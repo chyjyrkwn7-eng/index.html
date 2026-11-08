@@ -36450,3 +36450,64 @@ Madison, after watching the Fire Code videos: "The hundo effects, their borders 
 **Failing the same without this work** (the lead's rungs 25 / 75 / 125 / 200 against gates still written for 50 / 100 / 150 / 200, and fixtures built on them): check-behaviour b313_fx 'four to earn, one ladder of hundos', 'round 4: the 100-hundo rung is Underwater'; b317_hundobox 'each pop-up plays the effect live ... Earn 25', 'a run that takes you to 50 hundos announces Fireworks', 'and Home does not announce it again', 'Zenith counts the hundo effects: one short at 190'. `need` numbers were not touched.
 **Not confirmable in Chromium:** the light layer's strength on an OLED screen, the safe areas around the unlock pop-up, and how smooth the Hazmat jet and vapour are on a phone (the clock-driven recording is smooth by construction). Not merged.
 (r2, last) The hundo effect detail card (showUnlockDetail, .unlock-card-fx) name is the app sans too, like the pop-up; check-b384-hundoclean (C4) holds it (62 FAIL on the previous build, all PASS now).
+
+## 384 round 3b (r3-banners, NOT on main): six Fire Code banner items redrawn after Madison's review of round 3 (seven banners)
+
+Madison, per banner: Engine Company "not a fan, do like 5 inspectors at night or something"; Fully Compliant "just try something else.."; Grand Finale "it's great concept, just needs to be done
+better.. the vehicle just looks bad, the fireworks could have a glow and just it could be overall better"; Fully Involved and Hose Line "are like the exact same one.."; Fire Investigator "that's
+looking good, the fire scene tape should be lowered and looking better"; After Hours "I love the concept, maybe instead of thermal scanning something he could be hitting his flashlight with
+something? Idk". Only IFC_BANNER_ART's seven entries, IFC_BANNER_LOOK's four names and tints, and the new FCB3 helper block (before IFC_BANNER_ART). Ids, labels, needs, unlock rules, the academy,
+the characters and every other banner (Pulsar is another helper's) hash as c8143d5 drew them.
+- ID -> NAME -> SCENE. tests500 INSPECTION TEAM (was Engine Company; the apron of a fire station at night, five inspectors in a row against the lit bay doors under a FIRE STATION sign: clipboard, a
+  flashlight raised left, the tallest with the radio at his shoulder and a clipboard at his side, a flashlight raised right, the roll of plans; each a dark figure with a pale hard hat (two white, two
+  yellow-ish, one grey), two bands of reflective tape and a thin warm rim; five heights, 88 units apart with a clear gap between each; two beam cones from the flashlights' own lenses; stars, the
+  beams breathing, dust) / hundos100 PERFECT SCORE (was Fully Compliant; a hundo is a perfect 100%, so: a training-room scoreboard with 100% lit in seven-segment green under UNIT SCORE, two gold
+  stars, ten green lamps along the foot all lit, a table across the front with five helmets; the ghost segments of the unlit bars are nearly invisible so the 1 does not read as an 8; still, the first
+  rung, with its breathing glow and dust layers present but held) / hundos250 GRAND FINALE (kept: four shells round one gold finale, doubled in the lake, the crowd, the marshal, three cones; NEW the
+  truck, the glows, below) / level80 TOP OF THE LADDER (was Fully Involved; a dawn, not a fire: a ground ladder rising out of the bottom of the picture across the face of a rising sun to the parapet
+  of a tower, a firefighter standing on the edge at the top looking at the sun, violet to rose to gold sky, streaks of cloud, rays turning slowly BEHIND the skyline, the sun breathing, stars going out;
+  no hose, no fire, no truck) / exam100 TEN IN A ROW (was Hose Line; the pump room's instrument panel: ten gauges in one evenly spaced row, every needle pinned in the green, a lit lamp over each,
+  each on its own branch off one red manifold pipe, a plate under each numbered 1 to 10, 10 UNITS ACED IN A ROW along the top; cool teal steel; the lamps breathe one after another along the row;
+  no firefighter, hose or fire) / correct10000 FIRE INVESTIGATOR (kept; the tape, below; charred cracks across the boards and a smoke band under the ceiling) / early10 AFTER HOURS (kept: the marshal on
+  one knee in a dark room; the thermal camera is gone: his flashlight lights a sprinkler riser - the red pipe floor to ceiling with its pressure gauge (needle in the green) on a small pipe off it, the
+  valve's handwheel on the branch, a green PASSED tag with a white tick and OK tied to the wheel by a loop of string, a SPRINKLER RISER 2 sign, and a wall clock at 10:58; one warm beam in a cold room).
+  Names: Inspection Team, Perfect Score, Top of the Ladder and Ten in a Row are in IFC_BANNER_LOOK (they are what the Fire Code class shows; the academy's names were never touched). Tints: Inspection Team
+  gold/blue, Perfect Score green/blue, Top of the Ladder gold/magenta, Ten in a Row green/amber, After Hours teal/gold.
+- THE TRUCK (fbTruck + fbTruckGeom + fbTruckBar + fbTruckDefs in FCB3; fbSilverado and fbSilveradoLight are left in place unused, as fbChevy was). The round 3 truck was drawn with the nose turned
+  towards the viewer, which is what made it look wrong: an oblique sliver of a face on a profile body. This is a pure profile, in inches (231 long, 75 high, 147 wheelbase, 33-inch tyres): ONE outline for
+  the body (long flat hood rising to the cowl, the raked windshield, flat roof, the cab's back, the bed rail, the tailgate); a black greenhouse frame with the two door windows set into it and a headrest
+  in each; door seams, chrome handles, the fuel door, a tow mirror on an arm; two arches that are dark wells under a black flare with the tyre inside them and STANDING ON the ground (tyre bottom = ground
+  line, gate-measured); running boards between the wheels; the nose as a dark grille snout with its chrome bar, the headlamp wrapped round the corner with its daytime strip, the nudge bar on two brackets,
+  a fog lamp; the tail lamp up the corner of the bed, the step bumper and receiver; FIRE and MARSHAL in ghost lettering with the star in its ring, which reads left to right whichever way the truck faces
+  (facing right: star, FIRE on the rear door, MARSHAL on the front door; facing left the other way round). A first try put MARSHAL across the door seam and the lettering in the wrong order; both were
+  found by looking at a 3x crop, not by reading the code. The first try also set the beltline at y 59 and the windows came out a slit; real beltline is about 55. fbWheel's tyre carries class fb-tyre.
+- THE FIREWORKS: every burst now has a soft glow circle behind it (a radial gradient, class fb-glow), a hot core in two sizes, spokes, three rings of sparks, and the longer trails droop in a spark of their
+  own; the glow scales with the burst (they are on the bl-fwk layer). Their light lands on the truck: two layers (gold, pink) each a clip of the truck's body path (clip-path to a clipPath drawn with the
+  truck) filled with a gradient from the top down, pulsing on bl-glow; and on the pad and the lake (one pulsing glow layer). No filters anywhere; transform and opacity only.
+- THE TAPE (Fire Investigator): the old tape ran across the top (y 16 to 50). It now hangs from the doorway's right jamb (149, 98) to the stanchion (452, 104) on a quadratic that sags 13 below the chord
+  (16 units lower in the middle than at the jamb, measured), at chest height (the investigator's chest is about y 85, waist 112; the band runs y 90 to 122). It is built as sampled quads, so it can
+  twist: one full turn at 74 to 84 percent of its length, where the width goes cos 1 -> -1 -> 1, and the back of the tape (a darker yellow, unprinted) shows in the middle of the turn. Each glyph is set
+  on the curve by arc length (translate and rotate per glyph, fbText per character): FIRE SCENE, a diamond, DO NOT CROSS, a diamond, FIRE SCENE at 6.4 high, whole. Two slanting turns of tape round the jamb
+  and two round the post, a knot and a tail hanging from each. The flashlight beam still crosses it; the beam layer is above the base, so it brightens the tape, which is right (it is light). The
+  marshal moved 8 units left (BX 84) so his hand is clear of the jamb.
+- After Hours kept the kneeling figure whole (the hat, belt, badge, radio, the rim light - Madison liked it); only the camera is gone, the near arm now holds a flashlight, the far hand rests on the knee.
+  The cold test (check-b384-fcbanners 7) moved from .25 to .15: the picture is still the colder one, by .21, but a warm beam and a red valve cost it .04.
+- WHAT A STRIP SHOWS. The Profile cover is the strip with the avatar over its lower middle and a fade down its foot: the Inspection Team's middle figure loses his legs behind the circle, the truck keeps
+  its roof and bar, the gauges lose their plates; the tops of all of them read. Looked at on the real cover at 440x956 (tools shot with a scratch script: set bannerEarned and store.banner, showProfile).
+- TOOL: tools/shoot-fc-banners.py OUTDIR [--ids a,b] [--against OLD/index.html] [--sheet --cols N] [--scene] [--dpr N] [--t S] draws the banners as the 1050x348 strip (and with --scene the whole 480x180
+  scene, nothing cropped), live at --t seconds. Use --scene --dpr 3 and crop for a part that might float.
+- Gates: tools/check-b384-fcbanners.py rewritten around the new scenes (the Engine Company, Fully Compliant, Fully Involved, Hose Line, thermal camera and top-of-the-picture tape lines are gone; names,
+  the REDONE/KEEP lists, the cold threshold moved) and a new section (11) that MEASURES on the page, with check-b384-fcbanners.prev2.json (the bannerStaticSVG hashes of c8143d5): the seven differ from c8143d5 and
+  nothing else moved but Pulsar (another helper's, excluded); five inspectors with a gap between each, feet on one line, four-plus distinct heights, two beams, FIRE STATION and no ENGINE COMPANY; the
+  three digit segment groups of a 1, a 0 and a 0 (2, 6, 6 lit bars), a percent sign, ten lit lamps, UNIT SCORE, no COMPLIANT; the truck (length over ground-to-roof between 2.85 and 3.25, two tyres whose
+  bottoms are the ground line, two door windows, ghost lettering, a roof bar), six glow discs and the two clipped light layers; the ladder (12+ rungs, its top at the roof edge, its end on the roof, one
+  firefighter on that roof, no hose, no fire); ten gauges in one row at an even pitch with ten needles in the green, ten lamps and ten plates; neither of those two has fire, a hose or a firefighter at the
+  gauges and they share no long shape (the 'exact same one' complaint, as a measurement); the tape band (y 84 to 135, centre 90 to 125, nothing at the old y 33 / 25 ends), two turns at each end within
+  six units of the jamb and the post, two knots, a sag of 6+ and a back that shows, 30+ glyphs inside the picture; After Hours' beam lands on the wheel, the gauge and the tag, the clock is between 10:40
+  and 11:15, no thermal camera, no 187F or PANEL 4B. 15 lines FAIL on c8143d5 (`--against`), all PASS here. check-b384-banners (docstring only; it passes on both), check-b382-ifcart (its names line:
+  Top of the Ladder and Perfect Score; it has no --against, so it was run with the previous index.html copied in: FAIL there, PASS here; its other five failures are the same on both builds).
+- Run: check-js, console clean on every render, check-b384-fcbanners, check-b384-banners, check-b384-sets, check-b384-batch, check-b384-bannerroom, check-b384-polish, check-b382-ifcart (above).
+  check-b382-unhide D (the character question) fails the same on c8143d5 and here: not from this work.
+- NOT confirmable in Chromium: how the strips read on a phone's real screen at the scale the covers are shown; frame rate of Grand Finale (580 elements, 14 layers, the clipped truck layers) and Inspection
+  Team on an old iPhone; the Silverado's likeness to the real truck is a judgement from its profile (proportions measured, not compared to a photo); the headlamp and grille in profile are a drawing of a
+  3/4-turned nose seen edge on, so they read as a nose, not as a particular model.
