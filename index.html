@@ -59946,6 +59946,18 @@ var IFC_CHAR_DRAW = {
     k.add("path", { d: wedge(-1, 22, 1.5, 3.4), fill: beamS, opacity: ".45" });
     k.add("path", { d: wedge(-1, 22, .56, 1), fill: beamS });
     k.close();
+    /* the spin made visible: a ring of light round the star's equator (square to the axis), its far half behind the star and its near half
+       across it, brightest where it passes the viewer. A rotation, not a face: the same idea as the Quasar's disc, thinner and colder */
+    const RA = R + 5.2, RB = 3.3, RDEG = fcF(TILT * 180 / Math.PI + 90);
+    const ringG = fcLin(k, [["0", "#7FC8FF", "0"], [".2", "#9FD8FF", ".75"], [".5", "#FFFFFF", "1"], [".8", "#9FD8FF", ".75"], ["1", "#7FC8FF", "0"]], fcF(-RA), "0", fcF(RA), "0", true);
+    const ring = front => {
+      const d = front ? "M" + fcF(-RA) + " 0 A" + fcF(RA) + " " + RB + " 0 0 0 " + fcF(RA) + " 0" : "M" + fcF(-RA) + " 0 A" + fcF(RA) + " " + RB + " 0 0 1 " + fcF(RA) + " 0";
+      k.open("cx-fx cx-fx-sqlight", { transform: "translate(" + C[0] + " " + C[1] + ") rotate(" + RDEG + ")" });
+      k.add("path", { d, fill: "none", stroke: ICE, "stroke-width": "2.6", opacity: front ? ".2" : ".14", "stroke-linecap": "round" });
+      k.add("path", { d, fill: "none", stroke: ringG, "stroke-width": "1.1", "stroke-linecap": "round", opacity: front ? 1 : .7 });
+      k.add("path", { d, fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: front ? ".95" : ".55", "stroke-linecap": "round" });
+      k.close();
+    };
     k.open("cx-body");
     k.add("path", { d: "M5 40 Q5.6 30.8 13.4 28.6 Q20 26.8 26.6 28.6 Q34.4 30.8 35 40 Z", fill: k.headGrad("#2E4670", "#142240", "#050A18") });
     k.add("path", { d: "M5.9 36.6 Q6.6 31.8 12.6 29.6 M34.1 36.6 Q33.4 31.8 27.4 29.6", fill: "none", stroke: PALE, "stroke-width": ".4", opacity: ".55", "stroke-linecap": "round" });
@@ -59959,6 +59971,7 @@ var IFC_CHAR_DRAW = {
       k.add("path", { d, fill: "none", stroke: ICE, "stroke-width": ".4", opacity: op * .8, "stroke-linejoin": "round", "stroke-linecap": "round" });
     });
     k.close();
+    ring(false);
     k.open("cx-head");
     /* the star: a dark sphere with a lit rim, banded round by the spin (arcs square to the axis) */
     k.add("circle", { cx: C[0], cy: C[1], r: R + 1.1, fill: ICE, opacity: ".2" });
@@ -59968,27 +59981,28 @@ var IFC_CHAR_DRAW = {
       const m = [C[0] + AX[0] * (d0 + 1.3), C[1] + AX[1] * (d0 + 1.3)];
       k.add("path", { d: "M" + fcF(a[0]) + " " + fcF(a[1]) + " Q" + fcF(m[0]) + " " + fcF(m[1]) + " " + fcF(b[0]) + " " + fcF(b[1]), fill: "none", stroke: ICE, "stroke-width": ".3", opacity: f ? ".35" : ".5", "stroke-linecap": "round" });
     });
+    /* icy polar caps: where the jets leave, the surface is pale and lit, fading into the dark towards the equator (clipped to the sphere) */
+    { const cid = k.uid + "-pcl", cp = k.mk("clipPath", { id: cid }); cp.appendChild(k.mk("circle", { cx: C[0], cy: C[1], r: R })); k.defs.appendChild(cp);
+      const g = k.mk("g", { "clip-path": "url(#" + cid + ")" });
+      [1, -1].forEach(sg => {
+        const o = [C[0] + AX[0] * R * .93 * sg, C[1] + AX[1] * R * .93 * sg];
+        g.appendChild(k.mk("ellipse", { cx: fcF(o[0]), cy: fcF(o[1]), rx: 5.2, ry: 2.6, fill: sg > 0 ? "#DFF3FF" : "#9FD0FF", opacity: sg > 0 ? ".34" : ".22", transform: "rotate(" + RDEG + " " + fcF(o[0]) + " " + fcF(o[1]) + ")" }));
+        g.appendChild(k.mk("ellipse", { cx: fcF(o[0]), cy: fcF(o[1]), rx: 3, ry: 1.3, fill: "#FFFFFF", opacity: sg > 0 ? ".4" : ".22", transform: "rotate(" + RDEG + " " + fcF(o[0]) + " " + fcF(o[1]) + ")" }));
+      });
+      /* ice: a few hairline cracks and frost flecks across the dark middle */
+      [["M15.2 22.4 L17 21.4 L17.8 22.8", .36], ["M22.6 24 L24.4 23 L25.2 24.2", .3]].forEach(([d, op]) => g.appendChild(k.mk("path", { d, fill: "none", stroke: "#BFE6FF", "stroke-width": ".22", opacity: op, "stroke-linecap": "round", "stroke-linejoin": "round" })));
+      k.svg.appendChild(g); }
     k.add("path", { d: "M13.4 15.4 Q15.2 11.8 19.4 11.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".7", opacity: ".55", "stroke-linecap": "round" });
     [[15.4, 25.8], [25, 24.6], [22.8, 14.6]].forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i ? .2 : .28, fill: "#DFF3FF", opacity: ".6" }));
     /* the south pole's socket, unlit */
     k.add("circle", { cx: fcF(S[0]), cy: fcF(S[1]), r: 1.45, fill: "#0E2250", stroke: PALE, "stroke-width": ".3" });
     k.add("circle", { cx: fcF(S[0]), cy: fcF(S[1]), r: .75, fill: "#9FDCFF" });
-    k.open("cx-eyes");
-    k.open("cx-fx cx-fx-sqlight");
-    [17, 23].forEach(x => {
-      k.add("ellipse", { cx: x, cy: 20.4, rx: 2, ry: 2.9, fill: ICE, opacity: ".26" });
-      k.add("ellipse", { cx: x, cy: 20.4, rx: .98, ry: 1.75, fill: "#CFF1FF" });
-      k.add("ellipse", { cx: x, cy: 20.2, rx: .5, ry: 1.1, fill: "#FFFFFF" });
-    });
-    k.close();
-    k.close();
-    k.closedEyes([[17, 20.4, 1.3], [23, 20.4, 1.3]], "#9FDCFF", .5);
-    k.open("cx-mouth");
-    k.add("path", { d: "M18.6 25 Q20 25.9 21.4 25", fill: "none", stroke: "#7FC8FF", "stroke-width": ".42", opacity: ".8", "stroke-linecap": "round" });
-    k.close();
+    k.noEyes();
+    k.open("cx-mouth"); k.close();
     /* the north pole: a socket in the rim, and the flare set in it - the beam's own lamp */
     k.add("circle", { cx: fcF(N[0]), cy: fcF(N[1]), r: 1.95, fill: "#050C22", stroke: PALE, "stroke-width": ".35" });
     k.close();
+    ring(true);
     k.open("cx-fx cx-fx-flare cx-fx-sqlight");
     k.wornFlare(fcF(N[0]), fcF(N[1]), MYSTERY_COLOR.white, "#FFFFFF", .86);
     k.close();
