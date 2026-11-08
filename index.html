@@ -77739,6 +77739,85 @@ function fbFF(x, y, s, f, o){
   const rimG = fbL("M" + P(sh[0] + 6, sh[1] - 1) + " L" + P(hip[0] + 7.4, hip[1] + 1) + " M" + P(hd[0] + 8.4, hd[1] - 3) + " Q" + P(hd[0] + 8.6, hd[1] - 8) + " " + P(hd[0] + 2, hd[1] - 9.4), rim, w(1.2), ' opacity=".8"');
   return '<g class="fb-ff">' + g + rimG + '</g>';
 }
+/* ---- the office's 2025 Chevrolet Silverado 1500, crew cab, white, ghost lettering (Madison: "That does not look like a legit pickup truck ... We drive
+   2025 Chevy silverados. White. With ghost lettering.") ----
+   Drawn in inches (the real truck: 231 long, 75 high, 147 wheelbase, 33-inch wheels), front bumper at x 0, ground at 0, scaled by k and mirrored by f
+   (-1: it faces right, the body running off to the left of x). The current generation's lines: a tall flat nose with a big squared grille under a
+   chrome bar and the gold bowtie, the slim LED headlamp with its own thin daytime strip, the long hood and the raked windshield, a crew cab with four
+   doors and a flat roof, the squared wheel arches with their black flare, the bed with its tall sides, chrome door trim, black tow mirrors and running
+   boards. The front is turned towards us (the oblique sliver on the left of the nose) so the grille, the lamp and the bowtie are all seen.
+   Ghost lettering is tone on tone: letters a shade darker than the paint with a bright edge where they catch the light, FIRE MARSHAL across both doors,
+   a star in its ring on the front door. fbSilveradoLight(...) is one half of the roof light bar lit, for a blink layer. */
+function fbSilverado(u, x, y, k, o){
+  o = o || {};
+  const f = o.f || -1, P = (px, py) => bnF(x + px * k * f) + " " + bnF(y - py * k), w = v => bnF(v * k);
+  const poly = pts => "M" + pts.map(p => P(p[0], p[1])).join(" L") + " Z";
+  const FX = 24, FY = 3.4;   /* the nose, seen: how far its far edge sits beyond the near one, and how much higher */
+  let s1 = "";
+  /* the body: nose, hood, cowl, windshield, roof, back of the cab, bed rail, tailgate, bumper, rocker */
+  const body = "M" + P(2, 15) + " L" + P(0, 21) + " L" + P(0, 41) + " Q" + P(0, 46.4) + " " + P(5, 47.4) + " L" + P(58, 51.4) + " L" + P(67, 53.4) + " L" + P(99.6, 73.4) + " Q" + P(101.6, 75.2) + " " + P(106, 75.4) +
+    " L" + P(154, 75.4) + " Q" + P(159.6, 75.2) + " " + P(161.4, 69) + " L" + P(163.2, 56.6) + " L" + P(166, 55.6) + " L" + P(228, 55.6) + " Q" + P(231, 55.6) + " " + P(231.4, 52.6) + " L" + P(231.8, 24) + " L" + P(232.2, 19) + " L" + P(226, 16.6) + " L" + P(226, 13.6) + " L" + P(2, 13.6) + " Z";
+  s1 += '<path d="' + body + '" fill="url(#' + u + 'fbtruck)"/>';
+  /* the nose, turned towards us: the near edge is the body's own; this is the face itself, running away to its far edge (px 0..40) */
+  const N = (px, py) => P(-px * FX / 40 + 0, py + px * FY / 40);   /* a point on the face: px 0 (near edge) .. 40 (far edge), py its height */
+  const face = (a, b, c, d) => "M" + N(a[0], a[1]) + " L" + N(b[0], b[1]) + " L" + N(c[0], c[1]) + " L" + N(d[0], d[1]) + " Z";
+  const box = (x0, y0, x1, y1) => face([x0, y0], [x0, y1], [x1, y1], [x1, y0]);
+ /* the hood's top plane, the far half of it: from the near hood line out to the far edge of the face */
+  s1 += '<path d="M' + P(4.6, 47.4) + ' L' + P(52, 50.8) + ' L' + P(52 - FX, 50.8 + FY) + ' L' + P(4.6 - FX, 47.4 + FY) + ' Z" fill="#F6F8FB" stroke="#B4BCC8" stroke-width="' + w(.3) + '"/><path d="M' + P(10, 48.6) + ' L' + P(48, 51.4) + '" stroke="#FFFFFF" stroke-width="' + w(.9) + '" opacity=".8"/>';
+  s1 += '<path d="' + box(0, 14.4, 40, 46.4) + '" fill="url(#' + u + 'fbface)" stroke="#8A92A0" stroke-width="' + w(.4) + '" stroke-linejoin="round"/>';
+  /* the hood's leading edge seen from above: a lit strip along the top of the face, and a shade on the far side */
+  s1 += '<path d="' + box(0, 46.4, 40, 48.2) + '" fill="#FFFFFF"/><path d="' + box(35, 14.4, 40, 46.4) + '" fill="#000" opacity=".14"/>';
+  /* the grille: a big dark panel in a chrome frame, three slats, a chrome bar across its top with the gold bowtie on it */
+  s1 += '<path d="' + box(3, 28.6, 29.6, 43) + '" fill="#101216" stroke="url(#' + u + 'fbrim)" stroke-width="' + w(.9) + '"/>' + [31.2, 34.2, 37.2, 40.2].map(h => '<path d="M' + N(3.8, h) + ' L' + N(28.8, h) + '" stroke="#3A3F4A" stroke-width="' + w(1.3) + '"/>').join("") +
+    '<path d="' + box(2.4, 43, 30.2, 45.4) + '" fill="url(#' + u + 'fbrim)" stroke="#6A727E" stroke-width="' + w(.3) + '"/>' +
+    '<path d="M' + N(12.4, 44.2) + ' L' + N(15, 46.8) + ' L' + N(17.6, 44.2) + ' L' + N(15, 41.4) + ' Z" fill="#E3B341" stroke="#7A5A10" stroke-width="' + w(.35) + '" stroke-linejoin="round"/>' +
+    '<path d="M' + N(8.6, 44.2) + ' L' + N(21.4, 44.2) + '" stroke="#E3B341" stroke-width="' + w(1.4) + '" stroke-linecap="round" opacity=".9"/>';
+  /* the headlamp: the slim housing at the top outer corner, its long thin daytime strip lit, the low beam under it */
+  s1 += '<path d="' + box(30.6, 34.6, 40, 44.6) + '" fill="#161A22" stroke="#6A727E" stroke-width="' + w(.3) + '"/><path d="' + box(31, 42.4, 39.8, 44) + '" fill="#F4F8FF"/><path d="' + box(31.4, 37.4, 36.4, 39.6) + '" fill="#BFD6FF"/>' +
+    '<path d="' + box(0, 41.6, 2.4, 44.6) + '" fill="#F4F8FF"/>';
+  /* the nudge bar across the nose, black tube with chrome highlight, on two uprights to the bumper */
+  if(o.bar !== false) s1 += '<path d="' + box(1.4, 24.4, 3.6, 28.6) + '" fill="#16181E"/><path d="' + box(27, 24.4, 29.2, 28.6) + '" fill="#16181E"/><path d="' + box(0, 26.2, 31, 30.4) + '" fill="#16181E" stroke="#05060A" stroke-width="' + w(.3) + '"/><path d="' + box(0.6, 29.2, 30.4, 30) + '" fill="#9AA2AE" opacity=".8"/>';
+  /* the lower fascia: the bumper in white with a black intake and a fog lamp each side */
+  s1 += '<path d="' + box(0, 14.4, 40, 24.6) + '" fill="#E4E8EE" stroke="#A9B0BC" stroke-width="' + w(.3) + '"/>' + '<path d="' + box(5, 17, 29, 22.4) + '" fill="#13151A"/>' +
+    '<path d="' + box(31.6, 17.4, 37.6, 22.2) + '" fill="#1C2028"/><path d="' + box(32.6, 18.4, 36.6, 21.2) + '" fill="#FFF3C8"/>' + '<path d="M' + N(1.6, 15.6) + ' L' + N(1.6, 13.4) + '" stroke="#B5121B" stroke-width="' + w(1.4) + '"/>';
+  /* wheel wells, the glass, the pillar, the seams and the lines */
+  const arch = cx => { const pts = []; for(let i = 0; i <= 14; i++){ const a = Math.PI * i / 14; pts.push([cx - Math.cos(a) * 20.6, 16.5 + Math.sin(a) * 20 + (i === 0 || i === 14 ? 0 : 0)]); } return poly(pts); };
+  s1 += '<path d="' + arch(36) + '" fill="#101116"/><path d="' + arch(183) + '" fill="#101116"/>';
+  s1 += '<path d="' + poly([[68.4, 55.2], [99.6, 72.6], [122, 72.6], [122, 55.2]]) + '" fill="url(#' + u + 'fbglass)"/><path d="' + poly([[125.4, 55.2], [125.4, 72.6], [149, 72.6], [155, 70], [157, 55.2]]) + '" fill="url(#' + u + 'fbglass)"/>' +
+    '<path d="' + poly([[122, 54.8], [122, 73.2], [125.4, 73.2], [125.4, 54.8]]) + '" fill="#14161C"/>' +
+    '<path d="M' + P(72, 56) + ' L' + P(84, 64.2) + ' M' + P(75.4, 56) + ' L' + P(86, 63.6) + ' M' + P(130, 56) + ' L' + P(140, 69.6) + '" stroke="#FFFFFF" stroke-width="' + w(1.2) + '" opacity=".22"/>' +
+    '<path d="M' + P(68, 54.6) + ' L' + P(157.4, 54.6) + '" stroke="#C3CAD4" stroke-width="' + w(1.1) + '"/><path d="M' + P(68, 54) + ' L' + P(157.4, 54) + '" stroke="#5A616E" stroke-width="' + w(.5) + '"/>';
+  const seams = [[66.6, 53, 64, 15], [123.7, 54.6, 123.2, 15], [158, 66, 158.4, 15], [164.6, 55, 164.6, 18]];
+  s1 += '<path d="' + seams.map(q => "M" + P(q[0], q[1]) + " L" + P(q[2], q[3])).join(" ") + '" stroke="#9EA6B2" stroke-width="' + w(.7) + '" fill="none"/>' +
+    '<path d="M' + P(8, 37.2) + ' L' + P(60, 38.8) + ' M' + P(104, 37) + ' L' + P(160, 37) + ' M' + P(206, 37.4) + ' L' + P(230.4, 37.6) + '" stroke="#FFFFFF" stroke-width="' + w(.9) + '" opacity=".8" fill="none"/>' +
+    '<path d="M' + P(104, 36) + ' L' + P(160, 36) + ' M' + P(206, 36.4) + ' L' + P(230.4, 36.6) + '" stroke="#A8B0BC" stroke-width="' + w(.7) + '" fill="none"/>' +
+    /* chrome door handles, the fuel door */
+    '<path d="' + poly([[104, 52], [114.4, 52], [114.4, 49.6], [104, 49.6]]) + '" fill="url(#' + u + 'fbrim)" stroke="#6A727E" stroke-width="' + w(.3) + '"/><path d="' + poly([[143, 52], [153.4, 52], [153.4, 49.6], [143, 49.6]]) + '" fill="url(#' + u + 'fbrim)" stroke="#6A727E" stroke-width="' + w(.3) + '"/>';
+  /* the bed: its rail, the tail lamp, the rear bumper step */
+  s1 += '<path d="' + poly([[166.4, 55.6], [228, 55.6], [228, 53.4], [166.4, 53.4]]) + '" fill="#22252C"/><path d="' + poly([[229.4, 49], [232.2, 48.6], [232, 31], [229.2, 31.4]]) + '" fill="#B3161E"/><path d="' + poly([[229.6, 48.6], [232, 48.4], [232, 44], [229.6, 44.4]]) + '" fill="#FF6A5A"/>' +
+    '<path d="' + poly([[222, 19], [233.4, 19.6], [233.4, 15.4], [222, 15.4]]) + '" fill="#C3CAD4" stroke="#6A727E" stroke-width="' + w(.3) + '"/>';
+  /* running boards and the rocker */
+  s1 += '<path d="' + poly([[62, 15.6], [152, 15.6], [152, 12.4], [62, 12.4]]) + '" fill="#16181E"/><path d="' + poly([[62, 15.6], [152, 15.6], [152, 14.8], [62, 14.8]]) + '" fill="#4A505C"/>';
+  /* the mirror on its arm at the base of the pillar, and the roof's light bar (dark; fbSilveradoLight lights it) and antenna */
+  s1 += '<path d="' + poly([[67.2, 56], [63.6, 55.2], [63.6, 57.6], [67.2, 58.4]]) + '" fill="#15171C"/><path d="' + poly([[57, 53.8], [65.4, 53.6], [65.4, 63.6], [58.2, 64]]) + '" fill="#15171C" stroke="#05060A" stroke-width="' + w(.3) + '"/><path d="' + poly([[58.4, 62.6], [64.2, 62.4], [64.2, 55.2], [57.8, 55.4]]) + '" fill="#3A4256"/>' +
+    '<path d="' + poly([[108, 75.4], [140, 75.4], [139, 79.8], [109, 79.8]]) + '" fill="#15171C"/>' + '<path d="' + poly([[110, 79], [124, 79], [124, 76.6], [110, 76.6]]) + '" fill="#5A1414"/><path d="' + poly([[124.4, 79], [138, 79], [138, 76.6], [124.4, 76.6]]) + '" fill="#14205A"/>' +
+    '<path d="M' + P(159, 75.4) + ' L' + P(160.6, 92) + '" stroke="#1A1C22" stroke-width="' + w(.8) + '"/>';
+  /* the ghost lettering and the star: tone on tone, a bright edge */
+  const gx = x + 99 * k * f, gy = y - 45.2 * k, gh = 7.4 * k, word = o.ghost || "FIRE MARSHAL";
+  s1 += '<g class="fb-ghost">' + fbText(word, gx, gy, gh, "#B3BBC7", gh * .22) + fbText(word, gx - .3 * k * f, gy - .35 * k, gh, "#FFFFFF", gh * .08, ' opacity=".95"') + '</g>';
+  const bx = x + 214 * k * f, by = y - 45.6 * k;
+  s1 += '<circle cx="' + bnF(bx) + '" cy="' + bnF(by) + '" r="' + w(4.6) + '" fill="none" stroke="#B3BBC7" stroke-width="' + w(.9) + '"/><path d="' + fbStarPath(bx, by, 3.5 * k) + '" fill="#C3CAD4" stroke="#B3BBC7" stroke-width="' + w(.4) + '" stroke-linejoin="round"/>';
+  /* wheels, big and black, and their black flare over each arch */
+  if(!o.noWheels) [36, 183].forEach(cx => { s1 += fbWheel(u, x + cx * k * f, y - 16.5 * k, k * 1.33); });
+  [36, 183].forEach(cx => { const pts = []; for(let i = 0; i <= 14; i++){ const a = Math.PI * i / 14; pts.push([cx - Math.cos(a) * 22.2, 16.5 + Math.sin(a) * 21.6]); } for(let i = 14; i >= 0; i--){ const a = Math.PI * i / 14; pts.push([cx - Math.cos(a) * 20.6, 16.5 + Math.sin(a) * 20]); } s1 += '<path d="' + poly(pts) + '" fill="#101116"/>'; });
+  return s1;
+}
+function fbSilveradoLight(x, y, k, f, side, big){
+  f = f || -1;
+  const a = side ? 124.4 : 110, b = side ? 138 : 124, col = side ? "#3D7BFF" : "#FF2D2D", cx = x + (a + b) / 2 * k * f, cy = y - 78 * k;
+  return '<circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(26 * k * (big || 1)) + '" fill="' + col + '" opacity=".28"/><circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(10 * k * (big || 1)) + '" fill="' + col + '" opacity=".5"/>' +
+    '<path d="M' + bnF(x + a * k * f) + ' ' + bnF(y - 79 * k) + ' L' + bnF(x + b * k * f) + ' ' + bnF(y - 79 * k) + ' L' + bnF(x + b * k * f) + ' ' + bnF(y - 76.6 * k) + ' L' + bnF(x + a * k * f) + ' ' + bnF(y - 76.6 * k) + ' Z" fill="' + (side ? "#9FC0FF" : "#FF9A8A") + '"/>';
+}
 /*FCB2-END*/
 const IFC_BANNER_ART = {
   /* CERTIFIED (was Headquarters; this one is for finishing 100 full-length tests) - the marshal's office after hours. Round 2 (Madison:
@@ -78085,11 +78164,11 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* GRAND FINALE (was Pyrotechnics; 384 review: "Pyrotechnics is a great concept, put more fireworks in the
-     background and fix that banner up some"; named for its challenge, 250 hundos) - the last minute of a public
-     display over the lake: the whole sky going at once, a dozen shells opening and drooping on their own clocks
-     round one huge gold finale burst, all of it doubled in the water; the crowd along the far shore with their
-     arms up, and at the safety line the marshal beside the office's white Chevy with its bar lit. */
+  /* GRAND FINALE (was Pyrotechnics; named for its challenge, 250 hundos; Madison: "this is awesome, however there is too many fireworks? Make it
+     better. That does not look like a legit pickup truck ... We drive 2025 Chevy silverados. White. With ghost lettering.") - the last minute of a public
+     display over the lake, composed: four big shells (red, blue, pink, green) round ONE huge gold finale burst, all of it doubled in the water, the
+     crowd along the far bank with their arms up, and at the safety line the marshal beside the office's white 2025 Silverado (crew cab, the new
+     front end, FIRE MARSHAL in ghost lettering, a roof bar lit red and blue). */
   hundos250(u){
     const rnd = bnRand(3825);
     const st = bnStarsSplit(rnd, 70, 80);
@@ -78107,11 +78186,8 @@ const IFC_BANNER_ART = {
         '<circle cx="' + cx + '" cy="' + cy + '" r="' + bnF(r * .13) + '" fill="#FFFFFF" opacity=".85"/>';
     };
     /* x, y, radius, spokes, colour, tip, seconds per cycle, delay */
-    const B = [[44, 44, 26, 18, "#FF5A4E", "#FFE0D8", 6.4, 0], [104, 24, 20, 16, "#7FB8FF", "#FFFFFF", 5.2, 2.1], [150, 62, 30, 20, "#8CFF9A", "#E8FFE8", 7, 3.3],
-      [196, 30, 24, 18, "#F7A8FF", "#FFFFFF", 5.8, .8], [286, 26, 22, 16, "#FFD36A", "#FFFFFF", 6.2, 4.2], [330, 66, 32, 22, "#FF7AD0", "#FFE6F6", 6.8, 1.6],
-      [382, 28, 26, 18, "#7FFFE0", "#FFFFFF", 5.6, 3.6], [430, 62, 28, 20, "#FFA040", "#FFF0D8", 7.2, 5.2], [462, 26, 18, 14, "#B8A0FF", "#FFFFFF", 4.8, 2.6],
-      [74, 90, 18, 14, "#FFE56A", "#FFFFFF", 5.4, 4.6], [244, 96, 16, 14, "#FF6A5A", "#FFFFFF", 4.6, 1.2], [400, 98, 18, 14, "#8FD0FF", "#FFFFFF", 5, 2.9]];
-    const FIN = [240, 48, 56];
+    const B = [[66, 50, 32, 20, "#FF5A4E", "#FFE0D8", 6.4, 0], [152, 24, 22, 16, "#7FB8FF", "#FFFFFF", 5.4, 2.4], [334, 28, 26, 18, "#FF7AD0", "#FFE6F6", 6.8, 3.6], [418, 54, 34, 22, "#8CFF9A", "#E8FFE8", 7.2, 1.2]];
+    const FIN = [240, 50, 58];
     const refl = B.concat([[FIN[0], FIN[1], FIN[2], 0, "#FFD36A"]]).map(([x, y, r, n, col], i) => '<ellipse cx="' + x + '" cy="134" rx="' + bnF(r * .5) + '" ry="12" fill="url(#' + u + 'rf' + i + ')"/>').join("");
     let ripples = "";
     for(let i = 0; i < 22; i++){ const y = 124 + rnd() * 18, x = rnd() * 480; ripples += '<path d="M' + bnF(x) + ' ' + bnF(y) + ' l' + bnF(14 + rnd() * 30) + ' 0" stroke="#FFFFFF" stroke-width=".7" opacity="' + bnF(.08 + rnd() * .16) + '"/>'; }
@@ -78120,19 +78196,19 @@ const IFC_BANNER_ART = {
     for(let i = 0; i < 46; i++){ const x = 8 + i * 10.2 + (rnd() - .5) * 5, y = 124 + rnd() * 3, hh = 7 + rnd() * 4;
       crowd += '<circle cx="' + bnF(x) + '" cy="' + bnF(y - hh) + '" r="2.4" fill="#06070E"/><path d="M' + bnF(x - 3.6) + ' ' + bnF(y + 2) + ' Q' + bnF(x - 3.4) + ' ' + bnF(y - hh + 3) + ' ' + bnF(x) + ' ' + bnF(y - hh + 3) + ' Q' + bnF(x + 3.4) + ' ' + bnF(y - hh + 3) + ' ' + bnF(x + 3.6) + ' ' + bnF(y + 2) + ' Z" fill="#06070E"/>';
       if(rnd() < .35){ const s = rnd() < .5 ? -1 : 1; crowd += '<path d="M' + bnF(x + s * 2.6) + ' ' + bnF(y - hh + 4) + ' l' + bnF(s * 2.4) + ' -6.4" stroke="#06070E" stroke-width="1.8" stroke-linecap="round"/>' + (rnd() < .5 ? '<rect x="' + bnF(x + s * 5 - 1.2) + '" y="' + bnF(y - hh - 4.2) + '" width="2.4" height="3.6" fill="#CFE8FF" opacity=".9"/>' : ''); } }
-    const X = 178, Y = 164, S = .8;
+    const X = 214, Y = 164, K = .72;
     const base = '<defs>' + bnLin(u + "sky", [[0, "#03041A"], [0.7, "#141A44"], [1, "#2A2050"]]) + bnLin(u + "lake", [[0, "#1A1E44"], [1, "#07081A"]]) + bnLin(u + "shore", [[0, "#10141E"], [1, "#05060A"]]) + fbChevyDefs(u) +
       B.concat([[0, 0, 0, 0, "#FFD36A"]]).map((b, i) => bnRad(u + "rf" + i, [[0, b[4], 0.42], [1, b[4], 0]])).join("") + bnRad(u + "halo", [[0, "#FFFFFF", 0.1], [1, "#FFFFFF", 0]]) + bnRad(u + "puff", [[0, "#9A94BA", 0.16], [1, "#9A94BA", 0]]) + bnRad(u + "haze", [[0, "#9A90C0", 0.2], [1, "#9A90C0", 0]]) + bnRad(u + "glow", [[0, "#FFB86A", 0.34], [1, "#FFB86A", 0]]) + '</defs>' +
       '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + '<ellipse cx="240" cy="64" rx="260" ry="80" fill="url(#' + u + 'haze)"/>' +
       town.body + town.win + '<rect x="0" y="124" width="480" height="30" fill="url(#' + u + 'lake)"/><rect x="0" y="124" width="480" height="1.4" fill="#3A3E70" opacity=".8"/>' + crowd + refl + ripples +
       '<path d="M-10 150 Q120 144 240 149 Q360 154 490 148 L490 180 L-10 180 Z" fill="url(#' + u + 'shore)"/>' +
-      [230, 270, 310, 350, 390, 430, 468].map(x => '<path d="M' + (x - 3.4) + ' 154 L' + x + ' 144 L' + (x + 3.4) + ' 154 Z" fill="#FF7A2E"/><path d="M' + (x - 2) + ' 149.6 L' + (x + 2) + ' 149.6" stroke="#F4F1EA" stroke-width="1.2"/>').join("") +
-      '<ellipse cx="' + (X - 50) + '" cy="' + (Y + 1) + '" rx="56" ry="3.4" fill="#000" opacity=".5"/>' +
-      fbChevy(u, X, Y, S, { kind: "pickup", f: -1 }) + fbMarshal(X + 18, Y, 1.04, 1, { pose: "stand", rim: "#FFC88A" });
+      [290, 330, 370, 410, 450].map(x => '<path d="M' + (x - 3.4) + ' 154 L' + x + ' 144 L' + (x + 3.4) + ' 154 Z" fill="#FF7A2E"/><path d="M' + (x - 2) + ' 149.6 L' + (x + 2) + ' 149.6" stroke="#F4F1EA" stroke-width="1.2"/>').join("") +
+            '<ellipse cx="' + (X - 100 * K) + '" cy="' + (Y + 1.6) + '" rx="' + (118 * K) + '" ry="4" fill="#000" opacity=".55"/>' +
+      fbSilverado(u, X, Y, K, { f: -1 }) + fbMarshal(X + 42, Y, 1.3, 1, { pose: "stand", rim: "#FFC88A" });
     return [
       { svg: base },
       { svg: st.a, cls: "bl-tw", style: "animation-duration:2.8s" },
-      /* the display: twelve shells, each on its own clock, each lit most of the way through its cycle */
+      /* the display: four shells, each on its own clock, each lit most of the way through its cycle */
       ...B.map(([x, y, r, n, col, tip, dur, dl]) => ({ svg: burst(x, y, r, n, col, tip), box: [x - r * 1.25, y - r * 1.25, r * 2.5, r * 2.5], o: [x, y], cls: "bl-fwk", style: "animation-duration:" + dur + "s;animation-delay:-" + dl + "s" })),
       /* the finale: one huge gold burst over the middle every nine seconds, the sky answering it */
       { svg: burst(FIN[0], FIN[1], FIN[2], 30, "#FFD36A", "#FFFFFF") + burst(FIN[0], FIN[1], FIN[2] * .62, 20, "#FF9A3D", "#FFF0C8"), box: [FIN[0] - FIN[2] * 1.25, FIN[1] - FIN[2] * 1.25, FIN[2] * 2.5, FIN[2] * 2.5], o: [FIN[0], FIN[1]], cls: "bl-fwk", style: "animation-duration:9s;animation-delay:-1.4s" },
@@ -78140,10 +78216,10 @@ const IFC_BANNER_ART = {
       { svg: '<ellipse cx="240" cy="126" rx="230" ry="14" fill="url(#' + u + 'glow)"/>', box: [0, 100, 480, 40], cls: "bl-glow", style: "animation-duration:.8s" },
       { svg: fbPuffs(bnRand(57), 140, 70, 6, 16, "url(#" + u + "puff)") + fbPuffs(bnRand(58), 340, 60, 5, 14, "url(#" + u + "puff)"), box: [60, 10, 380, 110], cls: "bl-drift", style: "animation-duration:22s" },
       /* a shell climbing */
-      { svg: '<path d="M250 124 Q252 106 252 88" fill="none" stroke="#FFE7A8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 3" opacity=".8"/><circle cx="252" cy="88" r="1.6" fill="#FFFFFF"/>', box: [240, 84, 20, 44], cls: "bl-glint", style: "animation-duration:1.8s" },
+      { svg: '<path d="M300 124 Q302 106 302 88" fill="none" stroke="#FFE7A8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 3" opacity=".8"/><circle cx="302" cy="88" r="1.6" fill="#FFFFFF"/>', box: [290, 84, 20, 44], cls: "bl-glint", style: "animation-duration:1.8s" },
       /* the bar on the marshal's truck */
-      { svg: fbChevyLight(X, Y, S, -1, 0), box: [X - 80, Y - 80, 90, 36], cls: "bl-blink", style: "animation-duration:1.1s" },
-      { svg: fbChevyLight(X, Y, S, -1, 1), box: [X - 80, Y - 80, 90, 36], cls: "bl-blink", style: "animation-duration:1.1s;animation-delay:-.55s" }
+      { svg: fbSilveradoLight(X, Y, K, -1, 0), box: [X - 160 * K, Y - 120 * K, 70 * K, 60 * K], cls: "bl-blink", style: "animation-duration:1.1s" },
+      { svg: fbSilveradoLight(X, Y, K, -1, 1), box: [X - 160 * K, Y - 120 * K, 70 * K, 60 * K], cls: "bl-blink", style: "animation-duration:1.1s;animation-delay:-.55s" }
     ];
   },
 
