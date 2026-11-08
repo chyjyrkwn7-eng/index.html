@@ -166,7 +166,7 @@ off = [n for n in ["Hotshot", "Sparky", "Fire Marshal", "Truckie", "Air Attack",
 chk("no round-1 character he turned down is left in Fire Code (%s)" % off, not off, off)
 # (384) "I don't like the plane examiner ... a fire extinguisher character", "Let's not do the investigator, can you make that a
 # hazmat monster", "I don't like public educator, try something else": those three are the Extinguisher, Toxic Spill and Hydrant now
-need = ["Lookout", "Toxic Spill", "Smoke Alarm", "Strobe", "Sprinkler Head"]   # (384 r8) Lookout and Smoke Alarm replace Undercover and Pump Operator (r7: Pyrotech and Salamander) (r5: the Extinguisher and Hydrant)
+need = ["Undercover", "Toxic Spill", "The Irons", "Strobe", "Sprinkler Head"]   # (384 r9) Undercover and The Irons replace the Lookout and the Smoke Alarm (r8: they replaced Undercover and Pump Operator) (r7: Pyrotech and Salamander) (r5: the Extinguisher and Hydrant)
 chk("the extinguisher, toxic spill, hydrant, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
 gone = [n for n in ["Plans Examiner", "Public Educator", "Investigator"] if n in F["cnames"].values()]
 chk("...and the plans examiner, public educator and investigator he turned down in 384 are gone (%s)" % gone, not gone, gone)
