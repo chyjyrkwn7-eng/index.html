@@ -78060,6 +78060,10 @@ function fbInsp(x, y, s, o){
   const pol = (pts, fill, ex) => '<path d="M' + pts.map(p => P(p[0], p[1])).join(" L") + ' Z" fill="' + fill + '"' + (ex || "") + '/>';
   const lim = (pts, wd, col, ex) => '<path d="M' + pts.map(p => P(p[0], p[1])).join(" L") + '" fill="none" stroke="' + col + '" stroke-width="' + w(wd) + '" stroke-linecap="round" stroke-linejoin="round"' + (ex || "") + '/>';
   const dc = (cx, cy, r, fill, ex) => '<circle cx="' + bnF(x + cx * s * f) + '" cy="' + bnF(y + cy * s) + '" r="' + w(r) + '" fill="' + fill + '"' + (ex || "") + '/>';
+  /* several polylines / polygons as ONE path (the banner is built from few elements: each is a node the phone has to hold) */
+  const lims = (lst, wd, col, ex) => '<path d="' + lst.map(pts => 'M' + pts.map(p => P(p[0], p[1])).join(" L")).join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + w(wd) + '" stroke-linecap="round" stroke-linejoin="round"' + (ex || "") + '/>';
+  /* one winding for every polygon, or overlaps of opposite windings punch holes in each other under the nonzero rule */
+  const pols = (lst, fill, ex) => '<path d="' + lst.map(pts => { let ar = 0; pts.forEach((q, i) => { const n = pts[(i + 1) % pts.length]; ar += q[0] * n[1] - n[0] * q[1]; }); if(ar * f < 0) pts = pts.slice().reverse(); return 'M' + pts.map(p => P(p[0], p[1])).join(" L") + ' Z'; }).join(" ") + '" fill="' + fill + '"' + (ex || "") + '/>';
   const rot = (px, py, deg, cx, cy) => { const a = deg * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a); return [cx + (px - cx) * c - (py - cy) * sn, cy + (px - cx) * sn + (py - cy) * c]; };
   const box = (cx, cy, bw, bh, deg) => [[-bw / 2, -bh / 2], [bw / 2, -bh / 2], [bw / 2, bh / 2], [-bw / 2, bh / 2]].map(p => rot(cx + p[0], cy + p[1], deg, cx, cy));
   /* the arms: [shoulder, elbow, hand] for each side, per pose (local x is the figure's own left, negative) */
@@ -78086,7 +78090,9 @@ function fbInsp(x, y, s, o){
     const R = (px, py) => rot(cx + px, cy + py, deg, cx, cy);
     let g = '<g class="fb-board">' + pol(box(cx, cy, bw, bh, deg), "#8A6038", ' stroke="#4A3018" stroke-width="' + w(.6) + '" stroke-linejoin="round"') +
       pol([R(-bw / 2 + 1.5, -bh / 2 + 4), R(bw / 2 - 1.5, -bh / 2 + 4), R(bw / 2 - 1.5, bh / 2 - 1.5), R(-bw / 2 + 1.5, bh / 2 - 1.5)], "#F1F2EE");
-    for(let i = 0; i < lines; i++){ const yy = -bh / 2 + 8.4 + i * 3.7; g += lim([R(-bw / 2 + 3.2, yy), R(bw / 2 - 3.4 - (i % 3) * 1.8, yy)], .55, "#6A7488"); g += lim([R(-bw / 2 + 2.6, yy - .2), R(-bw / 2 + 3.4, yy + .5)], .5, "#2A8A4A"); }
+    const ls = [], ts = [];
+    for(let i = 0; i < lines; i++){ const yy = -bh / 2 + 8.4 + i * 3.7; ls.push([R(-bw / 2 + 3.2, yy), R(bw / 2 - 3.4 - (i % 3) * 1.8, yy)]); ts.push([R(-bw / 2 + 2.6, yy - .2), R(-bw / 2 + 3.4, yy + .5)]); }
+    g += lims(ls, .55, "#6A7488") + lims(ts, .5, "#2A8A4A");
     return g + pol([R(-2.6, -bh / 2 - .6), R(2.6, -bh / 2 - .6), R(2.6, -bh / 2 + 3.8), R(-2.6, -bh / 2 + 3.8)], "#A9B3C0", ' stroke="#4A5464" stroke-width="' + w(.5) + '" stroke-linejoin="round"') + dc(...rot(cx, cy - bh / 2 + 1.4, deg, cx, cy), .7, "#4A5464") + '</g>';
   };
   const fingersAt = (px, py, deg) => {
@@ -78150,8 +78156,8 @@ function fbInsp(x, y, s, o){
   /* the whole dark figure as one tone, to be drawn once shifted for the rim of light and once as itself */
   const sil = (dx, c) => {
     const Q = ps => ps.map(p => [p[0] + dx, p[1]]);
-    return legs.map(l => lim(Q(l), 12.6, c || pants)).join("") + boots.map(b => pol(Q(b), c || "#0E1217")).join("") + pol(Q(torso), c || shirt) +
-      pol(Q([[-3.6, -92], [3.6, -92], [3.8, -84], [-3.8, -84]]), c || skin) + [armA, armB].map(a => lim(Q(a), 8.4, c || shirt)).join("") +
+    return lims(legs.map(Q), 12.6, c || pants) + pols(boots.map(Q), c || "#0E1217") + pol(Q(torso), c || shirt) +
+      pol(Q([[-3.6, -92], [3.6, -92], [3.8, -84], [-3.8, -84]]), c || skin) + lims([armA, armB].map(Q), 8.4, c || shirt) +
       '<ellipse cx="' + bnF(x + dx * s * f) + '" cy="' + bnF(y - 97 * s) + '" rx="' + w(7.6) + '" ry="' + w(8.8) + '" fill="' + (c || skin) + '"/>';
   };
   /* the vest: two panels with the V of the neck and the zip between, its reflective bands (two round, two over the shoulders), a pocket, a badge */
@@ -78161,11 +78167,9 @@ function fbInsp(x, y, s, o){
   };
   const shadeSide = lit < 0 ? 1 : -1;
   let v = '<g class="fb-vest">' + vp(-1) + vp(1) + pol([[shadeSide * 16.2, -83], [shadeSide * 6.2, -86.6], [shadeSide * 1.6, -68], [shadeSide * 1.6, -45.6], [shadeSide * 16, -45.6]], vestD, ' opacity=".42"');
-  [-1, 1].forEach(a => {
-    v += pol([[a * 9.2, -85.6], [a * 12.6, -84.6], [a * 12.4, -45.6], [a * 9, -45.6]], tape, ' class="fb-band" stroke="#9AA6B4" stroke-width="' + w(.3) + '"') +
-      pol([[a * 15.9, -66.4], [a * 1.7, -66.4], [a * 1.7, -62.4], [a * 15.9, -62.4]], tape, ' class="fb-band" stroke="#9AA6B4" stroke-width="' + w(.3) + '"') +
-      pol([[a * 15.9, -54.4], [a * 1.7, -54.4], [a * 1.7, -50.4], [a * 15.9, -50.4]], tape, ' class="fb-band" stroke="#9AA6B4" stroke-width="' + w(.3) + '"');
-  });
+  const bandL = [];
+  [-1, 1].forEach(a => { bandL.push([[a * 9.2, -85.6], [a * 12.6, -84.6], [a * 12.4, -45.6], [a * 9, -45.6]], [[a * 15.9, -66.4], [a * 1.7, -66.4], [a * 1.7, -62.4], [a * 15.9, -62.4]], [[a * 15.9, -54.4], [a * 1.7, -54.4], [a * 1.7, -50.4], [a * 15.9, -50.4]]); });
+  v += pols(bandL, tape, ' class="fb-band" stroke="#9AA6B4" stroke-width="' + w(.3) + '"');
   v += lim([[0, -68], [0, -45.6]], .8, "#3E4E0E") + pol([[4.4, -78], [8, -78], [8, -73], [4.4, -73]], "#F2F5F8", ' stroke="#4A5464" stroke-width="' + w(.4) + '"') + lim([[5, -76.4], [7.4, -76.4]], .4, "#4A5464") + lim([[5, -74.8], [6.8, -74.8]], .4, "#4A5464") +
     dc(-6.4, -76.4, 1.6, "#F2C14E", ' stroke="#8A5E10" stroke-width="' + w(.4) + '"') + pol([[-14, -58.8], [-9.8, -58.8], [-9.8, -55.6], [-14, -55.6]], vestD, ' opacity=".6"') + '</g>';
   /* the belt, its buckle, a pouch */
@@ -78185,7 +78189,7 @@ function fbInsp(x, y, s, o){
   const shadow = '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y + .6) + '" rx="' + w(24) + '" ry="' + w(3) + '" fill="#000" opacity=".5"/>';
   const rimG = '<g opacity=".6">' + sil(lit * 1.1, rim) + '</g>';
   /* the arms and their cuffs, over the vest; sleeves have a lighter fold */
-  const arms = [armA, armB].map(a => lim(a, 8.4, shirt) + lim([a[1], a[2]], 8.4, shirt) + lim([[a[0][0], a[0][1] + 1.6], [a[1][0], a[1][1]]], 1, "#3C4A5C", ' opacity=".7"')).join("");
+  const arms = lims([armA, armB], 8.4, shirt) + lims([armA, armB].map(a => [[a[0][0], a[0][1] + 1.6], [a[1][0], a[1][1]]]), 1, "#3C4A5C", ' opacity=".7"');
   return { svg: '<g class="fb-inspector">' + shadow + rimG + sil(0) + belt + v + arms + under + held + '<g class="fb-hands">' + hands + '</g>' + face + hatSvg + '</g>', lens };
 }
 /* an inspector seen from behind, for a skyline at night (the Grand Finale) and a roof at dawn (Top of the Ladder). The same man: hard hat,
@@ -78201,6 +78205,9 @@ function fbInspBack(x, y, s, o){
   const pol = (pts, fill, ex) => '<path d="M' + pts.map(p => P(p[0], p[1])).join(" L") + ' Z" fill="' + fill + '"' + (ex || "") + '/>';
   const lim = (pts, wd, col, ex) => '<path d="M' + pts.map(p => P(p[0], p[1])).join(" L") + '" fill="none" stroke="' + col + '" stroke-width="' + w(wd) + '" stroke-linecap="round" stroke-linejoin="round"' + (ex || "") + '/>';
   const dc = (cx, cy, r, fill, ex) => '<circle cx="' + bnF(x + cx * s) + '" cy="' + bnF(y + cy * s) + '" r="' + w(r) + '" fill="' + fill + '"' + (ex || "") + '/>';
+  const lims = (lst, wd, col, ex) => '<path d="' + lst.map(pts => 'M' + pts.map(p => P(p[0], p[1])).join(" L")).join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + w(wd) + '" stroke-linecap="round" stroke-linejoin="round"' + (ex || "") + '/>';
+  /* one winding for every polygon, or overlaps of opposite windings punch holes in each other under the nonzero rule */
+  const pols = (lst, fill, ex) => '<path d="' + lst.map(pts => { let ar = 0; pts.forEach((q, i) => { const n = pts[(i + 1) % pts.length]; ar += q[0] * n[1] - n[0] * q[1]; }); if(ar < 0) pts = pts.slice().reverse(); return 'M' + pts.map(p => P(p[0], p[1])).join(" L") + ' Z'; }).join(" ") + '" fill="' + fill + '"' + (ex || "") + '/>';
   let armL, armR, extra = "", extraTop = "", bare = false;
   if(pose === "salute"){ armL = [[-15, -80], [-22, -62], [-19, -47]]; armR = [[15, -80], [27, -86], [9.2, -103]]; }
   else if(pose === "hatup"){ armL = [[-15, -80], [-22, -62], [-19, -47]]; armR = [[15, -80], [30, -92], [34, -116]]; bare = true; }
@@ -78216,16 +78223,15 @@ function fbInspBack(x, y, s, o){
   const head = (c, bc) => '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y - 97 * s) + '" rx="' + w(7.4) + '" ry="' + w(8.6) + '" fill="' + c + '"/>' + pol([[-3.4, -92], [3.4, -92], [3.6, -84], [-3.6, -84]], c);
   const sil = (dx, c) => {
     const Q = ps => ps.map(p => [p[0] + dx, p[1]]);
-    return legs.map(l => lim(Q(l), 12.4, c || pantsC)).join("") + boots.map(b => pol(Q(b), c || "#05070C")).join("") + pol(Q(torso), c || body) + [armL, armR].map(a => lim(Q(a), 8.2, c || body)).join("") + head(c || (bare ? skin : body));
+    return lims(legs.map(Q), 12.4, c || pantsC) + pols(boots.map(Q), c || "#05070C") + pol(Q(torso), c || body) + lims([armL, armR].map(Q), 8.2, c || body) + head(c || (bare ? skin : body));
   };
   const rimG = '<g opacity="' + rimOp + '">' + sil(lit * 1.2, tone) + '</g>';
   /* the vest from behind: a panel each side, the reflective bands (a round chest band, a round waist band, and the two vertical bands joined into a Y), catching the tone */
   const vst = pol([[-15.8, -83], [-6, -86.4], [6, -86.4], [15.8, -83], [15.4, -45.6], [-15.4, -45.6]], vest) +
     pol([[lit * 15.8, -83], [lit * 6, -86.4], [lit * 0.5, -86.4], [lit * .5, -45.6], [lit * 15.4, -45.6]], tone, ' opacity=".16"');
-  const bands = pol([[-15.6, -65], [15.6, -65], [15.6, -61], [-15.6, -61]], band, ' class="fb-band" opacity=".9"') + pol([[-15.4, -54], [15.4, -54], [15.4, -50], [-15.4, -50]], band, ' class="fb-band" opacity=".9"') +
-    pol([[-12.8, -85], [-9.2, -85.8], [-.8, -61], [-3.6, -61]], band, ' opacity=".9"') + pol([[12.8, -85], [9.2, -85.8], [.8, -61], [3.6, -61]], band, ' opacity=".9"') + pol([[-1.8, -62], [1.8, -62], [1.8, -50], [-1.8, -50]], band, ' opacity=".9"');
-  const bandLit = pol([[lit * 15.6, -65], [lit * 2, -65], [lit * 2, -63.6], [lit * 15.6, -63.6]], tone, ' opacity=".7"') + pol([[lit * 15.4, -54], [lit * 2, -54], [lit * 2, -52.6], [lit * 15.4, -52.6]], tone, ' opacity=".7"');
-  const arms = [armL, armR].map(a => lim(a, 8.2, body) + lim([[a[0][0] + lit * 3, a[0][1] + 1], [a[1][0] + lit * 2.4, a[1][1]]], 1, tone, ' opacity=".5"')).join("");
+  const bands = pols([[[-15.6, -65], [15.6, -65], [15.6, -61], [-15.6, -61]], [[-15.4, -54], [15.4, -54], [15.4, -50], [-15.4, -50]], [[-12.8, -85], [-9.2, -85.8], [-.8, -61], [-3.6, -61]], [[12.8, -85], [9.2, -85.8], [.8, -61], [3.6, -61]], [[-1.8, -62], [1.8, -62], [1.8, -50], [-1.8, -50]]], band, ' class="fb-band" opacity=".9"');
+  const bandLit = pols([[[lit * 15.6, -65], [lit * 2, -65], [lit * 2, -63.6], [lit * 15.6, -63.6]], [[lit * 15.4, -54], [lit * 2, -54], [lit * 2, -52.6], [lit * 15.4, -52.6]]], tone, ' opacity=".7"');
+  const arms = lims([armL, armR], 8.2, body) + lims([armL, armR].map(a => [[a[0][0] + lit * 3, a[0][1] + 1], [a[1][0] + lit * 2.4, a[1][1]]]), 1, tone, ' opacity=".5"');
   const hands = [armL, armR].map(a => dc(a[2][0], a[2][1], 3.3, o.handC || body)).join("") +
     [armL, armR].map(a => '<circle cx="' + bnF(x + (a[2][0] + lit * 1.1) * s) + '" cy="' + bnF(y + a[2][1] * s) + '" r="' + w(3.3) + '" fill="none" stroke="' + tone + '" stroke-width="' + w(.6) + '" opacity=".6"/>').join("");
   /* the hat, seen from behind: a dome with its ridge, the brim all round, a shade of the tone on the crown */
@@ -78498,11 +78504,16 @@ const IFC_BANNER_ART = {
       '<path d="' + courses + '" stroke="#0E1220" stroke-width=".6" opacity=".4" fill="none"/>';
     for(let x = 4; x < 480; x += 11) g += fbR(x, 30.4, 5, 3.4, "#2A3148");
     const COLS = [86, 120, 154, 188, 222, 256, 290, 324, 358, 392, 426], ROWS = [42, 74, 106];
+    let wf = "", wl = "", wb = "", wx = "", wm = "", ws = "", wg = "";
+    const wr = (px, py, ww, hh) => "M" + bnF(px) + " " + bnF(py) + " h" + bnF(ww) + " v" + bnF(hh) + " h" + bnF(-ww) + " Z ";
     ROWS.forEach((ry, ri) => COLS.forEach((cx, ci) => {
-      const lit = rnd() < .72, blue = lit && rnd() < .14, fill = lit ? (blue ? "url(#" + u + "winb)" : "url(#" + u + "win)") : "url(#" + u + "winx)";
-      g += fbR(cx - 2, ry - 2, 24, 22, "#0A0D17") + fbR(cx, ry, 20, 18, fill, lit ? ' class="fb-window"' : "") + fbR(cx + 9.4, ry, 1.2, 18, "#151A29", ' opacity=".85"') + fbR(cx, ry + 8.4, 20, 1.2, "#151A29", ' opacity=".85"') + fbR(cx - 3, ry + 18, 26, 2.4, "#4A5470");
-      if(lit && rnd() < .5) g += fbR(cx + 2, ry + 2, 7, 5, "#FFFFFF", ' opacity=".18"');
+      const lit = rnd() < .72, blue = lit && rnd() < .14;
+      wf += wr(cx - 2, ry - 2, 24, 22); ws += wr(cx - 3, ry + 18, 26, 2.4);
+      if(lit){ if(blue) wb += wr(cx, ry, 20, 18); else wl += wr(cx, ry, 20, 18); } else wx += wr(cx, ry, 20, 18);
+      wm += wr(cx + 9.4, ry, 1.2, 18) + wr(cx, ry + 8.4, 20, 1.2);
+      if(lit && rnd() < .5) wg += wr(cx + 2, ry + 2, 7, 5);
     }));
+    g += '<path d="' + wf + '" fill="#0A0D17"/><path d="' + ws + '" fill="#4A5470"/><path class="fb-window" d="' + wl + '" fill="url(#' + u + 'win)"/><path class="fb-window" d="' + wb + '" fill="url(#' + u + 'winb)"/><path d="' + wx + '" fill="url(#' + u + 'winx)"/><path d="' + wm + '" fill="#151A29" opacity=".85"/><path d="' + wg + '" fill="#FFFFFF" opacity=".18"/>';
     /* the doorway: the sign over it, its awning, the glass doors with their light on the pavement, the lamps either side */
     g += fbR(11, 82, 64, 14, "#4A0E12", ' stroke="#C69A3A" stroke-width="1.1" rx="2"') + fbText("FIRE MARSHAL", 43, 89.2, 4.6, "#FFE9B8", .95) +
       fbR(14, 100, 58, 3, "#2A0A0C") + fbP("M14 100 L72 100 L68 111 L18 111 Z", "url(#" + u + "awn)") + '<path d="M26 100 L28 111 M38 100 L39 111 M50 100 L50 111 M62 100 L61 111" stroke="#E9DCC0" stroke-width="2.2" opacity=".5"/>' +
@@ -79222,7 +79233,7 @@ const IFC_BANNER_ART = {
       bnLin(u + "face", [[0, "#FFFFFF"], [1, "#D4DAD6"]]) + bnLin(u + "plate", [[0, "#26343E"], [1, "#0E161C"]]) + bnLin(u + "strut", [[0, "#8A96A4"], [0.5, "#5A6674"], [1, "#2E3844"]], 0, 0, 1, 0) +
       bnLin(u + "box", [[0, "#5A6674"], [1, "#222C36"]]) + bnLin(u + "board", [[0, "#9A6A3E"], [1, "#5A3A1E"]]) +
       bnRad(u + "lamp", [[0, "#5CFFA6", .8], [0.5, "#5CFFA6", .26], [1, "#5CFFA6", 0]]) + bnRad(u + "wash", [[0, "#6CFFC0", .2], [1, "#6CFFC0", 0]]) + bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .5]]) + '</defs>';
-    const bolts = (x, y, w, n) => { let s = ""; for(let k = 0; k < n; k++) s += fbC(x + 1.4 + (w - 2.8) * (n === 1 ? .5 : k / (n - 1)), y, .55, "#2A323C"); return s; };
+    const bolts = (x, y, w, n) => { let d = ""; for(let k = 0; k < n; k++) d += "M" + bnF(x + 1.4 + (w - 2.8) * (n === 1 ? .5 : k / (n - 1))) + " " + bnF(y) + " l0 0 "; return '<path d="' + d + '" stroke="#2A323C" stroke-width="1.1" stroke-linecap="round" fill="none"/>'; };
     /* one pressure gauge (a bezel, face, red / amber / green arcs, ticks, the needle pinned in the green, glare) on its stem */
     const gauge = (x, y, i) => {
       const r = GR, a0 = 135, sweep = 270, P = (ang, rad) => [x + Math.cos(ang * Math.PI / 180) * rad, y + Math.sin(ang * Math.PI / 180) * rad].map(bnF);
@@ -79230,9 +79241,9 @@ const IFC_BANNER_ART = {
       let ticks = "";
       for(let t = 0; t <= 10; t++){ const p0 = P(a0 + t / 10 * sweep, r * .62), p1 = P(a0 + t / 10 * sweep, r * (t % 5 ? .56 : .5)); ticks += "M" + p0.join(" ") + " L" + p1.join(" ") + " "; }
       const fr = .955 + (i % 3) * .008, na = a0 + fr * sweep, tip = P(na, r * .78), tail = P(na + 180, r * .22);
-      return fbR(x - 2.2, y + r - 1, 4.4, 6.4, "url(#" + u + "chromeH)", ' stroke="#4A5260" stroke-width=".4"') + '<g class="fb-gauge">' + fbC(x, y, r + 2.2, "#000", ' opacity=".4" transform="translate(.8 1.6)"') + fbC(x, y, r + 1.2, "url(#" + u + "chromeV)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
-        arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".7" fill="none"/>' + fbText("PSI", x, y + r * .38, 2.6, "#4A545E", .5) +
-        '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + fr.toFixed(3) + '" stroke="#C0201A" stroke-width="1.4" stroke-linecap="round" fill="none"/>' + fbC(x, y, 1.9, "#1A232B") + fbC(x - .4, y - .4, .7, "#7A8794") +
+      return fbR(x - 2.2, y + r - 1, 4.4, 6.4, "url(#" + u + "chromeH)", ' stroke="#4A5260" stroke-width=".4"') + '<g class="fb-gauge">' + fbC(x, y, r + 1.2, "url(#" + u + "chromeV)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
+        arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".7" fill="none"/>' +
+        '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + fr.toFixed(3) + '" stroke="#C0201A" stroke-width="1.4" stroke-linecap="round" fill="none"/>' + fbC(x, y, 1.9, "#1A232B") +
         '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.3" opacity=".5" stroke-linecap="round"/></g>';
     };
     /* an OS&Y valve on a vertical pipe at x, its body between y0 (top flange) and y1 (bottom flange): flanges with bolts, the red body, the yoke's two posts and crossbar, the rising stem and the handwheel */
@@ -79263,11 +79274,10 @@ const IFC_BANNER_ART = {
       g += fbR(x - 6, 117.4, 12, 4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - 6, 119.4, 12, 4);
       g += osy(x, 94, 110.8, 1);
       /* the flow switch: a saddle clamp round the pipe, the housing on the side, a conduit port, a tiny paddle window */
-      g += fbR(x - 4.4, 66, 8.8, 3.2, "url(#" + u + "chromeV)", ' rx=".6" stroke="#4A5260" stroke-width=".4"') + fbR(x + 3.4, 63.4, 8.6, 8.6, "url(#" + u + "box)", ' class="fb-flowsw" rx="1.2" stroke="#10161C" stroke-width=".5"') + fbR(x + 4.4, 64.4, 6.6, 1.6, "#9AA6B4", ' opacity=".6"') + fbC(x + 8.2, 69, 1.1, "#10161C") + fbR(x + 11.6, 66.4, 1.6, 3, "#3A4452");
+      g += fbR(x - 4.4, 66, 8.8, 3.2, "url(#" + u + "chromeV)", ' rx=".6" stroke="#4A5260" stroke-width=".4"') + fbR(x + 3.4, 63.4, 8.6, 8.6, "url(#" + u + "box)", ' class="fb-flowsw" rx="1.2" stroke="#10161C" stroke-width=".5"') + fbR(x + 4.4, 64.4, 6.6, 1.6, "#9AA6B4", ' opacity=".6"') + '<path d="M' + bnF(x + 8.2) + ' 69 l0 0" stroke="#10161C" stroke-width="2.2" stroke-linecap="round"/>' + fbR(x + 11.6, 66.4, 1.6, 3, "#3A4452");
       /* the conduit: out of the housing, up the gap beside the gauge, along to the lamp's base, with two clamps */
-      g += '<path d="M' + bnF(x + 13.2) + ' 67.8 L' + bnF(x + 17.6) + ' 67.8 L' + bnF(x + 17.6) + ' 31.2 L' + bnF(x + 4.6) + ' 31.2" fill="none" stroke="#10161C" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="butt" opacity=".5" transform="translate(.8 .9)"/>' +
-        '<path d="M' + bnF(x + 13.2) + ' 67.8 L' + bnF(x + 17.6) + ' 67.8 L' + bnF(x + 17.6) + ' 31.2 L' + bnF(x + 4.6) + ' 31.2" fill="none" stroke="#8A96A6" stroke-width="2" stroke-linejoin="round" stroke-linecap="butt" class="fb-conduit"/>' +
-        '<path d="M' + bnF(x + 17.1) + ' 62 L' + bnF(x + 17.1) + ' 36" stroke="#CDD6E0" stroke-width=".5" opacity=".7"/>' + fbR(x + 15.8, 56, 3.6, 2, "#3A4452") + fbR(x + 15.8, 44, 3.6, 2, "#3A4452");
+      g += '<path d="M' + bnF(x + 13.2) + ' 67.8 L' + bnF(x + 17.6) + ' 67.8 L' + bnF(x + 17.6) + ' 31.2 L' + bnF(x + 4.6) + ' 31.2" fill="none" stroke="#8A96A6" stroke-width="2" stroke-linejoin="round" stroke-linecap="butt" class="fb-conduit"/>' +
+        '<path d="M' + bnF(x + 15.8) + ' 56 h3.6 v2 h-3.6 Z M' + bnF(x + 15.8) + ' 44 h3.6 v2 h-3.6 Z" fill="#3A4452"/>';
       g += gauge(x, GCY, i);
     }
     /* the header: a thick red pipe the width of the wall, a flange at each end, the weld collars at each branch were drawn over it; its shadow below */
@@ -79286,8 +79296,7 @@ const IFC_BANNER_ART = {
       fbR(RX - 12, 155, 24, 4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(RX - 12, 157, 24, 5);
     /* a zone plate under each branch, hung from the header on two rods with a clamp each */
     for(let i = 0; i < N; i++){ const x = gx(i);
-      g += fbR(x - 7.4, HY1 - .6, 1.4, 5.4, "url(#" + u + "chromeV)", ' class="fb-rod"') + fbR(x + 6, HY1 - .6, 1.4, 5.4, "url(#" + u + "chromeV)", ' class="fb-rod"') + fbR(x - 10.6, HY1 + 4, 21.2 + 2.6, 13, "#000", ' opacity=".3" rx="2" transform="translate(2.2 2)"') +
-        fbR(x - 10.6, HY1 + 4, 21.2, 13, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8" class="fb-plate"') + fbC(x - 8, HY1 + 6.4, .7, "#8A98A6") + fbC(x + 8, HY1 + 6.4, .7, "#8A98A6") + fbText(String(i + 1), x, HY1 + 11.8, 7.6, "#E4EEF4", 1.2); }
+      g += '<path class="fb-rod" d="M' + bnF(x - 7.4) + ' ' + bnF(HY1 - .6) + ' h1.4 v5.4 h-1.4 Z M' + bnF(x + 6) + ' ' + bnF(HY1 - .6) + ' h1.4 v5.4 h-1.4 Z" fill="#A6B0BC" stroke="#4A5260" stroke-width=".3"/>' + fbR(x - 10.6, HY1 + 4, 21.2, 13, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8" class="fb-plate"') + '<path d="M' + bnF(x - 8) + ' ' + bnF(HY1 + 6.4) + ' l0 0 M' + bnF(x + 8) + ' ' + bnF(HY1 + 6.4) + ' l0 0" stroke="#8A98A6" stroke-width="1.3" stroke-linecap="round"/>' + fbText(String(i + 1), x, HY1 + 11.8, 7.6, "#E4EEF4", 1.2); }
     /* a pilot lamp over each gauge, lit: a chrome base on the wall, a green dome with its highlight */
     for(let i = 0; i < N; i++){ const x = gx(i);
       g += fbR(x - 4.6, 30, 9.2, 3.6, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + '<path d="M' + bnF(x - 3.6) + ' 30 Q' + bnF(x - 3.6) + ' 25.2 ' + bnF(x) + ' 25.2 Q' + bnF(x + 3.6) + ' 25.2 ' + bnF(x + 3.6) + ' 30 Z" fill="#5CFFA6" class="fb-lamp" stroke="#0E3A22" stroke-width=".5"/>' + fbC(x - 1.2, 27.4, .8, "#E8FFF2"); }
