@@ -78480,14 +78480,21 @@ const IFC_BANNER_ART = {
     let motes = "";
     for(let i = 0; i < 22; i++){ const t = .15 + rnd() * .8, x = beam[0] + (OX - 8 - beam[0]) * t, y = beam[1] + (134 - beam[1]) * t + (rnd() - .5) * 34 * t;
       motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(.5 + rnd() * .7) + '" fill="#FFF6D8" opacity="' + bnF(.4 + rnd() * .5) + '"/>'; }
-    /* FIRE SCENE tape strung across the room, as the marshal's office lays it: yellow, black capitals,
-       FIRE SCENE and DO NOT CROSS alternating, a diamond between (build 384, "the tape on the wall says
-       fire lane?" - round 3's FIRE LINE did read that way at this size). The lettering is large, heavy and
-       whole inside the frame: three words' worth, no half-letters at the edge. */
-    const tape = '<g transform="rotate(-5 330 30)"><path d="M130 21.5 L530 21.5 L530 38.5 L130 38.5 Z" fill="#F2C21E"/>' +
-      '<path d="M130 22 L530 22 M130 38 L530 38" stroke="#8A6A0A" stroke-width=".8"/>' +
-      fbText("FIRE SCENE", 196, 30, 8.4, "#14161C", 1.9) + fbText("DO NOT CROSS", 304, 30, 8.4, "#14161C", 1.9) + fbText("FIRE SCENE", 410, 30, 8.4, "#14161C", 1.9) +
-      [250, 358, 144].map(x => '<path d="M' + x + ' 25.4 l3.6 4.6 l-3.6 4.6 l-3.6 -4.6 Z" fill="#14161C"/>').join("") + '</g>';
+    /* FIRE SCENE tape: tied round the doorway's right jamb at one end and round a stanchion at the other, taut, rising a little, so it is
+       fixed at BOTH ends and runs past nothing (Madison: "the yellow ribbon thing goes past the door frame and doesn't connect to anything ...
+       all things should connect properly"). Yellow, black capitals, FIRE SCENE and DO NOT CROSS alternating with a diamond between; the
+       lettering is large, heavy and whole. Each end wraps its post in two turns and leaves a short tail hanging from the knot. */
+    const TX0 = 149, TY0 = 33, TX1 = 452, TY1 = 25, TL = Math.hypot(TX1 - TX0, TY1 - TY0), TA = Math.atan2(TY1 - TY0, TX1 - TX0) * 180 / Math.PI;
+    const wrap = x => '<path d="M' + (x - 3.4) + ' -8.4 L' + (x + 1.6) + ' -8.4 L' + (x + 3.4) + ' 8.4 L' + (x - 1.6) + ' 8.4 Z" fill="#C79A0C"/><path d="M' + (x + 1.6) + ' -8.4 L' + (x + 4.4) + ' -8.4 L' + (x + 6.2) + ' 8.4 L' + (x + 3.4) + ' 8.4 Z" fill="#9A760A" opacity=".7"/>';
+    const tape = '<g transform="translate(' + TX0 + ' ' + TY0 + ') rotate(' + bnF(TA) + ')"><path d="M0 -8.5 L' + bnF(TL) + ' -8.5 L' + bnF(TL) + ' 8.5 L0 8.5 Z" fill="#F2C21E"/>' +
+      '<path d="M0 -8 L' + bnF(TL) + ' -8 M0 8 L' + bnF(TL) + ' 8" stroke="#8A6A0A" stroke-width=".8"/>' +
+      fbText("FIRE SCENE", 46, 0, 8.4, "#14161C", 1.9) + fbText("DO NOT CROSS", 151, 0, 8.4, "#14161C", 1.9) + fbText("FIRE SCENE", 256, 0, 8.4, "#14161C", 1.9) +
+      [96, 204].map(x => '<path d="M' + x + ' -4.6 l3.6 4.6 l-3.6 4.6 l-3.6 -4.6 Z" fill="#14161C"/>').join("") + wrap(2) + wrap(bnF(TL - 4)) + '</g>' +
+      /* the tails: a short length hanging from each knot */
+      '<path d="M' + (TX0 + 1) + ' ' + (TY0 + 8) + ' L' + (TX0 - 3) + ' ' + (TY0 + 19) + ' L' + (TX0 + 4) + ' ' + (TY0 + 18.4) + ' L' + (TX0 + 5.4) + ' ' + (TY0 + 8.6) + ' Z" fill="#E3B41C" stroke="#8A6A0A" stroke-width=".6"/>' +
+      '<path d="M' + (TX1 - 5) + ' ' + (TY1 + 8) + ' L' + (TX1 - 8) + ' ' + (TY1 + 18) + ' L' + (TX1 - 1) + ' ' + (TY1 + 17.6) + ' L' + (TX1 + .6) + ' ' + (TY1 + 8.6) + ' Z" fill="#E3B41C" stroke="#8A6A0A" stroke-width=".6"/>';
+    /* the stanchion the far end is tied to: a black post on a round weighted base, a cap on top */
+    const post = '<ellipse cx="452" cy="161" rx="15" ry="3.6" fill="#000" opacity=".5"/><ellipse cx="452" cy="158" rx="13" ry="3.2" fill="#1C1A1A" stroke="#05040A" stroke-width=".6"/><rect x="449" y="14" width="6" height="146" fill="#25282E" stroke="#05060A" stroke-width=".5"/><rect x="449" y="14" width="2" height="144" fill="#fff" opacity=".18"/><circle cx="452" cy="12.4" r="4.4" fill="#34383F" stroke="#05060A" stroke-width=".5"/>';
     const base = '<defs>' + bnLin(u + "wall", [[0, "#0C0A0A"], [0.6, "#1E1814"], [1, "#2A221C"]]) + bnLin(u + "clean", [[0, "#5A544E", 0.2], [0.7, "#8A8278", 0.75], [1, "#A89E90", 0.9]]) +
       bnLin(u + "floor", [[0, "#221C18"], [1, "#0A0807"]]) + bnRad(u + "ember", [[0, "#FF7A2E", 0.5], [1, "#FF7A2E", 0]]) + bnLin(u + "beam", [[0, "#FFF6D8", 0.5], [1, "#FFF6D8", 0.06]], 0, 0, 1, 0) +
       bnRad(u + "spot", [[0, "#FFF3D0", 0.45], [1, "#FFF3D0", 0]]) + bnLin(u + "door", [[0, "#8A9AB0"], [1, "#4E5A6E"]]) + bnLin(u + "spill", [[0, "#8A9AB0", 0.28], [1, "#8A9AB0", 0]]) + bnRad(u + "puff", [[0, "#9A9088", 0.34], [1, "#9A9088", 0]]) + bnLin(u + "heater", [[0, "#6A625A"], [1, "#2A2420"]]) + '</defs>' +
@@ -78506,7 +78513,7 @@ const IFC_BANNER_ART = {
       '<rect x="0" y="142" width="480" height="38" fill="url(#' + u + 'floor)"/><path d="M0 142 L480 142" stroke="#0A0807" stroke-width="2"/>' + debris +
       '<rect x="' + (OX - 12) + '" y="124" width="24" height="22" rx="2" fill="url(#' + u + 'heater)"/>' + [0, 1, 2, 3].map(i => '<path d="M' + (OX - 8) + ' ' + (128 + i * 4) + ' L' + (OX + 8) + ' ' + (128 + i * 4) + '" stroke="#14100E" stroke-width="1.4"/>').join("") +
       '<rect x="' + (OX - 14) + '" y="144" width="28" height="3" rx="1" fill="#1A1614"/>' +
-      tent(OX - 34, 160, 1) + tent(OX + 34, 158, 2) + tent(OX + 74, 166, 3) + tape;
+      tent(OX - 34, 160, 1) + tent(OX + 34, 158, 2) + tent(OX + 74, 166, 3) + post + tape;
     return [
       { svg: base },
       { svg: '<ellipse cx="' + OX + '" cy="152" rx="90" ry="16" fill="url(#' + u + 'ember)"/>' + embers, box: [OX - 90, 136, 180, 40], cls: "bl-glow", style: "animation-duration:2.6s" },
