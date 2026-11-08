@@ -77741,62 +77741,100 @@ function fbFF(x, y, s, f, o){
 }
 /*FCB2-END*/
 const IFC_BANNER_ART = {
-  /* CERTIFIED (was Headquarters; 384 review: "Headquarters, those vehicles look bad, and the banner could just
-     overall be better"; and "the names do need to line up with the challenge" - this one is for finishing 100
-     full-length tests) - the marshal's office after hours: the wall of framed certificates and commendations
-     over a wooden desk, a big certificate in the middle with its gold seal and red ribbons, the US and Texas
-     flags either side, a banker's lamp lighting the desk, the star badge on its stand, the nameplate, a mug.
-     The first rung of its ladder, so still. */
+  /* CERTIFIED (was Headquarters; this one is for finishing 100 full-length tests) - the marshal's office after hours. Round 2 (Madison:
+     "why are their random flags? ... maybe also put some challenge coins like on the desk on a stand like 20 of them, legit sized, they
+     are like a big quarter ... why are there flags in the desk?"): NO flags anywhere. The wall of framed certificates stays, each hung on
+     its own wire from the picture rail; the desk carries a banker's lamp, the star badge on its stand, the nameplate and a tiered
+     display stand of twenty challenge coins - four shelves of five, each coin 13 units across against a certificate 76 high (a 1.9-inch
+     coin beside an 11-inch sheet), each with a milled rim, a raised ring, its own metal, enamel and emblem. The first rung of its ladder, so still. */
   tests100(u){
     const rnd = bnRand(3821);
-    const W5 = "#F4F1EA";
     const defs = '<defs>' + bnLin(u + "wall", [[0, "#17302E"], [1, "#0E1C1C"]]) + bnLin(u + "wood", [[0, "#6A4426"], [0.5, "#4A2C16"], [1, "#2A180C"]]) + bnLin(u + "desk", [[0, "#7A5030"], [1, "#2E1A0C"]]) +
       bnLin(u + "gold", [[0, "#FFF0B8"], [0.5, "#F2C14E"], [1, "#9A6A10"]], 0, 0, 1, 1) + bnLin(u + "frame", [[0, "#E3B341"], [1, "#7A5410"]], 0, 0, 1, 1) + bnLin(u + "paper", [[0, "#FFFDF4"], [1, "#E6DEC4"]]) +
+      bnLin(u + "silver", [[0, "#FFFFFF"], [0.5, "#C9CED6"], [1, "#6A7280"]], 0, 0, 1, 1) + bnLin(u + "bronze", [[0, "#F6C49A"], [0.5, "#C97A3E"], [1, "#6A3A18"]], 0, 0, 1, 1) + bnLin(u + "nickel", [[0, "#7A808C"], [0.5, "#2E3138"], [1, "#0A0B0E"]], 0, 0, 1, 1) +
+      bnLin(u + "felt", [[0, "#1A2A52"], [1, "#0C1630"]]) + bnLin(u + "sepia", [[0, "#D9C49A"], [1, "#8A6A3E"]]) +
       bnRad(u + "lamp", [[0, "#FFD58A", 0.6], [0.5, "#FFC45A", 0.2], [1, "#FFC45A", 0]]) + bnRad(u + "pool", [[0, "#FFD58A", 0.5], [1, "#FFD58A", 0]]) + bnRad(u + "vig", [[0.5, "#000000", 0], [1, "#000000", 0.55]]) +
       bnLin(u + "shadeg", [[0, "#2E9A56"], [1, "#0F4A2A"]]) + bnLin(u + "brass", [[0, "#F4D88A"], [0.5, "#C69A3A"], [1, "#7A5A18"]], 0, 0, 1, 0) + '</defs>';
     /* a framed document: gold frame, a mat, a sheet with its heading, lines and a small seal */
     const frame = (x, y, w, h, o) => {
       o = o || {};
-      let g = fbR(x + 2, y + 3, w, h, "#000", ' opacity=".35"') + fbR(x, y, w, h, "url(#" + u + "frame)") + fbR(x + 2.4, y + 2.4, w - 4.8, h - 4.8, o.mat || "#1B2440") + fbR(x + 4.6, y + 4.6, w - 9.2, h - 9.2, "url(#" + u + "paper)");
+      let g = fbR(x + 2, y + 3, w, h, "#000", ' opacity=".35"') + fbR(x, y, w, h, "url(#" + u + "frame)") + fbR(x + 2.4, y + 2.4, w - 4.8, h - 4.8, o.mat || "#1B2440") + fbR(x + 4.6, y + 4.6, w - 9.2, h - 9.2, o.photo ? "url(#" + u + "sepia)" : "url(#" + u + "paper)");
       const cx = x + w / 2;
+      if(o.photo){
+        const gy = y + h - 12;
+        g += fbR(x + 4.6, gy, w - 9.2, 7.4, "#6A4E2A") + fbR(x + 9, gy - 13, w - 18, 13, "#3A2814") + fbR(x + 9, gy - 17, 11, 4, "#3A2814") + fbR(x + 12, gy - 20, 5, 3, "#3A2814") +
+          fbR(x + 22, gy - 15, w - 33, 1.6, "#6A4E2A") + fbC(x + 15, gy + .5, 3.4, "#1A1008") + fbC(x + w - 15, gy + .5, 3.4, "#1A1008") + fbL("M" + bnF(x + 24) + " " + bnF(gy - 18) + " L" + bnF(x + w - 12) + " " + bnF(gy - 21), "#3A2814", 1.2);
+        return g;
+      }
       if(o.title) g += fbText(o.title, cx, y + 9.6 + (o.dy || 0), Math.min(5, h / 9), "#2A3358", .9);
       for(let i = 0; i < Math.max(2, Math.floor((h - 26) / 5)); i++) g += '<path d="M' + bnF(x + 8) + ' ' + bnF(y + 17 + i * 4.6) + ' L' + bnF(x + w - 8 - (i % 2) * 8) + ' ' + bnF(y + 17 + i * 4.6) + '" stroke="#8A8E9E" stroke-width=".8"/>';
       if(!o.noseal) g += fbC(x + w - 11, y + h - 10, 4.2, o.seal || "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width=".6"') + fbP("M" + bnF(x + w - 12.6) + " " + bnF(y + h - 6) + " l-1 7 l2.6 -1.6 l1.8 2.4 l.4 -7 Z", "#B5121B");
       return g;
     };
-    const flag = (x0, y0, kind) => {
-      const Wd = 26, H = 18, wv = t => -1.6 * Math.sin(t * Math.PI * 2);
-      const quad = (u0, u1, v0, v1) => { const top = [], bot = []; for(let i = 0; i <= 6; i++){ const t = u0 + (u1 - u0) * i / 6; top.push(bnF(x0 + t * Wd) + " " + bnF(y0 + v0 * H + wv(t))); bot.unshift(bnF(x0 + t * Wd) + " " + bnF(y0 + v1 * H + wv(t))); } return "M" + top.concat(bot).join(" L") + " Z"; };
-      const star = (cx, cy, r) => fbP(fbStarPath(x0 + cx * Wd, y0 + cy * H + wv(cx), r), W5);
-      return kind === "us"
-        ? [0, 1, 2, 3, 4, 5, 6].map(i => fbP(quad(0, 1, i / 7, (i + 1) / 7), i % 2 ? W5 : "#B5121B")).join("") + fbP(quad(0, .44, 0, 4 / 7), "#1C2A5E") + [[.08, .1], [.2, .1], [.32, .1], [.14, .26], [.26, .26], [.08, .42], [.2, .42], [.32, .42]].map(([a, b]) => star(a, b, 1.1)).join("")
-        : fbP(quad(.34, 1, 0, .5), W5) + fbP(quad(.34, 1, .5, 1), "#B5121B") + fbP(quad(0, .34, 0, 1), "#1C3A8A") + star(.17, .5, 3.4);
-    };
+    /* the frames: [x, y, w, h, options]; each hangs from the picture rail by a wire to its two top corners */
+    const FR = [[18, 40, 34, 44, { photo: 1 }], [62, 34, 42, 54, { title: "STATE" }], [110, 52, 38, 38, { title: "HONOR", seal: "#B5121B" }], [164, 18, 116, 76, { title: "", dy: 5, noseal: true }],
+      [292, 16, 44, 46, { title: "COMMEND", seal: "#2E9A56" }], [344, 22, 44, 40, { title: "SCHOOL" }], [396, 18, 32, 40, { title: "MERIT", seal: "#3D7BFF" }], [438, 30, 30, 38, { title: "CERT" }]];
     let base = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
-    /* the panelling below the picture rail, and the picture rail */
-    base += fbR(0, 112, 480, 20, "url(#" + u + "wood)") + fbR(0, 110, 480, 3, "#8A5E34") + [0, 1, 2, 3, 4, 5, 6, 7].map(i => '<rect x="' + (6 + i * 62) + '" y="116" width="52" height="12" fill="none" stroke="#1E1008" stroke-width="1" opacity=".7"/>').join("");
-    /* the frames: a wall of them round the big one */
-    base += frame(66, 34, 42, 54, { title: "STATE" }) + frame(114, 50, 38, 40, { title: "HONOR", seal: "#B5121B" }) +
-      frame(164, 18, 116, 76, { title: "", dy: 5, noseal: true }) +
-      frame(292, 28, 44, 52, { title: "COMMEND", seal: "#2E9A56" }) + frame(344, 44, 44, 44, { title: "SCHOOL" }) + frame(396, 22, 32, 40, { title: "MERIT", seal: "#3D7BFF" });
+    /* the panelling below the picture rail on the wall, and the picture rail up top */
+    base += fbR(0, 112, 480, 20, "url(#" + u + "wood)") + fbR(0, 110, 480, 3, "#8A5E34") + [0, 1, 2, 3, 4, 5, 6, 7].map(i => '<rect x="' + (6 + i * 62) + '" y="116" width="52" height="12" fill="none" stroke="#1E1008" stroke-width="1" opacity=".7"/>').join("") +
+      fbR(0, 2, 480, 6, "#6A4426") + fbR(0, 2, 480, 1.4, "#9A6E3E") + fbR(0, 8, 480, 1.2, "#000", ' opacity=".4"');
+    /* wires first (behind the frames), then the frames, then the hooks on the rail */
+    FR.forEach(f => { const xc = f[0] + f[2] / 2; base += fbL("M" + bnF(xc) + " 7 L" + bnF(f[0] + 5) + " " + bnF(f[1] + 1) + " M" + bnF(xc) + " 7 L" + bnF(f[0] + f[2] - 5) + " " + bnF(f[1] + 1), "#D9C9A0", .7); });
+    FR.forEach(f => { base += frame(f[0], f[1], f[2], f[3], f[4]); });
+    FR.forEach(f => { const xc = f[0] + f[2] / 2; base += fbC(xc, 6.6, 1.7, "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width=".4"') + fbC(f[0] + 5, f[1] + 1, 1, "#E9B949") + fbC(f[0] + f[2] - 5, f[1] + 1, 1, "#E9B949"); });
     /* the big one's own details: a lettering rule, the seal and ribbons, a signature */
     base += fbText("CERTIFIED", 222, 38, 11, "#1B2440", 2.2) + fbText("FIRE MARSHAL", 222, 55, 4.6, "#8A5E10", .9) +
       '<path d="M180 64 L264 64" stroke="#8A5E10" stroke-width=".8"/><path d="M180 76 q6 -8 10 -2 t10 -3 t10 2 t10 -2" stroke="#2A3358" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
       '<path d="M232 76 L226 92 L234 88 L238 94 L242 77 Z" fill="#B5121B"/><path d="M250 76 L246 92 L254 88 L258 94 L260 77 Z" fill="#8A0E14"/><circle cx="244" cy="76" r="11" fill="url(#' + u + 'gold)" stroke="#8A5E10" stroke-width="1"/><circle cx="244" cy="76" r="8.4" fill="none" stroke="#8A5E10" stroke-width=".8" stroke-dasharray="1.6 1.2"/><path d="' + fbStarPath(244, 76.4, 6.4) + '" fill="#FFF0B8" stroke="#8A5E10" stroke-width=".7" stroke-linejoin="round"/>';
-    /* flags on their stands against the wall, left of the frames and right */
-    base += fbR(14, 30, 2, 100, "#C9CED6") + fbC(15, 29, 2, "#E9B949") + flag(16, 32, "us") + fbR(462, 30, 2, 100, "#C9CED6") + fbC(463, 29, 2, "#E9B949") + flag(436, 32, "tx");
     /* the desk: top edge, front, drawers */
     base += fbR(0, 134, 480, 46, "url(#" + u + "desk)") + fbR(0, 132, 480, 4, "#9A6A3E") + fbR(0, 136, 480, 1.4, "#000", ' opacity=".4"') +
       '<path d="M120 136 L120 180 M360 136 L360 180" stroke="#1A0E06" stroke-width="1.6"/>' + [150, 240, 330].map(x => fbR(x - 26, 146, 52, 18, "none", ' stroke="#1A0E06" stroke-width="1.2"') + fbC(x, 155, 2, "#E3B341")).join("");
-    /* on the desk: the lamp, the badge on its stand, the nameplate, a mug, a pen set, a binder */
+    /* the challenge coins' stand: a felt back in a wood frame, four shelves, a brass plate on the foot */
+    const SXc = 343, R = 6.6, PITCH = 15, T0 = 80, TP = 14.1;
+    const metals = ["gold", "silver", "bronze", "nickel"], ink = { gold: "#FFEBA6", silver: "#F6F8FC", bronze: "#FFD2AA", nickel: "#C9CED6" }, edge = { gold: "#7A5410", silver: "#59616E", bronze: "#5A2E12", nickel: "#050608" };
+    const enamels = ["#C8281E", "#1F4FB5", "#1E7A3E", "#6A2FA0", "#F4F1EA", "#101216", "#D9731E", "#1C6E8A", "#B5121B", "#2A3358"];
+    const emblem = (k, cx, cy, r, c) => {
+      const e = k % 8;
+      if(e === 0) return fbP(fbStarPath(cx, cy + .3, r * .5, .42), c);
+      if(e === 1) return fbP("M" + bnF(cx) + " " + bnF(cy - r * .52) + " L" + bnF(cx + r * .16) + " " + bnF(cy - r * .16) + " L" + bnF(cx + r * .52) + " " + bnF(cy) + " L" + bnF(cx + r * .16) + " " + bnF(cy + r * .16) + " L" + bnF(cx) + " " + bnF(cy + r * .52) + " L" + bnF(cx - r * .16) + " " + bnF(cy + r * .16) + " L" + bnF(cx - r * .52) + " " + bnF(cy) + " L" + bnF(cx - r * .16) + " " + bnF(cy - r * .16) + " Z", c);
+      if(e === 2) return fbP(fcFlamePath(cx, cy + r * .42, r * .27, r * .84, 0), c);
+      if(e === 3) return fbP("M" + bnF(cx - r * .34) + " " + bnF(cy - r * .4) + " L" + bnF(cx + r * .34) + " " + bnF(cy - r * .4) + " L" + bnF(cx + r * .34) + " " + bnF(cy + r * .08) + " Q" + bnF(cx + r * .3) + " " + bnF(cy + r * .38) + " " + bnF(cx) + " " + bnF(cy + r * .5) + " Q" + bnF(cx - r * .3) + " " + bnF(cy + r * .38) + " " + bnF(cx - r * .34) + " " + bnF(cy + r * .08) + " Z", c);
+      if(e === 4) return fbL("M" + bnF(cx - r * .38) + " " + bnF(cy - r * .38) + " L" + bnF(cx + r * .38) + " " + bnF(cy + r * .38) + " M" + bnF(cx + r * .38) + " " + bnF(cy - r * .38) + " L" + bnF(cx - r * .38) + " " + bnF(cy + r * .38), c, bnF(r * .2)) + fbC(cx, cy, r * .13, c);
+      if(e === 5) return fbP("M" + bnF(cx - r * .48) + " " + bnF(cy + r * .22) + " Q" + bnF(cx - r * .46) + " " + bnF(cy - r * .44) + " " + bnF(cx) + " " + bnF(cy - r * .46) + " Q" + bnF(cx + r * .46) + " " + bnF(cy - r * .44) + " " + bnF(cx + r * .48) + " " + bnF(cy + r * .22) + " Z", c) + fbR(cx - r * .62, cy + r * .2, r * 1.24, r * .14, c);
+      if(e === 6) return fbP("M" + bnF(cx) + " " + bnF(cy - r * .5) + " L" + bnF(cx + r * .42) + " " + bnF(cy) + " L" + bnF(cx) + " " + bnF(cy + r * .5) + " L" + bnF(cx - r * .42) + " " + bnF(cy) + " Z", c) + fbC(cx, cy, r * .14, edge.nickel);
+      return fbL("M" + bnF(cx - r * .42) + " " + bnF(cy + r * .3) + " L" + bnF(cx) + " " + bnF(cy - r * .38) + " L" + bnF(cx + r * .42) + " " + bnF(cy + r * .3), c, bnF(r * .2)) + fbC(cx, cy + r * .32, r * .13, c);
+    };
+    const coin = (cx, cy, r, k) => {
+      const m = metals[(k * 3 + (k >> 2)) % 4], en = enamels[(k * 7 + 3) % enamels.length];
+      return fbC(cx + .5, cy + 1, r, "#000", ' opacity=".35"') +
+        fbC(cx, cy, r, "url(#" + u + m + ")", ' stroke="' + edge[m] + '" stroke-width=".55"') +
+        fbC(cx, cy, r * .88, "none", ' stroke="' + edge[m] + '" stroke-width=".9" stroke-dasharray=".7 .65" opacity=".7"') +
+        fbC(cx, cy, r * .78, "none", ' stroke="' + ink[m] + '" stroke-width=".55" opacity=".9"') +
+        fbC(cx, cy, r * .68, en, ' stroke="' + edge[m] + '" stroke-width=".4"') +
+        emblem(k, cx, cy, r * .86, en === "#F4F1EA" ? "#2A3358" : ink[m]) +
+        fbP("M" + bnF(cx - r * .78) + " " + bnF(cy - r * .1) + " A" + bnF(r * .8) + " " + bnF(r * .8) + " 0 0 1 " + bnF(cx - r * .1) + " " + bnF(cy - r * .78), "none", ' stroke="#FFFFFF" stroke-width=".7" stroke-linecap="round" opacity=".55"');
+    };
+    let stand = fbR(SXc - 48, T0 - R - 6, 96, 6, "#4A2C16") + fbR(SXc - 48, T0 - R - 6, 96, 1.4, "#8A5E34") + fbR(SXc - 46, T0 - R, 92, 4 * TP + 2, "url(#" + u + "felt)") +
+      fbR(SXc - 48, T0 - R - 6, 3.6, 4 * TP + 14, "#4A2C16") + fbR(SXc + 44.4, T0 - R - 6, 3.6, 4 * TP + 14, "#4A2C16");
+    for(let t = 0; t < 4; t++){
+      const cy = T0 + t * TP;
+      for(let i = 0; i < 5; i++) stand += coin(SXc + (i - 2) * PITCH, cy, R, t * 5 + i);
+      /* the shelf's front lip: it hides the foot of each coin standing in it, so the coins are SEATED */
+      stand += fbR(SXc - 46, cy + R * .55, 92, R * .45 + .9 + 2.6, "#6A4426") + fbR(SXc - 46, cy + R * .55, 92, 1.1, "#B98A56") + fbR(SXc - 46, cy + R + 2.4, 92, 1.1, "#000", ' opacity=".35"');
+    }
+    /* the foot of the stand, and a brass plate along the top rail */
+    const footY = T0 + 3 * TP + R * .55 + R * .45 + 3.5;
+    stand += fbR(SXc - 49, footY, 98, 134 - footY + 1, "#3A2410") + fbR(SXc - 49, footY, 98, 1.2, "#8A5E34") +
+      fbR(SXc - 22, T0 - R - 5.2, 44, 4.4, "url(#" + u + "brass)", ' rx=".8"') + fbText("CHALLENGE COINS", SXc, T0 - R - 3, 2.4, "#3A2410", .5);
+    /* on the desk: the lamp (its pool of light), the badge on its stand, the nameplate */
     base += '<ellipse cx="86" cy="140" rx="64" ry="9" fill="url(#' + u + 'pool)"/><ellipse cx="108" cy="134" rx="14" ry="2.4" fill="#000" opacity=".4"/>' +
       fbR(104, 114, 3, 20, "url(#" + u + "brass)") + fbR(98, 131, 16, 3.4, "url(#" + u + "brass)") + fbP("M82 108 Q106 96 130 108 L124 120 L88 120 Z", "url(#" + u + "shadeg)", ' stroke="#07210F" stroke-width=".8"') + fbP("M92 108 Q106 101 120 108", "none", ' stroke="#8FE3A8" stroke-width="1.2" opacity=".7"') + fbR(86, 119, 40, 2.4, "#FFE9B0", ' opacity=".9"') +
       /* the star badge on its stand */
-      fbR(236, 124, 8, 9, "#2A1608") + fbP("M226 134 L254 134 L252 128 L228 128 Z", "#3A2410") + fbC(240, 114, 13, "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width="1"') + fbC(240, 114, 10.6, "#1B2440") + fbP(fbStarPath(240, 114.6, 9), "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width=".6" stroke-linejoin="round"') +
+      '<ellipse cx="242" cy="134.6" rx="20" ry="2" fill="#000" opacity=".4"/>' + fbR(236, 124, 8, 9, "#2A1608") + fbP("M226 134 L254 134 L252 128 L228 128 Z", "#3A2410") + fbC(240, 114, 13, "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width="1"') + fbC(240, 114, 10.6, "#1B2440") + fbP(fbStarPath(240, 114.6, 9), "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width=".6" stroke-linejoin="round"') +
+      /* the coin stand's shadow, then the stand */
+      '<ellipse cx="' + (SXc + 3) + '" cy="135" rx="54" ry="2.6" fill="#000" opacity=".45"/>' + stand +
       /* the nameplate */
-      fbP("M286 134 L350 134 L346 122 L290 122 Z", "#2A1608") + fbP("M290 122 L346 122 L347.2 126 L288.8 126 Z", "#6A4426") + fbText("FIRE MARSHAL", 318, 130, 5, "#F2C14E", .9) +
-      /* a mug with a coffee ring on a napkin, a pen stand, a binder */
-      fbR(386, 120, 14, 14, "#E8ECEF", ' rx="2"') + fbL("M400 123 Q407 125 400 131", "#E8ECEF", 2.6) + fbR(386, 120, 14, 3, "#6A4426") + fbR(396, 100, 3, 14, "#2A3358") + fbR(406, 126, 52, 8, "#1E2A4A") + fbR(406, 126, 52, 1.4, "#3D4A78") + fbR(412, 118, 44, 8, "#7A1410") + fbR(412, 118, 44, 1.4, "#B5351E") + fbR(418, 111, 36, 7, "#2A3358");
+      fbP("M404 134 L470 134 L466 122 L408 122 Z", "#2A1608") + fbP("M408 122 L466 122 L467.2 126 L406.8 126 Z", "#6A4426") + fbText("FIRE MARSHAL", 436, 130, 5, "#F2C14E", .9);
     base += fbR(0, 0, 480, 180, "url(#" + u + "vig)");
     return [
       { svg: base },
