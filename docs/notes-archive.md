@@ -36550,3 +36550,56 @@ the characters and every other banner (Pulsar is another helper's) hash as c8143
 - NOT confirmable in Chromium: how the strips read on a phone's real screen at the scale the covers are shown; frame rate of Grand Finale (580 elements, 14 layers, the clipped truck layers) and Inspection
   Team on an old iPhone; the Silverado's likeness to the real truck is a judgement from its profile (proportions measured, not compared to a photo); the headlamp and grille in profile are a drawing of a
   3/4-turned nose seen edge on, so they read as a nose, not as a particular model.
+
+
+## 384 round 4 (r4-banners, cut from claude/b384 c1d224b; NOT on main): seven Fire Code banners redrawn after Madison's review of round 3b
+
+Madison, per banner: Inspection Team "the 5 inspectors looking up at a fire station, they should be standing outside a building, make the banner better, clipboards are weirdly held on? Flashlights are lights
+coming from their hands?"; Perfect Score "Hundo [100] unit score 100 percent banner thing? Idk what that even is."; Grand Finale "The truck firework one. Again the truck just doesn't look right, maybe it's
+too close up? Maybe the truck shouldn't be there ... Not sure why the fireworks are symmetrical like that?"; Ten in a Row "The 10 gauges one, that's kinda cool but make it an actual system or just try
+better"; Top of the Ladder "he's a firefighter, we are inspectors.."; Fire Investigator (his favourite, the quality bar) "The fire scene rope is in a knot at the end and then doesn't say anything? Why the
+knot and stuff?"; After Hours "the tag just says ok, make it look like a blue inspection tag ... squiggles ... check boxes/hole punches (tiny ones) those are my favorites". Only IFC_BANNER_ART's seven entries,
+IFC_BANNER_LOOK's one name and tint, and the new FCB4 helper block (before IFC_BANNER_ART). Ids, labels, needs, unlock rules and every other banner hash exactly as c1d224b drew them.
+- ID -> NAME -> SCENE. tests500 INSPECTION TEAM (outside a four-storey building at night: three rows of windows (most lit, a few blue), the FIRE MARSHAL doorway with its awning on the left, a street lamp
+  on the right, wet pavement; five inspectors, each fbInsp: one reads his clipboard with a pen, one lifts a flashlight at the upper windows, the tallest holds a clipboard at his side and a radio at his
+  shoulder, one points a flashlight at the ground, one holds a roll of plans; five skin tones, hats white or yellow, five heights, vest gaps 46+ units; beams begin at the LENS) /
+  hundos100 CERTIFICATE OF MERIT (was Perfect Score; the scoreboard is scrapped: an inspector at the Fire Marshal's door at night, a framed CERTIFICATE OF MERIT "FOR A PERFECT UNIT SCORE" hung on a nail by a
+  wire to each top corner, a gold seal with ribbons and a red 100% stamp on the paper, a rubber stamp raised in one hand and the other hand flat on the frame's edge, a lit FIRE MARSHAL sign, a hanging
+  lantern, steps; shown still as the first rung) / hundos250 GRAND FINALE (no truck: seven inspectors seen from behind on a hill crest, two saluting, two holding their hats up, over a lit city with a tall
+  tower; six fireworks that are not a pattern - a huge gold willow, a red peony, a low wide green one over the skyline, a blue one mostly off the top edge, a small pink one, a violet one clipped by the top,
+  each with its own spoke count at uneven lengths with gaps, drooping trails, tip sparks and glitter, plus three shells still climbing as trails; glow behind every burst, colour washed over the sky and the
+  windows, rims of colour on the men) / exam100 TEN IN A ROW (a connected sprinkler control wall: a red header on three strut posts fed by a riser from the floor with its own OS&Y valve; ten branches, each
+  with a collar on the header, an OS&Y valve (flanges with bolts, body, yoke, rising stem, handwheel), a flow switch clamped on, a gauge on its stem with the needle in the green, and a conduit from the switch
+  up the gap beside the gauge to a lit pilot lamp; a zone plate 1 to 10 on two rods under each branch; a title plate TEN UNITS IN A ROW; a clipboard on a hook) / level80 TOP OF THE LADDER (same dawn, ladder and
+  tower; the figure is an inspector in the same style: hard hat, vest, a hand up against the sun and a clipboard gripped by its top edge; a few birds, a gold haze along the horizon) / correct10000 FIRE
+  INVESTIGATOR (only the tape: a flat ribbon wrapped once round the jamb and once round the stanchion, no knots, tails or twist, printed FIRE SCENE / DO NOT CROSS / FIRE SCENE / DO NOT CROSS along its whole
+  length, justified between the two wraps; the rest of the scene is byte for byte what it was) / early10 AFTER HOURS (only the tag: a BLUE inspection tag with its cut top corners, a reinforced hole with
+  the string through it from the handwheel, INSPECTION TAG in white, ten rows of squiggles each with a check box (seven ticked), a column of ten tiny punched holes down the right edge and twelve along the foot;
+  nothing says OK). Name: CERTIFICATE OF MERIT is in IFC_BANNER_LOOK (the other six names are as before).
+- fbInsp (FCB4) IS THE INSPECTOR. A person, not a silhouette: dark work clothes, a lime hi-vis vest with TWO vertical and TWO round reflective bands, a zip, an ID card and a badge, a hard hat with a ridge and a gold
+  shield, a face with eyes and a smile, a rim of warm light on the lit side (o.lit), a shadow. Arms are two segments ending in hands. Held things are drawn the way hands hold them: a CLIPBOARD (board, sheet,
+  lines and ticks, steel clip) rests on the forearm with three fingers curled round its edge and the thumb across its face, or hangs from a top edge the fingers grip; a FLASHLIGHT is a barrel, a flared head and a
+  lens, gripped in a closed fist (fingers and thumb drawn over the barrel), and the beam starts at the lens (returned as lens [x, y, angle]); the ROLL OF PLANS is gripped at its middle; the SHOULDER RADIO has
+  a mic in the other hand. Poses: clip, torchUp, torchDown, radio, plans, post (a hand flat on a frame, a rubber stamp raised), sunrise (a hand against the sun, a clipboard hanging). fbInspBack is the same man
+  from behind for a night skyline (salute, hatup, hatup2, stand, board, visor, wave).
+- Things learned, worth keeping: (1) MERGE PATHS. Each inspector was 80 nodes and the first Inspection Team measured 899 against the 700-element cap, Ten in a Row 902; sil() now draws legs, boots and arms as one
+  path each (lims / pols), the building's 33 windows are seven paths, the gauges lost their PSI lettering and the bolts are dots on one path. Check check-b384-fcbanners (9) after any figure change. (2) POLYGONS
+  MERGED INTO ONE PATH MUST SHARE A WINDING, or overlapping parts of opposite winding cancel under the nonzero rule: the vest's bands came out as a checkerboard until pols() reversed every polygon to one
+  orientation. (3) A flipped figure (o.flip) mirrors through P(); pass the pose as if unflipped. (4) A clipboard seen from behind shows its back, which does not read as a clipboard, so the dawn inspector faces
+  us (his hand up against the sun is the 'looking at the sunrise'); the night ceremony is the one place the men are seen from behind. (5) The strip crops 10.5 units off the top and bottom of the 480x180 scene
+  (1050x348), so a plate at y 4 loses its top: the title plate on Ten in a Row sits at y 12.5 and the lamps, gauges and valves were moved down to fit under it. (6) Fireworks that are 'not symmetrical' are
+  made of: unequal spoke counts, a length per spoke, spokes missing, a droop per spoke, a squash on the low one, a centre off the top edge, different clocks, and the men on a layer ABOVE the bursts so none
+  burns in front of a man. (7) A rounded tape wrap is a band whose two edges bow the same way, shaded darker towards both edges, with a seam where the end lies over the start.
+- Old pieces left in place unused, as fbChevy and fbSilverado were: fbTruck and its helpers (the Grand Finale truck), fbInspector (round 3b's silhouette), fbFF still draws Fully Involved's crews elsewhere.
+- Gates: tools/check-b384-fcbanners.py has a new section (12) measuring the seven on the page: five inspectors with hat, vest and bands, one pavement line, five heights, gaps between vests, lit windows, a door,
+  a lamp post, no FIRE STATION lettering, every board with a hand on its edge, every torch with a lens and a fist and a beam that starts within 4 units of its lens; the certificate in its frame with the stamp
+  and seal on the paper, the wire from the nail to the frame's top corners, a hand on the frame and the stamp above the head; seven men on one crest with hats and bands, six bursts with four or more sizes
+  and spoke counts, an uneven spread, one off the top, one low, three rising shells, a glow each, five or more clocks, no truck; the system (ten branches on the header, riser from the floor to the header, each
+  branch up to its gauge, flow switch on the branch, conduit touching both its switch and its lamp, plates hung on rods from the header, even pitch, ten needles in the green, ten lit lamps, the title and
+  the clipboard); the inspector on the roof with a held clipboard and no firefighter; the tape with no knot, twist or back, one wrap at each end, 38+ glyphs from the first to the last wrap with no gap over 14;
+  the tag's ten rows, ten boxes, seven ticks, 22 punches, blue gradient, INSPECTION heading, no OK and the string reaching the hole. check-b384-fcbanners.prev3.json holds the c1d224b hashes (the seven differ,
+  nothing else moved); NAMES, the Grand Finale shell line and the old section (11) lines for the replaced scenes moved to this decision. check-b382-ifcart's names line moved to Certificate of Merit.
+  Every new line FAILS against c1d224b (`--against`, 16 lines) and passes here.
+- NOT confirmable in Chromium: how the strips read on a phone at the size the covers are shown (looked at the 1050x348 strip and the 960x360 scene in Chromium); the frame rate of Inspection Team (641 elements),
+  Grand Finale (635, six bl-fwk layers) and Ten in a Row (679) on an old iPhone; whether Madison reads Certificate of Merit's name as too long for a card (20 characters; Perfect Mark is the shorter alternative);
+  the likeness of the hi-vis vest and torch to the academy's real kit.
