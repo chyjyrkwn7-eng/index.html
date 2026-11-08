@@ -59346,25 +59346,23 @@ var IFC_CHAR_DRAW = {
     k.add("path", { d: TUBE, fill: "none", stroke: "#E8A21A", "stroke-width": ".85", "stroke-linecap": "round", "stroke-linejoin": "round" });
     k.add("path", { d: TUBE, fill: "none", stroke: "#FFF6C8", "stroke-width": ".4", "stroke-linecap": "round", "stroke-linejoin": "round" });
     k.add("path", { d: "M14 20.8 h1.2 M24.8 20.8 h1.2", stroke: "#4A5262", "stroke-width": ".7", "stroke-linecap": "round" });
-    /* the face on the glass: two big dark eyes with their glints */
-    k.open("cx-eyes");
-    [17.2, 22.8].forEach(x => {
-      k.add("ellipse", { cx: x, cy: 21, rx: 1.45, ry: 1.9, fill: "#12202E" });
-      k.add("ellipse", { cx: x, cy: 21.5, rx: .9, ry: 1.05, fill: "#2A5A8A", opacity: ".8" });
-      k.add("circle", { cx: x - .45, cy: 20.2, r: .5, fill: "#FFFFFF" });
-      k.add("circle", { cx: x + .5, cy: 22, r: .22, fill: "#FFFFFF", opacity: ".8" });
-    });
-    k.close();
-    k.closedEyes([[17.2, 21, 1.5], [22.8, 21, 1.5]], "#5A7A94", .55);
+    /* the reflector behind the glass, in place of the face it used to carry: a bowl seen from the front (rings of light stepping in to the
+       lamp), the lamp's socket at its centre, so the glass shows what a strobe has behind it */
+    k.add("ellipse", { cx: 20, cy: 19.4, rx: 7.2, ry: 4.4, fill: "none", stroke: "#8FA6BA", "stroke-width": ".3", opacity: ".6" });
+    k.add("ellipse", { cx: 20, cy: 19.6, rx: 4.6, ry: 2.8, fill: "#D4E2EE", opacity: ".55", stroke: "#8FA6BA", "stroke-width": ".25" });
+    k.add("ellipse", { cx: 20, cy: 19.8, rx: 2.2, ry: 1.4, fill: "#F2C14E", opacity: ".9", stroke: "#7A5A10", "stroke-width": ".2" });
+    k.add("ellipse", { cx: 19.6, cy: 19.4, rx: .9, ry: .5, fill: "#FFFFFF", opacity: ".9" });
+    k.noEyes();
     k.add("path", { d: "M12.5 22.6 L12.5 15.6 Q12.5 14.5 13.6 14.5 L16.6 14.5 Q14.2 17 13.6 22.8 Z", fill: "#FFFFFF", opacity: ".35" });
     k.add("path", { d: "M13.1 15.6 Q13.3 14.9 14.2 14.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".4", opacity: ".9", "stroke-linecap": "round" });
-    /* the horn: a slotted grille for a mouth, each slot cut in with a lit lip */
-    k.open("cx-mouth");
-    k.add("rect", { x: 14.6, y: 25.9, width: 10.8, height: 3.2, rx: 1, fill: "#3A0408", stroke: "#8A1A1A", "stroke-width": ".2" });
-    [26.6, 27.4, 28.2].forEach(y => {
-      k.add("path", { d: "M15.7 " + y + " h8.6", stroke: "#12020A", "stroke-width": ".42", "stroke-linecap": "round" });
-      k.add("path", { d: "M15.9 " + fcF(y + .3) + " h8.2", stroke: "#FF9A90", "stroke-width": ".14", opacity: ".6", "stroke-linecap": "round" });
-    });
+    /* the horn: a speaker grille under the lens, a plate cut with a row of upright slots (not a mouth: the slots stand, they do not lie) */
+    k.add("rect", { x: 14.6, y: 25.9, width: 10.8, height: 3.2, rx: .8, fill: "#3A0408", stroke: "#8A1A1A", "stroke-width": ".2" });
+    for(let i = 0; i < 9; i++){
+      const x = 15.6 + i * 1.1;
+      k.add("path", { d: "M" + fcF(x) + " 26.5 v2", stroke: "#12020A", "stroke-width": ".42", "stroke-linecap": "round" });
+      k.add("path", { d: "M" + fcF(x + .26) + " 26.7 v1.6", stroke: "#FF9A90", "stroke-width": ".12", opacity: ".55", "stroke-linecap": "round" });
+    }
+    k.open("cx-mouth"); k.close();
     k.close();
     k.close();
     k.close();
@@ -59500,6 +59498,9 @@ var IFC_CHAR_DRAW = {
     k.close();
     k.open("cx-head");
     k.add("path", { d: "M7.9 28.4 Q8.2 24 10.4 19 Q11.6 15.4 13.8 13.2 Q14.2 10.6 16.6 10.6 Q17.8 8.6 20.2 9 Q22.6 8.4 23.8 10.6 Q26.6 10.6 27.2 13.6 Q29.8 16 30.4 20.6 Q31.6 24.4 32.1 28.4 Q20 31.8 7.9 28.4 Z", fill: ooze });
+    /* the tendril: out of the ooze's right shoulder, rising and curling over, tapering to a point (the body's own gradient, so no seam) */
+    k.add("path", { d: "M26.2 14.4 Q29.8 12.4 31.4 8.8 Q32 6.8 33.8 6.6 Q33.6 8.8 32.6 10.8 Q31.4 14.6 30.4 18.4 Q28.6 15.6 26.2 14.4 Z", fill: ooze });
+    k.add("path", { d: "M27.6 13.8 Q30.4 12 31.8 8.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".4", opacity: ".5", "stroke-linecap": "round" });
     /* wet: the long gloss, its catchlights, a few bubbles in the skin */
     k.add("path", { d: "M11.6 20.6 Q12.2 16 15.2 13.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".8", opacity: ".5", "stroke-linecap": "round" });
     k.add("circle", { cx: 16.1, cy: 11.7, r: .42, fill: "#FFFFFF", opacity: ".75" });
@@ -59509,40 +59510,23 @@ var IFC_CHAR_DRAW = {
       k.add("circle", { cx: x, cy: y, r, fill: "#C08AFF", stroke: "#F0D8FF", "stroke-width": ".14", opacity: ".8" });
       k.add("circle", { cx: x - r * .35, cy: y - r * .35, r: fcF(r * .28), fill: "#FFFFFF", opacity: ".8" });
     });
-    /* three acid eyes in dark sockets, their light pulsing */
-    const EYES = [[15.3, 18.7, 2.45], [24.7, 17.9, 2.1], [20.15, 12.95, 1.15]];
+    /* no face (round 4: "what's up with all these smiley faces"): a spill is a substance, so what looks out of it is its own light - a
+       cavity of acid green deep in the ooze, glowing up through it, veins of the same light running out to the skin, and one
+       tendril of it reaching up over the drum's edge. The glow is the same pulse the eyes had. */
     const glowId = k.uid + "-fcspg", glow = k.mk("radialGradient", { id: glowId });
-    [["0%", ".55"], ["55%", ".22"], ["100%", "0"]].forEach(([o, op]) => glow.appendChild(k.mk("stop", { offset: o, "stop-color": "#D9FF6A", "stop-opacity": op })));
+    [["0%", ".98"], ["45%", ".55"], ["100%", "0"]].forEach(([o, op]) => glow.appendChild(k.mk("stop", { offset: o, "stop-color": "#D9FF6A", "stop-opacity": op })));
     k.defs.appendChild(glow);
     k.open("cx-fx cx-fx-scopeglow");
-    EYES.forEach(([x, y, r]) => k.add("circle", { cx: x, cy: y, r: fcF(r * 1.9), fill: "url(#" + glowId + ")" }));
+    k.add("circle", { cx: 20, cy: 20, r: 12, fill: "url(#" + glowId + ")" });
     k.close();
-    EYES.forEach(([x, y, r]) => k.add("circle", { cx: x, cy: y, r: fcF(r + .3), fill: "#24063F" }));
-    k.open("cx-eyes");
-    EYES.forEach(([x, y, r]) => {
-      k.add("circle", { cx: x, cy: y, r, fill: "#E2FF6A" });
-      k.add("path", { d: "M" + fcF(x - r) + " " + y + " A" + r + " " + r + " 0 0 0 " + fcF(x + r) + " " + y + " A" + r + " " + fcF(r * .62) + " 0 0 1 " + fcF(x - r) + " " + y + " Z", fill: "#7AB80E", opacity: ".45" });
-      k.add("ellipse", { cx: fcF(x + r * .12), cy: fcF(y + r * .04), rx: fcF(r * .22), ry: fcF(r * .78), fill: "#120420" });
-      k.add("circle", { cx: fcF(x - r * .4), cy: fcF(y - r * .42), r: fcF(r * .2), fill: "#FFFFFF" });
+    [["M12.6 25.4 Q15.2 20.4 13.6 14.8", .5], ["M27.6 25.6 Q25 20.6 26.6 15.6", .45], ["M20 26.6 Q21.2 21 19.2 15.6 Q18.6 13.6 19.8 12", .5], ["M16.4 25.8 Q17.6 22.4 16 19.4", .38], ["M23.8 25.4 Q22.6 22 24.2 19", .38]].forEach(([d, op]) =>
+      k.add("path", { d, fill: "none", stroke: "#C6FF4A", "stroke-width": ".42", opacity: op, "stroke-linecap": "round" }));
+    [[17.6, 17.2, .5], [22.6, 21.6, .4], [15.2, 22.4, .34], [24.6, 16.4, .3], [20.8, 14.2, .26]].forEach(([x, y, r]) => {
+      k.add("circle", { cx: x, cy: y, r, fill: "#C6FF4A", opacity: ".75" });
+      k.add("circle", { cx: fcF(x - r * .35), cy: fcF(y - r * .35), r: fcF(r * .3), fill: "#FFFFFF", opacity: ".85" });
     });
-    k.close();
-    k.closedEyes(EYES.map(([x, y, r]) => [x, fcF(y + .2), fcF(r * .85)]), "#1E0434", .55);
-    /* the grin: teeth along the top, two fangs up from below, drool off the corner */
-    const q = (t, a, c, b) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * c + t * t * b;
-    k.open("cx-mouth");
-    k.add("path", { d: "M12.8 22.2 Q20 29 27.8 21.4 Q20.4 24.6 12.8 22.2 Z", fill: "#1A0330" });
-    let teeth = "";
-    for(let i = 0; i < 7; i++){
-      const t = (i + .5) / 7, x = q(t, 27.8, 20.4, 12.8), y = q(t, 21.4, 24.6, 22.2);
-      teeth += "M" + fcF(x - .52) + " " + fcF(y - .12) + " L" + fcF(x + .52) + " " + fcF(y - .12) + " L" + fcF(x) + " " + fcF(y + .95) + " Z ";
-    }
-    [.27, .73].forEach(t => {
-      const x = q(t, 12.8, 20, 27.8), y = q(t, 22.2, 29, 21.4);
-      teeth += "M" + fcF(x - .5) + " " + fcF(y + .1) + " L" + fcF(x + .5) + " " + fcF(y + .1) + " L" + fcF(x) + " " + fcF(y - 1.15) + " Z ";
-    });
-    k.add("path", { d: teeth, fill: "#F4F8E8", stroke: "#1A0330", "stroke-width": ".08" });
-    k.add("path", { d: "M26.25 22.9 Q26.85 25.2 26.4 26.3 Q25.9 25.2 26.25 22.9 Z", fill: "#C6FF4A", opacity: ".9" });
-    k.close();
+    k.noEyes();
+    k.open("cx-mouth"); k.close();
     /* bubbles off the top, two rising */
     [[12.7, 11.4, .52], [27.7, 11.7, .38]].forEach(([x, y, r]) => k.add("circle", { cx: x, cy: y, r, fill: "#C08AFF", stroke: "#F0D8FF", "stroke-width": ".14" }));
     k.close();
@@ -59835,19 +59819,18 @@ var IFC_CHAR_DRAW = {
     k.add("path", { d: "M13.6 20.6 Q13.8 13.6 20 13.2 Q26.2 13.6 26.4 20.6 Q26.6 27.8 20 30.4 Q13.4 27.8 13.6 20.6 Z", fill: k.headGrad("#34223C", "#150C1E", "#040208"), stroke: "#FFB070", "stroke-width": ".4", "stroke-opacity": ".75" });
     k.add("path", { d: "M14.6 18 Q14.9 14.8 17.6 14", fill: "none", stroke: "#FFFFFF", "stroke-width": ".4", opacity: ".25", "stroke-linecap": "round" });
     [[15.6, 25.4], [24.8, 26.2], [22.6, 15.8], [17.8, 28]].forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i % 2 ? .2 : .28, fill: "#FFE8D0", opacity: ".6" }));
-    k.open("cx-eyes");
+    /* no face (round 4): the dark in the middle of the gas is a globule, a pocket the light has not got into, and in it a young star -
+       a bright core with four fine rays, the one lit thing in it, and the gas's own colours reflected in the globule's rim */
+    const core = k.mk("radialGradient", { id: k.uid + "-nbcore" });
+    [["0", "#FFFFFF", "1"], [".25", "#FFE6B0", ".8"], [".6", "#F97316", ".3"], ["1", "#EF4444", "0"]].forEach(([o, c, op]) => core.appendChild(k.mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    k.defs.appendChild(core);
     k.open("cx-fx cx-fx-sqlight");
-    [17.2, 22.8].forEach((x, i) => {
-      k.add("circle", { cx: x, cy: 21.4, r: 2.1, fill: i ? "#FACC15" : "#F97316", opacity: ".3" });
-      k.add("ellipse", { cx: x, cy: 21.4, rx: 1.35, ry: 1.05, fill: i ? "#FFF2A8" : "#FFD39A" });
-      k.add("ellipse", { cx: x, cy: 21.4, rx: .6, ry: .5, fill: "#FFFFFF" });
-    });
+    k.add("circle", { cx: 20, cy: 21.6, r: 5.8, fill: "url(#" + k.uid + "-nbcore)" });
+    k.add("path", { d: "M20 15.4 L20.45 21.2 L20 27.8 L19.55 21.2 Z M13.8 21.6 L19.6 21.15 L26.2 21.6 L19.6 22.05 Z", fill: "#FFF2D8", opacity: ".92" });
+    k.add("circle", { cx: 20, cy: 21.6, r: .8, fill: "#FFFFFF" });
     k.close();
-    k.close();
-    k.closedEyes([[17.2, 21.4, 1.3], [22.8, 21.4, 1.3]], "#FFC890", .5);
-    k.open("cx-mouth");
-    k.add("path", { d: "M18.4 26.6 Q20 27.5 21.6 26.6", fill: "none", stroke: "#FF9A5A", "stroke-width": ".42", opacity: ".7", "stroke-linecap": "round" });
-    k.close();
+    k.noEyes();
+    k.open("cx-mouth"); k.close();
     k.close();
     /* the three flares, set in the gas round the face */
     k.add("path", { d: "M11.8 19.2 L20 10.4 L28.2 19.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".18", opacity: ".4", "stroke-dasharray": ".5 .5" });
@@ -59892,17 +59875,14 @@ var IFC_CHAR_DRAW = {
     k.add("path", { d: "M12.6 16.4 Q14.6 11.6 19.4 11", fill: "none", stroke: "#FFFFFF", "stroke-width": ".7", opacity: ".5", "stroke-linecap": "round" });
     k.add("path", { d: "M26.8 24.4 Q24 28.4 20 28.6", fill: "none", stroke: V, "stroke-width": ".5", opacity: ".55", "stroke-linecap": "round" });
     [[15.2, 24.6], [25, 15.2], [23.4, 25.8]].forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i ? .22 : .3, fill: "#E2D8FF", opacity: ".6" }));
-    k.open("cx-eyes");
+    /* no face (round 4): the core's own edge instead - the event horizon, a ring of light bent round the top of the core by its gravity
+       (the disc's far side, seen over the pole), and the hot inner edge of the disc glowing where it meets it */
     k.open("cx-fx cx-fx-sqlight");
-    [16.8, 23.2].forEach(x => {
-      k.add("circle", { cx: x, cy: 19.4, r: 2.2, fill: V, opacity: ".32" });
-      k.add("circle", { cx: x, cy: 19.4, r: 1.15, fill: "#E2D8FF" });
-      k.add("circle", { cx: x, cy: 19.4, r: .55, fill: "#FFFFFF" });
-      k.add("path", { d: "M" + (x - 2.5) + " 19.4 L" + (x + 2.5) + " 19.4 M" + x + " 17.4 L" + x + " 21.4", stroke: "#FFFFFF", "stroke-width": ".22", opacity: ".8", "stroke-linecap": "round" });
-    });
+    k.add("path", { d: "M13.4 17.4 Q20 6.8 26.6 17.4", fill: "none", stroke: V, "stroke-width": "1.5", opacity: ".3", "stroke-linecap": "round" });
+    k.add("path", { d: "M13.4 17.4 Q20 6.8 26.6 17.4", fill: "none", stroke: "#E2D8FF", "stroke-width": ".6", opacity: ".95", "stroke-linecap": "round" });
+    k.add("path", { d: "M14.2 25.4 Q20 31.4 25.8 25.4", fill: "none", stroke: "#B69CFF", "stroke-width": ".5", opacity: ".6", "stroke-linecap": "round" });
     k.close();
-    k.close();
-    k.closedEyes([[16.8, 19.4, 1.3], [23.2, 19.4, 1.3]], "#C4B5FD", .5);
+    k.noEyes();
     k.open("cx-mouth"); k.close();
     k.close();
     ring(true);
@@ -60043,19 +60023,16 @@ var IFC_CHAR_DRAW = {
     /* earthshine: the faint light on the dark side, and a few stars the moon has not hidden */
     k.add("path", { d: "M13 24.6 Q15 29.2 20.4 28.6", fill: "none", stroke: "#8A7AC8", "stroke-width": ".5", opacity: ".45", "stroke-linecap": "round" });
     [[14.4, 15.6, .22], [25.6, 25.2, .2], [22.4, 28.2, .18]].forEach(([x, y, r]) => k.add("circle", { cx: x, cy: y, r, fill: "#E8E0FF", opacity: ".7" }));
-    k.open("cx-eyes");
-    k.open("cx-fx cx-fx-sqlight");
-    [16.6, 23.4].forEach(x => {
-      k.add("ellipse", { cx: x, cy: 20.4, rx: 2.4, ry: 1.7, fill: "#FFB020", opacity: ".26" });
-      k.add("path", { d: "M" + fcF(x - 1.6) + " 20.6 Q" + x + " 18.6 " + fcF(x + 1.6) + " 20.6 Q" + x + " 22.3 " + fcF(x - 1.6) + " 20.6 Z", fill: "#FFE6A0" });
-      k.add("circle", { cx: x, cy: 20.5, r: .62, fill: "#FFFFFF" });
+    /* no face (round 4): the moon, as it is - a few dark seas and two old craters pressed into the disc, each with a thin lit lip on the side the
+       corona is on, so the black has a surface */
+    [["M14.2 15.6 Q16.8 13.8 19 15.2 Q18.8 17.6 16.4 18.2 Q14 17.8 14.2 15.6 Z", ".5"], ["M23 22.4 Q26 20.8 27.2 23 Q26.4 26 23.8 26.2 Q22 25 23 22.4 Z", ".45"], ["M15.8 24.6 Q18 23.4 19.4 25 Q18.6 27 16.6 27 Q15.2 26.2 15.8 24.6 Z", ".4"]].forEach(([d, op]) =>
+      k.add("path", { d, fill: "#02010A", opacity: op }));
+    [[22.4, 15.4, 1.5], [17.6, 21.2, 1.1]].forEach(([x, y, r]) => {
+      k.add("circle", { cx: x, cy: y, r, fill: "#06040E", stroke: "#3A2E5A", "stroke-width": ".3", opacity: ".95" });
+      k.add("path", { d: "M" + fcF(x - r * .8) + " " + fcF(y + r * .5) + " A" + r + " " + r + " 0 0 0 " + fcF(x + r * .6) + " " + fcF(y + r * .8), fill: "none", stroke: GOLD, "stroke-width": ".26", opacity: ".6", "stroke-linecap": "round" });
     });
-    k.close();
-    k.close();
-    k.closedEyes([[16.6, 20.5, 1.5], [23.4, 20.5, 1.5]], "#C8A860", .5);
-    k.open("cx-mouth");
-    k.add("path", { d: "M18.4 25.4 Q20 26.4 21.8 25.2", fill: "none", stroke: "#E8A8C8", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".85" });
-    k.close();
+    k.noEyes();
+    k.open("cx-mouth"); k.close();
     k.close();
     /* the diamond ring: the sun's last bead on the rim, a bright arc running into it, the flare burning there */
     k.open("cx-fx cx-fx-flare cx-fx-sqlight");
@@ -63363,19 +63340,21 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: door, fill: "#1A0E04", stroke: "#5E3A0E", "stroke-width": ".35" }));
     svg.appendChild(mk("path", { d: "M14.8 21.8 Q15 17.8 20 17.2 Q25 17.8 25.2 21.8 Q20 20.6 14.8 21.8 Z", fill: "#2E1A08", opacity: ".8" }));
     svg.appendChild(mk("path", { d: "M14.6 22.3 Q20 23.3 25.4 22.3", fill: "none", stroke: "#FFE08A", "stroke-width": ".3", opacity: ".6" }));
-    open("cx-eyes");
-    [[17.3, 19.9], [22.7, 19.9]].forEach(([cx, cy]) => {
-      svg.appendChild(mk("ellipse", { cx, cy, rx: 1.6, ry: 1.2, fill: honey, opacity: ".35" }));
-      svg.appendChild(mk("ellipse", { cx, cy, rx: .95, ry: .72, fill: "#FFC93C" }));
-      svg.appendChild(mk("circle", { cx: cx + .25, cy: cy - .2, r: .28, fill: "#FFF6D6" }));
-    });
-    close();
-    closedEyes([[17.3, 19.9, .95], [22.7, 19.9, .95]], "#FFC93C", .35);
-    /* Honey off the sill - the mouth, as far as a hive has one. */
-    open("cx-mouth");
-    svg.appendChild(mk("path", { d: "M18.8 23.2 L21.2 23.4 Q20.9 24.8 20.7 25.8 Q20.4 27 20 27 Q19.6 27 19.3 25.8 Q19 24.8 18.8 23.2 Z", fill: honey, stroke: "#B9770C", "stroke-width": ".2", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("path", { d: "M19.5 24 Q19.5 25.2 19.8 26", fill: "none", stroke: "#FFF2C2", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".9" }));
-    close();
+    /* (384 r4) no face: "what's up with all these smiley faces on the characters". The door was two lit eyes and a drip of honey for a mouth;
+       it is a door again, and what is lit in it is the inside of the hive - a warm glow rising from the floor of the doorway, the dark
+       combs it falls on, and a drip of honey off the sill at the side, where honey runs and a mouth is not. The empty eye and mouth groups stay
+       so every drawing has the same parts. */
+    { const gid = uid + "-hvin"; const rg = mk("radialGradient", { id: gid, cx: "50%", cy: "100%", r: "75%" });
+      [["0%", "#FFD560", ".95"], ["55%", "#F5A21A", ".5"], ["100%", "#F5A21A", "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(rg);
+      svg.appendChild(mk("path", { d: door, fill: "url(#" + gid + ")" }));
+      [[17.4, 21.2], [20, 20.2], [22.6, 21.2], [18.7, 18.9], [21.3, 18.9]].forEach(([cx, cy]) =>
+        svg.appendChild(mk("path", { d: hex(cx, cy, 1.15), fill: "none", stroke: "#7A4A12", "stroke-width": ".24", opacity: ".75" })));
+      svg.appendChild(mk("path", { d: "M14.6 22.3 Q20 23.3 25.4 22.3", fill: "none", stroke: "#FFE08A", "stroke-width": ".3", opacity: ".6" })); }
+    noEyes();
+    open("cx-mouth"); close();
+    svg.appendChild(mk("path", { d: "M28 29.2 L29.9 28.9 Q30 30.4 29.8 31.4 Q29.5 32.4 29 32.4 Q28.5 32.4 28.3 31.4 Q28 30.4 28 29.2 Z", fill: honey, stroke: "#B9770C", "stroke-width": ".2", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M28.6 29.8 Q28.6 30.8 28.8 31.4", fill: "none", stroke: "#FFF2C2", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".9" }));
     /* The bees, round the hive. */
     const bees = mk("g", { class: "cx-fx cx-fx-hivebees" });
     bees.appendChild(pivot(20, 18.2, 14.2));
@@ -64962,16 +64941,9 @@ function drawAvatarCharSVG(charId){
     /* the lit limb, upper left */
     svg.appendChild(mk("path", { d: "M13.4 15.6 Q15.2 12.6 18.6 11.9", fill: "none", stroke: "#FFF6E0", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".7" }));
     svg.appendChild(mk("circle", { cx: PX, cy: PY, r: PR, fill: "none", stroke: "#FFC2DE", "stroke-width": ".35", opacity: ".55" }));
-    /* THE EYES: two lights open on the planet's face */
-    open("cx-eyes");
-    [[16.6, -1], [23.4, 1]].forEach(([cx, s]) => {
-      svg.appendChild(mk("ellipse", { cx, cy: 19.8, rx: 2.5, ry: 1.25, fill: "#FF5CA8", opacity: ".55" }));
-      const o = cx + s * 1.9, i = cx - s * 1.9;
-      svg.appendChild(mk("path", { d: "M" + f(i) + " 19.9 Q" + f(cx) + " 18.2 " + f(o) + " 19.4 Q" + f(cx) + " 21 " + f(i) + " 19.9 Z", fill: "#FFF6E6" }));
-      svg.appendChild(mk("circle", { cx: f(cx + s * .2), cy: 19.6, r: ".5", fill: "#FFFFFF" }));
-    });
-    close();
-    closedEyes([[16.6, 19.9, 1.9], [23.4, 19.9, 1.9]], "#FFE0C0", .45);
+    /* (384 r4) no eyes: "what's up with all these smiley faces ... fix that app wide" - a planet is a planet. It was two lights on its face;
+       it now has its weather, its ring, its moon and the light of the seams, and the empty eye groups stay so every drawing has the same parts. */
+    noEyes();
     open("cx-mouth"); close();
     /* AN ERUPTION, now and then, off the planet's crown */
     open("cx-fx cx-fx-gnerupt", { opacity: "0" });
@@ -124234,7 +124206,7 @@ function playUmbraFlareScene(done){
   S.step(9100, "sf-total");
   S.later(9300, () => S.say("TOTALITY", "", ""));
   S.later(10700, () => { F.keys(); S.overlay.classList.add("sf-eyes"); });
-  S.later(11000, () => S.say("TOTALITY", "Something opens its eyes", ""));
+  S.later(11000, () => S.say("TOTALITY", IFC_ART_ON ? "Something lights in the dark" : "Something opens its eyes", ""));
   S.later(12000, () => F.emerge());
   S.later(13800, () => S.hush());
   S.later(14400, () => F.catchLight());
