@@ -78631,10 +78631,12 @@ const IFC_BANNER_ART = {
      room with a thermal camera. The wall clock reads 11:42. The camera's view cone washes the switchgear in heat
      colours and one breaker in the row is burning white-orange: the one he came for. Cold teal room, magenta and
      orange heat - against Fire Investigator's brown soot, doorway and flashlight - and a crouching pose to its
-     standing one. */
+     standing one. Round 2 ("I can't tell what he's scanning?"): the camera's SCREEN is shown (a round callout drawn from the camera: the panel's
+     breakers in false colour, the hot one white at a reticle, the colour scale, a reading), a narrow line of sight runs from the lens to a reticle
+     on the real breaker, the panel is plainly a panel (PANEL 4B on its door, MAIN BUS), the field of view is the cone over the whole panel. */
   early10(u){
     const rnd = bnRand(3811);
-    const CX = 262, CY = 24, CW = 150, CH = 124;
+    const CX = 292, CY = 24, CW = 150, CH = 124;
     /* the breakers: three rows of six on the panel, one of them hot */
     let brk = "";
     for(let r = 0; r < 3; r++) for(let c = 0; c < 6; c++){
@@ -78667,9 +78669,24 @@ const IFC_BANNER_ART = {
       fbC(219, 89.6, 7, "#0C1016", ' stroke="#3A4654" stroke-width="1.6"') + fbC(219, 89.6, 4.4, "#1A1030") + fbC(217.6, 88, 1.4, "#FF8AD0", ' opacity=".9"') + fbR(204, 83.4, 8, 3, "#FF5A8A", ' rx="1" opacity=".9"') +
       /* the heat's light on the side of him that faces it: along the front of the torso, the brim, the arm, the knee */
       fbL("M168 76 L152 112 M180 56 Q190 59 194 60 M176 98 L196 92 M178 124 L178 142", rim, 1.3, ' opacity=".75"');
+    /* the camera's screen, as a round callout from the camera: the panel's breakers in false colour, the hot one white, a reticle, the colour scale, a reading */
+    const IX = 238, IY = 42, IR = 26;
+    const cold = ["#2A1A7A", "#3A22A0", "#4A2AB4", "#5A2AA0"];
+    let sc = '<circle cx="' + IX + '" cy="' + IY + '" r="' + IR + '" fill="#140A3A"/>';
+    for(let r = 0; r < 3; r++) for(let c = 0; c < 4; c++){
+      const x = IX - 21 + c * 10.4, y = IY - 17 + r * 12.6, hot = r === 1 && c === 2, warm = Math.abs(r - 1) + Math.abs(c - 2) === 1;
+      sc += fbR(x, y, 8.6, 10.6, hot ? "#FFB03A" : warm ? "#C0309A" : cold[(r + c) % 4], ' rx="1.4"');
+    }
+    const SRX = IX - 21 + 2 * 10.4 + 4.3, SRY = IY - 17 + 12.6 + 5.3;
+    sc += '<circle cx="' + SRX + '" cy="' + SRY + '" r="12" fill="url(#' + u + 'hot)"/>' + '<rect x="' + (IX + 17) + '" y="' + (IY - 16) + '" width="4.4" height="32" fill="url(#' + u + 'iron)" stroke="#05060A" stroke-width=".4"/>';
+    const scope = '<defs><clipPath id="' + u + 'scr"><circle cx="' + IX + '" cy="' + IY + '" r="' + IR + '"/></clipPath></defs>' +
+      fbL("M193 78 L" + bnF(IX - 21) + " " + bnF(IY + 15) + " M216 80.4 L" + bnF(IX + 10) + " " + bnF(IY + 24), "#9FF0E0", .8, ' stroke-dasharray="2 2" opacity=".8"') +
+      '<circle cx="' + IX + '" cy="' + IY + '" r="' + (IR + 3) + '" fill="#0A0F14" stroke="#9AA6B4" stroke-width="1.4"/><g clip-path="url(#' + u + 'scr)">' + sc +
+      fbC(SRX, SRY, 7, "none", ' stroke="#FFFFFF" stroke-width=".9"') + fbL("M" + bnF(SRX - 11) + " " + bnF(SRY) + " L" + bnF(SRX - 4) + " " + bnF(SRY) + " M" + bnF(SRX + 4) + " " + bnF(SRY) + " L" + bnF(SRX + 11) + " " + bnF(SRY) + " M" + bnF(SRX) + " " + bnF(SRY - 11) + " L" + bnF(SRX) + " " + bnF(SRY - 4) + " M" + bnF(SRX) + " " + bnF(SRY + 4) + " L" + bnF(SRX) + " " + bnF(SRY + 11), "#FFFFFF", .8) +
+      fbR(IX - 24, IY + 15.6, 48, 12, "#0A0F14", ' opacity=".7"') + fbText("187F", IX - 4, IY + 20, 4.4, "#FFFFFF", .8) + '</g>' + '<circle cx="' + IX + '" cy="' + IY + '" r="' + IR + '" fill="none" stroke="#9FF0E0" stroke-width=".6" opacity=".6"/>';
     const base = '<defs>' + bnLin(u + "wall", [[0, "#12222C"], [1, "#07101A"]]) + bnLin(u + "cab", [[0, "#3A4A58"], [1, "#222E3A"]]) + bnLin(u + "floor", [[0, "#17222C"], [1, "#070B10"]]) +
       bnRad(u + "tube", [[0, "#9FF0E0", 0.35], [1, "#9FF0E0", 0]]) + bnRad(u + "hot", [[0, "#FFFFFF", 0.95], [0.18, "#FFE27A", 0.9], [0.45, "#FF7A1E", 0.55], [1, "#D01888", 0]]) + bnLin(u + "cone", [[0, "#FF8AD0", 0.5], [0.5, "#B42AC0", 0.28], [1, "#6A1AA8", 0.16]], 0, 0, 1, 0) +
-      bnRad(u + "screen", [[0, "#FF8AD0", 0.4], [1, "#FF8AD0", 0]]) + bnRad(u + "vig", [[0.55, "#000000", 0], [1, "#000000", 0.6]]) + '</defs>' +
+      bnLin(u + "iron", [[0, "#FFFFFF"], [0.25, "#FFE27A"], [0.5, "#FF7A1E"], [0.75, "#B42AC0"], [1, "#2A1A7A"]]) + bnRad(u + "screen", [[0, "#FF8AD0", 0.4], [1, "#FF8AD0", 0]]) + bnRad(u + "vig", [[0.55, "#000000", 0], [1, "#000000", 0.6]]) + '</defs>' +
       '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>' +
       Array.from({ length: 9 }, (_, r) => '<path d="M0 ' + (4 + r * 17) + ' L480 ' + (4 + r * 17) + '" stroke="#0A141C" stroke-width="1.2"/>').join("") +
       /* a long tube light, its cold wash on the wall */
@@ -78682,20 +78699,24 @@ const IFC_BANNER_ART = {
       fbR(20, 96, 68, 32, "#E4C21E", ' rx="2"') + fbR(23, 99, 62, 26, "none", ' stroke="#14161C" stroke-width="1"') + fbText("DANGER", 54, 108, 8, "#14161C", 1.6) + fbText("HIGH VOLTAGE", 54, 120, 4.2, "#14161C", .9) +
       /* the switchgear: cabinet, its door swung open at the left, the breakers */
       fbR(CX - 6, CY - 6, CW + 12, CH + 12, "#0A0F14", ' rx="3"') + fbR(CX - 3, CY - 3, CW + 6, CH + 6, "url(#" + u + "cab)", ' rx="2"') + fbR(CX, CY, CW, CH, "#101820") + brk +
-      fbP("M" + (CX - 4) + " " + (CY - 3) + " L" + (CX - 26) + " " + (CY + 8) + " L" + (CX - 26) + " " + (CY + CH - 8) + " L" + (CX - 4) + " " + (CY + CH + 3) + " Z", "#2C3A48", ' stroke="#0A0F14" stroke-width="1"') + fbR(CX - 20, CY + 54, 3, 14, "#9AA6B4") + fbR(CX - 18, CY + 18, 10, 8, "#E4C21E", ' opacity=".9"') +
+      /* the door, swung wide on its hinges, seen almost edge on at the cabinet's left; the label plate on the cabinet's own face */
+      fbP("M" + (CX - 4) + " " + (CY - 3) + " L" + (CX - 9.6) + " " + (CY - 1) + " L" + (CX - 9.6) + " " + (CY + CH + 1) + " L" + (CX - 4) + " " + (CY + CH + 3) + " Z", "#2C3A48", ' stroke="#0A0F14" stroke-width="1"') + fbR(CX + 4, CY + 2, 52, 9, "#E4C21E", ' rx="1.4"') + fbText("PANEL 4B", CX + 30, CY + 6.6, 5.2, "#14161C", 1) +
       fbR(CX + 8, CY + CH - 12, 134, 5, "#0A0F14") + fbText("MAIN BUS", CX + 40, CY + CH - 9.6, 3.6, "#8A96A4", .6) +
       /* the floor and its hazard line */
       fbR(0, 150, 480, 30, "url(#" + u + "floor)") + fbR(0, 148, 480, 4, "#14181E") + Array.from({ length: 40 }, (_, i) => fbP("M" + (i * 14) + " 148 L" + (i * 14 + 7) + " 148 L" + (i * 14 + 3) + " 152 L" + (i * 14 - 4) + " 152 Z", "#E4C21E", ' opacity=".7"')).join("") +
       '<ellipse cx="146" cy="152" rx="56" ry="4" fill="#000" opacity=".5"/>';
     /* the heat view: the cone from the lens to the row of breakers */
-    const cone = '<path d="M222 89.6 L' + (CX - 2) + ' ' + (CY - 4) + ' L' + (CX - 2) + ' ' + (CY + CH + 4) + ' Z" fill="url(#' + u + 'cone)"/>';
+    const cone = '<path d="M222 89.6 L' + (CX - 2) + ' ' + (CY - 4) + ' L' + (CX - 2) + ' ' + (CY + CH + 4) + ' Z" fill="url(#' + u + 'cone)" opacity=".5"/><path d="M222 89.6 L' + (HX - 12) + ' ' + (HY - 14) + ' L' + (HX - 12) + ' ' + (HY + 14) + ' Z" fill="url(#' + u + 'cone)"/><path d="M222 89.6 L' + (HX - 14) + ' ' + HY + '" stroke="#FFFFFF" stroke-width=".9" stroke-dasharray="3 2.4" opacity=".9"/>';
+    const reticle = fbC(HX, HY, 15, "none", ' stroke="#FFFFFF" stroke-width="1.1"') + fbL("M" + bnF(HX - 21) + " " + HY + " L" + bnF(HX - 11) + " " + HY + " M" + bnF(HX + 11) + " " + HY + " L" + bnF(HX + 21) + " " + HY + " M" + HX + " " + bnF(HY - 21) + " L" + HX + " " + bnF(HY - 11) + " M" + HX + " " + bnF(HY + 11) + " L" + HX + " " + bnF(HY + 21), "#FFFFFF", 1.1);
     return [
       { svg: base },
       { svg: '<ellipse cx="' + (CX + 70) + '" cy="' + (CY + 70) + '" rx="150" ry="100" fill="url(#' + u + 'tube)" opacity=".3"/>', box: [CX - 80, CY - 30, 300, 200], cls: "bl-breathe", style: "animation-duration:7s" },
       { svg: figure },
+      { svg: scope },
       /* the view cone, washing the panel in heat colours, and the hot breaker burning in it */
       { svg: cone, box: [220, CY - 4, CX - 218, CH + 8], o: [222, 89.6], cls: "bl-shimmer", style: "animation-duration:2.6s" },
       { svg: '<rect x="' + (CX + 4) + '" y="' + (CY + 4) + '" width="' + (CW - 8) + '" height="' + (CH - 8) + '" fill="#8A1AC0" opacity=".16"/>', box: [CX, CY, CW, CH], cls: "bl-glow", style: "animation-duration:2.6s" },
+      { svg: reticle },
       { svg: '<circle cx="' + HX + '" cy="' + HY + '" r="34" fill="url(#' + u + 'hot)"/>', box: [HX - 34, HY - 34, 68, 68], o: [HX, HY], cls: "bl-pulse", style: "animation-duration:1.5s" },
       { svg: '<circle cx="220" cy="90" r="30" fill="url(#' + u + 'screen)"/>', box: [190, 60, 60, 60], cls: "bl-glow", style: "animation-duration:1.8s" },
       /* the clock's second hand, a status light on the cabinet, heat shimmering up off the hot breaker, dust */
