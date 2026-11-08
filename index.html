@@ -78810,15 +78810,18 @@ function fbGearGloves(x, y, k, deg){
   };
   return '<g class="fb-geargloves" transform="translate(' + bnF(x) + ' ' + bnF(y) + ') rotate(' + (deg || 0) + ') scale(' + k + ')">' + glove(-4, 1, -14, "#16181D", "#3A404A") + glove(5, -1, 18, "#1C1F25", "#4A515C") + '</g>';
 }
-/* a navy ball cap seen from above and in front, its crown at (x, y), k its scale (k = 1 is about 30 wide); a gold patch on the front panel */
+/* a navy ball cap lying on its crown's edge, seen from the side (the bill out to the right, so it can never read as a helmet), its crown centred at (x, y),
+   k its scale (k = 1 is about 44 wide with the bill); a gold patch on the front panel, the seams, the button, the strap's gap at the back */
 function fbGearCap(x, y, k, o){
   o = o || {};
-  const tr = ' transform="translate(' + bnF(x) + ' ' + bnF(y) + ') scale(' + k + ')' + (o.rot ? ' rotate(' + o.rot + ')' : '') + '"';
-  return '<g class="fb-gearcap fb-cap" data-col="' + FB_KIT.cap + '"' + tr + '><path d="M-15 4 Q-15 -13 0 -13.6 Q15 -13 15 4 Z" fill="' + FB_KIT.cap + '" stroke="#0A1024" stroke-width=".6"/>' +
-    '<path d="M-15 4 Q-15 -13 0 -13.6 Q-9 -6 -7 4 Z" fill="#3A508A" opacity=".55"/><path d="M0 -13.6 L0 3 M-7.4 -11.6 Q-9 -4 -8 3.6 M7.4 -11.6 Q9 -4 8 3.6" stroke="#0E1630" stroke-width=".55" fill="none"/>' +
-    '<circle cx="0" cy="-13.2" r="1.3" fill="' + FB_KIT.cap + '" stroke="#0A1024" stroke-width=".4"/><rect x="-4.6" y="-8" width="9.2" height="6.4" rx="1" fill="' + FB_KIT.gold + '" stroke="' + FB_KIT.goldD + '" stroke-width=".4"/>' +
-    '<path d="' + fbStarPath(0, -4.8, 2.2) + '" fill="' + FB_KIT.goldD + '"/>' +
-    '<path d="M-16 3.4 Q0 1 16 3.4 Q19 6.4 15.6 9 Q0 12.6 -15.6 9 Q-19 6.4 -16 3.4 Z" fill="' + FB_KIT.capD + '" stroke="#060A16" stroke-width=".6"/><path d="M-13 5 Q0 3.2 13 5" stroke="#3A4A78" stroke-width=".7" fill="none" opacity=".8"/></g>';
+  const fl = o.flip ? -1 : 1;
+  const tr = ' transform="translate(' + bnF(x) + ' ' + bnF(y) + ') scale(' + bnF(k * fl) + ' ' + bnF(k) + ')' + (o.rot ? ' rotate(' + o.rot + ')' : '') + '"';
+  return '<g class="fb-gearcap fb-cap" data-col="' + FB_KIT.cap + '"' + tr + '>' +
+    '<path d="M8 3.4 Q20 1.6 29.4 5.8 Q31 8 28 8.8 Q18 7.6 7 7.4 Z" fill="' + FB_KIT.capD + '" stroke="#060A16" stroke-width=".6" stroke-linejoin="round"/><path d="M10 4.6 Q20 3.2 28.6 6.6" stroke="#3A4A78" stroke-width=".7" fill="none"/>' +
+    '<path d="M-15 6 Q-16.4 -9.6 -1 -10.8 Q12.6 -10.6 14 4.4 Q0 7.6 -15 6 Z" fill="' + FB_KIT.cap + '" stroke="#0A1024" stroke-width=".6"/>' +
+    '<path d="M-15 6 Q-16.4 -9.6 -1 -10.8 Q-9 -4 -7.6 6.6 Z" fill="#3A508A" opacity=".5"/><path d="M-1 -10.8 Q4 -2 3 6.2 M-1 -10.8 Q-6 -3 -6.4 6.6" stroke="#0E1630" stroke-width=".55" fill="none"/>' +
+    '<ellipse cx="-1" cy="-10.6" rx="1.8" ry=".9" fill="' + FB_KIT.cap + '" stroke="#0A1024" stroke-width=".4"/><path d="M-15.4 2 Q-13.6 -.4 -12 2.4 L-12.4 5.8 L-15 5.8 Z" fill="#0A1024"/>' +
+    '<path d="M5.4 -6.4 L12 -5.2 L12.6 .8 L5.8 1 Z" fill="' + FB_KIT.gold + '" stroke="' + FB_KIT.goldD + '" stroke-width=".4" stroke-linejoin="round"/><path d="' + fbStarPath(9.1, -2.4, 2) + '" fill="' + FB_KIT.goldD + '"/></g>';
 }
 /* a leather badge wallet lying open, centred at (x, y), k its scale (k = 1 is 26 x 17): the gold badge on one side, the ID card on the other */
 function fbGearWallet(x, y, k, deg){
@@ -79007,16 +79010,11 @@ const IFC_BANNER_ART = {
       tick(190, 71) + tick(244, 71) + tick(247, 106) +
       fbText("ADD EXIT SIGN", 182, 140.6, 3.4, RED, .6) + fbL("M150 140 L142 140 L142 87 L149 86.4", RED, .8) + fbP("M151.6 86 L147.6 84.2 L147.8 88.4 Z", RED) +
       rot(-9, 316, 160, fbR(288, 152, 54, 11, "none", ' stroke="' + RED + '" stroke-width="1" rx="1.2"') + fbR(290.4, 154.4, 49.2, 6.2, "none", ' stroke="' + RED + '" stroke-width=".4"') + fbText("REVIEWED", 315, 157.6, 4.2, RED, .75));
-    /* the triangular scale lying across the foot of the plan, on the sheet */
-    let ticks = ""; for(let i = 0; i <= 44; i++) ticks += '<path d="M' + (160 + i * 3.9) + ' 123.6 L' + (160 + i * 3.9) + ' ' + (i % 5 ? 125.4 : 127.2) + '" stroke="#5A4510" stroke-width=".45"/>';
-    const ruler = rot(-.8, 244, 128, '<rect x="157" y="124" width="178" height="10" rx="1" fill="#000" opacity=".3" transform="translate(1.6 2.4)"/><rect x="156" y="122" width="178" height="10" rx="1" fill="url(#' + u + 'scale)" stroke="#8A6A18" stroke-width=".5"/><path d="M156 126.4 L334 126.4" stroke="#fff" stroke-width=".5" opacity=".5"/>' + ticks +
-      [0, 1, 2, 3, 4].map(i => fbText(String(i * 10), 160 + i * 43, 130.4, 2.6, "#5A4510", .4)).join(""));
     /* a red pencil on the sheet's margin, tip down towards the stair, and a yellow pencil on the table */
     const pencil = (x, y, L, body, tip, eras) => '<rect x="' + x + '" y="' + (y - 2.3) + '" width="' + L + '" height="4.6" fill="' + body + '"/><rect x="' + x + '" y="' + (y - 2.3) + '" width="' + L + '" height="1.2" fill="#fff" opacity=".35"/><rect x="' + x + '" y="' + (y + 1.2) + '" width="' + L + '" height="1.1" fill="#000" opacity=".25"/>' +
       '<path d="M' + (x + L) + ' ' + (y - 2.3) + ' L' + (x + L + 6.4) + ' ' + y + ' L' + (x + L) + ' ' + (y + 2.3) + ' Z" fill="#E6C48E"/><path d="M' + (x + L + 4.4) + ' ' + (y - 1) + ' L' + (x + L + 6.4) + ' ' + y + ' L' + (x + L + 4.4) + ' ' + (y + 1) + ' Z" fill="' + tip + '"/>' +
       '<rect x="' + (x - 4.4) + '" y="' + (y - 2.3) + '" width="4.4" height="4.6" fill="#C9CED6"/><rect x="' + (x - 7.4) + '" y="' + (y - 2.3) + '" width="3" height="4.6" rx="1" fill="' + eras + '"/>';
-    const redPencil = rot(86, 340, 100, '<rect x="341" y="100.8" width="30" height="4.6" fill="#000" opacity=".28" transform="translate(1.6 2)"/>' + pencil(341, 100, 30, RED, "#7A1410", "#F0A0A8"));
-    const yelPencil = rot(-12, 60, 100, '<rect x="30" y="100.8" width="52" height="4.6" fill="#000" opacity=".3" transform="translate(1.4 2)"/>' + pencil(30, 100, 52, "#F2C21E", "#2A2D34", "#F0A0A8"));
+    const redPencil = rot(86, 340, 100, '<rect x="341" y="100.8" width="30" height="4.6" fill="#000" opacity=".28" transform="translate(1.6 -2)"/>' + pencil(341, 100, 30, RED, "#7A1410", "#F0A0A8"));
     /* the second sheet under the first: an elevation, its corner showing at the right, and a red circle on it */
     let elev = fbR(342, 56, 104, 80, "#000", ' opacity=".35" transform="translate(3 4)"') + fbR(342, 56, 104, 80, "url(#" + u + "paper)") + fbR(346, 60, 96, 72, "none", ' stroke="' + INK + '" stroke-width=".6"') +
       fbR(358, 84, 64, 36, "#FFFFFF", ' stroke="' + INK + '" stroke-width="1.4"') + fbP("M354 84 L390 68 L426 84 Z", "#FFFFFF", ' stroke="' + INK + '" stroke-width="1.2" stroke-linejoin="round"') + fbR(384, 100, 12, 20, "none", ' stroke="' + INK + '" stroke-width=".8"');
@@ -79028,26 +79026,42 @@ const IFC_BANNER_ART = {
       [-.28, .26].map(t => '<rect x="' + bnF(cx + t * L - 1.6) + '" y="' + (cy - R - .5) + '" width="3.2" height="' + (2 * R + 1) + '" fill="#B5352A"/>').join("") +
       '<path d="M' + bnF(cx - L / 2 + 2) + ' ' + bnF(cy - R + 2.4) + ' L' + bnF(cx + L * .18) + ' ' + bnF(cy - R + 2.4) + '" stroke="#9AA8C8" stroke-width=".6"/>' +
       '<ellipse cx="' + (cx + L / 2) + '" cy="' + cy + '" rx="' + bnF(R * .46) + '" ry="' + R + '" fill="#EDE6D2" stroke="#8A8062" stroke-width=".6"/><ellipse cx="' + (cx + L / 2) + '" cy="' + cy + '" rx="' + bnF(R * .3) + '" ry="' + bnF(R * .68) + '" fill="none" stroke="#9A9072" stroke-width=".5"/><ellipse cx="' + (cx + L / 2) + '" cy="' + cy + '" rx="' + bnF(R * .15) + '" ry="' + bnF(R * .36) + '" fill="#6A6248"/>');
-    /* the inspector's hard hat: white, ridged, a brim and front peak, a shield sticker; its shadow on the table */
-    const hat = '<ellipse cx="416" cy="163" rx="46" ry="5" fill="#000" opacity=".5"/>' +
-      '<path d="M370 156 Q368 122 412 120 Q458 120 458 156 Z" fill="url(#' + u + 'hat)" stroke="#8A94A4" stroke-width=".8"/>' +
-      [[-8], [0], [8]].map(([o]) => '<path d="M' + (413 + o * 1.5) + ' 121 Q' + (413 + o * 2.6) + ' 138 ' + (413 + o * 3) + ' 156" fill="none" stroke="#B4BCC8" stroke-width="2.4" opacity=".7"/>').join("") +
-      '<path d="M370 156 Q368 132 386 124 Q374 140 378 156 Z" fill="#fff" opacity=".6"/>' +
-      '<path d="M364 158 Q412 150 462 158 Q466 160.6 462 162.2 Q412 166.6 366 162.4 Q360 160.6 364 158 Z" fill="#DDE2EA" stroke="#8A94A4" stroke-width=".8"/>' +
-      '<path d="M458 156 Q474 156 478 160.6 Q466 163 456 162.4 Z" fill="#C9CFDA" stroke="#8A94A4" stroke-width=".8"/>' +
-      fbP("M424 132 L442 132 L442 142 Q442 148 433 151 Q424 148 424 142 Z", "#1B2440", ' stroke="#F2C14E" stroke-width="1"') + fbP(fbStarPath(433, 140.8, 5), "#F2C14E") +
-      '<path d="M394 134 Q402 128 410 128" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>';
-    /* the lamp: a base on the table, two arms with pivots, the head, and the cone of light it throws */
-    const lamp = '<ellipse cx="58" cy="66" rx="22" ry="5.4" fill="#000" opacity=".5"/><ellipse cx="58" cy="62" rx="20" ry="5" fill="url(#' + u + 'lampm)" stroke="#05070C" stroke-width=".8"/><ellipse cx="58" cy="60.4" rx="16" ry="3.4" fill="#4A5A78"/>' +
-      fbL("M58 60 L90 24 L150 14", "#2A3248", 3.2) + fbL("M58 60 L90 24 L150 14", "#6A7A9A", 1) + fbC(58, 58, 3.6, "url(#" + u + "steel)", ' stroke="#2A3248" stroke-width=".7"') + fbC(90, 24, 3.4, "url(#" + u + "steel)", ' stroke="#2A3248" stroke-width=".7"') + fbC(150, 14, 3, "url(#" + u + "steel)", ' stroke="#2A3248" stroke-width=".7"') +
-      '<path d="M144 12 L156 12 L173 38 L127 38 Z" fill="url(#' + u + 'lampm)" stroke="#05070C" stroke-width=".8"/><rect x="126" y="37" width="48" height="2.6" rx="1" fill="#FFF2C8"/><path d="M146 15 L155 15 L166 33" stroke="#7A8AAA" stroke-width="1" fill="none"/>';
+    /* round 6 (Madison: "fix the lamp, remove the ruler, and put other stuff on the table like a tactical flash light, a radio maybe some gloves" / "What's up with the hard
+       hats?"): the hard hat is gone; the inspector's own kit is on the table instead, each thing resting on it with its shadow thrown away from the lamp (down and right):
+       a navy ball cap, a handheld radio standing on its base, a pair of black tactical gloves, a tactical flashlight lying across the margin of the sheet. */
+    const cap = '<ellipse cx="412" cy="162.2" rx="30" ry="3.6" fill="#000" opacity=".5"/>' + fbGearCap(400, 151, 1.35);
+    const radio = '<ellipse cx="461" cy="137.4" rx="14" ry="3.2" fill="#000" opacity=".5"/>' + fbGearRadio(457, 117, 1.5, 0) + '<path d="M449 99 L449 134" stroke="#FFFFFF" stroke-width=".8" opacity=".22"/>';
+    const gloves = '<ellipse cx="108" cy="90" rx="16" ry="7" fill="#000" opacity=".45"/>' + fbGearGloves(104, 85, 1, 12);
+    const torch = '<path d="M18 163.6 L108 154.2 L109 158.6 L19 168 Z" fill="#000" opacity=".42"/>' + fbGearTorch(14, 159.4, 92, 7.4, -6);
+    /* the lamp: an architect's lamp. A weighted round base on the table, a pivot, the lower arm as two parallel bars with its spring, the elbow knuckle and its knob,
+       the upper arm (two bars) to the head's hinge, the yoke, the conical shade with its rolled rim, and the bulb seen inside it. Every joint is a knuckle that both
+       bars meet; the light comes out of the bulb and nowhere else. */
+    const B0 = [64, 52], E0 = [96, 14], H0 = [140, 15], A0 = [143, 20.6], BB = [153.4, 36.6];
+    const off = (p, q, d) => { const dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy), nx = -dy / l * d, ny = dx / l * d; return "M" + bnF(p[0] + nx) + " " + bnF(p[1] + ny) + " L" + bnF(q[0] + nx) + " " + bnF(q[1] + ny); };
+    const ax = BB[0] - A0[0], ay = BB[1] - A0[1], al = Math.hypot(ax, ay), dx = ax / al, dy = ay / al, nx = dy, ny = -dx;
+    const pt = (c, t, q) => bnF(c[0] + dx * t + nx * q) + " " + bnF(c[1] + dy * t + ny * q);
+    const rimAng = Math.atan2(ny, nx) * 180 / Math.PI;
+    const lamp = '<ellipse cx="70" cy="64.6" rx="22" ry="5" fill="#000" opacity=".5"/><ellipse cx="64" cy="61" rx="19" ry="5.2" fill="url(#' + u + 'lampm)" stroke="#05070C" stroke-width=".8"/><path d="M45 61 L45 58.4 Q64 52 83 58.4 L83 61 Q64 66.2 45 61 Z" fill="#2A3450"/><ellipse cx="64" cy="58.4" rx="19" ry="5" fill="#3A4A68" stroke="#05070C" stroke-width=".6"/><ellipse cx="60" cy="57.2" rx="10" ry="2" fill="#6A7A9A" opacity=".5"/>' +
+      fbR(61.6, 50, 4.8, 8.6, "url(#" + u + "steel)", ' stroke="#2A3248" stroke-width=".6"') +
+      /* the spring runs beside the lower arm and hooks onto it at both ends */
+      (() => { const p0 = [B0[0] + 5, B0[1] - 5], p1 = [E0[0] - 4, E0[1] + 6], q = off(p0, p1, 3).slice(1).split(" L").map(t => t.split(" ").map(Number));
+        return '<path d="M' + bnF(p0[0] - 1) + ' ' + bnF(p0[1] - 1) + ' L' + bnF(q[0][0]) + ' ' + bnF(q[0][1]) + ' M' + bnF(p1[0] - 1) + ' ' + bnF(p1[1] - 1) + ' L' + bnF(q[1][0]) + ' ' + bnF(q[1][1]) + '" stroke="#9AA6BC" stroke-width=".6" fill="none"/>' +
+          '<path d="' + off(p0, p1, 3) + '" fill="none" stroke="#7A869C" stroke-width="1.7" stroke-dasharray=".45 .4"/><path d="' + off(p0, p1, 3) + '" fill="none" stroke="#C9D2E0" stroke-width=".4" opacity=".6"/>'; })() +
+      '<path d="' + off(B0, E0, 1.5) + ' ' + off(B0, E0, -1.5) + ' ' + off(E0, H0, 1.4) + ' ' + off(E0, H0, -1.4) + '" stroke="#2A3248" stroke-width="1.8" stroke-linecap="round" fill="none"/>' +
+      '<path d="' + off(B0, E0, -1.9) + ' ' + off(E0, H0, -1.8) + '" stroke="#8A9AB8" stroke-width=".5" fill="none"/>' +
+      [B0, E0, H0].map((c, i) => fbC(c[0], c[1], i === 1 ? 3.6 : 3.1, "url(#" + u + "steel)", ' stroke="#2A3248" stroke-width=".7"') + fbC(c[0], c[1], 1, "#2A3248")).join("") + fbC(E0[0] - 4.4, E0[1] + 1, 2, "#1E2638", ' stroke="#05070C" stroke-width=".5"') +
+      fbL("M" + H0[0] + " " + H0[1] + " L" + bnF(A0[0]) + " " + bnF(A0[1]), "#2A3248", 2.4) +
+      '<path d="M' + pt(A0, 0, -4.6) + ' L' + pt(A0, 0, 4.6) + ' L' + pt(BB, 0, 14.4) + ' L' + pt(BB, 0, -14.4) + ' Z" fill="url(#' + u + 'lampm)" stroke="#05070C" stroke-width=".8" stroke-linejoin="round"/>' +
+      '<path d="M' + pt(A0, .6, 3.2) + ' L' + pt(BB, -.6, 11.4) + '" stroke="#7A8AAA" stroke-width="1.1" opacity=".8"/>' + '<ellipse cx="' + bnF(A0[0]) + '" cy="' + bnF(A0[1]) + '" rx="4.8" ry="1.6" transform="rotate(' + bnF(rimAng) + ' ' + bnF(A0[0]) + ' ' + bnF(A0[1]) + ')" fill="#1E2638" stroke="#05070C" stroke-width=".5"/>' +
+      '<ellipse cx="' + bnF(BB[0]) + '" cy="' + bnF(BB[1]) + '" rx="14.6" ry="4" transform="rotate(' + bnF(rimAng) + ' ' + bnF(BB[0]) + ' ' + bnF(BB[1]) + ')" fill="#FFF2C8" stroke="#2A3248" stroke-width="1"/>' +
+      '<ellipse cx="' + bnF(BB[0] - dx * .6) + '" cy="' + bnF(BB[1] - dy * .6) + '" rx="6" ry="2.4" transform="rotate(' + bnF(rimAng) + ' ' + bnF(BB[0]) + ' ' + bnF(BB[1]) + ')" fill="#FFFFFF"/>';
     return [
       { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>' +
         fbR(0, 34, 480, 146, "url(#" + u + "table)") + fbR(0, 33, 480, 2, "#9A6A3E") + [48, 76, 112, 150, 176].map((y, i) => '<path d="M0 ' + y + ' Q120 ' + (y - 3 + i) + ' 240 ' + y + ' T480 ' + (y - 2) + '" stroke="#1E1008" stroke-width=".8" opacity=".35" fill="none"/>').join("") +
-        roll(76, 138, -9, 100, 8) + roll(50, 118, -3, 70, 6.4) + yelPencil +
-        elev + sheet + red + ruler + redPencil + hat + lamp + fbR(0, 0, 480, 180, "url(#" + u + "vig)") },
+        roll(66, 112, -5, 84, 7.4) + gloves +
+        elev + sheet + red + redPencil + radio + cap + torch + lamp + fbR(0, 0, 480, 180, "url(#" + u + "vig)") },
       /* the lamp's cone and pool on the sheet, breathing */
-      { svg: '<path d="M128 39 L172 39 L300 132 L150 132 Z" fill="url(#' + u + 'cone)"/><ellipse cx="240" cy="108" rx="150" ry="70" fill="url(#' + u + 'pool)"/>', box: [100, 20, 280, 160], cls: "bl-breathe", style: "animation-duration:5s" },
+      { svg: '<path d="M140.4 44.7 L166.4 28.5 L318 118 L170 150 Z" fill="url(#' + u + 'cone)"/><ellipse cx="236" cy="104" rx="140" ry="66" fill="url(#' + u + 'pool)"/>', box: [100, 20, 280, 160], cls: "bl-breathe", style: "animation-duration:5s" },
       /* the reviewer's red marks, slowly brightening and fading */
       { svg: fbP(cloud(296, 74, 31, 22, 5.2), "none", ' stroke="' + RED + '" stroke-width="1.8" opacity=".5"') + fbText("WIDTH", 339, 63.4, 3.4, RED, 1.2, ' opacity=".4"'), box: [290, 56, 62, 44], cls: "bl-tw", style: "animation-duration:2.6s" },
       { svg: fbEmberSheet(rnd, 200, 60, 12, ["#FFE9B8", "#FFFFFF", "#FFD58A"]), box: [140, 20, 200, 120], cls: "bl-rise", style: "animation-duration:12s;opacity:.5" }
