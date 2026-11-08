@@ -60846,11 +60846,17 @@ function drawAvatarCharSVG(charId){
     }
     open("cx-body"); close();
     open("cx-head");
-    svg.appendChild(mk("path", {
-      d: "M7 31.4 L7 17 A13 13 0 0 1 33 17 L33 31.4 "
-       + "Q30.8 34.6 28.6 31.6 Q26.4 28.6 24.2 31.6 Q22 34.6 20 31.6 "
-       + "Q18 28.6 15.8 31.6 Q13.6 34.6 11.4 31.6 Q9.2 28.6 7 31.4 Z",
-      fill: bodyFill }));
+    /* (384 r2) The hem used to be six half-waves, down first on the right and UP last on the left, so the two ends of the
+       sheet did not match. Seven half-waves (down, up, down, up, down, up, down) of equal width are the same about the middle. */
+    let hem = "";
+    for(let i = 0; i < 7; i++){
+      const x1 = 33 - (i + 1) * 26 / 7, xm = 33 - (i + .5) * 26 / 7;
+      hem += " Q" + xm.toFixed(2) + " " + (i % 2 ? 28.8 : 34.4) + " " + x1.toFixed(2) + " " + (i === 6 ? 31.4 : 31.6);
+    }
+    const sheetD = "M7 31.4 L7 17 A13 13 0 0 1 33 17 L33 31.4" + hem.replace(/(\d+\.\d+) 31\.4$/, "$1 31.4") + " Z";
+    svg.appendChild(mk("path", { d: sheetD, fill: bodyFill }));
+    const sheetClip = uid + "-gclip";
+    { const cpg = mk("clipPath", { id: sheetClip }); cpg.appendChild(mk("path", { d: sheetD })); defs.appendChild(cpg); }
     /* The folds. Two soft darker bands rather than lines - a drawn line
        on a white sheet reads as an outline, a band reads as shadow. */
     /* (384 r6) They were two round-capped strokes 2.6 wide that ran from the shoulder to the hem, and read as grey pillars
@@ -60858,8 +60864,12 @@ function drawAvatarCharSVG(charId){
     { const sh = (id, x1, x2) => { const g = mk("linearGradient", { id: uid + id, gradientUnits: "userSpaceOnUse", x1, y1: 0, x2, y2: 0 });
         g.appendChild(mk("stop", { offset: "0%", "stop-color": "#5A566E", "stop-opacity": ".2" }));
         g.appendChild(mk("stop", { offset: "100%", "stop-color": "#5A566E", "stop-opacity": "0" })); defs.appendChild(g); return "url(#" + uid + id + ")"; };
-      svg.appendChild(mk("path", { d: "M7 18 L7 31.4 L10.6 31.6 Q9.4 24 10.4 18.4 Z", fill: sh("-gshl", 7, 10.8) }));
-      svg.appendChild(mk("path", { d: "M33 18 L33 31.4 L29.4 31.6 Q30.6 24 29.6 18.4 Z", fill: sh("-gshr", 33, 29.2) })); }
+      /* (384 r2) clipped to the sheet: the bands were plain quads that ended on a flat line at the hem and on a flat top at 18,
+         so they overshot the scallops and stopped short with a step. Now they run up into the dome and stop at the hem. */
+      const gsh = mk("g", { "clip-path": "url(#" + sheetClip + ")" });
+      gsh.appendChild(mk("path", { d: "M6.6 17 L6.6 34 L10.6 34 Q9.4 24 10.4 18.4 Q10.2 14 8 11 L6.6 11 Z", fill: sh("-gshl", 7, 10.8) }));
+      gsh.appendChild(mk("path", { d: "M33.4 17 L33.4 34 L29.4 34 Q30.6 24 29.6 18.4 Q29.8 14 32 11 L33.4 11 Z", fill: sh("-gshr", 33, 29.2) }));
+      svg.appendChild(gsh); }
     /* Arms: two small rounded stubs hanging at the sides, joined to the sheet (they were pointed flaps that read as horns, and
        then ears). */
     svg.appendChild(mk("path", { d: "M7.1 22.4 Q4.7 23 4.8 25.2 Q5 26.8 6.4 26.4 Q7.3 26 7.3 24.6 Z", fill: bodyFill }));
