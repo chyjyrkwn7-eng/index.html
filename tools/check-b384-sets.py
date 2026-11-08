@@ -203,8 +203,8 @@ chk("(7) the one ranger banner is drawn (%d long shapes)" % F["bTrioShared"], le
 newb = [i for i in SQB + TRIO if F["b"][i] == BEFORE["ifc"]["b"][i]]
 chk("(7) all seven banners are new (unchanged: %s)" % newb, not newb)
 bn = F["bnames"]
-# the secret-flare banners are named for the characters they come with (Nebula, Quasar, Pulsar, Solstice: the character helper renames the four to match)
-mism = [i for i in SQB if bn[i] != dict(zip(SQB, ["Nebula", "Quasar", "Pulsar", "Solstice"]))[i]] + [i for i in TRIO if bn[i] != F["names"][i]]
+# the secret-flare banners are named for the characters they come with (Nebula, Quasar, Pulsar, Eclipse (was Solstice): the character helper renames the four to match)
+mism = [i for i in SQB if bn[i] != dict(zip(SQB, ["Nebula", "Quasar", "Pulsar", "Eclipse"]))[i]] + [i for i in TRIO if bn[i] != F["names"][i]]
 chk("(7) each banner is named for its character (%s)" % bn, not mism, mism)
 ly = F["layers"]
 badl = {i: v for i, v in ly.items() if v["bad"] or v["filt"] or v["n"] > 14 or v["moving"] < 3}

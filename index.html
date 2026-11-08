@@ -78884,8 +78884,7 @@ const IFC_BANNER_ART = {
       fbL("M" + (SX - 4.4) + " " + (SY + 11) + " Q" + SX + " " + (SY + 13) + " " + (SX + 4.4) + " " + (SY + 11), "#0A1630", 1.3);
     return [
       { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' + st.still },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.4s;animation-delay:-1.8s" },
+      { svg: st.a + st.b, cls: "bl-tw", style: "animation-duration:3.6s" },
       /* the two beams, turning about the star (the box is square about it so the turn is true) */
       { svg: beamPair, box: [SX - 360, SY - 360, 720, 720], vb: [SX - 360, SY - 360, 720, 720], o: [SX, SY], cls: "bl-spin", style: "animation-duration:8s" },
       /* the halo round the core, breathing, and the field lines */
