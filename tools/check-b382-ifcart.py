@@ -14,7 +14,7 @@ Round 3 ("We don't wear police styled hats. We wear cowboy hats"): every Fire Co
 Diver, Breacher and Recon differs from round 2 (R2, hashes taken on claude/b382 after round 2's merge) and
 those three are round 2's own; the Hazmat's placard is whole under the chin and inside the circle; no drawing
 carries round 2's police-cap peaks, every hat is cowboy/beanie/helmet/hood/space helmet, the inspector, chief,
-investigator and star ranger wear cowboy hats; the clown's character is Strobe; headquarters, code 3, exit,
+investigator and star ranger wear cowboy hats (384 r6: no longer - cap, bareheaded, space helmet); the clown's character is Strobe; headquarters, code 3, exit,
 code book and the ultimates' banners are new and the rest are round 2's; no SUV is left (white pickups); the
 academy is untouched; the 50 and the Fire Alarm were rebuilt in round 3 (both differ from round 2).
 Round 4 (383, "Hundo effects, they all need to be better"): all four Fire Code effects differ from round 3's
@@ -206,12 +206,17 @@ pl = F.get("placard") or {}
 chk("the Hazmat is round 1's again with its placard whole: under the chin, inside the circle (%s)" % pl, pl.get("found") and pl["worst"] <= .96 and pl["top"] >= pl["headBottom"] - .5, pl)
 peaks = [i for i, v in F["hats"].items() if v["peak"]]
 chk("no Fire Code character wears a police-style peaked cap (%s)" % peaks, F["hats"] and not peaks, peaks)
-badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble", "hardhat") for h in v["hat"])]
-chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood or a space helmet (%s)" % badhat, not badhat, badhat)
+# (384 r6) Madison: "Fire inspectors wear police gear ... navy blue pants and short sleeved polo shirts" - the duty ball cap (cx-fc-hat-cap)
+# joins the list; the cowboy hat stays allowed by this line but no Fire Code character wears one now (the leg below)
+badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble", "hardhat", "cap") for h in v["hat"])]
+chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood, a space helmet or the duty cap (%s)" % badhat, not badhat, badhat)
 # (384) the investigator (astronaut) is the Toxic Spill now, a creature with no hat; (384 sets) Star Ranger is the last ultimate's
 # (zenith) now, and the other two ultimates are rangers too
-west = [i for i in ("detective", "poseidon", "astral", "celestial", "zenith") if "cowboy" not in F["hats"].get(i, {}).get("hat", [])]
-chk("the inspector, the chief and the three rangers wear cowboy hats (missing: %s)" % west, not west, west)
+# (384 r6) round 3's cowboy hats are gone: the inspector wears the navy duty cap, the chief is bareheaded, Star Ranger a space helmet
+# (astral / celestial are the two ultimates Fire Code retired in 384 - retireUltimates384 moves anyone off them, so nobody is shown them)
+west = [i for i in F["hats"] if i not in ("astral", "celestial") and "cowboy" in F["hats"][i].get("hat", [])]
+duty = F["hats"].get("detective", {}).get("hat", []) == ["cap"] and F["hats"].get("poseidon", {}).get("hat", []) == [] and F["hats"].get("zenith", {}).get("hat", []) == ["bubble"]
+chk("no Fire Code character wears a cowboy hat (%s); the inspector the duty cap, the chief none, Star Ranger a space helmet (%s)" % (west, {i: F["hats"].get(i, {}).get("hat") for i in ("detective", "poseidon", "zenith")}), not west and duty, west)
 chk("the clown's character is called Strobe (%s)" % F["cnames"].get("clown"), F["cnames"].get("clown") == "Strobe")
 BREDO3 = ["tests100", "early10", "hundos100", "study50", "astral", "celestial", "zenith"]
 bsame3 = [i for i in BREDO3 if F["banners"].get(i) == R2["ifc"]["banners"].get(i)]

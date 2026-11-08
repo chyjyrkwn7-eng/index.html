@@ -45,7 +45,7 @@ SNAP = r"""() => {
   const bb = n => { const b = n.getBBox(); return { x: b.x, y: b.y, w: b.width, h: b.height, cx: b.x + b.width / 2, cy: b.y + b.height / 2 }; };
   const out = { names: Object.fromEntries(AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy).map(c => [c.id, AVATAR_DISPLAY_NAME[c.id] || c.name])) };
   /* B: the inspector */
-  { const s = mount('detective'); const hat = s.querySelector('.cx-fc-hat-cowboy'); const felt = hat && hat.querySelector('path');
+  { const s = mount('detective'); const hat = s.querySelector('.cx-fc-hat-cap');   /* (384 r6) his hat is the navy duty cap now (the felt cowboy hat is gone) */ const felt = hat && hat.querySelector('path');
     const ser = new XMLSerializer().serializeToString(s);
     out.insp = { feltBase: stops(s, felt)[1], ticks: (ser.match(/#2E9A5A/g) || []).length, crosses: (ser.match(/#D8342A/g) || []).length, hand: /#7A4A2A/.test(ser) };
     const board = [...s.querySelectorAll('.cx-body rect')].filter(r => Number(r.getAttribute('width')) > 7 && Number(r.getAttribute('height')) > 7 && r.getAttribute('fill') && r.getAttribute('fill').indexOf('url(') === 0)[0];
@@ -132,7 +132,9 @@ chk("A. valkyrie is Undercover, timekeeper The Irons, genesis Eclipse (%s, %s, %
 chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator"} & set(N.values()), N)
 I = r["insp"]
 fb = lum(I["feltBase"]) if I.get("feltBase") else 1
-chk("B. the Inspector's hat is a darker felt: base %s, luminance %.2f (it was .52; now under .40 and still not black, over .10)" % (I.get("feltBase"), fb), .10 < fb < .40, I)
+# (384 r6) the felt cowboy hat became the navy duty cap ("Fire inspectors wear police gear"): still darker than round 6's .52, and not
+# black - navy, so the floor is a navy's luminance (.005), not the felt's .10 (tools/check-b384-r6-chars.py holds the cap's colour)
+chk("B. the Inspector's hat is the dark duty cap: base %s, luminance %.3f (it was .52; now under .40 and not black, over .005)" % (I.get("feltBase"), fb), .005 < fb < .40, I)
 chk("B. his clipboard: two ticks and a cross on the form, a hand on the board (%s ticks, %s crosses, hand %s)" % (I["ticks"], I["crosses"], I["hand"]), I["ticks"] >= 2 and I["crosses"] >= 1 and I["hand"], I)
 chk("B. ...and the board is bigger (%.1f units tall, it was 7.4) with most of it inside the coin (%.2f)" % (I["boardH"], I["boardIn"]), I["boardH"] >= 8.5 and I["boardIn"] >= .55, I)
 St = r["strobe"]

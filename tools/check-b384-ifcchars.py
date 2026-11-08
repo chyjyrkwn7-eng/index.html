@@ -60,7 +60,7 @@ SNAP = r"""async (oldKinds) => {
   const mk = AVATAR_CHARACTERS.find(c => c.id === 'marksman');
   out.hazmat = { kind: mk.kind, glow: AVATAR_GLOW.marksman, hash: hash(drawn('marksman').ser) };
   /* the inspector: the shirt is the first lit shape in his body */
-  { const { s } = drawn('detective'); const body = s.querySelector('.cx-body path'); out.inspector = { shirt: stops(s, body), hat: !!s.querySelector('.cx-fc-hat-cowboy'), parts: parts(s) }; }
+  { const { s } = drawn('detective'); const body = s.querySelector('.cx-body path'); out.inspector = { shirt: stops(s, body), hat: !!s.querySelector('.cx-fc-hat-cap') && !s.querySelector('.cx-fc-hat-cowboy'), parts: parts(s) }; }
   { const { s } = drawn('hacker'); out.dispatcher = { shirt: stops(s, s.querySelector('.cx-body path')) }; }
   for(const id of ['clown', 'hive']){ const { s, ser } = drawn(id); out.strobe[id] = { hash: hash(ser), parts: parts(s) }; }
   /* the drone in a 340px coin, a unit is 10px */
@@ -73,7 +73,18 @@ SNAP = r"""async (oldKinds) => {
     const hairTop = Math.min(...[...head.querySelectorAll('path')].filter(p => /url\(/.test(p.getAttribute('fill') || '') || p.getAttribute('fill') === '#1E140C').map(p => p.getBoundingClientRect().top));
     const d = drone ? R(drone) : null;
     const corners = d ? [[d[0], d[1]], [d[2], d[1]], [d[0], d[3]], [d[2], d[3]]] : [];
-    out.drone = d && { box: d.map(v => Math.round(v)), hairTop: Math.round(hairTop), gapUnits: +((hairTop - d[3]) / 10).toFixed(2),
+    /* (384 r6) the drone flies over his right shoulder now, not straight over his crown, so the air is measured in two dimensions and on
+       the drawn shapes, not on boxes (a banked drone's box is mostly empty corners): every shape of the drone and every lit shape of the
+       head (hair, goggles, face) is sampled along its outline in screen pixels, and the nearest pair is the clear air */
+    const outline = e => { const m = e.getScreenCTM(), P = (x, y) => [x * m.a + y * m.c + m.e, x * m.b + y * m.d + m.f], out = [], t = e.tagName;
+      if(t === 'path'){ const L = e.getTotalLength(); for(let i = 0; i <= 60; i++){ const q = e.getPointAtLength(L * i / 60); out.push(P(q.x, q.y)); } }
+      else if(t === 'circle' || t === 'ellipse'){ const cx = +e.getAttribute('cx'), cy = +e.getAttribute('cy'), rx = +(e.getAttribute('r') || e.getAttribute('rx')), ry = +(e.getAttribute('r') || e.getAttribute('ry')); for(let i = 0; i < 32; i++){ const a = i / 32 * Math.PI * 2; out.push(P(cx + Math.cos(a) * rx, cy + Math.sin(a) * ry)); } }
+      else if(t === 'rect'){ const x = +e.getAttribute('x'), y = +e.getAttribute('y'), w = +e.getAttribute('width'), h = +e.getAttribute('height'); for(let i = 0; i <= 8; i++){ out.push(P(x + w * i / 8, y), P(x + w * i / 8, y + h), P(x, y + h * i / 8), P(x + w, y + h * i / 8)); } }
+      return out; };
+    const dpts = drone ? [...drone.querySelectorAll('path,circle,ellipse,rect')].flatMap(outline) : [];
+    const hpts = [...head.querySelectorAll('path')].filter(p => /url\(/.test(p.getAttribute('fill') || '') || p.getAttribute('fill') === '#1E140C').flatMap(outline);
+    let near = 1e9; dpts.forEach(a => hpts.forEach(b => { near = Math.min(near, Math.hypot(a[0] - b[0], a[1] - b[1])); }));
+    out.drone = d && { box: d.map(v => Math.round(v)), hairTop: Math.round(hairTop), gapUnits: +(near / 10).toFixed(2),
       worst: +Math.max(...[[ (d[0] + d[2]) / 2, d[1] ], [d[0], (d[1] + d[3]) / 2], [d[2], (d[1] + d[3]) / 2]].map(([x, y]) => Math.hypot(x - 170, y - 170) / 170)).toFixed(3) };
     box.remove(); }
   /* F: check-b327z15 N's measure, here in Fire Code, on the challenge characters */
@@ -129,10 +140,11 @@ def hue_sat(h):
     h = h.lstrip("#"); rr, gg, bb = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)); hh, ll, ss = colorsys.rgb_to_hls(rr, gg, bb); return hh * 360, ss, ll
 shirt = r["inspector"]["shirt"]; hs = hue_sat(shirt[1]) if len(shirt) > 1 and shirt[1].startswith("#") else (0, 0, 0)
 chk("B. the inspector's shirt is blue (base %s: hue %d, saturation %.2f)" % (shirt[1] if len(shirt) > 1 else shirt, hs[0], hs[1]), 195 <= hs[0] <= 240 and hs[1] >= .35, shirt)
-chk("B. ...and he still wears his cowboy hat", r["inspector"]["hat"], r["inspector"])
+# (384 r6) "Fire inspectors wear police gear ... navy blue pants and short sleeved polo shirts": the cowboy hat is gone, the navy duty cap is on
+chk("B. ...and he wears the duty ball cap, not a cowboy hat", r["inspector"]["hat"], r["inspector"])
 # C
 dr = r["drone"]
-chk("C. the drone flies clear of his head: %.2f units of air between it (downlight and all) and his hair (at least 3)" % (dr["gapUnits"] if dr else -99), dr and dr["gapUnits"] >= 3, dr)
+chk("C. the drone flies clear of his head: %.2f units of air between the nearest drawn points of the drone and of his head (at least 2.5)" % (dr["gapUnits"] if dr else -99), dr and dr["gapUnits"] >= 2.5, dr)
 chk("C. ...and the whole drone is inside the coin (worst edge at %.3f of the radius)" % (dr["worst"] if dr else 9), dr and dr["worst"] <= 1.0, dr)
 # D
 for i in ("clown", "hive"):

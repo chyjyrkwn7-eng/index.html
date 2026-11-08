@@ -258,7 +258,10 @@ for key, R in (("ifc", IFC), ("academy", ACA)):
 mov = sorted(i for i, h in PREV["academy"]["chars"].items() if ACA["chars"].get(i, {}).get("hash") != h)
 chk("7. the ACADEMY's characters are byte for byte what c1d224b drew, all %d of them (changed: %s)" % (len(PREV["academy"]["chars"]), mov), not mov, mov)
 mov = sorted(i for i, h in PREV["ifc"]["chars"].items() if IFC["chars"].get(i, {}).get("hash") != h)
-expect = {"clown", "valkyrie", "timekeeper", "hive", "voidwalker", "umbra", "singularity", "genesis"}
+expect = {"clown", "valkyrie", "timekeeper", "hive", "voidwalker", "umbra", "singularity", "genesis",
+          # (384 r6, check-b384-r6-chars.py) the police-gear round: the Inspector, Chief, Drone Pilot and Star Ranger redrawn, the Smoke
+          # Diver's helmet navy, the Dispatcher's earcup lamp and collar; the Strobe's visor bar and the Pulsar's ring (both already named)
+          "detective", "poseidon", "ronin", "zenith", "masked", "hacker"}
 chk("7. in Fire Code only the characters named here changed their art since c1d224b; Toxic Spill is exactly c1d224b's (changed: %s)" % mov, set(mov) == expect and "astronaut" not in mov, {"changed": mov, "expected": sorted(expect)})
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
