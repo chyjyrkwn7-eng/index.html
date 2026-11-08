@@ -58985,7 +58985,7 @@ var IFC_CHAR_LOOK = {
   astronaut:   ["fcspill",      "Toxic Spill",    "#B266FF"],
   hacker:      ["fcdispatch3",  "Dispatcher",     "#4FB8FF"],
   timekeeper:  ["fcirons",      "The Irons",      "#D5E4F7"],
-  ronin:       ["fcdrone2",     "Drone Pilot",    "#3DE0C0"],
+  ronin:       ["fcdrone3",     "Drone Pilot",    "#3DE0C0"],
   hive:        ["fcsprinkler2", "Sprinkler Head", "#4FC3FF"],
   /* (384) the four secret flares are one squad and the three ultimates three rangers - see fcSquad
      and fcRanger; Star Ranger is Zenith's now, the last of them */
@@ -59009,7 +59009,7 @@ var IFC_BACKDROP = {
   fcdispatch2:  [["nebula", "#3DA8FF", "#0A1A3A"], ["stars", "#CFE6FF"]],
   fcdispatch3:  [["nebula", "#3DA8FF", "#0A1A3A"], ["stars", "#CFE6FF"]],
   fcirons:      [["nebula", "#6A7E9C", "#0A1018"], ["stars", "#E6F0FF"], ["rise", "ember", ["#FFB060", "#FF7A30"]]],
-  fcdrone2:     [["nebula", "#2AD8B8", "#04181C"], ["stars", "#D8FFF6"]],
+  fcdrone3:     [["nebula", "#2AD8B8", "#04181C"], ["stars", "#D8FFF6"]],
   fcsprinkler2: [["nebula", "#2A8CFF", "#06203F"], ["fall", "confetti", ["#CFF2FF", "#7FD4FF", "#FFFFFF"]]],
   fcnebula:     [["nebula", "#B8341E", "#0E0508"], ["stars", "#FFE8D0"], ["rise", "ember", ["#FF6A2E", "#FFD04A"]]],
   fcquasar:     [["nebula", "#6A3AD8", "#0C0620"], ["stars", "#E2D8FF"]],
@@ -59920,64 +59920,90 @@ var IFC_CHAR_DRAW = {
     k.add("circle", { cx: 18, cy: 37.4, r: .55, fill: "#FF4A3D" });
     k.close();
   },
-  /* DRONE PILOT (the Ronin's; round 3: "Drone pilot is cool, make it cool though"): FPV goggles
-     down, their screen glowing, a racing drone with lit arms and blurred rotors flying above him,
-     the controller and its antennas in front of him */
-  fcdrone2(k){
-    fcCoat(k, { coat: ["#2A3036", "#16191E", "#050608"], neck: "tan", extra(){
-      k.add("path", { d: "M13.6 29 L17 33.4 L17 40 M26.4 29 L23 33.4 L23 40 M8 33.4 Q11 33 13 30.6 M32 33.4 Q29 33 27 30.6", fill: "none", stroke: "#3DE0C0", "stroke-width": ".3", opacity: ".8" });
-      k.open("", { transform: "translate(0 -2.2)" });
-      k.add("path", { d: "M11.4 35.2 Q11.4 33.4 13.2 33.4 L26.8 33.4 Q28.6 33.4 28.6 35.2 L28.8 38.4 Q28.8 40 27.2 40 L12.8 40 Q11.2 40 11.2 38.4 Z", fill: "#14161A", stroke: "#3DE0C0", "stroke-width": ".25" });
-      k.add("path", { d: "M12.4 33.6 L10.6 28.6 M27.6 33.6 L29.4 28.6", stroke: "#2A2D34", "stroke-width": ".6", "stroke-linecap": "round" });
-      k.add("rect", { x: 16.6, y: 34.2, width: 6.8, height: 4, rx: .4, fill: "#062A28" });
-      k.add("path", { d: "M17.2 37.4 L18.6 36 L19.8 36.8 L21.4 35.2 L22.8 35.8", fill: "none", stroke: "#3DE0C0", "stroke-width": ".3" });
-      k.add("circle", { cx: 13.9, cy: 36.6, r: 1.1, fill: "#2A2D34" }); k.add("circle", { cx: 26.1, cy: 36.6, r: 1.1, fill: "#2A2D34" });
-      k.add("circle", { cx: 14.1, cy: 36.3, r: .5, fill: "#4A4E58" }); k.add("circle", { cx: 25.9, cy: 36.3, r: .5, fill: "#4A4E58" });
-      k.add("path", { d: "M10.4 40 Q10 37.6 11.8 37 L13 37.8 L12.4 40 Z M29.6 40 Q30 37.6 28.2 37 L27 37.8 L27.6 40 Z", fill: k.headGrad.apply(null, FC_SKIN.tan) });
+  /* DRONE PILOT (the Ronin's). Round 11 (384 r6): the agency's drone pilot in its duty uniform - a navy polo - flying. The FPV goggles are pushed up on his forehead so his face shows: auburn hair, freckles, eyes up
+     and to the right on the drone, a small closed smile of concentration (the open grin is gone). The drone is a solid quadcopter
+     banking over his right shoulder, whole inside the circle: a dark body with a teal light strip, four arms to four motors, the
+     blurred rotors, a camera on its gimbal underneath and its red and green nav lights; the controller is held in both hands at
+     the bottom, its two antennas up, its screen showing what the drone sees. */
+  fcdrone3(k){
+    const NAVY = ["#3E5A9C", "#22386E", "#0A1438"], SK = FC_SKIN.light;
+    fcCoat(k, { coat: NAVY, neck: SK, extra(){
+      k.add("path", { d: "M5.6 36.4 Q6.6 32.2 9.6 30.4 M34.4 36.4 Q33.4 32.2 30.4 30.4", fill: "none", stroke: "#0A1430", "stroke-width": ".35", opacity: ".6" });
+      k.add("path", { d: "M6.2 35.6 Q7.4 31.8 12.2 29.8 M33.8 35.6 Q32.6 31.8 27.8 29.8", fill: "none", stroke: "#7FE9D8", "stroke-width": ".35", opacity: ".35", "stroke-linecap": "round" });
+      k.add("path", { d: "M19.1 30.8 L20.9 30.8 L21.1 35 L18.9 35 Z", fill: "#1E3570" });
+      [32.2, 33.8].forEach(y => k.add("circle", { cx: 20, cy: y, r: .3, fill: "#E8ECF4" }));
+      k.add("path", { d: "M15.6 27.6 L20 31.4 L18 33.2 L14.4 29.4 Z M24.4 27.6 L20 31.4 L22 33.2 L25.6 29.4 Z", fill: k.headGrad("#5A78BC", "#2E4888", "#14245A"), stroke: "#0A1430", "stroke-width": ".2", "stroke-linejoin": "round" });
+      /* the controller in both hands, its antennas up, its screen showing the drone's picture */
+      k.open("", { transform: "translate(0 -3)" });
+      k.add("path", { d: "M12.4 34.4 L10.2 30.2 M27.6 34.4 L29.8 30.2", stroke: "#2A2D34", "stroke-width": ".7", "stroke-linecap": "round" });
+      k.add("circle", { cx: 10.2, cy: 30.2, r: .4, fill: "#3A3E48" }); k.add("circle", { cx: 29.8, cy: 30.2, r: .4, fill: "#3A3E48" });
+      k.add("path", { d: "M11.2 35.6 Q11.2 33.6 13.2 33.6 L26.8 33.6 Q28.8 33.6 28.8 35.6 L29 38.6 Q29 40.4 27.2 40.4 L12.8 40.4 Q11 40.4 11 38.6 Z", fill: k.headGrad("#3A3E48", "#1C1E24", "#08090C"), stroke: "#000", "stroke-width": ".2" });
+      k.add("path", { d: "M12 34.6 Q12.4 34 13.4 34 L26.6 34", fill: "none", stroke: "#FFFFFF", "stroke-width": ".25", opacity: ".25" });
+      k.add("rect", { x: 16.4, y: 34.3, width: 7.2, height: 4.2, rx: .4, fill: "#06201E", stroke: "#0A0B0E", "stroke-width": ".2" });
+      k.add("path", { d: "M16.8 37.6 L18.6 36.2 L19.8 37 L21.6 35.4 L23.2 36.2 L23.2 38.1 L16.8 38.1 Z", fill: "#1E6A5A" });
+      k.add("path", { d: "M19.4 35.2 h1.2 M20 34.6 v1.2", stroke: "#9FFFEA", "stroke-width": ".2" });
+      [13.9, 26.1].forEach(x => { k.add("circle", { cx: x, cy: 36.6, r: 1.15, fill: "#16181E" }); k.add("circle", { cx: x + .2, cy: 36.4, r: .55, fill: "#4A4E58" }); k.add("circle", { cx: x + .1, cy: 36.3, r: .2, fill: "#8A909C" }); });
+      /* the hands round the grips, thumbs on the sticks */
+      const hand = k.headGrad.apply(null, SK);
+      k.add("path", { d: "M10.2 40.4 Q9.8 37.4 11.6 36.8 Q13 36.4 13.6 37.4 L13.4 40.4 Z M29.8 40.4 Q30.2 37.4 28.4 36.8 Q27 36.4 26.4 37.4 L26.6 40.4 Z", fill: hand, stroke: "#9A6A48", "stroke-width": ".15" });
+      k.add("path", { d: "M12.4 37.2 Q13.4 36.4 14.2 36.8 Q14.4 37.4 13.4 37.8 Z M27.6 37.2 Q26.6 36.4 25.8 36.8 Q25.6 37.4 26.6 37.8 Z", fill: hand, stroke: "#9A6A48", "stroke-width": ".15" });
       k.close();
     } });
     k.open("cx-fx cx-fx-scopeglow");
-    k.add("rect", { x: 16.6, y: 32, width: 6.8, height: 4, rx: .4, fill: "#3DE0C0", opacity: ".2" });
+    k.add("rect", { x: 16.4, y: 31.3, width: 7.2, height: 4.2, rx: .4, fill: "#3DE0C0", opacity: ".22" });
     k.close();
     k.open("cx-head");
-    fcFace(k, "tan");
-    /* swept hair */
-    const hair = k.headGrad("#3A2A1E", "#1E140C", "#080402");
-    k.add("path", { d: "M11.6 18.4 Q10.8 10.4 19.6 10 Q28.4 10 28.4 17.4 Q26.6 14.2 22 14.6 Q18.4 15.2 15.6 14.4 Q12.8 14.6 11.6 18.4 Z", fill: hair });
-    k.add("path", { d: "M18.6 10.2 L23.6 8.6 L23.2 11.6 Z M15.4 10.8 L18.4 8.8 L19 11.4 Z", fill: hair });
-    k.noEyes();
-    /* the goggles: a box over the eyes, its screen strip glowing */
-    k.add("path", { d: "M11 18.6 Q20 16.8 29 18.6 L28.6 21 L11.4 21 Z", fill: "#16181E" });
-    k.add("path", { d: "M12.4 18.4 Q20 16.8 27.6 18.4 L27.6 23.6 Q24.4 25 20.6 23.8 Q20 23.4 19.4 23.8 Q15.6 25 12.4 23.6 Z", fill: k.headGrad("#3A3E48", "#1E2026", "#08090C"), stroke: "#0A0B0E", "stroke-width": ".3" });
-    k.add("path", { d: "M13.6 19.8 L26.4 19.8 L26.2 21.8 L13.8 21.8 Z", fill: fcLin(k, [["0", "#3DE0C0"], [".5", "#9FFFEA"], ["1", "#2AA8D8"]], "0", "0", "1", "0") });
-    k.open("cx-fx cx-fx-scopeglow");
-    k.add("path", { d: "M13 19.2 L27 19.2 L26.8 22.4 L13.2 22.4 Z", fill: "#9FFFEA", opacity: ".35" });
+    fcFace(k, SK);
+    /* auburn hair, short at the sides and swept up at the front */
+    const hair = k.headGrad("#C8683A", "#8A3C1A", "#3A1406");
+    k.add("path", { d: "M11.6 19.2 Q10.6 10 19.6 9.4 Q28.8 9.6 28.4 18.6 Q27.6 15.6 25.6 15 Q22.4 14.4 19.4 15 Q15.6 15.2 13.6 16 Q12.2 16.8 11.6 19.2 Z", fill: hair, stroke: "#2A0E04", "stroke-width": ".2", "stroke-linejoin": "round" });
+    k.add("path", { d: "M15.4 11.4 Q18.6 9.6 23.2 9.8", fill: "none", stroke: "#F0A070", "stroke-width": ".3", opacity: ".6", "stroke-linecap": "round" });
+    /* the FPV goggles pushed up on his forehead, the strap round his head; their lenses still glowing */
+    k.add("path", { d: "M11.4 16.6 Q11.8 14.6 13.4 14.2 L13.6 15.6 Q12.4 15.8 12.2 17 Z M28.6 16.6 Q28.2 14.6 26.6 14.2 L26.4 15.6 Q27.6 15.8 27.8 17 Z", fill: "#15161A" });
+    k.add("path", { d: "M13.2 13.2 Q13.4 11.8 15 11.7 L25 11.7 Q26.6 11.8 26.8 13.2 L26.7 15.6 Q26.4 16.8 25 16.8 L21.2 16.8 Q20 16 18.8 16.8 L15 16.8 Q13.6 16.8 13.3 15.6 Z", fill: k.headGrad("#4A4E58", "#22252C", "#08090C"), stroke: "#000", "stroke-width": ".25", "stroke-linejoin": "round" });
+    k.add("path", { d: "M14.4 13.2 L18.8 13.2 L18.6 15.6 L14.6 15.6 Z M21.2 13.2 L25.6 13.2 L25.4 15.6 L21.4 15.6 Z", fill: fcLin(k, [["0", "#9FFFEA"], [".5", "#3DE0C0"], ["1", "#1A7A8A"]]) });
+    k.add("path", { d: "M14.9 13.6 L16.4 13.6 M21.7 13.6 L22.8 13.6", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".8" });
+    k.add("path", { d: "M14.2 12.2 Q20 11.8 25.8 12.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".25", opacity: ".25" });
+    /* freckles across the nose */
+    [[16.2, 23.6], [17.1, 24.1], [15.6, 24.5], [23.8, 23.6], [22.9, 24.1], [24.4, 24.5]].forEach(([x, y]) => k.add("circle", { cx: x, cy: y, r: .17, fill: "#A8582A", opacity: ".55" }));
+    /* his eyes up and to the right, on the drone */
+    k.add("path", { d: "M15 19.2 Q16.6 18.2 18.2 18.9 M21.8 18.6 Q23.4 17.6 25 18.6", fill: "none", stroke: "#7A3414", "stroke-width": ".7", "stroke-linecap": "round" });
+    k.open("cx-eyes");
+    [16.6, 23.4].forEach(x => {
+      k.add("ellipse", { cx: x, cy: 21, rx: 1.35, ry: 1.05, fill: "#FFFFFF" });
+      k.add("circle", { cx: x + .42, cy: 20.68, r: .72, fill: "#4A7A3A" });
+      k.add("circle", { cx: x + .5, cy: 20.6, r: .34, fill: "#0E0A06" });
+      k.add("circle", { cx: x + .75, cy: 20.36, r: .22, fill: "#FFFFFF" });
+    });
     k.close();
-    k.add("path", { d: "M14.4 20.4 h3 M22 21 h3.4", stroke: "#062A28", "stroke-width": ".3", opacity: ".7" });
-    k.add("path", { d: "M27.4 18.4 L29.4 13.4", stroke: "#2A2D34", "stroke-width": ".5", "stroke-linecap": "round" });
-    k.add("circle", { cx: 29.5, cy: 13.2, r: .45, fill: "#3DE0C0" });
-    fcMouth(k, "grin");
+    k.closedEyes([[16.6, 21, 1.2], [23.4, 21, 1.2]], "#3A2418", .5);
+    k.open("cx-mouth");
+    k.add("path", { d: "M18.3 26.9 Q20.1 27.6 21.9 26.6", fill: "none", stroke: "#8A3E2A", "stroke-width": ".55", "stroke-linecap": "round" });
     k.close();
-    /* the drone, flying (384: "Drone pilot is sick, the drone is like sitting on his head though?"):
-       it was centred a hair over his crown with its glow lying on his hair; it is up in clear air
-       now, banked a little as if holding station, about five units of sky between its rotors and
-       his hair at every size, its downlight under its own belly */
-    k.open("", { transform: "translate(20.4 1.3) rotate(-6) scale(1.06) translate(-20 -6)" });
+    k.close();
+    /* the drone, flying over his right shoulder: whole in the circle, banked a little */
+    k.open("", { transform: "translate(28.1 4.4) rotate(-10) scale(.94)" });
     k.open("cx-fx cx-fx-fchover");
-    k.add("path", { d: "M14.2 4.4 L25.8 7.6 M25.8 4.4 L14.2 7.6", stroke: "#16181E", "stroke-width": ".9", "stroke-linecap": "round" });
-    k.add("path", { d: "M14.2 4.4 L25.8 7.6 M25.8 4.4 L14.2 7.6", stroke: "#3DE0C0", "stroke-width": ".2", opacity: ".8" });
-    k.add("path", { d: "M17.6 5 L22.4 5 Q23.4 6 22.4 7 L17.6 7 Q16.6 6 17.6 5 Z", fill: "#22252C", stroke: "#3DE0C0", "stroke-width": ".2" });
-    k.add("circle", { cx: 20, cy: 7.2, r: .55, fill: "#0A0B0E" }); k.add("circle", { cx: 20, cy: 7.2, r: .25, fill: "#3DE0C0" });
-    [[14.2, 4.4], [25.8, 4.4], [14.2, 7.6], [25.8, 7.6]].forEach(([x, y], i) => {
+    k.add("path", { d: "M-4.6 -1.1 L4.6 1.1 M4.6 -1.1 L-4.6 1.1", stroke: "#1A1D24", "stroke-width": "1.05", "stroke-linecap": "round" });
+    k.add("path", { d: "M-4.6 -1.1 L4.6 1.1 M4.6 -1.1 L-4.6 1.1", stroke: "#9AA4B4", "stroke-width": ".32", "stroke-linecap": "round", transform: "translate(0 -.2)" });
+    k.add("path", { d: "M-2 -1.1 Q0 -1.7 2 -1.1 L2.4 .7 Q0 1.5 -2.4 .7 Z", fill: k.headGrad("#C4CCD8", "#6A7484", "#22262E"), stroke: "#0A0B0E", "stroke-width": ".2", "stroke-linejoin": "round" });
+    k.add("path", { d: "M-1.5 -.4 L1.5 -.4", stroke: "#3DE0C0", "stroke-width": ".35", "stroke-linecap": "round" });
+    k.add("path", { d: "M-.6 1.1 L.6 1.1 L.5 1.9 L-.5 1.9 Z", fill: "#1A1C22" });
+    k.add("circle", { cx: 0, cy: 2.2, r: .62, fill: "#22252C", stroke: "#000", "stroke-width": ".15" });
+    k.add("circle", { cx: .05, cy: 2.25, r: .3, fill: "#2A6A8A" });
+    k.add("circle", { cx: .15, cy: 2.1, r: .1, fill: "#FFFFFF" });
+    [[-4.6, -1.1], [4.6, -1.1], [-4.6, 1.1], [4.6, 1.1]].forEach(([x, y], i) => {
+      k.add("rect", { x: x - .45, y: y - .7, width: .9, height: .9, rx: .2, fill: "#2A2D34", stroke: "#000", "stroke-width": ".12" });
       k.open("cx-fx cx-fx-fcrotor", { style: "animation-delay:" + (-i * .05) + "s" });
-      k.add("ellipse", { cx: x, cy: y - .3, rx: 2.2, ry: .45, fill: "#C9F6EE", opacity: ".5" });
+      k.add("ellipse", { cx: x, cy: y - .85, rx: 2.3, ry: .5, fill: "#D8FFF6", opacity: ".6" });
+      k.add("path", { d: "M" + (x - 2) + " " + (y - .85) + " L" + (x + 2) + " " + (y - .85), stroke: "#FFFFFF", "stroke-width": ".15", opacity: ".6" });
       k.close();
-      k.add("circle", { cx: x, cy: y, r: .35, fill: "#2A2D34" });
+      k.add("circle", { cx: x, cy: y - .85, r: .26, fill: "#0E0F12" });
     });
     k.open("cx-fx cx-fx-led");
-    k.add("circle", { cx: 22.6, cy: 6, r: .28, fill: "#FF4A3D" });
+    k.add("circle", { cx: -4.6, cy: 1.5, r: .3, fill: "#FF4A3D" });
+    k.add("circle", { cx: 4.6, cy: 1.5, r: .3, fill: "#4AFF8A" });
     k.close();
-    k.add("ellipse", { cx: 20, cy: 7.95, rx: 2.2, ry: .32, fill: "#3DE0C0", opacity: ".22" });
     k.close();
     k.close();
   },
@@ -60511,9 +60537,9 @@ if(IFC_ART_ON){
     /* every one is drawn on the same frame: cap or helmet top to chest. Round 2 sets them a little
        higher than round 1 (1.4) so the badge, patches and gear on the chest are in the circle;
        the sprinkler's crown and the drone overhead keep the old seat */
-    const seat = { fcsprinkler2: 1.4, fcdrone2: .6, fcstrobe: .2, fcinspector4: -1.6, fcchief4: -1.4 }[look[0]];
+    const seat = { fcsprinkler2: 1.4, fcdrone3: .6, fcstrobe: .2, fcinspector4: -1.6, fcchief4: -1.4 }[look[0]];
     /* the drone pilot is drawn a little smaller so the drone over the head is whole in the circle */
-    if(look[0] === "fcdrone2") AVATAR_ART_SCALE[id] = .86;
+    if(look[0] === "fcdrone3") AVATAR_ART_SCALE[id] = .86;
     AVATAR_CENTRE_DY[id] = seat != null ? seat : -.4;
     CHAR_SPECIAL_DRAW[id] = ifcSpecial(look[2], "#FFF3DE");
     if(!CHAR_SPECIAL_MS[id]) CHAR_SPECIAL_MS[id] = 2800;
