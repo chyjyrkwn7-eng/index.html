@@ -14,7 +14,7 @@
   A. valkyrie is Undercover, timekeeper is Pump Operator, genesis is Eclipse; Pyrotech, Salamander and Solstice are gone
   B. the Inspector's hat is a darker felt than it was; his clipboard has a hand on it, two ticks and a cross, and is mostly inside the coin
   C. Strobe is the appliance: a mounting plate that frames the housing, ribs down its lens, the horn grille's slots, FIRE in strokes
-  D. Sprinkler Head is built top to bottom as a sprinkler: threaded inlet, a bulb between two arms above a notched deflector that holds the face
+  D. Sprinkler Head (round 8): threaded inlet, a brass body that holds the face, a bulb between two arms joined to the body and the boss, a notched deflector under it
   E. Toxic Spill: the ooze spans the drum's width and every drip starts up inside the ooze, not on the rim
   F. each secret's flare sits ON its character: Quasar's on its ring, Pulsar's and Eclipse's on the rim of their head disc
   G. Undercover: a dark hat pulled low, glass over the eyes, a badge half hidden; Pump Operator: a hard hat, two gauges with working needles
@@ -63,14 +63,16 @@ SNAP = r"""() => {
     const mg = (red && plate) ? Math.min(red.b.x - plate.b.x, plate.b.x + plate.b.width - red.b.x - red.b.width, red.b.y - plate.b.y, plate.b.y + plate.b.height - red.b.y - red.b.height) : -1;
     out.strobe = { plateMargin: mg, ribs, slots, flash: !!s.querySelector('.cx-fx-fcflash'), screws: (ser.match(/<circle[^>]*r="0?\.62"/g) || []).length };
     s.remove(); }
-  /* D: the sprinkler */
+  /* D: the sprinkler (round 8: the brass-bodied one - the face is on the body, the deflector is a plain notched plate under the bulb) */
   { const s = mount('hive'); const head = s.querySelector('.cx-head');
     const ellipses = [...head.querySelectorAll('ellipse')].map(e => ({ cx: +e.getAttribute('cx'), cy: +e.getAttribute('cy'), rx: +e.getAttribute('rx'), ry: +e.getAttribute('ry'), f: e.getAttribute('fill') || '' }));
     const rim = [...head.querySelectorAll('path')].map(p => ({ n: (p.getAttribute('d') || '').split('L').length, b: p.getBBox() })).sort((a, b) => b.n - a.n)[0];
     const eyes = [...s.querySelectorAll('.cx-eyes ellipse')].map(e => ({ cx: +e.getAttribute('cx'), cy: +e.getAttribute('cy') }));
-    const bulb = ellipses.find(e => e.ry > 2.5 && Math.abs(e.cx - 20) < .5);
-    const ridges = [...head.querySelectorAll('path')].filter(p => /^M17\.2 [\d.]+ L22\.8 [\d.]+$/.test(p.getAttribute('d') || '')).length;
-    out.spr = { rimVerts: rim ? rim.n : 0, rimBox: rim && rim.b ? { x: rim.b.x, y: rim.b.y, w: rim.b.width, h: rim.b.height } : null, eyes, bulbY: bulb ? bulb.cy : null, bulbBottom: bulb ? bulb.cy + bulb.ry : null, ridges };
+    const bulb = ellipses.find(e => e.ry > 3 && Math.abs(e.cx - 20) < .5);
+    const body = [...head.querySelectorAll('path')].map(p => ({ b: p.getBBox(), f: p.getAttribute('fill') || '' })).filter(o => o.b.width > 12 && o.b.width < 15.5 && o.b.height > 9 && o.b.height < 13 && o.b.y < 13)[0];
+    const ridges = [...head.querySelectorAll('path')].filter(p => /^M16\.6 [\d.]+ L23\.4 [\d.]+$/.test(p.getAttribute('d') || '')).length;
+    out.spr = { rimVerts: rim ? rim.n : 0, rimBox: rim && rim.b ? { x: rim.b.x, y: rim.b.y, w: rim.b.width, h: rim.b.height } : null, eyes, bulbY: bulb ? bulb.cy : null, bulbTop: bulb ? bulb.cy - bulb.ry : null, bulbBottom: bulb ? bulb.cy + bulb.ry : null, ridges,
+      body: body ? { y: body.b.y, bottom: body.b.y + body.b.height, x: body.b.x, right: body.b.x + body.b.width } : null };
     s.remove(); }
   /* E: the toxic spill */
   { const s = mount('astronaut'); const head = s.querySelector('.cx-head');
@@ -132,10 +134,11 @@ St = r["strobe"]
 chk("C. the strobe's housing sits inside a mounting plate that shows round it (margin %.2f units, at least 1.5), with screws (%s)" % (St["plateMargin"], St["screws"]), St["plateMargin"] >= 1.5 and St["screws"] >= 2, St)
 chk("C. ...a ribbed lens (%s ribs), a slotted horn grille for a mouth (%s strokes) and a flash that goes off (%s)" % (St["ribs"], St["slots"], St["flash"]), St["ribs"] >= 8 and St["slots"] >= 4 and St["flash"], St)
 Sp = r["spr"]
-chk("D. the sprinkler's deflector is a notched rim (%s vertices) and its eyes are on it" % Sp["rimVerts"],
-    Sp["rimVerts"] >= 50 and Sp["rimBox"] and all(Sp["rimBox"]["x"] < e["cx"] < Sp["rimBox"]["x"] + Sp["rimBox"]["w"] and Sp["rimBox"]["y"] < e["cy"] < Sp["rimBox"]["y"] + Sp["rimBox"]["h"] for e in Sp["eyes"]) and len(Sp["eyes"]) >= 2, Sp)
-chk("D. ...the red bulb hangs above the deflector (bulb bottom %s over its top %s) and the inlet has thread ridges (%s)" % (Sp["bulbBottom"], Sp["rimBox"] and Sp["rimBox"]["y"], Sp["ridges"]),
-    Sp["bulbBottom"] is not None and Sp["rimBox"] and Sp["bulbBottom"] <= Sp["rimBox"]["y"] + 1.5 and Sp["ridges"] >= 3, Sp)
+chk("D. the sprinkler's face is on its brass body (%s), eyes inside it, and the deflector is a notched plate (%s vertices) with no eyes on it" % (Sp["body"], Sp["rimVerts"]),
+    Sp["body"] and len(Sp["eyes"]) >= 2 and all(Sp["body"]["x"] < e["cx"] < Sp["body"]["right"] and Sp["body"]["y"] < e["cy"] < Sp["body"]["bottom"] for e in Sp["eyes"])
+    and Sp["rimVerts"] >= 40 and Sp["rimBox"] and all(not (Sp["rimBox"]["y"] < e["cy"] < Sp["rimBox"]["y"] + Sp["rimBox"]["h"]) for e in Sp["eyes"]), Sp)
+chk("D. ...the red bulb is joined at both ends (top %s under the body's foot %s, bottom %s into the deflector's boss, above the plate %s) and the inlet has thread ridges (%s)" % (Sp["bulbTop"], Sp["body"] and Sp["body"]["bottom"], Sp["bulbBottom"], Sp["rimBox"] and Sp["rimBox"]["y"], Sp["ridges"]),
+    Sp["bulbTop"] is not None and Sp["body"] and Sp["bulbTop"] < Sp["body"]["bottom"] and Sp["rimBox"] and Sp["bulbBottom"] > Sp["rimBox"]["y"] - 4 and Sp["bulbBottom"] <= Sp["rimBox"]["y"] + 1.5 and Sp["ridges"] >= 3, Sp)
 Sl = r["spill"]
 chk("E. the ooze spans the drum's width (%.1f to %.1f, the drum is 7.8 to 32.2)" % (Sl["x0"], Sl["x1"]), Sl["x0"] <= 8.3 and Sl["x1"] >= 31.7, Sl)
 chk("E. every drip (%s of them) starts up inside the ooze, at least 1.5 units over the rim (least: %.2f)" % (Sl["n"], Sl["minUp"]), Sl["n"] >= 4 and Sl["minUp"] >= 1.5, Sl)
