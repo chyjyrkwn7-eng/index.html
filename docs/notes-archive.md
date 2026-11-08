@@ -36854,3 +36854,7 @@ Star Ranger and every character untouched.
 - NOT confirmable in Chromium: how the strips read on a phone at the cover's size (looked at 1050x348 and the 440x956 cover in Chromium); frame rate of
   Inspection Team (666 elements) and Grand Finale (681) on an old iPhone; whether the kit's details (badge, ID panel lettering at ~2 units tall) are legible on
   a real screen or only read as texture; the likeness of the plate carrier, duty belt and holster to the office's actual kit (drawn from the description).
+### Nov 8: the four folded duplicate accounts deleted (Madison: "if everything is merged and good to go I don't see why we couldn't delete them")
+- Re-checked first with `merge-now name:<First>` (dry run) for dessmarie, Sale, Napoleon and the second Z: every one "nothing to add: the old account holds nothing beyond its note's base".
+- Deleted per old account: `progress/<old>` and `progress/<old>__floor` (read back 404). Their rankings rows were already gone. KEPT `progress/<old>__merge`, so a phone that still opens on an old code follows the note to the real account (checkAccountMove runs as the listener attaches; the follow's setSyncCode wins the 2.5 s remote-reset confirm). Targets untouched and read back 200. Script: scratchpad del/del_old.py (not in the repo; prints no codes).
+- Madison also: keep "Squared Away" as the gear wall's name; keep Northern Lights / Sakura as named; drop "Play every mode 3 times" for the Hive / Sprinkler Head (replacement pending his OK).
