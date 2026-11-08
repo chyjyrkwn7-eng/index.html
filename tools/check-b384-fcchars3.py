@@ -11,7 +11,7 @@
   "pulsar needs to be better..and I don't like solstice. Ensure each of them you can see how their secret flares come from
    their character"
 
-  A. valkyrie is Undercover, timekeeper is Pump Operator, genesis is Eclipse; Pyrotech, Salamander and Solstice are gone
+  A. valkyrie is Lookout, timekeeper is Smoke Alarm (round 8), genesis is Eclipse; Pyrotech, Salamander, Solstice, Undercover and Pump Operator are gone
   B. the Inspector's hat is a darker felt than it was; his clipboard has a hand on it, two ticks and a cross, and is mostly inside the coin
   C. Strobe is the appliance: a mounting plate that frames the housing, ribs down its lens, the horn grille's slots, FIRE in strokes
   D. Sprinkler Head (round 8): threaded inlet, a brass body that holds the face, a bulb between two arms joined to the body and the boss, a notched deflector under it
@@ -93,16 +93,20 @@ SNAP = r"""() => {
   const discOf = (s, id) => { const cs = [...s.querySelectorAll('.cx-head circle')].map(c => ({ cx: +c.getAttribute('cx'), cy: +c.getAttribute('cy'), r: +c.getAttribute('r'), fill: c.getAttribute('fill') || '' })).filter(c => /^url\(/.test(c.fill)).sort((a, b) => b.r - a.r); return cs[0]; };
   for(const id of ['singularity', 'genesis']){ const s = mount(id); const f = flareOf(s), d = discOf(s, id);
     out.flare[id] = { f, d, off: f && d ? Math.abs(Math.hypot(f.x - d.cx, f.y - d.cy) - d.r) : 99 }; s.remove(); }
-  /* G: undercover and the pump operator */
-  { const s = mount('valkyrie'); const hat = s.querySelector('.cx-fc-hat-cowboy'); const felt = hat && hat.querySelector('path');
-    const eyes = [...s.querySelectorAll('.cx-eyes circle')].map(c => ({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy') }));
-    const ser = new XMLSerializer().serializeToString(s);
-    const glass = [...s.querySelectorAll('.cx-head path')].find(p => { const b = p.getBBox(); return eyes.length && b.x <= eyes[0].x && b.x + b.width >= eyes[eyes.length - 1].x && b.width < 16 && /url\(#/.test('') === false && (p.getAttribute('stroke-linejoin') === 'round') && b.y < eyes[0].y && b.y + b.height > eyes[0].y; });
-    out.uc = { feltBase: stops(s, felt)[1], hatY: hat ? hat.getBBox().y : 0, glass: !!glass, clip: /clip-path/.test(ser), cowboy: !!hat }; s.remove(); }
-  { const s = mount('timekeeper'); const hat = s.querySelector('.cx-fc-hat-hardhat');
-    const needles = s.querySelectorAll('.cx-body .cx-fx-fcbeam').length;
-    const dials = [...s.querySelectorAll('.cx-body circle')].filter(c => Number(c.getAttribute('r')) > 2.2 && Number(c.getAttribute('r')) < 2.5 && c.getAttribute('fill') === '#F6F4EC').length;
-    out.pump = { hardhat: !!hat, needles, dials }; s.remove(); }
+  /* G (round 8): the Lookout tower and the Smoke Alarm */
+  { const s = mount('valkyrie'); const ser = new XMLSerializer().serializeToString(s);
+    const eyes = [...s.querySelectorAll('.cx-eyes circle')].filter(c => Number(c.getAttribute('r')) > .9).map(c => ({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy') }));
+    const paths = [...s.querySelectorAll('.cx-head path')].map(p => ({ b: p.getBBox(), f: p.getAttribute('fill') || '' }));
+    const roof = paths.filter(o => o.b.y < 9 && o.b.width > 15)[0], cabin = paths.filter(o => o.b.y > 12 && o.b.y < 13 && o.b.width > 12 && o.b.width < 15)[0];
+    const deck = paths.filter(o => o.b.y > 20.5 && o.b.y < 21.5 && o.b.width > 17)[0], legs = paths.filter(o => o.b.y > 21 && o.b.y < 22 && o.b.height > 11);
+    out.look = { person: /cx-fc-hat|cx-fc-hat-cowboy/.test(ser), eyes: eyes.length, roof: roof ? { b: roof.b.y + roof.b.height } : null, cabin: cabin ? { y: cabin.b.y, b: cabin.b.y + cabin.b.height } : null,
+      deck: deck ? { y: deck.b.y, b: deck.b.y + deck.b.height } : null, legTop: legs.length ? Math.min(...legs.map(l => l.b.y)) : null, pole: /M19\.6 8\.2 L19\.6 2\.4/.test(ser), flag: !!s.querySelector('.cx-fx-fcflame'), clip: /clip-path/.test(ser) };
+    s.remove(); }
+  { const s = mount('timekeeper'); const ser = new XMLSerializer().serializeToString(s);
+    const slots = [...s.querySelectorAll('.cx-body path')].filter(p => /^M[\d.]+ [\d.]+ L[\d.]+ [\d.]+$/.test(p.getAttribute('d') || '') && p.getAttribute('stroke') === '#4A4536').length;
+    const cap = [...s.querySelectorAll('.cx-head circle')].map(c => +c.getAttribute('r')).filter(r => r > 6 && r < 7.5).length;
+    out.smoke = { person: /cx-fc-hat/.test(ser), slots, cap, led: !!s.querySelector('.cx-fx-fcflash'), waves: !!s.querySelector('.cx-fx-fcwave'), eyes: s.querySelectorAll('.cx-eyes ellipse').length };
+    s.remove(); }
   return out; }"""
 srv, port = rc["serve"]()
 with sync_playwright() as pw:
@@ -122,9 +126,9 @@ def lum(h):
     return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]
 chk("no page errors (%s)" % errs[:2], not errs, errs)
 N = r["names"]
-chk("A. valkyrie is Undercover, timekeeper Pump Operator, genesis Eclipse (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
-    (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Undercover", "Pump Operator", "Eclipse"), N)
-chk("A. Pyrotech, Salamander and Solstice are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice"} & set(N.values()), N)
+chk("A. valkyrie is Lookout, timekeeper Smoke Alarm, genesis Eclipse (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
+    (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Lookout", "Smoke Alarm", "Eclipse"), N)
+chk("A. Pyrotech, Salamander, Solstice, Undercover and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Undercover", "Pump Operator"} & set(N.values()), N)
 I = r["insp"]
 fb = lum(I["feltBase"]) if I.get("feltBase") else 1
 chk("B. the Inspector's hat is a darker felt: base %s, luminance %.2f (it was .52; now under .40 and still not black, over .10)" % (I.get("feltBase"), fb), .10 < fb < .40, I)
@@ -146,10 +150,13 @@ F = r["flare"]
 chk("F. Quasar's flare sits ON its ring (%.2f units from it, at most .6)" % F["umbra"]["ringDist"], F["umbra"]["ringDist"] <= .6, F["umbra"])
 chk("F. Pulsar's flare is set on the rim of its star (%.2f off the rim, at most .5)" % F["singularity"]["off"], F["singularity"]["off"] <= .5, F["singularity"])
 chk("F. Eclipse's flare is the bead on the rim of its black disc (%.2f off the rim, at most .5)" % F["genesis"]["off"], F["genesis"]["off"] <= .5, F["genesis"])
-U = r["uc"]; ub = lum(U["feltBase"]) if U.get("feltBase") else 1
-chk("G. Undercover wears a dark cowboy hat pulled low (felt luminance %.3f, hat top %.1f), glass over the eyes (%s) and a badge half hidden (clip %s)" % (ub, U["hatY"], U["glass"], U["clip"]),
-    U["cowboy"] and ub < .02 and U["hatY"] >= 8.5 and U["glass"] and U["clip"], U)
-P = r["pump"]
-chk("G. the Pump Operator wears a hard hat and has two gauges with working needles (%s, %s needles, %s dials)" % (P["hardhat"], P["needles"], P["dials"]), P["hardhat"] and P["needles"] >= 2 and P["dials"] >= 2, P)
+L = r["look"]
+chk("G. the Lookout is a tower, not a person in a hat: no hat group, two window eyes (%s), a pole into the roof and a pennant that flutters (%s, %s)" % (L["eyes"], L["pole"], L["flag"]),
+    not L["person"] and L["eyes"] >= 2 and L["pole"] and L["flag"], L)
+chk("G. ...and every part stands on the next: the roof (bottom %s) over the cabin (top %s), the cabin (bottom %s) on the catwalk (%s..%s), the legs (top %s) up under the catwalk" % (L["roof"] and L["roof"]["b"], L["cabin"] and L["cabin"]["y"], L["cabin"] and L["cabin"]["b"], L["deck"] and L["deck"]["y"], L["deck"] and L["deck"]["b"], L["legTop"]),
+    L["roof"] and L["cabin"] and L["deck"] and L["legTop"] is not None and L["roof"]["b"] > L["cabin"]["y"] + .2 and L["cabin"]["b"] > L["deck"]["y"] + .3 and L["legTop"] < L["deck"]["b"] - .3, L)
+M = r["smoke"]
+chk("G. the Smoke Alarm is a round alarm, not a person: no hat, a ring of %s vent slots, a face on a centre cap (%s), a blinking red lamp (%s), the sound arcs (%s)" % (M["slots"], M["cap"], M["led"], M["waves"]),
+    not M["person"] and M["slots"] >= 16 and M["cap"] >= 1 and M["led"] and M["waves"] and M["eyes"] >= 2, M)
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
