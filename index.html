@@ -63703,10 +63703,11 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("circle", { cx: 20, cy: 21.6, r: 1.5, fill: "#E23B3B" }));
     svg.appendChild(catchlight(19.5, 21.1, .45));
     close();
-    /* THE HAT: three points, two-tone, each ending in a lit bell. */
+    /* THE HAT: three points, two-tone, each ending in a lit bell. (384 r2) The two side points are rooted under the brim's
+       ends (their feet were 2 units out from the brim and hung free), mirrored about x = 20. */
     open("cx-fx cx-fx-cl2hat");
-    svg.appendChild(mk("path", { d: "M11.6 15 Q9.2 10 5 11.6 Q8 12.6 9.4 16.4 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
-    svg.appendChild(mk("path", { d: "M28.4 15 Q30.8 10 35 11.6 Q32 12.6 30.6 16.4 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M12.6 14.6 Q9.2 10 5 11.6 Q7.2 13.8 11.4 16.3 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M27.4 14.6 Q30.8 10 35 11.6 Q32.8 13.8 28.6 16.3 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
     svg.appendChild(mk("path", { d: "M14 13.4 Q16 4.6 22.4 3.6 Q19.4 7.2 20.6 12.8 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
     svg.appendChild(mk("path", { d: "M20.6 12.8 Q19.4 7.2 22.4 3.6 Q25.2 7.8 26 13.4 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
     svg.appendChild(mk("path", { d: "M11.2 16.4 Q20 11.2 28.8 16.4 L28.4 14.6 Q20 9.6 11.6 14.6 Z", fill: "#15111C", stroke: violet, "stroke-width": ".3" }));
