@@ -21,7 +21,7 @@ Everything is read off the page (rects, computed styles), never a label or a typ
   (P4) every row of banner/effect tiles is one height; nothing in a tile (its name, its requirement) is wider than the tile and
        each is centred under its picture;
   (P5) [384 r6, replaces "headings centred"] ONE BOX PER GROUP: every tile sits inside a group card (.cz-group), each card
-       holds one header and one grid; the cards are one width and centred in the viewport; a card is the entry cards' own
+       holds one header and one grid (384 r7: Theme and Hundo effect are ONE card now, the others two or more); the cards are one width and centred in the viewport; a card is the entry cards' own
        surface (background colour, radius, no shadow - read off the entry page); its header has the name at the left and
        "N of M" at the right, M the card's tiles and N the ones that are yours (counted off the tiles); one tile size across
        every card of a page;
@@ -34,11 +34,23 @@ Everything is read off the page (rects, computed styles), never a label or a typ
        picture's same point);
   (P7) scrolled to the end, the last tile clears the tab bar; no horizontal scroll; a tile is a tap target (44px);
   (P8) a laptop's tiles are not tiny (a character's picture at least 72px on a tablet or laptop);
+  (P9) [384 r7, BALANCED ROWS] in every card: maxCols is read off the card (its content width, a tile's width and the grid's
+       gap: the most that fit across); the rows are the fewest that hold the tiles (ceil(n / maxCols)), no two rows differ by
+       more than one tile, a row is never longer than the one above it, and a card of 3 or more never ends on a single tile
+       unless only two fit across (two across cannot make anything else without shrinking the tiles);
+  (P10) [384 r7] every row of every card is centred in the card's content box (left slack = right slack within 1.5px);
+  (P11) [384 r7] the tile size is the previous build's (6057892), per class, device and page, within .5px: pinned in
+       check-b384-custom.tiles.json (`--dump-tiles --against OLD` writes it). It is the reference, so it PASSES on the old
+       build by construction; it fails on a copy with a tile size tampered;
+  (P12) [384 r7] Theme, Banner and Hundo effect have no single-tile card, and on Theme the default (the swatch no rank hands
+       over) is in the same card as every rank colour;
+ ROTATION [384 r7] (phone, each class): the character page turned on its side and back keeps (P9) at each step;
  BEHAVIOUR unchanged (phone, academy): tapping a character wears it, tapping a locked one opens its card, a hold opens the card;
   [384 r6] after a tap the one mark is on the new pick only (characters, and a banner and a theme);
  SIGN-UP (Pro Max, each class): the sign-up character screen's pick shows the same mark (one, solid, centred) and no glow,
   growth or ring.
-Run:  python3 tools/check-b384-custom.py [--quick] [--only DEVICE] [--class academy|ifc] [--against OLD/index.html]   (the old build must FAIL)"""
+Run:  python3 tools/check-b384-custom.py [--quick] [--only DEVICE] [--class academy|ifc] [--against OLD/index.html]   (the old build must FAIL)
+      python3 tools/check-b384-custom.py --dump-tiles --against OLD/index.html   (re-pins (P11)'s tile sizes from OLD)"""
 import os, sys, json
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import b384_custom_lib as L
@@ -55,6 +67,10 @@ if QUICK: DEVICES = [d for d in DEVICES if d[0] in ("iPhone SE", "iPhone 17 Pro 
 if "--only" in args: DEVICES = [d for d in DEVICES if args[args.index("--only") + 1].lower() in d[0].lower()]
 ok = True; nfail = 0
 SURF = {}
+DUMP = "--dump-tiles" in args
+TILES_JSON = os.path.join(HERE, "check-b384-custom.tiles.json")
+TILES = json.load(open(TILES_JSON)) if os.path.exists(TILES_JSON) and not DUMP else {}
+DUMPED = {}
 def chk(name, cond, info=""):
     global ok, nfail
     ok = ok and bool(cond)
@@ -155,6 +171,16 @@ PAGE = r"""async (kind) => {
       heads: g.querySelectorAll(':scope > .cz-group-head').length, grids: g.querySelectorAll(':scope > ' + SEL[0]).length, n: tl.length, held: tl.filter(t => !isLk(t)).length,
       nums: cnt ? (cnt.textContent.match(/\d+/g) || []).map(Number) : [],
       nameL: nm ? Math.round((R(nm).l - r.l) * 10) / 10 : null, cntR: cnt ? Math.round((r.r - R(cnt).r) * 10) / 10 : null, between: nm && cnt ? Math.round((R(cnt).l - R(nm).r) * 10) / 10 : null }; });
+  // (384 r7) balanced rows: per card, maxCols off the card, the row lengths, each row's slack against the card's content box
+  out.bal = [...P.querySelectorAll('.cz-group')].filter(shown).map(g => { const cs = getComputedStyle(g), r = R(g);
+    const cl = r.l + parseFloat(cs.paddingLeft), cr = r.r - parseFloat(cs.paddingRight), cw = cr - cl;
+    const grid = g.querySelector(':scope > ' + SEL[0]); const tl = [...g.querySelectorAll(SEL[1])].filter(shown);
+    const tw = tl.length ? R(tl[0]).w : 0; const gx = grid ? parseFloat(getComputedStyle(grid).columnGap) || 0 : 0;
+    const rw = rows(tl, 6);
+    return { n: tl.length, maxCols: tw ? Math.max(1, Math.floor((cw + gx + 0.5) / (tw + gx))) : 0, lens: rw.map(x => x.els.length),
+      slack: rw.map(x => { const a = R(x.els[0]), b = R(x.els[x.els.length - 1]); return Math.round(((a.l - cl) - (cr - b.r)) * 10) / 10; }),
+      isDefault: kind === 'theme' ? tl.map(t => { const sw = t.querySelector('[data-swatch]'); return !!sw && !(typeof TIER_UNLOCKS === 'object' && TIER_UNLOCKS[sw.dataset.swatch]); }) : [],
+      isRank: kind === 'theme' ? tl.map(t => { const sw = t.querySelector('[data-swatch]'); return !!sw && typeof TIER_UNLOCKS === 'object' && !!TIER_UNLOCKS[sw.dataset.swatch]; }) : [] }; });
   out.loose = [...P.querySelectorAll(SEL[1])].filter(shown).filter(t => !t.closest('.cz-group')).length;
   const allW = [...P.querySelectorAll(SEL[1])].filter(shown).map(t => Math.round(R(t).w * 10) / 10);
   out.tileW = allW.length ? [Math.min(...allW), Math.max(...allW)] : [0, 0];
@@ -201,6 +227,37 @@ PAGE = r"""async (kind) => {
   return out; }"""
 
 def near(a, b, tol): return a is not None and b is not None and abs(a - b) <= tol
+
+def balance_faults(bal):
+    """(P9) the shape of each card's rows: fewest rows, lengths within one, never longer than the row above, no lone last
+    tile in a card of 3+ unless only two fit across"""
+    out = []
+    for b in bal:
+        L_, n, m = b["lens"], b["n"], b["maxCols"]
+        if not L_ or not m: out.append(("no rows", b)); continue
+        if len(L_) != -(-n // m): out.append(("rows %d, want ceil(%d/%d)" % (len(L_), n, m), L_))
+        if max(L_) - min(L_) > 1: out.append(("lengths differ by more than one", L_))
+        if any(L_[i + 1] > L_[i] for i in range(len(L_) - 1)): out.append(("a row longer than the one above", L_))
+        if n >= 3 and len(L_) > 1 and L_[-1] == 1 and m > 2: out.append(("a lone last tile", L_, "max", m))
+        if max(L_) > m: out.append(("a row wider than fits", L_, m))
+    return out
+
+ROWS = r"""() => { const { R, shown, rows } = window.__cz; return [...document.querySelectorAll('.screen-customize .cz-group')].filter(shown).map(g => {
+  const cs = getComputedStyle(g), r = R(g), cw = r.w - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const grid = g.querySelector(':scope > .avatarchar-grid'), tl = [...g.querySelectorAll('.avatarchar-cell')].filter(shown);
+  const tw = tl.length ? R(tl[0]).w : 0, gx = grid ? parseFloat(getComputedStyle(grid).columnGap) || 0 : 0;
+  return { n: tl.length, maxCols: tw ? Math.max(1, Math.floor((cw + gx + 0.5) / (tw + gx))) : 0, lens: rows(tl, 6).map(x => x.els.length) }; }); }"""
+
+def rotation(br, cls):
+    ctx, pg, errs = L.open_page(br, cls, 440, 956, (62, 0, 34, 0), body=L.body_for(AG, (62, 0, 34, 0)) if AG else None)
+    pg.evaluate(LIB)
+    tag = "[%s rotation]" % cls
+    pg.evaluate("()=>showCustomize('character')"); pg.wait_for_timeout(2300)
+    for W, H in ((440, 956), (956, 440), (440, 956)):
+        pg.set_viewport_size({"width": W, "height": H}); pg.wait_for_timeout(700)
+        b = pg.evaluate(ROWS); bad = balance_faults(b)
+        chk("%s (P9) %dx%d: balanced rows after the turn (%s)" % (tag, W, H, "; ".join("%d max%d %s" % (x["n"], x["maxCols"], "+".join(map(str, x["lens"]))) for x in b)), b and not bad, bad[:3])
+    chk("%s no page errors" % tag, not errs, errs[:2]); ctx.close()
 
 def run_device(br, dev, cls):
     name, W, H, ins = dev
@@ -251,7 +308,7 @@ def run_device(br, dev, cls):
         chk("%s (P4) each word is centred under its picture" % t, not r["wordsOff"], r["wordsOff"])
         gs = r["groups"]
         chk("%s (P5) every tile sits in a group card, one header and one grid per card (%d cards, %d loose tiles)" % (t, len(gs), r["loose"]),
-            len(gs) >= 2 and r["loose"] == 0 and all(g["heads"] == 1 and g["grids"] == 1 and g["n"] > 0 for g in gs), [r["loose"], [(g["heads"], g["grids"], g["n"]) for g in gs]])
+            len(gs) >= (2 if kind in ("character", "banner") else 1) and r["loose"] == 0 and all(g["heads"] == 1 and g["grids"] == 1 and g["n"] > 0 for g in gs), [r["loose"], [(g["heads"], g["grids"], g["n"]) for g in gs]])
         if gs:
             ws = [g["w"] for g in gs]; cen = [round(g["l"] - (W - g["r"]), 1) for g in gs]
             chk("%s (P5) the cards are one width and centred (%s, left-right %s)" % (t, sorted(set(ws)), sorted(set(cen))), max(ws) - min(ws) <= 1.01 and all(abs(c) <= 1.5 for c in cen), [ws, cen])
@@ -288,6 +345,24 @@ def run_device(br, dev, cls):
             r["endClear"] >= -0.5 and r["hscroll"] <= 0 and r["hscroll2"] <= 0 and r["picMin"] >= 44, [r["endClear"], r["hscroll"], r["hscroll2"], r["picMin"]])
         if kind == "character" and W >= 700:
             chk("%s (P8) the characters are not tiny on a big screen (%spx)" % (t, r["picMin"]), r["picMin"] >= 72, r["picMin"])
+        bad = balance_faults(r["bal"])
+        chk("%s (P9) balanced rows in every card (%s)" % (t, "; ".join("%d max%d %s" % (b["n"], b["maxCols"], "+".join(map(str, b["lens"]))) for b in r["bal"])), r["bal"] and not bad, bad[:3])
+        offc = [(b["lens"], b["slack"]) for b in r["bal"] if any(abs(v) > 1.5 for v in b["slack"])]
+        chk("%s (P10) every row is centred in its card" % t, r["bal"] and not offc, offc[:2])
+        key = "%s|%dx%d|%s" % (cls, W, H, kind)
+        if DUMP: DUMPED[key] = r["tileW"][0]
+        elif key in TILES:
+            chk("%s (P11) the tile size is the previous build's (%s, was %s)" % (t, r["tileW"], TILES[key]), abs(r["tileW"][0] - TILES[key]) <= .5 and abs(r["tileW"][1] - TILES[key]) <= .5, [r["tileW"], TILES[key]])
+        else:
+            chk("%s (P11) a pinned tile size exists for this device (run --dump-tiles)" % t, False, key)
+        if kind in ("theme", "banner", "fx"):
+            ones = [b["n"] for b in r["bal"] if b["n"] < 2]
+            okd = True
+            if kind == "theme":
+                home = [i for i, b in enumerate(r["bal"]) if any(b["isDefault"])]
+                ranks = [i for i, b in enumerate(r["bal"]) if any(b["isRank"])]
+                okd = len(home) == 1 and ranks == home and sum(sum(b["isRank"]) for b in r["bal"]) >= 2
+            chk("%s (P12) no single-tile card%s (%s)" % (t, ", the default in the rank colours' card" if kind == "theme" else "", [b["n"] for b in r["bal"]]), not ones and okd, [ones, okd])
     chk("%s (P1) the hold hint is the same words on all four pages (%s)" % (tag, hints[0]), all(hints) and len(set(hints)) == 1, hints)
     chk("%s no page errors" % tag, not errs, errs[:2])
     ctx.close()
@@ -353,8 +428,12 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=L.CHROME)
     for cls in CLS:
         for dev in DEVICES: run_device(br, dev, cls)
+        if DUMP: continue
         behaviour(br, cls)
+        rotation(br, cls)
         signup(br, cls)
     br.close()
+if DUMP:
+    json.dump(DUMPED, open(TILES_JSON, "w"), indent=1, sort_keys=True); print("wrote", TILES_JSON, len(DUMPED)); sys.exit(0)
 print("\nALL PASS" if ok else "\n%d FAILURES" % nfail)
 sys.exit(0 if ok else 1)
