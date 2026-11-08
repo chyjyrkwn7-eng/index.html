@@ -78384,7 +78384,7 @@ const IFC_BANNER_ART = {
     const PX = X0 + 3 * (DW + 12) + 14, PY = DY + 5;
     digits += '<g class="fb-pct"><circle cx="' + (PX + 6) + '" cy="' + (PY + 8) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/><circle cx="' + (PX + 28) + '" cy="' + (PY + DH - 14) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/>' +
       '<path d="M' + (PX + 30) + ' ' + (PY + 2) + ' L' + (PX + 4) + ' ' + (PY + DH - 8) + '" stroke="' + GR + '" stroke-width="3.8" stroke-linecap="round"/></g>';
-    g += '<ellipse cx="' + (X0 + 120) + '" cy="' + (DY + DH / 2) + '" rx="150" ry="56" fill="url(#' + u + 'glow)"/>' + digits;
+    g += digits;
     /* ten lamps, all lit */
     for(let i = 0; i < 10; i++) g += fbR(90 + i * 31.4, 118, 26.4, 7.6, "#0F2C1E", ' rx="1.6"') + fbR(91 + i * 31.4, 119, 24.4, 5.6, GR, ' rx="1" class="fb-lamp"') + fbR(91 + i * 31.4, 119, 24.4, 1.8, "#D8FFE8", ' rx="1" opacity=".8"');
     /* the training table across the front, and a helmet on it for every five of the lamps, dark and lit along their tops by the board */
@@ -78397,7 +78397,12 @@ const IFC_BANNER_ART = {
         fbP("M" + (x - 5) + " 152 L" + (x + 5) + " 152 L" + (x + 4) + " 145 L" + (x - 4) + " 145 Z", "#E3B341", ' opacity=".85"');
     });
     g += '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
-    return [{ svg: g }];
+    /* the light of the digits breathes and a little dust rises past the board (the first rung, so both are held still) */
+    return [
+      { svg: g },
+      { svg: '<ellipse cx="' + (X0 + 120) + '" cy="' + (DY + DH / 2) + '" rx="150" ry="56" fill="url(#' + u + 'glow)"/>', box: [X0 - 30, DY - 20, 300, 112], cls: "bl-breathe", style: "animation-duration:4.4s" },
+      { svg: fbEmberSheet(bnRand(3825), 480, 90, 14, ["#D8FFE8", "#9AD8FF", "#FFFFFF"]), box: [0, 20, 480, 130], cls: "bl-rise", style: "animation-duration:22s;opacity:.3" }
+    ];
   },
 
   /* GRAND FINALE (for earning 250 hundos; Madison: "it's great concept, just needs to be done better.. the vehicle just looks bad, the fireworks could have a glow and
