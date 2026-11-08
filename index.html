@@ -62314,18 +62314,16 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-moonstar");
     svg.appendChild(sparkle(20, 6.5, 1.45, "#FFFFFF"));
     close();
-    /* (384 r6 eyes) the same almond with no ring round it - the quietest of the set - drawn in a fine silver line, a pale
-       silver iris, and a crescent of light caught in it, the moon in each eye. */
+    /* (384 r7 eyes) "Not a fan of ... platinum eyes they look girly and not mean": the crescent catch-light, the fine outline
+       and the round iris went. The rulers' glare (glareEye): cold - a grey-white, a pale silver iris in a hard dark ring with a
+       pinpoint pupil (the stare that does not warm up), the lid band in slate, a slate lower lid so the eye holds on the pale
+       skin at 26px. The brows come down harder towards the nose. */
     open("cx-eyes");
-    [[16.8, 17.7], [23.2, 17.7]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.02, ry: .5, fill: "#FFFFFF", stroke: "#56627F", "stroke-width": ".22" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .42, fill: "#A9B6D0", stroke: "#46526E", "stroke-width": ".12" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .15, fill: "#3E4862" }));
-      svg.appendChild(mk("path", { d: lune(x - .1, y - .1, .2, -2.4, .55), fill: "#FFFFFF" }));
-    });
+    [[16.8, 17.7, -1], [23.2, 17.7, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.08, tilt: .2, up: .44, dn: .5, lidT: .3,
+      sclera: "#EEF2FA", lid: "#2E3650", low: "#56627F", iris: "#CDD3DE", ring: "#26304A", irisR: .38, pupil: "dot", pc: "#10141F" }));
     close();
     closedEyes([[16.8, 17.9, 1.1], [23.2, 17.9, 1.1]], "#6C7A90", .35);
-    svg.appendChild(mk("path", { d: "M15.2 15.9 L18.2 16.2 M24.8 15.9 L21.8 16.2", stroke: "#8C92B0", "stroke-width": ".45", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M15.1 15.6 L18.3 16.65 M24.9 15.6 L21.7 16.65", stroke: "#8C92B0", "stroke-width": ".45", "stroke-linecap": "round" }));
     [[15, 20.6], [15.9, 21.2], [25, 20.6], [24.1, 21.2]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .22, fill: "#FFFFFF", opacity: ".9" })));
     svg.appendChild(mk("path", { d: "M18.6 23.9 Q20 24.4 21.4 23.9", fill: "none", stroke: "#6C7A90", "stroke-width": ".42", "stroke-linecap": "round" }));
     close();
