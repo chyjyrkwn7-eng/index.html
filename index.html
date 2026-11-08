@@ -38476,6 +38476,7 @@ html.is-browser{ --fade-paper: transparent; }
     display:inline-flex; align-items:center; justify-content:center; min-height:1.6rem; box-sizing:border-box; padding:0 .62rem; border-radius:99px;
     font-size:.78rem; font-weight:600; letter-spacing:0; line-height:1; color:var(--soft); font-variant-numeric:tabular-nums;
     background:color-mix(in srgb, var(--ink) 8%, transparent);
+    padding-top:1.1px;   /* the words' ink sat .5-.6px high in the pill at line-height 1 (check-centering), as .cz-go's did */
   }
   html[data-layout] body #stage .screen-customize .cz-group .cz-group-count.is-all{ color:var(--ink); }
   /* the grids inside a box: the r4 rows, the box's width */
@@ -38513,7 +38514,7 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] body #stage .screen-customize .cz-group > .cz-group-head{ margin-bottom:1.2rem; }
     html[data-layout] body #stage .screen-customize .cz-group .cz-group-name{ font-size:1.08rem; }
     html[data-layout] body #stage .screen-customize .cz-group .cz-group-note{ font-size:.84rem; }
-    html[data-layout] body #stage .screen-customize .cz-group .cz-group-count{ font-size:.82rem; min-height:1.75rem; padding:0 .75rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .cz-group-count{ font-size:.82rem; min-height:1.75rem; padding:1.1px .75rem 0; }
     html[data-layout] body #stage .screen-customize .cz-group .avatarchar-grid.avatarchar-grid-appearance{ --cz-gx:1rem; --cz-gy:1.15rem; max-width:none; }
     html[data-layout] body #stage .screen-customize .cz-group .swatches{ --cz-gx:.7rem; --cz-gy:1rem; }
     html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell{ flex:0 0 5.1rem; width:5.1rem; }
