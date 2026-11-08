@@ -79205,52 +79205,104 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* TEN IN A ROW (was Hose Line; for acing 10 different units in a row; Madison: "Reach level 80 and ace 10 units are like the exact same one.. They are both a firefighter
-     with a hose at a burning building.") - ten in a row, drawn as ten: the pump room's instrument panel with ten pressure gauges side by side, every needle pinned in
-     the green, a lit lamp over each, each on its own branch off one red manifold pipe, a plate under each numbered 1 to 10, and UNITS ACED IN A ROW engraved along the top.
-     Cool teal steel and green where Top of the Ladder is a dawn sky; no firefighter, no hose, no fire. Moves: the ten lamps breathing one after another along the row,
-     dust drifting past the panel. */
+  /* TEN IN A ROW (was Hose Line; for acing 10 different units in a row; round 4, Madison: "The 10 gauges one, that's kinda cool but make it an actual system or just try better. It's a cool concept.") -
+     the ten gauges become a real, connected SYSTEM: a fire-sprinkler control room's wall. A thick red HEADER runs the width of the wall on strut posts, fed by a riser up from the floor on the left (a
+     flanged foot, a main OS&Y valve with its handwheel); ten branches rise out of it through welded collars, and each branch has an OS&Y control valve (flanges, the red body, a yoke, a rising stem, a
+     handwheel), a flow switch clamped on above it, and a pressure gauge on top with its needle in the green; a conduit leaves each flow switch, goes up the gap beside the gauge and ends at a pilot lamp,
+     lit; under the header, a numbered zone plate hangs from two rods on its branch (1 to 10). A plate on the wall reads TEN UNITS IN A ROW. An inspector's clipboard hangs from a hook at the end of the
+     wall. Pipe has its own shadow on the block wall, flanges are chrome with bolts, the green of the ten lamps washes the wall. Every pipe meets another or the floor or a fitting; nothing floats.
+     Moves: the ten lamps breathing one after another along the row, dust in the green light. */
   exam100(u){
     const rnd = bnRand(1001);
-    const X0 = 40, PITCH = 44.4, CY = 84, R = 19.2, N = 10;
-    const defs = '<defs>' + bnLin(u + "wall", [[0, "#12222B"], [1, "#0A141B"]]) + bnLin(u + "panel", [[0, "#4A5E6E"], [0.5, "#34444F"], [1, "#222E38"]]) + bnLin(u + "chrome", [[0, "#FFFFFF"], [0.5, "#A6B0BC"], [1, "#4E5866"]], 0, 0, 1, 1) +
-      bnLin(u + "pipe", [[0, "#F0644E"], [0.35, "#D23A2A"], [1, "#7A160E"]]) + bnLin(u + "face", [[0, "#FFFFFF"], [1, "#D4DAD6"]]) + bnLin(u + "plate", [[0, "#1A242C"], [1, "#0C1318"]]) +
-      bnRad(u + "lamp", [[0, "#5CFFA6", .75], [0.5, "#5CFFA6", .25], [1, "#5CFFA6", 0]]) + bnRad(u + "wash", [[0, "#6CFFC0", .16], [1, "#6CFFC0", 0]]) + bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .5]]) + '</defs>';
+    const N = 10, X0 = 48, PITCH = 41.4, GCY = 52, GR = 10.8, HY0 = 122, HY1 = 136, XE0 = 14, XE1 = 438;
     const gx = i => X0 + i * PITCH;
-    /* one gauge: bezel, face, the scale's red, amber and green arcs with ticks, the needle pinned at the top of the green, glass glare */
+    const defs = '<defs>' + bnLin(u + "wall", [[0, "#173038"], [1, "#0B171D"]]) + bnLin(u + "floor", [[0, "#1B262C"], [1, "#080C10"]]) + bnLin(u + "chromeV", [[0, "#FFFFFF"], [0.45, "#A6B0BC"], [1, "#4E5866"]]) +
+      bnLin(u + "chromeH", [[0, "#5A6472"], [0.35, "#F2F6FA"], [0.7, "#A6B0BC"], [1, "#4A5260"]], 0, 0, 1, 0) + bnLin(u + "pipeV", [[0, "#6A120A"], [0.28, "#F0644E"], [0.55, "#D23A2A"], [1, "#6A120A"]], 0, 0, 1, 0) +
+      bnLin(u + "pipeH", [[0, "#F8786A"], [0.3, "#D23A2A"], [0.7, "#A8281E"], [1, "#5A0E08"]]) + bnLin(u + "body", [[0, "#6A120A"], [0.3, "#E0483A"], [0.6, "#B02A1E"], [1, "#5A0E08"]], 0, 0, 1, 0) +
+      bnLin(u + "face", [[0, "#FFFFFF"], [1, "#D4DAD6"]]) + bnLin(u + "plate", [[0, "#26343E"], [1, "#0E161C"]]) + bnLin(u + "strut", [[0, "#8A96A4"], [0.5, "#5A6674"], [1, "#2E3844"]], 0, 0, 1, 0) +
+      bnLin(u + "box", [[0, "#5A6674"], [1, "#222C36"]]) + bnLin(u + "board", [[0, "#9A6A3E"], [1, "#5A3A1E"]]) +
+      bnRad(u + "lamp", [[0, "#5CFFA6", .8], [0.5, "#5CFFA6", .26], [1, "#5CFFA6", 0]]) + bnRad(u + "wash", [[0, "#6CFFC0", .2], [1, "#6CFFC0", 0]]) + bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .5]]) + '</defs>';
+    const bolts = (x, y, w, n) => { let s = ""; for(let k = 0; k < n; k++) s += fbC(x + 1.4 + (w - 2.8) * (n === 1 ? .5 : k / (n - 1)), y, .55, "#2A323C"); return s; };
+    /* one pressure gauge (a bezel, face, red / amber / green arcs, ticks, the needle pinned in the green, glare) on its stem */
     const gauge = (x, y, i) => {
-      const r = R, a0 = 135, sweep = 270, P = (ang, rad) => [x + Math.cos(ang * Math.PI / 180) * rad, y + Math.sin(ang * Math.PI / 180) * rad].map(bnF);
+      const r = GR, a0 = 135, sweep = 270, P = (ang, rad) => [x + Math.cos(ang * Math.PI / 180) * rad, y + Math.sin(ang * Math.PI / 180) * rad].map(bnF);
       const arc = (f0, f1, col) => { const p0 = P(a0 + f0 * sweep, r * .74), p1 = P(a0 + f1 * sweep, r * .74); return '<path d="M' + p0.join(" ") + ' A' + bnF(r * .74) + ' ' + bnF(r * .74) + ' 0 ' + ((f1 - f0) * sweep > 180 ? 1 : 0) + ' 1 ' + p1.join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + bnF(r * .17) + '"/>'; };
       let ticks = "";
       for(let t = 0; t <= 10; t++){ const p0 = P(a0 + t / 10 * sweep, r * .62), p1 = P(a0 + t / 10 * sweep, r * (t % 5 ? .56 : .5)); ticks += "M" + p0.join(" ") + " L" + p1.join(" ") + " "; }
-      const na = a0 + (.955 + (i % 3) * .008) * sweep, tip = P(na, r * .78), tail = P(na + 180, r * .22);
-      return '<g class="fb-gauge">' + fbC(x, y, r + 2.6, "#000", ' opacity=".4" transform="translate(.8 1.8)"') + fbC(x, y, r + 1.4, "url(#" + u + "chrome)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
-        arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".8" fill="none"/>' +
-        fbText("PSI", x, y + r * .36, 3.6, "#4A545E", .6) + '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#000" stroke-width="2.4" opacity=".25" transform="translate(.6 .9)"/><path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + (.955 + (i % 3) * .008).toFixed(3) + '" stroke="#C0201A" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
-        fbC(x, y, 2.4, "#1A232B") + fbC(x - .5, y - .5, .9, "#7A8794") + '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.6" opacity=".5" stroke-linecap="round"/></g>';
+      const fr = .955 + (i % 3) * .008, na = a0 + fr * sweep, tip = P(na, r * .78), tail = P(na + 180, r * .22);
+      return fbR(x - 2.2, y + r - 1, 4.4, 6.4, "url(#" + u + "chromeH)", ' stroke="#4A5260" stroke-width=".4"') + '<g class="fb-gauge">' + fbC(x, y, r + 2.2, "#000", ' opacity=".4" transform="translate(.8 1.6)"') + fbC(x, y, r + 1.2, "url(#" + u + "chromeV)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
+        arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".7" fill="none"/>' + fbText("PSI", x, y + r * .38, 2.6, "#4A545E", .5) +
+        '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + fr.toFixed(3) + '" stroke="#C0201A" stroke-width="1.4" stroke-linecap="round" fill="none"/>' + fbC(x, y, 1.9, "#1A232B") + fbC(x - .4, y - .4, .7, "#7A8794") +
+        '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.3" opacity=".5" stroke-linecap="round"/></g>';
+    };
+    /* an OS&Y valve on a vertical pipe at x, its body between y0 (top flange) and y1 (bottom flange): flanges with bolts, the red body, the yoke's two posts and crossbar, the rising stem and the handwheel */
+    const osy = (x, y0, y1, k) => {
+      k = k || 1; const mid = (y0 + y1) / 2, bw = 8.4 * k, fw = 6.8 * k, yk = y0 - 10 * k;
+      let s = fbR(x - fw, y1 - 2.8, fw * 2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - fw, y1 - 1.4, fw * 2, 4) +
+        '<path d="M' + bnF(x - 5 * k) + ' ' + bnF(y1 - 2.8) + ' Q' + bnF(x - bw) + ' ' + bnF(mid) + ' ' + bnF(x - 5 * k) + ' ' + bnF(y0 + 2.8) + ' L' + bnF(x + 5 * k) + ' ' + bnF(y0 + 2.8) + ' Q' + bnF(x + bw) + ' ' + bnF(mid) + ' ' + bnF(x + 5 * k) + ' ' + bnF(y1 - 2.8) + ' Z" fill="url(#' + u + 'body)" stroke="#3A0A06" stroke-width=".5"/>' +
+        fbR(x - fw, y0, fw * 2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - fw, y0 + 1.4, fw * 2, 4) +
+        fbR(x - 4.8 * k, yk + 1.4, 1.5 * k, y0 - yk - 1.4, "url(#" + u + "strut)") + fbR(x + 3.3 * k, yk + 1.4, 1.5 * k, y0 - yk - 1.4, "url(#" + u + "strut)") + fbR(x - 6 * k, yk, 12 * k, 2.6 * k, "url(#" + u + "chromeV)", ' rx=".6" stroke="#4A5260" stroke-width=".4"') +
+        fbR(x - .8 * k, yk - 8 * k, 1.6 * k, y0 - yk + 8 * k, "#DCE4EC") + fbR(x - .8 * k, yk - 8 * k, .6 * k, y0 - yk + 8 * k, "#FFFFFF", ' opacity=".8"');
+      const hy = yk - 8 * k; let sp = ""; for(let a = 0; a < 4; a++){ const an = a * Math.PI / 2 + .4; sp += "M" + bnF(x + Math.cos(an) * 1.6 * k) + " " + bnF(hy + Math.sin(an) * 1.6 * k) + " L" + bnF(x + Math.cos(an) * 4.2 * k) + " " + bnF(hy + Math.sin(an) * 4.2 * k) + " "; }
+      return s + '<g class="fb-valve">' + fbC(x, hy, 5.2 * k, "none", ' stroke="#E8402E" stroke-width="' + bnF(1.5 * k) + '"') + '<path d="' + sp + '" stroke="#C0301F" stroke-width="' + bnF(1 * k) + '" stroke-linecap="round" fill="none"/>' + fbC(x, hy, 1.6 * k, "url(#" + u + "chromeV)", ' stroke="#4A5260" stroke-width=".3"') + '</g>';
     };
     let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
-    /* the wall behind: a block course and the conduit run along the top */
-    let courses = ""; for(let y = 8; y < 180; y += 12) courses += "M0 " + y + " L480 " + y + " ";
-    g += '<path d="' + courses + '" stroke="#06101A" stroke-width="1" opacity=".7" fill="none"/>';
-    /* the panel: a steel plate with its bolts, a lit lip along its top, the header engraving */
-    g += fbR(10, 20, 460, 140, "#000", ' opacity=".5" rx="5" transform="translate(2 4)"') + fbR(8, 16, 464, 142, "url(#" + u + "panel)", ' rx="5" stroke="#667A8A" stroke-width="1.6"') + fbR(8, 16, 464, 1.6, "#9FB3C2", ' rx="1"') +
-      [[16, 24], [464, 24], [16, 150], [464, 150]].map(p => fbC(p[0], p[1], 2.4, "#8A98A6", ' stroke="#2A3640" stroke-width=".7"') + '<path d="M' + (p[0] - 1.6) + ' ' + p[1] + ' L' + (p[0] + 1.6) + ' ' + p[1] + '" stroke="#2A3640" stroke-width=".7"/>').join("") +
-      fbR(60, 23, 360, 12, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8"') + fbText("10 UNITS ACED IN A ROW", 240, 29.2, 6.4, "#E4EEF4", 1.1);
-    g += '<ellipse cx="240" cy="' + CY + '" rx="230" ry="46" fill="url(#' + u + 'wash)"/>';
-    /* the manifold: one red pipe along the foot of the gauges with a flange at each end, and a branch up from it into each gauge */
-    for(let i = 0; i < N; i++) g += fbR(gx(i) - 3, CY + R + 2, 6, 118 - CY - R + 2, "url(#" + u + "chrome)") + fbR(gx(i) - 4.4, CY + R + 1, 8.8, 2.4, "#6A7280") + fbR(gx(i) - 4.4, 114.4, 8.8, 2.4, "#6A7280");
-    g += fbR(20, 116, 440, 11, "url(#" + u + "pipe)", ' rx="2"') + fbR(20, 117, 440, 2.6, "#FF9A86", ' opacity=".75" rx="1"') + fbR(16, 112, 6, 19, "#8A929E", ' rx="1.4" stroke="#3A4452" stroke-width=".7"') + fbR(458, 112, 6, 19, "#8A929E", ' rx="1.4" stroke="#3A4452" stroke-width=".7"');
-    for(let i = 0; i < N; i++) g += gauge(gx(i), CY, i);
-    /* a lamp over each gauge (lit), and the numbered plate under the pipe */
-    for(let i = 0; i < N; i++) g += fbC(gx(i), 44, 3.4, "#0E2A1C", ' stroke="#8A98A6" stroke-width="1"') + fbC(gx(i), 44, 2.4, "#5CFFA6", ' class="fb-lamp"') + fbC(gx(i) - .7, 43.2, .8, "#E8FFF2") +
-      fbR(gx(i) - 9, 133, 18, 14, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8" class="fb-plate"') + fbText(String(i + 1), gx(i), 140, 8, "#E4EEF4", 1.3);
+    /* the block wall: courses and staggered joints, the baseboard and the floor */
+    let blocks = ""; for(let y = 8, r = 0; y < 159; y += 12, r++){ blocks += "M0 " + y + " L480 " + y + " "; for(let x = (r % 2) * 26; x < 480; x += 52) blocks += "M" + x + " " + y + " L" + x + " " + (y + 12) + " "; }
+    g += '<path d="' + blocks + '" stroke="#06101A" stroke-width=".9" opacity=".6" fill="none"/>' + '<ellipse cx="240" cy="48" rx="270" ry="56" fill="url(#' + u + 'wash)"/>' +
+      fbR(0, 152, 480, 8, "#0E161C") + fbR(0, 152, 480, 1.2, "#3A4856") + fbR(0, 159, 480, 21, "url(#" + u + "floor)") + fbR(0, 159, 480, 1.4, "#06090C");
+    /* the title plate on the wall: a dark plate with its four bolts and the engraving */
+    g += fbR(172, 12.5, 136, 11, "#000", ' opacity=".45" rx="2" transform="translate(1.6 2.6)"') + fbR(172, 12.5, 136, 11, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".9"') + [[176, 15.5], [304, 15.5], [176, 20.5], [304, 20.5]].map(p => fbC(p[0], p[1], .9, "#8A98A6")).join("") + fbText("TEN UNITS IN A ROW", 240, 18, 6, "#E4EEF4", 1.1);
+    /* strut posts on the wall that carry the header (a channel each, with the clamp that holds the pipe) */
+    const STR = [gx(0) + 20.7, gx(4) + 20.7, gx(8) + 20.7];
+    STR.forEach(x => { g += fbR(x - 3 + 2.4, 112, 6, 42, "#000", ' opacity=".3"') + fbR(x - 3, 112, 6, 42, "url(#" + u + "strut)", ' stroke="#2A323C" stroke-width=".5"') + fbR(x - .6, 113, 1.2, 40, "#1A222C") + fbR(x - 5.6, 119.6, 11.2, 3, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + fbR(x - 5.6, 135.4, 11.2, 3, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + fbR(x - 4.6, 122, 1, 14, "#8A96A4") + fbR(x + 3.6, 122, 1, 14, "#8A96A4"); });
+    /* the branches: pipe, shadow, collar at the header, the valve, a flow switch clamped on, the gauge's stem into the gauge; the conduit to the lamp */
+    for(let i = 0; i < N; i++){
+      const x = gx(i);
+      g += fbR(x - 3.4 + 2.6, 62, 6.8, 62, "#000", ' opacity=".3"') + fbR(x - 3.4, 62, 6.8, 62, "url(#" + u + "pipeV)") + fbR(x - 1.5, 62, 1, 62, "#FFC0B0", ' opacity=".4"');
+      g += fbR(x - 6, 117.4, 12, 4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - 6, 119.4, 12, 4);
+      g += osy(x, 94, 110.8, 1);
+      /* the flow switch: a saddle clamp round the pipe, the housing on the side, a conduit port, a tiny paddle window */
+      g += fbR(x - 4.4, 66, 8.8, 3.2, "url(#" + u + "chromeV)", ' rx=".6" stroke="#4A5260" stroke-width=".4"') + fbR(x + 3.4, 63.4, 8.6, 8.6, "url(#" + u + "box)", ' rx="1.2" stroke="#10161C" stroke-width=".5"') + fbR(x + 4.4, 64.4, 6.6, 1.6, "#9AA6B4", ' opacity=".6"') + fbC(x + 8.2, 69, 1.1, "#10161C") + fbR(x + 11.6, 66.4, 1.6, 3, "#3A4452");
+      /* the conduit: out of the housing, up the gap beside the gauge, along to the lamp's base, with two clamps */
+      g += '<path d="M' + bnF(x + 13.2) + ' 67.8 L' + bnF(x + 17.6) + ' 67.8 L' + bnF(x + 17.6) + ' 31.2 L' + bnF(x + 4.6) + ' 31.2" fill="none" stroke="#10161C" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="butt" opacity=".5" transform="translate(.8 .9)"/>' +
+        '<path d="M' + bnF(x + 13.2) + ' 67.8 L' + bnF(x + 17.6) + ' 67.8 L' + bnF(x + 17.6) + ' 31.2 L' + bnF(x + 4.6) + ' 31.2" fill="none" stroke="#8A96A6" stroke-width="2" stroke-linejoin="round" stroke-linecap="butt"/>' +
+        '<path d="M' + bnF(x + 17.1) + ' 62 L' + bnF(x + 17.1) + ' 36" stroke="#CDD6E0" stroke-width=".5" opacity=".7"/>' + fbR(x + 15.8, 56, 3.6, 2, "#3A4452") + fbR(x + 15.8, 44, 3.6, 2, "#3A4452");
+      g += gauge(x, GCY, i);
+    }
+    /* the header: a thick red pipe the width of the wall, a flange at each end, the weld collars at each branch were drawn over it; its shadow below */
+    g += fbR(XE0 + 2.6, HY0 + 3, XE1 - XE0, HY1 - HY0, "#000", ' opacity=".34" rx="2"') + fbR(XE0, HY0, XE1 - XE0, HY1 - HY0, "url(#" + u + "pipeH)", ' rx="2"') + fbR(XE0 + 1, HY0 + 2, XE1 - XE0 - 2, 2.8, "#FFA896", ' opacity=".7" rx="1.4"') + fbR(XE0 + 1, HY1 - 2.4, XE1 - XE0 - 2, 1.6, "#2A0604", ' opacity=".5"');
+    /* the header's flanges at the ends (the right one capped), and the three struts' clamps already hold it between */
+    [XE0 - 1, XE1 - 2.6].forEach((x, k) => { g += fbR(x, HY0 - 3, 3.6, HY1 - HY0 + 6, "url(#" + u + "chromeH)", ' rx="1" stroke="#4A5260" stroke-width=".5"') + fbC(x + 1.8, HY0, .6, "#2A323C") + fbC(x + 1.8, HY1, .6, "#2A323C"); });
+    for(let i = 0; i < N; i++){ const x = gx(i); g += fbR(x - 6, HY0 - .6, 12, 2.4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - 6, HY0 + .6, 12, 4); }
+    /* the riser up from the floor into the header's left end: a flanged foot on the floor, the main OS&Y valve with its handwheel to one side, a collar where it meets the header */
+    g += fbR(XE0 + 8 + 2.6, HY1 - 1, 10, 24, "#000", ' opacity=".3"') + fbR(XE0 + 8, HY1 - 1, 10, 24, "url(#" + u + "pipeV)") + fbR(XE0 + 10, HY1 - 1, 1.6, 24, "#FFC0B0", ' opacity=".4"') +
+      fbR(XE0 + 5.4, HY1 - 2, 15.2, 3.4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(XE0 + 5.4, HY1 - .3, 15.2, 4);
+    const RX = XE0 + 13;
+    g += fbR(RX - 7.6, 142.4, 15.2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(RX - 7.6, 143.8, 15.2, 4) +
+      '<path d="M' + bnF(RX - 5.4) + ' 145.2 Q' + bnF(RX - 9.4) + ' 148.6 ' + bnF(RX - 5.4) + ' 152 L' + bnF(RX + 5.4) + ' 152 Q' + bnF(RX + 9.4) + ' 148.6 ' + bnF(RX + 5.4) + ' 145.2 Z" fill="url(#' + u + 'body)" stroke="#3A0A06" stroke-width=".5"/>' +
+      fbR(RX - 7.6, 152, 15.2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(RX - 7.6, 153.4, 15.2, 4) +
+      fbR(RX - 17, 148, 12, 1.8, "#DCE4EC") + '<g class="fb-valve"><ellipse cx="' + bnF(RX - 17) + '" cy="149" rx="2" ry="6.4" fill="none" stroke="#E8402E" stroke-width="1.5"/><path d="M' + bnF(RX - 17) + ' 143.6 L' + bnF(RX - 17) + ' 154.4" stroke="#C0301F" stroke-width="1"/></g>' +
+      fbR(RX - 12, 155, 24, 4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(RX - 12, 157, 24, 5);
+    /* a zone plate under each branch, hung from the header on two rods with a clamp each */
+    for(let i = 0; i < N; i++){ const x = gx(i);
+      g += fbR(x - 7.4, HY1 - .6, 1.4, 5.4, "url(#" + u + "chromeV)") + fbR(x + 6, HY1 - .6, 1.4, 5.4, "url(#" + u + "chromeV)") + fbR(x - 10.6, HY1 + 4, 21.2 + 2.6, 13, "#000", ' opacity=".3" rx="2" transform="translate(2.2 2)"') +
+        fbR(x - 10.6, HY1 + 4, 21.2, 13, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8" class="fb-plate"') + fbC(x - 8, HY1 + 6.4, .7, "#8A98A6") + fbC(x + 8, HY1 + 6.4, .7, "#8A98A6") + fbText(String(i + 1), x, HY1 + 11.8, 7.6, "#E4EEF4", 1.2); }
+    /* a pilot lamp over each gauge, lit: a chrome base on the wall, a green dome with its highlight */
+    for(let i = 0; i < N; i++){ const x = gx(i);
+      g += fbR(x - 4.6, 30, 9.2, 3.6, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + '<path d="M' + bnF(x - 3.6) + ' 30 Q' + bnF(x - 3.6) + ' 25.2 ' + bnF(x) + ' 25.2 Q' + bnF(x + 3.6) + ' 25.2 ' + bnF(x + 3.6) + ' 30 Z" fill="#5CFFA6" class="fb-lamp" stroke="#0E3A22" stroke-width=".5"/>' + fbC(x - 1.2, 27.4, .8, "#E8FFF2"); }
+    /* the inspector's clipboard hanging on a hook at the end of the wall: a bent hook out of the wall through the clip's hole, the board, the sheet with its lines and ticks */
+    const CX = 458;
+    g += fbR(CX - 12 + 2.4, 42 + 2.4, 24, 36, "#000", ' opacity=".35" rx="1.4"') + fbR(CX - 12, 42, 24, 36, "url(#" + u + "board)", ' rx="1.4" stroke="#3A2410" stroke-width=".7"') + fbR(CX - 9.8, 48, 19.6, 27.6, "#F1F2EE") +
+      [0, 1, 2, 3, 4, 5].map(k => '<path d="M' + (CX - 4) + ' ' + (53.4 + k * 3.8) + ' L' + (CX + 7.6 - (k % 3) * 2) + ' ' + (53.4 + k * 3.8) + '" stroke="#6A7488" stroke-width=".6"/>' + fbR(CX - 8.2, 52.2 + k * 3.8, 2.4, 2.4, "#FFFFFF", ' stroke="#3A4254" stroke-width=".4"') + (k !== 4 ? '<path d="M' + (CX - 7.8) + ' ' + (53.4 + k * 3.8) + ' l.8 1 l1.8 -2.2" fill="none" stroke="#1E8A4A" stroke-width=".6" stroke-linecap="round"/>' : "")).join("") +
+      fbP("M" + (CX - 5.4) + " 40.4 L" + (CX + 5.4) + " 40.4 L" + (CX + 4.4) + " 48.4 L" + (CX - 4.4) + " 48.4 Z", "#A9B3C0", ' stroke="#4A5464" stroke-width=".6" stroke-linejoin="round"') + fbC(CX, 44.6, 2.2, "#4A5464") + fbC(CX, 44.6, 1.3, "#10161C") +
+      fbR(CX - 1.4, 26, 2.8, 4, "#3A4050") + fbC(CX, 30, 2.4, "#8A94A4", ' stroke="#3A4050" stroke-width=".5"') + '<path d="M' + CX + ' 30 L' + CX + ' 45.6 Q' + CX + ' 47.8 ' + (CX + 2.6) + ' 47.6" fill="none" stroke="#C9D2DE" stroke-width="1.5" stroke-linecap="round"/>';
     g += '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
-    const lampPair = k => [k, k + 5].map(i => '<circle cx="' + bnF(gx(i)) + '" cy="44" r="12" fill="url(#' + u + 'lamp)"/>').join("");
+    const lampPair = k => [k, k + 5].map(i => '<circle cx="' + bnF(gx(i)) + '" cy="28" r="13" fill="url(#' + u + 'lamp)"/>').join("");
     return [
       { svg: g },
       /* the ten lamps breathe one after another along the row: five layers of two, a fifth of a cycle apart */
-      ...[0, 1, 2, 3, 4].map(k => ({ svg: lampPair(k), box: [X0 - 14, 28, PITCH * 9 + 28, 32], cls: "bl-glow", style: "animation-duration:1.5s;animation-delay:-" + bnF(k * .3) + "s" })),
+      ...[0, 1, 2, 3, 4].map(k => ({ svg: lampPair(k), box: [X0 - 14, 12, PITCH * 9 + 28, 32], cls: "bl-glow", style: "animation-duration:1.5s;animation-delay:-" + bnF(k * .3) + "s" })),
       { svg: fbEmberSheet(bnRand(1002), 480, 90, 14, ["#CFFFE8", "#9AD8FF", "#FFFFFF"]), box: [0, 16, 480, 142], cls: "bl-rise", style: "animation-duration:22s;opacity:.28" }
     ];
   },
