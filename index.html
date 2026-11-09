@@ -149890,6 +149890,73 @@ function bindSheetToScreen(sheet){
   });
   bindSheetToScreen.mo.observe(stage, { childList: true });
 }
+/* ---- THE GLASS LENS, ONE FOR BOTH TAB BARS (r8) ----
+   Madison, with a recording of an iOS 26 segmented control (Delta's Light / Dark): "Our top tabs should look and function like this,
+   that's gonna work and function similar to our bottom tab by the way." The lens the bottom tab bar lifts (setupBottomTabs, build 325
+   on) is built, sized, drawn and sprung by these four, and the top switchers' glass (attachSegGlass) uses the same four - so the two
+   are one material and one motion. Pure helpers, no state; function declarations, so nothing that runs during boot can reach them in
+   a dead zone. */
+function glassLensMotion(){
+  /* [stiffness, damping ratio]; the stretch per px/s and its most; how long a tap stays up and any lens lingers (see LENS in
+     setupBottomTabs for where each was read off a recording) */
+  return { pop: [2000, .72], glide: [260, .95], settle: [380, .7], follow: [1700, .8], st: [520, .42],
+           stretch: .00026, stretchMax: .28, minUp: 240, linger: 110 };
+}
+/* a true capsule at any size: two halves, each a capsule scaled the same both ways and clipped at the centre line (.tab-lens-clip),
+   each wearing the glass and the grey (.tab-lens-glass / .tab-lens-grey) */
+function glassLensBuild(){
+  const mk = (cls, parent) => { const el = document.createElement("div"); el.className = cls; if(parent) parent.appendChild(el); return el; };
+  const lens = mk("tab-lens"); lens.setAttribute("aria-hidden", "true");
+  const body = mk("tab-lens-body", lens);
+  const clipL = mk("tab-lens-clip is-l", lens), capL = mk("tab-lens-cap is-l", clipL);
+  const clipR = mk("tab-lens-clip is-r", lens), capR = mk("tab-lens-cap is-r", clipR);
+  return { lens, body, clipL, capL, clipR, capR, els: [body, clipL, capL, clipR, capR],
+           glass: [mk("tab-lens-glass", capL), mk("tab-lens-glass", capR)],
+           grey: [mk("tab-lens-grey", capL), mk("tab-lens-grey", capR)] };
+}
+function glassLensSize(p, g){
+  const key = [g.W0, g.H0, g.CW, g.CH].join();
+  if(p.lens._key === key) return;
+  p.lens._key = key;
+  p.body.style.width = g.B + "px"; p.body.style.height = g.H0 + "px";
+  [p.capL, p.capR].forEach(c => { c.style.width = g.W0 + "px"; c.style.height = g.H0 + "px"; });
+  [p.clipL, p.clipR].forEach(c => { c.style.width = g.CW + "px"; c.style.height = g.CH + "px"; });
+}
+/* the five transforms for a lens of centre s.cx, width s.W and height s.H, in its host's own coordinates */
+function glassLensTf(g, s){
+  const px = v => (Math.round(v * 100) / 100) + "px";
+  const k = (s.H / g.H0).toFixed(5), top = px(g.CH / 2 - g.H0 / 2), clipY = px(g.cy - g.CH / 2);
+  return [
+    "translate3d(" + px(s.cx - s.W / 2) + "," + px(g.cy - s.H / 2) + ",0) scale(" + (s.W / g.B).toFixed(5) + "," + k + ")",
+    /* each clip runs 4px past the centre line, into the 8px band where the two halves cross-fade (.tab-lens-clip's masks) */
+    "translate3d(" + px(s.cx - g.CW + 4) + "," + clipY + ",0)",
+    "translate3d(" + px(g.CW - 4 - s.W / 2) + "," + top + ",0) scale(" + k + ")",
+    "translate3d(" + px(s.cx - 4) + "," + clipY + ",0)",
+    "translate3d(" + px(s.W / 2 + 4 - g.W0) + "," + top + ",0) scale(" + k + ")"
+  ];
+}
+/* one step of every channel's spring; the stretch chases the speed */
+function glassLensStep(s, v, tg, P, h, M){
+  tg.st = Math.min(M.stretchMax, Math.abs(v.cx || 0) * M.stretch);
+  ["cx", "W", "H", "st"].forEach(k => { const p = P[k], w = Math.sqrt(p[0]);
+    v[k] += (-p[0] * (s[k] - tg[k]) - 2 * p[1] * w * v[k]) * h; s[k] += v[k] * h; });
+}
+/* springs simulated ahead of time, from s0/v0 towards tg(tMs) with springs P(tMs), one frame per DT ms, until at rest on the last
+   target (and past `until`) - handed to Web Animations as a track, so it plays on the compositor through a busy main thread */
+function glassLensSpring(s0, v0, tg, P, until, maxMs, M, DT){
+  const s = Object.assign({ st: 0 }, s0), v = Object.assign({ cx: 0, W: 0, H: 0, st: 0 }, v0);
+  const sub = 4, h = DT / 1000 / sub;
+  const frames = [Object.assign({}, s)];
+  for(let n = 1; n * DT <= (maxMs || 1600); n++){
+    for(let j = 0; j < sub; j++){ const t = (n - 1) * DT + (j + 1) * h * 1000; glassLensStep(s, v, tg(t), P(t), h, M); }
+    frames.push(Object.assign({}, s));
+    const t = n * DT, T = tg(t);
+    if(t > (until || 0) && ["cx", "W", "H"].every(k => Math.abs(s[k] - T[k]) < .06 && Math.abs(v[k]) < 3) && Math.abs(s.st) < .002) break;
+  }
+  const T = tg((frames.length - 1) * DT);
+  frames.push({ cx: T.cx, W: T.W, H: T.H, st: 0 });
+  return frames;
+}
 function attachSegSlider(seg, activeSel){
   if(!seg || seg.querySelector(":scope > .seg-slider")) return;
   const sl = document.createElement("span");
@@ -156367,15 +156434,12 @@ function tabPerfText(){
      Opacity: the lens fades in over the platter as it lifts and out over
      it as it lands, and the platter does the opposite on the same clock.
      Reduce motion: no lens, no swell - the platter moves on its own. */
-  const lens = document.createElement("div");
-  lens.id = "bottomtabs-lens"; lens.className = "tab-lens"; lens.setAttribute("aria-hidden", "true");
-  const mkLens = (cls, parent) => { const el = document.createElement("div"); el.className = cls; parent.appendChild(el); return el; };
-  const lensBody = mkLens("tab-lens-body", lens);
-  const lensClipL = mkLens("tab-lens-clip is-l", lens), lensCapL = mkLens("tab-lens-cap is-l", lensClipL);
-  const lensClipR = mkLens("tab-lens-clip is-r", lens), lensCapR = mkLens("tab-lens-cap is-r", lensClipR);
-  const LENS_ELS = [lensBody, lensClipL, lensCapL, lensClipR, lensCapR];
-  const LENS_GLASS = [mkLens("tab-lens-glass", lensCapL), mkLens("tab-lens-glass", lensCapR)];
-  const LENS_GREY = [mkLens("tab-lens-grey", lensCapL), mkLens("tab-lens-grey", lensCapR)];
+  /* (r8) built, sized, drawn and sprung by the glassLens* helpers beside attachSegSlider, which the top switchers' glass uses too */
+  const LENS_PARTS = glassLensBuild();
+  const lens = LENS_PARTS.lens;
+  lens.id = "bottomtabs-lens";
+  const lensBody = LENS_PARTS.body, lensClipL = LENS_PARTS.clipL, lensCapL = LENS_PARTS.capL, lensClipR = LENS_PARTS.clipR, lensCapR = LENS_PARTS.capR;
+  const LENS_ELS = LENS_PARTS.els, LENS_GLASS = LENS_PARTS.glass, LENS_GREY = LENS_PARTS.grey;
   /* behind the tabs, in front of the platter: the tab it is over is drawn
      inside the glass, full strength */
   navrow.insertBefore(lens, slider.nextSibling);
@@ -156436,10 +156500,10 @@ function tabPerfText(){
      120 frames a second, not 60: Web Animations draws straight lines
      between keyframes, which on a 120Hz iPhone made every other frame a
      small change of speed. */
-  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: 0, stretch: .00026, stretchMax: .28, give: 22, minUp: 240, linger: 110,
-    pop: [2000, .72], glide: [260, .95], settle: [380, .7], follow: [1700, .8], st: [520, .42],
+  /* (r8) the springs, the stretch, minUp and linger are glassLensMotion()'s - the same numbers, shared with the top switchers */
+  const LENS = Object.assign(glassLensMotion(), { tall: 1.19, wide: 1.03, aspect: 1.2, mag: 0, give: 22,
     /* build 382: a slide's glass leads the finger by its speed times this (ms), at most leadMax px (see lensMove) */
-    lead: 12, leadMax: 8 };
+    lead: 12, leadMax: 8 });
   const LENS_DT = 1000 / 120;
   let lensG = null;           /* this touch's geometry (null: no lens) */
   let lensS = null, lensV = { cx: 0, W: 0, H: 0, st: 0 };   /* the lens now, and how fast it is changing */
@@ -156477,14 +156541,7 @@ function tabPerfText(){
              CW: Math.ceil(maxW / 2 + 44), CH: Math.ceil(H0 * 1.3 + 64),
              lo: tabs[0].c, hi: tabs[tabs.length - 1].c };
   }
-  function lensSize(g){
-    const key = [g.W0, g.H0, g.CW, g.CH].join();
-    if(lens._key === key) return;
-    lens._key = key;
-    lensBody.style.width = g.B + "px"; lensBody.style.height = g.H0 + "px";
-    [lensCapL, lensCapR].forEach(c => { c.style.width = g.W0 + "px"; c.style.height = g.H0 + "px"; });
-    [lensClipL, lensClipR].forEach(c => { c.style.width = g.CW + "px"; c.style.height = g.CH + "px"; });
-  }
+  function lensSize(g){ glassLensSize(LENS_PARTS, g); }
   const lensInfo = el => lensG && lensG.tabs.find(t => t.el === el);
   /* the client x of a finger, in the row's coordinates (the bar may be
      part-way through its swell) */
@@ -156534,19 +156591,7 @@ function tabPerfText(){
     const st = (f.st || 0) * lensLift(lensG, f.H);
     return { cx: f.cx, W: f.W * (1 + st), H: f.H / (1 + st) };
   }
-  const px = v => (Math.round(v * 100) / 100) + "px";
-  function lensTf(g, s){
-    const k = (s.H / g.H0).toFixed(5), top = px(g.CH / 2 - g.H0 / 2), clipY = px(g.cy - g.CH / 2);
-    return [
-      "translate3d(" + px(s.cx - s.W / 2) + "," + px(g.cy - s.H / 2) + ",0) scale(" + (s.W / g.B).toFixed(5) + "," + k + ")",
-      /* each clip runs 4px past the centre line, into the 8px band where
-         the two halves cross-fade (.tab-lens-clip's masks) */
-      "translate3d(" + px(s.cx - g.CW + 4) + "," + clipY + ",0)",
-      "translate3d(" + px(g.CW - 4 - s.W / 2) + "," + top + ",0) scale(" + k + ")",
-      "translate3d(" + px(s.cx - 4) + "," + clipY + ",0)",
-      "translate3d(" + px(s.W / 2 + 4 - g.W0) + "," + top + ",0) scale(" + k + ")"
-    ];
-  }
+  function lensTf(g, s){ return glassLensTf(g, s); }
   function lensWrite(f){
     const tf = lensTf(lensG, lensVis(f));
     LENS_ELS.forEach((el, j) => { el.style.transform = tf[j]; });
@@ -156575,28 +156620,11 @@ function tabPerfText(){
     if(lensG && lensS) lensWrite(lensS);
   }
   /* one step of every channel's spring; the stretch chases the speed */
-  function lensStep(s, v, tg, P, h){
-    tg.st = lensStretchFor(v.cx);
-    LENS_KEYS.forEach(k => { const p = P[k], w = Math.sqrt(p[0]);
-      v[k] += (-p[0] * (s[k] - tg[k]) - 2 * p[1] * w * v[k]) * h; s[k] += v[k] * h; });
-  }
+  function lensStep(s, v, tg, P, h){ glassLensStep(s, v, tg, P, h, LENS); }
   /* Springs, simulated ahead of time: from s/v towards tg(tMs) with
      springs P(tMs), one frame per 60th of a second, until at rest on the
      last target (and past `until`). */
-  function lensSpring(s0, v0, tg, P, until, maxMs){
-    const s = Object.assign({ st: 0 }, s0), v = Object.assign({ cx: 0, W: 0, H: 0, st: 0 }, v0);
-    const sub = 4, h = LENS_DT / 1000 / sub;
-    const frames = [Object.assign({}, s)];
-    for(let n = 1; n * LENS_DT <= (maxMs || 1600); n++){
-      for(let j = 0; j < sub; j++){ const t = (n - 1) * LENS_DT + (j + 1) * h * 1000; lensStep(s, v, tg(t), P(t), h); }
-      frames.push(Object.assign({}, s));
-      const t = n * LENS_DT, T = tg(t);
-      if(t > (until || 0) && ["cx", "W", "H"].every(k => Math.abs(s[k] - T[k]) < .06 && Math.abs(v[k]) < 3) && Math.abs(s.st) < .002) break;
-    }
-    const T = tg((frames.length - 1) * LENS_DT);
-    frames.push({ cx: T.cx, W: T.W, H: T.H, st: 0 });
-    return frames;
-  }
+  function lensSpring(s0, v0, tg, P, until, maxMs){ return glassLensSpring(s0, v0, tg, P, until, maxMs, LENS, LENS_DT); }
   function lensPlay(frames){
     lensStopTrack();
     const g = lensG, n = frames.length;
