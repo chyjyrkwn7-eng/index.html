@@ -9,8 +9,9 @@ can add Logan Preston" / "made by M. Davis and then the word nova in a nice cool
     bug, Version history, Terms of Use, Privacy (coloured words, no tile, no chevron); no names at the foot (that is
     Contributors' job), only "Made by Davis" (383: the name plain, small capitals like "Made by") and a NOVA wordmark in
     gradient text, last on the screen.
-(2) Every category opens its own page (round back button, title) holding its settings, each switch row with a coloured
-    tile; a page lights the tab Settings lights; back is the menu.
+(2) Every category opens its own page (round back button, title) holding its settings - (384 r8) with NO tile on any row ("when
+    you click a section and open it, there are icons within them? But there shouldn't be..": Delta's pages are plain lists; only
+    the menu has tiles); a page lights the tab Settings lights; back is the menu.
 (3) Every handler still fires (spied): share, install walkthrough, version check, report screen, release history, a
     switch, the sync code reveal; the new switch (Tap sounds) saves to the theme; (383) Study has no Longer pause switch.
 (4) Advanced settings opens its page: red word rows, Reset opens the warning.
@@ -189,9 +190,9 @@ with sync_playwright() as pw:
                 # Fire Code has no cloud (initFirebase stands down there): its Sync page is the unreachable status
                 titles += [t for t in pg.evaluate("()=>[...document.querySelectorAll('#stage .sync-status-row')].length ? ['Your sync code'] : []")]
             need = [] if (cls == "ifc" and k == "rankings") else PAGES[k]   # Fire Code's page is a read-only list of classes, no switch
-            chk("%s %s opens its page (%s) with %s, each with a coloured tile" % (tag, k, pr and pr["title"], need),
+            chk("%s %s opens its page (%s) with %s, and no row on it carries a tile (384 r8)" % (tag, k, pr and pr["title"], need),
                 opened and pr and pr["title"] and pr["back"] and pr["menuGone"] and all(t in titles for t in need)
-                and all(r.get("tile") and r["chroma"] >= 40 for r in prow if r["title"] in need), {"page": pr, "titles": titles})
+                and not any(r.get("tile") for r in prow), {"page": pr, "titles": titles, "tiled": [r["title"] for r in prow if r.get("tile")]})
             if k == "sound":
                 lit = pg.evaluate(LIT)
                 chk("%s a category page lights what Settings lights (%s)" % (tag, lit), lit == litSettings, lit)

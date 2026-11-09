@@ -11,10 +11,18 @@ iPhone 17 Pro Max (440x956), dark, Settings:
     theme's signature - not the near-gold planet highlight they were; in Amethyst they are violet, in Default its coral-rose, and the
     two themes differ; "MADE BY" and "DAVIS" are the same hue;
 (5) and the pages Settings opens ("When clicking the tabs and getting in them too, ensure that stuff within them is updated too"):
-    on Sound & Haptics, Study, Motion & Effects and Leaderboard & Privacy every switch row is 58px+, its tile 32px+, its title 18px+
-    and its description 14px+, and between two switch rows a hairline shows (white, 8%+) from the title to the row's content edge (the switch's); Account's
-    name row and Sign out are 58px+ at 18px; Advanced's red rows 18px; every Contributors row 18px; Legal / Terms / Privacy text 16px;
-    the sync code's label 18px and still blue;
+    on Sound & Haptics, Study, Motion & Effects and Leaderboard & Privacy every switch row is 49px+, (384 r8) with NO tile, its title
+    15-16.5px and its description 12-13.5px, and between two switch rows a hairline shows (white, 8%+) from the title to the row's content edge (the switch's); Account's
+    name row and Sign out are 49-54px at 15-16.5px; Advanced's red rows 15px+; every Contributors row 15px+; Legal / Terms / Privacy text 16px;
+    the sync code's label 15-16.5px and still blue;
+(6) (384 r8) "when you click a section and open it, there are icons within them? But there shouldn't be.." - Delta's pages are plain
+    grouped lists. On EVERY page Settings opens, in BOTH classes (Sound, Study, Motion, Account, Classes, Sync - with its code, offline
+    and with no code -, Leaderboard & Privacy, Share & Install, Advanced, Contributors, Legal, Terms, Privacy): no tile shows, and every
+    row's words start at the card's left padding (read off the menu: its tile's offset in its card), a one-line row is the menu's row
+    height, labels are the menu's label size and second lines its second-line size, a hairline between two rows runs from the words to
+    the row's content edge (clear of the card's), and every switch and chevron sits on its row's middle; tap targets 44px+;
+(7) and the top-level menu keeps its tiles, in both classes: every category row (and Check for update / Advanced) carries a visible
+    27-29px tile (this one cannot fail on the build before - it passes there too; it is run against a build with every tile stripped);
 (4) no page errors.
 Run:  python3 tools/check-b384-settings.py   (--against OLD/index.html must FAIL)"""
 import os, sys, re, colorsys
@@ -69,7 +77,7 @@ with sync_playwright() as pw:
        and hdist(ink["link"][0], el["link"][0]) > 40 and cohesive, [out, hues])
     pg.evaluate("()=>{ theme.accent='ink'; applyTheme(); }")
     SW = """()=>{ const rows=[...document.querySelectorAll('#stage .screen-settings-sub .settings-card > label.opt')].filter(r=>r.getBoundingClientRect().height>0);
-      return rows.map((r,i)=>{ const t=r.querySelector('.otext'), h=r.querySelector('.ohint'), ic=r.querySelector('.settings-row-icon'), card=r.parentElement.getBoundingClientRect();
+      return rows.map((r,i)=>{ const t=r.querySelector('.otext'), h=r.querySelector('.ohint'), ic=[...r.querySelectorAll('.settings-row-icon')].find(e=>e.getBoundingClientRect().width>0), card=r.parentElement.getBoundingClientRect();
         const prev=r.previousElementSibling, sep=getComputedStyle(r,'::before'), rr=r.getBoundingClientRect(), tr=t.getBoundingClientRect();
         const between = !!(prev && prev.matches('label.opt, .settings-volume'));
         return { h: Math.round(rr.height), title: parseFloat(getComputedStyle(t).fontSize), hint: h ? parseFloat(getComputedStyle(h).fontSize) : 99, tile: ic ? Math.round(ic.getBoundingClientRect().width) : 99,
@@ -82,7 +90,7 @@ with sync_playwright() as pw:
     for page in ("sound", "study", "motion", "rankings"):
         pg.evaluate("(p)=>showAppearance({ page: p })", page); pg.wait_for_timeout(800)
         for r in pg.evaluate(SW):
-            okr = 49 <= r["h"] <= 140 and 15 <= r["title"] <= 16.5 and 12 <= r["hint"] <= 13.5 and 27 <= r["tile"] <= 29
+            okr = 49 <= r["h"] <= 140 and 15 <= r["title"] <= 16.5 and 12 <= r["hint"] <= 13.5 and r["tile"] == 99   # (384 r8) no tile on a page
             if r["between"]: okr = okr and alpha_of(r["sep"]) >= .08 and abs(r["sepL"] - r["titleL"]) <= 2 and abs(r["sepR"] - r["contR"]) <= 2 and r["cardR"] - r["sepR"] >= 8
             if not okr: bad.append((page, r))
     pg.evaluate("()=>showAppearance({ page: 'account' })"); pg.wait_for_timeout(800)
@@ -105,8 +113,96 @@ with sync_playwright() as pw:
         pg.evaluate("(k)=>showSettingsText(k)", kind); pg.wait_for_timeout(700)
         pr = pg.evaluate("()=>[...document.querySelectorAll('#stage .settings-prose > p')].map(p=>parseFloat(getComputedStyle(p).fontSize))")
         if not pr or min(pr) < 16: bad.append((kind, sorted(set(pr))))
-    ck("(5) the pages Settings opens: switch rows, Account, the sync code, Advanced, Contributors and Legal/Terms/Privacy at the menu's size, hairlines between switch rows",
+    ck("(5) the pages Settings opens: switch rows (no tile), Account, the sync code, Advanced, Contributors and Legal/Terms/Privacy at the menu's size, hairlines between switch rows",
        not bad, bad[:4])
+    ctx.close()
+
+    # ---- (6) / (7): every page, both classes (384 r8) ----
+    MENU_REF = """()=>{ const vis=e=>{ const b=e.getBoundingClientRect(); return b.width>0 && b.height>0; };
+      const cats=[...document.querySelectorAll('#stage .screen-settings .settings-list > button.settings-row')].filter(vis)
+        .filter(r=>!r.matches('.settings-plainrow, .settings-linkrow, .settings-textrow'));
+      const t=r=>{ const i=r.querySelector(':scope > .settings-row-icon'); return i && vis(i) ? i.getBoundingClientRect() : null; };
+      const one=cats.find(r=>t(r) && !r.querySelector('.settings-row-sub'));
+      const sub=document.querySelector('#stage .screen-settings .settings-list .settings-row-sub');
+      const lab=one && one.querySelector('.settings-row-label');
+      return { cats: cats.map(r=>({ name: (r.querySelector('.settings-row-label')||r).textContent.trim().slice(0,30), cat: r.classList.contains('settings-cat'), tile: t(r) ? Math.round(t(r).width*10)/10 : 0 })),
+               pad: one ? t(one).left - one.closest('.settings-card').getBoundingClientRect().left : null, rowH: one ? one.getBoundingClientRect().height : null,
+               label: lab ? parseFloat(getComputedStyle(lab).fontSize) : null, sub: sub ? parseFloat(getComputedStyle(sub).fontSize) : null }; }"""
+    SUB = r"""()=>{ const S=document.querySelector('#stage .screen-settings-sub'); if(!S) return null;
+      const vis=e=>{ const b=e.getBoundingClientRect(); if(!b.width||!b.height) return false;
+        for(let x=e; x && x.nodeType===1; x=x.parentElement){ const cs=getComputedStyle(x); if(cs.display==='none'||cs.visibility==='hidden'||parseFloat(cs.opacity)===0) return false; } return true; };
+      const tiles=[...S.querySelectorAll('.settings-row-icon, [data-tile]')].filter(vis).map(e=>(e.parentElement.textContent||'').trim().slice(0,30));
+      const RS='.settings-card .settings-row, .settings-card > label.opt, .settings-card .sync-code-row';
+      const rows=[...S.querySelectorAll(RS)].filter(vis);
+      const firstText=r=>{ const w=document.createTreeWalker(r, NodeFilter.SHOW_TEXT); let n;
+        while((n=w.nextNode())){ if(!n.nodeValue.trim()) continue; if(n.parentElement.closest('.box, .settings-row-value, .settings-row-chev')) continue; return n; } return null; };
+      const al=c=>{ const a=(c||'').match(/[\d.]+/g)||[]; return a.length>3 ? +a[3] : (a.length ? 1 : 0); };
+      const mid=b=>b.top+b.height/2;
+      return { tiles, rows: rows.map(r=>{
+        const card=r.closest('.settings-card').getBoundingClientRect(), rb=r.getBoundingClientRect(), rs=getComputedStyle(r);
+        const tn=firstText(r); let tl=null, fs=null, tc=null;
+        if(tn){ const g=document.createRange(); g.selectNodeContents(tn); const tb=g.getBoundingClientRect(); tl=tb.left; tc=tb.left+tb.width/2; fs=parseFloat(getComputedStyle(tn.parentElement).fontSize); }
+        /* how many lines of words the row holds (a name over its role is two, with no .settings-row-sub) */
+        const tops=[]; { const w=document.createTreeWalker(r, NodeFilter.SHOW_TEXT); let n;
+          while((n=w.nextNode())){ if(!n.nodeValue.trim() || n.parentElement.closest('.box, .settings-row-chev') || !vis(n.parentElement)) continue;
+            const g=document.createRange(); g.selectNodeContents(n); for(const q of g.getClientRects()) if(q.width>1 && !tops.some(t=>Math.abs(t-q.top)<5)) tops.push(q.top); } }
+        const sub=r.querySelector('.settings-row-sub, .ohint');
+        const prev=r.previousElementSibling;
+        const between=!!(prev && vis(prev) && prev.matches('.settings-row, label.opt, .settings-volume'));
+        const pe=getComputedStyle(r,'::before'); const ph=parseFloat(pe.height);
+        const line = (pe.content!=='none' && pe.content!=='normal' && pe.position==='absolute' && ph>0 && ph<=1.6) ? (()=>{ const x0=rb.left+parseFloat(rs.borderLeftWidth)+parseFloat(pe.left); return { l:x0, r:x0+parseFloat(pe.width), a:al(pe.backgroundColor) }; })() : null;
+        const chev=r.querySelector(':scope > .settings-row-chev'), sw=r.querySelector(':scope > .box');
+        return { name: tn ? tn.nodeValue.trim().slice(0,30) : '', h: rb.height, tl, fs, lines: tops.length,
+          centred: tc !== null && Math.abs(tc-(rb.left+rb.width/2)) < 2, sub: sub ? parseFloat(getComputedStyle(sub).fontSize) : null,
+          tap: r.matches('button, label') ? Math.min(rb.width, rb.height) : null, cardL: card.left, cardR: card.right,
+          contR: rb.right-parseFloat(rs.paddingRight)-parseFloat(rs.borderRightWidth), between, line,
+          chevOff: chev && vis(chev) ? mid(chev.getBoundingClientRect())-mid(rb) : null, swOff: sw && vis(sw) ? mid(sw.getBoundingClientRect())-mid(rb) : null }; }) }; }"""
+    STATES = [("sound", "showAppearance({page:'sound'})"), ("study", "showAppearance({page:'study'})"), ("motion", "showAppearance({page:'motion'})"),
+              ("account", "showAppearance({page:'account'})"), ("classes", "showAppearance({page:'classes'})"), ("sync", "showAppearance({page:'sync'})"),
+              ("rankings", "showAppearance({page:'rankings'})"), ("share", "showAppearance({page:'share'})"), ("advanced", "showAdvancedSettings()"),
+              ("credits", "showCredits()"), ("legal", "showSettingsText('legal')"), ("terms", "showSettingsText('terms')"), ("privacy", "showSettingsText('privacy')"),
+              # Sync once the cloud answers (no "isn't reachable" row), then with no code at all (Start syncing / Enter a code)
+              ("sync-online", "__fake(); showAppearance({page:'sync'})"), ("sync-nocode", "syncCode=null; showAppearance({page:'sync'})")]
+    IFC_INIT = g["init_account"]("GATE-0384", g["store"](publicId="xph5b57jbp5a", classes=["academy", "ifc"])) + \
+        "localStorage.setItem('class26e.activeclass','ifc');localStorage.setItem('class26e.greet.ifc','done');"
+    bad6, bad7, seen6 = [], [], {}
+    for cls, init in (("academy", g["init_account"]("GATE-0384", g["store"]())), ("ifc", IFC_INIT)):
+        ctx, pg = g["open_page"](br, init, errs=errs)
+        if cls == "ifc" and pg.evaluate("()=>window.NOVA_CLASS") != "ifc": bad6.append((cls, "the page did not open in Fire Code")); ctx.close(); continue
+        pg.evaluate("()=>{ theme.accent='ink'; applyTheme(); showAppearance(); }"); pg.wait_for_timeout(1100)
+        ref = pg.evaluate(MENU_REF)
+        if not ref["cats"] or not ref["pad"]: bad7.append((cls, "no menu", ref)); ctx.close(); continue
+        nocat = [c["name"] for c in ref["cats"] if not (27 <= c["tile"] <= 29)]
+        if nocat or sum(1 for c in ref["cats"] if c["cat"]) < 6: bad7.append((cls, "menu rows without a tile", nocat, len(ref["cats"])))
+        for name, js in STATES:
+            pg.evaluate("()=>{ %s; }" % js); pg.wait_for_timeout(900)
+            m = pg.evaluate(SUB)
+            if not m: bad6.append((cls, name, "no page")); continue
+            seen6[cls + ":" + name] = (len(m["rows"]), len(m["tiles"]))
+            if m["tiles"]: bad6.append((cls, name, "tiles", m["tiles"][:4]))
+            for r in m["rows"]:
+                why = []
+                if r["centred"]: pass   # a centred action (Sign out of Nova) has no left edge to line up: its words sit on the row's middle
+                elif r["tl"] is None or abs((r["tl"] - r["cardL"]) - ref["pad"]) > 1.5: why.append("words at %s, not the card's padding %s" % (r["tl"] and round(r["tl"] - r["cardL"], 1), round(ref["pad"], 1)))
+                if r["lines"] == 1 and not (abs(r["h"] - ref["rowH"]) <= 1.5): why.append("one line %spx, not the menu's %spx" % (round(r["h"], 1), round(ref["rowH"], 1)))
+                if r["h"] < ref["rowH"] - 1.5: why.append("%spx, under the menu's row" % round(r["h"], 1))
+                if r["fs"] and not (abs(r["fs"] - ref["label"]) <= .6): why.append("label %spx, not %spx" % (r["fs"], ref["label"]))
+                if r["sub"] is not None and ref["sub"] and not (abs(r["sub"] - ref["sub"]) <= .6): why.append("second line %spx, not %spx" % (r["sub"], ref["sub"]))
+                if r["tap"] is not None and r["tap"] < 44: why.append("tap %spx" % round(r["tap"]))
+                if r["between"]:
+                    L = r["line"]
+                    if not L or L["a"] < .08: why.append("no hairline above")
+                    elif abs(L["l"] - r["tl"]) > 2 or abs(L["r"] - r["contR"]) > 2 or r["cardR"] - L["r"] < 8:
+                        why.append("hairline %s..%s, words at %s, content edge %s, card %s" % (round(L["l"]), round(L["r"]), round(r["tl"] or 0), round(r["contR"]), round(r["cardR"])))
+                for k in ("chevOff", "swOff"):
+                    if r[k] is not None and abs(r[k]) > 1: why.append("%s %+.1fpx off the row's middle" % ("chevron" if k == "chevOff" else "switch", r[k]))
+                if why: bad6.append((cls, name, r["name"], why))
+        ctx.close()
+    print("     rows (and tiles) read per page:", seen6)
+    for b in bad6[:40]: print("     ", b)
+    ck("(6) no tile on any page Settings opens, in either class; words at the card's padding, Delta's sizes, hairlines under the words, switches and chevrons centred",
+       not bad6 and len(seen6) >= 2 * len(STATES) and all(v[0] for k, v in seen6.items() if not k.endswith((":legal", ":terms", ":privacy")) and k != "ifc:sync-nocode"), bad6)   # prose pages; Fire Code with no code is a line of words
+    ck("(7) the top-level menu keeps its tiles, in both classes", not bad7, bad7[:4])
     ck("(4) no page errors", not errs, errs[:3])
     br.close()
 print("\nALL PASS" if not fails else "\nFAILED: %d" % len(fails))
