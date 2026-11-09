@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""Build 384 r8: the Virtual Room choice screen is centred.
+Madison, everything under the title circled: "Center this".
+On an iPhone 17 Pro Max, an iPad Pro 11" and an iPhone SE: (1) the group under the title (the line, the games, the two cards, the
+Inbox note) has as much room above it (to the title bar) as below it (to the tab bar) - 4px; on
+a screen too short for it (the group runs under the tab bar and the page scrolls) it starts just under the title and nothing overflows sideways; (2) the group is below the title bar and above the tab bar; (3) no errors.
+  python3 tools/check-b384-vrcenter.py [--against OLD/index.html]   (must FAIL on the build before)"""
+import os, sys, importlib.util
+HERE = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
+if "--against" in sys.argv:
+    OLD = open(sys.argv[sys.argv.index("--against") + 1], encoding="utf-8").read(); IR = cb.INSET_RE
+    cb.patched = lambda ins: IR.sub(lambda m: {"top": "%dpx" % ins[0], "right": "%dpx" % ins[1], "bottom": "%dpx" % ins[2], "left": "%dpx" % ins[3]}[m.group(1)], OLD)
+from playwright.sync_api import sync_playwright
+ok = True
+def chk(name, cond, info=""):
+    global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:300], flush=True)
+M = """()=>{ const p=document.querySelector('.screen-vroom-choice'); const kids=[...p.children]; const nav=p.querySelector(':scope > .ios-nav');
+  const rest=kids.filter(k=>k!==nav); const pr=p.getBoundingClientRect(), nr=nav.getBoundingClientRect();
+  const top=Math.min(...rest.map(k=>k.getBoundingClientRect().top)), bot=Math.max(...rest.map(k=>k.getBoundingClientRect().bottom));
+  const pb=parseFloat(getComputedStyle(p).paddingBottom)||0; const tb=document.querySelector('.bottomtabs'); const tbt=tb?tb.getBoundingClientRect().top:innerHeight;
+  return { above: top-nr.bottom, below: tbt-bot, top, bot, navB:nr.bottom, tab:tbt, sw: document.documentElement.scrollWidth, vw: innerWidth }; }"""
+with sync_playwright() as pw:
+    br = pw.chromium.launch(executable_path=cb.CHROME)
+    for lab, w, h in (("iPhone 17 Pro Max", 440, 956), ("iPad Pro 11in", 834, 1194), ("iPhone SE", 375, 667)):
+        ctx, pg = cb.booted(br, w, h, seed=cb.USED_ACCOUNT, dpr=1)
+        errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
+        pg.evaluate("()=>{ window.vroomDb = window.vroomDb || (()=>({})); showVirtualRoomChoice(); }"); pg.wait_for_timeout(1200)
+        m = pg.evaluate(M)
+        base = min(m["above"], m["below"])
+        chk("(1) %s: as much room above the group (to the title) as below it (to the tab bar) (%.0f / %.0f)" % (lab, m["above"], m["below"]), (abs(m["above"] - m["below"]) <= 4 if m["below"] > 0 else m["above"] <= 30) and m["sw"] <= m["vw"], m)
+        chk("(2) %s: the group sits between the title bar and the tab bar" % lab, m["top"] >= m["navB"] and (m["bot"] <= m["tab"] or h < 700), m)
+        chk("(3) %s: no page errors" % lab, not errs, errs[:3])
+        ctx.close()
+    br.close()
+print("ALL PASS" if ok else "FAILURES"); sys.exit(0 if ok else 1)

@@ -37645,6 +37645,18 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout] body #stage > .panel.screen-vroom-choice .modecardtitle{ font-family:inherit; font-size:1.18rem; font-weight:700; letter-spacing:-.01em; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > .cal-sub{ margin-top:-.2rem; color:var(--soft); }
+  /* (384 r8) CENTRED. Madison, the choice screen with everything under the title circled: "Center this". The panel fills the
+     screen like the other centred panels (the same min-height sum), the title bar stays at the top, and the group under it -
+     the line, the three games, the two cards and the Inbox note - takes an auto margin above and below, so it sits in the
+     middle of the space between the title and the tab bar. Where there is no room (a short phone) both margins are 0. */
+  html[data-layout] body #stage > .panel.screen-vroom-choice{
+    display:flex; flex-direction:column; box-sizing:border-box;
+    min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
+  }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > .ios-nav + *{ margin-top:auto; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > :last-child{ margin-bottom:auto; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > .cal-sub{ margin-top:auto; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > :not(.ios-nav){ translate:0 var(--vrc-shift, 0px); }
   /* the cards: the units screen's card next door (Settings' sheen and the board row's lift over the surface, the full rim) -
      "the app needs a cohesive look" (383) */
   html[data-theme][data-layout] body #stage > .panel.modeselect .modecard{
@@ -133601,7 +133613,26 @@ function showVirtualRoomChoice(){
 
   stage.replaceChildren(panel);
   toTop();
+  requestAnimationFrame(() => vrcCentre());
 }
+/* (384 r8) "Center this": the CSS centres the group in the panel; the panel's floor stops short of the tab bar (the space the
+   bar reserves), so the group read high by half that gap. This nudges it down by exactly that half - measured, so it holds
+   on every device and turn - and never further than the room below it. */
+function vrcCentre(){
+  const p = document.querySelector("#stage > .panel.screen-vroom-choice");
+  if(!p) return;
+  p.style.setProperty("--vrc-shift", "0px");
+  const nav = p.querySelector(":scope > .ios-nav"), rest = [...p.children].filter(k => k !== nav);
+  if(!nav || !rest.length) return;
+  const top = Math.min(...rest.map(k => k.getBoundingClientRect().top)), bot = Math.max(...rest.map(k => k.getBoundingClientRect().bottom));
+  const tb = document.querySelector(".bottomtabs");
+  const tr = tb && !tb.hidden ? tb.getBoundingClientRect() : null;   /* (fixed: offsetParent is always null, so ask its box) */
+  const floor = tr && tr.height > 0 && getComputedStyle(tb).display !== "none" ? tr.top : innerHeight;
+  const above = top - nav.getBoundingClientRect().bottom, below = floor - bot;
+  const shift = Math.max(0, Math.min((below - above) / 2, below - 8));
+  p.style.setProperty("--vrc-shift", shift.toFixed(1) + "px");
+}
+addEventListener("resize", () => { if(document.querySelector("#stage > .panel.screen-vroom-choice")) vrcCentre(); });
 
 /* ONE SCREEN, TWO JOBS. Setting a room up and changing it afterwards
    are the same question - which units, how long, how many - so they are
