@@ -37689,6 +37689,19 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ margin-top:auto !important; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > :last-child{ margin-bottom:auto; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > :is(.vrc-modecards, .vrc-note){ translate:0 var(--vrc-shift, 0px); }
+  /* (384 r8) "these two boxes being centered does kinda make the screen feel empty though ... Should we increase the size of the
+     boxes?" - two cards where Choose your mode has four, so each is bigger: taller, a larger icon and title, the words a size up,
+     the two filling the middle of the screen rather than floating in it. */
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:14px; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ min-height:min(30vh, 230px); padding:26px 26px; justify-content:center; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitlerow{ gap:12px; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitlerow > svg{ width:30px; height:30px; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitle{ font-size:1.42rem; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecarddesc.modecarddesc{ font-size:1.05rem; line-height:1.45; margin-top:10px; }
+  @media (min-width:40rem){
+    html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ min-height:min(26vh, 260px); padding:32px 34px; }
+    html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitle{ font-size:1.6rem; }
+  }
   /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
   html[data-layout] body #stage > .panel.vroom-finale-solo{
     display:flex; flex-direction:column; justify-content:center; gap:12px; box-sizing:border-box;
@@ -133654,11 +133667,12 @@ function showVirtualRoomChoice(){
   sub.className = "cal-sub"; sub.style.textAlign = "center";
   /* "The virtual room description needs to be a smidge better, needs to
      mention studying together" (build 287). */
-  sub.textContent = "Study together. Everyone in the room takes the same test at the same time, and you see how you all did at the end.";
+  /* (384 r8) "the description at the top is bad. Make it more simple" - one short line, as Choose your mode's question is */
+  sub.textContent = "Take a test live with your classmates.";
   /* (384 r8) THE GAMES ARE A LINE OF TEXT, NOT THREE PILLS. Madison: "The stuff at the top, they look like buttons for one, and
      for two, they have the old interface" - three rimmed chips with the old coloured art read as a row of buttons that did
      nothing when tapped. Which games a room can play is a fact about rooms, so it is said in the line under the title. */
-  sub.textContent += " Play a Race, a Tug of War or a Battle; the host picks the game.";
+
   panel.appendChild(sub);
 
   if(!vroomDb()){
@@ -133732,7 +133746,8 @@ function showVirtualRoomChoice(){
   /* NOT "PRIVATE" (build 287): "The host one says it's private but it's
      not, it's default private but can be public." So it says so. */
   const host = card("host", "host", "Host a room",
-    "Make your own room, pick the game and units, and invite friends. It starts invite only \u2014 you can open it to the class from the lobby.");
+    /* (384 r8) "why is it confusing and start saying it starts off as private or something? Don't do that" - Choose your mode's length and style, no "best for" */
+    "Pick the game and the units, then invite your friends. You start the match when everyone is ready.");
   /* STRAIGHT INTO THE LOBBY. Picking units before the room existed was
      the same screen twice - "the unit selection screen should ONLY be
      available from within a lobby". The room is created EMPTY - no
@@ -133762,7 +133777,7 @@ function showVirtualRoomChoice(){
      private by default, so nothing appears there that its host did not
      deliberately open. */
   const browse = card("browse", "join", "Join an open room",
-    "See the rooms others have opened to everyone, and hop into one \u2014 even if a match is already going.");
+    "See the rooms your classmates have opened and jump into one. You can join a match that has already started.");
   browse.b.addEventListener("click", showRoomBrowser);
   actions.append(host.b, browse.b);
   panel.appendChild(actions);
@@ -133777,11 +133792,12 @@ function showVirtualRoomChoice(){
   /* "It's now called Inbox, so update that" (build 311). */
   nt.textContent = "Invited to somebody\u2019s room? The invite shows up in your Inbox.";
   note.append(bell, nt);
-  panel.appendChild(note);
+  /* (384 r8) "the heads up at the bottom, should we remove that?" - removed: an invite already arrives in the Inbox and says so */
 
   stage.replaceChildren(panel);
   toTop();
   requestAnimationFrame(() => vrcCentre());
+  setTimeout(vrcCentre, 300);   /* and once more when the page has settled (a busy phone lays out late) */
 }
 /* (384 r8) the cards in the middle of the space between the line under the title and the tab bar - see .screen-vroom-choice */
 function vrcCentre(){
