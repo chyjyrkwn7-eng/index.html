@@ -168,6 +168,15 @@ window.__gold = function(D, W, H, s){
       if(m){ if(cur && y - cur.b <= 2){ cur.b = y; cur.rows.push([y, m]); } else { cur = { a: y, b: y, rows: [[y, m]] }; lines.push(cur); } }
     }
     if(!lines.length){ rec.skip = 'no letters inside'; out.push(rec); continue; }
+    /* (r17) the neighbour line's print is not the shape's: where the lines are set close (a 10 pt paragraph at 1.15), the gold of the line above
+       reaches down into the next line's ascenders (and the next line's gold up into this one's descenders), and the print of words that
+       are NOT cited shows under the shape's top or bottom edge as a stub of "line" - a fragment that touches the edge and stands well
+       under a line's height. It is dropped here (a second REAL line is as tall as the first). */
+    if(lines.length > 1){
+      const hh = (L) => L.b - L.a + 1, big = Math.max(...lines.map(hh));
+      while(lines.length > 1 && lines[lines.length - 1].b >= c.y1 - 1 && hh(lines[lines.length - 1]) < 0.55 * big) lines.pop();
+      while(lines.length > 1 && lines[0].a <= c.y0 + 1 && hh(lines[0]) < 0.55 * big) lines.shift();
+    }
     /* each line: its x-height block (the rows most letters cover: 0.45-0.47 em in both typefaces), baseline at its foot */
     for(const L of lines){
       const mx = Math.max(...L.rows.map(r => r[1]));
