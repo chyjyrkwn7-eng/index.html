@@ -172,7 +172,7 @@ def faced(C): return {i for i, c in C.items() if c["eyes"] or c["mouth"] or c["p
 for key, R, expect in (("ifc", IFC, set()), ("academy", ACA, {"valkyrie", "voidwalker"})):
     C = R["chars"]; bare = {i for i, c in C.items() if c["eyes"] == 0 and c["mouth"] == 0 and c["pairs"] == 0}
     chk("1. [%s] the characters with no face mark at all are only %s (found %s)" % (key, sorted(expect), sorted(bare)), bare == expect, {"extra": sorted(bare - expect), "missing": sorted(expect - bare)})
-MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Firebird"},   # (round 12 names)
+MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Aurora"},   # (round 12 names)
         "academy": {"hive": "Hive", "genesis": "Genesis"}}
 for key, R in (("ifc", IFC), ("academy", ACA)):
     C = R["chars"]
@@ -206,8 +206,10 @@ def differ_any(C, a, b):
 bad = [(a, b, CI[a]["face"]["kind"], CI[b]["face"]["kind"], CI[a]["face"]["lamp"], CI[b]["face"]["lamp"]) for n, a in enumerate(FL) for b in FL[n + 1:] if not differ_any(CI, a, b)]
 chk("2c. the four secret flares differ from each other in eye shape or colour: %s" % {N[i]: (CI[i]["face"]["kind"], CI[i]["face"]["lamp"], CI[i]["face"]["clusters"]) for i in FL}, not bad, bad)
 chk("2c. Strobe and Sprinkler Head differ in eye shape AND colour: %s" % {N[i]: (CI[i]["face"]["kind"], CI[i]["face"]["lamp"]) for i in ("clown", "hive")}, differ(CI, "clown", "hive"), {i: CI[i]["face"] for i in ("clown", "hive")})
-sig2d = [(CI[i]["face"]["clusters"], CI[i]["face"]["mouth"]) for i in FL]
-chk("2d. the four flares are not one treatment stamped four times: no two carry the same number of eyes and the same mouth (%s)" % {N[i]: (CI[i]["face"]["clusters"], CI[i]["face"]["mouth"]) for i in FL},
+# (384 round 14) Aurora and round 5's Nebula both have two lit eyes and a small mouth, in different light (teal almonds, orange and gold
+# rounds): the treatment is the count, the mouth AND the light, so the eyes' colour joins the signature
+sig2d = [(CI[i]["face"]["clusters"], CI[i]["face"]["mouth"], CI[i]["face"]["lamp"]) for i in FL]
+chk("2d. the four flares are not one treatment stamped four times: no two carry the same number of eyes, the same mouth and the same light (%s)" % {N[i]: (CI[i]["face"]["clusters"], CI[i]["face"]["mouth"], CI[i]["face"]["lamp"]) for i in FL},
     len(set(sig2d)) == 4, {i: CI[i]["face"] for i in FL})
 # the same eyes must not be stamped on the secret flares and Toxic Spill either (the other glowing-eyed one)
 bad = [i for i in FL if CI[i]["face"]["coarse"] == CI["astronaut"]["face"]["coarse"] or CI[i]["face"]["fine"] == CI["astronaut"]["face"]["fine"]]
@@ -224,7 +226,8 @@ chk("3. Quasar (the recon figure): violet eyes (%s, %s), no mouth (%s)" % (f["la
 f = CI["singularity"]["face"]
 chk("3. Whiteout: two pale lenses of light (%s, %s, %s eyes), no mouth (%s)" % (f["kind"], f["lamp"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["lamp"] in ("white", "h4", "h5") and f["mouth"] == "none", f)
 f = CI["genesis"]["face"]
-chk("3. Firebird: two round eyes (%s, %s eyes) and a beak for a mouth (%s)" % (f["kind"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["kind"] == "round" and f["mouth"] != "none", f)
+# (384 round 14) Aurora in the Firebird's place: two lit almond eyes and a small mouth
+chk("3. Aurora: two lit eyes (%s, %s eyes) and a small mouth (%s)" % (f["kind"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["mouth"] != "none", f)
 f = CI["astronaut"]["face"]; eyes3 = {round(b[0] * 2) / 2 for b in f["bodies"] if b[2] * b[3] >= 4}
 chk("3. Toxic Spill keeps its three acid eyes (%s) and its toothed grin (%s)" % (sorted(eyes3), f["mouth"]), len(eyes3) == 3 and f["mouth"].startswith("mwideopen"), f)
 f = CI["clown"]["face"]

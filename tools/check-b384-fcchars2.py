@@ -8,7 +8,7 @@
   "I don't like the secret flare characters from ifc, I love the academy ones though, we need to follow the academy
    theme but just come up with new ones.."
 
-  (384 round 12, r9-chars: the four are Nebula, Quasar (build 383's hooded recon drawing, his name kept), Whiteout and Firebird now, and the timekeeper id is the Fire Marshal; A and B follow.)
+  (384 round 12, r9-chars: the four are Nebula, Quasar (build 383's hooded recon drawing, his name kept), Whiteout and Firebird - round 14: Aurora - now, and the timekeeper id is the Fire Marshal; round 14 ships the Plainclothes as Undercover; A and B follow.)
   A. the four secret flares are Nebula, Quasar, Pulsar and Solstice: four new drawings (no helmet or hat, no human skin),
      each with the parts every character has, no svg filter, a glow that is the one the character table carries; Nebula's
      gas is the three flare colours (red, orange, yellow)
@@ -71,9 +71,9 @@ def lum(h):
 chk("the page is the Fire Code class (%s), no page errors (%s)" % (r["cls"], errs[:2]), r["cls"] == "ifc" and not errs, errs)
 C = r["ch"]
 # A
-want = {"voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Firebird"}   # (384 round 12, r9-chars: Madison's picks)
+want = {"voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Aurora"}   # (384 round 12, r9-chars: Madison's picks; round 14: Aurora for the Firebird)
 names = {i: C[i]["name"] for i in want}
-chk("A. the four secrets are Nebula, Quasar, Whiteout and Firebird (round 12: Quasar is build 383's recon drawing again, Whiteout for Pulsar, Firebird for Eclipse) (%s)" % names, names == want, names)
+chk("A. the four secrets are Nebula, Quasar, Whiteout and Aurora (round 12: Quasar is build 383's recon drawing again, Whiteout for Pulsar; round 14: Aurora for the Firebird) (%s)" % names, names == want, names)
 chk("A. each is a Fire Code drawing with a scene, and no helmet or hat (the Whiteout's parka hood is not one) (kinds %s)" % {i: C[i]["kind"] for i in want},
     all(C[i]["kind"].startswith("fc") and not C[i]["kind"].startswith("fcsq") and C[i]["scene"] and (not C[i]["hat"] or C[i]["hat"] == "hood") for i in want), C)
 chk("A. the four are four different drawings", len({C[i]["hash"] for i in want}) == 4)
@@ -85,7 +85,7 @@ chk("A. Nebula's gas is three colours: red, orange and yellow (%s)" % sorted(g),
 chk("B. the valkyrie id is Undercover and the timekeeper id the Fire Marshal (%s, %s) (round 9 replaced the Lookout and the Smoke Alarm; round 12 redrew Undercover and put a person in The Irons' place)" % (C["valkyrie"]["name"], C["timekeeper"]["name"]),
     C["valkyrie"]["name"] == "Undercover" and C["timekeeper"]["name"] == "Fire Marshal", C)
 chk("B. ...new kinds (%s, %s), each with its own scene and glow, no svg filter, no hat of the fire service" % (C["valkyrie"]["kind"], C["timekeeper"]["kind"]),
-    C["valkyrie"]["kind"] == "fcagent2" and C["timekeeper"]["kind"] == "fcmarshal" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
+    C["valkyrie"]["kind"] == "fcopt_plain" and C["timekeeper"]["kind"] == "fcmarshal" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
 # C
 sh = r["shirt"]; base = sh[1] if len(sh) > 1 else sh[0]
 rr, gg, bb = (int(base.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4)); hh, ll, ss = colorsys.rgb_to_hls(rr, gg, bb)

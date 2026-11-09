@@ -103,7 +103,7 @@ SNAP = r"""() => {
       out.strobe = { bar: [...s.querySelectorAll('.cx-head path')].filter(p => /^M1[45](\.\d+)? (19|20|21)(\.\d+)? L2[45](\.\d+)? (19|20|21)(\.\d+)?$/.test((p.getAttribute('d') || '').trim()) && p.getAttribute('stroke')).length };
     }
     if(id === 'hacker'){
-      out.disp = { ball: [...s.querySelectorAll('circle')].filter(c => +c.getAttribute('cx') > 28 && +c.getAttribute('cy') > 18 && +c.getAttribute('cy') < 23 && +c.getAttribute('r') >= 1.5).length };
+      out.disp = { ball: [...s.querySelectorAll('circle')].filter(c => +c.getAttribute('cx') > 28 && +c.getAttribute('cy') > 18 && +c.getAttribute('cy') < 23 && +c.getAttribute('r') >= 1.5 && !/^url/.test(c.getAttribute('fill') || '')).length };   /* (round 14) her curls are gradient rounds, not lamps */
     }
     s.remove();
   }

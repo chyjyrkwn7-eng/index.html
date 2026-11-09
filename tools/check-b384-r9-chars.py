@@ -25,6 +25,8 @@
   E. THE SMOKE DIVER'S HELMET carries a badge with a star, and no Maltese cross (the fire department's mark) anywhere on it; still navy.
   F. THE CHIEF (round 13: "I preferred the chief with the brown coat"): E's drawing byte for byte - the brown sport coat over the white shirt,
      the white cowboy hat, the grey moustache, the bolo's turquoise, the star.
+  M. (round 14) THE DISPATCHER is a woman: a crown of curls, gold hoops, the headset, the console's light, the navy polo.
+     Round 14 also shipped Plainclothes as Undercover (G) and Aurora as the genesis secret (I), and replaced the timekeeper's options (L).
   L. (round 13) THE OPTIONS: three finished concepts each for the timekeeper, genesis and valkyrie ids sit in IFC_CHAR_OPTIONS, none shipped
      (IFC_CHAR_PICK all 0, so the shipped three are unchanged - B); each of the nine draws whole (head, eyes, closed eyes, mouth, special
      parts, no svg filter), each differs from the others and from the shipped drawing, and the secret one's options carry the core flare.
@@ -36,7 +38,7 @@
      groups); THE FIREBIRD: wings, two round eyes with pupils, a beak in the mouth group, the core flare at its breast.
   J. EVERY SECRET'S FLARE IS ON ITS CHARACTER (inside the figure's own drawn shapes), and every changed drawing has a head, eyes, closed eyes,
      a mouth group, special parts and no svg filter.
-  K. THE NAMES: Inspector, Smoke Diver, Chief, Undercover, Fire Marshal, Drone Pilot, Nebula, Quasar, Whiteout, Firebird, Star Ranger.
+  K. THE NAMES: Inspector, Smoke Diver, Chief, Undercover, Fire Marshal, Drone Pilot, Nebula, Quasar, Whiteout, Aurora, Star Ranger, Dispatcher.
 
   python3 tools/check-b384-r9-chars.py [--against OLD/index.html]      (B's differs, C to K FAIL on cd82880)
   python3 tools/check-b384-r9-chars.py --write-prev                     (re-reads cd82880 / ea31d43 / 478a689 from git into the .prev.json)
@@ -61,11 +63,11 @@ INIT_IFC = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.se
 INIT_ACA = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
             "localStorage.setItem('class26e.drill.v1',%s);}catch(e){}") % S
 
-KEPT = ["ghost", "grizzly", "alien", "clown", "marksman", "astronaut", "hacker", "hive"]
+KEPT = ["ghost", "grizzly", "alien", "clown", "marksman", "astronaut", "hive"]   # (round 14: the Dispatcher is redrawn, a woman - M)
 RANKS = ["forge", "lunar", "solar", "tempest", "frost", "oracle", "inferno"]
-PICKED = ["detective", "masked", "poseidon", "valkyrie", "timekeeper", "ronin", "voidwalker", "umbra", "singularity", "genesis", "zenith"]
+PICKED = ["detective", "masked", "poseidon", "valkyrie", "timekeeper", "ronin", "voidwalker", "umbra", "singularity", "genesis", "zenith", "hacker"]
 NAMES = {"detective": "Inspector", "masked": "Smoke Diver", "poseidon": "Chief", "valkyrie": "Undercover", "timekeeper": "Fire Marshal", "ronin": "Drone Pilot",
-         "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Firebird", "zenith": "Star Ranger"}
+         "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Aurora", "zenith": "Star Ranger", "hacker": "Dispatcher"}
 
 SNAP = r"""(detail) => {
   document.getElementById('splashscreen')?.remove();
@@ -117,6 +119,7 @@ SNAP = r"""(detail) => {
         /* the vest: two-panel body shapes (two subpaths) filled with a gradient */
         panels: q('.cx-body path').filter(e => (e.getAttribute('d') || '').split('M').length === 3 && /^url/.test(e.getAttribute('fill') || '')).map(e => base(s, e)),
         rotGroups: q('g[transform*="rotate"]').length,
+        curls: q('.cx-head > circle, .cx-head circle').filter(e => +e.getAttribute('r') >= 1.8 && +e.getAttribute('r') <= 2.6 && /^url/.test(e.getAttribute('fill') || '')).length,
         /* the blue plate carrier: a body shape filled with the banners' vest gradient (#2D5DAA at its middle stop), edged #10285A */
         plate: q('.cx-body path').filter(e => (base(s, e) || '').toUpperCase() === '#2D5DAA' && (e.getAttribute('stroke') || '').toUpperCase() === '#10285A').map(e => box(e)) };
     }
@@ -229,10 +232,11 @@ chk("F. the Chief is ea31d43's (E) drawing byte for byte (%s), in the brown spor
     H["poseidon"] == PREV["E"].get("poseidon") and c["kind"] == "fcchief3" and 15 <= hsl(c["shirt"])[0] <= 40 and hsl(c["shirt"])[2] < .45 and "#F6F4EE" in c["fills"], c)
 chk("F. ...with his white cowboy hat (%s), the grey moustache (%s), the bolo's turquoise (%s) and the star (%s)" % (cw and cw[0]["fill"], "#DADCE2" in c["fills"], "#3FC8B8" in c["fills"], "#6E4A0C" in c["strokes"]),
     len(cw) == 1 and hsl(cw[0]["fill"])[2] > .85 and "#DADCE2" in c["fills"] and "#3FC8B8" in c["fills"] and "#6E4A0C" in c["strokes"], c)
-# G
+# G (round 14: "I like the plainclothes one" - round 13's option 1 shipped under the name Undercover)
 u = D["valkyrie"]
-chk("G. Undercover: no hat (%s), gold aviators (%s) over an empty eye group (%s marks), a badge on a chain (%s dashed, badge %s), an earpiece (%s), hair, a nearly flat mouth" % (u["hats"], "#E2BC5E" in u["strokes"], u["eyes"], u["dashed"], "#6E4A0C" in u["strokes"], "#DCEEF8" in u["fills"]),
-    not u["hats"] and "#E2BC5E" in u["strokes"] and u["eyes"] == 0 and u["dashed"] >= 1 and "#6E4A0C" in u["strokes"] and "#DCEEF8" in u["fills"] and u["kind"] == "fcagent2" and u["mouth"] >= 1, u)
+fed = [h for h in u["hats"] if h["kind"] == "fedora"]
+chk("G. Undercover is the Plainclothes detective: a charcoal fedora (%s), the tan trench coat (%s), a white shirt and dark tie, the notebook (%s), eyes of his own (%s whites)" % (fed and fed[0]["fill"], u["shirt"], "#F6F2E2" in u["fills"], u["eyeWhites"]),
+    u["kind"] == "fcopt_plain" and len(fed) == 1 and hsl(fed[0]["fill"])[2] < .3 and 25 <= hsl(u["shirt"])[0] <= 45 and "#F2F2EE" in u["fills"] and "#F6F2E2" in u["fills"] and u["eyeWhites"] == 2 and "#E2BC5E" not in u["strokes"], u)
 # H
 f = D["timekeeper"]
 vest = [p for p in f["panels"] if p]
@@ -247,9 +251,13 @@ w = D["singularity"]
 chk("I. the Whiteout: a parka hood (%s) with its fur, two lit eyes behind goggles (lit %s, %s shapes), no mouth (%s), the white flare, wind and snow (%s)" % ([h["kind"] for h in w["hats"]], w["eyesLit"], w["eyes"], w["mouth"], [g for g in w["groups"] if "wind" in g or "snow" in g]),
     [h["kind"] for h in w["hats"]] == ["hood"] and w["eyesLit"] and w["eyes"] >= 4 and w["mouth"] == 0 and "cx-fx cx-fx-wind" in w["groups"] and "cx-fx cx-fx-snow" in w["groups"] and w["flare"] and w["kind"] == "fcwhiteout2", w)
 b = D["genesis"]
-pupils = [x for x in b["eyeCircles"] if x[2] in ("#160406",)]
-chk("I. the Firebird: wings (%s), two round amber eyes with pupils (%d), a beak in the mouth group (%s shapes), no hat, the core flare at its breast (%s)" % ("cx-fx cx-fx-wings" in b["groups"], len(pupils), b["mouth"], b["flare"]),
-    "cx-fx cx-fx-wings" in b["groups"] and len(pupils) == 2 and "#FFB020" in [x[2] for x in b["eyeCircles"]] and b["mouth"] >= 2 and not b["hats"] and b["flare"] and b["flare"][1] > 30 and b["kind"] == "fcfirebird", b)
+# (round 14) Aurora, shipped as the secret and redrawn ("I like aurora but I feel it could be better")
+chk("I. Aurora: curtains of light round its head (%s), two lit almond eyes (lit %s), a small mouth (%s), no hat, the core flare as the jewel of a circlet at its brow (%s)" % ("cx-fx cx-fx-aurora" in b["groups"], b["eyesLit"], b["mouth"], b["flare"]),
+    b["kind"] == "fcopt_aurora" and "cx-fx cx-fx-aurora" in b["groups"] and b["eyesLit"] and b["mouth"] >= 1 and not b["hats"] and b["flare"] and b["flare"][1] < 17 and "#CFFFEF" in b["strokes"], b)
+# M (round 14: "Can you make the dispatcher a female?")
+h = D["hacker"]
+chk("M. the Dispatcher is a woman now: a crown of curls (%s rounds), gold hoops (%s), lashes, the headset (%s) with its boom mic, the console's light (%s), the navy polo (%s), two eyes (%s)" % (h["curls"], "#F2C14E" in h["strokes"], "cx-fx cx-fx-headset" in h["groups"], "cx-fx cx-fx-console" in h["groups"], h["shirt"], h["eyeWhites"]),
+    h["kind"] == "fcdispatch4" and h["curls"] >= 16 and "#F2C14E" in h["strokes"] and "cx-fx cx-fx-headset" in h["groups"] and "cx-fx cx-fx-console" in h["groups"] and (h["shirt"] or "").upper() == "#344C86" and h["eyeWhites"] == 2 and h["mouth"] >= 1, h)
 # J
 off = {i: (D[i]["flare"], D[i]["onFig"]) for i in ("voidwalker", "umbra", "singularity", "genesis") if not D[i]["onFig"]}
 chk("J. every secret's flare sits on its character's own drawn shapes (off: %s)" % (off or "none"), not off, {i: (D[i]["flare"], D[i]["onFig"]) for i in ("voidwalker", "umbra", "singularity", "genesis")})
@@ -260,13 +268,18 @@ O = IFC.get("opts")
 if not O:
     chk("L. the round-13 options are in the file (IFC_CHAR_OPTIONS)", False, "none")
 else:
+    # (round 14) the timekeeper's three are new (Arson Investigator, K-9 Handler, Code Officer) and wait on his pick; Plainclothes (valkyrie 1)
+    # and Aurora (genesis 2) are shipped through IFC_CHAR_PICK, so the shipped drawing of those two IS that option
     allo = [x for i in ("timekeeper", "genesis", "valkyrie") for x in O["o"].get(i, [])]
-    chk("L. three options each for the timekeeper, genesis and valkyrie ids, none shipped (pick %s)" % O["pick"],
-        all(len(O["o"].get(i, [])) == 3 for i in ("timekeeper", "genesis", "valkyrie")) and not any(O["pick"].values()), O["pick"])
+    chk("L. three options each; the timekeeper's are round 14's (%s) and unpicked, valkyrie ships option 1 and genesis option 2 (pick %s)" % ([x["name"] for x in O["o"].get("timekeeper", [])], O["pick"]),
+        all(len(O["o"].get(i, [])) == 3 for i in ("timekeeper", "genesis", "valkyrie")) and O["pick"] == {"timekeeper": 0, "genesis": 2, "valkyrie": 1}
+        and [x["kind"] for x in O["o"]["timekeeper"]] == ["fcopt_arson", "fcopt_k9", "fcopt_codeofficer"], O["pick"])
     bad = [x["name"] for x in allo if x["heads"] != 1 or not (x["eyes"] and x["closed"] and x["mouth"]) or x["sp"] < 1 or x["filter"] or not x["scene"]]
     chk("L. ...each of the nine draws whole: a head, eyes, closed eyes, a mouth, special parts, its scene, no svg filter (bad: %s)" % (bad or "none"), not bad and len(allo) == 9, allo)
     hs = [x["h"] for x in allo]
-    chk("L. ...the nine are nine different drawings, none the shipped one (%s)" % [x["name"] for x in allo], len(set(hs)) == 9 and not any(x["h"] == x["shipped"] for x in allo), hs)
+    chk("L. ...nine different drawings; the shipped valkyrie and genesis ARE their picked options, and no timekeeper option is the shipped Fire Marshal",
+        len(set(hs)) == 9 and O["o"]["valkyrie"][0]["h"] == O["o"]["valkyrie"][0]["shipped"] and O["o"]["genesis"][1]["h"] == O["o"]["genesis"][1]["shipped"]
+        and not any(x["h"] == x["shipped"] for x in O["o"]["timekeeper"]), [(x["name"], x["h"], x["shipped"]) for x in allo])
     chk("L. ...and the secret's three carry the core flare (%s)" % [x["flare"] for x in O["o"]["genesis"]], all(x["flare"] for x in O["o"]["genesis"]), O["o"]["genesis"])
 # K
 wrong = {i: N.get(i) for i in NAMES if N.get(i) != NAMES[i]}

@@ -210,8 +210,9 @@ peaks = [i for i, v in F["hats"].items() if v["peak"]]
 chk("no Fire Code character wears a police-style peaked cap (%s)" % peaks, F["hats"] and not peaks, peaks)
 # (384 r6) Madison: "Fire inspectors wear police gear ... navy blue pants and short sleeved polo shirts" - the duty ball cap (cx-fc-hat-cap)
 # joins the list; the cowboy hat stays allowed by this line but no Fire Code character wears one now (the leg below)
-badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble", "hardhat", "cap") for h in v["hat"])]
-chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood, a space helmet or the duty cap (%s)" % badhat, not badhat, badhat)
+# (384 round 14) the Plainclothes Undercover wears a fedora
+badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble", "hardhat", "cap", "fedora") for h in v["hat"])]
+chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood, a space helmet, the duty cap or the Plainclothes fedora (%s)" % badhat, not badhat, badhat)
 # (384) the investigator (astronaut) is the Toxic Spill now, a creature with no hat; (384 sets) Star Ranger is the last ultimate's
 # (zenith) now, and the other two ultimates are rangers too
 # (384 r6) round 3's cowboy hats are gone: the inspector wears the navy duty cap, the chief is bareheaded, Star Ranger a space helmet
