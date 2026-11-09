@@ -49,6 +49,10 @@ In the Fire Code class:
      strip, an EXIT, no gauges. AFTER HOURS: the kneeling officer, his beam from his lens, no cowboy hat. Nine banners differ from ea31d43 (prev4.json) and
      the other twelve are exactly as ea31d43 drew them.
 
+     ROUND 9 (r9-banners) follows Madison's review: the look (cowboy hat, glasses, stubble, navy shirt, BLUE vest), three inspectors in the warehouse, the hat in
+     place of the caps, After Hours' tag wired to the gauge line; the Inspection Team and Top Floor round 6 lines are retired and the round 9 banners are left out
+     of the older "nothing else moved" pins - tools/check-b384-r9-banners.py holds them, and the academy, byte for byte.
+
   python3 tools/check-b384-fcbanners.py [--against OLD/index.html]    (must FAIL on bb7eb94, and on c8143d5 for the round 3b lines)
   python3 tools/check-b384-fcbanners.py --dump    prints the hashes (run it against the build before to refresh PREV)
 """
@@ -67,8 +71,10 @@ NAMES = {"tests100": "Certified", "tests250": "Plan Review", "tests500": "Inspec
          "level80": "Top Floor", "early10": "After Hours", "exam100": "Clean Sweep", "adept_rank": "Sapphire", "elite_rank": "Amethyst", "titan_rank": "Supernova",
          "flare_void": "Nebula", "flare_umbra": "Quasar", "flare_horizon": "Pulsar", "flare_genesis": "Eclipse", "zenith": "Star Ranger"}
 REDONE = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "vr50", "study50", "study60", "correct10000", "level80", "early10", "exam100",
-          "flare_umbra", "flare_horizon", "flare_genesis"]
-KEEP = ["correct5000", "flare_void", "adept_rank", "elite_rank", "titan_rank", "zenith"]
+          "flare_umbra", "flare_horizon", "flare_genesis", "correct5000", "flare_void"]   # round 9 redrew Downpour and Nebula too
+KEEP = ["adept_rank", "elite_rank", "titan_rank", "zenith"]
+# round 9 (r9-banners; Madison's review, tools/check-b384-r9-banners.py): these moved on purpose, so the older "nothing else moved" pins leave them out
+R9 = ["tests500", "correct5000", "level80", "early10", "flare_void", "flare_umbra", "flare_horizon", "flare_genesis", "hundos100", "tests250", "hundos250"]
 # round 3b: the six redrawn in it, and hashes taken on c8143d5 (--dump --against its index.html)
 R3B = ["tests500", "hundos100", "hundos250", "level80", "exam100", "early10", "correct10000"]
 PREV2 = {}
@@ -161,13 +167,13 @@ GEO = r"""() => {
   try{ const b = mount('early10'); const bm = b.querySelector('.fb-beam'), wh = b.querySelector('.fb-wheel'), gg = b.querySelector('.fb-gauge'), tg = b.querySelector('.fb-tag'), ck = b.querySelector('.fb-clock');
     const Bm = bm && R(bm), W = wh && R(wh), G2 = gg && R(gg), Tg = tg && R(tg);
     const inside = (A, c) => !!(A && c && c.cx >= A.x && c.cx <= A.r && c.cy >= A.y && c.cy <= A.b);
-    const hole = b.querySelector('.fb-hole'), str = b.querySelector('.fb-string'), sn = str ? nums(str.getAttribute('d')) : [], Ho = hole && R(hole);
+    const hole = b.querySelector('.fb-hole'), str = b.querySelector('.fb-string'), sn = str ? nums(str.getAttribute('d')) : [], Ho = hole && R(hole), gl = all(b, '.fb-gaugeline').map(R);
     const gm = /id="gqtagb">(?:<stop[^>]*stop-color="(#[0-9A-Fa-f]{6})"[^>]*\/>)+/.exec(ls.early10), cols = ((/id="gqtagb"[^>]*>(.*?)<\/linearGradient>/.exec(ls.early10) || [0, ''])[1].match(/#[0-9A-Fa-f]{6}/g) || []);
     const blue = cols.length > 0 && cols.every(h => { const n = parseInt(h.slice(1), 16); return (n & 255) > (n >> 16 & 255) * 1.5; });
     out.G = { beam: Bm && { x: r1(Bm.x), r: r1(Bm.r) }, wheel: !!W, gauge: !!G2, tag: !!Tg, wheelLit: inside(Bm, W), gaugeLit: inside(Bm, G2), tagLit: inside(Bm, Tg), time: ck ? ck.getAttribute('data-time') : null,
       rows: all(b, '.fb-tagrows').reduce((a, e) => a + (e.getAttribute('d').match(/M/g) || []).length, 0), boxes: all(b, '.fb-tagbox').length, ticks: all(b, '.fb-tagticks').reduce((a, e) => a + (e.getAttribute('d').match(/M/g) || []).length, 0), punches: all(b, '.fb-punch').length,
       stringEnd: sn.length ? [r1(sn[sn.length - 2]), r1(sn[sn.length - 1])] : null, hole: Ho && [r1(Ho.cx), r1(Ho.cy)], stringToHole: Ho && sn.length ? r1(Math.hypot(sn[sn.length - 2] - Ho.cx, sn[sn.length - 1] - Ho.cy)) : null,
-      stringStartToWheel: W && sn.length ? r1(Math.hypot(sn[0] - W.cx, sn[1] - W.cy)) : null, wheelR: W && r1(W.w / 2), blue, cols, header: ls.early10.indexOf(tp('INSPECTION', 414, 113.2, 2.6)) >= 0, ok: ls.early10.indexOf(tp('OK', 414, 137, 5.6)) >= 0,
+      onLine: !!sn.length && gl.some(l => sn[0] >= l.x - 3 && sn[0] <= l.r + 3 && sn[1] >= l.y - 4 && sn[1] <= l.b + 4), blue, cols, header: !!tg && tg.querySelectorAll('path[stroke="#FFFFFF"]').length >= 2, ok: ls.early10.indexOf(tp('OK', 414, 137, 5.6)) >= 0,
       thermal: /iron|hot\b/.test(ls.early10) || /#FF8AD0/i.test(ls.early10) }; b.remove(); }catch(e){ out.err = (out.err || '') + 'G ' + String(e).slice(0, 120) + ' '; }
   return out;
 }"""
@@ -191,10 +197,12 @@ GEO6 = r"""() => {
       out.A.per[id] = offs.length;
       offs.forEach((o, i) => { const polo = o.querySelector('.fb-polo'), pants = o.querySelector('.fb-pants'), vest = o.querySelector('.fb-tacvest');
         const vf = vest ? [...vest.querySelectorAll('path')].map(e => e.getAttribute('fill')).filter(f => /^#/.test(f || '')) : [];
-        const ok = polo && navy(polo.getAttribute('fill')) && pants && navy(pants.getAttribute('stroke') || pants.getAttribute('fill')) && vest && vf.length && dark(vf[0]);
+        const vc = rgb(vest && vest.getAttribute('data-col')), blue = !!vc && vc[2] > 140 && vc[2] > vc[0] + 80;
+        const ok = polo && navy(polo.getAttribute('fill')) && pants && navy(pants.getAttribute('stroke') || pants.getAttribute('fill')) && vest && vf.length && blue;
         if(!ok) out.A.bad.push([id, i, polo && polo.getAttribute('fill'), pants && (pants.getAttribute('stroke') || pants.getAttribute('fill')), vf[0]]); });
       const old = all(b, '.fb-inspector, .fb-hat, .fb-person, .fb-ff, .fb-band').length; if(old) out.A.old[id] = old;
       all(b, '.fb-cap').forEach(c => out.A.caps.push([id, c.getAttribute('data-col')]));
+      all(b, '.fb-cowboy').forEach(c => out.A.hats = (out.A.hats || []).concat([[id, c.getAttribute('data-col')]]));
       const cols = new Set(((bannerStaticSVG(id) || '') + layerStr(id)).match(/#[0-9a-fA-F]{6}\b/g) || []), hv = [...cols].filter(h => { const q = hsl(rgb(h)); return q[0] >= 62 && q[0] <= 100 && q[1] > .55 && q[2] > .38; });
       if(hv.length) out.A.hivis[id] = hv;
       b.remove(); }); }catch(e){ out.err += 'A ' + String(e).slice(0, 120) + ' '; }
@@ -211,7 +219,7 @@ GEO6 = r"""() => {
     const cone = (BANNER_ART.tests250('gq')[1] || {}).svg || '', cn = nums((/d="([^"]*)"/.exec(cone) || [0, ''])[1]);
     out.C = { joints: J.length, baseUnderFirst: !!(B0 && J[0] && J[0].cx > B0.x && J[0].cx < B0.r && J[0].cy < B0.cy + 2 && J[0].cy > B0.y - 14), shadeAtLast: !!(narrow && J[2] && Math.hypot(narrow[0] - J[2].cx, narrow[1] - J[2].cy) < 8),
       coneFromBulb: !!(BU && cn.length >= 4 && [[cn[0], cn[1]], [cn[2], cn[3]]].every(p => p[0] >= BU.x - 3 && p[0] <= BU.r + 3 && p[1] >= BU.y - 3 && p[1] <= BU.b + 3)),
-      ruler: /url\(#gqscale\)/.test(ls), hardhat: /url\(#gqhat\)/.test(ls), torch: all(b, '.fb-geartorch').length, radio: all(b, '.fb-gearradio').length, gloves: all(b, '.fb-geargloves').length, cap: all(b, '.fb-gearcap').length }; b.remove(); }catch(e){ out.err += 'C ' + String(e).slice(0, 120) + ' '; }
+      ruler: /url\(#gqscale\)/.test(ls), hardhat: /url\(#gqhat\)/.test(ls), torch: all(b, '.fb-geartorch').length, radio: all(b, '.fb-gearradio').length, gloves: all(b, '.fb-geargloves').length, cap: all(b, '.fb-gearhat').length }; b.remove(); }catch(e){ out.err += 'C ' + String(e).slice(0, 120) + ' '; }
   /* D. inspection team */
   try{ const b = mount('tests500'), offs = all(b, '.fb-officer').sort((p, q) => R(p).cx - R(q).cx), vests = offs.map(o => R(o.querySelector('.fb-tacvest')));
     const lenses = all(b, '.fb-lens').map(R), beams = all(b, '.fb-beam').map(e => { const n = nums(e.getAttribute('d')); return [(n[0] + n[n.length - 2]) / 2, (n[1] + n[n.length - 1]) / 2]; });
@@ -224,7 +232,7 @@ GEO6 = r"""() => {
   /* F. squared away */
   try{ const b = mount('hundos100'), ls = layerStr('hundos100');
     out.F = { vest: all(b, '.fb-gearvest').length, belt: all(b, '.fb-gearbelt').length, holster: all(b, '.fb-gearbelt .fb-holster').length, gun: all(b, '.fb-gearbelt .fb-gun').length, torches: all(b, '.fb-geartorch').length, radio: all(b, '.fb-gearradio').length,
-      cuffs: all(b, '.fb-cuffs').length, cap: all(b, '.fb-gearcap').length, gloves: all(b, '.fb-geargloves').length, wallet: all(b, '.fb-gearwallet').length, shadows: b.querySelector('.fb-gearshadows') ? b.querySelector('.fb-gearshadows').children.length : 0,
+      cuffs: all(b, '.fb-cuffs').length, cap: all(b, '.fb-gearhat').length, gloves: all(b, '.fb-geargloves').length, wallet: all(b, '.fb-gearwallet').length, shadows: b.querySelector('.fb-gearshadows') ? b.querySelector('.fb-gearshadows').children.length : 0,
       cert: all(b, '.fb-cert, .fb-cert-frame').length, patch: ls.indexOf(fbTextPath('FIRE MARSHAL', 212, 30 + 28.5 * 1.72, 2.3 * 1.72)) >= 0 }; b.remove(); }catch(e){ out.err += 'F ' + String(e).slice(0, 120) + ' '; }
   /* G. top floor */
   try{ const b = mount('level80'), sg = b.querySelector('.fb-stairsign'), n80 = b.querySelector('.fb-floor80'), S = sg && R(sg), N = n80 && R(n80);
@@ -235,7 +243,7 @@ GEO6 = r"""() => {
       gauges: all(b, '.fb-gauge, .fb-header, .fb-branch').length }; b.remove(); }catch(e){ out.err += 'H ' + String(e).slice(0, 120) + ' '; }
   /* I. after hours */
   try{ const b = mount('early10'), ls = layerStr('early10'), offs = all(b, '.fb-officer'), lens = b.querySelector('.fb-lens'), bm = b.querySelector('.fb-beam'), L = lens && R(lens), bn = bm ? nums(bm.getAttribute('d')) : [];
-    out.I = { officers: offs.length, kneel: offs.filter(o => o.getAttribute('data-pose') === 'kneel').length, lensToBeam: L && bn.length ? r1(Math.hypot(L.cx - bn[0], L.cy - (bn[1] + bn[bn.length - 1]) / 2)) : null, cowboy: /#2E2018/i.test(ls) }; b.remove(); }catch(e){ out.err += 'I ' + String(e).slice(0, 120) + ' '; }
+    out.I = { officers: offs.length, kneel: offs.filter(o => o.getAttribute('data-pose') === 'kneel').length, lensToBeam: L && bn.length ? r1(Math.hypot(L.cx - bn[0], L.cy - (bn[1] + bn[bn.length - 1]) / 2)) : null, cowboy: !!(offs[0] && offs[0].querySelector('.fb-cowboy')) }; b.remove(); }catch(e){ out.err += 'I ' + String(e).slice(0, 120) + ' '; }
   return out;
 }"""
 
@@ -267,7 +275,7 @@ chk("(1) each banner is named for its challenge (%d wrong)" % len(bad), not bad,
 same = [i for i in REDONE if PREV.get(i) and F["hashes"].get(i) == PREV[i]]
 chk("(2) every redrawn banner differs from 976c414 (the build before round 3) (unchanged: %s; %d hashes known)" % (same, len(PREV)), PREV and not same, same)
 moved = [i for i in KEEP if PREV.get(i) and F["hashes"].get(i) != PREV[i]]
-chk("(2) Downpour, Nebula, Star Ranger and the rank banners are as they were (changed: %s)" % moved, PREV and not moved, moved)
+chk("(2) Star Ranger and the rank banners are as they were (Downpour and Nebula were redrawn in round 9) (changed: %s)" % moved, PREV and not moved, moved)
 S = F["shape"]
 chk("(4) Certified has its CERTIFIED lettering, no flag poles, and twenty challenge coins (%s)" % F["coins"], F["text"]["cert"] and not F["flags"] and F["coins"] == 20, (F["text"]["cert"], F["flags"], F["coins"]))
 chk("(4) Plan Review has its title block", F["text"]["plan"], F["text"])
@@ -292,7 +300,7 @@ G = G or {}
 same2 = [i for i in R3B if PREV2.get(i) and F["hashes"].get(i) == PREV2[i]]
 chk("(11) the seven banners redrawn in round 3b (items A to F) differ from c8143d5 (unchanged: %s; %d hashes known)" % (same2, len(PREV2)), PREV2 and not same2, same2)
 R6 = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "level80", "early10", "exam100", "study50"]   # round 6 moved these on purpose (13)
-rest = [i for i in NAMES if i not in R3B and i not in R6 and i != "flare_horizon"]   # Pulsar is being redrawn with its character, in another branch
+rest = [i for i in NAMES if i not in R3B and i not in R6 and i not in R9 and i != "flare_horizon"]   # Pulsar is being redrawn with its character, in another branch
 moved2 = [i for i in rest if PREV2.get(i) and F["hashes"].get(i) != PREV2[i]]
 chk("(11) nothing else moved since c8143d5 but round 6's (changed: %s) (Pulsar is another branch's)" % moved2, PREV2 and not moved2, moved2)
 # ---- (12) round 4 (Madison's review of round 3b), measured on the page itself ----
@@ -302,7 +310,7 @@ except Exception: pass
 R4 = ["tests500", "hundos100", "hundos250", "level80", "exam100", "early10", "correct10000"]
 same3 = [i for i in R4 if PREV3.get(i) and F["hashes"].get(i) == PREV3[i]]
 chk("(12) the seven banners redrawn in round 4 differ from c1d224b (unchanged: %s; %d hashes known)" % (same3, len(PREV3)), PREV3 and not same3, same3)
-moved3 = [i for i in NAMES if i not in R4 and i not in R6 and PREV3.get(i) and F["hashes"].get(i) != PREV3[i]]
+moved3 = [i for i in NAMES if i not in R4 and i not in R6 and i not in R9 and PREV3.get(i) and F["hashes"].get(i) != PREV3[i]]
 chk("(12) nothing else moved since c1d224b but round 6's (changed: %s)" % moved3, PREV3 and not moved3, moved3)
 C = G.get("C", {}); bu = C.get("bursts") or []
 xs = sorted(b["x"] for b in bu); gaps4 = [round(b - a, 1) for a, b in zip(xs, xs[1:])]
@@ -317,12 +325,12 @@ chk("(12) FIRE INVESTIGATOR'S TAPE: no knots (%s), no twists or turns (%s, back 
 chk("(12) ...and printed along its WHOLE length: %s glyphs, the first %s units from the jamb's wrap and the last %s from the post's, the widest gap between glyphs %s (a blank stretch would be 30+)" % (Fh.get("glyphs"), Fh.get("firstGap"), Fh.get("lastGap"), Fh.get("maxGap")),
     Fh.get("glyphs", 0) >= 38 and 0 <= Fh.get("firstGap", 99) <= 16 and 0 <= Fh.get("lastGap", 99) <= 16 and Fh.get("maxGap", 99) <= 14, Fh)
 Gh = G.get("G", {}); tm = (Gh.get("time") or "0:0").split(":"); mins = int(tm[0]) * 60 + int(tm[1])
-chk("(12) AFTER HOURS, the tag is a BLUE inspection tag (blue %s %s): INSPECTION heading (%s), %s handwriting rows, %s check boxes (%s ticked), %s punched holes, the string goes through its hole (%s units) from the handwheel (%s units from its centre, wheel radius %s); nothing says OK (%s)" %
-    (Gh.get("blue"), Gh.get("cols"), Gh.get("header"), Gh.get("rows"), Gh.get("boxes"), Gh.get("ticks"), Gh.get("punches"), Gh.get("stringToHole"), Gh.get("stringStartToWheel"), Gh.get("wheelR"), Gh.get("ok")),
+chk("(12) AFTER HOURS, the tag is a BLUE inspection tag (blue %s %s): INSPECTION heading (%s), %s handwriting rows, %s check boxes (%s ticked), %s punched holes, the string goes through its hole (%s units) from riser 1's gauge line (round 9: %s); nothing says OK (%s)" %
+    (Gh.get("blue"), Gh.get("cols"), Gh.get("header"), Gh.get("rows"), Gh.get("boxes"), Gh.get("ticks"), Gh.get("punches"), Gh.get("stringToHole"), Gh.get("onLine"), Gh.get("ok")),
     Gh.get("blue") and Gh.get("header") and Gh.get("rows") == 10 and Gh.get("boxes") == 10 and 4 <= Gh.get("ticks", 0) < 10 and Gh.get("punches", 0) >= 22 and Gh.get("stringToHole") is not None and Gh["stringToHole"] <= 3
-    and Gh.get("stringStartToWheel") is not None and Gh["stringStartToWheel"] <= Gh["wheelR"] + 8 and not Gh.get("ok"), Gh)
-chk("(12) ...and the scene is kept: the beam (x %s to %s) lands on the handwheel (%s), the gauge (%s) and the tag (%s), the clock %s is near eleven, no thermal camera (%s)" % ((Gh.get("beam") or {}).get("x"), (Gh.get("beam") or {}).get("r"), Gh.get("wheelLit"), Gh.get("gaugeLit"), Gh.get("tagLit"), Gh.get("time"), Gh.get("thermal")),
-    Gh.get("wheel") and Gh.get("gauge") and Gh.get("tag") and Gh.get("wheelLit") and Gh.get("gaugeLit") and Gh.get("tagLit") and 10 * 60 + 40 <= mins <= 11 * 60 + 15 and not Gh.get("thermal"), Gh)
+    and Gh.get("onLine") and not Gh.get("ok"), Gh)
+chk("(12) ...and the scene is kept: a handwheel (%s) and a gauge (%s), the beam (x %s to %s) lands on the tag (%s; round 9 aims it at riser 1's gauge line and its tag, not the wheel), the clock %s is near eleven, no thermal camera (%s)" % (Gh.get("wheel"), Gh.get("gauge"), (Gh.get("beam") or {}).get("x"), (Gh.get("beam") or {}).get("r"), Gh.get("tagLit"), Gh.get("time"), Gh.get("thermal")),
+    Gh.get("wheel") and Gh.get("gauge") and Gh.get("tag") and Gh.get("tagLit") and 10 * 60 + 40 <= mins <= 11 * 60 + 15 and not Gh.get("thermal"), Gh)
 chk("(12) the round 4 art still standing had no page error while it was measured (%s)" % G.get("err"), not G.get("err"), G.get("err"))
 # ---- (13) round 6 (the one inspector; the gear wall, the top floor, the clean sweep), measured on the page itself ----
 PREV4 = {}
@@ -330,44 +338,39 @@ try: PREV4 = json.load(open(os.path.join(HERE, "check-b384-fcbanners.prev4.json"
 except Exception: pass
 same4 = [i for i in R6 if PREV4.get(i) and F["hashes"].get(i) == PREV4[i]]
 chk("(13) the nine banners round 6 redrew differ from ea31d43 (unchanged: %s; %d hashes known)" % (same4, len(PREV4)), PREV4 and not same4, same4)
-moved4 = [i for i in NAMES if i not in R6 and PREV4.get(i) and F["hashes"].get(i) != PREV4[i]]
-chk("(13) the other twelve are exactly as ea31d43 drew them (changed: %s)" % moved4, PREV4 and not moved4, moved4)
+moved4 = [i for i in NAMES if i not in R6 and i not in R9 and PREV4.get(i) and F["hashes"].get(i) != PREV4[i]]
+chk("(13) the others (but round 9's) are exactly as ea31d43 drew them (changed: %s)" % moved4, PREV4 and not moved4, moved4)
 G6 = G6 or {}; A6 = G6.get("A") or {}; per = A6.get("per") or {}
-want = {"tests500": 5, "hundos250": 7, "level80": 1, "early10": 1}
+want = {"tests500": 3, "hundos250": 7, "level80": 1, "early10": 1}   # round 9: the Inspection Team is three, in a warehouse
 chk("(13) THE ONE INSPECTOR: the shared kit draws every inspector (%s; want %s, and none elsewhere)" % ({k: v for k, v in per.items() if v}, want),
     all(per.get(k) == v for k, v in want.items()) and sum(per.values()) == sum(want.values()), per)
-chk("(13) ...each in a navy polo, navy pants and a black plate carrier (wrong: %s)" % A6.get("bad"), sum(per.values()) == sum(want.values()) and not A6.get("bad"), A6.get("bad"))
-chk("(13) ...no round-4 hi-vis man, hard hat, crew figure or reflective band left in any Fire Code banner (%s), and every cap is navy (%s)" % (A6.get("old"), sorted(set(c[1] for c in A6.get("caps") or []))),
-    per and not A6.get("old") and A6.get("caps") and all(c[1] == "#1F2E55" for c in A6["caps"]), (A6.get("old"), A6.get("caps")))
+chk("(13) ...each in a navy shirt, navy pants and (round 9) a BLUE plate carrier (wrong: %s)" % A6.get("bad"), sum(per.values()) == sum(want.values()) and not A6.get("bad"), A6.get("bad"))
+chk("(13) ...no round-4 hi-vis man, hard hat, crew figure or reflective band left in any Fire Code banner (%s); round 9: no ball cap (%s) and every hat the one dark brown cowboy hat (%s)" % (A6.get("old"), A6.get("caps"), sorted(set(c[1] for c in A6.get("hats") or []))),
+    per and not A6.get("old") and not A6.get("caps") and A6.get("hats") and len(set(c[1] for c in A6["hats"])) == 1, (A6.get("old"), A6.get("caps"), A6.get("hats")))
 chk("(13) ...and no hi-vis yellow-green anywhere in a Fire Code banner (%s)" % A6.get("hivis"), per and not A6.get("hivis"), A6.get("hivis"))
 B6 = G6.get("B") or {}
 chk("(13) CERTIFIED: every ribbon tail (%s, under %s rosettes) starts under its rosette (%s) and ends on the paper (%s); the desk badge is off the centre line (x %s)" % (B6.get("tails"), B6.get("rosettes"), B6.get("under"), B6.get("onPaper"), B6.get("badgeX")),
     B6.get("tails", 0) >= 14 and all(B6.get("under") or [False]) and all(B6.get("onPaper") or [False]) and B6.get("badgeX") is not None and abs(B6["badgeX"] - 240) > 40, B6)
 C6 = G6.get("C") or {}
-chk("(13) PLAN REVIEW: no scale ruler (%s), no hard hat (%s); the lamp is joined: %s joints, base under the first (%s), shade at the last (%s), the cone leaving the bulb (%s); flashlight %s, radio %s, gloves %s, cap %s" %
+chk("(13) PLAN REVIEW: no scale ruler (%s), no hard hat (%s); the lamp is joined: %s joints, base under the first (%s), shade at the last (%s), the cone leaving the bulb (%s); flashlight %s, radio %s, gloves %s, the hat (round 9; was a cap) %s" %
     (C6.get("ruler"), C6.get("hardhat"), C6.get("joints"), C6.get("baseUnderFirst"), C6.get("shadeAtLast"), C6.get("coneFromBulb"), C6.get("torch"), C6.get("radio"), C6.get("gloves"), C6.get("cap")),
     C6 and not C6.get("ruler") and not C6.get("hardhat") and C6.get("joints") == 3 and C6.get("baseUnderFirst") and C6.get("shadeAtLast") and C6.get("coneFromBulb") and all(C6.get(k) == 1 for k in ("torch", "radio", "gloves", "cap")), C6)
-D6 = G6.get("D") or {}
-chk("(13) INSPECTION TEAM: five officers (%s) on one pavement line (feet %s), a gap between every two vests (%s), %s with a holstered handgun and the rest without, beams from their lenses (%s), two clipboards (%s)" %
-    (D6.get("n"), D6.get("feet"), D6.get("gap"), D6.get("guns"), D6.get("lensToBeam"), D6.get("boards")),
-    D6.get("n") == 5 and max(D6["feet"]) - min(D6["feet"]) < 2 and min(D6["gap"]) >= 12 and 1 <= D6.get("guns", 0) <= 4 and len(D6.get("lensToBeam") or []) == 2 and max(D6["lensToBeam"]) <= 4 and D6.get("boards") == 2, D6)
+# INSPECTION TEAM's round 6 line (five officers on one pavement line) is retired: round 9 replaced the scene (check-b384-r9-banners (6)).
 E6 = G6.get("E") or {}
 chk("(13) GRAND FINALE: seven officers from behind (%s / %s) on the crest (feet %s), %s saluting, %s hands on belts, %s arms folded, FIRE MARSHAL on every back (%s)" %
     (E6.get("n"), E6.get("back"), E6.get("feet"), E6.get("salute"), E6.get("belt"), E6.get("cross"), E6.get("lettering")),
     E6.get("n") == 7 and E6.get("back") == 7 and max(E6["feet"]) - min(E6["feet"]) <= 8 and E6.get("salute") == 2 and E6.get("belt", 0) >= 1 and E6.get("cross", 0) >= 1 and E6.get("lettering"), E6)
 F6 = G6.get("F") or {}
-chk("(13) SQUARED AWAY (was Certificate of Merit): the gear wall - %s" % {k: F6.get(k) for k in ("vest", "belt", "holster", "gun", "torches", "radio", "cuffs", "cap", "gloves", "wallet", "shadows", "cert", "patch")},
+chk("(13) SQUARED AWAY (was Certificate of Merit): the gear wall (round 9: the cap is the hat) - %s" % {k: F6.get(k) for k in ("vest", "belt", "holster", "gun", "torches", "radio", "cuffs", "cap", "gloves", "wallet", "shadows", "cert", "patch")},
     F6.get("vest") == 1 and F6.get("belt") == 1 and F6.get("holster") == 1 and F6.get("gun") == 1 and F6.get("torches", 0) >= 3 and F6.get("radio") == 1 and F6.get("cuffs") == 1 and F6.get("cap") == 1 and F6.get("gloves") == 1 and F6.get("wallet") == 1 and F6.get("shadows", 0) >= 6 and not F6.get("cert") and F6.get("patch"), F6)
-G7 = G6.get("G") or {}
-chk("(13) TOP FLOOR (was Top of the Ladder): the stair sign (%s) with a big 80 on it (%s), one officer seen from behind (%s / %s), no ladder or firefighter (%s)" % (G7.get("sign"), G7.get("eighty"), G7.get("officers"), G7.get("back"), G7.get("ladder")),
-    G7.get("sign") and G7.get("eighty") and G7.get("officers") == 1 and G7.get("back") == 1 and not G7.get("ladder"), G7)
+# TOP FLOOR's round 6 line (the stair sign with its 80) is retired: round 9 took the door and the sign out (check-b384-r9-banners (5)).
 H6 = G6.get("H") or {}
 chk("(13) CLEAN SWEEP (was Ten in a Row): ten inspection tags (%s: %s left, %s right of the vanishing point), all inside the strip (%s), an EXIT (%s), no gauges or pipes (%s)" % (H6.get("tags"), H6.get("left"), H6.get("right"), H6.get("inStrip"), H6.get("exit"), H6.get("gauges")),
     H6.get("tags") == 10 and H6.get("left") == 5 and H6.get("right") == 5 and H6.get("inStrip") and H6.get("exit") and not H6.get("gauges"), H6)
 I6 = G6.get("I") or {}
-chk("(13) AFTER HOURS: the kneeling inspector in the kit (%s, kneeling %s), his beam starting at his lens (%s units), no cowboy hat (%s)" % (I6.get("officers"), I6.get("kneel"), I6.get("lensToBeam"), I6.get("cowboy")),
-    I6.get("officers") == 1 and I6.get("kneel") == 1 and I6.get("lensToBeam") is not None and I6["lensToBeam"] <= 4 and not I6.get("cowboy"), I6)
-chk("(13) the round 6 measurements ran without a page error, over the fourteen inspectors (%s)" % G6.get("err"), G6 and not G6.get("err") and sum(per.values()) == 14, G6.get("err"))
+chk("(13) AFTER HOURS: the kneeling inspector in the kit (%s, kneeling %s), his beam starting at his lens (%s units), and (round 9) his cowboy hat (%s)" % (I6.get("officers"), I6.get("kneel"), I6.get("lensToBeam"), I6.get("cowboy")),
+    I6.get("officers") == 1 and I6.get("kneel") == 1 and I6.get("lensToBeam") is not None and I6["lensToBeam"] <= 4 and I6.get("cowboy"), I6)
+chk("(13) the round 6 measurements ran without a page error, over the twelve inspectors (%s)" % G6.get("err"), G6 and not G6.get("err") and sum(per.values()) == 12, G6.get("err"))
 
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

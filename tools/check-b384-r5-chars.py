@@ -257,7 +257,10 @@ chk("7. every unlock rule is as it was (%s)" % {i: IFC["feats"][i] for i in FEAT
 PREV = json.load(open(os.path.join(HERE, "check-b384-r5-chars.prev.json")))
 PINNED = lambda i: i.startswith("flare_") or i.endswith("_rank") or i in ("astral", "celestial", "zenith", "galaxy")   # (the banners round of 384 changed seven others on purpose)
 for key, R in (("ifc", IFC), ("academy", ACA)):
-    moved = sorted(i for i, h in PREV[key]["banners"].items() if PINNED(i) and R["banners"].get(i) != h)
+    # (384 round 9, r9-banners) Madison asked for the Fire Code class's four secret flare banners to be redrawn ("The secret flare ones need to be better");
+    # check-b384-r9-banners.py holds them now, and pins every academy banner byte for byte
+    R9F = ("flare_void", "flare_umbra", "flare_horizon", "flare_genesis") if key == "ifc" else ()
+    moved = sorted(i for i, h in PREV[key]["banners"].items() if PINNED(i) and i not in R9F and R["banners"].get(i) != h)
     chk("7. [%s] no flare or rank banner moved since c1d224b (moved: %s)" % (key, moved), not moved, moved)
 # (384 r6 eyes, check-b384-r6-eyes.py) Forge, Lunar, Solar and Tempest got eyes of their own, in both classes; Oracle, Frost and everybody
 # else stay byte for byte, and only those four may (and must) differ
