@@ -62,7 +62,8 @@ with sync_playwright() as pw:
       const name = document.querySelector('#stage .profile-name-display');
       const sameRowAsName = !!(btn && name && name.closest('.namedisplay-row') && name.closest('.namedisplay-row').contains(btn));
       const tileEl = btn ? btn.querySelector('.settings-row-icon') : null;
-      const fill = tileEl ? getComputedStyle(tileEl).backgroundColor : null;
+      /* (384 r8) the tile's fill can be on a layer of its own (the squircle mask lives there so the new-dot is not cut) */
+      const fill = tileEl ? ((/rgba?\([^)]*,\s*0\)$|transparent/.test(getComputedStyle(tileEl).backgroundColor)) ? getComputedStyle(tileEl, '::after').backgroundColor : getComputedStyle(tileEl).backgroundColor) : null;   /* (384 r8: ::after is the fill, ::before its rim) */
       const rimC = btn ? getComputedStyle(btn).borderTopColor : '', rimW = btn ? parseFloat(getComputedStyle(btn).borderTopWidth) : 0;
       const rimA = +((rimC.match(/rgba\([^)]*,\s*([\d.]+)\)/) || [])[1] || (rimC.startsWith('rgb(') ? 1 : 0));
       const rim = rimW >= 1 && rimA >= .14 && (lum(rimC) || 0) > .5;
@@ -146,9 +147,9 @@ with sync_playwright() as pw:
           label: lab ? parseFloat(getComputedStyle(lab).fontSize) : 0, after: tr && wr ? Math.round(wr.left - tr.right) : null,
           dy: wr ? Math.round(((wr.top + wr.height / 2) - (r.top + r.height / 2)) * 10) / 10 : null, rim: rimW >= 1 && (lum(rimC) || 0) > .5 }; }); }""")
     for b in r5:
-        ck("5. %s: a row - its tile on the left (%spx, %spx in), its chevron on the right (%spx in), its name at %spx straight after the tile (%spx)"
+        ck("5. %s: a row - (384 r8) the Settings menu's 28px tile on the left (%spx, %spx in), its chevron on the right (%spx in), its name at %spx straight after the tile (%spx)"
            % (b.get("sel"), b.get("tileW"), b.get("tileIn"), b.get("chevIn"), b.get("label"), b.get("after")),
-           not b.get("missing") and b.get("tileW", 0) >= 32 and 0 <= (b.get("tileIn") or -1) <= 16 and 0 <= (b.get("chevIn") or -1) <= 20 and b.get("label", 0) >= 18 and 8 <= (b.get("after") or 0) <= 20, b)
+           not b.get("missing") and 27 <= b.get("tileW", 0) <= 29 and 0 <= (b.get("tileIn") or -1) <= 18 and 0 <= (b.get("chevIn") or -1) <= 20 and b.get("label", 0) >= 18 and 8 <= (b.get("after") or 0) <= 20, b)
         ck("5. %s: the words in the row's middle top to bottom (%spx off)" % (b.get("sel"), b.get("dy")), b.get("dy") is not None and abs(b["dy"]) <= 1, b)
         ck("5. %s: wide (%s%% of its card), a full tap target (%spx), a light rim" % (b.get("sel"), b.get("widthPct"), b.get("h")),
            b.get("widthPct", 0) >= 60 and b.get("h", 0) >= 56 and b.get("rim"), b)

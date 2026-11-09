@@ -122,7 +122,7 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(900)
     opened = pg.evaluate("()=>!!document.querySelector('#stage .screen-testhistory')")
     ck("(4) Test history: none in the heading, a row under the last test, its width, 56px+, a tile, 18px - and it opens the history (%s, %s)" % (th, opened),
-       th and th.get("headBtn") == 0 and th.get("below") and th.get("wDiff", 99) <= 2 and th.get("lDiff", 99) <= 2 and th.get("h", 0) >= 56 and th.get("tile", 0) >= 32 and th.get("label", 0) >= 18 and opened, th)
+       th and th.get("headBtn") == 0 and th.get("below") and th.get("wDiff", 99) <= 2 and th.get("lDiff", 99) <= 2 and th.get("h", 0) >= 56 and 27 <= th.get("tile", 0) <= 29 and th.get("label", 0) >= 18 and opened, th)
     # (5) Profile's rows
     pg.evaluate("()=>{ showHome(); showProfile('profile'); window.scrollTo(0,0); }"); pg.wait_for_timeout(1200)
     rows = pg.evaluate("""()=>['.profile-customize-btn', '.pf-case-count', '.pf-goal-foot'].map(sel=>{ const b=document.querySelector('#stage '+sel); if(!b) return null;
@@ -135,7 +135,7 @@ with sync_playwright() as pw:
         bg = rgb(rw["bg"]); rim = rgb(rw["rim"])
         dark = len(bg) >= 3 and lum(bg) < .1
         lightrim = rw["rimW"] >= 1 and len(rim) >= 3 and min(rim[:3]) >= 200
-        if not (dark and lightrim and rw["tile"] >= 32 and rw["label"] >= 18 and rw["chev"] and rw["h"] >= 56): badr.append(rw)
+        if not (dark and lightrim and 27 <= rw["tile"] <= 29 and rw["label"] >= 18 and rw["chev"] and rw["h"] >= 56): badr.append(rw)
     wide = rows[0] and rows[1] and abs(rows[0]["w"] - rows[1]["w"]) <= 10
     opens = []
     for sel, scr in (("#stage .profile-customize-btn", ".screen-customize"), ("#stage .pf-case-count", ".screen-ranks"), ("#stage .pf-goal-foot", ".screen-ranks")):

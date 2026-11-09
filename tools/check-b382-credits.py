@@ -9,8 +9,9 @@ can add Logan Preston" / "made by M. Davis and then the word nova in a nice cool
     bug, Version history, Terms of Use, Privacy (coloured words, no tile, no chevron); no names at the foot (that is
     Contributors' job), only "Made by Davis" (383: the name plain, small capitals like "Made by") and a NOVA wordmark in
     gradient text, last on the screen.
-(2) Every category opens its own page (round back button, title) holding its settings, each switch row with a coloured
-    tile; a page lights the tab Settings lights; back is the menu.
+(2) Every category opens its own page (round back button, title) holding its settings - (384 r8) with NO tile on any row ("when
+    you click a section and open it, there are icons within them? But there shouldn't be..": Delta's pages are plain lists; only
+    the menu has tiles); a page lights the tab Settings lights; back is the menu.
 (3) Every handler still fires (spied): share, install walkthrough, version check, report screen, release history, a
     switch, the sync code reveal; the new switch (Tap sounds) saves to the theme; (383) Study has no Longer pause switch.
 (4) Advanced settings opens its page: red word rows, Reset opens the warning.
@@ -76,7 +77,8 @@ ROWS = """()=>{
     const out={ title: title.trim().slice(0,40), h: Math.round(r.getBoundingClientRect().height), card: cards.indexOf(card),
       cat: r.classList.contains('settings-cat'), page: r.dataset.page||'', chev: !!r.querySelector('.settings-row-chev'),
       color: cs.color, cardCls: card ? card.className : '' };
-    if(t){ const ts=getComputedStyle(t), c=rgb(ts.backgroundColor), svg=t.querySelector('svg');
+    if(t){ const own=getComputedStyle(t); const ts=/rgba\([^)]*,\s*0\)$|transparent/.test(own.backgroundColor) ? getComputedStyle(t,'::after') : own;   /* (384 r8) the fill can be the tile's ::after (Delta's material: a rim, then the fill) */
+      const c=rgb(ts.backgroundColor), svg=t.querySelector('svg');
       out.tile=c; out.chroma=Math.max(...c)-Math.min(...c); out.glyph=svg?getComputedStyle(svg).color:null;
       out.opaque=!/rgba\\([^)]*,\\s*0?\\.\\d+\\)/.test(ts.backgroundColor) && !/transparent/.test(ts.backgroundColor); }
     else out.tile=null;
@@ -148,13 +150,10 @@ with sync_playwright() as pw:
         rows = pg.evaluate(ROWS) or []
         cats = [r for r in rows if r["cat"]]
         chk("%s the menu's category rows are %s (%s)" % (tag, want, [r["page"] for r in cats]), sorted(r["page"] for r in cats) == sorted(want), cats)
-        bad = [(r["title"], r.get("tile"), r["h"]) for r in cats if not (r.get("tile") and r["chroma"] >= 40 and r["opaque"] and r["glyph"] == "rgb(255, 255, 255)" and r["chev"] and r["h"] >= 44)]
-        chk("%s every category row: a solid colour tile, a white glyph, a chevron, 44px+" % tag, cats and not bad, bad)
-        bycard = {}
-        for r in rows:
-            if r.get("tile"): bycard.setdefault(r["card"], []).append(tuple(r["tile"]))
-        dup = {k: v for k, v in bycard.items() if len(set(v)) != len(v)}
-        chk("%s tile colours differ inside every card" % tag, rows and not dup, dup)
+        # (384 r8) a tile need not be a colour any more: Delta's utility card is grey, and so is ours (check-b384-tilematerial (7))
+        bad = [(r["title"], r.get("tile"), r["h"]) for r in cats if not (r.get("tile") and r["opaque"] and r["glyph"] == "rgb(255, 255, 255)" and r["chev"] and r["h"] >= 44)]
+        chk("%s every category row: a solid tile, a white glyph, a chevron, 44px+" % tag, cats and not bad, bad)
+        print("  SKIP %s tile colours differ inside every card  -- superseded: 384 r8 gives each card ONE colour family, as Delta's are (\"Do you see how their grouped up stuff has the same color icons?\"); check-b384-tilematerial (7) holds it" % tag)
         m = pg.evaluate(MENU) or {}
         chk("%s no switch, slider or legal paragraph on the menu (%s)" % (tag, {k: m.get(k) for k in ("switches", "legal")}), m and m["switches"] == 0 and not m["legal"], m)
         cred = [r for r in rows if "settings-credits-card" in r["cardCls"]]
@@ -189,9 +188,9 @@ with sync_playwright() as pw:
                 # Fire Code has no cloud (initFirebase stands down there): its Sync page is the unreachable status
                 titles += [t for t in pg.evaluate("()=>[...document.querySelectorAll('#stage .sync-status-row')].length ? ['Your sync code'] : []")]
             need = [] if (cls == "ifc" and k == "rankings") else PAGES[k]   # Fire Code's page is a read-only list of classes, no switch
-            chk("%s %s opens its page (%s) with %s, each with a coloured tile" % (tag, k, pr and pr["title"], need),
+            chk("%s %s opens its page (%s) with %s, and no row on it carries a tile (384 r8)" % (tag, k, pr and pr["title"], need),
                 opened and pr and pr["title"] and pr["back"] and pr["menuGone"] and all(t in titles for t in need)
-                and all(r.get("tile") and r["chroma"] >= 40 for r in prow if r["title"] in need), {"page": pr, "titles": titles})
+                and not any(r.get("tile") for r in prow), {"page": pr, "titles": titles, "tiled": [r["title"] for r in prow if r.get("tile")]})
             if k == "sound":
                 lit = pg.evaluate(LIT)
                 chk("%s a category page lights what Settings lights (%s)" % (tag, lit), lit == litSettings, lit)
