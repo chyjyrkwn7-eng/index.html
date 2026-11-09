@@ -227,7 +227,7 @@
        so a different account signing in on this device sees none of it; class26e.enrolled is only a mirror of it now. */
     try{
       if(localStorage.getItem("class26e.signout")){
-        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|enrolled|classseen|greet\.[a-z]+|newclass\.[a-z]+)$/;
+        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|displaytest|enrolled|classseen|greet\.[a-z]+|newclass\.[a-z]+)$/;
         var del = [];
         for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf("class26e.") === 0 && !keepRe.test(k)) del.push(k); }
         for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
@@ -279,7 +279,7 @@
        (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
        with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
     /* (384) the status bar's colour is the class's own (its theme's), as the theme is: not shared */
-    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|displaytest|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -54807,13 +54807,14 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
    top of every screen (the screen title, the test's count) soft and dim; Chromium cannot reproduce it, so this gives a row of switches
    that turn each suspect layer off live on the phone, to see which one it is. */
 (function(){
-  try{ if(!/[?&]diag(=|&|$)/.test(location.search)) return; }catch(e){ return; }
+  try{ if(!/[?&]diag(=|&|$)/.test(location.search) && localStorage.getItem("class26e.displaytest") !== "1") return; }catch(e){ return; }
   const T = [
     ["blur", "No backdrop blur anywhere", "*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}"],
     ["glow", "No background glow or stars", "body::before,body::after,html::before,html::after{display:none!important}"],
     ["mask", "No masks", "*,*::before,*::after{-webkit-mask-image:none!important;mask-image:none!important}"],
     ["filt", "No filters or shadows", "*,*::before,*::after{filter:none!important}"],
     ["wc", "No will-change / compositing hints", "*,*::before,*::after{will-change:auto!important;isolation:auto!important;mix-blend-mode:normal!important}"],
+    ["topbtn", "No blur on the chat / back / Pause buttons only", "#chatdock-btn, .back-link, .settings-nav-back, .ios-nav-back, #pausebtn, .top #restart{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}"],
     ["pin", "Header not pinned", ".wrap > .top, .wrap.test-pinned > .top{position:static!important}"],
     ["dock", "Chat dock off", "#chatdock{display:none!important}"],
     ["anim", "No animations or transitions", "*,*::before,*::after{animation:none!important;transition:none!important}"],
@@ -117876,7 +117877,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-09-384.2";
+const APP_BUILD = "2026-11-09-384.3";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -133271,6 +133272,19 @@ function showAdvancedSettings(){
   dangerBtn.addEventListener("click", showResetWarning);
   dcard.appendChild(dangerBtn);
   panel.append(dcard, settingsFootnote("Clears your progress, XP and settings on every synced device. You'll be asked to confirm first."));
+
+  /* (384 r17) the display test's panel (see the ?diag block): switchable from here so an installed app can use it too */
+  panel.appendChild(settingsHeader("Troubleshooting"));
+  const tcard = document.createElement("div");
+  tcard.className = "settings-card settings-list settings-adv-diag";
+  let diagOn = false; try{ diagOn = localStorage.getItem("class26e.displaytest") === "1"; }catch(e){}
+  const diagBtn = settingsTextRow(diagOn ? "Hide the display test panel" : "Show the display test panel");
+  diagBtn.addEventListener("click", () => {
+    try{ if(diagOn) localStorage.removeItem("class26e.displaytest"); else localStorage.setItem("class26e.displaytest", "1"); }catch(e){}
+    location.reload();
+  });
+  tcard.appendChild(diagBtn);
+  panel.append(tcard, settingsFootnote("A small panel of switches that turn parts of the screen off one at a time, for finding what makes the top of a screen look soft. Ask an admin before using it."));
 
   stage.replaceChildren(panel);
   toTop(true);
