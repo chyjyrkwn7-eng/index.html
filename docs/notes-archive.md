@@ -37328,3 +37328,33 @@ Madison: "Can you make the dispatcher a female? I like the plainclothes one. I l
 
 ### 384 r11b - the Dispatcher stays a man
 Madison, right after r11 merged: "Nvm don't make dispatch a women". hacker is back on fcdispatch3 (its drawing and backdrop restored from the commit before the r11-chars merge; fcdispatch4 removed). check-b384-r9-chars: hacker is in KEPT (byte for byte cd82880's, which it is) and still read by M, which now asserts the man (fcdispatch3, no curls, no hoops). Plainclothes (valkyrie=1) and Aurora (genesis=2) stay shipped.
+### 384 r11 (r11-banners, cut from claude/b384 3b1526d; NOT on main) - the Whiteout and Aurora banners drawn as their names
+The two secret flare banners renamed with their characters still showed the old concepts (flare_horizon "Whiteout" a neutron star in space, flare_genesis
+"Aurora" an eclipse). Only those two entries of IFC_BANNER_ART, the Aurora's tint in IFC_BANNER_LOOK and the section's header comment changed; ids, unlock
+rules, names and the "Comes with X, a secret flare character" label logic are untouched; every academy banner and every other Fire Code banner is byte-identical.
+- WHITEOUT (flare_horizon): a blizzard at night on a frozen ridge. A storm sky paling down into a wall of blowing snow that swallows the far peaks; a long
+  wind-carved ridge climbing to a summit on the right, a lit cornice line along its crest and snow streaming off the summit downwind (bl-shimmer); a snowfield
+  of drifts and sastrugi; five trail-marker poles (reflector bands, snow on the windward side) fading into the white towards the summit. The secret flare
+  (white bead, #CFEAFF) hangs in the storm over the left shoulder, its light smeared sideways along the wind. The snow is three sheets of streaks and
+  round-capped flake dots driven right to left at 16s / 7s / 3.4s, spindrift along the ground (6s) and a gust veil (11s), all bl-slide boxes 960 wide drawn
+  twice 480 apart (each streak kept inside its tile so the loop has no pop); each sheet is one or two path elements, so the whole banner is 166 elements,
+  11 layers. Tried and dropped: dark rock outcrops on the crest (read as floating domes / lamp shades at strip size), a dark lip shadow under the cornice
+  (read as a stray stroke), a near-black sky (read as a clear night, not a whiteout).
+- AURORA (flare_genesis): the northern lights over a frozen lake. Three curtains (back left, the great sweep across, a bright fold on the right), each
+  built of 70-125 narrow slanted rays standing on a wavy lower edge, every ray its own path so its bbox-relative ramp (bright green edge -> teal -> rose,
+  #3DF5A0 ... #FF5CA8) hugs the curve; brightness folded along the curtain; a bright edge line, a soft green glow and a faint rose fringe under it. Back two
+  sway (bl-sway 12s / 9s), the front fold shimmers (4.2s). A dark range with its ridge line catching the green, a black bank of spruce on the shore, the
+  lake (ice patches, cracks, a sheen) giving the lights back as a soft band per curtain, mirrored and squashed (SQ .5), pulsing with bl-glow. The core flare
+  burns among the lights upper right (bead white -> mint -> rose, a long upright ray like the curtains', a short cross). 509 elements, 13 layers.
+  Tried and dropped: reflections built from every third ray (a blocky grid on the ice), tick-mark snow on the peaks (read as stitching), a strong rose
+  fringe line (read as an outline).
+- Tint: Aurora ["#34E0A1", "#FF5CA8"] (was the eclipse's ["#FF5CA8", "#FFB04A"]); Whiteout kept ["#6FB4F2", "#CFEAFF"].
+- Placement for the Profile cover (which shows about x 83-397 of the scene with the avatar over the centre bottom): both flares sit high and off centre
+  (Whiteout x 150, Aurora x 322) and are visible on the iPhone cover.
+- GATES: check-b384-r9-banners gained (9) with .prev2.json = 3b1526d's bannerStaticSVG hashes in both classes (written with --dump2 --against the base):
+  the two differ, the other 40 banners are byte-identical; Whiteout has 3+ bl-slide snow sheets, a lit ridge and nothing spinning; Aurora has three curtains
+  of 30+ rays on their own clocks, the lake and its reflection, a green/rose swatch. Its four (9) lines FAIL on 3b1526d (byte-identical pin aside). RUN one
+  at a time: check-js ALL PASS; check-b384-r9-banners ALL PASS; check-b384-sets ALL PASS; check-b384-fcbanners ALL PASS; check-b384-r5-chars ALL PASS;
+  check-b384-secretnames ALL PASS; check-b384-banners ALL PASS; Profile with each banner: no page error, console only the two blocked Firebase loads.
+- NOT confirmable in Chromium: frame rate of the five sliding snow sheets and the Aurora's 509 elements on an old iPhone (all motion is transform/opacity on
+  layer boxes, no filters).

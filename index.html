@@ -81231,8 +81231,10 @@ const IFC_BANNER_ART = {
   },
 
   /* ---- THE FOUR SECRET FLARES, round 9 (Madison: "The secret flare ones need to be better I'm not a huge fan tbh.") - each still its character's own picture in
-     its own colours (Nebula red/orange/yellow, Quasar violet, Pulsar ice blue, Eclipse rose and gold), but drawn as the real thing, big, and each in a setting of its
-     own: no two share a horizon, a lake or a row of pines any more. Soft light is radial gradients and stacked low-opacity shapes; there are no filters. ---- */
+     its own colours (Nebula red/orange/yellow, Quasar violet, Whiteout ice blue, Aurora green and rose), but drawn as the real thing, big, and each in a setting of its
+     own: no two share a horizon, a lake or a row of pines any more. Soft light is radial gradients and stacked low-opacity shapes; there are no filters.
+     (r11: the Pulsar and the Eclipse were renamed Whiteout and Aurora with their characters, and their pictures redrawn to match - a blizzard and the
+     northern lights.) ---- */
   /* NEBULA (flare_void): a stellar nursery filling the whole banner - banks of glowing gas in red, magenta, orange and gold with dark dust lanes across them; three
      pillars of dust leaning up out of the cloud (soft-edged, lumpy, lit along their tops, the cloud in front of their feet so they stand IN it, not on the ground), and
      at the tip of each the newborn star it has just lit - red, orange (the tallest), yellow - its four spikes of light. Bright young stars with spikes scattered
@@ -81343,110 +81345,176 @@ const IFC_BANNER_ART = {
       { svg: fbEmberSheet(rnd, 480, 90, 18, ["#CDBDFB", "#FFFFFF", "#8B6CF0"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:24s;opacity:.45" }
     ];
   },
-  /* PULSAR (flare_horizon): the NEW Pulsar's own picture (round 8) in deep space - a dark neutron star with an icy rim, banded round by its spin, the field's loops
-     curving out of its poles, two narrow opposed beams sweeping the sky like a lighthouse's (each leaving a fading wake), the flare set in the north pole's socket
-     where the beam begins - and round it the wreck of the star it was: a supernova remnant, a shell of ice-blue and teal filaments with a soft glowing heart. No
-     hills and no lake (the Eclipse has the ground). The star turns as one body with its beams and loops, the halo breathes, a pulse goes out with every turn. */
+  /* WHITEOUT (flare_horizon; r11, was the Pulsar's neutron star - its character, singularity, is the Whiteout now): the Whiteout's own weather, a blizzard at
+     night on a frozen ridge. A storm sky over a wall of blowing snow that swallows the far peaks; a long wind-carved ridge with a cornice along its crest and
+     black rock showing through the scour; a snowfield of drifts and sastrugi in front, a line of trail-marker poles leaning out of it and getting lost in the
+     white towards the summit. The secret flare hangs in the storm over the ridge, its light smeared sideways by the snow going through it. The snow is three
+     sheets of streaks and flakes driven right to left at three speeds, spindrift pouring along the ground, and a gust veil that thickens and clears as it
+     passes. Nothing here is shared with the Aurora (no lake, no pines, no curtains). */
   flare_horizon(u){
-    const rnd = bnRand(3815);
-    const st = bnStarsSplit(rnd, 100, 180);
-    const SX = 240, SY = 90, MR = 22, TILT = -24, K = MR / 16;
-    const defs = '<defs>' + bnLin(u + "sky", [[0, "#01030A"], [0.5, "#04102A"], [1, "#020814"]]) +
-      bnRad(u + "halo", [[0, "#BFE6FF", 0.55], [0.25, "#7FC8FF", 0.22], [0.6, "#2D5DA8", 0.08], [1, "#0B1A3A", 0]]) +
-      bnRad(u + "neb", [[0, "#3AD0E0", .3], [0.5, "#2A7ACC", .12], [1, "#1A3A8A", 0]]) + bnRad(u + "neb2", [[0, "#7FC8FF", .26], [0.6, "#2D5DA8", .08], [1, "#2D5DA8", 0]]) +
-      bnRad(u + "ball", [[0, "#3A5A98"], [0.55, "#12224A"], [1, "#03071A"]], "38%", "34%", "75%") +
-      bnLin(u + "bmN", [[0, "#FFFFFF", 0.98], [0.3, "#CFEAFF", 0.7], [1, "#7FC8FF", 0]], 0, 0, 1, 0) + bnLin(u + "bmS", [[0, "#FFFFFF", 0.9], [0.3, "#CFEAFF", 0.6], [1, "#7FC8FF", 0]], 1, 0, 0, 0) +
-      bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.25, "#FFFFFF", 0.95], [0.55, "#BFE6FF", 0.5], [1, "#7FC8FF", 0]]) + bnRad(u + "ring", [[0.8, "#FFFFFF", 0], [0.9, "#DFF3FF", 0.55], [1, "#7FC8FF", 0]]) + '</defs>';
-    /* the remnant: soft lobes of glow, then the filaments - curling strands round a rough shell */
-    const nr = bnRand(3830);
-    let lobes = "", fil = "", fil2 = "";
-    for(let i = 0; i < 10; i++){ const a = nr() * Math.PI * 2, r = 30 + nr() * 70, x = SX + Math.cos(a) * r * 1.6, y = SY + Math.sin(a) * r * .8;
-      lobes += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(50 + nr() * 50) + '" ry="' + bnF(26 + nr() * 26) + '" fill="url(#' + u + (i % 2 ? 'neb' : 'neb2') + ')"/>'; }
-    /* the shell: five wobbling rings of filament round the star, each broken into strands of different lengths */
-    for(let k = 0; k < 5; k++){ const rx = 112 + k * 13, ry = 54 + k * 6.4, ph = nr() * 6, pts = [];
-      for(let i = 0; i <= 72; i++){ const t = i / 72 * Math.PI * 2, wob = 1 + Math.sin(t * 5 + ph) * .06 + Math.sin(t * 11 + ph * 2) * .035; pts.push(bnF(SX + Math.cos(t) * rx * wob) + " " + bnF(SY + Math.sin(t) * ry * wob)); }
-      const seg = "M" + pts.join(" L") + " ";
-      if(k % 2) fil += seg; else fil2 += seg; }
-    const W = (dir, len, w0, w1) => '<path d="M' + SX + ' ' + (SY - w0) + ' L' + (SX + dir * len) + ' ' + (SY - w1) + ' L' + (SX + dir * len) + ' ' + (SY + w1) + ' L' + SX + ' ' + (SY + w0) + ' Z"';
-    const rot = a => '<g transform="rotate(' + a + ' ' + SX + ' ' + SY + ')">';
-    let body = "";
-    [[-7, .17], [-15, .09], [-25, .045]].forEach(([a, op]) => { body += rot(TILT + a) + W(1, 330, 6, 17 - a * .4) + ' fill="#7FC8FF" opacity="' + op + '"/>' + W(-1, 330, 6, 17 - a * .4) + ' fill="#7FC8FF" opacity="' + op + '"/></g>'; });
-    body += rot(TILT) + W(1, 340, 5, 13) + ' fill="url(#' + u + 'bmN)" opacity=".42"/>' + W(1, 340, 2.2, 3.4) + ' fill="url(#' + u + 'bmN)"/>' + W(-1, 340, 4.6, 12) + ' fill="url(#' + u + 'bmS)" opacity=".38"/>' + W(-1, 340, 2, 3.1) + ' fill="url(#' + u + 'bmS)"/>';
-    /* the field's loops out of the poles (a dipole: r = L sin^2), in the star's own frame so they turn with it */
-    let loops = "";
-    [34, 52, 74].forEach(L => { let d = "", d2 = ""; for(let i = 0; i <= 24; i++){ const th = .18 + i / 24 * (Math.PI - .36), r = L * Math.sin(th) * Math.sin(th), x = SX + r * Math.cos(th), y = SY + r * Math.sin(th);
-      d += (i ? " L" : "M") + bnF(x) + " " + bnF(y); d2 += (i ? " L" : "M") + bnF(x) + " " + bnF(2 * SY - y); } loops += d + " " + d2 + " "; });
-    body += '<path d="' + loops + '" fill="none" stroke="#9FDCFF" stroke-width=".7" stroke-dasharray="2 2.6" opacity=".45"/></g>';
-    body += '<circle cx="' + SX + '" cy="' + SY + '" r="' + (MR + 5) + '" fill="url(#' + u + 'ring)"/>' + '<circle cx="' + SX + '" cy="' + SY + '" r="' + MR + '" fill="url(#' + u + 'ball)"/><circle cx="' + SX + '" cy="' + SY + '" r="' + (MR - .3) + '" fill="none" stroke="#DFF3FF" stroke-width="2" opacity=".92"/>';
-    body += rot(TILT);
-    [-.5, 0, .5].forEach(f => { const d = f * MR, h = Math.sqrt(MR * MR - d * d) - .8;
-      body += '<path d="M' + bnF(SX + d) + ' ' + bnF(SY - h) + ' Q' + bnF(SX + d + 7) + ' ' + SY + ' ' + bnF(SX + d) + ' ' + bnF(SY + h) + '" fill="none" stroke="#7FC8FF" stroke-width="1.4" opacity="' + (f ? ".38" : ".55") + '" stroke-linecap="round"/>'; });
-    body += '<circle cx="' + (SX - MR) + '" cy="' + SY + '" r="' + bnF(4.6 * K) + '" fill="#0E2250" stroke="#DFF3FF" stroke-width="1.2"/><circle cx="' + (SX - MR) + '" cy="' + SY + '" r="' + bnF(2.2 * K) + '" fill="#9FDCFF"/>' +
-      '<circle cx="' + (SX + MR) + '" cy="' + SY + '" r="' + bnF(5.6 * K) + '" fill="#050C22" stroke="#DFF3FF" stroke-width="1.3"/>' +
-      '<circle cx="' + (SX + MR) + '" cy="' + SY + '" r="' + bnF(15 * K) + '" fill="url(#' + u + 'bead)"/><circle cx="' + (SX + MR) + '" cy="' + SY + '" r="' + bnF(3.8 * K) + '" fill="#FFFFFF"/>' +
-      '<path d="M' + (SX + MR - 16 * K) + ' ' + SY + ' L' + (SX + MR + 16 * K) + ' ' + SY + ' M' + (SX + MR) + ' ' + (SY - 16 * K) + ' L' + (SX + MR) + ' ' + (SY + 16 * K) + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".85"/></g>';
-    const R2 = 360;
+    const FX = 150, FY = 60;
+    const defs = '<defs>' + bnLin(u + "sky", [[0, "#0A1322"], [0.3, "#1E3048"], [0.6, "#56729A"], [0.82, "#A2BAD2"], [1, "#C6D8EA"]]) +
+      bnLin(u + "haze", [[0, "#D8E8F6", 0], [0.55, "#D8E8F6", 0.62], [1, "#EAF4FC", 0.9]]) + bnLin(u + "far", [[0, "#9DB6D0"], [1, "#B9CDE2"]]) +
+      bnLin(u + "ridge", [[0, "#E4F0FA"], [0.18, "#B4CAE0"], [0.6, "#6E88A8"], [1, "#3A5274"]]) + bnLin(u + "field", [[0, "#C6D8EA"], [0.45, "#8AA4C2"], [1, "#2E4462"]]) +
+      bnRad(u + "cl", [[0, "#060C18", 0.6], [0.6, "#060C18", 0.24], [1, "#060C18", 0]]) + bnRad(u + "lit", [[0, "#9FC4E6", 0.45], [1, "#9FC4E6", 0]]) +
+      bnRad(u + "glow", [[0, "#FFFFFF", 0.85], [0.14, "#CFEAFF", 0.55], [0.42, "#7FC8FF", 0.18], [1, "#7FC8FF", 0]]) +
+      bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.28, "#FFFFFF", 0.95], [0.6, "#CFEAFF", 0.5], [1, "#9FDCFF", 0]]) +
+      bnLin(u + "smear", [[0, "#CFEAFF", 0], [0.5, "#FFFFFF", 0.8], [1, "#CFEAFF", 0]], 0, 0, 1, 0) +
+      bnLin(u + "gust", [[0, "#E2EEF8", 0], [0.5, "#E2EEF8", 0.6], [1, "#E2EEF8", 0]], 0, 0, 1, 0) + bnLin(u + "plume", [[0, "#F2F8FF", 0], [0.7, "#F2F8FF", 0.7], [1, "#FFFFFF", 0.9]], 0, 0, 1, 0) + '</defs>';
+    /* the far peaks, only just there through the snow */
+    const fr = bnRand(6101);
+    let far = "M-10 130";
+    for(let x = -10; x <= 490; x += 16) far += " L" + x + " " + bnF(112 - Math.abs(Math.sin(x * .021 + 1.3)) * 18 - fr() * 6);
+    far += " L490 130 Z";
+    /* the ridge: a long crest climbing to a summit on the right, a lower shoulder under the flare */
+    const rr = bnRand(6102), crest = [];
+    for(let x = -10; x <= 490; x += 8) crest.push([x, 126 - 30 * Math.exp(-Math.pow((x - 352) / 110, 2)) - 9 * Math.exp(-Math.pow((x - 128) / 60, 2)) + Math.sin(x * .09) * 1.2 + (rr() - .5) * 1.6]);
+    const cl = "M" + crest.map(p => bnF(p[0]) + " " + bnF(p[1])).join(" L");
+    const ridge = cl + " L490 160 L-10 160 Z";
+    /* the cornice: a lit lip along the crest, its shadow under it on the lee (left) side of the summit */
+    const lip = "M" + crest.filter(p => p[0] > 196 && p[0] < 360).map(p => bnF(p[0]) + " " + bnF(p[1] + 3.4)).join(" L");
+    const crestY = x => { const i = Math.max(0, Math.min(crest.length - 1, Math.round((x + 10) / 8))); return crest[i][1]; };
+    /* snow streaming off the summit's cornice, downwind */
+    const SUMX = 352, SUMY = crestY(352);
+    const plume = [[0, 0, 130, 10, .55], [-20, -6, 110, 7, .4], [-50, 3, 90, 5, .3]].map(([dx, dy, len, w, o]) =>
+      fbP("M" + (SUMX + 6) + " " + bnF(SUMY + 1) + " Q" + bnF(SUMX - len * .4 + dx) + " " + bnF(SUMY - w * 1.6 + dy) + " " + bnF(SUMX - len + dx) + " " + bnF(SUMY - w * .6 + dy) +
+        " Q" + bnF(SUMX - len * .45 + dx) + " " + bnF(SUMY + w * .2 + dy) + " " + (SUMX + 2) + " " + bnF(SUMY + 3) + " Z", "url(#" + u + "plume)", ' opacity="' + o + '"')).join("");
+    /* the snowfield: drift crests and sastrugi carved by the wind, lit tops and blue lee shadows */
+    const fd = bnRand(6103);
+    let field = "M-10 150", sas = "", sasD = "";
+    for(let x = -10; x <= 490; x += 20) field += " L" + x + " " + bnF(146 + Math.sin(x * .03 + .6) * 4 + fd() * 2);
+    field += " L490 190 L-10 190 Z";
+    for(let i = 0; i < 16; i++){ const x = fd() * 470, y = 154 + fd() * 24, w = 22 + fd() * 46, h = 1.6 + fd() * 2.6;
+      sas += "M" + bnF(x) + " " + bnF(y) + " Q" + bnF(x + w * .55) + " " + bnF(y - h * 1.6) + " " + bnF(x + w) + " " + bnF(y - h * .2) + " ";
+      sasD += "M" + bnF(x + w * .2) + " " + bnF(y + 1.2) + " Q" + bnF(x + w * .6) + " " + bnF(y - h * .4) + " " + bnF(x + w) + " " + bnF(y + .4) + " "; }
+    /* the trail markers: leaning poles, each with a reflector band and snow plastered on its windward side, fading into the storm */
+    const poles = [[424, 182, 62, 4], [372, 150, 36, 2.6], [338, 134, 22, 1.8], [316, 123, 13, 1.3], [302, 117, 8, 1]].map(([x, y, h, w], i) => {
+      const lean = h * .1, op = [1, .85, .6, .4, .25][i];
+      return '<g opacity="' + op + '"><path d="M' + bnF(x - w / 2) + ' ' + y + ' L' + bnF(x - w / 2 + lean) + ' ' + bnF(y - h) + ' L' + bnF(x + w / 2 + lean) + ' ' + bnF(y - h) + ' L' + bnF(x + w / 2) + ' ' + y + ' Z" fill="#14202E"/>' +
+        '<path d="M' + bnF(x - w / 2 + lean * .86) + ' ' + bnF(y - h * .86) + ' L' + bnF(x + w / 2 + lean * .86) + ' ' + bnF(y - h * .86) + ' L' + bnF(x + w / 2 + lean * .76) + ' ' + bnF(y - h * .76) + ' L' + bnF(x - w / 2 + lean * .76) + ' ' + bnF(y - h * .76) + ' Z" fill="#CFEAFF"/>' +
+        '<path d="M' + bnF(x + w / 2) + ' ' + y + ' L' + bnF(x + w / 2 + lean) + ' ' + bnF(y - h) + '" stroke="#EAF4FC" stroke-width="' + bnF(w * .45) + '"/>' +
+        '<ellipse cx="' + x + '" cy="' + bnF(y + .4) + '" rx="' + bnF(w * 3) + '" ry="' + bnF(w * .7) + '" fill="#EAF4FC"/></g>'; }).join("");
+    /* the storm clouds, low and heavy, the ones nearest the flare lit from under */
+    const cr = bnRand(6104);
+    let clouds = "";
+    for(let i = 0; i < 12; i++){ const x = cr() * 540 - 30, y = 4 + cr() * 46; clouds += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(60 + cr() * 70) + '" ry="' + bnF(14 + cr() * 16) + '" fill="url(#' + u + 'cl)"/>'; }
+    clouds += '<ellipse cx="' + FX + '" cy="' + (FY - 26) + '" rx="120" ry="20" fill="url(#' + u + 'lit)"/>';
+    /* a sheet of driven snow for bl-slide: streaks (motion blur, right to left and a little down) and flakes as round-capped dots; drawn twice, 480 apart */
+    const sheet = (seed, n, len, sw, col, op, flakes, fr2, yTop, yBot) => {
+      const r = bnRand(seed); let d = "", f = "";
+      for(let i = 0; i < n; i++){ const l = len * (.5 + r()), x = l + r() * (480 - l), y = yTop + r() * (yBot - yTop); d += "M" + bnF(x) + " " + bnF(y) + " l" + bnF(-l) + " " + bnF(l * .1) + " "; }
+      for(let i = 0; i < flakes; i++){ const x = 2 + r() * 476, y = yTop + r() * (yBot - yTop); f += "M" + bnF(x) + " " + bnF(y) + " l.1 0 "; }
+      const one = '<path d="' + d + '" stroke="' + col + '" stroke-width="' + sw + '" stroke-linecap="round" fill="none" opacity="' + op + '"/>' + (flakes ? '<path d="' + f + '" stroke="#FFFFFF" stroke-width="' + fr2 + '" stroke-linecap="round" fill="none" opacity="' + bnF(op + .15) + '"/>' : "");
+      return one + '<g transform="translate(480 0)">' + one + '</g>';
+    };
+    /* spindrift: snow pouring along the ground, soft streams */
+    const sp = bnRand(6105);
+    let drift = "";
+    for(let i = 0; i < 9; i++){ const x = 40 + sp() * 400, y = 132 + sp() * 40; drift += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(34 + sp() * 40) + '" ry="' + bnF(2.2 + sp() * 2.4) + '" fill="#EAF4FC" opacity="' + bnF(.18 + sp() * .2) + '"/>'; }
+    drift += '<g transform="translate(480 0)">' + drift + '</g>';
+    const gust = '<rect x="20" y="0" width="300" height="180" fill="url(#' + u + 'gust)"/><rect x="500" y="0" width="300" height="180" fill="url(#' + u + 'gust)"/>';
+    return [
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + fbP(far, "url(#" + u + "far)", ' opacity=".55"') +
+          '<rect x="0" y="78" width="480" height="62" fill="url(#' + u + 'haze)"/>' + fbP(ridge, "url(#" + u + "ridge)") +
+          fbL(cl, "#F2F8FF", 1.4, ' opacity=".8"') + fbL(lip, "#6E88A8", 1.4, ' opacity=".3"') +
+          fbP(field, "url(#" + u + "field)") + fbL(sasD, "#3E5878", 1.6, ' opacity=".5"') + fbL(sas, "#F2F8FF", 1.1, ' opacity=".75"') + poles },
+      { svg: clouds, box: [-30, -20, 540, 100], vb: [-30, -20, 540, 100], cls: "bl-drift", style: "animation-duration:22s" },
+      { svg: plume, box: [SUMX - 190, SUMY - 30, 200, 40], vb: [SUMX - 190, SUMY - 30, 200, 40], o: [SUMX, SUMY], cls: "bl-shimmer", style: "animation-duration:2.8s" },
+      /* the flare in the storm: its light thrown wide by the snow, smeared along the wind, the bead and its spikes */
+      { svg: '<ellipse cx="' + FX + '" cy="' + FY + '" rx="170" ry="72" fill="url(#' + u + 'glow)"/>', box: [FX - 170, FY - 72, 340, 144], o: [FX, FY], cls: "bl-breathe", style: "animation-duration:3.6s" },
+      { svg: '<rect x="' + (FX - 120) + '" y="' + (FY - 1.6) + '" width="240" height="3.2" fill="url(#' + u + 'smear)"/><circle cx="' + FX + '" cy="' + FY + '" r="16" fill="url(#' + u + 'bead)"/><circle cx="' + FX + '" cy="' + FY + '" r="3.8" fill="#FFFFFF"/>',
+        box: [FX - 120, FY - 16, 240, 32], o: [FX, FY], cls: "bl-pulse", style: "animation-duration:2.2s" },
+      { svg: '<path d="M' + FX + ' ' + (FY - 18) + ' L' + FX + ' ' + (FY + 18) + ' M' + (FX - 9) + ' ' + (FY - 9) + ' L' + (FX + 9) + ' ' + (FY + 9) + ' M' + (FX + 9) + ' ' + (FY - 9) + ' L' + (FX - 9) + ' ' + (FY + 9) + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".8"/>',
+        box: [FX - 18, FY - 18, 36, 36], o: [FX, FY], cls: "bl-glow", style: "animation-duration:1.6s" },
+      /* the snow: far and fine, a gust veil, spindrift on the ground, then the near sheets */
+      { svg: sheet(6111, 90, 10, .7, "#DCEBF8", .45, 70, 1.2, 0, 180), box: [0, 0, 960, 180], vb: [0, 0, 960, 180], cls: "bl-slide", style: "animation-duration:16s" },
+      { svg: gust, box: [0, 0, 960, 180], vb: [0, 0, 960, 180], cls: "bl-slide", style: "animation-duration:11s" },
+      { svg: drift, box: [0, 0, 960, 180], vb: [0, 0, 960, 180], cls: "bl-slide", style: "animation-duration:6s" },
+      { svg: sheet(6112, 60, 22, 1, "#F2F8FF", .55, 40, 1.8, 0, 180), box: [0, 0, 960, 180], vb: [0, 0, 960, 180], cls: "bl-slide", style: "animation-duration:7s" },
+      { svg: sheet(6113, 26, 40, 1.5, "#FFFFFF", .5, 18, 3, 0, 180), box: [0, 0, 960, 180], vb: [0, 0, 960, 180], cls: "bl-slide", style: "animation-duration:3.4s" }
+    ];
+  },
+  /* AURORA (flare_genesis; r11, was the Eclipse - its character, genesis, is the Aurora now): the northern lights over a frozen lake. Three great curtains
+     hung across the night sky, each built of rays that rise off a sharp bright green lower edge (a rose fringe under it, as in a strong display) and fade up
+     through teal into rose; the curtains fold, overlap and sway on their own clocks. Under them a dark range with its snow catching the green, a black
+     shore of spruce, and the frozen lake giving the lights back, broken by the ice. The core flare burns among the lights, a long upright ray through it
+     like the curtains' own. Nothing here is shared with the Whiteout (no storm, no poles, no ridge). */
+  flare_genesis(u){
+    const rnd = bnRand(3816);
+    const st = bnStarsSplit(rnd, 100, 120);
+    const HZ = 134, FX = 322, FY = 42, SQ = .5;
+    const CUR = [["cA", [[0, "#C8FFE4", 0.95], [0.07, "#3DF5A0", 0.9], [0.4, "#1FC28C", 0.4], [0.7, "#F062AA", 0.34], [1, "#FF5CA8", 0]]],
+      ["cB", [[0, "#B8FFF0", 0.9], [0.08, "#34E0B4", 0.85], [0.45, "#22A890", 0.32], [0.74, "#F06AAE", 0.32], [1, "#FF5CA8", 0]]],
+      ["cC", [[0, "#E6FFF2", 1], [0.06, "#5CFFB0", 0.95], [0.35, "#2ED894", 0.5], [0.68, "#FF68B0", 0.36], [1, "#FF7AB8", 0]]]];
+    const defs = '<defs>' + bnLin(u + "sky", [[0, "#02040C"], [0.45, "#05122A"], [0.8, "#0A2834"], [1, "#12403C"]]) +
+      CUR.map(([k, s]) => bnLin(u + k, s, 0, 1, 0, 0) + bnLin(u + k + "r", s, 0, 0, 0, 1)).join("") +
+      bnRad(u + "sglow", [[0, "#2ED894", 0.32], [0.5, "#1A8A70", 0.12], [1, "#1A8A70", 0]]) +
+      bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.24, "#FFFFFF", 0.95], [0.5, "#9FFFE0", 0.55], [0.78, "#FF5CA8", 0.22], [1, "#FF5CA8", 0]]) +
+      bnRad(u + "halo", [[0, "#FFFFFF", 0.5], [0.3, "#7FFFD0", 0.2], [1, "#FF5CA8", 0]]) +
+      bnLin(u + "ray", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.9], [1, "#FFFFFF", 0]]) +
+      bnLin(u + "rng", [[0, "#12303A"], [1, "#050E16"]]) + bnLin(u + "lake", [[0, "#0A2A30"], [0.35, "#061820"], [1, "#02070C"]]) + '</defs>';
+    /* a curtain: rays (narrow slanted strips, each with its own gradient so the bright edge hugs the curve) standing on a wavy lower edge, folded by
+       brightness; plus the edge itself and its rose fringe. Returns the curtain and its reflection (every third ray, mirrored and squashed into the lake) */
+    const curtain = (k, seed, x0, x1, step, yb, hgt, op) => {
+      const r = bnRand(seed), ry = v => bnF(HZ + (HZ - v) * SQ); let s = "", streak = "", edge = "", redge = [], i = 0;
+      for(let x = x0; x <= x1; x += step, i++){
+        const w = step * 1.6, y0 = yb(x) + (r() - .5) * 1.6, y1 = yb(x + w), h = hgt(x) * (.55 + r() * .6), t = h * .08;
+        const fold = .35 + .65 * Math.abs(Math.sin(x / 19 + seed));
+        const o = bnF(op * fold * (.55 + r() * .45));
+        s += '<path d="M' + bnF(x) + ' ' + bnF(y0) + ' L' + bnF(x + w) + ' ' + bnF(y1) + ' L' + bnF(x + w + t) + ' ' + bnF(y1 - h) + ' L' + bnF(x + t) + ' ' + bnF(y0 - h) + ' Z" fill="url(#' + u + k + ')" opacity="' + o + '"/>';
+        if(i % 3 === 0) streak += "M" + bnF(x + 1) + " " + ry(y0) + " L" + bnF(x + 1) + " " + ry(y0 - h * .5) + " ";
+        redge.push([x, y0]);
+        edge += (edge ? " L" : "M") + bnF(x) + " " + bnF(y0);
+      }
+      s += fbL(edge, "#3DF5A0", 5, ' opacity=".14"') + fbL(edge, "#E6FFF2", .8, ' opacity=".55"') + '<path d="' + edge + '" fill="none" stroke="#FF5CA8" stroke-width="3" opacity=".12" transform="translate(0 3)"/>';
+      /* the reflection: the edge mirrored and squashed into the lake, a soft band hanging off it, faint rays down it */
+      const top = redge.map(p => bnF(p[0]) + " " + ry(p[1])), bot = redge.slice().reverse().map(p => bnF(p[0]) + " " + bnF(+ry(p[1]) + 16));
+      const refl = '<path d="M' + top.join(" L") + " L" + bot.join(" L") + ' Z" fill="url(#' + u + k + 'r)" opacity="' + bnF(op * .5) + '"/>' + fbL(streak, "#7FFFD0", 2.4, ' opacity=".05"') + fbL("M" + top.join(" L"), "#C8FFE4", .7, ' opacity=".25"');
+      return { s, refl };
+    };
+    const C1 = curtain("cB", 7201, -40, 300, 4.5, x => 76 + Math.sin(x / 58 + .5) * 12 + Math.sin(x / 21) * 4, x => 62 + Math.sin(x / 40) * 16, .75);
+    const C2 = curtain("cA", 7202, -40, 520, 4.5, x => 106 - x * .055 + Math.sin(x / 66 + 1.2) * 15 + Math.sin(x / 25 + .4) * 4, x => 92 + Math.sin(x / 33 + 2) * 22, .85);
+    const C3 = curtain("cC", 7203, 236, 520, 4, x => 70 + Math.sin(x / 34 + 2.4) * 13 + Math.sin(x / 13) * 2.4, x => 70 + Math.sin(x / 27) * 18, .9);
+    /* the range: rounded peaks, their snow catching the green along the ridge line */
+    const mr = bnRand(7204);
+    let rng = "M-10 " + HZ, snow = "";
+    const peaks = [];
+    for(let x = -10; x <= 490; x += 12){ const y = HZ - 6 - Math.max(0, Math.sin(x * .019 + .8)) * 26 - Math.max(0, Math.sin(x * .047 + 2)) * 8 - mr() * 3; peaks.push([x, y]); rng += " L" + x + " " + bnF(y); }
+    rng += " L490 " + (HZ + 1) + " L-10 " + (HZ + 1) + " Z";
+    peaks.forEach(([x, y], i) => { if(!i) return; const p = peaks[i - 1]; if(Math.min(y, p[1]) < HZ - 16) snow += (snow && p[1] < HZ - 16 ? " L" : " M") + bnF(p[0]) + " " + bnF(p[1] + .6) + " L" + bnF(x) + " " + bnF(y + .6); });
+    /* the shore: a low black bank of spruce, each a stack of drooping tiers to a spire */
+    const tr = bnRand(7205);
+    let trees = "M-10 " + (HZ + 2) + " L-10 " + (HZ - 3);
+    for(let x = -6; x < 490; x += 5 + tr() * 7){ const h = 6 + tr() * 16 * (x < 150 || x > 360 ? 1 : .55), w = h * .3, b = HZ - 2 - tr() * 1.5;
+      trees += " L" + bnF(x - w) + " " + bnF(b) + " L" + bnF(x - w * .5) + " " + bnF(b - h * .45) + " L" + bnF(x - w * .7) + " " + bnF(b - h * .45) + " L" + bnF(x) + " " + bnF(b - h) + " L" + bnF(x + w * .7) + " " + bnF(b - h * .45) + " L" + bnF(x + w * .5) + " " + bnF(b - h * .45) + " L" + bnF(x + w) + " " + bnF(b); }
+    trees += " L490 " + (HZ - 3) + " L490 " + (HZ + 2) + " Z";
+    /* the ice: snow lying on it in patches, pressure cracks, the shore's dark line */
+    const ir = bnRand(7206);
+    let ice = "", crack = "";
+    for(let i = 0; i < 7; i++){ const x = ir() * 480, y = HZ + 8 + ir() * 40; ice += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(26 + ir() * 50) + '" ry="' + bnF(1.4 + ir() * 2.2) + '" fill="#B8D8E0" opacity="' + bnF(.06 + ir() * .08) + '"/>'; }
+    for(let i = 0; i < 6; i++){ let x = ir() * 480, y = HZ + 6 + ir() * 40; crack += "M" + bnF(x) + " " + bnF(y); for(let k = 0; k < 4; k++){ x += 8 + ir() * 16; y += (ir() - .5) * 3; crack += " L" + bnF(x) + " " + bnF(y); } crack += " "; }
+    const sheen = '<rect x="120" y="' + (HZ + 10) + '" width="240" height="1" fill="#9FFFE0" opacity=".2"/><rect x="200" y="' + (HZ + 20) + '" width="200" height="1" fill="#FFB0D0" opacity=".14"/><rect x="60" y="' + (HZ + 31) + '" width="180" height="1" fill="#9FFFE0" opacity=".14"/>';
     return [
       { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still },
       { svg: st.a, cls: "bl-tw", style: "animation-duration:3.2s" },
       { svg: st.b, cls: "bl-tw", style: "animation-duration:4.4s;animation-delay:-1.6s" },
-      { svg: lobes, box: [-30, -30, 540, 240], vb: [-30, -30, 540, 240], cls: "bl-drift", style: "animation-duration:34s" },
-      { svg: '<path d="' + fil + fil2 + '" fill="none" stroke="#3AB8E0" stroke-width="4.4" stroke-linecap="round" stroke-dasharray="60 20 34 26" opacity=".12"/><path d="' + fil + '" fill="none" stroke="#7FE0F0" stroke-width=".9" stroke-linecap="round" stroke-dasharray="46 18 22 30 70 12" opacity=".5"/><path d="' + fil2 + '" fill="none" stroke="#DFF6FF" stroke-width="1" stroke-linecap="round" stroke-dasharray="30 24 58 16" opacity=".42"/>' },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="130" fill="url(#' + u + 'halo)"/>', box: [SX - 130, SY - 130, 260, 260], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:4.6s" },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.2" opacity=".6"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.8s;opacity:0" },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.2" opacity=".6"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.8s;animation-delay:-1.9s;opacity:0" },
-      { svg: body, box: [SX - R2, SY - R2, 2 * R2, 2 * R2], vb: [SX - R2, SY - R2, 2 * R2, 2 * R2], o: [SX, SY], cls: "bl-spin", style: "animation-duration:15s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 16, ["#CFEAFF", "#FFFFFF", "#9FD4FF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:24s;opacity:.35" }
-    ];
-  },
-  /* ECLIPSE (flare_genesis): totality over a range of mountains - the moon a true black disc, the inner corona a hard bright ring round it and the outer corona's
-     long fine streamers fanning out along the sun's equator (short brushes at the poles), rose prominences licking up off the rim, and on the rim the diamond
-     ring: the core flare, the sun's last bead, white-hot with a rose halo, a long horizontal streak and a shorter upright one. Totality's sky: deep dusk overhead,
-     a sunset glow all the way round the horizon, a planet and a few stars out; a jagged range of peaks in two layers (far ones in violet haze, near ones black)
-     and a still lake that gives the eclipse back. The corona breathes, the bead flares, the stars twinkle, the lake shimmers. */
-  flare_genesis(u){
-    const rnd = bnRand(3816);
-    const st = bnStarsSplit(rnd, 70, 100);
-    const SX = 240, SY = 62, MR = 30, HZ = 128;
-    const BA = -.85, BX = SX + Math.cos(BA) * (MR + 1.2), BY = SY + Math.sin(BA) * (MR + 1.2);
-    /* the outer corona: many fine streamers, long along the equator, short at the poles, each a thin tapered curve */
-    let stream = "", stream2 = ""; const r2 = bnRand(5151);
-    for(let i = 0; i < 64; i++){
-      const a = i / 64 * Math.PI * 2 + r2() * .06, eq = Math.abs(Math.cos(a)), len = MR + 8 + eq * eq * (120 + r2() * 70) + (1 - eq) * (10 + r2() * 14), w = .025 + r2() * .03, r1 = MR + 1, bend = (r2() - .5) * .18;
-      const d = '<path d="M' + bnF(SX + Math.cos(a - w) * r1) + ' ' + bnF(SY + Math.sin(a - w) * r1) + ' Q' + bnF(SX + Math.cos(a + bend) * len * .55) + ' ' + bnF(SY + Math.sin(a + bend) * len * .5) + ' ' + bnF(SX + Math.cos(a + bend * 1.6) * len) + ' ' + bnF(SY + Math.sin(a + bend * 1.6) * len * .86) +
-        ' Q' + bnF(SX + Math.cos(a + bend) * len * .55) + ' ' + bnF(SY + Math.sin(a + bend) * len * .5) + ' ' + bnF(SX + Math.cos(a + w) * r1) + ' ' + bnF(SY + Math.sin(a + w) * r1) + ' Z" fill="' + (i % 4 ? "#FFF3EA" : "#FFE0B0") + '" opacity="' + bnF(.12 + r2() * .22) + '"/>';
-      if(i % 2) stream += d; else stream2 += d;
-    }
-    /* prominences: small rose flames on the rim */
-    const prom = [[2.5, 3.6], [3.7, 2.8], [.7, 2.6]].map(([a, h]) => { const c = Math.cos(a), sn = Math.sin(a), nx = -sn, ny = c, r = MR + .6;
-      return '<path d="M' + bnF(SX + c * r + nx * 2.6) + ' ' + bnF(SY + sn * r + ny * 2.6) + ' Q' + bnF(SX + c * (r + h * 1.4) + nx * 3.4) + ' ' + bnF(SY + sn * (r + h * 1.4) + ny * 3.4) + ' ' + bnF(SX + c * (r + h)) + ' ' + bnF(SY + sn * (r + h)) +
-        ' Q' + bnF(SX + c * (r + h * .6) - nx * 1.4) + ' ' + bnF(SY + sn * (r + h * .6) - ny * 1.4) + ' ' + bnF(SX + c * r - nx * 2) + ' ' + bnF(SY + sn * r - ny * 2) + ' Z" fill="#FF5CA8" opacity=".9"/>'; }).join("");
-    /* the mountains: two jagged ranges */
-    const range = (seed, base, hMin, hMax, step) => { const r = bnRand(seed); let d = "M-10 " + base, x = -10; while(x < 490){ x += step * (.5 + r()); const peak = r() < .5; d += " L" + bnF(x) + " " + bnF(base - hMin - r() * (hMax - hMin) * (peak ? 1 : .45)); } return d + " L490 " + (HZ + 2) + " L-10 " + (HZ + 2) + " Z"; };
-    const far = range(919, HZ, 14, 40, 18), near = range(927, HZ, 4, 26, 13);
-    const defs = '<defs>' + bnLin(u + "sky", [[0, "#05020C"], [0.4, "#1A0820"], [0.75, "#5A1838"], [1, "#F0705A"]]) + bnRad(u + "cor", [[0, "#FFFFFF", 0.95], [0.16, "#FFE9D8", 0.7], [0.38, "#FFB8C8", 0.28], [0.7, "#E05A9A", 0.08], [1, "#E05A9A", 0]]) +
-      bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.22, "#FFFFFF", 0.95], [0.5, "#FFB0D0", 0.5], [1, "#FF5CA8", 0]]) + bnLin(u + "lake", [[0, "#4A1834"], [1, "#0A0410"]]) +
-      bnLin(u + "farR", [[0, "#3A1A4A"], [1, "#1A0A24"]]) + bnLin(u + "nearR", [[0, "#0C040E"], [1, "#030106"]]) + bnRad(u + "ring", [[0.8, "#FFFFFF", 0], [0.86, "#FFFFFF", 0.95], [0.94, "#FFD0E0", 0.5], [1, "#FF5CA8", 0]]) +
-      bnLin(u + "hz", [[0, "#FF9A6A", 0], [0.7, "#FF9A6A", .35], [1, "#FFC08A", .55]]) + bnLin(u + "streak", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", .9], [1, "#FFFFFF", 0]], 0, 0, 1, 0) + '</defs>';
-    const RR = MR + 8;
-    const lakeRefl = '<ellipse cx="' + SX + '" cy="' + (HZ + 14) + '" rx="60" ry="5" fill="#FF8AB0" opacity=".16"/><ellipse cx="' + SX + '" cy="' + (HZ + 14) + '" rx="24" ry="2.4" fill="#FFF3EA" opacity=".4"/><ellipse cx="' + bnF(BX) + '" cy="' + (HZ + 22) + '" rx="10" ry="1.6" fill="#FFFFFF" opacity=".35"/>';
-    return [
-      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + fbC(64, 40, 2.2, "#FFE9C8") + fbC(64, 40, 6, "#FFE9C8", ' opacity=".22"') + fbC(410, 26, 1.6, "#CFE0FF") +
-        '<rect x="0" y="' + (HZ - 40) + '" width="480" height="40" fill="url(#' + u + 'hz)"/>' },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="url(#' + u + 'cor)"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:5s" },
-      { svg: stream, box: [0, -40, 480, 220], vb: [0, -40, 480, 220], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:7s;animation-delay:-2s" },
-      { svg: stream2, box: [0, -40, 480, 220], vb: [0, -40, 480, 220], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:6s;animation-direction:alternate-reverse" },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="' + RR + '" fill="url(#' + u + 'ring)"/><circle cx="' + SX + '" cy="' + SY + '" r="' + (MR + 1.2) + '" fill="none" stroke="#FFFFFF" stroke-width="1.4" opacity=".95"/>' + prom +
-          '<circle cx="' + SX + '" cy="' + SY + '" r="' + MR + '" fill="#030108"/><circle cx="' + SX + '" cy="' + SY + '" r="' + (MR - .8) + '" fill="none" stroke="#2A1030" stroke-width=".8" opacity=".7"/>' },
-      { svg: '<path d="M' + bnF(SX + Math.cos(BA - .6) * (MR + 1.4)) + ' ' + bnF(SY + Math.sin(BA - .6) * (MR + 1.4)) + ' A' + (MR + 1.4) + ' ' + (MR + 1.4) + ' 0 0 1 ' + bnF(SX + Math.cos(BA + .5) * (MR + 1.4)) + ' ' + bnF(SY + Math.sin(BA + .5) * (MR + 1.4)) + '" fill="none" stroke="#FF5CA8" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>', cls: "bl-glow", style: "animation-duration:3s" },
-      { svg: '<rect x="' + bnF(BX - 70) + '" y="' + bnF(BY - 1.2) + '" width="140" height="2.4" fill="url(#' + u + 'streak)"/><rect x="' + bnF(BX - 40) + '" y="' + bnF(BY - .4) + '" width="80" height=".8" fill="#FFFFFF"/><circle cx="' + bnF(BX) + '" cy="' + bnF(BY) + '" r="18" fill="url(#' + u + 'bead)"/><circle cx="' + bnF(BX) + '" cy="' + bnF(BY) + '" r="4.2" fill="#FFFFFF"/>', box: [BX - 70, BY - 18, 140, 36], o: [BX, BY], cls: "bl-pulse", style: "animation-duration:2.2s" },
-      { svg: '<path d="M' + bnF(BX) + ' ' + bnF(BY - 26) + ' L' + bnF(BX) + ' ' + bnF(BY + 26) + ' M' + bnF(BX - 8) + ' ' + bnF(BY - 8) + ' L' + bnF(BX + 8) + ' ' + bnF(BY + 8) + ' M' + bnF(BX + 8) + ' ' + bnF(BY - 8) + ' L' + bnF(BX - 8) + ' ' + bnF(BY + 8) + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".85"/>', box: [BX - 26, BY - 26, 52, 52], o: [BX, BY], cls: "bl-glow", style: "animation-duration:1.7s" },
-      { svg: '<path d="' + far + '" fill="url(#' + u + 'farR)"/><path d="' + far.split(" L490")[0] + '" fill="none" stroke="#FF9AC0" stroke-width=".7" opacity=".35"/><path d="' + near + '" fill="url(#' + u + 'nearR)"/>' +
-          '<rect x="-10" y="' + HZ + '" width="500" height="' + (180 - HZ) + '" fill="url(#' + u + 'lake)"/><rect x="-10" y="' + (HZ - .4) + '" width="500" height="1.2" fill="#FF9A8A" opacity=".5"/>' + lakeRefl +
-          '<path d="' + near + '" fill="#000" opacity=".35" transform="translate(0 ' + (2 * HZ + 2) + ') scale(1 -1)"/>' },
-      { svg: '<rect x="150" y="' + (HZ + 8) + '" width="180" height="1.1" fill="#FFFFFF" opacity=".2"/><rect x="190" y="' + (HZ + 18) + '" width="100" height="1.1" fill="#FFFFFF" opacity=".16"/><rect x="170" y="' + (HZ + 30) + '" width="140" height="1" fill="#FFB0D0" opacity=".14"/>', box: [140, HZ + 4, 200, 30], cls: "bl-shimmer", style: "animation-duration:3.4s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 14, ["#FFE0EE", "#FFB0D0", "#FFFFFF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:24s;opacity:.3" }
+      /* the sky's own glow off the display */
+      { svg: '<ellipse cx="260" cy="96" rx="280" ry="70" fill="url(#' + u + 'sglow)"/>', box: [-20, 26, 560, 140], o: [260, 96], cls: "bl-breathe", style: "animation-duration:6s" },
+      /* the curtains, back to front, each swaying from its lower edge */
+      { svg: C1.s, box: [-60, -10, 400, 110], vb: [-60, -10, 400, 110], o: [130, 92], cls: "bl-sway", style: "animation-duration:12s;animation-delay:-5s" },
+      { svg: C2.s, box: [-60, -20, 600, 150], vb: [-60, -20, 600, 150], o: [240, 110], cls: "bl-sway", style: "animation-duration:9s" },
+      { svg: C3.s, box: [220, -20, 320, 110], vb: [220, -20, 320, 110], o: [380, 86], cls: "bl-shimmer", style: "animation-duration:4.2s" },
+      /* the core flare among the lights */
+      { svg: '<circle cx="' + FX + '" cy="' + FY + '" r="44" fill="url(#' + u + 'halo)"/><circle cx="' + FX + '" cy="' + FY + '" r="15" fill="url(#' + u + 'bead)"/><circle cx="' + FX + '" cy="' + FY + '" r="3.6" fill="#FFFFFF"/>',
+        box: [FX - 44, FY - 44, 88, 88], o: [FX, FY], cls: "bl-pulse", style: "animation-duration:2.6s" },
+      { svg: '<rect x="' + (FX - 1.1) + '" y="' + (FY - 40) + '" width="2.2" height="80" fill="url(#' + u + 'ray)"/><path d="M' + (FX - 16) + ' ' + FY + ' L' + (FX + 16) + ' ' + FY + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".85"/>',
+        box: [FX - 16, FY - 40, 32, 80], o: [FX, FY], cls: "bl-glow", style: "animation-duration:1.8s" },
+      /* the land: the range and the lake */
+      { svg: fbP(rng, "url(#" + u + "rng)") + fbL(snow, "#BFFFE4", .8, ' opacity=".4"') + '<rect x="-10" y="' + HZ + '" width="500" height="' + (190 - HZ) + '" fill="url(#' + u + 'lake)"/>' },
+      /* the lights given back by the ice */
+      { svg: C1.refl + C2.refl + C3.refl + '<circle cx="' + FX + '" cy="' + bnF(HZ + (HZ - FY) * SQ) + '" r="10" fill="url(#' + u + 'bead)" opacity=".6"/>', box: [-60, HZ, 600, 60], vb: [-60, HZ, 600, 60], cls: "bl-glow", style: "animation-duration:4.2s" },
+      { svg: ice + fbL(crack, "#CFEFF0", .5, ' opacity=".22"') + fbP(trees, "#020509") + '<rect x="-10" y="' + (HZ + 1.6) + '" width="500" height=".8" fill="#3DF5A0" opacity=".25"/>' },
+      { svg: sheen, box: [50, HZ + 6, 360, 30], cls: "bl-shimmer", style: "animation-duration:3.4s" }
     ];
   },
   /* ---- THE RANGERS' BANNERS (384: "Same for the ultimate character banners, not a big fan of any
@@ -81622,9 +81690,9 @@ const IFC_BANNER_LOOK = {
   level80: ["Top Floor", "#FFB04A", "#4A6AD8"], early10: ["After Hours", "#3FD0C0", "#F2C14E"],
   exam100: ["Clean Sweep", "#3CD9A0", "#FF5A4A"], flare_void: ["Nebula", "#F97316", "#EF4444"],
   /* (384 r9) the secret flare banners carry their characters' names: "rename banner names to match" - Pulsar's character is
-     Whiteout now and Eclipse's is Aurora */
+     Whiteout now and Eclipse's is Aurora; (r11) the Aurora's swatch is the lights' green and rose, not the eclipse's pink and orange */
   flare_umbra: ["Quasar", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Whiteout", "#6FB4F2", "#CFEAFF"],
-  flare_genesis: ["Aurora", "#FF5CA8", "#FFB04A"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
+  flare_genesis: ["Aurora", "#34E0A1", "#FF5CA8"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
   celestial: ["Comet Ranger", "#3FE9FF", "#1E8AB8"], zenith: ["Star Ranger", "#FFD36A", "#6A4AC8"]
 };
 if(IFC_ART_ON){

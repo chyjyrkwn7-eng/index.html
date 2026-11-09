@@ -16,9 +16,15 @@
      starting at their lenses, no lit building windows behind them, the racks' orange beams in the scene;
  (7) THE SECRET FLARES share no long shape between ANY two of the four (Pulsar and Eclipse used to share their hills and lake), each keeps its colour;
  (8) none of the round 9 banners has an svg filter, a clashing id or an unresolved url(#), or is heavier than 700 elements or 24 layers.
+ (9) r11 (r11-banners, cut from 3b1526d): the two secret flare banners renamed with their characters are redrawn to match - against
+     check-b384-r9-banners.prev2.json (3b1526d's hashes in both classes) flare_horizon (Whiteout) and flare_genesis (Aurora) differ and EVERY other
+     banner in both classes is byte-identical; WHITEOUT is a blizzard (three or more sheets of snow driven across on bl-slide, a gradient-lit ridge,
+     no spin and no beams round a star any more); AURORA is the northern lights (three curtains on their own clocks, each of 30+ rays filled by its own
+     green-to-rose ramp, a lake under them with the lights given back) and its swatch is green and rose.
 
   python3 tools/check-b384-r9-banners.py [--against OLD/index.html]     (FAILS on cd82880)
   python3 tools/check-b384-r9-banners.py --dump --against <cd82880 index.html>   writes the .prev.json
+  python3 tools/check-b384-r9-banners.py --dump2 --against <3b1526d index.html>  writes the .prev2.json
 """
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -26,8 +32,10 @@ src = open(os.path.join(HERE, "record-cutscenes.py")).read().split("\nSCENES = [
 rc = {"__file__": os.path.join(HERE, "record-cutscenes.py"), "__name__": "rc"}; exec(src, rc)
 from playwright.sync_api import sync_playwright
 BODY = open(sys.argv[sys.argv.index("--against") + 1], encoding="utf-8").read() if "--against" in sys.argv else None
-DUMP = "--dump" in sys.argv
-PREVF = os.path.join(HERE, "check-b384-r9-banners.prev.json")
+DUMP = "--dump" in sys.argv or "--dump2" in sys.argv
+PREVF = os.path.join(HERE, "check-b384-r9-banners.prev2.json" if "--dump2" in sys.argv else "check-b384-r9-banners.prev.json")
+PREVF2 = os.path.join(HERE, "check-b384-r9-banners.prev2.json")
+R11 = ["flare_horizon", "flare_genesis"]
 R9 = ["tests500", "correct5000", "level80", "early10", "flare_void", "flare_umbra", "flare_horizon", "flare_genesis", "hundos100", "tests250", "hundos250"]
 ok = True
 def chk(name, cond, info=""):
@@ -95,6 +103,12 @@ MEASURE = r"""(R9) => {
     for(let i = 0; i < 4; i++) for(let j = i + 1; j < 4; j++){ const n = [...L[i]].filter(v => L[j].has(v)).length; if(n) pairs.push([fl[i], fl[j], n]); }
     const C = {}; fl.forEach(id => C[id] = ((bannerStaticSVG(id) || '') + lstr(id)).toUpperCase());
     out.F = { pairs, colours: ['#EF4444', '#F97316', '#FACC15'].every(c => C.flare_void.indexOf(c) >= 0) && C.flare_umbra.indexOf('#8B5CF6') >= 0 && C.flare_horizon.indexOf('#CFEAFF') >= 0 && C.flare_genesis.indexOf('#FF5CA8') >= 0 }; }catch(e){ out.err += 'F ' + String(e).slice(0, 120) + ' '; }
+  /* 9. r11: the Whiteout and the Aurora by their parts */
+  try{ const wl = layers('flare_horizon'), al = layers('flare_genesis');
+    const rays = l => ((l.svg || '').match(/fill="url\(#gqc[ABC]\)"/g) || []).length;
+    out.R11 = { slides: wl.filter(l => /bl-slide/.test(l.cls || '')).length, spin: wl.filter(l => /bl-spin/.test(l.cls || '')).length, ridge: /url\(#gqridge\)/.test(lstr('flare_horizon')),
+      curtains: al.filter(l => /bl-sway|bl-shimmer/.test(l.cls || '') && rays(l) >= 30).map(l => [rays(l), l.style || '']),
+      lake: /url\(#gqlake\)/.test(lstr('flare_genesis')), refl: /url\(#gqc[ABC]r\)/.test(lstr('flare_genesis')), tint: (typeof BANNER_TINT !== 'undefined' && BANNER_TINT.flare_genesis) || null }; }catch(e){ out.err += 'R11 ' + String(e).slice(0, 120) + ' '; }
   /* 8. hygiene */
   try{ out.W = {}; out.bad = [];
     R9.forEach(id => { const x = buildBannerArt(id), y = buildBannerArt(id); out.W[id] = [x.querySelectorAll('*').length, x.querySelectorAll('.bnl').length];
@@ -160,5 +174,20 @@ chk("(7) THE SECRET FLARES share no long shape between any two (%s) and each kee
 W = M.get("W") or {}; heavy = {k: v for k, v in W.items() if v[0] > 700 or v[1] > 24}
 chk("(8) no filter, id clash or unresolved url in the round 9 banners (%s); none heavier than 700 elements or 24 layers (%s)" % (M.get("bad"), W), W and not M.get("bad") and not heavy, (M.get("bad"), heavy))
 chk("(8) the measurements ran without a page error (%s)" % M.get("err"), not M.get("err"), M.get("err"))
+P2 = json.load(open(PREVF2))
+same2 = [i for i in R11 if H.get(i) == P2["ifc"].get(i)]
+chk("(9) r11: the Whiteout and the Aurora are redrawn since 3b1526d (unchanged: %s)" % same2, not same2 and all(i in H for i in R11), same2)
+moved3 = [i for i in P2["ifc"] if i not in R11 and H.get(i) != P2["ifc"][i]] + ["academy:" + i for i in P2["academy"] if A0.get(i) != P2["academy"][i]]
+chk("(9) ...and every other banner in both classes is byte-identical to 3b1526d (%d checked; moved: %s)" % (len(P2["ifc"]) - len(R11) + len(P2["academy"]), moved3),
+    not moved3 and len(H) == len(P2["ifc"]) and len(A0) == len(P2["academy"]), moved3)
+R = M.get("R11") or {}
+chk("(9) WHITEOUT is a blizzard: %s sheets of snow driven across (bl-slide), a lit ridge (%s), nothing spinning (%s)" % (R.get("slides"), R.get("ridge"), R.get("spin")),
+    R.get("slides", 0) >= 3 and R.get("ridge") and not R.get("spin"), R)
+cu = R.get("curtains") or []
+tint = [str(c).upper() for c in (R.get("tint") or [])]
+def hue(h):
+    import colorsys; n = int(h[1:], 16); return colorsys.rgb_to_hsv((n >> 16) / 255, (n >> 8 & 255) / 255, (n & 255) / 255)[0] * 360
+chk("(9) AURORA is the northern lights: %d curtains of rays on their own clocks (%s), the lake (%s) giving them back (%s); its swatch is green and rose (%s)" % (len(cu), [c[0] for c in cu], R.get("lake"), R.get("refl"), tint),
+    len(cu) >= 3 and len(set(c[1] for c in cu)) == len(cu) and R.get("lake") and R.get("refl") and len(tint) == 2 and 120 <= hue(tint[0]) <= 175 and (hue(tint[1]) >= 300 or hue(tint[1]) <= 15), R)
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
