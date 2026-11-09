@@ -37481,3 +37481,8 @@ Madison: "host 3 virtual room matches ... They would need to fully finish each m
   chains it hung on (`fcopt_exit`, the first path in `cx-head`) are gone; nothing else in the drawing moved.
 - "existing people don't need the notice": `version.json` `frameId` stays `""`, so installed phones are not asked to re-add for
   the new dark icon. The icon reaches a phone the next time it is added to the Home Screen.
+- Hive kept for whoever had it. Madison: "People who already unlocked the hive, they will keep it and it will say they already
+  did the virtual room challenge." `migrateHive384()` (beside `migrateSheriff324`, same shape): once per account
+  (`store.hiveMoved384`, default true for a new store and after a reset, false for an existing one, OR-merged and seeded into a new
+  class store), whoever met the old rule (`busiestDay() >= HIVE_DAY`) or is wearing the Hive gets "hive" in `legacyChars`;
+  `hiveKept()` then makes `CHARACTER_FEATS.busyday300` read done, 3 of 3. Gate: `tools/check-b384-hivekept.py` (fails on a9404f6).

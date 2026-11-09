@@ -57355,8 +57355,8 @@ const CHARACTER_FEATS = {
      write itself), played with at least one classmate, reaching its end on this device (the race's standings, a Tug of War or
      Battle result; never a leave). Nothing kept before this build records hosting, so it counts from here. */
   busyday300: { label: "Host " + VR_HOST_NEED + " Virtual Room matches",
-                done: () => (Number(store.vrHosted) || 0) >= VR_HOST_NEED,
-                have: () => Math.min(Number(store.vrHosted) || 0, VR_HOST_NEED), need: VR_HOST_NEED,
+                done: () => hiveKept() || (Number(store.vrHosted) || 0) >= VR_HOST_NEED,
+                have: () => hiveKept() ? VR_HOST_NEED : Math.min(Number(store.vrHosted) || 0, VR_HOST_NEED), need: VR_HOST_NEED,
                 note: "Host a room and play the match to the end. Any game counts; it doesn't have to be in a row." },
   studyrun7: { label: "Study 7 days in a row",
                done: () => bestStudyRun() >= 7,
@@ -66497,7 +66497,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false, core: false },
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
@@ -66841,6 +66841,7 @@ function applyLoadedData(got){
      account has not, and has not been moved over yet (migrateSheriff324). */
   store.novaBeaten = got.novaBeaten === true;
   store.sheriffMoved324 = got.sheriffMoved324 === true;
+  store.hiveMoved384 = got.hiveMoved384 === true;   /* (384 r17) see migrateHive384 */
   store.bestTestStreak = Math.max(0, Number(got.bestTestStreak) || 0);
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, TEST_HISTORY_MAX) : [];
@@ -67055,6 +67056,7 @@ function applyLoadedData(got){
   store.weekWinWeeks = Array.isArray(got.weekWinWeeks) ? got.weekWinWeeks.filter(x => typeof x === "string").slice(-60) : [];
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
   try{ migrateSheriff324(); }catch(e){}
+  try{ migrateHive384(); }catch(e){}
   /* After everything the locks read (the streak, the study log) is in. */
   try{ revokeRaisedCharacters(); }catch(e){}
   try{ revokeLeakedStudyRewards(); }catch(e){}
@@ -67095,6 +67097,23 @@ function migrateSheriff324(){
   }
   store.sheriffMoved324 = true;
 }
+/* THE HIVE MOVED (384 r17) AND NOBODY LOSES IT. It was "Answer 500 questions in a single day" (busiestDay() >= HIVE_DAY) up
+   to build 383; it is hosting three Virtual Room matches now. Madison: "People who already unlocked the hive, they will keep it
+   and it will say they already did the virtual room challenge." Whoever met the old rule (or is wearing it) when this build
+   first loads their account keeps it for good (legacyChars, merged as a union), and CHARACTER_FEATS.busyday300 reads as done
+   for them. Once per account: the flag travels with it. */
+function migrateHive384(){
+  if(store.hiveMoved384 === true) return;
+  let held = store.avatarChar === "hive";
+  try{ if(!held && store.onboardingComplete && busiestDay() >= HIVE_DAY) held = true; }catch(e){}
+  if(held){
+    store.legacyChars = Array.isArray(store.legacyChars) ? store.legacyChars : [];
+    if(store.legacyChars.indexOf("hive") < 0) store.legacyChars.push("hive");
+  }
+  store.hiveMoved384 = true;
+}
+/* kept the Hive from before (migrateHive384): the hosting challenge reads as done */
+function hiveKept(){ return Array.isArray(store.legacyChars) && store.legacyChars.indexOf("hive") >= 0; }
 function legacyCharsFromRanks(){
   if(!store.onboardingComplete) return [];
   const out = [];
@@ -68959,7 +68978,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTestPassed = false;
   store.bigTest450Passed = false;
   store.bigTest500Passed = false;
-  store.novaBeaten = false; store.sheriffMoved324 = true;   /* build 324 */
+  store.novaBeaten = false; store.sheriffMoved324 = true; store.hiveMoved384 = true;   /* build 324 */
   store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
@@ -70233,7 +70252,7 @@ function mergeLeavingAccount(src, note){
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324"]
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384"]
     .forEach(k => { if(src[k] === true) store[k] = true; });
   if(src.mysteryColorsFound && store.mysteryColorsFound){
     Object.keys(src.mysteryColorsFound).forEach(c => { if(src.mysteryColorsFound[c]) store.mysteryColorsFound[c] = true; });
@@ -70712,7 +70731,7 @@ function mergeSameAccount(dst, src){
   /* when each badge was last clean (build 320, b320g): the newer time,
      badge by badge - cleaned on either device is cleaned */
   if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324",
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295", "savedCodeSaved",
    /* (384) the class button's tip, once per account */
    "seenClassTip"].forEach(k => orInto(dst, k, src[k]));
@@ -158875,7 +158894,7 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
     const a = JSON.parse(window.NOVA_ACADEMY_RAW || "null") || {};
     const seed = { lastModified: Date.now() };
     ["firstName", "username", "avatarChar", "publicId", "theme", "onboardingComplete", "tourRev", "novaMet", "novaHeard",
-     "levelWallRule", "challengeSeed289", "koiRevoked295", "sheriffMoved324", "lateHundosSeed312", "fullTestsSeeded"].forEach(k => { if(a[k] !== undefined) seed[k] = a[k]; });
+     "levelWallRule", "challengeSeed289", "koiRevoked295", "sheriffMoved324", "hiveMoved384", "lateHundosSeed312", "fullTestsSeeded"].forEach(k => { if(a[k] !== undefined) seed[k] = a[k]; });
     Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k)) seed[k] = a[k]; });
     seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
     /* (384) THE LOOK IS THE CLASS'S OWN. Madison: "When switching classes, the theme from the other class is being used on the
