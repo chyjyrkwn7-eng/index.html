@@ -37301,3 +37301,6 @@ Madison, on his own Profile at level 21 with no badges (Fire Code): "Our current
 
 ### 384 r9 - the race line: the same air over and under the dots
 Madison, a race question with the dots sitting on the track circled: "Shouldn't the spacing be better?" With the dots riding in the pinned race line (r8), the track was 8px under them on a phone (26px on a tablet) while the dots are 14.4px under the Drill / 1/12 row. `.wrap .vroom-racebar.has-meter .vroom-racetrack{ margin-top:.9rem }` on every device: 14.4 over, 14.4 under. check-b384-vrdots (7) holds it (fails on the previous build: 14.4/8.0 phone, 14.4/25.6 iPad); its Pause/chat-clear leg (3) still passes on the iPad.
+
+### 384 r9 - the lobby's switch says Private lobby / Open lobby
+Madison, "Open to class" circled: "Shouldn't this just say private lobby/open lobby?" The word beside the lobby's switch (.vroom-open-word) follows it now - "Private lobby" off, "Open lobby" on - painted in paintOpen() beside the line under it (which still says who can join). The switch's aria-label is the ON meaning, "Open lobby", fixed. check-b384-lobbyopen (6) (fails on the previous build: "Open to class" both ways).

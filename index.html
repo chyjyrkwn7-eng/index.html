@@ -139329,9 +139329,12 @@ function showVirtualRoomLobby(){
     sw.type = "button";
     sw.className = "vroom-open-switch nsw-host";
     sw.setAttribute("role", "switch");
-    sw.setAttribute("aria-label", "Open to class");
+    /* (384 r9) THE SWITCH NAMES THE ROOM IT MAKES. Madison, "Open to class" circled: "Shouldn't this just say private lobby/open
+       lobby?" The word beside the switch follows it - off "Private lobby", on "Open lobby" - and the line under it still says who
+       can get in. The switch's accessible name stays the ON meaning ("Open lobby", checked or not), as a switch's must. */
+    sw.setAttribute("aria-label", "Open lobby");
     const swWord = document.createElement("span");
-    swWord.className = "vroom-open-word"; swWord.textContent = "Open to class";
+    swWord.className = "vroom-open-word"; swWord.textContent = "Private lobby";
     const knob = document.createElement("span");
     knob.className = "nsw"; knob.setAttribute("aria-hidden", "true");
     sw.append(swWord, knob);
@@ -139347,6 +139350,7 @@ function showVirtualRoomLobby(){
     const paintOpen = () => {
       sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
       sw.classList.toggle("on", vroomIsOpen);
+      swWord.textContent = vroomIsOpen ? "Open lobby" : "Private lobby";
       openLine.textContent = vroomIsOpen ? "Anyone in " + openWho + " can find this room and join." : "Only people you invite can join.";
     };
     sw.addEventListener("click", () => {

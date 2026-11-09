@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384 r8: the lobby's Open to class line follows the switch; the game's name and icon wear its colour.
+"""Build 384 r8/r9: the lobby's open switch - (6, r9) its word reads "Private lobby" off and "Open lobby" on; its line follows the switch; the game's name and icon wear its colour.
 Madison (the host's lobby): "'On, anyone in 26e blah blah' wording has bad spacing and it's showing up while it's off? Also ... the word
 race at the top, shouldn't the race icon and stuff be the color of the race icon?"
 A four-person room you host, iPhone 17 Pro Max: (1) with the switch off the line says who can join (it does not describe ON); (2) after a
@@ -34,8 +34,13 @@ with sync_playwright() as pw:
     pg.evaluate(MOUNT, "race"); pg.wait_for_timeout(1500)
     off = pg.evaluate(LINE)
     chk("(1) switch off: the line says who can join, not what ON does (%r)" % (off and off["txt"]), off and off["on"] == "false" and not __import__("re").match(r"on\b", off["txt"].lower()) and "find this room" not in off["txt"], off)
+    W = "()=>{ const w=document.querySelector('.vroom-open-word'); return w ? w.textContent.trim() : null; }"
+    w_off = pg.evaluate(W)
     pg.evaluate("()=>{ document.querySelector('.vroom-open-switch').click(); }"); pg.wait_for_timeout(500)
     on = pg.evaluate(LINE)
+    w_on = pg.evaluate(W)
+    # (r9) "Shouldn't this just say private lobby/open lobby?" - the switch's word names the room it makes
+    chk("(6) the switch's word follows it: %r off, %r on" % (w_off, w_on), w_off == "Private lobby" and w_on == "Open lobby", [w_off, w_on])
     chk("(2) switch on: the line changes and names the class (%r)" % (on and on["txt"]), on and on["on"] == "true" and on["txt"] != off["txt"] and ("26E" in on["txt"] or "Fire Code" in on["txt"]), on)
     chk("(3) air round the line (%.1f under the switch row, %s above the first player)" % (on["underRow"], on["aboveFirst"]), on["underRow"] >= 10 and on["aboveFirst"] is not None and on["aboveFirst"] >= 14, on)
     cols = {}
