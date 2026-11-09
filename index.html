@@ -37379,6 +37379,18 @@ html.is-browser{ --fade-paper: transparent; }
   /* (383) held, it keeps its colour and only gives a little - 327z15's rule for every back button ("Back buttons no longer
      change colour when pressed"); the round one carried a lighter fill on press since 382 */
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back{ transition:transform .12s ease; }
+  /* (384 r8) ONE SIZE FOR THE TWO CORNER BUTTONS: the chat button is 52px from 40rem, so the back button is too (it was 44) */
+  @media (min-width:40rem){
+    html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back{ width:52px; height:52px; min-height:52px !important; top:calc(50% - 26px); }
+  }
+  /* (384 r8) THE CHAT BUTTON SITS WHERE THE BACK BUTTON IS, MIRRORED. Madison: "Why aren't the chat button and button in line
+     with each other? They should be perfectly symmetrical with each of their own corners?" The .6rem meet-in-the-middle (below)
+     was arithmetic on one layout; the nav has moved since and they were 20px apart (and 20 vs 24px in from their edges).
+     alignNavChat() measures the back button on every screen change and resize and puts the chat button level with it, as far
+     in from the right as the back button is from the left. */
+  html[data-layout] body.navchat-aligned .chatdock:not(.in-test) .chatdock-btn{
+    top:calc(var(--navchat-top, 0px) + var(--vv-shift, 0px)) !important; right:var(--navchat-right, 1.5rem) !important;
+  }
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:scale(.92); }
   [data-reduce-motion="true"] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:none; }
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron{ width:20px; height:20px; margin:0; }
@@ -54908,6 +54920,22 @@ function syncTestPin(force){
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
+/* (384 r8) see body.navchat-aligned: the chat button mirrors the back button's corner on any pushed screen */
+function alignNavChat(){
+  const b = document.body; if(!b) return;
+  const back = document.querySelector("#stage .ios-nav > .ios-nav-back");
+  const chat = document.getElementById("chatdock-btn");
+  const br = back ? back.getBoundingClientRect() : null;
+  if(!back || !chat || !br || br.width === 0 || window.scrollY > 4){ if(!back || !br || br.width === 0) b.classList.remove("navchat-aligned"); return; }
+  const ch = chat.getBoundingClientRect().height || br.height;
+  b.style.setProperty("--navchat-top", (br.top + (br.height - ch) / 2).toFixed(2) + "px");
+  b.style.setProperty("--navchat-right", br.left.toFixed(2) + "px");
+  b.classList.add("navchat-aligned");
+}
+try{
+  new MutationObserver(() => requestAnimationFrame(() => requestAnimationFrame(alignNavChat))).observe(document.getElementById("stage"), { childList: true });
+}catch(e){}
+addEventListener("resize", () => requestAnimationFrame(alignNavChat));
 /* THE STARFIELD'S TILES (build 323) - see the body::after rule for the
    why. Two tiles at sizes that share no factor (239 and 433 CSS px), so
    the field only repeats every ~100,000px and no pattern can be spotted:
