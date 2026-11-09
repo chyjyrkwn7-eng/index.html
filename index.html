@@ -133605,6 +133605,10 @@ function showVirtualRoomChoice(){
   /* "The virtual room description needs to be a smidge better, needs to
      mention studying together" (build 287). */
   sub.textContent = "Study together. Everyone in the room takes the same test at the same time, and you see how you all did at the end.";
+  /* (384 r8) THE GAMES ARE A LINE OF TEXT, NOT THREE PILLS. Madison: "The stuff at the top, they look like buttons for one, and
+     for two, they have the old interface" - three rimmed chips with the old coloured art read as a row of buttons that did
+     nothing when tapped. Which games a room can play is a fact about rooms, so it is said in the line under the title. */
+  sub.textContent += " Play a Race, a Tug of War or a Battle; the host picks the game.";
   panel.appendChild(sub);
 
   if(!vroomDb()){
@@ -133628,17 +133632,6 @@ function showVirtualRoomChoice(){
      whole card is the tap. Above them, the three games a room can play,
      so the screen says what a Virtual Room IS before asking anything.
      Side by side from tablet up. */
-  const games = document.createElement("div");
-  games.className = "vrc-games";
-  [["race", "Race"], ["tug", "Tug of War"], ["battle", "Battle"]].forEach(([k, label]) => {
-    const g = document.createElement("span");
-    g.className = "vrc-game vrc-game-" + k;
-    g.appendChild(buildVroomModeArt(k));
-    const t = document.createElement("span"); t.textContent = label;
-    g.appendChild(t);
-    games.appendChild(g);
-  });
-  panel.appendChild(games);
 
   const ICONS = {
     /* COLOUR IN THE ICONS (build 267): "The join an open room and host a

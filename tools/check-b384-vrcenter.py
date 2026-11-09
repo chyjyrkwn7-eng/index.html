@@ -3,7 +3,8 @@
 Madison, everything under the title circled: "Center this".
 On an iPhone 17 Pro Max, an iPad Pro 11" and an iPhone SE: (1) the group under the title (the line, the games, the two cards, the
 Inbox note) has as much room above it (to the title bar) as below it (to the tab bar) - 4px; on
-a screen too short for it (the group runs under the tab bar and the page scrolls) it starts just under the title and nothing overflows sideways; (2) the group is below the title bar and above the tab bar; (3) no errors.
+a screen too short for it (the group runs under the tab bar and the page scrolls) it starts just under the title and nothing overflows sideways; (2) the group is below the title bar and above the tab bar; (2b) nothing on it that is not a button is drawn like one (Madison: "The stuff at the top, they look like buttons" - the three game
+pills are a sentence now); (3) no errors.
   python3 tools/check-b384-vrcenter.py [--against OLD/index.html]   (must FAIL on the build before)"""
 import os, sys, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +31,11 @@ with sync_playwright() as pw:
         base = min(m["above"], m["below"])
         chk("(1) %s: as much room above the group (to the title) as below it (to the tab bar) (%.0f / %.0f)" % (lab, m["above"], m["below"]), (abs(m["above"] - m["below"]) <= 4 if m["below"] > 0 else m["above"] <= 30) and m["sw"] <= m["vw"], m)
         chk("(2) %s: the group sits between the title bar and the tab bar" % lab, m["top"] >= m["navB"] and (m["bot"] <= m["tab"] or h < 700), m)
+        pills = pg.evaluate("""()=>{ const p=document.querySelector('.screen-vroom-choice'); const nav=p.querySelector(':scope > .ios-nav');
+          return [...p.querySelectorAll('*')].filter(e=>!nav.contains(e) && e.getBoundingClientRect().width>0).filter(e=>{ const c=getComputedStyle(e);
+            const boxed=(c.backgroundColor!=='rgba(0, 0, 0, 0)' && c.backgroundColor!=='transparent') || parseFloat(c.borderTopWidth)>0;
+            const tap=e.closest('button, a, [role=button], .modecard'); return boxed && !tap && parseFloat(c.borderTopLeftRadius)>=8; }).map(e=>e.className).slice(0,5); }""")
+        chk("(2b) %s: nothing that is not a button is drawn like one - no boxed pills (%s)" % (lab, pills), not pills, pills)
         chk("(3) %s: no page errors" % lab, not errs, errs[:3])
         ctx.close()
     br.close()
