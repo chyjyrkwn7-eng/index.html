@@ -10579,11 +10579,15 @@ def check_b310(br):
         const btns = [...seg.children].filter(b => b !== sl && b.tagName === 'BUTTON');
         const target = btns.find(b => !b.classList.contains('active') && !b.classList.contains('is-on'));
         target.click(); await wait(60);
-        const mid = sl.getBoundingClientRect().left;
+        /* MOVED IN r8: a glass switcher's glide is its lens (attachSegGlass) - the thumb waits, hidden, on the new tab
+           while the lens carries the move - so where there is a lens up, the lens is the indicator measured */
+        const le = seg.querySelector(':scope > .seg-lens'), lup = le && +getComputedStyle(le).opacity > .5;
+        const ind = lup ? le.querySelector('.tab-lens-body') : sl;
+        const mid = lup ? ind.getBoundingClientRect().left + ind.getBoundingClientRect().width / 2 - sl.getBoundingClientRect().width / 2 : sl.getBoundingClientRect().left;
         /* MOVED IN 327z2: the glide is a Web Animation of transform now (a
            transition read the old box and forced a layout per tap), so
            either one counts as gliding. */
-        const anim = sl.getAnimations().some(an => (an.effect && an.effect.getKeyframes && an.effect.getKeyframes().some(k => k.transform)));
+        const anim = (lup ? [...le.querySelectorAll('*')] : [sl]).some(el => el.getAnimations().some(an => (an.effect && an.effect.getKeyframes && an.effect.getKeyframes().some(k => k.transform))));
         await wait(700);
         const end = sl.getBoundingClientRect().left;
         out.slide = { x0: Math.round(x0), mid: Math.round(mid), end: Math.round(end), tr: getComputedStyle(sl).transitionProperty + (anim ? ' transform(animation)' : '') };
