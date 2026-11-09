@@ -36813,6 +36813,16 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .savecode-card .next{ display:block; width:100%; min-height:48px; margin:0; animation:none; }
   html[data-layout] body .savecode-card .next.ghost:disabled{ opacity:.38; }
   html[data-layout] body .savecode-card .savecode-continue{ margin-top:.6rem; }
+  /* (384 r9) THE SAME CARD AS WHAT'S NEW. Madison, the sync code card circled: "This should match the what's new frost look". The
+     frosted sheet was already the same (--pop-bg-glass, the blur, the rim); what differed was everything on it. Now, as on What's
+     new (.intro-card): the eyebrow white, not gold; the title in What's new's serif at its size; the code in What's new's frosted
+     blue panel (.intro-gate-note's wash and edge) instead of a black slab; the tick row a quiet glass row; Continue its white pill. */
+  html[data-layout] body .savecode-card .savecode-tag{ color:#fff; letter-spacing:.1em; font-size:.7rem; }
+  html[data-layout] body .savecode-card .savecode-title{ font-family:Georgia, "Iowan Old Style", "Palatino Linotype", serif; font-size:1.5rem; letter-spacing:0; }
+  html[data-layout] body .savecode-card .savecode-value{
+    background:linear-gradient(180deg, rgba(61,139,255,.16), rgba(61,139,255,.06)) !important; border:1px solid rgba(143,193,255,.38) !important; border-radius:16px;
+  }
+  html[data-layout] body .savecode-card .savecode-ack{ background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.12); }
   .savecode-status{ min-height:1.2rem; margin:.45rem 0 .2rem; font-size:.88rem; line-height:1.35; color:rgba(255,255,255,.75); }
   .savecode-status.is-good{ color:#5FD38A; }
   .savecode-ack{
@@ -135355,7 +135365,8 @@ function showSaveCodeCard(opts){
   ackText.textContent = "I’ve written it down or saved it";
   ack.append(box, ackText);
   const go = document.createElement("button");
-  go.type = "button"; go.className = "next ghost savecode-continue";
+  /* (384 r9) the primary action is What's new's white pill ("Got it"), not the ghost one - see .savecode-card in the r9 block */
+  go.type = "button"; go.className = "next savecode-continue";
   go.textContent = "Continue";
   const foot = document.createElement("p");
   foot.className = "savecode-foot"; foot.textContent = "You can find it again any time in Settings, under Sync.";
