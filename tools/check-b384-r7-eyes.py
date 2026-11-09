@@ -32,6 +32,11 @@
   python3 tools/check-b384-r7-eyes.py --dump --against 6057892.html  (writes check-b384-r7-eyes.prev.json)
 """
 import json, os, sys, colorsys, io, warnings
+# SUPERSEDED IN 384 r8 (check-b384-r8-eyes.py): "The other 4 look the same though". r7's one-family legs (the four in glareEye, one
+# iris family, Inferno the "same eye" as theirs) describe exactly what was asked against; Forge, Lunar, Solar and Tempest now draw
+# eyes of their own and r8 pins Inferno, Oracle and Frost (and everyone else) to cd34de2 instead. Still runs --against an r7 build.
+if "--against" not in sys.argv and "--dump" not in sys.argv:
+    print("SKIP superseded by check-b384-r8-eyes.py (the four rulers' own eyes replaced the shared glare)"); sys.exit(0)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "record-cutscenes.py")).read().split("\nSCENES = [")[0]
