@@ -51,6 +51,7 @@ with sync_playwright() as pw:
     ctx, pg = g["open_page"](br, g["init_account"]("", g["store"]()), errs=errs)
     pg.evaluate("()=>{ theme.accent='ink'; applyTheme(); showAppearance(); }"); pg.wait_for_timeout(1300)
     m = pg.evaluate("""()=>{ const rows=[...document.querySelectorAll('#stage .settings-list > .settings-row')].filter(r=>r.querySelector('.settings-row-icon'));
+      if(rows.length < 2) return { h: 0, tile: 0, glyph: 0, label: 0, strokes: [], sepBg: '', sepLeft: 0, labelLeft: 99, sepRight: 0, cardRight: 0, contentRight: 99, none: true };   /* (384 r8) a menu with no tiled rows fails (1)/(2), it does not stop the gate */
       const r=rows[0], ic=r.querySelector('.settings-row-icon'), sv=ic.querySelector('svg'), lab=r.querySelector('.settings-row-label');
       const parts=[sv, ...sv.querySelectorAll('[stroke], path, circle, rect, line, polyline')].map(e=>parseFloat(getComputedStyle(e).strokeWidth)).filter(v=>v>0);
       const b=rows[1], sep=getComputedStyle(b,'::before'), lr=b.querySelector('.settings-row-label').getBoundingClientRect(), br=b.getBoundingClientRect(), card=b.parentElement.getBoundingClientRect();
