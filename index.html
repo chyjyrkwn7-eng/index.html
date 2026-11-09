@@ -37690,9 +37690,15 @@ html.is-browser{ --fade-paper: transparent; }
     display:flex; flex-direction:column; box-sizing:border-box;
     min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
   }
-  html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ margin-top:auto !important; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice > :last-child{ margin-bottom:auto; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice > :is(.vrc-modecards, .vrc-note){ translate:0 var(--vrc-shift, 0px); }
+  /* (384 r9) BACK UNDER THE LINE. Madison: "The two virtual options, maybe they should just be back towards the top on the
+     phone, and then for larger devices just side by side?" The middle of the screen left the phone half empty above them.
+     Now the cards sit right under the line, as Choose your mode's do, on every device; from 40rem they are side by side
+     (.modecards' own row). No auto margins, no shift - vrcCentre() is gone. */
+  html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ margin-top:1.1rem !important; }
+  @media (min-width:40rem){
+    html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ flex-direction:row; align-items:stretch; }
+    html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards > .vrc-modecard{ flex:1 1 0; min-width:0; }
+  }
   /* (384 r8) the bigger cards were tried and reverted ("These boxes being bigger is not the move after all. Revert their size.") */
   /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
   html[data-layout] body #stage > .panel.vroom-finale-solo{
@@ -133865,23 +133871,7 @@ function showVirtualRoomChoice(){
 
   stage.replaceChildren(panel);
   toTop();
-  requestAnimationFrame(() => vrcCentre());
-  setTimeout(vrcCentre, 300);   /* and once more when the page has settled (a busy phone lays out late) */
 }
-/* (384 r8) the cards in the middle of the space between the line under the title and the tab bar - see .screen-vroom-choice */
-function vrcCentre(){
-  const p = document.querySelector("#stage > .panel.screen-vroom-choice");
-  if(!p) return;
-  p.style.setProperty("--vrc-shift", "0px");
-  const sub = p.querySelector(":scope > .cal-sub"), group = [...p.querySelectorAll(":scope > .vrc-modecards, :scope > .vrc-note")];
-  if(!sub || !group.length) return;
-  const top = Math.min(...group.map(k => k.getBoundingClientRect().top)), bot = Math.max(...group.map(k => k.getBoundingClientRect().bottom));
-  const tb = document.querySelector(".bottomtabs"), tr = tb && !tb.hidden ? tb.getBoundingClientRect() : null;
-  const floor = tr && tr.height > 0 && getComputedStyle(tb).display !== "none" ? tr.top : innerHeight;
-  const above = top - sub.getBoundingClientRect().bottom, below = floor - bot;
-  p.style.setProperty("--vrc-shift", Math.max(0, Math.min((below - above) / 2, below - 8)).toFixed(1) + "px");
-}
-addEventListener("resize", () => { if(document.querySelector("#stage > .panel.screen-vroom-choice")) vrcCentre(); });
 
 /* ONE SCREEN, TWO JOBS. Setting a room up and changing it afterwards
    are the same question - which units, how long, how many - so they are

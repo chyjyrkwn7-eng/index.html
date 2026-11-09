@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384 r8: the Virtual Room choice screen. FINAL (Madison): "needs to be like the mode selection screen. Title at the top,
+"""Build 384 r8/r9: the Virtual Room choice screen. (r9: (2c) is the cards right under the line - Madison: "maybe they should just be back towards the top on the phone, and then for larger devices just side by side?" - stacked on a phone, side by side from 40rem.) FINAL (Madison): "needs to be like the mode selection screen. Title at the top,
 description under it, then the boxes are centered.." - (1) the line under the title at the top, (2c) the cards + Inbox note centred
 between that line and the tab bar, (2d) the cards' contents left-aligned like Choose your mode's. History: (The vertical centring this gate first held was reverted - Madison: "Centering the
 virtual room stuff??? Why would you center it like that?" - its legs (1)-(2) are off; (2b) and (3) stand. (2c): Madison then said "Center this" meant the cards' contents - their icon and title row and words are centred.)
@@ -45,8 +45,12 @@ with sync_playwright() as pw:
           const ms=[...document.querySelectorAll('.vrc-modecard')].map(c=>{ const r=c.getBoundingClientRect(), t=c.querySelector('.modecardtitlerow').getBoundingClientRect(); return t.left - r.left; });
           return { subGap: sub.getBoundingClientRect().top - nav.getBoundingClientRect().bottom, above: top - sub.getBoundingClientRect().bottom, below: fl - bot, titleIn: ms }; }""")
         chk("(1) %s: the title and the line under it at the top (line %.0fpx under the title bar)" % (lab, g["subGap"]), 0 <= g["subGap"] <= 30, g)
-        if g["below"] > 0:
-            chk("(2c) %s: the cards and the Inbox note centred between that line and the tab bar (%.0f above, %.0f below)" % (lab, g["above"], g["below"]), abs(g["above"] - g["below"]) <= 4, g)
+        # (384 r9) the centring is reverted - "The two virtual options, maybe they should just be back towards the top on the phone,
+        # and then for larger devices just side by side?" - (2c) is now: right under the line, and side by side from 40rem
+        cards = pg.evaluate("()=>[...document.querySelectorAll('.vrc-modecard')].map(c=>{const r=c.getBoundingClientRect(); return [r.left, r.top, r.width];})")
+        chk("(2c) %s: the cards right under the line (%.0fpx below it)" % (lab, g["above"]), 0 <= g["above"] <= 30, g)
+        side = len(cards) == 2 and abs(cards[0][1] - cards[1][1]) < 2 and abs(cards[0][0] - cards[1][0]) > 50
+        chk("(2c) %s: %s" % (lab, "side by side" if w >= 640 else "stacked"), side if w >= 640 else (len(cards) == 2 and cards[1][1] > cards[0][1]), cards)
         chk("(2d) %s: the cards' contents start at the left like Choose your mode's (%s)" % (lab, [round(v) for v in g["titleIn"]]), all(v < 40 for v in g["titleIn"]), g)
         z = pg.evaluate("()=>({ note: !!document.querySelector('.screen-vroom-choice .vrc-note'), h: [...document.querySelectorAll('.vrc-modecard')].map(c=>c.getBoundingClientRect().height), sub: document.querySelector('.screen-vroom-choice > .cal-sub').getBoundingClientRect().height })")
         chk("(2e) %s: no Inbox heads-up; a one-line description; the two cards (Choose your mode's size - the bigger cards were reverted) (%s, line %.0fpx)" % (lab, [round(v) for v in z["h"]], z["sub"]), not z["note"] and z["sub"] <= 30 and len(z["h"]) == 2, z)
