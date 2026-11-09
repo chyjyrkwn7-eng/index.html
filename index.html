@@ -13073,41 +13073,15 @@
   [data-layout="modern"] .wrap.test-pinned > .top{
     position:fixed; top:var(--test-top-y, 1.25rem); left:0; right:0; margin:0 auto;
     max-width:inherit; padding-left:inherit; padding-right:inherit; box-sizing:border-box;
-    min-height:var(--test-top-h, 0px); z-index:140;
+    min-height:var(--test-top-h, 0px); z-index:140; isolation:isolate;
   }
   .wrap.test-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px)) !important; }
-  /* (384 r15) THE FADE IS ITS OWN LAYER UNDER THE HEADER, NOT A NEGATIVE-Z CHILD INSIDE IT. Madison, on an iPhone, in a Drill: "The
-     top tab thing in tests broke. Why can't you see the amount of questions" - the mode, the count and Pause's label all read soft and
-     grey beside crisp text two inches lower. The fade used to be .top::before (z-index:-1 inside .top's own isolated stacking context,
-     100vw wide, 97% of the page colour), so the row's text sat in one fixed layer with a near-opaque translucent sheet beneath it,
-     a glass Pause (backdrop-filter) nested in it and the glass chat button over it. Now .top is a plain fixed row (no isolation, no
-     child with a z-index under it): the text is the only thing in its layer, and the fade is .wrap::before, a fixed sheet at 139,
-     one below the row. Same colours, same reach (from the top edge to .9rem under the row, and under the race line when it is up). */
-  .wrap.test-pinned::before{
-    content:""; position:fixed; left:0; right:0; top:0; z-index:139; pointer-events:none;
-    height:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px) + .9rem + var(--sb-top-x, 0px));
-    /* solid (97%) all the way down the row and only then the .9rem of fade: it used to start fading at 70% of the sheet's height, which
-       is the middle of the row's own text (the sheet is 59px of inset + the 44px row + .9rem), so a question scrolling under the
-       row stayed legible behind "1/102" and "Drill" at 25-45% - measured on white, 80 levels of it between the mode and the count */
-    background:linear-gradient(to bottom,
-      color-mix(in srgb, var(--paper) 97%, transparent) 0%,
-      color-mix(in srgb, var(--paper) 97%, transparent) calc(100% - .9rem),
-      color-mix(in srgb, var(--paper) 0%, transparent) 100%);
-  }
   /* The live race line pinned under the header (build 327, round 6) - see
      syncTestPin. Its place is measured; it carries the header's fade. */
-  /* the progress line that follows the row (syncTestProg): a 3px strip under it, shown only while the dots are not under the row */
-  .test-progress{ display:none; }
-  .wrap.test-pinned:not(.race-pinned) > .top > .test-progress{
-    display:block; position:absolute; left:var(--test-pad-x, 1.25rem); right:var(--test-pad-x, 1.25rem); top:calc(100% + 10px);
-    height:3px; border-radius:2px; background:var(--test-prog, var(--rule)); opacity:0; pointer-events:none; transition:opacity .16s ease;
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--paper) 97%, transparent);   /* a 3px band of the page's colour round it, so a question scrolling under reads under it, not struck through by it */
-  }
-  .wrap.test-pinned.test-prog-on:not(.race-pinned) > .top > .test-progress{ opacity:1; }
   .wrap.test-pinned.race-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px) + var(--test-race-h, 0px)) !important; }
   .wrap.test-pinned.race-pinned > #vroomracebar{ position:fixed; margin:0; z-index:141; box-sizing:border-box; isolation:isolate; }
-  .wrap.test-pinned.race-pinned::before{
-    height:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px) + var(--test-race-h, 0px) + .9rem + var(--sb-top-x, 0px));
+  [data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{
+    bottom:calc(-1 * var(--test-race-h, 0px));
     background:color-mix(in srgb, var(--paper) 96%, transparent);
   }
   .wrap.test-pinned.race-pinned > #vroomracebar::before{
@@ -13115,6 +13089,14 @@
     top:.7rem; bottom:-.9rem; pointer-events:none; z-index:-1;   /* (384 r5) from .7rem down, not 0: the header's own fade already covers the top, and this one painted over the bottom of Pause (it sits in the header's layer, which is under the race bar's) */
     background:linear-gradient(to bottom,
       color-mix(in srgb, var(--paper) 95%, transparent) 0%,
+      color-mix(in srgb, var(--paper) 95%, transparent) 70%,
+      color-mix(in srgb, var(--paper) 0%, transparent) 100%);
+  }
+  [data-layout="modern"] .wrap.test-pinned > .top::before{
+    content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
+    top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
+    background:linear-gradient(to bottom,
+      color-mix(in srgb, var(--paper) 97%, transparent) 0%,
       color-mix(in srgb, var(--paper) 95%, transparent) 70%,
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
@@ -39405,7 +39387,6 @@ html.is-browser{ --fade-paper: transparent; }
       <button class="iconbtn" id="pausebtn" type="button" hidden>Pause</button>
       <button class="restart" id="restart" type="button">Main menu</button>
     </div>
-    <i class="test-progress" id="testprogress" aria-hidden="true"></i>
   </div>
   <!-- Live race bar, per explicit request \u2014 replaces the earlier
        tap-to-view Progress popup with an always-visible, always-live
@@ -55165,8 +55146,7 @@ function syncTestPin(force){
   const raceWant = !!(want && rb && !rb.hidden);
   const hasRace = wrap.classList.contains("race-pinned");
   if(want === has && raceWant === hasRace && !force) return;
-  wrap.classList.remove("test-pinned", "race-pinned", "test-prog-on");
-  testProgPinned = false;
+  wrap.classList.remove("test-pinned", "race-pinned");
   if(rb){ rb.style.top = ""; rb.style.left = ""; rb.style.width = ""; }
   /* (384 r8) THE QUESTION DOTS STAY IN THEIR OWN PLACE, straight under the header, in a race too. Madison: "the amount of
      questions or the question progress bar needs to be in its normal spot, that way the pause button and chat button are
@@ -55179,7 +55159,6 @@ function syncTestPin(force){
   const y = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
   wrap.style.setProperty("--test-top-y", y + "px");
   wrap.style.setProperty("--test-top-h", top.offsetHeight + "px");
-  wrap.style.setProperty("--test-pad-x", (parseFloat(getComputedStyle(wrap).paddingLeft) || 0) + "px");
   if(raceWant){
     if(meter && meter.parentElement !== rb){ rb.prepend(meter); rb.classList.add("has-meter"); }
     const tr = top.getBoundingClientRect(), rr = rb.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
@@ -55190,48 +55169,9 @@ function syncTestPin(force){
     wrap.classList.add("race-pinned");
   }
   wrap.classList.add("test-pinned");
-  testProgPinned = true; testProgSoon();
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
-/* (384 r15) THE QUESTION PROGRESS FOLLOWS THE HEADER WHEN THE DOTS DO NOT. Madison, in a Drill on an iPhone: "Why can't you see the
-   amount of questions, why is it when you scroll down it doesn't follow now?" The dots (#meter) are in the page, under the pinned
-   row, so a question longer than the screen scrolls them away, and pulling the page down (iOS rubber-band) leaves a hole between the
-   row and the dots. Pinning the whole grid would cost a quarter of a phone's screen in a long test (a 102-question Drill is five rows,
-   a 358-question one twelve), so what follows is a thin line in the pinned header, the same ticks as the dots (green right, red
-   missed, the accent where you are, the rule colour still to come), shown only while the dots are not under the row - scrolled out
-   of sight, or pulled away from it - and not at all in a race, where the dots are pinned already (syncTestPin). It is
-   .top > .test-progress, absolutely placed, so nothing in the page or the row moves for it. */
-let testProgPinned = false, testProgRaf = 0, testProgSig = "";
-function testProgSoon(){ if(!testProgPinned || testProgRaf) return; testProgRaf = requestAnimationFrame(() => { testProgRaf = 0; syncTestProg(); }); }
-function syncTestProg(){
-  const wrap = testProgPinned ? document.querySelector(".wrap.test-pinned") : null;
-  const row = wrap && wrap.querySelector(":scope > .top"), meter = document.getElementById("meter");
-  if(!row || !meter || meter.hidden || wrap.classList.contains("race-pinned")){ if(wrap) wrap.classList.remove("test-prog-on"); return; }
-  const mr = meter.getBoundingClientRect(), rr = row.getBoundingClientRect();
-  const rest = (parseFloat(getComputedStyle(meter).marginTop) || 0);
-  const away = mr.bottom <= rr.bottom + 6 || mr.top - rr.bottom > rest + 8;
-  wrap.classList.toggle("test-prog-on", away);
-  if(!away) return;
-  const ticks = meter.children, n = ticks.length;
-  let sig = n + ":"; for(let k = 0; k < n; k++) sig += ticks[k].className.charAt(5) || "_";   /* "tick now" / "tick clean" / "tick messy" / "tick done" / "tick" */
-  if(sig === testProgSig) return;
-  testProgSig = sig;
-  const col = c => /\bnow\b/.test(c) ? "var(--accent)" : /\bclean\b/.test(c) ? "var(--right)" : /\bmessy\b/.test(c) ? "var(--wrong)"
-    : /\bdone\b/.test(c) ? "color-mix(in srgb, var(--accent) 55%, transparent)" : "var(--rule)";
-  const stops = []; let from = 0, cur = n ? col(ticks[0].className) : "var(--rule)";
-  for(let k = 1; k <= n; k++){
-    const c = k < n ? col(ticks[k].className) : null;
-    if(k === n || c !== cur){ stops.push(cur + " " + (from / n * 100).toFixed(3) + "% " + (k / n * 100).toFixed(3) + "%"); from = k; cur = c; }
-  }
-  wrap.style.setProperty("--test-prog", "linear-gradient(to right, " + (stops.join(", ") || "var(--rule) 0% 100%") + ")");
-}
-addEventListener("scroll", testProgSoon, { passive: true });
-addEventListener("resize", testProgSoon);
-try{
-  const m = document.getElementById("meter");
-  if(m) new MutationObserver(() => { testProgSig = ""; testProgSoon(); }).observe(m, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
-}catch(e){}
 /* (384 r8) see body.navchat-aligned: the chat button mirrors the back button's corner on any pushed screen */
 function alignNavChat(){
   const b = document.body; if(!b) return;
