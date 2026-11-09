@@ -20010,9 +20010,15 @@ def check_b317_badge2(br):
         const sh = badgeShapeFor(u), vb = badgeViewBoxFor(sh.d).split(/\\s+/).map(Number), S = BADGE_GEOM.scale;
         out.push({ u, col: n % 4, row: (n / 4) | 0, vb, c: sh.c, S, cuts: sh.cuts, p: String(badgeThemeFor(u).p) }); });
       document.body.appendChild(host); return out; }""", BIG)
+    # (384 r11) THE TRACEBACK: the grid is four across and as many rows as the bank has units (24: six rows, 1,800px) but the
+    # page was 1,240px tall, and a screenshot's clip stops at the viewport - so the bottom rows were not in the picture and
+    # the walk along a channel read a pixel past its foot (IndexError: image index out of range). The page is as tall as the
+    # grid now, read off the bank, and the walk stops at the picture's edge as well as the cell's.
+    rows = (len(geo) + 3) // 4
+    pg.set_viewport_size({"width": 1240, "height": max(1240, rows * BIG)})
     pg.wait_for_timeout(1500)
     pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
-    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 6 * BIG}))).convert("RGB")   # 24 units (328), four across, six rows
+    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": rows * BIG}))).convert("RGB")   # four across, a row per four units
     ctx.close()
     D = 3
     steps, slivers = {}, {}
@@ -20037,7 +20043,7 @@ def check_b317_badge2(br):
                     t = k * 0.1 * sgn
                     tx, ty = (at, g["c"][1] + t) if vert else (g["c"][0] + t, at)
                     x, y = tok(tx, ty)
-                    if x < ox or y < oy or x >= ox + BIG * D or y >= oy + BIG * D or isbg(x, y):
+                    if x < ox or y < oy or x >= ox + BIG * D or y >= oy + BIG * D or x >= shot.width or y >= shot.height or isbg(x, y):
                         break
                     pts.append((x, y))
                 # leave out the outer chamfer and wall (the last 6 token units): that light is meant
@@ -24582,6 +24588,12 @@ def check_b320c_case(br):
     # 7. every other cutscene turns focus on, and nesting under a journey's own hold works
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(600)
+    # (384 r11) WHY 6 AND 7 WENT RED: Home announced the two ultimates the class has retired (ULTIMATE_TOP - Celestial and
+    # Zenith in the academy) as "Challenge complete" to every account, because a retired character is never "locked"; the
+    # card is a scene (.rs-spot), so focus stayed on after the badge case and the secret flare with no tab bar or chat
+    # button. Against 7c21794 this lists ['celestial', 'zenith'].
+    ret = pg.evaluate("""() => announceableHeldCharacters().filter(id => { const d = AVATAR_CHARACTERS.find(c => c.id === id); return !d || d.retired; })""")
+    check("Home never announces a character the class has retired (no unlock card for a retired ultimate)", ret == [], ret)
     clk = _Stepper320(pg)
     SCENES = [("a secret flare scene", "() => { window.__sd = false; playVoidFlareScene(() => { window.__sd = true; }); }", ".sf-scene"),
               ("a rank cutscene outside the rank-up journey", "() => { window.__sd = false; playTierCutscene('vanguard'); }", "#supernova-cutscene"),

@@ -128174,9 +128174,13 @@ const UNLOCKS_NEW_IN_235 = ["pharaoh", "marksman", "adept_rank", "elite_rank",
   "lunar", "solar", "tempest", "valkyrie", "hacker", "timekeeper",
   /* build 244's two new banners. */
   "study50", "correct5000"];
+/* (384) never a retired one: isLockedCharacter says "not locked" for a retired character (nobody is locked out of what
+   they wear), so the two ultimates a class no longer has (ULTIMATE_TOP: Celestial and Zenith here, Astral and Celestial in
+   Fire Code) read as held and Home announced them to every account as "Challenge complete" - and the card, a scene, held
+   the tab bar and the chat button out of frame over whatever came next. */
 function announceableHeldCharacters(){
   return AVATAR_CHARACTERS
-    .filter(c => (c.feat || c.unlock) && HOME_UNLOCK_SKIP.indexOf(c.id) < 0 && !isLockedCharacter(c.id))
+    .filter(c => !c.retired && (c.feat || c.unlock) && HOME_UNLOCK_SKIP.indexOf(c.id) < 0 && !isLockedCharacter(c.id))
     .map(c => c.id);
 }
 function ensureUnlocksShown(){
