@@ -62367,16 +62367,31 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-moonstar");
     svg.appendChild(sparkle(20, 6.5, 1.45, "#FFFFFF"));
     close();
-    /* (384 r7 eyes) "Not a fan of ... platinum eyes they look girly and not mean": the crescent catch-light, the fine outline
-       and the round iris went. The rulers' glare (glareEye): cold - a grey-white, a pale silver iris in a hard dark ring with a
-       pinpoint pupil (the stare that does not warm up), the lid band in slate, a slate lower lid so the eye holds on the pale
-       skin at 26px. The brows come down harder towards the nose. */
+    /* (384 r7 eyes, gone in r8) Lunar wore the rulers' shared glare (glareEye) in slate and silver; r6's crescent catch-light,
+       fine outline and round iris had read "girly". Beside Forge, Solar and Tempest it was one eye in four colours. */
+    /* (384 r8 eyes) "The other 4 look the same though": Lunar's own eye - THE COLD STARE. No slant at all: a long, level,
+       thin lens, pointed at both ends, sunk in a deep shadowed socket. The lens is dark (the eye in shadow) and in it a pale
+       silver iris that gives off its own light - no pupil, nothing warm. Straight, level brows set low: severe, not scowling.
+       At 26px: two dark hollows with a light in each - the only ruler whose eye is darker than its face. */
+    const socket = eyeGrad("radialGradient", [["0%", "#161C38", .86], ["60%", "#262F50", .56], ["100%", "#3A4466", 0]]);
+    const moonIris = eyeGrad("radialGradient", [["0%", "#FFFFFF"], ["60%", "#E6ECF8"], ["100%", "#AEB9D2"]]);
     open("cx-eyes");
-    [[16.8, 17.7, -1], [23.2, 17.7, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.08, tilt: .2, up: .44, dn: .5, lidT: .3,
-      sclera: "#EEF2FA", lid: "#2E3650", low: "#56627F", iris: "#CDD3DE", ring: "#26304A", irisR: .38, pupil: "dot", pc: "#10141F" }));
+    [[16.8, 17.7, -1], [23.2, 17.7, 1]].forEach(([x, y, o]) => {
+      const f = n => +n.toFixed(2), X = u => f(x + o * u), Y = v => f(y + v);
+      const lens = "M" + X(1.25) + " " + Y(-.02) + " Q" + X(0) + " " + Y(-.56) + " " + X(-1.25) + " " + Y(.02) + " Q" + X(0) + " " + Y(.54) + " " + X(1.25) + " " + Y(-.02) + " Z";
+      svg.appendChild(mk("ellipse", { cx: X(0), cy: Y(-.04), rx: 1.78, ry: 1.0, fill: socket, class: "cx-socket" }));
+      svg.appendChild(mk("path", { d: lens, fill: "#1C2338", class: "cx-eye-white" }));
+      const g = eyeClip(lens);
+      g.appendChild(mk("circle", { cx: X(.02), cy: Y(-.06), r: .66, fill: "#C9D6FF", opacity: ".45" }));
+      g.appendChild(mk("circle", { cx: X(.02), cy: Y(-.06), r: .36, fill: moonIris, class: "cx-iris" }));
+      svg.appendChild(g);
+      svg.appendChild(mk("path", { d: lens, fill: "none", stroke: "#0E1220", "stroke-width": ".12", "stroke-linejoin": "round" }));
+    });
     close();
     closedEyes([[16.8, 17.9, 1.1], [23.2, 17.9, 1.1]], "#6C7A90", .35);
-    svg.appendChild(mk("path", { d: "M15.1 15.6 L18.3 16.65 M24.9 15.6 L21.7 16.65", stroke: "#8C92B0", "stroke-width": ".45", "stroke-linecap": "round" }));
+    open("cx-brow");
+    svg.appendChild(mk("path", { d: "M14.8 15.98 L18.5 16.3 M25.2 15.98 L21.5 16.3", stroke: "#6A7290", "stroke-width": ".48", "stroke-linecap": "round" }));
+    close();
     [[15, 20.6], [15.9, 21.2], [25, 20.6], [24.1, 21.2]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .22, fill: "#FFFFFF", opacity: ".9" })));
     svg.appendChild(mk("path", { d: "M18.6 23.9 Q20 24.4 21.4 23.9", fill: "none", stroke: "#6C7A90", "stroke-width": ".42", "stroke-linecap": "round" }));
     close();
