@@ -57936,6 +57936,19 @@ function featAchieved(key){
   return !!(f && f.done());
 }
 
+/* (384 r20) KEPT FROM BEFORE IS THE ACADEMY'S, AND ONLY THE ACADEMY'S. legacyChars is what an account held under the pre-243 rules
+   (the Clown and the Astronaut with a rank, the Sheriff's weekly route, the Hive's 500-a-day route): all of it academy history,
+   none of it ever existed in Fire Code (built at 328). Madison: "people signing into the fire code class, they unlocked the
+   character of the placeholder of that one that they have selected from the academy class". A Fire Code store's first load
+   computed the list from the character it was SEEDED with (legacyCharsFromRanks counts whoever is wearing a Clown or an
+   Astronaut; migrateHive384 whoever is wearing the Hive), so the academy's selected character came across as "kept" and was
+   unlocked there. Fire Code reads none of it: a character is unlocked here by this class's own challenge or rank, nothing else.
+   (The list may still sit on a Fire Code copy - an older build wrote it, another device's copy unions it back in - and is
+   simply never read here; ifcCharsRepair384 clears it once.) */
+function legacyHeld(id){
+  if(window.NOVA_CLASS === "ifc") return false;
+  return Array.isArray(store.legacyChars) && store.legacyChars.indexOf(id) >= 0;
+}
 function isLockedCharacter(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
   if(!def || def.retired) return false;
@@ -57943,7 +57956,7 @@ function isLockedCharacter(id){
      rules stays theirs: the Robot, which nothing replaces, and a Clown,
      SWAT or Astronaut that used to come with a rank and now comes with a
      challenge. See migrateCharacters243(). */
-  if(Array.isArray(store.legacyChars) && store.legacyChars.indexOf(id) >= 0) return false;
+  if(legacyHeld(id)) return false;
   if(def.legacy) return true;
   /* A feat character and a rank character are both "locked until you
      have done the thing" - one function, two kinds of thing. */
@@ -57983,13 +57996,45 @@ function ifcLookCheck(confirmed){
   try{ locked = isLockedCharacter(store.avatarChar); }catch(e){ return false; }
   if(!locked) return false;
   if(!confirmed){
+    /* (384 r20) the leak's own mark is enough with nothing read late: it is on the "kept from before" list, which Fire Code never
+       had (a Clown, an Astronaut or a Hive worn from the academy - see legacyHeld) */
+    const leaked = Array.isArray(store.legacyChars) && store.legacyChars.indexOf(store.avatarChar) >= 0;
     let a = null; try{ a = academyCopyNow(); }catch(e){}
-    if(!a || !a.avatarChar || a.avatarChar !== store.avatarChar) return false;
+    if(!leaked && (!a || !a.avatarChar || a.avatarChar !== store.avatarChar)) return false;
   }
   store.avatarChar = classDefaultCharacter();
   try{ saveStore(); }catch(e){}
   try{ updateHeaderTitle(); }catch(e){}
   return true;
+}
+/* (384 r20) SIGNING IN TO FIRE CODE GIVES NOTHING THE ACADEMY HELD (see legacyHeld). What an account already carries from the
+   leak is put right here, in Fire Code only, and never touches the academy or anything earned:
+   - an unlock still queued for a character that is locked here is dropped (nobody is told they have what they do not);
+   - once (ifcCharsFixed384, OR-merged): the academy's "kept from before" list goes off this copy (it is read nowhere in Fire
+     Code now, so what it cleared is only what it never earned), and a character it had marked announced or seen comes off
+     those marks when it is still locked here - earning it for real then announces it as it should.
+   Runs where the class's copy is whole: the cloud merged (markCloudConfirmed, every merge after it), and at launch only for
+   a copy with no sync (nothing is still to arrive). Returns whether anything changed; the save carries it to the account. */
+function ifcCharsRepair384(){
+  if(window.NOVA_CLASS !== "ifc" || !store) return false;
+  let changed = false;
+  const lockedNow = id => { try{ return isLockedCharacter(id); }catch(e){ return false; } };
+  if(Array.isArray(store.pendingCharUnlocks)){
+    const left = store.pendingCharUnlocks.filter(id => !lockedNow(id));
+    if(left.length !== store.pendingCharUnlocks.length){ store.pendingCharUnlocks = left; changed = true; }
+  }
+  if(store.ifcCharsFixed384 !== true){
+    const kept = Array.isArray(store.legacyChars) ? store.legacyChars.slice() : [];
+    const off = kept.filter(lockedNow);
+    const u = store.unlocksShown;
+    if(u && Array.isArray(u.chars)){ const c = u.chars.filter(id => off.indexOf(id) < 0); if(c.length !== u.chars.length){ u.chars = c; changed = true; } }
+    const sn = store.seenUnlocks;
+    if(sn && Array.isArray(sn.chars)){ const c = sn.chars.filter(id => off.indexOf(id) < 0); if(c.length !== sn.chars.length){ sn.chars = c; changed = true; } }
+    if(kept.length){ store.legacyChars = []; changed = true; }
+    store.ifcCharsFixed384 = true; changed = true;
+  }
+  if(changed){ try{ saveStore(); }catch(e){} }
+  return changed;
 }
 const RAISED_BAR_CHARACTERS = ["marksman", "hacker"];
 function revokeRaisedCharacters(){
@@ -66665,7 +66710,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false, core: false },
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
@@ -67010,6 +67055,9 @@ function applyLoadedData(got){
   store.novaBeaten = got.novaBeaten === true;
   store.sheriffMoved324 = got.sheriffMoved324 === true;
   store.hiveMoved384 = got.hiveMoved384 === true;   /* (384 r17) see migrateHive384 */
+  /* (384 r20) Fire Code's one-time clear of the academy's "kept from before" (ifcCharsRepair384). A copy without it has not had
+     it. The academy has nothing to clear, so it reads as done there - and the academy's flag is never copied into Fire Code. */
+  store.ifcCharsFixed384 = got.ifcCharsFixed384 === true || window.NOVA_CLASS !== "ifc";
   store.bestTestStreak = Math.max(0, Number(got.bestTestStreak) || 0);
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, TEST_HISTORY_MAX) : [];
@@ -67259,7 +67307,8 @@ function applyLoadedData(got){
    behind them. Once per account: the flag travels with it. */
 function migrateSheriff324(){
   if(store.sheriffMoved324 === true) return;
-  if((Number(store.weeklyTop3) || 0) >= 3){
+  /* (384 r20) the weekly route is the academy's; Fire Code has none, and keeps no one's Sheriff */
+  if(window.NOVA_CLASS !== "ifc" && (Number(store.weeklyTop3) || 0) >= 3){
     store.legacyChars = Array.isArray(store.legacyChars) ? store.legacyChars : [];
     if(store.legacyChars.indexOf("poseidon") < 0) store.legacyChars.push("poseidon");
   }
@@ -67272,8 +67321,10 @@ function migrateSheriff324(){
    for them. Once per account: the flag travels with it. */
 function migrateHive384(){
   if(store.hiveMoved384 === true) return;
-  let held = store.avatarChar === "hive";
-  try{ if(!held && store.onboardingComplete && busiestDay() >= HIVE_DAY) held = true; }catch(e){}
+  /* (384 r20) the old 500-a-day Hive was the academy's. In Fire Code the Sprinkler Head is its own challenge (host three
+     Virtual Room matches), and the character it was SEEDED with is the academy's, not a thing it held: nothing is kept. */
+  let held = window.NOVA_CLASS !== "ifc" && store.avatarChar === "hive";
+  try{ if(!held && window.NOVA_CLASS !== "ifc" && store.onboardingComplete && busiestDay() >= HIVE_DAY) held = true; }catch(e){}
   if(held){
     store.legacyChars = Array.isArray(store.legacyChars) ? store.legacyChars : [];
     if(store.legacyChars.indexOf("hive") < 0) store.legacyChars.push("hive");
@@ -67281,9 +67332,11 @@ function migrateHive384(){
   store.hiveMoved384 = true;
 }
 /* kept the Hive from before (migrateHive384): the hosting challenge reads as done */
-function hiveKept(){ return Array.isArray(store.legacyChars) && store.legacyChars.indexOf("hive") >= 0; }
+function hiveKept(){ return legacyHeld("hive"); }
 function legacyCharsFromRanks(){
   if(!store.onboardingComplete) return [];
+  /* (384 r20) Fire Code has no history from before 243, and the character it is seeded with is the academy's */
+  if(window.NOVA_CLASS === "ifc") return [];
   const out = [];
   /* The Officer is not here: build 244 removed it outright, and anybody
      wearing it is moved to the Oracle, Amethyst's reward (see
@@ -69146,7 +69199,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTestPassed = false;
   store.bigTest450Passed = false;
   store.bigTest500Passed = false;
-  store.novaBeaten = false; store.sheriffMoved324 = true; store.hiveMoved384 = true;   /* build 324 */
+  store.novaBeaten = false; store.sheriffMoved324 = true; store.hiveMoved384 = true; store.ifcCharsFixed384 = true;   /* build 324 */
   store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
@@ -69773,6 +69826,7 @@ function markCloudConfirmed(docExists){
     clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
     /* (384) Fire Code wears only what Fire Code has unlocked, judged on the merged copy */
     try{ ifcLookCheck(true); }catch(e){}
+    try{ ifcCharsRepair384(); }catch(e){}
     /* build 382: the save-your-code card waits for this */
     setTimeout(() => { try{ checkSaveCodeReminder(); }catch(e){} }, 900);
     /* a held save carries the held row with it - pushToCloud publishes
@@ -70420,7 +70474,7 @@ function mergeLeavingAccount(src, note){
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384"]
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384", "ifcCharsFixed384"]
     .forEach(k => { if(src[k] === true) store[k] = true; });
   if(src.mysteryColorsFound && store.mysteryColorsFound){
     Object.keys(src.mysteryColorsFound).forEach(c => { if(src.mysteryColorsFound[c]) store.mysteryColorsFound[c] = true; });
@@ -70899,7 +70953,7 @@ function mergeSameAccount(dst, src){
   /* when each badge was last clean (build 320, b320g): the newer time,
      badge by badge - cleaned on either device is cleaned */
   if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384",
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384", "ifcCharsFixed384",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295", "savedCodeSaved",
    /* (384) the class button's tip, once per account */
    "seenClassTip"].forEach(k => orInto(dst, k, src[k]));
@@ -70979,6 +71033,8 @@ function syncSameAccount(cloud){
     applyLoadedData(cloud);
     const r = mergeSameAccount(store, mine);
     try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
+    /* (384 r20) Fire Code, once this launch has heard the server: a copy that arrives wearing what this class has not unlocked */
+    try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ if(ifcLookCheck(true)) r.gained = true; if(ifcCharsRepair384()) r.gained = true; } }catch(e){}
     /* `gained` here means this device brought something the cloud lacks */
     themeFollowStore();
     if(r.gained) saveStore(); else persistLocally();
@@ -70986,6 +71042,7 @@ function syncSameAccount(cloud){
   }
   const r = mergeSameAccount(store, cloud);
   try{ if(applyWeekWinVoids()){ r.gained = true; r.otherHadLess = true; } }catch(e){}
+  try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ const a = ifcLookCheck(true), b = ifcCharsRepair384(); if(a || b){ r.gained = true; r.otherHadLess = true; } } }catch(e){}
   themeFollowStore();
   if(r.gained) persistLocally();
   /* This device is the newer side, or holds something the cloud lacks:
@@ -118075,7 +118132,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-09-384.5";
+const APP_BUILD = "2026-11-09-384.6";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -159235,7 +159292,9 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
     const seed = { lastModified: Date.now() };
     ["firstName", "username", "avatarChar", "publicId", "theme", "onboardingComplete", "tourRev", "novaMet", "novaHeard",
      "levelWallRule", "challengeSeed289", "koiRevoked295", "sheriffMoved324", "hiveMoved384", "lateHundosSeed312", "fullTestsSeeded"].forEach(k => { if(a[k] !== undefined) seed[k] = a[k]; });
-    Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k)) seed[k] = a[k]; });
+    /* (384 r20) the tips already seen come across; the dots behind the new things (seenUnlocks) are the class's own - the
+       academy's marks would hide a Fire Code unlock's dot, and name characters this class has not unlocked */
+    Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k) && k !== "seenUnlocks") seed[k] = a[k]; });
     seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
     /* (384) THE LOOK IS THE CLASS'S OWN. Madison: "When switching classes, the theme from the other class is being used on the
        class you switched to ... I don't have it unlocked" / "in the police class I have void selected, when I switch to IFC, it
@@ -159291,6 +159350,8 @@ function ifcSignupOwed(){
 try{ ifcSignupOwed(); }catch(e){}
 /* (384) Fire Code wears only its own look: the academy's character, copied before 384, goes (ifcLookCheck) */
 try{ ifcLookCheck(false); }catch(e){}
+/* (384 r20) and a copy with no sync has nothing still to arrive: its repair is now (see ifcCharsRepair384) */
+if(window.NOVA_CLASS === "ifc" && !syncCode){ try{ ifcLookCheck(true); ifcCharsRepair384(); }catch(e){} }
 if(window.NOVA_CLASS === "academy"){
   try{
     const arr = window.NOVA_CLASS_ARRIVE;
