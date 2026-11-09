@@ -6149,6 +6149,14 @@
   .vroom-open-switch:focus{ outline:none; }
   .vroom-open-word{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .vroom-open-line{ grid-area:line; margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); }
+  /* (384 r8) air round the switch's line: clear of the row above it and of the first player under it */
+  .vroom-open-line{ margin:.35rem 0 .2rem; }
+  .vroom-roster.has-tools > .vroom-roster-head{ margin-bottom:.75rem; }
+  /* (384 r8) the game in the room setup in its own colour, icon and word: Race blue, Tug of War amber, Battle red */
+  .vroom-test-summary-title[data-mode="race"]{ color:#7CC0F4; }
+  .vroom-test-summary-title[data-mode="tug"]{ color:#F2B35E; }
+  .vroom-test-summary-title[data-mode="battle"]{ color:#FF7A7A; }
+  .vroom-test-summary-title[data-mode] .vroom-summary-icon{ color:inherit; }
   /* the invite button's word goes before the switch's: under 26.5rem the
      two did not fit one row and "Invite friends" ran over "Open to class"
      (12-54px at 360-402px, build 327 audit); the icon keeps its label */
@@ -138671,10 +138679,15 @@ function showVirtualRoomLobby(){
     openLine.className = "vroom-open-line";
     /* (384 review) the room's class, not always the academy's "26E": a Fire Code room is found by Fire Code */
     const openCls = (vroomLastDoc && vroomLastDoc.code === vroomCode && vroomLastDoc.data) ? roomClassOf(vroomLastDoc.data) : BANK_CLASS;
-    openLine.textContent = "On, anyone in " + (openCls === "ifc" ? "Fire Code" : "26E") + " can find this room and join.";
+    /* (384 r8) THE LINE SAYS WHAT THE SWITCH IS DOING NOW. Madison: "'On, anyone in 26e blah blah' wording has bad spacing and
+       it's showing up while it's off?" Build 327 made it describe ON whatever the state; read under a switch that is off, it
+       read as the opposite of the truth. It follows the switch now, like an iOS footer: open, who can find it; closed, who can
+       join. */
+    const openWho = openCls === "ifc" ? "Fire Code" : "26E";
     const paintOpen = () => {
       sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
       sw.classList.toggle("on", vroomIsOpen);
+      openLine.textContent = vroomIsOpen ? "Anyone in " + openWho + " can find this room and join." : "Only people you invite can join.";
     };
     sw.addEventListener("click", () => {
       vroomIsOpen = !vroomIsOpen;
@@ -138880,6 +138893,8 @@ function showVirtualRoomLobby(){
     const isBattle = (data.game === "battle");
     const t = document.createElement("p");
     t.className = "vroom-test-summary-title vroom-summary-game";
+    /* (384 r8) "the word race at the top, shouldn't the race icon and stuff be the color of the race icon?" - the game's own colour */
+    t.dataset.mode = isBattle ? "battle" : isTug ? "tug" : (data.game ? "race" : "");
     const gIcon = document.createElement("span");
     gIcon.className = "vroom-summary-icon";
     gIcon.setAttribute("aria-hidden", "true");
