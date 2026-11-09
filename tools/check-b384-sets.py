@@ -9,7 +9,7 @@ don't really like any of those, that much. Same for the ultimate character banne
   (1) THE LAST ULTIMATE IS STAR RANGER: the ultimate whose challenge is everything (feat "everything", last in the list)
       is round 3's Star Ranger drawing, unchanged but for its special (STAR_R3: its hash on 185cc5c, the special's
       .cx-sp parts taken out), and carries its name.
-  (2) THE ULTIMATES ARE A TRIO (384 r6: one now, Star Ranger, in a space helmet - no cowboy hat, no duster): the star badge and eyes, and a ring of
+  (2) THE ULTIMATES ARE A TRIO (384 r6: one now, Star Ranger, in a space helmet; 384 round 12: round 3's again, cowboy hat and duster): the star badge and eyes, and a ring of
       sparks that grows up the three (astral < celestial < zenith); astral and celestial are new drawings.
   (3) THE SECRET FOUR ARE A SQUAD: each wears the same helmet (cx-fc-hat-helmet), and they share most of their drawing -
       the same shapes in all four - while each keeps its own colour.
@@ -166,10 +166,12 @@ lk = F["look"]
 # (384 r6) "Fire inspectors wear police gear": nobody in Fire Code wears a cowboy hat any more. The one ultimate, Star Ranger, is the
 # agency's uniform taken to the stars - a navy space suit, the gold star badge and a bubble helmet; the duster (a western coat) is gone and
 # his eyes are clear, not lit (the lit eyes were the crowned rulers' treatment). tools/check-b384-r6-chars.py holds the rest.
-notcow = [i for i in TRIO if "bubble" not in lk[i]["hats"] or "cowboy" in lk[i]["hats"]]
-chk("(2) the ultimate wears the space helmet, not a cowboy hat (not: %s)" % notcow, not notcow, {i: lk[i]["hats"] for i in TRIO})
-chk("(2) ...the star badge and a pair of eyes, no duster (%s)" % {i: (lk[i]["lapel"], lk[i]["badge"], lk[i]["eyes"]) for i in TRIO},
-    all(not lk[i]["lapel"] and lk[i]["badge"] >= 1 and lk[i]["eyes"] >= 2 for i in TRIO))
+# (384 round 12, r9-chars) Madison picked round 3's Star Ranger back ("Star Ranger: E"): the night-sky cowboy hat with its burning band,
+# the duster over the cosmic suit, the star badge, the gold-lit eyes. The space-helmet round is undone.
+notcow = [i for i in TRIO if "cowboy" not in lk[i]["hats"]]
+chk("(2) the ultimate wears round 3's night-sky cowboy hat again (not: %s)" % notcow, not notcow, {i: lk[i]["hats"] for i in TRIO})
+chk("(2) ...the star badge and a pair of eyes (%s)" % {i: (lk[i]["lapel"], lk[i]["badge"], lk[i]["eyes"]) for i in TRIO},
+    all(lk[i]["badge"] >= 1 and lk[i]["eyes"] >= 2 for i in TRIO))
 orb = [lk[i]["orbit"] for i in TRIO]
 chk("(2) ...and the ring of sparks grows up the three (%s)" % orb, len(orb) < 3 or orb[0] < orb[1] < orb[2], orb)
 ts = F["trioShared"]
@@ -179,8 +181,9 @@ chk("(2) the rangers are different drawings", len({F["c"][i] for i in TRIO}) == 
 # (3)
 # (384 r5: "I don't like the secret flare characters from ifc ... follow the academy theme but come up with new ones" - the
 # squad is withdrawn: the four are celestial beings now, so none wears a hat or a helmet, and they are four different drawings)
-noh = [i for i in SQUAD if lk[i]["hats"]]
-chk("(3) none of the four wears a helmet or a hat - they are nebula, quasar, pulsar and sun, not operators (hats: %s)" % noh, not noh, {i: lk[i]["hats"] for i in SQUAD})
+# (384 round 12) the Quasar (build 383's recon figure again) and the Whiteout are figures again; the Whiteout's parka hood is a hood, not a hat
+noh = [i for i in SQUAD if [h for h in lk[i]["hats"] if h != "hood"]]
+chk("(3) none of the four wears a helmet or a hat (a parka hood is neither) (hats: %s)" % noh, not noh, {i: lk[i]["hats"] for i in SQUAD})
 chk("(3) the four are four different drawings", len({F["c"][i] for i in SQUAD}) == 4)
 gl = [F["glow"][i] for i in SQUAD]
 chk("(3) ...each in its own colour (%s)" % gl, len(set(gl)) == 4)

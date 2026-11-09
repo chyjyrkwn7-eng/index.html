@@ -23,6 +23,9 @@
   J. STROBE: no bar drawn across the visor between its two lamps (it read as the bridge of a pair of glasses).
   K. DISPATCHER: the earcup's line light is a small lamp, not a glowing ball the size of an eye.
 
+  ROUND 12 (r9-chars) retired A, B, C, F, G, H and I: Madison picked older versions of the Inspector, Chief, Drone Pilot and Star Ranger
+  (cowboy hats and all) and replaced Pulsar. D, E (Inspector, Chief, Dispatcher), J and K still hold; check-b384-r9-chars has the rest.
+
   python3 tools/check-b384-r6-chars.py [--against OLD/index.html]      (every lettered group FAILS on ea31d43)
 """
 import json, os, sys, colorsys
@@ -130,42 +133,17 @@ def navy(h):
 
 C = R["chars"]; N = R["names"]
 chk("the page is the Fire Code class with no page error (%s)" % errs[:2], R["cls"] == "ifc" and not errs, errs)
-# A
-cow = [N[i] for i, c in C.items() if any(h["kind"] == "cowboy" for h in c["hats"])]
-chk("A. no Fire Code character wears a cowboy hat (wearing one: %s)" % cow, not cow, cow)
-# B
-I = R.get("insp") or {}; ci = C["detective"]
-chk("B. the Inspector wears a navy polo (base %s, hsl %s), its collar laid open (%s)" % (ci["shirt"], [round(v, 2) for v in hsl(ci["shirt"])], I.get("collar")), navy(ci["shirt"]) and I.get("collar", 0) >= 1, I)
-chk("B. ...a dark tactical vest over it (%s two-panel dark shapes), the gold badge on it (%s), a radio mic with its light on the strap (%s)" % (I.get("vest"), I.get("badge"), I.get("mic")), I.get("vest", 0) >= 1 and I.get("badge", 0) >= 1 and I.get("mic"), I)
-cap = [h for h in ci["hats"] if h["kind"] == "cap"]
-chk("B. ...the navy duty ball cap (%s) with the gold cross (%s); glasses (%s) and clipboard (%s) kept; a closed mouth (teeth: %s)" % (cap, I.get("capCross"), I.get("glasses"), I.get("clipboard"), ci["mouthWhite"]),
-    len(cap) == 1 and navy(cap[0]["fill"]) and I.get("capCross") and I.get("glasses") and I.get("clipboard") and not ci["mouthWhite"], (ci["hats"], I))
-# C
-Ch = R.get("chief") or {}; cc = C["poseidon"]
-chk("C. the Chief is bareheaded (%s) with silver hair (%s) and a moustache (%s)" % (cc["hats"], Ch.get("hair"), Ch.get("moustache")), not cc["hats"] and Ch.get("hair", 0) >= 1 and Ch.get("moustache", 0) >= 1, Ch)
-chk("C. ...a navy polo (%s) with gold collar piping (%s), the chief's insignia on both collar points (%s marks) and the gold badge (%s)" % (cc["shirt"], Ch.get("piping"), Ch.get("insignia"), Ch.get("badge")),
-    navy(cc["shirt"]) and Ch.get("piping", 0) >= 1 and Ch.get("insignia", 0) >= 2 and Ch.get("badge", 0) >= 1, Ch)
+# A, B, C, F, G, H, I are RETIRED by round 12 (r9-chars, Madison's picks from the version sheet): the Inspector is build 383's
+# investigator in a cowboy hat, the Chief round 3's in his white hat, the Drone Pilot (goggles down, grinning) and the Star Ranger
+# (night-sky hat) round 3's, and Pulsar is gone (Whiteout). tools/check-b384-r9-chars.py asserts what replaced them.
+print("RETIRED A, B, C, F, G, H, I (round 12 brought back the cowboy hats, round 3's Drone Pilot and Star Ranger, and replaced Pulsar; see check-b384-r9-chars)")
 # D
 helm = [(N[i], h["kind"], h["fill"]) for i, c in C.items() for h in c["hats"] if h["kind"] in ("helmet", "hardhat", "cap")]
 chk("D. every hard hat, helmet and cap is navy (%s)" % helm, helm and all(navy(f) for _, _, f in helm), helm)
 chk("D. ...the Smoke Diver's helmet among them (%s)" % C["masked"]["hats"], any(h["kind"] == "helmet" and navy(h["fill"]) for h in C["masked"]["hats"]), C["masked"]["hats"])
 # E
-uni = {N[i]: C[i]["shirt"] for i in ("detective", "poseidon", "hacker", "ronin")}
+uni = {N[i]: C[i]["shirt"] for i in ("detective", "poseidon", "hacker")}   # (round 12: the Drone Pilot is round 3's again, in his own dark gear)
 chk("E. the people in uniform wear navy shirts (%s)" % uni, all(navy(v) for v in uni.values()), {k: [round(x, 2) for x in hsl(v)] for k, v in uni.items()})
-# F
-D = R.get("drone") or {}; cr = C["ronin"]
-chk("F. Drone Pilot: the goggles pushed up (lens bottom %.1f) above eyes that show (eye line %.1f, %s whites)" % (D.get("lensBottom", 99), D.get("eyeY", -1), cr["eyeWhite"]), D.get("lensBottom", 99) < D.get("eyeY", -1) - 2 and cr["eyeWhite"] >= 2, D)
-chk("F. ...a controller held at the chest with its screen (%s), a closed mouth (teeth: %s)" % (D.get("screen"), cr["mouthWhite"]), D.get("screen") and not cr["mouthWhite"], D)
-# G
-G = R.get("ranger") or {}; cz = C["zenith"]
-chk("G. Star Ranger: a space helmet (%s), the star badge (%s), clear eyes - whites (%s), no glow over them (%s)" % ([h["kind"] for h in cz["hats"]], G.get("starBadge"), cz["eyeWhite"], G.get("eyesGlow")),
-    [h["kind"] for h in cz["hats"]] == ["bubble"] and G.get("starBadge", 0) >= 1 and cz["eyeWhite"] >= 2 and not G.get("eyesGlow"), G)
-# H
-grins = sorted(N[i] for i, c in C.items() if c["mouthWhite"])
-chk("H. only Toxic Spill shows teeth (teeth: %s)" % grins, grins == ["Toxic Spill"], grins)
-# I
-P = R.get("pulsar") or {}
-chk("I. Pulsar: the ring's near half is drawn in the head under the visor slit (%s)" % P, P.get("ringInHead") and P.get("ringBeforeSlit"), P)
 # J
 chk("J. Strobe: no bar across the visor between the lamps (%s)" % R.get("strobe"), (R.get("strobe") or {}).get("bar", 1) == 0, R.get("strobe"))
 # K

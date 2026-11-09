@@ -30,6 +30,10 @@
   (384 r7 eyes) and Inferno too, for the rulers' glare (check-b384-r7-eyes.py);
   it FAILS on 130a41c, where they still match.
 
+  ROUND 12 (r9-chars, Madison's picks from the version sheet) moved the goalposts this gate was written to: Fire Code's four secret flares
+  are now Nebula (round 5's face), Quasar (build 383's recon drawing), Whiteout and Firebird, The Irons is the Fire Marshal (a person), and the Drone Pilot and Star
+  Ranger are round 3's again. 1, 2c, 2d, 3 and 7 follow that; 5 is retired (check-b384-r9-chars has those characters).
+
   python3 tools/check-b384-r5-chars.py [--against OLD/index.html]       (every line group must FAIL on 7b65a06; the faces legs also on c1d224b)
 """
 import json, os, sys
@@ -164,10 +168,11 @@ if "--faces" in sys.argv:
 N = IFC["names"]; CI = IFC["chars"]; CA = ACA["chars"]
 def faced(C): return {i for i, c in C.items() if c["eyes"] or c["mouth"] or c["pairs"]}
 # ---- 1. faces exist: the only characters with no mark at all are the two who hide theirs on purpose ----
-for key, R, expect in (("ifc", IFC, {"timekeeper"}), ("academy", ACA, {"valkyrie", "voidwalker"})):
+# (384 round 12, r9-chars) The Irons is gone: the Fire Marshal in its place is a person with a face, so Fire Code has no bare drawing left
+for key, R, expect in (("ifc", IFC, set()), ("academy", ACA, {"valkyrie", "voidwalker"})):
     C = R["chars"]; bare = {i for i, c in C.items() if c["eyes"] == 0 and c["mouth"] == 0 and c["pairs"] == 0}
     chk("1. [%s] the characters with no face mark at all are only %s (found %s)" % (key, sorted(expect), sorted(bare)), bare == expect, {"extra": sorted(bare - expect), "missing": sorted(expect - bare)})
-MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Pulsar", "genesis": "Eclipse"},
+MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Firebird"},   # (round 12 names)
         "academy": {"hive": "Hive", "genesis": "Genesis"}}
 for key, R in (("ifc", IFC), ("academy", ACA)):
     C = R["chars"]
@@ -193,35 +198,33 @@ FL = ["voidwalker", "umbra", "singularity", "genesis"]
 def differ(C, a, b):
     fa, fb = C[a]["face"], C[b]["face"]
     return fa["kind"] != fb["kind"] and fa["lamp"] != fb["lamp"]
-bad = [(a, b, CI[a]["face"]["kind"], CI[b]["face"]["kind"], CI[a]["face"]["lamp"], CI[b]["face"]["lamp"]) for n, a in enumerate(FL) for b in FL[n + 1:] if not differ(CI, a, b)]
-chk("2c. the four secret flares differ from each other in eye shape AND colour: %s" % {N[i]: (CI[i]["face"]["kind"], CI[i]["face"]["lamp"], CI[i]["face"]["clusters"]) for i in FL}, not bad, bad)
+# (384 round 12) Madison picked round 5's Nebula (two lit eyes and a mouth) and the Firebird is a bird with amber eyes, so two of the four now share
+# a warm hue; they must still differ in eye SHAPE or colour, and no two may carry the same number of eyes AND the same mouth (2d)
+def differ_any(C, a, b):
+    fa, fb = C[a]["face"], C[b]["face"]
+    return fa["kind"] != fb["kind"] or fa["lamp"] != fb["lamp"]
+bad = [(a, b, CI[a]["face"]["kind"], CI[b]["face"]["kind"], CI[a]["face"]["lamp"], CI[b]["face"]["lamp"]) for n, a in enumerate(FL) for b in FL[n + 1:] if not differ_any(CI, a, b)]
+chk("2c. the four secret flares differ from each other in eye shape or colour: %s" % {N[i]: (CI[i]["face"]["kind"], CI[i]["face"]["lamp"], CI[i]["face"]["clusters"]) for i in FL}, not bad, bad)
 chk("2c. Strobe and Sprinkler Head differ in eye shape AND colour: %s" % {N[i]: (CI[i]["face"]["kind"], CI[i]["face"]["lamp"]) for i in ("clown", "hive")}, differ(CI, "clown", "hive"), {i: CI[i]["face"] for i in ("clown", "hive")})
-chk("2d. the four flares are not one treatment stamped four times: none has a mouth, and exactly two carry a pair of eyes (%s)" % {N[i]: (CI[i]["face"]["clusters"], CI[i]["face"]["mouth"]) for i in FL},
-    all(CI[i]["face"]["mouth"] == "none" for i in FL) and sum(CI[i]["face"]["clusters"] == 2 for i in FL) == 2, {i: CI[i]["face"] for i in FL})
+sig2d = [(CI[i]["face"]["clusters"], CI[i]["face"]["mouth"]) for i in FL]
+chk("2d. the four flares are not one treatment stamped four times: no two carry the same number of eyes and the same mouth (%s)" % {N[i]: (CI[i]["face"]["clusters"], CI[i]["face"]["mouth"]) for i in FL},
+    len(set(sig2d)) == 4, {i: CI[i]["face"] for i in FL})
 # the same eyes must not be stamped on the secret flares and Toxic Spill either (the other glowing-eyed one)
 bad = [i for i in FL if CI[i]["face"]["coarse"] == CI["astronaut"]["face"]["coarse"] or CI[i]["face"]["fine"] == CI["astronaut"]["face"]["fine"]]
 chk("2c. ...and none of them wears Toxic Spill's face either (%s)" % bad, not bad, bad)
 
 # ---- 3. each one's own face ----
-f = CI["voidwalker"]["face"]; B = f["bodies"]
-per = {}
-for b in B:
-    if b[5] == "round" and (b[2] not in per.get(round(b[0]), [0]) or True): per[round(b[0])] = max(per.get(round(b[0]), b), b, key=lambda q: q[2])
-emb = sorted(per.values())
-chk("3. Nebula: two small round embers, one bigger than the other (%s), at different heights, red-orange and yellow (%s), no mouth (%s)" % ([(b[0], b[1], b[2]) for b in emb], f["lamps"], f["mouth"]),
-    f["clusters"] == 2 and len(emb) == 2 and all(1.2 <= b[2] <= 2.6 for b in emb) and max(b[2] for b in emb) >= 1.25 * min(b[2] for b in emb) and {"h0", "h1"} <= set(f["lamps"]) and f["mouth"] == "none" and abs(emb[0][1] - emb[1][1]) > .3, f)
-f = CI["umbra"]["face"]; B = f["bodies"]
-slit = [b for b in B if b[3] / b[2] >= 3 and b[4] == "dark"]
-chk("3. Quasar: ONE central eye (%s eye, centre x %s), a lens of light wider than tall (%s) with a tall dark slit for a pupil (%s), no mouth (%s)" % (f["clusters"], [b[0] for b in B], f["kind"], slit, f["mouth"]),
-    f["clusters"] == 1 and f["kind"] == "lens" and f["asp"] >= 1.8 and abs(B[0][0] - 20) < .3 and len(slit) >= 1 and f["mouth"] == "none", f)
-f = CI["singularity"]["face"]; B = f["bodies"]
-roundish = [b for b in B if .5 <= b[2] / b[3] <= 2 and b[2] * b[3] > 1]
-chk("3. Pulsar: a very wide, very thin slit (aspect %.1f, at least 6), one of it, centred (x %s), no round or tall eye anywhere (%s), no mouth (%s)" % (f["asp"], [b[0] for b in B], roundish, f["mouth"]),
-    f["clusters"] == 1 and f["kind"] == "slit" and f["asp"] >= 6 and all(abs(b[0] - 20) < .5 for b in B) and not roundish and f["mouth"] == "none", f)
-chk("3. ...and the slit pulses with the beams (it sits in the same .cx-fx-fcpulse beat)", IFC["pulsar"]["pulse"] >= 1, IFC["pulsar"])
-f = CI["genesis"]["face"]; B = f["bodies"]
-chk("3. Eclipse: two crescents (fill %.2f of their box, under .55) mirrored about the middle (x %s), lit gold-white, no mouth (%s)" % (f["ratio"], [b[0] for b in B if b[5] == "crescent"], f["mouth"]),
-    f["clusters"] == 2 and f["kind"] == "crescent" and len([b for b in B if b[5] == "crescent"]) == 2 and abs(sum(b[0] for b in B if b[5] == "crescent") / 2 - 20) < .3 and f["mouth"] == "none", f)
+# (384 round 12, r9-chars) the four flares' own faces: Nebula round 5's (two lit eyes, orange and gold, and a small mouth), Quasar build 383's recon figure's
+# (two narrow violet eyes in the slot of the wrap, no mouth), Whiteout two pale lenses of light behind the goggles (no mouth: the gaiter),
+# Firebird two round amber eyes and a beak. check-b384-r9-chars measures the rest of each.
+f = CI["voidwalker"]["face"]
+chk("3. Nebula: two lit eyes (%s), orange and gold (%s), a small mouth (%s)" % (f["clusters"], f["lamps"], f["mouth"]), f["clusters"] == 2 and {"h0", "h1"} <= set(f["lamps"]) and f["mouth"] not in ("none",) and f["mouth"].startswith("msmall"), f)
+f = CI["umbra"]["face"]
+chk("3. Quasar (the recon figure): violet eyes (%s, %s), no mouth (%s)" % (f["lamp"], f["kind"], f["mouth"]), f["lamp"] == "h6" and f["mouth"] == "none", f)
+f = CI["singularity"]["face"]
+chk("3. Whiteout: two pale lenses of light (%s, %s, %s eyes), no mouth (%s)" % (f["kind"], f["lamp"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["lamp"] in ("white", "h4", "h5") and f["mouth"] == "none", f)
+f = CI["genesis"]["face"]
+chk("3. Firebird: two round eyes (%s, %s eyes) and a beak for a mouth (%s)" % (f["kind"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["kind"] == "round" and f["mouth"] != "none", f)
 f = CI["astronaut"]["face"]; eyes3 = {round(b[0] * 2) / 2 for b in f["bodies"] if b[2] * b[3] >= 4}
 chk("3. Toxic Spill keeps its three acid eyes (%s) and its toothed grin (%s)" % (sorted(eyes3), f["mouth"]), len(eyes3) == 3 and f["mouth"].startswith("mwideopen"), f)
 f = CI["clown"]["face"]
@@ -233,16 +236,9 @@ chk("3. Sprinkler Head: two blue eyes (%s, %s, %s eyes)" % (f["kind"], f["lamp"]
 chk("4. clown is Strobe (fcstrobe) and hive Sprinkler Head (fcsprinkler2), the older drawings of the 384 review (%s %s, %s %s)" % (N["clown"], CI["clown"]["kind"], N["hive"], CI["hive"]["kind"]),
     (N["clown"], CI["clown"]["kind"], N["hive"], CI["hive"]["kind"]) == ("Strobe", "fcstrobe", "Sprinkler Head", "fcsprinkler2"), N)
 # ---- 5. Undercover, The Irons, Pulsar's structure ----
-chk("5. valkyrie is Undercover (fcagent), timekeeper The Irons (fcirons) (%s, %s)" % (N["valkyrie"], N["timekeeper"]), (N["valkyrie"], CI["valkyrie"]["kind"], N["timekeeper"], CI["timekeeper"]["kind"]) == ("Undercover", "fcagent", "The Irons", "fcirons"), N)
-A = IFC.get("agent") or {}
-chk("5. Undercover: mirrored shades, a coiled earpiece wire, a turned-up collar of two flaps, a blinking light, a badge wallet's gold, hair, no hat, a flat mouth (curve %.2f)" % A.get("mouthCurve", 99),
-    A and A["lens"] and A["coil"] and A["flaps"] == 2 and A["led"] and A["wallet"] and A["hair"] and not A["hat"] and A["mouthCurve"] <= .8, A)
-M = IFC.get("irons") or {}
-chk("5. The Irons: two tools turned opposite ways, over a rimmed shield with the Maltese cross, glints, no hat (%s)" % M.get("tools"),
-    M and len(M["tools"]) == 2 and any("rotate(-" in t for t in M["tools"]) and any("rotate(3" in t for t in M["tools"]) and M["shield"] and M["cross"] >= 1 and M["glints"] and not M["hat"], M)
-Pu = IFC.get("pulsar") or {}
-chk("5. Pulsar keeps its two narrow opposed beams (%s), its flare on the rim (%.2f off, at most .5), banded surface (%s), pulse profile (%s), equator ring (%s) and polar caps (%s)" % (Pu.get("narrow"), Pu.get("flareOff", 99), Pu.get("bands"), Pu.get("profile"), Pu.get("rings"), Pu.get("caps")),
-    Pu and Pu["narrow"] == 2 and Pu["flareOff"] <= .5 and Pu["bands"] >= 3 and Pu["profile"] >= 3 and Pu["rings"] >= 2 and Pu["caps"], Pu)
+# (384 round 12) RETIRED: round 9's Undercover, The Irons and Pulsar are all replaced; check-b384-r9-chars asserts the new Undercover, the Fire
+# Marshal and the Whiteout
+print("RETIRED 5 (round 9's Undercover, The Irons and Pulsar were replaced in round 12; see check-b384-r9-chars)")
 
 # ---- 6. every drawing is whole ----
 for key, R in (("ifc", IFC), ("academy", ACA)):
@@ -272,7 +268,9 @@ mov = sorted(i for i, h in PREV["ifc"]["chars"].items() if IFC["chars"].get(i, {
 expect = {"clown", "valkyrie", "timekeeper", "hive", "voidwalker", "umbra", "singularity", "genesis",
           # (384 r6, check-b384-r6-chars.py) the police-gear round: the Inspector, Chief, Drone Pilot and Star Ranger redrawn, the Smoke
           # Diver's helmet navy, the Dispatcher's earcup lamp and collar; the Strobe's visor bar and the Pulsar's ring (both already named)
-          "detective", "poseidon", "ronin", "zenith", "masked", "hacker"} | EYES4
+          "detective", "poseidon", "masked", "hacker"} | EYES4
+# (384 round 12, r9-chars) the Drone Pilot and the Star Ranger are round 3's drawings again, byte for byte what c1d224b drew, so they are
+# NOT in the changed set any more
 chk("7. in Fire Code only the characters named here changed their art since c1d224b; Toxic Spill is exactly c1d224b's (changed: %s)" % mov, set(mov) == expect and "astronaut" not in mov, {"changed": mov, "expected": sorted(expect)})
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

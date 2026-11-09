@@ -79,22 +79,11 @@ srv.shutdown()
 import math, re
 chk("no page errors (%s)" % errs[:2], not errs, errs)
 N = r["names"]
-chk("the four are Undercover (fcagent), The Irons (fcirons), Sprinkler Head (fcsprinkler2, round 10: the older white robot is back) and Pulsar (fcpulsar) (%s) (round 9 replaced the Lookout and the Smoke Alarm: see check-b384-r4-chars)" % N,
-    N["valkyrie"] == ["Undercover", "fcagent"] and N["timekeeper"] == ["The Irons", "fcirons"] and N["hive"] == ["Sprinkler Head", "fcsprinkler2"] and N["singularity"] == ["Pulsar", "fcpulsar"], N)
-P = r["pulsar"]
-chk("Pulsar's head is a dark sphere like its squad's, not a white star (darkest stop %.4f, lightest %.3f; no pale disc: %s)" % (P["darkest"], P["lightest"], P["whiteDisc"]),
-    P["darkest"] < .005 and P["lightest"] < .2 and P["whiteDisc"] == 0, P)
-chk("...two narrow beams (%s white-hot cores under 3.6 units wide at the far end and over 18 long) with no brows or face-star left over (%s)" % (P["narrow"], P["brows"]), P["narrow"] >= 2 and not P["brows"], P)
-t = P["tips"]; cx, cy = P["head"]["x"], P["head"]["y"]
-ang = [math.degrees(math.atan2(a["y0"] - cy, a["x0"] - cx)) for a in t] if len(t) >= 2 else []
-opp = len(ang) == 2 and abs(((ang[0] - ang[1]) % 360) - 180) < 4
-chk("...the beams are opposed through the head's centre (their starts are %s degrees apart) on a tilted axis (%s)" % ([round(a, 1) for a in ang], [round(a % 180, 1) for a in ang]),
-    opp and 5 < abs(ang[0] % 180) < 85 or opp and 95 < abs(ang[0] % 180) < 175, P)
-f = P["flare"]
-dist = abs(math.hypot(f["x"] - cx, f["y"] - cy) - P["head"]["r"]) if f else 99
-onaxis = min(abs(((math.degrees(math.atan2(f["y"] - cy, f["x"] - cx)) - a) + 180) % 360 - 180) for a in ang) if f and ang else 99
-chk("...the flare is the north pole's lamp: on the rim (%.2f off) and on the beam's axis (%.1f degrees)" % (dist, onaxis), f and dist <= .5 and onaxis < 3, P)
-chk("...each beam leaves a wake (%s fan groups) and the chest carries the pulse profile (%s stacked lines)" % (P["wake"], P["prof"]), P["wake"] >= 1 and P["prof"] >= 3, P)
+# (384 round 12, r9-chars) Undercover is redrawn (fcagent2), The Irons is the Fire Marshal (fcmarshal) and Pulsar the Whiteout (fcwhiteout2):
+# the character half of this gate is retired - check-b384-r9-chars asserts those - and the banner half below still holds
+chk("the four are Undercover (fcagent2, round 12), the Fire Marshal (fcmarshal, round 12), Sprinkler Head (fcsprinkler2) and the Whiteout (fcwhiteout2, round 12) (%s)" % N,
+    N["valkyrie"] == ["Undercover", "fcagent2"] and N["timekeeper"] == ["Fire Marshal", "fcmarshal"] and N["hive"] == ["Sprinkler Head", "fcsprinkler2"] and N["singularity"] == ["Whiteout", "fcwhiteout2"], N)
+print("RETIRED the Pulsar character's checks (round 12 replaced it with the Whiteout; see check-b384-r9-chars)")
 B = r["ban"]["flare_horizon"]; E = r["ban"]["flare_genesis"]
 chk("the Pulsar banner turns the star as one body (a bl-spin layer holding the beams, the bands and the flare's bead) (%s)" % B["cls"],
     r["spin"] and 'bmN' in r["spin"]["svg"] and 'bmS' in r["spin"]["svg"] and 'bead' in r["spin"]["svg"] and r["spin"]["svg"].count("rotate(") >= 5, B["cls"])
