@@ -57166,6 +57166,8 @@ const MODE_TRIES = 3;   /* (384) the Hive's challenge: every mode this many time
 const HIVE_DAY = 500;
 /* The Koi Pond banner (build 295): this many friends. */
 const KOI_FRIENDS = 5;
+/* (384 r14) the Hive's / Sprinkler Head's challenge: host this many Virtual Room matches to the end (store.vrHosted) */
+const VR_HOST_NEED = 3;
 const CHARACTER_FEATS = {
   /* THE BEST RUN, NOT THE CURRENT ONE (build 289): "ensure all the
      rewards/unlocks are accurate to what people have done". This read
@@ -57347,10 +57349,15 @@ const CHARACTER_FEATS = {
      biggest unit". A hundo (store.unitPerfects - a 100% run over the whole unit, isFullUnitRun) on the unit with the most
      questions in the class you are in: Penal Code in the academy, the largest chapter in Fire Code. Worked out from the bank,
      so it follows the class and a re-cut bank. A hundo already earned there counts. The key stays `busyday300` (an id). */
-  busyday300: { get label(){ const u = biggestUnit(); return "Get a hundo on " + (u ? u.name : "the biggest unit"); },
-                done: () => { const u = biggestUnit(); return !!u && unitPerfectCount(u.name) >= 1; },
-                have: () => { const u = biggestUnit(); return u && unitPerfectCount(u.name) >= 1 ? 1 : 0; }, need: 1,
-                get note(){ const u = biggestUnit(); return u ? "The biggest " + (BANK_CLASS === "ifc" ? "chapter" : "unit") + " in the class, " + u.count.toLocaleString() + " questions. Score 100% on all of it in one run." : ""; } },
+  /* (384 r14) HOST THREE MATCHES. Madison: "host 3 virtual room matches ... They would need to fully finish each match. Doesn't
+     need to be back to back." (Winning a room has its own challenge, vrwins5; this one is about hosting.) store.vrHosted, counted
+     in recordVroomOutcome once per match - the match this account STARTED as host (startedBy on the room, written in the start
+     write itself), played with at least one classmate, reaching its end on this device (the race's standings, a Tug of War or
+     Battle result; never a leave). Nothing kept before this build records hosting, so it counts from here. */
+  busyday300: { label: "Host " + VR_HOST_NEED + " Virtual Room matches",
+                done: () => (Number(store.vrHosted) || 0) >= VR_HOST_NEED,
+                have: () => Math.min(Number(store.vrHosted) || 0, VR_HOST_NEED), need: VR_HOST_NEED,
+                note: "Host a room and play the match to the end. Any game counts; it doesn't have to be in a row." },
   studyrun7: { label: "Study 7 days in a row",
                done: () => bestStudyRun() >= 7,
                have: () => Math.min(bestStudyRun(), 7), need: 7,
@@ -66494,7 +66501,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
-              vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
+              vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
@@ -66796,6 +66803,10 @@ function applyLoadedData(got){
   store.lateHundosSeed312 = got.lateHundosSeed312 === true;
   store.flareHintsShown = Array.isArray(got.flareHintsShown) ? got.flareHintsShown.filter(x => typeof x === "string") : [];
   store.vrWins = typeof got.vrWins === "number" ? got.vrWins : 0;
+  /* (384 r14) matches hosted to the end, for the Hive / Sprinkler Head. 0 for everybody already here: nothing kept before this
+     build records who hosted a match, so it counts from now. A progress counter: merged as a max (mergeSameAccount), summed
+     when an account is folded in (mergeLeavingAccount), never lowered. */
+  store.vrHosted = typeof got.vrHosted === "number" && got.vrHosted >= 0 ? Math.floor(got.vrHosted) : 0;
   store.vrCounted = Array.isArray(got.vrCounted) ? got.vrCounted.filter(x => typeof x === "string") : [];
   store.vrRetroDone = got.vrRetroDone === true;
   /* Build 236: top-three finishes. Backfilled once from the rooms still
@@ -68958,7 +68969,7 @@ function wipeLocalProgressAndSettings(){
   store.seenUnlocks = null;
   store.badgeCleanedAt = {};
   store.unitRuns = {};
-  store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
+  store.vrMatches = 0; store.vrWins = 0; store.vrHosted = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.hundoFx = "confetti"; store.starfallKept = false;
@@ -70087,7 +70098,7 @@ function progressSinceBase(src, base){
   });
   const had = new Set((base.testHistory || []).map(t => t && t.playedAt).filter(Boolean));
   out.testHistory = (out.testHistory || []).filter(t => t && !had.has(t.playedAt));
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { out[k] = less(out[k], base[k]); });
+  ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { out[k] = less(out[k], base[k]); });
   if(base.weekKey && base.weekKey === out.weekKey) out.weekPoints = less(out.weekPoints, base.weekPoints);
   return out;
 }
@@ -70217,7 +70228,7 @@ function mergeLeavingAccount(src, note){
   if(store.unitRuns && src.unitRuns) sumMap("unitRuns"); else store.unitRuns = null;
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
+  ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
@@ -70655,7 +70666,7 @@ function mergeSameAccount(dst, src){
       res.gained = true;
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
+  ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
    "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
@@ -81391,12 +81402,26 @@ function vroomMatchFresh(code, startAt){
   return !(Array.isArray(store.vrCounted) && store.vrCounted.indexOf(id) >= 0);
 }
 
+/* (384 r14) WHO HOSTED IT: the account that started the match as host - `startedBy`, written by the host's own start write.
+   A hand-off mid-match (the host's phone dies, syncVroomHost passes the room on) credits nobody new: the match was started by
+   the first host, and that host only counts it by reaching its end themselves. A room started by an older build carries no
+   startedBy and counts for nobody. AND NOT ALONE: at least one CLASSMATE started it with them - the racers / the two teams fixed
+   at the start, so one who drops out later still counts, but Nova does not (he is invited by the host's own device, so a room
+   of the host and Nova is a room of one). A visitor never started a room, so a visitor never counts one. */
+function vroomHostedMatch(room, myKey){
+  if(!room || !myKey || room.startedBy !== myKey) return false;
+  try{ if(vroomForeign()) return false; }catch(e){}
+  const g = room.game === "tug" ? room.tug : room.game === "battle" ? room.battle : null;
+  const keys = g && g.teams ? Object.keys(g.teams)
+    : Array.isArray(room.racers) && room.racers.length ? room.racers.slice() : Object.keys(room.participants || {});
+  return keys.some(k => k !== myKey && k !== NOVA_VR_KEY);
+}
 /* ONE RECORD PER MATCH, NOT PER ROOM (build 313). A room is played again
    and again from its lobby - Return to lobby, ready up, another race - and
    keyed by the room code alone only the first match in it ever counted.
    The match is the room plus its shared start instant. Older records are
    bare codes for matches that have long finished, so none can collide. */
-function recordVroomOutcome(code, sortedKeys, myKey, startAt){
+function recordVroomOutcome(code, sortedKeys, myKey, startAt, room){
   if(!code || !myKey || sortedKeys.indexOf(myKey) < 0) return;
   store.vrCounted = Array.isArray(store.vrCounted) ? store.vrCounted : [];
   const matchId = startAt ? code + "@" + startAt : code;
@@ -81405,6 +81430,9 @@ function recordVroomOutcome(code, sortedKeys, myKey, startAt){
   code = matchId;
   if(store.vrCounted.length > 300) store.vrCounted = store.vrCounted.slice(-300);
   store.vrMatches = (store.vrMatches || 0) + 1;
+  /* (384 r14) A MATCH THIS ACCOUNT HOSTED, played to its end here - the Hive's / Sprinkler Head's challenge. Once per match by
+     the record just made (a redraw, a re-entry or a relaunch finds it in vrCounted and stops above). */
+  try{ if(vroomHostedMatch(room, myKey)) store.vrHosted = (Number(store.vrHosted) || 0) + 1; }catch(e){}
   /* Top three, in a room big enough for a podium - see VROOM_PODIUM_MIN.
      Rooms are remembered so the one-off backfill cannot count one twice. */
   const myPlace = sortedKeys.indexOf(myKey);
@@ -91123,16 +91151,6 @@ __bm("L72649");
 const LEVEL_STARS = { beginner: 1, intermediate: 2, mastery: 3 };
 const LEVEL_NAME = { beginner: "Beginner", intermediate: "Intermediate", mastery: "Advanced" };
 
-/* (384 r13) the class's unit with the most questions, for the Hive / Sprinkler Head challenge - { name, count } or null */
-function biggestUnit(){
-  try{
-    const counts = {};
-    QUESTIONS.forEach(q => { const t = (q.topic || "").trim(); if(t) counts[t] = (counts[t] || 0) + 1; });
-    let best = null;
-    classTopics().forEach(t => { const n = counts[t] || 0; if(!best || n > best.count) best = { name: t, count: n }; });
-    return best && best.count > 0 ? best : null;
-  }catch(e){ return null; }
-}
 function unitPerfectCount(name){
   return store.unitPerfects[name] || 0;
 }
@@ -136926,7 +136944,7 @@ function showTugResult(d){
        Clown's five wins. The same shape Battle uses: a side's win is a
        first place, a loss or a draw is a match. */
     const others = Object.keys(teams).filter(k => k !== vroomMyKey);
-    try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
+    try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt, d); }catch(e){}
     /* Beat Nova? (build 324) */
     try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
   }
@@ -137792,7 +137810,7 @@ function showBattleResult(d){
     if(vroomMatchFresh(vroomCode, d.startAt) && myXp > 0 && !vroomForeign()) awardXp(myXp);   /* (384) never a visitor from another class */
     try{ setTimeout(publishNow, 800); }catch(e){}
     const others = Object.keys(battleTeams(d)).filter(k => k !== vroomMyKey);
-    try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
+    try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt, d); }catch(e){}
     saveStore();
     /* Beat Nova? (build 324) */
     try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
@@ -139666,7 +139684,9 @@ function showVirtualRoomLobby(){
            race's finale wait for a finish that was never coming, and put
            them on a tug team pulling nothing. See vroomRacersOf(). */
         const inIt = presentParticipants(data.participants || {}) || {};
-        const patch = { status: "starting", startAt, racers: Object.keys(inIt) };
+        /* startedBy (384 r14): who hosted this match when it started - the Hive's "host 3 matches" credits them and only them,
+           whoever the host is by the end. In this same write, so it costs nothing. */
+        const patch = { status: "starting", startAt, racers: Object.keys(inIt), startedBy: vroomMyKey };
         /* TEAMS AND THE ROPE ARE SET ONCE, BY THE HOST. Deriving them
            per device is the same computation on four machines and one
            disagreement away from two people on the same end. */
@@ -141706,7 +141726,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
           /* (384 r8) PLACEMENT XP, paid here: the standings are settled, ranked as the cutscene ranks them, and this match is
              counted in the same breath - so the account push recordVroomOutcome makes carries it (VROOM_PLACE_XP). */
           try{ vroomPayRacePlace(data); }catch(e){}
-          try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
+          try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt, data); }catch(e){}
         }
       }
       pausedKeys.forEach(k => { if(pausedAtAllIn.indexOf(k) < 0) pausedAtAllIn.push(k); });
@@ -145187,7 +145207,7 @@ function unlockNoteFor(o){
     const prev = o.id === "umbra" ? "voidwalker" : "umbra";
     return "A secret. Its challenge shows here once you have " + (AVATAR_DISPLAY_NAME[prev] || prev) + ".";
   }
-  /* (384 r13) the Hive / Sprinkler Head's note names the class's biggest unit, worked out when it is shown */
+  /* the Hive / Sprinkler Head's note is its challenge's own (384 r14: host three matches; it has no UNLOCK_NOTES line) */
   if(o.kind === "character" && o.id === "hive"){ const f = CHARACTER_FEATS.busyday300; return f ? f.note : ""; }
   return UNLOCK_NOTES[o.kind + ":" + o.id] || "";
 }
