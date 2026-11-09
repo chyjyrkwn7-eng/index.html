@@ -23739,7 +23739,11 @@
      on this dark glass read as one more warm accent; a bright yellow
      with its own glow is the one thing on the card that is not
      already a colour the card uses. */
-  :root{ --new-dot:#FFD43B; --new-dot-glow:rgba(255,212,59,.65); }
+  :root{ --new-dot:#FFD43B; --new-dot-glow:rgba(255,212,59,.65);
+    /* (384 r8) "The yellow notification looks a little weak, shouldn't it have a nicer look? Maybe a small glow?" One 9px glow
+       at .65 all but vanished against the tab bar's glass. Two layers now: a tight bright halo hugging the dot and a wider
+       soft one around it - a lit bead, still small. Every new-dot in the app (the tab, Customize, the tiles, the case) wears it. */
+    --new-dot-light:0 0 5px 1px rgba(255,214,70,.95), 0 0 14px 3px rgba(255,186,40,.5); }
   /* ROUND AND A LITTLE NICER (build 317): "I feel like that could look a
      smidge better btw, and it also doesn't look like a perfect circle". It
      was .78rem - 12.48px - and a fractional box with a 2px ring rounds to
@@ -23749,7 +23753,7 @@
     position:absolute; top:-.2rem; right:-.2rem; width:11px; height:11px; aspect-ratio:1 / 1; flex:none; box-sizing:border-box;
     border-radius:50%;
     background:radial-gradient(circle at 34% 30%, #FFF7C9 0 14%, var(--new-dot) 46%, #F0A81C 100%);
-    box-shadow:0 0 0 2px var(--paper, #12161B), 0 0 9px var(--new-dot-glow);
+    box-shadow:0 0 0 2px var(--paper, #12161B), var(--new-dot-light);
     pointer-events:none; z-index:3;
   }
   /* The avatar icon clips its character with overflow:hidden, which
@@ -23761,7 +23765,7 @@
   #bottomtab-profile.has-new .bottomtab-icon::after{
     content:""; position:absolute; top:-.15rem; right:-.2rem; width:10px; height:10px; aspect-ratio:1 / 1; border-radius:50%;
     background:radial-gradient(circle at 34% 30%, #FFF7C9 0 14%, var(--new-dot) 46%, #F0A81C 100%);
-    box-shadow:0 0 0 2px #0E1116, 0 0 9px var(--new-dot-glow);
+    box-shadow:0 0 0 1.5px rgba(14,17,22,.92), var(--new-dot-light);
     pointer-events:none; z-index:2;
   }
   .new-dot-anchor{ position:relative; display:inline-flex; flex-shrink:0; }
@@ -37513,7 +37517,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-hero > .profile-customize-row > .new-dot-anchor{ display:flex; flex:1 1 auto; min-width:0; }
   /* something new in Customize: the dot inside the button's right end, not off its rounded corner */
   html[data-layout] body #stage .profile-hero > .profile-customize-row > .new-dot-anchor > .new-dot{
-    top:50%; right:1.25rem; width:12px; height:12px; margin-top:-6px; z-index:4; box-shadow:0 0 9px var(--new-dot-glow);
+    top:50%; right:1.25rem; width:12px; height:12px; margin-top:-6px; z-index:4; box-shadow:var(--new-dot-light);
   }
   html[data-theme][data-layout] body #stage .profile-hero .profile-edit-btn.profile-customize-btn{
     flex:1 1 auto; min-width:0; width:100%; min-height:3.4rem; margin:0;
@@ -38141,12 +38145,16 @@ html.is-browser{ --fade-paper: transparent; }
      would read as "messages"; yellow was Madison's pick in 299 ("what about it being yellow?"); and on the dark glass it is the
      brightest of the system colours, where a theme's accent can be a grey (Silver) that disappears. */
   :root{ --new-dot:#FFD43B; --new-dot-glow:transparent; --nd-d:9px; --nd-ring:2px; --nd-ring-c:#26282F; }
+  /* (384 r8) A SMALL GLOW AFTER ALL - Madison: "The yellow notification looks a little weak, shouldn't it have a nicer look?
+     Maybe a small glow?" The dot stays the solid 9px circle with its ring (above); a light comes off it, outside the ring:
+     a tight bright halo and a wider soft one (--new-dot-light), so it reads as lit on the tab bar's glass. */
+  :root{ --new-dot-light:0 0 6px 1px rgba(255,212,59,.85), 0 0 14px 3px rgba(255,186,40,.42); }
   html body .new-dot,
   html body #bottomtab-profile.has-new .bottomtab-icon::after,
   html body .class-bubble-wrap.has-new .class-bubble::after{
     content:""; position:absolute !important; display:block !important; box-sizing:border-box !important;
     width:var(--nd-d) !important; height:var(--nd-d) !important; aspect-ratio:1 / 1; flex:none; padding:0 !important; border:0 !important; border-radius:50% !important;
-    background:var(--new-dot) !important; background-image:none !important; box-shadow:0 0 0 var(--nd-ring) var(--nd-ring-c) !important;
+    background:var(--new-dot) !important; background-image:none !important; box-shadow:0 0 0 var(--nd-ring) var(--nd-ring-c), var(--new-dot-light) !important;
     filter:none !important; opacity:1 !important; animation:none !important; transform:none !important;
     top:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important; right:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important;
     left:auto !important; bottom:auto !important; margin:0 !important; pointer-events:none; z-index:6;

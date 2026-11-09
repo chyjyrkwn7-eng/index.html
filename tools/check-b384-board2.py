@@ -24,8 +24,8 @@ Installed, an iPhone's user agent, 440x956 at 3x, real touches (CDP), the CPU sl
     is a podium: 2nd, 1st, 3rd left to right on steps that rise from the card's floor, 1st's the tallest, the outer steps clear
     of the card's rounded corners. (tools/check-b384-podium-hint.py checks the podium at four sizes.)
 (5) THE NEW DOT (seen-unlocks cleared, a rank not yet shown): on the Profile tab, Profile (Customize, the badge case, the rank) and
-    Customize's character / banner / theme / hundo pages, every dot is one style - a solid fill (no gradient, no glow: every shadow
-    unblurred), round, 8-10px, the same fill and size everywhere - and sits on its icon's corner on the 45-degree line (as far in
+    Customize's character / banner / theme / hundo pages, every dot is one style - a solid fill (no gradient; since 384 r8 one small glow, a 10-20px
+    blur, round every one), round, 8-10px, the same fill and size everywhere - and sits on its icon's corner on the 45-degree line (as far in
     from the right edge as down from the top, within 1.5px, and not past a third of the icon in).
 (6) no page errors.
 Run:  python3 tools/check-b384-board2.py [--against REV] [--only 1,2,...]"""
@@ -357,8 +357,10 @@ with sync_playwright() as pw:
         alld = [dict(d, screen=k) for k, v in D.items() for d in v]
         where = sorted(set(d["screen"] + ":" + d["where"].split(" ")[0] for d in alld))
         chk("(5) dots found on the tab, Profile and Customize's pages (%d: %s)" % (len(alld), where), len(alld) >= 8 and D["home"] and len(D["profile"]) >= 3 and D["character"] and D["theme"], where)
-        bad = [d for d in alld if d["img"] != "none" or d["blur"] > 0 or d["filter"] != "none" or not re.match(r"rgb\(\d+, \d+, \d+\)$", d["fill"])]
-        chk("(5) ...each a solid fill - no gradient, no glow, nothing blurred (%d not: %s)" % (len(bad), [(d["screen"], d["where"], d["img"][:30], d["blur"]) for d in bad[:3]]), not bad, bad[:4])
+        # REVISED IN 384 r8: "The yellow notification looks a little weak ... Maybe a small glow?" - the dot is still a solid
+        # circle (no gradient, no filter), and now every one carries the same small glow outside its ring (a blur of 10-20px).
+        bad = [d for d in alld if d["img"] != "none" or not (10 <= d["blur"] <= 20) or d["filter"] != "none" or not re.match(r"rgb\(\d+, \d+, \d+\)$", d["fill"])]
+        chk("(5) ...each a solid fill, no gradient, with the same small glow round it (%d not: %s)" % (len(bad), [(d["screen"], d["where"], d["img"][:30], d["blur"]) for d in bad[:3]]), not bad, bad[:4])
         bad = [d for d in alld if d["rad"] != "50%" or abs(d["w"] - d["h"]) > .5 or not (8 <= d["w"] <= 10.5)]
         chk("(5) ...round, 8-10px (%d not: %s)" % (len(bad), [(d["screen"], d["where"], d["w"], d["h"], d["rad"]) for d in bad[:4]]), not bad, bad[:4])
         fills = sorted(set(d["fill"] for d in alld)); sizes = sorted(set(round(d["w"]) for d in alld if d["screen"] != "character"))
