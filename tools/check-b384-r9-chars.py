@@ -205,6 +205,10 @@ if "--write-prev" in sys.argv:
 if "--write-exit-pin" in sys.argv:
     # the Exit as round 15's options sheet drew it (7be2f35, option 3), normalised as EXIT_SNAP does, pinned into the .prev.json
     old = subprocess.run(["git", "show", "7be2f35:index.html"], cwd=os.path.dirname(HERE), capture_output=True, text=True, check=True).stdout
+    # (384 r17) the two chains the sign hung on came off ("What's up with two lines at the top? It looks like a necklace? ... remove that"):
+    # the pin is the sheet's drawing WITHOUT that one path
+    _chains = '    k.add("path", { d: "M13.4 9.6 L12.4 4 M26.6 9.6 L27.6 4", stroke: "#8A929E", "stroke-width": ".45", "stroke-dasharray": ".7 .3" });\n'
+    assert _chains in old; old = old.replace(_chains, "")
     pv = json.load(open(PREV_PATH)); pv["exitSheet"] = snap(INIT_IFC, old, [])["exit"]["h"]
     json.dump(pv, open(PREV_PATH, "w"), indent=0, sort_keys=True); print("pinned", pv["exitSheet"]); sys.exit(0)
 PREV = json.load(open(PREV_PATH))
@@ -276,7 +280,7 @@ chk("G. Undercover is the Plainclothes detective: a charcoal fedora (%s), the ta
 # H (round 16b: "I like the before option of the exit sign" / "Ensure the word exit is centered..") the shipped Exit is round 15's sheet drawing,
 # the same drawing but for the lettering's position, and the word EXIT sits centred in its lit plate
 f = D["timekeeper"]; X = IFC.get("exit") or {}
-chk("H. the timekeeper is the Exit as the round-15 sheet drew it (kind %s): its drawing, bar the letters' centring move and the special's glow, is 7be2f35's option 3 (%s / %s)" % (f["kind"], X.get("h"), PREV.get("exitSheet")),
+chk("H. the timekeeper is the Exit as the round-15 sheet drew it (kind %s): its drawing, bar the letters' centring move and the special's glow, is 7be2f35's option 3 without its two chains (%s / %s)" % (f["kind"], X.get("h"), PREV.get("exitSheet")),
     f["kind"] == "fcopt_exit" and X.get("shipped") == "fcopt_exit" and X.get("h") == PREV.get("exitSheet"), X)
 mm = X.get("m") or {}
 chk("H. ...and the word EXIT is centred in its plate at 150px: %.2fpx left of the ink, %.2fpx right (within 1px), %.2f / %.2f above and below (within 1px)" % (mm.get("left", -9), mm.get("right", 9), mm.get("top", -9), mm.get("bottom", 9)),
