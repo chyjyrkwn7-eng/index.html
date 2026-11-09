@@ -1,4 +1,6 @@
-"""The two screens the walk cannot reach, because both need run state."""
+"""The screens the walk cannot reach, because they need run state: a drill's results, a Virtual Room race's last screen (the
+run's results after the leaderboard cutscene's Continue - 384 r8; the old points screen it used to shoot is retired) and the
+race line."""
 import os, re, os, io, http.server, threading, functools, socket, sys
 from playwright.sync_api import sync_playwright
 # Derived, never hardcoded - see check-positions.py.
@@ -36,13 +38,13 @@ FAKE_ROOM = """
     startAt: Date.now()-60000, chatMessages:[],
     participants:{
       'MADI-0001':{name:'Madison',avatarChar:'ninja',level:23,badges:4,mystery:0,
-        joinedAt:1,ready:true,finished:true,score:96,elapsedMs:214000,totalScore:9386,progress:100},
+        joinedAt:1,ready:true,finished:true,score:96,elapsedMs:214000,xp:380,xpLines:[{key:'correct',label:'Correct answers',value:300},{key:'speed',label:'Speed',value:80}],progress:100},
       'DEVO-0002':{name:'Devonte',avatarChar:'ghost',level:31,badges:6,mystery:0,
-        joinedAt:2,ready:true,finished:true,score:92,elapsedMs:238000,totalScore:8962,progress:100},
+        joinedAt:2,ready:true,finished:true,score:92,elapsedMs:238000,xp:350,xpLines:[{key:'correct',label:'Correct answers',value:290},{key:'speed',label:'Speed',value:60}],revealDone:true,progress:100},
       'ALEX-0003':{name:'Alex',avatarChar:'grizzly',level:47,badges:9,mystery:0,
-        joinedAt:3,ready:true,finished:true,score:88,elapsedMs:201000,totalScore:8599,progress:100},
+        joinedAt:3,ready:true,finished:true,score:88,elapsedMs:201000,xp:410,xpLines:[{key:'correct',label:'Correct answers',value:330},{key:'speed',label:'Speed',value:80}],revealDone:true,progress:100},
       'KIMB-0004':{name:'Kim',avatarChar:'alien',level:12,badges:2,mystery:0,
-        joinedAt:4,ready:true,finished:true,score:84,elapsedMs:262000,totalScore:8138,progress:100}}};
+        joinedAt:4,ready:true,finished:true,score:84,elapsedMs:262000,xp:260,xpLines:[{key:'correct',label:'Correct answers',value:240},{key:'speed',label:'Speed',value:20}],revealDone:true,progress:100}}};
   window.__room = room;
   window.__useFakeRoom = () => {
     const snap = () => ({ exists:true, data:()=>JSON.parse(JSON.stringify(window.__room)),
@@ -66,7 +68,7 @@ FAKE_ROOM = """
     fbDb = { collection: () => ({ doc: doc, get: () => Promise.resolve({docs:[]}) }) };
     window.firebase = window.firebase || {};
     window.firebase.firestore = window.firebase.firestore || {};
-    window.firebase.firestore.FieldValue = { arrayUnion: (...a) => ({ __au:a }) };
+    window.firebase.firestore.FieldValue = { arrayUnion: (...a) => ({ __au:a }), delete: () => null };
   };
 })();
 """
@@ -126,14 +128,23 @@ with sync_playwright() as pw:
         pg.wait_for_timeout(500)
         pg.screenshot(path=f"{OUT}/{label}-50.5-drill-results-scrolled.png")
 
-        # ---- the Virtual Room results ----
+        # ---- a Virtual Room race's last screen: the run's results, the cutscene, Continue ----
         pg.evaluate("""()=>{
           __useFakeRoom();
           vroomCode='TEST-ROOM'; vroomMyKey='MADI-0001'; vroomIsHost=true;
           inVirtualRoom=false;
-          order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
-          showVirtualRoomResults();
+          lastRunRoomXp={ lines:[{key:'correct',label:'Correct answers',value:300},{key:'speed',label:'Speed',value:80}], total:380 };
+          finishVirtualRoomTest(96, 214000);
         }""")
+        pg.wait_for_timeout(2500)
+        pg.evaluate("()=>{ document.getElementById('vroom-prep')?.remove(); startVroomRaceCutscene(); }")
+        try:
+            pg.wait_for_function("()=>!!document.querySelector('#vroom-race-cut.is-done')", timeout=60000)
+        except Exception:
+            pass
+        pg.wait_for_timeout(1500)
+        pg.screenshot(path=f"{OUT}/{label}-50.8-vroom-race-cutscene.png")
+        pg.evaluate("()=>{ const c=document.querySelector('#vroom-race-cut .vrc-continue'); if(c) c.click(); }")
         pg.wait_for_timeout(2200)
         pg.screenshot(path=f"{OUT}/{label}-51.0-vroom-results.png")
         pg.evaluate("()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'})")

@@ -1829,7 +1829,8 @@ def check_b221(br):
       const src = String(showVirtualRoomLobby);
       return { oddGate: /oddTug/.test(src), perRight: TUG_XP_PER_RIGHT,
                countdown: /showVroomCountdown\\(tugStartAt/.test(String(beginTugMatch)),
-               board: /Team leaderboard in/.test(String(showTugResult)) }; }""")
+               /* (384 r8) the team board is the results screen's podium now (showVroomTeamResult / buildVroomTeamPodium) */
+               board: /Team leaderboard in/.test(String(showTugResult)) || (/showVroomTeamResult/.test(String(showTugResult)) && typeof buildVroomTeamPodium === 'function') }; }""")
     check("Tug waits for even teams, counts down, pays the winners and shows a team board",
           t["oddGate"] and t["countdown"] and t["board"] and t["perRight"] > 0, t)
     ctx.close()
@@ -1917,9 +1918,12 @@ def check_b223(br):
       d.battle.over = true; d.battle.winner = d.battle.teams.me;
       d.battle.progress = { me:{pos:20,correct:14}, bo:{pos:22,correct:18}, cy:{pos:15,correct:9}, dee:{pos:12,correct:6} };
       showBattleResult(d);
-      out.xp = (document.querySelector('.screen-battle-result .tug-xp-num') || {}).textContent || '';
-      out.title = (document.querySelector('.screen-battle-result h1') || {}).textContent || '';
-      out.cols = document.querySelectorAll('.screen-battle-result .tug-board-col').length;
+      /* (384 r8) the result is the results screen: the XP card's lines (right answers, and the place - placement XP replaced
+         the flat win bonus), the verdict in the place line's own words, the two sides on the podium */
+      out.xp = [...document.querySelectorAll('.screen-battle-result .rs-xp .rs-xpline-val')].reduce((t, e) => t + (Number(e.textContent.replace(/[^\d]/g, '')) || 0), 0);
+      out.title = (document.querySelector('.screen-battle-result .rs-xpline.is-place .rs-xpline-sub') || {}).textContent || '';
+      out.place = (document.querySelector('.screen-battle-result .rs-xpline.is-place .rs-xpline-name') || {}).textContent || '';
+      out.cols = document.querySelectorAll('.screen-battle-result .vr-podium .vr-side').length;
       return out; }""")
     check("the match screen has two bars, yours first, each with its members",
           u["bars"] == ["Your side", "Their side"] and u["faces"] == [2, 2] and u["choices"] >= 2
@@ -1929,8 +1933,9 @@ def check_b223(br):
     check("each is announced naming who did it",
           any("Bo froze you" in a for a in u["alerts"]) and any("Dee turned your screen upside down" in a for a in u["alerts"]), u["alerts"])
     check("a held power is a button that says what it does", "Use Shield" in u["power"], u["power"])
+    # (384 r8) 14 right x 10 + 1st of 4 (100) - it was 14 x 10 + a flat 150 for the win
     check("the result names the winning side and pays for right answers plus the win",
-          u["title"] == "Your side won" and u["xp"] == "+290 XP" and u["cols"] == 2, u)
+          u["title"] == "Your side won" and u["place"] == "1st of 4" and u["xp"] == 240 and u["cols"] == 2, u)
     ctx.close()
 
 

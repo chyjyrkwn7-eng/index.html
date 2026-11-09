@@ -46,10 +46,13 @@ with sync_playwright() as pw:
     pg.evaluate(D)
     for name, fn in (("Tug result","showTugResult(__d)"),("Battle result","showBattleResult(__d)"),("Tug waiting","renderTugWaiting(__d)"),("Battle waiting","renderBattleWaiting(__d)")):
         pg.evaluate("()=>{ try{ detachTug(); }catch(e){} "+fn+" }"); pg.wait_for_timeout(1500)
-        f = pg.evaluate(FACE, "#stage .welcomeintro-title")
+        # (384 r8) Tug of War and Battle end on the results screen: its heading is the unit title (.rs-units)
+        f = pg.evaluate(FACE, "#stage :is(.welcomeintro-title, .rs-units)")
         chk("%s: the title is the app's face, not the serif or upper case (%s)" % (name, [x["t"] for x in f]), f and not any(x["serif"] or x["up"] for x in f), f)
     pg.evaluate("()=>{ try{ detachTug(); }catch(e){} showTugResult(__d) }"); pg.wait_for_timeout(1500)
-    r = pg.evaluate("()=>{ const e=document.querySelector('.tug-xp'); return e ? getComputedStyle(e).borderTopWidth+' '+getComputedStyle(e).boxShadow : null; }")
-    chk("the XP card has no rim and no glow (%s)" % r, r is not None and r.startswith("0px") and r.endswith("none"), r)
+    # (384 r8) the XP card is the results' own (.rs-xp) now; "no rim" is a border nobody can see - none, or transparent
+    r = pg.evaluate("""()=>{ const e=document.querySelector('#stage :is(.tug-xp, .rs-xp)'); if(!e) return null; const c=getComputedStyle(e);
+      const clear = c.borderTopWidth==='0px' || /rgba\\(.*,\\s*0\\)$|transparent/.test(c.borderTopColor); return (clear ? 'clear' : c.borderTopWidth+' '+c.borderTopColor)+' '+c.boxShadow; }""")
+    chk("the XP card has no rim and no glow (%s)" % r, r is not None and r.startswith("clear") and r.endswith("none"), r)
     ctx.close(); br.close()
 print("ALL PASS" if ok else "FAILURES"); sys.exit(0 if ok else 1)

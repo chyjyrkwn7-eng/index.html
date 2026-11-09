@@ -6899,63 +6899,9 @@
   @media (max-width:23rem){
     .vroom-exit-row{ grid-template-columns:minmax(0, 1fr); }
   }
-  .vroom-result-reveal{
-    opacity:0;
-    animation:vroom-result-in .42s cubic-bezier(.2,.8,.25,1.1) forwards;
-  }
-  @keyframes vroom-result-in{
-    from{ opacity:0; transform:translateY(14px) scale(.97); }
-    to{ opacity:1; transform:none; }
-  }
-  /* reduce-motion strips the keyframes, which would leave every row at
-     opacity 0 - the animation is what makes them visible. The global
-     rule cannot know that, so this hands the rows back. */
-  [data-reduce-motion="true"] .vroom-result-reveal{ opacity:1; animation:none; }
-  @media (prefers-reduced-motion:reduce){
-    .vroom-result-reveal{ opacity:1; animation:none; }
-  }
   /* The placeholder marker while nobody has a place yet. */
   .lb-rank.is-pending{
     color:var(--soft); font-weight:700; opacity:.7;
-  }
-  /* Your own score, broken down. Its own surface rather than a row in the
-     list, because it is the one thing on this screen that is about you
-     rather than about the room - and it is there the moment you finish,
-     while everybody else's is still sealed. */
-  .vroom-mine{
-    margin:.2rem 0 1.1rem; padding:1rem 1.1rem .9rem; border-radius:16px;
-    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
-    border:1px solid rgba(255,255,255,.11);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
-  }
-  .vroom-mine[hidden]{ display:none; }
-  .vroom-mine-head{
-    margin:0 0 .65rem; font-size:.7rem; font-weight:800; letter-spacing:.1em;
-    text-transform:uppercase; color:var(--soft);
-  }
-  .vroom-mine-row{
-    display:grid; grid-template-columns:1fr auto auto; gap:.6rem;
-    align-items:baseline; padding:.3rem 0; text-align:left;
-  }
-  .vroom-mine-row.is-total{
-    grid-template-columns:1fr auto; margin-top:.35rem; padding-top:.6rem;
-    border-top:1px solid rgba(255,255,255,.1);
-  }
-  .vroom-mine-label{ font-size:.86rem; font-weight:600; color:var(--ink); }
-  .vroom-mine-raw{ font-size:.84rem; color:var(--soft); font-variant-numeric:tabular-nums; }
-  /* A fixed width on the arithmetic column, so the + and the minus line up
-     under each other rather than drifting with the length of the number. */
-  .vroom-mine-delta{
-    font-size:.84rem; font-weight:800; color:var(--soft);
-    font-variant-numeric:tabular-nums; min-width:4.2rem; text-align:right;
-  }
-  .vroom-mine-total{
-    font-size:1.25rem; font-weight:900; color:var(--theme-c1);
-    font-variant-numeric:tabular-nums;
-  }
-  .vroom-mine-note{
-    margin:.6rem 0 0; font-size:.72rem; color:var(--soft); line-height:1.35;
-    text-align:left;
   }
   /* The finale reveal screen \u2014 each line fades/slides in together
      once the wait is over (vroom-finale-in added right as the reveal
@@ -8802,7 +8748,7 @@
      "Ensure the loading screens match the theme color". It is a loading
      screen, like the splash and GENERATING PROFILE beside it, and all
      three now take the theme - the questions themselves still do not. */
-  .vroom-mine-delta, .vroom-mine-total, .points-progress-total{ color:#FFD37A !important; }
+  .points-progress-total{ color:#FFD37A !important; }
   /* No box of its own: the waiting note already is one, and a card
      inside a card read as a mistake. */
   .vroom-choice .next.is-busy{ opacity:.75; cursor:progress; }
@@ -37205,71 +37151,125 @@ html.is-browser{ --fade-paper: transparent; }
     /* each metal's colour, taken from the middle of the board's medal */
     --lw-gold:#E9C35A; --lw-silver:#C9CCD1; --lw-bronze:#CF8C57;
   }
-  html[data-layout] body .screen-rankings .lw-podium-stage{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-stage{
     display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.14fr) minmax(0,1fr); align-items:end; column-gap:.5rem;
     /* the outer steps clear the card's rounded corners where they meet its floor */
     max-width:31rem; margin:0 auto; padding:1.15rem max(var(--lb-pad), 18px) 0; box-sizing:border-box;
   }
-  html[data-layout] body .screen-rankings .lw-podium-spot{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot{
     grid-row:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:0; min-width:0;
     border-radius:0; transform:none; -webkit-tap-highlight-color:transparent; transition:opacity .12s ease; --pc:var(--lw-gold);
   }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-1{ grid-column:2; --pc:var(--lw-gold); }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-2{ grid-column:1; --pc:var(--lw-silver); }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-3{ grid-column:3; --pc:var(--lw-bronze); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-1{ grid-column:2; --pc:var(--lw-gold); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-2{ grid-column:1; --pc:var(--lw-silver); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-3{ grid-column:3; --pc:var(--lw-bronze); }
   /* pressed: iOS's dim, nothing moves (the step stays on the floor) */
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-tappable{ cursor:pointer; }
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-tappable:active{ transform:none; opacity:.55; }
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-tappable:focus-visible{ outline:2px solid color-mix(in srgb, var(--ink) 55%, transparent); outline-offset:-2px; border-radius:14px; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-tappable{ cursor:pointer; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-tappable:active{ transform:none; opacity:.55; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-tappable:focus-visible{ outline:2px solid color-mix(in srgb, var(--ink) 55%, transparent); outline-offset:-2px; border-radius:14px; }
   /* the disc: the board's own, a size up, ringed in its metal with a hair of the card between */
-  html[data-layout] body .screen-rankings .lw-podium-avwrap{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap{
     width:var(--lw-av); height:var(--lw-av); flex:0 0 auto; border-radius:50%; margin-top:4px;
     outline:2px solid var(--pc); outline-offset:2px;
   }
-  html[data-layout] body .screen-rankings .lw-place-1 .lw-podium-avwrap{ width:var(--lw-av-1); height:var(--lw-av-1); }
-  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-place-1 .lw-podium-avwrap{ width:var(--lw-av-1); height:var(--lw-av-1); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar{
     width:100%; height:100%; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%);
     background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #8FA4BE) 30%, #151A22) 0%, #0D1117 78%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
   }
-  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
     -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
-  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar > .char-flip-play{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar > .char-flip-play{
     border-radius:50%; -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%);
     -webkit-mask-composite:source-in; mask-composite:intersect;
   }
   /* the name in the page's ink (the accent if it is you), cut short with an ellipsis rather than wrapped; the XP grey under it */
-  html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-name{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-name{
     display:block; width:100%; max-width:100%; margin:.6rem 0 0; padding:0 .1rem; box-sizing:border-box; text-align:center;
     font-size:.9rem; font-weight:600; line-height:1.25; letter-spacing:-.005em; color:var(--ink);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-1 .lw-podium-name{ font-weight:700; }
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-me .lw-podium-name{ color:var(--accent); }
-  html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-pts{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-1 .lw-podium-name{ font-weight:700; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-me .lw-podium-name{ color:var(--accent); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-pts{
     display:block; max-width:100%; margin:.12rem 0 0; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:var(--sans); font-size:.78rem; font-weight:600; line-height:1.25; font-variant-numeric:tabular-nums; color:var(--soft);
   }
   /* the step: a soft tint of its metal fading to the card's floor, a fine catch-light along its top, the board's medal on it */
-  html[data-theme][data-layout] body .screen-rankings .lw-podium-spot .lw-podium-block{
+  html[data-theme][data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-block{
     display:flex; justify-content:center; align-items:flex-start; width:100%; height:var(--lw-step-3); margin:.65rem 0 0; padding:.5rem 0 0; box-sizing:border-box;
     border-radius:12px 12px 0 0; color:inherit; font-size:inherit; font-weight:inherit;
     background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 24%, transparent), color-mix(in srgb, var(--pc) 6%, transparent));
     box-shadow:inset 0 1px 0 color-mix(in srgb, var(--pc) 45%, transparent);
   }
-  html[data-theme][data-layout] body .screen-rankings .lw-place-1 .lw-podium-block{ height:var(--lw-step-1); }
-  html[data-theme][data-layout] body .screen-rankings .lw-place-2 .lw-podium-block{ height:var(--lw-step-2); }
-  html[data-layout] body .screen-rankings .lw-podium-block .rank-place.lb-rank-medal{
+  html[data-theme][data-layout] body :is(.screen-rankings, .vr-podium) .lw-place-1 .lw-podium-block{ height:var(--lw-step-1); }
+  html[data-theme][data-layout] body :is(.screen-rankings, .vr-podium) .lw-place-2 .lw-podium-block{ height:var(--lw-step-2); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .rank-place.lb-rank-medal{
     width:var(--lb-medal); height:var(--lb-medal); flex:0 0 auto; margin:0;
     font-family:var(--sans); font-variant-numeric:tabular-nums; font-size:.85rem; font-weight:800; letter-spacing:0; line-height:1;
   }
-  html[data-layout] body .screen-rankings .lw-podium-block .lb-rank-1{ box-shadow:inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.5), 0 1px 2px var(--surface-inset); }
-  html[data-layout] body .screen-rankings .lw-podium-block .lb-rank-2{ box-shadow:inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.45), 0 1px 2px var(--surface-inset); }
-  html[data-layout] body .screen-rankings .lw-podium-block .lb-rank-3{ box-shadow:inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.4), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .lb-rank-1{ box-shadow:inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.5), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .lb-rank-2{ box-shadow:inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.45), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .lb-rank-3{ box-shadow:inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.4), 0 1px 2px var(--surface-inset); }
   @media (min-width:40rem){
-    html[data-layout] body .screen-rankings .lw-podium-stage{ column-gap:.75rem; padding-top:1.35rem; }
-    html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-name{ font-size:1rem; }
-    html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-pts{ font-size:.85rem; }
+    html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-stage{ column-gap:.75rem; padding-top:1.35rem; }
+    html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-name{ font-size:1rem; }
+    html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-pts{ font-size:.85rem; }
+  }
+
+  /* ---- (384 r8) THE VIRTUAL ROOM'S RESULTS: the podium (the Leaderboard's "Last week's top 3", above, in a results card), the list
+     under it, the two sides, the game's own card. Madison: "I think it could be presented as a podium instead" / "make it the same
+     for all virtual rooms". The steps, discs, names and medals are the board's own rules (the :is(.screen-rankings, .vr-podium)
+     selectors above); this sets their sizes for a results card and adds what a match has that last week does not. ---- */
+  .vr-podium{
+    --lb-medal:1.85rem; --lb-av:2.5rem; --lb-pad:.9rem;
+    --lw-step-1:calc(var(--lb-medal) + 2.3rem); --lw-step-2:calc(var(--lb-medal) + 1.45rem); --lw-step-3:calc(var(--lb-medal) + .9rem);
+    --lw-av-1:calc(var(--lb-av) * 1.5); --lw-av:calc(var(--lb-av) * 1.2);
+    --lw-gold:#E9C35A; --lw-silver:#C9CCD1; --lw-bronze:#CF8C57;
+  }
+  @media (max-width:29rem){ .vr-podium{ --lb-medal:1.65rem; --lb-av:2.25rem; } }
+  @media (min-width:40rem){ .vr-podium{ --lb-medal:2rem; --lb-av:2.75rem; } }
+  /* the steps stand on the card's floor line, a podium's width in the middle */
+  html[data-layout] body .vr-podium .lw-podium-stage{ max-width:26rem; padding:.35rem .25rem 0; border-bottom:1px solid var(--clean-line, rgba(255,255,255,.08)); }
+  /* two sides: two columns, your side on the left (the page's order); the winners' step is the taller */
+  html[data-layout] body .vr-podium .vr-podium-sides{ grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:1.25rem; max-width:24rem; }
+  html[data-layout] body .vr-podium .vr-podium-sides > .lw-podium-spot{ grid-column:auto; }
+  .vr-side-avs{ display:flex; justify-content:center; align-items:flex-end; min-height:calc(var(--lb-av) * 1.15 + 8px); }
+  html[data-layout] body .vr-podium .vr-side-avs .lw-podium-avwrap{ width:var(--lb-av); height:var(--lb-av); }
+  html[data-layout] body .vr-podium .vr-side.lw-place-1 .vr-side-avs .lw-podium-avwrap{ width:calc(var(--lb-av) * 1.15); height:calc(var(--lb-av) * 1.15); }
+  .vr-side-avs > * + *{ margin-left:-.5rem; }
+  .vr-side-more{ align-self:center; margin-left:.3rem !important; font-size:.78rem; font-weight:700; color:var(--soft); }
+  /* everybody under the steps: place, character, name, XP - a quiet grouped list on the card */
+  .vr-podium-list{ display:flex; flex-direction:column; width:100%; max-width:26rem; margin:.45rem auto 0; }
+  .vr-podium-row{ display:grid; grid-template-columns:2.4rem 2rem minmax(0,1fr) auto; align-items:center; column-gap:.6rem; min-height:2.75rem;
+    border-top:1px solid var(--clean-line, rgba(255,255,255,.08)); }
+  .vr-podium-list > .vr-podium-row:first-child, .vr-podium-col > .vr-podium-row:first-child{ border-top:0; }
+  .vr-podium-place{ text-align:center; font-size:.85rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--soft); }
+  .vr-podium-av{ width:2rem; height:2rem; border-radius:50%; overflow:hidden; display:grid; place-items:center;
+    background:radial-gradient(circle at 50% 38%, #1D2430 0%, #0D1117 78%); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
+  .vr-podium-av svg{ width:100%; height:100%; transform:scale(.85); }
+  .vr-podium-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.92rem; font-weight:600; color:var(--ink); }
+  .vr-podium-row.is-me .vr-podium-name{ color:var(--accent); }
+  .vr-podium-xp{ white-space:nowrap; font-size:.85rem; font-weight:600; font-variant-numeric:tabular-nums; color:var(--soft); }
+  /* each side's members, under its own step */
+  .vr-podium-cols{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:1.25rem; max-width:24rem; margin:.45rem auto 0; }
+  .vr-podium-cols .vr-podium-row{ grid-template-columns:2rem minmax(0,1fr) auto; column-gap:.45rem; }
+  .vr-podium-col{ min-width:0; }
+  /* the game's own picture of the result, in a card */
+  .vr-gamecard .tug-rope-wrap, .vr-gamecard .battle-board{ margin-left:0; margin-right:0; }
+  /* the rope's live line ("keep pulling") is for a match in play; the card's own line says how it ended */
+  .vr-gamecard .tug-state{ display:none; }
+  :is(.screen-tug-result, .screen-battle-result, .rs-screen) .vr-gamecard :is(.tug-rope-wrap, .battle-board){ margin-top:0; }
+  .vr-gamecard-line{ margin:.75rem 0 0; text-align:center; font-size:.9rem; line-height:1.4; color:var(--soft); }
+  /* the race's place and podium arrive on the settled results */
+  @keyframes vr-arrive{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  .rs-xpline.is-arriving{ animation:vr-arrive .5s cubic-bezier(.2,.8,.2,1) .15s both; }
+  .vr-podium.is-arriving{ animation:vr-arrive .55s cubic-bezier(.2,.8,.2,1) .35s both; }
+  [data-reduce-motion="true"] :is(.rs-xpline, .vr-podium).is-arriving{ animation:none; }
+  @media (min-width:40rem){
+    .vr-podium-name{ font-size:1rem; }
+    .vr-podium-xp, .vr-podium-place{ font-size:.9rem; }
   }
 
   /* ---- THE CALENDAR, A SMIDGE BETTER ---- */
@@ -37937,15 +37937,11 @@ html.is-browser{ --fade-paper: transparent; }
      the old look: a serif, upper-case, centred title ("RESULTS", "YOU'RE DONE"), a serif game name on the lobby's summary, and a
      bordered glass card for your score. Now the title is the app's one (sans, bold, sentence case), the summary's game name is
      sans, and your score is a solid card like every other. */
-  html[data-layout] body #stage > :is(.vroom-results-panel, .vroom-finale-panel, .screen-tug-wait, .screen-tug-result, .screen-battle-wait, .screen-battle-result) > .welcomeintro-title{
+  html[data-layout] body #stage > :is(.vroom-finale-panel, .screen-tug-wait, .screen-tug-result, .screen-battle-wait, .screen-battle-result) > .welcomeintro-title{
     font-family:inherit; font-size:clamp(1.55rem, 6.4vw, 2rem); font-weight:700; letter-spacing:-.01em; text-transform:none; line-height:1.15;
     color:var(--ink); text-shadow:none;
   }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .sheet-summary-mode{ font-family:inherit; letter-spacing:-.005em; }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vroom-mine{
-    background:var(--clean-card); border:0; box-shadow:none; border-radius:20px;
-  }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vroom-mine-row.is-total{ border-top-color:var(--clean-line); }
   /* the lobby: Stats' headings (sentence case, 16px, 600) over its cards, and the game's name in the app's face */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-vroom-lobby :is(.vroom-setup-head, .vroom-roster-title){
     font-size:1rem; font-weight:600; letter-spacing:normal; text-transform:none; color:var(--soft);
@@ -81041,6 +81037,39 @@ function vroomTotalScore(p){
 const VROOM_PODIUM_MIN = 4;
 function vroomPlaces(n){ return n >= VROOM_PODIUM_MIN ? 3 : 1; }
 
+/* ---- PLACEMENT XP (384 r8) ----
+   Madison, over a Tug of War result that read "+0 XP - Winner takes all": "Everybody should still get xp, you get it based on your
+   finishing spot x how many people are in the lobby". The rule he picked: with N players in the match, 1st place is N shares, 2nd
+   N-1, and so on down to last, who still gets 1; a share is VROOM_PLACE_XP. Four people: 100 / 75 / 50 / 25. It goes ON TOP of
+   what your own right answers earn, in every game.
+   - Race: the place is the leaderboard cutscene's own (vroomRankedEntries: the room's XP, then time).
+   - Tug of War, Battle: the winning side are all 1st, the losing side all 2nd; a draw makes everybody 1st. It replaces Tug's
+     "winner takes all" pot and Battle's flat BATTLE_XP_WIN (the place already rewards the win).
+   - N is everybody who started the match (the racers, the two teams) - Nova included when he is in it, nobody who came back in
+     late, never a spectator. Every device works out every place from the same room document, so they agree.
+   PAID ONCE PER MATCH: alongside recordVroomOutcome, and only while that match is not yet in store.vrCounted (vroomMatchFresh), so a
+   redraw, a re-entry or a relaunch never pays it twice. Local awardXp and the account push recordVroomOutcome already makes - no
+   write of its own. A visitor from another class gets none (vroomForeign). */
+const VROOM_PLACE_XP = 25;
+function vroomPlaceXp(place, n){
+  n = Math.max(1, Math.floor(Number(n) || 0));
+  place = Math.min(n, Math.max(1, Math.floor(Number(place) || 1)));
+  return (n - place + 1) * VROOM_PLACE_XP;
+}
+function vroomOrdinal(p){
+  const n = Math.floor(Number(p) || 0), t = n % 100;
+  return n + (t >= 11 && t <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
+}
+function vroomPlaceLabel(place, n){ return vroomOrdinal(place) + " of " + n; }
+/* A team game's place: the winning side (and everybody in a draw) 1st, the losing side 2nd. */
+function vroomTeamPlace(drawn, won){ return drawn || won ? 1 : 2; }
+/* Not yet counted on this account - the same key recordVroomOutcome writes. */
+function vroomMatchFresh(code, startAt){
+  if(!code) return true;
+  const id = startAt ? code + "@" + startAt : code;
+  return !(Array.isArray(store.vrCounted) && store.vrCounted.indexOf(id) >= 0);
+}
+
 /* ONE RECORD PER MATCH, NOT PER ROOM (build 313). A room is played again
    and again from its lobby - Return to lobby, ready up, another race - and
    keyed by the room code alone only the first match in it ever counted.
@@ -101012,30 +101041,6 @@ const VROOM_CUTSCENE_MS = 5000;
    moment the tap happens rather than being captured into a closure at
    build time - somebody can still be finishing while this screen is up. */
 let lastFinaleData = null;
-/* SAME RANKING THE STANDINGS USE, with the same fallback for a
-   participant somehow missing totalScore. Two answers to "who won"
-   is how a cutscene ends up crowning somebody the list then puts
-   second. */
-function vroomWinnerOf(data){
-  return vroomTopThree(data)[0] || null;
-}
-/* The podium, in placing order, with at most three on it. Same ranking
-   the standings use, and the same fallback for a participant somehow
-   missing totalScore - two answers to "who won" is how a cutscene
-   crowns somebody the list then puts second. */
-function vroomTopThree(data){
-  const ps = Object.entries((data && data.participants) || {});
-  const tot = p => p.totalScore != null ? p.totalScore
-    : Math.round((p.score || 0) * 100) - Math.round((p.elapsedMs || 0) / 1000);
-  return ps
-    .sort(([, a], [, b]) => tot(b) - tot(a))
-    .slice(0, 3)
-    .map(([, p]) => ({
-      name: p.name, avatar: p.avatarChar, totalScore: p.totalScore, score: p.score,
-      sub: (p.score != null ? p.score + "%" : "")
-        + (p.totalScore != null ? " \u00b7 " + p.totalScore + " XP" : "")
-    }));
-}
 function playVroomWinnerCutscene(opts, done){
   const o = opts || {};
   let settled = false;
@@ -127117,6 +127122,12 @@ function buildRunHead(run){
   try{ mode.appendChild(modeIcon(rsModeIconKind(run))); }catch(e){}
   mode.appendChild(document.createTextNode(rsModeLabel(run)));
   chipRow.appendChild(mode);
+  if(run.vroom && run.vroomGame){
+    const g = document.createElement("span");
+    g.className = "rs-mode rs-mode-src rs-mode-game";
+    g.textContent = vroomGameName(run.vroomGame);
+    chipRow.appendChild(g);
+  }
   if(run.source === "recent" || run.source === "flagged"){
     const src = document.createElement("span");
     src.className = "rs-mode rs-mode-src";
@@ -128504,13 +128515,14 @@ function showRunRewards(run, hooks, opts){
   run.xpLines.forEach(l => {
     /* the bonuses under their own small heading, after what the answers
        earned (build 325) */
-    if(!bonusKick && l.key !== "correct" && l.key !== "daily" && run.xpLines.some(x => x.key === "correct")){
+    /* (384 r8) a Virtual Room's place is what the match earned, beside the answers - not a bonus */
+    if(!bonusKick && l.key !== "correct" && l.key !== "daily" && l.key !== "place" && run.xpLines.some(x => x.key === "correct")){
       bonusKick = document.createElement("p");
       bonusKick.className = "rs-xpline rs-xpkick rs-land"; bonusKick.textContent = "Bonuses";
       xp.appendChild(bonusKick); lineEls.push(bonusKick);
     }
     const row = document.createElement("div");
-    row.className = "rs-xpline rs-land" + (l.key === "multi" ? " is-multi" : "") + (l.badge ? " is-badge" : "");
+    row.className = "rs-xpline rs-land" + (l.key === "multi" ? " is-multi" : "") + (l.badge ? " is-badge" : "") + (l.key === "place" ? " is-place" : "");
     const a = document.createElement("span"); a.className = "rs-xpline-label";
     const lab = document.createElement("span"); lab.className = "rs-xpline-name"; lab.textContent = l.label;
     a.appendChild(lab);
@@ -128781,9 +128793,10 @@ function showRunRewards(run, hooks, opts){
     /* A bar per unit, on a single-unit test too - "I'm a huge fan of how
        you have it showing results for each unit ... do include it on
        tests with just a single unit". */
-    if(run.total > 0){
-      const byUnit = {};
-      run.order.forEach(qi => {
+    if(run.total > 0 && (run.order.length || run.byUnit)){
+      /* (384 r8) Tug of War and Battle know how many you got right, not which: their run carries the rows (byUnit) */
+      const byUnit = run.byUnit ? JSON.parse(JSON.stringify(run.byUnit)) : {};
+      if(!run.byUnit) run.order.forEach(qi => {
         const t = (QUESTIONS[qi].topic || "Other").trim();
         if(!byUnit[t]) byUnit[t] = { total: 0, wrong: 0 };
         byUnit[t].total++;
@@ -128838,6 +128851,10 @@ function showRunRewards(run, hooks, opts){
       });
       grade.appendChild(wrap);
     }
+  }
+  /* (384 r8) A VIRTUAL ROOM'S OWN CARDS - the placings and the game's own picture - land after the XP card like any box */
+  if(hooks && hooks.cards){
+    try{ hooks.cards(run).forEach(c => { if(!c) return; c.classList.add("rs-land"); boxes.push(c); }); }catch(e){}
   }
   /* The grade, then how it adds up (the XP box), then the badge boxes when
      they are switched on (build 320). */
@@ -128915,9 +128932,10 @@ function showRunRewards(run, hooks, opts){
      and Main menu under it. The review itself carries neither - it goes
      back to here, or on to a retake whose results come back to here, so
      missing some again is a cycle rather than a dead end. */
-  if(run.vroom){
+  if(run.vroom && !run.vroomFinal){
     /* The Virtual Room ends in its own standings - see
-       finishVirtualRoomTest(), which drops into this slot. */
+       finishVirtualRoomTest(), which drops into this slot. (Tug of War and Battle end HERE, run.vroomFinal: their
+       results are the match's last screen, with Back to lobby and Main menu - 384 r8.) */
   } else {
     actions = hooks.finalActions({ where: "results", toReview: () => showRunReview(run, hooks) });
     actions.classList.add("rs-actions", "rs-land");
@@ -129697,7 +129715,7 @@ function summarizeVisitingRun(){
     order: order.slice(), attempts: Object.assign({}, attempts), picked: Object.assign({}, picked),
     firstPick: Object.assign({}, firstPick), flare: null, flareAll: false, flareCount: mysteryColorsFoundCount(),
     timedOutSet: Object.assign({}, timedOutSet),
-    mode: runMode, retake: false, practice: false, vroom: true, source: cfg.source,
+    mode: runMode, retake: false, practice: false, vroom: true, vroomGame: "race", source: cfg.source,
     units: (cfg.units || []).slice(), unitsSat,
     xpLines: [], xpTotal: 0, pointsAfter: store.lifetime.points,
     badgesBefore: badgesNow, badgesAfter: badgesNow,
@@ -130496,7 +130514,7 @@ function summarize(){
     flareAll: mysteryFoundThisSession && flareCompletedVoidThisSession, flareCount: mysteryColorsFoundCount(),
     timedOutSet: Object.assign({}, timedOutSet),
     mode: runMode, retake: isMissedRetake, practice: practiceTestMinutes != null,
-    vroom: !!inVirtualRoom, source: cfg.source,
+    vroom: !!inVirtualRoom, vroomGame: inVirtualRoom ? "race" : null, source: cfg.source,
     units: (cfg.units || []).slice(), unitsSat,
     xpLines, xpTotal, pointsAfter: store.lifetime.points,
     /* build 314: the badges either side of the run, for the badge wall */
@@ -134314,9 +134332,10 @@ function showVirtualRoomSetup(editRoom){
   const gHint = document.createElement("p");
   gHint.className = "friend-hint";
   const gDesc = {
-    race: "Everyone takes the same test. Ranked by score, then time.",
-    tug: "Two teams, one rope. Both of you right pulls twice as hard; one each and it does not move. The clock tightens every round.",
-    battle: "Two teams, one health bar each. Every right answer hits the other side; powers unlock after question 10. First side to zero loses."
+    /* (384 r8) ranked by the XP the run earns (it said "by score" since build 213 made it XP), and every game pays your place */
+    race: "Everyone takes the same test. Ranked by XP, then time. Every place earns XP.",
+    tug: "Two teams, one rope. Both of you right pulls twice as hard; one each and it does not move. The clock tightens every round. Both sides earn XP for their answers and their place.",
+    battle: "Two teams, one health bar each. Every right answer hits the other side; powers unlock after question 10. First side to zero loses. Both sides earn XP for their answers and their place."
   };
   [["race", "Race"], ["tug", "Tug of War"], ["battle", "Battle"]].forEach(([key, label]) => {
     const b = document.createElement("button");
@@ -136513,50 +136532,24 @@ function showTugResult(d){
   const winner = d.tug.winner;
   const drawn = !winner;
   const won = !drawn && winner === mine;
-
-  const panel = document.createElement("section");
-  panel.className = "panel screen-tug-result";
-
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title";
-  /* A DRAW IS A REAL OUTCOME NOW, and it has to be said rather than
-     shown as a loss. The rope used to end only by being pulled clear,
-     so there was always a side; it can now also run out of questions
-     or out of pace with the rope dead centre, and calling that "your
-     side lost" would be a lie to both halves of the room. */
-  title.textContent = drawn ? "Nobody moved it" : (won ? "Your side won" : "Your side lost");
-  panel.appendChild(title);
-
-  const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.textAlign = "center";
-  const gap = Math.abs(Number(d.tug.finalPos) || 0);
-  /* The rope is pull now, not a count, so "pulled it 3.4 clear" is a
-     number nobody can picture. Say what happened to the rope instead. */
-  const winNames = drawn ? "" : (vroomNameList(tugMembers(d, winner), d) || (winner === mine ? "Your side" : "Their side"));
-  sub.textContent = drawn
-    ? "Dead even at the end of " + tugMatchCount(d) + " questions."
-    : winNames + (gap >= tugWinGap(tugMatchCount(d)) ? " pulled it over the line." : " had it on their side when the questions ran out.");
-  panel.appendChild(sub);
-
-  panel.appendChild(buildTugRope(d));
-  /* ---- WINNER TAKES ALL ----
-     Every right answer in the room goes into one pot, TUG_XP_PER_RIGHT
-     each, and the winning side splits all of it - the losers' answers
-     included. The losing side takes nothing; a draw hands everybody
-     back their own. Paid once per match (tugPaidFor), however many
-     times this screen is drawn. */
+  /* ---- YOUR ANSWERS, AND YOUR PLACE (384 r8) ----
+     "Winner takes all" is gone (Madison: "Everybody should still get xp"). Everybody keeps their own right answers,
+     TUG_XP_PER_RIGHT each, and takes placement XP on top: the winning side 1st, the losing side 2nd, a draw everybody 1st, out
+     of everybody who started the match (see VROOM_PLACE_XP). Paid once per match (tugPaidFor on this screen, store.vrCounted
+     across a relaunch), however many times this screen is drawn. */
   const prog = (d.tug && d.tug.progress) || {};
   const teams = (d.tug && d.tug.teams) || {};
   const rightOf = k => Number((prog[k] || {}).correct) || 0;
-  const pot = Object.keys(teams).reduce((t, k) => t + rightOf(k), 0) * TUG_XP_PER_RIGHT;
-  const winners = drawn ? [] : tugMembers(d, winner);
-  const myXp = drawn ? rightOf(vroomMyKey) * TUG_XP_PER_RIGHT
-    : won ? Math.round(pot / Math.max(1, winners.length)) : 0;
+  const matchN = Math.max(1, Object.keys(teams).length);
+  const myPlace = vroomTeamPlace(drawn, won);
+  const answersXp = rightOf(vroomMyKey) * TUG_XP_PER_RIGHT;
+  const placeXp = vroomPlaceXp(myPlace, matchN);
+  const myXp = answersXp + placeXp;
   const paidKey = Number(d.startAt) || 1;
   if(tugPaidFor !== paidKey){
     tugPaidFor = paidKey;
     /* (384) a visitor from another class takes the result and the match, not the XP */
-    if(myXp > 0 && !vroomForeign()){ awardXp(myXp); saveStore(); }
+    if(vroomMatchFresh(vroomCode, d.startAt) && myXp > 0 && !vroomForeign()){ awardXp(myXp); saveStore(); }
     try{ setTimeout(publishNow, 800); }catch(e){}
     /* A TUG MATCH COUNTS (build 313). Battle recorded its outcome and
        Tug never did, so no Tug of War ever reached "Matches played" or the
@@ -136567,98 +136560,29 @@ function showTugResult(d){
     /* Beat Nova? (build 324) */
     try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
   }
-  const xpCard = document.createElement("div");
-  xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
-  const xpNum = document.createElement("p");
-  xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
-  const xpWhy = document.createElement("p");
-  xpWhy.className = "tug-xp-why";
-  xpWhy.textContent = drawn ? "A draw — everyone keeps their own answers"
-    : won ? "Winner takes all — your side split the whole pot of " + pot.toLocaleString()
-          : "Winner takes all — the other side took the pot";
-  if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
-  xpCard.append(xpNum, xpWhy);
-  panel.appendChild(xpCard);
-  /* ---- THE TEAM LEADERBOARD, TEN SECONDS LATER ----
-     Long enough to take in who won before the numbers arrive. Each side
-     in its own column, everybody's right answers, the side's total, and
-     a star on the one who pulled hardest. */
-  const board = document.createElement("div");
-  board.className = "tug-board is-pending";
-  const boardHead = document.createElement("p");
-  boardHead.className = "tug-board-head";
-  board.appendChild(boardHead);
-  const cols = document.createElement("div");
-  cols.className = "tug-board-cols";
-  const all = Object.keys(teams);
-  const mvp = all.slice().sort((a, b) => rightOf(b) - rightOf(a))[0];
-  /* (384 review) YOUR SIDE FIRST, on the left - where the rope above has always put it (tugView), and where Battle's board puts
-     it. Team b read "Their side" on the left over a rope with "Your side" on the left. */
-  [mine, mine === "a" ? "b" : "a"].forEach(side => {
-    const col = document.createElement("div");
-    col.className = "tug-board-col" + (side === winner ? " is-winner" : "") + (side === mine ? " is-mine" : "");
-    const members = tugMembers(d, side).sort((a, b) => rightOf(b) - rightOf(a));
-    const h = document.createElement("p");
-    h.className = "tug-board-side";
-    h.textContent = (side === mine ? "Your side" : "Their side") + " · " +
-      members.reduce((t, k) => t + rightOf(k), 0) + " right";
-    col.appendChild(h);
-    members.forEach((k, i) => {
-      const pp = (d.participants || {})[k] || {};
-      const row = document.createElement("div");
-      row.className = "tug-board-row" + (k === vroomMyKey ? " is-me" : "");
-      row.style.setProperty("--i", i);
-      const av = document.createElement("span");
-      av.className = "tug-board-av";
-      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
-      const nm = document.createElement("span");
-      nm.className = "tug-board-name";
-      /* "You", as Battle's board and every side label say (build 313). */
-      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && rightOf(k) > 0 ? "  ★" : "");
-      const n = document.createElement("span");
-      n.className = "tug-board-n"; n.textContent = rightOf(k);
-      row.append(av, nm, n);
-      col.appendChild(row);
-    });
-    cols.appendChild(col);
+  /* THE RESULTS SCREEN (384 r8): the grade, the XP card with the place as its own line, the two sides on the podium (it
+     replaces the team leaderboard that came in ten seconds later), the rope as it ended, and the way on - see
+     showVroomTeamResult. A DRAW IS A REAL OUTCOME and is said as one, never as a loss. */
+  /* The rope is pull now, not a count, so "pulled it 3.4 clear" is a number nobody can picture: say what happened to it. */
+  const gap = Math.abs(Number(d.tug.finalPos) || 0);
+  const winNames = drawn ? "" : (vroomNameList(tugMembers(d, winner), d) || (winner === mine ? "Your side" : "Their side"));
+  const line = drawn
+    ? "Dead even at the end of " + tugMatchCount(d) + " questions."
+    : winNames + (gap >= tugWinGap(tugMatchCount(d)) ? " pulled it over the line." : " had it on their side when the questions ran out.");
+  showVroomTeamResult({
+    game: "tug", d: d, mine: mine, winner: winner || null,
+    right: rightOf(vroomMyKey), total: Number((prog[vroomMyKey] || {}).pos) || tugMatchCount(d) || 0,
+    answersXp: answersXp, placeXp: placeXp, perRight: TUG_XP_PER_RIGHT, n: matchN, foreign: vroomForeign(),
+    membersOf: side => tugMembers(d, side), numOf: rightOf, unit: "right", short: "",
+    cardKicker: "The rope", pic: buildTugRope(d), line: line,
+    onLobby: () => {
+      if(!vroomDb() || !vroomCode){ showVirtualRoomLobby(); return; }
+      const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
+      if(!vroomIsHost){ showVirtualRoomLobby(); return; }
+      vroomDb().collection("vrooms").doc(vroomCode).update(reset)
+        .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
+    }
   });
-  board.appendChild(cols);
-  panel.appendChild(board);
-  let leftS = 10;
-  boardHead.textContent = "Team leaderboard in " + leftS;
-  const boardTimer = setInterval(() => {
-    if(!board.isConnected){ clearInterval(boardTimer); return; }
-    leftS -= 1;
-    if(leftS <= 0){
-      clearInterval(boardTimer);
-      boardHead.textContent = "Team leaderboard";
-      board.classList.remove("is-pending");
-      board.classList.add("is-in");
-    } else boardHead.textContent = "Team leaderboard in " + leftS;
-  }, 1000);
-
-  const exits = document.createElement("div");
-  exits.className = "vroom-exit-row";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
-  lobby.textContent = "Back to lobby";
-  lobby.addEventListener("click", () => {
-    if(!vroomDb() || !vroomCode){ showVirtualRoomLobby(); return; }
-    const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
-    if(!vroomIsHost){ showVirtualRoomLobby(); return; }
-    vroomDb().collection("vrooms").doc(vroomCode).update(reset)
-      .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
-  });
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost vroom-exit-btn";
-  home.textContent = "Back to Home";
-  home.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
-  exits.append(lobby, home);
-  panel.appendChild(exits);
-
-  stage.replaceChildren(panel);
-  toTop();
-  rsRise(exits, { delay: 400, follow: false });
 }
 
 /* ================================ BATTLE ================================
@@ -136694,7 +136618,7 @@ const BATTLE_ABILITY_EVERY = 3;
 const BATTLE_FREEZE_MS = 5000;
 const BATTLE_FLIP_MS = 8000;
 const BATTLE_XP_PER_RIGHT = 10;
-const BATTLE_XP_WIN = 150;
+/* (BATTLE_XP_WIN, a flat 150 for the winning side, is gone - 384 r8: placement XP, VROOM_PLACE_XP, rewards the win.) */
 const BATTLE_ABILITIES = {
   freeze: { name: "Freeze", icon: "❄️", say: "Locks their best player's answers for 5 seconds" },
   flip:   { name: "Flip",   icon: "\u{1F643}",    say: "Turns their best player's screen upside down" },
@@ -137482,29 +137406,20 @@ function showBattleResult(d){
   const prog = d.battle.progress || {};
   const right = k => Number((prog[k] || {}).correct) || 0;
 
-  const panel = document.createElement("section");
-  panel.className = "panel screen-battle-result";
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title";
-  title.textContent = drawn ? "Nobody went down" : (won ? "Your side won" : "Your side lost");
-  panel.appendChild(title);
-  const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.textAlign = "center";
-  sub.textContent = drawn
-    ? "Both sides ended on " + r.hp.a + " health."
-    : battleSideNames(d, winner) + (r.downed ? " took the other side down" : " finished with more health")
-      + " — " + r.hp[winner] + " left.";
-  panel.appendChild(sub);
-  panel.appendChild(buildBattleBoard(d));
-
-  /* XP: every right answer, and a winner's bonus for everybody on the
-     side that won. Paid once per match however many times this is drawn.
-     A team win counts as a win toward the Champion, like a first place. */
-  const myXp = right(vroomMyKey) * BATTLE_XP_PER_RIGHT + (won ? BATTLE_XP_WIN : 0);
+  /* XP: every right answer, and placement XP on top (384 r8, VROOM_PLACE_XP) - the winning side 1st, the losing side 2nd, a
+     draw everybody 1st, out of everybody who started the match. It REPLACES the flat winner's bonus (BATTLE_XP_WIN, 150): the
+     place already rewards the win, and the losing side now takes something too. Paid once per match however many times this
+     is drawn (battlePaidFor; store.vrCounted across a relaunch). A team win counts as a win toward the Champion, like a first
+     place. */
+  const matchN = Math.max(1, Object.keys(battleTeams(d)).length);
+  const myPlace = vroomTeamPlace(drawn, won);
+  const answersXp = right(vroomMyKey) * BATTLE_XP_PER_RIGHT;
+  const placeXp = vroomPlaceXp(myPlace, matchN);
+  const myXp = answersXp + placeXp;
   const paidKey = Number(d.startAt) || 1;
   if(battlePaidFor !== paidKey){
     battlePaidFor = paidKey;
-    if(myXp > 0 && !vroomForeign()) awardXp(myXp);   /* (384) never a visitor from another class */
+    if(vroomMatchFresh(vroomCode, d.startAt) && myXp > 0 && !vroomForeign()) awardXp(myXp);   /* (384) never a visitor from another class */
     try{ setTimeout(publishNow, 800); }catch(e){}
     const others = Object.keys(battleTeams(d)).filter(k => k !== vroomMyKey);
     try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
@@ -137512,75 +137427,24 @@ function showBattleResult(d){
     /* Beat Nova? (build 324) */
     try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
   }
-  const xpCard = document.createElement("div");
-  xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
-  const xpNum = document.createElement("p");
-  xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
-  const xpWhy = document.createElement("p");
-  xpWhy.className = "tug-xp-why";
-  xpWhy.textContent = right(vroomMyKey) + " right" + (won ? " · the win" : "");
-  if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
-  xpCard.append(xpNum, xpWhy);
-  panel.appendChild(xpCard);
-
-  /* WHO DID THE DAMAGE, per side - the same two-column board Tug ends
-     on, with the damage each person dealt and a star on the top hitter. */
-  const cols = document.createElement("div");
-  cols.className = "tug-board-cols battle-result-cols";
-  const all = Object.keys(battleTeams(d)).filter(k => (d.participants || {})[k]);
-  const mvp = all.slice().sort((a, b) => (r.dealt[b] || 0) - (r.dealt[a] || 0))[0];
-  [mine || "a", battleOther(mine || "a")].forEach(side => {
-    const col = document.createElement("div");
-    col.className = "tug-board-col" + (side === winner ? " is-winner" : "") + (side === mine ? " is-mine" : "");
-    const members = battleMembers(d, side).sort((a, b) => (r.dealt[b] || 0) - (r.dealt[a] || 0));
-    const h = document.createElement("p");
-    h.className = "tug-board-side";
-    h.textContent = (side === mine ? "Your side" : "Their side") + " · " +
-      members.reduce((t, k) => t + (r.dealt[k] || 0), 0) + " damage";
-    col.appendChild(h);
-    members.forEach((k, i) => {
-      const pp = (d.participants || {})[k] || {};
-      const row = document.createElement("div");
-      row.className = "tug-board-row" + (k === vroomMyKey ? " is-me" : "");
-      row.style.setProperty("--i", i);
-      const av = document.createElement("span");
-      av.className = "tug-board-av";
-      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
-      const nm = document.createElement("span");
-      nm.className = "tug-board-name";
-      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && (r.dealt[k] || 0) > 0 ? "  ★" : "");
-      const n = document.createElement("span");
-      n.className = "tug-board-n"; n.textContent = (r.dealt[k] || 0) + " dmg";
-      row.append(av, nm, n);
-      col.appendChild(row);
-    });
-    cols.appendChild(col);
+  /* THE RESULTS SCREEN (384 r8, showVroomTeamResult): the grade, the XP card with the place, the two sides on the podium with
+     the damage each person dealt (it replaces the two-column board), both health bars as they ended, and the way on. */
+  const line = drawn
+    ? "Both sides ended on " + r.hp.a + " health."
+    : battleSideNames(d, winner) + (r.downed ? " took the other side down" : " finished with more health") + " \u2014 " + r.hp[winner] + " left.";
+  showVroomTeamResult({
+    game: "battle", d: d, mine: mine || "a", winner: winner,
+    right: right(vroomMyKey), total: Number((prog[vroomMyKey] || {}).pos) || 0,
+    answersXp: answersXp, placeXp: placeXp, perRight: BATTLE_XP_PER_RIGHT, n: matchN, foreign: vroomForeign(),
+    membersOf: side => battleMembers(d, side), numOf: k => r.dealt[k] || 0, unit: "damage", short: "dmg",
+    cardKicker: "Health", pic: buildBattleBoard(d), line: line,
+    onLobby: () => {
+      if(!vroomDb() || !vroomCode || !vroomIsHost){ showVirtualRoomLobby(); return; }
+      vroomDb().collection("vrooms").doc(vroomCode).update({
+        "battle.over": false, "battle.log": [], "battle.progress": {}, "battle.winner": null, status: "waiting"
+      }).then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
+    }
   });
-  const board = document.createElement("div");
-  board.className = "tug-board is-in battle-result-board";
-  board.appendChild(cols);
-  panel.appendChild(board);
-
-  const exits = document.createElement("div");
-  exits.className = "vroom-exit-row";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
-  lobby.textContent = "Back to lobby";
-  lobby.addEventListener("click", () => {
-    if(!vroomDb() || !vroomCode || !vroomIsHost){ showVirtualRoomLobby(); return; }
-    vroomDb().collection("vrooms").doc(vroomCode).update({
-      "battle.over": false, "battle.log": [], "battle.progress": {}, "battle.winner": null, status: "waiting"
-    }).then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
-  });
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost vroom-exit-btn";
-  home.textContent = "Back to Home";
-  home.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
-  exits.append(lobby, home);
-  panel.appendChild(exits);
-  stage.replaceChildren(panel);
-  toTop();
-  rsRise(exits, { delay: 400, follow: false });
 }
 
 /* ================= NOVA IN A VIRTUAL ROOM (build 324, b324v2) =================
@@ -141190,6 +141054,29 @@ function vroomRankedEntries(data){
   return ps.sort(([, a], [, b]) => (xpOf(b) - xpOf(a)) || ((a.elapsedMs || 0) - (b.elapsedMs || 0)))
     .map(([key, p]) => ({ key: key, p: p, xp: xpOf(p) }));
 }
+/* (384 r8) A racer's place and its XP, off that one ranking: place is 1-based, n is everybody ranked. */
+function vroomRacePlaces(data){
+  const ranked = vroomRankedEntries(data);
+  const n = ranked.length;
+  const out = {};
+  ranked.forEach((e, i) => { out[e.key] = { place: i + 1, n: n, xp: vroomPlaceXp(i + 1, n) }; });
+  return out;
+}
+/* This device's place in the race, paid once (vroomMatchFresh - before recordVroomOutcome counts the match). Kept for the
+   results screen, which shows it as its own line in the XP card. */
+let vroomRacePlace = null;
+function vroomPayRacePlace(data){
+  if(!vroomMyKey || !data) return null;
+  const mine = vroomRacePlaces(data)[vroomMyKey];
+  if(!mine) return null;
+  const id = vroomCode + "@" + (data.startAt || "");
+  if(vroomRacePlace && vroomRacePlace.id === id) return vroomRacePlace;
+  const foreign = vroomForeign();
+  const fresh = vroomMatchFresh(vroomCode, data.startAt);
+  if(fresh && !foreign && mine.xp > 0) awardXp(mine.xp);
+  vroomRacePlace = { id: id, place: mine.place, n: mine.n, xp: foreign ? 0 : mine.xp, paid: fresh && !foreign };
+  return vroomRacePlace;
+}
 
 /* ---- THE WAIT, AND THEN THE SHOW ----
    "When finishing a virtual room test, you will see all of your results
@@ -141293,15 +141180,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
      listener counts what arrives; the button lifts it into a sheet. The
      lobby's own panel, from before the race, is torn down first so there
      is one listener, not two. */
-  if(vroomCode && !host.querySelector(".vroom-chat")){
-    const chatHost = document.createElement("div");
-    chatHost.className = "roomchat-host";
-    chatHost.hidden = true;
-    host.appendChild(chatHost);
-    if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
-    try{ vroomChatUnsubscribe = buildVroomChatPanel(chatHost); }catch(e){}
-  }
-  mountRoomChatFab();
+  vroomMountResultChat(host);
 
   /* ---- WHEN THE LEADERBOARD ROLLS ----
      "When everyone is done give a banner ... after about 5 seconds that
@@ -141450,6 +141329,9 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
         /* (384 vr2) once, though a resume can take the room out of "all in" and back */
         if(!outcomeRecorded){
           outcomeRecorded = true;
+          /* (384 r8) PLACEMENT XP, paid here: the standings are settled, ranked as the cutscene ranks them, and this match is
+             counted in the same breath - so the account push recordVroomOutcome makes carries it (VROOM_PLACE_XP). */
+          try{ vroomPayRacePlace(data); }catch(e){}
           try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
         }
       }
@@ -141635,6 +141517,345 @@ const VROOM_XP_STEPS = [
   { key: "speed",   label: "Speed",           match: k => k === "speed" },
   { key: "correct", label: "Correct answers", match: k => k === "correct" }
 ];
+/* ================= ONE RESULT SCREEN FOR EVERY VIRTUAL ROOM GAME (384 r8) =================
+   Madison, over the old "Results - Ranked by total score" screen: "Is this what our leaderboard is now? ... I think it could be
+   presented as a podium instead. The xp box isn't the same as all the others? ... The virtual room result screen needs to match pretty
+   close to normal drills and tests + the lobby and placements and chat and whatever else? ... make it the same for all virtual rooms".
+   (That screen, showVirtualRoomResults, had not been reachable in a real match since build 240 - only the gates mounted it. It is
+   retired, with its accuracy x 100 minus seconds "points", which contradicted the XP the room is really ranked by.)
+   So every game ends on the normal results screen, built by showRunRewards from the same pieces as a drill:
+   - the grade card (centred, counted, then up), and the SAME XP card - your answers' line, your place as its own line
+     ("2nd of 4", VROOM_PLACE_XP), the total and the level bar;
+   - the placings as a PODIUM in the Leaderboard's "Last week's top 3" look (buildLastWeekPodium): a Race's 2nd, 1st and 3rd on
+     their steps and everybody else listed under them; Tug of War's and Battle's two sides, the winners on the higher step, each
+     side's members under it;
+   - the game's own picture where it explains the result (Tug's rope, Battle's health bars), as one card;
+   - Back to lobby and Main menu, the results' own buttons; the room's chat from the chat button beside the dock.
+   A Race reaches it through the wait and the leaderboard cutscene: the cutscene's Continue lands on the run's own results, now
+   carrying the placing line, the podium and the way on (vroomRaceFinalize). Tug of War and Battle build it straight away
+   (showVroomTeamResult). */
+function vroomGameName(g){ return g === "tug" ? "Tug of War" : g === "battle" ? "Battle" : "Race"; }
+
+/* The results' own way-on row: the same classes, the same guard against a tap meant for the screen, the same rise. */
+function buildVroomFinalActions(onLobby, onHome){
+  const actions = document.createElement("div");
+  actions.className = "actions actions-results rs-final vroom-final-actions";
+  rsDisarm(actions);
+  const mk = (label, cls, fn, id) => {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = cls; if(id) btn.id = id;
+    btn.textContent = label;
+    btn.addEventListener("click", e => { if(rsTapAt(e) < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; } endResultsReveal(); fn(); });
+    return btn;
+  };
+  actions.append(mk("Back to lobby", "next", onLobby, "nextbtn"), mk("Main menu", "next ghost", onHome));
+  return actions;
+}
+
+/* A character in the board's disc (the podium's own markup). */
+function vroomPodiumDisc(avatar){
+  const avw = document.createElement("span");
+  avw.className = "rank-avatar-wrap lw-podium-avwrap";
+  const av = document.createElement("span");
+  av.className = "rank-avatar";
+  try{ av.style.setProperty("--char-glow", avatarGlowColor(avatar || "ghost")); }catch(e){}
+  av.appendChild(buildAvatarCharSVGSafe(avatar || "ghost"));
+  avw.appendChild(av);
+  setCharState(avw, "live");
+  return avw;
+}
+function vroomPodiumStep(place){
+  const step = document.createElement("span");
+  step.className = "lw-podium-block";
+  const pl = document.createElement("span");
+  pl.className = "rank-place";
+  renderRankMarker(pl, place);
+  step.appendChild(pl);
+  return step;
+}
+function vroomPodiumCard(kicker){
+  const card = document.createElement("div");
+  card.className = "rs-card vr-podium";
+  const k = document.createElement("p");
+  k.className = "rs-kicker"; k.textContent = kicker;
+  card.appendChild(k);
+  return card;
+}
+
+/* THE RACE'S PODIUM: 2nd, 1st and 3rd on their steps (the page has them 1-2-3, the grid sets them 2-1-3), everybody else in a
+   list under them, each with the XP the room ranked them by plus their place's. Ranked by vroomRankedEntries - the cutscene's. */
+function buildVroomRacePodium(data){
+  const ranked = vroomRankedEntries(data);
+  const n = ranked.length;
+  const card = vroomPodiumCard("Final standings");
+  card.classList.add("vr-podium-race");
+  const stage = document.createElement("div");
+  stage.className = "lw-podium-stage";
+  const xpWith = (r, i) => r.xp + vroomPlaceXp(i + 1, n);
+  ranked.slice(0, 3).forEach((r, i) => {
+    const spot = document.createElement("div");
+    spot.className = "lw-podium-spot lw-place-" + (i + 1) + (r.key === vroomMyKey ? " is-me" : "");
+    spot.dataset.key = r.key;
+    const nm = document.createElement("span");
+    nm.className = "lw-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
+    const pts = document.createElement("span");
+    pts.className = "lw-podium-pts"; pts.textContent = xpWith(r, i).toLocaleString() + " XP";
+    spot.append(vroomPodiumDisc(r.p.avatarChar), nm, pts, vroomPodiumStep(i + 1));
+    stage.appendChild(spot);
+  });
+  card.appendChild(stage);
+  if(n > 3){
+    const list = document.createElement("div");
+    list.className = "vr-podium-list";
+    ranked.slice(3).forEach((r, j) => {
+      const i = j + 3;
+      const row = document.createElement("div");
+      row.className = "vr-podium-row" + (r.key === vroomMyKey ? " is-me" : "");
+      row.dataset.key = r.key;
+      const pl = document.createElement("span");
+      pl.className = "vr-podium-place"; pl.textContent = vroomOrdinal(i + 1);
+      const av = document.createElement("span");
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ghost"));
+      const nm = document.createElement("span");
+      nm.className = "vr-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
+      const x = document.createElement("span");
+      x.className = "vr-podium-xp"; x.textContent = xpWith(r, i).toLocaleString() + " XP";
+      row.append(pl, av, nm, x);
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+  }
+  return card;
+}
+
+/* THE TWO SIDES' PODIUM: your side on the left (where the rope and the boards have always put it), the winners on the higher
+   step with the gold, the losers on the lower with the silver, both on the top step in a draw; each side's characters, its name
+   and its total over its step, and its members under it with their own numbers and a star on the best. */
+function buildVroomTeamPodium(d, o){
+  const card = vroomPodiumCard("Final standings");
+  card.classList.add("vr-podium-team");
+  const stage = document.createElement("div");
+  stage.className = "lw-podium-stage vr-podium-sides";
+  const sides = [o.mine || "a", (o.mine || "a") === "a" ? "b" : "a"];
+  const placeOf = side => !o.winner ? 1 : side === o.winner ? 1 : 2;
+  const all = sides.reduce((t, s) => t.concat(o.membersOf(s)), []);
+  const mvp = all.slice().sort((a, b) => o.numOf(b) - o.numOf(a))[0];
+  sides.forEach(side => {
+    const members = o.membersOf(side).sort((a, b) => o.numOf(b) - o.numOf(a));
+    const parts = (d.participants || {});
+    const spot = document.createElement("div");
+    spot.className = "lw-podium-spot vr-side lw-place-" + placeOf(side) + (side === o.mine ? " is-me" : "") + (side === o.winner ? " is-winner" : "");
+    spot.dataset.side = side;
+    const avs = document.createElement("span");
+    avs.className = "vr-side-avs";
+    members.slice(0, 4).forEach(k => avs.appendChild(vroomPodiumDisc((parts[k] || {}).avatarChar)));
+    if(members.length > 4){ const more = document.createElement("span"); more.className = "vr-side-more"; more.textContent = "+" + (members.length - 4); avs.appendChild(more); }
+    const nm = document.createElement("span");
+    nm.className = "lw-podium-name"; nm.textContent = side === o.mine ? "Your side" : "Their side";
+    const pts = document.createElement("span");
+    pts.className = "lw-podium-pts"; pts.textContent = members.reduce((t, k) => t + o.numOf(k), 0).toLocaleString() + " " + o.unit;
+    spot.append(avs, nm, pts, vroomPodiumStep(placeOf(side)));
+    stage.appendChild(spot);
+  });
+  card.appendChild(stage);
+  const cols = document.createElement("div");
+  cols.className = "vr-podium-cols";
+  sides.forEach(side => {
+    const col = document.createElement("div");
+    col.className = "vr-podium-col" + (side === o.mine ? " is-mine" : "");
+    o.membersOf(side).sort((a, b) => o.numOf(b) - o.numOf(a)).forEach(k => {
+      const pp = (d.participants || {})[k] || {};
+      const row = document.createElement("div");
+      row.className = "vr-podium-row" + (k === vroomMyKey ? " is-me" : "");
+      row.dataset.key = k;
+      const av = document.createElement("span");
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
+      const nm = document.createElement("span");
+      nm.className = "vr-podium-name";
+      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : "");
+      const x = document.createElement("span");
+      x.className = "vr-podium-xp"; x.textContent = o.numOf(k).toLocaleString() + (o.short ? " " + o.short : "");
+      row.append(av, nm, x);
+      col.appendChild(row);
+    });
+    cols.appendChild(col);
+  });
+  card.appendChild(cols);
+  return card;
+}
+
+/* The game's own picture of the result, as one card: a kicker, the picture, and one line of what happened. */
+function buildVroomGameCard(kicker, pic, line){
+  const card = document.createElement("div");
+  card.className = "rs-card vr-gamecard";
+  const k = document.createElement("p");
+  k.className = "rs-kicker"; k.textContent = kicker;
+  card.appendChild(k);
+  if(pic) card.appendChild(pic);
+  if(line){
+    const p = document.createElement("p");
+    p.className = "vr-gamecard-line"; p.textContent = line;
+    card.appendChild(p);
+  }
+  return card;
+}
+
+/* The room's chat on a result screen: the one live panel, built out of sight so its listener counts, lifted into a sheet by the
+   chat button beside the dock (mountRoomChatFab). The race's wait does the same. */
+function vroomMountResultChat(host){
+  if(!host) return;
+  if(vroomCode && !host.querySelector(".vroom-chat")){
+    const chatHost = document.createElement("div");
+    chatHost.className = "roomchat-host";
+    chatHost.hidden = true;
+    host.appendChild(chatHost);
+    if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
+    try{ vroomChatUnsubscribe = buildVroomChatPanel(chatHost); }catch(e){}
+  }
+  mountRoomChatFab();
+}
+
+/* TUG OF WAR AND BATTLE END ON THE RESULTS SCREEN. `o`: game, d, mine, winner, right, total, answersXp, placeXp, n, foreign, the
+   podium's numbers (membersOf/numOf/unit/short), the game card (cardKicker, pic, line) and the way on (onLobby). */
+function showVroomTeamResult(o){
+  const d = o.d;
+  const drawn = !o.winner, won = !drawn && o.winner === o.mine;
+  const place = vroomTeamPlace(drawn, won);
+  const total = Math.max(o.total || 0, o.right || 0);
+  const pct = total ? Math.round(o.right / total * 100) : 0;
+  const units = (Array.isArray(d.units) && d.units.length ? d.units : (typeof vroomUnits !== "undefined" && vroomUnits) || []).slice();
+  const unitRow = units.length === 1 ? units[0] : vroomGameName(o.game);
+  const lines = o.foreign ? [] : [
+    { key: "correct", label: "Correct answers", sub: o.right + " × " + o.perRight + " XP", value: o.answersXp },
+    { key: "place", label: vroomPlaceLabel(place, o.n), sub: drawn ? "A draw — everyone places first" : won ? "Your side won" : "Your side lost", value: o.placeXp }
+  ].filter(l => l.key === "place" || l.value > 0);
+  const xpTotal = lines.reduce((s, l) => s + l.value, 0);
+  const badges = badgeCountOf(store);
+  const run = {
+    total: total, good: o.right, pct: pct, missed: [], isPerfect: false, elapsedMs: 0, timedOut: false,
+    order: [], attempts: {}, picked: {}, firstPick: {}, flare: null, flareAll: false, flareCount: mysteryColorsFoundCount(),
+    timedOutSet: {}, mode: "exam", retake: false, practice: false, vroom: true, vroomGame: o.game, vroomFinal: true,
+    source: null, units: units, unitsSat: units,
+    byUnit: total ? { [unitRow]: { total: total, wrong: total - o.right } } : null,
+    xpLines: lines, xpTotal: xpTotal, pointsAfter: store.lifetime.points,
+    badgesBefore: badges, badgesAfter: badges, hundosEarned: 0, leveledUpTo: null, newBest: false,
+    progUnits: [], perfectsBefore: Object.assign({}, store.unitPerfects || {}),
+    badges: [], retroBadges: [], colors: [], characters: [], banners: [], fx: [], supernova: false,
+    visiting: o.foreign ? visitingRoomNote() : null
+  };
+  const podium = buildVroomTeamPodium(d, o);
+  const gameCard = buildVroomGameCard(o.cardKicker, o.pic, o.line);
+  showRunRewards(run, {
+    cards: () => [podium, gameCard],
+    finalActions: () => buildVroomFinalActions(o.onLobby, () => { leaveVirtualRoom(); showHome(); }),
+    tour: () => {}
+  });
+  const host = stage.firstElementChild;
+  /* screen-tug-result / screen-battle-result: what the room's listeners test before drawing the result again, and what
+     names a room's screen to the update check and the class bank (ROOM_SCREENS) */
+  if(host){ host.classList.add("vroom-final", "vroom-final-" + o.game, "screen-" + o.game + "-result"); host.dataset.game = o.game; }
+  countEl.textContent = vroomGameName(o.game);
+  vroomMountResultChat(host);
+}
+
+/* A LINE ADDED TO THE XP CARD AFTER IT HAS LANDED - the Race's place, which is only known once everybody is in. The same markup
+   as the card's own lines; the total goes up by it and the level bar carries the extra on from where it stood. */
+function rsAddXpLine(host, l){
+  const xp = host && host.querySelector(".rs-xp");
+  if(!xp || xp.querySelector(".rs-xpline.is-" + l.key)) return false;
+  const row = document.createElement("div");
+  row.className = "rs-xpline is-" + l.key + " is-arriving";
+  const a = document.createElement("span"); a.className = "rs-xpline-label";
+  const lab = document.createElement("span"); lab.className = "rs-xpline-name"; lab.textContent = l.label;
+  a.appendChild(lab);
+  if(l.sub){ const sub = document.createElement("span"); sub.className = "rs-xpline-sub"; sub.textContent = l.sub; a.appendChild(sub); }
+  const b = document.createElement("span"); b.className = "rs-xpline-val"; b.textContent = "+" + (Number(l.value) || 0).toLocaleString();
+  row.append(a, b);
+  let totalRow = xp.querySelector(".rs-xptotal");
+  const level = xp.querySelector(".results-level");
+  const none = xp.querySelector(".rs-xpline-none");
+  if(none) none.remove();
+  /* the place goes beside the answers, above the bonuses' heading - it is what the match earned, not a bonus */
+  const bonusKick = l.key === "place" ? xp.querySelector(".rs-xpkick") : null;
+  xp.insertBefore(row, bonusKick || totalRow || level || null);
+  const was = totalRow ? (Number((totalRow.querySelector(".rs-xptotal-num") || {}).textContent.replace(/[^\d]/g, "")) || 0) : 0;
+  const now = was + (Number(l.value) || 0);
+  if(!totalRow){
+    totalRow = document.createElement("div");
+    totalRow.className = "rs-xptotal";
+    totalRow.innerHTML = '<span class="rs-xptotal-label">Total</span><span class="rs-xptotal-val"><span class="rs-xptotal-num"></span><span class="rs-xptotal-unit">XP</span></span>';
+    xp.insertBefore(totalRow, level || null);
+  }
+  totalRow.querySelector(".rs-xptotal-num").textContent = "+" + now.toLocaleString();
+  if(level && l.value > 0){
+    try{
+      const b2 = badgeCountOf(store);
+      const nb = buildResultsLevelBlock(l.value, store.lifetime.points, { me: level.classList.contains("has-me"), rankBefore: rankUpShownRank(), badgesBefore: b2, badgesAfter: b2 });
+      nb.className = level.className;
+      const g = nb.querySelector(".results-level-gain");
+      if(g) g.textContent = "+" + now.toLocaleString() + " XP";
+      level.replaceWith(nb);
+      requestAnimationFrame(() => { if(nb.runFill) nb.runFill(); });
+    }catch(e){}
+  }
+  return true;
+}
+
+/* THE RACE, FINISHED: the cutscene's Continue lands here, on the run's own results - the wait card comes off, the place goes into
+   the XP card as its own line, the podium goes up under it, and Back to lobby / Main menu arrive at the foot. On a screen that
+   is not the run's results (back in from elsewhere: the wait's own score card), the same three go onto that. */
+function vroomRaceFinalize(){
+  vroomAwaitingOthers = false;
+  document.getElementById("vroom-prep")?.remove();
+  const data = lastFinaleData || {};
+  const host = stage.firstElementChild;
+  if(!host || !host.dataset || host.dataset.screen !== "results" || !vroomCode){ vroomReturnToLobby(); return; }
+  host.classList.add("vroom-final", "vroom-final-race");
+  host.dataset.game = "race";
+  /* the race line is long down by now; it stays down on the match's last screen */
+  raceBarEl.hidden = true;
+  stopVroomRaceListener();
+  const wait = host.querySelector(".vroom-waitcard");
+  const mine = vroomRacePlaces(data)[vroomMyKey];
+  const paid = vroomRacePlace && vroomRacePlace.id === vroomCode + "@" + (data.startAt || "") ? vroomRacePlace : null;
+  if(mine && !vroomForeign()){
+    const xp = paid ? paid.xp : mine.xp;
+    let xpCard = host.querySelector(".rs-xp");
+    if(!xpCard){
+      /* the wait's own score card has no XP card: the run's lines as one, the same markup as the results' */
+      xpCard = document.createElement("div");
+      xpCard.className = "rs-card rs-xp rs-in-now";
+      const k = document.createElement("p"); k.className = "rs-kicker"; k.textContent = "XP earned"; xpCard.appendChild(k);
+      ((lastRunRoomXp && lastRunRoomXp.lines) || []).forEach(l => rsAddXpLine({ querySelector: s => s === ".rs-xp" ? xpCard : null }, { key: String(l.key || "run"), label: l.label, sub: l.sub, value: Number(l.value) || 0 }));
+      xpCard.querySelectorAll(".is-arriving").forEach(r => r.classList.remove("is-arriving"));
+      const g = host.querySelector(".rs-grade");
+      if(g) g.after(xpCard); else host.insertBefore(xpCard, host.firstChild);
+    }
+    /* what was paid, as it was paid (a racer who resumed after the standings settled can have moved the room since) */
+    rsAddXpLine(host, { key: "place", label: paid ? vroomPlaceLabel(paid.place, paid.n) : vroomPlaceLabel(mine.place, mine.n), sub: "Finishing place", value: xp });
+  }
+  const podium = buildVroomRacePodium(data);
+  podium.classList.add("rs-in-now", "is-arriving");
+  const xpCard = host.querySelector(".rs-xp");
+  if(xpCard) xpCard.after(podium);
+  else if(wait) wait.after(podium);
+  else host.appendChild(podium);
+  if(wait) wait.remove();
+  let slot = host.querySelector(".rs-endslot");
+  if(!slot){ slot = document.createElement("div"); slot.className = "rs-endslot"; host.appendChild(slot); }
+  if(!slot.querySelector(".vroom-final-actions")){
+    const actions = buildVroomFinalActions(() => { vroomStashedResults = null; vroomReturnToLobby(); },
+      () => { vroomStashedResults = null; leaveVirtualRoom(); showHome(); });
+    actions.classList.add("rs-actions");
+    slot.appendChild(actions);
+    rsRise(actions, { delay: 500, follow: false });
+  }
+  vroomMountResultChat(host);
+  /* where the news is: the XP card (with the place now in it) at the top of the screen, the podium under it */
+  const xpNow = host.querySelector(".rs-xp");
+  try{ window.scrollTo({ top: Math.max(0, xpNow ? xpNow.getBoundingClientRect().top + window.scrollY - 96 : 0), behavior: "instant" }); }catch(e){ toTop(); }
+}
+
 function startVroomRaceCutscene(){
   document.getElementById("vroom-prep")?.remove();
   detachVroomListener();
@@ -141676,7 +141897,10 @@ function playVroomRaceCutscene(ranked){
   const board = document.createElement("div");
   board.className = "vrc-board";
   const me = vroomMyKey;
-  const maxXp = Math.max(1, ...ranked.map(r => r.xp));
+  /* (384 r8) EVERYBODY'S PLACE IS WORTH XP (VROOM_PLACE_XP), off this same ranking, and it is counted as the last step */
+  const placeXpOf = r => vroomPlaceXp(ranked.indexOf(r) + 1, ranked.length);
+  const totalOf = r => r.xp + placeXpOf(r);
+  const maxXp = Math.max(1, ...ranked.map(totalOf));
   /* Rows go up in JOIN order and are only re-sorted at the end, so the
      finish is a reveal rather than something you could read off the
      row order from the first frame. */
@@ -141751,17 +141975,20 @@ function playVroomRaceCutscene(ranked){
     return order;
   };
 
+  /* (384 r8) THE WAY ON IS CONTINUE, to the run's own results, which now carry the place, the podium and Back to lobby / Main
+     menu (vroomRaceFinalize) - the match ends on the same screen as every other game's. Main menu stays beside it: the scene
+     has always had a way out of the room (build 246), and somebody done with it should not need a screen to leave from. */
   const exits = document.createElement("div");
   exits.className = "vrc-exits";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next";
-  lobby.textContent = "Return to lobby";
-  lobby.addEventListener("click", () => { overlay.remove(); vroomReturnToLobby(); });
+  const cont = document.createElement("button");
+  cont.type = "button"; cont.className = "next vrc-continue";
+  cont.textContent = "Continue";
+  cont.addEventListener("click", () => { overlay.remove(); vroomRaceFinalize(); });
   const home = document.createElement("button");
   home.type = "button"; home.className = "next ghost";
   home.textContent = "Main menu";
   home.addEventListener("click", () => { overlay.remove(); vroomAwaitingOthers = false; leaveVirtualRoom(); showHome(); });
-  exits.append(lobby, home);
+  exits.append(cont, home);
   overlay.appendChild(exits);
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add("is-in"));
@@ -141774,20 +142001,26 @@ function playVroomRaceCutscene(ranked){
   /* The "Everything else" step is what the others did not count, so it
      is left out of the count - it has no match of its own, and asking it
      for one threw the moment anybody had XP outside the named steps. */
-  const counted = x => steps.reduce((t, s) => s.rest ? t : t + catOf(x.r, s), 0);
+  const counted = x => steps.reduce((t, s) => (s.rest || s.place) ? t : t + catOf(x.r, s), 0);
   if(rows.some(x => x.r.xp - counted(x) > 0)) steps.push({ key: "rest", label: "Everything else", rest: true });
+  /* and the finishing place, last - it never changes the order (a higher place is always worth more), it says what it paid */
+  if(rows.length) steps.push({ key: "place", label: "Finishing place", place: true });
 
   const quiet = resultsMotionOff();
   const STEP_MS = quiet ? 0 : Math.max(1600, Math.min(2600, 14000 / Math.max(1, steps.length)));
   const timers = [];
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
   const countTo = (x, target, dur) => {
+    /* (384 r8) what has been counted moves on at once, not when the count lands: with reduce motion every step fires in the
+       same instant, and each one read 0 as where the last had left it - the board ended on the last step's figure alone */
     const from = x.shown, t0 = Date.now();
-    const iv = setInterval(() => {
+    x.shown = target;
+    if(x.iv) clearInterval(x.iv);
+    const iv = x.iv = setInterval(() => {
       const k = Math.min(1, (Date.now() - t0) / Math.max(1, dur));
       const v = Math.round(from + (target - from) * (1 - Math.pow(1 - k, 3)));
       x.num.textContent = v.toLocaleString();
-      if(k >= 1){ clearInterval(iv); x.shown = target; }
+      if(k >= 1){ clearInterval(iv); if(x.iv === iv) x.iv = null; }
     }, 30);
     x.fill.style.width = Math.round(target / maxXp * 100) + "%";
   };
@@ -141797,7 +142030,7 @@ function playVroomRaceCutscene(ranked){
       step.textContent = s.label;
       step.classList.remove("is-new"); void step.offsetWidth; step.classList.add("is-new");
       rows.forEach(x => {
-        const add = s.rest ? Math.max(0, x.r.xp - counted(x)) : catOf(x.r, s);
+        const add = s.place ? placeXpOf(x.r) : s.rest ? Math.max(0, x.r.xp - counted(x)) : catOf(x.r, s);
         x.gain.textContent = add > 0 ? "+" + add.toLocaleString() : "";
         x.gain.classList.remove("is-on"); void x.gain.offsetWidth;
         if(add > 0) x.gain.classList.add("is-on");
@@ -141819,8 +142052,8 @@ function playVroomRaceCutscene(ranked){
     const sorted = rows.slice().sort((a, b) => ranked.indexOf(a.r) - ranked.indexOf(b.r));
     sorted.forEach(x => board.appendChild(x.row));
     rows.forEach((x, i) => {
-      x.num.textContent = x.r.xp.toLocaleString();
-      x.fill.style.width = Math.round(x.r.xp / maxXp * 100) + "%";
+      x.num.textContent = totalOf(x.r).toLocaleString();
+      x.fill.style.width = Math.round(totalOf(x.r) / maxXp * 100) + "%";
       const dy = before[i] - x.row.getBoundingClientRect().top;
       if(!quiet && dy){
         x.row.style.transition = "none";
@@ -141932,345 +142165,6 @@ function buildRunReviewBlock(){
   });
   wrap.append(reviewToggle, reviewList);
   return wrap;
-}
-
-function showVirtualRoomResults(){
-  /* The waiting is over, so Pause goes back to meaning nothing here
-     and the screen carries its own two exits again. */
-  vroomAwaitingOthers = false;
-  pauseBtn.hidden = true;
-  setActiveNav(null);
-  /* AFTER setActiveNav, which clears this flag on the way into every
-     screen. The bar had no business here - "not sure at all why the
-     bottom tab is visible on any of these results screen. That
-     shouldn't be possible when in a test at all." summarize() already
-     sets this for the ordinary results screen; the Virtual Room's own
-     two end screens never did, so they were the one place it came
-     back. Cleared again by the next setActiveNav, which is how the
-     ordinary one already behaves. */
-  window.forceHideBottomTabs = true;
-  countEl.textContent = "Virtual Room";
-  const panel = document.createElement("section");
-  panel.className = "panel vroom-results-panel";
-
-  /* Can't leave until everyone's actually finished, per explicit
-     request \u2014 a real gate (the button itself is hidden, not just
-     discouraged), not a courtesy message someone could tap past.
-     Reassigned live inside renderResults below, once actual data is
-     in, rather than fixed at construction time. */
-  /* The two exits are ONE row at the foot of the screen, matched in
-     size and centred - "the back to lobby button and back to home
-     button need to be centered and the same size.. also remove the
-     back arrow from back to home". buildBackLink draws the arrow, so
-     Back to Home is a plain button now rather than a back link, and
-     the pair is appended last so they read as the way out rather than
-     as a header. */
-  const exitRow = document.createElement("div");
-  exitRow.className = "vroom-exit-row";
-  const backLink = document.createElement("button");
-  backLink.type = "button"; backLink.className = "next ghost vroom-exit-btn";
-  backLink.textContent = "Back to Home";
-  backLink.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
-
-  /* Returns to the SAME lobby (same code, same other participants),
-     per explicit request \u2014 gated by the same everyoneDone check as
-     "Back to Home" below, so it only ever appears once there's
-     actually a real results screen to leave. Resets this person's
-     own round-specific fields so the lobby shows them fresh, not
-     still carrying last round's finished score; the host additionally
-     resets the shared status back to "waiting" so a genuine new round
-     can actually be started (ready-up and all), not just a lobby
-     screen that looks right but is still stuck on "started". */
-  const backToLobbyBtn = document.createElement("button");
-  backToLobbyBtn.type = "button"; backToLobbyBtn.className = "next ghost vroom-exit-btn";
-  backToLobbyBtn.textContent = "Back to lobby";
-  backToLobbyBtn.addEventListener("click", () => {
-    const resetFields = {
-      ["participants." + vroomMyKey + ".progress"]: 0,
-      ["participants." + vroomMyKey + ".finished"]: false,
-      ["participants." + vroomMyKey + ".score"]: null,
-      ["participants." + vroomMyKey + ".elapsedMs"]: null,
-      ["participants." + vroomMyKey + ".revealDone"]: false,
-      ["participants." + vroomMyKey + ".ready"]: false
-    };
-    vroomBackPatch(resetFields);
-    if(vroomIsHost) resetFields.status = "waiting";
-    vroomDb().collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
-      detachVroomListener();
-      showVirtualRoomLobby();
-    });
-  });
-  exitRow.append(backToLobbyBtn, backLink);
-
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title"; title.textContent = "Results";
-  panel.appendChild(title);
-
-  const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.textAlign = "center";
-  sub.textContent = "Ranked by total score.";
-  panel.appendChild(sub);
-
-  /* Nobody's placing is shown until everybody is in. Ranking people
-     live as they finish gives the result away to whoever finishes
-     first and takes it away from whoever finishes last, which is the
-     opposite of what a race ending should feel like - so while the
-     room is still working this is a roll call in join order, and the
-     standings arrive all at once when the last person lands. */
-  let revealed = false;
-
-  /* YOUR OWN card, and only yours. The total is the number people are
-     ranked by, so it has to show its working - "make sure your score you
-     get after the virtual room is broken down so you see how the score
-     came about". Everybody else's stays sealed until the board goes up,
-     which is the whole point of the wait. */
-  const mineCard = document.createElement("div");
-  mineCard.className = "vroom-mine";
-  mineCard.hidden = true;
-  panel.appendChild(mineCard);
-
-  function renderMine(p){
-    if(!p || !p.finished){ mineCard.hidden = true; return; }
-    mineCard.hidden = false;
-    mineCard.replaceChildren();
-    const head = document.createElement("p");
-    head.className = "vroom-mine-head"; head.textContent = "Your score";
-    const pct = p.score || 0;
-    const secs = Math.round((p.elapsedMs || 0) / 1000);
-    const fromScore = Math.round(pct * 100);
-    const total = p.totalScore != null ? p.totalScore : (fromScore - secs);
-    const rows = document.createElement("div");
-    rows.className = "vroom-mine-rows";
-    /* Each line says what it is, what it was, and what it contributed -
-       the middle column is the raw fact and the right column is the
-       arithmetic, so the total underneath is obviously the sum. */
-    [["Accuracy", pct + "%", "+" + fromScore.toLocaleString()],
-     ["Time", formatClock(p.elapsedMs || 0), "\u2212" + secs.toLocaleString()]
-    ].forEach(function(parts){
-      const r = document.createElement("div");
-      r.className = "vroom-mine-row";
-      const a = document.createElement("span"); a.className = "vroom-mine-label"; a.textContent = parts[0];
-      const b = document.createElement("span"); b.className = "vroom-mine-raw"; b.textContent = parts[1];
-      const c = document.createElement("span"); c.className = "vroom-mine-delta"; c.textContent = parts[2];
-      r.append(a, b, c); rows.appendChild(r);
-    });
-    const totalRow = document.createElement("div");
-    totalRow.className = "vroom-mine-row is-total";
-    const tl = document.createElement("span");
-    tl.className = "vroom-mine-label"; tl.textContent = "Total";
-    const tr = document.createElement("span");
-    tr.className = "vroom-mine-total"; tr.textContent = total.toLocaleString() + " pts";
-    totalRow.append(tl, tr);
-    rows.appendChild(totalRow);
-    const note = document.createElement("p");
-    note.className = "vroom-mine-note";
-    note.textContent = "Every point of accuracy is worth 100. Each second costs 1.";
-    mineCard.append(head, rows, note);
-  }
-
-  /* The same XP-and-level block every other mode's results screen
-     shows - "ensure the test screen ... has the xp screen like the
-     other tests have so you can see how much xp you get". A Virtual
-     Room run already goes through summarize() for its side effects
-     (points, hundos, badges) and then has its screen replaced by this
-     one, so the XP was genuinely awarded and simply never shown. The
-     numbers come from that run rather than being recomputed, so the
-     two screens cannot disagree. */
-  let vroomResultsAt = performance.now(), vroomExitRiseOwed = false;
-  const vroomLevelBlock = buildResultsLevelBlock(lastRunXpEarned, lastRunPointsAfter,
-    { badgesBefore: lastRunBadgesBefore, badgesAfter: lastRunBadgesAfter });
-  panel.appendChild(vroomLevelBlock);
-
-  const list = document.createElement("div");
-  list.className = "cal-list";
-  panel.appendChild(list);
-
-  const waitNote = document.createElement("p");
-  waitNote.className = "info-note"; waitNote.style.marginTop = "1rem";
-  panel.appendChild(waitNote);
-
-  function renderResults(data){
-    /* Object.entries now, not Object.values \u2014 the actual fix for a
-       real, separate bug found while working on this: "is this row
-       me" was comparing by display name, so two participants sharing
-       a first name would both light up as "me" (or neither would, if
-       this person's own name happened to not match itself for some
-       reason). Keying off vroomMyKey, the actual unique identifier,
-       is what the leaderboard and lobby already correctly use
-       elsewhere. */
-    const entries = Object.entries(vroomRacersOf(data));
-    renderMine((data.participants || {})[vroomMyKey]);
-    /* Ranked by totalScore now \u2014 the combined score+time number the
-       finale reveal just showed everyone, per explicit request
-       ("that's how you'd be ranked"), not the separate score-then-time
-       comparison this used before that number existed. Falls back to
-       the old comparison only for a participant somehow missing
-       totalScore (shouldn't happen going forward, but harmless to
-       guard against). */
-    const totalNow = entries.length;
-    const doneNow = entries.filter(([, p]) => p.finished).length;
-    const allIn = totalNow > 0 && doneNow === totalNow;
-    /* FIRST, before any early return below. This used to sit at the end
-       of this function, past a `return` that fires on every snapshot
-       after the reveal - so a results screen that was rebuilt or
-       re-entered with the standings already up kept the race line on
-       screen, reported as "I can see the race line on that screen for
-       some reason even though the results are out". While people are
-       still working the line stays, which is the other half of the same
-       report: you should be able to see them on it. */
-    raceBarEl.hidden = allIn;
-    if(allIn) stopVroomRaceListener();
-
-    if(allIn){
-      entries.sort(([, a], [, b]) => {
-        const at = a.totalScore != null ? a.totalScore : Math.round((a.score || 0) * 100) - Math.round((a.elapsedMs || 0) / 1000);
-        const bt = b.totalScore != null ? b.totalScore : Math.round((b.score || 0) * 100) - Math.round((b.elapsedMs || 0) / 1000);
-        return bt - at;
-      });
-    } else {
-      /* Join order while waiting, which is the one ordering that says
-         nothing about who is winning. */
-      entries.sort(([, a], [, b]) => (a.joinedAt || 0) - (b.joinedAt || 0));
-    }
-
-    /* Only rebuild once the answer changes, so the rows are not being
-       torn down and rebuilt under somebody every time a progress tick
-       arrives - and so the reveal animation runs once rather than on
-       every snapshot after it. */
-    const alreadyRevealed = revealed;
-    if(allIn) revealed = true;
-    /* The match counts once, at the reveal: matches for the Arena
-       banner, first places for the Champion. Keyed by room code inside,
-       so a rebuilt screen does not count it again. */
-    if(allIn && !alreadyRevealed){
-      try{ recordVroomOutcome(vroomCode, entries.map(([k]) => k), vroomMyKey, data.startAt); }catch(e){}
-    }
-    if(alreadyRevealed && allIn) return;
-
-    list.replaceChildren();
-    entries.forEach(([key, p], i) => {
-      const row = document.createElement("div");
-      row.className = "lb-row" + (key === vroomMyKey ? " lb-row-me" : "");
-      if(allIn){
-        /* Last place first, the winner last. The stagger is small - this
-           is a beat of suspense, not a cutscene - and it is index-based
-           rather than a chain of timers so a row cannot be left behind
-           if the screen changes mid-reveal. */
-        row.classList.add("vroom-result-reveal");
-        row.style.animationDelay = ((entries.length - 1 - i) * 260) + "ms";
-      }
-      const rank = document.createElement("span");
-      rank.className = "lb-rank";
-      /* Under four people only the winner is placed (VROOM_PODIUM_MIN). */
-      if(allIn && i < vroomPlaces(entries.length)){ renderRankMarker(rank, i + 1); }
-      else if(allIn){ rank.classList.add("is-unplaced"); rank.textContent = "\u00b7"; }
-      else { rank.classList.add("is-pending"); rank.textContent = p.finished ? "\u2713" : "\u00b7"; }
-      /* THE SAME TREATMENT AS THE LOBBY, because it is the same moment
-         at the other end: "while in a lobby or after a match in the
-         results, that's where the character will stand out". Bigger,
-         with the glow, and the row opens the person's card. */
-      const avatarWrap = document.createElement("span");
-      avatarWrap.className = "lb-avatar vroom-avatar has-glow";
-      avatarWrap.style.setProperty("--char-glow",
-        avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
-      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" }));
-      decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
-      setCharState(avatarWrap, "live");
-      /* Your own row too, with the whole entry - see the lobby's (build 323). */
-      {
-        row.classList.add("vroom-row", "is-tappable");
-        row.setAttribute("role", "button");
-        row.tabIndex = 0;
-        const openCard = () => openPersonSheet(vroomPersonEntry(key, p));
-        row.addEventListener("click", openCard);
-        row.addEventListener("keydown", e => {
-          if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openCard(); }
-        });
-      }
-      const nameWrap = document.createElement("span");
-      nameWrap.className = "lb-name-wrap";
-      const name = document.createElement("span");
-      name.className = "lb-name"; name.textContent = p.name;
-      /* Rank and level under the name here too, so a classmate reads
-         the same on both Virtual Room screens. It goes ABOVE the score
-         line rather than replacing it - the score is what this screen
-         is for. */
-      const who = document.createElement("span");
-      who.className = "vroom-row-sub";
-      const rkR = rankOfStats(p.level || 0, p.badges || 0, p.mystery || 0);
-      if(rkR){
-        const rEl = document.createElement("span");
-        rEl.className = "vroom-row-rank";
-        rEl.textContent = RANK_DISPLAY_NAME[rkR];
-        rEl.style.color = RANK_COLOR[rkR];
-        who.append(rEl, document.createTextNode(" \u00b7 "));
-      }
-      const lEl = document.createElement("span");
-      lEl.textContent = "Level " + (p.level || 1);
-      who.appendChild(lEl);
-      const stats = document.createElement("span");
-      stats.className = "lb-stats";
-      /* A finished person's SCORE is part of the answer, so it waits too.
-         "Finished" is all anybody needs to know until the last person is
-         in; otherwise the first three scores tell you the result before
-         the fourth person has put their phone down. */
-      stats.textContent = allIn
-        ? ((p.score || 0) + "% \u00b7 " + formatClock(p.elapsedMs || 0) + " \u00b7 " + (p.totalScore != null ? p.totalScore : "\u2014") + " pts")
-        : (p.finished ? "Finished" : "Still working\u2026");
-      nameWrap.append(name, who, stats);
-      row.append(rank, avatarWrap, nameWrap);
-      list.appendChild(row);
-    });
-
-    const everyoneDone = allIn;
-    const exitsWereHidden = backLink.hidden;
-    backLink.hidden = !everyoneDone;
-    backToLobbyBtn.hidden = !everyoneDone;
-    /* the way out rises the moment it is there, after the level bar has
-       filled (build 325) */
-    if(exitsWereHidden && everyoneDone){
-      if(!exitRow.isConnected) vroomExitRiseOwed = true;
-      else rsRise(exitRow, { delay: Math.max(0, (vroomLevelBlock.fillMs || 0) - (performance.now() - vroomResultsAt)), follow: false });
-    }
-    waitNote.hidden = everyoneDone;
-    waitNote.textContent = "Waiting for everyone to finish (" + doneNow + " of " + totalNow + ")\u2014 "
-      + "the standings go up when the last person is in.";
-    sub.textContent = everyoneDone ? "Ranked by total score." : "Nobody\u2019s place is final yet.";
-  }
-
-  vroomDb().collection("vrooms").doc(vroomCode).get().then(docSnap => {
-    if(docSnap.exists){ announceVroomLeave(docSnap.data()); renderResults(docSnap.data()); }
-  });
-  detachVroomListener();
-  vroomUnsubscribe = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), docSnap => {
-    if(docSnap.exists){ announceVroomLeave(docSnap.data()); renderResults(docSnap.data()); }
-  });
-
-  if(vroomChatUnsubscribe) vroomChatUnsubscribe();
-
-  /* A genuine review of this person's own missed questions, per
-     explicit request ("results will have a review but no option to
-     retake") \u2014 the leaderboard above answers "how did everyone do,"
-     but this is what actually answers "what did I get wrong," which a
-     ranking alone never covers. Recomputed from the same global
-     order/picked state the just-finished run already left behind
-     (Virtual Room always runs as exam mode under the hood), the exact
-     same missed-question logic the normal exam results screen uses \u2014
-     just no retake button anywhere near it, per that same request. */
-  const reviewBlock = buildRunReviewBlock();
-  if(reviewBlock) panel.appendChild(reviewBlock);
-
-  /* The way out goes last, under everything it is the way out OF. */
-  panel.appendChild(exitRow);
-
-  vroomChatUnsubscribe = buildVroomChatPanel(panel);
-
-  stage.replaceChildren(panel);
-  toTop();
-  vroomResultsAt = performance.now();
-  if(vroomExitRiseOwed){ vroomExitRiseOwed = false; rsRise(exitRow, { delay: vroomLevelBlock.fillMs || 0, follow: false }); }
-  if(vroomLevelBlock.runFill) vroomLevelBlock.runFill();
-  mountRoomChatFab();
 }
 
 /* ---- THE ROOM'S CHAT FROM THE RESULTS AND THE LEADERBOARD (build 240) ----
