@@ -38738,6 +38738,14 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{ font-size:.78rem !important; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pcount{ font-size:.84rem !important; }
   }
+  /* ---- THE UNITS SCREENS' LINE UNDER THE TITLE (384 r8) ----
+     One centred line (.cal-sub) where the Virtual Room's grey "UNITS" caption was, and the same line on the ordinary
+     picker; the Virtual Room's search row then has 1rem of air above the grid, as Choose your mode's controls do. */
+  html[data-theme][data-layout] body #stage :is(.screen-vroom-setup > .vroom-setup-sub, .screen-setup > .setup-sub){
+    text-align:center; margin:-.3rem auto 1rem; max-width:28rem; font-size:.88rem; line-height:1.35; color:var(--soft); text-wrap:balance;
+  }
+  html[data-theme][data-layout] body #stage .screen-setup > .setup-sub{ margin-bottom:.75rem; }
+  html[data-theme][data-layout] body #stage .screen-vroom-setup .setup-tools{ margin-bottom:1rem !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -112132,6 +112140,13 @@ function showSetup(){
     h.className = "settings-nav-title setup-nav-title"; h.textContent = "Choose your units";
     nav.append(back, h);
     panel.appendChild(nav);
+    /* (384 r8) the same plain line under the title as the Virtual Room's units screen, in this mode's words */
+    const sub = document.createElement("p");
+    sub.className = "cal-sub setup-sub";
+    const SUBS = { drill: "Choose the units for this drill.", exam: "Choose the units for this mock test.",
+      game: "Choose the units for this game.", review: "Choose the units to review." };
+    sub.textContent = SUBS[cfg.mode] || "Choose the units for this test.";
+    panel.appendChild(sub);
   }
 
   /* THE RESULTS SCREEN'S MODE CHIP, not a grey pill of its own (build
@@ -134070,11 +134085,18 @@ function showVirtualRoomSetup(editRoom){
     ? buildBackLink("Back to lobby", () => showVirtualRoomLobby())
     : buildBackLink("Back", showVirtualRoomChoice)));
 
+  /* (384 r8) A LINE THAT SAYS WHAT THE SCREEN IS FOR, NOT A CAPTION THAT REPEATS ITS TITLE. Madison, the band under the
+     title circled: "Bad spacing where I circled.. should it say select your units for your virtual room match or something
+     there?" A grey "UNITS" sat between "Pick the units" and the search row, and the first cards butted up against the
+     search. One centred line in its place (Fire Code's own wording pass makes it "chapters"), and the search row has
+     clear air under it before the grid (.vroom-setup-sub / .setup-tools, the r8 block at the end of the CSS). */
+  const setupSub = document.createElement("p");
+  setupSub.className = "cal-sub vroom-setup-sub";
+  setupSub.textContent = editing ? "Change the units for this room's match." : "Choose the units for this room's match.";
+  panel.appendChild(setupSub);
+
   const unitSect = document.createElement("div");
   unitSect.className = "sect";
-  const unitsLabel = document.createElement("p");
-  unitsLabel.className = "slab"; unitsLabel.textContent = "Units";
-  unitSect.appendChild(unitsLabel);
 
   /* Brought in line with the main unit-selection screen's own card
      system per explicit request \u2014 this used to be a plain checkbox
