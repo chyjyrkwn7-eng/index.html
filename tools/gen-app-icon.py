@@ -67,7 +67,12 @@ BRAND = ["#FFD37A", "#F5804D", "#C23B7A"]
 # consistent +2 blue tint that made the grey read cool against Claude's
 # neutral. #323232 -> #141414 is what reproduces Claude's own measured curve
 # once rendered; see tools/ calibration note in CLAUDE.md.
-GREY_TOP, GREY_BOTTOM = "#323232", "#141414"
+# (384 r13) RECALIBRATED FOR iOS 26's NEW DARK MODE. Madison, a Home Screen photo: "They updated the Apple dark mode, it's a
+# different dark mode now. Update that." Sampled at the same fractions (.1/.25/.5/.75/.9 down the tile, clear of the glyphs)
+# Claude, Canvas and Authenticator now all read 31 / 28 / 23 / 18 / 16 - neutral, about 15 levels darker at the top than the
+# old dark icons and 7 at the bottom - while Nova read 46 / 42 / 34 / 27 / 23. #212121 -> #0E0E0E puts Nova's rendered curve
+# on theirs (31.0 at .1, 16.0 at .9); still R=G=B. The previous calibration (Claude at #2E2E2E -> #171718) is above.
+GREY_TOP, GREY_BOTTOM = "#212121", "#0E0E0E"
 
 VARIANTS = {
     "brand":      (GREY_TOP, GREY_BOTTOM, BRAND, None),
