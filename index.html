@@ -38894,6 +38894,17 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{ font-size:.78rem !important; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pcount{ font-size:.84rem !important; }
   }
+  /* (384 r17) THE TITLE STAYS IN THE TOP LEFT. Madison, on the chapter picker: "The words should still be in the top left. If it is the
+     next test then it would be moved down." Round 8 reserved the status strip on EVERY card so no title moved for carrying the mark, which
+     left every title ~40px down from the corner. Now only a card that carries the next-test mark has the strip (the title is under it); any
+     other card has no strip and its title sits in the corner at the card's own top padding, as it did before round 8. */
+  html[data-theme][data-layout] body #stage .picks > label.pick:not(:has(> .pick-nexttest)){ --uc-strip:0px; }
+  html[data-theme][data-layout] body #stage .picks > label.pick:not(:has(> .pick-nexttest)) > .pname{ margin-top:0 !important; }
+  html[data-theme][data-layout] body #stage .picks > label.pick:not(:has(> .pick-nexttest)) > .box{ top:calc(var(--uc-pt) + .2rem) !important; }
+  /* the picked dot now sits on the title's own line at the right, so the title keeps clear of it */
+  html[data-theme][data-layout] body #stage .picks > label.pick:not(:has(> .pick-nexttest)) > .pname::before{
+    display:block !important; content:""; float:right; width:calc(var(--uc-dot) + .45rem); height:1.2em;   /* one line high: only the first line gives way */
+  }
   /* ---- THE UNITS SCREENS' LINE UNDER THE TITLE (384 r8) ----
      One centred line (.cal-sub) where the Virtual Room's grey "UNITS" caption was, and the same line on the ordinary
      picker; the Virtual Room's search row then has 1rem of air above the grid, as Choose your mode's controls do. */

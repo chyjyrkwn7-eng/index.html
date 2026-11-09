@@ -12,8 +12,8 @@ Virtual Room's units screen (and the ordinary picker on the academy), with a fix
 test and every card picked (Select all) for the selected-state legs. Everything is read off the page.
  (1) TITLE FIT: every title inside its card (no sideways overflow, clear of the count), no word broken across two lines
      (a Range over each word has one line), and room round it: at least 14px in from the card's left and top edges;
- (2) SAME LAYOUT WITH OR WITHOUT A TAG: in each row a tagged card's title top is the untagged cards' (1px), and nothing but
-     the title lies between the strip and the count - the tag is never wedged under the title;
+ (2) (384 r17, Madison: "The words should still be in the top left. If it is the next test then it would be moved down.") an
+     untagged card's title is in the top-left corner; a tagged card's title is moved down under its tag; the tag is never wedged under the title;
  (3) TAG PLACEMENT: every tag on the screen at the same offset in its card (1px) and on one line;
  (4) COUNT ALIGNMENT: every count in a row on one baseline (1px), flush with the title's left edge (the chosen alignment:
      the badge holds the bottom-right, so the count holds the bottom-left);
@@ -141,8 +141,15 @@ def card_legs(lab, m, errs):
         if c["broken"]: bad.append((c["name"][:30], "word broken", c["broken"]))
         if t["l"] - cr["l"] < 14 - 0.5 or t["t"] - cr["t"] < 14 - 0.5: bad.append((c["name"][:30], "inset", round(t["l"] - cr["l"], 1), round(t["t"] - cr["t"], 1)))
     chk("(1) %s: every title fits its card, breaks no word, and sits >=14px in from the left and top (%d cards)" % (lab, len(cards)), not bad, bad[:4])
-    # (2)
+    # (2) (384 r17: Madison, "The words should still be in the top left. If it is the next test then it would be moved down.")
+    #     an UNTAGGED card's title is in the top-left corner (its top inset is the card's own padding, <= 22px, the same on every
+    #     untagged card of the row); a TAGGED card's title is moved DOWN by the tag's line, and the tag is never wedged between
+    #     the title and the count.
     bad = []; mixed = 0
+    plain_all = [c for c in cards if not c["tag"]]
+    if plain_all:
+        insets = [c["title"]["t"] - c["card"]["t"] for c in plain_all]
+        if max(insets) > 22 or max(insets) - min(insets) > 1: bad.append(("untagged title inset", round(min(insets), 1), round(max(insets), 1)))
     for row in rows(cards):
         tagged = [c for c in row if c["tag"]]; plain = [c for c in row if not c["tag"]]
         if tagged and plain:
@@ -150,10 +157,10 @@ def card_legs(lab, m, errs):
             ref = plain[0]["title"]["t"] - plain[0]["card"]["t"]
             for c in tagged:
                 d = c["title"]["t"] - c["card"]["t"]
-                if abs(d - ref) > 1: bad.append((c["name"][:24], "title top", round(d, 1), round(ref, 1)))
+                if d < ref + 8: bad.append((c["name"][:24], "tagged title not moved down", round(d, 1), round(ref, 1)))
         for c in tagged:
             if c["tag"]["b"] > c["title"]["t"] + 0.5 and c["tag"]["t"] < c["count"]["t"]: bad.append((c["name"][:24], "tag between title and count", round(c["tag"]["t"] - c["card"]["t"]), round(c["title"]["b"] - c["card"]["t"])))
-    chk("(2) %s: a tagged card's title is where an untagged one's is, and nothing but the title lies above the count (%d mixed rows)" % (lab, mixed), mixed > 0 and not bad, bad[:4] or "no mixed row")
+    chk("(2) %s: an untagged card's title is in the top-left corner, a tagged card's is moved down under its tag (%d mixed rows)" % (lab, mixed), mixed > 0 and not bad, bad[:4] or "no mixed row")
     # (3)
     tags = [c for c in cards if c["tag"]]
     offs = [(round(c["tag"]["l"] - c["card"]["l"], 1), round(c["tag"]["t"] - c["card"]["t"], 1)) for c in tags]
