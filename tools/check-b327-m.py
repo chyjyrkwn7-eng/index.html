@@ -168,7 +168,7 @@ def m2(br):
 
 
 def m3(br):
-    print("\nm3. the level-wall note is a box on the card when it applies")
+    print("\nm3. (384 r9) the level-wall note is never on What's new")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       const U = topicsIn(QUESTIONS); store.unitPerfects = {}; store.levelFloor = 0; store.rankFloor = 0; store.levelWallRule = 325;
@@ -182,8 +182,9 @@ def m3(br):
       out.free = !!document.querySelector('#intro-pop .intro-gate-note');
       document.getElementById('intro-pop')?.remove();
       return out; }""")
-    check("held at the wall: the note box is on the card; under it: no box",
-          r.get("held") and "badge" in r.get("text", "") and not r.get("free"), r)
+    # (384 r9) the note is gone from What's new for good - Madison: "Why is the 'levels wait for your next rank' in the what's new
+    # stuff? That was in the last update.." - held or not, the card carries no note box
+    check("held at the wall or not: no level-wall note on What's new (384 r9)", not r.get("held") and not r.get("free"), r)
     ctx.close()
 
 

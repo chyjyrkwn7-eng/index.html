@@ -21419,6 +21419,9 @@ def check_b319_levelnote(br):
     next levels unlock then. None of "to keep leveling up", "turns back
     into levels", "rank system". Nobody under the cap gets the note. Fails
     on 8aded7f, whose note opens with "to keep leveling up"."""
+    print("\n[319] the level note on What's new - SUPERSEDED (384 r9): the note is no longer on What's new; check-b327-m m3 holds its absence")
+    return
+
     print("\n319d. the 'Your level was adjusted' note, plainly")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)

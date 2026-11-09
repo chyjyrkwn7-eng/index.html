@@ -5,6 +5,7 @@ iPad Pro 11":
      and the cursor stands just before the hint (4-14px of gap);
  (2) a typed code ("ABC-123") is centred in the field (within 4px);
  (3) nothing scrolls sideways, and no page errors;
+ (5, r9) the hint centred top to bottom by its ink, within 1px;
  (4) with no friends, the card's one line ("Nobody yet...") is centred in it - his next screenshot, the card circled: "This isn't centered".
 Run:  python3 tools/check-b384-friendfield.py   (--against OLD/index.html must FAIL)"""
 import io, os, sys, importlib.util
@@ -49,6 +50,18 @@ with sync_playwright() as pw:
           const card=p.closest('.sect') || p.parentElement, c=card.getBoundingClientRect(); const r=document.createRange(); r.selectNodeContents(p); const t=r.getBoundingClientRect();
           return [t.left - c.left, c.right - t.right]; }""")
         chk("(4) %s: the empty list's line is centred in its card (%s)" % (lab, e and "%.1f / %.1f" % tuple(e)), e and abs(e[0] - e[1]) <= 3, e)
+        # (5) (r9) the hint centred top to bottom by its ink ("a little closer to the top though still")
+        ink = pg.evaluate("""()=>{ const i=document.querySelector('.friend-add-input'); const r=i.getBoundingClientRect(); return {x:r.left,y:r.top,w:r.width,h:r.height}; }""")
+        pg.add_style_tag(content="html body .friend-add-field.friend-add-field:has(> .friend-add-input:placeholder-shown:not(:focus))::before{ opacity:0 !important; animation:none !important; }"); pg.wait_for_timeout(120)
+        png = pg.screenshot(clip={"x": ink["x"] + 30, "y": ink["y"] + 3, "width": ink["w"] - 60, "height": ink["h"] - 6})
+        im = Image.open(io.BytesIO(png)).convert("L"); w2, h2 = im.size; p2 = im.load()
+        bg2 = sorted(p2[x, 2] for x in range(w2))[w2 // 2]
+        rows = [y for y in range(h2) if any(p2[x, y] > bg2 + 45 for x in range(w2))]
+        if rows:
+            above, below = rows[0] / DPR + 3, (h2 - 1 - rows[-1]) / DPR + 3
+            chk("(5) %s: the hint centred top to bottom by its ink (%.1f over / %.1f under)" % (lab, above, below), abs(above - below) <= 1.0, [above, below])
+        else:
+            chk("(5) %s: the hint's ink found" % lab, False)
         pg.click(".friend-add-input"); pg.keyboard.type("ABC123"); pg.wait_for_timeout(200)
         pg.evaluate("()=>{ const i=document.querySelector('.friend-add-input'); i.style.caretColor='transparent'; }")
         pg.wait_for_timeout(100)

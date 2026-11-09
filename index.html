@@ -26320,6 +26320,11 @@
      --ph-w (the hint's measured width, set by showFriends), and the hint moves right by half the cursor's gap so the pair is
      centred together. */
   .friend-sect .friend-add-field > .friend-add-input.friend-add-input{ text-align:center; }
+  /* (384 r9) ...and centred top to bottom by its INK. Madison, again: "Enter a friends code is a little closer to the top though
+     still". A code and this hint have no descenders, so the line box (which leaves room for them) put the letters' cap-to-baseline
+     band ~1.8px above the field's middle (measured: 16px of air over the ink, 19.7 under it). The same 49.9px field, its padding
+     moved 2px from bottom to top. */
+  html[data-theme][data-layout] body #stage .friend-sect .friend-add-field > input.friend-add-input.searchbox{ padding-top:calc(.7rem + 2px) !important; padding-bottom:calc(.7rem - 2px) !important; }
   .friend-add-field > .friend-add-input:placeholder-shown:not(:focus){ text-indent:.55rem; }
   .friend-add-field::before{
     content:""; position:absolute; left:calc(50% - var(--ph-w, 10rem) / 2 - .275rem - 2px); top:50%; width:2px; height:1.15em; margin-top:-.575em; border-radius:1px;
@@ -91756,6 +91761,15 @@ function startTimer(isResume){
      test timer setting, so with a timer on it showed a clock and a
      "Best:" for a one-question, one-attempt run. */
   if(runLabel === "Daily question"){ timerlineEl.hidden = true; tbestEl.hidden = true; return; }
+  /* (384 r9) NO CLOCK ON A RETAKE. Madison: "When doing a retake? Why is there a timer for the retake questions? There shouldn't
+     be?" A retake of missed questions is about getting them right, not a time - it is never a best time, and it took the test
+     timer setting like any run. Same treatment as the daily question: no clock, no "Best". */
+  if(isMissedRetake){
+    timerlineEl.hidden = true; tbestEl.hidden = true;
+    if(timerHandle){ clearInterval(timerHandle); timerHandle = null; }
+    timerDeadline = null;   /* and nothing left over from an earlier run can time it out */
+    return;
+  }
   if(cfg.timer === "off" && !forced){ timerlineEl.hidden = true; return; }
   timerlineEl.hidden = false;
   tmainEl.classList.remove("low");
@@ -109571,7 +109585,10 @@ function whatsNewState(){
   /* "Your level was adjusted" (build 314/319), only for somebody the
      update actually moved down - its facts exactly as levelGateNoteText
      words them, said by him */
-  try{ const ls = levelStateFor(store); if(ls.held && ls.saved > 0) st.note = levelGateNoteText(ls); }catch(e){}
+  /* (384 r9) NOT ANY MORE. Madison: "Why is the 'levels wait for your next rank' in the what's new stuff? That was in the last
+     update.." The note explained the level wall the update that BROUGHT it (314/319); left on, it opened every later update's
+     card too, for anyone the wall still holds - which is most people, all the time. What's new is what is new; the wall
+     explains itself where it lives (the held XP bar, the Rank tab's challenges). st.note stays null. */
   return st;
 }
 /* ---- WHAT'S NEW IS A CARD ON HOME AGAIN (build 327, b327m) ----
