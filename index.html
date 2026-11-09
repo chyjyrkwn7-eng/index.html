@@ -59462,7 +59462,7 @@ var IFC_CHAR_LOOK = {
   marksman:    ["fchazmat",     "Hazmat",         "#C8F03A"],
   astronaut:   ["fcspill",      "Toxic Spill",    "#B266FF"],
   hacker:      ["fcdispatch3",  "Dispatcher",     "#4FB8FF"],   /* (384 r11) "Nvm don't make dispatch a women" - back to fcdispatch3 */
-  timekeeper:  ["fcexit",       "Exit",           "#3CFF8A"],   /* (384 round 16) round 15's option 3, picked and finished */
+  timekeeper:  ["fcopt_exit",   "Exit",           "#3CFF8A"],   /* (384 round 16b) round 15's option 3, shipped as the sheet drew it */
   ronin:       ["fcdrone2",     "Drone Pilot",    "#3DE0C0"],
   hive:        ["fcsprinkler2", "Sprinkler Head", "#4FC3FF"],
   /* (384) the four secret flares are one squad and the three ultimates three rangers - see fcSquad
@@ -59489,7 +59489,7 @@ var IFC_BACKDROP = {
   fcspill:      [["nebula", "#8A3AE0", "#12062A"], ["rise", "ember", ["#D9FF6A", "#D2A8FF"]]],
   fcdispatch2:  [["nebula", "#3DA8FF", "#0A1A3A"], ["stars", "#CFE6FF"]],
   fcdispatch3:  [["nebula", "#3DA8FF", "#0A1A3A"], ["stars", "#CFE6FF"]],
-  fcexit:       [["nebula", "#1E8A4A", "#03120A"], ["city", "#06140C", "#3CFF8A"], ["stars", "#D8FFE6"]],
+  fcopt_exit:   [["nebula", "#1E8A4A", "#03120A"], ["city", "#06140C", "#3CFF8A"], ["stars", "#D8FFE6"]],
   fcdrone2:     [["nebula", "#2AD8B8", "#04181C"], ["stars", "#D8FFF6"]],
   fcsprinkler2: [["nebula", "#2A8CFF", "#06203F"], ["fall", "confetti", ["#CFF2FF", "#7FD4FF", "#FFFFFF"]]],
   fcnebula:     [["nebula", "#B8341E", "#0E0508"], ["stars", "#FFE8D0"], ["rise", "ember", ["#FF6A2E", "#FFD04A"]]],
@@ -60213,71 +60213,50 @@ var IFC_CHAR_DRAW = {
       k.close();
     });
   },
-  /* EXIT (the Timekeeper's place; 384 round 16, r13-chars). Madison picked option 3 of round 15 ("Do exit and comet. Make them look good."):
-     the exit sign come to life, finished as a premium lit object. A white steel housing with a real bevel - rim light along its top and left
-     edges, shade down the right and under the base, a screw in each corner, the face recessed into it - hung on two linked chains from a ceiling
-     plate. EXIT across the top plate in crisp letters with a glow round them. The face is the lit green panel: cool, sly eyes under flat lids
-     glancing to the side and one brow cocked, a one-sided LED smirk. On its chest the standard pictogram, white on green - the running man,
-     the door, the arrow - and the green of its light spilling round it. */
-  fcexit(k){
-    const F = fcF, G = "#3CFF8A", GL = "#B8FFD2", GD = "#063A1A";
+  /* (384 round 16b, r14-exit) Madison: "I like the before option of the exit sign" - the drawing exactly as round 15's options sheet showed it
+     (option 3, 7be2f35), in place of round 16's polished one. */
+  /* OPTION timekeeper 3 (round 15) - EXIT: the exit sign come to life. A boxy sign hung on its two chains, EXIT lit across its top plate, its
+     face the glowing green panel - two narrowed white eyes with mean brows and a sly LED grin - the little running man on the badge at its chest,
+     the arrow, the green spill of its own light on everything round it. */
+  fcopt_exit(k){
+    const G = "#3CFF8A", GD = "#0C7A3A";
     k.open("cx-body");
     k.add("path", { d: "M5 40 Q5.6 31.2 13 29.4 L27 29.4 Q34.4 31.2 35 40 Z", fill: k.headGrad("#4A5258", "#262C30", "#0A0E10") });
-    k.add("path", { d: "M6.5 35.4 Q7.5 31.6 12.6 30.2 M33.5 35.4 Q32.5 31.6 27.4 30.2", fill: "none", stroke: G, "stroke-width": ".45", opacity: ".6", "stroke-linecap": "round" });
-    /* the conduit up into the base */
-    k.add("path", { d: "M16.6 29.4 L23.4 29.4 L22.8 31.4 Q20 32.2 17.2 31.4 Z", fill: k.headGrad("#6A707C", "#30343C", "#0E1014") });
-    /* the pictogram: white on a lit green plate, with its own bevel */
-    k.add("rect", { x: 14.4, y: 32.4, width: 11.2, height: 5.6, rx: .7, fill: "#0A2A16" });
-    k.add("rect", { x: 14.8, y: 32.8, width: 10.4, height: 4.8, rx: .5, fill: fcLin(k, [["0", "#2EE07A"], ["1", "#0E8A44"]]) });
-    k.add("path", { d: "M15.2 33.1 h9.6", stroke: "#C8FFE0", "stroke-width": ".2", opacity: ".7" });
-    /* the door */
-    k.add("path", { d: "M15.8 37.2 L15.8 33.6 L18 33.6 L18 37.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", "stroke-linejoin": "round" });
-    /* the running man: head, a leaning body, arms and legs in stride */
-    k.add("circle", { cx: 20.1, cy: 33.7, r: .5, fill: "#FFFFFF" });
-    k.add("path", { d: "M19.9 34.3 L19.3 35.6 M19.3 35.6 L18.4 36.4 L18.5 37.1 M19.3 35.6 L20.3 36.3 L20.6 37.2 M19.8 34.6 L20.9 35.3 M19.8 34.6 L18.7 34.9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".42", "stroke-linecap": "round", "stroke-linejoin": "round" });
-    /* the arrow */
-    k.add("path", { d: "M21.6 35.2 L24.4 35.2 M23.3 34.1 L24.5 35.2 L23.3 36.3", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", "stroke-linecap": "round", "stroke-linejoin": "round" });
+    k.add("path", { d: "M6.5 35.4 Q7.5 31.6 12.6 30.2 M33.5 35.4 Q32.5 31.6 27.4 30.2", fill: "none", stroke: G, "stroke-width": ".45", opacity: ".55", "stroke-linecap": "round" });
+    /* the running-man badge and the arrow */
+    k.add("rect", { x: 15.6, y: 32.6, width: 8.8, height: 4.6, rx: .6, fill: "#0A2A16", stroke: G, "stroke-width": ".3" });
+    k.add("circle", { cx: 18.2, cy: 33.6, r: .5, fill: G });
+    k.add("path", { d: "M18 34.2 L17.6 35.4 L16.6 36.4 M17.6 35.4 L18.6 36.4 L18.8 37 M17.9 34.6 L19 35.2 M17.9 34.6 L16.8 34.9", fill: "none", stroke: G, "stroke-width": ".4", "stroke-linecap": "round", "stroke-linejoin": "round" });
+    k.add("path", { d: "M20.4 34.9 L23.2 34.9 M22.2 33.9 L23.4 34.9 L22.2 35.9", fill: "none", stroke: G, "stroke-width": ".45", "stroke-linecap": "round", "stroke-linejoin": "round" });
+    k.add("path", { d: "M16.6 29.4 L23.4 29.4 L22.8 31.6 Q20 32.4 17.2 31.6 Z", fill: k.headGrad("#5A5E68", "#2A2D34", "#0E0F12") });
     k.close();
     k.open("cx-head");
-    /* the light it throws: soft, behind everything */
-    k.add("ellipse", { cx: 20, cy: 20.4, rx: 12.6, ry: 11, fill: fcGas(k, "#2AE07A", "#9FFFC8"), opacity: ".28" });
-    /* the ceiling plate and the two chains of linked rings */
-    k.add("rect", { x: 9.6, y: 3, width: 20.8, height: 1.2, rx: .5, fill: k.headGrad("#9AA2AE", "#5A626E", "#22262C") });
-    [[12.8, 4.2, 13.6, 9.6], [27.2, 4.2, 26.4, 9.6]].forEach(([x0, y0, x1, y1]) => {
-      for(let i = 0; i < 5; i++){ const t = (i + .5) / 5, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
-        k.add("ellipse", { cx: F(x), cy: F(y), rx: i % 2 ? .22 : .38, ry: .58, fill: "none", stroke: i % 2 ? "#6A727E" : "#B8C0CC", "stroke-width": ".26" }); }
-    });
-    /* the housing: a dark outer edge, the white steel body, its bevel lit top-left and shaded bottom-right */
-    k.add("path", { d: "M9.6 12.2 Q9.6 9.2 12.6 9.2 L27.4 9.2 Q30.4 9.2 30.4 12.2 L30.4 27.6 Q30.4 30.6 27.4 30.6 L12.6 30.6 Q9.6 30.6 9.6 27.6 Z", fill: "#1A1E24" });
-    k.add("path", { d: "M10 12.2 Q10 9.6 12.6 9.6 L27.4 9.6 Q30 9.6 30 12.2 L30 27.6 Q30 30.2 27.4 30.2 L12.6 30.2 Q10 30.2 10 27.6 Z", fill: k.headGrad("#FFFFFF", "#D6DCE4", "#7A828E") });
-    k.add("path", { d: "M10.5 27.4 L10.5 12.3 Q10.5 10.1 12.7 10.1 L27.3 10.1", fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", "stroke-linecap": "round" });
-    k.add("path", { d: "M29.5 12.4 L29.5 27.5 Q29.5 29.7 27.3 29.7 L12.7 29.7", fill: "none", stroke: "#5A626E", "stroke-width": ".55", opacity: ".8", "stroke-linecap": "round" });
-    [[11.5, 11.1], [28.5, 11.1], [11.5, 28.7], [28.5, 28.7]].forEach(([x, y]) => { k.add("circle", { cx: x, cy: y, r: .42, fill: "#8A929E", stroke: "#3A4048", "stroke-width": ".12" }); k.add("path", { d: "M" + F(x - .26) + " " + F(y + .26) + " L" + F(x + .26) + " " + F(y - .26), stroke: "#2A3038", "stroke-width": ".14" }); });
-    /* the top plate: recessed, EXIT lit across it with a glow round the letters */
-    k.add("rect", { x: 12.2, y: 10.8, width: 15.6, height: 4.2, rx: .6, fill: "#062814", stroke: "#3A4048", "stroke-width": ".2" });
-    const EXIT = "M14.5 11.75 v2.3 h1.75 M14.5 11.75 h1.75 M14.5 12.9 h1.3 M17.3 11.75 l1.9 2.3 M19.2 11.75 l-1.9 2.3 M20.55 11.75 v2.3 M21.7 11.75 h2.6 M23 11.75 v2.3";
-    k.add("path", { d: EXIT, fill: "none", stroke: G, "stroke-width": "1.5", opacity: ".22", "stroke-linecap": "round", "stroke-linejoin": "round" });
-    k.add("path", { d: EXIT, fill: "none", stroke: G, "stroke-width": ".8", opacity: ".5", "stroke-linecap": "round", "stroke-linejoin": "round" });
-    k.add("path", { d: EXIT, fill: "none", stroke: "#F0FFF6", "stroke-width": ".45", "stroke-linecap": "round", "stroke-linejoin": "round" });
-    /* the face: the lit green panel, recessed (a dark lip above, a light one below), brighter at its heart */
-    k.add("rect", { x: 12.2, y: 15.8, width: 15.6, height: 12.6, rx: .9, fill: "#0A3A1C" });
-    k.add("rect", { x: 12.6, y: 16.2, width: 14.8, height: 11.8, rx: .7, fill: fcLin(k, [["0", "#2AF07E"], [".55", "#14B85C"], ["1", "#0A7A3A"]]) });
-    k.add("ellipse", { cx: 20, cy: 22, rx: 7, ry: 5.2, fill: fcGas(k, "#7FFFB8", "#D8FFE8"), opacity: ".35" });
-    k.add("path", { d: "M13.2 16.8 L17.6 16.8 L14 27.4 L13.2 27.4 Z", fill: "#FFFFFF", opacity: ".1" });
-    /* cool, sly eyes: flat lids half down, pupils to the side, the right brow cocked */
+    /* the chains it hangs on */
+    k.add("path", { d: "M13.4 9.6 L12.4 4 M26.6 9.6 L27.6 4", stroke: "#8A929E", "stroke-width": ".45", "stroke-dasharray": ".7 .3" });
+    /* the green glow it throws */
+    k.add("ellipse", { cx: 20, cy: 20, rx: 13, ry: 11.4, fill: fcGas(k, "#2AE07A", "#9FFFC8"), opacity: ".35" });
+    /* the housing: a white-edged box with a lit plate on top and the green face panel */
+    k.add("path", { d: "M10 12 Q10 9.4 12.6 9.4 L27.4 9.4 Q30 9.4 30 12 L30 27.6 Q30 30.2 27.4 30.2 L12.6 30.2 Q10 30.2 10 27.6 Z", fill: k.headGrad("#F4F6F8", "#C8CED6", "#6A727E"), stroke: "#2A3038", "stroke-width": ".35" });
+    k.add("path", { d: "M10.6 12.2 Q10.8 10 12.8 10 L20 10", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", opacity: ".8", "stroke-linecap": "round" });
+    k.add("rect", { x: 12, y: 10.8, width: 16, height: 4, rx: .6, fill: "#0A3A1C" });
+    const EXIT = "M14.6 11.6 v2.4 h1.6 M14.6 11.6 h1.6 M14.6 12.8 h1.2 M17.2 11.6 l1.8 2.4 M19 11.6 l-1.8 2.4 M20.4 11.6 v2.4 M21.6 11.6 h2.4 M22.8 11.6 v2.4";
+    /* (384 round 16b) "Ensure the word exit is centered..": the letters' ink ran 14.3 to 24.3 in a plate 12 to 28 (0.7 left of its middle); moved
+       right by .7 so it sits centred, the rest of the sheet's drawing untouched (vertically it was already centred: 11.3 to 14.3 in 10.8 to 14.8) */
+    k.add("path", { d: EXIT, fill: "none", stroke: "#B8FFD2", "stroke-width": ".6", "stroke-linecap": "round", "stroke-linejoin": "round", transform: "translate(.7 0)" });
+    k.add("path", { d: EXIT, fill: "none", stroke: G, "stroke-width": "1.3", opacity: ".25", "stroke-linecap": "round", transform: "translate(.7 0)" });
+    k.add("rect", { x: 12, y: 15.8, width: 16, height: 12.6, rx: .8, fill: fcLin(k, [["0", "#1AD870"], [".6", "#10A050"], ["1", GD]]) });
+    k.add("path", { d: "M12.6 16.4 L18 16.4 L13.6 27.6 L12.6 27.6 Z", fill: "#FFFFFF", opacity: ".12" });
+    /* the face: narrowed white eyes, mean brows, a sly LED grin */
     k.open("cx-eyes");
-    [16.6, 23.4].forEach(x => {
-      k.add("path", { d: "M" + F(x - 1.9) + " 21.2 L" + F(x + 1.9) + " 21.2 L" + F(x + 1.6) + " 22.5 Q" + x + " 23.2 " + F(x - 1.6) + " 22.5 Z", fill: "#F4FFF8" });
-      k.add("circle", { cx: F(x + .75), cy: 22.1, r: .62, fill: GD });
-      k.add("circle", { cx: F(x + .95), cy: 21.9, r: .16, fill: "#FFFFFF" });
+    [[16.4, 1], [23.6, -1]].forEach(([x, s]) => {
+      k.add("path", { d: "M" + fcF(x - 2) + " " + fcF(21 - s * .3) + " L" + fcF(x + 2) + " " + fcF(21 + s * .3) + " L" + fcF(x + 1.6) + " 22.6 Q" + x + " 23.2 " + fcF(x - 1.6) + " 22.6 Z", fill: "#F4FFF8" });
+      k.add("circle", { cx: fcF(x + s * .3), cy: 22, r: .55, fill: "#063A1A" });
     });
     k.close();
-    k.closedEyes([[16.6, 22, 1.7], [23.4, 22, 1.7]], "#F4FFF8", .5);
-    k.add("path", { d: "M14.4 20.3 L18.8 20.3 M21.2 19.4 Q23.4 18.6 25.6 19.6", fill: "none", stroke: GD, "stroke-width": ".75", "stroke-linecap": "round" });
-    /* the one-sided smirk */
+    k.closedEyes([[16.4, 22, 1.6], [23.6, 22, 1.6]], "#F4FFF8", .5);
+    k.add("path", { d: "M14.2 19.6 L18.6 20.8 M25.8 19.6 L21.4 20.8", stroke: "#063A1A", "stroke-width": ".8", "stroke-linecap": "round" });
     k.open("cx-mouth");
-    k.add("path", { d: "M17.4 25.8 Q20.4 26.5 23.2 24.8", fill: "none", stroke: "#F4FFF8", "stroke-width": ".6", "stroke-linecap": "round" });
-    k.add("path", { d: "M23 24.9 L23.6 24.4", stroke: "#F4FFF8", "stroke-width": ".45", "stroke-linecap": "round" });
+    k.add("path", { d: "M16.6 25.4 Q20 27.4 23.6 24.8", fill: "none", stroke: "#F4FFF8", "stroke-width": ".6", "stroke-linecap": "round", "stroke-dasharray": ".7 .35" });
     k.close();
   },
   /* DISPATCHER (the Hacker's). 384 round 14 (r11-chars), Madison: "Can you make the dispatcher a female?" The same dispatcher, the same look -

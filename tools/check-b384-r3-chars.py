@@ -81,8 +81,8 @@ chk("no page errors (%s)" % errs[:2], not errs, errs)
 N = r["names"]
 # (384 round 12, r9-chars) Undercover is redrawn (fcagent2), The Irons is the Fire Marshal (fcmarshal) and Pulsar the Whiteout (fcwhiteout2):
 # the character half of this gate is retired - check-b384-r9-chars asserts those - and the banner half below still holds
-chk("the four are Undercover (fcopt_plain, round 14's Plainclothes), the Exit (fcexit, round 16), Sprinkler Head (fcsprinkler2) and the Whiteout (fcwhiteout2, round 12) (%s)" % N,
-    N["valkyrie"] == ["Undercover", "fcopt_plain"] and N["timekeeper"] == ["Exit", "fcexit"] and N["hive"] == ["Sprinkler Head", "fcsprinkler2"] and N["singularity"] == ["Whiteout", "fcwhiteout2"], N)
+chk("the four are Undercover (fcopt_plain, round 14's Plainclothes), the Exit (fcopt_exit, round 16b: the sheet drawing), Sprinkler Head (fcsprinkler2) and the Whiteout (fcwhiteout2, round 12) (%s)" % N,
+    N["valkyrie"] == ["Undercover", "fcopt_plain"] and N["timekeeper"] == ["Exit", "fcopt_exit"] and N["hive"] == ["Sprinkler Head", "fcsprinkler2"] and N["singularity"] == ["Whiteout", "fcwhiteout2"], N)
 print("RETIRED the Pulsar character's checks (round 12 replaced it with the Whiteout; see check-b384-r9-chars)")
 print("RETIRED the Pulsar banner's checks (round 9 renamed and redrew flare_horizon as Whiteout - \"rename banner names to match\"; check-b384-r9-banners (9) holds the Whiteout scene)")
 if False:

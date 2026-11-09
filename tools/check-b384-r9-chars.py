@@ -27,6 +27,8 @@
      the white cowboy hat, the grey moustache, the bolo's turquoise, the star.
   M. (round 14) THE DISPATCHER is a woman: a crown of curls, gold hoops, the headset, the console's light, the navy polo.
      Round 14 also shipped Plainclothes as Undercover (G) and Aurora as the genesis secret (I), and replaced the timekeeper's options (L).
+  H (round 16b, r14-exit: "I like the before option of the exit sign" / "Ensure the word exit is centered.."): the shipped Exit is round 15's
+     sheet drawing (fcopt_exit, 7be2f35) - the same drawing except the lettering's position - and EXIT's ink sits centred in its plate at 150px.
   H / I / L (round 16, r13-chars: "Do exit and comet. Make them look good."): the timekeeper is the Exit and genesis the Comet, both finished;
      the options are closed - no IFC_CHAR_OPTIONS / IFC_CHAR_PICK, and no turned-down or unpicked drawing left in IFC_CHAR_DRAW. (The round
      13-15 wording below is history.)
@@ -150,6 +152,26 @@ OPTS_SNAP = r"""() => {
   });
   return out; }"""
 
+EXIT_SNAP = r"""() => {
+  /* (round 16b) the Exit as round 15's sheet drew it: its drawing with the special's parts, the data-char mark and the letters' centring
+     move taken out (the special takes the slot's glow, which was the Fire Marshal's when the sheet was drawn), hashed; and the EXIT ink's
+     space to the left and right of it inside its lit plate, measured at 150px. On a build where the shipped timekeeper is not the Exit, the
+     option-3 drawing (fcopt_exit) is swapped in to be measured. */
+  if(typeof IFC_CHAR_DRAW !== 'object' || !IFC_CHAR_DRAW.fcopt_exit) return null;
+  const def = AVATAR_CHARACTERS.find(c => c.id === 'timekeeper'), k0 = def.kind, g0 = AVATAR_GLOW.timekeeper; def.kind = 'fcopt_exit'; AVATAR_GLOW.timekeeper = '#3CFF8A';   /* the glow the sheet drew it with */
+  const hash = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:150px;height:150px;opacity:0;pointer-events:none'; document.body.appendChild(host);
+  const s = drawAvatarCharSVG('timekeeper'); s.setAttribute('width', 150); s.setAttribute('height', 150); host.appendChild(s);
+  const plate = [...s.querySelectorAll('.cx-head rect')].find(r => (r.getAttribute('fill') || '').toUpperCase() === '#0A3A1C' && +r.getAttribute('width') === 16);
+  const ink = [...s.querySelectorAll('.cx-head path')].find(p => (p.getAttribute('stroke') || '').toUpperCase() === '#B8FFD2');
+  let m = null;
+  if(plate && ink){ const P = plate.getBoundingClientRect(), I = ink.getBoundingClientRect(), u = P.width / 16, sw = +ink.getAttribute('stroke-width') / 2 * u;
+    m = { left: I.left - sw - P.left, right: P.right - (I.right + sw), top: I.top - sw - P.top, bottom: P.bottom - (I.bottom + sw) }; }
+  const c = s.cloneNode(true); c.querySelectorAll('.cx-sp').forEach(n => n.remove()); c.querySelectorAll('defs [id$="-sp0"], defs [id*="-sp"]').forEach(n => n.remove()); c.removeAttribute('data-char');
+  c.querySelectorAll('path[transform="translate(.7 0)"]').forEach(n => n.removeAttribute('transform'));
+  const out = { m, h: hash(new XMLSerializer().serializeToString(c).split(s.getAttribute('data-cx-uid')).join('U')), shipped: k0 };
+  def.kind = k0; AVATAR_GLOW.timekeeper = g0; host.remove(); return out; }"""
+
 def snap(init, body, detail):
     srv, port = rc["serve"]()
     errs = []
@@ -165,6 +187,7 @@ def snap(init, body, detail):
         r = pg.evaluate(SNAP, detail)
         r["opts"] = pg.evaluate(OPTS_SNAP)
         r["kinds"] = pg.evaluate("() => typeof IFC_CHAR_DRAW === 'object' ? Object.keys(IFC_CHAR_DRAW) : []")
+        r["exit"] = pg.evaluate(EXIT_SNAP)
         ctx.close(); br.close()
     srv.shutdown()
     r["errs"] = errs
@@ -179,6 +202,11 @@ if "--write-prev" in sys.argv:
     json.dump(prev, open(PREV_PATH, "w"), indent=0, sort_keys=True)
     print("wrote", PREV_PATH); sys.exit(0)
 
+if "--write-exit-pin" in sys.argv:
+    # the Exit as round 15's options sheet drew it (7be2f35, option 3), normalised as EXIT_SNAP does, pinned into the .prev.json
+    old = subprocess.run(["git", "show", "7be2f35:index.html"], cwd=os.path.dirname(HERE), capture_output=True, text=True, check=True).stdout
+    pv = json.load(open(PREV_PATH)); pv["exitSheet"] = snap(INIT_IFC, old, [])["exit"]["h"]
+    json.dump(pv, open(PREV_PATH, "w"), indent=0, sort_keys=True); print("pinned", pv["exitSheet"]); sys.exit(0)
 PREV = json.load(open(PREV_PATH))
 IFC = snap(INIT_IFC, BODY, PICKED)
 ACA = snap(INIT_ACA, BODY, [])
@@ -245,10 +273,14 @@ u = D["valkyrie"]
 fed = [h for h in u["hats"] if h["kind"] == "fedora"]
 chk("G. Undercover is the Plainclothes detective: a charcoal fedora (%s), the tan trench coat (%s), a white shirt and dark tie, the notebook (%s), eyes of his own (%s whites)" % (fed and fed[0]["fill"], u["shirt"], "#F6F2E2" in u["fills"], u["eyeWhites"]),
     u["kind"] == "fcopt_plain" and len(fed) == 1 and hsl(fed[0]["fill"])[2] < .3 and 25 <= hsl(u["shirt"])[0] <= 45 and "#F2F2EE" in u["fills"] and "#F6F2E2" in u["fills"] and u["eyeWhites"] == 2 and "#E2BC5E" not in u["strokes"], u)
-# H (round 16: "Do exit and comet. Make them look good." - round 15's option 3, the exit sign, finished)
-f = D["timekeeper"]
-chk("H. the timekeeper is the Exit: EXIT lit on its plate (%s), the green face panel with eyes and a smirk (%s eyes, mouth %s), a bevelled white housing with four screws (%s), the chains, the running-man pictogram (%s)" % ("#F0FFF6" in f["strokes"], f["eyeWhites"], f["mouth"], f["screws"], "#FFFFFF" in f["strokes"]),
-    f["kind"] == "fcexit" and "#F0FFF6" in f["strokes"] and f["mouth"] >= 1 and f["eyes"] >= 4 and f["screws"] == 4 and "#B8C0CC" in f["strokes"] and "#FFFFFF" in f["strokes"] and not f["hats"] and f["rotGroups"] == 0, f)
+# H (round 16b: "I like the before option of the exit sign" / "Ensure the word exit is centered..") the shipped Exit is round 15's sheet drawing,
+# the same drawing but for the lettering's position, and the word EXIT sits centred in its lit plate
+f = D["timekeeper"]; X = IFC.get("exit") or {}
+chk("H. the timekeeper is the Exit as the round-15 sheet drew it (kind %s): its drawing, bar the letters' centring move and the special's glow, is 7be2f35's option 3 (%s / %s)" % (f["kind"], X.get("h"), PREV.get("exitSheet")),
+    f["kind"] == "fcopt_exit" and X.get("shipped") == "fcopt_exit" and X.get("h") == PREV.get("exitSheet"), X)
+mm = X.get("m") or {}
+chk("H. ...and the word EXIT is centred in its plate at 150px: %.2fpx left of the ink, %.2fpx right (within 1px), %.2f / %.2f above and below (within 1px)" % (mm.get("left", -9), mm.get("right", 9), mm.get("top", -9), mm.get("bottom", 9)),
+    mm and abs(mm["left"] - mm["right"]) <= 1 and abs(mm["top"] - mm["bottom"]) <= 1, mm)
 # I
 w = D["singularity"]
 chk("I. the Whiteout: a parka hood (%s) with its fur, two lit eyes behind goggles (lit %s, %s shapes), no mouth (%s), the white flare, wind and snow (%s)" % ([h["kind"] for h in w["hats"]], w["eyesLit"], w["eyes"], w["mouth"], [g for g in w["groups"] if "wind" in g or "snow" in g]),
@@ -269,7 +301,7 @@ chk("J. every changed drawing has one head, an eye group, closed eyes, a mouth g
 # L (round 16) the option rounds are closed: no options table, no pick, and none of the drawings he turned down or did not pick left in the file
 O = IFC.get("opts")
 chk("L. no options are left (IFC_CHAR_OPTIONS / IFC_CHAR_PICK gone: %s)" % ("gone" if not O else O.get("pick")), not O, O)
-REJ = ["fcirons", "fcmarshal", "fcopt_oldtimer", "fcopt_bombtech", "fcopt_site", "fcopt_arson", "fcopt_k9", "fcopt_codeofficer", "fcopt_warden", "fcopt_recruit", "fcopt_exit", "fcopt_blackout",
+REJ = ["fcirons", "fcmarshal", "fcopt_oldtimer", "fcopt_bombtech", "fcopt_site", "fcopt_arson", "fcopt_k9", "fcopt_codeofficer", "fcopt_warden", "fcopt_recruit", "fcexit", "fcopt_blackout",
        "fceclipse", "fcfirebird", "fcopt_magma", "fcopt_prism", "fcopt_aurora", "fcopt_wraith", "fcopt_darkmatter", "fcopt_comet", "fcopt_constellation", "fcagent2", "fcopt_stakeout", "fcopt_handyman", "fcdispatch4"]
 left = [k for k in REJ if k in (IFC.get("kinds") or [])]
 chk("L. ...and no dead drawing is left in IFC_CHAR_DRAW (left: %s; %d kinds)" % (left or "none", len(IFC.get("kinds") or [])), not left and len(IFC.get("kinds") or []) > 10, left)
