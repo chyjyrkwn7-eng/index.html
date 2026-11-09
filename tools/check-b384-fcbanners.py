@@ -69,7 +69,7 @@ def chk(name, cond, info=""):
 NAMES = {"tests100": "Certified", "tests250": "Plan Review", "tests500": "Inspection Team", "hundos100": "Squared Away", "hundos250": "Grand Finale",
          "vr50": "Mutual Aid", "study50": "Code Book", "study60": "On Call", "correct5000": "Downpour", "correct10000": "Fire Investigator",
          "level80": "Top Floor", "early10": "After Hours", "exam100": "Clean Sweep", "adept_rank": "Sapphire", "elite_rank": "Amethyst", "titan_rank": "Supernova",
-         "flare_void": "Nebula", "flare_umbra": "Quasar", "flare_horizon": "Pulsar", "flare_genesis": "Eclipse", "zenith": "Star Ranger"}
+         "flare_void": "Nebula", "flare_umbra": "Quasar", "flare_horizon": "Whiteout", "flare_genesis": "Aurora", "zenith": "Star Ranger"}
 REDONE = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "vr50", "study50", "study60", "correct10000", "level80", "early10", "exam100",
           "flare_umbra", "flare_horizon", "flare_genesis", "correct5000", "flare_void"]   # round 9 redrew Downpour and Nebula too
 KEEP = ["adept_rank", "elite_rank", "titan_rank", "zenith"]
