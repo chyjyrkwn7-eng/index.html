@@ -20,9 +20,11 @@ connection holds them (CLOUD.slow), so "the screen waited for the server" can be
  (H) the wait card after your race and Return to lobby do not wait for the server's answer;
  (I) Battle with fewer than fifty questions picked runs the fifty every device plays (it was called over at the room's count),
      and its winners' cutscene stands on a floor, not Tug of War's rope;
- (J) Tug of War's team board puts your side first, as the rope does, and the winning end's figures are inside the field;
+ (J) Tug of War's results put your side first in the standings (the podium, 384 r8), as the rope does, and every figure on the
+     rope card is inside the field;
  (K) Nova invited while the server is slow still readies (his driver outlived a first answer from before his entry);
- (L) the lobby line for a Fire Code room names Fire Code, and a Battle lobby says the number of questions it runs;
+ (L) the lobby line for a Fire Code room, with the switch on (Open lobby), names Fire Code, and a Battle lobby says the number of
+     questions it runs;
  (M) the invite sheet in Fire Code asks for class sharing only when the account has it off;
  (N) no sync code in any `vrooms` document; no page errors;
  (O) (384, Virtual Room round 2: "Just ensure it makes sense and ensure it works") EVERY DOOR: an invite to a Fire Code room that
@@ -378,6 +380,11 @@ def ready(pages):
 def leave(pg):
     pg.evaluate("()=>{ try{ document.getElementById('vroom-race-cut')?.remove(); document.getElementById('vroom-cutscene')?.remove(); document.getElementById('vroom-prep')?.remove(); if(vroomCode) leaveVirtualRoom(); testInProgress = false; showHome(); }catch(e){} }")
     pg.wait_for_timeout(700)
+# (384 r5) a Tug of War or Battle is not called over in its first five minutes, and a Battle side has 300 health a member: the
+# matches (I) and (J) play run in seconds, so they set the app's own test hook for them (as check-vroom does); the five-minute
+# floor has its own gate (check-b384-matchlength). Off again after, for the sections that follow.
+def fast(pages, on):
+    for pg in pages: pg.evaluate("(on)=>{ window.__vroomFast = on; }", bool(on))
 RACE_UP = "()=>!!document.querySelector('.qpanel .choice') && !document.getElementById('vroom-reveal-overlay') && typeof inVirtualRoom !== 'undefined' && inVirtualRoom"
 ANSWER_ALL = """async (n)=>{ const W = ms => new Promise(r => setTimeout(r, ms)); let k = 0;
   while(typeof inVirtualRoom !== 'undefined' && inVirtualRoom && pos < order.length && (n == null || k < n)){
@@ -455,9 +462,20 @@ with sync_playwright() as pw:
             O.evaluate("()=>document.querySelector('.invite-overlay .invite-close')?.click()")
             lk = join(K, code_f)
             chk("(B) and joins it from the academy's page", bool(lk) and K.evaluate("()=>BANK_CLASS") == "ifc", lk)
+            # (round 8) the line follows the switch: off it says who can join ("Only people you invite"), so the class is only named
+            # with the switch ON - turn it on, read the line, turn it back off (the room stays private for what follows)
+            off_line = (O.evaluate(LOBBY) or {}).get("openLine") or ""
+            O.evaluate("()=>document.querySelector('#stage .screen-vroom-lobby .vroom-open-switch').click()")
+            on_doc = wait_for(O, "()=>!!vroomIsOpen", tries=10, step=200)
+            for _ in range(20):
+                if room(code_f).get("open") is True: break
+                O.wait_for_timeout(200)
             lo = O.evaluate(LOBBY) or {}
-            chk("(L) the Fire Code room's Open to class line names Fire Code, not the academy's 26E (%r)" % lo.get("openLine"),
-                "Fire Code" in (lo.get("openLine") or "") and "26E" not in (lo.get("openLine") or ""), lo)
+            on_line = lo.get("openLine") or ""
+            O.evaluate("()=>{ const sw = document.querySelector('#stage .screen-vroom-lobby .vroom-open-switch'); if(sw && vroomIsOpen) sw.click(); }")
+            O.wait_for_timeout(500)
+            chk("(L) the Fire Code room's Open lobby line names Fire Code, not the academy's 26E (on %r; off %r; room open: %s)" % (on_line, off_line, room(code_f).get("open")),
+                bool(on_doc) and on_line != off_line and "Fire Code" in on_line and "26E" not in on_line, lo)
             leave(K); leave(O)
             # an academy room: the Fire Code-only friend is the greyed one
             code_a = host_room(A, unit_a, "race", 5)
@@ -622,6 +640,7 @@ with sync_playwright() as pw:
     if want("I"):
         print("\n-- (I) a Battle with six questions picked runs the fifty every device plays", flush=True)
         try:
+            fast([A, K], True)
             code = host_room(A, unit_a, "battle", 6)
             join(K, code)
             lb = A.evaluate(LOBBY) or {}
@@ -650,14 +669,15 @@ with sync_playwright() as pw:
             sc = wait_for(A, "()=>{ const c = document.getElementById('vroom-cutscene'); return c ? { team: !!c.querySelector('.vroom-cut-team'), rope: !!c.querySelector('.vroom-cut-rope'), floor: !!c.querySelector('.vroom-cut-floor') } : null; }", tries=20, step=200)
             chk("(I) Battle's winners stand on a floor, not on Tug of War's rope (%s)" % sc, bool(sc) and sc["team"] and not sc["rope"] and sc["floor"], sc)
             wait_for(A, "()=>!!document.querySelector('.screen-battle-result')", tries=40)
-            leave(A); leave(K)
+            leave(A); leave(K); fast([A, K], False)
         except Exception as e:
-            chk("(I) ran to the end", False, repr(e)[:300]); leave(A); leave(K)
+            chk("(I) ran to the end", False, repr(e)[:300]); leave(A); leave(K); fast([A, K], False)
 
-    # ===================== (J) Tug of War's board and rope =====================
+    # ===================== (J) Tug of War's standings and rope =====================
     if want("J"):
-        print("\n-- (J) Tug of War: your side first on the board; the winners' end inside the field", flush=True)
+        print("\n-- (J) Tug of War: your side first in the standings; every figure on the rope inside the field", flush=True)
         try:
+            fast([A, K], True)
             code = host_room(A, unit_a, "tug", 6)
             join(K, code); ready([A, K])
             for pg in (A, K): wait_for(pg, "()=>!!document.querySelector('.screen-tug .choice')", tries=90, step=300)
@@ -665,18 +685,30 @@ with sync_playwright() as pw:
                 team_answer(A, True); team_answer(K, False)
                 if K.evaluate("()=>!!document.querySelector('.screen-tug-result')"): break
                 A.wait_for_timeout(250)
+            # (384 r8) the result is the drill's results screen: the podium ("Final standings") puts each side on a step and its
+            # members in a column under it, your side first; the game's own card is the rope as it ended. Read off the losing
+            # side's device (Kimber), where "first" is not simply the winners: her side, the step's side and her own row.
             res = wait_for(K, """()=>{ const s = document.querySelector('.screen-tug-result'); if(!s) return null;
-                const f = s.querySelector('.tug-field').getBoundingClientRect();
-                const figs = [...s.querySelectorAll('.tug-team-fig')].map(x => x.getBoundingClientRect());
-                const out = figs.filter(r => r.left < f.left - .5 || r.right > f.right + .5).length;
-                const cols = [...s.querySelectorAll('.tug-board-col')];
-                return { team: tugTeamOf(tugLastData || {}, vroomMyKey), firstMine: !!(cols[0] && cols[0].classList.contains('is-mine')), n: cols.length, figs: figs.length, out: out }; }""", tries=30)
-            chk("(J) the team board puts her side first, as the rope does (her team %s; first column hers: %s)" % ((res or {}).get("team"), (res or {}).get("firstMine")),
-                bool(res) and res["firstMine"] and res["n"] == 2, res)
-            chk("(J) every figure on the rope is inside the field (%s outside of %s)" % ((res or {}).get("out"), (res or {}).get("figs")), bool(res) and res["figs"] >= 2 and res["out"] == 0, res)
-            leave(A); leave(K)
+                const team = tugTeamOf(tugLastData || {}, vroomMyKey);
+                const spots = [...s.querySelectorAll('.vr-podium-sides .vr-side')];
+                const cols = [...s.querySelectorAll('.vr-podium-cols .vr-podium-col')];
+                const keysIn = c => c ? [...c.querySelectorAll('[data-key]')].map(r => r.dataset.key) : [];
+                const f = s.querySelector('.tug-field'); if(!f) return { team: team, spots: spots.length, cols: cols.length, figs: 0, out: null };
+                const fr = f.getBoundingClientRect();
+                const figs = [...f.querySelectorAll('.tug-team-fig')].map(x => x.getBoundingClientRect());
+                const out = figs.filter(r => r.left < fr.left - .5 || r.right > fr.right + .5).length;
+                return { team: team, winner: (tugLastData && tugLastData.tug || {}).winner, spots: spots.length, cols: cols.length,
+                         firstSide: spots[0] ? spots[0].dataset.side : null, firstColMine: keysIn(cols[0]).indexOf(vroomMyKey) >= 0,
+                         secondColMine: keysIn(cols[1]).indexOf(vroomMyKey) >= 0, figs: figs.length, out: out }; }""", tries=30)
+            r = res or {}
+            chk("(J) the standings put her side first, as the rope does (her side %s, the winners %s; first step %s; her row in the first column: %s)"
+                % (r.get("team"), r.get("winner"), r.get("firstSide"), r.get("firstColMine")),
+                bool(res) and r["spots"] == 2 and r["cols"] == 2 and r["team"] and r["firstSide"] == r["team"] and r["firstColMine"] and not r["secondColMine"]
+                and r.get("winner") and r["winner"] != r["team"], res)
+            chk("(J) every figure on the rope is inside the field (%s outside of %s)" % (r.get("out"), r.get("figs")), bool(res) and r["figs"] >= 2 and r["out"] == 0, res)
+            leave(A); leave(K); fast([A, K], False)
         except Exception as e:
-            chk("(J) ran to the end", False, repr(e)[:300]); leave(A); leave(K)
+            chk("(J) ran to the end", False, repr(e)[:300]); leave(A); leave(K); fast([A, K], False)
 
     # ===================== (K) Nova, invited on a slow connection =====================
     if want("K"):
