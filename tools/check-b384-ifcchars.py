@@ -60,7 +60,7 @@ SNAP = r"""async (oldKinds) => {
   const mk = AVATAR_CHARACTERS.find(c => c.id === 'marksman');
   out.hazmat = { kind: mk.kind, glow: AVATAR_GLOW.marksman, hash: hash(drawn('marksman').ser) };
   /* the inspector: the shirt is the first lit shape in his body */
-  { const { s } = drawn('detective'); const body = s.querySelector('.cx-body path'); out.inspector = { shirt: stops(s, body), hat: !!s.querySelector('.cx-fc-hat-cap') && !s.querySelector('.cx-fc-hat-cowboy'), parts: parts(s) }; }
+  { const { s } = drawn('detective'); const body = s.querySelector('.cx-body path'); out.inspector = { shirt: stops(s, body), hat: !!s.querySelector('.cx-fc-hat-cowboy') && !s.querySelector('.cx-fc-hat-cap'), parts: parts(s) }; }   /* (384 round 12) the cowboy hat is back: build 383's investigator is the Inspector */
   { const { s } = drawn('hacker'); out.dispatcher = { shirt: stops(s, s.querySelector('.cx-body path')) }; }
   for(const id of ['clown', 'hive']){ const { s, ser } = drawn(id); out.strobe[id] = { hash: hash(ser), parts: parts(s) }; }
   /* the drone in a 340px coin, a unit is 10px */
@@ -141,7 +141,7 @@ def hue_sat(h):
 shirt = r["inspector"]["shirt"]; hs = hue_sat(shirt[1]) if len(shirt) > 1 and shirt[1].startswith("#") else (0, 0, 0)
 chk("B. the inspector's shirt is blue (base %s: hue %d, saturation %.2f)" % (shirt[1] if len(shirt) > 1 else shirt, hs[0], hs[1]), 195 <= hs[0] <= 240 and hs[1] >= .35, shirt)
 # (384 r6) "Fire inspectors wear police gear ... navy blue pants and short sleeved polo shirts": the cowboy hat is gone, the navy duty cap is on
-chk("B. ...and he wears the duty ball cap, not a cowboy hat", r["inspector"]["hat"], r["inspector"])
+chk("B. ...and he wears the cowboy hat again, not round 11's ball cap (384 round 12, Madison's pick: build 383's investigator)", r["inspector"]["hat"], r["inspector"])
 # C
 dr = r["drone"]
 chk("C. the drone flies clear of his head: %.2f units of air between the nearest drawn points of the drone and of his head (at least 2.5)" % (dr["gapUnits"] if dr else -99), dr and dr["gapUnits"] >= 2.5, dr)

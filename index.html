@@ -59729,19 +59729,22 @@ var IFC_CHAR_DRAW = {
   /* INSPECTOR (the Detective's challenge). 384 round 12 (r9-chars), Madison picking from the version sheet: "Look at the investigator from toxic
      spill build A. Literally just make that the inspector.. but with glasses." / "Inspector, D give him some facial hair though but not a beard,
      just some. Like a shaved down beard." / "Our button ups are navy." So this is build 383's Investigator (fcinvest2) as the Inspector: the dark
-     brown felt cowboy hat with its tan band, brown skin, the button-up uniform shirt (now navy, its collar points, placket and silver buttons, the
+     brown felt cowboy hat with its tan band, brown skin, the uniform button-up (navy, short-sleeved, its collar points, placket and silver buttons, the
      darker navy epaulettes and pocket flaps), the agency's gold star badge on the chest, a gold nameplate, the gold-rimmed shoulder patch and the
      radio mic on the strap; plus round 7's (D's) rectangular glasses and its clipboard held up in his left hand, and a beard cut down to a shadow
      (a short boxed stubble along the jaw, chin and lip with a clean edge on the cheeks; no full beard). This is THE inspector look for the class:
      the banners that show him follow these colours (see the notes). */
   fcinspector5(k){
-    const NAVY = ["#3E5A9C", "#22386E", "#0A1438"], DARK = "#14244E", SKIN = FC_SKIN.brown;
-    fcCoat(k, { coat: NAVY, neck: "brown", extra(){
+    /* the one inspector look, shared with every Fire Code banner that shows him (FB_KIT, r9-banners): these values are that kit's */
+    const NAVY = ["#34497A", "#1E2C4E", "#121B33"], DARK = "#121B33", SKIN = ["#C2865E", "#A86C48", "#6E4228"], FELT = ["#76604C", "#4A382A", "#251A12"];
+    fcCoat(k, { coat: NAVY, neck: SKIN, extra(){
       /* the open neck, the collar points, the placket and its buttons */
-      k.add("path", { d: "M17.4 28.2 L20 31 L22.6 28.2 Z", fill: "#0C1430" });
-      k.add("path", { d: "M14.4 28.4 L16.8 27.6 L20 31.4 L17.4 32.8 Z M25.6 28.4 L23.2 27.6 L20 31.4 L22.6 32.8 Z", fill: k.headGrad("#5A78BC", "#2E4888", "#14245A"), stroke: "#0A1438", "stroke-width": ".2", "stroke-linejoin": "round" });
+      k.add("path", { d: "M17.4 28.2 L20 31 L22.6 28.2 Z", fill: "#0B111F" });
+      /* the short sleeves' seams over the shoulders */
+      k.add("path", { d: "M5.6 36.4 Q6.6 32.2 9.6 30.4 M34.4 36.4 Q33.4 32.2 30.4 30.4", fill: "none", stroke: "#0B111F", "stroke-width": ".35", opacity: ".6" });
+      k.add("path", { d: "M14.4 28.4 L16.8 27.6 L20 31.4 L17.4 32.8 Z M25.6 28.4 L23.2 27.6 L20 31.4 L22.6 32.8 Z", fill: k.headGrad("#4A62A0", "#34497A", "#1E2C4E"), stroke: "#121B33", "stroke-width": ".2", "stroke-linejoin": "round" });
       k.add("path", { d: "M15 28.6 L19.2 31.4 M25 28.6 L20.8 31.4", stroke: "#9FB8F0", "stroke-width": ".2", opacity: ".45" });
-      k.add("path", { d: "M20 31.4 L20 40", stroke: "#0A1438", "stroke-width": ".35" });
+      k.add("path", { d: "M20 31.4 L20 40", stroke: "#121B33", "stroke-width": ".35" });
       [34, 36.6, 39.2].forEach(y => k.add("circle", { cx: 20.6, cy: y, r: .3, fill: "#C9CED6" }));
       /* epaulettes and pocket flaps, a shade darker */
       k.add("path", { d: "M8.6 31.4 L14.2 28.8 L14.8 29.9 L9.4 32.6 Z M31.4 31.4 L25.8 28.8 L25.2 29.9 L30.6 32.6 Z", fill: DARK });
@@ -59769,29 +59772,29 @@ var IFC_CHAR_DRAW = {
       });
       k.add("path", { d: "M10.4 27.6 h3.6 l.4 1.9 h-4.4 Z", fill: fcLin(k, [["0", "#F4F6FA"], [".5", "#9AA4B4"], ["1", "#4A5262"]]), stroke: "#2A303C", "stroke-width": ".2", transform: t });
       k.add("circle", { cx: 12.2, cy: 28.6, r: .3, fill: "#2A303C", transform: t });
-      /* the navy sleeve and his hand, over the board's lower edge */
-      k.add("path", { d: "M10.8 40 L12 36.4 Q14.6 35.4 17 36.8 L18 40 Z", fill: fcLin(k, [["0", "#3E5A9C"], ["1", "#0A1438"]]) });
-      k.add("path", { d: "M12 36.5 Q12.4 34.4 14.4 34 Q15.4 33.9 15.9 34.7 Q16.3 35.4 15.7 36.1 Q16.6 36.1 16.6 36.9 Q16.4 37.7 15.4 37.5 Q14.2 37.9 12.8 37.4 Z", fill: fcLin(k, [["0", "#C8916A"], ["1", "#8E5A3A"]]), stroke: "#4A2A16", "stroke-width": ".18" });
+      /* the short sleeve leaves his forearm bare: the arm coming up to his hand, over the board's lower edge */
+      k.add("path", { d: "M10.8 40 L12 36.4 Q14.6 35.4 17 36.8 L18 40 Z", fill: k.headGrad.apply(null, SKIN) });
+      k.add("path", { d: "M12 36.5 Q12.4 34.4 14.4 34 Q15.4 33.9 15.9 34.7 Q16.3 35.4 15.7 36.1 Q16.6 36.1 16.6 36.9 Q16.4 37.7 15.4 37.5 Q14.2 37.9 12.8 37.4 Z", fill: fcLin(k, [["0", "#C2865E"], ["1", "#8A5634"]]), stroke: "#4A2A16", "stroke-width": ".18" });
       k.add("path", { d: "M14.5 34.2 L14.4 35.8 M15.5 34.8 L15.4 36.2", stroke: "#4A2A16", "stroke-width": ".18", opacity: ".7", "stroke-linecap": "round" });
     } });
     k.open("cx-head");
-    fcFace(k, "brown");
+    fcFace(k, SKIN);
     /* short dark hair under the hat, the sideburns running down into the stubble */
     k.add("path", { d: "M11.8 18.8 Q11.4 11.2 20 11 Q28.6 11.2 28.2 18.8 Q27.4 14.4 24.8 14 Q20 12.8 15.2 14 Q12.6 14.4 11.8 18.8 Z", fill: k.headGrad("#3A2A20", "#1E140E", "#0A0604") });
     k.add("path", { d: "M11.9 18.4 Q11.6 16.8 12.9 16.4 Q13.4 18.8 13.2 21.4 Q12.3 21.6 11.9 20.4 Z M28.1 18.4 Q28.4 16.8 27.1 16.4 Q26.6 18.8 26.8 21.4 Q27.7 21.6 28.1 20.4 Z", fill: "#1E140E" });
     /* the shaved-down beard: one short, close stubble along the jaw and chin and over the lip, its edge clean up the cheeks */
-    const STUB = "#1A0F08";
-    k.add("path", { d: "M12.8 21.4 Q12.8 25.6 14.7 28.2 Q17 30.9 20 30.9 Q23 30.9 25.3 28.2 Q27.2 25.6 27.2 21.4 Q26.6 25.4 25.2 26.8 Q23.8 27.6 22.8 27.2 Q20 26.6 17.2 27.2 Q16.2 27.6 14.8 26.8 Q13.4 25.4 12.8 21.4 Z", fill: STUB, opacity: ".24" });
-    k.add("path", { d: "M17 25.6 Q18.6 24.9 20 25.4 Q21.4 24.9 23 25.6 Q22.6 26.4 21.6 26.3 Q20.6 26 20 26.2 Q19.4 26 18.4 26.3 Q17.4 26.4 17 25.6 Z", fill: STUB, opacity: ".26" });
+    const STUB = "#22140C";
+    k.add("path", { d: "M12.8 21.4 Q12.8 25.6 14.7 28.2 Q17 30.9 20 30.9 Q23 30.9 25.3 28.2 Q27.2 25.6 27.2 21.4 Q26.6 25.4 25.2 26.8 Q23.8 27.6 22.8 27.2 Q20 26.6 17.2 27.2 Q16.2 27.6 14.8 26.8 Q13.4 25.4 12.8 21.4 Z", fill: STUB, opacity: ".3" });
+    k.add("path", { d: "M17 25.6 Q18.6 24.9 20 25.4 Q21.4 24.9 23 25.6 Q22.6 26.4 21.6 26.3 Q20.6 26 20 26.2 Q19.4 26 18.4 26.3 Q17.4 26.4 17 25.6 Z", fill: STUB, opacity: ".32" });
     fcBrimShade(k);
     fcEyes(k, { y: 21.4, brow: "#140C08", iris: "#3A2414" });
     /* the glasses (round 7's): thin dark rectangles with a lit top edge, the arms back to the ears */
-    k.add("path", { d: "M14.4 20.1 L18.8 20.1 L18.6 22.8 L14.6 22.8 Z M21.2 20.1 L25.6 20.1 L25.4 22.8 L21.4 22.8 Z M18.8 20.8 L21.2 20.8 M14.4 20.5 L12.3 20.1 M25.6 20.5 L27.7 20.1", fill: "none", stroke: "#18181C", "stroke-width": ".5", "stroke-linejoin": "round", "stroke-linecap": "round" });
-    k.add("path", { d: "M15 20.6 L16.6 20.6 M21.8 20.6 L22.8 20.6", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".6" });
+    k.add("path", { d: "M14.4 20.1 L18.8 20.1 L18.6 22.8 L14.6 22.8 Z M21.2 20.1 L25.6 20.1 L25.4 22.8 L21.4 22.8 Z M18.8 20.8 L21.2 20.8 M14.4 20.5 L12.3 20.1 M25.6 20.5 L27.7 20.1", fill: "none", stroke: "#0B0E14", "stroke-width": ".5", "stroke-linejoin": "round", "stroke-linecap": "round" });
+    k.add("path", { d: "M15 20.6 L16.6 20.6 M21.8 20.6 L22.8 20.6", stroke: "#A8C0E6", "stroke-width": ".3", opacity: ".85" });
     k.open("cx-mouth");
     k.add("path", { d: "M17.8 27 Q20.2 28 22.4 26.6", fill: "none", stroke: "#3A1A0E", "stroke-width": ".55", "stroke-linecap": "round" });
     k.close();
-    fcCowboy(k, { felt: ["#5A4A3E", "#2E241C", "#0E0A06"], band: "#8A6A3A" });
+    fcCowboy(k, { felt: FELT, band: "#8A6A3A", bandExtra(dy){ k.add("path", { d: "M13.2 " + fcF(14.3 + dy) + " Q20 " + fcF(13.5 + dy) + " 26.8 " + fcF(14.3 + dy), fill: "none", stroke: "#C9A46A", "stroke-width": ".3", opacity: ".8" }); } });
   },
   /* CHIEF (the Sheriff's). 384 round 12 (r9-chars), Madison picking from the version sheet: "Chief: E" - round 3's western chief is back: the
      white cowboy hat with its band and turquoise stud, silver temples, the thick grey moustache, the bolo with its turquoise slide and the gold star

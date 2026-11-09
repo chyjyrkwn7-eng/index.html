@@ -16,6 +16,7 @@
   C. Strobe (round 10: the older red alarm back, with its face): FIRE across the top, a visor with two white eyes in it, a speaker grille down each side of the visor, a horn slot for a mouth, the flash and the horn's waves
   D. Sprinkler Head (round 10: the older white robot back): a chrome head with a dark visor and two blue eyes, a smile of light, two arms to a notched deflector crown, the red bulb seated in the crown and on the head
   E. Toxic Spill: the ooze spans the drum's width and every drip starts up inside the ooze, not on the rim
+  (384 round 12, r9-chars: A follows the new names, B the dark felt hat; F and G are retired - their characters were replaced.)
   F. each secret's flare sits ON its character: Quasar's on its ring, Pulsar's and Eclipse's on the rim of their head disc
   G. Undercover (round 9): a person in shades, a coiled earpiece wire, a turned-up collar, no hat; The Irons: two tools crossed over a shield
 Every check fails on the build before:  python3 tools/check-b384-fcchars3.py --against OLD/index.html
@@ -45,9 +46,9 @@ SNAP = r"""() => {
   const bb = n => { const b = n.getBBox(); return { x: b.x, y: b.y, w: b.width, h: b.height, cx: b.x + b.width / 2, cy: b.y + b.height / 2 }; };
   const out = { names: Object.fromEntries(AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy).map(c => [c.id, AVATAR_DISPLAY_NAME[c.id] || c.name])) };
   /* B: the inspector */
-  { const s = mount('detective'); const hat = s.querySelector('.cx-fc-hat-cap');   /* (384 r6) his hat is the navy duty cap now (the felt cowboy hat is gone) */ const felt = hat && hat.querySelector('path');
+  { const s = mount('detective'); const hat = s.querySelector('.cx-fc-hat-cap, .cx-fc-hat-cowboy');   /* (384 r6) the navy duty cap; (384 round 12) the dark brown felt cowboy hat of build 383's investigator again */ const felt = hat && hat.querySelector('path');
     const ser = new XMLSerializer().serializeToString(s);
-    out.insp = { feltBase: stops(s, felt)[1], ticks: (ser.match(/#2E9A5A/g) || []).length, crosses: (ser.match(/#D8342A/g) || []).length, hand: /#7A4A2A/.test(ser) };
+    out.insp = { feltBase: stops(s, felt)[1], ticks: (ser.match(/#2E9A5A/g) || []).length, crosses: (ser.match(/#D8342A/g) || []).length, hand: /#7A4A2A|#4A2A16/.test(ser) };   /* (round 12: his hand is drawn in his own brown skin, outlined #4A2A16) */
     const board = [...s.querySelectorAll('.cx-body rect')].filter(r => Number(r.getAttribute('width')) > 7 && Number(r.getAttribute('height')) > 7 && r.getAttribute('fill') && r.getAttribute('fill').indexOf('url(') === 0)[0];
     if(board){ const b = board.getBoundingClientRect(), sr = s.getBoundingClientRect(), cx = sr.left + sr.width / 2, cy = sr.top + sr.height / 2, R = sr.width / 2;
       let inside = 0, n = 0; for(let i = 0; i <= 12; i++) for(let j = 0; j <= 12; j++){ const x = b.left + b.width * i / 12, y = b.top + b.height * j / 12; n++; if(Math.hypot(x - cx, y - cy) <= R * .97) inside++; }
@@ -127,14 +128,15 @@ def lum(h):
     return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]
 chk("no page errors (%s)" % errs[:2], not errs, errs)
 N = r["names"]
-chk("A. valkyrie is Undercover, timekeeper The Irons, genesis Eclipse (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
-    (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Undercover", "The Irons", "Eclipse"), N)
-chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator"} & set(N.values()), N)
+# (384 round 12, r9-chars) The Irons became the Fire Marshal and Eclipse the Firebird; they join the names that must be gone
+chk("A. valkyrie is Undercover, timekeeper the Fire Marshal, genesis the Firebird (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
+    (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Undercover", "Fire Marshal", "Firebird"), N)
+chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator", "The Irons", "Eclipse", "Pulsar", "Quasar"} & set(N.values()), N)
 I = r["insp"]
 fb = lum(I["feltBase"]) if I.get("feltBase") else 1
 # (384 r6) the felt cowboy hat became the navy duty cap ("Fire inspectors wear police gear"): still darker than round 6's .52, and not
 # black - navy, so the floor is a navy's luminance (.005), not the felt's .10 (tools/check-b384-r6-chars.py holds the cap's colour)
-chk("B. the Inspector's hat is the dark duty cap: base %s, luminance %.3f (it was .52; now under .40 and not black, over .005)" % (I.get("feltBase"), fb), .005 < fb < .40, I)
+chk("B. the Inspector's hat is dark (round 11's cap, round 12's dark felt): base %s, luminance %.3f (it was .52; now under .40 and not black, over .005)" % (I.get("feltBase"), fb), .005 < fb < .40, I)
 chk("B. his clipboard: two ticks and a cross on the form, a hand on the board (%s ticks, %s crosses, hand %s)" % (I["ticks"], I["crosses"], I["hand"]), I["ticks"] >= 2 and I["crosses"] >= 1 and I["hand"], I)
 chk("B. ...and the board is bigger (%.1f units tall, it was 7.4) with most of it inside the coin (%.2f)" % (I["boardH"], I["boardIn"]), I["boardH"] >= 8.5 and I["boardIn"] >= .55, I)
 St = r["strobe"]
@@ -151,17 +153,8 @@ chk("D. ...two arms from the helm's sides up to the notched crown (%s vertices, 
 Sl = r["spill"]
 chk("E. the ooze spans the drum's width (%.1f to %.1f, the drum is 7.8 to 32.2)" % (Sl["x0"], Sl["x1"]), Sl["x0"] <= 8.3 and Sl["x1"] >= 31.7, Sl)
 chk("E. every drip (%s of them) starts up inside the ooze, at least 1.5 units over the rim (least: %.2f)" % (Sl["n"], Sl["minUp"]), Sl["n"] >= 4 and Sl["minUp"] >= 1.5, Sl)
-F = r["flare"]
-chk("F. Quasar's flare sits ON its ring (%.2f units from it, at most .6)" % F["umbra"]["ringDist"], F["umbra"]["ringDist"] <= .6, F["umbra"])
-chk("F. Pulsar's flare is set on the rim of its star (%.2f off the rim, at most .5)" % F["singularity"]["off"], F["singularity"]["off"] <= .5, F["singularity"])
-chk("F. Eclipse's flare is the bead on the rim of its black disc (%.2f off the rim, at most .5)" % F["genesis"]["off"], F["genesis"]["off"] <= .5, F["genesis"])
-A_ = r["agent"]
-chk("G. Undercover is a person in shades, not a hat or a smiley: no hat group, no eye marks (%s), a pair of mirrored lenses (%s), a barely curved mouth (%.2f units, a smile is 1.6+)" % (A_["eyes"], A_["lens"], A_["mouthCurve"]),
-    not A_["person"] and A_["eyes"] == 0 and A_["lens"] and A_["mouthCurve"] <= .8, A_)
-chk("G. ...with a coiled earpiece wire (%s) that ends under a turned-up collar of two flaps (%s, tops at y %.1f, above the neck line 27), a blinking light on the earpiece (%s) and a badge wallet's gold (%s)" % (A_["coil"], A_["collar"], A_["collarTop"], A_["earLed"], A_["wallet"]),
-    A_["coil"] and A_["collar"] == 2 and A_["collarTop"] < 27 and A_["coil"]["bottom"] > A_["collarTop"] + 4 and A_["earLed"] and A_["wallet"], A_)
-M = r["irons"]
-chk("G. The Irons are two tools crossed over a shield, not a person and not a face: no hat, no eye marks (%s), two tool groups turned opposite ways (%s), the Maltese cross (%s) in a shield with a rim (%s), glints (%s)" % (M["eyes"], M["tools"], M["cross"], M["shield"], M["glints"]),
-    not M["person"] and M["eyes"] == 0 and len(M["tools"]) == 2 and any("rotate(-" in t for t in M["tools"]) and any("rotate(3" in t for t in M["tools"]) and M["cross"] >= 1 and M["shield"] and M["glints"], M)
+# (384 round 12, r9-chars) F and G are RETIRED: Quasar, Pulsar and Eclipse are replaced (Recon, Whiteout, Firebird), round 9's Undercover is
+# redrawn and The Irons is the Fire Marshal. check-b384-r9-chars asserts the new ones, each flare on its character among them.
+print("RETIRED F, G (round 12 replaced those characters; see check-b384-r9-chars)")
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

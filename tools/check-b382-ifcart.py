@@ -161,12 +161,14 @@ acad = [i for i in A["chars"] if A["chars"][i] != R1["academy"]["chars"].get(i)]
 chk("the academy's characters and banners are exactly as round 1 left them (changed: %s)" % acad[:6], not acad, acad)
 still = [i for i, v in F["anim"].items() if not v]
 chk("every Fire Code non-rank banner moves (layered, with a bl- motion) (still: %s)" % still, not still, still)
-off = [n for n in ["Hotshot", "Sparky", "Fire Marshal", "Truckie", "Air Attack", "Rescue Diver", "Gold Helmet", "Backdraft", "Night Shift", "Flashover", "Blue Flame", "Phoenix",
+# (384 round 12, r9-chars) "Fire Marshal" is off this list: round 1's was one of a fire-department set he turned down as a whole ("We are fire
+# prevention agency"); the round-12 Fire Marshal is the agency's own officer in its navy shirt and blue vest, in The Irons' place
+off = [n for n in ["Hotshot", "Sparky", "Truckie", "Air Attack", "Rescue Diver", "Gold Helmet", "Backdraft", "Night Shift", "Flashover", "Blue Flame", "Phoenix",
   "K9 Officer", "Logistics", "Horn Strobe", "Cyber Marshal", "Grand Marshal", "Commander"] if n in F["cnames"].values()]
 chk("no round-1 character he turned down is left in Fire Code (%s)" % off, not off, off)
 # (384) "I don't like the plane examiner ... a fire extinguisher character", "Let's not do the investigator, can you make that a
 # hazmat monster", "I don't like public educator, try something else": those three are the Extinguisher, Toxic Spill and Hydrant now
-need = ["Undercover", "Toxic Spill", "The Irons", "Strobe", "Sprinkler Head"]   # (384 r9) Undercover and The Irons replace the Lookout and the Smoke Alarm (r8: they replaced Undercover and Pump Operator) (r7: Pyrotech and Salamander) (r5: the Extinguisher and Hydrant)
+need = ["Undercover", "Toxic Spill", "Fire Marshal", "Strobe", "Sprinkler Head"]   # (384 round 12) the Fire Marshal replaces The Irons; (384 r9) Undercover and The Irons replace the Lookout and the Smoke Alarm (r8: they replaced Undercover and Pump Operator) (r7: Pyrotech and Salamander) (r5: the Extinguisher and Hydrant)
 chk("the extinguisher, toxic spill, hydrant, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
 gone = [n for n in ["Plans Examiner", "Public Educator", "Investigator"] if n in F["cnames"].values()]
 chk("...and the plans examiner, public educator and investigator he turned down in 384 are gone (%s)" % gone, not gone, gone)
@@ -214,9 +216,10 @@ chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood, a space helmet
 # (zenith) now, and the other two ultimates are rangers too
 # (384 r6) round 3's cowboy hats are gone: the inspector wears the navy duty cap, the chief is bareheaded, Star Ranger a space helmet
 # (astral / celestial are the two ultimates Fire Code retired in 384 - retireUltimates384 moves anyone off them, so nobody is shown them)
-west = [i for i in F["hats"] if i not in ("astral", "celestial") and "cowboy" in F["hats"][i].get("hat", [])]
-duty = F["hats"].get("detective", {}).get("hat", []) == ["cap"] and F["hats"].get("poseidon", {}).get("hat", []) == [] and F["hats"].get("zenith", {}).get("hat", []) == ["bubble"]
-chk("no Fire Code character wears a cowboy hat (%s); the inspector the duty cap, the chief none, Star Ranger a space helmet (%s)" % (west, {i: F["hats"].get(i, {}).get("hat") for i in ("detective", "poseidon", "zenith")}), not west and duty, west)
+# (384 round 12, r9-chars) Madison picked the cowboy hats back: the Inspector (build 383's investigator), the Chief (round 3) and Star Ranger
+# (round 3) wear them again, and nobody else does
+west = sorted(i for i in F["hats"] if i not in ("astral", "celestial") and "cowboy" in F["hats"][i].get("hat", []))
+chk("the Inspector, the Chief and Star Ranger wear cowboy hats again, and nobody else in Fire Code does (%s)" % west, west == ["detective", "poseidon", "zenith"], west)
 chk("the clown's character is called Strobe (%s)" % F["cnames"].get("clown"), F["cnames"].get("clown") == "Strobe")
 BREDO3 = ["tests100", "early10", "hundos100", "study50", "astral", "celestial", "zenith"]
 bsame3 = [i for i in BREDO3 if F["banners"].get(i) == R2["ifc"]["banners"].get(i)]
