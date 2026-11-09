@@ -132077,7 +132077,10 @@ var settingsIconFit = {sound: [0.9462, 0.783, 0.646], study: [0.9525, 0.569, 0.0
    dark, no colour at all): one neutral graphite tile for all three, the glyph white, as the bar's own icons are. */
 /* (384 r8) "Why is this purple? Shouldn't it just be grey?" (Stats' Test history, which took Settings' indigo for its kind): EVERY
    row tile outside the Settings menu is this one grey - Profile's three and Stats' Test history alike. Only the menu has colours. */
-const PF_ROW_GREY = "#48484A";
+/* (384 r9) ...AND THAT GREY IS SETTINGS' GREY. Madison, Stats' Test history tile beside the Settings menu: "Why does this icon not look
+   like the others?" The row grey was a darker #48484A, so the tile read as a different kind of thing from Share / Check for
+   update / Advanced, which are Delta's #8E8E93. One grey, the menu's, with the menu's rim. */
+const PF_ROW_GREY = "#8E8E93";
 const PF_ROW_TILE = { customize: PF_ROW_GREY, ladder: PF_ROW_GREY, badgecase: PF_ROW_GREY };
 function pfActFill(btn, kind, label, sub, tile){
   const t = settingsRowIcon(kind);
