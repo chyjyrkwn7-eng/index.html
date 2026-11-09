@@ -531,7 +531,8 @@
        stars show and brightens them a little, a hairline, a catch-light on top
        and a dark lip under. Every pop-up takes this. */
     --pop-bg:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
-    --pop-bg-card:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.5);
+    --pop-bg-glass:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.5);
+    --pop-bg-card:var(--pop-bg-glass);
     --pop-border:1px solid rgba(255,255,255,.11);
     --pop-blur:blur(9px) saturate(1.9) brightness(1.06);
     --pop-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
@@ -26973,8 +26974,11 @@
   }
   .person-card-grid.has-three > .person-card-cell:first-child{ grid-column:1 / -1; padding-top:.95rem; padding-bottom:.95rem; }
   .person-card-grid.has-three > .person-card-cell:first-child .person-card-cell-value{ font-size:1.7rem; }
+  /* (384 r8) "the letters 'xp' are pretty dang close to the number" - 1.6px between the big number and its label. Labels sit
+     .3rem under their number (.45rem under the big XP one), the gap the Stats tab's numbers keep. */
+  .person-card-grid.has-three > .person-card-cell:first-child{ gap:.45rem; }
   .person-card-cell{
-    display:flex; flex-direction:column; align-items:center; gap:.1rem;
+    display:flex; flex-direction:column; align-items:center; gap:.3rem;
     padding:.55rem .35rem; border-radius:14px;
     background:rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.07);
@@ -37823,6 +37827,15 @@ html.is-browser{ --fade-paper: transparent; }
     --surface-blur:none;
     --ios-card-fill:transparent;
     --pop-bg-card:var(--clean-card);
+  }
+  /* (384 r8) A POP-UP IS FROSTED ON EVERY SCREEN. Madison, a classmate's card opened from the Leaderboard beside the same card
+     opened from Home: "do you see how the stuff isn't frosted glass like the bo screenshot? I like the frosted look, ensure
+     it's there." The clean look above sets --pop-bg-card to the flat card colour beyond Home - meant for the Profile card,
+     which draws from it inside #stage - and every pop-up on <body> inherited it, so off Home the person card, the unlock card,
+     the intro card and the save-code / Add-to-Home sheets were solid. The clean look's own note keeps "the pop frosted look":
+     the pop-ups take the glass back here; the Profile card in #stage keeps the flat colour. */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) :is(.invite-overlay, .intro-card, .savecode-card, .a2hs-sheet){
+    --pop-bg-card:var(--pop-bg-glass);
   }
   /* ---- THE SKY BEYOND HOME (383 round 3) ----
      Madison, after the clean look: "what if they were more 'blurry' but not blurry just like more dull and less distracting so
