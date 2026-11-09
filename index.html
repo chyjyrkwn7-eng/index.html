@@ -37697,6 +37697,14 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage > .panel.vroom-finale-solo > .vroom-solo-grade{ text-align:center; padding-bottom:18px; }
   html[data-layout] body #stage > .panel.vroom-finale-solo > .vroom-solo-grade .rs-pct{ display:inline-block; }
   html[data-layout] body #stage > .panel.vroom-finale-solo > .vroom-solo-grade .vroom-solo-xp{ margin-top:.5rem; color:var(--soft); }
+  /* (384 r8) the Tug of War wait the same way: title, line, your score, the rope, who is left - centred, one width */
+  html[data-layout] body #stage > .panel.vroom-wait-centred{
+    display:flex; flex-direction:column; justify-content:center; gap:12px; box-sizing:border-box;
+    min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
+  }
+  html[data-layout] body #stage > .panel.vroom-wait-centred > .vroom-solo-grade{ width:min(100%, 24rem); align-self:center; box-sizing:border-box; text-align:center; padding-bottom:18px; margin:0; }
+  html[data-layout] body #stage > .panel.vroom-wait-centred > .vroom-solo-grade .rs-pct{ display:inline-block; }
+  html[data-layout] body #stage > .panel.vroom-wait-centred > .vroom-solo-grade .vroom-solo-xp{ margin-top:.5rem; color:var(--soft); }
   /* the cards: the units screen's card next door (Settings' sheen and the board row's lift over the surface, the full rim) -
      "the app needs a cohesive look" (383) */
   html[data-theme][data-layout] body #stage > .panel.modeselect .modecard{
@@ -136028,7 +136036,14 @@ function tugPaintRope(root, d){
   if(state){
     state.classList.remove("is-ours", "is-theirs");
     const near = Math.abs(v.disp) >= v.gap * .7;
-    if(v.lead === null){
+    /* (384 r8) once you are done the line describes the rope; it does not tell you to pull */
+    const done = !!(root.closest && root.closest(".screen-tug-wait")) || !!(root.classList && root.classList.contains("screen-tug-wait"));
+    if(done){
+      if(v.lead === "us") state.classList.add("is-ours"); else if(v.lead) state.classList.add("is-theirs");
+      state.textContent = v.lead === null ? "The rope is level"
+        : v.lead === "us" ? (near ? "Your side is almost over the line" : "Your side is ahead")
+        : (near ? "Their side is almost over the line" : "Their side is ahead");
+    } else if(v.lead === null){
       state.textContent = "Right answers pull the rope \u2014 faster ones pull harder";
     } else if(v.lead === "us"){
       state.classList.add("is-ours");
@@ -136274,7 +136289,7 @@ function refreshTugLive(d){
     const here = vroomMatchHere(d);
     const still = Object.keys((d.tug && d.tug.teams) || {})
       .filter(k => k !== vroomMyKey && here[k] && (Number((prog[k] || {}).pos) || 0) < count).length;
-    live.textContent = still === 0 ? "Everyone has finished"
+    live.textContent = still === 0 ? "Everyone has finished. The final pull is next."
       : (still === 1 ? "1 person is still answering" : still + " people are still answering");
   }
   tugLastRopePos = pos;
@@ -136296,11 +136311,15 @@ function renderTugWaiting(d){
   setActiveNav(null);
   window.forceHideBottomTabs = true;
   countEl.textContent = "Tug of War";
-  pauseBtn.hidden = false;
+  /* (384 r8) Madison, this screen: "This is a confusing screenshot, says I'm almost done but it also says I'm finished, and where
+     is the rest of the stuff". There is nothing left to pause once you are done (the race's wait hides Pause too); the line under
+     the rope says where the rope IS, not what to do (see tugPaintRope); and your own result is on it - your score card, the same
+     one the race's wait shows - with the rope and who is still answering under it, the whole column centred. */
+  pauseBtn.hidden = true;
   if(tugTickTimer){ clearInterval(tugTickTimer); tugTickTimer = null; }
 
   const panel = document.createElement("section");
-  panel.className = "panel screen-tug-wait";
+  panel.className = "panel screen-tug-wait vroom-wait-centred";
   const title = document.createElement("h1");
   title.className = "welcomeintro-title";
   /* Plain, not chatty - this is a police academy class. */
@@ -136308,9 +136327,21 @@ function renderTugWaiting(d){
   panel.appendChild(title);
   const sub = document.createElement("p");
   sub.className = "cal-sub"; sub.style.textAlign = "center";
-  sub.textContent = "You got through all " + tugCount + " with " + tugMyCorrect
-    + " right. The rope is still moving.";
+  sub.textContent = "The rope is still moving. The final pull plays when everyone has finished.";
   panel.appendChild(sub);
+  if(Number(tugCount) > 0){
+    const pct = Math.round(100 * (Number(tugMyCorrect) || 0) / Number(tugCount));
+    const mine = document.createElement("div");
+    mine.className = "rs-card rs-grade rs-graded vroom-solo-grade " + (pct >= PASS_MARK ? "is-pass" : "is-fail");
+    const kick = document.createElement("p"); kick.className = "rs-kicker"; kick.textContent = "Your score";
+    const num = document.createElement("span"); num.className = "rs-pct pct";
+    try{ gradePctMarkup(num, pct); }catch(e){ num.textContent = pct + "%"; }
+    num.style.color = pct >= PASS_MARK ? "var(--right)" : "var(--wrong)";
+    const line = document.createElement("p"); line.className = "rs-grade-sub vroom-solo-xp";
+    line.textContent = (Number(tugMyCorrect) || 0) + " of " + tugCount + " right";
+    mine.append(kick, num, line);
+    panel.appendChild(mine);
+  }
   panel.appendChild(buildTugRope(d));
   const live = document.createElement("p");
   live.className = "tug-waiting friend-hint";
@@ -137330,17 +137361,32 @@ function renderBattleWaiting(d){
   setActiveNav(null);
   window.forceHideBottomTabs = true;
   countEl.textContent = "Battle";
-  pauseBtn.hidden = false;
+  /* (384 r8) the Tug of War wait's fixes, here too: no Pause once you are done, your score card, centred (see renderTugWaiting) */
+  pauseBtn.hidden = true;
   if(battleTickTimer){ clearInterval(battleTickTimer); battleTickTimer = null; }
   detachBattleEffects();
   const panel = document.createElement("section");
-  panel.className = "panel screen-battle-wait";
+  panel.className = "panel screen-battle-wait vroom-wait-centred";
   const h = document.createElement("h1");
   h.className = "welcomeintro-title"; h.textContent = "You're done";
   const p = document.createElement("p");
   p.className = "cal-sub"; p.style.textAlign = "center";
-  p.textContent = "You got through all " + battleCount + " with " + battleCorrect + " right. The fight is still going.";
-  panel.append(h, p, buildBattleBoard(d));
+  p.textContent = "The fight is still going. The result comes when everyone has finished.";
+  panel.append(h, p);
+  if(Number(battleCount) > 0){
+    const pct = Math.round(100 * (Number(battleCorrect) || 0) / Number(battleCount));
+    const mine = document.createElement("div");
+    mine.className = "rs-card rs-grade rs-graded vroom-solo-grade " + (pct >= PASS_MARK ? "is-pass" : "is-fail");
+    const kick = document.createElement("p"); kick.className = "rs-kicker"; kick.textContent = "Your score";
+    const num = document.createElement("span"); num.className = "rs-pct pct";
+    try{ gradePctMarkup(num, pct); }catch(e){ num.textContent = pct + "%"; }
+    num.style.color = pct >= PASS_MARK ? "var(--right)" : "var(--wrong)";
+    const line = document.createElement("p"); line.className = "rs-grade-sub vroom-solo-xp";
+    line.textContent = (Number(battleCorrect) || 0) + " of " + battleCount + " right";
+    mine.append(kick, num, line);
+    panel.appendChild(mine);
+  }
+  panel.appendChild(buildBattleBoard(d));
   const live = document.createElement("p");
   live.className = "battle-live friend-hint";
   panel.appendChild(live);
