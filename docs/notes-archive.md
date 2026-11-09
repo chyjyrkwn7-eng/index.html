@@ -37418,3 +37418,29 @@ check-positions had flagged "Select your classes" (showClassSelection) on every 
 - `(min-width:64rem) and (min-aspect-ratio:5/4) and (max-height:860px)` (the laptop sign-up layout, where each step starts at the same height and its button follows its content): Back, the title and their spacing untouched so they still line up with every other step; the line under the title on one line (max-width 34rem, was 26rem: 46 -> 23px) and 1rem above the cards (was 1.8rem); the cards' gap 1rem (was 1.6rem, so each card is ~6px wider and Fire Code's kicker is one line); all three cards with the 38px mark and the tighter padding/gaps; the small print on one line (max-width 42rem, was 30rem) .75rem under the cards and .5rem over Continue; Continue .9rem under it (was 2rem / 1.2rem on 601-660px). Dell Latitude 1366x638: cards 308 -> 265px, Continue bottom 714 -> 602 (12px clear after the page's foot padding); small laptop 729 -> 604; MacBook Air 845 -> 701; MacBook Pro 14" 852 -> 709. 1536x864 and taller (MBP 16", FHD) are outside the tier and unchanged. The tier also catches tablets in landscape (they use the laptop layout): check-positions --landscape's six class-step scroll flags (iPad mini 125 / 103, iPad 10.2" 65, Air 56, Pro 11" 43, Android tablet 74) are gone.
 - STILL OPEN, pre-existing and not spacing: an iPhone SE 2nd/3rd gen (375x667 installed) still scrolls the step 91px with Continue 109px under the floor (and check-b384-classstep's "375x667 fits with nothing scrolled" leg still fails, as it did before this round); the first-gen SE (allowed to scroll) and phones in landscape likewise. Fire Code's card alone is ~300px tall in a 140px column; getting 110px back there needs a look decision (e.g. the cards as full-width rows on a short phone, or a shorter Fire Code line) - for Madison.
 - Gate: NEW tools/check-b384-classfloor.py (check-positions' own harness: its seed, insets, standalone patch and showWelcome() first). A: no scroll and Continue on the screen on the 13 mini, Dell Latitude, MBP 14", MacBook Air, small laptop; B: the class step's Continue within 2px of the other steps' median on the 13 mini, 14/15/16, Pro Max and Android phone; C: none of the step's type below the previous build's computed sizes (a guard: passes on both). FAILS on the previous build (--against): A on all five, B on the 13 mini. check-positions portrait: the 13 mini and the four laptop flags are gone, every other row identical; check-b384-classstep: 1440x820's "fits with nothing scrolled" now passes too.
+
+### 384 r13 (r13-banner, cut from claude/b384 9c276e7; NOT on main) - the genesis secret flare banner is the Comet
+Madison picked Comet as the genesis secret character (a carved-ice face, its hair the comet's tail in cyan-to-rose, the core flare at its heart; the
+character itself ships on r13-chars). So flare_genesis, drawn as the Aurora in r11, is renamed and redrawn: IFC_BANNER_LOOK flare_genesis
+["Comet", "#5CE1FF", "#FF5CA8"] (icy cyan + rose; was ["Aurora", "#34E0A1", "#FF5CA8"]). Ids, unlock rule and the "Comes with X, a secret flare
+character" label logic are untouched (the label follows AVATAR_DISPLAY_NAME, so it reads Comet once the character branch lands). Only this one banner
+changed; every other banner in both classes is byte-identical to 9c276e7 (gated).
+- THE SCENE: a great comet over a frozen sea. The nucleus right of centre (338, 74) - the secret flare IS the nucleus: a white bead with a cyan-to-rose halo,
+  a short horizontal glint and an upright spike, in a cyan coma. Out of it, up and away to the top-left corner, the ION TAIL: three wide soft glow layers,
+  two body layers and a white core, each a tapered quadratic-spine shape opening from ~4 to 150 units, their ramp icy cyan at the head into rose at the far
+  end (stacking wider/fainter layers is what gives the soft edge); seven fine streamers along it. Under it the DUST TAIL, broader, more curved and fainter,
+  warm white -> peach -> rose. The Milky Way faint across the sky behind, stars. Below, sea ice: a cyan-lit horizon line, three rows of pressure ridges
+  (broken floes) with cyan rims on their comet-facing slopes, cracks, a smear of the comet's light on the ice. Both flares on the Profile cover sit clear of
+  the avatar (the tail crosses above it).
+- MOTION (transform/opacity only, no filters): ion tail shimmer 4.2s and dust tail 6s, both scaling out of the nucleus; streamers glow 2.6s; two debris
+  sets of glints drifting along the tail (bl-mote 7s / 9s); a fragment shooting off (bl-meteor 7.5s); coma breathe, bead pulse, spike glow; stars twinkle.
+  275 elements, 13 layers.
+- Tried and dropped: single wide tail wedges (read as flat geometric cones), a grey dust tail (#FFE6D0 at low opacity over navy goes grey - warmed to
+  peach/rose), full chevron rims on every floe (read as scattered "^" marks).
+- GATES: check-b384-r9-banners (9) keeps the Whiteout lines and the 3b1526d pin (the Aurora part lines retired); NEW (10) with .prev3.json (9c276e7's hashes,
+  --dump3 --against the base): flare_genesis alone differs, the 41 others byte-identical; named Comet; a coma and the flare's bead with the ion and dust tails
+  shimmering out of it on their own clocks; the ion ramp has an icy cyan and a rose stop; two debris clocks; no curtains, lake or sway/spin; the swatch
+  cyan + rose. All three (10) lines FAIL on 9c276e7. check-b384-sets (7) and check-b384-fcbanners' name tables: flare_genesis "Comet". RUN one at a time:
+  check-js ALL PASS; check-b384-r9-banners ALL PASS; check-b384-sets ALL PASS; check-b384-fcbanners ALL PASS; check-b384-r5-chars ALL PASS;
+  check-b384-secretnames ALL PASS; check-b384-banners ALL PASS; Profile with the banner: no page error, console only the two blocked Firebase loads.
+- NOT confirmable in Chromium: the tail shimmer's smoothness on an old iPhone.

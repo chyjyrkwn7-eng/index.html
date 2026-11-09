@@ -17,14 +17,18 @@
  (7) THE SECRET FLARES share no long shape between ANY two of the four (Pulsar and Eclipse used to share their hills and lake), each keeps its colour;
  (8) none of the round 9 banners has an svg filter, a clashing id or an unresolved url(#), or is heavier than 700 elements or 24 layers.
  (9) r11 (r11-banners, cut from 3b1526d): the two secret flare banners renamed with their characters are redrawn to match - against
-     check-b384-r9-banners.prev2.json (3b1526d's hashes in both classes) flare_horizon (Whiteout) and flare_genesis (Aurora) differ and EVERY other
+     check-b384-r9-banners.prev2.json (3b1526d's hashes in both classes) flare_horizon (Whiteout) and flare_genesis differ and EVERY other
      banner in both classes is byte-identical; WHITEOUT is a blizzard (three or more sheets of snow driven across on bl-slide, a gradient-lit ridge,
-     no spin and no beams round a star any more); AURORA is the northern lights (three curtains on their own clocks, each of 30+ rays filled by its own
-     green-to-rose ramp, a lake under them with the lights given back) and its swatch is green and rose.
+     no spin and no beams round a star any more). (r11 drew flare_genesis as the Aurora; r13 retired those lines with it.)
+(10) r13 (r13-banner, cut from claude/b384 9c276e7): genesis's character is the Comet, so flare_genesis is named "Comet" and drawn as a great comet -
+     against check-b384-r9-banners.prev3.json (9c276e7's hashes in both classes) it alone differs and every other banner is byte-identical; the scene
+     has a nucleus (coma + bead) with the ion tail and the dust tail streaming out of it on their own shimmer clocks, the ion tail's ramp running from
+     icy cyan into rose (url(#..ion)), debris on two drifting clocks, no curtains, no lake and no spin; its swatch is icy cyan and rose.
 
   python3 tools/check-b384-r9-banners.py [--against OLD/index.html]     (FAILS on cd82880)
   python3 tools/check-b384-r9-banners.py --dump --against <cd82880 index.html>   writes the .prev.json
   python3 tools/check-b384-r9-banners.py --dump2 --against <3b1526d index.html>  writes the .prev2.json
+  python3 tools/check-b384-r9-banners.py --dump3 --against <9c276e7 index.html>  writes the .prev3.json
 """
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -32,8 +36,9 @@ src = open(os.path.join(HERE, "record-cutscenes.py")).read().split("\nSCENES = [
 rc = {"__file__": os.path.join(HERE, "record-cutscenes.py"), "__name__": "rc"}; exec(src, rc)
 from playwright.sync_api import sync_playwright
 BODY = open(sys.argv[sys.argv.index("--against") + 1], encoding="utf-8").read() if "--against" in sys.argv else None
-DUMP = "--dump" in sys.argv or "--dump2" in sys.argv
-PREVF = os.path.join(HERE, "check-b384-r9-banners.prev2.json" if "--dump2" in sys.argv else "check-b384-r9-banners.prev.json")
+DUMP = "--dump" in sys.argv or "--dump2" in sys.argv or "--dump3" in sys.argv
+PREVF = os.path.join(HERE, "check-b384-r9-banners.prev2.json" if "--dump2" in sys.argv else "check-b384-r9-banners.prev3.json" if "--dump3" in sys.argv else "check-b384-r9-banners.prev.json")
+PREVF3 = os.path.join(HERE, "check-b384-r9-banners.prev3.json")
 PREVF2 = os.path.join(HERE, "check-b384-r9-banners.prev2.json")
 R11 = ["flare_horizon", "flare_genesis"]
 R9 = ["tests500", "correct5000", "level80", "early10", "flare_void", "flare_umbra", "flare_horizon", "flare_genesis", "hundos100", "tests250", "hundos250"]
@@ -103,12 +108,16 @@ MEASURE = r"""(R9) => {
     for(let i = 0; i < 4; i++) for(let j = i + 1; j < 4; j++){ const n = [...L[i]].filter(v => L[j].has(v)).length; if(n) pairs.push([fl[i], fl[j], n]); }
     const C = {}; fl.forEach(id => C[id] = ((bannerStaticSVG(id) || '') + lstr(id)).toUpperCase());
     out.F = { pairs, colours: ['#EF4444', '#F97316', '#FACC15'].every(c => C.flare_void.indexOf(c) >= 0) && C.flare_umbra.indexOf('#8B5CF6') >= 0 && C.flare_horizon.indexOf('#CFEAFF') >= 0 && C.flare_genesis.indexOf('#FF5CA8') >= 0 }; }catch(e){ out.err += 'F ' + String(e).slice(0, 120) + ' '; }
-  /* 9. r11: the Whiteout and the Aurora by their parts */
-  try{ const wl = layers('flare_horizon'), al = layers('flare_genesis');
-    const rays = l => ((l.svg || '').match(/fill="url\(#gqc[ABC]\)"/g) || []).length;
-    out.R11 = { slides: wl.filter(l => /bl-slide/.test(l.cls || '')).length, spin: wl.filter(l => /bl-spin/.test(l.cls || '')).length, ridge: /url\(#gqridge\)/.test(lstr('flare_horizon')),
-      curtains: al.filter(l => /bl-sway|bl-shimmer/.test(l.cls || '') && rays(l) >= 30).map(l => [rays(l), l.style || '']),
-      lake: /url\(#gqlake\)/.test(lstr('flare_genesis')), refl: /url\(#gqc[ABC]r\)/.test(lstr('flare_genesis')), tint: (typeof BANNER_TINT !== 'undefined' && BANNER_TINT.flare_genesis) || null }; }catch(e){ out.err += 'R11 ' + String(e).slice(0, 120) + ' '; }
+  /* 9. r11: the Whiteout by its parts */
+  try{ const wl = layers('flare_horizon');
+    out.R11 = { slides: wl.filter(l => /bl-slide/.test(l.cls || '')).length, spin: wl.filter(l => /bl-spin/.test(l.cls || '')).length, ridge: /url\(#gqridge\)/.test(lstr('flare_horizon')) }; }catch(e){ out.err += 'R11 ' + String(e).slice(0, 120) + ' '; }
+  /* 10. r13: the Comet by its parts */
+  try{ const cl = layers('flare_genesis'), ls = lstr('flare_genesis'), stops = id => { const m = new RegExp('<linearGradient id="gq' + id + '"[^>]*>(.*?)</linearGradient>').exec(ls); return m ? (m[1].match(/stop-color="(#[0-9A-Fa-f]{6})"/g) || []).map(x => x.slice(12, 19).toUpperCase()) : []; };
+    const shim = cl.filter(l => /bl-shimmer/.test(l.cls || '') && /url\(#gq(ion|dust)\)/.test(l.svg || ''));
+    out.R13 = { name: (BANNERS.find(b => b.id === 'flare_genesis') || {}).name, tails: shim.map(l => [(l.svg.match(/url\(#gqion\)/) ? 'ion' : 'dust'), l.o, l.style || '']),
+      coma: /url\(#gqcoma\)/.test(ls), bead: cl.filter(l => /bl-pulse/.test(l.cls || '') && /url\(#gqbead\)/.test(l.svg || '')).map(l => l.o), ion: stops('ion'),
+      debris: cl.filter(l => /bl-mote/.test(l.cls || '')).map(l => l.style || ''), curtains: /url\(#gqc[ABC]\)/.test(ls), lake: /url\(#gqlake\)/.test(ls), spin: cl.filter(l => /bl-spin|bl-sway/.test(l.cls || '')).length,
+      tint: (typeof BANNER_TINT !== 'undefined' && BANNER_TINT.flare_genesis) || null }; }catch(e){ out.err += 'R13 ' + String(e).slice(0, 120) + ' '; }
   /* 8. hygiene */
   try{ out.W = {}; out.bad = [];
     R9.forEach(id => { const x = buildBannerArt(id), y = buildBannerArt(id); out.W[id] = [x.querySelectorAll('*').length, x.querySelectorAll('.bnl').length];
@@ -176,18 +185,28 @@ chk("(8) no filter, id clash or unresolved url in the round 9 banners (%s); none
 chk("(8) the measurements ran without a page error (%s)" % M.get("err"), not M.get("err"), M.get("err"))
 P2 = json.load(open(PREVF2))
 same2 = [i for i in R11 if H.get(i) == P2["ifc"].get(i)]
-chk("(9) r11: the Whiteout and the Aurora are redrawn since 3b1526d (unchanged: %s)" % same2, not same2 and all(i in H for i in R11), same2)
+chk("(9) r11: the Whiteout and flare_genesis are redrawn since 3b1526d (unchanged: %s)" % same2, not same2 and all(i in H for i in R11), same2)
 moved3 = [i for i in P2["ifc"] if i not in R11 and H.get(i) != P2["ifc"][i]] + ["academy:" + i for i in P2["academy"] if A0.get(i) != P2["academy"][i]]
 chk("(9) ...and every other banner in both classes is byte-identical to 3b1526d (%d checked; moved: %s)" % (len(P2["ifc"]) - len(R11) + len(P2["academy"]), moved3),
     not moved3 and len(H) == len(P2["ifc"]) and len(A0) == len(P2["academy"]), moved3)
 R = M.get("R11") or {}
 chk("(9) WHITEOUT is a blizzard: %s sheets of snow driven across (bl-slide), a lit ridge (%s), nothing spinning (%s)" % (R.get("slides"), R.get("ridge"), R.get("spin")),
     R.get("slides", 0) >= 3 and R.get("ridge") and not R.get("spin"), R)
-cu = R.get("curtains") or []
-tint = [str(c).upper() for c in (R.get("tint") or [])]
+P3 = json.load(open(PREVF3))
+same3 = H.get("flare_genesis") == P3["ifc"].get("flare_genesis")
+moved4 = [i for i in P3["ifc"] if i != "flare_genesis" and H.get(i) != P3["ifc"][i]] + ["academy:" + i for i in P3["academy"] if A0.get(i) != P3["academy"][i]]
+chk("(10) r13: the Comet banner is redrawn since 9c276e7 (%s) and every other banner in both classes is byte-identical to it (%d checked; moved: %s)" % (not same3, len(P3["ifc"]) - 1 + len(P3["academy"]), moved4),
+    not same3 and not moved4 and len(H) == len(P3["ifc"]) and len(A0) == len(P3["academy"]), (same3, moved4))
+C = M.get("R13") or {}
 def hue(h):
     import colorsys; n = int(h[1:], 16); return colorsys.rgb_to_hsv((n >> 16) / 255, (n >> 8 & 255) / 255, (n & 255) / 255)[0] * 360
-chk("(9) AURORA is the northern lights: %d curtains of rays on their own clocks (%s), the lake (%s) giving them back (%s); its swatch is green and rose (%s)" % (len(cu), [c[0] for c in cu], R.get("lake"), R.get("refl"), tint),
-    len(cu) >= 3 and len(set(c[1] for c in cu)) == len(cu) and R.get("lake") and R.get("refl") and len(tint) == 2 and 120 <= hue(tint[0]) <= 175 and (hue(tint[1]) >= 300 or hue(tint[1]) <= 15), R)
+cyan = lambda h: 175 <= hue(h) <= 205
+rose = lambda h: hue(h) >= 315 or hue(h) <= 10
+tails = C.get("tails") or []; nuc = (C.get("bead") or [None])[0]
+chk("(10) COMET: named %s; a nucleus (coma %s, the flare's bead pulsing at %s) with %s tails shimmering out of it on their own clocks (%s)" % (C.get("name"), C.get("coma"), nuc, len(tails), tails),
+    C.get("name") == "Comet" and C.get("coma") and nuc and {t[0] for t in tails} == {"ion", "dust"} and all(t[1] == nuc for t in tails) and len({t[2] for t in tails}) == len(tails), C)
+ion = C.get("ion") or []; tint = [str(c).upper() for c in (C.get("tint") or [])]
+chk("(10) ...the ion tail runs icy cyan into rose (%s); debris drifts on %d clocks; no curtains (%s), lake (%s) or swaying/spinning layer (%s); the swatch is icy cyan and rose (%s)" % (ion, len(C.get("debris") or []), C.get("curtains"), C.get("lake"), C.get("spin"), tint),
+    any(cyan(h) for h in ion) and any(rose(h) for h in ion) and len(set(C.get("debris") or [])) >= 2 and not C.get("curtains") and not C.get("lake") and not C.get("spin") and len(tint) == 2 and cyan(tint[0]) and rose(tint[1]), C)
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

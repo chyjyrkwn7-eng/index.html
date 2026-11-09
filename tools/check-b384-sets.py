@@ -210,8 +210,8 @@ newb = [i for i in SQB + TRIO if F["b"][i] == BEFORE["ifc"]["b"][i]]
 chk("(7) all seven banners are new (unchanged: %s)" % newb, not newb)
 bn = F["bnames"]
 # the secret-flare banners are named for the characters they come with (Nebula, Quasar, Pulsar, Eclipse (was Solstice): the character helper renames the four to match)
-# (384 r9) Pulsar's character is Whiteout and Eclipse's is Aurora now, and the banners were renamed with them
-mism = [i for i in SQB if bn[i] != dict(zip(SQB, ["Nebula", "Quasar", "Whiteout", "Aurora"]))[i]] + [i for i in TRIO if bn[i] != F["names"][i]]
+# (384 r9) Pulsar's character is Whiteout and Eclipse's is Aurora now, and the banners were renamed with them; (r13) genesis is the Comet
+mism = [i for i in SQB if bn[i] != dict(zip(SQB, ["Nebula", "Quasar", "Whiteout", "Comet"]))[i]] + [i for i in TRIO if bn[i] != F["names"][i]]
 chk("(7) each banner is named for its character (%s)" % bn, not mism, mism)
 ly = F["layers"]
 badl = {i: v for i, v in ly.items() if v["bad"] or v["filt"] or v["n"] > 14 or v["moving"] < 3}
