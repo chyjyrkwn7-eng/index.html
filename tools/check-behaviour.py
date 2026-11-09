@@ -608,6 +608,9 @@ def check_ranks(br):
       meter:!!c.querySelector('.rankmap-meter'),
       you:!!c.querySelector('.rankmap-you'),
       rewards:c.querySelectorAll('.rankmap-gift').length,
+      themeGift:!!c.querySelector('.rankmap-gift.is-theme'),
+      flareGift:!!c.querySelector('.rankmap-gift.is-flare'),
+      bannerGift:!!c.querySelector('.rankmap-gift.is-banner'),
       charGift:!!c.querySelector('.rankmap-gift.is-char')}))""")
     # Build 244 changed the names: Bronze first, Silver second, Iron gone.
     check("seven ranks, named as ranks and not as flares",
@@ -630,13 +633,16 @@ def check_ranks(br):
     # Theme and flare on every rank; Gold and up hand over a character
     # too, and the top three a banner (a chip again since build 236).
     # Build 235: Gold hands over the Pharaoh, so it is the top FIVE now.
-    check("every rank lists what it hands over, top five include the character",
-          # Build 236: the top three's banners are chips again, so they count.
-          # Build 244: the second rank hands over Lunar, so the rank
-          # characters start one rank lower - six of them.
-          [c["rewards"] for c in cards] == [2, 3, 3, 3, 4, 4, 4] and
-          [c["charGift"] for c in cards] == [False] + [True] * 6,
-          [c["rewards"] for c in cards])
+    # STALE AND REWRITTEN as a shape (384 round 4, "Forge, Bronze's character",
+    # docs/notes-archive.md): the first rank hands over a character too, so
+    # EVERY rank lists a theme, a flare and a character (3 rewards) and only
+    # the top three add their banner (4). It used to read [2,3,3,3,4,4,4] with
+    # no character on the first card - six characters on the top six ranks.
+    check("every rank lists what it hands over: a theme, a flare and a character, and the top three a banner as well",
+          len(cards) == 7 and all(c["themeGift"] and c["flareGift"] and c["charGift"] for c in cards)
+          and [c["bannerGift"] for c in cards] == [False] * 4 + [True] * 3
+          and all(c["rewards"] == 3 + (1 if c["bannerGift"] else 0) for c in cards),
+          [(c["rewards"], c["charGift"], c["bannerGift"]) for c in cards])
     # THE SHAPE, NOT THE COUNT. This asserted `count == 12` and that
     # every character without an `unlock` is free, and it went red the
     # day four FEAT characters were added - which is the app being
@@ -656,9 +662,14 @@ def check_ranks(br):
          earnable - it is kept by whoever held it - so it is not here. */
       lockedFree: AVATAR_CHARACTERS.filter(c=>!c.unlock && !c.feat && !c.legacy)
                     .map(c=>isLockedCharacter(c.id)),
-      featLocked: AVATAR_CHARACTERS.filter(c=>c.feat).map(c=>isLockedCharacter(c.id))})""")
-    check("six characters gated on the top six ranks (Lunar on the second since build 244)",
-          chars["gated"] == ["ranger", "veteran", "vanguard", "adept", "elite", "titan"], chars)
+      /* build 384: one ultimate per class (ULTIMATE_TOP) - the other two are
+         retired, so nobody can earn them and they are not "a feat you have
+         not done" */
+      featLocked: AVATAR_CHARACTERS.filter(c=>c.feat && !c.retired).map(c=>isLockedCharacter(c.id))})""")
+    # Build 384 round 4: Forge is Bronze's, so each of the seven ranks gates
+    # exactly one character (build 244 had six, Lunar on the second).
+    check("one character gated on each of the seven ranks, in rank order",
+          chars["gated"] == ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"], chars)
     # The seed holds Gold (so the Pharaoh is its own since build 235) and has done nothing towards any feat, so
     # none of the eight earned characters is reachable and none of the
     # free ones is ever locked.
@@ -1850,16 +1861,18 @@ def check_b223(br):
       const E = (id, at, from, kind, x) => Object.assign({ id, at, from, kind }, x || {});
       // A hit from either member of a side comes off the OTHER side's one bar.
       let r = battleReplay(mk([E('a',1,'me','hit',{dmg:5}), E('b',2,'cy','hit',{dmg:5}), E('c',3,'bo','hit',{dmg:5})]));
-      out.hp = r.hp; out.max = r.max;
+      out.hp = r.hp; out.max = r.max; out.perMember = BATTLE_HP;
       // Order-independent: the same log in any array order is the same fight.
       const log = [E('a',1,'bo','hit',{dmg:5}), E('b',2,'me','shield'), E('c',3,'dee','hit',{dmg:5}), E('d',4,'bo','double'),
                    E('e',5,'bo','hit',{dmg:5}), E('f',6,'cy','heal'), E('g',7,'cy','hit',{dmg:5})];
       out.orderFree = JSON.stringify(battleReplay(mk(log)).hp) === JSON.stringify(battleReplay(mk(log.slice().reverse())).hp);
       out.events = battleReplay(mk(log)).events.map(e => e.kind);
-      // A side at zero is down, and nothing after it counts.
-      const ko = [];
-      for(let i = 0; i < 40; i++) ko.push(E('k' + i, 10 + i, i % 2 ? 'me' : 'cy', 'hit', {dmg:7}));
+      // A side at zero is down, and nothing after it counts. The number of hits that empties the bar is read off the bar
+      // (a side's HP is BATTLE_HP per member, 384 r5 - it was 100), not typed: 7 a hit, enough of them to clear it.
+      const ko = [], n7 = Math.ceil(r.max[teams.bo] / 7) + 2;
+      for(let i = 0; i < n7; i++) ko.push(E('k' + i, 10 + i, i % 2 ? 'me' : 'cy', 'hit', {dmg:7}));
       ko.push(E('z', 999, 'bo', 'hit', {dmg:5}));
+      out.koHits = n7;
       r = battleReplay(mk(ko));
       out.downed = r.downed; out.afterDown = r.hp[teams.me];
       // At least fifty questions, the same order on every device.
@@ -1873,13 +1886,17 @@ def check_b223(br):
       return out; }""")
     t = r["teams"]
     check("teams alternate by join order, two a side", sorted(t.values()) == ["a", "a", "b", "b"] and t["me"] != t["bo"], t)
+    # STALE (384 r5): a side starts with BATTLE_HP (300) a member, so two a side is 600 and not 200 ("no play can empty it in under
+    # five minutes", docs/notes-archive.md "Build 384 round 5 - Battle VS and powers"). The shape: both sides share one bar size,
+    # and it is the app's own per-member figure times the members on the side. Two hits of 5 off Bo's side, one off mine.
     check("one health bar per side, sized for the side",
-          set(r["max"].values()) == {200} and r["hp"][t["bo"]] == 190 and r["hp"][t["me"]] == 195, r)
+          len(set(r["max"].values())) == 1 and r["max"][t["me"]] == r["perMember"] * 2 and r["max"][t["me"]] > 0
+          and r["hp"][t["bo"]] == r["max"][t["bo"]] - 10 and r["hp"][t["me"]] == r["max"][t["me"]] - 5, r)
     check("the bars are the same whatever order the log arrives in", r["orderFree"], r["events"])
     check("a shield blocks a hit, a double doubles one, a heal heals",
           "blocked" in r["events"] and "double" in r["events"] and "heal" in r["events"], r["events"])
     check("a side at zero is down, and a hit after that does nothing",
-          r["downed"] == t["bo"] and r["afterDown"] == 200, r)
+          r["downed"] == t["bo"] and r["afterDown"] == r["max"][t["me"]], r)
     check("a small unit cycles to at least fifty questions, in one shared order",
           r["pool"][0] >= 50 and r["pool"][1] and r["pool"][2] < 50, r["pool"])
     check("Match settings offers Battle, drawn as crossed swords", r["picker"] and r["art"] == 6, r)
@@ -1900,6 +1917,7 @@ def check_b223(br):
       out.faces = [...document.querySelectorAll('.screen-battle .battle-side')].map(x => x.querySelectorAll('.battle-av').length);
       out.choices = document.querySelectorAll('.screen-battle .choice').length;
       out.hint = (document.querySelector('.battle-power-hint') || {}).textContent || '';
+      out.every = BATTLE_ABILITY_EVERY;
       // Bo freezes me, Dee flips me: both land, and each is announced by name.
       const now = Date.now();
       d.battle.log = [{ id:'f1', at: now, from:'bo', kind:'freeze', to:'me' }, { id:'f2', at: now, from:'dee', kind:'flip', to:'me' }];
@@ -1926,8 +1944,11 @@ def check_b223(br):
       out.cols = document.querySelectorAll('.screen-battle-result .vr-podium .vr-side').length;
       return out; }""")
     check("the match screen has two bars, yours first, each with its members",
+          # STALE (384 r5, "powers from the first question"): the hint used to say "Powers unlock after question 10"; now there is
+          # no wait, so on question one it counts down the right answers to the first power - "N more right for a power", N the
+          # app's own BATTLE_ABILITY_EVERY, read off the page - and never talks about a question to wait for.
           u["bars"] == ["Your side", "Their side"] and u["faces"] == [2, 2] and u["choices"] >= 2
-          and "question 10" in u["hint"], u)
+          and ("%d more right" % u["every"]) in u["hint"] and "unlock after question" not in u["hint"], u)
     check("a freeze locks the answers and a flip turns the question over, with the ice still upright",
           u["frozen"] and u["flipped"] and u["iceUpright"] and u["frozenTap"] == 0, u)
     check("each is announced naming who did it",
@@ -2154,12 +2175,17 @@ def check_b232(br):
           let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (x * 60 + 360) % 360; };
         const gap = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
         const res = {};
+        const light = h => { const n = parseInt(h.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+          return (Math.max(r, g, b) + Math.min(r, g, b)) / 2; };
+        out.planetLight = {};
         // Build 244: Bronze is the rookie key now (it was ranger's), and
         // Silver, the new ranger, is held to the same rule.
         ['rookie','ranger','veteran','adept','titan'].forEach(a => {
           document.documentElement.dataset.accent = a;
           const cs = getComputedStyle(document.documentElement);
-          res[a] = Math.round(gap(hue(cs.getPropertyValue('--theme-c1').trim()), hue(cs.getPropertyValue('--theme-c3').trim())));
+          const c1 = cs.getPropertyValue('--theme-c1').trim(), c3 = cs.getPropertyValue('--theme-c3').trim();
+          res[a] = Math.round(gap(hue(c1), hue(c3)));
+          out.planetLight[a] = Math.round(Math.abs(light(c1) - light(c3)) * 100) / 100;
         });
         document.documentElement.dataset.accent = theme.accent || 'ink';
         return res; });
@@ -2229,8 +2255,14 @@ def check_b232(br):
     check("Sky Temple and the Supernova banner exist",
           names.get("hundos250") == "Sky Temple" and names.get("titan_rank") == "Supernova", names)
     check("Lanterns, Great Wave, Thunderhead and Hall of Fame are gone (build 284)", r["gone284"] == [], r["gone284"])
+    # STALE FOR SAPPHIRE ONLY (384 r5 "Sapphire bluer", docs/notes-archive.md): its third glow was a purple (#6A1FD8, 100+ degrees
+    # from the sky blue) and read as Amethyst, so it is now one blue family - #6FD6FF to #1F44C9, 30 degrees apart. Its two
+    # colours are still plainly two (a light sky against a deep blue), so Sapphire is held to 25 degrees AND a quarter of
+    # lightness between them; every other accent keeps the original 35 degrees.
+    pl, pll = r["planets"], r.get("planetLight") or {}
     check("the four circled themes put a second colour on the planet",
-          isinstance(r["planets"], dict) and all(v >= 35 for v in r["planets"].values()), r["planets"])
+          isinstance(pl, dict) and all(v >= 35 for k, v in pl.items() if k != "adept")
+          and pl.get("adept", 0) >= 25 and pll.get("adept", 0) >= .25, [pl, pll])
     check("putting the app away publishes your leaderboard row there and then", r["publish"] == 1, r["publish"])
 
     # Screens
@@ -2527,6 +2559,7 @@ def check_b235(br):
          line (within 2px). */
       await T('plate', () => { const e = document.querySelector('.pf-standing .pf-idline svg');
         const nm = document.querySelector('.pf-standing .pf-rankname');
+        const rl = document.querySelector('.pf-standing .profile-rankline');
         /* round 29: the level and the badge count are one row under the name */
         const lab = document.querySelector('.pf-standing .pf-idsub') || document.querySelector('.pf-standing .pf-level');
         if(e || !nm || !lab) return 'an emblem on the line, or no rank name / level';
@@ -2535,7 +2568,12 @@ def check_b235(br):
            like the profile thing when you click on someone" - the rank is the
            headline over the level, as on the person card; still no emblem.
            So: the name above the level, the two centred on each other. */
-        const off = Math.round(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2)));
+        /* MOVED AGAIN IN 384 (the person card's rank line on your own Profile, docs/notes-archive.md "384 r9 - your own Profile
+           always has a rank line"): the line is the flare AND the rank's name, as on a classmate's card - so it is that
+           group (the flare's left edge to the name's right edge) that sits centred over the level, not the name alone. */
+        const parts = rl ? [...rl.children].map(c => c.getBoundingClientRect()).filter(x => x.width) : [b];
+        const gl = Math.min(...parts.map(x => x.left)), gr = Math.max(...parts.map(x => x.right));
+        const off = Math.round(Math.abs((gl + gr) / 2 - (a.left + a.width / 2)));
         return b.bottom <= a.top + 2 ? off : 'not the rank over the level'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
@@ -2570,6 +2608,7 @@ def check_b235(br):
          well - they follow in the same sitting, each up long enough to
          count as seen and then tapped away. */
       out.fx = []; out.fxOwed = HUNDO_FX.filter(d => d.need > 0 && d.need <= hundosOf(store)).map(d => d.name);
+      out.fxOwedFull = HUNDO_FX.filter(d => d.need > 0).map(d => [d.name, d.need]);
       out.solarCard = /Solar/.test(String((out.first || {}).text));
       for(let k = 0; k < 6; k++){
         const any = document.querySelector('.rs-spot');
@@ -2609,7 +2648,7 @@ def check_b235(br):
         const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim();
         document.documentElement.dataset.accent = theme.accent || 'ink'; return v; });
       return out; }""")
-    check("the held rank's name leads the rank line, then the level, and no emblem (321; an emblem 316-320, a bubble in 315, the level ring before it)",
+    check("the held rank's flare and name lead the rank line, centred over the level (321: no emblem beside the level; 384: the person card's flare and name)",
           isinstance(r["plate"], int) and r["plate"] <= 2, r["plate"])
     check("your own character is alive on the Profile card", r["heroLive"] is True, r["heroLive"])
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
@@ -2629,8 +2668,11 @@ def check_b235(br):
     fl = r["flying"] if isinstance(r["flying"], dict) else {}
     check("tapping it away flies it to the Profile tab (fixed, above the screen) and rings the tab",
           fl.get("pos") == "fixed" and 0 < fl.get("y", -1) < 956 and r["pulse"] is True, [r["flying"], r["pulse"]])
+    # STALE COUNT (384 "hundo ladders": the academy's effects are at 25/75/125/200 hundos, Fire Code's 25/50/75/100): this account has 141
+    # hundos, so it is owed the effects whose rung is at or under 141 - three now, read off HUNDO_FX, not the first two named in
+    # build 313. What is held is that every one it qualifies for plays in the same sitting, in the table's order, none missed.
     check("the hundo effects this account already qualifies for follow in the same sitting (build 313)",
-          len(r.get("fxOwed") or []) == 2 and r.get("fx") == r.get("fxOwed"), [r.get("fx"), r.get("fxOwed")])
+          len(r.get("fxOwed") or []) >= 1 and r.get("fx") == r.get("fxOwed"), [r.get("fx"), r.get("fxOwed"), r.get("fxOwedFull")])
     af = r["after"] if isinstance(r["after"], dict) else {}
     check("each plays once: nothing left afterwards, nothing on the next visit",
           af.get("spots") == 0 and af.get("left") == 0 and r["again"] == 0, [r["after"], r["again"]])
@@ -2928,13 +2970,22 @@ def check_b237(br):
                xpBar: !!p.querySelector('.pf-xpbar .xpbar-fill'),
                w: Math.round(p.getBoundingClientRect().width),
                emb: !!p.querySelector('.pf-idline svg'), bubble: !!p.querySelector('.flare-solo'),
+               /* 384: the flare sits on the rank line (the person card's), beside the name, and nowhere else on the block */
+               flareOnRankLine: !!p.querySelector('.profile-rankline .flare-solo'),
+               flares: p.querySelectorAll('.flare-solo').length, rank: rankOf(store),
+               flareTier: ((p.querySelector('.profile-rankline .flare-solo') || {dataset: {}}).dataset || {}).rankTier || '',
                boxed: cs.backgroundImage !== 'none' || !/rgba\\(0, 0, 0, 0\\)|transparent/.test(cs.backgroundColor) || parseFloat(cs.borderTopWidth) > 0,
                button: p.tagName }; }""")
     # REVISED IN 321: "Remove the tiny icon" - no emblem on the line.
-    check("the rank leads the card as one line under the name - the rank, the level, the XP, no emblem (321) - with no box round it, as one button across the card",
+    # MOVED IN 384 ("your own profile wears the same rank line" as a classmate's person card, commit 7f72dfe; notes "384 r9 - your own
+    # Profile always has a rank line"): the line is the rank's flare and its name. 321's "no emblem" ("Remove the tiny icon") is
+    # still true of the level line (nothing drawn in .pf-idline) and of any second mark; what is held is ONE flare, on the rank
+    # line, the held rank's own.
+    check("the rank leads the card as one line under the name - its flare and name, then the level, the XP, no emblem on the level line - with no box round it, across the card",
           # MOVED IN 327z15 round 5: the standing block is a div (role=group) - it opens nothing ("Why ...
           # when I click my xp the rank road map pops up?"); round 27 put the rank over "Level N"
-          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") in ("BUTTON", "DIV"), r)
+          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and r.get("flareOnRankLine") and r.get("flares") == 1
+          and r.get("flareTier") == r.get("rank") and r.get("boxed") is False and r.get("button") in ("BUTTON", "DIV"), r)
     # REVISED IN 267: "the current rank in the profile box has a progress
     # bar, let's remove that". REVISED IN 315: the bar under the rank is
     # the XP bar, asked back ("how do we still get that nice xp stuff");
@@ -3342,11 +3393,13 @@ def check_b242(br):
       holder.remove();
       /* 9. the Queen and the Dragon are the Wizard now */
       const saved = JSON.parse(JSON.stringify(store)); saved.avatarChar = 'queen';
-      applyLoadedData(saved); out.queenBecomes = store.avatarChar;
+      applyLoadedData(saved); out.queenBecomes = store.avatarChar; out.keptStarters = STARTERS_KEPT_384.slice();
       out.dragonDrawnAs = buildAvatarCharSVG('dragon').querySelector('.cx-k-wizard') ? 'wizard' : 'other';
       showWelcomeCharacterPrompt(); await wait(500);
       /* build 382: the greyed "Still to find" grid under the starters is not counted */
       out.starters = [...document.querySelectorAll('.charselect-panel .avatarchar-grid:not(.charselect-later) .avatarchar-option')].filter(o => o.offsetParent).length;
+      out.starterNames = [...document.querySelectorAll('.charselect-panel .avatarchar-grid:not(.charselect-later) .avatarchar-option')].filter(o => o.offsetParent).map(o => ((o.querySelector('svg') || {getAttribute(){return ''}}).getAttribute('data-char') || '').split('~')[0]);
+      out.keptNames = STARTERS_KEPT_384.slice();
       out.starterCols = getComputedStyle(document.querySelector('.charselect-panel .avatarchar-grid')).gridTemplateColumns.split(' ').length;
       /* 10. Customize: colours before banners, and big enough to sit beside them.
          Build 315: each is its own page off a summary, so the order is the
@@ -3405,12 +3458,19 @@ def check_b242(br):
     check("with Reduce motion on, a pop-up is still visible, rank strip and all",
           sb.get("opacity") == "1" and sc.get("opacity") == "1" and r.get("rankStripOnScreen") is True, r)
     check("a character fades out at the bottom wherever it is drawn", "gradient" in str(r.get("fade")), r.get("fade"))
-    check("the Queen becomes the Wizard, and a Dragon anywhere is drawn as one",
-          r.get("queenBecomes") == "wizard" and r.get("dragonDrawnAs") == "wizard", r)
+    # STALE (384 "three starters", docs/notes-archive.md "THREE STARTERS"): the Wizard is retired as a starter, and whoever wore one is
+    # moved to one of the three that remain (retireStarters384). So a saved Queen is no longer the Wizard on load: it is a
+    # current starter (read off STARTERS_KEPT_384), never a Queen or a Wizard. A Dragon is still DRAWN as a Wizard (the old
+    # drawing is kept for a stale row elsewhere).
+    check("a saved Queen loads as one of today's starters, and a Dragon anywhere is still drawn as a Wizard",
+          r.get("queenBecomes") in (r.get("keptStarters") or ["-"]) and r.get("dragonDrawnAs") == "wizard", r)
     # 243: "go ahead and remove the samurai character as well. Let's make
     # it only 5 starter characters."
-    check("sign-up offers five starters, three across",
-          r.get("starters") == 5 and r.get("starterCols") == 3, [r.get("starters"), r.get("starterCols")])
+    # STALE (384, "Let's make it only three starters", Ghost / Bear / Alien): the picker offers exactly the starters the app
+    # keeps (STARTERS_KEPT_384, read off the page), in one row of three - "three across" is what this always asked for.
+    check("sign-up offers the three starters, three across",
+          r.get("starters") == len(r.get("keptStarters") or [0, 0]) and sorted(r.get("starterNames") or []) == sorted(r.get("keptNames") or ["-"])
+          and r.get("starterCols") == 3 and r.get("starters") <= 3, [r.get("starters"), r.get("starterNames"), r.get("starterCols")])
     cu = r.get("custom") or {}
     # REVISED IN 315: the long page became a summary of four rows, each
     # opening its own page - so no grid is buried under another any more.
@@ -3467,6 +3527,7 @@ def check_b243(br):
       const def = id => AVATAR_CHARACTERS.find(c => c.id === id) || {};
       /* 1. the table */
       out.starters = AVATAR_CHARACTERS.filter(c => !c.unlock && !c.feat && !c.retired && !c.legacy).map(c => c.id);
+      out.keptStarters = STARTERS_KEPT_384.slice();
       out.ranks = TIER_ORDER_FULL.map(k => (AVATAR_CHARACTERS.find(c => c.unlock === k) || {}).id || null);
       /* build 244: the Hacker took the K-9's hours, the Timekeeper is new,
          the Valkyrie took the Spartan's wins, and SWAT is its own secret. */
@@ -3492,7 +3553,12 @@ def check_b243(br):
         .filter(h => h.nextElementSibling && h.nextElementSibling.classList.contains('avatarchar-grid'))
         .map(h => h.firstChild && h.firstChild.textContent);
       const grid = document.querySelector('.screen-customize .avatarchar-grid');
-      out.cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+      /* (384 r6/r7) each group is a card and its tiles a flex-wrap row, balanced (balanceCzGrid) - not a CSS grid any more - so the
+         columns are read as the tiles per row, off the page, per group */
+      out.rows = [...document.querySelectorAll('.screen-customize .avatarchar-grid')].map(g => { const t = {};
+        [...g.children].forEach(c => { const k = Math.round(c.getBoundingClientRect().top); t[k] = (t[k] || 0) + 1; }); return Object.values(t); });
+      out.ultimateLast = (() => { const ids = AVATAR_CHARACTERS.filter(c => c.feat && !c.secret && !c.retired).map(c => c.id);
+        return ids[ids.length - 1] === ULTIMATE_TOP; })();
       out.twoLine = [...document.querySelectorAll('.screen-customize .avatarchar-name')].filter(n => n.getBoundingClientRect().height > 18).map(n => n.textContent);
       out.robotShown = !!document.querySelector('.screen-customize .avatarchar-option[aria-label="Robot"]');
       /* build 315: each thing you wear has its own Customize page */
@@ -3564,12 +3630,16 @@ def check_b243(br):
       out.fieldShare = f && row ? Math.round(f.getBoundingClientRect().width / row.getBoundingClientRect().width * 100) : 0;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
-    check("five starters: Ninja, Ghost, Wizard, Bear, Alien",
-          isinstance(r, dict) and r.get("starters") == ["ninja", "ghost", "wizard", "grizzly", "alien"], r)
+    # STALE (384, "three starters": Ghost, Bear, Alien - the Ninja and the Wizard are retired, notes "THREE STARTERS (build 384)"):
+    # the free, current characters are exactly the app's own kept starters (STARTERS_KEPT_384).
+    check("three starters: Ghost, Bear, Alien (the Ninja and the Wizard are retired)",
+          isinstance(r, dict) and r.get("starters") == r.get("keptStarters") == ["ghost", "grizzly", "alien"], r)
     # Build 244 moved these on: six rank characters from the second rank
     # up, the Scholar/Wolf/Pirate challenges and SWAT as its own secret.
-    check("a new character on each rank from the second up, in rank order",
-          r.get("ranks") == [None, "lunar", "solar", "tempest", "frost", "oracle", "inferno"], r.get("ranks"))
+    # STALE (384 round 4, "Forge, Bronze's character"): the first rank hands over a character too, so every rank has one, in rank
+    # order - Forge, Lunar, Solar, Tempest, Frost, Oracle, Inferno (the picks of 384's character rounds).
+    check("a new character on each of the seven ranks, in rank order",
+          r.get("ranks") == ["forge", "lunar", "solar", "tempest", "frost", "oracle", "inferno"], r.get("ranks"))
     check("the Clown is five wins, the Astronaut hundos in a day, the Hacker time studied, the Timekeeper days studied, the Valkyrie the Virtual Room, and SWAT is retired (build 245)",
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "studyrun7", "swatRetired": True}, r.get("feats"))
@@ -3581,10 +3651,18 @@ def check_b243(br):
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
           r.get("kept") == ["clown"] and r.get("robotHeld") is False and r.get("robotNew") is True, r)
     # Build 304: the Ultimate group (Zenith) is the last one, after the secrets.
-    check("Customize groups the characters, secrets on their own, the Ultimate last, and no Robot for somebody who never held it",
-          r.get("groups") == ["Starters", "Rank rewards", "Challenge rewards", "Secrets", "Ultimate"] and r.get("robotShown") is False, r.get("groups"))
-    check("five across on a phone, and every name on one line",
-          r.get("cols") == 5 and r.get("twoLine") == [], [r.get("cols"), r.get("twoLine")])
+    # STALE (384: "no Ultimate section: the one ultimate left is a challenge reward, last in that list", ULTIMATE_TOP; index.html
+    # buildCustomizeCharacterSect): the groups are Starters, Rank rewards, Challenge rewards, Secrets, and the one Ultimate is the
+    # last of the Challenge rewards.
+    check("Customize groups the characters, secrets on their own, the one Ultimate last of the challenge rewards, and no Robot for somebody who never held it",
+          r.get("groups") == ["Starters", "Rank rewards", "Challenge rewards", "Secrets"] and r.get("ultimateLast") is True
+          and r.get("robotShown") is False, [r.get("groups"), r.get("ultimateLast")])
+    # STALE MEASURE (384 r6/r7, balanceCzGrid): five across on a phone is a CEILING now and the rows are balanced - seven rank
+    # characters sit 4 + 3, not 5 + 2 - and the grids are flex rows, so grid-template-columns reads "repeat(5, ...)" unresolved.
+    rows = r.get("rows") or []
+    check("at most five across on a phone (one group fills a row of five), rows within one of each other, and every name on one line",
+          bool(rows) and max(max(x) for x in rows) == 5 and all(max(x) - min(x) <= 1 for x in rows) and r.get("twoLine") == [],
+          [rows, r.get("twoLine")])
     # Build 246: every tile carries its requirement (was the default's line only).
     check("every banner tile says what it takes, and the secret one is not listed until found",
           (r.get("tileNeeds") or [None])[0] == "Matches your theme" and len(r.get("tileNeeds") or []) > 10
@@ -3609,8 +3687,9 @@ def check_b243(br):
     # Build 245: SWAT removed entirely - the character, the item and the hunt.
     check("the SWAT item is never placed in a test, even when an account's turn has come (build 245)",
           r.get("swatNeverPlaced") is True, r.get("swatNeverPlaced"))
-    check("a saved SWAT loads as the Ninja, and there is no Undercover banner",
-          r.get("swatLoadsAs") == "ninja" and r.get("bannerAfter") is True, [r.get("swatLoadsAs"), r.get("bannerAfter")])
+    # STALE (384): SWAT -> Ninja -> retired too, so it loads as one of today's starters (retireStarters384), not the Ninja.
+    check("a saved SWAT loads as one of today's starters, and there is no Undercover banner",
+          r.get("swatLoadsAs") in (r.get("keptStarters") or ["-"]) and r.get("bannerAfter") is True, [r.get("swatLoadsAs"), r.get("bannerAfter")])
     lad = r.get("ladders") or {}
     # Build 246: the rank ladder is the exception - all three rank banners
     # move ("All 3 of the rank banners ... Ensure all 3 of them are
@@ -3687,11 +3766,20 @@ def check_b244(br):
          icon"), only the held rank's name */
       const held = 'ranger';
       out.coin = { name: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, want: RANK_DISPLAY_NAME[held],
-                   svg: !!document.querySelector('.pf-standing .pf-idline svg') };
+                   svg: !!document.querySelector('.pf-standing .pf-idline svg'),
+                   /* 384: the held rank's flare is on the rank line beside the name */
+                   flare: ((document.querySelector('.pf-standing .profile-rankline .flare-solo') || {dataset: {}}).dataset || {}).rankTier || '' };
       rankOf = rk0;
       showProfile('profile'); await wait(500);
-      out.unrankedEmpty = !rankOf(store) ? (!document.querySelector('.pf-standing .pf-idline svg') && !document.querySelector('.pf-standing .pf-rankname')
-        && /^Level \\d+$/.test((document.querySelector('.pf-standing .pf-level') || {}).textContent || '')) : true;
+      /* 384 r9 (docs/notes-archive.md "your own Profile always has a rank line"): below the first rank the line is still there, as
+         "No rank yet" in the soft colour - no rank's name, and no flare or emblem (a flare is a rank held). The level stays. */
+      { const sb = document.querySelector('.pf-standing'), names = Object.values(RANK_DISPLAY_NAME);
+        const wd = (sb.querySelector('.pf-rankname') || {}).textContent || '';
+        out.unranked = { rank: rankOf(store), word: wd, namesARank: names.indexOf(wd) >= 0,
+          marks: sb.querySelectorAll('.flare-solo, .person-card-mark, svg').length,
+          level: (sb.querySelector('.pf-level') || {}).textContent || '' }; }
+      out.unrankedEmpty = !rankOf(store) ? (!document.querySelector('.pf-standing svg') && !out.unranked.namesARank && !!out.unranked.word
+        && /^Level \\d+$/.test(out.unranked.level)) : true;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
     check("the ladder is Bronze, Silver, Gold, Platinum, Sapphire, Amethyst, Supernova - ranks and themes alike",
@@ -3711,9 +3799,12 @@ def check_b244(br):
     # boxes on purpose, and no further), not to show the change.
     check("every Home bubble's emblem is centred in it (within 1.5px)", len(home) == 7 and max(home) <= 1.5, home)
     coin = r.get("coin") or {}
-    check("the Profile card's rank line names the held rank and carries no emblem (321: 'Remove the tiny icon')",
-          coin.get("name") == coin.get("want") and coin.get("svg") is False, coin)
-    check("an unranked card names no rank and draws no emblem - just the level (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
+    check("the Profile card's rank line names the held rank beside its own flare, and carries no emblem on the level line (321: 'Remove the tiny icon'; 384: the flare)",
+          coin.get("name") == coin.get("want") and coin.get("svg") is False and coin.get("flare") == "ranger", coin)
+    # MOVED IN 384 r9: an unranked card does not go blank any more - its rank line reads "No rank yet" (check-b384-profrank holds the
+    # words and the soft colour). What stays true of 268: it names no RANK and draws no emblem or flare, and the level is there.
+    check("an unranked card names no rank and draws no emblem or flare - its rank line says there is none, and the level is there (268, 384)",
+          r.get("unrankedEmpty") is True, [r.get("unrankedEmpty"), r.get("unranked")])
     ctx.close()
 
 
@@ -5348,19 +5439,27 @@ def check_b258(br):
       store.studyLog['2026-03-07'] = 9; const seven = f.studyrun7.done();
       store.studyLog = wasLog; store.vrTop3 = 10; store.vrWins = 10; const vrNo = f.studyrun7.done() === (bestStudyRun() >= 7);
       out.valk = [six, seven, vrNo];
-      out.astro = f.hundo7day.need;
+      /* 384: the need is read off the feat, and the feat is held to it - a count one short does not hand it over, the need does */
+      { const wasBest = store.hundoDayBest, wasDay = store.hundoDay, N = f.hundo7day.need;
+        store.hundoDay = null; store.hundoDayBest = N - 1; const short = f.hundo7day.done();
+        store.hundoDayBest = N; const met = f.hundo7day.done();
+        store.hundoDayBest = wasBest; store.hundoDay = wasDay;
+        out.astro = { need: N, label: f.hundo7day.label, short, met }; }
       out.marks = f.streak100.need;
       /* 9. hold something you already have: the same card, marked held */
-      store.avatarChar = 'ghost'; showCustomize('character'); await wait(700);
-      const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === 'Ninja');
+      /* 384: the Ninja is retired (three starters), so its tile is gone; the held character is another starter - the second of the
+         three that remain - while the first is worn. Same card, same rules. */
+      const heldId = STARTERS_KEPT_384[1], heldName = AVATAR_DISPLAY_NAME[heldId];
+      store.avatarChar = STARTERS_KEPT_384[0]; showCustomize('character'); await wait(700);
+      const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === heldName);
       nj.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5, pointerId: 1 }));
       await wait(650);
       const held = document.querySelector('.unlock-card.is-unlocked');
       nj.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 })); nj.click();
       out.hold = { card: !!held, tick: !!(held && held.querySelector('.unlock-card-lock.is-held')),
-        text: held ? held.innerText : '', stillGhost: store.avatarChar === 'ghost' };
+        text: held ? held.innerText : '', stillGhost: store.avatarChar === STARTERS_KEPT_384[0] };
       document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
-      nj.click(); out.hold.tapPicks = store.avatarChar === 'ninja';
+      nj.click(); out.hold.tapPicks = store.avatarChar === heldId;
       /* 8. the Ronin (263; the Knight and the Night Owl were both asked
          against): pass a test of 400 or more questions */
       const ow = AVATAR_CHARACTERS.find(c => c.id === 'ronin');
@@ -5427,7 +5526,12 @@ def check_b258(br):
     check("Void's body meets the bottom of its hood",
           vd.get("bodyTop", 99) <= vd.get("headBottom", 0) + .5, vd)
     check("the Koi is seven study days in a row, and Virtual Room results have nothing to do with it (build 289)", r.get("valk") == [False, True, True], r.get("valk"))
-    check("the Astronaut is five hundos in a day", r.get("astro") == 5, r.get("astro"))
+    # STALE (384, "Toxic spill, make that 3 (change for all classes)", CHARACTER_FEATS.hundo7day): hundos in a day was five. Read off
+    # the feat now: its label says the number, one short of it is not enough, and it is enough at the number.
+    ao = r.get("astro") or {}
+    check("the Astronaut is N different hundos in a day: the label says N, N - 1 is not enough and N is",
+          isinstance(ao, dict) and (ao.get("need") or 0) >= 1 and str(ao.get("need")) in ao.get("label", "")
+          and ao.get("short") is False and ao.get("met") is True, ao)
     # REVISED IN 291: "Make the marksman challenge 250 not 200."
     check("the Marksman is 250 in a row (build 291)", r.get("marks") == 250, r.get("marks"))
     h = r.get("hold") or {}
@@ -5548,8 +5652,14 @@ def check_b266(br):
     cs = r.get("cards", [])
     check("the Virtual Room door is two mode cards, each with a mode icon: host and join",
           len(cs) == 2 and all(x["mode"] and x["icon"] for x in cs), cs)
-    check("and Host says it starts invite only and can be opened, not that it is private",
-          len(cs) == 2 and "invite only" in cs[0]["desc"].lower() and "open" in cs[0]["desc"].lower(), cs)
+    # STALE (384, "why is it confusing and start saying it starts off as private", docs/notes-archive.md): Host's line used to explain that
+    # a room starts invite only and can be opened. Madison found that confusing and asked for it simple and matched to the mode screen:
+    # now "Pick the game and the units, then invite your friends. You start the match when everyone is ready." What is held: it
+    # still does not call itself private, it is one short sentence pair about inviting friends and starting the match, and
+    # Join's line is about opened rooms.
+    check("and Host does not call itself private: it says to invite your friends and you start the match, and Join says rooms are opened",
+          len(cs) == 2 and "private" not in cs[0]["desc"].lower() and "invite" in cs[0]["desc"].lower() and "start" in cs[0]["desc"].lower()
+          and "open" in cs[1]["desc"].lower() and len(cs[0]["desc"]) < 140, cs)
     check("a new room starts with no game chosen", r.get("hasGameKey") is True and r.get("game") is None, r)
     check("and the lobby says so instead of saying Race",
           "No game chosen yet" in r.get("summary", "") and "Race" not in r.get("summary", ""), r)
@@ -6003,11 +6113,14 @@ def check_b272(br):
               if(c.length){ const cl = Math.min(...c.map(x => x.left)), cr = Math.max(...c.map(x => x.right));
                 b = { left: Math.max(b.left, cl), right: Math.min(b.right, cr) }; } } }
           l = Math.min(l, b.left); r = Math.max(r, b.right); });
-        return +((r - l) / 10).toFixed(1); };
-      const starters = ['ninja', 'ghost', 'wizard', 'grizzly', 'alien'];
+        /* two decimals: one decimal rounded the median DOWN (19.83 -> 19.8) and a head under the bar (22.19 <= 22.21) up over it (22.2) */
+        return +((r - l) / 10).toFixed(2); };
+      /* 384: the starters are the three the app keeps (STARTERS_KEPT_384); the Ninja and the Wizard are retired */
+      const starters = STARTERS_KEPT_384.slice();
       out.starters = Object.fromEntries(starters.map(id => [id, headW(id)]));
       const earned = ['zeus', 'hacker', 'umbra', 'lunar', 'solar', 'tempest', 'frost', 'oracle', 'timekeeper', 'singularity'].map(headW).sort((a, b) => a - b);
       out.median = earned[Math.floor(earned.length / 2)];
+      out.starterIds = starters;
       host.remove();
       const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
       const vp = buildAvatarCharSVG('poseidon'), pd = buildAvatarCharSVG('astronaut');
@@ -6025,6 +6138,9 @@ def check_b272(br):
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     st, med = r.get("starters") or {}, r.get("median") or 0
+    # Same bars as ever (23 units, 12% over the median). Measured to two decimals since 384: Ghost's head grew from 21.58 to 22.19 when
+    # the academy's characters were touched up (1ae1a86) and the earned median moved to 19.83, so 22.19 <= 22.21 holds by .02 - at one
+    # decimal (22.2 against 19.8 * 1.12 = 22.18) it failed on rounding alone. Thin: another touch-up to the Ghost would fail it.
     check("every starter's head is the set's size (<= 23 units, <= 12%% over the earned median of %s)" % med,
           st and all(w <= 23 and w <= med * 1.12 for w in st.values()), st)
     v, p = r.get("vamp") or {}, r.get("plague") or {}
