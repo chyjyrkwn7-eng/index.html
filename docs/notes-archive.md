@@ -37536,3 +37536,33 @@ Madison on the sign-up "Select your classes" step: "Both of the boxes should sti
 - THE COIN. Four things at once, found by zooming a dpr 3 render 8x and then by sampling the rim in 36 sectors: (1) the fill was `radial-gradient(...)` + a colour on a 1px-bordered circle with the default `background-repeat`/origin, so the gradient tiled under the border: the border's top strip showed the tile's dark bottom row and its bottom strip the bright top row - the flat cut along the top and the bright seam along the bottom (the `.class-bubble` has carried `no-repeat` + `border-box` for this since 342); (2) `inset 0 1px 1px white` at the top and `inset 0 -3px 6px black` at the bottom, a lit hairline and a dark crescent; (3) a 16px halo that the card's overflow cut off on a short phone (8px of padding); (4) `.cc-glow`, a -30% / -25% ellipse at opacity .5 whose gradient was still coloured at the end of its rounded box: a hard-edged lit disc behind the coin. Now: the fill is clipped to the padding box and does not repeat, centred and symmetric (nothing about the coin has a top or a bottom); the rim is the same white at every angle over the card; the only shadow is an 8px halo (the card's smallest padding); the glow is a box at the card's corner (min(100%, 13rem) x min(100%, 9rem)) whose gradient radii end on that box's own right and bottom edges, so nothing is cut inside the card. Same CSS for every `.cc-emblem` - the sign-up and the Classes screen share it. The Home class button and the class list it opens (`.class-bubble`, `.csi-bubble`) are a different object (frosted glass, set on purpose in 342) and already had `no-repeat`; they were not changed. No SVG filter anywhere.
 - GATE: tools/check-b384-classcards.py. A: the two cards one height (1px) on 11 sign-up viewports in every pick state, neither card changes with a pick, and the Classes screen on 4 widths with none/one/both enrolled. B: the coin at dpr 3 with the card's background and glow flattened, 36 sectors, the rim's peak minus the mean of a band outside / inside it. Tolerance read off the fixed render: spread at most 1.4 (inner) / 4.3 (outer), top-90 and bottom-90 sector means within 1.7 of the mean; set at 3 / 6 / 3 (the unfixed build: inner spread 40-92, outer 28-32). Sampling uses pixel CENTRES (-.5) - without it a half-pixel shift reads as an uneven rim at a 1px border; and the peak along the radius rather than one band, for the same reason. C: the coin plus the halo's own computed reach, and the glow box, inside the card and every clipping ancestor. FAILS on 1c91137 (24 checks: A on the three short phones, C on every coin and glow, B on every coin); passes on this build.
 - Chromium cannot show how iOS draws the 1px rim or the halo's blur on a real screen; the rim and the shadow have been measured here, not on a phone.
+
+### Build 384 (round 18) - Safari in a tab: no hard line at the top or bottom of the page (NOT on main)
+
+Madison, with three frames of his Safari tab (iPhone 17 Pro Max, iOS 26: Get Started, then Welcome twice): "The bottom of the screen while
+in safari, it's still not properly displaying", "PLEASE FIX SAFARI", "We need this safari problem to be fixed immediately".
+- WHAT HIS FRAMES SHOW (pixels read off them): the page runs between Safari's bars (62pt down, 98pt above the bottom, page zoom 85%),
+  and on Welcome the sky's glow ends in a hard line there - 9 levels at the bottom ((41,40,36) above, the flat (32,30,33) below), about 4
+  at the top - and on Get Started the phone mock-up was sliced at the same line, with Safari's flat fill (5,5,13 = the fixed layer's
+  own colour) below it. Fixed layers stop at Safari's bars; what shows past them is the root's flat colour (--band) or, where a solid
+  fixed layer is at that edge, that layer's colour (337).
+- CAUSE: the sky's bottom fade was switched OFF in 338 (--fade-paper: transparent) when a paper-coloured fade made black boxes, and
+  the top fade (341) only eased to --band at the very top of the root's own fallback layers; body::before's glow met the flat
+  colour with its full strength (the gold glow at the bottom). Get Started (a fixed, self-scrolling layer, overflow:hidden) cut
+  whatever scrolled across its edge.
+- FIX (index.html, CSS only; only html.is-browser:not(.safari-bars-over) on touch devices - the installed app, a laptop and a page
+  over the bars are untouched): --fade-paper is --band (with --fade-bot-solid 0, --fade-bot / --fade-top 3rem), so the sky's last 3rem at
+  each edge ease INTO the colour Safari fills beyond it - the same colour the root paints, so there is no line wherever Safari stops the
+  page; the tab bar's shadow is 0 2px 8px in a tab (the 0 4px 18px one reached the viewport's bottom edge and ended in a line too);
+  Get Started gets a 2.6rem scrim of #05060D (8px solid, then fading) over its first and last edge, under the button (z 3) and the
+  Sign in pill (z 4).
+- WHAT CHROMIUM CANNOT SHOW: Safari's own bars, its fill colours and whether it paints the root's layers beneath them. The model is
+  the repo's (check-b384-browsers' tab: the page between the bars, strips = the flat colour Safari fills them with: a solid fixed
+  layer's colour, else the root's). If his Safari DOES draw the root's layers under the toolbar the result is still seamless (the
+  edge rows ARE the root's colour). Only his phone can say how the toolbar's glass looks over the new last 3rem.
+- GATE tools/check-b384-safaribottom.py seam (iPhone 17 Pro Max, 16, SE, iPad Pro 11 in a tab; Welcome, Home, Get Started at rest
+  and at ten stops of its scroll): the page's first and last rows against the strip beyond, per 16px column, median, at most 3 levels.
+  Fails on af5725d (Welcome bottom 10.5, Home 3.4, Get Started mid-scroll 17.9 and 224 at the top); ALL PASS now.
+  Also run: check-js, check-b384-getstarted (all five sections), check-centering --quick (0 off centre), sweep-layout --quick 20/20,
+  check-b384-browsers safari (one fail, iPhone 17 bars-over Home, 'a2hs-close' ghost of the Add-to-Home-Screen sheet - over mode,
+  untouched by this change).

@@ -34208,6 +34208,16 @@ html.is-browser{ --fade-paper: transparent; }
    continues without a step (measured). A gradient image layer, never a background colour (see 338). */
 @media (hover:none), (pointer:coarse){
   html.is-browser{ --fade-paper-top: var(--band, transparent); }
+  /* BUILD 384 (round 18): THE SKY'S BOTTOM EDGE IS THE COLOUR SAFARI FILLS BEHIND ITS TOOLBAR. Madison, with a frame of Welcome and
+     one of Get Started in a tab: the glow ends in a hard line a little above the floating toolbar and below it is one flat colour
+     (measured off his frame: 9 levels at the bottom of Welcome, about 4 at the top under the status bar). The fixed layers stop at
+     Safari's bars and what shows past them is the root's flat colour (--band, as at the top: 341), so the bottom now eases into
+     --band over its last 3rem exactly as the top eases out of it, and the two meet it with no line. Only while the page runs
+     BETWEEN Safari's bars - over a full-screen page (html.safari-bars-over) the sky runs under them and this stays as it was. */
+  html.is-browser:not(.safari-bars-over){ --fade-paper: var(--band, transparent); --fade-bot-solid: 0px; --fade-bot: 3rem; --fade-top: 3rem; }
+  /* ...and the tab bar's shadow (0 4px 18px, 22px past its bottom edge, which sits 12px off the page's) ends in the same line, so in a
+     tab it is 0 2px 8px: it stops inside the 12px */
+  html.is-browser:not(.safari-bars-over) .bottomtabs, html.is-browser:not(.safari-bars-over)[data-theme="dark"] .bottomtabs{ box-shadow:0 2px 8px rgba(0,0,0,.45); }
   /* BUILD 382: THE STARS UNDER SAFARI'S TOOLBAR. Madison: "Safari version is still messed up, the bottom and top of the safari
      version is cut off, this absolutely needs to be fixed". His screenshot of a test page (share/edge-test.html: stripes on the
      root's background, dots on a fixed layer) settled what Safari 26 draws where: fixed layers stop at its bars (no dots under
@@ -35631,6 +35641,18 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-bar{ position:absolute; left:0; right:0; bottom:0; z-index:3; display:flex; justify-content:center; padding:2.2rem 1.2rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
     background:linear-gradient(180deg, rgba(5,6,13,0), rgba(5,6,13,.92) 60%); pointer-events:none; }
   .gs-bar .gs-go{ pointer-events:auto; margin:0; width:min(100%, 22rem); min-height:50px; }
+  /* BUILD 384 (round 18): IN A SAFARI TAB THE PAGE'S CONTENT DISSOLVES INTO ITS COLOUR AT BOTH EDGES. Madison: the phone mock-up on
+     Get Started was sliced by a hard line a little above Safari's floating toolbar. This page is a fixed layer, and Safari stops a
+     fixed layer at its bars; what it shows past them is the colour of the fixed layer (#05060D, which tints the bars), so
+     whatever scrolls across the edge ended in a line. The first and last 2.6rem of the page are that colour, fading out over the
+     content (transform-free, no filter: a gradient), only while the page runs between Safari's bars - the installed app, a laptop
+     and a page over the bars (html.safari-bars-over) are untouched. The bottom one is under the button (z 3), the top one under the Sign in pill (z 4). */
+  @media (hover:none), (pointer:coarse){
+    html.is-browser:not(.safari-bars-over) .gs-page::before, html.is-browser:not(.safari-bars-over) .gs-page::after{
+      content:""; position:absolute; left:0; right:0; z-index:2; height:2.6rem; pointer-events:none; }
+    html.is-browser:not(.safari-bars-over) .gs-page::before{ z-index:3; top:0; background:linear-gradient(to bottom, #05060D 8px, rgba(5,6,13,0)); }
+    html.is-browser:not(.safari-bars-over) .gs-page::after{ bottom:0; background:linear-gradient(to top, #05060D 8px, rgba(5,6,13,0)); }
+  }
   .gs-bar{ opacity:0; transform:translateY(26px); transition:opacity .45s ease, transform .55s cubic-bezier(.2,1.1,.35,1); }
   .gs-bar:not(.is-ready) .gs-go{ pointer-events:none; }
   .gs-bar.is-ready{ opacity:1; transform:none; }
