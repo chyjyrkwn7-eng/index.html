@@ -37358,3 +37358,35 @@ rules, names and the "Comes with X, a secret flare character" label logic are un
   check-b384-secretnames ALL PASS; check-b384-banners ALL PASS; Profile with each banner: no page error, console only the two blocked Firebase loads.
 - NOT confirmable in Chromium: frame rate of the five sliding snow sheets and the Aurora's 509 elements on an old iPhone (all motion is transform/opacity on
   layer boxes, no filters).
+
+## 384 round 11 (r11-badgegate): check-behaviour's badge-case sections green; a retired ultimate announced on Home (branch r11-badgegate, cut from claude/b384 7c21794; NOT on main)
+
+- **A REAL BUG, not a stale check: Home announced the two ultimates the class has retired.** 6b15be6 (one ultimate per class,
+  `ULTIMATE_TOP`) marks the other two `retired` (academy: Celestial and Zenith; Fire Code: Astral and Celestial), and
+  `isLockedCharacter` answers "not locked" for any retired character (nobody is locked out of what they wear). So
+  `announceableHeldCharacters()` counted both as held and Home's unlock pass (`ensureUnlocksShown` / the held-not-shown diff)
+  put up "Challenge complete - Celestial / Character unlocked", then Zenith, for EVERY account a beat after Home settled.
+  The card is a scene (`.rs-spot` is in `CUTSCENE_SCENE_SEL`, 327z15 r46), so cutscene focus stayed on for as long as it sat
+  there: no tab bar and no chat button until it was tapped away, and anything held (toasts, chat pings) stayed held. Fix:
+  `!c.retired` in `announceableHeldCharacters()` (the banners were never affected - the retired ultimate banners are spliced
+  out of BANNERS). Not live: 6b15be6 is not on main.
+- The two red legs were this, not focus: the focus code is byte-identical on 8074511, cd82880 and 7c21794. A probe of the
+  page (scratchpad r11-badgegate/probe.py) showed `cutsceneFocusDepth` 1 after the scene with the only `CUTSCENE_SCENE_SEL`
+  match `.rs-spot rs-spot-character is-challenge` (Celestial):
+  - 320c (6) "when the scene ends the chat button and the tab bar slide back" (17 Pro Max, iPad Pro 11);
+  - 320c (7) "a secret flare scene: focus ... off once it has gone".
+  Both kept as they were; they pass with the fix and FAIL on 7c21794. New leg in 320c (7): "Home never announces a character
+  the class has retired" (`announceableHeldCharacters()` holds no retired id) - FAILS on 7c21794 with ['celestial', 'zenith'].
+- **The Traceback**: none of the six sections raised one, on 7c21794 or with the fix (two full runs each, at load ~6). The one
+  in the badge-case sections is check_b317_badge2 (archive: "b317_badge2 - which then stops on an IndexError"): its "one
+  casting" grid is four across and a row per four units (24: six rows, 1,800px) on a page 1,240px tall, and a screenshot's
+  clip stops at the viewport, so the walk along a channel read a pixel below the picture (IndexError: image index out of
+  range). The viewport is now as tall as the grid (rows read off the bank) and the walk stops at the picture's edge too;
+  check_b317_badge2 then runs to the end, ALL PASS. A harness fault - the legs behind it are unchanged.
+- RUN, one at a time: check-js ALL PASS; the six sections (b318_badges, b319_badges, b320g_inspect, b320c_case, b321c_case,
+  b321d_badges) ALL PASS, no Traceback (were 3 FAIL on 7c21794); check_b320c_case alone with the new leg ALL PASS, --against
+  7c21794 4 FAIL (the two (6), the new leg, the secret flare (7)); check_b317_badge2 ALL PASS; check-b383-tabslide ALL PASS;
+  check-b384-cutscenes 56 PASS, the five known FAILs (hundo effect cards' counts x2, Fire Code's rank badge counts, Customize's
+  ultimate note, the academy's words) and then a Traceback in (9) - its SETUP looks up a hundo effect at perfectTests + 1
+  (25 / 50) and the new rungs (Fire Code 25/50/75/100 is fine, the academy's 25/75/125/200 has no 50) give undefined.name;
+  the same fixture staleness as the known (1) lines, from the hundo rung change, not this round (HUNDO_FX untouched here).
