@@ -7235,10 +7235,14 @@
     .intro-title{ font-size:1.7rem; }
     .intro-row-body{ font-size:.88rem; }
   }
-  .chatdock{ position:fixed; inset:0; z-index:300; pointer-events:none; }
+  /* (384 r17) THE DOCK IS A POINT, NOT A SCREEN. It was a full-screen fixed layer (inset:0) holding the chat button, the panel and the
+     confirm: every child is itself fixed, so the dock only ever needed to be the stacking context. A fixed layer spanning the whole top edge
+     is what iOS reads as a bar and softens the content behind (the screen title and the test's count on Madison's phone, every screen);
+     it is 0 x 0 at the corner now, and the one child that relied on its size (the confirm) is fixed to the screen itself. */
+  .chatdock{ position:fixed; inset:auto; top:0; left:0; width:0; height:0; z-index:300; pointer-events:none; }
   /* Leave's "are you sure" (build 240): over the whole dock, above the sheet. */
   /* Above the panel (320) and the dock button (370), its siblings in #chatdock. */
-  .chatdock-confirm{ position:absolute; inset:0; z-index:390; pointer-events:auto;
+  .chatdock-confirm{ position:fixed; inset:0; z-index:390; pointer-events:auto;
     display:flex; align-items:center; justify-content:center; padding:1rem;
     background:rgba(4,6,10,.58); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
     animation:pushfade .16s ease-out; }
