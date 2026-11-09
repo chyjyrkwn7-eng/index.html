@@ -26309,9 +26309,15 @@
   }
   html[data-theme][data-layout] body #stage .friend-sect .friend-add-field > input.friend-add-input.searchbox:focus{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent, #9FB4FF) 70%, transparent) !important; }
   .friend-add-field > .friend-add-input::placeholder{ color:var(--soft); opacity:1; }
+  /* (384 r9) CENTRED, like the sync code field. Madison, the field circled: "This isn't centered" - the hint and a typed code sat
+     against the field's left edge while everything else about a code (yours, above it, and the sync code entry) is centred.
+     The hint, the typed code and the blinking cursor all centre now; the cursor stands just before the centred hint, at
+     --ph-w (the hint's measured width, set by showFriends), and the hint moves right by half the cursor's gap so the pair is
+     centred together. */
+  .friend-sect .friend-add-field > .friend-add-input.friend-add-input{ text-align:center; }
   .friend-add-field > .friend-add-input:placeholder-shown:not(:focus){ text-indent:.55rem; }
   .friend-add-field::before{
-    content:""; position:absolute; left:.95rem; top:50%; width:2px; height:1.15em; margin-top:-.575em; border-radius:1px;
+    content:""; position:absolute; left:calc(50% - var(--ph-w, 10rem) / 2 - .275rem - 2px); top:50%; width:2px; height:1.15em; margin-top:-.575em; border-radius:1px;
     background:var(--accent, #9FB4FF); opacity:0; pointer-events:none; z-index:1;
   }
   .friend-add-field:has(> .friend-add-input:placeholder-shown:not(:focus))::before{ animation:friend-caret 1.1s steps(1, end) infinite; }
@@ -146929,6 +146935,13 @@ function showFriends(){
   field.className = "friend-add-field";
   field.appendChild(input);
   addRow.append(field, send);
+  /* (384 r9) the hint's width, for the blinking cursor that stands just before it (see .friend-add-field::before) */
+  requestAnimationFrame(() => { try{
+    if(!input.isConnected) return;
+    const cs = getComputedStyle(input), cv = document.createElement("canvas").getContext("2d");
+    cv.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+    field.style.setProperty("--ph-w", Math.ceil(cv.measureText(input.placeholder).width) + "px");
+  }catch(e){} });
   add.append(ah, addRow);
 
   /* ---- the people you have ---- */
