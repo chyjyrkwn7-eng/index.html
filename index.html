@@ -57343,10 +57343,14 @@ const CHARACTER_FEATS = {
      quiet day after it takes nothing back. Nothing kept answers per day
      before this build, so it counts from here. */
   /* (384) was "Answer 500 questions in a single day" - too like the Ronin's/Drone Pilot's 500-question test. Now every mode, three times. */
-  busyday300: { label: "Play every mode " + MODE_TRIES + " times",
-                done: () => modeCoverage().done >= modeCoverage().total,
-                have: () => modeCoverage().done, get need(){ return modeCoverage().total; },
-                note: "A Drill, a Test, a Retake, the Daily question and a Virtual Room match, " + MODE_TRIES + " of each. What you have already played counts." },
+  /* (384 r13) THE BIGGEST UNIT. Madison, after sixteen other ideas for this one: "Do the biggest unit one. Score a 100 on the
+     biggest unit". A hundo (store.unitPerfects - a 100% run over the whole unit, isFullUnitRun) on the unit with the most
+     questions in the class you are in: Penal Code in the academy, the largest chapter in Fire Code. Worked out from the bank,
+     so it follows the class and a re-cut bank. A hundo already earned there counts. The key stays `busyday300` (an id). */
+  busyday300: { get label(){ const u = biggestUnit(); return "Get a hundo on " + (u ? u.name : "the biggest unit"); },
+                done: () => { const u = biggestUnit(); return !!u && unitPerfectCount(u.name) >= 1; },
+                have: () => { const u = biggestUnit(); return u && unitPerfectCount(u.name) >= 1 ? 1 : 0; }, need: 1,
+                get note(){ const u = biggestUnit(); return u ? "The biggest " + (BANK_CLASS === "ifc" ? "chapter" : "unit") + " in the class, " + u.count.toLocaleString() + " questions. Score 100% on all of it in one run." : ""; } },
   studyrun7: { label: "Study 7 days in a row",
                done: () => bestStudyRun() >= 7,
                have: () => Math.min(bestStudyRun(), 7), need: 7,
@@ -91503,6 +91507,16 @@ __bm("L72649");
 const LEVEL_STARS = { beginner: 1, intermediate: 2, mastery: 3 };
 const LEVEL_NAME = { beginner: "Beginner", intermediate: "Intermediate", mastery: "Advanced" };
 
+/* (384 r13) the class's unit with the most questions, for the Hive / Sprinkler Head challenge - { name, count } or null */
+function biggestUnit(){
+  try{
+    const counts = {};
+    QUESTIONS.forEach(q => { const t = (q.topic || "").trim(); if(t) counts[t] = (counts[t] || 0) + 1; });
+    let best = null;
+    classTopics().forEach(t => { const n = counts[t] || 0; if(!best || n > best.count) best = { name: t, count: n }; });
+    return best && best.count > 0 ? best : null;
+  }catch(e){ return null; }
+}
 function unitPerfectCount(name){
   return store.unitPerfects[name] || 0;
 }
@@ -145545,7 +145559,6 @@ const UNLOCK_NOTES = {
   "character:poseidon": "Invite Nova from a Virtual Room lobby and finish ahead of him, in any mode.",
   "character:marksman": (window.NOVA_CLASS === "ifc" ? "100" : MARKSMAN_RUN) + " in a row, right on the first try. A miss starts it over; the run carries from one test to the next.",
   "character:astronaut": "A hundo is 100% on a whole unit. Get one in 3 different units on the same day.",
-  "character:hive": "A Drill, a Test, a Retake, the Daily question and a Virtual Room match, " + MODE_TRIES + " of each.",
   "character:ronin": "One test of " + RONIN_TEST_SIZE + " questions or more, finished at " + PASS_MARK + "% or better.",
   "character:voidwalker": "They hide inside tests. Keep your eyes open.",
   "character:umbra": "A secret. Its challenge shows here once you have Void.",
@@ -145558,6 +145571,8 @@ function unlockNoteFor(o){
     const prev = o.id === "umbra" ? "voidwalker" : "umbra";
     return "A secret. Its challenge shows here once you have " + (AVATAR_DISPLAY_NAME[prev] || prev) + ".";
   }
+  /* (384 r13) the Hive / Sprinkler Head's note names the class's biggest unit, worked out when it is shown */
+  if(o.kind === "character" && o.id === "hive"){ const f = CHARACTER_FEATS.busyday300; return f ? f.note : ""; }
   return UNLOCK_NOTES[o.kind + ":" + o.id] || "";
 }
 function showUnlockDetail(o){
