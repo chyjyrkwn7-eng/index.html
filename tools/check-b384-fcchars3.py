@@ -129,9 +129,9 @@ def lum(h):
 chk("no page errors (%s)" % errs[:2], not errs, errs)
 N = r["names"]
 # (384 round 12, r9-chars) The Irons became the Fire Marshal and Eclipse the Firebird; they join the names that must be gone
-chk("A. valkyrie is Undercover, timekeeper the Fire Marshal, genesis the Firebird (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
-    (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Undercover", "Fire Marshal", "Firebird"), N)
-chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator", "The Irons", "Eclipse", "Pulsar"} & set(N.values()), N)
+chk("A. valkyrie is Undercover, timekeeper the Fire Marshal, genesis Aurora (round 14) (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
+    (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Undercover", "Fire Marshal", "Aurora"), N)
+chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator", "The Irons", "Eclipse", "Pulsar", "Firebird"} & set(N.values()), N)
 I = r["insp"]
 fb = lum(I["feltBase"]) if I.get("feltBase") else 1
 # (384 r6) the felt cowboy hat became the navy duty cap ("Fire inspectors wear police gear"): still darker than round 6's .52, and not

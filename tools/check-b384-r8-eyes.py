@@ -304,7 +304,7 @@ for key, R in (("academy", ACA), ("ifc", IFC)):
     chk("E. [%s] Oracle and Frost are byte for byte what cd34de2 drew (changed: %s)" % (key, bad or "none"), not bad, bad)
     others = sorted(set(P["full"]) | set(R["full"]))
     # (384 round 12, r9-chars) the Fire Code characters Madison picked versions for are redrawn on purpose (check-b384-r9-chars holds them)
-    R12 = {"detective", "masked", "poseidon", "valkyrie", "timekeeper", "ronin", "voidwalker", "umbra", "singularity", "genesis", "zenith"} if key == "ifc" else set()
+    R12 = {"detective", "masked", "poseidon", "valkyrie", "timekeeper", "ronin", "voidwalker", "umbra", "singularity", "genesis", "zenith", "hacker"} if key == "ifc" else set()   # (round 14: the Dispatcher a woman)
     mv = [i for i in others if i not in FOUR and i not in R12 and i != "inferno" and R["full"].get(i) != P["full"].get(i)]
     chk("E. [%s] every other character (%d of them) is byte for byte cd34de2's (changed: %s)" % (key, len(others) - len(FOUR), mv or "none"), not mv and len(others) >= 25, mv)
     rest = [i for i in FOUR if R["noEyes"].get(i) != P["noEyes"].get(i)]
