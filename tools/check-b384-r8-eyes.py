@@ -298,10 +298,12 @@ for key, R in (("academy", ACA), ("ifc", IFC)):
                 if bx[2] < x0 or bx[0] > x1 or bx[3] < y0 or bx[1] > y1: floating.setdefault(i, []).append(p["tag"])
     chk("D. [%s] nothing floats: every part of each eye touches its opening (floating: %s)" % (key, floating or "none"), not floating, floating)
     # E
-    bad = [i for i in PINNED if R["full"].get(i) != P["full"].get(i)]
-    chk("E. [%s] Inferno, Oracle and Frost are byte for byte what cd34de2 drew (changed: %s)" % (key, bad or "none"), not bad, bad)
+    # (384 r8, after Madison: "The inferno eyes are still much different than the rest and are much bigger?") Inferno's eye group was
+    # resized to the set's footprint - check-b384-r8-inferno.py holds that; here Oracle and Frost stay byte for byte, Inferno outside its eyes.
+    bad = [i for i in PINNED if i != "inferno" and R["full"].get(i) != P["full"].get(i)]
+    chk("E. [%s] Oracle and Frost are byte for byte what cd34de2 drew (changed: %s)" % (key, bad or "none"), not bad, bad)
     others = sorted(set(P["full"]) | set(R["full"]))
-    mv = [i for i in others if i not in FOUR and R["full"].get(i) != P["full"].get(i)]
+    mv = [i for i in others if i not in FOUR and i != "inferno" and R["full"].get(i) != P["full"].get(i)]
     chk("E. [%s] every other character (%d of them) is byte for byte cd34de2's (changed: %s)" % (key, len(others) - len(FOUR), mv or "none"), not mv and len(others) >= 25, mv)
     rest = [i for i in FOUR if R["noEyes"].get(i) != P["noEyes"].get(i)]
     chk("E. [%s] ...and the four are cd34de2's outside their eye group and brows - crown, hair, robe, backdrop, neck, mouth, closed eyes (changed: %s)" % (key, rest or "none"), not rest, rest)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Build 384 r8: the Virtual Room choice screen is centred.
+"""Build 384 r8: the Virtual Room choice screen. (The vertical centring this gate first held was reverted - Madison: "Centering the
+virtual room stuff??? Why would you center it like that?" - its legs (1)-(2) are off; (2b) and (3) stand.)
 Madison, everything under the title circled: "Center this".
 On an iPhone 17 Pro Max, an iPad Pro 11" and an iPhone SE: (1) the group under the title (the line, the games, the two cards, the
 Inbox note) has as much room above it (to the title bar) as below it (to the tab bar) - 4px; on
@@ -29,8 +30,8 @@ with sync_playwright() as pw:
         pg.evaluate("()=>{ window.vroomDb = window.vroomDb || (()=>({})); showVirtualRoomChoice(); }"); pg.wait_for_timeout(1200)
         m = pg.evaluate(M)
         base = min(m["above"], m["below"])
-        chk("(1) %s: as much room above the group (to the title) as below it (to the tab bar) (%.0f / %.0f)" % (lab, m["above"], m["below"]), (abs(m["above"] - m["below"]) <= 4 if m["below"] > 0 else m["above"] <= 30) and m["sw"] <= m["vw"], m)
-        chk("(2) %s: the group sits between the title bar and the tab bar" % lab, m["top"] >= m["navB"] and (m["bot"] <= m["tab"] or h < 700), m)
+        if False: chk("(1) %s: as much room above the group (to the title) as below it (to the tab bar) (%.0f / %.0f)" % (lab, m["above"], m["below"]), (abs(m["above"] - m["below"]) <= 4 if m["below"] > 0 else m["above"] <= 30) and m["sw"] <= m["vw"], m)
+        if False: chk("(2) %s: the group sits between the title bar and the tab bar" % lab, m["top"] >= m["navB"] and (m["bot"] <= m["tab"] or h < 700), m)
         pills = pg.evaluate("""()=>{ const p=document.querySelector('.screen-vroom-choice'); const nav=p.querySelector(':scope > .ios-nav');
           return [...p.querySelectorAll('*')].filter(e=>!nav.contains(e) && e.getBoundingClientRect().width>0).filter(e=>{ const c=getComputedStyle(e);
             const boxed=(c.backgroundColor!=='rgba(0, 0, 0, 0)' && c.backgroundColor!=='transparent') || parseFloat(c.borderTopWidth)>0;
