@@ -6741,6 +6741,11 @@
   @media (min-width:40rem){ .wrap:not(:has(.qnumrow, .pausepanel)) .vroom-racebar{ margin-top:4.2rem; } }
   /* and in a question on a phone, a little air under the pinned Pause (its pill is taller than the row, and the finish flag touched it) */
   @media (max-width:39.99rem){ .wrap:has(.qnumrow, .pausepanel) .vroom-racebar{ margin-top:.4rem; } }   /* the tablet's chat button is 52px */
+  /* (384 r8) the question dots ride at the top of the pinned line (syncTestPin): the bar starts where the dots always start,
+     and on a tablet the track (not the dots) is what keeps clear of the corner Pause and chat */
+  .wrap .vroom-racebar.has-meter{ margin-top:0; padding-top:0; display:flow-root; }   /* flow-root: the dots' own top margin stays inside, so they sit where they always do */
+  .wrap .vroom-racebar.has-meter > .meter{ margin-left:-.3rem; margin-right:-.3rem; }
+  @media (min-width:40rem){ .vroom-racebar.has-meter .vroom-racetrack{ margin-top:1.6rem; } }
   .vroom-racetrack{
     position:relative; height:5.9rem;
     background:rgba(128,128,128,.14); border-radius:.35rem;   /* (384 r5) square-ended, so the start line and the finish meet its ends instead of floating inside a pill's curve */
@@ -54834,11 +54839,19 @@ function syncTestPin(force){
   if(want === has && raceWant === hasRace && !force) return;
   wrap.classList.remove("test-pinned", "race-pinned");
   if(rb){ rb.style.top = ""; rb.style.left = ""; rb.style.width = ""; }
+  /* (384 r8) THE QUESTION DOTS STAY IN THEIR OWN PLACE, straight under the header, in a race too. Madison: "the amount of
+     questions or the question progress bar needs to be in its normal spot, that way the pause button and chat button are
+     still in great spots, and then the stuff under it within the virtual room modes will look good." The race line came
+     between the header and the dots (#meter follows #vroomracebar in the markup), so the dots dropped ~110px. While the line
+     is pinned the dots ride at the top of it - header, dots, line - and they go back to their own place when it is not. */
+  const meter = document.getElementById("meter");
+  if(meter && rb && meter.parentElement === rb && !raceWant){ rb.after(meter); rb.classList.remove("has-meter"); }
   if(!want) return;
   const y = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
   wrap.style.setProperty("--test-top-y", y + "px");
   wrap.style.setProperty("--test-top-h", top.offsetHeight + "px");
   if(raceWant){
+    if(meter && meter.parentElement !== rb){ rb.prepend(meter); rb.classList.add("has-meter"); }
     const tr = top.getBoundingClientRect(), rr = rb.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
     wrap.style.setProperty("--test-race-h", Math.max(0, rr.bottom - tr.bottom) + "px");
     rb.style.top = (rr.top - wr.top) + "px";
