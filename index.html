@@ -37548,6 +37548,42 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ margin:.1rem 0 .25rem; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-desc{ font-size:.76rem; line-height:1.35; }
   }
+  /* (384 r13) STACKED ON A SHORT PHONE. Madison, for the SE 2nd/3rd gen (375x667, where the step scrolled 91px and its Continue
+     sat 109px under every other step's): "Stack on the SE". In the short-phone band (the tier above: under 40rem wide and no
+     taller than 46rem - an SE, a phone in Safari; a 13 mini at 812 and every taller phone are outside it) each class card is a
+     full-width row: its mark beside its kicker and name with the Select / Selected chip at the right of them (a fixed
+     column, so nothing reflows when Select becomes Selected), the line about it under them across the whole card, and Fire
+     Code's "Needs your own IFC PDF" under that. Two across in a ~140px column, Fire Code's line ran to six lines and both cards
+     were 303px tall. The rows reach 1.25rem past the step's column on each side (20px from the screen's edge), because at the
+     column's 269px "Police Academy" and the chip do not fit on one line and Fire Code's line takes three (the precedent: "What
+     This Actually Is" trims its side padding on short screens for the same reason - width is text that does not wrap). Every
+     word stays and no type is smaller than this tier already draws it. The picked check sits on the mark's corner (the
+     card's top-right corner is the chip's now). */
+  @media (max-width:39.99rem) and (max-height:46rem){
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards{ grid-template-columns:minmax(0, 1fr) !important; gap:.4rem !important;
+      width:auto; align-self:stretch; margin-left:-1.25rem !important; margin-right:-1.25rem !important; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon{ padding-top:.45rem !important; padding-bottom:.45rem !important; }
+    /* the padding as two variables, so the picked check can find the mark's corner from the card (under 600px tall: 8px, as
+       the step's own rule there has it, and the 22.5rem tier's .6rem sides) */
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ --cc-pt:.65rem; --cc-pl:.8rem; padding:var(--cc-pt) var(--cc-pl) .7rem !important; }
+    @media (max-height:37.49rem){ html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ --cc-pt:8px; --cc-pl:.6rem; padding-bottom:8px !important; } }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){
+      display:grid; grid-template-columns:38px minmax(0, 1fr) 6.25rem; grid-template-areas:"mark kicker chip" "mark title chip" "desc desc desc" "needs needs needs";
+      column-gap:.6rem; row-gap:0; align-items:center; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) :is(.cc-text, .cc-foot){ display:contents; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ grid-area:mark; align-self:start; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-kicker{ grid-area:kicker; align-self:end; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ grid-area:title; align-self:start; margin:0; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-desc{ grid-area:desc; margin-top:.3rem; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-needs{ grid-area:needs; margin-top:.15rem; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-status{ grid-area:chip; justify-self:end; }
+    /* the check on the mark's bottom-right corner, drawn by the card (a pseudo-element inside the mark would count as the
+       mark's own ink and pull it off centre) */
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked:not(.is-soon)::after{
+      top:calc(var(--cc-pt) + 24px); left:calc(var(--cc-pl) + 24px); right:auto; width:20px; height:20px; background-size:12px 12px; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+    html[data-layout] body #stage > .classselect-panel > .classselect-sub{ margin-bottom:.45rem !important; }
+    html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-top:.4rem !important; margin-bottom:.55rem !important; }
+  }
   /* (384 r11) THE CLASS STEP ON ITS SHARED FLOOR. check-positions: on a 13 mini (375x812) the step ran 15px past the screen and
      its Continue sat 34px under the line every other sign-up step's Continue shares; in a laptop window (1366x638, 1280x670,
      1440x770, 1512x852) it scrolled 27-101px. Spacing and card height only, in tiers only those screens match - no type gets
