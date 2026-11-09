@@ -63,7 +63,7 @@ INIT_IFC = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.se
 INIT_ACA = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
             "localStorage.setItem('class26e.drill.v1',%s);}catch(e){}") % S
 
-KEPT = ["ghost", "grizzly", "alien", "clown", "marksman", "astronaut", "hive"]   # (round 14: the Dispatcher is redrawn, a woman - M)
+KEPT = ["ghost", "grizzly", "alien", "clown", "marksman", "astronaut", "hive", "hacker"]   # (round 14b: the Dispatcher is the man again - "Nvm don't make dispatch a women"; M)
 RANKS = ["forge", "lunar", "solar", "tempest", "frost", "oracle", "inferno"]
 PICKED = ["detective", "masked", "poseidon", "valkyrie", "timekeeper", "ronin", "voidwalker", "umbra", "singularity", "genesis", "zenith", "hacker"]
 NAMES = {"detective": "Inspector", "masked": "Smoke Diver", "poseidon": "Chief", "valkyrie": "Undercover", "timekeeper": "Fire Marshal", "ronin": "Drone Pilot",
@@ -184,7 +184,7 @@ chk("A. the academy's %d characters are byte for byte cd82880's (moved: %s)" % (
 # B
 moved = [i for i in KEPT + RANKS if H.get(i) != PREV["F"]["ifc"].get(i)]
 chk("B. Fire Code's starters, eight kept challenge characters and seven rank characters are byte for byte cd82880's (moved: %s)" % (moved or "none"), not moved, moved)
-same = [i for i in PICKED if H.get(i) == PREV["F"]["ifc"].get(i)]
+same = [i for i in PICKED if i not in KEPT and H.get(i) == PREV["F"]["ifc"].get(i)]   # (14b) the Dispatcher is in both: kept (byte for byte) and still read (M)
 chk("B. ...and each of the eleven he picked a version for differs from cd82880's (unchanged: %s)" % (same or "none"), not same, same)
 # C
 chk("C. the Drone Pilot and the Star Ranger are ea31d43's drawings byte for byte (round 3's: %s, %s)" % (H["ronin"] == PREV["E"].get("ronin"), H["zenith"] == PREV["E"].get("zenith")),
@@ -254,10 +254,10 @@ b = D["genesis"]
 # (round 14) Aurora, shipped as the secret and redrawn ("I like aurora but I feel it could be better")
 chk("I. Aurora: curtains of light round its head (%s), two lit almond eyes (lit %s), a small mouth (%s), no hat, the core flare as the jewel of a circlet at its brow (%s)" % ("cx-fx cx-fx-aurora" in b["groups"], b["eyesLit"], b["mouth"], b["flare"]),
     b["kind"] == "fcopt_aurora" and "cx-fx cx-fx-aurora" in b["groups"] and b["eyesLit"] and b["mouth"] >= 1 and not b["hats"] and b["flare"] and b["flare"][1] < 17 and "#CFFFEF" in b["strokes"], b)
-# M (round 14: "Can you make the dispatcher a female?")
+# M (round 14 asked for a woman Dispatcher; round 14b: "Nvm don't make dispatch a women") - the Dispatcher is the man again, fcdispatch3
 h = D["hacker"]
-chk("M. the Dispatcher is a woman now: a crown of curls (%s rounds), gold hoops (%s), lashes, the headset (%s) with its boom mic, the console's light (%s), the navy polo (%s), two eyes (%s)" % (h["curls"], "#F2C14E" in h["strokes"], "cx-fx cx-fx-headset" in h["groups"], "cx-fx cx-fx-console" in h["groups"], h["shirt"], h["eyeWhites"]),
-    h["kind"] == "fcdispatch4" and h["curls"] >= 16 and "#F2C14E" in h["strokes"] and "cx-fx cx-fx-headset" in h["groups"] and "cx-fx cx-fx-console" in h["groups"] and (h["shirt"] or "").upper() == "#344C86" and h["eyeWhites"] == 2 and h["mouth"] >= 1, h)
+chk("M. the Dispatcher is the man again (fcdispatch3: no curls, no hoops; %s, curls %s)" % (h["kind"], h["curls"]),
+    h["kind"] == "fcdispatch3" and h["curls"] < 16 and "#F2C14E" not in h["strokes"] and "cx-fx cx-fx-headset" in h["groups"], h)
 # J
 off = {i: (D[i]["flare"], D[i]["onFig"]) for i in ("voidwalker", "umbra", "singularity", "genesis") if not D[i]["onFig"]}
 chk("J. every secret's flare sits on its character's own drawn shapes (off: %s)" % (off or "none"), not off, {i: (D[i]["flare"], D[i]["onFig"]) for i in ("voidwalker", "umbra", "singularity", "genesis")})
