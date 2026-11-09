@@ -51,6 +51,15 @@ INDEX = ROOT + "/index.html"
 
 DEVICES = [("iPhone 17 Pro Max", 440, 956), ("iPad Pro 11\"", 834, 1194)]
 
+# A CALM HOME for the two tips that wait for one (r18). The seed is a high-level account, so a character unlock is owed and
+# boot raises its spotlight (.rs-spot, ~7s up) on a timer of its own - before or after this setup runs depending on how loaded
+# the machine is. Overriding homeUnlocksOwed only stopped the NEXT ask; a spotlight already up held the tip back past the
+# 8-9s wait and the gate read "0 of 1 steps rendered" (found alone on a quiet machine, 3 of 3). The app is right to wait for
+# a spotlight; the fixture owes nothing: the owed unlocks are marked shown (as check-fixes does) and any spotlight is cleared.
+CALM_HOME = ("try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} "
+             "try{ homeUnlocksOwed = () => false; }catch(e){} "
+             "document.querySelectorAll('.rs-spot, .daily-alert').forEach(n => n.remove()); ")
+
 # Each scenario arms one tour and drives the app to the screen that runs it.
 # `flag` is the store field the screen checks; `setup` is evaluated in the
 # page to reach that screen. `source` is the line the declared step count is
@@ -74,13 +83,13 @@ SCENARIOS = [
     # 3s for Home to settle, then a few calm beats).
     {"key": "classtip", "flag": "seenClassTip", "source": "maybeClassButtonTip",
      # calm Home first (no unlock cards owed, no banner up), as an account with nothing else to say would be
-     "setup": "try{ homeUnlocksOwed = () => false; }catch(e){} document.querySelectorAll('.daily-alert').forEach(n => n.remove()); showHome(); maybeClassButtonTip()",
+     "setup": CALM_HOME + "showHome(); maybeClassButtonTip()",
      "wait": 8000, "min": 1,
      "note": "the class button, on Home"},
     # Build 384 round 4: Start Studying's tip, the last of a sign-up's tips - after the sign-up's Add to Home Screen sheet
     # (scheduleStudyTip waits for it, for the +100 XP and for a calm Home). Standalone here: nothing owed, so it comes at once.
     {"key": "studytip", "flag": None, "source": "scheduleStudyTip",
-     "setup": "try{ homeUnlocksOwed = () => false; }catch(e){} try{ localStorage.removeItem('class26e.a2hs'); }catch(e){} document.querySelectorAll('.daily-alert').forEach(n => n.remove()); showHome(); scheduleStudyTip()",
+     "setup": CALM_HOME + "try{ localStorage.removeItem('class26e.a2hs'); }catch(e){} showHome(); scheduleStudyTip()",
      "wait": 9000, "min": 1,
      "note": "Start Studying, on Home"},
     {"key": "modeselect", "flag": "seenModeSelectTour", "source": "showModeSelect",
@@ -286,6 +295,12 @@ def main(argv):
                             " function(steps){ if(window.__tourAsked === null) window.__tourAsked = (steps || []).length; return o.apply(this, arguments); }; }")
                 pg.evaluate("()=>{%s}" % sc["setup"])
                 pg.wait_for_timeout(sc.get("wait", 1500))
+                if sc.get("min"):
+                    # (r18) a tip that waits for a calm Home starts when Home is calm, not at a fixed second: the seed's owed
+                    # character unlock plays for ~5-7s first (homeUnlockPlaying - state, not a node, so nothing to clear) and
+                    # the app is right to wait for it. Allowed up to 25s more; a tip that never starts still reads 0 of 1.
+                    try: pg.wait_for_selector("#tour-tooltip", timeout=25000)
+                    except Exception: pass
                 asked = pg.evaluate("()=>window.__tourAsked")
                 if isinstance(asked, int) and asked > 0:
                     want = asked
