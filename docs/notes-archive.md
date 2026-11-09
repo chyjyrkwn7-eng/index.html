@@ -37496,3 +37496,28 @@ Madison, on the one class-step flag r11 left (iPhone SE 2nd/3rd gen 375x667: the
 - Spacing in the band: the line under the title .45rem above the cards, cards .4rem apart, the small print .4rem under them and .55rem over Continue (8.8px - check-b384-classstep wants >= 8 where the step still overflows, a 375x548 Safari window and the first-gen SE; .35rem failed it).
 - NUMBERS (check-positions, portrait): SE 2nd/3rd gen spread 109 -> 1, scroll 91 -> 0 (Continue 632 -> 522, ~11px of slack in its auto margin; the same with a class picked). First-gen SE (allowed to scroll): spread 167 -> 100, scroll 148 -> 81. Landscape: the first-gen SE's class step 287 -> 264; nothing else on the class step moves. (Home's "below" on the Android phone landscape and the MBP 14" portrait browser reads 46/27 and 84/81 between runs on either build - noise, Home is untouched.)
 - GATES: check-b384-classfloor extended - A and B now include the SE 2nd/3rd gen; new D (SE 2nd/3rd gen): the class cards are full-width rows one per row (mark left of the name), every part present (mark, kicker, name, line, chip, Fire Code's Needs), picking both moves Continue by at most 1px and does not scroll; C carries the SE's .76rem line as its floor. FAILS on the base build (A, B, D). check-b384-classstep: ALL PASS for the first time (its 375x667 "fits with nothing scrolled" leg passes). check-centering --sizes SE --only signup: all pass. shoot-flow gains an iphone-se-2-3 device.
+### 384 round 15 (r15-highlights): the whole page tints the whole provision; one look for every highlight
+- Madison, from his phone, on Fire Code's "Show the whole page": SECTION 322 / 105 tinted only at the left of their column ("should be symmetrical"),
+  Tables 5609.4.1 and 112.4.2 tinted only down to the cited row, 322.4.1.1 / 319.1.1 only down to the list item the question is about, 1013 EXIT SIGNS cut
+  mid-sentence and without its exceptions, ASTM E84 as two unrelated pieces (the organisation heading far above the entry) in a strip of tiny print - then "I need
+  you to fix every single question". Root cause: the page highlight (`clip.cited`) was the same lines as the card's picture, which ends at the answer.
+- THE RULE (card unchanged, as Madison asked: the picture shows what the answer needs, exceptions and later sub-items only when the answer is in them; the PAGE is where
+  the whole thing is tinted): a provision runs from its heading to the next numbered heading / SECTION / CHAPTER banner (children are provisions of their own), a table
+  from its title to its last row and notes (the next table's title ends it), a heading cited alone takes the first provision under it, an entry is its designation line
+  and the sections listed under it. Two tones only: WASH over the whole block, STRONG on the cited words / row / heading. A text block runs to the right edge of its
+  column (`xr`), a centred heading sits centred in it (`sym`), a table's own rules decide its width; padding is the viewer's 0.45 em everywhere.
+- county (`countyClip`): `countyChars` now reads what each printed LINE is (`ln.head` sec / banner / table, `ln.tbl`, `ln.body`; page `left` / `right`) from the
+  booklet's typefaces and where a paragraph starts, not from the section number alone (a wrapped line that starts "112.4.2. Court costs" is not a heading; a heading
+  set in the running face is). `cited` is built from that. The card's cut finishes the sentence: a last line that fills the column and does not end one takes the lines
+  to the end of the sentence (never a heading, a list item or an exception).
+- book (`computeClip`): a section title cited alone (`loc.lead`) now has `cited` = the banner and its whole first subsection with its exceptions; the cut ends on a line that
+  ends a sentence (looks on past `LEAD_LINES` to the paragraph's end); flow segments carry `xr`; a table `row` clip's `cited` is the whole table (it was the cut); an entry
+  (Chapter 80) is the entry alone, cut to its own width, its organisation heading shown only when it stands right above it and never tinted.
+- highlightPage: `sg.xr` / `sg.sym` widen the hugged block to the column / centre a heading; nothing else changed in how a block is drawn.
+- Gate: `tools/check-b384-hlall.py` (+ `b384-hlall.mjs`, `b384-hlall-page.js`): EVERY distinct citation (410 county; 1,368 book when IFC_BOOK is the owner's copy, else the
+  book legs SKIP) - structure (page highlight against the printed lines, read by a different rule than the viewer's; picture ends clean; no disjoint pieces; deeper marks
+  inside) and paint (Chromium, 2 px per point: one soft tint and one deeper gold, block top / bottom / right edge against its text, a centred heading centred, nothing
+  tinted outside the provision, the card's picture washed). Against 54a6848 it fails (county 82 offenders in the structure leg alone, book 27: 17 referenced standards as
+  disjoint pieces, 10 section titles ending early, 3 mid-sentence). `--shot ID` writes the painted page to /tmp for a look.
+- Could not fix: a referenced-standard entry is a wide line of 8 pt print (the book sets it across the page), so its card picture is as large as the book's own print
+  allows at the card's width; Enlarge shows it bigger.

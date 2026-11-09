@@ -1012,6 +1012,14 @@ export async function computeClip(doc, index, loc, ptr, opts = {}) {
   if (loc.kind === 'figure') return done(await figureClip(doc, index, loc, ptr, fontBold, cache));
   const r = await flowClip(doc, index, loc, ptr, opts, fontBold, cache);
   if (r.ok && ptr && ptr.blur) { try { const h = await hideInfo(doc, loc, fontBold, cache); if (h) { r.hide = h.hide; r.hiddenText = h.hiddenText; } } catch (e) { /* shown unblurred is never a leak: without the rectangles nothing is hidden, so the app must check clip.hide before it shows the picture */ } }
+  // (r15) A section's banner cited alone is cut with the start of what it heads, but the whole-page view highlights all of it: the banner and its
+  // first subsection through the last of its sub-items and exceptions.
+  if (r.ok && loc.lead) {
+    try {
+      const full = await flowClip(doc, index, { ...loc, lead: 0 }, ptr, opts, fontBold, cache);
+      if (full.ok && !full.segments.some(sg => sg.whole)) r.cited = full.segments;
+    } catch (e) { /* the whole-page view then highlights the clipping only */ }
+  }
   // The clipping stops above an exception (or a table) the question is not about; the whole-page view highlights the whole section, so the
   // full extent is cut once more, without marks, and handed over as `cited` (see highlightPage).
   if (r.ok && (loc.stoppedAtException || loc.stoppedAtTable) && loc.fullEnd !== undefined) {
@@ -1088,7 +1096,9 @@ async function flowClip(doc, index, loc, ptr, opts, fontBold, cache) {
         const ends = (k) => /\.$/.test(rows[k - 1].end);
         let k = n; while (k >= 3 && !ends(k)) k--;
         if (k >= 3) n = k;
-        else for (k = n + 1; k <= Math.min(rows.length, loc.lead + 3); k++) if (ends(k)) { n = k; break; }
+        else { let found = false; for (k = n + 1; k <= Math.min(rows.length, loc.lead + 3); k++) if (ends(k)) { n = k; found = true; break; }
+          // (r15) a picture never ends inside a sentence: on past the limit, to the first line that ends one (the paragraph's end)
+          if (!found) for (k = loc.lead + 4; k <= Math.min(rows.length, loc.lead + 14); k++) if (ends(k)) { n = k; break; } }
       }
       if (n < rows.length || slice.some(it => !same(it))) {
         const cut = n ? rows[n - 1].y - 0.5 : floor;
@@ -1163,7 +1173,9 @@ async function flowClip(doc, index, loc, ptr, opts, fontBold, cache) {
       for (const it of slice) r = union(r, rectOf(it));
       segs.push({ page: p, x0: COL_L, x1: COL_R, y0: Math.max(r.y0 - 2, BODY_BOTTOM), y1: r.y1 + 2, col: -1 });
     }
-    for (const s of segs) segments.push(trimEdges(model, s));
+    // (r15) a block of running text is highlighted to its column's right edge, whatever its last line holds (see highlightPage)
+    const mainRight = (sg) => { let r = null; for (const it of items) if (it.t && inBody(it) && isBodySize(it) && it.i < mainEnd && centre(it) >= sg.x0 && centre(it) <= sg.x1 && it.x + it.w <= sg.x1 + 2 && (r == null || it.x + it.w > r)) r = it.x + it.w; return r; };
+    for (const s of segs) { const t = trimEdges(model, s); if (!s.table) { const xr = mainRight(t); if (xr != null) t.xr = xr; } segments.push(t); }
     textParts.push(textIn(model, segs));
     pages.push(p);
     if (ptr && ptr.find) for (const m of findMarks(model, segs, ptr.find)) marks.push(m);
@@ -1271,7 +1283,8 @@ async function tableClip(doc, index, loc, ptr, opts, fontBold, cache) {
       const model = await pageModel(doc, p, fontBold, cache);
       if (model.rot) continue;
       const rowClip = await tableRowClip(model, segments.filter(sg => sg.page === p && !sg.whole), headsOn(p).filter(h => h.token === loc.token), rows);
-      if (rowClip) return { ok: true, ...rowClip, pages: [p], truncated: false };
+      // (r15) the picture is cut from the page that holds the row; the whole-page view shows - and tints - the whole table, on every page it runs over
+      if (rowClip) return { ok: true, ...rowClip, cited: segments.filter(sg => !sg.whole && !sg.figure).map(sg => ({ ...sg, table: true })), pages: pages.slice(), truncated: false };
     }
   }
   return { ok: true, segments, marks, text: textParts.join(' '), pages, truncated };
@@ -1398,8 +1411,8 @@ async function tableRowClip(model, segs, caps, rows) {
     const marks = [];
     if (cap) marks.push(headMark(seg.page, cap));
     for (const h of hits) { const m = { page: seg.page, x0: h.x0, x1: h.x1, i0: h.i0, i1: h.i1, fs: h.fs, kind: 'row', lt: h.lt, lb: h.lb }; m.y0 = h.i0 - 0.12 * h.fs; m.y1 = h.i1 + 0.12 * h.fs; marks.push(m); }
-    // the whole page washes what the picture shows (the cut), with the row in the stronger gold
-    return { segments: out, marks, cited: out.slice(), text: textIn(model, out) };
+    // (r15) the whole page washes the WHOLE TABLE - caption to last row and notes - with the row in the stronger gold; the picture shows the cut
+    return { segments: out, marks, cited: [{ page: seg.page, x0: seg.x0, x1: seg.x1, y0: seg.y0, y1: seg.y1, col: seg.col, table: true }], text: textIn(model, out) };
   }
   return null;
 }
@@ -1445,6 +1458,7 @@ async function entryClip(doc, index, loc, ptr, opts, fontBold, cache) {
       r = union(r, rectOf(it));
     }
     const segments = [], marks = [], textParts = [], pages = [p];
+    const band = { x0: Math.max(COL_L - 8, r.x0 - 8), x1: Math.min(COL_R + 8, r.x1 + 8) };
     // the organisation: its heading above the entry on this page, else the "—continued" line at the top
     let org = null;
     for (const it of items) {
@@ -1460,11 +1474,14 @@ async function entryClip(doc, index, loc, ptr, opts, fontBold, cache) {
         if (!inBody(it) || it.b) break;
         o = union(o, { x0: it.x, x1: it.x + it.w, y0: it.y - 0.22 * it.h, y1: it.y + 0.9 * it.h });
       }
-      segments.push({ page: p, x0: COL_L, x1: COL_R, y0: o.y0, y1: o.y1 + 2, col: -1 });
-      textParts.push(textIn(model, [segments[0]]));
+      // (r15) the organisation is context, not the cited thing: it is shown (not highlighted) only when it stands right above the entry; a heading
+      // far up the page, joined to the entry in one picture under a gap, made a sliver of two unrelated pieces
+      if (o.y0 - (line.y + 0.8 * line.h) <= 24) { segments.push({ page: p, ...band, y0: o.y0, y1: o.y1 + 2, col: -1, context: true }); textParts.push(textIn(model, [segments[0]])); }
     }
-    segments.push({ page: p, x0: COL_L, x1: COL_R, y0: Math.max(r.y0 - 2, BODY_BOTTOM), y1: line.y + 0.8 * line.h + 1.5, col: -1 });
-    textParts.push(textIn(model, [segments[segments.length - 1]]));
+    // (r15) the entry's own width: a picture of one entry is cut to where its lines run, not to the whole page width (a strip of print at half the size)
+    const entrySeg = { page: p, ...band, y0: Math.max(r.y0 - 2, BODY_BOTTOM), y1: line.y + 0.8 * line.h + 1.5, col: -1 };
+    segments.push(entrySeg);
+    textParts.push(textIn(model, [entrySeg]));
     marks.push(headMark(p, line));
     // the list of code sections may run onto the next page (above that page's first designation)
     if (!ended && p < index.numPages) {
@@ -1476,11 +1493,11 @@ async function entryClip(doc, index, loc, ptr, opts, fontBold, cache) {
         q = union(q, rectOf(it));
       }
       if (q) {
-        const seg = { page: p + 1, x0: COL_L, x1: COL_R, y0: Math.max(q.y0 - 3, BODY_BOTTOM), y1: q.y1 + 2, col: -1 };
+        const seg = { page: p + 1, ...band, y0: Math.max(q.y0 - 3, BODY_BOTTOM), y1: q.y1 + 2, col: -1 };
         segments.push(seg); pages.push(p + 1); textParts.push(textIn(m2, [seg]));
       }
     }
-    return { ok: true, segments, marks, text: textParts.join(' '), pages, truncated: false };
+    return { ok: true, segments, marks, cited: segments.filter(sg => !sg.context), text: textParts.join(' '), pages, truncated: false };
   }
   return { ok: false };
 }
@@ -1493,13 +1510,13 @@ async function entryClip(doc, index, loc, ptr, opts, fontBold, cache) {
 // opts.cache: a Map shared between calls.
 const C_TOP = 735, C_BOTTOM = 56;
 const cnorm = (s) => norm(String(s).replace(/\u00b2/g, '2').replace(/\u00b3/g, '3').replace(/\u00b9/g, '1'));   // m\u00b2 is printed as m and a raised 2
-async function countyChars(doc, p, cache) {
+export async function countyChars(doc, p, cache) {
   const key = 'c' + p;
   if (cache && cache.has(key)) return cache.get(key);
   const page = await doc.getPage(p);
   const tc = await page.getTextContent();
   const items = tc.items.filter(it => it.str && it.str.trim() && it.transform[5] >= C_BOTTOM && it.transform[5] <= C_TOP)
-    .map(it => ({ s: it.str, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || 11 }));
+    .map(it => ({ s: it.str, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || 11, f: it.fontName }));
   items.sort((a, b) => b.y - a.y);
   const lines = [];                           // superscripts ("m2", footnote marks) stand a few points higher than their line: one line = items within 5 pt
   for (const it of items) {
@@ -1519,6 +1536,40 @@ async function countyChars(doc, p, cache) {
     const wide = ln.items.reduce((m, it) => (it.w > m.w ? it : m), ln.items[0]);
     ln.y = wide.y; ln.fs = wide.h || 11;
   }
+  // (r15 whole provision) What each printed line IS, read from its type: the booklet sets a heading ("322.1 General.", "SECTION 322", "TABLE 112.4.2")
+  // in a bold face of its own and everything else in the body face, so a wrapped line that merely starts with a section number
+  // ("112.4.2. Court costs are ...") is not mistaken for one. Where a provision ends, where a table ends, and the text column's edges,
+  // are all decided from this.
+  // A numbered line is a heading when its number and title are set in a face of their own - followed on the line by running text in another face
+  // ("322.1 General. The storage ..."), or alone in a face that the page's headings are set in ("5609.2 Definitions."): a wrapped line that
+  // merely starts with a section number ("112.4.2. Court costs ..."), a table cell and a footnote are all one face to the end of the line.
+  const fchars = new Map(), headFonts = new Set(), bodyFonts = new Set();
+  for (const it of items) fchars.set(it.f, (fchars.get(it.f) || 0) + it.s.length);
+  const lead = (ln) => { const it0 = ln.items[0]; let t = '', k = 0; for (const it of ln.items) { if (it.f !== it0.f) break; t += it.s; k++; } return { f: it0.f, t: t.replace(/\s+/g, ' ').trim(), later: k < ln.items.length ? ln.items[k].f : null }; };
+  const SECH = /^[A-Z]{0,2}\d{2,4}(?:\.\s?\d+)+[A-Za-z]?\s*[A-Z]/;
+  for (const ln of lines) { const l = lead(ln); if (l.later && SECH.test(l.t)) { headFonts.add(l.f); bodyFonts.add(l.later); } }
+  if (!bodyFonts.size) { let bf = null; for (const [f, n] of fchars) if (bf == null || n > fchars.get(bf)) bf = f; bodyFonts.add(bf); }
+  // (a heading some paragraphs set in the running face - "611.2.4 Labeling. Emergency ..." - is read by where it starts: a numbered line whose
+  // title and text follow the number, after a line that ended its paragraph or a paragraph's space)
+  let right0 = 0; for (const ln of lines) if (ln.x1 <= 545 && ln.x1 > right0) right0 = ln.x1;
+  const startsPara = (i) => i === 0 || lines[i - 1].ref - lines[i].ref > 16.5 || lines[i - 1].x1 < right0 - 12;
+  let inTable = false;
+  for (const [i, ln] of lines.entries()) {
+    const l = lead(ln); ln.head = null;
+    if (SECH.test(l.t) && (l.later || headFonts.has(l.f) || startsPara(i))) ln.head = 'sec';
+    else if (/^(?:SECTIONS?\s*[A-Z]{0,2}\d|CHAPTER\s*\d|APPENDIX\s*[A-Z]\b|EXHIBIT\b)/.test(l.t) && l.t === l.t.toUpperCase()) ln.head = 'banner';
+    else if (/^(?:TABLE|Table)\s+[A-Z]?\d/.test(l.t) && !bodyFonts.has(l.f)) ln.head = 'table';
+    if (ln.head === 'table') inTable = true; else if (ln.head) inTable = false;
+    ln.text = ln.items.map(i => i.s).join(' ');
+    ln.tbl = inTable;                                                          // a line of a table (its cells and notes), not running text
+    ln.body = !inTable;
+  }
+  // the text column: its right edge is where the lines of text stop (the furthest right end of a line), its left edge the leftmost line of body text
+  let left = Infinity;
+  for (const ln of lines) if (ln.body || ln.head) left = Math.min(left, ln.x0);
+  let right = null; for (const ln of lines) if (ln.x1 <= 545 && (right == null || ln.x1 > right)) right = ln.x1;
+  if (right != null && right >= 534 && right <= 541) right = 540;                 // the booklet's text runs from 72 to 540 on every page (a 1 inch margin)
+  if (left >= 70 && left <= 74) left = 72;
   const chars = [];                           // letters and digits only, with the x range each one covers on its line
   lines.forEach((ln, li) => {
     // (384 one picture) a heading set larger than the body (an Exhibit's title) has a taller box: it was cut through its capitals
@@ -1533,7 +1584,7 @@ async function countyChars(doc, p, cache) {
       }
     }
   });
-  const out = { p, lines, chars };
+  const out = { p, lines, chars, left: Number.isFinite(left) ? left : null, right };
   if (cache) cache.set(key, out);
   return out;
 }
@@ -1686,6 +1737,14 @@ export async function countyClip(doc, ptr, opts = {}) {
       if (p && iBot(p) < top) { lo--; grew = true; }
       if (n && iTop(n) > bot) { hi++; grew = true; }
     }
+    // (r15) a cut never ends inside a sentence or a list item: a last line that runs the full width of the column and is followed by a
+    // line that goes on with it (no heading, no new list item, no exception) takes those lines in, to the end of the sentence
+    for (let n = 0; n < 14 && hi + 1 < pt.lines.length && pt.right; n++) {
+      const cur = pt.lines[hi], nx = pt.lines[hi + 1];
+      if (/[.:;?!)"\u201d]\s*$/.test(cur.text.trim())) break;                       // the last line ends a sentence
+      if (!(cur.body && cur.x1 >= pt.right - 6 && nx.body && !nx.head && !/^(?:Exceptions?\b|\d{1,2}\.\s|\(?[a-z0-9]{1,3}\)\s)/.test(nx.text) && nx.x0 >= cur.x0 - 2)) break;
+      hi++; used.add(hi);
+    }
     const runs = [[]];
     for (let g = lo; g <= hi; g++) runs[0].push(g);
     for (const run of runs) {
@@ -1735,27 +1794,52 @@ export async function countyClip(doc, ptr, opts = {}) {
   const T = cnorm((ptr.section || '') + (ptr.heading || ''));
   if (T.length >= 4 && N.startsWith(T, a)) markRange(a, a + T.length, 'heading');
   else if (headOnly) markRange(a, b, 'heading');               // a heading given whole ("SECTION 322 BATTERY STORAGE") carries its own number
-  // The whole-page view highlights the whole provision: when exceptions are printed after the cut (and the question is not about them), they are cited code too.
-  const cited = segments.slice();
-  const lastPt = parts[parts.length - 1];
-  let lastLi = -1;
-  for (const [x, y] of ranges) for (let k = x; k < y; k++) if (all[k].pt === lastPt) lastLi = Math.max(lastLi, all[k].li);
-  if (lastLi >= 0) {
-    const NEWSEC = /^(?:\d{2,4}(?:\.\d+)+[A-Za-z]?\b|SECTION\b|CHAPTER\b|TABLE\b|Table\b|APPENDIX\b)/;
-    let end = -1, sawExc = false;
-    for (let li = lastLi + 1; li < lastPt.lines.length; li++) {
-      const first = (lastPt.lines[li].items[0] || { s: '' }).s.trim();
-      if (NEWSEC.test(first)) break;
-      if (/^Exceptions?\b/.test(first)) sawExc = true;
-      end = li;
-    }
-    if (sawExc && end > lastLi) {
-      const ls = lastPt.lines.slice(lastLi + 1, end + 1);
-      const x0 = Math.max(0, Math.min(...ls.map(l => l.x0)) - 4), x1 = Math.min(612, Math.max(...ls.map(l => l.x1)) + 4);
-      const top = lastPt.lines[lastLi].y0 - 0.5, bottom = Math.min(...ls.map(l => l.y0));
-      cited.push({ page: lastPt.p, x0, x1, y0: bottom - 1, y1: top, col: -1 });
-    }
+  // THE WHOLE PAGE HIGHLIGHTS THE WHOLE PROVISION (r15): from its heading to the last of its sub-items and exceptions, the whole table from its
+  // title to its last row and notes, as far as the page the question cites goes - not just the lines the picture shows. A provision ends at the next
+  // heading (a numbered section, a SECTION / CHAPTER banner); a table at the next heading or at another table's title. A heading cited alone
+  // takes the first provision under it. The block runs the width of the text column (xr; a table's own rules decide its width), centred headings
+  // sitting in the middle of it (sym).
+  const cited = [];
+  const rowCite = / \| | › /.test(String(ptr.highlight || ''));
+  const citedLines = new Map();
+  for (const pt of parts) { const u = new Set(lead.get(pt) || []); for (const [x, y] of ranges) for (let k = x; k < y; k++) if (all[k].pt === pt) u.add(all[k].li); citedLines.set(pt, u); }
+  let carry = false;                                          // the provision is still running at the foot of the page before
+  for (const [pi, pt] of parts.entries()) {
+    const L = pt.lines, u = citedLines.get(pt);
+    let lo, hi;
+    if (u.size) {
+      const i0 = Math.min(...u), i1 = Math.max(...u);
+      let t = -1, head = -1;
+      for (let i = i1; i >= 0; i--) { if (L[i].head === 'table') { t = i; break; } if (L[i].head) { head = i; break; } }
+      const tbl = t >= 0 || (rowCite && head < 0);
+      lo = i0;
+      if (tbl) { if (t >= 0) lo = Math.min(lo, t); else if (head < 0) lo = 0; }          // a table that begins on the page before: from the page's first line
+      else { let h = -1; for (let i = i0; i >= 0; i--) if (L[i].head === 'sec' || L[i].head === 'banner') { h = i; break; } lo = h >= 0 ? Math.min(lo, h) : (pi === 0 && i0 > 0 && !L[i0].head ? Math.min(lo, 0) : lo); }
+      if (pi > 0) lo = 0;
+      const title = t >= 0 ? (/^(?:TABLE|Table)\s+([A-Z]?[\d.]+)/.exec(L[t].text) || [])[1] : null;
+      let skip = headOnly && pi === 0 && !L.slice(i0, i1 + 1).some(l => l.head === 'sec');
+      hi = L.length - 1;
+      for (let i = i1 + 1; i < L.length; i++) {
+        const h = L[i].head;
+        if (h === 'sec' || h === 'banner') { if (skip && h === 'sec') { skip = false; continue; } hi = i - 1; break; }
+        if (h === 'table' && tbl) { const n = (/^(?:TABLE|Table)\s+([A-Z]?[\d.]+)/.exec(L[i].text) || [])[1]; if (!title || n !== title) { hi = i - 1; break; } }
+      }
+      carry = hi === L.length - 1;
+    } else if (carry) {
+      lo = 0; hi = L.length - 1;
+      for (let i = 0; i < L.length; i++) { const h = L[i].head; if (h === 'sec' || h === 'banner') { hi = i - 1; carry = false; break; } }
+      if (hi < 0) continue;
+    } else continue;
+    const ls = L.slice(lo, hi + 1);
+    if (!ls.length) continue;
+    const x0 = Math.max(0, Math.min(...ls.map(l => l.x0)) - 4), x1 = Math.min(612, Math.max(...ls.map(l => l.x1)) + 4);
+    const prose = ls.some(l => l.head === 'sec' || l.head === 'banner'), mid = pt.left != null && pt.right ? (pt.left + pt.right) / 2 : null;
+    cited.push({ page: pt.p, x0, x1, y0: Math.min(...ls.map(l => l.y0)) - 0.5, y1: Math.max(...ls.map(l => l.y1)), col: -1, lines: [lo, hi],
+                 table: ls.some(l => l.head === 'table') || undefined,
+                 xr: prose && pt.right ? pt.right : undefined,                                                       // a block of text runs to the column's right edge; a table's own rules end it
+                 sym: mid != null && ls.some(l => l.head === 'banner' && Math.abs((l.x0 + l.x1) / 2 - mid) <= 4) ? mid : undefined });   // a centred heading sits centred in its block
   }
+  if (!cited.length) for (const sg of segments) cited.push(sg);
   const byPage = new Map(parts.map(pt => [pt.p, { items: pt.lines.flatMap(ln => ln.items.map(it => ({ ...it, b: false }))), g: null }]));
   return finishClip({ ok: true, segments, marks, text: texts.join(' '), pages, truncated: false, cited }, (p) => byPage.get(p) || { items: [], g: null });
 }
@@ -2256,7 +2340,7 @@ function highlightPage(ctx, vp, hl, s, model, keyed) {
   const box = (x0, y0, x1, y1) => { const a = P(x0, y0), b = P(x1, y1); return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), y0: Math.min(a[1], b[1]), y1: Math.max(a[1], b[1]) }; };
   if (keyed == null) keyed = hasKeyMark(hl.marks);
   const upright = !((vp.rotation || 0) % 360);
-  const items = model ? model.items.filter(it => it.t && inBody(it)) : [];
+  const items = model ? model.items.filter(it => it.t && /[A-Za-z0-9]/.test(it.t) && inBody(it)) : [];      // (a lone mark - the book's change asterisk - does not stretch a block)
   const bands = [];
   for (const m of hl.marks) {
     if (!isDark(m, keyed)) continue;
@@ -2285,6 +2369,9 @@ function highlightPage(ctx, vp, hl, s, model, keyed) {
         if (level && it.x >= R - 0.5) rgt = Math.min(rgt, (R + it.x) / 2);
         if (level && it.x + it.w <= L + 0.5) lft = Math.max(lft, (L + it.x + it.w) / 2);
       }
+      // (r15) a block of text runs the width of its column and a centred heading sits in the middle of it: the same block whatever its last line holds
+      if (sg.xr != null) rgt = Math.max(rgt, sg.xr + pad);
+      if (sg.sym != null) { lft = Math.min(lft, 2 * sg.sym - rgt); rgt = Math.max(rgt, 2 * sg.sym - lft); }
       r = box(lft, bot, rgt, top);
       // a table's rules reach past its text: the block takes in the rules ruled across these lines (a long level run of ink)
       try {
