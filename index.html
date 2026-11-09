@@ -38606,6 +38606,38 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body :is(.banner-opt-art, .hfx-opt-art) > .pick-mark{ top:.4rem; right:.4rem; left:auto; bottom:auto; }
   @media (min-width:40rem){ html[data-layout] body .pick-mark{ --pm:1.45rem; } html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock){ width:1.3rem; height:1.3rem; } }
   @media (prefers-reduced-motion:reduce){ html[data-layout] body .pick-mark{ transition:none; } }
+  /* ---- THE TOP SWITCHERS, AS iOS 26 DRAWS ONE (r8) - see attachSegGlass ----
+     "Our top tabs should look and function like this, that's gonna work and function similar to our bottom tab by the way." His
+     reference (Delta's Light / Dark control, iOS 26): a dark track with a faint light rim, a NEUTRAL grey pill 4pt inside it behind
+     the picked label - no theme colour - which lifts into the bottom bar's glass lens while it moves (the .tab-lens-* layers, shared).
+     Last in the sheet and on (1,8,1): it has to outrank the clean look's switch rules (1,7,2) and the Leaderboard's (0,6,2). */
+  .has-seg-slider > .tab-lens.seg-lens{ position:absolute; z-index:0; }
+  /* a sideways finger is the switcher's (its glass follows it); an upright one still scrolls the page */
+  .has-seg-glass{ touch-action:pan-y; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  /* while the glass is up it stands over what is just above and below the track (it is 1.26x the track's height). An attribute, not
+     a class: attachSegSlider re-places the thumb on any change to the switcher's class */
+  .has-seg-glass[data-lens="up"]{ z-index:3; }
+  /* the track: a pill, a faint light rim (the reference's is +20 levels over the page at 1pt) */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-glass.has-seg-glass.has-seg-glass.has-seg-glass:is(.navsegment, .rs-tabs){
+    border-radius:999px !important; border-color:rgba(255,255,255,.08) !important;
+  }
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-glass.has-seg-glass.has-seg-glass.has-seg-glass > :is(.iconbtn, .rs-tab, .chatdock-tab){ border-radius:999px; }
+  /* the thumb: a flat neutral grey pill (the reference's is +22 levels over its track; #3C3C3F is +22 over the clean track, chroma 3),
+     the bar platter's faint top light; the same in every theme - and it is exactly the grey the lens turns as it sinks into it */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-glass.has-seg-glass.has-seg-glass.has-seg-glass > .seg-slider.seg-slider,
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-glass.has-seg-glass.has-seg-glass.has-seg-glass > .seg-lens .tab-lens-grey{
+    background-color:#3C3C3F !important; background-image:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 50%) !important;
+    border:0 !important; border-radius:999px !important; box-shadow:inset 0 .75px 0 rgba(255,255,255,.1) !important;
+  }
+  /* the lit segment paints nothing of its own (the clean look gave it the thumb's fill, which the glass would leave behind it) */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-glass.has-seg-glass.has-seg-glass.has-seg-glass > :is(.iconbtn, .rs-tab, .chatdock-tab):is(.active, .is-on){
+    background:transparent !important; background-image:none !important; box-shadow:none !important; border-color:transparent !important;
+  }
+  /* the chat sheet's tabs are 36px pills: their touch reaches 4px past each (44px; 5px from the padding box, inside its 1px
+     border), the pill and the row stay as they were */
+  .chatdock-tabs.has-seg-glass > .chatdock-tab::before{ content:""; position:absolute; left:0; right:0; top:-5px; bottom:-5px; }
+  /* a key's focus on a segment: a ring inside its pill */
+  .has-seg-glass > :is(.iconbtn, .rs-tab, .chatdock-tab):focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-2px; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -149957,12 +149989,351 @@ function glassLensSpring(s0, v0, tg, P, until, maxMs, M, DT){
   frames.push({ cx: T.cx, W: T.W, H: T.H, st: 0 });
   return frames;
 }
+/* ---- THE TOP SWITCHERS' GLASS (r8) ----
+   Every pill switcher that attachSegSlider places a thumb in (Profile / Stats / Settings, the Leaderboard's boards, the units
+   screen's levels, the chat sheet's Friends / Groups / Inbox, the Virtual Room review's Missed / Entire test) is the reference's
+   control now. Read off his recording (1320x2868, 60fps; numbers in docs/notes-archive.md, r8):
+   - AT REST a neutral grey pill 4pt inside the track, the picked label on it; no theme colour anywhere (CSS: .has-seg-glass).
+   - TOUCH IT and the control swells (9% wide, 8% tall in ~10 frames) and the grey pill LIFTS into the bottom bar's glass lens: the
+     same two-half capsule, rim, fringes and grey hand-over (.tab-lens-*), 1.26x the track's height - it stands proud of the track
+     above and below - and 1.15x the pill's width, stretching with its speed.
+   - It GLIDES to the touched segment on a spring read off the reference ([400, .8]: 12% at 3 frames, 35% at 5, 91% at 10, a 1.6%
+     overshoot at 14) - the bar's glide is [260, .95], and the top control's reference is a touch quicker; every other spring, the
+     stretch, minUp and linger are the bar's own (glassLensMotion).
+   - DRAG it and it follows the finger, snapping to the nearest segment when let go (that segment is then picked, as a tap would).
+   - It SINKS back into the grey pill on the new segment, turning grey as it shrinks, and the control returns to size.
+   - A change made any other way - a swipe across the content, a key, a click with no finger - lifts, glides and lands the same.
+   Transform and opacity only, every frame on the compositor (Web Animations tracks; a rAF only while a finger drags); no filter of
+   any kind; no backdrop-filter. Reduce motion: no lens and no swell - the thumb moves as it always did. */
+function attachSegGlass(seg, segSel, sl, opts){
+  opts = opts || {};
+  if(typeof sl.animate !== "function") return null;
+  const P = glassLensBuild();
+  P.lens.classList.add("seg-lens");
+  seg.appendChild(P.lens);
+  seg.classList.add("has-seg-glass");
+  /* the hand-over to the thumb is by opacity on its own clock: nothing may ease it */
+  sl.style.transition = "none";
+  /* the reference's: lens 1.26 of the track's height (197 device px on a track swollen to 156), 1.15 of the pill's width held,
+     the control swollen 1.09 x 1.08 (591 x 156 device px from 540 x 144); the glide its own (above) */
+  const M = Object.assign(glassLensMotion(), { glide: [400, .8], tall: 1.26, wide: 1.15, give: 14 });
+  const SWELL = [1.09, 1.08], DT = 1000 / 120;
+  const zero = () => ({ cx: 0, W: 0, H: 0, st: 0 });
+  const calm = () => document.documentElement.dataset.reduceMotion === "true"
+    || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  let g = null, S = null, V = zero(), run = null, press = null, follow = null, t1 = null, tCheck = null, landing = null, pressT = 0, swellNow = "1 1";
+  let swallowUntil = 0;
+  const segsOf = () => [...seg.querySelectorAll(":scope > " + segSel)].filter(b => !b.hidden && b.offsetWidth > 0);
+  const activeEl = () => { const a = sl._active && sl._active(); return a && a.parentElement === seg ? a : null; };
+  /* the control's own scale on screen (it may be swelling): every box is read in its unscaled coordinates */
+  function scaleOf(){ const r = seg.getBoundingClientRect(); return { r, kx: r.width / (seg.offsetWidth || r.width || 1), ky: r.height / (seg.offsetHeight || r.height || 1) }; }
+  function local(clientX, sc){ sc = sc || scaleOf(); return (clientX - sc.r.left) / sc.kx - seg.clientLeft; }
+  function measure(){
+    const els = segsOf();
+    if(els.length < 2) return null;
+    const sc = scaleOf();
+    const segs = els.map(el => { const b = el.getBoundingClientRect();
+      return { el, c: (b.left - sc.r.left) / sc.kx - seg.clientLeft + b.width / sc.kx / 2, pw: b.width / sc.kx, y: (b.top - sc.r.top) / sc.ky - seg.clientTop, h: b.height / sc.ky }; });
+    if(!segs[0].pw || !segs[0].h) return null;
+    const pillH = segs[0].h, cy = segs[0].y + pillH / 2;
+    /* a switcher with no track of its own (the chat sheet's) is measured as if it had the others': its pill and 4px round it */
+    const trackH = opts.track === false ? pillH + 8 : seg.offsetHeight;
+    const lensH = Math.max(pillH + 10, trackH * M.tall);
+    segs.forEach(t => { t.lw = Math.max(t.pw * M.wide, lensH * 1.2); });
+    const maxW = Math.max.apply(null, segs.map(t => t.lw)) * (1 + M.stretchMax) + 6;
+    const H0 = Math.ceil(lensH * 1.08), kMin = pillH * .7 / H0;
+    const W0 = Math.ceil(maxW / (2 * kMin) + H0 / 2 + 12);
+    return { segs, cy, pillH, lensH, H0, W0, B: 100, CW: Math.ceil(maxW / 2 + 44), CH: Math.ceil(H0 * 1.3 + 64), lo: segs[0].c, hi: segs[segs.length - 1].c };
+  }
+  const info = el => g && el ? g.segs.find(t => t.el === el) : null;
+  const nearest = x => { let b = null, d = Infinity; g.segs.forEach(t => { const k = Math.abs(x - t.c); if(k < d){ d = k; b = t; } }); return b; };
+  function wAt(c){
+    const ts = g.segs;
+    if(c <= ts[0].c) return ts[0].lw;
+    if(c >= ts[ts.length - 1].c) return ts[ts.length - 1].lw;
+    for(let i = 0; i < ts.length - 1; i++) if(c <= ts[i + 1].c){
+      const f = (c - ts[i].c) / Math.max(1, ts[i + 1].c - ts[i].c);
+      return ts[i].lw + (ts[i + 1].lw - ts[i].lw) * f;
+    }
+    return ts[0].lw;
+  }
+  const liftOf = H => Math.max(0, Math.min(1, (H - g.pillH) / Math.max(1, g.lensH - g.pillH)));
+  /* stretched along its path, only as far as it has lifted - the pill itself never stretches. It gives up less height for its length
+     than the bar's (which keeps its area): the reference's lens at speed is 1.17x its held width and 0.93x its held height */
+  function vis(f){ const st = (f.st || 0) * liftOf(f.H); return { cx: f.cx, W: f.W * (1 + st), H: f.H / (1 + st * .45) }; }
+  function write(f){ const tf = glassLensTf(g, vis(f)); P.els.forEach((el, j) => { el.style.transform = tf[j]; }); }
+  function now(){
+    if(run){
+      const a = run.anims[0], f = run.frames, n = f.length;
+      const t = a && typeof a.currentTime === "number" ? a.currentTime : performance.now() - run.t0;
+      const i = Math.max(0, t / DT);
+      if(i >= n - 1) return { s: Object.assign({}, f[n - 1]), v: zero() };
+      const i0 = Math.floor(i), u = i - i0, A = f[i0], B = f[i0 + 1], dt = DT / 1000, s = {}, v = {};
+      ["cx", "W", "H", "st"].forEach(k => { s[k] = A[k] + (B[k] - A[k]) * u; v[k] = (B[k] - A[k]) / dt; });
+      return { s, v };
+    }
+    return { s: S && Object.assign({}, S), v: Object.assign({}, V) };
+  }
+  function stopTrack(){
+    if(!run) return;
+    const n = now();
+    run.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+    run = null; S = n.s; V = n.v;
+    if(g && S) write(S);
+  }
+  function play(frames){
+    stopTrack();
+    const n = frames.length, tfs = frames.map(f => glassLensTf(g, vis(f)));
+    P.els.forEach((el, j) => { el.style.transform = tfs[n - 1][j]; });
+    S = Object.assign({}, frames[n - 1]); V = zero();
+    if(n < 2) return;
+    const o = { duration: (n - 1) * DT, easing: "linear" };
+    const anims = P.els.map((el, j) => el.animate(tfs.map(tf => ({ transform: tf[j] })), o));
+    run = { t0: performance.now(), frames, anims };
+    anims[0].finished.then(() => { if(run && run.anims === anims) run = null; }, () => {});
+  }
+  const spring = (s0, v0, tg, Pf, until) => glassLensSpring(s0, v0, tg, Pf, until, 1600, M, DT);
+  const opOf = el => { const v = parseFloat(getComputedStyle(el).opacity); return isFinite(v) ? v : 0; };
+  /* opacity on the compositor, as [ms, value] points from now (the thumb's is left to the stylesheet when its fade is let go) */
+  function fade(el, pts){
+    if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; }
+    const end = pts[pts.length - 1];
+    if(el !== sl) el.style.opacity = String(end[1]);
+    const D = Math.max(1, end[0]);
+    el._fade = el.animate(pts.map(p => ({ opacity: p[1], offset: Math.min(1, Math.max(0, p[0] / D)) })), { duration: D, easing: "linear", fill: "both" });
+  }
+  function unfade(el){ if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } }
+  /* the swell, as the bar's: a track of [ms, "sx sy"] points on the control's own scale - and never to within 4px of the screen's edge */
+  function swellTarget(){
+    const r = seg.getBoundingClientRect(), w0 = seg.offsetWidth || r.width, cx = r.left + r.width / 2;
+    const vw = document.documentElement.clientWidth || innerWidth;
+    const room = Math.min(cx - w0 / 2, vw - (cx + w0 / 2));
+    const sx = Math.max(1, Math.min(SWELL[0], 1 + 2 * Math.max(0, room - 4) / w0));
+    const sy = Math.min(SWELL[1], Math.max(1.04, sx));
+    return sx.toFixed(4) + " " + sy.toFixed(4);
+  }
+  function swell(pts){
+    if(seg._swell){ try{ seg._swell.cancel(); }catch(e){} seg._swell = null; }
+    if(!pts || opts.swell === false) return;
+    const D = Math.max(1, pts[pts.length - 1][0]);
+    try{
+      const a = seg._swell = seg.animate(pts.map(p => ({ scale: p[1], offset: Math.min(1, Math.max(0, p[0] / D)), easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
+      if(pts[pts.length - 1][1] === "1 1") a.finished.then(() => { if(seg._swell === a){ a.cancel(); seg._swell = null; } }, () => {});
+    }catch(e){ seg._swell = null; }
+  }
+  const scaleNow = () => { const v = getComputedStyle(seg).scale; return v && v !== "none" ? v : "1 1"; };
+  /* the lens up out of the thumb: same place, same size, the grey clearing to glass in ~70ms, the control swelling */
+  function lift(s0){
+    S = Object.assign({ st: 0 }, s0); V = zero(); write(S);
+    P.glass.concat(P.grey).forEach(unfade);
+    P.glass.forEach(el => { el.style.opacity = "0"; });
+    P.grey.forEach(el => { el.style.opacity = "1"; });
+    P.lens.classList.add("is-up"); seg.dataset.lens = "up";
+    fade(P.lens, [[0, 1], [1, 1]]);
+    fade(sl, [[0, 0], [1, 0]]);
+    /* the grey clears to glass in about two frames, as the bar's does (b0324-b0325) */
+    P.glass.forEach(el => fade(el, [[0, 0], [70, 1]]));
+    P.grey.forEach(el => fade(el, [[0, 1], [70, 0]]));
+    clearUp();
+    swellNow = swellTarget();
+    swell([[0, scaleNow()], [160, swellNow]]);
+    pressT = performance.now();
+  }
+  /* already up (caught mid-landing): clear to glass again and stay swollen */
+  function relift(){
+    P.glass.forEach(el => fade(el, [[0, opOf(el)], [70, 1]]));
+    P.grey.forEach(el => fade(el, [[0, opOf(el)], [70, 0]]));
+    fade(P.lens, [[0, 1], [1, 1]]);
+    fade(sl, [[0, 0], [1, 0]]);
+    clearUp();
+    swell([[0, scaleNow()], [160, swellNow]]);
+  }
+  function clearUp(){ clearTimeout(t1); t1 = null; clearTimeout(tCheck); tCheck = null; }
+  function begin(){
+    if(calm()) return false;
+    const up = P.lens.classList.contains("is-up") && g && S;
+    if(up) return "caught";
+    g = measure();
+    if(!g) return false;
+    glassLensSize(P, g);
+    return "fresh";
+  }
+  /* down onto segment t, landing: held at its full size until `hold`, then into the grey pill there; the thumb takes over in one
+     frame once the lens is exactly the pill (the bar's lensRelease, step for step) */
+  function release(t, hold){
+    if(!g || !t){ hide(); return; }
+    clearUp();
+    stopFollow();
+    const upFor = performance.now() - pressT;
+    const n = now();
+    stopTrack();
+    if(!n.s){ hide(); return; }
+    landing = t.el;
+    if(hold == null) hold = Math.max(M.linger, M.minUp - upFor);
+    const frames = spring(n.s, n.v,
+      tt => tt < hold ? { cx: t.c, W: t.lw, H: g.lensH } : { cx: t.c, W: t.pw, H: g.pillH },
+      tt => tt < hold ? { cx: M.glide, W: M.pop, H: M.pop, st: M.st } : { cx: M.settle, W: M.settle, H: M.settle, st: M.st }, hold);
+    play(frames);
+    const total = (frames.length - 1) * DT;
+    let greyAt = hold, handAt = total;
+    for(let i = 0; i < frames.length; i++){ if(i * DT < hold) continue; if(liftOf(frames[i].H) < .97){ greyAt = i * DT; break; } }
+    for(let i = 0; i < frames.length; i++){
+      const f = frames[i];
+      if(i * DT >= greyAt + 56 && Math.abs(f.H - g.pillH) < 1.2 && Math.abs(f.W - t.pw) < 1.6 && Math.abs(f.cx - t.c) < 1){ handAt = i * DT; break; }
+    }
+    handAt = Math.min(handAt, total);
+    const sw = [[0, scaleNow()]];
+    if(hold > 0) sw.push([Math.min(hold, 160), swellNow], [hold, swellNow]);
+    sw.push([Math.max(hold, 1) + 300, "1 1"]);
+    swell(sw);
+    const gl = opOf(P.glass[0]), gIn = Math.max(1, Math.min(70, greyAt));
+    P.glass.forEach(el => fade(el, [[0, gl], [gIn, 1], [greyAt, 1], [greyAt + 56, 0]]));
+    P.grey.forEach(el => fade(el, [[0, 1 - gl], [gIn, 0], [greyAt, 0], [greyAt + 56, 1]]));
+    fade(P.lens, [[0, 1], [handAt, 1], [handAt + 1, 0]]);
+    fade(sl, [[0, 0], [handAt, 0], [handAt + 1, 1]]);
+    t1 = setTimeout(finish, Math.max(handAt + 60, greyAt + 220));
+    /* the thumb is only ever handed the lens on the lit segment: a pick that did not happen (refused) lands it on the lit one */
+    tCheck = setTimeout(() => { tCheck = null; const a = activeEl(); if(!press && landing && a && a !== landing && g){ const ai = info(a); if(ai) release(ai, 0); } }, 120);
+  }
+  function finish(){
+    t1 = null; landing = null;
+    P.lens.classList.remove("is-up"); delete seg.dataset.lens;
+    unfade(sl);
+    if(seg._swell && seg._swell.playState === "finished"){ try{ seg._swell.cancel(); }catch(e){} seg._swell = null; }
+    g = null;
+  }
+  function hide(){
+    clearUp(); stopFollow();
+    if(run){ run.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); run = null; }
+    [P.lens].concat(P.glass, P.grey).forEach(unfade);
+    P.lens.style.opacity = "0";
+    unfade(sl);
+    swell(null);
+    P.lens.classList.remove("is-up"); delete seg.dataset.lens;
+    g = null; landing = null;
+    if(press){ press = null; listen(false); }
+  }
+  /* ---- the finger ---- */
+  function stopFollow(){ if(follow){ cancelAnimationFrame(follow.raf); follow = null; } }
+  function startFollow(){
+    stopTrack();
+    if(!S) return;
+    const x = local(press.cX);
+    follow = { off: S.cx - x, last: performance.now(), raf: 0 };
+    const tick = () => {
+      const f = follow;
+      if(!f || !g || !press) return;
+      const t = performance.now(), dt = Math.min(.034, Math.max(.001, (t - f.last) / 1000));
+      f.last = t;
+      f.off *= Math.exp(-dt / .07);
+      let tx = local(press.cX) + f.off;
+      /* past an end segment it runs a little way on, as the reference's does */
+      if(tx < g.lo){ const o = g.lo - tx; tx = g.lo - M.give * o / (o + 50); }
+      else if(tx > g.hi){ const o = tx - g.hi; tx = g.hi + M.give * o / (o + 50); }
+      const sub = 4, h = dt / sub, Pf = { cx: M.follow, W: M.pop, H: M.pop, st: M.st };
+      for(let j = 0; j < sub; j++) glassLensStep(S, V, { cx: S.cx, W: wAt(S.cx), H: g.lensH }, Pf, h, M);
+      V.cx = (tx - S.cx) / dt; S.cx = tx;
+      S.st += (Math.min(M.stretchMax, Math.abs(press.vf) * M.stretch) - S.st) * Math.min(1, dt / .06);
+      write(S);
+      f.raf = requestAnimationFrame(tick);
+    };
+    follow.raf = requestAnimationFrame(tick);
+  }
+  seg.addEventListener("pointerdown", e => {
+    if(e.button > 0 || e.isPrimary === false) return;
+    const b = e.target && e.target.closest ? e.target.closest(segSel) : null;
+    if(!b || b.parentElement !== seg || b.hidden) return;
+    const how = begin();
+    if(!how) return;
+    let s0, v0;
+    if(how === "caught"){ const n = now(); s0 = n.s; v0 = n.v; stopTrack(); relift(); }
+    else {
+      /* from the lit segment, as the reference's: the grey pill lifts where it is and glides to the one touched */
+      const from = info(activeEl()) || info(b);
+      s0 = { cx: from.c, W: from.pw, H: g.pillH, st: 0 }; v0 = zero();
+      lift(s0);
+    }
+    const to = info(b);
+    if(!to){ hide(); return; }
+    landing = null;
+    press = { id: e.pointerId, x0: e.clientX, cX: e.clientX, el: b, drag: false, vf: 0, vX: e.clientX, vT: performance.now() };
+    listen(true);
+    play(spring(s0, v0, () => ({ cx: to.c, W: to.lw, H: g.lensH }), () => ({ cx: M.glide, W: M.pop, H: M.pop, st: M.st })));
+  });
+  const onMove = e => {
+    if(!press || e.pointerId !== press.id) return;
+    const t = performance.now(), dte = (t - press.vT) / 1000;
+    if(dte > .002){ press.vf += ((e.clientX - press.vX) / dte - press.vf) * Math.min(1, dte / .03); press.vT = t; press.vX = e.clientX; }
+    press.cX = e.clientX;
+    if(!press.drag && Math.abs(e.clientX - press.x0) > 8){ press.drag = true; startFollow(); }
+  };
+  const onUp = e => {
+    if(!press || e.pointerId !== press.id) return;
+    const p = press; press = null;
+    listen(false);
+    stopFollow();
+    if(!g){ return; }
+    let t;
+    if(p.drag){
+      /* let go after a drag: the nearest segment, picked as a tap would pick it - and the click the browser may still send to the
+         segment the finger went down on is not a second pick */
+      t = nearest(local(e.clientX));
+      swallowUntil = performance.now() + 450;
+    } else t = info(p.el);
+    release(t);
+    if(p.drag && t && t.el !== activeEl()) t.el.click();
+  };
+  const onCancel = e => {
+    if(!press || e.pointerId !== press.id) return;
+    press = null; listen(false); stopFollow();
+    if(!g) return;
+    /* the page took the touch (a scroll): back down onto the lit segment */
+    release(info(activeEl()) || (S ? nearest(S.cx) : null));
+  };
+  /* on the window only while a finger is down (a touch's moves go to the segment it went down on; a mouse's anywhere) */
+  const listen = on => {
+    const f = on ? addEventListener : removeEventListener;
+    f("pointermove", onMove, { passive: true }); f("pointerup", onUp, { passive: true }); f("pointercancel", onCancel, { passive: true });
+  };
+  seg.addEventListener("click", e => { if(e.isTrusted && performance.now() < swallowUntil){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  /* arrow keys move along the switcher, as a tab list's do */
+  seg.addEventListener("keydown", e => {
+    if(e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const els = segsOf(), i = els.indexOf(document.activeElement);
+    if(i === -1) return;
+    const n = els[i + (e.key === "ArrowRight" ? 1 : -1)];
+    if(!n) return;
+    e.preventDefault(); n.focus(); n.click();
+  });
+  return {
+    /* attachSegSlider's place(): the lit segment changed from the thumb at (fromX, fromW) to `to`. True when the glass carries it. */
+    onMove(fromX, fromW, to){
+      if(calm()) return false;
+      /* a finger is down, or the lens is already landing there: the landing puts the thumb on it */
+      if(press) return true;
+      if(landing === to && P.lens.classList.contains("is-up")) return true;
+      const how = begin();
+      if(!how) return false;
+      const t = info(to);
+      if(!t){ hide(); return false; }
+      if(how === "caught"){ relift(); }
+      else lift({ cx: fromX + fromW / 2, W: fromW, H: g.pillH, st: 0 });
+      pressT = performance.now();
+      release(t);
+      return true;
+    },
+    hide
+  };
+}
 function attachSegSlider(seg, activeSel){
   if(!seg || seg.querySelector(":scope > .seg-slider")) return;
   const sl = document.createElement("span");
   sl.className = "seg-slider"; sl.setAttribute("aria-hidden", "true");
   seg.appendChild(sl);
-  let x = null, w = null, styled = false;
+  sl._active = () => seg.querySelector(":scope > " + activeSel);
+  let x = null, w = null, styled = false, glass = null, lastA = null;
+  /* the segments: the active selector without its state (".iconbtn.active" -> ".iconbtn") */
+  const segSel = activeSel.replace(/\.(active|is-on)$/, "");
   /* ONE MEASURE A FRAME, NO FORCED FLUSH (build 327z3). "There is still
      a lot of lag with the bottom tab ... loading pages/screens lags bad."
      Every class change, every observed size and the first frame each ran
@@ -149986,15 +150357,20 @@ function attachSegSlider(seg, activeSel){
     const sr = seg.getBoundingClientRect(), ar = a.getBoundingClientRect();
     if(!ar.width || !sr.width) return;
     if(!styled){
-      const cs = getComputedStyle(a);
-      sl.style.backgroundColor = cs.backgroundColor;
-      sl.style.backgroundImage = cs.backgroundImage;
-      sl.style.boxShadow = cs.boxShadow;
-      sl.style.borderRadius = cs.borderRadius;
-      sl.style.border = cs.borderTopWidth + " solid " + cs.borderTopColor;
+      /* (r8) a glass switcher's thumb is the stylesheet's neutral grey pill, never a copy of the lit button's own (theme) colour */
+      if(!glass){
+        const cs = getComputedStyle(a);
+        sl.style.backgroundColor = cs.backgroundColor;
+        sl.style.backgroundImage = cs.backgroundImage;
+        sl.style.boxShadow = cs.boxShadow;
+        sl.style.borderRadius = cs.borderRadius;
+        sl.style.border = cs.borderTopWidth + " solid " + cs.borderTopColor;
+      }
       styled = true;
       seg.classList.add("has-seg-slider");
     }
+    /* a tab list's semantics, kept in step with the thumb (r8) */
+    if(glass) seg.querySelectorAll(":scope > " + segSel).forEach(b => { if(b.getAttribute("role") === "tab") b.setAttribute("aria-selected", b === a ? "true" : "false"); });
     /* IN LAYOUT PIXELS, NOT SCREEN PIXELS (build 320). A switcher placed
        while something above it was still scaling in (the chat sheet opens
        from .96) read every rect at .96 and kept it: measured on an iPad,
@@ -150016,7 +150392,11 @@ function attachSegSlider(seg, activeSel){
       && document.documentElement.dataset.reduceMotion !== "true" && typeof sl.animate === "function";
     sl.style.transform = "translateX(" + nx + "px)";
     if(moveAnim){ try{ moveAnim.cancel(); }catch(e){} moveAnim = null; }
-    if(moving){
+    /* (r8) the glass carries the move: the thumb waits, unseen, on the new segment until the lens sinks into it */
+    /* (only when the lit segment itself changed: a re-measure that nudges the thumb a fraction is not a move) */
+    const changed = !!lastA && lastA !== a; lastA = a;
+    if(moving && glass && changed && glass.onMove(fromX, fromW, a)){ /* the lens has it */ }
+    else if(moving){
       try{
         moveAnim = sl.animate([
           { transform: "translateX(" + fromX + "px) scaleX(" + (fromW / w).toFixed(4) + ")" },
@@ -150033,6 +150413,18 @@ function attachSegSlider(seg, activeSel){
      appearing or clearing on the chat dock's Friends tab) leaves the
      switcher's own size alone (build 327 audit) */
   try{ const ro = new ResizeObserver(() => schedule(false)); ro.observe(seg); [...seg.children].forEach(c => { if(c !== sl) ro.observe(c); }); }catch(e){}
+  /* (r8) every pill switcher is the iOS 26 control (attachSegGlass) - not the underline one (.sub-seg), which is words, not a pill.
+     After the observers above, so the lens's own comings and goings are never taken for the switcher changing. */
+  if(!seg.classList.contains("sub-seg")){
+    try{
+      glass = attachSegGlass(seg, segSel, sl, seg.classList.contains("chatdock-tabs") ? { track: false, swell: false } : {});
+      /* a tab list, where the switcher is nothing but its segments */
+      if(glass && !seg.getAttribute("role") && [...seg.children].every(c => c === sl || c.classList.contains("seg-lens") || c.matches(segSel))){
+        seg.setAttribute("role", "tablist");
+        seg.querySelectorAll(":scope > " + segSel).forEach(b => { if(!b.getAttribute("role")) b.setAttribute("role", "tab"); });
+      }
+    }catch(e){ glass = null; }
+  }
   schedule(false);
 }
 /* opts.zone: only a touch that STARTS inside this element counts (a
@@ -150066,6 +150458,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const t = e.touches[0];
     const tg = e.target;
     if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))
+       || (tg && tg.closest && tg.closest(".has-seg-glass"))   /* (r8) a finger on a top switcher drags its glass, not the page */
        || (typeof swipeOverlayUp === "function" && swipeOverlayUp())){   /* (384) never under the page viewer */
       startX = null; startY = null; locked = false; return;
     }
