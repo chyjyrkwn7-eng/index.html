@@ -62467,15 +62467,34 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M12.6 12.8 Q20 10.2 27.4 12.8 L27.2 13.9 Q20 11.4 12.8 13.9 Z", fill: gold, stroke: "#8A5A00", "stroke-width": ".15" }));
     svg.appendChild(mk("circle", { cx: 20, cy: 12.05, r: 1.25, fill: "#FFFBEA", stroke: "#F39A0A", "stroke-width": ".35" }));
     close();
-    /* (384 r7 eyes) "Not a fan of gold ... eyes they look girly and not mean": the rays, the fine outline and the round iris
-       went. The rulers' glare (glareEye): sun-hot - a warm cream white, a gold iris burning to a yellow core round a dark slit
-       pupil, the lid band in burnt bronze. The brows come down harder towards the nose. */
+    /* (384 r7 eyes, gone in r8) Solar wore the rulers' shared glare (glareEye) in gold; r6's rays, fine outline and round iris had
+       read "girly". Beside Forge, Lunar and Tempest it was one eye in four colours. */
+    /* (384 r8 eyes) "The other 4 look the same though": Solar's own eye - THE BLAZE. A hard squint against the glare: a thin
+       angular sliver, straight edges and sharp corners (its top breaks at a point over the outer half and runs straight down to
+       the nose), burning white at the core through gold to a hot red-orange rim, heaviest along the top. No iris, no pupil: the
+       eye is all light. Over it a scowl: each brow a wedge, thick and low at the nose, sharp at the temple. At 26px: two bright
+       hot-rimmed splinters under a heavy V. */
+    const blaze = eyeGrad("radialGradient", [["0%", "#FFFFFF"], ["34%", "#FFF8D0"], ["68%", "#FFC81E"], ["100%", "#FF8A0A"]], { cx: ".5", cy: ".58", r: ".58" });
     open("cx-eyes");
-    [[16.8, 17.8, -1], [23.2, 17.8, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.1, tilt: .2, up: .42, dn: .5, lidT: .3,
-      sclera: "#FFFBEC", lid: "#6A3C04", low: "#B8780A", iris: "#F2A20C", ring: "#7A4200", irisR: .38, core: "#FFD84A", pupil: "slit", pc: "#2A1400" }));
+    [[16.8, 17.8, -1], [23.2, 17.8, 1]].forEach(([x, y, o]) => {
+      const f = n => +n.toFixed(2), X = u => f(x + o * u), Y = v => f(y + v);
+      /* outer corner, the break on the top edge, the inner corner (lowest), the bottom edge's low point */
+      const O = X(1.28) + " " + Y(-.16), K = X(.38) + " " + Y(-.5), I = X(-1.26) + " " + Y(.16), B = X(.16) + " " + Y(.3);
+      const sliver = "M" + O + " L" + K + " L" + I + " L" + B + " Z";
+      /* the scowl's weight sits ABOVE the top edge (a filled band, thickest at the nose), so none of the light is covered */
+      const lidBand = "M" + O + " L" + K + " L" + I + " L" + X(-1.2) + " " + Y(-.2) + " L" + X(.36) + " " + Y(-.76) + " L" + X(1.2) + " " + Y(-.26) + " Z";
+      svg.appendChild(mk("path", { d: sliver, fill: blaze, stroke: "#E0580A", "stroke-width": ".14", "stroke-linejoin": "miter", "stroke-miterlimit": "1.6", class: "cx-eye-white" }));
+      svg.appendChild(mk("path", { d: lidBand, fill: "#5E1A02", stroke: "#5E1A02", "stroke-width": ".06", "stroke-linejoin": "miter", "stroke-miterlimit": "1.6", class: "cx-lid" }));
+    });
     close();
     closedEyes([[16.8, 18, 1.1], [23.2, 18, 1.1]], "#9A5E08", .35);
-    svg.appendChild(mk("path", { d: "M14.9 15.5 L18.4 16.7 M25.1 15.5 L21.6 16.7", stroke: "#C2830E", "stroke-width": ".5", "stroke-linecap": "round" }));
+    open("cx-brow");
+    [[16.8, -1], [23.2, 1]].forEach(([x, o]) => {
+      const f = n => +n.toFixed(2), X = u => f(x + o * u);
+      svg.appendChild(mk("path", { d: "M" + X(2.25) + " 15.42 L" + X(-1.62) + " 16.02 L" + X(-1.86) + " 16.98 Q" + X(.4) + " 16.14 " + X(2.25) + " 15.42 Z",
+        fill: "#8E5406", stroke: "#8E5406", "stroke-width": ".1", "stroke-linejoin": "miter" }));
+    });
+    close();
     [[14.9, 20.6], [25.1, 20.6]].forEach(([x, y]) => svg.appendChild(sparkle(x, y, .75, "#FFF6CC")));
     svg.appendChild(mk("path", { d: "M18.5 23.8 Q20 24.5 21.5 23.8", fill: "none", stroke: "#9A5E08", "stroke-width": ".45", "stroke-linecap": "round" }));
     close();
