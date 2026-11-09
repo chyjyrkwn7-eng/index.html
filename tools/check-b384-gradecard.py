@@ -81,15 +81,25 @@ def ramp_of(g, fx):
     v = g["vars"]
     return GOLD if fx == "confetti" else [hexrgb(v["--hfx-g1"]), hexrgb(v["--hfx-g2"]), hexrgb(v["--hfx-g3"]) or hexrgb(v["--hfx-g1"])]
 def ramp_check(g, fx):
-    want = ramp_of(g, fx); num = stops(g["pct"]["backgroundImage"]); bar = stops(g["fill"]["backgroundImage"])
+    """(384 r9) Confetti: its gold ramp. Every other effect: ONE HUE - the number's three stops and the bar's are the same ramp,
+    light to deep in the effect's own colour (--hfx-b), its middle that colour; the glow its colour; and NO light layer on the box
+    (Madison: the box "doesn't change color" on the default, "follow suite with the default way")."""
+    import colorsys
+    num = stops(g["pct"]["backgroundImage"]); bar = stops(g["fill"]["backgroundImage"])
     glow = stops(g["pct"]["filter"]); b = hexrgb(g["vars"]["--hfx-b"]) if fx != "confetti" else hexrgb("#F6D58E")
     bad = []
-    if len(num) != 3 or not all(near(a, w) for a, w in zip(num, want)): bad.append("number stops %s want %s" % (num, want))
-    if len(bar) != 3 or not all(near(a, w) for a, w in zip(bar, want)): bad.append("bar stops %s want %s" % (bar, want))
-    if fx != "confetti" and not (glow and near(glow[0], b, 3)): bad.append("number glow %s want %s" % (glow, b))
-    if fx != "confetti":
-        t = g.get("tint"); ts = stops(t["backgroundImage"]) if t else []
-        if not (ts and any(near(c, b, 14) for c in ts)): bad.append("light layer %s want %s" % (ts[:2], b))
+    if fx == "confetti":
+        if len(num) != 3 or not all(near(a, w) for a, w in zip(num, GOLD)): bad.append("number stops %s want %s" % (num, GOLD))
+        if len(bar) != 3 or not all(near(a, w) for a, w in zip(bar, GOLD)): bad.append("bar stops %s want %s" % (bar, GOLD))
+        return bad
+    hls = lambda c: colorsys.rgb_to_hls(*[v / 255 for v in c])
+    hd = lambda a, c: min(abs(hls(a)[0] - hls(c)[0]), 1 - abs(hls(a)[0] - hls(c)[0])) * 360
+    if len(num) != 3 or len(bar) != 3 or not all(near(x, y) for x, y in zip(num, bar)): bad.append("number %s and bar %s are not one ramp" % (num, bar))
+    elif not near(num[1], b, 6): bad.append("middle stop %s is not the effect's colour %s" % (num[1], b))
+    elif not all(hd(c, b) <= 12 for c in num): bad.append("stops %s leave the effect's hue %s" % (num, b))
+    elif not (hls(num[0])[1] > hls(num[1])[1] > hls(num[2])[1]): bad.append("stops %s not light to deep" % (num,))
+    if not (glow and near(glow[0], b, 3)): bad.append("number glow %s want %s" % (glow, b))
+    if g.get("tint"): bad.append("a light layer on the box: %s" % (stops(g["tint"]["backgroundImage"])[:2],))
     return bad
 
 DEVS = [("phone", 440, 956)] + ([] if QUICK else [("tablet", 834, 1194)])
@@ -121,7 +131,7 @@ with sync_playwright() as pw:
                 for when, g in (("mid", mid), ("settled", done)):
                     chk("(G1) %s %s: the same component as the Pass card - face, size, weight, spacing, radius, padding, the XP card's colour, no border or shadow, the same bar" % (tag, when),
                         g and "is-perfect" in g["cls"] and not face_same(g, plain, tag), g and face_same(g, plain, tag))
-                    chk("(G2) %s %s: the number and the bar are one ramp (the effect's three stops), the glow and the light layer its colour" % (tag, when),
+                    chk("(G2) %s %s: the number and the bar are one ramp in the effect's own hue (r9), the glow its colour, no light layer on the box" % (tag, when),
                         g and not ramp_check(g, fx), g and ramp_check(g, fx))
                 if dev == "phone":
                     named = {k: v for k, v in rings.items() if not (cls == "ifc" and fx == "bubbles")}
@@ -169,8 +179,10 @@ with sync_playwright() as pw:
             L.advance(pg, .12)
             r = pg.evaluate(PROBE4); m = r["mock"]
             if not m: chk("(G4) %s %s miniature exists" % (cls, fx), False, r); continue
-            want = [hexrgb(m["vars"].get("--hfx-g1")), hexrgb(m["vars"].get("--hfx-g2")), hexrgb(m["vars"].get("--hfx-g3")) or hexrgb(m["vars"].get("--hfx-g1"))]
             num, bar = stops(m["num"]["img"]), stops(m["bar"]["img"]) if m["bar"] else []
+            # (384 r9) the miniature of the results card is the results card: its ramp is the one-hue one (hfxOneHueRamp), so the
+            # stops it must match are the ones it actually carries - the number's and the bar's are compared with each other
+            want = num
             chk("(G4) %s %s miniature: its number and its bar are one ramp, no border or shadow on the card or the bar" % (cls, fx),
                 len(num) == 3 and len(bar) == 3 and all(near(a, w) for a, w in zip(num, want)) and all(near(a, w) for a, w in zip(bar, want)) and m["bar"]["sh"] in ("none",) and m["card"]["sh"] == "none" and m["card"]["bw"] in ("0px", "1px") and re.search(r"0\)$|transparent", m["card"]["bc"]) is not None,
                 [num, bar, want, m["bar"] and m["bar"]["sh"][:50], m["card"]["sh"][:50], m["card"]["bc"]])

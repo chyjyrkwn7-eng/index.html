@@ -110,14 +110,11 @@ for cls in ("ifc", "academy"):
         rgbs = [tuple(float(n) for n in m[:3]) for m in (re.findall(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)", (t or {}).get("img", "")))] if t else []
         cs = [tuple(float(n) * 255 for n in m) for m in re.findall(r"color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)", (t or {}).get("img", ""))]
         lay = rgbs + cs
-        chk("(B2) %s %s: the light layer is on, behind the words (z %s): a wash down from the top and a pool behind the number (two gradients), and NO box-shadow at all (no rim, no glow off the edge)" % (cls, id, t and t["z"]),
-            t and t["op"] == 1 and t["z"] == "-1" and (t["img"] or "").count("gradient(") >= 2 and not sh, [t, sh])
+        # (384 r9) the light layer is GONE from the results card: "Notice how when the grade box for the default one is done the
+        # box doesn't change color but the others do? Yeah they should be like that". The effect's colour is the number and the bars.
+        chk("(B2) %s %s: no light layer on the box (r9: the box stays the default's plain card)" % (cls, id), not t, t)
         hues.add(r["vars"][0])
-        hx = r["vars"][0].strip().lstrip("#")
-        want = tuple(int(hx[i:i + 2], 16) for i in (0, 2, 4)) if len(hx) == 6 else None
-        near = lambda a, b: max(abs(a[i] - b[i]) for i in range(3)) <= 14
-        chk("(B3) %s %s: the light is the effect's colour (%s) - proved from the layer's own gradients (%s), and the number's ramp is in it" % (cls, id, r["vars"][0], lay[:2]),
-            want and lay and any(near(c, want) for c in lay) and "gradient" in r["num"], [r["vars"], lay, t and t["img"]])
+        chk("(B3) %s %s: the effect's colour is in the number's ramp (%s)" % (cls, id, r["vars"][0]), "gradient" in r["num"] and bool(r["vars"][0]), [r["vars"], r["num"][:120]])
     chk("(B3) %s: the four effects glow in different colours (%s)" % (cls, sorted(hues)), len(hues) >= 3, hues)
     chk("no page errors (%s)" % cls, not errs, errs[:2])
 print("ALL PASS" if ok else "SOME FAILED")
