@@ -37201,71 +37201,124 @@ html.is-browser{ --fade-paper: transparent; }
     /* each metal's colour, taken from the middle of the board's medal */
     --lw-gold:#E9C35A; --lw-silver:#C9CCD1; --lw-bronze:#CF8C57;
   }
-  html[data-layout] body .screen-rankings .lw-podium-stage{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-stage{
     display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.14fr) minmax(0,1fr); align-items:end; column-gap:.5rem;
     /* the outer steps clear the card's rounded corners where they meet its floor */
     max-width:31rem; margin:0 auto; padding:1.15rem max(var(--lb-pad), 18px) 0; box-sizing:border-box;
   }
-  html[data-layout] body .screen-rankings .lw-podium-spot{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot{
     grid-row:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:0; min-width:0;
     border-radius:0; transform:none; -webkit-tap-highlight-color:transparent; transition:opacity .12s ease; --pc:var(--lw-gold);
   }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-1{ grid-column:2; --pc:var(--lw-gold); }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-2{ grid-column:1; --pc:var(--lw-silver); }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-3{ grid-column:3; --pc:var(--lw-bronze); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-1{ grid-column:2; --pc:var(--lw-gold); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-2{ grid-column:1; --pc:var(--lw-silver); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-3{ grid-column:3; --pc:var(--lw-bronze); }
   /* pressed: iOS's dim, nothing moves (the step stays on the floor) */
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-tappable{ cursor:pointer; }
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-tappable:active{ transform:none; opacity:.55; }
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-tappable:focus-visible{ outline:2px solid color-mix(in srgb, var(--ink) 55%, transparent); outline-offset:-2px; border-radius:14px; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-tappable{ cursor:pointer; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-tappable:active{ transform:none; opacity:.55; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-tappable:focus-visible{ outline:2px solid color-mix(in srgb, var(--ink) 55%, transparent); outline-offset:-2px; border-radius:14px; }
   /* the disc: the board's own, a size up, ringed in its metal with a hair of the card between */
-  html[data-layout] body .screen-rankings .lw-podium-avwrap{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap{
     width:var(--lw-av); height:var(--lw-av); flex:0 0 auto; border-radius:50%; margin-top:4px;
     outline:2px solid var(--pc); outline-offset:2px;
   }
-  html[data-layout] body .screen-rankings .lw-place-1 .lw-podium-avwrap{ width:var(--lw-av-1); height:var(--lw-av-1); }
-  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-place-1 .lw-podium-avwrap{ width:var(--lw-av-1); height:var(--lw-av-1); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar{
     width:100%; height:100%; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%);
     background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #8FA4BE) 30%, #151A22) 0%, #0D1117 78%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
   }
-  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
     -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
-  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar > .char-flip-play{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar > .char-flip-play{
     border-radius:50%; -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%);
     -webkit-mask-composite:source-in; mask-composite:intersect;
   }
   /* the name in the page's ink (the accent if it is you), cut short with an ellipsis rather than wrapped; the XP grey under it */
-  html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-name{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-name{
     display:block; width:100%; max-width:100%; margin:.6rem 0 0; padding:0 .1rem; box-sizing:border-box; text-align:center;
     font-size:.9rem; font-weight:600; line-height:1.25; letter-spacing:-.005em; color:var(--ink);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  html[data-layout] body .screen-rankings .lw-podium-spot.lw-place-1 .lw-podium-name{ font-weight:700; }
-  html[data-layout] body .screen-rankings .lw-podium-spot.is-me .lw-podium-name{ color:var(--accent); }
-  html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-pts{
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.lw-place-1 .lw-podium-name{ font-weight:700; }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot.is-me .lw-podium-name{ color:var(--accent); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-pts{
     display:block; max-width:100%; margin:.12rem 0 0; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:var(--sans); font-size:.78rem; font-weight:600; line-height:1.25; font-variant-numeric:tabular-nums; color:var(--soft);
   }
   /* the step: a soft tint of its metal fading to the card's floor, a fine catch-light along its top, the board's medal on it */
-  html[data-theme][data-layout] body .screen-rankings .lw-podium-spot .lw-podium-block{
+  html[data-theme][data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-block{
     display:flex; justify-content:center; align-items:flex-start; width:100%; height:var(--lw-step-3); margin:.65rem 0 0; padding:.5rem 0 0; box-sizing:border-box;
     border-radius:12px 12px 0 0; color:inherit; font-size:inherit; font-weight:inherit;
     background:linear-gradient(180deg, color-mix(in srgb, var(--pc) 24%, transparent), color-mix(in srgb, var(--pc) 6%, transparent));
     box-shadow:inset 0 1px 0 color-mix(in srgb, var(--pc) 45%, transparent);
   }
-  html[data-theme][data-layout] body .screen-rankings .lw-place-1 .lw-podium-block{ height:var(--lw-step-1); }
-  html[data-theme][data-layout] body .screen-rankings .lw-place-2 .lw-podium-block{ height:var(--lw-step-2); }
-  html[data-layout] body .screen-rankings .lw-podium-block .rank-place.lb-rank-medal{
+  html[data-theme][data-layout] body :is(.screen-rankings, .vr-podium) .lw-place-1 .lw-podium-block{ height:var(--lw-step-1); }
+  html[data-theme][data-layout] body :is(.screen-rankings, .vr-podium) .lw-place-2 .lw-podium-block{ height:var(--lw-step-2); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .rank-place.lb-rank-medal{
     width:var(--lb-medal); height:var(--lb-medal); flex:0 0 auto; margin:0;
     font-family:var(--sans); font-variant-numeric:tabular-nums; font-size:.85rem; font-weight:800; letter-spacing:0; line-height:1;
   }
-  html[data-layout] body .screen-rankings .lw-podium-block .lb-rank-1{ box-shadow:inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.5), 0 1px 2px var(--surface-inset); }
-  html[data-layout] body .screen-rankings .lw-podium-block .lb-rank-2{ box-shadow:inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.45), 0 1px 2px var(--surface-inset); }
-  html[data-layout] body .screen-rankings .lw-podium-block .lb-rank-3{ box-shadow:inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.4), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .lb-rank-1{ box-shadow:inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.5), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .lb-rank-2{ box-shadow:inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.45), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-block .lb-rank-3{ box-shadow:inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.4), 0 1px 2px var(--surface-inset); }
   @media (min-width:40rem){
-    html[data-layout] body .screen-rankings .lw-podium-stage{ column-gap:.75rem; padding-top:1.35rem; }
-    html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-name{ font-size:1rem; }
-    html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-pts{ font-size:.85rem; }
+    html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-stage{ column-gap:.75rem; padding-top:1.35rem; }
+    html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-name{ font-size:1rem; }
+    html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-spot .lw-podium-pts{ font-size:.85rem; }
+  }
+
+  /* ---- (384 r8) THE VIRTUAL ROOM'S RESULTS: the podium (the Leaderboard's "Last week's top 3", above, in a results card), the list
+     under it, the two sides, the game's own card. Madison: "I think it could be presented as a podium instead" / "make it the same
+     for all virtual rooms". The steps, discs, names and medals are the board's own rules (the :is(.screen-rankings, .vr-podium)
+     selectors above); this sets their sizes for a results card and adds what a match has that last week does not. ---- */
+  .vr-podium{
+    --lb-medal:1.85rem; --lb-av:2.5rem; --lb-pad:.9rem;
+    --lw-step-1:calc(var(--lb-medal) + 2.3rem); --lw-step-2:calc(var(--lb-medal) + 1.45rem); --lw-step-3:calc(var(--lb-medal) + .9rem);
+    --lw-av-1:calc(var(--lb-av) * 1.5); --lw-av:calc(var(--lb-av) * 1.2);
+    --lw-gold:#E9C35A; --lw-silver:#C9CCD1; --lw-bronze:#CF8C57;
+  }
+  @media (max-width:29rem){ .vr-podium{ --lb-medal:1.65rem; --lb-av:2.25rem; } }
+  @media (min-width:40rem){ .vr-podium{ --lb-medal:2rem; --lb-av:2.75rem; } }
+  /* the steps stand on the card's floor line, a podium's width in the middle */
+  html[data-layout] body .vr-podium .lw-podium-stage{ max-width:26rem; padding:.35rem .25rem 0; border-bottom:1px solid var(--clean-line, rgba(255,255,255,.08)); }
+  /* two sides: two columns, your side on the left (the page's order); the winners' step is the taller */
+  html[data-layout] body .vr-podium .vr-podium-sides{ grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:1.25rem; max-width:24rem; }
+  html[data-layout] body .vr-podium .vr-podium-sides > .lw-podium-spot{ grid-column:auto; }
+  .vr-side-avs{ display:flex; justify-content:center; align-items:flex-end; min-height:calc(var(--lb-av) * 1.15 + 8px); }
+  html[data-layout] body .vr-podium .vr-side-avs .lw-podium-avwrap{ width:var(--lb-av); height:var(--lb-av); }
+  html[data-layout] body .vr-podium .vr-side.lw-place-1 .vr-side-avs .lw-podium-avwrap{ width:calc(var(--lb-av) * 1.15); height:calc(var(--lb-av) * 1.15); }
+  .vr-side-avs > * + *{ margin-left:-.5rem; }
+  .vr-side-more{ align-self:center; margin-left:.3rem !important; font-size:.78rem; font-weight:700; color:var(--soft); }
+  /* everybody under the steps: place, character, name, XP - a quiet grouped list on the card */
+  .vr-podium-list{ display:flex; flex-direction:column; margin:.45rem 0 0; }
+  .vr-podium-row{ display:grid; grid-template-columns:2.4rem 2rem minmax(0,1fr) auto; align-items:center; column-gap:.6rem; min-height:2.75rem;
+    border-top:1px solid var(--clean-line, rgba(255,255,255,.08)); }
+  .vr-podium-list > .vr-podium-row:first-child, .vr-podium-col > .vr-podium-row:first-child{ border-top:0; }
+  .vr-podium-place{ text-align:center; font-size:.85rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--soft); }
+  .vr-podium-av{ width:2rem; height:2rem; border-radius:50%; overflow:hidden; display:grid; place-items:center;
+    background:radial-gradient(circle at 50% 38%, #1D2430 0%, #0D1117 78%); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
+  .vr-podium-av svg{ width:100%; height:100%; transform:scale(.85); }
+  .vr-podium-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.92rem; font-weight:600; color:var(--ink); }
+  .vr-podium-row.is-me .vr-podium-name{ color:var(--accent); }
+  .vr-podium-xp{ white-space:nowrap; font-size:.85rem; font-weight:600; font-variant-numeric:tabular-nums; color:var(--soft); }
+  /* each side's members, under its own step */
+  .vr-podium-cols{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:1.25rem; max-width:24rem; margin:.45rem auto 0; }
+  .vr-podium-cols .vr-podium-row{ grid-template-columns:2rem minmax(0,1fr) auto; column-gap:.45rem; }
+  .vr-podium-col{ min-width:0; }
+  /* the game's own picture of the result, in a card */
+  .vr-gamecard .tug-rope-wrap, .vr-gamecard .battle-board{ margin-left:0; margin-right:0; }
+  /* the rope's live line ("keep pulling") is for a match in play; the card's own line says how it ended */
+  .vr-gamecard .tug-state{ display:none; }
+  .vr-gamecard-line{ margin:.75rem 0 0; text-align:center; font-size:.9rem; line-height:1.4; color:var(--soft); }
+  /* the race's place and podium arrive on the settled results */
+  @keyframes vr-arrive{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  .rs-xpline.is-arriving{ animation:vr-arrive .5s cubic-bezier(.2,.8,.2,1) .15s both; }
+  .vr-podium.is-arriving{ animation:vr-arrive .55s cubic-bezier(.2,.8,.2,1) .35s both; }
+  [data-reduce-motion="true"] :is(.rs-xpline, .vr-podium).is-arriving{ animation:none; }
+  @media (min-width:40rem){
+    .vr-podium-name{ font-size:1rem; }
+    .vr-podium-xp, .vr-podium-place{ font-size:.9rem; }
   }
 
   /* ---- THE CALENDAR, A SMIDGE BETTER ---- */
@@ -127104,6 +127157,12 @@ function buildRunHead(run){
   try{ mode.appendChild(modeIcon(rsModeIconKind(run))); }catch(e){}
   mode.appendChild(document.createTextNode(rsModeLabel(run)));
   chipRow.appendChild(mode);
+  if(run.vroom && run.vroomGame){
+    const g = document.createElement("span");
+    g.className = "rs-mode rs-mode-src rs-mode-game";
+    g.textContent = vroomGameName(run.vroomGame);
+    chipRow.appendChild(g);
+  }
   if(run.source === "recent" || run.source === "flagged"){
     const src = document.createElement("span");
     src.className = "rs-mode rs-mode-src";
@@ -128471,13 +128530,14 @@ function showRunRewards(run, hooks, opts){
   run.xpLines.forEach(l => {
     /* the bonuses under their own small heading, after what the answers
        earned (build 325) */
-    if(!bonusKick && l.key !== "correct" && l.key !== "daily" && run.xpLines.some(x => x.key === "correct")){
+    /* (384 r8) a Virtual Room's place is what the match earned, beside the answers - not a bonus */
+    if(!bonusKick && l.key !== "correct" && l.key !== "daily" && l.key !== "place" && run.xpLines.some(x => x.key === "correct")){
       bonusKick = document.createElement("p");
       bonusKick.className = "rs-xpline rs-xpkick rs-land"; bonusKick.textContent = "Bonuses";
       xp.appendChild(bonusKick); lineEls.push(bonusKick);
     }
     const row = document.createElement("div");
-    row.className = "rs-xpline rs-land" + (l.key === "multi" ? " is-multi" : "") + (l.badge ? " is-badge" : "");
+    row.className = "rs-xpline rs-land" + (l.key === "multi" ? " is-multi" : "") + (l.badge ? " is-badge" : "") + (l.key === "place" ? " is-place" : "");
     const a = document.createElement("span"); a.className = "rs-xpline-label";
     const lab = document.createElement("span"); lab.className = "rs-xpline-name"; lab.textContent = l.label;
     a.appendChild(lab);
@@ -128748,9 +128808,10 @@ function showRunRewards(run, hooks, opts){
     /* A bar per unit, on a single-unit test too - "I'm a huge fan of how
        you have it showing results for each unit ... do include it on
        tests with just a single unit". */
-    if(run.total > 0){
-      const byUnit = {};
-      run.order.forEach(qi => {
+    if(run.total > 0 && (run.order.length || run.byUnit)){
+      /* (384 r8) Tug of War and Battle know how many you got right, not which: their run carries the rows (byUnit) */
+      const byUnit = run.byUnit ? JSON.parse(JSON.stringify(run.byUnit)) : {};
+      if(!run.byUnit) run.order.forEach(qi => {
         const t = (QUESTIONS[qi].topic || "Other").trim();
         if(!byUnit[t]) byUnit[t] = { total: 0, wrong: 0 };
         byUnit[t].total++;
@@ -128805,6 +128866,10 @@ function showRunRewards(run, hooks, opts){
       });
       grade.appendChild(wrap);
     }
+  }
+  /* (384 r8) A VIRTUAL ROOM'S OWN CARDS - the placings and the game's own picture - land after the XP card like any box */
+  if(hooks && hooks.cards){
+    try{ hooks.cards(run).forEach(c => { if(!c) return; c.classList.add("rs-land"); boxes.push(c); }); }catch(e){}
   }
   /* The grade, then how it adds up (the XP box), then the badge boxes when
      they are switched on (build 320). */
@@ -128882,9 +128947,10 @@ function showRunRewards(run, hooks, opts){
      and Main menu under it. The review itself carries neither - it goes
      back to here, or on to a retake whose results come back to here, so
      missing some again is a cycle rather than a dead end. */
-  if(run.vroom){
+  if(run.vroom && !run.vroomFinal){
     /* The Virtual Room ends in its own standings - see
-       finishVirtualRoomTest(), which drops into this slot. */
+       finishVirtualRoomTest(), which drops into this slot. (Tug of War and Battle end HERE, run.vroomFinal: their
+       results are the match's last screen, with Back to lobby and Main menu - 384 r8.) */
   } else {
     actions = hooks.finalActions({ where: "results", toReview: () => showRunReview(run, hooks) });
     actions.classList.add("rs-actions", "rs-land");
@@ -129660,7 +129726,7 @@ function summarizeVisitingRun(){
     order: order.slice(), attempts: Object.assign({}, attempts), picked: Object.assign({}, picked),
     firstPick: Object.assign({}, firstPick), flare: null, flareAll: false, flareCount: mysteryColorsFoundCount(),
     timedOutSet: Object.assign({}, timedOutSet),
-    mode: runMode, retake: false, practice: false, vroom: true, source: cfg.source,
+    mode: runMode, retake: false, practice: false, vroom: true, vroomGame: "race", source: cfg.source,
     units: (cfg.units || []).slice(), unitsSat,
     xpLines: [], xpTotal: 0, pointsAfter: store.lifetime.points,
     badgesBefore: badgesNow, badgesAfter: badgesNow,
@@ -130459,7 +130525,7 @@ function summarize(){
     flareAll: mysteryFoundThisSession && flareCompletedVoidThisSession, flareCount: mysteryColorsFoundCount(),
     timedOutSet: Object.assign({}, timedOutSet),
     mode: runMode, retake: isMissedRetake, practice: practiceTestMinutes != null,
-    vroom: !!inVirtualRoom, source: cfg.source,
+    vroom: !!inVirtualRoom, vroomGame: inVirtualRoom ? "race" : null, source: cfg.source,
     units: (cfg.units || []).slice(), unitsSat,
     xpLines, xpTotal, pointsAfter: store.lifetime.points,
     /* build 314: the badges either side of the run, for the badge wall */
@@ -134278,9 +134344,10 @@ function showVirtualRoomSetup(editRoom){
   const gHint = document.createElement("p");
   gHint.className = "friend-hint";
   const gDesc = {
-    race: "Everyone takes the same test. Ranked by score, then time.",
-    tug: "Two teams, one rope. Both of you right pulls twice as hard; one each and it does not move. The clock tightens every round.",
-    battle: "Two teams, one health bar each. Every right answer hits the other side; powers unlock after question 10. First side to zero loses."
+    /* (384 r8) ranked by the XP the run earns (it said "by score" since build 213 made it XP), and every game pays your place */
+    race: "Everyone takes the same test. Ranked by XP, then time. Every place earns XP.",
+    tug: "Two teams, one rope. Both of you right pulls twice as hard; one each and it does not move. The clock tightens every round. Both sides earn XP for their answers and their place.",
+    battle: "Two teams, one health bar each. Every right answer hits the other side; powers unlock after question 10. First side to zero loses. Both sides earn XP for their answers and their place."
   };
   [["race", "Race"], ["tug", "Tug of War"], ["battle", "Battle"]].forEach(([key, label]) => {
     const b = document.createElement("button");
@@ -136477,32 +136544,6 @@ function showTugResult(d){
   const winner = d.tug.winner;
   const drawn = !winner;
   const won = !drawn && winner === mine;
-
-  const panel = document.createElement("section");
-  panel.className = "panel screen-tug-result";
-
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title";
-  /* A DRAW IS A REAL OUTCOME NOW, and it has to be said rather than
-     shown as a loss. The rope used to end only by being pulled clear,
-     so there was always a side; it can now also run out of questions
-     or out of pace with the rope dead centre, and calling that "your
-     side lost" would be a lie to both halves of the room. */
-  title.textContent = drawn ? "Nobody moved it" : (won ? "Your side won" : "Your side lost");
-  panel.appendChild(title);
-
-  const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.textAlign = "center";
-  const gap = Math.abs(Number(d.tug.finalPos) || 0);
-  /* The rope is pull now, not a count, so "pulled it 3.4 clear" is a
-     number nobody can picture. Say what happened to the rope instead. */
-  const winNames = drawn ? "" : (vroomNameList(tugMembers(d, winner), d) || (winner === mine ? "Your side" : "Their side"));
-  sub.textContent = drawn
-    ? "Dead even at the end of " + tugMatchCount(d) + " questions."
-    : winNames + (gap >= tugWinGap(tugMatchCount(d)) ? " pulled it over the line." : " had it on their side when the questions ran out.");
-  panel.appendChild(sub);
-
-  panel.appendChild(buildTugRope(d));
   /* ---- YOUR ANSWERS, AND YOUR PLACE (384 r8) ----
      "Winner takes all" is gone (Madison: "Everybody should still get xp"). Everybody keeps their own right answers,
      TUG_XP_PER_RIGHT each, and takes placement XP on top: the winning side 1st, the losing side 2nd, a draw everybody 1st, out
@@ -136531,97 +136572,29 @@ function showTugResult(d){
     /* Beat Nova? (build 324) */
     try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
   }
-  const xpCard = document.createElement("div");
-  xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
-  const xpNum = document.createElement("p");
-  xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
-  const xpWhy = document.createElement("p");
-  xpWhy.className = "tug-xp-why";
-  xpWhy.textContent = vroomPlaceLabel(myPlace, matchN) + " · +" + placeXp.toLocaleString() + " XP · "
-    + rightOf(vroomMyKey) + " right · +" + answersXp.toLocaleString() + " XP";
-  if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
-  xpCard.append(xpNum, xpWhy);
-  panel.appendChild(xpCard);
-  /* ---- THE TEAM LEADERBOARD, TEN SECONDS LATER ----
-     Long enough to take in who won before the numbers arrive. Each side
-     in its own column, everybody's right answers, the side's total, and
-     a star on the one who pulled hardest. */
-  const board = document.createElement("div");
-  board.className = "tug-board is-pending";
-  const boardHead = document.createElement("p");
-  boardHead.className = "tug-board-head";
-  board.appendChild(boardHead);
-  const cols = document.createElement("div");
-  cols.className = "tug-board-cols";
-  const all = Object.keys(teams);
-  const mvp = all.slice().sort((a, b) => rightOf(b) - rightOf(a))[0];
-  /* (384 review) YOUR SIDE FIRST, on the left - where the rope above has always put it (tugView), and where Battle's board puts
-     it. Team b read "Their side" on the left over a rope with "Your side" on the left. */
-  [mine, mine === "a" ? "b" : "a"].forEach(side => {
-    const col = document.createElement("div");
-    col.className = "tug-board-col" + (side === winner ? " is-winner" : "") + (side === mine ? " is-mine" : "");
-    const members = tugMembers(d, side).sort((a, b) => rightOf(b) - rightOf(a));
-    const h = document.createElement("p");
-    h.className = "tug-board-side";
-    h.textContent = (side === mine ? "Your side" : "Their side") + " · " +
-      members.reduce((t, k) => t + rightOf(k), 0) + " right";
-    col.appendChild(h);
-    members.forEach((k, i) => {
-      const pp = (d.participants || {})[k] || {};
-      const row = document.createElement("div");
-      row.className = "tug-board-row" + (k === vroomMyKey ? " is-me" : "");
-      row.style.setProperty("--i", i);
-      const av = document.createElement("span");
-      av.className = "tug-board-av";
-      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
-      const nm = document.createElement("span");
-      nm.className = "tug-board-name";
-      /* "You", as Battle's board and every side label say (build 313). */
-      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && rightOf(k) > 0 ? "  ★" : "");
-      const n = document.createElement("span");
-      n.className = "tug-board-n"; n.textContent = rightOf(k);
-      row.append(av, nm, n);
-      col.appendChild(row);
-    });
-    cols.appendChild(col);
+  /* THE RESULTS SCREEN (384 r8): the grade, the XP card with the place as its own line, the two sides on the podium (it
+     replaces the team leaderboard that came in ten seconds later), the rope as it ended, and the way on - see
+     showVroomTeamResult. A DRAW IS A REAL OUTCOME and is said as one, never as a loss. */
+  /* The rope is pull now, not a count, so "pulled it 3.4 clear" is a number nobody can picture: say what happened to it. */
+  const gap = Math.abs(Number(d.tug.finalPos) || 0);
+  const winNames = drawn ? "" : (vroomNameList(tugMembers(d, winner), d) || (winner === mine ? "Your side" : "Their side"));
+  const line = drawn
+    ? "Dead even at the end of " + tugMatchCount(d) + " questions."
+    : winNames + (gap >= tugWinGap(tugMatchCount(d)) ? " pulled it over the line." : " had it on their side when the questions ran out.");
+  showVroomTeamResult({
+    game: "tug", d: d, mine: mine, winner: winner || null,
+    right: rightOf(vroomMyKey), total: Number((prog[vroomMyKey] || {}).pos) || tugMatchCount(d) || 0,
+    answersXp: answersXp, placeXp: placeXp, perRight: TUG_XP_PER_RIGHT, n: matchN, foreign: vroomForeign(),
+    membersOf: side => tugMembers(d, side), numOf: rightOf, unit: "right", short: "",
+    cardKicker: "The rope", pic: buildTugRope(d), line: line,
+    onLobby: () => {
+      if(!vroomDb() || !vroomCode){ showVirtualRoomLobby(); return; }
+      const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
+      if(!vroomIsHost){ showVirtualRoomLobby(); return; }
+      vroomDb().collection("vrooms").doc(vroomCode).update(reset)
+        .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
+    }
   });
-  board.appendChild(cols);
-  panel.appendChild(board);
-  let leftS = 10;
-  boardHead.textContent = "Team leaderboard in " + leftS;
-  const boardTimer = setInterval(() => {
-    if(!board.isConnected){ clearInterval(boardTimer); return; }
-    leftS -= 1;
-    if(leftS <= 0){
-      clearInterval(boardTimer);
-      boardHead.textContent = "Team leaderboard";
-      board.classList.remove("is-pending");
-      board.classList.add("is-in");
-    } else boardHead.textContent = "Team leaderboard in " + leftS;
-  }, 1000);
-
-  const exits = document.createElement("div");
-  exits.className = "vroom-exit-row";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
-  lobby.textContent = "Back to lobby";
-  lobby.addEventListener("click", () => {
-    if(!vroomDb() || !vroomCode){ showVirtualRoomLobby(); return; }
-    const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
-    if(!vroomIsHost){ showVirtualRoomLobby(); return; }
-    vroomDb().collection("vrooms").doc(vroomCode).update(reset)
-      .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
-  });
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost vroom-exit-btn";
-  home.textContent = "Back to Home";
-  home.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
-  exits.append(lobby, home);
-  panel.appendChild(exits);
-
-  stage.replaceChildren(panel);
-  toTop();
-  rsRise(exits, { delay: 400, follow: false });
 }
 
 /* ================================ BATTLE ================================
@@ -137445,21 +137418,6 @@ function showBattleResult(d){
   const prog = d.battle.progress || {};
   const right = k => Number((prog[k] || {}).correct) || 0;
 
-  const panel = document.createElement("section");
-  panel.className = "panel screen-battle-result";
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title";
-  title.textContent = drawn ? "Nobody went down" : (won ? "Your side won" : "Your side lost");
-  panel.appendChild(title);
-  const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.textAlign = "center";
-  sub.textContent = drawn
-    ? "Both sides ended on " + r.hp.a + " health."
-    : battleSideNames(d, winner) + (r.downed ? " took the other side down" : " finished with more health")
-      + " — " + r.hp[winner] + " left.";
-  panel.appendChild(sub);
-  panel.appendChild(buildBattleBoard(d));
-
   /* XP: every right answer, and placement XP on top (384 r8, VROOM_PLACE_XP) - the winning side 1st, the losing side 2nd, a
      draw everybody 1st, out of everybody who started the match. It REPLACES the flat winner's bonus (BATTLE_XP_WIN, 150): the
      place already rewards the win, and the losing side now takes something too. Paid once per match however many times this
@@ -137481,76 +137439,24 @@ function showBattleResult(d){
     /* Beat Nova? (build 324) */
     try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
   }
-  const xpCard = document.createElement("div");
-  xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
-  const xpNum = document.createElement("p");
-  xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
-  const xpWhy = document.createElement("p");
-  xpWhy.className = "tug-xp-why";
-  xpWhy.textContent = vroomPlaceLabel(myPlace, matchN) + " \u00b7 +" + placeXp.toLocaleString() + " XP \u00b7 "
-    + right(vroomMyKey) + " right \u00b7 +" + answersXp.toLocaleString() + " XP";
-  if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
-  xpCard.append(xpNum, xpWhy);
-  panel.appendChild(xpCard);
-
-  /* WHO DID THE DAMAGE, per side - the same two-column board Tug ends
-     on, with the damage each person dealt and a star on the top hitter. */
-  const cols = document.createElement("div");
-  cols.className = "tug-board-cols battle-result-cols";
-  const all = Object.keys(battleTeams(d)).filter(k => (d.participants || {})[k]);
-  const mvp = all.slice().sort((a, b) => (r.dealt[b] || 0) - (r.dealt[a] || 0))[0];
-  [mine || "a", battleOther(mine || "a")].forEach(side => {
-    const col = document.createElement("div");
-    col.className = "tug-board-col" + (side === winner ? " is-winner" : "") + (side === mine ? " is-mine" : "");
-    const members = battleMembers(d, side).sort((a, b) => (r.dealt[b] || 0) - (r.dealt[a] || 0));
-    const h = document.createElement("p");
-    h.className = "tug-board-side";
-    h.textContent = (side === mine ? "Your side" : "Their side") + " · " +
-      members.reduce((t, k) => t + (r.dealt[k] || 0), 0) + " damage";
-    col.appendChild(h);
-    members.forEach((k, i) => {
-      const pp = (d.participants || {})[k] || {};
-      const row = document.createElement("div");
-      row.className = "tug-board-row" + (k === vroomMyKey ? " is-me" : "");
-      row.style.setProperty("--i", i);
-      const av = document.createElement("span");
-      av.className = "tug-board-av";
-      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
-      const nm = document.createElement("span");
-      nm.className = "tug-board-name";
-      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && (r.dealt[k] || 0) > 0 ? "  ★" : "");
-      const n = document.createElement("span");
-      n.className = "tug-board-n"; n.textContent = (r.dealt[k] || 0) + " dmg";
-      row.append(av, nm, n);
-      col.appendChild(row);
-    });
-    cols.appendChild(col);
+  /* THE RESULTS SCREEN (384 r8, showVroomTeamResult): the grade, the XP card with the place, the two sides on the podium with
+     the damage each person dealt (it replaces the two-column board), both health bars as they ended, and the way on. */
+  const line = drawn
+    ? "Both sides ended on " + r.hp.a + " health."
+    : battleSideNames(d, winner) + (r.downed ? " took the other side down" : " finished with more health") + " \u2014 " + r.hp[winner] + " left.";
+  showVroomTeamResult({
+    game: "battle", d: d, mine: mine || "a", winner: winner,
+    right: right(vroomMyKey), total: Number((prog[vroomMyKey] || {}).pos) || 0,
+    answersXp: answersXp, placeXp: placeXp, perRight: BATTLE_XP_PER_RIGHT, n: matchN, foreign: vroomForeign(),
+    membersOf: side => battleMembers(d, side), numOf: k => r.dealt[k] || 0, unit: "damage", short: "dmg",
+    cardKicker: "Health", pic: buildBattleBoard(d), line: line,
+    onLobby: () => {
+      if(!vroomDb() || !vroomCode || !vroomIsHost){ showVirtualRoomLobby(); return; }
+      vroomDb().collection("vrooms").doc(vroomCode).update({
+        "battle.over": false, "battle.log": [], "battle.progress": {}, "battle.winner": null, status: "waiting"
+      }).then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
+    }
   });
-  const board = document.createElement("div");
-  board.className = "tug-board is-in battle-result-board";
-  board.appendChild(cols);
-  panel.appendChild(board);
-
-  const exits = document.createElement("div");
-  exits.className = "vroom-exit-row";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
-  lobby.textContent = "Back to lobby";
-  lobby.addEventListener("click", () => {
-    if(!vroomDb() || !vroomCode || !vroomIsHost){ showVirtualRoomLobby(); return; }
-    vroomDb().collection("vrooms").doc(vroomCode).update({
-      "battle.over": false, "battle.log": [], "battle.progress": {}, "battle.winner": null, status: "waiting"
-    }).then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
-  });
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost vroom-exit-btn";
-  home.textContent = "Back to Home";
-  home.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
-  exits.append(lobby, home);
-  panel.appendChild(exits);
-  stage.replaceChildren(panel);
-  toTop();
-  rsRise(exits, { delay: 400, follow: false });
 }
 
 /* ================= NOVA IN A VIRTUAL ROOM (build 324, b324v2) =================
@@ -141286,15 +141192,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
      listener counts what arrives; the button lifts it into a sheet. The
      lobby's own panel, from before the race, is torn down first so there
      is one listener, not two. */
-  if(vroomCode && !host.querySelector(".vroom-chat")){
-    const chatHost = document.createElement("div");
-    chatHost.className = "roomchat-host";
-    chatHost.hidden = true;
-    host.appendChild(chatHost);
-    if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
-    try{ vroomChatUnsubscribe = buildVroomChatPanel(chatHost); }catch(e){}
-  }
-  mountRoomChatFab();
+  vroomMountResultChat(host);
 
   /* ---- WHEN THE LEADERBOARD ROLLS ----
      "When everyone is done give a banner ... after about 5 seconds that
@@ -141631,6 +141529,342 @@ const VROOM_XP_STEPS = [
   { key: "speed",   label: "Speed",           match: k => k === "speed" },
   { key: "correct", label: "Correct answers", match: k => k === "correct" }
 ];
+/* ================= ONE RESULT SCREEN FOR EVERY VIRTUAL ROOM GAME (384 r8) =================
+   Madison, over the old "Results - Ranked by total score" screen: "Is this what our leaderboard is now? ... I think it could be
+   presented as a podium instead. The xp box isn't the same as all the others? ... The virtual room result screen needs to match pretty
+   close to normal drills and tests + the lobby and placements and chat and whatever else? ... make it the same for all virtual rooms".
+   (That screen, showVirtualRoomResults, had not been reachable in a real match since build 240 - only the gates mounted it. It is
+   retired, with its accuracy x 100 minus seconds "points", which contradicted the XP the room is really ranked by.)
+   So every game ends on the normal results screen, built by showRunRewards from the same pieces as a drill:
+   - the grade card (centred, counted, then up), and the SAME XP card - your answers' line, your place as its own line
+     ("2nd of 4", VROOM_PLACE_XP), the total and the level bar;
+   - the placings as a PODIUM in the Leaderboard's "Last week's top 3" look (buildLastWeekPodium): a Race's 2nd, 1st and 3rd on
+     their steps and everybody else listed under them; Tug of War's and Battle's two sides, the winners on the higher step, each
+     side's members under it;
+   - the game's own picture where it explains the result (Tug's rope, Battle's health bars), as one card;
+   - Back to lobby and Main menu, the results' own buttons; the room's chat from the chat button beside the dock.
+   A Race reaches it through the wait and the leaderboard cutscene: the cutscene's Continue lands on the run's own results, now
+   carrying the placing line, the podium and the way on (vroomRaceFinalize). Tug of War and Battle build it straight away
+   (showVroomTeamResult). */
+function vroomGameName(g){ return g === "tug" ? "Tug of War" : g === "battle" ? "Battle" : "Race"; }
+
+/* The results' own way-on row: the same classes, the same guard against a tap meant for the screen, the same rise. */
+function buildVroomFinalActions(onLobby, onHome){
+  const actions = document.createElement("div");
+  actions.className = "actions actions-results rs-final vroom-final-actions";
+  rsDisarm(actions);
+  const mk = (label, cls, fn, id) => {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = cls; if(id) btn.id = id;
+    btn.textContent = label;
+    btn.addEventListener("click", e => { if(rsTapAt(e) < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; } endResultsReveal(); fn(); });
+    return btn;
+  };
+  actions.append(mk("Back to lobby", "next", onLobby, "nextbtn"), mk("Main menu", "next ghost", onHome));
+  return actions;
+}
+
+/* A character in the board's disc (the podium's own markup). */
+function vroomPodiumDisc(avatar){
+  const avw = document.createElement("span");
+  avw.className = "rank-avatar-wrap lw-podium-avwrap";
+  const av = document.createElement("span");
+  av.className = "rank-avatar";
+  try{ av.style.setProperty("--char-glow", avatarGlowColor(avatar || "ghost")); }catch(e){}
+  av.appendChild(buildAvatarCharSVGSafe(avatar || "ghost"));
+  avw.appendChild(av);
+  setCharState(avw, "live");
+  return avw;
+}
+function vroomPodiumStep(place){
+  const step = document.createElement("span");
+  step.className = "lw-podium-block";
+  const pl = document.createElement("span");
+  pl.className = "rank-place";
+  renderRankMarker(pl, place);
+  step.appendChild(pl);
+  return step;
+}
+function vroomPodiumCard(kicker){
+  const card = document.createElement("div");
+  card.className = "rs-card vr-podium";
+  const k = document.createElement("p");
+  k.className = "rs-kicker"; k.textContent = kicker;
+  card.appendChild(k);
+  return card;
+}
+
+/* THE RACE'S PODIUM: 2nd, 1st and 3rd on their steps (the page has them 1-2-3, the grid sets them 2-1-3), everybody else in a
+   list under them, each with the XP the room ranked them by plus their place's. Ranked by vroomRankedEntries - the cutscene's. */
+function buildVroomRacePodium(data){
+  const ranked = vroomRankedEntries(data);
+  const n = ranked.length;
+  const card = vroomPodiumCard("Final standings");
+  card.classList.add("vr-podium-race");
+  const stage = document.createElement("div");
+  stage.className = "lw-podium-stage";
+  const xpWith = (r, i) => r.xp + vroomPlaceXp(i + 1, n);
+  ranked.slice(0, 3).forEach((r, i) => {
+    const spot = document.createElement("div");
+    spot.className = "lw-podium-spot lw-place-" + (i + 1) + (r.key === vroomMyKey ? " is-me" : "");
+    spot.dataset.key = r.key;
+    const nm = document.createElement("span");
+    nm.className = "lw-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
+    const pts = document.createElement("span");
+    pts.className = "lw-podium-pts"; pts.textContent = xpWith(r, i).toLocaleString() + " XP";
+    spot.append(vroomPodiumDisc(r.p.avatarChar), nm, pts, vroomPodiumStep(i + 1));
+    stage.appendChild(spot);
+  });
+  card.appendChild(stage);
+  if(n > 3){
+    const list = document.createElement("div");
+    list.className = "vr-podium-list";
+    ranked.slice(3).forEach((r, j) => {
+      const i = j + 3;
+      const row = document.createElement("div");
+      row.className = "vr-podium-row" + (r.key === vroomMyKey ? " is-me" : "");
+      row.dataset.key = r.key;
+      const pl = document.createElement("span");
+      pl.className = "vr-podium-place"; pl.textContent = vroomOrdinal(i + 1);
+      const av = document.createElement("span");
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ghost"));
+      const nm = document.createElement("span");
+      nm.className = "vr-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
+      const x = document.createElement("span");
+      x.className = "vr-podium-xp"; x.textContent = xpWith(r, i).toLocaleString() + " XP";
+      row.append(pl, av, nm, x);
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+  }
+  return card;
+}
+
+/* THE TWO SIDES' PODIUM: your side on the left (where the rope and the boards have always put it), the winners on the higher
+   step with the gold, the losers on the lower with the silver, both on the top step in a draw; each side's characters, its name
+   and its total over its step, and its members under it with their own numbers and a star on the best. */
+function buildVroomTeamPodium(d, o){
+  const card = vroomPodiumCard("Final standings");
+  card.classList.add("vr-podium-team");
+  const stage = document.createElement("div");
+  stage.className = "lw-podium-stage vr-podium-sides";
+  const sides = [o.mine || "a", (o.mine || "a") === "a" ? "b" : "a"];
+  const placeOf = side => !o.winner ? 1 : side === o.winner ? 1 : 2;
+  const all = sides.reduce((t, s) => t.concat(o.membersOf(s)), []);
+  const mvp = all.slice().sort((a, b) => o.numOf(b) - o.numOf(a))[0];
+  sides.forEach(side => {
+    const members = o.membersOf(side).sort((a, b) => o.numOf(b) - o.numOf(a));
+    const parts = (d.participants || {});
+    const spot = document.createElement("div");
+    spot.className = "lw-podium-spot vr-side lw-place-" + placeOf(side) + (side === o.mine ? " is-me" : "") + (side === o.winner ? " is-winner" : "");
+    spot.dataset.side = side;
+    const avs = document.createElement("span");
+    avs.className = "vr-side-avs";
+    members.slice(0, 4).forEach(k => avs.appendChild(vroomPodiumDisc((parts[k] || {}).avatarChar)));
+    if(members.length > 4){ const more = document.createElement("span"); more.className = "vr-side-more"; more.textContent = "+" + (members.length - 4); avs.appendChild(more); }
+    const nm = document.createElement("span");
+    nm.className = "lw-podium-name"; nm.textContent = side === o.mine ? "Your side" : "Their side";
+    const pts = document.createElement("span");
+    pts.className = "lw-podium-pts"; pts.textContent = members.reduce((t, k) => t + o.numOf(k), 0).toLocaleString() + " " + o.unit;
+    spot.append(avs, nm, pts, vroomPodiumStep(placeOf(side)));
+    stage.appendChild(spot);
+  });
+  card.appendChild(stage);
+  const cols = document.createElement("div");
+  cols.className = "vr-podium-cols";
+  sides.forEach(side => {
+    const col = document.createElement("div");
+    col.className = "vr-podium-col" + (side === o.mine ? " is-mine" : "");
+    o.membersOf(side).sort((a, b) => o.numOf(b) - o.numOf(a)).forEach(k => {
+      const pp = (d.participants || {})[k] || {};
+      const row = document.createElement("div");
+      row.className = "vr-podium-row" + (k === vroomMyKey ? " is-me" : "");
+      row.dataset.key = k;
+      const av = document.createElement("span");
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
+      const nm = document.createElement("span");
+      nm.className = "vr-podium-name";
+      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : "");
+      const x = document.createElement("span");
+      x.className = "vr-podium-xp"; x.textContent = o.numOf(k).toLocaleString() + (o.short ? " " + o.short : "");
+      row.append(av, nm, x);
+      col.appendChild(row);
+    });
+    cols.appendChild(col);
+  });
+  card.appendChild(cols);
+  return card;
+}
+
+/* The game's own picture of the result, as one card: a kicker, the picture, and one line of what happened. */
+function buildVroomGameCard(kicker, pic, line){
+  const card = document.createElement("div");
+  card.className = "rs-card vr-gamecard";
+  const k = document.createElement("p");
+  k.className = "rs-kicker"; k.textContent = kicker;
+  card.appendChild(k);
+  if(pic) card.appendChild(pic);
+  if(line){
+    const p = document.createElement("p");
+    p.className = "vr-gamecard-line"; p.textContent = line;
+    card.appendChild(p);
+  }
+  return card;
+}
+
+/* The room's chat on a result screen: the one live panel, built out of sight so its listener counts, lifted into a sheet by the
+   chat button beside the dock (mountRoomChatFab). The race's wait does the same. */
+function vroomMountResultChat(host){
+  if(!host) return;
+  if(vroomCode && !host.querySelector(".vroom-chat")){
+    const chatHost = document.createElement("div");
+    chatHost.className = "roomchat-host";
+    chatHost.hidden = true;
+    host.appendChild(chatHost);
+    if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
+    try{ vroomChatUnsubscribe = buildVroomChatPanel(chatHost); }catch(e){}
+  }
+  mountRoomChatFab();
+}
+
+/* TUG OF WAR AND BATTLE END ON THE RESULTS SCREEN. `o`: game, d, mine, winner, right, total, answersXp, placeXp, n, foreign, the
+   podium's numbers (membersOf/numOf/unit/short), the game card (cardKicker, pic, line) and the way on (onLobby). */
+function showVroomTeamResult(o){
+  const d = o.d;
+  const drawn = !o.winner, won = !drawn && o.winner === o.mine;
+  const place = vroomTeamPlace(drawn, won);
+  const total = Math.max(o.total || 0, o.right || 0);
+  const pct = total ? Math.round(o.right / total * 100) : 0;
+  const units = (Array.isArray(d.units) && d.units.length ? d.units : (typeof vroomUnits !== "undefined" && vroomUnits) || []).slice();
+  const unitRow = units.length === 1 ? units[0] : vroomGameName(o.game);
+  const lines = o.foreign ? [] : [
+    { key: "correct", label: "Correct answers", sub: o.right + " × " + o.perRight + " XP", value: o.answersXp },
+    { key: "place", label: vroomPlaceLabel(place, o.n), sub: drawn ? "A draw — everyone places first" : won ? "Your side won" : "Your side lost", value: o.placeXp }
+  ].filter(l => l.key === "place" || l.value > 0);
+  const xpTotal = lines.reduce((s, l) => s + l.value, 0);
+  const badges = badgeCountOf(store);
+  const run = {
+    total: total, good: o.right, pct: pct, missed: [], isPerfect: false, elapsedMs: 0, timedOut: false,
+    order: [], attempts: {}, picked: {}, firstPick: {}, flare: null, flareAll: false, flareCount: mysteryColorsFoundCount(),
+    timedOutSet: {}, mode: "exam", retake: false, practice: false, vroom: true, vroomGame: o.game, vroomFinal: true,
+    source: null, units: units, unitsSat: units,
+    byUnit: total ? { [unitRow]: { total: total, wrong: total - o.right } } : null,
+    xpLines: lines, xpTotal: xpTotal, pointsAfter: store.lifetime.points,
+    badgesBefore: badges, badgesAfter: badges, hundosEarned: 0, leveledUpTo: null, newBest: false,
+    progUnits: [], perfectsBefore: Object.assign({}, store.unitPerfects || {}),
+    badges: [], retroBadges: [], colors: [], characters: [], banners: [], fx: [], supernova: false,
+    visiting: o.foreign ? visitingRoomNote() : null
+  };
+  const podium = buildVroomTeamPodium(d, o);
+  const gameCard = buildVroomGameCard(o.cardKicker, o.pic, o.line);
+  showRunRewards(run, {
+    cards: () => [podium, gameCard],
+    finalActions: () => buildVroomFinalActions(o.onLobby, () => { leaveVirtualRoom(); showHome(); }),
+    tour: () => {}
+  });
+  const host = stage.firstElementChild;
+  if(host){ host.classList.add("vroom-final", "vroom-final-" + o.game); host.dataset.game = o.game; }
+  countEl.textContent = vroomGameName(o.game);
+  vroomMountResultChat(host);
+}
+
+/* A LINE ADDED TO THE XP CARD AFTER IT HAS LANDED - the Race's place, which is only known once everybody is in. The same markup
+   as the card's own lines; the total goes up by it and the level bar carries the extra on from where it stood. */
+function rsAddXpLine(host, l){
+  const xp = host && host.querySelector(".rs-xp");
+  if(!xp || xp.querySelector(".rs-xpline.is-" + l.key)) return false;
+  const row = document.createElement("div");
+  row.className = "rs-xpline is-" + l.key + " is-arriving";
+  const a = document.createElement("span"); a.className = "rs-xpline-label";
+  const lab = document.createElement("span"); lab.className = "rs-xpline-name"; lab.textContent = l.label;
+  a.appendChild(lab);
+  if(l.sub){ const sub = document.createElement("span"); sub.className = "rs-xpline-sub"; sub.textContent = l.sub; a.appendChild(sub); }
+  const b = document.createElement("span"); b.className = "rs-xpline-val"; b.textContent = "+" + (Number(l.value) || 0).toLocaleString();
+  row.append(a, b);
+  let totalRow = xp.querySelector(".rs-xptotal");
+  const level = xp.querySelector(".results-level");
+  const none = xp.querySelector(".rs-xpline-none");
+  if(none) none.remove();
+  /* the place goes beside the answers, above the bonuses' heading - it is what the match earned, not a bonus */
+  const bonusKick = l.key === "place" ? xp.querySelector(".rs-xpkick") : null;
+  xp.insertBefore(row, bonusKick || totalRow || level || null);
+  const was = totalRow ? (Number((totalRow.querySelector(".rs-xptotal-num") || {}).textContent.replace(/[^\d]/g, "")) || 0) : 0;
+  const now = was + (Number(l.value) || 0);
+  if(!totalRow){
+    totalRow = document.createElement("div");
+    totalRow.className = "rs-xptotal";
+    totalRow.innerHTML = '<span class="rs-xptotal-label">Total</span><span class="rs-xptotal-val"><span class="rs-xptotal-num"></span><span class="rs-xptotal-unit">XP</span></span>';
+    xp.insertBefore(totalRow, level || null);
+  }
+  totalRow.querySelector(".rs-xptotal-num").textContent = "+" + now.toLocaleString();
+  if(level && l.value > 0){
+    try{
+      const b2 = badgeCountOf(store);
+      const nb = buildResultsLevelBlock(l.value, store.lifetime.points, { me: level.classList.contains("has-me"), rankBefore: rankUpShownRank(), badgesBefore: b2, badgesAfter: b2 });
+      nb.className = level.className;
+      const g = nb.querySelector(".results-level-gain");
+      if(g) g.textContent = "+" + now.toLocaleString() + " XP";
+      level.replaceWith(nb);
+      requestAnimationFrame(() => { if(nb.runFill) nb.runFill(); });
+    }catch(e){}
+  }
+  return true;
+}
+
+/* THE RACE, FINISHED: the cutscene's Continue lands here, on the run's own results - the wait card comes off, the place goes into
+   the XP card as its own line, the podium goes up under it, and Back to lobby / Main menu arrive at the foot. On a screen that
+   is not the run's results (back in from elsewhere: the wait's own score card), the same three go onto that. */
+function vroomRaceFinalize(){
+  vroomAwaitingOthers = false;
+  document.getElementById("vroom-prep")?.remove();
+  const data = lastFinaleData || {};
+  const host = stage.firstElementChild;
+  if(!host || !host.dataset || host.dataset.screen !== "results" || !vroomCode){ vroomReturnToLobby(); return; }
+  host.classList.add("vroom-final", "vroom-final-race");
+  host.dataset.game = "race";
+  /* the race line is long down by now; it stays down on the match's last screen */
+  raceBarEl.hidden = true;
+  stopVroomRaceListener();
+  const wait = host.querySelector(".vroom-waitcard");
+  const mine = vroomRacePlaces(data)[vroomMyKey];
+  const paid = vroomRacePlace && vroomRacePlace.id === vroomCode + "@" + (data.startAt || "") ? vroomRacePlace : null;
+  if(mine && !vroomForeign()){
+    const xp = paid ? paid.xp : mine.xp;
+    let xpCard = host.querySelector(".rs-xp");
+    if(!xpCard){
+      /* the wait's own score card has no XP card: the run's lines as one, the same markup as the results' */
+      xpCard = document.createElement("div");
+      xpCard.className = "rs-card rs-xp rs-in-now";
+      const k = document.createElement("p"); k.className = "rs-kicker"; k.textContent = "XP earned"; xpCard.appendChild(k);
+      ((lastRunRoomXp && lastRunRoomXp.lines) || []).forEach(l => rsAddXpLine({ querySelector: s => s === ".rs-xp" ? xpCard : null }, { key: String(l.key || "run"), label: l.label, sub: l.sub, value: Number(l.value) || 0 }));
+      xpCard.querySelectorAll(".is-arriving").forEach(r => r.classList.remove("is-arriving"));
+      const g = host.querySelector(".rs-grade");
+      if(g) g.after(xpCard); else host.insertBefore(xpCard, host.firstChild);
+    }
+    rsAddXpLine(host, { key: "place", label: vroomPlaceLabel(mine.place, mine.n), sub: "Finishing place", value: xp });
+  }
+  const podium = buildVroomRacePodium(data);
+  podium.classList.add("rs-in-now", "is-arriving");
+  const xpCard = host.querySelector(".rs-xp");
+  if(xpCard) xpCard.after(podium);
+  else if(wait) wait.after(podium);
+  else host.appendChild(podium);
+  if(wait) wait.remove();
+  let slot = host.querySelector(".rs-endslot");
+  if(!slot){ slot = document.createElement("div"); slot.className = "rs-endslot"; host.appendChild(slot); }
+  if(!slot.querySelector(".vroom-final-actions")){
+    const actions = buildVroomFinalActions(() => { vroomStashedResults = null; vroomReturnToLobby(); },
+      () => { vroomStashedResults = null; leaveVirtualRoom(); showHome(); });
+    actions.classList.add("rs-actions");
+    slot.appendChild(actions);
+    rsRise(actions, { delay: 500, follow: false });
+  }
+  vroomMountResultChat(host);
+  /* where the news is: the XP card (with the place now in it) at the top of the screen, the podium under it */
+  const xpNow = host.querySelector(".rs-xp");
+  try{ window.scrollTo({ top: Math.max(0, xpNow ? xpNow.getBoundingClientRect().top + window.scrollY - 96 : 0), behavior: "instant" }); }catch(e){ toTop(); }
+}
+
 function startVroomRaceCutscene(){
   document.getElementById("vroom-prep")?.remove();
   detachVroomListener();
@@ -141672,7 +141906,10 @@ function playVroomRaceCutscene(ranked){
   const board = document.createElement("div");
   board.className = "vrc-board";
   const me = vroomMyKey;
-  const maxXp = Math.max(1, ...ranked.map(r => r.xp));
+  /* (384 r8) EVERYBODY'S PLACE IS WORTH XP (VROOM_PLACE_XP), off this same ranking, and it is counted as the last step */
+  const placeXpOf = r => vroomPlaceXp(ranked.indexOf(r) + 1, ranked.length);
+  const totalOf = r => r.xp + placeXpOf(r);
+  const maxXp = Math.max(1, ...ranked.map(totalOf));
   /* Rows go up in JOIN order and are only re-sorted at the end, so the
      finish is a reveal rather than something you could read off the
      row order from the first frame. */
@@ -141747,17 +141984,15 @@ function playVroomRaceCutscene(ranked){
     return order;
   };
 
+  /* (384 r8) ONE WAY ON: Continue, to the run's own results, which now carry the place, the podium and Back to lobby / Main
+     menu (vroomRaceFinalize) - the match ends on the same screen as every other game's. */
   const exits = document.createElement("div");
   exits.className = "vrc-exits";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next";
-  lobby.textContent = "Return to lobby";
-  lobby.addEventListener("click", () => { overlay.remove(); vroomReturnToLobby(); });
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost";
-  home.textContent = "Main menu";
-  home.addEventListener("click", () => { overlay.remove(); vroomAwaitingOthers = false; leaveVirtualRoom(); showHome(); });
-  exits.append(lobby, home);
+  const cont = document.createElement("button");
+  cont.type = "button"; cont.className = "next vrc-continue";
+  cont.textContent = "Continue";
+  cont.addEventListener("click", () => { overlay.remove(); vroomRaceFinalize(); });
+  exits.append(cont);
   overlay.appendChild(exits);
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add("is-in"));
@@ -141770,8 +142005,10 @@ function playVroomRaceCutscene(ranked){
   /* The "Everything else" step is what the others did not count, so it
      is left out of the count - it has no match of its own, and asking it
      for one threw the moment anybody had XP outside the named steps. */
-  const counted = x => steps.reduce((t, s) => s.rest ? t : t + catOf(x.r, s), 0);
+  const counted = x => steps.reduce((t, s) => (s.rest || s.place) ? t : t + catOf(x.r, s), 0);
   if(rows.some(x => x.r.xp - counted(x) > 0)) steps.push({ key: "rest", label: "Everything else", rest: true });
+  /* and the finishing place, last - it never changes the order (a higher place is always worth more), it says what it paid */
+  if(rows.length) steps.push({ key: "place", label: "Finishing place", place: true });
 
   const quiet = resultsMotionOff();
   const STEP_MS = quiet ? 0 : Math.max(1600, Math.min(2600, 14000 / Math.max(1, steps.length)));
@@ -141793,7 +142030,7 @@ function playVroomRaceCutscene(ranked){
       step.textContent = s.label;
       step.classList.remove("is-new"); void step.offsetWidth; step.classList.add("is-new");
       rows.forEach(x => {
-        const add = s.rest ? Math.max(0, x.r.xp - counted(x)) : catOf(x.r, s);
+        const add = s.place ? placeXpOf(x.r) : s.rest ? Math.max(0, x.r.xp - counted(x)) : catOf(x.r, s);
         x.gain.textContent = add > 0 ? "+" + add.toLocaleString() : "";
         x.gain.classList.remove("is-on"); void x.gain.offsetWidth;
         if(add > 0) x.gain.classList.add("is-on");
@@ -141815,8 +142052,8 @@ function playVroomRaceCutscene(ranked){
     const sorted = rows.slice().sort((a, b) => ranked.indexOf(a.r) - ranked.indexOf(b.r));
     sorted.forEach(x => board.appendChild(x.row));
     rows.forEach((x, i) => {
-      x.num.textContent = x.r.xp.toLocaleString();
-      x.fill.style.width = Math.round(x.r.xp / maxXp * 100) + "%";
+      x.num.textContent = totalOf(x.r).toLocaleString();
+      x.fill.style.width = Math.round(totalOf(x.r) / maxXp * 100) + "%";
       const dy = before[i] - x.row.getBoundingClientRect().top;
       if(!quiet && dy){
         x.row.style.transition = "none";
