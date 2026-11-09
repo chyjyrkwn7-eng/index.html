@@ -141933,12 +141933,16 @@ function playVroomRaceCutscene(ranked){
   const timers = [];
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
   const countTo = (x, target, dur) => {
+    /* (384 r8) what has been counted moves on at once, not when the count lands: with reduce motion every step fires in the
+       same instant, and each one read 0 as where the last had left it - the board ended on the last step's figure alone */
     const from = x.shown, t0 = Date.now();
-    const iv = setInterval(() => {
+    x.shown = target;
+    if(x.iv) clearInterval(x.iv);
+    const iv = x.iv = setInterval(() => {
       const k = Math.min(1, (Date.now() - t0) / Math.max(1, dur));
       const v = Math.round(from + (target - from) * (1 - Math.pow(1 - k, 3)));
       x.num.textContent = v.toLocaleString();
-      if(k >= 1){ clearInterval(iv); x.shown = target; }
+      if(k >= 1){ clearInterval(iv); if(x.iv === iv) x.iv = null; }
     }, 30);
     x.fill.style.width = Math.round(target / maxXp * 100) + "%";
   };
