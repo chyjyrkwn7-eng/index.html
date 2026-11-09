@@ -37095,7 +37095,8 @@ untouched; every academy banner is byte-identical (gated).
   (their scenes are gone). check-b384-r5-chars: the four Fire Code flare banners left out of its flare pin (the academy's still pinned).
 - RUN, one at a time: check-js ALL PASS; check-b384-r9-banners ALL PASS; check-b384-fcbanners ALL PASS; check-b384-r5-chars ALL PASS; check-b384-banners, -sets,
   -batch, -bannerroom, -secretnames, -r2-connect ALL PASS; check-b382-ifcart the same five failures as cd82880 (forge, academy-round-1 pins, hundo ladder);
-  check-unlocks the same two failures as cd82880 (the four locked characters' messages); sweep-layout --quick 20/20 clean; Profile with each changed banner and the
+  check-unlocks the same two failures as cd82880 (the four locked characters' messages); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS
+  (0 off centre); Profile with each changed banner and the
   console: only the two blocked Firebase loads.
 - NOT confirmable in Chromium: frame rate of Grand Finale (693 elements) and the warehouse on an old iPhone; whether the glasses/stubble read at the Customize tile
   size on a real screen (they read at the 440 Profile cover in Chromium at dpr 2).
