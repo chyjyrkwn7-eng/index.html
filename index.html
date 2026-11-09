@@ -79394,9 +79394,9 @@ function fbOfficerKneel(x, y, s, o){
     pol([[-3.6, -77.8], [.4, -83.4], [7.4, -84.6], [10.8, -80.6], [5, -79], [-.8, -76]], C.vestD) +
     lim([[14.4, -74.4], [14.8, -48]], .9, C.vestL, ' opacity=".8"') + lim([[-10.8, -61], [-7.6, -76]], .8, rim, ' opacity=".55"') +
     pol([[8.6, -73.4], [10.8, -74.2], [13, -73.4], [13, -70.4], [10.8, -68], [8.6, -70.4]], C.gold, ' stroke="' + C.goldD + '" stroke-width="' + w(.35) + '" stroke-linejoin="round"') +
-    pol([[5.6, -66], [14.2, -66], [14.2, -62.4], [5.6, -62.4]], C.patch) + fbText("FIRE", x + 9.9 * s * f, y - 64.2 * s, 1.9 * s, C.patchT, .4 * s) +
-    lims([[[5, -58], [14.4, -58]], [[5, -54], [14.4, -54]]], 1.1, C.web, ' stroke-dasharray="' + w(1.8) + ' ' + w(.6) + '" stroke-linecap="butt"') +
-    pol([[8.6, -84.4], [12.4, -83.6], [12, -76], [8.2, -76.6]], "#101318", ' stroke="#3A4452" stroke-width="' + w(.4) + '" stroke-linejoin="round"') + lim([[9.2, -84.2], [8.4, -92.4]], .9, "#0B0D10") + dc(11.2, -78, .5, "#FF4A3A") + '</g>';
+    pol([[5.2, -59.6], [14.4, -59.6], [14.4, -55.8], [5.2, -55.8]], C.patch) + fbText("FIRE", x + 9.8 * s * f, y - 57.7 * s, 2 * s, C.patchT, .42 * s) +
+    lims([[[5, -52.6], [14.6, -52.6]], [[5, -49.4], [14.6, -49.4]]], 1.1, C.web, ' stroke-dasharray="' + w(1.8) + ' ' + w(.6) + '" stroke-linecap="butt"') +
+    pol([[-5.6, -80.6], [-1.6, -81.2], [-1.4, -73.4], [-5.4, -73]], "#101318", ' stroke="#3A4452" stroke-width="' + w(.4) + '" stroke-linejoin="round"') + lim([[-4.8, -80.8], [-6.6, -89]], .9, "#0B0D10") + dc(-2.4, -75, .5, "#FF4A3A") + '</g>';
   /* the duty belt at the waist; the holster on the near hip with the grip showing (o.gun) or a pouch; the cuff case at the back */
   g += '<g class="fb-belt">' + pol([[-10.4, -47.4], [12.4, -47.4], [12, -42.4], [-10, -42.4]], C.belt) + pol([[-11.2, -47.6], [-6.8, -47.6], [-6.8, -40.6], [-11.2, -40.6]], C.gear, ' stroke="#2E333C" stroke-width="' + w(.4) + '"');
   g += o.gun ? pol([[-6, -48], [1.4, -48], [.6, -32], [-4.6, -31.4]], "#0B0C0F", ' class="fb-holster" stroke="#2C3038" stroke-width="' + w(.4) + '"') +
@@ -80605,7 +80605,7 @@ const IFC_BANNER_ART = {
       '<path d="M' + tq(5, 0) + ' L' + tq(25, 0) + ' L' + tq(30, 5) + ' L' + tq(30, 17) + ' L' + tq(0, 17) + ' L' + tq(0, 5) + ' Z" fill="#17408F"/>' +
       '<path d="M' + tq(0, 17) + ' L' + tq(30, 17) + '" stroke="#EAF2FF" stroke-width=".5"/>' +
       '<circle cx="' + bnF(hole[0]) + '" cy="' + bnF(hole[1]) + '" r="3" fill="#EAF2FF" stroke="#7F9CCB" stroke-width=".4"/><circle class="fb-hole" cx="' + bnF(hole[0]) + '" cy="' + bnF(hole[1]) + '" r="1.4" fill="#06112A"/>' +
-      fbText("INSPECTION", TGX, th0[1] + 11.2 * yk, 2.3, "#FFFFFF", .5) + fbText("TAG", TGX, th0[1] + 15 * yk, 2.3, "#FFFFFF", .5) +
+      fbText("INSPECTION", TGX, th0[1] + 10.4 * yk, 1.9, "#FFFFFF", .42) + fbText("TAG", TGX, th0[1] + 14.6 * yk, 1.9, "#FFFFFF", .42) +
       boxes + '<path class="fb-tagticks" d="' + ticks + '" fill="none" stroke="#0B2250" stroke-width=".4" stroke-linecap="round" stroke-linejoin="round"/>' +
       '<path class="fb-tagrows" d="' + rows + '" fill="none" stroke="#0B2250" stroke-width=".38" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>' + punches + feet +
       '<path d="M' + tq(1, 18) + ' L' + tq(1, 41) + '" stroke="#FFFFFF" stroke-width=".6" opacity=".22"/>' +

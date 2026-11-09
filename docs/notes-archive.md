@@ -37040,3 +37040,62 @@ Madison, over a Tug of War result reading "+0 XP · Winner takes all — your si
 **Gates.** `tools/check-b384-vrplace.py` (13 checks: the rule in each game incl. a 2v1 N=3, a draw, a race tie on XP broken by time, the cutscene's own order and totals, once only incl. a relaunch, a visitor, the place line, the drill's computed card styles, podium order, no pts, chat opens, no errors) - ALL PASS; every check FAILS on 968d107. Moved to the real finish / the new screen: check-vroom section 7 (Continue instead of mounting the old screen; exits, review tabs), sections 13 (the standings ranking is `vroomRankedEntries`, not the retired points top three), 20-22 (the team result's verdict is the place line's words, everybody in the podium's side lists, the results' exits); check-b327r ("the room's results": the chat is behind the Room button now), check-b384-vroomlook (the result's heading is `.rs-units`; the XP card is `.rs-xp`), check-behaviour b221 (the podium) and b223 (14 right + 1st of 4 = 240, was + a flat 150 = 290), shoot-results. The team result panel keeps `screen-tug-result` / `screen-battle-result`: the room listeners test for them before drawing the result again, and ROOM_SCREENS names them. Results: check-vroom ALL PASS (968d107 with its own gate: ALL PASS); check-b327r the same two in-match chat-button failures as 968d107; check-sync ALL PASS (one run hit the timing-sensitive 4c IDB check once, passed on re-run; 968d107 ALL PASS); check-behaviour VR sections (b220 b221 b223 b232 b236 b310 b318 x2 b323v b324v2 b324v3): the same 17 failures as 968d107, none new.
 
 **Cannot be confirmed without a real multi-device match:** that two phones agree on every place in a live race (same document, same ranking - asserted only on one device); a paused racer who resumes after the standings settled (the place is paid at the first all-in, as the match is counted; if their late finish reorders the room, the cutscene shows the new order and the paid place is the old one); the account push carrying the placement XP to the cloud (sandbox has no Firebase).
+
+## 384 round 9 (r9-banners, cut from claude/b384 cd82880; NOT on main): the Fire Code banners - the inspector look everywhere, five scenes redrawn, the secret flares
+
+Madison, verbatim: "The banners, the sprinkler one, don't make it a trash can fire. Make it something better?" / "The secret flare ones need to be better I'm not a huge
+fan tbh." / "The one where he's on a knee looking at the riser. Make the person better, give him a cowboy hat, and put two riders there [risers], put the inspection
+in a better legit spot like connected to the smaller pipe to the gauge maybe." / "The 80th floor one, remove the door, and make it look like out the windows there just
+a badass skyline the inspector is looking at." / "The one where the inspectors are standing in front of the building. I dont like this one at all. Make it something
+else." / "Again, ensure the inspector look is really good but make it cohesive banner wide, character wide." / "Do some touchups where you can." Uniform facts from
+him: vests are BLUE, button-ups are NAVY. Only IFC_BANNER_ART's entries, one IFC_BANNER_LOOK tint and the kit (FCB6). Ids, names, labels, needs and unlock rules
+untouched; every academy banner is byte-identical (gated).
+- THE INSPECTOR (FCB6, one change reaches every banner). He is the Fire Code Toxic Spill man of 42bbffa (character id `astronaut` there: brown skin, a dark brown
+  cowboy hat with a tan band) plus rectangular dark glasses and heavy stubble (a short shaved-down beard, not a full one), in a NAVY short-sleeved button-up
+  (collar points, placket and top button, a small patch on each sleeve), a BLUE plate carrier (#2D5DAA, shade #21488A, edge #10285A; the FIRE MARSHAL panel stays
+  dark navy with white letters), navy pants, the duty belt. FB_KIT has the new palette (hat/hatL/hatD/band/bandL/stubble/lens/glint/skin/skinD; cap/capD stay for
+  fbGearCap, now unused). Shared head pieces: fbKitHatFront, fbKitHatBack, fbKitHeadFront, fbKitHeadSide; fbKitPen gained dd/dp/dl (a path written in local units,
+  "M-7 -96 Q...", every number pair put through P). fbOfficer front, fbOfficerBack (hat from behind, short hair at the nape), fbOfficerKneel REWRITTEN (one torso
+  shape with the vest's front and back plates hugging it, the radio on the back strap so its antenna never crosses the face, the FIRE panel below the arm, the
+  profile head with the hat's brim out front and behind, the glasses' lens and temple, stubble). New pose fbOfficer "torchFwd" (unused so far). fbGearHat: the hat
+  off his head, side on. Classes the gates read: fb-cowboy (data-col), fb-shades, fb-stubble, fb-tacvest (data-col = the vest blue), fb-polo + fb-shirt, fb-gearhat.
+  ELEMENTS: the back figure was trimmed (no sleeve patches from behind, hat crown+brim one path, no second MARSHAL, no nape fade) so Grand Finale is 693 (cap 700).
+- INSPECTION TEAM (tests500; concept replaced, name kept - it is still the team, and the unlock is five friends): a night walk-through of a high-piled storage
+  warehouse in one-point perspective (S(X, Y, z) = VX + X*F/z), pallet racks bay after bay (blue uprights, orange beams, stock, some bays empty; every face goes into
+  a bucket by fill so the racks are ~15 paths), the sprinkler main and pendent heads along the ceiling, an EXIT over the far door; three inspectors in a V - the
+  lead with his clipboard, two behind with their flashlights up on the racks (beams from the lenses, pools on the stock). Tint ["#E8742E", "#3D6FC0"].
+- DOWNPOUR (correct5000): no wastebasket. A stockroom: a pallet load of cartons on fire, the ONE head over it fused (bulb gone, pieces falling, spray going out in
+  waves from its deflector - three bl-out layers in a square box on the deflector), the three other heads on the branch line shut with their red bulbs whole (only
+  the head over the fire opens - that is the legit detail), steel shelving with stock either side, a second (wet) pallet, a horn-strobe flashing, steam, the floor
+  ringing. The fire sits left of centre so the Profile avatar does not hide it.
+- TOP FLOOR (level80): door, EXIT sign and stair sign gone; glass edge to edge; a skyline of fifteen supertalls (setbacks, slanted crowns, needle spires, twin
+  masts, two crowns lit cyan and amber, banded towers) over a farther blue range and the far city in haze, streets running off below, red aviation lamps blinking,
+  a plane crossing; the inspector from behind at the glass. Tower bodies are .fb-tower.
+- AFTER HOURS (early10): two risers (RISER 1 / RISER 2 plates beside them), each with an alarm check valve, a control valve with its handwheel, the main across
+  the top, a brass drain; and each its gauge line - a tee out of the riser, a thin brass pipe with a quarter-turn test valve, up to the gauge. The blue tag (same
+  card: header, ten rows, boxes, punches) is WIRED to riser 1's gauge line (a twisted loop round the pipe, down through the hole) and hangs below it; the beam is
+  aimed at that gauge and tag. The kneeling inspector is the new kneel figure, s 1.02.
+- THE SECRET FLARES (each its character's colours, no shared setting): NEBULA a full stellar nursery (26 soft gas blobs, dust lanes, three lumpy soft-edged
+  pillars lit along their tops with the cloud in front of their feet, young stars with spikes, the three newborn stars at the tips); QUASAR an Interstellar-style
+  black hole (shadow, photon ring, the disc nearly edge on with a Doppler-bright side, the lensed far side over the top, the near side in front, jets, the galaxy's
+  spiral behind, the flare the disc's hot spot in front of the core); PULSAR in deep space inside its supernova remnant (five wobbling filament rings broken into
+  strands, glow lobes), the field's dipole loops turning with the star, beams and wakes (no hills, no lake); ECLIPSE over a jagged two-layer mountain range with a
+  lake, 64 fine corona streamers, three prominences, the diamond ring with a long horizontal streak and a shorter upright one.
+- TOUCHUPS: Plan Review's navy cap -> the hat on the table; Squared Away's black plate carrier -> blue, its navy cap on the peg -> the hat; Grand Finale's seven get
+  the hat and the blue vest through the kit.
+- GATES: NEW tools/check-b384-r9-banners.py (+ .prev.json = cd82880's bannerStaticSVG hashes in BOTH classes): the eleven differ, the other ten Fire Code banners and
+  all 21 academy banners are byte-identical; the look on every inspector (counts 3/7/1/1; brown hat; glasses + stubble where the face shows; navy shirt; blue vest
+  measured against the shirt); no ball cap; the hat on the table and the wall; Downpour (no can, one open head, shut heads with bulbs, fire under it, spray from
+  it); After Hours (two of each, the wire starts on a gauge line and ends in the hole, tag below the line, beam from the lens onto the tag, hat); Top Floor (no
+  door/EXIT/sign, 15 towers across the window); Inspection Team (three depths, clipboard, two beams from lenses, no lit building windows, racks); flares share no
+  long shape between ANY two; no filter/id clash/unresolved url; weights. 10 of its 15 lines FAIL on cd82880 (the class load, the two byte-identical pins and
+  the two hygiene lines cannot). check-b384-fcbanners: Downpour and Nebula moved from KEEP to REDONE; R9 left out of the (11)/(12)/(13) "nothing else moved" pins; After Hours' tag line
+  reads the header shape and the wire from the gauge line, the scene line the tag in the beam; (13) wants 3/7/1/1 = twelve inspectors, a navy shirt and a BLUE vest,
+  no cap and one hat colour, the hat on Plan Review and Squared Away, and the hat on the kneeling man; the round 6 Inspection Team and Top Floor lines are retired
+  (their scenes are gone). check-b384-r5-chars: the four Fire Code flare banners left out of its flare pin (the academy's still pinned).
+- RUN, one at a time: check-js ALL PASS; check-b384-r9-banners ALL PASS; check-b384-fcbanners ALL PASS; check-b384-r5-chars ALL PASS; check-b384-banners, -sets,
+  -batch, -bannerroom, -secretnames, -r2-connect ALL PASS; check-b382-ifcart the same five failures as cd82880 (forge, academy-round-1 pins, hundo ladder);
+  check-unlocks the same two failures as cd82880 (the four locked characters' messages); sweep-layout --quick 20/20 clean; Profile with each changed banner and the
+  console: only the two blocked Firebase loads.
+- NOT confirmable in Chromium: frame rate of Grand Finale (693 elements) and the warehouse on an old iPhone; whether the glasses/stubble read at the Customize tile
+  size on a real screen (they read at the 440 Profile cover in Chromium at dpr 2).

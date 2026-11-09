@@ -49,6 +49,10 @@ In the Fire Code class:
      strip, an EXIT, no gauges. AFTER HOURS: the kneeling officer, his beam from his lens, no cowboy hat. Nine banners differ from ea31d43 (prev4.json) and
      the other twelve are exactly as ea31d43 drew them.
 
+     ROUND 9 (r9-banners) follows Madison's review: the look (cowboy hat, glasses, stubble, navy shirt, BLUE vest), three inspectors in the warehouse, the hat in
+     place of the caps, After Hours' tag wired to the gauge line; the Inspection Team and Top Floor round 6 lines are retired and the round 9 banners are left out
+     of the older "nothing else moved" pins - tools/check-b384-r9-banners.py holds them, and the academy, byte for byte.
+
   python3 tools/check-b384-fcbanners.py [--against OLD/index.html]    (must FAIL on bb7eb94, and on c8143d5 for the round 3b lines)
   python3 tools/check-b384-fcbanners.py --dump    prints the hashes (run it against the build before to refresh PREV)
 """
