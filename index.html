@@ -10580,6 +10580,8 @@
     transition:background .15s ease, transform .1s ease;
   }
   .bottomtab:focus{ outline:none; }
+  /* (384 r19) a keyboard's place on the bar: the rule above hides the ring for a press, and left a keyboard nothing to follow */
+  .bottomtab:focus-visible{ outline:2px solid rgba(255,255,255,.9); outline-offset:-3px; }
   .bottomtab.active{ color:#fff; transition:color .2s ease .1s; }
   .bottomtabs-navrow .bottomtab-label{ text-shadow:0 1px 2px rgba(0,0,0,.35); }
   .bottomtab:active{ transform:scale(.93); background:rgba(128,128,128,.18); }
@@ -111848,6 +111850,7 @@ function openUnitDetail(row, name, mode){
   function close(){
     if(closed) return;
     closed = true;
+    document.removeEventListener("keydown", onEsc, true);
     if(unitDetailOpen && unitDetailOpen.card === card) unitDetailOpen = null;
     mo.disconnect();
     card.classList.remove("is-open"); card.classList.add("is-closing");
@@ -111878,6 +111881,9 @@ function openUnitDetail(row, name, mode){
     if(sb && typeof sb._paint === "function") sb._paint();
   }
   scrim.addEventListener("click", close);
+  /* (384 r19) Escape closes it, as it closes every other card on a computer (the version pop-up below says so for itself) */
+  const onEsc = e => { if(e.key === "Escape"){ e.stopPropagation(); close(); } };
+  document.addEventListener("keydown", onEsc, true);
   /* Leaving the screen under it closes it too. */
   const mo = new MutationObserver(() => { if(!row.isConnected){ mo.disconnect(); close(); } });
   mo.observe(stage, { childList: true });
@@ -117890,7 +117896,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-09-384.4";
+const APP_BUILD = "2026-11-09-384.5";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -156844,7 +156850,7 @@ function tabPerfText(){
       }
       tab.querySelector(".bottomtab-icon").appendChild(svg);
     }
-    const navigateTab = () => {
+    const navigateTab = (ev) => {
       /* iOS Safari can leave the :active state's transform:scale(.93)
          visually stuck on a button after a tap that triggers
          navigation, since the normal touch-end that would clear it
@@ -156852,7 +156858,9 @@ function tabPerfText(){
          cause of a tab looking permanently smaller after being
          tapped. Explicitly blurring it clears that lingering state
          immediately rather than leaving it to chance. */
-      tab.blur();
+      /* (384 r19) not for a key: Enter or Space on a focused tab (a click with detail 0) keeps the focus where it is, so the next Tab or
+         arrow goes on from this tab - the blur sent a keyboard back to the top of the page after every tab it opened */
+      if(!(ev && ev.isTrusted && ev.detail === 0)) tab.blur();
       /* A short lock while the entrance animation plays \u2014 without
          this, rapidly tapping between tabs could fire a second
          navigation call before the first screen had even finished
@@ -157494,7 +157502,7 @@ function tabPerfText(){
     const litTab = navrow.querySelector(".bottomtab.active:not([hidden])");
     tabDragFromActive = !litTab || !!(tabDragStartTab && tabDragStartTab === litTab);
     /* the lens lifts out of the platter under the finger at once (build 323, 325) */
-    if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
+    if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX, e.pointerType === "mouse");
     /* a screen still waiting to be built waits for this press too (327z15) */
     if(bar._navPend && bar._navPend.schedule) bar._navPend.schedule();
   });
@@ -157593,6 +157601,16 @@ function tabPerfText(){
     else slideBubbleToActiveTab(true); // dropped somewhere odd (e.g. off the bar) — snap back
   }
   navrow.addEventListener("pointerup", endTabDrag);
+  /* (384 r19) A MOUSE LET GO OFF THE BAR ENDS THE PRESS. A finger's touch is the bar's until it lifts (it is captured by the element it
+     landed on); a mouse is not, so a press on a tab let go above the bar (a click that drifts, a drag out) never reached pointerup here:
+     the press stayed open - `tab-held` on <html>, the lens up and the bar swollen, the page's warm-ups waiting on it - until the next press
+     anywhere on the bar. Seen with a real mouse: press a tab, move up 200px, release. A release that is not on the bar (a captured
+     slide's is, and takes the path above) is a cancelled press: the glass goes home and nothing opens. */
+  window.addEventListener("pointerup", (e) => {
+    if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
+    if(e.target && e.target.nodeType === 1 && navrow.contains(e.target)) return;
+    endTabDrag({ type: "pointercancel", pointerId: e.pointerId, clientX: e.clientX, preventDefault(){} });
+  }, true);
   /* build 376: THE TICK FOR A SLIDE'S LANDING, ON THE TOUCH'S OWN END. "The Haptic Touch feature, it works on the bottom tab taps but it
      also needs to work when you swipe to one." A slide's landing ticked from its pointerup, and a finger that has moved is, it seems, not
      a gesture iOS gives a haptic for there; the touchend of the same touch is tried as well (only after a slide that landed on another tab). */
@@ -157906,11 +157924,17 @@ function tabPerfText(){
       t.el.style.transform = k > .001 ? "scale(" + (1 + LENS.mag * k).toFixed(4) + ")" : "";
     });
   }
-  function lensDown(clientX){
+  function lensDown(clientX, mouse){
     clearTimeout(lensT1); lensT1 = null;
     lensAwaitClear();
     document.documentElement.classList.add("tab-held");   /* build 369: the tab bar is held (see the Drag test looks) */
-    if(lensCalm() || !canAnim){ lensG = null; return; }
+    /* (384 r19) A MOUSE PRESS HAS NO LENS. Madison, on a Windows computer: "clicking through the bottom tab is very laggy and doesn't work".
+       The lens is a finger's: a spring simulated in script on the press (~25ms of the press at 1x CPU, so ~100ms at 4x, before the first
+       frame), then the whole glass bar scaled up and back over ~500ms with its backdrop blur re-drawn at every step, and its landing,
+       planned on the release, on the thread that is also building the new screen - on a computer's weaker graphics that is the lag, and a
+       second click inside it is read against a bar still moving. A click goes the way reduced motion goes: no lens, the grey platter
+       steps to the tab (a transform, on the compositor) and the screen follows. A finger (touch, pen) keeps its lens. */
+    if(mouse || lensCalm() || !canAnim){ lensG = null; return; }
     const caught = lens.classList.contains("is-up") && lensG && lensS;
     const now = caught ? lensNow() : null;
     lensStopFollow();
@@ -158996,6 +159020,10 @@ document.addEventListener("keydown", (e) => {
   }
 
   if(e.key === "Enter"){
+    /* (384 r19) ENTER ON A FOCUSED CONTROL OF THE BAR OR A BACK LINK IS THAT CONTROL'S. This is the run's "Enter for the next one", on the
+       whole document - and with the keyboard on a tab (Tab to Profile, Enter) it clicked the screen's Start / Next button instead and
+       swallowed the key: on a computer a keyboard could not open a tab at all. It leaves the key to the control the focus is on. */
+    if(typedIn && typedIn.closest && typedIn.closest(".bottomtabs, .back-link, .navsegment, .chatdock")) return;
     const reveal = document.getElementById("revealbtn");
     if(reveal){ e.preventDefault(); reveal.click(); return; }
     const next = document.getElementById("nextbtn");
