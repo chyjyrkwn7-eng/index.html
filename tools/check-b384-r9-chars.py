@@ -23,7 +23,11 @@
   D. THE INSPECTOR: the banners' blue plate carrier over his shirt ("Our vests are blue and not black"), a dark brown felt cowboy hat, brown skin, a navy short-sleeved shirt, glasses, the clipboard, the star badge, and a heavy stubble
      (jaw, chin and lip; not a solid beard) with no teeth - in the banners' inspector colours (FB_KIT, r9-banners).
   E. THE SMOKE DIVER'S HELMET carries a badge with a star, and no Maltese cross (the fire department's mark) anywhere on it; still navy.
-  F. THE CHIEF: a white cowboy hat, a grey moustache, the bolo's turquoise, the star, a navy shirt.
+  F. THE CHIEF (round 13: "I preferred the chief with the brown coat"): E's drawing byte for byte - the brown sport coat over the white shirt,
+     the white cowboy hat, the grey moustache, the bolo's turquoise, the star.
+  L. (round 13) THE OPTIONS: three finished concepts each for the timekeeper, genesis and valkyrie ids sit in IFC_CHAR_OPTIONS, none shipped
+     (IFC_CHAR_PICK all 0, so the shipped three are unchanged - B); each of the nine draws whole (head, eyes, closed eyes, mouth, special
+     parts, no svg filter), each differs from the others and from the shipped drawing, and the secret one's options carry the core flare.
   G. UNDERCOVER: no hat, aviators (gold frame, dark mirrored lenses), the eye group empty (the glasses are the eyes), a badge on a chain, an
      earpiece, hair, a nearly flat mouth.
   H. THE FIRE MARSHAL: a person (a face with two eyes and a mouth, hair), the agency's BLUE vest (clearly blue, lighter than the navy shirt
@@ -121,6 +125,21 @@ SNAP = r"""(detail) => {
   return out; }"""
 
 
+OPTS_SNAP = r"""() => {
+  if(typeof IFC_CHAR_OPTIONS === 'undefined') return null;
+  const hash = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };
+  const out = { pick: Object.assign({}, IFC_CHAR_PICK), o: {} };
+  Object.keys(IFC_CHAR_OPTIONS).forEach(id => {
+    const def = AVATAR_CHARACTERS.find(c => c.id === id); if(!def) return;
+    const k0 = def.kind, ser = s => new XMLSerializer().serializeToString(s).split(s.getAttribute('data-cx-uid')).join('U');
+    const shipped = hash(ser(drawAvatarCharSVG(id)));
+    out.o[id] = IFC_CHAR_OPTIONS[id].map(([kind, name]) => { def.kind = kind; const s = drawAvatarCharSVG(id), x = ser(s);
+      const r = { kind, name, h: hash(x), shipped, heads: s.querySelectorAll('.cx-head').length, eyes: !!s.querySelector('.cx-eyes'), closed: !!s.querySelector('.cx-eyes-closed'),
+        mouth: !!s.querySelector('.cx-mouth'), sp: s.querySelectorAll('.cx-sp').length, filter: /<filter|filter=/.test(x), flare: !!s.querySelector('.cx-fx-flare'), scene: !!s.querySelector('.cx-bg') };
+      def.kind = k0; return r; });
+  });
+  return out; }"""
+
 def snap(init, body, detail):
     srv, port = rc["serve"]()
     errs = []
@@ -134,6 +153,7 @@ def snap(init, body, detail):
         pg.add_init_script(init)
         pg.goto("http://127.0.0.1:%d/index.html" % port); pg.wait_for_timeout(3500)
         r = pg.evaluate(SNAP, detail)
+        r["opts"] = pg.evaluate(OPTS_SNAP)
         ctx.close(); br.close()
     srv.shutdown()
     r["errs"] = errs
@@ -204,8 +224,11 @@ chk("E. the Smoke Diver's helmet carries a badge (%d) with a star (%d), and no M
 # F
 c = D["poseidon"]
 cw = [h for h in c["hats"] if h["kind"] == "cowboy"]
-chk("F. the Chief: a white cowboy hat (%s), the grey moustache (%s), the bolo's turquoise (%s), the star (%s), a navy shirt (%s)" % (cw and cw[0]["fill"], "#DADCE2" in c["fills"], "#3FC8B8" in c["fills"], "#6E4A0C" in c["strokes"], c["shirt"]),
-    len(cw) == 1 and hsl(cw[0]["fill"])[2] > .85 and "#DADCE2" in c["fills"] and "#3FC8B8" in c["fills"] and "#6E4A0C" in c["strokes"] and navy(c["shirt"]), c)
+# (384 round 13, r10-chars) Madison: "I preferred the chief with the brown coat as well." - E's chief exactly, brown sport coat over the white shirt
+chk("F. the Chief is ea31d43's (E) drawing byte for byte (%s), in the brown sport coat (%s, hue %.0f) over the white shirt (%s)" % (H["poseidon"] == PREV["E"].get("poseidon"), c["shirt"], hsl(c["shirt"])[0], "#F6F4EE" in c["fills"]),
+    H["poseidon"] == PREV["E"].get("poseidon") and c["kind"] == "fcchief3" and 15 <= hsl(c["shirt"])[0] <= 40 and hsl(c["shirt"])[2] < .45 and "#F6F4EE" in c["fills"], c)
+chk("F. ...with his white cowboy hat (%s), the grey moustache (%s), the bolo's turquoise (%s) and the star (%s)" % (cw and cw[0]["fill"], "#DADCE2" in c["fills"], "#3FC8B8" in c["fills"], "#6E4A0C" in c["strokes"]),
+    len(cw) == 1 and hsl(cw[0]["fill"])[2] > .85 and "#DADCE2" in c["fills"] and "#3FC8B8" in c["fills"] and "#6E4A0C" in c["strokes"], c)
 # G
 u = D["valkyrie"]
 chk("G. Undercover: no hat (%s), gold aviators (%s) over an empty eye group (%s marks), a badge on a chain (%s dashed, badge %s), an earpiece (%s), hair, a nearly flat mouth" % (u["hats"], "#E2BC5E" in u["strokes"], u["eyes"], u["dashed"], "#6E4A0C" in u["strokes"], "#DCEEF8" in u["fills"]),
@@ -232,6 +255,19 @@ off = {i: (D[i]["flare"], D[i]["onFig"]) for i in ("voidwalker", "umbra", "singu
 chk("J. every secret's flare sits on its character's own drawn shapes (off: %s)" % (off or "none"), not off, {i: (D[i]["flare"], D[i]["onFig"]) for i in ("voidwalker", "umbra", "singularity", "genesis")})
 bad = [i for i in PICKED if D[i]["heads"] != 1 or D[i]["eyes"] < 0 or not D[i]["closed"] or D[i]["mouth"] < 0 or D[i]["sp"] < 1 or D[i]["filter"]]
 chk("J. every changed drawing has one head, an eye group, closed eyes, a mouth group, special parts and no svg filter (bad: %s)" % (bad or "none"), not bad, {i: D[i] for i in bad})
+# L
+O = IFC.get("opts")
+if not O:
+    chk("L. the round-13 options are in the file (IFC_CHAR_OPTIONS)", False, "none")
+else:
+    allo = [x for i in ("timekeeper", "genesis", "valkyrie") for x in O["o"].get(i, [])]
+    chk("L. three options each for the timekeeper, genesis and valkyrie ids, none shipped (pick %s)" % O["pick"],
+        all(len(O["o"].get(i, [])) == 3 for i in ("timekeeper", "genesis", "valkyrie")) and not any(O["pick"].values()), O["pick"])
+    bad = [x["name"] for x in allo if x["heads"] != 1 or not (x["eyes"] and x["closed"] and x["mouth"]) or x["sp"] < 1 or x["filter"] or not x["scene"]]
+    chk("L. ...each of the nine draws whole: a head, eyes, closed eyes, a mouth, special parts, its scene, no svg filter (bad: %s)" % (bad or "none"), not bad and len(allo) == 9, allo)
+    hs = [x["h"] for x in allo]
+    chk("L. ...the nine are nine different drawings, none the shipped one (%s)" % [x["name"] for x in allo], len(set(hs)) == 9 and not any(x["h"] == x["shipped"] for x in allo), hs)
+    chk("L. ...and the secret's three carry the core flare (%s)" % [x["flare"] for x in O["o"]["genesis"]], all(x["flare"] for x in O["o"]["genesis"]), O["o"]["genesis"])
 # K
 wrong = {i: N.get(i) for i in NAMES if N.get(i) != NAMES[i]}
 chk("K. the names: %s (wrong: %s)" % (", ".join(NAMES.values()), wrong or "none"), not wrong, wrong)

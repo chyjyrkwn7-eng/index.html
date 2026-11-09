@@ -268,7 +268,8 @@ mov = sorted(i for i, h in PREV["ifc"]["chars"].items() if IFC["chars"].get(i, {
 expect = {"clown", "valkyrie", "timekeeper", "hive", "voidwalker", "umbra", "singularity", "genesis",
           # (384 r6, check-b384-r6-chars.py) the police-gear round: the Inspector, Chief, Drone Pilot and Star Ranger redrawn, the Smoke
           # Diver's helmet navy, the Dispatcher's earcup lamp and collar; the Strobe's visor bar and the Pulsar's ring (both already named)
-          "detective", "poseidon", "masked", "hacker"} | EYES4
+          "detective", "masked", "hacker"} | EYES4
+# (384 round 13, r10-chars) the Chief is round 3's again too ("I preferred the chief with the brown coat"), c1d224b's drawing, so out of the set
 # (384 round 12, r9-chars) the Drone Pilot and the Star Ranger are round 3's drawings again, byte for byte what c1d224b drew, so they are
 # NOT in the changed set any more
 chk("7. in Fire Code only the characters named here changed their art since c1d224b; Toxic Spill is exactly c1d224b's (changed: %s)" % mov, set(mov) == expect and "astronaut" not in mov, {"changed": mov, "expected": sorted(expect)})

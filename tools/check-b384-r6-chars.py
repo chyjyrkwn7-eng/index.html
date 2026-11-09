@@ -24,7 +24,7 @@
   K. DISPATCHER: the earcup's line light is a small lamp, not a glowing ball the size of an eye.
 
   ROUND 12 (r9-chars) retired A, B, C, F, G, H and I: Madison picked older versions of the Inspector, Chief, Drone Pilot and Star Ranger
-  (cowboy hats and all) and replaced Pulsar. D, E (Inspector, Chief, Dispatcher), J and K still hold; check-b384-r9-chars has the rest.
+  (cowboy hats and all) and replaced Pulsar. D, E (Inspector, Dispatcher; round 13 gave the Chief his brown coat back), J and K still hold; check-b384-r9-chars has the rest.
 
   python3 tools/check-b384-r6-chars.py [--against OLD/index.html]      (every lettered group FAILS on ea31d43)
 """
@@ -142,7 +142,7 @@ helm = [(N[i], h["kind"], h["fill"]) for i, c in C.items() for h in c["hats"] if
 chk("D. every hard hat, helmet and cap is navy (%s)" % helm, helm and all(navy(f) for _, _, f in helm), helm)
 chk("D. ...the Smoke Diver's helmet among them (%s)" % C["masked"]["hats"], any(h["kind"] == "helmet" and navy(h["fill"]) for h in C["masked"]["hats"]), C["masked"]["hats"])
 # E
-uni = {N[i]: C[i]["shirt"] for i in ("detective", "poseidon", "hacker")}   # (round 12: the Drone Pilot is round 3's again, in his own dark gear)
+uni = {N[i]: C[i]["shirt"] for i in ("detective", "hacker")}   # (round 12: the Drone Pilot is round 3's again, in his own dark gear; round 13: the Chief is round 3's brown coat again)
 chk("E. the people in uniform wear navy shirts (%s)" % uni, all(navy(v) for v in uni.values()), {k: [round(x, 2) for x in hsl(v)] for k, v in uni.items()})
 # J
 chk("J. Strobe: no bar across the visor between the lamps (%s)" % R.get("strobe"), (R.get("strobe") or {}).get("bar", 1) == 0, R.get("strobe"))
