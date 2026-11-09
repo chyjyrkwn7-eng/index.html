@@ -37256,6 +37256,7 @@ html.is-browser{ --fade-paper: transparent; }
   .vr-gamecard .tug-rope-wrap, .vr-gamecard .battle-board{ margin-left:0; margin-right:0; }
   /* the rope's live line ("keep pulling") is for a match in play; the card's own line says how it ended */
   .vr-gamecard .tug-state{ display:none; }
+  :is(.screen-tug-result, .screen-battle-result, .rs-screen) .vr-gamecard :is(.tug-rope-wrap, .battle-board){ margin-top:0; }
   .vr-gamecard-line{ margin:.75rem 0 0; text-align:center; font-size:.9rem; line-height:1.4; color:var(--soft); }
   /* the race's place and podium arrive on the settled results */
   @keyframes vr-arrive{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
@@ -141681,7 +141682,9 @@ function showVroomTeamResult(o){
     tour: () => {}
   });
   const host = stage.firstElementChild;
-  if(host){ host.classList.add("vroom-final", "vroom-final-" + o.game); host.dataset.game = o.game; }
+  /* screen-tug-result / screen-battle-result: what the room's listeners test before drawing the result again, and what
+     names a room's screen to the update check and the class bank (ROOM_SCREENS) */
+  if(host){ host.classList.add("vroom-final", "vroom-final-" + o.game, "screen-" + o.game + "-result"); host.dataset.game = o.game; }
   countEl.textContent = vroomGameName(o.game);
   vroomMountResultChat(host);
 }
@@ -141759,7 +141762,8 @@ function vroomRaceFinalize(){
       const g = host.querySelector(".rs-grade");
       if(g) g.after(xpCard); else host.insertBefore(xpCard, host.firstChild);
     }
-    rsAddXpLine(host, { key: "place", label: vroomPlaceLabel(mine.place, mine.n), sub: "Finishing place", value: xp });
+    /* what was paid, as it was paid (a racer who resumed after the standings settled can have moved the room since) */
+    rsAddXpLine(host, { key: "place", label: paid ? vroomPlaceLabel(paid.place, paid.n) : vroomPlaceLabel(mine.place, mine.n), sub: "Finishing place", value: xp });
   }
   const podium = buildVroomRacePodium(data);
   podium.classList.add("rs-in-now", "is-arriving");
@@ -141902,15 +141906,20 @@ function playVroomRaceCutscene(ranked){
     return order;
   };
 
-  /* (384 r8) ONE WAY ON: Continue, to the run's own results, which now carry the place, the podium and Back to lobby / Main
-     menu (vroomRaceFinalize) - the match ends on the same screen as every other game's. */
+  /* (384 r8) THE WAY ON IS CONTINUE, to the run's own results, which now carry the place, the podium and Back to lobby / Main
+     menu (vroomRaceFinalize) - the match ends on the same screen as every other game's. Main menu stays beside it: the scene
+     has always had a way out of the room (build 246), and somebody done with it should not need a screen to leave from. */
   const exits = document.createElement("div");
   exits.className = "vrc-exits";
   const cont = document.createElement("button");
   cont.type = "button"; cont.className = "next vrc-continue";
   cont.textContent = "Continue";
   cont.addEventListener("click", () => { overlay.remove(); vroomRaceFinalize(); });
-  exits.append(cont);
+  const home = document.createElement("button");
+  home.type = "button"; home.className = "next ghost";
+  home.textContent = "Main menu";
+  home.addEventListener("click", () => { overlay.remove(); vroomAwaitingOthers = false; leaveVirtualRoom(); showHome(); });
+  exits.append(cont, home);
   overlay.appendChild(exits);
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add("is-in"));

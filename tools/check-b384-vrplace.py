@@ -48,8 +48,11 @@ TEAM = """async ([game, teams, winner, right, me, foreign]) => {
   const parts = {}, prog = {};
   Object.keys(teams).forEach((k, i) => { parts[k] = { name:names[k] || k, avatarChar:chars[k] || 'ghost', level:10, badges:1, joinedAt:i + 1, ready:true, seen:9e15 };
     prog[k] = { pos:30, correct: k === me ? right : 12 + i, pull: 5, done:true, at: now }; });
-  const g = { teams, progress: prog, over:true, winner: winner, finalPos: winner ? (winner === 'a' ? -9 : 9) : 0, count:30, log:[] };
-  window.__d = { status:'finished', startAt: now, units:['Identity Crimes'], game, participants: parts, tug: g, battle: JSON.parse(JSON.stringify(g)) };
+  /* a hit per right answer, for the battle's damage board */
+  const log = []; Object.keys(teams).forEach(k => { for(let j = 0; j < prog[k].correct; j++) log.push({ id: k + j, at: now + j * 1000 + log.length, from: k, kind: 'hit' }); });
+  const g = { teams, progress: prog, over:true, winner: winner, finalPos: winner ? (winner === 'a' ? -9 : 9) : 0, count:30, log: [] };
+  const gb = Object.assign({}, g, { log: log });
+  window.__d = { status:'finished', startAt: now, units:['Identity Crimes'], game, participants: parts, tug: g, battle: JSON.parse(JSON.stringify(gb)) };
   __rooms['VRP' + __seq] = JSON.parse(JSON.stringify(__d));
   vroomCode = 'VRP' + __seq; vroomMyKey = me; vroomIsHost = true;
   vroomForeign = foreign ? (() => true) : __home;
@@ -78,7 +81,7 @@ RACE = """async ([mine, myMs]) => {
     p2:{ name:'Devonte', avatarChar:'ghost', level:31, badges:6, joinedAt:2, ready:true, finished:true, progress:100, elapsedMs:200000, xp:330, xpLines:L(280,50), revealDone:true, seen:9e15 },
     p3:{ name:'Alex', avatarChar:'grizzly', level:47, badges:9, joinedAt:3, ready:true, finished:true, progress:100, elapsedMs:180000, xp:400, xpLines:L(340,60), revealDone:true, seen:9e15 },
     p4:{ name:'Kim', avatarChar:'alien', level:12, badges:2, joinedAt:4, ready:true, finished:true, progress:100, elapsedMs:260000, xp:210, xpLines:L(200,10), revealDone:true, seen:9e15 } } };
-  const lines = [{ key:'correct', label:'Correct answers', sub:'x', value: mine - 20 }, { key:'speed', label:'Speed', value: 20 }];
+  const lines = [{ key:'correct', label:'Correct answers', sub: ((mine - 20) / 10) + ' \u00d7 10 XP', value: mine - 20 }, { key:'speed', label:'Speed', value: 20 }];
   lastRunRoomXp = { lines, total: mine };
   const b = badgeCountOf(store);
   const run = { total:30, good:28, pct:93, missed:[], isPerfect:false, elapsedMs:myMs, timedOut:false, order:[], attempts:{}, picked:{}, firstPick:{}, flare:null, flareAll:false, flareCount:0, timedOutSet:{},

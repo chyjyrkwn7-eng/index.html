@@ -987,12 +987,14 @@ def sections_313(ctx, open_tab, args):
                 check("%s, %d people: the match ends on the result screen" % (game, n), ended)
                 if ended:
                     pg.wait_for_timeout(600)
-                    r = pg.evaluate("""(before)=>{ const sub=document.querySelector('#stage .cal-sub');
+                    # (384 r8) the result is the results screen: the summary is the game card's line, everybody is in the
+                    # podium's side lists, and the two ways out are the results' own row
+                    r = pg.evaluate("""(before)=>{ const sub=document.querySelector('#stage :is(.cal-sub, .vr-gamecard-line)');
                       const bar=document.querySelector('.bottomtabs');
-                      const ex=[...document.querySelectorAll('#stage .vroom-exit-row button')].map(b=>b.getBoundingClientRect()).map(q=>q.right<=innerWidth+1&&q.left>=-1);
+                      const ex=[...document.querySelectorAll('#stage :is(.vroom-exit-row, .vroom-final-actions) button')].map(b=>b.getBoundingClientRect()).map(q=>q.right<=innerWidth+1&&q.left>=-1);
                       return { sub: sub ? sub.textContent : '', hs: document.documentElement.scrollWidth - innerWidth,
                                tabbar: !bar || bar.hidden || getComputedStyle(bar).display === 'none',
-                               exits: ex, rows: document.querySelectorAll('#stage .tug-board-row').length,
+                               exits: ex, rows: document.querySelectorAll('#stage :is(.tug-board-row, .vr-podium-cols .vr-podium-row)').length,
                                matches: (store.vrMatches || 0) - before }; }""", before)
                     check("%s, %d people: no sideways scroll and a one-line summary" % (game, n),
                           r["hs"] <= 0 and len(r["sub"]) <= 70 and r["sub"].count("&") <= 1, r)
@@ -1051,7 +1053,7 @@ def sections_313(ctx, open_tab, args):
         pg.evaluate("()=>__vrBots.die('b1')")
         try:
             pg.wait_for_selector(".screen-battle-result", timeout=20000)
-            won = pg.evaluate("()=>(document.querySelector('#stage h1')||{}).textContent")
+            won = pg.evaluate("()=>(document.querySelector('#stage h1, #stage .rs-xpline.is-place .rs-xpline-sub')||{}).textContent")   # (384 r8) the place line says it
         except Exception:
             won = None
         check("the only player on the other side goes quiet: the match ends, and you have won",
@@ -1570,7 +1572,7 @@ def main():
             pg.evaluate("()=>{ document.getElementById('vroom-prep')?.remove(); if(!document.getElementById('vroom-race-cut')) startVroomRaceCutscene(); }")
         host.evaluate("()=>{ document.getElementById('vroomracebar').hidden = false; }")
         for pg in (host, guest):
-            pg.evaluate("()=>{ const c = document.querySelector('#vroom-race-cut .vrc-continue'); if(c) c.click(); else { document.getElementById('vroom-race-cut')?.remove(); vroomRaceFinalize(); } }")
+            pg.evaluate("()=>{ const c = document.querySelector('#vroom-race-cut .vrc-continue'); if(c) c.click(); else { document.getElementById('vroom-race-cut')?.remove(); if(typeof vroomRaceFinalize === 'function') vroomRaceFinalize(); } }")
         host.wait_for_timeout(900 + args.latency * 4)
         host.evaluate("()=>{ fbDb.collection('vrooms').doc(vroomCode)"
                       "  .update({ nudge: Date.now() }); }")
@@ -1987,9 +1989,10 @@ def main():
                     pg.wait_for_selector(".screen-tug-result", timeout=20000)
                 except Exception:
                     pass
+            # (384 r8) the result is the results screen: the verdict is the place line's own words, the exits the results' row
             ends = [pg.evaluate("""()=>({ result: !!document.querySelector('.screen-tug-result'),
-              title: (document.querySelector('.screen-tug-result h1')||{}).textContent || null,
-              exits: [...document.querySelectorAll('.screen-tug-result .vroom-exit-btn')].map(b=>b.textContent) })""")
+              title: (document.querySelector('.screen-tug-result h1, .screen-tug-result .rs-xpline.is-place .rs-xpline-sub')||{}).textContent || null,
+              exits: [...document.querySelectorAll('.screen-tug-result :is(.vroom-exit-btn, .vroom-final-actions button)')].map(b=>b.textContent) })""")
                     for pg in (tugA, tugB)]
             check("the match ends on a result screen on both devices",
                   all(e["result"] for e in ends), ends)
@@ -2287,19 +2290,21 @@ def main():
             # The winner it names has to be the one the standings put
             # first, or the cutscene crowns somebody the list then
             # places second.
+            # (384 r8) the points-ranked vroomWinnerOf / vroomTopThree had no callers and are retired with the points screen;
+            # the standings' one ranking is vroomRankedEntries (the room's XP, then time), which the cutscene and the podium use.
             agree = cut.evaluate("""()=>{
               const d = { participants: {
-                a: { name:"A", totalScore: 120 }, b: { name:"B", totalScore: 700 },
-                c: { name:"C", totalScore: 450 } } };
-              return vroomWinnerOf(d).name; }""")
+                a: { name:"A", finished:true, xp: 120 }, b: { name:"B", finished:true, xp: 700 },
+                c: { name:"C", finished:true, xp: 450 } } };
+              return (vroomRankedEntries(d)[0] || {p:{}}).p.name; }""")
             check("the winner matches the standings' own ranking", agree == "B", agree)
             podium3 = cut.evaluate("""()=>{
               const d = { participants: {
-                a: { name:"A", avatarChar:"ninja", totalScore: 120 },
-                b: { name:"B", avatarChar:"ghost", totalScore: 700 },
-                c: { name:"C", avatarChar:"queen", totalScore: 450 },
-                e: { name:"E", avatarChar:"cadet", totalScore: 300 } } };
-              return vroomTopThree(d).map(p=>p.name); }""")
+                a: { name:"A", avatarChar:"ninja", finished:true, xp: 120 },
+                b: { name:"B", avatarChar:"ghost", finished:true, xp: 700 },
+                c: { name:"C", avatarChar:"queen", finished:true, xp: 450 },
+                e: { name:"E", avatarChar:"cadet", finished:true, xp: 300 } } };
+              return vroomRankedEntries(d).slice(0, 3).map(e=>e.p.name); }""")
             check("and the podium is the top three in order, not four",
                   podium3 == ["B", "C", "E"], podium3)
         except Exception as e:
