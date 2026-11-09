@@ -26940,7 +26940,6 @@
   .person-card-rank + .person-card-level{ margin-top:.6rem; }
   /* (384 r9) your own card below Iron: the rank's place kept, faded - Iron's flare at a third, the words in the soft colour, no glow */
   .person-card-rank.profile-rankline.is-none{ color:var(--soft) !important; }
-  .person-card-rank.profile-rankline.is-none > .person-card-mark{ opacity:.38; }
   html[data-theme][data-layout] body .person-card-rank.profile-rankline.is-none > .person-card-rankword{ filter:none; color:var(--soft) !important; -webkit-text-fill-color:var(--soft) !important; text-shadow:none !important; background:none !important; }
   .person-card-progress{
     margin-top:1.1rem; padding-top:.9rem;
@@ -149558,11 +149557,12 @@ function buildProfileStanding(prog, rankNow){
   } else {
     /* (384 r9) NO RANK YET IS STILL A LINE. Madison, on his own Profile at level 21 with no badges (Fire Code): "Our current rank
        should be here, similar to how it looks when you view someone on leaderboard and click them". Below Iron the line was simply
-       missing, so the card jumped from the name to "Level 21 · 0 badges". It now holds the same place: Iron's flare, faded, and
-       "No rank yet" in the line's soft colour - the words the XP card already uses - so the card reads the same at every rank. */
+       missing, so the card jumped from the name to "Level 21 · 0 badges". It now holds the same place: "No rank yet" in the line's
+       soft colour - the words the XP card already uses - so the card reads the same at every rank. */
     const rl = document.createElement("p");
     rl.className = "person-card-rank profile-rankline is-none";
-    try{ const mk = buildRankMark("rookie", "person-card-mark"); mk.classList.add("is-none"); rl.appendChild(mk); }catch(e){}
+    /* (384 r9, next) NO FLARE. "No rank yet, why is the bronze flare next to it?" - a faded Iron flare read as a rank held (Iron's
+       copper reads as bronze); a flare is what a rank hands over, so a card with no rank shows none: the words alone. */
     const nm = document.createElement("span");
     nm.className = "person-card-rankword pf-rankname is-none"; nm.textContent = "No rank yet";
     rl.appendChild(nm);

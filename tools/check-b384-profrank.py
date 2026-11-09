@@ -2,7 +2,7 @@
 here, similar to how it looks when you view someone on leaderboard and click them". On Profile (iPhone 17 Pro Max, iPad Pro 11"),
 both classes, for an account below Iron:
  (1) the rank line (.profile-rankline, the person card's .person-card-rank) is there, between the name and "Level N · N badges",
-     with a flare in it and the words "No rank yet";
+     the words "No rank yet" and no flare (a flare is a rank held - "why is the bronze flare next to it?");
  (2) the words are the line's soft colour (not a rank's colour, not white) and no page errors.
 Run:  python3 tools/check-b384-profrank.py   (--against OLD/index.html must FAIL)"""
 import os, sys, json, importlib.util
@@ -33,8 +33,9 @@ with sync_playwright() as pw:
             pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(1200)
             m = pg.evaluate(M); tag = "%s %s" % (cls, lab)
             if m["rank"]: chk("%s: the fixture is below Iron" % tag, False, m); ctx.close(); continue
-            chk("(1) %s: the rank line is there, above the level, with a flare and 'No rank yet' (%r)" % (tag, m["text"]),
-                m["has"] and m["mark"] and m["text"].lower() == "no rank yet" and m["rlBot"] <= m["lvTop"] + 1, m)
+            # (r9, next) "No rank yet, why is the bronze flare next to it?" - no flare without a rank
+            chk("(1) %s: the rank line is there, above the level: 'No rank yet' and NO flare (%r)" % (tag, m["text"]),
+                m["has"] and not m["mark"] and m["text"].lower() == "no rank yet" and m["rlBot"] <= m["lvTop"] + 1, m)
             soft = pg.evaluate("(c)=>{ const d=document.createElement('i'); d.style.color=c; document.body.appendChild(d); const v=getComputedStyle(d).color; d.remove(); return v; }", m["soft"] or "#999")
             chk("(2) %s: in the soft colour (%s) and no page errors" % (tag, m["col"]), m["col"] == soft and not errs, [m["col"], soft, errs[:2]])
             ctx.close()
