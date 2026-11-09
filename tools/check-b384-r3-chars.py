@@ -84,14 +84,17 @@ N = r["names"]
 chk("the four are Undercover (fcopt_plain, round 14's Plainclothes), the Exit (fcexit, round 16), Sprinkler Head (fcsprinkler2) and the Whiteout (fcwhiteout2, round 12) (%s)" % N,
     N["valkyrie"] == ["Undercover", "fcopt_plain"] and N["timekeeper"] == ["Exit", "fcexit"] and N["hive"] == ["Sprinkler Head", "fcsprinkler2"] and N["singularity"] == ["Whiteout", "fcwhiteout2"], N)
 print("RETIRED the Pulsar character's checks (round 12 replaced it with the Whiteout; see check-b384-r9-chars)")
-B = r["ban"]["flare_horizon"]; E = r["ban"]["flare_genesis"]
-chk("the Pulsar banner turns the star as one body (a bl-spin layer holding the beams, the bands and the flare's bead) (%s)" % B["cls"],
-    r["spin"] and 'bmN' in r["spin"]["svg"] and 'bmS' in r["spin"]["svg"] and 'bead' in r["spin"]["svg"] and r["spin"]["svg"].count("rotate(") >= 5, B["cls"])
-chk("...it stands on the Eclipse banner's ground: the same hills and pines, a lake with the star in it, the cool rim on the ridge, the shimmer (hill/lake gradients, a 'bl-shimmer' layer)",
-    all(k in B["all"] for k in ("hill", "lake")) and "bl-shimmer" in B["cls"] and len(re.findall(r"M\-10 140 Q40 118", B["all"])) >= 2 and "bl-rise" in B["cls"], B["cls"])
-chk("...and it has no leftover of the old Pulsar: no face (no slanted eyes), no field lines, no ice spires, no orbiting bead on a dotted ring",
-    'rotate(13' not in B["all"] and 'stroke-dasharray="1.4 4"' not in B["all"] and 'field' not in B["all"] and 'spire' not in B["all"] and 'rx="3.5" ry="6.4"' not in B["all"], B["all"][:100])
-chk("...one star, one pair of beams: no stray pieces (a single dark ball, a single flare bead) and no svg filter",
-    B["all"].count('url(#t-ball)') == 1 and B["all"].count('url(#t-bead)') == 1 and "<filter" not in B["all"] and B["n"] <= 14, (B["n"], B["all"].count('url(#t-ball)')))
+print("RETIRED the Pulsar banner's checks (round 9 renamed and redrew flare_horizon as Whiteout - \"rename banner names to match\"; check-b384-r9-banners (9) holds the Whiteout scene)")
+if False:
+    B = r["ban"]["flare_horizon"]; E = r["ban"]["flare_genesis"]
+    chk("the Pulsar banner turns the star as one body (a bl-spin layer holding the beams, the bands and the flare's bead) (%s)" % B["cls"],
+        r["spin"] and 'bmN' in r["spin"]["svg"] and 'bmS' in r["spin"]["svg"] and 'bead' in r["spin"]["svg"] and r["spin"]["svg"].count("rotate(") >= 5, B["cls"])
+    chk("...it stands on the Eclipse banner's ground: the same hills and pines, a lake with the star in it, the cool rim on the ridge, the shimmer (hill/lake gradients, a 'bl-shimmer' layer)",
+        all(k in B["all"] for k in ("hill", "lake")) and "bl-shimmer" in B["cls"] and len(re.findall(r"M\-10 140 Q40 118", B["all"])) >= 2 and "bl-rise" in B["cls"], B["cls"])
+    chk("...and it has no leftover of the old Pulsar: no face (no slanted eyes), no field lines, no ice spires, no orbiting bead on a dotted ring",
+        'rotate(13' not in B["all"] and 'stroke-dasharray="1.4 4"' not in B["all"] and 'field' not in B["all"] and 'spire' not in B["all"] and 'rx="3.5" ry="6.4"' not in B["all"], B["all"][:100])
+    chk("...one star, one pair of beams: no stray pieces (a single dark ball, a single flare bead) and no svg filter",
+        B["all"].count('url(#t-ball)') == 1 and B["all"].count('url(#t-bead)') == 1 and "<filter" not in B["all"] and B["n"] <= 14, (B["n"], B["all"].count('url(#t-ball)')))
+
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

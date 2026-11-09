@@ -185,7 +185,7 @@ with sync_playwright() as pw:
             [d["need"] for d in fx] == [25, 50, 75, 150] and all(d["said"] == "Earn %d hundos" % d["need"] for d in fx)
             and [d["name"] for d in fx] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Hazmat"], fx)
         chk("(1) the academy's ask for its own, %s" % [(d["name"], d["said"]) for d in CA["fx"]],
-            [d["need"] for d in CA["fx"]] == [50, 100, 150, 200] and all(d["said"] == "Earn %d hundos" % d["need"] for d in CA["fx"]), CA["fx"])
+            [d["need"] for d in CA["fx"]] == [25, 75, 125, 200] and all(d["said"] == "Earn %d hundos" % d["need"] for d in CA["fx"]), CA["fx"])   # (384 r9) the academy's rungs are 25/75/125/200 (AC_HUNDO_NEED)
         alarm = [t for _, t in CF["cards"] + CA["cards"] if re.search(r"fire alarm", t, re.I)]
         chk("(1) no card in either class is the Fire Alarm (Hazmat is the 150, the Thermal Camera the 75)", not alarm, alarm)
         want_b = [max(1, round(r["acad"] / 14 * (CF["chapters"] - 2))) for r in CF["ranks"]]
@@ -450,7 +450,7 @@ with sync_playwright() as pw:
           store.unitPerfects = {}; topics.slice(0, rule.badges - 1).forEach(t => { store.unitPerfects[t] = badgeThresholdFor(t); });
           store.unitPerfects[a.topic] = badgeThresholdFor(a.topic) - 1;
           let pts = 500; while(levelProgress(pts).level < rule.level) pts += 100;
-          store.lifetime.points = pts; store.lifetime.perfectTests = window.NOVA_CLASS === 'ifc' ? 24 : 49;
+          store.lifetime.points = pts; store.lifetime.perfectTests = Math.min(...HUNDO_FX.filter(d => d.need > 0).map(d => d.need)) - 1;   /* (384 r9) one short of the class's first rung, read off HUNDO_FX (was 24 / 49 - the academy's first rung moved to 25) */
           const held = TIER_ORDER_FULL.indexOf(rank) - 1; store.rankUpShown = held + 1; store.seenUnlockedTiers = TIER_ORDER_FULL.slice(0, held + 1);
           saveStore(); showHome();
           cfg.source = 'all'; cfg.mode = 'drill'; cfg.units = [a.topic];
