@@ -182,7 +182,7 @@ with sync_playwright() as pw:
         chk("(1) academy: no card (%d) says a Fire Code word or name (%s)" % (len(CA["cards"]), bad[:4]), not bad, bad)
         fx = CF["fx"]
         chk("(1) Fire Code's hundo effect cards ask for its own counts, %s" % [(d["name"], d["said"]) for d in fx],
-            [d["need"] for d in fx] == [25, 50, 75, 150] and all(d["said"] == "Earn %d hundos" % d["need"] for d in fx)
+            [d["need"] for d in fx] == [25, 50, 75, 100] and all(d["said"] == "Earn %d hundos" % d["need"] for d in fx)
             and [d["name"] for d in fx] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Hazmat"], fx)
         chk("(1) the academy's ask for its own, %s" % [(d["name"], d["said"]) for d in CA["fx"]],
             [d["need"] for d in CA["fx"]] == [25, 75, 125, 200] and all(d["said"] == "Earn %d hundos" % d["need"] for d in CA["fx"]), CA["fx"])   # (384 r9) the academy's rungs are 25/75/125/200 (AC_HUNDO_NEED)
