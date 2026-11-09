@@ -37837,7 +37837,7 @@ html.is-browser{ --fade-paper: transparent; }
   }
   /* (384 r5) Settings' group headings at Delta's: ~14px (ours 16 = x1.14 too big), 20px in from the card's edge */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page):is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.slab.motion-summary, .sect-label, .slab){
-    font-size:.875rem !important; padding-left:20px !important;
+    font-size:15px !important; padding-left:20px !important;   /* (384 r9) Delta's section names read ~15pt on the glass, semibold; was .875rem */
   }
   /* and Profile's ("Rank challenges", "<rank> unlocks") */
   html[data-layout] body #stage .profile-identity-tab .pf-goal > :is(.pf-tasks-kick, .pf-rewards-kick){ font-size:1rem !important; font-weight:600 !important; }
@@ -39072,6 +39072,21 @@ html.is-browser{ --fade-paper: transparent; }
   .chatdock-tabs.has-seg-glass > .chatdock-tab::before{ content:""; position:absolute; left:0; right:0; top:-5px; bottom:-5px; }
   /* a key's focus on a segment: a ring inside its pill */
   .has-seg-glass > :is(.iconbtn, .rs-tab, .chatdock-tab):focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-2px; }
+
+  /* ---- SETTINGS AT DELTA'S SIZE ON THE GLASS, AT ANY PAGE ZOOM (build 384, 8th pass) ----
+     Madison, Delta's Settings beside ours (his phone, same scale): "Why are our icons and sections not the same size, ours are
+     much smaller and it looks bad". Measured off the two screenshots: ours drew 23.4pt tiles, 43.5pt rows and ~13pt words
+     where Delta draws 27pt / 51pt / 15.5pt. The numbers in this file were RIGHT - 28px, 51px, 15.5px are Delta's own sizes in
+     points - but his phone runs Safari's page zoom at ~85% (518 CSS px across a 440pt screen), so every CSS px lands 15% short
+     on the glass. (The two rounds that "matched" Delta off his screenshots were reading a zoomed page against an unzoomed one,
+     and went smaller each time.) --zc is exactly that shortfall (syncFieldFloor: layout width over screen width, 1 at 100%), and
+     page-zoomed is only ever set above 1.02, so a phone at 100% is untouched. The cards, headings and footnotes of Settings and
+     the pages it opens are zoomed by --zc: they lay out as the 440pt screen they are drawn on, then land at full size on the
+     glass - the rows, tiles, glyphs, words, switches and hairlines all scale as one, and nothing in them is re-measured. The
+     headings step up to 15px as well (Delta's section names, ~15pt semibold; set where the 384 r5 heading rule is). */
+  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask){
+    zoom:var(--zc, 1);
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
