@@ -85,7 +85,7 @@ chk("A. Nebula's gas is three colours: red, orange and yellow (%s)" % sorted(g),
 chk("B. the valkyrie id is Undercover and the timekeeper id the Exit (round 16) (%s, %s) (round 9 replaced the Lookout and the Smoke Alarm; round 12 redrew Undercover and put a person in The Irons' place)" % (C["valkyrie"]["name"], C["timekeeper"]["name"]),
     C["valkyrie"]["name"] == "Undercover" and C["timekeeper"]["name"] == "Exit", C)
 chk("B. ...new kinds (%s, %s), each with its own scene and glow, no svg filter, no hat of the fire service" % (C["valkyrie"]["kind"], C["timekeeper"]["kind"]),
-    C["valkyrie"]["kind"] == "fcopt_plain" and C["timekeeper"]["kind"] == "fcexit" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
+    C["valkyrie"]["kind"] == "fcopt_plain" and C["timekeeper"]["kind"] == "fcopt_exit" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
 # C
 sh = r["shirt"]; base = sh[1] if len(sh) > 1 else sh[0]
 rr, gg, bb = (int(base.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4)); hh, ll, ss = colorsys.rgb_to_hls(rr, gg, bb)
