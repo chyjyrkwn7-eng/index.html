@@ -37676,11 +37676,19 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout] body #stage > .panel.screen-vroom-choice .modecardtitle{ font-family:inherit; font-size:1.18rem; font-weight:700; letter-spacing:-.01em; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > .cal-sub{ margin-top:-.2rem; color:var(--soft); }
-  /* (384 r8) THE CARDS' CONTENTS CENTRED. Madison circled everything under the title and said "Center this"; asked which, he
-     picked the cards' contents: the icon and title as one centred row, the description centred under it. */
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ align-items:center; text-align:center; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitlerow{ justify-content:center; align-self:center; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecarddesc{ text-align:center; text-wrap:balance; }
+  /* (384 r8) LIKE CHOOSE YOUR MODE, WITH THE BOXES IN THE MIDDLE. Madison: "The virtual room screen where you are selecting to
+     host or join an open room needs to be like the mode selection screen. Title at the top, description under it, then the
+     boxes are centered.." The title bar and the line under it stay where Choose your mode has them; the cards (Choose your
+     mode's own cards, contents left as there) and the Inbox note under them sit in the middle of the space left between that
+     line and the tab bar. vrcCentre() does the last step: the panel's floor stops short of the tab bar by what the bar
+     reserves, so it moves the group by half that difference (a translate, never more than the room below). */
+  html[data-layout] body #stage > .panel.screen-vroom-choice{
+    display:flex; flex-direction:column; box-sizing:border-box;
+    min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
+  }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ margin-top:auto !important; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > :last-child{ margin-bottom:auto; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > :is(.vrc-modecards, .vrc-note){ translate:0 var(--vrc-shift, 0px); }
   /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
   html[data-layout] body #stage > .panel.vroom-finale-solo{
     display:flex; flex-direction:column; justify-content:center; gap:12px; box-sizing:border-box;
@@ -133773,7 +133781,22 @@ function showVirtualRoomChoice(){
 
   stage.replaceChildren(panel);
   toTop();
+  requestAnimationFrame(() => vrcCentre());
 }
+/* (384 r8) the cards in the middle of the space between the line under the title and the tab bar - see .screen-vroom-choice */
+function vrcCentre(){
+  const p = document.querySelector("#stage > .panel.screen-vroom-choice");
+  if(!p) return;
+  p.style.setProperty("--vrc-shift", "0px");
+  const sub = p.querySelector(":scope > .cal-sub"), group = [...p.querySelectorAll(":scope > .vrc-modecards, :scope > .vrc-note")];
+  if(!sub || !group.length) return;
+  const top = Math.min(...group.map(k => k.getBoundingClientRect().top)), bot = Math.max(...group.map(k => k.getBoundingClientRect().bottom));
+  const tb = document.querySelector(".bottomtabs"), tr = tb && !tb.hidden ? tb.getBoundingClientRect() : null;
+  const floor = tr && tr.height > 0 && getComputedStyle(tb).display !== "none" ? tr.top : innerHeight;
+  const above = top - sub.getBoundingClientRect().bottom, below = floor - bot;
+  p.style.setProperty("--vrc-shift", Math.max(0, Math.min((below - above) / 2, below - 8)).toFixed(1) + "px");
+}
+addEventListener("resize", () => { if(document.querySelector("#stage > .panel.screen-vroom-choice")) vrcCentre(); });
 
 /* ONE SCREEN, TWO JOBS. Setting a room up and changing it afterwards
    are the same question - which units, how long, how many - so they are

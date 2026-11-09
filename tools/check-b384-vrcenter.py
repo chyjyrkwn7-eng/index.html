@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Build 384 r8: the Virtual Room choice screen. (The vertical centring this gate first held was reverted - Madison: "Centering the
+"""Build 384 r8: the Virtual Room choice screen. FINAL (Madison): "needs to be like the mode selection screen. Title at the top,
+description under it, then the boxes are centered.." - (1) the line under the title at the top, (2c) the cards + Inbox note centred
+between that line and the tab bar, (2d) the cards' contents left-aligned like Choose your mode's. History: (The vertical centring this gate first held was reverted - Madison: "Centering the
 virtual room stuff??? Why would you center it like that?" - its legs (1)-(2) are off; (2b) and (3) stand. (2c): Madison then said "Center this" meant the cards' contents - their icon and title row and words are centred.)
 Madison, everything under the title circled: "Center this".
 On an iPhone 17 Pro Max, an iPad Pro 11" and an iPhone SE: (1) the group under the title (the line, the games, the two cards, the
@@ -37,10 +39,15 @@ with sync_playwright() as pw:
             const boxed=(c.backgroundColor!=='rgba(0, 0, 0, 0)' && c.backgroundColor!=='transparent') || parseFloat(c.borderTopWidth)>0;
             const tap=e.closest('button, a, [role=button], .modecard'); return boxed && !tap && parseFloat(c.borderTopLeftRadius)>=8; }).map(e=>e.className).slice(0,5); }""")
         chk("(2b) %s: nothing that is not a button is drawn like one - no boxed pills (%s)" % (lab, pills), not pills, pills)
-        cc = pg.evaluate("""()=>[...document.querySelectorAll('.vrc-modecard')].map(c=>{ const r=c.getBoundingClientRect(), t=c.querySelector('.modecardtitlerow').getBoundingClientRect(), d=c.querySelector('.modecarddesc');
-          const rg=document.createRange(); rg.selectNodeContents(d); return [ (t.left+t.right)/2-(r.left+r.right)/2 ].concat([...rg.getClientRects()].map(q=>(q.left+q.right)/2-(r.left+r.right)/2)); })""")
-        off = [round(v, 1) for card in cc for v in card if abs(v) > 1.5]
-        chk("(2c) %s: the cards' icon-and-title row and each line of their words are centred in the card (off: %s)" % (lab, off or "none"), cc and not off, cc)
+        g = pg.evaluate("""()=>{ const p=document.querySelector('.screen-vroom-choice'), sub=p.querySelector(':scope > .cal-sub'), nav=p.querySelector(':scope > .ios-nav');
+          const grp=[...p.querySelectorAll(':scope > .vrc-modecards, :scope > .vrc-note')]; const top=Math.min(...grp.map(k=>k.getBoundingClientRect().top)), bot=Math.max(...grp.map(k=>k.getBoundingClientRect().bottom));
+          const tb=document.querySelector('.bottomtabs'); const fl=tb&&tb.getBoundingClientRect().height>0?tb.getBoundingClientRect().top:innerHeight;
+          const ms=[...document.querySelectorAll('.vrc-modecard')].map(c=>{ const r=c.getBoundingClientRect(), t=c.querySelector('.modecardtitlerow').getBoundingClientRect(); return t.left - r.left; });
+          return { subGap: sub.getBoundingClientRect().top - nav.getBoundingClientRect().bottom, above: top - sub.getBoundingClientRect().bottom, below: fl - bot, titleIn: ms }; }""")
+        chk("(1) %s: the title and the line under it at the top (line %.0fpx under the title bar)" % (lab, g["subGap"]), 0 <= g["subGap"] <= 30, g)
+        if g["below"] > 0:
+            chk("(2c) %s: the cards and the Inbox note centred between that line and the tab bar (%.0f above, %.0f below)" % (lab, g["above"], g["below"]), abs(g["above"] - g["below"]) <= 4, g)
+        chk("(2d) %s: the cards' contents start at the left like Choose your mode's (%s)" % (lab, [round(v) for v in g["titleIn"]]), all(v < 40 for v in g["titleIn"]), g)
         chk("(3) %s: no page errors" % lab, not errs, errs[:3])
         ctx.close()
     br.close()
