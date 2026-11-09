@@ -135,6 +135,7 @@ DEVICES = [
     ("ipad-pro-11",       834, 1194, (24, 0, 20, 0), True),
     ("iphone-15-non-max", 393,  852, (59, 0, 34, 0), True),
     ("iphone-13-mini",    375,  812, (50, 0, 34, 0), True),
+    ("iphone-se-2-3",     375,  667, (20, 0, 0, 0),  True),
     ("ipad-mini",         744, 1133, (24, 0, 20, 0), True),
     ("ipad-pro-12-9",    1024, 1366, (24, 0, 20, 0), True),
     ("dell-latitude",    1366,  638, (0, 0, 0, 0),  False),
