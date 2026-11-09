@@ -7175,17 +7175,16 @@ def check_b291(br):
                      svg: (() => { try{ const s = buildAvatarCharSVG('hive'); return !!(s && s.querySelector('.cx-fx-hivebees')); }catch(e){ return false; } })() };
         const keep = [store.dayAnswered, store.dayAnsweredBest];
         store.dayAnswered = null; store.dayAnsweredBest = 0;
-        const BU0 = biggestUnit().name, keepBU0 = store.unitPerfects[BU0]; store.unitPerfects[BU0] = 0;
+        /* (384 r14) the Hive's challenge is hosting VR_HOST_NEED Virtual Room matches to the end (store.vrHosted) */
+        const keepHosted = store.vrHosted || 0; store.vrHosted = 0;
         out.hiveLocked0 = isLockedCharacter('hive');
-        store.unitPerfects[BU0] = keepBU0 || 0;
         const qi = QUESTIONS.findIndex(q => (q.topic || '').indexOf('Identity') >= 0);
         try{ recordResult(qi, true); recordResult(qi, false); }catch(e){ out.recordThrew = String(e); }
         out.dayCount = typeof busiestDay === 'function' ? busiestDay() : null;
-        /* (384 r13) the Hive's challenge is a hundo on the class's biggest unit now ("Score a 100 on the biggest unit") */
-        const BU = biggestUnit().name, keepBU = store.unitPerfects[BU];
-        store.unitPerfects[BU] = 0; out.hiveLocked299 = isLockedCharacter('hive');
-        store.unitPerfects[BU] = 1; out.hiveOpen300 = !isLockedCharacter('hive');
-        store.unitPerfects[BU] = keepBU || 0;
+        /* (384 r14) one hosted match short is locked, VR_HOST_NEED open ("host 3 virtual room matches") */
+        store.vrHosted = VR_HOST_NEED - 1; out.hiveLocked299 = isLockedCharacter('hive');
+        store.vrHosted = VR_HOST_NEED; out.hiveOpen300 = !isLockedCharacter('hive');
+        store.vrHosted = 0;
         out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.dayAnsweredBest; delete d.dayAnswered; applyLoadedData(d);
           return [store.dayAnsweredBest, store.dayAnswered]; })();
         store.dayAnswered = keep[0]; store.dayAnsweredBest = 0;
@@ -7203,7 +7202,7 @@ def check_b291(br):
         const s1 = document.querySelector('.rs-spot');
         out.first = s1 ? s1.textContent.slice(0, 160) : null;
         /* earned while the first card is up */
-        store.unitPerfects[biggestUnit().name] = 1;   /* (384 r13) the Hive's challenge: a hundo on the biggest unit */
+        store.vrHosted = VR_HOST_NEED;   /* (384 r14) the Hive's challenge: host VR_HOST_NEED matches to the end */
         await wait(800);
         s1 && s1.click();
         t0 = performance.now(); let s2 = null;
@@ -7211,7 +7210,7 @@ def check_b291(br):
         out.second = s2 ? s2.textContent.slice(0, 160) : null;
         out.stillHome = !!stage.querySelector('[data-screen="home"]');
         s2 && s2.click(); await wait(1600);
-        store.bestTestStreak = kStreak; store.dayAnsweredBest = keep[1] || 0; store.unitPerfects[biggestUnit().name] = 0;
+        store.bestTestStreak = kStreak; store.dayAnsweredBest = keep[1] || 0; store.vrHosted = keepHosted;
         /* (4)(5) the start sheet */
         cfg.mode = 'drill'; const unit = topicsIn(QUESTIONS).find(u => u.indexOf('Identity') >= 0); cfg.units = [unit]; cfg.size = 0;
         showSetup(); await wait(700);
@@ -7266,9 +7265,9 @@ def check_b291(br):
         print("   threw:", r["threw"][:400])
     check("the Marksman is 250 in a row in one test", r.get("marks") == 250, r.get("marks"))
     hv = r.get("hive") or {}
-    # (384 r13) the challenge is one hundo on the class's biggest unit now (feat need 1)
-    check("the Hive exists, is drawn with its bees, and asks for a hundo on the biggest unit (384 r13; was 500 questions in a day)",
-          hv.get("def") and hv.get("svg") and hv.get("feat") == 1, hv)
+    # (384 r14) the challenge is hosting three Virtual Room matches to the end now (feat need 3; r13 was a hundo on the biggest unit)
+    check("the Hive exists, is drawn with its bees, and asks for three hosted Virtual Room matches (384 r14; was a hundo on the biggest unit)",
+          hv.get("def") and hv.get("svg") and hv.get("feat") == 3, hv)
     check("every answer counts toward the day, right or wrong, and the Hive opens at its number, not one short",
           r.get("dayCount") == 2 and r.get("hiveLocked0") and r.get("hiveLocked299") and r.get("hiveOpen300"),
           [r.get("dayCount"), r.get("hiveLocked0"), r.get("hiveLocked299"), r.get("hiveOpen300"), r.get("recordThrew")])
@@ -7276,7 +7275,7 @@ def check_b291(br):
     check("a character that arrives with the cloud copy plays on the same Home visit",
           r.get("spotsAtStart") == 0 and "Marksman" in str(r.get("first")), [r.get("spotsAtStart"), r.get("first")])
     check("and one earned while that card is up plays straight after it, still on Home",
-          "Hive" in str(r.get("second")) and "hundo on" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
+          "Hive" in str(r.get("second")) and "Host 3 Virtual Room matches" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
     na, npart = r.get("noteAll") or {}, r.get("notePartial") or {}
     # REVISED IN 311: "When you have the max questions on, that notice
     # beneath it does not need to be there." Nothing at All; the warning

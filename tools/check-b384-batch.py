@@ -11,7 +11,8 @@ Run in BOTH classes (Fire Code and the academy), read off the page:
 (3) the Inspector/Detective counts every daily question right (not a run): 10 right with a miss between them is done; the Strobe/Clown asks 3 wins; Toxic Spill/Orion a hundo in
     3 units in a day;
 (4) Fire Code: the Hazmat is 100 in a row counting runs across tests; the Hydrant's slot is 14 different days; the academy keeps 250-in-one-test and 30 days;
-(5) the Hive/Sprinkler Head asks something no other reward asks: not a count of questions, not a test (the Ronin's), and it is the same on every class;
+(5) the Hive/Sprinkler Head asks something no other reward asks: not a count of questions, not a test (the Ronin's), and it is the same on every class -
+    since 384 r14 hosting 3 Virtual Room matches to the end (not the Strobe's winning ones);
 (6) one ultimate per class: Fire Code keeps Zenith (the Star Ranger) and its banner, the academy Astral and its banner; the others are gone from the lists; the
     survivor's challenge is "everything" (character, banner, theme and hundo effect), it is listed under the challenge rewards, and nobody is left wearing a removed one;
 (7) the hundo rungs: Fire Code 0, 25, 50, 75, 100; the academy 0 then rising, topping out at 200 (every rung below the next);
@@ -57,7 +58,8 @@ J = """()=>{
   store.bestTestStreak = 0; L.currentStreak = 0; L.longestStreak = f.streak100.need; out.streakAcross = f.streak100.done();
   L.longestStreak = f.streak100.need - 1; out.streak99 = f.streak100.done(); store.bestTestStreak = wb.b; L.longestStreak = wb.l; L.currentStreak = wb.c;
   out.days = f.days30.need;
-  out.hive = { label: f.busyday300.label, ronin: f.bigtest400.label };
+  /* (384 r14) hosting Virtual Room matches: not the Strobe's winning one */
+  out.hive = { label: f.busyday300.label, ronin: f.bigtest400.label, strobe: f.vrwins5.label, need: f.busyday300.need, hostNeed: typeof VR_HOST_NEED === 'number' ? VR_HOST_NEED : null };
   return out; }"""
 res = {}
 with sync_playwright() as pw:
@@ -74,7 +76,10 @@ for k, v in (("Fire Code", I), ("academy", A)):
     chk("(3) %s: the Inspector/Detective counts daily questions right, 10 not 9 (%s / %s), the Strobe 3 and Toxic Spill 3 (%s)" % (k, v["d9"], v["d10"], v["vr"]),
         v["d9"] is False and v["d10"] is True and v["vr"] == [3, 3] and "in a row" not in v["dLabel"], v)
     chk("(5) %s: the Hive's challenge is its own - not a count of questions, not the Ronin's test (%s / %s)" % (k, v["hive"]["label"], v["hive"]["ronin"]),
-        "questions" not in v["hive"]["label"] and "test of" not in v["hive"]["label"].lower() and v["hive"]["label"] != v["hive"]["ronin"], v["hive"])
+        "questions" not in v["hive"]["label"] and "test of" not in v["hive"]["label"].lower() and v["hive"]["label"] != v["hive"]["ronin"]
+        # (384 r14) and it is hosting Virtual Room matches, VR_HOST_NEED of them - not the Strobe's winning ones
+        and v["hive"]["label"].startswith("Host ") and "Virtual Room" in v["hive"]["label"] and v["hive"]["need"] == v["hive"]["hostNeed"] == 3
+        and v["hive"]["label"] != v["hive"]["strobe"], v["hive"])
     chk("(6) %s: one ultimate - %s - and its banner (%s %s), asking for everything" % (k, v["top"], v["ultimates"], v["ultBanners"]),
         len(v["ultimates"]) == 1 and v["ultimates"][0].startswith(v["top"] + ":everything") and v["ultBanners"] == [v["top"]], v)
 chk("(4) Fire Code: Hazmat 100 in a row across tests (99 no, 100 yes), 14 different days (%s, %s)" % (I["streak"], I["days"]),
