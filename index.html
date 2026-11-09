@@ -313,6 +313,59 @@
   }catch(e){}
 </script>
 <script>
+  /* BUILD 384 (round 18): A TOOLBAR COLLAPSING IS NOT A RESIZE THE APP HAS TO ANSWER FRAME BY FRAME. Madison: "the bottom tab is a little
+     laggy", "the swiping and sliding is terrible". In a Safari tab the layout viewport changes height every frame while the toolbar
+     collapses or comes back, and every window "resize" listener in the app (thirty-odd: the tab bar's centring and glass, the chat dock,
+     the test header, the splash's centring, the insets, the Safari model...) ran each time, several of them reading layout after
+     writes. Measured with a viewport that grows and shrinks 47px in 94 frames, at 4x CPU, on Home: 94 resizes cost 4.9s of script,
+     828 layouts and 1122 style recalcs (the tab bar's own onBarResize 15ms a frame, the splash's place() still running for a splash
+     long gone 5ms, syncChatDock 2.5ms...) - well over a frame each on a phone. A listener now (1) is not called twice for a size it has
+     already answered (the window and the visual viewport both announce the same change) and (2) answers a height-only change of up
+     to 140px - a toolbar, never a keyboard or a rotation - at most once every 120ms, the last of them at the size the viewport ended on; a width change
+     or a bigger one is answered at once, as before. Touch devices only. The tab bar itself sits by CSS (--tabs-bottom) and moves with
+     the viewport's edge on its own. The visual viewport's own listeners are not governed. */
+  (function(){
+    try{
+      if(!window.matchMedia || !window.matchMedia("(hover:none), (pointer:coarse)").matches || typeof WeakMap !== "function") return;
+      var add = window.addEventListener, remove = window.removeEventListener, wraps = new WeakMap();
+      function wrapFor(fn){
+        var w = wraps.get(fn);
+        if(w) return w;
+        var st = { w: -1, h: -1, t: 0, e: null, at: 0 };
+        function answer(e){ st.t = 0; st.at = Date.now(); st.w = window.innerWidth; st.h = window.innerHeight; return fn.call(window, e); }
+        w = function(e){
+          if(e && e.isTrusted === false) return fn.call(this, e);   /* a resize the page or a test made up is always answered */
+          var iw = window.innerWidth, ih = window.innerHeight;
+          if(st.w === iw && st.h === ih && !st.t) return;   /* a size it has answered already */
+          if(st.w === iw && st.h > 0 && Math.abs(ih - st.h) <= 140){
+            /* a toolbar: at most one answer every 120ms, the last of them at the size the viewport ended on */
+            st.e = e;
+            if(!st.t){
+              var wait = 120 - (Date.now() - st.at);
+              if(wait <= 0) return answer(e);
+              st.t = setTimeout(function(){ answer(st.e); }, wait);
+            }
+            return;
+          }
+          if(st.t){ clearTimeout(st.t); st.t = 0; }
+          st.at = Date.now(); st.w = iw; st.h = ih;
+          return fn.call(this, e);
+        };
+        wraps.set(fn, w);
+        return w;
+      }
+      window.addEventListener = function(type, fn, opts){
+        if(type === "resize" && typeof fn === "function") return add.call(this, type, wrapFor(fn), opts);
+        return add.call(this, type, fn, opts);
+      };
+      window.removeEventListener = function(type, fn, opts){
+        if(type === "resize" && typeof fn === "function" && wraps.has(fn)) return remove.call(this, type, wraps.get(fn), opts);
+        return remove.call(this, type, fn, opts);
+      };
+    }catch(e){}
+  })();
+</script>
+<script>
   /* Reported from a Safari tab, with a screenshot circling both: a band
      across the top under the status bar and another behind the toolbar
      at the bottom, neither matching the splash between them.
@@ -34214,6 +34267,13 @@ html.is-browser{ --fade-paper: transparent; }
      Safari's bars and what shows past them is the root's flat colour (--band, as at the top: 341), so the bottom now eases into
      --band over its last 3rem exactly as the top eases out of it, and the two meet it with no line. Only while the page runs
      BETWEEN Safari's bars - over a full-screen page (html.safari-bars-over) the sky runs under them and this stays as it was. */
+  /* BUILD 384 (round 18): A SCREEN THAT FITS DOES NOT SCROLL IN A SAFARI TAB. html{min-height:100lvh} (977) is the viewport with
+     Safari's toolbar minimised, ~47pt taller than the one the page has at rest, so Welcome, Home and the boards were all that much
+     scrollable: any touch that drifted vertically (a swipe, a slide on the tab bar's neighbours, a tap with a thumb roll) scrolled
+     the document, Safari shrank its toolbar, the layout viewport resized under the fixed tab bar, and every resize listener ran.
+     (His Welcome frames show the scroll indicator on a screen with nothing to scroll.) At rest the root's box is the viewport the
+     page has (dvh): the paper layer still reaches the bottom, and the layers sized in lvh are no-repeat on the canvas beyond it. */
+  html.is-browser{ min-height:100vh; min-height:100dvh; }
   html.is-browser:not(.safari-bars-over){ --fade-paper: var(--band, transparent); --fade-bot-solid: 0px; --fade-bot: 3rem; --fade-top: 3rem; }
   /* ...and the tab bar's shadow (0 4px 18px, 22px past its bottom edge, which sits 12px off the page's) ends in the same line, so in a
      tab it is 0 2px 8px: it stops inside the 12px */
