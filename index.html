@@ -81161,10 +81161,10 @@ const IFC_BANNER_ART = {
   },
 
   /* ---- THE FOUR SECRET FLARES, round 9 (Madison: "The secret flare ones need to be better I'm not a huge fan tbh.") - each still its character's own picture in
-     its own colours (Nebula red/orange/yellow, Quasar violet, Whiteout ice blue, Aurora green and rose), but drawn as the real thing, big, and each in a setting of its
+     its own colours (Nebula red/orange/yellow, Quasar violet, Whiteout ice blue, Comet icy cyan and rose), but drawn as the real thing, big, and each in a setting of its
      own: no two share a horizon, a lake or a row of pines any more. Soft light is radial gradients and stacked low-opacity shapes; there are no filters.
      (r11: the Pulsar and the Eclipse were renamed Whiteout and Aurora with their characters, and their pictures redrawn to match - a blizzard and the
-     northern lights.) ---- */
+     northern lights; r13: genesis became the Comet, so its banner is a great comet now.) ---- */
   /* NEBULA (flare_void): a stellar nursery filling the whole banner - banks of glowing gas in red, magenta, orange and gold with dark dust lanes across them; three
      pillars of dust leaning up out of the cloud (soft-edged, lumpy, lit along their tops, the cloud in front of their feet so they stand IN it, not on the ground), and
      at the tip of each the newborn star it has just lit - red, orange (the tallest), yellow - its four spikes of light. Bright young stars with spikes scattered
@@ -81364,87 +81364,89 @@ const IFC_BANNER_ART = {
       { svg: sheet(6113, 26, 40, 1.5, "#FFFFFF", .5, 18, 3, 0, 180), box: [0, 0, 960, 180], vb: [0, 0, 960, 180], cls: "bl-slide", style: "animation-duration:3.4s" }
     ];
   },
-  /* AURORA (flare_genesis; r11, was the Eclipse - its character, genesis, is the Aurora now): the northern lights over a frozen lake. Three great curtains
-     hung across the night sky, each built of rays that rise off a sharp bright green lower edge (a rose fringe under it, as in a strong display) and fade up
-     through teal into rose; the curtains fold, overlap and sway on their own clocks. Under them a dark range with its snow catching the green, a black
-     shore of spruce, and the frozen lake giving the lights back, broken by the ice. The core flare burns among the lights, a long upright ray through it
-     like the curtains' own. Nothing here is shared with the Whiteout (no storm, no poles, no ridge). */
+  /* COMET (flare_genesis; r13, was the Aurora and before that the Eclipse - its character, genesis, is the Comet now): a great comet over a frozen sea.
+     The nucleus burns right of centre, a hard white bead in a cyan coma - the secret flare IS the nucleus - and out of it streams the tail, up and away to
+     the left across the whole sky: the ion tail long, straight-ish and layered (a wide soft glow, a brighter body, a white core) running cyan into rose, with
+     fine streamers along it, and under it the fainter dust tail, broader and more curved, warm white going rose. Debris glints along the tail, a fragment
+     shoots off now and then, the Milky Way lies faint behind it all. Below, a dark plain of sea ice with pressure ridges catching the comet's cyan on their
+     tops and a smear of its light on the ice. The tails shimmer on their own clocks, the coma breathes, the bead pulses, the debris drifts and twinkles.
+     Nothing here is shared with the Nebula, the Quasar or the Whiteout (no gas cloud, no disc, no storm). */
   flare_genesis(u){
     const rnd = bnRand(3816);
-    const st = bnStarsSplit(rnd, 100, 120);
-    const HZ = 134, FX = 322, FY = 42, SQ = .5;
-    const CUR = [["cA", [[0, "#C8FFE4", 0.95], [0.07, "#3DF5A0", 0.9], [0.4, "#1FC28C", 0.4], [0.7, "#F062AA", 0.34], [1, "#FF5CA8", 0]]],
-      ["cB", [[0, "#B8FFF0", 0.9], [0.08, "#34E0B4", 0.85], [0.45, "#22A890", 0.32], [0.74, "#F06AAE", 0.32], [1, "#FF5CA8", 0]]],
-      ["cC", [[0, "#E6FFF2", 1], [0.06, "#5CFFB0", 0.95], [0.35, "#2ED894", 0.5], [0.68, "#FF68B0", 0.36], [1, "#FF7AB8", 0]]]];
-    const defs = '<defs>' + bnLin(u + "sky", [[0, "#02040C"], [0.45, "#05122A"], [0.8, "#0A2834"], [1, "#12403C"]]) +
-      CUR.map(([k, s]) => bnLin(u + k, s, 0, 1, 0, 0) + bnLin(u + k + "r", s, 0, 0, 0, 1)).join("") +
-      bnRad(u + "sglow", [[0, "#2ED894", 0.32], [0.5, "#1A8A70", 0.12], [1, "#1A8A70", 0]]) +
-      bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.24, "#FFFFFF", 0.95], [0.5, "#9FFFE0", 0.55], [0.78, "#FF5CA8", 0.22], [1, "#FF5CA8", 0]]) +
-      bnRad(u + "halo", [[0, "#FFFFFF", 0.5], [0.3, "#7FFFD0", 0.2], [1, "#FF5CA8", 0]]) +
-      bnLin(u + "ray", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.9], [1, "#FFFFFF", 0]]) +
-      bnLin(u + "rng", [[0, "#12303A"], [1, "#050E16"]]) + bnLin(u + "lake", [[0, "#0A2A30"], [0.35, "#061820"], [1, "#02070C"]]) + '</defs>';
-    /* a curtain: rays (narrow slanted strips, each with its own gradient so the bright edge hugs the curve) standing on a wavy lower edge, folded by
-       brightness; plus the edge itself and its rose fringe. Returns the curtain and its reflection (every third ray, mirrored and squashed into the lake) */
-    const curtain = (k, seed, x0, x1, step, yb, hgt, op) => {
-      const r = bnRand(seed), ry = v => bnF(HZ + (HZ - v) * SQ); let s = "", streak = "", edge = "", redge = [], i = 0;
-      for(let x = x0; x <= x1; x += step, i++){
-        const w = step * 1.6, y0 = yb(x) + (r() - .5) * 1.6, y1 = yb(x + w), h = hgt(x) * (.55 + r() * .6), t = h * .08;
-        const fold = .35 + .65 * Math.abs(Math.sin(x / 19 + seed));
-        const o = bnF(op * fold * (.55 + r() * .45));
-        s += '<path d="M' + bnF(x) + ' ' + bnF(y0) + ' L' + bnF(x + w) + ' ' + bnF(y1) + ' L' + bnF(x + w + t) + ' ' + bnF(y1 - h) + ' L' + bnF(x + t) + ' ' + bnF(y0 - h) + ' Z" fill="url(#' + u + k + ')" opacity="' + o + '"/>';
-        if(i % 3 === 0) streak += "M" + bnF(x + 1) + " " + ry(y0) + " L" + bnF(x + 1) + " " + ry(y0 - h * .5) + " ";
-        redge.push([x, y0]);
-        edge += (edge ? " L" : "M") + bnF(x) + " " + bnF(y0);
-      }
-      s += fbL(edge, "#3DF5A0", 5, ' opacity=".14"') + fbL(edge, "#E6FFF2", .8, ' opacity=".55"') + '<path d="' + edge + '" fill="none" stroke="#FF5CA8" stroke-width="3" opacity=".12" transform="translate(0 3)"/>';
-      /* the reflection: the edge mirrored and squashed into the lake, a soft band hanging off it, faint rays down it */
-      const top = redge.map(p => bnF(p[0]) + " " + ry(p[1])), bot = redge.slice().reverse().map(p => bnF(p[0]) + " " + bnF(+ry(p[1]) + 16));
-      const refl = '<path d="M' + top.join(" L") + " L" + bot.join(" L") + ' Z" fill="url(#' + u + k + 'r)" opacity="' + bnF(op * .5) + '"/>' + fbL(streak, "#7FFFD0", 2.4, ' opacity=".05"') + fbL("M" + top.join(" L"), "#C8FFE4", .7, ' opacity=".25"');
-      return { s, refl };
+    const st = bnStarsSplit(rnd, 120, 150);
+    const NX = 338, NY = 74, GZ = 150;
+    const defs = '<defs>' + bnLin(u + "sky", [[0, "#01030C"], [0.5, "#041026"], [0.82, "#0A2236"], [1, "#12324A"]]) +
+      bnRad(u + "milk", [[0, "#9FB8E8", 0.14], [0.6, "#5A78B8", 0.05], [1, "#5A78B8", 0]]) +
+      bnLin(u + "ion", [[0, "#FF5CA8", 0], [0.35, "#E05AB8", 0.3], [0.7, "#5CE1FF", 0.6], [1, "#E8FCFF", 0.95]], 0, 0, 1, 1) +
+      bnLin(u + "ionG", [[0, "#FF5CA8", 0], [0.45, "#C85AC8", 0.16], [0.8, "#5CE1FF", 0.3], [1, "#B8F4FF", 0.5]], 0, 0, 1, 1) +
+      bnLin(u + "core", [[0, "#B8F4FF", 0], [0.5, "#CFF8FF", 0.55], [1, "#FFFFFF", 1]], 0, 0, 1, 1) +
+      bnLin(u + "dust", [[0, "#FF5CA8", 0], [0.4, "#FF6AAE", 0.22], [0.78, "#FFB89A", 0.4], [1, "#FFF2E4", 0.6]], 0, 0, 1, 0) +
+      bnRad(u + "coma", [[0, "#FFFFFF", 0.95], [0.12, "#CFF8FF", 0.7], [0.35, "#5CE1FF", 0.28], [0.7, "#2A8AC8", 0.08], [1, "#2A8AC8", 0]]) +
+      bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.28, "#FFFFFF", 0.95], [0.55, "#9FF0FF", 0.55], [0.8, "#FF5CA8", 0.2], [1, "#FF5CA8", 0]]) +
+      bnLin(u + "spk", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.95], [1, "#FFFFFF", 0]], 0, 0, 1, 0) +
+      bnLin(u + "ice", [[0, "#0E2232"], [0.3, "#081420"], [1, "#020509"]]) + bnLin(u + "ridge", [[0, "#1E3C52"], [0.5, "#0C1C2A"], [1, "#050C14"]]) +
+      bnRad(u + "smear", [[0, "#5CE1FF", 0.32], [0.5, "#5CE1FF", 0.1], [1, "#5CE1FF", 0]]) +
+      bnLin(u + "met", [[0, "#FFFFFF", 0], [1, "#CFF8FF", 0.9]], 1, 0, 0, 1) + '</defs>';
+    /* a tapered tail along a quadratic spine from the nucleus to (ex, ey) through (cx, cy): width w0 at the head opening to w1 at the far end */
+    const tail = (cx, cy, ex, ey, w0, w1, n) => {
+      const L = [], R = [];
+      for(let i = 0; i <= n; i++){ const t = i / n, a = (1 - t) * (1 - t), b = 2 * t * (1 - t), c = t * t;
+        const x = a * NX + b * cx + c * ex, y = a * NY + b * cy + c * ey;
+        const dx = 2 * (1 - t) * (cx - NX) + 2 * t * (ex - cx), dy = 2 * (1 - t) * (cy - NY) + 2 * t * (ey - cy), m = Math.hypot(dx, dy) || 1;
+        const w = (w0 + (w1 - w0) * Math.pow(t, .8)) / 2, nx = -dy / m * w, ny = dx / m * w;
+        L.push(bnF(x + nx) + " " + bnF(y + ny)); R.push(bnF(x - nx) + " " + bnF(y - ny)); }
+      return "M" + L.join(" L") + " L" + R.reverse().join(" L") + " Z";
     };
-    const C1 = curtain("cB", 7201, -40, 300, 4.5, x => 76 + Math.sin(x / 58 + .5) * 12 + Math.sin(x / 21) * 4, x => 62 + Math.sin(x / 40) * 16, .75);
-    const C2 = curtain("cA", 7202, -40, 520, 4.5, x => 106 - x * .055 + Math.sin(x / 66 + 1.2) * 15 + Math.sin(x / 25 + .4) * 4, x => 92 + Math.sin(x / 33 + 2) * 22, .85);
-    const C3 = curtain("cC", 7203, 236, 520, 4, x => 70 + Math.sin(x / 34 + 2.4) * 13 + Math.sin(x / 13) * 2.4, x => 70 + Math.sin(x / 27) * 18, .9);
-    /* the range: rounded peaks, their snow catching the green along the ridge line */
-    const mr = bnRand(7204);
-    let rng = "M-10 " + HZ, snow = "";
-    const peaks = [];
-    for(let x = -10; x <= 490; x += 12){ const y = HZ - 6 - Math.max(0, Math.sin(x * .019 + .8)) * 26 - Math.max(0, Math.sin(x * .047 + 2)) * 8 - mr() * 3; peaks.push([x, y]); rng += " L" + x + " " + bnF(y); }
-    rng += " L490 " + (HZ + 1) + " L-10 " + (HZ + 1) + " Z";
-    peaks.forEach(([x, y], i) => { if(!i) return; const p = peaks[i - 1]; if(Math.min(y, p[1]) < HZ - 16) snow += (snow && p[1] < HZ - 16 ? " L" : " M") + bnF(p[0]) + " " + bnF(p[1] + .6) + " L" + bnF(x) + " " + bnF(y + .6); });
-    /* the shore: a low black bank of spruce, each a stack of drooping tiers to a spire */
-    const tr = bnRand(7205);
-    let trees = "M-10 " + (HZ + 2) + " L-10 " + (HZ - 3);
-    for(let x = -6; x < 490; x += 5 + tr() * 7){ const h = 6 + tr() * 16 * (x < 150 || x > 360 ? 1 : .55), w = h * .3, b = HZ - 2 - tr() * 1.5;
-      trees += " L" + bnF(x - w) + " " + bnF(b) + " L" + bnF(x - w * .5) + " " + bnF(b - h * .45) + " L" + bnF(x - w * .7) + " " + bnF(b - h * .45) + " L" + bnF(x) + " " + bnF(b - h) + " L" + bnF(x + w * .7) + " " + bnF(b - h * .45) + " L" + bnF(x + w * .5) + " " + bnF(b - h * .45) + " L" + bnF(x + w) + " " + bnF(b); }
-    trees += " L490 " + (HZ - 3) + " L490 " + (HZ + 2) + " Z";
-    /* the ice: snow lying on it in patches, pressure cracks, the shore's dark line */
-    const ir = bnRand(7206);
-    let ice = "", crack = "";
-    for(let i = 0; i < 7; i++){ const x = ir() * 480, y = HZ + 8 + ir() * 40; ice += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(26 + ir() * 50) + '" ry="' + bnF(1.4 + ir() * 2.2) + '" fill="#B8D8E0" opacity="' + bnF(.06 + ir() * .08) + '"/>'; }
-    for(let i = 0; i < 6; i++){ let x = ir() * 480, y = HZ + 6 + ir() * 40; crack += "M" + bnF(x) + " " + bnF(y); for(let k = 0; k < 4; k++){ x += 8 + ir() * 16; y += (ir() - .5) * 3; crack += " L" + bnF(x) + " " + bnF(y); } crack += " "; }
-    const sheen = '<rect x="120" y="' + (HZ + 10) + '" width="240" height="1" fill="#9FFFE0" opacity=".2"/><rect x="200" y="' + (HZ + 20) + '" width="200" height="1" fill="#FFB0D0" opacity=".14"/><rect x="60" y="' + (HZ + 31) + '" width="180" height="1" fill="#9FFFE0" opacity=".14"/>';
+    /* the ion tail: a wide soft glow, the body, the white core; streamers fanning a little along it */
+    /* soft edges are stacked layers, each wider and fainter than the one inside it */
+    const ionG = [[150, .3], [112, .45], [80, .6]].map(([w, o]) => fbP(tail(172, 42, -40, 8, 5, w, 24), "url(#" + u + "ionG)", ' opacity="' + o + '"')).join("");
+    const ion = [[54, .6], [32, .75]].map(([w, o]) => fbP(tail(176, 46, -40, 14, 4, w, 24), "url(#" + u + "ion)", ' opacity="' + o + '"')).join("") + fbP(tail(182, 52, -20, 24, 2.4, 12, 20), "url(#" + u + "core)", ' opacity=".8"');
+    const sr = bnRand(7301);
+    let strm = "";
+    for(let i = 0; i < 7; i++){ const off = (i - 3) * 7 + (sr() - .5) * 4; strm += fbP(tail(176, 44 + off * .5, -30 + sr() * 60, 14 + off * 1.6, .6, 2.6 + sr() * 2, 16), "url(#" + u + "ion)", ' opacity="' + bnF(.35 + sr() * .35) + '"'); }
+    /* the dust tail: broader, more curved, fainter, warm */
+    const dust = [[120, .3], [84, .4], [50, .55]].map(([w, o]) => fbP(tail(214, 104, -40, 112, 5, w, 24), "url(#" + u + "dust)", ' opacity="' + o + '"')).join("");
+    /* debris along the tail: glints that drift and twinkle, two sets on their own clocks */
+    const deb = seed => { const r = bnRand(seed); let s = "";
+      for(let i = 0; i < 14; i++){ const t = .08 + r() * .8, x = NX + (-20 - NX) * t + (r() - .5) * 30, y = NY + (20 - NY) * t + (r() - .5) * 40 * t + 10 * t * (1 - t) * -4, rr = .5 + r() * 1.1;
+        s += fbC(x, y, rr, ["#E8FCFF", "#9FF0FF", "#FFC8E0"][i % 3], ' opacity="' + bnF(.5 + r() * .5) + '"'); }
+      return s; };
+    /* the Milky Way behind it all */
+    const mw = bnRand(7302);
+    let milk = "";
+    for(let i = 0; i < 8; i++){ const t = i / 7, x = 30 + t * 440, y = 150 - t * 140 + (mw() - .5) * 16; milk += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(60 + mw() * 40) + '" ry="' + bnF(16 + mw() * 10) + '" fill="url(#' + u + 'milk)" transform="rotate(-18 ' + bnF(x) + ' ' + bnF(y) + ')"/>'; }
+    /* the sea ice: a far flat edge, then pressure ridges of broken floes, their tops lit cyan from the comet */
+    const ir = bnRand(7303);
+    let ridges = "", rims = "";
+    [[GZ + 4, 5, 9, 26], [GZ + 16, 8, 14, 34], [GZ + 30, 12, 20, 46]].forEach(([y0, hMin, hMax, step], k) => {
+      let x = -20, d = "M-20 " + (y0 + 30) + " L-20 " + y0, rim = "";
+      while(x < 500){ const w = step * (.5 + ir() * .7), h = hMin + ir() * (hMax - hMin), pk = x + w * (.3 + ir() * .4);
+        if(ir() < .55){ d += " L" + bnF(pk) + " " + bnF(y0 - h) + " L" + bnF(pk + w * .18) + " " + bnF(y0 - h * .7) + " L" + bnF(x + w) + " " + bnF(y0);
+          rim += "M" + bnF(pk) + " " + bnF(y0 - h) + " L" + bnF(pk + w * .18) + " " + bnF(y0 - h * .7) + " L" + bnF(pk + w * .3) + " " + bnF(y0 - h * .4) + " "; }
+        else d += " L" + bnF(x + w) + " " + bnF(y0 - ir() * 2);
+        x += w; }
+      ridges += fbP(d + " L500 " + (y0 + 30) + " Z", "url(#" + u + "ridge)", k ? "" : ' opacity=".85"'); rims += rim; });
+    const crack = (() => { let s = ""; for(let i = 0; i < 5; i++){ let x = ir() * 460, y = GZ + 6 + ir() * 8; s += "M" + bnF(x) + " " + bnF(y); for(let k = 0; k < 4; k++){ x += 10 + ir() * 18; y += (ir() - .5) * 2; s += " L" + bnF(x) + " " + bnF(y); } s += " "; } return s; })();
     return [
-      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:3.2s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.4s;animation-delay:-1.6s" },
-      /* the sky's own glow off the display */
-      { svg: '<ellipse cx="260" cy="96" rx="280" ry="70" fill="url(#' + u + 'sglow)"/>', box: [-20, 26, 560, 140], o: [260, 96], cls: "bl-breathe", style: "animation-duration:6s" },
-      /* the curtains, back to front, each swaying from its lower edge */
-      { svg: C1.s, box: [-60, -10, 400, 110], vb: [-60, -10, 400, 110], o: [130, 92], cls: "bl-sway", style: "animation-duration:12s;animation-delay:-5s" },
-      { svg: C2.s, box: [-60, -20, 600, 150], vb: [-60, -20, 600, 150], o: [240, 110], cls: "bl-sway", style: "animation-duration:9s" },
-      { svg: C3.s, box: [220, -20, 320, 110], vb: [220, -20, 320, 110], o: [380, 86], cls: "bl-shimmer", style: "animation-duration:4.2s" },
-      /* the core flare among the lights */
-      { svg: '<circle cx="' + FX + '" cy="' + FY + '" r="44" fill="url(#' + u + 'halo)"/><circle cx="' + FX + '" cy="' + FY + '" r="15" fill="url(#' + u + 'bead)"/><circle cx="' + FX + '" cy="' + FY + '" r="3.6" fill="#FFFFFF"/>',
-        box: [FX - 44, FY - 44, 88, 88], o: [FX, FY], cls: "bl-pulse", style: "animation-duration:2.6s" },
-      { svg: '<rect x="' + (FX - 1.1) + '" y="' + (FY - 40) + '" width="2.2" height="80" fill="url(#' + u + 'ray)"/><path d="M' + (FX - 16) + ' ' + FY + ' L' + (FX + 16) + ' ' + FY + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".85"/>',
-        box: [FX - 16, FY - 40, 32, 80], o: [FX, FY], cls: "bl-glow", style: "animation-duration:1.8s" },
-      /* the land: the range and the lake */
-      { svg: fbP(rng, "url(#" + u + "rng)") + fbL(snow, "#BFFFE4", .8, ' opacity=".4"') + '<rect x="-10" y="' + HZ + '" width="500" height="' + (190 - HZ) + '" fill="url(#' + u + 'lake)"/>' },
-      /* the lights given back by the ice */
-      { svg: C1.refl + C2.refl + C3.refl + '<circle cx="' + FX + '" cy="' + bnF(HZ + (HZ - FY) * SQ) + '" r="10" fill="url(#' + u + 'bead)" opacity=".6"/>', box: [-60, HZ, 600, 60], vb: [-60, HZ, 600, 60], cls: "bl-glow", style: "animation-duration:4.2s" },
-      { svg: ice + fbL(crack, "#CFEFF0", .5, ' opacity=".22"') + fbP(trees, "#020509") + '<rect x="-10" y="' + (HZ + 1.6) + '" width="500" height=".8" fill="#3DF5A0" opacity=".25"/>' },
-      { svg: sheen, box: [50, HZ + 6, 360, 30], cls: "bl-shimmer", style: "animation-duration:3.4s" }
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + milk + st.still },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.4s;animation-delay:-1.5s" },
+      /* the tails, each shimmering out of the nucleus on its own clock */
+      { svg: dust, box: [-60, 30, 420, 120], vb: [-60, 30, 420, 120], o: [NX, NY], cls: "bl-shimmer", style: "animation-duration:6s;animation-delay:-2s" },
+      { svg: ionG + ion, box: [-60, -40, 420, 140], vb: [-60, -40, 420, 140], o: [NX, NY], cls: "bl-shimmer", style: "animation-duration:4.2s" },
+      { svg: strm, box: [-60, -40, 420, 140], vb: [-60, -40, 420, 140], o: [NX, NY], cls: "bl-glow", style: "animation-duration:2.6s" },
+      { svg: deb(7311), box: [-40, -20, 420, 140], vb: [-40, -20, 420, 140], cls: "bl-mote", style: "animation-duration:7s" },
+      { svg: deb(7312), box: [-40, -20, 420, 140], vb: [-40, -20, 420, 140], cls: "bl-mote", style: "animation-duration:9s;animation-delay:-4s" },
+      /* a fragment breaking off and shooting away now and then */
+      { svg: '<path d="M380 26 L404 14" stroke="url(#' + u + 'met)" stroke-width="1.3" stroke-linecap="round"/><circle cx="380" cy="26" r="1.3" fill="#FFFFFF"/>', box: [340, 0, 100, 60], cls: "bl-meteor", style: "animation-duration:7.5s;animation-delay:-2s" },
+      /* the coma, and the secret flare as the nucleus */
+      { svg: '<circle cx="' + NX + '" cy="' + NY + '" r="46" fill="url(#' + u + 'coma)"/>', box: [NX - 46, NY - 46, 92, 92], o: [NX, NY], cls: "bl-breathe", style: "animation-duration:4s" },
+      { svg: '<circle cx="' + NX + '" cy="' + NY + '" r="15" fill="url(#' + u + 'bead)"/><circle cx="' + NX + '" cy="' + NY + '" r="3.8" fill="#FFFFFF"/>', box: [NX - 15, NY - 15, 30, 30], o: [NX, NY], cls: "bl-pulse", style: "animation-duration:2.2s" },
+      { svg: '<rect x="' + (NX - 34) + '" y="' + (NY - 1) + '" width="68" height="2" fill="url(#' + u + 'spk)"/><path d="M' + NX + ' ' + (NY - 20) + ' L' + NX + ' ' + (NY + 20) + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".85"/>',
+        box: [NX - 34, NY - 20, 68, 40], o: [NX, NY], cls: "bl-glow", style: "animation-duration:1.7s" },
+      /* the sea ice */
+      { svg: '<rect x="-10" y="' + GZ + '" width="500" height="' + (190 - GZ) + '" fill="url(#' + u + 'ice)"/><rect x="-10" y="' + (GZ - .4) + '" width="500" height="1" fill="#5CE1FF" opacity=".3"/>' +
+          '<ellipse cx="' + (NX - 30) + '" cy="' + (GZ + 8) + '" rx="120" ry="7" fill="url(#' + u + 'smear)"/>' + fbL(crack, "#9FD8E8", .5, ' opacity=".2"') + ridges + fbL(rims, "#8FEAFF", .6, ' opacity=".4"') }
     ];
   },
   /* ---- THE RANGERS' BANNERS (384: "Same for the ultimate character banners, not a big fan of any
@@ -81620,9 +81622,10 @@ const IFC_BANNER_LOOK = {
   level80: ["Top Floor", "#FFB04A", "#4A6AD8"], early10: ["After Hours", "#3FD0C0", "#F2C14E"],
   exam100: ["Clean Sweep", "#3CD9A0", "#FF5A4A"], flare_void: ["Nebula", "#F97316", "#EF4444"],
   /* (384 r9) the secret flare banners carry their characters' names: "rename banner names to match" - Pulsar's character is
-     Whiteout now and Eclipse's is Aurora; (r11) the Aurora's swatch is the lights' green and rose, not the eclipse's pink and orange */
+     Whiteout now and Eclipse's is Aurora; (r11) the Aurora's swatch is the lights' green and rose, not the eclipse's pink and orange;
+     (r13) genesis is the Comet: the banner is "Comet" and its swatch the comet's icy cyan and rose */
   flare_umbra: ["Quasar", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Whiteout", "#6FB4F2", "#CFEAFF"],
-  flare_genesis: ["Aurora", "#34E0A1", "#FF5CA8"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
+  flare_genesis: ["Comet", "#5CE1FF", "#FF5CA8"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
   celestial: ["Comet Ranger", "#3FE9FF", "#1E8AB8"], zenith: ["Star Ranger", "#FFD36A", "#6A4AC8"]
 };
 if(IFC_ART_ON){

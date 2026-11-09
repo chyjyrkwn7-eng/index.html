@@ -37424,3 +37424,28 @@ Madison, after sixteen other ideas: "Do the biggest unit one. Score a 100 on the
 
 ### 384 r13 - the app icon recalibrated to iOS 26's new dark mode
 Madison, a Home Screen photo: "They updated the Apple dark mode, it's a different dark mode now. Update that." Sampled at .1/.25/.5/.75/.9 down each tile (clear of the glyphs), Claude, Canvas and Authenticator now read 31 / 28 / 23 / 18 / 16, neutral; Nova read 46 / 42 / 34 / 27 / 23 (still calibrated to the old Claude, #2E2E2E -> #171718). tools/gen-app-icon.py GREY_TOP/GREY_BOTTOM #323232/#141414 -> #212121/#0E0E0E; the shipped pixel V renders 31 / 28 / 23 / 19 / 16, R=G=B. Written to all three places (apple-touch-icon, favicon, manifest icons) and the share/ PNGs; share/icon-512.png and og-card.png regenerated with tools/gen-share-card.py (gen-app-icon --check reads share/icon-512.png and flagged it until then). Both --check pass. INSTALL-TIME: an installed Home Screen icon keeps the old tile until it is removed and re-added; frameId is NOT bumped (that is Madison's call - it prompts every installed device once).
+### 384 r13 (r13-banner, cut from claude/b384 9c276e7; NOT on main) - the genesis secret flare banner is the Comet
+Madison picked Comet as the genesis secret character (a carved-ice face, its hair the comet's tail in cyan-to-rose, the core flare at its heart; the
+character itself ships on r13-chars). So flare_genesis, drawn as the Aurora in r11, is renamed and redrawn: IFC_BANNER_LOOK flare_genesis
+["Comet", "#5CE1FF", "#FF5CA8"] (icy cyan + rose; was ["Aurora", "#34E0A1", "#FF5CA8"]). Ids, unlock rule and the "Comes with X, a secret flare
+character" label logic are untouched (the label follows AVATAR_DISPLAY_NAME, so it reads Comet once the character branch lands). Only this one banner
+changed; every other banner in both classes is byte-identical to 9c276e7 (gated).
+- THE SCENE: a great comet over a frozen sea. The nucleus right of centre (338, 74) - the secret flare IS the nucleus: a white bead with a cyan-to-rose halo,
+  a short horizontal glint and an upright spike, in a cyan coma. Out of it, up and away to the top-left corner, the ION TAIL: three wide soft glow layers,
+  two body layers and a white core, each a tapered quadratic-spine shape opening from ~4 to 150 units, their ramp icy cyan at the head into rose at the far
+  end (stacking wider/fainter layers is what gives the soft edge); seven fine streamers along it. Under it the DUST TAIL, broader, more curved and fainter,
+  warm white -> peach -> rose. The Milky Way faint across the sky behind, stars. Below, sea ice: a cyan-lit horizon line, three rows of pressure ridges
+  (broken floes) with cyan rims on their comet-facing slopes, cracks, a smear of the comet's light on the ice. Both flares on the Profile cover sit clear of
+  the avatar (the tail crosses above it).
+- MOTION (transform/opacity only, no filters): ion tail shimmer 4.2s and dust tail 6s, both scaling out of the nucleus; streamers glow 2.6s; two debris
+  sets of glints drifting along the tail (bl-mote 7s / 9s); a fragment shooting off (bl-meteor 7.5s); coma breathe, bead pulse, spike glow; stars twinkle.
+  275 elements, 13 layers.
+- Tried and dropped: single wide tail wedges (read as flat geometric cones), a grey dust tail (#FFE6D0 at low opacity over navy goes grey - warmed to
+  peach/rose), full chevron rims on every floe (read as scattered "^" marks).
+- GATES: check-b384-r9-banners (9) keeps the Whiteout lines and the 3b1526d pin (the Aurora part lines retired); NEW (10) with .prev3.json (9c276e7's hashes,
+  --dump3 --against the base): flare_genesis alone differs, the 41 others byte-identical; named Comet; a coma and the flare's bead with the ion and dust tails
+  shimmering out of it on their own clocks; the ion ramp has an icy cyan and a rose stop; two debris clocks; no curtains, lake or sway/spin; the swatch
+  cyan + rose. All three (10) lines FAIL on 9c276e7. check-b384-sets (7) and check-b384-fcbanners' name tables: flare_genesis "Comet". RUN one at a time:
+  check-js ALL PASS; check-b384-r9-banners ALL PASS; check-b384-sets ALL PASS; check-b384-fcbanners ALL PASS; check-b384-r5-chars ALL PASS;
+  check-b384-secretnames ALL PASS; check-b384-banners ALL PASS; Profile with the banner: no page error, console only the two blocked Firebase loads.
+- NOT confirmable in Chromium: the tail shimmer's smoothness on an old iPhone.
