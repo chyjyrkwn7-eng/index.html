@@ -37668,6 +37668,15 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > :last-child{ margin-bottom:auto; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > .cal-sub{ margin-top:auto; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > :not(.ios-nav){ translate:0 var(--vrc-shift, 0px); }
+  /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
+  html[data-layout] body #stage > .panel.vroom-finale-solo{
+    display:flex; flex-direction:column; justify-content:center; gap:12px; box-sizing:border-box;
+    min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
+  }
+  html[data-layout] body #stage > .panel.vroom-finale-solo > :is(.vroom-solo-grade, .vroom-waitcard){ width:min(100%, 24rem); align-self:center; box-sizing:border-box; margin-left:0; margin-right:0; }
+  html[data-layout] body #stage > .panel.vroom-finale-solo > .vroom-solo-grade{ text-align:center; padding-bottom:18px; }
+  html[data-layout] body #stage > .panel.vroom-finale-solo > .vroom-solo-grade .rs-pct{ display:inline-block; }
+  html[data-layout] body #stage > .panel.vroom-finale-solo > .vroom-solo-grade .vroom-solo-xp{ margin-top:.5rem; color:var(--soft); }
   /* the cards: the units screen's card next door (Settings' sheen and the board row's lift over the surface, the full rim) -
      "the app needs a cohesive look" (383) */
   html[data-theme][data-layout] body #stage > .panel.modeselect .modecard{
@@ -141101,9 +141110,23 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
     if(review && slot) slot.appendChild(review);
   } else {
     const panel = document.createElement("section");
-    panel.className = "panel rs-screen vroom-finale-panel";
+    panel.className = "panel rs-screen vroom-finale-panel vroom-finale-solo";
     panel.dataset.screen = "results";
-    panel.append(wait);
+    /* (384 r8) NEVER A BARE CARD ON AN EMPTY SCREEN. Madison, this screen on its own: "Idk what this screen is???" When the
+       results are not the screen this lands on (you came back to the room from elsewhere, or "Keep waiting" had nothing kept),
+       it was the wait card alone at the top of a blank page. It now says what it is: your own score and the XP this run
+       earned, as a settled grade card, with the wait card under it, the two centred on the screen. */
+    const mine = document.createElement("div");
+    const passed = Number(pct) >= PASS_MARK;
+    mine.className = "rs-card rs-grade rs-graded vroom-solo-grade " + (passed ? "is-pass" : "is-fail");
+    const kick = document.createElement("p"); kick.className = "rs-kicker"; kick.textContent = "Your score";
+    const num = document.createElement("span"); num.className = "rs-pct pct";
+    try{ gradePctMarkup(num, Math.round(Number(pct) || 0)); }catch(e){ num.textContent = Math.round(Number(pct) || 0) + "%"; }
+    num.style.color = passed ? "var(--right)" : "var(--wrong)";
+    const sub = document.createElement("p"); sub.className = "rs-grade-sub vroom-solo-xp";
+    sub.textContent = Number(totalScore) > 0 ? "+" + Number(totalScore).toLocaleString() + " XP earned" : "Your score is saved";
+    mine.append(kick, num, sub);
+    panel.append(mine, wait);
     if(review) panel.appendChild(review);
     stage.replaceChildren(panel);
     host = panel;
