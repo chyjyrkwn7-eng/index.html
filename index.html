@@ -38663,6 +38663,81 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body :is(.banner-opt-art, .hfx-opt-art) > .pick-mark{ top:.4rem; right:.4rem; left:auto; bottom:auto; }
   @media (min-width:40rem){ html[data-layout] body .pick-mark{ --pm:1.45rem; } html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock){ width:1.3rem; height:1.3rem; } }
   @media (prefers-reduced-motion:reduce){ html[data-layout] body .pick-mark{ transition:none; } }
+  /* ---- THE UNIT CARD, ROUND 8 (384 r8): A STATUS STRIP, THE TITLE, THE FOOT ----
+     Madison, the "NEXT TEST / Nov 9" markers circled: "The way and the position it says next test could be better, secondly,
+     how could the titles look better within the boxes for the phone? Seems a little cramped for a lot of them in the top left
+     corners? ... I'm almost wondering if the '15 questions' should be centered at the bottom". The mark was two lines wedged
+     under the title, so a card with it looked unlike its neighbours; the title sat tight in the corner beside the picked dot.
+     Three layouts were drawn side by side (the mark in the foot over the count; a strip at the top; everything centred with
+     the badge moved up) and the strip won:
+     - EVERY CARD HAS A STATUS STRIP at its top (--uc-strip, one line high, empty on most cards). The next test is one amber
+       line in it, "Next test · Nov 16", left; the picked dot sits on the same line, right. The strip is there on every card,
+       so a title never moves for carrying the mark, and the dot never shares a line with a word.
+     - THE TITLE starts under the strip at the same y on every card, a little larger and with room round it, its lines
+       balanced (text-wrap:balance) and never broken inside a word.
+     - THE FOOT: the count on the card's floor, left, under the title's edge - not centred: the badge stands bottom-right
+       (round 32's place), so a centred count sits between an empty left and the badge, and on a 375px phone it runs into
+       the badge. On an iPad the hundo bar has a row of its own under the count, the same height with or without a bar,
+       so every count in a row is on one baseline (an earned card, with no bar, used to sit 18px lower than its neighbour).
+     The mark is a label, not a control: no box round it, taps still reach the card. */
+  html[data-theme][data-layout] body #stage .picks > label.pick{
+    --uc-strip:1.1rem; --uc-bar:0px; --uc-pt:.9rem; --uc-pr:.95rem; --uc-dot:.8rem;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    grid-template-rows:var(--uc-strip) auto auto minmax(0,1fr) auto var(--uc-bar) !important;
+    grid-template-areas:"next next" "name name" "ver ver" "gap gap" "count badge" "bar badge" !important;
+    column-gap:.5rem !important; row-gap:0 !important; align-items:start;
+    padding:var(--uc-pt) var(--uc-pr) .85rem 1rem !important;
+  }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pname{
+    grid-area:name !important; margin:.45rem 0 0 !important; min-height:0 !important;
+    font-size:.95rem !important; line-height:1.26 !important;
+    text-wrap:balance; overflow-wrap:normal !important; word-break:normal !important; hyphens:manual !important;
+  }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pname::before{ display:none !important; }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pname > .pname-word{ white-space:nowrap; }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{
+    grid-area:next !important; align-self:center !important; justify-self:start !important;
+    display:inline-flex !important; flex-wrap:nowrap !important; align-items:center; gap:0 !important;
+    margin:0 !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:none !important; box-shadow:none !important;
+    max-width:calc(100% - var(--uc-dot) - .4rem); white-space:nowrap;
+    font-size:.7rem !important; line-height:1.2 !important; letter-spacing:0 !important;
+  }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest .pick-nexttest-what{
+    text-transform:none !important; color:#F5B54D !important; font-weight:700 !important; letter-spacing:0 !important; gap:.36rem !important;
+  }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest .pick-nexttest-what::before{ display:block !important; width:.4rem !important; height:.4rem !important; }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest .pick-nexttest-when{
+    padding:0 !important; font-size:1em !important; font-weight:600 !important; letter-spacing:0 !important; color:rgba(255,226,170,.92) !important;
+  }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest .pick-nexttest-when::before{ content:"\00B7"; margin:0 .3em; color:#F5B54D; }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pcount{
+    grid-area:count !important; align-self:end !important; justify-self:start; margin:0 !important; line-height:1.2 !important; font-size:.76rem !important;
+  }
+  html[data-theme][data-layout] body #stage .picks > label.pick .pick-badge{ grid-area:badge !important; align-self:end !important; justify-self:end !important; }
+  html[data-theme][data-layout] body #stage .picks > label.pick .pick-barrow{ grid-area:bar !important; align-self:end !important; }
+  html[data-theme][data-layout] body #stage .picks > label.pick > .pick-version{ grid-area:ver !important; }
+  /* the picked dot on the strip's centre line, at the card's right padding */
+  html[data-theme][data-layout] body #stage .picks > label.pick > .box{
+    top:calc(var(--uc-pt) + (var(--uc-strip) - var(--uc-dot)) / 2) !important; right:var(--uc-pr) !important;
+    width:var(--uc-dot) !important; height:var(--uc-dot) !important;
+  }
+  @media (max-width:399px){
+    html[data-theme][data-layout] body #stage .picks > label.pick{ --uc-pt:.85rem; --uc-pr:.8rem; --uc-dot:.7rem; padding-bottom:.75rem !important; padding-left:.85rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pname{ font-size:.86rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{ font-size:.66rem !important; }
+  }
+  @media (max-width:359px){
+    html[data-theme][data-layout] body #stage .picks > label.pick{ --uc-pr:.7rem; padding-left:.75rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pname{ font-size:.8rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{ font-size:.6rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pcount{ font-size:.66rem !important; }
+  }
+  @media (min-width:40rem){
+    html[data-theme][data-layout] body #stage .picks > label.pick{ --uc-strip:1.25rem; --uc-bar:1.15rem; --uc-pt:1.1rem; --uc-pr:1.2rem; padding-bottom:1rem !important; padding-left:1.2rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pname{ font-size:1.1rem !important; margin-top:.5rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{ font-size:.78rem !important; }
+    html[data-theme][data-layout] body #stage .picks > label.pick > .pcount{ font-size:.84rem !important; }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -71720,6 +71795,19 @@ function appendUnitNextTestTag(row, name){
   const b = document.createElement("span"); b.className = "pick-nexttest-when"; b.textContent = n.when;
   t.append(a, b);
   row.appendChild(t);
+}
+/* (384 r8) A UNIT CARD'S TITLE NEVER BREAKS INSIDE A WORD. Madison: "how could the titles look better within the boxes for
+   the phone? Seems a little cramped". The browser breaks after a hyphen when a line is full, so "Hard-of-Hearing" and Fire
+   Code's "Water-Reactive" or "Agro-Industrial," came apart across two lines. Each hyphenated word is kept whole (a nowrap
+   span); a line still breaks between words and at an em dash ("Systems\u2014Noncompliant" is two words). The text is
+   unchanged - textContent is the title exactly - so the search, the class wording pass and every reader see the same words. */
+function fillUnitTitle(el, text){
+  el.textContent = "";
+  String(text).split(/(\S*[A-Za-z0-9]-[A-Za-z0-9]\S*)/).forEach((part, i) => {
+    if(!part) return;
+    if(i % 2){ const s = document.createElement("span"); s.className = "pname-word"; s.textContent = part; el.appendChild(s); }
+    else el.appendChild(document.createTextNode(part));
+  });
 }
 /* The selected circle's tick, drawn as a stroke so it can draw itself in
    when the unit is picked (build 327: "could they be improved by making
@@ -112254,7 +112342,7 @@ function showSetup(){
     box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
     appendPickTick(box);
     const label = document.createElement("span");
-    label.className = "pname"; label.textContent = unitTitle(name);
+    label.className = "pname"; fillUnitTitle(label, unitTitle(name));
     row.append(cb, box, label);
     appendUnitNextTestTag(row, name);
     appendUnitVersionTag(row, name);
@@ -134058,7 +134146,7 @@ function showVirtualRoomSetup(editRoom){
     box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
     appendPickTick(box);
     const label = document.createElement("span");
-    label.className = "pname"; label.textContent = unitTitle(name);
+    label.className = "pname"; fillUnitTitle(label, unitTitle(name));
     row.append(cb, box, label);
     appendUnitNextTestTag(row, name);
     appendUnitVersionTag(row, name);
