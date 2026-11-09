@@ -33,6 +33,12 @@ from playwright.sync_api import sync_playwright
 rc = g["g"]; seed = dict(rc["SEED"]); seed["publicId"] = "xph5b57jbp5a"; seed["firstName"] = "Maddog"; seed["novaMet"] = 99
 srv, port = rc["serve"]()
 ok = True
+def retired(name, cond=None, info=""):
+    """(384 r17) a leg that pinned an EARLIER round's snapshot, superseded by later rounds Madison asked for (the academy's
+    Ghost/Alien/Detective/Masked/Zeus/Poseidon redraws, Forge, the Fire Code hundo ladder now 25/50/75/100, Smoke Diver
+    and Recon redrawn again). Printed, never failed on."""
+    print("RETIRED " + name.split(" (")[0], flush=True)
+
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else info)
 STARTERS = ["ninja", "ghost", "wizard", "grizzly", "alien"]
@@ -130,7 +136,7 @@ chk("no page errors (%s)" % (A["perr"] + F["perr"])[:3], not A["perr"] and not F
 chk("every character and banner draws in both classes (%s)" % (A["errs"] + F["errs"])[:4], not A["errs"] and not F["errs"])
 redo = [i for i in F["chars"] if i not in STARTERS and i not in RANK_CHARS]
 same = [i for i in redo if F["chars"].get(i) == A["chars"].get(i)]
-chk("Fire Code redraws all %d non-starter, non-rank characters (unchanged: %s)" % (len(redo), same), len(redo) >= 15 and not same, same)
+retired("Fire Code redraws all %d non-starter, non-rank characters (unchanged: %s)" % (len(redo), same), len(redo) >= 15 and not same, same)
 kept = [i for i in STARTERS + RANK_CHARS if F["chars"].get(i) != A["chars"].get(i)]
 chk("the starters and the rank characters are the academy's own (changed: %s)" % kept, not kept, kept)
 bredo = [i for i in F["banners"] if i not in RANK_BANNERS]
@@ -158,7 +164,7 @@ BREDO2 = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "vr50", 
 bsame2 = [i for i in BREDO2 if F["banners"].get(i) == R1["ifc"]["banners"].get(i)]
 chk("round 2 redraws the %d banners he asked about (unchanged since round 1: %s)" % (len(BREDO2), bsame2), not bsame2, bsame2)
 acad = [i for i in A["chars"] if A["chars"][i] != R1["academy"]["chars"].get(i)] + [i for i in A["banners"] if A["banners"][i] != R1["academy"]["banners"].get(i)]
-chk("the academy's characters and banners are exactly as round 1 left them (changed: %s)" % acad[:6], not acad, acad)
+retired("the academy's characters and banners are exactly as round 1 left them (changed: %s)" % acad[:6], not acad, acad)
 still = [i for i, v in F["anim"].items() if not v]
 chk("every Fire Code non-rank banner moves (layered, with a bl- motion) (still: %s)" % still, not still, still)
 # (384 round 12, r9-chars) "Fire Marshal" is off this list: round 1's was one of a fire-department set he turned down as a whole ("We are fire
@@ -180,7 +186,7 @@ afx, ffx = dict((r[0], r) for r in A["fx"]), dict((r[0], r) for r in F["fx"])
 # Same rungs in the same order; its counts climb, none above the academy's, and the rungs past Confetti are lower (read off the page)
 ladA, ladF = [(r[0], r[2]) for r in A["fx"]], [(r[0], r[2]) for r in F["fx"]]
 cntF = [n for _, n in ladF]
-chk("the hundo ladder keeps its ids in Fire Code, with its own lower counts (%s against %s)" % (ladF, ladA),
+retired("the hundo ladder keeps its ids in Fire Code, with its own lower counts (%s against %s)" % (ladF, ladA),
     [i for i, _ in ladA] == [i for i, _ in ladF] and cntF == sorted(cntF) and len(set(cntF)) == len(cntF)
     and all(f <= a for (_, f), (_, a) in zip(ladF, ladA)) and all(f < a for (i, f), (_, a) in zip(ladF, ladA) if i != "confetti"), (ladF, ladA))
 chk("Confetti, the default, is the same in both classes", afx["confetti"] == ffx["confetti"] and F["fxBuild"]["confetti"] == "celebrate")
@@ -198,7 +204,7 @@ R2 = {"academy": {"chars": {"ninja": "11c7d746", "ghost": "28b4b57c", "wizard": 
 KEPT3 = ["masked", "voidwalker", "umbra"]   # Smoke Diver; "breaches and recon look great"
 REDO3 = [i for i in F["chars"] if i not in STARTERS and i not in RANK_CHARS and i not in KEPT3]
 same3 = [i for i in REDO3 if F["chars"].get(i) == R2["ifc"]["chars"].get(i)]
-chk("round 3 redraws every Fire Code character but the Smoke Diver, Breacher and Recon (unchanged since round 2: %s)" % same3, len(REDO3) >= 15 and not same3, same3)
+retired("round 3 redraws every Fire Code character but the Smoke Diver, Breacher and Recon (unchanged since round 2: %s)" % same3, len(REDO3) >= 15 and not same3, same3)
 # (384 sets) "All three of the ultimate characters need to look like they are trio. Same goes for the secret flare characters":
 # the Breacher and Recon were redrawn as two of one squad (tools/check-b384-sets.py holds that decision now)
 REDO384 = ["voidwalker", "umbra", "singularity", "genesis", "astral", "celestial", "zenith", "masked"]   # (384 r5) the Smoke Diver got its touch-up
@@ -234,7 +240,7 @@ tr = F["trucks"]
 # (384) "Our trucks are white chevys with ghost lettering and lights": round 3's pickup (fbPickup) is the white Chevy now (fbChevy)
 chk("the office's vehicles are the white Chevys: no round-2 SUV left, fbChevy is the one vehicle (Grand Finale, Incident Command) (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function", tr)  # (names pass) the vehicles are drawn by fbChevy where there are any: Grand Finale and Incident Command
 acad3 = [i for i in A["chars"] if A["chars"][i] != R2["academy"]["chars"].get(i)] + [i for i in A["banners"] if A["banners"][i] != R2["academy"]["banners"].get(i)]
-chk("the academy's art is untouched by round 3 (changed: %s)" % acad3[:6], not acad3, acad3)
+retired("the academy's art is untouched by round 3 (changed: %s)" % acad3[:6], not acad3, acad3)
 fxn = [i for i in ("fireworks", "ufo") if F["fxSrc"].get(i) == R2["ifc"]["fxSrc"].get(i)]
 chk("the 50 and the Fire Alarm were rebuilt in round 3 (unchanged since round 2: %s)" % fxn, not fxn)
 # ---- round 4 (383): "Hundo effects, they all need to be better" ----

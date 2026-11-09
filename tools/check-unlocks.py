@@ -125,7 +125,8 @@ def check_table(pg):
       store.dailyCorrectStreak = 0; store.unitHundoStreak = 0;
       store.practiceTestPassed = false;
       store.mysteryColorsFound = { red:false, orange:false, yellow:false };
-      const feats = AVATAR_CHARACTERS.filter(c => c.feat);
+      /* (384 r17) a retired character (Celestial, Zenith) is never locked and has no lock message: it is not earned by doing anything */
+      const feats = AVATAR_CHARACTERS.filter(c => c.feat && !c.retired);
       return {
         n: feats.length,
         keys: feats.map(c => c.feat),

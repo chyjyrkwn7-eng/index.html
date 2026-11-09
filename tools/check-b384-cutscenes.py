@@ -188,7 +188,9 @@ with sync_playwright() as pw:
             [d["need"] for d in CA["fx"]] == [25, 75, 125, 200] and all(d["said"] == "Earn %d hundos" % d["need"] for d in CA["fx"]), CA["fx"])   # (384 r9) the academy's rungs are 25/75/125/200 (AC_HUNDO_NEED)
         alarm = [t for _, t in CF["cards"] + CA["cards"] if re.search(r"fire alarm", t, re.I)]
         chk("(1) no card in either class is the Fire Alarm (Hazmat is the 150, the Thermal Camera the 75)", not alarm, alarm)
-        want_b = [max(1, round(r["acad"] / 14 * (CF["chapters"] - 2))) for r in CF["ranks"]]
+        # (384 r17) Fire Code's ladder was re-lined in 384 to FIRE_BADGE_SHARE of its chapters (read off the page, not typed here)
+        share = F.evaluate("() => TIER_ORDER_FULL.map(k => FIRE_BADGE_SHARE[k])")
+        want_b = [max(1, round(sh * CF["chapters"])) for sh in share]
         chk("(1) Fire Code's rank cards ask its own badge counts, from its %d chapters (%s)" % (CF["chapters"], [r["label"] for r in CF["ranks"]]),
             [r["badges"] for r in CF["ranks"]] == want_b and all(r["label"] == "Reach level %d and %d badge%s" % (r["level"], r["badges"], "" if r["badges"] == 1 else "s") for r in CF["ranks"]), CF["ranks"])
         # the cards, played: the class's own art, and nothing left once tapped away
@@ -433,15 +435,17 @@ with sync_playwright() as pw:
     if want(8):
         WORDS = r"""async ()=>{ const won = novaVrMatchLine('won', true, 'race'); const vr = novaReplyFor('can I race you in a virtual room'); const test = novaReplyFor('when is the next test');
           showCustomize('character'); await new Promise(r => setTimeout(r, 900));
-          const notes = [...document.querySelectorAll('#stage *')].filter(e => !e.children.length && /takes everything/.test(e.textContent)).map(e => e.textContent);
+          /* (384 r17) Customize no longer prints "<name> takes everything"; the ultimate's tile and its note are what names the top character now */
+          const notes = [document.getElementById('stage').textContent.replace(/\s+/g, ' ')];
           showHome(); return { won, vr, test, notes, char: AVATAR_DISPLAY_NAME.poseidon, top: AVATAR_DISPLAY_NAME.zenith }; }"""
         wa, wf = A.evaluate(WORDS), F.evaluate(WORDS)
         chk("(8) Fire Code: beaten in a Virtual Room, Nova hands over its own character (%s), not the Sheriff: %r" % (wf["char"], wf["won"][-70:]),
             wf["char"] != "Sheriff" and wf["char"] in wf["won"] and "Sheriff" not in wf["won"], wf)
         chk("(8) Fire Code: his answer about a match names it too, and he sends nobody to a Calendar tab (%r)" % wf["test"][:70],
             ("Sheriff" not in wf["vr"]) and (wf["char"] in wf["vr"] or "Virtual Room" in wf["vr"]) and "Calendar tab" not in wf["test"], wf)
-        chk("(8) Fire Code: Customize's ultimate note names its own top character (%s)" % wf["notes"], wf["notes"] and wf["top"] in wf["notes"][0] and "Zenith" not in wf["notes"][0], wf["notes"])
-        chk("(8) the academy's words are as they were (the Sheriff, the Calendar tab, Zenith)", "Sheriff" in wa["won"] and "Calendar tab" in wa["test"] and wa["notes"] and "Zenith" in wa["notes"][0], wa)
+        chk("(8) Fire Code: Customize names its own top character and not the academy's (%s)" % wf["top"], wf["notes"] and wf["top"] in wf["notes"][0] and "Zenith" not in wf["notes"][0], wf["notes"][0][:200] if wf["notes"] else [])
+        # (384 r17) Customize does not print the "takes everything" note any more, so Zenith is no longer read off it; the Sheriff and the Calendar tab are
+        chk("(8) the academy's words are as they were (the Sheriff, the Calendar tab)", "Sheriff" in wa["won"] and "Calendar tab" in wa["test"] and "Sheriff" in wa["vr"], wa)
     # ---------------------------------------------------------------- (9) the whole earn, walked
     if want(9):
         SETUP = r"""(a) => {
