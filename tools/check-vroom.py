@@ -1560,22 +1560,18 @@ def main():
                 host.wait_for_timeout(250)
             check("and rolls once they are done", rolled)
             check("taking the banner down with it", not host.evaluate("()=>!!document.getElementById('vroom-prep')"))
+        # (384 r8) THE MATCH'S LAST SCREEN IS THE RUN'S OWN RESULTS. The old points screen (showVirtualRoomResults) this section
+        # used to mount by hand is retired - no real race had reached it since build 240. The real route: the leaderboard
+        # cutscene (rolled on its own, or started here from the room as the finale last saw it) and its Continue, which lands on
+        # the results with the place, the podium and the way on (vroomRaceFinalize).
+        # THE RACE LINE: put it back up before Continue, and the last screen has to take it down - and keep it down when the
+        # room document changes again.
         for pg in (host, guest):
-            pg.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); document.getElementById('vroom-prep')?.remove(); }")
-        # Both are finished as far as the room document is concerned, so
-        # the results screen can be asked for directly - what is under
-        # test is the screen, not the route to it.
-        for pg in (host, guest):
-            pg.evaluate("()=>{ showVirtualRoomResults(); }")
-        host.wait_for_timeout(900 + args.latency * 4)
-
-        # THE RACE LINE, on the path that was actually broken. Hiding it
-        # on the FIRST render always worked; what did not was every
-        # render after it, because the hide sat past an early return that
-        # fires once the standings are up. So: put the bar back, poke the
-        # room document to force another snapshot, and see whether the
-        # screen takes it down again.
+            pg.evaluate("()=>{ document.getElementById('vroom-prep')?.remove(); if(!document.getElementById('vroom-race-cut')) startVroomRaceCutscene(); }")
         host.evaluate("()=>{ document.getElementById('vroomracebar').hidden = false; }")
+        for pg in (host, guest):
+            pg.evaluate("()=>{ const c = document.querySelector('#vroom-race-cut .vrc-continue'); if(c) c.click(); else { document.getElementById('vroom-race-cut')?.remove(); vroomRaceFinalize(); } }")
+        host.wait_for_timeout(900 + args.latency * 4)
         host.evaluate("()=>{ fbDb.collection('vrooms').doc(vroomCode)"
                       "  .update({ nudge: Date.now() }); }")
         host.wait_for_timeout(700 + args.latency * 4)
@@ -1583,14 +1579,12 @@ def main():
 
         got = host.evaluate("""()=>{
           const R = e => e ? e.getBoundingClientRect() : null;
-          const btns = [...document.querySelectorAll('.vroom-exit-row .vroom-exit-btn')];
+          const btns = [...document.querySelectorAll('#stage .vroom-final-actions button')];   /* (384 r8) the results' own way on */
           const bar = document.querySelector('.bottomtabs');
           const race = document.getElementById('vroomracebar');
           const lvl = document.querySelector('.results-level');
-          const toggle = [...document.querySelectorAll('button')]
-            .find(b => /Review your answers/.test(b.textContent));
-          if(toggle) toggle.click();
-          const list = toggle ? toggle.nextElementSibling : null;
+          /* (384 r8) the review is the results' two tabs (missed / entire test), not a toggle: the whole test is listed */
+          const list = document.querySelector('#stage .rs-roomreview .rs-tabpane[data-tab="all"]');
           const chat = document.querySelector('.vroom-chat-toggle');
           const panel = document.querySelector('#stage .panel');
           return {
@@ -1602,7 +1596,7 @@ def main():
             raceHidden: !race || race.hidden,
             levelBlock: !!lvl,
             levelGain: lvl ? (lvl.querySelector('.results-level-gain') || {}).textContent : null,
-            reviewItems: list ? list.querySelectorAll('li').length : -1,
+            reviewItems: list ? list.querySelectorAll('li, .rs-qlist > *').length : -1,
             /* ---- ONE CHAT BUTTON IN THE APP ----
                This asserted that the Virtual Room's own chat TOGGLE sat
                in the top-right corner. That toggle is gone: the room's

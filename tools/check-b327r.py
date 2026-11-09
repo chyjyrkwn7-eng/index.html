@@ -311,12 +311,14 @@ def main():
         pg.evaluate("()=>{ order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); }); stopQuestionTimer(); summarize(); }")
         pg.wait_for_function("()=>!!document.querySelector('.vroom-waitcard')", timeout=30000)
         pg.wait_for_timeout(600)
-        pg.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); showVirtualRoomResults(); }")
-        pg.wait_for_selector("#stage .vroom-chat", timeout=15000)
+        # (384 r8) the room's last screen is the run's own results after the cutscene's Continue (the old points screen that
+        # carried the chat at its foot is retired): there the chat is not on the page, so the Room button is the way to it
+        pg.evaluate("()=>{ if(!document.getElementById('vroom-race-cut')) startVroomRaceCutscene(); const c = document.querySelector('#vroom-race-cut .vrc-continue'); if(c) c.click(); }")
+        pg.wait_for_selector("#stage .vroom-chat", state="attached", timeout=15000)
         pg.wait_for_timeout(800)
         if "A" in ONLY:
             i = fab_info()
-            check("A the room's results: its chat is on the page and there is no Room chat button", i["chatOnPage"] and not i["fab"], i)
+            check("A the room's results: its chat is not on the page, so the Room chat button is up", not i["chatOnPage"] and i["fab"] and i["fabVis"], i)
         if "B" in ONLY:
             sweep("the room's results")
         home()

@@ -1829,7 +1829,8 @@ def check_b221(br):
       const src = String(showVirtualRoomLobby);
       return { oddGate: /oddTug/.test(src), perRight: TUG_XP_PER_RIGHT,
                countdown: /showVroomCountdown\\(tugStartAt/.test(String(beginTugMatch)),
-               board: /Team leaderboard in/.test(String(showTugResult)) }; }""")
+               /* (384 r8) the team board is the results screen's podium now (showVroomTeamResult / buildVroomTeamPodium) */
+               board: /Team leaderboard in/.test(String(showTugResult)) || (/showVroomTeamResult/.test(String(showTugResult)) && typeof buildVroomTeamPodium === 'function') }; }""")
     check("Tug waits for even teams, counts down, pays the winners and shows a team board",
           t["oddGate"] and t["countdown"] and t["board"] and t["perRight"] > 0, t)
     ctx.close()
