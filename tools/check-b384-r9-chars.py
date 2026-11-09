@@ -27,6 +27,8 @@
      the white cowboy hat, the grey moustache, the bolo's turquoise, the star.
   M. (round 14) THE DISPATCHER is a woman: a crown of curls, gold hoops, the headset, the console's light, the navy polo.
      Round 14 also shipped Plainclothes as Undercover (G) and Aurora as the genesis secret (I), and replaced the timekeeper's options (L).
+  L. (round 15) THE OPTIONS: four each for the timekeeper and genesis ids, none shipped, all drawn whole, all different, the secret's carrying
+     the core flare, and the drawings he turned down out of the file. (Round 13's wording below is history.)
   L. (round 13) THE OPTIONS: three finished concepts each for the timekeeper, genesis and valkyrie ids sit in IFC_CHAR_OPTIONS, none shipped
      (IFC_CHAR_PICK all 0, so the shipped three are unchanged - B); each of the nine draws whole (head, eyes, closed eyes, mouth, special
      parts, no svg filter), each differs from the others and from the shipped drawing, and the secret one's options carry the core flare.
@@ -131,7 +133,7 @@ SNAP = r"""(detail) => {
 OPTS_SNAP = r"""() => {
   if(typeof IFC_CHAR_OPTIONS === 'undefined') return null;
   const hash = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };
-  const out = { pick: Object.assign({}, IFC_CHAR_PICK), o: {} };
+  const out = { pick: Object.assign({}, IFC_CHAR_PICK), o: {}, kinds: Object.keys(IFC_CHAR_DRAW) };
   Object.keys(IFC_CHAR_OPTIONS).forEach(id => {
     const def = AVATAR_CHARACTERS.find(c => c.id === id); if(!def) return;
     const k0 = def.kind, ser = s => new XMLSerializer().serializeToString(s).split(s.getAttribute('data-cx-uid')).join('U');
@@ -157,6 +159,7 @@ def snap(init, body, detail):
         pg.goto("http://127.0.0.1:%d/index.html" % port); pg.wait_for_timeout(3500)
         r = pg.evaluate(SNAP, detail)
         r["opts"] = pg.evaluate(OPTS_SNAP)
+        r["kinds"] = (r["opts"] or {}).get("kinds")
         ctx.close(); br.close()
     srv.shutdown()
     r["errs"] = errs
@@ -270,17 +273,20 @@ if not O:
 else:
     # (round 14) the timekeeper's three are new (Arson Investigator, K-9 Handler, Code Officer) and wait on his pick; Plainclothes (valkyrie 1)
     # and Aurora (genesis 2) are shipped through IFC_CHAR_PICK, so the shipped drawing of those two IS that option
-    allo = [x for i in ("timekeeper", "genesis", "valkyrie") for x in O["o"].get(i, [])]
-    chk("L. three options each; the timekeeper's are round 14's (%s) and unpicked, valkyrie ships option 1 and genesis option 2 (pick %s)" % ([x["name"] for x in O["o"].get("timekeeper", [])], O["pick"]),
-        all(len(O["o"].get(i, [])) == 3 for i in ("timekeeper", "genesis", "valkyrie")) and O["pick"] == {"timekeeper": 0, "genesis": 2, "valkyrie": 1}
-        and [x["kind"] for x in O["o"]["timekeeper"]] == ["fcopt_arson", "fcopt_k9", "fcopt_codeofficer"], O["pick"])
+    # (round 15, r12-chars: "I really don't even like aurora and i don't like the fire marshal options. Give me a few for each.") four new
+    # options each for the timekeeper and genesis, none shipped; valkyrie (Plainclothes) and genesis (Aurora) are written into IFC_CHAR_LOOK now
+    SLOTS = ("timekeeper", "genesis")
+    allo = [x for i in SLOTS for x in O["o"].get(i, [])]
+    chk("L. four options each for the timekeeper (%s) and genesis (%s), none shipped (pick %s), and no other slot has any" % ([x["name"] for x in O["o"].get("timekeeper", [])], [x["name"] for x in O["o"].get("genesis", [])], O["pick"]),
+        all(len(O["o"].get(i, [])) == 4 for i in SLOTS) and sorted(O["o"]) == sorted(SLOTS) and not any(O["pick"].values()), O["pick"])
     bad = [x["name"] for x in allo if x["heads"] != 1 or not (x["eyes"] and x["closed"] and x["mouth"]) or x["sp"] < 1 or x["filter"] or not x["scene"]]
-    chk("L. ...each of the nine draws whole: a head, eyes, closed eyes, a mouth, special parts, its scene, no svg filter (bad: %s)" % (bad or "none"), not bad and len(allo) == 9, allo)
+    chk("L. ...each of the eight draws whole: a head, eyes, closed eyes, a mouth, special parts, its scene, no svg filter (bad: %s)" % (bad or "none"), not bad and len(allo) == 8, allo)
     hs = [x["h"] for x in allo]
-    chk("L. ...nine different drawings; the shipped valkyrie and genesis ARE their picked options, and no timekeeper option is the shipped Fire Marshal",
-        len(set(hs)) == 9 and O["o"]["valkyrie"][0]["h"] == O["o"]["valkyrie"][0]["shipped"] and O["o"]["genesis"][1]["h"] == O["o"]["genesis"][1]["shipped"]
-        and not any(x["h"] == x["shipped"] for x in O["o"]["timekeeper"]), [(x["name"], x["h"], x["shipped"]) for x in allo])
-    chk("L. ...and the secret's three carry the core flare (%s)" % [x["flare"] for x in O["o"]["genesis"]], all(x["flare"] for x in O["o"]["genesis"]), O["o"]["genesis"])
+    chk("L. ...eight different drawings, none of them the shipped one", len(set(hs)) == 8 and not any(x["h"] == x["shipped"] for x in allo), [(x["name"], x["h"], x["shipped"]) for x in allo])
+    chk("L. ...and the secret's four carry the core flare (%s)" % [x["flare"] for x in O["o"]["genesis"]], all(x["flare"] for x in O["o"]["genesis"]), O["o"]["genesis"])
+    REJ = ["fcirons", "fcopt_oldtimer", "fcopt_bombtech", "fcopt_site", "fcopt_arson", "fcopt_k9", "fcopt_codeofficer", "fceclipse", "fcfirebird", "fcopt_magma", "fcopt_prism", "fcagent2", "fcopt_stakeout", "fcopt_handyman"]
+    left = [k for k in REJ if k in (IFC.get("kinds") or [])]
+    chk("L. ...and none of the turned-down drawings is left in the file (left: %s)" % (left or "none"), not left, left)
 # K
 wrong = {i: N.get(i) for i in NAMES if N.get(i) != NAMES[i]}
 chk("K. the names: %s (wrong: %s)" % (", ".join(NAMES.values()), wrong or "none"), not wrong, wrong)
