@@ -60222,7 +60222,7 @@ var IFC_CHAR_DRAW = {
   },
   /* (384 round 16b, r14-exit) Madison: "I like the before option of the exit sign" - the drawing exactly as round 15's options sheet showed it
      (option 3, 7be2f35), in place of round 16's polished one. */
-  /* OPTION timekeeper 3 (round 15) - EXIT: the exit sign come to life. A boxy sign hung on its two chains, EXIT lit across its top plate, its
+  /* OPTION timekeeper 3 (round 15) - EXIT: the exit sign come to life. A boxy sign, EXIT lit across its top plate, its
      face the glowing green panel - two narrowed white eyes with mean brows and a sly LED grin - the little running man on the badge at its chest,
      the arrow, the green spill of its own light on everything round it. */
   fcopt_exit(k){
@@ -60238,8 +60238,7 @@ var IFC_CHAR_DRAW = {
     k.add("path", { d: "M16.6 29.4 L23.4 29.4 L22.8 31.6 Q20 32.4 17.2 31.6 Z", fill: k.headGrad("#5A5E68", "#2A2D34", "#0E0F12") });
     k.close();
     k.open("cx-head");
-    /* the chains it hangs on */
-    k.add("path", { d: "M13.4 9.6 L12.4 4 M26.6 9.6 L27.6 4", stroke: "#8A929E", "stroke-width": ".45", "stroke-dasharray": ".7 .3" });
+    /* (384 round 17) no chains: "What's up with two lines at the top? It looks like a necklace? ... remove that" */
     /* the green glow it throws */
     k.add("ellipse", { cx: 20, cy: 20, rx: 13, ry: 11.4, fill: fcGas(k, "#2AE07A", "#9FFFC8"), opacity: ".35" });
     /* the housing: a white-edged box with a lit plate on top and the green face panel */
