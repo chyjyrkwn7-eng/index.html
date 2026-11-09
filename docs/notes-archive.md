@@ -37635,3 +37635,34 @@ Madison: "people signing into the fire code class, they unlocked the character o
 
 ### 384 r17 - the chat dock is a point, not a screen (384.7)
 Madison: the soft title at the top of every screen and of the test is "still there ... a massive problem". After 384.4 took the backdrop blur off the chat, back and Pause buttons, the one remaining thing spanning the top edge on every screen is the chat dock: `.chatdock` was a FULL-SCREEN fixed layer (inset:0, pointer-events:none) whose children (chat button, panel, confirm) are each fixed themselves. A fixed layer across the whole top edge is what iOS 26 reads as a bar and softens the content behind it. It is now 0 x 0 at the corner (still the stacking context, z 300) and `.chatdock-confirm` (the only child that relied on its size) is `position:fixed; inset:0`. check-b384-chatback / navchat / friends / vrpause pass.
+
+### Build 384 (round 18), second commit - the tab bar's lag and the swipe in a Safari tab (NOT on main)
+
+Madison: "The bottom tab is a little laggy", "The bottom tab STILL lags when swiping", then "The bottom tab is nearly perfect, could be a
+slight smoother. THE SWIPING AND SLIDING FUNCTION IS TERRIBLE". All of it in a Safari tab (the installed app's slide he called "100x
+better" in 383). What differs in a tab is the toolbar, so that is where this looked:
+- A SCREEN THAT FITS SCROLLED. html{min-height:100lvh} (line ~977) is Safari's viewport with the toolbar MINIMISED, taller than the
+  one the page has at rest (~47pt at 383's measurement), so Welcome, Home and the boards were that much scrollable (his Welcome frames
+  show the scroll indicator on a screen with nothing to scroll). Any touch that drifted vertically - a slide, a swipe - scrolled the
+  document, Safari shrank its toolbar, the layout viewport changed height under the fixed tab bar. Now html.is-browser{min-height:100dvh}
+  on touch devices: the root's box is the page's own viewport (the paper layer still reaches the bottom; the layers sized in lvh are
+  no-repeat on the canvas beyond it). Chromium's lvh equals its dvh, so the gate models Safari's by substituting calc(100dvh + 47px)
+  for 100lvh in the served page: Welcome and Home document 844px in a 797px viewport on the old build, 797 now (and the same on a 16, an SE).
+- EVERY RESIZE LISTENER RAN ON EVERY FRAME OF A TOOLBAR'S MOVE. Thirty-odd window "resize" listeners (the tab bar's onBarResize = centreProfileTab +
+  slideBubbleToActiveTab, which measures then writes; the splash's place(), still running for a splash long gone; syncChatDock;
+  syncTestPin; alignNavChat; syncBottomInsetClass; syncFieldFloor; backToTopRoom's 40 measures...). Wrapped with a listener timer
+  (init script) on Home at 4x CPU, a viewport growing then shrinking 47px in 94 frames: the resize listeners alone cost ~2.6s of script
+  (onBarResize 1416ms = 15ms a frame, place 468, syncChatDock 233, syncTestPin 126, alignNavChat 95...). A new script right after the
+  status-bar one (touch devices only) governs window "resize" listeners: (1) one that has answered a size is not called again for it,
+  (2) a HEIGHT-ONLY change of up to 140px (a toolbar; never a keyboard or a rotation) is answered at most once every 120ms and the last
+  one at the size the viewport ended on, (3) a width change, a bigger one, or an untrusted (made-up) event is answered at once, as
+  before. After, the same burst: the wrapper's own cost 335ms and getBoundingClientRect reads in the burst Home 692 -> ~350, Profile 2546 ->
+  ~1400 (the rest are the visual viewport's and the page's own listeners, not governed). The tab bar itself sits by CSS
+  (--tabs-bottom) and was never the thing moving.
+- NOT CHANGED: the bar's drag (touch-action:none already), the slide's code (383/384's lens, FLIP and holds - their gates pass), the
+  visual viewport's listeners. What the swipe feels like on his phone cannot be read in Chromium; if it is still bad after this, a
+  bug report's tab timings (class26e.tabperf) and `edges` are what to read.
+- GATE tools/check-b384-safaribottom.py: noscroll (Welcome, Home, three iPhones, lvh modelled 47px taller) and govern (the governor's
+  script run on its own in a mobile page: 40 one-pixel resizes in ~660ms answered 5 times, ends at the final size, a width change, a
+  keyboard-sized change and an untrusted event answered at once, the same size not twice) and bar (the tab bar keeps its distance
+  from the viewport's bottom when the toolbar collapses). All fail on af5725d.
