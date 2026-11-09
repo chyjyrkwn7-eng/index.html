@@ -1616,7 +1616,12 @@
   #splashscreen.splash-hide{ opacity:0; pointer-events:none; }
   /* (384) the splash's word and bar drift back a touch as it fades, so Welcome comes up through it rather than behind a wipe */
   #splash-group{ transition:scale .75s cubic-bezier(.4,0,.2,1); }
-  #splashscreen.splash-hide #splash-group{ scale:1.04; }   /* scale, not transform: the group is centred by its transform */
+  /* scale, not transform: the group is centred by its transform. The origin is the group's TOP-LEFT (where left/top put it, the
+     middle of the screen): `scale` applies after that transform, so about the default origin (the middle of the LAYOUT box,
+     half a group-size down and right) the 4% also pushed the word 4% of that offset up and left - -5,-3px on a phone, -6,-3 on
+     an iPad - found by check-fixes under load. check-b384-splashhide measures it. The origin changes in the same moment the
+     scale is still 1, so nothing jumps. */
+  #splashscreen.splash-hide #splash-group{ scale:1.04; transform-origin:0 0; }
   #splashscreen.splash-first{ visibility:hidden; }   /* a first visit never shows it (330) */
   /* Positioned in PIXELS from the top-left, not centred inside its
      parent, and that distinction is the whole fix for the bottom-right
