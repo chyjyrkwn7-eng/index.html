@@ -38575,7 +38575,8 @@ html.is-browser{ --fade-paper: transparent; }
   /* the grids inside a box: the r4 rows, the box's width */
   html[data-layout] body #stage .screen-customize .cz-group :is(.avatarchar-grid.avatarchar-grid-appearance, .banner-grid, .hfx-grid, .swatches){ margin:0; }
   html[data-layout] body #stage .screen-customize .cz-group .avatarchar-grid.avatarchar-grid-appearance{ --cz-gx:.5rem; --cz-gy:1rem; }
-  /* themes: plain tiles (the circle and its name), four to a phone's row, the seven rank colours one row from a tablet up */
+  /* themes: plain tiles (the circle and its name), four to a phone's row; (384 r7) the default and the seven rank colours are
+     one card, balanced 4+4 (balanceCzGrid) */
   html[data-layout] body #stage .screen-customize .cz-group .swatches{ --cz-gx:.5rem; --cz-gy:1rem; max-width:none; }
   html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell,
   html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell:has(.swatch.on){
@@ -145398,6 +145399,64 @@ function buildCustomizeGroup(key, title, note, have, total, gridClass, titleClas
   card.append(head, grid);
   return { card, grid, head };
 }
+/* (384 r7) BALANCED ROWS. Madison: "The characters need to be a little more symmetrical, 6 on top and 1 on bottom doesn't
+   look good." A group card wrapped at a fixed column count, so 7 came out 6+1 on a tablet and 5+2 on a phone, and 12 came
+   out 5+5+2. Now each card takes the most tiles that fit across it (maxCols: its own width, its tile's width and its gap,
+   all as laid out - the tile size is the CSS's and nothing here changes it), the fewest rows that hold them
+   (ceil(n / maxCols)), and shares the tiles out so no two rows differ by more than one, the longer rows first:
+   7 is 4+3, 8 is 4+4, 12 is 6+6 (4+4+4 on a phone), 13 is 5+4+4, 5 is 3+2 where five do not fit on one line.
+   A flex row cannot be told "end after four", so a row that must end early gets an equal margin on its first and last tile
+   (half its slack each, less half a pixel): the line is then full, the next tile wraps, and the row stays centred. The last
+   row needs nothing (justify-content:center). Where only two fit (a phone's banners and effects) an odd count still ends
+   on one tile: that is the only shape two across can make without shrinking the tiles.
+   One ResizeObserver re-runs it when a grid or its first tile changes size (rotation, a window resize, text size); it
+   measures layout sizes, not rects, so the screen's entrance animation cannot skew it. No ResizeObserver: the plain wrap. */
+function czBalanceSize(){ return czBalanceSize.map || (czBalanceSize.map = new WeakMap()); }   /* a function, not a top-level const: no TDZ */
+function balanceCzGrid(grid){
+  if(!grid || !grid.isConnected) return;
+  const tiles = [...grid.children];
+  const n = tiles.length, cw = czBalanceSize().get(grid), tw = czBalanceSize().get(grid.firstElementChild);
+  if(!n || !(cw > 0) || !(tw > 0)) return;
+  const gx = parseFloat(getComputedStyle(grid).columnGap) || 0;
+  const sig = n + "|" + cw.toFixed(2) + "|" + tw.toFixed(2) + "|" + gx.toFixed(2);
+  if(grid.__czSig === sig) return;
+  grid.__czSig = sig;
+  const maxCols = Math.max(1, Math.floor((cw + gx + 0.5) / (tw + gx)));
+  const rows = Math.ceil(n / maxCols), base = Math.floor(n / rows), extra = n % rows;
+  tiles.forEach(t => { t.style.marginLeft = ""; t.style.marginRight = ""; });
+  let i = 0;
+  for(let r = 0; r < rows; r++){
+    const k = base + (r < extra ? 1 : 0);
+    if(r < rows - 1){
+      const m = Math.max(0, (cw - (k * tw + (k - 1) * gx) - 1) / 2);
+      if(m > 0){ tiles[i].style.marginLeft = m + "px"; tiles[i + k - 1].style.marginRight = m + "px"; }
+    }
+    i += k;
+  }
+}
+function watchCzGrids(root){
+  if(typeof ResizeObserver !== "function" || !root) return;
+  if(!watchCzGrids.ro){
+    watchCzGrids.ro = new ResizeObserver(entries => {
+      const todo = new Set();
+      entries.forEach(e => {
+        const t = e.target;
+        if(!t.isConnected){ watchCzGrids.ro.unobserve(t); return; }
+        const isGrid = t.classList.contains("cz-grid-balanced");
+        const bb = e.borderBoxSize && e.borderBoxSize[0], cb = e.contentBoxSize && e.contentBoxSize[0];
+        czBalanceSize().set(t, isGrid ? (cb ? cb.inlineSize : e.contentRect.width) : (bb ? bb.inlineSize : t.offsetWidth));
+        todo.add(isGrid ? t : t.parentElement);
+      });
+      todo.forEach(g => { try{ balanceCzGrid(g); }catch(err){} });
+    });
+  }
+  root.querySelectorAll(".cz-group > .cz-group-head + *").forEach(grid => {
+    if(!grid.firstElementChild) return;
+    grid.classList.add("cz-grid-balanced");
+    watchCzGrids.ro.observe(grid);
+    watchCzGrids.ro.observe(grid.firstElementChild);
+  });
+}
 function buildCustomizeSummary(){
   const wrap = document.createElement("div");
   wrap.className = "sect cz-list";
@@ -145487,6 +145546,7 @@ function showCustomize(section){
     }
   }
   stage.replaceChildren(panel);
+  try{ watchCzGrids(panel); }catch(e){}   /* (384 r7) balanced rows in every group card */
   toTop();
   if(after) after();
 }
@@ -145729,9 +145789,9 @@ function buildCustomizeBannerSect(){
   const current = wornBanner();
   /* (384 r6) IN THE DATA'S OWN GROUPS, each its own card, in the character page's order: the default, what the ranks hand
      over, the challenges (the ultimate last, as the ultimate character is), the secret flares' */
+  /* (384 r7) the default shares the rank card, as the theme's does (no one-tile "Starter" card: Madison, of the theme's) */
   const bGroups = [
-    { key: "start", title: "Starter", note: "Yours from day one", defs: [null] },
-    { key: "rank", title: "Rank rewards", note: "Handed over as you climb the ranks", defs: BANNERS.filter(d => d.rank) },
+    { key: "rank", title: "Default and rank rewards", note: "Yours from day one, then handed over as you climb the ranks", defs: [null].concat(BANNERS.filter(d => d.rank)) },
     { key: "challenge", title: "Challenge rewards", note: "Each one is unlocked by a challenge",
       defs: BANNERS.filter(d => !d.rank && !d.flareChar && !d.ultimate).concat(BANNERS.filter(d => d.ultimate && !d.rank && !d.flareChar)) },
     { key: "secret", title: "Secrets", note: "Found, not earned — keep your eyes open", defs: BANNERS.filter(d => d.flareChar && !d.rank) }
@@ -145826,10 +145886,11 @@ function buildCustomizeBannerSect(){
 function buildCustomizeThemeSect(){
   const accentSect = document.createElement("div");
   accentSect.className = "sect";
-  /* (384 r6) two cards: the default, then the seven the ranks hand over (the data's own split: TIER_UNLOCKS) */
+  /* (384 r7) ONE card: the default first, then the seven the ranks hand over. Madison: "The theme 'starter' is not a good
+     idea, don't do that." A card holding one swatch was a box round a single circle; eight in one card are 4+4. */
   const tGroups = [
-    { key: "start", title: "Starter", note: "Yours from day one", names: ACCENTS.filter(n => !TIER_UNLOCKS[n]) },
-    { key: "rank", title: "Rank rewards", note: "Each rank hands one over", names: ACCENTS.filter(n => TIER_UNLOCKS[n]) }
+    { key: "all", title: "Default and rank rewards", note: "Yours from day one, then one from each rank",
+      names: ACCENTS.filter(n => !TIER_UNLOCKS[n]).concat(ACCENTS.filter(n => TIER_UNLOCKS[n])) }
   ].filter(g => g.names.length);
   const gridOf = {};
   tGroups.forEach(g => {
@@ -145920,10 +145981,11 @@ function buildCustomizeFxSect(){
   const fxSect = document.createElement("div");
   fxSect.className = "sect hfx-sect";
   const fxNow = hundoFxInUse();
-  /* (384 r6) two cards: the one you start with, then the rungs your hundos climb (the data's own split: `need`) */
+  /* (384 r7) ONE card: the one you start with first, then the rungs your hundos climb (no one-tile "Starter" card, as
+     the theme's: Madison) */
   const fGroups = [
-    { key: "start", title: "Starter", note: "Yours from day one", defs: HUNDO_FX.filter(d => !d.need) },
-    { key: "hundo", title: "Hundo rewards", note: "Each one is unlocked by earning hundos", defs: HUNDO_FX.filter(d => d.need) }
+    { key: "all", title: "Default and hundo rewards", note: "Yours from day one, then unlocked by earning hundos",
+      defs: HUNDO_FX.filter(d => !d.need).concat(HUNDO_FX.filter(d => d.need)) }
   ].filter(g => g.defs.length);
   const fxGridOf = {};
   fGroups.forEach(g => {
