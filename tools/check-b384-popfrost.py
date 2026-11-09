@@ -4,7 +4,7 @@ Madison, a classmate's card from the Leaderboard beside one from Home: "do you s
 screenshot? I like the frosted look, ensure it's there. Secondly, the letters 'xp' are pretty dang close to the number."
 iPhone 17 Pro Max: (1) the person card opened on Home, the Leaderboard, Profile and the Virtual Room choice screen is see-through
 (its fill's alpha under .7) with a backdrop blur; (2) the clean look still holds inside the page - Profile's own card beyond Home
-is the solid card colour (no blur); (3) the big XP label sits at least 6px under its number, the small ones at least 4px;
+is the solid card colour (no blur); (3) the big XP label sits at least 6px under its number, the small ones at least 4px, and the level line 8px+ under the rank ("The words level and badges right under the rank is too close together too");
 (4) no page errors.
   python3 tools/check-b384-popfrost.py [--against OLD/index.html]   (must FAIL on the build before)"""
 import os, sys, re, importlib.util
@@ -21,7 +21,8 @@ ENTRY = "{ name:'Levni', pub:'abcxyz123456', level:60, badges:7, points:144000, 
 M = """()=>{ const s=document.querySelector('.invite-sheet.person-card'); if(!s) return null; const cs=getComputedStyle(s);
   const a = (c => { const m = /rgba?\\(([^)]+)\\)/.exec(c); if(m){ const p=m[1].split(',').map(Number); return p.length>3 ? p[3] : 1; } const n=/\\/\\s*([\\d.]+)\\s*\\)/.exec(c); return n ? +n[1] : 1; })(cs.backgroundColor);
   const cells=[...s.querySelectorAll('.person-card-cell')].map(c=>{ const v=c.querySelector('.person-card-cell-value'), l=c.querySelector('.person-card-cell-label'); return l.getBoundingClientRect().top - v.getBoundingClientRect().bottom; });
-  return { alpha:a, blur:/blur\\(/.test(cs.backdropFilter||cs.webkitBackdropFilter||''), cells }; }"""
+  const rw=s.querySelector('.person-card-rank'), lv=s.querySelector('.person-card-level');
+  return { alpha:a, blur:/blur\\(/.test(cs.backdropFilter||cs.webkitBackdropFilter||''), cells, rankGap: rw&&lv ? lv.getBoundingClientRect().top - rw.getBoundingClientRect().bottom : null }; }"""
 SCREENS = [("Home", "showHome()"), ("Leaderboard", "showRankings()"), ("Profile", "showProfile('profile')"), ("Virtual Room", "window.vroomDb = window.vroomDb || (()=>({})); showVirtualRoomChoice()")]
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=cb.CHROME)
@@ -35,6 +36,7 @@ with sync_playwright() as pw:
         if lab == "Leaderboard":
             chk("(3) the big XP label sits 6px+ under its number, the others 4px+ (%s)" % [round(x, 1) for x in m["cells"]],
                 m["cells"] and m["cells"][0] >= 6 and all(x >= 4 for x in m["cells"][1:]), m["cells"])
+            chk("(3b) the level line sits 8px+ under the rank (%s)" % (m["rankGap"] if m["rankGap"] is None else round(m["rankGap"], 1)), m["rankGap"] is not None and m["rankGap"] >= 8, m)
     pg.evaluate("()=>{ document.querySelectorAll('.invite-overlay').forEach(n=>n.remove()); showProfile('profile'); }"); pg.wait_for_timeout(1200)
     p = pg.evaluate("""()=>{ const c=document.querySelector('#stage .profile-identity-tab > .pf-goal, #stage .pf-standing, #stage .profile-card'); if(!c) return null; const cs=getComputedStyle(c);
       return { bg: cs.backgroundColor, bf: cs.backdropFilter||'none', sky: document.body.classList.contains('sky-home') }; }""")

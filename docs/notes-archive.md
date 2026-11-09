@@ -36948,3 +36948,4 @@ Madison: "the academy firework effect where most of it comes off screen.. and th
 - `--pop-bg-glass` holds the glass recipe (`--pop-bg-card` defaults to it); beyond Home `.invite-overlay, .intro-card, .savecode-card, .a2hs-sheet` set `--pop-bg-card` back to the glass. Profile's card in #stage keeps the flat colour.
 - `.person-card-cell` gap .1rem -> .3rem; the big XP cell .45rem (label 7.2px under the number, was 1.6).
 - Gate: tools/check-b384-popfrost.py (Home, Leaderboard, Profile, Virtual Room: fill alpha < .7 + blur; label gaps; Profile's own card still solid). ALL PASS; FAILS on the previous build (alpha 1 off Home, 1.6px gaps).
+- (same round) "The words level and badges right under the rank is too close together too": `.person-card-rank + .person-card-level{ margin-top:.6rem }` - 9.6px under the rank line (was 2.4); with no rank the level line keeps its place under the name. check-b384-popfrost (3b).
