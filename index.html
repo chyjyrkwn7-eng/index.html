@@ -17582,7 +17582,7 @@
   /* (384) THE COPY BUTTON BESIDE THE WELL (buildCopyIconButton, Manage friends' own). It stands at the row's right, centred on
      the well - the well's height (3.7rem, 4.2rem from 40rem) less the button's, halved, above the row's bottom padding - and
      the well gives up the button's width and a gap. On a 320px phone the code steps down a size so it still fits on a line. */
-  .sync-code-block{ position:relative; --sync-cb:max(2.9rem, 44px); --sync-row-pb:.2rem; }   /* (.sync-plain .sync-code-row's padding) */
+  .sync-code-block{ position:relative; --sync-cb:44px; --sync-row-pb:.2rem; }   /* (.sync-plain .sync-code-row's padding) */
   .sync-code-block > .sync-code-row .sync-code-well{ margin-right:calc(var(--sync-cb) + .7rem); }
   .sync-code-block > .sync-copy-btn{
     position:absolute; right:0; width:var(--sync-cb); height:var(--sync-cb);
@@ -26312,20 +26312,24 @@
     box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset,
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4);
   }
-  /* (384) the copy icon button - see showFriends */
+  /* (384) the copy icon button - see showFriends. (r8) JUST THE GLYPH, no button round it - Madison: "why is it within a
+     button, typically I just see it the copy button thing and people know to click it?" The two-squares glyph sits centred in
+     a 44px tap area with no fill, rim or shadow; a press dims it, a copy turns it to the green tick. Keyboard focus alone
+     draws a ring (the save-code card used to focus it on open, which painted a white ring round it on a phone). */
   .friend-copy-btn{
-    position:relative; flex:0 0 auto; width:2.9rem; height:2.9rem; min-width:44px; min-height:44px; padding:0; border:0;
-    border-radius:50%; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:#FFFFFF;
-    background:#0A0A0C; -webkit-tap-highlight-color:transparent;
-    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset, 0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4);
-    transition:transform .14s ease;
+    position:relative; flex:0 0 auto; width:44px; height:44px; min-width:44px; min-height:44px; padding:0; border:0;
+    border-radius:12px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(235,235,245,.86);
+    background:none; box-shadow:none; -webkit-tap-highlight-color:transparent; outline:none;
+    transition:opacity .14s ease, color .14s ease;
   }
-  .friend-copy-btn:active{ transform:scale(.92); }
-  .friend-copy-btn svg{ position:absolute; width:1.3rem; height:1.3rem; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .friend-copy-btn:active{ opacity:.45; }
+  .friend-copy-btn:focus{ outline:none; }
+  .friend-copy-btn:focus-visible{ outline:2px solid rgba(235,235,245,.6); outline-offset:-2px; }
+  .friend-copy-btn svg{ position:absolute; left:50%; top:50%; width:1.45rem; height:1.45rem; margin:-.725rem 0 0 -.725rem;
+    fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .friend-copy-btn .friend-copy-tick{ stroke:#4ADE80; stroke-width:2.6; opacity:0; transform:scale(.4); }
   .friend-copy-btn.is-copied .friend-copy-ic{ animation:friend-copy-out .26s ease forwards; }
   .friend-copy-btn.is-copied .friend-copy-tick{ animation:friend-copy-in .34s cubic-bezier(.3,1.5,.5,1) .06s forwards; }
-  .friend-copy-btn.is-copied{ box-shadow:0 0 0 1.5px rgba(74,222,128,.55), 0 1px 3px rgba(0,0,0,.4), 0 4px 14px rgba(74,222,128,.22); }
   @keyframes friend-copy-out{ to{ opacity:0; transform:scale(.6); } }
   @keyframes friend-copy-in{ 0%{ opacity:0; transform:scale(.4); } 100%{ opacity:1; transform:scale(1); } }
   /* (384) the field's "type here": the wrapper takes the field's place in the row, the field fills it */
@@ -134848,7 +134852,9 @@ function showSaveCodeCard(opts){
      unanswered, so it comes back on the next Home. */
   if(opts.mode === "existing") clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
-  setTimeout(() => { try{ copy.focus({ preventScroll: true }); }catch(e){} }, 80);
+  /* (r8) focus goes to the sheet for screen readers, not to the copy glyph (focusing it painted a ring round it on a phone) */
+  sheet.tabIndex = -1; sheet.style.outline = "none";
+  setTimeout(() => { try{ sheet.focus({ preventScroll: true }); }catch(e){} }, 80);
   return el;
 }
 /* Settings > Sync: Save it, under the code (a settingsRow, 44px+). */
