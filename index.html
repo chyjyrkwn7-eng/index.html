@@ -1616,7 +1616,12 @@
   #splashscreen.splash-hide{ opacity:0; pointer-events:none; }
   /* (384) the splash's word and bar drift back a touch as it fades, so Welcome comes up through it rather than behind a wipe */
   #splash-group{ transition:scale .75s cubic-bezier(.4,0,.2,1); }
-  #splashscreen.splash-hide #splash-group{ scale:1.04; }   /* scale, not transform: the group is centred by its transform */
+  /* scale, not transform: the group is centred by its transform. The origin is the group's TOP-LEFT (where left/top put it, the
+     middle of the screen): `scale` applies after that transform, so about the default origin (the middle of the LAYOUT box,
+     half a group-size down and right) the 4% also pushed the word 4% of that offset up and left - -5,-3px on a phone, -6,-3 on
+     an iPad - found by check-fixes under load. check-b384-splashhide measures it. The origin changes in the same moment the
+     scale is still 1, so nothing jumps. */
+  #splashscreen.splash-hide #splash-group{ scale:1.04; transform-origin:0 0; }
   #splashscreen.splash-first{ visibility:hidden; }   /* a first visit never shows it (330) */
   /* Positioned in PIXELS from the top-left, not centred inside its
      parent, and that distinction is the whole fix for the bottom-right
@@ -10580,6 +10585,8 @@
     transition:background .15s ease, transform .1s ease;
   }
   .bottomtab:focus{ outline:none; }
+  /* (384 r19) a keyboard's place on the bar: the rule above hides the ring for a press, and left a keyboard nothing to follow */
+  .bottomtab:focus-visible{ outline:2px solid rgba(255,255,255,.9); outline-offset:-3px; }
   .bottomtab.active{ color:#fff; transition:color .2s ease .1s; }
   .bottomtabs-navrow .bottomtab-label{ text-shadow:0 1px 2px rgba(0,0,0,.35); }
   .bottomtab:active{ transform:scale(.93); background:rgba(128,128,128,.18); }
@@ -34208,6 +34215,16 @@ html.is-browser{ --fade-paper: transparent; }
    continues without a step (measured). A gradient image layer, never a background colour (see 338). */
 @media (hover:none), (pointer:coarse){
   html.is-browser{ --fade-paper-top: var(--band, transparent); }
+  /* BUILD 384 (round 18): THE SKY'S BOTTOM EDGE IS THE COLOUR SAFARI FILLS BEHIND ITS TOOLBAR. Madison, with a frame of Welcome and
+     one of Get Started in a tab: the glow ends in a hard line a little above the floating toolbar and below it is one flat colour
+     (measured off his frame: 9 levels at the bottom of Welcome, about 4 at the top under the status bar). The fixed layers stop at
+     Safari's bars and what shows past them is the root's flat colour (--band, as at the top: 341), so the bottom now eases into
+     --band over its last 3rem exactly as the top eases out of it, and the two meet it with no line. Only while the page runs
+     BETWEEN Safari's bars - over a full-screen page (html.safari-bars-over) the sky runs under them and this stays as it was. */
+  html.is-browser:not(.safari-bars-over){ --fade-paper: var(--band, transparent); --fade-bot-solid: 0px; --fade-bot: 3rem; --fade-top: 3rem; }
+  /* ...and the tab bar's shadow (0 4px 18px, 22px past its bottom edge, which sits 12px off the page's) ends in the same line, so in a
+     tab it is 0 2px 8px: it stops inside the 12px */
+  html.is-browser:not(.safari-bars-over) .bottomtabs, html.is-browser:not(.safari-bars-over)[data-theme="dark"] .bottomtabs{ box-shadow:0 2px 8px rgba(0,0,0,.45); }
   /* BUILD 382: THE STARS UNDER SAFARI'S TOOLBAR. Madison: "Safari version is still messed up, the bottom and top of the safari
      version is cut off, this absolutely needs to be fixed". His screenshot of a test page (share/edge-test.html: stripes on the
      root's background, dots on a fixed layer) settled what Safari 26 draws where: fixed layers stop at its bars (no dots under
@@ -35351,9 +35368,14 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-clips canvas{ display:block; max-width:100%; height:auto !important; border-radius:.6rem; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.35); }
   .ifc-clips.is-zoomable{ cursor:zoom-in; }
   /* THE PAGE VIEWER (build 333): a card inset from every edge over the dimmed app, opacity/transform only */
-  .ifc-vz{ position:fixed; inset:0; z-index:1500; display:flex; }
-  .ifc-vz-dim{ position:absolute; inset:0; background:rgba(6,7,12,.6); opacity:0; transition:opacity .26s ease; }
-  .ifc-vz-card{ position:relative; display:flex; flex-direction:column; width:100%; min-width:0; overflow:hidden; border-radius:1.3rem;
+  /* (384 r19) A READER, NOT A WALL. Madison, on a Windows computer: "when opening the view page of code it was absolutely massive and
+     it didn't look like a normal page on a computer". The card was the whole window's width and the page was fitted to the card's
+     width, so a letter page on a 1920px screen came out 1878px wide and 2430px tall (a third of one page on the screen, the highlight
+     below it). The card is a centred window now - at most 64rem wide, so on a phone it is exactly as it was - and ifcOpenViewer
+     fits the page to the height of the window (and caps its width), with Fit width / Fit page beside the zoom. */
+  .ifc-vz{ position:fixed; inset:0; z-index:1500; display:flex; justify-content:center; }
+  .ifc-vz-dim{ position:absolute; inset:0; background:rgba(6,7,12,.6); opacity:0; transition:opacity .26s ease; touch-action:none; }
+  .ifc-vz-card{ position:relative; display:flex; flex-direction:column; flex:0 1 64rem; min-width:0; overflow:hidden; border-radius:1.3rem;
     margin:max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
     background:rgb(22,24,34); border:1px solid var(--surface-border); box-shadow:0 18px 50px rgba(0,0,0,.55);
     opacity:0; transform:translateY(18px) scale(.96); transition:transform .34s cubic-bezier(.2,.9,.3,1), opacity .26s ease; }
@@ -35366,12 +35388,21 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz-title strong{ font-size:.82rem; font-weight:700; color:var(--ink); line-height:1.25; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .ifc-vz-title span{ font-size:.72rem; color:var(--soft); line-height:1.25; }
   .ifc-vz-ctl{ flex:none; display:flex; gap:.3rem; }
+  .ifc-vz-btn.is-fit{ font-size:.8rem; font-weight:650; white-space:nowrap; }
+  .ifc-vz-btn.is-fit[hidden]{ display:none; }
+  .ifc-vz-btn:focus-visible, .ifc-vz-scroll:focus-visible{ outline:2px solid rgba(255,179,92,.75); outline-offset:2px; }
+  .ifc-vz-scroll:focus-visible{ outline-offset:-3px; }
   .ifc-vz-btn{ min-width:44px; min-height:44px; padding:0 .8rem; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08);
     color:var(--ink); font:inherit; font-size:1.2rem; font-weight:700; line-height:1; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .ifc-vz-btn:disabled{ opacity:.35; }
   .ifc-vz-btn.is-done{ font-size:.88rem; font-weight:700; background:rgba(255,122,26,.2); border-color:rgba(255,179,92,.4); color:#FFB35C; }
-  .ifc-vz-scroll{ flex:1; min-height:0; overflow:hidden; overscroll-behavior:contain; touch-action:none; padding:0; background:rgb(14,15,22); }
-  .ifc-vz-pages{ width:100%; box-sizing:border-box; padding:.5rem; display:flex; flex-direction:column; gap:.5rem; }
+  .ifc-vz-scroll{ position:relative; flex:1; min-height:0; overflow:hidden; overscroll-behavior:contain; touch-action:none; padding:0; background:rgb(14,15,22); outline:none; }
+  .ifc-vz.is-zoomed .ifc-vz-scroll{ cursor:grab; }
+  .ifc-vz-scroll.is-drag{ cursor:grabbing !important; }
+  /* a slim marker of where the view is on a tall column of pages (the page itself is moved by a transform, so there is no scrollbar) */
+  .ifc-vz-thumb{ position:absolute; right:3px; top:0; width:5px; height:0; border-radius:3px; background:rgba(255,255,255,.3); opacity:0; transition:opacity .3s ease; pointer-events:none; z-index:2; }
+  .ifc-vz-thumb.is-on{ opacity:1; }
+  .ifc-vz-pages{ width:100%; box-sizing:border-box; padding:.5rem; display:flex; flex-direction:column; align-items:stretch; gap:.5rem; }
   .ifc-vz-pages canvas{ display:block; width:100% !important; max-width:none !important; height:auto !important; border-radius:.4rem; background:#fff; flex:none; }
   .ifc-vz-busy{ margin:2rem 0; text-align:center; font-size:.9rem; color:var(--soft); }
   /* build 382: a small pill over the foot of the page that fades (ifcOpenViewer), not a bar under it */
@@ -35381,7 +35412,14 @@ html.is-browser{ --fade-paper: transparent; }
     opacity:0; transform:translate(-50%, 6px); transition:opacity .35s ease, transform .35s ease; }
   .ifc-vz-hint.is-up{ opacity:1; transform:translate(-50%, 0); }
   .ifc-vz-hint.is-gone, .ifc-vz.is-zoomed .ifc-vz-hint{ opacity:0; transform:translate(-50%, 6px); }
-  @media (prefers-reduced-motion:reduce){ .ifc-vz-dim, .ifc-vz-card{ transition:none; } }
+  @media (min-width:64rem){
+    .ifc-vz-dim{ background:rgba(6,7,12,.72); }
+    .ifc-vz-card{ margin-top:max(18px, env(safe-area-inset-top, 0px)); margin-bottom:max(18px, env(safe-area-inset-bottom, 0px)); }
+    .ifc-vz-bar{ padding:.45rem .7rem .45rem 1.1rem; gap:.6rem; }
+    .ifc-vz-title strong{ font-size:.92rem; }
+    .ifc-vz-title span{ font-size:.78rem; }
+  }
+  @media (prefers-reduced-motion:reduce){ .ifc-vz-dim, .ifc-vz-card{ transition:none; } .ifc-vz-thumb{ transition:none; } }
   .ifc-links{ display:flex; flex-wrap:wrap; gap:.35rem 1rem; margin:.45rem 0 0; }
   /* build 382: the two ways on are pills side by side that share the card's width between them (each grows from its own words, so
      the row is filled edge to edge and neither is cut off; one alone fills it); on a card too narrow for both on one line they stack,
@@ -35631,6 +35669,18 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-bar{ position:absolute; left:0; right:0; bottom:0; z-index:3; display:flex; justify-content:center; padding:2.2rem 1.2rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
     background:linear-gradient(180deg, rgba(5,6,13,0), rgba(5,6,13,.92) 60%); pointer-events:none; }
   .gs-bar .gs-go{ pointer-events:auto; margin:0; width:min(100%, 22rem); min-height:50px; }
+  /* BUILD 384 (round 18): IN A SAFARI TAB THE PAGE'S CONTENT DISSOLVES INTO ITS COLOUR AT BOTH EDGES. Madison: the phone mock-up on
+     Get Started was sliced by a hard line a little above Safari's floating toolbar. This page is a fixed layer, and Safari stops a
+     fixed layer at its bars; what it shows past them is the colour of the fixed layer (#05060D, which tints the bars), so
+     whatever scrolls across the edge ended in a line. The first and last 2.6rem of the page are that colour, fading out over the
+     content (transform-free, no filter: a gradient), only while the page runs between Safari's bars - the installed app, a laptop
+     and a page over the bars (html.safari-bars-over) are untouched. The bottom one is under the button (z 3), the top one under the Sign in pill (z 4). */
+  @media (hover:none), (pointer:coarse){
+    html.is-browser:not(.safari-bars-over) .gs-page::before, html.is-browser:not(.safari-bars-over) .gs-page::after{
+      content:""; position:absolute; left:0; right:0; z-index:2; height:2.6rem; pointer-events:none; }
+    html.is-browser:not(.safari-bars-over) .gs-page::before{ z-index:3; top:0; background:linear-gradient(to bottom, #05060D 8px, rgba(5,6,13,0)); }
+    html.is-browser:not(.safari-bars-over) .gs-page::after{ bottom:0; background:linear-gradient(to top, #05060D 8px, rgba(5,6,13,0)); }
+  }
   .gs-bar{ opacity:0; transform:translateY(26px); transition:opacity .45s ease, transform .55s cubic-bezier(.2,1.1,.35,1); }
   .gs-bar:not(.is-ready) .gs-go{ pointer-events:none; }
   .gs-bar.is-ready{ opacity:1; transform:none; }
@@ -111848,6 +111898,7 @@ function openUnitDetail(row, name, mode){
   function close(){
     if(closed) return;
     closed = true;
+    document.removeEventListener("keydown", onEsc, true);
     if(unitDetailOpen && unitDetailOpen.card === card) unitDetailOpen = null;
     mo.disconnect();
     card.classList.remove("is-open"); card.classList.add("is-closing");
@@ -111878,6 +111929,9 @@ function openUnitDetail(row, name, mode){
     if(sb && typeof sb._paint === "function") sb._paint();
   }
   scrim.addEventListener("click", close);
+  /* (384 r19) Escape closes it, as it closes every other card on a computer (the version pop-up below says so for itself) */
+  const onEsc = e => { if(e.key === "Escape"){ e.stopPropagation(); close(); } };
+  document.addEventListener("keydown", onEsc, true);
   /* Leaving the screen under it closes it too. */
   const mo = new MutationObserver(() => { if(!row.isConnected){ mo.disconnect(); close(); } });
   mo.observe(stage, { childList: true });
@@ -115026,13 +115080,33 @@ function ifcCloseViewer(){
   ifcViewerEl = null;
   try{ v.obs && v.obs.disconnect(); }catch(e){}
   document.removeEventListener("keydown", v.onKey, true);
-  const gone = () => { try{ v.root.remove(); }catch(e){} document.documentElement.classList.remove("ifc-vz-open"); };
+  const gone = () => {
+    try{ v.root.remove(); }catch(e){} document.documentElement.classList.remove("ifc-vz-open");
+    try{ if(v.opener && v.opener.isConnected && v.opener.focus && v.opener !== document.body) v.opener.focus({ preventScroll: true }); }catch(e){}
+  };
   if(v.still){ gone(); return; }
   v.root.classList.add("is-leaving"); setTimeout(gone, 220);
 }
+/* (384 r19) What the viewer draws its pictures at. A phone and a tablet are left as they were (the caller's scale). A computer's
+   mouse zooms on a screen of one pixel to the CSS pixel (or 1.25, 1.5), where the page is fitted to the window's height and then
+   zoomed into: so the picture gets more pixels to a point (up to ~4.4 device pixels, the paint at 2x being as large as it is
+   ever drawn) and stays sharp to about 2.5x. */
+function ifcDeskScale(base){
+  try{
+    if(window.innerWidth >= 900 && window.matchMedia("(pointer:fine)").matches){
+      const d = Math.min(window.devicePixelRatio || 1, 2);
+      return Math.min(base * 1.4, 4.4 / d);
+    }
+  }catch(e){}
+  return base;
+}
+/* opts: title, sub, note, anchor, render(holder), fit ("page" - whole pages, fitted to the window's height - or "width" - a cut
+   picture, fitted to its width), ppt (device pixels to a point of the picture the renderer draws, so a cut is never shown larger
+   than 2.6 CSS px to a point on a computer's window) */
 async function ifcOpenViewer(opts){
   if(ifcViewerEl) ifcCloseViewer();
   const still = (() => { try{ return ruStill(); }catch(e){ return false; } })();
+  const fine = (() => { try{ return window.matchMedia("(pointer:fine)").matches; }catch(e){ return false; } })();
   const root = ifcEl("div", "ifc-vz"); root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true");
   root.setAttribute("aria-label", opts.title || "The code");
   const dim = ifcEl("div", "ifc-vz-dim");
@@ -115042,26 +115116,36 @@ async function ifcOpenViewer(opts){
   ttl.append(ifcEl("strong", null, opts.title || ""), ifcEl("span", null, opts.sub || ""));
   const mk = (cls, label, text) => { const b = ifcEl("button", "ifc-vz-btn " + cls, text); b.type = "button"; b.setAttribute("aria-label", label); return b; };
   const out = mk("is-out", "Zoom out", "−"), zin = mk("is-in", "Zoom in", "+"), done = mk("is-done", "Close", "Done");
-  const ctl = ifcEl("div", "ifc-vz-ctl"); ctl.append(out, zin);
+  const fit = mk("is-fit", "Fit the page to the width", "Fit width"); fit.hidden = true;
+  if(fine){ out.title = "Zoom out (−)"; zin.title = "Zoom in (+)"; done.title = "Close (Esc)"; }
+  const ctl = ifcEl("div", "ifc-vz-ctl"); ctl.append(out, zin, fit);
   bar.append(ttl, ctl, done);
   const scroll = ifcEl("div", "ifc-vz-scroll"); scroll.tabIndex = 0;
   const pages = ifcEl("div", "ifc-vz-pages");
+  const thumb = ifcEl("div", "ifc-vz-thumb"); thumb.setAttribute("aria-hidden", "true");
   pages.appendChild(ifcEl("p", "ifc-vz-busy", "Opening the page…"));
-  scroll.appendChild(pages);
+  scroll.append(pages, thumb);
   /* THE HINT IS A WORD, NOT A BAR (build 382): his screenshot of Enlarge circled the strip at the foot ("Pinch or double-tap to
      zoom") under a small excerpt and a screen of nothing. It is a small pill over the foot of the page now that fades out on its
      own (or at the first touch), and the page has the whole card. */
-  const hint = ifcEl("p", "ifc-vz-hint", "Pinch or double-tap to zoom");
+  const HINT = fine ? "Scroll to move · + / − or Ctrl + scroll to zoom · Esc to close" : "Pinch or double-tap to zoom";
+  const hint = ifcEl("p", "ifc-vz-hint", HINT);
   hint.setAttribute("aria-live", "polite");
   card.append(bar, scroll, hint);
   root.append(dim, card);
-  const v = { root, still, obs: null, onKey: e => { if(e.key === "Escape"){ e.stopPropagation(); ifcCloseViewer(); } } };
+  const opener = document.activeElement;
+  const v = { root, still, obs: null, key: null, onKey: e => {
+    if(e.key === "Escape"){ e.stopPropagation(); e.preventDefault(); ifcCloseViewer(); return; }
+    if(v.key) v.key(e);
+  } };
   ifcViewerEl = v;
   document.addEventListener("keydown", v.onKey, true);
   document.body.appendChild(root);
   document.documentElement.classList.add("ifc-vz-open");
   if(!still) requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add("is-in")));
   else root.classList.add("is-in");
+  try{ scroll.focus({ preventScroll: true }); }catch(e){}
+  v.opener = opener;
   /* the screen under it changing (a tab, a new question) closes it */
   try{
     const anchor = opts.anchor;
@@ -115069,9 +115153,14 @@ async function ifcOpenViewer(opts){
     v.obs.observe(stage, { childList: true });
   }catch(e){}
   dim.addEventListener("click", ifcCloseViewer); done.addEventListener("click", ifcCloseViewer);
+  /* the wheel on the dimmed app around the window moves nothing (the window is no longer the whole screen) */
+  root.addEventListener("wheel", e => { if(!scroll.contains(e.target)) e.preventDefault(); }, { passive: false });
   /* zoom and pan are one transform on the pages (nothing reflows while a finger is down): two fingers pinch about
-     their midpoint, one finger drags with a little glide, a double tap toggles, the wheel pans, ctrl + wheel zooms */
-  let z = 1, tx = 0, ty = 0; const ZMAX = 5;
+     their midpoint, one finger (or the mouse) drags with a little glide, a double tap toggles, the wheel pans, ctrl + wheel zooms.
+     z is the zoom from the FITTED page: 1 is the page whole in the window (the window's height, never wider than 60rem, never
+     wider than its room); "Fit width" is z > 1, to the width the room has. */
+  let z = 1, tx = 0, ty = 0; const ZMAX = 5, STEP = fine ? 1.25 : 1.5;
+  let fitW = 1;   /* z of the page fitted to the room's width, from the fitted page */
   pages.style.transformOrigin = "0 0"; pages.style.willChange = "transform";
   const clampT = () => {
     const cw = scroll.clientWidth, ch = scroll.clientHeight, w = pages.offsetWidth * z, h = pages.offsetHeight * z;
@@ -115079,20 +115168,61 @@ async function ifcOpenViewer(opts){
     /* build 382: shorter than the view (an excerpt fitted to the width) sits on its middle, not stuck to the top */
     ty = h <= ch ? (ch - h) / 2 : Math.min(0, Math.max(ch - h, ty));
   };
+  let thumbT = 0;
   const apply = () => {
     clampT(); pages.style.transform = "translate3d(" + tx + "px," + ty + "px,0) scale(" + z + ")";
     out.disabled = z <= 1.001; zin.disabled = z >= ZMAX - 0.001;
     root.classList.toggle("is-zoomed", z > 1.001);
+    const atW = fitW > 1.03 && Math.abs(z - fitW) < 0.03;
+    fit.textContent = atW ? "Fit page" : "Fit width"; fit.setAttribute("aria-label", atW ? "Fit the whole page in the window" : "Fit the page to the width");
+    const ch = scroll.clientHeight, h = pages.offsetHeight * z;
+    if(h > ch + 2){
+      const th = Math.max(28, ch * ch / h); thumb.style.height = th + "px";
+      thumb.style.transform = "translateY(" + ((-ty) / (h - ch) * (ch - th)) + "px)";
+      thumb.classList.add("is-on"); clearTimeout(thumbT); thumbT = setTimeout(() => thumb.classList.remove("is-on"), 900);
+    } else thumb.classList.remove("is-on");
   };
-  const setZ = (nz, fx, fy, soft) => {
+  /* THE FIT. The pages box is its width, padding included: the page (or picture) is the box less its padding. */
+  const layout = () => {
+    const cw = scroll.clientWidth, ch = scroll.clientHeight, first = pages.firstElementChild;
+    if(!cw || !ch || !first || first.classList.contains("ifc-vz-busy")) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const cs = getComputedStyle(pages), padX = parseFloat(cs.paddingLeft) || 0, padY = parseFloat(cs.paddingTop) || 0;
+    let capW = 60 * rem;                                  /* a page is never wider than 60rem */
+    /* a cut picture is never shown larger than 2.6 CSS px to a point on a computer's window (a phone and a tablet are left as they were) */
+    const cv0 = first.matches("canvas") ? first : first.querySelector("canvas");
+    if(opts.ppt && cv0 && window.innerWidth >= 900){
+      const nat = cv0.width / opts.ppt;                   /* the picture's width in points */
+      if(nat > 4 && opts.fit === "width") capW = Math.min(capW, nat * 2.6 + (first.matches("canvas") ? 0 : 16));
+    }
+    const wFw = Math.max(1, Math.min(capW + 2 * padX, cw));
+    let wFp = wFw;
+    if(opts.fit !== "width" && first.matches("canvas") && first.width > 0){
+      const aspect = first.height / first.width;
+      /* the first page whole in the window's height - not below 22rem (a phone on its side, a window as short as a letterbox) */
+      wFp = Math.min(wFw, Math.max(Math.min(wFw, 22 * rem), (ch - 2 * padY) / aspect + 2 * padX));
+    }
+    wFp = Math.round(wFp); const keep = fitW > 1 ? Math.abs(z - fitW) < 0.03 : false;
+    /* (the padding is part of what zooms: the page's width at z is its own width x z) */
+    pages.style.width = wFp + "px"; fitW = Math.max(1, (Math.round(wFw) - 2 * padX) / Math.max(1, wFp - 2 * padX));
+    fit.hidden = !(fitW > 1.03);
+    if(keep) z = fitW;
+  };
+  const soft = () => { if(!still){ pages.style.transition = "transform .22s cubic-bezier(.2,.8,.2,1)"; setTimeout(() => { pages.style.transition = ""; }, 260); } };
+  const setZ = (nz, fx, fy, isSoft) => {
     nz = Math.max(1, Math.min(ZMAX, nz));
     if(fx == null){ fx = scroll.clientWidth / 2; fy = scroll.clientHeight / 2; }
     const r = nz / z; tx = fx - (fx - tx) * r; ty = fy - (fy - ty) * r; z = nz;
-    if(soft && !still){ pages.style.transition = "transform .22s cubic-bezier(.2,.8,.2,1)"; setTimeout(() => { pages.style.transition = ""; }, 260); }
+    if(isSoft) soft();
     apply();
   };
   out.disabled = true;
-  out.addEventListener("click", () => setZ(z / 1.5, null, null, true)); zin.addEventListener("click", () => setZ(z * 1.5, null, null, true));
+  out.addEventListener("click", () => setZ(z / STEP, null, null, true)); zin.addEventListener("click", () => setZ(z * STEP, null, null, true));
+  fit.addEventListener("click", () => {
+    const atW = Math.abs(z - fitW) < 0.03;
+    setZ(atW ? 1 : fitW, null, null, true);
+    if(!atW){ /* the width fit starts at the top of the page */ ty = 0; apply(); }
+  });
   const ptr = new Map(); let lastD = 0, lastTap = 0, tapX = 0, tapY = 0, moved = 0, vx = 0, vy = 0, lastT = 0, glide = 0, downAt = 0;
   const rect = () => scroll.getBoundingClientRect();
   const stopGlide = () => { if(glide){ cancelAnimationFrame(glide); glide = 0; } };
@@ -115102,6 +115232,7 @@ async function ifcOpenViewer(opts){
     hintOff();
     stopGlide(); pages.style.transition = "";
     try{ scroll.setPointerCapture(e.pointerId); }catch(_){}
+    if(e.pointerType === "mouse" && e.button === 0 && z > 1.001) scroll.classList.add("is-drag");
     ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); lastD = 0; vx = vy = 0; lastT = e.timeStamp;
     if(ptr.size === 1){ moved = 0; downAt = e.timeStamp; } else moved = 99;
   });
@@ -115126,6 +115257,7 @@ async function ifcOpenViewer(opts){
   });
   const up = e => {
     const had = ptr.size; ptr.delete(e.pointerId); lastD = 0;
+    scroll.classList.remove("is-drag");
     if(had === 2){ const [q] = [...ptr.values()]; vx = vy = 0; return; }
     if(had !== 1) return;
     if(e.type === "pointerup" && moved < 10 && e.timeStamp - downAt < 400){
@@ -115148,18 +115280,69 @@ async function ifcOpenViewer(opts){
     }
   };
   scroll.addEventListener("pointerup", up); scroll.addEventListener("pointercancel", up);
+  /* the wheel: scrolls (a notch is a notch whether the browser counts it in pixels, lines or pages); ctrl + wheel - and a
+     trackpad's pinch, which a browser sends as ctrl + wheel - zooms the PAGE about the pointer, not the browser (a notch of a
+     mouse wheel is a step, not a jump) */
   scroll.addEventListener("wheel", e => {
-    e.preventDefault(); const r0 = rect();
-    if(e.ctrlKey) setZ(z * Math.exp(-e.deltaY * 0.01), e.clientX - r0.left, e.clientY - r0.top);
-    else { tx -= e.deltaX; ty -= e.deltaY; apply(); }
+    e.preventDefault(); hintOff(); const r0 = rect();
+    const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scroll.clientHeight : 1;
+    if(e.ctrlKey){
+      const d = Math.max(-40, Math.min(40, e.deltaY * k));
+      setZ(z * Math.exp(-d * 0.01), e.clientX - r0.left, e.clientY - r0.top);
+    }
+    else { stopGlide(); tx -= e.deltaX * k; ty -= e.deltaY * k; apply(); }
   }, { passive: false });
+  /* THE KEYBOARD (a computer): + / − zoom (Ctrl + them too, and Ctrl + 0, so the browser's own zoom is not what answers while a page
+     is up), 0 back to the whole page; arrows scroll; Page Up / Page Down / Space move a page at a time (to the next page where the
+     view holds one whole page, else a screenful); Home / End. Every key is the viewer's while it is up - the question behind it
+     answers to 1-4 and Enter otherwise. */
+  const pageTops = () => [...pages.children].filter(c => !c.classList.contains("ifc-vz-busy")).map(c => (c.getBoundingClientRect().top - pages.getBoundingClientRect().top) / z);
+  const goPage = dir => {
+    const tops = pageTops(), vh = scroll.clientHeight;
+    if(tops.length < 2 || z > 1.02) return false;
+    let cur = 0; tops.forEach((t, i) => { if(t * z + ty <= vh * .5) cur = i; });
+    const to = Math.max(0, Math.min(tops.length - 1, cur + dir)); if(to === cur) return false;
+    const padY = parseFloat(getComputedStyle(pages).paddingTop) || 0;
+    soft(); ty = -(tops[to] - padY) * z; apply(); return true;
+  };
+  const by = (dx, dy) => { stopGlide(); soft(); tx += dx; ty += dy; apply(); };
+  v.key = e => {
+    const k = e.key, mod = e.ctrlKey || e.metaKey;
+    if(k === "Tab"){
+      const f = [...root.querySelectorAll("button:not(:disabled):not([hidden])")], all = [scroll, ...f], i = all.indexOf(document.activeElement);
+      e.preventDefault(); all[(i + (e.shiftKey ? -1 : 1) + all.length) % all.length].focus(); e.stopPropagation(); return;
+    }
+    if(k === "Shift" || k === "Control" || k === "Alt" || k === "Meta") return;
+    /* Enter and Space on a focused button press it */
+    if((k === "Enter" || k === " ") && e.target && e.target.closest && e.target.closest("button")){ e.stopPropagation(); return; }
+    hintOff();
+    const vh = scroll.clientHeight;
+    let used = true;
+    if(k === "+" || k === "=" || k === "Add") setZ(z * STEP, null, null, true);
+    else if(k === "-" || k === "_" || k === "Subtract") setZ(z / STEP, null, null, true);
+    else if(k === "0" && (mod || !e.altKey)){ setZ(1, null, null, true); ty = 0; apply(); }
+    else if(mod || e.altKey) return;                       /* the browser's own shortcuts (Ctrl+C, Ctrl+F, Alt+Left ...) are left to it */
+    else if(k === "ArrowDown") by(0, -64);
+    else if(k === "ArrowUp") by(0, 64);
+    else if(k === "ArrowRight") { if(!goPage(1)) by(-64, 0); }
+    else if(k === "ArrowLeft") { if(!goPage(-1)) by(64, 0); }
+    else if(k === "PageDown" || (k === " " && !e.shiftKey)){ if(!goPage(1)) by(0, -vh * .88); }
+    else if(k === "PageUp" || (k === " " && e.shiftKey)){ if(!goPage(-1)) by(0, vh * .88); }
+    else if(k === "Home"){ soft(); ty = 0; apply(); }
+    else if(k === "End"){ soft(); ty = -1e9; apply(); }
+    else used = false;
+    if(used) e.preventDefault();
+    e.stopPropagation();
+  };
   new ResizeObserver(() => apply()).observe(pages);
+  new ResizeObserver(() => { layout(); apply(); }).observe(scroll);
   try{
     const holder = ifcEl("div", "ifc-vz-draw");
     await opts.render(holder);
     if(ifcViewerEl !== v) return;
     pages.replaceChildren(...holder.childNodes);
-    if(opts.note){ hint.textContent = opts.note + " · pinch or double-tap to zoom"; }
+    layout(); apply();
+    if(opts.note){ hint.textContent = opts.note + " · " + (fine ? "Scroll to move, + / − to zoom, Esc to close" : "pinch or double-tap to zoom"); }
     /* on its own, a moment after the page is up: longer when it carries a note to read */
     hint.classList.add("is-up");
     hintT = setTimeout(hintOff, opts.note ? 5200 : 2600);
@@ -115250,10 +115433,11 @@ async function ifcFillCode(item, body, foot){
     const links = ifcEl("div", "ifc-links");
     const whole = ifcLinkBtn("Show the whole page", "page");
     /* Enlarge shows the card's picture larger (the same lines); the whole page is the booklet's page as printed */
-    const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
+    const viewOf = (wholePage) => { const sc = ifcDeskScale(wholePage ? 2.2 : 2.6); return ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
+      fit: wholePage ? "page" : "width", ppt: sc * Math.min(window.devicePixelRatio || 1, 2),
       note: wholePage ? "The whole page of the HC Amendments. The highlighted lines are the code this question cites." : "",
-      render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip })
-        : V.paint(doc, clip, box, { scale: 2.6, keepPlain: true }).then(() => ifcCountyColumn(doc, clip, box, 2.6, c)).then(() => ifcFrameClips(box, 2.6, true, clip)) });
+      render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: sc, ...ifcCountyOpts, clip })
+        : V.paint(doc, clip, box, { scale: sc, keepPlain: true }).then(() => ifcCountyColumn(doc, clip, box, sc, c)).then(() => ifcFrameClips(box, sc, true, clip)) }); };
     whole.addEventListener("click", () => viewOf(true));
     holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
     const big = ifcLinkBtn("Enlarge", "zoom"); big.addEventListener("click", () => viewOf(false));
@@ -115307,13 +115491,14 @@ async function ifcFillCode(item, body, foot){
   {
     const links = ifcEl("div", "ifc-links");
     const whole = ifcLinkBtn("Show the whole book page", "page");
-    const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
+    const viewOf = (wholePage) => { const sc = ifcDeskScale(!wholePage && theClip ? 2.6 : 2.2); return ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
+      fit: !wholePage && theClip ? "width" : "page", ppt: sc * Math.min(window.devicePixelRatio || 1, 2),
       note: wholePage ? "The section the question cites is washed pale yellow; the sentence that decides the answer is the stronger gold." : "",
       render: box => {
-        if(!wholePage && theClip) return V.paint(book.doc, theClip, box, { scale: 2.6 }).then(() => ifcFrameClips(box, 2.6, true, theClip));
+        if(!wholePage && theClip) return V.paint(book.doc, theClip, box, { scale: sc }).then(() => ifcFrameClips(box, sc, true, theClip));
         const pages = theClip && theClip.pages.length ? theClip.pages : V.wholePages(book.index, c, shown ? 3 : 2);
-        return V.paintPages(book.doc, pages, box, { scale: 2.2, ...book.opts, clip: theClip });
-      } });
+        return V.paintPages(book.doc, pages, box, { scale: sc, ...book.opts, clip: theClip });
+      } }); };
     whole.addEventListener("click", () => viewOf(true));
     holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
     const big = ifcLinkBtn("Enlarge", "zoom"); big.addEventListener("click", () => viewOf(false));
@@ -117890,7 +118075,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-09-384.4";
+const APP_BUILD = "2026-11-09-384.5";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -156844,7 +157029,7 @@ function tabPerfText(){
       }
       tab.querySelector(".bottomtab-icon").appendChild(svg);
     }
-    const navigateTab = () => {
+    const navigateTab = (ev) => {
       /* iOS Safari can leave the :active state's transform:scale(.93)
          visually stuck on a button after a tap that triggers
          navigation, since the normal touch-end that would clear it
@@ -156852,7 +157037,9 @@ function tabPerfText(){
          cause of a tab looking permanently smaller after being
          tapped. Explicitly blurring it clears that lingering state
          immediately rather than leaving it to chance. */
-      tab.blur();
+      /* (384 r19) not for a key: Enter or Space on a focused tab (a click with detail 0) keeps the focus where it is, so the next Tab or
+         arrow goes on from this tab - the blur sent a keyboard back to the top of the page after every tab it opened */
+      if(!(ev && ev.isTrusted && ev.detail === 0)) tab.blur();
       /* A short lock while the entrance animation plays \u2014 without
          this, rapidly tapping between tabs could fire a second
          navigation call before the first screen had even finished
@@ -157494,7 +157681,7 @@ function tabPerfText(){
     const litTab = navrow.querySelector(".bottomtab.active:not([hidden])");
     tabDragFromActive = !litTab || !!(tabDragStartTab && tabDragStartTab === litTab);
     /* the lens lifts out of the platter under the finger at once (build 323, 325) */
-    if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
+    if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX, e.pointerType === "mouse");
     /* a screen still waiting to be built waits for this press too (327z15) */
     if(bar._navPend && bar._navPend.schedule) bar._navPend.schedule();
   });
@@ -157593,6 +157780,16 @@ function tabPerfText(){
     else slideBubbleToActiveTab(true); // dropped somewhere odd (e.g. off the bar) — snap back
   }
   navrow.addEventListener("pointerup", endTabDrag);
+  /* (384 r19) A MOUSE LET GO OFF THE BAR ENDS THE PRESS. A finger's touch is the bar's until it lifts (it is captured by the element it
+     landed on); a mouse is not, so a press on a tab let go above the bar (a click that drifts, a drag out) never reached pointerup here:
+     the press stayed open - `tab-held` on <html>, the lens up and the bar swollen, the page's warm-ups waiting on it - until the next press
+     anywhere on the bar. Seen with a real mouse: press a tab, move up 200px, release. A release that is not on the bar (a captured
+     slide's is, and takes the path above) is a cancelled press: the glass goes home and nothing opens. */
+  window.addEventListener("pointerup", (e) => {
+    if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
+    if(e.target && e.target.nodeType === 1 && navrow.contains(e.target)) return;
+    endTabDrag({ type: "pointercancel", pointerId: e.pointerId, clientX: e.clientX, preventDefault(){} });
+  }, true);
   /* build 376: THE TICK FOR A SLIDE'S LANDING, ON THE TOUCH'S OWN END. "The Haptic Touch feature, it works on the bottom tab taps but it
      also needs to work when you swipe to one." A slide's landing ticked from its pointerup, and a finger that has moved is, it seems, not
      a gesture iOS gives a haptic for there; the touchend of the same touch is tried as well (only after a slide that landed on another tab). */
@@ -157906,11 +158103,17 @@ function tabPerfText(){
       t.el.style.transform = k > .001 ? "scale(" + (1 + LENS.mag * k).toFixed(4) + ")" : "";
     });
   }
-  function lensDown(clientX){
+  function lensDown(clientX, mouse){
     clearTimeout(lensT1); lensT1 = null;
     lensAwaitClear();
     document.documentElement.classList.add("tab-held");   /* build 369: the tab bar is held (see the Drag test looks) */
-    if(lensCalm() || !canAnim){ lensG = null; return; }
+    /* (384 r19) A MOUSE PRESS HAS NO LENS. Madison, on a Windows computer: "clicking through the bottom tab is very laggy and doesn't work".
+       The lens is a finger's: a spring simulated in script on the press (~25ms of the press at 1x CPU, so ~100ms at 4x, before the first
+       frame), then the whole glass bar scaled up and back over ~500ms with its backdrop blur re-drawn at every step, and its landing,
+       planned on the release, on the thread that is also building the new screen - on a computer's weaker graphics that is the lag, and a
+       second click inside it is read against a bar still moving. A click goes the way reduced motion goes: no lens, the grey platter
+       steps to the tab (a transform, on the compositor) and the screen follows. A finger (touch, pen) keeps its lens. */
+    if(mouse || lensCalm() || !canAnim){ lensG = null; return; }
     const caught = lens.classList.contains("is-up") && lensG && lensS;
     const now = caught ? lensNow() : null;
     lensStopFollow();
@@ -158996,6 +159199,10 @@ document.addEventListener("keydown", (e) => {
   }
 
   if(e.key === "Enter"){
+    /* (384 r19) ENTER ON A FOCUSED CONTROL OF THE BAR OR A BACK LINK IS THAT CONTROL'S. This is the run's "Enter for the next one", on the
+       whole document - and with the keyboard on a tab (Tab to Profile, Enter) it clicked the screen's Start / Next button instead and
+       swallowed the key: on a computer a keyboard could not open a tab at all. It leaves the key to the control the focus is on. */
+    if(typedIn && typedIn.closest && typedIn.closest(".bottomtabs, .back-link, .navsegment, .chatdock")) return;
     const reveal = document.getElementById("revealbtn");
     if(reveal){ e.preventDefault(); reveal.click(); return; }
     const next = document.getElementById("nextbtn");
