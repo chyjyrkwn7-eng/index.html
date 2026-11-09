@@ -139391,12 +139391,59 @@ const TYPING_STALE_MS = 5000;
    room and the same on every device, which is the thing that actually
    matters: two people looking at the same lobby have to see the same
    person in the same colour, and an index cannot promise that either. */
+function vroomKeyHash(key){
+  let h = 0;
+  for(let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return h;
+}
+/* (384 r8) NO TWO PEOPLE IN ONE ROOM SHARE A COLOUR - OR A NEAR-TWIN OF ONE. Madison, three markers on the race line, two of
+   them violet: "Why are rings the same color". A bare hash into sixteen slots gave two of three people the same slot about one
+   room in six, and the table has near-twins (two violets, two blues, two cyans, two yellows), so it read worse than that. With
+   the room's members, each person - in join order, the same order on every device - takes their hash's slot or the next one
+   that looks most unlike everybody already coloured: the widest gap (in OKLab) that is still free, from .14 down. Measured
+   over thousands of rooms: five people are always at least .14 apart, six .12, up to eight .10, up to eleven .08 (two
+   violets are .08, the two cyans .017). Still a property of the person - earlier joiners never move - and the same mapping
+   colours the chat and the race line. Without the members (an old message from somebody who has left) it is the bare hash. */
+const VROOM_COLOR_GAPS = [.14, .12, .1, .08, .06, 0];
+let vroomColorLab = null, vroomColorMemo = { sig: null, map: null };
+function vroomColorDist(i, j){
+  if(!vroomColorLab) vroomColorLab = VROOM_RACE_COLORS.map(h => {
+    const n = parseInt(h.slice(1), 16), lin = c => { c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+    const r = lin(n >> 16), g = lin((n >> 8) & 255), b = lin(n & 255);
+    const l = Math.cbrt(.4122214708 * r + .5363325363 * g + .0514459929 * b), m = Math.cbrt(.2119034982 * r + .6806995451 * g + .1073969566 * b),
+          q = Math.cbrt(.0883024619 * r + .2817188376 * g + .6299787005 * b);
+    return [.2104542553 * l + .793617785 * m - .0040720468 * q, 1.9779984951 * l - 2.428592205 * m + .4505937099 * q, .0259040371 * l + .7827717662 * m - .808675766 * q];
+  });
+  const A = vroomColorLab[i], B = vroomColorLab[j];
+  return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]);
+}
+function vroomColorMap(participants){
+  const ks = Object.keys(participants).sort((a, b) =>
+    (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0)) || (a < b ? -1 : 1));
+  const sig = ks.join("|");
+  if(vroomColorMemo.sig === sig) return vroomColorMemo.map;
+  const N = VROOM_RACE_COLORS.length, picked = [], map = {};
+  ks.forEach(k => {
+    const h = vroomKeyHash(k) % N;
+    let pick = -1;
+    for(let t = 0; t < VROOM_COLOR_GAPS.length && pick < 0; t++){
+      for(let j = 0; j < N; j++){
+        const s = (h + j) % N;
+        if(picked.indexOf(s) >= 0) continue;
+        if(picked.every(p => vroomColorDist(s, p) >= VROOM_COLOR_GAPS[t])){ pick = s; break; }
+      }
+    }
+    if(pick < 0) pick = h;   /* past sixteen people every slot is taken: the hash, as it always was */
+    picked.push(pick); map[k] = VROOM_RACE_COLORS[pick];
+  });
+  vroomColorMemo = { sig, map };
+  return map;
+}
 function vroomColorFor(key, participants){
   if(!key) return null;
   if(participants && !participants[key]) return null;
-  let h = 0;
-  for(let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-  return VROOM_RACE_COLORS[h % VROOM_RACE_COLORS.length];
+  if(participants) return vroomColorMap(participants)[key];
+  return VROOM_RACE_COLORS[vroomKeyHash(key) % VROOM_RACE_COLORS.length];
 }
 
 /* SIXTEEN, NOT EIGHT, AND HAND-PICKED RATHER THAN SPACED.
@@ -140685,7 +140732,8 @@ function startVroomRaceListener(){
          vroomColorFor() says why an index into the list cannot be it:
          the chat hashed the key while this line indexed by join order,
          so the same person was two different colours on one screen. */
-      const color = vroomColorFor(key) || VROOM_RACE_COLORS[i % VROOM_RACE_COLORS.length];
+      const color = vroomColorFor(key, (data && data.participants && data.participants[key]) ? data.participants : null)
+        || VROOM_RACE_COLORS[i % VROOM_RACE_COLORS.length];
       const marker = document.createElement("div");
       const stack = stackOf[key] || { y: "0rem", z: "1" };
       marker.className = "vroom-race-marker"
