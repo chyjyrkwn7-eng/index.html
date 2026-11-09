@@ -23,14 +23,31 @@ f-<fx>-NN.jpg, one frame a second. Needs ffmpeg from imageio_ffmpeg.
           (only it can be in another class) with class26e.activeclass=ifc,
           a Fire Code chapter for the run, and each clip as long as that
           class's effect (IFX_DEF) plus the reveal. The fx start frame is
-          printed so frames can be cut at times into the effect."""
+          printed so frames can be cut at times into the effect.
+  --against FILE   records that index.html instead of the repo's (an older
+          build, for a before/after pair).
+  --seed N  Math.random is a seeded generator from the moment the clock is
+          installed, so two builds draw the same show (a pair that should be
+          identical can be compared frame by frame).
+
+  Build 384: every clip (both classes) now STARTS AT THE EFFECT, opened by
+  the half second before it: the grade counts in and the XP box fills first
+  and the effect only comes after that, so a clip that started as the grade
+  landed ran out before the effect began. f-<fx>-NN.jpg is NN seconds into
+  the effect; "fx at frame" is the clip frame it started on."""
 import importlib.util, sys, os, json
 IFC = "--ifc" in sys.argv
 if IFC: sys.argv.remove("--ifc")
+AGAINST = []
+if "--against" in sys.argv:
+    i = sys.argv.index("--against"); AGAINST = ["--against", os.path.abspath(sys.argv[i + 1])]; del sys.argv[i:i + 2]
+SEED = None
+if "--seed" in sys.argv:
+    i = sys.argv.index("--seed"); SEED = int(sys.argv[i + 1]); del sys.argv[i:i + 2]
 OUT = os.path.abspath(sys.argv[1])
 FXS = (sys.argv[2] if len(sys.argv) > 2 else "confetti,fireworks,underwater,bubbles,ufo").split(",")
 W = int(sys.argv[3]) if len(sys.argv) > 3 else 440; H = int(sys.argv[4]) if len(sys.argv) > 4 else 956
-sys.argv = [sys.argv[0]]
+sys.argv = [sys.argv[0]] + AGAINST
 WT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 spec = importlib.util.spec_from_file_location("cb", WT + "/tools/check-behaviour.py")
 cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
@@ -145,6 +162,9 @@ with sync_playwright() as pw:
           const rc = celebrate; window.celebrate = function(a, b){ window.__fxAt = performance.now(); return rc(a, b); }; }""", fx)
         pg.wait_for_timeout(1800)
         pg.evaluate(CLOCK)
+        if SEED is not None:
+            pg.evaluate("""(s) => { let a = s >>> 0; Math.random = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a;
+              t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }""", SEED)
         cdp = ctx.new_cdp_session(pg)
         if IFC:
             info = pg.evaluate("() => ({ cls: window.NOVA_CLASS, total: (typeof IFX_DEF !== 'undefined' && IFX_DEF[%s]) ? IFX_DEF[%s].total : 0, unit: topicsIn(QUESTIONS)[0] })" % (json.dumps(fx), json.dumps(fx)))
@@ -153,35 +173,38 @@ with sync_playwright() as pw:
             pg.evaluate("(u) => __run(u, 0, 'drill', false)", info["unit"])
         else:
             pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
-        k = 0
-        # Fire Code: the clip starts just before the effect (the grade counts in and the XP box fills
-        # first, ~10s), so a clip is the effect itself
-        ready = "() => window.__fxAt > 0" if IFC else "() => !!document.querySelector('.rs-grade.rs-in, .rs-grade.rs-in-now')"
-        while k < 40 * FPS and not pg.evaluate(ready):
-            pg.evaluate("() => __clk.advance(1000 / 30)"); k += 1
+        from collections import deque
+        from PIL import Image
+        def crop(fr, tag):
+            rr = pg.evaluate("() => { const b = document.querySelector('.rs-grade').getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }")
+            im = Image.open(io.BytesIO(fr)); kk = im.width / W
+            im.crop(tuple(int(round(v * kk)) for v in rr)).save(OUT + "/box-%s-%dx%d-%s.png" % (fx, W, H, tag))
+        def shot():
+            return base64.b64decode(cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 92})["data"])
+        # wait for the effect itself; once the grade box is up, keep the last half second of frames
+        k = 0; LEAD = FPS // 2; lead = deque(maxlen=LEAD); lead_ts = deque(maxlen=LEAD); got_first = False
+        while k < 60 * FPS and not pg.evaluate("() => window.__fxAt > 0"):
+            t = pg.evaluate("async () => { await __clk.advance(1000 / 30); return performance.now(); }"); k += 1
+            if got_first or pg.evaluate("() => { const g = document.querySelector('.rs-grade'); return !!g && +getComputedStyle(g).opacity >= .5; }"):
+                fr = shot(); lead.append(fr); lead_ts.append(t)
+                # the first frame the grade box is half shown
+                if not got_first: crop(fr, "first"); got_first = True
         path = OUT + "/hundo-%s-%dx%d.mp4" % (fx, W, H)
         p = subprocess.Popen([FF, "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg", "-i", "-",
             "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19", "-preset", "medium",
             "-movflags", "+faststart", "-r", str(FPS), path], stdin=subprocess.PIPE)
-        n = 0; t0 = None; ts = []; got_first = False
-        while n < LEN[fx] * FPS:
-            ts.append(pg.evaluate("async () => { await __clk.advance(1000 / 30); return performance.now(); }"))
-            fr = base64.b64decode(cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 92})["data"])
+        ts = list(lead_ts); n = 0
+        for fr in lead:
             p.stdin.write(fr); n += 1
-            if t0 is None and pg.evaluate("() => window.__fxAt > 0"): t0 = n
-            # the grade box cropped out of this very frame: the first frame
-            # it is half visible ("first"), and well into the effect ("mid")
-            tag = None
-            if not got_first and pg.evaluate("() => { const g = document.querySelector('.rs-grade'); return !!g && +getComputedStyle(g).opacity >= .5; }"):
-                tag = "first"; got_first = True
-            elif t0 is not None and n == t0 + int(MID.get(fx, 2) * FPS):
-                tag = "mid"
-            if tag:
-                rr = pg.evaluate("() => { const b = document.querySelector('.rs-grade').getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }")
-                from PIL import Image
-                im = Image.open(io.BytesIO(fr)); k = im.width / W
-                im.crop(tuple(int(round(v * k)) for v in rr)).save(OUT + "/box-%s-%dx%d-%s.png" % (fx, W, H, tag))
-            if n % 30 == 0: open(OUT + "/f-%s-%02d.jpg" % (fx, n // 30), "wb").write(fr)
+        # the effect started during the last step of the wait: the clip's frame n is its first
+        t0 = n
+        while n < t0 + LEN[fx] * FPS:
+            ts.append(pg.evaluate("async () => { await __clk.advance(1000 / 30); return performance.now(); }"))
+            fr = shot()
+            p.stdin.write(fr); n += 1
+            # the grade box cropped out of this very frame, well into the effect ("mid")
+            if n == t0 + int(MID.get(fx, 2) * FPS): crop(fr, "mid")
+            if (n - t0) % 30 == 0: open(OUT + "/f-%s-%02d.jpg" % (fx, (n - t0) // 30), "wb").write(fr)
         p.stdin.close(); p.wait()
         for _ in range(int(1.5 * FPS)): pg.evaluate("async () => { await __clk.advance(1000 / 30); }")
         # (Fire Code: the next scene is up over the card by then; the first and mid crops are kept)
@@ -190,7 +213,7 @@ with sync_playwright() as pw:
             except Exception as e: print(fx, "settled box not captured:", str(e).split("\n")[0])
         gaps = [round(b - a, 2) for a, b in zip(ts, ts[1:])]
         sm = smoothness(path)
-        print(fx, "frozen-between-moving", sm[0], "jumps", sm[1], ";", "reveal", round(k / FPS, 1), "s; fx at frame", t0, ";", n, "frames; clock steps", min(gaps), "-", max(gaps), "ms;", "ERR" if errs else "", errs[:3], flush=True)
+        print(fx, "frozen-between-moving", sm[0], "jumps", sm[1], ";", "fx after", round(k / FPS, 1), "s of reveal; fx at frame", t0, ";", n, "frames; clock steps", min(gaps), "-", max(gaps), "ms;", "ERR" if errs else "", errs[:3], flush=True)
         ctx.close()
     br.close()
 cb.SERVER.shutdown()

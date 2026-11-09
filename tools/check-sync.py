@@ -329,7 +329,9 @@ with sync_playwright() as pw:
     # BUILD 382: Save it is back, on request ("make saving the code
     # unmistakable"), as the one row under the code - info icon, code row,
     # Save it. Still a count, never labels.
-    check("the sync section is not a pile of buttons again", nbtn <= 3, str(nbtn))
+    # BUILD 384: and the code's copy button beside it, on request ("the sync code needs that same kinda button as well" -
+    # Manage friends' copy icon): info icon, code row, its copy button, Save it.
+    check("the sync section is not a pile of buttons again", nbtn <= 4, str(nbtn))
 
     # The recovery URL is still LOAD-BEARING even with no button on it:
     # the re-add notice hands off to Safari with it, and that is the one
@@ -1352,6 +1354,10 @@ with sync_playwright() as pw:
         p = page(c); p.goto(URL); p.wait_for_timeout(2600)
         p.evaluate("()=>document.getElementById('splashscreen')?.remove()")
         p.wait_for_timeout(300)
+        # (384, round 2) a device with no account opens on Get Started at every launch now - the seen mark above only puts its
+        # button up at once - so a fresh device reaches Welcome as a person does, through Let's get started
+        if p.evaluate("()=>!!document.querySelector('.gs-page .gs-bar.is-ready .gs-go')"):
+            p.evaluate("()=>document.querySelector('.gs-go').click()"); p.wait_for_timeout(1100)
         return c, p
 
     # ---- 9a. sign in first ----

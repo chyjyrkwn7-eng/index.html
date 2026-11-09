@@ -13,11 +13,11 @@ Phone 440x956, dark theme:
     Calendar, Review's list, the Rank and Badges screens, a results screen and a sign-up step - no stars and no wash layer;
 (2) one card: every card on those screens is solid (an opaque fill), with no rim, no shadow, no blur and no gradient of its own -
     the same colour everywhere;
-(3) the switches are a flat track with a flat lighter pill; the search field is the card's colour; the round back button and
-    the chat button are solid, not glass;
+(3) the switches are a flat track with a flat lighter pill; the search field is the card's colour; (384) the chat button is Home's
+    glass on every screen and the round back button wears the same glass;
 (4) no serif display face on Profile, Stats, the Rank tab or Badges (the names and titles);
 (5) a picked unit card: a step lighter, the green dot (scale 1, no tick), no green edge; unpicked: nothing in the corner;
-(6) the daily question, ready: a light running round its rim and a glow inside; answered: neither;
+(6) the daily question, ready: (384) lit and still - no light running round it - with a glow inside; answered: no running light;
 (7) the flash cards keep their own look (their face's gradient and rim);
 (8) round 3 - "more dull and less distracting so it's like leaving the main menu isn't such a major screen change ... darker but
     still little bit of the color from the theme": beyond Home the sky is Home's own turned down - at the screen's edge the
@@ -59,8 +59,10 @@ with sync_playwright() as pw:
       if(!b || !r) return null; const be=getComputedStyle(r,'::before'), af=getComputedStyle(r,'::after');
       return { ready: b.classList.contains('is-ready'), ring: +getComputedStyle(r).opacity, comet: be.animationName, glow: af.animationName,
                cometOn: be.content !== 'none' && parseFloat(be.width) > 0 }; }""")
-    ck("(6) the daily question, ready: a light running round its rim and a glow inside (%s)" % d,
-       d and d["ready"] and d["ring"] > .9 and d["cometOn"] and d["comet"] not in ("none", "") and d["glow"] not in ("none", ""), d)
+    # REVISED IN 384: "The ready version is it just spinning and that's distracting" - ready is still and lit: no comet, the ring
+    # drawn (its ::before a glow, not a turning light), the colour inside breathing
+    ck("(6) the daily question, ready: lit and still - no turning light, a glow inside (%s)" % d,
+       d and d["ready"] and d["ring"] > .9 and d["comet"] in ("none", "") and d["glow"] not in ("none", ""), d)
     # (8) the sky beyond Home: Home's, turned down, eased
     SK = """()=>{ const b=getComputedStyle(document.body,'::before'), h=getComputedStyle(document.documentElement);
       return { k: parseFloat(b.getPropertyValue('--sky-k')), hk: parseFloat(h.getPropertyValue('--sky-k')), layers: (b.backgroundImage.match(/gradient\\(/g) || []).length,
@@ -126,13 +128,16 @@ with sync_playwright() as pw:
             ck("(3) the switch: a flat track and a flat lighter pill (%s)" % seg,
                seg["trackImg"] == "none" and seg["pillImg"] == "none" and seg["pillShadow"] == "none" and seg["trackBlur"] in ("none", "") and seg["pill"] != seg["track"], seg)
             btn = pg.evaluate("""()=>{ const c=getComputedStyle(document.getElementById('chatdock-btn')); return { img: c.backgroundImage, blur: c.backdropFilter || c.webkitBackdropFilter, bg: c.backgroundColor }; }""")
-            ck("(3) the chat button beyond Home is solid, not glass (%s)" % btn, btn["img"] == "none" and btn["blur"] in ("none", "") and "/ 0." not in btn["bg"] and not re.search(r"rgba\([^)]*,\s*0?\.\d+\)", btn["bg"]), btn)
+            # REVISED IN 384: "the chat button on home looks amazing, revert the chat button it looks like that everywhere" - beyond
+            # Home it is Home's glass again (build 380's tab-bar recipe), not 383's flat disc
+            ck("(3) the chat button beyond Home is Home's glass - its frost and its gradient (%s)" % btn, "gradient" in btn["img"] and "blur" in (btn["blur"] or ""), btn)
         if name == "the units":
             f = pg.evaluate("()=>{ const i=document.querySelector('#stage .searchwrap input'); const c=getComputedStyle(i); return { bg: c.backgroundColor, img: c.backgroundImage, rim: c.borderTopColor }; }")
             ck("(3) the units' search field is the card's colour, no rim (%s)" % f, f["img"] == "none" and re.sub(r"\s+", "", f["bg"]) in colors, f)
         if name == "mode selection":
             b = pg.evaluate("()=>{ const c=getComputedStyle(document.querySelector('#stage .ios-nav-back')); return { img: c.backgroundImage, shadow: c.boxShadow, blur: c.backdropFilter }; }")
-            ck("(3) the round back button is solid (%s)" % b, b["img"] == "none" and b["shadow"] == "none" and b["blur"] in ("none", ""), b)
+            # REVISED IN 384: "I think the new back button needs to match it as well" - the chat button's glass
+            ck("(3) the round back button wears the chat button's glass - frost, gradient, shadow (%s)" % b, "gradient" in b["img"] and b["shadow"] != "none" and "blur" in (b["blur"] or ""), b)
     bad = [c for c in allcards if c["alpha"] < .99 or c["grads"] or c["rim"] or c["shadow"] or c["blur"]]
     ck("(2) every card beyond Home is solid - opaque, no gradient, rim, shadow or blur (%d of %d)" % (len(allcards) - len(bad), len(allcards)), allcards and not bad, bad[:4])
     ck("(2) and one colour (%s)" % sorted(colors), len(colors) == 1, sorted(colors))
@@ -148,20 +153,28 @@ with sync_playwright() as pw:
     tone = pg.evaluate("()=>[...document.querySelectorAll('#stage .rs-grade-tone')].map(t=>getComputedStyle(t).display)")
     rbad = [c for c in rc if c["alpha"] < .99 or c["grads"] or c["rim"] or c["shadow"]]
     ck("(2) the results' cards are the solid card, the grade's coloured frame gone (%d cards, tone %s)" % (len(rc), tone), rc and not rbad and all(t == "none" for t in tone), rbad[:3] or tone)
-    # (5) the green dot
+    # (5) the picked dot - (384) in the theme's colour: "what if the color of that was matched to your theme?" (it was iOS green, 383)
     settle(pg, "showHome(); cfg.mode='drill'; cfg.units=[]; showSetup();", 1500)
     pg.evaluate("()=>{ const c=document.querySelectorAll('.picks > label.pick')[1]; c.querySelector('input').click(); }"); pg.wait_for_timeout(900)
-    dot = pg.evaluate("""()=>{ const cs=[...document.querySelectorAll('.picks > label.pick')]; const on=cs[1], off=cs[0];
+    DOT = """()=>{ const cs=[...document.querySelectorAll('.picks > label.pick')]; const on=cs[1], off=cs[0];
       const b=on.querySelector(':scope > .box'), s=getComputedStyle(b), o=getComputedStyle(off.querySelector(':scope > .box'));
       const t=b.querySelector('.pick-tick'); const m=new DOMMatrixReadOnly(s.transform);
-      const green = (s.backgroundImage.match(/rgb\\((\\d+), (\\d+), (\\d+)\\)/g) || []).some(c => { const n=c.match(/\\d+/g).map(Number); return n[1] > n[0] + 60 && n[1] > n[2] + 40; });
+      const probe=document.createElement('span'); probe.style.color='var(--theme-c2)'; on.appendChild(probe); const theme=getComputedStyle(probe).color; probe.remove();
+      const num=c=>{ const n=(c.match(/[\d.]+/g)||[]).map(Number); return /^color\(/.test(c) ? n.slice(0,3).map(x=>x*255) : n.slice(0,3); };
+      const stops=(s.backgroundImage.match(/(rgba?\([^)]*\)|color\(srgb[^)]*\))/g)||[]).map(num), th=num(theme);
+      const near=stops.some(c=>c.length===3 && c.every((v,i)=>Math.abs(v-th[i])<=6));
       const co=getComputedStyle(on), cf=getComputedStyle(off);
-      return { picked: on.classList.contains('pick-checked'), op: +s.opacity, scale: Math.round(Math.hypot(m.a, m.b) * 100) / 100, green,
+      return { picked: on.classList.contains('pick-checked'), op: +s.opacity, scale: Math.round(Math.hypot(m.a, m.b) * 100) / 100, theme, near,
                tickShown: !!t && getComputedStyle(t).display !== 'none', offOp: +o.opacity, w: Math.round(b.getBoundingClientRect().width),
-               onBg: co.backgroundColor, offBg: cf.backgroundColor, onRim: co.borderTopColor, onShadow: co.boxShadow }; }""")
-    ck("(5) a picked unit: a step lighter, the green dot at full, no tick, no green edge (%s)" % dot,
-       dot["picked"] and dot["op"] > .95 and abs(dot["scale"] - 1) < .02 and dot["green"] and not dot["tickShown"] and dot["w"] <= 16
+               onBg: co.backgroundColor, offBg: cf.backgroundColor, onRim: co.borderTopColor, onShadow: co.boxShadow }; }"""
+    dot = pg.evaluate(DOT)
+    ck("(5) a picked unit: a step lighter, the dot at full in the theme's colour (%s), no tick, no edge (%s)" % (dot["theme"], dot),
+       dot["picked"] and dot["op"] > .95 and abs(dot["scale"] - 1) < .02 and dot["near"] and not dot["tickShown"] and dot["w"] <= 16
        and dot["onBg"] != dot["offBg"] and dot["onShadow"] == "none" and (re.search(r",\s*0\)$", dot["onRim"]) or "/ 0)" in dot["onRim"] or dot["onRim"] == "rgba(0, 0, 0, 0)"), dot)
+    th0 = dot["theme"]
+    pg.evaluate("()=>{ document.documentElement.setAttribute('data-accent', document.documentElement.getAttribute('data-accent') === 'vanguard' ? 'veteran' : 'vanguard'); }"); pg.wait_for_timeout(300)
+    dot2 = pg.evaluate(DOT)
+    ck("(5) ...and another theme's dot is that theme's colour (%s -> %s)" % (th0, dot2["theme"]), dot2["near"] and dot2["theme"] != th0, dot2)
     ck("(5) an unpicked card: nothing in the corner", dot["offOp"] < .05, dot)
     # (7) the flash cards keep theirs
     settle(pg, "showFlashcards([topicsIn(QUESTIONS)[6]], 'all');", 1500)

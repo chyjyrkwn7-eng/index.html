@@ -8,10 +8,11 @@ PDFJS = os.environ.get("PDFJS_DIR", "") + "/"
 if not os.path.exists(PDFJS + "build/pdf.min.mjs") and not os.path.exists(PDFJS + "build"):
     print("SKIP: set PDFJS_DIR to an unpacked pdfjs-dist@5.4.149"); sys.exit(0)
 H = ROOT + "/tools"
-src = open(H + "/record-landing.py").read().split("\nSCENES = {")[0]
-g = {"__file__": H + "/record-landing.py", "__name__": "rl"}; exec(src, g)
-rl_main = open(H + "/record-landing.py").read()
-exec(rl_main[rl_main.index("def encode("):rl_main.index("\ndef main(") if "\ndef main(" in rl_main else None], g)
+# (384) record-landing.py no longer wraps the cutscene harness (Get Started round 2 made it self-contained), so the
+# harness it used to hand over as g["g"] - record-cutscenes.py's, at 1.5x - is loaded here the way it loaded it
+src = open(H + "/record-cutscenes.py").read().split("\nSCENES = [")[0].replace("device_scale_factor=1)", "device_scale_factor=1.5)")
+_rc = {"__file__": H + "/record-cutscenes.py", "__name__": "rc"}; exec(src, _rc)
+g = {"g": _rc}
 from playwright.sync_api import sync_playwright
 rc = g["g"]; seed = dict(rc["SEED"]); seed["publicId"] = "xph5b57jbp5a"; seed["firstName"] = "Maddog"; seed["novaMet"] = 99
 srv, port = rc["serve"]()
@@ -96,8 +97,9 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{ cfg.mode = 'drill'; showModeSelect(); }"); pg.wait_for_timeout(900)
     mc = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c => ({ h: Math.round(c.getBoundingClientRect().height), d: (c.querySelector('.modecarddesc') || {}).textContent || '' }))")
     # (this page is the Fire Code class: three cards since 342 - "no Mock in Fire Code" - the academy keeps four)
-    chk("Fire Code's three mode cards (no Mock, 342) are at least 130px tall, their descriptions 60-130 characters and none says classmates",
-        len(mc) == 3 and all(m["h"] >= 130 and 60 <= len(m["d"]) <= 130 and "classmate" not in m["d"].lower() for m in mc), mc)
+    # (384) each card gained a third sentence ("Best for ..."), so a description runs to ~140 characters
+    chk("Fire Code's three mode cards (no Mock, 342) are at least 130px tall, their descriptions 60-170 characters and none says classmates",
+        len(mc) == 3 and all(m["h"] >= 130 and 60 <= len(m["d"]) <= 170 and "classmate" not in m["d"].lower() for m in mc), mc)
     pg.evaluate("()=>{ localStorage.removeItem('class26e.synccode'); }")
     pg.reload(); pg.wait_for_timeout(4800)
     sp = pg.evaluate("()=>{ const s = document.getElementById('splashscreen'); return !s || s.hidden || getComputedStyle(s).display === 'none' || getComputedStyle(s).visibility === 'hidden' || parseFloat(getComputedStyle(s).opacity) === 0; }")

@@ -146,7 +146,9 @@ with sync_playwright() as pw:
           const addRow=document.querySelector('.friend-add-row');
           const art=document.querySelector('.friend-row .friend-row-art');
           const lvl=document.querySelector('.friend-row-lvl');
-          const copy=[...document.querySelectorAll('.friend-act')].find(b=>b.textContent==='Copy');
+          // (384) Copy is the round icon button Manage friends and Settings > Sync share (.friend-copy-btn); the old text
+          // button is kept as a fallback for an older build
+          const copy=document.querySelector('.friend-copy-btn')||[...document.querySelectorAll('.friend-act')].find(b=>b.textContent==='Copy');
           const sect=document.querySelector('.friend-sect-mine');
           const ir=inp?inp.getBoundingClientRect():null, ar=addRow?addRow.getBoundingClientRect():null;
           const pr=pill?pill.getBoundingClientRect():null, wr=wrap?wrap.getBoundingClientRect():null;
@@ -202,7 +204,7 @@ with sync_playwright() as pw:
         ck("and no glow pool drawn on a row",
            f["artBefore"] in (None, "auto", "0px"), f["artBefore"])
         ck("level in the xp bar's blue", f["lvlColor"]=="rgb(111, 194, 255)", (f["lvlColor"],f["lvlText"]))
-        ck("Copy is the standard button", f["copyClass"] and "friend-send" in f["copyClass"] and "ghost" not in f["copyClass"], f["copyClass"])
+        ck("Copy is the standard button", f["copyClass"] and ("friend-copy-btn" in f["copyClass"] or "friend-send" in f["copyClass"]) and "ghost" not in f["copyClass"], f["copyClass"])
         ck("Copy is 44px", (f["copyH"] or 0)>=44, f["copyH"])
         ck("no horizontal page scroll (friends)", f["scrollX"]<=0, f["scrollX"])
         # ---- Calendar: the month (the list view went in build 324 - "instead

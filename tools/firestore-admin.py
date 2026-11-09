@@ -28,6 +28,7 @@ Usage
   python3 tools/firestore-admin.py move --finish [--only NAME] [--yes]
   python3 tools/firestore-admin.py merge <from-public-id> <to-public-id> [--bonus N] [--extra-from ID] [--yes]
   python3 tools/firestore-admin.py credit <orphan-row-public-id> <to-public-id> [--yes]
+  python3 tools/firestore-admin.py merge-now <old public id | name:First> [...] [--yes] [--force] [--hold-file F | --no-hold]
 
 `prune` is the one to reach for: it removes only the rankings rows
 nobody is behind any more and leaves every live row alone. `purge`
@@ -509,6 +510,9 @@ def cmd_bugs(limit):
         print("  %s  %s%s" % (f.get("viewport") or "?",
                               (f.get("ua") or "")[:70],
                               " [installed]" if f.get("standalone") else ""))
+        if f.get("edges"):
+            # build 384: where the browser's bars are on that device (safariBarsReading in index.html)
+            print("  edges: %s" % f.get("edges"))
         if f.get("perf"):
             print("  tab perf: %s" % f.get("perf"))
         for line in (f.get("text") or "").splitlines() or [""]:
@@ -917,6 +921,914 @@ def cmd_credit(argv):
     return 0
 
 
+# ---------------------------------------------------------------- merge-now
+#
+# THE SERVER-SIDE FOLD OF A DUPLICATE ACCOUNT (build 384 r4).
+#
+# `merge` only writes a NOTE; the folding itself happens when a device that is
+# still signed in to the old account opens the app (followAccountMove ->
+# mergeLeavingAccount in index.html). `merge-now` does what that phone would
+# do, from here, so it no longer waits for the phone. Everything below is a
+# line-for-line port of the app's own rules, and tools/check-merge-now.py runs
+# the app's real functions in Chromium against this port to keep them equal.
+#
+# What the phone does, and so what this does (see the docstring of cmd_merge_now):
+#   counts ADD, bests keep the better, lists union, and who the person IS (name,
+#   character, public id, friend code, theme, tours) stays the target's.
+#   A note that already carries `base` (build 287: the old account as it stood
+#   when the server folded it in) adds only the DIFFERENCE (progressSinceBase),
+#   which is what makes a second run, or a phone that opens later, add nothing.
+
+ADD_LIFETIME = ("answered", "correct", "drillPlays", "examPlays", "gamePlays",
+                "perfectTests", "points", "fullTests")
+ADD_COUNTERS = ("vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3",
+                "retakenQuestions", "lateHundos")
+MAX_FIELDS = ("dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak",
+              "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest",
+              "dayAnsweredBest", "friendsBest")
+UNION_LISTS = ("vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks")
+OR_FLAGS = ("practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed",
+            "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324")
+TEST_HISTORY_MAX = 50                    # TEST_HISTORY_MAX in index.html
+STUDY_LEAK_UNTIL, STUDY_OLD_DAY_MAX, STUDY_DAY_MAX = "2026-10-10", 6 * 3600 * 1000, 16 * 3600 * 1000
+MERGE_NOTE_SUFFIX = "__merge"
+FLOOR_SUFFIX = "__floor"
+RESOURCE_ROOT = "projects/%s/databases/(default)/documents" % PROJECT
+
+
+def _num(v):
+    """Number(v) || 0, as JavaScript reads it (ints stay ints)."""
+    if isinstance(v, bool):
+        return 1 if v else 0
+    if isinstance(v, (int, float)):
+        if v != v:
+            return 0
+        return int(v) if isinstance(v, float) and v.is_integer() else v
+    if isinstance(v, str):
+        try:
+            x = float(v.strip() or 0)
+        except ValueError:
+            return 0
+        if x != x:
+            return 0
+        return int(x) if x.is_integer() else x
+    return 0
+
+
+def _t(v):
+    """JavaScript truthiness: an empty object or array is TRUE, 0 and "" are not."""
+    if v is None or v is False or v == 0 and not isinstance(v, (dict, list)) or v == "":
+        return False
+    if isinstance(v, float) and v != v:
+        return False
+    return True
+
+
+def _isnum(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and v == v
+
+
+def _less(a, b):
+    return max(0, _num(a) - _num(b))
+
+
+def _js_str(v):
+    if v is None:
+        return "undefined"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v)
+
+
+def _obj(d, k):
+    """`store[k] || (store[k] = {})`."""
+    v = d.get(k)
+    if not isinstance(v, dict):
+        v = d[k] = {}
+    return v
+
+
+def _studylog_normalize(log):
+    if not isinstance(log, dict):
+        return log
+    for k in list(log):
+        v = _num(log[k])
+        cap = STUDY_OLD_DAY_MAX if k <= STUDY_LEAK_UNTIL else STUDY_DAY_MAX
+        if v > cap:
+            log[k] = cap
+    return log
+
+
+def _clean_classes(v):
+    if not isinstance(v, list):
+        return None
+    out = []
+    for k in v:
+        if k in ("academy", "ifc") and k not in out:
+            out.append(k)
+    if not out:
+        return None
+    return sorted(out, key=lambda x: 0 if x == "academy" else 1)
+
+
+def _classes_with_leaves(lst, a):
+    if not isinstance(lst, list) or not isinstance(a, dict):
+        return lst
+    left, joined = a.get("classLeftAt") or {}, a.get("classJoinedAt") or {}
+    return [k for k in lst if not (_num(left.get(k)) > _num(joined.get(k)))]
+
+
+def merge_leaving_account(dst, src, note=None, now_ms=0, week_key=None, hold_sets=None):
+    """mergeLeavingAccount(src, note) in index.html, on plain documents.
+
+    `dst` (the target's document) is changed IN PLACE; `src` is read only.
+    Returns a dict of what could not be done exactly as the phone does:
+      hold_skipped - no mergeHold was written (no `hold_sets` given)
+      week_skipped - the old account's weekly points were not carried (the
+                     target's week is stale and the tool never rolls a week)
+    Not ported on purpose: rollWeek() (the target's own phone rolls its week;
+    rolling it from here would also need rollWeekStats) - everything else is.
+    """
+    out = {"hold_skipped": False, "week_skipped": False}
+    L = dst.get("lifetime")
+    if not isinstance(L, dict):
+        L = dst["lifetime"] = {}
+    # THE HOLD: the account as it stood before the merge, kept so what the
+    # merge unlocks plays after the next test. A second merge keeps the first.
+    if not _t(dst.get("mergeHold")):
+        if hold_sets is None:
+            out["hold_skipped"] = True
+        else:
+            dst["mergeHold"] = {
+                "points": _num(L.get("points")),
+                "perfects": dict(dst.get("unitPerfects") or {}),
+                "chars": list(hold_sets.get("chars") or []),
+                "banners": list(hold_sets.get("banners") or []),
+                "hundos": _num(L.get("perfectTests")), "at": now_ms}
+    SL = src.get("lifetime") or {}
+    for k in ADD_LIFETIME:
+        L[k] = _num(L.get(k)) + _num(SL.get(k))
+    L["longestStreak"] = max(_num(L.get("longestStreak")), _num(SL.get("longestStreak")))
+    L["currentStreak"] = max(_num(L.get("currentStreak")), _num(SL.get("currentStreak")))
+    # per question: seen, missed, the recent misses
+    st = _obj(dst, "stats")
+    for k, b in (src.get("stats") or {}).items():
+        a = st.get(k) or {"n": 0, "m": 0, "r": []}
+        b = b or {}
+        r = [x for x in (list(a.get("r") or []) + list(b.get("r") or [])) if _isnum(x)]
+        r.sort()
+        st[k] = {"n": _num(a.get("n")) + _num(b.get("n")), "m": _num(a.get("m")) + _num(b.get("m")),
+                 "r": r[-20:]}
+    ts = _obj(dst, "testStats")
+    for k, b in (src.get("testStats") or {}).items():
+        a = ts.get(k)
+        b = b or {}
+        if not isinstance(a, dict):
+            ts[k] = dict(b)
+            continue
+        later = b if _num(b.get("lastPlayedAt")) > _num(a.get("lastPlayedAt")) else a
+        bests = [x for x in (a.get("bestMs"), b.get("bestMs")) if _isnum(x)]
+        merged = dict(a)
+        merged.update({"plays": _num(a.get("plays")) + _num(b.get("plays")),
+                       "totalMs": _num(a.get("totalMs")) + _num(b.get("totalMs")),
+                       "bestMs": min(bests) if bests else None})
+        for f in ("lastPlayedAt", "lastElapsedMs", "lastPct"):
+            if f in later:                       # undefined is dropped by JSON.stringify
+                merged[f] = later[f]
+            else:
+                merged.pop(f, None)
+        ts[k] = merged
+
+    def sum_map(k):
+        d = _obj(dst, k)
+        for u, v in (src.get(k) or {}).items():
+            d[u] = _num(d.get(u)) + _num(v)
+
+    def max_map(k):
+        d = _obj(dst, k)
+        for u, v in (src.get(k) or {}).items():
+            d[u] = max(_num(d.get(u)), _num(v))
+
+    def min_map(k):
+        d = _obj(dst, k)
+        for u, v in (src.get(k) or {}).items():
+            v = _num(v)
+            if v > 0:
+                d[u] = min(_num(d[u]), v) if _t(d.get(u)) else v
+
+    def or_map(k):
+        d = _obj(dst, k)
+        for u, v in (src.get(k) or {}).items():
+            if _t(v):
+                d[u] = d[u] if _t(d.get(u)) else v
+
+    sum_map("studyLog")
+    sum_map("unitPerfects")
+    _studylog_normalize(dst["studyLog"])
+    or_map("unitBlackStar")
+    or_map("flagged")
+    # the classes: both accounts' (a class either was in stays)
+    for f in ("classJoinedAt", "classLeftAt"):
+        d, o = _obj(dst, f), src.get(f) or {}
+        for k in ("academy", "ifc"):
+            if _num(o.get(k)) > _num(d.get(k)):
+                d[k] = _num(o.get(k))
+    ca, cb = _clean_classes(dst.get("classes")), _clean_classes(src.get("classes"))
+    if cb:
+        dst["classes"] = _clean_classes(_classes_with_leaves((ca or ["academy"]) + cb, dst)) or dst.get("classes")
+    if src.get("seenClassTip") is True:
+        dst["seenClassTip"] = True
+    # the grandfather floor: whichever account held the higher level keeps it
+    for k in ("levelFloor", "rankFloor", "levelWallRule"):
+        dst[k] = max(_num(dst.get(k)), _num(src.get(k)))
+    max_map("unitBestPct")
+    min_map("unitBestMs")
+    max_map("flareLevels")
+    for k in ("unitGameBeat", "gameFarthest"):
+        d = _obj(dst, k)
+        for u, bv in (src.get(k) or {}).items():
+            a, b = d.get(u) or {}, bv or {}
+            res = dict(a)
+            for sp, x in b.items():
+                res[sp] = (a.get(sp) or x) if isinstance(x, bool) else max(_num(a.get(sp)), _num(x))
+            d[u] = res
+    min_map("gameHardcoreMs")
+    # exam records and run counts re-seed themselves from the merged history
+    for u in (src.get("unitExam") or {}):
+        if isinstance(dst.get("unitExam"), dict) and _t(dst["unitExam"].get(u)):
+            del dst["unitExam"][u]
+    if isinstance(dst.get("unitRuns"), dict) and isinstance(src.get("unitRuns"), dict):
+        sum_map("unitRuns")
+    else:
+        dst["unitRuns"] = None
+    hist = list(dst.get("testHistory") or []) + list(src.get("testHistory") or [])
+    hist.sort(key=lambda h: -_num(h.get("playedAt") if isinstance(h, dict) else 0))
+    dst["testHistory"] = hist[:TEST_HISTORY_MAX]
+    for k in ADD_COUNTERS:
+        dst[k] = _num(dst.get(k)) + _num(src.get(k))
+    for k in MAX_FIELDS:
+        dst[k] = max(_num(dst.get(k)), _num(src.get(k)))
+    for k in UNION_LISTS:
+        a = dst.get(k) if isinstance(dst.get(k), list) else []
+        dst[k] = (a + [x for x in (src.get(k) or []) if x not in a])[-300:]
+    for k in OR_FLAGS:
+        if src.get(k) is True:
+            dst[k] = True
+    if isinstance(src.get("mysteryColorsFound"), dict) and isinstance(dst.get("mysteryColorsFound"), dict):
+        for c, v in src["mysteryColorsFound"].items():
+            if _t(v):
+                dst["mysteryColorsFound"][c] = True
+    if isinstance(src.get("flareMissed"), dict):
+        fm = dst["flareMissed"] = dst.get("flareMissed") or {}
+        for c, v in src["flareMissed"].items():
+            if v is True:
+                fm[c] = True
+    me = [dst.get("publicId"), src.get("publicId")]
+    for k in ("friendsOut", "friendsIn"):
+        a = dst.get(k) if isinstance(dst.get(k), list) else []
+        dst[k] = [x for x in (a + [x for x in (src.get(k) or []) if x not in a]) if x not in me][:200]
+    # this week's board, where both weeks are this week (see the docstring)
+    if src.get("weekKey") and week_key and src["weekKey"] == week_key:
+        if dst.get("weekKey") == week_key:
+            dst["weekPoints"] = _num(dst.get("weekPoints")) + _num(src.get("weekPoints"))
+        else:
+            out["week_skipped"] = True
+    ex = (note or {}).get("extra")
+    if isinstance(ex, dict):
+        L["points"] = _num(L.get("points")) + _num(ex.get("points"))
+        L["correct"] = _num(L.get("correct")) + _num(ex.get("correct"))
+        L["answered"] = max(_num(L.get("answered")) + _num(ex.get("correct")), _num(L.get("correct")))
+        if ex.get("week") and ex["week"] == dst.get("weekKey"):
+            dst["weekPoints"] = _num(dst.get("weekPoints")) + _num(ex.get("weekPoints"))
+    bonus = max(0, min(5, _num((note or {}).get("bonusLevels"))))
+    if bonus:
+        shown = effective_level(dst)
+        lp = level_detail(L.get("points"))
+        if not lp["at_cap"]:
+            target = min(LEVEL_CAP, lp["level"] + bonus)
+            base = xp_for_level(target)
+            span = level_detail(base)["span"] or 0
+            L["points"] = max(_num(L.get("points")), base + _js_round(lp["fraction"] * span))
+        gift_to = min(LEVEL_CAP, shown + bonus)
+        if effective_level(dst) < gift_to:
+            dst["levelFloor"] = max(_num(dst.get("levelFloor")), gift_to)
+    dst["lastModified"] = now_ms
+    return out
+
+
+def progress_since_base(src, base):
+    """progressSinceBase(src, base): only what `src` holds beyond `base`, for
+    the fields merge_leaving_account ADDS. Every max, min, either and union is
+    already safe to apply twice, so those are left alone."""
+    out = json.loads(json.dumps(src))
+    L, BL = out.setdefault("lifetime", {}), base.get("lifetime") or {}
+    for k in ADD_LIFETIME:
+        L[k] = _less(L.get(k), BL.get(k))
+    bs = base.get("stats") or {}
+    for k in list((out.get("stats") or {}).keys()):
+        a, b = out["stats"][k] or {}, bs.get(k)
+        if not _t(b):
+            continue
+        seen = {x for x in (b.get("r") or []) if _isnum(x)}
+        out["stats"][k] = {"n": _less(a.get("n"), b.get("n")), "m": _less(a.get("m"), b.get("m")),
+                           "r": [x for x in (a.get("r") or []) if _isnum(x) and x not in seen]}
+    bts = base.get("testStats") or {}
+    for k in list((out.get("testStats") or {}).keys()):
+        a, b = out["testStats"].get(k), bts.get(k)
+        if not _t(a) or not _t(b):
+            continue
+        a["plays"] = _less(a.get("plays"), b.get("plays"))
+        a["totalMs"] = _less(a.get("totalMs"), b.get("totalMs"))
+    for k in ("studyLog", "unitPerfects", "unitRuns"):
+        if not isinstance(out.get(k), dict) or not isinstance(base.get(k), dict):
+            continue
+        for u in list(out[k].keys()):
+            out[k][u] = _less(out[k][u], base[k].get(u))
+    had = {t.get("playedAt") for t in (base.get("testHistory") or []) if isinstance(t, dict) and t.get("playedAt")}
+    out["testHistory"] = [t for t in (out.get("testHistory") or []) if t and t.get("playedAt") not in had]
+    for k in ADD_COUNTERS:
+        out[k] = _less(out.get(k), base.get(k))
+    if base.get("weekKey") and base["weekKey"] == out.get("weekKey"):
+        out["weekPoints"] = _less(out.get("weekPoints"), base.get("weekPoints"))
+    return out
+
+
+def base_of(old):
+    """The `base` a merge note carries once the server has folded `old` in: the
+    fields progressSinceBase reads, and nothing else (a note must stay small)."""
+    L = old.get("lifetime") or {}
+    base = {"lifetime": {k: _num(L.get(k)) for k in ADD_LIFETIME},
+            "stats": {k: {"n": _num((v or {}).get("n")), "m": _num((v or {}).get("m")),
+                          "r": [x for x in ((v or {}).get("r") or []) if _isnum(x)]}
+                      for k, v in (old.get("stats") or {}).items()},
+            "testStats": {k: {"plays": _num((v or {}).get("plays")), "totalMs": _num((v or {}).get("totalMs"))}
+                          for k, v in (old.get("testStats") or {}).items()},
+            "testHistory": [{"playedAt": t["playedAt"]} for t in (old.get("testHistory") or [])
+                            if isinstance(t, dict) and t.get("playedAt")]}
+    for k in ("studyLog", "unitPerfects", "unitRuns"):
+        if isinstance(old.get(k), dict):
+            base[k] = {u: _num(v) for u, v in old[k].items()}
+    for k in ADD_COUNTERS:
+        base[k] = _num(old.get(k))
+    if old.get("weekKey"):
+        base["weekKey"] = old["weekKey"]
+        base["weekPoints"] = _num(old.get("weekPoints"))
+    return base
+
+
+def _projection(x):
+    """The additive part of a document, for 'is there anything to add'."""
+    L = x.get("lifetime") or {}
+    return {"life": {k: _num(L.get(k)) for k in ADD_LIFETIME},
+            "counters": {k: _num(x.get(k)) for k in ADD_COUNTERS},
+            "week": _num(x.get("weekPoints")),
+            "stats": {k: (_num((v or {}).get("n")), _num((v or {}).get("m")), len((v or {}).get("r") or []))
+                      for k, v in (x.get("stats") or {}).items()},
+            "testStats": {k: (_num((v or {}).get("plays")), _num((v or {}).get("totalMs")))
+                          for k, v in (x.get("testStats") or {}).items()},
+            "maps": {k: {u: _num(v) for u, v in (x.get(k) or {}).items()} if isinstance(x.get(k), dict) else None
+                     for k in ("studyLog", "unitPerfects", "unitRuns")},
+            "history": sorted(str(t.get("playedAt")) for t in (x.get("testHistory") or []) if t)}
+
+
+def nothing_to_add(delta, src):
+    """True when `delta` (progress_since_base) holds nothing the target lacks:
+    it equals what the same account minus ITSELF would give."""
+    return _projection(delta) == _projection(progress_since_base(src, base_of(src)))
+
+
+def fold_evidence(target, old):
+    """Is `old` already inside `target`? A test is in both histories only if
+    the target took the old account in (two people never share a test), and the
+    history is capped, so only the old tests NEWER than the target's oldest
+    kept one can be expected to be there."""
+    key = lambda h: h.get("playedAt") if isinstance(h, dict) else None
+    oh = {key(h) for h in (old.get("testHistory") or []) if key(h)}
+    th_list = [key(h) for h in (target.get("testHistory") or []) if key(h)]
+    th = set(th_list)
+    floor = min(th_list) if len(th_list) >= TEST_HISTORY_MAX else 0
+    checkable = {x for x in oh if x >= floor}
+    present = checkable & th
+    ost, tst = old.get("stats") or {}, target.get("stats") or {}
+    covered = sum(1 for k, v in ost.items() if _num((tst.get(k) or {}).get("n")) >= _num((v or {}).get("n")))
+    return {"old_tests": len(oh), "checkable": len(checkable), "present": len(present),
+            "stats_keys": len(ost), "stats_covered": covered}
+
+
+def floor_is_ahead(floor, merged):
+    """accountAhead(floor, merged) without its test-history clause (the history
+    is capped, so an entry the merge pushed off the end says nothing): does the
+    high-water mark hold progress the merged account lacks? Then it must be
+    healed first (a launch of the target's app does it), never written over."""
+    n = _num
+    La, Lb = floor.get("lifetime") or {}, merged.get("lifetime") or {}
+    tally_keys = ("points", "answered", "correct", "drillPlays", "examPlays", "gamePlays", "perfectTests", "fullTests")
+    if any(n(La.get(k)) > n(Lb.get(k)) for k in tally_keys):
+        return True
+    Ua, Ub = floor.get("unitPerfects") or {}, merged.get("unitPerfects") or {}
+    if any(n(Ua[u]) > n(Ub.get(u)) for u in Ua):
+        return True
+    Ta = floor.get("tally") if isinstance(floor.get("tally"), dict) else {}
+    Tb = merged.get("tally") if isinstance(merged.get("tally"), dict) else {}
+    for d, m in Ta.items():
+        for k, v in (m or {}).items():
+            if k[:1] != "W" and n(v) > n((Tb.get(d) or {}).get(k)):
+                return True
+    Sa, Sb = floor.get("studyLog") or {}, merged.get("studyLog") or {}
+    if any(n(Sa[d]) > n(Sb.get(d)) for d in Sa):
+        return True
+    ca, cb = _clean_classes(floor.get("classes")) or [], _clean_classes(merged.get("classes")) or []
+    if any(k not in cb for k in ca):
+        return True
+    return n(floor.get("socialAt")) > n(merged.get("socialAt"))
+
+
+def tally_normalize(doc):
+    """tallyNormalize(): a count raised by hand on the server goes into the
+    BASE, so base + tallies equals the count again and no device later reads the
+    difference as its own play. Only for a key that has a base (a copy without
+    one is read the old way, higher side wins)."""
+    tb, ty = doc.get("tallyBase"), doc.get("tally")
+    if not isinstance(tb, dict):
+        return
+    ty = ty if isinstance(ty, dict) else {}
+    for k in list(tb):
+        if k[:1] == "L":
+            v = _num((doc.get("lifetime") or {}).get(k[2:]))
+        elif k[:1] == "U":
+            v = _num((doc.get("unitPerfects") or {}).get(k[2:]))
+        elif k[:1] == "W":
+            if doc.get("weekKey") != k[2:]:
+                continue
+            v = _num(doc.get("weekPoints"))
+        else:
+            continue
+        s = sum(_num((m or {}).get(k)) for m in ty.values() if isinstance(m, dict))
+        if v - s > _num(tb[k]):
+            tb[k] = v - s
+
+
+def _growth(l):
+    """levelGrowthAt(): same table as level_of's _curve_level call."""
+    if l <= 25: return 1.05
+    if l > 50: return min(1.0835, 1 + 0.001 * (l - 50))
+    if l > 45: return 1.0835
+    if l == 26: return 2.0
+    return 1.0199
+
+
+def _ceiling(l):
+    return 9000 if l <= 25 else 150000
+
+
+def level_detail(points):
+    """levelProgress() for the academy: the level, what it costs, how far into
+    it. (_curve_level, above, only returns the level.)"""
+    p = max(0, float(points or 0))
+    lvl, need, spent = 1, 300, 0
+    while lvl < LEVEL_CAP and p >= spent + need:
+        spent += need; lvl += 1
+        need = min(_ceiling(lvl + 1), _js_round(need * _growth(lvl + 1)))
+    at_cap = lvl >= LEVEL_CAP
+    return {"level": lvl, "spent": spent, "span": 0 if at_cap else need, "at_cap": at_cap,
+            "fraction": 1 if at_cap else min(1, max(0, (p - spent) / need))}
+
+
+def xp_for_level(target):
+    lvl, need, spent = 1, 300, 0
+    while lvl < target and lvl < LEVEL_CAP:
+        spent += need; lvl += 1
+        need = min(_ceiling(lvl + 1), _js_round(need * _growth(lvl + 1)))
+    return spent
+
+
+# ---- typed values: the REST shape of a document, both ways ----
+
+_EXOTIC = ("timestampValue", "bytesValue", "referenceValue", "geoPointValue")
+
+
+def _has_exotic(typed):
+    """True if a typed tree holds a value this tool would flatten (a timestamp
+    read back as text would be written back as a string)."""
+    if isinstance(typed, dict):
+        if any(k in typed for k in _EXOTIC):
+            return True
+        return any(_has_exotic(v) for v in typed.values())
+    if isinstance(typed, list):
+        return any(_has_exotic(v) for v in typed)
+    return False
+
+
+def _typed_value(v):
+    if v is None:
+        return {"nullValue": None}
+    if isinstance(v, bool):
+        return {"booleanValue": v}
+    if isinstance(v, int):
+        return {"integerValue": str(v)}
+    if isinstance(v, float):
+        if v.is_integer() and abs(v) < 2 ** 53:
+            return {"integerValue": str(int(v))}      # what the app's SDK writes for a whole number
+        return {"doubleValue": v}
+    if isinstance(v, str):
+        return {"stringValue": v}
+    if isinstance(v, list):
+        return {"arrayValue": {"values": [_typed_value(x) for x in v]} if v else {}}
+    if isinstance(v, dict):
+        return {"mapValue": {"fields": {k: _typed_value(x) for k, x in v.items()}} if v else {}}
+    raise ValueError("cannot encode %r" % type(v))
+
+
+def _field_path(name):
+    import re
+    if re.match(r"^[A-Za-z_][A-Za-z_0-9]*$", name):
+        return name
+    return "`" + name.replace("\\", "\\\\").replace("`", "\\`") + "`"
+
+
+# ---- the REST transaction ----
+
+def _post(path, body, timeout=60):
+    req = urllib.request.Request(BASE + path, data=json.dumps(body).encode("utf-8"), method="POST")
+    req.add_header("Content-Type", "application/json")
+    token = _access_token()
+    if token:
+        req.add_header("Authorization", "Bearer " + token)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, r.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", "replace")
+
+
+def _resource(coll, doc_id):
+    return "%s/%s/%s" % (RESOURCE_ROOT, coll, doc_id)
+
+
+def _batch_get(refs, tx=None):
+    """{ (coll, id): raw document or None } in one round trip, inside the
+    transaction when there is one (a read in a transaction is locked until it
+    commits or is rolled back, which is what stops a concurrent write)."""
+    body = {"documents": [_resource(c, i) for c, i in refs]}
+    if tx:
+        body["transaction"] = tx
+    status, text = _post(":batchGet", body)
+    if status != 200:
+        raise RuntimeError("batchGet failed: HTTP %s" % status)
+    got = {}
+    for item in json.loads(text):
+        if "found" in item:
+            doc = item["found"]
+            got[tuple(doc["name"].split("/documents/", 1)[1].split("/", 1))] = doc
+    return {ref: got.get(ref) for ref in refs}
+
+
+def _plain_doc(raw):
+    return _plain(raw.get("fields")) if raw else None
+
+
+def _scrub(text, ids_to_labels):
+    """No sync code ever leaves this tool: an error body from Firestore names
+    the document it refused, and the document id IS a code."""
+    text = str(text)
+    for doc_id, label in ids_to_labels.items():
+        text = text.replace(doc_id, label)
+    return text
+
+
+def _resolve_old(rows, spec):
+    """(code, fields) of the old account `spec` names - a public id, or
+    name:<First name> - among the accounts that carry a merge note. Public ids
+    in, never codes; a name is exact and must be unique."""
+    noted = {c[:-len(MERGE_NOTE_SUFFIX)] for c, f in rows if c.endswith(MERGE_NOTE_SUFFIX)}
+    hit = []
+    for code, f in rows:
+        if "__" in code or code not in noted:
+            continue
+        if spec.startswith("name:"):
+            if f.get("firstName") == spec[5:]:
+                hit.append((code, f))
+        elif f.get("publicId") == spec:
+            hit.append((code, f))
+    return hit
+
+
+def plan_merge_now(target, old, note, floor, now_ms, week_key, hold_sets=None,
+                   force=False, allow_no_hold=False, target_pid_count=1):
+    """Everything merge-now decides, with no I/O - the thing the self-test
+    runs on synthetic documents. Returns:
+      refusals  - reasons it will not write (empty = may write)
+      warnings  - things worth reading
+      mode      - "delta" (the note carries base) or "whole"
+      merged    - the target's document after the merge, or None when there is
+                  nothing to add
+      changed   - the top-level fields that differ
+      floor_doc - what the high-water mark becomes (the merged document)
+      note_new  - fields to write on the merge note, and note_drop to delete
+      whole     - what adding the old account WHOLE would have given (the
+                  double-count a naive merge would make), for the report
+    """
+    refusals, warnings = [], []
+    plan = {"refusals": refusals, "warnings": warnings, "mode": None, "merged": None, "changed": [],
+            "floor_doc": None, "note_new": {}, "note_drop": [], "whole": None, "evidence": None,
+            "hold_skipped": False, "added": {}}
+    if target_pid_count != 1:
+        refusals.append("the target must be exactly one progress document; found %d carrying its public id" % target_pid_count)
+    if not target:
+        refusals.append("the target document does not exist")
+    if not old:
+        refusals.append("the old account's document does not exist")
+    if refusals:
+        return plan
+    base = note.get("base") if isinstance(note.get("base"), dict) else None
+    plan["mode"] = "delta" if base else "whole"
+    plan["evidence"] = fold_evidence(target, old)
+    ev = plan["evidence"]
+    # what a naive whole add would do, for the report only
+    whole = json.loads(json.dumps(target))
+    merge_leaving_account(whole, old, None, now_ms, week_key, {"chars": [], "banners": []})
+    plan["whole"] = whole
+    if base:
+        eff = progress_since_base(old, base)
+        if nothing_to_add(eff, old) and not (note.get("bonusLevels") or note.get("extra")):
+            plan["nothing"] = True
+            return plan
+        if note.get("bonusLevels") or note.get("extra"):
+            warnings.append("the note carries base AND bonus/extra: the fold that wrote the base may already have paid them")
+            if not force:
+                refusals.append("bonus/extra on a note that already has a base needs --force")
+    else:
+        eff = old
+        if ev["present"] > 0 and not force:
+            refusals.append("%d of the %d old tests that could still be in the target's history ARE there: the old "
+                            "account looks already folded in, and a whole add would count it twice (--force overrides)"
+                            % (ev["present"], ev["checkable"]))
+        elif ev["old_tests"] == 0:
+            warnings.append("the old account has no test history, so 'already folded in' cannot be checked")
+    merged = json.loads(json.dumps(target))
+    info = merge_leaving_account(merged, eff, note, now_ms, week_key, hold_sets)
+    plan["hold_skipped"] = info["hold_skipped"]
+    if info["hold_skipped"] and not allow_no_hold:
+        refusals.append("no mergeHold was written: give --hold-file (from tools/merge-hold-probe.py) so what the merge "
+                        "unlocks plays after the next test, or --no-hold to accept it being announced on Home")
+    if info["week_skipped"]:
+        warnings.append("the old account's weekly points were not carried (the target's week is stale; its own phone rolls it)")
+    tally_normalize(merged)
+    changed = [k for k in sorted(set(merged) | set(target)) if merged.get(k) != target.get(k) or (k in merged) != (k in target)]
+    changed = [k for k in changed if k != "lastModified"] + (["lastModified"] if "lastModified" in changed else [])
+    plan["merged"], plan["changed"] = merged, changed
+    if floor and floor_is_ahead(floor, merged):
+        refusals.append("the high-water mark holds progress the target lacks: open the target's app once so it heals, then re-run")
+    plan["floor_doc"] = merged
+    L, T = merged.get("lifetime") or {}, target.get("lifetime") or {}
+    plan["added"] = {k: _num(L.get(k)) - _num(T.get(k)) for k in ("points", "correct", "answered", "perfectTests", "fullTests")}
+    plan["note_new"] = {"base": base_of(old), "serverMergedAt": now_ms,
+                        "serverMerged": {"points": plan["added"]["points"], "correct": plan["added"]["correct"]}}
+    plan["note_drop"] = [k for k in ("bonusLevels", "extra") if k in note]
+    return plan
+
+
+def family_numbers(f):
+    """The numbers worth comparing before and after, from one document."""
+    L, up = f.get("lifetime") or {}, f.get("unitPerfects") or {}
+    seen = f.get("unlocksShown") or {}
+    return {"XP": _num(L.get("points")), "level": effective_level(f), "correct": _num(L.get("correct")),
+            "answered": _num(L.get("answered")), "hundos": _num(L.get("perfectTests")),
+            "badges": badges_of(f), "full tests": _num(L.get("fullTests")),
+            "tests on record": len(f.get("testHistory") or []),
+            "study min": round(sum(_num(v) for v in (f.get("studyLog") or {}).values()) / 60000),
+            "longest streak": _num(L.get("longestStreak")), "current streak": _num(L.get("currentStreak")),
+            "chars announced": len(seen.get("chars") or []), "banners announced": len(seen.get("banners") or [])}
+
+
+def week_key_now(now_ms):
+    """weekKeyNow(): the Monday of this week, in the class's own time zone."""
+    import datetime
+    try:
+        import zoneinfo
+        tz = zoneinfo.ZoneInfo(os.environ.get("NOVA_TZ") or "America/Chicago")
+    except Exception:
+        tz = datetime.timezone.utc
+    d = datetime.datetime.fromtimestamp(now_ms / 1000.0, tz)
+    d = (d - datetime.timedelta(days=(d.weekday()))).date()
+    return d.isoformat()
+
+
+def _print_family(labels, before, after, whole=None):
+    keys = list(before)
+    head = "    %-20s %12s %12s %12s" % ("", "before", "after", "change")
+    if whole is not None:
+        head += " %14s" % "naive whole add"
+    print(head)
+    for k in keys:
+        row = "    %-20s %12s %12s %12s" % (k, "{:,}".format(before[k]), "{:,}".format(after[k]),
+                                           "{:+,}".format(after[k] - before[k]) if after[k] != before[k] else "-")
+        if whole is not None:
+            row += " %14s" % "{:,}".format(whole[k])
+        print(row)
+
+
+def cmd_merge_now(argv):
+    """FOLD A DUPLICATE ACCOUNT INTO THE REAL ONE FROM HERE (build 384 r4).
+
+      merge-now <old public id | name:First> [...] [--yes] [--force]
+                [--hold-file FILE | --no-hold] [--to PUBLIC-ID]
+
+    Does what the phone would do when it follows the old account's
+    progress/<old code>__merge note - mergeLeavingAccount in index.html - but
+    on the server, so it no longer depends on that phone. The note is the
+    authority: its `to` names the target, its `bonusLevels` and `extra` are
+    applied, its `base` (if any) turns the merge into "add only what the old
+    account holds beyond what was already folded in".
+
+    DRY RUN BY DEFAULT: reads only, and prints a before/after for each family
+    of numbers with accounts labelled acct1, acct2 ... (never a sync code).
+    --yes writes, in ONE Firestore transaction (the old account, the target,
+    its high-water mark and the note are all read inside it, and the commit
+    carries each document's updateTime as a precondition, so any concurrent
+    write aborts it and nothing is written):
+      - the target's changed fields (every other field untouched);
+      - the target's high-water mark (__floor) set to the merged document - it
+        only ever rises: if it holds progress the merged account lacks the run
+        refuses instead;
+      - the note: `base` = the old account as just folded in, `serverMergedAt`,
+        and the `bonusLevels`/`extra` already paid are removed. A phone that
+        opens the old account later therefore adds only what it played since,
+        and a second merge-now of the same pair finds nothing to add.
+    The old account's own document is NEVER touched. Deleting it is a separate
+    step (see `move --finish`).
+
+    Refuses when: the target's public id is not on exactly one document; a
+    note-less old account; a note with no base whose old tests are already in
+    the target (it would count the account twice; --force overrides); a merge
+    that unlocks something and no --hold-file / --no-hold; a stale
+    high-water mark.
+    Public ids and `name:` in, never codes."""
+    if not admin_ready():
+        print("merge-now needs the admin key: the codes are the progress document ids.")
+        return 2
+    specs, hold_file, to_pid, i = [], None, None, 0
+    confirmed, force, no_hold = "--yes" in argv, "--force" in argv, "--no-hold" in argv
+    rest = [a for a in argv if a not in ("--yes", "--force", "--no-hold")]
+    while i < len(rest):
+        if rest[i] == "--hold-file":
+            hold_file = rest[i + 1]; i += 2; continue
+        if rest[i] == "--to":
+            to_pid = rest[i + 1]; i += 2; continue
+        specs.append(rest[i]); i += 1
+    if not specs or (to_pid and len(specs) != 1):
+        print("usage: firestore-admin.py merge-now <old public id | name:First> [...] [--yes] [--force] "
+              "[--hold-file FILE | --no-hold] [--to PUBLIC-ID]")
+        return 2
+    holds = {}
+    if hold_file:
+        with open(hold_file) as fh:
+            holds = json.load(fh)
+    rows = docs("progress", mask=["firstName", "publicId", "to"])
+    by_pub = {}
+    for code, f in rows:
+        if "__" not in code and f.get("publicId"):
+            by_pub.setdefault(f["publicId"], []).append(code)
+    names = {code: f.get("firstName") for code, f in rows}
+    status = 0
+    for n, spec in enumerate(specs, 1):
+        label = "pair %d" % n
+        hit = _resolve_old(rows, spec)
+        if len(hit) != 1:
+            print("%s: %s names %d accounts with a merge note (need exactly one)" % (label, spec if spec.startswith("name:") else "that public id", len(hit)))
+            status = 1
+            continue
+        old_code = hit[0][0]
+        note_rows = {c: f for c, f in rows}
+        note_stub = note_rows.get(old_code + MERGE_NOTE_SUFFIX) or {}
+        to_code = note_stub.get("to")
+        if not to_code or (to_code not in names):
+            print("%s: the merge note points at an account that does not exist" % label)
+            status = 1
+            continue
+        tgt_pid = (next(f for c, f in rows if c == to_code)).get("publicId")
+        ids = {old_code: "acct%d" % (2 * n - 1), to_code: "acct%d" % (2 * n)}
+        if to_pid and tgt_pid != to_pid:
+            print("%s: the note points at a different account than --to" % label)
+            status = 1
+            continue
+        refs = [("progress", old_code), ("progress", to_code), ("progress", old_code + MERGE_NOTE_SUFFIX),
+                ("progress", to_code + FLOOR_SUFFIX)]
+        tx = None
+        try:
+            if confirmed:
+                st, text = _post(":beginTransaction", {"options": {"readWrite": {}}})
+                if st != 200:
+                    raise RuntimeError("beginTransaction failed: HTTP %s" % st)
+                tx = json.loads(text)["transaction"]
+            raw = _batch_get(refs, tx)
+        except Exception as e:
+            print("%s: %s" % (label, _scrub(e, ids)))
+            status = 1
+            continue
+        old, target = _plain_doc(raw[refs[0]]), _plain_doc(raw[refs[1]])
+        note, floor = _plain_doc(raw[refs[2]]) or {}, _plain_doc(raw[refs[3]])
+        now_ms = int(time.time() * 1000)
+        wk = week_key_now(now_ms)
+        if any(_has_exotic(raw[r].get("fields")) for r in refs[:2] if raw[r]):
+            print("%s: a document holds a timestamp/bytes/reference value this tool would flatten; refusing" % label)
+            status = 1
+            continue
+        sets = holds.get(tgt_pid) if holds else None
+        plan = plan_merge_now(target, old, note, floor, now_ms, wk, hold_sets=sets, force=force,
+                              allow_no_hold=no_hold, target_pid_count=len(by_pub.get(tgt_pid, [])) if tgt_pid else 0)
+        print("\n%s: %s (%s) -> %s (%s)   mode: %s" % (label, ids[old_code], names.get(old_code), ids[to_code],
+                                                       names.get(to_code), plan["mode"] or "-"))
+        _report(plan, old, target, note, raw, refs)
+        if plan["refusals"]:
+            for r in plan["refusals"]:
+                print("  %s %s" % ("REFUSED:" if confirmed else "WOULD REFUSE --yes:", r))
+            status = 1
+        elif plan.get("nothing"):
+            print("  nothing to add: the old account holds nothing beyond its note's base (already folded in).")
+        elif not confirmed:
+            print("  dry run: nothing written. Re-run with --yes to write.")
+        else:
+            try:
+                ok = _commit_plan(plan, raw, refs, tx, old_code, to_code)
+            except Exception as e:
+                print("  NOT WRITTEN: %s" % _scrub(e, ids))
+                ok = False
+            status = status or (0 if ok else 1)
+        if tx and (plan["refusals"] or plan.get("nothing")):
+            _post(":rollback", {"transaction": tx})
+    return status
+
+
+def _report(plan, old, target, note, raw, refs):
+    ev = plan.get("evidence")
+    if ev:
+        print("  fold check: %d of %d old tests that could still be in the target's history are there; "
+              "target's answers cover %d of %d questions the old account saw"
+              % (ev["present"], ev["checkable"], ev["stats_covered"], ev["stats_keys"]))
+    base = note.get("base")
+    print("  note: base %s, bonusLevels %s, extra %s, serverMergedAt %s" % (
+        "yes" if isinstance(base, dict) else "no", note.get("bonusLevels", "-"),
+        "yes" if note.get("extra") else "-", note.get("serverMergedAt", "-")))
+    print("  old account written %s, target written %s" % (
+        (raw[refs[0]] or {}).get("updateTime", "?"), (raw[refs[1]] or {}).get("updateTime", "?")))
+    if plan.get("whole") is not None:
+        before = family_numbers(target)
+        after = family_numbers(plan["merged"]) if plan["merged"] else before
+        whole = family_numbers(plan["whole"])
+        _print_family(None, before, after, whole)
+        if plan["mode"] == "delta" and whole["XP"] > before["XP"]:
+            print("  FLAG: adding the old account whole (a merge with no base) would count %s XP twice, taking the level "
+                  "%d -> %d; this run uses the note's base and adds only the difference."
+                  % ("{:,}".format(whole["XP"] - before["XP"]), before["level"], whole["level"]))
+    for w in plan["warnings"]:
+        print("  note: " + w)
+
+
+def _floor_fields(merged_fields, floor_raw):
+    """What the high-water mark becomes: the merged document, as the app's own
+    push writes it (tx.set(fref, doc)). A seam of its own so the self-test can
+    prove a floor that is NOT raised gets caught."""
+    return merged_fields
+
+
+def _commit_plan(plan, raw, refs, tx, old_code, to_code):
+    """The writes, in ONE commit inside the transaction the reads were made in."""
+    t_raw, f_raw, n_raw = raw[refs[1]], raw[refs[3]], raw[refs[2]]
+    changed = plan["changed"]
+    merged_fields = dict(t_raw["fields"])
+    for k in changed:
+        if k in plan["merged"]:
+            merged_fields[k] = _typed_value(plan["merged"][k])
+        else:
+            merged_fields.pop(k, None)
+    writes = [{"update": {"name": _resource("progress", to_code),
+                          "fields": {k: merged_fields[k] for k in changed if k in plan["merged"]}},
+               "updateMask": {"fieldPaths": [_field_path(k) for k in changed]},
+               "currentDocument": {"updateTime": t_raw["updateTime"]}},
+              {"update": {"name": _resource("progress", to_code + FLOOR_SUFFIX), "fields": _floor_fields(merged_fields, f_raw)},
+               "currentDocument": ({"updateTime": f_raw["updateTime"]} if f_raw else {"exists": False})}]
+    note_fields = {k: _typed_value(v) for k, v in plan["note_new"].items()}
+    writes.append({"update": {"name": _resource("progress", old_code + MERGE_NOTE_SUFFIX), "fields": note_fields},
+                   "updateMask": {"fieldPaths": [_field_path(k) for k in list(plan["note_new"]) + plan["note_drop"]]},
+                   "currentDocument": {"updateTime": n_raw["updateTime"]}})
+    st, text = _post(":commit", {"writes": writes, "transaction": tx})
+    if st != 200:
+        print("  NOT WRITTEN: HTTP %s (a concurrent write aborts the transaction; nothing was changed)" % st)
+        return False
+    added = plan["added"]
+    again = _batch_get([refs[1], refs[3]])
+    now_t, now_f = _plain_doc(again[refs[1]]), _plain_doc(again[refs[3]])
+    ok = (now_t["lifetime"].get("points") == plan["merged"]["lifetime"].get("points")
+          and now_f and now_f["lifetime"].get("points") == plan["merged"]["lifetime"].get("points"))
+    print("  WRITTEN: +%s XP, +%s correct, %s field(s) of the target, its high-water mark raised, the note carries the new base."
+          % ("{:,}".format(added["points"]), "{:,}".format(added["correct"]), len(changed)))
+    print("  read back: target and high-water mark %s" % ("hold the merged XP" if ok else "DO NOT MATCH - look at it"))
+    return bool(ok)
+
+
 # ---------------------------------------------------------------- audit
 #
 # "Check every single account and ensure everything is fixed and
@@ -1213,6 +2125,8 @@ def main(argv):
         return cmd_merge(argv[2:])
     if cmd == "credit":
         return cmd_credit(argv[2:])
+    if cmd == "merge-now":
+        return cmd_merge_now(argv[2:])
     print("Unknown command %r" % cmd)
     return 2
 

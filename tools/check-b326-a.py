@@ -376,9 +376,10 @@ def sec_dim_edges(br, do_dim=True, do_edges=True):
                 gz = s0["gz"]
                 over = gz not in (None, "auto") and d and d[0]["z"] not in ("auto",) and int(gz) > int(d[0]["z"])
                 peak = [round(S[t]["dims"][0]["op"], 2) if S[t]["dims"] else 0 for t in times]
-                check("%s: one dim, the shared one (%s), up at its peak through the effect and gone when the buttons rise (opacity %s), the box over it" % (tag, kinds, peak),
-                      one and over and abs(peak[1] - .5) < .02 and abs(peak[2] - .5) < .02 and 0 < peak[3] < .45 and peak[4] < .02 and not S[times[5]]["dims"],
-                      {"dims": [(x["cls"], x["op"], x["z"]) for x in d], "gz": gz, "peak": peak})
+                # (384 r6, SUPERSEDED ON PURPOSE) build 326's one shared dim is gone: "Don't do the darkened thing any" - no dim
+                # layer at any moment now (check-b384-results-flow F2 holds it on real runs)
+                check("%s: no dim at all through the effect (384 r6; was build 326's one shared dim) - %s" % (tag, peak),
+                      all(not S[t]["dims"] for t in times), {"dims": [(x["cls"], x["op"], x["z"]) for x in d], "peak": peak})
             if do_edges:
                 xp = None
                 bad = []

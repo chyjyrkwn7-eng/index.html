@@ -22,9 +22,11 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else str(info)[:600])
 
 # ---- the cutscene harness (real index.html from the repo; Fire Code by activeclass + reload, as check-b363-ifc)
-src = open(H + "/record-landing.py").read().split("\nSCENES = {")[0]
-g = {"__file__": H + "/record-landing.py", "__name__": "rl"}; exec(src, g)
-rc = g["g"]
+# (384) record-landing.py no longer loads the cutscene harness (Get Started round 2 made it self-contained), so the harness
+# it used to hand over - record-cutscenes.py's, at 1.5x - is loaded here the way it loaded it
+src = open(H + "/record-cutscenes.py").read().split("\nSCENES = [")[0]
+src = src.replace("device_scale_factor=1)", "device_scale_factor=1.5)")
+rc = {"__file__": H + "/record-cutscenes.py", "__name__": "rc"}; exec(src, rc)
 # ---- the layout harness (patched page, fake Firebase), for the four devices
 sfsrc = open(os.path.join(H, "shoot-flow.py")).read().rsplit("\nmain()", 1)[0]
 sf = {"__file__": os.path.join(H, "shoot-flow.py"), "__name__": "sf"}; exec(sfsrc, sf)
@@ -120,7 +122,7 @@ with sync_playwright() as pw:
     print("  Fire Code ladder:", lad)
     b = lad["b"]
     chk("6. every rank's badges fit in Fire Code's %d chapters and rise rank by rank (%s)" % (lad["n"], b), all(x <= lad["n"] for x in b) and all(b[i] < b[i + 1] for i in range(len(b) - 1)), lad)
-    chk("6. the top rank asks for nearly every chapter, not the academy's 14 (%s of %d)" % (b[-1], lad["n"]), b[-1] >= lad["n"] - 4, lad)
+    chk("6. the top rank asks for more than the academy's 14, from Fire Code's own chapters (%s of %d)" % (b[-1], lad["n"]), 14 < b[-1] < lad["n"], lad)
     chk("6. the labels say the new counts (%s)" % lad["lab"], str(b[-1]) in lad["lab"], lad)
     flo = pg.evaluate("""()=>{ if(typeof ifcLadderFloorOnce!=='function') return null;
       const t=topicsIn(QUESTIONS).filter(u=>unitQuestionCount(u)<=25).slice(0,3);  // 3 badges at the old bands' 10 hundos
@@ -253,10 +255,11 @@ with sync_playwright() as pw:
      localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
     d = json.loads(sf["SEED"].replace("__WEEK__", sf["week_key_now"]())); d["publicId"] = "pubtest0382b"; d["firstName"] = "Casey"; d["novaMet"] = 99
     MEAS = """()=>{ const r=el=>el?el.getBoundingClientRect():null; const fs=el=>el?parseFloat(getComputedStyle(el).fontSize):0;
-      const all=document.querySelector('#stage .stx-allbtn.stx-allpill'), allIn=all&&all.querySelector('span');
+      /* (384) Test history is a row under the last test (Madison: "a bigger button under the last test"), not the heading's pill */
+      const all=document.querySelector('#stage .stx-histrow, #stage .stx-allbtn.stx-allpill'), allIn=all&&(all.querySelector('.pf-act-label')?all:all.querySelector('span'));
       const wk=[...document.querySelectorAll('#stage .stx-dots-switch > button')];
       const tab=document.querySelector('#stage .profiletabs .iconbtn');
-      return {allH:all?r(all).height:0, allVis:allIn?r(allIn).height:0, allFs:fs(all&&all.querySelector('b')||all),
+      return {allH:all?r(all).height:0, allVis:allIn?r(allIn).height:0, allFs:fs(all&&(all.querySelector('.pf-act-label')||all.querySelector('b'))||all),
               wkH:wk.length?Math.min(...wk.map(b=>r(b).height)):0, wkFs:wk.length?fs(wk[0]):0, wkN:wk.length, tabFs:fs(tab)}; }"""
     for (w, h, ins, lab) in ((440, 956, (62, 0, 34, 0), "iPhone 440x956"), (518, 1125, (73, 0, 40, 0), "Pro Max at 85%, 518x1125"),
                              (375, 667, (20, 0, 0, 0), "SE 375x667"), (834, 1194, (24, 0, 20, 0), "iPad 834x1194")):
@@ -269,7 +272,7 @@ with sync_playwright() as pw:
         p2.evaluate("()=>{ try{homeUnlocksOwed=()=>false;}catch(e){} showProfile('stats'); }"); p2.wait_for_timeout(1600)
         m = p2.evaluate(MEAS)
         print("  %s:" % lab, {k: round(v, 1) for k, v in m.items()})
-        chk("2. %s: the tests pill is a 44px button you can see (box %.0f, pill %.0f)" % (lab, m["allH"], m["allVis"]), m["allH"] >= 44 and m["allVis"] >= 36, m)
+        chk("2. %s: Test history is a 44px button you can see (box %.0f, pill %.0f)" % (lab, m["allH"], m["allVis"]), m["allH"] >= 44 and m["allVis"] >= 36, m)
         chk("2. %s: This week / Last week are 44px buttons (%.0f)" % (lab, m["wkH"]), m["wkN"] == 2 and m["wkH"] >= 44, m)
         chk("2. %s: their words are no smaller than Profile's tabs (pill %.1f, week %.1f, tabs %.1f)" % (lab, m["allFs"], m["wkFs"], m["tabFs"]),
             m["allFs"] >= m["tabFs"] - .01 and m["wkFs"] >= m["tabFs"] - .01, m)

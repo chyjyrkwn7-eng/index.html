@@ -10,7 +10,12 @@ and broken in the other, and most of the bugs found in this app were exactly
 that: invisible at 390x844 in a desktop browser, obvious on a real device.
 
 So every combination is checked: each device, portrait and landscape, as an
-installed app and as a browser tab.
+installed app and as a browser tab - and, for an iPhone or iPad (build 384),
+a third way: Safari's bars drawn OVER the page ("bars over"; see
+ios_bars_over). Each context carries its device's own browser (user agent,
+touch, screen size): Safari on an iPhone or iPad, Chrome or Samsung Internet
+on Android, Chrome or Safari on a laptop. The iPhone's browser-tab chrome is
+MEASURED off a frame of the reference phone in Safari 26 (ios_tab_chrome).
 
 Chromium reports every env(safe-area-inset-*) as 0 and has no display-mode
 emulation, so both are simulated - the insets by substituting real values
@@ -61,17 +66,84 @@ INSET_RE = re.compile(r"env\(safe-area-inset-(top|bottom|left|right)(?:\s*,[^()]
 # Browser chrome, in CSS px, taken off the viewport for a browser-tab run.
 # iOS Safari's bars in portrait, less in landscape where it compacts; desktop
 # browsers keep a tab strip plus an address bar.
-CHROME_H = {"ios-phone": (110, 60), "ios-tablet": (90, 90),
+# BUILD 384 - MEASURED, NOT GUESSED, for an iPhone in Safari 26: one frame of
+# Madison's own Safari tab (Welcome, iPhone 17 Pro Max, 85% page zoom) puts the
+# page between the status bar (62pt) and the floating toolbar, whose
+# reservation is 97pt from the bottom edge - four elements on that screen land
+# within 2px of a 518x938 CSS viewport starting 62pt down. So an iPhone's
+# Safari tab takes its status bar plus 97pt (72 with a Home button, which has
+# no indicator under the bar) in portrait; on its side, no status bar and the
+# compact bar, 60pt. An iPad's tab loses the status bar and Safari's top bar,
+# 74pt. These replace (110, 60) and (90, 90). ios_tab_chrome() below.
+CHROME_H = {"ios-phone": (110, 60), "ios-tablet": (74, 74),
             "android": (56, 56), "desktop": (130, 130)}
+# Samsung Internet keeps its address bar at the top AND a toolbar at the bottom
+SAMSUNG_CHROME = (112, 100)
+
+
+def ios_tab_chrome(platform, ins_p, orientation, zoom=1.0):
+    """CSS px of an iPhone/iPad screen Safari 26 keeps for its own bars in a tab (the measured model above)."""
+    if platform == "ios-tablet":
+        return round(74 / zoom)
+    if orientation == "landscape":
+        return round(60 / zoom)
+    top_pt = ins_p[0] * zoom          # the status bar, in points (the zoomed device's insets are in CSS px)
+    bottom_pt = 97 if ins_p[2] else 72
+    return round((top_pt + bottom_pt) / zoom)
+
+
+# BUILD 384 - SAFARI'S BARS OVER THE PAGE. The other way Safari can lay a tab
+# out (a minimised toolbar, other Tabs layouts, the iPad's bar, and what the
+# brief for 384 described): the page is the whole screen, the safe-area insets
+# are real, and Safari's floating toolbar is drawn OVER the page with no inset
+# for it. The app detects this (safariBarsReading in index.html) and keeps its
+# bars clear; this mode checks it, with the bars' modelled depth used as the
+# audit's insets: an iPhone's status bar and 83pt of toolbar (60 with a Home
+# button; 60 on its side), an iPad's 74pt top bar.
+def ios_bars_over(platform, ins, orientation, w, h, zoom=1.0):
+    """The bars Safari draws over the page, as audit insets in CSS px (ins: the device's own safe-area insets, CSS px)."""
+    phone = platform == "ios-phone"
+    face_id = max(w, h) * zoom >= 812 or ins[2] > 0
+    z = lambda pt: round(pt / zoom)
+    if not phone:
+        return (max(ins[0], z(74)), ins[1], ins[2], ins[3])
+    if orientation == "landscape":
+        return (ins[0], ins[1], max(ins[2], z(60 if face_id else 48)), ins[3])
+    return (max(ins[0], z(20)), ins[1], max(ins[2], z(83 if face_id else 60)), ins[3])
+
+
+def zoom_of(name):
+    """The page zoom a device entry is laid out at (the reference phone runs Safari's aA at 85%)."""
+    return 0.85 if "@85%" in name else 1.0
+
+
+UA = {
+    "ios-phone": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+    # iPadOS Safari asks for desktop pages: a Mac user agent, told apart by its touch points
+    "ios-tablet": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+    "android": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+    "samsung": "Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36",
+    "android-tablet": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+    "desktop": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+    "mac": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+}
+TOUCH_POINTS = "Object.defineProperty(navigator,'maxTouchPoints',{get:()=>5,configurable:true});"
 
 # name, css w, css h (portrait), platform,
 # portrait insets (top,right,bottom,left), landscape insets
+# (384: the browser a device is swept in is the one its owner uses - a Galaxy's label names Samsung Internet or Chrome, a
+# Mac's Safari - and the rumoured iPhone Fold is a foldable: a short wide cover screen and a near-square inner one, both
+# MODELLED from the leaked panels (2088x1422 and 2713x1920 at 3x), not from a device.)
 DEVICES = [
     ("iPhone SE (1st gen)",     320,  568, "ios-phone",  (20, 0, 0, 0),  (0, 0, 0, 0)),
     ("iPhone SE (2nd/3rd gen)", 375,  667, "ios-phone",  (20, 0, 0, 0),  (0, 0, 0, 0)),
     ("iPhone 13 mini",          375,  812, "ios-phone",  (50, 0, 34, 0), (0, 50, 21, 50)),
     ("iPhone 14 / 15 / 16",     393,  852, "ios-phone",  (59, 0, 34, 0), (0, 59, 21, 59)),
+    ("iPhone 16 Pro / 17",      402,  874, "ios-phone",  (62, 0, 34, 0), (0, 62, 21, 62)),
+    ("iPhone Air",              420,  912, "ios-phone",  (62, 0, 34, 0), (0, 62, 21, 62)),
     ("iPhone 16 Pro Max",       440,  956, "ios-phone",  (62, 0, 34, 0), (0, 62, 21, 62)),
+    ("iPhone Fold cover (rumoured)", 474, 696, "ios-phone", (44, 0, 34, 0), (0, 44, 21, 44)),   # an iPhone's home indicator, 34/21
+    ("iPhone Fold inner (rumoured)", 640, 904, "ios-tablet", (32, 0, 20, 0), (32, 0, 20, 0)),
     # THE REFERENCE PHONE AS IT IS ACTUALLY SET UP. Page zoom at ~85% lays
     # a 440pt screen out 518 CSS px wide, which was past every 512px phone
     # gate in the app - so eleven rounds of phone fixes never reached the
@@ -86,15 +158,31 @@ DEVICES = [
     ("iPad Pro 12.9\"",        1024, 1366, "ios-tablet", (24, 0, 20, 0), (24, 0, 20, 0)),
     ("iPad Pro 13\" (M4)",     1032, 1376, "ios-tablet", (24, 0, 20, 0), (24, 0, 20, 0)),
     ("Android phone",           360,  800, "android",    (24, 0, 24, 0), (0, 24, 24, 24)),
+    ("Galaxy S24 / S25 (Samsung Internet)", 384, 832, "android", (24, 0, 24, 0), (0, 24, 24, 24)),
+    ("Galaxy S24+ / S25 Ultra (Chrome)",    412, 915, "android", (24, 0, 24, 0), (0, 24, 24, 24)),
+    ("Galaxy Z Fold cover (Chrome)",        344, 882, "android", (24, 0, 24, 0), (0, 24, 24, 24)),
+    ("Galaxy Z Fold inner (Samsung Internet)", 673, 841, "android", (24, 0, 24, 0), (24, 0, 24, 0)),
+    ("Galaxy Z Fold7 inner (Chrome)",       884, 1104, "android", (24, 0, 24, 0), (24, 0, 24, 0)),
     ("Android tablet",          800, 1280, "android",    (24, 0, 24, 0), (24, 0, 24, 0)),
     ("Dell Latitude",          1366,  768, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
-    ("MacBook Pro 14-inch",    1512,  982, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
+    ("Windows laptop 1536x864", 1536, 864, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
+    ("MacBook Pro 14-inch (Safari)", 1512, 982, "desktop", (0, 0, 0, 0),   (0, 0, 0, 0)),
     ("MacBook Pro 16-inch",    1728, 1117, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
     ("Dell Latitude FHD",      1920, 1080, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
-    ("MacBook Air",            1440,  900, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
+    ("MacBook Air (Safari)",   1440,  900, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
     ("small laptop",           1280,  800, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
     ("external display",       2560, 1440, "desktop",    (0, 0, 0, 0),   (0, 0, 0, 0)),
 ]
+
+
+def ua_for(name, platform, w, h):
+    if platform == "android":
+        if "Samsung" in name:
+            return UA["samsung"]
+        return UA["android"] if min(w, h) < 600 else UA["android-tablet"]
+    if platform == "desktop":
+        return UA["mac"] if "Safari" in name else UA["desktop"]
+    return UA[platform]
 
 QUICK = {"iPhone 14 / 15 / 16", "iPad Pro 11\"", "iPad mini (6th gen)", "Dell Latitude"}
 
@@ -107,6 +195,8 @@ QUICK = {"iPhone 14 / 15 / 16", "iPad Pro 11\"", "iPad mini (6th gen)", "Dell La
 # else that can be called with no arguments belongs here.
 SCREENS = [
     # onboarding, in the order someone actually meets it
+    # (384) the first-visit page a shared link lands on, before Welcome
+    "showGetStarted",
     "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showWelcomeNamePrompt",
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
     # the everyday screens
@@ -129,6 +219,10 @@ SCREENS = [
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showReleaseHistory",   # (showWhatsNew left sign-up and the app in build 327)
+    # build 384: the end of sign-up's Add to Home Screen sheet, each of its three choices (over the screen before;
+    # each call replaces the last, and the next screen takes it away)
+    "showHomeScreenSheet({from:'settings',device:'apple'})", "showHomeScreenSheet({from:'settings',device:'android'})",
+    "showHomeScreenSheet({from:'settings',device:'computer'})",
     # (showSoundTest, the hidden sound test page, came out in build 325)
     "showVirtualRoomChoice", "showVirtualRoomSetup",
     # The end of a run (build 315). It needs a run behind it, which is why
@@ -136,11 +230,14 @@ SCREENS = [
     # summarize(): three whole units with two missed (every card, the unit
     # rows, Continue to review), and a retake (the long "Re-run the full
     # test" beside Main menu). Last, because a run changes the account.
+    # (384) and a drill's question itself, with its top bar and Next, before them
+    "__sweepQuestion()",
     "__sweepResults('drill')", "__sweepResults('retake')",
 ]
 
 # Reached only from Welcome, and only before the account exists.
 ONBOARDING_SCREENS = {
+    "showGetStarted",
     "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",
@@ -209,6 +306,12 @@ window.__sweepResults = function(kind){
     attempts[qi] = miss ? 2 : 1; picked[qi] = miss ? (r + 1) % oo.length : r; try{ if(miss) firstPick[qi] = (r + 1) % oo.length; }catch(e){} });
   runStartTime = Date.now() - order.length * 7000; testInProgress = true; pos = order.length - 1;
   summarize();
+};
+window.__sweepQuestion = function(){
+  theme.reduceMotion = true; theme.muteBanners = true;
+  const unit = 'Identity Crimes';
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [unit]; cfg.size = 0;
+  beginRun(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === unit && inWholeUnit(QUESTIONS[i])));
 };"""
 
 EXPECTED_ERRORS = ("firebase", "firestore", "gstatic", "Failed to fetch", "net::")
@@ -307,9 +410,10 @@ AUDIT = """(inset) => {
          for, with screenshots). Its tabs may enter the inset but must clear
          the indicator itself: a ~5px pill 8px off the bottom, so 21px with
          its margin. Everything else still keeps out of the whole inset. */
-      const floor = el.matches('.bottomtab') ? vh - Math.min(inset.bottom, 21) : vh - inset.bottom;
+      /* (384) except under Safari's toolbar ("bars over" mode, inset.bars): nothing pinned may enter it, the bar's tabs included */
+      const floor = (el.matches('.bottomtab') && !inset.bars) ? vh - Math.min(inset.bottom, 21) : vh - inset.bottom;
       if (inset.bottom && pinned(el) && r.bottom - padB > floor + 0.5)
-        problems.push(`pinned ${name(el)} under the home indicator (content bottom ${Math.round(r.bottom - padB)} > ${floor})`);
+        problems.push(`pinned ${name(el)} under ${inset.bars ? "Safari's toolbar" : 'the home indicator'} (content bottom ${Math.round(r.bottom - padB)} > ${floor})`);
       if (inset.left && r.left + padL < inset.left - 0.5)
         problems.push(`${name(el)} under the left inset (content ${Math.round(r.left + padL)} < ${inset.left})`);
       if (inset.right && r.right - padR > vw - inset.right + 0.5)
@@ -339,17 +443,32 @@ def serve():
 
 
 def combinations(devices):
+    """(name, orientation, mode, vw, vh, page insets, audit insets, platform, screen w x h)"""
     for name, w, h, platform, ins_p, ins_l in devices:
-        modes = ("browser",) if platform == "desktop" else ("home screen", "browser")
+        ios = platform.startswith("ios")
+        modes = ("browser",) if platform == "desktop" else (("home screen", "browser", "bars over") if ios else ("home screen", "browser"))
+        zoom = zoom_of(name)
+        scr = (round(w * zoom), round(h * zoom))
         for orientation in ("portrait", "landscape"):
             vw, vh = (w, h) if orientation == "portrait" else (h, w)
             insets = ins_p if orientation == "portrait" else ins_l
             for mode in modes:
                 if mode == "browser":
-                    chrome = CHROME_H[platform][0 if orientation == "portrait" else 1]
-                    yield name, orientation, mode, vw, max(320, vh - chrome), (0, 0, 0, 0)
+                    if ios:
+                        chrome = ios_tab_chrome(platform, ins_p, orientation, zoom)
+                    elif "Samsung Internet" in name:
+                        chrome = SAMSUNG_CHROME[0 if orientation == "portrait" else 1]
+                    else:
+                        chrome = CHROME_H[platform][0 if orientation == "portrait" else 1]
+                    yield name, orientation, mode, vw, max(320, vh - chrome), (0, 0, 0, 0), (0, 0, 0, 0), platform, scr
+                elif mode == "bars over":
+                    # A Home-button iPhone on its side has no inset at all: a page cannot tell it runs under a bar there
+                    # (and Safari hides its bars on such a phone turned sideways), so that one is not modelled.
+                    if not any(insets):
+                        continue
+                    yield name, orientation, mode, vw, vh, insets, ios_bars_over(platform, insets, orientation, w, h, zoom), platform, scr
                 else:
-                    yield name, orientation, mode, vw, vh, insets
+                    yield name, orientation, mode, vw, vh, insets, insets, platform, scr
 
 
 def main():
@@ -380,10 +499,16 @@ def main():
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.launch(executable_path=CHROME)
-            for label, orientation, mode, vw, vh, insets in combos:
-                ctx = browser.new_context(viewport={"width": vw, "height": vh})
+            for label, orientation, mode, vw, vh, insets, audit_insets, platform, scr in combos:
+                # (384) the device's own browser: its user agent, touch on a phone or tablet, and its screen
+                # (the app reads screen against the viewport to see the page zoom and Safari's bars)
+                touch = platform != "desktop"
+                ctx = browser.new_context(viewport={"width": vw, "height": vh}, screen={"width": scr[0], "height": scr[1]},
+                                          user_agent=ua_for(label, platform, vw, vh), has_touch=touch, is_mobile=touch)
                 ctx.add_init_script(seed)
                 ctx.add_init_script(RESULTS_STAGE)
+                if platform == "ios-tablet":
+                    ctx.add_init_script(TOUCH_POINTS)
                 if mode == "home screen":
                     ctx.add_init_script(STANDALONE)
                 page = ctx.new_page()
@@ -404,8 +529,12 @@ def main():
                 # slides out for it (by design), so it came up over a screen now and then and read as
                 # "tab bar below the fold". Owed unlocks are marked shown first, as check-fixes does.
                 page.evaluate("()=>{ try{ const u=pendingHomeUnlocks(); markUnlocksShown(u.chars,u.banners,u.fx); }catch(e){} try{ homeUnlocksOwed=()=>false; }catch(e){} document.querySelectorAll('.rs-spot').forEach(n=>n.remove()); document.body.classList.remove('cutscene-focus'); }")
-                ins = {"top": insets[0], "right": insets[1], "bottom": insets[2], "left": insets[3]}
+                # what the page must keep clear of: its own insets, or Safari's bars over it ("bars over")
+                ins = {"top": audit_insets[0], "right": audit_insets[1], "bottom": audit_insets[2], "left": audit_insets[3],
+                       "bars": mode == "bars over"}
                 found = {}
+                if mode == "bars over" and not page.evaluate("document.documentElement.classList.contains('safari-bars-over')"):
+                    found["(bars)"] = ["the app did not see Safari's bars over the page (html.safari-bars-over is off)"]
                 for fn in SCREENS:
                     try:
                         # An entry may carry arguments ("showProfile('badges')"),
@@ -429,6 +558,11 @@ def main():
                         call = fn if fn.endswith(")") else fn + "()"
                         page.evaluate(f"{call}; scrollTo(0,0);")
                         page.wait_for_timeout(300)
+                        if fn == "__sweepQuestion()":
+                            # a run puts up its loading screen first; the question is what is audited
+                            page.wait_for_function("!!document.querySelector('.qpanel .choice')", timeout=8000)
+                            page.evaluate("scrollTo(0,0)")
+                            page.wait_for_timeout(400)
                         hits = page.evaluate(AUDIT, ins)
                         if hits:
                             found[fn] = hits

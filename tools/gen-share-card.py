@@ -47,8 +47,15 @@ INK = (244, 240, 236)
 SOFT = (166, 158, 168)
 
 TITLE = "Nova"
-TAGLINE = "Police academy study app"
-DESC = "Study app for police academy cadets: drills, practice tests, a daily question, ranks and badges, and a class leaderboard."
+# BUILD 384: "When sharing the app, the description still hasn't been updated. In the actual link it's referred to as the police
+# academy study app, it's a study app rank up game where studying is fun, has tcole material, and 2021 ifc and Harris county
+# amendments drills and multiplayer and unlocks?" The card, the description and the Share sheet's words now say what Nova is
+# across both classes. CARD_REV versions the card's and the share page's addresses: iMessage keeps a link's preview by its
+# address, so the new words only show on a new one.
+TAGLINE = "Studying, made a rank-up game"
+DESC = "Nova turns studying into a rank-up game. TCOLE material and the 2021 IFC with the Harris County amendments: drills, practice tests, live multiplayer, ranks, badges and unlocks."
+CARD_LINES = ["TCOLE and the 2021 IFC. Drills,", "multiplayer, ranks and unlocks."]
+CARD_REV = "384"
 SITE = "https://chyjyrkwn7-eng.github.io/index.html/"
 # BUILD 381: bumped whenever the icon changes, so a phone that has the old one
 # cached (Safari keeps a site's touch icon for a long time) fetches it again.
@@ -181,7 +188,7 @@ def build_card(icon):
     # Measured and wrapped rather than trusted: the second line ran off the
     # right edge of the card at this size, which is the one thing a preview
     # image cannot get away with.
-    lines = [TAGLINE, "Drills, practice tests, ranks", "and a class leaderboard."]
+    lines = [TAGLINE] + CARD_LINES
     y = 372
     for i, line in enumerate(lines):
         col = SOFT if i == 0 else (120, 114, 124)
@@ -198,7 +205,7 @@ META = """{begin}
 <meta property="og:url" content="{site}">
 <meta property="og:title" content="Nova">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="{site}share/og-card.png">
+<meta property="og:image" content="{site}share/og-card.png?v={card}">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="{w}">
 <meta property="og:image:height" content="{h}">
@@ -206,9 +213,9 @@ META = """{begin}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Nova">
 <meta name="twitter:description" content="{desc}">
-<meta name="twitter:image" content="{site}share/og-card.png">
+<meta name="twitter:image" content="{site}share/og-card.png?v={card}">
 <meta name="description" content="{desc}">
-<link rel="image_src" href="{site}share/og-card.png">
+<link rel="image_src" href="{site}share/og-card.png?v={card}">
 {end}"""
 
 
@@ -221,15 +228,29 @@ SHARE_HTML = """<!doctype html>
 {meta}
 <link rel="apple-touch-icon" sizes="180x180" href="{site}share/apple-touch-icon.png?v={rev}">
 <link rel="icon" type="image/png" sizes="512x512" href="{site}share/icon-512.png?v={rev}">
-<meta http-equiv="refresh" content="0; url=../">
+<noscript><meta http-equiv="refresh" content="0; url=../"></noscript>
+<!-- BUILD 384, SECOND PASS: this page stays on screen for as long as the app (8MB) takes to download after the instant forward
+     below, so it is the app's own splash, frame for frame - the splash's #0A0A0A, NOVA in its serif and gradient, a status line
+     in its monospace, its thin gradient bar (running) - and reads as Nova starting, which is what it is. No link (a bare
+     "Open Nova" read as something gone wrong); one shows only with JavaScript off, beside the meta refresh. -->
 <style>
-  html, body {{ margin: 0; background: #121016; color: #F4F0EC; font: 17px -apple-system, system-ui, sans-serif; }}
-  main {{ min-height: 100vh; display: grid; place-items: center; text-align: center; }}
-  a {{ color: #FFD37A; display: inline-block; padding: 12px 20px; }}
+  html, body {{ margin: 0; height: 100%; background: #0A0A0A; }}
+  main {{ min-height: 100vh; min-height: 100lvh; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
+  .w {{ margin: 0; font: 800 33.6px/50px Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif; letter-spacing: .12em;
+        padding-left: .12em; background: linear-gradient(90deg, #FFD37A, #F5804D, #C23B7A); -webkit-background-clip: text;
+        background-clip: text; color: transparent; }}
+  .s {{ margin: 28px 0 0; font: 11.5px/17px ui-monospace, "SF Mono", "Roboto Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+        letter-spacing: .02em; color: #FFD37A; }}
+  .t {{ position: relative; width: 224px; height: 4px; margin-top: 23px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }}
+  .f {{ position: absolute; inset: 0; width: 40%; border-radius: 999px; background: linear-gradient(90deg, #FFD37A, #F5804D, #C23B7A);
+        animation: run 1.4s ease-in-out infinite; }}
+  @keyframes run {{ from {{ transform: translateX(-100%); }} to {{ transform: translateX(250%); }} }}
+  @media (prefers-reduced-motion: reduce) {{ .f {{ animation: none; width: 100%; opacity: .5; }} }}
+  noscript a {{ margin-top: 28px; color: rgba(244,240,236,.8); font: 15px -apple-system, system-ui, "Segoe UI", sans-serif; }}
 </style>
 </head>
 <body>
-<main><a href="../">Open Nova</a></main>
+<main><p class="w">NOVA</p><p class="s">&gt; opening Nova...</p><div class="t"><div class="f"></div></div><noscript><a href="../">Open Nova</a></noscript></main>
 <script>location.replace("../" + location.search + location.hash);</script>
 </body>
 </html>
@@ -237,7 +258,7 @@ SHARE_HTML = """<!doctype html>
 
 
 def write_share_page():
-    meta = META.format(begin=BEGIN, end=END, desc=DESC, site=SITE, w=CARD_W, h=CARD_H)
+    meta = META.format(begin=BEGIN, end=END, desc=DESC, site=SITE, w=CARD_W, h=CARD_H, card=CARD_REV)
     meta = meta.replace('<meta property="og:url" content="%s">' % SITE,
                         '<meta property="og:url" content="%sshare/">' % SITE)
     io.open(SHARE_PAGE, "w", encoding="utf-8").write(SHARE_HTML.format(meta=meta, site=SITE, rev=ICON_REV))
@@ -246,7 +267,7 @@ def write_share_page():
 def write_meta():
     src = io.open(INDEX, encoding="utf-8").read()
     block = META.format(begin=BEGIN, end=END, desc=DESC, site=SITE,
-                        w=CARD_W, h=CARD_H)
+                        w=CARD_W, h=CARD_H, card=CARD_REV)
     if BEGIN in src and END in src:
         head = src.index(BEGIN)
         tail = src.index(END) + len(END)
@@ -270,8 +291,8 @@ def check():
             if im.size != size:
                 problems.append("share/%s is %s, expected %s" % (name, im.size, size))
     src = io.open(INDEX, encoding="utf-8").read()
-    for needed in ['property="og:image" content="%sshare/og-card.png"' % SITE,
-                   'name="twitter:image" content="%sshare/og-card.png"' % SITE,
+    for needed in ['property="og:image" content="%sshare/og-card.png?v=%s"' % (SITE, CARD_REV),
+                   'name="twitter:image" content="%sshare/og-card.png?v=%s"' % (SITE, CARD_REV),
                    'property="og:title"', 'name="description"']:
         if needed not in src:
             problems.append("index.html is missing %s" % needed)
@@ -281,11 +302,11 @@ def check():
         page = io.open(SHARE_PAGE, encoding="utf-8").read()
         if len(page.encode("utf-8")) > 8000:
             problems.append("share/index.html is over 8KB - it exists to be small")
-        for needed in ['property="og:image" content="%sshare/og-card.png"' % SITE, 'content="%s"' % DESC,
+        for needed in ['property="og:image" content="%sshare/og-card.png?v=%s"' % (SITE, CARD_REV), 'content="%s"' % DESC,
                        'share/apple-touch-icon.png?v=%s' % ICON_REV, 'location.replace("../"']:
             if needed not in page:
                 problems.append("share/index.html is missing %s" % needed)
-    if ('const SHARE_URL = "%sshare/"' % SITE) not in src:
+    if ('const SHARE_URL = "%sshare/?v=%s"' % (SITE, CARD_REV)) not in src:
         problems.append("the Share button does not send the share page (SHARE_URL)")
     if ('share/apple-touch-icon.png?v=%s' % ICON_REV) not in src:
         problems.append("index.html's apple-touch-icon is not at ?v=%s" % ICON_REV)

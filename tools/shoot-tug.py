@@ -63,7 +63,7 @@ def shoot(outdir, name, w, h):
         br = pw.chromium.launch(executable_path=CHROME)
         ctx = br.new_context(viewport={"width": w, "height": h},
                              device_scale_factor=2)
-        ctx.add_init_script("window.__fakeLatency = 60;")
+        ctx.add_init_script("window.__fakeLatency = 60; window.__vroomFast = true;")   # (384 r5) the five-minute floor would keep this harness from ever ending a match
         ctx.add_init_script(_cv.FAKE_FIRESTORE)
         ctx.add_init_script(
             "try{localStorage.setItem('class26e.freshstart','1');"

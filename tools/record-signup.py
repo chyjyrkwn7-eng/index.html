@@ -151,7 +151,8 @@ with sync_playwright() as pw:
     r.until("!!document.querySelector('#stage .classselect-panel')", 8, then=2.0)
     mark("Select your classes")
     r.tap("document.querySelector('.classselect-panel .class-card.is-academy')"); r.wait(1.1)
-    r.tap("document.querySelector('.classselect-panel #nextbtn')"); r.wait(.4)
+    r.tap("document.querySelector('.classselect-panel #nextbtn')"); r.wait(1.0)
+    r.tap("document.querySelector('#classenroll-confirm .classenroll-yes')"); r.wait(.4)   # (384) the enroll confirm
     mark("GENERATING PROFILE")
     r.until("!document.getElementById('genprofile-overlay') && !!document.getElementById('nova-intro')", 40, then=.4)
     mark("Nova")

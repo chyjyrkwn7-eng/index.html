@@ -14,7 +14,7 @@ Round 3 ("We don't wear police styled hats. We wear cowboy hats"): every Fire Co
 Diver, Breacher and Recon differs from round 2 (R2, hashes taken on claude/b382 after round 2's merge) and
 those three are round 2's own; the Hazmat's placard is whole under the chin and inside the circle; no drawing
 carries round 2's police-cap peaks, every hat is cowboy/beanie/helmet/hood/space helmet, the inspector, chief,
-investigator and star ranger wear cowboy hats; the clown's character is Strobe; headquarters, code 3, exit,
+investigator and star ranger wear cowboy hats (384 r6: no longer - cap, bareheaded, space helmet); the clown's character is Strobe; headquarters, code 3, exit,
 code book and the ultimates' banners are new and the rest are round 2's; no SUV is left (white pickups); the
 academy is untouched; the 50 and the Fire Alarm were rebuilt in round 3 (both differ from round 2).
 Round 4 (383, "Hundo effects, they all need to be better"): all four Fire Code effects differ from round 3's
@@ -24,12 +24,21 @@ theirs carries an svg filter, and no screen play puts up more than 170 elements.
 Run:  python3 tools/check-b382-ifcart.py   (add --against old.html: copy it over index.html first, as the other checks do)"""
 import os, sys, json
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); H = ROOT + "/tools"
-src = open(H + "/record-landing.py").read().split("\nSCENES = {")[0]
-g = {"__file__": H + "/record-landing.py", "__name__": "rl"}; exec(src, g)
+# (384) record-landing.py no longer wraps the cutscene harness (Get Started round 2 made it self-contained), so the
+# harness it used to hand over as g["g"] - record-cutscenes.py's, at 1.5x - is loaded here the way it loaded it
+src = open(H + "/record-cutscenes.py").read().split("\nSCENES = [")[0].replace("device_scale_factor=1)", "device_scale_factor=1.5)")
+_rc = {"__file__": H + "/record-cutscenes.py", "__name__": "rc"}; exec(src, _rc)
+g = {"g": _rc}
 from playwright.sync_api import sync_playwright
 rc = g["g"]; seed = dict(rc["SEED"]); seed["publicId"] = "xph5b57jbp5a"; seed["firstName"] = "Maddog"; seed["novaMet"] = 99
 srv, port = rc["serve"]()
 ok = True
+def retired(name, cond=None, info=""):
+    """(384 r17) a leg that pinned an EARLIER round's snapshot, superseded by later rounds Madison asked for (the academy's
+    Ghost/Alien/Detective/Masked/Zeus/Poseidon redraws, Forge, the Fire Code hundo ladder now 25/50/75/100, Smoke Diver
+    and Recon redrawn again). Printed, never failed on."""
+    print("RETIRED " + name.split(" (")[0], flush=True)
+
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else info)
 STARTERS = ["ninja", "ghost", "wizard", "grizzly", "alien"]
@@ -80,7 +89,7 @@ SNAP = """()=>{
       const worst = Math.max(...pts.map(([x, y]) => Math.hypot(x - cx, y - cy)));
       const out = { found: true, worst: Math.round(worst / R * 1000) / 1000, top: Math.round(r.top * 10) / 10, headBottom: Math.round(h.bottom * 10) / 10 };
       box.remove(); return out; }catch(e){ return { err: String(e) }; } })(),
-    trucks: { suv: typeof fbSUV, pickup: typeof fbPickup, hq: /fbtruck/.test(bannerStaticSVG('tests100') || ''), code3: /fbtruck/.test(bannerStaticSVG('early10') || '') },
+    trucks: { suv: typeof fbSUV, pickup: typeof fbChevy, hq: /fbtruck/.test(bannerStaticSVG('tests100') || ''), code3: /fbtruck/.test(bannerStaticSVG('early10') || '') },
     fxBuild: Object.fromEntries(HUNDO_FX.map(d => [d.id, d.id === 'confetti' ? 'celebrate' : ((typeof HUNDO_FX_BUILD !== 'undefined' && HUNDO_FX_BUILD[d.id]) || {}).name || '?'])),
     fxPlay: HUNDO_FX.filter(d => d.need > 0).map(d => {
       const out = { id: d.id };
@@ -127,7 +136,7 @@ chk("no page errors (%s)" % (A["perr"] + F["perr"])[:3], not A["perr"] and not F
 chk("every character and banner draws in both classes (%s)" % (A["errs"] + F["errs"])[:4], not A["errs"] and not F["errs"])
 redo = [i for i in F["chars"] if i not in STARTERS and i not in RANK_CHARS]
 same = [i for i in redo if F["chars"].get(i) == A["chars"].get(i)]
-chk("Fire Code redraws all %d non-starter, non-rank characters (unchanged: %s)" % (len(redo), same), len(redo) >= 15 and not same, same)
+retired("Fire Code redraws all %d non-starter, non-rank characters (unchanged: %s)" % (len(redo), same), len(redo) >= 15 and not same, same)
 kept = [i for i in STARTERS + RANK_CHARS if F["chars"].get(i) != A["chars"].get(i)]
 chk("the starters and the rank characters are the academy's own (changed: %s)" % kept, not kept, kept)
 bredo = [i for i in F["banners"] if i not in RANK_BANNERS]
@@ -155,23 +164,36 @@ BREDO2 = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "vr50", 
 bsame2 = [i for i in BREDO2 if F["banners"].get(i) == R1["ifc"]["banners"].get(i)]
 chk("round 2 redraws the %d banners he asked about (unchanged since round 1: %s)" % (len(BREDO2), bsame2), not bsame2, bsame2)
 acad = [i for i in A["chars"] if A["chars"][i] != R1["academy"]["chars"].get(i)] + [i for i in A["banners"] if A["banners"][i] != R1["academy"]["banners"].get(i)]
-chk("the academy's characters and banners are exactly as round 1 left them (changed: %s)" % acad[:6], not acad, acad)
+retired("the academy's characters and banners are exactly as round 1 left them (changed: %s)" % acad[:6], not acad, acad)
 still = [i for i, v in F["anim"].items() if not v]
 chk("every Fire Code non-rank banner moves (layered, with a bl- motion) (still: %s)" % still, not still, still)
-off = [n for n in ["Hotshot", "Sparky", "Fire Marshal", "Truckie", "Air Attack", "Rescue Diver", "Gold Helmet", "Backdraft", "Night Shift", "Flashover", "Blue Flame", "Phoenix",
+# (384 round 12, r9-chars) "Fire Marshal" is off this list: round 1's was one of a fire-department set he turned down as a whole ("We are fire
+# prevention agency"); the round-12 Fire Marshal is the agency's own officer in its navy shirt and blue vest, in The Irons' place
+off = [n for n in ["Hotshot", "Sparky", "Truckie", "Air Attack", "Rescue Diver", "Gold Helmet", "Backdraft", "Night Shift", "Flashover", "Blue Flame", "Phoenix",
   "K9 Officer", "Logistics", "Horn Strobe", "Cyber Marshal", "Grand Marshal", "Commander"] if n in F["cnames"].values()]
 chk("no round-1 character he turned down is left in Fire Code (%s)" % off, not off, off)
-need = ["Plans Examiner", "Public Educator", "Strobe", "Sprinkler Head", "Investigator"]
-chk("the plans examiner, public educator, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
-boff = [n for n in ["Station 26", "Ladder 26", "The Crew", "Tower Ladder", "Night Watch", "Night Call", "Gold Helmet", "Fire Watch", "Blue Flame", "Phoenix", "Grand Marshal"] if n in F["bnames"].values()]
+# (384) "I don't like the plane examiner ... a fire extinguisher character", "Let's not do the investigator, can you make that a
+# hazmat monster", "I don't like public educator, try something else": those three are the Extinguisher, Toxic Spill and Hydrant now
+need = ["Undercover", "Toxic Spill", "Exit", "Strobe", "Sprinkler Head"]   # (384 round 16) the Exit replaces the Fire Marshal; (384 round 12) the Fire Marshal replaced The Irons; (384 r9) Undercover and The Irons replace the Lookout and the Smoke Alarm (r8: they replaced Undercover and Pump Operator) (r7: Pyrotech and Salamander) (r5: the Extinguisher and Hydrant)
+chk("the extinguisher, toxic spill, hydrant, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
+gone = [n for n in ["Plans Examiner", "Public Educator", "Investigator"] if n in F["cnames"].values()]
+chk("...and the plans examiner, public educator and investigator he turned down in 384 are gone (%s)" % gone, not gone, gone)
+boff = [n for n in ["Station 26", "Ladder 26", "Tower Ladder", "Night Watch", "Night Call", "Gold Helmet", "Fire Watch", "Blue Flame", "Phoenix", "Grand Marshal"] if n in F["bnames"].values()]
 chk("no firehouse, engine, ladder, crew, helmet or round-2 ultimate banner is left (%s)" % boff, not boff, boff)
-chk("a headquarters, two hazmat banners, an alarm panel and an exit banner are there", all(n in F["bnames"].values() for n in ["Headquarters", "Spill Response", "Hazmat", "Alarm Panel", "Exit"]), sorted(F["bnames"].values()))
+chk("a certificate wall, a plan review table, the 80th floor (Top Floor), an alarm panel (On Call) and the gear wall (Squared Away) are there, and not Top of the Ladder, Ten in a Row or Certificate of Merit (build 384 r6 replaced those three)", all(n in F["bnames"].values() for n in ["Certified", "Plan Review", "Top Floor", "On Call", "Squared Away", "Clean Sweep"]) and not any(n in F["bnames"].values() for n in ["Top of the Ladder", "Ten in a Row", "Certificate of Merit"]), sorted(F["bnames"].values()))
 afx, ffx = dict((r[0], r) for r in A["fx"]), dict((r[0], r) for r in F["fx"])
-chk("the hundo ladder keeps its ids and counts in Fire Code (%s)" % F["fx"], [(r[0], r[2]) for r in A["fx"]] == [(r[0], r[2]) for r in F["fx"]])
+# (384) Fire Code's own counts: "the amount of hundos needed to get the stuff could be lowered. Like increments of 25, 50, 75, 150?"
+# Same rungs in the same order; its counts climb, none above the academy's, and the rungs past Confetti are lower (read off the page)
+ladA, ladF = [(r[0], r[2]) for r in A["fx"]], [(r[0], r[2]) for r in F["fx"]]
+cntF = [n for _, n in ladF]
+retired("the hundo ladder keeps its ids in Fire Code, with its own lower counts (%s against %s)" % (ladF, ladA),
+    [i for i, _ in ladA] == [i for i, _ in ladF] and cntF == sorted(cntF) and len(set(cntF)) == len(cntF)
+    and all(f <= a for (_, f), (_, a) in zip(ladF, ladA)) and all(f < a for (i, f), (_, a) in zip(ladF, ladA) if i != "confetti"), (ladF, ladA))
 chk("Confetti, the default, is the same in both classes", afx["confetti"] == ffx["confetti"] and F["fxBuild"]["confetti"] == "celebrate")
 newfx = [i for i in ffx if i != "confetti" and (ffx[i][1] == afx[i][1] or F["fxBuild"][i] == A["fxBuild"][i])]
 chk("every other Fire Code hundo effect is new - its own name and its own build (same as academy: %s; %s)" % (newfx, F["fxBuild"]), not newfx, newfx)
-chk("...and they are an extinguisher, sprinklers, hazmat and a fire alarm", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Extinguisher", "Fire Alarm", "Hazmat", "Sprinklers"], [ffx[i][1] for i in ffx])
+chk("...and they are an extinguisher, sprinklers, a thermal camera and hazmat (384: the Fire Alarm is gone)", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Extinguisher", "Hazmat", "Sprinklers", "Thermal Camera"], [ffx[i][1] for i in ffx])
+chk("...in that order up the ladder, Hazmat on top (%s)" % [ffx[r[0]][1] for r in F["fx"]], [r[1] for r in F["fx"] if r[0] != "confetti"] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Hazmat"], F["fx"])
 acfx = [i for i in afx if A["fxBuild"][i] != {"confetti": "celebrate", "fireworks": "hfxFireworks", "underwater": "hfxUnderwater", "bubbles": "hfxBubbles", "ufo": "hfxUfo"}.get(i)]
 chk("the academy plays its own effects (%s)" % A["fxBuild"], not acfx, acfx)
 bad = [p for p in F["fxPlay"] if not F["fxBuild"].get(p["id"], "").startswith("ifx") or p.get("err") or p["screen"] < 8 or p["box"] < 2 or p["boxOnly"] < 6 or p["tile"] < 200 or p["still"] < 100]
@@ -182,27 +204,43 @@ R2 = {"academy": {"chars": {"ninja": "11c7d746", "ghost": "28b4b57c", "wizard": 
 KEPT3 = ["masked", "voidwalker", "umbra"]   # Smoke Diver; "breaches and recon look great"
 REDO3 = [i for i in F["chars"] if i not in STARTERS and i not in RANK_CHARS and i not in KEPT3]
 same3 = [i for i in REDO3 if F["chars"].get(i) == R2["ifc"]["chars"].get(i)]
-chk("round 3 redraws every Fire Code character but the Smoke Diver, Breacher and Recon (unchanged since round 2: %s)" % same3, len(REDO3) >= 15 and not same3, same3)
-kept3 = [i for i in KEPT3 if F["chars"].get(i) != R2["ifc"]["chars"].get(i)]
-chk("...and those three are exactly as round 2 left them (changed: %s)" % kept3, not kept3, kept3)
+retired("round 3 redraws every Fire Code character but the Smoke Diver, Breacher and Recon (unchanged since round 2: %s)" % same3, len(REDO3) >= 15 and not same3, same3)
+# (384 sets) "All three of the ultimate characters need to look like they are trio. Same goes for the secret flare characters":
+# the Breacher and Recon were redrawn as two of one squad (tools/check-b384-sets.py holds that decision now)
+REDO384 = ["voidwalker", "umbra", "singularity", "genesis", "astral", "celestial", "zenith", "masked"]   # (384 r5) the Smoke Diver got its touch-up
+kept3 = [i for i in KEPT3 if i not in REDO384 and F["chars"].get(i) != R2["ifc"]["chars"].get(i)]
+chk("...and those three are exactly as round 2 left them, but for the two 384 redrew as the squad (changed: %s)" % kept3, not kept3, kept3)
 pl = F.get("placard") or {}
 chk("the Hazmat is round 1's again with its placard whole: under the chin, inside the circle (%s)" % pl, pl.get("found") and pl["worst"] <= .96 and pl["top"] >= pl["headBottom"] - .5, pl)
 peaks = [i for i, v in F["hats"].items() if v["peak"]]
 chk("no Fire Code character wears a police-style peaked cap (%s)" % peaks, F["hats"] and not peaks, peaks)
-badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble") for h in v["hat"])]
-chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood or a space helmet (%s)" % badhat, not badhat, badhat)
-west = [i for i in ("detective", "poseidon", "astronaut", "celestial") if "cowboy" not in F["hats"].get(i, {}).get("hat", [])]
-chk("the inspector, the chief, the investigator and the star ranger wear cowboy hats (missing: %s)" % west, not west, west)
+# (384 r6) Madison: "Fire inspectors wear police gear ... navy blue pants and short sleeved polo shirts" - the duty ball cap (cx-fc-hat-cap)
+# joins the list; the cowboy hat stays allowed by this line but no Fire Code character wears one now (the leg below)
+# (384 round 14) the Plainclothes Undercover wears a fedora
+badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble", "hardhat", "cap", "fedora") for h in v["hat"])]
+chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood, a space helmet, the duty cap or the Plainclothes fedora (%s)" % badhat, not badhat, badhat)
+# (384) the investigator (astronaut) is the Toxic Spill now, a creature with no hat; (384 sets) Star Ranger is the last ultimate's
+# (zenith) now, and the other two ultimates are rangers too
+# (384 r6) round 3's cowboy hats are gone: the inspector wears the navy duty cap, the chief is bareheaded, Star Ranger a space helmet
+# (astral / celestial are the two ultimates Fire Code retired in 384 - retireUltimates384 moves anyone off them, so nobody is shown them)
+# (384 round 12, r9-chars) Madison picked the cowboy hats back: the Inspector (build 383's investigator), the Chief (round 3) and Star Ranger
+# (round 3) wear them again, and nobody else does
+west = sorted(i for i in F["hats"] if i not in ("astral", "celestial") and "cowboy" in F["hats"][i].get("hat", []))
+chk("the Inspector, the Chief and Star Ranger wear cowboy hats again, and nobody else in Fire Code does (%s)" % west, west == ["detective", "poseidon", "zenith"], west)
 chk("the clown's character is called Strobe (%s)" % F["cnames"].get("clown"), F["cnames"].get("clown") == "Strobe")
 BREDO3 = ["tests100", "early10", "hundos100", "study50", "astral", "celestial", "zenith"]
 bsame3 = [i for i in BREDO3 if F["banners"].get(i) == R2["ifc"]["banners"].get(i)]
 chk("round 3 redraws headquarters, code 3, exit, code book and the three ultimates' banners (unchanged since round 2: %s)" % bsame3, not bsame3, bsame3)
-bkept3 = [i for i in F["banners"] if i not in BREDO3 and F["banners"][i] != R2["ifc"]["banners"].get(i)]
+# (384) Madison's banner review redrew six of these as well (tools/check-b384-banners.py holds them now), and the four flare
+# banners were redrawn as one set (tools/check-b384-sets.py)
+REDO384 = ["tests250", "tests500", "hundos250", "study60", "correct5000", "correct10000", "flare_void", "flare_umbra", "flare_horizon", "flare_genesis", "vr50", "level80", "exam100", "early10", "tests100", "hundos100"]
+bkept3 = [i for i in F["banners"] if i not in BREDO3 and i not in REDO384 and F["banners"][i] != R2["ifc"]["banners"].get(i)]
 chk("...and the banners he called awesome are as round 2 left them (changed: %s)" % bkept3, not bkept3, bkept3)
 tr = F["trucks"]
-chk("the office's vehicles are white pickups: no SUV left, headquarters and code 3 drive pickups (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function" and tr["hq"] and tr["code3"], tr)
+# (384) "Our trucks are white chevys with ghost lettering and lights": round 3's pickup (fbPickup) is the white Chevy now (fbChevy)
+chk("the office's vehicles are the white Chevys: no round-2 SUV left, fbChevy is the one vehicle (Grand Finale, Incident Command) (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function", tr)  # (names pass) the vehicles are drawn by fbChevy where there are any: Grand Finale and Incident Command
 acad3 = [i for i in A["chars"] if A["chars"][i] != R2["academy"]["chars"].get(i)] + [i for i in A["banners"] if A["banners"][i] != R2["academy"]["banners"].get(i)]
-chk("the academy's art is untouched by round 3 (changed: %s)" % acad3[:6], not acad3, acad3)
+retired("the academy's art is untouched by round 3 (changed: %s)" % acad3[:6], not acad3, acad3)
 fxn = [i for i in ("fireworks", "ufo") if F["fxSrc"].get(i) == R2["ifc"]["fxSrc"].get(i)]
 chk("the 50 and the Fire Alarm were rebuilt in round 3 (unchanged since round 2: %s)" % fxn, not fxn)
 # ---- round 4 (383): "Hundo effects, they all need to be better" ----
@@ -210,9 +248,16 @@ chk("the 50 and the Fire Alarm were rebuilt in round 3 (unchanged since round 2:
 R3 = {"ifc": {"fxSrc": {"confetti": "", "fireworks": "bca3f472", "underwater": "9b316c94", "bubbles": "ecdfba36", "ufo": "51d48374"}}}
 same4 = [i for i in ("fireworks", "underwater", "bubbles", "ufo") if F["fxSrc"].get(i) == R3["ifc"]["fxSrc"].get(i)]
 chk("round 4 redraws all four Fire Code effects (unchanged since round 3: %s)" % same4, not same4, same4)
-chk("the 50 is the Extinguisher, its own build (%s, %s)" % (ffx["fireworks"][1], F["fxBuild"]["fireworks"]), ffx["fireworks"][1] == "Extinguisher" and F["fxBuild"]["fireworks"] == "ifxExtinguisher")
+chk("the first rung is the Extinguisher, its own build (%s, %s)" % (ffx["fireworks"][1], F["fxBuild"]["fireworks"]), ffx["fireworks"][1] == "Extinguisher" and F["fxBuild"]["fireworks"] == "ifxExtinguisher")
 moves = [(p["id"], p.get("props")) for p in F["fxPlay"] if not p.get("props") or any(x not in ("opacity", "transform") for x in p["props"])]
 heavy = [(p["id"], p.get("screen")) for p in F["fxPlay"] if (p.get("screen") or 0) > 170]
 chk("...and each moves only transform and opacity, no sprite has an svg filter, none puts up more than 170 pieces (%s; filters %s; %s)" % (moves, F.get("sprFilter"), [(p["id"], p.get("screen")) for p in F["fxPlay"]]),
     not same4 and not moves and not F.get("sprFilter") and not heavy, (moves, F.get("sprFilter"), heavy))
+# ---- round 5 (384): "Tighten up all of them where you can to ensure they perfect" ----
+# the four as round 4 left them (42bbffa, build 383, live): --dump on that code
+R4 = {"ifc": {"fxSrc": {"confetti": "", "fireworks": "ff0bb357", "underwater": "8e314e0", "bubbles": "6ecbf181", "ufo": "66edfbbf"}}}
+same5 = [i for i in ("fireworks", "underwater", "bubbles", "ufo") if F["fxSrc"].get(i) == R4["ifc"]["fxSrc"].get(i)]
+chk("round 5 rebuilds all four Fire Code effects (unchanged since 383: %s)" % same5, not same5, same5)
+chk("...the 75 is the Thermal Camera and the 150 Hazmat, each its own build (%s, %s)" % (F["fxBuild"].get("bubbles"), F["fxBuild"].get("ufo")),
+    F["fxBuild"].get("bubbles") == "ifxThermal" and F["fxBuild"].get("ufo") == "ifxHazmat")
 sys.exit(0 if ok else 1)

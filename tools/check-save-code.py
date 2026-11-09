@@ -62,6 +62,8 @@ with sync_playwright() as pw:
         ctx=br.new_context(viewport={"width":w,"height":h})
         pg=ctx.new_page(); errs=[]
         pg.on("pageerror",lambda e:errs.append(str(e)))
+        # (384) a device with nothing on it opens on Get Started; one signed out here opens on Welcome, where the label is
+        pg.add_init_script("try{localStorage.setItem('class26e.signedout','1')}catch(e){}")
         pg.route("**/index.html", lambda r: r.fulfill(status=200,headers={"content-type":"text/html; charset=utf-8"},body=BODY))
         pg.route("**/version.json", lambda r: r.fulfill(status=200,headers={"content-type":"application/json"},body=VERSION_JSON))
         pg.goto(URL); pg.wait_for_timeout(3000)
@@ -110,49 +112,19 @@ with sync_playwright() as pw:
     pg.add_init_script(INIT)
     pg.goto(URL); pg.wait_for_timeout(3000)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake();}")
+    # (383) Madison: "The save your sync code pop up, don't do that for the existing accounts" - the card is a step of the
+    # sign-up now (tools/check-b382-savecode.py walks it there) and an existing account never sees it on Home, however often
+    # Home is shown and whatever the cloud copy says
     up=card_wait(pg, 10000)
-    ck("the card appears on Home", up)
-    ck("the old banner does not", pg.evaluate("()=>!document.getElementById('save-code')"))
-    if up:
-        b=pg.evaluate("""()=>{ const e=document.getElementById('savecode-card');
-          const h=s=>Math.round(e.querySelector(s).getBoundingClientRect().height);
-          return { code:e.querySelector('.savecode-value').textContent, pe:getComputedStyle(e).pointerEvents,
-                   save:h('.savecode-save'), ack:h('.savecode-ack'), go:h('.savecode-continue'),
-                   off:e.querySelector('.savecode-continue').disabled,
-                   top:Math.round(e.querySelector('.savecode-sheet').getBoundingClientRect().top) }; }""")
-        ck("it shows this account's code", b["code"]=="WXYZ-7777", b)
-        ck("it is tappable and every control clears 44px", b["pe"]!="none" and min(b["save"],b["ack"],b["go"])>=44, b)
-        ck("it clears the top inset", b["top"]>=59, b["top"])
-        ck("Continue waits for an answer", b["off"] is True)
-        if OUT: pg.screenshot(path=os.path.join(OUT,"home-save-card.png"))
-        pg.click("#savecode-card .savecode-ack"); pg.wait_for_timeout(150)
-        pg.click("#savecode-card .savecode-continue"); pg.wait_for_timeout(500)
-        done=pg.evaluate("()=>({ gone:!document.getElementById('savecode-card'), saved:!!store.savedCodeSaved })")
-        ck("answering it ends it and records it saved", done["gone"] and done["saved"], done)
-    else:
-        for n in ("it shows this account's code","it is tappable and every control clears 44px","it clears the top inset",
-                  "Continue waits for an answer","answering it ends it and records it saved"):
-            ck(n, False, "no card")
-    ck("no JS errors", not errs, errs[:2])
-
-    print("\n3. it shows once, and never for a device with no code")
+    ck("(383) an existing account that never confirmed saving does not get the card on Home", not up)
+    ck("the old banner does not appear either", pg.evaluate("()=>!document.getElementById('save-code')"))
     seen=[]
-    for i in range(4):
-        pg.evaluate("()=>{ showHome(); setTimeout(checkSaveCodeReminder, 50); }")
+    for i in range(3):
+        pg.evaluate("()=>{ store.savedCodeSaved=false; showHome(); setTimeout(()=>{ try{ checkSaveCodeReminder(); }catch(e){} }, 50); }")
         pg.wait_for_timeout(900)
         seen.append(pg.evaluate("()=>!!document.getElementById('savecode-card')"))
-    ck("shown once, then never again", up and seen==[False,False,False,False], seen)
-    # A PULL FROM THE CLOUD CAN PUT AN OLDER FLAG BACK ON `store`; the
-    # device's own record has to hold.
-    pg.evaluate("()=>{ store.savedCodeSaved=false; showHome(); setTimeout(checkSaveCodeReminder, 50); }")
-    pg.wait_for_timeout(900)
-    ck("and an older copy from the cloud does not bring it back",
-       pg.evaluate("()=>!!document.getElementById('savecode-card')") is False)
-    pg.evaluate("""()=>{ store.savedCodeSaved=false; try{ localStorage.removeItem('class26e.savecode.card'); }catch(e){}
-       syncOff=true; showHome(); setTimeout(checkSaveCodeReminder, 50); }""")
-    pg.wait_for_timeout(900)
-    ck("never shown to a device that opted out of syncing",
-       pg.evaluate("()=>!!document.getElementById('savecode-card')") is False)
+    ck("nor on any later Home, even with an older copy's flag put back", seen==[False,False,False], seen)
+    ck("no JS errors", not errs, errs[:2])
     ctx.close()
     br.close()
 print("\n%s (%d failure(s))"%("ALL PASS" if not fails else "FAILED: "+", ".join(fails),len(fails)))

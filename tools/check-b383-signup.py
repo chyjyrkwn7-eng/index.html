@@ -87,7 +87,7 @@ SEEN_ACCT = SEEN + "['class26e.daily.seen','class26e.savecode.card','class26e.sa
 def account(name, pub, pts, correct, **extra):
     d = {"firstName": name, "avatarChar": "ghost", "onboardingComplete": True, "publicId": pub, "leaderboardOptIn": False,
          "tourRev": 999, "novaMet": 99, "lastModified": 1790500000000, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True,
-         "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
+         "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
          "seenRankingsTour": True, "seenAppearanceTour": True,
          "lifetime": {"points": pts, "answered": correct + 100, "correct": correct}, "testStats": {"Penal Code": {"plays": 3}}}
     d.update(extra)
@@ -133,6 +133,10 @@ def open_page(br, dev="phone", init="", seed=None, suffix="", firebase=True, wai
     pg.goto(URL + suffix); pg.wait_for_timeout(wait)
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
     pg.errs = errs; pg.dev = dev
+    # (384, round 2) Get Started opens on every launch with no account now; a device that has seen it (SEEN's mark) has its
+    # button up at once, and a person taps it to reach Welcome - so does this (a first visit still meets the page: sec_fresh)
+    if pg.evaluate("()=>!!document.querySelector('.gs-page .gs-bar.is-ready .gs-go')"):
+        pg.click(".gs-go"); pg.wait_for_timeout(1100)
     return ctx, pg
 
 def relaunch(pg, suffix="", wait=3200):
@@ -241,7 +245,9 @@ with sync_playwright() as pw:
             pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300)
             step(pg, "Class picked")
             t0 = time.time()
-            pg.evaluate("()=>{ const b=document.querySelector('.classselect-panel #nextbtn'); b.click(); b.click(); }")
+            # (384) Continue asks first (the enroll confirm); a double tap on Enroll is the double tap now
+            pg.evaluate("()=>{ const b=document.querySelector('.classselect-panel #nextbtn'); b.click(); b.click(); }"); pg.wait_for_timeout(300)
+            pg.evaluate("()=>{ const y=document.querySelector('#classenroll-confirm .classenroll-yes'); if(y){ y.click(); y.click(); } }")
             most = 0
             for _ in range(12):
                 most = max(most, pg.evaluate("()=>document.querySelectorAll('#genprofile-overlay').length")); pg.wait_for_timeout(100)
@@ -250,13 +256,17 @@ with sync_playwright() as pw:
             pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000)
             print("  INFO %s GENERATING PROFILE took %.1fs" % (dev, time.time() - t0))
             seen = set(); name = "Casey Rivera"; count_after = None; card_off = None
-            t1 = time.time()
-            while time.time() - t1 < 120:
+            t1 = time.time(); last_nova = time.time()
+            # (384 full check) 27 lines now: 120s ran out under load before he reached the code; the walk ends on its own at his end
+            while time.time() - t1 < 480:
                 st = nova(pg)
                 if not st:
-                    if pg.evaluate("()=>!!document.getElementById('savecode-card')"): pass
-                    elif "end" in seen or time.time() - t1 > 8: break
+                    # (384 full check) gone for good, not between two lines: 8s with no Nova at all, counted from when he was
+                    # last up (it was 8s from the walk's start, so a moment between lines on a slow run ended the walk early)
+                    if pg.evaluate("()=>!!document.getElementById('savecode-card')"): last_nova = time.time()
+                    elif "end" in seen or time.time() - last_nova > 8: break
                     pg.wait_for_timeout(150); continue
+                last_nova = time.time()
                 if st["card"] and "card" not in seen:
                     seen.add("card"); pg.wait_for_timeout(400)
                     card_off = pg.evaluate("()=>document.querySelector('#savecode-card .savecode-continue').disabled")
@@ -411,7 +421,9 @@ with sync_playwright() as pw:
         with pg.expect_navigation(timeout=15000):
             pg.click("#signout-confirm .signout-go")
         pg.wait_for_timeout(3600); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(600)
-        chk("[fix] after Sign out: Welcome, where Sign in is - not the first-visit Get Started page (%s)" % screen(pg), screen(pg) == "welcome", screen(pg))
+        # (384) Madison: "Signing out, signing out will just bring them to the welcome screen." (Get Started is for a device
+        # with nothing on it; a signed-out one opens on Welcome, as in 383.)
+        chk("[fix] after Sign out: Welcome, with Sign in on it (%s)" % screen(pg), screen(pg) == "welcome", screen(pg))
         r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', pts: (store.lifetime||{}).points || 0, keys: Object.keys(localStorage).filter(k=>/^class26e\\.(drill\\.v1|synccode|ifc\\.drill\\.v1|activeclass)$/.test(k)), enrolled: localStorage.getItem('class26e.enrolled') })")
         chk("[guard] nothing of the account is left on the device (%s)" % r, not r["code"] and not r["name"] and not r["pts"] and not r["keys"], r)
         chk("[fix2] Fire Code's enrolment, a device setting, is kept through the sign out (%s)" % r["enrolled"], "ifc" in (r["enrolled"] or ""), r)
@@ -464,6 +476,7 @@ with sync_playwright() as pw:
             pg.click("#signout-confirm .signout-go")
         pg.wait_for_timeout(5000); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(800)
         r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', href: location.href })")
+        # (384) signed out, the device opens on Welcome - and is not signed back in
         chk("[fix] Sign out sticks: the reload does not sign the icon's code back in (%s, %s)" % (screen(pg), r), not r["code"] and not r["name"] and screen(pg) == "welcome", r)
         relaunch(pg, "#k=" + CODE, wait=5000)
         r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', hash: location.hash })")

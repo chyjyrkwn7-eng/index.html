@@ -185,20 +185,25 @@ with sync_playwright() as pw:
       const tabs=[...lv.querySelectorAll('.iconbtn')].map(b=>Math.round(b.getBoundingClientRect().height));
       const nb=document.querySelector('.screen-setup .settings-nav-back'), nt=document.querySelector('.screen-setup .settings-nav-title');
       const lc=getComputedStyle(lv), sc=getComputedStyle(sa);
-      return { bd, flt, n:cards.length, on:r(on), off:r(off), tickShown: bs.opacity==='1' && bs.display!=='none', accRGB, bc, tabs,
+      /* (384 r8) the free band of each card - under the name, over the count - read off the page, so the sample is the fill
+         and never a word (the name moved down under the card's status strip in r8, into the old fixed 55-62% spot) */
+      const band=c=>Object.assign(r(c), { fy0:c.querySelector('.pname').getBoundingClientRect().bottom, fy1:c.querySelector('.pcount').getBoundingClientRect().top });
+      return { bd, flt, n:cards.length, on:band(on), off:band(off), tickShown: bs.opacity==='1' && bs.display!=='none', accRGB, bc, tabs,
                lv:r(lv), sa:r(sa), panel:r(panel), fld:(()=>{ const f=document.querySelector('.screen-setup .setup-tools .searchbox'); return f ? r(f) : null; })(), vw:innerWidth, lvGlass: lc.backdropFilter!=='none', lvRadius: parseFloat(lc.borderTopLeftRadius),
                saGlass: sc.backdropFilter!=='none', nav: nb && nt ? { back:r(nb), title:r(nt), round: getComputedStyle(nb).borderRadius, words: nt.textContent } : null,
                oldBack: !!document.querySelector('.screen-setup > .back-link') }; }""")
     chk("(4) no card has a backdrop-filter (%d of %d)" % (shape["bd"], shape["n"]), shape["bd"] == 0, shape)
     chk("(4) no card's badge carries a filter (%d cards do)" % shape["flt"], shape["flt"] == 0, shape["flt"])
-    # luminance at the same spot inside a picked and an unpicked card (the middle, below the name)
+    # luminance at the same spot inside a picked and an unpicked card (in the band below both names and above both counts)
     import io
     try:
         from PIL import Image
         dpr = 3
         im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        lo = max(shape["on"]["fy0"] - shape["on"]["y"], shape["off"]["fy0"] - shape["off"]["y"]) + 2
+        hi = min(shape["on"]["fy1"] - shape["on"]["y"], shape["off"]["fy1"] - shape["off"]["y"]) - 2
         def lum(rc):
-            xs = [rc["x"] + rc["w"] * f for f in (.3, .5, .7)]; ys = [rc["y"] + rc["h"] * f for f in (.55, .62)]
+            xs = [rc["x"] + rc["w"] * f for f in (.3, .5, .7)]; ys = [rc["y"] + lo + (hi - lo) * f for f in (.35, .65)]
             v = [im.getpixel((int(x * dpr), int(y * dpr))) for x in xs for y in ys]
             return sum(.2126 * p[0] + .7152 * p[1] + .0722 * p[2] for p in v) / len(v)
         lon, loff = lum(shape["on"]), lum(shape["off"])

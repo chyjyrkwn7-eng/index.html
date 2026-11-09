@@ -121,7 +121,7 @@ SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
         '"weekKey":"__WEEK__","weekPoints":640,'
         '"leaderboardOptIn":true,"lastModified":1700000000000,'
         '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
-        '"seenMainMenuTour":true,"seenRankingsTour":true,"seenAppearanceTour":true,'
+        '"seenMainMenuTour":true,"seenClassTip":true,"seenRankingsTour":true,"seenAppearanceTour":true,'
         '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35,'
         '"TCOLE Rules":35,"Penal Code":35,"Racial Profiling":22,"Victims of Crime":14,'
         '"Verbal Communication":31,"Identity Crimes":8,"Civil Process and Liability":19},'
@@ -134,6 +134,8 @@ DEVICES = [
     ("iphone-17-pro-max", 440,  956, (62, 0, 34, 0), True),
     ("ipad-pro-11",       834, 1194, (24, 0, 20, 0), True),
     ("iphone-15-non-max", 393,  852, (59, 0, 34, 0), True),
+    ("iphone-13-mini",    375,  812, (50, 0, 34, 0), True),
+    ("iphone-se-2-3",     375,  667, (20, 0, 0, 0),  True),
     ("ipad-mini",         744, 1133, (24, 0, 20, 0), True),
     ("ipad-pro-12-9",    1024, 1366, (24, 0, 20, 0), True),
     ("dell-latitude",    1366,  638, (0, 0, 0, 0),  False),

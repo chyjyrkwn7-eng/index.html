@@ -188,10 +188,17 @@ def main():
           Object.defineProperty(document, 'visibilityState', { configurable:true, get: () => 'visible' });
           Object.defineProperty(document, 'hidden', { configurable:true, get: () => false });
           document.dispatchEvent(new Event('visibilitychange'));
+          /* coming back counts after 1.8s (a glance away and back writes nothing - startHeartbeat's return heartbeat waits) */
+          await new Promise(r => setTimeout(r, 2300));
           __log = [];
+          /* (384 full check) hidden as the first hide was - both flags; this left document.hidden false, so the app saw a
+             visible page and rightly wrote nothing (failed the same on 383) */
           Object.defineProperty(document, 'visibilityState', { configurable:true, get: () => 'hidden' });
+          Object.defineProperty(document, 'hidden', { configurable:true, get: () => true });
           document.dispatchEvent(new Event('visibilitychange'));
+          await new Promise(r => setTimeout(r, 30));
           const again = __log.filter(x => x.id === PRESENCE_DOC && x.op === 'set').length;
+          Object.defineProperty(document, 'hidden', { configurable:true, get: () => false });
           Object.defineProperty(document, 'visibilityState', { configurable:true, get: () => 'visible' });
           chatRoomCode = null;
           return { may, pres, chat: chat.length, typingCleared: !!typingCleared, again };
@@ -302,7 +309,9 @@ def main():
           return { rev: INTRO_REV, rows: rows.slice(0, 3), all: rows, fits, goH: Math.round(go.height) };
         }""")
         check("J1. a device that saw Version 9's card sees it again", r["rev"] > 5, r)
-        check("J2. the layout and fixes rows lead", r["rows"][:2] == ["devices92", "fixes92"], r["rows"])
+        # (384) Version 10's card leads with the new class (Madison: the new class "can have a second" row) - its own order is
+        # check-b384-whatsnew10's; here the card is the current one, rows present and its fixes row still in it
+        check("J2. the card is Version 10's, the new class first and its fixes row in it", r["rows"][:1] == ["ifc10"] and "fixes10" in r["all"], r["all"])
         check("J3. no 'Mock, a real test' row (only the name changed)", "modes" not in r["all"], r["all"])
         check("J4. the card fits the screen with nothing to scroll, Got it still 44px+",
               r["fits"] and r["goH"] >= 44, (r["fits"], r["goH"]))

@@ -72,7 +72,8 @@ with sync_playwright() as pw:
         if not ok: fails.append(name)
     if r:
         check("a run left open 3 hours credits only the 5-minute idle allowance", abs(r["leftOpen"]["credited"] - 300000) < 1000, r["leftOpen"])
-        check("and still reports its real elapsed time to results", r["leftOpen"]["elapsedReturned"] == 3 * H, r["leftOpen"])
+        # (384 full check) within a second: the clock moves on by a few ms between setting the start and flushing under load
+        check("and still reports its real elapsed time to results", abs(r["leftOpen"]["elapsedReturned"] - 3 * H) < 1000, r["leftOpen"])
         check("40 minutes of steady study counts 40", r["steady"]["minutes"] == 40, r["steady"])
         check("a slow reader (an input every 4 minutes) still counts in full", r["slowReader"]["minutes"] == 40, r["slowReader"])
         check("20 minutes then 2 days locked counts 25", abs(r["abandoned"]["credited"] - 1500000) < 1000, r["abandoned"])

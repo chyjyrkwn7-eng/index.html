@@ -15,8 +15,13 @@ Checks (measured on the page, phone 440x956):
      "Tap" tag beside it that is part of the button (tapping it finds the flare), clear of the question number, the
      flag and the choices; an account that has found one gets no tag.
   5. (383: "the see rank ladder button and 4 of 24 badges button ... improve those buttons so they seem more clickable, ensure the
-     wording of those two buttons are centered") each is Customize's kind of button - wide, 44px+, 4.5:1 on its card - with an
-     icon on the left balancing the chevron on the right and its words within 1px of the button's middle.
+     wording of those two buttons are centered") - (384: "the customize button, the badge button, and rank button. I actually do
+     not like that at all. It's terrible. Please change that") each is a Settings row now, Customize's kind: wide, 56px+, its tile
+     on the left and its chevron on the right, its name at 18px+ straight after the tile, the words in the row's middle top to
+     bottom, a light rim.
+  (384) 2. "stands out": the rows are the tab bar's dark glass now, so Customize stands out by its light rim and its tile (3:1+
+     on the card) rather than a light fill. 3. the Tap tag is for a colour already missed once (384: "only appear when they miss
+     it the first time"), so the account that has never found one has missed orange.
   6. (383: "Why does the bottom right corner side of the badges within the unit selection cards look kinda off? There's like a
      gap thing on them?") a found badge on a unit card is the token alone - no slot (the case's dark wall and lit lip) round it;
      one not yet found is still drawn as its empty slot.
@@ -32,7 +37,8 @@ from playwright.sync_api import sync_playwright
 fails = g["fails"] = []
 ck = g["ck"]
 
-LUM = """const lum = c => { const n = (c.match(/[\\d.]+/g) || []).map(Number); if(n.length < 3) return null;
+LUM = """const lum = c => { let n = (c.match(/[\\d.]+/g) || []).map(Number); if(n.length < 3) return null;
+  if(/^color\\(/.test(c)) n = n.map((v, i) => i < 3 ? v * 255 : v);   /* (384) color(srgb r g b) is 0-1 */
   const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
   return .2126 * f(n[0]) + .7152 * f(n[1]) + .0722 * f(n[2]); };
 const solid = el => { for(let e = el; e; e = e.parentElement){ const c = getComputedStyle(e).backgroundColor;
@@ -55,14 +61,19 @@ with sync_playwright() as pw:
       const btn = document.querySelector('#stage .profile-hero .profile-edit-btn'); const br = btn ? btn.getBoundingClientRect() : null;
       const name = document.querySelector('#stage .profile-name-display');
       const sameRowAsName = !!(btn && name && name.closest('.namedisplay-row') && name.closest('.namedisplay-row').contains(btn));
-      const fill = btn ? getComputedStyle(btn).backgroundColor : null;
+      const tileEl = btn ? btn.querySelector('.settings-row-icon') : null;
+      /* (384 r8) the tile's fill can be on a layer of its own (the squircle mask lives there so the new-dot is not cut) */
+      const fill = tileEl ? ((/rgba?\([^)]*,\s*0\)$|transparent/.test(getComputedStyle(tileEl).backgroundColor)) ? getComputedStyle(tileEl, '::after').backgroundColor : getComputedStyle(tileEl).backgroundColor) : null;   /* (384 r8: ::after is the fill, ::before its rim) */
+      const rimC = btn ? getComputedStyle(btn).borderTopColor : '', rimW = btn ? parseFloat(getComputedStyle(btn).borderTopWidth) : 0;
+      const rimA = +((rimC.match(/rgba\([^)]*,\s*([\d.]+)\)/) || [])[1] || (rimC.startsWith('rgb(') ? 1 : 0));
+      const rim = rimW >= 1 && rimA >= .14 && (lum(rimC) || 0) > .5;
       const card = hero ? solid(hero.querySelector('.profile-hero-id') || hero) : null;
       let ratio = null;
       if(fill && card){ const a = lum(fill), b = lum(card); if(a != null && b != null) ratio = (Math.max(a, b) + .05) / (Math.min(a, b) + .05); }
       const steps = (typeof PROFILE_TIPS_289 !== 'undefined' ? PROFILE_TIPS_289 : []).map(s => s.target);
       return { order: cls, caseBottom: cr ? Math.round(cr.bottom) : null, barTop: Math.round(barTop),
         widthPct: br && hr ? Math.round(100 * br.width / hr.width) : 0, h: br ? Math.round(br.height) : 0,
-        sameRowAsName, fill, card, ratio: ratio && Math.round(ratio * 10) / 10,
+        sameRowAsName, fill, card, rim, rimC, ratio: ratio && Math.round(ratio * 10) / 10,
         tourCase: steps.findIndex(t => /pf-case/.test(t)), tourGoal: steps.findIndex(t => /pf-goal/.test(t)) }; }""")
     ck("1. the badge case is the card straight under the person card, above the next rank (%s)" % r["order"],
        r["order"][:3] == ["hero", "case", "goal"], r["order"])
@@ -72,8 +83,8 @@ with sync_playwright() as pw:
     ck("2. Customize is its own row, not beside the name", r["sameRowAsName"] is False, r)
     ck("2. Customize spans the person card (%s%% of its width) and is a full tap target (%spx)" % (r["widthPct"], r["h"]),
        r["widthPct"] >= 80 and r["h"] >= 44, r)
-    ck("2. Customize stands out from the card behind it: contrast %s:1 (fill %s on %s)" % (r["ratio"], r["fill"], r["card"]),
-       (r["ratio"] or 0) >= 4.5, r)
+    ck("2. Customize stands out from the card behind it: a light rim (%s) and its tile %s:1 on the card (%s on %s)" % (r["rimC"], r["ratio"], r["fill"], r["card"]),
+       r["rim"] and (r["ratio"] or 0) >= 3, r)
     pg.evaluate("()=>document.querySelector('#stage .profile-hero .profile-edit-btn').click()"); pg.wait_for_timeout(1200)
     ck("2. and it opens Customize", pg.evaluate("()=>!!document.querySelector('#stage .screen-customize')"))
     ck("no page errors", not errs, errs[:2])
@@ -83,7 +94,7 @@ with sync_playwright() as pw:
     ARM = """(found)=>{ const topics=[...new Set(QUESTIONS.map(q=>(q.topic||'').trim()))].filter(Boolean); const t=topics[0];
       cfg.mode='drill'; cfg.source='all'; cfg.units=[t];
       const pool=QUESTIONS.map((q,i)=>[q,i]).filter(([q])=>(q.topic||'').trim()===t).map(([,i])=>i);
-      store.mysteryColorsFound = found; beginRun(pool, null, null); }"""
+      store.mysteryColorsFound = found; store.flareMissed = Object.keys(found).length ? {} : { orange: true }; beginRun(pool, null, null); }"""
     SHOW = """(frac)=>{ mysteryAppearsAtPos = pos; mysteryColorThisRun = 'orange'; mysteryFoundThisSession = false; mysteryLeftFrac = frac; render(); }"""
     MEASURE = """()=>{ const s = document.querySelector('.mystery-spark'); if(!s) return null;
       const tag = s.querySelector('.mystery-tap'); const ring = s.querySelector('.mystery-ring');
@@ -106,7 +117,7 @@ with sync_playwright() as pw:
         worst.append((frac, m))
     m0 = worst[1][1] or {}
     ck("3. a second ring ripples out of the flare", m0.get("ring") is True, m0)
-    ck("3. never found one: a 'Tap' tag beside it, part of the button", m0.get("tag") is True and m0.get("inButton") is True and (m0.get("text") or "").lower().startswith("tap"), m0)
+    ck("3. never found one (and missed orange once): a 'Tap' tag beside it, part of the button", m0.get("tag") is True and m0.get("inButton") is True and (m0.get("text") or "").lower().startswith("tap"), m0)
     ck("3. the tag is clear of the question number, the flag and the choices, and inside the row, wherever the flare lands",
        all(m and m.get("tag") and not m.get("hit") and m.get("inRow") for _, m in worst), worst)
     pg.evaluate("()=>{ const t = document.querySelector('.mystery-spark .mystery-tap'); if(t) t.click(); }"); pg.wait_for_timeout(600)
@@ -120,30 +131,28 @@ with sync_playwright() as pw:
     ck("no page errors", not errs, errs[:2])
     ctx.close()
 
-    print("\n5. See rank ladder and the badge count: Customize's kind of button, words in the middle")
+    print("\n5. Rank ladder and the badge case: Settings rows, Customize's kind (384)")
     errs = []
     ctx, pg = g["open_page"](br, g["init_account"]("", g["store"]()), errs=errs)
     pg.evaluate("()=>{ showProfile('profile'); }"); pg.wait_for_timeout(1600)
     r5 = pg.evaluate("""()=>{ """ + LUM + """
       return ['.pf-goal .pf-goal-foot', '.pf-case-closed .pf-case-count'].map(sel => { const b = document.querySelector('#stage .profile-identity-tab ' + sel); if(!b) return { sel, missing: true };
         const r = b.getBoundingClientRect(); const w = b.querySelector('.pf-goal-foot-word, .pf-case-num');
-        const rg = document.createRange(); rg.selectNodeContents(w); const t = rg.getBoundingClientRect();
+        const tile = b.querySelector('.settings-row-icon'), chev = b.querySelector('.pf-act-chev'), lab = b.querySelector('.pf-act-label'), words = b.querySelector('.pf-act-words');
         const card = b.closest('.pf-goal, .pf-case'); const cr = card.getBoundingClientRect();
-        const be = getComputedStyle(b, '::before'), af = getComputedStyle(b, '::after');
-        const icon = be.content !== 'none' && be.content !== 'normal' && parseFloat(be.width) > 10;
-        /* the middles of the icon and the chevron, each from its own edge of the button */
-        const iconL = icon ? Math.round((parseFloat(be.left) + parseFloat(be.width) / 2) * 10) / 10 : null,
-              chevR = af.content !== 'none' ? Math.round((parseFloat(af.right) + parseFloat(af.width) / 2) * 10) / 10 : null;
-        const fill = getComputedStyle(b).backgroundColor, under = solid(card);
-        const a = lum(fill), c = lum(under); const ratio = a != null && c != null ? (Math.max(a, c) + .05) / (Math.min(a, c) + .05) : 0;
-        return { sel: sel.split(' ').pop(), words: w.textContent, dx: Math.round(((t.left + t.width / 2) - (r.left + r.width / 2)) * 10) / 10,
-          widthPct: Math.round(100 * r.width / cr.width), h: Math.round(r.height), icon, iconL, chevR, ratio: Math.round(ratio * 10) / 10 }; }); }""")
+        const tr = tile ? tile.getBoundingClientRect() : null, hr = chev ? chev.getBoundingClientRect() : null, wr = words ? words.getBoundingClientRect() : null;
+        const rimC = getComputedStyle(b).borderTopColor, rimW = parseFloat(getComputedStyle(b).borderTopWidth);
+        return { sel: sel.split(' ').pop(), words: w ? w.textContent : null, widthPct: Math.round(100 * r.width / cr.width), h: Math.round(r.height),
+          tileW: tr ? Math.round(tr.width) : 0, tileIn: tr ? Math.round(tr.left - r.left) : null, chevIn: hr ? Math.round(r.right - hr.right) : null,
+          label: lab ? parseFloat(getComputedStyle(lab).fontSize) : 0, after: tr && wr ? Math.round(wr.left - tr.right) : null,
+          dy: wr ? Math.round(((wr.top + wr.height / 2) - (r.top + r.height / 2)) * 10) / 10 : null, rim: rimW >= 1 && (lum(rimC) || 0) > .5 }; }); }""")
     for b in r5:
-        ck("5. %s: its words in the middle of the button (%spx off)" % (b.get("sel"), b.get("dx")), not b.get("missing") and abs(b.get("dx", 99)) <= 1, b)
-        ck("5. %s: an icon on the left balancing the chevron on the right (their middles %s / %spx in)" % (b.get("sel"), b.get("iconL"), b.get("chevR")),
-           b.get("icon") and b.get("iconL") is not None and b.get("chevR") is not None and abs(b["iconL"] - b["chevR"]) <= 2, b)
-        ck("5. %s: wide (%s%% of its card), a full tap target (%spx) and standing out from the card (%s:1)" % (b.get("sel"), b.get("widthPct"), b.get("h"), b.get("ratio")),
-           b.get("widthPct", 0) >= 60 and b.get("h", 0) >= 44 and b.get("ratio", 0) >= 4.5, b)
+        ck("5. %s: a row - (384 r8) the Settings menu's 28px tile on the left (%spx, %spx in), its chevron on the right (%spx in), its name at %spx straight after the tile (%spx)"
+           % (b.get("sel"), b.get("tileW"), b.get("tileIn"), b.get("chevIn"), b.get("label"), b.get("after")),
+           not b.get("missing") and 27 <= b.get("tileW", 0) <= 29 and 0 <= (b.get("tileIn") or -1) <= 18 and 0 <= (b.get("chevIn") or -1) <= 20 and b.get("label", 0) >= 18 and 8 <= (b.get("after") or 0) <= 20, b)
+        ck("5. %s: the words in the row's middle top to bottom (%spx off)" % (b.get("sel"), b.get("dy")), b.get("dy") is not None and abs(b["dy"]) <= 1, b)
+        ck("5. %s: wide (%s%% of its card), a full tap target (%spx), a light rim" % (b.get("sel"), b.get("widthPct"), b.get("h")),
+           b.get("widthPct", 0) >= 60 and b.get("h", 0) >= 56 and b.get("rim"), b)
     pg.evaluate("()=>document.querySelector('#stage .pf-goal .pf-goal-foot').click()"); pg.wait_for_timeout(1200)
     ck("5. See rank ladder still opens the rank ladder", pg.evaluate("()=>!!document.querySelector('#stage .screen-ranks')"))
     ck("no page errors", not errs, errs[:2])

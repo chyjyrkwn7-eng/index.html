@@ -1,5 +1,5 @@
-"""Build 358 (rows part reversed in 377: they keep their art): while the app is hidden Home's moving-emblem sheets come
-off (less to keep, so iOS is less likely to end the page), and come back when it returns; the grey platter is hidden the
+"""Build 358 (rows part reversed in 377: they keep their art; Home's sheets part reversed in 384: they stay on): while the app is
+hidden Home's moving-emblem sheets came off (less to keep, so iOS is less likely to end the page), and came back when it returned; the grey platter is hidden the
 instant the glass is pressed (it cannot snap across with no glass); a run that ended in the background is noted.
 Run:  python3 tools/check-b358.py"""
 import os, sys
@@ -28,10 +28,16 @@ with sync_playwright() as pw:
     chk("while hidden its rows keep their art (build 377) (%s)" % (r["hidden"],), r["hidden"]["svgs"] == r["before"]["svgs"] and r["hidden"]["marks"] == r["before"]["marks"] and r["hidden"]["bare"] <= r["before"]["bare"], r)
     chk("and the rows near the view are back a few seconds after returning (build 366: only those; the rest come as they are scrolled toward) (%s)" % (r["back"],), r["back"]["svgs"] >= 12 and r["back"]["svgs"] == r["before"]["svgs"], r)
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(4500)
+    # (384) a sheet on before it is measured: recording takes a while on a shared sandbox
+    for _ in range(40):
+        if pg.evaluate("()=>document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length") >= 1: break
+        pg.wait_for_timeout(3000)
     h = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const cnt=()=>document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length; const out={ before: cnt() };
       window.__h=true; document.dispatchEvent(new Event('visibilitychange')); await wait(100); out.hidden=cnt();
       window.__h=false; document.dispatchEvent(new Event('visibilitychange')); await wait(3500); out.back=cnt(); return out; }""")
-    chk("Home's moving emblems come off while hidden and are back after (%s)" % (h,), h["before"] >= 1 and h["hidden"] == 0 and h["back"] >= h["before"], h)
+    # build 384: REVERSED, as 377 did for the rows. Taking them off and putting them back was what came back wrong ("it still kinda
+    # does a weird thing"): each flare showed its still drawing, then crossfaded to its sheet, restarting. They stay on now.
+    chk("Home's moving emblems stay on while hidden (build 384) and are all there after (%s)" % (h,), h["before"] >= 1 and h["hidden"] == h["before"] and h["back"] == h["before"], h)
     # the platter is hidden the instant the glass is pressed
     s = pg.evaluate("""async()=>{ const el=document.getElementById('bottomtab-rewards'); const sl=document.getElementById('bottomtabs-slider'); const r=el.getBoundingClientRect(); const x=r.left+r.width/2,y=r.top+r.height/2;
       const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:41,isPrimary:true,clientX:x,clientY:y});

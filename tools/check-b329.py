@@ -44,7 +44,10 @@ with sync_playwright() as pw:
         chk("nothing is new today: no pulse, no banner", page.evaluate("()=>!document.querySelector('.class-bubble-wrap.has-new') && !document.getElementById('newclass-banner')"))
         ctx.close()
         ctx, page = page_for(br, "15", "localStorage.setItem('class26e.classseen','[\"academy\"]');")
-        page.evaluate("()=>{ sessionStorage.clear(); showHome(); }"); page.wait_for_timeout(3800)
+        # REVISED IN 384: the new-class banner (and its pulse) goes only to accounts on Fire Code's invite list (newClassInvited:
+        # a hash of the public id on NEW_CLASS_INVITES), not yet enrolled in it and not shown on this device - so the fixture
+        # stands in for an invited account, in the academy only (the shared seed is in both classes)
+        page.evaluate("()=>{ try{ localStorage.removeItem('class26e.newclass.ifc'); }catch(e){} newClassInvited = () => Promise.resolve(true); store.classes = ['academy']; if(store.publicId === window.NOVA_CLASS_OWNER) store.publicId = 'b329-test-pid'; try{ localStorage.setItem('class26e.a2hs','1'); homeUnlocksOwed = () => false; }catch(e){} document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly,#tour-overlay,#tour-tooltip').forEach(n => n.remove()); sessionStorage.clear(); showHome(); }"); page.wait_for_timeout(6500)   # (384) the banner waits 2.4s and then two calm looks 0.7s apart
         r = page.evaluate("""()=>{ const b=document.querySelector('.class-bubble'); const cs=getComputedStyle(b,'::before');
           return {has:!!document.querySelector('.class-bubble-wrap.has-new'), ring:cs.animationName, banner:!!document.querySelector('#newclass-banner'),
                   txt:(document.querySelector('#newclass-banner')||{}).innerText||''} }""")
@@ -90,8 +93,8 @@ with sync_playwright() as pw:
         page.evaluate("document.getElementById('splashscreen')?.remove()"); page.wait_for_timeout(600)
         chk("first visit: the Get Started page, not Welcome", page.evaluate("()=>!!document.querySelector('.gs-page') && !document.querySelector('.cosmic-welcome')"))
         r = page.evaluate("()=>{ const v=[...document.querySelectorAll('.gs-page video')]; return {n:v.length, srcs:v.map(x=>x.getAttribute('src')), scenes:document.querySelectorAll('.gs-scene').length} }")
-        # 330: a fifth scene, Fire Code's
-        chk("it has a clip beside each of its five scenes, and two beside the title", r["n"] == 7 and r["scenes"] == 5 and all(x and x.startswith("landing/") for x in r["srcs"]), r)
+        # 330: a fifth scene, Fire Code's; (384, round 2) a sixth, Police Academy questions - "some police academy questions in there"
+        chk("it has a clip beside each of its scenes (five or more), and two beside the title", r["scenes"] >= 5 and r["n"] == r["scenes"] + 2 and all(x and x.startswith("landing/") for x in r["srcs"]), r)
         page.wait_for_timeout(2200)
         # 330: the button waits for the end of the page
         page.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTo(0, s.scrollHeight); }"); page.wait_for_timeout(900)
@@ -110,15 +113,20 @@ with sync_playwright() as pw:
         page.click(".gs-go"); page.wait_for_timeout(1200)
         chk("Let's get started leads to Welcome, and the page is gone", page.evaluate("()=>!!document.querySelector('.cosmic-welcome') && !document.querySelector('.gs-page')"))
         page.reload(); page.wait_for_timeout(3500); page.evaluate("document.getElementById('splashscreen')?.remove()"); page.wait_for_timeout(600)
-        chk("a second visit goes straight to Welcome", page.evaluate("()=>!!document.querySelector('.cosmic-welcome') && !document.querySelector('.gs-page')"))
+        # (384, round 2) "Ensure it shows up everywhere when you aren't signed [in] or don't have an account": a second visit with no
+        # account opens Get Started again - its button up from the start - and Let's get started is Welcome (was: straight to Welcome)
+        chk("a second visit with no account opens Get Started again, its button up at once", page.evaluate("()=>!!document.querySelector('.gs-page .gs-bar.is-ready') && !document.querySelector('.cosmic-welcome')"))
+        page.click(".gs-go"); page.wait_for_timeout(1200)
+        chk("...and Let's get started is Welcome", page.evaluate("()=>!!document.querySelector('.cosmic-welcome') && !document.querySelector('.gs-page')"))
         page.click(".cosmic-welcome-btn.welcome-new"); page.wait_for_timeout(800)
         page.click(".signupcheck-panel .signupcheck-go"); page.wait_for_timeout(800)
         chk("sign-up: the check goes straight to the class screen (no What This Actually Is)", page.evaluate("()=>!!document.querySelector('.classselect-panel') && !document.querySelector('.welcomeintro-panel')"))
         r = page.evaluate("()=>({cards:document.querySelectorAll('.classselect-panel .class-card').length, soon:!!document.querySelector('.classselect-panel .class-card.is-soon'), ifc:!!document.querySelector('.classselect-panel .is-ifc')})")
-        chk("class screen: the Classes screen's cards - Police Academy and 'More classes', no Fire Code", r["cards"] == 2 and r["soon"] and not r["ifc"], r)
+        # REVISED IN 384: both classes are offered at sign-up ("Pick one or both"), with "More classes" after them
+        chk("class screen: the sign-up step's cards - Police Academy, Fire Code and 'More classes'", r["cards"] == 3 and r["soon"] and r["ifc"], r)
         page.click(".classselect-panel .class-card.is-academy"); page.wait_for_timeout(300)
         chk("picking one marks it Selected and shows Continue", page.evaluate("()=>document.querySelector('.classselect-panel .cc-status.is-enrolled')?.textContent==='Selected' && !document.querySelector('.classselect-panel .next.playbtn').hidden"))
-        page.click(".classselect-panel .next.playbtn")
+        page.click(".classselect-panel .next.playbtn"); page.wait_for_timeout(300); page.click("#classenroll-confirm .classenroll-yes")   # (384) the enroll confirm
         import time
         t0 = time.time()
         while not page.evaluate("()=>!!document.querySelector('#nova-intro .nt-ask-input')") and time.time() - t0 < 60:
@@ -144,9 +152,14 @@ with sync_playwright() as pw:
         ctx.add_init_script("try{localStorage.setItem('class26e.getstarted','1');}catch(e){}")
         page.goto(url); page.wait_for_timeout(3000); page.evaluate("document.getElementById('splashscreen')?.remove()")
         page.evaluate("()=>showClassSelection()"); page.wait_for_timeout(1400)
-        r = page.evaluate("""()=>({ scroll: document.documentElement.scrollHeight - innerHeight,
+        # REVISED IN 384: two classes now (Fire Code beside the academy), and their cards and words do not fit 320x568 with
+        # Continue under them - as the intro screen does not on this phone. What is asked now is that Continue is on the
+        # screen once a class is picked (the pick brings it into view; check-b384-classstep holds the larger phones to no
+        # scroll at all).
+        page.evaluate("()=>document.querySelector('.class-card.is-academy').click()"); page.wait_for_timeout(1200)
+        r = page.evaluate("""()=>({ scroll: Math.round(document.getElementById('nextbtn').getBoundingClientRect().bottom - innerHeight),
           spill: Math.max(...[...document.querySelectorAll('.class-card')].map(c => { const a = c.getBoundingClientRect(), t = c.querySelector('.cc-status').getBoundingClientRect(); return Math.round(t.right - (a.right - 1)); })) })""")
-        chk("se1: the sign-up class screen does not scroll", r["scroll"] <= 0, r)
+        chk("se1: on the sign-up class screen Continue is on the screen once a class is picked", r["scroll"] <= 0, r)
         chk("se1: every class card's chip sits inside its card", r["spill"] <= 0, r)
         ctx.close()
     if "xp" in want:

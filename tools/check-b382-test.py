@@ -30,7 +30,9 @@ INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
  ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card','class26e.getstarted',
   'class26e.ifc.intro.seen','class26e.ifc.unithold.tip','class26e.ifc.daily.seen','class26e.ifc.savecode.asked','class26e.ifc.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
  localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); localStorage.setItem('class26e.greet.ifc','done'); localStorage.setItem('class26e.activeclass','ifc');
- localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
+ localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1');
+ /* (384 review) the code box remembers being opened (class26e.codeopen): each page here starts with it shut */
+ localStorage.removeItem('class26e.ifc.codeopen'); })()"""
 d = json.loads(g["SEED"].replace("__WEEK__", g["week_key_now"]())); d["publicId"] = OWNER; d["firstName"] = "Casey"; d["novaMet"] = 99
 UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
 UA_IPAD = "Mozilla/5.0 (iPad; CPU OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
@@ -60,12 +62,18 @@ def page(br, w, h, ins, ua=UA):
     pg.route("**/index.html", lambda route, request, b=body: route.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
     pg.add_init_script(INIT % json.dumps(json.dumps(d)))
     pg.goto(url); pg.wait_for_timeout(3500)
-    pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlocksOwed=()=>false; }catch(e){} store.novaMet=99; document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro, .rs-spot, .unlock-card').forEach(n=>n.remove()); }")
+    # (384) the fixture's hundos earn Fire Code's Sprinklers effect, whose card Home queues ~10s in - over the drill this then
+    # starts by script (a person cannot start one under it). Marked as already seen, the queue has nothing to play.
+    pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlocksOwed=()=>false; }catch(e){} store.novaMet=99;"
+                " try{ const p = pendingHomeUnlocks(); markUnlocksShown(p.chars, p.banners, p.fx); }catch(e){}"
+                " document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro, .rs-spot, .unlock-card').forEach(n=>n.remove()); }")
     return ctx, pg, ctx.new_cdp_session(pg)
 CENTRE = "(sel)=>{ const b=document.querySelector(sel); if(!b) return null; b.scrollIntoView({block:'center',behavior:'instant'}); const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }"
 AMEND = "QUESTIONS.map((q,i)=>i).filter(i => QUESTIONS[i].ifc && QUESTIONS[i].ifc.citation.source==='amendment' && !QUESTIONS[i].ifc.citation.blur)"
 def start(pg, which, n=4):
     """a drill of county questions: 'long' = the longest answers first, 'short' = the shortest"""
+    # a card Home's queue had already collected before the setup marked it seen plays ~14s in; a person taps it away before Start
+    pg.evaluate("()=>{ document.querySelectorAll('.rs-spot, .unlock-card').forEach(n=>n.remove()); }")
     pg.evaluate("""([lf, n])=>{ let ids = %s;
       const L = i => (QUESTIONS[i].ifc.explanation||'').length + String(QUESTIONS[i].q||'').length + QUESTIONS[i].choices.join('').length;
       ids.sort((a,b)=> lf ? L(b)-L(a) : L(a)-L(b)); ids = ids.slice(0, n);
@@ -75,7 +83,9 @@ def answer_right(pg, cdp):
     c = pg.evaluate("()=>{ const r=correctSlot(order[pos]); const el=document.querySelector('.choice[data-index=\"'+r+'\"]'); el.scrollIntoView({block:'center',behavior:'instant'}); const b=el.getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2]; }")
     tap(cdp, *c); pg.wait_for_timeout(1900)   # the pill rises .78s + .62s after the answer
 def open_code(pg, cdp, before_wait=None):
-    tap(cdp, *pg.evaluate(CENTRE, ".ifc-code-sum"))
+    # (384 review) a box already open (remembered, or a wrong first try) is left open - a tap would shut it
+    if not pg.evaluate("()=>{ const d=document.querySelector('.qpanel details.ifc-code, details.ifc-code'); return !!(d && d.open); }"):
+        tap(cdp, *pg.evaluate(CENTRE, ".ifc-code-sum"))
     if before_wait: before_wait()
     for _ in range(100):
         if pg.evaluate("()=>!!document.querySelector('.ifc-code[open] .ifc-links') && !!document.querySelector('.ifc-code[open] .ifc-clips canvas')"): break

@@ -93,7 +93,7 @@ COUNT_CTX = r"""
 SEED = """()=>{ document.getElementById('splashscreen')?.remove(); try{ __useFake(); }catch(e){}
   store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99;
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
-   'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true); }"""
+   'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true); }"""
 
 # The fingerprint: a 1024-point FFT every 512 samples, energy in 32 log
 # bands from 80Hz to 16kHz; the active part (within 50dB of the loudest

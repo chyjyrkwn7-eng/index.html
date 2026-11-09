@@ -125,7 +125,8 @@ def check_table(pg):
       store.dailyCorrectStreak = 0; store.unitHundoStreak = 0;
       store.practiceTestPassed = false;
       store.mysteryColorsFound = { red:false, orange:false, yellow:false };
-      const feats = AVATAR_CHARACTERS.filter(c => c.feat);
+      /* (384 r17) a retired character (Celestial, Zenith) is never locked and has no lock message: it is not earned by doing anything */
+      const feats = AVATAR_CHARACTERS.filter(c => c.feat && !c.retired);
       return {
         n: feats.length,
         keys: feats.map(c => c.feat),
@@ -144,10 +145,11 @@ def check_table(pg):
     # check_hardcore against the banner rather than here.
     # Five rank characters since build 235 (Gold's Pharaoh).
     # Six since build 244: Silver's Lunar joined, one per rank from Silver up.
-    check("the original challenges are still there, and the six rank characters are there",
+    # Seven since build 384 round 4: Bronze's Forge - one per rank, the first included.
+    check("the original challenges are still there, and the seven rank characters are there",
           r["n"] >= 3 and all(k in r["keys"] for k in ("daily10", "weektop", "flares"))
           and "hardcore10" not in r["keys"]
-          and r["rankFour"] == 6, "%d feat, %d rank" % (r["n"], r["rankFour"]))
+          and r["rankFour"] == 7, "%d feat, %d rank" % (r["n"], r["rankFour"]))
     check("every feat key is in CHARACTER_FEATS", r["known"], r["keys"])
     check("all four locked on a fresh account", r["allLocked"])
     check("each has a display name and its own glow", r["named"] and r["glowed"])
@@ -589,6 +591,10 @@ def check_find(pg):
 # --------------------------------------------------------------------------
 BANNER_RUN = """()=>{
   [...document.querySelectorAll('.charup-banner')].forEach(b => b.remove());
+  /* (384 full check) a card the seed's hundos already owed (Fireworks at 50) can be up from the boot's first Home: let it go,
+     so the queue below is the Detective's alone (failed the same way on 383) */
+  document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly').forEach(n => n.remove()); document.body.classList.remove('cutscene-focus');
+  try{ homeUnlockPlaying = false; clearTimeout(homeUnlockTimer); homeUnlockTimer = null; }catch(e){}
   store.dailyCorrectStreak = 9;
   const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
   cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [topics[0]];

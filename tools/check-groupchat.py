@@ -78,7 +78,7 @@ def main(src, size):
                   store.onboardingComplete = true; store.firstName = a.name; store.publicId = a.pub;
                   store.avatarChar = a.av; store.tourRev = 99; store.savedCodeSaved = true;
                   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour',
-                   'seenSettingsTour','seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+                   'seenSettingsTour','seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
                   syncCode = 'SYNC-' + a.pub; chatRoomCode = null; chatMyKey = null;
                   leaderboardRows = a.rows.map(r => Object.assign({ facc: [], freq: [], level: 3, badges: 0, hundos: 0 }, r));
                   store.chats = [];
@@ -214,7 +214,7 @@ def main(src, size):
             A2.goto(url); A2.wait_for_timeout(2600)
             A2.evaluate("""(a)=>{ document.getElementById('splashscreen')?.remove(); __useFake();
               store.onboardingComplete = true; store.firstName = 'Alex'; store.publicId = a.pub; store.avatarChar = 'alien';
-              store.tourRev = 99; store.savedCodeSaved = true; syncCode = 'SYNC-' + a.pub;
+              store.tourRev = 99; store.seenClassTip = true; store.savedCodeSaved = true; syncCode = 'SYNC-' + a.pub;
               leaderboardRows = a.rows; showHome(); openChatDock(); enterChatRoom(a.code); }""",
                         {"pub": ALEX, "code": code, "rows": ROWS})
             A2.wait_for_timeout(900)
@@ -332,7 +332,7 @@ def main_313(src, size):
                   store.onboardingComplete = true; store.firstName = 'Madison'; store.publicId = 'pMad313';
                   store.avatarChar = 'grizzly'; store.tourRev = 99; store.savedCodeSaved = true;
                   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour',
-                   'seenSettingsTour','seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+                   'seenSettingsTour','seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
                   syncCode = 'SYNC-pMad313'; chatRoomCode = null; chatMyKey = null; }""", {})
                 if first:
                     pg.evaluate("()=>" + FIX_313)

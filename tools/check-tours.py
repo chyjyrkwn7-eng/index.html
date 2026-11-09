@@ -70,6 +70,19 @@ SCENARIOS = [
     {"key": "novareturn", "flag": None, "source": "startNovaReturnTour",
      "setup": "showHome(); startNovaReturnTour()",
      "note": "the main menu's tips, then the planet, Profile, the calendar"},
+    # Build 384: the class button's tip, once, on its own, for an account from before the button (maybeClassButtonTip waits
+    # 3s for Home to settle, then a few calm beats).
+    {"key": "classtip", "flag": "seenClassTip", "source": "maybeClassButtonTip",
+     # calm Home first (no unlock cards owed, no banner up), as an account with nothing else to say would be
+     "setup": "try{ homeUnlocksOwed = () => false; }catch(e){} document.querySelectorAll('.daily-alert').forEach(n => n.remove()); showHome(); maybeClassButtonTip()",
+     "wait": 8000, "min": 1,
+     "note": "the class button, on Home"},
+    # Build 384 round 4: Start Studying's tip, the last of a sign-up's tips - after the sign-up's Add to Home Screen sheet
+    # (scheduleStudyTip waits for it, for the +100 XP and for a calm Home). Standalone here: nothing owed, so it comes at once.
+    {"key": "studytip", "flag": None, "source": "scheduleStudyTip",
+     "setup": "try{ homeUnlocksOwed = () => false; }catch(e){} try{ localStorage.removeItem('class26e.a2hs'); }catch(e){} document.querySelectorAll('.daily-alert').forEach(n => n.remove()); showHome(); scheduleStudyTip()",
+     "wait": 9000, "min": 1,
+     "note": "Start Studying, on Home"},
     {"key": "modeselect", "flag": "seenModeSelectTour", "source": "showModeSelect",
      "setup": "showModeSelect()", "note": "Drill / Quiz / Review / Virtual Room"},  # MOVED IN 327 (b327k)
     {"key": "unitselect", "flag": "seenUnitSelectTour", "source": "showSetup",
@@ -267,8 +280,16 @@ def main(argv):
                 pg.goto("http://127.0.0.1:%d/index.html" % port)
                 pg.wait_for_timeout(2000)
                 pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+                # (384 full check) the steps the app hands over, counted at the call - a tour whose steps depend on the
+                # account, the layout or the device (spread in, or one of two) is measured against what it really asked for
+                pg.evaluate("()=>{ window.__tourAsked = null; const o = startSimpleTour; window.startSimpleTour = startSimpleTour ="
+                            " function(steps){ if(window.__tourAsked === null) window.__tourAsked = (steps || []).length; return o.apply(this, arguments); }; }")
                 pg.evaluate("()=>{%s}" % sc["setup"])
-                pg.wait_for_timeout(1500)
+                pg.wait_for_timeout(sc.get("wait", 1500))
+                asked = pg.evaluate("()=>window.__tourAsked")
+                if isinstance(asked, int) and asked > 0:
+                    want = asked
+                want = max(want, sc.get("min", 0))   # a tour that must show something fails if it never starts
                 got = walk_tour(pg)
                 ctx.close()
                 checked += 1

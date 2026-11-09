@@ -987,12 +987,14 @@ def sections_313(ctx, open_tab, args):
                 check("%s, %d people: the match ends on the result screen" % (game, n), ended)
                 if ended:
                     pg.wait_for_timeout(600)
-                    r = pg.evaluate("""(before)=>{ const sub=document.querySelector('#stage .cal-sub');
+                    # (384 r8) the result is the results screen: the summary is the game card's line, everybody is in the
+                    # podium's side lists, and the two ways out are the results' own row
+                    r = pg.evaluate("""(before)=>{ const sub=document.querySelector('#stage :is(.cal-sub, .vr-gamecard-line)');
                       const bar=document.querySelector('.bottomtabs');
-                      const ex=[...document.querySelectorAll('#stage .vroom-exit-row button')].map(b=>b.getBoundingClientRect()).map(q=>q.right<=innerWidth+1&&q.left>=-1);
+                      const ex=[...document.querySelectorAll('#stage :is(.vroom-exit-row, .vroom-final-actions) button')].map(b=>b.getBoundingClientRect()).map(q=>q.right<=innerWidth+1&&q.left>=-1);
                       return { sub: sub ? sub.textContent : '', hs: document.documentElement.scrollWidth - innerWidth,
                                tabbar: !bar || bar.hidden || getComputedStyle(bar).display === 'none',
-                               exits: ex, rows: document.querySelectorAll('#stage .tug-board-row').length,
+                               exits: ex, rows: document.querySelectorAll('#stage :is(.tug-board-row, .vr-podium-cols .vr-podium-row)').length,
                                matches: (store.vrMatches || 0) - before }; }""", before)
                     check("%s, %d people: no sideways scroll and a one-line summary" % (game, n),
                           r["hs"] <= 0 and len(r["sub"]) <= 70 and r["sub"].count("&") <= 1, r)
@@ -1051,7 +1053,7 @@ def sections_313(ctx, open_tab, args):
         pg.evaluate("()=>__vrBots.die('b1')")
         try:
             pg.wait_for_selector(".screen-battle-result", timeout=20000)
-            won = pg.evaluate("()=>(document.querySelector('#stage h1')||{}).textContent")
+            won = pg.evaluate("()=>(document.querySelector('#stage h1, #stage .rs-xpline.is-place .rs-xpline-sub')||{}).textContent")   # (384 r8) the place line says it
         except Exception:
             won = None
         check("the only player on the other side goes quiet: the match ends, and you have won",
@@ -1111,6 +1113,7 @@ def main():
         # localStorage and its storage event.
         ctx = br.new_context(viewport={"width": 440, "height": 956})
         ctx.add_init_script("window.__fakeLatency = %d;" % args.latency)
+        ctx.add_init_script("window.__vroomFast = true;")   # (384 r5) the matches here are played in seconds; the five-minute floor has its own check (check-b384-matchlength)
         ctx.add_init_script(FAKE_FIRESTORE)
 
         ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
@@ -1559,22 +1562,18 @@ def main():
                 host.wait_for_timeout(250)
             check("and rolls once they are done", rolled)
             check("taking the banner down with it", not host.evaluate("()=>!!document.getElementById('vroom-prep')"))
+        # (384 r8) THE MATCH'S LAST SCREEN IS THE RUN'S OWN RESULTS. The old points screen (showVirtualRoomResults) this section
+        # used to mount by hand is retired - no real race had reached it since build 240. The real route: the leaderboard
+        # cutscene (rolled on its own, or started here from the room as the finale last saw it) and its Continue, which lands on
+        # the results with the place, the podium and the way on (vroomRaceFinalize).
+        # THE RACE LINE: put it back up before Continue, and the last screen has to take it down - and keep it down when the
+        # room document changes again.
         for pg in (host, guest):
-            pg.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); document.getElementById('vroom-prep')?.remove(); }")
-        # Both are finished as far as the room document is concerned, so
-        # the results screen can be asked for directly - what is under
-        # test is the screen, not the route to it.
-        for pg in (host, guest):
-            pg.evaluate("()=>{ showVirtualRoomResults(); }")
-        host.wait_for_timeout(900 + args.latency * 4)
-
-        # THE RACE LINE, on the path that was actually broken. Hiding it
-        # on the FIRST render always worked; what did not was every
-        # render after it, because the hide sat past an early return that
-        # fires once the standings are up. So: put the bar back, poke the
-        # room document to force another snapshot, and see whether the
-        # screen takes it down again.
+            pg.evaluate("()=>{ document.getElementById('vroom-prep')?.remove(); if(!document.getElementById('vroom-race-cut')) startVroomRaceCutscene(); }")
         host.evaluate("()=>{ document.getElementById('vroomracebar').hidden = false; }")
+        for pg in (host, guest):
+            pg.evaluate("()=>{ const c = document.querySelector('#vroom-race-cut .vrc-continue'); if(c) c.click(); else { document.getElementById('vroom-race-cut')?.remove(); if(typeof vroomRaceFinalize === 'function') vroomRaceFinalize(); } }")
+        host.wait_for_timeout(900 + args.latency * 4)
         host.evaluate("()=>{ fbDb.collection('vrooms').doc(vroomCode)"
                       "  .update({ nudge: Date.now() }); }")
         host.wait_for_timeout(700 + args.latency * 4)
@@ -1582,14 +1581,12 @@ def main():
 
         got = host.evaluate("""()=>{
           const R = e => e ? e.getBoundingClientRect() : null;
-          const btns = [...document.querySelectorAll('.vroom-exit-row .vroom-exit-btn')];
+          const btns = [...document.querySelectorAll('#stage .vroom-final-actions button')];   /* (384 r8) the results' own way on */
           const bar = document.querySelector('.bottomtabs');
           const race = document.getElementById('vroomracebar');
           const lvl = document.querySelector('.results-level');
-          const toggle = [...document.querySelectorAll('button')]
-            .find(b => /Review your answers/.test(b.textContent));
-          if(toggle) toggle.click();
-          const list = toggle ? toggle.nextElementSibling : null;
+          /* (384 r8) the review is the results' two tabs (missed / entire test), not a toggle: the whole test is listed */
+          const list = document.querySelector('#stage .rs-roomreview .rs-tabpane[data-tab="all"]');
           const chat = document.querySelector('.vroom-chat-toggle');
           const panel = document.querySelector('#stage .panel');
           return {
@@ -1601,7 +1598,7 @@ def main():
             raceHidden: !race || race.hidden,
             levelBlock: !!lvl,
             levelGain: lvl ? (lvl.querySelector('.results-level-gain') || {}).textContent : null,
-            reviewItems: list ? list.querySelectorAll('li').length : -1,
+            reviewItems: list ? list.querySelectorAll('li, .rs-qlist > *').length : -1,
             /* ---- ONE CHAT BUTTON IN THE APP ----
                This asserted that the Virtual Room's own chat TOGGLE sat
                in the top-right corner. That toggle is gone: the room's
@@ -1820,8 +1817,9 @@ def main():
                        twist: /repeating-linear-gradient/.test(cs.backgroundImage),
                        knot: !!document.querySelector('.tug-knot'),
                        centre: !!document.querySelector('.tug-centre') };}""")
-            check("the rope is drawn as a rope, not a hairline",
-                  bool(rope) and rope["twist"] and rope["h"] >= 24, rope)
+            # REWRITTEN IN 384 r5: the rope is a clean light line now (the tan hatched rope looked bad), not a twisted strand
+            check("the rope is drawn as a line you can see (4px or more), through the field",
+                  bool(rope) and rope["h"] >= 4, rope)
             check("with a knot on it and a line to pull it past",
                   bool(rope) and rope["knot"] and rope["centre"], rope)
 
@@ -1991,9 +1989,10 @@ def main():
                     pg.wait_for_selector(".screen-tug-result", timeout=20000)
                 except Exception:
                     pass
+            # (384 r8) the result is the results screen: the verdict is the place line's own words, the exits the results' row
             ends = [pg.evaluate("""()=>({ result: !!document.querySelector('.screen-tug-result'),
-              title: (document.querySelector('.screen-tug-result h1')||{}).textContent || null,
-              exits: [...document.querySelectorAll('.screen-tug-result .vroom-exit-btn')].map(b=>b.textContent) })""")
+              title: (document.querySelector('.screen-tug-result h1, .screen-tug-result .rs-xpline.is-place .rs-xpline-sub')||{}).textContent || null,
+              exits: [...document.querySelectorAll('.screen-tug-result :is(.vroom-exit-btn, .vroom-final-actions button)')].map(b=>b.textContent) })""")
                     for pg in (tugA, tugB)]
             check("the match ends on a result screen on both devices",
                   all(e["result"] for e in ends), ends)
@@ -2291,19 +2290,21 @@ def main():
             # The winner it names has to be the one the standings put
             # first, or the cutscene crowns somebody the list then
             # places second.
+            # (384 r8) the points-ranked vroomWinnerOf / vroomTopThree had no callers and are retired with the points screen;
+            # the standings' one ranking is vroomRankedEntries (the room's XP, then time), which the cutscene and the podium use.
             agree = cut.evaluate("""()=>{
               const d = { participants: {
-                a: { name:"A", totalScore: 120 }, b: { name:"B", totalScore: 700 },
-                c: { name:"C", totalScore: 450 } } };
-              return vroomWinnerOf(d).name; }""")
+                a: { name:"A", finished:true, xp: 120 }, b: { name:"B", finished:true, xp: 700 },
+                c: { name:"C", finished:true, xp: 450 } } };
+              return (vroomRankedEntries(d)[0] || {p:{}}).p.name; }""")
             check("the winner matches the standings' own ranking", agree == "B", agree)
             podium3 = cut.evaluate("""()=>{
               const d = { participants: {
-                a: { name:"A", avatarChar:"ninja", totalScore: 120 },
-                b: { name:"B", avatarChar:"ghost", totalScore: 700 },
-                c: { name:"C", avatarChar:"queen", totalScore: 450 },
-                e: { name:"E", avatarChar:"cadet", totalScore: 300 } } };
-              return vroomTopThree(d).map(p=>p.name); }""")
+                a: { name:"A", avatarChar:"ninja", finished:true, xp: 120 },
+                b: { name:"B", avatarChar:"ghost", finished:true, xp: 700 },
+                c: { name:"C", avatarChar:"queen", finished:true, xp: 450 },
+                e: { name:"E", avatarChar:"cadet", finished:true, xp: 300 } } };
+              return vroomRankedEntries(d).slice(0, 3).map(e=>e.p.name); }""")
             check("and the podium is the top three in order, not four",
                   podium3 == ["B", "C", "E"], podium3)
         except Exception as e:

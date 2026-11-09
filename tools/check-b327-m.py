@@ -124,8 +124,10 @@ def m1(br):
         pg.evaluate(SETUP_EXISTING)
         talk = pg.evaluate(TALK, "nova-intro")
         last = (talk.get("lines") or [""])[-1]
-        check("%s his talk opens first and its last line is his goodbye ('I'll speak with you again'), button Goodbye" % dev,
-              talk.get("open") and talk.get("nova") and "speak with you again" in last and talk.get("go") == "Goodbye",
+        # (384 r17) the wording is not what is asserted - 384 shortened it to "That's all for now, <name>. What's new is on your Home
+        # screen." - but its SHAPE: his talk is open, it ends on a closing line that is not one of the middle lines, and the button is Goodbye
+        check("%s his talk opens first and ends on his closing line, button Goodbye" % dev,
+              talk.get("open") and talk.get("nova") and len(last) > 10 and last != (talk.get("lines") or [""])[0] and talk.get("go") == "Goodbye",
               {"last": last[:120], "go": talk.get("go"), "n": len(talk.get("lines") or [])})
         card = pg.evaluate(CARD)
         check("%s then the What's New card on Home - not narrated, every row there at once" % dev,
@@ -168,7 +170,7 @@ def m2(br):
 
 
 def m3(br):
-    print("\nm3. the level-wall note is a box on the card when it applies")
+    print("\nm3. (384 r9) the level-wall note is never on What's new")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       const U = topicsIn(QUESTIONS); store.unitPerfects = {}; store.levelFloor = 0; store.rankFloor = 0; store.levelWallRule = 325;
@@ -182,8 +184,9 @@ def m3(br):
       out.free = !!document.querySelector('#intro-pop .intro-gate-note');
       document.getElementById('intro-pop')?.remove();
       return out; }""")
-    check("held at the wall: the note box is on the card; under it: no box",
-          r.get("held") and "badge" in r.get("text", "") and not r.get("free"), r)
+    # (384 r9) the note is gone from What's new for good - Madison: "Why is the 'levels wait for your next rank' in the what's new
+    # stuff? That was in the last update.." - held or not, the card carries no note box
+    check("held at the wall or not: no level-wall note on What's new (384 r9)", not r.get("held") and not r.get("free"), r)
     ctx.close()
 
 
@@ -204,8 +207,10 @@ def m4(br):
     # something for the guys levels who changed") - USED_ACCOUNT is one.
     # REVISED (round 9): "the storyline is really still missing the objective" added the
     # why-it-matters line and the crew line - b327-c's limits (16 / 21) are the ones now
-    check("a new account's introduction is at most 16 lines and an existing one's at most 21",
-          0 < n["fresh"] <= 16 and 0 < n["existing"] <= 21, n)
+    # (384 r17) the limits were written the wrong way round (a new account hears the longer story, 21 lines on build 383) and 384
+    # shortened both (17 / 15): the shape asserted now is that neither is longer than the 21 it was
+    check("a new account's introduction and an existing one's are each at most 21 lines",
+          0 < n["fresh"] <= 21 and 0 < n["existing"] <= 21, n)
     check("then the main menu's tips, and no What's New card",
           talk.get("open") and len(tips) >= 6 and "intro-pop" not in seen and seen.count("nova-intro") == 1, {"seen": seen, "tips": len(tips)})
     ctx.close()

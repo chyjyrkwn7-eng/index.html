@@ -3,10 +3,11 @@ Run:  python3 tools/check-b346.py [--shots DIR]"""
 import os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 H = ROOT + "/tools"
-src = open(H + "/record-landing.py").read().split("\nSCENES = {")[0]
-g = {"__file__": H + "/record-landing.py", "__name__": "rl"}; exec(src, g)
-rl_main = open(H + "/record-landing.py").read()
-exec(rl_main[rl_main.index("def encode("):rl_main.index("\ndef main(") if "\ndef main(" in rl_main else None], g)
+# (384) record-landing.py no longer wraps the cutscene harness (Get Started round 2 made it self-contained), so the
+# harness it used to hand over as g["g"] - record-cutscenes.py's, at 1.5x - is loaded here the way it loaded it
+src = open(H + "/record-cutscenes.py").read().split("\nSCENES = [")[0].replace("device_scale_factor=1)", "device_scale_factor=1.5)")
+_rc = {"__file__": H + "/record-cutscenes.py", "__name__": "rc"}; exec(src, _rc)
+g = {"g": _rc}
 from playwright.sync_api import sync_playwright
 rc = g["g"]; seed = dict(rc["SEED"]); seed["publicId"] = "xph5b57jbp5a"; seed["firstName"] = "Maddog"; seed["novaMet"] = 99
 SHOTS = sys.argv[sys.argv.index("--shots") + 1] if "--shots" in sys.argv else None
@@ -26,15 +27,13 @@ with sync_playwright() as pw:
         os.makedirs(SHOTS, exist_ok=True)
         pg.evaluate("()=>document.getElementById('settings-version-history')?.scrollIntoView({block:'center'})"); pg.wait_for_timeout(500); pg.screenshot(path=SHOTS + "/settings-version.png")
     pg.evaluate("()=>document.getElementById('settings-version-history')?.click()"); pg.wait_for_timeout(1200)
-    h = pg.evaluate("()=>({ title: [...document.querySelectorAll('.slab')].map(e=>e.textContent).join('|'), back: (document.querySelector('.back-link')||{}).textContent })")
-    chk("it opens the release history, with Settings as the way back", "Release History" in h["title"] and "Settings" in (h["back"] or ""), h)
+    # (384) the history wears the iOS nav bar every pushed screen has, its title "Version history" - so the screen is found by
+    # its class and the bar's title read off the page, not a label string
+    h = pg.evaluate("()=>{ const p=document.querySelector('.screen-releasehistory'); return { screen: !!p, versions: p ? p.querySelectorAll('.releasehistory-version').length : 0, title: p ? ((p.querySelector('.ios-navbar-title,.ios-nav-title,h1,h2')||{}).textContent||'') : '', back: (document.querySelector('.back-link')||{}).textContent }; }")
+    chk("it opens the release history, with Settings as the way back", h["screen"] and h["title"].strip() and h["versions"] >= 2 and "Settings" in (h["back"] or ""), h)
     pg.evaluate("()=>document.querySelector('.back-link')?.click()"); pg.wait_for_timeout(1200)
     s = pg.evaluate("()=>!!document.querySelector('.screen-settings') || /Settings/.test(document.body.innerText) && !!document.getElementById('settings-version-history')")
     chk("Back returns to Settings", s)
-    # Home's version tag still goes back to Home
-    pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(1500)
-    pg.evaluate("()=>document.querySelector('.homeversion-btn')?.click()"); pg.wait_for_timeout(1200)
-    b = pg.evaluate("()=>(document.querySelector('.back-link')||{}).textContent")
-    chk("opened from Home's version tag, its way back is still Home", "Home" in (b or ""), b)
+    # (383/384) Home's version tag is a plain label now - Settings' Version history is the one way in - so the Home check is gone
     ctx.close(); br.close()
 sys.exit(0 if ok else 1)

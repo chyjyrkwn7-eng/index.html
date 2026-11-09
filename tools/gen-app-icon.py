@@ -67,7 +67,12 @@ BRAND = ["#FFD37A", "#F5804D", "#C23B7A"]
 # consistent +2 blue tint that made the grey read cool against Claude's
 # neutral. #323232 -> #141414 is what reproduces Claude's own measured curve
 # once rendered; see tools/ calibration note in CLAUDE.md.
-GREY_TOP, GREY_BOTTOM = "#323232", "#141414"
+# (384 r13) RECALIBRATED FOR iOS 26's NEW DARK MODE. Madison, a Home Screen photo: "They updated the Apple dark mode, it's a
+# different dark mode now. Update that." Sampled at the same fractions (.1/.25/.5/.75/.9 down the tile, clear of the glyphs)
+# Claude, Canvas and Authenticator now all read 31 / 28 / 23 / 18 / 16 - neutral, about 15 levels darker at the top than the
+# old dark icons and 7 at the bottom - while Nova read 46 / 42 / 34 / 27 / 23. #212121 -> #0E0E0E puts Nova's rendered curve
+# on theirs (31.0 at .1, 16.0 at .9); still R=G=B. The previous calibration (Claude at #2E2E2E -> #171718) is above.
+GREY_TOP, GREY_BOTTOM = "#212121", "#0E0E0E"
 
 VARIANTS = {
     "brand":      (GREY_TOP, GREY_BOTTOM, BRAND, None),
@@ -81,6 +86,29 @@ VARIANTS = {
 # Sizes written into the manifest. 180 is what iOS takes; Android and desktop
 # browsers pick the larger ones, and a flat-ish icon costs very little at 512.
 MANIFEST_SIZES = [180, 192, 512]
+
+# BUILD 384: "Let's ensure when you book mark the page the new app icon is the
+# book mark." A bookmark's icon is fetched by the browser's own icon service,
+# which does not always read a data: URI out of the markup the way a tab does
+# (the lesson launch/ and share/ already cost: a FETCHABLE PATH). So the
+# favicon also ships as real files at the sizes desktop browsers and Android
+# ask for - 16 and 32 for tabs, bookmark bars and Edge/Chrome's lists, 192
+# for Android's and Samsung Internet's tiles - each with its own
+# <link rel="icon" sizes> after the embedded one. Safari's bookmarks and
+# Favorites take the apple-touch-icon (already a real file).
+FAVICON_FILES = [(16, "favicon-16.png"), (32, "favicon-32.png"), (192, "icon-192.png")]
+FAVICON_REV = "384"   # bumped with the art, so a browser holding the old one fetches again
+
+
+def favicon_links():
+    return "".join('\n<link rel="icon" type="image/png" sizes="%dx%d" href="share/%s?v=%s">' % (n, n, f, FAVICON_REV)
+                   for n, f in FAVICON_FILES)
+
+# THE ICON THE APP SHIPS. "pixel" since build 342 (share/icon-512.png is drawn
+# from it too, by gen-share-card.py). The default was "brand", so running this
+# with no --variant to add a size silently swapped every icon for a different
+# one; it is the shipped art now.
+SHIPPED_VARIANT = "pixel"
 
 
 def hex_rgb(h):
@@ -439,6 +467,12 @@ def write_into_index(variant):
                          lambda m: m.group(1) + favicon + m.group(2), new_src, count=1)
     if not n:
         sys.exit("could not find the favicon link in index.html")
+    # (384) the same art as real files, for bookmarks, and their links right after the embedded one
+    for size, name in FAVICON_FILES:
+        master.resize((size, size), Image.LANCZOS).save(os.path.join(ROOT, "share", name), optimize=True)
+    new_src = re.sub(r'\n<link rel="icon" type="image/png" sizes="\d+x\d+" href="share/(?:favicon-\d+|icon-192)\.png\?v=[^"]*">', "", new_src)
+    m = re.search(r'<link rel="icon" href="[^"]+">', new_src)
+    new_src = new_src[:m.end()] + favicon_links() + new_src[m.end():]
 
     m = re.search(r'(href="data:application/manifest\+json;base64,)([^"]+)(")', new_src)
     if not m:
@@ -496,6 +530,21 @@ def check():
     for i in manifest.get("icons", []):
         found[f"manifest {i['sizes']} {i['purpose']}"] = Image.open(
             io.BytesIO(base64.b64decode(i["src"].split(",")[1]))).convert("RGB")
+    # (384) the real-file favicons for bookmarks: present, linked with their size, the right size, the same art
+    for size, name in FAVICON_FILES:
+        path = os.path.join(ROOT, "share", name)
+        link = '<link rel="icon" type="image/png" sizes="%dx%d" href="share/%s?v=' % (size, size, name)
+        if not os.path.exists(path) or link not in src:
+            print(f"MISSING: share/{name} or its <link rel=\"icon\" sizes=\"{size}x{size}\">")
+            return 1
+        img = Image.open(path)
+        if img.size != (size, size):
+            print(f"WRONG SIZE: share/{name} is {img.size}, expected {size}x{size}")
+            return 1
+        found[f"share/{name}"] = img.convert("RGB")
+    share512 = os.path.join(ROOT, "share", "icon-512.png")
+    if os.path.exists(share512):
+        found["share/icon-512.png"] = Image.open(share512).convert("RGB")
 
     n = 64
     ref = None
@@ -505,10 +554,14 @@ def check():
         if img.mode != "RGB":
             problems.append(f"{label} is {img.mode}, not opaque RGB")
         if ref is None:
-            ref, ref_label = small, label
+            ref, ref_label, ref_full = small, label, img
             continue
-        d = sum(abs(a - b) for p, q in zip(pixels(ref), pixels(small))
-                for a, b in zip(p, q)) / (n * n * 3)
+        # a favicon smaller than the comparison size is compared at its own size (16px blown up to 64 is only blur)
+        k = min(n, img.size[0])
+        a_img = ref if k == n else ref_full.resize((k, k), Image.LANCZOS)
+        b_img = small if k == n else img
+        d = sum(abs(a - b) for p, q in zip(pixels(a_img), pixels(b_img))
+                for a, b in zip(p, q)) / (k * k * 3)
         if d > 1.5:
             problems.append(f"{label} does not match {ref_label} (mean channel difference {d:.1f})")
 
@@ -522,8 +575,8 @@ def check():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--variant", default="brand", choices=sorted(VARIANTS),
-                    help="brand: Nova's gold-to-magenta V (default). "
+    ap.add_argument("--variant", default=SHIPPED_VARIANT, choices=sorted(VARIANTS),
+                    help="pixel: the shipped icon (default since 384). brand: Nova's gold-to-magenta V. "
                          "white: a monochrome V. noir: the same V on near-black.")
     ap.add_argument("--preview", metavar="DIR",
                     help="render every variant to DIR and leave index.html alone")

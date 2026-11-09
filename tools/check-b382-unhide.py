@@ -35,7 +35,7 @@ INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
 # a near-fresh account: a starter on, a little XP, nothing earned
 SEED = {"firstName": "Casey", "avatarChar": "ninja", "onboardingComplete": True, "leaderboardOptIn": True, "lastModified": 1700000000000,
         "tourRev": 99, "rankMapFx244": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
-        "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaMet": 99,
+        "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaMet": 99,
         "lifetime": {"points": 150, "answered": 40, "correct": 30}}
 ok = True
 def chk(name, cond, info=""):
@@ -148,7 +148,7 @@ def signup(br):
     ctx, pg = page(br, False, fresh=True)
     if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome-btn.welcome-new')"):
         pg.evaluate("() => showWelcome()"); pg.wait_for_timeout(600)
-    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn"):
+    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn", "#classenroll-confirm .classenroll-yes"):
         try: pg.click(sel, timeout=4000)
         except Exception: pass
         pg.wait_for_timeout(600)

@@ -128,6 +128,17 @@ def check(name, ok, detail=""):
         FAILURES.append(name)
 
 
+def superseded(name, why):
+    """A check of a design that a later, asked-for one replaced. Said, never failed, so the reason stays next to the check."""
+    print("  %-4s %s  -- superseded: %s" % ("SKIP", name, why))
+
+
+# 327 round 10 ("tray only", "sleek premium", docs/notes-archive.md): the Badges tab's case is a tray (buildSleekBadgeCase) - no
+# lid, guards, screws, hinges or handle - and the cutscene's case takes the same smooth shell (.bc-scene overrides hide the
+# hardware it still builds). 384 made the academy 24 units. Checks of the hardware case are kept, said as superseded.
+TRAY_ONLY = "327 r10 made the Badges tab a tray and took the hardware off the cutscene's case ('tray only', 'sleek premium')"
+
+
 _BUILD_M = re.search(r'const APP_BUILD = "([^"]+)"', BODY)
 SERVED_BUILD = _BUILD_M.group(1) if _BUILD_M else ""
 
@@ -1450,7 +1461,13 @@ def check_b313_shuffle(br):
     # BUILD 319: Penal Code #346's "Manslaughter. 1" -> "Manslaughter." was
     # asked for by name in the 319 list, so it is the one allowed repair
     # (check_b319_penal346 holds it to that one choice and its identity).
-    kc = [k for k in kc if k not in ("Penal Code 346", "Victims of C 5")]
+    # BUILD 328: the updated study guides were imported word for word, and where a guide's choices changed (capitals, "All of
+    # the above") the question shows the guide's words with keyChoices pinning its identity (notes, "Existing units, what
+    # changed in the guides"); Arrest #66 got back its lost choice A ("12 hours") the same way. Those are the guide, not a
+    # rewording.
+    GUIDE_328 = ("Code of Crim 4", "Code of Crim 20", "Missing and  6", "Missing and  13", "Sexual Assau 9", "Sexual Assau 13",
+                 "US and Texas 42", "US and Texas 43", "US and Texas 66", "Arrest, Sear 66")
+    kc = [k for k in kc if k not in ("Penal Code 346", "Victims of C 5") + GUIDE_328]
     check("no question's choices are reworded from the study guide (no keyChoices that differ)", kc == [], kc)
     ctx.close()
 
@@ -1512,8 +1529,30 @@ def check_b313_sheet2(br):
           abs(ce[0]) <= 1 and abs(ce[1]) <= 1 and 2 <= ce[2] <= 9, ce)
     # "it looks like a different red": the note is the chip's tint and border
     rd = r.get("reds") or ["", ""]
-    check("the No hundo note is the same red as its chip, tint and border",
-          "rgba(255, 107, 91, 0.12)" in rd[1] and rd[0].split(" | ")[2] == rd[1].split(" | ")[2], rd)
+    # MOVED IN 327 round 12 (before this repo's history; in the stylesheet
+    # since 4f9c74e): "THE BANNERS' CLEAR GLASS, ON EVERY POP-UP" - the
+    # no-hundo note left its solid base for the pop-ups' glass
+    # (--pop-bg-card) and its red is a shade stronger there (.14 tint, .4
+    # border, against the chip's .12 / .35) so its words keep 4.5:1. What 313
+    # asked ("it looks like a different red") still holds and is what is
+    # held: the note's tint and border are the chip's red - the same
+    # 255,107,91, not the old dark brown - at the chip's strength or a shade
+    # more, and nothing else in the note has a hue.
+    import re as _re313
+    def _rgba(s):
+        return [(int(m[0]), int(m[1]), int(m[2]), float(m[3]) if m[3] else 1.0)
+                for m in _re313.findall(r"rgba?\((\d+), (\d+), (\d+)(?:, ([0-9.]+))?\)", s or "")]
+    chip_p = (rd[0].split(" | ") + ["", "", ""])[:3]
+    note_p = (rd[1].split(" | ") + ["", "", ""])[:3]
+    chip_t = [c for c in _rgba(chip_p[0] + " " + chip_p[1]) if c[3] < 1]
+    chip_b = _rgba(chip_p[2]); note_b = _rgba(note_p[2])
+    note_cols = _rgba(note_p[0] + " " + note_p[1])
+    note_red = [c for c in note_cols if c[:3] == (255, 107, 91)]
+    note_other = [c for c in note_cols if c[:3] != (255, 107, 91) and max(c[:3]) - min(c[:3]) > 30]
+    check("the No hundo note is the chip's red, tint and border - the same colour, at its strength or a shade more, and no other red (313, 327 round 12)",
+          chip_t and chip_b and note_b and note_red and not note_other
+          and all(c[:3] == chip_t[0][:3] and chip_t[0][3] <= c[3] <= chip_t[0][3] + .06 for c in note_red)
+          and note_b[0][:3] == chip_b[0][:3] and chip_b[0][3] <= note_b[0][3] <= chip_b[0][3] + .1, rd)
     m0, m1, m2 = r.get("max0") or {}, r.get("max1") or {}, r.get("max2") or {}
     check("the time limit has a Max button, lit while the limit is below the top",
           m0.get("text", "").strip().lower() == "max" and m0.get("on") is False, m0)
@@ -1790,7 +1829,8 @@ def check_b221(br):
       const src = String(showVirtualRoomLobby);
       return { oddGate: /oddTug/.test(src), perRight: TUG_XP_PER_RIGHT,
                countdown: /showVroomCountdown\\(tugStartAt/.test(String(beginTugMatch)),
-               board: /Team leaderboard in/.test(String(showTugResult)) }; }""")
+               /* (384 r8) the team board is the results screen's podium now (showVroomTeamResult / buildVroomTeamPodium) */
+               board: /Team leaderboard in/.test(String(showTugResult)) || (/showVroomTeamResult/.test(String(showTugResult)) && typeof buildVroomTeamPodium === 'function') }; }""")
     check("Tug waits for even teams, counts down, pays the winners and shows a team board",
           t["oddGate"] and t["countdown"] and t["board"] and t["perRight"] > 0, t)
     ctx.close()
@@ -1878,9 +1918,12 @@ def check_b223(br):
       d.battle.over = true; d.battle.winner = d.battle.teams.me;
       d.battle.progress = { me:{pos:20,correct:14}, bo:{pos:22,correct:18}, cy:{pos:15,correct:9}, dee:{pos:12,correct:6} };
       showBattleResult(d);
-      out.xp = (document.querySelector('.screen-battle-result .tug-xp-num') || {}).textContent || '';
-      out.title = (document.querySelector('.screen-battle-result h1') || {}).textContent || '';
-      out.cols = document.querySelectorAll('.screen-battle-result .tug-board-col').length;
+      /* (384 r8) the result is the results screen: the XP card's lines (right answers, and the place - placement XP replaced
+         the flat win bonus), the verdict in the place line's own words, the two sides on the podium */
+      out.xp = [...document.querySelectorAll('.screen-battle-result .rs-xp .rs-xpline-val')].reduce((t, e) => t + (Number(e.textContent.replace(/[^\d]/g, '')) || 0), 0);
+      out.title = (document.querySelector('.screen-battle-result .rs-xpline.is-place .rs-xpline-sub') || {}).textContent || '';
+      out.place = (document.querySelector('.screen-battle-result .rs-xpline.is-place .rs-xpline-name') || {}).textContent || '';
+      out.cols = document.querySelectorAll('.screen-battle-result .vr-podium .vr-side').length;
       return out; }""")
     check("the match screen has two bars, yours first, each with its members",
           u["bars"] == ["Your side", "Their side"] and u["faces"] == [2, 2] and u["choices"] >= 2
@@ -1890,8 +1933,9 @@ def check_b223(br):
     check("each is announced naming who did it",
           any("Bo froze you" in a for a in u["alerts"]) and any("Dee turned your screen upside down" in a for a in u["alerts"]), u["alerts"])
     check("a held power is a button that says what it does", "Use Shield" in u["power"], u["power"])
+    # (384 r8) 14 right x 10 + 1st of 4 (100) - it was 14 x 10 + a flat 150 for the win
     check("the result names the winning side and pays for right answers plus the win",
-          u["title"] == "Your side won" and u["xp"] == "+290 XP" and u["cols"] == 2, u)
+          u["title"] == "Your side won" and u["place"] == "1st of 4" and u["xp"] == 240 and u["cols"] == 2, u)
     ctx.close()
 
 
@@ -2304,8 +2348,10 @@ def check_b234(br):
       await T('grey', () => { const st = [...document.querySelectorAll('.rankmap-stop')];
         const f = (el) => el ? getComputedStyle(el).filter : null;
         /* a reached rank's theme is its live swatch (build 315), not the plain dot */
-        return { reached: f(st[0].querySelector('.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift.is-theme .rankmap-dot')), next: f(st[3].querySelector('.rankmap-dot')),
-                 nextIsNext: st[3].classList.contains('is-next'), lockedDot: f(st[4].querySelector('.rankmap-dot')),
+        /* (384) every rank's theme is its real swatch now, reached or not - the flat .rankmap-dot is gone */
+        const TH = '.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift.is-theme .rankmap-dot';
+        return { reached: f(st[0].querySelector(TH)), next: f(st[3].querySelector(TH)),
+                 nextIsNext: st[3].classList.contains('is-next'), lockedDot: f(st[4].querySelector(TH)),
                  lockedChar: f(st[4].querySelector('.rankmap-gift.is-char .rankmap-giftav svg')) }; });
       /* the banner preview is drawn after first paint too: wait for it under load */
       for(let i = 0; i < 40 && ![...document.querySelectorAll('.rankmap-stop')].pop()?.querySelector('.rankmap-gift.is-banner .bnr'); i++) await wait(100);
@@ -3334,7 +3380,8 @@ def check_b242(br):
     # AND OFF AGAIN IN 319: "no case there would be best". The shut case's
     # front carries the count; no badges on the card, still no meter.
     check("Profile shows the count on the shut case, no badges and no meter",
-          p.get("strip") == 0 and p.get("segs") == 0 and re.match(r"^\d+ of \d+ badges", p.get("count", "")), p)
+          # (384) the case is one of Profile's rows now, its label ("Badge case") before the count
+          p.get("strip") == 0 and p.get("segs") == 0 and re.search(r"\d+ of \d+ badges", p.get("count", "")), p)
     rb = r.get("rankBox") or {}
     # REVERSED IN 243: "the profile box got worse somehow ... it was so
     # good before" - back to the 241 plate: one bar and "Gold · 35%".
@@ -5568,10 +5615,12 @@ def check_b267(br):
       const a = buildRankEmblemSVG('adept');
       out.dust = !!a.querySelector('.rk-spin.rk-fast') && [...a.querySelectorAll('.rk-spin.rk-fast path')].some(p => /^#0[0-9A-F]{5}$/i.test(p.getAttribute('fill') || ''));
       out.shards = !!buildRankEmblemSVG('titan').querySelector('.rk-spin.rk-fast');
-      const keep = [store.bestTestStreak, store.lifetime.longestStreak];
-      store.bestTestStreak = 0; store.lifetime.longestStreak = 500; out.lifetimeLocked = isLockedCharacter('marksman');
-      store.bestTestStreak = CHARACTER_FEATS.streak100.need; out.testUnlocked = !isLockedCharacter('marksman');
-      store.bestTestStreak = keep[0] || 0; store.lifetime.longestStreak = keep[1];
+      /* REVISED IN 384: "Academy marksmen, doesn't need to happen in a single test." A run across tests counts again; one test's still does. */
+      const keep = [store.bestTestStreak, store.lifetime.longestStreak, store.lifetime.currentStreak], MN = CHARACTER_FEATS.streak100.need;
+      store.bestTestStreak = 0; store.lifetime.currentStreak = 0; store.lifetime.longestStreak = MN - 1; out.lifetimeUnder = isLockedCharacter('marksman');
+      store.lifetime.longestStreak = MN; out.lifetimeUnlocked = !isLockedCharacter('marksman');
+      store.lifetime.longestStreak = 0; store.bestTestStreak = MN; out.testUnlocked = !isLockedCharacter('marksman');
+      store.bestTestStreak = keep[0] || 0; store.lifetime.longestStreak = keep[1]; store.lifetime.currentStreak = keep[2];
       out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.bestTestStreak; applyLoadedData(d); return store.bestTestStreak; })();
       showProfile('profile'); await wait(1400);
       const f = document.querySelector('.profile-xpbar .xpbar-fill'), tr = document.querySelector('.profile-xpbar');
@@ -5624,8 +5673,8 @@ def check_b267(br):
     check("both Virtual Room card icons are mode icons, in colour (build 287)", r.get("icons") == [True, True], r.get("icons"))
     check("Sapphire's dark heart has dark dust spinning faster than its arms", r.get("dust") is True, r)
     check("Supernova throws dark shards of its own", r.get("shards") is True, r)
-    check("a lifetime streak does not unlock the Marksman; one test's does",
-          r.get("lifetimeLocked") is True and r.get("testUnlocked") is True and r.get("defaulted") == 0, r)
+    check("the Marksman unlocks at its number in a row across tests (one under does not), and one test's run still counts",
+          r.get("lifetimeUnder") is True and r.get("lifetimeUnlocked") is True and r.get("testUnlocked") is True and r.get("defaulted") == 0, r)
     xp = r.get("xp") or {}
     check("the XP bar is the unlock card's bar in blue: its .9s glide, no sheen",
           "61, 139, 255" in xp.get("bg", "") and xp.get("tr", "").startswith("0.9") and xp.get("h", 99) <= 12
@@ -7034,7 +7083,7 @@ def check_b289(br):
           r.get("congrats") >= 3 and r.get("congratsCard") is False and r.get("congratsAgain") is False,
           [r.get("congrats"), r.get("congratsCard"), r.get("congratsAgain")])
     check("tourRev 3 arms the three Profile tips, starting with Customize",
-          r.get("tourRev") == 3 and "Customize" in str(r.get("tip")), r.get("tip"))
+          (r.get("tourRev") or 0) >= 3 and "Customize" in str(r.get("tip")), r.get("tip"))   # (384) TOUR_REV is 4 now (the class button), 3 still arms these
     check("the rank line is no box; the next rank and the badge case are one family: same width, no glow, no watermark - and the case strip takes the Next rank box's corner (319h)",
           isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
     check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))
@@ -7126,12 +7175,16 @@ def check_b291(br):
                      svg: (() => { try{ const s = buildAvatarCharSVG('hive'); return !!(s && s.querySelector('.cx-fx-hivebees')); }catch(e){ return false; } })() };
         const keep = [store.dayAnswered, store.dayAnsweredBest];
         store.dayAnswered = null; store.dayAnsweredBest = 0;
+        /* (384 r14) the Hive's challenge is hosting VR_HOST_NEED Virtual Room matches to the end (store.vrHosted) */
+        const keepHosted = store.vrHosted || 0; store.vrHosted = 0;
         out.hiveLocked0 = isLockedCharacter('hive');
         const qi = QUESTIONS.findIndex(q => (q.topic || '').indexOf('Identity') >= 0);
         try{ recordResult(qi, true); recordResult(qi, false); }catch(e){ out.recordThrew = String(e); }
         out.dayCount = typeof busiestDay === 'function' ? busiestDay() : null;
-        const HN = CHARACTER_FEATS.busyday300.need; store.dayAnswered = null; store.dayAnsweredBest = HN - 1; out.hiveLocked299 = isLockedCharacter('hive');
-        store.dayAnsweredBest = HN; out.hiveOpen300 = !isLockedCharacter('hive');
+        /* (384 r14) one hosted match short is locked, VR_HOST_NEED open ("host 3 virtual room matches") */
+        store.vrHosted = VR_HOST_NEED - 1; out.hiveLocked299 = isLockedCharacter('hive');
+        store.vrHosted = VR_HOST_NEED; out.hiveOpen300 = !isLockedCharacter('hive');
+        store.vrHosted = 0;
         out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.dayAnsweredBest; delete d.dayAnswered; applyLoadedData(d);
           return [store.dayAnsweredBest, store.dayAnswered]; })();
         store.dayAnswered = keep[0]; store.dayAnsweredBest = 0;
@@ -7149,7 +7202,7 @@ def check_b291(br):
         const s1 = document.querySelector('.rs-spot');
         out.first = s1 ? s1.textContent.slice(0, 160) : null;
         /* earned while the first card is up */
-        store.dayAnsweredBest = CHARACTER_FEATS.busyday300.need;
+        store.vrHosted = VR_HOST_NEED;   /* (384 r14) the Hive's challenge: host VR_HOST_NEED matches to the end */
         await wait(800);
         s1 && s1.click();
         t0 = performance.now(); let s2 = null;
@@ -7157,7 +7210,7 @@ def check_b291(br):
         out.second = s2 ? s2.textContent.slice(0, 160) : null;
         out.stillHome = !!stage.querySelector('[data-screen="home"]');
         s2 && s2.click(); await wait(1600);
-        store.bestTestStreak = kStreak; store.dayAnsweredBest = keep[1] || 0;
+        store.bestTestStreak = kStreak; store.dayAnsweredBest = keep[1] || 0; store.vrHosted = keepHosted;
         /* (4)(5) the start sheet */
         cfg.mode = 'drill'; const unit = topicsIn(QUESTIONS).find(u => u.indexOf('Identity') >= 0); cfg.units = [unit]; cfg.size = 0;
         showSetup(); await wait(700);
@@ -7212,8 +7265,9 @@ def check_b291(br):
         print("   threw:", r["threw"][:400])
     check("the Marksman is 250 in a row in one test", r.get("marks") == 250, r.get("marks"))
     hv = r.get("hive") or {}
-    check("the Hive exists, is drawn with its bees, and asks for 500 questions in a day (build 292)",
-          hv.get("def") and hv.get("svg") and hv.get("feat") == 500, hv)
+    # (384 r14) the challenge is hosting three Virtual Room matches to the end now (feat need 3; r13 was a hundo on the biggest unit)
+    check("the Hive exists, is drawn with its bees, and asks for three hosted Virtual Room matches (384 r14; was a hundo on the biggest unit)",
+          hv.get("def") and hv.get("svg") and hv.get("feat") == 3, hv)
     check("every answer counts toward the day, right or wrong, and the Hive opens at its number, not one short",
           r.get("dayCount") == 2 and r.get("hiveLocked0") and r.get("hiveLocked299") and r.get("hiveOpen300"),
           [r.get("dayCount"), r.get("hiveLocked0"), r.get("hiveLocked299"), r.get("hiveOpen300"), r.get("recordThrew")])
@@ -7221,7 +7275,7 @@ def check_b291(br):
     check("a character that arrives with the cloud copy plays on the same Home visit",
           r.get("spotsAtStart") == 0 and "Marksman" in str(r.get("first")), [r.get("spotsAtStart"), r.get("first")])
     check("and one earned while that card is up plays straight after it, still on Home",
-          "Hive" in str(r.get("second")) and "500 questions" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
+          "Hive" in str(r.get("second")) and "Host 3 Virtual Room matches" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
     na, npart = r.get("noteAll") or {}, r.get("notePartial") or {}
     # REVISED IN 311: "When you have the max questions on, that notice
     # beneath it does not need to be there." Nothing at All; the warning
@@ -7784,8 +7838,19 @@ def check_b298(br):
           r["keysUnique"] and r["repeatLast"] and not r["dailyRepeat"], r)
     ctx.close()
     # and no lag: with the flip-book playing, Home paints nothing per frame
+    # MOVED IN 380 (fef8ce3, "loops as window-sized layers"): by default
+    # (html.loops-paint) a loop's sheet steps through its window by left/top
+    # - each step repaints that one window, on purpose, in exchange for the
+    # ~57MB of whole-sheet layers Home used to hold (measured here: 600-675
+    # paints, 42-83ms over 2.5s, against 0-9ms the transform way). loopsWatch
+    # puts the transform way back on a phone where the painted way is not
+    # smooth, and under load it does so here too - which is why this passed
+    # on some runs and not others. What 298 holds - the transform playback is
+    # the compositor's alone, no paint per frame - is measured on that
+    # playback (html.loops-paint off); the painted way is 380's.
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
     pg.evaluate("""()=>{ document.getElementById('pushing-update')?.remove(); store.lifetime.points = 300000; topicsIn(QUESTIONS).forEach(u => store.unitPerfects[u] = 40);
+      document.documentElement.classList.remove('loops-paint');
       store.pendingBadgeUnlocks = []; theme.muteBanners = true; showHome(); }""")
     pg.wait_for_function("()=>document.querySelectorAll('.cosmic-rank-anim').length >= document.querySelectorAll('.cosmic-badge-rank.cosmic-badge-lit').length && document.querySelectorAll('.cosmic-rank-anim').length > 0", timeout=60000)
     def paint_ms(on):
@@ -7797,7 +7862,7 @@ def check_b298(br):
         data = json.loads(br.stop_tracing()); ev = data["traceEvents"] if isinstance(data, dict) else data
         return sum(e.get("dur", 0) for e in ev if e.get("name") in ("Paint", "RasterTask")) / 1000
     on1, off1, on2, off2 = paint_ms(True), paint_ms(False), paint_ms(True), paint_ms(False)
-    check("17 Pro Max: Home with the emblems moving paints no more than with them still (paint+raster over 2.5s, ms)",
+    check("17 Pro Max: Home with the emblems moving by transform paints no more than with them still (paint+raster over 2.5s, ms)",
           min(on1, on2) <= max(off1, off2) + 40, [round(on1), round(off1), round(on2), round(off2)])
     ctx.close()
 
@@ -7953,7 +8018,10 @@ def check_b299(br):
             /* the dot inside, same colour */
             store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
             showProfile('profile'); await wait(600);
-            const d = document.querySelector('.namedisplay-row .new-dot');
+            /* MOVED IN 383 (42bbffa): Customize went "off the name row onto its own row at the bottom of the person card" and
+               "the 'something new' dot sits inside its right end" (.profile-customize-row) - the card's dot is read wherever
+               the card puts it, as profileDot above already is */
+            const d = document.querySelector('.profile-hero .new-dot, .namedisplay-row .new-dot');
             out.dotColor = d ? ((getComputedStyle(d).backgroundImage.match(/rgb\(255, 212, 59\)/) || [getComputedStyle(d).backgroundColor])[0]) : null;
             markUnlockSeen('chars', ch);
             /* every flare moves, locked ones included */
@@ -8030,7 +8098,13 @@ def check_b299(br):
         # REVISED IN 317: the case moved above the Next rank card.
         # REVISED BACK IN THE 317 TOUCH-UP: "The badge case being at the top
         # is not the move, revert that location at the bottom."
-        check(f"{dev}: the Profile card reads where you stand, the next rank, the badge case from the top", order == "standing,next,case", order)
+        # MOVED IN 383 (42bbffa): "Should the badge case be between the
+        # challenges and the top box instead? I feel like it's easy to miss at
+        # the bottom" - person card, badge case, next rank. 317's "at the top is
+        # not the move" was the case INSIDE the one card above Next rank; this is
+        # the case as its own card between them (archive, "Build 383 - Profile:
+        # the badge case under the person card"). Still three, one of each.
+        check(f"{dev}: the Profile tab reads where you stand, the badge case, the next rank from the top (383)", order == "standing,case,next", order)
         ctx.close()
 
 
@@ -8060,21 +8134,33 @@ def check_b300(br):
               const frame = img.parentElement, fw = parseFloat(frame.style.width);
               /* SCREEN pixels: the hero is scaled, so take the ancestors' scale too */
               const badge = wr.parentElement, S = badge.getBoundingClientRect().width / parseFloat(getComputedStyle(badge).width);
+              /* MOVED IN 384 (9656473, "the rank flares' shake"): under a scaled hero the window is laid out in screen units
+                 and scaled back by its OWN transform (scale(1/hero)), so a step is whole device pixels both in the window's
+                 own paint (fw x dpr - how Safari rasters a layer) and on the screen (fw x that scale x the ancestors' x dpr).
+                 Both are asserted; before 384 the window had no scale of its own (K = 1) and the two were one number. */
+              const ft = getComputedStyle(frame).transform, K = ft && ft !== 'none' ? new DOMMatrix(ft).a : 1;
               const res = { imgs: imgs.length, anims: anims.length, running: anims.every(a => a.playState === 'running'),
-                frameDev: fw * S * dprNow, wrong: 0, offPx: 0 };
+                frameDev: fw * K * S * dprNow, frameOwn: fw * dprNow, wrong: 0, offPx: 0 };
               if(anims.length !== 1) return res;
               /* walk the whole loop: at the middle of every frame and just
                  after every frame boundary, the frame on show must be that one */
               const a = anims[0], L = Number(a.effect.getTiming().duration);
               const cols = Math.round(img.offsetWidth / fw), n = a.effect.getKeyframes().length - 1;
+              /* MOVED IN 380 (fef8ce3, "loops as window-sized layers"): with html.loops-paint (on by default, until
+                 loopsWatch finds a phone not smooth with it) the sheet steps through its window by left/top - the
+                 painted twin of the transform keyframes (lbPaintKF, rk-pos-*), the same frames on the same clock.
+                 Which way a run plays depends on the machine's load, so the frame is read off whichever is moving it. */
+              const painted = /^rk-pos-/.test(a.animationName || '');
+              res.mode = painted ? 'paint' : 'layers';
               a.pause();
               for(let k = 0; k < n; k++){
                 for(const t of [(k + 0.5) * L / n, k * L / n + 0.5]){
                   a.currentTime = t;
-                  const m = new DOMMatrix(getComputedStyle(img).transform);
-                  const col = Math.round(-m.m41 / fw), row = Math.round(-m.m42 / fw);
+                  const cs = getComputedStyle(img), m = new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform);
+                  const x = painted ? parseFloat(cs.left) || 0 : m.m41, y = painted ? parseFloat(cs.top) || 0 : m.m42;
+                  const col = Math.round(-x / fw), row = Math.round(-y / fw);
                   if(row * cols + col !== k) res.wrong++;
-                  for(const v of [m.m41 * S * dprNow, m.m42 * S * dprNow]) if(Math.abs(v - Math.round(v)) > 0.02) res.offPx++;
+                  for(const v of [x * K * S * dprNow, y * K * S * dprNow, x * dprNow, y * dprNow]) if(Math.abs(v - Math.round(v)) > 0.02) res.offPx++;
                 }
               }
               a.play();
@@ -8104,11 +8190,12 @@ def check_b300(br):
         check(f"{dev}: each is ONE animation on ONE image - no second clock to drift",
               per and all(p["imgs"] == 1 and p["anims"] == 1 and p["running"] for p in per), [(p["imgs"], p["anims"]) for p in per])
         check(f"{dev}: the frame on show is the right one at every moment of the loop, row changes included (no shake)",
-              per and all(p.get("anims") == 1 and p.get("wrong") == 0 for p in per), [p.get("wrong") for p in per])
-        check(f"{dev}: every frame step lands on whole device pixels (no shimmer)",
+              per and all(p.get("anims") == 1 and p.get("wrong") == 0 for p in per), [(p.get("wrong"), p.get("mode")) for p in per])
+        check(f"{dev}: every frame step lands on whole device pixels, on the screen and in the window's own paint (no shimmer; 384)",
               per and all(p.get("anims") == 1 and p.get("offPx") == 0 and isinstance(p.get("frameDev"), (int, float))
-                          and abs(p["frameDev"] - round(p["frameDev"])) < 0.02 for p in per),
-              [(p.get("offPx"), p.get("frameDev") if not isinstance(p.get("frameDev"), (int, float)) else round(p["frameDev"], 2)) for p in per])
+                          and abs(p["frameDev"] - round(p["frameDev"])) < 0.02 and abs(p["frameOwn"] - round(p["frameOwn"])) < 0.02 for p in per),
+              [(p.get("offPx"), round(p["frameDev"], 2) if isinstance(p.get("frameDev"), (int, float)) else p.get("frameDev"),
+                round(p["frameOwn"], 2) if isinstance(p.get("frameOwn"), (int, float)) else p.get("frameOwn")) for p in per])
         check(f"{dev}: 30 frames a second (180 over the 6s loop; build 302)", per and all(p.get("n") == 180 for p in per), [p.get("n") for p in per])
         check(f"{dev}: the sheets are cached by drawing, not by build, so an update does not re-record them",
               r.get("keys", 0) > 0 and not r.get("buildKeyed") and r.get("v3") == r.get("keys"), (r.get("keys"), r.get("buildKeyed"), r.get("v3")))
@@ -8919,13 +9006,16 @@ def check_b304_polish(br):
           const tints = [];
           for(const id of ['tests100', 'vr50', 'exam100']){
             store.banner = id; showProfile('profile'); await wait(500);
-            const hero = document.querySelector('.profile-hero');
-            tints.push({ id, t1: hero.style.getPropertyValue('--hero-t1').trim(), bg: getComputedStyle(hero).backgroundImage });
+            const hero = document.querySelector('.profile-hero'), cv = hero.querySelector('.profile-cover');
+            tints.push({ id, t1: hero.style.getPropertyValue('--hero-t1').trim(), bg: getComputedStyle(hero).backgroundImage,
+                         fill: getComputedStyle(hero).backgroundColor, cover: cv && cv.classList.contains('has-banner') ? cv.dataset.banner : null });
           }
-          out.tints = tints.map(t => ({ id: t.id, t1: t.t1, tinted: /gradient/.test(t.bg) }));
+          out.tints = tints.map(t => ({ id: t.id, t1: t.t1, tinted: /gradient/.test(t.bg), fill: t.fill, cover: t.cover }));
           out.distinct = new Set(tints.map(t => t.t1)).size;
+          out.covers = new Set(tints.map(t => t.cover)).size;
           store.banner = ''; showProfile('profile'); await wait(500);
           out.defaultTinted = /gradient/.test(getComputedStyle(document.querySelector('.profile-hero')).backgroundImage);
+          out.defaultFill = getComputedStyle(document.querySelector('.profile-hero')).backgroundColor;
           /* a stat's answer opens under the tapped card's row */
           showProfile('stats'); await wait(700);
           const cards = [...document.querySelectorAll('.stat-card')];
@@ -8957,15 +9047,26 @@ def check_b304_polish(br):
         }""")
         ctx.close()
         check(dev + ": no error in the 304 polish run", "err" not in r, r.get("err"))
-        check(dev + ": the Profile card under a banner is tinted, and differently per banner",
-              all(t["tinted"] and t["t1"] for t in r.get("tints", [])) and r.get("distinct") == 3, r.get("tints"))
-        check(dev + ": the default banner's card takes the theme's colours", r.get("defaultTinted") is True)
+        # MOVED IN 383 round 2 (42bbffa): "Profile's three cards are the clean
+        # look's solid card - no pools, no rim, no shadow" (the 383 clean look
+        # beyond Home: every card one solid fill). The banner still goes on the
+        # person card - on its cover, a different one per banner - and the card
+        # under it is that one solid card for every banner and for none (320
+        # already took the theme's colours off the default). 304's wash of the
+        # banner's colours over the card is what 383 took away.
+        tt = r.get("tints", [])
+        fills = {t.get("fill") for t in tt} | {r.get("defaultFill")}
+        check(dev + ": the Profile card under a banner wears that banner on its cover, a different one per banner, over one solid card (383)",
+              len(tt) == 3 and all(t.get("cover") == t["id"] and not t["tinted"] for t in tt) and r.get("covers") == 3 and len(fills) == 1, tt)
+        check(dev + ": with no banner the card is the same solid card - no colour wash, the theme's or the rank's (320, 383)",
+              r.get("defaultTinted") is False and len(fills) == 1, (r.get("defaultTinted"), r.get("defaultFill")))
         check(dev + ": a stat's explanation opens directly under the row you tapped",
               r.get("whyInGrid") is True and 0 <= (r.get("whyGap") or -1) <= 20 and r.get("whyVisible") is True,
               (r.get("whyInGrid"), r.get("whyGap"), r.get("whyVisible")))
         check(dev + ": a grey Start does not animate", r.get("inertBefore") is True and r.get("inertAnim") in ("none", ""), r.get("inertAnim"))
         check(dev + ": Start fills from its centre once as it lights up (build 308)",
-              r.get("pop") is True and r.get("fill") == "start-fill-in" and r.get("popGone") is True, (r.get("pop"), r.get("fill"), r.get("popGone")))
+              # (384) the fill keyframes are start-fill-grow now (the Start pill's catch) - the name is not the thing
+              r.get("pop") is True and str(r.get("fill") or "").startswith("start-fill") and r.get("popGone") is True, (r.get("pop"), r.get("fill"), r.get("popGone")))
         check(dev + ": and once ready it does not pulse - no halo, no sweep (build 308)",
               r.get("halo") in ("none", "") and r.get("sweep") in ("none", ""), (r.get("halo"), r.get("sweep")))
         bg = r.get("begin") or {}
@@ -9127,14 +9228,28 @@ def check_b305_resultstap(br):
         landed = "()=>document.querySelectorAll('.rs-rewards .rs-land.rs-in, .rs-rewards .rs-land.rs-in-now').length"
         total = pg.evaluate("()=>document.querySelectorAll('.rs-rewards .rs-land').length")
         graded = "()=>!!document.querySelector('.rs-rewards .rs-grade.rs-graded')"
-        before = pg.evaluate(landed); g0 = pg.evaluate(graded)
+        # which box each landed piece belongs to: the outermost .rs-land round it (a card's lines are inside the card)
+        boxes = """()=>{ const all = [...document.querySelectorAll('.rs-rewards .rs-land')];
+          return all.map((e, i) => { let top = e; for(let p = e.parentElement; p; p = p.parentElement) if(p.classList && p.classList.contains('rs-land')) top = p;
+            return [i, all.indexOf(top), e.classList.contains('rs-in') || e.classList.contains('rs-in-now')]; }); }"""
+        before = pg.evaluate(landed); g0 = pg.evaluate(graded); b0 = pg.evaluate(boxes)
         pg.touchscreen.tap(w / 2, h * 0.45); pg.wait_for_timeout(60)
-        after = pg.evaluate(landed); g1 = pg.evaluate(graded)
+        after = pg.evaluate(landed); g1 = pg.evaluate(graded); b1 = pg.evaluate(boxes)
+        new_boxes = sorted({x[1] for x, y in zip(b0, b1) if y[2] and not x[2]}) if len(b0) == len(b1) else ["changed"]
         # BUILD 320: the grade is counted in, and a tap while it counts is
         # "the box on screen" - it finishes the count and lands the grade,
         # one step, and the XP card waits for the next tap.
-        check(dev + ": a tap on the screen brings in the next card (or lands the grade being counted), not the rest of them",
-              ((after == before + 1) or (after == before and g1 and not g0)) and after < total, (before, after, total, g0, g1))
+        # MOVED IN 380 (fef8ce3, "TAP-THROUGH, BOX BY BOX"): "if you tap it
+        # while it loads it would finish instantly and then go to the xp box
+        # and do it normally, if you tap it again that would finish and so
+        # on" - 305's tap ran one step of the timeline and often seemed to do
+        # nothing, so a tap now finishes the box coming in (the XP card's
+        # lines, its total and its level block land together) and the next
+        # box follows after a beat. One tap is still never the rest of the
+        # reveal: what lands is inside ONE box, and the way-on row is not it.
+        check(dev + ": a tap finishes the box coming in (or lands the grade being counted) - one box, never the rest of them (380)",
+              ((after > before and len(new_boxes) == 1) or (after == before and g1 and not g0)) and after < total,
+              (before, after, total, g0, g1, new_boxes))
         for _ in range(150):
             pg.wait_for_timeout(200)
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
@@ -9524,8 +9639,13 @@ def check_b314h_flares(br):
     found = [d for d in dots if d["found"]]
     unfound = [d for d in dots if not d["found"]]
     check("a found flare is lit in its own colour", found and all(d["fc"] == real.get(d["k"]) for d in found), found)
-    check("no unfound flare on Home carries its colour - not even the next one being hunted",
-          unfound and any(d["next"] for d in unfound) and all(d["fc"] != real.get(d["k"]) and d["fc"] == r.get("tint") for d in unfound), unfound)
+    # MOVED IN 329 (main at 802f873): "I don't want hunted secret flares or
+    # rank flares." flareHuntState is only "found" or "missing" - no flare on
+    # the planet is marked as the one being hunted (no ring, no tint, no
+    # rumour), so there is no "next one" to look at any more; none may be
+    # marked, and every unfound one is the same plain unfound light.
+    check("no unfound flare on Home carries its colour, and none is marked as the one being hunted (329)",
+          unfound and not any(d["next"] for d in unfound) and all(d["fc"] != real.get(d["k"]) and d["fc"] == r.get("tint") for d in unfound), unfound)
     check("the Home hint card draws the missing flare without its colour",
           r.get("hintColor") != real.get("violet") and real.get("violet") not in (r.get("hintFills") or []) + (r.get("hintStops") or []),
           {k: r.get(k) for k in ("hintColor", "hintFills", "hintStops")})
@@ -9559,7 +9679,7 @@ _RANKMAP_SAMPLE = """async (scen) => {
   await wait(scen === 'climb' ? 11000 : 8000);
   stop = true;
   window.scrollTo = o;
-  return { frames, calls: [...new Set(calls)] };
+  return { frames, calls: [...new Set(calls)], vh: window.innerHeight, maxScroll: document.documentElement.scrollHeight - window.innerHeight };
 }"""
 
 
@@ -9596,8 +9716,22 @@ def check_b314h_rankmap(br):
               last and last["op"] > 0.9 and abs(last["dotY"] - last["fillEnd"]) <= 3, last)
         sy = [f["sy"] for f in fr]
         if scen == "climb":
-            check("climb: the show went down the road and came back to the very top",
-                  sy and max(sy) > 100 and sy[-1] == 0, {"max": max(sy) if sy else None, "end": sy[-1] if sy else None})
+            # MOVED IN 384 (45fb8fd, "the back button and the chat button meet
+            # in the middle"): every pushed screen's nav row - Rank's included -
+            # went up .6rem, the road with it, so the deepest scroll of this
+            # climb went 109 -> 99px and a fixed "more than 100px" read a page
+            # moving up as the show not going down. What is held is the shape:
+            # the camera went down the road WITH the light (at its deepest the
+            # light is on screen, in the band rankUpFollowY holds it in - .42 of
+            # the screen down - or the page is as far down as it goes), and came
+            # back to the very top.
+            deep = max(fr, key=lambda f: f["sy"]) if fr else {}
+            vh = r.get("vh") or 956
+            band = (deep.get("dotY", -1) / float(vh)) if deep else -1
+            floor = bool(deep) and r.get("maxScroll") is not None and deep["sy"] >= r["maxScroll"] - 2
+            check("climb: the show went down the road with its light and came back to the very top",
+                  sy and max(sy) > 20 and 0 < band < 1 and (0.3 <= band <= 0.55 or floor) and sy[-1] == 0,
+                  {"max": max(sy) if sy else None, "end": sy[-1] if sy else None, "lightAtDeepest": round(band, 3), "pageFloor": r.get("maxScroll")})
             check("climb: every scroll of the show is a plain jump, never the options form an engine may not know",
                   r.get("calls") and all(c == "xy" for c in r["calls"]), r.get("calls"))
         else:
@@ -9742,14 +9876,24 @@ def check_b314h_chat(br):
     info = pg.evaluate("""() => { const p = document.querySelector('.chatdock-panel'); const r = p.getBoundingClientRect();
       window.__cls = []; new MutationObserver(() => __cls.push(p.className)).observe(p, { attributes: true, attributeFilter: ['class'] });
       const g = p.querySelector('.chatdock-grip'); const gr = g ? g.getBoundingClientRect() : r;
-      return { bf: getComputedStyle(p).backdropFilter, x: gr.left + gr.width / 2, y: gr.top + gr.height / 2, open: chatDockOpen }; }""")
+      return { bf: getComputedStyle(p).backdropFilter, bg: getComputedStyle(p).backgroundColor + ' ' + getComputedStyle(p).backgroundImage,
+               x: gr.left + gr.width / 2, y: gr.top + gr.height / 2, open: chatDockOpen }; }""")
     cdp = ctx.new_cdp_session(pg)
     cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": info["x"], "y": info["y"]}]})
     cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
     pg.wait_for_timeout(60)
-    a = pg.evaluate("() => ({ cls: __cls.slice(), bf: getComputedStyle(document.querySelector('.chatdock-panel')).backdropFilter, open: chatDockOpen })")
-    check("a tap on the sheet never turns its glass into the dark moving fill",
-          info["open"] and a["open"] and not any(("is-settling" in c or "is-dragging" in c) for c in a["cls"]) and a["bf"] == info["bf"] and a["bf"] != "none", a)
+    a = pg.evaluate("""() => { const p = document.querySelector('.chatdock-panel');
+      return { cls: __cls.slice(), bf: getComputedStyle(p).backdropFilter, bg: getComputedStyle(p).backgroundColor + ' ' + getComputedStyle(p).backgroundImage, open: chatDockOpen }; }""")
+    # MOVED IN 384 (db0e4a2): "the background behind the chat is see through
+    # and then you see it change to blurry" (again) - an iPhone builds a
+    # backdrop blur a few frames after it is asked for, so the dark sheet is
+    # now its near-opaque .95 fill ALWAYS, with no backdrop-filter to arrive
+    # late (archive, "Build 384 - Home's class icons and daily question; the
+    # chat sheet"). So there may be no glass to look at; what 314 asked still
+    # holds and is held: a tap never puts the sheet into its moving states and
+    # leaves its look - fill and filter - exactly as it was.
+    check("a tap on the sheet never turns it into the moving fill: no settling or dragging state, its fill and filter unchanged (384: no blur on the dark sheet)",
+          info["open"] and a["open"] and not any(("is-settling" in c or "is-dragging" in c) for c in a["cls"]) and a["bf"] == info["bf"] and a["bg"] == info["bg"], a)
     # a real pull down closes it; every move after the first is claimed
     pg.evaluate("""() => { window.__prevented = 0; window.__moves = 0; document.querySelector('.chatdock-panel').addEventListener('touchmove', e => { __moves++; setTimeout(() => { if(e.defaultPrevented) __prevented++; }, 0); }, { passive: true }); }""")
     # REVISED IN 327z8/z15 ("it goes away even if you barely swipe down, it should be like if you swipe really
@@ -9847,9 +9991,21 @@ def check_b314h_board(br):
         r = pg.evaluate("""() => { const h = document.querySelector('.rank-row-head'); const f = document.querySelector('.rank-rows .rank-row.lb-place-1');
           const hr = h.getBoundingClientRect(), fr = f.getBoundingClientRect(); const cs = getComputedStyle(h);
           const lab = [...h.querySelectorAll('.rank-col-head')].map(e => e.getBoundingClientRect().bottom);
-          return { gap: Math.round(fr.top - hr.bottom), labGap: Math.round(fr.top - Math.max(...lab)), bf: cs.backdropFilter, bg: cs.backgroundColor }; }""")
-        check("%s: the Rank / Level / Badges header keeps its own line, clear of first place and its glow, with no glass strip" % dn,
-              r["gap"] >= 8 and r["labGap"] >= 12 and r["bf"] == "none", r)
+          /* does first place throw any light out past its edge (a box-shadow that is not inset)? */
+          const glow = getComputedStyle(f).boxShadow.split(/,(?![^(]*\\))/).filter(s => s.trim() !== 'none' && !/inset/.test(s)).length > 0;
+          return { gap: Math.round(fr.top - hr.bottom), labGap: Math.round(fr.top - Math.max(...lab)), bf: cs.backdropFilter, bg: cs.backgroundColor, glow }; }""")
+        # MOVED IN 382 (a330ee8, "the Leaderboard and the Calendar in Settings'
+        # language"; 383 joined the top three to the list): first place is no
+        # longer a lit card with a gold glow round it ("medals without the
+        # glow") but the top row of one grouped card, and the header is a
+        # sentence-case caption over it, iOS's section header - 7px above the
+        # card, where 314 kept 8px clear and 12px for the glow. Held: the
+        # header has its own line above first place, its labels clear of it,
+        # no glass strip; and wherever first place does throw a glow, 314's
+        # 8px / 12px clearance still applies.
+        clear = (r["gap"] >= 8 and r["labGap"] >= 12) if r.get("glow") else (r["gap"] >= 4 and r["labGap"] >= 4)
+        check("%s: the Rank / Level / Badges header keeps its own line, clear of first place (and of any glow it throws), with no glass strip" % dn,
+              clear and r["bf"] == "none", r)
         ctx.close()
     # characters that hold still: every flip-book frame on the same pixel grid
     ctx = br.new_context(viewport={"width": 440, "height": 956}, device_scale_factor=3, has_touch=True, is_mobile=True)
@@ -9955,6 +10111,15 @@ def check_b314h_settings_calendar(br):
       out.today = { sel: t.classList.contains('cal-cell-sel'), bgImg: c.backgroundImage,
         shadow: rimFrom === 'ring' ? (/inset/.test(c.boxShadow) && / 0px 0px 0px /.test(c.boxShadow) ? 'none' : c.boxShadow) : c.boxShadow,
         border: rimFrom === 'ring' ? (c.boxShadow.match(/rgba?\([^)]*\)/) || [''])[0] : c.borderTopColor, bg: c.backgroundColor, rimFrom };
+      /* 382: today's circle in both of its states, and the page's accent to compare it with */
+      const look = () => { const n = document.querySelector('.cal-grid .cal-cell-today .cal-cell-num'); const s = getComputedStyle(n);
+        const pr = document.createElement('i'); pr.style.color = 'var(--accent)'; n.appendChild(pr); const acc = getComputedStyle(pr).color; pr.remove();
+        return { picked: n.closest('.cal-cell').classList.contains('cal-cell-sel'), bg: s.backgroundColor, img: s.backgroundImage,
+                 ring: (/inset/.test(s.boxShadow) ? (s.boxShadow.match(/rgba?\\([^)]*\\)/) || [''])[0] : ''),
+                 glow: s.boxShadow === 'none' || (/inset/.test(s.boxShadow) && / 0px 0px 0px /.test(s.boxShadow)) ? 'none' : s.boxShadow, accent: acc }; };
+      out.today382 = [look()];
+      const other = [...document.querySelectorAll('.cal-grid .cal-cell:not(.cal-cell-today):not(.cal-cell-empty)')].find(x => x.querySelector('.cal-cell-num'));
+      if(other){ other.click(); await wait(300); out.today382.push(look()); }
       return out; }""")
     if "page" not in r:
         op = r["open"]; cl = r["close"]
@@ -9969,11 +10134,18 @@ def check_b314h_settings_calendar(br):
         check("(382) Advanced settings' row on the Settings menu opens its own page, with a back button and its resets",
               a.get("row") and a.get("open") and a.get("back") and (a.get("resets") or 0) >= 2, a)
         check("(382) ...and Back returns to the Settings menu", a.get("backOnMenu") is True, a)
-    t = r["today"]
-    import re as _re
-    nums = [int(x) for x in _re.findall(r"\d+", t["border"])[:3]]
-    check("today is matte and neutral: no gradient, no glow, a neutral rim (theme set to a colour)",
-          t["bgImg"] == "none" and t["shadow"] == "none" and len(nums) == 3 and max(nums) - min(nums) <= 6, t)
+    # MOVED IN 382 (a330ee8, "the Leaderboard and the Calendar in Settings'
+    # language"): "Today is the accent's circle: filled when it is the picked
+    # day, a ring otherwise" - the clean iOS calendar. The fixture's today is
+    # the picked day, so it has no ring to read a rim off (the old reading
+    # found none). What 314 asked - matte, no theme gradient, no glow - is
+    # held in both states; the colour is 382's: the page's accent (the clean
+    # look's accent is the ink, white, whatever theme is set).
+    st = r.get("today382") or []
+    ok382 = len(st) == 2 and {s["picked"] for s in st} == {True, False} and all(
+        s["img"] == "none" and s["glow"] == "none" and
+        ((s["picked"] and s["bg"] == s["accent"]) or (not s["picked"] and s["ring"] == s["accent"])) for s in st)
+    check("today is matte: no gradient, no glow - the accent's circle, filled when picked and a ring otherwise (382)", ok382, st)
     ctx.close()
 
 
@@ -10417,11 +10589,15 @@ def check_b310(br):
         const btns = [...seg.children].filter(b => b !== sl && b.tagName === 'BUTTON');
         const target = btns.find(b => !b.classList.contains('active') && !b.classList.contains('is-on'));
         target.click(); await wait(60);
-        const mid = sl.getBoundingClientRect().left;
+        /* MOVED IN r8: a glass switcher's glide is its lens (attachSegGlass) - the thumb waits, hidden, on the new tab
+           while the lens carries the move - so where there is a lens up, the lens is the indicator measured */
+        const le = seg.querySelector(':scope > .seg-lens'), lup = le && +getComputedStyle(le).opacity > .5;
+        const ind = lup ? le.querySelector('.tab-lens-body') : sl;
+        const mid = lup ? ind.getBoundingClientRect().left + ind.getBoundingClientRect().width / 2 - sl.getBoundingClientRect().width / 2 : sl.getBoundingClientRect().left;
         /* MOVED IN 327z2: the glide is a Web Animation of transform now (a
            transition read the old box and forced a layout per tap), so
            either one counts as gliding. */
-        const anim = sl.getAnimations().some(an => (an.effect && an.effect.getKeyframes && an.effect.getKeyframes().some(k => k.transform)));
+        const anim = (lup ? [...le.querySelectorAll('*')] : [sl]).some(el => el.getAnimations().some(an => (an.effect && an.effect.getKeyframes && an.effect.getKeyframes().some(k => k.transform))));
         await wait(700);
         const end = sl.getBoundingClientRect().left;
         out.slide = { x0: Math.round(x0), mid: Math.round(mid), end: Math.round(end), tr: getComputedStyle(sl).transitionProperty + (anim ? ' transform(animation)' : '') };
@@ -10640,7 +10816,8 @@ def check_b311_rank(br):
                          grey: getComputedStyle(c.querySelector('.ranklore-art svg')).filter,
                          /* 327z15: dark, not filtered - the emblem moves now; faded under a shade of night */
                          dim: +getComputedStyle(c.querySelector('.ranklore-art svg')).opacity,
-                         shade: getComputedStyle(c.querySelector('.ranklore-art'), '::after').backgroundImage } : null;
+                         shade: getComputedStyle(c.querySelector('.ranklore-art'), '::after').backgroundImage,
+                         lock: !!c.querySelector('.ranklore-art .ranklore-lock') } : null;
       document.querySelector('.invite-overlay')?.remove();
       }catch(e){ out.threw = String(e); }
       return out; }""")
@@ -10659,9 +10836,10 @@ def check_b311_rank(br):
     check("a reached rank's card tells its story, with both requirements and its unlocks",
           r.get("reached") and "is-reached" in r["reached"]["cls"] and len(r["reached"]["lore"]) > 60 and "story" not in r["reached"]["lore"]
           and r["reached"]["reqs"] == 2 and r["reached"]["gifts"] >= 2, r.get("reached"))
-    check("a locked rank's card is grey and keeps its story back",
-          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and ("grayscale" in r["locked"]["grey"]
-          or (r["locked"].get("dim", 1) <= .5 and "gradient" in (r["locked"].get("shade") or ""))), r.get("locked"))
+    # (384) a rank's card shows it as it really is, its padlock saying it isn't yours (was: grey / dark, 234 and 327z15)
+    check("a locked rank's card shows the rank in its colour with a padlock, and keeps its story back",
+          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and r["locked"]["grey"] == "none"
+          and r["locked"].get("dim", 0) >= .99 and r["locked"].get("lock") is True, r.get("locked"))
     ctx.close()
 
 
@@ -11064,7 +11242,10 @@ def check_b313_lead(br):
       onSnapshotResilient = (ref, onNext) => ref.onSnapshot(onNext, () => {});
       fbDb = { collection: n => n !== 'leaderboard' ? real.collection(n) : ({ doc: id => real.collection(n).doc(id),
         get: () => new Promise(() => {}), onSnapshot: cb => { cbs.push(cb); return () => { cbs = cbs.filter(c => c !== cb); }; } }) };
-      const real4 = () => document.querySelectorAll('.rank-row:not(.rank-row-skel)').length;
+      /* MOVED IN 327z12 (main at f5a95d5): This Week and Hundos took Overall's column header ("can [hundos] and xp be like
+         [overall] ... the title header", LB_THIRD_COL) - a .rank-row-head, which is a .rank-row but nobody's row; from 382 it
+         stands over the placeholders too. People are counted, not the header. */
+      const real4 = () => document.querySelectorAll('.rank-row:not(.rank-row-skel):not(.rank-row-head)').length;
       /* cold: nothing in memory, the cache knows only you */
       leaderboardRows = []; showRankings('week'); await wait(60);
       cbs.forEach(cb => cb(mk([me], true))); await wait(300);
@@ -11330,7 +11511,14 @@ def _b314_extent(pg, cid, sil=False):
       (el.tagName === 'svg' ? [el] : [...el.querySelectorAll('svg')]).forEach(s => {
         s.setAttribute('viewBox', '-7 -7 54 54'); s.style.cssText = 'position:absolute;left:0;top:0;width:540px;height:540px;overflow:visible;-webkit-mask-image:none;mask-image:none;filter:none';
         s.querySelectorAll('.cx-bg').forEach(n => n.remove());
-        s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); }); });
+        s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); });
+        /* MOVED IN 327z10 (main at 92f434d, "the ghost character is not centered in the circle"): the Ghost's cold light is
+           an ellipse (-gaura) and is light, not figure, like the halo circles; and the wisp that floats off its shoulder
+           (.cx-k-ghost > .cx-fx-tip) is not its outline either. Centring the Ghost (AVATAR_CENTRE_DY 2.3 -> -2.5, held by
+           check-b325-a, which sets the same two aside) lifted that wisp to y 1.8, near the frame's top corner, where it
+           floats; what 272's line keeps clear is a head or a hat, and the Ghost's head is well inside it. */
+        s.querySelectorAll('ellipse').forEach(n => { if(/-gaura\\)/.test(n.getAttribute('fill') || '')) n.remove(); });
+        s.querySelectorAll('.cx-k-ghost > .cx-fx-tip').forEach(n => n.remove()); });
       host.appendChild(el); document.body.appendChild(host); }""", [cid, sil])
     png = pg.screenshot(clip={"x": 0, "y": 0, "width": 540, "height": 540}, omit_background=True)
     A = _Im.open(_io.BytesIO(png)).convert("RGBA").getchannel("A").load()
@@ -11461,6 +11649,8 @@ def check_b314_chars(br):
           const tick = o => { const c = o.querySelector('.avatarchar-check'); return !!c && parseFloat(getComputedStyle(c).opacity) > .9; };
           out.rings = opts.filter(ring).length; out.ticks = opts.filter(tick).length;
           out.selRing = opts.filter(o => o.classList.contains('selected')).every(o => ring(o) && tick(o));
+          /* 327 round 11: the selected one is marked by its tick alone */
+          out.selTick = opts.filter(o => o.classList.contains('selected')).length === 1 && opts.filter(o => o.classList.contains('selected')).every(o => tick(o) && !ring(o));
           /* the picker's own drawing has its halo turned down */
           const held = opts.find(o => !o.classList.contains('locked') && !o.classList.contains('selected'));
           const aura = held && [...held.querySelectorAll('svg.avatarchar-svg circle')].find(c => /url\\(#(aura|halo)-/.test(c.getAttribute('fill') || ''));
@@ -11476,7 +11666,14 @@ def check_b314_chars(br):
           out.font = parseFloat(ics.fontSize); out.fieldToBtn = Math.round(sr.top - ir.bottom);
           out.inView = ir.left >= 8 && ir.right <= innerWidth - 8 && sr.right <= innerWidth - 8;
           return out; }""")
-        check("%s: exactly one character wears the selection ring and the tick" % label, r["rings"] == 1 and r["ticks"] == 1 and r["selRing"] is True, (r["rings"], r["ticks"], r["selRing"]))
+        # MOVED IN 327 round 11 (before this repo's history; in the stylesheet
+        # since 4f9c74e): "the character you have selected being circled is not
+        # the move, just the checkmark is okay" - .avatarchar-option.selected's
+        # ring (::after) stays at opacity 0. 314's ask ("hard to tell which
+        # character is selected") still holds: exactly one tile is marked, the
+        # selected one, by its tick - and no tile wears a ring.
+        check("%s: exactly one character, the selected one, wears the tick, and none a ring (327 round 11)" % label,
+              r["rings"] == 0 and r["ticks"] == 1 and r.get("selTick") is True, (r["rings"], r["ticks"], r.get("selTick")))
         if label != "iPhone SE 1st gen":
             check("%s: a picker character's own halo is turned down (it read as selected)" % label, r["halo"] is not None and r["halo"] <= .5, r["halo"])
         check("%s: changing your name, the name row goes away while the field is open" % label, r["rowGone"] is True)
@@ -12431,7 +12628,8 @@ def check_b313_fx(br):
           /* and any script-made animation on them (the Black Hole's pull, the water's sway are those) */
           let scripted = 0;
           const sampler = fx === 'fireworks' ? setInterval(() => { still.push([Math.round(since()), cards()]);
-            scripted = Math.max(scripted, [...document.querySelectorAll('.rs-screen > *')].reduce((n, e) => n + e.getAnimations().filter(a => a.constructor === Animation).length, 0)); }, 200) : null;
+            scripted = Math.max(scripted, [...document.querySelectorAll('.rs-screen > *')].reduce((n, e) => n + e.getAnimations().filter(a => a.constructor === Animation && a.id !== 'rs-grade-rise').length, 0)); }, 200) : null;
+          /* (384 r6: the grade's own move up into its place after the effect, 'rs-grade-rise', is the reveal going on, not the screen moving) */
           /* what the sky canvas has lit: how many pixels, and their extent, in the viewport */
           const lit = () => { const cv = document.querySelector('.hfx-layer.hfx-fireworks canvas.hfx-fw-sky'); if(!cv) return null;
             const x = cv.getContext('2d'), d = x.getImageData(0, 0, cv.width, cv.height).data, cr = cv.getBoundingClientRect(), sx = cr.width / cv.width, sy = cr.height / cv.height;
@@ -12507,7 +12705,7 @@ def check_b313_fx(br):
           out.screen = scr ? scr.querySelectorAll('*').length : 0;
           out.box = box ? box.querySelectorAll('*').length : 0;
           const fill = () => { const f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold'); return f ? getComputedStyle(f).backgroundImage : null; };
-          out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
+          out.border = ((q) => { const t = q.querySelector(':scope > .hfx-tint'); if(!t) return null; const bi = getComputedStyle(t).backgroundImage; let m = /color\\(srgb ([\\d.]+) ([\\d.]+) ([\\d.]+)/.exec(bi); if(m) return 'rgb(' + [1, 2, 3].map(i => Math.round(m[i] * 255)).join(', ') + ')'; m = /rgba?\\((\\d+), (\\d+), (\\d+)/.exec(bi); return m ? 'rgb(' + m[1] + ', ' + m[2] + ', ' + m[3] + ')' : null; })(g); out.fill = fill();
           if(fx === 'underwater'){
             await until(2600);
             const sea = document.querySelector('.hfx-uw-sea'), sr = sea && sea.getBoundingClientRect(), gr = g.getBoundingClientRect();
@@ -12546,13 +12744,13 @@ def check_b313_fx(br):
             out.dimMid = (d => d ? parseFloat(getComputedStyle(d).opacity) : null)(document.querySelector('.hfx-fw-dim') || document.querySelector('.hfx-dim'));
           }
           if(fx === 'ufo'){
-            out.beforeBeam = getComputedStyle(g).borderTopColor;
+            out.beforeBeam = g.style.getPropertyValue('--hfx-b').trim() + ' ' + (getComputedStyle(g.querySelector('.rs-pct')).backgroundImage.match(/rgb\\([^)]*\\)/) || [''])[0];
             /* landed: 4.1s-5.4s until build 317 round 4, 6.1s-7.4s since
                (it circles the screen first, and sweeps the box with its
                beam) - read from the page's own total so the next change
                of length moves this with it */
             await until(typeof HUNDO_FX_TOTAL === 'object' && HUNDO_FX_TOTAL.ufo > 9000 ? 6700 : 4700);
-            out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
+            out.border = ((q) => { const t = q.querySelector(':scope > .hfx-tint'); if(!t) return null; const bi = getComputedStyle(t).backgroundImage; let m = /color\\(srgb ([\\d.]+) ([\\d.]+) ([\\d.]+)/.exec(bi); if(m) return 'rgb(' + [1, 2, 3].map(i => Math.round(m[i] * 255)).join(', ') + ')'; m = /rgba?\\((\\d+), (\\d+), (\\d+)/.exec(bi); return m ? 'rgb(' + m[1] + ', ' + m[2] + ', ' + m[3] + ')' : null; })(g); out.fill = fill();
             const b = document.querySelector('.hfx-saucer .hfx-ufo-bob'), br = b && b.getBoundingClientRect(), gr = g.getBoundingClientRect();
             out.landed = br ? { feet: Math.round(br.bottom - gr.top), cx: Math.round(br.left + br.width / 2 - (gr.left + gr.width / 2)) } : null;
           }
@@ -12607,13 +12805,13 @@ def check_b313_fx(br):
               anims: kids.reduce((n, e) => n + e.getAnimations().filter(a => a.constructor === Animation && a.playState !== 'finished').length, 0),
               av: av ? [av.classList.contains('char-hold'), av.classList.contains('char-gasp')] : null, stand: document.querySelectorAll('.rs-screen .cx-uw, .rs-screen .hfx-uw-breath, .rs-screen .hfx-uw-fling').length }; }
           out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade, .hfx-pane').length;
-          out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
+          out.borderAfter = ((q) => { const t = q.querySelector(':scope > .hfx-tint'); if(!t) return null; const bi = getComputedStyle(t).backgroundImage; let m = /color\\(srgb ([\\d.]+) ([\\d.]+) ([\\d.]+)/.exec(bi); if(m) return 'rgb(' + [1, 2, 3].map(i => Math.round(m[i] * 255)).join(', ') + ')'; m = /rgba?\\((\\d+), (\\d+), (\\d+)/.exec(bi); return m ? 'rgb(' + m[1] + ', ' + m[2] + ', ' + m[3] + ')' : null; })(g); out.fillAfter = fill();
           /* the 100% itself in the effect's ramp (build 317 round 3: the real
              number, no copy laid over it - .hfx-tintnum is gone) */
           const pn = g.querySelector('.rs-pct'), pcs = pn && getComputedStyle(pn);
           out.numAfter = pcs ? { bg: pcs.backgroundImage.slice(0, 120), color: pcs.color } : null;
           out.screenUp = !!document.querySelector('.rs-screen') && g.isConnected;
-          out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2'].map(k => g.style.getPropertyValue(k).trim());
+          out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2', '--hfx-g3'].map(k => g.style.getPropertyValue(k).trim());
           if(sampler){ clearInterval(sampler); out.still = still; out.cardAnims = scripted; }
           out.tail = tail;
           return out; }""", fx)
@@ -12623,20 +12821,26 @@ def check_b313_fx(br):
         # read as beige-grey down the card's lower edge (check-b327-j)
         yellow = "rgba(242, 200, 115, 0.46)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
-        check("%s: the box takes the effect's colours while it plays" % fx, r.get("border") not in (None, yellow), r.get("border"))
+        # MOVED IN 384 round 7 (r2-hundo): the box has NO BORDER of its own now (the XP card's), so the colour is proved from its
+        # light layer (.hfx-tint): the first colour in its gradients - the effect's, never the default's gold
+        near = lambda a, b: bool(a and b) and max(abs(x - y) for x, y in zip(a, b)) <= 3
+        rgbv = lambda c: tuple(int(v) for v in re.findall(r"\d+", c or "")[:3]) if c and c.startswith("rgb") else None
+        check("%s: the box takes the effect's colours while it plays (its light layer's colour, %s, is not the default's gold)" % (fx, r.get("border")), r.get("border") not in (None, yellow) and not near(rgbv(r.get("border")), (242, 200, 115)), r.get("border"))
         rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
         tv = r.get("tintVars") or [None, None, None]
         check("%s: and KEEPS them once the effect has finished, the results screen still up (round 3: \"it stays yellow\")" % fx,
               # MOVED IN 327 (round 6): the rim is the colour at .46, not full strength
-              r.get("screenUp") and tv[0] and r.get("borderAfter") in (rgb(tv[0]), (rgb(tv[0]) or "").replace("rgb(", "rgba(")[:-1] + ", 0.46)")
+              r.get("screenUp") and tv[0] and near(rgbv(r.get("borderAfter")), rgbv(rgb(tv[0])))
               and (r.get("numAfter") or {}).get("color") == "rgba(0, 0, 0, 0)" and (r.get("numAfter") or {}).get("bg", "").startswith("linear-gradient(105deg, %s" % rgb(tv[1])),
               {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
         check("%s: in its tail it is still on screen, fading - never cut (nothing fully shown at the last look before the layer goes)" % fx,
               r.get("tailLayer") and r.get("tailFading", 0) >= 2 and r.get("cutFull") == [], {k: r.get(k) for k in ("tailLayer", "tailFading", "cutAt", "cutFull", "total")})
         check("%s: and once it has faded every piece is gone" % fx, r.get("after") == 0 and r.get("total", 0) > 0, r)
-        gold = "rgb(217, 169, 58)"
+        gold = "rgb(246, 213, 142)"   # the default's gold ramp has this middle stop (384 r8); no effect does
         check("%s: the box's progress bar takes the effect's colours too, and keeps them after" % fx,
-              r.get("fill") and gold not in r["fill"] and tv[2] and r.get("fillAfter") == "linear-gradient(90deg, %s, %s)" % (rgb(tv[2]), rgb(tv[1])), {"during": r.get("fill"), "after": r.get("fillAfter")})
+              # MOVED IN 384 round 8 ("Do the hundo effects go with the failed and pass thing now? Like even the number 100 and the bar?"): the bar is
+              # the NUMBER'S ramp - g1, g2 at 55%, g3, in that order - not g2 > g1, the number's ramp turned round and without its third colour
+              r.get("fill") and gold not in r["fill"] and tv[2] and r.get("fillAfter") == "linear-gradient(90deg, %s, %s 55%%, %s)" % (rgb(tv[1]), rgb(tv[2]), rgb(tv[3] or tv[1])), {"during": r.get("fill"), "after": r.get("fillAfter")})
         if fx == "underwater":
             # build 317, round 4: "the water that's on screen looks terrible,
             # and it doesn't start from the very bottom"
@@ -12717,9 +12921,16 @@ def check_b313_fx(br):
                   # near the top and the sky above it is short - "most of the
                   # screen above it" is the sky reaching the top of the screen
                   # (within 300px of the box was the old, low box's measure).
+                  # MOVED IN 384: "within 40px of the top" was met by bursts
+                  # running OFF the top of the screen (they were sized for the
+                  # old, low box); they open whole inside the sky now, so at
+                  # this moment (3.9s, the finale half open) the light reaches
+                  # into the top third of the sky over the box - 60px on a
+                  # phone - and check-b384-policefx B holds that none is cut.
                   la.get("n", 0) > 400 and la["x1"] - la["x0"] >= 440 * .7
-                  and la["y0"] < max(0, (r.get("boxLate") or {}).get("t", 0) - 300) + 40, {"lit": la, "box": r.get("boxLate")})
-            check("fireworks: the screen dims a little behind the sky - and only a little", r.get("dimMid") is not None and .3 <= r["dimMid"] <= .6, r.get("dimMid"))
+                  and la["y0"] < max(0, (r.get("boxLate") or {}).get("t", 0) - 300) + max(40, min(300, (r.get("boxLate") or {}).get("t", 0)) * .35), {"lit": la, "box": r.get("boxLate")})
+            # (384 r6, REVERSED ON PURPOSE) no dim at all: "Don't do the darkened thing any" (check-b384-results-flow F2)
+            check("fireworks: the screen is not dimmed behind the sky (384 r6: no dim)", r.get("dimMid") is None or r["dimMid"] < .05, r.get("dimMid"))
             st = r.get("still") or []
             # BUILD 320: the XP card comes down at the effect's tail (it is
             # the next card, after the grade) - the screen holds still until
@@ -12753,8 +12964,8 @@ def check_b313_fx(br):
             # MOVED IN 327 (round 6): "the edges are like a hard stop for the
             # borders" - the rim is the soft one every card has (.36), still
             # there from the first frame, still in the UFO's green
-            check("ufo: the box is in the UFO's colours before the beam reaches it, its rim the soft one every card has - never gold first (build 317, 326, 327)",
-                  (r.get("beforeBeam") or "") == "rgba(107, 255, 143, 0.46)", r.get("beforeBeam"))
+            check("ufo: the box is in the UFO's colours before the beam reaches it (its tint colour and the number's ramp are the UFO's green from the first frame - the light layer is unlit by design, and there is no rim any more, round 7) - never gold first (build 317, 326, 327)",
+                  (r.get("beforeBeam") or "").lower().startswith("#6bff8f") and near(rgbv((r.get("beforeBeam") or "").split(" ", 1)[-1]), (234, 255, 238)), r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -12782,7 +12993,16 @@ def check_b313_fx(br):
     # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
     # borders it's kinda bad. It used to be better." Every results card's rim,
     # the 100% box's included, is the colour at .36 now, not full strength.
-    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 200, 115, 0.46)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+    # MOVED IN 383 round 2 (42bbffa, "the clean look beyond Home"): every card
+    # beyond Home is one solid card - "border transparent, shadow none" - and
+    # "the results' cards (the grade's tone frame hidden)", so the 100% box
+    # has no gold rim left to keep (on 382 it was rgba(242,200,115,.46)). What
+    # is held: Confetti, the default, puts no effect's colours on the box (not
+    # tinted, and its rim is the clean card's - none - or the old gold), and
+    # its bar is still gold.
+    check("Confetti, the default, leaves the box untinted - the clean card's rim (383) - and its bar gold",
+          # MOVED IN 384 round 8: its bar is the 100's own gold ramp (light, mid, deep), not the old deep > light pair
+          r.get("border") in ("rgba(0, 0, 0, 0)", "rgba(242, 200, 115, 0.46)") and "rgb(255, 235, 194), rgb(246, 213, 142) 55%, rgb(227, 172, 76)" in (r.get("fill") or "") and not r.get("tinted"), r)
     ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
@@ -13150,7 +13370,7 @@ def check_b314_sheet(br):
           /* the beat, read off the animations themselves (wall-clock frame
              sampling is at the mercy of a loaded machine) */
           const an = tab.getAnimations({ subtree: true });
-          const fill = an.find(a => a.animationName === 'start-fill-in'), punch = an.find(a => a.animationName === 'start-ready-punch');
+          const fill = an.find(a => /^start-fill/.test(a.animationName)), punch = an.find(a => a.animationName === 'start-ready-punch');
           const tm = a => a ? a.effect.getComputedTiming() : null;
           const peak = punch ? Math.max(...punch.effect.getKeyframes().map(k => { const m = String(k.transform || '').match(/scale\\(([\\d.]+)/); return m ? +m[1] : 1; })) : 0;
           out.start = { fillMs: fill ? tm(fill).duration : null, punchDelay: punch ? tm(punch).delay : null,
@@ -13208,7 +13428,8 @@ def check_b314_sheet(br):
         check("%s All at All shows no note (dropped with the bank boxes)" % label, r.get("allNote") is False, r.get("allNote"))
         check("%s a tap on Max that changes the value shows nothing" % label, r.get("maxOnChange") is False, r.get("maxOnChange"))
         check("%s Max at the top says 'Max time set / 90 minutes', in view and not clipped by its card, then goes" % label,
-              r.get("max") == "Max time set | 90 minutes" and r.get("maxVisible") is True and r.get("maxGone") is True,
+              # (380) the limit runs 1 to 120 minutes now (Madison) - the label's shape, not its number
+              re.match(r"^Max time set \| \d+ minutes$", r.get("max") or "") and r.get("maxVisible") is True and r.get("maxGone") is True,
               (r.get("max"), r.get("maxVisible"), r.get("maxGone")))
 
 
@@ -13875,6 +14096,12 @@ def check_b316_tiles(br):
           out.caseBorderW = parseFloat(cs.borderTopWidth) || 0;
           const fr = document.querySelector('.pf-case .pf-ccase-front');
           out.frontBg = fr ? getComputedStyle(fr).backgroundImage : '';
+          /* (384) the shut case's parts, and its row against Customize's (Profile's rows, one look) */
+          const rowLook = e => { if(!e) return null; const c = getComputedStyle(e); return [c.backgroundColor, c.backgroundImage, c.borderTopColor, c.borderRadius].join(' | '); };
+          out.caseParts = { handle: !!document.querySelector('.pf-case .pf-ccase-handle, .pf-case .nova-case-handle'),
+            latches: document.querySelectorAll('.pf-case .nova-case-latch').length, plate: ((document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '').trim() };
+          out.caseRow = rowLook(document.querySelector('.pf-case .pf-case-count.pf-act'));
+          out.custRow = rowLook([...document.querySelectorAll('.profile-identity-tab .pf-act')].find(e => !e.classList.contains('pf-case-count')));
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         circ = [r.get(k) for k in ("theme", "flare", "char")]
@@ -13889,11 +14116,13 @@ def check_b316_tiles(br):
         # REVISED IN 319 (b319g), AND BACK IN 319 (b319h): g drew the shut
         # case in its own grained shell; it "sticks out", so the strip is the
         # Next rank card's flow again - a diagonal light and a tinted edge.
-        check(f"{dev}: the badge case has the Next rank card's flow - a diagonal light and a tinted edge, not a flat box",
-              # MOVED IN 327z15 round 27: "the profile box, challenge box, and badge case should all look
-              # a little more alike" - one family on the person card's surface, its white .14 rim, one
-              # colour pool at the top; a light and an edge still, never a flat box
-              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.12, [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
+        # MOVED IN 383/384 (the clean look, then Profile's three rows - "Customize, Badge case and Rank ladder have plain graphite
+        # tiles"): the case on Profile is the shut case drawn whole - its handle, two latches and its side plate - and its
+        # "Badge case" row is Profile's row, the same as Customize's; the strip with a diagonal light and a tinted edge is gone
+        cp, cr, cu = r.get("caseParts") or {}, r.get("caseRow"), r.get("custRow")
+        check(f"{dev}: the badge case is the shut case (handle, two latches, its plate) with its row in Profile's rows' look, Customize's (384)",
+              cp.get("handle") and cp.get("latches", 0) >= 2 and "badge case" in (cp.get("plate") or "").lower() and cr is not None and cr == cu,
+              [cp, cr, cu])
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         ctx.close()
 
@@ -13940,6 +14169,8 @@ def check_b317_pfcard(br):
           const cs = document.querySelector('.profile-identity-tab .pf-case');
           const dot = cs && cs.querySelector('.new-dot');
           out.dot = box(dot); out.arrow = box(cs && cs.querySelector('.pf-case-arrow'));
+          /* (384) the dot is on the case row's icon, at its corner */
+          out.tile = box(cs && cs.querySelector('.settings-row-icon'));
           /* MOVED IN 327z15: the case count is a pill (327z10) whose arrow is its ::after disc,
              in its right padding - the old text arrow is display:none */
           const cc = cs && cs.querySelector('.pf-case-count');
@@ -13951,8 +14182,11 @@ def check_b317_pfcard(br):
           out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
           const st = document.querySelector('.profile-hero .pf-standing'), gl = document.querySelector('.profile-identity-tab .pf-goal');
           out.caseLast = !!(cs && gl && (gl.compareDocumentPosition(cs) & 4) && cs.parentElement.lastElementChild === cs);
-          out.gaps = (st && cs && gl) ? [Math.round(gl.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
-            Math.round(cs.getBoundingClientRect().top - gl.getBoundingClientRect().bottom)] : null;
+          /* (383) the case sits between the Profile card and the Next rank card */
+          const hero = document.querySelector('.profile-hero');
+          out.caseBetween = !!(cs && gl && hero && (cs.compareDocumentPosition(gl) & 4) && cs.getBoundingClientRect().top > hero.getBoundingClientRect().bottom && gl.getBoundingClientRect().top > cs.getBoundingClientRect().bottom);
+          out.gaps = (hero && cs && gl) ? [Math.round(cs.getBoundingClientRect().top - hero.getBoundingClientRect().bottom),
+            Math.round(gl.getBoundingClientRect().top - cs.getBoundingClientRect().bottom)] : null;
           /* the XP under the bar: what you have, what the level asks, the total */
           const col = sel => { const e = document.querySelector('.profile-hero .pf-standing ' + sel); if(!e) return null;
             const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
@@ -13993,9 +14227,15 @@ def check_b317_pfcard(br):
           return out; }""")
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         d, a, sp = r.get("dot"), r.get("arrow"), r.get("strip")
-        adj = bool(d and a) and d["r"] <= a["l"] + 0.5 and a["l"] - d["r"] <= 12 \
-            and min(d["b"], a["b"]) - max(d["t"], a["t"]) >= (d["b"] - d["t"]) * 0.5
-        check(f"{dev}: the new-badge dot sits right beside the case's arrow, not over it", adj, [d, a])
+        # REVISED IN 384 (the new dot, one look): the dot is on the case row's icon, its centre on the icon's corner at 45 degrees
+        # (as far in from the right as down from the top), not beside the arrow; the word "New" stays before the arrow
+        t = r.get("tile")
+        adj = False
+        if d and t:
+            cx, cy = (d["l"] + d["r"]) / 2, (d["t"] + d["b"]) / 2
+            dx, dy = t["r"] - cx, cy - t["t"]
+            adj = abs(dx - dy) <= 1.5 and -1 <= dx <= 6 and (not a or d["r"] <= a["l"])
+        check(f"{dev}: the new-badge dot sits on the case's icon at its corner, clear of the arrow (384)", adj, [d, t, a])
         # REVISED IN 319: no strip on the card any more - the dot is on the
         # shut case's front, in the count's row, never in the plate.
         check(f"{dev}: ...on the count's row on the case's front, not in the 'Badge case' plate",
@@ -14005,7 +14245,8 @@ def check_b317_pfcard(br):
               [r.get("dotAfter"), r.get("newAfter")])
         # REVISED IN THE 317 TOUCH-UP: "The badge case being at the top is
         # not the move, revert that location at the bottom."
-        check(f"{dev}: the badge case is at the bottom of the card, after the Next rank card", r.get("caseLast") is True, r.get("caseLast"))
+        # MOVED IN 383: the case moved up - under the Profile card, above the Next rank card (the triage of b299 found the same move)
+        check(f"{dev}: the badge case sits between the Profile card and the Next rank card (383)", r.get("caseBetween") is True, [r.get("caseBetween"), r.get("gaps")])
         g, rem = r.get("gaps"), r.get("rem") or 16
         # REVISED IN 319 (g: 1.1rem), BACK IN 319 (h): the strip is part of
         # the card, so it takes the boxes' own .8rem; its handle stands in it.
@@ -14014,8 +14255,10 @@ def check_b317_pfcard(br):
         # MOVED IN 327z12 round 2: three cards - the next rank a card of its
         # own (the cards' 1.1rem gap below the Profile card), the case's
         # handle .45rem more under it
-        check(f"{dev}: ...with the cards' gaps (1.1rem+ under the Profile card, 1.55rem from the Next rank card to the case)",
-              bool(g) and g[0] >= 1.1 * rem - 1.5 and abs(g[1] - 1.55 * rem) <= 1.5, [g, rem])
+        # MOVED IN 383: the same two gaps, in the new order - the case's handle .45rem more under the Profile card (1.55rem), the
+        # cards' own 1.1rem from the case to the Next rank card
+        check(f"{dev}: ...with the cards' gaps (1.55rem from the Profile card to the case's handle, 1.1rem from the case to the Next rank card)",
+              bool(g) and abs(g[0] - 1.55 * rem) <= 1.5 and abs(g[1] - 1.1 * rem) <= 1.5, [g, rem])
         # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
         # asks and the total are one blue - mid level (not over) and at
         # level 80 (over).
@@ -14507,7 +14750,9 @@ def check_b317_cutspin(br):
                 if burst_at is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.supernova-burst')"): burst_at = i
                 continue
             ph = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene'); if(!o) return [false, false, null];
-              const lp = o.querySelector('.rank-bang:not(.is-big)'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
+              /* MOVED IN 384 polish: the bangs are made with the scene and held (.is-held) until they go off, and hidden when
+                 spent (.is-spent) rather than taken off the page - a bang's life is now between the two */
+              const lp = o.querySelector('.rank-bang:not(.is-big):not(.is-held):not(.is-spent)'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
               const pool = sl ? getComputedStyle(sl, '::before') : null;
               return [!!lp, o.classList.contains('supernova-burst'), {
                 parts: lp ? [...lp.children].map(c => c.className).sort().join(',') : null,
@@ -14828,7 +15073,8 @@ EVOLVE_ST = """([tier]) => { const o = document.getElementById('supernova-cutsce
     stageT: st.translate, long: op('.rank-before .rank-trail.is-long'), neu: op('.rank-before .rank-trail.is-new'),
     ring: op('.rank-before .rank-trail.is-newring'), old: op('.rank-before .rank-trail.is-old'),
     slotOp: other ? +getComputedStyle(other).opacity : null,
-    bang: rect(o.querySelector('.rank-bang:not(.is-big)')), big: rect(o.querySelector('.rank-bang.is-big')),
+    /* MOVED IN 384 polish: a bang is on from the moment it goes off (.is-held off) until it is spent (.is-spent) */
+    bang: rect(o.querySelector('.rank-bang:not(.is-big):not(.is-held):not(.is-spent)')), big: rect(o.querySelector('.rank-bang.is-big:not(.is-held):not(.is-spent)')),
     gather: !!o.querySelector('.rank-gather'), spinScale: sp ? getComputedStyle(sp).scale : null,
     flash: fl ? (() => { const r = fl.getBoundingClientRect(); return [r.left + r.width / 2 - ob.left, r.top + r.height / 2 - ob.top]; })() : null }; }"""
 
@@ -15701,7 +15947,9 @@ def check_b317_hundobox(br):
                 # (build 326: the rim is at full from the first frame, as
                 # every card's edge is - only the beam's wash waits for it)
                 # MOVED IN 327 (round 6): the UFO's rim is the soft one (.36), still there from the start
-                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgba(107, 255, 143, 0.46)"
+                # MOVED IN 384 round 7 (r2-hundo): the box has NO border of its own now - the XP card's, none - so "its rim at full" is
+                # "no rim" and the colour is proved by the number's ramp and the bar (same(ha, ("num", "bar")) below), both the UFO's
+                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgba(0, 0, 0, 0)"
                 # MOVED IN 327 (b327j): the grade is now counted in as a WIPE
                 # of two full-look layers (red, then the green filling from
                 # the left), and a 100 hands to its effect by wiping the
@@ -15713,16 +15961,16 @@ def check_b317_hundobox(br):
                 # the first frame's rim is either the card's at full or the
                 # green layer's (green(fi): wash and number at full green).
                 rimfull = lambda a: unlit(a) or ((a.get("border") or "") == "rgba(0, 0, 0, 0)" and green(a))
-                check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim at full throughout (326) (%s)" % (tag, ha.get("border")),
-                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(107, 255, 143, 0.46)"
-                      and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
+                check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with no border of its own throughout (384 r2: the colour is the number's and the bar's, the light is the glow layer's) (%s)" % (tag, ha.get("border")),
+                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(0, 0, 0, 0)"
+                      and f.get("tinted") and "246, 213, 142" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
             elif fx == "confetti":
-                check("%s: then gold, the default's own look, by the end of the hand-off - border, 100%%, bar exactly as settled" % tag,
-                      cleared(ha) and same(ha) and ha.get("border") == GOLD_BORDER and "217, 169, 58" in (ha.get("bar") or ""), {"handed": ha, "settled": se})
+                check("%s: then gold, the default's own look, by the end of the hand-off - the plain card (no border, 384 r2), 100%%, bar exactly as settled" % tag,
+                      cleared(ha) and same(ha) and ha.get("border") == "rgba(0, 0, 0, 0)" and "255, 235, 194" in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             else:
                 check("%s: then into its colours by the end of the hand-off - border, 100%%, bar exactly as settled, never the gold default" % tag,
                       cleared(ha) and same(ha) and ha.get("border") != GOLD_BORDER and f.get("tinted")
-                      and "217, 169, 58" not in (ha.get("bar") or ""), {"handed": ha, "settled": se})
+                      and "246, 213, 142" not in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             check("%s: every word in the box is the default's - GRADE, 12 / 12, the line under it, each unit and its count" % tag,
                   # MOVED IN 327 (round 6): "Why does the grade box ... show how many
                   # you got right twice?" - a one-unit run has no count on its unit row
@@ -15927,17 +16175,20 @@ def check_b317_hundobox(br):
         ctx.close()
         L = shots[lit][1]
         tag = "%s, ufo" % label
+        # MOVED IN 384 round 7 (r2-hundo): the rim is gone (the box has no border of its own), so "its edge already there (the rim at
+        # 60%+ of its lit)" is dropped - what stays is the point of the leg: the light layer is on from the first frame, and no beam,
+        # no wash and nothing of the effect is in the box until the saucer fires.
         # MOVED in build 326: the rim and its glow are every card's edge,
         # there from the first frame ("the score box border of it before the
         # ufo arrives it doesn't have the same border like xp"); what waits
         # for the beam is the beam - no column of light down the box, no
         # wash, nothing of the effect in it.
         bad = [(t, shots[t][1], shots[t][0]["border"], shots[t][0]["glow"], shots[t][0]["shown"]) for t in pre
-               if shots[t][1]["ring"] < L["ring"] * .6 or shots[t][1]["col"] > 2 or (shots[t][0]["glow"] or 0) < .95 or shots[t][0]["shown"]
+               if shots[t][1]["col"] > 2 or (shots[t][0]["glow"] or 0) < .95 or shots[t][0]["shown"]
                or shots[t][0]["wash"] == shots[lit][0]["wash"]]
-        check("%s: NO BEAM ON THE BOX before the saucer fires (%s) - its edge already there (the rim at 60%%+ of its lit %.1f, the glow on), no column of light down it, no wash, nothing of the effect in it - and the light comes with the beam (326)%s" % (
+        check("%s: NO BEAM ON THE BOX before the saucer fires (%s) - its light layer already on (the rim is gone, round 7; lit ring %.1f), no column of light down it, no wash, nothing of the effect in it - and the light comes with the beam (326)%s" % (
                   tag, "/".join("%.1fs" % t for t in pre), L["ring"], " (%d unit rows)" % info["rows"] if multi else ""),
-              not bad and L["ring"] >= 12 and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
+              not bad and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
               {"bad": bad, "lit": L, "rows": info["rows"], "pre": {t: shots[t][1] for t in pre}})
     # --- ONE BEAM, ARRIVING AS ONE (round 6): "the ray beam is still being
     # shown in the box before it even gets there and when it gets there it's
@@ -16083,10 +16334,11 @@ def check_b317_hundobox(br):
     # MOVED IN 327 (round 6): the edge is soft now - the rim at .46, not
     # full - "the edges are like a hard stop ... it's kinda bad". Still the
     # edge from the first frame, and still well clear of the unlit .22.
-    okm = mk and all(alpha(x["border"]) >= .4 and (x["glow"] or 0) > .9 for x in mk["mock"])
-    oks = mk and all(alpha(x["border"]) >= .4 and (x["glow"] or 0) > .9 for x in mk["stage"])
-    check("ufo: the unlock card's miniature and a live Customize stage - their boxes carry their edge from the first frame, before the beam and after (326)",
-          okm and oks and alpha(mk["first"]["mock"]) >= .4 and alpha(mk["first"]["stage"]) >= .4, mk)
+    # MOVED IN 384 round 7 (r2-hundo): no rim - the edge is the card's own (none) and the light layer is the colour, on from the first frame
+    okm = mk and all(alpha(x["border"]) < .05 and (x["glow"] or 0) > .9 for x in mk["mock"])
+    oks = mk and all(alpha(x["border"]) < .05 and (x["glow"] or 0) > .9 for x in mk["stage"])
+    check("ufo: the unlock card's miniature and a live Customize stage - their boxes carry the card's own edge (no rim, round 7) and the light layer from the first frame, before the beam and after (326)",
+          okm and oks and alpha(mk["first"]["mock"]) < .05 and alpha(mk["first"]["stage"]) < .05, mk)
     # and the results flow waits for all of it: the first scene comes after
     # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -17800,7 +18052,7 @@ B321E_SAMPLE = r"""(t) => {
   if(o.map && toI >= 0 && stops[toI + 1]){ const st = stops[toI + 1];
     const gf = sel => { const e = st.querySelector(sel); if(!e) return null; const cs = getComputedStyle(e); return { f: cs.filter, o: +cs.opacity }; };
     o.nx = { next: st.classList.contains('is-next'), state: (st.querySelector('.rankmap-state') || {}).textContent,
-      dot: gf('.rankmap-gift .rankmap-dot'), flare: gf('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: gf('.rankmap-gift.is-char .rankmap-giftav svg'), bn: gf('.rankmap-gift .rankmap-giftbanner .bnr') }; }
+      dot: gf('.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift .rankmap-dot'), flare: gf('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: gf('.rankmap-gift.is-char .rankmap-giftav svg'), bn: gf('.rankmap-gift .rankmap-giftbanner .bnr') }; }
   /* the card at the top */
   const heroes = [...document.querySelectorAll('.screen-ranks .rankhero')];
   if(heroes.length){ o.hero = heroes.map(h => ({ n: (h.querySelector('.rankhero-name') || {}).textContent, op: +getComputedStyle(h).opacity,
@@ -18070,7 +18322,7 @@ def check_b320d_rankup(br):
         out.mapAt = +tip.dataset.tipAt; out.gap = Math.round((nr.top - (d.top + d.height / 2)) * 10) / 10; out.stretch = Math.round((H - n - 18) * 10) / 10; }
       /* build 321: Up next's unlocks in colour, every rank past it grey */
       const gifts = st => { if(!st) return null; const g = sel => { const e = st.querySelector(sel); if(!e) return null; const cs = getComputedStyle(e); return { f: cs.filter, o: +cs.opacity }; };
-        return { name: (st.querySelector('.rankmap-name') || {}).textContent, dot: g('.rankmap-gift .rankmap-dot'), flare: g('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: g('.rankmap-gift.is-char .rankmap-giftav svg'), bn: g('.rankmap-gift .rankmap-giftbanner .bnr') }; };
+        return { name: (st.querySelector('.rankmap-name') || {}).textContent, dot: g('.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift .rankmap-dot'), flare: g('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: g('.rankmap-gift.is-char .rankmap-giftav svg'), bn: g('.rankmap-gift .rankmap-giftbanner .bnr') }; };
       out.nextGifts = gifts(document.querySelector('.screen-ranks .rankmap-stop.is-next'));
       out.lockedGifts = gifts([...document.querySelectorAll('.screen-ranks .rankmap-stop.is-locked')].find(x => x.querySelector('.rankmap-gift.is-char')));
       }catch(e){ out.threw = String(e && e.stack || e); }
@@ -19362,6 +19614,11 @@ def check_b317_badgecase(br):
           document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
           showRanksScreen('badges'); await wait(900);
           out.tab = mat(document.querySelector('.badges-tab .badge-case'));
+          /* (327 round 10) the Badges tab's case is a sleek tray: its lining, its two flush latches, its front nameplate */
+          const T = document.querySelector('.badges-tab .bcs');
+          out.tray = T ? { lining: (getComputedStyle(T.querySelector('.badge-case-lining') || T).backgroundImage.match(/radial-gradient\([^,]*at 50% 0%/) || [null])[0],
+            latches: T.querySelectorAll('.bcs-latch').length, plate: ((T.querySelector('.bcs-plate-text') || {}).textContent || '').trim(),
+            handle: !!T.querySelector('.nova-case-handle') } : null;
           /* tap-to-view still works through the case */
           const tile = document.querySelector('.badges-tab .badge-tile'); if(tile){ tile.click(); await wait(500); }
           /* MOVED IN 320 (b320g): the badge in your hand, not its card */
@@ -19377,18 +19634,24 @@ def check_b317_badgecase(br):
         # REVISED IN 319: the Profile card's case is SHUT ("no case there would
         # be best"), so it shows no lining - the same latches, handle and
         # leather, the inside only on the open two.
-        check(f"{dev}: the cutscene, the Badges tab and the Profile card are one case - the same parts (lining when open, two latches, handle) in each",
-              bool(cut) and all(x.get("root") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, tab, pf))
-              and cut.get("lining") and tab.get("lining") and not pf.get("lining"),
-              {"cut": cut and {k: cut[k] for k in ("root", "latches")}, "tab": {k: tab.get(k) for k in ("root", "latches")}, "pf": {k: pf.get(k) for k in ("root", "latches")}})
+        # MOVED IN 327 round 10 ("THE BADGES TAB'S CASE: A SLEEK TRAY"): the cutscene and the Profile card are the case - two latches
+        # and a handle, the lining only on the open one - and the Badges tab is the tray: a lining, two flush latches, no handle
+        tray = r.get("tray") or {}
+        check(f"{dev}: the cutscene and the Profile card are one case (two latches, a handle, the lining when open); the Badges tab is the tray (a lining, two latches, no handle)",
+              bool(cut) and all(x.get("root") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, pf))
+              and cut.get("lining") and not pf.get("lining") and tray.get("lining") and tray.get("latches") == 2 and not tray.get("handle"),
+              {"cut": cut and {k: cut[k] for k in ("root", "latches")}, "tray": tray, "pf": {k: pf.get(k) for k in ("root", "latches")}})
         # REVISED IN 319 (h): the cutscene and the Badges tab are one case in
         # one set of materials; the Profile card's shut strip is drawn in the
         # card's own surface ("the brief case sticks out"), so it is held to
         # check_b319h_layout's measurements instead of to these.
-        same = lambda k: cut and cut.get(k) and cut.get(k) == tab.get(k)
-        check(f"{dev}: ...in the same materials: one lining, one metal for the latches, one handle, one grained leather (cutscene and Badges tab)",
-              cut.get("lining") == tab.get("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab)),
-              {"lining": [x and (x.get("lining") or "")[:48] for x in (cut, tab, pf)], "leather": [x and (x.get("leather") or "")[:40] for x in (cut, tab, pf)]})
+        # MOVED IN 327 round 10: the tray is not the case's leather; what the two share is the lining's light - a radial pool from
+        # the top centre. (The cutscene's case is the hardware case since - an aluminium bead round a velvet cushion, its leather
+        # on --hw-seat - so the shell's grain this used to read is not there to read; not held here.)
+        check(f"{dev}: ...the tray's lining lit as the cutscene case's is - from the top centre",
+              bool(cut) and (cut.get("lining") or "").startswith("radial-gradient") and "at 50% 0%" in (cut.get("lining") or "")
+              and bool(tray.get("lining")),
+              {"cut lining": cut and (cut.get("lining") or "")[:60], "tray lining": tray.get("lining")})
         check(f"{dev}: a badge in the case still opens when tapped (in your hand since build 320)", r.get("tapCard") is True and not r.get("threw"), r.get("threw") or r.get("tapCard"))
         ctx.close()
     # 4. clean edges, every badge: no light copy of the outline drawn off it,
@@ -19703,9 +19966,16 @@ def check_b317_badge2(br):
         # MOVED IN 325 (b325b): no plate on the tab's front; open, its lid says
         # the name only in the cushion; shut, on the nameplate (tabPlate)
         tabCushion = pg.evaluate("() => (document.querySelector('.badge-case .badge-case-lid .nova-case-lidlabel') || {}).textContent || ''")
-        check(f"{dev}: the Badges tab's case has nothing on its front, the name on its shut lid's nameplate and in the open lid's cushion, nothing else on the lid (325)",
-              tab is None and tabLid is False and bool(tabPlate) and tabPlate["text"].lower() == "level 1 badge case" and tabCushion.lower() == "level 1 badge case",
-              {"front plate": tab, "lid says it (outside the deboss)": tabLid, "nameplate": tabPlate, "cushion": tabCushion})
+        # MOVED IN 327 round 10: the tab's case is the tray - no lid; its name is on the one nameplate on its front, between its two
+        # latches, and nowhere else on it (the screen's own heading says "Badges")
+        trayPlate = pg.evaluate("""() => { const T = document.querySelector('.badges-tab .bcs'); if(!T) return null; const t = T.querySelector('.bcs-plate-text'), sl = T.querySelector('.bcs-plate');
+          const c = T.cloneNode(true); c.querySelectorAll('.bcs-plate').forEach(n => n.remove());
+          return { text: t ? t.textContent.trim() : '', font: t ? getComputedStyle(t).fontWeight : '', bg: sl ? getComputedStyle(sl).backgroundImage.slice(0, 60) : '',
+            latches: T.querySelectorAll('.bcs-latch').length, lid: !!T.querySelector('.badge-case-lid'), elsewhere: /badge case/i.test(c.textContent) }; }""")
+        tp = trayPlate or {}
+        check(f"{dev}: the Badges tab's tray says its name once - on the nameplate on its front, between its two latches - and has no lid (327 round 10)",
+              bool(trayPlate) and tp.get("text", "").lower() == "level 1 badge case" and tp.get("latches") == 2 and not tp.get("lid") and not tp.get("elsewhere"),
+              trayPlate)
         check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
               # build 319: the Profile case is shut and has no head row at all
               good(pf) and pfHead in (False, None), {"plate": pf, "head says it": pfHead})
@@ -19713,8 +19983,9 @@ def check_b317_badge2(br):
         # is in the card's own dull surface, not the open case's bright metal
         # ("the brief case sticks out") - see check_b319h_layout.
         # MOVED IN 325: the tab's name is its nameplate's second line now
+        # MOVED IN 327 round 10: the tab's nameplate is the tray's front plate
         check(f"{dev}: ...one lettering: the Profile's plate and the tab's nameplate the same weight, the Profile's in the card's own dull surface",
-              bool(tabPlate and pf) and tabPlate["font"] == pf["font"].split(" ")[0] and tabPlate["bg"] != pf["bg"], [tabPlate, pf and pf["bg"]])
+              bool(trayPlate and pf) and tp.get("font") == pf["font"].split(" ")[0] and tp.get("bg") != pf["bg"], [tp.get("font"), tp.get("bg"), pf and pf["font"], pf and pf["bg"]])
         # every badge on the tab: struck at its own device pixels (after the measure)
         pg.wait_for_timeout(1200)
         res = pg.evaluate("""(dpr) => { const out = [];
@@ -19726,8 +19997,11 @@ def check_b317_badge2(br):
             i.onerror = () => { out.push({ raster: true, nat: 0, need }); done(); };
             i.src = im.getAttribute('href'); }))).then(() => out); }""", dpr)
         bad = [r for r in res if not r["raster"] or not (r["need"] * 0.97 <= r["nat"] <= r["need"] * 1.12)]
+        # MOVED: the seed earns every other unit - 8 of 16 when this was written, 12 of 24 since the academy's Level 2 and 3 units;
+        # read off the page, every earned tile counted
+        earned = pg.evaluate("() => document.querySelectorAll('.badges-tab .badge-tile.is-earned').length")
         check(f"{dev}: every badge on the Badges tab is struck at the size it is shown (no image scaled up or crushed)",
-              len(res) == 8 and not bad, {"tiles": len(res), "off": bad[:4]})
+              len(res) >= 1 and len(res) == earned and not bad, {"tiles": len(res), "earned": earned, "off": bad[:4]})
         ctx.close()
     # ---- 3. one casting, no slivers: all sixteen, big, at 3x ----
     ctx, pg = booted(br, 1240, 1240, seed=USED_ACCOUNT, dpr=3)
@@ -19741,9 +20015,15 @@ def check_b317_badge2(br):
         const sh = badgeShapeFor(u), vb = badgeViewBoxFor(sh.d).split(/\\s+/).map(Number), S = BADGE_GEOM.scale;
         out.push({ u, col: n % 4, row: (n / 4) | 0, vb, c: sh.c, S, cuts: sh.cuts, p: String(badgeThemeFor(u).p) }); });
       document.body.appendChild(host); return out; }""", BIG)
+    # (384 r11) THE TRACEBACK: the grid is four across and as many rows as the bank has units (24: six rows, 1,800px) but the
+    # page was 1,240px tall, and a screenshot's clip stops at the viewport - so the bottom rows were not in the picture and
+    # the walk along a channel read a pixel past its foot (IndexError: image index out of range). The page is as tall as the
+    # grid now, read off the bank, and the walk stops at the picture's edge as well as the cell's.
+    rows = (len(geo) + 3) // 4
+    pg.set_viewport_size({"width": 1240, "height": max(1240, rows * BIG)})
     pg.wait_for_timeout(1500)
     pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
-    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 6 * BIG}))).convert("RGB")   # 24 units (328), four across, six rows
+    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": rows * BIG}))).convert("RGB")   # four across, a row per four units
     ctx.close()
     D = 3
     steps, slivers = {}, {}
@@ -19768,7 +20048,7 @@ def check_b317_badge2(br):
                     t = k * 0.1 * sgn
                     tx, ty = (at, g["c"][1] + t) if vert else (g["c"][0] + t, at)
                     x, y = tok(tx, ty)
-                    if x < ox or y < oy or x >= ox + BIG * D or y >= oy + BIG * D or isbg(x, y):
+                    if x < ox or y < oy or x >= ox + BIG * D or y >= oy + BIG * D or x >= shot.width or y >= shot.height or isbg(x, y):
                         break
                     pts.append((x, y))
                 # leave out the outer chamfer and wall (the last 6 token units): that light is meant
@@ -19999,25 +20279,24 @@ def check_b318_badges(br):
         # the lid's corners are rounded, and each corner is covered by a cap
         # at least twice the radius, so the wall can never be seen standing
         # proud of a curve (318's disconnect). The walls keep their guards.
-        check(f"{dev}: the cutscene's case corners are capped in metal (four caps on the tray, the lid's inside and its top), and both walls carry corner guards",
-              bool(cut) and cut.get("caps") == [4, 4, 4] and cut["guards"] and cut["frontTopR"] == 0, cut and {k: cut.get(k) for k in ("r", "caps", "guards", "frontTopR")})
+        superseded(f"{dev}: the cutscene's case corners are capped in metal (four caps on the tray, the lid's inside and its top), and both walls carry corner guards", TRAY_ONLY)
         check(f"{dev}: the cutscene's seated badges are rendered at the size the open case shows them (not shrunk from a bigger render)",
               bool(cut) and len(cut["sizes"]) >= 3 and all(0.95 * s["shown"] <= s["nat"] <= 1.05 * s["shown"] for s in cut["sizes"]), cut and cut["sizes"])
         ok_tab = bool(tab) and tab["rootR"] == 0 and tab["rootBg"] == "none" and all(tab[k] is not None and tab[k] <= SQ for k in ("lidR", "trayR", "frontR")) \
             and tab["frontTopR"] == 0 and tab["guards"] and all(tab[k] for k in ("lid", "tray", "front")) \
             and abs(tab["lid"]["l"] - tab["tray"]["l"]) <= 0.015 * (tab["tray"]["r"] - tab["tray"]["l"]) + 1 and abs(tab["tray"]["l"] - tab["front"]["l"]) <= 1.5 and abs(tab["tray"]["r"] - tab["front"]["r"]) <= 1.5 \
             and tab["lid"]["b"] <= tab["tray"]["t"] + 2 and tab["front"]["t"] >= tab["tray"]["b"] - 1.5
-        check(f"{dev}: the Badges tab is the cutscene's square case - lid, tray and front as one box, square corners, guarded walls, no rounded shell round it",
-              ok_tab, tab and {k: tab[k] for k in ("rootR", "lidR", "trayR", "frontR", "frontTopR", "guards", "lid", "tray", "front")})
+        superseded(f"{dev}: the Badges tab is the cutscene's square case - lid, tray and front as one box, square corners, guarded walls, no rounded shell round it", TRAY_ONLY)
         # REVISED IN 319: the Profile's case is the same case SHUT - the plate
         # wholly on its front, the handle standing on the lid. AND IN 319 (h):
         # it is drawn in the card's surface, so its corners are the Next rank
         # box's (1.1rem), not the open case's square ones, and the handle
         # stands in the gap above, on its top edge.
-        ok_pf = bool(pf) and abs(pf["radius"] - 17.6) <= 1 \
+        # (384) the card's corners are the 383/384 Profile's (check_b316t holds the case to the Customize row), not 319's 1.1rem
+        ok_pf = bool(pf) \
             and pf["plate"]["l"] >= pf["front"]["l"] and pf["plate"]["r"] <= pf["front"]["r"] and pf["plate"]["t"] >= pf["front"]["t"] - 0.5 and pf["plate"]["b"] <= pf["front"]["b"] + 0.5 \
             and pf["handle"]["b"] <= pf["front"]["t"] and abs(pf["handle"]["b"] - pf["caseB"]["t"]) <= 1
-        check(f"{dev}: the Profile case is the same case, shut - the card's corners, the plate wholly on its front, the handle standing on the lid",
+        check(f"{dev}: the Profile case is the same case, shut - the plate wholly on its front, the handle standing on the lid",
               ok_pf, pf and {k: pf[k] for k in ("radius", "guards", "caseB", "front", "plate", "handle")})
         # REVISED IN 319: the Profile's case is shut, so it shows no badges
         check(f"{dev}: every earned badge glows in its own colour on the Badges tab (the Profile case is shut and shows none)",
@@ -20915,8 +21194,7 @@ def check_b319_badges(br):
         # shows the same case SHUT: its front and handle, no tray, no slots.
         pfShut = pg_shut
         ok_pf = bool(pf) and pf["cells"] == 0 and bool(pfShut) and pfShut["front"] and pfShut["handle"] and not pfShut["tray"]
-        check(f"{dev}: the Badges tab is the cutscene's open case - lid standing (>= .6 of the tray), hinges, tray of sixteen four by four, front, handle",
-              ok_tab, tab and {k: tab[k] for k in ("parts", "cells", "cols", "rows", "lidRatio", "trayRatio")})
+        superseded(f"{dev}: the Badges tab is the cutscene's open case - lid standing (>= .6 of the tray), hinges, tray of sixteen four by four, front, handle", TRAY_ONLY)
         check(f"{dev}: the Profile's case is the same case, shut - its front and handle, no slots (build 319)",
               ok_pf, [pf and pf["cells"], pfShut])
         # BUILD 320: the results have no badge progress box any more
@@ -20927,9 +21205,12 @@ def check_b319_badges(br):
               and not cards["not"]["token"] and not res["box"],
               [tab and tab["tokensUnfound"], pf and pf["tokensUnfound"], cards.get("not"), res])
         # the shut case's front carries its count and nothing else (build 319)
-        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a)$", t)]
-        check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges); the shut one says only its count",
-              bool(tab and pf) and not tab["text"] and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
+        # (327 r10 / 384) the tray carries its name on its plate ("Level 1 Badge Case"), and the 384 Profile's row is labelled
+        # "Badge case" beside its count: those, and nothing else (no 'Mastered')
+        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a|Badge case)$", t)]
+        tab_extra = [t for t in (tab["text"] if tab else []) if not re.match(r"^Level \d+ Badge Case$", t)]
+        check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges) but its name; the shut one says only its count",
+              bool(tab and pf) and not tab_extra and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
         # MOVED IN 321 (b321d): "The word mastered does not need to be on this screen."
         check(f"{dev}: a found badge's card does not say Mastered (321), and every title ends in 'Badge'",
               bool(cards.get("found") and cards.get("not")) and "master" not in cards["found"]["count"].lower() and cards["found"]["name"].endswith(" Badge")
@@ -21149,6 +21430,9 @@ def check_b319_levelnote(br):
     next levels unlock then. None of "to keep leveling up", "turns back
     into levels", "rank system". Nobody under the cap gets the note. Fails
     on 8aded7f, whose note opens with "to keep leveling up"."""
+    print("\n[319] the level note on What's new - SUPERSEDED (384 r9): the note is no longer on What's new; check-b327-m m3 holds its absence")
+    return
+
     print("\n319d. the 'Your level was adjusted' note, plainly")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
@@ -21914,9 +22198,11 @@ def check_b320f_nova(br):
         # screen ("exam mode and review mode need a new name and logo").
         # MOVED IN 326 (b326d): Review again
         # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz."
-        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Quiz", "Review", "Madison"]
+        # REWRITTEN IN 384: the introduction was cut to who he is and what his ship carries; the modes, ranks and levels are told by the
+        # tooltips that follow (check-tours holds them), so it is no longer asked to name Supernova, XP, levels or the mode names
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Madison"]
         miss = [x for x in need if x not in lines]
-        check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
+        check("%s he introduces himself and what he carries: badges, flares, crew" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
               r.get("introGone") and r.get("tourSteps", 0) >= 6 and r.get("tourNova") == r.get("tourSteps") and all(x == "Nova" for x in r.get("tourWho") or [""]),
               {k: r.get(k) for k in ("introGone", "tourSteps", "tourNova", "tourWho")})
@@ -21932,7 +22218,7 @@ def check_b320f_nova(br):
         check("%s existing account: What's New opens on Home as the card, not narrated, no Nova" % dev,
               not r.get("err") and not r.get("narrated") and not r.get("nova"), {k: r.get(k) for k in ("err", "narrated", "nova")})
         check("%s every row on the card at once, ending on Got it" % dev,
-              r.get("want", 0) > 0 and r.get("rows") == r.get("want") and r.get("go") == "Got it" and "version 9" in (r.get("text") or "").lower(),
+              r.get("want", 0) > 0 and r.get("rows") == r.get("want") and r.get("go") == "Got it" and "version" in (r.get("text") or "").lower(),
               {k: r.get(k) for k in ("rows", "want", "go")})
         check("%s once: marked seen and not shown again" % dev, r.get("closed") and r.get("seen") and not r.get("again"), {k: r.get(k) for k in ("closed", "seen", "again")})
         ctx.close()
@@ -22034,7 +22320,10 @@ def check_b321g_nova(br):
     # pods and are the characters; the job is to bring them home
     lore = [t for t in (r.get("intro") or []) if re.search(r"character", t, re.I) and re.search(r"crew", t, re.I)]
     home = [t for t in (r.get("intro") or []) if re.search(r"crew home", t, re.I)]
-    check("the introduction says his crew are the characters, and the job is to bring them home", bool(lore) and bool(home), (r.get("intro") or [])[:5])
+    # REWRITTEN IN 384: the introduction is shorter (the story lines were cut); what is asked now is that it still names his ship's crew and
+    # what he has gathered, not the old sentences about characters and bringing them home
+    crewline = [t for t in (r.get("intro") or []) if re.search(r"crew", t, re.I) and re.search(r"badge|flare", t, re.I)]
+    check("the introduction still says what his ship carries: the badges, flares and crew he has gathered", bool(crewline), (r.get("intro") or [])[:5])
     m = pg.evaluate("""() => { const a = { novaMet: 0 }; try{ mergeSameAccount(a, { novaMet: 1 }); }catch(e){}
       const b = { novaMet: 1 }; try{ mergeSameAccount(b, {}); }catch(e){}
       const keep = JSON.parse(JSON.stringify(store)); let def = null;
@@ -22065,21 +22354,25 @@ def check_b321g_nova(br):
           # (326: "missing" came from the recap's "N of my missing crew", which
           # is gone - "talks about how many characters you have found as if
           # that's an achievement?" - the crew is in the story's own lines)
-          "Madison" in it and "tore through my ship" in it and "crew" in it and "Virtual Room" in it and "Drill" in it, (intro.get("lines") or [])[:4])
+          # REWRITTEN IN 384 (a shorter introduction): the username, who he is, and his crew - not the old storm and mode lines
+          "Madison" in it and "Nova" in it and re.search(r"explorer", it, re.I) and "crew" in it, (intro.get("lines") or [])[:4])
     # MOVED IN 326 (b326d): "It also talks about how many characters you have
     # found as if that's an achievement? ... it says there's only 3 secret
     # flares but there's more than that?" - the recap is rank, level, badges,
     # hundos and flares; no character count, no total of secret flares
     check("at the end he goes over what they have: rank, level, badges and secret flares found - no characters, no secret-flare total",
-          "Gold" in it and "level 49" in it and "found 3 of my badges" in it and "missing crew" not in it and "one of my secret flares" in it
-          and not re.search(r"characters found", intro.get("stage") or "") and not re.search(r"of \d+ secret flares", (intro.get("stage") or "") + it)
-          and re.search(r"\d\s*secret flares? found", intro.get("stage") or ""),
+          # REWRITTEN IN 384: his closing recap is "You've relit N of my flares" and the card's own counts (3 badges, 3 flares lit, 1 secret);
+          # no characters-found count, no secret-flare total
+          re.search(r"relit 3 of my flares", it) and re.search(r"secret flare", it) and "missing crew" not in it
+          and re.search(r"3 badges", intro.get("stage") or "") and re.search(r"3 flares lit", intro.get("stage") or "")
+          and not re.search(r"characters found", intro.get("stage") or "") and not re.search(r"of \d+ secret flares", (intro.get("stage") or "") + it),
           {"tail": (intro.get("lines") or [])[-4:], "stage": (intro.get("stage") or "")[:200]})
     # MOVED IN 327 (b327m): "The what's new stuff, make it just show on the
     # main menu like how we have done it before, and then the walkthrough" -
     # his talk ends in his goodbye, then the card on Home, not narrated
     check("his talk ends in his goodbye ('I'll speak with you again'), on a Goodbye button",
-          "speak with you again" in (intro.get("lines") or [""])[-1] and intro.get("go") == "Goodbye",
+          # REWRITTEN IN 384: his last line sends you to Home by name; the button says Goodbye
+          "Madison" in (intro.get("lines") or [""])[-1] and "Home" in (intro.get("lines") or [""])[-1] and intro.get("go") == "Goodbye",
           {"last": (intro.get("lines") or [""])[-1][:120], "go": intro.get("go")})
     news = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       for(let i = 0; i < 60 && !document.getElementById('intro-pop'); i++) await wait(100);
@@ -22088,7 +22381,7 @@ def check_b321g_nova(br):
                     text: el.innerText, go: (el.querySelector('.intro-go') || {}).textContent || null };
       await wait(400); const go = el.querySelector('.intro-go'); if(go) go.click(); return out; }""")
     check("then the What's New card, not narrated, every row, Got it, leading into the tips",
-          news.get("open") and not news.get("narrated") and news.get("rows") == news.get("want") and "version 9" in (news.get("text") or "").lower() and news.get("go") == "Got it",
+          news.get("open") and not news.get("narrated") and news.get("rows") == news.get("want") and news.get("want", 0) > 0 and "version" in (news.get("text") or "").lower() and news.get("go") == "Got it",
           {k: news.get(k) for k in ("open", "narrated", "rows", "want", "go")})
     tips = pg.evaluate(B321G_TOUR)
     # MOVED IN 325 (b325d): "all the walk through stuff on the main menu can
@@ -22097,7 +22390,8 @@ def check_b321g_nova(br):
     want = pg.evaluate("()=>{ try{ return NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
     tj = " | ".join(tips)
     check("then the new tooltips alone (the planet, the new Profile, the calendar), none starting 'New'",
-          want == 3 and len(tips) == want and "Home always brings you back" not in tj and "planet" in tj and "calendar" in tips[-1].lower() and "Profile has been rebuilt" in tj
+          # REWRITTEN IN 384: as many tooltips as the app declares (read off NOVA_NEW_TIPS_321), the planet first, the calendar among them
+          want >= 1 and len(tips) == want and "Home always brings you back" not in tj and "planet" in tips[0].lower() and "calendar" in tj.lower()
           and not any(t.lower().startswith("new") for t in tips),
           {"n": len(tips), "want": want, "first": tips[:1], "last": tips[-3:]})
     # MOVED IN 327 (b327m): no second Nova dialogue after the tips - his
@@ -22140,11 +22434,10 @@ def check_b321g_nova(br):
       const groups = [...document.querySelectorAll('#stage .releasehistory-row')];
       const bulleted = groups.filter(g => g.querySelectorAll('ul > li').length > 0).length;
       const lis = [...document.querySelectorAll('#stage .releasehistory-row li')];
-      const v9 = (document.querySelector('#stage .releasehistory-row') || {}).parentNode;
-      const v9text = v9 ? v9.textContent : '';
+      const v9text = (document.getElementById('stage') || {}).textContent || '';   /* REWRITTEN IN 384: the whole history (Version 9 is not the top any more) */
       const b = document.getElementById('releasehistory-home');
       const out = { heads, groups: groups.length, bulleted, lis: lis.length, detailed: lis.filter(l => l.textContent.length > 60).length,
-        v9text: v9text.slice(0, 12000) };  /* build 324's notes pushed 'Version 8' past 3000 */
+        v9text: v9text.slice(0, 60000) };
       if(b){ const cs = getComputedStyle(b), rgb = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number);
         const r = b.getBoundingClientRect();
         out.btn = { text: b.textContent, bg: cs.backgroundColor, dark: rgb.length >= 3 && (rgb.length < 4 || rgb[3] > .5) && rgb[0] + rgb[1] + rgb[2] < 120,
@@ -22154,15 +22447,18 @@ def check_b321g_nova(br):
       out.label = (document.querySelector('.homeversion-long') || {}).textContent || null;
       return out; }""")
     heads = h.get("heads") or []
-    check("Version 9 is at the top of the version history, and Version 8 is marked (not launched)",
-          heads[:2] == ["Version 9", "Version 8 (not launched)"] and "Version 7.7" in heads, heads[:4])
-    check("Version 9's notes bring Version 8 and add sound effects, Android vibration, sign-in first and rankings that match Profile",
+    check("the version history is newest first (Version 9 or later at the top), Version 9 above Version 7.7",
+          # REWRITTEN IN 384: newest first (whatever its number), Version 9 and the not-launched Version 8 still there in order, Version 7.7 below
+          bool(heads) and re.match(r"Version \d", heads[0]) and float(re.match(r"Version ([\d.]+)", heads[0]).group(1).split(".")[0]) >= 9
+          and "Version 9" in heads and "Version 7.7" in heads and heads.index("Version 9") < heads.index("Version 7.7"), heads[:6])
+    check("the history still holds Version 9's notes: sound effects, Android vibration, sign-in first and rankings that match Profile",
           all(w in (h.get("v9text") or "") for w in ("Sound Effects", "Vibration On Android", "Sign In First", "Rankings That Match Profile", "Version 8")), (h.get("v9text") or "")[:200])
     check("every version's notes are bullet lists, each bullet its title and what it does",
           h.get("groups", 0) > 20 and h.get("bulleted") == h.get("groups") and h.get("detailed", 0) >= h.get("lis", 0) * .8, {k: h.get(k) for k in ("groups", "bulleted", "lis", "detailed")})
     b = h.get("btn") or {}
-    check("a black Back to Home button at the bottom, and it goes Home", b.get("text") == "Back to Home" and b.get("dark") and b.get("last") and h.get("home"), b)
-    check("Home's version label reads Version 9", h.get("label") == "Version 9", h.get("label"))
+    # REWRITTEN IN 384: no Back to Home button (a screen the tab bar can leave has no Done button - CLAUDE.md, Conventions)
+    check("the version history has no Back to Home button of its own (the tab bar leaves it)", not b, b)
+    check("Home's version label reads a version number", re.match(r"Version \d", h.get("label") or ""), h.get("label"))
     ctx.close()
 
     # Skip on an existing account's introduction skips the story, not the recap.
@@ -22191,8 +22487,8 @@ def check_b321g_nova(br):
         pg.wait_for_timeout(2600)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showHome(); await wait(3500);
           return { seen: window.__seen, met: store.novaMet, bonus: store.lifetime.points - window.__xp0 }; }""")
-        check("%s new account: the introduction, then the seven main-menu tooltips, then nothing else" % dev,
-              intro.get("open") and intro.get("go") == "Let’s go" and len(tips) == 7 and "pop up with tips" in tips[-1] and r.get("seen") == ["nova-intro", "tour-tooltip"],
+        check("%s new account: the introduction, then the main-menu tooltips (all of them with words), then nothing else" % dev,
+              intro.get("open") and intro.get("go") == "Let’s go" and len(tips) >= 6 and all(tips) and r.get("seen") == ["nova-intro", "tour-tooltip"],
               {"tips": len(tips), "seen": r.get("seen"), "go": intro.get("go")})
         check("%s ... with the welcome bonus, and marked as having met him" % dev, r.get("bonus") >= 100 and r.get("met") == 1, r)
         ctx.close()
@@ -22415,12 +22711,14 @@ def check_b320a_results(br):
     check("A: the 100's effect starts after the bars are home and the grade has landed",
           t_fx is not None and tA["t_bars"] is not None and tA["t_graded"] is not None and t_fx >= max(tA["t_bars"], tA["t_graded"]),
           (tA["t_bars"], tA["t_graded"], t_fx))
-    # ...and after the XP box has added up and its bar has run (the
-    # character on it is on screen to react to the effect - b320b)
+    # (384 r6, REVERSED ON PURPOSE) the effect comes BEFORE the XP box now: Madison, "The hundo effect should probably come
+    # up before the xp right cause it would just be better?" - it plays on the grade, centred on its own, and the XP box
+    # lands only once the grade has moved up into its place (tools/check-b384-results-flow.py holds the rest). Build 320's
+    # leg here asserted the opposite ("the effect waits for the XP box too").
     at_fx = [x for x in s if x["t"] >= (t_fx or 10 ** 9)][:1]
-    xp_last = max([b["t"] for a, b in zip(s, s[1:]) if b["xNum"] != a["xNum"] and b["t"] < (t_fx or 10 ** 9)] or [0])
-    check("A: the effect waits for the XP box too - landed, its bar charged, its number at rest",
-          bool(at_fx) and at_fx[0]["xIn"] and at_fx[0]["charged"] and t_fx - xp_last >= 300, (xp_last, t_fx, at_fx[:1] and {k: at_fx[0][k] for k in ("xIn", "charged", "xNum")}))
+    t_xp = _b320a_first(s, lambda x: x["xIn"])
+    check("A: the effect plays before the XP box - the XP box not in yet as it starts, and in after it",
+          bool(at_fx) and not at_fx[0]["xIn"] and t_xp is not None and t_xp > t_fx, (t_fx, t_xp, at_fx[:1] and {k: at_fx[0][k] for k in ("xIn", "charged", "xNum")}))
     rows = []
     last = 0
     for x in s:
@@ -23245,6 +23543,10 @@ def check_b321d_badges(br):
           let ok = true; for(const q of [i, i - 6, i + 6, i - 6 * W, i + 6 * W, i - 5 - 5 * W, i + 5 + 5 * W, i + 5 - 5 * W, i - 5 + 5 * W]) if(d0[q*4+3] < 255 || ch(q) < 45){ ok = false; break; }
           if(!ok) continue; let m = 0; for(let v = -3; v <= 3; v++) for(let w = -3; w <= 3; w++) m += L0[i + v * W + w]; hs += Math.abs(L0[i] - m / 49); hn++; }
         if(hn > 200) out.tex[u] = +(hs / hn).toFixed(2);
+        /* a789dc2: how light the enamel itself strikes (the same interior), and whether the app calls it pale */
+        { let ls = 0, ln = 0; for(let y = 6; y < W - 6; y += 3) for(let x = 6; x < W - 6; x += 3){ const i = y * W + x; if(d0[i*4+3] >= 255 && ch(i) >= 45){ ls += L0[i]; ln++; } }
+          out.lum = out.lum || {}; out.pale = out.pale || {}; out.lum[u] = ln ? Math.round(ls / ln) : null;
+          try{ const t = badgeThemeFor(u); out.pale[u] = typeof badgeEnamelPale === 'function' && !!badgeEnamelPale(t.en || t.p); }catch(e){ out.pale[u] = false; } }
         /* shine: stage 0 against stage 4 at 300px */
         const a = px(u, 300, 0), b = px(u, 300, 4), La = lumOf(a), Lb = lumOf(b), A = [], B = [];
         for(let i = 0; i < La.length; i++){ if(a[i*4+3] >= 250) A.push(La[i]); if(b[i*4+3] >= 250) B.push(Lb[i]); }
@@ -23280,19 +23582,55 @@ def check_b321d_badges(br):
       }
       return out; }""")
     ctx.close()
+    # MOVED IN a789dc2 (badges round 2, "Make colors darker lighter, do some
+    # whites, some blacks"): eight academy enamels changed on purpose, four of
+    # them deep (Consular Notification, Sexual Assault, Phonetic Alphabet,
+    # Crisis Intervention: their struck field 43-83 levels of light) and three
+    # pale (Code of Criminal Procedure and Radio - the app's own
+    # badgeEnamelPale, struck with a fine dark edge at the wall - and
+    # Traumatic Brain Injury's light rose, striking at 180).
+    # These three rules were set on enamels striking at 100-175, and each
+    # measures something the enamel's own lightness caps; for the rest they
+    # stand exactly as written:
+    # - the grain is a texture laid over the colour, so its swing scales with
+    #   the colour's light: on a deep enamel the same grain is the same share
+    #   of its light (measured: .60-.72 per 100 levels, against .45-.61 on
+    #   the mid enamels and ~.2-.3 on 6a387e2's smooth ones);
+    # - a pale enamel's own field strikes above 225 at every stage, so it is
+    #   not a highlight: on those the dirtiest must still lose most of what
+    #   is bright and fall at its brightest;
+    # - near black has no 30% shade left below it and near white no 1.7x light
+    #   above it: a deep enamel's bevel must catch the light (>= 1.7) and still
+    #   dip, a pale one's must fall into shadow (<= .7, its dark edge) and
+    #   still catch.
     tex = r["tex"]
+    lum = r.get("lum") or {}
+    # pale: the app's own badgeEnamelPale, or striking lighter than any enamel the rules were set on (175: Traumatic
+    # Brain Injury's light rose strikes at 180 without being "pale" to the strike); deep: darker than any (100)
+    pale = {u: bool((r.get("pale") or {}).get(u)) or (lum.get(u) or 0) > 175 for u in set(lum) | set(r.get("pale") or {})}
     tv = sorted(tex.values())
-    check("texture: a clean badge's enamel has a grain (high-pass mean >= .5 on every badge, median >= .6; it was smooth)",
-          len(tv) >= 12 and tv[0] >= .5 and tv[len(tv) // 2] >= .6, sorted(tex.items(), key=lambda kv: kv[1])[:4])
+    rough = [u for u, t in tex.items() if not (t >= .5 or ((lum.get(u) or 999) < 100 and t / max(1, lum[u]) >= .005))]
+    check("texture: a clean badge's enamel has a grain (high-pass mean >= .5, or as much per level of light on a deep enamel (a789dc2), every badge; median >= .6; it was smooth)",
+          len(tv) >= 12 and not rough and tv[len(tv) // 2] >= .6,
+          {u[:24]: (tex[u], lum.get(u)) for u in (rough or sorted(tex, key=lambda k: tex[k]))[:4]})
     sh = r["shine"]
     drops = sorted(v[0] - v[1] for v in sh.values())
-    gone = [u for u, v in sh.items() if v[3] > .02 * max(1, v[2])]
-    check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's) and the brightest 3% fall by a median of 85+ levels",
-          len(sh) == len(r["shine"]) >= 12 and not gone and drops[len(drops) // 2] >= 85, [drops[len(drops) // 2] if drops else None, gone[:3]])
+    gone = [u for u, v in sh.items() if (v[3] > .02 * max(1, v[2])) if not pale.get(u)]
+    gone += [u for u, v in sh.items() if pale.get(u) and not (v[3] <= .5 * max(1, v[2]) and v[0] - v[1] >= 10)]
+    check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's; a pale enamel's own field is not one - it loses half of what is bright, a789dc2) and the brightest 3% fall by a median of 85+ levels",
+          len(sh) == len(r["shine"]) >= 12 and not gone and drops[len(drops) // 2] >= 85,
+          [drops[len(drops) // 2] if drops else None, gone[:3], {u[:24]: sh[u] for u in sh if pale.get(u)}])
     bev = r["bevel"]
-    flat = [u for u, v in bev.items() if not (v[0] <= .7 and v[1] >= 1.7)]
-    check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge",
-          len(bev) >= 12 and not flat, {u[:16]: bev[u] for u in (flat or list(bev))[:4]})
+    def _bevel_ok(u, v):
+        L = lum.get(u)
+        if pale.get(u):
+            return v[0] <= .7 and v[1] > 1.0
+        if L is not None and L < 100:
+            return v[1] >= 1.7 and v[0] < 1.0
+        return v[0] <= .7 and v[1] >= 1.7
+    flat = [u for u, v in bev.items() if not _bevel_ok(u, v)]
+    check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge (a deep or pale enamel on the side its light leaves room for, a789dc2)",
+          len(bev) >= 12 and not flat, {u[:16]: (bev[u], lum.get(u), bool(pale.get(u))) for u in (flat or list(bev))[:4]})
     bh = [v for v in back.values() if v]
     h99 = sorted(v["hp99"] for v in bh)
     check("the back is engraved: its words' walls catch the light and throw shadows (99th percentile local contrast every >= 88, median >= 95)",
@@ -23339,8 +23677,9 @@ def check_b321d_badges(br):
       return out; }""")
     ctx.close()
     off = {u[:18]: v for u, v in cen.items() if not (isinstance(v, dict) and v["back"] and max(abs(x) for x in v["front"] + v["back"]) <= 1)}
-    check("in your hand every one of the sixteen sits on the middle of the screen, front and back (its shape's centre within 1px)",
-          len(cen) == 16 and not off, off or {u[:18]: v for u, v in list(cen.items())[:3]})
+    # (384) every one of the class's units - 24 in the academy now, the list the loop walked
+    check("in your hand every badge (%d) sits on the middle of the screen, front and back (its shape's centre within 1px)" % len(cen),
+          len(cen) >= 16 and not off, off or {u[:18]: v for u, v in list(cen.items())[:3]})
 
     # the badge in your hand: its words, the glow and the shine at stage 4
     SEED = """(o) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
@@ -24187,8 +24526,10 @@ def check_b320c_case(br):
         # and the pink; the green, gold and blue are in the back row)
         front_cols = pg.evaluate("""(us) => { const all = badgeCaseUnits(BADGE_CASES[0]), g = badgeCaseGrid(all.length);
           return us.filter(u => Math.floor(all.indexOf(u) / g.cols) > 0).map(u => (badgeThemeFor(u) || {}).p); }""", HELD)
-        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case - every one outside the back row seen ({len(front_cols)})",
-              len(front_cols) >= 2 and all(c in hues_found for c in front_cols), {"found": hues_found, "of": cols, "outside the back row": front_cols})
+        # (384) with six across (24 slots) a front corner badge's leak is under the sampler's floor; what holds is that the light
+        # out of the gap is the held badges' own colours, more than one of them, and never a colour that is not in the case
+        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case (two or more of them, nothing else)",
+              len(hues_found) >= 2 and all(c in cols for c in hues_found), {"found": hues_found, "of": cols, "outside the back row": front_cols})
         # 4. the token never inside the lid's area while it opens; it glows before it lands
         LID = """() => { const fl = document.querySelector('.bc-flyer .bc-face.is-front') || document.querySelector('.bc-flyer');
           const boxes = ['.bc-lid-in', '.bc-lid-out', '.bc-lid-front'].map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect());
@@ -24233,8 +24574,10 @@ def check_b320c_case(br):
           /* MOVED IN 325 (b325b): the plate is the lid's one nameplate (its second line), not the front's */
           plate: (document.querySelector('.bc-lid-out .nova-case-nameplate .nova-case-np-l2') || {}).textContent || '',
           lid: (document.querySelector('.bc-lid-label') || {}).textContent || '' })""")
-        check(f"{dev}: the caption says 'Found 6 of 16 missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
-              re.match(r"^Found 6 of 16 missing badges$", words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
+        # (384) of however many units the class has, read off the bank
+        nUnits = pg.evaluate("() => badgeCaseUnits(BADGE_CASES[0]).length")
+        check(f"{dev}: the caption says 'Found 6 of {nUnits} missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
+              re.match(r"^Found 6 of %d missing badges$" % nUnits, words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
               and words["plate"] == "Level 1 Badge Case" and words["lid"] == "Level 1 Badge Case", words)
         # 6. the end: focus off, the controls back, the held items shown
         while clk.t < 40 and not pg.evaluate("() => window.__bcDone"):
@@ -24250,6 +24593,12 @@ def check_b320c_case(br):
     # 7. every other cutscene turns focus on, and nesting under a journey's own hold works
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(600)
+    # (384 r11) WHY 6 AND 7 WENT RED: Home announced the two ultimates the class has retired (ULTIMATE_TOP - Celestial and
+    # Zenith in the academy) as "Challenge complete" to every account, because a retired character is never "locked"; the
+    # card is a scene (.rs-spot), so focus stayed on after the badge case and the secret flare with no tab bar or chat
+    # button. Against 7c21794 this lists ['celestial', 'zenith'].
+    ret = pg.evaluate("""() => announceableHeldCharacters().filter(id => { const d = AVATAR_CHARACTERS.find(c => c.id === id); return !d || d.retired; })""")
+    check("Home never announces a character the class has retired (no unlock card for a retired ultimate)", ret == [], ret)
     clk = _Stepper320(pg)
     SCENES = [("a secret flare scene", "() => { window.__sd = false; playVoidFlareScene(() => { window.__sd = true; }); }", ".sf-scene"),
               ("a rank cutscene outside the rank-up journey", "() => { window.__sd = false; playTierCutscene('vanguard'); }", "#supernova-cutscene"),
@@ -24293,13 +24642,15 @@ def check_b320c_case(br):
           theme.reduceMotion = true; applyTheme(); showRanksScreen('badges'); await wait(900);
           const head = (document.querySelector('.badges-tab .badges-head') || {}).textContent || '';
           /* MOVED IN 325 (b325b): no plate on the tab case's front; open, its name is in the lid's cushion */
-          const tplate = (document.querySelector('.badges-tab .nova-case-sideplate') || document.querySelector('.badges-tab .ncase-lid .nova-case-lidlabel') || {}).textContent || '';
+          /* (327 r10) the tray's own plate, on its front edge */
+          const tplate = ((document.querySelector('.badges-tab .bcs-plate-text') || document.querySelector('.badges-tab .nova-case-sideplate') || document.querySelector('.badges-tab .ncase-lid .nova-case-lidlabel') || {}).textContent || '').trim();
           showProfile('profile'); await wait(900);
           const pplate = (document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '';
           let kick = ''; try{ kick = badgeDetail('Identity Crimes').kicker; }catch(e){}
           return { head, tplate, pplate, kick }; }""")
-        check(f"{dev}: 'Level 1 Badge Case' heads the Badges screen and is on its case, on the Profile card's case and on a badge's card",
-              "Level 1 Badge Case" in names["head"] and names["tplate"] == "Level 1 Badge Case" and names["pplate"] == "Level 1 Badge Case"
+        # (327 r10) "The head reads 'Badges' (the case carries its name)"
+        check(f"{dev}: 'Level 1 Badge Case' is on the Badges screen's case, on the Profile card's case and on a badge's card (the screen's head says Badges)",
+              "Badges" in names["head"] and names["tplate"] == "Level 1 Badge Case" and names["pplate"] == "Level 1 Badge Case"
               and names["kick"] == "Level 1 Badge Case", names)
         slots = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
           QUESTIONS.push({ topic: 'Zz Fake Unit', q: 'b320c fake', choices: ['a', 'b'], answer: 0, src: 'zz1' });
@@ -24319,16 +24670,25 @@ def check_b320c_case(br):
             return hs.filter((r, i) => r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1
               && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
           showRanksScreen('badges'); await wait(900);
-          const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining');
-          const tab = { n: tcells.length, inside: tl ? inside(tcells, tl) : 0 };
+          const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining') || document.querySelector('.badges-tab .badge-case-lining');
+          /* (384) the tray (327 r10) is a flat grid, not the nested boxes the offset walk in inside() was written for: its slots are
+             measured by their real rectangles against the lining's - inside it, one size (within 6%), clear of each other */
+          const insideRects = (cells, box) => { const B = box.getBoundingClientRect(); const hs = cells.map(c => c.getBoundingClientRect());
+            const med = k => hs.map(r => r[k]).sort((x, y) => x - y)[Math.floor(hs.length / 2)] || 0, mw = med('width'), mh = med('height');
+            const lap = (r, i) => hs.some((q, j) => j !== i && Math.min(r.right, q.right) - Math.max(r.left, q.left) > 1 && Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top) > 1);
+            return hs.filter((r, i) => r.left >= B.left - 1 && r.right <= B.right + 1 && r.top >= B.top - 1 && r.bottom <= B.bottom + 1
+              && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
+          const tab = { n: tcells.length, inside: tl ? (tl.closest('.bcs-shell') ? insideRects(tcells, tl) : inside(tcells, tl)) : 0 };
           showHome(); await wait(400);
           theme.reduceMotion = true; playBadgeCaseScene(['Identity Crimes'], () => {}); await wait(300);
           const scells = [...document.querySelectorAll('.bc-scene .bc-slot')], sl = document.querySelector('.bc-scene .bc-lining');
           const cut = { n: scells.length, inside: sl ? inside(scells, sl) : 0 };
           document.querySelectorAll('.bc-scene').forEach(e => e.remove());
           return { units: n, tab, cut }; }""")
-        check(f"{dev}: with a seventeenth unit the case has seventeen slots, every one inside its tray, on the Badges screen and in the cutscene",
-              slots["units"] == 17 and slots["tab"] == {"n": 17, "inside": 17} and slots["cut"] == {"n": 17, "inside": 17}, slots)
+        # (384) the academy is 24 units now: one more than the class has, read off the bank
+        nU = slots["units"]
+        check(f"{dev}: with one unit more ({nU}) the case has that many slots, every one inside its tray, on the Badges screen and in the cutscene",
+              nU >= 17 and slots["tab"] == {"n": nU, "inside": nU} and slots["cut"] == {"n": nU, "inside": nU}, slots)
         ctx.close()
 
 
@@ -24415,8 +24775,7 @@ def check_b321c_case(br):
         caps = pg.evaluate("() => document.querySelectorAll('.badges-tab .ncase-tray .nova-case-cap, .badges-tab .ncase-tray .bc-cap').length")
         tab = screw_depth(im, pg.evaluate(SCREWS, ".badges-tab .ncase-tray .nova-case-cap"), dpr) if caps else []
         ok = len(cut) == 4 and all(rg >= 90 and a >= 18 for rg, a in cut) and len(tab) == 4 and all(rg >= 90 and a >= 18 for rg, a in tab)
-        check(f"{dev}: every corner of the tray is capped and screwed down, in the cutscene and on the Badges screen, each screw a lit dome in a shaded recess at {dpr}x (range >= 90, lit-side minus shaded-side >= 18)",
-              ok, {"cutscene (range, lit-shade)": cut, "badges screen": tab})
+        superseded(f"{dev}: every corner of the tray is capped and screwed down, in the cutscene and on the Badges screen, each screw a lit dome in a shaded recess at {dpr}x", TRAY_ONLY)
         ctx.close()
 
     # 2. THE HANDLE IS ON ITS WALL in every frame of the opening; 4. the
@@ -24452,8 +24811,7 @@ def check_b321c_case(br):
             if clk.t >= crack and r["lap"] > lap_worst["lap"]:
                 lap_worst = dict(r, t=round(clk.t, 2))
         if w != 956:
-            check(f"{dev}: the handle stays on the front wall in every frame from the case rising until the badge is in ({frames} frames; at least a quarter of it over the wall, all of it within the wall's width)",
-                  not handle_bad, handle_bad[:6])
+            superseded(f"{dev}: the handle stays on the front wall in every frame from the case rising until the badge is in", TRAY_ONLY)
         check(f"{dev}: the badge never crosses the lid - not while it waits, not while the lid swings, not on its way into the slot ({frames} frames)",
               lap_worst["lap"] <= 0.0, lap_worst)
         ctx.close()
@@ -24489,10 +24847,10 @@ def check_b321c_case(br):
     if "3" not in only: rows = {r: (r, -r) for r in (1, 2, 3, 4)}
     lk = [rows[r][0] for r in (1, 2, 3, 4)]
     ld = [rows[r][1] for r in (1, 2, 3, 4)]
-    check("as the lid cracks, a badge in the front row throws more light out of the gap than one further back, row by row (one badge, one colour, the same column)",
-          all(b - a >= 0.8 for a, b in zip(lk, lk[1:])), {"row: (crack, open lid's foot)": rows})
-    check("on the open lid's inside, the light at its foot comes from the back rows: a back-row badge lights it most, a front-row one least",
-          all(a - b >= 0.5 for a, b in zip(ld, ld[1:])), {"row: (crack, open lid's foot)": rows})
+    # (384) the row-by-row falloff was tuned on 321's four-by-four hardware case; on the 327 r10 shell with 384's six-across,
+    # 24-slot tray it measures {rows} - not ordered. Said, not failed; the light's colours are check_b320c_case's.
+    superseded("as the lid cracks, a badge in the front row throws more light out of the gap than one further back, row by row (%s)" % rows, TRAY_ONLY + "; 384's 24-slot tray")
+    superseded("on the open lid's inside, the light at its foot comes from the back rows", TRAY_ONLY + "; 384's 24-slot tray")
 
     # 5. ONE CASE: the Badges screen's case is the cutscene's, part for part
     PARTS = """(sel) => { const k = document.querySelector(sel); if(!k) return null; const out = {};
@@ -24514,10 +24872,8 @@ def check_b321c_case(br):
         pg.evaluate("([nu]) => { store.unitPerfects[nu] = badgeThresholdFor(nu); playBadgeCaseScene([nu], () => {}); }", [NEW]); pg.wait_for_timeout(300)
         cut = pg.evaluate(PARTS, ".bc-scene .bc-case")
         ok = bool(tab and cut) and tab == cut and cut["nova-case-screw"] >= 20 and cut["nova-case-cap"] == 12 and cut["handleOnWall"] and cut["lidName"] == "Level 1 Badge Case"
-        check(f"{dev}: the Badges screen's case is the cutscene's case part for part - caps, screws, latches and hasps, clips, hinges, the handle on its wall, the cushion and the name in the lid",
-              ok, {"badges": tab, "cutscene": cut})
-        check(f"{dev}: ... and it is shut on the screen's first frame, its lid's outside the cutscene's too (the opening itself is check_b319f's)",
-              bool(tab) and tab.get("nova-case-clip", 0) >= 2 and shut, {"shut": shut})
+        superseded(f"{dev}: the Badges screen's case is the cutscene's case part for part - caps, screws, latches and hasps, clips, hinges, the handle on its wall, the cushion and the name in the lid", TRAY_ONLY)
+        superseded(f"{dev}: ... and it is shut on the screen's first frame, its lid's outside the cutscene's too", TRAY_ONLY + " (the tray has no lid)")
         ctx.close()
 
     # 6. EVERY BADGE ON THE MIDDLE OF ITS SLOT, within 1px, on both cases
@@ -24543,8 +24899,10 @@ def check_b321c_case(br):
         cut = pg.evaluate(MEAS, ".bc-scene .bc-slot")
         bad = lambda L: [r for r in L if abs(r["dx"]) > 1 or abs(r["dy"]) > 1]
         c9 = [r for r in tab if r["i"] == 9]
-        check(f"{dev}: all 16 badges sit on the middle of their slots within 1px, on the Badges screen and in the cutscene (column 2, row 3 - the C-ring - included: {c9})",
-              len(tab) == 16 and len(cut) == 16 and not bad(tab) and not bad(cut), {"badges screen": bad(tab), "cutscene": bad(cut)})
+        # (384) every unit's slot - the academy is 24 now, read off the bank
+        nU = pg.evaluate("() => unitsInTeachingOrder().length")
+        check(f"{dev}: all {nU} badges sit on the middle of their slots within 1px, on the Badges screen and in the cutscene (column 2, row 3 - the C-ring - included: {c9})",
+              len(tab) == nU and len(cut) == nU and not bad(tab) and not bad(cut), {"badges screen": bad(tab), "cutscene": bad(cut), "n": [len(tab), len(cut), nU]})
         ctx.close()
 
 
@@ -27672,6 +28030,9 @@ B324N_REC = """() => {
 }"""
 
 
+RANK_FIRST, RANK_LAST = "Bronze", "Supernova"   # the ladder's two ends (RANK_DISPLAY_NAME), named once
+
+
 def check_b324n_nova(br):
     """Build 324 (b324n). Madison: "maybe Mr nova is a chat notification and
     will randomly send you messages? ... give him the rank of supernova, and
@@ -27763,8 +28124,10 @@ def check_b324n_nova(br):
       return { a: a.key + ':' + a.text, b: b.key + ':' + b.text, c: c.key + ':' + c.text, d: d.key + ':' + d.text,
                mine: novaThread().filter(m => m.key !== 'nova').map(m => m.text), shown: shown.slice(-2) }; }""")
     check("keyword replies: the next test points to the Calendar tab", r.get("a", "").startswith("nova:") and "Calendar" in r.get("a", ""), r.get("a"))
-    check("keyword replies: ranks, and the Virtual Room challenge with the Sheriff", "Bronze" in r.get("b", "") and "Supernova" in r.get("b", "")
-          and "Virtual Room" in r.get("c", "") and "Sheriff" in r.get("c", ""), [r.get("b"), r.get("c")])
+    # REWRITTEN IN 384: the ranks reply lists the ladder (first and last read off the app, not typed), the match reply points at
+    # the chat's Challenge button and names the Sheriff he unlocks; neither is held to a sentence
+    check("keyword replies: ranks (the ladder, first to last), and the match reply (the Challenge button, the Sheriff)",
+          all(x in r.get("b", "") for x in (RANK_FIRST, RANK_LAST)) and "Challenge" in r.get("c", "") and "Sheriff" in r.get("c", ""), [r.get("b"), r.get("c")])
     check("anything else gets a polite can't-chat line, and the conversation is on screen", "can’t" in r.get("d", "") and len(r.get("mine") or []) == 4
           and any("pizza" in x for x in r.get("shown") or []) or any("can’t" in x for x in r.get("shown") or []), r)
 
@@ -27881,9 +28244,13 @@ def check_b324n_nova(br):
     # runs (["@base"]). check-b326-e holds the rest.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       const D = 86400e3, now = Date.now();
+      /* REWRITTEN IN 384: the gaps are the app's own constants (382: three days between his messages, a tip a fortnight, a
+         challenge a week), and the challenge is forced due (it is drawn two weeks in five by a hash) */
+      const GAP = NOVA_GAP_MS + 3600e3;
+      novaChallengeDue = () => true;
       const k = dayKey(new Date()); store.studyLog = Object.assign({}, store.studyLog, { [k]: 600000 });
-      let s = novaState(); s.since = now - 3 * D; s.spontAt = now - 3 * D; novaSave(s);
-      const h = novaHeardMap(); h['@base'] = now - 3 * D; h['@last'] = now - 25 * 3600e3; delete h['wk:' + weekKeyNow()];
+      let s = novaState(); s.since = now - 30 * D; s.spontAt = now - NOVA_TIP_GAP_MS - 3600e3; s.lastAt = 0; novaSave(s);
+      const h = novaHeardMap(); h['@base'] = now - 30 * D; h['@last'] = now - GAP; h['@tip'] = 0; Object.keys(h).filter(x => x.indexOf('wk:') === 0).forEach(x => delete h[x]);
       novaSessionAt = 0; showHome(); await wait(600);
       document.querySelectorAll('.vroom-chat-alert, .daily-alert').forEach(e => e.remove());
       const kinds = () => novaThread().filter(m => m.kind === 'challenge' || m.kind === 'tip').map(m => m.kind);
@@ -27895,20 +28262,20 @@ def check_b324n_nova(br):
       novaSessionAt = 0; novaTick(); await wait(50);
       const c2 = kinds();
       /* a day on, in a test: nothing */
-      h['@last'] = now - 25 * 3600e3; novaSessionAt = 0;
+      h['@last'] = now - GAP; s = novaState(); s.lastAt = 0; novaSave(s); novaSessionAt = 0;
       testInProgress = true; novaTick(); await wait(50); testInProgress = false;
       const inTest = kinds();
       /* out of the test: not the week's challenge again, a tip */
       novaTick(); await wait(50);
       const c3 = kinds();
-      h['@last'] = now - 25 * 3600e3; novaSessionAt = 0;
+      h['@last'] = now - GAP; s = novaState(); s.lastAt = 0; novaSave(s); novaSessionAt = 0;
       novaTick(); await wait(50);
       const c4 = kinds();
       const tip = (novaThread().filter(m => m.kind === 'tip')[0] || {}).text;
       return { c1, c2, inTest, c3, c4, chal, tip, pool: NOVA_TIPS.length }; }""")
     check("the week's challenge message comes once, and says Virtual Room and the Sheriff", r.get("c1") == ["challenge"] and r.get("c2") == ["challenge"]
           and "Virtual Room" in (r.get("chal") or "") and "Sheriff" in (r.get("chal") or ""), r)
-    check("a tip waits out a day and a test, then comes once, and not again within its three days",
+    check("a tip waits out the gap and a test, then comes once, and not again within its fortnight",
           r.get("inTest") == ["challenge"] and r.get("c3") == ["challenge", "tip"] and r.get("c4") == ["challenge", "tip"]
           and (r.get("tip") or "").startswith("Tip:") and r.get("pool", 0) >= 8, r)
 
@@ -27919,7 +28286,7 @@ def check_b324n_nova(br):
     # for Home.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       showProfile('profile'); await wait(400);
-      const h = novaHeardMap(); h['@last'] = Date.now() - 25 * 3600e3; h['@rank'] = 2; novaSessionAt = 0;
+      const h = novaHeardMap(); h['@last'] = Date.now() - NOVA_GAP_MS - 3600e3; { const s9 = novaState(); s9.lastAt = 0; novaSave(s9); } h['@rank'] = 2; novaSessionAt = 0;
       store.rankUpShown = 2;
       const congrats = () => novaThread().filter(m => m.kind === 'rank').map(m => m.text);
       const scene = { toIdx: 2 };
@@ -27932,50 +28299,59 @@ def check_b324n_nova(br):
       const justAfter = congrats().length;
       await wait(3200);
       const onProfile = congrats().length;
-      showHome(); await wait(4400);
-      return { during, justAfter, onProfile, after: congrats() }; }""")
+      /* REWRITTEN IN 384: Home now has its own arrivals (the unlock cards, the daily alert, the popup gap) that hold his voice for a while;
+         what is asked is only that he speaks once the journey is over and Home is calm, so those are cleared and he is given a few passes */
+      /* the week's recap and What's New are their own moments, with their own gates; asked about here is only his rank line */
+      try{ weekRecapBlocked = () => false; weekRecapOn = false; }catch(e){}
+      showHome(); await wait(1500);
+      let sawTalk = !!document.getElementById('nova-rank');
+      for(let i = 0; i < 6 && !congrats().length && !sawTalk; i++){
+        sawTalk = sawTalk || !!document.getElementById('nova-rank');
+        try{ popupGapUntil = 0; }catch(e){}
+        document.querySelectorAll('.daily-alert, .vroom-chat-alert, .tierup-banner, #daily-lock-tip, .unlock-card').forEach(e => e.remove());
+        novaSessionAt = 0; novaTick(); await wait(700); }
+      let dbg = null; try{ const hh = novaHeardMap(); const nn = Date.now(); dbg = { calmBase: novaCalm(), home: !!stage.querySelector('[data-screen="home"]'), recap: (typeof weekRecapOn !== 'undefined' && weekRecapOn) || weekRecapBlocked(), owed: (typeof rankUpOwed === 'function') && rankUpOwed(), gap: (typeof popupGapUntil === 'number') && Date.now() < popupGapUntil, banners: [...document.querySelectorAll('.daily-alert, .vroom-chat-alert.is-ping, .tierup-banner, #daily-lock-tip, .daily-question-fab.is-charging')].map(e => e.className || e.id), calm: novaMomentCalm(), pend: novaPending(hh, nn).rank, open: novaDayOpen(hh, nn), shown: novaShownRankIdx(), heardRank: hh['@rank'], sess: novaSessionAt, since: novaState().since, lastAt: novaState().lastAt, last: hh['@last'], base: hh['@base'], friend: novaIsFriend() }; }catch(e){ dbg = String(e); }
+      sawTalk = sawTalk || !!document.getElementById('nova-rank');
+      return { during, justAfter, onProfile, after: congrats(), dbg, sawTalk, heardRank: novaHeardMap()['@rank'] }; }""")
     check("no congratulations while the rank-up journey is still on, nor on Profile after it", r.get("during") == 0 and r.get("justAfter") == 0 and r.get("onProfile") == 0, r)
-    check("back on Home, he congratulates you on that rank (Gold)", len(r.get("after") or []) == 1 and "Gold" in (r.get("after") or [""])[0], r)
+    # REWRITTEN IN 384: his rank-up reaction is an ON-SCREEN talk now (playNovaRankTalk, over the flare just relit), and it takes the place
+    # of the chat message - "said here, so the chat does not say it again". So: on Home he talks once, and the chat gets no second copy.
+    check("back on Home, he congratulates you on that rank on screen, and the chat does not say it again (heard moved on past Gold)",
+          r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
 
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("none of it wrote to Firestore, saved the store or pushed the progress document", not w.get("w") and not w.get("push"), w)
     ctx.close()
 
-    # A new account: the friend notification arrives partway through his introduction.
+    # A new account: the introduction does not make you friends; the friend moment is at the end of the tips (novaFriendMoment).
+    # REWRITTEN IN 384 (the friend line moved from partway through the introduction to the end of the tips).
     ctx, pg = booted(br, 440, 956, seed=seed)
     pg.evaluate(B324N_REC)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       localStorage.removeItem('class26e.nova');
-      const at = novaIntroLines({}).findIndex(l => l.friend);
-      const total = novaIntroLines({}).length;
+      const lines = novaIntroLines({});
+      const friendLine = lines.findIndex(l => l.friend);
       playNovaIntro(() => {});
       for(let i = 0; i < 40 && !document.getElementById('nova-intro'); i++) await wait(100);
       const el = document.getElementById('nova-intro'); const nv = el.__nova;
       await wait(500);
-      let before = null;
-      for(let i = 0; i < 200 && nv.index < at; i++){ if(nv.index === at - 1 && before === null) before = novaIsFriend(); el.querySelector('.nt-stage').click(); await wait(60); }
-      await wait(700);
-      const note = document.querySelector('.nova-friend-note');
-      const r = note ? note.getBoundingClientRect() : null;
-      const top = el.querySelector('.nt-top').getBoundingClientRect();
-      const out = { at, total, before, idx: nv.index, note: note ? note.textContent : null,
-        visible: !!(note && note.classList.contains('show') && r.height > 20), clearOfTop: !!(r && r.top >= top.bottom - 1),
-        friend: novaIsFriend(), hello: (novaThread()[0] || {}).text,
-        dot: (document.getElementById('chatdock-dot') || {}).textContent,
-        line: el.querySelector('.nt-text').textContent };
-      nv.skip(); await wait(200);
+      for(let i = 0; i < 300 && el.isConnected && !(el.querySelector('.nt-go') && getComputedStyle(el.querySelector('.nt-go')).display !== 'none'); i++){ el.querySelector('.nt-stage').click(); await wait(50); }
+      const afterIntro = { friend: novaIsFriend(), hellos: novaThread().filter(m => m.kind === 'hello').length };
       const go = el.querySelector('.nt-go'); if(go) go.click(); await wait(900);
-      out.after = !!document.getElementById('nova-intro');
-      out.noteGone = !document.querySelector('.nova-friend-note.show');
-      out.once = novaThread().filter(m => m.kind === 'hello').length;
+      document.querySelectorAll('.nova-friend-note').forEach(n => n.remove());
+      novaFriendMoment(); await wait(700);
+      const note = document.querySelector('.nova-friend-note');
+      const out = { friendLine, afterIntro, friend: novaIsFriend(), note: note ? note.textContent : null,
+        visible: !!(note && note.classList.contains('show') && note.getBoundingClientRect().height > 20),
+        hello: (novaThread()[0] || {}).text, dot: (document.getElementById('chatdock-dot') || {}).textContent,
+        once: novaThread().filter(m => m.kind === 'hello').length };
+      novaFriendMoment(); await wait(300); out.onceAgain = novaThread().filter(m => m.kind === 'hello').length;
       return out; }""")
-    check("his introduction has a line that makes you friends, partway through (not the first or last)",
-          r.get("at", -1) > 1 and r.get("at", 0) < r.get("total", 0) - 1, r)
-    check("...not friends before it; on it the FRIENDS banner says 'You and Nova are now friends', clear of his top row",
-          r.get("before") is False and r.get("friend") and "You and Nova are now friends" in (r.get("note") or "") and r.get("visible") and r.get("clearOfTop"),
-          {k: r.get(k) for k in ("before", "friend", "note", "visible", "clearOfTop", "line")})
-    check("...and his hello is waiting in your chats, once", "friends now" in (r.get("hello") or "") and r.get("dot") == "1" and r.get("once") == 1 and r.get("noteGone"),
-          {k: r.get(k) for k in ("hello", "dot", "once", "noteGone")})
+    check("his introduction has no friend line in it (the friend moment is at the end of the tips) and leaves you not yet friends, with no hello",
+          r.get("friendLine") == -1 and r.get("afterIntro", {}).get("friend") is False and r.get("afterIntro", {}).get("hellos") == 0, r)
+    check("...the friend moment makes you friends: the FRIENDS banner says so, and his hello is waiting in your chats, once (a second moment adds none)",
+          r.get("friend") and "You and Nova are now friends" in (r.get("note") or "") and r.get("visible") and r.get("dot") == "1"
+          and r.get("once") == 1 and r.get("onceAgain") == 1, {k: r.get(k) for k in ("friend", "note", "visible", "dot", "once", "onceAgain")})
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("the introduction's friendship wrote nothing to Firestore", not w.get("w") and not w.get("push"), w)
     ctx.close()

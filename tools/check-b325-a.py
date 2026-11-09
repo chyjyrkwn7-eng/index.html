@@ -250,8 +250,8 @@ def sec_dim(br):
     t_in = next(((a["delay"] + k[0] * a["dur"]) for k in a["k"] if k[1] is not None and k[1] >= peak - .01), None) if a else None
     t_out = (a["delay"] + a["dur"]) if a else None
     end = a["k"][-1][1] if a else None
-    check("Confetti: the screen dims while it plays (the Fireworks' .5 at its height)", a is not None and .4 <= peak <= .6, peak)
-    check("Confetti: the dim is in within .5s and gone (0) by 3s", a is not None and t_in is not None and t_in <= 500 and t_out <= 3050 and end == 0, [t_in, t_out, end])
+    # (384 r6, SUPERSEDED ON PURPOSE) no dim at all any more: "Don't do the darkened thing any" (check-b384-results-flow F2)
+    check("Confetti: the screen is not dimmed while it plays (384 r6; was build 325's .5)", not peak or peak < .05, peak)
     check("Confetti: the 100% box is lifted over it, as the Fireworks lift theirs", d["over"], d["over"])
     # the buttons wait for it: they start to rise only once the dim has lifted
     for _ in range(80):
@@ -259,7 +259,7 @@ def sec_dim(br):
             break
         pg.wait_for_timeout(250)
     ab = pg.evaluate("() => window.__dim && window.__dim.atButtons")
-    check("Confetti: the buttons rise only once its dim has lifted (dim 0 as they start)", a is not None and peak >= .4 and bool(ab) and ab["dim"] <= .02, ab)
+    check("Confetti: no dim as the buttons rise (384 r6)", bool(ab) and (ab.get("dim") or 0) <= .02, ab)
     ctx.close()
 
 
