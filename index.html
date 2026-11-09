@@ -118618,6 +118618,18 @@ function hfxTintVars(el, tint){
     el.style.setProperty("--hfx-rimline", "rgba(" + rgb + ",.18)");
     el.style.setProperty("--hfx-rimin", "rgba(" + rgb + ",.26)"); }
 }
+/* (384 r9) one colour as a light-to-deep ramp in its own hue, shaped like the default's gold: the light end high in
+   lightness and a little softer, the deep end darker and a little richer. [light, base, deep] as hsl() strings. */
+function hfxOneHueRamp(hex){
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || ""); if(!m) return null;
+  const n = parseInt(m[1], 16), R = (n >> 16) / 255, G = ((n >> 8) & 255) / 255, B = (n & 255) / 255;
+  const mx = Math.max(R, G, B), mn = Math.min(R, G, B), L = (mx + mn) / 2, d = mx - mn;
+  let H = 0, S = 0;
+  if(d){ S = d / (1 - Math.abs(2 * L - 1));
+    H = mx === R ? ((G - B) / d) % 6 : mx === G ? (B - R) / d + 2 : (R - G) / d + 4; H = (H * 60 + 360) % 360; }
+  const c = (s, l) => "hsl(" + Math.round(H) + " " + Math.round(Math.min(1, s) * 100) + "% " + Math.round(Math.max(0, Math.min(1, l)) * 100) + "%)";
+  return [c(S * .95, L + .45 * (1 - L)), c(S, L), c(S * 1.05, L - .15)];
+}
 function hfxMotionOff(){
   try{ if(theme.reduceMotion) return true; }catch(e){}
   return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -122421,7 +122433,11 @@ Object.assign(ifxSpr, {
 function ifxLit(bx, c, color, glow, dl, dur){ if(bx && c.pct) hfxLitText(bx, c, { mode: "flash", color, glow, dl, dur }); }
 /* the box's own light, washed over it (a card-sized glow) */
 function ifxBoxWash(bx, c, col, frames, dur, dl){
-  if(!bx) return null;
+  /* (384 r9) NOT ON THE GRADE BOX. These were the box going orange under the fire and blue under the water (Sprinklers),
+     red (Extinguisher), amber then green (Hazmat), orange (Thermal Camera) - Madison: "At the beginning of the hundo
+     effects, the colors are weird though they are odd colors and the transition of them isn't adding up", after "the
+     box doesn't change color" on the default. The effect still plays on and round the box; the box stays the card. */
+  if(!bx || c.plainBox) return null;
   const w = ifxImg(bx, ifxSpr.glow(col), -c.bw * .2, -c.bh * .6, c.bw * 1.4, c.bh * 2.2);
   ifxA(c, w, frames, dur, dl);
   return w;
@@ -123700,15 +123716,24 @@ function hfxApplyTint(id, opts){
      second .hfx-tint would fade in from nothing over the first */
   if(box.dataset.hfxTint === id && box.classList.contains("hfx-tinted")) return tint;
   hfxTintVars(box, tint);
-  /* (384 r9) THE GRADE BOX STAYS THE DEFAULT'S. Madison, on Extinguisher beside Confetti: "Notice how when the grade
-     box for the default one is done the box doesn't change color but the others do? Yeah they should be like that,
-     so follow suite with the default way" - and the tinted box was also where "the borders is messed up" and "some of
-     the old interface" came from (its own edge and wash instead of the clean card's). So the results card, and the
-     Customize mock of it, are never tinted: the effect plays over the box and the box ends exactly as Confetti's does,
-     gold 100% and gold bars. The variables still go on (the effect's own layer inside the box reads them). Effect tiles
-     (.hfx-stage) keep their colours - a tile is the effect's swatch, not the results card. */
-  if(box.classList.contains("rs-grade")) return null;
+  /* (384 r9) THE GRADE BOX ITSELF STAYS THE DEFAULT'S. Madison, on Extinguisher beside Confetti: "Notice how when the
+     grade box for the default one is done the box doesn't change color but the others do? Yeah they should be like
+     that, so follow suite with the default way" - and then, on Sprinklers' card at 0:00 (the teal 100% and bar on the
+     plain card, before the wash came up): "This is how the sprinkler one should look". So on the results card, and
+     the Customize mock of it, the 100% and the unit bars take the effect's colours (.hfx-tinted) but the box gets no
+     .hfx-tint layer - no wash, no pool of colour behind the number: it is the same plain card as Confetti's from the
+     first frame to the last. Effect tiles (.hfx-stage) keep their light - a tile is the effect's swatch. */
+  const plainBox = box.classList.contains("rs-grade");
   box.querySelectorAll(":scope > .hfx-keep").forEach(e => e.remove());
+  /* ...and the 100% and the bars in ONE hue, the effect's, light to deep the way Confetti's gold runs (#FFEBC2 > #F6D58E >
+     #E3AC4C). The effects' own ramps crossed hues - Sprinklers pale blue into gold, Extinguisher white into pink into red,
+     Fireworks magenta into cyan - and that, after the count's red and green, was his "the colors are weird though they
+     are odd colors and the transition of them isn't adding up". The vars are only read by the number and the bars. */
+  if(plainBox){
+    const r = hfxOneHueRamp(tint.b);
+    if(r){ box.style.setProperty("--hfx-g1", r[0]); box.style.setProperty("--hfx-g2", r[1]); box.style.setProperty("--hfx-g3", r[2]); }
+    box.dataset.hfxTint = id; box.classList.add("hfx-tinted"); return tint;
+  }
   const t = document.createElement("i");
   t.className = "hfx-tint hfx-keep"; t.setAttribute("aria-hidden", "true");
   box.appendChild(t);
@@ -123756,6 +123781,8 @@ function playHundoFx(id, opts){
   }
   if(id === "confetti" && opts.frame) opts = Object.assign({}, opts, { boxOnly: true, frame: null });
   const c = hfxContext(opts);
+  /* (384 r9) the results card (and its Customize mock) is never washed in a colour mid-effect - see ifxBoxWash */
+  c.plainBox = !!(opts.box && opts.box.classList && opts.box.classList.contains("rs-grade"));
   const total = opts.boxOnly ? HUNDO_FX_BOX_TOTAL[id] : HUNDO_FX_TOTAL[id];
   const tint = HFX_TINT[id] || null;
   c.anims = []; c.cleanup = [];
@@ -128382,6 +128409,26 @@ function rsOklchMix(a, b, k, alpha, bare, boost){
   return alpha >= 1 ? "rgb(" + c.join(",") + ")" : "rgba(" + c.join(",") + "," + Math.max(0, alpha).toFixed(3) + ")";
 }
 
+/* (384 r9) THE HAND-OFF'S MIX: by hue where the two colours are near each other (green into the default's gold, into
+   Sprinklers' blue - unchanged), and THROUGH A PALE LIGHT where they are far apart. Green round the wheel into red or
+   orange passes yellow-olive, and on Extinguisher that read as a muddy khaki 100% between the green and the red - "the
+   colors are weird though they are odd colors and the transition of them isn't adding up". Through the light the 100%
+   brightens and comes out in its effect's colour; no hue in between is ever shown. Same arguments as rsOklchMix. */
+const RS_HAND_NEAR = 1.5;   /* radians of hue (~86 degrees): green to gold is ~75, green to red ~125 */
+function rsHandMix(a, b, k, alpha, bare, boost){
+  const A = rsToOklch(a), B = rsToOklch(b);
+  let dh = B[2] - A[2];
+  while(dh > Math.PI) dh -= 2 * Math.PI;
+  while(dh < -Math.PI) dh += 2 * Math.PI;
+  if(Math.abs(dh) <= RS_HAND_NEAR) return rsOklchMix(a, b, k, alpha, bare, boost);
+  const Lm = .93, Cm = .03;
+  const t = k < .5 ? k * 2 : (k - .5) * 2, E = k < .5 ? A : B;
+  const L = k < .5 ? A[0] + (Lm - A[0]) * t : Lm + (B[0] - Lm) * t;
+  const C = k < .5 ? A[1] + (Cm - A[1]) * t : Cm + (B[1] - Cm) * t;
+  const c = rsFromOklch(L, C, E[2]);
+  if(bare) return c.join(",");
+  return alpha >= 1 ? "rgb(" + c.join(",") + ")" : "rgba(" + c.join(",") + "," + Math.max(0, alpha).toFixed(3) + ")";
+}
 /* The last unit bar's ease-out power: its slow finish is the suspense
    (build 321: 3.6, was 3.2 - "slow down a little more at the back end"). */
 /* build 380: 1.9, not 3.6 - "when the grade loads in, it's at 99 for too long". The number is the count floored, and with an ease that
@@ -129072,17 +129119,21 @@ function showRunRewards(run, hooks, opts){
     /* from the exact green the number and the bars counted up in - a
        different green here was a one-frame snap as the grade landed */
     const G = RS_TONE_GREEN.slice();
-    const to = rsHex(tint && tint.b || "#F2C873"), toN = rsHex(tint && tint.g2 || "#F6D58E");
+    /* (384 r9) the number turns into the middle of its one-hue ramp, the effect's own colour (hfxOneHueRamp) */
+    const to = rsHex(tint && tint.b || "#F2C873"), toN = rsHex(tint && tint.b || "#F6D58E");
     const green = grade.querySelector(".rs-grade-tone > i.is-green");
+    const handFar = (() => { const A = rsToOklch(G), B = rsToOklch(toN); let d = Math.abs(B[2] - A[2]); if(d > Math.PI) d = 2 * Math.PI - d; return d > RS_HAND_NEAR; })();
     /* the number: its effect ramp under a fill that turns towards the
        effect's colour as it fades off */
     numPlain(pe, "");
     const ramp = getComputedStyle(pe).backgroundImage;
     const hasRamp = ramp && ramp !== "none";
     const paintN = k => {
-      if(!hasRamp){ pe.style.color = k >= 1 ? "" : rsOklchMix(G, toN, k, 1); return; }
+      if(!hasRamp){ pe.style.color = k >= 1 ? "" : rsHandMix(G, toN, k, 1); return; }
       pe.style.webkitBackgroundClip = "text"; pe.style.backgroundClip = "text";
-      pe.style.webkitTextFillColor = k >= 1 ? "" : rsOklchMix(G, toN, Math.min(1, k * 1.25), Math.pow(1 - k, 1.4));
+      /* (384 r9) far apart (through the light, rsHandMix): a solid fill all the way, never a see-through one over the
+         ramp - half of a pale green over a red ramp is the grey-beige the hand-off was meant to avoid */
+      pe.style.webkitTextFillColor = k >= 1 ? "" : handFar ? rsHandMix(G, toN, k, 1) : rsHandMix(G, toN, Math.min(1, k * 1.25), Math.pow(1 - k, 1.4));
       pe.style.color = "";
     };
     paintN(0);
@@ -129097,13 +129148,13 @@ function showRunRewards(run, hooks, opts){
          the effect's own look fades in over it once the two agree */
       const hk = Math.min(1, k / .7);
       if(green){
-        const rim = rsOklchMix(G, to, hk, 1, true, .4);
+        const rim = rsHandMix(G, to, hk, 1, true, .4);
         green.style.setProperty("--te", rim);
         green.style.setProperty("--tw", "rgba(" + rim + ",.16)");
       }
       const fk = Math.max(0, (k - .45) / .55);
       grade.style.setProperty("--rs-gf", fk.toFixed(3));
-      unitBars.forEach(u => u.fill.style.setProperty("--was", rsOklchMix(G, to, hk, 1)));
+      unitBars.forEach(u => u.fill.style.setProperty("--was", rsHandMix(G, to, hk, 1)));
       paintN(k);
       if(t < 1){ requestAnimationFrame(step); return; }
       unitBars.forEach(u => { u.fill.classList.remove("rs-was"); u.fill.style.removeProperty("--was"); });
