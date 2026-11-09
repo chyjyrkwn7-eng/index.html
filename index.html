@@ -38677,14 +38677,15 @@ html.is-browser{ --fade-paper: transparent; }
        balanced (text-wrap:balance) and never broken inside a word.
      - THE FOOT: the count on the card's floor, left, under the title's edge - not centred: the badge stands bottom-right
        (round 32's place), so a centred count sits between an empty left and the badge, and on a 375px phone it runs into
-       the badge. On an iPad the hundo bar has a row of its own under the count, the same height with or without a bar,
-       so every count in a row is on one baseline (an earned card, with no bar, used to sit 18px lower than its neighbour).
+       the badge. On an iPad the hundo bar has a row of its own just above the count, the same height with or without a
+       bar, so every count in a row is on the floor and on one baseline (327z15 round 33's "closest to the bottom border"
+       for an earned card, now for every card: a card still working on its badge used to sit 18px higher).
      The mark is a label, not a control: no box round it, taps still reach the card. */
   html[data-theme][data-layout] body #stage .picks > label.pick{
     --uc-strip:1.1rem; --uc-bar:0px; --uc-pt:.9rem; --uc-pr:.95rem; --uc-dot:.8rem;
     grid-template-columns:minmax(0,1fr) auto !important;
-    grid-template-rows:var(--uc-strip) auto auto minmax(0,1fr) auto var(--uc-bar) !important;
-    grid-template-areas:"next next" "name name" "ver ver" "gap gap" "count badge" "bar badge" !important;
+    grid-template-rows:var(--uc-strip) auto auto minmax(0,1fr) var(--uc-bar) auto !important;
+    grid-template-areas:"next next" "name name" "ver ver" "gap gap" "bar badge" "count badge" !important;
     column-gap:.5rem !important; row-gap:0 !important; align-items:start;
     padding:var(--uc-pt) var(--uc-pr) .85rem 1rem !important;
   }
@@ -38714,7 +38715,7 @@ html.is-browser{ --fade-paper: transparent; }
     grid-area:count !important; align-self:end !important; justify-self:start; margin:0 !important; line-height:1.2 !important; font-size:.76rem !important;
   }
   html[data-theme][data-layout] body #stage .picks > label.pick .pick-badge{ grid-area:badge !important; align-self:end !important; justify-self:end !important; }
-  html[data-theme][data-layout] body #stage .picks > label.pick .pick-barrow{ grid-area:bar !important; align-self:end !important; }
+  html[data-theme][data-layout] body #stage .picks > label.pick .pick-barrow{ grid-area:bar !important; align-self:center !important; }
   html[data-theme][data-layout] body #stage .picks > label.pick > .pick-version{ grid-area:ver !important; }
   /* the picked dot on the strip's centre line, at the card's right padding */
   html[data-theme][data-layout] body #stage .picks > label.pick > .box{
