@@ -4,7 +4,8 @@ smaller too, our icons don't look as nice/hd/crispy either. It's also missing th
 our words are smaller. You see how ours has the gold text and the word nova in the default color? That needs to match your theme
 too.. would be a nice touch. The word nova 'Davis' is like white and bold. Make that entire 'made by Davis' cohesive there."
 iPhone 17 Pro Max (440x956), dark, Settings:
-(1) (384 r5, Delta's numbers) the rows are 49-53px, their tiles 27-29px, their glyphs 16-18px on one stroke weight, their labels 15-16.5px;
+(1) (384 r5, Delta's numbers) the rows are 49-53px, their tiles 27-29px, their glyphs' boxes 55-85% of the tile (384 r8: the ink itself,
+    55% of the tile as Delta's, is check-b384-tilematerial's) on one stroke weight, their labels 15-16.5px;
 (2) between two rows of a card a hairline shows (white, 8%+), starting at the label (an icon row) and running to the row's content
     edge - (384, round 2) "Theirs don't touch the sides, why would ours?": clear of the card's edge by the row's padding;
 (3) the theme's colour at the foot: the Support links, the NOVA wordmark's middle and both halves of "MADE BY DAVIS" are in the
@@ -59,8 +60,8 @@ with sync_playwright() as pw:
                strokes: [...new Set(parts.map(v=>Math.round(v*100)/100))], sepBg: sep.backgroundColor, sepLeft: br.left + parseFloat(sep.left), labelLeft: lr.left,
                sepRight: br.right - parseFloat(sep.right || '0'), cardRight: card.right,
                contentRight: br.right - parseFloat(getComputedStyle(b).paddingRight) - parseFloat(getComputedStyle(b).borderRightWidth) }; }""")
-    ck("(1) rows %spx, tiles %spx, glyphs %spx on one stroke %s, labels %spx" % (m["h"], m["tile"], m["glyph"], m["strokes"], m["label"]),
-       49 <= m["h"] <= 53 and 27 <= m["tile"] <= 29 and 16 <= m["glyph"] <= 18 and len(m["strokes"]) == 1 and m["strokes"][0] >= 1.5 and 15 <= m["label"] <= 16.5, m)   # (384 r5) Delta measured off his two screenshots: row 51, tile 27.6, label ~15.5   # (384 r5: one even weight - the lighter 1.75 of the glass tiles)
+    ck("(1) rows %spx, tiles %spx, glyph boxes %spx on one stroke %s, labels %spx" % (m["h"], m["tile"], m["glyph"], m["strokes"], m["label"]),
+       49 <= m["h"] <= 53 and 27 <= m["tile"] <= 29 and .55 * m["tile"] <= m["glyph"] <= .85 * m["tile"] and len(m["strokes"]) == 1 and m["strokes"][0] >= 1.5 and 15 <= m["label"] <= 16.5, m)   # (384 r5) Delta measured off his two screenshots: row 51, tile 27.6, label ~15.5   # (384 r5: one even weight - the lighter 1.75 of the glass tiles)
     sa = re.findall(r"[\d.]+", m["sepBg"] or ""); alpha = float(sa[3]) if len(sa) > 3 else (1 if sa else 0)
     ck("(2) a hairline between rows (%s), from the label (%s / %s) to the row's content edge (%s / %s), clear of the card's (%s)" % (m["sepBg"], round(m["sepLeft"]), round(m["labelLeft"]), round(m["sepRight"]), round(m["contentRight"]), round(m["cardRight"])),
        alpha >= .08 and abs(m["sepLeft"] - m["labelLeft"]) <= 2 and abs(m["sepRight"] - m["contentRight"]) <= 2 and m["cardRight"] - m["sepRight"] >= 8, m)

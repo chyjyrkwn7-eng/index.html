@@ -7,8 +7,9 @@ section and open it, there are icons within them? But there shouldn't be.."
 
 On every screen it can reach, in BOTH classes (iPhone 17 Pro Max; Profile and Stats on the iPad Pro 11" as well), every visible row
 tile (.settings-row-icon, [data-tile]) is read:
-(1) the Settings menu's tiles are UNCHANGED: each one's computed signature (size, mask, fill, sheen, shadow, glyph size and stroke)
-    equals what cd34de2 draws for the same row (the reference build is loaded from git and measured in the same run);
+(1) the Settings menu keeps its tiles: every row tiled on cd34de2 (the reference build, loaded from git and measured in the same
+    run) still has one, the same size in the same superellipse mask (on the tile or its layers). (Their material and colours did
+    change, on purpose, in 384 r8's Delta pass - check-b384-tilematerial holds those);
 (2) every row tile OUTSIDE the menu is the menu's tile in shape: 27-29px, the menu's own superellipse mask (on the tile or on the
     ::before that carries its fill), the menu's sheen, the menu's glyph size and stroke;
 (3) ...and one neutral grey: low chroma, and the same colour on every one of them (Profile's Customize / Badge case / Rank ladder,
@@ -41,18 +42,20 @@ TILES = r"""()=>{ const vis=e=>{ const b=e.getBoundingClientRect(); if(!b.width|
   const rgb=s=>{ const m=(s||'').match(/[\d.]+/g)||[]; const v=m.slice(0,3).map(Number); return /^color\(/.test(s||'') ? v.map(x=>Math.round(x*255)) : v; };
   const alpha=s=>{ const m=(s||'').match(/[\d.]+/g)||[]; return m.length>3 ? +m[3] : (m.length ? 1 : 0); };
   return [...document.querySelectorAll('#stage .settings-row-icon, #stage [data-tile]')].filter(vis).map(t=>{
-    const cs=getComputedStyle(t), be=getComputedStyle(t,'::before'), b=t.getBoundingClientRect();
+    const cs=getComputedStyle(t), be=getComputedStyle(t,'::before'), af=getComputedStyle(t,'::after'), b=t.getBoundingClientRect();
+    const on=p=>p.content!=='none' && p.content!=='normal';
     const own=cs.maskImage && cs.maskImage!=='none' ? cs.maskImage : (cs.webkitMaskImage && cs.webkitMaskImage!=='none' ? cs.webkitMaskImage : 'none');
     const pm=be.content!=='none' && be.content!=='normal' ? (be.maskImage && be.maskImage!=='none' ? be.maskImage : (be.webkitMaskImage||'none')) : 'none';
-    /* the layer that carries the fill: the tile itself, or its ::before when the tile's own background is clear */
-    const layer = alpha(cs.backgroundColor) > .5 ? cs : (be.content!=='none' && be.content!=='normal' && alpha(be.backgroundColor) > .5 ? be : cs);
+    /* the layer that carries the fill: the tile itself, or (384 r8, Delta's material) its ::after - the fill inside the rim that
+       ::before paints - or its ::before, when the tile's own background is clear */
+    const layer = alpha(cs.backgroundColor) > .5 ? cs : (on(af) && alpha(af.backgroundColor) > .5 ? af : (on(be) && alpha(be.backgroundColor) > .5 ? be : cs));
     const fill=rgb(layer.backgroundColor), svg=t.querySelector('svg'), ss=svg && getComputedStyle(svg);
     const row=t.closest('button, .settings-row, label, [role=button], .pf-act') || t.parentElement;
     return { name:((row.querySelector('.settings-row-label, .pf-act-label, .otext')||row).textContent||'').trim().slice(0,28), kind:t.dataset.tile||'',
       menu: !!t.closest('.screen-settings'), sub: !!t.closest('.screen-settings-sub'), w:Math.round(b.width*10)/10, h:Math.round(b.height*10)/10,
       mask: own!=='none' ? own : pm, fill, fillAlpha: alpha(layer.backgroundColor), chroma: fill.length ? Math.max(...fill)-Math.min(...fill) : 99,
       sheen: layer.backgroundImage, shadow: cs.boxShadow, glyph: svg ? Math.round(svg.getBoundingClientRect().width*10)/10 : 0, stroke: ss ? ss.strokeWidth : '',
-      sig: [Math.round(b.width*10)/10, own, cs.backgroundColor, cs.backgroundImage, cs.boxShadow, cs.borderRadius, svg ? Math.round(svg.getBoundingClientRect().width*10)/10 : 0, ss ? ss.strokeWidth : ''].join(' | ') }; }); }"""
+      sig: [Math.round(b.width*10)/10, own!=='none' ? own : pm].join(' | ') }; }); }"""
 def calm(pg):
     pg.evaluate("()=>{ try{ homeUnlocksOwed=()=>false; }catch(e){} }")
 def sweep(br, cls, w, h, screens, body=None):
@@ -90,6 +93,8 @@ with sync_playwright() as pw:
             if w == 440:
                 for t in menu:
                     if refsig.get(t["name"]) != t["sig"]: bad1.append((cls, t["name"], t["sig"][:140], (refsig.get(t["name"]) or "missing")[:140]))
+                gone = [n for n in refsig if n not in set(t["name"] for t in menu)]
+                if gone: bad1.append((cls, "rows that lost their tile", gone))
             outside, greys = [], set()
             for s, tiles in got.items():
                 for t in tiles:
@@ -110,7 +115,7 @@ with sync_playwright() as pw:
     br.close()
 cb.SERVER.shutdown()
 print("tiles read:", counts)
-chk("(1) the Settings menu's tiles are unchanged from %s (size, mask, fill, sheen, shadow, glyph, stroke), in both classes" % REF, not bad1 and all(counts.get((c, 440, "menu"), 0) >= 8 for c in ("academy", "ifc")), bad1[:6])
+chk("(1) the Settings menu keeps every tile it had on %s, the same size in the same mask, in both classes" % REF, not bad1 and all(counts.get((c, 440, "menu"), 0) >= 8 for c in ("academy", "ifc")), bad1[:6])
 chk("(2) every row tile outside the menu is the menu's tile: 27-29px, the menu's squircle mask, its sheen, its glyph and stroke", not bad2, bad2[:6])
 chk("(3) ...and one neutral grey, the same on every one (no colour outside the menu)", not bad3, bad3[:6])
 chk("(4) no tile on any page Settings opens", not bad4, bad4[:6])

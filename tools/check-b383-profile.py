@@ -62,8 +62,8 @@ with sync_playwright() as pw:
       const name = document.querySelector('#stage .profile-name-display');
       const sameRowAsName = !!(btn && name && name.closest('.namedisplay-row') && name.closest('.namedisplay-row').contains(btn));
       const tileEl = btn ? btn.querySelector('.settings-row-icon') : null;
-      /* (384 r8) the tile's fill can be on its ::before (the squircle mask lives there so the new-dot is not cut) */
-      const fill = tileEl ? ((/rgba?\([^)]*,\s*0\)$|transparent/.test(getComputedStyle(tileEl).backgroundColor)) ? getComputedStyle(tileEl, '::before').backgroundColor : getComputedStyle(tileEl).backgroundColor) : null;
+      /* (384 r8) the tile's fill can be on a layer of its own (the squircle mask lives there so the new-dot is not cut) */
+      const fill = tileEl ? ((/rgba?\([^)]*,\s*0\)$|transparent/.test(getComputedStyle(tileEl).backgroundColor)) ? getComputedStyle(tileEl, '::after').backgroundColor : getComputedStyle(tileEl).backgroundColor) : null;   /* (384 r8: ::after is the fill, ::before its rim) */
       const rimC = btn ? getComputedStyle(btn).borderTopColor : '', rimW = btn ? parseFloat(getComputedStyle(btn).borderTopWidth) : 0;
       const rimA = +((rimC.match(/rgba\([^)]*,\s*([\d.]+)\)/) || [])[1] || (rimC.startsWith('rgb(') ? 1 : 0));
       const rim = rimW >= 1 && rimA >= .14 && (lum(rimC) || 0) > .5;

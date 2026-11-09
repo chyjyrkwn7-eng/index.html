@@ -77,7 +77,8 @@ ROWS = """()=>{
     const out={ title: title.trim().slice(0,40), h: Math.round(r.getBoundingClientRect().height), card: cards.indexOf(card),
       cat: r.classList.contains('settings-cat'), page: r.dataset.page||'', chev: !!r.querySelector('.settings-row-chev'),
       color: cs.color, cardCls: card ? card.className : '' };
-    if(t){ const ts=getComputedStyle(t), c=rgb(ts.backgroundColor), svg=t.querySelector('svg');
+    if(t){ const own=getComputedStyle(t); const ts=/rgba\([^)]*,\s*0\)$|transparent/.test(own.backgroundColor) ? getComputedStyle(t,'::after') : own;   /* (384 r8) the fill can be the tile's ::after (Delta's material: a rim, then the fill) */
+      const c=rgb(ts.backgroundColor), svg=t.querySelector('svg');
       out.tile=c; out.chroma=Math.max(...c)-Math.min(...c); out.glyph=svg?getComputedStyle(svg).color:null;
       out.opaque=!/rgba\\([^)]*,\\s*0?\\.\\d+\\)/.test(ts.backgroundColor) && !/transparent/.test(ts.backgroundColor); }
     else out.tile=null;
@@ -149,13 +150,10 @@ with sync_playwright() as pw:
         rows = pg.evaluate(ROWS) or []
         cats = [r for r in rows if r["cat"]]
         chk("%s the menu's category rows are %s (%s)" % (tag, want, [r["page"] for r in cats]), sorted(r["page"] for r in cats) == sorted(want), cats)
-        bad = [(r["title"], r.get("tile"), r["h"]) for r in cats if not (r.get("tile") and r["chroma"] >= 40 and r["opaque"] and r["glyph"] == "rgb(255, 255, 255)" and r["chev"] and r["h"] >= 44)]
-        chk("%s every category row: a solid colour tile, a white glyph, a chevron, 44px+" % tag, cats and not bad, bad)
-        bycard = {}
-        for r in rows:
-            if r.get("tile"): bycard.setdefault(r["card"], []).append(tuple(r["tile"]))
-        dup = {k: v for k, v in bycard.items() if len(set(v)) != len(v)}
-        chk("%s tile colours differ inside every card" % tag, rows and not dup, dup)
+        # (384 r8) a tile need not be a colour any more: Delta's utility card is grey, and so is ours (check-b384-tilematerial (7))
+        bad = [(r["title"], r.get("tile"), r["h"]) for r in cats if not (r.get("tile") and r["opaque"] and r["glyph"] == "rgb(255, 255, 255)" and r["chev"] and r["h"] >= 44)]
+        chk("%s every category row: a solid tile, a white glyph, a chevron, 44px+" % tag, cats and not bad, bad)
+        print("  SKIP %s tile colours differ inside every card  -- superseded: 384 r8 gives each card ONE colour family, as Delta's are (\"Do you see how their grouped up stuff has the same color icons?\"); check-b384-tilematerial (7) holds it" % tag)
         m = pg.evaluate(MENU) or {}
         chk("%s no switch, slider or legal paragraph on the menu (%s)" % (tag, {k: m.get(k) for k in ("switches", "legal")}), m and m["switches"] == 0 and not m["legal"], m)
         cred = [r for r in rows if "settings-credits-card" in r["cardCls"]]
