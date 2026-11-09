@@ -38894,6 +38894,19 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{ font-size:.78rem !important; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pcount{ font-size:.84rem !important; }
   }
+  /* (384 r17) NOTHING IN THE TOP BAND OF A SCREEN BLURS WHAT IS BEHIND IT. Madison, on his iPhone: the screen title ("Profile"), the test's
+     "Drill" and its count, on EVERY screen, were soft and dim, the glass buttons beside them crisp ("What is happening at the top of the
+     screens? Fix this now" - and "Stop having me look for ways to fix it"). Chromium shows no layer over the title, so the cause could not be
+     read off; what changed in 384 is that the chat button (a flat disc on 383 beyond Home), the round back buttons and Pause were given the tab
+     bar's glass - backdrop-filter blur(7px) saturate(1.5) - and they are the only blurred elements in the top band of every screen. A
+     backdrop blur at the top edge is what iOS answers with its own soft band behind it. So the controls that stand in that band are the same
+     glass without the blur (a slightly fuller body so they read on any background); the blur stays on the bottom bar, the search circle and
+     the back-to-top button, which are not at the top edge. */
+  html[data-theme="dark"][data-layout="modern"] body :is(#chatdock-btn, #stage .ios-nav > .back-link.ios-nav-back, #stage .settings-nav-back, #stage .setup-nav-back, #pausebtn, .top #restart){
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.5) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+  }
   /* (384 r17) THE TITLE STAYS IN THE TOP LEFT. Madison, on the chapter picker: "The words should still be in the top left. If it is the
      next test then it would be moved down." Round 8 reserved the status strip on EVERY card so no title moved for carrying the mark, which
      left every title ~40px down from the corner. Now only a card that carries the next-test mark has the strip (the title is under it); any
@@ -117877,7 +117890,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-09-384.3";
+const APP_BUILD = "2026-11-09-384.4";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
