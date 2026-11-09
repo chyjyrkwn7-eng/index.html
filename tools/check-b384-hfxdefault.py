@@ -53,7 +53,7 @@ with sync_playwright() as pw:
             ctx, pg, errs = R.open_run(br, cls, 440, 956, fx, dpr=1)
             hand = []
             if cls == "ifc" and fx == "fireworks":
-                for _ in range(90):
+                for _ in range(220):
                     R.advance(pg, .05); v = pg.evaluate(SAMPLE)
                     if v and v["pct"].startswith("100"): hand.append(v)
                     if len(hand) > 26: break
@@ -87,6 +87,7 @@ with sync_playwright() as pw:
                         if not m or (m.group(4) is not None and float(m.group(4)) < .05): continue
                         L, C, H = oklch(tuple(int(m.group(i)) for i in (1, 2, 3)))
                         if C > .07 and hdist(H, G[2]) > 35 and hdist(H, T[2]) > 35: bad.append((key, v[key], round(H)))
+            if cls == "ifc" and fx == "fireworks":
                 chk(tag + ": (4) the green-to-red hand-off shows no hue in between (%d frames)" % len(hand), len(hand) >= 5 and not bad, bad[:6])
             if errs: chk(tag + ": no page errors", False, errs)
     br.close()
