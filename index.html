@@ -13974,6 +13974,12 @@
      element stacks among its own siblings (it was already the equivalent
      of z-index:0 there). */
   .cosmic-hero-wrap{ position:relative; isolation:isolate; width:100%; max-width:min(23rem, 46vh); margin:0 auto .5rem; }
+  /* (384 r17) THE FLARES ARE NOT TEXT. Madison, on a laptop: "when tapping the flares on the Home Screen very fast, it changes color, it's
+     almost as if it highlights it? It highlights words on the screen if I try to". A quick run of clicks is a double/triple click, which
+     selects: the flare's art went blue and the words beside it were picked up. The whole planet system (the sphere and every flare)
+     takes no selection, no long-press menu and no tap flash. */
+  .cosmic-hero-wrap, .cosmic-hero-wrap *{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+  .cosmic-hero-wrap ::selection, .cosmic-hero-wrap::selection{ background:transparent; color:inherit; }
   /* A short defensive fade specifically on this element, separate
      from the rest of the panel's own fade \u2014 the sphere's texture
      relies on an SVG filter (feTurbulence/feDisplacementMap), which
@@ -54773,6 +54779,10 @@ new MutationObserver(() => {
    press blurred it (a style pass in the press), and every screen mount blurred it again and ran the keyboard unwind's four passes.
    Traced with the iPhone layer on, at 4x CPU: ~35ms of every tab tap. */
 const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|reset|range|color|file|image|hidden)$/i.test(el.type || "")));
+/* (384 r17) a second or third click in a row on the planet system or a flare starts a text selection in a desktop browser: it never does */
+document.addEventListener("mousedown", (e) => {
+  if(e.detail > 1 && e.target && e.target.closest && e.target.closest(".cosmic-hero-wrap, .cosmic-icon-badge, .cosmic-flare-dot")) e.preventDefault();
+}, true);
 document.addEventListener("pointerdown", (e) => {
   const a = document.activeElement;
   if(!isTextEntry(a)) return;
