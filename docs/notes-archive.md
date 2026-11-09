@@ -36962,3 +36962,57 @@ Madison: "the academy firework effect where most of it comes off screen.. and th
 - Measured: on a 17 Pro Max the back button's top was 41.6 and the chat button's 21.6 (the 384 ".6rem meet in the middle" was arithmetic on an older nav), and they sat 20 / 24px in from their edges; on an iPad 44px against 52px.
 - `alignNavChat()` (a MutationObserver on #stage's children, two frames after each mount, and on resize) measures the round back button and sets `--navchat-top` (level with it, centred for any size difference) and `--navchat-right` (the back button's left inset) on body with `.navchat-aligned`; without a back button the class comes off and the chat button is in its own place. From 40rem the back button is 52px, the chat button's size. During a question (`.chatdock.in-test`) nothing changes.
 - Gate: tools/check-b384-navchat.py (4 pushed screens x phone + iPad: one size, level, mirrored insets; Home restored). ALL PASS; FAILS on the previous build (21).
+
+### Nov 9: the unit card - a status strip, the title, the foot; a line under "Pick the units" (r8-units, cut from claude/b384 8bb1dde; NOT on main)
+Madison, the unit picker with the "NEXT TEST / Nov 9" marks circled: "The way and the position it says next test could be better,
+secondly, how could the titles look better within the boxes for the phone? Seems a little cramped for a lot of them in the top left
+corners? ... I'm almost wondering if the '15 questions' should be centered at the bottom, would that be better? Idk up to you." Then
+the band under the Virtual Room's title circled: "Bad spacing where I circled.. should it say select your units for your virtual room
+match or something there? Idk".
+- THREE LAYOUTS drawn side by side at 440 and 375 (scratchpad h-r8-units/options.png): A the mark in the card's foot over the count;
+  B a one-line status strip at the top of every card; C everything centred, the badge moved up over the title. B chosen: the strip
+  holds the mark on the left and the picked dot on the right on the same line, so a title never moves for carrying the mark AND the
+  dot never shares a line with a word (on an iPhone SE the previous build's dot sat on a word of "Arrest, Search, and Seizure",
+  "Sexual Assault and Family Violence" and several Fire Code titles - measured). A put the mark next to the count (two grey/amber lines in the foot read as one block) and
+  left the dot over the title's first line; C moved the badge off round 32's bottom-right ("the unit cards would look better if the
+  badge was in the bottom right") and a centred 3-line title read loose.
+- THE COUNT stays bottom-left, flush with the title: the badge holds the bottom-right, so a centred count sits between an empty left
+  and the badge, and at 375 "340 questions" centred runs into it. On a tablet the hundo bar (or Fire Code's "Badge: get 100% once")
+  has a fixed row just ABOVE the count (--uc-bar 1.15rem, empty on an earned card), so every count is on the card's floor and on one
+  baseline - before, a card still working on its badge had its count 18px above a found card's. (First try put the bar's row under
+  the count; check-b326-f's 327z15 round 33 leg - a found card's count "closest to the bottom border" - caught it.)
+- THE MARK: "Next test · Nov 16" on one line, sentence case, the calendar's test amber with its dot; no box, so it cannot read as a
+  button; .pick-nexttest keeps its two spans (the separator is CSS). THE TITLE: .95rem / 1.26 on a phone (.86 at <=399px, .8 at
+  <=359px, 1.1rem from 40rem), text-wrap:balance, 16px in (14 at 375). A hyphenated word is kept whole (fillUnitTitle wraps it in
+  a nowrap .pname-word; textContent unchanged): "Hard-of-Hearing", "TCIC-TLETS", Fire Code's "Water-Reactive", "Agro-Industrial,"
+  and "Dust-Producing" broke across lines; a line may still break at an em dash ("Systems—Noncompliant").
+- CSS: one block at the end of the main <style> ("THE UNIT CARD, ROUND 8"), html[data-theme][data-layout] body #stage .picks >
+  label.pick, so it outranks every earlier layer (the 328 grid-template-areas !important and the 383/384 dot rules included).
+  Variables --uc-strip / --uc-bar / --uc-pt / --uc-pr / --uc-dot; the dot's top is computed onto the strip's centre line.
+- COST: the strip adds ~11px to every card at 440 (154 -> 165). Fire Code's cards are as tall as Appendix H (seven lines), as before
+  (one height for all cards, 327z5): 189 -> 222 at 440.
+- THE LINE UNDER THE TITLE: the Virtual Room's grey "UNITS" caption is gone; a centred .cal-sub says "Choose the units for this
+  room's match." ("Change the units ..." when editing; Fire Code's wording pass makes it chapters). The search row has 1rem above
+  the grid (was .7rem, 11px) - Choose your mode measures 14 / 13px nav -> line -> cards; this screen is 12 / 16 / 16. The ordinary
+  picker takes the same line in its mode's words ("Choose the units for this drill." / "this mock test." / "this game." / "to
+  review."), over the mode chip.
+- Gate: tools/check-b384-unitcards.py (17 Pro Max, SE, iPad Pro 11"; academy and Fire Code; the Virtual Room's screen and the
+  ordinary picker; every third unit on the next test; Select all for the picked legs).
+- Gates brought up to date: check-b382-units (5) sampled a picked and an unpicked card's fill at a fixed 55-62% of the card, which
+  under the strip lands on a three-line name ("51.7 vs 125.4"); it now samples the band between both names and both counts, read
+  off the page.
+- RESULTS (one at a time; the machine shared with other sessions, so three runs lost their browser and were re-run):
+  check-js ALL PASS; check-b384-unitcards ALL PASS (99). --against 8bb1dde FAILS 53: (1) 9/9 runs (hyphenated words broken:
+  "Hard-of-Hearing", "TCIC-TLETS", "Dust-Producing" ...; 13px insets on an SE), (2) 9/9 (the mark wedged between the title and
+  the count), (3) 9/9 (two lines; at 375 at two heights), (4) 2/9 (iPad: counts 126 / 144), (6) 2/6 (SE: the dot on a word),
+  (8a) 6/9, (8b) 9/9, (8c) 6/6 (11.2px). Passing on both, as invariants: (5) one height per row, (7) 44px, (9) no page errors.
+  check-b382-units ALL PASS; check-b326-f unit cards ALL PASS (its other failures - the lobby's "Waiting for everyone" at 4.08:1
+  on all 8 themes - are the same on 8bb1dde); check-b328-level1, check-b384-searchink, check-b384-badgetwins, check-b384-glitches
+  ALL PASS; check-b325-e, check-b327-d fail identically on 8bb1dde (7 / 15); check-b327z5-b 1 (the start sheet's scrolled drag,
+  one of the previous build's 3). check-behaviour (b240_units, b235b, penal_versions, b313_sheet2, b314_dragselect, b323u_units,
+  b323v_vroom, b324q_penal): the same 14 failures as 8bb1dde. check-centering --quick ALL PASS; full on units / units/* /
+  virtual room/setup (4 sizes, both classes, 44 screens) ALL PASS. sweep-layout 144/144 clean. Console after load on both screens,
+  both classes, phone and iPad: nothing (the two blocked Firebase loads at boot aside).
+- Sheets (scratchpad h-r8-units): options.png (A / B / C at 440), before-after.png (academy and Fire Code, 440x956 and 834x1194).
+- NOT confirmable in Chromium: text-wrap:balance needs Safari 17.5+ (older iOS wraps greedily - still no mid-word break, just
+  less even lines); how the 11px amber line reads on a real phone in sunlight; the safe-area insets above the title line.
