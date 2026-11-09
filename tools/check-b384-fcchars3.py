@@ -131,7 +131,7 @@ N = r["names"]
 # (384 round 12, r9-chars) The Irons became the Fire Marshal and Eclipse the Firebird; they join the names that must be gone
 chk("A. valkyrie is Undercover, timekeeper the Fire Marshal, genesis the Firebird (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
     (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Undercover", "Fire Marshal", "Firebird"), N)
-chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator", "The Irons", "Eclipse", "Pulsar", "Quasar"} & set(N.values()), N)
+chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator", "The Irons", "Eclipse", "Pulsar"} & set(N.values()), N)
 I = r["insp"]
 fb = lum(I["feltBase"]) if I.get("feltBase") else 1
 # (384 r6) the felt cowboy hat became the navy duty cap ("Fire inspectors wear police gear"): still darker than round 6's .52, and not
@@ -153,7 +153,7 @@ chk("D. ...two arms from the helm's sides up to the notched crown (%s vertices, 
 Sl = r["spill"]
 chk("E. the ooze spans the drum's width (%.1f to %.1f, the drum is 7.8 to 32.2)" % (Sl["x0"], Sl["x1"]), Sl["x0"] <= 8.3 and Sl["x1"] >= 31.7, Sl)
 chk("E. every drip (%s of them) starts up inside the ooze, at least 1.5 units over the rim (least: %.2f)" % (Sl["n"], Sl["minUp"]), Sl["n"] >= 4 and Sl["minUp"] >= 1.5, Sl)
-# (384 round 12, r9-chars) F and G are RETIRED: Quasar, Pulsar and Eclipse are replaced (Recon, Whiteout, Firebird), round 9's Undercover is
+# (384 round 12, r9-chars) F and G are RETIRED: Quasar, Pulsar and Eclipse are redrawn (Quasar as build 383's recon figure, Whiteout, Firebird), round 9's Undercover is
 # redrawn and The Irons is the Fire Marshal. check-b384-r9-chars asserts the new ones, each flare on its character among them.
 print("RETIRED F, G (round 12 replaced those characters; see check-b384-r9-chars)")
 print("\nALL PASS" if ok else "\nFAILURES")

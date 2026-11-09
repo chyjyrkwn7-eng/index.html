@@ -31,7 +31,7 @@
   it FAILS on 130a41c, where they still match.
 
   ROUND 12 (r9-chars, Madison's picks from the version sheet) moved the goalposts this gate was written to: Fire Code's four secret flares
-  are now Nebula (round 5's face), Recon, Whiteout and Firebird, The Irons is the Fire Marshal (a person), and the Drone Pilot and Star
+  are now Nebula (round 5's face), Quasar (build 383's recon drawing), Whiteout and Firebird, The Irons is the Fire Marshal (a person), and the Drone Pilot and Star
   Ranger are round 3's again. 1, 2c, 2d, 3 and 7 follow that; 5 is retired (check-b384-r9-chars has those characters).
 
   python3 tools/check-b384-r5-chars.py [--against OLD/index.html]       (every line group must FAIL on 7b65a06; the faces legs also on c1d224b)
@@ -172,7 +172,7 @@ def faced(C): return {i for i, c in C.items() if c["eyes"] or c["mouth"] or c["p
 for key, R, expect in (("ifc", IFC, set()), ("academy", ACA, {"valkyrie", "voidwalker"})):
     C = R["chars"]; bare = {i for i, c in C.items() if c["eyes"] == 0 and c["mouth"] == 0 and c["pairs"] == 0}
     chk("1. [%s] the characters with no face mark at all are only %s (found %s)" % (key, sorted(expect), sorted(bare)), bare == expect, {"extra": sorted(bare - expect), "missing": sorted(expect - bare)})
-MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Recon", "singularity": "Whiteout", "genesis": "Firebird"},   # (round 12 names)
+MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Firebird"},   # (round 12 names)
         "academy": {"hive": "Hive", "genesis": "Genesis"}}
 for key, R in (("ifc", IFC), ("academy", ACA)):
     C = R["chars"]
@@ -214,13 +214,13 @@ bad = [i for i in FL if CI[i]["face"]["coarse"] == CI["astronaut"]["face"]["coar
 chk("2c. ...and none of them wears Toxic Spill's face either (%s)" % bad, not bad, bad)
 
 # ---- 3. each one's own face ----
-# (384 round 12, r9-chars) the four flares' own faces: Nebula round 5's (two lit eyes, orange and gold, and a small mouth), Recon build 383's
+# (384 round 12, r9-chars) the four flares' own faces: Nebula round 5's (two lit eyes, orange and gold, and a small mouth), Quasar build 383's recon figure's
 # (two narrow violet eyes in the slot of the wrap, no mouth), Whiteout two pale lenses of light behind the goggles (no mouth: the gaiter),
 # Firebird two round amber eyes and a beak. check-b384-r9-chars measures the rest of each.
 f = CI["voidwalker"]["face"]
 chk("3. Nebula: two lit eyes (%s), orange and gold (%s), a small mouth (%s)" % (f["clusters"], f["lamps"], f["mouth"]), f["clusters"] == 2 and {"h0", "h1"} <= set(f["lamps"]) and f["mouth"] not in ("none",) and f["mouth"].startswith("msmall"), f)
 f = CI["umbra"]["face"]
-chk("3. Recon: violet eyes (%s, %s), no mouth (%s)" % (f["lamp"], f["kind"], f["mouth"]), f["lamp"] == "h6" and f["mouth"] == "none", f)
+chk("3. Quasar (the recon figure): violet eyes (%s, %s), no mouth (%s)" % (f["lamp"], f["kind"], f["mouth"]), f["lamp"] == "h6" and f["mouth"] == "none", f)
 f = CI["singularity"]["face"]
 chk("3. Whiteout: two pale lenses of light (%s, %s, %s eyes), no mouth (%s)" % (f["kind"], f["lamp"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["lamp"] in ("white", "h4", "h5") and f["mouth"] == "none", f)
 f = CI["genesis"]["face"]

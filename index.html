@@ -59268,10 +59268,10 @@ var IFC_CHAR_LOOK = {
      and fcRanger; Star Ranger is Zenith's now, the last of them.
      384 round 12 (r9-chars): Madison picked a version of each from the version-history sheet - the Inspector is build 383's
      Investigator with glasses and a shaved-down beard, the Chief round 3's western chief in a navy button-up, the Drone Pilot and
-     the Star Ranger round 3's, the Nebula round 5's face, the Recon (Umbra's) build 383's; Undercover, the Fire Marshal (was The
+     the Star Ranger round 3's, the Nebula round 5's face, the Quasar (Umbra's) build 383's hooded recon figure, keeping the name Quasar; Undercover, the Fire Marshal (was The
      Irons: "think of an entire new character", a person), the Whiteout (a blizzard, was Pulsar) and the Firebird (was Eclipse) are new */
   voidwalker:  ["fcnebula",   "Nebula",   "#F97316"],
-  umbra:       ["fcrecon",    "Recon",    "#8B5CF6"],
+  umbra:       ["fcrecon",    "Quasar",   "#8B5CF6"],
   singularity: ["fcwhiteout2", "Whiteout", "#9FDCFF"],
   genesis:     ["fcfirebird", "Firebird", "#FF5CA8"],
   astral:      ["fcmoonranger",  "Moon Ranger",    "#9CC0FF"],
@@ -59731,28 +59731,36 @@ var IFC_CHAR_DRAW = {
      just some. Like a shaved down beard." / "Our button ups are navy." So this is build 383's Investigator (fcinvest2) as the Inspector: the dark
      brown felt cowboy hat with its tan band, brown skin, the uniform button-up (navy, short-sleeved, its collar points, placket and silver buttons, the
      darker navy epaulettes and pocket flaps), the agency's gold star badge on the chest, a gold nameplate, the gold-rimmed shoulder patch and the
-     radio mic on the strap; plus round 7's (D's) rectangular glasses and its clipboard held up in his left hand, and a beard cut down to a shadow
+     radio mic on the strap, and (the lead, after Madison's "Our vests are blue and not black") the banners' blue plate carrier over the shirt; plus round 7's (D's) rectangular glasses and its clipboard held up in his left hand, and a beard cut down to a shadow
      (a short boxed stubble along the jaw, chin and lip with a clean edge on the cheeks; no full beard). This is THE inspector look for the class:
      the banners that show him follow these colours (see the notes). */
   fcinspector5(k){
     /* the one inspector look, shared with every Fire Code banner that shows him (FB_KIT, r9-banners): these values are that kit's */
     const NAVY = ["#34497A", "#1E2C4E", "#121B33"], DARK = "#121B33", SKIN = ["#C2865E", "#A86C48", "#6E4228"], FELT = ["#76604C", "#4A382A", "#251A12"];
     fcCoat(k, { coat: NAVY, neck: SKIN, extra(){
-      /* the open neck, the collar points, the placket and its buttons */
+      /* the open neck and the short sleeves' seams over the shoulders */
       k.add("path", { d: "M17.4 28.2 L20 31 L22.6 28.2 Z", fill: "#0B111F" });
-      /* the short sleeves' seams over the shoulders */
       k.add("path", { d: "M5.6 36.4 Q6.6 32.2 9.6 30.4 M34.4 36.4 Q33.4 32.2 30.4 30.4", fill: "none", stroke: "#0B111F", "stroke-width": ".35", opacity: ".6" });
-      k.add("path", { d: "M14.4 28.4 L16.8 27.6 L20 31.4 L17.4 32.8 Z M25.6 28.4 L23.2 27.6 L20 31.4 L22.6 32.8 Z", fill: k.headGrad("#4A62A0", "#34497A", "#1E2C4E"), stroke: "#121B33", "stroke-width": ".2", "stroke-linejoin": "round" });
+      /* THE VEST (lead, from Madison: "Our vests are blue and not black"; the banners' plate carrier, FB_KIT vest #2D5DAA, vestD #21488A, vestL
+         #6A98E0, vestE #10285A): the cummerbund round the sides, the shoulder straps, the front plate with its shaded side and lit edge, two rows of
+         webbing, the dark name tape and ID panel with their light lettering, the gold shield with the agency's star */
+      const VD = "#21488A", VE = "#10285A", VL = "#6A98E0", WEB = "#1B3F7C", PATCH = "#0D1730", PT = "#E4EAF2";
+      k.add("path", { d: "M6 35.4 L34 35.4 L34.6 40 L5.4 40 Z", fill: VD, stroke: VE, "stroke-width": ".2" });
+      k.add("path", { d: "M11 30.6 L14.4 28.8 L16.6 31.6 L13.6 32.6 Z M29 30.6 L25.6 28.8 L23.4 31.6 L26.4 32.6 Z", fill: VD, stroke: VE, "stroke-width": ".2", "stroke-linejoin": "round" });
+      k.add("path", { d: "M13.4 31.8 Q13.4 31 14.2 31 L25.8 31 Q26.6 31 26.6 31.8 L26.8 40 L13.2 40 Z", fill: k.headGrad(VL, "#2D5DAA", VD), stroke: VE, "stroke-width": ".25", "stroke-linejoin": "round" });
+      k.add("path", { d: "M24.6 31 L25.8 31 Q26.6 31 26.6 31.8 L26.8 40 L24.8 40 Z", fill: VE, opacity: ".35" });
+      k.add("path", { d: "M13.8 31.8 L13.6 39.6 M11.4 30.6 L14.2 29.2", fill: "none", stroke: VL, "stroke-width": ".35", opacity: ".85", "stroke-linecap": "round" });
+      [37.6, 39].forEach(y => k.add("path", { d: "M14 " + y + " h12.2 M6.6 " + y + " h5.6 M27.8 " + y + " h5.8", stroke: WEB, "stroke-width": ".55", "stroke-dasharray": "1.1 .4" }));
+      k.add("rect", { x: 14.4, y: 31.7, width: 4.8, height: 1.1, fill: PATCH });
+      k.add("path", { d: "M14.8 32.25 h4", stroke: PT, "stroke-width": ".3", "stroke-dasharray": ".5 .25", opacity: ".6" });
+      k.add("rect", { x: 14.2, y: 34, width: 11.8, height: 2.3, fill: PATCH, stroke: "#4A6AA8", "stroke-width": ".15" });
+      k.add("path", { d: "M15.4 35.15 h4 M20.4 35.15 h4.4", stroke: PT, "stroke-width": ".55", "stroke-dasharray": ".42 .3", opacity: ".7" });
+      fcBadge(k, 23.6, 32.6, 2.5, { mark: "none", seal: "#16244E" });
+      { let d = ""; for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? .22 : .55; d += (i ? "L" : "M") + fcF(23.6 + Math.cos(a) * r) + " " + fcF(32.75 + Math.sin(a) * r) + " "; }
+        k.add("path", { d: d + "Z", fill: "#FFE7A0" }); }
+      /* the shirt's collar points lying over the vest's neck */
+      k.add("path", { d: "M14.4 28.4 L16.8 27.6 L20 31.4 L17.4 32.6 Z M25.6 28.4 L23.2 27.6 L20 31.4 L22.6 32.6 Z", fill: k.headGrad("#4A62A0", "#34497A", "#1E2C4E"), stroke: "#121B33", "stroke-width": ".2", "stroke-linejoin": "round" });
       k.add("path", { d: "M15 28.6 L19.2 31.4 M25 28.6 L20.8 31.4", stroke: "#9FB8F0", "stroke-width": ".2", opacity: ".45" });
-      k.add("path", { d: "M20 31.4 L20 40", stroke: "#121B33", "stroke-width": ".35" });
-      [34, 36.6, 39.2].forEach(y => k.add("circle", { cx: 20.6, cy: y, r: .3, fill: "#C9CED6" }));
-      /* epaulettes and pocket flaps, a shade darker */
-      k.add("path", { d: "M8.6 31.4 L14.2 28.8 L14.8 29.9 L9.4 32.6 Z M31.4 31.4 L25.8 28.8 L25.2 29.9 L30.6 32.6 Z", fill: DARK });
-      k.add("path", { d: "M22.8 34.6 L27.2 34.6 L27 35.7 L23 35.7 Z", fill: DARK });
-      /* the star badge over the pocket, the nameplate under it, the patch on the right sleeve */
-      fcStarBadge(k, 25, 32.4, 1.6);
-      k.add("rect", { x: 23.1, y: 36.3, width: 3.8, height: 1, rx: .2, fill: "#F2C14E" });
-      k.add("path", { d: "M23.5 36.8 h3", stroke: "#5A3E0A", "stroke-width": ".3", "stroke-dasharray": ".5 .3" });
       fcPatch(k, 32, 33.6, 3.2, 26, { fill: DARK, rim: "#F2C14E" });
       fcMic(k, 28.6, 30);
       /* the clipboard, held up against his chest in his left hand (round 7's board): the hardboard and its chrome clip, the form with its
@@ -60723,7 +60731,7 @@ if(IFC_ART_ON){
     /* every one is drawn on the same frame: cap or helmet top to chest. Round 2 sets them a little
        higher than round 1 (1.4) so the badge, patches and gear on the chest are in the circle;
        the sprinkler's crown and the drone overhead keep the old seat */
-    const seat = { fcsprinkler2: 1.4, fcdrone2: .6, fcstrobe: .2 }[look[0]];
+    const seat = { fcsprinkler2: 1.4, fcdrone2: .6, fcstrobe: .2, fcinspector5: -1.6 }[look[0]];
     /* the drone pilot is drawn a little smaller so the drone over the head is whole in the circle */
     if(look[0] === "fcdrone2") AVATAR_ART_SCALE[id] = .86;
 

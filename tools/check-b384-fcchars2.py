@@ -8,7 +8,7 @@
   "I don't like the secret flare characters from ifc, I love the academy ones though, we need to follow the academy
    theme but just come up with new ones.."
 
-  (384 round 12, r9-chars: the four are Nebula, Recon, Whiteout and Firebird now, and the timekeeper id is the Fire Marshal; A and B follow.)
+  (384 round 12, r9-chars: the four are Nebula, Quasar (build 383's hooded recon drawing, his name kept), Whiteout and Firebird now, and the timekeeper id is the Fire Marshal; A and B follow.)
   A. the four secret flares are Nebula, Quasar, Pulsar and Solstice: four new drawings (no helmet or hat, no human skin),
      each with the parts every character has, no svg filter, a glow that is the one the character table carries; Nebula's
      gas is the three flare colours (red, orange, yellow)
@@ -71,9 +71,9 @@ def lum(h):
 chk("the page is the Fire Code class (%s), no page errors (%s)" % (r["cls"], errs[:2]), r["cls"] == "ifc" and not errs, errs)
 C = r["ch"]
 # A
-want = {"voidwalker": "Nebula", "umbra": "Recon", "singularity": "Whiteout", "genesis": "Firebird"}   # (384 round 12, r9-chars: Madison's picks)
+want = {"voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Firebird"}   # (384 round 12, r9-chars: Madison's picks)
 names = {i: C[i]["name"] for i in want}
-chk("A. the four secrets are Nebula, Recon, Whiteout and Firebird (round 12: Recon back from build 383, Whiteout for Pulsar, Firebird for Eclipse) (%s)" % names, names == want, names)
+chk("A. the four secrets are Nebula, Quasar, Whiteout and Firebird (round 12: Quasar is build 383's recon drawing again, Whiteout for Pulsar, Firebird for Eclipse) (%s)" % names, names == want, names)
 chk("A. each is a Fire Code drawing with a scene, and no helmet or hat (the Whiteout's parka hood is not one) (kinds %s)" % {i: C[i]["kind"] for i in want},
     all(C[i]["kind"].startswith("fc") and not C[i]["kind"].startswith("fcsq") and C[i]["scene"] and (not C[i]["hat"] or C[i]["hat"] == "hood") for i in want), C)
 chk("A. the four are four different drawings", len({C[i]["hash"] for i in want}) == 4)

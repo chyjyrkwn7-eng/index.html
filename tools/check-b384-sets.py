@@ -181,7 +181,7 @@ chk("(2) the rangers are different drawings", len({F["c"][i] for i in TRIO}) == 
 # (3)
 # (384 r5: "I don't like the secret flare characters from ifc ... follow the academy theme but come up with new ones" - the
 # squad is withdrawn: the four are celestial beings now, so none wears a hat or a helmet, and they are four different drawings)
-# (384 round 12) Recon (back from build 383) and the Whiteout are figures again; the Whiteout's parka hood is a hood, not a hat
+# (384 round 12) the Quasar (build 383's recon figure again) and the Whiteout are figures again; the Whiteout's parka hood is a hood, not a hat
 noh = [i for i in SQUAD if [h for h in lk[i]["hats"] if h != "hood"]]
 chk("(3) none of the four wears a helmet or a hat (a parka hood is neither) (hats: %s)" % noh, not noh, {i: lk[i]["hats"] for i in SQUAD})
 chk("(3) the four are four different drawings", len({F["c"][i] for i in SQUAD}) == 4)

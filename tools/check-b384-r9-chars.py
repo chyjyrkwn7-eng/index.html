@@ -10,7 +10,7 @@
   Chief      - E (white cowboy hat, grey moustache, bolo), in a navy button-up.
   Undercover - "redo, try that one again": a plainclothes officer (leather jacket, badge on a chain, aviators, earpiece, crew cut).
   The Irons  - "I hate this one, think of an entire new character" / "We are doing weapons as characters?": the Fire Marshal, a person.
-  Drone Pilot, Star Ranger - E.   Nebula - C.   Quasar (umbra) - B (build 383's Recon).
+  Drone Pilot, Star Ranger - E.   Nebula - C.   Quasar (umbra) - B (build 383's hooded recon figure; the name stays Quasar).
   Pulsar     - "do whiteout but try it again. A blizzard type character": the Whiteout.
   Eclipse    - "I don't like eclipse at all. Try something else": the Firebird.
 
@@ -18,9 +18,9 @@
   A. THE ACADEMY IS UNTOUCHED: every academy character byte for byte cd82880's.
   B. IN FIRE CODE THE KEPT ONES ARE UNTOUCHED: the starters, the eight kept challenge characters and the seven rank characters byte for byte
      cd82880's; and every one of the eleven picked characters DIFFERS from cd82880's (F).
-  C. THE RESTORED ONES ARE THEIR VERSIONS: the Drone Pilot and the Star Ranger byte for byte ea31d43's (E); Recon is 478a689's drawing (B)
+  C. THE RESTORED ONES ARE THEIR VERSIONS: the Drone Pilot and the Star Ranger byte for byte ea31d43's (E); Quasar is 478a689's recon drawing (B)
      with only its flare marked to stay lit in the secret-flare scene; Nebula keeps F's body and cloud and wears d096932's face (C).
-  D. THE INSPECTOR: a dark brown felt cowboy hat, brown skin, a navy short-sleeved shirt, glasses, the clipboard, the star badge, and a heavy stubble
+  D. THE INSPECTOR: the banners' blue plate carrier over his shirt ("Our vests are blue and not black"), a dark brown felt cowboy hat, brown skin, a navy short-sleeved shirt, glasses, the clipboard, the star badge, and a heavy stubble
      (jaw, chin and lip; not a solid beard) with no teeth - in the banners' inspector colours (FB_KIT, r9-banners).
   E. THE SMOKE DIVER'S HELMET carries a badge with a star, and no Maltese cross (the fire department's mark) anywhere on it; still navy.
   F. THE CHIEF: a white cowboy hat, a grey moustache, the bolo's turquoise, the star, a navy shirt.
@@ -32,7 +32,7 @@
      groups); THE FIREBIRD: wings, two round eyes with pupils, a beak in the mouth group, the core flare at its breast.
   J. EVERY SECRET'S FLARE IS ON ITS CHARACTER (inside the figure's own drawn shapes), and every changed drawing has a head, eyes, closed eyes,
      a mouth group, special parts and no svg filter.
-  K. THE NAMES: Inspector, Smoke Diver, Chief, Undercover, Fire Marshal, Drone Pilot, Nebula, Recon, Whiteout, Firebird, Star Ranger.
+  K. THE NAMES: Inspector, Smoke Diver, Chief, Undercover, Fire Marshal, Drone Pilot, Nebula, Quasar, Whiteout, Firebird, Star Ranger.
 
   python3 tools/check-b384-r9-chars.py [--against OLD/index.html]      (B's differs, C to K FAIL on cd82880)
   python3 tools/check-b384-r9-chars.py --write-prev                     (re-reads cd82880 / ea31d43 / 478a689 from git into the .prev.json)
@@ -61,7 +61,7 @@ KEPT = ["ghost", "grizzly", "alien", "clown", "marksman", "astronaut", "hacker",
 RANKS = ["forge", "lunar", "solar", "tempest", "frost", "oracle", "inferno"]
 PICKED = ["detective", "masked", "poseidon", "valkyrie", "timekeeper", "ronin", "voidwalker", "umbra", "singularity", "genesis", "zenith"]
 NAMES = {"detective": "Inspector", "masked": "Smoke Diver", "poseidon": "Chief", "valkyrie": "Undercover", "timekeeper": "Fire Marshal", "ronin": "Drone Pilot",
-         "voidwalker": "Nebula", "umbra": "Recon", "singularity": "Whiteout", "genesis": "Firebird", "zenith": "Star Ranger"}
+         "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Firebird", "zenith": "Star Ranger"}
 
 SNAP = r"""(detail) => {
   document.getElementById('splashscreen')?.remove();
@@ -112,7 +112,9 @@ SNAP = r"""(detail) => {
         hatPaths: hats.length ? q('[class*="cx-fc-hat-"] path, .cx-fx-hat path').map(e => ({ fill: (e.getAttribute('fill') || '').toUpperCase(), stroke: (e.getAttribute('stroke') || '').toUpperCase(), n: (e.getAttribute('d') || '').split(/[LQ]/).length })) : [],
         /* the vest: two-panel body shapes (two subpaths) filled with a gradient */
         panels: q('.cx-body path').filter(e => (e.getAttribute('d') || '').split('M').length === 3 && /^url/.test(e.getAttribute('fill') || '')).map(e => base(s, e)),
-        rotGroups: q('g[transform*="rotate"]').length };
+        rotGroups: q('g[transform*="rotate"]').length,
+        /* the blue plate carrier: a body shape filled with the banners' vest gradient (#2D5DAA at its middle stop), edged #10285A */
+        plate: q('.cx-body path').filter(e => (base(s, e) || '').toUpperCase() === '#2D5DAA' && (e.getAttribute('stroke') || '').toUpperCase() === '#10285A').map(e => box(e)) };
     }
     s.remove();
   });
@@ -165,7 +167,7 @@ chk("B. ...and each of the eleven he picked a version for differs from cd82880's
 chk("C. the Drone Pilot and the Star Ranger are ea31d43's drawings byte for byte (round 3's: %s, %s)" % (H["ronin"] == PREV["E"].get("ronin"), H["zenith"] == PREV["E"].get("zenith")),
     H["ronin"] == PREV["E"].get("ronin") and H["zenith"] == PREV["E"].get("zenith"), {"ronin": (H["ronin"], PREV["E"].get("ronin")), "zenith": (H["zenith"], PREV["E"].get("zenith"))})
 du = D["umbra"]
-chk("C. Recon is build 383's drawing (kind %s), its flare marked to stay lit in the secret-flare scene (%s)" % (du["kind"], [g for g in du["groups"] if "flare" in g]),
+chk("C. Quasar is build 383's recon drawing (kind %s), its flare marked to stay lit in the secret-flare scene (%s)" % (du["kind"], [g for g in du["groups"] if "flare" in g]),
     du["kind"] == "fcrecon" and "cx-fx cx-fx-flare cx-fx-sqlight" in du["groups"] and "#8B5CF6" in du["strokes"] and "#D8CCFF" in du["fills"], du["groups"])
 dn = D["voidwalker"]
 lit = [c for c in dn["eyeCircles"]]
@@ -186,6 +188,9 @@ chk("D. the Inspector wears a dark brown felt cowboy hat (%s, hue %.0f, lightnes
 # the banners' inspector kit (FB_KIT, r9-banners): skin #A86C48, navy button-up #1E2C4E, glasses #0B0E14, stubble #22140C, felt #4A382A
 chk("D. ...the banners' inspector: skin #A86C48 (%s), the navy button-up #1E2C4E (%s), the rectangular glasses #0B0E14 (%s), the clipboard's ticks (%s) and the star badge (%s)" % ("#A86C48" in d["gstops"], d["shirt"], "#0B0E14" in d["strokes"], "#2E9A5A" in d["strokes"], "#6E4A0C" in d["strokes"]),
     "#A86C48" in d["gstops"] and (d["shirt"] or "").upper() == "#1E2C4E" and navy(d["shirt"]) and "#0B0E14" in d["strokes"] and "#2E9A5A" in d["strokes"] and "#6E4A0C" in d["strokes"], d)
+pl = d["plate"]
+chk("D. ...the banners' BLUE plate carrier over the shirt (%d plate, %s; vest #2D5DAA edged #10285A, its straps and cummerbund #21488A, webbing #1B3F7C), lighter than the navy shirt" % (len(pl), [[round(v, 1) for v in b] for b in pl]),
+    len(pl) == 1 and pl[0][2] - pl[0][0] > 10 and pl[0][1] < 32 and "#21488A" in d["fills"] and "#1B3F7C" in d["strokes"] and hsl("#2D5DAA")[2] > hsl(d["shirt"])[2] and hsl("#2D5DAA")[1] > .45, d["plate"])
 st = d["stubble"]
 chk("D. ...a shaved-down beard: a heavy stubble on the jaw, chin and lip (%d shapes, opacity %s; at most .35, not a solid beard) and no teeth" % (len(st), [x["op"] for x in st]),
     len(st) >= 2 and all(0 < x["op"] <= .35 for x in st) and max(x["box"][3] for x in st) > 29.5 and not d["mouthWhite"], st)
