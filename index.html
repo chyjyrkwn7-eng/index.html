@@ -62608,17 +62608,36 @@ function drawAvatarCharSVG(charId){
       .forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#9FF6E8", opacity: ".6" })));
     close();
     close();
-    /* (384 r7 eyes) beside the new Solar, Lunar and Inferno the r6 eye (a round iris, a jagged flick off the corner that read
-       as a liner wing) looked soft, so Tempest takes the rulers' glare (glareEye) and keeps its twist: the storm in the pupil -
-       a teal iris round a dark lightning-bolt slit - the lid band in deep sea green. The flick went. The brows come down
-       harder towards the nose. */
+    /* (384 r7 eyes, gone in r8) Tempest wore the rulers' shared glare (glareEye) with a bolt pupil; r6's corner flick had read as
+       a liner wing. Beside Forge, Lunar and Solar it was one eye in four colours. */
+    /* (384 r8 eyes) "The other 4 look the same though": Tempest's own eye - THE STRIKE. The upper lid is cut like a lightning
+       bolt: from the nose it climbs, drops back in a notch, and climbs again to a high outer point; a dark sea-green lid band
+       follows the zigzag, so the cut shows even small. A teal iris with a bright crackle round its lower edge and the dark bolt
+       for a pupil. And it is lopsided on purpose: the left brow drives straight down to the nose, the right one is cocked -
+       peaked high, then dropping hard - and the eye under it sits a little more open. At 26px: the one ruler that is not
+       symmetrical. */
     open("cx-eyes");
-    [[16.8, 18, -1], [23.2, 18, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.1, tilt: .2, up: .44, dn: .5, lidT: .3,
-      sclera: "#F2FFFD", lid: "#16423E", low: "#1E6F68", iris: "#13A390", ring: "#0A4A44", irisR: .4, pupil: "bolt", pc: "#04241F" }));
+    [[16.8, 18, -1, 0], [23.2, 18, 1, .1]].forEach(([x, y, o, lift]) => {
+      const f = n => +n.toFixed(2), X = u => f(x + o * u), Y = v => f(y + v), P = (u, v) => X(u) + " " + Y(v);
+      /* inner corner (low), the bolt: up, a notch back down, up to the outer point; a blunt outer end; the lower lid */
+      const I = P(-1.22, .16), A = P(-.5, -.44 - lift * .5), N = P(-.12, -.1 - lift * .5), T = P(.86, -.66 - lift), E = P(1.26, -.36 - lift * .5);
+      const eye = "M" + I + " L" + A + " L" + N + " L" + T + " L" + E + " Q" + P(.62, .3) + " " + I + " Z";
+      svg.appendChild(mk("path", { d: eye, fill: "#F2FFFD", class: "cx-eye-white" }));
+      const g = eyeClip(eye), cx = X(.02), cy = Y(-.06);
+      g.appendChild(mk("circle", { cx, cy, r: .42, fill: "#13A390", stroke: "#0A4A44", "stroke-width": ".12", class: "cx-iris" }));
+      g.appendChild(mk("path", { d: "M" + f(+cx - .3) + " " + f(+cy + .16) + " Q" + cx + " " + f(+cy + .44) + " " + f(+cx + .3) + " " + f(+cy + .16), fill: "none", stroke: "#9DFFF0", "stroke-width": ".09", "stroke-linecap": "round" }));
+      g.appendChild(mk("path", { d: "M" + f(+cx + .08) + " " + f(+cy - .38) + " L" + f(+cx - .13) + " " + f(+cy + .04) + " L" + f(+cx + .01) + " " + f(+cy + .04) +
+        " L" + f(+cx - .08) + " " + f(+cy + .38) + " L" + f(+cx + .13) + " " + f(+cy - .05) + " L" + f(+cx - .01) + " " + f(+cy - .05) + " Z", fill: "#04241F", class: "cx-pupil" }));
+      svg.appendChild(g);
+      svg.appendChild(mk("path", { d: "M" + E + " Q" + P(.62, .3) + " " + I, fill: "none", stroke: "#1E6F68", "stroke-width": ".12", "stroke-linecap": "round" }));
+      /* the lid band along the bolt: thickest at the nose, still there at the outer point, never past either end */
+      svg.appendChild(mk("path", { d: "M" + I + " L" + A + " L" + N + " L" + T + " L" + E + " L" + P(1.2, -.5 - lift * .5) + " L" + P(.84, -.82 - lift) + " L" + P(-.1, -.34 - lift * .5) +
+        " L" + P(-.48, -.68 - lift * .5) + " L" + P(-1.24, -.16) + " Z", fill: "#16423E", stroke: "#16423E", "stroke-width": ".05", "stroke-linejoin": "miter", class: "cx-lid" }));
+    });
     close();
     closedEyes([[16.8, 18.2, 1.1], [23.2, 18.2, 1.1]], "#2E6E68", .35);
     open("cx-brow");
-    svg.appendChild(mk("path", { d: "M14.7 15.6 L18.5 16.85 M25.3 15.6 L21.5 16.85", stroke: "#2E6E68", "stroke-width": ".55", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.6 15.62 L18.5 16.9 M25.5 15.5 L23.7 14.76 L21.5 15.92", fill: "none", stroke: "#2E6E68", "stroke-width": ".55", "stroke-linecap": "round", "stroke-linejoin": "miter" }));
     close();
     svg.appendChild(mk("path", { d: "M15.2 19.8 L14.6 21 L15.4 21.2 L14.8 22.4 M24.8 19.8 L25.4 21 L24.6 21.2 L25.2 22.4", fill: "none", stroke: "#2FBFAA", "stroke-width": ".32", "stroke-linecap": "round", "stroke-linejoin": "round" }));
     open("cx-mouth");
