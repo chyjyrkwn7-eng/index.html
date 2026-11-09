@@ -37689,19 +37689,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ margin-top:auto !important; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > :last-child{ margin-bottom:auto; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > :is(.vrc-modecards, .vrc-note){ translate:0 var(--vrc-shift, 0px); }
-  /* (384 r8) "these two boxes being centered does kinda make the screen feel empty though ... Should we increase the size of the
-     boxes?" - two cards where Choose your mode has four, so each is bigger: taller, a larger icon and title, the words a size up,
-     the two filling the middle of the screen rather than floating in it. */
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:14px; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ min-height:min(30vh, 230px); padding:26px 26px; justify-content:center; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitlerow{ gap:12px; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitlerow > svg{ width:30px; height:30px; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitle{ font-size:1.42rem; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecarddesc.modecarddesc{ font-size:1.05rem; line-height:1.45; margin-top:10px; }
-  @media (min-width:40rem){
-    html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ min-height:min(26vh, 260px); padding:32px 34px; }
-    html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitle{ font-size:1.6rem; }
-  }
+  /* (384 r8) the bigger cards were tried and reverted ("These boxes being bigger is not the move after all. Revert their size.") */
   /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
   html[data-layout] body #stage > .panel.vroom-finale-solo{
     display:flex; flex-direction:column; justify-content:center; gap:12px; box-sizing:border-box;

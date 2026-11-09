@@ -49,7 +49,7 @@ with sync_playwright() as pw:
             chk("(2c) %s: the cards and the Inbox note centred between that line and the tab bar (%.0f above, %.0f below)" % (lab, g["above"], g["below"]), abs(g["above"] - g["below"]) <= 4, g)
         chk("(2d) %s: the cards' contents start at the left like Choose your mode's (%s)" % (lab, [round(v) for v in g["titleIn"]]), all(v < 40 for v in g["titleIn"]), g)
         z = pg.evaluate("()=>({ note: !!document.querySelector('.screen-vroom-choice .vrc-note'), h: [...document.querySelectorAll('.vrc-modecard')].map(c=>c.getBoundingClientRect().height), sub: document.querySelector('.screen-vroom-choice > .cal-sub').getBoundingClientRect().height })")
-        chk("(2e) %s: no Inbox heads-up; a one-line description; two big cards (%s, line %.0fpx)" % (lab, [round(v) for v in z["h"]], z["sub"]), not z["note"] and z["sub"] <= 30 and all(v >= (170 if h < 700 else 200) for v in z["h"]), z)
+        chk("(2e) %s: no Inbox heads-up; a one-line description; the two cards (Choose your mode's size - the bigger cards were reverted) (%s, line %.0fpx)" % (lab, [round(v) for v in z["h"]], z["sub"]), not z["note"] and z["sub"] <= 30 and len(z["h"]) == 2, z)
         chk("(3) %s: no page errors" % lab, not errs, errs[:3])
         ctx.close()
     br.close()
