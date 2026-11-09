@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build 384 r8: the Virtual Room choice screen. (The vertical centring this gate first held was reverted - Madison: "Centering the
-virtual room stuff??? Why would you center it like that?" - its legs (1)-(2) are off; (2b) and (3) stand.)
+virtual room stuff??? Why would you center it like that?" - its legs (1)-(2) are off; (2b) and (3) stand. (2c): Madison then said "Center this" meant the cards' contents - their icon and title row and words are centred.)
 Madison, everything under the title circled: "Center this".
 On an iPhone 17 Pro Max, an iPad Pro 11" and an iPhone SE: (1) the group under the title (the line, the games, the two cards, the
 Inbox note) has as much room above it (to the title bar) as below it (to the tab bar) - 4px; on
@@ -37,6 +37,10 @@ with sync_playwright() as pw:
             const boxed=(c.backgroundColor!=='rgba(0, 0, 0, 0)' && c.backgroundColor!=='transparent') || parseFloat(c.borderTopWidth)>0;
             const tap=e.closest('button, a, [role=button], .modecard'); return boxed && !tap && parseFloat(c.borderTopLeftRadius)>=8; }).map(e=>e.className).slice(0,5); }""")
         chk("(2b) %s: nothing that is not a button is drawn like one - no boxed pills (%s)" % (lab, pills), not pills, pills)
+        cc = pg.evaluate("""()=>[...document.querySelectorAll('.vrc-modecard')].map(c=>{ const r=c.getBoundingClientRect(), t=c.querySelector('.modecardtitlerow').getBoundingClientRect(), d=c.querySelector('.modecarddesc');
+          const rg=document.createRange(); rg.selectNodeContents(d); return [ (t.left+t.right)/2-(r.left+r.right)/2 ].concat([...rg.getClientRects()].map(q=>(q.left+q.right)/2-(r.left+r.right)/2)); })""")
+        off = [round(v, 1) for card in cc for v in card if abs(v) > 1.5]
+        chk("(2c) %s: the cards' icon-and-title row and each line of their words are centred in the card (off: %s)" % (lab, off or "none"), cc and not off, cc)
         chk("(3) %s: no page errors" % lab, not errs, errs[:3])
         ctx.close()
     br.close()

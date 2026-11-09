@@ -37676,6 +37676,11 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout] body #stage > .panel.screen-vroom-choice .modecardtitle{ font-family:inherit; font-size:1.18rem; font-weight:700; letter-spacing:-.01em; }
   html[data-layout] body #stage > .panel.screen-vroom-choice > .cal-sub{ margin-top:-.2rem; color:var(--soft); }
+  /* (384 r8) THE CARDS' CONTENTS CENTRED. Madison circled everything under the title and said "Center this"; asked which, he
+     picked the cards' contents: the icon and title as one centred row, the description centred under it. */
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ align-items:center; text-align:center; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecardtitlerow{ justify-content:center; align-self:center; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecarddesc{ text-align:center; text-wrap:balance; }
   /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
   html[data-layout] body #stage > .panel.vroom-finale-solo{
     display:flex; flex-direction:column; justify-content:center; gap:12px; box-sizing:border-box;
