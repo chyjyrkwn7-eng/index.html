@@ -26309,6 +26309,8 @@
   }
   html[data-theme][data-layout] body #stage .friend-sect .friend-add-field > input.friend-add-input.searchbox:focus{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent, #9FB4FF) 70%, transparent) !important; }
   .friend-add-field > .friend-add-input::placeholder{ color:var(--soft); opacity:1; }
+  /* (384 r9) the empty list's one line is centred in its card - Madison, the "Nobody yet" card circled: "This isn't centered" */
+  .friend-sect .friend-hint.friend-empty{ text-align:center; text-wrap:balance; }
   /* (384 r9) CENTRED, like the sync code field. Madison, the field circled: "This isn't centered" - the hint and a typed code sat
      against the field's left edge while everything else about a code (yours, above it, and the sync code entry) is centred.
      The hint, the typed code and the blinking cursor all centre now; the cursor stands just before the centred hint, at
@@ -146975,7 +146977,7 @@ function showFriends(){
   } else if(!ids.length){
     if(nova) list.appendChild(novaManageRow());
     const none = document.createElement("p");
-    none.className = "friend-hint";
+    none.className = "friend-hint friend-empty";
     none.textContent = nova ? "No friends yet. Send someone your code, or add theirs above."
       : "Nobody yet. Send someone your code, or add theirs above.";
     list.appendChild(none);

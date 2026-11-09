@@ -4,7 +4,8 @@ iPad Pro 11":
  (1) empty: the hint and the blinking cursor in front of it, as one group, are centred in the field (left and right space within 4px),
      and the cursor stands just before the hint (4-14px of gap);
  (2) a typed code ("ABC-123") is centred in the field (within 4px);
- (3) nothing scrolls sideways, and no page errors.
+ (3) nothing scrolls sideways, and no page errors;
+ (4) with no friends, the card's one line ("Nobody yet...") is centred in it - his next screenshot, the card circled: "This isn't centered".
 Run:  python3 tools/check-b384-friendfield.py   (--against OLD/index.html must FAIL)"""
 import io, os, sys, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -43,6 +44,11 @@ with sync_playwright() as pw:
         first_gap = next((g for g in gaps if g > 1), 0) / DPR
         chk("(1) %s: the hint and its cursor centred in the field (%.1f left / %.1f right)" % (lab, L, R), abs(L - R) <= 4, (L, R))
         chk("(1) %s: the cursor just before the hint (%.1fpx)" % (lab, first_gap), 4 <= first_gap <= 14, first_gap)
+        # (4) the empty list's one line is centred in its card ("Nobody yet..." circled: "This isn't centered")
+        e = pg.evaluate("""()=>{ const p=[...document.querySelectorAll('.friend-sect p')].find(x=>/^No(body| friends) yet/.test(x.textContent)); if(!p) return null;
+          const card=p.closest('.sect') || p.parentElement, c=card.getBoundingClientRect(); const r=document.createRange(); r.selectNodeContents(p); const t=r.getBoundingClientRect();
+          return [t.left - c.left, c.right - t.right]; }""")
+        chk("(4) %s: the empty list's line is centred in its card (%s)" % (lab, e and "%.1f / %.1f" % tuple(e)), e and abs(e[0] - e[1]) <= 3, e)
         pg.click(".friend-add-input"); pg.keyboard.type("ABC123"); pg.wait_for_timeout(200)
         pg.evaluate("()=>{ const i=document.querySelector('.friend-add-input'); i.style.caretColor='transparent'; }")
         pg.wait_for_timeout(100)
