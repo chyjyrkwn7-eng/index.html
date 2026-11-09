@@ -33216,20 +33216,10 @@
   }
   [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary:first-child,
   [data-layout="modern"] .screen-settings-sub .settings-nav + .slab.motion-summary{ margin-top:.4rem; }
-  /* the switch rows: tile, words, switch; the hairline starts at the words */
-  [data-layout="modern"] .settings-card > label.opt.has-tile{ position:relative; gap:14px; }
-  .settings-card > label.opt.has-tile > .settings-row-icon{ order:0; align-self:flex-start; margin-top:.05rem; }
-  [data-layout="modern"] .settings-card > label.opt.has-tile + label.opt,
-  [data-layout="modern"] .settings-card > .settings-volume + label.opt.has-tile{ border-top:0; }
-  .settings-card > label.opt.has-tile + label.opt::before,
-  .settings-card > .settings-volume + label.opt.has-tile::before{
-    content:""; position:absolute; top:0; left:calc(30px + 14px); right:-1rem; height:1px;
-    background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
-  }
-  /* the volume lines up with the words of the switch above it */
-  [data-layout="modern"] .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(30px + 14px); gap:.75rem; }
-  .settings-card > .settings-sound-row.has-tile + .settings-volume .slider{ min-width:0; }
-  /* the sync code: its tile beside the label, the well under both */
+  /* the switch rows: words and a switch (384 r8: no tile - a page Settings opens is a plain grouped list, as Delta's are); their
+     hairline and the volume's alignment are in the 384 Settings block below */
+  .screen-settings-sub .settings-card > .settings-sound-row + .settings-volume .slider{ min-width:0; }
+  /* the sync code: the label, the well under it */
   .sync-code-head{ display:flex; align-items:center; gap:14px; min-width:0; }
   .sync-code-head > .otext{ flex:1 1 auto; min-width:0; }
   /* the Advanced card stands alone, without a heading */
@@ -33415,22 +33405,26 @@
      still be blue"). The prefix out-ranks the 383 rules in THE iOS LOOK block (html[data-layout] body #stage :is(...) ...). */
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card:has(> label.opt){ padding-left:18px; padding-right:18px; }
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.opt{ min-height:51px; padding-top:9px; padding-bottom:9px; }
-  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile{ gap:14px; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.opt{ position:relative; }
   html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt > .otext{ font-size:15.5px; line-height:1.25; }
   html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt .ohint{ font-size:12.5px; line-height:1.4; margin-top:3px; }
-  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
-  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{
-    left:calc(28px + 14px); right:0; background:rgba(255,255,255,.1);   /* (384) to the switch's edge, not the card's */
+  /* (384 r8) NO TILE ON A PAGE: "when you click a section and open it, there are icons within them? But there shouldn't be.." The
+     words start at the card's padding (18px), and the hairline between two switch rows runs from the words (left:0, inside that
+     padding) to the switch's edge (right:0) - as the menu's rows with no tile have it (left:18px, right:18px of a padless card). */
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > :is(label.opt, .settings-volume) + label.opt{ border-top:0; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > :is(label.opt, .settings-volume) + label.opt::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:1px; background:rgba(255,255,255,.1); pointer-events:none;   /* (384) to the switch's edge, not the card's */
   }
-  html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
-  html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{ background:rgba(0,0,0,.1); }
-  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(28px + 14px); }
+  html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > :is(label.opt, .settings-volume) + label.opt::before{ background:rgba(0,0,0,.1); }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-sound-row + .settings-volume{ padding-left:0; gap:.75rem; }   /* the volume lines up with the words above it */
   html[data-layout] body #stage .screen-settings-sub .settings-volume :is(.settings-volume-label, .sliderval){ font-size:16px; }
   /* Account: the name row and Sign out */
   html[data-layout] body #stage .settings-page-account .customize-namerow.customize-namerow{ min-height:51px; padding-left:18px; }
   html[data-layout] body #stage .settings-page-account .customize-namerow .profile-name-display.profile-name-display{ font-size:15.5px; }
   html[data-layout] body #stage .screen-settings-sub .signout-card > .signout-row.signout-row{ min-height:51px; }
-  /* Sync: the code's label at the rows' size; Save lines up with the code's tile */
+  /* Sync: the code's label at the rows' size; Save lines up with the code's tile. (384 r8) With no tile the words lead, so the card
+     takes the other pages' 18px side padding (it had 1rem: the words would sit 2px left of every other page's) */
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card.sync-card{ padding-left:18px; padding-right:18px; }
   html[data-layout] body #stage .screen-settings-sub .sync-code-row .sync-code-label{ font-size:15.5px; font-weight:600; }
   html[data-layout] body #stage .screen-settings-sub .sync-code-row .ohint{ font-size:12.5px; }
   html[data-layout="modern"] body #stage .screen-settings-sub .sync-card > .sync-save-code-row{ padding-left:0; padding-right:0; }
@@ -56072,13 +56066,13 @@ function buildClassesSect(){
   card.className = "settings-card settings-list settings-classes-card";
   mine.forEach(k => {
     const info = NOVA_CLASS_INFO[k] || {};
-    const b = settingsRow("classes", classTitle(k), info.kicker || null, null, k === window.NOVA_CLASS ? "Open now" : null);
+    /* (384 r8) no tile on a Settings page: the class's own mark (shield / flame) came off with the rest */
+    const b = settingsPageRow("classes", classTitle(k), info.kicker || null, k === window.NOVA_CLASS ? "Open now" : null);
     b.classList.add("settings-class-row"); b.dataset.cls = k;
-    { const ic = b.querySelector(":scope > .settings-row-icon"); if(ic && (k === "academy" || k === "ifc")) ic.replaceWith(settingsRowIcon(k === "ifc" ? "classifc" : "classacademy")); }
     b.addEventListener("click", () => askLeaveClass(k));
     card.appendChild(b);
   });
-  const join = settingsRow("install", "Join another class", null, "accent");
+  const join = settingsPageRow("install", "Join another class");
   join.id = "settings-join-class";
   join.addEventListener("click", () => { try{ showClassCatalog(); }catch(e){} });
   const add = document.createElement("div");
@@ -131130,7 +131124,9 @@ function settingsRow(kind, label, sub, tone, value){
   chev.className = "settings-row-chev";
   chev.setAttribute("aria-hidden", "true");
   chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
-  b.append(settingsRowIcon(kind, tone), txt);
+  if(tone === "plain") b.classList.add("settings-row-plain");
+  else b.append(settingsRowIcon(kind, tone));
+  b.append(txt);
   if(value){
     const v = document.createElement("span");
     v.className = "settings-row-value"; v.textContent = value;
@@ -131139,6 +131135,12 @@ function settingsRow(kind, label, sub, tone, value){
   b.appendChild(chev);
   return b;
 }
+/* (384 r8) A ROW ON A PAGE SETTINGS OPENS HAS NO TILE. Madison, with Delta's Settings beside ours: "when you click a section and
+   open it, there are icons within them? But there shouldn't be.." Delta's pages are plain iOS grouped lists - the words, a second
+   line, a switch or a value or a chevron - and only its top-level menu carries coloured tiles. So the menu keeps settingsRow() and
+   every page's row is this: the same row with no tile, its words at the card's padding (the hairline already starts there for a row
+   with no tile). `kind` stays on data-row, which gates and taps find rows by. */
+function settingsPageRow(kind, label, sub, value){ return settingsRow(kind, label, sub, "plain", value); }
 /* A row that is only words: red for a one-way action (iOS "Reset Online
    Settings"). Its text is the button's own text node, so armConfirm() can
    relabel it ("Tap again to clear") the way it always has. */
@@ -131824,8 +131826,7 @@ function showAppearance(opts){
       card.className = "settings-card settings-list sync-status-card";
       const row = document.createElement("div");
       row.className = "settings-row settings-row-static sync-status-row";
-      row.setAttribute("role", "status");
-      row.append(settingsRowIcon("cloudoff", "muted"));
+      row.setAttribute("role", "status");   /* (384 r8) no tile on a Settings page */
       const txt = document.createElement("span");
       txt.className = "settings-row-text";
       const t1 = document.createElement("span");
@@ -131875,10 +131876,11 @@ function showAppearance(opts){
         codeWell.classList.toggle("is-revealed", revealed);
         hint.textContent = (revealed ? "Tap to hide" : "Tap to show") + ". Use it to link another device.";
       });
-      /* build 382: the key tile beside "Sync code", the well under both */
+      /* build 382: the key tile beside "Sync code", the well under both. (384 r8) No tile on a Settings page: the words alone,
+         at the card's padding, the well under them */
       const codeHead = document.createElement("span");
       codeHead.className = "sync-code-head";
-      codeHead.append(settingsRowIcon("key"), label);
+      codeHead.append(label);
       row.append(codeHead, codeWell);
 
       /* ONE CARD FOR THE CODE, not four treatments stacked. Reported as
@@ -131986,7 +131988,7 @@ function showAppearance(opts){
       /* build 382: rows in a list card like the rest of Settings */
       const bar = document.createElement("div");
       bar.className = "settings-card settings-list sync-start-card";
-      const startBtn = settingsRow("cloudup", "Start syncing");
+      const startBtn = settingsPageRow("cloudup", "Start syncing");
       startBtn.addEventListener("click", () => {
         setSyncCode(generateSyncCode());
         codeIssuedFresh();   /* build 382 */
@@ -131994,7 +131996,7 @@ function showAppearance(opts){
         renderSyncBody();
         showSaveCodeCard({ mode: "settings" });
       });
-      const enterBtn = settingsRow("entercode", "Enter a code");
+      const enterBtn = settingsPageRow("entercode", "Enter a code");
       enterBtn.addEventListener("click", () => renderEnterCodeForm());
       bar.append(startBtn, enterBtn);
       syncSect.appendChild(bar);
@@ -132072,7 +132074,7 @@ function showAppearance(opts){
      these look the same way. Button creation and click handlers below
      are unchanged from before, only the wrapping markup and classes. */
   /* Build 382: rows in a list card (settingsRow), not two pills. */
-  const shareBtn = settingsRow("share", "Share this app");
+  const shareBtn = settingsPageRow("share", "Share this app");
   shareBtn.addEventListener("click", async () => {
     /* The explicit, canonical published URL — window.location.href
        could resolve to something else depending on exactly how the
@@ -132144,7 +132146,7 @@ function showAppearance(opts){
      the app better for the person pressing it - it is how Nova stops
      being a browser tab - so since build 382 its icon is the one filled
      with the app's accent (it was the one accent-tinted pill before). */
-  const installBtn = settingsRow("install", "Add to Home Screen", null, "accent");
+  const installBtn = settingsPageRow("install", "Add to Home Screen");
   installBtn.addEventListener("click", handleInstallTap);
 
   /* ---- ADVANCED IS A PAGE OF ITS OWN (build 382) ----
@@ -132214,29 +132216,9 @@ function showAppearance(opts){
   verBtn.id = "settings-version-history";
   verBtn.addEventListener("click", () => showReleaseHistory("settings"));
 
-  /* Every switch row gets its tile (build 382). Rows are found by their
-     class (Sound & vibration's) or their title, the way regroupSwitches
-     finds them; the tile sits beside .otext, never in it, so the title is
-     still .otext's first text node. */
-  (function tileSwitchRows(){
-    const BY_TITLE = {
-      "Reduce motion": "motion", "Swipe to next question": "swipe", "Auto-advance": "forward",
-      "Longer pause before moving on": "pause",
-      "Auto-star questions you keep missing": "star", "Skip celebrations and pop-ups": "party",
-      "Show me in the rankings": "trophy", "Sound effects": "sound", "Tap sounds": "tap", "Vibration": "haptics", "Haptics": "haptics"
-    };
-    panel.querySelectorAll(".settings-card > label.opt").forEach(r => {
-      const t = r.querySelector(".otext");
-      const title = t && t.firstChild ? String(t.firstChild.textContent).trim() : "";
-      const kind = r.classList.contains("settings-sound-row") ? "sound"
-        : r.classList.contains("settings-tapsound-row") ? "tap"
-        : (r.classList.contains("settings-vibrate-row") || r.classList.contains("settings-haptics-row")) ? "haptics"
-        : BY_TITLE[title];
-      if(!kind || r.querySelector(":scope > .settings-row-icon")) return;
-      r.classList.add("has-tile");
-      r.insertBefore(settingsRowIcon(kind), t);
-    });
-  })();
+  /* Every switch row got a tile here (build 382, tileSwitchRows). (384 r8) Not any more: the switch rows live only on the pages
+     Settings opens, and a page's rows carry no tile ("when you click a section and open it, there are icons within them? But there
+     shouldn't be.."). The words start at the card's padding; the hairline runs under them (the 384 Settings block). */
 
   const noBoard = window.NOVA_CLASS === "ifc";   /* no leaderboard in Fire Code */
   let host = into;
@@ -134854,7 +134836,7 @@ function showSaveCodeCard(opts){
 /* Settings > Sync: Save it, under the code (a settingsRow, 44px+). */
 function buildSettingsSaveCodeRow(){
   /* (384) on a computer it copies, and says so before it is tapped */
-  const row = settingsRow("share", "Save it", saveCodeShares() ? "Send it to Notes or a message to yourself" : "Copy it, to paste into a note or an email");
+  const row = settingsPageRow("share", "Save it", saveCodeShares() ? "Send it to Notes or a message to yourself" : "Copy it, to paste into a note or an email");
   row.classList.add("sync-save-code-row");
   row.addEventListener("click", async () => {
     if(row.disabled) return;
