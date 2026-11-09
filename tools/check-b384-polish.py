@@ -34,12 +34,14 @@ B. THE PLANET CHANGES COLOUR SMOOTHLY. The tier cutscene on the page's clock, 1/
 C. THE WORDS UNDER THE GRADE NEVER COME BEFORE ITS NUMBERS. Real results (summarize()) on the page's clock: in every
    frame "right on the first try" (.rs-grade-sub) is no more visible than "10 / 12" (.rs-grade-frac) above it, and it
    is fully there once the grade has landed.
-D. RED INTO GREEN, SMOOTH, NO OTHER COLOUR. Same runs, every frame, off the pixels: the number's glyphs and each unit
-   bar are only ever the red or the green (over the dark card) - no hue between them (orange, yellow, olive) with any
-   colour in it, and no green brighter or more saturated than the landed one; the change is a transition (8+ frames from
-   the last full red to the first full green) with no frame-to-frame step over .1 in OKLab (a third of the red-green
-   distance; the old switch was the whole of it in one frame - a fade through the card is ~.07 at its fastest);
-   a fail never takes any green; a pass ends on the landed green.
+D. RED INTO GREEN, SMOOTH, NO OTHER COLOUR, NEVER COLOURLESS. Same runs, every frame, off the pixels: the number's glyphs
+   and each unit bar are only ever the red or the green (over the dark card) - no hue between them (orange, yellow, olive)
+   with any colour in it, and no green brighter or more saturated than the landed one; a fail never takes any green; a
+   pass ends on the landed green. REVISED IN 384 r7 (Madison: "When the grade transition turns from red to green, it's
+   like no color when that happens"): the 384-polish fade to 12% opacity WAS that colourless moment, so the turn is a
+   FLIP - the number and each bar keep their full colour in every frame (chroma never under 60% of the weaker landed
+   colour), the number's colour changes only while it is edge-on (its height at that frame under 30% of its full height),
+   and the flip is a movement over several frames (3+ frames under 90% height), not a cut.
 E. THE XP BOX'S FOOT (the level, the character, the bar under them): its parts in one row and in order, the level
    chip and the bar's line legible, nothing clipped or overflowing, at every size, both classes.
 
@@ -300,14 +302,19 @@ def section_d(c):
         ck("D %s: a fail never takes any green" % lab, not gr, gr[:6])
     else:
         ck("D %s: no green brighter or richer than the landed one (no bloom)" % lab, not over, over[:6])
-        lim = max(.1, dE(red, green) / 3)
-        jumps = [(rows[i]["f"], round(dE(rows[i - 1]["num"], rows[i]["num"]), 3)) for i in range(1, len(rows))
-                 if dE(rows[i - 1]["num"], rows[i]["num"]) > lim]
-        ck("D %s: smooth - no frame-to-frame step over %.3f (the switch was one step of red to green, %.3f)" % (lab, lim, dE(red, green)), not jumps, jumps[:6])
-        lr = max((r["f"] for r in rows if dE(r["num"], red) < .03), default=None)
-        fg = min((r["f"] for r in rows if dE(r["num"], green) < .03 and (lr is None or r["f"] > lr)), default=None)
-        ck("D %s: a transition, not a switch: %s frames from the last full red to the first full green" % (lab, (fg - lr) if lr is not None and fg is not None else None),
-           lr is not None and fg is not None and fg - lr >= 8, (lr, fg))
+        # (r7) never colourless: every frame keeps its full colour
+        cmin = .6 * min(lch(red)[1], lch(green)[1])
+        dull = [(r["f"], round(lch(r["num"])[1], 3)) for r in rows if lch(r["num"])[1] < cmin]
+        ck("D %s: never colourless - the number keeps its colour in every frame (chroma >= %.3f)" % (lab, cmin), not dull, dull[:6])
+        # (r7) the colour changes edge-on, inside a flip of several frames
+        hs = [(r["f"], r["pbox"][3] - r["pbox"][1], hue_gap(lch(r["num"])[2], hG) < hue_gap(lch(r["num"])[2], hR)) for r in rows if r.get("pbox")]
+        full = max((h for _, h, _ in hs), default=0)
+        sw = next((i for i in range(1, len(hs)) if hs[i][2] and not hs[i - 1][2]), None)
+        at = min(hs[sw - 1][1], hs[sw][1]) if sw else None
+        ck("D %s: the colour changes while the number is edge-on (height %s of %s)" % (lab, at and round(at, 1), round(full, 1)),
+           sw is not None and full > 0 and at <= .3 * full, (sw and hs[sw - 1:sw + 1], full))
+        low = sum(1 for _, h, _ in hs if full and h < .9 * full)
+        ck("D %s: a flip over several frames, not a cut (%d frames under 90%% height)" % (lab, low), low >= 3, low)
     # the unit bars: their own red and green, same rules
     nb = max((len(r.get("barc") or []) for r in rows), default=0)
     for bi in range(nb):
@@ -319,9 +326,9 @@ def section_d(c):
         boff = [(f, [round(v) for v in col]) for f, col in seq if lch(col)[1] > .035 and hue_gap(lch(col)[2], h0) > 30 and hue_gap(lch(col)[2], hl) > 30]
         ck("D %s: unit bar %d is only ever its red or its green" % (lab, bi + 1), not boff, boff[:6])
         if passes and hue_gap(h0, hl) > 60:
-            lim = max(.1, dE(b0, bl) / 3)
-            bj = [(seq[i][0], round(dE(seq[i - 1][1], seq[i][1]), 3)) for i in range(1, len(seq)) if dE(seq[i - 1][1], seq[i][1]) > lim]
-            ck("D %s: unit bar %d turns smoothly (no step over %.3f)" % (lab, bi + 1, lim), not bj, bj[:6])
+            bmin = .6 * min(lch(b0)[1], lch(bl)[1])
+            bd = [(f, round(lch(col)[1], 3)) for f, col in seq if lch(col)[1] < bmin]
+            ck("D %s: unit bar %d keeps its colour through the turn (chroma >= %.3f)" % (lab, bi + 1, bmin), not bd, bd[:6])
     ck("D %s: no page errors" % lab, not c["errs"], c["errs"][:3])
 
 

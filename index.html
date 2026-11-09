@@ -128084,14 +128084,19 @@ function rsToneAt(p){
    - 1 - v^1.7 down, then 1 - (1 - v)^1.7 up, so it eases out of the red and into the green and never stops at the
    bottom. Every frame is the red or the green over the dark card, never a mix of the two. rsTurnAt(u) -> { green, s }
    (s the strength, 0-1). */
-const RS_TURN_MS = 700, RS_TURN_FLOOR = .12;
+/* (384, r7) THE TURN IS A FLIP, NOT A FADE. Madison: "When the grade transition turns from red to green, it's like no color when
+   that happens, fix that too." The 700ms fade to 12% opacity WAS the colourless moment (measured: the number's saturation 0 on the
+   crossing frame, the card .08). Now the number (and each bar) turns over edge-on like a card - scaleY down to RS_TURN_FLOOR and
+   back - at full opacity and full colour throughout; the colour changes on the edge-on frame, so no frame is a blend, a dim or
+   another hue. `scale` (the individual property) composes with the landing's own transform animation. */
+const RS_TURN_MS = 380, RS_TURN_FLOOR = .04;
 function rsTurnAt(u){
   u = Math.max(0, Math.min(1, Number(u) || 0));
   if(u < .5){ const v = u * 2; return { green: false, s: 1 - Math.pow(v, 1.7) }; }
   const v = u * 2 - 1;
   return { green: true, s: 1 - Math.pow(1 - v, 1.7) };
 }
-/* Runs paint(green, alpha, last) once a frame for RS_TURN_MS (alpha from RS_TURN_FLOOR to 1), then once more with
+/* Runs paint(green, k, last) once a frame for RS_TURN_MS (k, the flip's height, from RS_TURN_FLOOR to 1), then once more with
    last = true; finish() jumps to that end, and .onEnd runs after it. */
 function rsTurn(paint){
   const T = { done: false, onEnd: null };
@@ -128736,8 +128741,8 @@ function showRunRewards(run, hooks, opts){
     pe.style.backgroundImage = ""; pe.style.webkitBackgroundClip = ""; pe.style.backgroundClip = "";
     pe.style.webkitTextFillColor = ""; pe.style.color = col || "";
   };
-  /* (384 polish) the turn is a fade out of the red and into the green (rsTurn, RS_TURN_MS) - the number by its
-     opacity, each bar by its own; the card's two washes (hidden under the plain results card since build 383) trade
+  /* (384 polish, r7) the turn is a flip from the red to the green (rsTurn, RS_TURN_MS) - the number by its
+     scaleY at full colour, each bar by its own; the card's two washes (hidden under the plain results card since build 383) trade
      places at the bottom of it, where neither shows. */
   let greenOn = false, numTurn = null;
   const goGreen = () => {
@@ -128749,9 +128754,10 @@ function showRunRewards(run, hooks, opts){
     numPlain(pe, rsToneAt(0));
     numTurn = rsTurn((green, a, last) => {
       if(green && tl) tl.classList.add("is-green-on");
-      if(last){ pe.style.opacity = ""; if(pe.style.color) pe.style.color = rsToneAt(100); return; }
+      if(last){ pe.style.scale = ""; pe.style.transformOrigin = ""; if(pe.style.color) pe.style.color = rsToneAt(100); return; }
       pe.style.color = rsToneAt(green ? 100 : 0);
-      pe.style.opacity = a.toFixed(3);
+      pe.style.transformOrigin = "50% 58%";
+      pe.style.scale = "1 " + a.toFixed(3);
     });
   };
   const paintUnit = (u, p) => {
@@ -128766,9 +128772,9 @@ function showRunRewards(run, hooks, opts){
       u.bgNow = bg;
       if(green && was){
         u.turn = rsTurn((g, a, last) => {
-          if(last){ u.fill.style.opacity = ""; u.fill.style.background = u.home ? "" : "var(--right)"; return; }
+          if(last){ u.fill.style.scale = ""; u.fill.style.background = u.home ? "" : "var(--right)"; return; }
           u.fill.style.background = g ? "var(--right)" : "var(--wrong)";
-          u.fill.style.opacity = a.toFixed(3);
+          u.fill.style.scale = "1 " + (.5 + .5 * a).toFixed(3);   /* a 6px bar edge-on is a grey hairline: it only dips to half */
         });
       } else u.fill.style.background = bg;
     }
