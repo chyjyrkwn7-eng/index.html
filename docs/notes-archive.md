@@ -37486,3 +37486,29 @@ Madison: "host 3 virtual room matches ... They would need to fully finish each m
   (`store.hiveMoved384`, default true for a new store and after a reset, false for an existing one, OR-merged and seeded into a new
   class store), whoever met the old rule (`busiestDay() >= HIVE_DAY`) or is wearing the Hive gets "hive" in `legacyChars`;
   `hiveKept()` then makes `CHARACTER_FEATS.busyday300` read done, 3 of 3. Gate: `tools/check-b384-hivekept.py` (fails on a9404f6).
+
+### 384 round 15 (r15-highlights): the whole page tints the whole provision; one look for every highlight
+- Madison, from his phone, on Fire Code's "Show the whole page": SECTION 322 / 105 tinted only at the left of their column ("should be symmetrical"),
+  Tables 5609.4.1 and 112.4.2 tinted only down to the cited row, 322.4.1.1 / 319.1.1 only down to the list item the question is about, 1013 EXIT SIGNS cut
+  mid-sentence and without its exceptions, ASTM E84 as two unrelated pieces (the organisation heading far above the entry) in a strip of tiny print - then "I need
+  you to fix every single question". Root cause: the page highlight (`clip.cited`) was the same lines as the card's picture, which ends at the answer.
+- THE RULE (card unchanged, as Madison asked: the picture shows what the answer needs, exceptions and later sub-items only when the answer is in them; the PAGE is where
+  the whole thing is tinted): a provision runs from its heading to the next numbered heading / SECTION / CHAPTER banner (children are provisions of their own), a table
+  from its title to its last row and notes (the next table's title ends it), a heading cited alone takes the first provision under it, an entry is its designation line
+  and the sections listed under it. Two tones only: WASH over the whole block, STRONG on the cited words / row / heading. A text block runs to the right edge of its
+  column (`xr`), a centred heading sits centred in it (`sym`), a table's own rules decide its width; padding is the viewer's 0.45 em everywhere.
+- county (`countyClip`): `countyChars` now reads what each printed LINE is (`ln.head` sec / banner / table, `ln.tbl`, `ln.body`; page `left` / `right`) from the
+  booklet's typefaces and where a paragraph starts, not from the section number alone (a wrapped line that starts "112.4.2. Court costs" is not a heading; a heading
+  set in the running face is). `cited` is built from that. The card's cut finishes the sentence: a last line that fills the column and does not end one takes the lines
+  to the end of the sentence (never a heading, a list item or an exception).
+- book (`computeClip`): a section title cited alone (`loc.lead`) now has `cited` = the banner and its whole first subsection with its exceptions; the cut ends on a line that
+  ends a sentence (looks on past `LEAD_LINES` to the paragraph's end); flow segments carry `xr`; a table `row` clip's `cited` is the whole table (it was the cut); an entry
+  (Chapter 80) is the entry alone, cut to its own width, its organisation heading shown only when it stands right above it and never tinted.
+- highlightPage: `sg.xr` / `sg.sym` widen the hugged block to the column / centre a heading; nothing else changed in how a block is drawn.
+- Gate: `tools/check-b384-hlall.py` (+ `b384-hlall.mjs`, `b384-hlall-page.js`): EVERY distinct citation (410 county; 1,368 book when IFC_BOOK is the owner's copy, else the
+  book legs SKIP) - structure (page highlight against the printed lines, read by a different rule than the viewer's; picture ends clean; no disjoint pieces; deeper marks
+  inside) and paint (Chromium, 2 px per point: one soft tint and one deeper gold, block top / bottom / right edge against its text, a centred heading centred, nothing
+  tinted outside the provision, the card's picture washed). Against 54a6848 it fails (county 82 offenders in the structure leg alone, book 27: 17 referenced standards as
+  disjoint pieces, 10 section titles ending early, 3 mid-sentence). `--shot ID` writes the painted page to /tmp for a look.
+- Could not fix: a referenced-standard entry is a wide line of 8 pt print (the book sets it across the page), so its card picture is as large as the book's own print
+  allows at the card's width; Enlarge shows it bigger.
