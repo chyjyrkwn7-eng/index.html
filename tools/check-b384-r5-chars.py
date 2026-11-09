@@ -172,7 +172,7 @@ def faced(C): return {i for i, c in C.items() if c["eyes"] or c["mouth"] or c["p
 for key, R, expect in (("ifc", IFC, set()), ("academy", ACA, {"valkyrie", "voidwalker"})):
     C = R["chars"]; bare = {i for i, c in C.items() if c["eyes"] == 0 and c["mouth"] == 0 and c["pairs"] == 0}
     chk("1. [%s] the characters with no face mark at all are only %s (found %s)" % (key, sorted(expect), sorted(bare)), bare == expect, {"extra": sorted(bare - expect), "missing": sorted(expect - bare)})
-MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Aurora"},   # (round 12 names)
+MUST = {"ifc": {"clown": "Strobe", "astronaut": "Toxic Spill", "hive": "Sprinkler Head", "voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Whiteout", "genesis": "Comet"},   # (round 12 names)
         "academy": {"hive": "Hive", "genesis": "Genesis"}}
 for key, R in (("ifc", IFC), ("academy", ACA)):
     C = R["chars"]
@@ -227,7 +227,8 @@ f = CI["singularity"]["face"]
 chk("3. Whiteout: two pale lenses of light (%s, %s, %s eyes), no mouth (%s)" % (f["kind"], f["lamp"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["lamp"] in ("white", "h4", "h5") and f["mouth"] == "none", f)
 f = CI["genesis"]["face"]
 # (384 round 14) Aurora in the Firebird's place: two lit almond eyes and a small mouth
-chk("3. Aurora: two lit eyes (%s, %s eyes) and a small mouth (%s)" % (f["kind"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["mouth"] != "none", f)
+# (384 round 16) the Comet in Aurora's place: two lit slits and a hard mouth
+chk("3. Comet: two lit eyes (%s, %s eyes) and a mouth (%s)" % (f["kind"], f["clusters"], f["mouth"]), f["clusters"] == 2 and f["mouth"] != "none", f)
 f = CI["astronaut"]["face"]; eyes3 = {round(b[0] * 2) / 2 for b in f["bodies"] if b[2] * b[3] >= 4}
 chk("3. Toxic Spill keeps its three acid eyes (%s) and its toothed grin (%s)" % (sorted(eyes3), f["mouth"]), len(eyes3) == 3 and f["mouth"].startswith("mwideopen"), f)
 f = CI["clown"]["face"]
