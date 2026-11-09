@@ -81030,6 +81030,39 @@ function vroomTotalScore(p){
 const VROOM_PODIUM_MIN = 4;
 function vroomPlaces(n){ return n >= VROOM_PODIUM_MIN ? 3 : 1; }
 
+/* ---- PLACEMENT XP (384 r8) ----
+   Madison, over a Tug of War result that read "+0 XP - Winner takes all": "Everybody should still get xp, you get it based on your
+   finishing spot x how many people are in the lobby". The rule he picked: with N players in the match, 1st place is N shares, 2nd
+   N-1, and so on down to last, who still gets 1; a share is VROOM_PLACE_XP. Four people: 100 / 75 / 50 / 25. It goes ON TOP of
+   what your own right answers earn, in every game.
+   - Race: the place is the leaderboard cutscene's own (vroomRankedEntries: the room's XP, then time).
+   - Tug of War, Battle: the winning side are all 1st, the losing side all 2nd; a draw makes everybody 1st. It replaces Tug's
+     "winner takes all" pot and Battle's flat BATTLE_XP_WIN (the place already rewards the win).
+   - N is everybody who started the match (the racers, the two teams) - Nova included when he is in it, nobody who came back in
+     late, never a spectator. Every device works out every place from the same room document, so they agree.
+   PAID ONCE PER MATCH: alongside recordVroomOutcome, and only while that match is not yet in store.vrCounted (vroomMatchFresh), so a
+   redraw, a re-entry or a relaunch never pays it twice. Local awardXp and the account push recordVroomOutcome already makes - no
+   write of its own. A visitor from another class gets none (vroomForeign). */
+const VROOM_PLACE_XP = 25;
+function vroomPlaceXp(place, n){
+  n = Math.max(1, Math.floor(Number(n) || 0));
+  place = Math.min(n, Math.max(1, Math.floor(Number(place) || 1)));
+  return (n - place + 1) * VROOM_PLACE_XP;
+}
+function vroomOrdinal(p){
+  const n = Math.floor(Number(p) || 0), t = n % 100;
+  return n + (t >= 11 && t <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
+}
+function vroomPlaceLabel(place, n){ return vroomOrdinal(place) + " of " + n; }
+/* A team game's place: the winning side (and everybody in a draw) 1st, the losing side 2nd. */
+function vroomTeamPlace(drawn, won){ return drawn || won ? 1 : 2; }
+/* Not yet counted on this account - the same key recordVroomOutcome writes. */
+function vroomMatchFresh(code, startAt){
+  if(!code) return true;
+  const id = startAt ? code + "@" + startAt : code;
+  return !(Array.isArray(store.vrCounted) && store.vrCounted.indexOf(id) >= 0);
+}
+
 /* ONE RECORD PER MATCH, NOT PER ROOM (build 313). A room is played again
    and again from its lobby - Return to lobby, ready up, another race - and
    keyed by the room code alone only the first match in it ever counted.
@@ -136470,24 +136503,24 @@ function showTugResult(d){
   panel.appendChild(sub);
 
   panel.appendChild(buildTugRope(d));
-  /* ---- WINNER TAKES ALL ----
-     Every right answer in the room goes into one pot, TUG_XP_PER_RIGHT
-     each, and the winning side splits all of it - the losers' answers
-     included. The losing side takes nothing; a draw hands everybody
-     back their own. Paid once per match (tugPaidFor), however many
-     times this screen is drawn. */
+  /* ---- YOUR ANSWERS, AND YOUR PLACE (384 r8) ----
+     "Winner takes all" is gone (Madison: "Everybody should still get xp"). Everybody keeps their own right answers,
+     TUG_XP_PER_RIGHT each, and takes placement XP on top: the winning side 1st, the losing side 2nd, a draw everybody 1st, out
+     of everybody who started the match (see VROOM_PLACE_XP). Paid once per match (tugPaidFor on this screen, store.vrCounted
+     across a relaunch), however many times this screen is drawn. */
   const prog = (d.tug && d.tug.progress) || {};
   const teams = (d.tug && d.tug.teams) || {};
   const rightOf = k => Number((prog[k] || {}).correct) || 0;
-  const pot = Object.keys(teams).reduce((t, k) => t + rightOf(k), 0) * TUG_XP_PER_RIGHT;
-  const winners = drawn ? [] : tugMembers(d, winner);
-  const myXp = drawn ? rightOf(vroomMyKey) * TUG_XP_PER_RIGHT
-    : won ? Math.round(pot / Math.max(1, winners.length)) : 0;
+  const matchN = Math.max(1, Object.keys(teams).length);
+  const myPlace = vroomTeamPlace(drawn, won);
+  const answersXp = rightOf(vroomMyKey) * TUG_XP_PER_RIGHT;
+  const placeXp = vroomPlaceXp(myPlace, matchN);
+  const myXp = answersXp + placeXp;
   const paidKey = Number(d.startAt) || 1;
   if(tugPaidFor !== paidKey){
     tugPaidFor = paidKey;
     /* (384) a visitor from another class takes the result and the match, not the XP */
-    if(myXp > 0 && !vroomForeign()){ awardXp(myXp); saveStore(); }
+    if(vroomMatchFresh(vroomCode, d.startAt) && myXp > 0 && !vroomForeign()){ awardXp(myXp); saveStore(); }
     try{ setTimeout(publishNow, 800); }catch(e){}
     /* A TUG MATCH COUNTS (build 313). Battle recorded its outcome and
        Tug never did, so no Tug of War ever reached "Matches played" or the
@@ -136504,9 +136537,8 @@ function showTugResult(d){
   xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
   const xpWhy = document.createElement("p");
   xpWhy.className = "tug-xp-why";
-  xpWhy.textContent = drawn ? "A draw — everyone keeps their own answers"
-    : won ? "Winner takes all — your side split the whole pot of " + pot.toLocaleString()
-          : "Winner takes all — the other side took the pot";
+  xpWhy.textContent = vroomPlaceLabel(myPlace, matchN) + " · +" + placeXp.toLocaleString() + " XP · "
+    + rightOf(vroomMyKey) + " right · +" + answersXp.toLocaleString() + " XP";
   if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
   xpCard.append(xpNum, xpWhy);
   panel.appendChild(xpCard);
@@ -136625,7 +136657,7 @@ const BATTLE_ABILITY_EVERY = 3;
 const BATTLE_FREEZE_MS = 5000;
 const BATTLE_FLIP_MS = 8000;
 const BATTLE_XP_PER_RIGHT = 10;
-const BATTLE_XP_WIN = 150;
+/* (BATTLE_XP_WIN, a flat 150 for the winning side, is gone - 384 r8: placement XP, VROOM_PLACE_XP, rewards the win.) */
 const BATTLE_ABILITIES = {
   freeze: { name: "Freeze", icon: "❄️", say: "Locks their best player's answers for 5 seconds" },
   flip:   { name: "Flip",   icon: "\u{1F643}",    say: "Turns their best player's screen upside down" },
@@ -137428,14 +137460,20 @@ function showBattleResult(d){
   panel.appendChild(sub);
   panel.appendChild(buildBattleBoard(d));
 
-  /* XP: every right answer, and a winner's bonus for everybody on the
-     side that won. Paid once per match however many times this is drawn.
-     A team win counts as a win toward the Champion, like a first place. */
-  const myXp = right(vroomMyKey) * BATTLE_XP_PER_RIGHT + (won ? BATTLE_XP_WIN : 0);
+  /* XP: every right answer, and placement XP on top (384 r8, VROOM_PLACE_XP) - the winning side 1st, the losing side 2nd, a
+     draw everybody 1st, out of everybody who started the match. It REPLACES the flat winner's bonus (BATTLE_XP_WIN, 150): the
+     place already rewards the win, and the losing side now takes something too. Paid once per match however many times this
+     is drawn (battlePaidFor; store.vrCounted across a relaunch). A team win counts as a win toward the Champion, like a first
+     place. */
+  const matchN = Math.max(1, Object.keys(battleTeams(d)).length);
+  const myPlace = vroomTeamPlace(drawn, won);
+  const answersXp = right(vroomMyKey) * BATTLE_XP_PER_RIGHT;
+  const placeXp = vroomPlaceXp(myPlace, matchN);
+  const myXp = answersXp + placeXp;
   const paidKey = Number(d.startAt) || 1;
   if(battlePaidFor !== paidKey){
     battlePaidFor = paidKey;
-    if(myXp > 0 && !vroomForeign()) awardXp(myXp);   /* (384) never a visitor from another class */
+    if(vroomMatchFresh(vroomCode, d.startAt) && myXp > 0 && !vroomForeign()) awardXp(myXp);   /* (384) never a visitor from another class */
     try{ setTimeout(publishNow, 800); }catch(e){}
     const others = Object.keys(battleTeams(d)).filter(k => k !== vroomMyKey);
     try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
@@ -137449,7 +137487,8 @@ function showBattleResult(d){
   xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
   const xpWhy = document.createElement("p");
   xpWhy.className = "tug-xp-why";
-  xpWhy.textContent = right(vroomMyKey) + " right" + (won ? " · the win" : "");
+  xpWhy.textContent = vroomPlaceLabel(myPlace, matchN) + " \u00b7 +" + placeXp.toLocaleString() + " XP \u00b7 "
+    + right(vroomMyKey) + " right \u00b7 +" + answersXp.toLocaleString() + " XP";
   if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
   xpCard.append(xpNum, xpWhy);
   panel.appendChild(xpCard);
@@ -141121,6 +141160,29 @@ function vroomRankedEntries(data){
   return ps.sort(([, a], [, b]) => (xpOf(b) - xpOf(a)) || ((a.elapsedMs || 0) - (b.elapsedMs || 0)))
     .map(([key, p]) => ({ key: key, p: p, xp: xpOf(p) }));
 }
+/* (384 r8) A racer's place and its XP, off that one ranking: place is 1-based, n is everybody ranked. */
+function vroomRacePlaces(data){
+  const ranked = vroomRankedEntries(data);
+  const n = ranked.length;
+  const out = {};
+  ranked.forEach((e, i) => { out[e.key] = { place: i + 1, n: n, xp: vroomPlaceXp(i + 1, n) }; });
+  return out;
+}
+/* This device's place in the race, paid once (vroomMatchFresh - before recordVroomOutcome counts the match). Kept for the
+   results screen, which shows it as its own line in the XP card. */
+let vroomRacePlace = null;
+function vroomPayRacePlace(data){
+  if(!vroomMyKey || !data) return null;
+  const mine = vroomRacePlaces(data)[vroomMyKey];
+  if(!mine) return null;
+  const id = vroomCode + "@" + (data.startAt || "");
+  if(vroomRacePlace && vroomRacePlace.id === id) return vroomRacePlace;
+  const foreign = vroomForeign();
+  const fresh = vroomMatchFresh(vroomCode, data.startAt);
+  if(fresh && !foreign && mine.xp > 0) awardXp(mine.xp);
+  vroomRacePlace = { id: id, place: mine.place, n: mine.n, xp: foreign ? 0 : mine.xp, paid: fresh && !foreign };
+  return vroomRacePlace;
+}
 
 /* ---- THE WAIT, AND THEN THE SHOW ----
    "When finishing a virtual room test, you will see all of your results
@@ -141381,6 +141443,9 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
         /* (384 vr2) once, though a resume can take the room out of "all in" and back */
         if(!outcomeRecorded){
           outcomeRecorded = true;
+          /* (384 r8) PLACEMENT XP, paid here: the standings are settled, ranked as the cutscene ranks them, and this match is
+             counted in the same breath - so the account push recordVroomOutcome makes carries it (VROOM_PLACE_XP). */
+          try{ vroomPayRacePlace(data); }catch(e){}
           try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
         }
       }
