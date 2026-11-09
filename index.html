@@ -12032,6 +12032,10 @@
   /* (build 326: the dims are one fixed layer of their own now, .hfx-dim) */
   .hfx-box{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:2;
     clip-path:inset(0 round var(--hfx-r, 18px)); }
+  /* (384 r9) OVER THE CARD'S BORDER TOO. inset:0 is the card's padding box, so its 1px (transparent) border was left
+     out of whatever the effect lays in the box - Extinguisher's dry chem, the fires' glow - and the plain card showed
+     through as a dark ring round a lightened middle: Madison's "the borders is messed up". */
+  .rs-card.rs-grade > .hfx-box.is-grade{ inset:calc(-1 * var(--rs-card-bw, 1px)); }
   .hfx-box > *, .hfx-layer > *{ pointer-events:none; }
   /* the number, lit: a copy laid over it in light */
   .hfx-lit{ position:absolute; overflow:hidden; }
@@ -123696,6 +123700,14 @@ function hfxApplyTint(id, opts){
      second .hfx-tint would fade in from nothing over the first */
   if(box.dataset.hfxTint === id && box.classList.contains("hfx-tinted")) return tint;
   hfxTintVars(box, tint);
+  /* (384 r9) THE GRADE BOX STAYS THE DEFAULT'S. Madison, on Extinguisher beside Confetti: "Notice how when the grade
+     box for the default one is done the box doesn't change color but the others do? Yeah they should be like that,
+     so follow suite with the default way" - and the tinted box was also where "the borders is messed up" and "some of
+     the old interface" came from (its own edge and wash instead of the clean card's). So the results card, and the
+     Customize mock of it, are never tinted: the effect plays over the box and the box ends exactly as Confetti's does,
+     gold 100% and gold bars. The variables still go on (the effect's own layer inside the box reads them). Effect tiles
+     (.hfx-stage) keep their colours - a tile is the effect's swatch, not the results card. */
+  if(box.classList.contains("rs-grade")) return null;
   box.querySelectorAll(":scope > .hfx-keep").forEach(e => e.remove());
   const t = document.createElement("i");
   t.className = "hfx-tint hfx-keep"; t.setAttribute("aria-hidden", "true");
