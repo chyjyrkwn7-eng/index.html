@@ -1,0 +1,279 @@
+{
+"academy": {
+"eye": {
+"forge": [
+{
+"W": 2.0671606063842773,
+"centre": [
+16.846418857574463,
+17.669824600219727
+],
+"ratio": 0.39650946334036885
+},
+{
+"W": 2.0671615600585938,
+"centre": [
+23.153581619262695,
+17.669824600219727
+],
+"ratio": 0.39650928041277445
+}
+],
+"lunar": [
+{
+"W": 2.0671606063842773,
+"centre": [
+16.846418857574463,
+17.669824600219727
+],
+"ratio": 0.39650946334036885
+},
+{
+"W": 2.0671615600585938,
+"centre": [
+23.153581619262695,
+17.669824600219727
+],
+"ratio": 0.39650928041277445
+}
+],
+"solar": [
+{
+"W": 2.1051998138427734,
+"centre": [
+16.847399711608887,
+17.779824256896973
+],
+"ratio": 0.3798452702696581
+},
+{
+"W": 2.1051998138427734,
+"centre": [
+23.152600288391113,
+17.779824256896973
+],
+"ratio": 0.3798452702696581
+}
+],
+"tempest": [
+{
+"W": 2.1051998138427734,
+"centre": [
+16.847399711608887,
+17.96982479095459
+],
+"ratio": 0.38934577356258
+},
+{
+"W": 2.1051998138427734,
+"centre": [
+23.152600288391113,
+17.96982479095459
+],
+"ratio": 0.38934577356258
+}
+]
+},
+"full": {
+"alien": "3cc5a9f6",
+"astral": "226919a2",
+"astronaut": "179a4681",
+"blitz": "18d3e66d",
+"celestial": "ad5f6163",
+"champion": "b14480e7",
+"clown": "dacbcb0",
+"detective": "a492869b",
+"dragon": "e924cd4",
+"forge": "c3978e2b",
+"frost": "1f9f4c04",
+"genesis": "db4d1995",
+"ghost": "2373301b",
+"grizzly": "c6d70923",
+"hacker": "a40c3a75",
+"hive": "89ba0b4e",
+"inferno": "79f5af61",
+"k9": "no drawing (retired)",
+"lunar": "61794ba",
+"marksman": "5e6f5e44",
+"masked": "65fdd940",
+"ninja": "3e00cc49",
+"officer": "no drawing (retired)",
+"oracle": "af9d174b",
+"paladin": "no drawing (retired)",
+"pharaoh": "e9ef585f",
+"pirate": "no drawing (retired)",
+"poseidon": "de4ebf97",
+"queen": "2632ebae",
+"robot": "8a00fac2",
+"ronin": "b6f772f4",
+"samurai": "a8c6dc61",
+"scholar": "no drawing (retired)",
+"sentinel": "no drawing (retired)",
+"singularity": "75042c1f",
+"solar": "a76f9590",
+"spartan": "no drawing (retired)",
+"swat": "67211943",
+"tempest": "8d9847d3",
+"timekeeper": "d2eef171",
+"umbra": "8ca649e3",
+"valkyrie": "24be453a",
+"voidwalker": "7493d79c",
+"wizard": "563e535d",
+"wolf": "no drawing (retired)",
+"zenith": "56b76cc7",
+"zeus": "688d7a6"
+},
+"noEyes": {
+"forge": "79de6344",
+"k9": "no drawing (retired)",
+"lunar": "b5f897ee",
+"officer": "no drawing (retired)",
+"paladin": "no drawing (retired)",
+"pirate": "no drawing (retired)",
+"scholar": "no drawing (retired)",
+"sentinel": "no drawing (retired)",
+"solar": "88988fe5",
+"spartan": "no drawing (retired)",
+"tempest": "e0891f18",
+"wolf": "no drawing (retired)"
+}
+},
+"ifc": {
+"eye": {
+"forge": [
+{
+"W": 2.0671606063842773,
+"centre": [
+16.846418857574463,
+17.669824600219727
+],
+"ratio": 0.39650946334036885
+},
+{
+"W": 2.0671615600585938,
+"centre": [
+23.153581619262695,
+17.669824600219727
+],
+"ratio": 0.39650928041277445
+}
+],
+"lunar": [
+{
+"W": 2.0671606063842773,
+"centre": [
+16.846418857574463,
+17.669824600219727
+],
+"ratio": 0.39650946334036885
+},
+{
+"W": 2.0671615600585938,
+"centre": [
+23.153581619262695,
+17.669824600219727
+],
+"ratio": 0.39650928041277445
+}
+],
+"solar": [
+{
+"W": 2.1051998138427734,
+"centre": [
+16.847399711608887,
+17.779824256896973
+],
+"ratio": 0.3798452702696581
+},
+{
+"W": 2.1051998138427734,
+"centre": [
+23.152600288391113,
+17.779824256896973
+],
+"ratio": 0.3798452702696581
+}
+],
+"tempest": [
+{
+"W": 2.1051998138427734,
+"centre": [
+16.847399711608887,
+17.96982479095459
+],
+"ratio": 0.38934577356258
+},
+{
+"W": 2.1051998138427734,
+"centre": [
+23.152600288391113,
+17.96982479095459
+],
+"ratio": 0.38934577356258
+}
+]
+},
+"full": {
+"alien": "3cc5a9f6",
+"astral": "94a72fbe",
+"astronaut": "c289db19",
+"blitz": "18d3e66d",
+"celestial": "51fb6faf",
+"champion": "b14480e7",
+"clown": "1e401792",
+"detective": "3e25714c",
+"dragon": "e924cd4",
+"forge": "c3978e2b",
+"frost": "1f9f4c04",
+"genesis": "dbfe3929",
+"ghost": "2373301b",
+"grizzly": "c6d70923",
+"hacker": "9c0e245d",
+"hive": "7a8668fd",
+"inferno": "79f5af61",
+"k9": "no drawing (retired)",
+"lunar": "61794ba",
+"marksman": "8bd78cf1",
+"masked": "9c7c5ca8",
+"ninja": "3e00cc49",
+"officer": "no drawing (retired)",
+"oracle": "af9d174b",
+"paladin": "no drawing (retired)",
+"pharaoh": "e9ef585f",
+"pirate": "no drawing (retired)",
+"poseidon": "ff2eb6d",
+"queen": "2632ebae",
+"robot": "8a00fac2",
+"ronin": "52d81320",
+"samurai": "a8c6dc61",
+"scholar": "no drawing (retired)",
+"sentinel": "no drawing (retired)",
+"singularity": "9a9ddc6f",
+"solar": "a76f9590",
+"spartan": "no drawing (retired)",
+"swat": "67211943",
+"tempest": "8d9847d3",
+"timekeeper": "fdc5949a",
+"umbra": "22639a65",
+"valkyrie": "866675cb",
+"voidwalker": "39f3199a",
+"wizard": "563e535d",
+"wolf": "no drawing (retired)",
+"zenith": "1e048a30"
+},
+"noEyes": {
+"forge": "79de6344",
+"k9": "no drawing (retired)",
+"lunar": "b5f897ee",
+"officer": "no drawing (retired)",
+"paladin": "no drawing (retired)",
+"pirate": "no drawing (retired)",
+"scholar": "no drawing (retired)",
+"sentinel": "no drawing (retired)",
+"solar": "88988fe5",
+"spartan": "no drawing (retired)",
+"tempest": "e0891f18",
+"wolf": "no drawing (retired)"
+}
+}
+}
