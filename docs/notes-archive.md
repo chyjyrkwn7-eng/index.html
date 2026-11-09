@@ -37581,3 +37581,32 @@ Eleven sections of `tools/check-behaviour.py` (check_ranks, check_b223, check_b2
 - WHERE THE TIME GOES (not changed; for the next round): a tab switch at 1x is ~100-230ms of main thread on this machine (Home the largest: ~8k elements restyled over ~70 style recalcs, `syncStartAction` ~30ms on the Start pill joining or leaving the bar, `place()` of the class button, a build ~50-60ms), no task over ~60ms. With animations switched off (`*{animation:none}`) the total did not move (1218 -> 1031, inside the noise), so it is build + style + layout, not the SVG loops. The ember-dot / flare / eye animations show as ~300 style invalidations per switch each but are a few elements a frame. Idle with the mouse still: Home ~12-16% of the main thread, the Leaderboard ~26% (rows' art, Paint x545 in 4s), the Calendar <1% - the first-launch flip-book recorders (`orbitAnimYield`, cached afterwards) are most of Home's. The `:has()` rules rooted at `body`/`.wrap`/`html` (`body:has(.screen-home-actual){--home-bar}`, `.wrap:has(> #stage > .screen-home-actual){overflow:clip}`) make a Home mount a whole-subtree restyle; that is the lever if a computer is still slow.
 - GATE: tools/check-b384-mouse.py (1366x768 and 1920x1080, academy and Fire Code, a mouse only, Windows UA): every click lands, a quick run ends on the last tab, no lens under a mouse, a press let go off the bar ends, a mouse slide, Tab + Enter + focus ring, and the controls walk (Start, modes, units, Select all, held press, Escape, Begin, answer, Enter, number key, Space, leaderboard boards, chat, daily question). The median click-to-screen (button up to the screen painted, read in the page) at 4x CPU is held to 900ms, not 600: the sandbox is shared and a median of 500-620ms was seen with the same code under load.
 - ONLY A REAL WINDOWS MACHINE CAN CONFIRM: the felt lag (a GPU re-drawing a blur(7px) backdrop under a scaled bar, DWM compositing, 125%/150% display scaling with CSS `zoom:.9` on the bar), a touchscreen laptop (touch presses keep the lens), a precision touchpad's click and tap-to-click timing, Edge vs Chrome, high-refresh displays, and the real cost of the first-launch recorders on a weak CPU.
+### Build 384 (round 18) - Safari in a tab: no hard line at the top or bottom of the page (NOT on main)
+
+Madison, with three frames of his Safari tab (iPhone 17 Pro Max, iOS 26: Get Started, then Welcome twice): "The bottom of the screen while
+in safari, it's still not properly displaying", "PLEASE FIX SAFARI", "We need this safari problem to be fixed immediately".
+- WHAT HIS FRAMES SHOW (pixels read off them): the page runs between Safari's bars (62pt down, 98pt above the bottom, page zoom 85%),
+  and on Welcome the sky's glow ends in a hard line there - 9 levels at the bottom ((41,40,36) above, the flat (32,30,33) below), about 4
+  at the top - and on Get Started the phone mock-up was sliced at the same line, with Safari's flat fill (5,5,13 = the fixed layer's
+  own colour) below it. Fixed layers stop at Safari's bars; what shows past them is the root's flat colour (--band) or, where a solid
+  fixed layer is at that edge, that layer's colour (337).
+- CAUSE: the sky's bottom fade was switched OFF in 338 (--fade-paper: transparent) when a paper-coloured fade made black boxes, and
+  the top fade (341) only eased to --band at the very top of the root's own fallback layers; body::before's glow met the flat
+  colour with its full strength (the gold glow at the bottom). Get Started (a fixed, self-scrolling layer, overflow:hidden) cut
+  whatever scrolled across its edge.
+- FIX (index.html, CSS only; only html.is-browser:not(.safari-bars-over) on touch devices - the installed app, a laptop and a page
+  over the bars are untouched): --fade-paper is --band (with --fade-bot-solid 0, --fade-bot / --fade-top 3rem), so the sky's last 3rem at
+  each edge ease INTO the colour Safari fills beyond it - the same colour the root paints, so there is no line wherever Safari stops the
+  page; the tab bar's shadow is 0 2px 8px in a tab (the 0 4px 18px one reached the viewport's bottom edge and ended in a line too);
+  Get Started gets a 2.6rem scrim of #05060D (8px solid, then fading) over its first and last edge, under the button (z 3) and the
+  Sign in pill (z 4).
+- WHAT CHROMIUM CANNOT SHOW: Safari's own bars, its fill colours and whether it paints the root's layers beneath them. The model is
+  the repo's (check-b384-browsers' tab: the page between the bars, strips = the flat colour Safari fills them with: a solid fixed
+  layer's colour, else the root's). If his Safari DOES draw the root's layers under the toolbar the result is still seamless (the
+  edge rows ARE the root's colour). Only his phone can say how the toolbar's glass looks over the new last 3rem.
+- GATE tools/check-b384-safaribottom.py seam (iPhone 17 Pro Max, 16, SE, iPad Pro 11 in a tab; Welcome, Home, Get Started at rest
+  and at ten stops of its scroll): the page's first and last rows against the strip beyond, per 16px column, median, at most 3 levels.
+  Fails on af5725d (Welcome bottom 10.5, Home 3.4, Get Started mid-scroll 17.9 and 224 at the top); ALL PASS now.
+  Also run: check-js, check-b384-getstarted (all five sections), check-centering --quick (0 off centre), sweep-layout --quick 20/20,
+  check-b384-browsers safari (one fail, iPhone 17 bars-over Home, 'a2hs-close' ghost of the Add-to-Home-Screen sheet - over mode,
+  untouched by this change).
