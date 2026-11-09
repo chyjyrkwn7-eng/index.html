@@ -36929,3 +36929,78 @@ Madison: "the academy firework effect where most of it comes off screen.. and th
 - Cause: `#meter` follows `#vroomracebar` in the markup, so in a race the line sat between the header and the dots and the dots dropped ~114px (phone) / ~160px (iPad), scrolling away under a pinned line.
 - syncTestPin: while the race line is pinned, #meter is moved to the top of #vroomracebar (`.has-meter`: no top margin or padding on the bar, `display:flow-root` so the dots' own .9rem margin stays inside); when the line is not pinned it goes back after the bar. Header, dots, line - the dots at exactly their ordinary height (78.4 phone, 58.4 iPad) and pinned with the line. From 40rem the track itself carries 1.6rem above it to clear the corner Pause and chat (measured 28px clear on an iPad Pro 11").
 - Gate: tools/check-b384-vrdots.py (phone + iPad: ordinary height, track below, Pause/chat clear of the track and flag, dots stay put on scroll, back in place with the line gone, no errors). ALL PASS; FAILS on the previous build (dots at 192 / 218). racebar, vrpause, seams, vrkick pass.
+
+## 384 r8 (r8-toptabs, cut from claude/b384 68c4216; NOT on main): the top switchers are the iOS 26 segmented control, on the bottom bar's glass
+Madison, with a screenshot of the Stats tab's Profile / Stats / Settings circled and a recording of Delta's iOS 26 Light / Dark control:
+"Our top tabs should look and function like this, that's gonna work and function similar to our bottom tab by the way."
+
+**The reference, measured** (ref.mp4, 1320x2868 = 440x956pt at 3x, 60fps; a 700x240 crop of the control read frame by frame):
+- Track 540x144 device px = **180x48pt**, a full pill; inside it is the page's own colour (39 vs 40) with a faint light rim (+20 levels, ~1pt).
+- Thumb 245x120 px = **82x40pt**, a pill, **4pt inside the track** top, bottom and end (12 / 12 / 11 px); two thumbs side by side would be
+  7.7pt apart. **Neutral grey: 61 on a 39 track (+22), R=G=B within 1.** No colour anywhere.
+- Labels at rest: both ~135/255 (the thumb alone says which is picked); they brighten while the lens is up.
+- **Swell:** 540 -> 591 wide (**1.094**) and 144 -> 156 tall (**1.083**), full by ~10 frames (167ms), back by ~5 frames after the landing.
+- **Lens:** up to 197 px tall = **66pt: 1.37x the rest track, 1.26x the swollen one**, standing ~26 px (**9pt**) out above and below the rest
+  track. Held ~1.15x the thumb's width; at speed ~1.34x (1.17x held) and ~0.93x its held height. Bright rims, colour fringes at the ends.
+- **Glide** (lens centre, from the first frame it moves; the tap's first visible change is ~3 frames earlier): 4% at 1 frame, 12% at 2,
+  22% at 3, 35% at 4, 91% at 9, 95% at 10, 98.7% at 11, 100% at 12, a 1.6% overshoot at 14. A spring **w=20 (k=400), zeta 0.8** fits it
+  (it is a little quicker than the bottom bar's [260, .95]).
+- **Settle:** the lens shrinks into the grey over ~6 frames (~100ms); tap to rest is ~24 frames (**~400ms**).
+
+**What was built** (`attachSegGlass`, called from `attachSegSlider` for every pill switcher - not `.sub-seg`, the underline one):
+- **Shared with the bottom bar, not copied:** the bar's lens is now built, sized, drawn and sprung by top-level helpers
+  (`glassLensBuild`, `glassLensSize`, `glassLensTf`, `glassLensStep`, `glassLensSpring`) with its numbers in `glassLensMotion()`;
+  `setupBottomTabs` calls them (same values, same DOM - check-b383-tabslide all green after). The top switchers use the same helpers and
+  the same `.tab-lens-*` layers, so the glass, rim, fringes and grey hand-over are literally the bar's.
+- Covers Profile / Stats / Settings, the Leaderboard's boards, the units screen's levels (academy), the chat sheet's Friends / Groups /
+  Inbox, and the Virtual Room review's Missed / Entire test (both classes). Fire Code has only the chat's and the review's: one Profile
+  tab, no board, one level.
+- **At rest:** pill track (`border-radius:999px`, rim `rgba(255,255,255,.08)`), thumb **#3C3C3F** (60,60,63: +22-25 over the clean track
+  (35,38,43), chroma 3) with the bar platter's faint top light, the same in every theme, and the lens's grey coat is that same colour.
+  The lit button's own fill (the clean look gave it `--clean-card-2`) is cleared, or the glass leaves it behind. The thumb is no longer
+  copied from the lit button's computed style (that copy is what carried a theme colour). Overrides sit last in the sheet at (1,8,1)
+  (`:is(body, #r8-seg)` for the id weight and `.has-seg-glass` x4) to beat the clean look's (1,7,2) `!important` rules.
+- **Touch:** the control swells 1.09 x 1.08 (sideways held so it stays 4px off the screen edge: 1.08 on a 440 phone), the grey pill
+  lifts where it is (from the lit segment, as the reference's) into the lens - 1.26x the track's height, 1.15x the pill's width - which
+  glides to the touched segment on [400, .8] and stretches with speed (giving up less height than the bar's: H / (1 + 0.45 st)). The bar's
+  pop, settle, stretch, minUp and linger are unchanged.
+- **Drag:** past 8px the lens follows the finger every frame (rAF, only while dragging), rubber-banding 14px past the end segments;
+  let go, it lands on the nearest segment, which is clicked (the browser's own click to the segment the finger went down on is swallowed
+  for 450ms). A drag that ends nearer the lit segment lands back on it. A vertical move is the page's (`touch-action:pan-y`).
+- **Any other change** (a swipe across the content, a key, a click without a finger) lifts, glides and lands the same, via `place()`
+  only when the lit segment itself changed (`lastA`). attachTabSwipe ignores a finger that starts on a `.has-seg-glass`.
+- **Hand-over:** the thumb is hidden (Web Animation opacity, `fill:both`) the whole time the lens is up and comes back in the same frame
+  the lens goes, on the lit segment; a pick that did not happen (the academy's empty levels open "coming") lands the lens back on the lit
+  one 120ms later. Once the swell is back at 1 the thumb is placed once more (a place in the swell's last frames read a scale a hair over
+  1 as 1 and was up to 1px off on an iPad).
+- **A11y:** arrow keys move along; a switcher made only of segments gets `role=tablist` / `role=tab`, `aria-selected` kept in step;
+  a focus ring inside each pill. The chat's 36px tabs reach 44px with a `::before` (5px from the padding box: it sits inside a 1px border).
+- **Reduce motion:** no lens, no swell; the thumb jumps as it always did.
+- Transform and opacity only, no filters, no backdrop-filter; `seg.dataset.lens` (not a class: attachSegSlider re-places on class changes,
+  which looped the lens once) raises the control's z-index while it is up.
+
+**Ours, measured** (Profile, iPhone 17 Pro Max): track 400x52, thumb 130.7x44 4px inside; swell 400 -> 432 x 52 -> 56; lens up to
+~71px on screen (out ~9.5px above and below the rest track), 150 wide held, ~208 at speed; tap to settled ~405ms (the reference ~400);
+thumb lands centred under its label within 0.3px. Side by side: h-r8-toptabs/compare.png (rest, lifting, mid-glide, arrived, sinking,
+settled). The one visible difference is the glass's own body: ours is the bar's (rgba(54,57,66,.5), a touch blue and darker inside than
+the reference's clear lens) - kept, so the two bars stay one material.
+
+**Gate:** `tools/check-b384-toptabs.py` (phone + iPad, both classes, every switcher; real CDP touches): rest look under two themes,
+tap (lens up, taller than and out of the track, glide, swell, hand-over and centring), drag (follows; snaps; snaps back), content swipe
+with the lens, reduce motion, 44px hits, no errors. 144 checks, ALL PASS; against 68c4216 130 fail - every kind except "no page errors" (and the 44px check fails only on the chat's
+tabs there - the others were already 44). Fixtures: the academy's empty levels 2/3 are given two units each (a tap on an empty level opens
+"coming" instead - and the lens correctly lands back on the lit one); an unlock spotlight is stubbed; the switcher is opened again after
+each theme change (applyTheme rebuilt the chat sheet on an iPad).
+**Other gates:** check-js; check-behaviour's tab / swipe / Profile / board / chat sections (swipe, ranks, 314h tabs, 314 swipe and
+slider release, 317, 318c, 319h, 320h, 321f, 323n, 323t, 324s, 310, 314h board and chat): failure list identical to 68c4216's except
+310's "the indicator glides", which measured the thumb - now hidden while the lens carries the move - and was updated to read the lens
+when one is up; check-b383-tabslide (the bottom bar, after its lens moved onto the shared helpers) all pass; check-tours clean;
+check-centering --quick all pass, and in full on units / profile / stats / leaderboard x3 / settings / chat x3 one fail, the SE's
+board-3 first row, identical on 68c4216; sweep-layout 140/140 clean (run per family: whole it outruns a 30-minute limit); check-loops
+0 seams; console clean on phone and iPad in both classes.
+**Recorder:** `tools/record-toptabs.py` - real frames at 2x, the page's clocks at 1/8 while it records (CDP Animation.setPlaybackRate and
+patched timers / performance.now / rAF), resampled to 60fps. Chromium's virtual time was tried and hangs: code in the app waits on
+performance.now, which a paused clock never moves; a DOM element added under it also stopped screenshots coming back.
+**Chromium cannot show:** iOS's real glass refraction (ours is the bar's drawn rim and fringes, as on the bottom tab), 120Hz feel, and
+the `.nova-hsw` switch under a finger on a real iPhone (the effective `touch-action` is the switcher's pan-y, so a sideways drag should
+reach it, but only a phone can confirm).
