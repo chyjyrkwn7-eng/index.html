@@ -6754,7 +6754,10 @@
      and on a tablet the track (not the dots) is what keeps clear of the corner Pause and chat */
   .wrap .vroom-racebar.has-meter{ margin-top:0; padding-top:0; display:flow-root; }   /* flow-root: the dots' own top margin stays inside, so they sit where they always do */
   .wrap .vroom-racebar.has-meter > .meter{ margin-left:-.3rem; margin-right:-.3rem; }
-  @media (min-width:40rem){ .vroom-racebar.has-meter .vroom-racetrack{ margin-top:1.6rem; } }
+  /* (384 r9) THE SAME AIR ABOVE AND BELOW THE DOTS. Madison, the dots on the track circled: "Shouldn't the spacing be better?" The
+     dots sat 14px under the Drill / 1/12 row and 8px over the track (26px on a tablet) - jammed on a phone, loose on a tablet.
+     Now the track is as far under the dots as the dots are under the row, on every device (.9rem = the row's 14.4px). */
+  .wrap .vroom-racebar.has-meter .vroom-racetrack{ margin-top:.9rem; }
   .vroom-racetrack{
     position:relative; height:5.9rem;
     background:rgba(128,128,128,.14); border-radius:.35rem;   /* (384 r5) square-ended, so the start line and the finish meet its ends instead of floating inside a pill's curve */

@@ -6,7 +6,7 @@ room modes will look good."
 A real drill question on an iPhone 17 Pro Max and an iPad Pro 11", then the same question with the race line up and pinned:
 (1) the dots (#meter) are at the same height as in an ordinary question (1px); (2) the race track starts below the dots;
 (3) Pause and the chat button do not touch the track or its finish flag; (4) the dots stay where they are when the page scrolls;
-(5) with the race line gone the dots are back in their own place in the page (after the line) and still where an ordinary
+(7, r9) the track as far under the dots as the dots are under the Drill / 1/12 row; (5) with the race line gone the dots are back in their own place in the page (after the line) and still where an ordinary
 question puts them; (6) no page errors.
   python3 tools/check-b384-vrdots.py [--against OLD/index.html]   (must FAIL on the build before)"""
 import os, sys, importlib.util
@@ -46,6 +46,11 @@ with sync_playwright() as pw:
         chk("(1) %s: the dots at their ordinary height (%.1f, ordinary %.1f)" % (lab, v["meter"]["t"] if v["meter"] else -1, n["meter"]["t"]),
             v["meter"] and abs(v["meter"]["t"] - n["meter"]["t"]) <= 1, (n, v))
         chk("(2) %s: the race track starts below the dots" % lab, v["meter"] and v["track"] and v["track"]["t"] >= v["meter"]["b"], v)
+        # (7) (r9) "Shouldn't the spacing be better?" - as much air under the dots (to the track) as over them (to the Drill / 1/12 row)
+        top = pg.evaluate("()=>{ const e=document.querySelector('.wrap > .top'); return e ? e.getBoundingClientRect().bottom : null; }")
+        if v["meter"] and v["track"] and top is not None:
+            over, under = v["meter"]["t"] - top, v["track"]["t"] - v["meter"]["b"]
+            chk("(7) %s: the same air over and under the dots (%.1f / %.1f)" % (lab, over, under), abs(over - under) <= 2, [over, under])
         clear = not any(hit(x, y) for x in (v["pause"], v["chat"]) for y in (v["track"], v["flag"]))
         chk("(3) %s: Pause and the chat button touch neither the track nor its flag" % lab, clear, v)
         pg.evaluate("()=>{ document.querySelector('.qpanel').style.minHeight='3000px'; window.scrollTo({top:400, behavior:'instant'}); }"); pg.wait_for_timeout(500)
