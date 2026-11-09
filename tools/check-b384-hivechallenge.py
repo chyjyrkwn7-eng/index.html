@@ -8,7 +8,8 @@ listener, showTugResult, showBattleResult) with room documents in the fake Fires
  (3) only a match this account STARTED as host counts: one it joined (started by somebody else) does not, nor one it hosted
      with only Nova (no classmate), nor one it hosted and left before the end (abandoned);
  (4) no double count: the same result drawn again, and again as after a relaunch (the screen's own guard reset), adds nothing;
- (5) the counter is a persisted field: defaulted to 0 when missing and kept through applyLoadedData; no page errors.
+ (5) the counter is a persisted field: defaulted to 0 when missing and kept through applyLoadedData; no page errors;
+ (6) it merges as a progress counter: the larger of one account's copies (mergeSameAccount), the sum when an account is folded in.
 Run:  python3 tools/check-b384-hivechallenge.py   (--against OLD/index.html must FAIL)"""
 import os, sys, json, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -106,6 +107,14 @@ with sync_playwright() as pw:
         dflt = ev("""()=>{ const keep = store.vrHosted; const d = JSON.parse(JSON.stringify(store)); delete d.vrHosted; applyLoadedData(d); const missing = store.vrHosted;
           const d2 = JSON.parse(JSON.stringify(store)); d2.vrHosted = 2; applyLoadedData(d2); const kept = store.vrHosted; store.vrHosted = keep; return [missing, kept]; }""")
         chk("(5) %s: a copy without the field loads as 0, one with it keeps it (%s), and no page errors" % (tag, dflt), dflt == [0, 2] and not errs, [dflt, errs[:3]])
+        # (6) a progress counter: the same account's two copies merge to the larger (never lowered); a folded-in account adds
+        mg = ev("""()=>{ const a = { vrHosted: 1 }, b = { vrHosted: 3 }; mergeSameAccount(a, b); const up = a.vrHosted;
+          const c = { vrHosted: 3 }; mergeSameAccount(c, { vrHosted: 1 }); const down = c.vrHosted;
+          const keep = JSON.parse(JSON.stringify(store)); store.vrHosted = 2; let sum = null;
+          try{ mergeLeavingAccount(JSON.parse(JSON.stringify(Object.assign({}, keep, { vrHosted: 1 })))); sum = store.vrHosted; }catch(e){ sum = 'ERR ' + e; }
+          applyLoadedData(keep); return [up, down, sum]; }""")
+        chk("(6) %s: two copies of one account merge to the larger, either way round (%s), and a folded-in account adds (2 + 1 = %s)" % (tag, (mg or [None])[:2], (mg or [None] * 3)[2]),
+            mg and mg[0] == 3 and mg[1] == 3 and mg[2] == 3, mg)
         ctx.close()
     br.close()
 print("ALL PASS" if ok else "FAILED")
