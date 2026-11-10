@@ -38135,6 +38135,59 @@ Gate: `tools/check-b384-ifcweekly.py` (a Wednesday, both classes; Fire Code: no 
 challenge in any of twelve weeks; academy: both still there). It fails on 384.19 (the recap plays, 3 checks). `check-b383-classes` (5) used to
 assert the Fire Code recap plays; it now asserts it does not, and still asserts the academy's.
 
+## 384.20 - fix: SE landscape bar, banner scroll, desktop lag
+
+Branch claude/b384-fix-layout, from 384.19. NOT on main; the build number is not bumped (APP_BUILD and version.json stay as they were).
+
+### 1. iPhone SE 1st gen on its side in a Safari tab: the "GREY BAR"
+- Reproduced: `check-fixes.py --only "SE (1st"` fails 568x260 browser with "GREY BAR - 7 levels at (284, 221)", the one known failure since build 279.
+- Cause, read off the page: Home is 284px tall in a 260px tab (336 in the 320px installed app). Home's own content is 154px and the bar's whole footprint is 91px (12px
+  offset + 79px), but `.wrap` kept the 8rem (130px) a phone upright or a tablet reserves under its content. A page that scrolls puts the html fallback (anchored to the
+  top of the document) 24px off the fixed sky at the bottom edge: that is the gate's number. It also gives Safari's toolbar something to move.
+- Fix: one rule, `@media (min-width:34rem) and (max-width:39.99rem) and (max-height:26rem)`: `body.has-bottomtabs:has(.screen-home-actual) .wrap{ padding-bottom:calc(var(--tabs-bottom) + 5rem + 6px) }`
+  (98px: the bar's footprint plus 6px, as Home upright keeps in --home-pb). Only .wrap's padding-bottom changes; nothing above it moves.
+- Measured: Home 284 -> 260 (browser) and 336 -> 320 (installed); grey-bar levels 7 -> 0 (and 2 -> 0 scrolled to the top). A scan of Home on every device x orientation x mode (104 rows)
+  before and after differs in exactly the two SE 1st gen landscape rows (Start button and bar y unchanged). Full sweep-layout: 144/144 clean. check-positions: output byte-identical to 384.19
+  (its 2 flags are the SE 1st gen PORTRAIT onboarding, older). check-centering --quick: the same 2 "Coming soon" failures as 384.19.
+- Left alone: the Galaxy Z Fold cover (882x288 browser) still scrolls Home by 15px (its bar is the 101px tablet one; needs its own tier); a 2px overflow on laptops and iPads in landscape.
+  The tab's top and bottom 3rem fades into the band colour (8-9 levels lighter at the edge) are 37% of a 260px viewport; if what Madison sees is that band and not a scroll, it is by design
+  (`--fade-top`/`--fade-bot`) and shortening it on short tabs is a look decision, not made here.
+- Gate: tools/check-b384-selandscape.py. Fails on 384.19 (Home taller than the tab at 568x260, 568x320 installed, 600x280; grey bar 7 levels), passes here.
+- Phone only: whether this is the bar he sees (iOS 15.8 is the SE 1st gen's last: no color-mix(), so its sky may paint differently again), and Safari's toolbar behaviour on a page that no longer scrolls.
+
+### 2. Banners as you scroll (Customize > Banner)
+- NOT reproduced as a stopped or idle tile while scrolling: a frame-by-frame log (every tile's classes and animations each animation frame) through mouse flings at 1500-8000px/s,
+  phone 440x956 and tablet 834x1194, Fire Code and academy, 1x and 4x CPU: no tile at least half in view was ever .is-offscreen, .rk-idle or without running animations. The Leaderboard's rows
+  likewise (a fling at 8000px/s at 4x: no visible row ever skipped).
+- FOUND, and fixed: a JUMP (back to top, the status bar's tap, a long fling's end). A tile is held (.is-offscreen) outside its observer's margin and woken by an IntersectionObserver
+  callback, a task after the frame that shows the new place. 384.19: 4-6 frames over six jumps with a moving tile in view frozen on its pose at 1x (tablet 1-2); at 4x CPU, where a frame is
+  150ms+, up to ~500ms. `wakeTilesOnScroll()` (Customize's banner tiles at the observer's 34%, the theme swatches at its 120px) wakes them in the scroll event, which runs in the frame that moves the
+  page; one listener for all lists, reads then writes, a section that has left the page dropped on the next add or scroll. The observers stay and agree. After: 0 frames in every config.
+- Budget, INFO only: on this ~2-screen page every tile is inside the idle margin (a whole screen) at every stop - all 22 tiles alive, 251 animations (Fire Code) / 222 (academy) at the top, middle and
+  end. Tightening it makes a tile arrive still on a hard fling (the reason r24 widened the margin), so it was not touched. This is the likeliest iOS culprit (hundreds of promoted animated layers on one
+  page), and cannot be measured here.
+- Other iOS-only candidates, unconfirmed: WebKit resuming paused accelerated animations, IntersectionObserver timing during momentum scroll, the `.banner-opt:active` scale. Reduce Motion (iOS or the app's) shows no banner moving at all.
+- Gate: tools/check-b384-bannerscroll.py (fling and jump, both classes, phone and tablet). Fling and the budget line hold on both builds; the jump line FAILS on 384.19 in all four configs and passes here.
+
+### 3. Lag on a computer
+- Profiled with tools/profile-desktop.py (new; CDP trace, thread CPU in 1x-equivalent ms, forced style/layout passes by the function and line that forced them) at 1366x768x1, 1512x982x2,
+  1920x1080x1 and 1920x1080x2, and 2560x1440 / 3840x2160 through check-b384-tabbutter: tab changes, the Leaderboard and Customize scrolled, the Start sheet, hover.
+- A tab change on 384.19 forces no function more than 4-6 style passes (the 60+ of place / hswFits / backToTopRoom were 384.19's own fix; check-b384-tabbutter --quick passes). Of the FULL run the two desktops
+  2560x1440 and 3840x2160 failed (2): `charFlipAttach` 10 and 12 passes. Cause: a character tile inside a row the page has skipped (.rank-row.is-offscreen, content-visibility:hidden) read its size on its
+  timer, and a size read inside a skipped row opens its lock (a style pass and a layout of the whole row) - the cost 384.19 took out of hswFits. Fix: charFlipAttach (and its retry) treat such a tile as "later", like a
+  hidden one; the observer attaches it the moment its row is let back in. After: tabbutter (2) 0 on both, and the FULL tabbutter run is ALL PASS on every device.
+- The same removes `charFlipAttach` from every Leaderboard scroll: 29 / 24 / 22 / 22 forced passes (+ as many layouts) -> 0 at 1366x768x1 / 1512x982x2 / 1920x1080x1 / 1920x1080x2; main-thread CPU of that scroll
+  743 -> 712, 733 -> 590, 705 -> 676, 716 -> 624 ms (a sandbox at load 7: the direction held on all four, the size is not exact).
+- Tried and removed (no measured gain): moving setShift's visualViewport read off a computer's scroll (the next scroll-time reader pays the same flush), batching syncLoopClock across a board (sheets arrive
+  one a frame, so each call is one pass anyway), two-phase orbitStandIns, arm/measure batching of tiles. LESSON: a forced pass is only waste if the page would not have done that work in the frame anyway;
+  count the writes between the reads, not the passes.
+- WHAT A COMPUTER ACTUALLY PAYS FOR is the first visit of each screen with art: the flip-book sheets of characters and flares are recorded (nothing saved yet; ~10s a sheet in this sandbox): the main thread is 59-77%
+  busy for minutes (Leaderboard 8-10s open: 4.7-7.3s CPU; Profile 4s: 3.1s CPU, 77% of frames late, p50 33ms), against ~10% for a settled screen (Calendar idle 425ms in 4s) and 13% hovering over a settled board.
+  The recorder yields to touch, scroll, keys and a dragged mouse but takes every idle slice of a frame otherwise (so a hovering mouse sees it). Capping its duty (e.g. a third of each idle slice on a fine pointer) would trade
+  lateness for longer on live drawings; not done without a decision. Batch size 4 -> 2 made no difference.
+- Not changed, measured: Customize and the Leaderboard cost mostly compositing (Layerize 130-270ms a scroll, 100-270 layers); the hover scenario's 1.4s CPU is that recording, not hover.
+- UNFINISHED: the tab hop's first flush on arriving at Home (`slideBubbleToActiveTab` via syncStartAction, ~25ms, one pass that would happen in the frame anyway); lbArtQueue's per-step re-sort (20-28 small passes a scroll).
+
 ## 384.19.1 - the pearl, and a stray merge marker
 
 Madison, shown the three unlit secret flares (ember A, socket B, pearl C): "For the secret flares, I like the pearl look." The unlit flare is now the pearl (option C of "384 r15 - unlit secret flares"): frosted pale glass over a dark core, a bright thin rim, a glint high on the left, a veiled light drifting inside it (`cof-ul-drift`, opacity + transform only), the existing slow sheen, NO ring (`.cof-ring` is `display:none`; the part stays in the DOM so the four-part markup is unchanged). Same one look in every place (Home's orbit, Welcome's planet, recap dots, hint card, locked secret character's mark). Colourless, no filter, reduced motion leaves the core as a still dim light. `check-b384-unlitflares.py` follows: "a pearl has no ring" (display none, nothing running) replaces "a ring opens and goes", and the pixel check asks for a frosted body clearly lighter than the panel inside a brighter thin edge (it fails on 384.19: the ring check, the dark body).

@@ -35548,6 +35548,18 @@ html.is-browser{ --fade-paper: transparent; }
     /* and Find me gives the search its words ("Search names" whole) */
     html[data-theme][data-layout] body .rank-tools .iconbtn.rank-me-btn{ padding-left:.75rem; padding-right:.75rem; }
   }
+  /* ---- A SMALL PHONE ON ITS SIDE: HOME DOES NOT SCROLL (384.20) ----
+     An iPhone SE 1st gen held sideways (568 wide) shows Home 260px tall in a Safari tab and 320px installed. Home's own
+     content is 154px tall there and the bar's whole footprint is 91px, but .wrap still reserved the 8rem a phone upright
+     or a tablet keeps under its content (130px), so the page was 284px: 24px taller than the tab (16 installed) for no
+     reason, Safari's toolbar moved on the slightest touch, and check-fixes' "GREY BAR" read the html fallback (anchored to
+     the top of a page that now scrolled) 7 levels off the fixed sky at the bottom edge. The reserve is the bar's own here
+     (its offset, its 5rem, 6px, as Home upright keeps in --home-pb), so the page is exactly as tall as the screen. Only
+     .wrap's padding-bottom changes: the panel, its content and the bar do not move. Short AND narrow (a phone on its
+     side below 40rem, where the bar is its compact 79px height); wider phones and tablets keep the reserve they had. */
+  @media (min-width:34rem) and (max-width:39.99rem) and (max-height:26rem){
+    html[data-layout] body.has-bottomtabs:has(.screen-home-actual) .wrap{ padding-bottom:calc(var(--tabs-bottom) + 5rem + 6px); }
+  }
   /* ---- A SMALL PHONE HELD UPRIGHT (327z15 round 47) ----
      "The iPhone SE layout ... Why is the planet system so tiny and the start studying button
      massive? Why is the bottom tab like that? ... the se (or any smaller phone) has really bad
@@ -84926,6 +84938,45 @@ function watchRankEmblemOnScreen(svg){
   _rkIO.observe(svg); _rkSeen.add(svg);
 }
 setInterval(() => { _rkSeen.forEach(t => { if(!t.isConnected){ try { _rkIO && _rkIO.unobserve(t); } catch(e){} _rkSeen.delete(t); } }); }, 15000);
+/* (384.20) A JUMP WAKES ITS TILES IN THE FRAME IT LANDS. Customize's banner and theme tiles are held still (.is-offscreen) outside
+   their observer's margin and woken by that observer - whose callback is a task of its own, after the frame that shows the new place.
+   A jump (back to top, the status bar's tap, a long fling's end) therefore showed its first frames with every arriving tile frozen
+   on its pose: measured at 440x956, 1-3 frames per jump at 1x (17-84ms) and 150-530ms at 4x CPU, where a frame is 150ms+. A scroll
+   event runs in the frame that moves the page, before it is drawn, so this wakes the tiles that are now inside the same margin
+   in that very frame (reading only the tiles still held, a rect each; the observer stays, and agrees). `margin`: a fraction of the
+   screen (<1) or px. Detached with its section. */
+var wakeTileSets = null;   /* var, lazily made (a const would be a TDZ error for a caller that runs earlier in the boot) */
+function wakeTilesOnScroll(sect, sel, margin){
+  const tiles = Array.from(sect.querySelectorAll(sel));
+  if(!tiles.length) return;
+  if(!wakeTileSets){
+    wakeTileSets = new Set();
+    /* ONE listener for every list; a list that has left the page is dropped when the next one is added or the next scroll comes, so a
+       section (and the hundreds of elements in each tile's art) is never kept alive by a listener of its own */
+    window.addEventListener("scroll", () => {
+      const vh = window.innerHeight || 800;
+      wakeTileSets.forEach(set => {
+        if(!set.sect.isConnected){ wakeTileSets.delete(set); return; }
+        const m = set.margin < 1 ? vh * set.margin : set.margin;
+        /* every read first, then every write: a tile's class change dirties its whole art, and the next tile's rect would flush it */
+        const wake = [];
+        for(let i = 0; i < set.tiles.length; i++){
+          const b = set.tiles[i];
+          if(!b.classList.contains("is-offscreen")) continue;
+          const r = b.getBoundingClientRect();
+          if(r.bottom > -m && r.top < vh + m) wake.push(b);
+        }
+        wake.forEach(b => {
+          b.classList.remove("is-offscreen");
+          const bn = b.querySelector(".bnr.bnr-layered.rk-idle");
+          if(bn) bn.classList.remove("rk-idle");
+        });
+      });
+    }, { passive: true });
+  }
+  wakeTileSets.forEach(set => { if(!set.sect.isConnected) wakeTileSets.delete(set); });
+  wakeTileSets.add({ sect, tiles, margin });
+}
 
 /* A person's character with their rank on it. Every list that shows
    somebody - the three rankings boards, the Virtual Room lobby, the
@@ -84996,8 +85047,8 @@ function setCharState(el, state, opts){
       const r = charFlipAttach(el);
       if(r === false) goLive();
       else if(r === null){
-        /* hidden, not unmeasurable: the watcher attaches it once shown */
-        if(!el.getClientRects().length) return;
+        /* hidden, not unmeasurable: the watcher attaches it once shown (a skipped row's tile too: no read of it, see charFlipAttach) */
+        if(el.closest(".screen-rankings .rank-row.is-offscreen") || !el.getClientRects().length) return;
         if(++tries < 40) setTimeout(attach, 150); else goLive();
       }
     };
@@ -98043,6 +98094,12 @@ function charFlipAttach(el){
      a character in Customize did to your own character in the tab bar,
      for the rest of the session. A hidden tile waits to be shown; the
      watcher (charFlipWatch) attaches it then. */
+  /* (384.20) NOT A TILE IN A ROW THE PAGE HAS SKIPPED (.rank-row.is-offscreen: content-visibility:hidden). A size read inside one opens the
+     row's lock for the read and shuts it again - a style pass and a layout of the whole row, per tile (the same cost 384.19 took out of
+     hswFits): 10 on a 2560x1440 window's first hop to the Leaderboard, 12 on a 4K one, where a board's rows below the screen are skipped
+     and every one of their tiles was measured on its timer. It is "later", as a hidden tile is: the observer (charFlipIO) attaches it the
+     moment its row is let back in and it has a box. */
+  if(el.closest(".screen-rankings .rank-row.is-offscreen")) return null;
   if(!el.getClientRects().length) return null;
   const layoutW = svg.clientWidth || parseFloat(getComputedStyle(svg).width) || 0;
   if(!layoutW) return null;
@@ -148842,6 +148899,7 @@ function buildCustomizeBannerSect(){
       entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
     }, { rootMargin: "34% 0px" });
     bannerSect.querySelectorAll(".banner-opt").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
+    wakeTilesOnScroll(bannerSect, ".banner-opt", .34);
   }
   return { sect: bannerSect, after: () => fillDeferredBannerArt(bannerArtQueue) };
 }
@@ -148921,6 +148979,7 @@ function buildCustomizeThemeSect(){
       entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
     }, { rootMargin: "120px 0px" });
     accentSect.querySelectorAll(".swatch").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
+    wakeTilesOnScroll(accentSect, ".swatch", 120);
   }
 
   function paintAccents(){
