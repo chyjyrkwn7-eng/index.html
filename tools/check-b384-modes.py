@@ -3,8 +3,8 @@ Madison, on Fire Code's three: "there's so much empty space on the bottom here a
 centered, and for the police one you'd centered the 4 a little better? The wording within the boxes is a little too short. Could
 we add a smidge more?"
 Read off the page, both classes:
-(1) iPhone 17 Pro Max (440x956): the cards sit in the middle of the room between the question under the title and the tab bar
-    (16px above it) - the space above the first card and below the last within 2px of each other - Fire Code's three and the
+(1) iPhone 17 Pro Max (440x956): the cards take the room between the question under the title and the tab bar (build 384 r20: tiles that
+    fill it, 18px under the question and 18px above the tab bar) - the space above the first card and below the last within 2px of each other - Fire Code's three and the
     academy's four; the academy's four all above the tab bar;
 (2) the question stays where it was, under the title;
 (3) iPad (834x1194): the same middle;
@@ -36,7 +36,7 @@ READ = """()=>{ const q=document.querySelector('#stage .modeselect-sub'), cards=
   const glows = [q.closest('.panel'), ...q.closest('.panel').querySelectorAll('*')].flatMap(e => ['', '::before', '::after'].map(pe => [e, pe, getComputedStyle(e, pe || null)]))
     .filter(([e, pe, s]) => (!pe || (s.content !== 'none' && s.content !== 'normal')) && s.display !== 'none' && /radial-gradient/.test(s.backgroundImage))
     .map(([e, pe]) => (e.className && e.className.baseVal !== undefined ? e.className.baseVal : e.className) + pe);
-  return { glows, qTop: qr.top, qBot: qr.bottom, first: f.top, last: l.bottom, tab: tr.top, n: cards.length, above: f.top - qr.bottom, below: (tr.top - 16) - l.bottom, sentences }; }"""
+  return { glows, qTop: qr.top, qBot: qr.bottom, first: f.top, last: l.bottom, tab: tr.top, n: cards.length, above: f.top - qr.bottom, below: tr.top - l.bottom, sentences }; }"""
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G["g"]["CHROME"])
     out, errs_all = {}, []
@@ -57,7 +57,7 @@ with sync_playwright() as pw:
             abs(r["above"] - r["below"]) <= 2 and r["last"] <= r["tab"] - 8 and r["above"] >= 12, r)
         chk("(2) %s, Pro Max: the question still under the title (top %.0f)" % (cls, r["qTop"]), r["qTop"] < 160, r)
         r = out[(cls, 834)]
-        chk("(3) %s, iPad: the cards in the middle (%s)" % (cls, fmt(r)), abs(r["above"] - r["below"]) <= 2 and r["above"] > 30, r)
+        chk("(3) %s, iPad: the cards in the middle (%s)" % (cls, fmt(r)), abs(r["above"] - r["below"]) <= 2 and r["above"] >= 12, r)
         r = out[(cls, 375)]
         chk("(4) %s, SE: no room, nothing moved (the first card %.0fpx under the question)" % (cls, r["above"]), 10 <= r["above"] <= 24, r)
     sents = {cls: out[(cls, 440)]["sentences"] for cls in ("ifc", "academy")}

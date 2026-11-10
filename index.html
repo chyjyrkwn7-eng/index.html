@@ -37889,18 +37889,8 @@ html.is-browser{ --fade-paper: transparent; }
     position:relative; z-index:1; margin:-.2rem auto 0; max-width:26rem; text-align:center;
     font-family:inherit; font-size:1rem; line-height:1.45; color:var(--soft); text-wrap:balance;
   }
-  html[data-layout] body #stage > .panel.modeselect .modecards{ margin-top:1.1rem; }
-  /* (384) the group's place (centerModeGroup) - with each card's third sentence the academy's four fit an iPhone Pro Max's
-     screen and can be centred too */
-  html[data-layout] body #stage > .panel.modeselect .modecards.modecards{ margin-top:var(--ms-gap, 1.1rem); }   /* the question's own bottom margin is 0, so nothing collapses into it */
-  /* still BIG (343: "The buttons for mode selection still look small and not big like before" - check-b342 holds 160px+):
-     a 160px floor, the words filling it, 10px between - the academy's four fill a Pro Max's room exactly and centre */
-  html[data-layout] body #stage > .panel.modeselect .modecard.modecard{ min-height:160px; padding:22px 24px; }
-  html[data-layout] body #stage > .panel.modeselect .modecards.modecards{ gap:10px; }
-  /* the academy's four on a phone: 154px each, so the four and their gaps sit in a Pro Max's room with ~14px either side (at 160
-     they were 13px under the tab bar); still the big cards, nowhere near 334's 138px */
-  @media (max-width:39.99rem){ html[data-layout] body #stage > .panel.modeselect .modecards.modecards:has(> .modecard:nth-of-type(4)) > .modecard.modecard{ min-height:154px; } }
-  @media (min-width:40rem){ html[data-layout] body #stage > .panel.modeselect .modecard.modecard{ padding:24px 26px; } html[data-layout] body #stage > .panel.modeselect .modecards.modecards{ gap:16px; } }
+  /* (384 r20) the cards' size, place and build are one block at the end of the sheet ("THE MODE TILES"): the group takes the room
+     under the question (fillModeGroup) - the 160px rows, the centring gap and the 10px / 16px gaps that stood here are gone */
   /* (384 r5) VIRTUAL ROOM'S CHOICE IS THE MODE SCREEN'S SECOND PAGE: the same question under the title, the same big cards (22px 24px,
      the same words size, 10px between), the three games a flat row of chips like every other small control */
   html[data-layout] body #stage > .panel.screen-vroom-choice{ padding-top:24px; }
@@ -37909,10 +37899,6 @@ html.is-browser{ --fade-paper: transparent; }
     position:relative; z-index:1; margin:-.2rem auto 0; max-width:26rem; text-align:center;
     font-family:inherit; font-size:1rem; line-height:1.45; color:var(--soft); text-wrap:balance;
   }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ min-height:160px; padding:22px 24px; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecarddesc.modecarddesc{ font-size:.95rem; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:10px; margin-top:1.1rem; }
-  @media (min-width:40rem){ html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ padding:24px 26px; } html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:16px; } }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vrc-game{ background:var(--clean-card); border:0; }
   /* (383) Report a bug's label: a grey sentence-case heading like Settings' groups, not spaced capitals */
   html[data-layout] body #stage .screen-bugreport .bugreport-label{ text-transform:none; letter-spacing:0; font-size:.86rem; font-weight:600; color:var(--soft); }
@@ -37939,11 +37925,6 @@ html.is-browser{ --fade-paper: transparent; }
      phone, and then for larger devices just side by side?" The middle of the screen left the phone half empty above them.
      Now the cards sit right under the line, as Choose your mode's do, on every device; from 40rem they are side by side
      (.modecards' own row). No auto margins, no shift - vrcCentre() is gone. */
-  html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ margin-top:1.1rem !important; }
-  @media (min-width:40rem){
-    html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ flex-direction:row; align-items:stretch; }
-    html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards > .vrc-modecard{ flex:1 1 0; min-width:0; }
-  }
   /* (384 r8) the bigger cards were tried and reverted ("These boxes being bigger is not the move after all. Revert their size.") */
   /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
   html[data-layout] body #stage > .panel.vroom-finale-solo{
@@ -39135,6 +39116,102 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .settings-page-account .customize-namerow .profile-edit-btn.profile-edit-btn{
     font-size:16px; font-weight:600; padding-inline:1.15rem; padding-block:calc(.55rem + (1lh - 1cap)/2); min-height:38px; line-height:1.25;
   }
+
+  /* ---- THE MODE TILES (build 384 r20) ----
+     Madison, on Choose your mode and the Virtual Room's Host / Join at his page zoom: "There's so much open space on these screens, it
+     doesn't look like that. In the academy there's a 4th mode ... so it looks better, however, on the phone not so much.. should we do
+     them as a different looking boxes? Almost like the boxes you see when signing up for a class? ... each device size may need a
+     different layout and that's okay. Fix it though." The title and the question stay at the top; the cards are TILES that take the
+     room under them down to the tab bar (fillModeGroup measures it and sets --ms-room / --ms-tile / --ms-cols / --ms-gap / --ms-w and
+     data-tile): glass, tinted with the mode's own colour, a medallion for its mark top-left, a chevron top-right, the name and the line
+     at the foot. The markup is the card it always was (.modecard > .modecardtitlerow > icon + name, then the line): the title row is
+     display:contents, so the mark, the name and the line are the tile's own grid items and every id, class and tour target holds.
+     data-tile "stack": the medallion above the words (a phone with room, a tablet, a laptop); "snug": the medallion small beside the
+     name, the line across the foot (a phone with three or four to a screen). All sizes are glass px times --zc (1 at 100%; 1.18 at the
+     owner's 85% page zoom, so the tile is drawn at the size it has on a 440pt screen); the tile's own height is the grid's, so nothing
+     here changes height by animation - the tile only scales (transform) under a finger. */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice){
+    --u:calc(1px * var(--zc, 1));
+    display:flex; flex-direction:column; padding-bottom:0; min-height:0; box-sizing:border-box; overflow:visible;
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards.modecards{
+    display:grid; grid-template-columns:repeat(var(--ms-cols, 1), minmax(0, 1fr));
+    grid-auto-rows:minmax(var(--ms-tile, 140px), auto); gap:var(--ms-gap, 10px); align-content:center;
+    min-height:var(--ms-room, 0px); width:var(--ms-w, 100%); box-sizing:border-box;
+    margin:calc(18 * var(--u)) 0 0 calc((100% - var(--ms-w, 100%)) / 2) !important; flex-direction:initial;
+  }
+  :where(.modecard){ --mc:var(--accent); }
+  .modecard[data-mode="drill"]{ --mc:#FF5A60; }
+  .modecard[data-mode="exam"]{ --mc:#FF9A3C; }
+  .modecard[data-mode="review"]{ --mc:#4ADE80; }
+  .modecard[data-mode="vroom"]{ --mc:#4A9FE8; }
+  .modecard.vrc-card-host{ --mc:#B48CFF; }
+  .modecard.vrc-card-browse{ --mc:#3FE3A8; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard{
+    --mi:calc(56 * var(--u));
+    position:relative; display:grid; box-sizing:border-box; min-width:0; min-height:0; width:auto; margin:0; text-align:left; overflow:hidden;
+    padding:calc(20 * var(--u)) calc(20 * var(--u)) calc(20 * var(--u)) calc(22 * var(--u)); border-radius:calc(22 * var(--u));
+    grid-template-columns:auto 1fr; grid-template-rows:auto minmax(calc(12 * var(--u)), 1fr) auto auto; align-items:start; gap:0;
+    background:linear-gradient(150deg, color-mix(in srgb, var(--mc) 12%, transparent), color-mix(in srgb, var(--mc) 3%, transparent) 55%, transparent 85%),
+      var(--surface-sheen), linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
+    border:1px solid color-mix(in srgb, var(--mc) 24%, var(--surface-border)) !important; box-shadow:none !important;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:is([data-tall="1"], [data-tall="2"]) > .modecard.modecard,
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) > .modecard.modecard{
+    --mi:calc(64 * var(--u)); padding:calc(24 * var(--u)) calc(24 * var(--u)) calc(24 * var(--u)) calc(26 * var(--u)); border-radius:calc(26 * var(--u));
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards.ms-spanlast > .modecard.modecard:last-child{ grid-column:1 / -1; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:active{
+    background:linear-gradient(150deg, color-mix(in srgb, var(--mc) 12%, transparent), color-mix(in srgb, var(--mc) 3%, transparent) 55%, transparent 85%),
+      var(--surface-sheen), linear-gradient(color-mix(in srgb, var(--ink) 12%, transparent), color-mix(in srgb, var(--ink) 12%, transparent)), var(--surface-1) !important;
+  }
+  @media (hover:hover){
+    html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:hover{
+      border-color:color-mix(in srgb, var(--mc) 55%, var(--surface-border)) !important;
+    }
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:focus-visible{
+    outline:2px solid color-mix(in srgb, var(--mc) 80%, #fff); outline-offset:2px; border-color:color-mix(in srgb, var(--mc) 70%, var(--surface-border)) !important;
+  }
+  /* the mark: the mode's own drawing on a glass medallion in its colour (a gradient and a rim, no filter, no blur) */
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modecardtitlerow{ display:contents; }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modeicon.modeicon{
+    grid-column:1; grid-row:1; width:var(--mi); height:var(--mi); padding:calc(var(--mi) * .26); box-sizing:border-box; border-radius:50%; flex:none;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--mc) 34%, transparent), color-mix(in srgb, var(--mc) 12%, transparent));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mc) 42%, transparent), inset 0 1px 0 rgba(255,255,255,.2);
+  }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modeicon .modeiconpath{ stroke-width:1.75; }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modecardtitle.modecardtitle{
+    grid-column:1 / -1; grid-row:3; margin:0; font-size:calc(22 * var(--u)); line-height:1.2; letter-spacing:-.015em;
+  }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modecarddesc.modecarddesc{
+    grid-column:1 / -1; grid-row:4; margin:calc(6 * var(--u)) 0 0; font-size:calc(15 * var(--u)); line-height:1.45; max-width:34em;
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ min-height:var(--ms-dh, 0px); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:is(:not([data-cols="1"]), [data-tall="1"], [data-tall="2"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(24 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:is(:not([data-cols="1"]), [data-tall="1"], [data-tall="2"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(16 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] > .modecard.modecard{ --mi:calc(88 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] .modecard .modecardtitle.modecardtitle{ font-size:calc(28 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] .modecard .modecarddesc.modecarddesc{ font-size:calc(17 * var(--u)); }
+  /* the chevron: the tile is one tap, and this says where it goes */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard::after{
+    content:""; grid-column:2; grid-row:1; justify-self:end; width:calc(34 * var(--u)); height:calc(34 * var(--u)); border-radius:50%;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.85' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6l6 6-6 6'/%3E%3C/svg%3E") center / 50% no-repeat,
+      color-mix(in srgb, var(--mc) 16%, transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mc) 26%, transparent);
+  }
+  /* SNUG: three or four to a phone's screen. The medallion small beside the name, the chevron at the end of that line, the line across the foot */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard.modecard{
+    --mi:calc(38 * var(--u)); padding:calc(14 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u)) calc(16 * var(--u)); border-radius:calc(20 * var(--u));
+    grid-template-columns:auto 1fr auto; grid-template-rows:auto auto; align-content:center; align-items:center; column-gap:calc(12 * var(--u)); row-gap:calc(6 * var(--u));
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard .modecardtitle.modecardtitle{ grid-column:2; grid-row:1; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard .modecarddesc.modecarddesc{ grid-row:2; margin:0; font-size:calc(14.5 * var(--u)); line-height:1.4; }
+  /* the iPhone's switch under the head of a card is the medallion's height now (it was the 64px of the old row) */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="stack"] > .modecard > .nova-hsw{ height:calc(96 * var(--u)); }
+
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -111348,35 +111425,79 @@ function buildProgressRing(pct, small){
   return ringWrap;
 }
 
-/* THE MODES IN THE MIDDLE (384). Madison, on Fire Code's three: "there's so much empty space on the bottom here and it feels super
-   off.. should these 3 options be centered, and for the police one you'd centered the 4 a little better?" The question and the
-   question stays under the title as the screen's heading, and where the screen has room the cards sit in the middle of the
-   space between it and the tab bar (never closer to it than they were). Measured after the mount (the layout is there to read before the first paint)
-   and again when the window changes size, for as long as this screen is the one on the stage. */
-function centerModeGroup(panel){
+/* THE MODES FILL THEIR SCREEN (384 r20). Madison, on a Pro Max at ~85% page zoom: "There's so much open space on these screens, it doesn't
+   look like that. In the academy there's a 4th mode ... so it looks better, however, on the phone not so much.. should we do them as
+   a different looking boxes? Almost like the boxes you see when signing up for a class? ... each device size may need a different layout
+   and that's okay." The cards were the same flat rows at every size, centred (build 384) or parked under the line (r9) in a screen
+   three times their height. Now the title and the question stay at the top and the CARDS TAKE THE ROOM under them, down to the tab
+   bar: tall glass tiles (a tinted medallion for the mode's mark, the name, the line, a chevron), laid out by what the screen has -
+   one column of equal tiles on a phone (compact when three or four cannot be tall: a small medallion beside the name), two across
+   on a tablet held upright (an odd one out across both columns), one row of tiles on a landscape tablet, laptop or desktop (capped, in
+   the middle). One function for both screens that use them (Choose your mode, Host / Join) so they cannot drift. Measured after the
+   mount (the layout is there to read before the first paint) and again when the window changes size, for as long as this screen is the
+   one on the stage. All of it in glass px: the page's CSS px are 0.85pt on a zoomed phone (--zc), so what is tuned here is divided by it. */
+function fillModeGroup(panel){
   const fit = () => {
     if(!panel.isConnected) return false;
-    const head = panel.querySelector(".modeselect-sub"), cards = panel.querySelector(".modecards");
+    const head = panel.querySelector(".modeselect-sub, .cal-sub"), cards = panel.querySelector(".modecards");
     if(!head || !cards) return true;
-    panel.style.removeProperty("--ms-gap");
+    const kids = [...cards.children].filter(c => c.classList.contains("modecard")), n = kids.length;
+    if(!n) return true;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--zc")) || 1;
     /* layout positions (offsetTop), not boxes: the screen comes in on a transform, and the tab bar is not in it */
     const at = el => { let y = 0; for(let e = el; e; e = e.offsetParent) y += e.offsetTop; return y; };
     const tb = document.getElementById("bottomtabs");
-    const floor = (tb && !tb.hidden && tb.offsetHeight ? at(tb) : innerHeight) - 16;
-    /* the question stays under the title, as the screen's own heading; the cards sit in the middle of what is left */
-    /* the gap above the cards IS the centring: half the room the cards leave - set outright, so it can come in under the
-       usual 1.1rem as well as grow (the academy's four on a Pro Max: 14.5px each side); with less than 12px a side to give,
-       the usual gap stands and the page scrolls (a small phone) */
-    const subB = at(head) + head.offsetHeight, h = cards.offsetHeight;
-    const gap = Math.floor(((floor - subB) - h) / 2);
-    if(gap >= 12) panel.style.setProperty("--ms-gap", gap + "px");
+    const GAP = 18 * z;   /* under the question, and (the same) above the tab bar: the group's room is what is between */
+    /* the tab bar is fixed, so its box on the screen is the one thing that is where it looks (its offsetTop is not, on a wide screen) */
+    const floor = (tb && !tb.hidden && tb.offsetHeight ? tb.getBoundingClientRect().top : innerHeight) - GAP;
+    const room = Math.max(0, Math.floor(floor - (at(cards) - scrollY)));
+    const vw = innerWidth / z, vh = innerHeight / z;
+    /* the columns: one on a phone; two on a tablet upright; a row of them where the screen is wide and not tall (a landscape
+       tablet, a laptop, a desktop). Wider than 640 glass px and a card per column is a tile, not a row. */
+    const wide = vw >= 900 && vw > vh * 1.1;
+    const cols = n === 1 || vw < 640 ? 1 : wide ? Math.min(n, 4) : 2;
+    const rows = Math.ceil(n / cols);
+    const gap = (cols === 1 ? 10 : 14) * z;
+    const cap = (cols === 1 ? 17 : wide ? 30 : rows === 1 ? 40 : 28) * 16;   /* a tile never gets taller than this (glass px) - a desktop's tile is not a poster */
+    let tile = Math.floor((room - (rows - 1) * gap) / rows);
+    tile = Math.min(tile, (cap + (cols === 1 && n <= 2 ? 40 : 0)) * z);
+    /* a phone's tiles, three or four to a screen, may not have room for the tall build: the medallion goes beside the name */
+    const kind = cols === 1 && tile < 176 * z ? "snug" : "stack";
+    const set = (k, v) => cards.style.setProperty(k, v);
+    /* tiles side by side: every line is as tall as the longest in the group, so the names sit on one line along the foot of a row */
+    set("--ms-dh", "0px");
+    if(cols > 1) set("--ms-dh", Math.max(0, ...kids.map(c => { const d = c.querySelector(".modecarddesc"); return d ? d.offsetHeight : 0; })) + "px");
+    set("--ms-cols", cols); set("--ms-tile", Math.max(0, tile) + "px"); set("--ms-room", room + "px");
+    /* a wide screen's row of tiles is wider than the 50rem panel it sits in: it breaks out of it, centred, to its own width */
+    set("--ms-gap", gap + "px"); set("--ms-w", wide ? Math.min(Math.min(72, 17 * n + 4) * 16, innerWidth - 48) + "px" : cols === 2 ? "min(50rem, 100%)" : "100%");
+    cards.dataset.tile = kind; cards.dataset.cols = cols;
+    cards.dataset.tall = kind === "stack" ? (tile >= 380 * z ? "2" : tile >= 250 * z ? "1" : "0") : "0";
+    cards.classList.toggle("ms-spanlast", cols === 2 && n % 2 === 1);
+    /* the wrap reserves the tab bar's room under the screen; where that is more than the bar takes (a phone with no home
+       indicator) a group that fits would still scroll by the difference - so it is taken back, and only when the group fits */
+    panel.style.marginBottom = "";
+    const over = document.documentElement.scrollHeight - innerHeight;
+    if(over > 0 && over < 90 * z && cards.offsetHeight <= room + 1) panel.style.marginBottom = (-over) + "px";
     return true;
   };
   fit();
   setTimeout(fit, 450);   /* once the entrance has settled */
+  setTimeout(fit, 1100);   /* and once a slow phone has settled the tab bar */
   const onResize = () => { if(!fit()) removeEventListener("resize", onResize); };
   addEventListener("resize", onResize);
   try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fit()); }catch(e){}
+  /* the tab bar is shown, hidden and resized by the app after a screen is up (the first screen after a launch, a keyboard): the
+     group's floor follows it. fit() writes only to the panel and the cards, never to the bar, so this cannot loop. */
+  try{
+    const tbEl = document.getElementById("bottomtabs");
+    if(tbEl){
+      if(window.ResizeObserver){ const ro = new ResizeObserver(() => { if(!fit()) ro.disconnect(); }); ro.observe(tbEl); }
+      if(window.MutationObserver){ const mo = new MutationObserver(() => { if(!fit()) mo.disconnect(); }); mo.observe(tbEl, { attributes: true, attributeFilter: ["hidden", "class", "style"] }); }
+      /* it slides in (after a cutscene, on the first screen of a launch): its floor is where it comes to rest, not where it started */
+      const rest = () => { if(!fit()){ tbEl.removeEventListener("transitionend", rest); tbEl.removeEventListener("animationend", rest); } };
+      tbEl.addEventListener("transitionend", rest); tbEl.addEventListener("animationend", rest);
+    }
+  }catch(e){}
 }
 function showModeSelect(){
   /* LEAVING UNIT SELECTION DROPS THE PICKS. "If I select units and then
@@ -111522,7 +111643,7 @@ function showModeSelect(){
 
   stage.replaceChildren(panel);
   toTop();
-  centerModeGroup(panel);
+  fillModeGroup(panel);
   if(!store.seenModeSelectTour){
     store.seenModeSelectTour = true;
     saveStore();
@@ -135226,6 +135347,7 @@ function showVirtualRoomChoice(){
 
   stage.replaceChildren(panel);
   toTop();
+  fillModeGroup(panel);
 }
 
 /* ONE SCREEN, TWO JOBS. Setting a room up and changing it afterwards
