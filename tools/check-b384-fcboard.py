@@ -29,7 +29,7 @@ listeners, every write logged) holding the academy's rows in `leaderboard` AND a
 Labels are read off the page; shapes are asserted, not strings (the two exceptions are Madison's own words: the empty state names Fire Code).
 
   python3 tools/check-b384-fcboard.py [--against OLD/index.html] [--shots DIR]     (--against must FAIL)"""
-import json, os, re, subprocess, sys, time
+import json, os, os, re, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 ARGV = list(sys.argv)
 def arg(n, d=None): return ARGV[ARGV.index(n) + 1] if n in ARGV else d
@@ -106,6 +106,16 @@ def new_ctx(br, init, seed, w=440, h=956, html=None):
         ctx, pg, errs = G["page"](br, init, seed=seed)
     finally:
         if html is not None: g["patched"] = keep
+    if html is not None:
+        # a standing-in build must not be "updated" mid-check (its own build against the repo's version.json is a mismatch, and a forced
+        # update reloads the page under the evaluate calls)
+        import re as _re
+        _m = _re.search(r'const APP_BUILD = "([^"]+)"', html)
+        if _m:
+            _b = _m.group(1)
+            ctx.route("**/version.json*", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps({"build": _b, "note": "", "frameId": "", "frameNote": "", "force": False})))
+    if html is not None and os.environ.get('FCB_DEBUG'):
+        pg.on('framenavigated', lambda f: print('NAV', f.url[:90], flush=True)); pg.on('console', lambda m: print('CON', m.text[:160], flush=True) if 'eload' in m.text or 'pdate' in m.text else None)
     if (w, h) != (440, 956): pg.set_viewport_size({"width": w, "height": h}); pg.wait_for_timeout(500)
     pg.evaluate(SW_TAPS)
     return ctx, pg, errs
@@ -372,8 +382,12 @@ with sync_playwright() as pw:
     chk("(5) ...its board data holds none of Fire Code's rows, and its scans of `vrooms` read the board document as nothing (%s)" % {"pubs": len(seen["pubs"]), "thrown": seen["thrown"], "matches": seen["matches"]},
         not seen["thrown"] and not (set(seen["pubs"]) & set(FIRE_ONLY)) and seen["matches"] == 0 and not any(n in seen["text"] for n in FIRE_ONLY.values()), seen["pubs"])
     pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(600)
-    fr = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms)); try{ showFriends(); }catch(e){ try{ openFriendsFromChat(); }catch(x){} } await w(1500);
-        try{ chatDockTab = 'friends'; openChatDock(); }catch(e){} await w(1200); return document.body.innerText; }""")
+    try:
+        fr = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms)); try{ showFriends(); }catch(e){ try{ openFriendsFromChat(); }catch(x){} } await w(1500);
+            try{ chatDockTab = 'friends'; openChatDock(); }catch(e){} await w(1200); return document.body.innerText; }""")
+    except Exception as _e:   # the standing-in build reloaded itself under the call (its own update check against the repo's version.json): look again
+        pg.wait_for_timeout(2500)
+        fr = pg.evaluate("()=>{ try{ showFriends(); }catch(e){} return document.body.innerText; }")
     chk("(5) ...its Friends screens name none of Fire Code's people", not any(n in fr for n in FIRE_ONLY.values()), fr[:200])
     ws = G["writes_of"](pg)
     chk("(5) ...and it writes nothing to Fire Code's board (%s)" % [w for w in ws if BOARD in w], not [w for w in ws if BOARD in w])
