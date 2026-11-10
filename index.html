@@ -117080,7 +117080,29 @@ function qSwipeCommits(p, v){
   if(!(p > 0) || v <= -Q_FLICK_V) return false;
   return p >= Q_SWIPE_COMMIT || (v >= Q_FLICK_V && p >= Q_FLICK_MIN);
 }
+/* (r22) NOTHING ELSE LAYS THE PAGE OUT INSIDE A NEXT. syncVisibility (and syncChatDock, placeDockBesidePause under it) answers
+   every stage and body mutation, and a question swapped for the next - plus the slide's own copy going onto <body> - is two
+   or three of them inside the tap, each reading Pause's box (offsetLeft, getComputedStyle) and forcing a style pass and layout of
+   the page: ~20ms of a 4x CPU tap, in the frames before the first one of the slide. A question for a question changes nothing they
+   decide (the bar and the dock stay as they are), so while a slide is under way they only note that they are owed and the slide's
+   end runs them once, with nothing moving (qSyncRelease). */
+let qSyncHold = false, qSyncOwed = false, qSyncRun = null;
+function qSyncRelease(){
+  if(!qSyncHold) return;
+  qSyncHold = false;
+  if(!qSyncOwed) return;
+  /* in idle time, not in the slide's last frame: it lays the page out (the dock is measured against Pause) and the slide's end is
+     where a dropped frame is seen. Anything else that runs syncVisibility first has paid it already (it clears the debt). */
+  const run = () => {
+    if(!qSyncOwed || qSyncHold) return;
+    qSyncOwed = false;
+    try{ if(qSyncRun) qSyncRun(); else if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
+  };
+  if(typeof requestIdleCallback === "function") requestIdleCallback(run, { timeout: 600 });
+  else setTimeout(run, 120);
+}
 function qSlideDone(clone, extra, incoming, anims){
+  qSyncRelease();
   if(clone) clone.remove();
   if(extra) extra.remove();
   if(incoming){ incoming.style.opacity = ""; incoming.style.transform = ""; incoming.style.transition = ""; incoming.style.willChange = ""; }
@@ -117120,9 +117142,10 @@ function advanceWithSlide(fromDx, opts){
     advance(); return;
   }
   slideTransitionInFlight = true;
+  /* the box is read BEFORE the class goes on: read after it, it laid the whole page out on the spot (r22) */
+  const rect = live ? s.rect : outgoing.getBoundingClientRect();
   document.documentElement.classList.add("q-sliding");
   const p0 = live ? Math.max(0, Math.min(1, s.p)) : 0;
-  const rect = live ? s.rect : outgoing.getBoundingClientRect();
   const push = live ? s.push : Math.round(rect.width + SLIDE_GAP);
   const dur = p0 > 0 ? qCommitMs(p0, push, opts.v) : qSlideMsFor(push);
   /* A fixed copy of the outgoing question, carried off on the clock.
@@ -117141,6 +117164,7 @@ function advanceWithSlide(fromDx, opts){
   };
   if(live && s.pair){ qCommitFromPreview(s, p0, dur, makeClone); return; }
   if(live){ qDropPair(s.pair); }
+  qSyncHold = pos < order.length - 1;
   const clone = makeClone();
   document.body.appendChild(clone);
   advance();
@@ -117176,6 +117200,7 @@ function qCommitFromPreview(s, p0, dur, makeClone){
   const handover = () => {
     if(handed) return;
     handed = true;
+    qSyncHold = pos < order.length - 1;
     clone = makeClone();
     document.body.appendChild(clone);
     const aC = run(clone, p => qOutFrame(p, push));
@@ -157383,6 +157408,8 @@ function tabPerfText(){
      this bar hides and shows exactly when that nav already does. */
   const oldNav = document.querySelector(".navsegment");
   function syncVisibility(){
+    if(qSyncHold){ qSyncOwed = true; return; }   /* (r22) a question for a question: run once when the slide ends */
+    qSyncOwed = false;
     const isModern = document.documentElement.dataset.layout === "modern";
     /* The DOM, not the computed style (build 282). The legacy nav is
        shown by exactly one rule - .navsegment:has(> .iconbtn:not([hidden]))
@@ -157463,10 +157490,18 @@ function tabPerfText(){
     new MutationObserver(syncVisibility).observe(oldNav, { attributes: true, childList: true, subtree: true });
     new MutationObserver(syncVisibility).observe(stage, { childList: true });
     /* Nova's introduction and GENERATING PROFILE are body's own children (round 37) */
-    new MutationObserver(syncVisibility).observe(document.body, { childList: true });
+    /* (r22) NOT FOR A QUESTION SLIDE'S OWN COPIES: the next question's stand-in goes onto <body> where a finger lands (and off it where
+       it lifts) and the outgoing question's copy goes on for the slide - none of them is a screen, and each ran this and, under it,
+       the dock's measure of Pause (a style pass and layout of the page: ~20ms at 4x CPU, in the frame a finger lands on a question) */
+    const slideOnly = n => n.nodeType !== 1 || (n.classList && (n.classList.contains("q-blurpair") || n.classList.contains("q-slide-clone")));
+    new MutationObserver(ms => {
+      if(ms.every(m => Array.prototype.every.call(m.addedNodes, slideOnly) && Array.prototype.every.call(m.removedNodes, slideOnly))) return;
+      syncVisibility();
+    }).observe(document.body, { childList: true });
     new MutationObserver(syncVisibility).observe(document.documentElement, { attributes: true, attributeFilter: ["data-layout"] });
   }
   syncVisibility();
+  qSyncRun = syncVisibility;
 
   /* Active-tab highlight: checked on the same stage-change signal as the
      visibility sync above, using simple on-screen markers already unique
