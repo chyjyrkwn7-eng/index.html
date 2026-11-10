@@ -217,8 +217,8 @@ with sync_playwright() as pw:
         social: (typeof socialDb === 'function' && !!socialDb()), pub: store.publicId, fcode: store.friendCode, optin: store.leaderboardOptIn })""")
     chk("(A) Fire Code: fbDb stays null (no leaderboard) and the friends reach the cloud through their own handle (%s)" % r,
         r["cls"] == "ifc" and r["fb"] is None and r["social"] is True, r)
-    chk("(A) Fire Code is the academy account on the friends side: its public id and its friend code %s (%s / %s), off the board itself" % (MYCODE, r["pub"], r["fcode"]),
-        r["pub"] == OWNER and r["fcode"] == MYCODE and r["optin"] is False, r)
+    chk("(A) Fire Code is the academy account on the friends side: its public id and its friend code %s (%s / %s), and, since 385, its own switch for Fire Code's own board (%s)" % (MYCODE, r["pub"], r["fcode"], r["optin"]),
+        r["pub"] == OWNER and r["fcode"] == MYCODE and isinstance(r["optin"], bool), r)
     d = wait_for(pg, "async ()=>{ const x = await (%s)(); return (x.rows.length && x.rows.some(r => r.online)) ? x : null; }" % DOCK_FRIENDS, tries=12) or pg.evaluate(DOCK_FRIENDS)
     alex = [x for x in d["rows"] if x["code"] == dm(OWNER, ALEX)]
     chk("(A) the chat's Friends tab lists the academy's friend %s, online (%s)" % (NAMES[ALEX], d),

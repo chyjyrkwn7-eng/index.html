@@ -49,7 +49,7 @@ IFC = ("try{ localStorage.setItem('class26e.activeclass','ifc'); ['class26e.ifc.
 SCREEN = {"bottomtab-home": ".screen-home-actual", "bottomtab-profile": ".screen-profile:not(.screen-stats)", "bottomtab-rewards": ".screen-rankings",
           "bottomtab-calendar": ".screen-calendar-tab", "bottomtab-stats": ".screen-stats", "bottomtab-settings": ".screen-settings"}
 TABS = {"academy": ["bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar"],
-        "ifc": ["bottomtab-home", "bottomtab-profile", "bottomtab-stats", "bottomtab-settings"]}
+        "ifc": ["bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-settings"]}   # (385) Fire Code's bar has the Leaderboard; Stats is a tab of Profile
 # a screen is SHOWING: in the page, and not inside something hidden (Profile builds Settings and Stats as hidden panels of its own)
 SHOWING = "(s)=>[...document.querySelectorAll('#stage '+s)].some(e=>!e.closest('[hidden]'))"
 LIT = "()=>[...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(t=>t.id)"

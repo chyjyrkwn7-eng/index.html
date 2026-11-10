@@ -56,7 +56,7 @@ with sync_playwright() as pw:
         chk("same person: name + publicId, onboarding done", st["name"]=="Maddog" and st["pid"]=="xph5b57jbp5a" and st["onb"] is True, st)
         # build 383 ("The fire code side says sync code isn't reachable. Fix that"): Fire Code's ACCOUNT syncs, at its own document beside
         # the academy's (<academy code>__ifc) - and nothing else reaches the cloud: no leaderboard, fbDb still null
-        chk("off the leaderboard and the shared cloud (fbDb null); its account's code is the academy's + __ifc", st["lb"] is False and st["fb"] is None and isinstance(st["code"], str) and st["code"].endswith("__ifc") and "__" not in st["code"][:-5], st)
+        chk("off the academy's leaderboard and shared cloud (fbDb null; its own board is one document, 385); its account's code is the academy's + __ifc", isinstance(st["lb"], bool) and st["fb"] is None and isinstance(st["code"], str) and st["code"].endswith("__ifc") and "__" not in st["code"][:-5], st)
         chk("Home shows with the flame bubble", st["home"] and "is-ifc" in (st["icon"] or ""), st)
         # (384, kit 5.4.2) the bank's own count, read off it (Madison's update: "do not hard-code" - 1,812 in 5.4.2)
         bank_n = page.evaluate("()=>window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount")
