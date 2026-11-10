@@ -82425,7 +82425,8 @@ const RANKING_BOARDS = [
    (Madison: "there won't be a weekly one or whatever. Just hundos and overall") - so its tabs, its swipe, its Settings hint and
    its links are all drawn from this and not from RANKING_BOARDS. */
 function rankingBoardsFor(){
-  return window.NOVA_CLASS === "ifc" ? RANKING_BOARDS.filter(b => b.key !== "week") : RANKING_BOARDS;
+  /* (385 r2) Fire Code's board is Overall alone: "Remove the hundo leaderboard in fire code. Not many people will get any" */
+  return window.NOVA_CLASS === "ifc" ? RANKING_BOARDS.filter(b => b.key === "overall") : RANKING_BOARDS;
 }
 
 
@@ -118687,7 +118688,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.11";
+const APP_BUILD = "2026-11-10-384.12";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -133422,7 +133423,7 @@ function showAppearance(opts){
   const howMany = ["", "one way", "two ways", "three ways", "four ways", "five ways"][boardNames.length]
     || (boardNames.length + " ways");
   lbHint.textContent = "Ranks the " + (window.NOVA_CLASS === "ifc" ? "Fire Code " : "") + "class " + howMany + " \u2014 "
-    + boardNames.slice(0, -1).join(", ") + " and " + boardNames[boardNames.length - 1]
+    + (boardNames.length > 1 ? boardNames.slice(0, -1).join(", ") + " and " : "") + boardNames[boardNames.length - 1]
     /* Tidied in build 324, same meaning: what is shared, and that
        switching off hides the boards from you as well. */
     + ". Shares only your username, avatar and those numbers" + (window.NOVA_CLASS === "ifc" ? ", with the people in Fire Code" : "") + ". "
@@ -152397,8 +152398,8 @@ function showRankings(defaultBoard){
     tabBtns[b.key] = btn;
     seg.appendChild(btn);
   });
-  panel.appendChild(seg);
-  attachSegSlider(seg, ".iconbtn.active");
+  /* (385 r2) one board (Fire Code's Overall) needs no switcher */
+  if(boards.length > 1){ panel.appendChild(seg); attachSegSlider(seg, ".iconbtn.active"); }
 
   /* What this board ranks, in the board's own words. Sits between the
      tabs and the search so it reads as a caption for the tab you just
@@ -152723,7 +152724,7 @@ function showRankings(defaultBoard){
 
   /* The same contained tab swipe the old Rewards tab had, now shared -
      see attachTabSwipe. */
-  attachTabSwipe(panel, boards.map(b => b.key), () => rankingsBoardKey, selectBoard, { content: () => [rows], ghost: () => rows });
+  if(boards.length > 1) attachTabSwipe(panel, boards.map(b => b.key), () => rankingsBoardKey, selectBoard, { content: () => [rows], ghost: () => rows });
 
   /* Detach the snapshot when this screen goes, not just when Rankings is
      opened again. Without this, walking Rankings -> Home -> Rankings
@@ -152760,9 +152761,9 @@ function showRankings(defaultBoard){
     store.seenRewardsTour = true;
     saveStore();
     startSimpleTour([
-      { target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
-        text: ifcBoard ? "Overall: ranked by rank, then level. Hundos: chapters at 100%."
-          : "This Week: XP since Monday. Overall: all time. Hundos: units at 100%." },
+      /* (385 r2) Fire Code has one board, so no switcher to point at: the search is the first stop */
+      ...(ifcBoard ? [] : [{ target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
+        text: "This Week: XP since Monday. Overall: all time. Hundos: units at 100%." }]),
       { target: ".rank-search", align: "left", vplacement: "below",
         text: ifcBoard ? "Search for anyone in Fire Code by username." : "Search for anyone in 26E by username." },
       { target: ".rank-me-btn", align: "right", vplacement: "below",
