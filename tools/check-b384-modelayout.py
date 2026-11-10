@@ -43,7 +43,7 @@ READ = """()=>{ document.querySelectorAll('.daily-alert,.app-banner').forEach(n=
     return { mode:c.dataset.mode||((c.className.match(/vrc-card-(\\w+)/)||[])[1]), l:r.left, t:r.top, r:r.right, b:r.bottom, w:r.width, h:r.height,
       iL:i.left, iR:i.right, iCy:(i.top+i.bottom)/2, tL:t.left, tCy:(t.top+t.bottom)/2, tR:t.right, dL:d.left, dR:d.right, dB:d.bottom, tTop:t.top, iTop:i.top, hit, vis:(r.top>=0 && r.bottom<=(tr?tr.top:innerHeight)+.5), titlePx:parseFloat(getComputedStyle(ti).fontSize), z }; });
   return { sub:sr.bottom, tab:tr?tr.top:null, ih:innerHeight, iw:innerWidth, sh:document.documentElement.scrollHeight, sw:document.documentElement.scrollWidth,
-    tile:(document.querySelector('#stage .modecards')||{dataset:{}}).dataset.tile, cols:(document.querySelector('#stage .modecards')||{dataset:{}}).dataset.cols,
+    tile:(document.querySelector('#stage .modecards')||{dataset:{}}).dataset.build, cols:(document.querySelector('#stage .modecards')||{dataset:{}}).dataset.cols,
     zoomed:document.documentElement.classList.contains('page-zoomed'), fixed, tiles }; }"""
 def analyse(r, dev, scrolled=None):
     """the numbers the checks read, from one READ"""

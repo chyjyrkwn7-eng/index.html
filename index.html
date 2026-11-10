@@ -39123,10 +39123,10 @@ html.is-browser{ --fade-paper: transparent; }
      them as a different looking boxes? Almost like the boxes you see when signing up for a class? ... each device size may need a
      different layout and that's okay. Fix it though." The title and the question stay at the top; the cards are TILES that take the
      room under them down to the tab bar (fillModeGroup measures it and sets --ms-room / --ms-tile / --ms-cols / --ms-gap / --ms-w and
-     data-tile): glass, tinted with the mode's own colour, a medallion for its mark top-left, a chevron top-right, the name and the line
+     data-build): glass, tinted with the mode's own colour, a medallion for its mark top-left, a chevron top-right, the name and the line
      at the foot. The markup is the card it always was (.modecard > .modecardtitlerow > icon + name, then the line): the title row is
      display:contents, so the mark, the name and the line are the tile's own grid items and every id, class and tour target holds.
-     data-tile "stack": the medallion above the words (a phone with room, a tablet, a laptop); "snug": the medallion small beside the
+     data-build "stack": the medallion above the words (a phone with room, a tablet, a laptop); "snug": the medallion small beside the
      name, the line across the foot (a phone with three or four to a screen). All sizes are glass px times --zc (1 at 100%; 1.18 at the
      owner's 85% page zoom, so the tile is drawn at the size it has on a 440pt screen); the tile's own height is the grid's, so nothing
      here changes height by animation - the tile only scales (transform) under a finger. */
@@ -39157,7 +39157,6 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid color-mix(in srgb, var(--mc) 24%, var(--surface-border)) !important; box-shadow:none !important;
     transition:transform .15s ease, border-color .15s ease;
   }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:is([data-tall="1"], [data-tall="2"]) > .modecard.modecard,
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) > .modecard.modecard{
     --mi:calc(64 * var(--u)); padding:calc(24 * var(--u)) calc(24 * var(--u)) calc(24 * var(--u)) calc(26 * var(--u)); border-radius:calc(26 * var(--u));
   }
@@ -39189,11 +39188,12 @@ html.is-browser{ --fade-paper: transparent; }
     grid-column:1 / -1; grid-row:4; margin:calc(6 * var(--u)) 0 0; font-size:calc(15 * var(--u)); line-height:1.45; max-width:34em;
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ min-height:var(--ms-dh, 0px); }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:is(:not([data-cols="1"]), [data-tall="1"], [data-tall="2"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(24 * var(--u)); }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:is(:not([data-cols="1"]), [data-tall="1"], [data-tall="2"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(16 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(24 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(16 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="1"] > .modecard.modecard{ --mi:calc(64 * var(--u)); }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] > .modecard.modecard{ --mi:calc(88 * var(--u)); }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] .modecard .modecardtitle.modecardtitle{ font-size:calc(28 * var(--u)); }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] .modecard .modecarddesc.modecarddesc{ font-size:calc(17 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(28 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(17 * var(--u)); }
   /* the chevron: the tile is one tap, and this says where it goes */
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard::after{
     content:""; grid-column:2; grid-row:1; justify-self:end; width:calc(34 * var(--u)); height:calc(34 * var(--u)); border-radius:50%;
@@ -39202,15 +39202,15 @@ html.is-browser{ --fade-paper: transparent; }
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mc) 26%, transparent);
   }
   /* SNUG: three or four to a phone's screen. The medallion small beside the name, the chevron at the end of that line, the line across the foot */
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard.modecard{
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard{
     --mi:calc(38 * var(--u)); padding:calc(14 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u)) calc(16 * var(--u)); border-radius:calc(20 * var(--u));
     grid-template-columns:auto 1fr auto; grid-template-rows:auto auto; align-content:center; align-items:center; column-gap:calc(12 * var(--u)); row-gap:calc(6 * var(--u));
   }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard .modecardtitle.modecardtitle{ grid-column:2; grid-row:1; }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="snug"] > .modecard .modecarddesc.modecarddesc{ grid-row:2; margin:0; font-size:calc(14.5 * var(--u)); line-height:1.4; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecardtitle.modecardtitle{ grid-column:2; grid-row:1; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecarddesc.modecarddesc{ grid-row:2; margin:0; font-size:calc(14.5 * var(--u)); line-height:1.4; }
   /* the iPhone's switch under the head of a card is the medallion's height now (it was the 64px of the old row) */
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tile="stack"] > .modecard > .nova-hsw{ height:calc(96 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="stack"] > .modecard > .nova-hsw{ height:calc(96 * var(--u)); }
 
   /* (384 r20) the app's icon under the Terms of Use */
   html[data-layout] body #stage .screen-settings-sub img.settings-text-appicon{
@@ -111501,7 +111501,7 @@ function fillModeGroup(panel){
     set("--ms-cols", cols); set("--ms-tile", Math.max(0, tile) + "px"); set("--ms-room", room + "px");
     /* a wide screen's row of tiles is wider than the 50rem panel it sits in: it breaks out of it, centred, to its own width */
     set("--ms-gap", gap + "px"); set("--ms-w", wide ? Math.min(Math.min(72, 17 * n + 4) * 16, innerWidth - 48) + "px" : cols === 2 ? "min(50rem, 100%)" : "100%");
-    cards.dataset.tile = kind; cards.dataset.cols = cols;
+    cards.dataset.build = kind; cards.dataset.cols = cols;
     cards.dataset.tall = kind === "stack" ? (tile >= 380 * z ? "2" : tile >= 250 * z ? "1" : "0") : "0";
     cards.classList.toggle("ms-spanlast", cols === 2 && n % 2 === 1);
     /* the wrap reserves the tab bar's room under the screen; where that is more than the bar takes (a phone with no home
