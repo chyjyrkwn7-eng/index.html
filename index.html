@@ -26419,14 +26419,12 @@
      band ~1.8px above the field's middle (measured: 16px of air over the ink, 19.7 under it). The same 49.9px field, its padding
      moved 2px from bottom to top. */
   html[data-theme][data-layout] body #stage .friend-sect .friend-add-field > input.friend-add-input.searchbox{ padding-top:calc(.7rem + 2px) !important; padding-bottom:calc(.7rem - 2px) !important; }
-  .friend-add-field > .friend-add-input:placeholder-shown:not(:focus){ text-indent:.55rem; }
-  .friend-add-field::before{
-    content:""; position:absolute; left:calc(50% - var(--ph-w, 10rem) / 2 - .275rem - 2px); top:50%; width:2px; height:1.15em; margin-top:-.575em; border-radius:1px;
-    background:var(--accent, #9FB4FF); opacity:0; pointer-events:none; z-index:1;
-  }
-  .friend-add-field:has(> .friend-add-input:placeholder-shown:not(:focus))::before{ animation:friend-caret 1.1s steps(1, end) infinite; }
-  @keyframes friend-caret{ 0%{ opacity:.95; } 50%{ opacity:0; } }
-  [data-reduce-motion="true"] .friend-add-field::before{ animation:none !important; opacity:.8 !important; }
+  /* (384.18) NO FAKE CURSOR. Madison, the field circled: "Not centered, and the cursor is flashing". The blinking line was a ::before
+     placed from the hint's measured width plus a text-indent to make room for it, which stood left of the hint (28px at his page
+     zoom, where the measured width and the drawn one differ) and moved the hint off the field's middle. Both are gone: the hint is
+     plain centred text, and an empty field has no caret of its own (the same call as the username field) - the line that appears
+     once a code is being typed is the browser's, at the end of the letters. */
+  .friend-add-field > .friend-add-input:placeholder-shown{ text-indent:0; caret-color:transparent; }
   .profile-classline.has-pending{
     box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
                0 0 14px -3px var(--accent);
@@ -118736,7 +118734,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.17";
+const APP_BUILD = "2026-11-10-384.18";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -148098,13 +148096,6 @@ function showFriends(){
   field.className = "friend-add-field";
   field.appendChild(input);
   addRow.append(field, send);
-  /* (384 r9) the hint's width, for the blinking cursor that stands just before it (see .friend-add-field::before) */
-  requestAnimationFrame(() => { try{
-    if(!input.isConnected) return;
-    const cs = getComputedStyle(input), cv = document.createElement("canvas").getContext("2d");
-    cv.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
-    field.style.setProperty("--ph-w", Math.ceil(cv.measureText(input.placeholder).width) + "px");
-  }catch(e){} });
   add.append(ah, addRow);
 
   /* ---- the people you have ---- */

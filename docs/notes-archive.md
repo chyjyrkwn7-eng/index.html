@@ -37823,3 +37823,12 @@ Madison, Settings > Advanced: "Why is this font bigger than the rest of the scre
 
 THE TOP BLUR (Madison's display-test recording, build 384.9): the grey wash over the top ~95pt measured (41,40,41) in all 13 steps - nothing off, everything off at once, each of backdrop-filter / glow+stars / masks / filters / will-change / chat-button blur / pinned header / chat dock / animations / tab bar / every fixed layer off - so none of our layers makes it; his phone had updated that morning and a screenshot from the evening before is crisp. It is the system's progressive blur over the top of a black-translucent Home-Screen app (iOS 26.1+/27; other apps report it: autobrr/qui #2520, nesquena/hermes-webui #8365, stacker.news #3248 - WebKit samples the top pixels of the viewport; a small opaque fixed element at the very top blocks it). `syncTopGuard(color)` (called from syncStatusBarColor): #top-guard, fixed, top:0, 8px, the status-bar colour, pointer-events none, installed iPhone/iPad only, a NEW element when the colour changes; `class26e.topguard`="0" removes it; the display test has a "Top strip OFF" switch. EXPERIMENTAL - only a phone can say. The proper fix (status-bar-style default) needs every install re-added. `tools/check-b384-topguard.py`.
 Reset's Cancel (either screen) goes to Advanced (showAdvancedSettings), not Settings' first page (check-b384-resetconfirm). Contributors: "The original idea for the app" and "Virtual Room design" removed; every row a short phrase; Cameron lists four rows like the founder; `tools/check-b384-credits2.py`. Terms of Use ends with the app icon (the page's data-URI favicon, 76px, centred). The manifest's background_color is #0A0A0A (the splash's colour; theme_color unchanged).
+
+## 384.18 - the friend-code field has no fake cursor
+
+Madison, the Add a friend field circled: "Not centered, and the cursor is flashing". The blinking line was a `.friend-add-field::before`
+placed from the hint's measured width (`--ph-w`) with a `text-indent:.55rem` on the hint to make room; at his page zoom (0.85) it stood
+~28px left of the hint and the indent pushed the hint off the field's middle. Both are removed, with the JS that measured the hint. The
+empty field has `caret-color:transparent` (as the username field), the hint is plain centred text (left/right space within 2px), and the
+browser's own caret appears only while a code is typed. `check-b384-friendfield.py` now asserts the hint centred within 2px and no
+pseudo-element/animation/indent; it fails on 384.17 (7 FAIL).
