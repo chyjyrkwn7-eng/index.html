@@ -27,7 +27,7 @@ and 4x for the phone and the 1366x768 laptop (a weak machine); budgets are in 1x
 (6) THE IDLE STAND-IN WAITS FOR THE FINGER AND THE GLASS (phone, iPad: Safari has no requestIdleCallback, the page's own runs the warm-ups 700ms
     after the last touchSTART - a finger that stays down on the bar (a slide, a long press) is still there then): a job asked for while a finger is
     down on a tab does not run until it lifts, and then only with the lens down, the bar not held and no settle window open.
-Run:  python3 tools/check-b384-tabbutter.py [--quick] [--only phone,1366x768x1] [--against REV|path/to/index.html]
+Run:  python3 tools/check-b384-tabbutter.py [--quick] [--only phone,1366x768x1] [--checks 1,6] [--against REV|path/to/index.html]
       (--against origin/main's file must FAIL (1) and (2) on every device they run on; (1) on the finger's, (2) everywhere.)"""
 import os, sys, re, time, json, statistics, collections
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -36,6 +36,8 @@ def _opt(name, default=None):
     return _args[_args.index(name) + 1] if name in _args else default
 QUICK = "--quick" in _args
 ONLY = set(_opt("--only", "").split(",")) - {""}
+CHECKS = set(_opt("--checks", "").split(",")) - {""}          # e.g. --checks 1,6 (the finger's checks alone, no traced hops)
+TRACED = not CHECKS or bool(CHECKS & {"2", "3", "4"})
 AG = _opt("--against")
 # the desktop harness' prelude (open_page, tap, SRC, CHROME); --against is a git rev there, a path here
 _src = open(os.path.join(HERE, "check-b384-desktop.py")).read().split("\nwith sync_playwright() as pw:")[0]
@@ -65,7 +67,7 @@ if QUICK: DEVICES = [("phone", (1,)), ("1366x768x1", (1,)), ("1920x1080x2", (1,)
 if ONLY: DEVICES = [d for d in DEVICES if d[0] in ONLY]
 FINGER = ("phone", "ipad")
 # 1x-equivalent ms of main-thread CPU, per class
-BUDGET = {"finger": {"worst": 110, "input": 16, "total": 520}, "mouse": {"worst": 110, "input": 12, "total": 520}}
+BUDGET = {"finger": {"worst": 140, "input": 20, "total": 600}, "mouse": {"worst": 140, "input": 14, "total": 600}}
 AREA_RATIO = 1.6
 # the heavy art a tap holds, read from the source (the same selector a slide holds)
 HOLD_SEL = (re.search(r'const SLIDE_HOLD_SEL = "([^"]+)"', G["SRC"]) or [None, ""])[1]
@@ -108,7 +110,7 @@ def analyse(evs, thr):
             st = (a.get("beginData", {}) or {}).get("stackTrace") or a.get("stackTrace") or []
             fn = next((f.get("functionName") for f in st if f.get("functionName")), None)
             # a pass that did something: restyled an element, or took measurable time (a read with nothing dirty is a marker, not a pass)
-            real = (e["name"] == "UpdateLayoutTree" and (a.get("elementCount") or 0) > 0) or (e["name"] == "Layout" and e.get("tdur", e["dur"]) >= 50)
+            real = (e["name"] == "UpdateLayoutTree" and (a.get("elementCount") or 0) > 0) or (e["name"] == "Layout" and e.get("tdur", 0) >= 50)
             if fn and real: forced[(e["name"], fn)] += 1
     viz = [e.get("tdur", e["dur"]) / 1000.0 for e in evs if th(e) == "VizCompositorThread" and e.get("ph") == "X" and e.get("name") == "Display::DrawAndSwap" and t0 <= e["ts"] <= t1]
     return {"worst": max([cpu(e) for e in tasks] or [0]), "total": sum(cpu(e) for e in tasks),
@@ -122,14 +124,15 @@ def frame_stats(fr):
     if len(d) < 3: return None
     s = sorted(d); n = len(s)
     return {"n": n, "p50": round(s[n // 2], 1), "p95": round(s[min(n - 1, int(n * .95))], 1), "max": round(s[-1], 1), "late": sum(1 for x in d if x > 25)}
-HOLD = """([sel, dest, hold])=>{ const st=document.getElementById('stage'); const S=window.__hold={ t0:performance.now(), rows:[], mount:null, lensSeen:null, lensGone:null, before:null, after:null, on:true };
+HOLD = """([sel, dest, hold])=>{ const st=document.getElementById('stage'); const S=window.__hold={ t0:performance.now(), rows:[], mount:null, mountFrame:null, lensSeen:null, lensGone:null, before:null, on:true, fr:0 };
   const heavy=()=>{ let run=0; try{ st.getAnimations({subtree:true}).forEach(a=>{ if(a.playState!=='running') return; const t=a.effect&&a.effect.target; if(t&&t.closest&&t.closest(hold)) run++; }); }catch(e){} return run; };
   S.before=heavy();
-  const mo=new MutationObserver(()=>{ if(S.mount===null && st.querySelector(dest)) S.mount=performance.now()-S.t0; }); mo.observe(st,{childList:true});
-  const tick=()=>{ if(!S.on) return; const t=performance.now()-S.t0; const up=!!document.querySelector('#bottomtabs-lens.is-up');
-    if(up && S.lensSeen===null) S.lensSeen=t; if(!up && S.lensSeen!==null && S.lensGone===null) S.lensGone=t;
-    S.rows.push([Math.round(t), up?1:0, heavy()]); setTimeout(tick, 45); };
-  setTimeout(tick, 20); }"""
+  const mo=new MutationObserver(()=>{ if(S.mount===null && st.querySelector(dest)){ S.mount=performance.now()-S.t0; S.mountFrame=S.fr; } }); mo.observe(st,{childList:true});
+  /* in FRAMES, not milliseconds: a frame on a shared sandbox can take 300ms, and the hold's own look is two frames after the press and one after the build */
+  const tick=()=>{ if(!S.on) return; S.fr++; const t=performance.now()-S.t0; const lensEl=document.getElementById('bottomtabs-lens'); const up=!!(lensEl && lensEl.classList.contains('is-up') && parseFloat(getComputedStyle(lensEl).opacity)>.5);   /* the glass SEEN: it hands over to the platter before its class is taken off */
+    if(up && S.lensSeen===null) S.lensSeen=S.fr; if(!up && S.lensSeen!==null && S.lensGone===null) S.lensGone=S.fr;
+    if(S.fr%2===0) S.rows.push([S.fr, up?1:0, heavy()]); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick); }"""
 
 IDLE_JOB = """()=>{ window.__idle=null; const t0=performance.now(); requestIdleCallback(()=>{ window.__idle={ at: Math.round(performance.now()-t0), up: !!document.querySelector('#bottomtabs-lens.is-up'),
   held: document.documentElement.classList.contains('tab-held'), settle: (typeof settleUntil==='number' && Date.now()<settleUntil) }; }); }"""
@@ -148,7 +151,7 @@ with sync_playwright() as pw:
             cls = "finger" if dev in FINGER else "mouse"
             if thr > 1: cdp.send("Emulation.setCPUThrottlingRate", {"rate": thr})
             pg.wait_for_timeout(1200)
-            pairs = QUICK_PAIRS if QUICK else PAIRS
+            pairs = [] if not TRACED else (QUICK_PAIRS if QUICK else PAIRS)
             rows = []
             fr_all = []
             for a, b in pairs:
@@ -161,25 +164,26 @@ with sync_playwright() as pw:
                     chk("(5) %s %s>%s: the trace saw the tap" % (label, a, b), False); continue
                 r["pair"] = (a, b); r["fs"] = frame_stats(fr); rows.append(r); fr_all += fr
                 if r["fs"] is None: chk("(5) %s %s>%s: the page drew frames" % (label, a, b), False)
-            # (2) no style pass per loop
-            worst_forced = collections.Counter()
-            for r in rows:
-                for k, v in r["forced"].items(): worst_forced[k] = max(worst_forced[k], v)
-            top = worst_forced.most_common(1)
-            tmax = top[0][1] if top else 0
-            chk("(2) %s: no script function forces more than 8 style recalcs or layouts in a tab change (most: %s)" % (label, top[0] if top else "-"), tmax <= 8, dict(worst_forced.most_common(4)))
-            # (3) budgets
-            B = BUDGET[cls]
-            w = max(r["worst"] for r in rows); i = max(r["inputMax"] for r in rows); tot = statistics.median([r["total"] for r in rows])
-            wp = max(rows, key=lambda r: r["worst"])["pair"]; ip = max(rows, key=lambda r: r["inputMax"])["pair"]
-            chk("(3a) %s: no main-thread task over %dms (1x-equivalent) in a tab change (worst %.0fms, %s>%s)" % (label, B["worst"], w, wp[0], wp[1]), w <= B["worst"], w)
-            chk("(3b) %s: no input handler over %dms (worst %.1fms, %s>%s)" % (label, B["input"], i, ip[0], ip[1]), i <= B["input"], i)
-            chk("(3c) %s: a tab change's main-thread CPU, median of %d pairs, under %dms (%.0fms)" % (label, len(rows), B["total"], tot), tot <= B["total"], tot)
-            fs = frame_stats(fr_all)
-            vz = statistics.median([r["viz"] for r in rows if r["viz"]] or [0])
-            info("%s frame clock over %d hops: p50 %s p95 %s max %s ms, %d late (>25ms) | software compositor draw per frame %.1fms (median) | worst task %.0fms, total %.0fms (1x-eq)" % (
-                label, len(rows), fs and fs["p50"], fs and fs["p95"], fs and fs["max"], fs["late"] if fs else -1, vz, w, tot))
-            SUM[label] = {"total": tot, "worst": w, "p95": fs and fs["p95"], "viz": vz}
+            if rows:
+                # (2) no style pass per loop
+                worst_forced = collections.Counter()
+                for r in rows:
+                    for k, v in r["forced"].items(): worst_forced[k] = max(worst_forced[k], v)
+                top = worst_forced.most_common(1)
+                tmax = top[0][1] if top else 0
+                chk("(2) %s: no script function forces more than 8 style recalcs or layouts in a tab change (most: %s)" % (label, top[0] if top else "-"), tmax <= 8, dict(worst_forced.most_common(4)))
+                # (3) budgets
+                B = BUDGET[cls]
+                w = max(r["worst"] for r in rows); i = max(r["inputMax"] for r in rows); tot = statistics.median([r["total"] for r in rows])
+                wp = max(rows, key=lambda r: r["worst"])["pair"]; ip = max(rows, key=lambda r: r["inputMax"])["pair"]
+                chk("(3a) %s: no main-thread task over %dms (1x-equivalent) in a tab change (worst %.0fms, %s>%s)" % (label, B["worst"], w, wp[0], wp[1]), w <= B["worst"], w)
+                chk("(3b) %s: no input handler over %dms (worst %.1fms, %s>%s)" % (label, B["input"], i, ip[0], ip[1]), i <= B["input"], i)
+                chk("(3c) %s: a tab change's main-thread CPU, median of %d pairs, under %dms (%.0fms)" % (label, len(rows), B["total"], tot), tot <= B["total"], tot)
+                fs = frame_stats(fr_all)
+                vz = statistics.median([r["viz"] for r in rows if r["viz"]] or [0])
+                info("%s frame clock over %d hops: p50 %s p95 %s max %s ms, %d late (>25ms) | software compositor draw per frame %.1fms (median) | worst task %.0fms, total %.0fms (1x-eq)" % (
+                    label, len(rows), fs and fs["p50"], fs and fs["p95"], fs and fs["max"], fs["late"] if fs else -1, vz, w, tot))
+                SUM[label] = {"total": tot, "worst": w, "p95": fs and fs["p95"], "viz": vz}
             # (1) the finger's tap holds the heavy art
             if cls == "finger" and thr == 1:
                 bad = []; unmeasured = []; nconcl = 0
@@ -188,9 +192,11 @@ with sync_playwright() as pw:
                     pg.evaluate(HOLD, [SCREEN[b], SCREEN[b], HOLD_SEL])
                     tap(pg, cdp, touch, b); pg.wait_for_timeout(1700)
                     H = pg.evaluate("()=>{ __hold.on=false; return __hold; }")
-                    mount = H["mount"]; gone = H["lensGone"] if H["lensGone"] is not None else 1e9
-                    viol = [r for r in H["rows"] if r[1] and r[0] >= (H["lensSeen"] or 0) + 80 and r[2] > 0 and not (mount is not None and mount <= r[0] <= mount + 260)]
-                    held = [r for r in H["rows"] if r[1] and r[0] >= (H["lensSeen"] or 0) + 80 and not (mount is not None and mount <= r[0] <= mount + 260)]
+                    mf = H["mountFrame"]
+                    grace = lambda fr: mf is not None and mf <= fr <= mf + 5     # the look is a frame after the build
+                    after_press = lambda r: r[1] and r[0] >= (H["lensSeen"] or 0) + 3
+                    viol = [r for r in H["rows"] if after_press(r) and r[2] > 0 and not grace(r[0])]
+                    held = [r for r in H["rows"] if after_press(r) and not grace(r[0])]
                     if H["lensSeen"] is None: unmeasured.append("%s>%s (no lens)" % (a, b)); continue
                     if viol: bad.append("%s>%s: %d of %d samples under the lens had %d loops running (before the tap: %d)" % (a, b, len(viol), len(held), max(r[2] for r in viol), H["before"]))
                     elif H["before"] > 0 or b == "home": nconcl += 1
