@@ -20,7 +20,7 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:300], flush=True)
 LOBBY = open(os.path.join(HERE, "..", "docs", "fixtures", "lobby.js")).read() if os.path.exists(os.path.join(HERE, "..", "docs", "fixtures", "lobby.js")) else None
 CARD = """()=>{ const c=document.querySelector('.modecard'); const cs=getComputedStyle(c); const t=getComputedStyle(c.querySelector('.modecardtitle')); const d=getComputedStyle(c.querySelector('.modecarddesc'));
-  const sub=document.querySelector('.modeselect-sub, .screen-vroom-choice > .cal-sub'); return {pad:cs.padding, title:t.fontSize, desc:d.fontSize, sub:getComputedStyle(sub).fontSize, subAlign:getComputedStyle(sub).textAlign}; }"""
+  const sub=document.querySelector('.modeselect-sub, .screen-vroom-choice > .cal-sub'); return {pad:cs.padding, bw:cs.borderTopWidth, layers:cs.backgroundImage.split('linear-gradient').length - 1, ff:t.fontFamily, title:t.fontSize, desc:d.fontSize, sub:getComputedStyle(sub).fontSize, subAlign:getComputedStyle(sub).textAlign}; }"""
 FACE = """(sel)=>[...document.querySelectorAll(sel)].map(e=>{ const c=getComputedStyle(e); return {t:e.textContent.trim().slice(0,24), serif:/georgia|times|palatino|iowan/i.test(c.fontFamily.split(',')[0]), up:c.textTransform==='uppercase'}; })"""
 D = """()=>{ window.__d = {status:'finished', startAt:Date.now()-400000, participants:{me:{name:'Madison',avatarChar:'ninja',level:23,badges:4,joinedAt:1,ready:true,finished:true,progress:100},
   a2:{name:'Ben',avatarChar:'wizard',level:12,badges:1,joinedAt:2,ready:true,finished:true,progress:100}, b1:{name:'Ava',avatarChar:'ghost',level:31,badges:6,joinedAt:3,ready:true,finished:true,progress:100}},
@@ -32,8 +32,13 @@ with sync_playwright() as pw:
     pg.evaluate("document.querySelectorAll('#splashscreen,#pushing-update,#intro-pop').forEach(n=>n.remove()); __useRooms();")
     pg.evaluate("showModeSelect()"); pg.wait_for_timeout(1300); m = pg.evaluate(CARD)
     pg.evaluate("showVirtualRoomChoice()"); pg.wait_for_timeout(1300); v = pg.evaluate(CARD)
-    chk("Virtual Room's cards have the mode screen's padding (%s vs %s)" % (v["pad"], m["pad"]), v["pad"] == m["pad"], (v, m))
-    chk("...the same title size and the same words size", v["title"] == m["title"] and v["desc"] == m["desc"], (v, m))
+    # (384 r20) the tiles fill their screens, so each screen builds them to its own room (three or four to a phone are compact, two are
+    # tall): the padding follows the tile, the MATERIAL and the TYPE are the one family - the same face and layers and rim, the title
+    # and the words within 2px of each other
+    px = lambda s: float(s[:-2])
+    chk("Virtual Room's tiles are the mode screen's: the same material and rim, the same face (%s vs %s)" % ((v["layers"], v["bw"]), (m["layers"], m["bw"])),
+        v["layers"] == m["layers"] and v["bw"] == m["bw"] and v["ff"] == m["ff"], (v, m))
+    chk("...the title size and the words size within 2px", abs(px(v["title"]) - px(m["title"])) <= 2 and abs(px(v["desc"]) - px(m["desc"])) <= 2, (v, m))
     chk("...and the question under the title is the same size and centred", v["sub"] == m["sub"] and v["subAlign"] == m["subAlign"], (v, m))
     # the lobby (a four-person room, you are the host)
     pg.evaluate("""()=>{ const me=publicIdOf(); const parts={}; parts[me]={name:'Madison',avatarChar:'ninja',level:41,badges:6,joinedAt:1,seen:9e15,ready:false};
