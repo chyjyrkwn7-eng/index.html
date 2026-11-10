@@ -38210,3 +38210,7 @@ ONLY A PHONE CAN SAY: whether his own account was locked by the old bound (the c
 
 ### Gates run (this machine, one at a time)
 `check-js.py index.html` pass; `check-b384-roomleft.py` ALL PASS (25 checks fail on 384.19); `check-b384-smokediver.py` ALL PASS (8 fail on 384.19); `check-b384-fcchallenges.py` ALL PASS; `check-vroom.py` ALL PASS (0 failures); `check-sync.py` ALL PASS (0 failures); `sweep-layout.py --quick` 20/20 clean (its output carries harmless BrokenPipeError noise from the local server). Chromium cannot say how the 300ms leave feels on a phone, or whether any iOS-only door (the system back swipe, a Home Screen relaunch with the lobby up) lands on a room screen.
+
+## 384.21.1 - rolled back to 384.19.1's app (emergency)
+
+Madison, right after 384.21 went live: "Just opened the app, the pushing update thing took forever, I closed the app and went to open it again. Now the app isn't loading when I open it. FIX THIS NOW." The app was rolled back to the code of 384.19.1 (the last build he had used without trouble) under a new build string, 384.21.1 (the comparison is equality only, so every device on 384.20 / 384.21 is offered it, and devices on 384.19.1 are offered it harmlessly). The mode screens (384.20), the Open rooms card, the lobby grid, the room-code fix and the Smoke Diver fix (384.21) are OFF `main` until the cause is found; they are still on branches (claude/b384-int21 is the merged set). The tools/ and docs were left as they are.
