@@ -62,6 +62,7 @@ DEVICES = [
     (393, 852, 3, "iPhone 14 Pro, 15/15 Pro, 16, 17"),
     (430, 932, 3, "iPhone 14 Pro Max, 15 Plus/Pro Max, 16 Plus"),
     (402, 874, 3, "iPhone 16 Pro, 17 Pro"),
+    (420, 912, 3, "iPhone Air"),
     (440, 956, 3, "iPhone 16 Pro Max, 17 Pro Max"),
     (744, 1133, 2, "iPad mini (6th gen and later)"),
     (768, 1024, 2, "iPad mini (up to 5th gen), iPad 9.7\""),
