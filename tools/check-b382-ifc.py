@@ -99,23 +99,20 @@ with sync_playwright() as pw:
 
     # ---- 5. the bar and Stats
     bar = pg.evaluate("()=>[...document.querySelectorAll('#bottomtabs .bottomtab')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>b.dataset.dest)")
-    chk("5. Fire Code's bar is Home, Profile, Stats, Settings (%s)" % bar, bar == ["home", "profile", "stats", "settings"], bar)
-    glyph = pg.evaluate("()=>{ const s=document.querySelector('#bottomtab-stats .bottomtab-icon svg'); return s ? s.getAttribute('class') : null; }")
-    chk("5. the Stats tab has a filled glyph like its neighbours (%s)" % glyph, glyph and "tab-glyph" in glyph, glyph)
-    if "stats" in bar:
-        pg.evaluate(TAP, "stats"); pg.wait_for_timeout(2000)
-        st = pg.evaluate("()=>({stats:!!document.querySelector('#stage .screen-stats'), dots:!!document.querySelector('#stage .stx-dots'), recent:!!document.querySelector('#stage .stx-recent'), tabs:!!document.querySelector('#stage .profiletabs'), lit:[...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b=>b.id).join(',')})")
-        chk("5. the Stats tab opens Stats on its own and lights only Stats (%s)" % st, st["stats"] and st["dots"] and st["recent"] and not st["tabs"] and st["lit"] == "bottomtab-stats", st)
-        words8 = pg.evaluate(UNIT_WORDS)
-        chk("8. Stats never says unit (%s)" % words8[:4], not words8, words8)
+    chk("5. Fire Code's bar is Home, Profile, Leaderboard, Settings (%s) - 385: Stats moved into Profile" % bar, bar == ["home", "profile", "rewards", "settings"], bar)
+    pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(2000)
+    st = pg.evaluate("()=>({dots:!!document.querySelector('#stage .stx-dots'), recent:!!document.querySelector('#stage .stx-recent'), tabs:document.querySelectorAll('#stage .profiletabs .iconbtn').length, lit:[...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b=>b.id).join(',')})")
+    chk("5. Profile's Stats tab shows Stats (two tabs over it), and the bar lights Profile (%s)" % st, st["dots"] and st["recent"] and st["tabs"] == 2 and st["lit"] == "bottomtab-profile", st)
+    words8 = pg.evaluate(UNIT_WORDS)
+    chk("8. Stats never says unit (%s)" % words8[:4], not words8, words8)
     pg.evaluate(TAP, "profile"); pg.wait_for_timeout(2000)
     pf = pg.evaluate("()=>({tabs:[...document.querySelectorAll('#stage .profiletabs .iconbtn')].map(b=>b.textContent.trim()), lit:[...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b=>b.id).join(',')})")
-    chk("5. Profile has no Stats tab and lights Profile (%s)" % pf, "Stats" not in pf["tabs"] and "Profile" in pf["tabs"] and pf["lit"] == "bottomtab-profile", pf)
+    chk("5. Profile has Profile and Stats tabs (385: Stats moved in from the bar) and lights Profile (%s)" % pf, len(pf["tabs"]) == 2 and pf["tabs"][0] == "Profile" and "Stats" in pf["tabs"] and pf["lit"] == "bottomtab-profile", pf)
     words8 = pg.evaluate(UNIT_WORDS)
     chk("8. Profile never says unit (%s)" % words8[:4], not words8, words8)
     pg.evaluate("()=>{ try{ showRankings(); }catch(e){} }"); pg.wait_for_timeout(1500)
     rk = pg.evaluate("()=>({board:!!document.querySelector('#stage .screen-rankings'), stats:!!document.querySelector('#stage .screen-stats')})")
-    chk("5. anything sent to the leaderboard lands on Stats (%s)" % rk, rk["stats"] and not rk["board"], rk)
+    chk("5. the leaderboard is Fire Code's own board, not Stats (%s)" % rk, rk["board"] and not rk["stats"], rk)
 
     # ---- 6. the ladder
     lad = pg.evaluate("()=>({n:topicsIn(QUESTIONS).length, b:TIER_ORDER_FULL.map(k=>TIER_UNLOCKS[k].badges), l:TIER_ORDER_FULL.map(k=>TIER_UNLOCKS[k].level), lab:TIER_UNLOCKS.titan.label})")

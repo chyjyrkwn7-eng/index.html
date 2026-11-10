@@ -62,8 +62,8 @@ REVIEW = ("showProfile('stats'); const run={missed:[0,1], order:[0,1,2,3], timed
           "const p=document.createElement('section'); p.className='panel'; p.appendChild(buildRoomReviewTabs(run)); stage.replaceChildren(p); window.scrollTo({top:0, behavior:'instant'});")
 # name, how to open it, its selector, its segments, the classes it exists in, whether a swipe across the content changes it, track
 SWITCHERS = [
-    ("profile", "showProfile('stats');", "#stage .screen-profile > .navsegment.profiletabs", ".iconbtn", ("academy",), True, True),
-    ("boards", "showRankings();", "#stage .screen-rankings > .navsegment.profiletabs", ".iconbtn", ("academy",), True, True),
+    ("profile", "showProfile('stats');", "#stage .screen-profile > .navsegment.profiletabs", ".iconbtn", ("academy", "ifc"), True, True),
+    ("boards", "showRankings();", "#stage .screen-rankings > .navsegment.profiletabs", ".iconbtn", ("academy", "ifc"), True, True),
     # (the academy's levels 2 and 3 have no units yet, and a tap on one opens "coming" instead: the fixture gives them two each)
     ("levels", "if(!window.__lv2){ window.__lv2=1; const u0=unitsOfLevel; unitsOfLevel=(lv,all)=>{ const r=u0(lv,all); return r.length ? r : (all||[]).slice(0,2); }; } cfg.mode='drill'; cfg.units=[]; showSetup();", "#stage .setup-levels", ".iconbtn", ("academy",), False, True),
     ("chat", "showHome(); chatDockTab='friends'; openChatDock();", ".chatdock-tabs", ".chatdock-tab", ("academy", "ifc"), False, False),

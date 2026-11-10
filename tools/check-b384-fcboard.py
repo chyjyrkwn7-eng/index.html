@@ -52,7 +52,7 @@ class section:
         if v is not None: chk(self.name + ": raised %s: %s" % (t.__name__, v), False)
         return True
 
-PREV = "3a6675d"   # the build before this one: what every phone not yet updated runs
+PREV = "ca5f8f0"   # the build before this one (main now): what every phone not yet updated runs; 3a6675d and 383 read the same collections the same way
 PREV_HTML = subprocess.check_output(["git", "-C", ROOT, "show", PREV + ":index.html"]).decode("utf-8")
 OWNER, CODE, ALEX, KIM, PAT, LEE = G["OWNER"], G["CODE"], G["ALEX"], G["KIM"], G["PAT"], G["LEE"]
 FIONA, GUS, HALE = "tst385fione01", "tst385gusss02", "tst385haleee03"
