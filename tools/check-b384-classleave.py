@@ -213,6 +213,11 @@ def sec_lists_academy(pw, srv):
         cl = V.cloud_now(X.pg) or {}
         chk("lists rejoin Fire Code: the cloud's copy lists both again (%s)" % cl, cl.get("classes") == ["academy", "ifc"], cl)
 
+        # ---- the hand-off keys are the academy's own names even when Fire Code writes them (Fire Code remaps every class26e.* key that is not
+        # on the head script's shared list to class26e.ifc.*: a note written under the remapped name is one the academy never reads)
+        keys = ev(X, """()=>{ const out = {}; ['class26e.leaveclass', 'class26e.leftnote'].forEach(k => { try{ localStorage.setItem(k, 'x'); out[k] = { raw: localStorage[k] === 'x', ifc: localStorage['class26e.ifc.' + k.slice(9)] === 'x' }; localStorage.removeItem(k); }catch(e){ out[k] = String(e); } }); return out; }""")
+        chk("keys in Fire Code the leave hand-off keys are written under the academy's own names, not remapped (%s)" % keys,
+            all(isinstance(v, dict) and v["raw"] and not v["ifc"] for v in keys.values()), keys)
         # ---- in Fire Code: Cancel at either sheet changes nothing, for both classes
         L.ev(pg, "()=>showAppearance({page:'classes'})"); pg.wait_for_timeout(1100)
         before = X.state()
