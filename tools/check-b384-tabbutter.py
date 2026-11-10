@@ -36,7 +36,7 @@ def _opt(name, default=None):
     return _args[_args.index(name) + 1] if name in _args else default
 QUICK = "--quick" in _args
 ONLY = set(_opt("--only", "").split(",")) - {""}
-CHECKS = set(_opt("--checks", "").split(",")) - {""}          # e.g. --checks 1,6 (the finger's checks alone, no traced hops)
+CHECKS = set(_opt("--checks", "").split(",")) - {""}          # e.g. --checks 1,6 (the finger checks alone, no traced hops), 2b (the loop clock alone)
 TRACED = not CHECKS or bool(CHECKS & {"2", "3", "4"})
 AG = _opt("--against")
 # the desktop harness' prelude (open_page, tap, SRC, CHROME); --against is a git rev there, a path here
@@ -117,6 +117,21 @@ def analyse(evs, thr):
             "inputMax": max([c for _, c in inputs] or [0]), "inputs": inputs, "forced": forced,
             "viz": statistics.median(viz) / thr if viz else 0, "draws": len(viz)}
 
+def forced_passes(evs):
+    """style recalcs that restyled something and layouts of 50us+, by the script function that forced them (its stack)"""
+    names = {}
+    for e in evs:
+        if e.get("name") == "thread_name": names[(e["pid"], e["tid"])] = e["args"]["name"]
+    out = collections.Counter()
+    for e in evs:
+        if e.get("ph") != "X" or e["name"] not in ("UpdateLayoutTree", "Layout") or names.get((e.get("pid"), e.get("tid"))) != "CrRendererMain": continue
+        a = e.get("args", {})
+        st = (a.get("beginData", {}) or {}).get("stackTrace") or a.get("stackTrace") or []
+        fn = next((f.get("functionName") for f in st if f.get("functionName")), None)
+        if fn and ((e["name"] == "UpdateLayoutTree" and (a.get("elementCount") or 0) > 0) or (e["name"] == "Layout" and e.get("tdur", 0) >= 50)): out[(e["name"], fn)] += 1
+    return out
+LOOPCLOCK = "()=>{ for(let i=0;i<3;i++) syncLoopClock(document.getElementById('stage')); return document.getElementById('stage').getAnimations({subtree:true}).length; }"
+
 # ---- the page's own frame clock and the glass --------------------------------------------------------------------------------------------
 CLOCK = """()=>{ const S=window.__tb={frames:[],on:true}; const f=t=>{ if(!S.on) return; S.frames.push(t); requestAnimationFrame(f); }; requestAnimationFrame(f); }"""
 def frame_stats(fr):
@@ -184,6 +199,13 @@ with sync_playwright() as pw:
                 info("%s frame clock over %d hops: p50 %s p95 %s max %s ms, %d late (>25ms) | software compositor draw per frame %.1fms (median) | worst task %.0fms, total %.0fms (1x-eq)" % (
                     label, len(rows), fs and fs["p50"], fs and fs["p95"], fs and fs["max"], fs["late"] if fs else -1, vz, w, tot))
                 SUM[label] = {"total": tot, "worst": w, "p95": fs and fs["p95"], "viz": vz}
+            # (2b) the loop clock itself: Home's loops set to the shared clock, three times over, is one style pass each time, not one per loop
+            if not CHECKS or CHECKS & {"2", "2b"}:
+                tap(pg, cdp, touch, "home"); pg.wait_for_timeout(1800 + 700 * (thr - 1))
+                nloops = [0]
+                evs = trace_run(pg, cdp, lambda: nloops.__setitem__(0, pg.evaluate(LOOPCLOCK)), 400)
+                lc = forced_passes(evs); n = sum(v for (nm, fn), v in lc.items() if fn == "syncLoopClock")
+                chk("(2) %s: setting Home's %d loops to the shared clock, three times, forces at most 6 style passes / layouts, not one per loop (%d)" % (label, nloops[0], n), nloops[0] >= 10 and n <= 6, [nloops[0], dict(lc)])
             # (1) the finger's tap holds the heavy art
             if cls == "finger" and thr == 1:
                 bad = []; unmeasured = []; nconcl = 0
