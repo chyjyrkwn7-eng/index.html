@@ -39152,8 +39152,8 @@ html.is-browser{ --fade-paper: transparent; }
     position:relative; display:grid; box-sizing:border-box; min-width:0; min-height:0; width:auto; margin:0; text-align:left; overflow:hidden;
     padding:calc(20 * var(--u)) calc(20 * var(--u)) calc(20 * var(--u)) calc(22 * var(--u)); border-radius:calc(22 * var(--u));
     grid-template-columns:auto 1fr; grid-template-rows:auto minmax(calc(12 * var(--u)), 1fr) auto auto; align-items:start; gap:0;
-    background:var(--surface-sheen), linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
-    border:1px solid var(--surface-border) !important; box-shadow:none !important;
+    background:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1) !important;
+    border:1px solid transparent !important; box-shadow:none !important;
     transition:transform .15s ease, border-color .15s ease;
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) > .modecard.modecard{
@@ -39161,7 +39161,7 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards.ms-spanlast > .modecard.modecard:last-child{ grid-column:1 / -1; }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:active{
-    background:var(--surface-sheen), linear-gradient(color-mix(in srgb, var(--ink) 12%, transparent), color-mix(in srgb, var(--ink) 12%, transparent)), var(--surface-1) !important;
+    background:linear-gradient(color-mix(in srgb, var(--ink) 12%, transparent), color-mix(in srgb, var(--ink) 12%, transparent)), var(--surface-1) !important;
   }
   @media (hover:hover){
     html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:hover{
