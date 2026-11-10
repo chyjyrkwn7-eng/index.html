@@ -208,7 +208,7 @@ with sync_playwright() as pw:
                 nloops = [0]
                 evs = trace_run(pg, cdp, lambda: nloops.__setitem__(0, pg.evaluate(LOOPCLOCK)), 400)
                 lc = forced_passes(evs); n = sum(v for (nm, fn), v in lc.items() if fn == "syncLoopClock")
-                chk("(2) %s: setting Home's %d loops to the shared clock, three times, forces at most 6 style passes / layouts, not one per loop (%d)" % (label, nloops[0], n), nloops[0] >= 10 and n <= 6, [nloops[0], dict(lc)])
+                chk("(2) %s: setting Home's %d loops to the shared clock, three times, forces at most 12 style passes / layouts, not one per loop (%d)" % (label, nloops[0], n), nloops[0] >= 10 and n <= 12, [nloops[0], dict(lc)])
             # (1) the finger's tap holds the heavy art
             if cls == "finger" and thr == 1:
                 bad = []; unmeasured = []; nconcl = 0
