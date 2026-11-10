@@ -1,8 +1,7 @@
 """Build 384 r9: the Friends screen's "Enter a friend's code" field is centred.
 Madison, the field circled: "This isn't centered". Measured from the pixels (dpr 2), on an iPhone 17 Pro Max, an iPhone SE and an
 iPad Pro 11":
- (1) empty: the hint and the blinking cursor in front of it, as one group, are centred in the field (left and right space within 4px),
-     and the cursor stands just before the hint (4-14px of gap);
+ (1) empty: the hint is centred in the field (left and right space within 2px) and nothing blinks beside it (384.18: no fake cursor);
  (2) a typed code ("ABC-123") is centred in the field (within 4px);
  (3) nothing scrolls sideways, and no page errors;
  (5, r9) the hint centred top to bottom by its ink, within 1px;
@@ -43,8 +42,11 @@ with sync_playwright() as pw:
         L, R, cols = r
         gaps = [cols[k + 1] - cols[k] for k in range(len(cols) - 1)]
         first_gap = next((g for g in gaps if g > 1), 0) / DPR
-        chk("(1) %s: the hint and its cursor centred in the field (%.1f left / %.1f right)" % (lab, L, R), abs(L - R) <= 4, (L, R))
-        chk("(1) %s: the cursor just before the hint (%.1fpx)" % (lab, first_gap), 4 <= first_gap <= 14, first_gap)
+        chk("(1) %s: the hint centred in the field (%.1f left / %.1f right)" % (lab, L, R), abs(L - R) <= 2, (L, R))
+        # (384.18) no fake cursor: nothing blinks in the empty field, and no pseudo-element draws a line there
+        nb = pg.evaluate("""()=>{ const f=document.querySelector('.friend-add-field'), i=f.querySelector('input'); const b=getComputedStyle(f,'::before');
+          return { content:b.content, anim:b.animationName, caret:getComputedStyle(i).caretColor, indent:getComputedStyle(i).textIndent }; }""")
+        chk("(1) %s: no blinking cursor drawn beside the hint (%s)" % (lab, nb), nb["content"] in ("none", "normal") and nb["anim"] == "none" and nb["indent"] in ("0px", "0"), nb)
         # (4) the empty list's one line is centred in its card ("Nobody yet..." circled: "This isn't centered")
         e = pg.evaluate("""()=>{ const p=[...document.querySelectorAll('.friend-sect p')].find(x=>/^No(body| friends) yet/.test(x.textContent)); if(!p) return null;
           const card=p.closest('.sect') || p.parentElement, c=card.getBoundingClientRect(); const r=document.createRange(); r.selectNodeContents(p); const t=r.getBoundingClientRect();

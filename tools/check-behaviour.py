@@ -25563,10 +25563,10 @@ def check_b321f_profile(br):
         lw = next((r for r in wall["rows"] if r["k"] == "level"), {}); bw = next((r for r in wall["rows"] if r["k"] == "badges"), {})
         check(f"{dev}: the card is headed 'To reach' over the rank, the road map's words",
               mid["kick"].strip().lower() == "to reach" and mid["goalName"] == "Platinum", [mid["kick"], mid["goalName"]])
-        check(f"{dev}: the level challenge reads 'Reach Level 50', your level on the right ('Level 44'), no bar, unticked",
-              lm.get("label") == "Reach Level 50" and lm.get("shown") == "Level 44" and not lm.get("bar") and not lm.get("met") and lm.get("tick") == "", lm)
-        check(f"{dev}: ...met, it reads 'Met', ticked, still no bar - never a level past its goal",
-              lw.get("label") == "Reach Level 50" and lw.get("shown") == "Met" and lw.get("met") and lw.get("tick") == "\u2713" and not lw.get("bar")
+        check(f"{dev}: the level challenge reads 'Reach Level 50', your level on the right ('Level 44'), a bar like the badge row's (384.18), unticked",
+              lm.get("label") == "Reach Level 50" and lm.get("shown") == "Level 44" and lm.get("bar") and not lm.get("met") and lm.get("tick") == "", lm)
+        check(f"{dev}: ...met, it reads 'Met', ticked, bar full - never a level past its goal",
+              lw.get("label") == "Reach Level 50" and lw.get("shown") == "Met" and lw.get("met") and lw.get("tick") == "\u2713" and lw.get("bar")
               and "59" not in lw.get("shown", "x"), lw)
         check(f"{dev}: ...and keeps the journey's hooks (.pf-now the level, capped; .pf-need the goal)",
               lm.get("now") == "44" and lm.get("need") == "50" and lw.get("now") == "50" and lw.get("need") == "50", [lm.get("now"), lm.get("need"), lw.get("now")])
