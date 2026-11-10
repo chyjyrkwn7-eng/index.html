@@ -39108,8 +39108,8 @@ html.is-browser{ --fade-paper: transparent; }
      the pages it opens are zoomed by --zc: they lay out as the 440pt screen they are drawn on, then land at full size on the
      glass - the rows, tiles, glyphs, words, switches and hairlines all scale as one, and nothing in them is re-measured. The
      headings step up to 15px as well (Delta's section names, ~15pt semibold; set where the 384 r5 heading rule is). */
-  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask, .settings-namesect){
-    zoom:var(--zc, 1);
+  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary:not(.settings-namesect .slab), .settings-footnote:not(.settings-footnotes .settings-footnote), .settings-footnotes, .confirm-ask, .settings-namesect){
+    zoom:var(--zc, 1);   /* (384 r19) a footnote inside .settings-footnotes rides its container's zoom: zoomed twice it drew at 1.38x, bigger than every other line */
   }
   /* THE REST OF THE APP, THE SAME TREATMENT (Madison: "I want the same treatment ... fix the rest"). The content blocks of the
      screens that sit beside Settings - Profile's and Stats' tabs, the Leaderboard's blurb, tools and rows, Customize, Friends, the
@@ -118704,7 +118704,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.15";
+const APP_BUILD = "2026-11-10-384.16";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
