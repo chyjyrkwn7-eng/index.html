@@ -20,6 +20,13 @@ for i, b in enumerate(blocks, 1):
     if r.returncode: print(r.stderr[:600])
     os.unlink(p)
 print(f"{len(blocks)} inline blocks — " + ("ALL PASS" if ok else "SYNTAX ERRORS"))
+# A LEFT-OVER MERGE MARKER IS NOT A SYNTAX ERROR IN A STYLESHEET: a stray "=======" line before a rule just makes the browser drop
+# that one rule (384.19 shipped one, and it silently switched off the Settings Account row's height). Any such line fails here.
+_markers = [n for n, line in enumerate(io.open(path, encoding='utf-8').read().splitlines(), 1)
+            if re.match(r'(<{7}( |$)|={7}$|>{7}( |$))', line)]
+if _markers:
+    ok = False
+    print("  LEFT-OVER MERGE MARKER on line(s): " + ", ".join(map(str, _markers[:10])))
 
 
 # ---------------------------------------------------------------- build guard
