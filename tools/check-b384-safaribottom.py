@@ -24,7 +24,7 @@ background colour. Per device and screen:
             distance from the viewport's bottom is the same, and no handler writes layout per scroll event (counted).
 Run:  python3 tools/check-b384-safaribottom.py [seam scroll bar] [--root DIR] [--shots DIR]
       --root /tmp/old (a tree with the build before: git archive af5725d index.html version.json share launch | tar -x -C /tmp/old) must FAIL."""
-import functools, http.server, io, json, os, re, socket, sys, threading
+import functools, http.server, io, json, os, re, socket, sys, threading, time
 from playwright.sync_api import sync_playwright
 from PIL import Image
 
@@ -38,7 +38,7 @@ if "--shots" in args:
 ONLY = None
 if "--only" in args:
     i = args.index("--only"); ONLY = args[i + 1]; del args[i:i + 2]
-want = args or ["seam", "scroll", "bar"]
+want = args or ["seam", "scroll", "noscroll", "govern", "bar"]
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 SEAM_MAX = 3.0   # levels (0-255 luminance) between the page's edge and what Safari shows beyond it
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 "
@@ -90,7 +90,7 @@ def parse_rgb(s):
     m = re.findall(r"[\d.]+", s)
     return tuple(float(x) for x in m[:3])
 
-def open_page(br, dev, extra_h=0):
+def open_page(br, dev, extra_h=0, lvh=0):
     name, (sw, sh), top, bot, ipad = dev
     vh = sh - top - bot + extra_h
     ctx = br.new_context(viewport={"width": sw, "height": vh}, screen={"width": sw, "height": sh}, user_agent=UA_IPAD if ipad else UA,
@@ -98,6 +98,9 @@ def open_page(br, dev, extra_h=0):
     ctx.add_init_script(INIT)
     if ipad: ctx.add_init_script(TOUCH_POINTS)
     pg = ctx.new_page()
+    if lvh:   # Chromium's lvh is its dvh; Safari's is taller by what its toolbar gives up when it minimises (~47pt measured at 383)
+        src = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read().replace("100lvh", "calc(100dvh + %dpx)" % lvh)
+        pg.route("**/index.html", lambda route, request, b=src: route.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
     pg.errs = []; pg.on("pageerror", lambda e: pg.errs.append(str(e)[:160]))
     pg.goto(URL); pg.wait_for_timeout(2500)
     pg.evaluate("document.getElementById('splashscreen')?.remove()")
@@ -208,7 +211,67 @@ def scroll(pw):
         ctx.close()
     br.close()
 
+def noscroll(pw):
+    br = pw.chromium.launch(executable_path=CHROME)
+    for dev in DEVICES[:3]:
+        name, (sw, sh), top, bot, ipad = dev
+        ctx, pg, vh = open_page(br, dev, lvh=47)
+        for sname, call in (("Welcome", "showWelcome()"), ("Home", "showHome()")):
+            screen_on(pg, call)
+            r = pg.evaluate("[document.scrollingElement.scrollHeight, innerHeight]")
+            chk("%s, Safari tab (%dx%d, its 100lvh 47px taller than the page's viewport), %s: a screen that fits does not scroll (document %d, viewport %d)" % (name, sw, vh, sname, r[0], r[1]),
+                r[0] <= r[1] + 1, r)
+        # and a vertical drift of a finger on it scrolls nothing
+        pg.evaluate("window.scrollTo(0, 40)"); pg.wait_for_timeout(200)
+        chk("%s: ...so there is no document scroll for a touch to start (scrollY %s)" % (name, pg.evaluate("scrollY")), pg.evaluate("scrollY") == 0)
+        ctx.close()
+    br.close()
+
 BAR = """()=>{ const t = document.querySelector('.bottomtabs'); if(!t) return null; const r = t.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, vh: innerHeight, fromBottom: innerHeight - r.bottom }; }"""
+GOVERN = """async (src) => {
+  window.__cap = []; const oa = window.addEventListener;
+  window.addEventListener = function(t, f, o){ if(t === 'resize') window.__cap.push(f); return oa.apply(this, arguments); };
+  let H = 800, W = 400;
+  Object.defineProperty(window, 'innerHeight', { get: () => H, configurable: true });
+  Object.defineProperty(window, 'innerWidth', { get: () => W, configurable: true });
+  (0, eval)(src);
+  const calls = []; window.addEventListener('resize', () => calls.push([W, H]));
+  const w = window.__cap[window.__cap.length - 1];
+  if(!w) return { err: 'the governor did not wrap a listener' };
+  const fire = (trusted = true) => w({ isTrusted: trusted });
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  fire(); out.first = calls.length;                          // the first one is answered
+  const t0 = performance.now();
+  for(let k = 1; k <= 40; k++){ H = 800 + k; fire(); await sleep(16); }   // a toolbar giving up 40px over ~64 frames
+  out.burstMs = Math.round(performance.now() - t0); out.during = calls.length - out.first;
+  await sleep(250); out.after = calls.length - out.first; out.last = calls[calls.length - 1];
+  let n = calls.length; fire(); out.dup = calls.length - n;   // the same size again, nothing new
+  n = calls.length; W = 300; fire(); out.width = calls.length - n; out.widthAt = calls[calls.length - 1];
+  n = calls.length; H = 500; fire(); out.keyboard = calls.length - n;      // 340px: a keyboard, answered at once
+  n = calls.length; H = 505; fire(false); out.synthetic = calls.length - n; // one a test or the page made up
+  return out; }"""
+def govern(pw):
+    src = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
+    m = re.search(r"<script>\s*/\* BUILD 384 \(round 18\): A TOOLBAR COLLAPSING.*?</script>", src, re.S)
+    chk("the page carries the resize governor (a toolbar collapsing is not answered frame by frame)", bool(m))
+    if not m: return
+    js = m.group(0)[len("<script>"):-len("</script>")]
+    br = pw.chromium.launch(executable_path=CHROME)
+    ctx = br.new_context(viewport={"width": 440, "height": 797}, user_agent=UA, has_touch=True, is_mobile=True)
+    pg = ctx.new_page(); pg.set_content("<html><body></body></html>")
+    r = pg.evaluate(GOVERN, js)
+    chk("governor: it wraps a window resize listener", "err" not in r, r)
+    if "err" not in r:
+        allowed = int(r["burstMs"] / 120) + 2
+        chk("governor: a toolbar giving up 40px in %dms (40 resizes) is answered at most once every 120ms: %d (<= %d)" % (r["burstMs"], r["during"], allowed), r["during"] <= allowed and r["during"] < 20, r)
+        chk("governor: ...and the last answer is at the size the viewport ended on (%s)" % (r["last"],), r["last"] == [400, 840] and r["after"] >= r["during"], r)
+        chk("governor: the same size again is not answered twice (%d)" % r["dup"], r["dup"] == 0, r)
+        chk("governor: a width change is answered at once, at that size (%d, %s)" % (r["width"], r["widthAt"]), r["width"] == 1 and r["widthAt"] == [300, 840], r)
+        chk("governor: a 340px height change (a keyboard) is answered at once (%d)" % r["keyboard"], r["keyboard"] == 1, r)
+        chk("governor: a resize a test or the page made up (untrusted) is always answered (%d)" % r["synthetic"], r["synthetic"] == 1, r)
+    ctx.close(); br.close()
+
 def bar(pw):
     br = pw.chromium.launch(executable_path=CHROME)
     dev = DEVICES[0]; name, (sw, sh), top, bot, ipad = dev
@@ -216,17 +279,7 @@ def bar(pw):
     screen_on(pg, "showHome()")
     pg.wait_for_timeout(500)
     a = pg.evaluate(BAR)
-    # per-event cost: count writes to style / class on the root and the tab bar while a burst of scroll and resize events runs
-    pg.evaluate("""()=>{ window.__w = 0; const root = document.documentElement;
-      new MutationObserver(m => { window.__w += m.length; }).observe(root, { attributes: true, attributeFilter: ['style', 'class'] });
-      const t = document.querySelector('.bottomtabs'); if(t) new MutationObserver(m => { window.__w += m.length; }).observe(t, { attributes: true }); }""")
-    for _ in range(40):
-        pg.evaluate("()=>{ window.dispatchEvent(new Event('scroll')); window.dispatchEvent(new Event('resize')); if(window.visualViewport) window.visualViewport.dispatchEvent(new Event('resize')); }")
-    pg.wait_for_timeout(300)
-    writes = pg.evaluate("window.__w")
-    chk("%s, Safari tab: 40 scroll + resize events with nothing changed write nothing to the root or the tab bar (%d writes)" % (name, writes), writes == 0, writes)
-    # the toolbar collapses: the page's viewport grows by its height (Safari reports it as a resize)
-    pg.set_viewport_size({"width": sw, "height": vh + bot - 36}); pg.wait_for_timeout(700)
+    pg.set_viewport_size({"width": sw, "height": vh + bot - 36}); pg.wait_for_timeout(700)   # the toolbar minimises: the viewport grows
     b = pg.evaluate(BAR)
     chk("%s, Safari tab: when the toolbar collapses the tab bar keeps its distance from the viewport's bottom (%.1f -> %.1f)" % (name, a["fromBottom"], b["fromBottom"]),
         abs(a["fromBottom"] - b["fromBottom"]) <= 1.5, [a, b])
@@ -236,6 +289,6 @@ def bar(pw):
 
 with sync_playwright() as pw:
     for s in want:
-        {"seam": seam, "scroll": scroll, "bar": bar}[s](pw)
+        {"seam": seam, "scroll": scroll, "noscroll": noscroll, "govern": govern, "bar": bar}[s](pw)
 print("ALL PASS" if ok else "FAILED")
 sys.exit(0 if ok else 1)
