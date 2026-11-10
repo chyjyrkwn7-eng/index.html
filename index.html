@@ -27226,6 +27226,11 @@
   }
   .person-card.has-cover .person-card-art > .rank-avatar{ border-radius:50%; overflow:hidden; }
   .person-card.has-cover .person-card-art > .rank-avatar.has-plate{ overflow:visible; }
+  /* (384.23) A PERSON'S CARD DRAWS THE CHARACTER INSIDE ITS CIRCLE. Madison, a card with a ghost on it, the drop and sparks circled where they sit on
+     and past the ring: "Why are some character effects going outside the circles?" The plate (overflow:visible, above) lets the drawing hang out
+     over the plate on purpose, but on this small round token the art's own flourishes (the ghost's drop, the alien's glyph, the marksman's rifle tip)
+     landed outside the ring too. The token is a circle, so the drawing is cut to it. */
+  .person-card-art > .rank-avatar{ clip-path:circle(50% at 50% 50%); }
   /* ---- the unlock card (build 243) - see showUnlockDetail ---- */
   .invite-sheet.unlock-card{ text-align:center; padding-top:1.2rem; }
   /* build 266: no text selection carried over from a press-and-hold. */
@@ -120096,7 +120101,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.23";
+const APP_BUILD = "2026-11-10-384.24";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";

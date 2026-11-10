@@ -38231,3 +38231,10 @@ Madison: "The leaderboard when clicking it sometimes doesn't load right away, it
 - A FIRST EVER VISIT (nothing kept) still shows the placeholders: there is nothing true to show yet.
 - GATE: `tools/check-b384-lbcache.py` (stubbed Firestore: a server answer is kept, a cache-only snapshot is not, after a relaunch with the cloud silent the kept rows are up within 500ms with the header and no placeholders, a later answer replaces them, a week-old copy is not used, the first-ever visit still shows placeholders). FAILS on 384.22.
 - ONLY A PHONE CAN CONFIRM how it feels on the real network: open the Leaderboard right after launching the app.
+
+## 384.24 - a person's card draws the character inside its circle
+
+Madison, a leaderboard person card with a ghost, the drop and sparks circled where they sit on and past the ring: "Why are some character effects going outside the circles?"
+- CAUSE: the card's token (`.person-card-art`, a 72px circle with a ring) holds the character in a `.rank-avatar.has-plate` that is `overflow:visible` on purpose (a plated character's drawing hangs out over the plate). On this small round token, six characters' own flourishes landed past the ring: the ghost's drop and sparks, the queen's, wizard's and dragon's, poseidon's, and the marksman's rifle tip (measured on all 47: pixels the drawing paints 1.5-14px outside the circle).
+- FIX: `.person-card-art > .rank-avatar{ clip-path:circle(50% at 50% 50%) }` - cut to the circle it is shown in. Only the person's card (the leaderboard, friends, a lobby row's tap); the Profile's own hero, Customize and the Virtual Room's lobby glow are unchanged.
+- GATE: `tools/check-b384-cardclip.py` (every character: the token photographed with the drawing and without; nothing of the drawing paints in the ring just outside the circle). FAILS on 384.23 (ghost, queen, wizard, dragon, poseidon, marksman).
