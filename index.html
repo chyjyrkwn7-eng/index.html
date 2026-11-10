@@ -150256,7 +150256,8 @@ function showProfile(defaultTab, opts){
      Profile tab. */
   /* Settings' volume slider is dragged sideways; a drag on it is the
      slider's, never a tab change. */
-  if(profileTabOrder.length > 1) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]" });
+  if(profileTabOrder.length > 1) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]",
+    content: () => { const d = profileTabDefs.find(t => t.key === profileTabKey); return d ? [d.node] : []; } });
 
   /* ---------- identity header ----------------------------------------
      One card: the character you chose, your name, the day streak, and
@@ -151532,13 +151533,33 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
      chat dock, a sheet) is not theirs. */
   const host = document;
   const onSurface = tg => !!tg && (tg === document.documentElement || tg === document.body || surface.contains(tg));
-  let startX = null, startY = null, locked = false;
+  let startX = null, startY = null, locked = false, axis = null, drag = null, busy = false, samples = [];
+  /* (r22) THE SWIPE FOLLOWS THE FINGER. Until now a swipe did nothing at all until the finger had lifted and then swapped the tab in
+     one step (the build of a board - 180-280ms at 4x CPU - sitting between the lift and anything moving). Now, once the drag is
+     clearly sideways (axis chosen once, ~10px, then kept: a vertical scroll that drifts is never taken, a sideways one never lets go),
+     the tab's content (opts.content) moves with the finger on the compositor - one transform write a frame, no reads, passive
+     listeners but the one that has to cancel the page's scroll - and gives way at an end (no tab beyond: a third of the finger's
+     way, as a rubber band). Let go: past a third of the width, or thrown (>0.35px/ms), it is carried off the side on the compositor
+     and the next tab's content comes in from the other (select() runs between, with nothing moving); short of that it eases back.
+     Nothing starts within 20px of the screen's left edge (the system's swipe back), inside anything that scrolls sideways itself, or
+     under [data-noswipe]. opts.content absent, or reduced motion: the plain swap as it was. */
+  const reduced = () => !!(theme.reduceMotion || document.documentElement.dataset.reduceMotion === "true");
+  const EASE = "cubic-bezier(.2,.8,.25,1)";
+  const hScrolls = tg => {
+    for(let n = tg; n && n.nodeType === 1 && n !== document.body; n = n.parentElement){
+      if(n.hasAttribute && n.hasAttribute("data-noswipe")) return true;
+      if(n.scrollWidth > n.clientWidth + 2){ const ox = getComputedStyle(n).overflowX; if(ox === "auto" || ox === "scroll") return true; }
+    }
+    return false;
+  };
   const onStart = (e) => {
     const t = e.touches[0];
     const tg = e.target;
-    if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))
+    axis = null;
+    if(busy || e.touches.length !== 1 || !onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))
        || (tg && tg.closest && tg.closest(".has-seg-glass"))   /* (r8) a finger on a top switcher drags its glass, not the page */
-       || (typeof swipeOverlayUp === "function" && swipeOverlayUp())){   /* (384) never under the page viewer */
+       || (typeof swipeOverlayUp === "function" && swipeOverlayUp())   /* (384) never under the page viewer */
+       || t.clientX < 20 || hScrolls(tg)){
       startX = null; startY = null; locked = false; return;
     }
     /* build 368: NOT A TOUCH ON THE TAB BAR'S OWN SPACE. A slide across the bar that began in its margin (the gap round the pill, which is the
@@ -151549,7 +151570,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
       const bb = document.getElementById("bottomtabs");
       if(bb && !bb.hidden){ const r = bb.getBoundingClientRect(); if(r.height && t.clientY >= r.top - 14 && t.clientY <= r.bottom + 30){ startX = null; startY = null; locked = false; return; } }
     }catch(e){}
-    startX = t.clientX; startY = t.clientY; locked = false;
+    startX = t.clientX; startY = t.clientY; locked = false; samples = [{ t: e.timeStamp, x: t.clientX }];
   };
   host.addEventListener("touchstart", onStart, { passive: true });
   /* The actual reason this swipe reportedly never fired on a real
@@ -151561,25 +151582,131 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
      failing the swipe. Once the drag is clearly more horizontal than
      vertical, claim it before the native scroll gets the chance. An
      ordinary vertical scroll never crosses that threshold. */
+  const stepsOf = i => ({ prev: i > 0, next: i >= 0 && i < order.length - 1 });
+  const place = () => {
+    if(!drag) return;
+    drag.raf = 0;
+    const st = stepsOf(drag.i), dx = drag.dx;
+    const x = (dx < 0 ? st.next : st.prev) ? dx : dx * 0.3;
+    drag.x = x;
+    const o = (1 - 0.4 * Math.min(1, Math.abs(x) / drag.W)).toFixed(3), tf = "translate3d(" + x.toFixed(1) + "px,0,0)";
+    drag.els.forEach(el => { el.style.transform = tf; el.style.opacity = o; });
+  };
+  const clearDrag = () => {
+    if(!drag) return;
+    drag.els.forEach(el => { el.style.transform = ""; el.style.opacity = ""; el.style.transition = ""; el.style.willChange = ""; el.removeAttribute("data-tabdrag"); });
+    if(drag.raf) cancelAnimationFrame(drag.raf);
+    drag = null;
+  };
+  const beginDrag = () => {
+    if(!opts.content || reduced()) return;
+    const els = (opts.content() || []).filter(Boolean);
+    const i = order.indexOf(getCurrent());
+    if(!els.length || i === -1) return;
+    drag = { els, i, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth) };
+    els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform, opacity"; el.setAttribute("data-tabdrag", "1"); });
+  };
   const onMove = (e) => {
     if(startX === null) return;
     const t = e.touches[0];
     const dx = t.clientX - startX, dy = t.clientY - startY;
-    if(!locked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) locked = true;
-    if(locked) e.preventDefault();
+    if(!axis && (Math.abs(dx) > 10 || Math.abs(dy) > 10)){
+      axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if(axis === "x"){ locked = true; beginDrag(); }
+    }
+    if(axis !== "x") return;
+    e.preventDefault();
+    samples.push({ t: e.timeStamp, x: t.clientX });
+    if(samples.length > 24) samples.shift();
+    if(drag){ drag.dx = dx; if(!drag.raf) drag.raf = requestAnimationFrame(place); }
   };
   host.addEventListener("touchmove", onMove, { passive: false });
+  const settle = (els, from, to, ms, done) => {
+    const anims = els.map(el => { try{ return el.animate([from, to], { duration: ms, easing: EASE, fill: "forwards" }); }catch(e){ return null; } });
+    let fin = false;
+    const end = () => { if(fin) return; fin = true; anims.forEach(a => { try{ if(a) a.cancel(); }catch(e){} }); done(); };
+    const a0 = anims.find(Boolean);
+    if(a0) a0.onfinish = end;
+    setTimeout(end, ms + 60);      /* a hidden tab never finishes an animation */
+  };
   const onEnd = (e) => {
     if(startX === null) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - startX, dy = t.clientY - startY;
-    startX = null; startY = null; locked = false;
-    if(Math.abs(dx) < 60 || Math.abs(dy) > 70) return;
-    const i = order.indexOf(getCurrent());
-    const next = dx < 0 ? i + 1 : i - 1;
-    if(i !== -1 && next >= 0 && next < order.length) select(order[next]);
+    const wasAxis = axis;
+    startX = null; startY = null; locked = false; axis = null;
+    if(!drag){
+      if(wasAxis === "y" || Math.abs(dx) < 60 || Math.abs(dy) > 70) return;
+      const i = order.indexOf(getCurrent());
+      const next = dx < 0 ? i + 1 : i - 1;
+      if(i !== -1 && next >= 0 && next < order.length) select(order[next]);
+      return;
+    }
+    const d = drag, i = d.i, dir = dx < 0 ? 1 : -1, next = i + dir;
+    if(d.raf){ cancelAnimationFrame(d.raf); d.raf = 0; }
+    d.dx = dx; place();
+    /* the finger's last ~100ms of moves (its last two when it rested before it moved, so a rest then a flick is still a flick) */
+    const b = samples[samples.length - 1];
+    let a = samples.find(q => b && q.t >= b.t - 100);
+    if(a === b && samples.length > 1) a = samples[samples.length - 2];
+    const v = a && b && b.t > a.t ? (b.x - a.x) / Math.max(8, b.t - a.t) : 0;      /* px/ms, leftwards negative */
+    const speed = dir === 1 ? -v : v;
+    const commit = next >= 0 && next < order.length && panel.isConnected
+      && (Math.abs(dx) > d.W * 0.33 || (speed > 0.35 && Math.abs(dx) > 24)) && wasAxis === "x";
+    const cur = { transform: "translate3d(" + d.x.toFixed(1) + "px,0,0)", opacity: d.els[0].style.opacity || "1" };
+    if(!commit){
+      /* back where it was, eased from where it is */
+      settle(d.els, cur, { transform: "translate3d(0,0,0)", opacity: "1" }, 260, () => { if(drag === d) clearDrag(); });
+      return;
+    }
+    busy = true;
+    const enter = (hold) => {
+      const els = (opts.content() || []).filter(Boolean);
+      if(!els.length){ busy = false; return; }
+      /* the next tab's content comes in from the side the finger was taking this one to */
+      settle(els, { transform: "translate3d(" + (dir * 56) + "px,0,0)", opacity: "0" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 200, () => {
+        if(hold) els.forEach(el => { el.style.opacity = ""; });
+        busy = false;
+      });
+    };
+    const out = { transform: "translate3d(" + (-dir * d.W * 0.5).toFixed(0) + "px,0,0)", opacity: "0" };
+    const host0 = opts.ghost ? opts.ghost() : null;
+    if(host0 && host0.isConnected && host0.firstChild){
+      /* THE OLD LIST STAYS WHERE THE FINGER LEFT IT WHILE THE NEW ONE IS BUILT, then the two cross. A board's rows are one element
+         repainted in place and the build of the next is 180-280ms at 4x CPU: it used to sit between the lift and anything on screen,
+         and a first version that carried the old list off first left a bare screen for the build. Its rows are lifted into a copy of
+         the container, at the place they are seen, the build runs under it (a frame later, so the lift is painted first; the new rows
+         held at no opacity), and once it is done the old list leaves on the compositor as the new one comes in from the other side. */
+      const r = host0.getBoundingClientRect();     /* the drag's transform is in it: where the rows are SEEN */
+      const gh = document.createElement("div");
+      gh.className = host0.className; gh.setAttribute("aria-hidden", "true"); gh.inert = true;
+      gh.style.cssText = "position:fixed; margin:0; pointer-events:none; z-index:2; top:" + r.top + "px; left:" + r.left + "px; width:" + r.width + "px; height:" + r.height + "px; overflow:hidden;";
+      gh.append(...host0.childNodes);
+      clearDrag();
+      host0.style.opacity = "0";
+      host0.insertAdjacentElement("afterend", gh);
+      requestAnimationFrame(() => setTimeout(() => {
+        if(!panel.isConnected){ gh.remove(); host0.style.opacity = ""; busy = false; return; }
+        select(order[next]);
+        settle([gh], cur, out, 170, () => { gh.remove(); });
+        enter(true);
+      }, 0));
+      return;
+    }
+    settle(d.els, cur, out, 110, () => {
+      clearDrag();
+      if(!panel.isConnected){ busy = false; return; }
+      select(order[next]);
+      enter();
+    });
   };
   host.addEventListener("touchend", onEnd);
+  const onCancel = () => {
+    startX = null; startY = null; locked = false; axis = null;
+    const d = drag; if(!d) return;
+    settle(d.els, { transform: "translate3d(" + d.x.toFixed(1) + "px,0,0)", opacity: d.els[0].style.opacity || "1" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 260, () => { if(drag === d) clearDrag(); });
+  };
+  host.addEventListener("touchcancel", onCancel, { passive: true });
 
   /* .wrap outlives the screen inside it, so these have to come off when
      the panel goes - otherwise every screen after this one inherits this
@@ -151591,6 +151718,8 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     host.removeEventListener("touchstart", onStart);
     host.removeEventListener("touchmove", onMove);
     host.removeEventListener("touchend", onEnd);
+    host.removeEventListener("touchcancel", onCancel);
+    clearDrag();
   });
   obs.observe(stage, { childList: true, subtree: true });
 }
@@ -152046,7 +152175,7 @@ function showRankings(defaultBoard){
 
   /* The same contained tab swipe the old Rewards tab had, now shared -
      see attachTabSwipe. */
-  attachTabSwipe(panel, RANKING_BOARDS.map(b => b.key), () => rankingsBoardKey, selectBoard);
+  attachTabSwipe(panel, RANKING_BOARDS.map(b => b.key), () => rankingsBoardKey, selectBoard, { content: () => [rows], ghost: () => rows });
 
   /* Detach the snapshot when this screen goes, not just when Rankings is
      opened again. Without this, walking Rankings -> Home -> Rankings
