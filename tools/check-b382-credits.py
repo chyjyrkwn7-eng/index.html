@@ -284,7 +284,7 @@ with sync_playwright() as pw:
             cr and all(c["nameFirst"] and c["role"] and not c["nameChev"] and c["items"] and all(i["h"] >= 44 for i in c["items"]) for c in cr["cards"]), cr and cr["cards"])
         links = [i for c in (cr or {}).get("cards", []) for i in c["items"] if i["link"]]
         chk("%s a chevron only on a row that opens something (%d linked rows)" % (tag, len(links)),
-            cr and all(i["chev"] == i["link"] for c in cr["cards"] for i in c["items"]) and len(links) == (0 if cls == "ifc" else 2), [c["items"] for c in (cr or {}).get("cards", [])])
+            cr and all(i["chev"] == i["link"] for c in cr["cards"] for i in c["items"]) and len(links) == (0 if cls == "ifc" else 1), [c["items"] for c in (cr or {}).get("cards", [])])
         if cls != "ifc":
             got = []
             for n in range(len(links)):
@@ -293,8 +293,8 @@ with sync_playwright() as pw:
                   b.click(); await new Promise(r=>setTimeout(r,1200));
                   const out = { chat: typeof chatDockOpen !== 'undefined' && chatDockOpen === true, room: !!document.querySelector('#stage .screen-vroom-choice') };
                   try{ if(chatDockOpen) closeChatDock(); }catch(e){} return out; }""", n))
-            chk("%s the two linked rows open the chat and the Virtual Room (%s)" % (tag, got),
-                len(got) == 2 and sorted([bool(x and x["chat"]) for x in got]) == [False, True] and sorted([bool(x and x["room"]) for x in got]) == [False, True], got)
+            chk("%s (384.17) the one linked row opens the chat; the Virtual Room row is gone (%s)" % (tag, got),
+                len(got) == 1 and bool(got[0] and got[0]["chat"]) and not got[0]["room"], got)
             pg.wait_for_timeout(600)
             settings(pg); tap(pg, "Contributors"); pg.wait_for_timeout(1300)
         chk("%s the tab bar lights what Settings lights (%s / %s)" % (tag, cr and cr["lit"], litSettings), cr and cr["lit"] and cr["lit"] == litSettings, cr and cr["lit"])
