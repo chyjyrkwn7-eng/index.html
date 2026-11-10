@@ -6963,6 +6963,17 @@
      or two above centre; text-box trims the box to the capitals (Safari
      18.2+, current Chrome), so equal padding is equal space round the
      letters. Older browsers keep line-height:1 and the same padding. */
+  /* ---- A LOBBY ROW IS A GRID: THE NAME TAKES THE ROOM, THE STATUS SITS AT THE RIGHT EDGE (build 384.21) ----
+     Madison, a screenshot of the lobby on his iPhone: the "Not ready" chip sat right after the name in the middle of the row with the rest of
+     the row empty, and his own name was cut to "Ma..." ("it's on the left, your username isn't visible either"). The row was a flex row whose
+     chip found the right edge only by an auto margin, and whose name column was as wide as its own words: anything that took the free
+     space (or a name column that shrank) left both in the wrong place. Three tracks now - the character, a middle track that is all the
+     room that is left (the name and the line under it, ellipsis only when it truly does not fit), the status at the end - so the status
+     cannot sit anywhere but the right and the name cannot be narrower than the room it has. A crowded room (more than six, two across)
+     keeps its own tight flex rows. */
+  .vroom-roster:not(.is-crowded) .vroom-row{ display:grid; grid-template-columns:auto minmax(0, 1fr) auto; column-gap:.8rem; align-items:center; }
+  .vroom-roster:not(.is-crowded) .vroom-row > .lb-name-wrap{ min-width:0; }
+  .vroom-roster:not(.is-crowded) .vroom-row > .vroom-ready-badge{ margin-left:0; justify-self:end; }
   .vroom-ready-badge{
     margin-left:auto; flex-shrink:0; font-size:.68rem; font-weight:800;
     letter-spacing:.03em; text-transform:uppercase; padding:.5rem .6rem; line-height:1;
