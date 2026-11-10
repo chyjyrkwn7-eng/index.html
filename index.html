@@ -39429,46 +39429,39 @@ html.is-browser{ --fade-paper: transparent; }
     zoom:var(--zc, 1);
   }
 
-  /* ---- AN UNLIT SECRET FLARE IS AN UNKINDLED EMBER (build 384 r15) ----
-     Madison: "The unlit secret flares, I'm not the biggest fan of how they look, room for improvement there." They were a
-     smoky grey glass bead with a bright glint - a water drop or a ball bearing, nothing to find. It is dark obsidian now with
-     a thin cool rim of frosted light, a dim point of light deep in the middle that slowly swells and fades (it is not lit yet,
-     it is waiting to be) and, every few seconds, one faint ring that opens round it and goes. Still colourless (build 314: a
-     flare you have not found gives away no hue), still a marble (a small glint high on the left, a catch of light on the rim).
+  /* ---- AN UNLIT SECRET FLARE IS A PEARL (build 384.20; was an unkindled ember in 384.19) ----
+     Madison, shown three looks (ember, socket, pearl): "For the secret flares, I like the pearl look." A pearl is frosted pale glass
+     over a dark core, a bright thin rim, a small glint high on the left and a veiled light that drifts slowly about inside it
+     (it is not lit yet). Still colourless (build 314: a flare you have not found gives away no hue). No ring, no filter, no
+     backdrop-filter: every part only ever changes transform or opacity.
      ONE LOOK for every place an unlit secret flare is drawn: Home's orbit and Welcome's planet (.cosmic-flare-dot not found),
      the recap dots (.nt-rc-sf), the hint card's flare, and the mark on a locked secret character's tile (in place of a
-     padlock) - they are all .cof-* parts inside either .cosmic-flare-dot:not(.is-found) or .unlit-flare (buildUnlitFlare).
-     Every part is a small box that only ever changes transform or opacity: no filter, no backdrop-filter. */
+     padlock) - they are all .cof-* parts inside either .cosmic-flare-dot:not(.is-found) or .unlit-flare (buildUnlitFlare). */
   .unlit-flare{ position:relative; display:block; aspect-ratio:1; border-radius:50%; flex:none; }
   .unlit-flare > i{ position:absolute; inset:0; border-radius:50%; pointer-events:none; }
   .nt-rc-sf.unlit-flare{ background:none; box-shadow:none; }
-  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare){ --ul-rim:206, 216, 238; }
   :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-body{
     background:
-      radial-gradient(ellipse 22% 14% at 32% 22%, rgba(255,255,255,.55) 0 40%, rgba(255,255,255,0) 100%),
-      radial-gradient(circle at 50% 50%, rgba(150,168,206,0) 0 50%, rgba(150,168,206,.24) 76%, rgba(196,210,238,.5) 100%),
-      radial-gradient(circle at 46% 44%, #323b58 0%, #1a2034 60%, #0d101b 100%);
-    box-shadow:inset 0 0 0 .8px rgba(var(--ul-rim), .72), 0 1.5px 3px rgba(0,0,0,.6), 0 0 7px rgba(170,188,228,.3);
+      radial-gradient(ellipse 34% 22% at 32% 24%, rgba(255,255,255,.7) 0 40%, rgba(255,255,255,0) 100%),
+      radial-gradient(circle at 50% 50%, rgba(238,243,255,.30) 0%, rgba(206,217,242,.24) 60%, rgba(150,168,210,.42) 100%),
+      radial-gradient(circle at 50% 50%, #1b1f2e 0%, #141824 100%);
+    box-shadow:inset 0 0 0 .8px rgba(255,255,255,.62), 0 0 9px rgba(214,224,248,.26), 0 1.5px 3px rgba(0,0,0,.55);
   }
   :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{
-    inset:24%; opacity:.45;
-    background:radial-gradient(circle, rgba(250,252,255,.95) 0, rgba(240,246,255,.8) 16%, rgba(196,210,244,.4) 46%, rgba(196,210,244,0) 100%);
+    inset:14%; opacity:.3;
+    background:radial-gradient(circle at 40% 42%, rgba(255,255,255,.85) 0 14%, rgba(235,242,255,.34) 36%, rgba(235,242,255,0) 66%);
   }
-  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ inset:-8%; border:1px solid rgba(var(--ul-rim), .55); opacity:0; }
-  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen{ overflow:hidden; opacity:.6; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ display:none; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen{ overflow:hidden; opacity:.85; }
   :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen::before{ content:""; position:absolute; top:-20%; bottom:-20%; left:-80%; width:45%;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent); transform:translateX(0) skewX(-18deg); }
   .avatarchar-lockmark .unlit-flare{ width:100%; height:100%; }
-  .avatarchar-lockmark .unlit-flare .cof-ring{ display:none; }
   .rs-hint-orb .unlit-flare{ width:100%; height:100%; }
   @media (prefers-reduced-motion:no-preference){
-    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{ animation:cof-ul-core 5.4s ease-in-out var(--fd, 0s) infinite; }
-    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ animation:cof-ul-ring 8s ease-out var(--fd, 0s) infinite; }
+    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{ animation:cof-ul-drift 7s ease-in-out var(--fd, 0s) infinite; }
     :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen::before{ animation:cof-sweep calc(var(--fo, 6.5s) + 1.5s) ease-in-out var(--fd, 0s) infinite; }
   }
-  @keyframes cof-ul-core{ 0%,100%{ opacity:.25; transform:scale(.8); } 50%{ opacity:1; transform:scale(1.12); } }
-  @keyframes cof-ul-ring{ 0%,68%{ opacity:0; transform:scale(.92); } 74%{ opacity:.42; } 100%{ opacity:0; transform:scale(1.7); } }
-=======
+  @keyframes cof-ul-drift{ 0%,100%{ opacity:.22; transform:translate(-8%, -6%) scale(.9); } 50%{ opacity:.7; transform:translate(10%, 8%) scale(1.1); } }
   /* ---- ACCOUNT: THE NAME AND ITS CHANGE BUTTON AT THE SIZE OF EVERYTHING ELSE IN SETTINGS (build 384, 9th pass) ----
      Madison: "In account within settings, why is the name and change button so tiny? Fix that." The name was 15.5px and Change
      12.5px in a 43pt row on his zoomed phone (the name block was the one Settings block the page-zoom rule did not reach: it is now
@@ -119887,7 +119880,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.19";
+const APP_BUILD = "2026-11-10-384.19.1";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";

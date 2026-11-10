@@ -45,7 +45,7 @@ HOME = """()=>{ const ANIM=%s; const dots=[...document.querySelectorAll('.cosmic
   const out = unlit.map(d=>{ const core=d.querySelector('.cof-core'), ring=d.querySelector('.cof-ring'), body=d.querySelector('.cof-body');
     const cs=getComputedStyle(core), r=d.getBoundingClientRect(), cr=core.getBoundingClientRect();
     return { flare:d.dataset.flare, w:r.width, coreOpacity:parseFloat(cs.opacity), coreFrac:cr.width/r.width,
-      core:ANIM(core), ring:ANIM(ring), ringW:ring.getBoundingClientRect().width/r.width, bodyBg:getComputedStyle(body).backgroundImage.length }; });
+      core:ANIM(core), ring:ANIM(ring), ringW:ring.getBoundingClientRect().width/r.width, ringDisplay:getComputedStyle(ring).display, bodyBg:getComputedStyle(body).backgroundImage.length }; });
   return { total:dots.length, unlit:out }; }""" % ANIM
 
 NOFILTER = """(sel)=>{ const bad=[]; document.querySelectorAll(sel).forEach(el=>{
@@ -106,8 +106,8 @@ with sync_playwright() as pw:
             u and all(x["coreOpacity"] > 0 and 0.15 < x["coreFrac"] < 0.8 for x in u), [(x["flare"], x["coreOpacity"], x["coreFrac"]) for x in u])
         chk("%s (1) the core is animated: a running animation of opacity and transform only" % cls,
             u and all(x["core"]["running"] > 0 and set(x["core"]["props"]) <= {"opacity", "transform"} and "opacity" in x["core"]["props"] for x in u), [x["core"] for x in u][:2])
-        chk("%s (1) a ring opens round it and goes: a running animation of opacity and transform only, wider than the dot" % cls,
-            u and all(x["ring"]["running"] > 0 and set(x["ring"]["props"]) <= {"opacity", "transform"} and x["ringW"] > 1 for x in u), [(x["ring"], x["ringW"]) for x in u][:2])
+        chk("%s (1) a pearl has no ring: nothing opens round the dot, and nothing runs on it (384.20; the ember's ring is gone)" % cls,
+            u and all(x["ringDisplay"] == "none" and x["ring"]["running"] == 0 for x in u), [(x["ringDisplay"], x["ring"]) for x in u][:2])
         # pixels: a copy of an orbit dot and a standalone mark, each set 48px on a flat dark panel (an orbiting dot moves under a
         # screenshot), their animations held at their first frame (the core at its dimmest)
         pg.evaluate("""()=>{ const p=document.createElement('div'); p.id='ulpix'; p.style.cssText='position:fixed;left:0;top:0;width:260px;height:120px;background:#14161f;z-index:99999';
@@ -129,8 +129,8 @@ with sync_playwright() as pw:
             return sum(mid) / len(mid), sum(rim) / len(rim)
         for what, cx, cy in (("orbit dot", 70, 60), ("standalone mark", 150 + 24, 36 + 24)):
             midm, rimm = luma(cx, cy, 48)
-            chk("%s (1) the %s renders a dark body inside a lighter thin edge (mean luma of the body ring %.0f, of the rim %.0f)" % (cls, what, midm, rimm),
-                rimm > midm + 25 and midm < 80, (midm, rimm))
+            chk("%s (1) the %s renders a frosted pearl: a body clearly lighter than the dark panel under it, inside a brighter thin edge (mean luma of the body ring %.0f, of the rim %.0f, of the panel 20)" % (cls, what, midm, rimm),
+                midm > 45 and rimm > midm + 3, (midm, rimm))
         if SHOTS:
             os.makedirs(SHOTS, exist_ok=True); full.save(os.path.join(SHOTS, "pix-" + ("fc" if ifc else "ac") + ".png"))
         pg.evaluate("()=>document.getElementById('ulpix').remove()")
