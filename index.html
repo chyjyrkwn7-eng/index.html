@@ -54989,6 +54989,27 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
     });
     const sp = document.createElement("span"); sp.textContent = label; row.append(cb, sp); box.appendChild(row);
   });
+  /* (384 r12) AUTO TEST: one tap, then screen-record the phone. Each suspect is switched on by itself for 5 seconds with its name in
+     the panel (the first step is nothing off, the second is everything off at once); the recording shows which one makes the soft
+     band across the top go - nobody has to tick anything. */
+  const auto = document.createElement("button"); auto.type = "button"; auto.textContent = "Run auto test (then screen-record)";
+  auto.style.cssText = "margin-top:6px;min-height:44px;width:100%;font:600 13px -apple-system,system-ui,sans-serif;border-radius:10px;border:0;background:#fff;color:#000;padding:8px 10px";
+  let running = false;
+  auto.addEventListener("click", () => {
+    if(running) return; running = true;
+    const clear = () => { T.forEach(([k]) => { const e = document.getElementById("diag-" + k); if(e) e.remove(); }); box.querySelectorAll("input").forEach(c => { c.checked = false; }); };
+    const put = (list) => list.forEach(([k, , css]) => { const st = document.createElement("style"); st.id = "diag-" + k; st.textContent = css; document.head.appendChild(st); });
+    const steps = [["Step 1: nothing off", []], ["Step 2: EVERYTHING off at once", T]].concat(T.map((t, i) => ["Step " + (i + 3) + ": " + t[1], [t]]));
+    let i = 0;
+    const next = () => {
+      clear();
+      if(i >= steps.length){ h.textContent = "Done - stop the recording and send it"; auto.textContent = "Run auto test (then screen-record)"; running = false; return; }
+      const [label, list] = steps[i++]; h.textContent = label; auto.textContent = label; put(list);
+      setTimeout(next, 5000);
+    };
+    h.textContent = "Starting in 3 seconds - start the screen recording now"; setTimeout(next, 3000);
+  });
+  box.appendChild(auto);
   const add = () => { if(document.body && !document.getElementById("diagpanel")) document.body.appendChild(box); };
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", add); else add();
   setInterval(add, 1500);
@@ -118249,7 +118270,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.8";
+const APP_BUILD = "2026-11-10-384.9";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
