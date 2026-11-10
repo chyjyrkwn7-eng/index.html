@@ -10,6 +10,10 @@ glass size is read as CSS px x (screen / layout width):
  (6) "fix the rest": the content of Profile, Stats, the Leaderboard, Customize, Friends, the Calendar, the Rank ladder and the badge case is
      the height on the glass at his zoom that it has at 100% (within 3%) - the same treatment;
  (7) Account's name row and its Change button are Settings-sized on the glass at his zoom: row 49-58pt, the name 16-18pt, Change 15.5pt+ and 36pt+ tall;
+ (8) Settings footnotes are one size on the glass: the lines inside a group of footnotes (Advanced's "Your data" notes) are the same height at his zoom
+     as a lone footnote's (a footnote inside a zoomed group used to be zoomed twice);
+ (9) nothing in Settings or the screens beside it is zoomed twice: no element with a zoom has an ancestor with a zoom (Account's "Name" heading inside the
+     zoomed name block was);
  (5) nothing scrolls sideways at either, and no page errors.
 Run:  python3 tools/check-b384-settingszoom.py   (--against OLD/index.html must FAIL)"""
 import os, sys, importlib.util
@@ -57,6 +61,19 @@ with sync_playwright() as pw:
       return { row: n.getBoundingClientRect().height*k, name: parseFloat(getComputedStyle(d).fontSize)*z*(k*(innerWidth/innerWidth)), btnh: b.getBoundingClientRect().height*k, btnf: parseFloat(getComputedStyle(b).fontSize)*z*k, z }; }""", k)
     chk("(7) Account's name row and Change button at his zoom: row %.0fpt, Change %.0fpt tall (%s)" % (ac and ac["row"] or 0, ac and ac["btnh"] or 0, ac),
         ac and 49 <= ac["row"] <= 58 and ac["btnh"] >= 36, ac)
+    pg.evaluate("()=>showAdvancedSettings()"); pg.wait_for_timeout(1300)
+    fn = pg.evaluate("""(k)=>{ const R=e=>{ const g=document.createRange(); g.selectNodeContents(e); const r=g.getClientRects(); return r.length ? r[0].height*k : 0; };
+      const all=[...document.querySelectorAll('#stage .settings-footnote')]; const inGrp=all.filter(e=>e.closest('.settings-footnotes')), lone=all.filter(e=>!e.closest('.settings-footnotes'));
+      return { grp: inGrp.map(R), lone: lone.map(R) }; }""", k)
+    chk("(8) footnotes in a group and alone are one size on the glass (%s)" % fn, fn["grp"] and fn["lone"] and all(abs(a_ - fn["lone"][0]) <= 1.5 for a_ in fn["grp"] + fn["lone"]), fn)
+    DZ = """()=>{ const out=[]; for(const e of document.querySelectorAll('#stage *')){ if(parseFloat(getComputedStyle(e).zoom)>1.05){ let a=e.parentElement; while(a && a.id!=='stage'){ if(parseFloat(getComputedStyle(a).zoom)>1.05){ out.push(e.tagName+'.'+String(e.className).slice(0,30)+' in '+String(a.className).slice(0,30)); break; } a=a.parentElement; } } } return out.slice(0,6); }"""
+    dz = []
+    for scr in ("showAppearance()", "showAppearance({page:'sound'})", "showAppearance({page:'study'})", "showAppearance({page:'account'})", "showAppearance({page:'classes'})", "showAppearance({page:'sync'})", "showAppearance({page:'rankings'})", "showAdvancedSettings()", "showCredits()", "showProfile('profile')", "showProfile('stats')", "showRankings()", "showCustomize()", "showFriends()", "showProfile('ranks')", "showProfile('badges')"):
+        try:
+            pg.evaluate("()=>" + scr); pg.wait_for_timeout(500); dz += [scr + ': ' + x for x in pg.evaluate(DZ)]
+        except Exception as _e:
+            pass
+    chk("(9) nothing is zoomed twice (%s)" % dz[:3], not dz, dz)
     OTHER = [("profile", "showProfile('profile')", ".screen-profile > .profile-identity-tab"), ("stats", "showProfile('stats')", ".screen-profile > .profile-stats-tab"),
              ("leaderboard", "showRankings()", ".screen-rankings > .rank-blurb"), ("customize", "showCustomize()", ".screen-customize > .cz-list"),
              ("friends", "showFriends()", ".screen-friends > .friend-sect"), ("calendar", "showCalendarTab()", ".screen-calendar > .cal-glance"),
