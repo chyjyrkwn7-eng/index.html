@@ -7,6 +7,8 @@ glass size is read as CSS px x (screen / layout width):
  (2) a word's line box 18-21pt (15.5pt type) and a section heading's 17-22pt line (15pt type);
  (3) on a page Settings opens (Sound & Haptics, Study): every row is the height on the glass it has at 100% (within 1.5pt);
  (4) at 100% (440 CSS px on a 440pt screen) nothing is scaled: tile 28px, pitch 51px, and page-zoomed is not set;
+ (6) "fix the rest": the content of Profile, Stats, the Leaderboard, Customize, Friends, the Calendar, the Rank ladder and the badge case is
+     the height on the glass at his zoom that it has at 100% (within 3%) - the same treatment;
  (5) nothing scrolls sideways at either, and no page errors.
 Run:  python3 tools/check-b384-settingszoom.py   (--against OLD/index.html must FAIL)"""
 import os, sys, importlib.util
@@ -48,6 +50,15 @@ with sync_playwright() as pw:
         pg.evaluate("(p)=>showAppearance({page:p})", pgname); pg.wait_for_timeout(1100)
         zoomed[pgname] = pg.evaluate(SUB, k)
     chk("(5) no page errors at his zoom", not errs, errs)
+    OTHER = [("profile", "showProfile('profile')", ".screen-profile > .profile-identity-tab"), ("stats", "showProfile('stats')", ".screen-profile > .profile-stats-tab"),
+             ("leaderboard", "showRankings()", ".screen-rankings > .rank-blurb"), ("customize", "showCustomize()", ".screen-customize > .cz-list"),
+             ("friends", "showFriends()", ".screen-friends > .friend-sect"), ("calendar", "showCalendarTab()", ".screen-calendar > .cal-glance"),
+             ("rank", "showProfile('ranks')", ".screen-ranks > .ranks-tab"), ("badges", "showProfile('badges')", ".screen-ranks > .badges-tab")]
+    HEIGHT = "(sel)=>{ const e=document.querySelector(sel); return e ? [e.getBoundingClientRect().height, e.getBoundingClientRect().width] : null; }"
+    other_z = {}
+    for nm, call, sel in OTHER:
+        pg.evaluate("()=>" + call); pg.wait_for_timeout(1200)
+        v = pg.evaluate(HEIGHT, sel); other_z[nm] = v and [v[0] * k, v[1] * k]
     ctx.close()
     ctx, pg = boot(br, 440, 956, 440, 956)
     errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
@@ -60,6 +71,11 @@ with sync_playwright() as pw:
         base = pg.evaluate(SUB, 1); z = zoomed[pgname]
         chk("(3) %s: every row is its 100%% height on the glass at his zoom (%s vs %s)" % (pgname, [round(v) for v in z], [round(v) for v in base]),
             base and len(base) == len(z) and all(abs(a_ - b_) <= 1.5 for a_, b_ in zip(z, base)), [z, base])
+    for nm, call, sel in OTHER:
+        pg.evaluate("()=>" + call); pg.wait_for_timeout(1200)
+        base = pg.evaluate(HEIGHT, sel); z = other_z[nm]
+        chk("(6) %s: the block is its 100%% height on the glass at his zoom (%s vs %s)" % (nm, z and [round(x) for x in z], base and [round(x) for x in base]),
+            z and base and abs(z[0] - base[0]) <= max(4, base[0] * .03), [z, base])   # heights only: the column is 6pt wider on the glass at his zoom (the page's 20px side padding is 17pt there)
     ctx.close(); br.close()
 print("ALL PASS" if ok else "FAILED")
 sys.exit(0 if ok else 1)

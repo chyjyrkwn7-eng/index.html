@@ -39087,6 +39087,19 @@ html.is-browser{ --fade-paper: transparent; }
   html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask){
     zoom:var(--zc, 1);
   }
+  /* THE REST OF THE APP, THE SAME TREATMENT (Madison: "I want the same treatment ... fix the rest"). The content blocks of the
+     screens that sit beside Settings - Profile's and Stats' tabs, the Leaderboard's blurb, tools and rows, Customize, Friends, the
+     Calendar, the Rank ladder and the badge case - are zoomed by the same --zc. Not the headers, the top segmented controls, the
+     back buttons or anything fixed: those were signed off at their own size and are placed against the screen, not the page. */
+  html.page-zoomed[data-layout] body #stage :is(
+      .screen-profile > :is(.profile-identity-tab, .profile-stats-tab),
+      .screen-rankings > :is(.rank-blurb, .rank-tools, .rank-rows),
+      .screen-customize > :is(.cz-intro, .cz-list),
+      .screen-friends > .friend-sect,
+      .screen-calendar > :is(.cal-classhead, .cal-glance, .cal-monthview, .cal-card),
+      .screen-ranks > :is(.ranks-tab, .badges-tab)){
+    zoom:var(--zc, 1);
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -118236,7 +118249,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-09-384.7";
+const APP_BUILD = "2026-11-10-384.8";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
