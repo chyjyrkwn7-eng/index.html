@@ -34846,11 +34846,15 @@ html.is-browser{ --fade-paper: transparent; }
     opacity:1; background:transparent; transition:none;
   }
   .invite-overlay:has(> .invite-sheet.person-card)::before{
-    content:""; position:absolute; inset:0; background:var(--pop-scrim); opacity:0; transition:opacity .32s ease; pointer-events:none; will-change:opacity;
+    content:""; position:absolute; inset:0; background:var(--pop-scrim); opacity:0; transition:opacity .32s ease; pointer-events:none;
   }
   .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card)::before{ opacity:1; }
   .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{
-    position:relative; opacity:0; transform:translateY(8px) scale(.965); transition:opacity .3s ease, transform .36s cubic-bezier(.2,.8,.25,1); will-change:opacity, transform;
+    position:relative; opacity:0; transform:translateY(8px) scale(.965); transition:opacity .3s ease, transform .36s cubic-bezier(.2,.8,.25,1);
+    /* (384.24) NO will-change HERE. `will-change: opacity` makes this card a compositing group of its own with an opacity effect, and WebKit
+       draws a backdrop-filter on such an element against that group (empty) instead of against the page: on Madison's iPhone the card read as a
+       flat dark pane ("Where's the frosted glass?") while every other pop-up, which has no will-change, frosted. Chromium never showed it. The
+       transition does not need the hint. */
   }
   .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ opacity:1; transform:none; }
   /* closing: the same beat backwards, a little quicker */
