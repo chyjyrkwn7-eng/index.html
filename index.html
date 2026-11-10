@@ -93196,22 +93196,12 @@ function centerPauseStack(panel, stack){
    from the plain Pause screen — Pause only ever offers Resume, and this
    is the only path that asks about leaving, so it's never nested inside
    itself or asked more than once per attempt. */
-/* Per explicit report: tapping Profile/Rewards/Settings on the bottom tab
-   bar while choosing units (Setup) used to just abandon that screen for
-   good \u2014 the only way back was re-entering the whole Mode Select flow
-   from Home. Capturing "Setup was the screen I just left" here, checked
-   right at the top of the three screens the tab bar can jump to, and
-   consumed the next time the Home tab is tapped (see confirmMainMenu
-   below), makes the tab bar feel like it's keeping your place instead of
-   discarding it \u2014 the same way switching tabs on a phone's OS doesn't
-   lose whatever screen you were on inside the other tab. Setup itself
-   doesn't need special handling to make this actually restore the same
-   units/mode: cfg and the selected-units state it already reads from are
-   both plain globals that were never touched by leaving the screen. */
-let returnToSetupAfterTabs = false;
-function captureSetupReturn(){
-  if(document.querySelector(".screen-setup")) returnToSetupAfterTabs = true;
-}
+/* (384 r15) A TAP ON HOME ALWAYS LANDS ON HOME. This used to hold "Setup was the screen I just left"
+   (returnToSetupAfterTabs, set by Profile, Calendar and the rank screens) and the next Home tap
+   brought the unit screen back instead of Home - "if I'm selecting a unit, go to settings, and then
+   hit home it goes back to units?? Fix that and ensure none of it does that." Nothing is held now: a
+   tab leaves the unit screen for good and Home is Home. Start Studying is how the units are reached
+   again, and showModeSelect() drops the picks on the way, as it always has. */
 
 /* Two separate confirmations sharing the same shape \u2014 confirmMainMenu()
    for the avatar popover's "Main Menu" (always goes all the way home),
@@ -93220,7 +93210,6 @@ function captureSetupReturn(){
    when you were already mid-test). Kept as two functions rather than one
    parameterized one so each call site's intent stays obvious at a glance. */
 function confirmMainMenu(){
-  if(returnToSetupAfterTabs){ returnToSetupAfterTabs = false; showSetup(); return; }
   if(!testInProgress){ showHome(); return; }
   /* Daily question is always exactly one question, so unlike a real
      test/drill run (which can be many questions deep), there's no
@@ -111138,13 +111127,6 @@ function showHome(){
      (build 299) - a no-op once the record exists. */
   try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
   try{ seedForgeSilently(); }catch(e){}   /* (384 r4) Bronze's character, quietly, for those who already hold it */
-  /* Reaching the real Home screen by any path always means the pending
-     "return to Setup" state from captureSetupReturn() is stale/no longer
-     wanted — confirmMainMenu() already consumes and clears it itself on
-     the one path that's actually meant to honor it (tapping Home from
-     Profile/Rewards/Settings right after Setup), so this only ever
-     matters as a safety net for some other, direct route to Home. */
-  returnToSetupAfterTabs = false;
   /* The Supernova cutscene takes over completely before Home ever
      renders normally \u2014 checked first, before any of Home's own setup
      runs, so nothing about the ordinary screen flashes into view
@@ -111931,12 +111913,10 @@ function showModeSelect(){
      for the whole session. Build 100 stopped it persisting across
      LAUNCHES by dropping the localStorage restore, which is a
      different thing and is why this came back.
-     Cleared HERE, on the screen you land on when you back out, rather
-     than on entry to showSetup() - because showSetup() is also how you
-     return after popping over to Profile or Settings mid-selection
-     (returnToSetupAfterTabs), and losing your picks to a tab round
-     trip would be its own bug. Backing out goes through this screen;
-     a tab round trip does not. */
+     Cleared HERE, on the screen you land on when you back out (and on the
+     way in through Start Studying), rather than on entry to showSetup().
+     (384 r15: a tab no longer brings the unit screen back - the Home tap
+     lands on Home - so there is no tab round trip to keep picks for.) */
   cfg.units = [];
   cfg.versions = {};
   stopTimer(); stopQuestionTimer();
@@ -113740,8 +113720,9 @@ function ifcFinderFirst(units){
 }
 function showSetup(){
   /* Arriving with no units picked (from the mode menu, which clears them)
-     is a new test: defaults. Arriving WITH units picked is a round trip -
-     a tab and back - and Start never went dark, so what you set stays. */
+     is a new test: defaults. Arriving WITH units picked (a screen that sets
+     cfg.units itself, e.g. a single question's practice) keeps what is set.
+     A tab no longer brings this screen back (384 r15). */
   const arrivedLit = Array.isArray(cfg.units) && cfg.units.length > 0;
   if(!arrivedLit) resetSheetOptions();
   stopTimer(); stopQuestionTimer();
@@ -148774,7 +148755,6 @@ function showFriends(){
    in - showCalendar(), showProfile("calendar"), showClass("calendar"), a
    tour, an old link - lands here. */
 function showCalendarTab(){
-  captureSetupReturn();
   rankUpAbsorbPending();
   stopTimer();
   flushStudyTime();
@@ -150558,7 +150538,6 @@ function showRanksScreen(defaultTab){
   /* A rank cutscene is never played from here any more (build 319): an
      older build's pending one is a rank-up owed on the road map. */
   rankUpAbsorbPending();
-  captureSetupReturn();
   stopTimer();
   flushStudyTime();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
@@ -151301,7 +151280,6 @@ function showProfile(defaultTab, opts){
      has no calendar), so it is a screen alone, built here only when asked for by name. */
   const ifcStats = window.NOVA_CLASS === "ifc";
   const settingsAlone = ifcStats && initialTab === "settings";   /* (383) Settings is Fire Code's bar tab, alone */
-  captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
      to the cutscene no matter which tab was actually tapped from
      the results screen, since "leave the test, see the moment" is
