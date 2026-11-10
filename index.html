@@ -118704,7 +118704,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.13";
+const APP_BUILD = "2026-11-10-384.14";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -133613,11 +133613,11 @@ function showAppearance(opts){
 
       const saveNote = document.createElement("p");
       saveNote.className = "sync-note-plain";
-      /* (384) an account in Fire Code alone has no Police Academy to name: it is told what everybody else is */
-      saveNote.textContent = (window.NOVA_CLASS === "ifc" && academyMember())
-        ? "The same code as your Police Academy account. Fire Code saves to the cloud under it, on every device signed in to that account."
-        : "Keep this somewhere off this phone. If this device ever loses its "
-        + "data, the code is what puts you back on your account.";
+      /* (384 r17) THE CODE IS THE ACCOUNT'S, NOT A CLASS'S: "I'm not sure what's up with this sync code description ... Shouldn't specific
+         stuff about either class not be there?" One line for every class, naming none (it used to name the Police Academy and Fire Code
+         in Fire Code and say nothing of the account's classes in the academy). */
+      saveNote.textContent = "This code is your account, and every class you are in saves under it. Keep it somewhere off this phone: "
+        + "if this device ever loses its data, the code is what puts you back on your account.";
       card.appendChild(saveNote);
       /* SAVE IT IS BACK (build 382), as the one row under the code. It came
          off for making the section a pile; it returns because saving the
@@ -133638,7 +133638,7 @@ function showAppearance(opts){
       /* Fire Code has no code of its own: it follows the academy account's (build 383) */
       const note = document.createElement("p");
       note.className = "sync-note-plain";
-      note.textContent = "Fire Code syncs under your Police Academy account's code. Turn sync on in the Police Academy class, then come back.";
+      note.textContent = "Sync is on the account, not a class, and it is turned on from the Police Academy class. Turn it on there, then come back.";
       syncSect.appendChild(note);
     } else {
       /* build 382: rows in a list card like the rest of Settings */
