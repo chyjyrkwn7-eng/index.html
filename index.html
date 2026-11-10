@@ -89472,7 +89472,11 @@ const NovaSound = (function(){
     const out = [];
     todo.forEach(([h]) => [h.__hsw, h.__hlb].forEach(x => { if(x && x.parentNode === h && !h.matches(HSW_ALWAYS)) out.push([h, x]); }));
     faces.forEach(f => { if(f.__hlb && f.__hlb.parentNode === f) out.push([f, f.__hlb]); });
-    out.filter(([h, x]) => !hswFits(h, x)).forEach(([h, x]) => hswUnfit(h, x));
+    /* (384.19) NOT A ROW THE PAGE HAS SKIPPED. A rankings row off the screen is content-visibility:hidden (.screen-rankings
+       .rank-row.is-offscreen), and a size read inside one opens its lock for the read and shuts it again: a style pass and a layout
+       for EACH row (29 of them, ~0.7ms apiece, on the Leaderboard's first hop; tabbutter check 2). A row is a plain block the page
+       lays out itself - the same row on screen is read and fits - so a skipped one is not asked. */
+    out.filter(([h, x]) => !(h.matches && h.matches(".screen-rankings .rank-row.is-offscreen")) && !hswFits(h, x)).forEach(([h, x]) => hswUnfit(h, x));
     if(hswQueue.size) hswSchedule();
   }
   /* a control that was hidden (another tab's pane) had no size when it was
@@ -153154,7 +153158,10 @@ function attachSegSlider(seg, activeSel){
     if(!a){ sl.classList.remove("ready"); return; }
     const sr = seg.getBoundingClientRect(), ar = a.getBoundingClientRect();
     if(!ar.width || !sr.width) return;
-    seg.classList.add("has-seg-slider");
+    /* (384.19) ONLY WHEN IT IS NOT THERE YET: classList.add() of a class already present still rewrites the attribute, which the
+       observer below takes for the switcher changing - so every place() asked for the next one a frame later, for as long as the
+       page was open (a style pass and a layout per switcher per frame; tabbutter check 2). */
+    if(!seg.classList.contains("has-seg-slider")) seg.classList.add("has-seg-slider");
     /* a tab list's semantics, kept in step with the thumb */
     if(th) seg.querySelectorAll(":scope > " + segSel).forEach(b => { if(b.getAttribute("role") === "tab") b.setAttribute("aria-selected", b === a ? "true" : "false"); });
     /* IN LAYOUT PIXELS, NOT SCREEN PIXELS (build 320). A switcher placed while something above it was still scaling in read every
@@ -158518,7 +158525,13 @@ if(backToTopBtn){
     const all = stage.querySelectorAll(TAPPABLE);
     let need = 0;
     for(let i = all.length - 1, n = 0; i >= 0 && n < 40; i--, n++){
-      const el = all[i], r = el.getBoundingClientRect();
+      const el = all[i];
+      /* (384.19) NOT A CONTROL INSIDE A ROW THE PAGE HAS SKIPPED (.rank-row.is-offscreen, content-visibility:hidden): a size read
+         there opens the row's lock and shuts it again - a style pass and a layout each, 16 of them in one measure on the
+         Leaderboard's first hop (tabbutter check 2). The row itself is a tappable of its own and is read (its own box costs
+         nothing), and it is at least as low and as wide as anything inside it, so the room it asks for is the same. */
+      if(el.parentElement && el.parentElement.closest(".screen-rankings .rank-row.is-offscreen")){ n--; continue; }
+      const r = el.getBoundingClientRect();
       if(!(r.width > 0 && r.height > 0) || r.left >= b.right + 4 || r.right <= b.left - 4) continue;
       /* where it will be with the page scrolled to its end */
       const top = r.top - toEnd, bottom = r.bottom - toEnd;
