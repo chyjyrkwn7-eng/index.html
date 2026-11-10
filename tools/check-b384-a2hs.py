@@ -297,7 +297,7 @@ def sheet_layout(pg, label):
     return r
 
 def close_sheet(pg):
-    pg.click("#a2hs-sheet .a2hs-foot button"); pg.wait_for_timeout(600)
+    pg.click("#a2hs-sheet .a2hs-close"); pg.wait_for_timeout(600)   # (r19) Not now; the foot also has "I've added it" first
     return pg.evaluate("()=>!document.getElementById('a2hs-sheet')")
 
 def errs_ok(pg, where):

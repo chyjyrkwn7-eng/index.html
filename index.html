@@ -15607,7 +15607,10 @@
      larger hero exactly as they were. Home only - Welcome and the
      cutscenes are not containers and keep their sizes. */
   .panel.home.screen-home-actual .cosmic-hero-wrap{ container-type:inline-size;
-    translate:0 var(--notice-push, 0px); transition:translate .45s cubic-bezier(.2,.7,.2,1); }
+    translate:0 var(--notice-push, 0px); transition:translate .45s cubic-bezier(.2,.7,.2,1), scale .45s cubic-bezier(.2,.7,.2,1);
+    /* (384 r19) the Home Screen reminder is up for good, so the planet system also gives up a little size where sliding down
+       clear of it would put its lowest flare over the greeting (pushHomeHeroForNotice); 1 everywhere else */
+    scale:var(--notice-scale, 1); }
   /* A floor of 1.75rem keeps a bubble big enough to read and to tap on
      the smallest heroes; `translate` then moves a floored bubble back by
      half of what the floor added, so its CENTRE stays where the scaled
@@ -36255,6 +36258,45 @@ html.is-browser{ --fade-paper: transparent; }
       min-height:0; padding-block:calc((44px - 1cap) / 2); white-space:nowrap; }
   }
   html[data-layout] .update-banner.is-glass .update-banner-head{ display:flex; align-items:center; gap:.5rem; padding-right:1.8rem; }
+  /* ---- THE HOME SCREEN REMINDER (build 384 r19, syncA2hsBar) ----
+     A slim notice on the notices' glass: one plain line, an Add pill, an x. Every length is written x --zc (1 at 100%, 1.18 on
+     a phone at 85% page zoom) so it is the same size on the glass at any page zoom; the whole bar but the x is one button
+     (the walkthrough), the x is 44pt square with a 15pt glyph, and the bar is position:fixed so it holds no space. Only
+     opacity and transform move. */
+  html[data-layout] .update-banner.is-glass.is-a2hs:not(.is-frame){
+    left:max(calc(16px * var(--zc, 1)), env(safe-area-inset-left, 0px)); right:max(calc(16px * var(--zc, 1)), env(safe-area-inset-right, 0px));
+    max-width:calc(26rem * var(--zc, 1)); box-sizing:border-box;
+    gap:calc(4px * var(--zc, 1)); padding:0 0 0 calc(14px * var(--zc, 1)); min-height:calc(52px * var(--zc, 1));
+    border-radius:calc(16px * var(--zc, 1)); border-left-width:calc(3px * var(--zc, 1));
+  }
+  html[data-layout] .update-banner.is-a2hs .a2hs-bar-main{
+    flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:calc(10px * var(--zc, 1));
+    min-height:calc(44px * var(--zc, 1)); margin:0; padding:calc(4px * var(--zc, 1)) 0; border:0; background:transparent;
+    font:inherit; text-align:left; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  html[data-layout] .update-banner.is-a2hs .a2hs-bar-text{
+    flex:1 1 auto; min-width:0; font-size:calc(14px * var(--zc, 1)); line-height:1.3; font-weight:500; color:var(--ink, #F2F4F7);
+  }
+  html[data-layout] .update-banner.is-a2hs .a2hs-bar-pill{
+    flex:none; display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box;
+    min-width:calc(52px * var(--zc, 1)); min-height:calc(32px * var(--zc, 1)); padding:0 calc(14px * var(--zc, 1)); border-radius:999px;
+    font-size:calc(13px * var(--zc, 1)); line-height:1; font-weight:700; letter-spacing:-.01em; color:#1A2027; background:#ECEFF3;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.95), inset 0 -2px 2px rgba(20,28,40,.26), 0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4);
+    transition:transform .12s ease;
+  }
+  html[data-layout] .update-banner.is-a2hs .a2hs-bar-main:active .a2hs-bar-pill{ transform:scale(.96); }
+  @supports (text-box: trim-both cap alphabetic){
+    html[data-layout] .update-banner.is-a2hs .a2hs-bar-pill{ display:inline-block; text-box:trim-both cap alphabetic; min-height:0; padding-block:calc((32px * var(--zc, 1) - 1cap) / 2); white-space:nowrap; text-align:center; }
+  }
+  html[data-layout] .update-banner.is-glass.is-a2hs .a2hs-bar-x{
+    flex:none; width:calc(44px * var(--zc, 1)); height:calc(44px * var(--zc, 1)); margin:0 calc(2px * var(--zc, 1)) 0 0; padding:0;
+    border:0; border-radius:50%; background:transparent; color:var(--soft); display:grid; place-items:center; opacity:1; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  html[data-layout] .update-banner.is-glass.is-a2hs .a2hs-bar-x svg{ width:calc(15px * var(--zc, 1)); height:calc(15px * var(--zc, 1)); display:block; }
+  /* the open chat panel has the corner, as it has for every banner (body.chatdock-open .daily-alert); the bar is back when it closes */
+  body.chatdock-open .update-banner.is-a2hs{ opacity:0 !important; pointer-events:none !important; }
+  html[data-layout] .update-banner.is-a2hs .a2hs-bar-main:focus-visible, html[data-layout] .update-banner.is-a2hs .a2hs-bar-x:focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-2px; }
   @media (max-width:639px){
     html[data-layout] .vroom-chat-alert.is-glass{ left:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
   }
@@ -37048,7 +37090,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* the clip: a phone's shape, the size of the screen's height on a short phone */
   .a2hs-phone{
     position:relative; flex:none; margin:0 auto; box-sizing:border-box;
-    width:clamp(9.5rem, calc((100vh - 27rem) * .46), 12.5rem); width:clamp(9.5rem, calc((100dvh - 27rem) * .46), 12.5rem);
+    width:clamp(9.5rem, calc((100vh - 34.5rem) * .46), 12.5rem); width:clamp(9.5rem, calc((100dvh - 34.5rem) * .46), 12.5rem);
     aspect-ratio:540 / 1174; border-radius:26px; overflow:hidden; background:#0A0B14; cursor:pointer;
     border:1px solid rgba(255,255,255,.2); box-shadow:0 18px 44px rgba(0,0,0,.5);
   }
@@ -37111,6 +37153,19 @@ html.is-browser{ --fade-paper: transparent; }
   .a2hs-now-n{ font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#FFC24A; font-variant-numeric:tabular-nums; }
   .a2hs-now-t{ font-size:.98rem; font-weight:600; line-height:1.38; color:#FFFFFF; }
   .a2hs-address{ display:inline-block; margin-top:.25rem; padding:.15rem .45rem; border-radius:8px; font-family:var(--mono); font-size:.84rem; color:#FFFFFF; background:var(--surface-inset); overflow-wrap:anywhere; }
+  /* ---- THE WALKTHROUGH, SCANNABLE (build 384 r19) ----
+     The buttons' names are bold in the steps, what the person gets is its own short list under the intro, and the foot has
+     two answers side by side: "I've added it" (the reminder is over) and "Not now" (it just closes). */
+  .a2hs-sheet .installguide-btn{ font-weight:800; color:#FFFFFF; }
+  .a2hs-sheet .a2hs-step-note .installguide-btn{ font-weight:700; color:rgba(255,255,255,.86); }
+  .a2hs-gains{ list-style:none; margin:.7rem 0 0; padding:0; display:flex; flex-direction:column; gap:.3rem; }
+  .a2hs-gains[hidden]{ display:none; }
+  .a2hs-gain{ display:flex; align-items:flex-start; gap:.55rem; font-size:.92rem; line-height:1.35; color:rgba(255,255,255,.88); }
+  .a2hs-gain svg{ flex:none; width:1.05rem; height:1.05rem; margin-top:.14rem; color:#5FD38A; }
+  .a2hs-foot{ display:flex; gap:.6rem; }
+  html[data-layout] body .a2hs-sheet .a2hs-foot .next{ width:auto; flex:1 1 0; min-width:0; }
+  html[data-layout] body .a2hs-sheet .a2hs-foot .next[hidden]{ display:none; }
+  html[data-layout] body .a2hs-sheet .a2hs-foot .a2hs-added{ flex:1.25 1 0; }
   @media (min-width:40rem){
     .a2hs-sheet{ max-width:40rem; }
     .a2hs-body{ padding:1.6rem 1.6rem .8rem; }
@@ -90760,6 +90815,10 @@ function renderInlineParts(parts, container){
       iconWrap.className = "installguide-inline-icon installguide-style-" + (p.style || "plain");
       iconWrap.appendChild(p.icon());
       container.appendChild(iconWrap);
+    } else if(p.b){
+      /* (384 r19) a button's name, in bold, so a step reads at a glance */
+      const b = document.createElement("strong"); b.className = "installguide-btn"; b.textContent = p.text;
+      container.appendChild(b);
     } else {
       container.appendChild(document.createTextNode(p.text));
     }
@@ -90918,25 +90977,27 @@ var A2HS_POINTERS = [
   { kind: "icon", from: 12.85, to: 14.65, x: .841, y: .248, side: "above", step: 5, label: "Tap Nova to open it" }
 ];
 var A2HS_STEPS_APPLE = [
-  { parts: [{ text: "In Safari, tap " }, { icon: buildDotsIcon, style: "grey-circle" }, { text: ", then Share." }],
-    note: [{ text: "If the " }, { icon: buildShareIcon, style: "plain" }, { text: " Share button is in the toolbar, tap it instead." }] },
-  { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " View More." }],
-    note: [{ text: "If Add to Home Screen is already showing, skip this." }] },
-  { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " Add to Home Screen." }],
-    note: [{ text: "It is in the list under the icons, or on some iPhones with the icons. Scroll down if it is not showing." }] },
-  { parts: [{ text: "Make sure " }, { icon: buildToggleIcon, style: "plain" }, { text: " Open as Web App is on." }] },
-  { parts: [{ text: "Tap Add." }] },
-  { parts: [{ text: "Open Nova from your Home Screen." }] }
+  { parts: [{ text: "Tap " }, { icon: buildDotsIcon, style: "grey-circle" }, { text: ", then " }, { text: "Share", b: true }, { text: "." }],
+    note: [{ text: "In Safari. If the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button is in the toolbar, tap that instead." }] },
+  { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " " }, { text: "View More", b: true }, { text: "." }],
+    note: [{ text: "It is called " }, { text: "More", b: true }, { text: " on some versions. If " }, { text: "Add to Home Screen", b: true }, { text: " is already in the list, skip this step." }] },
+  { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " " }, { text: "Add to Home Screen", b: true }, { text: "." }],
+    note: [{ text: "It is in the list under the row of icons. Scroll down if you do not see it." }] },
+  { parts: [{ text: "Make sure " }, { icon: buildToggleIcon, style: "plain" }, { text: " " }, { text: "Open as Web App", b: true }, { text: " is on." }],
+    note: [{ text: "It is on by default. Leave it on, so Nova opens full screen." }] },
+  { parts: [{ text: "Tap " }, { text: "Add", b: true }, { text: " at the top right." }] },
+  { parts: [{ text: "Open Nova from your Home Screen." }],
+    note: [{ text: "Use the new icon, not Safari, from now on." }] }
 ];
 var A2HS_STEPS_CHROME = [
   { parts: [{ text: "Tap " }, { icon: buildVerticalDotsIcon, style: "grey-circle" }, { text: " at the top right." }] },
-  { parts: [{ text: "Tap Add to Home screen, or Install app." }] },
-  { parts: [{ text: "Tap Install, or Add." }] }
+  { parts: [{ text: "Tap " }, { text: "Add to Home screen", b: true }, { text: ", or " }, { text: "Install app", b: true }, { text: "." }] },
+  { parts: [{ text: "Tap " }, { text: "Install", b: true }, { text: ", or " }, { text: "Add", b: true }, { text: "." }] }
 ];
 var A2HS_STEPS_SAMSUNG = [
   { parts: [{ text: "Tap " }, { icon: buildMenuLinesIcon, style: "grey-circle" }, { text: " at the bottom right." }] },
-  { parts: [{ text: "Tap Add page to." }] },
-  { parts: [{ text: "Tap Home screen, then Add." }] }
+  { parts: [{ text: "Tap " }, { text: "Add page to", b: true }, { text: "." }] },
+  { parts: [{ text: "Tap " }, { text: "Home screen", b: true }, { text: ", then " }, { text: "Add", b: true }, { text: "." }] }
 ];
 /* where each browser keeps its menu: a phone, its address bar, the button ringed in the pointers' amber */
 var A2HS_ART_CHROME = '<svg viewBox="0 0 60 104" aria-hidden="true">' +
@@ -91025,9 +91086,137 @@ function scheduleHomeScreenSheet(firstDelay, kind){
   };
   a2hsTimer = setTimeout(attempt, firstDelay == null ? 1800 : firstDelay);
 }
+/* ---- THE HOME SCREEN REMINDER (build 384 r19) ----
+   Madison: "maybe you can put out reminders for people who are on Safari without it as a home app? And it won't go away
+   on the screen till they hit the X button or something?" A web page cannot add itself to the Home Screen (the person has
+   to do Share > Add to Home Screen), so the app does what it can: a slim glass bar at the top of Home, for anybody using
+   Nova in a browser tab on a phone or tablet, with one plain line, the walkthrough one tap away (the bar, or its Add),
+   and an X.
+   IT STAYS until the person ends it, on every visit to Home and every launch: the X, "I've added it" in the walkthrough,
+   the browser's own install (appinstalled), or the app opened from the Home Screen (Android shares the browser's storage;
+   an iPhone's icon does not, and never shows it anyway). class26e.a2hs.bar holds "x" or "d" and a time; once there it never
+   comes back on its own (a day later, a new build - nothing). "Not now" in the walkthrough only closes it: the bar stays.
+   WHO: a phone or tablet (a2hsDeviceGuess), not the installed app, never a computer, on an account that has finished its
+   sign-up and shown the one-time walkthrough (a sign-up's own showing, or an existing account's "Quick tip", comes first:
+   class26e.a2hs is a time) and has a code (without one the icon would start a second, empty account).
+   WHERE: Home only (dataset.screen), the way the update notices are; it is position:fixed, so it holds no space, and
+   the planet system slides down clear of it (pushHomeHeroForNotice, a translate: nothing re-flows). It sits below
+   whatever else is along the top (the chat button; positionDailyAlert and settleTopBanner park every other banner below
+   it) and WAITS while the update or re-add notice is up (those take precedence: #updatebanner), during a tour, a cutscene,
+   the splash or anything else Home is busy with (a2hsBusy). It is sized in glass points: x --zc, so on a page-zoomed phone
+   (518 CSS px on a 440pt screen) it is the size it is at 100%. */
+var A2HS_BAR_KEY = "class26e.a2hs.bar";
+var a2hsBarGone = false, a2hsBarTimer = 0, a2hsBarFreeAt = 0, a2hsBarShownOnce = false;
+function a2hsBarStored(){ try{ return localStorage.getItem(A2HS_BAR_KEY) || ""; }catch(e){ return ""; } }
+function a2hsBarEnded(){ return a2hsBarGone || /^[xd]\d*$/.test(a2hsBarStored()); }
+function a2hsBarEnd(how){
+  a2hsBarGone = true;
+  try{ localStorage.setItem(A2HS_BAR_KEY, (how === "added" ? "d" : "x") + Date.now()); }catch(e){}
+  try{ syncA2hsBar(); }catch(e){}
+}
+function a2hsBarOnHome(){
+  const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
+  return !!(el && el.dataset && el.dataset.screen === "home");
+}
+/* is it for this person at all (everything that is a fact about them, not about what is on screen now) */
+function a2hsBarWanted(){
+  if(a2hsBarEnded()) return false;
+  if(isStandaloneApp()){ a2hsBarEnd("added"); return false; }
+  if(a2hsDeviceGuess() === "computer") return false;
+  if(!store || !store.onboardingComplete || !syncCode || syncOff) return false;
+  const st = a2hsState();
+  return st !== "" && st !== "owed";
+}
+/* what a bar that is not up yet waits for: the walkthrough's own showing, the splash, a loader, and anything Home is busy with */
+function a2hsBarBusy(){
+  if(a2hsHolds()) return true;
+  if(document.getElementById("splashscreen") || document.getElementById("genprofile-overlay") || document.getElementById("class-switch-loader")) return true;
+  try{ return a2hsBusy(); }catch(e){ return true; }
+}
+function a2hsBarArm(ms){
+  clearTimeout(a2hsBarTimer);
+  a2hsBarTimer = setTimeout(() => { a2hsBarTimer = 0; try{ syncA2hsBar(); }catch(e){} }, ms);
+}
+function syncA2hsBar(){
+  const bar = document.getElementById("a2hsbar");
+  const home = a2hsBarOnHome();
+  /* nearly every call, on every other screen: nothing up, nothing to do */
+  if(!bar && !home){ a2hsBarFreeAt = 0; return; }
+  let ok = false;
+  try{ ok = home && a2hsBarWanted() && noticeAllowedHere() && !document.getElementById("updatebanner"); }catch(e){}
+  if(!ok){
+    if(bar) hideA2hsBar(bar, !home);
+    a2hsBarFreeAt = 0;
+    return;
+  }
+  if(bar){ if(!bar.classList.contains("is-leaving")) positionA2hsBar(bar); return; }
+  if(a2hsBarBusy()){ a2hsBarFreeAt = 0; a2hsBarArm(1400); return; }
+  /* a calm beat once it is quiet, the first time in a launch; back on Home later it is simply there */
+  if(!a2hsBarShownOnce){
+    const now = Date.now();
+    if(!a2hsBarFreeAt){ a2hsBarFreeAt = now; a2hsBarArm(500); return; }
+    if(now - a2hsBarFreeAt < 900){ a2hsBarArm(450); return; }
+  }
+  showA2hsBar();
+}
+function showA2hsBar(){
+  const bar = document.createElement("div");
+  bar.className = "update-banner is-glass is-a2hs";
+  bar.id = "a2hsbar";
+  bar.setAttribute("role", "region");
+  bar.setAttribute("aria-label", "Add Nova to your Home Screen");
+  bar.style.setProperty("--banner-color", NOTICE_KINDS.home.color);
+  const main = document.createElement("button");
+  main.type = "button"; main.className = "a2hs-bar-main";
+  main.setAttribute("aria-label", "Show how to add Nova to your Home Screen");
+  const text = document.createElement("span"); text.className = "a2hs-bar-text";
+  text.textContent = "Add Nova to your Home Screen to open it as an app.";
+  const pill = document.createElement("span"); pill.className = "a2hs-bar-pill"; pill.setAttribute("aria-hidden", "true");
+  pill.textContent = "Add";
+  main.append(text, pill);
+  main.addEventListener("click", () => { try{ showHomeScreenSheet({ from: "bar" }); }catch(e){} });
+  const x = document.createElement("button");
+  x.type = "button"; x.className = "update-banner-close a2hs-bar-x";
+  x.setAttribute("aria-label", "Close this reminder");
+  x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>';
+  x.addEventListener("click", () => a2hsBarEnd("x"));
+  bar.append(main, x);
+  document.body.appendChild(bar);
+  /* placed before it is seen, so it fades in where it will stay; the frame is committed here, not on requestAnimationFrame
+     (a frame callback never comes in a background tab, and a bar at opacity 0 would still take taps) */
+  bar.style.transition = "none";
+  positionA2hsBar(bar);
+  void bar.offsetHeight;
+  bar.style.transition = "";
+  bar.classList.add("show");
+  a2hsBarShownOnce = true;
+  /* a banner already up goes below it */
+  try{ resettleTopBanners(); }catch(e){}
+}
+function positionA2hsBar(bar){
+  if(!bar || !bar.isConnected) return;
+  const top = topNoticeOffset(bar);
+  bar.style.top = top === null ? "" : Math.round(top) + "px";
+  /* what topNoticeOffset measured already includes a browser's bar margin; keep it only where nothing was measured */
+  bar.style.marginTop = top === null ? "" : "0px";
+  settleTopBanner(bar);
+  pushHomeHeroForNotice(bar);
+}
+function hideA2hsBar(bar, now){
+  if(!bar || bar.classList.contains("is-leaving")) return;
+  bar.classList.add("is-leaving");
+  bar.classList.remove("show");
+  bar.style.pointerEvents = "none";
+  pushHomeHeroForNotice(null);
+  const gone = () => { bar.remove(); try{ positionDailyAlert(); }catch(e){} try{ syncA2hsBar(); }catch(e){} };
+  /* leaving Home it goes at once (it must never sit over another screen's title); otherwise it fades */
+  if(now) gone(); else setTimeout(gone, 260);
+}
+window.addEventListener("appinstalled", () => { try{ a2hsBarEnd("added"); }catch(e){} });
+
 function showHomeScreenSheet(opts){
   opts = opts || {};
-  const signup = opts.from === "signup", tip = opts.from === "tip";
+  const signup = opts.from === "signup", tip = opts.from === "tip", fromBar = opts.from === "bar";
   const old = document.getElementById("a2hs-sheet");
   if(old) old.remove();
   if(signup || tip){ try{ localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){} }
@@ -91036,7 +91225,7 @@ function showHomeScreenSheet(opts){
   const standalone = isStandaloneApp();
   const overlay = mk("div", "invite-overlay a2hs-overlay");
   overlay.id = "a2hs-sheet";
-  overlay.dataset.from = signup ? "signup" : tip ? "tip" : "settings";
+  overlay.dataset.from = signup ? "signup" : tip ? "tip" : fromBar ? "bar" : "settings";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", "a2hs-title");
@@ -91044,10 +91233,22 @@ function showHomeScreenSheet(opts){
   const body = mk("div", "a2hs-body");
   const title = mk("h2", "a2hs-title", "Add Nova to your Home Screen");
   title.id = "a2hs-title";
+  /* (384 r19) the intro says what this is and where it is open; what the person gains is its own short list under it */
   body.append(mk("p", "a2hs-tag", tip ? "Quick tip" : "Home Screen"), title,
-    mk("p", "a2hs-intro", tip ? "Nova is designed as an app for your phone, and right now it is open in a browser tab. Added to your Home Screen, it opens full screen like any other app."
-      : "Nova is designed as an app for your phone. Added to your Home Screen, it opens full screen like any other app. It also works as a website on a computer."));
+    mk("p", "a2hs-intro", tip || fromBar ? "Nova is designed as an app for your phone, and right now it is open in a browser tab."
+      : "Nova is designed as an app for your phone. It also works as a website on a computer."));
   if(standalone) body.appendChild(mk("p", "a2hs-already", "Nova is already open from the Home Screen on this device."));
+  else {
+    const gains = mk("ul", "a2hs-gains");
+    gains.setAttribute("aria-label", "What adding it gives you");
+    ["Opens full screen, with no browser bars.", "Opens from your Home Screen like any other app.", "Keeps you signed in, with your progress."].forEach(t => {
+      const li = mk("li", "a2hs-gain");
+      li.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      li.appendChild(mk("span", "", t));
+      gains.appendChild(li);
+    });
+    body.appendChild(gains);
+  }
 
   /* the device: one of three */
   const seg = mk("div", "a2hs-seg");
@@ -91195,9 +91396,11 @@ function showHomeScreenSheet(opts){
 
   body.append(apple, android, computer);
   const foot = mk("div", "a2hs-foot");
-  /* (384 r4) "can it say I'll do this later or something? It needs to say something that catches everyone" */
-  const done = mk("button", "next ghost a2hs-close", signup || tip ? "I’ll add it later" : "Done"); done.type = "button";
-  foot.appendChild(done);
+  /* (384 r19) two answers: I've added it (it ends the reminder bar, for good) and Not now (it just closes; the bar stays).
+     Neither is offered on a computer or in the installed app, which have only Done. */
+  const added = mk("button", "next a2hs-added", "I’ve added it"); added.type = "button";
+  const done = mk("button", "next ghost a2hs-close", "Not now"); done.type = "button";
+  foot.append(added, done);
   sheet.append(body, foot);
   overlay.appendChild(sheet);
 
@@ -91267,6 +91470,12 @@ function showHomeScreenSheet(opts){
     });
     [apple, android, computer].forEach(p => { p.hidden = p.dataset.dev !== key; });
     overlay.dataset.dev = key;
+    /* (384 r19) the list of what it gives and "I've added it" are for a phone or tablet that has not got it yet; a computer, or
+       the installed app, has only Done */
+    const phoneAsk = key !== "computer" && !standalone;
+    added.hidden = !phoneAsk;
+    const gainsEl = body.querySelector(".a2hs-gains"); if(gainsEl) gainsEl.hidden = !phoneAsk;
+    done.textContent = phoneAsk ? "Not now" : "Done";
     if(key === "apple") startApple(); else if(was === "apple") stopApple();
   };
   const cleanup = () => {
@@ -91285,9 +91494,17 @@ function showHomeScreenSheet(opts){
     cleanup();
     overlay.classList.remove("invite-overlay-show");
     setTimeout(() => overlay.remove(), 220);
+    /* the reminder bar may have been waiting for this sheet to go */
+    setTimeout(() => { try{ syncA2hsBar(); }catch(e){} }, 300);
   };
   const onKey = e => { if(e.key === "Escape"){ e.preventDefault(); close(); } };
   done.addEventListener("click", close);
+  /* (384 r19) "I've added it": the reminder is over for good on this device, and the one-time showing counts as made */
+  added.addEventListener("click", () => {
+    try{ if(!a2hsShownBefore()) localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){}
+    a2hsBarEnd("added");
+    close();
+  });
   overlay.addEventListener("click", e => { if(e.target === overlay) close(); });
   document.addEventListener("keydown", onKey, true);
 
@@ -104185,9 +104402,14 @@ let dailyResetTimer = null;
 function positionDailyAlert(elArg){
   const el = (elArg && elArg.nodeType === 1) ? elArg : document.getElementById("dailyalert");
   if(!el) return;
-  const notice = document.getElementById("updatebanner");
-  const r = notice ? notice.getBoundingClientRect() : null;
-  if(r && r.height > 0){ el.style.top = Math.round(r.bottom + 10) + "px"; settleTopBanner(el); return; }
+  /* (384 r19) below the update notice, or the Home Screen reminder (the lower of the two, if both are up) */
+  let r = null;
+  [document.getElementById("updatebanner"), document.getElementById("a2hsbar")].forEach(n => {
+    if(!n || n.classList.contains("is-leaving")) return;
+    const rr = n.getBoundingClientRect();
+    if(rr.height > 0 && (!r || rr.bottom > r.bottom)) r = rr;
+  });
+  if(r){ el.style.top = Math.round(r.bottom + 10) + "px"; settleTopBanner(el); return; }
   /* With no notice up, the only thing left that can be in the way is
      whatever the current screen puts along its own top. This used to
      assume there was nothing - true while the alert only ever appeared on
@@ -104229,6 +104451,8 @@ function settleTopBanner(el){
   });
   document.querySelectorAll(".daily-alert.show, .app-banner.show").forEach(b => {
     if(b === el || b.contains(el) || el.contains(b)) return;
+    /* (384 r19) the Home Screen reminder is the first thing along the top and keeps it: banners park below IT (positionDailyAlert) */
+    if(el.id === "a2hsbar") return;
     if(b.classList.contains("nova-friend-note")) return;
     const r = b.getBoundingClientRect();
     if(r.width <= 0 || r.top > window.innerHeight * .4) return;
@@ -104253,6 +104477,8 @@ function settleTopBanner(el){
    places, top first, each one sliding (transform only) from where it was. */
 let topBannerWatch = null;
 function resettleTopBanners(){
+  /* (384 r19) the Home Screen reminder goes back up when what was above it has gone */
+  try{ const ab = document.getElementById("a2hsbar"); if(ab && !ab.classList.contains("is-leaving")) positionA2hsBar(ab); }catch(e){}
   const list = [...document.querySelectorAll(".daily-alert.show")].filter(b => b.isConnected)
     .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   list.forEach(b => {
@@ -104269,7 +104495,7 @@ function watchTopBanners(){
   if(topBannerWatch || typeof MutationObserver === "undefined" || !document.body) return;
   topBannerWatch = new MutationObserver(recs => {
     for(const r of recs) for(const n of r.removedNodes){
-      if(n.nodeType === 1 && n.classList && (n.classList.contains("daily-alert") || n.classList.contains("app-banner"))){ requestAnimationFrame(resettleTopBanners); return; }
+      if(n.nodeType === 1 && n.classList && (n.classList.contains("daily-alert") || n.classList.contains("app-banner") || n.id === "a2hsbar")){ requestAnimationFrame(resettleTopBanners); return; }
     }
   });
   topBannerWatch.observe(document.body, { childList: true });
@@ -118787,7 +119013,13 @@ function holdNoticesAfterTour(){
    on-screen one gets out of the way the moment they leave. Navigating
    away is not a dismissal - pendingNotice survives it, so the banner
    returns on the way back. */
+/* (384 r19) the Home Screen reminder (syncA2hsBar) is re-read after every one of these: it yields to the update and re-add
+   notices, and returns when they go */
 function syncNoticeVisibility(){
+  try{ syncNoticeVisibilityMain(); }
+  finally{ try{ syncA2hsBar(); }catch(e){} }
+}
+function syncNoticeVisibilityMain(){
   const bar = document.getElementById("updatebanner");
   if(!noticeAllowedHere()){
     if(bar) hideBanner();
@@ -118977,13 +119209,41 @@ function clearNoticeOfChat(bar){
 function pushHomeHeroForNotice(bar){
   const hero = document.querySelector("#stage .panel.home.screen-home-actual .cosmic-hero-wrap");
   if(!hero) return;
-  if(!bar || !bar.isConnected){ hero.style.setProperty("--notice-push", "0px"); return; }
-  const was = parseFloat(hero.style.getPropertyValue("--notice-push")) || 0;
-  let natural = hero.getBoundingClientRect().top;
-  hero.querySelectorAll(".cosmic-badge").forEach(e => { const r = e.getBoundingClientRect(); if(r.width > 0 && r.top < natural) natural = r.top; });
-  natural -= was;
-  const push = Math.max(0, Math.ceil(bar.getBoundingClientRect().bottom + 14 - natural));
-  hero.style.setProperty("--notice-push", push + "px");
+  /* (384 r19) the update notice and the Home Screen reminder are both up on Home, one after the other and never together;
+     whichever is up (and not on its way out) is what the planet clears */
+  const bars = [bar, document.getElementById("updatebanner"), document.getElementById("a2hsbar")]
+    .filter((b, i, a) => b && b.isConnected && !b.classList.contains("is-leaving") && a.indexOf(b) === i);
+  const setVars = (push, scale) => {
+    if(hero.style.getPropertyValue("--notice-push") !== push + "px") hero.style.setProperty("--notice-push", push + "px");
+    const sv = scale >= .999 ? "1" : scale.toFixed(3);
+    if(hero.style.getPropertyValue("--notice-scale") !== sv) hero.style.setProperty("--notice-scale", sv);
+  };
+  if(!bars.length){ setVars(0, 1); return; }
+  /* where it is NOW: its translate and scale are transitioning, and this runs on every Home mutation while the reminder is
+     up, so the natural (un-pushed, un-scaled) edges are worked back from the transform it is at this instant - not the one
+     it is heading for, or each call mid-slide pushes it further (168px on a 17 Pro Max, 482px on an iPad, for a 52px bar) */
+  const cs = getComputedStyle(hero);
+  let T = 0, S = 1;
+  const m = /(-?[\d.]+)px\s*$/.exec(cs.translate || ""); if(m) T = parseFloat(m[1]) || 0;
+  const sc = parseFloat(cs.scale); if(sc > 0) S = sc;
+  const hr = hero.getBoundingClientRect();
+  const C = (hr.top + hr.bottom) / 2 - T;            /* the hero's centre: where the scale is about, and unmoved by it */
+  const nat = y => C + (y - C - T) / S;
+  let top0 = nat(hr.top), bot0 = nat(hr.bottom);
+  hero.querySelectorAll(".cosmic-badge").forEach(e => { const r = e.getBoundingClientRect(); if(r.width > 0){ top0 = Math.min(top0, nat(r.top)); bot0 = Math.max(bot0, nat(r.bottom)); } });
+  const want = Math.max.apply(null, bars.map(b => b.getBoundingClientRect().bottom)) + 14;   /* where the top flare has to start */
+  /* the Home Screen reminder stays: where sliding down clear of it would put the lowest flare over the greeting, the planet
+     system is also drawn a little smaller (never below 72%), so it is neither under the bar nor over the words */
+  let k = 1;
+  if(bars.indexOf(document.getElementById("a2hsbar")) >= 0){
+    const title = document.querySelector("#stage .panel.home.screen-home-actual .hometitle-wrap");
+    const h0 = bot0 - top0;
+    if(title && h0 > 0){
+      const room = title.getBoundingClientRect().top - 6 - want;
+      if(room < h0) k = Math.max(.72, room / h0);
+    }
+  }
+  setVars(Math.max(0, Math.ceil(want - C + (C - top0) * k)), k);
 }
 
 /* Where a banner pinned to the top of the screen has to start so it clears
@@ -118995,10 +119255,14 @@ function pushHomeHeroForNotice(bar){
 function topNoticeOffset(bar){
   const vh = window.innerHeight;
   let bottomOf = -Infinity;
+  /* (384 r19) the Home Screen reminder is up for good, so it keeps out of the way of what it would actually meet: on a tablet
+     or a phone on its side it sits clear of the chat button's corner and takes the top, where on a phone it goes under it */
+  const own = bar && bar.id === "a2hsbar" ? bar.getBoundingClientRect() : null;
   NOTICE_OBSTRUCTIONS.forEach(sel => {
     document.querySelectorAll(sel).forEach(el => {
       if(el === bar || bar.contains(el)) return;
       const r = el.getBoundingClientRect();
+      if(own && own.width > 0 && (r.right <= own.left || r.left >= own.right)) return;
       /* Zero-sized means hidden (display:none, or not laid out yet), and
          anything already off the bottom of the screen is not in the way. */
       if(r.width <= 0 || r.height <= 0 || r.top >= vh) return;
@@ -119027,7 +119291,7 @@ function topNoticeOffset(bar){
 /* Rotating an iPad changes every one of those measurements at once, and
    the notice persists across screen changes, so it has to re-measure
    rather than keep the position it was first shown at. */
-function repositionTopNotices(){ positionNotice(); positionDailyAlert(); }
+function repositionTopNotices(){ positionNotice(); try{ positionA2hsBar(document.getElementById("a2hsbar")); }catch(e){} positionDailyAlert(); }
 __bm("L96966");
 window.addEventListener("resize", repositionTopNotices);
 window.addEventListener("orientationchange", repositionTopNotices);
@@ -119433,9 +119697,11 @@ function showSafariFallback(bar){
 function hideBanner(){
   const bar = document.getElementById("updatebanner");
   if(!bar) return;
+  bar.classList.add("is-leaving");
   bar.classList.remove("show");
   pushHomeHeroForNotice(null);
-  setTimeout(() => bar.remove(), 300);
+  /* (384 r19) the Home Screen reminder waited for this one */
+  setTimeout(() => { bar.remove(); try{ syncA2hsBar(); }catch(e){} }, 300);
 }
 
 /* ---------- the forced update -------------------------------------------
