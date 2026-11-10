@@ -136,4 +136,8 @@ Run gates one at a time (they are timing-sensitive under load):
 - New localStorage keys are `class26e.<thing>`, wrapped in try/catch.
 - Em dashes: some are literal `—` text in source; check raw bytes before
   an exact-match edit.
+- The splash's markup is the first thing in `<body>` and the 2.9MB stylesheet comes AFTER it (384 r17), so a first paint does not wait
+  for the sheet. Anything that adds a `<style>` at run time appends to `document.body`, never `<head>` (a head style now comes before
+  the sheet and loses ties). The splash's own first-frame rules live in the document's first `<style>` and are declared once; its word
+  is placed from `screen`, never from a viewport reading (`launch` notes: "384 r17").
 - Commit and PR messages: no model identifiers.

@@ -125,8 +125,13 @@ with sync_playwright() as pw:
             seg = pg.evaluate("""()=>{ const t=document.querySelector('#stage .navsegment.profiletabs'), sl=t && (t.querySelector('.seg-slider') || t.querySelector('.iconbtn.active'));
               const ct=getComputedStyle(t), cs=getComputedStyle(sl); return { track: ct.backgroundColor, trackImg: ct.backgroundImage, trackRim: ct.borderTopColor, trackBlur: ct.backdropFilter,
                 pill: cs.backgroundColor, pillImg: cs.backgroundImage, pillShadow: cs.boxShadow }; }""")
-            ck("(3) the switch: a flat track and a flat lighter pill (%s)" % seg,
-               seg["trackImg"] == "none" and seg["pillImg"] == "none" and seg["pillShadow"] == "none" and seg["trackBlur"] in ("none", "") and seg["pill"] != seg["track"], seg)
+            # REVISED IN 384 r18: "It should be designed like the Delta one, look like it" - Delta's control is a LIGHTER track with a
+            # DARKER thumb (the thumb has a soft inner edge, so it is no longer shadowless); no blur on either. check-b384-segdelta holds the rest.
+            def _lum(c):
+                m = re.match(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)", c or ""); return .2126 * float(m.group(1)) + .7152 * float(m.group(2)) + .0722 * float(m.group(3)) if m else None
+            lt, lp = _lum(seg["track"]), _lum(seg["pill"])
+            ck("(3) the switch is Delta's: a lighter track and a darker thumb, no blur (%s)" % seg,
+               seg["pillImg"] == "none" and seg["trackBlur"] in ("none", "") and lt is not None and lp is not None and lt - lp >= 8, seg)
             btn = pg.evaluate("""()=>{ const c=getComputedStyle(document.getElementById('chatdock-btn')); return { img: c.backgroundImage, blur: c.backdropFilter || c.webkitBackdropFilter, bg: c.backgroundColor }; }""")
             # REVISED IN 384: "the chat button on home looks amazing, revert the chat button it looks like that everywhere" - beyond
             # Home it is Home's glass again (build 380's tab-bar recipe), not 383's flat disc

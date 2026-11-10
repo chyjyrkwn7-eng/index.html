@@ -102,10 +102,11 @@ def new_ctx(br, init, seed, w=440, h=956, html=None):
             v = {"top": "%dpx" % ins[0], "right": "%dpx" % ins[1], "bottom": "%dpx" % ins[2], "left": "%dpx" % ins[3]}
             return INSET.sub(lambda m: v[m.group(1)], _o)
         g["patched"] = _p
+        keep_build = G.get("OLD_BUILD"); G["OLD_BUILD"] = re.search(r'const APP_BUILD = "([^"]+)"', html).group(1)   # version.json says what it runs: no update reload
     try:
         ctx, pg, errs = G["page"](br, init, seed=seed)
     finally:
-        if html is not None: g["patched"] = keep
+        if html is not None: g["patched"] = keep; G["OLD_BUILD"] = keep_build
     if html is not None:
         # a standing-in build must not be "updated" mid-check (its own build against the repo's version.json is a mismatch, and a forced
         # update reloads the page under the evaluate calls)
@@ -436,10 +437,11 @@ with sync_playwright() as pw:
         pg.evaluate("()=>{ enrolledClasses = () => ['academy','ifc']; }")
         pg.evaluate("()=>{ document.getElementById('settings-row-rankings').click(); }"); pg.wait_for_timeout(1000)
         pg_ = pg.evaluate("""()=>({ sw: !!document.querySelector('#stage input[type=checkbox]'), hint: (document.querySelector('#stage .ohint')||{}).textContent || '',
-            classes: [...document.querySelectorAll('#stage .settings-lb-class')].map(r => (r.querySelector('.settings-row-label')||{}).textContent + '=' + (r.querySelector('.settings-row-value')||{}).textContent),
+            classes: [...document.querySelectorAll('#stage .settings-lb-class')].map(r => r.querySelector('.otext').firstChild.textContent + '=' + (r.querySelector('input').checked ? 'Shown' : 'Hidden')),
             boards: rankingBoardsFor().map(b => b.tab), text: document.getElementById('stage').innerText })""")
-        chk("(6) its page has the switch, a hint that names Fire Code and exactly its two boards (%s)" % pg_["hint"][:160],
-            pg_["sw"] and "Fire Code" in pg_["hint"] and all(t in pg_["hint"] for t in pg_["boards"]) and len(pg_["boards"]) == 1 and not re.search(r"week|hundo", pg_["hint"], re.I)
+        # (385 r17) the hint explains the per-class switches below the master (check-b384-privacy); the boards a class has are the tabs of its Leaderboard
+        chk("(6) its page has the master switch and a hint that explains the class switches (%s); Fire Code has one board" % pg_["hint"][:160],
+            pg_["sw"] and "below" in pg_["hint"] and len(pg_["boards"]) == 1 and not re.search(r"week|hundo", pg_["hint"], re.I)
             and not re.search(r"no leaderboard|police academy only", pg_["text"], re.I), pg_)
         chk("(6) ...and lists each class, Shown or Hidden - no 'No leaderboard' (%s)" % pg_["classes"],
             len(pg_["classes"]) == 2 and all(c.split("=")[1] in ("Shown", "Hidden") for c in pg_["classes"]), pg_["classes"])
