@@ -245,9 +245,9 @@ UNIT_STEPS = [("Home -> mode", "#bottomtab-start|.screen-home-actual .playbtn|.h
               ("mode -> units", '.modecard[data-mode="drill"]', "()=>!!document.querySelector('label.pick')"),
               ("tick a unit", "label.pick", "()=>!!document.querySelector('label.pick input:checked')"),
               ("Start -> the sheet", "#bottomtab-start|#nextbtn", "()=>{ const m=document.querySelector('.unitoptions-modal'); return !!(m && !m.hidden); }"),
-              ("Begin -> loading", ".sheet-begin-btn", "()=>!!document.getElementById('teststart-overlay')")]
+              ("Begin -> LOADING -> the first question", ".sheet-begin-btn", "()=>!!document.querySelector('.qpanel .choice') && !document.getElementById('teststart-overlay')")]
 def run_units(br, dev, rate, label):
-    """Start Studying -> mode -> units -> a unit -> Start -> the sheet -> Begin -> LOADING TEST -> the first question, each a real tap on a real
+    """Start Studying -> mode -> units -> a unit -> Start -> the sheet -> Begin -> LOADING TEST -> the first question (the last trace runs through the loading screen's end), each a real tap on a real
     boot; per step the input task, the frames' CPU, the compositor's draw and raster, and where it landed."""
     ctx, pg, cdp, errs, touch = G["open_page"](br, dev, [])
     out = {"errs": errs, "steps": [], "label": label, "viewport": pg.evaluate("()=>[innerWidth, innerHeight]")}
@@ -260,22 +260,16 @@ def run_units(br, dev, rate, label):
                 use = pg.evaluate("(c)=>{ for(const s of c.split('|')){ const e=document.querySelector(s); if(e){ const r=e.getBoundingClientRect(); if(r.width>0 && r.height>0){ if(r.bottom>innerHeight||r.top<0) e.scrollIntoView({block:'nearest',behavior:'instant'}); return s; } } } return c.split('|')[0]; }", sel)
                 pg.wait_for_timeout(80)
                 G["tap"](pg, cdp, touch, use)
-            evs = collect(cdp, pg, fire, 900, CATS)
-            r = read_trace(evs, ("click",), 900)
+            long_ = "Begin" in name      # the loading screen is 2.5s: the trace runs over its end and the first question's build
+            evs = collect(cdp, pg, fire, 3600 if long_ else 900, CATS)
+            r = read_trace(evs, ("click",), 3600 if long_ else 900)
             ok_ = bool(pg.evaluate(arrived))
-            if not ok_ and "Begin" in name:
-                pg.wait_for_timeout(700); G["tap"](pg, cdp, touch, ".sheet-begin-btn"); pg.wait_for_timeout(900); ok_ = bool(pg.evaluate(arrived)); out["begin_retry"] = True
             if r: r["name"] = name; r["arrived"] = ok_; out["steps"].append(r)
             else: out["steps"].append({"name": name, "arrived": ok_, "task": 0, "frames": [], "other_max": 0, "draw_per_frame": 0, "draw_ms": 0, "raster_ms": 0, "presented": 0, "gaps": []})
             if "sheet" in name:
                 out["sheet"] = pg.evaluate("()=>{ const s=document.querySelector('.unitoptions-modal-sheet'); if(!s) return null; const cs=getComputedStyle(s); return { bf: cs.backdropFilter || cs.webkitBackdropFilter || 'none', bg: cs.backgroundColor, w: Math.round(s.getBoundingClientRect().width) }; }")
                 out["sheet_draw"] = r["draw_ms"] if r else None
             pg.wait_for_timeout(1800 if "sheet" in name else 300)
-        # the loading screen's end: the bar's last stretch, the overlay going, the first question building
-        def wait_end(): pg.wait_for_timeout(1800)
-        evs = collect(cdp, pg, wait_end, 1700, CATS)
-        r = read_trace(evs, None, 1500)
-        if r: r["name"] = "LOADING -> first question"; r["arrived"] = bool(pg.evaluate("()=>!!document.querySelector('.qpanel .choice') && !document.getElementById('teststart-overlay')")); out["steps"].append(r)
     finally:
         ctx.close()
     return out
@@ -352,7 +346,7 @@ if __name__ == "__main__":
             info("input task by size @%dx %s %s: %s" % (scen_key[0], scen_key[1], scen_key[2], ", ".join("%s %.0f" % (d_, v["task"]) for d_, v in rows)))
     for dev, u in units.items():
         vl = next(v[0] for v in VIEWPORTS if v[1] == dev)
-        chk("(6) %s units: every step arrived, the first question is up, no page error" % vl, all(r["arrived"] for r in u["steps"]) and len(u["steps"]) == 6, [(r["name"], r["arrived"]) for r in u["steps"] if not r["arrived"]])
+        chk("(6) %s units: every step arrived, the first question is up, no page error" % vl, all(r["arrived"] for r in u["steps"]) and len(u["steps"]) == 5, [(r["name"], r["arrived"]) for r in u["steps"] if not r["arrived"]])
         sh = u.get("sheet")
         chk("(6) %s units: the start sheet's fill is solid and it blurs nothing behind it (backdrop-filter %s)" % (vl, sh and sh["bf"]), bool(sh) and sh["bf"] in ("none", "") and sh["bg"].startswith("rgb(") , sh)
     if len(units) >= 2:
