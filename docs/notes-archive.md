@@ -37847,3 +37847,21 @@ Madison: "I don't like the leaning crown thing anymore, make that better". `.lb-
 (`rotate:0`), symmetric (three points with a bead on each tip, a band, a jewel), a little larger and snug on the medal's top edge;
 its centre equals the medal's centre (measured 47.375 vs 47.383 on a phone, equal on an iPad). Markup/CSS only; `check-behaviour`
 only asserts the crown's presence.
+
+## 384.18.1 - no weekly Nova pop-up in Fire Code
+
+Madison: "Why did nova pop up for a weekly thing in the fire code class? Remove that."
+
+What it was: Nova's Tuesday-to-Sunday "weekly recap" (`maybeShowWeekRecap`). Fire Code has no weekly board, so since build 383 it was given a
+stripped-down personal version (`buildWeekRecapOptedOut`: your own points, tests and hundos for last week) and still stopped a person once a
+week on Home or the Leaderboard. A second weekly thing was also allowed there: Nova's weekly challenge message (`novaPending(...).weekly`).
+
+Now, in the Fire Code class (`window.NOVA_CLASS === "ifc"`):
+- `maybeShowWeekRecap` returns first thing, marks nothing seen, so the account's `@recap` record is untouched;
+- `novaRecapOwedToday` is false, so a recap that will never play no longer holds Nova's other messages back on a Tuesday;
+- `novaPending` leaves `weekly` null: no challenge message.
+The academy is untouched (its recap and weekly challenge still run). Nothing stored changes, so an account in both classes is unaffected.
+
+Gate: `tools/check-b384-ifcweekly.py` (a Wednesday, both classes; Fire Code: no `.nova-talk`, no seen mark, no recap owed on a Tuesday, no
+challenge in any of twelve weeks; academy: both still there). It fails on 384.19 (the recap plays, 3 checks). `check-b383-classes` (5) used to
+assert the Fire Code recap plays; it now asserts it does not, and still asserts the academy's.

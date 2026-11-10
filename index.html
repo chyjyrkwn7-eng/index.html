@@ -106205,6 +106205,7 @@ function novaSeed(heard, now){
    the recap's, and only a rank-up or a broadcast goes before it. */
 function novaRecapOwedToday(now){
   try{
+    if(window.NOVA_CLASS === "ifc") return false;      /* (384.20) no recap in Fire Code, so none is owed */
     const d = new Date(now);
     if(d.getDay() !== 2 || !weekRecapDayOk(d)) return false;
     return !weekRecapSeen(lastWeekKey());
@@ -106231,7 +106232,7 @@ function novaPending(heard, now){
      challenge nova whenever you want." Not every week: a week of this
      account's is a challenge week or not, and on which day, by a hash of the
      account and the week - so every device agrees and nothing is stored. */
-  if(NOVA_VR_READY && !heard["wk:" + wk] && novaChallengeDue(wk, now) && novaChallengeGapOk(heard, now)) out.weekly = wk;
+  if(NOVA_VR_READY && window.NOVA_CLASS !== "ifc" && !heard["wk:" + wk] && novaChallengeDue(wk, now) && novaChallengeGapOk(heard, now)) out.weekly = wk;   /* (384.20) none in Fire Code */
   /* progress */
   const f = novaFoundNow();
   const pend = (s.pend && typeof s.pend === "object") ? s.pend : {};
@@ -118734,7 +118735,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.18";
+const APP_BUILD = "2026-11-10-384.18.1";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -144837,6 +144838,10 @@ function weekRecapBlocked(){
 function maybeShowWeekRecap(tries){
   weekRecapTimer = null;
   const n = tries || 0;
+  /* (384.20) FIRE CODE HAS NO WEEKLY RECAP. Madison: "Why did nova pop up for a weekly thing in the fire code class? Remove that."
+     The recap is the week's board; that class has no weekly board, and the stripped-down version it was given still stopped a
+     person on Home or the Leaderboard once a week. Nothing plays, and nothing is marked seen. */
+  if(window.NOVA_CLASS === "ifc") return;
   if(weekRecapOn || !store || !store.onboardingComplete) return;
   /* ON THE LEADERBOARD, NOT HOME (build 383): Madison, "the weekly news popup. I don't like how it pops up forced like
      that ... that only pops up if you select leaderboard that week". showRankings schedules it; it plays only while the

@@ -121,7 +121,11 @@ with sync_playwright() as pw:
                 pg.evaluate("()=>{ const n=document.getElementById('nova-intro'); if(n && n.__nova){ n.__nova.advance(); } }")
             pg.wait_for_timeout(500)
         want = "Fire Code" if cls == "ifc" else "Police Academy"
-        chk("(5) %s: the week's recap plays on the first Home of the launch, headed with its class (%s)" % (cls, got), got and got["home"] and want in (got["eyebrow"] or ""), got)
+        if cls == "ifc":
+            # (384.20) Madison: "Why did nova pop up for a weekly thing in the fire code class? Remove that." Fire Code has no weekly recap.
+            chk("(5) ifc: no weekly recap plays in Fire Code (%s)" % (got,), not got, got)
+        else:
+            chk("(5) %s: the week's recap plays on the first Home of the launch, headed with its class (%s)" % (cls, got), got and got["home"] and want in (got["eyebrow"] or ""), got)
         ctx.close()
     # (6) a class with nothing done last week - Fire Code just enrolled in - has nothing to recap: no recap of zeros over Home
     G["ifc"] = recap_store(G["ifc"], played=False)
