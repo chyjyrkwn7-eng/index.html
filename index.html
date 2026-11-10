@@ -23537,6 +23537,24 @@
        Umbra's cloud sea sliding one tile */
     .bn-stage .bl-in{ animation:bl-in 7s linear infinite; opacity:0; }
     .bn-stage .bl-slide{ animation:bl-slide 60s linear infinite; }
+    /* build 384 r24: the Fire Code banners' own motion (see fcmGlow and the rest above IFC_BANNER_ART). Every one is a transform or an opacity on a box. */
+    .bn-stage .bl-led{ animation:bl-led 1.2s linear infinite; }
+    .bn-stage .bl-ping{ animation:bl-ping 2.4s cubic-bezier(.2,.6,.4,1) infinite; }
+    .bn-stage .bl-spark{ animation:bl-spark 2.6s ease-in-out infinite; }
+    .bn-stage .bl-glintx{ animation:bl-glintx 4.4s linear infinite; }
+    .bn-stage .bl-flick{ animation:bl-flick 2.6s linear infinite; }
+    .bn-stage .bl-swing{ animation:bl-swing 3.4s ease-in-out infinite alternate; }
+    .bn-stage .bl-flash{ animation:bl-flash 6.5s linear infinite; }
+    .bn-stage .bl-pop{ animation:bl-pop 3s ease-out infinite; }
+    .bn-stage .bl-away{ animation:bl-away 3.2s linear infinite; }
+    .bn-stage .bl-lit{ animation:bl-lit 3s ease-out infinite; }
+    .bn-stage .bl-sec{ animation:bl-sec 60s steps(60) infinite; }
+    .bn-stage .bl-fly{ animation:bl-fly 20s linear infinite; }
+    .bn-stage .bl-run0{ animation:bl-run0 5s linear infinite; }
+    .bn-stage .bl-run1{ animation:bl-run1 4.6s linear infinite; }
+    .bn-stage .bl-run2{ animation:bl-run2 4.8s linear infinite; }
+    .bn-stage .bl-run3{ animation:bl-run3 4.2s linear infinite; }
+    .bn-stage .bl-run4{ animation:bl-run4 5.2s linear infinite; }
   }
   @keyframes bl-in{ 0%{ transform:scale(1.25); opacity:0; } 18%{ opacity:1; } 80%{ opacity:.9; } 100%{ transform:scale(.42); opacity:0; } }
   @keyframes bl-slide{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
@@ -23602,6 +23620,26 @@
   @keyframes bl-pour{ from{ transform:translateY(-20%); } to{ transform:translateY(0); } }
   @keyframes bl-sheet{ 0%,100%{ transform:translateY(0); opacity:0; } 2%{ transform:translateY(0); opacity:1; } 14%{ opacity:.9; } 20%{ transform:translateY(75%); opacity:0; } }
   @keyframes bl-shimmer{ from{ transform:scaleX(.94); opacity:.55; } to{ transform:scaleX(1.06); opacity:1; } }
+  /* build 384 r24 - the Fire Code banners. Lights, glints, a swinging beam, a ping, units running to the incident. Each is a transform or an opacity
+     on its own box (the compositor's), and the layer carries opacity:0 inline so, with motion off, the scene is the picture that was drawn. */
+  @keyframes bl-led{ 0%, 46%{ opacity:1; } 50%, 96%{ opacity:.1; } 100%{ opacity:1; } }
+  @keyframes bl-ping{ 0%{ transform:scale(.2); opacity:0; } 10%{ opacity:.95; } 100%{ transform:scale(1.6); opacity:0; } }
+  @keyframes bl-spark{ 0%, 100%{ transform:scale(.1) rotate(0deg); opacity:0; } 30%{ transform:scale(1) rotate(30deg); opacity:1; } 55%{ transform:scale(.55) rotate(60deg); opacity:.7; } 80%{ opacity:0; } }
+  @keyframes bl-glintx{ 0%{ transform:translateX(-130%); opacity:0; } 8%{ opacity:1; } 42%{ opacity:1; } 52%, 100%{ transform:translateX(130%); opacity:0; } }
+  @keyframes bl-flick{ 0%{ opacity:.55; } 8%{ opacity:1; } 14%{ opacity:.45; } 22%{ opacity:.95; } 40%{ opacity:.7; } 55%{ opacity:1; } 70%{ opacity:.5; } 85%{ opacity:.9; } 100%{ opacity:.55; } }
+  @keyframes bl-swing{ from{ transform:rotate(-3.5deg); } to{ transform:rotate(3.5deg); } }
+  @keyframes bl-flash{ 0%, 84%, 100%{ opacity:0; } 85%{ opacity:.95; } 87%{ opacity:.2; } 89%{ opacity:1; } 95%{ opacity:0; } }
+  @keyframes bl-pop{ 0%, 100%{ opacity:.08; transform:scale(.85); } 10%{ opacity:1; transform:scale(1.25); } 45%{ opacity:.3; transform:scale(1); } }
+  @keyframes bl-fly{ from{ transform:translateX(0); opacity:1; } to{ transform:translateX(-1150%); opacity:1; } }
+  @keyframes bl-sec{ from{ transform:rotate(0deg); opacity:1; } to{ transform:rotate(360deg); opacity:1; } }
+  @keyframes bl-lit{ 0%, 100%{ opacity:.08; } 10%{ opacity:1; } 45%{ opacity:.3; } }
+  @keyframes bl-away{ 0%{ transform:scale(1.7); opacity:0; } 15%{ opacity:.8; } 100%{ transform:scale(.1); opacity:0; } }
+  /* the five units in Mutual Aid, each from its station along its own route to the incident (the route's corners, as shares of an 8-unit box) */
+  @keyframes bl-run0{ 0%{ transform:translate(0%,0%); opacity:0; } 4.0%{ transform:translate(0.0%,0.0%); opacity:1; } 76.9%{ transform:translate(2125.0%,0.0%); opacity:1; } 88.0%{ transform:translate(2125.0%,-325.0%); opacity:1; } 94%{ transform:translate(2125.0%,-325.0%); opacity:0; } 100%{ transform:translate(2125.0%,-325.0%); opacity:0; } }
+  @keyframes bl-run1{ 0%{ transform:translate(0%,0%); opacity:0; } 4.0%{ transform:translate(0.0%,0.0%); opacity:1; } 43.1%{ transform:translate(1000.0%,0.0%); opacity:1; } 52.8%{ transform:translate(1000.0%,250.0%); opacity:1; } 88.0%{ transform:translate(1900.0%,250.0%); opacity:1; } 94%{ transform:translate(1900.0%,250.0%); opacity:0; } 100%{ transform:translate(1900.0%,250.0%); opacity:0; } }
+  @keyframes bl-run2{ 0%{ transform:translate(0%,0%); opacity:0; } 4.0%{ transform:translate(0.0%,0.0%); opacity:1; } 56.9%{ transform:translate(-1400.0%,0.0%); opacity:1; } 68.2%{ transform:translate(-1400.0%,-300.0%); opacity:1; } 88.0%{ transform:translate(-1925.0%,-300.0%); opacity:1; } 94%{ transform:translate(-1925.0%,-300.0%); opacity:0; } 100%{ transform:translate(-1925.0%,-300.0%); opacity:0; } }
+  @keyframes bl-run3{ 0%{ transform:translate(0%,0%); opacity:0; } 4.0%{ transform:translate(0.0%,0.0%); opacity:1; } 8.7%{ transform:translate(0.0%,100.0%); opacity:1; } 72.8%{ transform:translate(-1375.0%,100.0%); opacity:1; } 88.0%{ transform:translate(-1375.0%,425.0%); opacity:1; } 94%{ transform:translate(-1375.0%,425.0%); opacity:0; } 100%{ transform:translate(-1375.0%,425.0%); opacity:0; } }
+  @keyframes bl-run4{ 0%{ transform:translate(0%,0%); opacity:0; } 4.0%{ transform:translate(0.0%,0.0%); opacity:1; } 40.1%{ transform:translate(-1025.0%,0.0%); opacity:1; } 45.3%{ transform:translate(-1025.0%,-150.0%); opacity:1; } 71.7%{ transform:translate(-1775.0%,-150.0%); opacity:1; } 79.6%{ transform:translate(-1775.0%,75.0%); opacity:1; } 88.0%{ transform:translate(-2012.5%,75.0%); opacity:1; } 94%{ transform:translate(-2012.5%,75.0%); opacity:0; } 100%{ transform:translate(-2012.5%,75.0%); opacity:0; } }
 
   /* On the Profile cover the banner replaces the theme wash; the cover's
      own fade and the rank watermark stay on top of it. */
@@ -76384,6 +76422,10 @@ const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "eli
                          /* build 304: the three new ones move too - see BANNERS */
                          "study60", "correct10000", "early10", "astral", "celestial", "zenith",
                          "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"];
+/* BUILD 384 r24: "why barely any of them animate?" Fire Code's three first rungs (Certified, Squared Away, Mutual Aid) were held
+   still by the academy's rule above and nothing else was wrong with them, so in Fire Code every banner moves. The academy keeps
+   its still first rungs: this list is read only when the page is Fire Code (IFC_ART_ON). */
+const IFC_BANNER_ANIMATED = ["tests100", "hundos100", "vr50"];
 __bm("L61469");
 const BANNERS = [
   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
@@ -79008,7 +79050,7 @@ const ZENITH_BANNER = {
 };
 function buildBannerArt(id){
   const el = document.createElement("div");
-  el.className = "bnr bnr-" + id + (BANNER_ANIMATED.indexOf(id) < 0 ? " is-still" : "");
+  el.className = "bnr bnr-" + id + (BANNER_ANIMATED.indexOf(id) < 0 && !(IFC_ART_ON && IFC_BANNER_ANIMATED.indexOf(id) >= 0) ? " is-still" : "");
   el.setAttribute("aria-hidden", "true");
   if(BANNER_ART[id]){
     /* A copy of the banner's one template, with its ids made unique to
@@ -80320,6 +80362,45 @@ function fbGearWallet(x, y, k, deg){
     '<rect x="1.2" y="-7" width="10.6" height="2" fill="#1F2E55" opacity=".9"/></g>';
 }
 /*FCB6-END*/
+/* ---- BUILD 384 r24: EVERY FIRE CODE BANNER MOVES ----
+   "Why barely any of them animate, and why do some of them not animate as you scroll through them?" What a banner showed was a slow
+   breathing glow (a few percent of scale, a fifth of its opacity) and a sheet of dust sliding up over twenty seconds: at the size a
+   tile is drawn that reads as still. Each banner now also has things in its own scene that visibly do something: a lamp that flickers,
+   a glint that crosses the glass, a beam that sweeps, a unit that runs to the incident. One continuous loop and one event each.
+   Each helper returns one LAYER (a box, a class from the bl-* set, a clock), placed in scene units. Three rules for them:
+   - every one is hidden at rest (opacity:0 inline; the keyframes set the opacity), so with motion off the banner is exactly the
+     picture it was, and bannerStaticSVG (the at-rest picture, which the older checks hash) skips them;
+   - the clock is a NEGATIVE delay (`at`, seconds into its cycle), so the thing is already mid-flight the frame the banner appears -
+     a layer that starts at its own beginning, or waits out a positive delay, is a banner that looks still for as long as that takes;
+   - transform and opacity only, on a box: nothing here repaints. */
+const fcmT = (dur, at) => "animation-duration:" + dur + "s;animation-delay:-" + (at || 0) + "s;opacity:0";
+/* a soft light at (x, y), radius r (ry for an ellipse), colour col at strength a: bl-flick / bl-pop / bl-led / bl-ping's quieter cousin */
+function fcmGlow(u, key, x, y, r, col, a, cls, dur, at, ry){
+  const h = ry || r;
+  return { svg: '<defs>' + bnRad(u + key, [[0, col, a], [1, col, 0]]) + '</defs><ellipse cx="' + x + '" cy="' + y + '" rx="' + r + '" ry="' + h + '" fill="url(#' + u + key + ')"/>',
+    box: [x - r, y - h, r * 2, h * 2], o: [x, y], cls: cls, style: fcmT(dur, at) };
+}
+/* a four-point sparkle at (x, y), r across */
+function fcmSpark(x, y, r, col, dur, at){
+  return { svg: '<path d="M' + x + ' ' + (y - r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + ' Z" fill="' + col + '"/><circle cx="' + x + '" cy="' + y + '" r="' + bnF(r * .22) + '" fill="#FFFFFF"/>',
+    box: [x - r, y - r, r * 2, r * 2], o: [x, y], cls: "bl-spark", style: fcmT(dur, at) };
+}
+/* a ring that goes out from (x, y) and fades: a radio's signal, an alarm's pulse, the incident calling */
+function fcmPing(x, y, r, col, dur, at, sw){
+  return { svg: '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="' + (sw || 1.6) + '"/>',
+    box: [x - r - 2, y - r - 2, r * 2 + 4, r * 2 + 4], vb: [x - r - 2, y - r - 2, r * 2 + 4, r * 2 + 4], o: [x, y], cls: "bl-ping", style: fcmT(dur, at) };
+}
+/* an indicator lamp: a dot and its halo, on for half its cycle and off for the other half */
+function fcmLed(x, y, r, col, dur, at){
+  return { svg: '<circle cx="' + x + '" cy="' + y + '" r="' + bnF(r * 2.6) + '" fill="' + col + '" opacity=".3"/><circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + col + '"/>',
+    box: [x - r * 2.6, y - r * 2.6, r * 5.2, r * 5.2], o: [x, y], cls: "bl-led", style: fcmT(dur, at) };
+}
+/* a band of light that crosses a box (the glass of a frame, a screen, a pipe), left to right, clipped to it; round is the clip's corner as a percentage */
+function fcmGlint(u, key, box, col, a, dur, at, round){
+  const [bx, by, bw, bh] = box, s = bh * .35;
+  return { svg: '<defs>' + bnLin(u + key, [[0, col, 0], [0.5, col, a], [1, col, 0]], 0, 0, 1, 0) + '</defs><path d="M' + bnF(bx + bw * .36 + s) + ' ' + by + ' L' + bnF(bx + bw * .64 + s) + ' ' + by + ' L' + bnF(bx + bw * .64) + ' ' + (by + bh) + ' L' + bnF(bx + bw * .36) + ' ' + (by + bh) + ' Z" fill="url(#' + u + key + ')"/>',
+    box: box, clip: "inset(0" + (round ? " round " + round + "%" : "") + ")", cls: "bl-glintx", style: fcmT(dur, at) };
+}
 const IFC_BANNER_ART = {
   /* CERTIFIED (was Headquarters; this one is for finishing 100 full-length tests) - the marshal's office after hours. Round 2 (Madison:
      "why are their random flags? ... maybe also put some challenge coins like on the desk on a stand like 20 of them, legit sized, they
@@ -80432,7 +80513,15 @@ const IFC_BANNER_ART = {
       { svg: base },
       /* the lamp's light on the wall and the frames, breathing */
       { svg: '<ellipse cx="106" cy="104" rx="110" ry="80" fill="url(#' + u + 'lamp)"/>', box: [-10, 20, 240, 170], cls: "bl-breathe", style: "animation-duration:5s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 22, ["#FFE9B8", "#FFD58A", "#FFFFFF"]), box: [0, 10, 480, 150], cls: "bl-rise", style: "animation-duration:18s;opacity:.45" }
+      { svg: fbEmberSheet(rnd, 480, 90, 22, ["#FFE9B8", "#FFD58A", "#FFFFFF"]), box: [0, 10, 480, 150], cls: "bl-rise", style: "animation-duration:11s;opacity:.6" },
+      /* r24: the banker's lamp flickers; a glint crosses the big certificate's glass and the coin stand's; the seal, the star badge, three coins and the small
+         certificate's seal catch the light in turn; the badge on its stand calls out a ring */
+      fcmGlow(u, "lf", 106, 114, 46, "#FFD58A", .55, "bl-flick", 2.6, .7, 34),
+      fcmGlint(u, "gc", [164, 18, 116, 76], "#FFFFFF", .6, 4.4, .9),
+      fcmGlint(u, "gs", [295, 67, 96, 63], "#FFF6D8", .5, 5.2, 2.6),
+      fcmSpark(255, 68.4, 11, "#FFF3C0", 2.4, .4), fcmSpark(176, 114, 10, "#FFF3C0", 2.8, 1.6), fcmSpark(313, 94.1, 6.4, "#FFFFFF", 2.2, .2),
+      fcmSpark(358, 122.3, 6.4, "#FFFFFF", 2.6, 1.4), fcmSpark(343, 108.2, 6.4, "#FFF3C0", 3, 2.2), fcmSpark(324.6, 47.6, 5.4, "#FFFFFF", 2.8, .9),
+      fcmPing(176, 114, 15, "#FFE9A0", 3, .5)
     ];
   },
 
@@ -80552,7 +80641,14 @@ const IFC_BANNER_ART = {
       { svg: '<path d="M140.4 44.7 L166.4 28.5 L318 118 L170 150 Z" fill="url(#' + u + 'cone)"/><ellipse cx="236" cy="104" rx="140" ry="66" fill="url(#' + u + 'pool)"/>', box: [100, 20, 280, 160], cls: "bl-breathe", style: "animation-duration:5s" },
       /* the reviewer's red marks, slowly brightening and fading */
       { svg: fbP(cloud(296, 74, 31, 22, 5.2), "none", ' stroke="' + RED + '" stroke-width="1.8" opacity=".5"') + fbText("WIDTH", 339, 63.4, 3.4, RED, 1.2, ' opacity=".4"'), box: [290, 56, 62, 44], cls: "bl-tw", style: "animation-duration:2.6s" },
-      { svg: fbEmberSheet(rnd, 200, 60, 12, ["#FFE9B8", "#FFFFFF", "#FFD58A"]), box: [140, 20, 200, 120], cls: "bl-rise", style: "animation-duration:12s;opacity:.5" }
+      { svg: fbEmberSheet(rnd, 200, 60, 12, ["#FFE9B8", "#FFFFFF", "#FFD58A"]), box: [140, 20, 200, 120], cls: "bl-rise", style: "animation-duration:8s;opacity:.65" },
+      /* r24: a glint crosses the plan; the reviewer's red lights up tick by tick, rings out from the revision cloud and thumps on the REVIEWED stamp; the lamp's
+         bulb flickers; the radio's lamp blinks and its signal goes out */
+      fcmGlint(u, "sg", [128, 38, 224, 134], "#FFFFFF", .42, 4.6, 1),
+      fcmGlow(u, "t1", 193, 69, 10, "#FF4A4A", .9, "bl-pop", 3, .3), fcmGlow(u, "t2", 247, 69, 10, "#FF4A4A", .9, "bl-pop", 3, 1.3), fcmGlow(u, "t3", 250, 104, 10, "#FF4A4A", .9, "bl-pop", 3, 2.3),
+      fcmPing(311.5, 85, 20, "#FF4A4A", 2.4, .8, 1.2), fcmGlow(u, "st", 316, 160, 28, "#FF4A4A", .7, "bl-pop", 3.6, 2.9, 12),
+      fcmGlow(u, "lh", 154, 38, 26, "#FFE7A8", .85, "bl-flick", 2.4, .4),
+      fcmLed(462.4, 94.5, 1.7, "#FF4A3A", 1.2, .5), fcmPing(463.3, 79.5, 8, "#7CFFB0", 2.4, 1.2)
     ];
   },
 
@@ -80653,10 +80749,16 @@ const IFC_BANNER_ART = {
     [wl, wr2].forEach(P => { const [lx, ly, a] = P.lens; for(let i = 0; i < 12; i++){ const t = 10 + rnd() * 90, d = (rnd() - .5) * t * .3; motes += fbC(lx + Math.cos(a) * t - Math.sin(a) * d, ly + Math.sin(a) * t + Math.cos(a) * d, .4 + rnd() * .6, "#FFF6D8", ' opacity="' + bnF(.4 + rnd() * .5) + '"'); } });
     return [
       { svg: g },
-      { svg: bA, box: [wl.lens[0] - 130, wl.lens[1] - 130, 260, 260], o: [wl.lens[0], wl.lens[1]], cls: "bl-breathe", style: "animation-duration:4.2s" },
-      { svg: bB, box: [wr2.lens[0] - 130, wr2.lens[1] - 130, 260, 260], o: [wr2.lens[0], wr2.lens[1]], cls: "bl-breathe", style: "animation-duration:4.2s;animation-delay:-2.1s" },
-      { svg: motes, box: [0, 0, 480, 180], cls: "bl-mote", style: "animation-duration:7s" },
-      { svg: fbEmberSheet(bnRand(5004), 480, 90, 16, ["#CFE0FF", "#FFF2D0", "#FFFFFF"]), box: [0, 20, 480, 140], cls: "bl-rise", style: "animation-duration:22s;opacity:.22" }
+      /* r24: each officer sweeps a torch (the beam turns about its lens), and each lens flares */
+      { svg: bA, box: [wl.lens[0] - 130, wl.lens[1] - 130, 260, 260], o: [wl.lens[0], wl.lens[1]], cls: "bl-swing", style: "animation-duration:4.2s" },
+      { svg: bB, box: [wr2.lens[0] - 130, wr2.lens[1] - 130, 260, 260], o: [wr2.lens[0], wr2.lens[1]], cls: "bl-swing", style: "animation-duration:4.2s;animation-delay:-2.1s" },
+      { svg: motes, box: [0, 0, 480, 180], cls: "bl-mote", style: "animation-duration:4.5s" },
+      { svg: fbEmberSheet(bnRand(5004), 480, 90, 16, ["#CFE0FF", "#FFF2D0", "#FFFFFF"]), box: [0, 20, 480, 140], cls: "bl-rise", style: "animation-duration:14s;opacity:.4" },
+      { svg: motes, box: [3, 3, 480, 180], cls: "bl-mote", style: fcmT(6, 2.4) },
+      fcmSpark(wl.lens[0], wl.lens[1], 7, "#FFFFFF", 2.2, .3), fcmSpark(wr2.lens[0], wr2.lens[1], 7, "#FFFFFF", 2.6, 1.5),
+      fcmPing(wl.lens[0], wl.lens[1], 9, "#FFF2D0", 1.9, .2, 1.3), fcmPing(wr2.lens[0], wr2.lens[1], 9, "#FFF2D0", 1.9, 1.1, 1.3),
+      fcmLed(ex[0], ex[1], 1.7, "#FF5A48", 1.6, .3), fcmPing(ex[0], ex[1], 9, "#FF6A58", 2.2, .6, 1.2),
+      fcmGlint(u, "fl", [100, 104, 280, 66], "#FFF2D0", .22, 5, 1.6)
     ];
   },
 
@@ -80784,9 +80886,17 @@ const IFC_BANNER_ART = {
     const cone = [[118, .5], [92, .7], [64, 1]].map(q => '<path d="M' + (LX - 14) + ' ' + (LY + 1) + ' L' + (LX + 14) + ' ' + (LY + 1) + ' L' + (LX + q[0]) + ' 160 L' + (LX - q[0]) + ' 160 Z" fill="url(#' + u + 'cone)" opacity="' + bnF(q[1] * .3) + '"/>').join("");
     return [
       { svg: g },
-      { svg: cone + '<ellipse cx="' + LX + '" cy="' + LY + '" rx="40" ry="18" fill="url(#' + u + 'lamp)"/>', box: [LX - 130, 0, 260, 180], cls: "bl-breathe", style: "animation-duration:5.4s" },
-      { svg: '<circle cx="443.5" cy="129" r="7" fill="url(#' + u + 'led)"/>', box: [434, 120, 19, 18], o: [443.5, 129], cls: "bl-glow", style: "animation-duration:2.4s" },
-      { svg: fbEmberSheet(rnd, 220, 120, 18, ["#FFF2D0", "#FFE2A0", "#FFFFFF"]), box: [LX - 110, 18, 220, 140], cls: "bl-rise", style: "animation-duration:18s;opacity:.4" }
+      /* r24: the lamp swings on its cord (the cone sways about its mouth) */
+      { svg: cone + '<ellipse cx="' + LX + '" cy="' + LY + '" rx="40" ry="18" fill="url(#' + u + 'lamp)"/>', box: [LX - 130, 0, 260, 180], o: [LX, LY], cls: "bl-swing", style: "animation-duration:4.2s;animation-delay:-1.3s" },
+      { svg: '<circle cx="443.5" cy="129" r="7" fill="url(#' + u + 'led)"/>', box: [434, 120, 19, 18], o: [443.5, 129], cls: "bl-glow", style: "animation-duration:1.6s" },
+      { svg: fbEmberSheet(rnd, 220, 120, 18, ["#FFF2D0", "#FFE2A0", "#FFFFFF"]), box: [LX - 110, 18, 220, 140], cls: "bl-rise", style: "animation-duration:12s;opacity:.55" },
+      /* the radio's red lamp blinks and calls out a ring; steel glints run along the duty belt and across the wall; the vest's badge, the wallet's badge, the
+         flashlights' lenses and the cuffs catch the light in turn */
+      fcmLed(436.9, 91.8, 1.7, "#FF4A3A", 1.2, .3), fcmPing(437.7, 79, 8, "#7CFFB0", 2.4, 1),
+      fcmGlint(u, "gb", [290, 46, 108, 40], "#FFFFFF", .55, 4.6, 1.2), fcmGlint(u, "gv", [190, 56, 44, 62], "#FFFFFF", .4, 3.4, 2.4),
+      fcmGlow(u, "lb", LX, LY + 4, 56, "#FFE2A8", .5, "bl-flick", 3, .9, 26),
+      fcmSpark(221, 65, 8, "#FFF3C0", 2.4, .5), fcmSpark(82.3, 124.9, 7, "#FFF3C0", 2.8, 1.7), fcmSpark(104, 50, 6, "#FFFFFF", 2.2, .2),
+      fcmSpark(124, 50, 6, "#FFFFFF", 2.6, 1.5), fcmSpark(440, 34, 6.4, "#FFFFFF", 3, 2.2)
     ];
   },
 
@@ -80918,7 +81028,18 @@ const IFC_BANNER_ART = {
     return [
       { svg: base + person(124, false) + person(356, true) + '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>' },
       { svg: '<circle cx="' + IX + '" cy="' + IY + '" r="30" fill="url(#' + u + 'inc)"/>', box: [IX - 30, IY - 30, 60, 60], o: [IX, IY], cls: "bl-pulse", style: "animation-duration:1.6s" }
-    ];
+    ].concat([
+      /* r24: the incident calls (two rings out across the map, half a cycle apart), and each unit RUNS from its station along its own route to it, one clock each
+         (bl-run0..4 carry the routes' corners); the dispatchers' screens scan; their headset lamps blink */
+      fcmPing(IX, IY, 26, "#FF6A4D", 2.4, 0, 1.8), fcmPing(IX, IY, 26, "#FFB08A", 2.4, 1.2, 1.2)
+    ]).concat(routes.map(([col, pts], i) => ({
+      svg: '<circle cx="' + pts[0][0] + '" cy="' + pts[0][1] + '" r="6.4" fill="' + col + '" opacity=".38"/><circle cx="' + pts[0][0] + '" cy="' + pts[0][1] + '" r="3.3" fill="' + col + '" stroke="#FFFFFF" stroke-width="1"/>',
+      box: [pts[0][0] - 4, pts[0][1] - 4, 8, 8], o: [pts[0][0], pts[0][1]], cls: "bl-run" + i, style: fcmT([5, 4.6, 4.8, 4.2, 5.2][i], [1.6, 3.4, .4, 2.6, 0][i])
+    }))).concat([
+      fcmGlint(u, "d1", [49, 153, 42, 10], "#BFE6FF", .7, 1.8, .2), fcmGlint(u, "d2", [159, 153, 42, 10], "#BFE6FF", .7, 2.2, 1.1),
+      fcmGlint(u, "d3", [279, 153, 42, 10], "#BFE6FF", .7, 1.9, .6), fcmGlint(u, "d4", [389, 153, 42, 10], "#BFE6FF", .7, 2.4, 1.6),
+      fcmLed(132, 152.6, 1.6, "#6CC0FF", 1.4, .2), fcmLed(348, 152.6, 1.6, "#6CC0FF", 1.4, .9)
+    ]);
   },
 
   /* CODE BOOK (round 3: "Code book one is eh, some of the stuff on the table idk, like the badge and
@@ -80967,7 +81088,19 @@ const IFC_BANNER_ART = {
       { svg: front },
       { svg: '<path d="M121 105 L172 105 L246 146 L110 146 Z" fill="url(#' + u + 'cone)"/><ellipse cx="200" cy="136" rx="110" ry="22" fill="url(#' + u + 'lamp)"/>', box: [40, 90, 300, 70], cls: "bl-glow", style: "animation-duration:4.2s" },
       { svg: '<path d="M400 116 Q396 106 402 98 Q408 90 402 80" fill="none" stroke="#E8ECEF" stroke-width="2" stroke-linecap="round" opacity=".55"/><path d="M408 116 Q404 106 410 98" fill="none" stroke="#E8ECEF" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>', box: [390, 70, 30, 50], cls: "bl-steam", style: "animation-duration:4s" }
-    ];
+    ].concat((() => {
+      /* r24: a second, faster fall of rain with bigger, brighter drops; lightning over the city every few seconds (one is on its way as the banner appears); the
+         lamp flickers; a second wisp off the mug; the moon glints */
+      const r2 = bnRand(3846); let rain2 = "";
+      for(let rep = 0; rep < 7; rep++) for(let i = 0; i < 6; i++){ rain2 += '<path d="M' + bnF(256 + r2() * 212) + ' ' + bnF(10 + rep * 24 + r2() * 24) + ' l-1.6 ' + bnF(8 + r2() * 8) + '" stroke="#E6F0FF" stroke-width="1.1" opacity=".7"/>'; }
+      return [
+        { svg: rain2, box: [252, 10, 220, 120], vb: [252, 10, 220, 120], clip: "inset(0)", cls: "bl-pour", style: "animation-duration:.62s;animation-delay:-.2s;opacity:0" },
+        { svg: '<rect x="252" y="10" width="220" height="110" fill="#DDE8FF" fill-opacity=".5"/>', box: [252, 10, 220, 110], cls: "bl-flash", style: fcmT(6.5, 5.2) },
+        fcmGlow(u, "lf", 146, 100, 70, "#FFE7A8", .6, "bl-flick", 2.8, .5, 40),
+        { svg: '<path d="M396 116 Q390 104 398 94 Q406 84 398 70" fill="none" stroke="#E8ECEF" stroke-width="2.4" stroke-linecap="round" opacity=".5"/>', box: [386, 58, 30, 62], cls: "bl-steam", style: fcmT(3, 1.6) },
+        fcmSpark(440, 30, 9, "#FFFFFF", 3, .8)
+      ];
+    })());
   },
 
   /* ON CALL (60 hours studied; Madison's review: "super cool, but why are we acting as if it's sitting on a desk? ... a random yellow
@@ -81057,8 +81190,25 @@ const IFC_BANNER_ART = {
       { svg: pull + panel + box },
       /* the cursor after the time, and the AC POWER lamp's halo, slow */
       { svg: '<rect x="' + (PX + PW - 28) + '" y="' + (PY + 46.6) + '" width="2.6" height="5.6" fill="#1B5A30"/>', box: [PX + PW - 30, PY + 45, 8, 9], cls: "bl-blink", style: "animation-duration:1.2s" },
-      { svg: '<circle cx="' + LX + '" cy="' + LY + '" r="5.4" fill="#2ECC71" opacity=".4"/>', box: [LX - 9, LY - 9, 18, 18], cls: "bl-pulse", style: "animation-duration:2.4s" }
-    ];
+      { svg: '<circle cx="' + LX + '" cy="' + LY + '" r="5.4" fill="#2ECC71" opacity=".4"/>', box: [LX - 9, LY - 9, 18, 18], cls: "bl-pulse", style: "animation-duration:1.6s" }
+    ].concat((() => {
+      /* r24: the display scans and flickers, a glare crosses the panel's glass, the AC POWER lamp calls out a ring, the ceiling light flickers, dust drifts up in the
+         green, the pull station's handle, the box's lock and the key switch catch the light */
+      const mr = bnRand(3862); let motes = "";
+      for(let i = 0; i < 16; i++) motes += fbC(bnF(110 + mr() * 280), bnF(40 + mr() * 100), bnF(.6 + mr() * .8), mr() < .5 ? "#CFFFE0" : "#FFFFFF", ' opacity="' + bnF(.5 + mr() * .5) + '"');
+      return [
+        { svg: fbR(PX + 19.4, PY + 29.4, PW - 38.8, 25.2, "#FFFFFF", ' fill-opacity=".16"'), box: [PX + 19.4, PY + 29.4, PW - 38.8, 25.2], cls: "bl-flick", style: fcmT(1.4, .2) },
+        fcmGlint(u, "ls", [PX + 19.4, PY + 29.4, PW - 38.8, 25.2], "#F2FFF4", .85, 2.2, .5),
+        fcmGlint(u, "ls2", [PX + 19.4, PY + 29.4, PW - 38.8, 25.2], "#F2FFF4", .85, 2.2, 1.6),
+        fcmGlint(u, "gp", [PX, PY, PW, PH], "#FFFFFF", .32, 4.2, 1.4, 4),
+        fcmGlint(u, "gp2", [PX, PY, PW, PH], "#FFFFFF", .32, 4.2, 3.5, 4),
+        fcmPing(LX, LY, 7, "#2ECC71", 1.8, .3, 1.2),
+        fcmGlow(u, "cf", 250, 24, 120, "#FFF3D8", .26, "bl-flick", 3.1, 1, 60),
+        { svg: motes, box: [110, 40, 280, 100], cls: "bl-mote", style: fcmT(5.5, 1.5) },
+        { svg: motes, box: [112, 44, 280, 100], cls: "bl-mote", style: fcmT(7, 4) },
+        fcmSpark(SX + SW / 2, SY + 25, 6, "#FFFFFF", 2.6, .6), fcmSpark(DX + DW - 10.5, DY + 58, 5, "#FFFFFF", 3, 1.8), fcmSpark(PX + PW - 22, PY + 76, 5, "#FFFFFF", 2.8, 2.3)
+      ];
+    })());
   },
 
   /* DOWNPOUR (for 5,000 right answers). Round 9, Madison: "The banners, the sprinkler one, don't make it a trash can fire. Make it something better?" - a stockroom at
@@ -81255,11 +81405,16 @@ const IFC_BANNER_ART = {
       { svg: fbPuffs(bnRand(3827), OX, 118, 6, 9, "url(#" + u + "puff)"), box: [OX - 40, 40, 80, 100], cls: "bl-steam", style: "animation-duration:4.4s" },
       { svg: fbPuffs(bnRand(3828), OX + 6, 118, 5, 8, "url(#" + u + "puff)"), box: [OX - 40, 40, 80, 100], cls: "bl-steam", style: "animation-duration:4.4s;animation-delay:-2.2s" },
       /* the flashlight's beam, its pool on the heater, the dust in it */
-      { svg: '<path d="M' + bnF(beam[0]) + ' ' + bnF(beam[1]) + ' L' + (OX - 22) + ' 108 L' + (OX + 6) + ' 160 Z" fill="url(#' + u + 'beam)"/><ellipse cx="' + OX + '" cy="134" rx="40" ry="26" fill="url(#' + u + 'spot)"/>', box: [beam[0], 90, OX + 50 - beam[0], 80], o: [beam[0], beam[1]], cls: "bl-breathe", style: "animation-duration:3.4s" },
-      { svg: motes, box: [beam[0], 84, OX - beam[0], 70], cls: "bl-mote", style: "animation-duration:7s" },
+      { svg: '<path d="M' + bnF(beam[0]) + ' ' + bnF(beam[1]) + ' L' + (OX - 22) + ' 108 L' + (OX + 6) + ' 160 Z" fill="url(#' + u + 'beam)"/><ellipse cx="' + OX + '" cy="134" rx="40" ry="26" fill="url(#' + u + 'spot)"/>', box: [beam[0], 90, OX + 50 - beam[0], 80], o: [beam[0], beam[1]], cls: "bl-swing", style: "animation-duration:3.6s;animation-delay:-.9s" },
+      { svg: motes, box: [beam[0], 84, OX - beam[0], 70], cls: "bl-mote", style: "animation-duration:4.5s" },
+      /* r24: the trucks' lights go round on the window behind him (red and blue, a beat apart, under him), and a glint runs along the tape */
+      { svg: '<rect x="46" y="20" width="100" height="121" fill="#FF3A3A" fill-opacity=".3"/>', box: [46, 20, 100, 121], cls: "bl-led", style: fcmT(1.2, .2) },
+      { svg: '<rect x="46" y="20" width="100" height="121" fill="#3A6AFF" fill-opacity=".3"/>', box: [46, 20, 100, 121], cls: "bl-led", style: fcmT(1.2, .8) },
       { svg: fbMarshal(BX, BY, BS, 1, { pose: "aim", rim: "#FFE7B0", col: "#07060A" }) },
       /* the scene camera's flash */
-      { svg: '<rect x="-10" y="-10" width="500" height="200" fill="#FFFFFF" opacity=".22"/>', cls: "bl-spike", style: "animation-duration:6s;opacity:0" }
+      { svg: '<rect x="-10" y="-10" width="500" height="200" fill="#FFFFFF" opacity=".22"/>', cls: "bl-spike", style: "animation-duration:6s;opacity:0" },
+      fcmGlint(u, "tp", [148, 88, 306, 38], "#FFFFFF", .55, 3.6, .5), fcmSpark(beam[0], beam[1], 10, "#FFFFFF", 2.2, .4), fcmPing(beam[0], beam[1], 9, "#FFF2D0", 1.9, .2, 1.3),
+      fcmSpark(292, 150, 7, "#FFFFFF", 2.6, .6), fcmSpark(362, 148, 7, "#FFFFFF", 3, 1.5), fcmSpark(402, 156, 7, "#FFFFFF", 2.8, 2.2)
     ];
   },
 
@@ -81356,7 +81511,13 @@ const IFC_BANNER_ART = {
       { svg: '<path d="' + twW + '" fill="#FFE7B0"/>', box: [0, 10, 480, 120], cls: "bl-tw", style: "animation-duration:4.1s;animation-delay:-2s" },
       { svg: crowns.map(c => '<ellipse cx="' + c[0] + '" cy="' + c[1] + '" rx="' + (c[3] * .9) + '" ry="9" fill="url(#' + u + c[2] + ')"/>').join(""), box: [100, 10, 380, 80], cls: "bl-breathe", style: "animation-duration:4.4s" },
       { svg: avs.map(p => '<circle cx="' + bnF(p[0]) + '" cy="' + bnF(p[1]) + '" r="4" fill="url(#' + u + 'av)"/><circle cx="' + bnF(p[0]) + '" cy="' + bnF(p[1]) + '" r=".9" fill="#FF6A5A"/>').join(""), box: [0, -10, 480, 120], cls: "bl-glow", style: "animation-duration:1.6s" },
-      { svg: '<circle cx="470" cy="18" r=".9" fill="#FFFFFF"/><circle cx="472.6" cy="18.4" r=".8" fill="#FF4A3A"/><circle cx="470" cy="18" r="3" fill="#FFFFFF" opacity=".2"/>', box: [420, 10, 60, 16], cls: "bl-cross", style: "animation-duration:46s" }
+      { svg: '<circle cx="470" cy="18" r=".9" fill="#FFFFFF"/><circle cx="472.6" cy="18.4" r=".8" fill="#FF4A3A"/><circle cx="470" cy="18" r="3" fill="#FFFFFF" opacity=".2"/>', box: [420, 10, 60, 16], cls: "bl-cross", style: "animation-duration:22s;animation-delay:-5s" },
+      /* r24: aviation lamps ring out, a light sweeps the glass, the two lit crowns and the moon catch it, and a second aircraft crosses lower down */
+      ...avs.filter((_, i) => i % 3 === 0).slice(0, 5).map((p, i) => fcmPing(p[0], p[1], 8, "#FF5A4A", 1.8, i * .55, 1.2)),
+      fcmGlint(u, "wg", [0, 10, 480, 146], "#CFE0FF", .2, 5, 1.2),
+      ...crowns.map((c, i) => fcmSpark(c[0], c[1] - 5, 10, i ? "#FFD8A0" : "#BFF4FF", 2.4 + i * .5, .4 + i)),
+      fcmSpark(62, 30, 11, "#FFFFFF", 3, .7),
+      { svg: '<circle cx="470" cy="46" r="1" fill="#FFFFFF"/><circle cx="472.8" cy="46.4" r=".8" fill="#FF4A3A"/><circle cx="470" cy="46" r="3" fill="#FFFFFF" opacity=".25"/>', box: [420, 38, 60, 16], cls: "bl-fly", style: "animation-duration:15s;animation-delay:-3s;opacity:0" }
     ];
   },
 
@@ -81479,9 +81640,17 @@ const IFC_BANNER_ART = {
     return [
       { svg: base },
       { svg: officer.svg },
-      { svg: cone + '<ellipse cx="' + TX + '" cy="' + (TY + 8) + '" rx="46" ry="40" fill="url(#' + u + 'spot)"/><circle cx="' + LX + '" cy="' + LY + '" r="14" fill="url(#' + u + 'spot)"/>', box: [LX - 16, 20, 230, 140], vb: [LX - 16, 20, 230, 140], o: [LX, LY], cls: "bl-breathe", style: "animation-duration:3.6s" },
-      { svg: motes, box: [LX, 50, TX - LX, 90], cls: "bl-mote", style: "animation-duration:7s" },
-      { svg: fbEmberSheet(bnRand(3812), 480, 90, 12, ["#CFF6EE", "#9AD8FF", "#FFFFFF"]), box: [0, 30, 480, 110], cls: "bl-rise", style: "animation-duration:24s;opacity:.25" }
+      { svg: cone + '<ellipse cx="' + TX + '" cy="' + (TY + 8) + '" rx="46" ry="40" fill="url(#' + u + 'spot)"/><circle cx="' + LX + '" cy="' + LY + '" r="14" fill="url(#' + u + 'spot)"/>', box: [LX - 16, 20, 230, 140], vb: [LX - 16, 20, 230, 140], o: [LX, LY], cls: "bl-swing", style: "animation-duration:3.8s;animation-delay:-1.1s" },
+      { svg: motes, box: [LX, 50, TX - LX, 90], cls: "bl-mote", style: "animation-duration:4.5s" },
+      { svg: fbEmberSheet(bnRand(3812), 480, 90, 12, ["#CFF6EE", "#9AD8FF", "#FFFFFF"]), box: [0, 30, 480, 110], cls: "bl-rise", style: "animation-duration:14s;opacity:.4" },
+      /* r24: the beam sweeps (the torch is in a hand) and its lens flares; the gauges' glass and the handwheels catch it; the clock's second hand ticks; a light runs
+         along the red main and along the hazard tape on the floor; a second drift of dust crosses the beam */
+      { svg: motes, box: [LX + 4, 54, TX - LX, 90], cls: "bl-mote", style: fcmT(5.5, 2.2) },
+      fcmPing(LX, LY, 9, "#FFF4D0", 1.8, .4, 1.4), fcmSpark(LX, LY, 7, "#FFFFFF", 2.2, .6),
+      fcmSpark(G1[0] - 3.2, G1[1] - 3, 5.4, "#FFFFFF", 2.6, 1), fcmSpark(G2[0] - 3.2, G2[1] - 3, 5.4, "#FFFFFF", 3, 2.1),
+      fcmSpark(R1 - 6, 56, 6, "#FFD8CC", 2.8, .3), fcmSpark(R2 - 6, 56, 6, "#FFD8CC", 3.2, 1.9),
+      { svg: '<path d="M60 46 L60 31.4" stroke="#C0201A" stroke-width="1" stroke-linecap="round"/><circle cx="60" cy="46" r="1.6" fill="#C0201A"/>', box: [43, 29, 34, 34], vb: [43, 29, 34, 34], o: [60, 46], cls: "bl-sec", style: "animation-delay:-17s;opacity:0" },
+      fcmGlint(u, "mp", [0, 8, 480, 9], "#FFFFFF", .6, 3.2, 1.2), fcmGlint(u, "hz", [0, 147, 480, 6], "#FFF6A0", .85, 2.6, .5)
     ];
   },
 
@@ -81561,8 +81730,21 @@ const IFC_BANNER_ART = {
       { svg: glow(0), cls: "bl-glow", box: [0, 40, 480, 100], o: [VX, VY], style: "animation-duration:2.6s" },
       { svg: glow(1), cls: "bl-glow", box: [0, 40, 480, 100], o: [VX, VY], style: "animation-duration:2.6s;animation-delay:-1.3s" },
       { svg: '<ellipse cx="' + bnF(em) + '" cy="' + bnF(ey1 - 29) + '" rx="22" ry="12" fill="url(#' + u + 'ex)"/>', box: [em - 22, ey1 - 41, 44, 24], o: [em, ey1 - 29], cls: "bl-breathe", style: "animation-duration:3.8s" },
-      { svg: fbEmberSheet(rnd, 300, 90, 16, ["#E8F0FF", "#BFFFD8", "#FFFFFF"]), box: [VX - 150, 30, 300, 110], cls: "bl-rise", style: "animation-duration:22s;opacity:.25" }
-    ];
+      { svg: fbEmberSheet(rnd, 300, 90, 16, ["#E8F0FF", "#BFFFD8", "#FFFFFF"]), box: [VX - 150, 30, 300, 110], cls: "bl-rise", style: "animation-duration:14s;opacity:.4" }
+    ].concat((() => {
+      /* r24: the tags light in a wave from the nearest door pair to the far one (one layer a door pair, a beat apart); the EXIT sign pulses and rings out; two bands of
+         light run down the polished floor to the exit door */
+      /* each pair's layer is a box round ITS two tags (the near pair is wide, the far one a few units), not the whole corridor */
+      const out = [0, 1, 2, 3, 4].map(i => {
+        const g = tags.filter(t => t[3] === i), cs = g.map(([x, y, k]) => [x, y + 11 * k, 24 * k]);
+        const x0 = Math.min(...cs.map(c => c[0] - c[2])), x1 = Math.max(...cs.map(c => c[0] + c[2])), y0 = Math.min(...cs.map(c => c[1] - c[2])), y1 = Math.max(...cs.map(c => c[1] + c[2]));
+        return { svg: '<defs>' + bnRad(u + "pw" + i, [[0, "#6BFFA8", .95], [1, "#6BFFA8", 0]]) + '</defs>' + cs.map(c => '<circle cx="' + bnF(c[0]) + '" cy="' + bnF(c[1]) + '" r="' + bnF(c[2]) + '" fill="url(#' + u + 'pw' + i + ')"/>').join(""),
+          box: [x0, y0, x1 - x0, y1 - y0], cls: "bl-lit", style: fcmT(3, 3 - i * .45) };
+      });
+      out.push(fcmGlow(u, "xg", em, ey1 - 29.3, 16, "#FF5A48", .8, "bl-pop", 1.6, .3, 9), fcmPing(em, ey1 - 29.3, 9, "#FF6A5A", 2, .8, 1.2));
+      [0, 1.6].forEach((at, j) => out.push({ svg: '<defs>' + bnRad(u + "fw" + j, [[0, "#CFE0FF", .6], [1, "#CFE0FF", 0]]) + '</defs><ellipse cx="' + VX + '" cy="150" rx="110" ry="9" fill="url(#' + u + 'fw' + j + ')"/>', box: [VX - 110, 141, 220, 18], o: [VX, VY], cls: "bl-away", style: fcmT(3.2, at + .6) }));
+      return out;
+    })());
   },
 
   /* ---- THE FOUR SECRET FLARES, round 9 (Madison: "The secret flare ones need to be better I'm not a huge fan tbh.") - each still its character's own picture in
@@ -81619,9 +81801,12 @@ const IFC_BANNER_ART = {
       { svg: st.b, cls: "bl-tw", style: "animation-duration:4.2s;animation-delay:-1.4s" },
       { svg: yst },
       { svg: pil },
-      { svg: front, box: [-30, 100, 540, 110], vb: [-30, 100, 540, 110], cls: "bl-drift", style: "animation-duration:36s;animation-direction:alternate-reverse" },
+      { svg: front, box: [-30, 100, 540, 110], vb: [-30, 100, 540, 110], cls: "bl-drift", style: "animation-duration:16s;animation-direction:alternate-reverse" },
       ...S.map(([x, y], i) => ({ svg: star(x, y, i), box: [x - 32, y - 26, 64, 52], o: [x, y], cls: "bl-pulse", style: "animation-duration:" + (2.6 + i * .7) + "s;animation-delay:-" + (i * .9) + "s" })),
-      { svg: fbEmberSheet(rnd, 480, 90, 26, ["#FFB070", "#FFE08A", "#FF7A6A"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:26s;opacity:.5" }
+      { svg: fbEmberSheet(rnd, 480, 90, 26, ["#FFB070", "#FFE08A", "#FF7A6A"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:9s;opacity:.85" },
+      /* r24: the gas lights up in waves (the two glows are one layer: the sets check holds these banners to 14) and a shooting star crosses */
+      { svg: '<defs>' + bnRad(u + "nz1", [[0, "#FF5A2A", .6], [1, "#FF5A2A", 0]]) + bnRad(u + "nz2", [[0, "#E0207A", .55], [1, "#E0207A", 0]]) + '</defs><ellipse cx="150" cy="112" rx="100" ry="64" fill="url(#' + u + 'nz1)"/><ellipse cx="330" cy="104" rx="100" ry="64" fill="url(#' + u + 'nz2)"/>', box: [50, 40, 380, 136], cls: "bl-flick", style: fcmT(2.8, .6) },
+      { svg: '<path d="M358 14 L376 2" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/><circle cx="358" cy="14" r="1.6" fill="#FFFFFF"/>', box: [250, 4, 130, 70], cls: "bl-meteor", style: "animation-duration:6s;animation-delay:-3.7s;opacity:0" }
     ];
   },
   /* QUASAR (flare_umbra): the engine at the heart of a galaxy, as it really looks - a black hole's shadow ringed by its thin photon ring; the accretion disc seen
@@ -81843,12 +82028,14 @@ const IFC_BANNER_ART = {
       { svg: deb(7311), box: [-40, -20, 420, 140], vb: [-40, -20, 420, 140], cls: "bl-mote", style: "animation-duration:7s" },
       { svg: deb(7312), box: [-40, -20, 420, 140], vb: [-40, -20, 420, 140], cls: "bl-mote", style: "animation-duration:9s;animation-delay:-4s" },
       /* a fragment breaking off and shooting away now and then */
-      { svg: '<path d="M380 26 L404 14" stroke="url(#' + u + 'met)" stroke-width="1.3" stroke-linecap="round"/><circle cx="380" cy="26" r="1.3" fill="#FFFFFF"/>', box: [340, 0, 100, 60], cls: "bl-meteor", style: "animation-duration:7.5s;animation-delay:-2s" },
+      { svg: '<path d="M380 26 L404 14" stroke="url(#' + u + 'met)" stroke-width="1.3" stroke-linecap="round"/><circle cx="380" cy="26" r="1.3" fill="#FFFFFF"/>', box: [340, 0, 100, 60], cls: "bl-meteor", style: "animation-duration:7.5s;animation-delay:-4.1s" },
       /* the coma, and the secret flare as the nucleus */
       { svg: '<circle cx="' + NX + '" cy="' + NY + '" r="46" fill="url(#' + u + 'coma)"/>', box: [NX - 46, NY - 46, 92, 92], o: [NX, NY], cls: "bl-breathe", style: "animation-duration:4s" },
       { svg: '<circle cx="' + NX + '" cy="' + NY + '" r="15" fill="url(#' + u + 'bead)"/><circle cx="' + NX + '" cy="' + NY + '" r="3.8" fill="#FFFFFF"/>', box: [NX - 15, NY - 15, 30, 30], o: [NX, NY], cls: "bl-pulse", style: "animation-duration:2.2s" },
       { svg: '<rect x="' + (NX - 34) + '" y="' + (NY - 1) + '" width="68" height="2" fill="url(#' + u + 'spk)"/><path d="M' + NX + ' ' + (NY - 20) + ' L' + NX + ' ' + (NY + 20) + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".85"/>',
         box: [NX - 34, NY - 20, 68, 40], o: [NX, NY], cls: "bl-glow", style: "animation-duration:1.7s" },
+      /* r24: the nucleus flares (one layer: the sets check holds these banners to 14); the fragment below is already on its way as the banner appears */
+      fcmSpark(NX, NY, 30, "#FFFFFF", 2.2, .3),
       /* the sea ice */
       { svg: '<rect x="-10" y="' + GZ + '" width="500" height="' + (190 - GZ) + '" fill="url(#' + u + 'ice)"/><rect x="-10" y="' + (GZ - .4) + '" width="500" height="1" fill="#5CE1FF" opacity=".3"/>' +
           '<ellipse cx="' + (NX - 30) + '" cy="' + (GZ + 8) + '" rx="120" ry="7" fill="url(#' + u + 'smear)"/>' + fbL(crack, "#9FD8E8", .5, ' opacity=".2"') + ridges + fbL(rims, "#8FEAFF", .6, ' opacity=".4"') }
@@ -147261,12 +147448,17 @@ function buildCustomizeBannerSect(){
      live animated scene; together with the swatches they held the old
      all-in-one screen to ~30fps on a throttled phone. A tile scrolled out
      of view pauses, one in view plays, so nothing anybody can see
-     changes. Disconnects itself once the page is gone. */
+     changes. Disconnects itself once the page is gone.
+     (384 r24) A THIRD OF A SCREEN AHEAD, NOT 120px. "Why do some of them not animate as you scroll through them?" A tile is
+     paused until this observer's callback runs, and a callback waits for the main thread: in a fling at 2,000px a second a
+     120px margin is 60ms of runway, and one 65ms frame (the Leaderboard's, at 4x CPU; build 360) is a banner that arrives
+     in view still. A third of the screen (~320px on a phone, ~400px on an iPad) is ~160ms. A paused tile still holds its
+     layers, so this adds no memory - the build 252 budget is .rk-idle's, which stays a whole screen out. */
   if(typeof IntersectionObserver === "function"){
     const io = new IntersectionObserver(entries => {
       if(!document.contains(bannerSect)){ io.disconnect(); return; }
       entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
-    }, { rootMargin: "120px 0px" });
+    }, { rootMargin: "34% 0px" });
     bannerSect.querySelectorAll(".banner-opt").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
   }
   return { sect: bannerSect, after: () => fillDeferredBannerArt(bannerArtQueue) };

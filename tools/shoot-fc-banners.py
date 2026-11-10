@@ -3,9 +3,12 @@
 floats, a letter that is cut off or a scene that does not read at that size can be looked at.
 
   python3 tools/shoot-fc-banners.py OUTDIR [--ids a,b,c] [--against OLD/index.html] [--w 1050] [--h 348] [--t 1.2] [--sheet] [--dpr 1] [--cols 2]
+                                    [--frames 0.2,1.2,2.4]
 
 Writes OUTDIR/<id>.png (the live, animated banner at --t seconds). With --sheet also OUTDIR/sheet.png: every banner asked for in
 two columns, labelled with its name. --scene also writes OUTDIR/<id>-scene.png, the whole 480x180 scene (nothing cropped).
+--frames t1,t2,t3 (build 384 r24) writes OUTDIR/<id>-frames.png instead: the banner at each of those seconds into its life, one under the other. The
+animations are PAUSED and set to that time (not waited for), so a frame is the same on any machine however slow its paint is.
 """
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -50,7 +53,20 @@ with sync_playwright() as pw:
     pg.goto("http://127.0.0.1:%d/index.html" % port); pg.wait_for_timeout(3000)
     ids = IDS or pg.evaluate("() => BANNERS.filter(b => typeof IFC_BANNER_ART !== 'undefined' && IFC_BANNER_ART[b.id]).map(b => b.id)")
     names = {}
+    FR = [float(x) for x in opt("--frames").split(",")] if opt("--frames") else None
     for i in ids:
+        if FR:
+            names[i] = pg.evaluate(MOUNT, [i, W, H, False]); pg.wait_for_timeout(300)
+            ims = []
+            for t in FR:
+                pg.evaluate("(t) => document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} })", t); pg.wait_for_timeout(120)
+                pg.query_selector("#strip").screenshot(path=os.path.join(OUT, "_f.png")); ims.append(Image.open(os.path.join(OUT, "_f.png")).convert("RGB").copy())
+            sh = Image.new("RGB", (W, (H + 4) * len(ims)), (18, 20, 26)); d = ImageDraw.Draw(sh)
+            for n, im in enumerate(ims):
+                sh.paste(im, (0, n * (H + 4))); d.text((6, n * (H + 4) + 4), "%s  t=%.1fs" % (names[i], FR[n]), fill=(255, 255, 255))
+            sh.save(os.path.join(OUT, i + "-frames.png")); os.remove(os.path.join(OUT, "_f.png"))
+            continue
+    for i in ids if not FR else []:
         for scene in ([False, True] if "--scene" in args else [False]):
             names[i] = pg.evaluate(MOUNT, [i, W, H, scene]); pg.wait_for_timeout(int(T * 1000))
             pg.query_selector("#strip").screenshot(path=os.path.join(OUT, i + ("-scene" if scene else "") + ".png"))
