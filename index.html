@@ -313,6 +313,59 @@
   }catch(e){}
 </script>
 <script>
+  /* BUILD 384 (round 18): A TOOLBAR COLLAPSING IS NOT A RESIZE THE APP HAS TO ANSWER FRAME BY FRAME. Madison: "the bottom tab is a little
+     laggy", "the swiping and sliding is terrible". In a Safari tab the layout viewport changes height every frame while the toolbar
+     collapses or comes back, and every window "resize" listener in the app (thirty-odd: the tab bar's centring and glass, the chat dock,
+     the test header, the splash's centring, the insets, the Safari model...) ran each time, several of them reading layout after
+     writes. Measured with a viewport that grows and shrinks 47px in 94 frames, at 4x CPU, on Home: 94 resizes cost 4.9s of script,
+     828 layouts and 1122 style recalcs (the tab bar's own onBarResize 15ms a frame, the splash's place() still running for a splash
+     long gone 5ms, syncChatDock 2.5ms...) - well over a frame each on a phone. A listener now (1) is not called twice for a size it has
+     already answered (the window and the visual viewport both announce the same change) and (2) answers a height-only change of up
+     to 140px - a toolbar, never a keyboard or a rotation - at most once every 120ms, the last of them at the size the viewport ended on; a width change
+     or a bigger one is answered at once, as before. Touch devices only. The tab bar itself sits by CSS (--tabs-bottom) and moves with
+     the viewport's edge on its own. The visual viewport's own listeners are not governed. */
+  (function(){
+    try{
+      if(!window.matchMedia || !window.matchMedia("(hover:none), (pointer:coarse)").matches || typeof WeakMap !== "function") return;
+      var add = window.addEventListener, remove = window.removeEventListener, wraps = new WeakMap();
+      function wrapFor(fn){
+        var w = wraps.get(fn);
+        if(w) return w;
+        var st = { w: -1, h: -1, t: 0, e: null, at: 0 };
+        function answer(e){ st.t = 0; st.at = Date.now(); st.w = window.innerWidth; st.h = window.innerHeight; return fn.call(window, e); }
+        w = function(e){
+          if(e && e.isTrusted === false) return fn.call(this, e);   /* a resize the page or a test made up is always answered */
+          var iw = window.innerWidth, ih = window.innerHeight;
+          if(st.w === iw && st.h === ih && !st.t) return;   /* a size it has answered already */
+          if(st.w === iw && st.h > 0 && Math.abs(ih - st.h) <= 140){
+            /* a toolbar: at most one answer every 120ms, the last of them at the size the viewport ended on */
+            st.e = e;
+            if(!st.t){
+              var wait = 120 - (Date.now() - st.at);
+              if(wait <= 0) return answer(e);
+              st.t = setTimeout(function(){ answer(st.e); }, wait);
+            }
+            return;
+          }
+          if(st.t){ clearTimeout(st.t); st.t = 0; }
+          st.at = Date.now(); st.w = iw; st.h = ih;
+          return fn.call(this, e);
+        };
+        wraps.set(fn, w);
+        return w;
+      }
+      window.addEventListener = function(type, fn, opts){
+        if(type === "resize" && typeof fn === "function") return add.call(this, type, wrapFor(fn), opts);
+        return add.call(this, type, fn, opts);
+      };
+      window.removeEventListener = function(type, fn, opts){
+        if(type === "resize" && typeof fn === "function" && wraps.has(fn)) return remove.call(this, type, wraps.get(fn), opts);
+        return remove.call(this, type, fn, opts);
+      };
+    }catch(e){}
+  })();
+</script>
+<script>
   /* Reported from a Safari tab, with a screenshot circling both: a band
      across the top under the status bar and another behind the toolbar
      at the bottom, neither matching the splash between them.
@@ -7259,10 +7312,14 @@
     .intro-title{ font-size:1.7rem; }
     .intro-row-body{ font-size:.88rem; }
   }
-  .chatdock{ position:fixed; inset:0; z-index:300; pointer-events:none; }
+  /* (384 r17) THE DOCK IS A POINT, NOT A SCREEN. It was a full-screen fixed layer (inset:0) holding the chat button, the panel and the
+     confirm: every child is itself fixed, so the dock only ever needed to be the stacking context. A fixed layer spanning the whole top edge
+     is what iOS reads as a bar and softens the content behind (the screen title and the test's count on Madison's phone, every screen);
+     it is 0 x 0 at the corner now, and the one child that relied on its size (the confirm) is fixed to the screen itself. */
+  .chatdock{ position:fixed; inset:auto; top:0; left:0; width:0; height:0; z-index:300; pointer-events:none; }
   /* Leave's "are you sure" (build 240): over the whole dock, above the sheet. */
   /* Above the panel (320) and the dock button (370), its siblings in #chatdock. */
-  .chatdock-confirm{ position:absolute; inset:0; z-index:390; pointer-events:auto;
+  .chatdock-confirm{ position:fixed; inset:0; z-index:390; pointer-events:auto;
     display:flex; align-items:center; justify-content:center; padding:1rem;
     background:rgba(4,6,10,.58); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
     animation:pushfade .16s ease-out; }
@@ -34245,6 +34302,13 @@ html.is-browser{ --fade-paper: transparent; }
      Safari's bars and what shows past them is the root's flat colour (--band, as at the top: 341), so the bottom now eases into
      --band over its last 3rem exactly as the top eases out of it, and the two meet it with no line. Only while the page runs
      BETWEEN Safari's bars - over a full-screen page (html.safari-bars-over) the sky runs under them and this stays as it was. */
+  /* BUILD 384 (round 18): A SCREEN THAT FITS DOES NOT SCROLL IN A SAFARI TAB. html{min-height:100lvh} (977) is the viewport with
+     Safari's toolbar minimised, ~47pt taller than the one the page has at rest, so Welcome, Home and the boards were all that much
+     scrollable: any touch that drifted vertically (a swipe, a slide on the tab bar's neighbours, a tap with a thumb roll) scrolled
+     the document, Safari shrank its toolbar, the layout viewport resized under the fixed tab bar, and every resize listener ran.
+     (His Welcome frames show the scroll indicator on a screen with nothing to scroll.) At rest the root's box is the viewport the
+     page has (dvh): the paper layer still reaches the bottom, and the layers sized in lvh are no-repeat on the canvas beyond it. */
+  html.is-browser{ min-height:100vh; min-height:100dvh; }
   html.is-browser:not(.safari-bars-over){ --fade-paper: var(--band, transparent); --fade-bot-solid: 0px; --fade-bot: 3rem; --fade-top: 3rem; }
   /* ...and the tab bar's shadow (0 4px 18px, 22px past its bottom edge, which sits 12px off the page's) ends in the same line, so in a
      tab it is 0 2px 8px: it stops inside the 12px */
@@ -37797,7 +37861,7 @@ html.is-browser{ --fade-paper: transparent; }
   }
   /* (384 r5) Settings' group headings at Delta's: ~14px (ours 16 = x1.14 too big), 20px in from the card's edge */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page):is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.slab.motion-summary, .sect-label, .slab){
-    font-size:.875rem !important; padding-left:20px !important;
+    font-size:15px !important; padding-left:20px !important;   /* (384 r9) Delta's section names read ~15pt on the glass, semibold; was .875rem */
   }
   /* and Profile's ("Rank challenges", "<rank> unlocks") */
   html[data-layout] body #stage .profile-identity-tab .pf-goal > :is(.pf-tasks-kick, .pf-rewards-kick){ font-size:1rem !important; font-weight:600 !important; }
@@ -39032,6 +39096,34 @@ html.is-browser{ --fade-paper: transparent; }
   .chatdock-tabs.has-seg-glass > .chatdock-tab::before{ content:""; position:absolute; left:0; right:0; top:-5px; bottom:-5px; }
   /* a key's focus on a segment: a ring inside its pill */
   .has-seg-glass > :is(.iconbtn, .rs-tab, .chatdock-tab):focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-2px; }
+
+  /* ---- SETTINGS AT DELTA'S SIZE ON THE GLASS, AT ANY PAGE ZOOM (build 384, 8th pass) ----
+     Madison, Delta's Settings beside ours (his phone, same scale): "Why are our icons and sections not the same size, ours are
+     much smaller and it looks bad". Measured off the two screenshots: ours drew 23.4pt tiles, 43.5pt rows and ~13pt words
+     where Delta draws 27pt / 51pt / 15.5pt. The numbers in this file were RIGHT - 28px, 51px, 15.5px are Delta's own sizes in
+     points - but his phone runs Safari's page zoom at ~85% (518 CSS px across a 440pt screen), so every CSS px lands 15% short
+     on the glass. (The two rounds that "matched" Delta off his screenshots were reading a zoomed page against an unzoomed one,
+     and went smaller each time.) --zc is exactly that shortfall (syncFieldFloor: layout width over screen width, 1 at 100%), and
+     page-zoomed is only ever set above 1.02, so a phone at 100% is untouched. The cards, headings and footnotes of Settings and
+     the pages it opens are zoomed by --zc: they lay out as the 440pt screen they are drawn on, then land at full size on the
+     glass - the rows, tiles, glyphs, words, switches and hairlines all scale as one, and nothing in them is re-measured. The
+     headings step up to 15px as well (Delta's section names, ~15pt semibold; set where the 384 r5 heading rule is). */
+  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask){
+    zoom:var(--zc, 1);
+  }
+  /* THE REST OF THE APP, THE SAME TREATMENT (Madison: "I want the same treatment ... fix the rest"). The content blocks of the
+     screens that sit beside Settings - Profile's and Stats' tabs, the Leaderboard's blurb, tools and rows, Customize, Friends, the
+     Calendar, the Rank ladder and the badge case - are zoomed by the same --zc. Not the headers, the top segmented controls, the
+     back buttons or anything fixed: those were signed off at their own size and are placed against the screen, not the page. */
+  html.page-zoomed[data-layout] body #stage :is(
+      .screen-profile > :is(.profile-identity-tab, .profile-stats-tab),
+      .screen-rankings > :is(.rank-blurb, .rank-tools, .rank-rows),
+      .screen-customize > :is(.cz-intro, .cz-list),
+      .screen-friends > .friend-sect,
+      .screen-calendar > :is(.cal-classhead, .cal-glance, .cal-monthview, .cal-card),
+      .screen-ranks > :is(.ranks-tab, .badges-tab)){
+    zoom:var(--zc, 1);
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -117106,7 +117198,29 @@ function qSwipeCommits(p, v){
   if(!(p > 0) || v <= -Q_FLICK_V) return false;
   return p >= Q_SWIPE_COMMIT || (v >= Q_FLICK_V && p >= Q_FLICK_MIN);
 }
+/* (r22) NOTHING ELSE LAYS THE PAGE OUT INSIDE A NEXT. syncVisibility (and syncChatDock, placeDockBesidePause under it) answers
+   every stage and body mutation, and a question swapped for the next - plus the slide's own copy going onto <body> - is two
+   or three of them inside the tap, each reading Pause's box (offsetLeft, getComputedStyle) and forcing a style pass and layout of
+   the page: ~20ms of a 4x CPU tap, in the frames before the first one of the slide. A question for a question changes nothing they
+   decide (the bar and the dock stay as they are), so while a slide is under way they only note that they are owed and the slide's
+   end runs them once, with nothing moving (qSyncRelease). */
+let qSyncHold = false, qSyncOwed = false, qSyncRun = null;
+function qSyncRelease(){
+  if(!qSyncHold) return;
+  qSyncHold = false;
+  if(!qSyncOwed) return;
+  /* in idle time, not in the slide's last frame: it lays the page out (the dock is measured against Pause) and the slide's end is
+     where a dropped frame is seen. Anything else that runs syncVisibility first has paid it already (it clears the debt). */
+  const run = () => {
+    if(!qSyncOwed || qSyncHold) return;
+    qSyncOwed = false;
+    try{ if(qSyncRun) qSyncRun(); else if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
+  };
+  if(typeof requestIdleCallback === "function") requestIdleCallback(run, { timeout: 600 });
+  else setTimeout(run, 120);
+}
 function qSlideDone(clone, extra, incoming, anims){
+  qSyncRelease();
   if(clone) clone.remove();
   if(extra) extra.remove();
   if(incoming){ incoming.style.opacity = ""; incoming.style.transform = ""; incoming.style.transition = ""; incoming.style.willChange = ""; }
@@ -117146,9 +117260,10 @@ function advanceWithSlide(fromDx, opts){
     advance(); return;
   }
   slideTransitionInFlight = true;
+  /* the box is read BEFORE the class goes on: read after it, it laid the whole page out on the spot (r22) */
+  const rect = live ? s.rect : outgoing.getBoundingClientRect();
   document.documentElement.classList.add("q-sliding");
   const p0 = live ? Math.max(0, Math.min(1, s.p)) : 0;
-  const rect = live ? s.rect : outgoing.getBoundingClientRect();
   const push = live ? s.push : Math.round(rect.width + SLIDE_GAP);
   const dur = p0 > 0 ? qCommitMs(p0, push, opts.v) : qSlideMsFor(push);
   /* A fixed copy of the outgoing question, carried off on the clock.
@@ -117167,6 +117282,7 @@ function advanceWithSlide(fromDx, opts){
   };
   if(live && s.pair){ qCommitFromPreview(s, p0, dur, makeClone); return; }
   if(live){ qDropPair(s.pair); }
+  qSyncHold = pos < order.length - 1;
   const clone = makeClone();
   document.body.appendChild(clone);
   advance();
@@ -117202,6 +117318,7 @@ function qCommitFromPreview(s, p0, dur, makeClone){
   const handover = () => {
     if(handed) return;
     handed = true;
+    qSyncHold = pos < order.length - 1;
     clone = makeClone();
     document.body.appendChild(clone);
     const aC = run(clone, p => qOutFrame(p, push));
@@ -118237,7 +118354,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-09-384.6";
+const APP_BUILD = "2026-11-10-384.8";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -157409,6 +157526,8 @@ function tabPerfText(){
      this bar hides and shows exactly when that nav already does. */
   const oldNav = document.querySelector(".navsegment");
   function syncVisibility(){
+    if(qSyncHold){ qSyncOwed = true; return; }   /* (r22) a question for a question: run once when the slide ends */
+    qSyncOwed = false;
     const isModern = document.documentElement.dataset.layout === "modern";
     /* The DOM, not the computed style (build 282). The legacy nav is
        shown by exactly one rule - .navsegment:has(> .iconbtn:not([hidden]))
@@ -157489,10 +157608,18 @@ function tabPerfText(){
     new MutationObserver(syncVisibility).observe(oldNav, { attributes: true, childList: true, subtree: true });
     new MutationObserver(syncVisibility).observe(stage, { childList: true });
     /* Nova's introduction and GENERATING PROFILE are body's own children (round 37) */
-    new MutationObserver(syncVisibility).observe(document.body, { childList: true });
+    /* (r22) NOT FOR A QUESTION SLIDE'S OWN COPIES: the next question's stand-in goes onto <body> where a finger lands (and off it where
+       it lifts) and the outgoing question's copy goes on for the slide - none of them is a screen, and each ran this and, under it,
+       the dock's measure of Pause (a style pass and layout of the page: ~20ms at 4x CPU, in the frame a finger lands on a question) */
+    const slideOnly = n => n.nodeType !== 1 || (n.classList && (n.classList.contains("q-blurpair") || n.classList.contains("q-slide-clone")));
+    new MutationObserver(ms => {
+      if(ms.every(m => Array.prototype.every.call(m.addedNodes, slideOnly) && Array.prototype.every.call(m.removedNodes, slideOnly))) return;
+      syncVisibility();
+    }).observe(document.body, { childList: true });
     new MutationObserver(syncVisibility).observe(document.documentElement, { attributes: true, attributeFilter: ["data-layout"] });
   }
   syncVisibility();
+  qSyncRun = syncVisibility;
 
   /* Active-tab highlight: checked on the same stage-change signal as the
      visibility sync above, using simple on-screen markers already unique

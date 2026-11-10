@@ -37633,6 +37633,53 @@ Madison: "people signing into the fire code class, they unlocked the character o
 - GATE: tools/check-b384-signinchars.py: A (fresh device, academy wearing 12 characters), A2 (academy copy without its Hive flag), B (Fire Code's document carries the leak; on a fresh device, and the migration on a device that has it: repaired once, the earned kept, left alone after, no-sync repaired at launch), C (the first class switch, really switched), D (sign-up for both: the starter comes across), E (the real Sign in screen, Fire Code alone), F (the academy afterwards: its own kept characters kept, Fire Code's nothing in it). Asserts shape: nobody wears a character the class has not earned, nothing unlocked that its own challenge or rank has not earned (read with the kept list emptied), Customize tiles, no queued unlock or Home card, the academy's saved copy byte for byte. Fails on 844c314 (clown, astronaut and, where the academy copy lacks its Hive flag or Fire Code's document carries it, hive; 22 of 44 checks fail there, 44 of 44 pass after). The other gates were run too: check-sync, check-b383-ifcsync, check-b384-lbclasses, check-unlocks, check-b384-hivekept, check-b384-hivechallenge, check-b384-fcchars2 pass; check-b383-classes (5), check-b384-r9-chars (H) and check-b384-classes-open (7b, 9-12, 14) fail identically on 844c314 (sandbox-related, not this change); check-sync 4c is a known race (fails ~1 in 3 on 844c314 alone).
 - Under load a page sometimes crashes (TargetClosedError / "Page crashed"): the gate re-runs the walk from a fresh context.
 
+### 384 r17 - the chat dock is a point, not a screen (384.7)
+Madison: the soft title at the top of every screen and of the test is "still there ... a massive problem". After 384.4 took the backdrop blur off the chat, back and Pause buttons, the one remaining thing spanning the top edge on every screen is the chat dock: `.chatdock` was a FULL-SCREEN fixed layer (inset:0, pointer-events:none) whose children (chat button, panel, confirm) are each fixed themselves. A fixed layer across the whole top edge is what iOS 26 reads as a bar and softens the content behind it. It is now 0 x 0 at the corner (still the stacking context, z 300) and `.chatdock-confirm` (the only child that relied on its size) is `position:fixed; inset:0`. check-b384-chatback / navchat / friends / vrpause pass.
+
+### Build 384 (round 18), second commit - the tab bar's lag and the swipe in a Safari tab (NOT on main)
+
+Madison: "The bottom tab is a little laggy", "The bottom tab STILL lags when swiping", then "The bottom tab is nearly perfect, could be a
+slight smoother. THE SWIPING AND SLIDING FUNCTION IS TERRIBLE". All of it in a Safari tab (the installed app's slide he called "100x
+better" in 383). What differs in a tab is the toolbar, so that is where this looked:
+- A SCREEN THAT FITS SCROLLED. html{min-height:100lvh} (line ~977) is Safari's viewport with the toolbar MINIMISED, taller than the
+  one the page has at rest (~47pt at 383's measurement), so Welcome, Home and the boards were that much scrollable (his Welcome frames
+  show the scroll indicator on a screen with nothing to scroll). Any touch that drifted vertically - a slide, a swipe - scrolled the
+  document, Safari shrank its toolbar, the layout viewport changed height under the fixed tab bar. Now html.is-browser{min-height:100dvh}
+  on touch devices: the root's box is the page's own viewport (the paper layer still reaches the bottom; the layers sized in lvh are
+  no-repeat on the canvas beyond it). Chromium's lvh equals its dvh, so the gate models Safari's by substituting calc(100dvh + 47px)
+  for 100lvh in the served page: Welcome and Home document 844px in a 797px viewport on the old build, 797 now (and the same on a 16, an SE).
+- EVERY RESIZE LISTENER RAN ON EVERY FRAME OF A TOOLBAR'S MOVE. Thirty-odd window "resize" listeners (the tab bar's onBarResize = centreProfileTab +
+  slideBubbleToActiveTab, which measures then writes; the splash's place(), still running for a splash long gone; syncChatDock;
+  syncTestPin; alignNavChat; syncBottomInsetClass; syncFieldFloor; backToTopRoom's 40 measures...). Wrapped with a listener timer
+  (init script) on Home at 4x CPU, a viewport growing then shrinking 47px in 94 frames: the resize listeners alone cost ~2.6s of script
+  (onBarResize 1416ms = 15ms a frame, place 468, syncChatDock 233, syncTestPin 126, alignNavChat 95...). A new script right after the
+  status-bar one (touch devices only) governs window "resize" listeners: (1) one that has answered a size is not called again for it,
+  (2) a HEIGHT-ONLY change of up to 140px (a toolbar; never a keyboard or a rotation) is answered at most once every 120ms and the last
+  one at the size the viewport ended on, (3) a width change, a bigger one, or an untrusted (made-up) event is answered at once, as
+  before. After, the same burst: the wrapper's own cost 335ms and getBoundingClientRect reads in the burst Home 692 -> ~350, Profile 2546 ->
+  ~1400 (the rest are the visual viewport's and the page's own listeners, not governed). The tab bar itself sits by CSS
+  (--tabs-bottom) and was never the thing moving.
+- NOT CHANGED: the bar's drag (touch-action:none already), the slide's code (383/384's lens, FLIP and holds - their gates pass), the
+  visual viewport's listeners. What the swipe feels like on his phone cannot be read in Chromium; if it is still bad after this, a
+  bug report's tab timings (class26e.tabperf) and `edges` are what to read.
+- GATE tools/check-b384-safaribottom.py: noscroll (Welcome, Home, three iPhones, lvh modelled 47px taller) and govern (the governor's
+  script run on its own in a mobile page: 40 one-pixel resizes in ~660ms answered 5 times, ends at the final size, a width change, a
+  keyboard-sized change and an untrusted event answered at once, the same size not twice) and bar (the tab bar keeps its distance
+  from the viewport's bottom when the toolbar collapses). All fail on af5725d.
+
+## 384 r9 - Settings at Delta's size ON THE GLASS (the owner's phone runs Safari's page zoom at ~85%)
+
+Madison, our Settings and Delta's side by side (same phone, 1186-wide screenshots): "Why are our icons and sections not the same size, ours are much smaller and it looks bad."
+READ OFF THE PIXELS: ours drew a 23.4pt tile, 43.5pt rows and ~13pt words; Delta draws 27.2pt / 51pt / 15.5pt. Our CSS (28px tiles, 51px rows, 15.5px words) IS Delta's size in points - but his phone lays the page out 518 CSS px wide on a 440pt screen (the 85% page zoom already recorded at build 199/218/230), so every CSS px lands 0.85pt. The card in his screenshot is 17pt in and 405pt wide, i.e. 20px / 484px at 518 - the proof. The two earlier "match Delta" passes (384 r3 to 60/32/18, then 384 final back to 51/28/15.5 off "Delta = ours x .85") were each reading a zoomed page against an unzoomed native app, and went one way then the other. LESSON: any pixel measure off one of his screenshots must be divided by --zc (innerWidth/screen.width, set by syncFieldFloor) before it is compared to CSS.
+FIX: no size changed. Under `html.page-zoomed` (set only when --zc > 1.02; a phone at 100% is untouched) the cards, headings, footnotes and confirm lines of Settings and the pages it opens take `zoom:var(--zc,1)`: they lay out as the 440pt screen they are drawn on and land at full size on the glass - tiles 28pt, rows 51pt, words 15.5pt, switches, hairlines and chevrons scale as one. Settings' section headings are 15px (was .875rem = 14px; Delta's names read ~15pt semibold).
+Simulated: 518x1126 viewport with `screen` 440x956 -> tile 28.0pt, pitch 51.0pt, card inset 17.0pt (his: 17), word line 18.7pt, heading 17.8pt; every Sound / Study row the same height on the glass as at 100%.
+Gate: `tools/check-b384-settingszoom.py` (FAILS `--against` 383-384.7 before this: tile 23.8, pitch 43.3). `check-b384-settings.py` (100%) still passes.
+NOT DONE, reported: Profile / Stats / Customize and other screens' rows also draw 0.85x on his phone by the same cause; only Settings was asked about. The blurred top-of-screen title in his Settings screenshot (build 384.4) is still unexplained - it is sharp in every Chromium render, including at 518px.
+
+## 384 r10 - the page-zoom treatment on the rest of the app, and the blurred title (build 384.8)
+
+Madison: "I want the same treatment, if you fixed settings fix the rest." The same `zoom:var(--zc)` under `html.page-zoomed` now covers the content blocks of Profile's and Stats' tabs, the Leaderboard (blurb, tools, rows), Customize (intro, list), Friends (sections), the Calendar (class head, glance, month, cards) and the Rank ladder / badge case tabs. Not the headings, the top segmented controls, the back buttons or anything fixed. At his zoom each block is within 3% of its height at 100% on the glass (`check-b384-settingszoom.py` section 6; fails on 384.7 for all eight). The column is 6pt wider on the glass than at 100% (the page's 20px side padding is 17pt there) - that is why only heights are compared.
+THE BLURRED TITLE: still unexplained by anything Chromium can show (the title, #count, is a plain static element with no filter, mask, will-change or translate; nothing overlaps it). His latest Settings screenshot is on 384.4; the chat dock's full-screen fixed layer (the one thing still spanning the top edge) came out in 384.7. If the title is still soft on 384.7 or later, the next steps are in the display test panel (Settings > Advanced > Troubleshooting), not more guessing.
 ## Build 384 r21: the class switch is one smooth motion (Madison: "There's a bad transition when switching between classes.")
 
 He did not say what was bad, so it was measured: the real switch driven (class button, its list, the class) with a CDP screencast for what a person sees and an rAF log kept across the reload for what the page was doing (tools/b384_switchfx_lib.py; tools/record-b384-switch.py lays any switch out as a frame-by-frame contact sheet, `--device phone|se|laptop --cpu 4 --reduce --against OLD`). A switch is still a reload into the other class's stores (nothing about STORE_KEY, class26e.activeclass or the stores changed); what changed is everything a person sees between the tap and the settled Home.
