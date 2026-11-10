@@ -493,8 +493,9 @@ SCREENS = [
     {"name": "badge case", "js": "showRanksScreen('badges');"},
     {"name": "friends", "js": "showFriends();"},
     # the Leaderboard, each board
-    {"name": "leaderboard", "js": "showRankings();", "ready": "document.querySelector('#stage .screen-rankings, .screen-rankings')", "cls": "academy"},
-    {"name": "leaderboard/board 2", "js": "showRankings(); setTimeout(()=>{ const t=[...document.querySelectorAll('#stage [role=tab], #stage .lb-boardtab, #stage .navsegment button')]; t[1] && t[1].click(); }, 700);", "wait": 2000, "cls": "academy"},
+    # (385) Fire Code has a Leaderboard too, with two boards (here without a cloud: the pill switcher, search and Find me are what is measured)
+    {"name": "leaderboard", "js": "showRankings();", "ready": "document.querySelector('#stage .screen-rankings, .screen-rankings')"},
+    {"name": "leaderboard/board 2", "js": "showRankings(); setTimeout(()=>{ const t=[...document.querySelectorAll('#stage [role=tab], #stage .lb-boardtab, #stage .navsegment button')]; t[1] && t[1].click(); }, 700);", "wait": 2000},
     {"name": "leaderboard/board 3", "js": "showRankings(); setTimeout(()=>{ const t=[...document.querySelectorAll('#stage [role=tab], #stage .lb-boardtab, #stage .navsegment button')]; t[2] && t[2].click(); }, 700);", "wait": 2000, "cls": "academy"},
     {"name": "leaderboard/this week", "js": "showRankings('week');", "wait": 1800, "cls": "academy"},
     {"name": "calendar", "js": "showCalendarTab();"},

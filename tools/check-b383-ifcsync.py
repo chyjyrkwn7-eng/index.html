@@ -30,7 +30,8 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else ("  -> " + str(info)[:300]), flush=True)
 OWNER = "xph5b57jbp5a"; CODE = "TEST-3830"
 # (384) the academy account's friends documents, which Fire Code now writes as the academy would: presence, mailboxes, friend chats
-FRIENDS_DOCS = ("vrooms/presence-v1", "vrooms/inbox-", "vrooms/DM-")
+# (385: and Fire Code's own leaderboard, one document of `vrooms` - check-b384-fcboard)
+FRIENDS_DOCS = ("vrooms/presence-v1", "vrooms/inbox-", "vrooms/DM-", "vrooms/lb-ifc-v1")
 # an in-memory Firestore: docs, get, set, update, delete, live listeners; every write logged as collection/id
 FAKE = r"""(()=>{
   const seed = window.__cloudSeed || {};

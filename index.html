@@ -56526,7 +56526,14 @@ function buildLeaderboardClassList(){
   card.className = "settings-card settings-list settings-lb-classes";
   let acad = null;
   try{ acad = (window.NOVA_CLASS === "ifc") ? academyCopyNow() : store; }catch(e){ acad = store; }
-  const status = k => k === "academy" ? ((acad && acad.leaderboardOptIn) ? "Shown" : "Hidden") : "No leaderboard";
+  /* (385) Fire Code has a leaderboard of its own: its switch is on its own store (read from the academy's page off the class's
+     saved copy) */
+  const ifcOn = () => {
+    if(window.NOVA_CLASS === "ifc") return store.leaderboardOptIn !== false;
+    try{ const c = JSON.parse(localStorage.getItem("class26e.ifc.drill.v1") || "null"); return !(c && c.leaderboardOptIn === false); }catch(e){ return true; }
+  };
+  const status = k => k === "academy" ? ((acad && acad.leaderboardOptIn) ? "Shown" : "Hidden")
+    : k === "ifc" ? (ifcOn() ? "Shown" : "Hidden") : "No leaderboard";
   mine.forEach(k => {
     const info = NOVA_CLASS_INFO[k] || {};
     const row = document.createElement("div");
@@ -56592,6 +56599,9 @@ function leaveClass(k){
 function finishLeaveClass(k){
   if(!setEnrolled(k, false)) return;
   const name = classTitle(k);
+  /* (385) leaving Fire Code takes the account's row off Fire Code's board (the class's own copy never runs again until it is
+     joined again; that visit publishes the row back) */
+  if(k === "ifc"){ try{ retireOtherClassBoardRow("ifc", publicIdOf()); }catch(e){} }
   if(k === "academy"){
     try{ retireLeaderboardEntry(publicIdOf()); }catch(e){}
     try{ pushToCloud(true); }catch(e){}
@@ -66570,6 +66580,14 @@ ROW_LAZY_FIELDS.push("wk", "pwk");
    the end of a run and go at once (flushLeaderboardRow) - and every write
    is read again by each open board. */
 const ROW_SCORE_PUSH_MS = 5 * 60 * 1000;
+/* EACH CLASS HAS ITS OWN LEADERBOARD (build 385): the academy's is the `leaderboard` collection, one document a person, exactly as
+   it has always been. Every other class keeps its board in ONE document of `vrooms` - `lb-<class>-v1`, { kind, cls, rows: { <public
+   id>: row } } - the collection Fire Code already writes (the presence beat lives there the same way). It is read by that class
+   alone, so the academy's board never lists these people and no build that already runs can: no build reads this document. */
+const CLASS_BOARD_DOC = { ifc: "lb-ifc-v1" };
+/* Fire Code's board as the Leaderboard screen last read it (the academy's is leaderboardRows, which Fire Code's friends read
+   from and its board never touches) */
+let classBoardRows = [];
 __bm("L53559");
 let lastRowSig = null, lastRowUrgentSig = null, lastRowPushAt = 0, rowPushTimer = null;
 /* WHICH DOCUMENT THE CACHED SIGNATURE DESCRIBES. Without this, "the row
@@ -68974,7 +68992,12 @@ function setSyncCode(code){
      and the id it was using is left with nobody holding it. The sync
      code is no longer a document id anywhere, so retiring by it would
      delete nothing. */
-  if(previous && previous !== code) retireLeaderboardEntry(previousPublic);
+  if(previous && previous !== code){
+    retireLeaderboardEntry(previousPublic);
+    /* (385) and Fire Code's board has a row under the same id: it goes with the academy's (the next push of whoever owns the
+       id puts it back) */
+    try{ retireOtherClassBoardRow("ifc", previousPublic); }catch(e){}
+  }
   try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
   try { window.localStorage.removeItem(SYNC_OFF_KEY); } catch(e){}
   /* an account on this device again: no longer signed out (383 audit, signedOutHere) */
@@ -69302,6 +69325,8 @@ function resetEverything(){
        awaited, so a slow connection cannot block the local reset. */
     try { if(store.publicId && fbDb) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
     forgetLeaderboardRowCache();
+    /* (385) and Fire Code's own board has its row too */
+    try{ if(window.NOVA_CLASS === "ifc") retireClassBoardRow(); }catch(e){}
   }
   detachLiveListener();
   clearSyncCode();
@@ -69358,6 +69383,8 @@ function applyRemoteReset(){
     deleteAccountFloor(syncCode);   /* build 298 */
     forgetLeaderboardRowCache();
   }
+  /* (385) Fire Code's board row, with the reset */
+  try{ if(window.NOVA_CLASS === "ifc" && syncCode) retireClassBoardRow(); }catch(e){}
   detachLiveListener();
   clearSyncCode();
   wipeLocalProgressAndSettings();
@@ -69682,6 +69709,8 @@ function rowBehind(cur, row){
    day. Now: whatever is queued goes the moment the page is hidden, and
    the end of every kind of run publishes rather than queues. */
 function publishNow(){
+  /* (385) Fire Code's board row goes the same moment (the account's own flush here has never been Fire Code's: fbDb is null there) */
+  if(window.NOVA_CLASS === "ifc"){ try{ if(store.leaderboardOptIn) flushClassBoardRow(); }catch(e){} return; }
   if(!fbDb || !syncCode) return;
   let rowFollows = false;
   try{
@@ -69705,6 +69734,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 function pushLeaderboardRow(){
+  if(window.NOVA_CLASS === "ifc") return pushClassBoardRow();   /* (385) Fire Code's own board: its own document */
   if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
   /* (384) an account in Fire Code alone has no row on the academy's board - until it joins the academy (academyMember) */
   if(!academyMember()) return;
@@ -69737,10 +69767,192 @@ function pushLeaderboardRow(){
 /* For the moments where waiting would be noticed: the end of a run, and
    the app going away with a write still pending. */
 function flushLeaderboardRow(){
+  if(window.NOVA_CLASS === "ifc") return flushClassBoardRow();   /* (385) see pushLeaderboardRow */
   if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
   if(!academyMember()) return;   /* (384) see pushLeaderboardRow */
   clearTimeout(rowPushTimer); rowPushTimer = null;
   try{ writeLeaderboardRow(buildLeaderboardRow()); }catch(e){}
+}
+
+/* ================= FIRE CODE'S OWN LEADERBOARD (build 385) =================
+   Madison: "fire code is gonna get the leaderboard ... It will be an entirely different leaderboard than the academy one. They
+   will look the same but ifc one will only be for the people in the class. In other words, every class will have their own
+   leaderboard. Different about the fire code one, there won't be a weekly one or whatever. Just hundos and overall."
+
+   WHERE THE ROWS LIVE: one document, `vrooms/lb-ifc-v1` - { kind: "board", cls: "ifc", rows: { <public id>: row } } - and not in
+   `leaderboard`. Three reasons, in the order they matter:
+   1. NO BUILD THAT IS ALREADY OUT CAN SEE IT. Every phone still on 383 or 384.x lists the whole `leaderboard` collection and
+      draws every document in it as an academy classmate; a Fire Code row there would be a stranger in the academy's ranking on
+      every one of them, for days, with nothing to be done about it. Nothing before this build reads this document (they read
+      presence-v1, inbox-<id>, chat and room documents by their own ids; the two that list `vrooms` - the once-per-account
+      history seeds and the open-rooms search - look only for `participants` and `open`, which it has not).
+   2. FIRE CODE CAN WRITE IT, AND CANNOT WRITE THE ACADEMY'S BOARD. Its scoped handle (ifcSocialMay) reads `leaderboard` and
+      writes `vrooms` alone - exactly as before; no rule changes, and the invariant that Fire Code never writes the `leaderboard`
+      collection stays true.
+   3. IT IS CHEAPER. The class reads one document, not one a person: opening the board is one read, and a row somebody writes
+      is one read on each phone that has the board open - what a row in `leaderboard` costs too, without the other class's
+      rows arriving as well.
+   A person's field is their PUBLIC ID (the academy account's, which is Fire Code's on the friends side - publicIdOf) and holds
+   a row of the same shape as the academy's, less everything weekly (week, weekPoints, prevWeek*, wk, pwk) and everything
+   friends (fcode, freq, facc, inv, cinv, seenAt): a tap on a row opens the same person card, which asks the friends block
+   for the rest. NOTHING HERE IS THE SYNC CODE (syncCode is "<code>__ifc" in Fire Code and is never in a row, a field name or a
+   document id). Written only for a person who is in the rankings (leaderboardOptIn, on Fire Code's own store) and takes it
+   off the board when they go out of it, leave the class or reset it. */
+function classBoardCls(){ return window.NOVA_CLASS === "ifc" ? "ifc" : null; }
+/* the handle this class's board is read through: the academy's own, or Fire Code's scoped one (which may read `vrooms`) */
+function boardDbNow(){ return window.NOVA_CLASS === "ifc" ? ifcSocialDb : fbDb; }
+/* What Fire Code's board says when it cannot be reached: it rides the academy account's sync, as the chat does */
+function classBoardUnreachable(){
+  if(!syncCode) return "The leaderboard needs sync. Turn it on in the Police Academy class.";
+  return "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.";
+}
+const CLASS_BOARD_PUB_RE = /^[A-Za-z0-9]{6,40}$/;
+function classBoardPubOK(pub){ return typeof pub === "string" && CLASS_BOARD_PUB_RE.test(pub); }
+function classBoardRef(db, cls){ return db.collection("vrooms").doc(CLASS_BOARD_DOC[cls]); }
+/* the class's board, drawn as the academy's rows are: an entry per person, `pub` their public id */
+function classBoardEntriesFrom(snap){
+  const out = [];
+  if(!snap || !snap.exists) return out;
+  let d = null; try{ d = snap.data(); }catch(e){ d = null; }
+  const rows = d && d.rows && typeof d.rows === "object" ? d.rows : {};
+  Object.keys(rows).forEach(pub => {
+    const r = rows[pub];
+    if(!classBoardPubOK(pub) || !r || typeof r !== "object" || String(r.firstName || "").trim() === "") return;
+    const e = Object.assign({ pub: pub }, r);
+    fixBoardLevel(e);
+    out.push(e);
+  });
+  return out;
+}
+/* The row this class publishes: the numbers its two boards rank on (level with badges and the rank floor for Overall, hundos)
+   and what a row and its card show - name, character, colour, banner, XP, tests, correct answers. */
+function buildClassBoardRow(){
+  const n = boardNumbersOf(store);
+  return {
+    firstName: store.firstName || "Anonymous",
+    avatarChar: store.avatarChar || "ghost",
+    accent: theme.accent || "ink",
+    correct: n.correct,
+    level: n.level,
+    badges: n.badges,
+    hundos: n.hundos,
+    rankFloor: n.rankFloor,
+    xp: n.xp,
+    tests: n.tests,
+    banner: wornBanner() || "",
+    lastModified: Date.now()
+  };
+}
+/* The same cadence as the academy's row, on the same machinery: pushed after each account write (afterAccountWrite), the score
+   fields waiting ROW_SCORE_PUSH_MS between writes, the end of a run and putting the app away going at once, and a row that
+   says what the last one did is not written again. No timer of its own and nothing periodic. */
+function pushClassBoardRow(){
+  if(!ifcSocialDb || !syncCode || !store.leaderboardOptIn) return;
+  const key = publicIdOf();
+  if(!classBoardPubOK(key)) return;
+  let row;
+  try{ row = buildClassBoardRow(); }catch(e){ return; }
+  const sig = rowSignature(row, false);
+  if(sig === lastRowSig && lastRowKey === key) return;
+  const urgent = rowSignature(row, true);
+  const waited = Date.now() - lastRowPushAt;
+  if(urgent === lastRowUrgentSig && lastRowSig !== null && waited < ROW_SCORE_PUSH_MS && lastRowKey === key){
+    if(!rowPushTimer){
+      rowPushTimer = setTimeout(() => { rowPushTimer = null; pushClassBoardRow(); }, ROW_SCORE_PUSH_MS - waited + 50);
+    }
+    return;
+  }
+  writeClassBoardRow(row);
+}
+function flushClassBoardRow(){
+  if(!ifcSocialDb || !syncCode || !store.leaderboardOptIn) return;
+  clearTimeout(rowPushTimer); rowPushTimer = null;
+  const key = publicIdOf();
+  if(!classBoardPubOK(key)) return;
+  let row;
+  try{ row = buildClassBoardRow(); }catch(e){ return; }
+  /* the academy's flush writes every time; this one has nothing to say when the board already has it (a launch, a hide, the
+     end of a run that changed nothing the row carries) */
+  if(rowSignature(row, false) === lastRowSig && lastRowKey === key) return;
+  writeClassBoardRow(row);
+}
+/* A row is a transaction, as the academy's is (build 322): it reads what is there, and if that holds play this copy lacks
+   (more XP, right answers or hundos) nothing is written and the account is read again - a phone that has been put away never
+   publishes older numbers over the row the other one just wrote. */
+function writeClassBoardRow(row){
+  if(cloudConfirmedFor !== syncCode){
+    rowAwaitingConfirm = true;
+    clearTimeout(rowPushTimer); rowPushTimer = null;
+    ensureCloudConfirmed();
+    return;
+  }
+  clearTimeout(rowPushTimer); rowPushTimer = null;
+  const code = syncCode, pub = publicIdOf(), db = ifcSocialDb;
+  if(!db || !classBoardPubOK(pub)) return;
+  let ref = null;
+  try{ ref = classBoardRef(db, "ifc"); }catch(e){ return; }
+  /* a public id that changed since the last row (a reset, a different account): the old one comes off in the same write */
+  const gone = (lastRowKey && lastRowKey !== pub && classBoardPubOK(lastRowKey)) ? lastRowKey : null;
+  lastRowSig = rowSignature(row, false);
+  lastRowUrgentSig = rowSignature(row, true);
+  lastRowKey = pub;
+  lastRowPushAt = Date.now();
+  const reread = rowRecheckFor === code;
+  const ok = cur => reread || !rowBehind(cur, row);
+  const first = { kind: "board", cls: "ifc", rows: { [pub]: row } };
+  let run;
+  try{
+    if(typeof db.runTransaction === "function" && typeof ref.get === "function"){
+      run = db.runTransaction(tx => tx.get(ref).then(snap => {
+        const there = !!(snap && snap.exists);
+        const data = there ? snap.data() : null;
+        if(!ok(data && data.rows ? data.rows[pub] : null)) return false;
+        if(!there) tx.set(ref, first);
+        else {
+          const patch = { ["rows." + pub]: row };
+          if(gone) patch["rows." + gone] = firebase.firestore.FieldValue.delete();
+          tx.update(ref, patch);
+        }
+        return true;
+      }));
+    } else {
+      run = Promise.resolve(ref.set(first, { merge: true })).then(() => true);
+    }
+  }catch(e){ run = Promise.reject(e); }
+  Promise.resolve(run).then(wrote => {
+    if(code !== syncCode) return;
+    if(wrote){ if(rowRecheckFor === code) rowRecheckFor = ""; return; }
+    lastRowSig = null; lastRowUrgentSig = null;
+    rowRecheckFor = code;
+    if(cloudConfirmedFor === code) cloudConfirmedFor = "";
+    rowAwaitingConfirm = true;
+    ensureCloudConfirmed();
+  }, () => {
+    if(code === syncCode){ lastRowSig = null; lastRowUrgentSig = null; }
+  });
+}
+/* Takes one person off a class's board. Only their field: the document, and everybody else's row in it, is never touched.
+   Safe to fire speculatively - with no document or no such field there is nothing to remove. The academy calls it too (leaving
+   Fire Code, abandoning a code), through its own full handle. */
+function deleteClassBoardRow(cls, pub, db){
+  if(!db || !CLASS_BOARD_DOC[cls] || !classBoardPubOK(pub)) return;
+  try{
+    classBoardRef(db, cls).update({ ["rows." + pub]: firebase.firestore.FieldValue.delete() }).catch(() => {});
+  }catch(e){}
+}
+/* this class's own row, off its board (an opt-out, a reset) */
+function retireClassBoardRow(){
+  forgetLeaderboardRowCache();
+  const cls = classBoardCls();
+  if(!cls || !ifcSocialDb) return;
+  let pub = null;
+  try{ pub = publicIdOf(); }catch(e){ pub = store.publicId; }
+  deleteClassBoardRow(cls, pub, ifcSocialDb);
+}
+/* the other class's row, from the academy: the full handle writes where Fire Code's scoped one writes */
+function retireOtherClassBoardRow(cls, pub){
+  if(window.NOVA_CLASS === cls || !fbDb) return;
+  deleteClassBoardRow(cls, pub, fbDb);
 }
 
 /* ---- THE ACCOUNT'S HIGH-WATER MARK (build 298) ----
@@ -70053,6 +70265,17 @@ function writeAccount(code, withMain, withFloor, leaving){
    way out of the app the row goes at once rather than waiting out its
    usual deferral. */
 function afterAccountWrite(leaving){
+  /* (385) Fire Code's board is its own document (see pushClassBoardRow): its row follows the account here as the academy's does,
+     and an opt-out that was made takes it off */
+  if(window.NOVA_CLASS === "ifc"){
+    if(ifcSocialDb && syncCode && store.leaderboardOptIn){
+      if(leaving === true) flushClassBoardRow(); else pushClassBoardRow();
+    } else if(ifcSocialDb && syncCode && store.leaderboardOptIn === false && store.leaderboardOptInChanged){
+      retireClassBoardRow();
+      store.leaderboardOptInChanged = false;
+    }
+    return;
+  }
   /* A separate, deliberately minimal collection \u2014 only what's needed
      to render a leaderboard entry (name, avatar, points, stars), never
      the full progress document, and only written at all when the
@@ -81901,6 +82124,12 @@ const RANKING_BOARDS = [
        counted per unit, not per test; this says that in two lines. */
     blurb: "A hundo is 100% on a whole unit, in any mode. A test of three units can earn three." }
 ];
+/* (385) THE BOARDS A CLASS HAS. The academy's three; Fire Code's own leaderboard has two - Overall and Hundos, nothing weekly
+   (Madison: "there won't be a weekly one or whatever. Just hundos and overall") - so its tabs, its swipe, its Settings hint and
+   its links are all drawn from this and not from RANKING_BOARDS. */
+function rankingBoardsFor(){
+  return window.NOVA_CLASS === "ifc" ? RANKING_BOARDS.filter(b => b.key !== "week") : RANKING_BOARDS;
+}
 
 
 /* Where you stand against a tier, in the two numbers the ladder now
@@ -101350,14 +101579,11 @@ function mainMenuTourSteps(returning){
   return [
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home brings you back here from anywhere." },
-    /* in the bar's own order: Home, Profile, Leaderboard (Fire Code: Stats), Calendar (Fire Code: Settings) */
+    /* in the bar's own order: Home, Profile, Leaderboard, Calendar (Fire Code: Settings) */
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: ifc ? "Profile: your rank, level and badges." : "Profile: your rank, level and badges. Stats and Settings are here too." },
-    ifc
-      ? { target: "#bottomtab-stats", align: "left", vplacement: "above",
-          text: "Stats: your study time, scores and test history." }
-      : { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-          text: "The Leaderboard: the whole class, live. Tap Find me to see where you stand." },
+      text: ifc ? "Profile: your rank, level and badges. Stats is here too." : "Profile: your rank, level and badges. Stats and Settings are here too." },
+    { target: "#bottomtab-rewards", align: "left", vplacement: "above",
+      text: "The Leaderboard: the whole class, live. Tap Find me to see where you stand." },
     ifc
       ? { target: "#bottomtab-settings", align: "right", vplacement: "above",
           text: "Settings: your name, character, look and sound." }
@@ -105906,7 +106132,7 @@ function novaReplyFor(raw){
   /* (384) Fire Code has no class calendar (its bar is Home, Profile, Stats, Settings), and its Sheriff is the Chief */
   if(has(/ (next test|the test|test (on|is|day|date|topics?)|what's on|whats on|on the test|calendar|sunday|topics?|quiz|mock) /))
     return window.NOVA_CLASS === "ifc"
-      ? "This class has no calendar or test dates. Study the chapters at your own pace, and the Stats tab keeps your numbers."
+      ? "This class has no calendar or test dates. Study the chapters at your own pace, and Profile's Stats tab keeps your numbers."
       : "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
   if(has(/ (virtual room|vr|race|challenge|sheriff|chief|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
@@ -105939,7 +106165,7 @@ function novaReplyFor(raw){
   if(has(/ (friends?|friend code|add) /))
     return "Add friends from the chat › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
-    return window.NOVA_CLASS === "ifc" ? "This class has no leaderboard. Your own numbers are on the Stats tab."
+    return window.NOVA_CLASS === "ifc" ? "The Leaderboard tab ranks the Fire Code class, by rank and by hundos. Your own numbers are on Profile's Stats tab."
       : "The Leaderboard tab ranks the class. Tap anyone on it to see their card.";
   if(has(/ (who are you|your name|about you|are you real|ai|bot|robot|human|chatgpt) /))
     return "I’m Nova, a space explorer and your instructor here. I’m no robot, but I can’t really chat either: I answer what I can about the app and pass on news.";
@@ -132477,7 +132703,9 @@ function showSettingsText(kind){
     block("Your progress", ["Turns on automatically so your progress saves to the cloud as you go. To add a second device, enter this device's code there once — from then on both devices share the same progress automatically, updating live, no need to enter it again."]);
     block("Your sync code", ["Your sync code is your account. Use it to add a second device, and keep it somewhere safe — it is the only way back in.",
       "Keep this somewhere off this phone. If this device ever loses its data, the code is what puts you back on your account."]);
-    if(window.NOVA_CLASS !== "ifc") block("Leaderboard", ["Show me in the rankings shares only your username, avatar and your ranking numbers. With it off, you can't see the rankings either."]);
+    block("Leaderboard", [window.NOVA_CLASS === "ifc"
+      ? "Show me in the rankings shares only your username, avatar and your ranking numbers with the people in Fire Code. With it off, you can't see the rankings either."
+      : "Show me in the rankings shares only your username, avatar and your ranking numbers. With it off, you can't see the rankings either."]);
     block("Bug reports", ["Your report goes to the Nova admin, with your first name, app version and device attached so the problem can be tracked down and fixed."]);
   } else {
     block("Notices", lines);
@@ -132827,6 +133055,9 @@ function showAppearance(opts){
     store.leaderboardOptIn = lbCb.checked;
     store.leaderboardOptInChanged = true;
     saveStore();
+    /* (385) Fire Code's board follows the switch at once - one write for a tap, where the academy's row waits for the account's
+       next write (a minute at most) */
+    if(window.NOVA_CLASS === "ifc"){ try{ if(store.leaderboardOptIn) flushClassBoardRow(); else retireClassBoardRow(); }catch(e){} }
     showToast(store.leaderboardOptIn ? "You're on the leaderboard." : "Removed from the leaderboard.");
   });
   const lbBox = document.createElement("span");
@@ -132858,14 +133089,14 @@ function showAppearance(opts){
      has to be built from the boards, or it goes stale the next time one
      changes - which is the same lesson as a gate that hardcodes a
      label. */
-  const boardNames = RANKING_BOARDS.map(b => b.tab);
+  const boardNames = rankingBoardsFor().map(b => b.tab);
   const howMany = ["", "one way", "two ways", "three ways", "four ways", "five ways"][boardNames.length]
     || (boardNames.length + " ways");
-  lbHint.textContent = "Ranks the class " + howMany + " \u2014 "
+  lbHint.textContent = "Ranks the " + (window.NOVA_CLASS === "ifc" ? "Fire Code " : "") + "class " + howMany + " \u2014 "
     + boardNames.slice(0, -1).join(", ") + " and " + boardNames[boardNames.length - 1]
     /* Tidied in build 324, same meaning: what is shared, and that
        switching off hides the boards from you as well. */
-    + ". Shares only your username, avatar and those numbers. "
+    + ". Shares only your username, avatar and those numbers" + (window.NOVA_CLASS === "ifc" ? ", with the people in Fire Code" : "") + ". "
     + "With this off, you can't see the rankings either.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
@@ -132883,8 +133114,7 @@ function showAppearance(opts){
       lbSect.appendChild(cl); lbSect.appendChild(buildLeaderboardClassList());
     }
   }catch(e){}
-  /* no leaderboard in Fire Code (build 382), so no switch for one */
-  if(window.NOVA_CLASS !== "ifc") panel.appendChild(lbSect);
+  panel.appendChild(lbSect);
 
   const syncSect = document.createElement("div");
   syncSect.className = "sect";
@@ -133300,7 +133530,6 @@ function showAppearance(opts){
      Settings opens, and a page's rows carry no tile ("when you click a section and open it, there are icons within them? But there
      shouldn't be.."). The words start at the card's padding; the hairline runs under them (the 384 Settings block). */
 
-  const noBoard = window.NOVA_CLASS === "ifc";   /* no leaderboard in Fire Code */
   let host = into;
   if(page){
     /* ---- ONE CATEGORY, ITS OWN PAGE ---- */
@@ -133311,12 +133540,7 @@ function showAppearance(opts){
       sync:   ["Sync", [syncSect]],
       share:  ["Share & Install", [settingsHeader("This app"), shareCard]]
     };
-    if(!noBoard) PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];
-    else if(academyMember()){
-      const note = document.createElement("p"); note.className = "settings-classes-note";
-      note.textContent = "Fire Code has no leaderboard. The Police Academy class does: whether you show on it is set in the Police Academy's Settings.";
-      PAGES.rankings = ["Leaderboard & Privacy", [settingsHeader("Your classes"), buildLeaderboardClassList(), note]];
-    }
+    PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];   /* (385) every class has a leaderboard and a switch for it */
     /* YOUR NAME (build 383): Madison, "The change your name option in customize, that needs to be in settings somewhere".
        Customize's own editor (the one-name-per-person rule and all), built only when this page is opened. */
     /* (383) the Account page: the name, and signing out - "name" (its first home, earlier in 383) opens it too */
@@ -133368,8 +133592,7 @@ function showAppearance(opts){
       /* (384 r4) "We need a function where you can unenroll from a class" - the classes you are in, and leaving one */
       cat("classes", "classes", "Classes", (() => { const n = enrolledClasses().length; return n === 1 ? ((NOVA_CLASS_INFO[enrolledClasses()[0]] || {}).title || "1 class") : n + " classes"; })()),
       cat("sync", "sync", "Sync", !acctDb() ? "Unreachable" : (syncCode ? "On" : "Off")),
-      noBoard ? (academyMember() ? cat("rankings", "trophy", "Leaderboard & Privacy", "Police Academy only") : null)
-              : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
+      cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
     ]));
     dataSect.classList.add("settings-menu-card");
     dataSect.replaceChildren(cat("share", "share", "Share & Install"), updBtn, ...dataSect.children);
@@ -134085,7 +134308,7 @@ function showTestReviewList(){
   const panel = document.createElement("section");
   panel.className = "panel screen-testreview screen-testhistory";
 
-  const back = buildBackLink(window.NOVA_CLASS === "ifc" ? "Back to Stats" : "Back to Profile", () => showProfile("stats"));
+  const back = buildBackLink("Back to Profile", () => showProfile("stats"));
   /* (383: "the app needs a cohesive look across" - the round back button and the centred title every pushed screen has) */
   panel.appendChild(iosNavBar("Test history", back));
 
@@ -144426,7 +144649,8 @@ function renderRankingRows(rows, entries, board, opts){
   if(ranked.length === 0){
     const empty = document.createElement("p");
     empty.className = "lb-board-empty";
-    empty.textContent = "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
+    empty.textContent = window.NOVA_CLASS === "ifc" ? "Nobody has joined the Fire Code leaderboard yet."
+      : "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
     rows.appendChild(empty);
     return;
   }
@@ -150108,10 +150332,10 @@ function showProfile(defaultTab, opts){
   /* The calendar is a bottom tab of its own (build 323). */
   if(asked === "calendar") return showCalendarTab();
   const initialTab = PROFILE_TABS.indexOf(asked) !== -1 ? asked : "profile";
-  /* FIRE CODE: STATS IS A BAR TAB, NOT ONE OF PROFILE'S (build 382). Asked for Stats, this builds the Stats screen alone
-     (no Profile tabs over it, the bar's Stats lit); asked for anything else, Profile has no Stats tab. */
+  /* FIRE CODE (build 385): PROFILE AND STATS ARE ONE SCREEN WITH TWO TOP TABS, as the academy's Profile is - "move stats to
+     profile as a top tab option" (382 had made Stats a bar tab of its own). Settings is still Fire Code's own bar tab (the class
+     has no calendar), so it is a screen alone, built here only when asked for by name. */
   const ifcStats = window.NOVA_CLASS === "ifc";
-  const statsAlone = ifcStats && initialTab === "stats";
   const settingsAlone = ifcStats && initialTab === "settings";   /* (383) Settings is Fire Code's bar tab, alone */
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
@@ -150124,13 +150348,13 @@ function showProfile(defaultTab, opts){
   flushStudyTime();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
-  setActiveNav(statsAlone ? "stats" : settingsAlone ? "settings" : "profile");
-  countEl.textContent = statsAlone ? "Stats" : settingsAlone ? "Settings" : "Profile";
+  setActiveNav(settingsAlone ? "settings" : "profile");
+  countEl.textContent = settingsAlone ? "Settings" : "Profile";
   /* A rank-up not yet shown: built as it was before it (317, 319). */
   armRankUpProfileScene(initialTab);
 
   const panel = document.createElement("section");
-  panel.className = "panel screen-profile" + (statsAlone ? " screen-stats" : "");
+  panel.className = "panel screen-profile";
 
   /* Same .navsegment.profiletabs / .iconbtn / hidden-panel shape
      showRewards() already established, rather than a second way of doing
@@ -150174,9 +150398,9 @@ function showProfile(defaultTab, opts){
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
     { key: "settings", label: "Settings", node: settingsTab, cls: " profile-settings-tab-btn" }
-  /* (383) Fire Code: "why is settings still within profile? It should just be in on the bottom tab" - each of its bar tabs is a
-     screen of its own: Profile alone, Stats alone, Settings alone, no switch over any of them */
-  ].filter(t => !ifcStats || t.key === (initialTab === "stats" || initialTab === "settings" ? initialTab : "profile"));
+  /* (383) Fire Code: "why is settings still within profile? It should just be in on the bottom tab" - Settings is a screen of its
+     own there, with no switch over it; (385) Profile and Stats are the two tabs of Profile */
+  ].filter(t => !ifcStats || (settingsAlone ? t.key === "settings" : t.key !== "settings"));
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
     const btn = document.createElement("button");
@@ -150879,8 +151103,8 @@ function showProfile(defaultTab, opts){
       /* Stats and Settings in one step (327z15: "not a crazy amount");
          Settings has a tour of its own the first time it opens. */
       window.NOVA_CLASS === "ifc"
-        ? { target: ".profile-settings-tab-btn", align: "left", vplacement: "below",
-            text: "Settings has the rest of the options." }
+        ? { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
+            text: "Stats: your study time and test history." }
         : { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
         text: "Stats: your study time and test history. Settings is beside it." }
       /* Badges and the rank climb moved to their own Ranks tab in the
@@ -151601,7 +151825,7 @@ function showClass(which, opts){
   if(w === "friends" || w === "friend") return showFriends();
   if(w === "calendar" || w === "cal" || w === "schedule" || w === "class") return showCalendar();
   const board = opts && typeof opts.board === "string" ? opts.board
-    : (w === "level" || RANKING_BOARDS.some(b => b.key === w)) ? w : undefined;
+    : (w === "level" || rankingBoardsFor().some(b => b.key === w)) ? w : undefined;
   return showRankings(board);
 }
 /* The Leaderboard tab while "Show me in the rankings" is off (build 324):
@@ -151630,6 +151854,7 @@ function buildRankingsOptedOut(boardKey){
     store.leaderboardOptIn = true;
     store.leaderboardOptInChanged = true;
     saveStore();
+    if(window.NOVA_CLASS === "ifc"){ try{ flushClassBoardRow(); }catch(e){} }   /* (385) see the Settings switch */
     showToast("You're on the leaderboard.");
     showRankings(boardKey);
   });
@@ -151646,14 +151871,16 @@ document.addEventListener("visibilitychange", () => {
      changed is not drawn again anyway, and one that has is drawn a moment later */
   if(!document.hidden) setTimeout(() => { if(!document.hidden && f.rows.isConnected && rankingsOnVisible === f) f.paint(); }, 2200);
 });
-/* Fire Code's bar has Stats where the Leaderboard is (build 382): the class has no board, so its tab, Stats. */
+/* Stats is Profile's second tab (Fire Code's bar had it as a tab of its own from 382 to 384; its hidden button still routes here) */
 function showStatsScreen(){ return showProfile("stats"); }
 function showRankings(defaultBoard){
-  if(window.NOVA_CLASS === "ifc") return showStatsScreen();
   setActiveNav(null);
   countEl.textContent = "Leaderboard";
+  /* (385) Fire Code's board is its own class's: two boards, nothing weekly, and no week's recap owed here */
+  const ifcBoard = window.NOVA_CLASS === "ifc";
+  const boards = rankingBoardsFor();
   /* the week's recap, if it is owed, a moment after the board is up (build 383) */
-  try{ scheduleWeekRecap(WEEK_RECAP_BOARD_DELAY_MS); }catch(e){}
+  try{ if(!ifcBoard) scheduleWeekRecap(WEEK_RECAP_BOARD_DELAY_MS); }catch(e){}
   /* a string or nothing: handed straight to a listener it is a MouseEvent */
   rankingsBoardKey = (typeof defaultBoard === "string" && defaultBoard) || RANKINGS_DEFAULT_BOARD;
   /* "level" is still accepted as a name, so a link or a stored key from
@@ -151664,7 +151891,7 @@ function showRankings(defaultBoard){
      preference or a link from an older build lands on the board that
      replaced it rather than on a different one. */
   if(rankingsBoardKey === "level") rankingsBoardKey = "overall";
-  if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = RANKINGS_DEFAULT_BOARD;
+  if(!boards.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = RANKINGS_DEFAULT_BOARD;
 
   /* ---- HIDDEN FROM THE RANKINGS, SO NO RANKINGS (build 324) ----
      "The show me in rankings toggle, if I turn it off, I can still see
@@ -151690,7 +151917,7 @@ function showRankings(defaultBoard){
   const seg = document.createElement("div");
   seg.className = "navsegment profiletabs";
   const tabBtns = {};
-  RANKING_BOARDS.forEach(b => {
+  boards.forEach(b => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "iconbtn" + (b.key === rankingsBoardKey ? " active" : "");
@@ -151769,7 +151996,9 @@ function showRankings(defaultBoard){
      round trip to tell it what it already knew. Seeded here, the rows
      are on screen in the frame the tab opens and the snapshot below
      simply replaces them when it lands. */
-  let entries = (leaderboardRows && leaderboardRows.length) ? leaderboardRows.slice() : [];
+  /* (385) Fire Code's own rows (classBoardRows), never the academy's (leaderboardRows: what its friends are read from) */
+  const seedRows = ifcBoard ? classBoardRows : leaderboardRows;
+  let entries = (seedRows && seedRows.length) ? seedRows.slice() : [];
   let loaded = entries.length > 0;
 
   /* Your own row is rendered from LIVE LOCAL STATE, never from the
@@ -151806,7 +152035,7 @@ function showRankings(defaultBoard){
     /* switched off while the board was up (another device's change
        arriving, say): the board goes, the same way it would on opening */
     if(!store.leaderboardOptIn){ if(panel.isConnected) showRankings(rankingsBoardKey); return; }
-    const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
+    const board = boards.find(b => b.key === rankingsBoardKey);
     blurb.textContent = board.blurb || "";
     const list = liveEntries();
     /* Recorded whichever board is on screen, not only This Week. paint()
@@ -151814,7 +152043,7 @@ function showRankings(defaultBoard){
        means simply having the Leaderboard open keeps your weekly
        position up to date - where hooking the weekly board alone would
        have made the feat depend on which tab somebody happens to like. */
-    observeWeeklyRank(list);
+    if(!ifcBoard) observeWeeklyRank(list);
     rows.removeAttribute("aria-busy");
     /* build 382: rows that replace the placeholders stand where they stood (same header, same row height) and come up softly */
     const fromSkel = !!rows.querySelector(":scope > .rank-row-skel");
@@ -151898,7 +152127,7 @@ function showRankings(defaultBoard){
     rows.appendChild(p);
   };
 
-  blurb.textContent = (RANKING_BOARDS.find(b => b.key === rankingsBoardKey) || {}).blurb || "";
+  blurb.textContent = (boards.find(b => b.key === rankingsBoardKey) || {}).blurb || "";
 
   /* Only when there is genuinely nothing to show. With the cache seeded
      above, the usual case paints real rows immediately. */
@@ -151941,7 +152170,7 @@ function showRankings(defaultBoard){
        instead (the listener paints the moment the server answers); offline, or with classmates in hand, it is 2.5s as before. */
     const skelAt = Date.now();
     const fallback = () => {
-      if(loaded || !rows.isConnected || !fbDb) return;
+      if(loaded || !rows.isConnected || !boardDbNow()) return;
       if(!rows.querySelector(".rank-row-skel")) return;
       if(navigator.onLine !== false && Date.now() - skelAt < LB_SLOW_WAIT_MS && !entries.some(e => e && e.pub !== store.publicId)){
         setTimeout(fallback, 500); return;
@@ -151952,7 +152181,9 @@ function showRankings(defaultBoard){
   }
 
   if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
-  if(!fbDb){
+  if(!boardDbNow()){
+    /* (385) Fire Code's handle comes up a beat after the page: the board opens as it does */
+    if(ifcBoard && syncCode){ try{ onSocialReady(() => { try{ if(panel.isConnected && !boardDbNow()) return; if(panel.isConnected) showRankings(rankingsBoardKey); }catch(e){} }); }catch(e){} }
     /* Only when there is nothing to show. With the cache seeded above,
        going offline leaves the last board you saw on screen instead of
        replacing people with a notice - which is both more useful and
@@ -151961,7 +152192,7 @@ function showRankings(defaultBoard){
       rows.replaceChildren();
       const p = document.createElement("p");
       p.className = "info-note";
-      p.textContent = academyOnly("The leaderboard", "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.");
+      p.textContent = ifcBoard ? classBoardUnreachable() : academyOnly("The leaderboard", "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.");
       rows.appendChild(p);
     }
   } else {
@@ -151971,13 +152202,13 @@ function showRankings(defaultBoard){
        stale and the board quietly stops being live, which is the one
        failure this screen cannot afford. */
     try{
-      rankingsLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
-        const next = [];
+      rankingsLiveUnsub = onSnapshotResilient(ifcBoard ? classBoardRef(ifcSocialDb, "ifc") : fbDb.collection("leaderboard"), snap => {
+        const next = ifcBoard ? classBoardEntriesFrom(snap) : [];
         /* doc.id is the PUBLIC ID, not the sync code - see "THE PUBLIC
            ID" above. Named `pub` rather than left as `code`, because a
            field called `code` holding something that is no longer the
            sync code is exactly how the next person reintroduces this. */
-        snap.forEach(doc => {
+        if(!ifcBoard) snap.forEach(doc => {
           if(isLegacyBoardId(doc.id)) return;
           const e = Object.assign({ pub: doc.id }, doc.data());
           /* Expire a stale week here rather than at every read site -
@@ -152006,8 +152237,8 @@ function showRankings(defaultBoard){
         /* Shared with the Friends screen, which needs the same rows
            and must not open a second listener on the same
            collection. */
-        leaderboardRows = entries; leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){}
-        friendsListCatchUp();
+        if(ifcBoard) classBoardRows = entries;
+        else { leaderboardRows = entries; leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){} friendsListCatchUp(); }
         /* A cache that knows nobody but you is not the class: the
            placeholders stay up until the server answers, rather than
            crowning you 1st of 1 for a second. Offline, the fallback
@@ -152021,7 +152252,7 @@ function showRankings(defaultBoard){
 
   /* The same contained tab swipe the old Rewards tab had, now shared -
      see attachTabSwipe. */
-  attachTabSwipe(panel, RANKING_BOARDS.map(b => b.key), () => rankingsBoardKey, selectBoard);
+  attachTabSwipe(panel, boards.map(b => b.key), () => rankingsBoardKey, selectBoard);
 
   /* Detach the snapshot when this screen goes, not just when Rankings is
      opened again. Without this, walking Rankings -> Home -> Rankings
@@ -152059,9 +152290,10 @@ function showRankings(defaultBoard){
     saveStore();
     startSimpleTour([
       { target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
-        text: "This Week: XP since Monday. Overall: all time. Hundos: units at 100%." },
+        text: ifcBoard ? "Overall: ranked by rank, then level. Hundos: chapters at 100%."
+          : "This Week: XP since Monday. Overall: all time. Hundos: units at 100%." },
       { target: ".rank-search", align: "left", vplacement: "below",
-        text: "Search for anyone in 26E by username." },
+        text: ifcBoard ? "Search for anyone in Fire Code by username." : "Search for anyone in 26E by username." },
       { target: ".rank-me-btn", align: "right", vplacement: "below",
         text: "Find me jumps to your row. It all updates live." }
     ]);
@@ -157056,12 +157288,14 @@ function tabPerfText(){
   if(window.NOVA_CLASS === "ifc"){
     const calTab = bar.querySelector("#bottomtab-calendar"), setTab = bar.querySelector("#bottomtab-settings");
     if(calTab && setTab){ calTab.hidden = true; setTab.hidden = false; }
-    /* BUILD 382: NO LEADERBOARD IN FIRE CODE - STATS TAKES ITS PLACE. "we are gonna remove the leaderboard completely. That
-       will now just be stats, so stats from profile will be moved to the bottom tab for the fire code side." The class has
-       no cloud (build 328), so its board could never fill anyway. Home, Profile, Stats, Settings; showRankings() sends any
-       route still pointed at the board (back links, banners, old links) to Stats in this class. */
+    /* BUILD 385: FIRE CODE HAS ITS OWN LEADERBOARD, AND STATS IS A TAB OF PROFILE. "fire code is gonna get the leaderboard. So move
+       stats to profile as a top tab option." (382 had taken the Leaderboard off this bar for Stats: "we are gonna remove the
+       leaderboard completely".) The bar is Home, Profile, Leaderboard, Settings - the academy's, with Settings where the
+       Calendar is, since this class has no calendar. #bottomtab-stats stays in the markup, hidden for good: Stats is
+       showProfile("stats"), a top tab beside Profile's. */
     const lbTab = bar.querySelector("#bottomtab-rewards"), stTab = bar.querySelector("#bottomtab-stats");
-    if(lbTab && stTab){ lbTab.hidden = true; stTab.hidden = false; }
+    if(lbTab) lbTab.hidden = false;
+    if(stTab) stTab.hidden = true;
   }
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
@@ -157422,7 +157656,7 @@ function tabPerfText(){
     /* Friends is opened from the chat over any tab since build 327z12
        round 2, and keeps THAT tab lit (its data-from) */
     const frFrom = (document.querySelector("#stage .screen-friends") || { dataset: {} }).dataset.from || "";
-    const onProfileSub = !!document.querySelector(window.NOVA_CLASS === "ifc" ? ".screen-customize" : ".screen-customize, .screen-testreview") || frFrom === "profile";
+    const onProfileSub = !!document.querySelector(".screen-customize, .screen-testreview") || frFrom === "profile";
     const onSettingsSub = !!document.querySelector(".screen-bugreport, .screen-settings-sub");
     /* THE CALENDAR IS A BAR TAB (build 323), so the calendar lights
        Calendar, not Profile - wherever it is drawn, as its own screen or
@@ -157440,9 +157674,8 @@ function tabPerfText(){
     const settingsShown = !!settingsBtn && !settingsBtn.hidden;
     lit("#bottomtab-profile", !calShown && (((onProfile && !(settingsShown && onSettingsAny))) || onRanks || onProfileSub || (onSettingsAny && !settingsShown)));
     lit("#bottomtab-rewards", (onRewards || frFrom === "rewards") && !calShown);
-    /* Fire Code's Stats tab (build 382): its own screen, and the test history it opens */
-    const onStats = !!document.querySelector("#stage .screen-stats") || (window.NOVA_CLASS === "ifc" && !!document.querySelector("#stage .screen-testreview")) || frFrom === "stats";
-    lit("#bottomtab-stats", onStats && !calShown);
+    /* (385) Stats is a tab of Profile in every class now: its bar button is never shown, so nothing is lit for it */
+    lit("#bottomtab-stats", false);
     lit("#bottomtab-calendar", calShown);
     lit("#bottomtab-settings", onSettingsAny && !calShown);
     lit("#bottomtab-home", (onHome || frFrom === "home") && !calShown);
@@ -157591,7 +157824,7 @@ function tabPerfText(){
      the bar as laid out - whatever the labels, widths or merged Start
      pill. Only re-measured when the row or a tab changes size. */
   const pfTab = document.getElementById("bottomtab-profile");
-  const pfNeighbours = [document.getElementById("bottomtab-home"), document.getElementById(window.NOVA_CLASS === "ifc" ? "bottomtab-stats" : "bottomtab-rewards")];
+  const pfNeighbours = [document.getElementById("bottomtab-home"), document.getElementById("bottomtab-rewards")];
   function centreProfileTab(){
     if(!pfTab || !pfNeighbours[0] || !pfNeighbours[1]) return;
     const mid = el => { const r = el.getBoundingClientRect(); return r.width ? r.left + r.width / 2 : null; };
@@ -159295,7 +159528,9 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
     /* (384 r20) the tips already seen come across; the dots behind the new things (seenUnlocks) are the class's own - the
        academy's marks would hide a Fire Code unlock's dot, and name characters this class has not unlocked */
     Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k) && k !== "seenUnlocks") seed[k] = a[k]; });
-    seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
+    /* (385) Fire Code has a leaderboard of its own: a first visit is on it, as the academy's default is, unless the person hid
+       themselves in the academy (their word on class sharing travels with them; it is theirs to change in Fire Code's Settings) */
+    seed.leaderboardOptIn = a.leaderboardOptIn !== false; seed.leaderboardOptInChanged = false;
     /* (384) THE LOOK IS THE CLASS'S OWN. Madison: "When switching classes, the theme from the other class is being used on the
        class you switched to ... I don't have it unlocked" / "in the police class I have void selected, when I switch to IFC, it
        selects the void character for me". The settings come across (sound, haptics, swipe and the rest - the person's), the
@@ -159306,6 +159541,20 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
       storageHadData = true;
       try{ if(store.avatarChar && isLockedCharacter(store.avatarChar)) store.avatarChar = classDefaultCharacter(); }catch(e){}
       persistLocally();
+    }
+  }catch(e){}
+}
+/* (385) FIRE CODE HAS A LEADERBOARD NOW, AND EVERY COPY MADE BEFORE IT IS OFF IT. Until this build the class had no board and no
+   switch, so a Fire Code copy that says "not in the rankings" was never anybody's choice - the first-visit seed wrote it. Once, on
+   this device, such a copy joins the board as the academy's default does, unless the person hid themselves in the academy (class
+   sharing is theirs to turn off in Fire Code's Settings, and a choice made there is never touched again). */
+if(window.NOVA_CLASS === "ifc" && storageHadData){
+  try{
+    if(!localStorage.getItem("class26e.boardseed.385")){
+      localStorage.setItem("class26e.boardseed.385", "1");
+      if(store.leaderboardOptIn === false && store.leaderboardOptInChanged === true && academyCopyNow().leaderboardOptIn !== false){
+        store.leaderboardOptIn = true; store.leaderboardOptInChanged = false; saveStore();
+      }
     }
   }catch(e){}
 }
