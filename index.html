@@ -39123,7 +39123,7 @@ html.is-browser{ --fade-paper: transparent; }
      them as a different looking boxes? Almost like the boxes you see when signing up for a class? ... each device size may need a
      different layout and that's okay. Fix it though." The title and the question stay at the top; the cards are TILES that take the
      room under them down to the tab bar (fillModeGroup measures it and sets --ms-room / --ms-tile / --ms-cols / --ms-gap / --ms-w and
-     data-build): glass, tinted with the mode's own colour, a medallion for its mark top-left, a chevron top-right, the name and the line
+     data-build): the app's solid card (the units card's, no rim, no gradient: check-b383-look (2)) with a flat 8% tint of the mode's own colour, a medallion for its mark top-left, a chevron top-right, the name and the line
      at the foot. The markup is the card it always was (.modecard > .modecardtitlerow > icon + name, then the line): the title row is
      display:contents, so the mark, the name and the line are the tile's own grid items and every id, class and tour target holds.
      data-build "stack": the medallion above the words (a phone with room, a tablet, a laptop); "snug": the medallion small beside the
@@ -39152,9 +39152,8 @@ html.is-browser{ --fade-paper: transparent; }
     position:relative; display:grid; box-sizing:border-box; min-width:0; min-height:0; width:auto; margin:0; text-align:left; overflow:hidden;
     padding:calc(20 * var(--u)) calc(20 * var(--u)) calc(20 * var(--u)) calc(22 * var(--u)); border-radius:calc(22 * var(--u));
     grid-template-columns:auto 1fr; grid-template-rows:auto minmax(calc(12 * var(--u)), 1fr) auto auto; align-items:start; gap:0;
-    background:linear-gradient(150deg, color-mix(in srgb, var(--mc) 12%, transparent), color-mix(in srgb, var(--mc) 3%, transparent) 55%, transparent 85%),
-      var(--surface-sheen), linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
-    border:1px solid color-mix(in srgb, var(--mc) 24%, var(--surface-border)) !important; box-shadow:none !important;
+    background:var(--surface-sheen), linear-gradient(var(--surface-lift), var(--surface-lift)), color-mix(in srgb, var(--mc) 8%, var(--surface-1)) !important;
+    border:1px solid var(--surface-border) !important; box-shadow:none !important;
     transition:transform .15s ease, border-color .15s ease;
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) > .modecard.modecard{
@@ -39162,12 +39161,11 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards.ms-spanlast > .modecard.modecard:last-child{ grid-column:1 / -1; }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:active{
-    background:linear-gradient(150deg, color-mix(in srgb, var(--mc) 12%, transparent), color-mix(in srgb, var(--mc) 3%, transparent) 55%, transparent 85%),
-      var(--surface-sheen), linear-gradient(color-mix(in srgb, var(--ink) 12%, transparent), color-mix(in srgb, var(--ink) 12%, transparent)), var(--surface-1) !important;
+    background:var(--surface-sheen), linear-gradient(color-mix(in srgb, var(--ink) 12%, transparent), color-mix(in srgb, var(--ink) 12%, transparent)), color-mix(in srgb, var(--mc) 8%, var(--surface-1)) !important;
   }
   @media (hover:hover){
     html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:hover{
-      border-color:color-mix(in srgb, var(--mc) 55%, var(--surface-border)) !important;
+      border-color:color-mix(in srgb, var(--mc) 45%, var(--surface-border)) !important;
     }
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:focus-visible{
