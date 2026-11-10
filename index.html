@@ -23247,6 +23247,19 @@
      frame measured 106ms against 15ms on a phone (software compositor, 4x CPU). Its fill is the solid #0F1115 just above, so the blur shows
      nowhere; the sheet is the same picture without it and its cost no longer grows with the window. */
   [data-layout="modern"] .unitoptions-modal-sheet.is-setup{ backdrop-filter:none; -webkit-backdrop-filter:none; will-change:transform; }
+  /* (384.24) THE TEST SETTINGS SHEET IS FROSTED GLASS ON A PHONE OR TABLET, like every other pop-up (.POP-UP GLASS, r16). Madison, on the settings
+     sheet and the pop-ups: "The setting stuff we've talked about should have [the frosted glass]." r15 made it opaque to stop a 4K monitor re-blurring a
+     window-wide box on every frame of its slide (106ms a frame, measured); that cost is a big computer's, so a phone or tablet (a touch screen, or a
+     window under 64rem) gets the glass and a laptop or desktop keeps the solid sheet. The sheet is a direct child of the modal (no ancestor is a
+     backdrop root: no opacity, filter or will-change on the modal) and carries no will-change of its own while frosted (see the person card). The dim
+     is the pop-ups' own (--pop-scrim), only for this sheet - the Virtual Room's Match settings keep theirs. */
+  @media (hover:none), (max-width:63.99rem){
+    html[data-theme][data-layout] body .unitoptions-modal-sheet.is-setup{
+      background:var(--sheet-bg); border:var(--sheet-border); border-bottom:none; box-shadow:var(--sheet-shadow);
+      -webkit-backdrop-filter:var(--sheet-blur); backdrop-filter:var(--sheet-blur); will-change:auto;
+    }
+    html[data-theme][data-layout] body .unitoptions-modal:has(> .unitoptions-modal-sheet.is-setup) > .unitoptions-modal-scrim{ background:var(--pop-scrim); }
+  }
   /* ---- (384 r21) THE SHEET IS THREE PARTS: A PINNED HEAD, A BODY THAT SCROLLS, A PINNED FOOT ----
      "When you hit start, and the test settings come up, should the menu it pulls up be a little bigger? Right now if you hit
      Time limit, you can't even tell the settings are there because you'd have to scroll which is not practical."
