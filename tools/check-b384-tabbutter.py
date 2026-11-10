@@ -15,7 +15,7 @@ and 4x for the phone and the 1366x768 laptop (a weak machine); budgets are in 1x
     in Home's hero, Profile's card and goals or the board's rows (SLIDE_HOLD_SEL, read from the source) is running - on the screen it leaves, and
     (a short grace after the build) on the screen it brings in - and once the glass has landed Home's hero is running again. His recording: the
     glass dropped frames only where Home's ~30 loops ran under it.
-(2) NO STYLE PASS PER LOOP: no script function forces more than 8 style recalcs (UpdateLayoutTree attributed to it by its stack) or 8 layouts in one
+(2) NO STYLE PASS PER LOOP: no script function forces more than 8 style recalcs that restyled something (UpdateLayoutTree attributed to it by its stack) or 8 layouts that took 50us or more in one
     tab change, on every device and throttle. (Home's loop clock set each of its ~75 loops after reading the last one's timing: 75 style passes a
     tab change; the board's rows the same on every row coming into view.)
 (3) BUDGETS, 1x-equivalent ms of main-thread CPU, per class (a finger: phone, iPad; a mouse: every computer):
@@ -24,6 +24,9 @@ and 4x for the phone and the 1366x768 laptop (a weak machine); budgets are in 1x
     c. the tab change's whole main-thread CPU (median of the 12 pairs) under BUDGET_TOTAL.
 (4) NOTHING SCALES WITH THE SCREEN'S AREA: the median whole-hop main-thread CPU on 3840x2160 (and on 1920x1080 at 2x) is at most 1.6x the 1366x768's.
 (5) the page's own frame clock saw a frame, every hop; no page errors.
+(6) THE IDLE STAND-IN WAITS FOR THE FINGER AND THE GLASS (phone, iPad: Safari has no requestIdleCallback, the page's own runs the warm-ups 700ms
+    after the last touchSTART - a finger that stays down on the bar (a slide, a long press) is still there then): a job asked for while a finger is
+    down on a tab does not run until it lifts, and then only with the lens down, the bar not held and no settle window open.
 Run:  python3 tools/check-b384-tabbutter.py [--quick] [--only phone,1366x768x1] [--against REV|path/to/index.html]
       (--against origin/main's file must FAIL (1) and (2) on every device they run on; (1) on the finger's, (2) everywhere.)"""
 import os, sys, re, time, json, statistics, collections
@@ -104,8 +107,10 @@ def analyse(evs, thr):
             a = e.get("args", {})
             st = (a.get("beginData", {}) or {}).get("stackTrace") or a.get("stackTrace") or []
             fn = next((f.get("functionName") for f in st if f.get("functionName")), None)
-            if fn: forced[(e["name"], fn)] += 1
-    viz = [e.get("tdur", e["dur"]) / 1000.0 for e in evs if th(e) == "VizCompositorThread" and e.get("name") == "Display::DrawAndSwap" and t0 <= e["ts"] <= t1]
+            # a pass that did something: restyled an element, or took measurable time (a read with nothing dirty is a marker, not a pass)
+            real = (e["name"] == "UpdateLayoutTree" and (a.get("elementCount") or 0) > 0) or (e["name"] == "Layout" and e.get("tdur", e["dur"]) >= 50)
+            if fn and real: forced[(e["name"], fn)] += 1
+    viz = [e.get("tdur", e["dur"]) / 1000.0 for e in evs if th(e) == "VizCompositorThread" and e.get("ph") == "X" and e.get("name") == "Display::DrawAndSwap" and t0 <= e["ts"] <= t1]
     return {"worst": max([cpu(e) for e in tasks] or [0]), "total": sum(cpu(e) for e in tasks),
             "inputMax": max([c for _, c in inputs] or [0]), "inputs": inputs, "forced": forced,
             "viz": statistics.median(viz) / thr if viz else 0, "draws": len(viz)}
@@ -126,6 +131,8 @@ HOLD = """([sel, dest, hold])=>{ const st=document.getElementById('stage'); cons
     S.rows.push([Math.round(t), up?1:0, heavy()]); setTimeout(tick, 45); };
   setTimeout(tick, 20); }"""
 
+IDLE_JOB = """()=>{ window.__idle=null; const t0=performance.now(); requestIdleCallback(()=>{ window.__idle={ at: Math.round(performance.now()-t0), up: !!document.querySelector('#bottomtabs-lens.is-up'),
+  held: document.documentElement.classList.contains('tab-held'), settle: (typeof settleUntil==='number' && Date.now()<settleUntil) }; }); }"""
 def tap(pg, cdp, touch, tab):
     return G["tap"](pg, cdp, touch, "#bottomtab-" + tab)
 
@@ -193,6 +200,24 @@ with sync_playwright() as pw:
                         back = pg.evaluate("([sel,hold])=>{ let n=0; document.getElementById('stage').getAnimations({subtree:true}).forEach(x=>{ if(x.playState!=='running') return; const t=x.effect&&x.effect.target; if(t&&t.closest&&t.closest(hold)) n++; }); return n; }", [SCREEN[b], HOLD_SEL])
                         if back < 5: bad.append("%s>%s: after the glass landed only %d loops of Home's hero are running" % (a, b, back))
                 chk("(1) %s: a tap holds the heavy art under the glass and gives it back (%d pairs measured)" % (label, nconcl), not bad and not unmeasured and nconcl >= len(QUICK_PAIRS if QUICK else PAIRS) // 2, bad + unmeasured)
+            # (6) the idle stand-in (Safari has no requestIdleCallback) does not run its jobs under a finger or the landing glass
+            if cls == "finger" and thr == 1:
+                late = []
+                for a, b in (QUICK_PAIRS if QUICK else PAIRS)[:3]:
+                    tap(pg, cdp, touch, a); pg.wait_for_timeout(1700)
+                    c = pg.evaluate("(id)=>{ const r=document.getElementById(id).getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }", "bottomtab-" + b)
+                    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": c[0], "y": c[1]}]})   # a finger that stays down (a slide's first second)
+                    pg.wait_for_timeout(100); pg.evaluate(IDLE_JOB); pg.wait_for_timeout(1300)
+                    mid = pg.evaluate("()=>window.__idle")
+                    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+                    for _ in range(40):                      # behind whatever else the page has queued, a job can take seconds
+                        pg.wait_for_timeout(250)
+                        if pg.evaluate("()=>!!window.__idle"): break
+                    J = pg.evaluate("()=>window.__idle")
+                    if mid: late.append("%s>%s: ran under the finger, %dms after it was asked (bar held %s)" % (a, b, mid["at"], mid["held"]))
+                    elif not J: late.append("%s>%s: the job never ran" % (a, b))
+                    elif J["up"] or J["held"] or J["settle"]: late.append("%s>%s: ran after the lift with the glass up %s, bar held %s, settling %s" % (a, b, J["up"], J["held"], J["settle"]))
+                chk("(6) %s: a warm-up job asked for under a finger waits for the lift and the landing" % label, not late, late)
             errs_all += errs
             ctx.close()
     # (4) area
