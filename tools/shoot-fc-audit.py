@@ -27,7 +27,7 @@ INIT = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.setIte
 BUILD = r"""async ([ids, px]) => {
   document.getElementById('splashscreen')?.remove();
   const list = ids || Object.keys(IFC_CHAR_LOOK);
-  document.body.innerHTML = '';
+  [...document.body.children].forEach(n => { if(n.tagName !== 'STYLE') n.remove(); });   /* not body.innerHTML = '': the 2.9MB stylesheet is a <style> in <body> (384 r17) */
   document.body.style.cssText = 'background:#12151B;margin:0;padding:10px;display:flex;flex-wrap:wrap;gap:14px;width:' + (px * 3 + 60) + 'px';
   const u = px / 34;
   for(const id of list){

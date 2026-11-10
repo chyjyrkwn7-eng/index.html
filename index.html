@@ -6630,12 +6630,14 @@
   .rank-row .rank-avatar:not(.has-plate) > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
     -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
   .rank-row .rank-avatar:not(.has-plate) > .char-flip-play{
+    transform:none;   /* (384.20) the sheet is recorded at the size the drawing is SHOWN (charFlipAttach bakes the svg's own .85 into it): scaling it again made the loop .72 of its drawing */
     -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%);
     -webkit-mask-composite:source-in; mask-composite:intersect; }
   /* ...and a person's card. (Not the Profile's own, nor Customize: there the art's soft halo is meant to fill the disc, and scaling the drawing down shows its edge as a second, smaller circle.) */
   :is(.person-card-art) .rank-avatar:not(.has-plate) > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
     -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
   :is(.person-card-art) .rank-avatar:not(.has-plate) > .char-flip-play{
+    transform:none;   /* (384.20) as the board's: the loop already has the drawing's .85 baked in */
     -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); -webkit-mask-composite:source-in; mask-composite:intersect; }
   /* ...AND THE FLIP-BOOK TOO (build 327z10): "The characters on the
      leaderboard, the bottom half slightly comes out of the circle." The
@@ -35591,6 +35593,15 @@ html.is-browser{ --fade-paper: transparent; }
     .cc-status.is-enrolled::before{ display:inline-block; vertical-align:-1px; margin-right:.35rem; }
     .cc-status.is-enroll{ padding-top:calc((28px - 1cap)/2 + 1.2px); padding-bottom:calc((28px - 1cap)/2 - 1.2px); }
     .cc-status.is-soon{ padding-top:calc((28px - 1cap)/2 + .5px); padding-bottom:calc((28px - 1cap)/2 - .5px); }   /* (384 r5) "Coming soon" read .75px high on Classes and .2 on the sign-up (two sub-pixel positions): half way (lowercase letters hang below the capitals' middle) */
+    /* (384.20) ...and on the SIGN-UP step it moves less. The same CSS and the same layout read -0.14 on one launch and +0.68 on the next
+       (check-centering, signup/class, a 17 Pro Max, run to run): Chromium places this line of words in one of two pixel rows depending on
+       the launch, 1.5 device pixels apart, and the +.5 above put the pair at -.14 / +.68, one of them outside the half pixel allowed.
+       +.25 puts the pair at -.15 / +.34 (measured over repeated runs), both inside it, so it holds whichever way a launch falls. The
+       Classes screen (.class-catalog) keeps +.5: it reads -.25 there. And the short-phone band (an SE 2nd/3rd gen: under 40rem wide
+       and no taller than 46rem, the stacked step) keeps +.5 too: at 2x it reads -.15 / +.19 there and -.48 at +.25. */
+    @media (min-width:40rem), (min-height:46.01rem){
+      .classselect-panel .cc-status.is-soon{ padding-top:calc((28px - 1cap)/2 + .25px); padding-bottom:calc((28px - 1cap)/2 - .25px); }
+    }
   }
   /* The narrowest phones (a first-gen SE, 320px): two across leaves a card about 83px inside, and
      "Coming soon" ran off its edge while the sign-up page scrolled 46px. Two across stays ("don't put
@@ -37657,6 +37668,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
     -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
   html[data-layout] body :is(.screen-rankings, .vr-podium) .lw-podium-avwrap .rank-avatar > .char-flip-play{
+    transform:none;   /* (384.20) as the board's: the loop already has the drawing's .85 baked in */
     border-radius:50%; -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%);
     -webkit-mask-composite:source-in; mask-composite:intersect;
   }
@@ -84816,6 +84828,10 @@ function setCharState(el, state, opts){
       if(!el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
       el.dataset.flipArmed = "1";
       if(!el.isConnected){ if(++tries < 40) setTimeout(attach, 150); return; }
+      /* (384.20) a tile in a board row the page has skipped is not measured: a read inside one opens the row's display lock and shuts it
+         again - a style pass and a layout for each of them (the Leaderboard's first hop at 2560 and 3840 wide: ten and twelve, traced as
+         "DisplayLock" under charFlipAttach). Its loop goes on when the row comes into view (lbWatchOffscreen -> charFlipWake). */
+      if(el.closest(".rank-row.is-offscreen")) return;
       const r = charFlipAttach(el);
       if(r === false) goLive();
       else if(r === null){
@@ -97858,6 +97874,7 @@ function charFlipAttach(el){
   const svg = el.querySelector("svg.avatarchar-svg");
   if(!svg) return false;
   if(el.querySelector(":scope .char-flip-play")) return true;
+  if(el.closest(".rank-row.is-offscreen")) return null;   /* (384.20) skipped: see setCharState's attach; the row's observer wakes it */
   /* NOT LAID OUT IS "LATER", NOT "TOO BIG" (build 315). A tile with no
      box at all - the tab bar while a page hides it - has no used width,
      and the computed width read off it is the declared one, "100%",
@@ -97928,6 +97945,11 @@ function charFlipAttach(el){
      the time its sheet is ready is simply not there to be given it. */
   recordCharFrames(charId, px, el).then(charFlipThen(typeof WeakRef === "function" ? new WeakRef(el) : { deref: (k => () => k)(el) }, waitT, scale, layoutW, ownScale, wide));
   return true;
+}
+/* (384.20) a board row that comes back into view takes its tile's loop (the attach skipped it while the row was not drawn) */
+function charFlipWake(t){
+  if(!t || !t.isConnected || !t.dataset.flipArmed || !t.classList.contains("char-flip") || t.classList.contains("char-sleep") || t.querySelector(".char-flip-play")) return;
+  if(charFlipAttach(t) === false && t.classList.contains("char-flip")){ t.classList.remove("char-flip"); t.classList.add("char-live"); }
 }
 function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
   const run = sp => {
@@ -147025,16 +147047,18 @@ function lbWatchOffscreen(rows, more){
       if(!e.isIntersecting && e.target.classList.contains("rank-row")){ const cs = getComputedStyle(e.target), h = e.boundingClientRect.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0); if(h > 1) sizes.push([e.target, (Math.round(h * 10) / 10) + "px"]); }
     });
     sizes.forEach(([t, h]) => { t.style.containIntrinsicHeight = h; });
-    const resync = [];
+    const resync = [], wake = [];
     list.forEach(e => {
       const wasOff = e.target.classList.contains("is-offscreen");
       e.target.classList.toggle("is-offscreen", !e.isIntersecting);
+      if(e.isIntersecting && wasOff) e.target.querySelectorAll(".char-flip").forEach(t => wake.push(t));   /* (384.20) charFlipWake */
       /* a rank flare paused off screen comes back on the shared clock
          (build 324), level with every other flare of its rank - (build 380) only one that WAS off screen: the observer's first report on
          every row on screen re-synced flares put on the clock a moment before (a style pass each) */
       if(e.isIntersecting && wasOff) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => resync.push(a));
     });
     resync.forEach(a => { try{ syncLoopClock(a); }catch(x){} });
+    if(wake.length) setTimeout(() => wake.forEach(charFlipWake), 0);
   }, { rootMargin: "240px 0px" });
   rows._lbIo = io;
   /* not marked off-screen up front (build 310): the observer's first
