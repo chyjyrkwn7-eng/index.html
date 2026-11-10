@@ -39843,11 +39843,11 @@ try{ ["class26e.bootmark","class26e.bootcb","class26e.booterr","class26e.diag"].
     if(!q.length) return;
     var now = Date.now(), wait = Math.max(nextAt - now, lastInput + 700 - now);
     if(document.hidden) wait = Math.max(wait, 500);
-    /* (384 r15) NOT UNDER THE GLASS. 700ms after a touch is exactly when a tab change's glass is still landing (it hands over to the
-       platter ~800ms after the press), and the warm-ups behind this (badge art, sound, character sheets) are 15-70ms jobs: a frame or
-       three lost in the lens's last shrink, on every tab change a person paused after. The app's own "after the settle" work already waits
-       for settleUntil and the held bar; this stand-in did not. (A real requestIdleCallback is given its slots by the browser.) */
-    try{ if(typeof settleUntil === "number" && now < settleUntil) wait = Math.max(wait, settleUntil - now + 40); }catch(e){}
+    /* (384 r15) NOT UNDER A FINGER ON THE BAR, NOR UNDER THE GLASS IT LANDS WITH. "The last touch" above is a pointerdown, a touchstart, a
+       key, a wheel or a scroll - never a move - so a finger that stays down on the bar (a slide, a long press) is 700ms old in the middle
+       of its slide, and a warm-up job (badge art, sound synthesis, character sheets: 15-70ms each) ran under the lens. html.tab-held is on
+       from the press until the glass has landed (lensDown .. lensFinish). A job waits it out, 250ms at a time. (Not the whole settle window:
+       the first sound of a swipe on Profile or the Leaderboard then found its warm-up not yet done and made it inside the swipe.) */
     try{ if(document.documentElement.classList.contains("tab-held")) wait = Math.max(wait, 250); }catch(e){}
     if(wait > 0){ arm(wait); return; }
     var job = q.shift(), t0 = Date.now();

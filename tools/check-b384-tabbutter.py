@@ -26,7 +26,7 @@ and 4x for the phone and the 1366x768 laptop (a weak machine); budgets are in 1x
 (5) the page's own frame clock saw a frame, every hop; no page errors.
 (6) THE IDLE STAND-IN WAITS FOR THE FINGER AND THE GLASS (phone, iPad: Safari has no requestIdleCallback, the page's own runs the warm-ups 700ms
     after the last touchSTART - a finger that stays down on the bar (a slide, a long press) is still there then): a job asked for while a finger is
-    down on a tab does not run until it lifts, and then only with the lens down, the bar not held and no settle window open.
+    down on a tab does not run until it lifts, and then only with the lens down and the bar not held.
 (7) A LENS TRACK NEVER GOES BACKWARDS: lensOffsets() turns a track planned out of order (a landing whose grey-over point comes before its clearing
     point) into keyframes whose offsets do not decrease, and animate() takes them (the swipe gate's page error under load, thrown in lensRelease
     before the timer that puts the glass away was set).
@@ -247,7 +247,7 @@ with sync_playwright() as pw:
                     J = pg.evaluate("()=>window.__idle")
                     if mid: late.append("%s>%s: ran under the finger, %dms after it was asked (bar held %s)" % (a, b, mid["at"], mid["held"]))
                     elif not J: late.append("%s>%s: the job never ran" % (a, b))
-                    elif J["up"] or J["held"] or J["settle"]: late.append("%s>%s: ran after the lift with the glass up %s, bar held %s, settling %s" % (a, b, J["up"], J["held"], J["settle"]))
+                    elif J["up"] or J["held"]: late.append("%s>%s: ran after the lift with the glass up %s, bar held %s" % (a, b, J["up"], J["held"]))
                 chk("(6) %s: a warm-up job asked for under a finger waits for the lift and the landing" % label, not late, late)
             # (7) a lens track's keyframe offsets never go backwards (check-b384-swipe's page error under load: "Offsets must be monotonically non-decreasing")
             if label == DEVICES[0][0] + ("@%dx" % DEVICES[0][1][0] if DEVICES[0][1][0] > 1 else ""):
