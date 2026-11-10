@@ -50,7 +50,9 @@ with sync_playwright() as pw:
         out.listed = [...document.querySelectorAll('.settings-class-row')].map(r => r.dataset.cls);
         out.join = !!document.getElementById('settings-join-class');
         const ifcRow = document.querySelector('.settings-class-row[data-cls="ifc"]');
-        if(ifcRow){ ifcRow.click(); await w(400); const yes = document.querySelector('#classenroll-confirm .classenroll-yes'); out.sheet = !!yes; if(yes) yes.click(); await w(700); }
+        if(ifcRow){ ifcRow.click(); await w(400); const yes = document.querySelector('#classenroll-confirm .classenroll-yes'); out.sheet = !!yes; if(yes) yes.click(); await w(500);
+          /* (384 r16) the red button asks once more; only the second one leaves */
+          const yes2 = document.querySelector('#classenroll-confirm .classenroll-yes'); out.sheet2 = !!yes2 && yes2 !== yes; out.stillAfterFirst = enrolledClasses().length; if(yes2) yes2.click(); await w(900); }
         out.after = enrolledClasses();
         out.dated = !!(store.classLeftAt && store.classLeftAt.ifc);
         out.listedAfter = [...document.querySelectorAll('.settings-class-row')].map(r => r.dataset.cls);
@@ -69,7 +71,7 @@ with sync_playwright() as pw:
     chk("(U) Settings has a Classes row, and its page lists both classes and Join another class (%s)" % u.get("listed"),
         u.get("row") and u.get("listed") == ["academy", "ifc"] and u.get("join"), u)
     chk("(U) leaving one of two asks first, takes it off the account and the page, and dates the leave (%s -> %s)" % (u.get("listed"), u.get("after")),
-        u.get("sheet") and u.get("after") == ["academy"] and u.get("dated") and u.get("listedAfter") == ["academy"], u)
+        u.get("sheet") and u.get("sheet2") and u.get("stillAfterFirst") == 2 and u.get("after") == ["academy"] and u.get("dated") and u.get("listedAfter") == ["academy"], u)
     chk("(U) another device's copy that still lists it does not bring it back (%s); one that joined it again later does (%s)" % (u.get("mergeKeeps"), u.get("mergeRejoin")),
         u.get("mergeKeeps") == ["academy"] and u.get("mergeRejoin") == ["academy", "ifc"], u)
     chk("(U) the only class cannot be left: the sheet says so and the class stays (%r)" % (u.get("onlyText") or "")[:80],

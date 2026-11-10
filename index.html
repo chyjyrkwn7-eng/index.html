@@ -279,7 +279,7 @@
        (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
        with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
     /* (384) the status bar's colour is the class's own (its theme's), as the theme is: not shared */
-    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|displaytest|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|leaveclass|leftnote|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|displaytest|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -39554,6 +39554,11 @@ html.is-browser{ --fade-paper: transparent; }
     }
     function finishSplash(){
         if(splashDone) return;
+        /* (384 r16) a stop on the way (the academy's page finishing a class left in Fire Code): the cover stays up until it reloads */
+        if(window.NOVA_CLASS_HOP && Date.now() - window.NOVA_CLASS_HOP < 20000){
+          if(!splashPoll) splashPoll = setTimeout(function(){ splashPoll = 0; finishSplash(); }, 80);
+          return;
+        }
         if(!firstVisit){
           var stg = document.getElementById("stage");
           if(stg && !stg.firstElementChild){
@@ -56364,7 +56369,7 @@ function maybeNewClassBanner(){
       const ic = document.createElement("span"); ic.innerHTML = c.icon;
       showDailyAlert("Tap to see the class list", { kind: "enrolled", tag: "NEW CLASS", title: (info.title || c.name) + " is open to join",
         color: "#FF9648", iconEl: ic.firstElementChild, id: "newclass-banner", stay: 7000,
-        onTap: () => { try{ showClassCatalog(); }catch(e){} } });
+        onTap: () => { try{ showClassCatalog("home"); }catch(e){} } });
     };
     newClassTimer = setTimeout(attempt, 2400);
   });
@@ -56385,7 +56390,7 @@ function mountClassBubble(){
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
   const items = others.map(c => ({ cls: "is-" + c.key, icon: c.icon, label: c.name, run: () => switchClass(c.key) }));
-  items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog(); } });
+  items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog("home"); } });
   wrap.style.setProperty("--n", items.length);
   items.forEach((it, k) => {
     const b = document.createElement("button");
@@ -56478,6 +56483,8 @@ function switchClass(key, row, opts){
   if(enrolledClasses().indexOf(key) < 0 && !(opts.join && key === "academy")) return;
   if(document.getElementById("class-switch-loader")) return;
   /* (384) the loader first, from the tap; this page's copy is written while it fades in, before the reload */
+  /* (384 r16) the class this device opened in, kept: a switch that is given up (or a leave that could not finish) puts it back */
+  let prevActive = null; try{ prevActive = localStorage.getItem("class26e.activeclass"); }catch(e){}
   try{ if(key === "academy") localStorage.removeItem("class26e.activeclass"); else localStorage.setItem("class26e.activeclass", key); }catch(e){ return; }
   if(row) row.classList.add("is-going");
   document.documentElement.classList.add("class-switching");
@@ -56488,9 +56495,13 @@ function switchClass(key, row, opts){
   /* (384 r21) the cover holds at least CSW_HOLD_MS from the tap on the new page (a floor: a fast reload is not a flicker), then
      lifts the moment the new Home is built (finishSplash); a person with reduced motion gets a plain quick cross-fade */
   const calm = (() => { try{ return document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){ return false; } })();
-  const info = NOVA_CLASS_INFO[key] || {}, cls = NOVA_CLASSES.find(c => c.key === key) || {};
+  /* (384 r16) look: the class the cover says it is opening and takes its colours from - the page it reloads into is `key`, but a
+     leave that goes by way of the academy's page (Fire Code, leaving the academy) ends in Fire Code, so its cover is Fire Code's
+     from the first frame to the last and never turns to the academy's colours in between */
+  const look = opts.final || key;
+  const info = NOVA_CLASS_INFO[look] || {}, cls = NOVA_CLASSES.find(c => c.key === look) || {};
   const line = "> opening " + String(info.title || cls.name || "your class") + "...";
-  let reloadIn = 380, went = false, goReload = null;
+  let reloadIn = 380, went = false, goReload = null, giveBack = () => {}, gaveBack = false;
   const inApp = (() => { try{ return navigator.standalone === true || !!(window.matchMedia && matchMedia("(display-mode: standalone)").matches); }catch(e){ return false; } })();
   try{
     const L = document.createElement("div");
@@ -56506,13 +56517,13 @@ function switchClass(key, row, opts){
     let toAcc = "ink";
     try{
       const raw = k => { try{ return localStorage[k]; }catch(e){ return null; } };   /* (a property read: Fire Code's own key-mapping is for getItem) */
-      const shown = raw(key === "academy" ? "class26e.accentshown" : "class26e." + key + ".accentshown");
+      const shown = raw(look === "academy" ? "class26e.accentshown" : "class26e." + look + ".accentshown");
       if(shown && ACCENTS.indexOf(shown) >= 0) toAcc = shown;
       else {
-        const sv = JSON.parse(raw(key === "academy" ? "class26e.drill.v1" : "class26e." + key + ".drill.v1") || "null");
+        const sv = JSON.parse(raw(look === "academy" ? "class26e.drill.v1" : "class26e." + look + ".drill.v1") || "null");
         const acc = sv && sv.theme && sv.theme.accent;
         /* (not Fire Code's copy of the academy's colour, from before 384: never its own) */
-        let leak = null; try{ if(key === "ifc") leak = (JSON.parse(raw("class26e.drill.v1") || "null") || {}).theme.accent; }catch(e){}
+        let leak = null; try{ if(look === "ifc") leak = (JSON.parse(raw("class26e.drill.v1") || "null") || {}).theme.accent; }catch(e){}
         if(acc && ACCENTS.indexOf(acc) >= 0 && acc !== leak) toAcc = acc;
       }
     }catch(e){}
@@ -56571,20 +56582,34 @@ function switchClass(key, row, opts){
     /* a reload that never happens (blocked) gives the screen back - (384) after a minute, not 8s: a reload over a slow connection
        is still under way at 8s (iOS has no event to say so), and giving the old screen back then left it there, stale, until
        the new page landed on top of it */
-    setTimeout(() => {
+    giveBack = () => {
+      if(gaveBack) return; gaveBack = true; went = true;
       if(L.isConnected){
         L.remove(); document.documentElement.classList.remove("class-switching");
         try{ document.documentElement.style.background = ""; if(typeof syncStatusBarColor === "function") syncStatusBarColor(); }catch(e){}
         try{ if(classListClose) classListClose(); }catch(e){}   /* the screen is given back whole: its list shut, Home not stepped back */
       }
-    }, CSW_GIVEUP_MS);
+      /* (384 r16) and the device opens where it did: the switch did not happen */
+      try{ if(prevActive) localStorage.setItem("class26e.activeclass", prevActive); else localStorage.removeItem("class26e.activeclass"); }catch(e){}
+      try{ sessionStorage.removeItem("class26e.classswitch"); }catch(e){}
+      try{ if(opts.onGiveUp) opts.onGiveUp(); }catch(e){}
+    };
+    setTimeout(() => { if(L.isConnected) giveBack(); }, CSW_GIVEUP_MS);
   }catch(e){}
   goReload = () => {
     if(went) return; went = true;
-    try{ persistLocally(); }catch(e){}
-    /* a sign-in's or a sign-up's screen is taken off under the cover, not before it (it was emptied first: a blank beat under the fade) */
-    if(opts.clear){ try{ stage.replaceChildren(); }catch(e){} }
-    requestAnimationFrame(() => requestAnimationFrame(() => location.reload()));
+    const go = () => {
+      if(gaveBack) return;
+      try{ persistLocally(); }catch(e){}
+      /* a sign-in's or a sign-up's screen is taken off under the cover, not before it (it was emptied first: a blank beat under the fade) */
+      if(opts.clear){ try{ stage.replaceChildren(); }catch(e){} }
+      requestAnimationFrame(() => requestAnimationFrame(() => location.reload()));
+    };
+    /* (384 r16) work that has to be done before the page goes (a class left: the account written) is done UNDER the cover, which
+       is already up - the screen never sits there with nothing said while it runs. It calls go() when it is done, or giveBack()
+       if it could not be (nothing is then changed). */
+    if(typeof opts.until === "function"){ try{ opts.until(go, giveBack); }catch(e){ giveBack(); } return; }
+    go();
   };
   setTimeout(goReload, reloadIn);
 }
@@ -56678,12 +56703,22 @@ const NOVA_CLASS_INFO = {
    the same size. Also ensure there's a box that says more classes coming soon." Two across on a
    phone, three on a tablet or laptop; every box the same size; "Enrolled" for any class you are in
    (the one you are in is ringed). */
-function showClassCatalog(){
+/* (384 r16) WHERE IT WAS OPENED FROM, AND BACK GOES THERE. Madison: "I hit the Join another class button, I hit the back button, and that
+   took me to the main menu for some reason." Back was Home's, whichever way the list was opened. From Settings > Manage classes it is
+   that page; from the class button's "+" and the banner it is Home. The Fire Code enrol screen's own Back returns to this list, which
+   then goes on to where it was opened from. */
+let classCatalogFrom = "home";
+function classCatalogBack(from){
+  return from === "settings" ? () => showAppearance({ page: "classes" }) : () => showHome();
+}
+function showClassCatalog(from){
+  classCatalogFrom = from === "settings" ? "settings" : "home";
   markClassesSeen();
   const panel = document.createElement("section");
   panel.className = "panel class-catalog";
+  panel.dataset.from = classCatalogFrom;
   /* (383: "the add class thing didn't get the new back button and stuff" - the round back button and centred title every pushed screen has) */
-  panel.appendChild(iosNavBar("Classes", buildBackLink("Back", showHome)));
+  panel.appendChild(iosNavBar("Classes", buildBackLink("Back", classCatalogBack(classCatalogFrom))));
   const sub = document.createElement("p"); sub.className = "class-catalog-sub"; sub.textContent = "Each class keeps its own rank, level and progress.";
   panel.append(sub);
   const list = document.createElement("div"); list.className = "class-cards";
@@ -56781,87 +56816,222 @@ function buildClassesSect(){
   card.className = "settings-card settings-list settings-classes-card";
   mine.forEach(k => {
     const info = NOVA_CLASS_INFO[k] || {};
-    /* (384 r8) no tile on a Settings page: the class's own mark (shield / flame) came off with the rest */
-    const b = settingsPageRow("classes", classTitle(k), info.kicker || null, k === window.NOVA_CLASS ? "Open now" : null);
+    const cur = k === window.NOVA_CLASS;
+    /* (384 r8) no tile on a Settings page: the class's own mark (shield / flame) came off with the rest.
+       (384 r16) the class you are in says "Current", not "Open now": tapping any row manages that class (it offers to leave it) */
+    const b = settingsPageRow("classes", classTitle(k), info.kicker || null, cur ? "Current" : null);
     b.classList.add("settings-class-row"); b.dataset.cls = k;
+    b.setAttribute("aria-label", "Manage " + classTitle(k) + (cur ? ", your current class" : ""));
     b.addEventListener("click", () => askLeaveClass(k));
     card.appendChild(b);
   });
   const join = settingsPageRow("install", "Join another class");
   join.id = "settings-join-class";
-  join.addEventListener("click", () => { try{ showClassCatalog(); }catch(e){} });
+  join.addEventListener("click", () => { try{ showClassCatalog("settings"); }catch(e){} });
   const add = document.createElement("div");
   add.className = "settings-card settings-list";
   add.appendChild(join);
   const note = document.createElement("p");
   note.className = "settings-classes-note";
-  note.textContent = "Tap a class to leave it. Your progress in it is kept, and comes back if you join again.";
-  return [settingsHeader("Your classes"), card, note, add];
+  note.textContent = "Tap a class to manage it. You can leave a class from here: your progress in it is kept, and comes back if you join again.";
+  return [settingsHeader("Manage classes"), card, note, add];
 }
+/* the Classes page's own contents rebuilt where it stands (a class left from it): not the page mounted again - that put its entrance,
+   its scroll to the top and its tab-bar work through a second time for a list that only lost a row */
+function refreshClassesPage(){
+  const host = document.querySelector(".settings-page-classes");
+  if(!host) return false;
+  [...host.children].filter(n => !n.classList.contains("settings-nav")).forEach(n => n.remove());
+  buildClassesSect().forEach(n => host.appendChild(n));
+  return true;
+}
+/* the sheet that stands in for a class that could not be left: this device could not reach the account, or it did not take it */
+function sayCannotLeave(k, why){
+  const name = classTitle(k);
+  showClassEnrollConfirm(name, "", () => leaveClass(k), {
+    title: "Couldn’t leave " + name,
+    body: (why === "away" ? "Your class list is saved to your account, and this device can’t reach it right now." : "Your account didn’t take the change.")
+      + " Nothing was changed. Check your connection and try again.",
+    yes: "Try again", back: "OK" });
+}
+/* (384 r16) TWO QUESTIONS, NOT ONE. Madison: "When I hit the red leave button, it should ask again for confirmation." The first sheet
+   says what leaving does; its red button opens the second, which names the class and what is kept, and only ITS red button leaves.
+   Cancel on either changes nothing. The second stands where the first stood (shown at once: the first goes, the dim stays). */
 function askLeaveClass(k){
   const mine = enrolledClasses(), name = classTitle(k);
   if(mine.length <= 1 || mine.indexOf(k) < 0){
-    showClassEnrollConfirm(name, "", () => { try{ showClassCatalog(); }catch(e){} }, {
+    showClassEnrollConfirm(name, "", () => { try{ showClassCatalog("settings"); }catch(e){} }, {
       title: name + " is your only class",
       body: "You need at least one class. To leave " + name + ", join another class first.",
       yes: "Join another class", back: "OK" });
     return;
   }
   const other = classTitle(mine.find(x => x !== k));
-  showClassEnrollConfirm(name, "", () => leaveClass(k), {
+  showClassEnrollConfirm(name, "", () => confirmLeaveClassFinal(k), {
     title: "Leave " + name + "?",
     body: name + " comes off your classes" + (k === "academy" ? " and its leaderboard" : "") + ". Your progress in it is kept: join again any time and it’s all there."
       + (k === window.NOVA_CLASS ? " Nova opens " + other + "." : ""),
     yes: "Leave " + name, back: "Cancel", danger: true });
 }
+function confirmLeaveClassFinal(k){
+  const mine = enrolledClasses(), name = classTitle(k);
+  if(mine.length <= 1 || mine.indexOf(k) < 0) return;
+  const other = classTitle(mine.find(x => x !== k));
+  const el = showClassEnrollConfirm(name, "", () => leaveClass(k), {
+    title: "Are you sure you want to leave " + name + "?",
+    body: "This removes " + name + " from your classes and takes you off its leaderboard. Your rank, level, badges and progress in it are kept on your account, and come back if you join again."
+      + (k === window.NOVA_CLASS ? " Nova then opens " + other + "." : ""),
+    yes: "Yes, leave " + name, back: "Cancel", danger: true });
+  try{ el.classList.add("show"); }catch(e){}   /* in the first sheet's place, not faded in over a gap */
+}
+/* Can the account's change reach the account? A leave is saved to it (the list is the account's), so a device that cannot reach it
+   leaves nothing changed. Fire Code asks only the network: the academy's page writes it. */
+function leaveCanReach(){
+  try{
+    if(navigator.onLine === false) return false;
+    if(window.NOVA_CLASS !== "academy") return true;
+    if(!syncCode || syncOff) return true;      /* a device that does not sync has no account to reach */
+    return !!acctDb();
+  }catch(e){ return true; }
+}
+/* The account's write has landed (nothing in flight, queued or failed), or there is nothing to land. */
+function leaveWritten(){
+  try{
+    if(!syncCode || syncOff || !acctDb()) return true;
+    return cloudConfirmedFor === syncCode && !accountWriteAt && !accountWriteNext && !cloudPushPending && !cloudPushTimer && !accountWriteFails;
+  }catch(e){ return true; }
+}
+const LEAVE_WRITE_MS = 8000;
+function waitLeaveWritten(done){
+  const t0 = Date.now();
+  const look = () => {
+    if(leaveWritten()){ done(true); return; }
+    if(Date.now() - t0 >= LEAVE_WRITE_MS){ done(false); return; }
+    /* a page just opened asks the server for the account before it may write (the rule: nothing writes before this launch has
+       read it), and the push that was waiting then goes on the usual few-second deferral - the leave does not wait that out */
+    try{ if(syncCode && acctDb() && cloudConfirmedFor === syncCode && !accountWriteAt && !accountWriteNext && (cloudPushTimer || cloudPushPending)) pushToCloud(true); }catch(e){}
+    setTimeout(look, 120);
+  };
+  setTimeout(look, 60);
+}
+let classLeaving = false;
 function leaveClass(k){
-  if(enrolledClasses().length <= 1) return;
-  /* the list lives on the academy's copy: from Fire Code, the academy page finishes it */
+  if(classLeaving) return;
+  const mine = enrolledClasses();
+  if(mine.length <= 1 || mine.indexOf(k) < 0) return;
+  if(!leaveCanReach()){ sayCannotLeave(k, "away"); return; }
+  const other = mine.find(x => x !== k), name = classTitle(k);
+  /* the list lives on the academy's copy: from Fire Code, the academy's page writes the leave - and goes straight on to Fire Code
+     if it was the academy that was left (one cover from the tap to the end: its colours are the class you end in) */
   if(window.NOVA_CLASS !== "academy"){
     try{ localStorage.setItem(LEAVE_CLASS_KEY, JSON.stringify({ key: k, at: Date.now() })); }catch(e){ return; }
-    switchClass("academy");
+    classLeaving = true;
+    switchClass("academy", null, { note: "left", final: k === "academy" ? "ifc" : "academy",
+      onGiveUp: () => { classLeaving = false; try{ localStorage.removeItem(LEAVE_CLASS_KEY); }catch(e){} sayCannotLeave(k, "away"); } });
     return;
   }
-  finishLeaveClass(k);
+  /* another class than the one you are in: the account is written and the page it was asked from loses the row, where it stands */
+  if(k !== window.NOVA_CLASS){
+    if(!finishLeaveClass(k)){ sayCannotLeave(k, "refused"); return; }
+    try{ showToast("You left " + name + "."); }catch(e){}
+    refreshClassesPage();
+    return;
+  }
+  /* the class you are in: the cover comes up at the tap, the account is written UNDER it, and the page goes to the other class
+     once the account has it. If it cannot be written, the class is not left (undone) and the screen is given back. */
+  classLeaving = true;
+  let applied = false;
+  switchClass(other, null, { note: "left",
+    until: (go, giveBack) => {
+      if(!finishLeaveClass(k)){ giveBack(); return; }
+      applied = true;
+      setLeftNote({ name });
+      waitLeaveWritten(ok => { if(ok) go(); else giveBack(); });
+    },
+    onGiveUp: () => {
+      classLeaving = false;
+      if(applied){ applied = false; undoLeaveClass(k); }
+      setLeftNote(null);
+      sayCannotLeave(k, "refused");
+    } });
 }
+/* the class off the account's list, its board row off its board, the account written. true when the list took it. */
 function finishLeaveClass(k){
-  if(!setEnrolled(k, false)) return;
-  const name = classTitle(k);
+  if(!setEnrolled(k, false)) return false;
   /* (385) leaving Fire Code takes the account's row off Fire Code's board (the class's own copy never runs again until it is
      joined again; that visit publishes the row back) */
   if(k === "ifc"){ try{ retireOtherClassBoardRow("ifc", publicIdOf()); }catch(e){} }
-  if(k === "academy"){
-    try{ retireLeaderboardEntry(publicIdOf()); }catch(e){}
-    try{ pushToCloud(true); }catch(e){}
-    /* the account written before the page goes (a pending write may not outlive the reload); 6s at most */
-    const t0 = Date.now();
-    const go = () => {
-      let busy = false;
-      try{ busy = !!(accountWriteAt || accountWriteNext || cloudPushPending); }catch(e){}
-      if(busy && Date.now() - t0 < 6000){ setTimeout(go, 200); return; }
-      try{ localStorage.setItem("class26e.leftnote", name); }catch(e){}
-      switchClass("ifc");
-    };
-    setTimeout(go, 300);
-    return;
-  }
+  if(k === "academy"){ try{ retireLeaderboardEntry(publicIdOf()); }catch(e){} }
   try{ pushToCloud(true); }catch(e){}
-  try{ showToast("You left " + name + "."); }catch(e){}
-  if(document.querySelector(".settings-page-classes")) showAppearance({ page: "classes" });
-  try{ mountClassBubble(); }catch(e){}
+  return true;
 }
-/* The academy page finishing a leave asked for in Fire Code, and either page saying a leave that moved it */
+/* a leave that did not finish put back: the class is joined again (dated after the leave, so no other copy keeps it off), and
+   its board row comes back with the next push. The account ends as it began. */
+function undoLeaveClass(k){
+  try{ setEnrolled(k, true); }catch(e){}
+  try{ pushToCloud(true); }catch(e){}
+}
+/* What the next page says about a leave: "You left X." (or that it could not be done). Shared between the classes (the head
+   script's SHARED list: it was Fire Code's own key, so the academy never saw it), read once and said when Home has settled. */
+const LEFT_NOTE_KEY = "class26e.leftnote";
+function setLeftNote(n){ try{ if(n) localStorage.setItem(LEFT_NOTE_KEY, JSON.stringify(n)); else localStorage.removeItem(LEFT_NOTE_KEY); }catch(e){} }
+function sayLeftNote(){
+  let n = null;
+  try{
+    const raw = localStorage.getItem(LEFT_NOTE_KEY);
+    if(raw){
+      localStorage.removeItem(LEFT_NOTE_KEY);
+      try{ n = JSON.parse(raw); }catch(e){ n = { name: raw }; }
+      if(typeof n === "string") n = { name: n };
+    }
+  }catch(e){ n = null; }
+  if(!n || typeof n !== "object" || !n.name) return;
+  const text = n.fail ? "Couldn’t leave " + n.name + ". Nothing was changed." : "You left " + n.name + ".";
+  let tries = 0;
+  const say = () => {
+    if((document.getElementById("splashscreen") || document.getElementById("class-switch-loader")) && ++tries < 40){ setTimeout(say, 400); return; }
+    try{ showToast(text); }catch(e){}
+  };
+  setTimeout(say, 700);
+}
+/* Straight on into another class from a page that was only a stop on the way (the academy's page, finishing a leave asked for in
+   Fire Code): the cover that is up carries on - same picture, same bar, same arrival record - and the next page is the class. */
+function hopToClass(key, note){
+  try{ if(key === "academy") localStorage.removeItem("class26e.activeclass"); else localStorage.setItem("class26e.activeclass", key); }catch(e){}
+  setLeftNote(note || null);
+  try{ persistLocally(); }catch(e){}
+  try{
+    const a = window.NOVA_CLASS_ARRIVE;
+    if(a && typeof a === "object") sessionStorage.setItem("class26e.classswitch", JSON.stringify(Object.assign({}, a, { to: key, note: "left" })));
+  }catch(e){}
+  requestAnimationFrame(() => requestAnimationFrame(() => location.reload()));
+}
+/* The academy's page finishing a leave asked for in Fire Code. Run before Home is built (showHome's first line): a leave of Fire
+   Code is done and Home is built once, with the right class list; a leave of the academy is written and the page goes straight on
+   to Fire Code with Home never built (true: the cover stays up, finishSplash waits on NOVA_CLASS_HOP). */
 function runPendingClassLeave(){
-  let note = null;
-  try{ note = localStorage.getItem("class26e.leftnote"); if(note) localStorage.removeItem("class26e.leftnote"); }catch(e){}
-  if(note) setTimeout(() => { try{ showToast("You left " + note + "."); }catch(e){} }, 900);
-  if(window.NOVA_CLASS !== "academy") return;
+  if(window.NOVA_CLASS !== "academy") return false;
+  if(window.NOVA_CLASS_HOP) return true;
   let p = null;
   try{ p = JSON.parse(localStorage.getItem(LEAVE_CLASS_KEY) || "null"); localStorage.removeItem(LEAVE_CLASS_KEY); }catch(e){ p = null; }
-  if(!p || (p.key !== "academy" && p.key !== "ifc") || Date.now() - (Number(p.at) || 0) > 120000) return;
-  if(!store || !store.onboardingComplete || enrolledClasses().length <= 1) return;
-  if(p.key === "ifc"){ try{ localStorage.removeItem("class26e.activeclass"); }catch(e){} }
-  finishLeaveClass(p.key);
+  if(!p || (p.key !== "academy" && p.key !== "ifc") || Date.now() - (Number(p.at) || 0) > 120000) return false;
+  if(!store || !store.onboardingComplete) return false;
+  const k = p.key, name = classTitle(k), mine = enrolledClasses();
+  if(mine.length <= 1 || mine.indexOf(k) < 0) return false;
+  if(k === "ifc"){
+    try{ localStorage.removeItem("class26e.activeclass"); }catch(e){}
+    setLeftNote(finishLeaveClass("ifc") ? { name } : { name, fail: true });
+    return false;
+  }
+  window.NOVA_CLASS_HOP = Date.now();
+  try{
+    if(!finishLeaveClass("academy")){ hopToClass("ifc", { name, fail: true }); return true; }
+    waitLeaveWritten(ok => {
+      if(!ok){ undoLeaveClass("academy"); hopToClass("ifc", { name, fail: true }); }
+      else hopToClass("ifc", { name });
+    });
+  }catch(e){ hopToClass("ifc", { name, fail: true }); }
+  return true;
 }
 function confirmJoinAcademy(){
   const info = NOVA_CLASS_INFO.academy || {};
@@ -56897,7 +57067,7 @@ function showIfcEnroll(opts){
   const panel = document.createElement("section");
   panel.className = "panel class-enroll is-ifc" + (opts.signup ? " is-signup" : "");
   /* (383: "the add class thing didn't get the new back button and stuff" - the round back button and centred title every pushed screen has) */
-  panel.appendChild(iosNavBar("Fire Code", opts.signup ? buildBackLink("Back", showClassSelection) : buildBackLink("Classes", showClassCatalog)));
+  panel.appendChild(iosNavBar("Fire Code", opts.signup ? buildBackLink("Back", showClassSelection) : buildBackLink("Classes", () => showClassCatalog(classCatalogFrom))));
   panel.insertAdjacentHTML("beforeend", '<div class="ce-emblem">' + c.icon + '</div>');
   const h = document.createElement("h1"); h.className = "ce-title"; h.textContent = "Enroll in Fire Code";
   const k = document.createElement("p"); k.className = "ce-kicker"; k.textContent = "2021 IFC + HC Amendments";
@@ -68175,7 +68345,10 @@ function pickAcademyCopy(a){
   return { publicId: typeof a.publicId === "string" && a.publicId ? a.publicId : null, firstName: a.firstName || "",
            avatarChar: a.avatarChar || null, leaderboardOptIn: a.leaderboardOptIn, lastModified: Number(a.lastModified) || 0,
            /* (384) the classes the account is in (accountClassesOf) - Fire Code's class button lists them */
-           classes: cleanClassList(a.classes) };
+           classes: cleanClassList(a.classes),
+           /* (384 r16) and when it joined and left each, so the list here is read as the academy reads it (classesWithLeaves) */
+           classJoinedAt: (a.classJoinedAt && typeof a.classJoinedAt === "object") ? a.classJoinedAt : {},
+           classLeftAt: (a.classLeftAt && typeof a.classLeftAt === "object") ? a.classLeftAt : {} };
 }
 function academyCopyNow(){
   if(!academyCopy){   /* (384) and before its line has run (a var: undefined), should anything ask that early */
@@ -110586,6 +110759,8 @@ function sayClassArrival(){
   if(said){ try{ holdNoticesAfterTour(); }catch(e){} showWelcomeBackBanner(said); }
 }
 function showHome(){
+  /* (384 r16) a leave asked for in Fire Code is finished here before anything is built; one that goes straight on to Fire Code builds no Home */
+  try{ if(runPendingClassLeave()) return; }catch(e){}
   if(academyHomeBarred()){ enterAccountClass(); return; }
   /* a browser tab keeps its sign-in in its own address (build 327z) */
   try{ syncBrowserCodeUrl(); }catch(e){}
@@ -110982,7 +111157,7 @@ function showHome(){
   versionTag.hidden = true; versionTag.tabIndex = -1; versionTag.setAttribute("aria-hidden", "true");
   stage.appendChild(versionTag);
   try{ mountClassBubble(); maybeClassGreeting(); if(classSwitchAllowed()) maybeNewClassBanner(); }catch(e){}
-  try{ runPendingClassLeave(); }catch(e){}   /* (384 r4) */
+  try{ sayLeftNote(); }catch(e){}   /* (384 r4, r16) */
   /* (384) a page opened by a sign-in elsewhere welcomes them back; one opened by the class button welcomes them to the class;
      and an account in Fire Code has its questions in the cache before it switches (warmIfcBank) */
   try{ sayClassArrival(); maybeSwitchWelcome(); warmIfcBankSoon(); }catch(e){}
