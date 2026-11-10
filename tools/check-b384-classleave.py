@@ -280,7 +280,12 @@ def sec_academy_leaves(pw, srv, start, label):
         pts = ev(X, "()=>store.lifetime && store.lifetime.points")
         chk("lists rejoin the academy: both classes are back and the academy's progress is as it was (%s points) (%s)" % (pts, st["enrolled"]),
             st["enrolled"] == ["academy", "ifc"] and pts == 900, st)
+        # the academy's page records the join as it opens and the account's write follows its first read of the cloud's copy: ~0.6s after Home is
+        # up, which is where the 600ms the page was left to settle for ended - so the cloud is read until it has it (a few seconds at most), not once
         cl = V.cloud_now(X.pg) or {}
+        for _ in range(40):
+            if cl.get("classes") == ["academy", "ifc"] and (cl.get("joined") or {}).get("academy"): break
+            X.pg.wait_for_timeout(250); cl = V.cloud_now(X.pg) or {}
         chk("lists rejoin the academy: the cloud lists both (%s), the join dated after the leave (%s)" % (cl.get("classes"), cl),
             cl.get("classes") == ["academy", "ifc"] and (cl.get("joined") or {}).get("academy", 0) > (cl.get("left") or {}).get("academy", 1e18), cl)
         errs = [e for e in X.S.errs if "Failed to load" not in e]

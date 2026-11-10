@@ -70,7 +70,7 @@ DEV = {"iphone": (440, 956, (62, 0, 34, 0), "iphone", 5, None), "se": (375, 667,
        "ipad-land": (1194, 834, (24, 0, 20, 0), "ipad", 5, None), "android-land": (800, 360, (0, 32, 0, 32), "android", 5, None),
        "windows": (1536, 864, (0, 0, 0, 0), "windows", 0, None), "mac": (1440, 900, (0, 0, 0, 0), "mac", 0, None)}
 PERF = """(()=>{ window.__ls = []; try{ new PerformanceObserver(l => { for(const e of l.getEntries()) window.__ls.push({ t: e.startTime, v: e.value,
-   src: (e.sources || []).map(s => s.node ? (s.node.id || s.node.className || s.node.nodeName) : '') }); }).observe({ type: 'layout-shift', buffered: true }); }catch(e){}
+   src: (e.sources || []).map(s => s.node ? ((s.node.nodeName === 'IMG' && s.node.closest && s.node.closest('.rk-frame, .char-flip-play')) ? 'LOOP' : (s.node.id || s.node.className || s.node.nodeName)) : '') }); }).observe({ type: 'layout-shift', buffered: true }); }catch(e){}
   const go = () => new MutationObserver(ms => { for(const m of ms){ const t = m.target;
       if(t && t.id === 'a2hsbar' && t.classList.contains('show') && !window.__barShowAt) window.__barShowAt = performance.now(); } })
       .observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'], childList: true });
@@ -326,7 +326,11 @@ with sync_playwright() as pw:
             chk("(8) %s the bar's layout position does not change after it has arrived (its slide in is a transform) (%s then %s)" % (dev, top_a, top_b), top_a is not None and top_b is not None and abs(top_a - top_b) <= 1, [top_a, top_b])
             if True:   # every device
                 L = pg.evaluate("()=>({ ls: window.__ls || [], at: window.__barShowAt || 0, hero: (()=>{ const h=document.querySelector('.cosmic-hero-wrap'); return h ? getComputedStyle(h).translate : null; })() })")
-                later = [e for e in L["ls"] if e["t"] >= L["at"] - 120]
+                # a recorded loop's sprite sheet (a flare, a character) is stepped by left/top inside an overflow:hidden window (html.loops-paint, build 380) and
+                # Chromium 1243 reports each step as a shift of that IMG while an ancestor moves on the compositor (the hero's ease here, the flares'
+                # float always: origin/main's Home alone has 0.04 in 2.5s, 0 with the loops' animation off). Nothing in the window moves: told apart
+                # ('LOOP') and not counted; every other source still is.
+                later = [e for e in L["ls"] if e["t"] >= L["at"] - 120 and not (e["src"] and all(x == "LOOP" for x in e["src"]))]
                 chk("(8) %s no layout shift from the moment the bar shows (%d entries in all, %d from then; %s); the planet moves by translate (%s)"
                     % (dev, len(L["ls"]), len(later), [(round(e["v"], 4), e["src"]) for e in later][:3], L["hero"]), L["at"] > 0 and not later, L)
             errs_all.extend(pg.errs); ctx.close()

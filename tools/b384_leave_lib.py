@@ -35,7 +35,7 @@ WITNESS = r"""(()=>{ if(location.protocol !== 'http:') return;
   push({ k: 'load', cls: window.NOVA_CLASS || null, cover: cover() });
   try{ new PerformanceObserver(l => { for(const e of l.getEntries()){
     push({ k: 'ls', v: +e.value.toFixed(4), cover: cover(), input: !!e.hadRecentInput, st: Math.round(e.startTime),
-      src: (e.sources || []).slice(0, 3).map(s => { const n = s.node; return n ? (n.id ? '#' + n.id : (n.className && String(n.className).split(' ')[0] ? '.' + String(n.className).split(' ')[0] : n.nodeName)) : '?'; }) });
+      src: (e.sources || []).slice(0, 3).map(s => { const n = s.node; if(n && n.nodeName === 'IMG' && n.closest && n.closest('.rk-frame, .char-flip-play')) return 'LOOP'; return n ? (n.id ? '#' + n.id : (n.className && String(n.className).split(' ')[0] ? '.' + String(n.className).split(' ')[0] : n.nodeName)) : '?'; }) });
   } }).observe({ type: 'layout-shift', buffered: true }); }catch(e){}
   try{ new PerformanceObserver(l => { for(const e of l.getEntries()) push({ k: 'lt', d: Math.round(e.duration), st: Math.round(e.startTime), cover: cover() }); }).observe({ type: 'longtask', buffered: true }); }catch(e){}
   // the cover (the switch's loader) going up, and the splash going away
@@ -136,10 +136,16 @@ def summarise(log, t_tap):
     cover = next((e["t"] - t0 for e in log if e["k"] == "cover" and e["t"] >= t0 - 50), None)
     reload1 = loads[0]["t"] - t0 if loads else None
     gone = next((e["t"] - t0 for e in log if e["k"] == "splashgone" and e["t"] >= t0 - 50), None)
+    # A LOOP'S SPRITE SHEET IS NOT A LAYOUT SHIFT. A recorded loop (a flare, a character) is a sheet stepped by left/top inside an overflow:hidden window
+    # (html.loops-paint, build 380); Chromium 1243 reports each step as a shift of the IMG while an ancestor is moving on the compositor (the flares
+    # float, the hero eases), 0.04 in 2.5s on origin/main's Home, 0 with the loops' animation off - and nothing in the window moves. They are told
+    # apart ('LOOP') and counted on their own: every other shift still counts.
+    loops = [e for e in ls if e["src"] and all(x == "LOOP" for x in e["src"])]
+    ls = [e for e in ls if not (e["src"] and all(x == "LOOP" for x in e["src"]))]
     seen = [e for e in ls if e["cover"] < .5]                 # a shift with the cover mostly away: the person sees it
     return {
         "loads": len(loads), "load_classes": [e["cls"] for e in loads],
-        "shift_all": round(sum(e["v"] for e in ls), 4), "shift_seen": round(sum(e["v"] for e in seen), 4),
+        "shift_loops": round(sum(e["v"] for e in loops), 4), "shift_all": round(sum(e["v"] for e in ls), 4), "shift_seen": round(sum(e["v"] for e in seen), 4),
         "shift_seen_n": len(seen), "shift_seen_src": sorted({s for e in seen for s in e["src"]})[:8],
         "longest_task": max([e["d"] for e in lt] or [0]), "tasks": len(lt), "tasks_uncovered": [e["d"] for e in lt if e["cover"] < .5],
         "homes": len(homes), "home_classes": [e["cls"] for e in homes], "covers": len([e for e in log if e["k"] == "cover" and e["t"] >= t0 - 50]),
