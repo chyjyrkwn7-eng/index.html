@@ -37823,6 +37823,29 @@ Madison, Settings > Advanced: "Why is this font bigger than the rest of the scre
 THE TOP BLUR (Madison's display-test recording, build 384.9): the grey wash over the top ~95pt measured (41,40,41) in all 13 steps - nothing off, everything off at once, each of backdrop-filter / glow+stars / masks / filters / will-change / chat-button blur / pinned header / chat dock / animations / tab bar / every fixed layer off - so none of our layers makes it; his phone had updated that morning and a screenshot from the evening before is crisp. It is the system's progressive blur over the top of a black-translucent Home-Screen app (iOS 26.1+/27; other apps report it: autobrr/qui #2520, nesquena/hermes-webui #8365, stacker.news #3248 - WebKit samples the top pixels of the viewport; a small opaque fixed element at the very top blocks it). `syncTopGuard(color)` (called from syncStatusBarColor): #top-guard, fixed, top:0, 8px, the status-bar colour, pointer-events none, installed iPhone/iPad only, a NEW element when the colour changes; `class26e.topguard`="0" removes it; the display test has a "Top strip OFF" switch. EXPERIMENTAL - only a phone can say. The proper fix (status-bar-style default) needs every install re-added. `tools/check-b384-topguard.py`.
 Reset's Cancel (either screen) goes to Advanced (showAdvancedSettings), not Settings' first page (check-b384-resetconfirm). Contributors: "The original idea for the app" and "Virtual Room design" removed; every row a short phrase; Cameron lists four rows like the founder; `tools/check-b384-credits2.py`. Terms of Use ends with the app icon (the page's data-URI favicon, 76px, centred). The manifest's background_color is #0A0A0A (the splash's colour; theme_color unchanged).
 
+## 384.18 - the friend-code field has no fake cursor
+
+Madison, the Add a friend field circled: "Not centered, and the cursor is flashing". The blinking line was a `.friend-add-field::before`
+placed from the hint's measured width (`--ph-w`) with a `text-indent:.55rem` on the hint to make room; at his page zoom (0.85) it stood
+~28px left of the hint and the indent pushed the hint off the field's middle. Both are removed, with the JS that measured the hint. The
+empty field has `caret-color:transparent` (as the username field), the hint is plain centred text (left/right space within 2px), and the
+browser's own caret appears only while a code is typed. `check-b384-friendfield.py` now asserts the hint centred within 2px and no
+pseudo-element/animation/indent; it fails on 384.17 (7 FAIL).
+
+### 384.18 - a bar under both rank challenges
+
+Madison, the two Rank challenges circled: "Why is there a progress bar only under one of these". Build 321 had taken the level row's bar
+off (it repeated the XP bar above it on Profile); read alone it looked like a missing one. `buildProfileTask` now gives the level row
+a `.pf-bar` too, filled by levels reached out of the level asked (capped, full once met). The rank-up journey already handled a bar on
+that row (`ruTo`). `check-behaviour` 321f updated (bar present, unmet and met); the rank-word colour assertion there was already
+failing on 384.17 (stale, not from this).
+
+### 384.18 - first place's crown is upright
+
+Madison: "I don't like the leaning crown thing anymore, make that better". `.lb-crown` was rotated -8deg and drawn lopsided. It is now level
+(`rotate:0`), symmetric (three points with a bead on each tip, a band, a jewel), a little larger and snug on the medal's top edge;
+its centre equals the medal's centre (measured 47.375 vs 47.383 on a phone, equal on an iPad). Markup/CSS only; `check-behaviour`
+only asserts the crown's presence.
 ### 384 r20 - the mode screens fill their screens
 Madison, on Choose your mode (Fire Code's three) and the Virtual Room's Host / Join, from his iPhone 17 Pro Max at ~85% page zoom (518x1126 CSS px on a 440x956 screen): "There's so much open space on these screens, it doesn't look like that. In the academy there's a 4th mode in mode selection so it looks better, however, on the phone not so much.. should we do them as a different looking boxes? Almost like the boxes you see when signing up for a class? Idk? Fix it though.. each device size may need a different layout and that's okay." (Branch worktree-agent-a0cbcdbc42a392ec0, cut from main 4bb08b1; NOT on main.)
 - WHAT WAS WRONG. The cards were the same flat 160px rows at every size, centred (build 384) in a screen three times their height: ~300pt dead above and below on his phone (Fire Code three), and two rows parked at the top of Host / Join with the lower 60% empty (r9 had moved them up from the centre). Centring and parking both leave the room; the fix is to use it.
