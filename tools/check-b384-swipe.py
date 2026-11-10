@@ -20,7 +20,7 @@ For every adjacent pair of tabs, both directions:
      scrolls sideways itself (a strip made to scroll sideways, put on the screen) does not, and does not move the content.
  (8) A SECOND SWIPE THAT STARTS WHILE THE FIRST IS STILL LANDING (150ms after it) is taken: the first is carried to its end at once and the
      second goes on from there (three tabs: first -> third).
- (6) FIRE CODE: its Profile has no tabs: a sideways drag moves nothing, switches nothing and throws nothing.
+ (6) FIRE CODE: its Profile has two tabs (Profile, Stats - 384 r21): a sideways drag follows the finger like the academy's and throws nothing.
  (7) no page error.
 Run:  python3 tools/check-b384-swipe.py [--only 1,2,...] [--against REV|path/to/index.html]   (--against 3a6675d must FAIL (1)(3)(5))"""
 import os, sys, time, json, math, statistics
@@ -234,7 +234,7 @@ with sync_playwright() as pw:
         tabs = tabs_of(pg); y = pg.evaluate(FINDY)
         pg.evaluate(LOGGER); drag(pg, cdp, 330, 150, y, 0.4); pg.wait_for_timeout(700)
         seen = pg.evaluate("()=>window.__s.fr.some(f=>f[3])")
-        chk("(6) Fire Code's Profile (%d tabs): a sideways drag moves nothing and throws nothing" % len(tabs), not seen and not errs, (seen, errs))
+        chk("(6) Fire Code's Profile (%d tabs): a sideways drag follows the finger (moved: %s) and throws nothing" % (len(tabs), seen), len(tabs) == 2 and seen and not errs, (len(tabs), seen, errs))
         allerrs += errs; ctx.close()
     chk("(7) no page error", not allerrs, allerrs)
     br.close()
