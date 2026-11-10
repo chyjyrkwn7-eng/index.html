@@ -150473,7 +150473,15 @@ function buildProfileTask(c, color){
     here.append("Level ", now);
     const done = document.createElement("span"); done.className = "pf-lv-met"; done.textContent = "Met";
     val.append(here, done);
-    t.append(ck, lab, val);
+    /* (384.18) a bar under BOTH rows. Madison, the two challenges circled: "Why is there a progress bar only under one of these".
+       Build 321 took the level row's bar off (it repeated the XP bar above it); read on its own, with the badge row's bar beside it,
+       it looked like a missing one. Levels so far of the level asked (capped, like the number). */
+    const lbar = document.createElement("span");
+    lbar.className = "pf-bar";
+    const lfill = document.createElement("i");
+    lfill.style.setProperty("--w", Math.round(Math.min(1, (Number(c.now) || 0) / Math.max(1, Number(c.need) || 1)) * 1000) / 10 + "%");
+    lbar.appendChild(lfill);
+    t.append(ck, lab, val, lbar);
   } else {
     lab.textContent = c.label;
     const sep = document.createElement("span"); sep.className = "pf-sep"; sep.textContent = " / ";

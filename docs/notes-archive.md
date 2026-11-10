@@ -37832,3 +37832,11 @@ placed from the hint's measured width (`--ph-w`) with a `text-indent:.55rem` on 
 empty field has `caret-color:transparent` (as the username field), the hint is plain centred text (left/right space within 2px), and the
 browser's own caret appears only while a code is typed. `check-b384-friendfield.py` now asserts the hint centred within 2px and no
 pseudo-element/animation/indent; it fails on 384.17 (7 FAIL).
+
+### 384.18 - a bar under both rank challenges
+
+Madison, the two Rank challenges circled: "Why is there a progress bar only under one of these". Build 321 had taken the level row's bar
+off (it repeated the XP bar above it on Profile); read alone it looked like a missing one. `buildProfileTask` now gives the level row
+a `.pf-bar` too, filled by levels reached out of the level asked (capped, full once met). The rank-up journey already handled a bar on
+that row (`ruTo`). `check-behaviour` 321f updated (bar present, unmet and met); the rank-word colour assertion there was already
+failing on 384.17 (stale, not from this).
