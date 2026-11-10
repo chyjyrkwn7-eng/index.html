@@ -96033,16 +96033,21 @@ function syncLoopClock(root){
   let lag = 0;
   try{ const tl = document.timeline && document.timeline.currentTime; if(typeof tl === "number") lag = Math.max(0, performance.now() - tl); }catch(e){}
   const wall = loopWallMs(lag);
+  /* (384 r15) ALL THE READS, THEN ALL THE WRITES. getTiming() on a CSS animation updates the style it was made from, and the write
+     above it (a.currentTime =) had made that dirty - so each loop's read put the page through a style pass again: 75 on a Home
+     (traced: UpdateLayoutTree attributed to this callback, 75 a tab change, ~8ms at 1x, ~30ms at 4x), the same on the Leaderboard's
+     rows. Read first, write after: one pass, the same times. */
+  const todo = [];
   anims.forEach(a => {
     try{
       const t = a.effect && a.effect.getTiming();
       if(!t || t.iterations !== Infinity || !(Number(t.duration) > 0)) return;
       /* the rings, and the veils timed to them, are ahead of the wall
          clock by whatever planet taps have gained them (build 318) */
-      const ahead = ORBIT_PHASE_ANIMS[a.animationName] ? orbitAdvanceMs : 0;
-      a.currentTime = wall + ahead;
+      todo.push([a, ORBIT_PHASE_ANIMS[a.animationName] ? orbitAdvanceMs : 0]);
     }catch(e){}
   });
+  todo.forEach(([a, ahead]) => { try{ a.currentTime = wall + ahead; }catch(e){} });
 }
 /* WHERE EACH BUBBLE'S SHEET WENT LAST TIME (build 314), so a Home that
    comes back can put every sheet on in the same task that mounts it -
@@ -145704,17 +145709,27 @@ function lbWatchOffscreen(rows, more){
   if(rows._lbIo) rows._lbIo.disconnect();
   const io = new IntersectionObserver(list => {
     if(!document.contains(rows)){ io.disconnect(); return; }
+    /* (384 r15) READS, THEN WRITES, THEN THE CLOCK. Each entry read a row's computed padding after the previous entry had changed a
+       class on its own row - a style pass per entry (14 on a Leaderboard open, traced); and each flare put back on the clock was
+       its own getAnimations after the last class change. The paddings are read first (a row's padding does not depend on the
+       classes below), the sizes and classes written next, the flares set last. */
+    const sizes = [];
     list.forEach(e => {
       /* the row's own height is its place while its contents are skipped (content-visibility; the size given is the
          content box, so the padding and border come off), so the list does not change length under a scroll */
-      if(!e.isIntersecting && e.target.classList.contains("rank-row")){ const cs = getComputedStyle(e.target), h = e.boundingClientRect.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0); if(h > 1) e.target.style.containIntrinsicHeight = (Math.round(h * 10) / 10) + "px"; }
+      if(!e.isIntersecting && e.target.classList.contains("rank-row")){ const cs = getComputedStyle(e.target), h = e.boundingClientRect.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0); if(h > 1) sizes.push([e.target, (Math.round(h * 10) / 10) + "px"]); }
+    });
+    sizes.forEach(([t, h]) => { t.style.containIntrinsicHeight = h; });
+    const resync = [];
+    list.forEach(e => {
       const wasOff = e.target.classList.contains("is-offscreen");
       e.target.classList.toggle("is-offscreen", !e.isIntersecting);
       /* a rank flare paused off screen comes back on the shared clock
          (build 324), level with every other flare of its rank - (build 380) only one that WAS off screen: the observer's first report on
          every row on screen re-synced flares put on the clock a moment before (a style pass each) */
-      if(e.isIntersecting && wasOff) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { try{ syncLoopClock(a); }catch(x){} });
+      if(e.isIntersecting && wasOff) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => resync.push(a));
     });
+    resync.forEach(a => { try{ syncLoopClock(a); }catch(x){} });
   }, { rootMargin: "240px 0px" });
   rows._lbIo = io;
   /* not marked off-screen up front (build 310): the observer's first
@@ -157914,6 +157929,9 @@ function tabPerfText(){
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
         finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
+          /* (384 r15) the screen a tap has just brought in is held while the glass is still over it (see lensDown); its first look is the
+             frame after it is drawn, not inside the tap's own task */
+          requestAnimationFrame(() => { if(!slideNav && lensG && lens.classList.contains("is-up")) barUnderPause(true); });
           /* build 375: the frame after the one that drew it - the glass may land now */
           requestAnimationFrame(() => requestAnimationFrame(() => { if(bar._lensScreenIn) bar._lensScreenIn(); }));
           if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++;
@@ -158386,27 +158404,34 @@ function tabPerfText(){
         barUnderBand = { top: br.top - 40, bottom: br.bottom + 14 };
       }
       const top = barUnderBand.top, bottom = barUnderBand.bottom;
+      /* (384 r15) ALL THE READS, THEN ALL THE PAUSES. Each pause() made the next animation's playState read a style pass: 66 of them in one
+         look on a Home (traced, UpdateLayoutTree attributed to this function), on the thread that carries the glass. The looks are
+         the same; the animations are judged first and held after. */
+      const hold = [], under = [];
       st.getAnimations({ subtree: true }).forEach(a => {
         if(a.playState !== "running" || barUnderSeen.has(a)) return;
         barUnderSeen.add(a);
         const t = a.effect && a.effect.target;
         if(!t || !t.getBoundingClientRect) return;
         /* build 382: Home's hero, wherever it is on the screen (383: and Profile's card and challenges, the board's rows) */
-        if(t.closest && t.closest(SLIDE_HOLD_SEL)){ try{ a.pause(); slideHeldPaused.push(a); }catch(e){} return; }
+        if(t.closest && t.closest(SLIDE_HOLD_SEL)){ hold.push(a); return; }
         /* build 380: a loop is where its window is - the sheet inside it moves by left/top from frame to frame, so its own box wanders
            in and out of the bar's band while what is seen stays put */
         const r = ((t.closest && t.closest(".rk-frame, .char-flip-play")) || t).getBoundingClientRect();
-        if(r.width > 0 && r.bottom > top && r.top < bottom){ try{ a.pause(); barUnderPaused.push(a); }catch(e){} }
+        if(r.width > 0 && r.bottom > top && r.top < bottom) under.push(a);
       });
+      hold.forEach(a => { try{ a.pause(); slideHeldPaused.push(a); }catch(e){} });
+      under.forEach(a => { try{ a.pause(); barUnderPaused.push(a); }catch(e){} });
     }catch(e){}
   }
+  /* (384 r15) the same way back: which are paused is read first, then they play (a play() between two reads was a style pass each) */
   function barUnderResume(){
     const list = barUnderPaused; barUnderPaused = [];
-    list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+    list.filter(a => { try{ return a.playState === "paused"; }catch(e){ return false; } }).forEach(a => { try{ a.play(); }catch(e){} });
   }
   function slideHeldResume(){
     const list = slideHeldPaused; slideHeldPaused = [];
-    list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+    list.filter(a => { try{ return a.playState === "paused"; }catch(e){ return false; } }).forEach(a => { try{ a.play(); }catch(e){} });
   }
   let tabDragMoved = false;
   let tabDragPointerId = null;
@@ -158940,6 +158965,13 @@ function tabPerfText(){
     lensPlay(lensSpring(s0, v0, () => ({ cx: ti.c, W: ti.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
     if(lensRun) lensRun.lift = true;
     lensMagnify(ti.c, 1, 220, 0);
+    /* (384 r15) A TAP HOLDS THE HEAVY ART STILL TOO, not only a slide. His 384.11 recording: the glass glides at 60 over Profile, the
+       Leaderboard and Settings and drops frames only where Home is - Home idles at ~40fps there, 31% of its frames late, and every
+       glide into or out of it dropped 4-7 of its ~20. Home's hero is ~30 loops on the compositor over the bar's blur (see
+       SLIDE_HOLD_SEL), and the glass, swelling over it, is redrawn at the same price. A tap's glide is 300-800ms; a loop that turns once
+       in 52s is not missed for that long. Looked at once, a frame after the press (the same look a slide takes); the screen the tap
+       brings in is looked at once more when it is built (navRun), and lensFinish gives it all back. */
+    requestAnimationFrame(() => { if(lensG && lens.classList.contains("is-up") && !tabDragMoved) barUnderPause(); });
   }
   /* The drag: a spring after the finger, every frame, while the finger is down. */
   function lensStopFollow(){
