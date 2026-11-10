@@ -22986,6 +22986,12 @@
      the sheet's borders, which left the sheet 2px wider than its own
      scrollport - a sideways wiggle under a thumb on a phone. */
   .unitoptions-modal-sheet.is-setup{ background:#0F1115; overflow-x:hidden; }
+  /* (384 r15) THE START SHEET IS OPAQUE, SO IT BLURS NOTHING. The sheet spans the whole window (a bottom sheet reaches both edges), and the
+     modern glass rule above gives it backdrop-filter:blur(16px) saturate(2) with will-change:backdrop-filter - sampled and blurred again on every
+     frame of its 250ms slide up, over a box 80vh tall and as wide as the window: 6.6 million pixels on a 3840x2160 monitor, where the draw of one
+     frame measured 106ms against 15ms on a phone (software compositor, 4x CPU). Its fill is the solid #0F1115 just above, so the blur shows
+     nowhere; the sheet is the same picture without it and its cost no longer grows with the window. */
+  [data-layout="modern"] .unitoptions-modal-sheet.is-setup{ backdrop-filter:none; -webkit-backdrop-filter:none; will-change:transform; }
   /* The grab bar is a solid strip pinned to the top of the sheet (309).
      Scrolled, the sheet's own headings used to run right up under its
      rounded top edge and get cut there, against the page's "UNITS"
@@ -117898,14 +117904,31 @@ function qSmoothstep(a, b, x){ const t = Math.max(0, Math.min(1, (x - a) / (b - 
 /* The blurred copy's strength while it is dragged in: dimmer while it is
    mostly off to the side, full from the line on. Nothing of the sharp copy
    shows during a drag at all - see the note above. */
-function qSoftAlpha(p){ return .55 + .45 * qSmoothstep(0, Q_SWIPE_COMMIT, p); }
+/* (384 r15) A PUSH THAT ENDS INSIDE THE WINDOW FADES, IT DOES NOT POP. The push crosses the panel's own width plus the gap, which takes the
+   outgoing question clean off a phone or a portrait iPad; on a window wider than the panel (a laptop, a landscape iPad, any monitor) it ended
+   in the middle of the screen at 55% and was removed in one frame, and the next question was already there at 85% where it began - Madison:
+   "going to the next question was not smooth at all" on a large screen. Where the move's end is on screen, the outgoing question fades out
+   over the same trip and the incoming one fades in from nothing; where it is off screen (every phone, every portrait tablet) the numbers are
+   the signed-off ones, exactly. qSetFade reads the panel's rect and the window once per move or drag. */
+let qFadeOutLoss = .45, qFadeInStart = .85, qFadeInK = 1;
+function qSetFade(rect){
+  const w = Math.max(1, rect.width), push = Math.round(w + SLIDE_GAP);
+  const vw = (document.documentElement && document.documentElement.clientWidth) || window.innerWidth || 0;
+  const share = l => Math.max(0, Math.min(vw, l + w) - Math.max(0, l)) / w;
+  /* 1 where none of it is on screen (the signed-off numbers), 0 from a twelfth of it on (a sliver on a landscape iPad or a laptop fades too) */
+  const keep = v => Math.max(0, 1 - 12 * v);
+  const kOut = keep(share(rect.left - push)), kIn = keep(share(rect.left + push));
+  qFadeOutLoss = 1 - .55 * kOut; qFadeInStart = .85 * kIn; qFadeInK = kIn;
+}
+function qInAlpha(p){ return qFadeInStart + (1 - qFadeInStart) * Math.max(0, Math.min(1, p)); }
+function qSoftAlpha(p){ return (.55 + .45 * qSmoothstep(0, Q_SWIPE_COMMIT, p)) * (qFadeInK + (1 - qFadeInK) * qSmoothstep(0, .3, p)); }
 /* The outgoing question at p: with the finger, stepping back a little and
    holding most of its strength until it is nearly gone. A rightward pull
    (p below 0) only moves it. */
 function qOutFrame(p, push){
   const q = Math.max(0, p);
   return { transform: "translateX(" + (-p * push).toFixed(2) + "px) scale(" + (1 - .04 * q).toFixed(4) + ")",
-           opacity: (1 - .45 * q * q * q).toFixed(4) };
+           opacity: (1 - qFadeOutLoss * q * q * q).toFixed(4) };
 }
 function qInFrame(p, push){ return { transform: "translateX(" + ((1 - Math.max(0, p)) * push).toFixed(2) + "px)" }; }
 /* p0 to p1 over dur on `ease`, as linear keyframes ~10ms apart: the curve
@@ -117942,6 +117965,22 @@ function qCommitMs(p0, push, v){
   if(!(v > 0)) return most;
   return Math.max(150, Math.min(most, Math.round(2.33 * rest / v)));
 }
+/* (384 r15) A COPY OF A QUESTION KEEPS ITS PICTURES. cloneNode copies a <canvas> as an empty one of the same size, so a Fire Code question with its
+   code box (or the hint's picture) open slid off with a blank frame where the print was: the picture was gone in the first frame of the move and
+   the paper-coloured card travelled on without it. The bitmaps are drawn across (a blit, no re-render of the page). */
+function qCopyCanvases(src, dst){
+  try{
+    const a = src.querySelectorAll("canvas"), b = dst.querySelectorAll("canvas");
+    if(a.length !== b.length) return;
+    for(let i = 0; i < a.length; i++){
+      const s = a[i], d = b[i];
+      if(!s.width || !s.height) continue;
+      if(d.width !== s.width) d.width = s.width;
+      if(d.height !== s.height) d.height = s.height;
+      d.getContext("2d").drawImage(s, 0, 0);
+    }
+  }catch(e){}
+}
 function qStripClone(el){
   el.classList.add("q-slide-clone");
   el.removeAttribute("id");
@@ -117971,6 +118010,7 @@ function qDragPrepare(){
     else if(h){ qDropPair(h.pair); qClearPanel(h.panel); }
   }
   if(!rect) rect = panel.getBoundingClientRect();
+  qSetFade(rect);
   const push = Math.round(rect.width + SLIDE_GAP);
   if(!pair && Array.isArray(order) && pos + 1 < order.length){
     try{
@@ -118138,6 +118178,7 @@ function advanceWithSlide(fromDx, opts){
   slideTransitionInFlight = true;
   /* the box is read BEFORE the class goes on: read after it, it laid the whole page out on the spot (r22) */
   const rect = live ? s.rect : outgoing.getBoundingClientRect();
+  qSetFade(rect);
   document.documentElement.classList.add("q-sliding");
   const p0 = live ? Math.max(0, Math.min(1, s.p)) : 0;
   const push = live ? s.push : Math.round(rect.width + SLIDE_GAP);
@@ -118150,6 +118191,7 @@ function advanceWithSlide(fromDx, opts){
      with the next one arriving UNDER it (.panel is transparent). */
   const makeClone = () => {
     const c = qStripClone(outgoing.cloneNode(true));
+    qCopyCanvases(outgoing, c);
     c.style.cssText =
       "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
       "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
@@ -118172,7 +118214,7 @@ function advanceWithSlide(fromDx, opts){
   incoming.style.willChange = "opacity, transform";
   const anims = [
     qRun(clone, p => qOutFrame(p, push), p0, 1, dur, qEaseFor(push)),
-    qRun(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: (.85 + .15 * p).toFixed(4) }), p0, 1, dur, qEaseFor(push))
+    qRun(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: qInAlpha(p).toFixed(4) }), p0, 1, dur, qEaseFor(push))
   ];
   if(live) qClearPanel(s.panel);
   setTimeout(() => qSlideDone(clone, null, incoming, anims), dur + 30);
@@ -118215,7 +118257,7 @@ function qCommitFromPreview(s, p0, dur, makeClone){
             run(haze.soft, p => ({ opacity: softAt(p).toFixed(4) })));
         }catch(e){ if(haze) haze.wrap.remove(); haze = null; }
       } else {
-        now.push(run(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: (.85 + .15 * p).toFixed(4) })));
+        now.push(run(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: qInAlpha(p).toFixed(4) })));
       }
     }
     qSync(now, ref);
