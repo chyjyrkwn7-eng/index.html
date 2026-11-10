@@ -151737,6 +151737,8 @@ function segThumb(seg, segSel, sl, o){
   function to(nx, ny, nw, nh, animate){
     W0 = nw; lifts(ny, nh, nw);
     const T = { c: nx + nw / 2, W: nw, k: press && press.lifted ? 1 : 0 };
+    /* a re-measure (a resize, a sub-pixel width) while a spring is on its way to this very place is not a move: let it finish */
+    if(!animate && run && c != null && Math.abs(run.c.T - T.c) < 1.5 && Math.abs(run.W.T - T.W) < 1.5 && Math.abs(run.k.T - T.k) < .001) return;
     if(c == null || !animate){ stop(); c = T.c; W = T.W; k = T.k; write(); return; }
     /* already on its way to there: leave the spring alone */
     if(run && Math.abs(run.c.T - T.c) < .5 && Math.abs(run.W.T - T.W) < .5 && Math.abs(run.k.T - T.k) < .001) return;
