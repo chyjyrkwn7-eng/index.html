@@ -118704,7 +118704,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.14";
+const APP_BUILD = "2026-11-10-384.15";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -131933,7 +131933,7 @@ function armConfirm(btn, confirmLabel, onConfirm){
   });
 }
 
-function showResetWarning(){
+function showResetWarning(stage2){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
@@ -131942,6 +131942,7 @@ function showResetWarning(){
 
   const panel = document.createElement("section");
   panel.className = "panel resetwarning-panel";
+  panel.dataset.resetStep = stage2 === true ? "2" : "1";
 
   const title = document.createElement("p");
   /* Size lives in .resetwarning-title now, not inline. An inline
@@ -131950,29 +131951,31 @@ function showResetWarning(){
      larger screens - it read as small and unchanged on an iPad even
      though its colour had updated correctly. */
   title.className = "hometitle resetwarning-title";
-  title.textContent = "Reset everything?";
   panel.appendChild(title);
 
+  /* (384 r18) TWO CONFIRMATIONS, EACH ITS OWN SCREEN. "Reset thing need a double confirmation just to be sure... the description
+     needs to mention it will reset your account." The first screen says what a reset is and asks to go on; the second is the last
+     check, in other words, and is the only one whose red button resets. (It used to be one screen whose red button changed its
+     words to "Tap again to confirm" - a second tap, not a second question.) */
   const body = document.createElement("p");
   body.className = "hometagline";
-  body.textContent = "Clears your progress, XP, and settings on every synced device. Your code stops working and you'll get a new one. This can't be undone.";
+  if(stage2 === true){
+    title.textContent = "Last check: reset your account?";
+    body.textContent = "This resets your account. Your progress, XP, badges and settings are cleared on every device signed in to it, your sync code stops working and you get a new one, and you come off the leaderboard. This can't be undone.";
+  } else {
+    title.textContent = "Reset your account?";
+    body.textContent = "Resetting clears your progress, XP, badges and settings on every synced device, and your sync code stops working. You'll be asked once more before anything is cleared.";
+  }
   panel.appendChild(body);
 
-  let armed = false;
   const confirmBtn = document.createElement("button");
   /* "danger", the same class the Settings Reset button carries, rather
      than a second set of red values. Matching by construction means the
-     two cannot drift apart - changing the danger red once changes both.
-     The armed "Tap again to confirm" state is this same element, so it
-     follows automatically. */
+     two cannot drift apart - changing the danger red once changes both. */
   confirmBtn.type = "button"; confirmBtn.className = "next danger resetwarning-confirm";
-  confirmBtn.textContent = "Yes, reset everything";
+  confirmBtn.textContent = stage2 === true ? "Yes, reset my account" : "Continue";
   confirmBtn.addEventListener("click", () => {
-    if(!armed){
-      armed = true;
-      confirmBtn.textContent = "Tap again to confirm";
-      return;
-    }
+    if(stage2 !== true){ showResetWarning(true); return; }
     resetEverything();
   });
   panel.appendChild(confirmBtn);
@@ -131980,7 +131983,7 @@ function showResetWarning(){
   const cancelBtn = document.createElement("button");
   cancelBtn.type = "button"; cancelBtn.className = "next ghost";
   cancelBtn.style.marginTop = ".7rem";
-  cancelBtn.textContent = "Cancel \u2014 keep my progress";
+  cancelBtn.textContent = "Cancel \u2014 keep my account";
   cancelBtn.addEventListener("click", showAppearance);
   panel.appendChild(cancelBtn);
 
@@ -134093,9 +134096,9 @@ function showAdvancedSettings(){
   dcard.className = "settings-card settings-list settings-adv-reset";
   const dangerBtn = settingsTextRow("Reset", "danger");
   dangerBtn.id = "resetbtn";
-  dangerBtn.addEventListener("click", showResetWarning);
+  dangerBtn.addEventListener("click", () => showResetWarning());
   dcard.appendChild(dangerBtn);
-  panel.append(dcard, settingsFootnote("Clears your progress, XP and settings on every synced device. You'll be asked to confirm first."));
+  panel.append(dcard, settingsFootnote("Resets your account: clears your progress, XP, badges and settings on every device signed in to it, and your sync code stops working. You'll be asked to confirm twice. This can't be undone."));
 
   /* (384 r17) the display test's panel (see the ?diag block): switchable from here so an installed app can use it too */
   panel.appendChild(settingsHeader("Troubleshooting"));
