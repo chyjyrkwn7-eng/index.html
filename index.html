@@ -38872,6 +38872,31 @@ html.is-browser{ --fade-paper: transparent; }
   @media (min-width:40rem){ html[data-layout] .rankmap-gift{ padding-left:.42rem; padding-right:.48rem; } }
   /* a card holding only its one line (the rooms list's "Couldn't load") has no line above to keep a gap from */
   html[data-layout] .rooms-list > .friend-hint:only-child{ margin-top:0; }
+  /* ---- OPEN ROOMS: the search, nothing found and can't-load states fill the room (build 384.20) ----
+     Madison: "Loading open rooms screen is kinda empty, make that better." One card the height of the room under the line above and
+     above the tab bar (--rr-room, set by fitRoom()), the Join medallion in the middle of three rings that open out from it while the
+     search runs (transform and opacity only; still under Reduce Motion), a title and a line in the app's own type. */
+  html[data-layout] body #stage .screen-rooms .rooms-list.is-state{ min-height:var(--rr-room, 16rem); display:flex; align-items:center; justify-content:center; padding:1.5rem 1.25rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty{ background:none; border:0; margin:0; padding:0; gap:.55rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-art{ position:relative; display:grid; place-items:center; width:9rem; height:9rem; margin-bottom:.6rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-ring{ position:absolute; inset:27%; border-radius:50%; border:1.5px solid rgba(63,227,168,.5); opacity:.3; pointer-events:none; }
+  html[data-layout] body #stage .screen-rooms .rooms-ring:nth-child(2){ transform:scale(1.35); opacity:.2; }
+  html[data-layout] body #stage .screen-rooms .rooms-ring:nth-child(3){ transform:scale(1.75); opacity:.1; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-icon{ position:relative; z-index:1; width:4.4rem; height:4.4rem; border-radius:50%;
+    background:radial-gradient(circle at 35% 28%, rgba(63,227,168,.34), rgba(63,227,168,.12)); border:0; box-shadow:inset 0 0 0 1px rgba(63,227,168,.5); }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-icon .modeicon{ width:2.1rem; height:2.1rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-title{ margin:0; font-family:inherit; font-size:1.375rem; font-weight:700; line-height:1.25; letter-spacing:0; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-text{ font-size:1rem; line-height:1.45; max-width:22rem; }
+  @media (prefers-reduced-motion:no-preference){
+    html[data-layout] body #stage .screen-rooms .rooms-empty.is-looking .rooms-ring{ animation:rooms-ping 3.3s ease-out var(--rd, 0s) infinite; }
+  }
+  @keyframes rooms-ping{ 0%{ opacity:0; transform:scale(.7); } 15%{ opacity:.55; } 100%{ opacity:0; transform:scale(2.15); } }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .screen-rooms .rooms-empty-art{ width:11rem; height:11rem; }
+    html[data-layout] body #stage .screen-rooms .rooms-empty-icon{ width:5rem; height:5rem; }
+    html[data-layout] body #stage .screen-rooms .rooms-empty-title{ font-size:1.6rem; }
+    html[data-layout] body #stage .screen-rooms .rooms-empty-text{ font-size:1.1rem; max-width:26rem; }
+  }
   /* ==== end of build 384's centring ==== */
   /* ==== THE ROUND BUTTONS, AS iOS DRAWS THEM (384 final check) ====
      Madison, beside a screenshot of iMessage's round back and FaceTime buttons: "Those bubbles look amazing ... it looks so
@@ -141142,30 +141167,51 @@ function showRoomBrowser(){
   refresh.textContent = "Refresh";
   panel.appendChild(refresh);
 
-  function note(text){
+  /* (384.20) "Loading open rooms screen is kinda empty, make that better": a line of grey text in a small card, and the rest of the screen
+     empty, was all the search had. The search, the nothing-found and the can't-load states are ONE card now, the height of the room
+     between the line above and the tab bar (the way the mode screens fill theirs): the Join medallion in the middle of three rings
+     that open out from it while it is looking (transform and opacity only, still when Reduce Motion is on or it is not looking), a
+     title and a line. kind is "looking", "empty" or "error". */
+  function state(kind, title, text){
     list.replaceChildren();
-    const p = document.createElement("p");
-    p.className = "friend-hint"; p.textContent = text;
-    list.appendChild(p);
+    list.classList.add("is-state");
+    const empty = document.createElement("div");
+    empty.className = "rooms-empty is-" + kind;
+    const art = document.createElement("span");
+    art.className = "rooms-empty-art"; art.setAttribute("aria-hidden", "true");
+    for(let i = 0; i < 3; i++){ const rg = document.createElement("i"); rg.className = "rooms-ring"; rg.style.setProperty("--rd", (i * 1.1) + "s"); art.appendChild(rg); }
+    const ic = document.createElement("span");
+    ic.className = "rooms-empty-icon"; ic.appendChild(modeIcon("join"));
+    art.appendChild(ic);
+    const t = document.createElement("p");
+    t.className = "rooms-empty-title"; t.textContent = title;
+    const d = document.createElement("p");
+    d.className = "rooms-empty-text"; d.textContent = text;
+    empty.append(art, t, d);
+    list.appendChild(empty);
+    if(kind === "looking") empty.setAttribute("role", "status");
+  }
+  /* the card's height: from where it starts to the tab bar (18px above it, as on the mode screens), less the Refresh button under it */
+  function fitRoom(){
+    if(!panel.isConnected) return false;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--zc")) || 1;
+    const at = el => { let y = 0; for(let e = el; e; e = e.offsetParent) y += e.offsetTop; return y; };
+    const tb = document.getElementById("bottomtabs");
+    const floor = (tb && !tb.hidden && tb.offsetHeight ? tb.getBoundingClientRect().top : innerHeight) - 18 * z;
+    const below = refresh.offsetHeight + parseFloat(getComputedStyle(refresh).marginTop || 0);
+    let room = Math.max(220 * z, Math.floor(floor - (at(list) - scrollY) - below));
+    panel.style.setProperty("--rr-room", room + "px");
+    /* then what is really there: the Refresh button's own bottom edge against the floor (the card has margins of its own) */
+    const over = Math.round(refresh.getBoundingClientRect().bottom - floor);
+    if(over && Math.abs(over) < 120 * z){ room = Math.max(220 * z, room - over); panel.style.setProperty("--rr-room", room + "px"); }
+    return true;
   }
 
   function draw(rooms){
     list.replaceChildren();
+    list.classList.remove("is-state");
     if(!rooms.length){
-      /* A REAL EMPTY STATE (build 287): "when there isn't one available,
-         that text box and stuff is small and also pushed too close
-         together." An icon, a title and a line, with room round them. */
-      const empty = document.createElement("div");
-      empty.className = "rooms-empty";
-      const ic = document.createElement("span");
-      ic.className = "rooms-empty-icon"; ic.appendChild(modeIcon("join"));
-      const t = document.createElement("p");
-      t.className = "rooms-empty-title"; t.textContent = "No open rooms found at this time";
-      const d = document.createElement("p");
-      d.className = "rooms-empty-text";
-      d.textContent = "When someone turns on Open room in their lobby, it shows up here. You can also host one yourself.";
-      empty.append(ic, t, d);
-      list.appendChild(empty);
+      state("empty", "No open rooms found at this time", "When someone turns on Open room in their lobby, it shows up here. You can also host one yourself.");
       return;
     }
     rooms.forEach(entry => {
@@ -141238,10 +141284,10 @@ function showRoomBrowser(){
   const OPEN_ROOMS_SEARCH_MS = 5000, OPEN_ROOMS_LOOK_EVERY_MS = 1250;
   let searchToken = 0;
   function load(){
-    if(!vroomDb()){ note("No connection right now \u2014 try again in a moment."); return; }
+    if(!vroomDb()){ state("error", "No connection right now", "Try again in a moment."); return; }
     const token = ++searchToken, t0 = Date.now();
     const alive = () => token === searchToken && list.isConnected;
-    note("Looking for open rooms\u2026");
+    state("looking", "Looking for open rooms", "Checking for rooms your classmates have opened.");
     let settled = false;
     const finishEmpty = () => { if(!settled && alive()){ settled = true; draw([]); } };
     const deadline = setTimeout(finishEmpty, OPEN_ROOMS_SEARCH_MS + 1500);
@@ -141263,8 +141309,8 @@ function showRoomBrowser(){
           if(open.length){ settled = true; clearTimeout(deadline); draw(open); return; }
           if(Date.now() - t0 >= OPEN_ROOMS_SEARCH_MS){ clearTimeout(deadline); finishEmpty(); return; }
           setTimeout(look, OPEN_ROOMS_LOOK_EVERY_MS);
-        }).catch(() => { if(alive() && !settled){ settled = true; clearTimeout(deadline); note("Couldn\u2019t load the rooms \u2014 try again."); } });
-      }catch(e){ if(!settled){ settled = true; clearTimeout(deadline); note("Couldn\u2019t load the rooms \u2014 try again."); } }
+        }).catch(() => { if(alive() && !settled){ settled = true; clearTimeout(deadline); state("error", "Couldn\u2019t load the rooms", "Try again."); } });
+      }catch(e){ if(!settled){ settled = true; clearTimeout(deadline); state("error", "Couldn\u2019t load the rooms", "Try again."); } }
     };
     look();
   }
@@ -141273,6 +141319,15 @@ function showRoomBrowser(){
   stage.replaceChildren(panel);
   toTop();
   load();
+  fitRoom();
+  setTimeout(fitRoom, 450);   /* once the entrance has settled */
+  setTimeout(fitRoom, 1100);  /* and once a slow phone has settled the tab bar */
+  const onRoomResize = () => { if(!fitRoom()) removeEventListener("resize", onRoomResize); };
+  addEventListener("resize", onRoomResize);
+  try{
+    const tbEl = document.getElementById("bottomtabs");
+    if(tbEl && window.ResizeObserver){ const ro = new ResizeObserver(() => { if(!fitRoom()) ro.disconnect(); }); ro.observe(tbEl); }
+  }catch(e){}
 }
 
 function showVirtualRoomLobby(){
