@@ -84,7 +84,7 @@ def shot(pg, t, sel=None):
     return Image.open(io.BytesIO(png)).convert("RGB")
 
 STATS = """(a) => { const [id, w, h] = a;
-  document.getElementById('splashscreen')?.remove(); document.body.innerHTML = ''; document.body.style.cssText = 'background:#000;margin:0';
+  document.getElementById('splashscreen')?.remove(); [...document.body.children].forEach(n => { if(n.tagName !== 'STYLE') n.remove(); }); document.body.style.cssText = 'background:#000;margin:0';
   const box = document.createElement('div'); box.id = 'strip'; box.style.cssText = 'position:fixed;left:0;top:0;width:' + w + 'px;height:' + h + 'px;overflow:hidden;z-index:99999;background:#000';
   const el = buildBannerArt(id); box.appendChild(el); document.body.appendChild(box);
   const an = el.getAnimations({ subtree: true }).filter(x => x.playState === 'running');
@@ -198,7 +198,7 @@ try:
     # ---------------------------------------------------------------- (4): the academy keeps its still first rungs
     br, ctx, pg, errs = boot(pw, "academy", 440, 700)
     info = pg.evaluate("""() => { const stillIds = BANNERS.filter(b => BANNER_ANIMATED.indexOf(b.id) < 0).map(b => b.id), res = {};
-      document.body.innerHTML = ''; document.body.style.cssText = 'background:#000;margin:0';
+      [...document.body.children].forEach(n => { if(n.tagName !== 'STYLE') n.remove(); }); document.body.style.cssText = 'background:#000;margin:0';
       BANNERS.forEach(b => { const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:440px;height:146px;overflow:hidden';
         const el = buildBannerArt(b.id); box.appendChild(el); document.body.appendChild(box);
         res[b.id] = { still: el.classList.contains('is-still'), running: el.getAnimations({ subtree: true }).filter(x => x.playState === 'running').length }; box.remove(); });
