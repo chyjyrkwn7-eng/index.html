@@ -38097,3 +38097,21 @@ ONLY HIS PHONE CAN CONFIRM: (1) that the first frame is now flat dark edge to ed
 
 RESULTS (machine at load 40-65 on 4 cores the whole time, so every timing budget is load-bound; read as shape): check-b384-launchframe `--quick` (Pro Max 100% and 85% installed, iPad Pro 11in landscape installed, Pro Max tab) ALL PASS on this build; `--against` main's index.html FAILS the short-first-frame cases on COVER (the box is [0,0,440,922] in a 922-tall first frame: the strip), on STILL (the word moves 461 -> 478 and 430 -> 478 when the viewport grows), on theme-color rewritten under the splash, on the splash markup being AFTER the stylesheet, and in a tab on <html>'s background cleared mid-splash (rgb(28,28,31) in place of #0A0A0A). check-js, gen-startup-images --check (22 devices, 45 tags), check-b384-topguard, `sweep-layout --quick` (20/20 clean), check-b384-switchfx `ONLY=phone` (every picture check passes: 6b, 8, 8b, 8c; the timing budgets (1), (1c) fail on main as well at this load), check-behaviour `ONLY_FN=check_launch` ("never paints off-centre" passes; "settles centred and visible" reads 999px on main and here alike - at this load the splash is gone before the gate measures), check-b384-splashhide (the splash is gone before it measures, on main too), check-fixes (one fail per device, "tapping a done daily question showed no banner", on main too).
 - check-b384-splashstage (5) "an ordinary launch: off at its own time (< 3.3s)" reads 3.85s here and 0.85s on main under load: on main the splash was not in the page until after the stylesheet, so the gate's sampler counted "no splash yet" as "off" and passed spuriously; with the splash in the page from the first bytes it measures the real clock (the stylesheet's parse + 2.5s), which is over its budget only on a loaded machine.
+
+## 384.20 - no weekly Nova pop-up in Fire Code
+
+Madison: "Why did nova pop up for a weekly thing in the fire code class? Remove that."
+
+What it was: Nova's Tuesday-to-Sunday "weekly recap" (`maybeShowWeekRecap`). Fire Code has no weekly board, so since build 383 it was given a
+stripped-down personal version (`buildWeekRecapOptedOut`: your own points, tests and hundos for last week) and still stopped a person once a
+week on Home or the Leaderboard. A second weekly thing was also allowed there: Nova's weekly challenge message (`novaPending(...).weekly`).
+
+Now, in the Fire Code class (`window.NOVA_CLASS === "ifc"`):
+- `maybeShowWeekRecap` returns first thing, marks nothing seen, so the account's `@recap` record is untouched;
+- `novaRecapOwedToday` is false, so a recap that will never play no longer holds Nova's other messages back on a Tuesday;
+- `novaPending` leaves `weekly` null: no challenge message.
+The academy is untouched (its recap and weekly challenge still run). Nothing stored changes, so an account in both classes is unaffected.
+
+Gate: `tools/check-b384-ifcweekly.py` (a Wednesday, both classes; Fire Code: no `.nova-talk`, no seen mark, no recap owed on a Tuesday, no
+challenge in any of twelve weeks; academy: both still there). It fails on 384.19 (the recap plays, 3 checks). `check-b383-classes` (5) used to
+assert the Fire Code recap plays; it now asserts it does not, and still asserts the academy's.
