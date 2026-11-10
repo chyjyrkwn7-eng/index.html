@@ -62,7 +62,8 @@ with sync_playwright() as pw:
     ctx, pg = rc["new_page"](br, port, 834, 1194, seed); go(pg, True)
     pg.evaluate("()=>{ showModeSelect(); }"); pg.wait_for_timeout(900)
     w = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>{ const r=c.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.left + r.width/2)]; })")
-    chk("Fire Code on a tablet: three cards, the last as wide as the others and centred (%s)" % w, len(w) == 3 and abs(w[2][0] - w[0][0]) <= 2 and abs(w[2][1] - 417) <= 6, w)
+    # (384 r20) the odd one out runs across both columns (a wide tile) instead of sitting at one column's width: either way it is centred
+    chk("Fire Code on a tablet: three cards, the last centred, one column wide or across both (%s)" % w, len(w) == 3 and (abs(w[2][0] - w[0][0]) <= 2 or w[2][0] >= 2 * w[0][0]) and abs(w[2][1] - 417) <= 6, w)
     ctx.close()
     # the shared link and the Home Screen
     ctx, pg = rc["new_page"](br, port, 440, 956, seed); pg.reload(); pg.wait_for_timeout(2500)
