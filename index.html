@@ -1750,9 +1750,33 @@
      the last frame of the old page until the new one has drawn something, so that last frame is the loader. */
   #class-switch-loader{
     position:fixed; inset:0; width:100vw; height:100vh; height:100lvh; overflow:hidden; z-index:100000;
-    background:var(--splash-bg, #0A0A0A); opacity:0; transition:opacity .16s ease; pointer-events:auto; touch-action:none;
+    background:var(--splash-bg, #0A0A0A); opacity:0; transition:opacity .24s cubic-bezier(.4,0,.2,1); pointer-events:auto; touch-action:none;
+    will-change:opacity;
   }
   #class-switch-loader.is-on{ opacity:1; }
+  /* (384 r21) ONE CALM COVER. The cover is the near-black the splash is (and the status bar's cover colour), faded in over the screen
+     that is up in opacity only; its mark (the word, the line, the bar) comes in AFTER the cover is over the screen, not with it -
+     it used to appear at once over Home's own NOVA and read as the word twice. Where the mark rests is where the splash puts it
+     (pic, in switchClass), so the reload under it changes nothing. */
+  #class-switch-loader #csl-group{ opacity:0; transition:opacity .16s ease .14s; }
+  #class-switch-loader.is-on #csl-group{ opacity:1; }
+  /* the new page's cover lifts in opacity alone: the splash's word and bar no longer drift back 4% as it fades (they are the cover's
+     mark, which did not move on the way in) */
+  #splashscreen.splash-hide.class-lift #splash-group{ scale:none; }
+  /* ...and the mark goes first (.12s), the cover after it (.3s): the word is on Home too, in another place, and the two are not shown
+     together while the cover is still thick */
+  html.class-arrive #splashscreen.class-lift #splash-group{ opacity:0 !important; transition:opacity .12s ease !important; }
+  /* (384 r21) HOME ARRIVES INTO THE LIFTING COVER (body.class-rise, finishSplash): the planet, then the greeting and the button, then
+     the tab bar - three steps, a fade and a few px (`translate` and `scale`, so a phone's own transform on the planet and the bar's
+     centring are not replaced), each backwards-filled so a part is not seen before its turn. Not in reduce motion: the cover alone
+     cross-fades there. */
+  @keyframes class-rise{ from{ opacity:0; translate:0 10px; } to{ opacity:1; translate:0 0; } }
+  @keyframes class-rise-hero{ from{ opacity:0; scale:.96; } to{ opacity:1; scale:1; } }
+  body.class-rise #stage .screen-home-actual .cosmic-hero-wrap{ animation:class-rise-hero .42s cubic-bezier(.2,.7,.2,1) 0s backwards; }
+  body.class-rise #stage .screen-home-actual :is(.hometitle-wrap, .playbtn, .class-bubble-wrap){ animation:class-rise .4s cubic-bezier(.2,.7,.2,1) .06s backwards; }
+  body.class-rise .bottomtabs{ animation:class-rise .4s cubic-bezier(.2,.7,.2,1) .12s backwards; }
+  /* (no reduced-motion rules here: finishSplash never adds body.class-rise for a person with reduced motion, and a `*` rule under a body
+     class makes the whole page restyle the moment the class goes on - the same frame the cover is lifting in) */
   /* (384) its colours turn from the class left to the class it opens (switchClass animates these from one to the other) */
   @property --csw-c1{ syntax:"<color>"; inherits:true; initial-value:#FFD37A; }
   @property --csw-c2{ syntax:"<color>"; inherits:true; initial-value:#F5804D; }
@@ -39254,9 +39278,13 @@ html.is-browser{ --fade-paper: transparent; }
     var arrive = window.NOVA_CLASS_ARRIVE || null, arriveAt = 0;
     try{ sessionStorage.removeItem("class26e.classswitch"); }catch(e){}
     try{ document.documentElement.classList.remove("class-arrive-pre"); var pre = document.getElementById("class-arrive-pre"); if(pre) pre.remove(); }catch(e){}
+    /* (384 r21) A CLASS SWITCH IS ONE MOTION (see #class-switch-loader): the cover holds for what is left of CSW_HOLD_MS from the
+       tap (a floor, so a fast reload is not a flicker) and then only until the new class's Home is BUILT (arriveReady) - it used
+       to hold 2.5s from the tap whatever Home was doing, 1.5s of it with Home done and waiting, and then fade for .75s with its
+       own NOVA over Home's NOVA. */
     if(arrive && !isUpdating){
-      duration = Math.max(800, Number(arrive.dur) || 2500);
-      arriveAt = Math.max(0, Math.min(duration - 800, Date.now() - arrive.at));
+      duration = Math.max(150, (Number(arrive.min) || 900) - Math.max(0, Date.now() - arrive.at));
+      arriveAt = 0;
     }
     /* A FIRST VISIT OPENS ON GET STARTED, NOT THE LOADING SCREEN (build 330): "The start up sequence, it
        does the loading thing first before the start up, don't do that." Nothing on this device - no code,
@@ -39352,7 +39380,8 @@ html.is-browser{ --fade-paper: transparent; }
     }
     var messageCount = isUpdating ? 4 : (isReturningUser ? 3 : 6);
     var messages = pool.slice(0, Math.min(messageCount, pool.length)).concat([readyMsg]);
-    if(arrive && arriveAt && arrive.line) messages[0] = String(arrive.line);
+    /* (384 r21) a switch says one thing, the line the loader said: no rotating "syncing... booting... ready." over the planet */
+    if(arrive && !isUpdating && arrive.line) messages = [String(arrive.line)];
     var msgInterval = duration / messages.length;
     var msgIndex = 0;
     statusEl.textContent = messages[0];
@@ -39366,16 +39395,12 @@ html.is-browser{ --fade-paper: transparent; }
        reduce-motion rule would otherwise leave it empty. */
     fill.style.setProperty("animation", "loadbar-fill " + duration + "ms linear " + (arriveAt ? -arriveAt : 0) + "ms forwards", "important");
     /* (384) from a class switch the bar carries on from where the loader's creep is now (CSW_CREEP_MS: a reload over a slow
-       connection can take far longer than the 1.7s the bar ran to before), and fills from there over what is left */
-    if(arrive){
+       connection can take far longer than the 1.7s the bar ran to before) - and (r21) goes on creeping until the new Home is
+       built, then runs to full as the cover lifts (finishSplash) */
+    if(arrive && !isUpdating){
       try{
-        var since = Math.max(0, Date.now() - arrive.at);
-        var CS = [[0, 0], [1700, .68], [4000, .78], [10000, .86], [30000, .93], [60000, .96]], p0 = .96;
-        for(var ci = 1; ci < CS.length; ci++){ if(since <= CS[ci][0]){ p0 = CS[ci - 1][1] + (CS[ci][1] - CS[ci - 1][1]) * (since - CS[ci - 1][0]) / (CS[ci][0] - CS[ci - 1][0]); break; } }
-        var fk = document.createElement("style");
-        fk.textContent = "@keyframes csw-finish{from{transform:scaleX(" + p0.toFixed(4) + ");}to{transform:scaleX(1);}}";
-        document.head.appendChild(fk);
-        fill.style.setProperty("animation", "csw-finish " + Math.max(400, duration - arriveAt) + "ms linear 0ms forwards", "important");
+        var since = Math.max(0, Math.min(59999, Date.now() - arrive.at));
+        fill.style.setProperty("animation", "csw-creep 60000ms linear -" + since + "ms forwards", "important");
       }catch(e){}
     }
     /* the loader has already run arriveAt of the bar: the splash lasts what is left of it */
@@ -39403,6 +39428,27 @@ html.is-browser{ --fade-paper: transparent; }
        and then goes whatever is there, so a launch that never mounts one is not held behind it. A first visit is not held:
        its splash is never shown (Get Started is the first thing seen). */
     var SPLASH_STAGE_WAIT_MS = 6000, splashWaitUntil = 0, splashPoll = 0;
+    /* (384 r21) A CLASS SWITCH LIFTS ONLY OVER A BUILT HOME. Arriving from the class button the cover is not on a clock: it
+       waits for the planet, the greeting's button and the tab bar to be in the page (a screen that is not Home - a sign-in or a
+       sign-up carrying on - once it has been up a moment), then the bar runs to full as the cover fades (opacity only, .3s) and
+       Home's parts ease in after it (body.class-rise, three steps). Never for good: SPLASH_STAGE_WAIT_MS, as every launch. */
+    var arriving = !!arrive && !isUpdating && !firstVisit, arriveStarted = false, arriveHomeAt = 0, arriveAnyAt = 0, arriveWaitUntil = 0;
+    var arriveCalm = !!(arrive && arrive.calm);
+    try{ arriveCalm = arriveCalm || document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){}
+    function arriveReady(){
+      var now = performance.now(), stg = document.getElementById("stage");
+      if(!arriveWaitUntil) arriveWaitUntil = now + SPLASH_STAGE_WAIT_MS;
+      if(now >= arriveWaitUntil) return true;
+      if(!stg || !stg.firstElementChild) return false;
+      if(!arriveAnyAt) arriveAnyAt = now;
+      var h = stg.querySelector('[data-screen="home"]');
+      if(h && h.querySelector(".cosmic-hero-wrap") && document.getElementById("nextbtn")){
+        if(!arriveHomeAt) arriveHomeAt = now;
+        var bt = document.querySelector(".bottomtabs");
+        return now - arriveHomeAt > 40 && ((bt && !bt.hidden) || now - arriveHomeAt > 500);
+      }
+      return now - arriveAnyAt > 1500;
+    }
     function finishSplash(){
         if(splashDone) return;
         if(!firstVisit){
@@ -39414,6 +39460,25 @@ html.is-browser{ --fade-paper: transparent; }
               return;
             }
           }
+        }
+        if(arriving && !arriveStarted){
+          if(!arriveReady()){
+            if(!splashPoll) splashPoll = setTimeout(function(){ splashPoll = 0; finishSplash(); }, 30);
+            return;
+          }
+          arriveStarted = true;
+          try{
+            /* the bar runs from where it is to full as the cover starts to go; the cover fades in opacity only */
+            var cs = getComputedStyle(fill).transform;
+            fill.style.setProperty("animation", "none", "important");
+            if(fill.animate) fill.animate([{ transform: cs && cs !== "none" ? cs : "scaleX(.9)" }, { transform: "scaleX(1)" }], { duration: arriveCalm ? 100 : 120, easing: "ease-out", fill: "forwards" });
+            splash.classList.add("class-lift");
+            splash.style.setProperty("transition", "opacity " + (arriveCalm ? ".14s linear" : ".3s cubic-bezier(.4,0,.2,1)"), "important");
+            if(!arriveCalm){
+              document.body.classList.add("class-rise");
+              setTimeout(function(){ document.body.classList.remove("class-rise"); }, 1100);
+            }
+          }catch(e){}
         }
         splashDone = true;
         clearInterval(msgTimer);
@@ -39450,7 +39515,7 @@ html.is-browser{ --fade-paper: transparent; }
              nothing ever ran it again once the splash was gone and Home
              came up with no chat button at all. */
           try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
-        }, 800);   /* (384) after the .75s fade */
+        }, arriving ? 450 : 800);   /* (384) after the .75s fade (r21: a class switch's cover lifts in .3s) */
     }
     requestAnimationFrame(tick);
   })();
@@ -56180,6 +56245,7 @@ function maybeNewClassBanner(){
     newClassTimer = setTimeout(attempt, 2400);
   });
 }
+var classListRetract = null, classListClose = null;   /* (384 r21) set by the class button's list (mountClassBubble) */
 function mountClassBubble(){
   if(!classSwitchAllowed()) return;
   const cur = NOVA_CLASSES.find(c => c.key === window.NOVA_CLASS) || NOVA_CLASSES[0];
@@ -56207,6 +56273,10 @@ function mountClassBubble(){
     stack.appendChild(b);
   });
   const outside = (e) => { if(!wrap.contains(e.target)) closeStack(); };
+  /* (384 r21) a switch: the list folds back into the class button at the tap, and Home stays stepped back behind the cover that
+     is coming (the dim stays; the cover takes it from there). classListClose gives it all back if the switch is given up. */
+  classListRetract = () => { try{ wrap.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false"); document.removeEventListener("pointerdown", outside, true); }catch(e){} };
+  classListClose = () => { try{ closeStack(); }catch(e){} };
   /* what is behind steps back while the list is open (#stage.class-list-open); the class goes with the list - shut, or the
      list taken off the screen by the next screen's mount, which would otherwise leave that screen dimmed and untappable */
   let dimWatch = null;
@@ -56274,6 +56344,8 @@ function warmIfcBankSoon(){
    bar creeps on (csw-creep: 68% at 1.7s, 78% at 4s, 86% at 10s, 93% at 30s, 96% at a minute) - the head script's arrival
    picture and the splash carry both on from the same numbers */
 const CSW_TINT_MS = 1400, CSW_CREEP_MS = 60000;
+/* (384 r21) the new page's cover holds at least this long from the tap, and gives the old screen back after this long with no reload */
+const CSW_HOLD_MS = 900, CSW_GIVEUP_MS = 60000;
 function switchClass(key, row, opts){
   opts = opts || {};
   if(!classSwitchAllowed() || !NOVA_CLASSES.some(c => c.key === key)) return;
@@ -56285,12 +56357,17 @@ function switchClass(key, row, opts){
   try{ if(key === "academy") localStorage.removeItem("class26e.activeclass"); else localStorage.setItem("class26e.activeclass", key); }catch(e){ return; }
   if(row) row.classList.add("is-going");
   document.documentElement.classList.add("class-switching");
+  /* (384 r21) the list closes into the class button as the cover comes in (Home stays stepped back: no brightening under it) */
+  try{ if(classListRetract) classListRetract(); }catch(e){}
   /* (384) NO BLANK SCREEN ON THE WAY (see #class-switch-loader): the splash's picture fades in OVER the screen that is up, its bar
      already moving, and the page reloads under it once it covers the screen - the new page's splash carries on from it */
-  const DUR = 2500;
+  /* (384 r21) the cover holds at least CSW_HOLD_MS from the tap on the new page (a floor: a fast reload is not a flicker), then
+     lifts the moment the new Home is built (finishSplash); a person with reduced motion gets a plain quick cross-fade */
+  const calm = (() => { try{ return document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){ return false; } })();
   const info = NOVA_CLASS_INFO[key] || {}, cls = NOVA_CLASSES.find(c => c.key === key) || {};
   const line = "> opening " + String(info.title || cls.name || "your class") + "...";
-  let reloadIn = 380;
+  let reloadIn = 380, went = false, goReload = null;
+  const inApp = (() => { try{ return navigator.standalone === true || !!(window.matchMedia && matchMedia("(display-mode: standalone)").matches); }catch(e){ return false; } })();
   try{
     const L = document.createElement("div");
     L.id = "class-switch-loader"; L.setAttribute("role", "status"); L.setAttribute("aria-label", "Opening " + String(info.title || cls.name || "your class"));
@@ -56326,6 +56403,7 @@ function switchClass(key, row, opts){
        and slower, never quite full (csw-creep, CSW_CREEP_MS) - a reload over a slow connection fetches the page again, and a
        bar that holds still for that long reads as frozen. The new page's picture and splash carry on from the same curve. */
     L.querySelector("#csl-fill").style.setProperty("animation", "csw-creep " + CSW_CREEP_MS + "ms linear 0ms forwards", "important");
+    if(calm){ L.style.setProperty("transition", "opacity .14s linear", "important"); const gr = L.querySelector("#csl-group"); gr.style.setProperty("transition", "none", "important"); gr.style.opacity = "1"; }
     document.body.appendChild(L);
     const at = Date.now();
     const to = ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => getComputedStyle(L).getPropertyValue(v).trim());
@@ -56348,17 +56426,43 @@ function switchClass(key, row, opts){
       if(!pic.c.every(okc)) pic = null;
     }catch(e){ pic = null; }
     /* (384) join: joining the academy from Fire Code; note: what the class says as it opens (a sign-in, a sign-up going on) */
-    try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, dur: DUR, line, to: key, pic, join: opts.join ? 1 : 0, note: opts.note || "" })); }catch(e){}
+    try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, min: CSW_HOLD_MS, line, to: key, pic, join: opts.join ? 1 : 0, note: opts.note || "", calm: calm ? 1 : 0 })); }catch(e){}
     void L.offsetWidth;
     L.classList.add("is-on");
-    /* covered once its fade is done and a frame has shown it whole */
-    reloadIn = 230;
+    /* (384 r21) THE STATUS BAR GOES WITH THE COVER, under it: in a browser tab (an installed app's bar is read once, at launch) Safari's
+       bars take the splash's colour as the cover comes in - they kept the class left's tint until the reload - and the new page's
+       splash holds them there until the cover lifts (finishSplash hands them back) */
+    if(!inApp){
+      try{
+        const bg = getComputedStyle(document.documentElement).getPropertyValue("--splash-bg").trim() || "#0A0A0A";
+        const tc = document.getElementById("themecolor"); if(tc) tc.content = bg;
+        document.documentElement.style.background = bg;
+      }catch(e){}
+    }
+    /* covered once its fade is done (.24s, .14s calm) - the fade's own end (transitionend), not a timer for it: a busy main thread
+       stretches the fade, and a reload that started under a half-thick cover showed the new page's first frame against it (the
+       timer is only the fallback) */
+    reloadIn = calm ? 450 : 650;
+    L.addEventListener("transitionend", e => { if(e.target === L && e.propertyName === "opacity") goReload(); });
     /* a reload that never happens (blocked) gives the screen back - (384) after a minute, not 8s: a reload over a slow connection
        is still under way at 8s (iOS has no event to say so), and giving the old screen back then left it there, stale, until
        the new page landed on top of it */
-    setTimeout(() => { if(L.isConnected){ L.remove(); document.documentElement.classList.remove("class-switching"); } }, 60000);
+    setTimeout(() => {
+      if(L.isConnected){
+        L.remove(); document.documentElement.classList.remove("class-switching");
+        try{ document.documentElement.style.background = ""; if(typeof syncStatusBarColor === "function") syncStatusBarColor(); }catch(e){}
+        try{ if(classListClose) classListClose(); }catch(e){}   /* the screen is given back whole: its list shut, Home not stepped back */
+      }
+    }, CSW_GIVEUP_MS);
   }catch(e){}
-  setTimeout(() => { try{ persistLocally(); }catch(e){} requestAnimationFrame(() => requestAnimationFrame(() => location.reload())); }, reloadIn);
+  goReload = () => {
+    if(went) return; went = true;
+    try{ persistLocally(); }catch(e){}
+    /* a sign-in's or a sign-up's screen is taken off under the cover, not before it (it was emptied first: a blank beat under the fade) */
+    if(opts.clear){ try{ stage.replaceChildren(); }catch(e){} }
+    requestAnimationFrame(() => requestAnimationFrame(() => location.reload()));
+  };
+  setTimeout(goReload, reloadIn);
 }
 /* ---- NOVA GREETS A NEW CLASS (build 328) ----
    "When signing up the new class, ensure you get greeted by nova for signing up, he will talk
@@ -84207,10 +84311,12 @@ function cssColorHexNow(expr){
    it permanently and put the original grey seam back. An installed app has
    no browser bars to tint anyway. */
 function splashOwnsFrame(){
+  const inApp = navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  /* (384 r21) a class switch's cover owns the frame from the tap, as the splash does from the page's first byte */
+  if(!inApp && document.documentElement.classList.contains("class-switching")) return true;
   const sp = document.getElementById("splashscreen");
   if(!sp || sp.classList.contains("splash-hide")) return false;
-  return !(navigator.standalone === true ||
-           (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches));
+  return !inApp;
 }
 
 /* SAFARI'S BARS (build 327z3). Safari 26 colours the band behind its
@@ -109995,8 +110101,7 @@ function enterAccountClass(note){
   if(accountClassEntering) return true;
   accountClassEntering = true;
   try{ persistLocally(); }catch(e){}
-  try{ stage.replaceChildren(); }catch(e){}
-  switchClass("ifc", null, { note: note || "" });
+  switchClass("ifc", null, { note: note || "", clear: true });   /* (r21) the screen goes under the cover, not before it */
   return true;
 }
 /* (384) WELCOME BACK, SAID ON ARRIVAL. Madison: "When you switch classes ensure a banner pops up that says welcome back to blah
@@ -110017,7 +110122,7 @@ function maybeSwitchWelcome(){
     if(switchWelcomeDone) return;
     let busy = !onNovaHome() || document.getElementById("splashscreen");
     try{ busy = busy || whatsNewHolds() || a2hsBusy() || a2hsHolds(); }catch(e){ busy = true; }
-    busy = busy || !!document.querySelector("#tour-overlay, #tour-tooltip, .daily-alert, .nova-talk, .class-bubble-wrap.is-open");
+    busy = busy || !!document.querySelector("#tour-overlay, #tour-tooltip, .daily-alert, .nova-talk, .class-bubble-wrap.is-open") || document.body.classList.contains("class-rise");
     try{ busy = busy || pendingMainMenuTour || signupInNova || novaIntroOn; }catch(e){}
     if(busy){ calm = 0; if(++tries > 60){ switchWelcomeDone = true; return; } switchWelcomeTimer = setTimeout(attempt, 500); return; }
     if(++calm < 2){ switchWelcomeTimer = setTimeout(attempt, 400); return; }
