@@ -196,23 +196,19 @@ with sync_playwright() as pw:
             if r and r["rows"]: break
             pg.wait_for_timeout(300)
         boards = pg.evaluate("()=>({ fire: rankingBoardsFor().map(b => b.tab), all: RANKING_BOARDS.map(b => b.tab) })")
-        chk("(3) Fire Code's Leaderboard has exactly two boards, Overall and Hundos - the academy's own two, none of This Week (%s of %s)" % ([s["t"] for s in r["segs"]], boards["all"]),
-            [s["t"] for s in r["segs"]] == boards["fire"] and len(boards["fire"]) == 2 and boards["all"][0] not in boards["fire"] and r["segs"][0]["on"], (r, boards))
+        chk("(3) Fire Code's Leaderboard has ONE board, Overall - no Hundos (removed at the owner's word: 'Not many people will get any'), none of This Week, and so no pill switcher (%s of %s)" % ([s["t"] for s in r["segs"]], boards["all"]),
+            boards["fire"] == ["Overall"] and r["segs"] == [] and boards["all"][0] not in boards["fire"] and "Hundos" not in boards["fire"], (r["segs"], boards))
         names = {x["name"] for x in r["rows"]}
         mine = [x["name"] for x in r["rows"] if x["me"]]
         chk("(3) Overall lists Fire Code's people and only them - Alexis, Fiona, Gus, Hale and the viewer (%s)" % sorted(names),
             names == {"Alexis", "Fiona", "Gus", "Hale", "Maddox"}, names)
         chk("(3) the viewer's own row is marked, once, and is the viewer's (%s)" % mine, mine == ["Maddox"], mine)
         chk("(3) nothing weekly on the board: no last week's podium, no 'week' anywhere in it (%s)" % r["podium"], not r["podium"] and not re.search(r"week", r["text"], re.I), r["text"][:300])
-        chk("(3) the screen has the pieces the academy's has: the pill switcher, the blurb, search, Find me, the column header",
-            all(r["parts"]), r["parts"])
-        h = pick(pg, boards["fire"][1])
-        hnums = []
-        for x in h["rows"]:
-            m = re.search(r"(\d+)\s*hundos?", x["txt"], re.I) or re.findall(r"\d+", x["txt"])
-            hnums.append(int(m.group(1)) if hasattr(m, "group") else int(m[-1]))
-        chk("(3) the Hundos board is in order of hundos, Fire Code's own - Gus 14, Alexis 9, the viewer's 5 (%s)" % [(x["name"], n) for x, n in zip(h["rows"], hnums)],
-            [x["name"] for x in h["rows"]][:3] == ["Gus", "Alexis", "Maddox"] and hnums == sorted(hnums, reverse=True) and hnums[:3] == [14, 9, 5], h["rows"])
+        chk("(3) the screen has the pieces the academy's has bar the switcher: the blurb, search, Find me, the column header",
+            all(r["parts"][1:]) and not r["parts"][0], r["parts"])
+        hb = pg.evaluate("()=>{ showRankings('hundos'); return { key: rankingsBoardKey }; }"); pg.wait_for_timeout(900)
+        chk("(3) a link or stored name for the Hundos board lands on Overall in Fire Code (%s)" % hb["key"], hb["key"] == "overall", hb)
+        pg.evaluate("()=>showRankings('overall')"); pg.wait_for_timeout(600)
         # Find me
         fm = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms)); document.querySelector('.rank-me-btn').click(); await w(500);
             const me = document.querySelector('.rank-row[data-me="1"]'); return { flash: !!me && me.classList.contains('rank-flash'), toast: !!document.querySelector('.daily-alert') }; }""")
@@ -229,7 +225,6 @@ with sync_playwright() as pw:
         if SHOTS:
             os.makedirs(SHOTS, exist_ok=True)
             pg.evaluate("()=>showRankings('overall')"); pg.wait_for_timeout(1600); pg.screenshot(path=os.path.join(SHOTS, "ifc-promax-leaderboard-overall.png"))
-            pg.evaluate("()=>showRankings('hundos')"); pg.wait_for_timeout(1600); pg.screenshot(path=os.path.join(SHOTS, "ifc-promax-leaderboard-hundos.png"))
             pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(1800); pg.screenshot(path=os.path.join(SHOTS, "ifc-promax-profile-stats.png"))
     with section('(4) the writes'):
         # (4) the writes of this device (opted in): one row, in the Fire Code board, nothing of the academy's board
@@ -261,7 +256,6 @@ with sync_playwright() as pw:
     if SHOTS:
         pg.set_viewport_size({"width": 834, "height": 1194}); pg.wait_for_timeout(700)
         pg.evaluate("()=>showRankings('overall')"); pg.wait_for_timeout(1800); pg.screenshot(path=os.path.join(SHOTS, "ifc-ipad-leaderboard-overall.png"))
-        pg.evaluate("()=>showRankings('hundos')"); pg.wait_for_timeout(1600); pg.screenshot(path=os.path.join(SHOTS, "ifc-ipad-leaderboard-hundos.png"))
         pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(1800); pg.screenshot(path=os.path.join(SHOTS, "ifc-ipad-profile-stats.png"))
     with section('(4) opt out and back in'):
         # opt out in Settings: the row comes off, everybody else's stays
@@ -303,8 +297,8 @@ with sync_playwright() as pw:
         pg.evaluate("()=>document.getElementById('bottomtab-rewards').click()"); pg.wait_for_timeout(1500)
         r = open_board(pg)
         ov = pg.evaluate("()=>({ sx: document.documentElement.scrollWidth - innerWidth })")
-        chk("(3) %s: the board is up with its two boards and its rows, and the page does not scroll sideways (%s)" % (tag, ov),
-            r and len(r["segs"]) == 2 and len(r["rows"]) == 5 and ov["sx"] <= 0, (r and r["segs"], ov))
+        chk("(3) %s: the board is up with its one board (no switcher) and its rows, and the page does not scroll sideways (%s)" % (tag, ov),
+            r and len(r["segs"]) == 0 and len(r["rows"]) == 5 and ov["sx"] <= 0, (r and r["segs"], ov))
         pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(1300)
         ps = pg.evaluate(PROFILE_STATE)
         chk("(2) %s: Profile's two tabs, Stats showing (%s)" % (tag, ps and [s["t"] for s in ps["segs"]]), ps and len(ps["segs"]) == 2 and ps["stats"], ps)
@@ -397,7 +391,12 @@ with sync_playwright() as pw:
     ifc_copy(True)
     ctx, pg, errs = new_ctx(br, G["init"]("ifc"), cloud0(), html=PREV_HTML)
     pg.wait_for_timeout(2200)
-    pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(900)
+    for _try in range(3):   # the standing-in build may reload itself (its update check) under a call: wait and ask again
+        try:
+            pg.evaluate("()=>showRankings()"); break
+        except Exception:
+            pg.wait_for_timeout(2500)
+    pg.wait_for_timeout(900)
     chk("(5) the previous build's Fire Code copy, over this data, is where it was: Stats on its bar, no board, no errors (%s)" % errs[:2],
         pg.evaluate("()=>!!document.querySelector('#stage .screen-stats')") and not errs, errs)
     ctx.close()
@@ -440,7 +439,7 @@ with sync_playwright() as pw:
             classes: [...document.querySelectorAll('#stage .settings-lb-class')].map(r => (r.querySelector('.settings-row-label')||{}).textContent + '=' + (r.querySelector('.settings-row-value')||{}).textContent),
             boards: rankingBoardsFor().map(b => b.tab), text: document.getElementById('stage').innerText })""")
         chk("(6) its page has the switch, a hint that names Fire Code and exactly its two boards (%s)" % pg_["hint"][:160],
-            pg_["sw"] and "Fire Code" in pg_["hint"] and all(t in pg_["hint"] for t in pg_["boards"]) and len(pg_["boards"]) == 2 and not re.search(r"week", pg_["hint"], re.I)
+            pg_["sw"] and "Fire Code" in pg_["hint"] and all(t in pg_["hint"] for t in pg_["boards"]) and len(pg_["boards"]) == 1 and not re.search(r"week|hundo", pg_["hint"], re.I)
             and not re.search(r"no leaderboard|police academy only", pg_["text"], re.I), pg_)
         chk("(6) ...and lists each class, Shown or Hidden - no 'No leaderboard' (%s)" % pg_["classes"],
             len(pg_["classes"]) == 2 and all(c.split("=")[1] in ("Shown", "Hidden") for c in pg_["classes"]), pg_["classes"])
@@ -464,8 +463,8 @@ with sync_playwright() as pw:
         pg.evaluate("()=>document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove())")
         pg.evaluate("()=>{ store.seenRewardsTour = false; showRankings(); }"); pg.wait_for_timeout(2200)
         rt = pg.evaluate("""()=>({ tour: !!document.querySelector('#tour-tooltip'), text: (document.querySelector('#tour-tooltip')||{}).innerText || '',
-            targets: ['.screen-rankings .navsegment', '.rank-search', '.rank-me-btn'].map(q => !!document.querySelector(q)) })""")
-        chk("(7) the Leaderboard's own tour runs in Fire Code and does not speak of This Week (%s)" % rt, rt["tour"] and all(rt["targets"]) and not re.search(r"this week|26E", rt["text"], re.I), rt)
+            targets: ['.rank-search', '.rank-me-btn'].map(q => !!document.querySelector(q)), noSwitcher: !document.querySelector('.screen-rankings .navsegment') })""")
+        chk("(7) the Leaderboard's own tour runs in Fire Code and does not speak of This Week (%s)" % rt, rt["tour"] and all(rt["targets"]) and rt["noSwitcher"] and not re.search(r"this week|26E|hundo", rt["text"], re.I), rt)
     errs_all += errs; ctx.close()
 
     chk("no page errors", not errs_all, errs_all[:3])
