@@ -22,7 +22,7 @@ Studying still offers it ("Resume test" / "Start a new test"), while a Home tap 
 kept or dropped as before: arriving at the units by Start Studying shows none ticked, and a Home tap never builds that screen.
 
 On a phone (an iPhone 17 Pro Max installed, 440x956) and a laptop (1536x864, a mouse), in both classes.
-Run:  python3 tools/check-b384-tabroots.py [--quick] [--against REV|DIR|path/to/index.html]  [device ...]   (devices: promax laptop se)
+Run:  python3 tools/check-b384-tabroots.py [--quick] [--only STARTING-SCREEN-SUBSTRING] [academy|ifc] [--against REV|DIR|path/to/index.html]  [device ...]   (devices: promax laptop se)
       --against HEAD~1 / the build before r15 must FAIL (1)/(4) from the units screen, from Profile, Calendar, the rank screens.
 """
 import importlib.util, os, shutil, subprocess, sys, tempfile
@@ -41,6 +41,11 @@ if "--against" in argv:
     against = ["--against", target]
 QUICK = "--quick" in argv
 if QUICK: argv.remove("--quick")
+CLASSES = [c for c in ("academy", "ifc") if c in argv]
+argv = [a for a in argv if a not in ("academy", "ifc")]
+ONLY = None
+if "--only" in argv:
+    i = argv.index("--only"); ONLY = argv[i + 1].lower(); del argv[i:i + 2]
 want = argv or ["promax", "laptop"]
 sys.argv = [sys.argv[0]] + against
 spec = importlib.util.spec_from_file_location("glitches", os.path.join(HERE, "check-b384-glitches.py"))
@@ -202,6 +207,12 @@ def reset(pg):
       window.forceHideBottomTabs=false; showHome(); }""")
     pg.wait_for_timeout(350); G.clear_popups(pg)
 
+def reach_retry(pg, reach, cls, touch):
+    """a machine under load can be slow to put a screen up: one more try from Home before a screen is called unreachable"""
+    try: reach(pg, cls, touch)
+    except Exception:
+        reset(pg); pg.wait_for_timeout(1500); reach(pg, cls, touch)
+
 def walk(br, dev, cls):
     touch = G.DEV[dev][6]
     pg = G.open_dev(br, dev, [G.seed_init(cls)])
@@ -211,11 +222,12 @@ def walk(br, dev, cls):
     def shown(): return pg.evaluate("(ts)=>ts.filter(i=>{const b=document.getElementById(i);return !!b&&!b.hidden&&b.getClientRects().length>0;})", tabs)
     for name, which, reach, kind in STARTS:
         if which not in ("both", cls): continue
+        if ONLY and ONLY not in name.lower(): continue
         if QUICK and name not in ("Home", "the units, Drill, a unit ticked", "Profile", "Profile's Settings tab", "the badge case", "the Calendar", "Settings (Fire Code's tab)", "Friends"): continue
         for T in tabs:
             reset(pg)
             try:
-                reach(pg, cls, touch); settle(pg, 450)
+                reach_retry(pg, reach, cls, touch); settle(pg, 450)
             except Exception as e:
                 bad.append((name, "cannot be reached: %s" % str(e)[:100])); break
             if T == tabs[0]:
@@ -247,9 +259,10 @@ def walk(br, dev, cls):
     cbad = []; cn = 0
     for name, which, reach, kind in STARTS:
         if which not in ("both", cls): continue
+        if ONLY and ONLY not in name.lower(): continue
         if QUICK and name not in ("Home", "the units, Drill, a unit ticked", "Friends"): continue
         reset(pg)
-        try: reach(pg, cls, touch); settle(pg, 450)
+        try: reach_retry(pg, reach, cls, touch); settle(pg, 450)
         except Exception: continue
         if not pg.evaluate(BAR_TAB_VISIBLE, tabs[1]): continue
         for T in tabs[1:] + tabs[:1] + tabs[2:3] + tabs[:1]:
@@ -334,7 +347,7 @@ def walk(br, dev, cls):
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G.CHROME)
     for dev in want:
-        for cls in ["academy", "ifc"]:
+        for cls in (CLASSES or ["academy", "ifc"]):
             print("\n%s %s" % (dev, cls), flush=True)
             walk(br, dev, cls)
     br.close()
