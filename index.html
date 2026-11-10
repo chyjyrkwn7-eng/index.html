@@ -91159,6 +91159,9 @@ function a2hsBarWanted(){
   const st = a2hsState();
   return st !== "" && st !== "owed";
 }
+/* a phone on its side: Home has no room to spare (the planet system is a few dozen pixels tall and the class button sits in the
+   corner the bar would take), so the bar waits for it to be turned upright */
+function a2hsBarCramped(){ return window.innerWidth > window.innerHeight && window.innerHeight < 480; }
 /* what a bar that is not up yet waits for: the walkthrough's own showing, the splash, a loader, and anything Home is busy with */
 function a2hsBarBusy(){
   if(a2hsHolds()) return true;
@@ -91175,7 +91178,7 @@ function syncA2hsBar(){
   /* nearly every call, on every other screen: nothing up, nothing to do */
   if(!bar && !home){ a2hsBarFreeAt = 0; return; }
   let ok = false;
-  try{ ok = home && a2hsBarWanted() && noticeAllowedHere() && !document.getElementById("updatebanner"); }catch(e){}
+  try{ ok = home && a2hsBarWanted() && noticeAllowedHere() && !document.getElementById("updatebanner") && !a2hsBarCramped(); }catch(e){}
   if(!ok){
     if(bar) hideA2hsBar(bar, !home);
     a2hsBarFreeAt = 0;
@@ -91390,7 +91393,7 @@ function showHomeScreenSheet(opts){
     /* (384 r4) "if you add to homescreen ... and then you open the app from your Home Screen, isn't it gonna get you back to the
        start up page again?" Added from here, no: the icon carries this account's sign-in (installCodeInUrl). Said plainly, with
        the way back if it is ever asked for. */
-    : hasCode ? "Add it now, while this page is open, and the icon opens signed in with your progress. Then open Nova from the icon, not Safari. If it ever asks you to sign in, tap Sign in and enter your sync code (Settings > Sync code)."
+    : hasCode ? "Add it from this page, and the icon opens signed in with your progress. Open Nova from the icon from then on, not Safari. If it ever asks you to sign in, tap Sign in and enter your sync code (Settings > Sync code)."
     : "On iPhone and iPad the Home Screen icon keeps its own data, apart from Safari. Open it and sign in with your sync code to bring your progress."));
 
   /* Android: Chrome and Samsung Internet, this browser first */
@@ -119323,7 +119326,7 @@ function topNoticeOffset(bar){
 /* Rotating an iPad changes every one of those measurements at once, and
    the notice persists across screen changes, so it has to re-measure
    rather than keep the position it was first shown at. */
-function repositionTopNotices(){ positionNotice(); try{ positionA2hsBar(document.getElementById("a2hsbar")); }catch(e){} positionDailyAlert(); }
+function repositionTopNotices(){ positionNotice(); try{ syncA2hsBar(); }catch(e){} positionDailyAlert(); }
 __bm("L96966");
 window.addEventListener("resize", repositionTopNotices);
 window.addEventListener("orientationchange", repositionTopNotices);

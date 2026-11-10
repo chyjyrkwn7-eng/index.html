@@ -21,6 +21,7 @@ Read off the page, an existing account (signed up, has answered questions, the H
     the greeting, Start Studying, the daily question button, the tab bar; a tap at each of their centres lands on it, not on the bar;
 (8) NO SHIFT ON ARRIVAL: no layout-shift entry (PerformanceObserver) from the moment it shows; the planet moves by `translate`;
 (9) NEVER over a test, a tour, a cutscene or the splash (hidden while one is up, back after);
+(12) A PHONE ON ITS SIDE has no room for it (Home's planet system is a few dozen pixels tall there): the bar waits for it to be turned upright; a tablet on its side has it;
 (10) AT 85% PAGE ZOOM (518 CSS px across a 440pt screen, html.page-zoomed, --zc) it is the size it is at 100% on the glass:
     its height and its X in points, and its words not smaller;
 (11) the key is class26e.a2hs.bar, in localStorage only (nothing of it on the account's store); no page errors.
@@ -65,6 +66,8 @@ UA = {
 DEV = {"iphone": (440, 956, (62, 0, 34, 0), "iphone", 5, None), "se": (375, 667, (20, 0, 0, 0), "iphone", 5, None),
        "ipad": (834, 1194, (24, 0, 20, 0), "ipad", 5, None), "android": (360, 800, (24, 0, 0, 0), "android", 5, None),
        "zoom": (518, 1125, (62, 0, 34, 0), "iphone", 5, (440, 956)),
+       "se-land": (667, 375, (0, 44, 21, 44), "iphone", 5, None), "promax-land": (956, 440, (0, 62, 21, 62), "iphone", 5, None),
+       "ipad-land": (1194, 834, (24, 0, 20, 0), "ipad", 5, None), "android-land": (800, 360, (0, 32, 0, 32), "android", 5, None),
        "windows": (1536, 864, (0, 0, 0, 0), "windows", 0, None), "mac": (1440, 900, (0, 0, 0, 0), "mac", 0, None)}
 PERF = """(()=>{ window.__ls = []; try{ new PerformanceObserver(l => { for(const e of l.getEntries()) window.__ls.push({ t: e.startTime, v: e.value,
    src: (e.sources || []).map(s => s.node ? (s.node.id || s.node.className || s.node.nodeName) : '') }); }).observe({ type: 'layout-shift', buffered: true }); }catch(e){}
@@ -295,14 +298,15 @@ with sync_playwright() as pw:
         # a banner arriving after the bar parks below it
         pg.evaluate("()=>showDailyAlert && showDailyAlert('Gate banner: nothing to see here.')"); pg.wait_for_timeout(900)
         r = pg.evaluate("""()=>{ const a=document.querySelector('.daily-alert.show'), b=document.getElementById('a2hsbar'); if(!a||!b) return { a:!!a, b:!!b };
-          const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect(); return { a:true, b:true, gap: ar.top - br.bottom, ovl: !(br.bottom<=ar.top || br.top>=ar.bottom) }; }""")
+          /* layout boxes (offsetTop), not painted ones: a banner is still sliding in with a transform here */
+          const aT=a.offsetTop, bB=b.offsetTop+b.offsetHeight; return { a:true, b:true, gap: aT - bB, ovl: aT < bB }; }""")
         chk("(6) a banner that arrives after the bar parks below it, not over it (%s)" % r, bool(r.get("a")) and bool(r.get("b")) and not r["ovl"] and r["gap"] >= 0, r)
         errs_all.extend(pg.errs); ctx.close()
 
         print("\n(7)(8) Home is neither covered nor blocked, and nothing shifts")
         for dev in ("iphone", "se", "ipad"):
             ctx, pg = open2(br, dev)
-            on_home(pg); up = wait_bar(pg, 30); pg.wait_for_timeout(2500)
+            on_home(pg); up = wait_bar(pg, 30); top_a = pg.evaluate("()=>{ const b=document.getElementById('a2hsbar'); return b ? b.offsetTop : null; }"); pg.wait_for_timeout(2500)
             pg.evaluate("()=>document.querySelectorAll('.daily-alert').forEach(a=>a.remove())"); pg.wait_for_timeout(600)
             R = pg.evaluate("""()=>{ const b=document.getElementById('a2hsbar'); if(!b) return null; const br=b.getBoundingClientRect();
               const sels=['.chatdock-btn','.cosmic-hero-wrap','.cosmic-badge','.hometitle-wrap','.playbtn','.daily-question-fab','.bottomtabs','.bottomtab','.class-bubble'];
@@ -318,11 +322,13 @@ with sync_playwright() as pw:
             below = pg.evaluate("()=>{ const b=document.getElementById('a2hsbar').getBoundingClientRect(); const y=Math.min(innerHeight-2, b.bottom+3); const t=document.elementFromPoint(innerWidth/2, y); return !t || !document.getElementById('a2hsbar').contains(t); }")
             chk("(7) %s a point just under the bar is not the bar's" % dev, below, below)
             shot(pg, "home")
-            if dev == "iphone":
+            top_b = pg.evaluate("()=>{ const b=document.getElementById('a2hsbar'); return b ? b.offsetTop : null; }")
+            chk("(8) %s the bar's layout position does not change after it has arrived (its slide in is a transform) (%s then %s)" % (dev, top_a, top_b), top_a is not None and top_b is not None and abs(top_a - top_b) <= 1, [top_a, top_b])
+            if True:   # every device
                 L = pg.evaluate("()=>({ ls: window.__ls || [], at: window.__barShowAt || 0, hero: (()=>{ const h=document.querySelector('.cosmic-hero-wrap'); return h ? getComputedStyle(h).translate : null; })() })")
                 later = [e for e in L["ls"] if e["t"] >= L["at"] - 120]
-                chk("(8) no layout shift from the moment the bar shows (%d entries in all, %d from then; %s); the planet moves by translate (%s)"
-                    % (len(L["ls"]), len(later), [(round(e["v"], 4), e["src"]) for e in later][:3], L["hero"]), L["at"] > 0 and not later and L["hero"] not in (None, "none"), L)
+                chk("(8) %s no layout shift from the moment the bar shows (%d entries in all, %d from then; %s); the planet moves by translate (%s)"
+                    % (dev, len(L["ls"]), len(later), [(round(e["v"], 4), e["src"]) for e in later][:3], L["hero"]), L["at"] > 0 and not later, L)
             errs_all.extend(pg.errs); ctx.close()
 
     # ---------------------------------------------------------------- (9) never over a test, a tour, a cutscene, the splash
@@ -346,6 +352,25 @@ with sync_playwright() as pw:
         pg.evaluate("()=>beginRun([0], 'Gate run')"); pg.wait_for_timeout(5000)
         run = pg.evaluate("()=>({ q: !!document.querySelector('.choice'), bar: !!document.getElementById('a2hsbar') })")
         chk("(9) in a test (a question on screen) there is no bar (%s)" % run, run["q"] and not run["bar"], run)
+        errs_all.extend(pg.errs); ctx.close()
+
+    # ---------------------------------------------------------------- (12) a phone on its side
+    if want("land"):
+        print("\n(12) a phone on its side has no room for it; a tablet does")
+        res = {}
+        for dev in ("se-land", "promax-land", "android-land"):
+            ctx, pg = open2(br, dev); on_home(pg); res[dev] = never_bar(pg, 8); errs_all.extend(pg.errs); ctx.close()
+        chk("(12) never on an iPhone or Android phone held sideways, however long it waits (%s)" % res, all(res.values()), res)
+        ctx, pg = open2(br, "ipad-land"); on_home(pg); up = wait_bar(pg, 30); info = pg.evaluate(BAR) if up else None
+        chk("(12) an iPad on its side has it, clear of the chat button (%s)" % (info and [round(v) for v in info["rect"]]), bool(info) and info["insideX"] and info["x"][0] >= 43.5, info)
+        shot(pg, "land")
+        errs_all.extend(pg.errs); ctx.close()
+        # turned upright, it comes; turned on its side, it goes
+        ctx, pg = open2(br, "iphone"); on_home(pg); up = wait_bar(pg, 30)
+        pg.set_viewport_size({"width": 956, "height": 440}); pg.wait_for_timeout(500)
+        g = gone_bar(pg, 5)
+        pg.set_viewport_size({"width": 440, "height": 956}); back = wait_bar(pg, 20)
+        chk("(12) turned on its side the bar goes, turned upright it comes back (%s, %s, %s)" % (up, g, back), up and g and back, [up, g, back])
         errs_all.extend(pg.errs); ctx.close()
 
     # ---------------------------------------------------------------- (10) 85% page zoom
