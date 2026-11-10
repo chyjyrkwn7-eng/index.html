@@ -68037,11 +68037,55 @@ function noteAcademyCopy(d){
   if((Number(d.lastModified) || 0) >= cur.lastModified) academyCopy = pickAcademyCopy(d);
 }
 function socialMe(){
-  if(window.NOVA_CLASS !== "ifc") return { publicId: store.publicId, firstName: store.firstName, avatarChar: store.avatarChar, optIn: !!store.leaderboardOptIn };
+  if(window.NOVA_CLASS !== "ifc") return { publicId: store.publicId, firstName: store.firstName, avatarChar: store.avatarChar, avatarCharIfc: ifcCharOfMe(), optIn: !!store.leaderboardOptIn };
   const a = academyCopyNow();
   return { publicId: a.publicId || store.publicId, firstName: a.firstName || store.firstName,
-           avatarChar: a.avatarChar || store.avatarChar, optIn: a.leaderboardOptIn !== false };
+           avatarChar: a.avatarChar || store.avatarChar, avatarCharIfc: ifcCharOfMe(), optIn: a.leaderboardOptIn !== false };
 }
+/* ---- EVERYONE IS SHOWN WEARING THEIR OWN CHARACTER OF THE CLASS YOU ARE IN (384 r11) ----
+   Madison: "In the friends chat, if I look at them while in one class, I'll see what they have selected as the placeholder in the
+   class I'm in. I guess it would be whatever class they are currently in and whatever character that is, so it may change
+   constantly." One account is two classes, each with its own character; everything social carried only the academy's, and Fire
+   Code re-skins an academy id as its own look (IFC_ART_ON), so a friend in the academy's Marksman showed in Fire Code as a Hazmat
+   they never chose or unlocked there. Now what a person says about themselves carries BOTH: `avatarChar` stays the academy's
+   (every older build reads that, unchanged) and `avatarCharIfc` is what the account wears in Fire Code (the presence beat's `fv`
+   beside `v`). faceCharFor(card, pub) is the one reader - the academy page draws `avatarChar`, Fire Code draws `avatarCharIfc`, else
+   the class's starter - and faceSpanFor() draws it. Your own face in your own class is simply store.avatarChar. */
+function faceCharValid(id){
+  try{ return typeof id === "string" && !!id && AVATAR_CHARACTERS.some(c => c.id === id); }catch(e){ return false; }
+}
+/* What the account wears in Fire Code, or null when it is not in that class or has never opened it. In Fire Code that is the store;
+   in the academy page it is read off Fire Code's own saved copy - an exact key, the academy page has no key mapping (only the
+   character is taken from it, never a code or progress). */
+function ifcCharOfMe(){
+  if(window.NOVA_CLASS === "ifc") return faceCharValid(store.avatarChar) ? store.avatarChar : null;
+  try{
+    if(accountClassesOf(store).indexOf("ifc") < 0) return null;
+    const raw = localStorage.getItem("class26e.ifc.drill.v1");
+    const o = raw ? JSON.parse(raw) : null;
+    return (o && faceCharValid(o.avatarChar)) ? o.avatarChar : null;
+  }catch(e){ return null; }
+}
+/* A person's Fire Code character as their own beat last said it (presenceClasses[pub].fv), or null */
+function presenceIfcChar(pub){
+  try{
+    const e = pub && presenceClasses && presenceClasses[pub];
+    return (e && typeof e === "object" && faceCharValid(e.fv)) ? e.fv : null;
+  }catch(err){ return null; }
+}
+/* The character id to DRAW for somebody else in the class this page is. `card` is whatever the screen holds about them (a board
+   row, a friend card, a chat or room entry: avatarChar and, from this build, avatarCharIfc); `pub` their public id when the card
+   does not carry it. A board row for another class's board can set avatarCharIfc to have its own character drawn here. */
+function faceCharFor(card, pub){
+  const c = card || {};
+  if(c.nova || c.avatarChar === "nova") return c.avatarChar || "nova";
+  const key = pub || c.pub || c.key || null;
+  if(window.NOVA_CLASS !== "ifc") return c.avatarChar || "ghost";
+  if(key && (key === store.publicId || key === academyCopyNow().publicId) && faceCharValid(store.avatarChar)) return store.avatarChar;
+  if(faceCharValid(c.avatarCharIfc)) return c.avatarCharIfc;
+  return presenceIfcChar(key) || classDefaultCharacter() || c.avatarChar || "ghost";
+}
+function faceSpanFor(card, pub){ return avatarSpanFor({ avatarChar: faceCharFor(card, pub) }); }
 /* class sharing, which friends need (they are read off the class board): the academy account's choice in every class */
 function socialOptIn(){ return !!socialMe().optIn; }
 /* What a mailbox message or a chat roster entry says about you. In Fire Code the numbers are the academy row's (null until
@@ -68049,11 +68093,11 @@ function socialOptIn(){ return !!socialMe().optIn; }
 function socialCard(){
   const me = socialMe();
   if(window.NOVA_CLASS !== "ifc"){
-    return { firstName: me.firstName, avatarChar: me.avatarChar, level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount() };
+    return { firstName: me.firstName, avatarChar: me.avatarChar, avatarCharIfc: me.avatarCharIfc, level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount() };
   }
   const row = (me.publicId && rowsByPublicId()[me.publicId]) || null;
   /* the level the academy published (fixBoardLevel keeps it as rawLevel when it caps what the board draws) */
-  return { firstName: me.firstName, avatarChar: me.avatarChar,
+  return { firstName: me.firstName, avatarChar: me.avatarChar, avatarCharIfc: me.avatarCharIfc,
            level: row ? (Number(typeof row.rawLevel === "number" ? row.rawLevel : row.level) || 0) : null, badges: row ? (Number(row.badges) || 0) : null,
            mystery: row ? (Number(row.mystery) || 0) : null };
 }
@@ -68239,7 +68283,7 @@ let presenceClasses = null;
 function presenceClassesValue(){
   let k = "academy"; try{ k = enrolledClasses().join(",") || "academy"; }catch(e){}
   const out = { k: k };
-  try{ const me = socialMe(); if(me.firstName) out.n = String(me.firstName).slice(0, 40); if(me.avatarChar) out.v = String(me.avatarChar).slice(0, 40); }catch(e){}
+  try{ const me = socialMe(); if(me.firstName) out.n = String(me.firstName).slice(0, 40); if(me.avatarChar) out.v = String(me.avatarChar).slice(0, 40); if(me.avatarCharIfc) out.fv = String(me.avatarCharIfc).slice(0, 40); }catch(e){}
   return out;
 }
 /* The classes a friend's account is in, or null when nothing has said (a device from before this build, a friend who has not
@@ -68257,7 +68301,7 @@ function friendClassesOf(pub){
 /* A friend's name and character as their own beat gave them, or null */
 function friendCardFromPresence(pub){
   const e = pub && presenceClasses && presenceClasses[pub];
-  return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ghost" } : null;
+  return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ghost", avatarCharIfc: faceCharValid(e.fv) ? e.fv : null } : null;
 }
 /* ---- A FRIEND, AS EVERY FRIENDS SCREEN DRAWS THEM (384, Virtual Room round 2) ----
    Madison: "If I'm friends with someone they should be there and stuff." A friend in Fire Code alone has no academy board row,
@@ -68280,7 +68324,7 @@ function friendCardOf(pub, rows){
   try{
     const code = friendChatCode(pub);
     const p = ((chatListPeople || {})[code] || []).find(x => x && x.key === pub);
-    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ghost", fromChat: true };
+    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ghost", avatarCharIfc: p.avatarCharIfc || null, fromChat: true };
     const ce = chatEntry(code);
     if(ce && ce.name) return { pub: pub, firstName: String(ce.name), fromChat: true };
   }catch(e){}
@@ -68306,7 +68350,7 @@ function paintFriendFallbacks(){
     if(el.dataset.friendName){ if(c.firstName) el.textContent = c.firstName; }
     else {
       const old = el.querySelector(".rank-avatar");
-      try{ const nu = avatarSpanFor(c); if(old) old.replaceWith(nu); else el.prepend(nu); }catch(e){}
+      try{ const nu = faceSpanFor(c, pub); if(old) old.replaceWith(nu); else el.prepend(nu); }catch(e){}
     }
     delete el.dataset.fallback;
   });
@@ -68687,7 +68731,7 @@ function celebrateNewFriend(pub, tries){
     return;
   }
   try{ const m = friendMomentShown(); m[pub] = Date.now(); localStorage.setItem(FRIEND_MOMENT_KEY, JSON.stringify(m)); }catch(e){}
-  const e = Object.assign({ pub: pub }, rowsByPublicId()[pub] || {});
+  const e = Object.assign({ pub: pub }, rowsByPublicId()[pub] || friendCardFromPresence(pub) || {});
   const name = e.firstName || "A friend";
   if(typeof theme === "object" && theme && theme.muteBanners){
     showToast("You and " + name + " are now friends.", "good");
@@ -68704,7 +68748,7 @@ function celebrateNewFriend(pub, tries){
   const a = document.createElement("span"); a.className = "friend-moment-art";
   try{ a.appendChild(avatarSpanFor({ avatarChar: store.avatarChar || "ghost" })); }catch(err){}
   const b = document.createElement("span"); b.className = "friend-moment-art";
-  try{ b.appendChild(avatarSpanFor(e)); }catch(err){}
+  try{ b.appendChild(faceSpanFor(e, pub)); }catch(err){}
   const link = document.createElement("span"); link.className = "friend-moment-link";
   link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3 4.6 13.1A4.6 4.6 0 0 1 12 7.2a4.6 4.6 0 0 1 7.4 5.9Z" fill="currentColor"/></svg>';
   pair.append(a, link, b);
@@ -68903,7 +68947,7 @@ function sendToInbox(pub, payload){
       at: Date.now(),
       firstName: card.firstName || "Someone",
       avatarChar: card.avatarChar || "ghost"
-    }, card.level == null ? {} : {
+    }, card.avatarCharIfc ? { avatarCharIfc: card.avatarCharIfc } : {}, card.level == null ? {} : {
       level: card.level,
       badges: card.badges,
       mystery: card.mystery
@@ -68925,7 +68969,7 @@ function sendToInboxSlot(pub, slot, payload){
       pub: publicIdOf(), at: Date.now(),
       firstName: me.firstName || "Someone",
       avatarChar: me.avatarChar || "ghost"
-    }, payload);
+    }, me.avatarCharIfc ? { avatarCharIfc: me.avatarCharIfc } : {}, payload);
     inboxDocFor(pub).set({ kind: "inbox", msgs: { [slot]: msg } }, { merge: true }).catch(() => {});
   }catch(e){}
 }
@@ -98685,7 +98729,7 @@ function showWelcomeNamePrompt(){
   const showClash = row => {
     clashKey = accountNameKey(input.value);
     const shown = String(row.firstName || "").trim();
-    clashArt.replaceChildren(avatarSpanFor(row));
+    clashArt.replaceChildren(faceSpanFor(row));
     clashTitle.textContent = shown + " already has a Nova account.";
     clashLevel.textContent = typeof row.level === "number" && row.level > 0 ? "Level " + row.level : "";
     clashLevel.hidden = !clashLevel.textContent;
@@ -104728,7 +104772,7 @@ function saveChatListCache(){
         const last = chatListLast[code] || null;
         const people = chatListPeople[code];
         if(!last && !people) return;
-        keep[code] = { last: last, people: Array.isArray(people) ? people.map(p => ({ key: p.key, name: p.name, avatarChar: p.avatarChar })) : undefined };
+        keep[code] = { last: last, people: Array.isArray(people) ? people.map(p => ({ key: p.key, name: p.name, avatarChar: p.avatarChar, avatarCharIfc: p.avatarCharIfc })) : undefined };
       });
       localStorage.setItem(CHAT_LIST_CACHE_KEY, JSON.stringify(keep));
     }catch(e){}
@@ -104760,7 +104804,7 @@ function chatPeopleOf(members){
   const m = members || {};
   return Object.keys(m).filter(k => k !== me)
     .sort((a, b) => (((m[a] || {}).joinedAt || 0) - ((m[b] || {}).joinedAt || 0)) || (a < b ? -1 : 1))
-    .map(k => ({ key: k, name: (m[k] || {}).name || "", avatarChar: (m[k] || {}).avatarChar || "ghost" }));
+    .map(k => ({ key: k, name: (m[k] || {}).name || "", avatarChar: (m[k] || {}).avatarChar || "ghost", avatarCharIfc: (m[k] || {}).avatarCharIfc || null }));
 }
 function paintChatFaces(el, code){
   /* Before the room has been read, the people recorded on the entry
@@ -104785,7 +104829,7 @@ function paintChatFaces(el, code){
   shown.forEach(p => {
     const f = document.createElement("span");
     f.className = "chatdock-face";
-    try{ f.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" })); }catch(e){}
+    try{ f.appendChild(faceSpanFor(p, p.key)); }catch(e){}
     el.appendChild(f);
   });
   if(n > 3){
@@ -106772,14 +106816,16 @@ function chatPersonOf(key, entry){
   const e = entry || {};
   if(key && key === publicIdOf()){
     const me = socialMe();   /* (384) as your friends see you, in every class */
-    return { name: me.firstName || e.name || "You", avatarChar: me.avatarChar || e.avatarChar || "ghost" };
+    return { name: me.firstName || e.name || "You", avatarChar: me.avatarChar || e.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null };
   }
   let row = null;
   try{ row = rowsByPublicId()[key] || null; }catch(err){}
   /* (384 vr2) no board row (Fire Code alone): their own beat's name and character (friendCardFromPresence) */
   if(!row){ try{ row = friendCardFromPresence(key); }catch(err){} }
+  /* (384 r11) and the Fire Code character: the row's, their beat's, or the one the room's entry last carried */
   return { name: (row && row.firstName) || e.name || "",
-           avatarChar: (row && row.avatarChar) || e.avatarChar || "ghost" };
+           avatarChar: (row && row.avatarChar) || e.avatarChar || "ghost",
+           avatarCharIfc: (row && faceCharValid(row.avatarCharIfc) ? row.avatarCharIfc : null) || presenceIfcChar(key) || (faceCharValid(e.avatarCharIfc) ? e.avatarCharIfc : null) };
 }
 function chatMemberMap(participants, data){
   const out = {};
@@ -106818,7 +106864,7 @@ function openChatMembers(){
     row.className = "chat-member";
     const art = document.createElement("span");
     art.className = "chat-member-art";
-    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ghost" }));
+    art.appendChild(faceSpanFor(e, k));
     const nm = document.createElement("span");
     nm.className = "chat-member-name";
     nm.textContent = k === chatMyKey ? (e.name || "You") + " (you)" : (e.name || "Student");
@@ -106836,7 +106882,7 @@ function openChatMembers(){
       const dm = document.createElement("button");
       dm.type = "button"; dm.className = "next ghost chatdock-mini";
       dm.textContent = "Message";
-      dm.addEventListener("click", () => { ov.remove(); openDirectChatWith({ pub: k, firstName: e.name, avatarChar: e.avatarChar }); });
+      dm.addEventListener("click", () => { ov.remove(); openDirectChatWith({ pub: k, firstName: e.name, avatarChar: e.avatarChar, avatarCharIfc: e.avatarCharIfc }); });
       if(keys.length > 2) row.appendChild(dm);
     }
     sh.appendChild(row);
@@ -106866,7 +106912,7 @@ function seedChatRosterFromList(code){
   all[me] = Object.assign({ joinedAt: 0 }, chatPersonOf(me, null));
   people.forEach((p, i) => {
     const who = chatPersonOf(p.key, p);
-    if(p.key && who.name) all[p.key] = { name: who.name, avatarChar: who.avatarChar, joinedAt: i + 1 };
+    if(p.key && who.name) all[p.key] = { name: who.name, avatarChar: who.avatarChar, avatarCharIfc: who.avatarCharIfc, joinedAt: i + 1 };
   });
   chatAllMembers = all;
   renderChatRoster({ [me]: all[me] });
@@ -106910,7 +106956,7 @@ function renderChatRoster(participants){
     one.title = (k === chatMyKey ? "You" : (e.name || "Someone")) + (isHere(k) ? " \u2014 here" : " \u2014 away");
     const art = document.createElement("span");
     art.className = "chatdock-who-art";
-    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ghost" }));
+    art.appendChild(faceSpanFor(e, k));
     const nm = document.createElement("span");
     nm.className = "chatdock-who-name";
     nm.textContent = k === chatMyKey ? "You" : (e.name || "Someone");
@@ -106987,6 +107033,7 @@ function chatSelfEntry(){
   /* (384) the academy account's name, face and numbers in every class (socialCard); Fire Code's numbers never */
   const c = socialCard();
   const out = { name: c.firstName || "Anonymous", avatarChar: c.avatarChar || "ghost" };
+  if(c.avatarCharIfc) out.avatarCharIfc = c.avatarCharIfc;   /* (384 r11) what the account wears in Fire Code */
   if(c.level != null){ out.level = c.level; out.badges = c.badges; }
   out.joinedAt = Date.now(); out.seen = Date.now();
   return out;
@@ -107009,6 +107056,7 @@ function startVroomPresence(){
       const sm = socialMe();
       patch["participants." + vroomMyKey + ".name"] = sm.firstName || "Anonymous";
       patch["participants." + vroomMyKey + ".avatarChar"] = sm.avatarChar || "ghost";
+      if(sm.avatarCharIfc) patch["participants." + vroomMyKey + ".avatarCharIfc"] = sm.avatarCharIfc;
       /* and Nova's, if this device brought him (build 324) */
       try{ novaVrPresencePatch(patch); }catch(e){}
       vroomDb().collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
@@ -107028,6 +107076,7 @@ function chatPresencePatch(seen){
   const c = socialCard();   /* (384) see chatSelfEntry */
   patch[k + "name"] = c.firstName || "Anonymous";
   patch[k + "avatarChar"] = c.avatarChar || "ghost";
+  if(c.avatarCharIfc) patch[k + "avatarCharIfc"] = c.avatarCharIfc;
   if(c.level != null){ patch[k + "level"] = c.level; patch[k + "badges"] = c.badges; }
   patch[k + "seen"] = seen;
   return patch;
@@ -107344,6 +107393,7 @@ function openDirectChatWith(entry){
   const me = publicIdOf();
   const theirName = entry.firstName || entry.name || "Student";
   const them = { name: theirName, avatarChar: entry.avatarChar || "ghost",
+                 avatarCharIfc: entry.avatarCharIfc || presenceIfcChar(pub) || null,
                  level: entry.level || 0, badges: entry.badges || 0,
                  joinedAt: Date.now(), seen: 0 };
   socialDb().collection("vrooms").doc(code).set({
@@ -108124,7 +108174,7 @@ function rebuildChatTab(){
     const art = document.createElement("span");
     art.className = "chatdock-friendhead-art" + (isOnline(e) ? " is-online" : "");
     art.dataset.onlinePub = pub || "";
-    try{ art.appendChild(avatarSpanFor(e)); }catch(err){}
+    try{ art.appendChild(faceSpanFor(e, pub)); }catch(err){}
     const txt = document.createElement("span");
     txt.className = "chatdock-friendhead-text";
     const nm = document.createElement("span");
@@ -108286,7 +108336,7 @@ function renderFriendChatList(){
     const art = document.createElement("span");
     art.className = "chatdock-chatrow-avatar" + (isOnline(e) ? " is-online" : "");
     art.dataset.onlinePub = e.pub || "";
-    try{ art.appendChild(avatarSpanFor(e)); }catch(err){}
+    try{ art.appendChild(faceSpanFor(e, e.pub)); }catch(err){}
     open.appendChild(art);
     const top = document.createElement("span");
     top.className = "chatdock-chatrow-top";
@@ -109023,7 +109073,7 @@ function paintChatInvitePeek(box, code){
     ((p && p.people) || []).slice(0, 4).forEach(x => {
       const f = document.createElement("span");
       f.className = "chatdock-face";
-      try{ f.appendChild(avatarSpanFor({ avatarChar: x.avatarChar || "ghost" })); }catch(e){}
+      try{ f.appendChild(faceSpanFor(x, x.key)); }catch(e){}
       faces.appendChild(f);
     });
     faces.hidden = !faces.childNodes.length;
@@ -109052,7 +109102,7 @@ function renderNotifications(){
     row.className = "chatdock-notif chatdock-notif-" + it.kind;
     const art = document.createElement("div");
     art.className = "friend-row-art";
-    art.appendChild(avatarSpanFor(it.who));
+    art.appendChild(faceSpanFor(it.who, it.who && it.who.pub));
     const text = document.createElement("p");
     text.className = "chatdock-notif-text"; text.textContent = it.text;
     /* A GROUP YOU ARE NOT IN, SHOWN FOR WHAT IT IS (build 313): who is in
@@ -109326,7 +109376,7 @@ function openChatInviteSheet(){
       row.className = "friend-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor(e));
+      art.appendChild(faceSpanFor(e, e.pub));
       decorateAvatar(art, e.level, e.badges, e.mystery);
       /* Asleep when they are not on - "same when you go to invite". */
       if(e.firstName) setCharState(art, isOnline(e) ? "live" : "sleep");
@@ -109908,13 +109958,13 @@ function openPersonSheet(entry){
   if(isNova) sheet.classList.add("is-nova");
   const art = document.createElement("div");
   art.className = "person-sheet-art person-card-art";
-  art.appendChild(isNova ? novaAvatarSpan(false, true) : platePortrait(avatarSpanFor(entry)));
+  art.appendChild(isNova ? novaAvatarSpan(false, true) : platePortrait(faceSpanFor(entry, entry.pub)));
   /* Big and alone here, so this is exactly where the character's own
      light belongs - the opposite call from the list rows, which lost
      it for being a smear. */
   art.classList.add("has-glow");
   art.style.setProperty("--char-glow",
-    isNova ? NOVA_COLOR : avatarGlowColor((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
+    isNova ? NOVA_COLOR : avatarGlowColor(faceCharFor(entry, entry && entry.pub) || AVATAR_CHARACTERS[0].id));
   /* A friend who is not on is asleep; anybody else - including anybody
      opened from the Leaderboard, whose presence you cannot see - is
      simply alive. */
@@ -135457,7 +135507,7 @@ function roomClassLabel(data){
 function vroomMeEntry(){
   const me = socialMe();
   let dev = ""; try{ dev = tallyDeviceId(); }catch(e){}
-  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
+  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null, level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
 }
 function createVirtualRoomLobby(units, timeLimit, game, versions){
   /* The actual bug behind "wouldn't let me start a Virtual Room
@@ -135508,6 +135558,7 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
     /* So the browser can say whose room it is without a second lookup. */
     hostName: myName,
     hostAvatar: me.avatarChar,
+    hostAvatarIfc: me.avatarCharIfc || null,
     status: "waiting",
     startAt: null,
     /* The room's own mode, so the host can change it without everyone
@@ -136906,7 +136957,7 @@ function tugTeamEnd(d, side, cls){
     fig.className = "tug-team-fig char-live";
     fig.style.setProperty("--i", i);
     fig.title = pp.name || "";
-    fig.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
+    fig.appendChild(buildAvatarCharSVGSafe(faceCharFor(pp, k)));
     end.appendChild(fig);
   });
   return end;
@@ -137772,7 +137823,7 @@ function beginBattleMatch(data){
       /* THE WHOLE WINNING SIDE, like Tug - they won it together. */
       const shown = (side ? battleMembers(d, side) : Object.keys(d.participants || {}))
         .map(k => ({ name: (d.participants[k] || {}).name || "?",
-                     avatar: (d.participants[k] || {}).avatarChar || "ghost" }));
+                     avatar: faceCharFor(d.participants[k] || {}, k) }));
       detachBattleEffects();
       playVroomWinnerCutscene({
         kind: "team",
@@ -137926,8 +137977,8 @@ function buildBattleBoard(d){
       const p = d.participants[k] || {};
       const av = document.createElement("span");
       av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
-      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ghost"));
-      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
+      av.style.setProperty("--pl", avatarGlowColor(faceCharFor(p, k)));
+      av.appendChild(buildAvatarCharSVGSafe(faceCharFor(p, k)));
       faces.appendChild(av);
     });
     if(sideKeys.length > 3){
@@ -137978,8 +138029,8 @@ function battlePaintFaces(row, d, side){
       const p = (d.participants || {})[k] || {};
       const av = document.createElement("span");
       av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
-      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ghost"));
-      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
+      av.style.setProperty("--pl", avatarGlowColor(faceCharFor(p, k)));
+      av.appendChild(buildAvatarCharSVGSafe(faceCharFor(p, k)));
       faces.appendChild(av);
     });
     if(keys.length > 3){
@@ -139117,7 +139168,7 @@ function openInviteFriendsSheet(roomCode){
       row.className = "friend-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor(e));
+      art.appendChild(faceSpanFor(e, e.pub));
       decorateAvatar(art, e.level, e.badges, e.mystery);
       if(e.firstName) setCharState(art, isOnline(e) ? "live" : "sleep");
       const text = document.createElement("div");
@@ -139250,7 +139301,8 @@ function openRoomsFrom(docs){
     const hk = vroomHostKeyOf(here);
     const host = (hk && here[hk]) || null;
     out.push({ code: d.id, room: r, count: n, inMatch: !!(r.status && r.status !== "waiting"),
-               hostName: (host && host.name) || r.hostName, hostAvatar: (host && host.avatarChar) || r.hostAvatar });
+               hostName: (host && host.name) || r.hostName, hostAvatar: (host && host.avatarChar) || r.hostAvatar,
+               hostAvatarIfc: (host && host.avatarCharIfc) || r.hostAvatarIfc || null, hostKey: hk || null });
   });
   /* Fullest first: a room with people in it is the one worth joining,
      and an empty-looking list of one-person rooms is what makes a
@@ -139326,7 +139378,7 @@ function showRoomBrowser(){
       row.className = "friend-row room-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor({ avatarChar: entry.hostAvatar || r.hostAvatar || "ghost" }));
+      art.appendChild(faceSpanFor({ avatarChar: entry.hostAvatar || r.hostAvatar || "ghost", avatarCharIfc: entry.hostAvatarIfc || null }, entry.hostKey));
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
@@ -139920,7 +139972,7 @@ function showVirtualRoomLobby(){
        every snapshot, because those are cheap and some of them are
        what make the room start at all. */
     const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : p.prep ? "p" : 0,
-      p.level || 0, p.badges || 0, p.avatarChar || "", p.banner || ""].join("~")).join("|")
+      p.level || 0, p.badges || 0, faceCharFor(p, key) || "", p.banner || ""].join("~")).join("|")
       + "||" + (data.units || []).join(",") + "|" + JSON.stringify(roomVersionsOf(data)) + "|" + (data.timeLimit || 0)
       /* `count`, the field Match settings writes. This read
          `questionCount`, which nothing has ever written, so changing
@@ -139964,10 +140016,10 @@ function showVirtualRoomLobby(){
          is exactly the case the glow was written for. */
       avatarWrap.className = "lb-avatar vroom-avatar has-glow";
       avatarWrap.style.setProperty("--char-glow",
-        avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
+        avatarGlowColor(faceCharFor(p, key) || AVATAR_CHARACTERS[0].id));
       /* In a .rank-avatar wrapper (build 266), which carries the glow's
          drop-shadow - see .vroom-avatar.has-glow > .rank-avatar. */
-      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" }));
+      avatarWrap.appendChild(faceSpanFor(p, key));
       decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
       /* alive in the lobby (build 314: "make sure the ones that are meant
          to animate do") - a flip-book, like a board row */
@@ -141843,7 +141895,7 @@ function startVroomRaceListener(){
          character, a renamed one) came back null and threw here, which
          stopped the loop and left everybody after that person off the
          line. Found recording a four-person room. */
-      avatar.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
+      avatar.appendChild(buildAvatarCharSVGSafe(faceCharFor(p, key)));
       const initials = document.createElement("span");
       initials.className = "vroom-race-marker-initials";
       initials.textContent = "You";
@@ -142504,7 +142556,7 @@ function buildVroomRacePodium(data){
     nm.className = "lw-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
     const pts = document.createElement("span");
     pts.className = "lw-podium-pts"; pts.textContent = xpWith(r, i).toLocaleString() + " XP";
-    spot.append(vroomPodiumDisc(r.p.avatarChar), nm, pts, vroomPodiumStep(i + 1));
+    spot.append(vroomPodiumDisc(faceCharFor(r.p, r.key)), nm, pts, vroomPodiumStep(i + 1));
     stage.appendChild(spot);
   });
   card.appendChild(stage);
@@ -142519,7 +142571,7 @@ function buildVroomRacePodium(data){
       const pl = document.createElement("span");
       pl.className = "vr-podium-place"; pl.textContent = vroomOrdinal(i + 1);
       const av = document.createElement("span");
-      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ghost"));
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(faceCharFor(r.p, r.key)));
       const nm = document.createElement("span");
       nm.className = "vr-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
       const x = document.createElement("span");
@@ -142552,7 +142604,7 @@ function buildVroomTeamPodium(d, o){
     spot.dataset.side = side;
     const avs = document.createElement("span");
     avs.className = "vr-side-avs";
-    members.slice(0, 4).forEach(k => avs.appendChild(vroomPodiumDisc((parts[k] || {}).avatarChar)));
+    members.slice(0, 4).forEach(k => avs.appendChild(vroomPodiumDisc(faceCharFor(parts[k] || {}, k))));
     if(members.length > 4){ const more = document.createElement("span"); more.className = "vr-side-more"; more.textContent = "+" + (members.length - 4); avs.appendChild(more); }
     const nm = document.createElement("span");
     nm.className = "lw-podium-name"; nm.textContent = side === o.mine ? "Your side" : "Their side";
@@ -142573,7 +142625,7 @@ function buildVroomTeamPodium(d, o){
       row.className = "vr-podium-row" + (k === vroomMyKey ? " is-me" : "");
       row.dataset.key = k;
       const av = document.createElement("span");
-      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(faceCharFor(pp, k)));
       const nm = document.createElement("span");
       nm.className = "vr-podium-name";
       nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : "");
@@ -142814,10 +142866,10 @@ function playVroomRaceCutscene(ranked){
     /* Each player's bar in their OWN colour - the colour their character
        glows in everywhere else - so you can follow a person down the
        board as it reshuffles rather than reading names every step. */
-    row.style.setProperty("--pl", avatarGlowColor(r.p.avatarChar || "ghost"));
+    row.style.setProperty("--pl", avatarGlowColor(faceCharFor(r.p, r.key)));
     const fig = document.createElement("span");
     fig.className = "vrc-fig";
-    fig.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ghost"));
+    fig.appendChild(buildAvatarCharSVGSafe(faceCharFor(r.p, r.key)));
     const place = document.createElement("span");
     place.className = "vrc-place";
     fig.appendChild(place);
@@ -147373,7 +147425,7 @@ function showFriends(){
     row.className = "friend-row";
     const art = document.createElement("div");
     art.className = "friend-row-art";
-    art.appendChild(avatarSpanFor(entry));
+    art.appendChild(faceSpanFor(entry, entry.pub));
     /* NO RANK EMBLEM ON THE CHARACTER HERE (build 231) - "on the friend
        list as well remove the rank icon next to their character". The
        rank is already the coloured word on the line under the name, and
