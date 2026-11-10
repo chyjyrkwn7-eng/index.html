@@ -98,8 +98,10 @@ with sync_playwright() as pw:
     pg.evaluate("()=>showAppearance({ page: 'account' })"); pg.wait_for_timeout(800)
     acc = pg.evaluate("""()=>{ const n=document.querySelector('#stage .customize-namerow'), d=n && n.querySelector('.profile-name-display'), so=document.querySelector('#stage .signout-row');
       return { nameH: n ? Math.round(n.getBoundingClientRect().height) : 0, name: d ? parseFloat(getComputedStyle(d).fontSize) : 0,
+               chg: (n && n.querySelector('.profile-edit-btn')) ? (()=>{ const b=n.querySelector('.profile-edit-btn'), r=b.getBoundingClientRect(); return { h: Math.round(r.height), f: parseFloat(getComputedStyle(b).fontSize) }; })() : null,
                outH: so ? Math.round(so.getBoundingClientRect().height) : 0, out: so ? parseFloat(getComputedStyle(so.querySelector('.settings-row-label')).fontSize) : 0 }; }""")
-    if not (49 <= acc["nameH"] <= 54 and 15 <= acc["name"] <= 16.5 and 49 <= acc["outH"] <= 54 and 15 <= acc["out"] <= 16.5): bad.append(("account", acc))
+    # (384 r16) "why is the name and change button so tiny": the name reads at 16-18px and Change is a real button (words 15.5px+, 36px+ tall)
+    if not (49 <= acc["nameH"] <= 58 and 16 <= acc["name"] <= 18 and acc["chg"] and acc["chg"]["f"] >= 15.5 and acc["chg"]["h"] >= 36 and 49 <= acc["outH"] <= 54 and 15 <= acc["out"] <= 16.5): bad.append(("account", acc))
     pg.evaluate("()=>showAppearance({ page: 'sync' })"); pg.wait_for_timeout(800)
     sy = pg.evaluate("()=>{ const l=document.querySelector('#stage .sync-code-label'); return l ? { size: parseFloat(getComputedStyle(l).fontSize), color: getComputedStyle(l).color } : null; }")
     sh = hue(rgb(sy and sy["color"]))

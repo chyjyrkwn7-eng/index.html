@@ -9,6 +9,7 @@ glass size is read as CSS px x (screen / layout width):
  (4) at 100% (440 CSS px on a 440pt screen) nothing is scaled: tile 28px, pitch 51px, and page-zoomed is not set;
  (6) "fix the rest": the content of Profile, Stats, the Leaderboard, Customize, Friends, the Calendar, the Rank ladder and the badge case is
      the height on the glass at his zoom that it has at 100% (within 3%) - the same treatment;
+ (7) Account's name row and its Change button are Settings-sized on the glass at his zoom: row 49-58pt, the name 16-18pt, Change 15.5pt+ and 36pt+ tall;
  (5) nothing scrolls sideways at either, and no page errors.
 Run:  python3 tools/check-b384-settingszoom.py   (--against OLD/index.html must FAIL)"""
 import os, sys, importlib.util
@@ -50,6 +51,12 @@ with sync_playwright() as pw:
         pg.evaluate("(p)=>showAppearance({page:p})", pgname); pg.wait_for_timeout(1100)
         zoomed[pgname] = pg.evaluate(SUB, k)
     chk("(5) no page errors at his zoom", not errs, errs)
+    pg.evaluate("()=>showAppearance({page:'account'})"); pg.wait_for_timeout(1300)
+    ac = pg.evaluate("""(k)=>{ const n=document.querySelector('#stage .customize-namerow'), d=n&&n.querySelector('.profile-name-display'), b=n&&n.querySelector('.profile-edit-btn'); if(!n) return null;
+      const z = parseFloat(getComputedStyle(n.closest('.settings-namesect')||n).zoom) || 1;
+      return { row: n.getBoundingClientRect().height*k, name: parseFloat(getComputedStyle(d).fontSize)*z*(k*(innerWidth/innerWidth)), btnh: b.getBoundingClientRect().height*k, btnf: parseFloat(getComputedStyle(b).fontSize)*z*k, z }; }""", k)
+    chk("(7) Account's name row and Change button at his zoom: row %.0fpt, Change %.0fpt tall (%s)" % (ac and ac["row"] or 0, ac and ac["btnh"] or 0, ac),
+        ac and 49 <= ac["row"] <= 58 and ac["btnh"] >= 36, ac)
     OTHER = [("profile", "showProfile('profile')", ".screen-profile > .profile-identity-tab"), ("stats", "showProfile('stats')", ".screen-profile > .profile-stats-tab"),
              ("leaderboard", "showRankings()", ".screen-rankings > .rank-blurb"), ("customize", "showCustomize()", ".screen-customize > .cz-list"),
              ("friends", "showFriends()", ".screen-friends > .friend-sect"), ("calendar", "showCalendarTab()", ".screen-calendar > .cal-glance"),

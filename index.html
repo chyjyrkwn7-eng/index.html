@@ -39108,7 +39108,7 @@ html.is-browser{ --fade-paper: transparent; }
      the pages it opens are zoomed by --zc: they lay out as the 440pt screen they are drawn on, then land at full size on the
      glass - the rows, tiles, glyphs, words, switches and hairlines all scale as one, and nothing in them is re-measured. The
      headings step up to 15px as well (Delta's section names, ~15pt semibold; set where the 384 r5 heading rule is). */
-  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask){
+  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask, .settings-namesect){
     zoom:var(--zc, 1);
   }
   /* THE REST OF THE APP, THE SAME TREATMENT (Madison: "I want the same treatment ... fix the rest"). The content blocks of the
@@ -39123,6 +39123,17 @@ html.is-browser{ --fade-paper: transparent; }
       .screen-calendar > :is(.cal-classhead, .cal-glance, .cal-monthview, .cal-card),
       .screen-ranks > :is(.ranks-tab, .badges-tab)){
     zoom:var(--zc, 1);
+  }
+
+  /* ---- ACCOUNT: THE NAME AND ITS CHANGE BUTTON AT THE SIZE OF EVERYTHING ELSE IN SETTINGS (build 384, 9th pass) ----
+     Madison: "In account within settings, why is the name and change button so tiny? Fix that." The name was 15.5px and Change
+     12.5px in a 43pt row on his zoomed phone (the name block was the one Settings block the page-zoom rule did not reach: it is now
+     .settings-namesect, zoomed with the cards). The name reads like a row's title (17px, semibold) and Change is a real button:
+     16px words, ~38px tall, its touch 44px+ (the button's own ::before). */
+  html[data-layout] body #stage .settings-page-account .customize-namerow.customize-namerow{ min-height:54px; padding-right:12px; }
+  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-name-display.profile-name-display{ font-size:17px; font-weight:600; letter-spacing:0; }
+  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-edit-btn.profile-edit-btn{
+    font-size:16px; font-weight:600; padding-inline:1.15rem; padding-block:calc(.55rem + (1lh - 1cap)/2); min-height:38px; line-height:1.25;
   }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -89313,6 +89324,11 @@ function buildSoundSettings(){
       theme.haptics = on;
       saveTheme();
       NovaSound.sync();
+      /* (384 r16) TURNED BACK ON, THE SWITCH LAYER IS ASKED FOR AGAIN, A BEAT LATER AND ONCE MORE: "when turning off Haptic Touch and
+         turning it back on, it doesn't register it till you hit the back button" - what the back button does is mount a screen, and a
+         mounted screen is what hands every control its switch. The layer's own restart queues the page once, and on a phone that was
+         still inside the tap's own settle window; these ask again for this page, each a no-op where the switches are already on. */
+      if(on){ [260, 900].forEach(ms => setTimeout(() => { try{ if(typeof window.hswRescan === "function") window.hswRescan(document.getElementById("stage") || document.body); }catch(e){} }, ms)); }
       if(on) NovaSound.haptic("tap");
       showToast(on ? "Haptics on." : "Haptics off.");
     });
@@ -118688,7 +118704,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.12";
+const APP_BUILD = "2026-11-10-384.13";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -146881,7 +146897,7 @@ function showCustomize(section){
 function buildCustomizeNameSect(){
   /* ---- name, with Change beside it ---- */
   const nameSect = document.createElement("div");
-  nameSect.className = "sect";
+  nameSect.className = "sect settings-namesect";
   const nameLab = document.createElement("p");
   nameLab.className = "slab motion-summary"; nameLab.textContent = "Name";
   nameSect.appendChild(nameLab);
