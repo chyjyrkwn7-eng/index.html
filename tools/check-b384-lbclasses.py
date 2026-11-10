@@ -6,7 +6,7 @@
 the second: Settings lists each class.) So:
 (1) in Fire Code (enrolled in both): a Leaderboard tab on the bar, a real Leaderboard & Privacy row (Shown or Hidden, its own switch) whose
     page has the switch, a hint that names Fire Code, and lists each class: Police Academy and Fire Code, each Shown or Hidden;
-(2) in the academy, enrolled in both: the switch is there, its hint names the Police Academy, and the page lists each class too - Fire
+(2) in the academy, enrolled in both: the switch is there, its hint explains the per-class switches below it (385 r17: one switch a class, check-b384-privacy), and the page lists each class too - Fire
     Code's as it is in its own copy (Shown, or Hidden once it is hidden there);
 (3) in the academy, enrolled in one: no class list, the hint is as it was.
   python3 tools/check-b384-lbclasses.py [--against OLD/index.html]   (must FAIL on the build before)"""
@@ -32,7 +32,7 @@ READ = """async (two)=>{ const w=ms=>new Promise(r=>setTimeout(r,ms)); document.
   const menu = row ? { value: (row.querySelector('.settings-row-value')||{}).textContent } : null;
   let page = null;
   if(row){ row.click(); await w(900);
-    page = { text: (document.querySelector('#stage')||{}).innerText, classes: [...document.querySelectorAll('#stage .settings-lb-class')].map(r => (r.querySelector('.settings-row-label')||{}).textContent + '=' + (r.querySelector('.settings-row-value')||{}).textContent),
+    page = { text: (document.querySelector('#stage')||{}).innerText, classes: [...document.querySelectorAll('#stage .settings-lb-class')].map(r => (r.querySelector('.otext').firstChild.textContent) + '=' + (r.querySelector('input').checked ? 'Shown' : 'Hidden')),
              hint: (document.querySelector('#stage .ohint')||{}).textContent || null, sw: !!document.querySelector('#stage input[type=checkbox]') }; }
   return { cls: window.NOVA_CLASS, tab: [...document.querySelectorAll('.bottomtabs .bottomtab')].filter(b => b.id === 'bottomtab-rewards').map(b => b.hidden || !b.getBoundingClientRect().width), menu, page }; }"""
 with sync_playwright() as pw:
@@ -43,14 +43,14 @@ with sync_playwright() as pw:
     chk("(1) Fire Code: a Leaderboard tab on the bar (%s), a Leaderboard & Privacy row that is Shown or Hidden (%s), and its own switch" % (r["tab"], r["menu"]),
         r["cls"] == "ifc" and not any(r["tab"]) and len(r["tab"]) == 1 and r["menu"] and r["menu"]["value"] in ("Shown", "Hidden") and r["page"] and r["page"]["sw"], r)
     chk("(1) ...its page names Fire Code, and lists each class: the Police Academy and Fire Code, each shown or hidden (%s)" % (r["page"] and r["page"]["classes"]),
-        r["page"] and "Fire Code" in (r["page"]["hint"] or "") and len(r["page"]["classes"]) == 2 and r["page"]["classes"][0].startswith("Police Academy=")
+        r["page"] and "below" in (r["page"]["hint"] or "") and len(r["page"]["classes"]) == 2 and r["page"]["classes"][0].startswith("Police Academy=")
         and r["page"]["classes"][1].startswith("Fire Code=") and all(c.split("=")[1] in ("Shown", "Hidden") for c in r["page"]["classes"]), r)
     for two in (True, False):
         ctx, pg, errs = G["page"](br, G["init"](G["academy"], active="academy")); pg.wait_for_timeout(1200)
         r = pg.evaluate(READ, two); errs_all += errs; ctx.close()
         if two:
             chk("(2) the academy, in both classes: the switch is there, its hint names the Police Academy, and the page lists both classes (%s)" % (r["page"] and r["page"]["classes"]),
-                r["page"] and r["page"]["sw"] and "Police Academy" in (r["page"]["hint"] or "") and len(r["page"]["classes"]) == 2
+                r["page"] and r["page"]["sw"] and "below" in (r["page"]["hint"] or "") and len(r["page"]["classes"]) == 2
                 and r["page"]["classes"][1].startswith("Fire Code=") and r["page"]["classes"][1].split("=")[1] in ("Shown", "Hidden"), r)
         else:
             chk("(3) the academy, in one class: no class list, the hint as it was",
