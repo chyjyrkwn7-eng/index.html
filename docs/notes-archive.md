@@ -37840,3 +37840,10 @@ off (it repeated the XP bar above it on Profile); read alone it looked like a mi
 a `.pf-bar` too, filled by levels reached out of the level asked (capped, full once met). The rank-up journey already handled a bar on
 that row (`ruTo`). `check-behaviour` 321f updated (bar present, unmet and met); the rank-word colour assertion there was already
 failing on 384.17 (stale, not from this).
+
+### 384.18 - first place's crown is upright
+
+Madison: "I don't like the leaning crown thing anymore, make that better". `.lb-crown` was rotated -8deg and drawn lopsided. It is now level
+(`rotate:0`), symmetric (three points with a bead on each tip, a band, a jewel), a little larger and snug on the medal's top edge;
+its centre equals the medal's centre (measured 47.375 vs 47.383 on a phone, equal on an iPad). Markup/CSS only; `check-behaviour`
+only asserts the crown's presence.

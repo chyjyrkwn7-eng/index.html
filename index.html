@@ -6526,10 +6526,10 @@
   .screen-rankings .rank-row .lb-rank-2{ box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.5), inset 0 1px 0 rgba(255,255,255,.6); }
   .screen-rankings .rank-row .lb-rank-3{ box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.45), inset 0 1px 0 rgba(255,255,255,.45); }
   /* the crown, set on first place's medal */
-  .lb-crown{ position:absolute; left:50%; bottom:calc(100% - .1rem); width:1.05rem; height:.7rem; translate:-50% 0; rotate:-8deg;
+  .lb-crown{ position:absolute; left:50%; bottom:calc(100% - .18rem); width:1.2rem; height:.8rem; translate:-50% 0; rotate:0deg;
     pointer-events:none; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55)) drop-shadow(0 0 4px rgba(255,205,90,.45)); }
   .lb-crown svg{ display:block; width:100%; height:100%; overflow:visible; }
-  @media (min-width:40rem){ .lb-crown{ width:1.25rem; height:.84rem; } }
+  @media (min-width:40rem){ .lb-crown{ width:1.4rem; height:.93rem; } }
   /* Your own row keeps its accent ring even on the podium - being
      first should not cost you the ability to find yourself. Stated
      after the podium rules so it wins on source order. */
@@ -145107,11 +145107,16 @@ function renderRankingRows(rows, entries, board, opts){
       const crown = document.createElement("span");
       crown.className = "lb-crown"; crown.setAttribute("aria-hidden", "true");
       const cid = "lbcrown-" + (++lbCrownSeq);
+      /* (384.18) UPRIGHT AND SYMMETRIC. Madison: "I don't like the leaning crown thing anymore, make that better". It was tilted 8 degrees
+         and drawn lopsided. Now: level, three points with a bead on each tip, a band with a jewel, and it sits on the medal's top edge. */
       crown.innerHTML = "<svg viewBox=\"0 0 24 16\"><defs><linearGradient id=\"" + cid + "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">"
         + "<stop offset=\"0\" stop-color=\"#FFF1B8\"/><stop offset=\".55\" stop-color=\"#F5C84A\"/><stop offset=\"1\" stop-color=\"#B9851A\"/></linearGradient></defs>"
-        + "<path d=\"M3 13.5 1.6 4.2l5.6 4.1L12 1.5l4.8 6.8 5.6-4.1L21 13.5Z\" fill=\"url(#" + cid + ")\" stroke=\"#7A5508\" stroke-width=\".9\" stroke-linejoin=\"round\"/>"
-        + "<path d=\"M3.4 13.1h17.2\" stroke=\"#FFF6D6\" stroke-width=\".8\" opacity=\".7\"/>"
-        + "<circle cx=\"12\" cy=\"9.6\" r=\"1.25\" fill=\"#FFF8E0\"/></svg>";
+        + "<path d=\"M4 14.2 2.8 5.4 7.6 9.4 12 3.4 16.4 9.4 21.2 5.4 20 14.2Z\" fill=\"url(#" + cid + ")\" stroke=\"#7A5508\" stroke-width=\".9\" stroke-linejoin=\"round\"/>"
+        + "<path d=\"M4.3 11.6h15.4\" stroke=\"#7A5508\" stroke-width=\".7\" opacity=\".55\"/>"
+        + "<circle cx=\"2.8\" cy=\"4.6\" r=\"1.35\" fill=\"#FFF3C4\" stroke=\"#7A5508\" stroke-width=\".6\"/>"
+        + "<circle cx=\"12\" cy=\"2.6\" r=\"1.5\" fill=\"#FFF3C4\" stroke=\"#7A5508\" stroke-width=\".6\"/>"
+        + "<circle cx=\"21.2\" cy=\"4.6\" r=\"1.35\" fill=\"#FFF3C4\" stroke=\"#7A5508\" stroke-width=\".6\"/>"
+        + "<circle cx=\"12\" cy=\"12.9\" r=\"1.05\" fill=\"#FFF8E0\"/></svg>";
       rank.appendChild(crown);
     }
 
