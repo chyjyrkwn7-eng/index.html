@@ -58039,6 +58039,7 @@ function lateHundosInEntry(t){
 }
 function seedLateHundos312(){
   if(store.lateHundosSeed312) return;
+  if(window.NOVA_CLASS === "ifc"){ store.lateHundosSeed312 = true; return; }   /* (384 r23) Fire Code counts live from its first test */
   let n = 0;
   (store.testHistory || []).forEach(t => { n += lateHundosInEntry(t); });
   store.lateHundos = Math.max(Number(store.lateHundos) || 0, n);
@@ -58048,6 +58049,18 @@ function lateHundosOf(){ try{ seedLateHundos312(); }catch(e){} return Number(sto
 function seedChallenges289(){
   try{ revokePenalKoi295(); }catch(e){}
   if(store.challengeSeed289) return;
+  /* (384 r23) FIRE CODE HAS NOTHING TO BACKFILL. The retake count was seeded from "the misses already on record" for accounts
+     that played before it was kept; Fire Code (built 328, its counters kept live from the first answer) has no such history, so
+     the same sum there turned its own misses into retakes it never made (a copy whose flag read "not seeded" - a cloud document
+     without it - was handed retakenQuestions = misses x drill share, which is how a new account holds the Smoke Diver). It only
+     marks itself seeded there. */
+  if(window.NOVA_CLASS === "ifc"){
+    store.dailyCorrectBest = dailyBestRun();
+    store.unitHundoStreakBest = unitStreakBest();
+    store.challengeSeed289 = true;
+    saveStore();
+    return;
+  }
   let misses = 0;
   try{ Object.keys(store.stats || {}).forEach(k => { const st = store.stats[k]; misses += (st && Number(st.m)) || 0; }); }catch(e){}
   const L = store.lifetime || {};
@@ -58280,6 +58293,51 @@ function ifcCharsRepair384(){
     if(kept.length){ store.legacyChars = []; changed = true; }
     store.ifcCharsFixed384 = true; changed = true;
   }
+  if(changed){ try{ saveStore(); }catch(e){} }
+  return changed;
+}
+/* (384 r23) A FIRE CODE ACCOUNT ONLY COUNTS ITS OWN CHALLENGES. Madison: "There's no chance I completed this, why do I have this
+   unlocked already" - the Smoke Diver ("Retake 100 missed questions", `retake100`: retakenQuestions >= 100, or Game's Hardcore beaten
+   on 10 units) on a Fire Code account that is days old. Two counters in that one challenge are the academy's kind of history:
+   - the Hardcore clause reads store.unitGameBeat, Game mode's record (retired in 283, academy units only): Fire Code has no Game mode
+     and no way to write it, so anything there is another class's;
+   - retakenQuestions, which a copy's "not yet seeded" flag backfilled from its OWN misses x drill share (seedChallenges289: written
+     for accounts that played before the count was kept, wrong in a class that has counted from its first answer).
+   What an honest Fire Code store can hold is bounded by its own record: every retake counted (a Drill question missed then answered
+   again, or a question of a Retake run) follows a miss on that question, recorded in stats as `m`, and is an answer given - so
+   retakenQuestions <= the misses on record, and <= answers given. A count over that is not this class's.
+   A RULE, NOT AN EDIT (see applyWeekWinVoids): both counters merge as a max / union, so a lowered copy would be put straight back by
+   the cloud document, the `__floor` backup or another device. The rule runs on a Fire Code copy after every merge (once the server's
+   copy is in) and on the document about to be written (writeAccount, which writes the floor from the same copy, so the floor comes
+   down with it), and never touches a count the record supports - a Fire Code account that really retook 100 keeps the Smoke Diver. */
+function ifcMissesOnRecord(d){
+  let m = 0;
+  try{ const st = (d && d.stats) || {}; Object.keys(st).forEach(k => { m += (st[k] && Number(st[k].m)) || 0; }); }catch(e){}
+  return m;
+}
+function ifcChallengeClamp(d){
+  if(window.NOVA_CLASS !== "ifc" || !d || typeof d !== "object") return false;
+  let changed = false;
+  const answered = Number(d.lifetime && d.lifetime.answered) || 0;
+  const cap = Math.max(0, Math.min(ifcMissesOnRecord(d), answered));
+  if((Number(d.retakenQuestions) || 0) > cap){ d.retakenQuestions = cap; changed = true; }
+  if(d.unitGameBeat && typeof d.unitGameBeat === "object" && Object.keys(d.unitGameBeat).length){ d.unitGameBeat = {}; changed = true; }
+  return changed;
+}
+function ifcChallengesRepair384(){
+  if(window.NOVA_CLASS !== "ifc" || !store) return false;
+  let changed = ifcChallengeClamp(store);
+  /* what the count unlocked, where it no longer holds: an unlock still queued, the marks that it was announced or seen (so the real
+     earn is announced as it should be), and the character itself if it is being worn - quietly, to the class's first starter */
+  AVATAR_CHARACTERS.filter(c => c.feat === "retake100").forEach(c => {
+    let locked = false; try{ locked = isLockedCharacter(c.id); }catch(e){ return; }
+    if(!locked) return;
+    if(Array.isArray(store.pendingCharUnlocks) && store.pendingCharUnlocks.indexOf(c.id) >= 0){ store.pendingCharUnlocks = store.pendingCharUnlocks.filter(x => x !== c.id); changed = true; }
+    [store.unlocksShown, store.seenUnlocks].forEach(u => {
+      if(u && Array.isArray(u.chars) && u.chars.indexOf(c.id) >= 0){ u.chars = u.chars.filter(x => x !== c.id); changed = true; }
+    });
+    if(store.avatarChar === c.id){ store.avatarChar = classDefaultCharacter(); changed = true; try{ updateHeaderTitle(); }catch(e){} }
+  });
   if(changed){ try{ saveStore(); }catch(e){} }
   return changed;
 }
@@ -67248,7 +67306,7 @@ function applyLoadedData(got){
   /* (384) every daily question answered right; an account without the count starts at its best run, so nobody loses the Inspector */
   store.dailyCorrectTotal = typeof got.dailyCorrectTotal === "number" ? got.dailyCorrectTotal : Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak || 0);
   store.unitHundoStreakBest = typeof got.unitHundoStreakBest === "number" ? got.unitHundoStreakBest : 0;
-  store.challengeSeed289 = got.challengeSeed289 === true;
+  store.challengeSeed289 = got.challengeSeed289 === true || window.NOVA_CLASS === "ifc";   /* (384 r23) Fire Code has no earlier history to seed from */
   /* Build 291: the Hive's busiest day. Starts at nothing - no answers
      per day were kept before it. */
   store.dayAnswered = got.dayAnswered && typeof got.dayAnswered === "object" && typeof got.dayAnswered.day === "string" ? got.dayAnswered : null;
@@ -67339,7 +67397,7 @@ function applyLoadedData(got){
      seedLateHundos312() - which is why the flag defaults to false here
      and true on a fresh store. */
   store.lateHundos = typeof got.lateHundos === "number" ? got.lateHundos : 0;
-  store.lateHundosSeed312 = got.lateHundosSeed312 === true;
+  store.lateHundosSeed312 = got.lateHundosSeed312 === true || window.NOVA_CLASS === "ifc";
   store.flareHintsShown = Array.isArray(got.flareHintsShown) ? got.flareHintsShown.filter(x => typeof x === "string") : [];
   store.vrWins = typeof got.vrWins === "number" ? got.vrWins : 0;
   /* (384 r14) matches hosted to the end, for the Hive / Sprinkler Head. 0 for everybody already here: nothing kept before this
@@ -67353,7 +67411,7 @@ function applyLoadedData(got){
   store.vrTop3 = typeof got.vrTop3 === "number" ? got.vrTop3 : 0;
   store.vrTop3Rooms = Array.isArray(got.vrTop3Rooms) ? got.vrTop3Rooms.filter(x => typeof x === "string").slice(-300) : [];
   store.vrTop3RetroDone = got.vrTop3RetroDone === true;
-  store.fullTestsSeeded = got.fullTestsSeeded === true;
+  store.fullTestsSeeded = got.fullTestsSeeded === true || window.NOVA_CLASS === "ifc";
   store.practiceExamPerfect = got.practiceExamPerfect === true;
   store.starfallKept = got.starfallKept === true;
   store.creditsApplied = Array.isArray(got.creditsApplied) ? got.creditsApplied.filter(x => typeof x === "string").slice(-50) : [];
@@ -70540,6 +70598,7 @@ function markCloudConfirmed(docExists){
     cloudConfirmedFor = code;
     clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
     /* (384) Fire Code wears only what Fire Code has unlocked, judged on the merged copy */
+    try{ ifcChallengesRepair384(); }catch(e){}   /* (384 r23) before the look is judged: a character this class has not earned is not worn */
     try{ ifcLookCheck(true); }catch(e){}
     try{ ifcCharsRepair384(); }catch(e){}
     /* build 382: the save-your-code card waits for this */
@@ -70713,6 +70772,9 @@ function writeAccount(code, withMain, withFloor, leaving){
         doc = fromCloud;
       } else doc = probe;
     });
+    /* (384 r23) what is written is never what the rule would take down again: the merge above puts the cloud's and the floor's
+       max back, and the account and its floor are written from this copy (see ifcChallengeClamp) */
+    try{ ifcChallengeClamp(doc); }catch(e){}
     return { doc, ahead };
   };
   let run;
@@ -71760,7 +71822,7 @@ function syncSameAccount(cloud){
     const r = mergeSameAccount(store, mine);
     try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
     /* (384 r20) Fire Code, once this launch has heard the server: a copy that arrives wearing what this class has not unlocked */
-    try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ if(ifcLookCheck(true)) r.gained = true; if(ifcCharsRepair384()) r.gained = true; } }catch(e){}
+    try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ if(ifcChallengesRepair384()) r.gained = true; if(ifcLookCheck(true)) r.gained = true; if(ifcCharsRepair384()) r.gained = true; } }catch(e){}
     /* `gained` here means this device brought something the cloud lacks */
     themeFollowStore();
     if(r.gained) saveStore(); else persistLocally();
@@ -71768,7 +71830,7 @@ function syncSameAccount(cloud){
   }
   const r = mergeSameAccount(store, cloud);
   try{ if(applyWeekWinVoids()){ r.gained = true; r.otherHadLess = true; } }catch(e){}
-  try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ const a = ifcLookCheck(true), b = ifcCharsRepair384(); if(a || b){ r.gained = true; r.otherHadLess = true; } } }catch(e){}
+  try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ const c = ifcChallengesRepair384(), a = ifcLookCheck(true), b = ifcCharsRepair384(); if(a || b || c){ r.gained = true; r.otherHadLess = true; } } }catch(e){}
   themeFollowStore();
   if(r.gained) persistLocally();
   /* This device is the newer side, or holds something the cloud lacks:
@@ -82338,6 +82400,7 @@ function wornBanner(){
 function fullTestsOf(){ return (store.lifetime && store.lifetime.fullTests) || 0; }
 function seedBannerCounters(){
   if(store.fullTestsSeeded) return;
+  if(window.NOVA_CLASS === "ifc"){ store.fullTestsSeeded = true; saveStore(); return; }   /* (384 r23) Fire Code counts live from its first test */
   const units = classTopics().length || 1;
   const avg = QUESTIONS.length / units;
   const answered = (store.lifetime && store.lifetime.answered) || 0;
@@ -160329,6 +160392,9 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
     /* (384 r20) the tips already seen come across; the dots behind the new things (seenUnlocks) are the class's own - the
        academy's marks would hide a Fire Code unlock's dot, and name characters this class has not unlocked */
     Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k) && k !== "seenUnlocks") seed[k] = a[k]; });
+    /* (384 r23) these three say "an earlier history was backfilled into this copy's counters". Fire Code has none to backfill and counts
+       from its own first answer, so they are always set here - never the academy's copy of them, never "not yet" */
+    seed.challengeSeed289 = true; seed.lateHundosSeed312 = true; seed.fullTestsSeeded = true;
     /* (385) Fire Code has a leaderboard of its own: a first visit is on it, as the academy's default is, unless the person hid
        themselves in the academy (their word on class sharing travels with them; it is theirs to change in Fire Code's Settings) */
     seed.leaderboardOptIn = a.leaderboardOptIn !== false; seed.leaderboardOptInChanged = false;
@@ -160401,7 +160467,7 @@ try{ ifcSignupOwed(); }catch(e){}
 /* (384) Fire Code wears only its own look: the academy's character, copied before 384, goes (ifcLookCheck) */
 try{ ifcLookCheck(false); }catch(e){}
 /* (384 r20) and a copy with no sync has nothing still to arrive: its repair is now (see ifcCharsRepair384) */
-if(window.NOVA_CLASS === "ifc" && !syncCode){ try{ ifcLookCheck(true); ifcCharsRepair384(); }catch(e){} }
+if(window.NOVA_CLASS === "ifc" && !syncCode){ try{ ifcChallengesRepair384(); ifcLookCheck(true); ifcCharsRepair384(); }catch(e){} }
 if(window.NOVA_CLASS === "academy"){
   try{
     const arr = window.NOVA_CLASS_ARRIVE;
