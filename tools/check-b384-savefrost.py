@@ -1,11 +1,12 @@
 """Build 384 r9: the sync code card is What's new's card. Madison, the card circled: "This should match the what's new frost look".
 On Home (iPhone 17 Pro Max and iPad Pro 11"), read off What's new (.intro-card) and the sync code card (.savecode-card) on the same page:
  (1) the frosted sheet is the same (background, backdrop blur, edge, shadow);
- (2) the eyebrow is What's new's colour (white, not gold) and the title What's new's typeface;
+ (2) the eyebrow is What's new's colour (white, not gold); the title is the app's sans, NOT What's new's serif (384 r16: "why does the
+     font look weird here" - the confirm family left the serif, see check-b384-popglass.py);
  (3) the code sits in What's new's frosted panel (.intro-gate-note's wash and edge), not a dark slab;
  (4) ticked, Continue is What's new's "Got it" pill (same fill, same ink); and no page errors.
 Run:  python3 tools/check-b384-savefrost.py   (--against OLD/index.html must FAIL)"""
-import os, sys, importlib.util
+import os, re, sys, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
 if "--against" in sys.argv:
@@ -32,8 +33,8 @@ with sync_playwright() as pw:
         S["go"] = pg.evaluate(R, ".savecode-continue")
         same = lambda k: all(I["card"][x] == S["card"][x] for x in ("bg", "bi", "bf", "bd", "sh"))
         chk("(1) %s: the same frosted sheet" % lab, same("card"), [I["card"], S["card"]])
-        chk("(2) %s: the eyebrow What's new's colour (%s / %s) and the title its typeface" % (lab, S["eye"]["col"], I["eye"]["col"]),
-            S["eye"]["col"] == I["eye"]["col"] and S["title"]["ff"].split(",")[0] == I["title"]["ff"].split(",")[0], [S["eye"]["col"], S["title"]["ff"][:30], I["title"]["ff"][:30]])
+        chk("(2) %s: the eyebrow What's new's colour (%s / %s) and the title the app's sans, not the serif" % (lab, S["eye"]["col"], I["eye"]["col"]),
+            S["eye"]["col"] == I["eye"]["col"] and not re.search(r"Georgia|Iowan|Palatino", S["title"]["ff"]), [S["eye"]["col"], S["title"]["ff"][:30], I["title"]["ff"][:30]])
         note = I["note"] or {"bi": "linear-gradient(rgba(61, 139, 255, 0.16), rgba(61, 139, 255, 0.06))", "bd": "rgba(143, 193, 255, 0.38)"}
         chk("(3) %s: the code in What's new's frosted panel" % lab, S["val"]["bi"] == note["bi"] and S["val"]["bd"] == note["bd"], [S["val"]["bi"][:90], S["val"]["bd"], note["bi"][:90]])
         chk("(4) %s: Continue is the Got it pill (%s / %s)" % (lab, S["go"]["bg"], I["go"]["bg"]), S["go"]["bg"] == I["go"]["bg"] and S["go"]["col"] == I["go"]["col"], [S["go"], I["go"]])

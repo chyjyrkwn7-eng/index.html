@@ -590,6 +590,18 @@
     --pop-blur:blur(9px) saturate(1.9) brightness(1.06);
     --pop-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
     --pop-shadow-card:0 14px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    /* (384 r16) THE ONE GLASS FOR EVERY CARD AND SHEET THAT OPENS OVER A SCREEN (confirms, the person / unlock / rank cards,
+       What's new, the save-code and Add-to-Home sheets, the install guide, the resume offer, the chat sheets). Madison, the Leave
+       Police Academy confirm on his phone: "These pop ups need the Frosted look". They were the same glass in name and flat in the
+       eye: a .66 dim over a mostly empty dark page left nothing lit to frost, and a dark .5 tint at 9px blur let the little that
+       was there through as mud. So: a LIGHTER tint with a top sheen, a longer blur at higher saturation, a fine rim, and a thinner
+       dim (--pop-scrim) so the page is still there to be blurred. One rule at the end of the stylesheet (".POP-UP GLASS") applies
+       these; a new pop-up takes the class .pop-glass on its card and .pop-glass-host on its overlay and inherits all of it. */
+    --pop-scrim:rgba(4,6,10,.4);
+    --sheet-bg:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.045) 40%, rgba(255,255,255,.02)), rgba(40,48,62,.42);
+    --sheet-border:1px solid rgba(255,255,255,.17);
+    --sheet-blur:blur(22px) saturate(1.8) brightness(1.05);
+    --sheet-shadow:0 18px 48px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.24), inset 0 -1px 0 rgba(0,0,0,.2);
   }
 
   /* ---------- dark mode ---------- */
@@ -33726,11 +33738,7 @@
     backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
     box-shadow:var(--pop-shadow);
   }
-  html[data-theme="dark"][data-layout="modern"] :is(.intro-card, .invite-sheet.unlock-card, .invite-sheet.person-card){
-    background:var(--pop-bg-card); border:var(--pop-border);
-    backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
-    box-shadow:var(--pop-shadow-card);
-  }
+  /* (384 r16) the person / unlock cards and What's new take the shared sheet glass now: see ".POP-UP GLASS" at the end of the stylesheet */
   html[data-theme="dark"][data-layout="modern"] .hundo-why{
     /* (384 r5) SOLID, not glass: this popover's arrow takes the body's fill (background:inherit), and a translucent, layered fill
        painted twice where the arrow overlaps the body is a visible diamond inside it (measured: 47 levels). One opaque colour is the
@@ -34550,7 +34558,7 @@ html.is-browser{ --fade-paper: transparent; }
     opacity:1; background:transparent; transition:none;
   }
   .invite-overlay:has(> .invite-sheet.person-card)::before{
-    content:""; position:absolute; inset:0; background:rgba(0,0,0,.5); opacity:0; transition:opacity .32s ease; pointer-events:none; will-change:opacity;
+    content:""; position:absolute; inset:0; background:var(--pop-scrim); opacity:0; transition:opacity .32s ease; pointer-events:none; will-change:opacity;
   }
   .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card)::before{ opacity:1; }
   .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{
@@ -34570,7 +34578,7 @@ html.is-browser{ --fade-paper: transparent; }
     background:
       radial-gradient(120% 34% at 18% 0%, color-mix(in srgb, var(--pc-t1) 26%, transparent), transparent 100%),
       radial-gradient(120% 34% at 82% 4%, color-mix(in srgb, var(--pc-t2) 22%, transparent), transparent 100%),
-      var(--pop-bg-card);
+      var(--sheet-bg);
   }
   .person-card.has-tint .person-card-cover{
     --pc-fade:linear-gradient(180deg, #000 0%, #000 24%, rgba(0,0,0,.94) 34%, rgba(0,0,0,.82) 44%,
@@ -36959,14 +36967,13 @@ html.is-browser{ --fade-paper: transparent; }
      dim, the pop-up glass every pop-up takes; only opacity and transform
      move. Above Nova's talk (360), since his sign-up line asks it. */
   .savecode-card{
-    position:fixed; inset:0; z-index:420; display:flex; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    position:fixed; inset:0; z-index:420; display:flex; align-items:center; justify-content:center;
     padding-top:calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);
     padding-left:calc(env(safe-area-inset-left, 0px) + 16px); padding-right:calc(env(safe-area-inset-right, 0px) + 16px);
-    background:rgba(4,6,10,.66); opacity:0; transition:opacity .22s ease; cursor:default;
+    background:transparent; cursor:default;   /* (384 r16) the dim is the ::before layer (.POP-UP GLASS); the overlay no longer scrolls or fades - the sheet does both for itself */
   }
-  .savecode-card.show{ opacity:1; }
   .savecode-sheet{
-    width:100%; max-width:26rem; margin:auto; box-sizing:border-box;
+    width:100%; max-width:26rem; margin:auto; box-sizing:border-box; max-height:100%; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
     padding:1.35rem 1.25rem 1.05rem; border-radius:22px; color:#FFFFFF; text-align:center;
     background:var(--pop-bg-card); border:var(--pop-border); box-shadow:var(--pop-shadow-card);
     backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
@@ -36995,7 +37002,7 @@ html.is-browser{ --fade-paper: transparent; }
      new (.intro-card): the eyebrow white, not gold; the title in What's new's serif at its size; the code in What's new's frosted
      blue panel (.intro-gate-note's wash and edge) instead of a black slab; the tick row a quiet glass row; Continue its white pill. */
   html[data-layout] body .savecode-card .savecode-tag{ color:#fff; letter-spacing:.1em; font-size:.7rem; }
-  html[data-layout] body .savecode-card .savecode-title{ font-family:Georgia, "Iowan Old Style", "Palatino Linotype", serif; font-size:1.5rem; letter-spacing:0; }
+  html[data-layout] body .savecode-card .savecode-title{ font-family:var(--sans); font-size:1.35rem; font-weight:700; letter-spacing:-.01em; line-height:1.25; }
   html[data-layout] body .savecode-card .savecode-value{
     background:linear-gradient(180deg, rgba(61,139,255,.16), rgba(61,139,255,.06)) !important; border:1px solid rgba(143,193,255,.38) !important; border-radius:16px;
   }
@@ -37028,7 +37035,7 @@ html.is-browser{ --fade-paper: transparent; }
      fractions of the frame (left/top %), so they land on the same button at any size. Only opacity and transform
      move; the clip's frame has no filter. */
   .invite-overlay.a2hs-overlay{
-    z-index:420; align-items:center; justify-content:center; background:rgba(4,6,10,.66);
+    z-index:420; align-items:center; justify-content:center; background:transparent;
     padding-top:calc(env(safe-area-inset-top, 0px) + 12px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
     padding-left:calc(env(safe-area-inset-left, 0px) + 12px); padding-right:calc(env(safe-area-inset-right, 0px) + 12px);
   }
@@ -39152,6 +39159,56 @@ html.is-browser{ --fade-paper: transparent; }
     display:block; width:76px; height:76px; margin:2.25rem auto 1.5rem; border-radius:17px; object-fit:cover;
     box-shadow:0 6px 18px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); -webkit-user-drag:none; user-select:none; pointer-events:none;
   }
+  /* ---- .POP-UP GLASS: EVERY CARD AND SHEET THAT OPENS OVER A SCREEN IS THE SAME FROSTED GLASS (build 384, r16) ----
+     Madison, the "Leave Police Academy?" confirm on his iPhone 17 Pro Max: "These pop ups need the Frosted look, why does the font
+     look weird here by the way??" It read as a flat dark navy slab. Three things made it so, and they are the same on every
+     pop-up that was converted here:
+       1. THE DIM WAS TOO THICK. .66 black over a screen that is mostly empty dark gives the blur nothing lit to frost. It is
+          --pop-scrim now (.4), a layer of its own (the overlay's ::before) faded by opacity, so the page stays visible under it.
+       2. THE TINT WAS DARK AND THE BLUR SHORT: rgba(26,31,38,.5) at 9px. --sheet-bg is a lighter, bluer pane with a top sheen,
+          --sheet-blur is 22px at saturate 1.8, the rim is .17 and the shadow soft: what a person card already looked like on a
+          busy page, now the same everywhere.
+       3. A SHEET CAN ONLY BLUR WHAT IS BEHIND ITS BACKDROP ROOT. An ancestor with opacity below 1, a filter, a mask or its own
+          backdrop-filter is a backdrop root: the sheet then blurs that ancestor's own (empty) contents, not the page, and reads
+          flat - what the person card's note in 327z10 found and fixed for that card alone. The confirm overlay faded by
+          opacity AND scrolled (overflow-y:auto), and the chat / resume / version overlays carried a blur of their own. Now the
+          overlay is a plain fixed box (opacity 1, no filter, no scroll); the dim and the sheet each fade by themselves, and a
+          tall sheet scrolls inside itself (max-height:100%), not its overlay.
+     NOT converted, on purpose: the unit card (it grows out of its row by animating left/top/width/height, and a blur re-sampled
+     every frame of that is a cost this app does not pay), the Start sheet (dragged by a finger, opaque on purpose), the document
+     viewer window, the two arrowed popovers (.under-note, .hundo-why: an arrow that shares the body's fill must be one opaque
+     colour), and full-screen takeovers (cutscenes, loading, the update screen). tools/check-b384-popglass.py reads every pop-up
+     in b384_pop_lib.INVENTORY and asserts the shape; a new pop-up is added there, and takes .pop-glass on its card and
+     .pop-glass-host on its overlay to inherit all of this. */
+  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm:not(.chat-leavesheet), .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host){
+    opacity:1; background:transparent; transition:none; animation:none; overflow:visible;
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+  }
+  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm:not(.chat-leavesheet), .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host)::before{
+    content:""; position:absolute; inset:0; background:var(--pop-scrim); pointer-events:none;
+  }
+  /* the dim: faded in by its own opacity where the overlay has a .show state, by a one-shot keyframe where it has none */
+  html[data-theme][data-layout] body :is(.savecode-card, .resume-offer, .friend-moment, .unitver, .intro-pop, .invite-overlay, .pop-glass-host)::before{ opacity:0; transition:opacity .24s ease; }
+  html[data-theme][data-layout] body :is(.savecode-card.show, .resume-offer.show, .friend-moment.show, .unitver.show, .intro-pop.show, .invite-overlay.invite-overlay-show, .pop-glass-host.show)::before{ opacity:1; }
+  html[data-theme][data-layout] body :is(.chatdock-confirm:not(.chat-leavesheet), .installguide-overlay)::before{ animation:pop-glass-in .2s ease-out both; }
+  @keyframes pop-glass-in{ from{ opacity:0; } to{ opacity:1; } }
+  /* the sheet: above the dim, and fading in by itself where the overlay has a .show state */
+  html[data-theme][data-layout] body :is(.savecode-card, .resume-offer, .friend-moment, .unitver, .intro-pop, .invite-overlay, .pop-glass-host) > :is(.savecode-sheet, .resume-card, .friend-moment-card, .unitver-card, .intro-card, .a2hs-sheet, .invite-sheet, .pop-glass){
+    opacity:0; transition-property:opacity, transform; transition-duration:.24s, .3s;
+  }
+  html[data-theme][data-layout] body :is(.savecode-card.show, .resume-offer.show, .friend-moment.show, .unitver.show, .intro-pop.show, .invite-overlay.invite-overlay-show, .pop-glass-host.show) > :is(.savecode-sheet, .resume-card, .friend-moment-card, .unitver-card, .intro-card, .a2hs-sheet, .invite-sheet, .pop-glass){ opacity:1; }
+  html[data-theme][data-layout] body :is(.chatdock-confirm:not(.chat-leavesheet), .installguide-overlay) > :is(.chatdock-confirm-card, .installguide-card){ animation:pop-glass-card-in .2s ease-out both; }
+  @keyframes pop-glass-card-in{ from{ opacity:0; transform:translateY(8px) scale(.98); } to{ opacity:1; transform:none; } }
+  html[data-theme][data-layout] body :is(.savecode-sheet, .chatdock-confirm-card, .resume-card, .friend-moment-card, .unitver-card, .installguide-card, .intro-card, .a2hs-sheet, .invite-sheet, .pop-glass){
+    position:relative;
+  }
+  /* the glass itself - one rule, one set of tokens */
+  html[data-theme][data-layout] body :is(.savecode-sheet, .chatdock-confirm-card, .resume-card, .friend-moment-card, .unitver-card, .installguide-card, .intro-card, .a2hs-sheet, .invite-sheet, .chat-leavesheet-group, .chat-leavesheet-cancel, .pop-glass){
+    background:var(--sheet-bg); border:var(--sheet-border); box-shadow:var(--sheet-shadow);
+    -webkit-backdrop-filter:var(--sheet-blur); backdrop-filter:var(--sheet-blur);
+  }
+  /* a tall card scrolls inside itself, never its overlay */
+  html[data-theme][data-layout] body .intro-card{ max-height:100%; overflow-y:auto; overscroll-behavior:contain; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
