@@ -102,6 +102,48 @@
     else if(window.addEventListener) window.addEventListener("load", settle, false);
   })();
 </script>
+<script>
+  /* A LAUNCH THAT NEVER FINISHES SAYS SO (build 384.22). The owner, after an update that "took forever": "I closed the app and went to open it
+     again. Now the app isn't loading when I open it." Nothing on screen said what was wrong or offered a way out. This is a plain script with
+     nothing to depend on: if 25 seconds after the page began the app has not put a screen on the stage, or its splash is still up, it puts a
+     page of its own over everything - what is wrong, that progress is saved, and a Try again button that fetches the app fresh (the cache is
+     bypassed) and reloads. It checks every two seconds and takes the page away again the moment the app does come up (a slow connection
+     is not a failure), and does nothing at all once the app is up. It is declared in the head so a script error later in the file cannot take it. */
+  (function(){
+    var t0 = Date.now(), box = null;
+    function up(){
+      try{
+        var st = document.getElementById("stage");
+        return !!(st && st.children.length) && !document.getElementById("splashscreen");
+      }catch(e){ return true; }
+    }
+    function fresh(){
+      var go = function(){ try{ location.reload(); }catch(e){} };
+      try{ fetch(location.href.split("#")[0], { cache: "reload" }).then(go, go); }catch(e){ go(); }
+    }
+    function show(){
+      if(box || !document.documentElement) return;
+      box = document.createElement("div");
+      box.id = "launch-trouble";
+      box.setAttribute("role", "alert");
+      box.style.cssText = "position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:#0A0A0A;color:#F2F4F7;display:flex;flex-direction:column;" +
+        "align-items:center;justify-content:center;text-align:center;padding:32px;font:17px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;";
+      var h = document.createElement("p"); h.textContent = "Nova is taking too long to open."; h.style.cssText = "margin:0 0 .5rem;font-size:22px;font-weight:700;";
+      var d = document.createElement("p"); d.textContent = "Your progress is saved. Check your connection, then try again."; d.style.cssText = "margin:0 0 1.5rem;color:#AEB7C2;max-width:22rem;";
+      var b = document.createElement("button"); b.type = "button"; b.textContent = "Try again";
+      b.style.cssText = "min-height:48px;min-width:11rem;padding:0 1.6rem;border:0;border-radius:999px;background:#F2F4F7;color:#0A0A0A;font:600 17px -apple-system,BlinkMacSystemFont,sans-serif;";
+      b.addEventListener("click", function(){ b.disabled = true; b.textContent = "Opening\u2026"; fresh(); });
+      box.appendChild(h); box.appendChild(d); box.appendChild(b);
+      document.documentElement.appendChild(box);
+    }
+    function check(){
+      if(up()){ if(box){ try{ box.remove(); }catch(e){} box = null; } return; }
+      if(Date.now() - t0 > 25000) show();
+      setTimeout(check, 2000);
+    }
+    setTimeout(check, 25000);
+  })();
+</script>
 <!-- Two separate mechanisms, both aimed at the same symptom: a brief
      white flash on launch, reported as landing right before the splash
      appears.
@@ -6963,6 +7005,17 @@
      or two above centre; text-box trims the box to the capitals (Safari
      18.2+, current Chrome), so equal padding is equal space round the
      letters. Older browsers keep line-height:1 and the same padding. */
+  /* ---- A LOBBY ROW IS A GRID: THE NAME TAKES THE ROOM, THE STATUS SITS AT THE RIGHT EDGE (build 384.21) ----
+     Madison, a screenshot of the lobby on his iPhone: the "Not ready" chip sat right after the name in the middle of the row with the rest of
+     the row empty, and his own name was cut to "Ma..." ("it's on the left, your username isn't visible either"). The row was a flex row whose
+     chip found the right edge only by an auto margin, and whose name column was as wide as its own words: anything that took the free
+     space (or a name column that shrank) left both in the wrong place. Three tracks now - the character, a middle track that is all the
+     room that is left (the name and the line under it, ellipsis only when it truly does not fit), the status at the end - so the status
+     cannot sit anywhere but the right and the name cannot be narrower than the room it has. A crowded room (more than six, two across)
+     keeps its own tight flex rows. */
+  .vroom-roster:not(.is-crowded) .vroom-row{ display:grid; grid-template-columns:auto minmax(0, 1fr) auto; column-gap:.8rem; align-items:center; }
+  .vroom-roster:not(.is-crowded) .vroom-row > .lb-name-wrap{ min-width:0; }
+  .vroom-roster:not(.is-crowded) .vroom-row > .vroom-ready-badge{ margin-left:0; justify-self:end; }
   .vroom-ready-badge{
     margin-left:auto; flex-shrink:0; font-size:.68rem; font-weight:800;
     letter-spacing:.03em; text-transform:uppercase; padding:.5rem .6rem; line-height:1;
@@ -38199,18 +38252,8 @@ html.is-browser{ --fade-paper: transparent; }
     position:relative; z-index:1; margin:-.2rem auto 0; max-width:26rem; text-align:center;
     font-family:inherit; font-size:1rem; line-height:1.45; color:var(--soft); text-wrap:balance;
   }
-  html[data-layout] body #stage > .panel.modeselect .modecards{ margin-top:1.1rem; }
-  /* (384) the group's place (centerModeGroup) - with each card's third sentence the academy's four fit an iPhone Pro Max's
-     screen and can be centred too */
-  html[data-layout] body #stage > .panel.modeselect .modecards.modecards{ margin-top:var(--ms-gap, 1.1rem); }   /* the question's own bottom margin is 0, so nothing collapses into it */
-  /* still BIG (343: "The buttons for mode selection still look small and not big like before" - check-b342 holds 160px+):
-     a 160px floor, the words filling it, 10px between - the academy's four fill a Pro Max's room exactly and centre */
-  html[data-layout] body #stage > .panel.modeselect .modecard.modecard{ min-height:160px; padding:22px 24px; }
-  html[data-layout] body #stage > .panel.modeselect .modecards.modecards{ gap:10px; }
-  /* the academy's four on a phone: 154px each, so the four and their gaps sit in a Pro Max's room with ~14px either side (at 160
-     they were 13px under the tab bar); still the big cards, nowhere near 334's 138px */
-  @media (max-width:39.99rem){ html[data-layout] body #stage > .panel.modeselect .modecards.modecards:has(> .modecard:nth-of-type(4)) > .modecard.modecard{ min-height:154px; } }
-  @media (min-width:40rem){ html[data-layout] body #stage > .panel.modeselect .modecard.modecard{ padding:24px 26px; } html[data-layout] body #stage > .panel.modeselect .modecards.modecards{ gap:16px; } }
+  /* (384 r20) the cards' size, place and build are one block at the end of the sheet ("THE MODE TILES"): the group takes the room
+     under the question (fillModeGroup) - the 160px rows, the centring gap and the 10px / 16px gaps that stood here are gone */
   /* (384 r5) VIRTUAL ROOM'S CHOICE IS THE MODE SCREEN'S SECOND PAGE: the same question under the title, the same big cards (22px 24px,
      the same words size, 10px between), the three games a flat row of chips like every other small control */
   html[data-layout] body #stage > .panel.screen-vroom-choice{ padding-top:24px; }
@@ -38219,10 +38262,6 @@ html.is-browser{ --fade-paper: transparent; }
     position:relative; z-index:1; margin:-.2rem auto 0; max-width:26rem; text-align:center;
     font-family:inherit; font-size:1rem; line-height:1.45; color:var(--soft); text-wrap:balance;
   }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ min-height:160px; padding:22px 24px; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecarddesc.modecarddesc{ font-size:.95rem; }
-  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:10px; margin-top:1.1rem; }
-  @media (min-width:40rem){ html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ padding:24px 26px; } html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:16px; } }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vrc-game{ background:var(--clean-card); border:0; }
   /* (383) Report a bug's label: a grey sentence-case heading like Settings' groups, not spaced capitals */
   html[data-layout] body #stage .screen-bugreport .bugreport-label{ text-transform:none; letter-spacing:0; font-size:.86rem; font-weight:600; color:var(--soft); }
@@ -38249,11 +38288,6 @@ html.is-browser{ --fade-paper: transparent; }
      phone, and then for larger devices just side by side?" The middle of the screen left the phone half empty above them.
      Now the cards sit right under the line, as Choose your mode's do, on every device; from 40rem they are side by side
      (.modecards' own row). No auto margins, no shift - vrcCentre() is gone. */
-  html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ margin-top:1.1rem !important; }
-  @media (min-width:40rem){
-    html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards{ flex-direction:row; align-items:stretch; }
-    html[data-layout] body #stage > .panel.screen-vroom-choice > .vrc-modecards > .vrc-modecard{ flex:1 1 0; min-width:0; }
-  }
   /* (384 r8) the bigger cards were tried and reverted ("These boxes being bigger is not the move after all. Revert their size.") */
   /* (384 r8) the room's wait on its own (showVirtualRoomFinaleReveal with no results under it): your score, then the wait card, centred */
   html[data-layout] body #stage > .panel.vroom-finale-solo{
@@ -38903,6 +38937,31 @@ html.is-browser{ --fade-paper: transparent; }
   @media (min-width:40rem){ html[data-layout] .rankmap-gift{ padding-left:.42rem; padding-right:.48rem; } }
   /* a card holding only its one line (the rooms list's "Couldn't load") has no line above to keep a gap from */
   html[data-layout] .rooms-list > .friend-hint:only-child{ margin-top:0; }
+  /* ---- OPEN ROOMS: the search, nothing found and can't-load states fill the room (build 384.20) ----
+     Madison: "Loading open rooms screen is kinda empty, make that better." One card the height of the room under the line above and
+     above the tab bar (--rr-room, set by fitRoom()), the Join medallion in the middle of three rings that open out from it while the
+     search runs (transform and opacity only; still under Reduce Motion), a title and a line in the app's own type. */
+  html[data-layout] body #stage .screen-rooms .rooms-list.is-state{ min-height:var(--rr-room, 16rem); display:flex; align-items:center; justify-content:center; padding:1.5rem 1.25rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty{ background:none; border:0; margin:0; padding:0; gap:.55rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-art{ position:relative; display:grid; place-items:center; width:9rem; height:9rem; margin-bottom:.6rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-ring{ position:absolute; inset:27%; border-radius:50%; border:1.5px solid rgba(63,227,168,.5); opacity:.3; pointer-events:none; }
+  html[data-layout] body #stage .screen-rooms .rooms-ring:nth-child(2){ transform:scale(1.35); opacity:.2; }
+  html[data-layout] body #stage .screen-rooms .rooms-ring:nth-child(3){ transform:scale(1.75); opacity:.1; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-icon{ position:relative; z-index:1; width:4.4rem; height:4.4rem; border-radius:50%;
+    background:radial-gradient(circle at 35% 28%, rgba(63,227,168,.34), rgba(63,227,168,.12)); border:0; box-shadow:inset 0 0 0 1px rgba(63,227,168,.5); }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-icon .modeicon{ width:2.1rem; height:2.1rem; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-title{ margin:0; font-family:inherit; font-size:1.375rem; font-weight:700; line-height:1.25; letter-spacing:0; }
+  html[data-layout] body #stage .screen-rooms .rooms-empty-text{ font-size:1rem; line-height:1.45; max-width:22rem; }
+  @media (prefers-reduced-motion:no-preference){
+    html[data-layout] body #stage .screen-rooms .rooms-empty.is-looking .rooms-ring{ animation:rooms-ping 3.3s ease-out var(--rd, 0s) infinite; }
+  }
+  @keyframes rooms-ping{ 0%{ opacity:0; transform:scale(.7); } 15%{ opacity:.55; } 100%{ opacity:0; transform:scale(2.15); } }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .screen-rooms .rooms-empty-art{ width:11rem; height:11rem; }
+    html[data-layout] body #stage .screen-rooms .rooms-empty-icon{ width:5rem; height:5rem; }
+    html[data-layout] body #stage .screen-rooms .rooms-empty-title{ font-size:1.6rem; }
+    html[data-layout] body #stage .screen-rooms .rooms-empty-text{ font-size:1.1rem; max-width:26rem; }
+  }
   /* ==== end of build 384's centring ==== */
   /* ==== THE ROUND BUTTONS, AS iOS DRAWS THEM (384 final check) ====
      Madison, beside a screenshot of iMessage's round back and FaceTime buttons: "Those bubbles look amazing ... it looks so
@@ -39441,46 +39500,39 @@ html.is-browser{ --fade-paper: transparent; }
     zoom:var(--zc, 1);
   }
 
-  /* ---- AN UNLIT SECRET FLARE IS AN UNKINDLED EMBER (build 384 r15) ----
-     Madison: "The unlit secret flares, I'm not the biggest fan of how they look, room for improvement there." They were a
-     smoky grey glass bead with a bright glint - a water drop or a ball bearing, nothing to find. It is dark obsidian now with
-     a thin cool rim of frosted light, a dim point of light deep in the middle that slowly swells and fades (it is not lit yet,
-     it is waiting to be) and, every few seconds, one faint ring that opens round it and goes. Still colourless (build 314: a
-     flare you have not found gives away no hue), still a marble (a small glint high on the left, a catch of light on the rim).
+  /* ---- AN UNLIT SECRET FLARE IS A PEARL (build 384.20; was an unkindled ember in 384.19) ----
+     Madison, shown three looks (ember, socket, pearl): "For the secret flares, I like the pearl look." A pearl is frosted pale glass
+     over a dark core, a bright thin rim, a small glint high on the left and a veiled light that drifts slowly about inside it
+     (it is not lit yet). Still colourless (build 314: a flare you have not found gives away no hue). No ring, no filter, no
+     backdrop-filter: every part only ever changes transform or opacity.
      ONE LOOK for every place an unlit secret flare is drawn: Home's orbit and Welcome's planet (.cosmic-flare-dot not found),
      the recap dots (.nt-rc-sf), the hint card's flare, and the mark on a locked secret character's tile (in place of a
-     padlock) - they are all .cof-* parts inside either .cosmic-flare-dot:not(.is-found) or .unlit-flare (buildUnlitFlare).
-     Every part is a small box that only ever changes transform or opacity: no filter, no backdrop-filter. */
+     padlock) - they are all .cof-* parts inside either .cosmic-flare-dot:not(.is-found) or .unlit-flare (buildUnlitFlare). */
   .unlit-flare{ position:relative; display:block; aspect-ratio:1; border-radius:50%; flex:none; }
   .unlit-flare > i{ position:absolute; inset:0; border-radius:50%; pointer-events:none; }
   .nt-rc-sf.unlit-flare{ background:none; box-shadow:none; }
-  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare){ --ul-rim:206, 216, 238; }
   :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-body{
     background:
-      radial-gradient(ellipse 22% 14% at 32% 22%, rgba(255,255,255,.55) 0 40%, rgba(255,255,255,0) 100%),
-      radial-gradient(circle at 50% 50%, rgba(150,168,206,0) 0 50%, rgba(150,168,206,.24) 76%, rgba(196,210,238,.5) 100%),
-      radial-gradient(circle at 46% 44%, #323b58 0%, #1a2034 60%, #0d101b 100%);
-    box-shadow:inset 0 0 0 .8px rgba(var(--ul-rim), .72), 0 1.5px 3px rgba(0,0,0,.6), 0 0 7px rgba(170,188,228,.3);
+      radial-gradient(ellipse 34% 22% at 32% 24%, rgba(255,255,255,.7) 0 40%, rgba(255,255,255,0) 100%),
+      radial-gradient(circle at 50% 50%, rgba(238,243,255,.30) 0%, rgba(206,217,242,.24) 60%, rgba(150,168,210,.42) 100%),
+      radial-gradient(circle at 50% 50%, #1b1f2e 0%, #141824 100%);
+    box-shadow:inset 0 0 0 .8px rgba(255,255,255,.62), 0 0 9px rgba(214,224,248,.26), 0 1.5px 3px rgba(0,0,0,.55);
   }
   :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{
-    inset:24%; opacity:.45;
-    background:radial-gradient(circle, rgba(250,252,255,.95) 0, rgba(240,246,255,.8) 16%, rgba(196,210,244,.4) 46%, rgba(196,210,244,0) 100%);
+    inset:14%; opacity:.3;
+    background:radial-gradient(circle at 40% 42%, rgba(255,255,255,.85) 0 14%, rgba(235,242,255,.34) 36%, rgba(235,242,255,0) 66%);
   }
-  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ inset:-8%; border:1px solid rgba(var(--ul-rim), .55); opacity:0; }
-  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen{ overflow:hidden; opacity:.6; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ display:none; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen{ overflow:hidden; opacity:.85; }
   :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen::before{ content:""; position:absolute; top:-20%; bottom:-20%; left:-80%; width:45%;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent); transform:translateX(0) skewX(-18deg); }
   .avatarchar-lockmark .unlit-flare{ width:100%; height:100%; }
-  .avatarchar-lockmark .unlit-flare .cof-ring{ display:none; }
   .rs-hint-orb .unlit-flare{ width:100%; height:100%; }
   @media (prefers-reduced-motion:no-preference){
-    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{ animation:cof-ul-core 5.4s ease-in-out var(--fd, 0s) infinite; }
-    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ animation:cof-ul-ring 8s ease-out var(--fd, 0s) infinite; }
+    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{ animation:cof-ul-drift 7s ease-in-out var(--fd, 0s) infinite; }
     :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen::before{ animation:cof-sweep calc(var(--fo, 6.5s) + 1.5s) ease-in-out var(--fd, 0s) infinite; }
   }
-  @keyframes cof-ul-core{ 0%,100%{ opacity:.25; transform:scale(.8); } 50%{ opacity:1; transform:scale(1.12); } }
-  @keyframes cof-ul-ring{ 0%,68%{ opacity:0; transform:scale(.92); } 74%{ opacity:.42; } 100%{ opacity:0; transform:scale(1.7); } }
-=======
+  @keyframes cof-ul-drift{ 0%,100%{ opacity:.22; transform:translate(-8%, -6%) scale(.9); } 50%{ opacity:.7; transform:translate(10%, 8%) scale(1.1); } }
   /* ---- ACCOUNT: THE NAME AND ITS CHANGE BUTTON AT THE SIZE OF EVERYTHING ELSE IN SETTINGS (build 384, 9th pass) ----
      Madison: "In account within settings, why is the name and change button so tiny? Fix that." The name was 15.5px and Change
      12.5px in a 43pt row on his zoomed phone (the name block was the one Settings block the page-zoom rule did not reach: it is now
@@ -39491,6 +39543,99 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .settings-page-account .customize-namerow .profile-edit-btn.profile-edit-btn{
     font-size:16px; font-weight:600; padding-inline:1.15rem; padding-block:calc(.55rem + (1lh - 1cap)/2); min-height:38px; line-height:1.25;
   }
+
+  /* ---- THE MODE TILES (build 384 r20) ----
+     Madison, on Choose your mode and the Virtual Room's Host / Join at his page zoom: "There's so much open space on these screens, it
+     doesn't look like that. In the academy there's a 4th mode ... so it looks better, however, on the phone not so much.. should we do
+     them as a different looking boxes? Almost like the boxes you see when signing up for a class? ... each device size may need a
+     different layout and that's okay. Fix it though." The title and the question stay at the top; the cards are TILES that take the
+     room under them down to the tab bar (fillModeGroup measures it and sets --ms-room / --ms-tile / --ms-cols / --ms-gap / --ms-w and
+     data-build): the app's own solid card (the units card's: one colour for every card, no rim, no gradient - check-b383-look (2)), the mode's colour in its medallion and chevron only, a medallion for its mark top-left, a chevron top-right, the name and the line
+     at the foot. The markup is the card it always was (.modecard > .modecardtitlerow > icon + name, then the line): the title row is
+     display:contents, so the mark, the name and the line are the tile's own grid items and every id, class and tour target holds.
+     data-build "stack": the medallion above the words (a phone with room, a tablet, a laptop); "snug": the medallion small beside the
+     name, the line across the foot (a phone with three or four to a screen). All sizes are glass px times --zc (1 at 100%; 1.18 at the
+     owner's 85% page zoom, so the tile is drawn at the size it has on a 440pt screen); the tile's own height is the grid's, so nothing
+     here changes height by animation - the tile only scales (transform) under a finger. */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice){
+    --u:calc(1px * var(--zc, 1));
+    display:flex; flex-direction:column; padding-bottom:0; min-height:0; box-sizing:border-box; overflow:visible;
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards.modecards{
+    display:grid; grid-template-columns:repeat(var(--ms-cols, 1), minmax(0, 1fr));
+    grid-auto-rows:minmax(var(--ms-tile, 140px), auto); gap:var(--ms-gap, 10px); align-content:center;
+    min-height:var(--ms-room, 0px); width:var(--ms-w, 100%); box-sizing:border-box;
+    margin:calc(18 * var(--u)) 0 0 calc((100% - var(--ms-w, 100%)) / 2) !important; flex-direction:initial;
+  }
+  :where(.modecard){ --mc:var(--accent); }
+  .modecard[data-mode="drill"]{ --mc:#FF5A60; }
+  .modecard[data-mode="exam"]{ --mc:#FF9A3C; }
+  .modecard[data-mode="review"]{ --mc:#4ADE80; }
+  .modecard[data-mode="vroom"]{ --mc:#4A9FE8; }
+  .modecard.vrc-card-host{ --mc:#B48CFF; }
+  .modecard.vrc-card-browse{ --mc:#3FE3A8; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard{
+    --mi:calc(56 * var(--u));
+    position:relative; display:grid; box-sizing:border-box; min-width:0; min-height:0; width:auto; margin:0; text-align:left; overflow:hidden;
+    padding:calc(20 * var(--u)) calc(20 * var(--u)) calc(20 * var(--u)) calc(22 * var(--u)); border-radius:calc(22 * var(--u));
+    grid-template-columns:auto 1fr; grid-template-rows:auto minmax(calc(12 * var(--u)), 1fr) auto auto; align-items:start; gap:0;
+    background:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1) !important;
+    border:1px solid transparent !important; box-shadow:none !important;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) > .modecard.modecard{
+    --mi:calc(64 * var(--u)); padding:calc(24 * var(--u)) calc(24 * var(--u)) calc(24 * var(--u)) calc(26 * var(--u)); border-radius:calc(26 * var(--u));
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards.ms-spanlast > .modecard.modecard:last-child{ grid-column:1 / -1; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:active{
+    background:linear-gradient(color-mix(in srgb, var(--ink) 12%, transparent), color-mix(in srgb, var(--ink) 12%, transparent)), var(--surface-1) !important;
+  }
+  @media (hover:hover){
+    html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:hover{
+      border-color:color-mix(in srgb, var(--mc) 45%, var(--surface-border)) !important;
+    }
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard:focus-visible{
+    outline:2px solid color-mix(in srgb, var(--mc) 80%, #fff); outline-offset:2px; border-color:color-mix(in srgb, var(--mc) 70%, var(--surface-border)) !important;
+  }
+  /* the mark: the mode's own drawing on a glass medallion in its colour (a gradient and a rim, no filter, no blur) */
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modecardtitlerow{ display:contents; }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modeicon.modeicon{
+    grid-column:1; grid-row:1; width:var(--mi); height:var(--mi); padding:calc(var(--mi) * .26); box-sizing:border-box; border-radius:50%; flex:none;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--mc) 34%, transparent), color-mix(in srgb, var(--mc) 12%, transparent));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mc) 42%, transparent), inset 0 1px 0 rgba(255,255,255,.2);
+  }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modeicon .modeiconpath{ stroke-width:1.75; }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modecardtitle.modecardtitle{
+    grid-column:1 / -1; grid-row:3; margin:0; font-size:calc(22 * var(--u)); line-height:1.2; letter-spacing:-.015em;
+  }
+  html[data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard .modecarddesc.modecarddesc{
+    grid-column:1 / -1; grid-row:4; margin:calc(6 * var(--u)) 0 0; font-size:calc(15 * var(--u)); line-height:1.45; max-width:34em;
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ min-height:var(--ms-dh, 0px); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(24 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(16 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="1"] > .modecard.modecard{ --mi:calc(64 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] > .modecard.modecard{ --mi:calc(88 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(28 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(17 * var(--u)); }
+  /* the chevron: the tile is one tap, and this says where it goes */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard::after{
+    content:""; grid-column:2; grid-row:1; justify-self:end; width:calc(34 * var(--u)); height:calc(34 * var(--u)); border-radius:50%;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.85' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6l6 6-6 6'/%3E%3C/svg%3E") center / 50% no-repeat,
+      color-mix(in srgb, var(--mc) 16%, transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mc) 26%, transparent);
+  }
+  /* SNUG: three or four to a phone's screen. The medallion small beside the name, the chevron at the end of that line, the line across the foot */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard{
+    --mi:calc(38 * var(--u)); padding:calc(14 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u)) calc(16 * var(--u)); border-radius:calc(20 * var(--u));
+    grid-template-columns:auto 1fr auto; grid-template-rows:auto auto; align-content:center; align-items:center; column-gap:calc(12 * var(--u)); row-gap:calc(6 * var(--u));
+  }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecardtitle.modecardtitle{ grid-column:2; grid-row:1; }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecarddesc.modecarddesc{ grid-row:2; margin:0; font-size:calc(14.5 * var(--u)); line-height:1.4; }
+  /* the iPhone's switch under the head of a card is the medallion's height now (it was the 64px of the old row) */
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="stack"] > .modecard > .nova-hsw{ height:calc(96 * var(--u)); }
 
   /* (384 r20) the app's icon under the Terms of Use */
   html[data-layout] body #stage .screen-settings-sub img.settings-text-appicon{
@@ -56022,8 +56167,11 @@ const SAVED_TEST_DROPPED_KEY = "class26e.savedtest.dropped";
 let runSaveSlot = false;
 let runStudyPriorMs = 0;
 function runSessionSavable(){
+  /* (384.20) NEVER ASKS vroomCode. That variable says "this device is in a room", and it outlived any room left by a door
+     that was not leaveVirtualRoom() - so an ordinary Drill that came after could not be saved. A room's run is told by the
+     run's own flags: inVirtualRoom, and raceTimed (both set by beginVirtualRoomTest for exactly that run). */
   return runSaveSlot && testInProgress && order.length > 0 && runLabel !== "Daily question" &&
-         !inVirtualRoom && !vroomCode && !raceTimed && (runMode === "drill" || runMode === "exam");
+         !inVirtualRoom && !raceTimed && (runMode === "drill" || runMode === "exam");
 }
 /* `asSaved === true` only from Save and exit / Not now - the function is
    also an event listener, and an event object must not count as yes. */
@@ -56216,6 +56364,8 @@ function markRunSessionSaved(unfinished){
   }catch(e){}
 }
 function resumeRunSession(s){
+  /* (384.20) a saved test is an ordinary run: a room this device still holds is left first (see beginRun) */
+  try{ if(vroomCode || inVirtualRoom) leaveVirtualRoom("away"); }catch(e){}
   ["mode", "units", "versions", "source", "size", "timer", "timerMinutes", "recall", "shuffle"].forEach(k => {
     if(s.cfg && s.cfg[k] !== undefined) cfg[k] = s.cfg[k];
   });
@@ -57587,7 +57737,10 @@ function runModeTitle(){
      should the daily question stuff AT the very top be repositioned and
      be similar?" So it is named where a test is named, and stays put. */
   if(runLabel === "Daily question") return "Daily question";
-  if(vroomCode) return "Virtual Room";
+  /* (384.20) the run's own flags, not the room code - see runSessionSavable */
+  let roomRun = false;
+  try{ roomRun = !!inVirtualRoom || !!raceTimed; }catch(e){}
+  if(roomRun) return "Virtual Room";
   if(isMissedRetake) return "Retake";
   return modeTitleOf(runMode === "exam" ? "exam" : "drill");
 }
@@ -58775,8 +58928,13 @@ function ifcCharsRepair384(){
    - retakenQuestions, which a copy's "not yet seeded" flag backfilled from its OWN misses x drill share (seedChallenges289: written
      for accounts that played before the count was kept, wrong in a class that has counted from its first answer).
    What an honest Fire Code store can hold is bounded by its own record: every retake counted (a Drill question missed then answered
-   again, or a question of a Retake run) follows a miss on that question, recorded in stats as `m`, and is an answer given - so
-   retakenQuestions <= the misses on record, and <= answers given. A count over that is not this class's.
+   again, or a question of a Retake run) follows a miss on that question, recorded in stats as `m`, and is an answer given. (384.20)
+   BUT A MISS CAN BE RETAKEN TWICE: the Drill counts the question the moment it is missed and answered again (one retake, one miss),
+   and "Retake missed questions" counts the same question again when it is retaken, with no new miss - so two retakes for one miss is
+   ordinary play, and 2 x the misses on record is the most an honest store can hold (a retake that is missed again is a new miss, and
+   its own two). This said "retakenQuestions <= the misses on record" for the first version of the rule, which put an account that had
+   missed 60 questions and retaken them (120, the Smoke Diver, honestly) back to 60, locked it and took it off the cloud too. So
+   retakenQuestions <= 2 x the misses on record, and <= answers given. A count over that is not this class's.
    A RULE, NOT AN EDIT (see applyWeekWinVoids): both counters merge as a max / union, so a lowered copy would be put straight back by
    the cloud document, the `__floor` backup or another device. The rule runs on a Fire Code copy after every merge (once the server's
    copy is in) and on the document about to be written (writeAccount, which writes the floor from the same copy, so the floor comes
@@ -58790,7 +58948,7 @@ function ifcChallengeClamp(d){
   if(window.NOVA_CLASS !== "ifc" || !d || typeof d !== "object") return false;
   let changed = false;
   const answered = Number(d.lifetime && d.lifetime.answered) || 0;
-  const cap = Math.max(0, Math.min(ifcMissesOnRecord(d), answered));
+  const cap = Math.max(0, Math.min(2 * ifcMissesOnRecord(d), answered));   /* (384.20) 2x: a miss is counted once when it is made up and once when it is retaken */
   if((Number(d.retakenQuestions) || 0) > cap){ d.retakenQuestions = cap; changed = true; }
   if(d.unitGameBeat && typeof d.unitGameBeat === "object" && Object.keys(d.unitGameBeat).length){ d.unitGameBeat = {}; changed = true; }
   return changed;
@@ -112553,35 +112711,79 @@ function buildProgressRing(pct, small){
   return ringWrap;
 }
 
-/* THE MODES IN THE MIDDLE (384). Madison, on Fire Code's three: "there's so much empty space on the bottom here and it feels super
-   off.. should these 3 options be centered, and for the police one you'd centered the 4 a little better?" The question and the
-   question stays under the title as the screen's heading, and where the screen has room the cards sit in the middle of the
-   space between it and the tab bar (never closer to it than they were). Measured after the mount (the layout is there to read before the first paint)
-   and again when the window changes size, for as long as this screen is the one on the stage. */
-function centerModeGroup(panel){
+/* THE MODES FILL THEIR SCREEN (384 r20). Madison, on a Pro Max at ~85% page zoom: "There's so much open space on these screens, it doesn't
+   look like that. In the academy there's a 4th mode ... so it looks better, however, on the phone not so much.. should we do them as
+   a different looking boxes? Almost like the boxes you see when signing up for a class? ... each device size may need a different layout
+   and that's okay." The cards were the same flat rows at every size, centred (build 384) or parked under the line (r9) in a screen
+   three times their height. Now the title and the question stay at the top and the CARDS TAKE THE ROOM under them, down to the tab
+   bar: tall glass tiles (a tinted medallion for the mode's mark, the name, the line, a chevron), laid out by what the screen has -
+   one column of equal tiles on a phone (compact when three or four cannot be tall: a small medallion beside the name), two across
+   on a tablet held upright (an odd one out across both columns), one row of tiles on a landscape tablet, laptop or desktop (capped, in
+   the middle). One function for both screens that use them (Choose your mode, Host / Join) so they cannot drift. Measured after the
+   mount (the layout is there to read before the first paint) and again when the window changes size, for as long as this screen is the
+   one on the stage. All of it in glass px: the page's CSS px are 0.85pt on a zoomed phone (--zc), so what is tuned here is divided by it. */
+function fillModeGroup(panel){
   const fit = () => {
     if(!panel.isConnected) return false;
-    const head = panel.querySelector(".modeselect-sub"), cards = panel.querySelector(".modecards");
+    const head = panel.querySelector(".modeselect-sub, .cal-sub"), cards = panel.querySelector(".modecards");
     if(!head || !cards) return true;
-    panel.style.removeProperty("--ms-gap");
+    const kids = [...cards.children].filter(c => c.classList.contains("modecard")), n = kids.length;
+    if(!n) return true;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--zc")) || 1;
     /* layout positions (offsetTop), not boxes: the screen comes in on a transform, and the tab bar is not in it */
     const at = el => { let y = 0; for(let e = el; e; e = e.offsetParent) y += e.offsetTop; return y; };
     const tb = document.getElementById("bottomtabs");
-    const floor = (tb && !tb.hidden && tb.offsetHeight ? at(tb) : innerHeight) - 16;
-    /* the question stays under the title, as the screen's own heading; the cards sit in the middle of what is left */
-    /* the gap above the cards IS the centring: half the room the cards leave - set outright, so it can come in under the
-       usual 1.1rem as well as grow (the academy's four on a Pro Max: 14.5px each side); with less than 12px a side to give,
-       the usual gap stands and the page scrolls (a small phone) */
-    const subB = at(head) + head.offsetHeight, h = cards.offsetHeight;
-    const gap = Math.floor(((floor - subB) - h) / 2);
-    if(gap >= 12) panel.style.setProperty("--ms-gap", gap + "px");
+    const GAP = 18 * z;   /* under the question, and (the same) above the tab bar: the group's room is what is between */
+    /* the tab bar is fixed, so its box on the screen is the one thing that is where it looks (its offsetTop is not, on a wide screen) */
+    const floor = (tb && !tb.hidden && tb.offsetHeight ? tb.getBoundingClientRect().top : innerHeight) - GAP;
+    const room = Math.max(0, Math.floor(floor - (at(cards) - scrollY)));
+    const vw = innerWidth / z, vh = innerHeight / z;
+    /* the columns: one on a phone; two on a tablet upright; a row of them where the screen is wide and not tall (a landscape
+       tablet, a laptop, a desktop). Wider than 640 glass px and a card per column is a tile, not a row. */
+    const wide = vw >= 900 && vw > vh * 1.1;
+    const cols = n === 1 || vw < 640 ? 1 : wide ? Math.min(n, 4) : 2;
+    const rows = Math.ceil(n / cols);
+    const gap = (cols === 1 ? 10 : 14) * z;
+    const cap = (cols === 1 ? 17 : wide ? 30 : rows === 1 ? 40 : 28) * 16;   /* a tile never gets taller than this (glass px) - a desktop's tile is not a poster */
+    let tile = Math.floor((room - (rows - 1) * gap) / rows);
+    tile = Math.min(tile, (cap + (cols === 1 && n <= 2 ? 40 : 0)) * z);
+    /* a phone's tiles, three or four to a screen, may not have room for the tall build: the medallion goes beside the name */
+    const kind = cols === 1 && tile < 176 * z ? "snug" : "stack";
+    const set = (k, v) => cards.style.setProperty(k, v);
+    /* tiles side by side: every line is as tall as the longest in the group, so the names sit on one line along the foot of a row */
+    set("--ms-dh", "0px");
+    if(cols > 1) set("--ms-dh", Math.max(0, ...kids.map(c => { const d = c.querySelector(".modecarddesc"); return d ? d.offsetHeight : 0; })) + "px");
+    set("--ms-cols", cols); set("--ms-tile", Math.max(0, tile) + "px"); set("--ms-room", room + "px");
+    /* a wide screen's row of tiles is wider than the 50rem panel it sits in: it breaks out of it, centred, to its own width */
+    set("--ms-gap", gap + "px"); set("--ms-w", wide ? Math.min(Math.min(72, 17 * n + 4) * 16, innerWidth - 48) + "px" : cols === 2 ? "min(50rem, 100%)" : "100%");
+    cards.dataset.build = kind; cards.dataset.cols = cols;
+    cards.dataset.tall = kind === "stack" ? (tile >= 380 * z ? "2" : tile >= 250 * z ? "1" : "0") : "0";
+    cards.classList.toggle("ms-spanlast", cols === 2 && n % 2 === 1);
+    /* the wrap reserves the tab bar's room under the screen; where that is more than the bar takes (a phone with no home
+       indicator) a group that fits would still scroll by the difference - so it is taken back, and only when the group fits */
+    panel.style.marginBottom = "";
+    const over = document.documentElement.scrollHeight - innerHeight;
+    if(over > 0 && over < 90 * z && cards.offsetHeight <= room + 1) panel.style.marginBottom = (-over) + "px";
     return true;
   };
   fit();
   setTimeout(fit, 450);   /* once the entrance has settled */
+  setTimeout(fit, 1100);   /* and once a slow phone has settled the tab bar */
   const onResize = () => { if(!fit()) removeEventListener("resize", onResize); };
   addEventListener("resize", onResize);
   try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fit()); }catch(e){}
+  /* the tab bar is shown, hidden and resized by the app after a screen is up (the first screen after a launch, a keyboard): the
+     group's floor follows it. fit() writes only to the panel and the cards, never to the bar, so this cannot loop. */
+  try{
+    const tbEl = document.getElementById("bottomtabs");
+    if(tbEl){
+      if(window.ResizeObserver){ const ro = new ResizeObserver(() => { if(!fit()) ro.disconnect(); }); ro.observe(tbEl); }
+      if(window.MutationObserver){ const mo = new MutationObserver(() => { if(!fit()) mo.disconnect(); }); mo.observe(tbEl, { attributes: true, attributeFilter: ["hidden", "class", "style"] }); }
+      /* it slides in (after a cutscene, on the first screen of a launch): its floor is where it comes to rest, not where it started */
+      const rest = () => { if(!fit()){ tbEl.removeEventListener("transitionend", rest); tbEl.removeEventListener("animationend", rest); } };
+      tbEl.addEventListener("transitionend", rest); tbEl.addEventListener("animationend", rest);
+    }
+  }catch(e){}
 }
 function showModeSelect(){
   /* LEAVING UNIT SELECTION DROPS THE PICKS. "If I select units and then
@@ -112725,7 +112927,7 @@ function showModeSelect(){
 
   stage.replaceChildren(panel);
   toTop();
-  centerModeGroup(panel);
+  fillModeGroup(panel);
   if(!store.seenModeSelectTour){
     store.seenModeSelectTour = true;
     saveStore();
@@ -115906,6 +116108,13 @@ let originalTestLabel = null;
    reason retroHideBadges gives. */
 var runStartLocked = null, runStartBanners = null, runStartHundos = null;
 function beginRun(indexes, label, practiceMinutes, missedRetake){
+  /* (384.20) AN ORDINARY RUN IS NOT IN A ROOM. beginVirtualRoomTest sets raceTimedNext (and inVirtualRoom) for the one run that
+     is; any other run that starts while this device still holds a room - a lobby or a match walked away from by a door that was
+     not leaveVirtualRoom() - leaves it first, so the room's presence beat, its listener and its class bank are not carried into
+     a Drill, and the room is told this device has gone. */
+  let heldRoom = false;
+  try{ heldRoom = !raceTimedNext && (!!vroomCode || !!inVirtualRoom); }catch(e){}
+  if(heldRoom){ try{ leaveVirtualRoom("away"); }catch(e){} }
   /* (384) A ROOM FROM ANOTHER CLASS: its questions earn nothing here, so nothing is seeded, snapshotted or remembered for
      them, and no flare is hidden in them (summarizeVisitingRun ends it) */
   const visiting = vroomForeign();
@@ -115954,7 +116163,7 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
      it, so a saved test waits through either. A run that owns it starts
      with it empty - Start Studying has already asked about anything in it. */
   runStudyPriorMs = 0;
-  runSaveSlot = runLabel !== "Daily question" && !inVirtualRoom && !vroomCode && !raceTimed &&
+  runSaveSlot = runLabel !== "Daily question" && !inVirtualRoom && !raceTimed &&
                 (runMode === "drill" || runMode === "exam");
   if(runSaveSlot) clearRunSession();
   /* The actual fix for the daily question never awarding points at
@@ -119944,7 +120153,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.19";
+const APP_BUILD = "2026-11-10-384.22";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -120856,7 +121065,9 @@ function forcedUpdateBlocked(){
      leaderboard. A lobby is a countdown other people are waiting on, and
      a match is a test with company. */
   let inRoom = false;
-  try{ inRoom = !!inVirtualRoom || !!vroomCode; }catch(e){}
+  /* (384.20) a room as the SCREEN says it (roomBankInUse), not a bare vroomCode: a code left set by a lobby walked away from held
+     every forced update off for the rest of the session */
+  try{ inRoom = !!inVirtualRoom || roomBankInUse(); }catch(e){}
   if(inRoom) return true;
   if(document.querySelector(".vroom-lobby-panel, .vroom-chat-slot, .vroom-results-panel, .vroom-finale-panel, " +
      ".screen-vroom-lobby, .screen-vroom-choice, .screen-rooms, .screen-tug, .screen-tug-wait, .screen-tug-result, " +
@@ -136186,6 +136397,12 @@ function showTestHistoryDetail(entry){
 /* ---------- virtual room ------------------------------------------------- */
 
 let vroomCode = null;
+/* (384.22) DECLARED HERE, ABOVE leaveVirtualRoom(), WHICH READS THEM: they were three lines of `const` / `let` a hundred lines below it, so a call to
+   leaveVirtualRoom() while the script was still loading would have read them in their temporal dead zone and taken the whole app down
+   (CLAUDE.md: a `let` is declared above its first caller that runs during boot). */
+const VROOM_AWAY_MS = 300;
+let vroomAwayTimer = null;
+let vroomAwayWhere = "";    /* where this device last was in the room: "lobby", "match" or "room" (vroomLeaveWhere) */
 let vroomUnsubscribe = null;
 let vroomIsHost = false;
 /* THE HOST IS THE EARLIEST JOINER, COMPUTED RATHER THAN STORED - and
@@ -136258,6 +136475,11 @@ function leaveVirtualRoom(reason){
   /* (384 vr2) where this device is as it goes - read before the flags below are cleared */
   let where = "room";
   try{ where = vroomLeaveWhere(); }catch(e){}
+  /* (384.20) "away": this device walked out of the room's screens by a door that is not a Leave button (vroomAwayCheck, or an
+     ordinary run starting). The screen it is on now is not the room's, so where it WAS is what it last had up */
+  if(reason === "away" && vroomAwayWhere) where = vroomAwayWhere;
+  vroomAwayWhere = "";
+  clearTimeout(vroomAwayTimer); vroomAwayTimer = null;
   detachVroomListener();
   /* THE RACE LINE'S LISTENER TOO. It is separate from the lobby's, and
      leaving mid-race left it running - still reading the room on every
@@ -136348,6 +136570,35 @@ try{
   new MutationObserver(() => {
     if(BANK_CLASS === ownClass()) return;
     try{ if(!roomBankInUse()) restoreClassBank(); }catch(e){}
+  }).observe(stage, { childList: true });
+}catch(e){}
+/* ---- A ROOM IS LEFT BY LEAVING ITS SCREENS (384.20) ----
+   The one variable that says "this device is in a room" (vroomCode) was cleared by leaveVirtualRoom() and by nothing else, and a
+   lobby or a finished match can be walked away from by other doors: the header's Home, a banner's View, a tab. What stayed was
+   the code, the presence beat (a write every few seconds), the lobby's listener, the room's class bank and a line on the roster
+   for somebody who is not there - and an ordinary Drill that followed could not be saved (runSessionSavable). So the stage is
+   watched: when this device holds a room and the screen is not one of the room's (ROOM_SCREENS, the run, or the empty stage
+   between them), it leaves it, as the Leave button does, after VROOM_AWAY_MS - the delay is so a screen that is only between two
+   of the room's is never mistaken for a way out. The same check runs again where an ordinary run starts (beginRun). */
+function vroomAwayCheck(){
+  vroomAwayTimer = null;
+  let code = null;
+  try{ code = vroomCode; }catch(e){}
+  if(!code) return;
+  if(roomBankInUse()) return;
+  leaveVirtualRoom("away");
+}
+try{
+  new MutationObserver(() => {
+    let code = null;
+    try{ code = vroomCode; }catch(e){}
+    if(!code){ if(vroomAwayTimer){ clearTimeout(vroomAwayTimer); vroomAwayTimer = null; } return; }
+    if(roomBankInUse()){
+      try{ vroomAwayWhere = vroomLeaveWhere(); }catch(e){}
+      if(vroomAwayTimer){ clearTimeout(vroomAwayTimer); vroomAwayTimer = null; }
+      return;
+    }
+    if(!vroomAwayTimer) vroomAwayTimer = setTimeout(vroomAwayCheck, VROOM_AWAY_MS);
   }).observe(stage, { childList: true });
 }catch(e){}
 
@@ -136547,6 +136798,7 @@ function showVirtualRoomChoice(){
 
   stage.replaceChildren(panel);
   toTop();
+  fillModeGroup(panel);
 }
 
 /* ONE SCREEN, TWO JOBS. Setting a room up and changing it afterwards
@@ -141087,30 +141339,51 @@ function showRoomBrowser(){
   refresh.textContent = "Refresh";
   panel.appendChild(refresh);
 
-  function note(text){
+  /* (384.20) "Loading open rooms screen is kinda empty, make that better": a line of grey text in a small card, and the rest of the screen
+     empty, was all the search had. The search, the nothing-found and the can't-load states are ONE card now, the height of the room
+     between the line above and the tab bar (the way the mode screens fill theirs): the Join medallion in the middle of three rings
+     that open out from it while it is looking (transform and opacity only, still when Reduce Motion is on or it is not looking), a
+     title and a line. kind is "looking", "empty" or "error". */
+  function state(kind, title, text){
     list.replaceChildren();
-    const p = document.createElement("p");
-    p.className = "friend-hint"; p.textContent = text;
-    list.appendChild(p);
+    list.classList.add("is-state");
+    const empty = document.createElement("div");
+    empty.className = "rooms-empty is-" + kind;
+    const art = document.createElement("span");
+    art.className = "rooms-empty-art"; art.setAttribute("aria-hidden", "true");
+    for(let i = 0; i < 3; i++){ const rg = document.createElement("i"); rg.className = "rooms-ring"; rg.style.setProperty("--rd", (i * 1.1) + "s"); art.appendChild(rg); }
+    const ic = document.createElement("span");
+    ic.className = "rooms-empty-icon"; ic.appendChild(modeIcon("join"));
+    art.appendChild(ic);
+    const t = document.createElement("p");
+    t.className = "rooms-empty-title"; t.textContent = title;
+    const d = document.createElement("p");
+    d.className = "rooms-empty-text"; d.textContent = text;
+    empty.append(art, t, d);
+    list.appendChild(empty);
+    if(kind === "looking") empty.setAttribute("role", "status");
+  }
+  /* the card's height: from where it starts to the tab bar (18px above it, as on the mode screens), less the Refresh button under it */
+  function fitRoom(){
+    if(!panel.isConnected) return false;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--zc")) || 1;
+    const at = el => { let y = 0; for(let e = el; e; e = e.offsetParent) y += e.offsetTop; return y; };
+    const tb = document.getElementById("bottomtabs");
+    const floor = (tb && !tb.hidden && tb.offsetHeight ? tb.getBoundingClientRect().top : innerHeight) - 18 * z;
+    const below = refresh.offsetHeight + parseFloat(getComputedStyle(refresh).marginTop || 0);
+    let room = Math.max(220 * z, Math.floor(floor - (at(list) - scrollY) - below));
+    panel.style.setProperty("--rr-room", room + "px");
+    /* then what is really there: the Refresh button's own bottom edge against the floor (the card has margins of its own) */
+    const over = Math.round(refresh.getBoundingClientRect().bottom - floor);
+    if(over && Math.abs(over) < 120 * z){ room = Math.max(220 * z, room - over); panel.style.setProperty("--rr-room", room + "px"); }
+    return true;
   }
 
   function draw(rooms){
     list.replaceChildren();
+    list.classList.remove("is-state");
     if(!rooms.length){
-      /* A REAL EMPTY STATE (build 287): "when there isn't one available,
-         that text box and stuff is small and also pushed too close
-         together." An icon, a title and a line, with room round them. */
-      const empty = document.createElement("div");
-      empty.className = "rooms-empty";
-      const ic = document.createElement("span");
-      ic.className = "rooms-empty-icon"; ic.appendChild(modeIcon("join"));
-      const t = document.createElement("p");
-      t.className = "rooms-empty-title"; t.textContent = "No open rooms found at this time";
-      const d = document.createElement("p");
-      d.className = "rooms-empty-text";
-      d.textContent = "When someone turns on Open room in their lobby, it shows up here. You can also host one yourself.";
-      empty.append(ic, t, d);
-      list.appendChild(empty);
+      state("empty", "No open rooms found at this time", "When someone turns on Open room in their lobby, it shows up here. You can also host one yourself.");
       return;
     }
     rooms.forEach(entry => {
@@ -141183,10 +141456,10 @@ function showRoomBrowser(){
   const OPEN_ROOMS_SEARCH_MS = 5000, OPEN_ROOMS_LOOK_EVERY_MS = 1250;
   let searchToken = 0;
   function load(){
-    if(!vroomDb()){ note("No connection right now \u2014 try again in a moment."); return; }
+    if(!vroomDb()){ state("error", "No connection right now", "Try again in a moment."); return; }
     const token = ++searchToken, t0 = Date.now();
     const alive = () => token === searchToken && list.isConnected;
-    note("Looking for open rooms\u2026");
+    state("looking", "Looking for open rooms", "Checking for rooms your classmates have opened.");
     let settled = false;
     const finishEmpty = () => { if(!settled && alive()){ settled = true; draw([]); } };
     const deadline = setTimeout(finishEmpty, OPEN_ROOMS_SEARCH_MS + 1500);
@@ -141208,8 +141481,8 @@ function showRoomBrowser(){
           if(open.length){ settled = true; clearTimeout(deadline); draw(open); return; }
           if(Date.now() - t0 >= OPEN_ROOMS_SEARCH_MS){ clearTimeout(deadline); finishEmpty(); return; }
           setTimeout(look, OPEN_ROOMS_LOOK_EVERY_MS);
-        }).catch(() => { if(alive() && !settled){ settled = true; clearTimeout(deadline); note("Couldn\u2019t load the rooms \u2014 try again."); } });
-      }catch(e){ if(!settled){ settled = true; clearTimeout(deadline); note("Couldn\u2019t load the rooms \u2014 try again."); } }
+        }).catch(() => { if(alive() && !settled){ settled = true; clearTimeout(deadline); state("error", "Couldn\u2019t load the rooms", "Try again."); } });
+      }catch(e){ if(!settled){ settled = true; clearTimeout(deadline); state("error", "Couldn\u2019t load the rooms", "Try again."); } }
     };
     look();
   }
@@ -141218,6 +141491,15 @@ function showRoomBrowser(){
   stage.replaceChildren(panel);
   toTop();
   load();
+  fitRoom();
+  setTimeout(fitRoom, 450);   /* once the entrance has settled */
+  setTimeout(fitRoom, 1100);  /* and once a slow phone has settled the tab bar */
+  const onRoomResize = () => { if(!fitRoom()) removeEventListener("resize", onRoomResize); };
+  addEventListener("resize", onRoomResize);
+  try{
+    const tbEl = document.getElementById("bottomtabs");
+    if(tbEl && window.ResizeObserver){ const ro = new ResizeObserver(() => { if(!fitRoom()) ro.disconnect(); }); ro.observe(tbEl); }
+  }catch(e){}
 }
 
 function showVirtualRoomLobby(){
