@@ -18,6 +18,8 @@ For every adjacent pair of tabs, both directions:
  (5) NEVER FIGHTS A SCROLL: a finger that goes down first (14px) and then sideways does not switch (and moves nothing); a swipe
      that starts within 20px of the screen's left edge (the system's swipe back) does not; one that starts on something that
      scrolls sideways itself (a strip made to scroll sideways, put on the screen) does not, and does not move the content.
+ (8) A SECOND SWIPE THAT STARTS WHILE THE FIRST IS STILL LANDING (150ms after it) is taken: the first is carried to its end at once and the
+     second goes on from there (three tabs: first -> third).
  (6) FIRE CODE: its Profile has no tabs: a sideways drag moves nothing, switches nothing and throws nothing.
  (7) no page error.
 Run:  python3 tools/check-b384-swipe.py [--only 1,2,...] [--against REV|path/to/index.html]   (--against 3a6675d must FAIL (1)(3)(5))"""
@@ -183,9 +185,9 @@ with sync_playwright() as pw:
                     x0, x1 = (330, 330 - 64) if to_left else (110, 110 + 64)
                     drag(pg, cdp, x0, x1, y, 0.4, release=False); time.sleep(0.1)
                     mid = pg.evaluate("()=>{ const f=window.__s.fr; return f.length?f[f.length-1][1]:0; }")
-                    touch(cdp, "touchEnd"); pg.wait_for_timeout(450)
+                    touch(cdp, "touchEnd"); pg.wait_for_timeout(650)
                     st = pg.evaluate(STATE); pg.evaluate("()=>{ window.__s.on=false; }")
-                    chk("(3) %s: a short drag moved the content (%s px) and eases back: same tab, nothing left within 450ms" % (name, mid),
+                    chk("(3) %s: a short drag moved the content (%s px) and eases back: same tab, nothing left within 650ms" % (name, mid),
                         abs(mid) > 20 and st["tab"] == frm and not st["left"], (mid, st))
                 if want(4):
                     go_tab(pg, frm); y = pg.evaluate(FINDY)
@@ -195,6 +197,13 @@ with sync_playwright() as pw:
                     lit = settle_wait(pg, to, 600)
                     pg.wait_for_timeout(700)
                     chk("(4) %s: a flick (90px in 90ms) commits (lit after %s ms)" % (name, lit), lit is not None, lit)
+        if want(8) and len(tabs) >= 3:
+            go_tab(pg, tabs[0]); y = pg.evaluate(FINDY)
+            drag(pg, cdp, 330, 154, y, 0.3, gap=0.012)
+            time.sleep(0.15)                       # the first is still landing
+            drag(pg, cdp, 330, 154, y, 0.3, gap=0.012)
+            lit = settle_wait(pg, tabs[2], 1500); pg.wait_for_timeout(700)
+            chk("(8) %s: a second swipe that starts while the first is landing is taken (%s -> %s, lit after %s ms)" % (label, tabs[0], tabs[2], lit), lit is not None and not pg.evaluate(STATE)["left"], pg.evaluate(STATE))
         if want(5):
             a_, b_ = tabs[0], tabs[1]
             go_tab(pg, a_); y = pg.evaluate(FINDY)

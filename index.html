@@ -151625,7 +151625,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
      chat dock, a sheet) is not theirs. */
   const host = document;
   const onSurface = tg => !!tg && (tg === document.documentElement || tg === document.body || surface.contains(tg));
-  let startX = null, startY = null, locked = false, axis = null, drag = null, busy = false, samples = [];
+  let startX = null, startY = null, locked = false, axis = null, drag = null, busy = false, samples = [], settling = null, earlyGo = null;
   /* (r22) THE SWIPE FOLLOWS THE FINGER. Until now a swipe did nothing at all until the finger had lifted and then swapped the tab in
      one step (the build of a board - 180-280ms at 4x CPU - sitting between the lift and anything moving). Now, once the drag is
      clearly sideways (axis chosen once, ~10px, then kept: a vertical scroll that drifts is never taken, a sideways one never lets go),
@@ -151648,6 +151648,8 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const t = e.touches[0];
     const tg = e.target;
     axis = null;
+    /* a finger that comes down while the last swipe is still landing takes it to its end at once and goes on from there */
+    for(let k = 0; busy && k < 4; k++){ if(earlyGo) earlyGo(); else if(settling) settling(); else break; }
     if(busy || e.touches.length !== 1 || !onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))
        || (tg && tg.closest && tg.closest(".has-seg-glass"))   /* (r8) a finger on a top switcher drags its glass, not the page */
        || (typeof swipeOverlayUp === "function" && swipeOverlayUp())   /* (384) never under the page viewer */
@@ -151718,7 +151720,8 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
   const settle = (els, from, to, ms, done) => {
     const anims = els.map(el => { try{ return el.animate([from, to], { duration: ms, easing: EASE, fill: "forwards" }); }catch(e){ return null; } });
     let fin = false;
-    const end = () => { if(fin) return; fin = true; anims.forEach(a => { try{ if(a) a.cancel(); }catch(e){} }); done(); };
+    const end = () => { if(fin) return; fin = true; if(settling === end) settling = null; anims.forEach(a => { try{ if(a) a.cancel(); }catch(e){} }); done(); };
+    settling = end;
     const a0 = anims.find(Boolean);
     if(a0) a0.onfinish = end;
     setTimeout(end, ms + 60);      /* a hidden tab never finishes an animation */
@@ -151779,12 +151782,17 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
       clearDrag();
       host0.style.opacity = "0";
       host0.insertAdjacentElement("afterend", gh);
-      requestAnimationFrame(() => setTimeout(() => {
+      let went = false;
+      const go = () => {
+        if(went) return;
+        went = true; earlyGo = null;
         if(!panel.isConnected){ gh.remove(); host0.style.opacity = ""; busy = false; return; }
         select(order[next]);
         settle([gh], cur, out, 170, () => { gh.remove(); });
         enter(true);
-      }, 0));
+      };
+      earlyGo = go;
+      requestAnimationFrame(() => setTimeout(go, 0));
       return;
     }
     settle(d.els, cur, out, 110, () => {
