@@ -37680,3 +37680,37 @@ NOT DONE, reported: Profile / Stats / Customize and other screens' rows also dra
 
 Madison: "I want the same treatment, if you fixed settings fix the rest." The same `zoom:var(--zc)` under `html.page-zoomed` now covers the content blocks of Profile's and Stats' tabs, the Leaderboard (blurb, tools, rows), Customize (intro, list), Friends (sections), the Calendar (class head, glance, month, cards) and the Rank ladder / badge case tabs. Not the headings, the top segmented controls, the back buttons or anything fixed. At his zoom each block is within 3% of its height at 100% on the glass (`check-b384-settingszoom.py` section 6; fails on 384.7 for all eight). The column is 6pt wider on the glass than at 100% (the page's 20px side padding is 17pt there) - that is why only heights are compared.
 THE BLURRED TITLE: still unexplained by anything Chromium can show (the title, #count, is a plain static element with no filter, mask, will-change or translate; nothing overlaps it). His latest Settings screenshot is on 384.4; the chat dock's full-screen fixed layer (the one thing still spanning the top edge) came out in 384.7. If the title is still soft on 384.7 or later, the next steps are in the display test panel (Settings > Advanced > Troubleshooting), not more guessing.
+
+## Build 384 (r22) - swiping and sliding: the next-question slide, the top-tab swipe
+
+Madison: "THE SWIPING AND SLIDING FUNCTION IS TERRIBLE" / "there is still so much lag when swiping between stuff ... I noticed on Windows computers too, that
+swiping to the NEXT QUESTION had a lot of lag". Measured in Chromium at 4x CPU with real touches (CDP) and a real mouse; a phone's WebKit and a Windows GPU are not here.
+- NOT DONE ON PURPOSE: swiping the page between BOTTOM tabs. It was removed by explicit request (the comment above the keydown listener near the end of
+  index.html; "a swipe on Rewards while reading it could silently change tabs") and is not back. "The tab sliding/swiping function" in the notes since 383 is the bar's
+  own finger slide (the glass lens); it was measured again (check-b383-tabslide, -b382-slide, -b384-mouse all pass) and not changed.
+- THE NEXT QUESTION (commit b328405, in 384.8): a Next (click, Enter, tap, committed swipe) ran the bar/dock sync (syncVisibility -> syncChatDock ->
+  placeDockBesidePause: offsetLeft + getComputedStyle of Pause, a style pass and layout of the whole page) 2-4 times inside the tap - for the stage swap, for the slide's
+  own copy going onto <body>, and (phone) for the swipe's stand-in going on where a finger lands and off where it lifts - and read the outgoing box after putting a
+  class on <html>. Now syncVisibility ignores the slide's copies (.q-slide-clone, .q-blurpair) on <body>; while a slide is under way a stage swap only marks the sync owed
+  (qSyncHold / qSyncOwed) and qSlideDone runs it once in idle time (qSyncRelease; the last question's advance is not held: summarize() changes the bar); the box is read
+  before the class goes on. 4x CPU (thread time, medians of 8): laptop click task 64 -> 41-51ms, forced style/layout 32 -> 13-15; Enter 56 -> 33 / 35 -> 12; phone tap
+  76-85 -> 42-49 / 30 -> 12; swipe release's build 60 -> 44; dock measures inside the move 2-4 -> 0. The rest of a Next is the new question's own build
+  (replaceChildren: style + layout of its panel, 13-43ms at 4x), left. Gate tools/check-b384-qslide.py.
+- THE TOP-TAB SWIPE (Profile's tabs, the Leaderboard's boards; attachTabSwipe): a swipe did nothing until the finger lifted, then swapped the tab in one step; on the
+  Leaderboard the next board's build (180-280ms at 4x) sat between the lift and anything on screen (first frame with the new tab 230-330ms after the release).
+  Now: axis chosen once at ~10px (a finger that went down first never becomes a swipe), the content (opts.content: the visible tab's node; the board's rows) follows the
+  finger by transform only (one rAF write, no reads; passive but the one touchmove that cancels the scroll; data-tabdrag marks the moving elements), a third as far where no
+  tab lies that way; released past a third of the width or thrown (>0.35px/ms over the last ~100ms of moves, the last two when it rested first) it is carried off on the
+  compositor (WAAPI) and the next tab's content comes in from the other side; short of that it eases back (260ms). The Leaderboard's old rows are lifted into a copy that
+  stays where the finger left it while the next board is built under it (a first version carried it off first and left a bare screen for the build), then the two cross.
+  Nothing starts within 20px of the left edge (the system's swipe back), inside anything that scrolls sideways (hScrolls) or [data-noswipe], or with a second finger.
+  Reduce motion, or no opts.content: the plain swap as before. An opacity under 1 on the dragged list was tried and dropped: it made the whole long list a blended
+  surface every frame. Gate tools/check-b384-swipe.py (every adjacent pair, both ways, 1x and 4x; academy Profile and Leaderboard read off the page, Fire Code's single-tab Profile
+  moves nothing); fails on 3a6675d at (1) follow, (3) ease-back, (5) down-first / left edge / sideways strip.
+- LOOKED AT, NOT CHANGED: a bottom-tab click with a mouse at 4x CPU is 417-579ms to the screen (check-b384-mouse info, held to 900). Profiled: Home 270-340ms, Leaderboard 190,
+  Calendar 200 are the new screen's first style pass and layout, which slideBubbleToActiveTab / syncLoopClock's getAnimations force inside the click task - the same work the first frame
+  would do, moved earlier, so deferring them buys nothing; the first-use sound synthesis (prewarm: sndImpulseData / sndNoiseSamples, 28-55ms a step at 4x) runs in idle slots 4s
+  after the first touch. A real saving needs a lighter screen, not a reorder.
+- PHONE ONLY: how the follow, the carry-off and the ease-back feel on his 17 Pro Max (Chromium's compositor is not WebKit's; the harness cannot send a thumb's 60-120 touches
+  a second at 4x), whether Safari's page zoom (html.page-zoomed: CSS zoom on cards inside the tabs) leaves the dragged element's px 1:1 with the finger, and the system's back
+  swipe against the 20px edge.
