@@ -58920,14 +58920,12 @@ function ifcCharsRepair384(){
      and no way to write it, so anything there is another class's;
    - retakenQuestions, which a copy's "not yet seeded" flag backfilled from its OWN misses x drill share (seedChallenges289: written
      for accounts that played before the count was kept, wrong in a class that has counted from its first answer).
-   What an honest Fire Code store can hold is bounded by its own record: every retake counted (a Drill question missed then answered
-   again, or a question of a Retake run) follows a miss on that question, recorded in stats as `m`, and is an answer given. (384.20)
-   BUT A MISS CAN BE RETAKEN TWICE: the Drill counts the question the moment it is missed and answered again (one retake, one miss),
-   and "Retake missed questions" counts the same question again when it is retaken, with no new miss - so two retakes for one miss is
-   ordinary play, and 2 x the misses on record is the most an honest store can hold (a retake that is missed again is a new miss, and
-   its own two). This said "retakenQuestions <= the misses on record" for the first version of the rule, which put an account that had
-   missed 60 questions and retaken them (120, the Smoke Diver, honestly) back to 60, locked it and took it off the cloud too. So
-   retakenQuestions <= 2 x the misses on record, and <= answers given. A count over that is not this class's.
+   What an honest Fire Code store can hold is bounded by its own record: the challenge is "Retake 100 MISSED questions", so a count of retakes is
+   held to the misses on record (stats `m`) and to the answers given: retakenQuestions <= the misses on record, and <= answers given. (384.24)
+   The counter does tick twice for one miss in ordinary play (the Drill counts the question when it is made up, and "Retake missed questions"
+   counts it again), and 384.20 loosened this bound to 2 x the misses so that was never cut - which let an account of fifty-odd misses hold the
+   Smoke Diver again ("it still shows I unlocked Smoke Diver, there's no way I did"). A challenge about 100 missed questions is not earned
+   with fewer than 100 misses on record: the bound is the misses, as r23 had it.
    A RULE, NOT AN EDIT (see applyWeekWinVoids): both counters merge as a max / union, so a lowered copy would be put straight back by
    the cloud document, the `__floor` backup or another device. The rule runs on a Fire Code copy after every merge (once the server's
    copy is in) and on the document about to be written (writeAccount, which writes the floor from the same copy, so the floor comes
@@ -58941,7 +58939,7 @@ function ifcChallengeClamp(d){
   if(window.NOVA_CLASS !== "ifc" || !d || typeof d !== "object") return false;
   let changed = false;
   const answered = Number(d.lifetime && d.lifetime.answered) || 0;
-  const cap = Math.max(0, Math.min(2 * ifcMissesOnRecord(d), answered));   /* (384.20) 2x: a miss is counted once when it is made up and once when it is retaken */
+  const cap = Math.max(0, Math.min(ifcMissesOnRecord(d), answered));   /* (384.24) back to the misses on record: "Retake 100 MISSED questions" (384.20 had 2x) */
   if((Number(d.retakenQuestions) || 0) > cap){ d.retakenQuestions = cap; changed = true; }
   if(d.unitGameBeat && typeof d.unitGameBeat === "object" && Object.keys(d.unitGameBeat).length){ d.unitGameBeat = {}; changed = true; }
   return changed;

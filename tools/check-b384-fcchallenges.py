@@ -159,12 +159,12 @@ with sync_playwright() as pw:
         wrong["stats"] = {"q%d" % i: {"n": 3, "m": 1, "r": []} for i in range(5)}
         cloud_doc = json.loads(json.dumps(wrong)); cloud_doc["lastModified"] = now - 300000
         floor_doc = json.loads(json.dumps(wrong))
-        cap = 10   # (384.20) two retakes a miss: 5 misses on record
+        cap = 5   # (384.24) the misses on record: 5
         set_ifc(wrong)
         ctx, pg, errs = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with(fire=cloud_doc, floor=floor_doc))
         pg.wait_for_timeout(2500); p = settle(pg)
         chk("B the server's copy is in (the repair waits for it)", p["confirmed"], p)
-        chk("B the count is within what Fire Code's own record supports (%d misses, %d answers) - was 640" % (p["misses"], p["answered"]), p["retaken"] <= min(2 * p["misses"], p["answered"]) and p["retaken"] < 100, p)
+        chk("B the count is within what Fire Code's own record supports (%d misses, %d answers) - was 640" % (p["misses"], p["answered"]), p["retaken"] <= min(p["misses"], p["answered"]) and p["retaken"] < 100, p)
         chk("B no Hardcore units", p["hc"] == 0, p)
         chk("B the Smoke Diver is locked, not worn (the first starter instead), not queued, not marked announced or seen", p["maskedLocked"] is True and p["avatar"] != p["maskedId"] and p["maskedId"] not in p["pending"] and p["maskedId"] not in p["shown"] and p["maskedId"] not in p["seen"], p)
         chk("B what is not the Smoke Diver's is left alone (another mark stays)", "ghost" in p["shown"], p)
