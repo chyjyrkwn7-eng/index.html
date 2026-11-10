@@ -35,13 +35,16 @@ with sync_playwright() as pw:
     # cancel on the second
     pg.evaluate("()=>document.querySelector('.resetwarning-panel .ghost').click()"); pg.wait_for_timeout(700)
     back = pg.evaluate("()=>({ warn: !!document.querySelector('.resetwarning-panel'), n: window.__resets, adv: !!document.getElementById('resetbtn') || !!document.querySelector('#stage .screen-settings, #stage .screen-settings-sub') })")
+    adv2 = pg.evaluate("()=>({ advanced: !!document.getElementById('resetbtn') && !!document.querySelector('#stage .screen-advsettings'), home: !!document.querySelector('#stage [data-screen=home]') })")
     chk("(3) Cancel on the second screen leaves the warning and resets nothing (%s)" % back, not back["warn"] and back["n"] == 0, back)
+    chk("(3) ...and lands back on Advanced where Reset is, not on Home or Settings' first page (%s)" % adv2, adv2["advanced"] and not adv2["home"], adv2)
     # cancel on the first
     pg.evaluate("()=>{ showAdvancedSettings(); }"); pg.wait_for_timeout(700)
     pg.evaluate("()=>document.getElementById('resetbtn').click()"); pg.wait_for_timeout(400)
     pg.evaluate("()=>document.querySelector('.resetwarning-panel .ghost').click()"); pg.wait_for_timeout(600)
     b1 = pg.evaluate("()=>({ warn: !!document.querySelector('.resetwarning-panel'), n: window.__resets })")
-    chk("(3) Cancel on the first screen resets nothing (%s)" % b1, not b1["warn"] and b1["n"] == 0, b1)
+    b1["advanced"] = pg.evaluate("()=>!!document.getElementById('resetbtn') && !!document.querySelector('#stage .screen-advsettings')")
+    chk("(3) Cancel on the first screen resets nothing and lands on Advanced (%s)" % b1, not b1["warn"] and b1["n"] == 0 and b1["advanced"], b1)
     # full path
     pg.evaluate("()=>{ showAdvancedSettings(); }"); pg.wait_for_timeout(700)
     pg.evaluate("()=>document.getElementById('resetbtn').click()"); pg.wait_for_timeout(300)
