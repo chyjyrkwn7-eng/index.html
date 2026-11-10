@@ -68261,6 +68261,10 @@ function presenceClassesValue(){
   let k = "academy"; try{ k = enrolledClasses().join(",") || "academy"; }catch(e){}
   const out = { k: k };
   try{ const me = socialMe(); if(me.firstName) out.n = String(me.firstName).slice(0, 40); if(me.avatarChar) out.v = String(me.avatarChar).slice(0, 40); }catch(e){}
+  /* (384 r13) the friend code, `f`: the handle somebody types to add this person. The board row carries it, but a person in Fire Code
+     alone has no board row, and so could not be found by code ("no one in the class has that code"). A friend code is already
+     public on every board row; it is not a sync code. */
+  try{ const fc = friendCodeOf(); if(fc && FRIEND_CODE_RE.test(fc)) out.f = fc; }catch(e){}
   return out;
 }
 /* The classes a friend's account is in, or null when nothing has said (a device from before this build, a friend who has not
@@ -68650,11 +68654,19 @@ function sendFriendRequest(code){
      example was not a friend code. */
   if(!FRIEND_CODE_RE.test(want)) return { ok: false, why: "That is not a friend code. They look like ABC-234." };
   if(want === friendCodeOf()) return { ok: false, why: "That is your own code." };
-  const match = (leaderboardRows || []).find(e => e && e.fcode === want);
+  let match = (leaderboardRows || []).find(e => e && e.fcode === want);
+  /* (384 r13) NOT ON THE BOARD: a friend in Fire Code alone has no board row, but their presence beat carries their code (`f`) */
+  if(!match){
+    try{
+      const pc = presenceClasses || {};
+      const pub = Object.keys(pc).find(k => pc[k] && typeof pc[k] === "object" && pc[k].f === want && k !== store.publicId);
+      if(pub) match = { pub: pub, firstName: String(pc[pub].n || ""), noRow: true };
+    }catch(e){}
+  }
   /* A code that matches nobody is the ordinary case while the other
      person has not opened the app since this shipped, so it says so
      rather than "no such person". */
-  if(!match || !match.pub) return { ok: false, why: "No one on the class board has that code yet. They may need to open the app once." };
+  if(!match || !match.pub) return { ok: false, notFound: true, want: want, why: "No one in your classes has that code yet. They may need to update and open the app once." };
   if(friendPublicIds().indexOf(match.pub) >= 0) return { ok: false, why: (match.firstName || "They") + " is already a friend." };
   if((store.friendsOut || []).indexOf(match.pub) < 0){
     store.friendsOut = (store.friendsOut || []).concat([match.pub]);
@@ -68662,8 +68674,32 @@ function sendFriendRequest(code){
   }
   /* (384) the row that carries a request (freq) is published by the academy alone, so from another class the request goes
      to their mailbox at once, the way a request from a person's card always has (sendFriendRequestTo) */
-  if(window.NOVA_CLASS === "ifc") sendToInbox(match.pub, { type: "friendreq" });
+  if(window.NOVA_CLASS === "ifc" || match.noRow) sendToInbox(match.pub, { type: "friendreq" });   /* (384 r13) and to anyone with no board row for the request to sit on */
   return { ok: true, name: match.firstName || "They" };
+}
+
+/* (384 r13) A CODE NOT FOUND IN WHAT THIS DEVICE HOLDS IS ASKED OF THE CLOUD, once, as a one-document query: a board this device
+   read before the person joined (a stale list) never had them. Only on a miss, so the common case reads nothing. */
+function sendFriendRequestAsync(code){
+  const r = sendFriendRequest(code);
+  if(r.ok || !r.notFound) return Promise.resolve(r);
+  const db = socialDb();
+  if(!db) return Promise.resolve(r);
+  return new Promise(resolve => {
+    let done = false;
+    const finish = v => { if(done) return; done = true; resolve(v); };
+    setTimeout(() => finish(r), 6000);
+    try{
+      db.collection("leaderboard").where("fcode", "==", r.want).limit(1).get().then(snap => {
+        let found = null;
+        snap.forEach(doc => { if(!found && !isLegacyBoardId(doc.id)) found = Object.assign({ pub: doc.id }, doc.data()); });
+        if(!found){ finish(r); return; }
+        try{ found.rawWeekPoints = found.weekPoints; found.weekPoints = weekPointsOfEntry(found); fixBoardLevel(found); }catch(e){}
+        leaderboardRows = (leaderboardRows || []).filter(e => !(e && e.pub === found.pub)).concat([found]);
+        finish(sendFriendRequest(r.want));
+      }).catch(() => finish(r));
+    }catch(e){ finish(r); }
+  });
 }
 
 function acceptFriendRequest(pub){
@@ -118270,7 +118306,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.9";
+const APP_BUILD = "2026-11-10-384.10";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -147605,11 +147641,12 @@ function showFriends(){
     input.value = raw.length > 3 ? raw.slice(0, 3) + "-" + raw.slice(3) : raw;
   });
   const send = actBtn("Send", "friend-send", () => {
-    const r = sendFriendRequest(input.value);
-    if(!r.ok){ showToast(r.why); return; }
-    pushToCloud();
-    showToast("Request sent to " + r.name + ".", "good");
-    showFriends();
+    sendFriendRequestAsync(input.value).then(r => {
+      if(!r.ok){ showToast(r.why); return; }
+      pushToCloud();
+      showToast("Request sent to " + r.name + ".", "good");
+      showFriends();
+    });
   });
   input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
   /* (384) "The 'enter a friends code' doesn't come off as a text box but I like how it looks? Could we still keep it how it is but
