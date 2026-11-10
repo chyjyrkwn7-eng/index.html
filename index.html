@@ -151681,8 +151681,10 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const st = stepsOf(drag.i), dx = drag.dx;
     const x = (dx < 0 ? st.next : st.prev) ? dx : dx * 0.3;
     drag.x = x;
-    const o = (1 - 0.4 * Math.min(1, Math.abs(x) / drag.W)).toFixed(3), tf = "translate3d(" + x.toFixed(1) + "px,0,0)";
-    drag.els.forEach(el => { el.style.transform = tf; el.style.opacity = o; });
+    /* transform alone while the finger is down: an opacity under 1 makes the whole (long) list a surface of its own that is blended
+       again every frame, which a machine without a GPU does not do in 16ms */
+    const tf = "translate3d(" + x.toFixed(1) + "px,0,0)";
+    drag.els.forEach(el => { el.style.transform = tf; });
   };
   const clearDrag = () => {
     if(!drag) return;
@@ -151696,7 +151698,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const i = order.indexOf(getCurrent());
     if(!els.length || i === -1) return;
     drag = { els, i, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth) };
-    els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform, opacity"; el.setAttribute("data-tabdrag", "1"); });
+    els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform"; el.setAttribute("data-tabdrag", "1"); });
   };
   const onMove = (e) => {
     if(startX === null) return;
