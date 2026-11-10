@@ -120096,7 +120096,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.22";
+const APP_BUILD = "2026-11-10-384.23";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -153796,6 +153796,30 @@ document.addEventListener("visibilitychange", () => {
 });
 /* Stats is Profile's second tab (Fire Code's bar had it as a tab of its own from 382 to 384; its hidden button still routes here) */
 function showStatsScreen(){ return showProfile("stats"); }
+/* ---- THE LAST BOARD, KEPT ON THE DEVICE (384.23) ----
+   What the Leaderboard last read from the server (never a cache's guess: it is only written when the snapshot was served), kept per class under
+   `class26e.lbcache.<academy|ifc>` as {t, rows}. Read only by showRankings, to put real rows up while the first answer of a launch is on its way;
+   it never feeds leaderboardRows / classBoardRows, so nothing else (the week recap, friends, rank-ups) can mistake a stale copy for a fresh one.
+   The rows are the ones the board already shows everybody - keyed by public id, no sync code. At most 80, one write per 20 seconds (a live
+   board answers on every classmate's write), and nothing older than a week is used. */
+var lbCacheWroteAt = 0;
+function lbCacheRead(cls){
+  try{
+    const o = JSON.parse(localStorage.getItem("class26e.lbcache." + cls) || "null");
+    if(o && Array.isArray(o.rows) && o.rows.length && Date.now() - (Number(o.t) || 0) < 7 * 864e5) return o.rows.filter(e => e && typeof e === "object" && e.pub);
+  }catch(e){}
+  return [];
+}
+function lbCacheWrite(cls, rows){
+  try{
+    const now = Date.now();
+    if(now - lbCacheWroteAt < 20000) return;
+    const keep = (rows || []).filter(e => e && e.pub).slice(0, 80);
+    if(keep.length < 2) return;
+    lbCacheWroteAt = now;
+    localStorage.setItem("class26e.lbcache." + cls, JSON.stringify({ t: now, rows: keep }));
+  }catch(e){}
+}
 function showRankings(defaultBoard){
   setActiveNav(null);
   countEl.textContent = "Leaderboard";
@@ -153920,7 +153944,12 @@ function showRankings(defaultBoard){
      are on screen in the frame the tab opens and the snapshot below
      simply replaces them when it lands. */
   /* (385) Fire Code's own rows (classBoardRows), never the academy's (leaderboardRows: what its friends are read from) */
-  const seedRows = ifcBoard ? classBoardRows : leaderboardRows;
+  let seedRows = ifcBoard ? classBoardRows : leaderboardRows;
+  /* (384.23) "The leaderboard, when clicking it, sometimes doesn't load right away, it's grey boxes at first": the first visit of a launch has
+     nothing in memory (classBoardRows / leaderboardRows fill from the first answer), so it stood on placeholders for as long as the cloud took
+     (1-6 seconds on a phone). The last board this device read from the SERVER is kept on the device (lbCacheWrite, below) and seeds the
+     screen the same way memory does: the rows are up in the frame the tab opens, and the live answer replaces them. */
+  if(!(seedRows && seedRows.length)){ const disk = lbCacheRead(ifcBoard ? "ifc" : "academy"); if(disk.length) seedRows = disk; }
   let entries = (seedRows && seedRows.length) ? seedRows.slice() : [];
   let loaded = entries.length > 0;
 
@@ -154157,6 +154186,7 @@ function showRankings(defaultBoard){
            mergeBoardSnapshot. */
         const served = !(snap && snap.metadata && snap.metadata.fromCache);
         entries = mergeBoardSnapshot(entries, next, snap);
+        if(served) lbCacheWrite(ifcBoard ? "ifc" : "academy", entries);
         /* Shared with the Friends screen, which needs the same rows
            and must not open a second listener on the same
            collection. */
