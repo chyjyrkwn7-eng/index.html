@@ -38117,3 +38117,21 @@ Five gates failed on the merged 384.19 (claude/b384-int) and passed on their own
 Not fixed: tabbutter check (2) on the 2560x1440 and 3840x2160 desktops of the FULL run (not `--quick`, which is a phone, 1366x768 and 1920x1080 at 2x) fails on `charFlipAttach` (10 and 12 forced passes on the Leaderboard's first hop; one per character tile, each tile's own timer reading its size after the last one wrote its sheet in). It is not this merge: the tabbutter helper's own tip and origin/main read 12 there too. Batching those reads is a change to the recorded-sheet attach path (builds 308-375) and was left alone.
 
 Gate results (this machine, load about 1.5): tabbutter `--quick` ALL PASS (was: `place` 33-66 per tab change, then `hswFits` 31, then `backToTopRoom` 16, in that order); the full run passes every device except the two desktops above; segdelta `--quick` and `--quick --class ifc` 0 failed; toptabs `--quick` 0 failed; classleave ALL PASS; a2hsbar ALL PASS; qslide fails as on main. check-b384-haptics: the same two Calendar failures as before these changes, plus a Safari-tab Home one that comes and goes between runs.
+
+## 384.18.1 - no weekly Nova pop-up in Fire Code
+
+Madison: "Why did nova pop up for a weekly thing in the fire code class? Remove that."
+
+What it was: Nova's Tuesday-to-Sunday "weekly recap" (`maybeShowWeekRecap`). Fire Code has no weekly board, so since build 383 it was given a
+stripped-down personal version (`buildWeekRecapOptedOut`: your own points, tests and hundos for last week) and still stopped a person once a
+week on Home or the Leaderboard. A second weekly thing was also allowed there: Nova's weekly challenge message (`novaPending(...).weekly`).
+
+Now, in the Fire Code class (`window.NOVA_CLASS === "ifc"`):
+- `maybeShowWeekRecap` returns first thing, marks nothing seen, so the account's `@recap` record is untouched;
+- `novaRecapOwedToday` is false, so a recap that will never play no longer holds Nova's other messages back on a Tuesday;
+- `novaPending` leaves `weekly` null: no challenge message.
+The academy is untouched (its recap and weekly challenge still run). Nothing stored changes, so an account in both classes is unaffected.
+
+Gate: `tools/check-b384-ifcweekly.py` (a Wednesday, both classes; Fire Code: no `.nova-talk`, no seen mark, no recap owed on a Tuesday, no
+challenge in any of twelve weeks; academy: both still there). It fails on 384.19 (the recap plays, 3 checks). `check-b383-classes` (5) used to
+assert the Fire Code recap plays; it now asserts it does not, and still asserts the academy's.
