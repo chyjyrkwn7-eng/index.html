@@ -10705,8 +10705,8 @@ def check_b310(br):
         const btns = [...seg.children].filter(b => b !== sl && b.tagName === 'BUTTON');
         const target = btns.find(b => !b.classList.contains('active') && !b.classList.contains('is-on'));
         target.click(); await wait(60);
-        /* MOVED IN r8: a glass switcher's glide is its lens (attachSegGlass) - the thumb waits, hidden, on the new tab
-           while the lens carries the move - so where there is a lens up, the lens is the indicator measured */
+        /* (r8 had a glass lens carry the move; r18 took it off, so the thumb is the indicator measured - the lens branch below is for a
+           build before r18 only) */
         const le = seg.querySelector(':scope > .seg-lens'), lup = le && +getComputedStyle(le).opacity > .5;
         const ind = lup ? le.querySelector('.tab-lens-body') : sl;
         const mid = lup ? ind.getBoundingClientRect().left + ind.getBoundingClientRect().width / 2 - sl.getBoundingClientRect().width / 2 : sl.getBoundingClientRect().left;
@@ -23938,7 +23938,7 @@ B320H_TABS = """() => {
     const under = seg.classList.contains('sub-seg');
     const pr = (under || !sl) ? a.getBoundingClientRect() : sl.getBoundingClientRect();
     const capMid = base - cap / 2, pillMid = pr.top + pr.height / 2;
-    out.push({ seg: (seg.className.match(/profiletabs|sub-seg|chatdock-tabs|rs-tabs|cal-viewseg/g) || []).join(' '),
+    out.push({ seg: (seg.className.match(/profiletabs|sub-seg|chatdock-seg|chatdock-tabs|rs-tabs|cal-viewseg/g) || []).join(' '),
       label: (a.querySelector('.tab-label') || a).textContent.trim().replace(/\\d+$/, ''),
       off: +(capMid - pillMid).toFixed(2), pillH: +pr.height.toFixed(2), cap: +cap.toFixed(2) });
   });
@@ -24103,7 +24103,7 @@ def check_b320h_fixes(br):
         # Calendar has no Month / List switcher any more, so there is none
         # to measure (check_b324c_calendar holds that it is gone).
         check("%s: every switcher measured (Profile, chat, room review)" % dev,
-              all(k in seen for k in ("profiletabs", "chatdock-tabs", "rs-tabs")), sorted(seen))
+              all(k in seen for k in ("profiletabs", "rs-tabs")) and ("chatdock-seg" in seen or "chatdock-tabs" in seen), sorted(seen))   # (384 r18: the chat sheet's three tabs are the .chatdock-seg inside its tab row)
         ctx.close()
     # ---- 4: Save and exit --------------------------------------------------
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)

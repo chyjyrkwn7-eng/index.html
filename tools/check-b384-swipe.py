@@ -63,7 +63,7 @@ STATE = """()=>{ const seg=document.querySelector('#stage .navsegment'); const a
   const anim=document.getAnimations().filter(a=>{ const tm=a.effect&&a.effect.getTiming&&a.effect.getTiming(); return a.playState==='running' && tm && tm.fill==='forwards' && isFinite(tm.iterations) && [110,170,200,260].indexOf(tm.duration)>=0 && a.effect.target && a.effect.target.closest && a.effect.target.closest('#stage'); }).length;
   return { tab: act&&act.textContent.trim(), left: !!moving, anims: anim }; }"""
 # the first y on the screen where a finger belongs to the swipe (not on a slider, a field, the switcher)
-FINDY = """()=>{ for(const y of [500,620,380,740,300,820]){ const e=document.elementFromPoint(300,y); if(e && !e.closest('input,textarea,select,.sliderwrap,.has-seg-glass,[data-noswipe],.bottomtabs,#bottomtabs')) return y; } return 500; }"""
+FINDY = """()=>{ for(const y of [500,620,380,740,300,820]){ const e=document.elementFromPoint(300,y); if(e && !e.closest('input,textarea,select,.sliderwrap,.has-seg-thumb,[data-noswipe],.bottomtabs,#bottomtabs')) return y; } return 500; }"""
 
 def touch(cdp, typ, x=None, y=None):
     cdp.send("Input.dispatchTouchEvent", {"type": typ, "touchPoints": [] if x is None else [{"x": x, "y": y}]})
