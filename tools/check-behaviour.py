@@ -8934,7 +8934,9 @@ def check_b303(br):
         # ("exam mode and review mode need a new name and logo"). The sheet,
         # the list and the card all say the same thing.
         # MOVED IN 326 (b326d): Review again ("I kinda prefer briefing to be called review")
-        check(dev + ": the mode is called Review everywhere (build 326)", r.get("sheetTitle") == "Review" and r.get("listTitle") == "Review", (r.get("sheetTitle"), r.get("listTitle")))
+        # MOVED IN 384 r21: the sheet is titled "Review settings" (a settings title, not the bare mode); the list says Review
+        check(dev + ": the mode is called Review in the list, and its sheet is titled as settings (build 326, 384 r21)",
+              (r.get("sheetTitle") or "").endswith(" settings") and (r.get("sheetTitle") or "").startswith("Review") and r.get("listTitle") == "Review", (r.get("sheetTitle"), r.get("listTitle")))
         # MOVED IN 324: "if flashcards are on, it would probably just say the
         # same thing, begin review" - Begin names the mode, flashcards or not.
         check(dev + ": with Flashcards on, Begin says Begin review and opens a card (build 324, 326's name)", r.get("beginText") == "Begin review" and r.get("fcCard") is True, r.get("beginText"))
@@ -27319,8 +27321,11 @@ def check_b324m_modes(br):
                 "review": ("Review", "Begin review"), "flash": ("Review", "Begin review")}  # 326: Review again
         for k, (name, begin) in want.items():
             s = sh.get(k) or {}
-            check("%s %s sheet: titled %s, the box and the chip say %s, Begin reads %r" % (label, k, name, name, begin),
-                  s.get("title") == name and s.get("box") == name and s.get("chip") == name and s.get("begin") == begin,
+            # MOVED IN 384 r21: the sheet's title is the generic settings title ("Test settings", "Review settings"), not the mode
+            # a third time - asserted by shape (a settings title that is not the mode's name); the box, the chip and Begin say the mode
+            check("%s %s sheet: titled as settings (not %s), the box and the chip say %s, Begin reads %r" % (label, k, name, name, begin),
+                  (s.get("title") or "").endswith(" settings") and s.get("title") != name and s.get("title") != s.get("box")
+                  and s.get("box") == name and s.get("chip") == name and s.get("begin") == begin,
                   {x: s.get(x) for x in ("title", "box", "chip", "begin")})
         ex = sh.get("exam") or {}
         check("%s no Instant feedback anywhere in the Qualifier's sheet" % label,
