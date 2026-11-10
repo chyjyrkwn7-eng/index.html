@@ -166,11 +166,10 @@ def walk(br, dev, cls):
         click_or(pg, "#bottomtab-calendar", "()=>showCalendarTab()"); at("the Calendar", True, under=True)
         pg.evaluate("()=>showAppearance()"); at("Settings", None, under=True)
     else:
-        # Fire Code's bar: Home, Profile, Stats, Settings
-        click_or(pg, "#bottomtab-stats", "()=>showProfile('stats')"); at("the Stats tab", True, under=True)
+        # Fire Code's bar (385): Home, Profile, Leaderboard, Settings; Stats is Profile's second tab
+        click_or(pg, "#bottomtab-rewards", "()=>showRankings('overall')"); at("the Leaderboard", True, 1500, under=True)
         click_or(pg, "#bottomtab-settings", "()=>showAppearance()"); at("the Settings tab", True, under=True)
     for page in ["sound", "study", "motion", "sync", "share", "rankings", "account"]:
-        if page == "rankings" and cls == "ifc": continue
         pg.evaluate("(p)=>showAppearance({ page: p })", page); at("Settings > " + page, None, 700, under=True)
     pg.evaluate("()=>showCredits()"); at("Contributors", None, under=True)
     pg.evaluate("()=>showSettingsText('legal')"); at("Legal", None, 700, under=True)

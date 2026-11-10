@@ -1803,9 +1803,33 @@
      the last frame of the old page until the new one has drawn something, so that last frame is the loader. */
   #class-switch-loader{
     position:fixed; inset:0; width:100vw; height:100vh; height:100lvh; overflow:hidden; z-index:100000;
-    background:var(--splash-bg, #0A0A0A); opacity:0; transition:opacity .16s ease; pointer-events:auto; touch-action:none;
+    background:var(--splash-bg, #0A0A0A); opacity:0; transition:opacity .24s cubic-bezier(.4,0,.2,1); pointer-events:auto; touch-action:none;
+    will-change:opacity;
   }
   #class-switch-loader.is-on{ opacity:1; }
+  /* (384 r21) ONE CALM COVER. The cover is the near-black the splash is (and the status bar's cover colour), faded in over the screen
+     that is up in opacity only; its mark (the word, the line, the bar) comes in AFTER the cover is over the screen, not with it -
+     it used to appear at once over Home's own NOVA and read as the word twice. Where the mark rests is where the splash puts it
+     (pic, in switchClass), so the reload under it changes nothing. */
+  #class-switch-loader #csl-group{ opacity:0; transition:opacity .16s ease .14s; }
+  #class-switch-loader.is-on #csl-group{ opacity:1; }
+  /* the new page's cover lifts in opacity alone: the splash's word and bar no longer drift back 4% as it fades (they are the cover's
+     mark, which did not move on the way in) */
+  #splashscreen.splash-hide.class-lift #splash-group{ scale:none; }
+  /* ...and the mark goes first (.12s), the cover after it (.3s): the word is on Home too, in another place, and the two are not shown
+     together while the cover is still thick */
+  html.class-arrive #splashscreen.class-lift #splash-group{ opacity:0 !important; transition:opacity .12s ease !important; }
+  /* (384 r21) HOME ARRIVES INTO THE LIFTING COVER (body.class-rise, finishSplash): the planet, then the greeting and the button, then
+     the tab bar - three steps, a fade and a few px (`translate` and `scale`, so a phone's own transform on the planet and the bar's
+     centring are not replaced), each backwards-filled so a part is not seen before its turn. Not in reduce motion: the cover alone
+     cross-fades there. */
+  @keyframes class-rise{ from{ opacity:0; translate:0 10px; } to{ opacity:1; translate:0 0; } }
+  @keyframes class-rise-hero{ from{ opacity:0; scale:.96; } to{ opacity:1; scale:1; } }
+  body.class-rise #stage .screen-home-actual .cosmic-hero-wrap{ animation:class-rise-hero .42s cubic-bezier(.2,.7,.2,1) 0s backwards; }
+  body.class-rise #stage .screen-home-actual :is(.hometitle-wrap, .playbtn, .class-bubble-wrap){ animation:class-rise .4s cubic-bezier(.2,.7,.2,1) .06s backwards; }
+  body.class-rise .bottomtabs{ animation:class-rise .4s cubic-bezier(.2,.7,.2,1) .12s backwards; }
+  /* (no reduced-motion rules here: finishSplash never adds body.class-rise for a person with reduced motion, and a `*` rule under a body
+     class makes the whole page restyle the moment the class goes on - the same frame the cover is lifting in) */
   /* (384) its colours turn from the class left to the class it opens (switchClass animates these from one to the other) */
   @property --csw-c1{ syntax:"<color>"; inherits:true; initial-value:#FFD37A; }
   @property --csw-c2{ syntax:"<color>"; inherits:true; initial-value:#F5804D; }
@@ -39346,9 +39370,13 @@ html.is-browser{ --fade-paper: transparent; }
     var arrive = window.NOVA_CLASS_ARRIVE || null, arriveAt = 0;
     try{ sessionStorage.removeItem("class26e.classswitch"); }catch(e){}
     try{ document.documentElement.classList.remove("class-arrive-pre"); var pre = document.getElementById("class-arrive-pre"); if(pre) pre.remove(); }catch(e){}
+    /* (384 r21) A CLASS SWITCH IS ONE MOTION (see #class-switch-loader): the cover holds for what is left of CSW_HOLD_MS from the
+       tap (a floor, so a fast reload is not a flicker) and then only until the new class's Home is BUILT (arriveReady) - it used
+       to hold 2.5s from the tap whatever Home was doing, 1.5s of it with Home done and waiting, and then fade for .75s with its
+       own NOVA over Home's NOVA. */
     if(arrive && !isUpdating){
-      duration = Math.max(800, Number(arrive.dur) || 2500);
-      arriveAt = Math.max(0, Math.min(duration - 800, Date.now() - arrive.at));
+      duration = Math.max(150, (Number(arrive.min) || 900) - Math.max(0, Date.now() - arrive.at));
+      arriveAt = 0;
     }
     /* A FIRST VISIT OPENS ON GET STARTED, NOT THE LOADING SCREEN (build 330): "The start up sequence, it
        does the loading thing first before the start up, don't do that." Nothing on this device - no code,
@@ -39444,7 +39472,8 @@ html.is-browser{ --fade-paper: transparent; }
     }
     var messageCount = isUpdating ? 4 : (isReturningUser ? 3 : 6);
     var messages = pool.slice(0, Math.min(messageCount, pool.length)).concat([readyMsg]);
-    if(arrive && arriveAt && arrive.line) messages[0] = String(arrive.line);
+    /* (384 r21) a switch says one thing, the line the loader said: no rotating "syncing... booting... ready." over the planet */
+    if(arrive && !isUpdating && arrive.line) messages = [String(arrive.line)];
     var msgInterval = duration / messages.length;
     var msgIndex = 0;
     statusEl.textContent = messages[0];
@@ -39458,16 +39487,12 @@ html.is-browser{ --fade-paper: transparent; }
        reduce-motion rule would otherwise leave it empty. */
     fill.style.setProperty("animation", "loadbar-fill " + duration + "ms linear " + (arriveAt ? -arriveAt : 0) + "ms forwards", "important");
     /* (384) from a class switch the bar carries on from where the loader's creep is now (CSW_CREEP_MS: a reload over a slow
-       connection can take far longer than the 1.7s the bar ran to before), and fills from there over what is left */
-    if(arrive){
+       connection can take far longer than the 1.7s the bar ran to before) - and (r21) goes on creeping until the new Home is
+       built, then runs to full as the cover lifts (finishSplash) */
+    if(arrive && !isUpdating){
       try{
-        var since = Math.max(0, Date.now() - arrive.at);
-        var CS = [[0, 0], [1700, .68], [4000, .78], [10000, .86], [30000, .93], [60000, .96]], p0 = .96;
-        for(var ci = 1; ci < CS.length; ci++){ if(since <= CS[ci][0]){ p0 = CS[ci - 1][1] + (CS[ci][1] - CS[ci - 1][1]) * (since - CS[ci - 1][0]) / (CS[ci][0] - CS[ci - 1][0]); break; } }
-        var fk = document.createElement("style");
-        fk.textContent = "@keyframes csw-finish{from{transform:scaleX(" + p0.toFixed(4) + ");}to{transform:scaleX(1);}}";
-        document.head.appendChild(fk);
-        fill.style.setProperty("animation", "csw-finish " + Math.max(400, duration - arriveAt) + "ms linear 0ms forwards", "important");
+        var since = Math.max(0, Math.min(59999, Date.now() - arrive.at));
+        fill.style.setProperty("animation", "csw-creep 60000ms linear -" + since + "ms forwards", "important");
       }catch(e){}
     }
     /* the loader has already run arriveAt of the bar: the splash lasts what is left of it */
@@ -39495,6 +39520,27 @@ html.is-browser{ --fade-paper: transparent; }
        and then goes whatever is there, so a launch that never mounts one is not held behind it. A first visit is not held:
        its splash is never shown (Get Started is the first thing seen). */
     var SPLASH_STAGE_WAIT_MS = 6000, splashWaitUntil = 0, splashPoll = 0;
+    /* (384 r21) A CLASS SWITCH LIFTS ONLY OVER A BUILT HOME. Arriving from the class button the cover is not on a clock: it
+       waits for the planet, the greeting's button and the tab bar to be in the page (a screen that is not Home - a sign-in or a
+       sign-up carrying on - once it has been up a moment), then the bar runs to full as the cover fades (opacity only, .3s) and
+       Home's parts ease in after it (body.class-rise, three steps). Never for good: SPLASH_STAGE_WAIT_MS, as every launch. */
+    var arriving = !!arrive && !isUpdating && !firstVisit, arriveStarted = false, arriveHomeAt = 0, arriveAnyAt = 0, arriveWaitUntil = 0;
+    var arriveCalm = !!(arrive && arrive.calm);
+    try{ arriveCalm = arriveCalm || document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){}
+    function arriveReady(){
+      var now = performance.now(), stg = document.getElementById("stage");
+      if(!arriveWaitUntil) arriveWaitUntil = now + SPLASH_STAGE_WAIT_MS;
+      if(now >= arriveWaitUntil) return true;
+      if(!stg || !stg.firstElementChild) return false;
+      if(!arriveAnyAt) arriveAnyAt = now;
+      var h = stg.querySelector('[data-screen="home"]');
+      if(h && h.querySelector(".cosmic-hero-wrap") && document.getElementById("nextbtn")){
+        if(!arriveHomeAt) arriveHomeAt = now;
+        var bt = document.querySelector(".bottomtabs");
+        return now - arriveHomeAt > 40 && ((bt && !bt.hidden) || now - arriveHomeAt > 500);
+      }
+      return now - arriveAnyAt > 1500;
+    }
     function finishSplash(){
         if(splashDone) return;
         if(!firstVisit){
@@ -39506,6 +39552,25 @@ html.is-browser{ --fade-paper: transparent; }
               return;
             }
           }
+        }
+        if(arriving && !arriveStarted){
+          if(!arriveReady()){
+            if(!splashPoll) splashPoll = setTimeout(function(){ splashPoll = 0; finishSplash(); }, 30);
+            return;
+          }
+          arriveStarted = true;
+          try{
+            /* the bar runs from where it is to full as the cover starts to go; the cover fades in opacity only */
+            var cs = getComputedStyle(fill).transform;
+            fill.style.setProperty("animation", "none", "important");
+            if(fill.animate) fill.animate([{ transform: cs && cs !== "none" ? cs : "scaleX(.9)" }, { transform: "scaleX(1)" }], { duration: arriveCalm ? 100 : 120, easing: "ease-out", fill: "forwards" });
+            splash.classList.add("class-lift");
+            splash.style.setProperty("transition", "opacity " + (arriveCalm ? ".14s linear" : ".3s cubic-bezier(.4,0,.2,1)"), "important");
+            if(!arriveCalm){
+              document.body.classList.add("class-rise");
+              setTimeout(function(){ document.body.classList.remove("class-rise"); }, 1100);
+            }
+          }catch(e){}
         }
         splashDone = true;
         clearInterval(msgTimer);
@@ -39542,7 +39607,7 @@ html.is-browser{ --fade-paper: transparent; }
              nothing ever ran it again once the splash was gone and Home
              came up with no chat button at all. */
           try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
-        }, 800);   /* (384) after the .75s fade */
+        }, arriving ? 450 : 800);   /* (384) after the .75s fade (r21: a class switch's cover lifts in .3s) */
     }
     requestAnimationFrame(tick);
   })();
@@ -56293,6 +56358,7 @@ function maybeNewClassBanner(){
     newClassTimer = setTimeout(attempt, 2400);
   });
 }
+var classListRetract = null, classListClose = null;   /* (384 r21) set by the class button's list (mountClassBubble) */
 function mountClassBubble(){
   if(!classSwitchAllowed()) return;
   const cur = NOVA_CLASSES.find(c => c.key === window.NOVA_CLASS) || NOVA_CLASSES[0];
@@ -56320,6 +56386,10 @@ function mountClassBubble(){
     stack.appendChild(b);
   });
   const outside = (e) => { if(!wrap.contains(e.target)) closeStack(); };
+  /* (384 r21) a switch: the list folds back into the class button at the tap, and Home stays stepped back behind the cover that
+     is coming (the dim stays; the cover takes it from there). classListClose gives it all back if the switch is given up. */
+  classListRetract = () => { try{ wrap.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false"); document.removeEventListener("pointerdown", outside, true); }catch(e){} };
+  classListClose = () => { try{ closeStack(); }catch(e){} };
   /* what is behind steps back while the list is open (#stage.class-list-open); the class goes with the list - shut, or the
      list taken off the screen by the next screen's mount, which would otherwise leave that screen dimmed and untappable */
   let dimWatch = null;
@@ -56387,6 +56457,8 @@ function warmIfcBankSoon(){
    bar creeps on (csw-creep: 68% at 1.7s, 78% at 4s, 86% at 10s, 93% at 30s, 96% at a minute) - the head script's arrival
    picture and the splash carry both on from the same numbers */
 const CSW_TINT_MS = 1400, CSW_CREEP_MS = 60000;
+/* (384 r21) the new page's cover holds at least this long from the tap, and gives the old screen back after this long with no reload */
+const CSW_HOLD_MS = 900, CSW_GIVEUP_MS = 60000;
 function switchClass(key, row, opts){
   opts = opts || {};
   if(!classSwitchAllowed() || !NOVA_CLASSES.some(c => c.key === key)) return;
@@ -56398,12 +56470,17 @@ function switchClass(key, row, opts){
   try{ if(key === "academy") localStorage.removeItem("class26e.activeclass"); else localStorage.setItem("class26e.activeclass", key); }catch(e){ return; }
   if(row) row.classList.add("is-going");
   document.documentElement.classList.add("class-switching");
+  /* (384 r21) the list closes into the class button as the cover comes in (Home stays stepped back: no brightening under it) */
+  try{ if(classListRetract) classListRetract(); }catch(e){}
   /* (384) NO BLANK SCREEN ON THE WAY (see #class-switch-loader): the splash's picture fades in OVER the screen that is up, its bar
      already moving, and the page reloads under it once it covers the screen - the new page's splash carries on from it */
-  const DUR = 2500;
+  /* (384 r21) the cover holds at least CSW_HOLD_MS from the tap on the new page (a floor: a fast reload is not a flicker), then
+     lifts the moment the new Home is built (finishSplash); a person with reduced motion gets a plain quick cross-fade */
+  const calm = (() => { try{ return document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){ return false; } })();
   const info = NOVA_CLASS_INFO[key] || {}, cls = NOVA_CLASSES.find(c => c.key === key) || {};
   const line = "> opening " + String(info.title || cls.name || "your class") + "...";
-  let reloadIn = 380;
+  let reloadIn = 380, went = false, goReload = null;
+  const inApp = (() => { try{ return navigator.standalone === true || !!(window.matchMedia && matchMedia("(display-mode: standalone)").matches); }catch(e){ return false; } })();
   try{
     const L = document.createElement("div");
     L.id = "class-switch-loader"; L.setAttribute("role", "status"); L.setAttribute("aria-label", "Opening " + String(info.title || cls.name || "your class"));
@@ -56439,6 +56516,7 @@ function switchClass(key, row, opts){
        and slower, never quite full (csw-creep, CSW_CREEP_MS) - a reload over a slow connection fetches the page again, and a
        bar that holds still for that long reads as frozen. The new page's picture and splash carry on from the same curve. */
     L.querySelector("#csl-fill").style.setProperty("animation", "csw-creep " + CSW_CREEP_MS + "ms linear 0ms forwards", "important");
+    if(calm){ L.style.setProperty("transition", "opacity .14s linear", "important"); const gr = L.querySelector("#csl-group"); gr.style.setProperty("transition", "none", "important"); gr.style.opacity = "1"; }
     document.body.appendChild(L);
     const at = Date.now();
     const to = ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => getComputedStyle(L).getPropertyValue(v).trim());
@@ -56461,17 +56539,43 @@ function switchClass(key, row, opts){
       if(!pic.c.every(okc)) pic = null;
     }catch(e){ pic = null; }
     /* (384) join: joining the academy from Fire Code; note: what the class says as it opens (a sign-in, a sign-up going on) */
-    try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, dur: DUR, line, to: key, pic, join: opts.join ? 1 : 0, note: opts.note || "" })); }catch(e){}
+    try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, min: CSW_HOLD_MS, line, to: key, pic, join: opts.join ? 1 : 0, note: opts.note || "", calm: calm ? 1 : 0 })); }catch(e){}
     void L.offsetWidth;
     L.classList.add("is-on");
-    /* covered once its fade is done and a frame has shown it whole */
-    reloadIn = 230;
+    /* (384 r21) THE STATUS BAR GOES WITH THE COVER, under it: in a browser tab (an installed app's bar is read once, at launch) Safari's
+       bars take the splash's colour as the cover comes in - they kept the class left's tint until the reload - and the new page's
+       splash holds them there until the cover lifts (finishSplash hands them back) */
+    if(!inApp){
+      try{
+        const bg = getComputedStyle(document.documentElement).getPropertyValue("--splash-bg").trim() || "#0A0A0A";
+        const tc = document.getElementById("themecolor"); if(tc) tc.content = bg;
+        document.documentElement.style.background = bg;
+      }catch(e){}
+    }
+    /* covered once its fade is done (.24s, .14s calm) - the fade's own end (transitionend), not a timer for it: a busy main thread
+       stretches the fade, and a reload that started under a half-thick cover showed the new page's first frame against it (the
+       timer is only the fallback) */
+    reloadIn = calm ? 450 : 650;
+    L.addEventListener("transitionend", e => { if(e.target === L && e.propertyName === "opacity") goReload(); });
     /* a reload that never happens (blocked) gives the screen back - (384) after a minute, not 8s: a reload over a slow connection
        is still under way at 8s (iOS has no event to say so), and giving the old screen back then left it there, stale, until
        the new page landed on top of it */
-    setTimeout(() => { if(L.isConnected){ L.remove(); document.documentElement.classList.remove("class-switching"); } }, 60000);
+    setTimeout(() => {
+      if(L.isConnected){
+        L.remove(); document.documentElement.classList.remove("class-switching");
+        try{ document.documentElement.style.background = ""; if(typeof syncStatusBarColor === "function") syncStatusBarColor(); }catch(e){}
+        try{ if(classListClose) classListClose(); }catch(e){}   /* the screen is given back whole: its list shut, Home not stepped back */
+      }
+    }, CSW_GIVEUP_MS);
   }catch(e){}
-  setTimeout(() => { try{ persistLocally(); }catch(e){} requestAnimationFrame(() => requestAnimationFrame(() => location.reload())); }, reloadIn);
+  goReload = () => {
+    if(went) return; went = true;
+    try{ persistLocally(); }catch(e){}
+    /* a sign-in's or a sign-up's screen is taken off under the cover, not before it (it was emptied first: a blank beat under the fade) */
+    if(opts.clear){ try{ stage.replaceChildren(); }catch(e){} }
+    requestAnimationFrame(() => requestAnimationFrame(() => location.reload()));
+  };
+  setTimeout(goReload, reloadIn);
 }
 /* ---- NOVA GREETS A NEW CLASS (build 328) ----
    "When signing up the new class, ensure you get greeted by nova for signing up, he will talk
@@ -56639,7 +56743,14 @@ function buildLeaderboardClassList(){
   card.className = "settings-card settings-list settings-lb-classes";
   let acad = null;
   try{ acad = (window.NOVA_CLASS === "ifc") ? academyCopyNow() : store; }catch(e){ acad = store; }
-  const status = k => k === "academy" ? ((acad && acad.leaderboardOptIn) ? "Shown" : "Hidden") : "No leaderboard";
+  /* (385) Fire Code has a leaderboard of its own: its switch is on its own store (read from the academy's page off the class's
+     saved copy) */
+  const ifcOn = () => {
+    if(window.NOVA_CLASS === "ifc") return store.leaderboardOptIn !== false;
+    try{ const c = JSON.parse(localStorage.getItem("class26e.ifc.drill.v1") || "null"); return !(c && c.leaderboardOptIn === false); }catch(e){ return true; }
+  };
+  const status = k => k === "academy" ? ((acad && acad.leaderboardOptIn) ? "Shown" : "Hidden")
+    : k === "ifc" ? (ifcOn() ? "Shown" : "Hidden") : "No leaderboard";
   mine.forEach(k => {
     const info = NOVA_CLASS_INFO[k] || {};
     const row = document.createElement("div");
@@ -56705,6 +56816,9 @@ function leaveClass(k){
 function finishLeaveClass(k){
   if(!setEnrolled(k, false)) return;
   const name = classTitle(k);
+  /* (385) leaving Fire Code takes the account's row off Fire Code's board (the class's own copy never runs again until it is
+     joined again; that visit publishes the row back) */
+  if(k === "ifc"){ try{ retireOtherClassBoardRow("ifc", publicIdOf()); }catch(e){} }
   if(k === "academy"){
     try{ retireLeaderboardEntry(publicIdOf()); }catch(e){}
     try{ pushToCloud(true); }catch(e){}
@@ -66683,6 +66797,14 @@ ROW_LAZY_FIELDS.push("wk", "pwk");
    the end of a run and go at once (flushLeaderboardRow) - and every write
    is read again by each open board. */
 const ROW_SCORE_PUSH_MS = 5 * 60 * 1000;
+/* EACH CLASS HAS ITS OWN LEADERBOARD (build 385): the academy's is the `leaderboard` collection, one document a person, exactly as
+   it has always been. Every other class keeps its board in ONE document of `vrooms` - `lb-<class>-v1`, { kind, cls, rows: { <public
+   id>: row } } - the collection Fire Code already writes (the presence beat lives there the same way). It is read by that class
+   alone, so the academy's board never lists these people and no build that already runs can: no build reads this document. */
+const CLASS_BOARD_DOC = { ifc: "lb-ifc-v1" };
+/* Fire Code's board as the Leaderboard screen last read it (the academy's is leaderboardRows, which Fire Code's friends read
+   from and its board never touches) */
+let classBoardRows = [];
 __bm("L53559");
 let lastRowSig = null, lastRowUrgentSig = null, lastRowPushAt = 0, rowPushTimer = null;
 /* WHICH DOCUMENT THE CACHED SIGNATURE DESCRIBES. Without this, "the row
@@ -68058,11 +68180,55 @@ function noteAcademyCopy(d){
   if((Number(d.lastModified) || 0) >= cur.lastModified) academyCopy = pickAcademyCopy(d);
 }
 function socialMe(){
-  if(window.NOVA_CLASS !== "ifc") return { publicId: store.publicId, firstName: store.firstName, avatarChar: store.avatarChar, optIn: !!store.leaderboardOptIn };
+  if(window.NOVA_CLASS !== "ifc") return { publicId: store.publicId, firstName: store.firstName, avatarChar: store.avatarChar, avatarCharIfc: ifcCharOfMe(), optIn: !!store.leaderboardOptIn };
   const a = academyCopyNow();
   return { publicId: a.publicId || store.publicId, firstName: a.firstName || store.firstName,
-           avatarChar: a.avatarChar || store.avatarChar, optIn: a.leaderboardOptIn !== false };
+           avatarChar: a.avatarChar || store.avatarChar, avatarCharIfc: ifcCharOfMe(), optIn: a.leaderboardOptIn !== false };
 }
+/* ---- EVERYONE IS SHOWN WEARING THEIR OWN CHARACTER OF THE CLASS YOU ARE IN (384 r11) ----
+   Madison: "In the friends chat, if I look at them while in one class, I'll see what they have selected as the placeholder in the
+   class I'm in. I guess it would be whatever class they are currently in and whatever character that is, so it may change
+   constantly." One account is two classes, each with its own character; everything social carried only the academy's, and Fire
+   Code re-skins an academy id as its own look (IFC_ART_ON), so a friend in the academy's Marksman showed in Fire Code as a Hazmat
+   they never chose or unlocked there. Now what a person says about themselves carries BOTH: `avatarChar` stays the academy's
+   (every older build reads that, unchanged) and `avatarCharIfc` is what the account wears in Fire Code (the presence beat's `fv`
+   beside `v`). faceCharFor(card, pub) is the one reader - the academy page draws `avatarChar`, Fire Code draws `avatarCharIfc`, else
+   the class's starter - and faceSpanFor() draws it. Your own face in your own class is simply store.avatarChar. */
+function faceCharValid(id){
+  try{ return typeof id === "string" && !!id && AVATAR_CHARACTERS.some(c => c.id === id); }catch(e){ return false; }
+}
+/* What the account wears in Fire Code, or null when it is not in that class or has never opened it. In Fire Code that is the store;
+   in the academy page it is read off Fire Code's own saved copy - an exact key, the academy page has no key mapping (only the
+   character is taken from it, never a code or progress). */
+function ifcCharOfMe(){
+  if(window.NOVA_CLASS === "ifc") return faceCharValid(store.avatarChar) ? store.avatarChar : null;
+  try{
+    if(accountClassesOf(store).indexOf("ifc") < 0) return null;
+    const raw = localStorage.getItem("class26e.ifc.drill.v1");
+    const o = raw ? JSON.parse(raw) : null;
+    return (o && faceCharValid(o.avatarChar)) ? o.avatarChar : null;
+  }catch(e){ return null; }
+}
+/* A person's Fire Code character as their own beat last said it (presenceClasses[pub].fv), or null */
+function presenceIfcChar(pub){
+  try{
+    const e = pub && presenceClasses && presenceClasses[pub];
+    return (e && typeof e === "object" && faceCharValid(e.fv)) ? e.fv : null;
+  }catch(err){ return null; }
+}
+/* The character id to DRAW for somebody else in the class this page is. `card` is whatever the screen holds about them (a board
+   row, a friend card, a chat or room entry: avatarChar and, from this build, avatarCharIfc); `pub` their public id when the card
+   does not carry it. A board row for another class's board can set avatarCharIfc to have its own character drawn here. */
+function faceCharFor(card, pub){
+  const c = card || {};
+  if(c.nova || c.avatarChar === "nova") return c.avatarChar || "nova";
+  const key = pub || c.pub || c.key || null;
+  if(window.NOVA_CLASS !== "ifc") return c.avatarChar || "ghost";
+  if(key && (key === store.publicId || key === academyCopyNow().publicId) && faceCharValid(store.avatarChar)) return store.avatarChar;
+  if(faceCharValid(c.avatarCharIfc)) return c.avatarCharIfc;
+  return presenceIfcChar(key) || classDefaultCharacter() || c.avatarChar || "ghost";
+}
+function faceSpanFor(card, pub){ return avatarSpanFor({ avatarChar: faceCharFor(card, pub) }); }
 /* class sharing, which friends need (they are read off the class board): the academy account's choice in every class */
 function socialOptIn(){ return !!socialMe().optIn; }
 /* What a mailbox message or a chat roster entry says about you. In Fire Code the numbers are the academy row's (null until
@@ -68070,11 +68236,11 @@ function socialOptIn(){ return !!socialMe().optIn; }
 function socialCard(){
   const me = socialMe();
   if(window.NOVA_CLASS !== "ifc"){
-    return { firstName: me.firstName, avatarChar: me.avatarChar, level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount() };
+    return { firstName: me.firstName, avatarChar: me.avatarChar, avatarCharIfc: me.avatarCharIfc, level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount() };
   }
   const row = (me.publicId && rowsByPublicId()[me.publicId]) || null;
   /* the level the academy published (fixBoardLevel keeps it as rawLevel when it caps what the board draws) */
-  return { firstName: me.firstName, avatarChar: me.avatarChar,
+  return { firstName: me.firstName, avatarChar: me.avatarChar, avatarCharIfc: me.avatarCharIfc,
            level: row ? (Number(typeof row.rawLevel === "number" ? row.rawLevel : row.level) || 0) : null, badges: row ? (Number(row.badges) || 0) : null,
            mystery: row ? (Number(row.mystery) || 0) : null };
 }
@@ -68260,7 +68426,7 @@ let presenceClasses = null;
 function presenceClassesValue(){
   let k = "academy"; try{ k = enrolledClasses().join(",") || "academy"; }catch(e){}
   const out = { k: k };
-  try{ const me = socialMe(); if(me.firstName) out.n = String(me.firstName).slice(0, 40); if(me.avatarChar) out.v = String(me.avatarChar).slice(0, 40); }catch(e){}
+  try{ const me = socialMe(); if(me.firstName) out.n = String(me.firstName).slice(0, 40); if(me.avatarChar) out.v = String(me.avatarChar).slice(0, 40); if(me.avatarCharIfc) out.fv = String(me.avatarCharIfc).slice(0, 40); }catch(e){}
   /* (384 r13) the friend code, `f`: the handle somebody types to add this person. The board row carries it, but a person in Fire Code
      alone has no board row, and so could not be found by code ("no one in the class has that code"). A friend code is already
      public on every board row; it is not a sync code. */
@@ -68282,7 +68448,7 @@ function friendClassesOf(pub){
 /* A friend's name and character as their own beat gave them, or null */
 function friendCardFromPresence(pub){
   const e = pub && presenceClasses && presenceClasses[pub];
-  return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ghost" } : null;
+  return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ghost", avatarCharIfc: faceCharValid(e.fv) ? e.fv : null } : null;
 }
 /* ---- A FRIEND, AS EVERY FRIENDS SCREEN DRAWS THEM (384, Virtual Room round 2) ----
    Madison: "If I'm friends with someone they should be there and stuff." A friend in Fire Code alone has no academy board row,
@@ -68305,7 +68471,7 @@ function friendCardOf(pub, rows){
   try{
     const code = friendChatCode(pub);
     const p = ((chatListPeople || {})[code] || []).find(x => x && x.key === pub);
-    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ghost", fromChat: true };
+    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ghost", avatarCharIfc: p.avatarCharIfc || null, fromChat: true };
     const ce = chatEntry(code);
     if(ce && ce.name) return { pub: pub, firstName: String(ce.name), fromChat: true };
   }catch(e){}
@@ -68331,7 +68497,7 @@ function paintFriendFallbacks(){
     if(el.dataset.friendName){ if(c.firstName) el.textContent = c.firstName; }
     else {
       const old = el.querySelector(".rank-avatar");
-      try{ const nu = avatarSpanFor(c); if(old) old.replaceWith(nu); else el.prepend(nu); }catch(e){}
+      try{ const nu = faceSpanFor(c, pub); if(old) old.replaceWith(nu); else el.prepend(nu); }catch(e){}
     }
     delete el.dataset.fallback;
   });
@@ -68744,7 +68910,7 @@ function celebrateNewFriend(pub, tries){
     return;
   }
   try{ const m = friendMomentShown(); m[pub] = Date.now(); localStorage.setItem(FRIEND_MOMENT_KEY, JSON.stringify(m)); }catch(e){}
-  const e = Object.assign({ pub: pub }, rowsByPublicId()[pub] || {});
+  const e = Object.assign({ pub: pub }, rowsByPublicId()[pub] || friendCardFromPresence(pub) || {});
   const name = e.firstName || "A friend";
   if(typeof theme === "object" && theme && theme.muteBanners){
     showToast("You and " + name + " are now friends.", "good");
@@ -68761,7 +68927,7 @@ function celebrateNewFriend(pub, tries){
   const a = document.createElement("span"); a.className = "friend-moment-art";
   try{ a.appendChild(avatarSpanFor({ avatarChar: store.avatarChar || "ghost" })); }catch(err){}
   const b = document.createElement("span"); b.className = "friend-moment-art";
-  try{ b.appendChild(avatarSpanFor(e)); }catch(err){}
+  try{ b.appendChild(faceSpanFor(e, pub)); }catch(err){}
   const link = document.createElement("span"); link.className = "friend-moment-link";
   link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3 4.6 13.1A4.6 4.6 0 0 1 12 7.2a4.6 4.6 0 0 1 7.4 5.9Z" fill="currentColor"/></svg>';
   pair.append(a, link, b);
@@ -68960,7 +69126,7 @@ function sendToInbox(pub, payload){
       at: Date.now(),
       firstName: card.firstName || "Someone",
       avatarChar: card.avatarChar || "ghost"
-    }, card.level == null ? {} : {
+    }, card.avatarCharIfc ? { avatarCharIfc: card.avatarCharIfc } : {}, card.level == null ? {} : {
       level: card.level,
       badges: card.badges,
       mystery: card.mystery
@@ -68982,7 +69148,7 @@ function sendToInboxSlot(pub, slot, payload){
       pub: publicIdOf(), at: Date.now(),
       firstName: me.firstName || "Someone",
       avatarChar: me.avatarChar || "ghost"
-    }, payload);
+    }, me.avatarCharIfc ? { avatarCharIfc: me.avatarCharIfc } : {}, payload);
     inboxDocFor(pub).set({ kind: "inbox", msgs: { [slot]: msg } }, { merge: true }).catch(() => {});
   }catch(e){}
 }
@@ -69123,7 +69289,12 @@ function setSyncCode(code){
      and the id it was using is left with nobody holding it. The sync
      code is no longer a document id anywhere, so retiring by it would
      delete nothing. */
-  if(previous && previous !== code) retireLeaderboardEntry(previousPublic);
+  if(previous && previous !== code){
+    retireLeaderboardEntry(previousPublic);
+    /* (385) and Fire Code's board has a row under the same id: it goes with the academy's (the next push of whoever owns the
+       id puts it back) */
+    try{ retireOtherClassBoardRow("ifc", previousPublic); }catch(e){}
+  }
   try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
   try { window.localStorage.removeItem(SYNC_OFF_KEY); } catch(e){}
   /* an account on this device again: no longer signed out (383 audit, signedOutHere) */
@@ -69451,6 +69622,8 @@ function resetEverything(){
        awaited, so a slow connection cannot block the local reset. */
     try { if(store.publicId && fbDb) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
     forgetLeaderboardRowCache();
+    /* (385) and Fire Code's own board has its row too */
+    try{ if(window.NOVA_CLASS === "ifc") retireClassBoardRow(); }catch(e){}
   }
   detachLiveListener();
   clearSyncCode();
@@ -69507,6 +69680,8 @@ function applyRemoteReset(){
     deleteAccountFloor(syncCode);   /* build 298 */
     forgetLeaderboardRowCache();
   }
+  /* (385) Fire Code's board row, with the reset */
+  try{ if(window.NOVA_CLASS === "ifc" && syncCode) retireClassBoardRow(); }catch(e){}
   detachLiveListener();
   clearSyncCode();
   wipeLocalProgressAndSettings();
@@ -69831,6 +70006,8 @@ function rowBehind(cur, row){
    day. Now: whatever is queued goes the moment the page is hidden, and
    the end of every kind of run publishes rather than queues. */
 function publishNow(){
+  /* (385) Fire Code's board row goes the same moment (the account's own flush here has never been Fire Code's: fbDb is null there) */
+  if(window.NOVA_CLASS === "ifc"){ try{ if(store.leaderboardOptIn) flushClassBoardRow(); }catch(e){} return; }
   if(!fbDb || !syncCode) return;
   let rowFollows = false;
   try{
@@ -69854,6 +70031,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 function pushLeaderboardRow(){
+  if(window.NOVA_CLASS === "ifc") return pushClassBoardRow();   /* (385) Fire Code's own board: its own document */
   if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
   /* (384) an account in Fire Code alone has no row on the academy's board - until it joins the academy (academyMember) */
   if(!academyMember()) return;
@@ -69886,10 +70064,192 @@ function pushLeaderboardRow(){
 /* For the moments where waiting would be noticed: the end of a run, and
    the app going away with a write still pending. */
 function flushLeaderboardRow(){
+  if(window.NOVA_CLASS === "ifc") return flushClassBoardRow();   /* (385) see pushLeaderboardRow */
   if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
   if(!academyMember()) return;   /* (384) see pushLeaderboardRow */
   clearTimeout(rowPushTimer); rowPushTimer = null;
   try{ writeLeaderboardRow(buildLeaderboardRow()); }catch(e){}
+}
+
+/* ================= FIRE CODE'S OWN LEADERBOARD (build 385) =================
+   Madison: "fire code is gonna get the leaderboard ... It will be an entirely different leaderboard than the academy one. They
+   will look the same but ifc one will only be for the people in the class. In other words, every class will have their own
+   leaderboard. Different about the fire code one, there won't be a weekly one or whatever. Just hundos and overall."
+
+   WHERE THE ROWS LIVE: one document, `vrooms/lb-ifc-v1` - { kind: "board", cls: "ifc", rows: { <public id>: row } } - and not in
+   `leaderboard`. Three reasons, in the order they matter:
+   1. NO BUILD THAT IS ALREADY OUT CAN SEE IT. Every phone still on 383 or 384.x lists the whole `leaderboard` collection and
+      draws every document in it as an academy classmate; a Fire Code row there would be a stranger in the academy's ranking on
+      every one of them, for days, with nothing to be done about it. Nothing before this build reads this document (they read
+      presence-v1, inbox-<id>, chat and room documents by their own ids; the two that list `vrooms` - the once-per-account
+      history seeds and the open-rooms search - look only for `participants` and `open`, which it has not).
+   2. FIRE CODE CAN WRITE IT, AND CANNOT WRITE THE ACADEMY'S BOARD. Its scoped handle (ifcSocialMay) reads `leaderboard` and
+      writes `vrooms` alone - exactly as before; no rule changes, and the invariant that Fire Code never writes the `leaderboard`
+      collection stays true.
+   3. IT IS CHEAPER. The class reads one document, not one a person: opening the board is one read, and a row somebody writes
+      is one read on each phone that has the board open - what a row in `leaderboard` costs too, without the other class's
+      rows arriving as well.
+   A person's field is their PUBLIC ID (the academy account's, which is Fire Code's on the friends side - publicIdOf) and holds
+   a row of the same shape as the academy's, less everything weekly (week, weekPoints, prevWeek*, wk, pwk) and everything
+   friends (fcode, freq, facc, inv, cinv, seenAt): a tap on a row opens the same person card, which asks the friends block
+   for the rest. NOTHING HERE IS THE SYNC CODE (syncCode is "<code>__ifc" in Fire Code and is never in a row, a field name or a
+   document id). Written only for a person who is in the rankings (leaderboardOptIn, on Fire Code's own store) and takes it
+   off the board when they go out of it, leave the class or reset it. */
+function classBoardCls(){ return window.NOVA_CLASS === "ifc" ? "ifc" : null; }
+/* the handle this class's board is read through: the academy's own, or Fire Code's scoped one (which may read `vrooms`) */
+function boardDbNow(){ return window.NOVA_CLASS === "ifc" ? ifcSocialDb : fbDb; }
+/* What Fire Code's board says when it cannot be reached: it rides the academy account's sync, as the chat does */
+function classBoardUnreachable(){
+  if(!syncCode) return "The leaderboard needs sync. Turn it on in the Police Academy class.";
+  return "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.";
+}
+const CLASS_BOARD_PUB_RE = /^[A-Za-z0-9]{6,40}$/;
+function classBoardPubOK(pub){ return typeof pub === "string" && CLASS_BOARD_PUB_RE.test(pub); }
+function classBoardRef(db, cls){ return db.collection("vrooms").doc(CLASS_BOARD_DOC[cls]); }
+/* the class's board, drawn as the academy's rows are: an entry per person, `pub` their public id */
+function classBoardEntriesFrom(snap){
+  const out = [];
+  if(!snap || !snap.exists) return out;
+  let d = null; try{ d = snap.data(); }catch(e){ d = null; }
+  const rows = d && d.rows && typeof d.rows === "object" ? d.rows : {};
+  Object.keys(rows).forEach(pub => {
+    const r = rows[pub];
+    if(!classBoardPubOK(pub) || !r || typeof r !== "object" || String(r.firstName || "").trim() === "") return;
+    const e = Object.assign({ pub: pub }, r);
+    fixBoardLevel(e);
+    out.push(e);
+  });
+  return out;
+}
+/* The row this class publishes: the numbers its two boards rank on (level with badges and the rank floor for Overall, hundos)
+   and what a row and its card show - name, character, colour, banner, XP, tests, correct answers. */
+function buildClassBoardRow(){
+  const n = boardNumbersOf(store);
+  return {
+    firstName: store.firstName || "Anonymous",
+    avatarChar: store.avatarChar || "ghost",
+    accent: theme.accent || "ink",
+    correct: n.correct,
+    level: n.level,
+    badges: n.badges,
+    hundos: n.hundos,
+    rankFloor: n.rankFloor,
+    xp: n.xp,
+    tests: n.tests,
+    banner: wornBanner() || "",
+    lastModified: Date.now()
+  };
+}
+/* The same cadence as the academy's row, on the same machinery: pushed after each account write (afterAccountWrite), the score
+   fields waiting ROW_SCORE_PUSH_MS between writes, the end of a run and putting the app away going at once, and a row that
+   says what the last one did is not written again. No timer of its own and nothing periodic. */
+function pushClassBoardRow(){
+  if(!ifcSocialDb || !syncCode || !store.leaderboardOptIn) return;
+  const key = publicIdOf();
+  if(!classBoardPubOK(key)) return;
+  let row;
+  try{ row = buildClassBoardRow(); }catch(e){ return; }
+  const sig = rowSignature(row, false);
+  if(sig === lastRowSig && lastRowKey === key) return;
+  const urgent = rowSignature(row, true);
+  const waited = Date.now() - lastRowPushAt;
+  if(urgent === lastRowUrgentSig && lastRowSig !== null && waited < ROW_SCORE_PUSH_MS && lastRowKey === key){
+    if(!rowPushTimer){
+      rowPushTimer = setTimeout(() => { rowPushTimer = null; pushClassBoardRow(); }, ROW_SCORE_PUSH_MS - waited + 50);
+    }
+    return;
+  }
+  writeClassBoardRow(row);
+}
+function flushClassBoardRow(){
+  if(!ifcSocialDb || !syncCode || !store.leaderboardOptIn) return;
+  clearTimeout(rowPushTimer); rowPushTimer = null;
+  const key = publicIdOf();
+  if(!classBoardPubOK(key)) return;
+  let row;
+  try{ row = buildClassBoardRow(); }catch(e){ return; }
+  /* the academy's flush writes every time; this one has nothing to say when the board already has it (a launch, a hide, the
+     end of a run that changed nothing the row carries) */
+  if(rowSignature(row, false) === lastRowSig && lastRowKey === key) return;
+  writeClassBoardRow(row);
+}
+/* A row is a transaction, as the academy's is (build 322): it reads what is there, and if that holds play this copy lacks
+   (more XP, right answers or hundos) nothing is written and the account is read again - a phone that has been put away never
+   publishes older numbers over the row the other one just wrote. */
+function writeClassBoardRow(row){
+  if(cloudConfirmedFor !== syncCode){
+    rowAwaitingConfirm = true;
+    clearTimeout(rowPushTimer); rowPushTimer = null;
+    ensureCloudConfirmed();
+    return;
+  }
+  clearTimeout(rowPushTimer); rowPushTimer = null;
+  const code = syncCode, pub = publicIdOf(), db = ifcSocialDb;
+  if(!db || !classBoardPubOK(pub)) return;
+  let ref = null;
+  try{ ref = classBoardRef(db, "ifc"); }catch(e){ return; }
+  /* a public id that changed since the last row (a reset, a different account): the old one comes off in the same write */
+  const gone = (lastRowKey && lastRowKey !== pub && classBoardPubOK(lastRowKey)) ? lastRowKey : null;
+  lastRowSig = rowSignature(row, false);
+  lastRowUrgentSig = rowSignature(row, true);
+  lastRowKey = pub;
+  lastRowPushAt = Date.now();
+  const reread = rowRecheckFor === code;
+  const ok = cur => reread || !rowBehind(cur, row);
+  const first = { kind: "board", cls: "ifc", rows: { [pub]: row } };
+  let run;
+  try{
+    if(typeof db.runTransaction === "function" && typeof ref.get === "function"){
+      run = db.runTransaction(tx => tx.get(ref).then(snap => {
+        const there = !!(snap && snap.exists);
+        const data = there ? snap.data() : null;
+        if(!ok(data && data.rows ? data.rows[pub] : null)) return false;
+        if(!there) tx.set(ref, first);
+        else {
+          const patch = { ["rows." + pub]: row };
+          if(gone) patch["rows." + gone] = firebase.firestore.FieldValue.delete();
+          tx.update(ref, patch);
+        }
+        return true;
+      }));
+    } else {
+      run = Promise.resolve(ref.set(first, { merge: true })).then(() => true);
+    }
+  }catch(e){ run = Promise.reject(e); }
+  Promise.resolve(run).then(wrote => {
+    if(code !== syncCode) return;
+    if(wrote){ if(rowRecheckFor === code) rowRecheckFor = ""; return; }
+    lastRowSig = null; lastRowUrgentSig = null;
+    rowRecheckFor = code;
+    if(cloudConfirmedFor === code) cloudConfirmedFor = "";
+    rowAwaitingConfirm = true;
+    ensureCloudConfirmed();
+  }, () => {
+    if(code === syncCode){ lastRowSig = null; lastRowUrgentSig = null; }
+  });
+}
+/* Takes one person off a class's board. Only their field: the document, and everybody else's row in it, is never touched.
+   Safe to fire speculatively - with no document or no such field there is nothing to remove. The academy calls it too (leaving
+   Fire Code, abandoning a code), through its own full handle. */
+function deleteClassBoardRow(cls, pub, db){
+  if(!db || !CLASS_BOARD_DOC[cls] || !classBoardPubOK(pub)) return;
+  try{
+    classBoardRef(db, cls).update({ ["rows." + pub]: firebase.firestore.FieldValue.delete() }).catch(() => {});
+  }catch(e){}
+}
+/* this class's own row, off its board (an opt-out, a reset) */
+function retireClassBoardRow(){
+  forgetLeaderboardRowCache();
+  const cls = classBoardCls();
+  if(!cls || !ifcSocialDb) return;
+  let pub = null;
+  try{ pub = publicIdOf(); }catch(e){ pub = store.publicId; }
+  deleteClassBoardRow(cls, pub, ifcSocialDb);
+}
+/* the other class's row, from the academy: the full handle writes where Fire Code's scoped one writes */
+function retireOtherClassBoardRow(cls, pub){
+  if(window.NOVA_CLASS === cls || !fbDb) return;
+  deleteClassBoardRow(cls, pub, fbDb);
 }
 
 /* ---- THE ACCOUNT'S HIGH-WATER MARK (build 298) ----
@@ -70202,6 +70562,17 @@ function writeAccount(code, withMain, withFloor, leaving){
    way out of the app the row goes at once rather than waiting out its
    usual deferral. */
 function afterAccountWrite(leaving){
+  /* (385) Fire Code's board is its own document (see pushClassBoardRow): its row follows the account here as the academy's does,
+     and an opt-out that was made takes it off */
+  if(window.NOVA_CLASS === "ifc"){
+    if(ifcSocialDb && syncCode && store.leaderboardOptIn){
+      if(leaving === true) flushClassBoardRow(); else pushClassBoardRow();
+    } else if(ifcSocialDb && syncCode && store.leaderboardOptIn === false && store.leaderboardOptInChanged){
+      retireClassBoardRow();
+      store.leaderboardOptInChanged = false;
+    }
+    return;
+  }
   /* A separate, deliberately minimal collection \u2014 only what's needed
      to render a leaderboard entry (name, avatar, points, stars), never
      the full progress document, and only written at all when the
@@ -82050,6 +82421,12 @@ const RANKING_BOARDS = [
        counted per unit, not per test; this says that in two lines. */
     blurb: "A hundo is 100% on a whole unit, in any mode. A test of three units can earn three." }
 ];
+/* (385) THE BOARDS A CLASS HAS. The academy's three; Fire Code's own leaderboard has two - Overall and Hundos, nothing weekly
+   (Madison: "there won't be a weekly one or whatever. Just hundos and overall") - so its tabs, its swipe, its Settings hint and
+   its links are all drawn from this and not from RANKING_BOARDS. */
+function rankingBoardsFor(){
+  return window.NOVA_CLASS === "ifc" ? RANKING_BOARDS.filter(b => b.key !== "week") : RANKING_BOARDS;
+}
 
 
 /* Where you stand against a tier, in the two numbers the ladder now
@@ -84356,10 +84733,12 @@ function cssColorHexNow(expr){
    it permanently and put the original grey seam back. An installed app has
    no browser bars to tint anyway. */
 function splashOwnsFrame(){
+  const inApp = navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  /* (384 r21) a class switch's cover owns the frame from the tap, as the splash does from the page's first byte */
+  if(!inApp && document.documentElement.classList.contains("class-switching")) return true;
   const sp = document.getElementById("splashscreen");
   if(!sp || sp.classList.contains("splash-hide")) return false;
-  return !(navigator.standalone === true ||
-           (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches));
+  return !inApp;
 }
 
 /* SAFARI'S BARS (build 327z3). Safari 26 colours the band behind its
@@ -98742,7 +99121,7 @@ function showWelcomeNamePrompt(){
   const showClash = row => {
     clashKey = accountNameKey(input.value);
     const shown = String(row.firstName || "").trim();
-    clashArt.replaceChildren(avatarSpanFor(row));
+    clashArt.replaceChildren(faceSpanFor(row));
     clashTitle.textContent = shown + " already has a Nova account.";
     clashLevel.textContent = typeof row.level === "number" && row.level > 0 ? "Level " + row.level : "";
     clashLevel.hidden = !clashLevel.textContent;
@@ -101499,14 +101878,11 @@ function mainMenuTourSteps(returning){
   return [
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home brings you back here from anywhere." },
-    /* in the bar's own order: Home, Profile, Leaderboard (Fire Code: Stats), Calendar (Fire Code: Settings) */
+    /* in the bar's own order: Home, Profile, Leaderboard, Calendar (Fire Code: Settings) */
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: ifc ? "Profile: your rank, level and badges." : "Profile: your rank, level and badges. Stats and Settings are here too." },
-    ifc
-      ? { target: "#bottomtab-stats", align: "left", vplacement: "above",
-          text: "Stats: your study time, scores and test history." }
-      : { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-          text: "The Leaderboard: the whole class, live. Tap Find me to see where you stand." },
+      text: ifc ? "Profile: your rank, level and badges. Stats is here too." : "Profile: your rank, level and badges. Stats and Settings are here too." },
+    { target: "#bottomtab-rewards", align: "left", vplacement: "above",
+      text: "The Leaderboard: the whole class, live. Tap Find me to see where you stand." },
     ifc
       ? { target: "#bottomtab-settings", align: "right", vplacement: "above",
           text: "Settings: your name, character, look and sound." }
@@ -104785,7 +105161,7 @@ function saveChatListCache(){
         const last = chatListLast[code] || null;
         const people = chatListPeople[code];
         if(!last && !people) return;
-        keep[code] = { last: last, people: Array.isArray(people) ? people.map(p => ({ key: p.key, name: p.name, avatarChar: p.avatarChar })) : undefined };
+        keep[code] = { last: last, people: Array.isArray(people) ? people.map(p => ({ key: p.key, name: p.name, avatarChar: p.avatarChar, avatarCharIfc: p.avatarCharIfc })) : undefined };
       });
       localStorage.setItem(CHAT_LIST_CACHE_KEY, JSON.stringify(keep));
     }catch(e){}
@@ -104817,7 +105193,7 @@ function chatPeopleOf(members){
   const m = members || {};
   return Object.keys(m).filter(k => k !== me)
     .sort((a, b) => (((m[a] || {}).joinedAt || 0) - ((m[b] || {}).joinedAt || 0)) || (a < b ? -1 : 1))
-    .map(k => ({ key: k, name: (m[k] || {}).name || "", avatarChar: (m[k] || {}).avatarChar || "ghost" }));
+    .map(k => ({ key: k, name: (m[k] || {}).name || "", avatarChar: (m[k] || {}).avatarChar || "ghost", avatarCharIfc: (m[k] || {}).avatarCharIfc || null }));
 }
 function paintChatFaces(el, code){
   /* Before the room has been read, the people recorded on the entry
@@ -104842,7 +105218,7 @@ function paintChatFaces(el, code){
   shown.forEach(p => {
     const f = document.createElement("span");
     f.className = "chatdock-face";
-    try{ f.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" })); }catch(e){}
+    try{ f.appendChild(faceSpanFor(p, p.key)); }catch(e){}
     el.appendChild(f);
   });
   if(n > 3){
@@ -106055,7 +106431,7 @@ function novaReplyFor(raw){
   /* (384) Fire Code has no class calendar (its bar is Home, Profile, Stats, Settings), and its Sheriff is the Chief */
   if(has(/ (next test|the test|test (on|is|day|date|topics?)|what's on|whats on|on the test|calendar|sunday|topics?|quiz|mock) /))
     return window.NOVA_CLASS === "ifc"
-      ? "This class has no calendar or test dates. Study the chapters at your own pace, and the Stats tab keeps your numbers."
+      ? "This class has no calendar or test dates. Study the chapters at your own pace, and Profile's Stats tab keeps your numbers."
       : "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
   if(has(/ (virtual room|vr|race|challenge|sheriff|chief|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
@@ -106088,7 +106464,7 @@ function novaReplyFor(raw){
   if(has(/ (friends?|friend code|add) /))
     return "Add friends from the chat › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
-    return window.NOVA_CLASS === "ifc" ? "This class has no leaderboard. Your own numbers are on the Stats tab."
+    return window.NOVA_CLASS === "ifc" ? "The Leaderboard tab ranks the Fire Code class, by rank and by hundos. Your own numbers are on Profile's Stats tab."
       : "The Leaderboard tab ranks the class. Tap anyone on it to see their card.";
   if(has(/ (who are you|your name|about you|are you real|ai|bot|robot|human|chatgpt) /))
     return "I’m Nova, a space explorer and your instructor here. I’m no robot, but I can’t really chat either: I answer what I can about the app and pass on news.";
@@ -106829,14 +107205,16 @@ function chatPersonOf(key, entry){
   const e = entry || {};
   if(key && key === publicIdOf()){
     const me = socialMe();   /* (384) as your friends see you, in every class */
-    return { name: me.firstName || e.name || "You", avatarChar: me.avatarChar || e.avatarChar || "ghost" };
+    return { name: me.firstName || e.name || "You", avatarChar: me.avatarChar || e.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null };
   }
   let row = null;
   try{ row = rowsByPublicId()[key] || null; }catch(err){}
   /* (384 vr2) no board row (Fire Code alone): their own beat's name and character (friendCardFromPresence) */
   if(!row){ try{ row = friendCardFromPresence(key); }catch(err){} }
+  /* (384 r11) and the Fire Code character: the row's, their beat's, or the one the room's entry last carried */
   return { name: (row && row.firstName) || e.name || "",
-           avatarChar: (row && row.avatarChar) || e.avatarChar || "ghost" };
+           avatarChar: (row && row.avatarChar) || e.avatarChar || "ghost",
+           avatarCharIfc: (row && faceCharValid(row.avatarCharIfc) ? row.avatarCharIfc : null) || presenceIfcChar(key) || (faceCharValid(e.avatarCharIfc) ? e.avatarCharIfc : null) };
 }
 function chatMemberMap(participants, data){
   const out = {};
@@ -106875,7 +107253,7 @@ function openChatMembers(){
     row.className = "chat-member";
     const art = document.createElement("span");
     art.className = "chat-member-art";
-    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ghost" }));
+    art.appendChild(faceSpanFor(e, k));
     const nm = document.createElement("span");
     nm.className = "chat-member-name";
     nm.textContent = k === chatMyKey ? (e.name || "You") + " (you)" : (e.name || "Student");
@@ -106893,7 +107271,7 @@ function openChatMembers(){
       const dm = document.createElement("button");
       dm.type = "button"; dm.className = "next ghost chatdock-mini";
       dm.textContent = "Message";
-      dm.addEventListener("click", () => { ov.remove(); openDirectChatWith({ pub: k, firstName: e.name, avatarChar: e.avatarChar }); });
+      dm.addEventListener("click", () => { ov.remove(); openDirectChatWith({ pub: k, firstName: e.name, avatarChar: e.avatarChar, avatarCharIfc: e.avatarCharIfc }); });
       if(keys.length > 2) row.appendChild(dm);
     }
     sh.appendChild(row);
@@ -106923,7 +107301,7 @@ function seedChatRosterFromList(code){
   all[me] = Object.assign({ joinedAt: 0 }, chatPersonOf(me, null));
   people.forEach((p, i) => {
     const who = chatPersonOf(p.key, p);
-    if(p.key && who.name) all[p.key] = { name: who.name, avatarChar: who.avatarChar, joinedAt: i + 1 };
+    if(p.key && who.name) all[p.key] = { name: who.name, avatarChar: who.avatarChar, avatarCharIfc: who.avatarCharIfc, joinedAt: i + 1 };
   });
   chatAllMembers = all;
   renderChatRoster({ [me]: all[me] });
@@ -106967,7 +107345,7 @@ function renderChatRoster(participants){
     one.title = (k === chatMyKey ? "You" : (e.name || "Someone")) + (isHere(k) ? " \u2014 here" : " \u2014 away");
     const art = document.createElement("span");
     art.className = "chatdock-who-art";
-    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ghost" }));
+    art.appendChild(faceSpanFor(e, k));
     const nm = document.createElement("span");
     nm.className = "chatdock-who-name";
     nm.textContent = k === chatMyKey ? "You" : (e.name || "Someone");
@@ -107044,6 +107422,7 @@ function chatSelfEntry(){
   /* (384) the academy account's name, face and numbers in every class (socialCard); Fire Code's numbers never */
   const c = socialCard();
   const out = { name: c.firstName || "Anonymous", avatarChar: c.avatarChar || "ghost" };
+  if(c.avatarCharIfc) out.avatarCharIfc = c.avatarCharIfc;   /* (384 r11) what the account wears in Fire Code */
   if(c.level != null){ out.level = c.level; out.badges = c.badges; }
   out.joinedAt = Date.now(); out.seen = Date.now();
   return out;
@@ -107066,6 +107445,7 @@ function startVroomPresence(){
       const sm = socialMe();
       patch["participants." + vroomMyKey + ".name"] = sm.firstName || "Anonymous";
       patch["participants." + vroomMyKey + ".avatarChar"] = sm.avatarChar || "ghost";
+      if(sm.avatarCharIfc) patch["participants." + vroomMyKey + ".avatarCharIfc"] = sm.avatarCharIfc;
       /* and Nova's, if this device brought him (build 324) */
       try{ novaVrPresencePatch(patch); }catch(e){}
       vroomDb().collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
@@ -107085,6 +107465,7 @@ function chatPresencePatch(seen){
   const c = socialCard();   /* (384) see chatSelfEntry */
   patch[k + "name"] = c.firstName || "Anonymous";
   patch[k + "avatarChar"] = c.avatarChar || "ghost";
+  if(c.avatarCharIfc) patch[k + "avatarCharIfc"] = c.avatarCharIfc;
   if(c.level != null){ patch[k + "level"] = c.level; patch[k + "badges"] = c.badges; }
   patch[k + "seen"] = seen;
   return patch;
@@ -107401,6 +107782,7 @@ function openDirectChatWith(entry){
   const me = publicIdOf();
   const theirName = entry.firstName || entry.name || "Student";
   const them = { name: theirName, avatarChar: entry.avatarChar || "ghost",
+                 avatarCharIfc: entry.avatarCharIfc || presenceIfcChar(pub) || null,
                  level: entry.level || 0, badges: entry.badges || 0,
                  joinedAt: Date.now(), seen: 0 };
   socialDb().collection("vrooms").doc(code).set({
@@ -108181,7 +108563,7 @@ function rebuildChatTab(){
     const art = document.createElement("span");
     art.className = "chatdock-friendhead-art" + (isOnline(e) ? " is-online" : "");
     art.dataset.onlinePub = pub || "";
-    try{ art.appendChild(avatarSpanFor(e)); }catch(err){}
+    try{ art.appendChild(faceSpanFor(e, pub)); }catch(err){}
     const txt = document.createElement("span");
     txt.className = "chatdock-friendhead-text";
     const nm = document.createElement("span");
@@ -108343,7 +108725,7 @@ function renderFriendChatList(){
     const art = document.createElement("span");
     art.className = "chatdock-chatrow-avatar" + (isOnline(e) ? " is-online" : "");
     art.dataset.onlinePub = e.pub || "";
-    try{ art.appendChild(avatarSpanFor(e)); }catch(err){}
+    try{ art.appendChild(faceSpanFor(e, e.pub)); }catch(err){}
     open.appendChild(art);
     const top = document.createElement("span");
     top.className = "chatdock-chatrow-top";
@@ -109080,7 +109462,7 @@ function paintChatInvitePeek(box, code){
     ((p && p.people) || []).slice(0, 4).forEach(x => {
       const f = document.createElement("span");
       f.className = "chatdock-face";
-      try{ f.appendChild(avatarSpanFor({ avatarChar: x.avatarChar || "ghost" })); }catch(e){}
+      try{ f.appendChild(faceSpanFor(x, x.key)); }catch(e){}
       faces.appendChild(f);
     });
     faces.hidden = !faces.childNodes.length;
@@ -109109,7 +109491,7 @@ function renderNotifications(){
     row.className = "chatdock-notif chatdock-notif-" + it.kind;
     const art = document.createElement("div");
     art.className = "friend-row-art";
-    art.appendChild(avatarSpanFor(it.who));
+    art.appendChild(faceSpanFor(it.who, it.who && it.who.pub));
     const text = document.createElement("p");
     text.className = "chatdock-notif-text"; text.textContent = it.text;
     /* A GROUP YOU ARE NOT IN, SHOWN FOR WHAT IT IS (build 313): who is in
@@ -109383,7 +109765,7 @@ function openChatInviteSheet(){
       row.className = "friend-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor(e));
+      art.appendChild(faceSpanFor(e, e.pub));
       decorateAvatar(art, e.level, e.badges, e.mystery);
       /* Asleep when they are not on - "same when you go to invite". */
       if(e.firstName) setCharState(art, isOnline(e) ? "live" : "sleep");
@@ -109965,13 +110347,13 @@ function openPersonSheet(entry){
   if(isNova) sheet.classList.add("is-nova");
   const art = document.createElement("div");
   art.className = "person-sheet-art person-card-art";
-  art.appendChild(isNova ? novaAvatarSpan(false, true) : platePortrait(avatarSpanFor(entry)));
+  art.appendChild(isNova ? novaAvatarSpan(false, true) : platePortrait(faceSpanFor(entry, entry.pub)));
   /* Big and alone here, so this is exactly where the character's own
      light belongs - the opposite call from the list rows, which lost
      it for being a smear. */
   art.classList.add("has-glow");
   art.style.setProperty("--char-glow",
-    isNova ? NOVA_COLOR : avatarGlowColor((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
+    isNova ? NOVA_COLOR : avatarGlowColor(faceCharFor(entry, entry && entry.pub) || AVATAR_CHARACTERS[0].id));
   /* A friend who is not on is asleep; anybody else - including anybody
      opened from the Leaderboard, whose presence you cannot see - is
      simply alive. */
@@ -110144,8 +110526,7 @@ function enterAccountClass(note){
   if(accountClassEntering) return true;
   accountClassEntering = true;
   try{ persistLocally(); }catch(e){}
-  try{ stage.replaceChildren(); }catch(e){}
-  switchClass("ifc", null, { note: note || "" });
+  switchClass("ifc", null, { note: note || "", clear: true });   /* (r21) the screen goes under the cover, not before it */
   return true;
 }
 /* (384) WELCOME BACK, SAID ON ARRIVAL. Madison: "When you switch classes ensure a banner pops up that says welcome back to blah
@@ -110166,7 +110547,7 @@ function maybeSwitchWelcome(){
     if(switchWelcomeDone) return;
     let busy = !onNovaHome() || document.getElementById("splashscreen");
     try{ busy = busy || whatsNewHolds() || a2hsBusy() || a2hsHolds(); }catch(e){ busy = true; }
-    busy = busy || !!document.querySelector("#tour-overlay, #tour-tooltip, .daily-alert, .nova-talk, .class-bubble-wrap.is-open");
+    busy = busy || !!document.querySelector("#tour-overlay, #tour-tooltip, .daily-alert, .nova-talk, .class-bubble-wrap.is-open") || document.body.classList.contains("class-rise");
     try{ busy = busy || pendingMainMenuTour || signupInNova || novaIntroOn; }catch(e){}
     if(busy){ calm = 0; if(++tries > 60){ switchWelcomeDone = true; return; } switchWelcomeTimer = setTimeout(attempt, 500); return; }
     if(++calm < 2){ switchWelcomeTimer = setTimeout(attempt, 400); return; }
@@ -118306,7 +118687,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.10";
+const APP_BUILD = "2026-11-10-384.11";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -132651,7 +133032,9 @@ function showSettingsText(kind){
     block("Your progress", ["Turns on automatically so your progress saves to the cloud as you go. To add a second device, enter this device's code there once — from then on both devices share the same progress automatically, updating live, no need to enter it again."]);
     block("Your sync code", ["Your sync code is your account. Use it to add a second device, and keep it somewhere safe — it is the only way back in.",
       "Keep this somewhere off this phone. If this device ever loses its data, the code is what puts you back on your account."]);
-    if(window.NOVA_CLASS !== "ifc") block("Leaderboard", ["Show me in the rankings shares only your username, avatar and your ranking numbers. With it off, you can't see the rankings either."]);
+    block("Leaderboard", [window.NOVA_CLASS === "ifc"
+      ? "Show me in the rankings shares only your username, avatar and your ranking numbers with the people in Fire Code. With it off, you can't see the rankings either."
+      : "Show me in the rankings shares only your username, avatar and your ranking numbers. With it off, you can't see the rankings either."]);
     block("Bug reports", ["Your report goes to the Nova admin, with your first name, app version and device attached so the problem can be tracked down and fixed."]);
   } else {
     block("Notices", lines);
@@ -133001,6 +133384,9 @@ function showAppearance(opts){
     store.leaderboardOptIn = lbCb.checked;
     store.leaderboardOptInChanged = true;
     saveStore();
+    /* (385) Fire Code's board follows the switch at once - one write for a tap, where the academy's row waits for the account's
+       next write (a minute at most) */
+    if(window.NOVA_CLASS === "ifc"){ try{ if(store.leaderboardOptIn) flushClassBoardRow(); else retireClassBoardRow(); }catch(e){} }
     showToast(store.leaderboardOptIn ? "You're on the leaderboard." : "Removed from the leaderboard.");
   });
   const lbBox = document.createElement("span");
@@ -133032,14 +133418,14 @@ function showAppearance(opts){
      has to be built from the boards, or it goes stale the next time one
      changes - which is the same lesson as a gate that hardcodes a
      label. */
-  const boardNames = RANKING_BOARDS.map(b => b.tab);
+  const boardNames = rankingBoardsFor().map(b => b.tab);
   const howMany = ["", "one way", "two ways", "three ways", "four ways", "five ways"][boardNames.length]
     || (boardNames.length + " ways");
-  lbHint.textContent = "Ranks the class " + howMany + " \u2014 "
+  lbHint.textContent = "Ranks the " + (window.NOVA_CLASS === "ifc" ? "Fire Code " : "") + "class " + howMany + " \u2014 "
     + boardNames.slice(0, -1).join(", ") + " and " + boardNames[boardNames.length - 1]
     /* Tidied in build 324, same meaning: what is shared, and that
        switching off hides the boards from you as well. */
-    + ". Shares only your username, avatar and those numbers. "
+    + ". Shares only your username, avatar and those numbers" + (window.NOVA_CLASS === "ifc" ? ", with the people in Fire Code" : "") + ". "
     + "With this off, you can't see the rankings either.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
@@ -133057,8 +133443,7 @@ function showAppearance(opts){
       lbSect.appendChild(cl); lbSect.appendChild(buildLeaderboardClassList());
     }
   }catch(e){}
-  /* no leaderboard in Fire Code (build 382), so no switch for one */
-  if(window.NOVA_CLASS !== "ifc") panel.appendChild(lbSect);
+  panel.appendChild(lbSect);
 
   const syncSect = document.createElement("div");
   syncSect.className = "sect";
@@ -133474,7 +133859,6 @@ function showAppearance(opts){
      Settings opens, and a page's rows carry no tile ("when you click a section and open it, there are icons within them? But there
      shouldn't be.."). The words start at the card's padding; the hairline runs under them (the 384 Settings block). */
 
-  const noBoard = window.NOVA_CLASS === "ifc";   /* no leaderboard in Fire Code */
   let host = into;
   if(page){
     /* ---- ONE CATEGORY, ITS OWN PAGE ---- */
@@ -133485,12 +133869,7 @@ function showAppearance(opts){
       sync:   ["Sync", [syncSect]],
       share:  ["Share & Install", [settingsHeader("This app"), shareCard]]
     };
-    if(!noBoard) PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];
-    else if(academyMember()){
-      const note = document.createElement("p"); note.className = "settings-classes-note";
-      note.textContent = "Fire Code has no leaderboard. The Police Academy class does: whether you show on it is set in the Police Academy's Settings.";
-      PAGES.rankings = ["Leaderboard & Privacy", [settingsHeader("Your classes"), buildLeaderboardClassList(), note]];
-    }
+    PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];   /* (385) every class has a leaderboard and a switch for it */
     /* YOUR NAME (build 383): Madison, "The change your name option in customize, that needs to be in settings somewhere".
        Customize's own editor (the one-name-per-person rule and all), built only when this page is opened. */
     /* (383) the Account page: the name, and signing out - "name" (its first home, earlier in 383) opens it too */
@@ -133542,8 +133921,7 @@ function showAppearance(opts){
       /* (384 r4) "We need a function where you can unenroll from a class" - the classes you are in, and leaving one */
       cat("classes", "classes", "Classes", (() => { const n = enrolledClasses().length; return n === 1 ? ((NOVA_CLASS_INFO[enrolledClasses()[0]] || {}).title || "1 class") : n + " classes"; })()),
       cat("sync", "sync", "Sync", !acctDb() ? "Unreachable" : (syncCode ? "On" : "Off")),
-      noBoard ? (academyMember() ? cat("rankings", "trophy", "Leaderboard & Privacy", "Police Academy only") : null)
-              : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
+      cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
     ]));
     dataSect.classList.add("settings-menu-card");
     dataSect.replaceChildren(cat("share", "share", "Share & Install"), updBtn, ...dataSect.children);
@@ -134259,7 +134637,7 @@ function showTestReviewList(){
   const panel = document.createElement("section");
   panel.className = "panel screen-testreview screen-testhistory";
 
-  const back = buildBackLink(window.NOVA_CLASS === "ifc" ? "Back to Stats" : "Back to Profile", () => showProfile("stats"));
+  const back = buildBackLink("Back to Profile", () => showProfile("stats"));
   /* (383: "the app needs a cohesive look across" - the round back button and the centred title every pushed screen has) */
   panel.appendChild(iosNavBar("Test history", back));
 
@@ -135514,7 +135892,7 @@ function roomClassLabel(data){
 function vroomMeEntry(){
   const me = socialMe();
   let dev = ""; try{ dev = tallyDeviceId(); }catch(e){}
-  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
+  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null, level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
 }
 function createVirtualRoomLobby(units, timeLimit, game, versions){
   /* The actual bug behind "wouldn't let me start a Virtual Room
@@ -135565,6 +135943,7 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
     /* So the browser can say whose room it is without a second lookup. */
     hostName: myName,
     hostAvatar: me.avatarChar,
+    hostAvatarIfc: me.avatarCharIfc || null,
     status: "waiting",
     startAt: null,
     /* The room's own mode, so the host can change it without everyone
@@ -136963,7 +137342,7 @@ function tugTeamEnd(d, side, cls){
     fig.className = "tug-team-fig char-live";
     fig.style.setProperty("--i", i);
     fig.title = pp.name || "";
-    fig.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
+    fig.appendChild(buildAvatarCharSVGSafe(faceCharFor(pp, k)));
     end.appendChild(fig);
   });
   return end;
@@ -137829,7 +138208,7 @@ function beginBattleMatch(data){
       /* THE WHOLE WINNING SIDE, like Tug - they won it together. */
       const shown = (side ? battleMembers(d, side) : Object.keys(d.participants || {}))
         .map(k => ({ name: (d.participants[k] || {}).name || "?",
-                     avatar: (d.participants[k] || {}).avatarChar || "ghost" }));
+                     avatar: faceCharFor(d.participants[k] || {}, k) }));
       detachBattleEffects();
       playVroomWinnerCutscene({
         kind: "team",
@@ -137983,8 +138362,8 @@ function buildBattleBoard(d){
       const p = d.participants[k] || {};
       const av = document.createElement("span");
       av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
-      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ghost"));
-      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
+      av.style.setProperty("--pl", avatarGlowColor(faceCharFor(p, k)));
+      av.appendChild(buildAvatarCharSVGSafe(faceCharFor(p, k)));
       faces.appendChild(av);
     });
     if(sideKeys.length > 3){
@@ -138035,8 +138414,8 @@ function battlePaintFaces(row, d, side){
       const p = (d.participants || {})[k] || {};
       const av = document.createElement("span");
       av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
-      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ghost"));
-      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
+      av.style.setProperty("--pl", avatarGlowColor(faceCharFor(p, k)));
+      av.appendChild(buildAvatarCharSVGSafe(faceCharFor(p, k)));
       faces.appendChild(av);
     });
     if(keys.length > 3){
@@ -139174,7 +139553,7 @@ function openInviteFriendsSheet(roomCode){
       row.className = "friend-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor(e));
+      art.appendChild(faceSpanFor(e, e.pub));
       decorateAvatar(art, e.level, e.badges, e.mystery);
       if(e.firstName) setCharState(art, isOnline(e) ? "live" : "sleep");
       const text = document.createElement("div");
@@ -139307,7 +139686,8 @@ function openRoomsFrom(docs){
     const hk = vroomHostKeyOf(here);
     const host = (hk && here[hk]) || null;
     out.push({ code: d.id, room: r, count: n, inMatch: !!(r.status && r.status !== "waiting"),
-               hostName: (host && host.name) || r.hostName, hostAvatar: (host && host.avatarChar) || r.hostAvatar });
+               hostName: (host && host.name) || r.hostName, hostAvatar: (host && host.avatarChar) || r.hostAvatar,
+               hostAvatarIfc: (host && host.avatarCharIfc) || r.hostAvatarIfc || null, hostKey: hk || null });
   });
   /* Fullest first: a room with people in it is the one worth joining,
      and an empty-looking list of one-person rooms is what makes a
@@ -139383,7 +139763,7 @@ function showRoomBrowser(){
       row.className = "friend-row room-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor({ avatarChar: entry.hostAvatar || r.hostAvatar || "ghost" }));
+      art.appendChild(faceSpanFor({ avatarChar: entry.hostAvatar || r.hostAvatar || "ghost", avatarCharIfc: entry.hostAvatarIfc || null }, entry.hostKey));
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
@@ -139977,7 +140357,7 @@ function showVirtualRoomLobby(){
        every snapshot, because those are cheap and some of them are
        what make the room start at all. */
     const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : p.prep ? "p" : 0,
-      p.level || 0, p.badges || 0, p.avatarChar || "", p.banner || ""].join("~")).join("|")
+      p.level || 0, p.badges || 0, faceCharFor(p, key) || "", p.banner || ""].join("~")).join("|")
       + "||" + (data.units || []).join(",") + "|" + JSON.stringify(roomVersionsOf(data)) + "|" + (data.timeLimit || 0)
       /* `count`, the field Match settings writes. This read
          `questionCount`, which nothing has ever written, so changing
@@ -140021,10 +140401,10 @@ function showVirtualRoomLobby(){
          is exactly the case the glow was written for. */
       avatarWrap.className = "lb-avatar vroom-avatar has-glow";
       avatarWrap.style.setProperty("--char-glow",
-        avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
+        avatarGlowColor(faceCharFor(p, key) || AVATAR_CHARACTERS[0].id));
       /* In a .rank-avatar wrapper (build 266), which carries the glow's
          drop-shadow - see .vroom-avatar.has-glow > .rank-avatar. */
-      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" }));
+      avatarWrap.appendChild(faceSpanFor(p, key));
       decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
       /* alive in the lobby (build 314: "make sure the ones that are meant
          to animate do") - a flip-book, like a board row */
@@ -141900,7 +142280,7 @@ function startVroomRaceListener(){
          character, a renamed one) came back null and threw here, which
          stopped the loop and left everybody after that person off the
          line. Found recording a four-person room. */
-      avatar.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
+      avatar.appendChild(buildAvatarCharSVGSafe(faceCharFor(p, key)));
       const initials = document.createElement("span");
       initials.className = "vroom-race-marker-initials";
       initials.textContent = "You";
@@ -142561,7 +142941,7 @@ function buildVroomRacePodium(data){
     nm.className = "lw-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
     const pts = document.createElement("span");
     pts.className = "lw-podium-pts"; pts.textContent = xpWith(r, i).toLocaleString() + " XP";
-    spot.append(vroomPodiumDisc(r.p.avatarChar), nm, pts, vroomPodiumStep(i + 1));
+    spot.append(vroomPodiumDisc(faceCharFor(r.p, r.key)), nm, pts, vroomPodiumStep(i + 1));
     stage.appendChild(spot);
   });
   card.appendChild(stage);
@@ -142576,7 +142956,7 @@ function buildVroomRacePodium(data){
       const pl = document.createElement("span");
       pl.className = "vr-podium-place"; pl.textContent = vroomOrdinal(i + 1);
       const av = document.createElement("span");
-      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ghost"));
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(faceCharFor(r.p, r.key)));
       const nm = document.createElement("span");
       nm.className = "vr-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
       const x = document.createElement("span");
@@ -142609,7 +142989,7 @@ function buildVroomTeamPodium(d, o){
     spot.dataset.side = side;
     const avs = document.createElement("span");
     avs.className = "vr-side-avs";
-    members.slice(0, 4).forEach(k => avs.appendChild(vroomPodiumDisc((parts[k] || {}).avatarChar)));
+    members.slice(0, 4).forEach(k => avs.appendChild(vroomPodiumDisc(faceCharFor(parts[k] || {}, k))));
     if(members.length > 4){ const more = document.createElement("span"); more.className = "vr-side-more"; more.textContent = "+" + (members.length - 4); avs.appendChild(more); }
     const nm = document.createElement("span");
     nm.className = "lw-podium-name"; nm.textContent = side === o.mine ? "Your side" : "Their side";
@@ -142630,7 +143010,7 @@ function buildVroomTeamPodium(d, o){
       row.className = "vr-podium-row" + (k === vroomMyKey ? " is-me" : "");
       row.dataset.key = k;
       const av = document.createElement("span");
-      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
+      av.className = "vr-podium-av"; av.appendChild(buildAvatarCharSVGSafe(faceCharFor(pp, k)));
       const nm = document.createElement("span");
       nm.className = "vr-podium-name";
       nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : "");
@@ -142871,10 +143251,10 @@ function playVroomRaceCutscene(ranked){
     /* Each player's bar in their OWN colour - the colour their character
        glows in everywhere else - so you can follow a person down the
        board as it reshuffles rather than reading names every step. */
-    row.style.setProperty("--pl", avatarGlowColor(r.p.avatarChar || "ghost"));
+    row.style.setProperty("--pl", avatarGlowColor(faceCharFor(r.p, r.key)));
     const fig = document.createElement("span");
     fig.className = "vrc-fig";
-    fig.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ghost"));
+    fig.appendChild(buildAvatarCharSVGSafe(faceCharFor(r.p, r.key)));
     const place = document.createElement("span");
     place.className = "vrc-place";
     fig.appendChild(place);
@@ -144600,7 +144980,8 @@ function renderRankingRows(rows, entries, board, opts){
   if(ranked.length === 0){
     const empty = document.createElement("p");
     empty.className = "lb-board-empty";
-    empty.textContent = "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
+    empty.textContent = window.NOVA_CLASS === "ifc" ? "Nobody has joined the Fire Code leaderboard yet."
+      : "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
     rows.appendChild(empty);
     return;
   }
@@ -147430,7 +147811,7 @@ function showFriends(){
     row.className = "friend-row";
     const art = document.createElement("div");
     art.className = "friend-row-art";
-    art.appendChild(avatarSpanFor(entry));
+    art.appendChild(faceSpanFor(entry, entry.pub));
     /* NO RANK EMBLEM ON THE CHARACTER HERE (build 231) - "on the friend
        list as well remove the rank icon next to their character". The
        rank is already the coloured word on the line under the name, and
@@ -150283,10 +150664,10 @@ function showProfile(defaultTab, opts){
   /* The calendar is a bottom tab of its own (build 323). */
   if(asked === "calendar") return showCalendarTab();
   const initialTab = PROFILE_TABS.indexOf(asked) !== -1 ? asked : "profile";
-  /* FIRE CODE: STATS IS A BAR TAB, NOT ONE OF PROFILE'S (build 382). Asked for Stats, this builds the Stats screen alone
-     (no Profile tabs over it, the bar's Stats lit); asked for anything else, Profile has no Stats tab. */
+  /* FIRE CODE (build 385): PROFILE AND STATS ARE ONE SCREEN WITH TWO TOP TABS, as the academy's Profile is - "move stats to
+     profile as a top tab option" (382 had made Stats a bar tab of its own). Settings is still Fire Code's own bar tab (the class
+     has no calendar), so it is a screen alone, built here only when asked for by name. */
   const ifcStats = window.NOVA_CLASS === "ifc";
-  const statsAlone = ifcStats && initialTab === "stats";
   const settingsAlone = ifcStats && initialTab === "settings";   /* (383) Settings is Fire Code's bar tab, alone */
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
@@ -150299,13 +150680,13 @@ function showProfile(defaultTab, opts){
   flushStudyTime();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
-  setActiveNav(statsAlone ? "stats" : settingsAlone ? "settings" : "profile");
-  countEl.textContent = statsAlone ? "Stats" : settingsAlone ? "Settings" : "Profile";
+  setActiveNav(settingsAlone ? "settings" : "profile");
+  countEl.textContent = settingsAlone ? "Settings" : "Profile";
   /* A rank-up not yet shown: built as it was before it (317, 319). */
   armRankUpProfileScene(initialTab);
 
   const panel = document.createElement("section");
-  panel.className = "panel screen-profile" + (statsAlone ? " screen-stats" : "");
+  panel.className = "panel screen-profile";
 
   /* Same .navsegment.profiletabs / .iconbtn / hidden-panel shape
      showRewards() already established, rather than a second way of doing
@@ -150349,9 +150730,9 @@ function showProfile(defaultTab, opts){
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
     { key: "settings", label: "Settings", node: settingsTab, cls: " profile-settings-tab-btn" }
-  /* (383) Fire Code: "why is settings still within profile? It should just be in on the bottom tab" - each of its bar tabs is a
-     screen of its own: Profile alone, Stats alone, Settings alone, no switch over any of them */
-  ].filter(t => !ifcStats || t.key === (initialTab === "stats" || initialTab === "settings" ? initialTab : "profile"));
+  /* (383) Fire Code: "why is settings still within profile? It should just be in on the bottom tab" - Settings is a screen of its
+     own there, with no switch over it; (385) Profile and Stats are the two tabs of Profile */
+  ].filter(t => !ifcStats || (settingsAlone ? t.key === "settings" : t.key !== "settings"));
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
     const btn = document.createElement("button");
@@ -150406,7 +150787,8 @@ function showProfile(defaultTab, opts){
      Profile tab. */
   /* Settings' volume slider is dragged sideways; a drag on it is the
      slider's, never a tab change. */
-  if(profileTabOrder.length > 1) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]" });
+  if(profileTabOrder.length > 1) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]",
+    content: () => { const d = profileTabDefs.find(t => t.key === profileTabKey); return d ? [d.node] : []; } });
 
   /* ---------- identity header ----------------------------------------
      One card: the character you chose, your name, the day streak, and
@@ -151054,8 +151436,8 @@ function showProfile(defaultTab, opts){
       /* Stats and Settings in one step (327z15: "not a crazy amount");
          Settings has a tour of its own the first time it opens. */
       window.NOVA_CLASS === "ifc"
-        ? { target: ".profile-settings-tab-btn", align: "left", vplacement: "below",
-            text: "Settings has the rest of the options." }
+        ? { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
+            text: "Stats: your study time and test history." }
         : { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
         text: "Stats: your study time and test history. Settings is beside it." }
       /* Badges and the rank climb moved to their own Ranks tab in the
@@ -151682,13 +152064,35 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
      chat dock, a sheet) is not theirs. */
   const host = document;
   const onSurface = tg => !!tg && (tg === document.documentElement || tg === document.body || surface.contains(tg));
-  let startX = null, startY = null, locked = false;
+  let startX = null, startY = null, locked = false, axis = null, drag = null, busy = false, samples = [], settling = null, earlyGo = null;
+  /* (r22) THE SWIPE FOLLOWS THE FINGER. Until now a swipe did nothing at all until the finger had lifted and then swapped the tab in
+     one step (the build of a board - 180-280ms at 4x CPU - sitting between the lift and anything moving). Now, once the drag is
+     clearly sideways (axis chosen once, ~10px, then kept: a vertical scroll that drifts is never taken, a sideways one never lets go),
+     the tab's content (opts.content) moves with the finger on the compositor - one transform write a frame, no reads, passive
+     listeners but the one that has to cancel the page's scroll - and gives way at an end (no tab beyond: a third of the finger's
+     way, as a rubber band). Let go: past a third of the width, or thrown (>0.35px/ms), it is carried off the side on the compositor
+     and the next tab's content comes in from the other (select() runs between, with nothing moving); short of that it eases back.
+     Nothing starts within 20px of the screen's left edge (the system's swipe back), inside anything that scrolls sideways itself, or
+     under [data-noswipe]. opts.content absent, or reduced motion: the plain swap as it was. */
+  const reduced = () => !!(theme.reduceMotion || document.documentElement.dataset.reduceMotion === "true");
+  const EASE = "cubic-bezier(.2,.8,.25,1)";
+  const hScrolls = tg => {
+    for(let n = tg; n && n.nodeType === 1 && n !== document.body; n = n.parentElement){
+      if(n.hasAttribute && n.hasAttribute("data-noswipe")) return true;
+      if(n.scrollWidth > n.clientWidth + 2){ const ox = getComputedStyle(n).overflowX; if(ox === "auto" || ox === "scroll") return true; }
+    }
+    return false;
+  };
   const onStart = (e) => {
     const t = e.touches[0];
     const tg = e.target;
-    if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))
+    axis = null;
+    /* a finger that comes down while the last swipe is still landing takes it to its end at once and goes on from there */
+    for(let k = 0; busy && k < 4; k++){ if(earlyGo) earlyGo(); else if(settling) settling(); else break; }
+    if(busy || e.touches.length !== 1 || !onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))
        || (tg && tg.closest && tg.closest(".has-seg-glass"))   /* (r8) a finger on a top switcher drags its glass, not the page */
-       || (typeof swipeOverlayUp === "function" && swipeOverlayUp())){   /* (384) never under the page viewer */
+       || (typeof swipeOverlayUp === "function" && swipeOverlayUp())   /* (384) never under the page viewer */
+       || t.clientX < 20 || hScrolls(tg)){
       startX = null; startY = null; locked = false; return;
     }
     /* build 368: NOT A TOUCH ON THE TAB BAR'S OWN SPACE. A slide across the bar that began in its margin (the gap round the pill, which is the
@@ -151699,7 +152103,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
       const bb = document.getElementById("bottomtabs");
       if(bb && !bb.hidden){ const r = bb.getBoundingClientRect(); if(r.height && t.clientY >= r.top - 14 && t.clientY <= r.bottom + 30){ startX = null; startY = null; locked = false; return; } }
     }catch(e){}
-    startX = t.clientX; startY = t.clientY; locked = false;
+    startX = t.clientX; startY = t.clientY; locked = false; samples = [{ t: e.timeStamp, x: t.clientX }];
   };
   host.addEventListener("touchstart", onStart, { passive: true });
   /* The actual reason this swipe reportedly never fired on a real
@@ -151711,25 +152115,139 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
      failing the swipe. Once the drag is clearly more horizontal than
      vertical, claim it before the native scroll gets the chance. An
      ordinary vertical scroll never crosses that threshold. */
+  const stepsOf = i => ({ prev: i > 0, next: i >= 0 && i < order.length - 1 });
+  const place = () => {
+    if(!drag) return;
+    drag.raf = 0;
+    const st = stepsOf(drag.i), dx = drag.dx;
+    const x = (dx < 0 ? st.next : st.prev) ? dx : dx * 0.3;
+    drag.x = x;
+    /* transform alone while the finger is down: an opacity under 1 makes the whole (long) list a surface of its own that is blended
+       again every frame, which a machine without a GPU does not do in 16ms */
+    const tf = "translate3d(" + x.toFixed(1) + "px,0,0)";
+    drag.els.forEach(el => { el.style.transform = tf; });
+  };
+  const clearDrag = () => {
+    if(!drag) return;
+    drag.els.forEach(el => { el.style.transform = ""; el.style.opacity = ""; el.style.transition = ""; el.style.willChange = ""; el.removeAttribute("data-tabdrag"); });
+    if(drag.raf) cancelAnimationFrame(drag.raf);
+    drag = null;
+  };
+  const beginDrag = () => {
+    if(!opts.content || reduced()) return;
+    const els = (opts.content() || []).filter(Boolean);
+    const i = order.indexOf(getCurrent());
+    if(!els.length || i === -1) return;
+    drag = { els, i, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth) };
+    els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform"; el.setAttribute("data-tabdrag", "1"); });
+  };
   const onMove = (e) => {
     if(startX === null) return;
     const t = e.touches[0];
     const dx = t.clientX - startX, dy = t.clientY - startY;
-    if(!locked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) locked = true;
-    if(locked) e.preventDefault();
+    if(!axis && (Math.abs(dx) > 10 || Math.abs(dy) > 10)){
+      axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if(axis === "x"){ locked = true; beginDrag(); }
+    }
+    if(axis !== "x") return;
+    e.preventDefault();
+    samples.push({ t: e.timeStamp, x: t.clientX });
+    if(samples.length > 24) samples.shift();
+    if(drag){ drag.dx = dx; if(!drag.raf) drag.raf = requestAnimationFrame(place); }
   };
   host.addEventListener("touchmove", onMove, { passive: false });
+  const settle = (els, from, to, ms, done) => {
+    const anims = els.map(el => { try{ return el.animate([from, to], { duration: ms, easing: EASE, fill: "forwards" }); }catch(e){ return null; } });
+    let fin = false;
+    const end = () => { if(fin) return; fin = true; if(settling === end) settling = null; anims.forEach(a => { try{ if(a) a.cancel(); }catch(e){} }); done(); };
+    settling = end;
+    const a0 = anims.find(Boolean);
+    if(a0) a0.onfinish = end;
+    setTimeout(end, ms + 60);      /* a hidden tab never finishes an animation */
+  };
   const onEnd = (e) => {
     if(startX === null) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - startX, dy = t.clientY - startY;
-    startX = null; startY = null; locked = false;
-    if(Math.abs(dx) < 60 || Math.abs(dy) > 70) return;
-    const i = order.indexOf(getCurrent());
-    const next = dx < 0 ? i + 1 : i - 1;
-    if(i !== -1 && next >= 0 && next < order.length) select(order[next]);
+    const wasAxis = axis;
+    startX = null; startY = null; locked = false; axis = null;
+    if(!drag){
+      if(wasAxis === "y" || Math.abs(dx) < 60 || Math.abs(dy) > 70) return;
+      const i = order.indexOf(getCurrent());
+      const next = dx < 0 ? i + 1 : i - 1;
+      if(i !== -1 && next >= 0 && next < order.length) select(order[next]);
+      return;
+    }
+    const d = drag, i = d.i, dir = dx < 0 ? 1 : -1, next = i + dir;
+    if(d.raf){ cancelAnimationFrame(d.raf); d.raf = 0; }
+    d.dx = dx; place();
+    /* the finger's last ~100ms of moves (its last two when it rested before it moved, so a rest then a flick is still a flick) */
+    const b = samples[samples.length - 1];
+    let a = samples.find(q => b && q.t >= b.t - 100);
+    if(a === b && samples.length > 1) a = samples[samples.length - 2];
+    const v = a && b && b.t > a.t ? (b.x - a.x) / Math.max(8, b.t - a.t) : 0;      /* px/ms, leftwards negative */
+    const speed = dir === 1 ? -v : v;
+    const commit = next >= 0 && next < order.length && panel.isConnected
+      && (Math.abs(dx) > d.W * 0.33 || (speed > 0.35 && Math.abs(dx) > 24)) && wasAxis === "x";
+    const cur = { transform: "translate3d(" + d.x.toFixed(1) + "px,0,0)", opacity: d.els[0].style.opacity || "1" };
+    if(!commit){
+      /* back where it was, eased from where it is */
+      settle(d.els, cur, { transform: "translate3d(0,0,0)", opacity: "1" }, 260, () => { if(drag === d) clearDrag(); });
+      return;
+    }
+    busy = true;
+    const enter = (hold) => {
+      const els = (opts.content() || []).filter(Boolean);
+      if(!els.length){ busy = false; return; }
+      /* the next tab's content comes in from the side the finger was taking this one to */
+      settle(els, { transform: "translate3d(" + (dir * 56) + "px,0,0)", opacity: "0" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 200, () => {
+        if(hold) els.forEach(el => { el.style.opacity = ""; });
+        busy = false;
+      });
+    };
+    const out = { transform: "translate3d(" + (-dir * d.W * 0.5).toFixed(0) + "px,0,0)", opacity: "0" };
+    const host0 = opts.ghost ? opts.ghost() : null;
+    if(host0 && host0.isConnected && host0.firstChild){
+      /* THE OLD LIST STAYS WHERE THE FINGER LEFT IT WHILE THE NEW ONE IS BUILT, then the two cross. A board's rows are one element
+         repainted in place and the build of the next is 180-280ms at 4x CPU: it used to sit between the lift and anything on screen,
+         and a first version that carried the old list off first left a bare screen for the build. Its rows are lifted into a copy of
+         the container, at the place they are seen, the build runs under it (a frame later, so the lift is painted first; the new rows
+         held at no opacity), and once it is done the old list leaves on the compositor as the new one comes in from the other side. */
+      const r = host0.getBoundingClientRect();     /* the drag's transform is in it: where the rows are SEEN */
+      const gh = document.createElement("div");
+      gh.className = host0.className; gh.setAttribute("aria-hidden", "true"); gh.inert = true;
+      gh.style.cssText = "position:fixed; margin:0; pointer-events:none; z-index:2; top:" + r.top + "px; left:" + r.left + "px; width:" + r.width + "px; height:" + r.height + "px; overflow:hidden;";
+      gh.append(...host0.childNodes);
+      clearDrag();
+      host0.style.opacity = "0";
+      host0.insertAdjacentElement("afterend", gh);
+      let went = false;
+      const go = () => {
+        if(went) return;
+        went = true; earlyGo = null;
+        if(!panel.isConnected){ gh.remove(); host0.style.opacity = ""; busy = false; return; }
+        select(order[next]);
+        settle([gh], cur, out, 170, () => { gh.remove(); });
+        enter(true);
+      };
+      earlyGo = go;
+      requestAnimationFrame(() => setTimeout(go, 0));
+      return;
+    }
+    settle(d.els, cur, out, 110, () => {
+      clearDrag();
+      if(!panel.isConnected){ busy = false; return; }
+      select(order[next]);
+      enter();
+    });
   };
   host.addEventListener("touchend", onEnd);
+  const onCancel = () => {
+    startX = null; startY = null; locked = false; axis = null;
+    const d = drag; if(!d) return;
+    settle(d.els, { transform: "translate3d(" + d.x.toFixed(1) + "px,0,0)", opacity: d.els[0].style.opacity || "1" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 260, () => { if(drag === d) clearDrag(); });
+  };
+  host.addEventListener("touchcancel", onCancel, { passive: true });
 
   /* .wrap outlives the screen inside it, so these have to come off when
      the panel goes - otherwise every screen after this one inherits this
@@ -151741,6 +152259,8 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     host.removeEventListener("touchstart", onStart);
     host.removeEventListener("touchmove", onMove);
     host.removeEventListener("touchend", onEnd);
+    host.removeEventListener("touchcancel", onCancel);
+    clearDrag();
   });
   obs.observe(stage, { childList: true, subtree: true });
 }
@@ -151776,7 +152296,7 @@ function showClass(which, opts){
   if(w === "friends" || w === "friend") return showFriends();
   if(w === "calendar" || w === "cal" || w === "schedule" || w === "class") return showCalendar();
   const board = opts && typeof opts.board === "string" ? opts.board
-    : (w === "level" || RANKING_BOARDS.some(b => b.key === w)) ? w : undefined;
+    : (w === "level" || rankingBoardsFor().some(b => b.key === w)) ? w : undefined;
   return showRankings(board);
 }
 /* The Leaderboard tab while "Show me in the rankings" is off (build 324):
@@ -151805,6 +152325,7 @@ function buildRankingsOptedOut(boardKey){
     store.leaderboardOptIn = true;
     store.leaderboardOptInChanged = true;
     saveStore();
+    if(window.NOVA_CLASS === "ifc"){ try{ flushClassBoardRow(); }catch(e){} }   /* (385) see the Settings switch */
     showToast("You're on the leaderboard.");
     showRankings(boardKey);
   });
@@ -151821,14 +152342,16 @@ document.addEventListener("visibilitychange", () => {
      changed is not drawn again anyway, and one that has is drawn a moment later */
   if(!document.hidden) setTimeout(() => { if(!document.hidden && f.rows.isConnected && rankingsOnVisible === f) f.paint(); }, 2200);
 });
-/* Fire Code's bar has Stats where the Leaderboard is (build 382): the class has no board, so its tab, Stats. */
+/* Stats is Profile's second tab (Fire Code's bar had it as a tab of its own from 382 to 384; its hidden button still routes here) */
 function showStatsScreen(){ return showProfile("stats"); }
 function showRankings(defaultBoard){
-  if(window.NOVA_CLASS === "ifc") return showStatsScreen();
   setActiveNav(null);
   countEl.textContent = "Leaderboard";
+  /* (385) Fire Code's board is its own class's: two boards, nothing weekly, and no week's recap owed here */
+  const ifcBoard = window.NOVA_CLASS === "ifc";
+  const boards = rankingBoardsFor();
   /* the week's recap, if it is owed, a moment after the board is up (build 383) */
-  try{ scheduleWeekRecap(WEEK_RECAP_BOARD_DELAY_MS); }catch(e){}
+  try{ if(!ifcBoard) scheduleWeekRecap(WEEK_RECAP_BOARD_DELAY_MS); }catch(e){}
   /* a string or nothing: handed straight to a listener it is a MouseEvent */
   rankingsBoardKey = (typeof defaultBoard === "string" && defaultBoard) || RANKINGS_DEFAULT_BOARD;
   /* "level" is still accepted as a name, so a link or a stored key from
@@ -151839,7 +152362,7 @@ function showRankings(defaultBoard){
      preference or a link from an older build lands on the board that
      replaced it rather than on a different one. */
   if(rankingsBoardKey === "level") rankingsBoardKey = "overall";
-  if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = RANKINGS_DEFAULT_BOARD;
+  if(!boards.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = RANKINGS_DEFAULT_BOARD;
 
   /* ---- HIDDEN FROM THE RANKINGS, SO NO RANKINGS (build 324) ----
      "The show me in rankings toggle, if I turn it off, I can still see
@@ -151865,7 +152388,7 @@ function showRankings(defaultBoard){
   const seg = document.createElement("div");
   seg.className = "navsegment profiletabs";
   const tabBtns = {};
-  RANKING_BOARDS.forEach(b => {
+  boards.forEach(b => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "iconbtn" + (b.key === rankingsBoardKey ? " active" : "");
@@ -151944,7 +152467,9 @@ function showRankings(defaultBoard){
      round trip to tell it what it already knew. Seeded here, the rows
      are on screen in the frame the tab opens and the snapshot below
      simply replaces them when it lands. */
-  let entries = (leaderboardRows && leaderboardRows.length) ? leaderboardRows.slice() : [];
+  /* (385) Fire Code's own rows (classBoardRows), never the academy's (leaderboardRows: what its friends are read from) */
+  const seedRows = ifcBoard ? classBoardRows : leaderboardRows;
+  let entries = (seedRows && seedRows.length) ? seedRows.slice() : [];
   let loaded = entries.length > 0;
 
   /* Your own row is rendered from LIVE LOCAL STATE, never from the
@@ -151981,7 +152506,7 @@ function showRankings(defaultBoard){
     /* switched off while the board was up (another device's change
        arriving, say): the board goes, the same way it would on opening */
     if(!store.leaderboardOptIn){ if(panel.isConnected) showRankings(rankingsBoardKey); return; }
-    const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
+    const board = boards.find(b => b.key === rankingsBoardKey);
     blurb.textContent = board.blurb || "";
     const list = liveEntries();
     /* Recorded whichever board is on screen, not only This Week. paint()
@@ -151989,7 +152514,7 @@ function showRankings(defaultBoard){
        means simply having the Leaderboard open keeps your weekly
        position up to date - where hooking the weekly board alone would
        have made the feat depend on which tab somebody happens to like. */
-    observeWeeklyRank(list);
+    if(!ifcBoard) observeWeeklyRank(list);
     rows.removeAttribute("aria-busy");
     /* build 382: rows that replace the placeholders stand where they stood (same header, same row height) and come up softly */
     const fromSkel = !!rows.querySelector(":scope > .rank-row-skel");
@@ -152073,7 +152598,7 @@ function showRankings(defaultBoard){
     rows.appendChild(p);
   };
 
-  blurb.textContent = (RANKING_BOARDS.find(b => b.key === rankingsBoardKey) || {}).blurb || "";
+  blurb.textContent = (boards.find(b => b.key === rankingsBoardKey) || {}).blurb || "";
 
   /* Only when there is genuinely nothing to show. With the cache seeded
      above, the usual case paints real rows immediately. */
@@ -152116,7 +152641,7 @@ function showRankings(defaultBoard){
        instead (the listener paints the moment the server answers); offline, or with classmates in hand, it is 2.5s as before. */
     const skelAt = Date.now();
     const fallback = () => {
-      if(loaded || !rows.isConnected || !fbDb) return;
+      if(loaded || !rows.isConnected || !boardDbNow()) return;
       if(!rows.querySelector(".rank-row-skel")) return;
       if(navigator.onLine !== false && Date.now() - skelAt < LB_SLOW_WAIT_MS && !entries.some(e => e && e.pub !== store.publicId)){
         setTimeout(fallback, 500); return;
@@ -152127,7 +152652,9 @@ function showRankings(defaultBoard){
   }
 
   if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
-  if(!fbDb){
+  if(!boardDbNow()){
+    /* (385) Fire Code's handle comes up a beat after the page: the board opens as it does */
+    if(ifcBoard && syncCode){ try{ onSocialReady(() => { try{ if(panel.isConnected && !boardDbNow()) return; if(panel.isConnected) showRankings(rankingsBoardKey); }catch(e){} }); }catch(e){} }
     /* Only when there is nothing to show. With the cache seeded above,
        going offline leaves the last board you saw on screen instead of
        replacing people with a notice - which is both more useful and
@@ -152136,7 +152663,7 @@ function showRankings(defaultBoard){
       rows.replaceChildren();
       const p = document.createElement("p");
       p.className = "info-note";
-      p.textContent = academyOnly("The leaderboard", "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.");
+      p.textContent = ifcBoard ? classBoardUnreachable() : academyOnly("The leaderboard", "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.");
       rows.appendChild(p);
     }
   } else {
@@ -152146,13 +152673,13 @@ function showRankings(defaultBoard){
        stale and the board quietly stops being live, which is the one
        failure this screen cannot afford. */
     try{
-      rankingsLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
-        const next = [];
+      rankingsLiveUnsub = onSnapshotResilient(ifcBoard ? classBoardRef(ifcSocialDb, "ifc") : fbDb.collection("leaderboard"), snap => {
+        const next = ifcBoard ? classBoardEntriesFrom(snap) : [];
         /* doc.id is the PUBLIC ID, not the sync code - see "THE PUBLIC
            ID" above. Named `pub` rather than left as `code`, because a
            field called `code` holding something that is no longer the
            sync code is exactly how the next person reintroduces this. */
-        snap.forEach(doc => {
+        if(!ifcBoard) snap.forEach(doc => {
           if(isLegacyBoardId(doc.id)) return;
           const e = Object.assign({ pub: doc.id }, doc.data());
           /* Expire a stale week here rather than at every read site -
@@ -152181,8 +152708,8 @@ function showRankings(defaultBoard){
         /* Shared with the Friends screen, which needs the same rows
            and must not open a second listener on the same
            collection. */
-        leaderboardRows = entries; leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){}
-        friendsListCatchUp();
+        if(ifcBoard) classBoardRows = entries;
+        else { leaderboardRows = entries; leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){} friendsListCatchUp(); }
         /* A cache that knows nobody but you is not the class: the
            placeholders stay up until the server answers, rather than
            crowning you 1st of 1 for a second. Offline, the fallback
@@ -152196,7 +152723,7 @@ function showRankings(defaultBoard){
 
   /* The same contained tab swipe the old Rewards tab had, now shared -
      see attachTabSwipe. */
-  attachTabSwipe(panel, RANKING_BOARDS.map(b => b.key), () => rankingsBoardKey, selectBoard);
+  attachTabSwipe(panel, boards.map(b => b.key), () => rankingsBoardKey, selectBoard, { content: () => [rows], ghost: () => rows });
 
   /* Detach the snapshot when this screen goes, not just when Rankings is
      opened again. Without this, walking Rankings -> Home -> Rankings
@@ -152234,9 +152761,10 @@ function showRankings(defaultBoard){
     saveStore();
     startSimpleTour([
       { target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
-        text: "This Week: XP since Monday. Overall: all time. Hundos: units at 100%." },
+        text: ifcBoard ? "Overall: ranked by rank, then level. Hundos: chapters at 100%."
+          : "This Week: XP since Monday. Overall: all time. Hundos: units at 100%." },
       { target: ".rank-search", align: "left", vplacement: "below",
-        text: "Search for anyone in 26E by username." },
+        text: ifcBoard ? "Search for anyone in Fire Code by username." : "Search for anyone in 26E by username." },
       { target: ".rank-me-btn", align: "right", vplacement: "below",
         text: "Find me jumps to your row. It all updates live." }
     ]);
@@ -157231,12 +157759,14 @@ function tabPerfText(){
   if(window.NOVA_CLASS === "ifc"){
     const calTab = bar.querySelector("#bottomtab-calendar"), setTab = bar.querySelector("#bottomtab-settings");
     if(calTab && setTab){ calTab.hidden = true; setTab.hidden = false; }
-    /* BUILD 382: NO LEADERBOARD IN FIRE CODE - STATS TAKES ITS PLACE. "we are gonna remove the leaderboard completely. That
-       will now just be stats, so stats from profile will be moved to the bottom tab for the fire code side." The class has
-       no cloud (build 328), so its board could never fill anyway. Home, Profile, Stats, Settings; showRankings() sends any
-       route still pointed at the board (back links, banners, old links) to Stats in this class. */
+    /* BUILD 385: FIRE CODE HAS ITS OWN LEADERBOARD, AND STATS IS A TAB OF PROFILE. "fire code is gonna get the leaderboard. So move
+       stats to profile as a top tab option." (382 had taken the Leaderboard off this bar for Stats: "we are gonna remove the
+       leaderboard completely".) The bar is Home, Profile, Leaderboard, Settings - the academy's, with Settings where the
+       Calendar is, since this class has no calendar. #bottomtab-stats stays in the markup, hidden for good: Stats is
+       showProfile("stats"), a top tab beside Profile's. */
     const lbTab = bar.querySelector("#bottomtab-rewards"), stTab = bar.querySelector("#bottomtab-stats");
-    if(lbTab && stTab){ lbTab.hidden = true; stTab.hidden = false; }
+    if(lbTab) lbTab.hidden = false;
+    if(stTab) stTab.hidden = true;
   }
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
@@ -157607,7 +158137,7 @@ function tabPerfText(){
     /* Friends is opened from the chat over any tab since build 327z12
        round 2, and keeps THAT tab lit (its data-from) */
     const frFrom = (document.querySelector("#stage .screen-friends") || { dataset: {} }).dataset.from || "";
-    const onProfileSub = !!document.querySelector(window.NOVA_CLASS === "ifc" ? ".screen-customize" : ".screen-customize, .screen-testreview") || frFrom === "profile";
+    const onProfileSub = !!document.querySelector(".screen-customize, .screen-testreview") || frFrom === "profile";
     const onSettingsSub = !!document.querySelector(".screen-bugreport, .screen-settings-sub");
     /* THE CALENDAR IS A BAR TAB (build 323), so the calendar lights
        Calendar, not Profile - wherever it is drawn, as its own screen or
@@ -157625,9 +158155,8 @@ function tabPerfText(){
     const settingsShown = !!settingsBtn && !settingsBtn.hidden;
     lit("#bottomtab-profile", !calShown && (((onProfile && !(settingsShown && onSettingsAny))) || onRanks || onProfileSub || (onSettingsAny && !settingsShown)));
     lit("#bottomtab-rewards", (onRewards || frFrom === "rewards") && !calShown);
-    /* Fire Code's Stats tab (build 382): its own screen, and the test history it opens */
-    const onStats = !!document.querySelector("#stage .screen-stats") || (window.NOVA_CLASS === "ifc" && !!document.querySelector("#stage .screen-testreview")) || frFrom === "stats";
-    lit("#bottomtab-stats", onStats && !calShown);
+    /* (385) Stats is a tab of Profile in every class now: its bar button is never shown, so nothing is lit for it */
+    lit("#bottomtab-stats", false);
     lit("#bottomtab-calendar", calShown);
     lit("#bottomtab-settings", onSettingsAny && !calShown);
     lit("#bottomtab-home", (onHome || frFrom === "home") && !calShown);
@@ -157776,7 +158305,7 @@ function tabPerfText(){
      the bar as laid out - whatever the labels, widths or merged Start
      pill. Only re-measured when the row or a tab changes size. */
   const pfTab = document.getElementById("bottomtab-profile");
-  const pfNeighbours = [document.getElementById("bottomtab-home"), document.getElementById(window.NOVA_CLASS === "ifc" ? "bottomtab-stats" : "bottomtab-rewards")];
+  const pfNeighbours = [document.getElementById("bottomtab-home"), document.getElementById("bottomtab-rewards")];
   function centreProfileTab(){
     if(!pfTab || !pfNeighbours[0] || !pfNeighbours[1]) return;
     const mid = el => { const r = el.getBoundingClientRect(); return r.width ? r.left + r.width / 2 : null; };
@@ -159480,7 +160009,9 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
     /* (384 r20) the tips already seen come across; the dots behind the new things (seenUnlocks) are the class's own - the
        academy's marks would hide a Fire Code unlock's dot, and name characters this class has not unlocked */
     Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k) && k !== "seenUnlocks") seed[k] = a[k]; });
-    seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
+    /* (385) Fire Code has a leaderboard of its own: a first visit is on it, as the academy's default is, unless the person hid
+       themselves in the academy (their word on class sharing travels with them; it is theirs to change in Fire Code's Settings) */
+    seed.leaderboardOptIn = a.leaderboardOptIn !== false; seed.leaderboardOptInChanged = false;
     /* (384) THE LOOK IS THE CLASS'S OWN. Madison: "When switching classes, the theme from the other class is being used on the
        class you switched to ... I don't have it unlocked" / "in the police class I have void selected, when I switch to IFC, it
        selects the void character for me". The settings come across (sound, haptics, swipe and the rest - the person's), the
@@ -159491,6 +160022,20 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
       storageHadData = true;
       try{ if(store.avatarChar && isLockedCharacter(store.avatarChar)) store.avatarChar = classDefaultCharacter(); }catch(e){}
       persistLocally();
+    }
+  }catch(e){}
+}
+/* (385) FIRE CODE HAS A LEADERBOARD NOW, AND EVERY COPY MADE BEFORE IT IS OFF IT. Until this build the class had no board and no
+   switch, so a Fire Code copy that says "not in the rankings" was never anybody's choice - the first-visit seed wrote it. Once, on
+   this device, such a copy joins the board as the academy's default does, unless the person hid themselves in the academy (class
+   sharing is theirs to turn off in Fire Code's Settings, and a choice made there is never touched again). */
+if(window.NOVA_CLASS === "ifc" && storageHadData){
+  try{
+    if(!localStorage.getItem("class26e.boardseed.385")){
+      localStorage.setItem("class26e.boardseed.385", "1");
+      if(store.leaderboardOptIn === false && store.leaderboardOptInChanged === true && academyCopyNow().leaderboardOptIn !== false){
+        store.leaderboardOptIn = true; store.leaderboardOptInChanged = false; saveStore();
+      }
     }
   }catch(e){}
 }

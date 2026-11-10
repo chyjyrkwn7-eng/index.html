@@ -30,8 +30,8 @@ with sync_playwright() as pw:
         ctx, pg = rc["new_page"](br, port, 440, 956, seed); go(pg, ifc)
         bar = pg.evaluate(BAR); ids = [b["id"] for b in bar]
         if ifc:
-            # build 382: Stats takes the Leaderboard's place in Fire Code
-            chk(tag + ": the bar is Home, Profile, Stats, Settings", ids == ["bottomtab-home", "bottomtab-profile", "bottomtab-stats", "bottomtab-settings"], ids)
+            # build 385: Fire Code's bar has the Leaderboard again (Stats is a tab of Profile)
+            chk(tag + ": the bar is Home, Profile, Leaderboard, Settings", ids == ["bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-settings"], ids)
             chk(tag + ": Settings has its gear drawn", all(b["svg"] for b in bar), bar)
         else:
             chk(tag + ": the bar is Home, Profile, Leaderboard, Calendar", ids == ["bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar"], ids)
