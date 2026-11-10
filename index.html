@@ -56010,8 +56010,11 @@ const SAVED_TEST_DROPPED_KEY = "class26e.savedtest.dropped";
 let runSaveSlot = false;
 let runStudyPriorMs = 0;
 function runSessionSavable(){
+  /* (384.20) NEVER ASKS vroomCode. That variable says "this device is in a room", and it outlived any room left by a door
+     that was not leaveVirtualRoom() - so an ordinary Drill that came after could not be saved. A room's run is told by the
+     run's own flags: inVirtualRoom, and raceTimed (both set by beginVirtualRoomTest for exactly that run). */
   return runSaveSlot && testInProgress && order.length > 0 && runLabel !== "Daily question" &&
-         !inVirtualRoom && !vroomCode && !raceTimed && (runMode === "drill" || runMode === "exam");
+         !inVirtualRoom && !raceTimed && (runMode === "drill" || runMode === "exam");
 }
 /* `asSaved === true` only from Save and exit / Not now - the function is
    also an event listener, and an event object must not count as yes. */
@@ -56204,6 +56207,8 @@ function markRunSessionSaved(unfinished){
   }catch(e){}
 }
 function resumeRunSession(s){
+  /* (384.20) a saved test is an ordinary run: a room this device still holds is left first (see beginRun) */
+  try{ if(vroomCode || inVirtualRoom) leaveVirtualRoom("away"); }catch(e){}
   ["mode", "units", "versions", "source", "size", "timer", "timerMinutes", "recall", "shuffle"].forEach(k => {
     if(s.cfg && s.cfg[k] !== undefined) cfg[k] = s.cfg[k];
   });
@@ -57575,7 +57580,10 @@ function runModeTitle(){
      should the daily question stuff AT the very top be repositioned and
      be similar?" So it is named where a test is named, and stays put. */
   if(runLabel === "Daily question") return "Daily question";
-  if(vroomCode) return "Virtual Room";
+  /* (384.20) the run's own flags, not the room code - see runSessionSavable */
+  let roomRun = false;
+  try{ roomRun = !!inVirtualRoom || !!raceTimed; }catch(e){}
+  if(roomRun) return "Virtual Room";
   if(isMissedRetake) return "Retake";
   return modeTitleOf(runMode === "exam" ? "exam" : "drill");
 }
@@ -58763,8 +58771,13 @@ function ifcCharsRepair384(){
    - retakenQuestions, which a copy's "not yet seeded" flag backfilled from its OWN misses x drill share (seedChallenges289: written
      for accounts that played before the count was kept, wrong in a class that has counted from its first answer).
    What an honest Fire Code store can hold is bounded by its own record: every retake counted (a Drill question missed then answered
-   again, or a question of a Retake run) follows a miss on that question, recorded in stats as `m`, and is an answer given - so
-   retakenQuestions <= the misses on record, and <= answers given. A count over that is not this class's.
+   again, or a question of a Retake run) follows a miss on that question, recorded in stats as `m`, and is an answer given. (384.20)
+   BUT A MISS CAN BE RETAKEN TWICE: the Drill counts the question the moment it is missed and answered again (one retake, one miss),
+   and "Retake missed questions" counts the same question again when it is retaken, with no new miss - so two retakes for one miss is
+   ordinary play, and 2 x the misses on record is the most an honest store can hold (a retake that is missed again is a new miss, and
+   its own two). This said "retakenQuestions <= the misses on record" for the first version of the rule, which put an account that had
+   missed 60 questions and retaken them (120, the Smoke Diver, honestly) back to 60, locked it and took it off the cloud too. So
+   retakenQuestions <= 2 x the misses on record, and <= answers given. A count over that is not this class's.
    A RULE, NOT AN EDIT (see applyWeekWinVoids): both counters merge as a max / union, so a lowered copy would be put straight back by
    the cloud document, the `__floor` backup or another device. The rule runs on a Fire Code copy after every merge (once the server's
    copy is in) and on the document about to be written (writeAccount, which writes the floor from the same copy, so the floor comes
@@ -58778,7 +58791,7 @@ function ifcChallengeClamp(d){
   if(window.NOVA_CLASS !== "ifc" || !d || typeof d !== "object") return false;
   let changed = false;
   const answered = Number(d.lifetime && d.lifetime.answered) || 0;
-  const cap = Math.max(0, Math.min(ifcMissesOnRecord(d), answered));
+  const cap = Math.max(0, Math.min(2 * ifcMissesOnRecord(d), answered));   /* (384.20) 2x: a miss is counted once when it is made up and once when it is retaken */
   if((Number(d.retakenQuestions) || 0) > cap){ d.retakenQuestions = cap; changed = true; }
   if(d.unitGameBeat && typeof d.unitGameBeat === "object" && Object.keys(d.unitGameBeat).length){ d.unitGameBeat = {}; changed = true; }
   return changed;
@@ -115849,6 +115862,13 @@ let originalTestLabel = null;
    reason retroHideBadges gives. */
 var runStartLocked = null, runStartBanners = null, runStartHundos = null;
 function beginRun(indexes, label, practiceMinutes, missedRetake){
+  /* (384.20) AN ORDINARY RUN IS NOT IN A ROOM. beginVirtualRoomTest sets raceTimedNext (and inVirtualRoom) for the one run that
+     is; any other run that starts while this device still holds a room - a lobby or a match walked away from by a door that was
+     not leaveVirtualRoom() - leaves it first, so the room's presence beat, its listener and its class bank are not carried into
+     a Drill, and the room is told this device has gone. */
+  let heldRoom = false;
+  try{ heldRoom = !raceTimedNext && (!!vroomCode || !!inVirtualRoom); }catch(e){}
+  if(heldRoom){ try{ leaveVirtualRoom("away"); }catch(e){} }
   /* (384) A ROOM FROM ANOTHER CLASS: its questions earn nothing here, so nothing is seeded, snapshotted or remembered for
      them, and no flare is hidden in them (summarizeVisitingRun ends it) */
   const visiting = vroomForeign();
@@ -115897,7 +115917,7 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
      it, so a saved test waits through either. A run that owns it starts
      with it empty - Start Studying has already asked about anything in it. */
   runStudyPriorMs = 0;
-  runSaveSlot = runLabel !== "Daily question" && !inVirtualRoom && !vroomCode && !raceTimed &&
+  runSaveSlot = runLabel !== "Daily question" && !inVirtualRoom && !raceTimed &&
                 (runMode === "drill" || runMode === "exam");
   if(runSaveSlot) clearRunSession();
   /* The actual fix for the daily question never awarding points at
@@ -120799,7 +120819,9 @@ function forcedUpdateBlocked(){
      leaderboard. A lobby is a countdown other people are waiting on, and
      a match is a test with company. */
   let inRoom = false;
-  try{ inRoom = !!inVirtualRoom || !!vroomCode; }catch(e){}
+  /* (384.20) a room as the SCREEN says it (roomBankInUse), not a bare vroomCode: a code left set by a lobby walked away from held
+     every forced update off for the rest of the session */
+  try{ inRoom = !!inVirtualRoom || roomBankInUse(); }catch(e){}
   if(inRoom) return true;
   if(document.querySelector(".vroom-lobby-panel, .vroom-chat-slot, .vroom-results-panel, .vroom-finale-panel, " +
      ".screen-vroom-lobby, .screen-vroom-choice, .screen-rooms, .screen-tug, .screen-tug-wait, .screen-tug-result, " +
@@ -136201,6 +136223,11 @@ function leaveVirtualRoom(reason){
   /* (384 vr2) where this device is as it goes - read before the flags below are cleared */
   let where = "room";
   try{ where = vroomLeaveWhere(); }catch(e){}
+  /* (384.20) "away": this device walked out of the room's screens by a door that is not a Leave button (vroomAwayCheck, or an
+     ordinary run starting). The screen it is on now is not the room's, so where it WAS is what it last had up */
+  if(reason === "away" && vroomAwayWhere) where = vroomAwayWhere;
+  vroomAwayWhere = "";
+  clearTimeout(vroomAwayTimer); vroomAwayTimer = null;
   detachVroomListener();
   /* THE RACE LINE'S LISTENER TOO. It is separate from the lobby's, and
      leaving mid-race left it running - still reading the room on every
@@ -136291,6 +136318,38 @@ try{
   new MutationObserver(() => {
     if(BANK_CLASS === ownClass()) return;
     try{ if(!roomBankInUse()) restoreClassBank(); }catch(e){}
+  }).observe(stage, { childList: true });
+}catch(e){}
+/* ---- A ROOM IS LEFT BY LEAVING ITS SCREENS (384.20) ----
+   The one variable that says "this device is in a room" (vroomCode) was cleared by leaveVirtualRoom() and by nothing else, and a
+   lobby or a finished match can be walked away from by other doors: the header's Home, a banner's View, a tab. What stayed was
+   the code, the presence beat (a write every few seconds), the lobby's listener, the room's class bank and a line on the roster
+   for somebody who is not there - and an ordinary Drill that followed could not be saved (runSessionSavable). So the stage is
+   watched: when this device holds a room and the screen is not one of the room's (ROOM_SCREENS, the run, or the empty stage
+   between them), it leaves it, as the Leave button does, after VROOM_AWAY_MS - the delay is so a screen that is only between two
+   of the room's is never mistaken for a way out. The same check runs again where an ordinary run starts (beginRun). */
+const VROOM_AWAY_MS = 300;
+let vroomAwayTimer = null;
+let vroomAwayWhere = "";    /* where this device last was in the room: "lobby", "match" or "room" (vroomLeaveWhere) */
+function vroomAwayCheck(){
+  vroomAwayTimer = null;
+  let code = null;
+  try{ code = vroomCode; }catch(e){}
+  if(!code) return;
+  if(roomBankInUse()) return;
+  leaveVirtualRoom("away");
+}
+try{
+  new MutationObserver(() => {
+    let code = null;
+    try{ code = vroomCode; }catch(e){}
+    if(!code){ if(vroomAwayTimer){ clearTimeout(vroomAwayTimer); vroomAwayTimer = null; } return; }
+    if(roomBankInUse()){
+      try{ vroomAwayWhere = vroomLeaveWhere(); }catch(e){}
+      if(vroomAwayTimer){ clearTimeout(vroomAwayTimer); vroomAwayTimer = null; }
+      return;
+    }
+    if(!vroomAwayTimer) vroomAwayTimer = setTimeout(vroomAwayCheck, VROOM_AWAY_MS);
   }).observe(stage, { childList: true });
 }catch(e){}
 
