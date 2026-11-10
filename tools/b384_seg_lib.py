@@ -41,7 +41,9 @@ REVIEW = ("showProfile('stats'); const run={missed:[0,1], order:[0,1,2,3], timed
 # name, how to open it, the switcher's selector, its segments, the classes it exists in, whether a swipe across the content changes it
 SWITCHERS = [
     ("profile", "showProfile('stats');", "#stage .screen-profile > .navsegment.profiletabs", ".iconbtn", ("academy", "ifc"), True),
-    ("boards", "showRankings();", "#stage .screen-rankings > .navsegment.profiletabs", ".iconbtn", ("academy", "ifc"), True),
+    # (Fire Code's Leaderboard is Overall alone, since 384.12 - "Remove the hundo leaderboard in fire code" - and one board has no switcher, so it has
+    # nothing to drive there: boards is the academy's alone. The gate had still expected a switcher in both classes.)
+    ("boards", "showRankings();", "#stage .screen-rankings > .navsegment.profiletabs", ".iconbtn", ("academy",), True),
     # (the academy's levels 2 and 3 have no units yet, and a tap on one opens "coming" instead: the fixture gives them two each)
     ("levels", "if(!window.__lv2){ window.__lv2=1; const u0=unitsOfLevel; unitsOfLevel=(lv,all)=>{ const r=u0(lv,all); return r.length ? r : (all||[]).slice(0,2); }; } cfg.mode='drill'; cfg.units=[]; showSetup();", "#stage .setup-levels", ".iconbtn", ("academy",), False),
     ("chat", "showHome(); chatDockTab='friends'; openChatDock();", ".chatdock-seg, .chatdock-tabs:not(:has(.chatdock-seg))", ".chatdock-tab", ("academy", "ifc"), False),
