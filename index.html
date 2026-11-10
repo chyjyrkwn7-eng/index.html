@@ -39124,6 +39124,46 @@ html.is-browser{ --fade-paper: transparent; }
       .screen-ranks > :is(.ranks-tab, .badges-tab)){
     zoom:var(--zc, 1);
   }
+
+  /* ---- AN UNLIT SECRET FLARE IS AN UNKINDLED EMBER (build 384 r15) ----
+     Madison: "The unlit secret flares, I'm not the biggest fan of how they look, room for improvement there." They were a
+     smoky grey glass bead with a bright glint - a water drop or a ball bearing, nothing to find. It is dark obsidian now with
+     a thin cool rim of frosted light, a dim point of light deep in the middle that slowly swells and fades (it is not lit yet,
+     it is waiting to be) and, every few seconds, one faint ring that opens round it and goes. Still colourless (build 314: a
+     flare you have not found gives away no hue), still a marble (a small glint high on the left, a catch of light on the rim).
+     ONE LOOK for every place an unlit secret flare is drawn: Home's orbit and Welcome's planet (.cosmic-flare-dot not found),
+     the recap dots (.nt-rc-sf), the hint card's flare, and the mark on a locked secret character's tile (in place of a
+     padlock) - they are all .cof-* parts inside either .cosmic-flare-dot:not(.is-found) or .unlit-flare (buildUnlitFlare).
+     Every part is a small box that only ever changes transform or opacity: no filter, no backdrop-filter. */
+  .unlit-flare{ position:relative; display:block; aspect-ratio:1; border-radius:50%; flex:none; }
+  .unlit-flare > i{ position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+  .nt-rc-sf.unlit-flare{ background:none; box-shadow:none; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare){ --ul-rim:206, 216, 238; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-body{
+    background:
+      radial-gradient(ellipse 22% 14% at 32% 22%, rgba(255,255,255,.55) 0 40%, rgba(255,255,255,0) 100%),
+      radial-gradient(circle at 50% 50%, rgba(150,168,206,0) 0 50%, rgba(150,168,206,.24) 76%, rgba(196,210,238,.5) 100%),
+      radial-gradient(circle at 46% 44%, #323b58 0%, #1a2034 60%, #0d101b 100%);
+    box-shadow:inset 0 0 0 .8px rgba(var(--ul-rim), .72), 0 1.5px 3px rgba(0,0,0,.6), 0 0 7px rgba(170,188,228,.3);
+  }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{
+    inset:24%; opacity:.45;
+    background:radial-gradient(circle, rgba(250,252,255,.95) 0, rgba(240,246,255,.8) 16%, rgba(196,210,244,.4) 46%, rgba(196,210,244,0) 100%);
+  }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ inset:-8%; border:1px solid rgba(var(--ul-rim), .55); opacity:0; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen{ overflow:hidden; opacity:.6; }
+  :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen::before{ content:""; position:absolute; top:-20%; bottom:-20%; left:-80%; width:45%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent); transform:translateX(0) skewX(-18deg); }
+  .avatarchar-lockmark .unlit-flare{ width:100%; height:100%; }
+  .avatarchar-lockmark .unlit-flare .cof-ring{ display:none; }
+  .rs-hint-orb .unlit-flare{ width:100%; height:100%; }
+  @media (prefers-reduced-motion:no-preference){
+    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-core{ animation:cof-ul-core 5.4s ease-in-out var(--fd, 0s) infinite; }
+    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-ring{ animation:cof-ul-ring 8s ease-out var(--fd, 0s) infinite; }
+    :is(.cosmic-flare-dot:not(.is-found), .unlit-flare) .cof-sheen::before{ animation:cof-sweep calc(var(--fo, 6.5s) + 1.5s) ease-in-out var(--fd, 0s) infinite; }
+  }
+  @keyframes cof-ul-core{ 0%,100%{ opacity:.25; transform:scale(.8); } 50%{ opacity:1; transform:scale(1.12); } }
+  @keyframes cof-ul-ring{ 0%,68%{ opacity:0; transform:scale(.92); } 74%{ opacity:.42; } 100%{ opacity:0; transform:scale(1.7); } }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -90167,6 +90207,18 @@ function buildInfoIcon(text){
   return wrap;
 }
 
+/* An unlit secret flare as a standalone mark (build 384 r15 - see the stylesheet's "AN UNLIT SECRET FLARE IS AN UNKINDLED
+   EMBER"): the same four parts Home's orbit dot carries, so the CSS is one look. Each is given its own point on the
+   breathing clock so a row of them never beats in step. No colour of its own - an unfound flare gives none away. */
+function buildUnlitFlare(){
+  const el = document.createElement("span");
+  el.className = "unlit-flare";
+  el.setAttribute("aria-hidden", "true");
+  buildUnlitFlare.n = (buildUnlitFlare.n || 0) + 1;
+  el.style.setProperty("--fd", (-((buildUnlitFlare.n * 1.9) % 6)).toFixed(1) + "s");
+  el.innerHTML = '<i class="cof-ring"></i><i class="cof-body"></i><i class="cof-sheen"></i><i class="cof-core"></i>';
+  return el;
+}
 function buildLockIcon(){
   const svgNS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgNS, "svg");
@@ -99295,7 +99347,7 @@ function showWelcomeCharacterPrompt(){
     const lockMark = document.createElement("span");
     lockMark.className = "avatarchar-lockmark";
     lockMark.setAttribute("aria-hidden", "true");
-    lockMark.appendChild(buildLockIcon());
+    lockMark.appendChild(charDef.secret ? buildUnlitFlare() : buildLockIcon());
     opt.appendChild(lockMark);
     opt.addEventListener("click", () => showToast(characterLockMessage(charDef.id)));
     laterGrid.appendChild(opt);
@@ -101116,8 +101168,9 @@ function novaRecapCard(st){
   tile("is-flares", st.rankIdx + 1, st.rankIdx === 0 ? "flare lit" : "flares lit", fl);
   const sf = document.createElement("div"); sf.className = "nt-rc-dots is-secret";
   st.secrets.forEach(x => {
-    const d = document.createElement("i"); d.className = "nt-rc-sf" + (x.found ? " is-found" : "");
+    const d = document.createElement("i"); d.className = "nt-rc-sf" + (x.found ? " is-found" : " unlit-flare");
     if(x.found) d.style.setProperty("--fc", MYSTERY_COLOR[x.k]);
+    else d.innerHTML = '<i class="cof-ring"></i><i class="cof-body"></i><i class="cof-sheen"></i><i class="cof-core"></i>';
     sf.appendChild(d);
   });
   tile("is-secret", st.flares, st.flares === 1 ? "secret flare found" : "secret flares found", sf);
@@ -129080,7 +129133,7 @@ function flareHintItem(ch){
       try{ ghost.appendChild(buildCharArtFor(ch)); }catch(e){}
       const orb = document.createElement("span"); orb.className = "rs-hint-orb";
       orb.style.setProperty("--hy", ch === "umbra" ? "80%" : ch === "genesis" ? "83%" : "35%");
-      orb.appendChild(buildFlareOrb((store.mysteryColorsFound || {})[flare] ? MYSTERY_COLOR[flare] : FLARE_UNFOUND_TINT, "hint-" + ch));
+      orb.appendChild((store.mysteryColorsFound || {})[flare] ? buildFlareOrb(MYSTERY_COLOR[flare], "hint-" + ch) : buildUnlitFlare());
       f.append(ghost, orb);
       return f;
     } };
@@ -147058,7 +147111,7 @@ function buildCustomizeCharacterSect(){
       const lockMark = document.createElement("span");
       lockMark.className = "avatarchar-lockmark";
       lockMark.setAttribute("aria-hidden", "true");
-      lockMark.appendChild(buildLockIcon());
+      lockMark.appendChild(charDef.secret ? buildUnlitFlare() : buildLockIcon());
       opt.appendChild(lockMark);
     }
     const clearNew = locked ? () => {} : attachNewDot(opt, "chars", charDef.id);

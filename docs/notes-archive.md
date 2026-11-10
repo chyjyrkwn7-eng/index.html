@@ -37801,3 +37801,27 @@ Merged into claude/b384 and shipped together: Fire Code's own leaderboard (vroom
 ## 384.12 - Fire Code's Leaderboard is Overall alone
 
 Madison: "Remove the hundo leaderboard in fire code. Not many people will get any." `rankingBoardsFor()` returns only Overall for Fire Code (the academy keeps This Week, Overall and Hundos). With one board there is no pill switcher and no swipe (showRankings skips both), the Leaderboard tour starts at the search (its switcher step is dropped), the Settings hint reads "Ranks the Fire Code class one way — Overall", and a link or stored name for the Hundos board lands on Overall. The Fire Code row still carries `hundos` (nothing reads it there; dropping it would be a wire change). check-b384-fcboard.py updated to the rule (fails on 384.11 in 8 checks); it also looks again when its standing-in previous build reloads itself under a call.
+
+## 384 r15 - unlit secret flares
+
+Madison: "The unlit secret flares, I'm not the biggest fan of how they look, room for improvement there."
+
+WHERE AN UNLIT SECRET FLARE IS DRAWN (found by looking at each at its real size, iPhone 17 Pro Max 440x956 dpr3 and iPad Pro 11" 834x1194, Police Academy and Fire Code):
+- Home's orbit and Welcome's planet: six `.cosmic-flare-dot` (the small beads, ~11px on a phone, 2.9% of the hero; NOT the seven larger rank bubbles). Same art in both classes.
+- The recap dots in Nova's walk-through (`.nt-rc-sf`), the hint card's flare (`flareHintItem` > `.rs-hint-orb`, was a lit pale orb in FLARE_UNFOUND_TINT), and a locked secret character's tile.
+- NOT a cut-out any more: since build 382 every locked character is its real drawing greyed, with a padlock chip (charLockLook() returns null). The brief's "blacked-out silhouette" look is retired; 382 ("they are gonna be viewable again") is newer than 313/325 and stands. The characters' art is unchanged; only the MARK on a locked SECRET character's tile changed (below). Rank / challenge / ultimate characters keep the padlock.
+
+WHAT WAS WRONG: the bead was smoky grey glass with a hard white glint (build 380's marble) - a water drop or ball bearing: nothing to find, and next to the silver rank bubbles it read as one more of them. The tile mark was the same padlock sticker the 20 other locked characters carry, so the Secrets group looked like the rest.
+
+THE NEW LOOK (option A, shipped): AN UNKINDLED EMBER. Dark indigo glass (not black: a black bead vanished on the sky at 11px), a thin cool frosted rim, a small glint high on the left, and a dim point of light deep in the middle that slowly swells and fades (5.4s, `cof-ul-core`: opacity + transform) - a lamp that is waiting to be lit - and, every ~8s, one faint ring that opens round it and goes (`cof-ul-ring`: opacity + transform). A slower, dimmer sheen sweeps across now and then (the existing `cof-sweep`). Colourless on purpose: build 314 (an unfound flare gives away no hue) outranks "a hint of its own colour".
+- ONE LOOK EVERYWHERE: the CSS selects `:is(.cosmic-flare-dot:not(.is-found), .unlit-flare)` and the same four parts (`cof-ring, cof-body, cof-sheen, cof-core`). `buildUnlitFlare()` makes the standalone mark: used for a locked SECRET character's tile mark in Customize and sign-up's greyed list (in place of the padlock, so it is a "flare to find" cue rather than a lock sticker; the ring is hidden at 16px), the recap dots (`.nt-rc-sf.unlit-flare`), and the hint card's flare. Found flares, lit looks, unlock rules and requirements are untouched.
+- COST: every part is a small box changing only transform or opacity; no filter, no backdrop-filter anywhere in it. Reduced motion: nothing runs and the core stays at a still dim ember (base opacity .45).
+- Sizes read at 16 / 26 / 40 / 60px (the contact sheet's last row); on Home the bead is distinct from the rank bubbles (dark indigo vs silver).
+
+ALTERNATES, rendered but NOT shipped (the override CSS is not kept in the repo; each was a ~12-line override of A's `.cof-body / .cof-core / .cof-ring / .cof-sheen`):
+- B "Socket": a near-black recess in a thin bezel (inset shadow top-left, catch-light bottom-right, like the badge slots), a white pinpoint waiting in the middle, no ring or sheen. Most striking on Home, but reads as a black hole / dead pixel and does not look like a flare you could light.
+- C "Pearl": frosted pale glass with a veiled light drifting off-centre inside it. Closest to today's grey and to the rank bubbles, so it stays one more bead among the rest.
+
+SCREENSHOTS (contact sheets, today | A | B | C): scratchpad r15-flares/sheet-ac-phone.png, sheet-ac-pad.png, sheet-fc-phone.png, sheet-fc-pad.png (Home orbit and the Customize Secrets tiles), sheet-shared.png (hint card, recap dots, tile mark at 16/26/40/60px, Welcome planet).
+
+GATE: tools/check-b384-unlitflares.py (shared harness tools/b384_unlit_lib.py, which opens a seeded account in either class against any index.html): by shape - a visible, animated (opacity/transform only) core and ring on every unlit orbit dot in both classes and on Welcome; the body rendered as a dark ring inside a lighter edge (read off pixels of a 48px copy); no filter/backdrop-filter on an unlit flare, its parts, or an animated ancestor; the tile mark / sign-up list / recap dots / hint card all `.unlit-flare` with the four parts; non-secret locked characters keep the padlock; held characters have no mark; found flares keep their halo/orbit and are not `.unlit-flare`; no hue; reduced motion still. Fails 23 checks against build 384.12 (`--against`).
