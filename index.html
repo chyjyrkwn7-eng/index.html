@@ -39114,7 +39114,7 @@ html.is-browser{ --fade-paper: transparent; }
      the pages it opens are zoomed by --zc: they lay out as the 440pt screen they are drawn on, then land at full size on the
      glass - the rows, tiles, glyphs, words, switches and hairlines all scale as one, and nothing in them is re-measured. The
      headings step up to 15px as well (Delta's section names, ~15pt semibold; set where the 384 r5 heading rule is). */
-  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask){
+  html.page-zoomed[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-card, .slab.motion-summary, .settings-footnote, .settings-footnotes, .confirm-ask, .settings-namesect){
     zoom:var(--zc, 1);
   }
   /* THE REST OF THE APP, THE SAME TREATMENT (Madison: "I want the same treatment ... fix the rest"). The content blocks of the
@@ -39129,6 +39129,17 @@ html.is-browser{ --fade-paper: transparent; }
       .screen-calendar > :is(.cal-classhead, .cal-glance, .cal-monthview, .cal-card),
       .screen-ranks > :is(.ranks-tab, .badges-tab)){
     zoom:var(--zc, 1);
+  }
+
+  /* ---- ACCOUNT: THE NAME AND ITS CHANGE BUTTON AT THE SIZE OF EVERYTHING ELSE IN SETTINGS (build 384, 9th pass) ----
+     Madison: "In account within settings, why is the name and change button so tiny? Fix that." The name was 15.5px and Change
+     12.5px in a 43pt row on his zoomed phone (the name block was the one Settings block the page-zoom rule did not reach: it is now
+     .settings-namesect, zoomed with the cards). The name reads like a row's title (17px, semibold) and Change is a real button:
+     16px words, ~38px tall, its touch 44px+ (the button's own ::before). */
+  html[data-layout] body #stage .settings-page-account .customize-namerow.customize-namerow{ min-height:54px; padding-right:12px; }
+  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-name-display.profile-name-display{ font-size:17px; font-weight:600; letter-spacing:0; }
+  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-edit-btn.profile-edit-btn{
+    font-size:16px; font-weight:600; padding-inline:1.15rem; padding-block:calc(.55rem + (1lh - 1cap)/2); min-height:38px; line-height:1.25;
   }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -89319,6 +89330,11 @@ function buildSoundSettings(){
       theme.haptics = on;
       saveTheme();
       NovaSound.sync();
+      /* (384 r16) TURNED BACK ON, THE SWITCH LAYER IS ASKED FOR AGAIN, A BEAT LATER AND ONCE MORE: "when turning off Haptic Touch and
+         turning it back on, it doesn't register it till you hit the back button" - what the back button does is mount a screen, and a
+         mounted screen is what hands every control its switch. The layer's own restart queues the page once, and on a phone that was
+         still inside the tap's own settle window; these ask again for this page, each a no-op where the switches are already on. */
+      if(on){ [260, 900].forEach(ms => setTimeout(() => { try{ if(typeof window.hswRescan === "function") window.hswRescan(document.getElementById("stage") || document.body); }catch(e){} }, ms)); }
       if(on) NovaSound.haptic("tap");
       showToast(on ? "Haptics on." : "Haptics off.");
     });
@@ -118730,7 +118746,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.12";
+const APP_BUILD = "2026-11-10-384.15";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -131959,7 +131975,7 @@ function armConfirm(btn, confirmLabel, onConfirm){
   });
 }
 
-function showResetWarning(){
+function showResetWarning(stage2){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
@@ -131968,6 +131984,7 @@ function showResetWarning(){
 
   const panel = document.createElement("section");
   panel.className = "panel resetwarning-panel";
+  panel.dataset.resetStep = stage2 === true ? "2" : "1";
 
   const title = document.createElement("p");
   /* Size lives in .resetwarning-title now, not inline. An inline
@@ -131976,29 +131993,31 @@ function showResetWarning(){
      larger screens - it read as small and unchanged on an iPad even
      though its colour had updated correctly. */
   title.className = "hometitle resetwarning-title";
-  title.textContent = "Reset everything?";
   panel.appendChild(title);
 
+  /* (384 r18) TWO CONFIRMATIONS, EACH ITS OWN SCREEN. "Reset thing need a double confirmation just to be sure... the description
+     needs to mention it will reset your account." The first screen says what a reset is and asks to go on; the second is the last
+     check, in other words, and is the only one whose red button resets. (It used to be one screen whose red button changed its
+     words to "Tap again to confirm" - a second tap, not a second question.) */
   const body = document.createElement("p");
   body.className = "hometagline";
-  body.textContent = "Clears your progress, XP, and settings on every synced device. Your code stops working and you'll get a new one. This can't be undone.";
+  if(stage2 === true){
+    title.textContent = "Last check: reset your account?";
+    body.textContent = "This resets your account. Your progress, XP, badges and settings are cleared on every device signed in to it, your sync code stops working and you get a new one, and you come off the leaderboard. This can't be undone.";
+  } else {
+    title.textContent = "Reset your account?";
+    body.textContent = "Resetting clears your progress, XP, badges and settings on every synced device, and your sync code stops working. You'll be asked once more before anything is cleared.";
+  }
   panel.appendChild(body);
 
-  let armed = false;
   const confirmBtn = document.createElement("button");
   /* "danger", the same class the Settings Reset button carries, rather
      than a second set of red values. Matching by construction means the
-     two cannot drift apart - changing the danger red once changes both.
-     The armed "Tap again to confirm" state is this same element, so it
-     follows automatically. */
+     two cannot drift apart - changing the danger red once changes both. */
   confirmBtn.type = "button"; confirmBtn.className = "next danger resetwarning-confirm";
-  confirmBtn.textContent = "Yes, reset everything";
+  confirmBtn.textContent = stage2 === true ? "Yes, reset my account" : "Continue";
   confirmBtn.addEventListener("click", () => {
-    if(!armed){
-      armed = true;
-      confirmBtn.textContent = "Tap again to confirm";
-      return;
-    }
+    if(stage2 !== true){ showResetWarning(true); return; }
     resetEverything();
   });
   panel.appendChild(confirmBtn);
@@ -132006,7 +132025,7 @@ function showResetWarning(){
   const cancelBtn = document.createElement("button");
   cancelBtn.type = "button"; cancelBtn.className = "next ghost";
   cancelBtn.style.marginTop = ".7rem";
-  cancelBtn.textContent = "Cancel \u2014 keep my progress";
+  cancelBtn.textContent = "Cancel \u2014 keep my account";
   cancelBtn.addEventListener("click", showAppearance);
   panel.appendChild(cancelBtn);
 
@@ -133639,11 +133658,11 @@ function showAppearance(opts){
 
       const saveNote = document.createElement("p");
       saveNote.className = "sync-note-plain";
-      /* (384) an account in Fire Code alone has no Police Academy to name: it is told what everybody else is */
-      saveNote.textContent = (window.NOVA_CLASS === "ifc" && academyMember())
-        ? "The same code as your Police Academy account. Fire Code saves to the cloud under it, on every device signed in to that account."
-        : "Keep this somewhere off this phone. If this device ever loses its "
-        + "data, the code is what puts you back on your account.";
+      /* (384 r17) THE CODE IS THE ACCOUNT'S, NOT A CLASS'S: "I'm not sure what's up with this sync code description ... Shouldn't specific
+         stuff about either class not be there?" One line for every class, naming none (it used to name the Police Academy and Fire Code
+         in Fire Code and say nothing of the account's classes in the academy). */
+      saveNote.textContent = "This code is your account, and every class you are in saves under it. Keep it somewhere off this phone: "
+        + "if this device ever loses its data, the code is what puts you back on your account.";
       card.appendChild(saveNote);
       /* SAVE IT IS BACK (build 382), as the one row under the code. It came
          off for making the section a pile; it returns because saving the
@@ -133664,7 +133683,7 @@ function showAppearance(opts){
       /* Fire Code has no code of its own: it follows the academy account's (build 383) */
       const note = document.createElement("p");
       note.className = "sync-note-plain";
-      note.textContent = "Fire Code syncs under your Police Academy account's code. Turn sync on in the Police Academy class, then come back.";
+      note.textContent = "Sync is on the account, not a class, and it is turned on from the Police Academy class. Turn it on there, then come back.";
       syncSect.appendChild(note);
     } else {
       /* build 382: rows in a list card like the rest of Settings */
@@ -134119,9 +134138,9 @@ function showAdvancedSettings(){
   dcard.className = "settings-card settings-list settings-adv-reset";
   const dangerBtn = settingsTextRow("Reset", "danger");
   dangerBtn.id = "resetbtn";
-  dangerBtn.addEventListener("click", showResetWarning);
+  dangerBtn.addEventListener("click", () => showResetWarning());
   dcard.appendChild(dangerBtn);
-  panel.append(dcard, settingsFootnote("Clears your progress, XP and settings on every synced device. You'll be asked to confirm first."));
+  panel.append(dcard, settingsFootnote("Resets your account: clears your progress, XP, badges and settings on every device signed in to it, and your sync code stops working. You'll be asked to confirm twice. This can't be undone."));
 
   /* (384 r17) the display test's panel (see the ?diag block): switchable from here so an installed app can use it too */
   panel.appendChild(settingsHeader("Troubleshooting"));
@@ -146923,7 +146942,7 @@ function showCustomize(section){
 function buildCustomizeNameSect(){
   /* ---- name, with Change beside it ---- */
   const nameSect = document.createElement("div");
-  nameSect.className = "sect";
+  nameSect.className = "sect settings-namesect";
   const nameLab = document.createElement("p");
   nameLab.className = "slab motion-summary"; nameLab.textContent = "Name";
   nameSect.appendChild(nameLab);
