@@ -56928,6 +56928,8 @@ function leaveClass(k){
     classLeaving = true;
     switchClass("academy", null, { note: "left", final: k === "academy" ? "ifc" : "academy",
       onGiveUp: () => { classLeaving = false; try{ localStorage.removeItem(LEAVE_CLASS_KEY); }catch(e){} sayCannotLeave(k, "away"); } });
+    /* the switch did not start (it refuses while another is under way): nothing was done, nothing is waiting */
+    if(!document.getElementById("class-switch-loader")){ classLeaving = false; try{ localStorage.removeItem(LEAVE_CLASS_KEY); }catch(e){} }
     return;
   }
   /* another class than the one you are in: the account is written and the page it was asked from loses the row, where it stands */
@@ -56954,6 +56956,7 @@ function leaveClass(k){
       setLeftNote(null);
       sayCannotLeave(k, "refused");
     } });
+  if(!document.getElementById("class-switch-loader")) classLeaving = false;
 }
 /* the class off the account's list, its board row off its board, the account written. true when the list took it. */
 function finishLeaveClass(k){

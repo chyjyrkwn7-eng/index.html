@@ -111,8 +111,16 @@ def sec_academy(pw, srv):
             unchanged(X, before, "confirm %s: Cancel on the second sheet changes nothing (no cover, no reload, the lists and the cloud as they were)" % k)
             chk("confirm %s: no class-left note was written and no hand-off is waiting" % k,
                 not ev(X, "()=>['class26e.leaveclass','class26e.leftnote'].some(k => localStorage.getItem(k))"))
+        errs = [e for e in X.S.errs if "Failed to load" not in e]
+        chk("no page errors (academy)", not errs, errs)
+    finally:
+        X.close()
 
-        # ---- (5) Back from the class list goes to where it was opened from
+# ------------------------------------------------------------------------------------------------ (5) Back from the class list goes to where it was opened from
+def sec_back(pw, srv):
+    X = V.Leave(pw, srv, "academy").boot()
+    try:
+        pg = X.pg
         L.ev(pg, "()=>showAppearance({page:'classes'})"); pg.wait_for_timeout(900)
         X.S.tap("#settings-join-class"); pg.wait_for_timeout(900)
         on = ev(X, "()=>!!document.querySelector('.class-catalog')")
@@ -128,8 +136,6 @@ def sec_academy(pw, srv):
         X.S.tap(".class-catalog .back-link"); pg.wait_for_timeout(900)
         where = ev(X, "()=>({ home: !!document.querySelector('#stage [data-screen=\"home\"]'), catalog: !!document.querySelector('.class-catalog') })")
         chk("back from the class list opened by the class button's + lands on Home (%s)" % where, on and where["home"] and not where["catalog"], (on, where))
-        errs = [e for e in X.S.errs if "Failed to load" not in e]
-        chk("no page errors (academy)", not errs, errs)
     finally:
         X.close()
 
@@ -360,7 +366,8 @@ print("check-b384-classleave against", L.SRC_PATH, "(build %s)" % L.BUILD, flush
 with sync_playwright() as pw:
     srv = L.Server()
     try:
-        for name, fn in (("texts,confirm,back", lambda: sec_academy(pw, srv)),
+        for name, fn in (("texts,confirm", lambda: sec_academy(pw, srv)),
+                         ("back", lambda: sec_back(pw, srv)),
                          ("lists", lambda: sec_lists_academy(pw, srv)),
                          ("hop", lambda: (sec_academy_leaves(pw, srv, "academy", "academy"), sec_academy_leaves(pw, srv, "ifc", "fc"))),
                          ("undo", lambda: sec_undo(pw, srv)),
