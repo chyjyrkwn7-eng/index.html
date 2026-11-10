@@ -506,7 +506,10 @@ SCREENS = [
     {"name": "settings/motion", "js": "showAppearance({page:'motion'});"},
     {"name": "settings/sync", "js": "showAppearance({page:'sync'});"},
     {"name": "settings/share", "js": "showAppearance({page:'share'});"},
-    {"name": "settings/rankings", "js": "showAppearance({page:'rankings'});", "cls": "academy"},
+    {"name": "settings/rankings", "js": "showAppearance({page:'rankings'});"},
+    # (385 r17) one switch per class under the master: both on, and the master off (every class greyed, in the off position)
+    {"name": "settings/rankings, two classes", "js": "enrolledClasses = () => ['academy','ifc']; showAppearance({page:'rankings'});"},
+    {"name": "settings/rankings, two classes, master off", "js": "enrolledClasses = () => ['academy','ifc']; showAppearance({page:'rankings'}); setTimeout(()=>{ document.querySelector('#stage .settings-card input[type=checkbox]').click(); }, 700);", "wait": 1800},
     {"name": "settings/account", "js": "showAppearance({page:'account'});"},
     {"name": "settings/advanced", "js": "showAdvancedSettings();"},
     {"name": "settings/credits", "js": "showCredits();"},

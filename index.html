@@ -9732,6 +9732,9 @@
   .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(21px); }
   .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
   .opt > input:disabled ~ .box{ cursor:default; }
+  /* (385 r17) a switch row that cannot be changed now (the leaderboard's class switches while the master is off): visible, in the off position, greyed */
+  .opt.is-locked{ opacity:.45; cursor:default; }
+  .opt.is-locked > .box{ cursor:default; }
   /* While the lens is out it IS the knob, and the green follows it. */
   .nsw-lensed::after{ opacity:0; transition:none; }
   /* Reduce motion: no lens (see nswCalm), and a quicker plain slide */
@@ -56757,32 +56760,68 @@ function classTitle(k){ return (NOVA_CLASS_INFO[k] || {}).title || ((NOVA_CLASSE
 /* (384 r5) WHICH CLASS HAS A LEADERBOARD: "The leaderboard should not be available for Fire Code ... maybe in leaderboard settings it
    shows each class". A read-only list of the classes you are in and what each one does about the leaderboard - the Police Academy's
    is the one that exists (shown or hidden is its own switch, set in the academy's Settings), Fire Code has none. */
-function buildLeaderboardClassList(){
-  const mine = enrolledClasses();
-  const card = document.createElement("div");
-  card.className = "settings-card settings-list settings-lb-classes";
-  let acad = null;
-  try{ acad = (window.NOVA_CLASS === "ifc") ? academyCopyNow() : store; }catch(e){ acad = store; }
-  /* (385) Fire Code has a leaderboard of its own: its switch is on its own store (read from the academy's page off the class's
-     saved copy) */
-  const ifcOn = () => {
-    if(window.NOVA_CLASS === "ifc") return store.leaderboardOptIn !== false;
+/* ---- ONE SWITCH PER CLASS (build 385, r17) ----
+   Madison: "Shouldn't each class get its own toggle though to be shown? The toggles would disappear if you turn off the top toggle? Or they
+   would be greyed out in the off position. If you turn the toggle on, they both turn on automatically."
+   Settings > Leaderboard & Privacy has the master switch ("Show me in the rankings") and, for an account in more than one class, a
+   switch for each class it is in: whether you are shown on THAT class's leaderboard. The master reads on while any class is on; off
+   turns every class off and greys them (disabled, in the off position); on turns every class on; a class switched off on its own
+   leaves the others as they are, and the master goes off once the last one is.
+   WHERE EACH CHOICE LIVES: the academy's is `leaderboardOptIn` on the academy copy, Fire Code's on Fire Code's own copy, and each page
+   writes only its own copy. A choice for the OTHER class is left for that class's page to apply when it next loads
+   (applyPendingBoardChoice, at boot): class26e.ifc.pendingboard.<class> = { on, at } - a key under class26e.ifc., so neither page
+   remaps it and both read the one name. Until it is applied the row shows the pending value (that is what the person chose) and says
+   so under the class's name. Nothing is added to the cloud: Fire Code's row comes off at once from the academy (retireOtherClassBoardRow:
+   the academy's handle writes `vrooms`), the academy's row cannot be reached from Fire Code (its handle never writes `leaderboard`) and
+   comes off when the academy next opens, exactly as an opt-out made there does. */
+const PENDING_BOARD_PREFIX = "class26e.ifc.pendingboard.";
+function pageClassKey(){ return window.NOVA_CLASS === "ifc" ? "ifc" : "academy"; }
+function pendingBoardChoice(k){
+  try{ const p = JSON.parse(localStorage.getItem(PENDING_BOARD_PREFIX + k) || "null"); return (p && typeof p.on === "boolean") ? p : null; }catch(e){ return null; }
+}
+/* the other class's saved choice, without anything pending: Fire Code's from its saved copy, the academy's from the copy this page read */
+function savedBoardChoice(k){
+  if(k === pageClassKey()) return !!store.leaderboardOptIn;
+  if(k === "ifc"){
     try{ const c = JSON.parse(localStorage.getItem("class26e.ifc.drill.v1") || "null"); return !(c && c.leaderboardOptIn === false); }catch(e){ return true; }
-  };
-  const status = k => k === "academy" ? ((acad && acad.leaderboardOptIn) ? "Shown" : "Hidden")
-    : k === "ifc" ? (ifcOn() ? "Shown" : "Hidden") : "No leaderboard";
-  mine.forEach(k => {
-    const info = NOVA_CLASS_INFO[k] || {};
-    const row = document.createElement("div");
-    row.className = "settings-row settings-row-static settings-lb-class"; row.dataset.cls = k;
-    const txt = document.createElement("span"); txt.className = "settings-row-text";
-    const lab = document.createElement("span"); lab.className = "settings-row-label"; lab.textContent = info.title || k;
-    txt.appendChild(lab);
-    const val = document.createElement("span"); val.className = "settings-row-value"; val.textContent = status(k);
-    row.append(txt, val);
-    card.appendChild(row);
-  });
-  return card;
+  }
+  try{ return academyCopyNow().leaderboardOptIn !== false; }catch(e){ return true; }
+}
+/* whether this account is shown on class k's leaderboard, as far as this page can tell (what was chosen: a pending choice counts) */
+function boardChoiceOf(k){
+  if(k === pageClassKey()) return !!store.leaderboardOptIn;
+  const p = pendingBoardChoice(k);
+  return p ? p.on : savedBoardChoice(k);
+}
+function setBoardChoice(k, on){
+  on = !!on;
+  if(k === pageClassKey()){
+    store.leaderboardOptIn = on;
+    store.leaderboardOptInChanged = true;
+    saveStore();
+    /* Fire Code's board follows the switch at once - one write for a tap, where the academy's row waits for the account's next write */
+    if(window.NOVA_CLASS === "ifc"){ try{ if(on) flushClassBoardRow(); else retireClassBoardRow(); }catch(e){} }
+    return;
+  }
+  try{
+    if(savedBoardChoice(k) === on) localStorage.removeItem(PENDING_BOARD_PREFIX + k);
+    else localStorage.setItem(PENDING_BOARD_PREFIX + k, JSON.stringify({ on: on, at: Date.now() }));
+  }catch(e){}
+  /* Fire Code's row can be taken off from the academy now; its copy hears of it when it next loads */
+  if(!on && k === "ifc" && window.NOVA_CLASS !== "ifc"){ try{ retireOtherClassBoardRow("ifc", publicIdOf()); }catch(e){} }
+}
+/* at boot, on this class's page: what the other class's Settings chose for it */
+function applyPendingBoardChoice(){
+  const k = pageClassKey();
+  const p = pendingBoardChoice(k);
+  if(!p) return;
+  try{ localStorage.removeItem(PENDING_BOARD_PREFIX + k); }catch(e){}
+  if(!store.onboardingComplete) return;
+  if(!!store.leaderboardOptIn !== p.on){
+    store.leaderboardOptIn = p.on;
+    store.leaderboardOptInChanged = true;
+    saveStore();
+  }
 }
 function buildClassesSect(){
   const mine = enrolledClasses();
@@ -133736,15 +133775,14 @@ function showAppearance(opts){
   const lbRow = document.createElement("label");
   lbRow.className = "opt";
   const lbCb = document.createElement("input");
-  lbCb.type = "checkbox"; lbCb.checked = !!store.leaderboardOptIn;
+  const lbClasses = (() => { const m = enrolledClasses().slice(); if(m.indexOf(pageClassKey()) < 0) m.push(pageClassKey()); return m; })();
+  lbCb.type = "checkbox"; lbCb.checked = lbClasses.some(boardChoiceOf);
+  let lbRefresh = () => {};
   lbCb.addEventListener("change", () => {
-    store.leaderboardOptIn = lbCb.checked;
-    store.leaderboardOptInChanged = true;
-    saveStore();
-    /* (385) Fire Code's board follows the switch at once - one write for a tap, where the academy's row waits for the account's
-       next write (a minute at most) */
-    if(window.NOVA_CLASS === "ifc"){ try{ if(store.leaderboardOptIn) flushClassBoardRow(); else retireClassBoardRow(); }catch(e){} }
-    showToast(store.leaderboardOptIn ? "You're on the leaderboard." : "Removed from the leaderboard.");
+    /* the master: every class the account is in goes with it */
+    lbClasses.forEach(k => setBoardChoice(k, lbCb.checked));
+    lbRefresh();
+    showToast(lbCb.checked ? "You're on the leaderboard." : "Removed from the leaderboard.");
   });
   const lbBox = document.createElement("span");
   lbBox.className = "box"; lbBox.setAttribute("aria-hidden", "true"); lbBox.textContent = "\u2713";
@@ -133792,12 +133830,45 @@ function showAppearance(opts){
   lbCard.className = "settings-card";
   lbCard.appendChild(lbRow);
   lbSect.appendChild(lbCard);
-  /* (384 r5) more than one class: say which one this switch is for, and what the other one does */
+  /* (385 r17) more than one class: a switch for each, under the master */
   try{
-    if(enrolledClasses().length > 1){
-      lbHint.textContent = lbHint.textContent.replace("Ranks the class ", "Ranks the Police Academy class ");
-      const cl = document.createElement("p"); cl.className = "slab section-divider motion-summary"; cl.textContent = "Your classes";
-      lbSect.appendChild(cl); lbSect.appendChild(buildLeaderboardClassList());
+    if(lbClasses.length > 1){
+      lbHint.textContent = "Shows you on the leaderboard of each class switched on below, and shares only your username, avatar and ranking numbers.";
+      const cl = document.createElement("p"); cl.className = "slab section-divider motion-summary"; cl.id = "settings-rankings-classes"; cl.textContent = "Shown in";
+      const card = document.createElement("div"); card.className = "settings-card settings-lb-classes";
+      const rows = lbClasses.map(k => {
+        const info = NOVA_CLASS_INFO[k] || {};
+        const row = document.createElement("label"); row.className = "opt settings-lb-class"; row.dataset.cls = k;
+        const cb = document.createElement("input"); cb.type = "checkbox";
+        const box = document.createElement("span"); box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
+        const wrap = document.createElement("span"); wrap.className = "otext";
+        wrap.appendChild(document.createTextNode(info.title || k));
+        /* the pending note is in the row only while there is one (an empty hint line would sit under the name and lift it off the middle) */
+        const note = document.createElement("span"); note.className = "ohint";
+        row.append(cb, box, wrap);
+        cb.addEventListener("change", () => {
+          setBoardChoice(k, cb.checked);
+          lbRefresh();
+          showToast(cb.checked ? "Shown on the " + (info.title || k) + " leaderboard." : "Removed from the " + (info.title || k) + " leaderboard.");
+        });
+        card.appendChild(row);
+        return { k, row, cb, note, wrap, title: info.title || k };
+      });
+      lbRefresh = () => {
+        const any = lbClasses.some(boardChoiceOf);
+        lbCb.checked = any;
+        rows.forEach(r => {
+          r.cb.checked = boardChoiceOf(r.k);
+          /* the master off: every class off and greyed, in the off position */
+          r.cb.disabled = !any;
+          r.row.classList.toggle("is-locked", !any);
+          const pend = r.k !== pageClassKey() && pendingBoardChoice(r.k);
+          if(pend){ r.note.textContent = "Applies when you next open " + r.title + "."; if(!r.note.parentNode) r.wrap.appendChild(r.note); }
+          else if(r.note.parentNode) r.note.remove();
+        });
+      };
+      lbSect.appendChild(cl); lbSect.appendChild(card);
+      lbRefresh();
     }
   }catch(e){}
   panel.appendChild(lbSect);
@@ -160425,6 +160496,8 @@ if(window.NOVA_CLASS === "ifc" && storageHadData){
     }
   }catch(e){}
 }
+/* (385 r17) what the other class's Settings chose for this one (see setBoardChoice), applied as this page loads - after the one-shot above */
+try{ applyPendingBoardChoice(); }catch(e){}
 /* (384, the 5.4.2 bank) the three removed Fire Code questions come off the starred list - once, with the tombstone a
    Reset starred questions leaves, so the account's other devices follow (see IFC_RETIRED_KEYS) */
 if(window.NOVA_CLASS === "ifc"){
