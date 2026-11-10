@@ -67,15 +67,28 @@ RECORDER = """
       return d.set.call(this, v);
     }});
   }catch(e){}
-  (function rec(){
+  /* sampled on every animation frame AND on a 10ms timer: a launch's main thread is blocked for seconds by the page's own parse and
+     script, and a timer's turn between two of its tasks is the state a frame would paint - an animation frame alone would see none of it */
+  function sample(){
     const de = document.documentElement, sp = document.getElementById('splashscreen'), g = document.getElementById('splash-group');
     const f = { t: performance.now() - t0, wall: Date.now(), iw: innerWidth, ih: innerHeight, hbg: de ? de.style.backgroundColor : null,
                 hcs: de ? getComputedStyle(de).backgroundColor : null, sp: null, g: null, op: 0, hide: false };
     if(sp){ const r = sp.getBoundingClientRect(); f.sp = [r.left, r.top, r.right, r.bottom]; f.hide = sp.classList.contains('splash-hide'); }
-    if(g){ const r = g.getBoundingClientRect(); f.g = [(r.left + r.right) / 2, (r.top + r.bottom) / 2, r.width, r.height]; f.op = parseFloat(getComputedStyle(g).opacity); }
+    if(g){ const r = g.getBoundingClientRect(); f.g = [(r.left + r.right) / 2, (r.top + r.bottom) / 2, r.width, r.height]; { const cs = getComputedStyle(g); f.op = cs.visibility === 'hidden' ? 0 : parseFloat(cs.opacity); } }
     window.__rec.push(f);
-    if(window.__rec.length < 600) requestAnimationFrame(rec);
-  })();
+  }
+  try{
+    const ca = DOMTokenList.prototype.add;
+    DOMTokenList.prototype.add = function(){ try{ if(!window.__hideAt && [].indexOf.call(arguments, 'splash-hide') >= 0){ window.__hideAt = performance.now() - t0; window.__hideWall = Date.now(); } }catch(e){} return ca.apply(this, arguments); };
+  }catch(e){}
+  if(window.parent !== window){
+    /* inside the host's <iframe>: the moment the splash's group is in the page (a microtask after the parser's task that made it, before any
+       layout of its own) is the page's first frame - sample it at the short size, then let the host grow the viewport */
+    new MutationObserver((ms, o) => { if(document.getElementById('splash-group')){ o.disconnect(); sample(); try{ window.parent.__grow(); }catch(e){} } })
+      .observe(document, { childList: true, subtree: true });
+  }
+  (function rec(){ sample(); if(window.__rec.length < 900) requestAnimationFrame(rec); })();
+  const iv = setInterval(() => { sample(); if(window.__rec.length >= 900) clearInterval(iv); }, 10);
 })();
 """
 
@@ -145,14 +158,14 @@ def run_case(br, dev, installed, short, late=False):
     io.open(os.path.join(TMP, host), "w", encoding="utf-8").write(
         '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         '<body style="margin:0;background:#0A0A0A;overflow:hidden"><iframe id="f" src="%s" style="border:0;display:block;width:%dpx;height:%dpx"></iframe>'
-        '<script>(function(){ var f = document.getElementById("f"), done = false;'
-        ' (function poll(){ try{ var d = f.contentDocument; if(!done && d && d.getElementById("splash-group")){ done = true;'
-        ' if(%d) setTimeout(function(){ f.style.height = "%dpx"; }, 110); else f.style.height = "%dpx"; } }catch(e){} if(!done) requestAnimationFrame(poll); })(); })();</script>'
+        '<script>(function(){ var f = document.getElementById("f"); window.__grow = function(){'
+        ' if(%d) setTimeout(function(){ f.style.height = "%dpx"; }, 110); else f.style.height = "%dpx"; }; })();</script>'
         % (page_for((it, ib)), fw, h0, 1 if late else 0, fh, fh))
     ctx = br.new_context(viewport={"width": fw, "height": fh}, screen={"width": sw, "height": sh}, device_scale_factor=3 * (1 / r),
                          is_mobile=True, has_touch=True, user_agent=ua)
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:140]))
+    if os.environ.get("LF_DEBUG"): pg.on("framenavigated", lambda f: print("  nav", f.url[-30:], flush=True)); pg.on("console", lambda m: print("  console", m.text[:100], flush=True))
     if installed: ctx.add_init_script(STANDALONE)
     ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.a2hs','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
                         "localStorage.setItem('class26e.intro.seen','99');localStorage.setItem('class26e.statusbar.v1','#271E23');localStorage.setItem('class26e.drill.v1',%s)}catch(e){}" % json.dumps(json.dumps(seed)))
@@ -186,9 +199,11 @@ def run_case(br, dev, installed, short, late=False):
         pg.wait_for_timeout(40)
     try: cdp.send("Page.stopScreencast")
     except Exception: pass
-    rec = fr.evaluate("()=>window.__rec"); writes = fr.evaluate("()=>window.__metaWrites")
+    rec = fr.evaluate("()=>window.__rec"); writes = fr.evaluate("()=>window.__metaWrites"); hide_at = fr.evaluate("()=>window.__hideAt || null"); hide_wall0 = fr.evaluate("()=>window.__hideWall || null")
+    if os.environ.get("LF_DEBUG"): print("DEBUG", fr.url[-30:], len(rec), [(round(f["t"]), bool(f["sp"]), f["hide"], round(f["op"], 2), f["ih"]) for f in rec[:3] + rec[-4:]], flush=True)
     ctx.close()
     tag = "%s, %s, %s%s" % (name, "installed" if installed else "browser tab", ("starts " + short_name(short)) if short else "no transient", ", grows late" if late else "")
+    rec.sort(key=lambda f: f["t"])
     live = [f for f in rec if f["sp"] and not f["hide"]]
     chk("%s: the splash was recorded (%d frames)" % (tag, len(live)), len(live) >= 4, len(rec))
     if len(live) < 4: return
@@ -213,7 +228,7 @@ def run_case(br, dev, installed, short, late=False):
     cleared = [f for f in live if f["hbg"] not in ("rgb(10, 10, 10)", "#0a0a0a", "#0A0A0A")]
     chk("%s: ... and its inline background is still there while the splash is up" % tag, not cleared, [(round(f["t"]), f["hbg"]) for f in cleared[:3]])
     worst = (0, 0); light = None
-    hide_wall = next((f["wall"] for f in rec if f["hide"]), 1e18) / 1000.0
+    hide_wall = (hide_wall0 or next((f["wall"] for f in rec if f["hide"]), 1e18)) / 1000.0
     shots = [d for (ts, d) in shots if ts <= hide_wall - 0.08]       # what was painted before the splash began to fade
     lead = 0                                            # the frames before the page's first paint are the blank page it replaced
     while lead < len(shots) and luma_frac(shots[lead])[0] > 0.9: lead += 1
@@ -227,8 +242,7 @@ def run_case(br, dev, installed, short, late=False):
     vw = [w for w in writes if w[0] == "viewport"]
     chk("%s: nothing writes the viewport meta while the splash is up" % tag, not vw, vw[:3])
     if installed:
-        hide_t = next((f["t"] for f in rec if f["hide"]), 1e12)
-        tw = [w for w in writes if w[0] == "theme" and first["t"] < w[1] < hide_t - 80]
+        tw = [w for w in writes if w[0] == "theme" and first["t"] < w[1] < (hide_at or 1e12)]
         chk("%s: nothing rewrites theme-color while the splash is up" % tag, not tw, tw[:3])
     # 5. FIRST
     chk("%s: the splash's markup comes before the stylesheet in the document" % tag, order is True, order)

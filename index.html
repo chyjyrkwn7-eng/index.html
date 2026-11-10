@@ -14,7 +14,11 @@
      box came up 62pt short and the strip it left showed the app's own glow and stars (a lighter band across the bottom for a frame).
      Nothing is centred in it - the group is its own fixed element, placed from the head script's --splash-cx/--splash-cy. */
   #splashscreen{ position:fixed; left:-300px; top:-300px; width:calc(100vw + 600px); height:calc(100vh + 600px); height:calc(100lvh + 600px); overflow:hidden; z-index:9999; background:#0A0A0A; }
-  #splash-group{ position:fixed; left:var(--splash-cx, 50%); top:var(--splash-cy, 50%); transform:translate(-50%, -50%); display:flex; flex-direction:column; align-items:center; opacity:0; }
+  #splash-group{ position:fixed; left:var(--splash-cx, 50%); top:var(--splash-cy, 50%); transform:translate(-50%, -50%); display:flex; flex-direction:column; align-items:center; opacity:0; visibility:hidden; }
+  /* the group is shown by the STYLESHEET (visibility:inherit there), so the word is never drawn before the sheet that gives it its face and colours - not even in a
+     class switch's arrival, where html.class-arrive forces it to opacity 1. And in that arrival the box is see-through until the splash's own script has run (it
+     takes class-arrive-pre away, after the sheet): the arrival picture (the loader's last frame, drawn on <html>) is what shows until then, as it did. */
+  html.class-arrive-pre #splashscreen{ background:transparent; }
   /* (384) arriving from a class switch: the splash is up from the page's first frame - see #class-switch-loader */
   html.class-arrive #splash-group, html.class-arrive #splashscreen::before{ animation:none !important; opacity:1 !important; }
   /* The on-glass floor. Only ever set on a page-zoomed touch device -
@@ -1847,6 +1851,8 @@
     transition:opacity .75s cubic-bezier(.4,0,.2,1);
   }
   #splashscreen.splash-hide{ opacity:0; pointer-events:none; }
+  /* (384 r17) the stylesheet is in: the box is the splash's again (it is see-through only until then, in a class switch's arrival - first style block) */
+  html.class-arrive-pre #splashscreen{ background:var(--splash-bg); }
   /* (384) the splash's word and bar drift back a touch as it fades, so Welcome comes up through it rather than behind a wipe */
   #splash-group{ transition:scale .75s cubic-bezier(.4,0,.2,1); }
   /* scale, not transform: the group is centred by its transform. The origin is the group's TOP-LEFT (where left/top put it, the
@@ -1885,6 +1891,7 @@
   #splash-group{
     display:flex; flex-direction:column; align-items:center; gap:.7rem;
     position:fixed; left:var(--splash-cx, 50%); top:var(--splash-cy, 50%); transform:translate(-50%, -50%);   /* (384 r17) the head script's anchor */
+    visibility:inherit;   /* (384 r17) the first style block hides it until this sheet is in */
     opacity:0;
     /* NEVER A BLACK SCREEN WHILE THE APP LOADS (build 327z15). Madison:
        "When leaving the app, and coming back; the entire screen is black
@@ -84907,12 +84914,27 @@ function syncStatusBarColor(){
    Glide and OJapp write-ups). So: an 8px solid strip in the sky's own top colour (what theme-color already is), fixed at the top edge, in the installed
    iPhone/iPad app only, replaced by a NEW element whenever the colour changes (a colour is read when an element appears, see refreshEdgeTints).
    It takes no touch. `class26e.topguard` = "0" (the display test's switch) takes it away. EXPERIMENTAL: only a phone can say if it works. */
+var topGuardWatch = null;
 function syncTopGuard(color){
   try{
     const old = document.getElementById("top-guard");
     const standalone = navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
     let off = false; try{ off = localStorage.getItem("class26e.topguard") === "0"; }catch(e){}
     if(!(isIOSDevice() && standalone) || off || !color || !document.body){ if(old) old.remove(); return; }
+    /* (384 r17) NOT UNDER THE SPLASH. The strip is above everything (z-index 2147483000), so one made while the splash is up is a band
+       of the sky's colour across the top of a flat #0A0A0A launch, appearing in the middle of it (applyTheme runs here while the
+       main script boots) - and a new element at the top edge is exactly what iOS's top blur reads. finishSplash calls this again as
+       the fade starts (after .splash-hide is on), and it is made then, over the app's own sky. */
+    const sp = document.getElementById("splashscreen");
+    if(sp && !sp.classList.contains("splash-hide")){
+      if(old) old.remove();
+      /* ...and if the splash goes without the fade (it is taken out of the page), it is made then */
+      if(!topGuardWatch && window.MutationObserver){
+        topGuardWatch = new MutationObserver(() => { if(!document.getElementById("splashscreen")){ topGuardWatch.disconnect(); try{ syncStatusBarColor(); }catch(e){} } });
+        topGuardWatch.observe(document.body, { childList: true });
+      }
+      return;
+    }
     if(old && old.dataset.color === color) return;
     if(old) old.remove();
     const d = document.createElement("div");
