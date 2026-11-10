@@ -27,6 +27,9 @@ and 4x for the phone and the 1366x768 laptop (a weak machine); budgets are in 1x
 (6) THE IDLE STAND-IN WAITS FOR THE FINGER AND THE GLASS (phone, iPad: Safari has no requestIdleCallback, the page's own runs the warm-ups 700ms
     after the last touchSTART - a finger that stays down on the bar (a slide, a long press) is still there then): a job asked for while a finger is
     down on a tab does not run until it lifts, and then only with the lens down, the bar not held and no settle window open.
+(7) A LENS TRACK NEVER GOES BACKWARDS: lensOffsets() turns a track planned out of order (a landing whose grey-over point comes before its clearing
+    point) into keyframes whose offsets do not decrease, and animate() takes them (the swipe gate's page error under load, thrown in lensRelease
+    before the timer that puts the glass away was set).
 Run:  python3 tools/check-b384-tabbutter.py [--quick] [--only phone,1366x768x1] [--checks 1,6] [--against REV|path/to/index.html]
       (--against origin/main's file must FAIL (1) and (2) on every device they run on; (1) on the finger's, (2) everywhere.)"""
 import os, sys, re, time, json, statistics, collections
@@ -246,6 +249,12 @@ with sync_playwright() as pw:
                     elif not J: late.append("%s>%s: the job never ran" % (a, b))
                     elif J["up"] or J["held"] or J["settle"]: late.append("%s>%s: ran after the lift with the glass up %s, bar held %s, settling %s" % (a, b, J["up"], J["held"], J["settle"]))
                 chk("(6) %s: a warm-up job asked for under a finger waits for the lift and the landing" % label, not late, late)
+            # (7) a lens track's keyframe offsets never go backwards (check-b384-swipe's page error under load: "Offsets must be monotonically non-decreasing")
+            if label == DEVICES[0][0] + ("@%dx" % DEVICES[0][1][0] if DEVICES[0][1][0] > 1 else ""):
+                R = pg.evaluate("""()=>{ try{ if(typeof lensOffsets !== 'function') return { err: 'no lensOffsets' };
+                    const k = lensOffsets([[0, 1], [1, 1], [0, 1], [56, 0]], 56, p => ({ opacity: p[1] })); const a = document.body.animate(k, { duration: 56 }); a.cancel();
+                    return { mono: k.every((x, i) => i === 0 || x.offset >= k[i - 1].offset), n: k.length }; }catch(e){ return { err: String(e).slice(0, 120) }; } }""")
+                chk("(7) a lens track planned out of order still makes keyframes that animate()", bool(R) and R.get("mono") and not R.get("err"), R)
             errs_all += errs
             ctx.close()
     # (4) area

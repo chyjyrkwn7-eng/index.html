@@ -151659,6 +151659,14 @@ function glassLensTf(g, s){
   ];
 }
 /* one step of every channel's spring; the stretch chases the speed */
+/* (384 r15) A TRACK'S OFFSETS NEVER GO BACKWARDS. A lens track is [ms, value] points turned into keyframes at p[0] / D; a landing planned with
+   its grey-over point before its clearing point (a glass that never shrank, a release long after the lift: greyAt 0 against a clearing at 1ms)
+   made offsets 0, .02, 0, 1 and animate() threw "Offsets must be monotonically non-decreasing" - inside lensRelease, before the timer that
+   puts the glass away was set. Each offset is at least the one before it. */
+function lensOffsets(pts, D, make){
+  let at = 0;
+  return pts.map(p => { at = Math.min(1, Math.max(at, p[0] / D)); const k = make(p); k.offset = at; return k; });
+}
 function glassLensStep(s, v, tg, P, h, M){
   tg.st = Math.min(M.stretchMax, Math.abs(v.cx || 0) * M.stretch);
   ["cx", "W", "H", "st"].forEach(k => { const p = P[k], w = Math.sqrt(p[0]);
@@ -151791,7 +151799,7 @@ function attachSegGlass(seg, segSel, sl, opts){
     const end = pts[pts.length - 1];
     if(el !== sl) el.style.opacity = String(end[1]);
     const D = Math.max(1, end[0]);
-    el._fade = el.animate(pts.map(p => ({ opacity: p[1], offset: Math.min(1, Math.max(0, p[0] / D)) })), { duration: D, easing: "linear", fill: "both" });
+    el._fade = el.animate(lensOffsets(pts, D, p => ({ opacity: p[1] })), { duration: D, easing: "linear", fill: "both" });
   }
   function unfade(el){ if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } }
   /* the swell, as the bar's: a track of [ms, "sx sy"] points on the control's own scale - and never to within 4px of the screen's edge */
@@ -151808,7 +151816,7 @@ function attachSegGlass(seg, segSel, sl, opts){
     if(!pts || opts.swell === false) return;
     const D = Math.max(1, pts[pts.length - 1][0]);
     try{
-      const a = seg._swell = seg.animate(pts.map(p => ({ scale: p[1], offset: Math.min(1, Math.max(0, p[0] / D)), easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
+      const a = seg._swell = seg.animate(lensOffsets(pts, D, p => ({ scale: p[1], easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
       /* back at rest: the thumb is placed once more at scale 1 (a placing in the swell's last few frames reads a scale a hair over
          1 as 1 - attachSegSlider's rounding - and was up to 1px off on an iPad) */
       if(pts[pts.length - 1][1] === "1 1") a.finished.then(() => { if(seg._swell === a){ a.cancel(); seg._swell = null; if(opts.onRest) opts.onRest(); } }, () => {});
@@ -158913,7 +158921,7 @@ function tabPerfText(){
     if(el !== slider) el.style.opacity = String(end[1]);
     if(!canAnim) return null;
     const D = Math.max(1, end[0]);
-    el._fade = el.animate(pts.map(p => ({ opacity: p[1], offset: Math.min(1, Math.max(0, p[0] / D)) })), { duration: D, easing: "linear", fill: "both" });
+    el._fade = el.animate(lensOffsets(pts, D, p => ({ opacity: p[1] })), { duration: D, easing: "linear", fill: "both" });
     return el._fade;
   }
   /* the bar's swell, the same way: a track of [ms, "sx sy"] points */
@@ -158948,7 +158956,7 @@ function tabPerfText(){
     if(!canAnim || !pts || window.__noSwell) return;
     const D = Math.max(1, pts[pts.length - 1][0]);
     try{
-      const a = bar._swell = bar.animate(pts.map(p => ({ scale: p[1], offset: Math.min(1, Math.max(0, p[0] / D)), easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
+      const a = bar._swell = bar.animate(lensOffsets(pts, D, p => ({ scale: p[1], easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
       /* a swell back to rest lets go of the bar when it is done */
       if(pts[pts.length - 1][1] === "1 1") a.finished.then(() => { if(bar._swell === a){ a.cancel(); bar._swell = null; } }, () => {});
     }catch(e){ bar._swell = null; }
