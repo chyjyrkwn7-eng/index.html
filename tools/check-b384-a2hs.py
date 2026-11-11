@@ -170,6 +170,9 @@ def open_page(br, dev, installed=False, init="", seed=None, wait=3500):
     ctx.add_init_script("window.__cloudSeed = %s;" % json.dumps(seed or {}))
     ctx.add_init_script(FAKE)
     ctx.add_init_script(WATCH)
+    # 384.23: a phone in a tab with no account is held on the install page (check-b384-installfirst.py); this gate is about the sheet that
+    # the browser sign-up ends on, so its devices are ones that tapped "I can't add it"
+    ctx.add_init_script("try{ if(location.protocol === 'http:') localStorage.setItem('class26e.installskip','1'); }catch(e){}")
     if installed: ctx.add_init_script(STANDALONE)
     if init:
         ctx.add_init_script("(()=>{ try{ if(location.protocol !== 'http:' || sessionStorage.getItem('__seeded')) return; sessionStorage.setItem('__seeded','1'); "
@@ -263,7 +266,7 @@ def sign_up(pg, name):
         if pg.evaluate("()=>!!document.getElementById('a2hs-sheet')"): early.append("during the tips")
         if not pg.evaluate("()=>!!document.getElementById('tour-next')"): break
         pg.evaluate("()=>document.getElementById('tour-next').click()"); tips += 1; pg.wait_for_timeout(350)
-    return {"nova": {"name", "char", "card"} <= seen, "tips": tip and tips > 0, "early": early}
+    return {"nova": {"name", "char"} <= seen and "card" not in seen, "tips": tip and tips > 0, "early": early}
 
 def wait_sheet(pg, secs=25):
     t0 = time.time()
@@ -306,7 +309,7 @@ def errs_ok(pg, where):
 def a2(pg): return pg.evaluate("()=>window.__a2")
 
 def check_signup_point(pg, walk, label):
-    chk("%s the sign-up ran: Nova asked the name and the partner, the save-code card was answered, the tips ran" % label, walk["nova"] and walk["tips"], walk)
+    chk("%s the sign-up ran: Nova asked the name and the partner (no save-code card in the way, 384.27), the tips ran" % label, walk["nova"] and walk["tips"], walk)
     chk("%s nothing of the sheet while Nova talked or a tip was up" % label, not walk["early"], walk["early"])
     t = wait_sheet(pg)
     w = a2(pg)

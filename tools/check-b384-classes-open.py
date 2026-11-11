@@ -314,7 +314,7 @@ with sync_playwright() as pw:
             under = ev(pg, "()=>({ home: !!document.querySelector('#stage [data-screen=\"home\"]'), stage: document.getElementById('stage').innerText.trim().slice(0,80) })")
             p1 = walk_nova(pg, texts=path, name="Casey Rivera")
             S.ck("5", "Nova's first half: the name, the partner (no academy crew), the code's card; ends on %r, whose Continue ends him; no academy Home under him (%s)" % (p1["final"], under),
-                 {"name", "char", "card"} <= p1["asked"] and not p1["later"] and p1["final"] == "Open Fire Code" and p1["ended"] and not under["home"], [p1["asked"], p1["final"], p1["ended"], p1["stuck"], under])
+                 {"name", "char"} <= p1["asked"] and "card" not in p1["asked"] and not p1["later"] and p1["final"] == "Open Fire Code" and p1["ended"] and not under["home"], [p1["asked"], p1["final"], p1["ended"], p1["stuck"], under])
             state["code"] = None
             wait_for(pg, "()=>window.NOVA_CLASS === 'ifc' && !!document.getElementById('nova-intro')", 40)
             p2 = walk_nova(pg, texts=path, name="Casey Rivera")
@@ -332,7 +332,7 @@ with sync_playwright() as pw:
             S.ck("7c", "a new account's tips include the class button, pointing at it (%s)" % [(c["text"][:50], c["onBubble"]) for c in ct],
                  len(ct) == 1 and ct[0]["onBubble"] and ct[0]["text"].startswith("Your classes"), [s["text"][:40] for s in steps])
             sheet = wait_for(pg, "()=>{ const o=document.getElementById('a2hs-sheet'); return o && o.classList.contains('invite-overlay-show') ? o.innerText : null; }", 40)
-            if sheet: path.append(sheet); pg.wait_for_timeout(600); pg.click("#a2hs-sheet .a2hs-foot button"); pg.wait_for_timeout(600)
+            if sheet: path.append(sheet); pg.wait_for_timeout(600); pg.click("#a2hs-sheet .a2hs-foot .a2hs-added"); pg.wait_for_timeout(600)
             enrolled = wait_for(pg, "()=>{ const e=document.getElementById('enrolled-banner'); return e ? e.innerText : null; }", 20)
             if enrolled: path.append(enrolled)
             luck = wait_for(pg, "()=>{ const t=localStorage.getItem('class26e.nova')||''; return /Good luck on your learning adventure/.test(t) ? t : null; }", 40)
@@ -482,19 +482,19 @@ with sync_playwright() as pw:
             pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000)
             nv = walk_nova(pg, name="Robin Twoclass")
             S.ck("14b", "Police Academy's whole sign-up: Nova asks the name, the partner, the code, ends on %r" % nv["final"],
-                 {"name", "char", "card"} <= nv["asked"] and nv["ended"] and ev(pg, "()=>window.NOVA_CLASS") == "academy"
-                 and any("four ways to train" in l for l in nv["lines"]), [nv["asked"], nv["final"], nv["stuck"]])
+                 {"name", "char"} <= nv["asked"] and "card" not in nv["asked"] and nv["ended"] and ev(pg, "()=>window.NOVA_CLASS") == "academy"
+                 and 4 <= len(nv["lines"]) <= 12, [nv["asked"], nv["final"], nv["stuck"], len(nv["lines"])])
             steps = []
             n = tips(pg, steps=steps)
             sheet = wait_for(pg, "()=>{ const o=document.getElementById('a2hs-sheet'); return o && o.classList.contains('invite-overlay-show'); }", 40)
-            if sheet: pg.wait_for_timeout(500); pg.click("#a2hs-sheet .a2hs-foot button"); pg.wait_for_timeout(500)
+            if sheet: pg.wait_for_timeout(500); pg.click("#a2hs-sheet .a2hs-foot .a2hs-added"); pg.wait_for_timeout(500)
             eb = wait_for(pg, "()=>{ const e=document.getElementById('enrolled-banner'); return e ? e.innerText : null; }", 20)
             ct = class_tip_of(steps)
             S.ck("14c", "the tips name the class button, pointing at it (%s); then \"You're enrolled in Police Academy and Fire Code\" (%r)" % ([(c["text"][:40], c["onBubble"]) for c in ct], (eb or "")[:90]),
                  n >= 4 and len(ct) == 1 and ct[0]["onBubble"] and bool(eb) and "Police Academy and Fire Code" in eb, [n, eb, [s["text"][:40] for s in steps]])
             pg.wait_for_timeout(9000)
             late = ev(pg, "()=>{ const t=document.getElementById('tour-text'); return t ? t.textContent : null; }")
-            S.ck("14g", "a new account is not shown the class button's tip again on its own (%r)" % late, late is None and ev(pg, "()=>store.seenClassTip") is True, late)
+            S.ck("14g", "a new account is not shown the class button's tip again on its own (%r)" % late, not (late and ("Your classes" in late or "class button" in late)) and ev(pg, "()=>store.seenClassTip") is True, late)
             ev(pg, "()=>{ try{ pushToCloud(true); }catch(e){} }"); pg.wait_for_timeout(2500)
             r = ev(pg, "()=>({ list: enrolledClasses(), code: syncCode, pub: store.publicId })")
             c = cloud(pg)

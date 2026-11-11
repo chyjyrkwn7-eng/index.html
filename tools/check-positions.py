@@ -92,7 +92,8 @@ Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
 
 # 329: "What This Actually Is" (showWelcomeIntro) is no longer a sign-up step - the check goes
 # straight to the class screen - so it is not walked here.
-ONBOARDING = ["showSignUpCheck", "showClassSelection", "showWelcomeNamePrompt",
+# 384.23: and the install-first page (showInstallFirst), whose primary button is on the same floor as the others
+ONBOARDING = ["showInstallFirst", "showSignUpCheck", "showClassSelection", "showWelcomeNamePrompt",
               "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal"]
 
 def patched(insets):
@@ -110,7 +111,7 @@ def serve():
     return srv, f"http://127.0.0.1:{port}/index.html"
 
 ONBOARDING_SCREENS = {
-    "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showClassSelection",
+    "showInstallFirst", "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",
 }
