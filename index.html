@@ -131404,7 +131404,8 @@ function celebrationsOffLine(items){
 /* Opens Settings on the page that holds the switch, with its row lit (the settings page shows what it does in its own words) */
 function openCelebrationSetting(){
   try{ endResultsReveal(); }catch(e){}
-  try{ setActiveNav("settings"); }catch(e){}   /* the tab bar comes back (a results screen holds it down) */
+  /* the tab bar comes back (a results screen holds it down: its nav buttons are hidden, and the bar follows them) */
+  try{ appearanceBtn.hidden = false; homeBtn.hidden = false; profileBtn.hidden = false; setActiveNav("settings"); }catch(e){}
   showAppearance({ page: "motion", focus: "celebrations" });
 }
 function buildCelebrationsOffNote(items){

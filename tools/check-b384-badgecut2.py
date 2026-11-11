@@ -20,6 +20,7 @@ own page with its row lit; where the scene would have played over Home, one top 
 (H) NOTHING EARNED IS LEFT UNTOLD WITH THE SETTING OFF EITHER: a badge whose scene never reached its end on the results (the phone put the app away and it came
     back reloaded, 2.5s into the results) is owed (store.badgeSceneOwed) and Home plays the case by itself, to its end, and marks it played
 (I) a scene that played on the results is marked played and Home does not play it a second time
+(J) every unit of both classes: the scene builds, in motion and still, none throwing (the sweep that found no other silent case; passes on main too)
 
 Run:  python3 tools/check-b384-badgecut2.py   (--against OLD/index.html must FAIL (A, B, C, E); ONLY=A,C runs those)"""
 import importlib.util, json, os, re, sys, time
@@ -57,7 +58,9 @@ with sync_playwright() as pw:
             chk("(%s) %s, setting ON, a real full-unit run: no case scene, and the results' box says '%s' was earned and that celebrations are off, with a button (%s)"
                 % (key, "Fire Code" if cls == "ifc" else "the academy", title[:30], note),
                 not s and bool(note) and title.lower() in note["text"].lower() and "celebrations are off" in note["text"].lower() and note["btn"] and note["shown"], (note, tr["skipped"][:1]))
-        if key == "A" and want("C"):
+        if key == "A" and want("C") and not note:
+            chk("(C) the note's button opens Motion & Effects ... (there is no note to press)", False, note)
+        elif key == "A" and want("C"):
             pg.evaluate("()=>document.querySelector('.rs-celebrate-off').scrollIntoView({block:'center'})"); pg.wait_for_timeout(600)
             pg.click(".rs-celebrate-off-btn"); pg.wait_for_timeout(1200)
             st = pg.evaluate("""()=>({ page: !!document.querySelector('.settings-page-motion'), row: !!document.getElementById('settings-celebrations'),
@@ -81,17 +84,19 @@ with sync_playwright() as pw:
     if want("E"):
         for muted in (True, False):
             ctx, pg, errs = fresh(br, "academy", muted)
-            cid = pg.evaluate("""()=>{ const c = AVATAR_CHARACTERS.find(c => c.id !== 'ninja' && !c.unlock && !c.feat && !c.legacy && !c.retired && !isLockedCharacter(c.id));
-              store.pendingCharUnlocks = [c.id]; store.unlocksShown = { chars: [], banners: [], fx: [] }; saveStore(); showHome(); return c.id; }""")
-            name = pg.evaluate("(id)=>AVATAR_DISPLAY_NAME[id] || id", cid)
+            names = pg.evaluate("""()=>{ const c = AVATAR_CHARACTERS.find(c => c.id !== 'ninja' && !c.unlock && !c.feat && !c.legacy && !c.retired && !isLockedCharacter(c.id));
+              store.pendingCharUnlocks = [c.id]; store.unlocksShown = { chars: [], banners: [], fx: [] }; saveStore();
+              const p = pendingHomeUnlocks(); const items = [].concat(p.chars.map(characterUnlockItem), p.banners.map(bannerUnlockItem), (p.fx || []).map(hundoFxUnlockItem)).filter(Boolean);
+              showHome(); return items.map(i => i.name); }""")
+            name = names[0] if names else ""
             got = None
             for _ in range(60):
                 got = pg.evaluate("()=>{ const b = document.getElementById('celebrations-off'); return { banner: b ? b.textContent : null, card: !!document.querySelector('.rs-spot') }; }")
                 if got["banner"] or got["card"]: break
                 pg.wait_for_timeout(250)
             if muted:
-                chk("(E) Home, setting ON, a character waiting: ONE banner names it and says celebrations are off, and no card plays (%s)" % got,
-                    bool(got["banner"]) and name.lower() in got["banner"].lower() and "celebrations are off" in got["banner"].lower() and not got["card"], got)
+                chk("(E) Home, setting ON, something waiting to be announced: ONE banner names it and says celebrations are off, and no card plays (%s)" % got,
+                    bool(names) and bool(got["banner"]) and name.lower() in got["banner"].lower() and "celebrations are off" in got["banner"].lower() and not got["card"], got)
                 pg.evaluate("()=>document.getElementById('celebrations-off').click()"); pg.wait_for_timeout(1000)
                 chk("(E) ... and tapping it opens the switch's page", pg.evaluate("()=>!!document.querySelector('.settings-page-motion #settings-celebrations')"))
             else:
@@ -151,6 +156,21 @@ with sync_playwright() as pw:
         chk("(I) a full run's scene played on the results (up %s s) is marked played, nothing owed (%s), and Home does not play it again (%s)" % (ups, st, again),
             bool(ups) and st == [True, 0] and not again, (ups, st, again))
         errs_all += errs; ctx.close()
+    # ---------------------------------------------------------------- (J) every unit's scene builds (a scene that throws is a silent badge). Passes on main too: it is the sweep that found nothing.
+    if want("J"):
+        for cls in ("academy", "ifc"):
+            ctx, pg, errs = fresh(br, cls, False)
+            r = pg.evaluate(r"""()=>{ const bad = []; let n = 0;
+              unitsInTeachingOrder().filter(u => unitQuestionCount(u) > 0).forEach(u => {
+                [false, true].forEach(still => { n++;
+                  try{ theme.reduceMotion = still; const h = playBadgeCaseScene([u], () => {}, [], {}); const o = document.querySelector('.bc-scene');
+                    if(!o) bad.push([u.slice(0, 30), still, 'no overlay']); else { (o.__nova || {}).skip && o.__nova.skip(); o.remove(); }
+                    document.body.classList.remove('bc-covering'); }
+                  catch(e){ bad.push([u.slice(0, 30), still, String(e && e.message || e).slice(0, 60)]); }
+                  document.querySelectorAll('.bc-scene').forEach(x => x.remove()); }); });
+              theme.reduceMotion = false; return { n, bad }; }""")
+            chk("(J) %s: the badge scene builds for every unit, in motion and still (%d scenes), none throwing and none without its overlay %s" % (cls, r["n"], r["bad"][:3]), r["n"] > 0 and not r["bad"], r)
+            errs_all += errs; ctx.close()
     chk("(G) no page errors on any of it", not errs_all, errs_all[:4])
     br.close()
 sys.exit(0 if ok else 1)
