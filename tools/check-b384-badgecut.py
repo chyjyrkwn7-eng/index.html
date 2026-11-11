@@ -76,13 +76,16 @@ ANSWER = r"""()=>{ if(!document.querySelector('.choice') || typeof order === 'un
 SCENE = r"""()=>{ const s = document.querySelector('.bc-scene'); return s ? { out: s.classList.contains('bc-out'), still: s.classList.contains('bc-still') } : null; }"""
 MIN_UP = 4.0
 
-def walk(pg, cls, tap_every=0.25, min_up=MIN_UP, limit=170):
+CARD = r"""()=>{ const out = []; document.querySelectorAll('.rs-spot').forEach(e => { if(!e.__t){ e.__t = { up: null, leave: null, kind: (e.className.match(/rs-spot-(\w+)/) || [])[1] }; (window.__cards = window.__cards || []).push(e.__t); }
+  const t = e.__t, now = performance.now(); if(e.classList.contains('is-up') && t.up === null) t.up = now; if(e.classList.contains('is-leaving') && t.leave === null) t.leave = now; }); return (window.__cards || []).map(t => [t.kind, t.up, t.leave]); }"""
+def walk(pg, cls, tap_every=0.25, min_up=MIN_UP, limit=170, setup="", cards=False):
     """a real full-unit run in the unit one hundo short of its badge; from the results on, a person taps the screen"""
     topic = pg.evaluate("()=>unitsInTeachingOrder().filter(u=>unitQuestionCount(u)>0).sort((a,b)=>unitQuestionCount(a)-unitQuestionCount(b))[0]")
+    if setup: pg.evaluate(setup)
     pg.evaluate(r"""(t) => { store.unitPerfects = {}; store.unitPerfects[t] = Math.max(0, badgeThresholdFor(t) - 1); saveStore(); showHome();
       cfg.source = 'all'; cfg.mode = 'drill'; cfg.units = [t];
       setTimeout(() => beginRun(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === t)), 1200); return true; }""", topic)
-    t0 = time.time(); rs = first = last = None; out_seen = False; taps = 0; nxt = 0
+    t0 = time.time(); rs = first = last = None; out_seen = False; taps = 0; nxt = 0; seen_cards = []
     while time.time() - t0 < limit:
         try:
             if pg.evaluate("()=>!!document.querySelector('.rs-screen')"):
@@ -91,16 +94,18 @@ def walk(pg, cls, tap_every=0.25, min_up=MIN_UP, limit=170):
                     pg.mouse.click(220, 300); taps += 1; nxt = time.time() + tap_every
             else:
                 pg.evaluate(ANSWER)
+            if cards: seen_cards = pg.evaluate(CARD)
             s = pg.evaluate(SCENE)
             if s:
                 if first is None: first = time.time()
                 last = time.time(); out_seen = out_seen or s["out"]
-                if time.time() - first >= min_up + 1.0: break
-            elif first is not None: break
+                if time.time() - first >= min_up + 1.0 and not cards: break
+            elif first is not None and not cards: break
+            if cards and rs and time.time() - rs > 45: break
         except Exception as ex:
             print("   (walk: %s)" % str(ex)[:100])
         pg.wait_for_timeout(100)
-    return {"unit": topic[:30], "resultsAt": None if rs is None else round(rs - t0, 1), "taps": taps, "up": None if first is None else round(last - first, 2), "outBegun": out_seen}
+    return {"unit": topic[:30], "resultsAt": None if rs is None else round(rs - t0, 1), "taps": taps, "up": None if first is None else round(last - first, 2), "outBegun": out_seen, "cards": seen_cards}
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=CHROME)
@@ -162,6 +167,38 @@ with sync_playwright() as pw:
         pg.wait_for_timeout(e_at + 2500)
         chk("(E) ... and it ends by itself, handing over once", pg.evaluate("()=>[!document.querySelector('.sf-scene'), window.__done]") == [True, 1], pg.evaluate("()=>[!document.querySelector('.sf-scene'), window.__done]"))
         errs_all += errs; ctx.close()
+    # ------------------------------------------------------------------ (J) an unlock card is not tapped away before it can be read
+    if want("J"):
+        ctx, pg, errs = page(br, "academy")
+        tap_ms = pg.evaluate("()=>typeof SPOT_TAP_MS === 'number' ? SPOT_TAP_MS : 1600")
+        pg.evaluate("""()=>{ window.__rel = 0; const ch = AVATAR_CHARACTERS.find(c => c.id !== 'ninja' && !c.retired);
+          playUnlockSpotlight(characterUnlockItem(ch.id), 1, 1, () => { window.__rel++; }); }""")
+        for _ in range(40):
+            if pg.evaluate("()=>!!document.querySelector('.rs-spot.is-up')"): break
+            pg.wait_for_timeout(100)
+        pg.wait_for_timeout(300)
+        for _ in range(3):
+            pg.mouse.click(220, 478); pg.wait_for_timeout(150)
+        st = pg.evaluate("()=>{ const e = document.querySelector('.rs-spot'); return e ? { leaving: e.classList.contains('is-leaving') } : null; }")
+        chk("(J) an unlock card (a character's) tapped three times in its first second is still up, not leaving (SPOT_TAP_MS = %d)" % tap_ms, bool(st) and not st["leaving"] and pg.evaluate("()=>window.__rel") == 0, st)
+        pg.wait_for_timeout(tap_ms + 400)
+        pg.mouse.click(220, 478); pg.wait_for_timeout(900)
+        chk("(J) ... and once it has been read a tap is still 'continue': it goes and hands over (release called once)", pg.evaluate("()=>[!document.querySelector('.rs-spot-character.is-up'), window.__rel]") == [True, 1],
+            pg.evaluate("()=>[!document.querySelector('.rs-spot-character.is-up'), window.__rel]"))
+        errs_all += errs; ctx.close()
+    # ------------------------------------------------------------------ (K) a real run that unlocks a character, tapped through: its card is read
+    if want("K"):
+        ctx, pg, errs = page(br, "academy")
+        tap_ms = pg.evaluate("()=>typeof SPOT_TAP_MS === 'number' ? SPOT_TAP_MS : 1600")
+        setup = """()=>{ const c = AVATAR_CHARACTERS.find(c => c.id !== 'ninja' && !c.unlock && !c.feat && !c.legacy && !c.retired && !isLockedCharacter(c.id));
+          store.pendingCharUnlocks = [c.id]; store.unlocksShown = { chars: [], banners: [], fx: [] }; saveStore(); window.__cid = c.id; }"""
+        r = walk(pg, "academy", setup=setup, cards=True, limit=100)
+        errs_all += errs
+        cs = [c for c in r["cards"] if c[0] == "character"]
+        held = [round(c[2] - c[1]) for c in cs if c[1] is not None and c[2] is not None]
+        chk("(K) a real run that unlocks a character, tapped through (%d taps): its card comes up and stays up at least %dms before any tap can take it (up %s ms)" % (r["taps"], tap_ms, held),
+            bool(cs) and bool(held) and min(held) >= tap_ms - 150, r["cards"])
+        ctx.close()
     # ------------------------------------------------------------------ (F) the Home badge cutscene (an old build's queue)
     if want("F"):
         ctx, pg, errs = page(br, "academy")

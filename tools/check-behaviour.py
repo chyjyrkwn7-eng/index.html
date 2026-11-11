@@ -13205,13 +13205,13 @@ def check_b313_fx(br):
     ctx.close()
     ctx, pg = booted(br, 440, 956, seed=stored)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showHome(); let n = 0;
-      for(let i = 0; i < 24; i++){ if(document.querySelector('.rs-spot-fx')) n++; const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(250); } return n; }""")
+      for(let i = 0; i < 24; i++){ if(document.querySelector('.rs-spot-fx')) n++; const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); await wait(250); } return n; }""")
     check("and not again on the next launch", r == 0, r)
     ctx.close()
     acct["lifetime"]["perfectTests"] = 0
     ctx, pg = booted(br, 440, 956, seed=json.dumps(acct))
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showHome(); let n = 0;
-      for(let i = 0; i < 24; i++){ if(document.querySelector('.rs-spot-fx')) n++; const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(250); } return n; }""")
+      for(let i = 0; i < 24; i++){ if(document.querySelector('.rs-spot-fx')) n++; const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); await wait(250); } return n; }""")
     check("an account with no hundos gets no hundo effect pop-up", r == 0, r)
     ctx.close()
 
@@ -17688,7 +17688,7 @@ B319_RU_WALK = """async (a) => {
   window.playTierCutscene = fake; window.playSupernovaCutscene = o => fake('titan', o);
   if(!document.querySelector('[data-screen="home"]')) showHome();
   for(let i = 0; i < 80 && !document.body.classList.contains('rankup-lock'); i++){
-    const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click();
+    const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click());
     await wait(150);
   }
   out.lock = document.body.classList.contains('rankup-lock');
@@ -18033,7 +18033,7 @@ B320D_WALK = """async (a) => {
   window.playSupernovaCutscene = o => handed('titan', o, () => realSn(o));
   if(!document.querySelector('[data-screen="home"]')) showHome();
   for(let i = 0; i < 80 && !document.body.classList.contains('rankup-lock'); i++){
-    const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click();
+    const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click());
     await wait(150);
   }
   /* ---- Home, locked: the Profile tab does not ring or jump ---- */
@@ -18265,7 +18265,7 @@ def _b321e_stepped(br, w, h, dev):
     for _ in range(40):
         if pg.evaluate("() => document.body.classList.contains('rankup-lock')"):
             break
-        pg.evaluate("() => { const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
+        pg.evaluate("() => { const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); }")
         pg.wait_for_timeout(250)
     # Home's flip-books made, as on any phone that has had Home up for a minute
     for _ in range(90):
@@ -18297,7 +18297,7 @@ def _b321e_stepped(br, w, h, dev):
         if up["spot"]:
             card_at = card_at if card_at is not None else st.t
             if st.t - card_at > 1.2:
-                pg.evaluate("() => { const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
+                pg.evaluate("() => { const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); }")
                 card_at = None
         if up["settle"]:
             settle_at = settle_at if settle_at is not None else st.t
@@ -19946,7 +19946,7 @@ B317_RING_JS = r"""async (a) => {
     runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
     summarize();
     for(let i = 0; i < 600 && !document.querySelector('.rs-rewards.rs-done'); i++){
-      const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(100); }
+      const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); await wait(100); }
     await wait(300);
   };
   if(a.only === 'kbd'){ await unitRun(4); out.kbd = ring(document.querySelector('.rs-actions button')); return out; }
@@ -22736,7 +22736,7 @@ def _b320a_play(pg, o, limit=90000, tap_spots=True):
         if tap_spots and st["spot"]:
             spot_at = spot_at or t
             if t - spot_at > 3000:
-                pg.evaluate("()=>{ const s = document.querySelector('.rs-spot.is-up'); if(s) s.click(); }"); spot_at = None
+                pg.evaluate("()=>{ const s = document.querySelector('.rs-spot.is-up'); if(s) (s.__nova ? s.__nova.skip() : s.click()); }"); spot_at = None
         else:
             spot_at = None
         if st["done"]:

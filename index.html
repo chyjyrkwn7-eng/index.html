@@ -131850,6 +131850,7 @@ function unlockSpotLook(item){
 /* The centre-screen banner. Holds for a few seconds, or until tapped,
    then leaves and releases the timeline for the next one. */
 const SPOT_SEEN_MS = 1200;
+const SPOT_TAP_MS = 1600;   /* (384.37) how long a card is up before a tap on it means "continue" */
 function playUnlockSpotlight(item, n, of, release){
   clearCelebrationsForScene();
   /* SHOWN WHEN IT WAS SEEN, NOT WHEN IT STARTED (build 312). "The Home
@@ -132039,8 +132040,17 @@ function playUnlockSpotlight(item, n, of, release){
     setTimeout(() => spot.remove(), 320);
     setTimeout(release, Math.max(320, flight + 120));
   }
-  spot.addEventListener("click", () => leave(true));
+  /* (384.37) A TAP BEFORE THE CARD HAS BEEN READ IS NOT "CONTINUE". "I just unlocked a character, a flare, and a badge and not a
+     single pop up happened": a person tapping through the results ("Tap to skip") taps the next card away the moment it comes
+     up, and a card tapped away counts as seen (markSeen), so nothing was ever owed again. The card takes taps once it has
+     been up SPOT_TAP_MS (its entrance is ~1.5s); "Tap to continue" is still the way on after that, and the timer still ends it.
+     The tools tap one only after it has been up 2s+; skip() is the tools' and the screens' own way out. */
+  let upAt = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => { upAt = performance.now(); }));
+  spot.addEventListener("click", () => { if(!upAt || performance.now() - upAt < SPOT_TAP_MS) return; leave(true); });
   timer = setTimeout(() => leave(true), HOLD);
+  /* the tools' way past a card at once (the pattern of Nova's bubbles); the tap above waits SPOT_TAP_MS */
+  spot.__nova = { skip(){ leave(true); } };
   return {
     skip(){ leave(); },
     stop(){ gone = true; stopFx(); if(timer) clearTimeout(timer); spot.remove(); }
