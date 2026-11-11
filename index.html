@@ -58830,6 +58830,65 @@ if(window.NOVA_CLASS === "ifc"){
   CHARACTER_FEATS.days30 = { label: "Study on 14 different days",
     done: () => studyDaysTotal() >= 14, have: () => Math.min(studyDaysTotal(), 14), need: 14 };
 }
+/* (384.40) THE SMOKE DIVER, THE THIRD TIME: IT COUNTED MISSES, NOT RETAKES. Madison, Fire Code: "It's still saying I unlocked this. There's
+   no way I did. I've barely answered 200 questions in total." His account (read, not guessed): 216 different questions answered,
+   384 answers, 128 different questions missed - and retakenQuestions 172, EXACTLY the 172 misses on record, in the document and in
+   its floor. In a Drill a wrong pick is followed by picking again until it is right, and the app recorded ONE miss and ticked ONE
+   retake for that very moment (choose(): `attempts[qi] > 1` -> retakenQuestions + 1, and recordResult(qi, true) -> m + 1). So in Fire
+   Code the counter was the number of misses, by construction, and "Retake 100 missed questions" was met by missing 100 answers: no
+   question had to come back. That is also why the two clamps before this one never bound: ifcChallengeClamp held the counter to
+   min(misses on record, answers) - the same number the counter already was. 67 of his 128 missed questions were never shown again;
+   at most 61 were answered a second time at all.
+   The challenge now means what it says, in Fire Code: a DIFFERENT question counts once, when it is answered AFTER a miss of it is on
+   record (a Drill in a later sitting, a Retake run, a test's misses retaken). Two sources, both kept in the account itself:
+   store.retakenKeys (the question's own key, written at the moment it is answered while its miss is already in stats; a union on every
+   merge) and the record alone: a question with two or more misses in stats (m >= 2) was answered again after its first miss, so it counts
+   with nothing stored. The count is worked out when it is READ - from the keys, kept only if the key is a question of this bank and
+   its stats still hold a miss - so nothing is ever "granted": a stale counter, an old copy, a floor document or another device cannot
+   hold the Smoke Diver, because nothing they carry is read. (The old retakenQuestions still ticks and still merges, unread in Fire
+   Code. The academy keeps it as its rule - an account there earned the Masked One under it - see retake100 above.) */
+var RETAKE_NEED = 100, RETAKEN_KEYS_CAP = 300;   /* var: read at boot by applyLoadedData, never in a temporal dead zone */
+var retakeKeyCache = null;
+function retakeKeySet(){
+  try{
+    if(!retakeKeyCache || retakeKeyCache.n !== KEYS.length) retakeKeyCache = { n: KEYS.length, s: new Set(KEYS) };
+    return retakeKeyCache.s;
+  }catch(e){ return null; }   /* the bank is not built yet (boot): the stats alone are read */
+}
+function retakeDistinctCount(d){
+  d = d || store;
+  const stats = (d && d.stats && typeof d.stats === "object") ? d.stats : {};
+  const real = retakeKeySet();
+  const seen = new Set();
+  const take = k => {
+    if(typeof k !== "string" || seen.has(k)) return;
+    const e = stats[k];
+    if(!e || !(Number(e.m) >= 1)) return;          /* a retake is of a question whose miss is on record */
+    if(real && !real.has(k)) return;               /* ...and of a question this class's bank still has */
+    seen.add(k);
+  };
+  (Array.isArray(d.retakenKeys) ? d.retakenKeys : []).forEach(take);
+  Object.keys(stats).forEach(k => { const e = stats[k]; if(e && Number(e.m) >= 2) take(k); });
+  return seen.size;
+}
+if(window.NOVA_CLASS === "ifc"){
+  CHARACTER_FEATS.retake100 = { label: "Retake 100 missed questions",
+    done: () => retakeDistinctCount() >= RETAKE_NEED,
+    have: () => Math.min(retakeDistinctCount(), RETAKE_NEED), need: RETAKE_NEED,
+    note: "Answer a question you missed in an earlier Drill or test again, in a Drill or through Retake missed questions. Each question counts once." };
+}
+/* the question's key goes on the account the moment it is answered right with a miss of it already on record (Fire Code; see above).
+   Called from choose() BEFORE recordResult, so a miss made in this very sitting is not yet on record and does not count. */
+function noteRetakenKey(qi){
+  if(window.NOVA_CLASS !== "ifc" || runLabel === "Daily question") return;
+  try{ if(vroomForeign()) return; }catch(e){}   /* recordResult() takes nothing of another class's question either */
+  const k = KEYS[qi];
+  if(typeof k !== "string") return;
+  const e = store.stats && store.stats[k];
+  if(!e || !(Number(e.m) >= 1)) return;
+  if(!Array.isArray(store.retakenKeys)) store.retakenKeys = [];
+  if(store.retakenKeys.indexOf(k) < 0){ store.retakenKeys.push(k); if(store.retakenKeys.length > RETAKEN_KEYS_CAP) store.retakenKeys = store.retakenKeys.slice(-RETAKEN_KEYS_CAP); }
+}
 function ifcRunBest(){ return Math.max(Number(store.bestTestStreak) || 0, Number(store.lifetime && store.lifetime.longestStreak) || 0, Number(store.lifetime && store.lifetime.currentStreak) || 0); }
 /* ---- THE ULTIMATE UNLOCK (build 304) ----
    "The unlock requirement will be, unlock all characters and banners and
@@ -59339,22 +59398,42 @@ function ifcChallengeClamp(d){
   const cap = Math.max(0, Math.min(ifcMissesOnRecord(d), answered));   /* (384.24) back to the misses on record: "Retake 100 MISSED questions" (384.20 had 2x) */
   if((Number(d.retakenQuestions) || 0) > cap){ d.retakenQuestions = cap; changed = true; }
   if(d.unitGameBeat && typeof d.unitGameBeat === "object" && Object.keys(d.unitGameBeat).length){ d.unitGameBeat = {}; changed = true; }
+  /* (384.40) THE CLAMP ABOVE NEVER BOUND ON A DRILL-ONLY ACCOUNT (the counter IS the misses there, so min(misses, answers) is the counter) and it
+     is no longer what decides the Smoke Diver: that is the count of DIFFERENT retaken questions, worked out from the document's own stats and
+     keys (retakeDistinctCount). What is left to do on a document - the copy about to be written, the account's and its floor's - is to take
+     the character's traces off it when that count does not support it: not queued to be announced, not marked announced or seen (a real earn
+     is then announced as it should be), not the worn character (the class's first starter; the rest of the look is not touched). */
+  try{
+    if(retakeDistinctCount(d) < RETAKE_NEED){
+      AVATAR_CHARACTERS.filter(c => c.feat === "retake100").forEach(c => {
+        if(Array.isArray(d.pendingCharUnlocks) && d.pendingCharUnlocks.indexOf(c.id) >= 0){ d.pendingCharUnlocks = d.pendingCharUnlocks.filter(x => x !== c.id); changed = true; }
+        [d.unlocksShown, d.seenUnlocks].forEach(u => {
+          if(u && Array.isArray(u.chars) && u.chars.indexOf(c.id) >= 0){ u.chars = u.chars.filter(x => x !== c.id); changed = true; }
+        });
+        if(d.avatarChar === c.id){ d.avatarChar = classDefaultCharacter(); changed = true; }
+      });
+    }
+  }catch(e){}
   return changed;
 }
+/* (384.40) AFTER EVERY MERGE (see the places it is called from): a challenge or rank character this class holds LOCKED - however it came to be
+   queued, marked or worn - is not queued, not marked announced or seen, and not worn (quietly, to the class's first starter). The lock itself
+   is never stored: every character here reads its own counters when asked (isLockedCharacter), so nothing a document, its floor or another
+   device carries can keep one unlocked. */
 function ifcChallengesRepair384(){
   if(window.NOVA_CLASS !== "ifc" || !store) return false;
+  const wore = store.avatarChar;
   let changed = ifcChallengeClamp(store);
-  /* what the count unlocked, where it no longer holds: an unlock still queued, the marks that it was announced or seen (so the real
-     earn is announced as it should be), and the character itself if it is being worn - quietly, to the class's first starter */
-  AVATAR_CHARACTERS.filter(c => c.feat === "retake100").forEach(c => {
+  AVATAR_CHARACTERS.filter(c => (c.feat || c.unlock) && !c.retired && !c.legacy).forEach(c => {
     let locked = false; try{ locked = isLockedCharacter(c.id); }catch(e){ return; }
     if(!locked) return;
     if(Array.isArray(store.pendingCharUnlocks) && store.pendingCharUnlocks.indexOf(c.id) >= 0){ store.pendingCharUnlocks = store.pendingCharUnlocks.filter(x => x !== c.id); changed = true; }
     [store.unlocksShown, store.seenUnlocks].forEach(u => {
       if(u && Array.isArray(u.chars) && u.chars.indexOf(c.id) >= 0){ u.chars = u.chars.filter(x => x !== c.id); changed = true; }
     });
-    if(store.avatarChar === c.id){ store.avatarChar = classDefaultCharacter(); changed = true; try{ updateHeaderTitle(); }catch(e){} }
+    if(store.avatarChar === c.id){ store.avatarChar = classDefaultCharacter(); changed = true; }
   });
+  if(store.avatarChar !== wore){ try{ updateHeaderTitle(); }catch(e){} }
   if(changed){ try{ saveStore(); }catch(e){} }
   return changed;
 }
@@ -68113,7 +68192,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -68334,6 +68413,9 @@ function applyLoadedData(got){
      least that many podium finishes. */
   store.weeklyTop3 = Math.max(typeof got.weeklyTop3 === "number" ? got.weeklyTop3 : 0, store.weeklyWins);
   store.retakenQuestions = typeof got.retakenQuestions === "number" ? got.retakenQuestions : 0;
+  /* (384.40) Fire Code's retakes: the keys of the different questions answered after a miss (see retakeDistinctCount). Defaults to none: what an
+     older copy never recorded is not guessed from its counter. */
+  store.retakenKeys = Array.isArray(got.retakenKeys) ? got.retakenKeys.filter(k => typeof k === "string").slice(-RETAKEN_KEYS_CAP) : [];
   store.hundoDay = got.hundoDay && typeof got.hundoDay === "object" && typeof got.hundoDay.day === "string" && Array.isArray(got.hundoDay.units) ? got.hundoDay : null;
   store.hundoDayBest = typeof got.hundoDayBest === "number" ? got.hundoDayBest : 0;
   /* Null until the Rank tab first sees it, which sets it to the rank
@@ -70075,13 +70157,29 @@ function friendPublicIds(){
 
 /* Somebody whose row asks for me, that I have neither accepted nor
    declined. Read off THEIR row, which is the only place it can be. */
+/* When THIS device last declined or removed somebody (a local viewing mark, never on `store`: it is not progress). A request that
+   was sent before that is the old one; one after it is new. */
+var FRIEND_DECLINED_AT_KEY = "class26e.frienddecl";
+function friendDeclinedAtMap(){
+  try{ const m = JSON.parse(localStorage.getItem(FRIEND_DECLINED_AT_KEY) || "{}"); return (m && typeof m === "object") ? m : {}; }catch(e){ return {}; }
+}
+function markFriendDeclinedAt(pub){
+  try{ const m = friendDeclinedAtMap(); m[pub] = Date.now(); const ks = Object.keys(m); if(ks.length > 200) delete m[ks[0]]; localStorage.setItem(FRIEND_DECLINED_AT_KEY, JSON.stringify(m)); }catch(e){}
+}
 function incomingFriendRequests(){
   const accepted = new Set(store.friendsIn || []);
   const declined = new Set(store.friendsDeclined || []);
   const friends = new Set(friendPublicIds());
+  /* (384.39) A REQUEST IN THE MAILBOX IS A NEW REQUEST, DECLINED BEFORE OR NOT. Declining (and removing a friend, which declines)
+     takes the person's message out of the mailbox (clearInbox), so one that is there now was sent after: it is shown. Held to
+     "declined" it could never be seen, and two people who had once removed each other could never add each other again - the
+     sender is told "Request sent" and nothing ever appears on the other phone. The board-row path below keeps the old rule,
+     because a row's request stays in it until its sender withdraws it. */
+  const decAt = friendDeclinedAtMap();
   const box = inboxOfType("friendreq", 0).filter(m =>
     m.pub && m.pub !== store.publicId &&
-    !accepted.has(m.pub) && !declined.has(m.pub) && !friends.has(m.pub));
+    !accepted.has(m.pub) && !friends.has(m.pub) &&
+    !(declined.has(m.pub) && decAt[m.pub] && (Number(m.at) || 0) <= decAt[m.pub]));
   if(box.length) return box;
   return (leaderboardRows || []).filter(e =>
     e && e.pub && e.pub !== store.publicId &&
@@ -70095,14 +70193,53 @@ function outgoingFriendRequests(){
   return (store.friendsOut || []).filter(id => !friends.has(id));
 }
 
+/* ---- WHAT SOMEBODY TYPES OR PASTES IS READ KINDLY (384.39) ----
+   A code is read out loud, texted, copied from a message and typed from a screenshot, so what arrives is "abc 234", "ABC–234"
+   (a typographic dash), "ABC-234\n", "my code is ABC-234" or six letters with no dash. All of those are the one code. The
+   field's 7-character limit used to cut a pasted line off before any of this could run. What cannot be read says why: the
+   alphabet has no I, O, 0 or 1 (they are mistaken for each other and for L and Q), so one of those typed is a misread, and
+   the message names that rather than calling the whole thing "not a friend code". Returns { code } or { why }. */
+var FRIEND_CODE_WHY_SHAPE = "That is not a friend code. They look like ABC-234.";
+function friendCodeFromText(text){
+  let t = String(text == null ? "" : text);
+  try{ t = t.normalize("NFKC"); }catch(e){}
+  t = t.toUpperCase().trim();
+  if(!t) return { why: "Enter a friend code. They look like ABC-234." };
+  let cand = "";
+  /* 1. three, a dash of any kind, three - found anywhere in what was pasted */
+  const dashed = t.match(/(?:^|[^A-Z0-9])([A-Z0-9]{3})\s*[-‐-―−_]\s*([A-Z0-9]{3})(?![A-Z0-9])/);
+  if(dashed) cand = dashed[1] + "-" + dashed[2];
+  /* 2. six characters with spaces, dots or nothing between */
+  if(!cand){
+    const compact = t.replace(/[^A-Z0-9]/g, "");
+    if(compact.length === 6) cand = compact.slice(0, 3) + "-" + compact.slice(3);
+  }
+  /* 3. one six-character word in a longer message */
+  if(!cand){
+    const six = t.split(/[^A-Z0-9]+/).filter(w => w.length === 6);
+    if(six.length === 1) cand = six[0].slice(0, 3) + "-" + six[0].slice(3);
+  }
+  if(!cand) return { why: FRIEND_CODE_WHY_SHAPE };
+  if(!FRIEND_CODE_RE.test(cand)){
+    return { why: "That is not a friend code. A code never has the letters I or O or the numbers 0 or 1, so check those characters." };
+  }
+  return { code: cand };
+}
+/* A refused or failed Firestore call, in words (the SDK's own code names it). A day's free quota spent comes back as
+   resource-exhausted, and it was shown as "nobody has that code" - now it says what it is. */
+function friendFailWhy(code){
+  const c = String(code || "");
+  if(/resource-exhausted/.test(c)) return "The class server is too busy right now. Try again in a little while.";
+  if(/unavailable|offline|network|deadline/.test(c)) return "Could not reach the class. Check your connection and try again.";
+  if(/permission/.test(c)) return "The class server did not accept that. Try again in a little while.";
+  return "Could not reach the class right now. Try again in a moment.";
+}
+var FRIEND_OFFLINE_WHY = "Nova is not connected to the class yet. Check your connection and try again.";
+
 function sendFriendRequest(code){
-  const want = (code || "").trim().toUpperCase();
-  /* THE EXAMPLE HAS TO BE A CODE THAT COULD EXIST. "ABC-123" was the
-     placeholder and the error text, and it is impossible: the alphabet
-     drops I, O, 1 and 0 so a 1 can never appear in one. Somebody
-     copying the shape from the hint would have been told their own
-     example was not a friend code. */
-  if(!FRIEND_CODE_RE.test(want)) return { ok: false, why: "That is not a friend code. They look like ABC-234." };
+  const parsed = friendCodeFromText(code);
+  if(!parsed.code) return { ok: false, why: parsed.why };
+  const want = parsed.code;
   if(want === friendCodeOf()) return { ok: false, why: "That is your own code." };
   let match = (leaderboardRows || []).find(e => e && e.fcode === want);
   /* (384 r13) NOT ON THE BOARD: a friend in Fire Code alone has no board row, but their presence beat carries their code (`f`) */
@@ -70118,37 +70255,71 @@ function sendFriendRequest(code){
      rather than "no such person". */
   if(!match || !match.pub) return { ok: false, notFound: true, want: want, why: "No one in your classes has that code yet. They may need to update and open the app once." };
   if(friendPublicIds().indexOf(match.pub) >= 0) return { ok: false, why: (match.firstName || "They") + " is already a friend." };
+  if(!socialDb()) return { ok: false, offline: true, why: FRIEND_OFFLINE_WHY };
+  /* (384.39) THEY ALREADY ASKED ME, SO THIS IS MY YES. Two people who each type the other's code (the way buddies sitting
+     together do it) used to end with a request sent each way and nobody ever accepting: each had a pending request from the
+     other that nothing told them about. The second request is the answer to the first. */
+  try{
+    const theirs = incomingFriendRequests().find(e => e && e.pub === match.pub);
+    if(theirs){
+      acceptFriendRequest(match.pub);
+      return { ok: true, accepted: true, name: match.firstName || theirs.firstName || "They" };
+    }
+  }catch(e){}
+  /* asking somebody I once declined or removed is me changing my mind */
+  if((store.friendsDeclined || []).indexOf(match.pub) >= 0){
+    store.friendsDeclined = store.friendsDeclined.filter(x => x !== match.pub);
+    saveStore();
+  }
   if((store.friendsOut || []).indexOf(match.pub) < 0){
     store.friendsOut = (store.friendsOut || []).concat([match.pub]);
     saveStore();
   }
-  /* (384) the row that carries a request (freq) is published by the academy alone, so from another class the request goes
-     to their mailbox at once, the way a request from a person's card always has (sendFriendRequestTo) */
-  if(window.NOVA_CLASS === "ifc" || match.noRow) sendToInbox(match.pub, { type: "friendreq" });   /* (384 r13) and to anyone with no board row for the request to sit on */
-  return { ok: true, name: match.firstName || "They" };
+  /* (384.39) THE MAILBOX, EVERY TIME. The request used to go only into MY board row (freq) for a classmate on the academy's
+     board, and the other phone reads the board once in fifteen minutes (a Friends screen opened with rows already held did not
+     read it at all) - so a request typed in by code reached nobody until then, while the same request from a person's card
+     (sendFriendRequestTo) always went to their mailbox and arrived at once. Both do now. The row still carries it for a
+     classmate on an older build, which reads the row and not the mailbox. */
+  const delivered = sendToInbox(match.pub, { type: "friendreq" });
+  return { ok: true, name: match.firstName || "They", delivered: delivered };
 }
 
 /* (384 r13) A CODE NOT FOUND IN WHAT THIS DEVICE HOLDS IS ASKED OF THE CLOUD, once, as a one-document query: a board this device
-   read before the person joined (a stale list) never had them. Only on a miss, so the common case reads nothing. */
+   read before the person joined (a stale list) never had them. Only on a miss, so the common case reads nothing.
+   (384.39) AND AN ANSWER IT COULD NOT GET IS NOT "NOBODY HAS THAT CODE": a refused query, a dropped connection and a slow one
+   each say so, and only a served, empty answer says the code is nobody's. */
 function sendFriendRequestAsync(code){
   const r = sendFriendRequest(code);
   if(r.ok || !r.notFound) return Promise.resolve(r);
   const db = socialDb();
-  if(!db) return Promise.resolve(r);
+  if(!db) return Promise.resolve({ ok: false, offline: true, why: FRIEND_OFFLINE_WHY });
   return new Promise(resolve => {
     let done = false;
     const finish = v => { if(done) return; done = true; resolve(v); };
-    setTimeout(() => finish(r), 6000);
+    setTimeout(() => finish({ ok: false, queryFailed: true, why: friendFailWhy("deadline") }), 8000);
     try{
       db.collection("leaderboard").where("fcode", "==", r.want).limit(1).get().then(snap => {
         let found = null;
         snap.forEach(doc => { if(!found && !isLegacyBoardId(doc.id)) found = Object.assign({ pub: doc.id }, doc.data()); });
-        if(!found){ finish(r); return; }
+        if(!found){
+          /* an empty answer out of the device's own cache says nothing about the class */
+          if(snap && snap.metadata && snap.metadata.fromCache === true){ finish({ ok: false, queryFailed: true, why: friendFailWhy("offline") }); return; }
+          /* (384.39) a person in Fire Code alone has no board row and is found by their beat's `f` - which is only here once the
+             presence listener has answered. Asked once, as one document, before saying nobody has the code. */
+          try{
+            db.collection("vrooms").doc(PRESENCE_DOC).get().then(ps => {
+              const d = (ps && ps.exists) ? (ps.data() || {}) : null;
+              if(d && d.c && typeof d.c === "object") presenceClasses = Object.assign({}, presenceClasses || {}, d.c);
+              finish(sendFriendRequest(r.want));
+            }).catch(err => finish({ ok: false, queryFailed: true, why: friendFailWhy(err && (err.code || err.message)) }));
+          }catch(e){ finish(r); }
+          return;
+        }
         try{ found.rawWeekPoints = found.weekPoints; found.weekPoints = weekPointsOfEntry(found); fixBoardLevel(found); }catch(e){}
         leaderboardRows = (leaderboardRows || []).filter(e => !(e && e.pub === found.pub)).concat([found]);
         finish(sendFriendRequest(r.want));
-      }).catch(() => finish(r));
-    }catch(e){ finish(r); }
+      }).catch(err => finish({ ok: false, queryFailed: true, why: friendFailWhy(err && (err.code || err.message)) }));
+    }catch(e){ finish({ ok: false, queryFailed: true, why: friendFailWhy("") }); }
   });
 }
 
@@ -70244,6 +70415,7 @@ function clearFriendRequestFromInbox(pub){ clearInbox(pub); }
 
 function declineFriendRequest(pub){
   if(!pub) return;
+  markFriendDeclinedAt(pub);
   clearInbox(pub);
   /* Local only. Declining is not something the other person needs told,
      and publishing it would mean writing "no" into a document they can
@@ -70255,6 +70427,7 @@ function declineFriendRequest(pub){
 }
 
 function removeFriend(pub){
+  markFriendDeclinedAt(pub);
   store.friendsIn = (store.friendsIn || []).filter(x => x !== pub);
   store.friendsOut = (store.friendsOut || []).filter(x => x !== pub);
   /* Their row may still accept me, which would put them straight back.
@@ -70400,7 +70573,9 @@ function inboxDocFor(pub){
    replaces their first rather than piling up - the same shape the row
    field had, which is what keeps the readers simple. */
 function sendToInbox(pub, payload){
-  if(!socialDb() || !pub || !payload) return;
+  /* (384.39) returns a promise that never rejects: { ok: true } once the write is acknowledged, or { ok: false, code } when it was
+     refused (the friend request says so; every other caller ignores it, as before) */
+  if(!socialDb() || !pub || !payload) return Promise.resolve({ ok: false, code: "unavailable" });
   try{
     const me = publicIdOf();
     /* (384) who you are to them: the academy account's name, face and numbers, in every class (socialCard) */
@@ -70415,9 +70590,9 @@ function sendToInbox(pub, payload){
       badges: card.badges,
       mystery: card.mystery
     }, payload);
-    inboxDocFor(pub).set({ kind: "inbox", msgs: { [me]: msg } },
-                         { merge: true }).catch(() => {});
-  }catch(e){}
+    return Promise.resolve(inboxDocFor(pub).set({ kind: "inbox", msgs: { [me]: msg } },
+                         { merge: true })).then(() => ({ ok: true }), err => ({ ok: false, code: String(err && (err.code || err.message) || "") }));
+  }catch(e){ return Promise.resolve({ ok: false, code: "error" }); }
 }
 
 /* Same mailbox, a named slot. Everything else is keyed by the sender,
@@ -70807,7 +70982,7 @@ function wipeLocalProgressAndSettings(){
   store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
-  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
+  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
   store.badgeCleanedAt = {};
@@ -72278,7 +72453,7 @@ function mergeLeavingAccount(src, note){
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
   ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
-  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks"].forEach(k => {
+  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "retakenKeys"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
@@ -72718,6 +72893,7 @@ function mergeSameAccount(dst, src){
    "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
+  unionArr("retakenKeys", RETAKEN_KEYS_CAP);   /* (384.40) a union: a question retaken on either device is retaken */
   /* The backfills ran once per ACCOUNT (build 327): a device whose copy
      says not-yet would scan the rooms again and count them twice. */
   ["vrRetroDone", "vrTop3RetroDone"].forEach(k => { if(src[k] === true && dst[k] !== true){ dst[k] = true; res.gained = true; } });
@@ -97894,16 +98070,27 @@ function loopsPlayTurn(tGo){
    back; this can, from his phone. It only counts frames - no layout, no style read. */
 function loopResumeFrames(tag){
   try{
-    let last = performance.now(); const end = last + 3000; let n = 0, worst = 0, slow = 0;
+    let last = performance.now(); const t0 = last, end = last + 3000, end2 = last + 6000; let n = 0, worst = 0, slow = 0, wrote = false;
+    /* 384.35: and the frames themselves. His 384.34 recording, a return after 8.5s away: the planet system ran at 59 frames a second before he
+       left and at 44 (62% of the gaps 25ms or more) for the first second back - nothing the loops do (the poses were where the card had them,
+       nothing faded in, nothing restarted); a phone dropping what it had drawn. "q" is the frames drawn in each half second of the first 6s
+       (30 is 60Hz) and "g" the first 24 gaps in ms, so the next report says how long it lasts and whether it starts with a stall. Counts only. */
+    const bins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], gaps = [];
+    const put = (txt, key) => {
+      try{
+        const l = JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || [];
+        for(let i = l.length - 1; i >= 0; i--){ if(l[i].indexOf(tag) === 0 && l[i].indexOf(key) < 0){ l[i] += txt; break; } }
+        localStorage.setItem(LOOP_RESUME_KEY, JSON.stringify(l.slice(-6)));
+      }catch(e){}
+    };
     const tick = t => {
       if(document.hidden) return;
       const dt = t - last; last = t; n++; if(dt > worst) worst = dt; if(dt > 50) slow++;
-      if(t < end){ requestAnimationFrame(tick); return; }
-      try{
-        const l = JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || [];
-        for(let i = l.length - 1; i >= 0; i--){ if(l[i].indexOf(tag) === 0 && l[i].indexOf(" fr") < 0){ l[i] += " fr" + n + "/w" + Math.round(worst) + "/s" + slow; break; } }
-        localStorage.setItem(LOOP_RESUME_KEY, JSON.stringify(l.slice(-6)));
-      }catch(e){}
+      const k = Math.min(11, Math.floor((t - t0) / 500)); if(k >= 0) bins[k]++;
+      if(gaps.length < 24) gaps.push(Math.round(dt));
+      if(t >= end && !wrote){ wrote = true; put(" fr" + n + "/w" + Math.round(worst) + "/s" + slow, " fr"); }
+      if(t < end2){ requestAnimationFrame(tick); return; }
+      put(" q" + bins.join(",") + " g" + gaps.join(","), " q");
     };
     requestAnimationFrame(tick);
   }catch(e){}
@@ -105293,7 +105480,12 @@ function playRankUpScene(tierKey, opts, spec){
      bubble) and the bubbles' and flares' taps would otherwise answer it -
      the sphere stops the event, so a tap on the planet never ended the
      scene, and could put a bubble over it. */
-  overlay.addEventListener("click", (e) => { e.stopPropagation(); if(titleUp) endScene(); }, true);
+  /* (384.37) ...and a tap no longer ends the scene once its title is up: a rank-up is a reward and plays through, as the badge's
+     case does (the owner: "you shouldn't be able to skip those rewards"; "Skip celebrations and pop-ups" is the way not to
+     see it). The tap is still the scene's - swallowed - so it reaches nothing under it. The tools fast-forward through
+     overlay.__nova.skip(). */
+  overlay.addEventListener("click", (e) => { e.stopPropagation(); }, true);
+  overlay.__nova = { skip(){ if(titleUp) endScene(); } };
   /* REDUCE MOTION: A SHORT, STILL SCENE (build 317, flow round). The full
      scene under Reduce motion was ~13s of a near-still screen. Now: the
      planet you are getting, already in its colour with its flare lit (for
@@ -113538,7 +113730,8 @@ function playQueuedBadgeCutscenes(){
     }, 780);
   }
 
-  overlay.addEventListener("click", finish);
+  /* (384.37) not tappable away, like the badge's case (playBadgeCaseScene); tools use __nova.skip() */
+  overlay.__nova = { skip: finish };
   requestAnimationFrame(() => overlay.classList.add("badge-cutscene-in"));
   setTimeout(finish, BADGE_CUTSCENE_MS);
 }
@@ -119397,6 +119590,7 @@ function choose(slot){
     if(runLabel !== "Daily question" && (isMissedRetake || attempts[qi] > 1)){
       store.retakenQuestions = (store.retakenQuestions || 0) + 1;
     }
+    try{ noteRetakenKey(qi); }catch(e){}   /* (384.40) Fire Code's retake: a different question, answered after a miss of it is on record */
     recordResult(qi, attempts[qi] > 1 || hinted);
     const streakTier = runStreakLive(!(attempts[qi] > 1 || hinted));
     /* the streak's own sound at the banner's tiers (10, 25, 50 ...) is
@@ -121103,7 +121297,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.41";
+const APP_BUILD = "2026-11-11-384.44";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -129002,7 +129196,12 @@ function playBadgeCaseScene(units, done, retro, opts){
     openSceneBridge(col);
     setTimeout(() => { overlay.remove(); done(); }, 450);
   }
-  overlay.addEventListener("click", finish);
+  /* (384.37) A BADGE'S SCENE CANNOT BE TAPPED AWAY. "You shouldn't be able to skip the badge cutscene ... unless you have the setting
+     on in settings" - the setting is "Skip celebrations and pop-ups" (theme.muteBanners), which stops the scene before it starts
+     (above). With it off, a tap does nothing here. It used to end the scene: the results' "Tap to skip" (384 r6) has people
+     tapping through the grade and the XP box, the tap that brings the scene in is followed by the next, and the case was gone
+     in under a second - "badge cutscenes aren't showing up". The tools fast-forward through overlay.__nova.skip(). */
+  overlay.__nova = { skip: finish };
   clearCelebrationsForScene();
 
   /* No XP line any more (build 320): a badge pays nothing of its own. */
@@ -129613,7 +129812,9 @@ function sfScene(kind, color, ch, done, opts){
     openSceneBridge(ch ? avatarGlowColor(ch) : fc);
     setTimeout(() => { overlay.remove(); done(); }, SF_OUT_MS);
   }
-  overlay.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); if(titleUp) endScene(); }, true);
+  /* (384.37) a tap is swallowed and ends nothing: a find plays through (see the badge's case, playBadgeCaseScene); tools use __nova.skip() */
+  overlay.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); }, true);
+  overlay.__nova = { skip(){ if(titleUp) endScene(); } };
   document.body.appendChild(overlay);
   void overlay.offsetWidth;
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("sf-in")));
@@ -131838,6 +132039,7 @@ function unlockSpotLook(item){
 /* The centre-screen banner. Holds for a few seconds, or until tapped,
    then leaves and releases the timeline for the next one. */
 const SPOT_SEEN_MS = 1200;
+const SPOT_TAP_MS = 1600;   /* (384.37) how long a card is up before a tap on it means "continue" */
 function playUnlockSpotlight(item, n, of, release){
   clearCelebrationsForScene();
   /* SHOWN WHEN IT WAS SEEN, NOT WHEN IT STARTED (build 312). "The Home
@@ -132027,8 +132229,17 @@ function playUnlockSpotlight(item, n, of, release){
     setTimeout(() => spot.remove(), 320);
     setTimeout(release, Math.max(320, flight + 120));
   }
-  spot.addEventListener("click", () => leave(true));
+  /* (384.37) A TAP BEFORE THE CARD HAS BEEN READ IS NOT "CONTINUE". "I just unlocked a character, a flare, and a badge and not a
+     single pop up happened": a person tapping through the results ("Tap to skip") taps the next card away the moment it comes
+     up, and a card tapped away counts as seen (markSeen), so nothing was ever owed again. The card takes taps once it has
+     been up SPOT_TAP_MS (its entrance is ~1.5s); "Tap to continue" is still the way on after that, and the timer still ends it.
+     The tools tap one only after it has been up 2s+; skip() is the tools' and the screens' own way out. */
+  let upAt = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => { upAt = performance.now(); }));
+  spot.addEventListener("click", () => { if(!upAt || performance.now() - upAt < SPOT_TAP_MS) return; leave(true); });
   timer = setTimeout(() => leave(true), HOLD);
+  /* the tools' way past a card at once (the pattern of Nova's bubbles); the tap above waits SPOT_TAP_MS */
+  spot.__nova = { skip(){ leave(true); } };
   return {
     skip(){ leave(); },
     stop(){ gone = true; stopFx(); if(timer) clearTimeout(timer); spot.remove(); }
@@ -139425,6 +139636,7 @@ function fetchBoardForInvites(force){
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
       friendsListCatchUp();
       try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
+      try{ refreshPresenceViews(); }catch(e){}   /* (384.39) the Friends screen redraws if a request or a friend landed (it holds back while somebody is typing) */
     }).catch(() => { boardFetchInFlight = false; if(delta) boardDeltaOk = false; });
   }catch(e){ boardFetchInFlight = false; if(delta) boardDeltaOk = false; }
 }
@@ -150404,6 +150616,10 @@ function showFriends(){
   countEl.textContent = "Friends";
   updateHeaderTitle();
   if(!leaderboardRows || !leaderboardRows.length) attachFriendsBoardListener();
+  /* (384.39) rows already held are as old as the last fetch (up to fifteen minutes, and a classmate who joined since is not in
+     them). Ask for what changed since: the same delta query the launch fetch uses - a row or two, not the class - at most
+     every 20 seconds, and the screen redraws if it brings anything (fetchBoardForInvites ends in refreshPresenceViews). */
+  else if(Date.now() - boardFetchedAt > 20000){ try{ fetchBoardForInvites(true); }catch(e){} }
   friendsShownSignature = friendsViewSignature();
 
   const panel = document.createElement("section");
@@ -150632,23 +150848,33 @@ function showFriends(){
   addRow.className = "friend-add-row";
   const input = document.createElement("input");
   input.type = "text"; input.className = "searchbox searchbox-plain friend-add-input";
-  input.placeholder = "Enter a friend\u2019s code"; input.maxLength = 7;
+  /* (384.39) no 7-character limit: a pasted "my code is ABC-234" was cut to "my code" before it could be read (friendCodeFromText) */
+  input.placeholder = "Enter a friend\u2019s code"; input.maxLength = 80;
   input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false;
   /* THE DASH TYPES ITSELF, the same as the lobby code field already
      does. A friend code is XXX-XXX and somebody typing six characters
      without one had the whole thing rejected as "not a friend code",
      which is a format complaint dressed up as a lookup failure. */
   input.addEventListener("input", () => {
-    const raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    /* a whole pasted code, or a line with one in it, is read as one (friendCodeFromText); typing goes in as it comes */
+    const read = friendCodeFromText(input.value);
+    const raw = (read.code ? read.code.replace("-", "") : input.value.toUpperCase().replace(/[^A-Z0-9]/g, "")).slice(0, 6);
     input.value = raw.length > 3 ? raw.slice(0, 3) + "-" + raw.slice(3) : raw;
   });
+  let sending = false;
   const send = actBtn("Send", "friend-send", () => {
+    if(sending) return;
+    sending = true;
     sendFriendRequestAsync(input.value).then(r => {
+      sending = false;
       if(!r.ok){ showToast(r.why); return; }
       pushToCloud();
+      if(r.accepted){ showToast("You and " + r.name + " are now friends.", "good"); showFriends(); return; }
       showToast("Request sent to " + r.name + ".", "good");
+      /* a write the cloud refused is said so, rather than left looking sent (a day's quota spent, no permission) */
+      try{ if(r.delivered) r.delivered.then(d => { if(d && d.ok === false && !/unavailable/.test(d.code || "")) showToast(friendFailWhy(d.code)); }); }catch(e){}
       showFriends();
-    });
+    }, () => { sending = false; });
   });
   input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
   /* (384) "The 'enter a friends code' doesn't come off as a text box but I like how it looks? Could we still keep it how it is but
@@ -160398,7 +160624,7 @@ function tabPerfText(){
          the platter hidden under it; the landing (lensRelease) puts the platter on this tab itself. Measuring it here read the bar's
          boxes straight after the classes changed - a whole-page style pass and layout inside the release (the largest piece of the
          release at 4x CPU on Home). The platter is only marked as this tab's, so syncActive after the build does not measure either. */
-      const slideHeld = slideNav && bar._lensHeld && bar._lensHeld() === tab;
+      const slideHeld = slideNav && ((bar._lensHeld && bar._lensHeld() === tab) || bar._slideLandTab === tab);
       if(slideHeld){ bubbleAt = tab; slider.classList.add("ready"); }
       else slideBubbleToActiveTab();
       beginSettle();
@@ -160866,6 +161092,16 @@ function tabPerfText(){
     list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
   }
   let barUnderPaused = [], barUnderAt = 0;
+  /* (384.35) THE PLANET SYSTEM IS NEVER HELD STILL UNDER THE GLASS. His 384.34 recording: he pressed the bar and slid across it for 11s and
+     Home's planet system stood still for the whole of it (0 changed frames in 8 of 22 half-second windows, short bursts between). The hold
+     below paused Home's hero (~39 of its 41 loops) a frame after the finger landed and played them again when the glass landed (builds
+     376-384 r15). Home's hero is nowhere near the bar (a phone: hero 102-482px, bar 855-934px), so it was never "behind the glass": it was
+     held for the frames' sake, and the frames it bought are paid for another way (see the 384.35 notes). Profile's card and goals, the
+     board's rows and whatever sits behind the bar are still held while a slide or a tap is on the glass: they are small drawings (a
+     character's sway, a row's loop), the 383 recording showed the glass dropping a quarter of its frames from Profile without it, and
+     measured again here a slide from Profile has 21 of 43 frames over 20ms without the hold and 1 of 44 with it. true brings Home's hero
+     back into the hold. */
+  const TAB_HOLDS_HERO = false;
   /* build 382: HOME'S PLANET HOLDS STILL WHILE A FINGER SLIDES, AND UNTIL THE GLASS HAS LANDED. His 381 recording: every stretch of dropped
      frames had Home in it (leaving it, arriving at it, the glass over it); the other three tabs slid at a steady 60. Home's hero is the
      heaviest thing on any screen - the orbit layers (~475px a side, spinning), three smoke layers and the plasma drifting, the glow
@@ -160882,7 +161118,7 @@ function tabPerfText(){
      the slide's one listing of the stage's animations (below, a frame after the start) pauses these as it pauses Home's hero: each
      paused animation restyles its own element, nothing else. Descendants only (`X *`), as the rule had it: a row's own entrance is not
      stopped half-way. */
-  const SLIDE_HOLD_SEL = ".cosmic-hero-wrap, .profile-hero *, .pf-goal *, .rank-row *";
+  const SLIDE_HOLD_SEL = ".profile-hero *, .pf-goal *, .rank-row *";
   /* each animation is judged once a slide (a repeat look only measures what is new), and the band is measured once a slide */
   let barUnderSeen = new WeakSet(), barUnderBand = null;
   function barUnderPause(again){
@@ -160913,7 +161149,9 @@ function tabPerfText(){
         const t = a.effect && a.effect.target;
         if(!t || !t.getBoundingClientRect) return;
         /* build 382: Home's hero, wherever it is on the screen (383: and Profile's card and challenges, the board's rows) */
-        if(t.closest && t.closest(SLIDE_HOLD_SEL)){ hold.push(a); return; }
+        if(t.closest && (t.closest(SLIDE_HOLD_SEL) || (TAB_HOLDS_HERO && t.closest(".cosmic-hero-wrap")))){ hold.push(a); return; }
+        /* (384.35) and the planet system is never "under the bar", wherever a short window puts it */
+        if(!TAB_HOLDS_HERO && t.closest && t.closest(".cosmic-hero-wrap")) return;
         /* build 380: a loop is where its window is - the sheet inside it moves by left/top from frame to frame, so its own box wanders
            in and out of the bar's band while what is seen stays put */
         const r = ((t.closest && t.closest(".rk-frame, .char-flip-play")) || t).getBoundingClientRect();
@@ -161028,6 +161266,7 @@ function tabPerfText(){
   function endTabDrag(e){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
+    bar._slideLandTab = null;
     barUnderResume();
     tabSwitchesBack();
     if(slideHeldSettle){ slideHeldSettle = false; try{ settleUntil = Date.now() + 120; }catch(err){} }
@@ -161046,7 +161285,11 @@ function tabPerfText(){
     else {
       const over = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
       /* build 382: a slide let go over another tab holds its glass up until that tab's screen has been drawn (lensHoldFor) */
-      if(lensG && tabDragMoved && !window.__dragTestOn && over && !over.classList.contains("active") && over._navigate && bar.dataset.navigating !== "1") lensHoldFor(over);
+      if(lensG && tabDragMoved && !window.__dragTestOn && over && !over.classList.contains("active") && over._navigate && bar.dataset.navigating !== "1"){
+        /* (384.35) planned at the release like a tap's, unless the wait for the screen is put back (SLIDE_WAITS_FOR_SCREEN) */
+        if(SLIDE_WAITS_FOR_SCREEN) lensHoldFor(over);
+        else { bar._slideLandTab = over; lensRelease(over); }
+      }
       else lensRelease(over);
     }
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
@@ -161067,7 +161310,7 @@ function tabPerfText(){
        scrolls a screen that is up back to its top ("if you swipe but don't end up swiping to another, the page scrolls back to the top") */
     if(tab && tab.classList.contains("active")){ slideBubbleToActiveTab(true); return; }
     /* build 384: _navigate knows it is a slide's release (its screen is built after the frame that lets go, and it measures nothing) */
-    if(tab && tab._navigate && bar.dataset.navigating !== "1"){ bar._slideNav = true; try{ tab._navigate(); } finally{ bar._slideNav = false; } }
+    if(tab && tab._navigate && bar.dataset.navigating !== "1"){ bar._slideNav = true; try{ tab._navigate(); } finally{ bar._slideNav = false; bar._slideLandTab = null; } }
     else if(tab && tabDests[tab.id] && bar.dataset.navigating !== "1"){
       bar.dataset.navigating = "1";
       setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
@@ -161666,6 +161909,17 @@ function tabPerfText(){
      lands then: the screen changes under the glass and the glass shrinks into the platter over it. A screen drawn inside the 110ms the
      glass lingers anyway changes nothing; one that is slow lands at SLIDE_AWAIT_MAX at the latest, whatever it is doing. */
   const SLIDE_AWAIT_MAX = 280;
+  /* (384.35) A SLIDE LANDS ON THE TAP'S CLOCK, NOT ON ITS SCREEN'S. His 384.34 recording: "on home and profile the bubble is there longer
+     before it drops compared to the others." The wait above is why: the glass stood up until the new screen had been drawn (at most
+     SLIDE_AWAIT_MAX, and later still when the build ran long), and Home and Profile are the two heavy screens. Measured here (4x CPU,
+     the 12 slides between Home / Profile / Leaderboard / Calendar): release to the glass at rest was 776ms on Home, 467 Profile,
+     396 Calendar, 374 Leaderboard, a 400ms spread that is the screens' build times and nothing the glass does. A tap has landed
+     on its own clock since 380 ("every tab lands the same, however long its screen takes") and he calls the tap "really good"; a slide
+     lands the same way now: held LENS.linger ms on its tab, then the same shrink, whichever screen it brings in. The screen is built
+     on the frame after the release as before and changes under the glass as it shrinks. The landing is PLANNED AT THE RELEASE, as a tap's
+     is (lensRelease): one compositor track, so no timer on the main thread stands between the release and the glass - a long build
+     (Home's, at 4x CPU) delayed a timer-driven landing by up to 640ms, which is the spread's other half. true brings the wait back. */
+  const SLIDE_WAITS_FOR_SCREEN = false;
   /* The glass is clear and up already (a slide is long past its 70ms clearing) and the bar is swollen, so holding it is ONE prepared
      track to the tab's held size and nothing else - no landing planned first and thrown away, and nothing read off the page (a read
      here, after the navigation has lit the new tab, was a whole style pass on the release). */

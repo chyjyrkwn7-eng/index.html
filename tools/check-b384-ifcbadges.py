@@ -218,7 +218,7 @@ with sync_playwright() as pw:
           const card = document.querySelector('.rs-spot.rs-spot-badge');
           if(card && !S.card){ const sv = card.querySelector('svg.badge-art'), im = sv && sv.querySelector('image.badge-raster'); S.card = { d: sv ? __h(__outline(sv) || '') : null, en: im && im.getAttribute('data-enamel'), text: card.textContent.replace(/\s+/g, ' ').trim() }; }
           const up = document.querySelector('.rs-spot.is-up'); if(up){ if(!up.__t0) up.__t0 = performance.now(); if(performance.now() - up.__t0 > 2200) up.click(); }
-          const sc = document.querySelector('.bc-scene'); if(sc && S.coin){ if(!sc.__t0) sc.__t0 = performance.now(); if(performance.now() - sc.__t0 > 2500) sc.click(); }
+          const sc = document.querySelector('.bc-scene'); if(sc && S.coin){ if(!sc.__t0) sc.__t0 = performance.now(); if(performance.now() - sc.__t0 > 2500) (sc.__nova ? sc.__nova.skip() : sc.click()); }
           return { row: !!S.row, coin: !!S.coin, card: !!S.card, results: !!document.querySelector('.rs-screen'), done: !!document.querySelector('.rs-rewards.rs-done') }; }"""
         F.evaluate(SETUP, {"topic": CH40, "twin": CH26})
         t0, st, fin = time.time(), "answer", None
