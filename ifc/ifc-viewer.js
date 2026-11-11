@@ -1510,11 +1510,69 @@ async function entryClip(doc, index, loc, ptr, opts, fontBold, cache) {
 // opts.cache: a Map shared between calls.
 const C_TOP = 735, C_BOTTOM = 56;
 const cnorm = (s) => norm(String(s).replace(/\u00b2/g, '2').replace(/\u00b3/g, '3').replace(/\u00b9/g, '1'));   // m\u00b2 is printed as m and a raised 2
+// WHERE EACH LETTER OF THE BOOKLET REALLY STANDS. getTextContent gives a run's start and width, not its letters, and the old reading spread a
+// run's width over its letters by Times' proportions - but the booklet is set in Calibri, and a justified line is one long run with wide
+// spaces, so a letter's place could be four points out by the middle of a line (a highlight ended in the middle of "apart."). The page's own
+// drawing says it exactly: pdf.js draws each letter with one fillText at its origin, so the page is drawn once into a 1 px canvas whose
+// fillText is watched, and every origin and advance is kept in page points. (No canvas - a headless reader - gives null: the old reading stays.)
+async function glyphOrigins(page) {
+  try {
+    if (typeof document === 'undefined') return null;
+    const cv = document.createElement('canvas'); cv.width = 1; cv.height = 1;
+    const ctx = cv.getContext('2d');
+    if (!ctx || !ctx.getTransform) return null;
+    const vp = page.getViewport({ scale: 1 }), out = [], orig = ctx.fillText;
+    ctx.fillText = function (str, x, y) {
+      try {
+        const t = ctx.getTransform(), p = vp.convertToPdfPoint(t.a * x + t.c * y + t.e, t.b * x + t.d * y + t.f);
+        out.push({ x: p[0], y: p[1], w: ctx.measureText(str).width * Math.hypot(t.a, t.b) / vp.scale });
+      } catch (e) { /* this letter keeps the old reading */ }
+      return orig.apply(this, arguments);
+    };
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    cv.width = 0; cv.height = 0;
+    return out.length ? out : null;
+  } catch (e) { return null; }
+}
+// one run's letters: [{ x0, x1 } | null for a space] when the page drew exactly as many letters as the run has (else null)
+function runGlyphs(it, recs) {
+  if (!recs) return null;
+  const cs = Array.from(it.s), ns = [];
+  cs.forEach((c, k) => { if (!/\s/.test(c)) ns.push(k); });
+  const mine = recs.filter(r => Math.abs(r.y - it.y) < 0.6 && r.x >= it.x - 0.2 && r.x < it.x + it.w - 0.05).sort((a, b) => a.x - b.x).filter((r, i, a) => !i || r.x - a[i - 1].x > 0.05);     // (a letter drawn twice for weight is one)
+  if (!ns.length || mine.length > ns.length) return null;
+  // the font draws "fi", "fl", "ff", "ft", "tt", "ti" (and "ffi", "ffl") as one glyph each: the text has two or three letters where the page drew one.
+  // They are joined when the count says so, and only when it says so for certain (as many places as it needs); the glyph is shared out between its letters
+  const LIGS = [['ffi', 'ffl', 'ff', 'fi', 'fl', 'ft', 'tt', 'ti'], ['ffi', 'ffl', 'ff', 'fi', 'fl', 'ft', 'tt', 'ti', 'Th'], ['ffi', 'ffl', 'ff', 'fi', 'fl']], units = [];
+  const need = ns.length - mine.length;
+  if (need) {
+    let lig = null;
+    for (const LIG of LIGS) {
+      const at = [];
+      for (let q = 0; q < ns.length; q++) {
+        const k = ns[q];
+        for (const l of LIG) if (q + l.length <= ns.length && ns[q + l.length - 1] === k + l.length - 1 && cs.slice(k, k + l.length).join('') === l) { at.push([q, l.length]); q += l.length - 1; break; }
+      }
+      if (at.reduce((a, [, l]) => a + l - 1, 0) === need) { lig = new Map(at); break; }
+    }
+    if (!lig) return null;
+    for (let q = 0; q < ns.length;) { const l = lig.get(q) || 1; units.push(ns.slice(q, q + l)); q += l; }
+  } else for (const k of ns) units.push([k]);
+  if (units.length !== mine.length) return null;
+  const out = cs.map(() => null);
+  units.forEach((u, i) => {
+    const r = mine[i], last = u[u.length - 1], nextCh = last + 1 < cs.length && !/\s/.test(cs[last + 1]);
+    const x0 = r.x, x1 = nextCh && mine[i + 1] ? mine[i + 1].x : (last === cs.length - 1 ? it.x + it.w : r.x + Math.min(r.w, Math.max(0.5, it.x + it.w - r.x)));
+    u.forEach((k, m) => { out[k] = { x0: x0 + (x1 - x0) * m / u.length, x1: x0 + (x1 - x0) * (m + 1) / u.length }; });
+  });
+  return out;
+}
 export async function countyChars(doc, p, cache) {
   const key = 'c' + p;
   if (cache && cache.has(key)) return cache.get(key);
   const page = await doc.getPage(p);
   const tc = await page.getTextContent();
+  const recs = await glyphOrigins(page);
   const items = tc.items.filter(it => it.str && it.str.trim() && it.transform[5] >= C_BOTTOM && it.transform[5] <= C_TOP)
     .map(it => ({ s: it.str, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || 11, f: it.fontName }));
   items.sort((a, b) => b.y - a.y);
@@ -1574,15 +1632,28 @@ export async function countyChars(doc, p, cache) {
   lines.forEach((ln, li) => {
     // (384 one picture) a heading set larger than the body (an Exhibit's title) has a taller box: it was cut through its capitals
     ln.y0 = ln.y - Math.max(3, 0.3 * ln.fs); ln.y1 = ln.y + Math.max(9.5, 0.95 * ln.fs);
+    // the line's letters in reading order: { n (the letter, '' for punctuation), x0, x1, sp (a space stands before it), ex (placed by the page's own drawing) }
+    const seq = [];
+    let prev = null;
     for (const it of ln.items) {
-      const ws = Array.from(it.s, c => TNR[c] || 500), tot = ws.reduce((a, b) => a + b, 0) || 1;
-      let acc = 0, k = 0;
+      const ws = Array.from(it.s, c => TNR[c] || 500), tot = ws.reduce((a, b) => a + b, 0) || 1, gl = runGlyphs(it, recs);
+      let acc = 0, k = 0, sp = !prev || (it.x - prev.x1 > 0.12 * ln.fs);               // (a run that starts a hair after the last one's end goes on with its word)
       for (const c of it.s) {
-        const w = ws[k++], a = it.x + it.w * acc / tot; acc += w;
-        const n = cnorm(c);
-        if (n) chars.push({ c: n, li, x0: a, x1: it.x + it.w * acc / tot });
+        const w = ws[k], a = it.x + it.w * acc / tot; acc += w;
+        const g = gl ? gl[k] : null; k++;
+        if (/\s/.test(c)) { sp = true; continue; }
+        const e = { n: cnorm(c), x0: g ? g.x0 : a, x1: g ? g.x1 : it.x + it.w * acc / tot, sp, ex: !!g };
+        seq.push(e); prev = e; sp = false;
       }
     }
+    seq.forEach((e, i) => {
+      if (!e.n) return;
+      // the punctuation that goes with this letter's word: after it up to the next space ("apart." / "NAME”,"), before it back to the last one ("(a" / "“NO")
+      const pre = [], post = [];
+      for (let j = i + 1; j < seq.length && !seq[j].sp && !seq[j].n; j++) post.push(seq[j]);
+      if (!e.sp) for (let j = i - 1; j >= 0 && !seq[j].n; j--) { pre.push(seq[j]); if (seq[j].sp) break; }
+      chars.push({ c: e.n, li, x0: e.x0, x1: e.x1, ex: e.ex && post.every(q => q.ex) && pre.every(q => q.ex), pre: pre.length ? Math.min(...pre.map(q => q.x0)) : null, post: post.length ? Math.max(...post.map(q => q.x1)) : null });
+    });
   });
   const out = { p, lines, chars, left: Number.isFinite(left) ? left : null, right };
   if (cache) cache.set(key, out);
@@ -1765,11 +1836,15 @@ export async function countyClip(doc, ptr, opts = {}) {
     for (let k = from; k < to; k++) {
       const ch = all[k], key = ch.pt.p + ':' + ch.li;
       const m = byLine.get(key);
-      if (m) { m.x0 = Math.min(m.x0, ch.x0); m.x1 = Math.max(m.x1, ch.x1); }
+      // (a line's first letter takes the punctuation that is part of its word, a quote or bracket before it; its last letter the full stop, comma
+      // or closing quote after it - a mark reaches the end of its words, to the last glyph of the cited text and not a letter short of it)
+      const lo = ch.pre != null ? Math.min(ch.x0, ch.pre) : ch.x0, hi = ch.post != null ? Math.max(ch.x1, ch.post) : ch.x1;
+      if (m) { m.x0 = Math.min(m.x0, lo); m.x1 = Math.max(m.x1, hi); m.exact = m.exact && !!ch.ex; }
       else {
         const ln = ch.pt.lines[ch.li], nb = [ch.pt.lines[ch.li - 1], ch.pt.lines[ch.li + 1]].filter(Boolean).map(o => Math.abs(o.y - ln.y)).filter(d => d >= 0.9 * ln.fs && d <= 2.2 * ln.fs);
-        // (snap: placed from Times widths on a booklet set in Calibri - the painter moves its ends onto the words it covers)
-        byLine.set(key, inkMark({ page: ch.pt.p, x0: ch.x0, x1: ch.x1, kind, snap: true, lp:nb.length ? Math.min(...nb) : 1.25 * ln.fs }, ln.y, ln.fs, DSC_COUNTY));
+        // (snap: where the letters are placed from Times widths on a booklet set in Calibri - the painter moves its ends onto the words it covers;
+        // exact: the page's own drawing placed every letter, so the ends stand where the letters do and nothing is moved)
+        byLine.set(key, inkMark({ page: ch.pt.p, x0: lo, x1: hi, kind, snap: true, exact: !!ch.ex, lp:nb.length ? Math.min(...nb) : 1.25 * ln.fs }, ln.y, ln.fs, DSC_COUNTY));
       }
     }
     for (const m of byLine.values()) marks.push(m);
@@ -1786,7 +1861,7 @@ export async function countyClip(doc, ptr, opts = {}) {
       for (const pg of new Set(rows.map(m => m.page))) {
         const rs = rows.filter(m => m.page === pg);
         const m = { ...rs[0], x0: Math.min(...rs.map(r => r.x0)), x1: Math.max(...rs.map(r => r.x1)), i0: Math.min(...rs.map(r => r.i0)), i1: Math.max(...rs.map(r => r.i1)), fs: Math.max(...rs.map(r => r.fs)) };
-        m.y0 = m.i0 - 0.12 * m.fs; m.y1 = m.i1 + 0.12 * m.fs; m.lp = m.i1 - m.i0; m.tableRow = true;
+        m.y0 = m.i0 - 0.12 * m.fs; m.y1 = m.i1 + 0.12 * m.fs; m.lp = m.i1 - m.i0; m.tableRow = true; m.exact = rs.every(r => r.exact);
         marks.push(m);
       }
     }
@@ -2258,10 +2333,10 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
     const p = parts.find(q => q.seg.page === m.page && cx >= q.seg.x0 - 2 && cx <= q.seg.x1 + 2 && cy <= q.pc.top + 1 && cy >= q.pc.bot - 1);
     if (!p) continue;
     const X = (v) => (v - p.seg.x0) * s + p.x, Y = (v) => (p.ry - v) * s - p.r0 + p.y;
-    bands.push({ x0: X(m.x0), x1: X(m.x1), t: Y(m.i1 != null ? m.i1 : m.y1), b: Y(m.i0 != null ? m.i0 : m.y0), em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow,
+    bands.push({ x0: X(m.x0), x1: X(m.x1), t: Y(m.i1 != null ? m.i1 : m.y1), b: Y(m.i0 != null ? m.i0 : m.y0), em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, exact: m.exact, row: m.kind === 'row' || m.tableRow,
                  lt: m.lt != null ? Y(m.lt) : null, lb: m.lb != null ? Y(m.lb) : null });
   }
-  for (const b of bands) { if (b.snap) snapBand(ctx, b); ruleBand(ctx, b, !b.row); }
+  for (const b of bands) { if (b.snap && !b.exact) snapBand(ctx, b); ruleBand(ctx, b, !b.row); }
   for (const b of bands.slice()) if (b.extra) bands.push(b.extra);
   fillMarker(ctx, bands);
   return canvas;
@@ -2345,7 +2420,7 @@ function highlightPage(ctx, vp, hl, s, model, keyed) {
   for (const m of hl.marks) {
     if (!isDark(m, keyed)) continue;
     const r = box(m.x0, m.i0 != null ? m.i0 : m.y0, m.x1, m.i1 != null ? m.i1 : m.y1);
-    bands.push({ x0: r.x0, x1: r.x1, t: r.y0, b: r.y1, em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow,
+    bands.push({ x0: r.x0, x1: r.x1, t: r.y0, b: r.y1, em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, exact: m.exact, row: m.kind === 'row' || m.tableRow,
                  lt: m.lt != null ? P(m.x0, m.lt)[1] : null, lb: m.lb != null ? P(m.x0, m.lb)[1] : null });
   }
   const rects = [], W = ctx.canvas.width;
@@ -2395,7 +2470,7 @@ function highlightPage(ctx, vp, hl, s, model, keyed) {
     } else r = box(sg.x0, sg.y0, sg.x1, sg.y1);
     rects.push({ ...r, em: fs * s });
   }
-  for (const b of bands) { if (b.snap && upright) snapBand(ctx, b); if (upright) ruleBand(ctx, b, !b.row); }
+  for (const b of bands) { if (b.snap && !b.exact && upright) snapBand(ctx, b); if (upright) ruleBand(ctx, b, !b.row); }
   for (const b of bands.slice()) if (b.extra) bands.push(b.extra);
   // the wash is under every gold mark: a mark is part of the block it sits in (or a block of its own), the marker's own extent
   for (const b of bands) {
