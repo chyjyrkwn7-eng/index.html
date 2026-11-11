@@ -55369,8 +55369,25 @@ const IFC_KEY_TEXT = {
   "nav-NAVB-301": "Which chapter of the Harris County Fire Code contains the construction requirements for existing buildings?",
   "nav-NAVB-319": "Which appendix of the Harris County Fire Code contains the minimum fire-flow requirements for buildings?"
 };
-const IFC_SRC_GAPS = { "4": [19], "12": [9, 10] };
-const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j"];
+/* ---- (384.42) ONE QUESTION MOVED BETWEEN CHAPTERS, EVERY OTHER KEY UNTOUCHED ----
+   The owner moved ch12-012 (Group I-1 backup power within 3 hours - it cites county 403.7.1.1, Chapter 4's Fire safety and
+   evacuation plan, like ch4-001) from Chapter 12 to Chapter 4. Wording, options, answer, explanation, citation and
+   highlight are the bank's, unchanged; only its unit is (tools/gen-ifc-bank.py UNIT_MOVES). Its own key had to change
+   (a key is chapter | position | wording hash) and nobody else's may:
+   - Chapter 4: it sits last in the bank's array order for the chapter, so it takes the last position (41; 19 is a gap) and
+     no other Chapter 4 question's position moves.
+   - Chapter 12: it was the first question (position 1); the position stays taken (IFC_SRC_GAPS "12" gains 1, beside 9 and 10)
+     so the 43 questions after it keep theirs.
+   - Its old key (IFC_MOVED_KEYS) is read by nothing any more (every count walks this bank's KEYS); its counts stay where they
+     are, as ever (nothing may lower progress, a merge would only bring them back). A star on it is CARRIED to the question's
+     new key and comes off the old one with the same tombstone Reset starred questions leaves (see the one-shot below), so a
+     question somebody starred for study does not drop out of their list. Its answer history under the new key starts empty
+     (a key cannot follow a chapter change; keyText / keyChoices pin wording only). A hundo in Chapter 4 stays (counters are
+     never lowered); a full-chapter run is 40 questions now and Chapter 12's 43. */
+const IFC_SRC_GAPS = { "4": [19], "12": [1, 9, 10] };
+/* [the key the moved question was stored under (generated from the 5.4.2 bank), its id] */
+const IFC_MOVED_KEYS = [["Chapter 12: Energy Systems|1|yahkhw", "ch12-012"]];
+const IFC_RETIRED_KEYS =["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j"];
 /* The bank's own count ("1,812"), read from it where it is loaded; the 5.4.2 count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
@@ -121196,7 +121213,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.39";
+const APP_BUILD = "2026-11-11-384.42";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -162693,6 +162710,21 @@ if(window.NOVA_CLASS === "ifc"){
   try{
     const hit = IFC_RETIRED_KEYS.filter(k => store.flagged && store.flagged[k]);
     if(hit.length){ unflagAll(hit); saveStore(); }
+  }catch(e){}
+  /* (384.42) a star on the question that moved chapters goes with it: onto its new key (unless it was unstarred there since),
+     off the old one with the tombstone */
+  try{
+    const moved = IFC_MOVED_KEYS.filter(m => store.flagged && store.flagged[m[0]]);
+    if(moved.length){
+      if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {};
+      moved.forEach(m => {
+        const qi = QUESTIONS.findIndex(q => q.ifc && q.ifc.id === m[1]);
+        if(qi < 0) return;
+        const nk = KEYS[qi], stamp = flagStamp(store.flagged[m[0]]);
+        if(!store.flagged[nk] && flagStamp(store.unflagged[nk]) < stamp){ store.flagged[nk] = stamp; delete store.unflagged[nk]; }
+      });
+      unflagAll(moved.map(m => m[0])); saveStore();
+    }
   }catch(e){}
 }
 /* FRIENDS IN EVERY CLASS (build 384 - see socialDb()): the other class's friends block, from its copy on this device, when

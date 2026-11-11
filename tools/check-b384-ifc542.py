@@ -3,10 +3,11 @@ questions as the update says. Madison: "Fix these questions (attached file for u
 PERFECTLY. We can't mess up questions." The update (class26e-ifc-update-5.4.2): 43 rewordings (42 questions, 3 explanations),
 36 Finder questions added, 3 removed (ch12-008, ch12-071, ch4-040), nothing else changed.
 Read off the page, in Fire Code, against the 5.4.1 bank and app (git: BASE below):
-(1) the class holds the 5.4.2 bank: 1,812 questions, and each unit's size is the bank's own questionCount (Chapter 4 39,
-    Chapter 12 44, the Finder 138);
+(1) the class holds the 5.4.2 bank: 1,812 questions, and each unit's size is the bank's own questionCount (Chapter 4 40,
+    Chapter 12 43, the Finder 138; 384.42 moved ch12-012 from Chapter 12 to Chapter 4, so each is one off the 5.4.2 kit's 39 / 44);
 (2) every question kept from 5.4.1 (1,776) has exactly the key (topic|position|wording hash) it had - so no one's answers,
-    stars, badges or saved tests on them move - and the 36 new keys are new (no clash with any old key), all keys unique;
+    stars, badges or saved tests on them move - EXCEPT ch12-012, the one question the owner moved to Chapter 4 in 384.42 (its key
+    changes on purpose; check-b384-moveq holds that move: 1,775 of 1,775 others unchanged) - and the 36 new keys are new (no clash with any old key), all keys unique;
 (3) the 42 reworded questions show the new wording and the 3 explanations the new explanation; every question, explanation
     and keyed answer shown is the bank's word for word; no answer changed;
 (4) the 3 removed questions are gone, and a star left on one comes off once (a tombstone in `unflagged`), other stars kept;
@@ -84,14 +85,14 @@ with sync_playwright() as pw:
     wrong = {k: v for k, v in sizes.items() if v[0] != v[1]}
     chk("(1) the 5.4.2 bank: %d questions (bank says %s); Chapter 4 %s, Chapter 12 %s, the Finder %s; every unit its bank size" % (
         len(new["rows"]), new["meta"], sizes.get("4"), sizes.get("12"), sizes.get("NAV")),
-        len(new["rows"]) == new["meta"] == 1812 and sizes.get("4") == (39, 39) and sizes.get("12") == (44, 44) and sizes.get("NAV") == (138, 138) and not wrong, wrong)
+        len(new["rows"]) == new["meta"] == 1812 and sizes.get("4") == (40, 40) and sizes.get("12") == (43, 43) and sizes.get("NAV") == (138, 138) and not wrong, wrong)
     # (2)
     kept = sorted(set(O) & set(N)); moved = [i for i in kept if O[i]["key"] != N[i]["key"]]
     added = sorted(set(N) - set(O)); oldkeys = {r["key"] for r in old["rows"]}
     clash = [i for i in added if N[i]["key"] in oldkeys]
     allk = [r["key"] for r in new["rows"]]
-    chk("(2) %d kept questions, every one's key unchanged (%d moved); %d new, none clashing (%s); all keys unique" % (len(kept), len(moved), len(added), clash[:3]),
-        len(kept) == 1776 and not moved and len(added) == 36 and not clash and len(set(allk)) == len(allk), moved[:5])
+    chk("(2) %d kept questions, every one's key unchanged but the moved ch12-012 (%d moved); %d new, none clashing (%s); all keys unique" % (len(kept), len(moved), len(added), clash[:3]),
+        len(kept) == 1776 and moved == ["ch12-012"] and len(added) == 36 and not clash and len(set(allk)) == len(allk), moved[:5])
     # (3)
     oq = {q["id"]: q for q in ob["questions"]}; nq = {q["id"]: q for q in nb["questions"]}
     reworded = [i for i in kept if oq[i]["question"] != nq[i]["question"]]; reexp = [i for i in kept if oq[i]["explanation"] != nq[i]["explanation"]]
