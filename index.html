@@ -73473,7 +73473,15 @@ const TEST_TOPICS = {
   /* build 380, the instructor's email for Test #8 on 11-9-26: "Test #8 will cover the Health and Safety Code & Controlled
      Substances Act, Multiculturalism, Racial Profiling, and Professionalism and Ethics." (Multiculturalism is the unit's full
      name, so its card carries the mark; the Health and Safety Code line matches its unit by the name it starts with.) */
-  "2026-11-09": { title: "Test #8", topics: ["Health and Safety Code & Controlled Substances Act", "Multiculturalism and Human Relations", "Racial Profiling", "Professionalism and Ethics"], postedAt: "2026-11-02" }
+  "2026-11-09": { title: "Test #8", topics: ["Health and Safety Code & Controlled Substances Act", "Multiculturalism and Human Relations", "Racial Profiling", "Professionalism and Ethics"], postedAt: "2026-11-02" },
+  /* build 384.27, the instructor's email for Test #9 on 11-16-26: "Test #9 will cover the following subjects. Arrest, Search, and
+     Seizure, CCP, and Consular Notifications." The topics are written as the units' own names (Arrest, Search, and Seizure; Code of
+     Criminal Procedure and Bill of Rights, which the email calls CCP; Consular Notification) so each unit's card carries the mark. */
+  "2026-11-16": { title: "Test #9", topics: ["Arrest, Search, and Seizure", "Code of Criminal Procedure and Bill of Rights", "Consular Notification"], postedAt: "2026-11-11" },
+  /* build 384.28, the instructor's email for Test #10 on 11-30-26 (the Monday after the Thanksgiving break): "Test #10 ... will cover the
+     following subjects. Victims of Crime, Missing and Exploited Children, and Sexual Assault & Family Violence." Written as the units'
+     own names (the unit is "Sexual Assault and Family Violence") so each card carries the mark. */
+  "2026-11-30": { title: "Test #10", topics: ["Victims of Crime", "Missing and Exploited Children", "Sexual Assault and Family Violence"], postedAt: "2026-11-11" }
 };
 /* the Fire Code class has no test calendar yet: none of the academy's tests are its "next test" */
 if(window.NOVA_CLASS === "ifc") Object.keys(TEST_TOPICS).forEach(k => { delete TEST_TOPICS[k]; });
@@ -120427,7 +120435,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.26";
+const APP_BUILD = "2026-11-10-384.29";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
