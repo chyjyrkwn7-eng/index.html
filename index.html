@@ -97344,22 +97344,24 @@ function restoreAfterBackground(){
    tools/check-b384-resume.py, decodes started per 400ms after a return). Now one every ~350ms, the most lately used first, from 3.5s
    after the return, and each waits while a finger is on the tab bar or the glass is landing. The board still finds its sheets decoded
    unless it is opened within seconds of the return - which decodes what it needs, as it did before 377. */
-var charPreRestoreTimer = 0;
+var charPreRestoreTimer = 0, charPreRestoreGen = 0;
 function charPreRestoreSoon(){
   try{
     clearTimeout(charPreRestoreTimer);
+    /* one chain at a time: a return inside a decode of the last one's makes a new chain and the old one stops where it is */
+    const gen = ++charPreRestoreGen;
     const tried = new Set();
     const next = () => {
       charPreRestoreTimer = 0;
-      if(document.hidden || testTrimmed) return;
+      if(gen !== charPreRestoreGen || document.hidden || testTrimmed) return;
       if(document.documentElement.classList.contains("tab-held") || (typeof settleUntil === "number" && Date.now() < settleUntil)){ charPreRestoreTimer = setTimeout(next, 400); return; }
       let sp = null;
       for(let i = charPreList.length - 1; i >= 0; i--){ const c = charPreList[i]; if(c && !c.pre && c.url && !tried.has(c)){ sp = c; break; } }
       if(!sp) return;
       tried.add(sp);
       const im = new Image(); im.src = sp.url;
-      const again = () => { charPreRestoreTimer = setTimeout(next, 350); };
-      try{ im.decode().then(() => { if(!document.hidden && !testTrimmed && !sp.pre){ sp.pre = im; charPreKeep(sp); } again(); }, again); }catch(e){ again(); }
+      const again = () => { if(gen === charPreRestoreGen) charPreRestoreTimer = setTimeout(next, 350); };
+      try{ im.decode().then(() => { if(gen === charPreRestoreGen && !document.hidden && !testTrimmed && !sp.pre){ sp.pre = im; charPreKeep(sp); } again(); }, again); }catch(e){ again(); }
     };
     charPreRestoreTimer = setTimeout(next, 3500);
   }catch(e){}
@@ -97429,6 +97431,7 @@ function testTrimSheets(){
 window.addEventListener("pagehide", e => { sessionMark(e && e.persisted ? "hidden" : "closed"); });
 /* 384.27: the loops still to be played after a return, and the frame-by-frame turn that plays them (see go() in loopsBack) */
 var loopResumeRest = [], loopResumeRaf = 0, loopResumeRef = null, loopResumeRefPose = 0, loopResumeWaited = 0;
+var loopsBackAt = -1e9;   /* performance.now() of the last return to the app (loopsWatchTick keeps clear of it) */
 const LOOP_RESUME_PER_FRAME = 8;
 function loopsTimelineNow(){ try{ const t = document.timeline && document.timeline.currentTime; if(typeof t === "number") return t; }catch(e){} return performance.now(); }
 function loopsPlayTurn(tGo){
@@ -97493,6 +97496,7 @@ function loopsBack(){
   }
   loopHiddenMs += gap; loopHiddenAt = 0;
   const t0 = performance.now();
+  loopsBackAt = t0;
   /* build 349: played on the next frame, after the page has painted once, and the other wake-up work (presence,
      listeners, the update check) is held back a couple of seconds - "lag, a second of black, the planet system
      loads its positions late" came from everything starting in the same frames */
@@ -159415,6 +159419,10 @@ function loopsWatchTick(force){
   try{
     const root = document.documentElement;
     if(force) loopsWatch.touchAt = -1e9;
+    /* 384.27: NOT IN THE SECONDS AFTER A RETURN TO THE APP. The frames of a page that is waking up are slow on any phone; counted here
+       they are a strike against the loops' paint mode, and two in a row (7s apart) put the planet system and the boards' loops on
+       their fallback for the rest of the build - because he had switched apps. A count that a return falls inside is thrown away too. */
+    if(performance.now() - loopsBackAt < 9000) return;
     if(document.hidden || loopsWatch.busy || !root.classList.contains("loops-paint") || lagTestRunning || boardTestRunning) return;
     if(document.querySelector("#bottomtabs-lens.is-up") || root.classList.contains("tab-dragging") || (!force && Date.now() < settleUntil)) return;
     if(performance.now() - loopsWatch.touchAt < 1500 || loopsInView() < (force ? 1 : 4)) return;
@@ -159424,7 +159432,7 @@ function loopsWatchTick(force){
       iv.push(t - last); last = t;
       if(t - t0 < 1500 && !document.hidden) { requestAnimationFrame(tick); return; }
       loopsWatch.busy = false;
-      if(document.hidden || performance.now() - loopsWatch.touchAt < 1600 || iv.length < 10) return;
+      if(document.hidden || loopsBackAt > t0 || performance.now() - loopsWatch.touchAt < 1600 || iv.length < 10) return;
       const slow = iv.filter(v => v > 25).length;
       loopsWatch.last.push("n" + iv.length + "/s" + slow); if(loopsWatch.last.length > 6) loopsWatch.last.shift();
       if(slow / iv.length > .35){
