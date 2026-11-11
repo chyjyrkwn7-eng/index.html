@@ -58883,11 +58883,26 @@ function retakeKeySet(){
     return retakeKeyCache.s;
   }catch(e){ return null; }   /* the bank is not built yet (boot): the stats alone are read */
 }
+/* (384.46) THE ACADEMY'S MASKED ONE, THE SAME RULE. Before keys existed the academy kept no record of WHICH question was retaken, so an
+   account that really did retake 100 different questions in an earlier build has no keys. What its stats do hold per question is `n`
+   (times answered), `m` (misses) and `r` (the last 20 miss times, absent on old entries). A question with a single miss and two or more
+   answers was answered again after that miss UNLESS the miss was its last answer: the stats do not keep the order, so this is an upper
+   estimate of the real count (a question answered right first and missed afterwards is counted too), and it is generous on purpose - a
+   genuine earner is kept when the record clearly supports it. It is also the carry-over ONLY: a miss made after RETAKE_CARRY_BEFORE_MS
+   (a little after this build goes live) never takes this path, so from then on a question counts through its own key or a second miss
+   and nothing is guessed. Fire Code has nothing to carry over (it counted from its first answer and nobody there earned it). */
+var RETAKE_CARRY_BEFORE_MS = Date.UTC(2026, 10, 13);
+function retakeCarriedOver(e){
+  if(!e || Number(e.m) !== 1 || !(Number(e.n) >= 2)) return false;
+  const r = Array.isArray(e.r) ? e.r : [];
+  return !r.some(t => Number(t) >= RETAKE_CARRY_BEFORE_MS);     /* no stamp (an old entry) or only old ones: carried over */
+}
 function retakeDistinctCount(d){
   d = d || store;
   const stats = (d && d.stats && typeof d.stats === "object") ? d.stats : {};
   const real = retakeKeySet();
   const seen = new Set();
+  const academy = window.NOVA_CLASS !== "ifc";
   const take = k => {
     if(typeof k !== "string" || seen.has(k)) return;
     const e = stats[k];
@@ -58896,8 +58911,19 @@ function retakeDistinctCount(d){
     seen.add(k);
   };
   (Array.isArray(d.retakenKeys) ? d.retakenKeys : []).forEach(take);
-  Object.keys(stats).forEach(k => { const e = stats[k]; if(e && Number(e.m) >= 2) take(k); });
+  Object.keys(stats).forEach(k => { const e = stats[k]; if(e && (Number(e.m) >= 2 || (academy && retakeCarriedOver(e)))) take(k); });
   return seen.size;
+}
+/* the Masked One's other door is the old Game mode's Hardcore on 10 units (retired in 283: nothing new reaches it); read from a store or a document */
+function hardcoreUnitsOf(d){
+  return Object.values((d && d.unitGameBeat) || {}).filter(g => g && g.hardcore).length;
+}
+if(window.NOVA_CLASS !== "ifc"){
+  /* (384.46) the academy's Masked One counts DIFFERENT questions too (build 289's rule counted every wrong pick followed by the right one) */
+  CHARACTER_FEATS.retake100 = { label: "Retake 100 missed questions",
+    done: () => retakeDistinctCount() >= RETAKE_NEED || hardcoreUnitsBeaten() >= 10,
+    have: () => Math.min(retakeDistinctCount(), RETAKE_NEED), need: RETAKE_NEED,
+    note: "Answer a question you missed in an earlier Drill or test again, in a Drill or through Retake missed questions. Each question counts once." };
 }
 if(window.NOVA_CLASS === "ifc"){
   CHARACTER_FEATS.retake100 = { label: "Retake 100 missed questions",
@@ -58908,7 +58934,7 @@ if(window.NOVA_CLASS === "ifc"){
 /* the question's key goes on the account the moment it is answered right with a miss of it already on record (Fire Code; see above).
    Called from choose() BEFORE recordResult, so a miss made in this very sitting is not yet on record and does not count. */
 function noteRetakenKey(qi){
-  if(window.NOVA_CLASS !== "ifc" || runLabel === "Daily question") return;
+  if(runLabel === "Daily question") return;      /* (384.46) both classes; the Daily question is never a retake */
   try{ if(vroomForeign()) return; }catch(e){}   /* recordResult() takes nothing of another class's question either */
   const k = KEYS[qi];
   if(typeof k !== "string") return;
@@ -59431,8 +59457,17 @@ function ifcChallengeClamp(d){
      keys (retakeDistinctCount). What is left to do on a document - the copy about to be written, the account's and its floor's - is to take
      the character's traces off it when that count does not support it: not queued to be announced, not marked announced or seen (a real earn
      is then announced as it should be), not the worn character (the class's first starter; the rest of the look is not touched). */
+  if(retakeTracesClamp(d)) changed = true;
+  return changed;
+}
+/* (384.46) the Smoke Diver's / the Masked One's traces on a store or a document, in either class: when its own count does not support the
+   character (100 different questions retaken, or - academy only, retired - Hardcore on 10 units) it is not queued, not marked announced or
+   seen, and not worn (the class's first starter, the rest of the look untouched). The count is never edited: it is derived. */
+function retakeTracesClamp(d){
+  if(!d || typeof d !== "object") return false;
+  let changed = false;
   try{
-    if(retakeDistinctCount(d) < RETAKE_NEED){
+    if(retakeDistinctCount(d) < RETAKE_NEED && !(window.NOVA_CLASS !== "ifc" && hardcoreUnitsOf(d) >= 10)){
       AVATAR_CHARACTERS.filter(c => c.feat === "retake100").forEach(c => {
         if(Array.isArray(d.pendingCharUnlocks) && d.pendingCharUnlocks.indexOf(c.id) >= 0){ d.pendingCharUnlocks = d.pendingCharUnlocks.filter(x => x !== c.id); changed = true; }
         [d.unlocksShown, d.seenUnlocks].forEach(u => {
@@ -59442,6 +59477,19 @@ function ifcChallengeClamp(d){
       });
     }
   }catch(e){}
+  return changed;
+}
+/* (384.46) THE ACADEMY'S MASKED ONE, REPAIRED THE WAY THE SMOKE DIVER WAS. The lock is derived (isLockedCharacter -> retakeDistinctCount),
+   so on every surface that asks it reads locked from the first launch that has the server's copy; what is stored around it is cleaned here:
+   not queued, not marked announced or seen (a real earn is announced as it should be), not worn (first starter, quietly). Runs where
+   ifcChallengesRepair384 does, once the server's copy is in; only this one character, because a feat read from data that arrives later
+   must never cost anybody another character (build 246). */
+function academyMaskedRepair384(){
+  if(window.NOVA_CLASS === "ifc" || !store) return false;
+  const wore = store.avatarChar;
+  const changed = retakeTracesClamp(store);
+  if(store.avatarChar !== wore){ try{ updateHeaderTitle(); }catch(e){} }
+  if(changed){ try{ saveStore(); }catch(e){} }
   return changed;
 }
 /* (384.40) AFTER EVERY MERGE (see the places it is called from): a challenge or rank character this class holds LOCKED - however it came to be
@@ -71824,6 +71872,7 @@ function markCloudConfirmed(docExists){
     try{ ifcChallengesRepair384(); }catch(e){}   /* (384 r23) before the look is judged: a character this class has not earned is not worn */
     try{ ifcLookCheck(true); }catch(e){}
     try{ ifcCharsRepair384(); }catch(e){}
+    try{ academyMaskedRepair384(); }catch(e){}   /* (384.46) the academy's Masked One, on the merged copy */
     /* build 382: the save-your-code card waits for this */
     setTimeout(() => { try{ checkSaveCodeReminder(); }catch(e){} }, 900);
     /* a held save carries the held row with it - pushToCloud publishes
@@ -71998,6 +72047,7 @@ function writeAccount(code, withMain, withFloor, leaving){
     /* (384 r23) what is written is never what the rule would take down again: the merge above puts the cloud's and the floor's
        max back, and the account and its floor are written from this copy (see ifcChallengeClamp) */
     try{ ifcChallengeClamp(doc); }catch(e){}
+    try{ if(window.NOVA_CLASS !== "ifc") retakeTracesClamp(doc); }catch(e){}   /* (384.46) the academy's Masked One, on the account and its floor */
     return { doc, ahead };
   };
   let run;
@@ -73047,6 +73097,7 @@ function syncSameAccount(cloud){
     try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
     /* (384 r20) Fire Code, once this launch has heard the server: a copy that arrives wearing what this class has not unlocked */
     try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ if(ifcChallengesRepair384()) r.gained = true; if(ifcLookCheck(true)) r.gained = true; if(ifcCharsRepair384()) r.gained = true; } }catch(e){}
+    try{ if(window.NOVA_CLASS !== "ifc" && cloudConfirmedFor === syncCode && academyMaskedRepair384()) r.gained = true; }catch(e){}   /* (384.46) */
     /* `gained` here means this device brought something the cloud lacks */
     themeFollowStore();
     if(r.gained) saveStore(); else persistLocally();
@@ -73055,6 +73106,7 @@ function syncSameAccount(cloud){
   const r = mergeSameAccount(store, cloud);
   try{ if(applyWeekWinVoids()){ r.gained = true; r.otherHadLess = true; } }catch(e){}
   try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ const c = ifcChallengesRepair384(), a = ifcLookCheck(true), b = ifcCharsRepair384(); if(a || b || c){ r.gained = true; r.otherHadLess = true; } } }catch(e){}
+  try{ if(window.NOVA_CLASS !== "ifc" && cloudConfirmedFor === syncCode && academyMaskedRepair384()){ r.gained = true; r.otherHadLess = true; } }catch(e){}   /* (384.46) */
   themeFollowStore();
   if(r.gained) persistLocally();
   /* This device is the newer side, or holds something the cloud lacks:
@@ -121325,7 +121377,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.45";
+const APP_BUILD = "2026-11-11-384.46";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -162929,6 +162981,7 @@ try{ ifcSignupOwed(); }catch(e){}
 try{ ifcLookCheck(false); }catch(e){}
 /* (384 r20) and a copy with no sync has nothing still to arrive: its repair is now (see ifcCharsRepair384) */
 if(window.NOVA_CLASS === "ifc" && !syncCode){ try{ ifcChallengesRepair384(); ifcLookCheck(true); ifcCharsRepair384(); }catch(e){} }
+if(window.NOVA_CLASS !== "ifc" && !syncCode){ try{ academyMaskedRepair384(); }catch(e){} }   /* (384.46) nothing is still to arrive for a copy with no sync */
 if(window.NOVA_CLASS === "academy"){
   try{
     const arr = window.NOVA_CLASS_ARRIVE;
