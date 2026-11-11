@@ -17,7 +17,7 @@ wins and hosted matches, a 300-run, a passed 450-question test, 5,400 answers):
      in: the count within what its own record supports, no Hardcore, the character locked, not worn (the class's first starter),
      not queued, not marked; and it STAYS so after another boot and after a cloud merge that brings the high count back (max-merged
      counters), and the document written is clamped too.
- (C) A REAL EARN IS KEPT: a Fire Code account whose own record supports its 120 retakes (130 misses on record, 400 answers) keeps
+ (C) A REAL EARN IS KEPT (384.40: 120 different questions of the bank, each missed and answered again): a Fire Code account keeps
      the Smoke Diver, wears it, and a live Drill - a question missed then answered again - counts one more retake and is not undone.
  (D) THE ACADEMY IS UNAFFECTED: its own retakes and Hardcore units still count and still unlock the Masked One, however few misses
      its stats hold (the rule is Fire Code's alone), and nothing is lowered in its saved copy.
@@ -195,8 +195,12 @@ with sync_playwright() as pw:
         real = fc_base(retakenQuestions=120, avatarChar="masked", lifetime={"answered": 400, "correct": 270, "drillPlays": 12, "examPlays": 3, "gamePlays": 0,
                        "perfectTests": 0, "currentStreak": 0, "longestStreak": 9, "points": 2600, "fullTests": 0},
                        unlocksShown={"chars": ["masked"], "banners": [], "fx": []})
-        real["stats"] = {"q%d" % i: {"n": 5, "m": 1 + (i % 3 == 0), "r": []} for i in range(100)}
-        real["stats"].update({"z%d" % i: {"n": 5, "m": 1, "r": []} for i in range(26)})
+        # (384.40) the challenge counts DIFFERENT questions answered after a miss: 120 questions of the class's own bank, each missed and answered
+        # again (two misses on record), is the earn; the old counter (retakenQuestions, 120 here) is no longer what decides
+        _c, _p, _e = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with())
+        RK = _p.evaluate("KEYS.slice(0, 300)"); _c.close()
+        real["stats"] = {RK[i]: {"n": 5, "m": 2, "r": []} for i in range(120)}
+        real["stats"].update({RK[200 + i]: {"n": 5, "m": 1, "r": []} for i in range(40)})
         cd = json.loads(json.dumps(real)); cd["lastModified"] = now - 300000
         set_ifc(real)
         ctx, pg, errs = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with(fire=cd, floor=cd))

@@ -395,7 +395,7 @@ def section_xpcard(br):
       order.forEach((qi, k) => { attempts[qi] = 1; picked[qi] = k % 9 === 4 ? (optionOrder(qi).indexOf(QUESTIONS[qi].answer) + 1) % optionOrder(qi).length : optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
       runStartTime = Date.now() - order.length * 9000; testInProgress = true; pos = order.length - 1;
       summarize();
-      for(let i = 0; i < 300 && !document.querySelector('.rs-rewards.rs-done'); i++){ const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(100); }
+      for(let i = 0; i < 300 && !document.querySelector('.rs-rewards.rs-done'); i++){ const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); await wait(100); }
       const x = document.querySelector('#stage .rs-xp');
       const kids = [...x.children].map(e => e.className);
       const lines = [...x.querySelectorAll('.rs-xpline:not(.rs-xpkick)')].map(e => ({ name: (e.querySelector('.rs-xpline-name') || {}).textContent,
