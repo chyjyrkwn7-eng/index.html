@@ -21,10 +21,13 @@ that same state is booted on this build. Everything is read off the page:
 (e) two devices of one account, one on the old bank and one on the new, merged either way with mergeSameAccount (and added with
     mergeLeavingAccount): no hundo counter, count, best or answer count is lower afterwards than the higher of the two;
 and the move is in effect on this page (the chapter sizes are 111, 40, 43, 16, 10, 10) - which is what fails on main.
-  python3 tools/check-b384-moveq-keep.py [--against OLD/index.html]    (BASE=origin/main; OLD_BANK=<its ifc/bank.js> with --against)"""
+  python3 tools/check-b384-moveq-keep.py [--against OLD/index.html]    (BASE = merge-base with origin/main; OLD_BANK=<its ifc/bank.js> with --against)"""
 import os, sys, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-BASE = os.environ.get("BASE", "origin/main")
+def _base():   # the commit this branch was cut from (origin/main moves as other branches merge; the keys to hold are the ones THIS bank started from)
+    r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
+    return r or "origin/main"
+BASE = os.environ.get("BASE") or _base()
 MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch64-001": "2"}
 UNITS = ["2", "4", "12", "55", "62", "64"]
 SIZES = {"2": 111, "4": 40, "12": 43, "55": 16, "62": 10, "64": 10}
@@ -143,7 +146,7 @@ same_per = all(B[t]["perf"] == Af[t]["perf"] and B[t]["star"] == Af[t]["star"] a
 chk("(b) every stored field but the per-question answers and stars is identical (%d differ: %s); hundos %s -> %s, level %s, rank %s, the published row, unit stars and levels the same" % (
     len(diff), diff[:4], before["hundos"], after["hundos"], "same" if before["lvl"] == after["lvl"] else "CHANGED", "same" if before["rank"] == after["rank"] else "CHANGED"),
     not diff and same_per and before["hundos"] == after["hundos"] == 9 and before["lvl"] == after["lvl"] and before["rank"] == after["rank"] and before["row"] == after["row"] and before["classTopicsN"] == after["classTopicsN"],
-    {"diff": diff[:5], "rowdiff": [k for k in set(before["row"]) | set(after["row"]) if before["row"].get(k) != after["row"].get(k)], "lvl": [before["lvl"], after["lvl"]], "rank": [before["rank"], after["rank"]], "ct": [before["classTopicsN"], after["classTopicsN"]], "h": [before["hundos"], after["hundos"]]})
+    {"diff": diff[:5], "vals": {k: [json.dumps(before["rest"].get(k))[:200], json.dumps(after["rest"].get(k))[:200]] for k in diff[:3]}, "rowdiff": [k for k in set(before["row"]) | set(after["row"]) if before["row"].get(k) != after["row"].get(k)], "lvl": [before["lvl"], after["lvl"]], "rank": [before["rank"], after["rank"]], "ct": [before["classTopicsN"], after["classTopicsN"]], "h": [before["hundos"], after["hundos"]]})
 chk("(c) nothing is owed: pendingBadgeUnlocks %s -> %s, Home's pending unlocks %s -> %s, no cutscene or unlock card on the page (%s)" % (
     before["pending"], after["pending"], before["pend"], after["pend"], after["overlay"]),
     after["pending"] == [] and before["pending"] == [] and after["pend"] == before["pend"] and not after["overlay"], {"pend": after["pend"], "overlay": after["overlay"]})

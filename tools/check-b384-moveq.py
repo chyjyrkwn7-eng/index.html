@@ -26,10 +26,13 @@ the app and bank on origin/main (BASE) and for this build:
 (6) no page errors.
 (1)-(5) FAIL on main: run it there with  --against <main's index.html>  and  OLD_BANK=<main's ifc/bank.js>.
 Adding a move later: one line in MOVES here, and UNIT_MOVES / IFC_SRC_GAPS / IFC_MOVED_KEYS (see tools/gen-ifc-bank.py).
-  python3 tools/check-b384-moveq.py [--against OLD/index.html]   (BASE=origin/main by default)"""
+  python3 tools/check-b384-moveq.py [--against OLD/index.html]   (BASE = the merge-base with origin/main by default)"""
 import os, sys, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-BASE = os.environ.get("BASE", "origin/main")
+def _base():   # the commit this branch was cut from (origin/main moves as other branches merge; the keys to hold are the ones THIS bank started from)
+    r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
+    return r or "origin/main"
+BASE = os.environ.get("BASE") or _base()
 # id -> the unit id it moves to, in the order the generator appends them
 MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch64-001": "2"}
 EXPECT = {"2": 111, "4": 40, "12": 43, "55": 16, "62": 10, "64": 10}      # the owner's numbers
