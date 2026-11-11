@@ -59516,10 +59516,128 @@ function revokeRaisedCharacters(){
 const WEEK_WIN_VOIDS = {
   "kdxnp7smgcre": { from: "2026-09-28", keep: 0, wear: "solar" }
 };
-function applyWeekWinVoids(){
-  const v = WEEK_WIN_VOIDS[store && store.publicId];
-  if(!v) return false;
+/* ---- ONE WEEK, ONE WINNER (384.51) ----
+   Zeus is "first place on the weekly board", and a week has one first place. Six academy accounts held a weekly win, and two of the
+   weeks they listed (5 and 19 October) were each listed by TWO accounts - two different people who study on the same days, not friends,
+   so not one person's two accounts: a week settled twice.
+   WHY IT COULD HAPPEN. Every device settles ITS OWN win, against whatever rows the board shows at that moment, and nothing arbitrates
+   between devices: the winner is not written anywhere shared. Three ways in, all in the settle as it was: (1) the standing was read off
+   rows that can lag - a phone that closes before its last push leaves its row low, so two people could each look first against the
+   other's stale row; (2) a tie put both at rank 1 (a strict "more than"); (3) a week more than one back can no longer be read off the
+   rows (a row keeps one week back), so it fell back to the rank last SEEN - first on the board on a Monday is a win, by that reading -
+   and every phone in that state settled itself first. Nothing there shows which of the two was right, and the old weeks' numbers are gone
+   (the board keeps one week, the weekly tally is pruned to this week, the test history is the last 50 runs), so no record can be asked.
+   WHAT HOLDS NOW, as rules on the record rather than edits to it (the pattern of applyWeekWinVoids; both counters merge as a max / union,
+   so a lowered copy would be put straight back by the cloud document, the `__floor` backup or another device):
+   - a week counts for an account only if it is listed (`weekWinWeeks`) and not in `weekWinLost`; `weeklyWins` can never exceed
+     `weekWinBase` (the wins no listed week backs: the owner's hand-set grants of 312.3, Sauce's and Maddog's) plus those weeks;
+   - the settle adds a week once (a second device settling the same week adds nothing), skips a week already lost, breaks a tie by the
+     lower public id, never counts a week it can only read off a sighting, and records the points the claim was made with
+     (`weekWinPts`);
+   - every row publishes its claims (`wins`: week -> points, 0 where none were recorded), and when the server's board shows another
+     account with a BETTER claim on the same week (more points; a claim with points beats one without; then more lifetime XP; then the
+     lower public id) this account's claim on it goes into `weekWinLost`, for good: one total order, so exactly one claimant is never
+     beaten. `WEEK_WIN_PINS` is the owner's word on a week and beats all of it;
+   - the repair runs on the store after every load and merge, on the document about to be written (writeAccount, whose floor is written
+     from the same copy), and takes the character's traces off whatever the count does not support: not queued, not marked announced
+     or seen, not worn (quietly, to the class's first starter). Nothing is announced and no pop-up can result. */
+/* The two weeks two accounts listed. Each is pinned to the account that has the most lifetime XP of the pair (by far: about 342k against
+   154k, and 247k against 178k) because no number for either week survives; the owner can change a line here. A pin is the answer, not
+   a vote: every other account loses that week. Keyed by public id, which is not a sync code and is printed on the board. */
+const WEEK_WIN_PINS = {
+  "2026-10-05": "3gkuv79t4vzd",
+  "2026-10-19": "hhx364dust79"
+};
+function weekWinsLostSet(d){
+  const out = new Set((d && Array.isArray(d.weekWinLost) ? d.weekWinLost : []).filter(x => typeof x === "string"));
+  const me = d && d.publicId;
+  Object.keys(WEEK_WIN_PINS).forEach(w => { if(WEEK_WIN_PINS[w] !== me) out.add(w); });
+  return out;
+}
+/* the wins a copy can stand behind: its grants plus the weeks it lists that it has not lost */
+function weekWinsAllowed(d){
+  const lost = weekWinsLostSet(d);
+  const weeks = [];
+  (Array.isArray(d.weekWinWeeks) ? d.weekWinWeeks : []).forEach(w => { if(typeof w === "string" && weeks.indexOf(w) < 0) weeks.push(w); });
+  return (typeof d.weekWinBase === "number" ? d.weekWinBase : 0) + weeks.filter(w => !lost.has(w)).length;
+}
+/* Zeus's traces off a store or a document that has no win behind it. Returns whether anything changed. */
+function weekWinsTraces(d){
+  const z = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
+  if(!z) return false;
   let changed = false;
+  if(Array.isArray(d.pendingCharUnlocks) && d.pendingCharUnlocks.indexOf(z.id) >= 0){ d.pendingCharUnlocks = d.pendingCharUnlocks.filter(x => x !== z.id); changed = true; }
+  [d.unlocksShown, d.seenUnlocks].forEach(u => {
+    if(u && Array.isArray(u.chars) && u.chars.indexOf(z.id) >= 0){ u.chars = u.chars.filter(x => x !== z.id); changed = true; }
+  });
+  if(d.avatarChar === z.id){ d.avatarChar = classDefaultCharacter(); changed = true; }
+  return changed;
+}
+/* The rule, on any copy (the store, or a document about to be written). Academy only: Fire Code has no weekly board of its own. */
+function weekWinsRepair(d){
+  if(!d || typeof d !== "object" || window.NOVA_CLASS === "ifc") return false;
+  let changed = false;
+  if(typeof d.weekWinBase !== "number" || !isFinite(d.weekWinBase)){
+    const listed = new Set((Array.isArray(d.weekWinWeeks) ? d.weekWinWeeks : []).filter(w => typeof w === "string")).size;
+    d.weekWinBase = Math.max(0, Math.floor(Number(d.weeklyWins) || 0) - listed);
+    changed = true;
+  }
+  const allowed = weekWinsAllowed(d);
+  if((Number(d.weeklyWins) || 0) > allowed){ d.weeklyWins = allowed; changed = true; }
+  const kept = Array.isArray(d.legacyChars) && d.legacyChars.indexOf("zeus") >= 0;
+  if((Number(d.weeklyWins) || 0) < 1 && !kept && weekWinsTraces(d)) changed = true;
+  return changed;
+}
+function weekClaimBeats(a, b){
+  const ap = a.pts > 0, bp = b.pts > 0;
+  if(ap && bp && a.pts !== b.pts) return a.pts > b.pts;
+  if(ap !== bp) return ap;
+  if(a.xp !== b.xp) return a.xp > b.xp;
+  return a.pub < b.pub;
+}
+/* What this account's row says about the weeks it has won: week -> the points the claim was made with (0 where none were recorded).
+   Only the last twelve, only the ones it has not lost. */
+function weekWinsPublished(){
+  const out = {};
+  if(window.NOVA_CLASS === "ifc") return out;
+  const lost = weekWinsLostSet(store), pts = store.weekWinPts || {};
+  (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => typeof w === "string" && !lost.has(w)).slice(-12).forEach(w => { out[w] = Number(pts[w]) || 0; });
+  return out;
+}
+/* Called whenever the board has come from the SERVER (a cached snapshot can show a claim that has since been withdrawn). A claim only ever
+   loses to one that is on the board now; a board that cannot be read leaves every claim as it is. Returns whether a claim was lost. */
+function arbitrateWeekWins(){
+  if(window.NOVA_CLASS === "ifc" || !store || !store.publicId) return false;
+  if(!leaderboardRowsFromServer || !Array.isArray(leaderboardRows) || !leaderboardRows.length) return false;
+  const me = store.publicId, lost = weekWinsLostSet(store);
+  const myXp = Number(store.lifetime && store.lifetime.points) || 0;
+  const pts = store.weekWinPts || {};
+  let out = false;
+  (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => typeof w === "string" && !lost.has(w)).forEach(w => {
+    const mine = { pts: Number(pts[w]) || 0, xp: myXp, pub: me };
+    const beaten = leaderboardRows.some(e => {
+      if(!e || !e.pub || e.pub === me || !e.wins || typeof e.wins !== "object" || !Object.prototype.hasOwnProperty.call(e.wins, w)) return false;
+      return weekClaimBeats({ pts: Number(e.wins[w]) || 0, xp: Number(e.xp) || 0, pub: String(e.pub) }, mine);
+    });
+    if(beaten){
+      store.weekWinLost = (Array.isArray(store.weekWinLost) ? store.weekWinLost : []).filter(x => x !== w).concat([w]).slice(-60);
+      out = true;
+    }
+  });
+  if(out){
+    const wore = store.avatarChar;
+    try{ weekWinsRepair(store); }catch(e){}
+    if(store.avatarChar !== wore){ try{ updateHeaderTitle(); }catch(e){} }
+    saveStore();
+  }
+  return out;
+}
+function applyWeekWinVoids(){
+  let again = false;
+  try{ again = weekWinsRepair(store); }catch(e){}
+  const v = WEEK_WIN_VOIDS[store && store.publicId];
+  if(!v) return again;
+  let changed = again;
   const weeks = Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : [];
   const allowed = v.keep + weeks.filter(w => typeof w === "string" && w >= v.from).length;
   if((store.weeklyWins || 0) > allowed){ store.weeklyWins = allowed; changed = true; }
@@ -68076,7 +68194,7 @@ const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
                          "hundos", "week", "weekPoints", "rankFloor"];
 /* Build 324: the weekly blocks Nova's recap reads change with every test,
    and nobody is watching them live - they ride with the next push. */
-ROW_LAZY_FIELDS.push("wk", "pwk");
+ROW_LAZY_FIELDS.push("wk", "pwk", "wins");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long.
    FIVE MINUTES, NOT 90s (build 327z15): "maybe to save space the
@@ -68234,7 +68352,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], weekWinLost: [], weekWinPts: {}, weekWinBase: null, retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -68796,6 +68914,14 @@ function applyLoadedData(got){
   store.shadesFound = got.shadesFound === true;
   store.shadesAt = typeof got.shadesAt === "number" ? got.shadesAt : null;
   store.weekWinWeeks = Array.isArray(got.weekWinWeeks) ? got.weekWinWeeks.filter(x => typeof x === "string").slice(-60) : [];
+  /* (384.51) one week, one winner: the weeks this account lost to a better claim, the points each claim was made with, and the count of
+     wins no listed week backs (the owner's hand-set grants). None of them means anything to an account that has never had a win. */
+  store.weekWinLost = Array.isArray(got.weekWinLost) ? got.weekWinLost.filter(x => typeof x === "string").slice(-60) : [];
+  store.weekWinPts = {};
+  if(got.weekWinPts && typeof got.weekWinPts === "object" && !Array.isArray(got.weekWinPts)){
+    Object.keys(got.weekWinPts).slice(-60).forEach(k => { const v = Number(got.weekWinPts[k]); if(/^\d{4}-\d{2}-\d{2}$/.test(k) && isFinite(v) && v > 0) store.weekWinPts[k] = v; });
+  }
+  store.weekWinBase = typeof got.weekWinBase === "number" && isFinite(got.weekWinBase) ? Math.max(0, Math.floor(got.weekWinBase)) : null;
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
   try{ migrateSheriff324(); }catch(e){}
   try{ migrateHive384(); }catch(e){}
@@ -71024,7 +71150,7 @@ function wipeLocalProgressAndSettings(){
   store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
-  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
+  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.weekWinLost = []; store.weekWinPts = {}; store.weekWinBase = null; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
   store.badgeCleanedAt = {};
@@ -71347,6 +71473,9 @@ function buildLeaderboardRow(){
         /* Last week's, so the board can show last week's top three. */
         prevWeek: store.prevWeekKey || "",
         prevWeekPoints: store.prevWeekPoints || 0,
+        /* (384.51) the weeks this account has won and the points each claim was made with (0: none recorded). Another account's
+           better claim on the same week is what takes a win back (arbitrateWeekWins). Week keys and numbers only. */
+        wins: weekWinsPublished(),
         /* Build 324: this week's and last week's numbers for Nova's
            Tuesday recap (weekBlockOf - tests, hundos, daily questions,
            study time, XP by day). Each carries its week; an older build
@@ -71874,6 +72003,8 @@ function markCloudConfirmed(docExists){
         const f = snap.data();
         if(f && (!FRESH_START_CUTOFF || (Number(f.lastModified) || 0) >= FRESH_START_CUTOFF)){
           tallyCapture(store); r = mergeSameAccount(store, f);
+          /* (384.51) what the floor brought back is held to the record too */
+          try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
           if(r.gained){ persistLocally(); try{ onLiveUpdateApplied(); }catch(e){} }
         }
       }
@@ -72012,6 +72143,8 @@ function writeAccount(code, withMain, withFloor, leaving){
     /* (384 r23) what is written is never what the rule would take down again: the merge above puts the cloud's and the floor's
        max back, and the account and its floor are written from this copy (see ifcChallengeClamp) */
     try{ ifcChallengeClamp(doc); }catch(e){}
+    /* (384.51) and a weekly win the record does not support is not written either: the floor comes down with the account */
+    try{ weekWinsRepair(doc); }catch(e){}
     return { doc, ahead };
   };
   let run;
@@ -72493,9 +72626,15 @@ function mergeLeavingAccount(src, note){
   if(store.unitRuns && src.unitRuns) sumMap("unitRuns"); else store.unitRuns = null;
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
+  /* (384.51) the wins no listed week backs are summed with the wins (before they are): the two accounts' grants both stay, and a week
+     both of them listed is one week, which weekWinsRepair then holds the sum to */
+  { const bs = o => (typeof o.weekWinBase === "number") ? o.weekWinBase : Math.max(0, num(o.weeklyWins) - new Set((Array.isArray(o.weekWinWeeks) ? o.weekWinWeeks : []).filter(w => typeof w === "string")).size);
+    store.weekWinBase = bs(store) + bs(src);
+    if(!store.weekWinPts || typeof store.weekWinPts !== "object") store.weekWinPts = {};
+    Object.keys(src.weekWinPts || {}).forEach(k => { if(num(src.weekWinPts[k]) > num(store.weekWinPts[k])) store.weekWinPts[k] = num(src.weekWinPts[k]); }); }
   ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
-  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "retakenKeys"].forEach(k => {
+  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "weekWinLost", "retakenKeys"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
@@ -72934,7 +73073,16 @@ function mergeSameAccount(dst, src){
   ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
    "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
-  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
+  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks", "weekWinLost"].forEach(k => unionArr(k));
+  /* (384.51) the points a week's claim was made with: the higher of the two copies; the grants count: the higher too (a copy that has not
+     worked it out yet - null - takes the other's) */
+  { if(!dst.weekWinPts || typeof dst.weekWinPts !== "object" || Array.isArray(dst.weekWinPts)) dst.weekWinPts = {};
+    const sp = (src.weekWinPts && typeof src.weekWinPts === "object" && !Array.isArray(src.weekWinPts)) ? src.weekWinPts : {};
+    Object.keys(sp).forEach(k => maxInto(dst.weekWinPts, k, sp[k]));
+    Object.keys(dst.weekWinPts).forEach(k => { if(!(k in sp)) res.otherHadLess = true; });
+    const a = dst.weekWinBase, b = src.weekWinBase;
+    if(typeof b === "number" && (typeof a !== "number" || b > a)){ dst.weekWinBase = b; res.gained = true; }
+    else if(typeof a === "number" && (typeof b !== "number" || a > b)) res.otherHadLess = true; }
   unionArr("retakenKeys", RETAKEN_KEYS_CAP);   /* (384.40) a union: a question retaken on either device is retaken */
   /* The backfills ran once per ACCOUNT (build 327): a device whose copy
      says not-yet would scan the rooms again and count them twice. */
@@ -77753,6 +77901,8 @@ function observeWeeklyRank(list){
    settleWeeklyWin() returning true IS the unlock. Called from Home and
    from every board load, since a settlement waits for server rows. */
 function settleWeeklyWinQueued(){
+  /* (384.51) first: a claim another account's better one has beaten is withdrawn before anything is settled or announced */
+  try{ arbitrateWeekWins(); }catch(e){}
   if(!settleWeeklyWin()) return false;
   const won = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
   if(won && !isLockedCharacter(won.id)){
@@ -77791,7 +77941,8 @@ function finalRankForWeek(wk){
   const mine = store.prevWeekKey === wk ? (store.prevWeekPoints || 0)
              : store.weekKey === wk ? (store.weekPoints || 0) : 0;
   if(!(mine > 0)) return leaderboardRows.length + 1;
-  return 1 + leaderboardRows.filter(e => e && e.pub && e.pub !== me && lastWeekPointsOfEntry(e) > mine).length;
+  /* (384.51) a tie goes to the lower public id, so equal totals are one winner and not two (the strict "more than" put both at 1) */
+  return 1 + leaderboardRows.filter(e => { if(!e || !e.pub || e.pub === me) return false; const p = lastWeekPointsOfEntry(e); return p > mine || (p === mine && e.pub < me); }).length;
 }
 /* Called from Home, which is the screen every launch and every finished
    test passes through, and again whenever the board arrives from the
@@ -77805,11 +77956,28 @@ function settleWeeklyWin(){
   /* Last week, and the board has not come from the server yet: wait. */
   if(final === null && seen.week === lastWeekKey()) return false;
   const rank = final === null ? seen.rank : final;
-  const won = rank === 1;
+  /* (384.51) A WIN IS COUNTED ONLY WHEN THE STANDINGS SUPPORT IT: a week read off the final standings (or a hand-recorded one). A week
+     more than one back can no longer be read off the rows, and the rank this phone last SAW is not proof of finishing first - it is how
+     two phones both settled the same week. Such a week is not a win (the podium below still reads the sighting). */
+  const won = rank === 1 && final !== null;
+  let counted = false;
   store.weekRankSeen = null;
   if(won){
-    store.weeklyWins = (store.weeklyWins || 0) + 1;
-    store.weekWinWeeks = (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => w !== seen.week).concat([seen.week]).slice(-60);
+    const listed = Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : [];
+    /* once: a week this account already holds (its other device settled it first) adds nothing, and a week it has lost to a better
+       claim is not taken back */
+    if(!weekWinsLostSet(store).has(seen.week)){
+      if(listed.indexOf(seen.week) < 0){
+        store.weeklyWins = (store.weeklyWins || 0) + 1;
+        store.weekWinWeeks = listed.concat([seen.week]).slice(-60);
+        counted = true;
+      }
+      const pts = storePointsForWeek(seen.week);
+      if(pts > 0){
+        if(!store.weekWinPts || typeof store.weekWinPts !== "object") store.weekWinPts = {};
+        store.weekWinPts[seen.week] = Math.max(Number(store.weekWinPts[seen.week]) || 0, pts);
+      }
+    }
   }
   if(rank >= 1 && rank <= 3){
     const before = store.weeklyTop3 || 0;
@@ -77819,7 +77987,7 @@ function settleWeeklyWin(){
        sheriff's new challenge now". Still counted.) */
   }
   saveStore();
-  return won;
+  return counted;
 }
 
 function hundosOf(st){
@@ -121339,7 +121507,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.48";
+const APP_BUILD = "2026-11-11-384.51";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
