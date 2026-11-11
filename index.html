@@ -70221,7 +70221,16 @@ function sendFriendRequestAsync(code){
         if(!found){
           /* an empty answer out of the device's own cache says nothing about the class */
           if(snap && snap.metadata && snap.metadata.fromCache === true){ finish({ ok: false, queryFailed: true, why: friendFailWhy("offline") }); return; }
-          finish(r); return;
+          /* (384.39) a person in Fire Code alone has no board row and is found by their beat's `f` - which is only here once the
+             presence listener has answered. Asked once, as one document, before saying nobody has the code. */
+          try{
+            db.collection("vrooms").doc(PRESENCE_DOC).get().then(ps => {
+              const d = (ps && ps.exists) ? (ps.data() || {}) : null;
+              if(d && d.c && typeof d.c === "object") presenceClasses = Object.assign({}, presenceClasses || {}, d.c);
+              finish(sendFriendRequest(r.want));
+            }).catch(err => finish({ ok: false, queryFailed: true, why: friendFailWhy(err && (err.code || err.message)) }));
+          }catch(e){ finish(r); }
+          return;
         }
         try{ found.rawWeekPoints = found.weekPoints; found.weekPoints = weekPointsOfEntry(found); fixBoardLevel(found); }catch(e){}
         leaderboardRows = (leaderboardRows || []).filter(e => !(e && e.pub === found.pub)).concat([found]);

@@ -159,6 +159,11 @@ with sync_playwright() as pw:
     if A.evaluate("()=>!!document.querySelector('.friend-sect-pending .friend-act')"):
         A.click(".friend-sect-pending .friend-act >> nth=0"); A.wait_for_timeout(1500)
     chk("(5) A taps Accept: they are friends", A.evaluate("(p)=>friendPublicIds().indexOf(p) >= 0", ib["pub"]) and until(B, "(p)=>friendPublicIds().indexOf(p) >= 0", 40, 250, ia["pub"]), "")
+    # ---- (5b) a classmate in Fire Code alone has no board row: their code is in their presence beat, and this phone may not have heard it yet
+    cloud.data.setdefault("vrooms", {}).setdefault("presence-v1", {"kind": "presence"}).setdefault("c", {})["zzfireonly01"] = {"k": "ifc", "n": "Fay", "f": "FYR-234"}
+    B.evaluate("()=>{ presenceClasses = null; }")
+    fire = B.evaluate("async()=>{ const r = await sendFriendRequestAsync('fyr 234'); return { ok: !!r.ok, name: r.name || '', out: store.friendsOut.indexOf('zzfireonly01') >= 0 }; }")
+    chk("(5b) a code held only in somebody's presence beat (Fire Code alone, no board row) is found even before this phone has heard the beat", fire["ok"] and fire["out"] and fire["name"] == "Fay", fire)
     # ---- (6) a refused cloud, and a refused write
     B.evaluate("()=>{ window.__toasts = []; }")
     nobody = B.evaluate("async()=>{ const r = await sendFriendRequestAsync('KQR-234'); return { notFound: !!r.notFound, why: r.why || '' }; }")
