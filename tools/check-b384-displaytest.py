@@ -190,7 +190,11 @@ with sync_playwright() as pw:
         click_trial(pg, tid)
         back = pg.evaluate(STATE)
         for k in ("metas", "htmlStyle", "bodyStyle", "kids", "styles", "dx", "strip", "guard", "edge", "cs"):
-            if back[k] != base[k]: why.append(("not restored", k, str(base[k]), str(back[k])))
+            if back[k] != base[k]:
+                if k in ("htmlStyle", "bodyStyle"):   # name what differs, not both whole strings (they are long)
+                    pa, pb = set(re.split(r";\s*", re.sub(r'blob:[^")]*', "blob", base[k]))), set(re.split(r";\s*", re.sub(r'blob:[^")]*', "blob", back[k])))
+                    why.append(("not restored", k, "was only in the start: " + str(sorted(pa - pb)), "is only in the end: " + str(sorted(pb - pa))))
+                else: why.append(("not restored", k, str(base[k]), str(back[k])))
         if diff_boxes(base["boxes"], back["boxes"]): why.append(("boxes not restored", diff_boxes(base["boxes"], back["boxes"])))
         if why: problems.append((tid, why))
     chk("(3) every trial: on does the intended thing, off restores the page exactly (%d trials, %d with problems)" % (len(ids), len(problems)), not problems and len(ids) >= 27, problems[:6])

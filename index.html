@@ -55689,12 +55689,14 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
      the unit of this test (the system's latch is per launch), so it is stored and put back by All off, not by a reload */
   const flagTrial = (id, label, key, val, cls, tags) => ({ id, label, flag: () => document.documentElement.classList.contains(cls),
     on(){
-      if(tags) saved[id] = ["themecolor", "colorscheme"].map(i => { const m = document.getElementById(i); return m ? m.getAttribute("content") : null; });
+      if(tags){ saved[id] = ["themecolor", "colorscheme"].map(i => { const m = document.getElementById(i); return m ? m.getAttribute("content") : null; }); saved[id + "cs"] = document.documentElement.style.colorScheme; }
       try{ localStorage.setItem(key, val); }catch(e){} document.documentElement.classList.add(cls); try{ syncStatusBarColor(); }catch(e){} },
     off(){
       try{ localStorage.removeItem(key); }catch(e){} document.documentElement.classList.remove(cls); try{ syncStatusBarColor(); }catch(e){}
       /* the old behaviour rewrote the two tags; going back puts them as the still top edge had them */
       if(tags && saved[id]) ["themecolor", "colorscheme"].forEach((i, n) => { const m = document.getElementById(i); if(m && saved[id][n] != null && m.getAttribute("content") !== saved[id][n]) m.setAttribute("content", saved[id][n]); });
+      /* the old behaviour also wrote the root's own color-scheme; the still edge leaves it to the first style block */
+      if(tags && saved[id + "cs"] === "") document.documentElement.style.removeProperty("color-scheme");
       saved[id] = null;
     } });
   const X = [
