@@ -1,4 +1,4 @@
-"""Build 384.30, lag on a computer. Madison: the app lags on a laptop / a big monitor (Chrome, Safari, Edge). tools/profile-desktop.py found where the
+"""Build 384.32, lag on a computer. Madison: the app lags on a laptop / a big monitor (Chrome, Safari, Edge). tools/profile-desktop.py found where the
 main thread goes: not a settled screen (Home 7%, a saved Leaderboard 25%, a question 5% of it; every running animation transform / opacity and in or
 near the window) but the FLIP-BOOK RECORDERS, which draw every character and flare a frame at a time into a saved sheet (a data: SVG document loaded
 per frame, a style pass per frame, a canvas draw). A fresh profile (every update that changes a drawing, every cleared cache) spent 29% (Home) to 66%
