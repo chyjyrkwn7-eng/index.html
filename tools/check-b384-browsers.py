@@ -396,8 +396,9 @@ def share(pw):
         pg = ctx.new_page(); pg.goto(link); pg.wait_for_timeout(4500)
         r = pg.evaluate("""()=>({ url: location.href, code: localStorage.getItem('class26e.synccode'), store: localStorage.getItem('class26e.drill.v1'),
           gs: !!document.querySelector('.gs-page'), welcome: !!document.querySelector('.cosmic-welcome'), home: !!document.querySelector('#stage [data-screen="home"]'),
-          stage: !!document.getElementById('stage') })""")
-        first = (r["gs"] or r["welcome"]) and not r["home"]
+          stage: !!document.getElementById('stage'), inst: !!document.querySelector('[data-screen="installfirst"]') })""")
+        # 384.23: a phone or tablet in a tab with no account is first held on the install page (check-b384-installfirst.py); a computer is not
+        first = (r["gs"] or r["welcome"] or (touch and r["inst"])) and not r["home"] and (touch or not r["inst"])
         chk("%s opens the shared link: it reaches the app (%s) at its first run, with no account" % (who, r["url"].replace(BASE, "/")),
             r["stage"] and "/share/" not in r["url"] and first and not r["code"], r)
         pid = pg.evaluate("()=>{ try{ return (JSON.parse(localStorage.getItem('class26e.drill.v1') || '{}')).publicId || null; }catch(e){ return null; } }")

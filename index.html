@@ -12087,6 +12087,22 @@
     text-align:center; margin:.9rem 0 0; max-width:22rem; }
   .signupcheck-panel .signupcheck-text{ max-width:26rem; }
   .signupcheck-panel .signupcheck-signin{ position:relative; z-index:1; width:100%; max-width:22rem; margin-top:1.2rem; }
+  /* (384.23) the install-first page (showInstallFirst) wears the New to Nova? step's layout (.signupcheck-panel); these are its own parts */
+  .installfirst-panel .if-note, .installfirst-panel .if-status{ position:relative; z-index:1; margin:.9rem auto 0; max-width:22rem;
+    font-size:.95rem; line-height:1.45; text-align:center; text-wrap:balance; }
+  .installfirst-panel .if-note{ color:var(--soft); }
+  .installfirst-panel .if-status{ color:var(--ink); font-weight:600; }
+  .installfirst-panel .if-status[hidden]{ display:none; }
+  .installfirst-panel .if-icon{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; width:5.2rem; height:5.2rem; margin:0 auto 1.3rem;
+    border-radius:50%; background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); color:var(--ink); }
+  .installfirst-panel .if-icon svg{ width:2.5rem; height:2.5rem; }
+  .installfirst-panel .if-guide[hidden]{ display:none; }
+  .installfirst-panel .if-skip, .installfirst-panel .if-guide{ position:relative; z-index:1; align-self:center; display:block; min-height:44px; min-width:44px; margin:.6rem auto 0; padding:.6rem 1rem;
+    background:none; border:0; border-radius:12px; color:var(--soft); font-family:inherit; font-size:.9rem; line-height:1.3; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+  .installfirst-panel .if-guide{ margin-top:1rem; }
+  .installfirst-panel .if-link{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:.6rem; width:100%; margin-top:1rem; }
+  .installfirst-panel .if-link-addr{ max-width:100%; font-size:.85rem; line-height:1.4; color:var(--soft); text-align:center; overflow-wrap:anywhere; }
+  .installfirst-panel .if-copy{ width:100%; max-width:22rem; }
   /* Without this, any toast on a screen with the bottom tab bar
      visible renders directly underneath it (both were anchored to
      the same bottom:1rem), completely hidden behind the bar's own
@@ -37510,7 +37526,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* the clip: a phone's shape, the size of the screen's height on a short phone */
   .a2hs-phone{
     position:relative; flex:none; margin:0 auto; box-sizing:border-box;
-    width:clamp(9.5rem, calc((100vh - 34.5rem) * .46), 12.5rem); width:clamp(9.5rem, calc((100dvh - 34.5rem) * .46), 12.5rem);
+    width:clamp(9.5rem, calc((100vh - 36rem) * .46), 12.5rem); width:clamp(9.5rem, calc((100dvh - 36rem) * .46), 12.5rem);
     aspect-ratio:540 / 1174; border-radius:26px; overflow:hidden; background:#0A0B14; cursor:pointer;
     border:1px solid rgba(255,255,255,.2); box-shadow:0 18px 44px rgba(0,0,0,.5);
   }
@@ -37586,6 +37602,11 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .a2hs-sheet .a2hs-foot .next{ width:auto; flex:1 1 0; min-width:0; }
   html[data-layout] body .a2hs-sheet .a2hs-foot .next[hidden]{ display:none; }
   html[data-layout] body .a2hs-sheet .a2hs-foot .a2hs-added{ flex:1.25 1 0; }
+  /* (384.23) the white button is Open Share menu, a row of its own; I've added it and Not now share the row under it */
+  .a2hs-foot{ flex-wrap:wrap; }
+  html[data-layout] body .a2hs-sheet .a2hs-foot .a2hs-share{ flex:1 1 100%; }
+  .a2hs-foot .a2hs-share-status{ flex:1 1 100%; min-height:0; margin:-.1rem 0 .05rem; font-size:.84rem; text-align:center; color:rgba(255,255,255,.8); }
+  .a2hs-foot .a2hs-share-status[hidden]{ display:none; }
   @media (min-width:40rem){
     .a2hs-sheet{ max-width:40rem; }
     .a2hs-body{ padding:1.6rem 1.6rem .8rem; }
@@ -58082,7 +58103,14 @@ window.addEventListener("blur", () => { setTimeout(() => { try{ if(!document.has
 /* build 376: "when I swipe to view the app it's still on the test question". Swiping up from the bottom edge for the app switcher, iOS takes
    the touch away from the page (touchcancel) before the app goes - the moment the pause screen can still be drawn into the picture iOS keeps. */
 let edgeTouch = false;
-document.addEventListener("touchstart", e => { try{ const t = e.touches && e.touches[0]; edgeTouch = !!t && t.clientY > (window.innerHeight || 0) - 22; }catch(x){ edgeTouch = false; } }, { capture: true, passive: true });
+/* (384.25) NO LAYOUT READ IN A TOUCH'S FIRST HANDLER. This ran on every touchstart in the app, bar and page alike, and read window.innerHeight:
+   Chromium answers it by bringing style and layout up to date, so the press's own class changes (the lens, tab-held on <html>) were flushed
+   here - 20 elements restyled, 2-8ms at 1x - inside the handler that stands between the finger and the glass. The height is kept from
+   resizes instead (the URL bar collapsing and the keyboard are both resizes), and read once here, before anything is on screen to flush. */
+let edgeVh = window.innerHeight || 0;
+window.addEventListener("resize", () => { edgeVh = window.innerHeight || 0; }, { passive: true });
+try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", () => { edgeVh = window.innerHeight || 0; }, { passive: true }); }catch(e){}
+document.addEventListener("touchstart", e => { try{ const t = e.touches && e.touches[0]; edgeTouch = !!t && t.clientY > edgeVh - 22; }catch(x){ edgeTouch = false; } }, { capture: true, passive: true });
 document.addEventListener("touchcancel", () => { if(edgeTouch){ edgeTouch = false; try{ autoPauseOnLeave(); }catch(x){} } }, { capture: true, passive: true });
 document.addEventListener("touchend", () => { edgeTouch = false; }, { capture: true, passive: true });
 window.addEventListener("pagehide", () => { autoPauseOnLeave(); saveRunSession(); });
@@ -73746,7 +73774,15 @@ const TEST_TOPICS = {
   /* build 380, the instructor's email for Test #8 on 11-9-26: "Test #8 will cover the Health and Safety Code & Controlled
      Substances Act, Multiculturalism, Racial Profiling, and Professionalism and Ethics." (Multiculturalism is the unit's full
      name, so its card carries the mark; the Health and Safety Code line matches its unit by the name it starts with.) */
-  "2026-11-09": { title: "Test #8", topics: ["Health and Safety Code & Controlled Substances Act", "Multiculturalism and Human Relations", "Racial Profiling", "Professionalism and Ethics"], postedAt: "2026-11-02" }
+  "2026-11-09": { title: "Test #8", topics: ["Health and Safety Code & Controlled Substances Act", "Multiculturalism and Human Relations", "Racial Profiling", "Professionalism and Ethics"], postedAt: "2026-11-02" },
+  /* build 384.27, the instructor's email for Test #9 on 11-16-26: "Test #9 will cover the following subjects. Arrest, Search, and
+     Seizure, CCP, and Consular Notifications." The topics are written as the units' own names (Arrest, Search, and Seizure; Code of
+     Criminal Procedure and Bill of Rights, which the email calls CCP; Consular Notification) so each unit's card carries the mark. */
+  "2026-11-16": { title: "Test #9", topics: ["Arrest, Search, and Seizure", "Code of Criminal Procedure and Bill of Rights", "Consular Notification"], postedAt: "2026-11-11" },
+  /* build 384.28, the instructor's email for Test #10 on 11-30-26 (the Monday after the Thanksgiving break): "Test #10 ... will cover the
+     following subjects. Victims of Crime, Missing and Exploited Children, and Sexual Assault & Family Violence." Written as the units'
+     own names (the unit is "Sexual Assault and Family Violence") so each card carries the mark. */
+  "2026-11-30": { title: "Test #10", topics: ["Victims of Crime", "Missing and Exploited Children", "Sexual Assault and Family Violence"], postedAt: "2026-11-11" }
 };
 /* the Fire Code class has no test calendar yet: none of the academy's tests are its "next test" */
 if(window.NOVA_CLASS === "ifc") Object.keys(TEST_TOPICS).forEach(k => { delete TEST_TOPICS[k]; });
@@ -90090,14 +90126,25 @@ const NovaSound = (function(){
      the mode cards' tick away after the first tap anywhere on that screen */
   function hswPrune(){
     if(hswTouching()){ hswPruneLater(); return; }
+    /* (384.25) READS FIRST, THEN WRITES. This ran 450ms after every click - a tab's tap included, on the screen it had just brought in -
+       and read each control's size (offsetWidth, hswTooBig) straight after removing the last one's switch: a style pass and a layout
+       per control, 17-18 in a tab change on Profile and Settings (traced, 4x CPU). The judging is one pass of reads, and only then
+       do the controls that were judged too big lose their switch; the same ones, the same result. */
+    const out = [];
     document.querySelectorAll(".nova-hsw").forEach(sw => {
       const h = sw.parentNode;
-      if(!h || !h.offsetWidth) return;
-      if(!h.matches(HSW_ALWAYS) && !h.matches(".modecard") && hswTooBig(h)){
-        h.__hsw = null; sw.remove();
-        if(!hlbHas(h) && (hswMode(h) & 2)){ hlbAttach(h); if(hlbHas(h) && !hswFits(h, h.__hlb)) hswUnfit(h, h.__hlb); }
-        if(!hlbHas(h)) h.removeAttribute("data-hsw");
-      }
+      if(!h) return;
+      /* (384.27) NOT A ROW THE PAGE HAS SKIPPED (see hswFlush): a size read inside a rankings row that is content-visibility:hidden opens its
+         lock for the read and shuts it again - a style pass and a layout for each of the 17 the Leaderboard's tab change traced. A row
+         is a plain block that fits on screen, and the judging is repeated by the next click once it is on screen. */
+      if(h.closest(".screen-rankings .rank-row.is-offscreen")) return;
+      if(!h.offsetWidth) return;
+      if(!h.matches(HSW_ALWAYS) && !h.matches(".modecard") && hswTooBig(h)) out.push([sw, h]);
+    });
+    out.forEach(([sw, h]) => {
+      h.__hsw = null; sw.remove();
+      if(!hlbHas(h) && (hswMode(h) & 2)){ hlbAttach(h); if(hlbHas(h) && !hswFits(h, h.__hlb)) hswUnfit(h, h.__hlb); }
+      if(!hlbHas(h)) h.removeAttribute("data-hsw");
     });
   }
   let hswPruneT = 0;
@@ -92691,7 +92738,18 @@ function showA2hsBar(){
   const pill = document.createElement("span"); pill.className = "a2hs-bar-pill"; pill.setAttribute("aria-hidden", "true");
   pill.textContent = "Add";
   main.append(text, pill);
-  main.addEventListener("click", () => { try{ showHomeScreenSheet({ from: "bar" }); }catch(e){} });
+  /* (384.27) THE WHITE BUTTON OPENS THE SHARE MENU (iPhone and iPad): the same as the install page's and the sheet's. It is called from
+     this tap, with the canonical address; Add to Home Screen is a row in the menu (Apple has no call that adds it in one tap, so the
+     pill says "Share"). Cancelled, failed or missing, the guide opens, as it always did. */
+  const shareHere = a2hsDeviceGuess() === "apple" && typeof navigator.share === "function";
+  if(shareHere){
+    pill.textContent = "Share";
+    main.setAttribute("aria-label", "Open the share menu, then tap Add to Home Screen");
+  }
+  main.addEventListener("click", () => {
+    if(!shareHere){ try{ showHomeScreenSheet({ from: "bar" }); }catch(e){} return; }
+    a2hsShare().then(r => { if(r !== "shared"){ try{ showHomeScreenSheet({ from: "bar" }); }catch(e){} } });
+  });
   const x = document.createElement("button");
   x.type = "button"; x.className = "update-banner-close a2hs-bar-x";
   x.setAttribute("aria-label", "Close this reminder");
@@ -92733,7 +92791,7 @@ window.addEventListener("appinstalled", () => { try{ a2hsBarEnd("added"); }catch
 
 function showHomeScreenSheet(opts){
   opts = opts || {};
-  const signup = opts.from === "signup", tip = opts.from === "tip", fromBar = opts.from === "bar";
+  const signup = opts.from === "signup", tip = opts.from === "tip", fromBar = opts.from === "bar", first = opts.from === "installfirst";
   const old = document.getElementById("a2hs-sheet");
   if(old) old.remove();
   if(signup || tip){ try{ localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){} }
@@ -92742,7 +92800,7 @@ function showHomeScreenSheet(opts){
   const standalone = isStandaloneApp();
   const overlay = mk("div", "invite-overlay a2hs-overlay");
   overlay.id = "a2hs-sheet";
-  overlay.dataset.from = signup ? "signup" : tip ? "tip" : fromBar ? "bar" : "settings";
+  overlay.dataset.from = signup ? "signup" : tip ? "tip" : fromBar ? "bar" : first ? "installfirst" : "settings";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", "a2hs-title");
@@ -92752,13 +92810,14 @@ function showHomeScreenSheet(opts){
   title.id = "a2hs-title";
   /* (384 r19) the intro says what this is and where it is open; what the person gains is its own short list under it */
   body.append(mk("p", "a2hs-tag", tip ? "Quick tip" : "Home Screen"), title,
-    mk("p", "a2hs-intro", tip || fromBar ? "Nova is designed as an app for your phone, and right now it is open in a browser tab."
+    mk("p", "a2hs-intro", first ? "Add Nova first. Then open it from the new icon on your Home Screen to get started."
+      : tip || fromBar ? "Nova is designed as an app for your phone, and right now it is open in a browser tab."
       : "Nova is designed as an app for your phone. It also works as a website on a computer."));
   if(standalone) body.appendChild(mk("p", "a2hs-already", "Nova is already open from the Home Screen on this device."));
   else {
     const gains = mk("ul", "a2hs-gains");
     gains.setAttribute("aria-label", "What adding it gives you");
-    ["Opens full screen, with no browser bars.", "Opens from your Home Screen like any other app.", "Keeps you signed in, with your progress."].forEach(t => {
+    ["Opens full screen, with no browser bars.", "Opens from your Home Screen like any other app.", "Keeps your progress with your account."].forEach(t => {
       const li = mk("li", "a2hs-gain");
       li.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       li.appendChild(mk("span", "", t));
@@ -92870,12 +92929,15 @@ function showHomeScreenSheet(opts){
   showNow(0);
   row.append(frame, now, appleSteps.ol);
   const hasCode = !!(syncCode && !syncOff && store && store.onboardingComplete);
+  /* (384.23) Open Share menu (below) opens the share menu with Add to Home Screen in it; the steps are the same thing by hand, as in the clip */
+  const shareOk = !standalone && typeof navigator.share === "function";
   apple.append(row, mk("p", "a2hs-note",
     standalone ? "These steps are for adding Nova on another iPhone or iPad."
     /* (384 r4) "if you add to homescreen ... and then you open the app from your Home Screen, isn't it gonna get you back to the
        start up page again?" Added from here, no: the icon carries this account's sign-in (installCodeInUrl). Said plainly, with
        the way back if it is ever asked for. */
-    : hasCode ? "Add it from this page, and the icon opens signed in with your progress. Open Nova from the icon from then on, not Safari. If it ever asks you to sign in, tap Sign in and enter your sync code (Settings > Sync code)."
+    : hasCode ? "The Home Screen icon keeps its own data, apart from Safari. Open Nova from the icon, tap Sign in and enter your sync code (Settings > Sync code) to bring your progress. Use the icon from then on, not Safari."
+    : first ? "After you add it, open Nova from the new icon, not from this page. If the share menu does not open, add it by hand, as in the video."
     : "On iPhone and iPad the Home Screen icon keeps its own data, apart from Safari. Open it and sign in with your sync code to bring your progress."));
 
   /* Android: Chrome and Samsung Internet, this browser first */
@@ -92916,8 +92978,14 @@ function showHomeScreenSheet(opts){
   /* (384 r19) two answers: I've added it (it ends the reminder bar, for good) and Not now (it just closes; the bar stays).
      Neither is offered on a computer or in the installed app, which have only Done. */
   const added = mk("button", "next a2hs-added", "I’ve added it"); added.type = "button";
+  /* (384.23) THE WHITE BUTTON DOES THE FIRST STEP. People took "I've added it" for the button that adds it. On iPhone and iPad the
+     primary button now opens the system share menu (navigator.share, from the tap, with the canonical address); Add to Home
+     Screen is a row in that menu. Apple has no call that adds it in one tap, so the button says what it opens. Cancelled, failed or
+     missing, the steps above are the way, and "I've added it" is a quiet answer, not the main button. */
+  const shareBtn = mk("button", "next a2hs-share", "Open Share menu"); shareBtn.type = "button";
+  const shareSt = mk("p", "a2hs-status a2hs-share-status"); shareSt.setAttribute("role", "status"); shareSt.textContent = "In the menu, tap Add to Home Screen."; shareSt.hidden = true;
   const done = mk("button", "next ghost a2hs-close", "Not now"); done.type = "button";
-  foot.append(added, done);
+  foot.append(shareBtn, shareSt, added, done);
   sheet.append(body, foot);
   overlay.appendChild(sheet);
 
@@ -92991,6 +93059,10 @@ function showHomeScreenSheet(opts){
        the installed app, has only Done */
     const phoneAsk = key !== "computer" && !standalone;
     added.hidden = !phoneAsk;
+    const shareOn = phoneAsk && key === "apple" && shareOk;
+    shareBtn.hidden = !shareOn;
+    shareSt.hidden = !shareOn;
+    added.classList.toggle("ghost", shareOn);
     const gainsEl = body.querySelector(".a2hs-gains"); if(gainsEl) gainsEl.hidden = !phoneAsk;
     done.textContent = phoneAsk ? "Not now" : "Done";
     if(key === "apple") startApple(); else if(was === "apple") stopApple();
@@ -93016,6 +93088,17 @@ function showHomeScreenSheet(opts){
   };
   const onKey = e => { if(e.key === "Escape"){ e.preventDefault(); close(); } };
   done.addEventListener("click", close);
+  shareBtn.addEventListener("click", () => {
+    if(shareBtn.disabled) return;
+    shareBtn.disabled = true;
+    a2hsShare().then(r => {
+      shareBtn.disabled = false;
+      if(closed) return;
+      if(r === "shared") shareSt.textContent = "Now open Nova from the new icon on your Home Screen.";
+      else { shareSt.textContent = "The share menu did not open. Add it by hand, as in the video."; try{ apple.scrollIntoView({ block: "start", behavior: "smooth" }); }catch(e){} }
+      shareSt.hidden = false;
+    });
+  });
   /* (384 r19) "I've added it": the reminder is over for good on this device, and the one-time showing counts as made */
   added.addEventListener("click", () => {
     try{ if(!a2hsShownBefore()) localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){}
@@ -97174,7 +97257,44 @@ let recUserAt = -1e9;
 try{ ["pointerdown", "touchstart", "keydown", "pointermove", "touchmove", "wheel", "scroll"].forEach(t => window.addEventListener(t, (e) => {
   if(t === "pointermove" && e && e.pointerType === "mouse" && !e.buttons) return;
   recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
+/* (384.30) A COMPUTER'S MAIN THREAD IS NOT THE RECORDER'S TO TAKE, AND NOTHING IS RECORDED FOR A PAGE NOBODY CAN SEE. Madison: the app lags
+   on a computer. Profiled (tools/profile-desktop.py, 1440x900, a fresh profile - nothing saved yet - the state every update that changes a
+   drawing leaves a computer in): Home 29% of the main thread over 10s, the Leaderboard 66%, Profile 27%, in 7,000-18,000 tasks, nearly all of
+   it the flip-book recorders - and the SAME 80% with the page told it is hidden, because only charRecPump's background branch looked at
+   document.hidden; orbitAnimYield and the warm-ups behind recordingShouldWait did not. A settled screen is cheap (Home 7%, a saved
+   Leaderboard 25%, a question 5%), so this is the cost that matters. Two rules:
+   (1) HIDDEN = WAIT. A recording is never urgent; the wait polls once a second and the first visible poll lets it go on.
+   (2) ON A COMPUTER (a mouse as the main pointer: "(hover:hover) and (pointer:fine)", which a phone or a tablet never answers) A
+       RECORDER TAKES A SHARE OF THE MAIN THREAD, NOT ALL OF IT. The cost of a recorded frame is mostly NOT in the script: setting the
+       image's src starts a loader task, an isolated SVG document is made and parsed, and the decode and the canvas draw follow - tasks
+       of their own, after the idle slice that asked for them, so pacing the slices (a first try: after a slice of W ms wait W / duty)
+       moved the main thread's share from 66% to 66%. What can be measured is how long a whole batch takes from its first frame to its
+       last drawn (it grows when the page has other work, which is exactly when to back off), so after each batch the recorder sleeps
+       batch x (1 / REC_DUTY - 1), at most REC_PAUSE_MAX_MS: the recorder is a third of the main thread when the page is quiet and less
+       when it is not. A recording takes about three times as long (one per sheet, saved, and not again until a drawing changes);
+       the live drawing shows meanwhile, as it always did. A phone / tablet is unchanged (REC_DUTY 1: no sleep). */
+const REC_DESKTOP = (() => { try{ return !!(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches); }catch(e){ return false; } })();
+const REC_DUTY = REC_DESKTOP ? 0.25 : 1;
+const REC_SLICE_MAX_MS = REC_DESKTOP ? 8 : 12;
+const REC_PAUSE_MAX_MS = 700;
+const recStats = { batches: 0, batchMs: 0, sleptMs: 0 };   /* what the recorders took and slept, read by the gate (check-b384-desktoplag) */
+/* ONE BUDGET FOR BOTH RECORDERS (the flares' and the characters' run side by side on the Leaderboard and on Profile: a pause each would be
+   a third of the thread each): a batch starts no earlier than recNextAt, and the one that ends sets it to its own length x (1/duty - 1)
+   from now. */
+let recNextAt = 0;
+function recBatchWait(){
+  if(REC_DUTY >= 1) return Promise.resolve();
+  const ms = recNextAt - performance.now();
+  return ms > 1 ? new Promise(r => setTimeout(r, ms)) : Promise.resolve();
+}
+function recBatchDone(batchMs){
+  if(REC_DUTY >= 1) return;
+  const ms = Math.min(REC_PAUSE_MAX_MS, Math.max(0, batchMs) * (1 / REC_DUTY - 1));
+  recStats.batches++; recStats.batchMs += batchMs; recStats.sleptMs += ms;
+  recNextAt = Math.max(recNextAt, performance.now()) + ms;
+}
 function recordingShouldWait(){
+  if(document.hidden) return 1000;
   const now = performance.now();
   /* 2s after a touch and 1.6s after a screen goes in (build 327z8, was
      1s / 700ms): a tab switch's own work - the new screen's first paint,
@@ -97224,7 +97344,7 @@ function orbitAnimYield(){
          - 8ms when the wait ran out, as the timer path below gives. */
       if(window.requestIdleCallback) window.requestIdleCallback(d => {
         if(recordingShouldWait() > 0){ go(); return; }
-        orbitAnimSliceEnd = performance.now() + (d.didTimeout ? 8 : Math.max(4, Math.min(12, d.timeRemaining()))); res();
+        orbitAnimSliceEnd = performance.now() + (d.didTimeout ? 8 : Math.max(4, Math.min(REC_SLICE_MAX_MS, d.timeRemaining()))); res();
       }, { timeout: 60 });
       else setTimeout(() => { if(recordingShouldWait() > 0){ go(); return; } orbitAnimSliceEnd = performance.now() + 8; res(); }, 16);
     };
@@ -97412,6 +97532,8 @@ function recordRankSheet(drawing, px, key){
         /* nobody can see this one any more and the screen that is up is
            waiting on a recording: that one goes first (see orbitRecPump) */
         if(!orbitRecWanted(key) && recordingWantedNow()) return null;
+        await recBatchWait();
+        const bt0 = performance.now();
         const batch = [];
         for(let f = f0; f < Math.min(N, f0 + B); f++){
           const tau = f * L / N;
@@ -97438,6 +97560,7 @@ function recordRankSheet(drawing, px, key){
           g.drawImage(b.img, (b.f % cols) * px, Math.floor(b.f / cols) * px, px, px);
         }
         await orbitAnimYield();
+        recBatchDone(performance.now() - bt0);   /* 384.30: a computer's share */
       }
       const blob = await new Promise(r => sheet.toBlob(r, "image/png"));
       sheet.width = sheet.height = 0;
@@ -97488,6 +97611,8 @@ function orbitAnimKeyframes(cellCss, cols, n){
    where the clock says. Stagger offsets (negative delays) are kept;
    one-shot entrances are left alone. Reduce motion has no loops to set. */
 const LOOP_EPOCH = Date.UTC(2026, 0, 1);
+/* 384.27: one step of the flare sheets' 24 a second is 41.7ms; a loop nearer than this to where the wall clock puts it is not moved */
+const LOOP_SYNC_SLACK_MS = 45;
 /* How far the Home rings are ahead of
    LOOP_EPOCH's clock, from planet taps - see orbitBoostKick (build 318). */
 let orbitAdvanceMs = 0;
@@ -97526,7 +97651,7 @@ function heroSettleSkip(root){
    again as it comes back, from the same pose; the time away is taken off
    the loop clock (loopHiddenMs), so a Home built afterwards lands on the
    same poses the paused loops resume from. */
-let loopHiddenMs = 0, loopHiddenAt = 0;
+let loopHiddenMs = 0, loopHiddenAt = 0, loopHidePose = null;   /* 384.31: the reference loop's pose when it was paused for the hide */
 const loopPausedByUs = new Set();
 function loopWallMs(lag){ return Date.now() - LOOP_EPOCH - (lag || 0) - loopHiddenMs - (loopHiddenAt ? Date.now() - loopHiddenAt : 0); }
 /* build 355: WHEN THE PAGE IS FROZEN BEFORE IT HEARS IT IS HIDDEN. iOS can suspend a Home Screen app without the
@@ -97562,8 +97687,16 @@ function loopsPauseAll(shiftBack){
       try{
         const t = a.effect && a.effect.getTiming();
         if(!t || t.iterations !== Infinity || a.playState !== "running") return;
+        /* 384.31: PAUSED AT THE POSE IT WAS LEFT IN, NOT AT THE POSE IT IS FOUND IN. pause() is only a request: the animation stays
+           "pending" until the page draws its next frame and its hold time is the timeline's time THEN. A Home Screen app that iOS
+           suspends before that frame - the usual way out - has every pause still pending, and the first frame after it comes back
+           completes them all at the moment of the return: the loops stand where they would have been had nothing paused them, the time
+           away ahead of the pose the app switcher's card still shows. His recording (return at 6.2s): the card, five identical
+           frames, then the dots lurch ~11 degrees (inner ring) and ~4.6 (outer) = 1.6 seconds of travel. Writing the pose just read
+           makes the pause take hold in this task (setting currentTime completes a pending pause at that time). */
+        const pose = a.currentTime;
         a.pause();
-        if(shiftBack > 0 && typeof a.currentTime === "number") a.currentTime = Math.max(0, a.currentTime - shiftBack);
+        if(typeof pose === "number") a.currentTime = shiftBack > 0 ? Math.max(0, pose - shiftBack) : pose;
         out.push(a);
       }catch(e){}
     });
@@ -97608,7 +97741,7 @@ function trimHeroSheetsNow(){
 }
 function restoreAfterBackground(){
   /* build 377: the decoded sheets let go on the way out come back, in the quiet, so the next board's rows are not decoded in its first frame */
-  try{ setTimeout(() => { charPreList.slice().forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden){ sp.pre = im; charPreKeep(sp); } }, () => {}); }catch(e){} } }); }, 1200); }catch(e){}
+  charPreRestoreSoon();
   try{
     const rows = document.querySelector(".rank-rows");
     if(rows) lbArtQueue(rows, lbNearRows(rows));
@@ -97620,7 +97753,9 @@ function restoreAfterBackground(){
     if(resized) trimHeroSheetsNow();
     trimHeroVP = "";
     if(hero && !resized){
-      setTimeout(() => { try{ if(!document.hidden && hero.isConnected){ const r = hero.parentElement || hero; startOrbitEmblemAnimsKnown(r); orbitStandIns(r); startOrbitEmblemAnims(r); } }catch(e){} }, 2500);
+      /* 384.27: only when a bubble is still without its sheet. With all of them on there is nothing to put on, and this was still
+         ending in orbitStandIns' syncLoopClock(root): every loop of the planet system written to, 2.5s after every return */
+      setTimeout(() => { try{ if(!document.hidden && hero.isConnected){ const r = hero.parentElement || hero; if(!Array.from(r.querySelectorAll(".cosmic-badge-rank")).some(b => !orbitHasSheet(b))) return; startOrbitEmblemAnimsKnown(r); orbitStandIns(r); startOrbitEmblemAnims(r); } }catch(e){} }, 2500);
     }
     else if(hero){
       startOrbitEmblemAnimsKnown(hero.parentElement || hero);
@@ -97632,6 +97767,33 @@ function restoreAfterBackground(){
       orbitStandIns(hero.parentElement || hero);
       startOrbitEmblemAnims(hero.parentElement || hero);
     }
+  }catch(e){}
+}
+/* 384.27: THE SHEETS LET GO ON THE WAY OUT COME BACK ONE AT A TIME. They were all decoded again 1.2s after the return - up to 14 sheets
+   (~2.2MB of pixels each) started in one go, on Home, which shows none of them, in the seconds the planet system is waking up (measured:
+   tools/check-b384-resume.py, decodes started per 400ms after a return). Now one every ~350ms, the most lately used first, from 3.5s
+   after the return, and each waits while a finger is on the tab bar or the glass is landing. The board still finds its sheets decoded
+   unless it is opened within seconds of the return - which decodes what it needs, as it did before 377. */
+var charPreRestoreTimer = 0, charPreRestoreGen = 0;
+function charPreRestoreSoon(){
+  try{
+    clearTimeout(charPreRestoreTimer);
+    /* one chain at a time: a return inside a decode of the last one's makes a new chain and the old one stops where it is */
+    const gen = ++charPreRestoreGen;
+    const tried = new Set();
+    const next = () => {
+      charPreRestoreTimer = 0;
+      if(gen !== charPreRestoreGen || document.hidden || testTrimmed) return;
+      if(document.documentElement.classList.contains("tab-held") || (typeof settleUntil === "number" && Date.now() < settleUntil)){ charPreRestoreTimer = setTimeout(next, 400); return; }
+      let sp = null;
+      for(let i = charPreList.length - 1; i >= 0; i--){ const c = charPreList[i]; if(c && !c.pre && c.url && !tried.has(c)){ sp = c; break; } }
+      if(!sp) return;
+      tried.add(sp);
+      const im = new Image(); im.src = sp.url;
+      const again = () => { if(gen === charPreRestoreGen) charPreRestoreTimer = setTimeout(next, 350); };
+      try{ im.decode().then(() => { if(gen === charPreRestoreGen && !document.hidden && !testTrimmed && !sp.pre){ sp.pre = im; charPreKeep(sp); } again(); }, again); }catch(e){ again(); }
+    };
+    charPreRestoreTimer = setTimeout(next, 3500);
   }catch(e){}
 }
 /* and a note of how the last run ended, so that a page that was ended in the background shows up in the report */
@@ -97646,7 +97808,8 @@ const SESSION_KEY = "class26e.session", CRASH_KEY = "class26e.crashlog";
     }
   }catch(e){}
 })();
-function sessionMark(state){
+var sessionLastFp = "";
+function sessionMark(state, light){
   try{
     const scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : document.querySelector(".qpanel, .pausepanel") ? "test" : "other";
     /* build 377: WHAT THE PAGE HELD AS IT WENT. His report: ended in the background 0-3s after leaving on 365, 368, 371, 373 and 375 - iOS
@@ -97655,7 +97818,10 @@ function sessionMark(state){
     let fp = "";
     /* build 378: every mark carries it (a page that ends while in use - "middle of my test the app just white screened" - left only the
        mark from 6s before, with nothing in it), and whether a recording was running */
-    if(state === "hidden" || state === "visible"){
+    /* 384.27: `light` (the mark made in the frames of a return) keeps the last count rather than walking every image, canvas and
+       element of the page while the planet system is waking up; the 6s mark makes a fresh one */
+    if(light) fp = sessionLastFp;
+    else if(state === "hidden" || state === "visible"){
       try{
         let imgMp = 0, imgs = 0, cvMp = 0;
         document.querySelectorAll("img").forEach(i => { if(i.naturalWidth){ imgs++; imgMp += i.naturalWidth * i.naturalHeight / 1e6; } });
@@ -97663,6 +97829,7 @@ function sessionMark(state){
         try{ if(typeof heroGlowCache !== "undefined" && heroGlowCache.canvas && !heroGlowCache.canvas.isConnected) cvMp += heroGlowCache.canvas.width * heroGlowCache.canvas.height / 1e6; }catch(e){}
         fp = "el" + document.getElementsByTagName("*").length + " img" + imgs + "/" + imgMp.toFixed(1) + "mp cv" + cvMp.toFixed(1) + "mp sh" + (charAnimReady.size + orbitAnimReady.size)
           + (charRecBusy || charRecPending.size ? " rec" + charRecPending.size : "") + (testTrimmed ? " tt" : "");
+        sessionLastFp = fp;
       }catch(e){}
     }
     localStorage.setItem(SESSION_KEY, JSON.stringify({ state, t: Date.now(), screen: scr, build: typeof APP_BUILD === "string" ? APP_BUILD : "", fp }));
@@ -97692,6 +97859,54 @@ function testTrimSheets(){
   }catch(e){}
 }
 window.addEventListener("pagehide", e => { sessionMark(e && e.persisted ? "hidden" : "closed"); });
+/* 384.27: the loops still to be played after a return, and the frame-by-frame turn that plays them (see go() in loopsBack) */
+var loopResumeRest = [], loopResumeRaf = 0, loopResumeRef = null, loopResumeRefPose = 0, loopResumeWaited = 0;
+var loopsBackAt = -1e9;   /* performance.now() of the last return to the app (loopsWatchTick keeps clear of it) */
+const LOOP_RESUME_PER_FRAME = 8;
+function loopsTimelineNow(){ try{ const t = document.timeline && document.timeline.currentTime; if(typeof t === "number") return t; }catch(e){} return performance.now(); }
+function loopsPlayTurn(tGo){
+  loopResumeRaf = 0;
+  if(document.hidden){ loopResumeRest.forEach(a => loopPausedByUs.add(a)); loopResumeRest = []; loopResumeRef = null; return; }
+  /* by the animation timeline's own clock (it moves a frame at a time, and an animation played now starts on it) */
+  const lag = loopsTimelineNow() - tGo;
+  const ref = loopResumeRef;
+  /* the others are started from the reference loop's start time, so they wait (a few frames at most) until it has one */
+  if(ref && ref.pending && loopResumeWaited++ < 12){ loopResumeRaf = requestAnimationFrame(() => loopsPlayTurn(tGo)); return; }
+  loopResumeRest.splice(0, LOOP_RESUME_PER_FRAME).forEach(a => {
+    try{
+      if(a.playState !== "paused") return;
+      const pose = a.currentTime;
+      if(typeof pose !== "number") { a.play(); return; }
+      if(!ref){ loopResumeRef = a; loopResumeRefPose = pose; a.play(); return; }
+      if(ref === a || lag < 4){ a.play(); return; }
+      /* the reference loop is running by now: this one is started at the moment that puts it exactly as far from the reference as it was
+         (its start time on the timeline: the reference's, moved by the difference of their poses), whatever the frames in between took */
+      if(ref.startTime != null && !ref.pending && typeof ref.startTime === "number"){ a.startTime = ref.startTime + (loopResumeRefPose - pose); return; }
+      a.currentTime = pose + lag; a.play();
+    }catch(e){ try{ a.play(); }catch(x){} }
+  });
+  if(loopResumeRest.length) loopResumeRaf = requestAnimationFrame(() => loopsPlayTurn(tGo));
+  else loopResumeRef = null;
+}
+/* 384.27: HOW THE 3 SECONDS AFTER A RETURN WENT, on the phone itself: frames drawn, the worst gap between two, and how many were over 50ms,
+   added to the return's line in the resume log ("Send tab timings" carries it). Chromium cannot say what iOS does with a page as it comes
+   back; this can, from his phone. It only counts frames - no layout, no style read. */
+function loopResumeFrames(tag){
+  try{
+    let last = performance.now(); const end = last + 3000; let n = 0, worst = 0, slow = 0;
+    const tick = t => {
+      if(document.hidden) return;
+      const dt = t - last; last = t; n++; if(dt > worst) worst = dt; if(dt > 50) slow++;
+      if(t < end){ requestAnimationFrame(tick); return; }
+      try{
+        const l = JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || [];
+        for(let i = l.length - 1; i >= 0; i--){ if(l[i].indexOf(tag) === 0 && l[i].indexOf(" fr") < 0){ l[i] += " fr" + n + "/w" + Math.round(worst) + "/s" + slow; break; } }
+        localStorage.setItem(LOOP_RESUME_KEY, JSON.stringify(l.slice(-6)));
+      }catch(e){}
+    };
+    requestAnimationFrame(tick);
+  }catch(e){}
+}
 function loopsBack(){
   let gap = 0, told = true, resume;
   if(loopHiddenAt){
@@ -97711,6 +97926,7 @@ function loopsBack(){
   }
   loopHiddenMs += gap; loopHiddenAt = 0;
   const t0 = performance.now();
+  loopsBackAt = t0;
   /* build 349: played on the next frame, after the page has painted once, and the other wake-up work (presence,
      listeners, the update check) is held back a couple of seconds - "lag, a second of black, the planet system
      loads its positions late" came from everything starting in the same frames */
@@ -97719,15 +97935,28 @@ function loopsBack(){
      and then appear already moved on ("the planet system freezes, then loads to where it went"). They stay on their
      pose until four frames in a row come at a normal pace (at most ~1.5s), then go on from that pose. */
   let good = 0, tries = 0, lastT = t0, first = 0;
+  const hidePose = told ? loopHidePose : null; loopHidePose = null;
   const go = () => {
-    resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
-    restoreAfterBackground(); sessionMark("visible");
+    /* 384.31: HOW FAR THE REFERENCE LOOP MOVED WHILE IT WAS PAUSED (ms of loop time; 0 when the pause held). Read before anything is played. */
+    let slip = "-";
+    try{ const rs = loopRef(); if(hidePose != null && rs && typeof rs.currentTime === "number") slip = Math.round(rs.currentTime - hidePose); }catch(e){}
+    /* 384.27: LET GO IN TURNS, NOT ALL IN ONE FRAME. 41 animations played in the same frame (measured, and 26-52 in his own resume
+       log) is the planet system's compositor layers started again together; the reference loop goes first (its pose sets the loop
+       clock below) and the rest follow at most LOOP_RESUME_PER_FRAME a frame, each put on by the time it waited, so every one is where
+       it would have been had it been played at once. */
+    const rf0 = resume.find(a => { try{ return a.animationName === "cosmic-orbit-spin" && a.effect && a.effect.target && a.effect.target.classList.contains("cosmic-hero-orbitlayer"); }catch(e){ return false; } });
+    const ordered = rf0 && resume.indexOf(rf0) > 0 ? [rf0].concat(resume.filter(a => a !== rf0)) : resume.slice();
+    if(loopResumeRaf){ try{ cancelAnimationFrame(loopResumeRaf); }catch(e){} loopResumeRaf = 0; }
+    loopResumeRest = ordered; loopResumeRef = null; loopResumeWaited = 0;
+    loopsPlayTurn(loopsTimelineNow());
+    restoreAfterBackground(); sessionMark("visible", true);
+    loopResumeFrames(told ? "told " : "NOTTOLD ");
     /* the time they stood still is time off the loop clock too, or the next Home built would put them ahead */
     /* and the loop clock is made to agree with where the reference loop actually is, so a Home built next lands on it */
     const r2 = loopRef();
     if(r2 && typeof r2.currentTime === "number") loopHiddenMs = Date.now() - LOOP_EPOCH - (r2.currentTime - (typeof orbitAdvanceMs === "number" ? orbitAdvanceMs : 0));
     else loopHiddenMs += performance.now() - t0;
-    const c0 = r2 && r2.currentTime, w0 = performance.now(), note = "away" + Math.round(gap) + " first" + first + " held" + Math.round(w0 - t0) + " n" + resume.length;
+    const c0 = r2 && r2.currentTime, w0 = performance.now(), note = "away" + Math.round(gap) + " first" + first + " held" + Math.round(w0 - t0) + " n" + resume.length + " slip" + slip;
     setTimeout(() => {
       /* how far the reference loop has moved in 600ms, against the 600 it should (a jump shows here) */
       const r3 = loopRef(); let drift = "-";
@@ -97753,8 +97982,12 @@ document.addEventListener("visibilitychange", () => {
   if(document.hidden){
     if(loopHiddenAt) return;
     loopHiddenAt = Date.now();
+    /* 384.27: loops still waiting their turn after a return are kept for the next one */
+    const waiting = loopResumeRest; loopResumeRest = [];
     loopPausedByUs.clear();
     loopsPauseAll(0).forEach(a => loopPausedByUs.add(a));
+    waiting.forEach(a => loopPausedByUs.add(a));
+    try{ const rh = loopRef(); loopHidePose = rh && typeof rh.currentTime === "number" ? rh.currentTime : null; }catch(e){ loopHidePose = null; }
     trimForBackground(); sessionMark("hidden");
   } else loopsBack();
 });
@@ -97783,7 +98016,14 @@ function syncLoopClock(root){
       if(!t || t.iterations !== Infinity || !(Number(t.duration) > 0)) return;
       /* the rings, and the veils timed to them, are ahead of the wall
          clock by whatever planet taps have gained them (build 318) */
-      todo.push([a, ORBIT_PHASE_ANIMS[a.animationName] ? orbitAdvanceMs : 0]);
+      const ahead = ORBIT_PHASE_ANIMS[a.animationName] ? orbitAdvanceMs : 0;
+      /* 384.27: A LOOP ALREADY WITHIN A FRAME OF ITS PLACE IS LEFT ALONE. Writing currentTime on a running animation restarts it (on
+         iOS the compositor's copy is made again), and this is called for the whole planet system - 39 of its 41 loops on every return
+         to the app, 2.5s after it, each already within 2ms of where the wall clock says (measured: tools/check-b384-resume.py) - a
+         herd of restarts for nothing, in the seconds the planet system is meant to look like nothing happened. */
+      const cur = a.currentTime;
+      if(typeof cur === "number" && Math.abs(wall + ahead - cur) < LOOP_SYNC_SLACK_MS) return;
+      todo.push([a, ahead]);
     }catch(e){}
   });
   todo.forEach(([a, ahead]) => { try{ a.currentTime = wall + ahead; }catch(e){} });
@@ -98116,7 +98356,7 @@ try{ new MutationObserver(() => { stageMountedAt = performance.now(); }).observe
 const charRecPending = new Map();
 const charRecWaiters = new Map();
 let charRecBusy = false;
-const CHAR_REC_LIMIT_MS = 60000;
+const CHAR_REC_LIMIT_MS = 60000;   /* 384.30: divided by REC_DUTY where it is read - a computer paces a recording, and the limit is for one that has stalled */
 function charRecWant(key, el){
   if(!el) return;
   let set = charRecWaiters.get(key);
@@ -98360,10 +98600,12 @@ async function recordCharSheet(drawing, px){
          once held a throttled phone for most of a second. */
       const B = 4;
       for(let f0 = 0; f0 < N; f0 += B){
-        if(!host.isConnected || performance.now() - t0 > CHAR_REC_LIMIT_MS) return null;
+        if(!host.isConnected || performance.now() - t0 > CHAR_REC_LIMIT_MS / REC_DUTY) return null;
         /* nobody can see it any more and something on the screen that is
            up is waiting (build 315): dropped, as the pump drops one */
         if(charRecPriority(drawing.id + "|" + px) >= 3 && recordingWantedNow()) return false;
+        await recBatchWait();
+        const bt0 = performance.now();
         const batch = [];
         for(let f = f0; f < Math.min(N, f0 + B); f++){
           const tau = f * L / N;
@@ -98379,6 +98621,7 @@ async function recordCharSheet(drawing, px){
           await charRecYield();
           g.drawImage(b.img, (b.f % cols) * px, Math.floor(b.f / cols) * px, px, px);
         }
+        recBatchDone(performance.now() - bt0);   /* 384.30: a computer's share */
       }
       const blob = await charRecWithin(new Promise(r => sheet.toBlob(r, "image/png")), 10000);
       sheet.width = sheet.height = 0;
@@ -100492,6 +100735,193 @@ function gsLeave(page){
   zoomA.ready.then(begin, begin);
   setTimeout(begin, 400);   /* where frames do not come (a hidden tab) */
 }
+/* ---- INSTALL FIRST (384.23) ----
+   The owner, watching classmates: "They create an account, then the Nova intro, then the tips at Home ... When people add it to
+   their Home Screen and click it, the first thing they see is the start up page again even though they just went through that
+   entire process. That isn't going to work. Maybe when you click the link the first thing it makes you do on the phone is add it
+   to your Home Screen (forced, can't move on till done, easy)."
+   WHY: on iPhone and iPad the Home Screen icon keeps its own storage, apart from Safari's, and the address does not carry the
+   account into it (installCodeInUrl is kept, but it is not relied on). So nothing is carried: a phone or tablet in a browser tab,
+   with no account on it, opens on ONE page whose only job is adding Nova to the Home Screen. The account, the intro and the tips
+   all happen in the icon, once.
+   WHO: a touch phone or tablet (iPhone, iPad - including iPadOS's Mac-like user agent - and Android) that is not already the
+   installed app and has no account on it. A computer (a Mac in Safari too) is never held: it opens on Get Started as before. A
+   device that has an account, a name, a code, a signed-out mark or a code in its address goes to Welcome as before.
+   WHAT: Add to Home Screen opens the system share menu on iPhone and iPad (navigator.share, from the tap) and the browser's own
+   install prompt on Android where it offered one (beforeinstallprompt); where neither is there, the guide (showHomeScreenSheet).
+   Apple has no call that adds it in one tap, so the page says what the button does and does not say it adds itself. A browser
+   inside another app (Instagram, Facebook, TikTok, Snapchat, LinkedIn, Line, WeChat, Gmail, a webview) cannot add to the Home
+   Screen, so it is asked to open the page in Safari (or the browser) first. "I can't add it" goes on as before, in the browser
+   (class26e.installskip), so a school iPad or a locked-down phone is never stranded. */
+var INSTALL_SKIP_KEY = "class26e.installskip";
+var A2HS_URL = "https://" + A2HS_ADDRESS + "/";
+var installSkippedNow = false;
+function installSkipped(){
+  if(installSkippedNow) return true;
+  try{ return localStorage.getItem(INSTALL_SKIP_KEY) === "1"; }catch(e){ return false; }
+}
+function installSkip(){
+  installSkippedNow = true;
+  try{ localStorage.setItem(INSTALL_SKIP_KEY, "1"); }catch(e){}
+}
+/* A page open inside another app's own browser (it has no Share > Add to Home Screen): by name where the user agent gives one,
+   and an iOS web view by its missing Safari token (every real iOS browser has one). */
+function inAppBrowser(){
+  const ua = navigator.userAgent || "";
+  if(/FBAN|FBAV|FB_IAB|FBIOS|Instagram|Snapchat|TikTok|musical_ly|Bytedance|Line\/|MicroMessenger|LinkedInApp|Twitter|GSA\/|KAKAOTALK|Pinterest|Outlook|Teams\/|\bGmail\b/i.test(ua)) return true;
+  if(/Android/i.test(ua) && /;\s*wv\)/.test(ua)) return true;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+  if(ios && !/Safari\//.test(ua)) return true;
+  return false;
+}
+/* Is this the device that is held on the install page? A phone or tablet (never a computer), not the installed app, no account
+   on it, and "I can't add it" not tapped. */
+function installFirstWanted(){
+  try{
+    if(isStandaloneApp()) return false;
+    if(a2hsDeviceGuess() === "computer") return false;
+    if(installSkipped()) return false;
+    if(accountTraceNow() || String(store.firstName || "").trim() || store.onboardingComplete) return false;
+    if(signedOutHere() || browserLinkCode) return false;
+    /* a device that has held an account (its own marks, or a stopped sync) is a returning one: Welcome, where Sign in is first */
+    if(localStorage.getItem("class26e.hadaccount") || localStorage.getItem("class26e.savecode.asked") || localStorage.getItem("class26e.savecode.card") || localStorage.getItem("class26e.syncoff")) return false;
+    return true;
+  }catch(e){ return false; }
+}
+/* The system share menu, from a tap: "shared", "cancelled", "failed" or "unavailable". Always the canonical address, whatever
+   address this page was opened at. */
+function a2hsShare(){
+  if(typeof navigator.share !== "function") return Promise.resolve("unavailable");
+  try{
+    return Promise.resolve(navigator.share({ url: A2HS_URL, title: "Nova" })).then(() => "shared",
+      e => (e && e.name === "AbortError") ? "cancelled" : "failed");
+  }catch(e){ return Promise.resolve("failed"); }
+}
+function showInstallFirst(o){
+  o = o || {};
+  stopTimer(); stopQuestionTimer();
+  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true; timerlineEl.hidden = true;
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true; pauseBtn.hidden = true;
+  countEl.textContent = "";
+  setOnboardingHeader();
+  let dev = o.device || a2hsDeviceGuess();
+  if(dev !== "android") dev = "apple";
+  const inApp = o.inapp != null ? !!o.inapp : inAppBrowser();
+  const mk = (tag, cls, text) => { const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; };
+  const panel = mk("section", "panel home onboarding-shortform-panel signupcheck-panel installfirst-panel");
+  panel.setAttribute("data-screen", "installfirst");
+  panel.dataset.mode = inApp ? "inapp" : "install"; panel.dataset.dev = dev;
+  const glow = mk("div", "homeglow"); glow.setAttribute("aria-hidden", "true");
+  const browserName = dev === "apple" ? "Safari" : "your browser";
+  const title = mk("p", "hometitle if-title", inApp ? "Open this page in " + browserName + " first" : "Add Nova to your Home Screen");
+  const line = mk("p", "hometagline signupcheck-text if-line", inApp
+    ? "This app cannot add Nova to your Home Screen. Open the page in " + browserName + ", then add it from there."
+    : "Add it first, then open Nova from the new icon to get started.");
+  const note = mk("p", "if-note");
+  const status = mk("p", "if-status"); status.setAttribute("role", "status");
+  const guide = mk("button", "if-guide", "Show me how"); guide.type = "button";
+  const skip = mk("button", "if-skip if-out", "I can’t add it"); skip.type = "button";
+  /* the glyph of what the button opens: the share arrow on iPhone and iPad, the plus on Android */
+  const icon = mk("span", "if-icon"); icon.setAttribute("aria-hidden", "true");
+  try{ icon.appendChild(dev === "apple" && !inApp ? buildShareIcon() : buildAddSquareIcon()); }catch(e){}
+  const go = mk("button", "next playbtn if-go"); go.type = "button"; go.id = "nextbtn";
+  panel.append(glow, icon, title, line, note, status);
+  let linkRow = null;
+  if(inApp){
+    /* the page's address, to copy and paste into the browser, where the hand-off does nothing */
+    linkRow = mk("div", "if-link");
+    const addr = mk("code", "if-link-addr", A2HS_ADDRESS);
+    const copy = mk("button", "next ghost if-copy", "Copy link"); copy.type = "button";
+    copy.addEventListener("click", async () => {
+      let ok = false;
+      try{ await navigator.clipboard.writeText(A2HS_URL); ok = true; }catch(e){}
+      copy.textContent = ok ? "Copied" : "Select it above";
+    });
+    linkRow.append(addr);
+    if(dev === "apple") linkRow.append(copy);   /* Android's primary button is the copy */
+    panel.appendChild(linkRow);
+  }
+  if(!inApp) panel.appendChild(guide);
+  panel.append(skip, go);
+
+  let busy = false;
+  const setStatus = t => { status.textContent = t; status.hidden = !t; };
+  setStatus("");
+  const openGuide = () => { try{ showHomeScreenSheet({ from: "installfirst", device: dev }); }catch(e){} };
+  if(inApp){
+    go.textContent = dev === "apple" ? "Open in Safari" : "Copy link";
+    note.textContent = dev === "apple"
+      ? "Tap Open in Safari. If nothing happens, copy the link and paste it into Safari."
+      : "Copy the link, then paste it into Chrome or your browser’s address bar.";
+    go.addEventListener("click", () => {
+      if(dev === "apple"){
+        let handedOff = false;
+        const onHide = () => { if(document.hidden) handedOff = true; };
+        document.addEventListener("visibilitychange", onHide);
+        try{ window.location.href = safariHandoffTarget(); }catch(e){}
+        setTimeout(() => {
+          document.removeEventListener("visibilitychange", onHide);
+          if(!handedOff && !document.hidden && panel.isConnected) setStatus("Could not open Safari. Copy the link below and paste it into Safari.");
+        }, 1500);
+      } else {
+        try{ navigator.clipboard.writeText(A2HS_URL).then(() => setStatus("Link copied. Paste it into your browser."), () => setStatus("Could not copy. Select the link below.")); }
+        catch(e){ setStatus("Could not copy. Select the link below."); }
+      }
+    });
+  } else if(dev === "apple"){
+    go.textContent = "Open Share menu";
+    note.textContent = "This opens your phone’s share menu. Tap Add to Home Screen in it, then open Nova from the new icon.";
+    go.addEventListener("click", () => {
+      if(busy) return;
+      busy = true;
+      /* called in the tap, before anything else: the share menu needs the tap that opened it */
+      a2hsShare().then(r => {
+        busy = false;
+        if(!panel.isConnected) return;
+        if(r === "shared") setStatus("Now open Nova from the new icon on your Home Screen.");
+        else { setStatus("Use the steps to add it by hand."); openGuide(); }
+      });
+    });
+  } else {
+    note.textContent = "Add Nova to your Home Screen, then open Nova from the new icon.";
+    const paint = () => {
+      const has = !!window.__deferredInstallPrompt;
+      go.textContent = has ? "Install Nova" : "Show me how to add it";
+      guide.hidden = !has;
+    };
+    paint();
+    const onPrompt = () => setTimeout(() => { if(panel.isConnected) paint(); }, 0);
+    const onInstalled = () => { if(panel.isConnected) setStatus("Nova has been added. Open it from your Home Screen."); };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    try{
+      const gone = new MutationObserver(() => { if(!panel.isConnected){ gone.disconnect(); window.removeEventListener("beforeinstallprompt", onPrompt); window.removeEventListener("appinstalled", onInstalled); } });
+      gone.observe(stage, { childList: true });
+    }catch(e){}
+    go.addEventListener("click", () => {
+      const p = window.__deferredInstallPrompt;
+      if(!p){ openGuide(); return; }
+      if(busy) return;
+      busy = true;
+      try{
+        p.prompt();
+        Promise.resolve(p.userChoice).then(c => {
+          window.__deferredInstallPrompt = null; busy = false;
+          if(!panel.isConnected) return;
+          if(c && c.outcome === "accepted") setStatus("Nova is being added. Open it from your Home Screen.");
+          else { setStatus("Not added. Tap Install Nova to try again."); paint(); }
+        }).catch(() => { busy = false; });
+      }catch(e){ busy = false; openGuide(); }
+    });
+  }
+  guide.addEventListener("click", openGuide);
+  /* goes on as before, in the browser: Get Started, then Welcome */
+  skip.addEventListener("click", () => { installSkip(); showWelcomeFirst(); });
+
+  stage.replaceChildren(panel);
+  toTop();
+  return panel;
+}
 /* Get Started is for a device with no account on it. A device that still
    has one (its code, a name in the store, or the mirror's copy) goes to
    Welcome, which offers that account first - the recovery paths live
@@ -100506,6 +100936,16 @@ function showWelcomeFirst(){
      A device signed out here (class26e.signedout, set by Sign out, cleared by signing in or up) opens on Welcome, as in
      383 - the person has an account and Sign in is right there. A device with nothing on it still gets Get Started. */
   if(signedOutHere()){ gsMarkSeen(); showWelcome(); return; }
+  /* (384.23) INSTALL FIRST: a phone or tablet in a browser tab with no account opens on the Add to Home Screen page (see
+     installFirstWanted), the account is made in the icon. A computer, the installed app and any device with an account are not held. */
+  if(installFirstWanted()){
+    showInstallFirst();
+    findAccountTrace().then(t => {
+      if(!t || !stage.querySelector('[data-screen="installfirst"]')) return;
+      gsMarkSeen(); showWelcome();
+    });
+    return;
+  }
   showGetStarted();
   findAccountTrace().then(t => {
     if(!t || !stage.querySelector('[data-screen="getstarted"]')) return;
@@ -103052,9 +103492,12 @@ function novaIntroLines(o){
     enter: ctx => { const a = document.createElement("span"); a.className = "nt-picked";
       try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
       novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } };
+  /* (384.27) ONE BOX, NO CARD. The sign-up used to stop on a "Save your sync code" card (tick it, then Continue) after two boxes about
+     the code: three presses and a screen the owner counted as too long. The code is still made at sign-up (novaSignupCreate) and is
+     shown here, once, in a box that goes on with a tap; it is in Settings, under Sync, with its Save it row, for good. */
   const codeLines = [
-    { gesture: "raise", text: "This is your sync code.", enter: ctx => novaProp(ctx, novaStack(novaCodeProp())), ask: novaAskSaveCode /* build 382: the save-your-code card */ },
-    { text: "It signs you in on other devices. Find it any time in Settings." }
+    { gesture: "raise", text: "This is your sync code. It signs you in on other devices. Find it any time in Settings, under Sync.",
+      enter: ctx => novaProp(ctx, novaStack(novaCodeProp())) }
   ];
   if(existing){
     lines.push({ gesture: "wave", text: "There you are, " + name + "!", enter: hello });
@@ -103068,6 +103511,28 @@ function novaIntroLines(o){
     lines.push({ text: "Every question comes with the code it’s from." });
     lines.push({ gesture: "nod", text: "Answer one, and I’ll show you the page." });
     lines.push({ gesture: "raise", text: "Now, a little about me." });
+  } else if(o.signup && part === 0){
+    /* (384.23) A SHORTER SIGN-UP INTRODUCTION. The owner, watching classmates: "The walkthrough is a lot. The sign up process is not
+       easy ... long." He took 23 boxes (a tap each) before the tips: the story (the voyage, the storm, the scattering, the flares, the
+       badges, the crew) and the four modes, each its own box. A new account hears it in nine: who he is, the name, one box for what the
+       storm did, one for ranks and badges, the partner, the code, and the hand-over to the tips. Every thing the person has to DO is
+       still here (the name, the partner, the sync code's card); what is dropped is only what the tips and the screens say again (the four
+       modes are the Mode Select tips', the crew parade is Customize's). A Fire Code half (part 1, 2) and an existing account are as
+       they were. */
+    const both = signupPicked().indexOf("ifc") >= 0;
+    lines.push({ gesture: "wave", text: "Hello there! I\u2019m Nova, an explorer, and I\u2019ll be your instructor.", enter: hello });
+    lines.push({ gesture: "raise", text: "First, what should I call you?", ask: novaAskName });
+    lines.push({ gesture: "wave", text: () => "So you\u2019re " + novaName() + "! A storm scattered my badges, flares and crew across your studies.",
+      enter: ctx => novaProp(ctx, buildNovaVoyage(true)) });
+    lines.push({ gesture: "raise",
+      text: ifcNow ? "Reach a new rank, and one of my flares lights back up. Score 100% on a chapter to find its badge."
+        : "Reach a new rank, and one of my flares lights back up. Score 100% on a unit enough times to find its badge." + (both ? " In Fire Code, once is enough." : ""),
+      enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
+    lines.push({ gesture: "raise", text: "A few of my crew stayed aboard. Who do you want as your partner?", ask: novaAskCharacter });
+    lines.push(picked);
+    lines.push(codeLines[0]);
+    lines.push({ gesture: "nod", final: true, text: "Now let me show you around.", enter: ctx => novaProp(ctx, null) });
+    return lines;
   } else if(o.signup){
     /* (327z15) a sign-up: he asks the name himself */
     lines.push({ gesture: "wave", text: "Hello there!", enter: hello });
@@ -103633,6 +104098,21 @@ function mainMenuTourSteps(returning){
      (scheduleStudyTip). */
   const ifc = window.NOVA_CLASS === "ifc";
   const laptop = !!(window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches);
+  /* (384.23) A NEW ACCOUNT'S TIPS ARE FOUR, NOT EIGHT. "The walkthrough is a lot." The four tab-bar tips (and the flares, which Nova's
+     introduction has just shown) are one tip at the bar; what stays are the places that are not in the bar: the daily question, the
+     class button and Nova's chat. An account from before Nova (returning) is as it was. */
+  if(!returning) return [
+    { target: ".bottomtabs", align: "left", vplacement: "above",
+      text: ifc ? "The bar at the bottom: Home, Profile, Leaderboard and Settings. Tap Profile for your rank and badges."
+        : "The bar at the bottom: Home, Profile, Leaderboard and Calendar. Tap Profile for your rank and badges." },
+    { target: ".daily-question-fab", align: "right", vplacement: "above",
+      text: "Your daily question: one a day, one try." },
+    classButtonTipStep("Your classes. Switch classes or join another here."),
+    { target: "#chatdock-btn", align: "right", vplacement: "below",
+      /* (384 r4) "The 'I've added you as a friend I'll keep in touch' make that at the end of tool tips instead" */
+      text: "I\u2019ve added you as a friend. Message me here any time.",
+      onShow: () => { try{ novaFriendMoment(); }catch(e){} } }
+  ];
   return [
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home brings you back here from anywhere." },
@@ -120622,7 +121102,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.26";
+const APP_BUILD = "2026-11-11-384.34";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -159614,6 +160094,10 @@ function loopsWatchTick(force){
   try{
     const root = document.documentElement;
     if(force) loopsWatch.touchAt = -1e9;
+    /* 384.27: NOT IN THE SECONDS AFTER A RETURN TO THE APP. The frames of a page that is waking up are slow on any phone; counted here
+       they are a strike against the loops' paint mode, and two in a row (7s apart) put the planet system and the boards' loops on
+       their fallback for the rest of the build - because he had switched apps. A count that a return falls inside is thrown away too. */
+    if(performance.now() - loopsBackAt < 9000) return;
     if(document.hidden || loopsWatch.busy || !root.classList.contains("loops-paint") || lagTestRunning || boardTestRunning) return;
     if(document.querySelector("#bottomtabs-lens.is-up") || root.classList.contains("tab-dragging") || (!force && Date.now() < settleUntil)) return;
     if(performance.now() - loopsWatch.touchAt < 1500 || loopsInView() < (force ? 1 : 4)) return;
@@ -159623,7 +160107,7 @@ function loopsWatchTick(force){
       iv.push(t - last); last = t;
       if(t - t0 < 1500 && !document.hidden) { requestAnimationFrame(tick); return; }
       loopsWatch.busy = false;
-      if(document.hidden || performance.now() - loopsWatch.touchAt < 1600 || iv.length < 10) return;
+      if(document.hidden || loopsBackAt > t0 || performance.now() - loopsWatch.touchAt < 1600 || iv.length < 10) return;
       const slow = iv.filter(v => v > 25).length;
       loopsWatch.last.push("n" + iv.length + "/s" + slow); if(loopsWatch.last.length > 6) loopsWatch.last.shift();
       if(slow / iv.length > .35){
@@ -159676,6 +160160,14 @@ function tabPerfText(){
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
+  /* (384.25) THE LIT TAB IS SAID, NOT ONLY DRAWN. The platter and the white label were the whole of "you are here"; a screen reader heard
+     four buttons and no place. The tab that is lit carries aria-current="page" and no other does; the one place that lights a tab
+     (this) keeps the attribute and the class together, so they cannot disagree. A function declaration, so it is there for any caller. */
+  function markLit(t, on){
+    t.classList.toggle("active", !!on);
+    if(on){ if(t.getAttribute("aria-current") !== "page") t.setAttribute("aria-current", "page"); }
+    else if(t.hasAttribute("aria-current")) t.removeAttribute("aria-current");
+  }
   /* The Calendar tab's screen (build 323): showCalendarTab() where the
      build has it, the class calendar's own way in otherwise. */
   const openCalendarTab = () => {
@@ -159878,7 +160370,11 @@ function tabPerfText(){
          screen that was already there. As on iOS, it scrolls to the top. */
       /* (round 33) Profile counts only on its own page: from Profile's Stats or Settings the tab goes
          back to Profile, at its top at once (tapping it there only glided Settings to its top) */
-      const ROOT_OF = { profile: ".screen-profile .profile-identity-tab:not([hidden])", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
+      /* (384.25) Fire Code's Settings tab is a root like the others: its page is Profile's settings pane, shown (the academy's is hidden,
+         and its bar has no Settings tab). Without it a second tap on Settings built the whole screen again - a long task, a new screen
+         under the finger, an open section lost - where Profile, the Leaderboard and the Calendar go to their top. */
+      const ROOT_OF = { profile: ".screen-profile .profile-identity-tab:not([hidden])", rewards: ".screen-rankings", calendar: ".screen-calendar-tab",
+                        settings: ".screen-profile .profile-settings-tab:not([hidden])" };
       if(!testInProgress && ROOT_OF[dest] && stage.querySelector(ROOT_OF[dest])){
         if(pend){ syncActive(); slideBubbleToActiveTab(true); }
         if(bar._lensScreenIn) bar._lensScreenIn();
@@ -159896,7 +160392,7 @@ function tabPerfText(){
          after. syncActive() runs again once it is up, which puts the
          highlight back if the navigation was refused (a confirm declined,
          a cutscene owed). */
-      bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
+      bar.querySelectorAll(".bottomtab").forEach(t => markLit(t, t === tab));
       /* build 384: A SLIDE'S RELEASE MEASURES NOTHING. Let go of a slide over this tab and the glass is held up over it (lensHoldFor) with
          the platter hidden under it; the landing (lensRelease) puts the platter on this tab itself. Measuring it here read the bar's
          boxes straight after the classes changed - a whole-page style pass and layout inside the release (the largest piece of the
@@ -160170,7 +160666,7 @@ function tabPerfText(){
     const calShown = [...document.querySelectorAll("#stage .screen-calendar")].some(el => !el.closest("[hidden]")) || frFrom === "calendar";
     const settingsBtn = bar.querySelector("#bottomtab-settings");
     const onSettingsAny = onSettings || onSettingsSub;
-    const lit = (id, on) => { const b = bar.querySelector(id); if(b) b.classList.toggle("active", !!on); };
+    const lit = (id, on) => { const b = bar.querySelector(id); if(b) markLit(b, !!on); };
     /* a Settings tab that is SHOWN (the Fire Code class, build 342) takes Settings' screen for itself; Settings is a
        tab of the Profile screen, which would otherwise light both and park the platter on Profile */
     const settingsShown = !!settingsBtn && !settingsBtn.hidden;

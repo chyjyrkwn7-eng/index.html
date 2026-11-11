@@ -128,20 +128,25 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=CHROME)
 
     if want("signup"):
-        print("\n1. a new sign-up stops on the code card")
+        print("\n1. a new sign-up shows the code once, with no card to stop it (384.27); the card itself still works where it is asked for")
         errs = []
         ctx, pg = open_page(br, SEEN, errs=errs)
         pg.evaluate("()=>{ startSignupWithNova(); }")
         pg.wait_for_timeout(11500)
-        reached = False; steps = 0; last = None
-        for steps in range(160):
-            st = pg.evaluate("""()=>{ const n=document.getElementById('nova-intro'); if(!n||!n.__nova) return {gone:true};
+        card_seen = False; code_box = None; last = None; finished = False
+        for steps in range(200):
+            st = pg.evaluate("""()=>{ const n=document.getElementById('nova-intro'); const e=document.querySelector('.nt-codebox .codereveal-value');
+              const cb = e ? e.textContent : '';
+              if(!n||!n.__nova) return {gone:true, card: !!document.getElementById('savecode-card'), cb:cb};
               return { asking:n.__nova.asking, typing:n.__nova.typing, i:n.__nova.index, count:n.__nova.count,
                        name: !!n.querySelector('.nt-ask-name input'), char: !!n.querySelector('.nt-ask-char .avatarchar-option'),
-                       card: !!document.getElementById('savecode-card'), final: !!n.querySelector('.nt-bubble.is-final') }; }""")
+                       card: !!document.getElementById('savecode-card'), cb:cb, code:syncCode, final: !!n.querySelector('.nt-bubble.is-final') }; }""")
             last = st
-            if st.get("card"): reached = True; break
-            if st.get("gone"): pg.wait_for_timeout(400); continue
+            if st.get("card"): card_seen = True
+            if st.get("cb") and st.get("code") and st["cb"] == st["code"]: code_box = st["cb"]
+            if st.get("gone"):
+                if steps > 20: finished = True; break
+                pg.wait_for_timeout(400); continue
             if st["typing"]: pg.evaluate("()=>document.getElementById('nova-intro').__nova.advance()"); pg.wait_for_timeout(120); continue
             if st["asking"]:
                 if st["name"]:
@@ -151,14 +156,20 @@ with sync_playwright() as pw:
                     pg.click("#nova-intro .nt-ask-char .avatarchar-option"); pg.wait_for_timeout(200)
                     pg.click("#nova-intro .nt-ask-char .nt-ask-go"); pg.wait_for_timeout(900); continue
                 pg.wait_for_timeout(400); continue
-            if st["final"]: break
+            if st["final"]: finished = True; break
             pg.evaluate("()=>document.getElementById('nova-intro').__nova.advance()"); pg.wait_for_timeout(160)
-        ck("the sign-up reaches the code card (in Nova's introduction)", reached, last)
+        ck("the sign-up goes through to its last box with no sync-code card in the way", finished and not card_seen, [finished, card_seen, last])
+        ck("the account's own code was shown once, in Nova's own box", bool(code_box), last)
+        ck("the code is on the device and Settings, Sync can show it", pg.evaluate("()=>!!syncCode && typeof shownSyncCode==='function' && shownSyncCode()===syncCode") is True)
+        # the card itself (still how Settings and the settings-mode ask show it): opened directly
+        pg.evaluate("()=>{ const n=document.getElementById('nova-intro'); if(n && n.__nova) n.__nova.close(); window.__cardDone = 0; showSaveCodeCard({ mode: 'new', onDone: () => { window.__cardDone++; } }); }")
+        pg.wait_for_timeout(600)
+        reached = card_up(pg)
+        ck("the card opens where it is asked for", reached, "")
         if not reached:
             for n in ("the code is large, monospace and is the account's code", "Continue starts disabled",
-                      "a cancelled Save does not enable Continue", "ticking the box enables Continue, unticking disables it",
-                      "a Save that worked enables Continue", "Nova waits while the card is up", "every control is 44px or taller",
-                      "Continue closes it, records it saved and Nova goes on", "it does not show again on Home"):
+                      "ticking the box enables Continue, unticking disables it", "every control is 44px or taller",
+                      "Continue closes it, records it saved and goes on"):
                 ck(n, False, "no card")
         else:
             c = pg.evaluate("""()=>{ const v=document.querySelector('#savecode-card .savecode-value'); const cs=getComputedStyle(v);
@@ -179,17 +190,13 @@ with sync_playwright() as pw:
             pg.click("#savecode-card .savecode-copy"); pg.wait_for_timeout(400)
             copied = pg.evaluate("()=>window.__copied")
             ck("copying the code enables Continue and puts the code (and only the code) on the clipboard", dis() is False and copied == c["code"], copied)
-            ck("Nova waits while the card is up", pg.evaluate("()=>document.getElementById('nova-intro').__nova.asking") is True)
             sizes = pg.evaluate("""()=>['.savecode-copy','.savecode-ack','.savecode-continue'].map(s=>Math.round(document.querySelector('#savecode-card '+s).getBoundingClientRect().height))""")
             ck("every control is 44px or taller", min(sizes) >= 44, sizes)
-            i0 = pg.evaluate("()=>document.getElementById('nova-intro').__nova.index")
             pg.click("#savecode-card .savecode-continue"); pg.wait_for_timeout(700)
             after = pg.evaluate("""()=>({ card:!!document.getElementById('savecode-card'), saved:store.savedCodeSaved,
-                 key:!!localStorage.getItem('class26e.savecode.card'), i:document.getElementById('nova-intro').__nova.index })""")
-            ck("Continue closes it, records it saved and Nova goes on",
-               not after["card"] and after["saved"] is True and after["key"] and after["i"] > i0, after)
-            pg.evaluate("()=>{ const n=document.getElementById('nova-intro'); if(n) n.__nova.close(); }")
-            pg.wait_for_timeout(600)
+                 key:!!localStorage.getItem('class26e.savecode.card'), done:window.__cardDone })""")
+            ck("Continue closes it, records it saved and goes on",
+               not after["card"] and after["saved"] is True and after["key"] and after["done"] == 1, after)
             shown = []
             for _ in range(3):
                 pg.evaluate("()=>{ cloudConfirmedFor = syncCode; showHome(); setTimeout(checkSaveCodeReminder, 50); }")
