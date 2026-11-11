@@ -20,17 +20,21 @@ that same state is booted on this build. Everything is read off the page:
     Stats ring's "answered right once" count is the same, and no chapter's answered count falls except by the moved questions;
 (e) two devices of one account, one on the old bank and one on the new, merged either way with mergeSameAccount (and added with
     mergeLeavingAccount): no hundo counter, count, best or answer count is lower afterwards than the higher of the two;
-and the move is in effect on this page (the chapter sizes are 111, 40, 43, 16, 10, 10) - which is what fails on main.
+and the move is in effect on this page (the chapter sizes are 111, 40, 41, 8, 5, 9: the five, with 384.47's moves out of 12, 55, 62 and 64 taken off) - which is what fails on main.
   python3 tools/check-b384-moveq-keep.py [--against OLD/index.html]    (BASE = merge-base with origin/main; OLD_BANK=<its ifc/bank.js> with --against)"""
 import os, sys, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-def _base():   # the commit this branch was cut from (origin/main moves as other branches merge; the keys to hold are the ones THIS bank started from)
-    r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
-    return r or "origin/main"
-BASE = os.environ.get("BASE") or _base()
+# (384.47) main now holds the five moves: compare with the last commit before them (6c1d14a, main 384.44). The questions 384.47 moved or removed are
+# left out of this fixture (check-b384-moveperm-keep.py holds that move), so what is measured is the five alone.
+BASE = os.environ.get("BASE") or "6c1d14a"
+import ast
+def _gen(name):   # the owner's moves and removals of 384.47, read from the generator's own tables
+    for n in ast.parse(open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()).body:
+        if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch64-001": "2"}
 UNITS = ["2", "4", "12", "55", "62", "64"]
-SIZES = {"2": 111, "4": 40, "12": 43, "55": 16, "62": 10, "64": 10}
+SIZES = {"2": 111, "4": 40, "12": 41, "55": 8, "62": 5, "64": 9}     # 384.42's 111/40/43/16/10/10 with 384.47's moves out of 12, 55, 62, 64
+GONE47 = set(_gen("UNIT_MOVES")) | set(_gen("UNIT_REMOVALS"))
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384moveqkeep"}
 exec(src, G)
@@ -96,7 +100,7 @@ with sync_playwright() as pw:
     A = pg.evaluate(ROWS); ctx.close()
     topics = [A["topics"][u] for u in UNITS]
     keyof = {r["id"]: r["key"] for r in A["rows"]}
-    in_unit = {u: [r for r in A["rows"] if r["topic"] == A["topics"][u] and r["id"] not in MOVES] for u in UNITS}
+    in_unit = {u: [r for r in A["rows"] if r["topic"] == A["topics"][u] and r["id"] not in GONE47] for u in UNITS}
     stats = {}
     for i in MOVES: stats[keyof[i]] = {"n": 6, "m": 2, "r": [1790000000001, 1790000000002]}              # the moved questions answered (and missed twice)
     for u in UNITS:                                                                                         # partly answered chapters: a third of each, some missed
