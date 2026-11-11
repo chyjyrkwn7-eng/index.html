@@ -11,7 +11,7 @@ document and its __floor are written from the clamped copy) took the count off t
 
  (A) THE INVARIANT, FROM THE APP'S OWN FLOW: a Drill whose every question is missed once and then answered, then "Retake missed
      questions" answered right, in Fire Code: the retakes read off the page are MORE than the misses on record (so "retakes <= misses"
-     is not an invariant) and no more than twice them (so 2x is the bound);
+     is not an invariant) and no more than twice them (the raw counter ticks twice for one miss, which is why the clamp holds a count to the misses, not to twice them: 384.24);
  (B) THE CLAMP'S BOUND, read off the page: a store with M misses on record keeps a count of 2M and is held to 2M above it, whatever
      the answers (it is still <= answers given); the academy's store is not touched at all;
  (C) AN HONEST EARN ABOVE ITS MISSES IS KEPT: a Fire Code account with 120 retakes on 60 misses and 400 answers (the shape (A) makes)
@@ -28,7 +28,7 @@ exec(compile(_src, os.path.join(HERE, "check-b384-fcchallenges.py"), "exec"), gl
 # the page's own numbers
 BOUND = """()=>{ const mk = (m, a, r) => ({ stats: { x: { n: 9, m: m, r: [] } }, lifetime: { answered: a }, retakenQuestions: r, unitGameBeat: {} });
   const run = (m, a, r) => { const d = mk(m, a, r); const ch = ifcChallengeClamp(d); return { kept: d.retakenQuestions, changed: ch }; };
-  return { two: run(10, 999, 20), over: run(10, 999, 21), way: run(10, 999, 640), few: run(10, 12, 20), zero: run(0, 999, 5) }; }"""
+  return { two: run(10, 999, 10), over: run(10, 999, 11), way: run(10, 999, 640), few: run(10, 6, 20), zero: run(0, 999, 5) }; }"""
 
 # a Drill missed once on every question then answered, finished; then Retake missed questions, answered right
 FLOW = """async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -90,9 +90,9 @@ with sync_playwright() as pw:
         ctx, pg, errs = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with())
         pg.wait_for_timeout(2500)
         b = pg.evaluate(BOUND)
-        chk("B 10 misses: a count of 20 (two retakes a miss) is kept, untouched (%s)" % b["two"], b["two"]["kept"] == 20 and b["two"]["changed"] is False, b)
-        chk("B 21 is held to 20, and 640 to 20 (%s / %s)" % (b["over"], b["way"]), b["over"]["kept"] == 20 and b["way"]["kept"] == 20, b)
-        chk("B and never above the answers given (12 answered: %s), nor anything on no misses (%s)" % (b["few"], b["zero"]), b["few"]["kept"] == 12 and b["zero"]["kept"] == 0, b)
+        chk("B 10 misses: a count of 10 is kept, untouched (%s)" % b["two"], b["two"]["kept"] == 10 and b["two"]["changed"] is False, b)
+        chk("B 11 is held to 10, and 640 to 10 (%s / %s)" % (b["over"], b["way"]), b["over"]["kept"] == 10 and b["way"]["kept"] == 10, b)
+        chk("B and never above the answers given (6 answered: %s), nor anything on no misses (%s)" % (b["few"], b["zero"]), b["few"]["kept"] == 6 and b["zero"]["kept"] == 0, b)
         chk("B no script error", not errs, errs)
         ctx.close()
         G["academy"].clear(); G["academy"].update(heavy_academy(avatarChar="masked", stats={"a": {"n": 3, "m": 1, "r": []}}))
@@ -105,23 +105,23 @@ with sync_playwright() as pw:
     # ---------------- (C) an honest earn above its misses is kept ----------------
     with section("C"):
         G["academy"].clear(); G["academy"].update(heavy_academy())
-        real = fc_base(retakenQuestions=120, avatarChar="masked", lifetime={"answered": 400, "correct": 270, "drillPlays": 12, "examPlays": 3, "gamePlays": 0,
+        real = fc_base(retakenQuestions=100, avatarChar="masked", lifetime={"answered": 400, "correct": 270, "drillPlays": 12, "examPlays": 3, "gamePlays": 0,
                        "perfectTests": 0, "currentStreak": 0, "longestStreak": 9, "points": 2600, "fullTests": 0},
                        unlocksShown={"chars": ["masked"], "banners": [], "fx": []})
-        real["stats"] = {"q%d" % i: {"n": 5, "m": 1, "r": []} for i in range(60)}      # 60 misses on record; 120 retakes is two a miss
+        real["stats"] = {"q%d" % i: {"n": 5, "m": 1, "r": []} for i in range(100)}      # 100 misses on record and 100 retaken: the challenge, honestly
         cd = json.loads(json.dumps(real)); cd["lastModified"] = now - 300000
         set_ifc(real)
         ctx, pg, errs = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with(fire=cd, floor=cd))
         pg.wait_for_timeout(2500); p = settle(pg)
         chk("C the server's copy is in (the rule waits for it)", p["confirmed"], p)
-        chk("C 120 retakes on %d misses (two a miss) and %d answers: kept, Smoke Diver unlocked and still worn (retakes %s)" % (p["misses"], p["answered"], p["retaken"]),
-            p["misses"] == 60 and p["retaken"] == 120 and worn_unlocked(p) and "masked" in p["shown"], p)
+        chk("C 100 retakes on %d misses and %d answers: kept, Smoke Diver unlocked and still worn (retakes %s)" % (p["misses"], p["answered"], p["retaken"]),
+            p["misses"] == 100 and p["retaken"] == 100 and worn_unlocked(p) and "masked" in p["shown"], p)
         pg.wait_for_timeout(6500); p = probe(pg)
-        chk("C written to the cloud document and its floor as 120 (%s / %s)" % (p["docRetaken"], p["floorRetaken"]), p["docRetaken"] == 120 and p["floorRetaken"] == 120, p)
+        chk("C written to the cloud document and its floor as 100 (%s / %s)" % (p["docRetaken"], p["floorRetaken"]), p["docRetaken"] == 100 and p["floorRetaken"] == 100, p)
         pg.reload(); pg.wait_for_timeout(3500); pg.evaluate("document.getElementById('splashscreen')?.remove()"); p = settle(pg)
-        chk("C after another boot", p["retaken"] == 120 and worn_unlocked(p), p)
+        chk("C after another boot", p["retaken"] == 100 and worn_unlocked(p), p)
         back = pg.evaluate("""()=>{ const hi = JSON.parse(JSON.stringify(store)); hi.lastModified = Date.now() + 5000; syncSameAccount(hi); return { retaken: store.retakenQuestions, locked: isLockedCharacter('masked') }; }""")
-        chk("C and after a cloud merge (%s)" % back, back["retaken"] == 120 and back["locked"] is False, back)
+        chk("C and after a cloud merge (%s)" % back, back["retaken"] == 100 and back["locked"] is False, back)
         chk("C no script error", not errs, errs)
         ctx.close()
 
@@ -135,8 +135,8 @@ with sync_playwright() as pw:
         set_ifc(wrong)
         ctx, pg, errs = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with(fire=cd, floor=cd))
         pg.wait_for_timeout(2500); p = settle(pg)
-        chk("D 640 retakes on %d misses and %d answers are put at what the record supports (%s <= 2 x misses), no Hardcore, Smoke Diver locked and not worn" % (p["misses"], p["answered"], p["retaken"]),
-            p["confirmed"] and p["retaken"] <= 2 * p["misses"] and p["retaken"] < 100 and p["hc"] == 0 and p["maskedLocked"] is True and p["avatar"] != p["maskedId"], p)
+        chk("D 640 retakes on %d misses and %d answers are put at what the record supports (%s <= misses), no Hardcore, Smoke Diver locked and not worn" % (p["misses"], p["answered"], p["retaken"]),
+            p["confirmed"] and p["retaken"] <= p["misses"] and p["retaken"] < 100 and p["hc"] == 0 and p["maskedLocked"] is True and p["avatar"] != p["maskedId"], p)
         chk("D no script error", not errs, errs)
         ctx.close()
     br.close()

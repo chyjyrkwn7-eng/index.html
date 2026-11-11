@@ -1504,7 +1504,10 @@ def check_b313_sheet2(br):
                  inBox: !!chip.closest('.sheet-begin-bar .sheet-summary'), overSlider: !!chip.closest('.howmany-sect') };
       chip.click(); await wait(300); out.why=(sheet.querySelector('.hundo-why')||{}).textContent||'';
       { const w=sheet.querySelector('.hundo-why'); const bg = el => { const c=getComputedStyle(el); return c.backgroundImage + ' | ' + c.backgroundColor + ' | ' + c.borderTopColor; };
-        out.reds = w ? [bg(chip), bg(w)] : null; }
+        out.reds = w ? [bg(chip), bg(w)] : null;
+        /* the opaque colour the note sits on: the first ancestor whose own background is a solid colour */
+        let base = null; for(let x = w && w.parentElement; x && !base; x = x.parentElement){ const c = getComputedStyle(x).backgroundColor; const m = c.match(/rgba?\(([^)]*)\)/); if(m){ const q = m[1].split(',').map(Number); if(q.length === 3 || q[3] === 1) base = q.slice(0, 3); } }
+        out.noteBase = base; }
       document.body.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); await wait(100);
       const inp=[...sheet.querySelectorAll('input[type=checkbox]')].find(x=>{ let e=x; for(let k=0;k<4&&e;k++){ e=e.parentElement; if(e && /Time limit/.test(e.textContent) && !/Stopwatch/.test(e.textContent)) return true; } return false; });
       inp && inp.click(); await wait(500);
@@ -1560,10 +1563,21 @@ def check_b313_sheet2(br):
     note_cols = _rgba(note_p[0] + " " + note_p[1])
     note_red = [c for c in note_cols if c[:3] == (255, 107, 91)]
     note_other = [c for c in note_cols if c[:3] != (255, 107, 91) and max(c[:3]) - min(c[:3]) > 30]
-    check("the No hundo note is the chip's red, tint and border - the same colour, at its strength or a shade more, and no other red (313, 327 round 12)",
-          chip_t and chip_b and note_b and note_red and not note_other
-          and all(c[:3] == chip_t[0][:3] and chip_t[0][3] <= c[3] <= chip_t[0][3] + .06 for c in note_red)
-          and note_b[0][:3] == chip_b[0][:3] and chip_b[0][3] <= note_b[0][3] <= chip_b[0][3] + .1, rd)
+    # MOVED AGAIN IN 384 r5 (docs/notes-archive.md; the stylesheet's ".hundo-why" and its dark/modern override): the note is now ONE SOLID
+    # colour, not the chip's translucent rgba - "a layered, translucent fill is dithered, and the arrow's dither and the body's differed by
+    # a level, a visible diamond" (measured: 47 levels). rgb(44,28,29) IS the chip's rgba(255,107,91,.12) laid over the sheet's #0F1115,
+    # flattened, so what 313 / 327 asked ("it looks like a different red") still holds and is what is held: the note's fill is opaque and
+    # equals the chip's tint composited over the colour it sits on (within 3 levels a channel), it has no other hue, and its border is the
+    # chip's red at the chip's strength or a shade more.
+    base = r.get("noteBase")
+    flat = None
+    if chip_t and base:
+        tt = chip_t[0]; flat = [round(tt[i] * tt[3] + base[i] * (1 - tt[3])) for i in range(3)]
+    note_solid = [c for c in note_cols if c[3] == 1.0]
+    check("the No hundo note is the chip's red, tint and border - the chip's tint over the sheet as one opaque colour, its border the chip's red at its strength or a shade more, and no other red (313, 327 round 12, 384 r5)",
+          bool(chip_t and chip_b and note_b and base and note_solid and not note_other)
+          and all(abs(note_solid[0][i] - flat[i]) <= 3 for i in range(3))
+          and note_b[0][:3] == chip_b[0][:3] and chip_b[0][3] <= note_b[0][3] <= chip_b[0][3] + .1, (rd, base, flat))
     m0, m1, m2 = r.get("max0") or {}, r.get("max1") or {}, r.get("max2") or {}
     check("the time limit has a Max button, lit while the limit is below the top",
           m0.get("text", "").strip().lower() == "max" and m0.get("on") is False, m0)
@@ -8934,7 +8948,9 @@ def check_b303(br):
         # ("exam mode and review mode need a new name and logo"). The sheet,
         # the list and the card all say the same thing.
         # MOVED IN 326 (b326d): Review again ("I kinda prefer briefing to be called review")
-        check(dev + ": the mode is called Review everywhere (build 326)", r.get("sheetTitle") == "Review" and r.get("listTitle") == "Review", (r.get("sheetTitle"), r.get("listTitle")))
+        # MOVED IN 384 r21: the sheet is titled "Review settings" (a settings title, not the bare mode); the list says Review
+        check(dev + ": the mode is called Review in the list, and its sheet is titled as settings (build 326, 384 r21)",
+              (r.get("sheetTitle") or "").endswith(" settings") and (r.get("sheetTitle") or "").startswith("Review") and r.get("listTitle") == "Review", (r.get("sheetTitle"), r.get("listTitle")))
         # MOVED IN 324: "if flashcards are on, it would probably just say the
         # same thing, begin review" - Begin names the mode, flashcards or not.
         check(dev + ": with Flashcards on, Begin says Begin review and opens a card (build 324, 326's name)", r.get("beginText") == "Begin review" and r.get("fcCard") is True, r.get("beginText"))
@@ -11107,6 +11123,9 @@ def check_b312_unlocks(br):
       const looks = {}; out.ult.forEach(id => { const sv = buildAvatarCharSVG(id); looks[id] = ['za', 'zb', 'zc'].filter(k => sv.querySelector('[class*="cx-fx-' + k + '"]')); });
       out.looks = looks;
       out.ultBanners = BANNERS.filter(b => b.ultimate).map(b => b.id);
+      out.top = ULTIMATE_TOP; out.retiredUlt = AVATAR_CHARACTERS.filter(c => c.ultimate && c.retired).map(c => c.id);
+      out.retiredBannerLeft = BANNERS.filter(b => out.retiredUlt.indexOf(b.id) >= 0).map(b => b.id);
+      out.lastBanner = BANNERS[BANNERS.length - 1].id;
       /* the ladder: everything else held -> Astral and Celestial, and Zenith only once those are too */
       const realLocked = isLockedCharacter, realEarned = bannerEarned, realAccent = isLockedAccent;
       const ultIds = ['astral', 'celestial', 'zenith'];
@@ -11115,9 +11134,7 @@ def check_b312_unlocks(br):
       window.isLockedAccent = () => false;
       /* build 313: Zenith also counts the hundo effects, read off the hundos */
       const hundosWas = store.lifetime.perfectTests; store.lifetime.perfectTests = Math.max(hundosWas || 0, 500);
-      out.astral = !isLockedCharacter('astral'); out.celestial = !isLockedCharacter('celestial');
-      out.astralBanner = bannerEarned('astral'); out.celestialBanner = bannerEarned('celestial');
-      out.zenith = !isLockedCharacter('zenith');
+      out.topChar = !isLockedCharacter(ULTIMATE_TOP); out.topBanner = bannerEarned(ULTIMATE_TOP);
       const up = ultimateProgress(); out.up = up;
       store.lifetime.perfectTests = hundosWas;
       window.isLockedCharacter = realLocked; window.bannerEarned = realEarned; window.isLockedAccent = realAccent;
@@ -11141,10 +11158,16 @@ def check_b312_unlocks(br):
     check("three ultimates, hardest last: Astral, Celestial, Zenith", r.get("ult") == ["astral", "celestial", "zenith"], r.get("ult"))
     check("each ultimate wears its own look (Astral the plasma, Celestial the stars, Zenith the obsidian)",
           r.get("looks") == {"astral": ["zc"], "celestial": ["zb"], "zenith": ["za"]}, r.get("looks"))
-    check("each ultimate has its banner, last in the list", r.get("ultBanners") == ["astral", "celestial", "zenith"], r.get("ultBanners"))
-    check("every other character earns Astral and every banner earns Celestial, character and banner alike",
-          r.get("astral") and r.get("celestial") and r.get("astralBanner") and r.get("celestialBanner"), r)
-    check("Zenith asks for everything, the other two ultimates included", r.get("zenith") is True and r["up"]["have"] == r["up"]["need"], r.get("up"))
+    # STALE SINCE 384 r5 (docs/notes-archive.md, "ONE ULTIMATE PER CLASS"): `ULTIMATE_TOP` is Astral in the academy and Zenith in Fire Code;
+    # the other two are `retired` as characters and spliced out of BANNERS, and the survivor's challenge is "everything" (Zenith's, so
+    # Astral no longer stops at "every other character"). Held now, whichever class the page is: the class's one ultimate is the only
+    # ultimate banner, last in the list; the retired ones have no banner left; and a character and a banner of the survivor are both
+    # earned once everything else is.
+    check("the class's one ultimate has its banner, last in the list, and the retired ultimates have none",
+          r.get("ultBanners") == [r.get("top")] and r.get("lastBanner") == r.get("top") and r.get("retiredBannerLeft") == [] and len(r.get("retiredUlt") or []) == 2, r)
+    check("with everything else held, the class's ultimate is earned, character and banner alike",
+          r.get("topChar") is True and r.get("topBanner") is True, r)
+    check("the class's ultimate asks for everything else (384: Astral took over Zenith's challenge)", r.get("topChar") is True and r["up"]["have"] == r["up"]["need"] and r["up"]["need"] > 0, r.get("up"))
     # First Light was "10 tests before 8 in the morning" ("I wouldn't even
     # want to do that challenge"), then a hundo in 10 units. Madison's own
     # idea replaced both: "get a hundo between 8pm and 12pm ... Or 3 hundos".
@@ -11520,10 +11543,18 @@ def check_b313_alive(br):
           anims.filter(a => /^cx-(sa5|sh4|ronin2|zc2|zb2|za2|dt4)-/.test(a.animationName)).forEach(a => { const t = a.effect.getTiming(); const P = Number(t.duration) * (String(t.direction).indexOf('alternate') >= 0 ? 2 : 1);
             const k = 6000 / P; if(P <= 12000 && Math.abs(k - Math.round(k)) > .01) out.odd.push(c.id + ':' + a.animationName + ':' + P); });
       }
+      out.live = AVATAR_CHARACTERS.filter(c => c.ultimate && !c.retired).map(c => c.id);
       host.remove(); return out; }""")
     n = r["n"]
+    live = r["live"]
     before = {"astronaut": 24, "poseidon": 13, "ronin": 8, "astral": 15, "celestial": 21, "zenith": 26}
     for cid, b in before.items():
+        # STALE SINCE 384 r5 ("ONE ULTIMATE PER CLASS", docs/notes-archive.md): the page keeps one ultimate (ULTIMATE_TOP: Astral in the
+        # academy, Zenith in Fire Code) and marks the other two `retired`, so the loop above no longer draws them here and nobody can
+        # earn them. Their counts are not asserted on a page that retired them; the live one is, at the same bar as before.
+        if cid in ("astral", "celestial", "zenith") and cid not in live:
+            superseded("%s moves at least %d parts (was %d)" % (cid, b + (8 if cid != "celestial" else 4), b), "384 r5: retired in this class, one ultimate per class")
+            continue
         need = b + (8 if cid in ("astral", "celestial", "zenith") else 4)
         # Build 314 redrew Celestial and calmed it on request ("a smidge
         # toned down ... could look better"): it moves 27 parts, still more
@@ -11532,8 +11563,8 @@ def check_b313_alive(br):
             need = 25
         check("%s moves at least %d parts (was %d)" % (cid, need, b), n.get(cid, 0) >= need, n.get(cid))
     others = {k: v for k, v in n.items() if k not in ("astral", "celestial", "zenith", "voidwalker", "umbra", "singularity", "astronaut")}
-    check("each ultimate moves more parts than every challenge, rank and starter character but Orion",
-          all(n.get(u, 0) > max(others.values()) for u in ("astral", "celestial", "zenith")), (max(others.items(), key=lambda kv: kv[1]), {u: n.get(u) for u in ("astral", "celestial", "zenith")}))
+    check("each ultimate the class keeps moves more parts than every challenge, rank and starter character but Orion",
+          len(live) >= 1 and all(n.get(u, 0) > max(others.values()) for u in live), (max(others.items(), key=lambda kv: kv[1]), {u: n.get(u) for u in live}))
     check("every loop added in 313 divides the 6s flip-book", r["odd"] == [], r["odd"][:6])
     ctx.close()
 
@@ -11731,9 +11762,18 @@ def check_b314_chars(br):
           out.held = held.length; out.locked = opts.filter(o => o.classList.contains('locked') && !o.classList.contains('is-silhouette')).length;
           out.heldFlip = held.filter(o => o.classList.contains('char-flip') || o.classList.contains('char-live')).length;
           out.lockedMoving = opts.filter(o => o.classList.contains('locked') && !o.classList.contains('is-silhouette') && (o.classList.contains('char-flip') || o.classList.contains('char-live'))).length;
-          for(let t = 0; t < 600; t++){ if(held.filter(near).every(o => o.querySelector('.char-flip-play img'))) break; await wait(250); }
-          const playing = o => { const img = o.querySelector('.char-flip-play img'); return !!img && img.getAnimations().some(a => a.playState === 'running'); };
+          /* STALE FOR TILES OVER CHAR_FLIP_MAX_CSS (docs/notes-archive.md, "flip-books stop at 80 CSS px for memory"; builds 308-317): a tile whose
+             drawing is wider than 80 CSS px is deliberately NOT given a recorded flip-book - charFlipAttach answers false and the tile plays
+             its LIVE drawing (char-live). An iPad's picker tile is 83px, so every held character there is live. "Playing" is a running
+             flip-book OR a live drawing with a running animation; a held tile that is neither is still, which is what this guards. */
+          const flipOf = o => o.querySelector('.char-flip-play img');
+          for(let t = 0; t < 600; t++){ if(held.filter(near).every(o => flipOf(o) || o.classList.contains('char-live'))) break; await wait(250); }
+          await wait(500);
+          const playing = o => { const img = flipOf(o); if(img) return img.getAnimations().some(a => a.playState === 'running');
+            const sv = o.querySelector('svg.avatarchar-svg'); return o.classList.contains('char-live') && !!sv && sv.getAnimations({ subtree: true }).some(a => a.playState === 'running'); };
           out.nearHeld = held.filter(near).length; out.nearPlaying = held.filter(near).filter(playing).length;
+          out.nearFlip = held.filter(near).filter(o => !!flipOf(o)).length; out.nearLive = held.filter(near).filter(o => !flipOf(o) && o.classList.contains('char-live')).length;
+          out.maxCss = CHAR_FLIP_MAX_CSS; out.tileW = Math.round(Math.max(0, ...held.filter(near).map(o => (o.querySelector('svg.avatarchar-svg') || o).getBoundingClientRect().width)));
           /* a silhouette scrolled into view plays too */
           /* the SECRET's (build 325: challenge and ultimate characters are
              cut-outs too, each in its category's own colour - see check-b325-d;
@@ -11748,7 +11788,10 @@ def check_b314_chars(br):
           out.silLocked = sil.classList.contains('locked');
           return out; }""")
         check("%s: every held character on Customize is set to play" % label, r["held"] > 0 and r["heldFlip"] == r["held"], (r["heldFlip"], r["held"]))
-        check("%s: every held character on screen is playing its loop" % label, r["nearHeld"] > 0 and r["nearPlaying"] == r["nearHeld"], (r["nearPlaying"], r["nearHeld"]))
+        check("%s: every held character on screen is playing - a flip-book loop, or the live drawing where the tile is over the flip-book's size cap (384: live over 80 CSS px)" % label,
+              r["nearHeld"] > 0 and r["nearPlaying"] == r["nearHeld"], (r["nearPlaying"], r["nearHeld"], "flip", r["nearFlip"], "live", r["nearLive"], "tile", r["tileW"], "cap", r["maxCss"]))
+        check("%s: a tile is a flip-book up to the cap and a live drawing over it - never a held character with neither" % label,
+              r["nearFlip"] + r["nearLive"] == r["nearHeld"] and (r["nearLive"] == 0 or r["tileW"] > r["maxCss"] * .85), (r["nearFlip"], r["nearLive"], r["tileW"], r["maxCss"]))
         check("%s: a locked (non-secret) character stays still" % label, r["locked"] > 0 and r["lockedMoving"] == 0, (r["lockedMoving"], r["locked"]))
         check("%s: a locked secret is no cut-out, greyed and still like any locked character (build 382)" % label, r["silLocked"] and not r["silCut"] and r["silPlaying"] is False, r)
         ctx.close()
@@ -13059,7 +13102,8 @@ def check_b313_fx(br):
             check("underwater: the screen floods - the water is over the whole box", r.get("flooded"), r)
         if fx == "blackhole":
             pl, bk = r.get("pulled") or {}, r.get("back") or {}
-            sc = [float(v) for v in (pl.get("scale") or "1").split()]
+            # a card that is not scaled has the computed value "none" (CSS `scale`), not "1": that used to end the whole run here
+            sc = [float(v) for v in (pl.get("scale") or "1").split() if v != "none"] or [1.0]
             ty = (pl.get("translate") or "0px 0px").replace("px", "").split()
             check("blackhole: the hole opens at the box", r.get("atBox") is not None and r["atBox"] <= 4, r.get("atBox"))
             # BUILD 320: the XP card is BELOW the grade now, so towards the box
@@ -27319,8 +27363,11 @@ def check_b324m_modes(br):
                 "review": ("Review", "Begin review"), "flash": ("Review", "Begin review")}  # 326: Review again
         for k, (name, begin) in want.items():
             s = sh.get(k) or {}
-            check("%s %s sheet: titled %s, the box and the chip say %s, Begin reads %r" % (label, k, name, name, begin),
-                  s.get("title") == name and s.get("box") == name and s.get("chip") == name and s.get("begin") == begin,
+            # MOVED IN 384 r21: the sheet's title is the generic settings title ("Test settings", "Review settings"), not the mode
+            # a third time - asserted by shape (a settings title that is not the mode's name); the box, the chip and Begin say the mode
+            check("%s %s sheet: titled as settings (not %s), the box and the chip say %s, Begin reads %r" % (label, k, name, name, begin),
+                  (s.get("title") or "").endswith(" settings") and s.get("title") != name and s.get("title") != s.get("box")
+                  and s.get("box") == name and s.get("chip") == name and s.get("begin") == begin,
                   {x: s.get(x) for x in ("title", "box", "chip", "begin")})
         ex = sh.get("exam") or {}
         check("%s no Instant feedback anywhere in the Qualifier's sheet" % label,
