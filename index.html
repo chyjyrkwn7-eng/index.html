@@ -112860,8 +112860,14 @@ function fillModeGroup(panel){
     const cap = (cols === 1 ? 17 : wide ? 30 : rows === 1 ? 40 : 28) * 16;   /* a tile never gets taller than this (glass px) - a desktop's tile is not a poster */
     let tile = Math.floor((room - (rows - 1) * gap) / rows);
     tile = Math.min(tile, (cap + (cols === 1 && n <= 2 ? 40 : 0)) * z);
-    /* a phone's tiles, three or four to a screen, may not have room for the tall build: the medallion goes beside the name */
-    const kind = cols === 1 && tile < 176 * z ? "snug" : "stack";
+    /* (384.25) A PHONE'S TWO OR THREE TILES LOOK LIKE ITS FOUR. Madison, over the academy's four (which he likes), Fire Code's three and the Virtual
+       Room's two on his phone: "I'm a fan of how the 4 boxes look in academy, however I think they may be a little too big in the virtual room ones
+       and the fire code with just 3, could we improve?" On one column every group is the compact build (the medallion beside the name, the line
+       across the foot) and a tile is never taller than a little over what four would get (1.2x): the group sits in the middle of the room, as the
+       grid's align-content:center already does. A tablet or computer (two columns, a row) is unchanged. */
+    if(cols === 1 && n < 4){ const ref4 = Math.floor((room - 3 * gap) / 4); tile = Math.min(tile, Math.max(Math.round(ref4 * 1.2), 150 * z)); }
+    /* a phone's tiles, up to four to a screen, are the compact build: the medallion goes beside the name */
+    const kind = cols === 1 && (n <= 4 || tile < 176 * z) ? "snug" : "stack";
     const set = (k, v) => cards.style.setProperty(k, v);
     /* tiles side by side: every line is as tall as the longest in the group, so the names sit on one line along the foot of a row */
     set("--ms-dh", "0px");
@@ -120327,7 +120333,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.24";
+const APP_BUILD = "2026-11-10-384.25";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
