@@ -38754,3 +38754,59 @@ GATE: tools/check-b384-highlights.py (+ tools/b384-highlights-page.js; PDFJS_DIR
 - BEFORE (origin/main, 384.38): 156 of 410 citations fail (155 on the whole page, 2 in the card; 1 in both): 166 words cut by a band's edge, 143 bands ending late (the cut word missing from them), 149 cited words left outside a band, 10 bands starting inside their first word. AFTER: 0 of 410. D103.6 (chAppD-012) fails on main (right 8.8pt of "apart." outside the band) and passes. 28 citations have a line whose words could not be told from its print (one ink group per word could not be matched): their band edges are still checked, only the cited-word comparison is skipped there.
 - Also run: check-js; check-b384-ifc542, codelinks, codeslide, viewerdesk (county legs): pass. check-b384-ifccrop, cropfit, check-b383-ifcbook, codeopen SKIP (they need the owner's IFC PDF). check-behaviour has no section on the code box (grep finds neither "ifc" nor "county" in it). check-b384-hlall's node leg cannot start in this sandbox (node 22 has no DOMMatrix for pdf.js's legacy build) - not run; its paint leg is the older version of this gate's whole-page leg.
 WHAT ONLY A PHONE CAN CONFIRM: that iOS Safari's canvas draws the booklet's embedded font through fillText (the same path pdf.js takes on every other browser); if it did not, the glyph list is empty and the old reading (and old snap) is what shows, which is today's behaviour. The first open of a county code box now draws the page once more to read it (~30ms in Chromium at 1x, a 1px canvas): worth a glance for a stall on the oldest phone.
+
+## 384.45 - five questions moved between chapters (branch claude/b384-moveq, NOT on main, waiting for Madison)
+The owner (Madison, he/him) decided two things. (1) ch12-012 ("In Harris County, a Group I-1 assisted living fire safety and evacuation plan
+must outline how backup power is provided within _____ of a power loss.", C, 3 hours) cites county amendment 403.7.1.1, Fire safety and
+evacuation plan, which is Chapter 4's (ch4-001 is from the same section): "yes, move it" to Chapter 4. (2) "we ARENT gonna study chapter 9 and
+get references to chapter 2": a chapter's questions must cite that chapter's own. Four questions that ask a fact from a definition (they cite
+IFC 2021 202, Definitions) go to Chapter 2, appended after its 107: ch55-702 (Cryogenic Fluids, was position 12), ch62-702 and ch62-703
+(Organic Peroxides, 8 and 9), ch64-001 (Pyrophoric Materials, 1). He saw the pictures first and then said go. NOTHING ELSE moves: the other
+~87 chapter/citation mismatches (the county permit questions) are NOT decided and stay where they are.
+Wording, options, answer, explanation, citation, highlight and every id are the bank's, unchanged. Only `unit` changed.
+Sizes: Chapter 2 107 -> 111, Chapter 4 39 -> 40, Chapter 12 44 -> 43, Chapter 55 17 -> 16, Chapter 62 12 -> 10, Chapter 64 11 -> 10; 1,812 unchanged.
+- HOW: tools/gen-ifc-bank.py has `UNIT_MOVES` (applied by every regeneration, so the hand-off's file, which still has them where the study
+  guide put them, cannot undo it) and `--from-bank-js ifc/bank.js` (re-applies the table to the shipped bank; a no-op for a question already
+  moved). A moved question is placed after the target chapter's last question in the array (several into one chapter append in the table's
+  order); unit questionCounts are recomputed. The hand-off's json is not in the repo, so ifc/bank.js was made with --from-bank-js; a round
+  trip of main's file with no move is byte-identical. Adding a move later = one entry in UNIT_MOVES, its old position in IFC_SRC_GAPS, its old
+  key in IFC_MOVED_KEYS, one line in check-b384-moveq's MOVES.
+- IDENTITY (key = chapter | position | hash(wording + choices)): ifcQuestionsFrom numbers a chapter's questions in the bank's array order and
+  skips IFC_SRC_GAPS. New chapter: last in order -> Chapter 4 position 41 (19 is the 5.4.2 gap), Chapter 2 positions 108-111; nobody else's moves.
+  Old chapter: the position stays taken - IFC_SRC_GAPS is now {"4":[19],"12":[1,9,10],"55":[12],"62":[8,9],"64":[1]} - so every question after it keeps
+  its own. Measured in the app, main's app+bank against this build's: 1,807 of 1,807 other questions' keys identical, chapters and positions
+  identical, all 1,812 keys unique; the five moved keys are the only ones that change (same wording hash, new chapter and position), listed in
+  IFC_MOVED_KEYS (old key + id), e.g. `Chapter 12: Energy Systems|1|yahkhw` -> `Chapter 4: Emergency Planning and Preparedness|41|yahkhw`.
+- THE OLD KEYS' HISTORY: a key cannot follow a chapter change (keyText / keyChoices pin wording only; no existing pin does it, and no identity
+  override was added to core code). Left alone, each moved question would read as never answered in its new chapter and the Stats ring (which only
+  ever fills: n > m once) would lose it. So one boot-time block beside IFC_RETIRED_KEYS (Fire Code only) COPIES the old `store.stats` entry onto the
+  new key when the new key has none, and CARRIES a star (new key with its stamp unless unstarred there since; old key gets unflagAll's tombstone,
+  as the 5.4.2 removals did). The old entries are never removed or lowered (a merge would only bring them back, and nothing reads them: every count
+  walks this bank's KEYS). Copy, not move: the same-account merge takes the larger of each count, so a second device that still holds only the old key
+  cannot double anything; the add-two-accounts merge (mergeLeavingAccount) sums per key, which is right for two accounts. Without the copy,
+  the fixture account's answered-right count over the six chapters drops 78 -> 73 (the mutation run of check-b384-moveq-keep). Who is affected
+  cannot be read from here (per-person data is private): everyone who ever answered one of the five. Anyone with an old-build saved test holding one
+  gets the existing "a question is gone" notice for that saved test.
+- WHAT A MOVE DOES NOT TOUCH (read from the code, then proved by check-b384-moveq-keep): a hundo, a chapter star ("Advanced"), a badge and a rank are
+  per chapter NAME - `store.unitPerfects[topic]`, `unitLevel`, `unitDrillStarEarned` (= unitPerfects >= badgeThresholdFor, which is ONE hundo in Fire
+  Code, whatever the chapter's size), `badgeCountOf`, `hundosOf` (= lifetime.perfectTests). None is recomputed from a chapter's question list or
+  size; the chapter names did not change. Points, level (levelProgress), the board row (buildLeaderboardRow), unitBestPct / unitRuns / testStats
+  (keyed by chapter name) are the same. Nothing re-fires: the badge diff in summarize() compares unitPerfects before and after a run, so no badge
+  cutscene, unlock pop-up or rank-up is owed (pendingBadgeUnlocks stays empty; pendingHomeUnlocks is empty). The `__floor` backup is a second copy of
+  the whole account merged with mergeSameAccount (maxima), so it can only bring the old entries back, harmlessly.
+- HOW A PERSON WITH A HUNDO BEFORE THE MOVE IS TREATED: the hundo (the counter), the badge, the star and the rank are KEPT, in every one of Chapters 2, 4,
+  12, 55, 62, 64 - nothing is lowered or re-derived. The NEXT run is judged by the chapter as it is now: a full-chapter run (isFullUnitRun: every question of the
+  chapter) must cover Chapter 2's 111, Chapter 4's 40, Chapter 12's 43, 55's 16, 62's 10, 64's 10, so the moved questions are in it (the new chapters' runs
+  gain them; the old chapters' runs lose them); a run of the old size (e.g. 39 in Chapter 4) is no longer "the chapter", it is a partial run and earns no
+  hundo. A 100% full run adds one more hundo as before. Fire Code's biggest chapter is still Chapter 9 (145), so the "biggest unit" challenge is unchanged.
+- Virtual Room: its seeded order is by QUESTIONS index, which shifts for questions after the new end of Chapters 2 and 4 - the same as any bank update;
+  the forced update (version.json force) puts every device on this build.
+- GATES: tools/check-b384-moveq.py (new; FAILS on main with --against + OLD_BANK, (1)-(5) red): the five byte-identical but `unit`, 1,807 of 1,807 keys
+  unchanged, each last in its new chapter and the old chapter's gap, chapter counts 111/40/43/16/10/10 on the bank, unitQuestionCount, a full run and the
+  chapter cards, stars carried, no page errors. tools/check-b384-moveq-keep.py (new; the owner's "ensure they didn't lose their badge"): a Fire Code
+  account holding the badge in all six chapters (a hundo count beyond it in one) with partly-answered chapters and the moved questions answered and
+  starred is booted on main, its saved state is booted on this build: (a) badges held and drawn earned in the case, (b) every stored field but
+  stats/flagged/unflagged/lastModified byte-identical, hundos, level, rank, the published row the same, (c) nothing owed or re-fired, (d) answered
+  and right/wrong totals conserved, the Stats ring the same, old tallies left in place, (e) two devices (old bank, new bank) merged either way lower nothing.
+  Fails on main (the move is not there) and, with the copy block disabled, on (d). check-b384-ifc542 updated on purpose (Chapter 4 40, Chapter 12 43,
+  exactly the five kept-question keys moved). The other gates: see the build's report.
