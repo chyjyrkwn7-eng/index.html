@@ -15122,15 +15122,18 @@ def check_b317_cutend(br):
         gone = first(rows, lambda st: st is None, tapped or 0)
         fade = [st["stage"] for i, st in rows if tapped and began and st and began <= i < (gone or 10 ** 6)]
         mids = [v for v in fade if .15 < v < .85]
-        check("%s: once the title is up, a tap ends it at once" % label,
-              bool(tapped) and began is not None and began - tapped <= 2, (tapped, began))
+        # 384.37 REVERSED: "you shouldn't be able to skip those rewards". Written as 317e's "a tap ends it at once"; a rank-up is a
+        # reward and plays through now ("Skip celebrations and pop-ups" is the way not to see it). The tap is the scene's and ends
+        # nothing: no ending begins within a second of it (the scene's own ending is seconds later).
+        check("%s: once the title is up, a tap does NOT end it (384.37)" % label,
+              bool(tapped) and (began is None or began - tapped > 30), (tapped, began))
         # the planet in the scene is a real hero: a tap on it must be the
         # scene's, never the sphere's own "....." bubble over the scene
         check("%s: no tap in the scene opens a Home bubble over it (the planet's own tap)" % label,
               not any(st and st.get("info") for i, st in rows), [i for i, st in rows if st and st.get("info")][:2])
-        check("%s: and smoothly - the planet fades over frames, no cut, and it hands over within ~2s" % label,
-              began is not None and gone is not None and len(mids) >= 5 and fade == sorted(fade, reverse=True) and (gone - tapped) <= 66,
-              (len(mids), gone and tapped and gone - tapped))
+        check("%s: and it ends smoothly by itself - the planet fades over frames, no cut, and it hands over within ~2s" % label,
+              began is not None and gone is not None and len(mids) >= 5 and fade == sorted(fade, reverse=True) and (gone - began) <= 66,
+              (len(mids), gone and began and gone - began))
 
     # 2. one ending: the words are up until everything goes, and go with it
     rows, settle_at, tapped, early, ex = scene("vanguard", "veteran")
@@ -15841,7 +15844,7 @@ def check_b318_celebrations(br):
         if(av && av.dataset.reacted && reactedAt === null) reactedAt = Date.now();
         if(av && av.classList.contains('char-special')){ specialAt = Date.now(); break; }
         /* a pop-up or the case: tap it on, the way somebody would */
-        document.querySelector('.rs-spot, .bc-scene, .scene-bridge')?.click();
+        { const sc = document.querySelector('.bc-scene'); if(sc && sc.__nova) sc.__nova.skip(); else document.querySelector('.rs-spot, .bc-scene, .scene-bridge')?.click(); }
         await wait(150);
       }
       return { reacted: !!(av && av.classList.contains('rx-ninja') && av.classList.contains('char-react-perfect')),
@@ -18299,7 +18302,7 @@ def _b321e_stepped(br, w, h, dev):
         if up["settle"]:
             settle_at = settle_at if settle_at is not None else st.t
             if st.t - settle_at > 1.2:
-                pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); if(o) o.click(); }")
+                pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); if(o) { if(o.__nova) o.__nova.skip(); else o.click(); } }")
                 settle_at = None
     ctx.close()
     return pre, frames
