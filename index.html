@@ -58830,6 +58830,65 @@ if(window.NOVA_CLASS === "ifc"){
   CHARACTER_FEATS.days30 = { label: "Study on 14 different days",
     done: () => studyDaysTotal() >= 14, have: () => Math.min(studyDaysTotal(), 14), need: 14 };
 }
+/* (384.40) THE SMOKE DIVER, THE THIRD TIME: IT COUNTED MISSES, NOT RETAKES. Madison, Fire Code: "It's still saying I unlocked this. There's
+   no way I did. I've barely answered 200 questions in total." His account (read, not guessed): 216 different questions answered,
+   384 answers, 128 different questions missed - and retakenQuestions 172, EXACTLY the 172 misses on record, in the document and in
+   its floor. In a Drill a wrong pick is followed by picking again until it is right, and the app recorded ONE miss and ticked ONE
+   retake for that very moment (choose(): `attempts[qi] > 1` -> retakenQuestions + 1, and recordResult(qi, true) -> m + 1). So in Fire
+   Code the counter was the number of misses, by construction, and "Retake 100 missed questions" was met by missing 100 answers: no
+   question had to come back. That is also why the two clamps before this one never bound: ifcChallengeClamp held the counter to
+   min(misses on record, answers) - the same number the counter already was. 67 of his 128 missed questions were never shown again;
+   at most 61 were answered a second time at all.
+   The challenge now means what it says, in Fire Code: a DIFFERENT question counts once, when it is answered AFTER a miss of it is on
+   record (a Drill in a later sitting, a Retake run, a test's misses retaken). Two sources, both kept in the account itself:
+   store.retakenKeys (the question's own key, written at the moment it is answered while its miss is already in stats; a union on every
+   merge) and the record alone: a question with two or more misses in stats (m >= 2) was answered again after its first miss, so it counts
+   with nothing stored. The count is worked out when it is READ - from the keys, kept only if the key is a question of this bank and
+   its stats still hold a miss - so nothing is ever "granted": a stale counter, an old copy, a floor document or another device cannot
+   hold the Smoke Diver, because nothing they carry is read. (The old retakenQuestions still ticks and still merges, unread in Fire
+   Code. The academy keeps it as its rule - an account there earned the Masked One under it - see retake100 above.) */
+var RETAKE_NEED = 100, RETAKEN_KEYS_CAP = 300;   /* var: read at boot by applyLoadedData, never in a temporal dead zone */
+var retakeKeyCache = null;
+function retakeKeySet(){
+  try{
+    if(!retakeKeyCache || retakeKeyCache.n !== KEYS.length) retakeKeyCache = { n: KEYS.length, s: new Set(KEYS) };
+    return retakeKeyCache.s;
+  }catch(e){ return null; }   /* the bank is not built yet (boot): the stats alone are read */
+}
+function retakeDistinctCount(d){
+  d = d || store;
+  const stats = (d && d.stats && typeof d.stats === "object") ? d.stats : {};
+  const real = retakeKeySet();
+  const seen = new Set();
+  const take = k => {
+    if(typeof k !== "string" || seen.has(k)) return;
+    const e = stats[k];
+    if(!e || !(Number(e.m) >= 1)) return;          /* a retake is of a question whose miss is on record */
+    if(real && !real.has(k)) return;               /* ...and of a question this class's bank still has */
+    seen.add(k);
+  };
+  (Array.isArray(d.retakenKeys) ? d.retakenKeys : []).forEach(take);
+  Object.keys(stats).forEach(k => { const e = stats[k]; if(e && Number(e.m) >= 2) take(k); });
+  return seen.size;
+}
+if(window.NOVA_CLASS === "ifc"){
+  CHARACTER_FEATS.retake100 = { label: "Retake 100 missed questions",
+    done: () => retakeDistinctCount() >= RETAKE_NEED,
+    have: () => Math.min(retakeDistinctCount(), RETAKE_NEED), need: RETAKE_NEED,
+    note: "Answer a question you missed in an earlier Drill or test again, in a Drill or through Retake missed questions. Each question counts once." };
+}
+/* the question's key goes on the account the moment it is answered right with a miss of it already on record (Fire Code; see above).
+   Called from choose() BEFORE recordResult, so a miss made in this very sitting is not yet on record and does not count. */
+function noteRetakenKey(qi){
+  if(window.NOVA_CLASS !== "ifc" || runLabel === "Daily question") return;
+  try{ if(vroomForeign()) return; }catch(e){}   /* recordResult() takes nothing of another class's question either */
+  const k = KEYS[qi];
+  if(typeof k !== "string") return;
+  const e = store.stats && store.stats[k];
+  if(!e || !(Number(e.m) >= 1)) return;
+  if(!Array.isArray(store.retakenKeys)) store.retakenKeys = [];
+  if(store.retakenKeys.indexOf(k) < 0){ store.retakenKeys.push(k); if(store.retakenKeys.length > RETAKEN_KEYS_CAP) store.retakenKeys = store.retakenKeys.slice(-RETAKEN_KEYS_CAP); }
+}
 function ifcRunBest(){ return Math.max(Number(store.bestTestStreak) || 0, Number(store.lifetime && store.lifetime.longestStreak) || 0, Number(store.lifetime && store.lifetime.currentStreak) || 0); }
 /* ---- THE ULTIMATE UNLOCK (build 304) ----
    "The unlock requirement will be, unlock all characters and banners and
@@ -59339,22 +59398,42 @@ function ifcChallengeClamp(d){
   const cap = Math.max(0, Math.min(ifcMissesOnRecord(d), answered));   /* (384.24) back to the misses on record: "Retake 100 MISSED questions" (384.20 had 2x) */
   if((Number(d.retakenQuestions) || 0) > cap){ d.retakenQuestions = cap; changed = true; }
   if(d.unitGameBeat && typeof d.unitGameBeat === "object" && Object.keys(d.unitGameBeat).length){ d.unitGameBeat = {}; changed = true; }
+  /* (384.40) THE CLAMP ABOVE NEVER BOUND ON A DRILL-ONLY ACCOUNT (the counter IS the misses there, so min(misses, answers) is the counter) and it
+     is no longer what decides the Smoke Diver: that is the count of DIFFERENT retaken questions, worked out from the document's own stats and
+     keys (retakeDistinctCount). What is left to do on a document - the copy about to be written, the account's and its floor's - is to take
+     the character's traces off it when that count does not support it: not queued to be announced, not marked announced or seen (a real earn
+     is then announced as it should be), not the worn character (the class's first starter; the rest of the look is not touched). */
+  try{
+    if(retakeDistinctCount(d) < RETAKE_NEED){
+      AVATAR_CHARACTERS.filter(c => c.feat === "retake100").forEach(c => {
+        if(Array.isArray(d.pendingCharUnlocks) && d.pendingCharUnlocks.indexOf(c.id) >= 0){ d.pendingCharUnlocks = d.pendingCharUnlocks.filter(x => x !== c.id); changed = true; }
+        [d.unlocksShown, d.seenUnlocks].forEach(u => {
+          if(u && Array.isArray(u.chars) && u.chars.indexOf(c.id) >= 0){ u.chars = u.chars.filter(x => x !== c.id); changed = true; }
+        });
+        if(d.avatarChar === c.id){ d.avatarChar = classDefaultCharacter(); changed = true; }
+      });
+    }
+  }catch(e){}
   return changed;
 }
+/* (384.40) AFTER EVERY MERGE (see the places it is called from): a challenge or rank character this class holds LOCKED - however it came to be
+   queued, marked or worn - is not queued, not marked announced or seen, and not worn (quietly, to the class's first starter). The lock itself
+   is never stored: every character here reads its own counters when asked (isLockedCharacter), so nothing a document, its floor or another
+   device carries can keep one unlocked. */
 function ifcChallengesRepair384(){
   if(window.NOVA_CLASS !== "ifc" || !store) return false;
+  const wore = store.avatarChar;
   let changed = ifcChallengeClamp(store);
-  /* what the count unlocked, where it no longer holds: an unlock still queued, the marks that it was announced or seen (so the real
-     earn is announced as it should be), and the character itself if it is being worn - quietly, to the class's first starter */
-  AVATAR_CHARACTERS.filter(c => c.feat === "retake100").forEach(c => {
+  AVATAR_CHARACTERS.filter(c => (c.feat || c.unlock) && !c.retired && !c.legacy).forEach(c => {
     let locked = false; try{ locked = isLockedCharacter(c.id); }catch(e){ return; }
     if(!locked) return;
     if(Array.isArray(store.pendingCharUnlocks) && store.pendingCharUnlocks.indexOf(c.id) >= 0){ store.pendingCharUnlocks = store.pendingCharUnlocks.filter(x => x !== c.id); changed = true; }
     [store.unlocksShown, store.seenUnlocks].forEach(u => {
       if(u && Array.isArray(u.chars) && u.chars.indexOf(c.id) >= 0){ u.chars = u.chars.filter(x => x !== c.id); changed = true; }
     });
-    if(store.avatarChar === c.id){ store.avatarChar = classDefaultCharacter(); changed = true; try{ updateHeaderTitle(); }catch(e){} }
+    if(store.avatarChar === c.id){ store.avatarChar = classDefaultCharacter(); changed = true; }
   });
+  if(store.avatarChar !== wore){ try{ updateHeaderTitle(); }catch(e){} }
   if(changed){ try{ saveStore(); }catch(e){} }
   return changed;
 }
@@ -68113,7 +68192,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -68334,6 +68413,9 @@ function applyLoadedData(got){
      least that many podium finishes. */
   store.weeklyTop3 = Math.max(typeof got.weeklyTop3 === "number" ? got.weeklyTop3 : 0, store.weeklyWins);
   store.retakenQuestions = typeof got.retakenQuestions === "number" ? got.retakenQuestions : 0;
+  /* (384.40) Fire Code's retakes: the keys of the different questions answered after a miss (see retakeDistinctCount). Defaults to none: what an
+     older copy never recorded is not guessed from its counter. */
+  store.retakenKeys = Array.isArray(got.retakenKeys) ? got.retakenKeys.filter(k => typeof k === "string").slice(-RETAKEN_KEYS_CAP) : [];
   store.hundoDay = got.hundoDay && typeof got.hundoDay === "object" && typeof got.hundoDay.day === "string" && Array.isArray(got.hundoDay.units) ? got.hundoDay : null;
   store.hundoDayBest = typeof got.hundoDayBest === "number" ? got.hundoDayBest : 0;
   /* Null until the Rank tab first sees it, which sets it to the rank
@@ -70900,7 +70982,7 @@ function wipeLocalProgressAndSettings(){
   store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
-  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
+  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
   store.badgeCleanedAt = {};
@@ -72371,7 +72453,7 @@ function mergeLeavingAccount(src, note){
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
   ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
-  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks"].forEach(k => {
+  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "retakenKeys"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
@@ -72811,6 +72893,7 @@ function mergeSameAccount(dst, src){
    "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
+  unionArr("retakenKeys", RETAKEN_KEYS_CAP);   /* (384.40) a union: a question retaken on either device is retaken */
   /* The backfills ran once per ACCOUNT (build 327): a device whose copy
      says not-yet would scan the rooms again and count them twice. */
   ["vrRetroDone", "vrTop3RetroDone"].forEach(k => { if(src[k] === true && dst[k] !== true){ dst[k] = true; res.gained = true; } });
@@ -119490,6 +119573,7 @@ function choose(slot){
     if(runLabel !== "Daily question" && (isMissedRetake || attempts[qi] > 1)){
       store.retakenQuestions = (store.retakenQuestions || 0) + 1;
     }
+    try{ noteRetakenKey(qi); }catch(e){}   /* (384.40) Fire Code's retake: a different question, answered after a miss of it is on record */
     recordResult(qi, attempts[qi] > 1 || hinted);
     const streakTier = runStreakLive(!(attempts[qi] > 1 || hinted));
     /* the streak's own sound at the banner's tiers (10, 25, 50 ...) is
@@ -121196,7 +121280,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.39";
+const APP_BUILD = "2026-11-11-384.41";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
