@@ -22,7 +22,7 @@ Read off the page, in Fire Code, for the app and bank on origin/main (BASE) and 
 import os, sys, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 # (384.47) main holds the 5.4.3 change now, so the commit to compare with is the last one BEFORE it (efe84b3, main 384.45). What 384.47 did to the bank
-# besides (71 questions into Chapter 1, 16 removed: tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS) is read from the generator and left out of
+# besides (70 questions into Chapter 1, 17 removed: tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS) is read from the generator and left out of
 # the comparisons here; tools/check-b384-moveperm.py holds that move.
 BASE = os.environ.get("BASE") or "efe84b3"
 import ast
