@@ -243,8 +243,11 @@ def main(src, size):
             box = K.evaluate("""()=>{ const s=document.querySelector('.chat-leavesheet'); const p=document.getElementById('chatdock-panel');
               if(!s||!p) return null; const a=s.getBoundingClientRect(), b=p.getBoundingClientRect();
               return { inside: a.left>=b.left-1 && a.right<=b.right+1 && a.top>=b.top-1 && a.bottom<=b.bottom+1,
+                       onBody: s.parentElement===document.body, inDom: p.contains(s),
                        sheet:[a.left,a.top,a.width,a.height].map(Math.round), panel:[b.left,b.top,b.width,b.height].map(Math.round) }; }""")
-            check("it is drawn inside the chat panel", bool(box and box["inside"]), box)
+            # 384.52, DELIBERATE: the sheet is no longer a DOM child of the panel (the panel is a backdrop root, so a child of it could not blur the page:
+            # tools/check-b384-leavefrost.py). It is a child of <body> sized to the panel, so "belongs to the chat" is geometry: inside the panel's rectangle.
+            check("it is drawn inside the chat panel's rectangle (on <body>, sized to it)", bool(box and box["inside"] and box["onBody"] and not box["inDom"]), box)
             K.evaluate("()=>document.querySelector('.chatdock-back').click()"); K.wait_for_timeout(300)
             stay = K.evaluate("()=>document.querySelectorAll('.chat-leavesheet').length")
             check("and going back to the list takes it away", stay == 0, stay)
