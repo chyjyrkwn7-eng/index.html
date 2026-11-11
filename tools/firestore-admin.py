@@ -946,7 +946,7 @@ ADD_COUNTERS = ("vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3",
 MAX_FIELDS = ("dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak",
               "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest",
               "dayAnsweredBest", "friendsBest")
-UNION_LISTS = ("vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks")
+UNION_LISTS = ("vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "retakenKeys")
 OR_FLAGS = ("practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed",
             "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324")
 TEST_HISTORY_MAX = 50                    # TEST_HISTORY_MAX in index.html
