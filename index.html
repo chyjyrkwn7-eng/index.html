@@ -98070,16 +98070,27 @@ function loopsPlayTurn(tGo){
    back; this can, from his phone. It only counts frames - no layout, no style read. */
 function loopResumeFrames(tag){
   try{
-    let last = performance.now(); const end = last + 3000; let n = 0, worst = 0, slow = 0;
+    let last = performance.now(); const t0 = last, end = last + 3000, end2 = last + 6000; let n = 0, worst = 0, slow = 0, wrote = false;
+    /* 384.35: and the frames themselves. His 384.34 recording, a return after 8.5s away: the planet system ran at 59 frames a second before he
+       left and at 44 (62% of the gaps 25ms or more) for the first second back - nothing the loops do (the poses were where the card had them,
+       nothing faded in, nothing restarted); a phone dropping what it had drawn. "q" is the frames drawn in each half second of the first 6s
+       (30 is 60Hz) and "g" the first 24 gaps in ms, so the next report says how long it lasts and whether it starts with a stall. Counts only. */
+    const bins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], gaps = [];
+    const put = (txt, key) => {
+      try{
+        const l = JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || [];
+        for(let i = l.length - 1; i >= 0; i--){ if(l[i].indexOf(tag) === 0 && l[i].indexOf(key) < 0){ l[i] += txt; break; } }
+        localStorage.setItem(LOOP_RESUME_KEY, JSON.stringify(l.slice(-6)));
+      }catch(e){}
+    };
     const tick = t => {
       if(document.hidden) return;
       const dt = t - last; last = t; n++; if(dt > worst) worst = dt; if(dt > 50) slow++;
-      if(t < end){ requestAnimationFrame(tick); return; }
-      try{
-        const l = JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || [];
-        for(let i = l.length - 1; i >= 0; i--){ if(l[i].indexOf(tag) === 0 && l[i].indexOf(" fr") < 0){ l[i] += " fr" + n + "/w" + Math.round(worst) + "/s" + slow; break; } }
-        localStorage.setItem(LOOP_RESUME_KEY, JSON.stringify(l.slice(-6)));
-      }catch(e){}
+      const k = Math.min(11, Math.floor((t - t0) / 500)); if(k >= 0) bins[k]++;
+      if(gaps.length < 24) gaps.push(Math.round(dt));
+      if(t >= end && !wrote){ wrote = true; put(" fr" + n + "/w" + Math.round(worst) + "/s" + slow, " fr"); }
+      if(t < end2){ requestAnimationFrame(tick); return; }
+      put(" q" + bins.join(",") + " g" + gaps.join(","), " q");
     };
     requestAnimationFrame(tick);
   }catch(e){}
@@ -121286,7 +121297,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.42";
+const APP_BUILD = "2026-11-11-384.43";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -160613,7 +160624,7 @@ function tabPerfText(){
          the platter hidden under it; the landing (lensRelease) puts the platter on this tab itself. Measuring it here read the bar's
          boxes straight after the classes changed - a whole-page style pass and layout inside the release (the largest piece of the
          release at 4x CPU on Home). The platter is only marked as this tab's, so syncActive after the build does not measure either. */
-      const slideHeld = slideNav && bar._lensHeld && bar._lensHeld() === tab;
+      const slideHeld = slideNav && ((bar._lensHeld && bar._lensHeld() === tab) || bar._slideLandTab === tab);
       if(slideHeld){ bubbleAt = tab; slider.classList.add("ready"); }
       else slideBubbleToActiveTab();
       beginSettle();
@@ -161081,6 +161092,16 @@ function tabPerfText(){
     list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
   }
   let barUnderPaused = [], barUnderAt = 0;
+  /* (384.35) THE PLANET SYSTEM IS NEVER HELD STILL UNDER THE GLASS. His 384.34 recording: he pressed the bar and slid across it for 11s and
+     Home's planet system stood still for the whole of it (0 changed frames in 8 of 22 half-second windows, short bursts between). The hold
+     below paused Home's hero (~39 of its 41 loops) a frame after the finger landed and played them again when the glass landed (builds
+     376-384 r15). Home's hero is nowhere near the bar (a phone: hero 102-482px, bar 855-934px), so it was never "behind the glass": it was
+     held for the frames' sake, and the frames it bought are paid for another way (see the 384.35 notes). Profile's card and goals, the
+     board's rows and whatever sits behind the bar are still held while a slide or a tap is on the glass: they are small drawings (a
+     character's sway, a row's loop), the 383 recording showed the glass dropping a quarter of its frames from Profile without it, and
+     measured again here a slide from Profile has 21 of 43 frames over 20ms without the hold and 1 of 44 with it. true brings Home's hero
+     back into the hold. */
+  const TAB_HOLDS_HERO = false;
   /* build 382: HOME'S PLANET HOLDS STILL WHILE A FINGER SLIDES, AND UNTIL THE GLASS HAS LANDED. His 381 recording: every stretch of dropped
      frames had Home in it (leaving it, arriving at it, the glass over it); the other three tabs slid at a steady 60. Home's hero is the
      heaviest thing on any screen - the orbit layers (~475px a side, spinning), three smoke layers and the plasma drifting, the glow
@@ -161097,7 +161118,7 @@ function tabPerfText(){
      the slide's one listing of the stage's animations (below, a frame after the start) pauses these as it pauses Home's hero: each
      paused animation restyles its own element, nothing else. Descendants only (`X *`), as the rule had it: a row's own entrance is not
      stopped half-way. */
-  const SLIDE_HOLD_SEL = ".cosmic-hero-wrap, .profile-hero *, .pf-goal *, .rank-row *";
+  const SLIDE_HOLD_SEL = ".profile-hero *, .pf-goal *, .rank-row *";
   /* each animation is judged once a slide (a repeat look only measures what is new), and the band is measured once a slide */
   let barUnderSeen = new WeakSet(), barUnderBand = null;
   function barUnderPause(again){
@@ -161128,7 +161149,9 @@ function tabPerfText(){
         const t = a.effect && a.effect.target;
         if(!t || !t.getBoundingClientRect) return;
         /* build 382: Home's hero, wherever it is on the screen (383: and Profile's card and challenges, the board's rows) */
-        if(t.closest && t.closest(SLIDE_HOLD_SEL)){ hold.push(a); return; }
+        if(t.closest && (t.closest(SLIDE_HOLD_SEL) || (TAB_HOLDS_HERO && t.closest(".cosmic-hero-wrap")))){ hold.push(a); return; }
+        /* (384.35) and the planet system is never "under the bar", wherever a short window puts it */
+        if(!TAB_HOLDS_HERO && t.closest && t.closest(".cosmic-hero-wrap")) return;
         /* build 380: a loop is where its window is - the sheet inside it moves by left/top from frame to frame, so its own box wanders
            in and out of the bar's band while what is seen stays put */
         const r = ((t.closest && t.closest(".rk-frame, .char-flip-play")) || t).getBoundingClientRect();
@@ -161243,6 +161266,7 @@ function tabPerfText(){
   function endTabDrag(e){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
+    bar._slideLandTab = null;
     barUnderResume();
     tabSwitchesBack();
     if(slideHeldSettle){ slideHeldSettle = false; try{ settleUntil = Date.now() + 120; }catch(err){} }
@@ -161261,7 +161285,11 @@ function tabPerfText(){
     else {
       const over = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
       /* build 382: a slide let go over another tab holds its glass up until that tab's screen has been drawn (lensHoldFor) */
-      if(lensG && tabDragMoved && !window.__dragTestOn && over && !over.classList.contains("active") && over._navigate && bar.dataset.navigating !== "1") lensHoldFor(over);
+      if(lensG && tabDragMoved && !window.__dragTestOn && over && !over.classList.contains("active") && over._navigate && bar.dataset.navigating !== "1"){
+        /* (384.35) planned at the release like a tap's, unless the wait for the screen is put back (SLIDE_WAITS_FOR_SCREEN) */
+        if(SLIDE_WAITS_FOR_SCREEN) lensHoldFor(over);
+        else { bar._slideLandTab = over; lensRelease(over); }
+      }
       else lensRelease(over);
     }
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
@@ -161282,7 +161310,7 @@ function tabPerfText(){
        scrolls a screen that is up back to its top ("if you swipe but don't end up swiping to another, the page scrolls back to the top") */
     if(tab && tab.classList.contains("active")){ slideBubbleToActiveTab(true); return; }
     /* build 384: _navigate knows it is a slide's release (its screen is built after the frame that lets go, and it measures nothing) */
-    if(tab && tab._navigate && bar.dataset.navigating !== "1"){ bar._slideNav = true; try{ tab._navigate(); } finally{ bar._slideNav = false; } }
+    if(tab && tab._navigate && bar.dataset.navigating !== "1"){ bar._slideNav = true; try{ tab._navigate(); } finally{ bar._slideNav = false; bar._slideLandTab = null; } }
     else if(tab && tabDests[tab.id] && bar.dataset.navigating !== "1"){
       bar.dataset.navigating = "1";
       setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
@@ -161881,6 +161909,17 @@ function tabPerfText(){
      lands then: the screen changes under the glass and the glass shrinks into the platter over it. A screen drawn inside the 110ms the
      glass lingers anyway changes nothing; one that is slow lands at SLIDE_AWAIT_MAX at the latest, whatever it is doing. */
   const SLIDE_AWAIT_MAX = 280;
+  /* (384.35) A SLIDE LANDS ON THE TAP'S CLOCK, NOT ON ITS SCREEN'S. His 384.34 recording: "on home and profile the bubble is there longer
+     before it drops compared to the others." The wait above is why: the glass stood up until the new screen had been drawn (at most
+     SLIDE_AWAIT_MAX, and later still when the build ran long), and Home and Profile are the two heavy screens. Measured here (4x CPU,
+     the 12 slides between Home / Profile / Leaderboard / Calendar): release to the glass at rest was 776ms on Home, 467 Profile,
+     396 Calendar, 374 Leaderboard, a 400ms spread that is the screens' build times and nothing the glass does. A tap has landed
+     on its own clock since 380 ("every tab lands the same, however long its screen takes") and he calls the tap "really good"; a slide
+     lands the same way now: held LENS.linger ms on its tab, then the same shrink, whichever screen it brings in. The screen is built
+     on the frame after the release as before and changes under the glass as it shrinks. The landing is PLANNED AT THE RELEASE, as a tap's
+     is (lensRelease): one compositor track, so no timer on the main thread stands between the release and the glass - a long build
+     (Home's, at 4x CPU) delayed a timer-driven landing by up to 640ms, which is the spread's other half. true brings the wait back. */
+  const SLIDE_WAITS_FOR_SCREEN = false;
   /* The glass is clear and up already (a slide is long past its 70ms clearing) and the bar is swollen, so holding it is ONE prepared
      track to the tab's held size and nothing else - no landing planned first and thrown away, and nothing read off the page (a read
      here, after the navigation has lit the new tab, was a whole style pass on the release). */
