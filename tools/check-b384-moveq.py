@@ -42,6 +42,7 @@ MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch
 EXPECT = {"2": 111, "4": 40, "12": 41, "55": 8, "62": 5, "64": 9}      # the owner's numbers for the five (384.42: 111, 40, 43, 16, 10, 10) with 384.47's moves out of 12, 55, 62, 64 taken off
 M47 = [i for i in _gen("UNIT_MOVES") if i not in MOVES]; RM47 = list(_gen("UNIT_REMOVALS"))
 GONE = set(MOVES) | set(M47) | set(RM47)
+S543 = {"chAppH-805"}   # 384.48 (5.4.3): one wrong option changed on main after the base this gate compares with; not a move
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384moveq"}
 exec(src, G)
@@ -136,7 +137,7 @@ S = {s["id"]: s for s in new["sizes"]}
 card = {c["name"]: c["count"] for c in cards}
 card_for = lambda t: next((v for k, v in card.items() if k and (k == t or k == t.split(": ", 1)[-1])), None)
 bank_same = [q["id"] for q in ob["questions"] if q["id"] not in GONE] == [q["id"] for q in nb["questions"] if q["id"] not in GONE] and \
-    all(oq[i] == nq[i] for i in oq if i not in GONE) and {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and \
+    all(oq[i] == nq[i] for i in oq if i not in GONE and i not in S543) and {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and \
     all({k: v for k, v in a.items() if k != "questionCount"} == {k: v for k, v in b.items() if k != "questionCount"} for a, b in zip(ob["units"], nb["units"])) and \
     all(u["questionCount"] == sum(1 for q in nb["questions"] if q["unit"] == u["id"]) for u in nb["units"])
 bad4 = {u: (S[u]["n"], S[u]["cache"], S[u]["run"], len(rows(new["rows"], S[u]["topic"])), card_for(S[u]["topic"])) for u, n in EXPECT.items()
