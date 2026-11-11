@@ -170,9 +170,10 @@ def walk_signup(pg, name="J.Smith", log=None, shot=None):
     pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000)
     pg.wait_for_selector("#nova-intro", state="attached", timeout=15000)
     see("nova")
-    seen_lines = set(); seen_ask = set(); t1 = time.time(); nova_boxes = 0
+    seen_lines = set(); seen_ask = set(); t1 = time.time(); nova_boxes = 0; code_shown = False
     while time.time() - t1 < 300:
         st = novastate(pg)
+        if not code_shown and pg.evaluate("()=>{ const e=document.querySelector('.nt-codebox .codereveal-value'); return !!(e && e.textContent.trim()); }"): code_shown = True
         if not st:
             if pg.evaluate("()=>!!document.getElementById('savecode-card')"): pg.wait_for_timeout(150); continue
             if time.time() - t1 > 8 or "end" in seen_ask: break
@@ -219,4 +220,4 @@ def walk_signup(pg, name="J.Smith", log=None, shot=None):
             pg.wait_for_timeout(450)
     see(screen_of(pg))
     info = pg.evaluate("()=>({ onboarded: !!store.onboardingComplete, code: !!syncCode, name: store.firstName || '', avatar: store.avatarChar || '' })")
-    return {"taps": taps, "pages": pages, "nova_boxes": nova_boxes, "tips": tips, **info}
+    return {"taps": taps, "pages": pages, "nova_boxes": nova_boxes, "tips": tips, "code_shown": code_shown, "card_met": "sync code card" in pages, **info}

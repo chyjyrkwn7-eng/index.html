@@ -102996,9 +102996,12 @@ function novaIntroLines(o){
     enter: ctx => { const a = document.createElement("span"); a.className = "nt-picked";
       try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
       novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } };
+  /* (384.27) ONE BOX, NO CARD. The sign-up used to stop on a "Save your sync code" card (tick it, then Continue) after two boxes about
+     the code: three presses and a screen the owner counted as too long. The code is still made at sign-up (novaSignupCreate) and is
+     shown here, once, in a box that goes on with a tap; it is in Settings, under Sync, with its Save it row, for good. */
   const codeLines = [
-    { gesture: "raise", text: "This is your sync code.", enter: ctx => novaProp(ctx, novaStack(novaCodeProp())), ask: novaAskSaveCode /* build 382: the save-your-code card */ },
-    { text: "It signs you in on other devices. Find it any time in Settings." }
+    { gesture: "raise", text: "This is your sync code. It signs you in on other devices. Find it any time in Settings, under Sync.",
+      enter: ctx => novaProp(ctx, novaStack(novaCodeProp())) }
   ];
   if(existing){
     lines.push({ gesture: "wave", text: "There you are, " + name + "!", enter: hello });
@@ -103021,8 +103024,7 @@ function novaIntroLines(o){
        modes are the Mode Select tips', the crew parade is Customize's). A Fire Code half (part 1, 2) and an existing account are as
        they were. */
     const both = signupPicked().indexOf("ifc") >= 0;
-    lines.push({ gesture: "wave", text: "Hello there!", enter: hello });
-    lines.push({ text: "I\u2019m Nova, an explorer, and I\u2019ll be your instructor." });
+    lines.push({ gesture: "wave", text: "Hello there! I\u2019m Nova, an explorer, and I\u2019ll be your instructor.", enter: hello });
     lines.push({ gesture: "raise", text: "First, what should I call you?", ask: novaAskName });
     lines.push({ gesture: "wave", text: () => "So you\u2019re " + novaName() + "! A storm scattered my badges, flares and crew across your studies.",
       enter: ctx => novaProp(ctx, buildNovaVoyage(true)) });

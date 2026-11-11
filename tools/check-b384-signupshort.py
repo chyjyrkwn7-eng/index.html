@@ -30,7 +30,7 @@ from playwright.sync_api import sync_playwright
 args = sys.argv[1:]
 SRC_PATH = args[args.index("--against") + 1] if "--against" in args else None
 SRC = L.load_src(SRC_PATH)
-BUDGET = 28
+BUDGET = 21
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond)
@@ -53,7 +53,7 @@ try:
         chk("(2) the tips are at most 5, and every declared step rendered (declared %d + the last one, rendered %d)" % (declared, r["tips"]),
             r["tips"] <= 5 and r["tips"] == declared + 1, r)
         chk("(3) the account ends onboarded, with a sync code, the typed name and a partner", r["onboarded"] and r["code"] and r["name"] == "J.Smith" and r["avatar"], r)
-        chk("(3) the sync code's card was on the way", "sync code card" in r["pages"], r["pages"])
+        chk("(3) no sync-code card stopped the walk (no tick, no Continue), and the code was shown once, in Nova's own box", (not r["card_met"]) and r["code_shown"], r)
         chk("(3) Settings still holds the code (Sync page builds a code row)", pg.evaluate("()=>typeof shownSyncCode==='function' && !!shownSyncCode()"), "")
         # a relaunch
         pg.reload(); pg.wait_for_timeout(2500)
