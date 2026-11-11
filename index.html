@@ -30338,6 +30338,11 @@
   }
   .rs-screen .rs-unlocked .rs-unlock + .rs-unlock{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
   .rs-unlocked .rs-kicker + .rs-unlock{ padding-top:0; }
+  /* (384.50) the line that says celebrations are off, under the rows of a run that earned something, with its one button */
+  .rs-unlocked .rs-celebrate-off{ display:flex; align-items:center; gap:.8rem; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(255,255,255,.06); }
+  .rs-celebrate-off-text{ flex:1 1 auto; min-width:0; margin:0; font-size:.8rem; line-height:1.4; color:var(--soft); overflow-wrap:break-word; }
+  .rs-celebrate-off-btn{ flex:none; min-height:44px; min-width:44px; padding:0 1.1rem; border-radius:999px; font:inherit; font-size:.85rem; font-weight:700;
+    color:var(--ink); background:var(--surface-lift); border:1px solid var(--surface-border); cursor:pointer; -webkit-tap-highlight-color:transparent; }
   /* The slot each row waits in (build 313) - see the row builder. */
   .rs-unlock-slot{ position:relative; }
   .rs-screen .rs-unlocked .rs-unlock-slot + .rs-unlock-slot{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
@@ -96084,7 +96089,7 @@ function foundMysteryFlare(btn){
 }
 
 function showFlareFoundBanner(color, all){
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([{ kind: "flare" }]); return; }
   const banner = document.createElement("div");
   banner.className = "tierup-banner flare-banner";
   banner.style.setProperty("--tier-color", MYSTERY_COLOR[color]);
@@ -106240,7 +106245,7 @@ function playTierCutscene(tierKey, opts){
    Settings uses, so the banner and the dot you go and tap cannot be
    two different colours. */
 function showThemeUnlockBanner(tierKey){
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([{ kind: "theme", name: ACCENT_DISPLAY_NAME[tierKey] || tierKey }]); return; }
   const swatch = ACCENT_SWATCH[tierKey];
   if(!swatch) return;
   const banner = document.createElement("div");
@@ -106278,7 +106283,7 @@ function showThemeUnlockBanner(tierKey){
 
 function showCharacterUnlockBanner(id){
   markUnlocksShown([id], []);
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([characterUnlockItem(id)]); return; }
   const banner = document.createElement("div");
   banner.className = "tierup-banner charup-banner";
   banner.style.setProperty("--tier-color", avatarGlowColor(id));
@@ -106338,7 +106343,7 @@ function announceCharacterUnlocks(before){
    the challenge was. Call of duty style." */
 function showChallengeUnlock(id){
   markUnlocksShown([id], []);
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([characterUnlockItem(id)]); return; }
   setTimeout(() => {
     try{
       playUnlockSpotlight({ kind: "character", character: id, feat: true, kicker: "Character unlocked",
@@ -113626,6 +113631,8 @@ function playQueuedBadgeCutscenes(){
   if(theme.muteBanners){
     store.pendingBadgeUnlocks = [];
     saveStore();
+    /* (384.50) said once, as the queue is cleared */
+    celebrationsOffBanner(queue.map(u => ({ kind: "badge", name: badgeTitle(u) })));
     return;
   }
 
@@ -121339,7 +121346,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.48";
+const APP_BUILD = "2026-11-11-384.50";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -131311,6 +131318,63 @@ function bannerUnlockItem(id){
                  w.appendChild(buildBannerArt(id)); return w; } };
 }
 
+/* ---- (384.50) CELEBRATIONS OFF IS SAID, NEVER SILENT ----
+   Settings > Motion & Effects > "Skip celebrations and pop-ups" (theme.muteBanners) stops every badge, character, banner, hundo-effect
+   and flare scene and card, by design and by request - and until now it stopped them without a word, so a person who had it on (a
+   row is a whole-row tap in a list) earned a badge and saw nothing, and could not tell why. With it ON, anything earned is now
+   told ONCE, plainly, where it was earned: in the results' "Found & unlocked" box (celebrationsOffNote, a line and a "Turn on"
+   button) or, where the scene would have played on Home or over another screen, as one top banner (celebrationsOffBanner). Nothing is
+   said when the setting is OFF. The line names what was earned (an item's own kicker/name, as the results' rows do). */
+function celebrationWhat(it){
+  if(!it) return "";
+  const nm = String(it.name || "").trim();
+  if(it.kind === "badge") return "the " + (nm.replace(/\s*badge$/i, "") || "new") + " badge";
+  if(it.kind === "character") return "the " + nm + " character";
+  if(it.kind === "banner") return "the " + nm + " banner";
+  if(it.kind === "fx") return "the " + nm + " hundo effect";
+  if(it.kind === "theme") return "the " + nm + " theme colour";
+  if(it.kind === "flare" || it.kind === "flarechar") return "a new flare";
+  return nm || "something new";
+}
+function celebrationsOffLine(items){
+  const w = (items || []).map(celebrationWhat).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i);
+  if(!w.length) return "";
+  const what = w.length === 1 ? w[0] : w.length === 2 ? w[0] + " and " + w[1] : w[0] + ", " + w[1] + " and " + (w.length - 2) + " more";
+  return "You earned " + what + ".";
+}
+/* Opens Settings on the page that holds the switch, with its row lit (the settings page shows what it does in its own words) */
+function openCelebrationSetting(){
+  try{ endResultsReveal(); }catch(e){}
+  showAppearance({ page: "motion", focus: "celebrations" });
+}
+function buildCelebrationsOffNote(items){
+  const line = celebrationsOffLine(items);
+  if(!line) return null;
+  const box = document.createElement("div");
+  box.className = "rs-celebrate-off";
+  const p = document.createElement("p");
+  p.className = "rs-celebrate-off-text";
+  p.textContent = line + " Celebrations are off.";
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "rs-celebrate-off-btn"; b.textContent = "Turn on";
+  b.addEventListener("click", e => {
+    if(rsTapAt(e) < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; }
+    openCelebrationSetting();
+  });
+  box.append(p, b);
+  return box;
+}
+/* One top banner, for a thing earned where its scene would have played over Home or another screen. A tap on it opens the setting. */
+function celebrationsOffBanner(items){
+  try{
+    if(!theme.muteBanners) return null;
+    const line = celebrationsOffLine(items);
+    if(!line) return null;
+    return showDailyAlert("Celebrations are off. Tap to turn them on.",
+      { kind: "celebrations", id: "celebrations-off", title: line.replace(/\.$/, ""), stay: 9000, onTap: openCelebrationSetting });
+  }catch(e){ return null; }
+}
+
 /* A hundo effect crossed by this run (build 313): a challenge like a
    challenge banner, so it carries the same strip. The row shows the
    effect's still; the pop-up plays it in a small 100% box. */
@@ -131861,7 +131925,15 @@ function playHomeUnlocks(tries){
   }
   /* Muted: recorded as shown and never played, the same as the badge
      queue, so unmuting weeks later does not ambush anybody. */
-  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners, p.fx); p.hints.forEach(markFlareHintShown); (p.finds || []).forEach(o => markFlareFind(o.c, 3)); return; }
+  if(theme.muteBanners){
+    markUnlocksShown(p.chars, p.banners, p.fx); p.hints.forEach(markFlareHintShown); (p.finds || []).forEach(o => markFlareFind(o.c, 3));
+    /* (384.50) said once, as it is marked */
+    try{
+      celebrationsOffBanner([].concat(p.chars.map(characterUnlockItem), p.banners.map(bannerUnlockItem), (p.fx || []).map(hundoFxUnlockItem),
+        (p.finds || []).map(() => ({ kind: "flare" }))).filter(Boolean));
+    }catch(e){}
+    return;
+  }
   /* A FIND ITS RESULTS NEVER PLAYED (build 318): its character and banner
      wait for it, so they come in the results' order - the scene, the
      flare's card, the character, its banner. */
@@ -132884,7 +132956,7 @@ function showRunRewards(run, hooks, opts){
      The card lands, and then each unlock comes through centre screen
      and drops into it, one at a time - never all at once up front. */
   const unlockItems = rsUnlockItems(run);
-  let unlocked = null;
+  let unlocked = null, celebNote = null;
   const unlockRows = [];
   if(unlockItems.length){
     unlocked = document.createElement("div");
@@ -132933,6 +133005,11 @@ function showRunRewards(run, hooks, opts){
       unlocked.appendChild(slotEl);
       unlockRows.push(row);
     });
+    /* (384.50) with "Skip celebrations and pop-ups" on, nothing of this plays - the box says so, once, under its rows */
+    if(theme.muteBanners){
+      celebNote = buildCelebrationsOffNote(unlockItems);
+      if(celebNote){ celebNote.classList.add("rs-land"); unlocked.appendChild(celebNote); }
+    }
     panel.appendChild(unlocked);
   }
 
@@ -133257,12 +133334,12 @@ function showRunRewards(run, hooks, opts){
        the Unlocked box only once the scenes are over. */
     const holdBox = !!unlocked && !(opts && opts.instant) && !theme.muteBanners &&
       ((run.badges && run.badges.length && typeof playBadgeCaseScene === "function") || (run.flare && typeof playFlareFoundScene === "function"));
-    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows])].forEach(el => rsLand(el, true));
+    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows, celebNote])].forEach(el => rsLand(el, true));
     /* back from the review the screen is drawn at once, and its buttons
        still come up from below (build 325); the page is not scrolled */
     if(actions) rsRise(actions, { delay: 160, follow: false });
     let boxDown = !holdBox;
-    const boxNow = () => { if(boxDown || !panel.isConnected) return; boxDown = true; [unlocked, ...unlockRows].forEach(el => rsLand(el, true)); };
+    const boxNow = () => { if(boxDown || !panel.isConnected) return; boxDown = true; [unlocked, ...unlockRows, celebNote].forEach(el => rsLand(el, true)); };
     if(holdBox) setTimeout(boxNow, 30000);
     /* THE BOX IN ITS EFFECT'S COLOURS, STILL (build 314). With reduce
        motion (or coming back from the review) the reveal is skipped and
@@ -133437,6 +133514,7 @@ function showRunRewards(run, hooks, opts){
         : row.classList.contains("rs-unlock-character") ? "res.found.character" : "res.unlock.reveal");
       if(onRow[n]) onRow[n]();
     }));
+    if(celebNote) seq.add(520, instant => rsLand(celebNote, instant));
   }
   /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
   if(actions) seq.add(unlocked ? 650 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); hint.hide(); rsRise(actions, { instant }); });
@@ -135950,7 +136028,7 @@ function showAppearance(opts){
   studyDetails.appendChild(autoAdvRow);
 
   const bannerRow = document.createElement("label");
-  bannerRow.className = "opt";
+  bannerRow.className = "opt"; bannerRow.id = "settings-celebrations";
   const bannerCb = document.createElement("input");
   bannerCb.type = "checkbox"; bannerCb.checked = theme.muteBanners;
   bannerCb.addEventListener("change", () => {
@@ -136711,6 +136789,15 @@ function showAppearance(opts){
      back to the top. That is the whole reason the section flashed
      correctly while sitting 1045px below the fold. */
   if(opts && opts.focus) toTop(true);
+  /* (384.50) sent here by "Celebrations are off": the switch's row is lit once the page is up */
+  if(opts && opts.focus === "celebrations"){
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const r = document.getElementById("settings-celebrations");
+      if(!r) return;
+      r.classList.remove("settings-flash"); void r.offsetWidth; r.classList.add("settings-flash");
+      r.addEventListener("animationend", () => r.classList.remove("settings-flash"), { once: true });
+    }));
+  }
   /* SCROLLED TO AND LIT UP, after the screen is mounted and laid out -
      a getBoundingClientRect on a node that is not in the document yet
      has no box, and scrollIntoView on it does nothing. Two frames,
@@ -138906,6 +138993,9 @@ const BANNER_KINDS = {
   /* XP earned (build 380: the daily question's XP on Home's banner glass): the XP blue, a spark */
   xp: { tag: "XP EARNED", color: "#4B9BFF",
     svg: '<path fill="currentColor" d="M12 2.9l2.35 6.15 6.15 2.35-6.15 2.35L12 19.9l-2.35-6.15-6.15-2.35 6.15-2.35z"/><path fill="currentColor" opacity=".7" d="M19 15.6l.85 2.15 2.15.85-2.15.85L19 21.6l-.85-2.15-2.15-.85 2.15-.85z"/>' },
+  /* (384.50) a thing earned while "Skip celebrations and pop-ups" is on: a bell, struck through */
+  celebrations: { tag: "CELEBRATIONS OFF", color: "#E8C770",
+    svg: '<path d="M6.6 16.4h10.8l-1.5-2.1V10.2a3.9 3.9 0 0 0-7.8 0v4.1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10.3 19.2a1.9 1.9 0 0 0 3.4 0M4.6 4.6l14.8 14.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' },
   savedtest: { tag: "SAVED TEST", color: "#7CB8FF",
     svg: '<path d="M7.2 3.6h9.6a1.2 1.2 0 0 1 1.2 1.2v15.5l-6-4.3-6 4.3V4.8a1.2 1.2 0 0 1 1.2-1.2z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>' },
   /* The passive lines on the same glass (build 327z3, showDailyAlert's
@@ -142161,7 +142251,10 @@ function novaVrAfterMatch(data, opts){
       try{ playUnlockSpotlight(characterUnlockItem("poseidon"), 1, 1, () => setTimeout(say, 700)); }
       catch(e){ say(); }
     }, lead);
-  } else setTimeout(say, lead + 2500);
+  } else {
+    if(earned && theme.muteBanners) celebrationsOffBanner([characterUnlockItem("poseidon")]);   /* (384.50) */
+    setTimeout(say, lead + 2500);
+  }
   return out;
 }
 
@@ -159340,6 +159433,8 @@ async function rankUpCards(scene){
       seen(o.k);
     });
     todo.forEach(seen);
+    /* (384.50) a rank's character and banner are told once, in one line */
+    try{ celebrationsOffBanner([].concat(...cards.map(o => o.parts.filter(p => p.kind === "character" || p.kind === "banner")))); }catch(e){}
     return;
   }
   scene.phase = "cards";
