@@ -38654,3 +38654,36 @@ WHAT CHANGED (index.html; sign-up path untouched, check-b384-signupshort 21 pres
 GATES. tools/check-b384-addfriend.py (new; the name check-b384-friends.py already exists as another gate): two brand-new accounts through the real sign-up, shared in-memory cloud (tools/b384_cloud_lib.py, a copy of check-b384-vrifc's stand-in with the live rules' refusal to list `progress` and a `Cloud.fail` switch for a quota-spent day), a class board with six people already on it. Asserts: both accounts whole; B's messy typing sent; A has it with no tap and sees it on Friends with buttons; A typing B's code makes both friends on both phones; pasted variants read as one code and the field shows it; an O in a code says so; a request after a decline is seen and accepted; a presence-only (Fire Code-only) code found with the beat not loaded; a refused cloud is not "nobody has that code"; a refused mailbox write is said; no sync code in the board, presence or inboxes. FAILS on 384.34 (16 checks red); passes on 384.39. check-friends, check-b384-friends, check-b384-friendcode, check-b384-friendfield, check-b384-chatback, check-sync, check-b384-signupshort, sweep-layout --quick all pass.
 
 WHAT ONLY REAL PHONES CAN CONFIRM: that the live Firestore delivers the mailbox write and the listener the way the stand-in does (the same path the person-card "Add friend" has used all along); the real SDK's error codes (resource-exhausted, unavailable) as mapped; a paste from iMessage on iOS (Chromium's fill is not a paste). No UI layout changed (a placeholder, one limit and one toast), so no centering run.
+
+## 384.42 - one question moved from Chapter 12 to Chapter 4 (branch claude/b384-moveq, NOT on main, waiting for Madison)
+The owner (Madison, he/him): ch12-012 ("In Harris County, a Group I-1 assisted living fire safety and evacuation plan must outline how
+backup power is provided within _____ of a power loss.", C, 3 hours) cites county amendment 403.7.1.1, Fire safety and evacuation plan, which is
+Chapter 4's; ch4-001 is from the same section. "Yes, move it." ONE question moves; the other 91 chapter/citation mismatches stay (not decided).
+His thinking for a bigger move (a unit's questions should cite that unit's own chapter: "we ARENT gonna study chapter 9 and get references to
+chapter 2") is only partly decided: 4 definition questions (ch55-702, ch62-702, ch62-703, ch64-001) to Chapter 2 were asked for, then put on hold
+("send me the pictures before you do") - NOT in this build. Adding them later is the same three edits as below for each id.
+- Wording, options, answer, explanation, citation, highlight and the id `ch12-012` are the bank's, unchanged. Only `unit` changed ("12" -> "4").
+- HOW: tools/gen-ifc-bank.py gained `UNIT_MOVES = {"ch12-012": "4"}` (applied by every regeneration, so the hand-off's file, which still has the question
+  in Chapter 12, cannot undo it) and `--from-bank-js ifc/bank.js` (re-applies the table to the shipped bank; no-op when already moved). The moved question is
+  placed after the target unit's last question in the array; unit questionCounts are recomputed (4: 39 -> 40, 12: 44 -> 43; 1,812 unchanged). The
+  hand-off's json is not in the repo, so ifc/bank.js was produced with --from-bank-js; a round trip of main's file without a move is byte-identical.
+- IDENTITY (key = chapter | position | hash(wording + choices)): ifcQuestionsFrom numbers a chapter's questions in the bank's array order and skips IFC_SRC_GAPS.
+  (a) Chapter 4: last in order -> position 41 (19 is the 5.4.2 gap); no other Chapter 4 position moves. (b) Chapter 12: it was the FIRST question (position 1);
+  IFC_SRC_GAPS "12" is now [1, 9, 10], so the 43 after it keep 2..; (c) its old key `Chapter 12: Energy Systems|1|yahkhw` is IFC_MOVED_KEYS. Measured in the app,
+  main's app+bank against this build's: 1,811 of 1,811 other questions' keys identical, positions identical, all 1,812 keys unique; the moved key is
+  `Chapter 4: Emergency Planning and Preparedness|41|yahkhw` (same hash, new chapter and position).
+- THE OLD KEY'S HISTORY: its counts (stats, testStats) stay where they are (nothing lowers progress; a merge would bring them back) and nothing reads them
+  (every count walks KEYS). Unlike the three 5.4.2 removals, a STAR on it is CARRIED: a one-shot beside IFC_RETIRED_KEYS puts it on the new key with its own
+  stamp (unless unstarred there since) and takes it off the old key with unflagAll's tombstone, so a question somebody starred does not drop out of their
+  list. The answer history under the NEW key starts empty: a key cannot follow a chapter change, and keyText / keyChoices pin wording only (no existing pin
+  can carry it, and no identity override was added to core code). Who is affected cannot be read from here (per-person data is private): everyone who ever
+  answered the question loses it from their Chapter 4 / Chapter 12 accuracy and "answered" figures (the question reads as unanswered in Chapter 4; Chapter 12's
+  figures lose its answers); anyone with the old build's saved test holding it gets the existing "a question is gone" notice for that saved test.
+- COUNTS: a hundo / chapter perfect is a per-chapter counter (unitPerfects) - never lowered, so someone with a Chapter 4 or Chapter 12 hundo keeps it, and
+  Fire Code's badge is ONE hundo anyway (badgeThresholdFor). A full-chapter run must cover the chapter in full (isFullUnitRun reads the chapter's size from
+  the bank): Chapter 4 is 40 questions now (the moved one included, so a 39-question run is no longer "the chapter") and Chapter 12 43. Virtual Room: its seeded
+  order is by QUESTIONS index, which shifts for every question after Chapter 4's end - the same as any bank update; the forced update (version.json force)
+  puts every device on this build.
+- GATES: tools/check-b384-moveq.py (new; FAILS on main with --against + OLD_BANK: (1)-(5) red; passes here): the question byte-identical but its unit, 1,811 of 1,811
+  keys unchanged, last in Chapter 4 and Chapter 12's gap, counts 40/43 on the bank, unitQuestionCount, a full run and the chapter cards, a star carried,
+  no page errors. check-b384-ifc542 updated on purpose (Chapter 4 40, Chapter 12 43, exactly one kept key moved: ch12-012). Others: see the build's report.
