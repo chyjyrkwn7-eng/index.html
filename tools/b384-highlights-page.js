@@ -17,6 +17,11 @@
   const inkPx = (R, G, B) => R + G + B < 330;
   const CARD_GAP = 0.2;                                                           // (the card's reflow sets its spaces a little narrower)
   const GAP = 0.22;                                                              // em: a wider gap in the print than this is a space
+  // a citation inside a table: a cell or a row ("cell | cell"), a TABLE's rows, or the short lines of a table's continuation page ("Toxic materials / Gases / See Section ...")
+  const tabular = (c) => {
+    const ex = String(c.excerpt || ""), ls = ex.split("\n");
+    return / \| | \u203a /.test(String(c.highlight || "")) || /\bTABLE\b/.test(ex) || (ls.length >= 4 && ls.filter(l => l.length < 34).length >= 0.75 * ls.length);
+  };
   let V = null, doc = null;
   async function boot() { if (!V) { V = await ifcViewer(); doc = await ifcCountyDoc(); } }
   function groupsOf(col, W, gap) {
@@ -53,7 +58,8 @@
     for (const [da, db] of bands) {
       const cov = words.filter(([a, b]) => b >= da - tol && a <= db + tol);
       const inside = cov.filter(([a, b]) => a >= da - tol && b <= db + tol);
-      for (const w of cov) if (!inside.includes(w)) bad.push(["a word is cut by the band's edge", (w[0] < da - tol ? "left " + ((da - w[0]) / s).toFixed(1) : "right " + ((w[1] - db) / s).toFixed(1)) + "pt of a word outside"]);
+      // (in a table the rows are set so close that a word of the next row can fall in a line's rows: a cut longer than 6pt there is another row's word)
+      for (const w of cov) if (!inside.includes(w) && !(loose && Math.max(da - w[0], w[1] - db) > 6 * s)) bad.push(["a word is cut by the band's edge", (w[0] < da - tol ? "left " + ((da - w[0]) / s).toFixed(1) : "right " + ((w[1] - db) / s).toFixed(1)) + "pt of a word outside"]);
       if (!inside.length) { if (!loose) bad.push(["a band holds no word", ((db - da) / s).toFixed(1) + "pt wide"]); continue; }
       if (tight) {
         const gl = inside[0][0] - da, gr = db - inside[inside.length - 1][1];
@@ -88,7 +94,7 @@
         await V.paintPages(doc, clip.pages, box, { scale: S, ...ifcCountyOpts, clip });
         const cvs = [...box.querySelectorAll("canvas.ifc-page")], p0 = c.pdfPage, p1 = c.pdfPageEnd || c.pdfPage;
         if (dump) res.img = cvs.map(cv => cv.toDataURL("image/png"));
-        const stream = [], rowish = / \| | › /.test(String(c.highlight || "")) || /\bTABLE\b/.test(String(c.excerpt || ""));      // (a cell of a table: its band runs to the table's rules)
+        const stream = [], rowish = / \| | › /.test(String(c.highlight || "")) || tabular(c);      // (a cell of a table: its band runs to the table's rules)
         const covered = new Set();
         for (let k = 0; k < clip.pages.length; k++) {
           const p = clip.pages[k], cv = cvs[k]; if (!cv) continue;
@@ -165,7 +171,7 @@
         const cvs = [...body.querySelectorAll("canvas")];
         if (dump) res.img = cvs.map(cv => cv.toDataURL("image/png"));
         if (!cvs.length) { res.notpicture = true; return res; }
-        const rowish = / \| | › /.test(String(c.highlight || "")) || /\bTABLE\b/.test(String(c.excerpt || ""));
+        const rowish = / \| | › /.test(String(c.highlight || "")) || tabular(c);
         const s = Math.min(window.devicePixelRatio || 1, 2) * 1.7;
         for (const cv of cvs) {
           const W = cv.width, H = cv.height, img = cv.getContext("2d").getImageData(0, 0, W, H), D = img.data;
@@ -175,11 +181,18 @@
           const em0 = 11 * s, lines = [];
           // a cluster of rows with print is one line, or (lines set close, a descender in the next ascender's rows) several: split at the row with least print
           const split = (r0, r1) => {
-            if (r1 - r0 <= 1.65 * em0) { if (r1 - r0 >= 0.3 * em0) lines.push([r0, r1]); return; }
-            let best = -1, bv = Infinity;
-            for (let y = Math.ceil(r0 + 0.6 * em0); y <= Math.floor(r1 - 0.6 * em0); y++) if (rowInk[y] < bv) { bv = rowInk[y]; best = y; }
-            if (best < 0) { lines.push([r0, r1]); return; }
-            split(r0, best); split(best, r1);
+            // (taller than one line: split at the row between two humps of print, where it falls to under a third of the lower hump)
+            if (r1 - r0 > 1.05 * em0) {
+              let best = -1, bv = Infinity;
+              for (let y = Math.ceil(r0 + 0.4 * em0); y <= Math.floor(r1 - 0.4 * em0); y++) if (rowInk[y] < bv) { bv = rowInk[y]; best = y; }
+              if (best > 0) {
+                let ml = 0, mr = 0;
+                for (let y = r0; y < best; y++) ml = Math.max(ml, rowInk[y]);
+                for (let y = best; y < r1; y++) mr = Math.max(mr, rowInk[y]);
+                if (bv <= 0.34 * Math.min(ml, mr) || r1 - r0 > 1.65 * em0) { split(r0, best); split(best, r1); return; }
+              }
+            }
+            if (r1 - r0 >= 0.3 * em0) lines.push([r0, r1]);
           };
           let a = -1;
           for (let y = 0; y <= H; y++) { if (y < H && rowInk[y]) { if (a < 0) a = y; } else if (a >= 0) { split(a, y); a = -1; } }
@@ -190,7 +203,7 @@
             if (dump) (res.dbg = res.dbg || []).push({ r: [r0, r1], g: groups.map(g => g.map(v => Math.round(v / s * 10) / 10)), b: bands.map(g => g.map(v => Math.round(v / s * 10) / 10)) });
             if (!bands.length) continue;
             res.bands += bands.length;
-            for (const f of judge(groups, bands, em, s, !rowish, rowish, 0.5)) res.bad.push([f[0], "line " + res.lines + ": " + f[1]]);
+            for (const f of judge(groups, bands, em, s, !rowish, rowish, 0.65)) res.bad.push([f[0], "line " + res.lines + ": " + f[1]]);
             for (const g of groups) if (bands.some(([da, db]) => g[0] >= da - 1.5 && g[1] <= db + 1.5)) res.covered++;
           }
         }
