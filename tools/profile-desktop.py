@@ -35,6 +35,8 @@ if AG:
     G["BUILD"] = (re.search(r'const APP_BUILD = "([^"]+)"', G["SRC"]) or [None, ""])[1]
 from playwright.sync_api import sync_playwright
 DEV, SCEN = _args[1], _args[2]
+sys.path.insert(0, HERE)
+from b384_desktoplag_lib import SHAPE_JS, recorder_cost
 PROFILE = opt("--profile")   # 384.30: a persistent browser profile, so the saved flip-book sheets (Cache Storage) are there next run: a WARM page
 class _Persist:
     """a stand-in for a Browser whose new_context() is a persistent context on one directory, on one port (Cache Storage is per origin)"""
@@ -124,7 +126,11 @@ def report(evs, label, thr=1.0, top=6):
                 calls[key] += cpu(e); ccount[key] += 1
         print("   TOP CALLS (cumulative ms, n): " + "; ".join("%s %.0f x%d" % (k, v, ccount[k]) for k, v in calls.most_common(int(opt("--ncalls", 10)))))
     long = sorted(tasks, key=lambda e: -cpu(e))[:top]
-    print("== %s: main-thread CPU %.0fms over %d tasks (1x-equiv); " % (label, total, len(tasks)) +
+    # 384.30: WHAT THE FLIP-BOOK RECORDERS COST, read off the trace: the isolated SVG document made and parsed for every recorded frame, the
+    # image's resource request and update, the canvas draw. (The whole main thread's CPU is a poor measure on its own here: headless Chromium has
+    # no vsync, so a page that gets cheaper simply draws more frames and spends the CPU again - see "384.30" in docs/notes-archive.md.)
+    rec, nrec = recorder_cost(evs, thr)
+    print("== %s: recorder %.0fms (%d frames loaded), main-thread CPU %.0fms over %d tasks (1x-equiv); " % (label, rec, nrec, total, len(tasks)) +
           "style/layout/paint: " + ", ".join("%s %d x %.0fms" % (k, cnt[k], v) for k, v in byname.most_common(6)))
     print("   longest tasks (ms): " + ", ".join("%.0f" % cpu(e) for e in long))
     if forced: print("   forced passes (fn: n, ms): " + "; ".join("%s %s: %d, %.0fms" % (k[0][:6], k[1], v, fms[k]) for k, v in forced.most_common(int(opt("--nf", 6)))))
@@ -228,6 +234,14 @@ def main():
                 fr = pg.evaluate("()=>{__fc.on=false; return __fc.frames;}")
                 lc = live_counts(pg, cdp)
                 report(evs, "%s IDLE on %s %sms [%s] [running %d of %d animations, %d layers, %d elements]" % (DEV, tabn, opt("--idlems", 4000), fstats(fr), lc["running"], lc["anims"], lc["layers"], lc["els"]), THR, top=6)
+            elif sc.startswith("shape"):
+                # what is running and where (in view / near / far), and the effects the page holds: shape:TAB (home, rewards, profile ...)
+                tabn = sc.split(":")[1] if ":" in sc else "home"
+                G["tap"](pg, cdp, touch, "#bottomtab-" + tabn); pg.wait_for_timeout(2500)
+                r = pg.evaluate(SHAPE_JS)
+                print("== %s SHAPE %s: running %d of %d (in view %d, near %d, far %d, detached %d), elements %d, effects %s, animating %s" % (DEV, tabn, r["running"], r["all"], r["inView"], r["near"], r["far"], r["detached"], r["els"], r["fx"], r["props"]))
+                print("   running by name: %s" % sorted(r["byName"].items(), key=lambda kv: -kv[1])[:12])
+                if r["far_names"]: print("   FAR by name: %s" % r["far_names"])
             elif sc == "question":
                 # a Drill question sitting open (Identity Crimes, the unit the recorders use): the screen a person spends most of their time on
                 pg.evaluate("""()=>{ cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false; cfg.recall=false;
