@@ -12071,10 +12071,10 @@
   .installfirst-panel .if-icon{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; width:5.2rem; height:5.2rem; margin:0 auto 1.3rem;
     border-radius:50%; background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); color:var(--ink); }
   .installfirst-panel .if-icon svg{ width:2.5rem; height:2.5rem; }
-  .installfirst-panel .if-guide{ margin-top:1rem; }
   .installfirst-panel .if-guide[hidden]{ display:none; }
-  .installfirst-panel .if-skip{ position:relative; z-index:1; align-self:center; display:block; min-height:44px; min-width:44px; margin:.6rem auto 0; padding:.6rem 1rem;
+  .installfirst-panel .if-skip, .installfirst-panel .if-guide{ position:relative; z-index:1; align-self:center; display:block; min-height:44px; min-width:44px; margin:.6rem auto 0; padding:.6rem 1rem;
     background:none; border:0; border-radius:12px; color:var(--soft); font-family:inherit; font-size:.9rem; line-height:1.3; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+  .installfirst-panel .if-guide{ margin-top:1rem; }
   .installfirst-panel .if-link{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:.6rem; width:100%; margin-top:1rem; }
   .installfirst-panel .if-link-addr{ max-width:100%; font-size:.85rem; line-height:1.4; color:var(--soft); text-align:center; overflow-wrap:anywhere; }
   .installfirst-panel .if-copy{ width:100%; max-width:22rem; }
@@ -100323,7 +100323,7 @@ function showInstallFirst(o){
     : "Add it first, then open Nova from the new icon to get started.");
   const note = mk("p", "if-note");
   const status = mk("p", "if-status"); status.setAttribute("role", "status");
-  const guide = mk("button", "if-skip if-guide", "Show me how"); guide.type = "button";
+  const guide = mk("button", "if-guide", "Show me how"); guide.type = "button";
   const skip = mk("button", "if-skip if-out", "I can’t add it"); skip.type = "button";
   /* the glyph of what the button opens: the share arrow on iPhone and iPad, the plus on Android */
   const icon = mk("span", "if-icon"); icon.setAttribute("aria-hidden", "true");

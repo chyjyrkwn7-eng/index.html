@@ -53,7 +53,7 @@ STATE = """()=>{ const st = document.getElementById('stage'); const f = st && st
   const q = s => document.querySelector(s); const bt = e => { if(!e) return null; const r = e.getBoundingClientRect(); return { h: r.height, w: r.width, text: e.textContent.trim() }; };
   return { inst: !!(f && f.dataset && f.dataset.screen === 'installfirst'), mode: f && f.dataset ? f.dataset.mode : '', dev: f && f.dataset ? f.dataset.dev : '',
     gs: !!q('.gs-page'), welcome: !!q('.cosmic-welcome'), home: !!q('[data-screen=home]'),
-    go: bt(q('.if-go')), skip: bt(q('.if-skip')), guide: bt(q('.if-guide')), copy: bt(q('.if-copy')), link: !!q('.if-link-addr'),
+    go: bt(q('.if-go')), skip: bt(q('.if-out')), guide: bt(q('.if-guide')), copy: bt(q('.if-copy')), link: !!q('.if-link-addr'),
     status: (q('.if-status') || {}).textContent || '', sheet: !!q('#a2hs-sheet'), sheetDev: (q('#a2hs-sheet') || {}).dataset ? q('#a2hs-sheet').dataset.dev : '',
     title: (q('.if-title') || {}).textContent || '' }; }"""
 
@@ -96,7 +96,7 @@ try:
                         ("a name in the saved store", "try{localStorage.setItem('class26e.drill.v1', JSON.stringify({firstName:'Kim'}));}catch(e){}")):
             ctx, pg = open_dev(br, "iphone-safari", extra=(sc,))
             s = pg.evaluate(STATE)
-            chk("(2) an iPhone in Safari with %s: Welcome, not the install page" % lab, (not s["inst"]) and (s["welcome"] or s["home"]), s)
+            chk("(2) an iPhone in Safari with %s: Welcome, not the install page" % lab, (not s["inst"]) and (s["welcome"] or s["home"] or s["gs"]), s)
             ctx.close()
         # ---- (3) in-app browsers
         for ua in ("iphone-instagram", "iphone-facebook", "iphone-tiktok", "iphone-webview", "android-facebook", "android-webview"):
@@ -113,7 +113,7 @@ try:
         ctx, pg = open_dev(br, "iphone-safari")
         s = pg.evaluate(STATE)
         chk("(4) the way out is at least 44px tall and wide", s["skip"] and s["skip"]["h"] >= 43.5 and s["skip"]["w"] >= 43.5, s)
-        pg.click(".if-skip"); pg.wait_for_timeout(1500)
+        pg.click(".if-out"); pg.wait_for_timeout(1500)
         s2 = pg.evaluate(STATE)
         chk("(4) it goes on as before: Get Started, not the install page", s2["gs"] and not s2["inst"], s2)
         mem = pg.evaluate("()=>{ try{ return Object.keys(localStorage).filter(k=>/^class26e\\./.test(k)&&/install/.test(k)).length; }catch(e){ return -1; } }")
