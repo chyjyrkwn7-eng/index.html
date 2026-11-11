@@ -38720,7 +38720,7 @@ NOT confirmable in Chromium: that a real thumb on an iPhone no longer ends the c
 
 Pre-existing, not this change (fail the same on 384.34): check-behaviour 317e "Reduce motion ... nothing moving" (4 animations running in the still rank scene).
 
-## 384.40 - the planet system keeps moving under the bar; a slide lands like a tap; what the return log now says (branch claude/b384-planetfreeze, first built as 384.35, merged as 384.40)
+## 384.43 - the planet system keeps moving under the bar; a slide lands like a tap; what the return log now says (branch claude/b384-planetfreeze, first built as 384.35, merged as 384.43)
 
 Madison, on three 384.34 recordings (iPhone 17 Pro Max, installed): (1) "when you leave the app and come back, it's like the planet system restarts and lags ... the bottom tab, when using it, it freezes the planet system stuff ... fix this all"; (2) "tapping looks really good ... swiping/sliding on the bottom tab is not good to go, it's still not perfectly smooth across the board, should be cohesive for all the tabs ... I can kinda feel some resistance some lag, also on home and profile the bubble is there longer before it drops compared to the others".
 
