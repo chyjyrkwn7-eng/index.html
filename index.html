@@ -12060,6 +12060,22 @@
     text-align:center; margin:.9rem 0 0; max-width:22rem; }
   .signupcheck-panel .signupcheck-text{ max-width:26rem; }
   .signupcheck-panel .signupcheck-signin{ position:relative; z-index:1; width:100%; max-width:22rem; margin-top:1.2rem; }
+  /* (384.23) the install-first page (showInstallFirst) wears the New to Nova? step's layout (.signupcheck-panel); these are its own parts */
+  .installfirst-panel .if-note, .installfirst-panel .if-status{ position:relative; z-index:1; margin:.9rem auto 0; max-width:22rem;
+    font-size:.95rem; line-height:1.45; text-align:center; text-wrap:balance; }
+  .installfirst-panel .if-note{ color:var(--soft); }
+  .installfirst-panel .if-status{ color:var(--ink); font-weight:600; }
+  .installfirst-panel .if-status[hidden]{ display:none; }
+  .installfirst-panel .if-icon{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; width:5.2rem; height:5.2rem; margin:0 auto 1.3rem;
+    border-radius:50%; background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); color:var(--ink); }
+  .installfirst-panel .if-icon svg{ width:2.5rem; height:2.5rem; }
+  .installfirst-panel .if-guide{ margin-top:1rem; }
+  .installfirst-panel .if-guide[hidden]{ display:none; }
+  .installfirst-panel .if-skip{ position:relative; z-index:1; align-self:center; display:block; min-height:44px; min-width:44px; margin:.6rem auto 0; padding:.6rem 1rem;
+    background:none; border:0; border-radius:12px; color:var(--soft); font-family:inherit; font-size:.9rem; line-height:1.3; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+  .installfirst-panel .if-link{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:.6rem; width:100%; margin-top:1rem; }
+  .installfirst-panel .if-link-addr{ max-width:100%; font-size:.85rem; line-height:1.4; color:var(--soft); text-align:center; overflow-wrap:anywhere; }
+  .installfirst-panel .if-copy{ width:100%; max-width:22rem; }
   /* Without this, any toast on a screen with the bottom tab bar
      visible renders directly underneath it (both were anchored to
      the same bottom:1rem), completely hidden behind the bar's own
@@ -37386,7 +37402,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* the clip: a phone's shape, the size of the screen's height on a short phone */
   .a2hs-phone{
     position:relative; flex:none; margin:0 auto; box-sizing:border-box;
-    width:clamp(9.5rem, calc((100vh - 34.5rem) * .46), 12.5rem); width:clamp(9.5rem, calc((100dvh - 34.5rem) * .46), 12.5rem);
+    width:clamp(9.5rem, calc((100vh - 36rem) * .46), 12.5rem); width:clamp(9.5rem, calc((100dvh - 36rem) * .46), 12.5rem);
     aspect-ratio:540 / 1174; border-radius:26px; overflow:hidden; background:#0A0B14; cursor:pointer;
     border:1px solid rgba(255,255,255,.2); box-shadow:0 18px 44px rgba(0,0,0,.5);
   }
@@ -37462,6 +37478,11 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .a2hs-sheet .a2hs-foot .next{ width:auto; flex:1 1 0; min-width:0; }
   html[data-layout] body .a2hs-sheet .a2hs-foot .next[hidden]{ display:none; }
   html[data-layout] body .a2hs-sheet .a2hs-foot .a2hs-added{ flex:1.25 1 0; }
+  /* (384.23) the white button is Open Share menu, a row of its own; I've added it and Not now share the row under it */
+  .a2hs-foot{ flex-wrap:wrap; }
+  html[data-layout] body .a2hs-sheet .a2hs-foot .a2hs-share{ flex:1 1 100%; }
+  .a2hs-foot .a2hs-share-status{ flex:1 1 100%; min-height:0; margin:-.1rem 0 .05rem; font-size:.84rem; text-align:center; color:rgba(255,255,255,.8); }
+  .a2hs-foot .a2hs-share-status[hidden]{ display:none; }
   @media (min-width:40rem){
     .a2hs-sheet{ max-width:40rem; }
     .a2hs-body{ padding:1.6rem 1.6rem .8rem; }
@@ -92286,7 +92307,7 @@ window.addEventListener("appinstalled", () => { try{ a2hsBarEnd("added"); }catch
 
 function showHomeScreenSheet(opts){
   opts = opts || {};
-  const signup = opts.from === "signup", tip = opts.from === "tip", fromBar = opts.from === "bar";
+  const signup = opts.from === "signup", tip = opts.from === "tip", fromBar = opts.from === "bar", first = opts.from === "installfirst";
   const old = document.getElementById("a2hs-sheet");
   if(old) old.remove();
   if(signup || tip){ try{ localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){} }
@@ -92295,7 +92316,7 @@ function showHomeScreenSheet(opts){
   const standalone = isStandaloneApp();
   const overlay = mk("div", "invite-overlay a2hs-overlay");
   overlay.id = "a2hs-sheet";
-  overlay.dataset.from = signup ? "signup" : tip ? "tip" : fromBar ? "bar" : "settings";
+  overlay.dataset.from = signup ? "signup" : tip ? "tip" : fromBar ? "bar" : first ? "installfirst" : "settings";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", "a2hs-title");
@@ -92305,13 +92326,14 @@ function showHomeScreenSheet(opts){
   title.id = "a2hs-title";
   /* (384 r19) the intro says what this is and where it is open; what the person gains is its own short list under it */
   body.append(mk("p", "a2hs-tag", tip ? "Quick tip" : "Home Screen"), title,
-    mk("p", "a2hs-intro", tip || fromBar ? "Nova is designed as an app for your phone, and right now it is open in a browser tab."
+    mk("p", "a2hs-intro", first ? "Add Nova first. Then open it from the new icon on your Home Screen to get started."
+      : tip || fromBar ? "Nova is designed as an app for your phone, and right now it is open in a browser tab."
       : "Nova is designed as an app for your phone. It also works as a website on a computer."));
   if(standalone) body.appendChild(mk("p", "a2hs-already", "Nova is already open from the Home Screen on this device."));
   else {
     const gains = mk("ul", "a2hs-gains");
     gains.setAttribute("aria-label", "What adding it gives you");
-    ["Opens full screen, with no browser bars.", "Opens from your Home Screen like any other app.", "Keeps you signed in, with your progress."].forEach(t => {
+    ["Opens full screen, with no browser bars.", "Opens from your Home Screen like any other app.", "Keeps your progress with your account."].forEach(t => {
       const li = mk("li", "a2hs-gain");
       li.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       li.appendChild(mk("span", "", t));
@@ -92423,12 +92445,15 @@ function showHomeScreenSheet(opts){
   showNow(0);
   row.append(frame, now, appleSteps.ol);
   const hasCode = !!(syncCode && !syncOff && store && store.onboardingComplete);
+  /* (384.23) Open Share menu (below) opens the share menu with Add to Home Screen in it; the steps are the same thing by hand, as in the clip */
+  const shareOk = !standalone && typeof navigator.share === "function";
   apple.append(row, mk("p", "a2hs-note",
     standalone ? "These steps are for adding Nova on another iPhone or iPad."
     /* (384 r4) "if you add to homescreen ... and then you open the app from your Home Screen, isn't it gonna get you back to the
        start up page again?" Added from here, no: the icon carries this account's sign-in (installCodeInUrl). Said plainly, with
        the way back if it is ever asked for. */
-    : hasCode ? "Add it from this page, and the icon opens signed in with your progress. Open Nova from the icon from then on, not Safari. If it ever asks you to sign in, tap Sign in and enter your sync code (Settings > Sync code)."
+    : hasCode ? "The Home Screen icon keeps its own data, apart from Safari. Open Nova from the icon, tap Sign in and enter your sync code (Settings > Sync code) to bring your progress. Use the icon from then on, not Safari."
+    : first ? "After you add it, open Nova from the new icon, not from this page. If the share menu does not open, add it by hand, as in the video."
     : "On iPhone and iPad the Home Screen icon keeps its own data, apart from Safari. Open it and sign in with your sync code to bring your progress."));
 
   /* Android: Chrome and Samsung Internet, this browser first */
@@ -92469,8 +92494,14 @@ function showHomeScreenSheet(opts){
   /* (384 r19) two answers: I've added it (it ends the reminder bar, for good) and Not now (it just closes; the bar stays).
      Neither is offered on a computer or in the installed app, which have only Done. */
   const added = mk("button", "next a2hs-added", "I’ve added it"); added.type = "button";
+  /* (384.23) THE WHITE BUTTON DOES THE FIRST STEP. People took "I've added it" for the button that adds it. On iPhone and iPad the
+     primary button now opens the system share menu (navigator.share, from the tap, with the canonical address); Add to Home
+     Screen is a row in that menu. Apple has no call that adds it in one tap, so the button says what it opens. Cancelled, failed or
+     missing, the steps above are the way, and "I've added it" is a quiet answer, not the main button. */
+  const shareBtn = mk("button", "next a2hs-share", "Open Share menu"); shareBtn.type = "button";
+  const shareSt = mk("p", "a2hs-status a2hs-share-status"); shareSt.setAttribute("role", "status"); shareSt.textContent = "In the menu, tap Add to Home Screen."; shareSt.hidden = true;
   const done = mk("button", "next ghost a2hs-close", "Not now"); done.type = "button";
-  foot.append(added, done);
+  foot.append(shareBtn, shareSt, added, done);
   sheet.append(body, foot);
   overlay.appendChild(sheet);
 
@@ -92544,6 +92575,10 @@ function showHomeScreenSheet(opts){
        the installed app, has only Done */
     const phoneAsk = key !== "computer" && !standalone;
     added.hidden = !phoneAsk;
+    const shareOn = phoneAsk && key === "apple" && shareOk;
+    shareBtn.hidden = !shareOn;
+    shareSt.hidden = !shareOn;
+    added.classList.toggle("ghost", shareOn);
     const gainsEl = body.querySelector(".a2hs-gains"); if(gainsEl) gainsEl.hidden = !phoneAsk;
     done.textContent = phoneAsk ? "Not now" : "Done";
     if(key === "apple") startApple(); else if(was === "apple") stopApple();
@@ -92569,6 +92604,17 @@ function showHomeScreenSheet(opts){
   };
   const onKey = e => { if(e.key === "Escape"){ e.preventDefault(); close(); } };
   done.addEventListener("click", close);
+  shareBtn.addEventListener("click", () => {
+    if(shareBtn.disabled) return;
+    shareBtn.disabled = true;
+    a2hsShare().then(r => {
+      shareBtn.disabled = false;
+      if(closed) return;
+      if(r === "shared") shareSt.textContent = "Now open Nova from the new icon on your Home Screen.";
+      else { shareSt.textContent = "The share menu did not open. Add it by hand, as in the video."; try{ apple.scrollIntoView({ block: "start", behavior: "smooth" }); }catch(e){} }
+      shareSt.hidden = false;
+    });
+  });
   /* (384 r19) "I've added it": the reminder is over for good on this device, and the one-time showing counts as made */
   added.addEventListener("click", () => {
     try{ if(!a2hsShownBefore()) localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){}
@@ -100033,6 +100079,193 @@ function gsLeave(page){
   zoomA.ready.then(begin, begin);
   setTimeout(begin, 400);   /* where frames do not come (a hidden tab) */
 }
+/* ---- INSTALL FIRST (384.23) ----
+   The owner, watching classmates: "They create an account, then the Nova intro, then the tips at Home ... When people add it to
+   their Home Screen and click it, the first thing they see is the start up page again even though they just went through that
+   entire process. That isn't going to work. Maybe when you click the link the first thing it makes you do on the phone is add it
+   to your Home Screen (forced, can't move on till done, easy)."
+   WHY: on iPhone and iPad the Home Screen icon keeps its own storage, apart from Safari's, and the address does not carry the
+   account into it (installCodeInUrl is kept, but it is not relied on). So nothing is carried: a phone or tablet in a browser tab,
+   with no account on it, opens on ONE page whose only job is adding Nova to the Home Screen. The account, the intro and the tips
+   all happen in the icon, once.
+   WHO: a touch phone or tablet (iPhone, iPad - including iPadOS's Mac-like user agent - and Android) that is not already the
+   installed app and has no account on it. A computer (a Mac in Safari too) is never held: it opens on Get Started as before. A
+   device that has an account, a name, a code, a signed-out mark or a code in its address goes to Welcome as before.
+   WHAT: Add to Home Screen opens the system share menu on iPhone and iPad (navigator.share, from the tap) and the browser's own
+   install prompt on Android where it offered one (beforeinstallprompt); where neither is there, the guide (showHomeScreenSheet).
+   Apple has no call that adds it in one tap, so the page says what the button does and does not say it adds itself. A browser
+   inside another app (Instagram, Facebook, TikTok, Snapchat, LinkedIn, Line, WeChat, Gmail, a webview) cannot add to the Home
+   Screen, so it is asked to open the page in Safari (or the browser) first. "I can't add it" goes on as before, in the browser
+   (class26e.installskip), so a school iPad or a locked-down phone is never stranded. */
+var INSTALL_SKIP_KEY = "class26e.installskip";
+var A2HS_URL = "https://" + A2HS_ADDRESS + "/";
+var installSkippedNow = false;
+function installSkipped(){
+  if(installSkippedNow) return true;
+  try{ return localStorage.getItem(INSTALL_SKIP_KEY) === "1"; }catch(e){ return false; }
+}
+function installSkip(){
+  installSkippedNow = true;
+  try{ localStorage.setItem(INSTALL_SKIP_KEY, "1"); }catch(e){}
+}
+/* A page open inside another app's own browser (it has no Share > Add to Home Screen): by name where the user agent gives one,
+   and an iOS web view by its missing Safari token (every real iOS browser has one). */
+function inAppBrowser(){
+  const ua = navigator.userAgent || "";
+  if(/FBAN|FBAV|FB_IAB|FBIOS|Instagram|Snapchat|TikTok|musical_ly|Bytedance|Line\/|MicroMessenger|LinkedInApp|Twitter|GSA\/|KAKAOTALK|Pinterest|Outlook|Teams\/|\bGmail\b/i.test(ua)) return true;
+  if(/Android/i.test(ua) && /;\s*wv\)/.test(ua)) return true;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+  if(ios && !/Safari\//.test(ua)) return true;
+  return false;
+}
+/* Is this the device that is held on the install page? A phone or tablet (never a computer), not the installed app, no account
+   on it, and "I can't add it" not tapped. */
+function installFirstWanted(){
+  try{
+    if(isStandaloneApp()) return false;
+    if(a2hsDeviceGuess() === "computer") return false;
+    if(installSkipped()) return false;
+    if(accountTraceNow() || String(store.firstName || "").trim() || store.onboardingComplete) return false;
+    if(signedOutHere() || browserLinkCode) return false;
+    /* a device that has held an account (its own marks, or a stopped sync) is a returning one: Welcome, where Sign in is first */
+    if(localStorage.getItem("class26e.hadaccount") || localStorage.getItem("class26e.savecode.asked") || localStorage.getItem("class26e.savecode.card") || localStorage.getItem("class26e.syncoff")) return false;
+    return true;
+  }catch(e){ return false; }
+}
+/* The system share menu, from a tap: "shared", "cancelled", "failed" or "unavailable". Always the canonical address, whatever
+   address this page was opened at. */
+function a2hsShare(){
+  if(typeof navigator.share !== "function") return Promise.resolve("unavailable");
+  try{
+    return Promise.resolve(navigator.share({ url: A2HS_URL, title: "Nova" })).then(() => "shared",
+      e => (e && e.name === "AbortError") ? "cancelled" : "failed");
+  }catch(e){ return Promise.resolve("failed"); }
+}
+function showInstallFirst(o){
+  o = o || {};
+  stopTimer(); stopQuestionTimer();
+  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true; timerlineEl.hidden = true;
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true; pauseBtn.hidden = true;
+  countEl.textContent = "";
+  setOnboardingHeader();
+  let dev = o.device || a2hsDeviceGuess();
+  if(dev !== "android") dev = "apple";
+  const inApp = o.inapp != null ? !!o.inapp : inAppBrowser();
+  const mk = (tag, cls, text) => { const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; };
+  const panel = mk("section", "panel home onboarding-shortform-panel signupcheck-panel installfirst-panel");
+  panel.setAttribute("data-screen", "installfirst");
+  panel.dataset.mode = inApp ? "inapp" : "install"; panel.dataset.dev = dev;
+  const glow = mk("div", "homeglow"); glow.setAttribute("aria-hidden", "true");
+  const browserName = dev === "apple" ? "Safari" : "your browser";
+  const title = mk("p", "hometitle if-title", inApp ? "Open this page in " + browserName + " first" : "Add Nova to your Home Screen");
+  const line = mk("p", "hometagline signupcheck-text if-line", inApp
+    ? "This app cannot add Nova to your Home Screen. Open the page in " + browserName + ", then add it from there."
+    : "Add it first, then open Nova from the new icon to get started.");
+  const note = mk("p", "if-note");
+  const status = mk("p", "if-status"); status.setAttribute("role", "status");
+  const guide = mk("button", "if-skip if-guide", "Show me how"); guide.type = "button";
+  const skip = mk("button", "if-skip if-out", "I can’t add it"); skip.type = "button";
+  /* the glyph of what the button opens: the share arrow on iPhone and iPad, the plus on Android */
+  const icon = mk("span", "if-icon"); icon.setAttribute("aria-hidden", "true");
+  try{ icon.appendChild(dev === "apple" && !inApp ? buildShareIcon() : buildAddSquareIcon()); }catch(e){}
+  const go = mk("button", "next playbtn if-go"); go.type = "button"; go.id = "nextbtn";
+  panel.append(glow, icon, title, line, note, status);
+  let linkRow = null;
+  if(inApp){
+    /* the page's address, to copy and paste into the browser, where the hand-off does nothing */
+    linkRow = mk("div", "if-link");
+    const addr = mk("code", "if-link-addr", A2HS_ADDRESS);
+    const copy = mk("button", "next ghost if-copy", "Copy link"); copy.type = "button";
+    copy.addEventListener("click", async () => {
+      let ok = false;
+      try{ await navigator.clipboard.writeText(A2HS_URL); ok = true; }catch(e){}
+      copy.textContent = ok ? "Copied" : "Select it above";
+    });
+    linkRow.append(addr);
+    if(dev === "apple") linkRow.append(copy);   /* Android's primary button is the copy */
+    panel.appendChild(linkRow);
+  }
+  if(!inApp) panel.appendChild(guide);
+  panel.append(skip, go);
+
+  let busy = false;
+  const setStatus = t => { status.textContent = t; status.hidden = !t; };
+  setStatus("");
+  const openGuide = () => { try{ showHomeScreenSheet({ from: "installfirst", device: dev }); }catch(e){} };
+  if(inApp){
+    go.textContent = dev === "apple" ? "Open in Safari" : "Copy link";
+    note.textContent = dev === "apple"
+      ? "Tap Open in Safari. If nothing happens, copy the link and paste it into Safari."
+      : "Copy the link, then paste it into Chrome or your browser’s address bar.";
+    go.addEventListener("click", () => {
+      if(dev === "apple"){
+        let handedOff = false;
+        const onHide = () => { if(document.hidden) handedOff = true; };
+        document.addEventListener("visibilitychange", onHide);
+        try{ window.location.href = safariHandoffTarget(); }catch(e){}
+        setTimeout(() => {
+          document.removeEventListener("visibilitychange", onHide);
+          if(!handedOff && !document.hidden && panel.isConnected) setStatus("Could not open Safari. Copy the link below and paste it into Safari.");
+        }, 1500);
+      } else {
+        try{ navigator.clipboard.writeText(A2HS_URL).then(() => setStatus("Link copied. Paste it into your browser."), () => setStatus("Could not copy. Select the link below.")); }
+        catch(e){ setStatus("Could not copy. Select the link below."); }
+      }
+    });
+  } else if(dev === "apple"){
+    go.textContent = "Open Share menu";
+    note.textContent = "This opens your phone’s share menu. Tap Add to Home Screen in it, then open Nova from the new icon.";
+    go.addEventListener("click", () => {
+      if(busy) return;
+      busy = true;
+      /* called in the tap, before anything else: the share menu needs the tap that opened it */
+      a2hsShare().then(r => {
+        busy = false;
+        if(!panel.isConnected) return;
+        if(r === "shared") setStatus("Now open Nova from the new icon on your Home Screen.");
+        else { setStatus("Use the steps to add it by hand."); openGuide(); }
+      });
+    });
+  } else {
+    note.textContent = "Add Nova to your Home Screen, then open Nova from the new icon.";
+    const paint = () => {
+      const has = !!window.__deferredInstallPrompt;
+      go.textContent = has ? "Install Nova" : "Show me how to add it";
+      guide.hidden = !has;
+    };
+    paint();
+    const onPrompt = () => setTimeout(() => { if(panel.isConnected) paint(); }, 0);
+    const onInstalled = () => { if(panel.isConnected) setStatus("Nova has been added. Open it from your Home Screen."); };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    try{
+      const gone = new MutationObserver(() => { if(!panel.isConnected){ gone.disconnect(); window.removeEventListener("beforeinstallprompt", onPrompt); window.removeEventListener("appinstalled", onInstalled); } });
+      gone.observe(stage, { childList: true });
+    }catch(e){}
+    go.addEventListener("click", () => {
+      const p = window.__deferredInstallPrompt;
+      if(!p){ openGuide(); return; }
+      if(busy) return;
+      busy = true;
+      try{
+        p.prompt();
+        Promise.resolve(p.userChoice).then(c => {
+          window.__deferredInstallPrompt = null; busy = false;
+          if(!panel.isConnected) return;
+          if(c && c.outcome === "accepted") setStatus("Nova is being added. Open it from your Home Screen.");
+          else { setStatus("Not added. Tap Install Nova to try again."); paint(); }
+        }).catch(() => { busy = false; });
+      }catch(e){ busy = false; openGuide(); }
+    });
+  }
+  guide.addEventListener("click", openGuide);
+  /* goes on as before, in the browser: Get Started, then Welcome */
+  skip.addEventListener("click", () => { installSkip(); showWelcomeFirst(); });
+
+  stage.replaceChildren(panel);
+  toTop();
+  return panel;
+}
 /* Get Started is for a device with no account on it. A device that still
    has one (its code, a name in the store, or the mirror's copy) goes to
    Welcome, which offers that account first - the recovery paths live
@@ -100047,6 +100280,16 @@ function showWelcomeFirst(){
      A device signed out here (class26e.signedout, set by Sign out, cleared by signing in or up) opens on Welcome, as in
      383 - the person has an account and Sign in is right there. A device with nothing on it still gets Get Started. */
   if(signedOutHere()){ gsMarkSeen(); showWelcome(); return; }
+  /* (384.23) INSTALL FIRST: a phone or tablet in a browser tab with no account opens on the Add to Home Screen page (see
+     installFirstWanted), the account is made in the icon. A computer, the installed app and any device with an account are not held. */
+  if(installFirstWanted()){
+    showInstallFirst();
+    findAccountTrace().then(t => {
+      if(!t || !stage.querySelector('[data-screen="installfirst"]')) return;
+      gsMarkSeen(); showWelcome();
+    });
+    return;
+  }
   showGetStarted();
   findAccountTrace().then(t => {
     if(!t || !stage.querySelector('[data-screen="getstarted"]')) return;
@@ -102609,6 +102852,29 @@ function novaIntroLines(o){
     lines.push({ text: "Every question comes with the code it’s from." });
     lines.push({ gesture: "nod", text: "Answer one, and I’ll show you the page." });
     lines.push({ gesture: "raise", text: "Now, a little about me." });
+  } else if(o.signup && part === 0){
+    /* (384.23) A SHORTER SIGN-UP INTRODUCTION. The owner, watching classmates: "The walkthrough is a lot. The sign up process is not
+       easy ... long." He took 23 boxes (a tap each) before the tips: the story (the voyage, the storm, the scattering, the flares, the
+       badges, the crew) and the four modes, each its own box. A new account hears it in nine: who he is, the name, one box for what the
+       storm did, one for ranks and badges, the partner, the code, and the hand-over to the tips. Every thing the person has to DO is
+       still here (the name, the partner, the sync code's card); what is dropped is only what the tips and the screens say again (the four
+       modes are the Mode Select tips', the crew parade is Customize's). A Fire Code half (part 1, 2) and an existing account are as
+       they were. */
+    const both = signupPicked().indexOf("ifc") >= 0;
+    lines.push({ gesture: "wave", text: "Hello there!", enter: hello });
+    lines.push({ text: "I\u2019m Nova, an explorer, and I\u2019ll be your instructor." });
+    lines.push({ gesture: "raise", text: "First, what should I call you?", ask: novaAskName });
+    lines.push({ gesture: "wave", text: () => "So you\u2019re " + novaName() + "! A storm scattered my badges, flares and crew across your studies.",
+      enter: ctx => novaProp(ctx, buildNovaVoyage(true)) });
+    lines.push({ gesture: "raise",
+      text: ifcNow ? "Reach a new rank, and one of my flares lights back up. Score 100% on a chapter to find its badge."
+        : "Reach a new rank, and one of my flares lights back up. Score 100% on a unit enough times to find its badge." + (both ? " In Fire Code, once is enough." : ""),
+      enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
+    lines.push({ gesture: "raise", text: "A few of my crew stayed aboard. Who do you want as your partner?", ask: novaAskCharacter });
+    lines.push(picked);
+    lines.push(codeLines[0]);
+    lines.push({ gesture: "nod", final: true, text: "Now let me show you around.", enter: ctx => novaProp(ctx, null) });
+    return lines;
   } else if(o.signup){
     /* (327z15) a sign-up: he asks the name himself */
     lines.push({ gesture: "wave", text: "Hello there!", enter: hello });
@@ -103174,6 +103440,21 @@ function mainMenuTourSteps(returning){
      (scheduleStudyTip). */
   const ifc = window.NOVA_CLASS === "ifc";
   const laptop = !!(window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches);
+  /* (384.23) A NEW ACCOUNT'S TIPS ARE FOUR, NOT EIGHT. "The walkthrough is a lot." The four tab-bar tips (and the flares, which Nova's
+     introduction has just shown) are one tip at the bar; what stays are the places that are not in the bar: the daily question, the
+     class button and Nova's chat. An account from before Nova (returning) is as it was. */
+  if(!returning) return [
+    { target: ".bottomtabs", align: "left", vplacement: "above",
+      text: ifc ? "The bar at the bottom: Home, Profile, Leaderboard and Settings. Tap Profile for your rank and badges."
+        : "The bar at the bottom: Home, Profile, Leaderboard and Calendar. Tap Profile for your rank and badges." },
+    { target: ".daily-question-fab", align: "right", vplacement: "above",
+      text: "Your daily question: one a day, one try." },
+    classButtonTipStep("Your classes. Switch classes or join another here."),
+    { target: "#chatdock-btn", align: "right", vplacement: "below",
+      /* (384 r4) "The 'I've added you as a friend I'll keep in touch' make that at the end of tool tips instead" */
+      text: "I\u2019ve added you as a friend. Message me here any time.",
+      onShow: () => { try{ novaFriendMoment(); }catch(e){} } }
+  ];
   return [
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home brings you back here from anywhere." },

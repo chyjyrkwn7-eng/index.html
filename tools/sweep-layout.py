@@ -197,6 +197,8 @@ SCREENS = [
     # onboarding, in the order someone actually meets it
     # (384) the first-visit page a shared link lands on, before Welcome
     "showGetStarted",
+    # (384.23) the page a phone in a tab with no account is held on (add Nova to the Home Screen), and the one an in-app browser sees
+    "showInstallFirst({device:'apple',inapp:false})", "showInstallFirst({device:'apple',inapp:true})", "showInstallFirst({device:'android',inapp:false})",
     "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showWelcomeNamePrompt",
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
     # the everyday screens
@@ -237,7 +239,7 @@ SCREENS = [
 
 # Reached only from Welcome, and only before the account exists.
 ONBOARDING_SCREENS = {
-    "showGetStarted",
+    "showGetStarted", "showInstallFirst({device:'apple',inapp:false})", "showInstallFirst({device:'apple',inapp:true})", "showInstallFirst({device:'android',inapp:false})",
     "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",

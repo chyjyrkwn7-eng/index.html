@@ -332,7 +332,7 @@ with sync_playwright() as pw:
             S.ck("7c", "a new account's tips include the class button, pointing at it (%s)" % [(c["text"][:50], c["onBubble"]) for c in ct],
                  len(ct) == 1 and ct[0]["onBubble"] and ct[0]["text"].startswith("Your classes"), [s["text"][:40] for s in steps])
             sheet = wait_for(pg, "()=>{ const o=document.getElementById('a2hs-sheet'); return o && o.classList.contains('invite-overlay-show') ? o.innerText : null; }", 40)
-            if sheet: path.append(sheet); pg.wait_for_timeout(600); pg.click("#a2hs-sheet .a2hs-foot button"); pg.wait_for_timeout(600)
+            if sheet: path.append(sheet); pg.wait_for_timeout(600); pg.click("#a2hs-sheet .a2hs-foot .a2hs-close"); pg.wait_for_timeout(600)
             enrolled = wait_for(pg, "()=>{ const e=document.getElementById('enrolled-banner'); return e ? e.innerText : null; }", 20)
             if enrolled: path.append(enrolled)
             luck = wait_for(pg, "()=>{ const t=localStorage.getItem('class26e.nova')||''; return /Good luck on your learning adventure/.test(t) ? t : null; }", 40)
@@ -487,7 +487,7 @@ with sync_playwright() as pw:
             steps = []
             n = tips(pg, steps=steps)
             sheet = wait_for(pg, "()=>{ const o=document.getElementById('a2hs-sheet'); return o && o.classList.contains('invite-overlay-show'); }", 40)
-            if sheet: pg.wait_for_timeout(500); pg.click("#a2hs-sheet .a2hs-foot button"); pg.wait_for_timeout(500)
+            if sheet: pg.wait_for_timeout(500); pg.click("#a2hs-sheet .a2hs-foot .a2hs-close"); pg.wait_for_timeout(500)
             eb = wait_for(pg, "()=>{ const e=document.getElementById('enrolled-banner'); return e ? e.innerText : null; }", 20)
             ct = class_tip_of(steps)
             S.ck("14c", "the tips name the class button, pointing at it (%s); then \"You're enrolled in Police Academy and Fire Code\" (%r)" % ([(c["text"][:40], c["onBubble"]) for c in ct], (eb or "")[:90]),

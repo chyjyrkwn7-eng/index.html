@@ -170,6 +170,9 @@ def open_page(br, dev, installed=False, init="", seed=None, wait=3500):
     ctx.add_init_script("window.__cloudSeed = %s;" % json.dumps(seed or {}))
     ctx.add_init_script(FAKE)
     ctx.add_init_script(WATCH)
+    # 384.23: a phone in a tab with no account is held on the install page (check-b384-installfirst.py); this gate is about the sheet that
+    # the browser sign-up ends on, so its devices are ones that tapped "I can't add it"
+    ctx.add_init_script("try{ if(location.protocol === 'http:') localStorage.setItem('class26e.installskip','1'); }catch(e){}")
     if installed: ctx.add_init_script(STANDALONE)
     if init:
         ctx.add_init_script("(()=>{ try{ if(location.protocol !== 'http:' || sessionStorage.getItem('__seeded')) return; sessionStorage.setItem('__seeded','1'); "
