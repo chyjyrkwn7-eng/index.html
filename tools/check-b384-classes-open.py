@@ -314,7 +314,7 @@ with sync_playwright() as pw:
             under = ev(pg, "()=>({ home: !!document.querySelector('#stage [data-screen=\"home\"]'), stage: document.getElementById('stage').innerText.trim().slice(0,80) })")
             p1 = walk_nova(pg, texts=path, name="Casey Rivera")
             S.ck("5", "Nova's first half: the name, the partner (no academy crew), the code's card; ends on %r, whose Continue ends him; no academy Home under him (%s)" % (p1["final"], under),
-                 {"name", "char", "card"} <= p1["asked"] and not p1["later"] and p1["final"] == "Open Fire Code" and p1["ended"] and not under["home"], [p1["asked"], p1["final"], p1["ended"], p1["stuck"], under])
+                 {"name", "char"} <= p1["asked"] and "card" not in p1["asked"] and not p1["later"] and p1["final"] == "Open Fire Code" and p1["ended"] and not under["home"], [p1["asked"], p1["final"], p1["ended"], p1["stuck"], under])
             state["code"] = None
             wait_for(pg, "()=>window.NOVA_CLASS === 'ifc' && !!document.getElementById('nova-intro')", 40)
             p2 = walk_nova(pg, texts=path, name="Casey Rivera")
@@ -482,7 +482,7 @@ with sync_playwright() as pw:
             pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000)
             nv = walk_nova(pg, name="Robin Twoclass")
             S.ck("14b", "Police Academy's whole sign-up: Nova asks the name, the partner, the code, ends on %r" % nv["final"],
-                 {"name", "char", "card"} <= nv["asked"] and nv["ended"] and ev(pg, "()=>window.NOVA_CLASS") == "academy"
+                 {"name", "char"} <= nv["asked"] and "card" not in nv["asked"] and nv["ended"] and ev(pg, "()=>window.NOVA_CLASS") == "academy"
                  and any("four ways to train" in l for l in nv["lines"]), [nv["asked"], nv["final"], nv["stuck"]])
             steps = []
             n = tips(pg, steps=steps)

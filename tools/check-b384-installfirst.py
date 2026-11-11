@@ -166,6 +166,27 @@ try:
         txt = pg.evaluate("()=>{ const e=document.querySelector('#a2hs-sheet .a2hs-share-status'); return e && !e.hidden ? e.textContent : ''; }")
         chk("(5) a failed share leaves the steps on the sheet and says to use them", txt.strip() and pg.evaluate("()=>!!document.getElementById('a2hs-sheet')"), txt)
         ctx.close()
+        # the reminder bar on Home: its pill (the white button) opens the share menu the same way; cancelled or failed, the guide
+        ctx, pg = open_dev(br, "iphone-safari", seeded=True, extra=(SHARE_STUB,))
+        pg.wait_for_timeout(2500)
+        pg.evaluate("()=>{ document.getElementById('a2hsbar') && document.getElementById('a2hsbar').remove(); showA2hsBar(); }"); pg.wait_for_timeout(600)
+        pill = pg.evaluate("()=>{ const p=document.querySelector('#a2hsbar .a2hs-bar-pill'); return p ? p.textContent : null; }")
+        chk("(5) the reminder bar's pill says it is Share, not that it adds itself (%r)" % pill, pill and re.search(r"share", pill, re.I), pill)
+        pg.click("#a2hsbar .a2hs-bar-main"); pg.wait_for_timeout(600)
+        sh = pg.evaluate("()=>window.__shares"); sheet = pg.evaluate("()=>!!document.getElementById('a2hs-sheet')")
+        chk("(5) the bar's tap calls navigator.share with the canonical address, and the guide stays shut when it resolved", len(sh) == 1 and sh[0]["url"] == canon and not sheet, [sh, sheet])
+        for mode in ("abort", "fail"):
+            pg.evaluate("(m)=>{ window.__shareMode = m; }", mode)
+            pg.click("#a2hsbar .a2hs-bar-main"); pg.wait_for_timeout(700)
+            chk("(5) the bar: share %s -> the guide opens" % mode, pg.evaluate("()=>!!document.getElementById('a2hs-sheet')"), "")
+            pg.evaluate("()=>{ const o=document.getElementById('a2hs-sheet'); if(o) o.remove(); }")
+        ctx.close()
+        ctx, pg = open_dev(br, "iphone-safari", seeded=True, extra=(NO_SHARE,))
+        pg.wait_for_timeout(2500)
+        pg.evaluate("()=>{ document.getElementById('a2hsbar') && document.getElementById('a2hsbar').remove(); showA2hsBar(); }"); pg.wait_for_timeout(600)
+        pg.click("#a2hsbar .a2hs-bar-main"); pg.wait_for_timeout(700)
+        chk("(5) the bar with no navigator.share: the guide opens", pg.evaluate("()=>!!document.getElementById('a2hs-sheet')"), "")
+        ctx.close()
         # ---- (6) Android
         PROMPT = """(()=>{ window.__prompts = 0; window.__fire = function(outcome){ const e = new Event('beforeinstallprompt'); e.prompt = function(){ window.__prompts++; return Promise.resolve(); };
             e.userChoice = Promise.resolve({ outcome: outcome || 'accepted' }); window.dispatchEvent(e); }; })();"""

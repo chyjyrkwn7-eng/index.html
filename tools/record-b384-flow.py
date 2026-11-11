@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record the whole NEW first-run path of 384.23 as one mp4 at iPhone 17 Pro Max size (440x956), with a caption on every screen.
+"""Record the whole NEW first-run path of 384.27 as one mp4 at iPhone 17 Pro Max size (440x956), with a caption on every screen.
 
   1. an iPhone in a Safari tab with no account: the install page, what Open Share menu does (the share menu is SIMULATED here: Chromium has
      none, so navigator.share is stubbed and a mock sheet is drawn, labelled as such), the guide, and the page an in-app browser (Instagram) sees;
@@ -145,7 +145,7 @@ def icon_new(pg):
     n("Generating the profile")
     pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000)
     pg.wait_for_selector("#nova-intro", state="attached", timeout=15000)
-    n("Nova introduces himself: 7 short boxes, a name, a partner and the sync code")
+    n("Nova introduces himself: a few short boxes, your name, a partner, and the sync code (shown once, no card)")
     seen = set(); asked = set(); t1 = time.time()
     while time.time() - t1 < 200:
         st = L.novastate(pg)
@@ -154,8 +154,7 @@ def icon_new(pg):
             if "end" in asked or time.time() - t1 > 10: break
             slow(pg, 200); continue
         if st["card"] and "card" not in asked:
-            asked.add("card"); cap(pg, "<b>The sync code</b>: saved for you; copy or tick, then Continue. It is kept in Settings"); slow(pg, 2800)
-            tap(pg, "#savecode-card .savecode-ack", 1200); tap(pg, "#savecode-card .savecode-continue", 900); cap(pg, "<b>Screen %d</b> Nova again" % steps[0]); continue
+            asked.add("card"); tap(pg, "#savecode-card .savecode-ack", 1200); tap(pg, "#savecode-card .savecode-continue", 900); continue
         if st["asking"] and not st["typing"] and st["name"] and "name" not in asked:
             asked.add("name"); cap(pg, "<b>Nova asks your name</b>"); slow(pg, 1200)
             tap(pg, ".nt-ask-input", 300); pg.keyboard.type("J.Smith", delay=120); slow(pg, 700)

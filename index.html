@@ -92413,7 +92413,18 @@ function showA2hsBar(){
   const pill = document.createElement("span"); pill.className = "a2hs-bar-pill"; pill.setAttribute("aria-hidden", "true");
   pill.textContent = "Add";
   main.append(text, pill);
-  main.addEventListener("click", () => { try{ showHomeScreenSheet({ from: "bar" }); }catch(e){} });
+  /* (384.27) THE WHITE BUTTON OPENS THE SHARE MENU (iPhone and iPad): the same as the install page's and the sheet's. It is called from
+     this tap, with the canonical address; Add to Home Screen is a row in the menu (Apple has no call that adds it in one tap, so the
+     pill says "Share"). Cancelled, failed or missing, the guide opens, as it always did. */
+  const shareHere = a2hsDeviceGuess() === "apple" && typeof navigator.share === "function";
+  if(shareHere){
+    pill.textContent = "Share";
+    main.setAttribute("aria-label", "Open the share menu, then tap Add to Home Screen");
+  }
+  main.addEventListener("click", () => {
+    if(!shareHere){ try{ showHomeScreenSheet({ from: "bar" }); }catch(e){} return; }
+    a2hsShare().then(r => { if(r !== "shared"){ try{ showHomeScreenSheet({ from: "bar" }); }catch(e){} } });
+  });
   const x = document.createElement("button");
   x.type = "button"; x.className = "update-banner-close a2hs-bar-x";
   x.setAttribute("aria-label", "Close this reminder");

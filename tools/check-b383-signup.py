@@ -299,7 +299,7 @@ with sync_playwright() as pw:
                         seen.add("end"); pg.evaluate("()=>document.querySelector('#nova-intro .nt-go')?.click()")
                     else: pg.evaluate("()=>document.getElementById('nova-intro').__nova.advance()")
                 pg.wait_for_timeout(120)
-            chk("[guard] %s Nova asked the name, the partner and had the save-code card answered" % dev, {"name", "char", "card"} <= seen, seen)
+            chk("[guard] %s Nova asked the name and the partner, and no save-code card stopped the sign-up (384.27: the code is shown in his box and kept in Settings)" % dev, {"name", "char"} <= seen and "card" not in seen, seen)
             tip = False
             for _ in range(40):
                 if pg.evaluate("()=>!!document.getElementById('tour-tooltip')"): tip = True; break
@@ -315,8 +315,8 @@ with sync_playwright() as pw:
             docs = pg.evaluate("()=>Object.keys(__cloud.progress).filter(k=>!/__/.test(k))")
             chk("[guard] %s choosing the partner (twice) made one account: one code, kept to the end, one document (%s, %s)" % (dev, count_after, docs),
                 bool(count_after) and bool(count_after["code"]) and count_after["code"] == r["code"] and docs == [r["code"]], (count_after, docs))
-            chk("[guard] %s Home, the account named, its partner, onboarded, the code saved, in the cloud with its backup (%s)" % (dev, r),
-                r["screen"] == "home" and r["name"] == name and r["char"] and r["onb"] and r["saved"] and r["cloudName"] == name and r["floor"] and not r["card"], r)
+            chk("[guard] %s Home, the account named, its partner, onboarded, with its code, in the cloud with its backup (%s)" % (dev, r),
+                r["screen"] == "home" and r["name"] == name and r["char"] and r["onb"] and r["code"] and r["cloudName"] == name and r["floor"] and not r["card"], r)
             relaunch(pg)
             chk("[guard] %s opened again: Home, still signed in" % dev, screen(pg) == "home" and pg.evaluate("()=>syncCode") == r["code"], screen(pg))
             errs_ok(pg, "fresh install")
