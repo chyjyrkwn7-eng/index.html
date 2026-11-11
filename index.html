@@ -70074,13 +70074,29 @@ function friendPublicIds(){
 
 /* Somebody whose row asks for me, that I have neither accepted nor
    declined. Read off THEIR row, which is the only place it can be. */
+/* When THIS device last declined or removed somebody (a local viewing mark, never on `store`: it is not progress). A request that
+   was sent before that is the old one; one after it is new. */
+var FRIEND_DECLINED_AT_KEY = "class26e.frienddecl";
+function friendDeclinedAtMap(){
+  try{ const m = JSON.parse(localStorage.getItem(FRIEND_DECLINED_AT_KEY) || "{}"); return (m && typeof m === "object") ? m : {}; }catch(e){ return {}; }
+}
+function markFriendDeclinedAt(pub){
+  try{ const m = friendDeclinedAtMap(); m[pub] = Date.now(); const ks = Object.keys(m); if(ks.length > 200) delete m[ks[0]]; localStorage.setItem(FRIEND_DECLINED_AT_KEY, JSON.stringify(m)); }catch(e){}
+}
 function incomingFriendRequests(){
   const accepted = new Set(store.friendsIn || []);
   const declined = new Set(store.friendsDeclined || []);
   const friends = new Set(friendPublicIds());
+  /* (384.39) A REQUEST IN THE MAILBOX IS A NEW REQUEST, DECLINED BEFORE OR NOT. Declining (and removing a friend, which declines)
+     takes the person's message out of the mailbox (clearInbox), so one that is there now was sent after: it is shown. Held to
+     "declined" it could never be seen, and two people who had once removed each other could never add each other again - the
+     sender is told "Request sent" and nothing ever appears on the other phone. The board-row path below keeps the old rule,
+     because a row's request stays in it until its sender withdraws it. */
+  const decAt = friendDeclinedAtMap();
   const box = inboxOfType("friendreq", 0).filter(m =>
     m.pub && m.pub !== store.publicId &&
-    !accepted.has(m.pub) && !declined.has(m.pub) && !friends.has(m.pub));
+    !accepted.has(m.pub) && !friends.has(m.pub) &&
+    !(declined.has(m.pub) && decAt[m.pub] && (Number(m.at) || 0) <= decAt[m.pub]));
   if(box.length) return box;
   return (leaderboardRows || []).filter(e =>
     e && e.pub && e.pub !== store.publicId &&
@@ -70094,14 +70110,53 @@ function outgoingFriendRequests(){
   return (store.friendsOut || []).filter(id => !friends.has(id));
 }
 
+/* ---- WHAT SOMEBODY TYPES OR PASTES IS READ KINDLY (384.39) ----
+   A code is read out loud, texted, copied from a message and typed from a screenshot, so what arrives is "abc 234", "ABC–234"
+   (a typographic dash), "ABC-234\n", "my code is ABC-234" or six letters with no dash. All of those are the one code. The
+   field's 7-character limit used to cut a pasted line off before any of this could run. What cannot be read says why: the
+   alphabet has no I, O, 0 or 1 (they are mistaken for each other and for L and Q), so one of those typed is a misread, and
+   the message names that rather than calling the whole thing "not a friend code". Returns { code } or { why }. */
+var FRIEND_CODE_WHY_SHAPE = "That is not a friend code. They look like ABC-234.";
+function friendCodeFromText(text){
+  let t = String(text == null ? "" : text);
+  try{ t = t.normalize("NFKC"); }catch(e){}
+  t = t.toUpperCase().trim();
+  if(!t) return { why: "Enter a friend code. They look like ABC-234." };
+  let cand = "";
+  /* 1. three, a dash of any kind, three - found anywhere in what was pasted */
+  const dashed = t.match(/(?:^|[^A-Z0-9])([A-Z0-9]{3})\s*[-‐-―−_]\s*([A-Z0-9]{3})(?![A-Z0-9])/);
+  if(dashed) cand = dashed[1] + "-" + dashed[2];
+  /* 2. six characters with spaces, dots or nothing between */
+  if(!cand){
+    const compact = t.replace(/[^A-Z0-9]/g, "");
+    if(compact.length === 6) cand = compact.slice(0, 3) + "-" + compact.slice(3);
+  }
+  /* 3. one six-character word in a longer message */
+  if(!cand){
+    const six = t.split(/[^A-Z0-9]+/).filter(w => w.length === 6);
+    if(six.length === 1) cand = six[0].slice(0, 3) + "-" + six[0].slice(3);
+  }
+  if(!cand) return { why: FRIEND_CODE_WHY_SHAPE };
+  if(!FRIEND_CODE_RE.test(cand)){
+    return { why: "That is not a friend code. A code never has the letters I or O or the numbers 0 or 1, so check those characters." };
+  }
+  return { code: cand };
+}
+/* A refused or failed Firestore call, in words (the SDK's own code names it). A day's free quota spent comes back as
+   resource-exhausted, and it was shown as "nobody has that code" - now it says what it is. */
+function friendFailWhy(code){
+  const c = String(code || "");
+  if(/resource-exhausted/.test(c)) return "The class server is too busy right now. Try again in a little while.";
+  if(/unavailable|offline|network|deadline/.test(c)) return "Could not reach the class. Check your connection and try again.";
+  if(/permission/.test(c)) return "The class server did not accept that. Try again in a little while.";
+  return "Could not reach the class right now. Try again in a moment.";
+}
+var FRIEND_OFFLINE_WHY = "Nova is not connected to the class yet. Check your connection and try again.";
+
 function sendFriendRequest(code){
-  const want = (code || "").trim().toUpperCase();
-  /* THE EXAMPLE HAS TO BE A CODE THAT COULD EXIST. "ABC-123" was the
-     placeholder and the error text, and it is impossible: the alphabet
-     drops I, O, 1 and 0 so a 1 can never appear in one. Somebody
-     copying the shape from the hint would have been told their own
-     example was not a friend code. */
-  if(!FRIEND_CODE_RE.test(want)) return { ok: false, why: "That is not a friend code. They look like ABC-234." };
+  const parsed = friendCodeFromText(code);
+  if(!parsed.code) return { ok: false, why: parsed.why };
+  const want = parsed.code;
   if(want === friendCodeOf()) return { ok: false, why: "That is your own code." };
   let match = (leaderboardRows || []).find(e => e && e.fcode === want);
   /* (384 r13) NOT ON THE BOARD: a friend in Fire Code alone has no board row, but their presence beat carries their code (`f`) */
@@ -70117,37 +70172,62 @@ function sendFriendRequest(code){
      rather than "no such person". */
   if(!match || !match.pub) return { ok: false, notFound: true, want: want, why: "No one in your classes has that code yet. They may need to update and open the app once." };
   if(friendPublicIds().indexOf(match.pub) >= 0) return { ok: false, why: (match.firstName || "They") + " is already a friend." };
+  if(!socialDb()) return { ok: false, offline: true, why: FRIEND_OFFLINE_WHY };
+  /* (384.39) THEY ALREADY ASKED ME, SO THIS IS MY YES. Two people who each type the other's code (the way buddies sitting
+     together do it) used to end with a request sent each way and nobody ever accepting: each had a pending request from the
+     other that nothing told them about. The second request is the answer to the first. */
+  try{
+    const theirs = incomingFriendRequests().find(e => e && e.pub === match.pub);
+    if(theirs){
+      acceptFriendRequest(match.pub);
+      return { ok: true, accepted: true, name: match.firstName || theirs.firstName || "They" };
+    }
+  }catch(e){}
+  /* asking somebody I once declined or removed is me changing my mind */
+  if((store.friendsDeclined || []).indexOf(match.pub) >= 0){
+    store.friendsDeclined = store.friendsDeclined.filter(x => x !== match.pub);
+    saveStore();
+  }
   if((store.friendsOut || []).indexOf(match.pub) < 0){
     store.friendsOut = (store.friendsOut || []).concat([match.pub]);
     saveStore();
   }
-  /* (384) the row that carries a request (freq) is published by the academy alone, so from another class the request goes
-     to their mailbox at once, the way a request from a person's card always has (sendFriendRequestTo) */
-  if(window.NOVA_CLASS === "ifc" || match.noRow) sendToInbox(match.pub, { type: "friendreq" });   /* (384 r13) and to anyone with no board row for the request to sit on */
-  return { ok: true, name: match.firstName || "They" };
+  /* (384.39) THE MAILBOX, EVERY TIME. The request used to go only into MY board row (freq) for a classmate on the academy's
+     board, and the other phone reads the board once in fifteen minutes (a Friends screen opened with rows already held did not
+     read it at all) - so a request typed in by code reached nobody until then, while the same request from a person's card
+     (sendFriendRequestTo) always went to their mailbox and arrived at once. Both do now. The row still carries it for a
+     classmate on an older build, which reads the row and not the mailbox. */
+  const delivered = sendToInbox(match.pub, { type: "friendreq" });
+  return { ok: true, name: match.firstName || "They", delivered: delivered };
 }
 
 /* (384 r13) A CODE NOT FOUND IN WHAT THIS DEVICE HOLDS IS ASKED OF THE CLOUD, once, as a one-document query: a board this device
-   read before the person joined (a stale list) never had them. Only on a miss, so the common case reads nothing. */
+   read before the person joined (a stale list) never had them. Only on a miss, so the common case reads nothing.
+   (384.39) AND AN ANSWER IT COULD NOT GET IS NOT "NOBODY HAS THAT CODE": a refused query, a dropped connection and a slow one
+   each say so, and only a served, empty answer says the code is nobody's. */
 function sendFriendRequestAsync(code){
   const r = sendFriendRequest(code);
   if(r.ok || !r.notFound) return Promise.resolve(r);
   const db = socialDb();
-  if(!db) return Promise.resolve(r);
+  if(!db) return Promise.resolve({ ok: false, offline: true, why: FRIEND_OFFLINE_WHY });
   return new Promise(resolve => {
     let done = false;
     const finish = v => { if(done) return; done = true; resolve(v); };
-    setTimeout(() => finish(r), 6000);
+    setTimeout(() => finish({ ok: false, queryFailed: true, why: friendFailWhy("deadline") }), 8000);
     try{
       db.collection("leaderboard").where("fcode", "==", r.want).limit(1).get().then(snap => {
         let found = null;
         snap.forEach(doc => { if(!found && !isLegacyBoardId(doc.id)) found = Object.assign({ pub: doc.id }, doc.data()); });
-        if(!found){ finish(r); return; }
+        if(!found){
+          /* an empty answer out of the device's own cache says nothing about the class */
+          if(snap && snap.metadata && snap.metadata.fromCache === true){ finish({ ok: false, queryFailed: true, why: friendFailWhy("offline") }); return; }
+          finish(r); return;
+        }
         try{ found.rawWeekPoints = found.weekPoints; found.weekPoints = weekPointsOfEntry(found); fixBoardLevel(found); }catch(e){}
         leaderboardRows = (leaderboardRows || []).filter(e => !(e && e.pub === found.pub)).concat([found]);
         finish(sendFriendRequest(r.want));
-      }).catch(() => finish(r));
-    }catch(e){ finish(r); }
+      }).catch(err => finish({ ok: false, queryFailed: true, why: friendFailWhy(err && (err.code || err.message)) }));
+    }catch(e){ finish({ ok: false, queryFailed: true, why: friendFailWhy("") }); }
   });
 }
 
@@ -70243,6 +70323,7 @@ function clearFriendRequestFromInbox(pub){ clearInbox(pub); }
 
 function declineFriendRequest(pub){
   if(!pub) return;
+  markFriendDeclinedAt(pub);
   clearInbox(pub);
   /* Local only. Declining is not something the other person needs told,
      and publishing it would mean writing "no" into a document they can
@@ -70254,6 +70335,7 @@ function declineFriendRequest(pub){
 }
 
 function removeFriend(pub){
+  markFriendDeclinedAt(pub);
   store.friendsIn = (store.friendsIn || []).filter(x => x !== pub);
   store.friendsOut = (store.friendsOut || []).filter(x => x !== pub);
   /* Their row may still accept me, which would put them straight back.
@@ -70399,7 +70481,9 @@ function inboxDocFor(pub){
    replaces their first rather than piling up - the same shape the row
    field had, which is what keeps the readers simple. */
 function sendToInbox(pub, payload){
-  if(!socialDb() || !pub || !payload) return;
+  /* (384.39) returns a promise that never rejects: { ok: true } once the write is acknowledged, or { ok: false, code } when it was
+     refused (the friend request says so; every other caller ignores it, as before) */
+  if(!socialDb() || !pub || !payload) return Promise.resolve({ ok: false, code: "unavailable" });
   try{
     const me = publicIdOf();
     /* (384) who you are to them: the academy account's name, face and numbers, in every class (socialCard) */
@@ -70414,9 +70498,9 @@ function sendToInbox(pub, payload){
       badges: card.badges,
       mystery: card.mystery
     }, payload);
-    inboxDocFor(pub).set({ kind: "inbox", msgs: { [me]: msg } },
-                         { merge: true }).catch(() => {});
-  }catch(e){}
+    return Promise.resolve(inboxDocFor(pub).set({ kind: "inbox", msgs: { [me]: msg } },
+                         { merge: true })).then(() => ({ ok: true }), err => ({ ok: false, code: String(err && (err.code || err.message) || "") }));
+  }catch(e){ return Promise.resolve({ ok: false, code: "error" }); }
 }
 
 /* Same mailbox, a named slot. Everything else is keyed by the sender,
@@ -121102,7 +121186,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.34";
+const APP_BUILD = "2026-11-11-384.39";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -139424,6 +139508,7 @@ function fetchBoardForInvites(force){
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
       friendsListCatchUp();
       try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
+      try{ refreshPresenceViews(); }catch(e){}   /* (384.39) the Friends screen redraws if a request or a friend landed (it holds back while somebody is typing) */
     }).catch(() => { boardFetchInFlight = false; if(delta) boardDeltaOk = false; });
   }catch(e){ boardFetchInFlight = false; if(delta) boardDeltaOk = false; }
 }
@@ -150403,6 +150488,10 @@ function showFriends(){
   countEl.textContent = "Friends";
   updateHeaderTitle();
   if(!leaderboardRows || !leaderboardRows.length) attachFriendsBoardListener();
+  /* (384.39) rows already held are as old as the last fetch (up to fifteen minutes, and a classmate who joined since is not in
+     them). Ask for what changed since: the same delta query the launch fetch uses - a row or two, not the class - at most
+     every 20 seconds, and the screen redraws if it brings anything (fetchBoardForInvites ends in refreshPresenceViews). */
+  else if(Date.now() - boardFetchedAt > 20000){ try{ fetchBoardForInvites(true); }catch(e){} }
   friendsShownSignature = friendsViewSignature();
 
   const panel = document.createElement("section");
@@ -150631,23 +150720,33 @@ function showFriends(){
   addRow.className = "friend-add-row";
   const input = document.createElement("input");
   input.type = "text"; input.className = "searchbox searchbox-plain friend-add-input";
-  input.placeholder = "Enter a friend\u2019s code"; input.maxLength = 7;
+  /* (384.39) no 7-character limit: a pasted "my code is ABC-234" was cut to "my code" before it could be read (friendCodeFromText) */
+  input.placeholder = "Enter a friend\u2019s code"; input.maxLength = 80;
   input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false;
   /* THE DASH TYPES ITSELF, the same as the lobby code field already
      does. A friend code is XXX-XXX and somebody typing six characters
      without one had the whole thing rejected as "not a friend code",
      which is a format complaint dressed up as a lookup failure. */
   input.addEventListener("input", () => {
-    const raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    /* a whole pasted code, or a line with one in it, is read as one (friendCodeFromText); typing goes in as it comes */
+    const read = friendCodeFromText(input.value);
+    const raw = (read.code ? read.code.replace("-", "") : input.value.toUpperCase().replace(/[^A-Z0-9]/g, "")).slice(0, 6);
     input.value = raw.length > 3 ? raw.slice(0, 3) + "-" + raw.slice(3) : raw;
   });
+  let sending = false;
   const send = actBtn("Send", "friend-send", () => {
+    if(sending) return;
+    sending = true;
     sendFriendRequestAsync(input.value).then(r => {
+      sending = false;
       if(!r.ok){ showToast(r.why); return; }
       pushToCloud();
+      if(r.accepted){ showToast("You and " + r.name + " are now friends.", "good"); showFriends(); return; }
       showToast("Request sent to " + r.name + ".", "good");
+      /* a write the cloud refused is said so, rather than left looking sent (a day's quota spent, no permission) */
+      try{ if(r.delivered) r.delivered.then(d => { if(d && d.ok === false && !/unavailable/.test(d.code || "")) showToast(friendFailWhy(d.code)); }); }catch(e){}
       showFriends();
-    });
+    }, () => { sending = false; });
   });
   input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
   /* (384) "The 'enter a friends code' doesn't come off as a text box but I like how it looks? Could we still keep it how it is but
