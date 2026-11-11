@@ -188,6 +188,13 @@ def run(pg, scenario="plain", units=None, tap_every=0.25, limit=120, one_short=T
         except Exception as ex:
             print("   (run: %s)" % str(ex)[:100])
         pg.wait_for_timeout(120)
+    # let a scene still up play out (the results can be "done" under a still scene in Reduce motion)
+    for _ in range(160):
+        try:
+            if not pg.evaluate("()=>!!document.querySelector('.bc-scene, .rs-spot')"): break
+        except Exception: break
+        pg.wait_for_timeout(250)
+    pg.wait_for_timeout(600)
     tr = pg.evaluate("()=>window.__tr")
     tr["resultsAt"] = None if rs_at is None else round(rs_at - t0, 1); tr["taps"] = taps; tr["frames"] = frames
     tr["unitsPlayed"] = units
@@ -203,7 +210,7 @@ def report(tr, label=""):
     print("earned items: badges %s, chars %s, banners %s, effects %s, flares %s" % (short(badges), chars, banners, fx, flares))
     played = []
     for s in tr["scenes"]:
-        if s.get("shown") or s["name"] in ("home badge queue", "home unlocks"):
+        if s.get("shown"):
             played.append("%s%s @%dms up %s" % (s["name"], " [" + s["arg"][:28] + "]" if s["arg"] else "", s["at"],
                           ("%dms" % (s["ended"] - s["up"])) if s.get("ended") and s.get("up") else "still up/never ended"))
     print("scenes played: %s" % (played or []))
