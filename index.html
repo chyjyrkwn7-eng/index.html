@@ -97041,6 +97041,8 @@ function orbitAnimKeyframes(cellCss, cols, n){
    where the clock says. Stagger offsets (negative delays) are kept;
    one-shot entrances are left alone. Reduce motion has no loops to set. */
 const LOOP_EPOCH = Date.UTC(2026, 0, 1);
+/* 384.25: one step of the flare sheets' 24 a second is 41.7ms; a loop nearer than this to where the wall clock puts it is not moved */
+const LOOP_SYNC_SLACK_MS = 45;
 /* How far the Home rings are ahead of
    LOOP_EPOCH's clock, from planet taps - see orbitBoostKick (build 318). */
 let orbitAdvanceMs = 0;
@@ -97161,7 +97163,7 @@ function trimHeroSheetsNow(){
 }
 function restoreAfterBackground(){
   /* build 377: the decoded sheets let go on the way out come back, in the quiet, so the next board's rows are not decoded in its first frame */
-  try{ setTimeout(() => { charPreList.slice().forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden){ sp.pre = im; charPreKeep(sp); } }, () => {}); }catch(e){} } }); }, 1200); }catch(e){}
+  charPreRestoreSoon();
   try{
     const rows = document.querySelector(".rank-rows");
     if(rows) lbArtQueue(rows, lbNearRows(rows));
@@ -97173,7 +97175,9 @@ function restoreAfterBackground(){
     if(resized) trimHeroSheetsNow();
     trimHeroVP = "";
     if(hero && !resized){
-      setTimeout(() => { try{ if(!document.hidden && hero.isConnected){ const r = hero.parentElement || hero; startOrbitEmblemAnimsKnown(r); orbitStandIns(r); startOrbitEmblemAnims(r); } }catch(e){} }, 2500);
+      /* 384.25: only when a bubble is still without its sheet. With all of them on there is nothing to put on, and this was still
+         ending in orbitStandIns' syncLoopClock(root): every loop of the planet system written to, 2.5s after every return */
+      setTimeout(() => { try{ if(!document.hidden && hero.isConnected){ const r = hero.parentElement || hero; if(!Array.from(r.querySelectorAll(".cosmic-badge-rank")).some(b => !orbitHasSheet(b))) return; startOrbitEmblemAnimsKnown(r); orbitStandIns(r); startOrbitEmblemAnims(r); } }catch(e){} }, 2500);
     }
     else if(hero){
       startOrbitEmblemAnimsKnown(hero.parentElement || hero);
@@ -97185,6 +97189,31 @@ function restoreAfterBackground(){
       orbitStandIns(hero.parentElement || hero);
       startOrbitEmblemAnims(hero.parentElement || hero);
     }
+  }catch(e){}
+}
+/* 384.25: THE SHEETS LET GO ON THE WAY OUT COME BACK ONE AT A TIME. They were all decoded again 1.2s after the return - up to 14 sheets
+   (~2.2MB of pixels each) started in one go, on Home, which shows none of them, in the seconds the planet system is waking up (measured:
+   tools/check-b384-resume.py, decodes started per 400ms after a return). Now one every ~350ms, the most lately used first, from 3.5s
+   after the return, and each waits while a finger is on the tab bar or the glass is landing. The board still finds its sheets decoded
+   unless it is opened within seconds of the return - which decodes what it needs, as it did before 377. */
+var charPreRestoreTimer = 0;
+function charPreRestoreSoon(){
+  try{
+    clearTimeout(charPreRestoreTimer);
+    const tried = new Set();
+    const next = () => {
+      charPreRestoreTimer = 0;
+      if(document.hidden || testTrimmed) return;
+      if(document.documentElement.classList.contains("tab-held") || (typeof settleUntil === "number" && Date.now() < settleUntil)){ charPreRestoreTimer = setTimeout(next, 400); return; }
+      let sp = null;
+      for(let i = charPreList.length - 1; i >= 0; i--){ const c = charPreList[i]; if(c && !c.pre && c.url && !tried.has(c)){ sp = c; break; } }
+      if(!sp) return;
+      tried.add(sp);
+      const im = new Image(); im.src = sp.url;
+      const again = () => { charPreRestoreTimer = setTimeout(next, 350); };
+      try{ im.decode().then(() => { if(!document.hidden && !testTrimmed && !sp.pre){ sp.pre = im; charPreKeep(sp); } again(); }, again); }catch(e){ again(); }
+    };
+    charPreRestoreTimer = setTimeout(next, 3500);
   }catch(e){}
 }
 /* and a note of how the last run ended, so that a page that was ended in the background shows up in the report */
@@ -97199,7 +97228,8 @@ const SESSION_KEY = "class26e.session", CRASH_KEY = "class26e.crashlog";
     }
   }catch(e){}
 })();
-function sessionMark(state){
+var sessionLastFp = "";
+function sessionMark(state, light){
   try{
     const scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : document.querySelector(".qpanel, .pausepanel") ? "test" : "other";
     /* build 377: WHAT THE PAGE HELD AS IT WENT. His report: ended in the background 0-3s after leaving on 365, 368, 371, 373 and 375 - iOS
@@ -97208,7 +97238,10 @@ function sessionMark(state){
     let fp = "";
     /* build 378: every mark carries it (a page that ends while in use - "middle of my test the app just white screened" - left only the
        mark from 6s before, with nothing in it), and whether a recording was running */
-    if(state === "hidden" || state === "visible"){
+    /* 384.25: `light` (the mark made in the frames of a return) keeps the last count rather than walking every image, canvas and
+       element of the page while the planet system is waking up; the 6s mark makes a fresh one */
+    if(light) fp = sessionLastFp;
+    else if(state === "hidden" || state === "visible"){
       try{
         let imgMp = 0, imgs = 0, cvMp = 0;
         document.querySelectorAll("img").forEach(i => { if(i.naturalWidth){ imgs++; imgMp += i.naturalWidth * i.naturalHeight / 1e6; } });
@@ -97216,6 +97249,7 @@ function sessionMark(state){
         try{ if(typeof heroGlowCache !== "undefined" && heroGlowCache.canvas && !heroGlowCache.canvas.isConnected) cvMp += heroGlowCache.canvas.width * heroGlowCache.canvas.height / 1e6; }catch(e){}
         fp = "el" + document.getElementsByTagName("*").length + " img" + imgs + "/" + imgMp.toFixed(1) + "mp cv" + cvMp.toFixed(1) + "mp sh" + (charAnimReady.size + orbitAnimReady.size)
           + (charRecBusy || charRecPending.size ? " rec" + charRecPending.size : "") + (testTrimmed ? " tt" : "");
+        sessionLastFp = fp;
       }catch(e){}
     }
     localStorage.setItem(SESSION_KEY, JSON.stringify({ state, t: Date.now(), screen: scr, build: typeof APP_BUILD === "string" ? APP_BUILD : "", fp }));
@@ -97245,6 +97279,53 @@ function testTrimSheets(){
   }catch(e){}
 }
 window.addEventListener("pagehide", e => { sessionMark(e && e.persisted ? "hidden" : "closed"); });
+/* 384.25: the loops still to be played after a return, and the frame-by-frame turn that plays them (see go() in loopsBack) */
+var loopResumeRest = [], loopResumeRaf = 0, loopResumeRef = null, loopResumeRefPose = 0, loopResumeWaited = 0;
+const LOOP_RESUME_PER_FRAME = 8;
+function loopsTimelineNow(){ try{ const t = document.timeline && document.timeline.currentTime; if(typeof t === "number") return t; }catch(e){} return performance.now(); }
+function loopsPlayTurn(tGo){
+  loopResumeRaf = 0;
+  if(document.hidden){ loopResumeRest.forEach(a => loopPausedByUs.add(a)); loopResumeRest = []; loopResumeRef = null; return; }
+  /* by the animation timeline's own clock (it moves a frame at a time, and an animation played now starts on it) */
+  const lag = loopsTimelineNow() - tGo;
+  const ref = loopResumeRef;
+  /* the others are started from the reference loop's start time, so they wait (a few frames at most) until it has one */
+  if(ref && ref.pending && loopResumeWaited++ < 12){ loopResumeRaf = requestAnimationFrame(() => loopsPlayTurn(tGo)); return; }
+  loopResumeRest.splice(0, LOOP_RESUME_PER_FRAME).forEach(a => {
+    try{
+      if(a.playState !== "paused") return;
+      const pose = a.currentTime;
+      if(typeof pose !== "number") { a.play(); return; }
+      if(!ref){ loopResumeRef = a; loopResumeRefPose = pose; a.play(); return; }
+      if(ref === a || lag < 4){ a.play(); return; }
+      /* the reference loop is running by now: this one is started at the moment that puts it exactly as far from the reference as it was
+         (its start time on the timeline: the reference's, moved by the difference of their poses), whatever the frames in between took */
+      if(ref.startTime != null && !ref.pending && typeof ref.startTime === "number"){ a.startTime = ref.startTime + (loopResumeRefPose - pose); return; }
+      a.currentTime = pose + lag; a.play();
+    }catch(e){ try{ a.play(); }catch(x){} }
+  });
+  if(loopResumeRest.length) loopResumeRaf = requestAnimationFrame(() => loopsPlayTurn(tGo));
+  else loopResumeRef = null;
+}
+/* 384.25: HOW THE 3 SECONDS AFTER A RETURN WENT, on the phone itself: frames drawn, the worst gap between two, and how many were over 50ms,
+   added to the return's line in the resume log ("Send tab timings" carries it). Chromium cannot say what iOS does with a page as it comes
+   back; this can, from his phone. It only counts frames - no layout, no style read. */
+function loopResumeFrames(tag){
+  try{
+    let last = performance.now(); const end = last + 3000; let n = 0, worst = 0, slow = 0;
+    const tick = t => {
+      if(document.hidden) return;
+      const dt = t - last; last = t; n++; if(dt > worst) worst = dt; if(dt > 50) slow++;
+      if(t < end){ requestAnimationFrame(tick); return; }
+      try{
+        const l = JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || [];
+        for(let i = l.length - 1; i >= 0; i--){ if(l[i].indexOf(tag) === 0 && l[i].indexOf(" fr") < 0){ l[i] += " fr" + n + "/w" + Math.round(worst) + "/s" + slow; break; } }
+        localStorage.setItem(LOOP_RESUME_KEY, JSON.stringify(l.slice(-6)));
+      }catch(e){}
+    };
+    requestAnimationFrame(tick);
+  }catch(e){}
+}
 function loopsBack(){
   let gap = 0, told = true, resume;
   if(loopHiddenAt){
@@ -97273,8 +97354,17 @@ function loopsBack(){
      pose until four frames in a row come at a normal pace (at most ~1.5s), then go on from that pose. */
   let good = 0, tries = 0, lastT = t0, first = 0;
   const go = () => {
-    resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
-    restoreAfterBackground(); sessionMark("visible");
+    /* 384.25: LET GO IN TURNS, NOT ALL IN ONE FRAME. 41 animations played in the same frame (measured, and 26-52 in his own resume
+       log) is the planet system's compositor layers started again together; the reference loop goes first (its pose sets the loop
+       clock below) and the rest follow at most LOOP_RESUME_PER_FRAME a frame, each put on by the time it waited, so every one is where
+       it would have been had it been played at once. */
+    const rf0 = resume.find(a => { try{ return a.animationName === "cosmic-orbit-spin" && a.effect && a.effect.target && a.effect.target.classList.contains("cosmic-hero-orbitlayer"); }catch(e){ return false; } });
+    const ordered = rf0 && resume.indexOf(rf0) > 0 ? [rf0].concat(resume.filter(a => a !== rf0)) : resume.slice();
+    if(loopResumeRaf){ try{ cancelAnimationFrame(loopResumeRaf); }catch(e){} loopResumeRaf = 0; }
+    loopResumeRest = ordered; loopResumeRef = null; loopResumeWaited = 0;
+    loopsPlayTurn(loopsTimelineNow());
+    restoreAfterBackground(); sessionMark("visible", true);
+    loopResumeFrames(told ? "told " : "NOTTOLD ");
     /* the time they stood still is time off the loop clock too, or the next Home built would put them ahead */
     /* and the loop clock is made to agree with where the reference loop actually is, so a Home built next lands on it */
     const r2 = loopRef();
@@ -97306,8 +97396,11 @@ document.addEventListener("visibilitychange", () => {
   if(document.hidden){
     if(loopHiddenAt) return;
     loopHiddenAt = Date.now();
+    /* 384.25: loops still waiting their turn after a return are kept for the next one */
+    const waiting = loopResumeRest; loopResumeRest = [];
     loopPausedByUs.clear();
     loopsPauseAll(0).forEach(a => loopPausedByUs.add(a));
+    waiting.forEach(a => loopPausedByUs.add(a));
     trimForBackground(); sessionMark("hidden");
   } else loopsBack();
 });
@@ -97336,7 +97429,14 @@ function syncLoopClock(root){
       if(!t || t.iterations !== Infinity || !(Number(t.duration) > 0)) return;
       /* the rings, and the veils timed to them, are ahead of the wall
          clock by whatever planet taps have gained them (build 318) */
-      todo.push([a, ORBIT_PHASE_ANIMS[a.animationName] ? orbitAdvanceMs : 0]);
+      const ahead = ORBIT_PHASE_ANIMS[a.animationName] ? orbitAdvanceMs : 0;
+      /* 384.25: A LOOP ALREADY WITHIN A FRAME OF ITS PLACE IS LEFT ALONE. Writing currentTime on a running animation restarts it (on
+         iOS the compositor's copy is made again), and this is called for the whole planet system - 39 of its 41 loops on every return
+         to the app, 2.5s after it, each already within 2ms of where the wall clock says (measured: tools/check-b384-resume.py) - a
+         herd of restarts for nothing, in the seconds the planet system is meant to look like nothing happened. */
+      const cur = a.currentTime;
+      if(typeof cur === "number" && Math.abs(wall + ahead - cur) < LOOP_SYNC_SLACK_MS) return;
+      todo.push([a, ahead]);
     }catch(e){}
   });
   todo.forEach(([a, ahead]) => { try{ a.currentTime = wall + ahead; }catch(e){} });
