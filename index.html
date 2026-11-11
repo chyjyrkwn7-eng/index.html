@@ -57809,7 +57809,14 @@ window.addEventListener("blur", () => { setTimeout(() => { try{ if(!document.has
 /* build 376: "when I swipe to view the app it's still on the test question". Swiping up from the bottom edge for the app switcher, iOS takes
    the touch away from the page (touchcancel) before the app goes - the moment the pause screen can still be drawn into the picture iOS keeps. */
 let edgeTouch = false;
-document.addEventListener("touchstart", e => { try{ const t = e.touches && e.touches[0]; edgeTouch = !!t && t.clientY > (window.innerHeight || 0) - 22; }catch(x){ edgeTouch = false; } }, { capture: true, passive: true });
+/* (384.25) NO LAYOUT READ IN A TOUCH'S FIRST HANDLER. This ran on every touchstart in the app, bar and page alike, and read window.innerHeight:
+   Chromium answers it by bringing style and layout up to date, so the press's own class changes (the lens, tab-held on <html>) were flushed
+   here - 20 elements restyled, 2-8ms at 1x - inside the handler that stands between the finger and the glass. The height is kept from
+   resizes instead (the URL bar collapsing and the keyboard are both resizes), and read once here, before anything is on screen to flush. */
+let edgeVh = window.innerHeight || 0;
+window.addEventListener("resize", () => { edgeVh = window.innerHeight || 0; }, { passive: true });
+try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", () => { edgeVh = window.innerHeight || 0; }, { passive: true }); }catch(e){}
+document.addEventListener("touchstart", e => { try{ const t = e.touches && e.touches[0]; edgeTouch = !!t && t.clientY > edgeVh - 22; }catch(x){ edgeTouch = false; } }, { capture: true, passive: true });
 document.addEventListener("touchcancel", () => { if(edgeTouch){ edgeTouch = false; try{ autoPauseOnLeave(); }catch(x){} } }, { capture: true, passive: true });
 document.addEventListener("touchend", () => { edgeTouch = false; }, { capture: true, passive: true });
 window.addEventListener("pagehide", () => { autoPauseOnLeave(); saveRunSession(); });
@@ -89799,14 +89806,25 @@ const NovaSound = (function(){
      the mode cards' tick away after the first tap anywhere on that screen */
   function hswPrune(){
     if(hswTouching()){ hswPruneLater(); return; }
+    /* (384.25) READS FIRST, THEN WRITES. This ran 450ms after every click - a tab's tap included, on the screen it had just brought in -
+       and read each control's size (offsetWidth, hswTooBig) straight after removing the last one's switch: a style pass and a layout
+       per control, 17-18 in a tab change on Profile and Settings (traced, 4x CPU). The judging is one pass of reads, and only then
+       do the controls that were judged too big lose their switch; the same ones, the same result. */
+    const out = [];
     document.querySelectorAll(".nova-hsw").forEach(sw => {
       const h = sw.parentNode;
-      if(!h || !h.offsetWidth) return;
-      if(!h.matches(HSW_ALWAYS) && !h.matches(".modecard") && hswTooBig(h)){
-        h.__hsw = null; sw.remove();
-        if(!hlbHas(h) && (hswMode(h) & 2)){ hlbAttach(h); if(hlbHas(h) && !hswFits(h, h.__hlb)) hswUnfit(h, h.__hlb); }
-        if(!hlbHas(h)) h.removeAttribute("data-hsw");
-      }
+      if(!h) return;
+      /* (384.27) NOT A ROW THE PAGE HAS SKIPPED (see hswFlush): a size read inside a rankings row that is content-visibility:hidden opens its
+         lock for the read and shuts it again - a style pass and a layout for each of the 17 the Leaderboard's tab change traced. A row
+         is a plain block that fits on screen, and the judging is repeated by the next click once it is on screen. */
+      if(h.closest(".screen-rankings .rank-row.is-offscreen")) return;
+      if(!h.offsetWidth) return;
+      if(!h.matches(HSW_ALWAYS) && !h.matches(".modecard") && hswTooBig(h)) out.push([sw, h]);
+    });
+    out.forEach(([sw, h]) => {
+      h.__hsw = null; sw.remove();
+      if(!hlbHas(h) && (hswMode(h) & 2)){ hlbAttach(h); if(hlbHas(h) && !hswFits(h, h.__hlb)) hswUnfit(h, h.__hlb); }
+      if(!hlbHas(h)) h.removeAttribute("data-hsw");
     });
   }
   let hswPruneT = 0;
@@ -159506,6 +159524,14 @@ function tabPerfText(){
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
+  /* (384.25) THE LIT TAB IS SAID, NOT ONLY DRAWN. The platter and the white label were the whole of "you are here"; a screen reader heard
+     four buttons and no place. The tab that is lit carries aria-current="page" and no other does; the one place that lights a tab
+     (this) keeps the attribute and the class together, so they cannot disagree. A function declaration, so it is there for any caller. */
+  function markLit(t, on){
+    t.classList.toggle("active", !!on);
+    if(on){ if(t.getAttribute("aria-current") !== "page") t.setAttribute("aria-current", "page"); }
+    else if(t.hasAttribute("aria-current")) t.removeAttribute("aria-current");
+  }
   /* The Calendar tab's screen (build 323): showCalendarTab() where the
      build has it, the class calendar's own way in otherwise. */
   const openCalendarTab = () => {
@@ -159708,7 +159734,11 @@ function tabPerfText(){
          screen that was already there. As on iOS, it scrolls to the top. */
       /* (round 33) Profile counts only on its own page: from Profile's Stats or Settings the tab goes
          back to Profile, at its top at once (tapping it there only glided Settings to its top) */
-      const ROOT_OF = { profile: ".screen-profile .profile-identity-tab:not([hidden])", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
+      /* (384.25) Fire Code's Settings tab is a root like the others: its page is Profile's settings pane, shown (the academy's is hidden,
+         and its bar has no Settings tab). Without it a second tap on Settings built the whole screen again - a long task, a new screen
+         under the finger, an open section lost - where Profile, the Leaderboard and the Calendar go to their top. */
+      const ROOT_OF = { profile: ".screen-profile .profile-identity-tab:not([hidden])", rewards: ".screen-rankings", calendar: ".screen-calendar-tab",
+                        settings: ".screen-profile .profile-settings-tab:not([hidden])" };
       if(!testInProgress && ROOT_OF[dest] && stage.querySelector(ROOT_OF[dest])){
         if(pend){ syncActive(); slideBubbleToActiveTab(true); }
         if(bar._lensScreenIn) bar._lensScreenIn();
@@ -159726,7 +159756,7 @@ function tabPerfText(){
          after. syncActive() runs again once it is up, which puts the
          highlight back if the navigation was refused (a confirm declined,
          a cutscene owed). */
-      bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
+      bar.querySelectorAll(".bottomtab").forEach(t => markLit(t, t === tab));
       /* build 384: A SLIDE'S RELEASE MEASURES NOTHING. Let go of a slide over this tab and the glass is held up over it (lensHoldFor) with
          the platter hidden under it; the landing (lensRelease) puts the platter on this tab itself. Measuring it here read the bar's
          boxes straight after the classes changed - a whole-page style pass and layout inside the release (the largest piece of the
@@ -160000,7 +160030,7 @@ function tabPerfText(){
     const calShown = [...document.querySelectorAll("#stage .screen-calendar")].some(el => !el.closest("[hidden]")) || frFrom === "calendar";
     const settingsBtn = bar.querySelector("#bottomtab-settings");
     const onSettingsAny = onSettings || onSettingsSub;
-    const lit = (id, on) => { const b = bar.querySelector(id); if(b) b.classList.toggle("active", !!on); };
+    const lit = (id, on) => { const b = bar.querySelector(id); if(b) markLit(b, !!on); };
     /* a Settings tab that is SHOWN (the Fire Code class, build 342) takes Settings' screen for itself; Settings is a
        tab of the Profile screen, which would otherwise light both and park the platter on Profile */
     const settingsShown = !!settingsBtn && !settingsBtn.hidden;
