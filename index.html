@@ -89805,7 +89805,12 @@ const NovaSound = (function(){
     const out = [];
     document.querySelectorAll(".nova-hsw").forEach(sw => {
       const h = sw.parentNode;
-      if(!h || !h.offsetWidth) return;
+      if(!h) return;
+      /* (384.27) NOT A ROW THE PAGE HAS SKIPPED (see hswFlush): a size read inside a rankings row that is content-visibility:hidden opens its
+         lock for the read and shuts it again - a style pass and a layout for each of the 17 the Leaderboard's tab change traced. A row
+         is a plain block that fits on screen, and the judging is repeated by the next click once it is on screen. */
+      if(h.closest(".screen-rankings .rank-row.is-offscreen")) return;
+      if(!h.offsetWidth) return;
       if(!h.matches(HSW_ALWAYS) && !h.matches(".modecard") && hswTooBig(h)) out.push([sw, h]);
     });
     out.forEach(([sw, h]) => {
