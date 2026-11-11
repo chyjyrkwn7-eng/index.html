@@ -75,17 +75,37 @@ SURF = """(o)=>{
     if(getComputedStyle(el).pointerEvents === 'none') continue;
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     if(avoid.some(a => cx >= a.left && cx <= a.right && cy >= a.top && cy <= a.bottom)) continue;
+    /* what a finger at (x, y) lands on, as this surface's own switch / label, something else's switch, or nothing of ours */
+    const read = (x, y) => {
+      const h = document.elementFromPoint(x, y);
+      let got = 'none:' + desc(h);
+      if(nat(h)){
+        const host = h.closest('label') && !h.classList.contains('nova-hsw') ? h.closest('label') : h.parentElement;
+        got = (el.contains(h) || (host && host.contains(el)) || (h.closest('label') === el)) ? 'switch' : 'other:' + desc(host);
+      } else {
+        const lb = h && h.closest ? h.closest('label') : null;
+        if(lb && nat(lb.control)) got = (el.contains(lb) || lb === el || lb.contains(el)) ? 'label' : 'other-label:' + desc(lb.parentElement);
+      }
+      return { h, got };
+    };
     /* a control inside another surface of this list (the star on a flash card face) is its own surface */
-    const h = document.elementFromPoint(cx, cy);
-    let got = 'none:' + desc(h);
-    if(nat(h)){
-      const host = h.closest('label') && !h.classList.contains('nova-hsw') ? h.closest('label') : h.parentElement;
-      got = (el.contains(h) || (host && host.contains(el)) || (h.closest('label') === el)) ? 'switch' : 'other:' + desc(host);
-    } else {
-      const lb = h && h.closest ? h.closest('label') : null;
-      if(lb && nat(lb.control)) got = (el.contains(lb) || lb === el || lb.contains(el)) ? 'label' : 'other-label:' + desc(lb.parentElement);
+    let res = read(cx, cy), px = cx, py = cy;
+    /* MOVED IN 384.20 (docs/notes-archive.md, "384.20 - gate repair"): the exact middle can be under something that is not this surface -
+       the floating chat button over a month arrow that has scrolled up beneath it, a 2px sticky strip across a row of days - and a finger there
+       belongs to THAT control (its own switch ticks, or it is a strip that takes no tap). Such a surface is read where it is not covered
+       (five more points inside it); one covered everywhere cannot be tapped and is left out. A surface whose visible middle lands on
+       itself WITHOUT a switch still fails, which is the wiring this checks. */
+    const covered = x => !!x.h && !el.contains(x.h) && !x.h.contains(el) && x.got !== 'switch' && x.got !== 'label';
+    if(covered(res)){
+      let alt = null;
+      for(const [fx, fy] of [[-.3, 0], [.3, 0], [0, -.3], [0, .3], [-.3, -.3], [.3, .3]]){
+        const qx = cx + fx * r.width, qy = cy + fy * r.height; if(qx < 1 || qy < 1 || qx > innerWidth - 1 || qy > innerHeight - 1) continue;
+        const t = read(qx, qy); if(!covered(t)){ alt = { t, qx, qy }; break; } }
+      if(!alt) continue;
+      res = alt.t; px = alt.qx; py = alt.qy;
     }
-    out.push({ el: desc(el), w: Math.round(r.width), h: Math.round(r.height), x: Math.round(cx), y: Math.round(cy), got });
+    const got = res.got;
+    out.push({ el: desc(el), w: Math.round(r.width), h: Math.round(r.height), x: Math.round(px), y: Math.round(py), got });
   }
   return { list: out };
 }"""

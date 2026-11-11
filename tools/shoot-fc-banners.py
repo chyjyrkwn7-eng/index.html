@@ -31,7 +31,7 @@ INIT = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.setIte
         "localStorage.setItem('class26e.ifc.drill.v1',%s);}catch(e){}") % (S, S)
 MOUNT = r"""([id, w, h, scene]) => {
   document.getElementById('splashscreen')?.remove();
-  document.body.innerHTML = '';
+  [...document.body.children].forEach(n => { if(n.tagName !== 'STYLE') n.remove(); });   /* not body.innerHTML = '': the 2.9MB stylesheet is a <style> in <body> (384 r17) */
   document.body.style.cssText = 'background:#000;margin:0';
   const box = document.createElement('div'); box.id = 'strip';
   const sw = scene ? 960 : w, sh = scene ? 360 : h;
