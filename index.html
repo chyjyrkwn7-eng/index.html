@@ -160429,7 +160429,7 @@ function tabPerfText(){
         finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
           /* (384 r15) the screen a tap has just brought in is held while the glass is still over it (see lensDown); its first look is the
              frame after it is drawn, not inside the tap's own task */
-          requestAnimationFrame(() => { if(!slideNav && lensG && lens.classList.contains("is-up")) barUnderPause(true); });
+          if(TAB_HOLDS_ART) requestAnimationFrame(() => { if(!slideNav && lensG && lens.classList.contains("is-up")) barUnderPause(true); });
           /* build 375: the frame after the one that drew it - the glass may land now */
           requestAnimationFrame(() => requestAnimationFrame(() => { if(bar._lensScreenIn) bar._lensScreenIn(); }));
           if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++;
@@ -160865,6 +160865,14 @@ function tabPerfText(){
     list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
   }
   let barUnderPaused = [], barUnderAt = 0;
+  /* (384.35) NOTHING IS HELD STILL UNDER THE GLASS ANY MORE. His 384.34 recording: he pressed the bar and slid across it for 11s and Home's
+     planet system stood still for the whole of it (0 changed frames in 8 of 22 half-second windows, short bursts between) - the hold below
+     (builds 376-384 r15: Home's hero, Profile's card and goals, the board's rows, whatever sits under the bar's band) paused ~41 loops a
+     frame after the finger landed and played them again when the glass landed. "It freezes the planet system ... fix this all."
+     Measured here, 4x CPU: the hold costs the glass itself too - a look at the stage's animations on the frame a slide starts (the
+     "resistance" at the slop) and 41 play() calls on the landing. The loops now go on under a press, a hold, a slide and a tap. Set this to
+     true to bring the hold back (every call below is gated on it); see the 384.35 notes for what it was buying and what it costs. */
+  const TAB_HOLDS_ART = false;
   /* build 382: HOME'S PLANET HOLDS STILL WHILE A FINGER SLIDES, AND UNTIL THE GLASS HAS LANDED. His 381 recording: every stretch of dropped
      frames had Home in it (leaving it, arriving at it, the glass over it); the other three tabs slid at a steady 60. Home's hero is the
      heaviest thing on any screen - the orbit layers (~475px a side, spinning), three smoke layers and the plasma drifting, the glow
@@ -160885,6 +160893,7 @@ function tabPerfText(){
   /* each animation is judged once a slide (a repeat look only measures what is new), and the band is measured once a slide */
   let barUnderSeen = new WeakSet(), barUnderBand = null;
   function barUnderPause(again){
+    if(!TAB_HOLDS_ART) return;
     barUnderAt = performance.now();
     if(!again){
       barUnderResume();
@@ -160999,7 +161008,7 @@ function tabPerfText(){
          (SLIDE_HOLD_SEL), not by a class on <html>, which restyled the whole page as the slide started (see SLIDE_HOLD_SEL). */
       /* build 376: only what is BEHIND THE BAR holds still while the finger slides - looked for once, a frame after the slide starts
          (the frame it starts in already carries the capture and the classes) */
-      requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(); });
+      if(TAB_HOLDS_ART) requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(); });
       /* build 377: NO TICKS ON THE WAY. "The bottom tab swipe Haptic Touch ... does it even when you swipe over, pass other tabs on the
          way to the one you select." Each tab carries a real native switch for its tap's tick (NovaSound, "A REAL SWITCH UNDER THE FINGER");
          a finger that slides drags the switch it landed on, and every time it flips across its middle iOS plays a tick. The switches leave
@@ -161469,7 +161478,7 @@ function tabPerfText(){
        SLIDE_HOLD_SEL), and the glass, swelling over it, is redrawn at the same price. A tap's glide is 300-800ms; a loop that turns once
        in 52s is not missed for that long. Looked at once, a frame after the press (the same look a slide takes); the screen the tap
        brings in is looked at once more when it is built (navRun), and lensFinish gives it all back. */
-    requestAnimationFrame(() => { if(lensG && lens.classList.contains("is-up") && !tabDragMoved) barUnderPause(); });
+    if(TAB_HOLDS_ART) requestAnimationFrame(() => { if(lensG && lens.classList.contains("is-up") && !tabDragMoved) barUnderPause(); });
   }
   /* The drag: a spring after the finger, every frame, while the finger is down. */
   function lensStopFollow(){
@@ -161665,6 +161674,15 @@ function tabPerfText(){
      lands then: the screen changes under the glass and the glass shrinks into the platter over it. A screen drawn inside the 110ms the
      glass lingers anyway changes nothing; one that is slow lands at SLIDE_AWAIT_MAX at the latest, whatever it is doing. */
   const SLIDE_AWAIT_MAX = 280;
+  /* (384.35) A SLIDE LANDS ON THE TAP'S CLOCK, NOT ON ITS SCREEN'S. His 384.34 recording: "on home and profile the bubble is there longer
+     before it drops compared to the others." The wait above is why: the glass stood up until the new screen had been drawn (at most
+     SLIDE_AWAIT_MAX, and later still when the build ran long), and Home and Profile are the two heavy screens. Measured here (4x CPU,
+     the 12 slides between Home / Profile / Leaderboard / Calendar): release to the glass at rest was 776ms on Home, 467 Profile,
+     396 Calendar, 374 Leaderboard, a 400ms spread that is the screens' build times and nothing the glass does. A tap has landed
+     on its own clock since 380 ("every tab lands the same, however long its screen takes") and he calls the tap "really good"; a slide
+     lands the same way now: held LENS.linger ms on its tab, then the same shrink, whichever screen it brings in. The screen is built
+     on the frame after the release as before and changes under the glass as it shrinks. true brings the wait back. */
+  const SLIDE_WAITS_FOR_SCREEN = false;
   /* The glass is clear and up already (a slide is long past its 70ms clearing) and the bar is swollen, so holding it is ONE prepared
      track to the tab's held size and nothing else - no landing planned first and thrown away, and nothing read off the page (a read
      here, after the navigation has lit the new tab, was a whole style pass on the release). */
@@ -161680,7 +161698,8 @@ function tabPerfText(){
     lensAt = tab;
     lensPlay(lensSpring(now.s, now.v, () => ({ cx: hi.c, W: hi.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
     const upFor = performance.now() - lensPressT;
-    lensAwait = { tab, earliest: performance.now() + Math.max(LENS.linger, LENS.minUp - upFor), timer: setTimeout(lensLandNow, SLIDE_AWAIT_MAX) };
+    const slideEarliest = performance.now() + Math.max(LENS.linger, LENS.minUp - upFor);
+    lensAwait = { tab, earliest: slideEarliest, timer: setTimeout(lensLandNow, SLIDE_WAITS_FOR_SCREEN ? SLIDE_AWAIT_MAX : Math.max(0, slideEarliest - performance.now())) };
     /* what a screen puts off until the glass has landed keeps waiting while it is held (lensRelease sets the landing's own) */
     try{ settleUntil = Math.max(settleUntil, Date.now() + SLIDE_AWAIT_MAX + 400); }catch(e){}
   }
