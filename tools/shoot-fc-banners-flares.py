@@ -24,7 +24,7 @@ INIT = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.setIte
         "localStorage.setItem('class26e.ifc.drill.v1',%s);}catch(e){}") % (S, S)
 BUILD = r"""([ids, w]) => {
   document.getElementById('splashscreen')?.remove();
-  document.body.innerHTML = ''; document.body.style.cssText = 'background:#12151B;margin:0;padding:10px;width:' + w + 'px;font:12px sans-serif;color:#cfd6e2';
+  [...document.body.children].forEach(n => { if(n.tagName !== 'STYLE') n.remove(); });   /* not body.innerHTML = '': the 2.9MB stylesheet is a <style> in <body> (384 r17) */ document.body.style.cssText = 'background:#12151B;margin:0;padding:10px;width:' + w + 'px;font:12px sans-serif;color:#cfd6e2';
   ids.forEach(id => { const c = document.createElement('div'); c.className = 'cell'; c.dataset.id = id; c.style.cssText = 'margin-bottom:10px';
     const b = document.createElement('div'); b.style.cssText = 'width:' + w + 'px;height:' + Math.round(w * 180 / 480) + 'px;overflow:hidden;position:relative;border-radius:10px';
     const art = buildBannerArt(id); art.style.cssText += ';position:absolute;inset:0;width:100%;height:100%'; b.appendChild(art);

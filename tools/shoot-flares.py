@@ -130,7 +130,8 @@ SHEET = """()=>{
     cell.append(box, small, lbl, sub);
     wrap.appendChild(cell);
   });
-  document.body.replaceChildren(wrap);}"""
+  [...document.body.children].forEach(n => { if(n.tagName !== 'STYLE') n.remove(); });   /* not replaceChildren: the stylesheet is a <style> in <body> (384 r17) */
+  document.body.appendChild(wrap);}"""
 
 
 def main():

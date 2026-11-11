@@ -4,8 +4,8 @@ of settings, please get all these buttons and things looking better".
 (1) Report a bug carries no diagnostics controls (tab speed / tab timings / Leaderboard speed / drag test): the
     form's only button is the send.
 (2) Share this app, Add to Home Screen, Check for update, Report a bug, Version history and Advanced settings are
-    each a full-width row of its card, 44px+, with a label; all but Support's two word rows (Report a bug, Version
-    history) with an icon. Since Settings became a menu (382), Share this app and Add to Home Screen are on the Share &
+    each a full-width row of its card, 44px+, with a label; on the menu, all but Support's two word rows (Report a bug,
+    Version history) with an icon tile; on a page the menu opens (Share & Install) NO tile (384 r8: pages are plain lists). Since Settings became a menu (382), Share this app and Add to Home Screen are on the Share &
     Install page; the rest are on the menu.
 (3) Every one still does what it did (spied): share, the install walkthrough, the version check, the report screen,
     the release history, Advanced opening (its own page since the colour redesign).
@@ -62,7 +62,12 @@ def open_for(pg, label):
 def rows_ok(sh, t):
     v = sh.get(t)
     # and on the screen it belongs to: its category page, or the menu (382)
-    return bool(v) and v["h"] >= 44 and v["full"] and v["label"] and (v["icon"] or t in WORDS) and v["onPage"] == bool(WHERE[t])
+    # MOVED IN 384 r8 (docs/notes-archive.md, "Settings pages lose their tiles"; "when you click a section and open it, there are icons
+    # within them? But there shouldn't be"): only the top-level menu has icon tiles. A page it opens (Share & Install here) is a plain
+    # list - words, no tile - so its rows are held to have NO icon, and the menu's rows to have one (bar Support's word rows).
+    if not v: return False
+    icon_ok = (not v["icon"]) if WHERE[t] else (v["icon"] or t in WORDS)
+    return v["h"] >= 44 and v["full"] and v["label"] and bool(icon_ok) and v["onPage"] == bool(WHERE[t])
 SHAPE = """(labels)=>{ const out={};
   const all=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].filter(b=>b.offsetParent);
   for(const t of labels){
@@ -96,7 +101,7 @@ with sync_playwright() as pw:
     for t in LABELS:
         open_for(pg, t)
         sh = pg.evaluate(SHAPE, [t])
-        chk("%s is a full-width row, 44px+, with a label%s (%s)" % (t, "" if t in WORDS else " and an icon", sh.get(t)), rows_ok(sh, t), sh.get(t))
+        chk("%s is a full-width row, 44px+, with a label%s (%s)" % (t, " and no tile (a page is a plain list, 384 r8)" if WHERE[t] else ("" if t in WORDS else " and an icon"), sh.get(t)), rows_ok(sh, t), sh.get(t))
 
     # (3) every action still does what it did
     def fresh(spies, label=""):
@@ -149,7 +154,7 @@ with sync_playwright() as pw:
             shs.update({k: v for k, v in pg.evaluate(SHAPE, LABELS).items() if v})
         cl = pg.evaluate("window.NOVA_CLASS")
         all_rows = all(rows_ok(shs, t) for t in LABELS)
-        chk("%s (%s): no sideways scroll, nothing past the edge, every action a row (%s)" % (label, cl, geos),
+        chk("%s (%s): no sideways scroll, nothing past the edge, every action a row, tiles on the menu only (%s)" % (label, cl, geos),
             all(g_["hscroll"] <= 0 and g_["past"] == 0 for g_ in geos.values()) and all_rows and cl == cls, {"geo": geos, "rows": shs})
         ctx.close()
     br.close()

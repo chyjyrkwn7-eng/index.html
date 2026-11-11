@@ -99,7 +99,9 @@ OPEN_SETUP = """async (vr)=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   for(let i=0;i<40 && sh && sh.getAnimations().some(a=>a.playState==='running');i++) await wait(100);
   await wait(250);
   if(!sh || document.getElementById('unitoptions-modal').hidden) return null;
-  sh.scrollTop = 0;
+  /* (384 r21) the start sheet's scroller is its body (a pinned head and foot around it); the Match settings sheet's is the sheet */
+  const _b=sh.querySelector('.optionsmodal-body'); const _sc=(_b && /auto|scroll/.test(getComputedStyle(_b).overflowY)) ? _b : sh;
+  _sc.scrollTop = 0;
   const r=sh.getBoundingClientRect();
   /* a point on the sheet that is not a control that owns its own drag */
   const cand=[...sh.querySelectorAll('.sect-caption, .bank-caption, .ohint, .slab, .sheet-summary-units, .unitoptions-modal-title')]
@@ -109,7 +111,10 @@ OPEN_SETUP = """async (vr)=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const e=document.elementFromPoint(x,y);
   const cs=getComputedStyle(sh);
   return { top:r.top, left:r.left, right:r.right, bottom:r.bottom, h:r.height, x, y, at:(e&&e.className)||'',
-           look: cs.backgroundColor+'|'+cs.backgroundImage, scrolls: sh.scrollHeight>sh.clientHeight+20 }; }"""
+           look: cs.backgroundColor+'|'+cs.backgroundImage, scrolls: _sc.scrollHeight>_sc.clientHeight+20 }; }"""
+
+SET_SCROLL = """(v)=>{ const sh=document.querySelector('#unitoptions-modal .unitoptions-modal-sheet'); const b=sh.querySelector('.optionsmodal-body');
+  (b && /auto|scroll/.test(getComputedStyle(b).overflowY) ? b : sh).scrollTop = v; }"""
 
 TRACE = """()=>{ const sh=document.querySelector('#unitoptions-modal .unitoptions-modal-sheet'); window.__tr=[];
   const L=()=>{ const cs=getComputedStyle(sh); const m=new DOMMatrix(cs.transform==='none'?undefined:cs.transform);
@@ -199,7 +204,7 @@ def section_a(br):
         check("%s: a sideways drag does not pull it" % name, abs(sw["ty"]) < 1 and not sw2["hidden"], [sw, sw2])
         # 4. scrolled down: a drag down scrolls
         if o["scrolls"]:
-            pg.evaluate("()=>{ document.querySelector('#unitoptions-modal .unitoptions-modal-sheet').scrollTop = 120; }")
+            pg.evaluate(SET_SCROLL, 120)
             time.sleep(0.2)
             drag_to(cdp, o["x"], o["y"], 0, 90, steps=10)
             time.sleep(0.08)
@@ -208,7 +213,7 @@ def section_a(br):
             sc2 = pg.evaluate(READ_SHEET)
             check("%s: scrolled down, a drag down scrolls the sheet's list and does not pull it" % name,
                   abs(sc["ty"]) < 1 and not sc2["hidden"], [sc, sc2])
-            pg.evaluate("()=>{ document.querySelector('#unitoptions-modal .unitoptions-modal-sheet').scrollTop = 0; }")
+            pg.evaluate(SET_SCROLL, 0)
             time.sleep(0.3)
         # 5. the close X
         xr = pg.evaluate(X_READ)
