@@ -35,6 +35,25 @@ if AG:
     G["BUILD"] = (re.search(r'const APP_BUILD = "([^"]+)"', G["SRC"]) or [None, ""])[1]
 from playwright.sync_api import sync_playwright
 DEV, SCEN = _args[1], _args[2]
+PROFILE = opt("--profile")   # 384.30: a persistent browser profile, so the saved flip-book sheets (Cache Storage) are there next run: a WARM page
+class _Persist:
+    """a stand-in for a Browser whose new_context() is a persistent context on one directory, on one port (Cache Storage is per origin)"""
+    def __init__(self, pw, exe, d): self.pw, self.exe, self.d, self.ctx = pw, exe, d, None
+    def new_context(self, **kw):
+        self.ctx = self.pw.chromium.launch_persistent_context(self.d, executable_path=self.exe, **kw)
+        for p in list(self.ctx.pages): p.close()
+        return self.ctx
+    def close(self):
+        try: self.ctx.close()
+        except Exception: pass
+if PROFILE:
+    import functools, http.server, threading
+    _port = int(opt("--port", 8765))
+    class _Q(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a): pass
+    _srv = http.server.ThreadingHTTPServer(("127.0.0.1", _port), functools.partial(_Q, directory=G["ROOT"]))
+    threading.Thread(target=_srv.serve_forever, daemon=True).start()
+    G["URL"] = "http://127.0.0.1:%d/index.html" % _port
 CATS = "devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.stack,v8.execute,cc,viz,blink"
 
 def trace_run(pg, cdp, fn, tail_ms=300):
@@ -51,6 +70,18 @@ def trace_run(pg, cdp, fn, tail_ms=300):
     except Exception: pass
     return evs
 
+LIVE = """()=>{ const A = document.getAnimations(); const run = A.filter(a => a.playState === 'running');
+  return { anims: A.length, running: run.length, els: document.getElementsByTagName('*').length }; }"""
+def live_counts(pg, cdp):
+    """running animations, elements, and the compositor's layer count (read off one layerTreeDidChange)"""
+    r = pg.evaluate(LIVE); box = []
+    h = lambda p: box.append(len(p.get("layers") or []))
+    try:
+        cdp.on("LayerTree.layerTreeDidChange", h); cdp.send("LayerTree.enable"); pg.wait_for_timeout(700)
+        cdp.send("LayerTree.disable"); cdp.remove_listener("LayerTree.layerTreeDidChange", h)
+    except Exception: pass
+    r["layers"] = max(box) if box else -1
+    return r
 def report(evs, label, thr=1.0, top=6):
     names = {}
     for e in evs:
@@ -129,11 +160,11 @@ def scroll_wheel(pg, W, H, dist, step, touch, cdp):
 
 def main():
     with sync_playwright() as pw:
-        br = pw.chromium.launch(executable_path=G["CHROME"])
+        br = _Persist(pw, G["CHROME"], PROFILE) if PROFILE else pw.chromium.launch(executable_path=G["CHROME"])
         ctx, pg, cdp, errs, touch = G["open_page"](br, DEV)
         vp = pg.evaluate("()=>[innerWidth,innerHeight]"); W, H = vp
         if THR > 1: cdp.send("Emulation.setCPUThrottlingRate", {"rate": THR})
-        pg.wait_for_timeout(1500)
+        pg.wait_for_timeout(int(opt("--settle", 1500)))
         tail = 500
         scen = SCEN.split(",") if SCEN != "all" else ["tabs", "lbscroll", "czscroll", "startsheet", "hover"]
         for sc in scen:
@@ -195,7 +226,31 @@ def main():
                 pg.evaluate(CLOCK)
                 evs = trace_run(pg, cdp, lambda: pg.wait_for_timeout(int(opt("--idlems", 4000))), 300)
                 fr = pg.evaluate("()=>{__fc.on=false; return __fc.frames;}")
-                report(evs, "%s IDLE on %s %sms [%s]" % (DEV, tabn, opt("--idlems", 4000), fstats(fr)), THR, top=6)
+                lc = live_counts(pg, cdp)
+                report(evs, "%s IDLE on %s %sms [%s] [running %d of %d animations, %d layers, %d elements]" % (DEV, tabn, opt("--idlems", 4000), fstats(fr), lc["running"], lc["anims"], lc["layers"], lc["els"]), THR, top=6)
+            elif sc == "question":
+                # a Drill question sitting open (Identity Crimes, the unit the recorders use): the screen a person spends most of their time on
+                pg.evaluate("""()=>{ cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false; cfg.recall=false;
+                  beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null); }""")
+                for _ in range(120):
+                    if pg.evaluate("()=>!!document.querySelector('.qpanel .choice')"): break
+                    pg.wait_for_timeout(100)
+                pg.wait_for_timeout(1500); pg.mouse.move(5, 5)
+                pg.evaluate(CLOCK)
+                evs = trace_run(pg, cdp, lambda: pg.wait_for_timeout(int(opt("--idlems", 4000))), 300)
+                fr = pg.evaluate("()=>{__fc.on=false; return __fc.frames;}")
+                lc = live_counts(pg, cdp)
+                report(evs, "%s a question sitting open %sms [%s] [running %d of %d animations, %d layers, %d elements]" % (DEV, opt("--idlems", 4000), fstats(fr), lc["running"], lc["anims"], lc["layers"], lc["els"]), THR, top=6)
+            elif sc == "hidden":
+                # the page told it is hidden (the browser's own flag is the test's to set), then the main thread's work for --idlems
+                pg.evaluate("""()=>{ let hid=false; Object.defineProperty(Document.prototype,'hidden',{get(){return hid;},configurable:true});
+                  Object.defineProperty(Document.prototype,'visibilityState',{get(){return hid?'hidden':'visible';},configurable:true});
+                  window.__setHidden=v=>{ hid=v; document.dispatchEvent(new Event('visibilitychange')); }; }""")
+                G["tap"](pg, cdp, touch, "#bottomtab-" + (opt("--tab", "rewards"))); pg.wait_for_timeout(1500)
+                pg.evaluate("()=>__setHidden(true)"); pg.wait_for_timeout(500)
+                evs = trace_run(pg, cdp, lambda: pg.wait_for_timeout(int(opt("--idlems", 4000))), 300)
+                report(evs, "%s HIDDEN on %s %sms" % (DEV, opt("--tab", "rewards"), opt("--idlems", 4000)), THR, top=6)
+                pg.evaluate("()=>__setHidden(false)")
             elif sc == "hover":
                 G["tap"](pg, cdp, touch, "#bottomtab-rewards"); pg.wait_for_timeout(2500)
                 pg.evaluate(CLOCK)

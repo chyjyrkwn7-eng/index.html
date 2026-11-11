@@ -96883,7 +96883,22 @@ let recUserAt = -1e9;
 try{ ["pointerdown", "touchstart", "keydown", "pointermove", "touchmove", "wheel", "scroll"].forEach(t => window.addEventListener(t, (e) => {
   if(t === "pointermove" && e && e.pointerType === "mouse" && !e.buttons) return;
   recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
+/* (384.30) A COMPUTER'S MAIN THREAD IS NOT THE RECORDER'S TO TAKE, AND NOTHING IS RECORDED FOR A PAGE NOBODY CAN SEE. Madison: the app lags
+   on a computer. Profiled (tools/profile-desktop.py, 1440x900, a fresh profile - nothing saved yet - the state every update that changes a
+   drawing leaves a computer in): Home 29% of the main thread over 10s, the Leaderboard 66%, Profile 27%, in 7,000-18,000 tasks, nearly all of
+   it the flip-book recorders (a data: SVG document loaded per frame, a style pass per frame, a canvas draw) - and the SAME 80% with the page
+   told it is hidden, because only charRecPump's background branch looked at document.hidden; orbitAnimYield and the warm-ups behind
+   recordingShouldWait did not. Two rules: (1) hidden = wait (a recording is never urgent; the wait polls once a second and the first
+   visible poll lets it go on); (2) on a computer (a mouse as the main pointer: "(hover:hover) and (pointer:fine)", which a phone or a
+   tablet never answers) the recorders take at most REC_DUTY of the main thread: after a slice that ran W ms the next may not start for
+   W / REC_DUTY ms, so a page that is also hovering, scrolling and drawing keeps two frames in three. A recording takes about three
+   times as long (it is one per sheet, saved, and never again until a drawing changes); the live drawing shows meanwhile, as it
+   always did. A phone / tablet is unchanged (REC_DUTY 1: no gap). */
+const REC_DESKTOP = (() => { try{ return !!(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches); }catch(e){ return false; } })();
+const REC_DUTY = REC_DESKTOP ? 0.3 : 1;
+const REC_SLICE_MAX_MS = REC_DESKTOP ? 8 : 12;
 function recordingShouldWait(){
+  if(document.hidden) return 1000;
   const now = performance.now();
   /* 2s after a touch and 1.6s after a screen goes in (build 327z8, was
      1s / 700ms): a tab switch's own work - the new screen's first paint,
@@ -96922,20 +96937,33 @@ function quietIdle(fn, timeout){
   };
   go();
 }
+let orbitAnimSliceStart = 0, orbitAnimNextAt = 0;
+const recStats = { slices: 0, workMs: 0, gaps: 0 };   /* what the recorders took, read by the gate (check-b384-desktoplag) */
 function orbitAnimYield(){
-  if(performance.now() < orbitAnimSliceEnd && !recordingShouldWait()) return Promise.resolve();
+  const t0 = performance.now();
+  if(t0 < orbitAnimSliceEnd && !recordingShouldWait()) return Promise.resolve();
+  /* a slice has just ended: what it really took (its frames can run past the end of it) sets when the next may start */
+  if(orbitAnimSliceStart && REC_DUTY < 1){
+    const worked = Math.min(250, Math.max(0, t0 - orbitAnimSliceStart));
+    recStats.slices++; recStats.workMs += worked;
+    orbitAnimNextAt = orbitAnimSliceStart + worked / REC_DUTY;
+  }
+  orbitAnimSliceStart = 0;
   return new Promise(res => {
     const go = () => {
       const w = recordingShouldWait();
       if(w > 0){ setTimeout(go, w + 20); return; }
+      const gap = orbitAnimNextAt - performance.now();
+      if(gap > 1){ recStats.gaps++; setTimeout(go, gap); return; }
       /* An idle period, or 60ms at most: a main thread that is never
          idle (a busy phone, a slow one) still records, a slice at a time
          - 8ms when the wait ran out, as the timer path below gives. */
       if(window.requestIdleCallback) window.requestIdleCallback(d => {
         if(recordingShouldWait() > 0){ go(); return; }
-        orbitAnimSliceEnd = performance.now() + (d.didTimeout ? 8 : Math.max(4, Math.min(12, d.timeRemaining()))); res();
+        orbitAnimSliceStart = performance.now();
+        orbitAnimSliceEnd = orbitAnimSliceStart + (d.didTimeout ? 8 : Math.max(4, Math.min(REC_SLICE_MAX_MS, d.timeRemaining()))); res();
       }, { timeout: 60 });
-      else setTimeout(() => { if(recordingShouldWait() > 0){ go(); return; } orbitAnimSliceEnd = performance.now() + 8; res(); }, 16);
+      else setTimeout(() => { if(recordingShouldWait() > 0){ go(); return; } orbitAnimSliceStart = performance.now(); orbitAnimSliceEnd = orbitAnimSliceStart + 8; res(); }, 16);
     };
     go();
   });
