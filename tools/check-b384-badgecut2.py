@@ -97,7 +97,7 @@ with sync_playwright() as pw:
             if muted:
                 chk("(E) Home, setting ON, something waiting to be announced: ONE banner names it and says celebrations are off, and no card plays (%s)" % got,
                     bool(names) and bool(got["banner"]) and name.lower() in got["banner"].lower() and "celebrations are off" in got["banner"].lower() and not got["card"], got)
-                pg.evaluate("()=>document.getElementById('celebrations-off').click()"); pg.wait_for_timeout(1000)
+                pg.evaluate("()=>{ const b = document.getElementById('celebrations-off'); if(b) b.click(); }"); pg.wait_for_timeout(1000)
                 chk("(E) ... and tapping it opens the switch's page", pg.evaluate("()=>!!document.querySelector('.settings-page-motion #settings-celebrations')"))
             else:
                 chk("(E) Home, setting OFF: the card plays and there is no banner (%s)" % got, got["card"] and not got["banner"], got)
@@ -123,7 +123,7 @@ with sync_playwright() as pw:
         while time.time() - t0 < 120 and not pg.evaluate("()=>!!document.querySelector('.rs-screen')"):
             pg.evaluate(tb.ANSWER); pg.wait_for_timeout(120)
         pg.wait_for_timeout(2500)
-        owed = pg.evaluate("(u)=>[!!(store.badgeSceneOwed||{})[u], !!(store.badgeScenePlayed||{})[u], badgeScenesOwed().length]", unit)
+        owed = pg.evaluate("(u)=>[!!(store.badgeSceneOwed||{})[u], !!(store.badgeScenePlayed||{})[u], (typeof badgeScenesOwed === 'function' ? badgeScenesOwed().length : -1)]", unit)
         # the phone puts the app away and brings it back: the results (and their scene) are gone, the account is not
         pg.reload(); pg.wait_for_timeout(3500); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
         up = None; t1 = time.time()
@@ -138,7 +138,7 @@ with sync_playwright() as pw:
                 if not pg.evaluate("()=>!!document.querySelector('.bc-scene')"): end = time.time(); break
                 pg.wait_for_timeout(300)
             pg.wait_for_timeout(1500)
-            st = pg.evaluate("(u)=>[!!(store.badgeScenePlayed||{})[u], badgeScenesOwed().length, !!document.querySelector('.bc-scene')]", unit)
+            st = pg.evaluate("(u)=>[!!(store.badgeScenePlayed||{})[u], (typeof badgeScenesOwed === 'function' ? badgeScenesOwed().length : -1), !!document.querySelector('.bc-scene')]", unit)
             chk("(H) ... it plays to its end (%s s), is then marked played, nothing is owed, and it does not come round again (%s)" % (None if end is None else round(end - up, 1), st),
                 end is not None and end - up >= MIN_UP and st == [True, 0, False], (end, st))
             pg.reload(); pg.wait_for_timeout(3500); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(5000)
@@ -150,7 +150,7 @@ with sync_playwright() as pw:
         tr = tb.run(pg, "plain", limit=150)
         s, ups = scene_up(tr)
         u = tr["unitsPlayed"][0]
-        st = pg.evaluate("(u)=>[!!(store.badgeScenePlayed||{})[u], badgeScenesOwed().length]", u)
+        st = pg.evaluate("(u)=>[!!(store.badgeScenePlayed||{})[u], (typeof badgeScenesOwed === 'function' ? badgeScenesOwed().length : -1)]", u)
         pg.evaluate("()=>showHome()"); pg.wait_for_timeout(6000)
         again = pg.evaluate("()=>!!document.querySelector('.bc-scene')")
         chk("(I) a full run's scene played on the results (up %s s) is marked played, nothing owed (%s), and Home does not play it again (%s)" % (ups, st, again),
