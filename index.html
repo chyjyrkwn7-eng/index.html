@@ -55399,8 +55399,9 @@ const IFC_SRC_GAPS = { "4": [19], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1,
    The owner: a test of the chapters you selected must not show references to chapters you did not select, so the 87 Fire Code
    questions that cite the county's Chapter 1 (sections 101-199: 105.5.x operational permits, 105.6.x construction permits, the
    citation table) but sat in other chapters go to Chapter 1 - "I don't want repeat questions and I don't want bad questions ... I want
-   the best questions out of what we got." 72 move (Chapter 1: 88 -> 160, appended in citation order, positions 89-160, so none of its
-   own 88 shifts); 15 that ask the same fact as one that stays are deleted (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the
+   the best questions out of what we got." 71 move (Chapter 1: 88 -> 159, appended in citation order, positions 89-159, so none of its
+   own 88 shifts); 16 are deleted: 15 that ask the same fact as one that stays, and ch20-508 (rooftop heliport), which the owner took
+   out himself (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the
    table of each with its reason is in docs/notes-archive.md, 384.47). No question was reworded: the moved ones differ from main's
    only in `unit`. Same mechanism as 384.42, for the same reasons:
    - every moved question's old position stays taken in its old chapter (IFC_SRC_GAPS), so no other question's key moves
@@ -55417,7 +55418,7 @@ const IFC_MOVED_KEYS = [
   ["Chapter 62: Organic Peroxides|8|ulabyl", "ch62-702"],
   ["Chapter 62: Organic Peroxides|9|w1tgss", "ch62-703"],
   ["Chapter 64: Pyrophoric Materials|1|1pska3k", "ch64-001"],
-  /* (384.47) the county permit questions that moved to Chapter 1, in the order they now sit there (positions 89-160) */
+  /* (384.47) the county permit questions that moved to Chapter 1, in the order they now sit there (positions 89-159) */
   ["Chapter 51: Aerosols|1|1es3xwy", "ch51-020"],
   ["Chapter 20: Aviation Facilities|1|rvuis0", "ch20-003"],
   ["Chapter 22: Combustible Dust-Producing Operations|1|sq5x17", "ch22-001"],
@@ -55476,7 +55477,6 @@ const IFC_MOVED_KEYS = [
   ["Appendix C: Fire Hydrant Locations and Distribution|8|1flmha6", "chAppC-701"],
   ["Appendix C: Fire Hydrant Locations and Distribution|10|souzda", "chAppC-703"],
   ["Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics|1|17h6d8p", "ch65-006"],
-  ["Chapter 20: Aviation Facilities|12|1ikiga7", "ch20-508"],
   ["Chapter 34: Tire Rebuilding and Tire Storage|1|x4buh2", "ch34-007"],
   ["Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures|1|5gvnvw", "ch31-031"],
   ["Chapter 61: Liquefied Petroleum Gases|25|4x201x", "ch61-715"],
@@ -55492,7 +55492,7 @@ const IFC_MOVED_KEYS = [
   ["Chapter 10: Means of Egress|1|2njh7i", "ch10-108"]
 ];
 const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j",
-  /* (384.47) the fifteen repeats the owner took out (tools/gen-ifc-bank.py UNIT_REMOVALS) */
+  /* (384.47) the fifteen repeats the owner took out (tools/gen-ifc-bank.py UNIT_REMOVALS; a sixteenth follows the list) */
   "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities|9|1wts5n9",
   "Chapter 37: Combustible Fibers|1|ymtyre",
   "Chapter 56: Explosives and Fireworks|37|44roqb",
@@ -55507,12 +55507,14 @@ const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru
   "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|9|1av8bji",
   "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|10|6rcore",
   "Chapter 55: Cryogenic Fluids|9|1idq5kc",
-  "Chapter 55: Cryogenic Fluids|10|hzyocq"];
-/* The bank's own count ("1,797"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
+  "Chapter 55: Cryogenic Fluids|10|hzyocq",
+  /* (384.47) and the one the owner took out himself: ch20-508, the rooftop-heliport question (its wrong options are not stated not to need a permit) */
+  "Chapter 20: Aviation Facilities|12|1ikiga7"];
+/* The bank's own count ("1,796"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1797).toLocaleString("en-US");
+  return (n || 1796).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to

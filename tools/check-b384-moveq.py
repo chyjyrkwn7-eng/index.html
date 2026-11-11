@@ -30,7 +30,7 @@ Adding a move later: one line in MOVES here, and UNIT_MOVES / IFC_SRC_GAPS / IFC
 import os, sys, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 # (384.47) main now HOLDS the five moves, so the commit to compare with is the last one before them: 6c1d14a (main 384.44, five questions still where
-# the study guide put them). What 384.47 did to the bank besides (72 questions into Chapter 1, 15 removed) is read from the generator's tables and
+# the study guide put them). What 384.47 did to the bank besides (71 questions into Chapter 1, 16 removed) is read from the generator's tables and
 # left out of every "nobody else changed" comparison here; tools/check-b384-moveperm.py holds that move.
 BASE = os.environ.get("BASE") or "6c1d14a"
 import ast
