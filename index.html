@@ -105292,7 +105292,12 @@ function playRankUpScene(tierKey, opts, spec){
      bubble) and the bubbles' and flares' taps would otherwise answer it -
      the sphere stops the event, so a tap on the planet never ended the
      scene, and could put a bubble over it. */
-  overlay.addEventListener("click", (e) => { e.stopPropagation(); if(titleUp) endScene(); }, true);
+  /* (384.37) ...and a tap no longer ends the scene once its title is up: a rank-up is a reward and plays through, as the badge's
+     case does (the owner: "you shouldn't be able to skip those rewards"; "Skip celebrations and pop-ups" is the way not to
+     see it). The tap is still the scene's - swallowed - so it reaches nothing under it. The tools fast-forward through
+     overlay.__nova.skip(). */
+  overlay.addEventListener("click", (e) => { e.stopPropagation(); }, true);
+  overlay.__nova = { skip(){ if(titleUp) endScene(); } };
   /* REDUCE MOTION: A SHORT, STILL SCENE (build 317, flow round). The full
      scene under Reduce motion was ~13s of a near-still screen. Now: the
      planet you are getting, already in its colour with its flare lit (for
@@ -113537,7 +113542,8 @@ function playQueuedBadgeCutscenes(){
     }, 780);
   }
 
-  overlay.addEventListener("click", finish);
+  /* (384.37) not tappable away, like the badge's case (playBadgeCaseScene); tools use __nova.skip() */
+  overlay.__nova = { skip: finish };
   requestAnimationFrame(() => overlay.classList.add("badge-cutscene-in"));
   setTimeout(finish, BADGE_CUTSCENE_MS);
 }
@@ -121102,7 +121108,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.34";
+const APP_BUILD = "2026-11-11-384.37";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -129001,7 +129007,12 @@ function playBadgeCaseScene(units, done, retro, opts){
     openSceneBridge(col);
     setTimeout(() => { overlay.remove(); done(); }, 450);
   }
-  overlay.addEventListener("click", finish);
+  /* (384.37) A BADGE'S SCENE CANNOT BE TAPPED AWAY. "You shouldn't be able to skip the badge cutscene ... unless you have the setting
+     on in settings" - the setting is "Skip celebrations and pop-ups" (theme.muteBanners), which stops the scene before it starts
+     (above). With it off, a tap does nothing here. It used to end the scene: the results' "Tap to skip" (384 r6) has people
+     tapping through the grade and the XP box, the tap that brings the scene in is followed by the next, and the case was gone
+     in under a second - "badge cutscenes aren't showing up". The tools fast-forward through overlay.__nova.skip(). */
+  overlay.__nova = { skip: finish };
   clearCelebrationsForScene();
 
   /* No XP line any more (build 320): a badge pays nothing of its own. */
@@ -129612,7 +129623,9 @@ function sfScene(kind, color, ch, done, opts){
     openSceneBridge(ch ? avatarGlowColor(ch) : fc);
     setTimeout(() => { overlay.remove(); done(); }, SF_OUT_MS);
   }
-  overlay.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); if(titleUp) endScene(); }, true);
+  /* (384.37) a tap is swallowed and ends nothing: a find plays through (see the badge's case, playBadgeCaseScene); tools use __nova.skip() */
+  overlay.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); }, true);
+  overlay.__nova = { skip(){ if(titleUp) endScene(); } };
   document.body.appendChild(overlay);
   void overlay.offsetWidth;
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("sf-in")));
