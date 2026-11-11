@@ -26148,7 +26148,10 @@ def check_b323t_tabbar(br):
         cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y}]})
         pg.wait_for_timeout(20)
         if abs(x - mid) < .5 or abs(x - lb) < .5:
-            pg.wait_for_timeout(60)
+            # (384.27) the glass leads a MOVING finger by design (383: the finger's speed carried on until the next move is due) and is on it
+            # ~90ms after the finger stops (traced: +8.6px at 50ms, +3.1 at 70, +1.0 at 87). 60ms read the middle of that decay, where the
+            # same build reads 3.0 or 3.4 by a millisecond - the sample waits it out
+            pg.wait_for_timeout(150)
             dd = pg.evaluate(B323T_LENS)
             follow.append((round(x), round(dd.get("cx", -999)), dd.get("up"), round(dd.get("h", 0))))
     check("while dragging, the lens follows the finger (within 3px), still popped out",
