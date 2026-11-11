@@ -38379,3 +38379,11 @@ Madison, a screenshot of the Test settings sheet from 384.25 (frosted on a phone
 ## 384.27 - Test #9 (Monday Nov 16) is on the calendar
 
 Madison, with the instructor's email for Test #9 on 11-16-26 ("Test #9 will cover the following subjects. Arrest, Search, and Seizure, CCP, and Consular Notifications."): "Up the test stuff. Next test." `TEST_TOPICS["2026-11-16"]` (title Test #9) lists the three subjects written as the units' own names - Arrest, Search, and Seizure; Code of Criminal Procedure and Bill of Rights (the email's CCP); Consular Notification (the email says Notifications; the unit is singular and a topic marks a unit only by starting with its name) - so each unit's card carries the "Next test" mark. Tapping Mon Nov 16 in the Calendar shows the three; the unit cards, Home, Nova and the countdown move to it at 8 PM on Monday Nov 9 (TEST_DAY_HANDOVER_HOUR 20, CST). Nothing from the email but the test went in (the repo is public: no names or addresses). `tools/check-b384-test9.py`: posted with three topics; at 7:59 PM Monday Nov 9 the next test is still Nov 9's, from 8 PM it is Nov 16's and marks exactly those three units; fails on 384.26.
+
+## Build 384.28 - Test #10 posted (Monday Nov 30)
+
+Instructor's email: Test #10, given November 30, 2026, covers Victims of Crime; Missing and Exploited Children; Sexual Assault & Family Violence.
+`TEST_TOPICS["2026-11-30"]` = { title "Test #10", three topics, postedAt 2026-11-11 }. The email's "Sexual Assault & Family Violence" is written as the unit's own name
+("Sexual Assault and Family Violence") so its card gets the "Next test" mark. Hand-over is the usual 8 PM CST on the previous test's day: from 8 PM Monday Nov 16
+the calendar's "what's on the next test" and the unit marks switch from Test #9 to Test #10. Calendar already carried the Nov 30 TEST #10 row; Nov 23 is the Thanksgiving break.
+Fire Code deletes all TEST_TOPICS (unchanged). Gate: `check-b384-test9.py` extended (checks 4 and 5); fails against 384.26.

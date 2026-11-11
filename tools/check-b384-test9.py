@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Build 384.27: Test #9 (Monday Nov 16, 2026) is on the calendar with its subjects, and the next test hands over to it at 8 PM on Monday Nov 9.
+"""Build 384.28 adds Test #10 (Monday Nov 30: Victims of Crime; Missing and Exploited Children; Sexual Assault and Family Violence): posted with three topics, and at 8 PM on Monday Nov 16 it is the next test, marking those three units (checks 4 and 5).
+Build 384.27: Test #9 (Monday Nov 16, 2026) is on the calendar with its subjects, and the next test hands over to it at 8 PM on Monday Nov 9.
 Madison, with the instructor's email: "Up the test stuff. Next test." The email: "Test #9 will cover the following subjects. Arrest, Search, and Seizure, CCP, and
 Consular Notifications." Read off the page (Chicago time, CST):
  (1) testTopicsFor('2026-11-16') has the three subjects and the title Test #9, written as the units' own names;
@@ -36,6 +37,13 @@ try:
     chk("(2) at 7:59 PM Monday Nov 9 the next test is still Nov 9's (%s); from 8 PM it is Nov 16's, marking %s" % (before and before.get("d"), after and after.get("u")),
         before and before.get("d") == "2026-11-09" and after and after.get("d") == "2026-11-16" and after.get("u") == sorted(want), [before, after])
     chk("(2) each marked unit exists in the app", all(w in units for w in want), units[:30])
+    T10 = "() => { try{ const u = nextTestUnits(); const t = testTopicsFor('2026-11-30'); return { d: u && u.date, u: u ? [...u.units].sort() : null, t: t && t.topics, title: t && t.title }; }catch(e){ return { err: String(e).slice(0, 80) }; } }"
+    c, p = at("2026-11-16T19:59:00-06:00"); b10 = p.evaluate(T10); c.close()
+    c, p = at("2026-11-16T20:00:30-06:00"); a10 = p.evaluate(T10); c.close()
+    want10 = sorted(["Victims of Crime", "Missing and Exploited Children", "Sexual Assault and Family Violence"])
+    chk("(4) Test #10 is posted: title %r, topics %s" % ((a10 or {}).get("title"), (a10 or {}).get("t")), a10 and a10.get("title") == "Test #10" and len(a10.get("t") or []) == 3, a10)
+    chk("(5) at 7:59 PM Monday Nov 16 the next test is still Nov 16's (%s); from 8 PM it is Nov 30's, marking %s" % (b10 and b10.get("d"), a10 and a10.get("u")),
+        b10 and b10.get("d") == "2026-11-16" and a10 and a10.get("d") == "2026-11-30" and a10.get("u") == want10, [b10, a10])
     c, p = at("2026-11-09T20:00:30-06:00", ifc=True); f = p.evaluate("()=>({cls:window.NOVA_CLASS, t:testTopicsFor('2026-11-16')})"); c.close()
     chk("(3) Fire Code has no test calendar (%s)" % f, f["cls"] != "ifc" or f["t"] is None, f)
     br.close()
