@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""384.25: COMING BACK TO THE APP - Home's planet system (the hero sphere, its flare bubbles and the loops that move them).
+"""384.27: COMING BACK TO THE APP - Home's planet system (the hero sphere, its flare bubbles and the loops that move them).
 
 Madison (iPhone, installed): "When leaving the app and coming back, the planet system lags badly still."
 
@@ -91,6 +91,8 @@ INSTR = """(()=>{
  const P = Animation.prototype, ct = Object.getOwnPropertyDescriptor(P, 'currentTime');
  const nm = a => a.animationName || (a.effect && a.effect.target && a.effect.target.className && (a.effect.target.className.baseVal || a.effect.target.className)) || '?';
  Object.defineProperty(P, 'currentTime', { get(){ return ct.get.call(this); }, set(v){ log(this.playState === 'running' ? 'write-running' : 'write-other', nm(this)); return ct.set.call(this, v); }, configurable:true });
+ const st = Object.getOwnPropertyDescriptor(P, 'startTime');
+ if(st) Object.defineProperty(P, 'startTime', { get(){ return st.get.call(this); }, set(v){ if(this.playState === 'paused') log('resume', nm(this)); else log('write-running', nm(this)); return st.set.call(this, v); }, configurable:true });
  const op = P.play; P.play = function(){ if(this.playState === 'paused') log('resume', nm(this)); return op.apply(this, arguments); };
  const oc = P.cancel; P.cancel = function(){ log('cancel', nm(this)); return oc.apply(this, arguments); };
  const oa = Element.prototype.animate; Element.prototype.animate = function(){ log('animate', this.tagName); return oa.apply(this, arguments); };
