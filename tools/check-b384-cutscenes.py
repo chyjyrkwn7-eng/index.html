@@ -279,7 +279,7 @@ with sync_playwright() as pw:
         STILL = r"""async (c) => { theme.reduceMotion = true; document.documentElement.dataset.reduceMotion = 'true';
           const order = ['red','orange','yellow','violet','white','core']; store.mysteryColorsFound = {}; order.slice(0, order.indexOf(c) + 1).forEach(k => store.mysteryColorsFound[k] = true);
           __capStart(); playFlareFoundScene(c, false, () => {}); await new Promise(r => setTimeout(r, 2600));
-          const e = __capEnd(); document.querySelectorAll('.sf-scene').forEach(x => x.click()); await new Promise(r => setTimeout(r, 1500));
+          const e = __capEnd(); document.querySelectorAll('.sf-scene').forEach(x => (x.__nova ? x.__nova.skip() : x.click())); await new Promise(r => setTimeout(r, 1500));
           theme.reduceMotion = false; delete document.documentElement.dataset.reduceMotion; e.after = [...document.querySelectorAll('.sf-scene')].length; return e; }"""
         for color, ch in (("red", None), ("violet", "umbra"), ("white", "singularity")):
             for c, p in P.items():
