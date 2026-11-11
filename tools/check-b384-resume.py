@@ -30,13 +30,15 @@ accelerated animations again); what it CAN say is what the page itself asks for,
      numbers) and its longest task is under three times the settled one plus 250ms. Read off the page, printed either way.
  (8) REDUCE MOTION: with it on the planet system has no loops, and a return starts none and throws nothing.
  (9) no page error.
+ (10) THE PAINT-MODE WATCH KEEPS CLEAR OF A RETURN: loopsWatchTick (frames counted for 1.5s; two slow counts in a row switch the loops to their fallback for the build) does not start inside 9s of a return,
+     while it does start on the settled Home in the same run. (origin/main: it starts.)
 
 Phone = iPhone 17 Pro Max installed 440x956 at 3x, tablet = iPad Pro 11" 834x1194 at 2x; both classes (the academy's Home and Fire
 Code's), both of which have the planet system, with all seven bubbles on their moving sheets before the page is put away.
 
   python3 tools/check-b384-resume.py [--quick] [--only academy|ifc|phone|tablet|rm] [--against REV|DIR|index.html] [--cpu 4]
 
-On origin/main (384.22) it fails (1), (2), (3), (6); (4), (5), (7), (8), (9) pass there (they hold the new behaviour to what it must keep)."""
+On origin/main (384.26) it fails (1), (2), (3), (6), (10); (4), (5), (7), (8), (9) pass there (they hold the new behaviour to what it must keep)."""
 import json, os, re, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -146,6 +148,9 @@ def scenario(br, label, ifc, w, h, dpr, rm=False):
     pg.evaluate("()=>{ window.__B0 = performance.now(); }"); pg.wait_for_timeout(2200)
     base = pg.evaluate("()=>{ const f = __M.fr.filter(t => t >= __B0 && t <= __B0 + 2000); const d = f.slice(1).map((t, i) => t - f[i]); const lt = __M.lt.filter(x => x[0] >= __B0 && x[0] <= __B0 + 2000).map(x => x[1]);"
                        " const so = d.slice().sort((a, b) => a - b); return { frames: f.length, slow: d.filter(x => x > 50).length, longest: Math.max(0, ...lt), med: so.length ? so[so.length >> 1] : 17 }; }")
+    # the loops' paint-mode watch (loopsWatchTick) counts frames for 1.5s when it runs: it must be ABLE to run on this settled Home (or (10) measures nothing)
+    watch_settled = pg.evaluate("()=>{ try{ loopsWatch.touchAt = -1e9; loopsWatchTick(); return loopsWatch.busy; }catch(e){ return 'err ' + e; } }")
+    pg.wait_for_timeout(1900)
     n_loops = pg.evaluate("()=>__M.loops().length")
     n_anims = pg.evaluate("()=>document.getAnimations().length")
     before = pg.evaluate("()=>__M.poses().filter(p => p[1] === 'running').length")
@@ -188,9 +193,10 @@ def scenario(br, label, ifc, w, h, dpr, rm=False):
         pg.wait_for_timeout(300)
         again = pg.evaluate("()=>({ running: __M.poses().filter(p => p[1] === 'running').length, loops: __M.loops().length })")
         if again["running"] >= before: break
+    watch_after = pg.evaluate("()=>{ try{ loopsWatch.touchAt = -1e9; loopsWatchTick(); return loopsWatch.busy; }catch(e){ return 'err ' + e; } }")
     cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
     ctx.close()
-    return dict(cost=cost, label=label, sheets=n, seeded=seeded, base=base, n_loops=n_loops, n_anims=n_anims, before=before, P=P, Q=Q, r=r, again=again, errs=errs)
+    return dict(watch_settled=watch_settled, watch_after=watch_after, cost=cost, label=label, sheets=n, seeded=seeded, base=base, n_loops=n_loops, n_anims=n_anims, before=before, P=P, Q=Q, r=r, again=again, errs=errs)
 def judge(s):
     L = s["label"]; r = s["r"]; ev = r["ev"]; na = max(1, s["n_anims"]); rm = "rm" in L
     restarts = [e for e in ev if e["k"] in ("resume", "write-running", "cancel", "animate")]
@@ -235,6 +241,9 @@ def judge(s):
     b = s["base"]
     chk("(7) %s: the 2s after the return: %d frames over 50ms (settled Home %d), longest task %dms (settled %dms)" % (L, r["slow"], b["slow"], r["longest"], b["longest"]),
         r["slow"] <= 2 * b["slow"] + 8 and r["longest"] <= 3 * b["longest"] + 250, [r["slow"], b, r["longest"]])
+    chk("(10) %s: the loops' paint-mode watch does not count the frames of a page that is waking up (it can run when settled: %s; started within 2.5s of a return: %s)" % (L, s["watch_settled"], s["watch_after"]),
+        # (a device whose Home shows fewer than four loops in view never runs the watch at all - the tablet's: nothing to hold clear of, said so)
+        (s["watch_settled"] is False and s["watch_after"] is False) or (s["watch_settled"] is True and s["watch_after"] is False), [s["watch_settled"], s["watch_after"]])
     chk("(9) %s: no page error" % L, not s["errs"], s["errs"][:3])
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
