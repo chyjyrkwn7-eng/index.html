@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Build 384.24: the Test settings sheet is frosted glass on a phone or tablet, solid on a big computer.
+"""Build 384.26: the Test settings sheet is SOLID on every device (384.25 frosted it on phones and tablets; Madison: "Change this back what the hell??").
+(Kept as the gate that holds it solid; its old frosted description follows.)
+Build 384.24: the Test settings sheet is frosted glass on a phone or tablet, solid on a big computer.
 Madison: "The setting stuff we've talked about should have [the frosted glass]." The sheet was opaque on purpose (r15: a 4K monitor re-blurred a window-wide box on
 every frame of its slide); that cost is a big computer's. Read off the page with the sheet open and settled:
  (1) PHONE (440x956), TABLET upright (834x1194), TABLET on its side with touch (1194x834): the sheet has a backdrop-filter that blurs, its fill is translucent (alpha < 1),
@@ -36,7 +38,7 @@ READ = """()=>{ const sh=document.querySelector('.unitoptions-modal-sheet.is-set
   const scrim=document.querySelector('.unitoptions-modal-scrim'); const sc=scrim?getComputedStyle(scrim).backgroundColor:'';
   const b=sh.getBoundingClientRect();
   return { bf:c.backdropFilter, own:/opacity|filter|mask|backdrop-filter/.test(w)?w:'', anc, alpha, bgImg:c.backgroundImage.slice(0,30), scrim:sc, box:{x:b.left,y:b.top,w:b.width,h:b.height} }; }"""
-CASES = (("phone 440x956", 440, 956, False, True), ("tablet upright 834x1194", 834, 1194, True, True), ("tablet on its side 1194x834 (touch)", 1194, 834, True, True),
+CASES = (("phone 440x956", 440, 956, False, False), ("tablet upright 834x1194", 834, 1194, True, False), ("tablet on its side 1194x834 (touch)", 1194, 834, True, False),
          ("laptop 1366x768 (mouse)", 1366, 768, False, False), ("desktop 1920x1080", 1920, 1080, False, False))
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=cb.CHROME)
