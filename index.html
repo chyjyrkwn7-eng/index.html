@@ -12103,9 +12103,9 @@
   .if-step{ display:flex; align-items:center; gap:.65rem; min-height:2.9rem; box-sizing:border-box; padding:.4rem .7rem .4rem .6rem; border-radius:14px;
     background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); color:var(--ink); font-size:1rem; line-height:1.3; }
   .if-num{ flex:none; display:flex; align-items:center; justify-content:center; width:1.9rem; height:1.9rem; border-radius:50%; box-sizing:border-box;
-    border:1.5px solid var(--soft); font-size:.95rem; font-weight:800; line-height:1; color:var(--ink); }
+    border:1.5px solid var(--soft); font-size:1rem; font-weight:800; line-height:1; color:var(--ink); }
   .if-step-text{ display:flex; flex-direction:column; gap:.2rem; min-width:0; }
-  .if-step-note{ font-size:.95rem; line-height:1.35; color:var(--soft); }
+  .if-step-note{ font-size:1rem; line-height:1.35; color:var(--soft); }
   .if-step .installguide-btn{ font-weight:800; color:var(--ink); }
   .if-step .installguide-inline-icon{ width:1.4rem; height:1.4rem; }
   .if-step .installguide-style-plain, .if-step .installguide-style-plain .installguide-glyph{ color:inherit; }
@@ -12125,7 +12125,7 @@
   /* the video screen: the heading and the clip stay in the top ~40% of the screen, above the share menu that rises over the rest.
      The clip's box is these three properties (a new recording is cropped here, not in code): --iv-ar is the box's width / height,
      --iv-pos which part of the frame is kept (x y), --iv-scale a zoom into it. --iv-h is the height the top 40% leaves. */
-  .installvideo-panel{ --iv-ar:1.4; --iv-pos:50% 86%; --iv-scale:1;
+  .installvideo-panel{ --iv-ar:1.4; --iv-pos:50% 92%; --iv-scale:1;
     --iv-h:max(7rem, calc(40vh - env(safe-area-inset-top, 0px) - 6.5rem)); --iv-h:max(7rem, calc(40dvh - env(safe-area-inset-top, 0px) - 6.5rem)); }
   .if-vhead{ margin:0 0 .75rem; font-size:clamp(1.15rem, 5vw, 1.55rem); font-weight:700; line-height:1.2; color:var(--ink); text-align:center; text-wrap:balance; font-family:inherit; text-transform:none; }
   .iv-frame{ position:relative; flex:none; box-sizing:border-box; width:min(100%, 30rem, calc(var(--iv-h) * var(--iv-ar))); aspect-ratio:var(--iv-ar);
@@ -12156,7 +12156,7 @@
     html[data-layout] body #stage > .installfirst-panel .if-steps{ max-width:26rem; }
     html[data-layout] body #stage > .installfirst-panel .if-step{ font-size:1.1rem; }
     html[data-layout] body #stage > .installfirst-panel .if-appicon{ width:5.5rem; height:5.5rem; }
-    html[data-layout] body #stage > .installvideo-panel{ padding-top:clamp(2rem, 9vh, 6rem) !important; }
+    html[data-layout] body #stage > .installvideo-panel{ padding-top:clamp(1.5rem, 4.5vh, 4rem) !important; }
     .if-vhead{ font-size:1.7rem; }
   }
   /* Without this, any toast on a screen with the bottom tab bar
