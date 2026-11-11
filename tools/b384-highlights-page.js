@@ -12,9 +12,10 @@
 // A word is a run of print columns; a gap wider than 0.22 em starts the next one. Table rows (cell | cell) run rule to rule on purpose: only
 // the first check is made on them.
 (() => {
-  const nz = s => String(s).toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9]+/g, "");
+  const nz = s => String(s).replace(/\u00b2/g, "2").replace(/\u00b3/g, "3").replace(/\u00b9/g, "1").toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9]+/g, "");
   const deepPx = (R, G, B) => R >= 235 && G < 232 && B < 95;                    // the wash is (255,245,160), the gold over it (255,215,25)
   const inkPx = (R, G, B) => R + G + B < 330;
+  const CARD_GAP = 0.2;                                                           // (the card's reflow sets its spaces a little narrower)
   const GAP = 0.22;                                                              // em: a wider gap in the print than this is a space
   let V = null, doc = null;
   async function boot() { if (!V) { V = await ifcViewer(); doc = await ifcCountyDoc(); } }
@@ -24,24 +25,36 @@
     if (a >= 0) out.push([a, last]);
     return out;
   }
-  // one text line's reading: its words (ink groups) and its bands (deep runs), over the rows r0..r1 of an image
+  // one text line's reading over the rows r0..r1 of an image: its print's columns (a table's rules left out: a row of ink as long as 8 em, a column of it
+  // that fills the rows) and the columns that hold the darker gold
   function readLine(img, W, r0, r1, em, wantInk) {
-    const D = img.data, ink = new Uint8Array(W), deep = new Uint8Array(W);
-    for (let y = Math.max(0, r0); y < Math.min(img.height, r1); y++) for (let x = 0, i = y * W * 4; x < W; x++, i += 4) {
-      const R = D[i], G = D[i + 1], B = D[i + 2];
-      if (wantInk === img && inkPx(R, G, B)) ink[x] = 1;
-      if (deepPx(R, G, B)) deep[x] = 1;
+    const D = img.data, deep = new Uint8Array(W);
+    r0 = Math.max(0, r0); r1 = Math.min(img.height, r1);
+    const cnt = new Uint16Array(W);
+    for (let y = r0; y < r1; y++) {
+      let run = 0, best = 0;
+      const dark = [];
+      for (let x = 0, i = y * W * 4; x < W; x++, i += 4) {
+        const R = D[i], G = D[i + 1], B = D[i + 2];
+        if (deepPx(R, G, B)) deep[x] = 1;
+        const k = wantInk === img && inkPx(R, G, B);
+        dark.push(k);
+        if (k) { run++; if (run > best) best = run; } else run = 0;
+      }
+      if (wantInk === img && best < 8 * em) for (let x = 0; x < W; x++) if (dark[x]) cnt[x]++;
     }
+    const ink = new Uint8Array(W), rows = Math.max(1, r1 - r0);
+    for (let x = 0; x < W; x++) if (cnt[x] && cnt[x] < 0.88 * rows) ink[x] = 1;
     return { ink, deep };
   }
   // the verdict on one line: words [a,b], bands [a,b] (px) -> violations
-  function judge(words, bands, em, s, tight) {
-    const bad = [], tol = Math.max(1.2, 0.3 * s), room = 0.34 * em;
+  function judge(words, bands, em, s, tight, loose, roomEm) {
+    const bad = [], tol = Math.max(1.2, (loose ? 1.5 : 0.3) * s), room = (roomEm || 0.34) * em;
     for (const [da, db] of bands) {
       const cov = words.filter(([a, b]) => b >= da - tol && a <= db + tol);
       const inside = cov.filter(([a, b]) => a >= da - tol && b <= db + tol);
       for (const w of cov) if (!inside.includes(w)) bad.push(["a word is cut by the band's edge", (w[0] < da - tol ? "left " + ((da - w[0]) / s).toFixed(1) : "right " + ((w[1] - db) / s).toFixed(1)) + "pt of a word outside"]);
-      if (!inside.length) { bad.push(["a band holds no word", ((db - da) / s).toFixed(1) + "pt wide"]); continue; }
+      if (!inside.length) { if (!loose) bad.push(["a band holds no word", ((db - da) / s).toFixed(1) + "pt wide"]); continue; }
       if (tight) {
         const gl = inside[0][0] - da, gr = db - inside[inside.length - 1][1];
         if (gl > room) bad.push(["the band starts before its first glyph", (gl / s).toFixed(1) + "pt early"]);
@@ -64,7 +77,7 @@
   }
   window.__hl = {
     // ---- the whole page
-    async page(id, S) {
+    async page(id, S, dump) {
       await boot();
       const q = QUESTIONS.find(q => q.ifc && q.ifc.id === id), c = q.ifc.citation;
       const clip = await V.countyClip(doc, c, ifcCountyOpts);
@@ -74,7 +87,8 @@
       try {
         await V.paintPages(doc, clip.pages, box, { scale: S, ...ifcCountyOpts, clip });
         const cvs = [...box.querySelectorAll("canvas.ifc-page")], p0 = c.pdfPage, p1 = c.pdfPageEnd || c.pdfPage;
-        const stream = [], rowish = / \| | › /.test(String(c.highlight || ""));
+        if (dump) res.img = cvs.map(cv => cv.toDataURL("image/png"));
+        const stream = [], rowish = / \| | › /.test(String(c.highlight || "")) || /\bTABLE\b/.test(String(c.excerpt || ""));      // (a cell of a table: its band runs to the table's rules)
         const covered = new Set();
         for (let k = 0; k < clip.pages.length; k++) {
           const p = clip.pages[k], cv = cvs[k]; if (!cv) continue;
@@ -88,7 +102,7 @@
             res.lines++;
             if (bands.length) {
               res.bands += bands.length;
-              for (const f of judge(groups, bands, em, s, !(rowish || ln.tbl))) res.bad.push([f[0], "p" + p + " line " + li + ": " + f[1]]);
+              for (const f of judge(groups, bands, em, s, !(rowish || ln.tbl), rowish || ln.tbl)) res.bad.push([f[0], "p" + p + " line " + li + ": " + f[1]]);
             }
             const aligned = groups.length === words.length;
             if (p >= p0 && p <= p1) words.forEach((w, wi) => stream.push({ p, li, wi, n: nz(w), g: aligned ? groups[wi] : null, bands, aligned }));
@@ -100,7 +114,17 @@
         const toks = String(c.highlight || "").split(/\s+/).map(nz).filter(Boolean);
         if (toks.length && !rowish) {
           const T = stream.filter(e => e.n), occ = [];
-          const find = (seq) => { const o = []; for (let i = 0; i + seq.length <= T.length; i++) { let ok = true; for (let j = 0; j < seq.length && ok; j++) ok = T[i + j].n === seq[j]; if (ok) o.push([i, i + seq.length - 1]); } return o; };
+          // (by letters, so a word the book breaks over two lines - "I-" / "3" - is found: a hit starts and ends on a word's edge)
+          const starts = [], ends = []; let acc = 0, joined = "";
+          T.forEach(e => { starts.push(acc); acc += e.n.length; ends.push(acc); joined += e.n; });
+          const find = (seq) => {
+            const o = [], key = seq.join("");
+            for (let at = joined.indexOf(key); at >= 0; at = joined.indexOf(key, at + 1)) {
+              const i = starts.indexOf(at), j = ends.indexOf(at + key.length);
+              if (i >= 0 && j >= i) o.push([i, j]);
+            }
+            return o;
+          };
           let hits = find(toks);
           if (!hits.length && toks.length > 8) {                                  // a piece that skips a few words: its first and its last
             const h = find(toks.slice(0, 4)), t = find(toks.slice(-4));
@@ -117,7 +141,7 @@
           if (best) {
             res.expected = best.length;
             for (const e of best) {
-              if (!e.aligned) continue;
+              if (!e.aligned || !e.n) continue;
               if (!covered.has(e.p + ":" + e.li + ":" + e.wi)) res.missing.push("p" + e.p + " line " + e.li + " word " + e.wi + " (" + e.n + ")");
             }
             const exp = new Set(best.map(e => e.p + ":" + e.li + ":" + e.wi));
@@ -130,7 +154,7 @@
       return res;
     },
     // ---- the card's picture
-    async card(id) {
+    async card(id, S, dump) {
       await boot();
       const q = QUESTIONS.find(q => q.ifc && q.ifc.id === id), c = q.ifc.citation;
       const res = { id, view: "card", bad: [], lines: 0, bands: 0, covered: 0, tokens: 0 };
@@ -139,25 +163,34 @@
       try {
         await ifcFillCode({ ifc: { citation: c } }, body, document.createElement("div"));
         const cvs = [...body.querySelectorAll("canvas")];
+        if (dump) res.img = cvs.map(cv => cv.toDataURL("image/png"));
         if (!cvs.length) { res.notpicture = true; return res; }
-        const rowish = / \| | › /.test(String(c.highlight || ""));
+        const rowish = / \| | › /.test(String(c.highlight || "")) || /\bTABLE\b/.test(String(c.excerpt || ""));
         const s = Math.min(window.devicePixelRatio || 1, 2) * 1.7;
         for (const cv of cvs) {
           const W = cv.width, H = cv.height, img = cv.getContext("2d").getImageData(0, 0, W, H), D = img.data;
           // the text lines: rows with print, split where a row has none
-          const rowInk = new Uint8Array(H);
-          for (let y = 0; y < H; y++) for (let x = 0, i = y * W * 4; x < W; x++, i += 4) if (inkPx(D[i], D[i + 1], D[i + 2])) { rowInk[y] = 1; break; }
-          const lines = []; let a = -1;
-          for (let y = 0; y <= H; y++) { if (y < H && rowInk[y]) { if (a < 0) a = y; } else if (a >= 0) { if (y - a >= 0.3 * 11 * s) lines.push([a, y]); a = -1; } }
+          const rowInk = new Uint8Array(H);                                       // print pixels in each row
+          for (let y = 0; y < H; y++) for (let x = 0, i = y * W * 4; x < W; x++, i += 4) if (inkPx(D[i], D[i + 1], D[i + 2])) rowInk[y]++;
+          const em0 = 11 * s, lines = [];
+          // a cluster of rows with print is one line, or (lines set close, a descender in the next ascender's rows) several: split at the row with least print
+          const split = (r0, r1) => {
+            if (r1 - r0 <= 1.65 * em0) { if (r1 - r0 >= 0.3 * em0) lines.push([r0, r1]); return; }
+            let best = -1, bv = Infinity;
+            for (let y = Math.ceil(r0 + 0.6 * em0); y <= Math.floor(r1 - 0.6 * em0); y++) if (rowInk[y] < bv) { bv = rowInk[y]; best = y; }
+            if (best < 0) { lines.push([r0, r1]); return; }
+            split(r0, best); split(best, r1);
+          };
+          let a = -1;
+          for (let y = 0; y <= H; y++) { if (y < H && rowInk[y]) { if (a < 0) a = y; } else if (a >= 0) { split(a, y); a = -1; } }
           for (const [r0, r1] of lines) {
-            const em = 11 * s, rd = readLine(img, W, r0, r1, em, img);
-            const ink = new Uint8Array(W);
-            for (let y = r0; y < r1; y++) for (let x = 0, i = y * W * 4; x < W; x++, i += 4) if (inkPx(D[i], D[i + 1], D[i + 2])) ink[x] = 1;
-            const groups = groupsOf(ink, W, GAP * em), bands = groupsOf(rd.deep, W, 2);
+            const em = 11 * s, rd = readLine(img, W, Math.round(r0 - 0.06 * em), Math.round(r1 + 0.06 * em), em, img);       // (rows a hair past the print: a line of capitals and ascenders only has a stem in every row of its own)
+            const groups = groupsOf(rd.ink, W, CARD_GAP * em), bands = groupsOf(rd.deep, W, 2);
             res.lines++;
+            if (dump) (res.dbg = res.dbg || []).push({ r: [r0, r1], g: groups.map(g => g.map(v => Math.round(v / s * 10) / 10)), b: bands.map(g => g.map(v => Math.round(v / s * 10) / 10)) });
             if (!bands.length) continue;
             res.bands += bands.length;
-            for (const f of judge(groups, bands, em, s, !rowish)) res.bad.push([f[0], "line " + res.lines + ": " + f[1]]);
+            for (const f of judge(groups, bands, em, s, !rowish, rowish, 0.5)) res.bad.push([f[0], "line " + res.lines + ": " + f[1]]);
             for (const g of groups) if (bands.some(([da, db]) => g[0] >= da - 1.5 && g[1] <= db + 1.5)) res.covered++;
           }
         }

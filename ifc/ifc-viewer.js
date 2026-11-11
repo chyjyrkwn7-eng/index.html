@@ -1541,9 +1541,9 @@ function runGlyphs(it, recs) {
   cs.forEach((c, k) => { if (!/\s/.test(c)) ns.push(k); });
   const mine = recs.filter(r => Math.abs(r.y - it.y) < 0.6 && r.x >= it.x - 0.2 && r.x < it.x + it.w - 0.05).sort((a, b) => a.x - b.x).filter((r, i, a) => !i || r.x - a[i - 1].x > 0.05);     // (a letter drawn twice for weight is one)
   if (!ns.length || mine.length > ns.length) return null;
-  // the font draws "fi", "fl", "ff", "ft", "tt", "ti" (and "ffi", "ffl") as one glyph each: the text has two or three letters where the page drew one.
+  // the font draws "fi", "fl", "ff", "ft", "tf", "tt", "ti" (and "ffi", "ffl", "tti") as one glyph each: the text has two or three letters where the page drew one.
   // They are joined when the count says so, and only when it says so for certain (as many places as it needs); the glyph is shared out between its letters
-  const LIGS = [['ffi', 'ffl', 'ff', 'fi', 'fl', 'ft', 'tt', 'ti'], ['ffi', 'ffl', 'ff', 'fi', 'fl', 'ft', 'tt', 'ti', 'Th'], ['ffi', 'ffl', 'ff', 'fi', 'fl']], units = [];
+  const LIGS = [['ffi', 'ffl', 'tti', 'ff', 'fi', 'fl', 'ft', 'tf', 'tt', 'ti'], ['ffi', 'ffl', 'ff', 'fi', 'fl', 'ft', 'tf', 'tt', 'ti'], ['ffi', 'ffl', 'ff', 'fi', 'fl', 'ft', 'tf', 'tt', 'ti', 'Th'], ['ffi', 'ffl', 'ff', 'fi', 'fl']], units = [];
   const need = ns.length - mine.length;
   if (need) {
     let lig = null;

@@ -31,7 +31,7 @@ if not os.path.exists(PDFJS + "build/pdf.min.mjs"):
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384hl"}
 _argv = sys.argv[:]
-for flag in ("--against", "--viewer", "--ids"):
+for flag in ("--against", "--viewer", "--ids", "--dump"):
     if flag in sys.argv:                                      # the harness reads --against as a file of its own; these are this gate's
         i = sys.argv.index(flag); sys.argv = sys.argv[:i] + sys.argv[i + 2:]
 exec(src, G)
@@ -49,6 +49,7 @@ if a:
         AGAINST = subprocess.check_output(["git", "-C", ROOT, "show", a + ":index.html"]).decode("utf-8")
         VIEWER = subprocess.check_output(["git", "-C", ROOT, "show", a + ":ifc/ifc-viewer.js"]).decode("utf-8")
 IDS = arg("--ids").split(",") if arg("--ids") else None
+DUMP = arg("--dump")                                          # (debug) a folder: every citation's two pictures are written there as PNGs
 QUICK = "--quick" in sys.argv
 def body_for(ins):
     if AGAINST is None: return G["g"]["patched"](ins)
@@ -106,11 +107,17 @@ with sync_playwright() as pw:
         for view in ("page", "card"):
             for attempt in range(3):
                 try:
-                    r[view] = pg.evaluate("([id, s]) => window.__hl.%s(id, s)" % view, [cid, SPAGE]); break
+                    r[view] = pg.evaluate("([id, s, d]) => window.__hl.%s(id, s, d)" % view, [cid, SPAGE, bool(DUMP)]); break
                 except Exception as e:
                     r[view] = {"id": cid, "bad": [["harness error", str(e)[:160]]]}
                     if "closed" in str(e).lower(): break
         rows[cid] = r
+        if DUMP:
+            import base64
+            os.makedirs(DUMP, exist_ok=True)
+            for view in ("page", "card"):
+                for k, u in enumerate(r[view].pop("img", None) or []): open("%s/%s-%s-%d.png" % (DUMP, cid, view, k), "wb").write(base64.b64decode(u.split(",", 1)[1]))
+                if r[view].get("dbg"): json.dump(r[view]["dbg"], open("%s/%s-%s.json" % (DUMP, cid, view), "w"))
         if n % 60 == 59: print("  ... %d / %d" % (n + 1, len(cites)), flush=True)
     br.close()
 if os.environ.get("OUT_JSON"): json.dump(rows, open(os.environ["OUT_JSON"], "w"))
