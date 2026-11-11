@@ -22,7 +22,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # loses its progress (tools/check-b384-moveq.py holds all of it).
 #   ch12-012: "Group I-1 ... backup power within 3 hours" cites county 403.7.1.1 (Chapter 4's Fire safety and evacuation
 #             plan): Chapter 12 (its first question, position 1) -> Chapter 4 (position 41).
-UNIT_MOVES = {"ch12-012": "4"}
+#   "we ARENT gonna study chapter 9 and get references to chapter 2": a unit's questions cite that unit's own chapter. Four
+#   questions that ask a fact from a definition (they cite IFC 2021 202, Definitions) go to Chapter 2, after its 107 (108..111):
+#   ch55-702 (Cryogenic Fluids, position 12), ch62-702 and ch62-703 (Organic Peroxides, 8 and 9), ch64-001 (Pyrophoric, 1).
+#   Several moves into one unit append in the order listed here.
+UNIT_MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch64-001": "2"}
 
 def apply_moves(bank):
     qs, units = bank["questions"], bank["units"]

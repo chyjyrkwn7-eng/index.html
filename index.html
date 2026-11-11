@@ -55369,25 +55369,36 @@ const IFC_KEY_TEXT = {
   "nav-NAVB-301": "Which chapter of the Harris County Fire Code contains the construction requirements for existing buildings?",
   "nav-NAVB-319": "Which appendix of the Harris County Fire Code contains the minimum fire-flow requirements for buildings?"
 };
-/* ---- (384.42) ONE QUESTION MOVED BETWEEN CHAPTERS, EVERY OTHER KEY UNTOUCHED ----
+/* ---- (384.42) FIVE QUESTIONS MOVED BETWEEN CHAPTERS, EVERY OTHER KEY UNTOUCHED ----
    The owner moved ch12-012 (Group I-1 backup power within 3 hours - it cites county 403.7.1.1, Chapter 4's Fire safety and
-   evacuation plan, like ch4-001) from Chapter 12 to Chapter 4. Wording, options, answer, explanation, citation and
-   highlight are the bank's, unchanged; only its unit is (tools/gen-ifc-bank.py UNIT_MOVES). Its own key had to change
-   (a key is chapter | position | wording hash) and nobody else's may:
-   - Chapter 4: it sits last in the bank's array order for the chapter, so it takes the last position (41; 19 is a gap) and
-     no other Chapter 4 question's position moves.
-   - Chapter 12: it was the first question (position 1); the position stays taken (IFC_SRC_GAPS "12" gains 1, beside 9 and 10)
-     so the 43 questions after it keep theirs.
+   evacuation plan, like ch4-001) from Chapter 12 to Chapter 4, and then four questions that ask a fact from a definition
+   (they cite IFC 2021 202, Definitions) to Chapter 2: "we aren't gonna study chapter 9 and get references to chapter 2" - a
+   chapter's questions cite that chapter's own. ch55-702 (Cryogenic Fluids, position 12), ch62-702 and ch62-703 (Organic
+   Peroxides, 8 and 9), ch64-001 (Pyrophoric, 1). Wording, options, answer, explanation, citation and highlight are the bank's,
+   unchanged; only the unit is (tools/gen-ifc-bank.py UNIT_MOVES). A moved question's own key had to change (a key is
+   chapter | position | wording hash) and nobody else's may:
+   - The new chapter: each sits last in the bank's array order for it, so it takes the last position (Chapter 4: 41, 19 is a gap;
+     Chapter 2: 108, 109, 110, 111 after its 107) and no other question there moves.
+   - The old chapter: the position stays taken (IFC_SRC_GAPS), so every question after it keeps its own: Chapter 12 gains 1
+     (it was the first question), Chapter 55 gains 12, Chapter 62 gains 8 and 9, Chapter 64 gains 1.
    - Its old key (IFC_MOVED_KEYS) is read by nothing any more (every count walks this bank's KEYS); its counts stay where they
      are, as ever (nothing may lower progress, a merge would only bring them back). A star on it is CARRIED to the question's
      new key and comes off the old one with the same tombstone Reset starred questions leaves (see the one-shot below), so a
-     question somebody starred for study does not drop out of their list. Its answer history under the new key starts empty
-     (a key cannot follow a chapter change; keyText / keyChoices pin wording only). A hundo in Chapter 4 stays (counters are
-     never lowered); a full-chapter run is 40 questions now and Chapter 12's 43. */
-const IFC_SRC_GAPS = { "4": [19], "12": [1, 9, 10] };
-/* [the key the moved question was stored under (generated from the 5.4.2 bank), its id] */
-const IFC_MOVED_KEYS = [["Chapter 12: Energy Systems|1|yahkhw", "ch12-012"]];
-const IFC_RETIRED_KEYS =["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j"];
+     question somebody starred for study does not drop out of their list; its answer counts (stats) are COPIED onto the new key
+     in the same one-shot (a key cannot follow a chapter change and keyText / keyChoices pin wording only, so the copy is the
+     only way its history and the Stats ring's "answered right once" keep it). A hundo in a chapter stays: hundos, badges, stars
+     and ranks are per chapter NAME (unitPerfects), never per question, and Fire Code's badge is one hundo; a full-chapter run
+     covers the chapter as it is now: Chapter 2 111, Chapter 4 40, Chapter 12 43, Chapter 55 16, Chapter 62 10, Chapter 64 10. */
+const IFC_SRC_GAPS = { "4": [19], "12": [1, 9, 10], "55": [12], "62": [8, 9], "64": [1] };
+/* [the key a moved question was stored under (generated from the 5.4.2 bank), its id] */
+const IFC_MOVED_KEYS = [
+  ["Chapter 12: Energy Systems|1|yahkhw", "ch12-012"],
+  ["Chapter 55: Cryogenic Fluids|12|1qsi68l", "ch55-702"],
+  ["Chapter 62: Organic Peroxides|8|ulabyl", "ch62-702"],
+  ["Chapter 62: Organic Peroxides|9|w1tgss", "ch62-703"],
+  ["Chapter 64: Pyrophoric Materials|1|1pska3k", "ch64-001"]
+];
+const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j"];
 /* The bank's own count ("1,812"), read from it where it is loaded; the 5.4.2 count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
@@ -162711,20 +162722,30 @@ if(window.NOVA_CLASS === "ifc"){
     const hit = IFC_RETIRED_KEYS.filter(k => store.flagged && store.flagged[k]);
     if(hit.length){ unflagAll(hit); saveStore(); }
   }catch(e){}
-  /* (384.42) a star on the question that moved chapters goes with it: onto its new key (unless it was unstarred there since),
-     off the old one with the tombstone */
+  /* (384.42) a question that moved chapters takes its own history with it, as a COPY: its answer counts (store.stats) are
+     copied onto its new key unless that already has some - so a chapter's answered / accuracy figures and the Stats ring
+     (which only ever fills) do not lose a question that was answered - and the old entry stays where it is (nothing is ever
+     lowered; the merges only take the larger). A star goes the same way: onto its new key (unless it was unstarred there since),
+     off the old one with the tombstone. Nothing here touches a counter of hundos, a badge, XP or a rank: those are per chapter
+     NAME (unitPerfects) and the chapter names have not changed. */
   try{
-    const moved = IFC_MOVED_KEYS.filter(m => store.flagged && store.flagged[m[0]]);
-    if(moved.length){
-      if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {};
-      moved.forEach(m => {
-        const qi = QUESTIONS.findIndex(q => q.ifc && q.ifc.id === m[1]);
-        if(qi < 0) return;
-        const nk = KEYS[qi], stamp = flagStamp(store.flagged[m[0]]);
-        if(!store.flagged[nk] && flagStamp(store.unflagged[nk]) < stamp){ store.flagged[nk] = stamp; delete store.unflagged[nk]; }
-      });
-      unflagAll(moved.map(m => m[0])); saveStore();
-    }
+    let changed = false;
+    const unf = () => { if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {}; return store.unflagged; };
+    IFC_MOVED_KEYS.forEach(m => {
+      const qi = QUESTIONS.findIndex(q => q.ifc && q.ifc.id === m[1]);
+      if(qi < 0) return;
+      const nk = KEYS[qi];
+      if(nk === m[0]) return;
+      if(store.stats && store.stats[m[0]] && typeof store.stats[m[0]] === "object" && !store.stats[nk]){
+        store.stats[nk] = JSON.parse(JSON.stringify(store.stats[m[0]])); changed = true;
+      }
+      if(store.flagged && store.flagged[m[0]]){
+        const stamp = flagStamp(store.flagged[m[0]]);
+        if(!store.flagged[nk] && flagStamp(unf()[nk]) < stamp){ store.flagged[nk] = stamp; delete unf()[nk]; }
+        unflagAll([m[0]]); changed = true;
+      }
+    });
+    if(changed) saveStore();
   }catch(e){}
 }
 /* FRIENDS IN EVERY CLASS (build 384 - see socialDb()): the other class's friends block, from its copy on this device, when
