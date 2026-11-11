@@ -68239,7 +68239,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, badgeSceneOwed: null, badgeScenePlayed: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -68522,6 +68522,10 @@ function applyLoadedData(got){
      of filthy badges. */
   store.badgeCleanedAt = badgeCleanMap(got.badgeCleanedAt) || badgeCleanMap(store.badgeCleanedAt) || {};
   try{ ensureBadgeCleanedAt(false); }catch(e){}
+  /* (384.50) the badge scenes still owed, and the ones that have played to their end: unit -> when. An older copy has neither,
+     so nothing is owed for what was earned before this build (nothing is replayed). */
+  store.badgeSceneOwed = badgeCleanMap(got.badgeSceneOwed) || badgeCleanMap(store.badgeSceneOwed) || {};
+  store.badgeScenePlayed = badgeCleanMap(got.badgeScenePlayed) || badgeCleanMap(store.badgeScenePlayed) || {};
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string"),
@@ -71032,7 +71036,7 @@ function wipeLocalProgressAndSettings(){
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
-  store.badgeCleanedAt = {};
+  store.badgeCleanedAt = {}; store.badgeSceneOwed = {}; store.badgeScenePlayed = {};
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrHosted = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
@@ -72984,6 +72988,9 @@ function mergeSameAccount(dst, src){
   /* when each badge was last clean (build 320, b320g): the newer time,
      badge by badge - cleaned on either device is cleaned */
   if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
+  /* (384.50) a badge scene owed on either device stays owed until it has played on either: both maps only ever grow */
+  if(dst.badgeSceneOwed || src.badgeSceneOwed) maxMap("badgeSceneOwed");
+  if(dst.badgeScenePlayed || src.badgeScenePlayed) maxMap("badgeScenePlayed");
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384", "ifcCharsFixed384",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295", "savedCodeSaved",
    /* (384) the class button's tip, once per account */
@@ -76319,6 +76326,32 @@ function badgeSmudge(seed, x, y){
   const n = .62 * badgeNoiseAt(T, x * (4 / 15) + ox, y * (4 / 15) + oy) + .38 * badgeNoiseAt(T, y * (4 / 6.5) + oy + 31.7, -x * (4 / 6.5) + ox + 17.9);
   const t = (n - .4) / .36;
   return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+}
+/* ---- (384.50) A BADGE'S SCENE IS OWED UNTIL IT HAS PLAYED TO ITS END ----
+   The case scene is the results' (playBadgeCaseScene), and it takes ~17s to come round after the grade and the XP. A results screen
+   that goes before it does (the app put away and evicted by the phone, a relaunch) used to take the scene with it - the badge was
+   earned and saved and nothing ever said so. summarize() now writes each badge it finds into store.badgeSceneOwed (unit -> when);
+   the scene writes store.badgeScenePlayed when it reaches its own end (finish - never when a screen replaced it); and Home plays
+   whatever is still owed (playOwedBadgeScenes). Only badges earned from this build on are ever owed. Both maps only grow
+   (mergeSameAccount takes the later time per unit), so a scene played on one device is not owed on another. */
+function badgeSceneMaps(){
+  if(!store.badgeSceneOwed || typeof store.badgeSceneOwed !== "object" || Array.isArray(store.badgeSceneOwed)) store.badgeSceneOwed = {};
+  if(!store.badgeScenePlayed || typeof store.badgeScenePlayed !== "object" || Array.isArray(store.badgeScenePlayed)) store.badgeScenePlayed = {};
+  return { owed: store.badgeSceneOwed, played: store.badgeScenePlayed };
+}
+function oweBadgeScenes(units){
+  const m = badgeSceneMaps(), now = Date.now();
+  (units || []).forEach(u => { if(!m.played[u] && !m.owed[u]) m.owed[u] = now; });
+}
+function markBadgeScenesPlayed(units){
+  const m = badgeSceneMaps(), now = Date.now();
+  let changed = false;
+  (units || []).forEach(u => { if(!m.played[u]){ m.played[u] = now; changed = true; } });
+  if(changed) saveStore();
+}
+function badgeScenesOwed(){
+  const m = badgeSceneMaps();
+  return Object.keys(m.owed).filter(u => !m.played[u] && unitBadgeEarned(u)).sort((a, b) => m.owed[a] - m.owed[b]);
 }
 function badgeCleanMap(v){
   if(!v || typeof v !== "object" || Array.isArray(v)) return null;
@@ -113555,6 +113588,8 @@ function showHome(){
        (see noticeAllowedHere). A badge earned in that window is still
        queued and still plays - just on the next visit to Home. */
     setTimeout(playQueuedBadgeCutscenes, 500);
+    /* (384.50) a badge's scene that never reached its end on the results (the app put away, a relaunch) */
+    setTimeout(() => playOwedBadgeScenes(0), 900);
     /* And anything unlocked away from a results screen, after the
        badges - see playHomeUnlocks. Straight away when a cutscene has
        just handed over (build 268): the bridge it left is holding the
@@ -113603,6 +113638,26 @@ const BADGE_CUTSCENE_MS = 4200;
 /* Entrance plus flight, for anything that needs the whole thing. */
 const BADGE_CUTSCENE_TOTAL_MS = BADGE_CUTSCENE_MS + 800;
 
+/* (384.50) Home plays the case for any badge whose scene is still owed (see badgeSceneMaps). Waits (a second at a time, 40 times) for
+   whatever owns the screen - the same list Home's unlock cards wait for; with "Skip celebrations and pop-ups" on it is told once
+   (celebrationsOffBanner) and no longer owed. */
+function playOwedBadgeScenes(tries){
+  try{
+    if(!store || !store.onboardingComplete) return;
+    const units = badgeScenesOwed();
+    if(!units.length) return;
+    if(!stage || !stage.querySelector('[data-screen="home"]')) return;
+    if(window.__owedBadgePlaying && Date.now() - window.__owedBadgePlaying < 60000) return;
+    if(theme.muteBanners){
+      markBadgeScenesPlayed(units);
+      celebrationsOffBanner(units.map(u => ({ kind: "badge", name: badgeTitle(u) })));
+      return;
+    }
+    if(homeUnlockBlocked()){ if((tries || 0) < 40) setTimeout(() => playOwedBadgeScenes((tries || 0) + 1), 1000); return; }
+    window.__owedBadgePlaying = Date.now();
+    playBadgeCaseScene(units.slice(), () => { window.__owedBadgePlaying = 0; }, [], { alive: () => !!(stage && stage.querySelector('[data-screen="home"]')) });
+  }catch(e){ window.__owedBadgePlaying = 0; }
+}
 function playQueuedBadgeCutscenes(){
   const queue = store.pendingBadgeUnlocks || [];
   if(!queue.length) return;
@@ -129169,7 +129224,9 @@ function bcLeakLayers(all, held, o){
 }
 
 function playBadgeCaseScene(units, done, retro, opts){
-  if(!units || !units.length || theme.muteBanners){ done(); return null; }
+  if(!units || !units.length){ done(); return null; }
+  /* skipped on purpose: nothing is owed after it (and the results' box, or Home's banner, says so - celebrationsOffNote) */
+  if(theme.muteBanners){ try{ markBadgeScenesPlayed(units); }catch(e){} done(); return null; }
   const still = resultsMotionOff();
   /* the case these badges belong in, and its slots (build 320) */
   const caseDef = badgeCaseOf(units[0]);
@@ -129242,6 +129299,8 @@ function playBadgeCaseScene(units, done, retro, opts){
     timers.forEach(clearTimeout);
     document.body.classList.remove("bc-covering");
     overlay.classList.add("bc-out");
+    /* (384.50) it has played to its end: no longer owed */
+    try{ markBadgeScenesPlayed(units); }catch(e){}
     openSceneBridge(col);
     setTimeout(() => { overlay.remove(); done(); }, 450);
   }
@@ -131345,6 +131404,7 @@ function celebrationsOffLine(items){
 /* Opens Settings on the page that holds the switch, with its row lit (the settings page shows what it does in its own words) */
 function openCelebrationSetting(){
   try{ endResultsReveal(); }catch(e){}
+  try{ setActiveNav("settings"); }catch(e){}   /* the tab bar comes back (a results screen holds it down) */
   showAppearance({ page: "motion", focus: "celebrations" });
 }
 function buildCelebrationsOffNote(items){
@@ -131856,7 +131916,7 @@ function homeUnlockBlocked(){
   return !!(document.getElementById("genprofile-overlay") || document.getElementById("splashscreen") ||
     document.getElementById("tour-overlay") || document.getElementById("badge-cutscene") ||
     document.getElementById("supernova-cutscene") || document.getElementById("void-cutscene") ||
-    document.getElementById("vroom-cutscene") || document.querySelector(".rs-spot") ||
+    document.getElementById("vroom-cutscene") || document.querySelector(".rs-spot") || document.querySelector(".bc-scene") ||
     /* nor under a secret-flare scene (build 317): Home's card started 1.4s
        into an Umbra scene played on Home and showed through it */
     document.querySelector(".fl-scene, .ff-scene") ||
@@ -134186,6 +134246,8 @@ function summarize(){
       saveStore();
     }
     if(badgesEarnedThisRun.length){
+      /* (384.50) owed until the scene has played to its end (playBadgeCaseScene's finish), wherever that turns out to be */
+      try{ oweBadgeScenes(badgesEarnedThisRun); }catch(e){}
       /* Not queued for Home any more: the badge case plays on the results
          screen the moment the badge box lands (playBadgeCaseScene). */
       /* Paid off the same diff the cutscene is queued off, so the XP and

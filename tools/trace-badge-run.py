@@ -228,6 +228,8 @@ def main():
     if sj:
         seed = {k: v for k, v in json.load(open(sj)).items() if k not in DROP}
         seed["onboardingComplete"] = True
+    if "--mute" in sys.argv:
+        seed["theme"] = dict(seed.get("theme") or {}, muteBanners=True)
     srv, port = serve()
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
