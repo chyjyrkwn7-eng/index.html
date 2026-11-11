@@ -130,7 +130,7 @@ def novastate(pg):
         card: !!document.getElementById('savecode-card') }; }""")
 
 
-def walk_signup(pg, name="J.Smith", log=None, shot=None):
+def walk_signup(pg, name="J.Smith", log=None, shot=None, box_shot=None, tip_shot=None):
     """Sign a new account up from the first screen the app shows, as a person does, until the last tip has been tapped.
     Returns {taps, pages, nova_boxes, tips, onboarded, code, name, avatar}. `taps` is what a person presses: each button, one per Nova box
     (a box is a tap; the name, the partner and the code card are each their own presses), one per tip. `shot(label)` is called at each
@@ -198,6 +198,9 @@ def walk_signup(pg, name="J.Smith", log=None, shot=None):
         elif not st["asking"]:
             if st["i"] not in seen_lines:
                 seen_lines.add(st["i"]); nova_boxes += 1; taps += 1
+                if box_shot:
+                    try: box_shot("nova-box-%d" % (st["i"] + 1))
+                    except Exception: pass
                 if log: log("  tap %d: Nova box %d of %d" % (taps, st["i"] + 1, st["count"]))
             if st["i"] == st["count"] - 1:
                 seen_ask.add("end"); pg.evaluate("()=>document.querySelector('#nova-intro .nt-go')?.click()")
@@ -216,6 +219,9 @@ def walk_signup(pg, name="J.Smith", log=None, shot=None):
         for _ in range(20):
             if not pg.evaluate("()=>!!document.getElementById('tour-next')"): break
             pg.wait_for_timeout(500)
+            if tip_shot:
+                try: tip_shot("tip-%d" % (tips + 1))
+                except Exception: pass
             press("Tip %d" % (tips + 1), js="()=>document.getElementById('tour-next').click()"); tips += 1
             pg.wait_for_timeout(450)
     see(screen_of(pg))

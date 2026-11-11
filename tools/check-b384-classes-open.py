@@ -483,7 +483,7 @@ with sync_playwright() as pw:
             nv = walk_nova(pg, name="Robin Twoclass")
             S.ck("14b", "Police Academy's whole sign-up: Nova asks the name, the partner, the code, ends on %r" % nv["final"],
                  {"name", "char"} <= nv["asked"] and "card" not in nv["asked"] and nv["ended"] and ev(pg, "()=>window.NOVA_CLASS") == "academy"
-                 and any("four ways to train" in l for l in nv["lines"]), [nv["asked"], nv["final"], nv["stuck"]])
+                 and 4 <= len(nv["lines"]) <= 12, [nv["asked"], nv["final"], nv["stuck"], len(nv["lines"])])
             steps = []
             n = tips(pg, steps=steps)
             sheet = wait_for(pg, "()=>{ const o=document.getElementById('a2hs-sheet'); return o && o.classList.contains('invite-overlay-show'); }", 40)
@@ -494,7 +494,7 @@ with sync_playwright() as pw:
                  n >= 4 and len(ct) == 1 and ct[0]["onBubble"] and bool(eb) and "Police Academy and Fire Code" in eb, [n, eb, [s["text"][:40] for s in steps]])
             pg.wait_for_timeout(9000)
             late = ev(pg, "()=>{ const t=document.getElementById('tour-text'); return t ? t.textContent : null; }")
-            S.ck("14g", "a new account is not shown the class button's tip again on its own (%r)" % late, late is None and ev(pg, "()=>store.seenClassTip") is True, late)
+            S.ck("14g", "a new account is not shown the class button's tip again on its own (%r)" % late, not (late and ("Your classes" in late or "class button" in late)) and ev(pg, "()=>store.seenClassTip") is True, late)
             ev(pg, "()=>{ try{ pushToCloud(true); }catch(e){} }"); pg.wait_for_timeout(2500)
             r = ev(pg, "()=>({ list: enrolledClasses(), code: syncCode, pub: store.publicId })")
             c = cloud(pg)

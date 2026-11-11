@@ -194,8 +194,8 @@ try:
         before = pg.evaluate(STATE)
         pg.evaluate("()=>window.__fire('accepted')"); pg.wait_for_timeout(500)
         s = pg.evaluate(STATE)
-        chk("(6) Android Chrome with the install prompt: the button changes to Install and the guide link hides (was %r, now %r)" % (before["go"] and before["go"]["text"], s["go"] and s["go"]["text"]),
-            s["go"] and s["go"]["text"] != (before["go"] or {}).get("text") and pg.evaluate("()=>{ const g=document.querySelector('.if-guide'); return !g || g.hidden; }"), s)
+        chk("(6) Android Chrome with the install prompt: the button changes to Install and the guide stays reachable beside it (before the prompt the button is the guide, so the link is hidden then) (was %r, now %r)" % (before["go"] and before["go"]["text"], s["go"] and s["go"]["text"]),
+            s["go"] and s["go"]["text"] != (before["go"] or {}).get("text") and (before["guide"] or {"h": 0})["h"] == 0 and s["guide"] is not None and s["guide"]["h"] >= 43.5, [before["guide"], s["guide"]])
         pg.click(".if-go"); pg.wait_for_timeout(700)
         n = pg.evaluate("()=>window.__prompts"); s = pg.evaluate(STATE)
         chk("(6) its tap calls the browser's prompt() once and says what happened", n == 1 and s["status"].strip() and not s["sheet"], [n, s])
