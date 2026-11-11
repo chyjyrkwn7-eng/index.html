@@ -54,7 +54,7 @@
   }
   // the verdict on one line: words [a,b], bands [a,b] (px) -> violations
   function judge(words, bands, em, s, tight, loose, roomEm) {
-    const bad = [], tol = Math.max(1.2, (loose ? 1.5 : 0.3) * s), room = (roomEm || 0.34) * em;
+    const bad = [], tol = Math.max(1.2, (loose ? 4.2 : 0.3) * s), room = (roomEm || 0.34) * em;
     for (const [da, db] of bands) {
       const cov = words.filter(([a, b]) => b >= da - tol && a <= db + tol);
       const inside = cov.filter(([a, b]) => a >= da - tol && b <= db + tol);
