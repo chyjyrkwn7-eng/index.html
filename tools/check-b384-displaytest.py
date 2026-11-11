@@ -46,7 +46,8 @@ STATE = """()=>{
   return { metas: [...document.head.querySelectorAll('meta')].map(m => m.outerHTML).join('|'),
            htmlStyle: de.getAttribute('style') || '', bodyStyle: b.getAttribute('style') || '', kids: [...b.children].map(e => e.id || e.className || e.tagName).filter(k => !/^rk-|^top-guard$/.test(k)).sort().join(','),
            styles: [...document.querySelectorAll('style')].filter(e => !/^rk-/.test(e.id)).length, dx: document.querySelectorAll('style[id^=dx-]').length, strip: !!document.getElementById('dx-strip'),
-           guard: g ? [getComputedStyle(g).display, g.dataset.color] : null, tc: document.getElementById('themecolor').content,
+           guard: g ? [getComputedStyle(g).display, g.dataset.color] : null,
+           edge: (() => { const e = document.getElementById('top-edge'); return e ? [getComputedStyle(e).display, e.dataset.color || '', e.style.backgroundColor, getComputedStyle(e).pointerEvents] : null; })(), tc: document.getElementById('themecolor').content,
            boxes: { play: r('.playbtn'), tabs: r('.bottomtabs'), title: r('.hometitle-wrap'), hero: r('.cosmic-hero-wrap'), stage: r('#stage') },
            cs: [getComputedStyle(de).overflow, getComputedStyle(b).overflow, getComputedStyle(b).paddingTop, getComputedStyle(document.getElementById('stage')).position] }; }"""
 HIT = "()=>{ const e = document.elementFromPoint(Math.round(innerWidth/2), 4); return e ? (e.id || e.className || e.tagName) : null; }"
@@ -87,7 +88,7 @@ with sync_playwright() as pw:
     base = pg.evaluate(STATE)
     ACC0 = pg.evaluate("()=>theme.accent"); ALT = "veteran" if ACC0 != "veteran" else "ink"
     ids = pg.evaluate("()=>[...document.querySelectorAll('#diagpanel [data-trial]')].map(b => b.dataset.trial)")
-    chk("(2) the panel has trials (%d)" % len(ids), len(ids) >= 20, ids)
+    chk("(2) the panel has trials (%d)" % len(ids), len(ids) >= 20 and "old" in ids, ids)
     off = pg.evaluate("()=>[...document.querySelectorAll('#diagpanel [data-trial]')].every(b => b.getAttribute('aria-checked') === 'false') && document.querySelectorAll('style[id^=dx-]').length === 0 && !document.getElementById('dx-strip')")
     chk("(2) every trial is OFF at load, none has put anything in the page", off)
     sw = pg.evaluate("()=>[...document.querySelectorAll('#diagpanel [data-trial]')].map(b => (b.textContent || '').trim().length)")
@@ -95,8 +96,8 @@ with sync_playwright() as pw:
     chk("(2) a big All off button and a 'what is on' line", pg.evaluate("()=>{ const f = [...document.querySelectorAll('#diagpanel button')].find(b => /^all off$/i.test(b.textContent.trim())); return !!f && f.getBoundingClientRect().height >= 44 && /nothing/i.test(document.querySelector('#diagpanel').textContent); }"))
     box = pg.evaluate("()=>{ const r = document.getElementById('diagpanel').getBoundingClientRect(); return [r.top, r.bottom, r.width, innerWidth, innerHeight]; }")
     chk("(2) the panel starts below the top 120px and inside the screen (%s)" % box, box[0] >= 120 and box[1] <= box[4] and box[2] <= box[3] * 0.8, box)
-    want = {"strip": 7, "vfit": 1, "tc": 3, "cs": 2, "scroll": 2, "low": 2, "still": 2}
-    groups = {"strip": [i for i in ids if re.match(r"s\d", i)], "vfit": [i for i in ids if i == "vfit"], "tc": [i for i in ids if i.startswith("tc")],
+    want = {"old": 1, "strip": 7, "vfit": 1, "tc": 3, "cs": 2, "scroll": 2, "low": 2, "still": 2}
+    groups = {"old": [i for i in ids if i == "old"], "strip": [i for i in ids if re.match(r"s\d", i)], "vfit": [i for i in ids if i == "vfit"], "tc": [i for i in ids if i.startswith("tc")],
               "cs": [i for i in ids if i.startswith("cs")], "scroll": [i for i in ids if i in ("inner", "fixb")], "low": [i for i in ids if i.startswith("lo")],
               "still": [i for i in ids if i in ("gin", "ftc", "fcs")]}
     chk("(2) the candidates are all there (%s)" % {k: len(v) for k, v in groups.items()}, all(len(groups[k]) >= v for k, v in want.items()), groups)
@@ -117,13 +118,23 @@ with sync_playwright() as pw:
             if not r: why.append("no strip")
             else:
                 if abs(r["h"] - h) > 0.5 or r["top"] != 0 or abs(r["w"] - r["vw"]) > 1 or r["pos"] != pos or r["pe"] != "auto" or r["count"] != 1: why.append(("shape", r))
-                if bg == "sky" and hexof(r["bg"]) != hexof(st["tc"]): why.append(("colour", r["bg"], st["tc"]))
+                if bg == "sky" and hexof(r["bg"]) != pg.evaluate("()=>appTopEdgeColor()").lower(): why.append(("colour", r["bg"], st["tc"]))
                 if bg == "#000000" and hexof(r["bg"]) != "#000000": why.append(("colour", r["bg"]))
                 if bg == "transparent" and not re.search(r"rgba\(0, 0, 0, 0\)|transparent", r["bg"]): why.append(("colour", r["bg"]))
                 if tid == "s12b" and (not r["bdf"] or r["bdf"] == "none"): why.append(("no blur", r["bdf"]))
-                if r["guard"] != "none": why.append(("today's strip still shown", r["guard"]))
+                if st["edge"] and st["edge"][0] != "none": why.append(("the app's own strip still shown", st["edge"]))
                 if h > 4 and r["hit"] != "dx-strip": why.append(("not what is 4px down", r["hit"]))
             if moved: why.append(("moved", moved))
+        elif tid == "old":
+            r = pg.evaluate("()=>({ cls: document.documentElement.classList.contains('top-edge-old'), key: localStorage.getItem('class26e.topedgeold'), edge: getComputedStyle(document.getElementById('top-edge')).display, guard: !!document.getElementById('top-guard') })")
+            if not (r["cls"] and r["key"] == "1" and r["edge"] == "none" and r["guard"]): why.append(("old behaviour not on", r))
+            pg.evaluate("()=>{ window.__g0 = document.getElementById('top-guard'); window.__m0 = document.getElementById('themecolor').content; theme.accent = '%s'; applyTheme(); }" % ALT); pg.wait_for_timeout(600)
+            r2 = pg.evaluate("()=>{ const g = document.getElementById('top-guard'); return { replaced: g !== window.__g0, tag: document.getElementById('themecolor').content !== window.__m0 }; }")
+            pg.evaluate("()=>{ theme.accent = '%s'; applyTheme(); }" % ACC0)
+            if not (r2["replaced"] and r2["tag"]): why.append(("old behaviour did not replace the strip and rewrite the tag", r2))
+        elif tid == "pe0":
+            r = pg.evaluate("()=>({ cls: document.documentElement.classList.contains('top-edge-none'), key: localStorage.getItem('class26e.topedgepe'), pe: getComputedStyle(document.getElementById('top-edge')).pointerEvents, hit: (document.elementFromPoint(Math.round(innerWidth/2), 4) || {}).id })")
+            if not (r["cls"] and r["key"] == "none" and r["pe"] == "none" and r["hit"] != "top-edge"): why.append(("not ignoring touch", r))
         elif tid == "vfit":
             v = pg.evaluate("()=>document.getElementById('viewportmeta').content")
             if "viewport-fit" in v or "width=device-width" not in v: why.append(v)
@@ -153,9 +164,11 @@ with sync_playwright() as pw:
             pg.evaluate("()=>{ document.documentElement.style.colorScheme = 'light'; }")
             if pg.evaluate("()=>document.documentElement.style.colorScheme") == "light": why.append("write went through")
         elif tid == "gin":
+            pg.evaluate("()=>window.__diagTrials.toggle('old', true)"); pg.wait_for_timeout(300)
             pg.evaluate("()=>{ window.__g0 = document.getElementById('top-guard'); theme.accent = '%s'; applyTheme(); }" % ALT); pg.wait_for_timeout(500)
             r = pg.evaluate("()=>{ const g = document.getElementById('top-guard'); return g ? { same: g === window.__g0, c: g.dataset.color, tc: document.getElementById('themecolor').content, n: document.querySelectorAll('#top-guard').length } : null; }")
             pg.evaluate("()=>{ theme.accent = '%s'; applyTheme(); }" % ACC0)
+            pg.evaluate("()=>window.__diagTrials.toggle('old', false)")
             if not r or not r["same"] or r["n"] != 1 or r["c"].lower() != r["tc"].lower(): why.append(r)
         elif tid in ("inner", "fixb"):
             c = pg.evaluate("()=>({ html: getComputedStyle(document.documentElement).overflow, body: getComputedStyle(document.body).overflow, stage: getComputedStyle(document.querySelector('body > .wrap')).position, stageOv: getComputedStyle(document.querySelector('body > .wrap')).overflowY, bodyPos: getComputedStyle(document.body).position, sw: document.documentElement.scrollWidth, iw: innerWidth })")
@@ -176,33 +189,33 @@ with sync_playwright() as pw:
             why.append("no check for this trial")
         click_trial(pg, tid)
         back = pg.evaluate(STATE)
-        for k in ("metas", "htmlStyle", "bodyStyle", "kids", "styles", "dx", "strip", "guard", "cs"):
+        for k in ("metas", "htmlStyle", "bodyStyle", "kids", "styles", "dx", "strip", "guard", "edge", "cs"):
             if back[k] != base[k]: why.append(("not restored", k, str(base[k]), str(back[k])))
         if diff_boxes(base["boxes"], back["boxes"]): why.append(("boxes not restored", diff_boxes(base["boxes"], back["boxes"])))
         if why: problems.append((tid, why))
-    chk("(3) every trial: on does the intended thing, off restores the page exactly (%d trials, %d with problems)" % (len(ids), len(problems)), not problems and len(ids) >= 20, problems[:6])
+    chk("(3) every trial: on does the intended thing, off restores the page exactly (%d trials, %d with problems)" % (len(ids), len(problems)), not problems and len(ids) >= 27, problems[:6])
     # ---------------- (4) radio groups; today's strip comes back ----------------
     click_trial(pg, "s8"); click_trial(pg, "s24")
     r = pg.evaluate(STRIPREAD)
     chk("(4) two strips are never up at once: switching to 24px leaves one, 24px (%s)" % (r and r["h"]), r and r["count"] == 1 and r["h"] == 24)
     click_trial(pg, "s24")
-    g = pg.evaluate("()=>{ const g = document.getElementById('top-guard'); return g ? getComputedStyle(g).display : null; }")
-    chk("(4) with the trial off, today's strip is shown again (%s)" % g, g == "block")
+    g = pg.evaluate("()=>{ const g = document.getElementById('top-edge'); return g ? getComputedStyle(g).display : null; }")
+    chk("(4) with the trial off, the app's own strip is shown again (%s)" % g, g == "block")
     # ---------------- (5) the point WebKit samples ----------------
     click_trial(pg, "s12")
     hit = pg.evaluate(HIT)
     chk("(5) with a 12px trial up, the element 4px down in the middle is the trial strip (%s)" % hit, hit == "dx-strip")
     click_trial(pg, "s12")
     hit0 = pg.evaluate(HIT)
-    print("INFO today's strip: the element 4px down in the middle is '%s' (not top-guard: it takes no touch, so a hit test goes through it)" % hit0)
+    chk("(5) with no trial, the element 4px down in the middle is the app's own strip, which takes touch (%s)" % hit0, hit0 == "top-edge")
     # ---------------- (6) All off, and the auto test's end ----------------
-    for t in ("s12", "tcb", "csl", "gin", "inner", "lo24", "ovs", "vfit"): click_trial(pg, t)
+    for t in ("s12", "tcb", "csl", "gin", "inner", "lo24", "ovs", "vfit", "old", "pe0"): click_trial(pg, t)
     pg.evaluate("()=>{ document.querySelectorAll('#diagpanel input[type=checkbox]').forEach((c, i) => { if(i < 3){ c.checked = true; c.dispatchEvent(new Event('change')); } }); }")
     mid = pg.evaluate("()=>document.getElementById('diagpanel').textContent.match(/On now: [^A-Z]*/)[0]")
-    chk("(6) the 'what is on' line names what is on (%s)" % mid, all(t in mid for t in ("s12", "tcb", "csl", "gin", "inner", "lo24", "ovs", "vfit", "blur")), mid)
+    chk("(6) the 'what is on' line names what is on (%s)" % mid, all(t in mid for t in ("s12", "tcb", "csl", "gin", "inner", "lo24", "ovs", "vfit", "old", "pe0", "blur")), mid)
     pg.evaluate("()=>[...document.querySelectorAll('#diagpanel button')].find(b => /^all off$/i.test(b.textContent.trim())).click()"); pg.wait_for_timeout(300)
     back = pg.evaluate(STATE)
-    bad = [k for k in ("metas", "htmlStyle", "bodyStyle", "kids", "styles", "dx", "strip", "guard", "cs", "tc") if back[k] != base[k]]
+    bad = [k for k in ("metas", "htmlStyle", "bodyStyle", "kids", "styles", "dx", "strip", "guard", "edge", "cs", "tc") if back[k] != base[k]]
     chk("(6) All off puts the page back exactly (%s)" % bad, not bad and not diff_boxes(base["boxes"], back["boxes"]), [bad, diff_boxes(base["boxes"], back["boxes"])])
     chk("(6) ...and every switch reads off, 'On now: nothing'", pg.evaluate("()=>[...document.querySelectorAll('#diagpanel [data-trial]')].every(b => b.getAttribute('aria-checked') === 'false') && [...document.querySelectorAll('#diagpanel input[type=checkbox]')].every(c => !c.checked) && /On now: nothing/.test(document.getElementById('diagpanel').textContent)"))
     # ---------------- (7) move, clamp, readout, notch ----------------
@@ -216,7 +229,7 @@ with sync_playwright() as pw:
     chk("(7) dragged lower, it follows (%s)" % box2, 330 < box2[1] < 470 and box2[2] <= 956, box2)
     pg.evaluate("()=>window.__diagTrials.toggle('s12', true)")
     rd = pg.evaluate("()=>window.__diagTrials.readout()")
-    need = ["installed", "window", "screen", "safe area top", "100vh", "lvh", "status bar style tag", "viewport:", "theme-color", "4px down", "today's strip", "trial strip", "scrolls"]
+    need = ["top edge behaviour: STILL", "tag writes since the panel opened", "same element since the panel opened", "installed", "window", "screen", "safe area top", "100vh", "lvh", "status bar style tag", "viewport:", "theme-color", "4px down", "old behaviour's strip", "trial strip", "scrolls"]
     chk("(7) the readout has the geometry (%s lines)" % len(rd.splitlines()), all(k in rd for k in need), [k for k in need if k not in rd])
     chk("(7) the notch is simulated (safe area top 59px) and the trial strip is read (%s)" % rd.splitlines()[3], "top 59px" in rd and "trial strip: 440x12" in rd, rd)
     pg.evaluate("()=>window.__diagTrials.toggle('s12', false)")

@@ -6,6 +6,8 @@ the system's own top-edge blur of a black-translucent Home-Screen app; the repor
  (2) its colour is the status-bar colour the app already computes (the theme-color meta), and when the theme changes it is a NEW element in the new colour;
  (3) not in a browser tab, not on a laptop, and not when class26e.topguard is "0";
  (4) it is in the display test's switches, and no page errors.
+(384.27) THE OLD BEHAVIOUR NOW LIVES BEHIND class26e.topedgeold = "1" (the display test's A/B): the installed default is the persistent #top-edge, held to its own gate
+ (check-b384-topedge). (1)(2) are therefore read with that flag on; (3) still holds as written (no #top-guard in a tab, on a laptop or with topguard 0).
 Run:  python3 tools/check-b384-topguard.py   (--against OLD/index.html must FAIL)"""
 import os, sys, re, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +37,7 @@ def hexof(c):
     return "#%02x%02x%02x" % tuple(int(float(x)) for x in m[:3]) if len(m) >= 3 else None
 with sync_playwright() as pw:
     br = pw.chromium.launch()
-    ctx, pg = boot(br, True, True)
+    ctx, pg = boot(br, True, True, extra="localStorage.setItem('class26e.topedgeold','1');")
     errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:140]))
     r = pg.evaluate(READ)
     chk("(1) installed on an iPhone: a fixed, full-width, 8px, opaque strip at the top edge, no touch, above everything (%s)" % r, r and r["pos"] == "fixed" and r["top"] == 0 and r["left"] == 0 and abs(r["w"] - r["vw"]) < 1 and r["h"] == 8

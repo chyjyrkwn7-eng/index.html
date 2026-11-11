@@ -37,6 +37,15 @@
   html.page-zoomed:not(#nz1):not(#nz2):not(#nz3) [contenteditable="true"]{
     font-size:var(--field-floor, 19px) !important;
   }
+  /* (384.27) THE STILL TOP EDGE. One strip, in the markup from the first byte of <body>, in an installed iPhone/iPad app only (the head script
+     puts .top-edge-on on <html> for exactly that, and nothing else): the splash's #0A0A0A until the splash starts to fade, then the sky's
+     own top colour, changed IN PLACE (syncTopGuard) - never removed, never replaced. iOS 26/27 reports (folio #1026) say the system's top blur
+     latches on the first time the top-edge element or the theme-color / color-scheme tags change after launch. .top-edge-old is the old
+     behaviour (a new strip each colour, the tags rewritten) for the display test's A/B; .top-edge-none makes the strip ignore touch. */
+  #top-edge{ display:none; }
+  html.top-edge-on:not(.top-edge-old) #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:12px; z-index:2147483000;
+    background-color:var(--splash-bg,#0A0A0A); transition:background-color .6s ease; pointer-events:auto; }
+  html.top-edge-on.top-edge-none:not(.top-edge-old) #top-edge{ pointer-events:none; }
 </style>
 <script>
   /* INTERNET EXPLORER (build 384). Nova cannot run in it (custom properties, color-mix(), modern script throughout), and
@@ -454,6 +463,16 @@
     /* build 327z: a browser tab, for the rules that are only right there
        (no pull-to-refresh, edge strips for Safari's bars) */
     if(!inApp) document.documentElement.classList.add("is-browser");
+    /* (384.27) the still top edge: an installed iPhone/iPad app only (the same test as isIOSDevice() && standalone); class26e.topguard = "0"
+       switches it off, class26e.topedgeold = "1" is the old behaviour, class26e.topedgepe = "none" a strip that ignores touch (display test) */
+    if(inApp && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream){
+      var te = document.documentElement.classList, tg = localStorage.getItem("class26e.topguard");
+      if(tg !== "0"){
+        te.add("top-edge-on");
+        if(localStorage.getItem("class26e.topedgeold") === "1") te.add("top-edge-old");
+        if(localStorage.getItem("class26e.topedgepe") === "none") te.add("top-edge-none");
+      }
+    }
     if(!inApp){
       var tc = document.getElementById("themecolor");
       if(tc) tc.content = splashBg;
@@ -667,6 +686,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 </head>
 <body>
+<div id="top-edge" aria-hidden="true"></div>
 
 <div id="splashscreen">
   <div id="splash-group">
@@ -55466,7 +55486,7 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
     ["anim", "No animations or transitions", "*,*::before,*::after{animation:none!important;transition:none!important}"],
     ["tabs", "Bottom tab bar off", ".bottomtabs{display:none!important}"],
     ["lay", "Everything in front of the page off (fixed layers)", "body > *:not(#stage):not(.wrap):not(#diagpanel){display:none!important}"],
-    ["guard", "Top strip OFF (the iOS top-blur workaround)", "#top-guard{display:none!important}"]
+    ["guard", "Top strip OFF (the iOS top-blur workaround)", "#top-guard,#top-edge{display:none!important}"]
   ];
   const HEAD = "Display test (tick one at a time)";
   const box = document.createElement("div"); box.id = "diagpanel";
@@ -55552,7 +55572,7 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
   /* the strip: ONE element, made when the trial goes on, recoloured in place, taken away when it goes off */
   const stripOn = (o) => {
     stripOff();
-    sheet("noguard", "#top-guard{display:none!important}");
+    sheet("noguard", "#top-guard,#top-edge{display:none!important}");
     const d = document.createElement("div"); d.id = "dx-strip"; d.setAttribute("aria-hidden", "true");
     const colour = () => o.bg === "sky" ? sky() : o.bg;
     d.style.cssText = "position:" + (o.pos || "fixed") + ";top:0;left:0;right:0;height:" + o.h + "px;z-index:2147483000;pointer-events:auto;background-color:" + colour() + ";" + (o.extra || "");
@@ -55563,7 +55583,22 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
   };
   const stripOff = () => { clearInterval(saved.stripTimer); const d = document.getElementById("dx-strip"); if(d) d.remove(); unsheet("noguard"); };
   const meta = (name) => document.querySelector('meta[name="' + name + '"]');
+  /* a switch that is a flag the HEAD script reads at launch (class26e.<key> and a class on <html>): it has to survive a force-quit, which is
+     the unit of this test (the system's latch is per launch), so it is stored and put back by All off, not by a reload */
+  const flagTrial = (id, label, key, val, cls, tags) => ({ id, label, flag: () => document.documentElement.classList.contains(cls),
+    on(){
+      if(tags) saved[id] = ["themecolor", "colorscheme"].map(i => { const m = document.getElementById(i); return m ? m.getAttribute("content") : null; });
+      try{ localStorage.setItem(key, val); }catch(e){} document.documentElement.classList.add(cls); try{ syncStatusBarColor(); }catch(e){} },
+    off(){
+      try{ localStorage.removeItem(key); }catch(e){} document.documentElement.classList.remove(cls); try{ syncStatusBarColor(); }catch(e){}
+      /* the old behaviour rewrote the two tags; going back puts them as the still top edge had them */
+      if(tags && saved[id]) ["themecolor", "colorscheme"].forEach((i, n) => { const m = document.getElementById(i); if(m && saved[id][n] != null && m.getAttribute("content") !== saved[id][n]) m.setAttribute("content", saved[id][n]); });
+      saved[id] = null;
+    } });
   const X = [
+    /* ---- 0. the top edge's behaviour (kept across launches until All off) ---- */
+    flagTrial("old", "OLD top edge behaviour (replace strip, rewrite tags)", "class26e.topedgeold", "1", "top-edge-old", true),
+    flagTrial("pe0", "The top edge strip ignores touch (pointer-events:none)", "class26e.topedgepe", "none", "top-edge-none"),
     /* ---- 1. a strip at the very top edge (radio) ---- */
     { id: "s1",   rg: "strip", label: "1px solid strip at the top edge, page colour", on(){ stripOn({ h: 1, bg: "sky" }); }, off: stripOff },
     { id: "s8",   rg: "strip", label: "8px solid strip that takes touch (today's is 8px and ignores touch)", on(){ stripOn({ h: 8, bg: "sky" }); }, off: stripOff },
@@ -55576,7 +55611,7 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
     /* ---- 2. keep the top edge still ---- */
     { id: "gin", label: "Today's strip is recoloured in place, never replaced", on(){
         saved.gin = window.syncTopGuard; if(typeof saved.gin !== "function") return;
-        window.syncTopGuard = (color) => { const g = document.getElementById("top-guard"); if(g && color){ if(g.dataset.color !== color){ g.style.backgroundColor = color; g.dataset.color = color; } return; } return saved.gin(color); };
+        window.syncTopGuard = (color) => { const g = document.getElementById("top-guard"); if(topEdgeStill()) return saved.gin(color); if(g && color){ if(g.dataset.color !== color){ g.style.backgroundColor = color; g.dataset.color = color; } return; } return saved.gin(color); };
       }, off(){ if(typeof saved.gin === "function") window.syncTopGuard = saved.gin; } },
     { id: "ftc", label: "The app stops rewriting the theme-color tag", on(){ const m = document.getElementById("themecolor"); if(m) saved.ftc = holdContent(m, m.getAttribute("content")); },
       off(){ if(saved.ftc) saved.ftc(); saved.ftc = null; try{ syncStatusBarColor(); }catch(e){} } },
@@ -55609,8 +55644,10 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
     { id: "loin", rg: "low", label: "Everything starts below the safe area (adds the notch height again)", on(){ sheet("low", "body{padding-top:env(safe-area-inset-top,0px)!important}"); }, off(){ unsheet("low"); } }
   ];
   const byId = {}; X.forEach(x => { byId[x.id] = x; x.isOn = false; });
+  const flagged = () => X.filter(x => x.flag);
   const SECTIONS = [
-    ["Top strip (one at a time; today's is hidden while one is on)", ["s1", "s8", "s12", "s24", "s12st", "s12k", "s12t", "s12b"]],
+    ["Top edge behaviour (kept across launches)", ["old", "pe0"]],
+    ["Top strip (one at a time; the app's own is hidden while one is on)", ["s1", "s8", "s12", "s24", "s12st", "s12k", "s12t", "s12b"]],
     ["Keep the top edge still", ["gin", "ftc", "fcs"]],
     ["Tags, changed live", ["vfit", "tcb", "tcw", "tcc", "tcm", "csl", "csb", "csn"]],
     ["How the page scrolls", ["inner", "fixb", "ovs"]],
@@ -55647,6 +55684,15 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
   const px = (css, prop) => { const d = document.createElement("div"); d.style.cssText = "position:fixed;left:0;top:0;width:0;visibility:hidden;pointer-events:none;box-sizing:border-box;" + css; (document.body || document.documentElement).appendChild(d); const v = getComputedStyle(d)[prop]; d.remove(); return v; };
   const desc = (e) => e ? e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + (typeof e.className === "string" && e.className.trim() ? "." + e.className.trim().split(/\s+/)[0] : "") : "nothing";
   const rect = (e) => { if(!e) return "none"; const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return Math.round(r.width) + "x" + Math.round(r.height) + " at y" + Math.round(r.top) + ", " + cs.position + ", touch " + cs.pointerEvents; };
+  /* how many times the colour tags were written, and whether the strip is still the element it was, since this panel opened */
+  const tagWrites = { "theme-color": 0, "color-scheme": 0 }, edge0 = document.getElementById("top-edge");
+  try{
+    const isTag = (n) => n && n.nodeType === 1 && n.tagName === "META" && tagWrites[n.getAttribute("name")] !== undefined;
+    new MutationObserver((recs) => recs.forEach(r => {
+      if(r.type === "attributes" && isTag(r.target)) tagWrites[r.target.getAttribute("name")]++;
+      if(r.type === "childList") [...r.addedNodes, ...r.removedNodes].forEach(n => { if(isTag(n)) tagWrites[n.getAttribute("name")]++; });
+    })).observe(document.head, { subtree: true, attributes: true, childList: true });
+  }catch(e){}
   const readout = () => {
     const vv = window.visualViewport, standalone = navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
     const mc = (sel) => { const m = document.querySelector(sel); return m ? m.getAttribute("content") : "(none)"; };
@@ -55661,7 +55707,10 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
       "viewport: " + mc("#viewportmeta"),
       "theme-color: " + mc("#themecolor") + "  color-scheme: " + mc("#colorscheme"),
       "what is 4px down, middle: " + desc(hit),
-      "today's strip: " + rect(document.getElementById("top-guard")),
+      "top edge behaviour: " + (document.documentElement.classList.contains("top-edge-on") ? (document.documentElement.classList.contains("top-edge-old") ? "OLD (a new strip each colour, tags rewritten)" : "STILL (one strip, tags not rewritten)") : "not an installed iPhone/iPad: the browser behaviour"),
+      "strip " + rect(document.getElementById("top-edge")) + (edge0 ? (document.getElementById("top-edge") === edge0 ? "  same element since the panel opened" : "  REPLACED since the panel opened") : ""),
+      "tag writes since the panel opened: theme-color " + tagWrites["theme-color"] + ", color-scheme " + tagWrites["color-scheme"] + " (trials count)",
+      "old behaviour's strip: " + rect(document.getElementById("top-guard")),
       "trial strip: " + rect(document.getElementById("dx-strip")),
       "scrolls: " + desc(document.scrollingElement) + " " + (document.scrollingElement ? document.scrollingElement.scrollTop + "/" + document.scrollingElement.scrollHeight : "")
     ].join("\n");
@@ -55691,8 +55740,10 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
   const paintKept = () => { kinfo.textContent = "Next launch starts with: " + (kept.length ? kept.join(", ") : "nothing") + ". Force-quit Nova and open it again to see it."; };
   const kbtn = (text, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = text; b.style.cssText = "min-height:44px;width:100%;margin-bottom:4px;border:0;border-radius:10px;background:#333;color:#fff;font:600 13px -apple-system,system-ui,sans-serif"; b.addEventListener("click", fn); return b; };
   const setKept = (list) => { kept = list; try{ if(list.length) localStorage.setItem(KEPT, JSON.stringify(list)); else localStorage.removeItem(KEPT); }catch(e){} paintKept(); paintOn(); };
-  klist.append(kinfo, kbtn("Keep what is on for the next launch", () => setKept(X.filter(x => x.isOn).map(x => x.id))), kbtn("Forget it", () => setKept([])));
+  klist.append(kinfo, kbtn("Keep what is on for the next launch", () => setKept(X.filter(x => x.isOn && !x.flag).map(x => x.id))), kbtn("Forget it", () => setKept([])));
   paintKept();
+
+  flagged().forEach(x => { if(x.flag()){ x.isOn = true; setRow(x); } });
 
   /* ---- footer: All off, and what is on ---- */
   const allOff = document.createElement("button"); allOff.type = "button"; allOff.textContent = "All off";
@@ -55700,7 +55751,8 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
   allOff.addEventListener("click", () => {
     autoGen++; running = false; h.textContent = HEAD; auto.textContent = "Run auto test (then screen-record)";
     setKept([]); clearSuspects();
-    X.slice().reverse().forEach(x => { if(x.isOn){ try{ x.off(); }catch(e){} x.isOn = false; setRow(x); } });
+    /* the behaviour flags first (they put the two tags back as they found them), then the rest, last switched on first off */
+    [...flagged(), ...X.filter(x => !x.flag).reverse()].forEach(x => { if(x.isOn){ try{ x.off(); }catch(e){} x.isOn = false; setRow(x); } });
     paintOn(); if(mlist.style.display !== "none") paintRead();
   });
   foot.append(allOff, onLine); box.append(body, foot); paintOn(); fitBox();
@@ -85908,9 +85960,10 @@ function applyTheme(){
      scrollbars) in sync with our theme, so the page reads as fully one
      mode or the other instead of a light page inside a dark-tinted frame. */
   const nativeScheme = effectiveMode === "light" ? "light" : "dark";
-  document.documentElement.style.colorScheme = nativeScheme;
+  /* (384.27) the still top edge writes neither the color-scheme tag nor (unless it changes, which it cannot: the light mode is retired) the root's */
+  if(!topEdgeStill() || document.documentElement.style.colorScheme !== nativeScheme) document.documentElement.style.colorScheme = nativeScheme;
   const csMeta = document.getElementById("colorscheme");
-  if(csMeta) csMeta.content = nativeScheme;
+  if(csMeta && !topEdgeStill()) csMeta.content = nativeScheme;
   syncStatusBarColor();
 }
 
@@ -86118,7 +86171,9 @@ function syncStatusBarColor(){
      more thing the web view is asked to do while the launch is settling. finishSplash calls this again as the fade starts, after
      .splash-hide is on, and it is written then. A browser tab is unchanged: its bars follow it, and `owns` is what it holds. */
   const holdForSplash = !owns && !!document.getElementById("splashscreen") && !document.getElementById("splashscreen").classList.contains("splash-hide");
-  if(!holdForSplash && tcMeta.content !== (owns ? splashBg : color)) tcMeta.content = owns ? splashBg : color;
+  /* (384.27) NOT IN THE STILL TOP EDGE (an installed iPhone/iPad app): the tag was set once, before first paint, by the head script; after
+     that nothing rewrites it. Only the strip's colour (syncTopGuard) and the cache for the NEXT launch follow the sky. */
+  if(!topEdgeStill() && !holdForSplash && tcMeta.content !== (owns ? splashBg : color)) tcMeta.content = owns ? splashBg : color;
   refreshEdgeTints(color);
   syncTopGuard(color);
   /* The cache always holds the APP's colour, never the splash's - it is
@@ -86143,8 +86198,31 @@ function syncStatusBarColor(){
    iPhone/iPad app only, replaced by a NEW element whenever the colour changes (a colour is read when an element appears, see refreshEdgeTints).
    It takes no touch. `class26e.topguard` = "0" (the display test's switch) takes it away. EXPERIMENTAL: only a phone can say if it works. */
 var topGuardWatch = null;
+/* (384.27) true in an installed iPhone/iPad app unless the display test has put the old behaviour back (class names set by the head script) */
+function topEdgeStill(){
+  const c = document.documentElement.classList;
+  return c.contains("top-edge-on") && !c.contains("top-edge-old");
+}
 function syncTopGuard(color){
   try{
+    if(topEdgeStill()){
+      /* the one strip (#top-edge, in the markup): its colour is changed in place and it is never removed or replaced. Under the splash it
+         keeps the splash's colour (it is above the splash, so it must not show as a band of sky over it); finishSplash calls this again
+         as the fade starts, and it takes the sky's colour then (the CSS fades it with the splash). */
+      const stale = document.getElementById("top-guard"); if(stale) stale.remove();
+      const el = document.getElementById("top-edge");
+      if(!el || !color) return;
+      const sp0 = document.getElementById("splashscreen");
+      if(sp0 && !sp0.classList.contains("splash-hide")){
+        if(!topGuardWatch && window.MutationObserver && document.body){
+          topGuardWatch = new MutationObserver(() => { if(!document.getElementById("splashscreen")){ topGuardWatch.disconnect(); topGuardWatch = null; try{ syncStatusBarColor(); }catch(e){} } });
+          topGuardWatch.observe(document.body, { childList: true });
+        }
+        return;
+      }
+      if(el.dataset.color !== color){ el.dataset.color = color; el.style.backgroundColor = color; }
+      return;
+    }
     const old = document.getElementById("top-guard");
     const standalone = navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
     let off = false; try{ off = localStorage.getItem("class26e.topguard") === "0"; }catch(e){}
@@ -135799,7 +135877,7 @@ function showAdvancedSettings(){
   let diagOn = false; try{ diagOn = localStorage.getItem("class26e.displaytest") === "1"; }catch(e){}
   const diagBtn = settingsTextRow(diagOn ? "Hide the display test panel" : "Show the display test panel");
   diagBtn.addEventListener("click", () => {
-    try{ if(diagOn){ localStorage.removeItem("class26e.displaytest"); localStorage.removeItem("class26e.dxboot"); } else localStorage.setItem("class26e.displaytest", "1"); }catch(e){}
+    try{ if(diagOn){ localStorage.removeItem("class26e.displaytest"); localStorage.removeItem("class26e.dxboot"); localStorage.removeItem("class26e.topedgeold"); localStorage.removeItem("class26e.topedgepe"); } else localStorage.setItem("class26e.displaytest", "1"); }catch(e){}
     location.reload();
   });
   tcard.appendChild(diagBtn);
