@@ -33,7 +33,7 @@ INIT = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.setIte
 BUILD = r"""async ([ids, big]) => {
   document.getElementById('splashscreen')?.remove();
   const list = ids || AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy).map(c => c.id);
-  document.body.innerHTML = '';
+  [...document.body.children].forEach(n => { if(n.tagName !== 'STYLE') n.remove(); });   /* not body.innerHTML = '': the 2.9MB stylesheet is a <style> in <body> (384 r17) */
   document.body.style.cssText = 'background:#12151B;margin:0;padding:14px;font:13px sans-serif;color:#cfd6e2';
   const wrap = document.createElement('div'); wrap.id = 'wrap'; document.body.appendChild(wrap);
   for(const id of list){

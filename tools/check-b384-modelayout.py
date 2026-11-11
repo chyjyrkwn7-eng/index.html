@@ -82,10 +82,18 @@ with sync_playwright() as pw:
                 if phone or upright_tab:
                     need = 0.85 if not (upright_tab and scr == "vroom") else 0.55
                 else: need = 0.50
+                # (384.25) a phone's two or three tiles are the academy's four-up look, never much taller than a four-up tile: they do not have to fill
+                # the room (Madison: "a little too big in the virtual room ones and the fire code with just 3"), they sit in the middle of it
+                compact = phone and n < 4
+                if compact: need = 0.45
                 if scrollable:
                     chk("(1) %s: a small phone that cannot fit scrolls, and the last tile clears the tab bar at the end (%.0f vs %.0f)" % (tag, a2["bots"], a2["tab"]), a2["bots"] <= a2["tab"] + 0.5, a2)
                 else:
                     chk("(1) %s: the tiles fill %.0f%% of the room under the question (need %d%%, no more than 100%%)" % (tag, a["fill"] * 100, need * 100), need <= a["fill"] <= 1.005, a)
+                    if compact and not scrollable:
+                        h0 = r["tiles"][0]["h"]; ref4 = (a["free"] - 3 * 10 * k) / 4.0
+                        chk("(1b) %s: the %d tiles are the compact build and no taller than 1.3x a four-up tile (%.0f px vs %.0f)" % (tag, n, h0, ref4 * 1.3),
+                            r["tile"] == "snug" and h0 <= max(ref4 * 1.3, 150 * k) + 3, [r["tile"], h0, ref4])
                     # (2) place
                     chk("(2) %s: centred in the room (%.1f above, %.1f below)" % (tag, a["above"], a["below"]), abs(a["above"] - a["below"]) <= 3 and a["above"] >= 10, a)
                 # (3) tiles
