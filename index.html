@@ -97255,7 +97255,7 @@ function heroSettleSkip(root){
    again as it comes back, from the same pose; the time away is taken off
    the loop clock (loopHiddenMs), so a Home built afterwards lands on the
    same poses the paused loops resume from. */
-let loopHiddenMs = 0, loopHiddenAt = 0;
+let loopHiddenMs = 0, loopHiddenAt = 0, loopHidePose = null;   /* 384.31: the reference loop's pose when it was paused for the hide */
 const loopPausedByUs = new Set();
 function loopWallMs(lag){ return Date.now() - LOOP_EPOCH - (lag || 0) - loopHiddenMs - (loopHiddenAt ? Date.now() - loopHiddenAt : 0); }
 /* build 355: WHEN THE PAGE IS FROZEN BEFORE IT HEARS IT IS HIDDEN. iOS can suspend a Home Screen app without the
@@ -97291,8 +97291,16 @@ function loopsPauseAll(shiftBack){
       try{
         const t = a.effect && a.effect.getTiming();
         if(!t || t.iterations !== Infinity || a.playState !== "running") return;
+        /* 384.31: PAUSED AT THE POSE IT WAS LEFT IN, NOT AT THE POSE IT IS FOUND IN. pause() is only a request: the animation stays
+           "pending" until the page draws its next frame and its hold time is the timeline's time THEN. A Home Screen app that iOS
+           suspends before that frame - the usual way out - has every pause still pending, and the first frame after it comes back
+           completes them all at the moment of the return: the loops stand where they would have been had nothing paused them, the time
+           away ahead of the pose the app switcher's card still shows. His recording (return at 6.2s): the card, five identical
+           frames, then the dots lurch ~11 degrees (inner ring) and ~4.6 (outer) = 1.6 seconds of travel. Writing the pose just read
+           makes the pause take hold in this task (setting currentTime completes a pending pause at that time). */
+        const pose = a.currentTime;
         a.pause();
-        if(shiftBack > 0 && typeof a.currentTime === "number") a.currentTime = Math.max(0, a.currentTime - shiftBack);
+        if(typeof pose === "number") a.currentTime = shiftBack > 0 ? Math.max(0, pose - shiftBack) : pose;
         out.push(a);
       }catch(e){}
     });
@@ -97531,7 +97539,11 @@ function loopsBack(){
      and then appear already moved on ("the planet system freezes, then loads to where it went"). They stay on their
      pose until four frames in a row come at a normal pace (at most ~1.5s), then go on from that pose. */
   let good = 0, tries = 0, lastT = t0, first = 0;
+  const hidePose = told ? loopHidePose : null; loopHidePose = null;
   const go = () => {
+    /* 384.31: HOW FAR THE REFERENCE LOOP MOVED WHILE IT WAS PAUSED (ms of loop time; 0 when the pause held). Read before anything is played. */
+    let slip = "-";
+    try{ const rs = loopRef(); if(hidePose != null && rs && typeof rs.currentTime === "number") slip = Math.round(rs.currentTime - hidePose); }catch(e){}
     /* 384.27: LET GO IN TURNS, NOT ALL IN ONE FRAME. 41 animations played in the same frame (measured, and 26-52 in his own resume
        log) is the planet system's compositor layers started again together; the reference loop goes first (its pose sets the loop
        clock below) and the rest follow at most LOOP_RESUME_PER_FRAME a frame, each put on by the time it waited, so every one is where
@@ -97548,7 +97560,7 @@ function loopsBack(){
     const r2 = loopRef();
     if(r2 && typeof r2.currentTime === "number") loopHiddenMs = Date.now() - LOOP_EPOCH - (r2.currentTime - (typeof orbitAdvanceMs === "number" ? orbitAdvanceMs : 0));
     else loopHiddenMs += performance.now() - t0;
-    const c0 = r2 && r2.currentTime, w0 = performance.now(), note = "away" + Math.round(gap) + " first" + first + " held" + Math.round(w0 - t0) + " n" + resume.length;
+    const c0 = r2 && r2.currentTime, w0 = performance.now(), note = "away" + Math.round(gap) + " first" + first + " held" + Math.round(w0 - t0) + " n" + resume.length + " slip" + slip;
     setTimeout(() => {
       /* how far the reference loop has moved in 600ms, against the 600 it should (a jump shows here) */
       const r3 = loopRef(); let drift = "-";
@@ -97579,6 +97591,7 @@ document.addEventListener("visibilitychange", () => {
     loopPausedByUs.clear();
     loopsPauseAll(0).forEach(a => loopPausedByUs.add(a));
     waiting.forEach(a => loopPausedByUs.add(a));
+    try{ const rh = loopRef(); loopHidePose = rh && typeof rh.currentTime === "number" ? rh.currentTime : null; }catch(e){ loopHidePose = null; }
     trimForBackground(); sessionMark("hidden");
   } else loopsBack();
 });
@@ -120453,7 +120466,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.30";
+const APP_BUILD = "2026-11-10-384.31";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
