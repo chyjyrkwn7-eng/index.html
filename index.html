@@ -55405,6 +55405,18 @@ function ifcQuestionCountText(){
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
   return (n || 1812).toLocaleString("en-US");
 }
+/* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
+   Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
+   have an Emergency Action Plan or Emergency Response Plan, that plan must be included as part of the _____.") had the wrong
+   option "operational permit application" replaced by "construction documents" - under IFC 5001.5.1 a permit application can
+   include the hazardous materials management plan, so the old option could be argued as partly right. Nothing else changed (no
+   question text, keyed answer, explanation, reference or highlight).
+   A question's identity includes its choices (bankKeysOf), so without a pin everybody's answers on this question would have
+   started again. IFC_KEY_CHOICES keeps the choices it was first stored under (identity only: the question shows the new ones),
+   in the bank's order A-D. Generated from the 5.4.2 bank, not typed. */
+const IFC_KEY_CHOICES = {
+  "chAppH-805": ["hazardous materials inventory statement", "operational permit application", "site plan", "hazardous materials management plan"]
+};
 /* (384) a function of the bank, so the academy can build the same list when a Fire Code room is joined (classBankReady) */
 function ifcQuestionsFrom(B){
   if(!B || !Array.isArray(B.questions)) return [];
@@ -55424,6 +55436,8 @@ function ifcQuestionsFrom(B){
                explanation: q.explanation, ifc: q };
     /* (384, 5.4.2) a reworded question keeps its identity */
     if(Object.prototype.hasOwnProperty.call(IFC_KEY_TEXT, q.id)) it.keyText = IFC_KEY_TEXT[q.id];
+    /* (384.48, 5.4.3) a question whose wrong option was replaced keeps its identity */
+    if(Object.prototype.hasOwnProperty.call(IFC_KEY_CHOICES, q.id)) it.keyChoices = IFC_KEY_CHOICES[q.id];
     /* THE REFERENCE UNDER THE QUESTION, as the Penal Code has it (build 333): "none of them have
        their reference showing under the question". Not where the label would give the answer
        away - the chapter finder (the label IS the chapter) and a question whose answer is in the
@@ -121325,7 +121339,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.45";
+const APP_BUILD = "2026-11-11-384.48";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
