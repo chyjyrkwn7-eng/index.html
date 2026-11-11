@@ -38810,3 +38810,68 @@ Sizes: Chapter 2 107 -> 111, Chapter 4 39 -> 40, Chapter 12 44 -> 43, Chapter 55
   and right/wrong totals conserved, the Stats ring the same, old tallies left in place, (e) two devices (old bank, new bank) merged either way lower nothing.
   Fails on main (the move is not there) and, with the copy block disabled, on (d). check-b384-ifc542 updated on purpose (Chapter 4 40, Chapter 12 43,
   exactly the five kept-question keys moved). The other gates: see the build's report.
+
+## 384.47 - the county permit questions move to Chapter 1; the repeats and the weak ones go (branch claude/b384-moveperm, cut from main 384.45, merged with main 384.48 and bumped to 384.49 - NOT on main, waiting for Madison)
+The owner (Madison, he/him): "the 87 questions we are gonna take them and put them in chapter 1. However we don't want repeat questions of course ... Chapter 1
+could have a lot of questions because the questions are a lot about the tables which is good because knowing those limit requirements for operational permits is
+what a lot of people want to know ... I don't want repeat questions and I don't want bad questions ... I want the best questions out of what we got." The principle
+(from 384.45): a test of the chapters you selected must not show references to chapters you did not select; a question lives in the unit of the chapter whose text it
+cites. Then, after seeing the counts: "figure out which questions will be in chapter 1. The chapter needs the amount of questions that are relevant to how much content
+is in it ... I also want it to make sense, question amounts based on sizes of the chapters."
+- THE 87: Fire Code questions whose citation is the county's Chapter 1 (section 1xx, source 'amendment', so NOT 1001/1103/5003... : match `^1\d\d(\.|$)`) in a unit that is not
+  Chapter 1, the Finder (NAV) or Exhibit B. They came from 35 chapters (the biggest givers: 63 six, 62 five, 57 five, 53 five, 55 eight, 60 four, 66 four).
+- RESULT: 15 removed, 72 moved into Chapter 1 (88 -> 160). The bank goes 1,812 -> 1,797. Nothing wrong or doubtful against the cited text was found (every answer read
+  against its citation excerpt/highlight and, for the 105.5.x list and the tables, ifc/harris-county-amendments.pdf pages 15-21 by pdftotext), so every removal is a repeat
+  (same fact, same section or table cell); no question of Chapter 1's own was removed. The full keep/remove table (all 175, with the reason for each removal) is
+  the owner's file; the 15, kept twin first: ch1-604 (wood chips 200 cu ft) over ch28-501; ch1-318 (fibers 100) over ch37-001; ch1-319 (explosives any quantity) over
+  ch56-312; ch1-602 (magnesium 10 lb) over ch59-711; ch1-603 (coatings 1 gal) over ch29-201; ch1-051 (corrosive liquids 55 gal, ONE of three) over ch50-074 and
+  ch54-009; ch54-011 (corrosive solids 1,000 lb) over ch50-075; ch50-076 (flammable solids 100 lb) over ch59-207; ch54-010 (corrosive gas 200 cu ft) over ch53-601;
+  ch53-024 (oxidizing gas 504) over ch63-210; ch55-019 (oxidizing cryogenic inside 10 gal) over ch63-510; ch55-022 (outside 50) over ch63-701; ch58-502 (flammable
+  cryogenic inside 1 gal) over ch55-501; ch58-503 (outside 60) over ch55-502. The keeper is the one already in Chapter 1, else the one whose citation shows the whole table
+  / the rule's lead-in, else the clearer stem. Looked at and KEPT because they test a different cell or a different fact: ch62-205/701 (Class III vs IV), ch66-702/704
+  (Class 1 vs 2 solids), ch1-025/026, ch1-033/606, ch1-036/130, ch1-071/072, the four tent questions, ch1-053/ch32-612 (operational vs construction permit), the
+  'any amount' rows of Tables 105.5.9 / 105.5.22. ONE for the owner's decision: ch20-508 (rooftop heliport; the wrong options - a private runway, an aircraft apron, a
+  ground-level landing pad - are not in the cited text); kept. No typos in any question; two slips in the county's own text (Table 105.5.11 'no including above', 105.5.18
+  item 4 'were connected').
+- CHAPTER 1'S SIZE, BY CONTENT (the owner's second request). County Chapter 1 is 15,347 words, 29 booklet pages, 228 numbered sections (68 operational-permit items 105.5.x,
+  27 construction-permit items 105.6.x), 4 tables (105.5.9, 105.5.11, 105.5.22, 112.4.2: about 85 limit cells and 11 fine rows), 84 quantities. County-text questions per
+  1,000 words in the county's other chapters with 900+ words (2, 3, 4, 5, 9, 11, 56, 58): median 8.2, quartiles 4.5 / 10.7, highest 13.4 (Chapter 9). At the median Chapter 1 would
+  hold 127, at the upper quartile 165, at the densest chapter 206; main's 88 was 5.7. 160 is 10.4 per 1,000 words, 0.70 per numbered section (others: median 0.57, upper
+  quartile 1.16), 45% of its sections carry a question (others: median 43%): between the median and the upper quartile, as a chapter this table-heavy should be. The content
+  would carry a little more than there are good, distinct questions: 175 existed, 15 are repeats. Not padded; not cut to the median either (that would drop 33 table-limit
+  and permit-trigger questions that repeat nothing). Per IFC-book page the figure is 5.5 against about 2.4, but that mixes unlike pages (the IFC span is a lower bound, the pdf is
+  not in the repo) so the like-for-like county measure is the one to steer by. The whole table (every unit: pages, sections, questions, density) is in the owner's report.
+  UNDER-COVERED after the move, by the same measure (nothing to add: the bank has no more): Chapter 55 (8 questions on about 5 cited pages, was 16), Chapter 62 (5, was 10),
+  Chapter 53 (15, was 20), Chapter 57 (74 on 42 pages, 1.8 per page), Chapter 32, 56, 12 (about 2.0); under 8 questions: 25 (5), 30 (6), 54 (7), 62 (5), Appendix C (7).
+  The move itself thins 55, 62 and 53: their best questions are the permit limits, which cite Chapter 1's text.
+- COUNTS (main -> now): Chapter 1 88 -> 160; Chapter 10 132 -> 131; 12 43 -> 41; 20 23 -> 21; 21 17 -> 16; 22 15 -> 14; 25 6 -> 5; 26 13 -> 11; 27 18 -> 17; 28 17 -> 16;
+  29 10 -> 9; 30 9 -> 6; 31 29 -> 28; 32 33 -> 32; 34 18 -> 16; 35 18 -> 16; 37 15 -> 13; 39 11 -> 9; 50 55 -> 52; 51 17 -> 16; 53 20 -> 15; 54 10 -> 7; 55 16 -> 8; 56 48 -> 47;
+  57 79 -> 74; 58 14 -> 11; 59 18 -> 16; 60 23 -> 19; 61 26 -> 24; 62 10 -> 5; 63 18 -> 12; 64 10 -> 9; 65 9 -> 8; 66 16 -> 12; 67 13 -> 10; Appendix C 11 -> 7. Everything else
+  (including the Finder 138 and Exhibit B 7) is untouched. The Finder's own questions about Chapter 1 (nav-NAVB-...) stay in the Finder by design.
+- HOW: tools/gen-ifc-bank.py: UNIT_MOVES gets the 72 (listed in citation order, so they take Chapter 1's positions 89-160 in that order; ifc/bank.js is made with
+  `--from-bank-js ifc/bank.js`, which also applies the new UNIT_REMOVALS and sets meta.questionCount; re-running is a no-op, byte-identical). In index.html: IFC_SRC_GAPS (every old
+  position of a moved or removed question, 35 chapters, read off main's own numbering), IFC_MOVED_KEYS (+72: old key + id), IFC_RETIRED_KEYS (+15 removed keys, un-starred once), the
+  fallback count 1,812 -> 1,797 (ifcQuestionCountText, for the academy's class list where the bank is not loaded). The boot copy of 384.42 builds one id -> index map instead of a scan per
+  moved question (77 entries now: 77 map lookups and at most 77 small JSON copies at boot; no per-answer cost, no Firestore writes of its own beyond the save it already does).
+- IDENTITY (key = chapter | position | hash(wording + choices)), measured in the app on main and on this build: 1,725 of 1,725 questions that stay keep main's exact key; the 72 moved ones'
+  keys change (wording hash kept) and nothing else; all 1,797 keys unique; against the 5.4.1 bank too (check-b384-ifc542): 1,761 kept, only the 77 moved by the owner differ.
+- NOTHING LOST (tools/check-b384-moveperm-keep.py, same method as moveq-keep, 36 affected chapters, all holding the badge, one with a hundo count beyond it): the badge is held and drawn
+  earned in all 36; every stored field but stats/flagged/unflagged/lastModified byte-identical; hundos 9 -> 9, level, rank, published row the same; nothing owed (no cutscene, no unlock card,
+  pendingBadgeUnlocks empty); no stored answer tally lowered (363 entries, 0 lowered); the 72 moved questions' tallies are copied to their new keys, so Chapter 1's answered count goes
+  29 -> 101; two devices (old bank, new bank) merged either way lower nothing. Fails on main ((d) and (f)) and, with the copy block switched off, on (d) (363 -> 276 answered).
+  WHAT A PERSON DOES SEE: the 15 removed questions leave the chapter lists, so a person who answered one of them sees the Stats ring and their chapter's answered figures drop by that
+  question (and its denominator by one too: the ring is a share of the bank; 1,812 -> 1,797). The stored tally is NOT lowered (the 5.4.2 precedent: left in place, nothing reads it). The
+  alternative - carrying a removed question's tally to the twin that stays - was not built: it was not asked for and it would credit a question the person never saw. Madison to decide.
+  The star on a removed question comes off once; a star on a moved one goes with it.
+- NEXT FULL RUN: Chapter 1 is 160 questions, so a full-chapter run (isFullUnitRun) must cover all 160 and the old 88-question run is a partial run (no hundo); a hundo already held stays.
+  There is no per-question time limit: the countdown timer is the person's own setting (default off, 15 min when on), so a full Chapter 1 run takes as long as the person takes - at 20 seconds a
+  question about 53 minutes, at 30 seconds 80 (the longest chapter before was Chapter 9, 145; the biggest-unit challenge no longer exists: busyday300 is hosting a room). Virtual Room questions are
+  seeded by QUESTIONS index, which shifts for any later question as in any bank update; the forced update puts every device on this build. An old-build saved test holding a removed question
+  gets the existing 'a question is gone' notice.
+- CHAPTER PURITY (check-b384-moveperm (6)): no question outside Chapter 1, the Finder and Exhibit B cites the county's Chapter 1 now (87 on main). Every other question in the bank has a
+  unit equal to the chapter its citation's section belongs to: 0 exceptions (Table N citations read by their section number). Left on purpose: the Finder's 138 questions (they ask about any chapter) and
+  Exhibit B's 7 (the county's building-code amendments, IBC chapters 5 and 10).
+- GATES: tools/check-b384-moveperm.py (new; (1)-(6) FAIL on main with --against + OLD_BANK) and tools/check-b384-moveperm-keep.py (new; (d) and (f) fail on main, (d) fails with the copy off).
+  Updated on purpose: check-b384-ifc542 (reads UNIT_MOVES / UNIT_REMOVALS from the generator: 1,797, Chapter 1 160, Chapter 12 41, 1,761 kept, 77 moved, class list '1,797 questions'),
+  check-b384-moveq and -keep (they now compare with the commit before the five moves, 6c1d14a, since main holds them, and leave 384.47's moves and removals out: sizes 111/40/41/8/5/9),
+  check-b328-classes (>= 1,797).
