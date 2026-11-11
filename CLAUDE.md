@@ -42,6 +42,11 @@ file short - only rules every session must know go here.
 
 ## Hard rules
 
+- **A challenge counts what its label says, and an unlock is derived when
+  read, never stored.** The Smoke Diver was reported three times because its
+  counter ticked on the same event as the miss counter, so a "clamp to the
+  misses" could never bind (384.40: read the account's real numbers before
+  writing a bound). Fire Code counts distinct questions (`retakenKeys`).
 - **Never rename `STORE_KEY` (`"class26e.drill.v1"`) or `"class26e.synccode"`**,
   the Firebase project id or the IndexedDB name - it orphans real progress.
 - Never call Firestore `.onSnapshot()` directly - use `onSnapshotResilient()`.

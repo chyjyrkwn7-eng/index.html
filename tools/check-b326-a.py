@@ -184,7 +184,7 @@ RUN3 = """async () => {
     attempts[qi] = bad ? 2 : 1; picked[qi] = bad ? (right + 1) % oo.length : right; });
   runStartTime = Date.now() - order.length * 9000; testInProgress = true; pos = order.length - 1;
   summarize();
-  for(let i = 0; i < 300 && !document.querySelector('.rs-rewards.rs-done'); i++){ const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(100); }
+  for(let i = 0; i < 300 && !document.querySelector('.rs-rewards.rs-done'); i++){ const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); await wait(100); }
   const x = document.querySelector('#stage .rs-xp'); if(!x) return null;
   const tot = x.querySelector('.rs-xptotal'), lvl = x.querySelector('.results-level');
   const between = []; for(let e = tot && tot.nextElementSibling; e && e !== lvl; e = e.nextElementSibling) if(e.getClientRects().length && e.textContent.trim()) between.push(e.textContent.trim());

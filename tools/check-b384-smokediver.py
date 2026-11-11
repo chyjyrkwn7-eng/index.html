@@ -108,14 +108,17 @@ with sync_playwright() as pw:
         real = fc_base(retakenQuestions=100, avatarChar="masked", lifetime={"answered": 400, "correct": 270, "drillPlays": 12, "examPlays": 3, "gamePlays": 0,
                        "perfectTests": 0, "currentStreak": 0, "longestStreak": 9, "points": 2600, "fullTests": 0},
                        unlocksShown={"chars": ["masked"], "banners": [], "fx": []})
-        real["stats"] = {"q%d" % i: {"n": 5, "m": 1, "r": []} for i in range(100)}      # 100 misses on record and 100 retaken: the challenge, honestly
+        # (384.40) the challenge counts 100 DIFFERENT questions answered after a miss: real keys of the bank, each missed and answered again
+        _c, _p, _e = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with())
+        _rk = _p.evaluate("KEYS.slice(0, 300)"); _c.close()
+        real["stats"] = {_rk[i]: {"n": 5, "m": 2, "r": []} for i in range(100)}
         cd = json.loads(json.dumps(real)); cd["lastModified"] = now - 300000
         set_ifc(real)
         ctx, pg, errs = G["page"](br, G["init"]("ifc", with_ifc=True), seed=cloud_with(fire=cd, floor=cd))
         pg.wait_for_timeout(2500); p = settle(pg)
         chk("C the server's copy is in (the rule waits for it)", p["confirmed"], p)
         chk("C 100 retakes on %d misses and %d answers: kept, Smoke Diver unlocked and still worn (retakes %s)" % (p["misses"], p["answered"], p["retaken"]),
-            p["misses"] == 100 and p["retaken"] == 100 and worn_unlocked(p) and "masked" in p["shown"], p)
+            p["misses"] == 200 and p["retaken"] == 100 and worn_unlocked(p) and "masked" in p["shown"], p)
         pg.wait_for_timeout(6500); p = probe(pg)
         chk("C written to the cloud document and its floor as 100 (%s / %s)" % (p["docRetaken"], p["floorRetaken"]), p["docRetaken"] == 100 and p["floorRetaken"] == 100, p)
         pg.reload(); pg.wait_for_timeout(3500); pg.evaluate("document.getElementById('splashscreen')?.remove()"); p = settle(pg)

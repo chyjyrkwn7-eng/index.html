@@ -253,7 +253,7 @@ QUEUE_WALK = """async (a) => {
     /* Home: locked, the tab calling */
     let nudges0 = Number(tab.dataset.ruNudges) || 0, sawNudge = false;
     for(let i = 0; i < 160 && !document.body.classList.contains('rankup-lock'); i++){
-      const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click();
+      const sp = document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click());
       await wait(100);
     }
     const t1 = performance.now();
