@@ -40130,7 +40130,9 @@ html.is-browser{ --fade-paper: transparent; }
           } else {
             var tc = document.getElementById("themecolor");
             var saved = localStorage.getItem("class26e.statusbar.v1");
-            if(tc && saved && /^#[0-9a-fA-F]{6}$/.test(saved)) tc.content = saved;
+            /* (384.27) not in the still top edge: the tag is never written after first paint there */
+            var stillEdge = document.documentElement.classList.contains("top-edge-on") && !document.documentElement.classList.contains("top-edge-old");
+            if(!stillEdge && tc && saved && /^#[0-9a-fA-F]{6}$/.test(saved)) tc.content = saved;
           }
         }catch(e){}
         setTimeout(function(){
@@ -86108,8 +86110,8 @@ function applyTheme(){
      scrollbars) in sync with our theme, so the page reads as fully one
      mode or the other instead of a light page inside a dark-tinted frame. */
   const nativeScheme = effectiveMode === "light" ? "light" : "dark";
-  /* (384.27) the still top edge writes neither the color-scheme tag nor (unless it changes, which it cannot: the light mode is retired) the root's */
-  if(!topEdgeStill() || document.documentElement.style.colorScheme !== nativeScheme) document.documentElement.style.colorScheme = nativeScheme;
+  /* (384.27) the still top edge writes neither the color-scheme tag nor the root's (the first style block already says dark, and the light mode is retired) */
+  if(!topEdgeStill() || nativeScheme !== "dark") document.documentElement.style.colorScheme = nativeScheme;
   const csMeta = document.getElementById("colorscheme");
   if(csMeta && !topEdgeStill()) csMeta.content = nativeScheme;
   syncStatusBarColor();
