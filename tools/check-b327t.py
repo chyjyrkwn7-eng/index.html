@@ -115,7 +115,7 @@ def section_handoff(br):
         for i in range(80):
             if pg.evaluate("()=>document.body.classList.contains('rankup-lock')"):
                 break
-            pg.evaluate("()=>{ const sp=document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
+            pg.evaluate("()=>{ const sp=document.querySelector('.rs-spot.is-up'); if(sp) (sp.__nova ? sp.__nova.skip() : sp.click()); }")
             pg.wait_for_timeout(150)
         pg.evaluate(HOOK)
         pg.evaluate("()=>document.getElementById('bottomtab-profile').click()")

@@ -11,8 +11,9 @@ frame, which stands in for a GPU's), and what is ASSERTED is thread-CPU of the p
 Devices: a phone (440x956 at 3x, a finger, installed), an iPad (834x1194 at 2x, a finger), and a mouse on 1366x768, 1512x982 at 2x, 1920x1080,
 2560x1440, 3840x2160 (4K at 1x) and 1920x1080 at 2x (4K at 200%). Taps: all 12 ordered pairs of the academy's four tabs. CPU throttle 1x,
 and 4x for the phone and the 1366x768 laptop (a weak machine); budgets are in 1x-equivalent milliseconds (the measured time divided by the throttle).
-(1) A TAP HOLDS THE HEAVY ART STILL UNDER THE GLASS (phone, iPad; all 12 pairs): from a frame after the press until the glass has landed, nothing
-    in Home's hero, Profile's card and goals or the board's rows (SLIDE_HOLD_SEL, read from the source) is running - on the screen it leaves, and
+(1) A TAP HOLDS THE HEAVY ART STILL UNDER THE GLASS (phone, iPad; all 12 pairs) - 384.35: NOT HOME'S HERO ANY MORE (see check-b384-planetfreeze):
+    from a frame after the press until the glass has landed, nothing in Profile's card and goals or the board's rows (SLIDE_HOLD_SEL, read from
+    the source; it also named Home's hero until 384.34) is running - on the screen it leaves, and
     (a short grace after the build) on the screen it brings in - and once the glass has landed Home's hero is running again. His recording: the
     glass dropped frames only where Home's ~30 loops ran under it.
 (2) NO STYLE PASS PER LOOP: no script function forces more than 8 style recalcs that restyled something (UpdateLayoutTree attributed to it by its stack) or 8 layouts that took 50us or more in one
@@ -228,7 +229,8 @@ with sync_playwright() as pw:
                     # given back: once the glass has landed Home's hero (and the rest) is running again
                     if b == "home":
                         pg.wait_for_timeout(500)
-                        back = pg.evaluate("([sel,hold])=>{ let n=0; document.getElementById('stage').getAnimations({subtree:true}).forEach(x=>{ if(x.playState!=='running') return; const t=x.effect&&x.effect.target; if(t&&t.closest&&t.closest(hold)) n++; }); return n; }", [SCREEN[b], HOLD_SEL])
+                        # (384.35) Home's hero is not in SLIDE_HOLD_SEL any more (check-b384-planetfreeze holds that to account): it is simply running
+                        back = pg.evaluate("([sel,hold])=>{ let n=0; document.getElementById('stage').getAnimations({subtree:true}).forEach(x=>{ if(x.playState!=='running') return; const t=x.effect&&x.effect.target; if(t&&t.closest&&t.closest(hold)) n++; }); return n; }", [SCREEN[b], ".cosmic-hero-wrap"])
                         if back < 5: bad.append("%s>%s: after the glass landed only %d loops of Home's hero are running" % (a, b, back))
                 chk("(1) %s: a tap holds the heavy art under the glass and gives it back (%d pairs measured)" % (label, nconcl), not bad and not unmeasured and nconcl >= len(QUICK_PAIRS if QUICK else PAIRS) // 2, bad + unmeasured)
             # (6) the idle stand-in (Safari has no requestIdleCallback) does not run its jobs under a finger or the landing glass

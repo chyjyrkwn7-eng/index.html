@@ -237,7 +237,7 @@ def judge(s):
     chk("(5) %s: hidden again two frames after a return and shown again, all %d loops run (running %d)" % (L, s["again"]["loops"], s["again"]["running"]),
         s["again"]["running"] >= s["before"], s["again"])
     line = (r["log"] or [""])[-1] if r["log"] else ""
-    chk("(6) %s: the return's line in the resume log carries the frames of the 3s after it (%r)" % (L, line[-60:]), bool(re.search(r" fr\d+/w\d+/s\d+$", line)) or any(re.search(r" fr\d+/w\d+/s\d+$", x) for x in r["log"]), r["log"])
+    chk("(6) %s: the return's line in the resume log carries the frames of the 3s after it (%r)" % (L, line[-60:]), bool(re.search(r" fr\d+/w\d+/s\d+( q[\d,]+ g[\d,-]+)?$", line)) or any(re.search(r" fr\d+/w\d+/s\d+( q[\d,]+ g[\d,-]+)?$", x) for x in r["log"]), r["log"])
     b = s["base"]
     chk("(7) %s: the 2s after the return: %d frames over 50ms (settled Home %d), longest task %dms (settled %dms)" % (L, r["slow"], b["slow"], r["longest"], b["longest"]),
         r["slow"] <= 2 * b["slow"] + 8 and r["longest"] <= 3 * b["longest"] + 250, [r["slow"], b, r["longest"]])
