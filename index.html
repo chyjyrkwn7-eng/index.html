@@ -96901,7 +96901,44 @@ let recUserAt = -1e9;
 try{ ["pointerdown", "touchstart", "keydown", "pointermove", "touchmove", "wheel", "scroll"].forEach(t => window.addEventListener(t, (e) => {
   if(t === "pointermove" && e && e.pointerType === "mouse" && !e.buttons) return;
   recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
+/* (384.30) A COMPUTER'S MAIN THREAD IS NOT THE RECORDER'S TO TAKE, AND NOTHING IS RECORDED FOR A PAGE NOBODY CAN SEE. Madison: the app lags
+   on a computer. Profiled (tools/profile-desktop.py, 1440x900, a fresh profile - nothing saved yet - the state every update that changes a
+   drawing leaves a computer in): Home 29% of the main thread over 10s, the Leaderboard 66%, Profile 27%, in 7,000-18,000 tasks, nearly all of
+   it the flip-book recorders - and the SAME 80% with the page told it is hidden, because only charRecPump's background branch looked at
+   document.hidden; orbitAnimYield and the warm-ups behind recordingShouldWait did not. A settled screen is cheap (Home 7%, a saved
+   Leaderboard 25%, a question 5%), so this is the cost that matters. Two rules:
+   (1) HIDDEN = WAIT. A recording is never urgent; the wait polls once a second and the first visible poll lets it go on.
+   (2) ON A COMPUTER (a mouse as the main pointer: "(hover:hover) and (pointer:fine)", which a phone or a tablet never answers) A
+       RECORDER TAKES A SHARE OF THE MAIN THREAD, NOT ALL OF IT. The cost of a recorded frame is mostly NOT in the script: setting the
+       image's src starts a loader task, an isolated SVG document is made and parsed, and the decode and the canvas draw follow - tasks
+       of their own, after the idle slice that asked for them, so pacing the slices (a first try: after a slice of W ms wait W / duty)
+       moved the main thread's share from 66% to 66%. What can be measured is how long a whole batch takes from its first frame to its
+       last drawn (it grows when the page has other work, which is exactly when to back off), so after each batch the recorder sleeps
+       batch x (1 / REC_DUTY - 1), at most REC_PAUSE_MAX_MS: the recorder is a third of the main thread when the page is quiet and less
+       when it is not. A recording takes about three times as long (one per sheet, saved, and not again until a drawing changes);
+       the live drawing shows meanwhile, as it always did. A phone / tablet is unchanged (REC_DUTY 1: no sleep). */
+const REC_DESKTOP = (() => { try{ return !!(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches); }catch(e){ return false; } })();
+const REC_DUTY = REC_DESKTOP ? 0.25 : 1;
+const REC_SLICE_MAX_MS = REC_DESKTOP ? 8 : 12;
+const REC_PAUSE_MAX_MS = 700;
+const recStats = { batches: 0, batchMs: 0, sleptMs: 0 };   /* what the recorders took and slept, read by the gate (check-b384-desktoplag) */
+/* ONE BUDGET FOR BOTH RECORDERS (the flares' and the characters' run side by side on the Leaderboard and on Profile: a pause each would be
+   a third of the thread each): a batch starts no earlier than recNextAt, and the one that ends sets it to its own length x (1/duty - 1)
+   from now. */
+let recNextAt = 0;
+function recBatchWait(){
+  if(REC_DUTY >= 1) return Promise.resolve();
+  const ms = recNextAt - performance.now();
+  return ms > 1 ? new Promise(r => setTimeout(r, ms)) : Promise.resolve();
+}
+function recBatchDone(batchMs){
+  if(REC_DUTY >= 1) return;
+  const ms = Math.min(REC_PAUSE_MAX_MS, Math.max(0, batchMs) * (1 / REC_DUTY - 1));
+  recStats.batches++; recStats.batchMs += batchMs; recStats.sleptMs += ms;
+  recNextAt = Math.max(recNextAt, performance.now()) + ms;
+}
 function recordingShouldWait(){
+  if(document.hidden) return 1000;
   const now = performance.now();
   /* 2s after a touch and 1.6s after a screen goes in (build 327z8, was
      1s / 700ms): a tab switch's own work - the new screen's first paint,
@@ -96951,7 +96988,7 @@ function orbitAnimYield(){
          - 8ms when the wait ran out, as the timer path below gives. */
       if(window.requestIdleCallback) window.requestIdleCallback(d => {
         if(recordingShouldWait() > 0){ go(); return; }
-        orbitAnimSliceEnd = performance.now() + (d.didTimeout ? 8 : Math.max(4, Math.min(12, d.timeRemaining()))); res();
+        orbitAnimSliceEnd = performance.now() + (d.didTimeout ? 8 : Math.max(4, Math.min(REC_SLICE_MAX_MS, d.timeRemaining()))); res();
       }, { timeout: 60 });
       else setTimeout(() => { if(recordingShouldWait() > 0){ go(); return; } orbitAnimSliceEnd = performance.now() + 8; res(); }, 16);
     };
@@ -97139,6 +97176,8 @@ function recordRankSheet(drawing, px, key){
         /* nobody can see this one any more and the screen that is up is
            waiting on a recording: that one goes first (see orbitRecPump) */
         if(!orbitRecWanted(key) && recordingWantedNow()) return null;
+        await recBatchWait();
+        const bt0 = performance.now();
         const batch = [];
         for(let f = f0; f < Math.min(N, f0 + B); f++){
           const tau = f * L / N;
@@ -97165,6 +97204,7 @@ function recordRankSheet(drawing, px, key){
           g.drawImage(b.img, (b.f % cols) * px, Math.floor(b.f / cols) * px, px, px);
         }
         await orbitAnimYield();
+        recBatchDone(performance.now() - bt0);   /* 384.30: a computer's share */
       }
       const blob = await new Promise(r => sheet.toBlob(r, "image/png"));
       sheet.width = sheet.height = 0;
@@ -97960,7 +98000,7 @@ try{ new MutationObserver(() => { stageMountedAt = performance.now(); }).observe
 const charRecPending = new Map();
 const charRecWaiters = new Map();
 let charRecBusy = false;
-const CHAR_REC_LIMIT_MS = 60000;
+const CHAR_REC_LIMIT_MS = 60000;   /* 384.30: divided by REC_DUTY where it is read - a computer paces a recording, and the limit is for one that has stalled */
 function charRecWant(key, el){
   if(!el) return;
   let set = charRecWaiters.get(key);
@@ -98204,10 +98244,12 @@ async function recordCharSheet(drawing, px){
          once held a throttled phone for most of a second. */
       const B = 4;
       for(let f0 = 0; f0 < N; f0 += B){
-        if(!host.isConnected || performance.now() - t0 > CHAR_REC_LIMIT_MS) return null;
+        if(!host.isConnected || performance.now() - t0 > CHAR_REC_LIMIT_MS / REC_DUTY) return null;
         /* nobody can see it any more and something on the screen that is
            up is waiting (build 315): dropped, as the pump drops one */
         if(charRecPriority(drawing.id + "|" + px) >= 3 && recordingWantedNow()) return false;
+        await recBatchWait();
+        const bt0 = performance.now();
         const batch = [];
         for(let f = f0; f < Math.min(N, f0 + B); f++){
           const tau = f * L / N;
@@ -98223,6 +98265,7 @@ async function recordCharSheet(drawing, px){
           await charRecYield();
           g.drawImage(b.img, (b.f % cols) * px, Math.floor(b.f / cols) * px, px, px);
         }
+        recBatchDone(performance.now() - bt0);   /* 384.30: a computer's share */
       }
       const blob = await charRecWithin(new Promise(r => sheet.toBlob(r, "image/png")), 10000);
       sheet.width = sheet.height = 0;
@@ -120466,7 +120509,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-10-384.31";
+const APP_BUILD = "2026-11-10-384.32";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
