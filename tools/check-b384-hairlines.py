@@ -3,7 +3,8 @@ Madison, with Delta's Settings beside ours: "Pay attention to their lines. Their
 please pay attention to details. Please ensure ours looks this great". Delta's line runs from the words to the chevron's right
 edge, the row's own padding clear of the card on the right as well as the left.
 Installed on an iPhone 17 Pro Max (440x956), dark, read off the page - every line between two rows (a 1px pseudo-element) on:
-Settings, Settings' Sound page and Studying page (the switch rows), Contributors, and the Leaderboard's grouped list
+Settings, Settings' Sound page and Studying page (the switch rows), Contributors, and the Leaderboard's grouped list (384.92: the board's
+lines run across its card now, on purpose - (1)-(3) skip it, check-b384-lbclean holds it; (4)-(6) still read it)
 (Customize was here until round 4 of 384 made its four rows four separate centred cards - no list, no lines; check-b384-custom):
 (1) the line's right end is at the row's content edge - the row's right side less its padding, where its chevron, switch, value
     or points end (a row of words alone, a Support link, ends there too, as Delta's do) - within 1.5px;
@@ -59,7 +60,11 @@ with sync_playwright() as pw:
       const k=c.children[c.children.length-1], g=document.createRange(); g.selectNodeContents(k); const t=g.getBoundingClientRect(), rr=r.getBoundingClientRect(), rs=getComputedStyle(r);
       return { n:(k.textContent||'').trim(), off: Math.round((rr.right-parseFloat(rs.paddingRight)-parseFloat(rs.borderRightWidth)-t.right)*10)/10 }; }).filter(Boolean)""")
     br.close()
-for name, _ in SCREENS:
+# CHANGED ON PURPOSE IN 384.92: the Leaderboard's lines run across the card, edge to edge inside it (Madison on 384.86: "why are there weird
+# lines? Fix that" - inset lines under rows whose tints and your wash run edge to edge read as broken). (1)-(3) hold for Settings' lists;
+# the board's lines are held by check-b384-lbclean (inner left to inner right), and (5) here still wants them visible.
+INSET = [n for n, _ in SCREENS if n != "Leaderboard"]
+for name in INSET:
     L = res[name]
     off = [l for l in L if abs(l["end"]) > 1.5]
     chk("(1) %s: %d line(s) end at the row's content edge - chevron, switch, value (off by %s)" % (name, len(L), sorted(set(l["end"] for l in L))), L and not off, off[:4])

@@ -39286,7 +39286,67 @@ GATE tools/check-b384-homescroll.py (new; --quick, --matrix, --gestures, --only 
 GATES CHANGED ON PURPOSE: check-b384-tabhotfix (2) FOLLOW now waits 900ms after each scroll step (was 260): the follow happens once the page is still, not mid-scroll.
 WHAT ONLY HIS PHONE CAN CONFIRM: that the bar, "?" and class bubble stay put through a swipe and its bounce on Home (and everywhere); whether the planets still blink during the snap-back of a long stretch (if so it is WebKit's raster of the hero, a separate fix: a cheaper hero, 384.31's list); that the 384.62 bar-in-the-middle state, if it ever comes back, is still put right a moment after the page stops.
 
-## 384.91 - EVERY TOP POP-UP ON ONE LINE, just under the chat button and the system's top wash (branch claude/b384-popups, cut from origin/main 384.86 1548eb0; NOT merged, waiting for Madison's go)
+## 384.92 - the Leaderboard: no crown, and lines that mean something (branch claude/b384-lbclean; NOT merged - waiting for Madison's go)
+Madison, two screenshots of his board on 384.86 (Fire Code, seven people, his own row washed at #2), circling the crown on first place's
+medal and then the left ends of the lines between rows 3-6: "No crown. Also, why are there weird lines? Fix that".
+
+**The crown.** It was drawn in one place only: renderRankingRows put a `.lb-crown` span (an inline SVG, build 324, made upright in 384.18)
+inside first place's `.rank-place`. That block, `lbCrownSeq` and the three `.lb-crown` CSS rules are gone. The medal (`renderRankMarker`:
+the gold "1" circle, its struck edge) is untouched. Nothing else used it: the Virtual Room results, the podium of last week and the friend
+lists never drew one (renderRankingRows has one caller, showRankings); no tour points at it. check-behaviour check_b324l_board asserted it
+on purpose ("first place a crown") - CHANGED ON PURPOSE to assert no crown on any of the three boards.
+
+**The lines - what was wrong, measured off his PNG** (1186 px wide):
+- the line under each row (`::after`, `--lb-hair` rgba(255,255,255,.1)) started at the name (`--lb-hair-l`, x~265 of 921) and stopped at
+  the row's content edge (`--lb-pad` short of the card) - an iOS list's inset line, written for a list of identical rows. This list is
+  not one: the podium's metal tints and your accent wash run edge to edge, so a line that stops short of them reads as broken;
+- under every line, the full width of the card, ~1px at 25-31 (the page is 19/21/25, the rows 35/37/42): the page showing through where
+  two rows meet. The rows sit on a fractional y (309.52 in Chromium, from the heights above them); WebKit softens each row's top and bottom
+  edge there and the two half-covered pixels at a boundary let the page through. Chromium snaps the rows to whole CSS pixels and never
+  shows it - so a screenshot here cannot see it, and the gate holds what is UNDER the boundary instead;
+- the podium rows' light (a radial tile from the padding box) repeated into the rows' 1px side border: a lit gold/silver/bronze line down
+  the card's right edge on rows 1-3 (+26 levels in the outermost column).
+
+**Dividers: rendered both ways and looked at** (scratchpad lbclean/proto/compare.png): a full-width hairline between every row, and no lines
+at all. Without lines, first place's gold fades into second's silver with nothing between and rows 4-8 merge into one slab with wide
+gaps; the full-width line reads as one deliberate table. So: ONE LINE PER BOUNDARY, from the card's inner left edge to its inner right
+(`left:0; right:0`), the same 1px rgba(255,255,255,.1) everywhere, none above the first row or under the last, nothing doubled (rows have
+no top/bottom borders inside the card). `--lb-hair-l` is gone (it had no other user). Both the old "THE LIST" rule and the #stage
+"ONE LIST" rule carry it.
+- NO PAGE BETWEEN TWO ROWS: every row but the last paints `--lb-cell-under` (the list's cell colour as a 1px box-shadow, defined next to
+  `--lb-cell` in both places that set it, so the same tokens resolve at the same element) - it lies under the row below, which covers it:
+  nothing moves, and a boundary has the card behind it. Not on a row mid Find-me flash (`.rank-flash`; its box-shadow was already `none
+  !important`, as before).
+- THE SIDES: `background-origin:border-box` on the board's rows (#stage rule): the tints start at the outer edge, no repeat into the border.
+- Unchanged: row heights and positions (0px shift), the medal, the tints, the wash, the rank flares, the column header.
+- Superseded on purpose: check-b384-hairlines (1)-(3) ("the line never touches the sides", Madison's Delta note for Settings) no longer
+  measure the Leaderboard - Settings' lists keep the inset; check-b382-ios (3) wanted the line "inset to the name" (left > 8), now left 0.
+
+**Gate: tools/check-b384-lbclean.py** - iPhone 17 Pro Max (3x) and iPad Pro 11" (2x), installed, both classes, every board each class has
+(read off rankingBoardsFor(): academy This Week/Overall/Hundos; Fire Code Overall), eight people like his with the viewer on the podium in
+the academy and in the list in Fire Code: (1) no crown (no child in the place marker, no pseudo with content on it or the medal, nothing
+named crown), the gold 1 medal round; (2) one card - rows touch, one left and right edge, no borders inside; with the rows pulled 4px apart,
+under each boundary the cell colour (within 3), under the last row the page; (3) rows-1 lines, each on a boundary, none on the outer edges,
+none within 2px of another, each from inner left to inner right within 1px; (4) on the screenshot every line is lighter than its row at the
+left, the middle and the right; (5) the outermost pixel column on each side of every row is the row's colour (within 6); (6) no page errors.
+Serves version.json at the build under test (an --against build would otherwise be pushed to reload). FAILS on origin/main 384.86 on
+(1)-(5) for every board, device and class; ALL PASS (45) here.
+
+**What only his phone can confirm:** that the dark seam under each line is gone - it is WebKit's antialiasing at a fractional y and
+Chromium cannot draw it; the fix (the card under every boundary) is measured here, the seam itself is not.
+- Also changed on purpose: check-behaviour check_b314h_board read ANY non-inset box-shadow on first place as "a glow" and then wanted
+  314's 8px/12px clearance under the header; it now counts only light thrown UP past the row's top (blur + spread - y > 0) - the 1px
+  `--lb-cell-under` reaches only below the row.
+- Gates, one at a time, on the tree with main 384.89 merged (build 384.92): check-js ok; console - only the two blocked-Firebase-CDN
+  loads, no page errors, both classes; check-b384-lbclean ALL PASS (45; FAILS 384.86 on (1)-(5) everywhere); check-behaviour
+  check_b324l_board / check_b314h_board / check_b313_lead / check_ranks 65 pass, 1 fail ("the board, the person card and the Profile
+  card show the same element") - the same failure on 384.86, not from this; check-tours 24 runs, every step renders; check-centering
+  --quick ALL PASS (a first run flagged the badge case lid on the Virtual Room screen and Fire Code's empty Friends card, then passed
+  clean on the rerun - timing under load, neither on the board); sweep-layout --quick 20/20 clean; check-b384-top383 ALL PASS;
+  check-b384-hairlines ALL PASS; check-b382-ios (3) passes (fails on main 384.89 as changed), (4) "the top three are the list's
+  first rows" fails identically on main 384.89 (its fixture has no .rank-podium-2 row), not from this.
+
+## 384.93 (built as 384.91) - EVERY TOP POP-UP ON ONE LINE, just under the chat button and the system's top wash (branch claude/b384-popups, cut from origin/main 384.86 1548eb0, main 384.89 and 384.92 merged in; build 384.93; NOT merged, waiting for Madison's go)
 Madison (iPhone 17 Pro Max, installed, 384.86, a screenshot of Home with "DAILY QUESTION / Done for today" up at ~110pt, under the chat button's row and over the planet system): "I feel like these pops need to be a little closer to the top. Not in the blurred area but yeah. They are in an awkward spot." The blurred area is iOS 26's wash over the top ~100pt of an installed iPhone (384.64 / 384.77 notes): the status bar plus the chat button's row. On his screenshot the button's ring ends at 99.8pt and the banner starts at 109.8pt.
 
 WHAT WAS GOING ON (Chromium, installed Pro Max 440x956, 59/34 simulated): every top pop-up asked `topNoticeOffset()`, which put it 0.6rem under the LOWEST thing in NOTICE_OBSTRUCTIONS - on Profile, the Leaderboard and Settings that is the tab switcher (`.panel > .navsegment`), on a question the question's count (`.wrap > .count`). So one banner sat at 125 on Home but 198 on Profile and Settings, 203 on the Leaderboard and 243 on a question. The rank-up banner (showTierUpBanner) and a toast said at the top (chat open, a start sheet, the save-code card, an invite sheet) had no placement: CSS `--sat + .35rem` / `+ .75rem`, inside the wash, beside or under the chat button. The streak pop, which no longer fits the test bar's gap on a phone (the chat button is in that row), fell back to `--sat + 4.6rem`.
