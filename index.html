@@ -18865,13 +18865,15 @@
     box-shadow:0 2px 8px rgba(0,0,0,.5);
   }
   .rankmap-you svg{ width:1.55rem; height:1.55rem; }
+  /* (384.74) EVERY STATE'S CARD IS THE ONE SOLID CARD, here at the base as well as in the Rank tab's flat rule further down: this
+     used to be a gradient of the rank's colour with a rank-coloured rim (and a lighter wash, a catch-light and a halo on the
+     reached ones, a dark glass on the locked ones, a glow on "You are here" and on a celebration), all of it covered on the
+     Rank tab by that flat rule and none of it deleted - which is how the Up next pop could leave a glass card behind. A rank's
+     colour is in its circle, its chip, its name and its unlock dots, never in the card. */
   .rankmap-card{
     padding:.75rem .9rem .8rem; border-radius:16px;
-    background:linear-gradient(135deg, color-mix(in srgb, var(--rank-color) 14%, rgba(22,27,34,.7)), rgba(18,22,28,.7));
-    border:1px solid color-mix(in srgb, var(--rank-color) 30%, rgba(255,255,255,.08));
+    background:var(--clean-card, #232830); border:1px solid transparent;
   }
-  .rankmap-stop.is-locked .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); }
-  .rankmap-stop.is-here .rankmap-card{ border-color:color-mix(in srgb, var(--rank-color) 70%, #fff); box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent); }
   /* EVERY RANK YOU HOLD GLOWS LIKE THE ONE YOU ARE ON (build 315). "You
      see how the silver one is super nice, great glow? And then you see
      bronze.. no glow, not shiny.. all the boxes need that super nice
@@ -18881,13 +18883,6 @@
      richer wash and a catch-light along the top; "You are here" is still
      told by its chip and the node's ping. A rank reached since you last
      looked stays dark until its celebration lights it. */
-  .rankmap-card{ transition:border-color .7s ease, box-shadow .7s ease, background .7s ease; }
-  .rankmap-stop.is-reached .rankmap-card{
-    border-color:color-mix(in srgb, var(--rank-color) 70%, #fff);
-    background:linear-gradient(135deg, color-mix(in srgb, var(--rank-color) 22%, rgba(22,27,34,.72)), rgba(18,22,28,.72) 70%);
-    box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.12);
-  }
-  .rankmap-stop.is-celebrate-pending .rankmap-card{ border-color:rgba(255,255,255,.07); background:rgba(20,24,30,.55); box-shadow:none; }
   /* wraps only when the chip cannot fit beside the name - a 320px phone
      clipped "You are here" off the card's edge (build 312 audit) */
   .rankmap-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.25rem .5rem; }
@@ -19098,7 +19093,6 @@
   /* Waiting to be celebrated: drawn exactly like a locked stop. */
   .rankmap-stop.is-celebrate-pending .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; border-style:solid; }
   .rankmap-stop.is-celebrate-pending .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
-  .rankmap-stop.is-celebrate-pending .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); box-shadow:none; }
   .rankmap-stop.is-celebrate-pending .rankmap-name{ color:rgba(255,255,255,.62); }
   .rankmap-stop.is-celebrate-pending .rankmap-state{ color:rgba(255,255,255,.7); background:rgba(255,255,255,.07); }
   .rankmap-stop.is-celebrate-pending .rankmap-you{ opacity:0; transform:scale(.4); }
@@ -19149,7 +19143,6 @@
   @keyframes rankmap-tip-swell{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.6); } }
   .rankmap-stop.is-climbing .rankmap-meter .rankcard-meterfill{ transition-duration:3.2s; }
   [data-reduce-motion="true"] .rankmap-sparks, [data-reduce-motion="true"] .rankmap-flash{ display:none; }
-  .rankmap-stop.is-celebrating .rankmap-card{ box-shadow:0 0 34px -4px color-mix(in srgb, var(--rank-color) 85%, transparent); }
   .rankmap-card{ position:relative; }
   .rankmap-ribbon{
     position:absolute; top:-.7rem; left:50%; transform:translateX(-50%) scale(.6); opacity:0;
@@ -19432,27 +19425,26 @@
      or something (not the same effect as the unlock one but still just as
      good) and then it slides back to the top". The unlock is a burst at
      the CIRCLE (rings, sparks, a flash, a ribbon); this is the BOX: it
-     lifts, its colour washes up through it from below, its edge lights
-     in the rank's colour and a band of light crosses it once, and the
-     "Up next" chip answers. Transform and opacity only. */
+     lifts, a thin ring in the rank's colour draws round it once and goes,
+     and the "Up next" chip answers. Transform and opacity only.
+     (384.74) THE BOX STAYS THE SOLID CARD. Through 384.55 the pop also
+     washed a gradient of the rank's colour up through it (left at 32%),
+     lit an inset glow and a 45% rim, and ran a white sheen across it, and
+     the wash and the rim never went: the Up next box sat on the ladder as
+     a tinted gold glass card beside Silver's and Platinum's flat ones
+     ("This needs to be updated to match the newer look"). Now the card's
+     own background is never touched (it is the same --clean-card as every
+     other state, see the Rank tab's solid-card rule), the pop is the lift
+     and one ring that ends at opacity 0, and the layer is removed once it
+     has played. */
   .rankmap-stop.ru-nextpop .rankmap-card{ isolation:isolate; animation:ru-nx-lift 1.5s cubic-bezier(.2,.9,.25,1) both; }
   @keyframes ru-nx-lift{ 0%{ transform:none; } 32%{ transform:translateY(-3px) scale(1.045); } 100%{ transform:none; } }
-  .ru-nextfx{ position:absolute; inset:0; z-index:-1; border-radius:inherit; overflow:hidden; pointer-events:none; }
-  .ru-nextfx > i{ position:absolute; pointer-events:none; opacity:0; }
-  .ru-nx-wash{ inset:0; background:linear-gradient(to top, color-mix(in srgb, var(--rank-color) 42%, transparent), color-mix(in srgb, var(--rank-color) 14%, transparent) 70%, transparent);
-    transform-origin:50% 100%; animation:ru-nx-wash 2.1s cubic-bezier(.25,.8,.3,1) both; }
-  @keyframes ru-nx-wash{ 0%{ opacity:0; transform:scaleY(.2); } 28%{ opacity:1; transform:scaleY(1); } 70%{ opacity:.75; } 100%{ opacity:.32; transform:scaleY(1); } }
-  .ru-nx-edge{ inset:0; border-radius:inherit; border:2px solid color-mix(in srgb, var(--rank-color) 78%, #fff);
-    box-shadow:inset 0 0 18px color-mix(in srgb, var(--rank-color) 45%, transparent); animation:ru-nx-edge 2.1s ease both; }
-  @keyframes ru-nx-edge{ 0%{ opacity:0; } 22%{ opacity:1; } 60%{ opacity:.85; } 100%{ opacity:.45; } }
-  .ru-nx-sheen{ top:-20%; bottom:-20%; left:0; width:38%;
-    background:linear-gradient(100deg, transparent, rgba(255,255,255,.28) 45%, rgba(255,255,255,.5) 50%, rgba(255,255,255,.28) 55%, transparent);
-    transform:translateX(-120%) skewX(-12deg); animation:ru-nx-sheen 1.1s cubic-bezier(.45,.1,.35,1) .3s both; }
-  @keyframes ru-nx-sheen{ 0%{ opacity:1; transform:translateX(-120%) skewX(-12deg); } 100%{ opacity:1; transform:translateX(320%) skewX(-12deg); } }
+  .ru-nextfx{ position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none; }
+  .ru-nextfx > i{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; }
+  .ru-nx-edge{ border:1.5px solid color-mix(in srgb, var(--rank-color) 78%, #fff); animation:ru-nx-edge 1.6s ease both; }
+  @keyframes ru-nx-edge{ 0%{ opacity:0; } 22%{ opacity:1; } 55%{ opacity:.9; } 100%{ opacity:0; } }
   .rankmap-stop.ru-nextpop .rankmap-state{ animation:ru-nx-chip .7s cubic-bezier(.2,1.6,.4,1) .2s both; }
   @keyframes ru-nx-chip{ 0%{ transform:scale(1); } 45%{ transform:scale(1.18); } 100%{ transform:scale(1); } }
-  [data-reduce-motion="true"] .ru-nx-wash{ opacity:.32; }
-  [data-reduce-motion="true"] .ru-nx-edge{ opacity:.6; }
   /* 10. THE CARD AT THE TOP (build 321): no turn any more - it fades to
      the new card (rankUpHeroTurn), so build 320's turn and sheen are gone. */
   /* 11. back on Profile: the rank you had, then (build 321) the new rank's
@@ -160563,8 +160555,10 @@ async function rankUpUpNext(scene, map){
   rankUpNextLift(stop);
   const fx = document.createElement("span");
   fx.className = "ru-nextfx"; fx.setAttribute("aria-hidden", "true");
-  fx.innerHTML = '<i class="ru-nx-wash"></i><i class="ru-nx-edge"></i><i class="ru-nx-sheen"></i>';
+  fx.innerHTML = '<i class="ru-nx-edge"></i>';
   card.appendChild(fx);
+  /* the ring has played by 1.6s and ends at opacity 0; the layer goes with it, so nothing of the pop stays on the card */
+  setTimeout(() => { try{ fx.remove(); }catch(e){} }, 1800);
   stop.classList.add("ru-nextpop");
   scene.upnext = nx;
   await rankUpWait(still ? 1200 : 2500);
