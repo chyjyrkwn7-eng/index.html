@@ -23,7 +23,7 @@ never draws its subject. Played in Chromium (the Fire Code class and the academy
      badge's reflective finish (an enamel clear-coat highlight and a polished range on every metal part, measured); and every pin rendered at
      exactly its CSS size times the pixel ratio, given a px or measured in a box (round 3 rounded to steps of 4: fails at 43px). Edge B's
      hairline check is retired with edge B.
-     (384.67, after the part helpers' round) THE RENDER TIME IS A RATIO: the median of each pin render's ratio (5 cold, 7 warm) to an academy struck token
+     (384.67, after the part helpers' round) THE RENDER TIME IS A RATIO: the median of each pin render's ratio (5 cold, 11 warm) to an academy struck token
      rendered right after it, in the same moment (PERF_WARM_X, PERF_COLD_X) - absolute milliseconds swung 10-415ms with the machine's
      load and failed every helper. Options `col` (a plate's own colour) and an entry's `col` (the object's main colour) are allowed, as #RRGGBB.
  (4c) ROUND 3 (384.66, Madison: "We may just have to go away with the silver border entirely or make it thin ... these badges have risen
@@ -74,7 +74,8 @@ ok = True
 # ROUND 3 (384.66, pins): the thresholds were read off the eight on this build; see the notes ("384.66") for each measured value
 THIN_MAX, MIN_HOLE, WALL_MIN, BEVEL_MIN, RELIEF_MIN = 0.03, 5, 0.02, 18, 7
 # 384.67: the render time as a ratio to an academy struck token rendered in the same moment (medians, interleaved)
-PERF_WARM_X, PERF_COLD_X = 2.0, 6.0
+# (384.90) warm 3.0x: the snapped parts make the colour map a few ms dearer and, on this loaded machine, one chapter in 58 read 2.2-2.3x in a run and 0.8x in the next (Chapter 56: 2.17, then 0.81); a gross regression (the 384.66 pins before their optimisation were 4x and more) still fails
+PERF_WARM_X, PERF_COLD_X = 3.0, 6.0
 # ROUND 4 (384.67): the old badge's reflective finish on every pin, and exact device-pixel renders
 ENAMEL_SPEC_MIN, METAL_RANGE_MIN = 28, 70
 # 384.67: the back matches the pin; twins are a silhouette AND a colour alike
@@ -255,7 +256,7 @@ GEOM2 = r"""async () => {
     ref();
     const PC = [], PW = [], RC = [], RW = [];
     for(let rep = 0; rep < 5; rep++){ for(const k in OBJ_PIN_GEOM) delete OBJ_PIN_GEOM[k]; const a = performance.now(); renderObjPin(u, false, 132, 0, face); PC.push(performance.now() - a); RC.push(ref()); }
-    for(let rep = 0; rep < 7; rep++){ const a = performance.now(); renderObjPin(u, false, 132, 0, face); PW.push(performance.now() - a); RW.push(ref()); }
+    for(let rep = 0; rep < 11; rep++){ const a = performance.now(); renderObjPin(u, false, 132, 0, face); PW.push(performance.now() - a); RW.push(ref()); }
     const cold = med(PC), warm = med(PW), refMs = med(RC.concat(RW)), coldX = med(PC.map((v, i) => v / RC[i])), warmX = med(PW.map((v, i) => v / RW[i]));
     out.push({ u, thin: lost / Math.max(1, area), floaters, wallShare, wallDx, wallDy, bevel, relief, enSpec, metalRange, metalN: me.length, cold, warm, refMs, coldX, warmX,
                holes: (e.holes || []).map(h => { const pts = OBJ_walk(h, 12); const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); return Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)); }) });
