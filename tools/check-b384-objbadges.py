@@ -43,6 +43,8 @@ never draws its subject. Played in Chromium (the Fire Code class and the academy
      geometries at least BACK_IOU_MIN), its rendered token is the front's size (opaque box within BACK_BOX_PX device pixels at 132; the struck
      back of round 3/4, 6.5 units of rim larger all round, is ~18px bigger and FAILS), its bevel is polished metal (luminance range at least
      BACK_RANGE_MIN), and on the cutscene coin the back is drawn at the same device pixels as the front;
+ (5b) (384.79) EVERY BACK'S WORDS: the exact chapter title, the class line ("FIRE CODE") on every one, and the name at least 9.2 CSS px tall in
+     the badge in your hand (FAILS on 384.68: Chapter 65's and Appendix B's backs had no class line, Chapter 56's name was 8.9 px);
  (6) NO TWINS (384.67, Madison: "make the color of stuff relevant, you don't need to keep the old colors"): an object takes its natural
      colours, so the per-chapter enamel families and "58 distinct enamels" are retired; instead no two chapters may have BOTH a near-identical
      silhouette (IoU at least TWIN_IOU, 0.80, as 48px shapes; 0.70 flagged a red tent against the red jerry can) AND a near-identical main colour (CIELAB distance under TWIN_DE; an authored
@@ -306,6 +308,14 @@ BACKS = r"""async () => {
     out.push(r);
   }
   return out; }"""
+BACKWORDS = r"""() => {
+  /* (384.79) every pin's back: the words are the chapter's exact title (uppercased, rows joined), the class line is there, and the
+     name is at least 9.2 CSS px tall in the badge in your hand (the size every back is held to, check-b325-b) */
+  const hand = (typeof binspectPinW === 'function' ? binspectPinW() : 950) / devicePixelRatio, cls = BADGE_CASE_CLASS.toUpperCase();
+  return Object.keys(CHAPTER_OBJ).map(u => { const p = badgeBackPlan(u), rows = p.items.filter(i => !i.rule).map(i => i.s);
+    const words = (p.mode === 'arc' ? rows.join('') : rows.filter(r => r !== cls).join(' ')).replace(/\s+/g, ' ').replace(/\u2014 /g, '\u2014');
+    return { u, exact: words === String(u).toUpperCase().replace(/\s+/g, ' '), cls: !!p.cls && rows.indexOf(cls) >= 0, px: p.fs / p.W * hand, rows: rows.length }; });
+}"""
 MAINCOL = r"""async () => {
   /* each chapter's main colour: an authored chapter's commonest painted colour (its colour map, quantised), any other's enamel */
   const out = {};
@@ -388,6 +398,9 @@ with sync_playwright() as pw:
         bk = [(r["u"][:24], round(r["back"], 4), r["items"]) for r in rows if r["back"] < .026 or r["items"] < 1]
         lo = min(rows, key=lambda r: r["back"]) if rows else None
         chk("(5) the title still fits every silhouette's back (the smallest plan is %s of the frame at %s; the floor is 0.026)" % (round(lo["back"], 4) if lo else "-", lo["u"][:26] if lo else ""), rows and not bk, bk[:4])
+        bw = pg.evaluate(BACKWORDS)
+        badw = [(r["u"][:24], r["exact"], r["cls"], round(r["px"], 1)) for r in bw if not r["exact"] or not r["cls"] or r["px"] < 9.2]
+        chk("(5) EVERY BACK'S WORDS: the chapter's exact title, the class line, and at least 9.2 CSS px in your hand: the smallest is %s" % (min([(round(r["px"], 1), r["u"][:22]) for r in bw] or [(0, "")]),), bw and not badw, badw[:6])
         bs = pg.evaluate(BACKS)
         print("     backs (chapter, front/back IoU, front box, back box, back/front area, back bevel range, coin front/back px):",
               [(r["u"][:18], round(r["iou"], 3), (r["fw"], r["fh"]), (r["bw"], r["bh"]), round(r["area"], 3), round(r["range"]), r["coin"][:2]) for r in bs], flush=True)

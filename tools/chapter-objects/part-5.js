@@ -30,7 +30,8 @@
   const xj = C[0] + Math.sqrt(R * R - (Y0 - C[1]) * (Y0 - C[1]));          /* where the strip's top edge meets the reel */
   const a0 = Math.atan2(Y0 - C[1], xj - C[0]), a1 = Math.PI / 2, am = (a0 + a1 - 2 * Math.PI) / 2;   /* the long way round, over the top */
   const mid = [C[0] + R * Math.cos(am), C[1] + R * Math.sin(am)];
-  const holes = []; for(let k = 0; k < 5; k++){ const t = -Math.PI / 2 + k * 2 * Math.PI / 5; holes.push(OBJ_circle(C[0] + 24 * Math.cos(t), C[1] + 24 * Math.sin(t), 5.8)); }
+  /* (384.79) six small windows near the rim, not five big ones round the hub: the back's title had no room between them */
+  const holes = []; for(let k = 0; k < 6; k++){ const t = -Math.PI / 2 + k * 2 * Math.PI / 6; holes.push(OBJ_circle(C[0] + 26.5 * Math.cos(t), C[1] + 26.5 * Math.sin(t), 4.2)); }
   let perf = ""; for(const x of [76, 85]) for(const y of [61.5, 71.5]) perf += OBJ_rrect(x, y, 5.5, 5.5, 1.2);
   CHAPTER_OBJ["Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics"] = {
     d: "M" + f([C[0], Y1]) + OBJ_chain([[C[0], Y1], [96, Y1], [96, Y0], [xj, Y0]], [0, 2, 2, 0]) + "A" + R + " " + R + " 0 0 0 " + f(mid) + "A" + R + " " + R + " 0 0 0 " + f([C[0], Y1]) + "Z",
@@ -117,7 +118,7 @@
    streams grooved into it. ---- */
 {
   const O = [38, 50], deg = Math.PI / 180, at = (a, r) => [O[0] + r * Math.cos(a * deg), O[1] + r * Math.sin(a * deg)];
-  const A = 33, RV = 50, RT = 57, top = (x) => 39 + 4 * (x - 26) / 20, bot = (x) => 61 - 4 * (x - 26) / 20;
+  const A = 46, RV = 50, RT = 57,   /* (384.79) A 33 -> 46: a wider spray, room for the back's title and its FIRE CODE line (9.2 CSS px in your hand) */ top = (x) => 39 + 4 * (x - 26) / 20, bot = (x) => 61 - 4 * (x - 26) / 20;
   const edge = [at(-A, RV)], er = [2];
   for(let k = 0; k < 5; k++){ const c = -A + (k + .5) * (2 * A / 5); edge.push(at(c - 3.6, RT), at(c + 3.6, RT)); er.push(4, 4); if(k < 4){ edge.push(at(c + 6.6, RV)); er.push(2.5); } }
   edge.push(at(A, RV)); er.push(2);

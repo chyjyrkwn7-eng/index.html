@@ -93,8 +93,10 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["cream", OBJ_rrect(33, 12, 16, 12, 1), { z: .3 }],                                         /* the neck */
       ["red", OBJ_rrect(31, 4, 20, 9.5, 2.5), { z: .6, bev: .6 }],                               /* the cap */
       ["deep", "M35 6.5V11M39 6.5V11M43 6.5V11M47 6.5V11", { ln: 1.3, cut: .6, paint: 0 }],       /* its knurling */
-      ["water", "M36.5 14V27", { ln: 3.6, z: .6, bev: .9 }],                                      /* the acid running down */
-      ["water", OBJ_circle(36.5, 30, 3.4), { dome: 1.4 }],                                        /* its drop */
+      /* (384.79) the acid runs from under the cap down over the shoulder and gathers in a drop: a straight line with a ball on its end read
+         as a pipette standing on the jug */
+      ["water", "M37.5 13.5Q38 21 33.5 27.5", { ln: 3.4, z: .6, bev: .9 }],                          /* the acid running down */
+      ["water", OBJ_poly([[33.5, 26.5], [36.6, 31.6], [35.7, 35.3], [32.6, 36.6], [29.5, 35.3], [28.8, 31.6]], [.5, 2.2, 2.2, 2.2, 2.2, 2.2]), { z: .6, bev: .9, dome: 1.2 }],   /* its drop */
     ],
   };
 }
@@ -141,23 +143,25 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
 /* ---- Chapter 56: Explosives and Fireworks - a firework rocket: the faceted nose cone, the paper body with its spiral wraps, the fins,
    and the guide stick. Symmetric. ---- */
 {
-  const half = [[50, 2], [54.5, 6.5], [58.5, 11.5], [61.5, 17], [63.3, 22], [64, 26], [64, 47], [78, 67], [78, 80], [64, 73], [64, 77], [53, 77], [53, 97]];
+  /* (384.79) a fifth wider about its axis (X): its back's title was 8.9 CSS px in your hand, under the 9.2 every back is held to */
+  const X = x => 50 + (x - 50) * 1.2;
+  const half = [[50, 2], [X(54.5), 6.5], [X(58.5), 11.5], [X(61.5), 17], [X(63.3), 22], [X(64), 26], [X(64), 47], [X(78), 67], [X(78), 80], [X(64), 73], [X(64), 77], [53, 77], [53, 97]];
   const hr = [2, 0, 0, 0, 0, 1, 1, 3, 3.5, 1, 2, 1, 2.5];
   const left = half.slice(1).reverse().map(p => [100 - p[0], p[1]]), lr = hr.slice(1).reverse();
-  const cone = OBJ_poly([[50, 2], [54.5, 6.5], [58.5, 11.5], [61.5, 17], [63.3, 22], [64, 26.5], [36, 26.5], [36.7, 22], [38.5, 17], [41.5, 11.5], [45.5, 6.5]], [2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0]);
-  const wrap = k => OBJ_poly([[36, 34 + k], [64, 42 + k], [64, 48 + k], [36, 40 + k]], .8);
+  const cone = OBJ_poly([[50, 2], [54.5, 6.5], [58.5, 11.5], [61.5, 17], [63.3, 22], [64, 26.5], [36, 26.5], [36.7, 22], [38.5, 17], [41.5, 11.5], [45.5, 6.5]].map(p => [X(p[0]), p[1]]), [2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0]);
+  const wrap = k => OBJ_poly([[X(36), 34 + k], [X(64), 42 + k], [X(64), 48 + k], [X(36), 40 + k]], .8);
   CHAPTER_OBJ["Chapter 56: Explosives and Fireworks"] = {
     base: "red",
     d: OBJ_poly(half.concat(left), hr.concat(lr)),
     plates: [
-      ["red", OBJ_rrect(36, 26, 28, 51, [0, 0, 2, 2]), { dome: 1.6 }],                          /* the body */
+      ["red", OBJ_rrect(X(36), 26, X(64) - X(36), 51, [0, 0, 2, 2]), { dome: 1.6 }],            /* the body */
       ["cream", wrap(0), { z: .5, bev: .6 }],                                                       /* its spiral wraps */
       ["cream", wrap(14), { z: .5, bev: .6 }],
       ["cream", wrap(28), { z: .5, bev: .6 }],
       ["brass", cone, { gem: 1.6, gw: 6 }],                                                          /* the nose cone, faceted */
-      ["brass", OBJ_rrect(35, 24.5, 30, 4, 1.5), { z: .5, bev: .5 }],                               /* its rim */
-      ["brass", OBJ_poly([[64, 47], [78, 67], [78, 80], [64, 73]], [0, 3, 3.5, 0]), { z: .3, bev: .8 }],   /* the fins */
-      ["brass", OBJ_poly([[36, 47], [22, 67], [22, 80], [36, 73]], [0, 3, 3.5, 0]), { z: .3, bev: .8 }],
+      ["brass", OBJ_rrect(X(35), 24.5, X(65) - X(35), 4, 1.5), { z: .5, bev: .5 }],                 /* its rim */
+      ["brass", OBJ_poly([[X(64), 47], [X(78), 67], [X(78), 80], [X(64), 73]], [0, 3, 3.5, 0]), { z: .3, bev: .8 }],   /* the fins */
+      ["brass", OBJ_poly([[X(36), 47], [X(22), 67], [X(22), 80], [X(36), 73]], [0, 3, 3.5, 0]), { z: .3, bev: .8 }],
       ["wood", OBJ_rrect(47, 74, 6, 23, [0, 0, 2.5, 2.5]), { dome: .7 }],                          /* the stick */
     ],
   };

@@ -163,7 +163,11 @@
         ["body", strands(35, [-30, -21, -12, -3, 6, 15, 24, 32], 5), { ln: 2, cut: 1.3, paint: 0 }],   /* its wound strands */
         ["lite", band, { z: .9, bev: 1, dome: .8 }],                                                 /* the over-wrap band */
         ["lite", strands(125, [-5, 0, 5], 3), { ln: 1.5, cut: 1, paint: 0 }],                      /* its strands */
-        ["shade", "M" + line.slice(2).map(P3f).join("L"), { ln: hw * 2, z: .3, bev: 1 }],           /* the loose end */
+        /* (384.79) the loose end comes OUT of the ball: it starts well inside the ball (on its wound surface), in the ball's own colour and
+           at the silhouette's own thickness, and runs off it - it was the darker shade and began at the ball's edge, so it read as a
+           separate piece ("the piece coming off looks disconnected") */
+        ["body", "M" + P3f([50, 66]) + "Q" + P3f([55, 76]) + " " + P3f(line[0]) + "L" + line.map(P3f).join("L"), { ln: hw * 2, z: .45, bev: 1.1 }],
+        ["body", "M" + P3f(line[4]) + "l2.6 -3.4M" + P3f(line[8]) + "l2.6 -3.4M" + P3f(line[12]) + "l3.2 -1.2", { ln: 1, cut: .6, paint: 0 }],   /* its ply twist */
       ],
     };
   }

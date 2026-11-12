@@ -4,29 +4,46 @@
    relief: raised or recessed (z, bev), domed (dome), cut into facets (gem, gw) or a V-groove (cut, with ln). Identity is the silhouette and
    the sculpture, never a sticker; every pin has to read in plain grey too. See tools/chapter-objects/README.md. */
 
-/* ---- Chapter 10: Means of Egress - an open door. The leaf (raised, with raised panels and a brass knob) swung toward you so its free edge
-   is the tallest thing; the frame beside it, and the doorway a deep recess. ---- */
+/* ---- Chapter 10: Means of Egress - an open door under a lit EXIT sign (384.79, redrawn: Madison, "the door is open but the frame is
+   weird ... something is off", and of the sign, "have it say EXIT with a glow or highlight look"). It was: the leaf's HINGE edge was its
+   tallest edge (so it read as swinging away and toward at once), the leaf hung off the frame's outer edge rather than its jamb, and the frame
+   was a slab with a hole. Now: a steel frame with even jambs and head (6 each) round a clean dark opening with daylight on its floor; the
+   leaf hinged on the LEFT jamb's inner edge and swung open toward you, so its FREE edge - nearer you - is the taller one (the hinge edge is
+   exactly the opening's height); its thickness on the free edge, the knob near it, the hinges on the hinge edge. The EXIT sign sits on the
+   head, centred over the opening: a steel housing, a dark face, the diffuser's green glow inside it, and the four letters raised and lit -
+   the one place a front carries words (at 44px and 26px they become a glowing green bar, as a real sign does at a distance). ---- */
 {
   const lerp = (a, b, t) => a + (b - a) * t;
-  const leaf = (u, v) => [lerp(12, 50, u), lerp(lerp(16, 1, u), lerp(84, 99, u), v)];
+  /* u: 0 at the free edge (x 12), 1 at the hinge (x 50, the left jamb's inner edge); v: 0 top, 1 bottom */
+  const leaf = (u, v) => [lerp(12, 50, u), lerp(lerp(12, 20, u), lerp(99, 94, u), v)];
   const quad = (u0, u1, v0, v1, r) => OBJ_poly([leaf(u0, v0), leaf(u1, v0), leaf(u1, v1), leaf(u0, v1)], r);
+  const yTop = x => lerp(12, 20, (x - 12) / 38);
+  /* E X I T: strokes 1.5 wide, 6.2 tall, centred on the sign (x 67) */
+  const L = 55.75, T = 4.15, B = 10.35, M = 7.25, sw = 4.2, xw = 4.8, g = 2.9;
+  const xE = L, xX = xE + sw + g, xI = xX + xw + g, xT = xI + g;
+  const exit = "M" + (xE + sw) + " " + T + "H" + xE + "V" + B + "H" + (xE + sw) + "M" + xE + " " + M + "H" + (xE + sw * .85) +
+               "M" + xX + " " + T + "L" + (xX + xw) + " " + B + "M" + (xX + xw) + " " + T + "L" + xX + " " + B +
+               "M" + xI + " " + T + "V" + B +
+               "M" + xT + " " + T + "H" + (xT + xw) + "M" + (xT + xw / 2) + " " + T + "V" + B;
   CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
-    col: "#2F9A5A",   /* (384.67) natural colours: a green door */
-    /* (384.68) the exit sign over the doorway: the outline was 0.86 alike the hazmat diamond turned (check-b384-badgetwins, 2px edge) */
-    d: OBJ_poly([[12, 16], [50, 1], [50, 12], [59, 12], [59, 2], [81, 2], [81, 12], [88, 12], [88, 90], [50, 90], [50, 99], [12, 84]], [2.5, 2, 1, 1, 2, 2, 1, 3, 3, 1, 2, 2.5]),
+    col: "#2F9A5A",   /* a green door in a hollow-metal steel frame */
+    d: OBJ_poly([[12, 12], [44, yTop(44)], [44, 14], [47, 14], [47, 0], [87, 0], [87, 14], [90, 14], [90, 94], [50, 94], [12, 99]],
+      [2.5, 0, .5, .5, 2.5, 2.5, .5, 1.5, 1.5, 0, 2.5]),
     plates: [
-      ["steel", OBJ_rrect(50, 12, 38, 78, 2)],                                                 /* the frame: hollow metal (384.67) */
-      ["steel", OBJ_rrect(59, 2, 22, 11, 2), { z: .4, bev: .5 }],                               /* the exit sign over it (384.68) */
-      ["glow", OBJ_rrect(61.5, 4.5, 17, 6, 1.2), { z: -.4, bev: .4, col: "#6FE39B" }],         /* its lit green face (no letters) */
-      ["ink", OBJ_rrect(57, 19, 24, 71, 1.5), { z: -1.8, bev: .9 }],                           /* the doorway, a deep recess */
-      ["shade", OBJ_poly([[57, 62], [81, 52], [81, 90], [57, 90]], 1), { z: -1.8, bev: .9 }],   /* the light on its floor */
-      ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 1.5), { z: 1.6, bev: 1.4 }],   /* the leaf, raised */
-      ["deep", quad(.86, 1, 0, 1, .8), { z: 1.6, bev: .5 }],                                 /* its thick edge */
-      ["lite", quad(.12, .7, .08, .44, 1.5), { z: .9, bev: .8 }],                             /* its upper panel */
-      ["lite", quad(.12, .7, .56, .92, 1.5), { z: .9, bev: .8 }],                             /* its lower panel */
-      ["brass", OBJ_circle(leaf(.8, .5)[0], leaf(.8, .5)[1], 3.2), { dome: 2.2 }],           /* the knob */
-      ["brass", quad(0, .08, .12, .2, .6), { z: .6, bev: .4 }],                               /* the hinges */
-      ["brass", quad(0, .08, .8, .88, .6), { z: .6, bev: .4 }],
+      ["steel", OBJ_rrect(44, 14, 46, 80, [1.5, 1.5, 0, 0]), { z: .5, bev: .6 }],                    /* the frame: jambs and head, 6 each */
+      ["ink", OBJ_rrect(50, 20, 34, 74, [1, 1, 0, 0]), { z: -2.3, bev: .8 }],                          /* the opening, a clean dark recess */
+      ["glow", OBJ_poly([[50, 94], [50, 83], [84, 76], [84, 94]], [0, 1, 1, 0]), { z: -2.3, bev: .8, col: "#BFE6CB" }],   /* daylight on its floor */
+      ["steel", OBJ_rrect(47, 0, 40, 14.5, 2.5), { z: .5, bev: .5 }],                                /* the sign's housing, on the head */
+      ["ink", OBJ_rrect(49.5, 2.2, 35, 10.1, 1.6), { z: -.6, bev: .4, col: "#0E2A1A" }],             /* its dark face */
+      ["glow", OBJ_rrect(51, 3.3, 32, 7.9, 1.4), { z: .25, bev: .6, col: "#2C9A5C" }],               /* the diffuser's glow */
+      ["glow", exit, { ln: 1.5, z: .8, bev: .35, col: "#D9FFE6" }],                                  /* E X I T, raised and lit */
+      ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], [1.5, .5, .5, 1.5]), { z: 1.6, bev: 1.2 }],   /* the leaf, swung toward you */
+      ["deep", quad(0, .07, 0, 1, .6), { z: 1.6, bev: .5 }],                                          /* its thickness, on the free edge */
+      ["lite", quad(.2, .84, .07, .45, 1.5), { z: .8, bev: .8 }],                                     /* its upper panel */
+      ["lite", quad(.2, .84, .55, .93, 1.5), { z: .8, bev: .8 }],                                     /* its lower panel */
+      ["brass", OBJ_circle(leaf(.13, .52)[0], leaf(.13, .52)[1], 3), { dome: 2 }],                   /* the knob, near the free edge */
+      ["brass", quad(.93, 1, .12, .2, .5), { z: .6, bev: .4 }],                                       /* the hinges, on the hinge edge */
+      ["brass", quad(.93, 1, .8, .88, .5), { z: .6, bev: .4 }],
     ],
   };
 }
