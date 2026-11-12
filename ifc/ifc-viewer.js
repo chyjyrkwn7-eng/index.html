@@ -808,10 +808,17 @@ function findMarks(model, segs, find) {
       const cl = !!(cutL && cutL.k === k), cr = !!(cutH && cutH.k === k);        // (cl / cr: this edge is a cut inside a line, not the end of the line)
       inkMark(r, it.y, it.h);
       const last = bands[bands.length - 1];
-      if (last && Math.abs((last.i0 + last.i1) / 2 - (r.i0 + r.i1) / 2) < 5 && r.x0 >= last.x0 && r.x0 - last.x1 <= 20) {
+      // (384.71) A STACKED FRACTION IS ONE RUN OF THE LINE. The raised numerator, the slash and the lowered denominator ("1" / "/" / "32", the figures 0.6 of
+      // the slash's size, the first 3.6 pt up and the last 2.2 pt down) stand more than 5 pt apart by their middles, so the test below split the lowered
+      // figures off as a band of their own - which then took a descender's room under them (the room a letter's tail would have) and the gold stood 1 pt
+      // low round the fraction (ch22-014's 1/32). A small figure that touches the run before it and overlaps its height is part of that run.
+      const small = (a, b) => Math.min(a, b) < 0.8 * Math.max(a, b);
+      const stacked = !!last && r.x0 >= last.x0 && r.x0 - last.x1 <= 1.5 && small(r.fs, last.fmax) && r.y0 < last.y1 && r.y1 > last.y0;
+      if (last && ((Math.abs((last.i0 + last.i1) / 2 - (r.i0 + r.i1) / 2) < 5 && r.x0 >= last.x0 && r.x0 - last.x1 <= 20) || stacked)) {
         last.x1 = Math.max(last.x1, r.x1); last.y0 = Math.min(last.y0, r.y0); last.y1 = Math.max(last.y1, r.y1); last.text += ' ' + text; last.cl = last.cl || cl; last.cr = last.cr || cr;
+        last.fmax = Math.max(last.fmax, r.fs);
         last.its.push(it);
-      } else bands.push({ ...r, text, cl, cr, its: [it] });
+      } else bands.push({ ...r, text, cl, cr, its: [it], fmax: r.fs });
     }
     // a line's ink: its text's - a raised or lowered small figure ("1 1/4", "m 2") reaches only as far as its own figures, from its
     // own baseline up, so it does not stretch the line's marker
@@ -823,7 +830,7 @@ function findMarks(model, segs, find) {
         i0 = Math.min(i0, small ? it.y : it.y - DSC * it.h); i1 = Math.max(i1, it.y + ASC * it.h);
       }
       b.i0 = i0; b.i1 = i1; b.fs = H; b.y0 = i0 - 0.12 * H; b.y1 = i1 + 0.12 * H;
-      delete b.its;
+      delete b.its; delete b.fmax;
     }
     for (const b of bands) out.push({ page: model.p, ...b, kind: 'cite' });
    } catch (e) { /* no highlight for this phrase */ }
@@ -2358,6 +2365,9 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
   canvas.className = 'ifc-clip';
   // where a one-piece picture lies on its page: page point (x, y) is picture pixel ((x - x0) * s, (top - y) * s)
   if (parts.length === 1) canvas._ifcAt = { page: parts[0].seg.page, x0: parts[0].seg.x0 - parts[0].x / s, top: parts[0].ry - parts[0].r0 / s, s };
+  // (384.71) where every piece of a sheet lies on the picture, in page points: piece k's page point (x, y) is picture pixel ((x - ox) * s, (oy - y) * s) between its rows
+  // y0..y1 (the first and the last piece's outer edges are settled to a clean row - settleEdge - so a piece does not start where its cut says); read by the gates' pixel checks only
+  canvas._ifcParts = parts.map(p => ({ page: p.seg.page, ox: p.seg.x0 - p.x / s, oy: p.ry + (p.y - p.r0) / s, s, x0: p.seg.x0, x1: p.seg.x1, y0: p.seg.y0, y1: p.seg.y1, row0: p.y, row1: p.y + (p.r1 - p.r0) }));
   if (opts.blur) return canvas;                                      // the picture of a hidden name carries no wash and no marks
   const ctx = canvas.getContext('2d');
   ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = WASH; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore();

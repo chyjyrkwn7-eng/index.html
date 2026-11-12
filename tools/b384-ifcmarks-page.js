@@ -99,7 +99,13 @@
           for (const pc of sheet.pieces) { X0 = Math.min(X0, segs[pc.i].x0 + pc.dx); X1 = Math.max(X1, segs[pc.i].x1 + pc.dx); }
           const sc = cv0.width / (X1 - X0);
           frames = []; let yy = 0;
-          for (const pc of sheet.pieces) {
+          if (cv0._ifcParts && cv0._ifcParts.length === sheet.pieces.length) {
+            // (384.71) the app says where each piece lies (the first and the last piece's outer edges are settled to a clean row, which moves every piece after it)
+            for (let k = 0; k < sheet.pieces.length; k++) {
+              const pt = cv0._ifcParts[k], seg = segs[sheet.pieces[k].i];
+              frames.push({ cv: cv0, model: await V.pageModel(book.doc, seg.page, book.opts.fontBold, book.opts.cache), s: pt.s, ox: pt.ox, oy: pt.oy, seg, pc: { top: pt.oy - pt.row0 / pt.s, bot: pt.oy - pt.row1 / pt.s } });
+            }
+          } else for (const pc of sheet.pieces) {
             yy += Math.round((pc.gap || 0) * sc);
             const seg = segs[pc.i];
             frames.push({ cv: cv0, model: await V.pageModel(book.doc, seg.page, book.opts.fontBold, book.opts.cache), s: sc, ox: X0 - pc.dx, oy: pc.top + yy / sc, seg, pc });
@@ -127,7 +133,39 @@
                 if (R + G + B < 330) continue;                         // print
                 paper++; if (deep(R, G, B)) gold++;
               }
-              out.words.push({ page: model.p, text: it.s.slice(0, 60), hit: mm[0], gold, paper, share: paper ? gold / paper : 0, label: w.label });
+              const rec = { page: model.p, text: it.s.slice(0, 60), hit: mm[0], gold, paper, share: paper ? gold / paper : 0, label: w.label, box: [px0, px1, py0, py1] };
+              // (384.71) where the gold shape that holds this run lies, and where the print inside it lies, in picture pixels: the gold's box and the ink's box
+              // (a table's rules and any pixel that is not print are left out of the ink), so a mark's room on every side can be read - ch22-014's stacked 1/32
+              if (w.comp && gold) {
+                let seed = -1;
+                for (let y = py0; y <= py1 && seed < 0; y++) for (let x = px0; x <= px1; x++) { const i = (y * cv.width + x) * 4; if (deep(D[i], D[i + 1], D[i + 2])) { seed = y * cv.width + x; break; } }
+                const Wd = cv.width, Ht = cv.height, seen = new Uint8Array(Wd * Ht), st = [seed];
+                let gx0 = Infinity, gx1 = -1, gy0 = Infinity, gy1 = -1; seen[seed] = 1;
+                while (st.length) {
+                  const q = st.pop(), x = q % Wd, y = (q - x) / Wd;
+                  const qi = q * 4;
+                  if (deep(D[qi], D[qi + 1], D[qi + 2])) { if (x < gx0) gx0 = x; if (x > gx1) gx1 = x; if (y < gy0) gy0 = y; if (y > gy1) gy1 = y; }
+                  for (const r of [q - 1, q + 1, q - Wd, q + Wd]) {
+                    if (r < 0 || r >= Wd * Ht || seen[r]) continue;
+                    const rx = r % Wd; if ((r === q - 1 && x === 0) || (r === q + 1 && x === Wd - 1) || Math.abs(rx - x) > 1) continue;
+                    const i = r * 4; if (deep(D[i], D[i + 1], D[i + 2]) || D[i] + D[i + 1] + D[i + 2] < 330) { seen[r] = 1; st.push(r); }
+                  }
+                }
+                // (the flood runs through the print inside the shape - black is part of it - and stops at the paper; the gold's box is its gold pixels only; a row or a column of ink
+                // across most of the box is a table's rule and not print)
+                let ix0 = Infinity, ix1 = -1, iy0 = Infinity, iy1 = -1;
+                const gw = gx1 - gx0 + 1, gh = gy1 - gy0 + 1;
+                const inkAt = (x, y) => { const i = (y * Wd + x) * 4; return D[i] + D[i + 1] + D[i + 2] < 330; };
+                const rowInk = [], colInk = [];
+                for (let y = gy0; y <= gy1; y++) { let n = 0; for (let x = gx0; x <= gx1; x++) if (inkAt(x, y)) n++; rowInk.push(n); }
+                for (let x = gx0; x <= gx1; x++) { let n = 0; for (let y = gy0; y <= gy1; y++) if (inkAt(x, y)) n++; colInk.push(n); }
+                for (let y = gy0; y <= gy1; y++) for (let x = gx0; x <= gx1; x++) {
+                  if (!seen[y * Wd + x] || !inkAt(x, y) || rowInk[y - gy0] > 0.6 * gw || colInk[x - gx0] > 0.6 * gh) continue;
+                  if (x < ix0) ix0 = x; if (x > ix1) ix1 = x; if (y < iy0) iy0 = y; if (y > iy1) iy1 = y;
+                }
+                rec.comp = { gx0, gx1, gy0, gy1, ix0, ix1, iy0, iy1, s, fs: it.h };
+              }
+              out.words.push(rec);
             }
           }
         }

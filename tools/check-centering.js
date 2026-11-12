@@ -321,6 +321,25 @@
           desc.some(d => !deco.has(d) && !shapeKids.has(d) && !within(deco, d) && !d.closest('svg') && paints(getComputedStyle(d)) && d.getBoundingClientRect().width > 0)),
         hIntent, vIntent, opticalDx, layH: +layH.toFixed(2), layV: +layV.toFixed(2), cssH: css.h, cssV: css.v });
     }
+    /* (384.71) THE CHEVRON DISC ON A MODE TILE (Choose your mode, the Virtual Room's Host / Join). It is the tile's own ::after: a grid item, not a box the loop above can
+       see (a tile is over 170px tall and is skipped as a whole), and the picture in it is its own background. So the disc is a candidate of its own: its box is read
+       from a probe set in the same grid cell, and the content hidden for the second screenshot is the picture alone (the disc's fill stays), so the difference
+       between the two is the chevron's ink - held to 0.3px (`tol`), the tighter look: the 384 r4 note on Settings' icons, 0.38px right and passed by 0.5 */
+    for (const card of document.querySelectorAll('#stage .modecards > .modecard')) {
+      if (card.dataset.czdone && !opts.again) continue;
+      const ps = getComputedStyle(card, '::after'), cr = card.getBoundingClientRect();
+      if (ps.content === 'none' || ps.display === 'none' || !/url\(/.test(ps.backgroundImage) || !/50%/.test(ps.borderTopLeftRadius) || cr.width < 40) continue;
+      const pr = document.createElement('i');
+      pr.style.cssText = 'display:block;grid-column:' + ps.gridColumnStart + ';grid-row:' + ps.gridRowStart + ';justify-self:' + ps.justifySelf + ';align-self:' + ps.alignSelf +
+        ';width:' + ps.width + ';height:' + ps.height + ';visibility:hidden;margin:0;padding:0;border:0';
+      card.appendChild(pr); const dr = pr.getBoundingClientRect(); pr.remove();
+      if (dr.width < 12 || dr.left < -.5 || dr.top < -.5 || dr.right > VW + .5 || dr.bottom > VH + .5 || effOpacity(card) < .6) continue;
+      const id = n++;
+      CZ.cands[id] = { el: card, keep: new Set(), shapeKids: new Set(), look: lookOf(card), disc: true };
+      card.dataset.czid = String(id);
+      out.push({ id, name: 'modecard::after (the arrow)', path: pathOf(card), txt: '', S: { l: dr.left, t: dr.top, r: dr.right, b: dr.bottom, kind: '::after' }, kind: '::after', owned: '',
+        lines: [], tall: false, caps: false, desc: false, icons: 1, snap: [0, 0], art: [], mixed: false, hIntent: true, vIntent: true, opticalDx: 0, layH: 0, layV: 0, cssH: true, cssV: true, tol: .3 });
+    }
     pe.remove();
     return out;
   };
@@ -334,6 +353,8 @@
   CZ.hide = (ids, mode) => {
     for (const id of ids) {
       const c = CZ.cands[id]; if (!c) continue; const el = c.el;
+      /* (384.71) a mode tile's arrow disc: only its picture goes (the disc's fill stays, so the difference is the chevron's ink) */
+      if (c.disc) { if (mode === 'a') { save(el); el.setAttribute('data-czdisc', '1'); } continue; }
       const kept = n => { for (const x of c.keep) if (x.contains(n)) return x; return null; };
       const nodes = [el, ...el.querySelectorAll('*')].filter(n => !(n.closest('svg') && n.tagName !== 'svg'));
       /* the words go by their fill alone (-webkit-text-fill-color), so nothing drawn in currentColor - an icon, a rim,
@@ -353,13 +374,13 @@
     }
   };
   CZ.restore = () => {
-    for (const [n, s] of CZ.saved) { if (s === null) n.removeAttribute('style'); else n.setAttribute('style', s); n.removeAttribute('data-czp-b'); n.removeAttribute('data-czp-a'); }
+    for (const [n, s] of CZ.saved) { if (s === null) n.removeAttribute('style'); else n.setAttribute('style', s); n.removeAttribute('data-czp-b'); n.removeAttribute('data-czp-a'); n.removeAttribute('data-czdisc'); }
     CZ.saved.clear();
   };
   CZ.changed = ids => ids.filter(id => { const c = CZ.cands[id]; return c && lookOf(c.el) !== c.look; });
   CZ.done = ids => { for (const id of ids) { const c = CZ.cands[id]; if (c) c.el.dataset.czdone = '1'; } };
   const st = document.createElement('style'); st.id = 'cz-style';
-  st.textContent = '[data-czp-b]::before,[data-czp-a]::after{visibility:hidden!important}';
+  st.textContent = '[data-czp-b]::before,[data-czp-a]::after{visibility:hidden!important} [data-czdisc]::after{background-image:none!important}';
   (document.head || document.documentElement).appendChild(st);
   /* a still page: no rAF-driven drawing while a screen is measured */
   const raf = window.requestAnimationFrame.bind(window); let q = [], fid = 1e9;

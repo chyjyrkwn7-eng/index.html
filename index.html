@@ -39761,10 +39761,18 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] > .modecard.modecard{ --mi:calc(88 * var(--u)); }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(28 * var(--u)); }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(17 * var(--u)); }
-  /* the chevron: the tile is one tap, and this says where it goes */
+  /* the chevron: the tile is one tap, and this says where it goes.
+     (384.71) CENTRED BY ITS INK. The drawing is a 24-unit box with the chevron's two arms from x 9 to 15 and round caps and a round join 1.2 units
+     past that, so its ink runs 7.8 to 16.2 - the middle of the box, 12. It was drawn from 9.5 to 15.5 (ink 8.3 to 16.7, middle 12.5): half a unit
+     right of the middle, which on the disc's 50% picture (15px on a phone's 30px disc, 17px on a 34px one) is 0.3 to 0.35px right - and 0.45 / 0.35
+     as measured at 3x / 2x, the picture's own placement on the device pixel grid included. It reads "not centred" because a chevron's ink is a
+     thin line: the gap left of it and the gap right of it are what the eye compares. Move the path, not the picture or the disc.
+     And the picture is 16px on the 34px disc and 14px on the 30px one - 50% of the disc was 17 and 15, and 15px at 3x is 45 device pixels in a
+     90-pixel disc: a picture set half a device pixel off the middle, which the phone rounds right (+0.17px). Whole device pixels at 1x, 2x and 3x
+     (16 -> 32 / 48, 14 -> 28 / 42; the room round them is even), so the middle of the drawing is the middle of the disc. */
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard::after{
     content:""; grid-column:2; grid-row:1; justify-self:end; width:calc(34 * var(--u)); height:calc(34 * var(--u)); border-radius:50%;
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.85' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6l6 6-6 6'/%3E%3C/svg%3E") center / 50% no-repeat,
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.85' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / calc(16 * var(--u)) no-repeat,
       color-mix(in srgb, var(--mc) 16%, transparent);
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mc) 26%, transparent);
   }
@@ -39774,7 +39782,7 @@ html.is-browser{ --fade-paper: transparent; }
     grid-template-columns:auto 1fr auto; grid-template-rows:auto auto; align-content:center; align-items:center; column-gap:calc(12 * var(--u)); row-gap:calc(6 * var(--u));
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecardtitle.modecardtitle{ grid-column:2; grid-row:1; }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); background-size:calc(14 * var(--u)); }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecarddesc.modecarddesc{ grid-row:2; margin:0; font-size:calc(14.5 * var(--u)); line-height:1.4; }
   /* the iPhone's switch under the head of a card is the medallion's height now (it was the 64px of the old row) */
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="stack"] > .modecard > .nova-hsw{ height:calc(96 * var(--u)); }
@@ -55453,7 +55461,8 @@ const IFC_POINTER_PATCH = {
   "ch6-030": { find: ["operations utilizing solid fuel-burning cooking appliances", "1 month"] },
   "ch62-702": { find: ["Class I Describes those formulations that are capable", "deflagration but not detonation"] },
   "ch62-703": { find: ["Class IV Describes those formulations that burn", "same manner as ordinary combustibles", "minimal reactivity hazard"] },
-  "ch33-001": { find: ["written site safety plan", "approved before a building permit is issued"] }
+  "ch33-001": { find: ["written site safety plan", "approved before a building permit is issued"] },
+  "ch22-014": { find: ["All other dusts", "not exceed the critical depth layer", "1 / 32"] }
 };
 function ifcWithPatch(q){
   const p = IFC_POINTER_PATCH[q && q.id];
