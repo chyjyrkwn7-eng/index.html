@@ -12,9 +12,12 @@
   const quad = (u0, u1, v0, v1, r) => OBJ_poly([leaf(u0, v0), leaf(u1, v0), leaf(u1, v1), leaf(u0, v1)], r);
   CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
     col: "#2F9A5A",   /* (384.67) natural colours: a green door */
-    d: OBJ_poly([[12, 16], [50, 1], [50, 12], [88, 12], [88, 90], [50, 90], [50, 99], [12, 84]], [2.5, 2, 1, 3, 3, 1, 2, 2.5]),
+    /* (384.68) the exit sign over the doorway: the outline was 0.86 alike the hazmat diamond turned (check-b384-badgetwins, 2px edge) */
+    d: OBJ_poly([[12, 16], [50, 1], [50, 12], [59, 12], [59, 2], [81, 2], [81, 12], [88, 12], [88, 90], [50, 90], [50, 99], [12, 84]], [2.5, 2, 1, 1, 2, 2, 1, 3, 3, 1, 2, 2.5]),
     plates: [
       ["steel", OBJ_rrect(50, 12, 38, 78, 2)],                                                 /* the frame: hollow metal (384.67) */
+      ["steel", OBJ_rrect(59, 2, 22, 11, 2), { z: .4, bev: .5 }],                               /* the exit sign over it (384.68) */
+      ["glow", OBJ_rrect(61.5, 4.5, 17, 6, 1.2), { z: -.4, bev: .4, col: "#6FE39B" }],         /* its lit green face (no letters) */
       ["ink", OBJ_rrect(57, 19, 24, 71, 1.5), { z: -1.8, bev: .9 }],                           /* the doorway, a deep recess */
       ["shade", OBJ_poly([[57, 62], [81, 52], [81, 90], [57, 90]], 1), { z: -1.8, bev: .9 }],   /* the light on its floor */
       ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 1.5), { z: 1.6, bev: 1.4 }],   /* the leaf, raised */

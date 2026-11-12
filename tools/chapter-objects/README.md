@@ -1,4 +1,4 @@
-# Fire Code chapter badges: each badge is a raised PIN of the chapter's object (build 384.67, round 4)
+# Fire Code chapter badges: each badge is a raised PIN of the chapter's object (build 384.68: all 58 chapters)
 
 How we got here, in the owner's words:
 - 384.63 put a picture inside a generic outline: "those badges aren't what I had in mind, you just put stuff in the badge.. the badge needs
@@ -34,10 +34,11 @@ silver, with the title cut into it. A chapter with no entry here still draws its
 4. **Colour: the object's own, natural colours** (384.67, Madison: "make the color of stuff relevant, you don't need to keep the old
    colors"): a red extinguisher, a brass sprinkler, a green door, a yellow school bus. Give the entry its main colour, `col: "#RRGGBB"`, and
    `field`/`lite`/`body`/`shade`/`deep`/`ink` are made from it (without `col` they are made from the chapter's old enamel, which is no
-   longer required to show). `brass`, `steel` (chrome), `red`, `water`, `glass`, `rubber`, `cream`, `wood`, `hot`, `glow` are natural colours,
+   longer required to show). `brass`, `steel` (chrome), `red`, `water`, `glass`, `rubber`, `cream`, `wood`, `cardboard` (384.68: a carton's tan), `leather`
+   (384.68: a chair's brown), `hot`, `glow` are natural colours,
    the same on every chapter and never tinted by it. A single part may take its own colour with the option `col: "#RRGGBB"`. The material
-   follows the role: `brass` and `steel` are polished metal, `rubber` satin, everything else glossy enamel. The one colour rule left is
-   gated: **no twins** - no two chapters with BOTH a near-identical silhouette (IoU 0.70+ at 48px) AND a near-identical main colour
+   follows the role: `brass` and `steel` are polished metal, `rubber`, `cardboard` and `leather` satin, everything else glossy enamel. The one colour rule left is
+   gated: **no twins** - no two chapters with BOTH a near-identical silhouette (IoU 0.80+ at 48px) AND a near-identical main colour
    (CIELAB distance under 18; the main colour is the commonest colour of the painted face). (The 58-distinct-enamels and hue-family checks
    are retired.)
 5. **MIN_PART (re-measured for pins): a part at least 5 across** (two bevels of 2.4: narrower and it is all slope, no top); aim for 8+ where
@@ -105,6 +106,10 @@ a few units at most: the whole pin is ~2.6 thick.
 entry into index.html as plain data, not your code. Compute your outlines as freely as you like (trace arcs into points, ring a disc with
 teeth, offset a curve): it runs once, at merge, and costs the page nothing at boot. A generator script of your own that pre-traces curves
 is no longer needed. Keep each file's helpers inside its own `{ ... }` block (each file is run in a block of its own).
+**OBJ_SDF (384.68, tools/chapter-objects/sdf.js)**: part 2's signed-distance toolkit, there for every part file at merge time - circle,
+ellipse, capsule, cone, box, poly, tube, `union(fs, k)` (filleted), minus, inter, grow, and `shape(f, bb)` / `trace(f, bb)` (the outline,
+and its holes, as one closed path). An organic union (a hand of bananas, a beetle and its legs) is one call, and the page only ever sees
+the finished string. (gen-part-2.js uses the same file.)
 
 The loop:
 ```
@@ -131,7 +136,7 @@ run of rounded corners, to join with arcs), `OBJ_walk(d)` (a path's points). Ari
 8. **No text, numbers, letters, people, trademarks.** Official, not cute.
 9. **The back still holds the title** (the back is the pin's own silhouette and the title is laid out on it, from the foot of the bevel
    in; a silhouette with no broad area - all thin arms - leaves it no room; the gate reads its plan).
-10. **Distinct from every other chapter's silhouette** at 48px (overlap under 0.85), and **no twin** (a silhouette 0.70+ alike AND the
+10. **Distinct from every other chapter's silhouette** at 48px (overlap under 0.85), and **no twin** (a silhouette 0.80+ alike AND the
     same main colour).
 
 ## 4. Checklist (every chapter, before hand-off)

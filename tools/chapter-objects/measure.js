@@ -19,7 +19,8 @@ if(i0 < 0 || i1 < 0){ console.log(JSON.stringify({ bbox: {}, errors: ["index.htm
 const helpers = index.slice(i0, i1);
 const files = fs.readdirSync(__dirname).filter(f => /^part-.*\.js$/.test(f)).sort();
 const errors = [];
-let src = helpers + "\nconst __FILES = [];";
+/* (384.68) OBJ_SDF (sdf.js), the signed-distance toolkit, is there for every part file: it runs here, at merge, never in the page */
+let src = helpers + "\n" + fs.readFileSync(path.join(__dirname, "sdf.js"), "utf8") + "\nconst __FILES = [];";
 /* each file in its own block, so one file's consts cannot meet another's; the keys it added are noted after it */
 files.forEach(f => { src += "\n{\nconst __k0 = Object.keys(CHAPTER_OBJ);\n" + fs.readFileSync(path.join(__dirname, f), "utf8") +
   "\n;__FILES.push([" + JSON.stringify(f) + ", Object.keys(CHAPTER_OBJ).filter(k => __k0.indexOf(k) < 0)]);\n}"; });

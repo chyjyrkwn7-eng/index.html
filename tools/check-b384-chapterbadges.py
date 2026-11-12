@@ -169,9 +169,9 @@ with sync_playwright() as pw:
     chk("(8) no two chapters share an outline (%d keys shared, %d identical paths), and the octagon - the coin to the pixel - is not used beside the coin" % (len(ol["shared"]), ol["sameD"]),
         not ol["shared"] and not ol["sameD"] and not ol["octagonAndCoin"], ol)
     lo = sorted(ol["rows"], key=lambda r: r["side"])[:3]
-    chk("(8) every chapter's outline leaves its icon room: the smallest square is %s of 100 (%s), at least 18" % (lo[0]["side"] if lo else "-", lo[0]["u"][:22] if lo else ""), ol["rows"] and all(r["side"] >= 18 for r in ol["rows"]), lo)
+    chk("(8) every chapter's outline leaves its icon room: the smallest square is %s of 100 (%s), at least 18" % (lo[0]["side"] if lo else "-", lo[0]["u"][:22] if lo else ""), (ol["rows"] or len(pr.get("obj") or []) == 58) and all(r["side"] >= 18 for r in ol["rows"]), lo)   # (384.68) every chapter an object: no icon to hold
     hi = sorted(ol["rows"], key=lambda r: -r["off"])[:3]
-    chk("(8) the icon sits in the middle of its plate: the furthest off-centre is %s units (%s), at most 25" % (hi[0]["off"] if hi else "-", hi[0]["u"][:22] if hi else ""), ol["rows"] and all(r["off"] <= 25 for r in ol["rows"]), hi)
+    chk("(8) the icon sits in the middle of its plate: the furthest off-centre is %s units (%s), at most 25" % (hi[0]["off"] if hi else "-", hi[0]["u"][:22] if hi else ""), (ol["rows"] or len(pr.get("obj") or []) == 58) and all(r["off"] <= 25 for r in ol["rows"]), hi)
     # (5)
     ai = pg.evaluate(ALLIDS)
     chk("(5) all 58 chapters x 3 drawings on one page (%d svgs, %d ids): no id twice, every url(#) resolves, no icon group has an id" % (ai["svgs"], ai["ids"]),
