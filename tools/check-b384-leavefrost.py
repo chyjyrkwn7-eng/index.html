@@ -49,8 +49,11 @@ def spread(png, box):
     x0, y0, x1, y1 = [int(round(v)) for v in box]
     return statistics.pstdev(list(im.crop((x0, y0, x1, y1)).getdata()))
 
-SETUP = """(sel)=>{ const sh = document.querySelector(sel); if(!sh) return null;
+SETUP = """(arg)=>{ const [sel, under] = arg; const sh = document.querySelector(sel); if(!sh) return null;
   let top = sh; const chain = []; while(top.parentElement && top.parentElement !== document.body){ top = top.parentElement; chain.push(top); }
+  // `under`: a layer the stripes go beneath instead (the chat's whole dock, so the stripes are on the PAGE behind the panel, and the panel's own
+  // fill is cleared too: what is asked is whether the sheet's blur CAN reach the page through the chat, not how opaque the panel happens to be)
+  if(under){ const u = document.querySelector(under); if(u){ top = u; const p = document.getElementById('chatdock-panel'); if(p) p.style.setProperty('background', 'transparent', 'important'); } }
   chain.forEach(a => a.style.setProperty('background', 'transparent', 'important'));
   const z = parseInt(getComputedStyle(top).zIndex, 10);
   const d = document.createElement('div'); d.className = '__stripes';
@@ -59,10 +62,10 @@ SETUP = """(sel)=>{ const sh = document.querySelector(sel); if(!sh) return null;
   const r = sh.getBoundingClientRect();
   return { z: isNaN(z) ? 'auto' : z, top: top.className || top.tagName, inBody: top.parentElement === document.body, r: [r.left, r.top, r.width, r.height], depth: chain.length }; }"""
 
-def pixel_ratio(pg, sel):
+def pixel_ratio(pg, sel, under=None):
     """The stripe test for the sheet `sel`. Returns (ratio, spread_with_blur, spread_without, info) or None."""
     # the stripes' pattern is passed in by string replace (evaluate takes one arg)
-    info = pg.evaluate(SETUP.replace("arguments[0]", repr(STRIPES)), sel)
+    info = pg.evaluate(SETUP.replace("arguments[0]", repr(STRIPES)), [sel, under])
     if not info: return None
     pg.wait_for_timeout(250)
     r = info["r"]; vw, vh = pg.evaluate("()=>[innerWidth, innerHeight]")
@@ -108,7 +111,8 @@ def run(br, w, h, tag):
             if "closed" in str(e).lower(): raise
         if shots and key == "chat-leave":
             pg.screenshot(path=os.path.join(shots, "%s-%s.png" % (key, "tablet" if w > 600 else "phone")))
-        return pixel_ratio(pg, sel)
+        # the chat's leave sheet: stripes on the PAGE, under the whole dock (panel fill cleared), so a sheet stuck in the panel's backdrop root fails
+        return pixel_ratio(pg, sel, "#chatdock" if key == "chat-leave" else None)
     for key, js, sel, kind, bg in L.INVENTORY:
         if only and key not in only: continue
         res = None
