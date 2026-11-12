@@ -114307,8 +114307,8 @@ function sayClassArrival(){
    page - the bottom reserve for furniture that sits lower than the reserve assumes; build 383 had most of the small ones too) the page
    could be scrolled by that much, which on a phone is a real scroll under the rubber band. That slack is taken back with a negative bottom
    margin on the panel - nothing on the screen moves - and only when it IS slack: everything Home shows ends above the tab bar (or the
-   window's foot) with room to spare, so nothing that has to be reached is put out of reach. Where the content itself does not fit (a 4-inch
-   phone on its side) the page keeps its scroll. Measured again after the entrance, once the tab bar has settled, on fonts and on resize. */
+   window's foot), so nothing that has to be reached is put out of reach. Where the content itself runs under the bar (none in the matrix today;
+   tools/check-b384-homescroll.py) the page keeps its scroll. Measured again after the entrance, once the tab bar has settled, on fonts and on resize. */
 function homeFitNow(panel){
   try{
     if(!panel || !panel.isConnected) return;
@@ -114326,7 +114326,7 @@ function homeFitNow(panel){
       const r = c.getBoundingClientRect();
       if(r.height > 0 && getComputedStyle(c).position !== "fixed") bottom = Math.max(bottom, r.bottom + y);
     }
-    if(!bottom || bottom > floor - 4) return;   /* the content itself reaches the bar: a real scroll */
+    if(!bottom || bottom > floor + .5) return;   /* the content itself runs under the bar: a real scroll (nothing moves either way, so what is above the bar stays reachable) */
     panel.style.marginBottom = (-over) + "px";
   }catch(e){}
 }
