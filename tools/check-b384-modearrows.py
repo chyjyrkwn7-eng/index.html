@@ -69,7 +69,7 @@ def read(pg, cdp, dev, shot):
         cm, rm = diff.max(axis=0).astype(float), diff.max(axis=1).astype(float)
         L, T = G["edge"](cm, bb[0], 1), G["edge"](rm, bb[1], 1); R, B = G["edge"](cm, bb[2] - 1, -1), G["edge"](rm, bb[3] - 1, -1)
         ink = [(x0 + L) / d, (y0 + T) / d, (x0 + R) / d, (y0 + B) / d]
-        q = lambda x: round(x * d) / d                      # (the disc is drawn on the device's pixel grid)
+        q = lambda x: math.floor(x * d + .5) / d                      # (the disc is drawn on the device's pixel grid)
         gl, gr, gt, gb = ink[0] - q(l), q(r) - ink[2], ink[1] - q(t), q(bt) - ink[3]
         rows.append(dict(b, dx=float((gl - gr) / 2), dy=float((gt - gb) / 2), w=float(ink[2] - ink[0]), h=float(ink[3] - ink[1]), size=float(r - l), gaps=[float(x) for x in (gl, gr, gt, gb)]))
     return rows

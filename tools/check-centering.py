@@ -264,7 +264,7 @@ def measure_cand(c, A1, A2, B, C, dpr, org):
     if not parts: return {"empty": True}
     L = min(p[0] for p in parts); T = min(p[1] for p in parts); Rr = max(p[2] for p in parts); Bb = max(p[3] for p in parts)
     # the shape is drawn on the device's pixel grid (its edges rounded to device pixels), so it is compared as drawn
-    q = lambda v: round(v * dpr) / dpr
+    q = lambda v: math.floor(v * dpr + .5) / dpr    # (half a device pixel rounds UP, as the browser snaps it: Python's round() takes 2980.5 to 2980 and read a disc at x 993.5 a third of a pixel off)
     gl, gr, gt, gb = L - q(S["l"]), q(S["r"]) - Rr, T - q(S["t"]), q(S["b"]) - Bb
     if SHOTS:
         c["_crop"] = (A1[sl].astype(np.uint8), C[sl].astype(np.uint8), (x0, y0), [L, T, Rr, Bb])
@@ -625,7 +625,7 @@ if __name__ == "__main__":
         if ONLY and not ONLY.search(scr): continue
         for d in DEVICES:
             for cl in CLASSES:
-                got = sum(1 for r in rows if r["name"].startswith("modecard::after") and r["tag"].split("|")[:3] == [d[0], cl, scr] and r.get("m") and "dx" in r["m"])
+                got = sum(1 for r in rows if r["name"].startswith("modecard::after") and [r["tag"].split("|")[0], r["tag"].split("|")[1], r["tag"].split("|")[2].split("@")[0]] == [d[0], cl, scr] and r.get("m") and "dx" in r["m"])
                 if got < want[cl]: uncovered.append("%s / %s / %s: %d of %d arrows measured" % (d[0], cl, scr, got, want[cl]))
     if uncovered:
         complete = False

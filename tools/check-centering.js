@@ -334,6 +334,10 @@
         ';width:' + ps.width + ';height:' + ps.height + ';visibility:hidden;margin:0;padding:0;border:0';
       card.appendChild(pr); const dr = pr.getBoundingClientRect(); pr.remove();
       if (dr.width < 12 || dr.left < -.5 || dr.top < -.5 || dr.right > VW + .5 || dr.bottom > VH + .5 || effOpacity(card) < .6) continue;
+      /* not under the tab bar or anything else (a tile at the foot of a short screen is, until it is scrolled up): every probe point of the disc lands on the tile */
+      let under = false;
+      for (const [fx, fy] of [[.5, .5], [.2, .2], [.8, .2], [.2, .8], [.8, .8]]) { const e = document.elementFromPoint(dr.left + fx * dr.width, dr.top + fy * dr.height); if (!e || !card.contains(e)) { under = true; break; } }
+      if (under) { why.push(['covered', 'modecard::after']); continue; }
       const id = n++;
       CZ.cands[id] = { el: card, keep: new Set(), shapeKids: new Set(), look: lookOf(card), disc: true };
       card.dataset.czid = String(id);
