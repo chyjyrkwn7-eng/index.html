@@ -491,6 +491,7 @@
         te.add("top-edge-on");
         if(localStorage.getItem("class26e.topedgeold") === "1") te.add("top-edge-old");
         if(localStorage.getItem("class26e.topedgepe") === "none") te.add("top-edge-none");
+        if(localStorage.getItem("class26e.topclear") === "0") te.add("top-clear-off");   /* (384.54) the clearance under the system's wash: off */
       }
     }
     if(!inApp){
@@ -1469,8 +1470,25 @@
      page's reservation for the bar gives that much back, so screens end
      the same distance above the bar as before rather than further off. */
   :root{ --tabs-drop: calc(.6rem + env(safe-area-inset-bottom, 0px) - var(--tabs-bottom)); }
+  /* (384.54) THE TOP OF THE SCREEN IS TWO THINGS, NOT ONE: the status bar, and the soft wash the system draws under it. In an installed
+     iPhone app with `black-translucent` iOS 26 draws a fade over the top ~100pt (his Home, Drill and paused screenshots: the title
+     "Drill", "8/8" and Pause are blurred to nothing at 62-99pt, the chat button faded, and the effect ends level with the bottom of
+     that row; CSS cannot remove it - docs/notes-archive.md "384.54"). Every header, title and button sat at the safe-area line, i.e.
+     inside it. So the line every CSS `top`/padding clears is now --sat: the notch plus --edge-extra, the depth of that wash. It is
+     written in points on the glass (x --zc: his page is laid out 518px wide on a 440pt screen, so a CSS px is 0.85pt), only in an
+     installed iPhone held upright (html.top-edge-on is the head script's "installed iOS"; a Safari tab, an iPad, a laptop, Android
+     and a phone on its side keep --sat = env() exactly), and only on a phone with a notch or island (inset > 30px: an SE-sized phone
+     has no room to give and a shorter status bar). `class26e.topclear = "0"` puts it back (html.top-clear-off). Everything that
+     measures itself against the old line does it through --sat (63 places), so --pad-inset-top below still collapses to its old value. */
+  :root{ --sat: env(safe-area-inset-top, 0px); --edge-extra: 0px; }
+  @media (orientation:portrait) and (max-width:39.99rem){
+    html.top-edge-on:not(.top-clear-off){
+      --edge-extra: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 42px) * var(--zc, 1));
+      --sat: calc(env(safe-area-inset-top, 0px) + var(--edge-extra));
+    }
+  }
   :root{
-    --pad-inset-top: max(0px, env(safe-area-inset-top, 0px) - 1.25rem);
+    --pad-inset-top: max(0px, var(--sat) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
     /* What .wrap's padding costs a panel, top and bottom together. 9rem
        was a single constant covering the bottom-tab-bar case (1.25rem top
@@ -1814,7 +1832,7 @@
      - White stars at low alpha, not tinted ones: over each theme's own
        glow triad they take that theme's colour on their own, so a set
        theme still only recolours. */
-  :root{ --sky-clear: max(1.5rem, env(safe-area-inset-top, 0px)); }
+  :root{ --sky-clear: max(1.5rem, var(--sat)); }
   [data-layout="modern"] body::after{
     content:""; position:fixed; left:0; right:0; bottom:0; height:100lvh;
     z-index:-1; pointer-events:none;
@@ -2464,7 +2482,7 @@
      finish the line, again for the next; Skip in the corner. */
   .nova-talk{
     position:fixed; inset:0; z-index:360; display:flex; flex-direction:column;
-    padding-top:calc(env(safe-area-inset-top, 0px) + .6rem);
+    padding-top:calc(var(--sat) + .6rem);
     padding-left:calc(env(safe-area-inset-left, 0px) + 1rem);
     padding-right:calc(env(safe-area-inset-right, 0px) + 1rem);
     color:#FFFFFF; cursor:pointer; user-select:none; -webkit-user-select:none;
@@ -3490,7 +3508,7 @@
     max-width:44rem; margin:0 auto; padding:1.5rem 1.5rem 4rem;
     padding-left:max(1.5rem, env(safe-area-inset-left));
     padding-right:max(1.5rem, env(safe-area-inset-right));
-    padding-top:max(1.5rem, env(safe-area-inset-top));
+    padding-top:max(1.5rem, var(--sat));
     padding-bottom:max(4rem, env(safe-area-inset-bottom));
   }
   /* Genuinely wider on a tablet, not just a phone layout stranded in
@@ -3624,7 +3642,7 @@
        top inset (the notch moves to the edge, which left/right cover), but
        it does keep a home indicator. */
     .wrap{
-      padding-top:max(.75rem, env(safe-area-inset-top));
+      padding-top:max(.75rem, var(--sat));
       padding-bottom:max(2rem, env(safe-area-inset-bottom));
     }
     .top{ padding-bottom:.5rem; }
@@ -7380,7 +7398,7 @@
      colour, the one their marker carries on the race line. */
   .vroom-chat-alert{
     position:fixed; left:50%; transform:translateX(-50%) translateY(-8px);
-    top:calc(env(safe-area-inset-top, 0px) + .75rem);
+    top:calc(var(--sat) + .75rem);
     z-index:330; max-width:min(26rem, calc(100vw - 2rem));
     display:flex; align-items:center; gap:.55rem;
     padding:.6rem .85rem; border-radius:14px;
@@ -7487,7 +7505,7 @@
        top where there is not. */
     display:flex; align-items:flex-start; justify-content:center;
     padding:1.25rem;
-    padding-top:calc(1.25rem + env(safe-area-inset-top, 0px));
+    padding-top:calc(1.25rem + var(--sat));
     padding-bottom:calc(1.25rem + env(safe-area-inset-bottom, 0px));
     background:rgba(6,8,11,.62);
     opacity:0; transition:opacity .24s ease;
@@ -7674,7 +7692,7 @@
        screen - which is why the chat button disappeared off the top of
        Home the moment you tapped into the chat. It is 0 whenever there
        is no keyboard, so this costs nothing anywhere else. */
-    top:calc(env(safe-area-inset-top, 0px) + .75rem + var(--vv-shift, 0px));
+    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
     right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     width:44px; height:44px; padding:0; margin:0;
     display:flex; align-items:center; justify-content:center;
@@ -7695,11 +7713,11 @@
      rather than going away - the chat is supposed to be reachable
      mid-test, which is most of the point of it. */
   .chatdock.in-test .chatdock-btn{
-    top:calc(env(safe-area-inset-top, 0px) + 4.4rem + var(--vv-shift, 0px));
+    top:calc(var(--sat) + 4.4rem + var(--vv-shift, 0px));
   }
   @media (min-width:40rem){
     .chatdock.in-test .chatdock-panel{
-      top:calc(env(safe-area-inset-top, 0px) + 4.4rem + 52px + .5rem);
+      top:calc(var(--sat) + 4.4rem + 52px + .5rem);
     }
   }
   @media (min-width:40rem){
@@ -7765,18 +7783,18 @@
      selector is one class more specific than that rule, whatever order
      the two end up in. */
   body.chatdock-open .toast,
-  body.chatdock-open.has-bottomtabs .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  body.chatdock-open.has-bottomtabs .toast{ z-index:390; top:calc(var(--sat) + .75rem); bottom:auto; }
   /* OVER AN OPEN START SHEET (build 267): "In game mode, when clicking the
      mode I don't have unlocked, the pop up is appearing behind the start
      menu." The toast was z-index 70 under the sheet's 210, and at the
      bottom where the sheet is. It goes on top, and to the top of the
      screen, where the sheet is not. */
-  body:has(.unitoptions-modal:not([hidden])) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  body:has(.unitoptions-modal:not([hidden])) .toast{ z-index:390; top:calc(var(--sat) + .75rem); bottom:auto; }
   /* (384 review) and over the invite sheet: "<Name> isn't enrolled in Fire Code." landed under the sheet (340) and the room's
      Ready bar, where nobody could read it. */
   /* (384 r5) over the save-your-code card (420) the toast says Copied on top of the dim, not behind it */
-  body:has(.savecode-card) .toast{ z-index:430; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
-  body:has(.invite-overlay) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  body:has(.savecode-card) .toast{ z-index:430; top:calc(var(--sat) + .75rem); bottom:auto; }
+  body:has(.invite-overlay) .toast{ z-index:390; top:calc(var(--sat) + .75rem); bottom:auto; }
   body.chatdock-open .vroom-chat-alert{
     opacity:0 !important; pointer-events:none !important;
   }
@@ -8152,7 +8170,7 @@
     .chatdock-panel{
       /* Cleared by the BUTTON'S OWN SIZE, which grows below - so this
          has to be the same number, or the panel tucks under it. */
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 52px + .5rem);
+      top:calc(var(--sat) + .75rem + 52px + .5rem);
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
       left:auto; bottom:auto;
       /* REPORTED AS TOO SMALL ON A LARGER DEVICE, and it was: a 24rem
@@ -8174,7 +8192,7 @@
     }
     /* the popover runs from its own top down to the keyboard (build 314) */
     .chatdock-panel.is-kb{
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 52px + .5rem + var(--kb-top, 0px));
+      top:calc(var(--sat) + .75rem + 52px + .5rem + var(--kb-top, 0px));
       bottom:var(--kb-bottom, 0px); height:auto; min-height:0; max-height:none;
       border-bottom-left-radius:0; border-bottom-right-radius:0;
     }
@@ -8374,7 +8392,7 @@
     background-size:200% 100%; animation:chatphoto-shimmer 1.2s ease-in-out infinite alternate; }
   @keyframes chatphoto-shimmer{ from{ background-position:100% 0 } to{ background-position:-100% 0 } }
   .vroom-chat-photo.is-missing{ aspect-ratio:auto; width:auto; }
-  .chat-photo-close{ position:absolute; top:calc(env(safe-area-inset-top,0px) + .75rem); right:calc(env(safe-area-inset-right,0px) + .75rem);
+  .chat-photo-close{ position:absolute; top:calc(var(--sat) + .75rem); right:calc(env(safe-area-inset-right,0px) + .75rem);
     width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.2); background:rgba(0,0,0,.5);
     color:#fff; font-size:1.5rem; line-height:1; cursor:pointer; }
   .vroom-chat-photo.is-missing::after{ content:"Photo no longer available"; display:block; padding:1rem; font-size:.75rem; color:var(--soft); }
@@ -9052,7 +9070,7 @@
      the page (mountRoomChatFab), and it is the dock button's size. */
   .roomchat-fab{
     position:fixed; z-index:445;
-    top:calc(env(safe-area-inset-top, 0px) + .75rem + var(--vv-shift, 0px));
+    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
     right:calc(max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) + 44px + .5rem);
     height:44px; padding:0 .85rem 0 .7rem; margin:0; border-radius:999px; box-sizing:border-box;
     display:flex; align-items:center; gap:.4rem;
@@ -9087,15 +9105,15 @@
      pushed down by its height so nothing is under it. The window is inset
      5% of the height and 3% of the width with a 9px rim (.vrc-window). */
   body:has(#vroom-race-cut) .roomchat-fab{
-    top:max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) !important;
+    top:max(calc(5vh + 9px + .55rem), calc(var(--sat) + .55rem)) !important;
     right:calc(3vw + 9px + .7rem) !important;
   }
   body:has(#roomchat-fab) .vrc{
-    padding-top:calc(max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) + 44px + .5rem);
+    padding-top:calc(max(calc(5vh + 9px + .55rem), calc(var(--sat) + .55rem)) + 44px + .5rem);
   }
   @media (min-width:40rem){
     body:has(#roomchat-fab) .vrc{
-      padding-top:calc(max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) + 52px + .5rem);
+      padding-top:calc(max(calc(5vh + 9px + .55rem), calc(var(--sat) + .55rem)) + 52px + .5rem);
     }
   }
   .roomchat-sheet{ display:flex; flex-direction:column; max-height:min(80vh, 44rem); }
@@ -11843,7 +11861,7 @@
        because no status bar is drawn - the gap was real, just smaller
        than it looked. tools/shoot-flow.py draws the inset now so the
        next judgement call is made against what the device shows. */
-    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:80;
+    top:calc(var(--sat) + .35rem); z-index:80;
     max-width:26rem; margin:0 auto; padding:.8rem .9rem .8rem 1.1rem;
     display:flex; align-items:center; gap:.75rem;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#FFFFFF; border-radius:16px;
@@ -12142,7 +12160,7 @@
     position:fixed;
     left:max(1rem, env(safe-area-inset-left, 0px));
     right:max(1rem, env(safe-area-inset-right, 0px));
-    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:75;
+    top:calc(var(--sat) + .35rem); z-index:75;
     max-width:26rem; margin:0 auto; padding:.9rem 1.1rem;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#FFFFFF; border-radius:16px;
     border:1px solid rgba(255,255,255,.11);
@@ -12250,7 +12268,7 @@
      they were landing right on top of the floating Next-question
      button, covering the one thing someone would tap next. */
   .toast-flag{
-    top:max(1rem, env(safe-area-inset-top)); bottom:auto;
+    top:max(1rem, var(--sat)); bottom:auto;
     transform:translateY(-8px);
   }
   .toast-flag.show{ transform:translateY(0); }
@@ -13304,7 +13322,7 @@
        Nothing caught it because Chromium reports every inset as 0, so the
        max() and the shorthand look identical locally. */
     .wrap{
-      padding-top:max(1.25rem, env(safe-area-inset-top));
+      padding-top:max(1.25rem, var(--sat));
       padding-right:max(1.25rem, env(safe-area-inset-right));
       padding-bottom:max(3rem, env(safe-area-inset-bottom));
       padding-left:max(1.25rem, env(safe-area-inset-left));
@@ -14997,7 +15015,7 @@
   .rank-home-preview{
     position:absolute; inset:0; z-index:5; pointer-events:none;
     display:flex; align-items:center; justify-content:center;
-    padding:calc(env(safe-area-inset-top, 0px) + 2rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3rem);
+    padding:calc(var(--sat) + 2rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3rem);
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
@@ -15449,7 +15467,7 @@
        phone, which is what "it looks like the banners aren't all showing
        up at the top" was pointing at - they were at the top of the
        document and behind the status bar. */
-    position:fixed; top:calc(env(safe-area-inset-top, 0px) + .35rem);
+    position:fixed; top:calc(var(--sat) + .35rem);
     left:50%; transform:translateX(-50%) translateY(-8rem);
     z-index:300; display:flex; align-items:center; gap:.85rem;
     padding:.85rem 1.2rem .85rem .85rem; border-radius:999px; cursor:pointer;
@@ -16631,7 +16649,7 @@
   .welcome-build{
     position:fixed; z-index:1; pointer-events:none;
     left:max(1.25rem, calc(env(safe-area-inset-left, 0px) + 1rem));
-    top:calc(env(safe-area-inset-top, 0px) + .3rem);
+    top:calc(var(--sat) + .3rem);
     font-size:.6rem; letter-spacing:.04em; color:var(--soft); opacity:.38;
     /* A <p>'s default margin is 1em top and bottom, which pushed this
        9px down and straight into the hero on both SEs - measured, a
@@ -17410,7 +17428,7 @@
   @media (max-width:639px){
     .homeversion, .homeversion.homeversion-btn{
       display:block; z-index:1;
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 22px); bottom:auto; right:auto;
+      top:calc(var(--sat) + .75rem + 22px); bottom:auto; right:auto;
       transform:translateY(-50%);
       left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem));
       font-size:.84rem; line-height:1.15em; opacity:.72; font-weight:600;
@@ -20541,13 +20559,13 @@
   /* The value is .wrap's own top padding at each width (it is .wrap's
      first child), so these three have to follow .wrap's three. */
   @media (max-width:39.99rem){
-    [data-layout="modern"] .top{ top:max(1.5rem, env(safe-area-inset-top, 0px)); }
+    [data-layout="modern"] .top{ top:max(1.5rem, var(--sat)); }
   }
   @media (max-width:32rem){
-    [data-layout="modern"] .top{ top:max(1.25rem, env(safe-area-inset-top, 0px)); }
+    [data-layout="modern"] .top{ top:max(1.25rem, var(--sat)); }
   }
   @media (max-width:39.99rem) and (max-height:480px) and (orientation:landscape){
-    [data-layout="modern"] .top{ top:max(.75rem, env(safe-area-inset-top, 0px)); }
+    [data-layout="modern"] .top{ top:max(.75rem, var(--sat)); }
   }
   [data-theme="dark"][data-layout="modern"] .top{
     background:none; box-shadow:none;
@@ -20590,7 +20608,7 @@
   @media (min-width:40rem){
     [data-layout="modern"] .top #pausebtn:not([hidden]){
       position:fixed;
-      top:calc(env(safe-area-inset-top, 0px) + 1.1rem);
+      top:calc(var(--sat) + 1.1rem);
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
       z-index:150;
       padding:.8rem 1.6rem; font-size:1.05rem;
@@ -20609,7 +20627,7 @@
        where nothing moves. */
     [data-layout="modern"] .wrap:has(#pausebtn:not([hidden])) .timerline,
     [data-layout="modern"] .wrap:has(.pausepanel) .timerline{
-      margin-top:calc(.55rem + env(safe-area-inset-top, 0px));
+      margin-top:calc(.55rem + var(--sat));
     }
   }
   /* ...and a short, wide screen - a phone held sideways - starts the test's
@@ -20619,7 +20637,7 @@
   @media (min-width:40rem) and (max-height:36rem){
     [data-layout="modern"] .wrap:has(#pausebtn:not([hidden])) .timerline,
     [data-layout="modern"] .wrap:has(.pausepanel) .timerline{
-      margin-top:calc(1.1rem + env(safe-area-inset-top, 0px));
+      margin-top:calc(1.1rem + var(--sat));
     }
   }
   /* The hidden-choices reveal (build 240): a centred block, not a
@@ -20654,7 +20672,7 @@
   @media (max-width:39.99rem){
     [data-layout="modern"] .top #pausebtn:not([hidden]){
       position:fixed;
-      top:calc(max(1.25rem, env(safe-area-inset-top, 0px)) + .35rem);
+      top:calc(max(1.25rem, var(--sat)) + .35rem);
       right:max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1.1rem));
       z-index:150; transform:none;
       min-height:44px; min-width:5.4rem; padding:.55rem 1.3rem; font-size:1rem;   /* (384 r5) "why is the pause button so small": the label was 15px in a 74px pill */
@@ -22966,7 +22984,7 @@
      rows. Above the tab bar and the chat dock, like every other pop-up. */
   .unitver{
     position:fixed; inset:0; z-index:460; display:flex; align-items:center; justify-content:center;
-    padding:calc(env(safe-area-inset-top, 0px) + 1rem) calc(env(safe-area-inset-right, 0px) + 1rem)
+    padding:calc(var(--sat) + 1rem) calc(env(safe-area-inset-right, 0px) + 1rem)
             calc(env(safe-area-inset-bottom, 0px) + 1rem) calc(env(safe-area-inset-left, 0px) + 1rem);
     background:rgba(4,6,10,.62); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
     opacity:0; transition:opacity .22s ease;
@@ -23312,7 +23330,7 @@
      Scoped to .is-setup: the Virtual Room's Match settings sheet shares the base class and is untouched. */
   .unitoptions-modal-sheet.is-setup{
     display:flex; flex-direction:column; overflow:hidden; padding:0;
-    max-height:min(92%, calc(100% - env(safe-area-inset-top, 0px) - 4.25rem));
+    max-height:min(92%, calc(100% - var(--sat) - 4.25rem));
   }
   /* 4.25rem under the top safe area is where the page's own header (back and chat buttons, its title) ends on a phone, in an
      installed app and in a tab alike - measured on a 440x956 standalone, a 375x667 and a 393x742 tab. Taller and the sheet's
@@ -23321,7 +23339,7 @@
     .unitoptions-modal-sheet.is-setup{ left:0; right:0; margin-left:auto; margin-right:auto; width:min(100%, 38rem); border-left:1px solid rgba(255,255,255,.12); border-right:1px solid rgba(255,255,255,.12);
       /* a narrow sheet in the middle of a wide screen covers the page's centred title entirely or not at all - at 4.25rem under
          the top it cut the title in half on a 1366x768 laptop. Its buttons are out at the sides, so nothing is in the way. */
-      max-height:min(94%, calc(100% - env(safe-area-inset-top, 0px) - 1.5rem)); }
+      max-height:min(94%, calc(100% - var(--sat) - 1.5rem)); }
   }
   .unitoptions-modal-sheet.is-setup .optionsmodal-body{
     flex:1 1 auto; min-height:0; position:relative; overflow-x:hidden; overflow-y:auto;
@@ -23422,7 +23440,7 @@
      a full-width Begin stacked are ~300px of 390. So the foot is one row (the box beside Begin, the unit names left to the
      body's own heading) and the head is slimmer; the body keeps what is left. */
   @media (max-height:30rem){
-    .unitoptions-modal-sheet.is-setup{ max-height:min(96%, calc(100% - env(safe-area-inset-top, 0px) - .5rem)); }
+    .unitoptions-modal-sheet.is-setup{ max-height:min(96%, calc(100% - var(--sat) - .5rem)); }
     .unitoptions-modal-sheet.is-setup .unitoptions-modal-handle{ height:.8rem; background-position:50% .3rem; }
     .unitoptions-modal-sheet.is-setup .unitoptions-modal-title{ font-size:1.3rem; }
     .unitoptions-modal-sheet.is-setup .unitoptions-modal-head{ margin-bottom:0; }
@@ -27122,7 +27140,7 @@
   .battle-ice-t{ font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#E0F2FE; text-shadow:0 0 12px rgba(125,211,252,.9); }
   .battle-ice-left{ font-family:var(--mono); font-weight:800; color:#E0F2FE; }
   .battle-alert{
-    position:fixed; left:50%; top:calc(env(safe-area-inset-top) + .75rem); z-index:360;
+    position:fixed; left:50%; top:calc(var(--sat) + .75rem); z-index:360;
     transform:translateX(-50%) translateY(-8px); max-width:min(26rem, calc(100vw - 2rem));
     padding:.6rem 1rem; border-radius:999px; text-align:center; font-weight:800; font-size:.85rem;
     color:var(--ink); background:rgba(20,22,28,.82); border:1px solid rgba(255,255,255,.14);
@@ -30409,7 +30427,7 @@
   /* One unlock at a time, centre screen. */
   .rs-spot{
     position:fixed; inset:0; z-index:320; display:flex; align-items:center; justify-content:center;
-    padding:calc(env(safe-area-inset-top, 0px) + 1.5rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+    padding:calc(var(--sat) + 1.5rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
     background:rgba(6,8,12,0); transition:background .3s ease; cursor:pointer;
   }
   .rs-spot.is-up{ background:rgba(6,8,12,.72); transition:background .6s ease; }
@@ -31220,7 +31238,7 @@
      the streak climbs: the colour warms from blue through gold to red,
      and from 50 up it carries a ring. */
   .streak-pop{
-    position:fixed; left:50%; top:calc(env(safe-area-inset-top, 0px) + 4.6rem); z-index:250;
+    position:fixed; left:50%; top:calc(var(--sat) + 4.6rem); z-index:250;
     transform:translateX(-50%); pointer-events:none;
     display:flex; align-items:baseline; gap:.45rem;
     padding:.5rem 1rem; border-radius:999px;
@@ -31530,7 +31548,7 @@
     /* one hundredth of the case's width: the hardware's unit (build 321) */
     --cu:calc(var(--cw) / 100); --hw-r:var(--bc-r);
     position:fixed; inset:0; z-index:420; overflow:hidden; cursor:pointer;
-    padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    padding:var(--sat) 0 env(safe-area-inset-bottom, 0px);
     background:rgba(5,7,11,0); transition:background .26s ease, opacity .45s ease;
   }
   /* the open case is about 1.75 of its own width tall with its lid up, so
@@ -32527,7 +32545,7 @@
        so the padding clears that plus its 9px rim. Vertical percentages
        would resolve against the WIDTH, hence lvh; the safe-area term wins
        only where a notch or home indicator reaches further in. */
-    padding:max(calc(5lvh + 1.4rem), calc(env(safe-area-inset-top, 0px) + 1.2rem))
+    padding:max(calc(5lvh + 1.4rem), calc(var(--sat) + 1.2rem))
             calc(3% + 1.05rem)
             max(calc(5lvh + 1.2rem), calc(env(safe-area-inset-bottom, 0px) + 1.2rem));
     background:radial-gradient(120% 80% at 50% 0%, #1B2140 0%, #0A0C18 55%, #04050A 100%);
@@ -33003,7 +33021,7 @@
   .binspect-stage{
     position:relative; box-sizing:border-box; min-height:100%;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.6rem;
-    padding:calc(env(safe-area-inset-top, 0px) + 1.4rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.6rem);
+    padding:calc(var(--sat) + 1.4rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.6rem);
   }
   .binspect-float{ position:relative; flex:none; width:var(--bi); height:var(--bi); transform-origin:50% 50%; will-change:transform; }
   .binspect-glow{
@@ -33076,8 +33094,8 @@
      transition is overridden. Anything that would interrupt is held in JS
      (holdForCutscene); a banner already up when a scene starts is hidden
      here and comes back with the controls. */
-  @keyframes cs-up-out{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - env(safe-area-inset-top, 0px)); } }
-  @keyframes cs-up-in{ from{ translate:0 calc(-100% - 1.5rem - env(safe-area-inset-top, 0px)); } to{ translate:0 0; } }
+  @keyframes cs-up-out{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - var(--sat)); } }
+  @keyframes cs-up-in{ from{ translate:0 calc(-100% - 1.5rem - var(--sat)); } to{ translate:0 0; } }
   @keyframes cs-down-out{ from{ translate:0 0; } to{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } }
   @keyframes cs-down-in{ from{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } to{ translate:0 0; } }
   /* A ROOM'S CHAT BUTTON LEAVES UPWARD, like the dock's (build 324). It is
@@ -33096,8 +33114,8 @@
   /* (327 round 6) over the race leaderboard the Room button sits INSIDE the
      ship's window, lower than the screen's corner, so its slide has to clear
      the window's top as well as its own height or it stops in frame. */
-  @keyframes cs-up-out-vrc{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - env(safe-area-inset-top, 0px)); } }
-  @keyframes cs-up-in-vrc{ from{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - env(safe-area-inset-top, 0px)); } to{ translate:0 0; } }
+  @keyframes cs-up-out-vrc{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - var(--sat)); } }
+  @keyframes cs-up-in-vrc{ from{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - var(--sat)); } to{ translate:0 0; } }
   body.cutscene-focus:not(.cutscene-soft):has(#vroom-race-cut) .roomchat-fab{ animation-name:cs-up-out-vrc; }
   body.cutscene-return:not(.cutscene-focus):has(#vroom-race-cut) .roomchat-fab{ animation-name:cs-up-in-vrc; }
   body.cutscene-focus :is(.daily-alert, .app-banner, .vroom-chat-alert, .toast, .update-banner){ visibility:hidden !important; pointer-events:none !important; }
@@ -34251,7 +34269,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
    - At the top, what the safe-area inset does not already cover (the iPad's Safari bar; an iPhone's status bar when Safari
      gives no inset) moves the page and the controls pinned to the top down by that much. */
 html.is-browser.safari-bars-over{
-  --sb-top-x: max(0px, calc(var(--sb-top, 0px) - env(safe-area-inset-top, 0px)));
+  --sb-top-x: max(0px, calc(var(--sb-top, 0px) - var(--sat)));
   --sb-bottom-x: max(0px, calc(var(--sb-bottom, 0px) - env(safe-area-inset-bottom, 0px)));
   --tabs-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px), calc(env(safe-area-inset-bottom, 0px) * .6), calc(var(--sb-bottom, 0px) + 8px));
 }
@@ -34282,6 +34300,17 @@ html.vp-stale :is(.bottomtabs, .backtotop, .daily-question-fab, .homeversion, .c
 html.vp-top :is(.wrap.test-pinned > .top, #pausebtn, .update-banner, .daily-alert, .tierup-banner, .battle-alert, .streak-pop){
   margin-top:calc(var(--sb-top-x, 0px) + var(--vp-top, 0px)) !important;
 }
+/* (384.54) IN A BROWSER TAB A TEST'S PINNED HEADER FADES IN FROM THE ROOT'S COLOUR, NOT FROM PAPER. The header's fade is the page's own first
+   rows, and Safari fills the band above the page with the root's colour (--band). Paper at 97% from y=0 left a step between the two: 9 levels
+   at 440x797, (17,21,27) against (26,27,30), a line across the top of every question in a tab. The same fade in --band meets it. The installed
+   app is untouched (its status bar sits over the page, and the strip under it follows the paper: topEdgeStripColor). */
+html.is-browser[data-layout="modern"] .wrap.test-pinned:not(.race-pinned) > .top::before{
+  background:linear-gradient(to bottom,
+    color-mix(in srgb, var(--band, var(--paper)) 97%, transparent) 0%,
+    color-mix(in srgb, var(--band, var(--paper)) 95%, transparent) 70%,
+    color-mix(in srgb, var(--band, var(--paper)) 0%, transparent) 100%);
+}
+html.is-browser[data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{ background:color-mix(in srgb, var(--band, var(--paper)) 96%, transparent); }
 /* and the notices pinned to the bottom sit above the toolbar */
 html.is-browser.safari-bars-over :is(.toast, .vroom-prep){ margin-bottom:calc(var(--sb-bottom-x) + 8px); }
 /* Welcome is measured to end just over the home indicator (its hint, --pad-inset-bottom): it ends that much over the toolbar
@@ -34495,7 +34524,7 @@ html.is-browser.safari-bars-over :is(.gs-bar, .cosmic-welcome > .cosmic-welcome-
      fixed, so nothing passes under it). A test keeps its own header - the
      mode, the count and the progress line belong together there. */
   html[data-layout] body .wrap:not(:has(> .meter:not([hidden]))) > #count{
-    position:absolute; z-index:5; left:calc(env(safe-area-inset-left, 0px) + 1.5rem); top:calc(env(safe-area-inset-top, 0px) + .75rem + 35px); translate:0 -50%;
+    position:absolute; z-index:5; left:calc(env(safe-area-inset-left, 0px) + 1.5rem); top:calc(var(--sat) + .75rem + 35px); translate:0 -50%;
     margin:0; padding:0 !important; border:0; font-size:1.02rem; letter-spacing:.01em;
   }
   /* the daily question's card (round 31): under NOVA's line, ranged to the
@@ -34533,8 +34562,8 @@ html.is-browser.safari-bars-over :is(.gs-bar, .cosmic-welcome > .cosmic-welcome-
   /* round 26: "When the chat is open, it's covering the actual chat
      button" - the panel opens under the button's own size here (it was
      cleared for the 52px button, so the 4.4rem one sat 10px under it) */
-  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem); }
-  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel.is-kb{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem + var(--kb-top, 0px)); }
+  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(var(--sat) + .75rem + 4.4rem + .6rem); }
+  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel.is-kb{ top:calc(var(--sat) + .75rem + 4.4rem + .6rem + var(--kb-top, 0px)); }
   html[data-layout] body .chatdock-btn svg{ width:1.65rem; height:1.65rem; }
   /* the 69dvh floor above is for laptops (the Dell's 638px). A phone held sideways in a zoomed-out
      browser tab (Pro Max at 85%, 1125x458) is this layout too, and there the floor made the planet
@@ -35912,7 +35941,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz{ position:fixed; inset:0; z-index:1500; display:flex; justify-content:center; }
   .ifc-vz-dim{ position:absolute; inset:0; background:rgba(6,7,12,.6); opacity:0; transition:opacity .26s ease; touch-action:none; }
   .ifc-vz-card{ position:relative; display:flex; flex-direction:column; flex:0 1 64rem; min-width:0; overflow:hidden; border-radius:1.3rem;
-    margin:max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    margin:max(10px, var(--sat)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
     background:rgb(22,24,34); border:1px solid var(--surface-border); box-shadow:0 18px 50px rgba(0,0,0,.55);
     opacity:0; transform:translateY(18px) scale(.96); transition:transform .34s cubic-bezier(.2,.9,.3,1), opacity .26s ease; }
   .ifc-vz.is-in .ifc-vz-dim{ opacity:1; }
@@ -35950,7 +35979,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz-hint.is-gone, .ifc-vz.is-zoomed .ifc-vz-hint{ opacity:0; transform:translate(-50%, 6px); }
   @media (min-width:64rem){
     .ifc-vz-dim{ background:rgba(6,7,12,.72); }
-    .ifc-vz-card{ margin-top:max(18px, env(safe-area-inset-top, 0px)); margin-bottom:max(18px, env(safe-area-inset-bottom, 0px)); }
+    .ifc-vz-card{ margin-top:max(18px, var(--sat)); margin-bottom:max(18px, env(safe-area-inset-bottom, 0px)); }
     .ifc-vz-bar{ padding:.45rem .7rem .45rem 1.1rem; gap:.6rem; }
     .ifc-vz-title strong{ font-size:.92rem; }
     .ifc-vz-title span{ font-size:.78rem; }
@@ -36110,7 +36139,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* bigger screens: the way the daily question grows, and up in the top-left corner (the chat button's
      opposite) where there is room */
   @media (min-width:40rem){
-    .class-bubble-wrap{ --cb:4.6rem; top:calc(env(safe-area-inset-top, 0px) + .75rem) !important; left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)); }
+    .class-bubble-wrap{ --cb:4.6rem; top:calc(var(--sat) + .75rem) !important; left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)); }
     .class-bubble > svg{ width:38px; height:38px; }
   }
   /* ON A PHONE, THE DAILY QUESTION'S MIRROR (build 333): "the bubble doesn't go with the Home Screen". It sat
@@ -36196,7 +36225,7 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-title{ margin:0 0 .7rem; font-size:clamp(1.7rem, 6.4vw, 2.5rem); line-height:1.12; font-weight:750; }
   .gs-body{ margin:0; font-size:1.02rem; line-height:1.5; color:rgba(230,236,255,.74); }
   .gs-end{ position:relative; z-index:1; text-align:center; padding:4rem 1.4rem 2rem; opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
-  .gs-signin{ position:absolute; z-index:4; top:calc(env(safe-area-inset-top, 0px) + 10px); right:calc(env(safe-area-inset-right, 0px) + 14px);
+  .gs-signin{ position:absolute; z-index:4; top:calc(var(--sat) + 10px); right:calc(env(safe-area-inset-right, 0px) + 14px);
     min-height:44px; padding:0 1.05rem; border-radius:999px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06);
     color:#FFFFFF; font:inherit; font-size:.95rem; font-weight:650; letter-spacing:.01em; cursor:pointer; -webkit-tap-highlight-color:transparent;
     transition:background-color .2s ease, transform .15s ease; }
@@ -36496,7 +36525,7 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout][data-theme] body:has(.screen-home-actual){ --hg:clamp(10px, 2.4dvh, 22px); --home-bar:5rem; --home-pb:calc(var(--tabs-bottom) + var(--home-bar) + 6px); }
     html[data-layout][data-theme]:not(.x) body.has-bottomtabs:has(.screen-home-actual) .wrap{ padding-bottom:var(--home-pb) !important; }
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{
-      height:calc(100dvh - max(1.25rem, env(safe-area-inset-top, 0px)) - var(--home-pb) - 4px) !important; min-height:0 !important;
+      height:calc(100dvh - max(1.25rem, var(--sat)) - var(--home-pb) - 4px) !important; min-height:0 !important;
       display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
       padding-top:1.25rem !important; padding-bottom:calc(var(--hg) * 2.4) !important; box-sizing:border-box !important;
     }
@@ -37436,7 +37465,7 @@ html.is-browser{ --fade-paper: transparent; }
      move. Above Nova's talk (360), since his sign-up line asks it. */
   .savecode-card{
     position:fixed; inset:0; z-index:420; display:flex; align-items:center; justify-content:center;
-    padding-top:calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);
+    padding-top:calc(var(--sat) + 16px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);
     padding-left:calc(env(safe-area-inset-left, 0px) + 16px); padding-right:calc(env(safe-area-inset-right, 0px) + 16px);
     background:transparent; cursor:default;   /* (384 r16) the dim is the ::before layer (.POP-UP GLASS); the overlay no longer scrolls or fades - the sheet does both for itself */
   }
@@ -37504,7 +37533,7 @@ html.is-browser{ --fade-paper: transparent; }
      move; the clip's frame has no filter. */
   .invite-overlay.a2hs-overlay{
     z-index:420; align-items:center; justify-content:center; background:transparent;
-    padding-top:calc(env(safe-area-inset-top, 0px) + 12px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding-top:calc(var(--sat) + 12px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
     padding-left:calc(env(safe-area-inset-left, 0px) + 12px); padding-right:calc(env(safe-area-inset-right, 0px) + 12px);
   }
   .a2hs-sheet{
@@ -38856,10 +38885,10 @@ html.is-browser{ --fade-paper: transparent; }
      two share one line. Only where there is a back button: on Home and the tab screens the chat button keeps its place beside the
      big page title. */
   html[data-layout] body #stage .settings-nav.settings-nav{ margin-top:calc(.2rem - .6rem); }
-  html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(env(safe-area-inset-top, 0px) + .75rem + .6rem + var(--vv-shift, 0px)); }
+  html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem + var(--vv-shift, 0px)); }
   /* a tablet's chat button is 52px against the back button's 44: its top 4px higher puts the two middles on one line */
   @media (min-width:40rem){
-    html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(env(safe-area-inset-top, 0px) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
+    html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
   }
   /* (384) "The back button flashed white or something when you hit it." The press shimmer (setupBubbleButtons: .glass-pressed,
      a pool of white in ::after) reached the back links - and a back link's ::after is its invisible 44px tap target, centred by
@@ -56329,7 +56358,7 @@ function syncTestPin(force){
      is pinned the dots ride at the top of it - header, dots, line - and they go back to their own place when it is not. */
   const meter = document.getElementById("meter");
   if(meter && rb && meter.parentElement === rb && !raceWant){ rb.after(meter); rb.classList.remove("has-meter"); }
-  if(!want) return;
+  if(!want){ try{ if(lastTopEdgeModel) syncTopGuard(lastTopEdgeModel); }catch(e){} return; }
   const y = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
   wrap.style.setProperty("--test-top-y", y + "px");
   wrap.style.setProperty("--test-top-h", top.offsetHeight + "px");
@@ -56343,6 +56372,7 @@ function syncTestPin(force){
     wrap.classList.add("race-pinned");
   }
   wrap.classList.add("test-pinned");
+  try{ if(lastTopEdgeModel) syncTopGuard(lastTopEdgeModel); }catch(e){}   /* (384.54) the strip follows the pin: paper under it */
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
@@ -86723,8 +86753,14 @@ function syncStatusBarColor(){
   const holdForSplash = !owns && !!document.getElementById("splashscreen") && !document.getElementById("splashscreen").classList.contains("splash-hide");
   /* (384.27) NOT IN THE STILL TOP EDGE (an installed iPhone/iPad app): the tag was set once, before first paint, by the head script; after
      that nothing rewrites it. Only the strip's colour (syncTopGuard) and the cache for the NEXT launch follow the sky. */
-  if(!topEdgeStill() && !holdForSplash && tcMeta.content !== (owns ? splashBg : color)) tcMeta.content = owns ? splashBg : color;
+  /* (384.54) IN A BROWSER TAB THE TAG SAYS WHAT THE PAGE PAINTS AT ITS TOP EDGE. The page's first rows are --band (the sky eases into it over
+     its first 3rem, and Safari fills the band beyond the page with the same colour); the tag carried the sky's own top colour, 13 levels
+     apart on Home ((46,32,37) against (33,29,33)), so any browser that tints its bar from the tag (Safari before 26, Chrome on Android) showed
+     a band of one colour over a page that starts in another. Same colour in both now. The installed app's tag and the cache are the sky's, as before. */
   refreshEdgeTints(color);
+  let tagColor = color;
+  try{ if(document.documentElement.classList.contains("is-browser")){ const bnd = document.documentElement.style.getPropertyValue("--band").trim(); if(/^#[0-9a-f]{6}$/i.test(bnd)) tagColor = bnd; } }catch(e){}
+  if(!topEdgeStill() && !holdForSplash && tcMeta.content !== (owns ? splashBg : tagColor)) tcMeta.content = owns ? splashBg : tagColor;
   syncTopGuard(color);
   /* The cache always holds the APP's colour, never the splash's - it is
      replayed before first paint on the next launch to get a standalone
@@ -86753,8 +86789,22 @@ function topEdgeStill(){
   const c = document.documentElement.classList;
   return c.contains("top-edge-on") && !c.contains("top-edge-old");
 }
+/* (384.54) UNDER A PINNED TEST HEADER THE PAGE'S TOP IS PAPER, NOT THE SKY. .wrap.test-pinned > .top::before paints --paper at 97% from the very
+   top of the screen to under the header, so on a question the glow the model in appTopEdgeColor() describes is not what is there; the strip
+   (12px, above everything) kept the model's colour and showed as a lighter band across the top of every question (measured 10 levels at
+   440x956: (27,25,30) against (17,21,26)). While that fade is up the strip takes the paper's colour, recoloured in place like every other
+   change; syncTestPin calls this again when the pin comes or goes. The tag and the next launch's cache are untouched (they are the sky's). */
+var lastTopEdgeModel = null;
+function topEdgeStripColor(color){
+  try{
+    if(document.querySelector(".wrap.test-pinned")){ const p = cssColorHex("var(--paper)"); if(p) return p; }
+  }catch(e){}
+  return color;
+}
 function syncTopGuard(color){
   try{
+    if(color) lastTopEdgeModel = color;
+    color = topEdgeStripColor(color);
     if(topEdgeStill()){
       /* the one strip (#top-edge, in the markup): its colour is changed in place and it is never removed or replaced. Under the splash it
          keeps the splash's colour (it is above the splash, so it must not show as a band of sky over it); finishSplash calls this again
@@ -121482,7 +121532,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.62";
+const APP_BUILD = "2026-11-12-384.64";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
