@@ -19435,14 +19435,14 @@
      ("This needs to be updated to match the newer look"). Now the card's
      own background is never touched (it is the same --clean-card as every
      other state, see the Rank tab's solid-card rule), the pop is the lift
-     and one ring that ends at opacity 0, and the layer is removed once it
+     and one thin ring (65% at most) that ends at opacity 0, and the layer is removed once it
      has played. */
   .rankmap-stop.ru-nextpop .rankmap-card{ isolation:isolate; animation:ru-nx-lift 1.5s cubic-bezier(.2,.9,.25,1) both; }
   @keyframes ru-nx-lift{ 0%{ transform:none; } 32%{ transform:translateY(-3px) scale(1.045); } 100%{ transform:none; } }
   .ru-nextfx{ position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none; }
   .ru-nextfx > i{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; }
-  .ru-nx-edge{ border:1.5px solid color-mix(in srgb, var(--rank-color) 78%, #fff); animation:ru-nx-edge 1.6s ease both; }
-  @keyframes ru-nx-edge{ 0%{ opacity:0; } 22%{ opacity:1; } 55%{ opacity:.9; } 100%{ opacity:0; } }
+  .ru-nx-edge{ border:1.5px solid color-mix(in srgb, var(--rank-color) 78%, #fff); animation:ru-nx-edge 1.3s ease both; }
+  @keyframes ru-nx-edge{ 0%{ opacity:0; } 25%{ opacity:.65; } 100%{ opacity:0; } }
   .rankmap-stop.ru-nextpop .rankmap-state{ animation:ru-nx-chip .7s cubic-bezier(.2,1.6,.4,1) .2s both; }
   @keyframes ru-nx-chip{ 0%{ transform:scale(1); } 45%{ transform:scale(1.18); } 100%{ transform:scale(1); } }
   /* 10. THE CARD AT THE TOP (build 321): no turn any more - it fades to
@@ -160557,8 +160557,8 @@ async function rankUpUpNext(scene, map){
   fx.className = "ru-nextfx"; fx.setAttribute("aria-hidden", "true");
   fx.innerHTML = '<i class="ru-nx-edge"></i>';
   card.appendChild(fx);
-  /* the ring has played by 1.6s and ends at opacity 0; the layer goes with it, so nothing of the pop stays on the card */
-  setTimeout(() => { try{ fx.remove(); }catch(e){} }, 1800);
+  /* the ring has played by 1.3s and ends at opacity 0; the layer goes with it, so nothing of the pop stays on the card */
+  setTimeout(() => { try{ fx.remove(); }catch(e){} }, 1500);
   stop.classList.add("ru-nextpop");
   scene.upnext = nx;
   await rankUpWait(still ? 1200 : 2500);
