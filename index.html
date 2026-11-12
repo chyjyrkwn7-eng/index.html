@@ -491,7 +491,7 @@
         te.add("top-edge-on");
         if(localStorage.getItem("class26e.topedgeold") === "1") te.add("top-edge-old");
         if(localStorage.getItem("class26e.topedgepe") === "none") te.add("top-edge-none");
-        if(localStorage.getItem("class26e.topclear") === "0") te.add("top-clear-off");   /* (384.54) the clearance under the system's wash: off */
+        if(localStorage.getItem("class26e.topclear") !== "1") te.add("top-clear-off");   /* (384.76) the 42pt clearance is OFF by default: it pushed every header down and opened a band the page scrolled through; "1" brings it back */
       }
     }
     if(!inApp){
@@ -68401,6 +68401,7 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
   function apply(b, t, why){
     if(b === compB && t === compT) return;
     const was = compB || compT;
+    t = 0;   /* (384.76) the top is never moved: his 384.70 recording showed it moving a header that was where it belonged (in-flight reading); the bottom half is unchanged */
     compB = b; compT = t;
     if(b){ root.style.setProperty("--vp-stale", b + "px"); root.classList.add("vp-stale"); } else { root.style.removeProperty("--vp-stale"); root.classList.remove("vp-stale"); }
     if(t){ root.style.setProperty("--vp-top", t + "px"); root.classList.add("vp-top"); } else { root.style.removeProperty("--vp-top"); root.classList.remove("vp-top"); }
@@ -122174,7 +122175,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.70";
+const APP_BUILD = "2026-11-12-384.76";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
