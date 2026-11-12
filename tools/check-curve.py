@@ -251,7 +251,7 @@ def main():
             for n in ("the badge line only ever climbs",
                       "no rank asks for more badges than there are units",
                       "every rank's level is inside the cap",
-                      "the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/12/14)",
+                      "the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/16/25)",
                       "every rank's label says the numbers it actually checks"):
                 check(n, False, line["threw"])
             line = None
@@ -265,7 +265,9 @@ def main():
             check("the badge line only ever climbs",
                   all(b >= a for a, b in zip(line["levels"], line["levels"][1:])),
                   line["levels"])
-            over = [t for t in line["tiers"] if t["badges"] > line["units"]]
+            # 384.88 CHANGED ON PURPOSE: Supernova asks 25 badges over 24 units, as asked ("16 for amethyst. 25 for
+            # supernova") - the top rank may sit past the units (it did once before: 20 over 16); every other rank may not
+            over = [t for t in line["tiers"][:-1] if t["badges"] > line["units"]]
             check("no rank asks for more badges than there are units", not over, over)
             # "THE BADGE IS THE GATE" IS RETIRED (build 210). It asserted
             # that earning a rank's badges always already paid for its
@@ -287,10 +289,10 @@ def main():
             # somebody, so section 3b checks every real account keeps the
             # rank it holds today.
             WANT = {"rookie": (21, 1), "ranger": (30, 3), "veteran": (40, 5),
-                    "vanguard": (50, 7), "adept": (60, 9), "elite": (70, 12),
-                    "titan": (80, 14)}
+                    "vanguard": (50, 7), "adept": (60, 9), "elite": (70, 16),
+                    "titan": (80, 25)}   # 384.88: "16 for amethyst. 25 for supernova", levels unchanged
             got = {t["key"]: (t["level"], t["badges"]) for t in line["tiers"]}
-            check("the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/12/14)",
+            check("the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/16/25)",
                   got == WANT, got)
             stale = [t["key"] for t in line["tiers"]
                      if str(t["level"]) not in t["label"] or str(t["badges"]) not in t["label"]]
@@ -633,7 +635,10 @@ def main():
             };
             out.floor = [];
             [5000, 20000, 39395, 66355, 87480, 160000, 600000].forEach(p => [0, 1, 3, 6, 9, 12].forEach(n => {
-              applyLoadedData({ lifetime: { points: p }, unitPerfects: perfFor(n), onboardingComplete: true, levelWallRule: 325 });
+              /* (384.88) a copy under the current rules carries the academy ladder's flag and a rank floor (0) too, or an older
+                 ladder's rank floor applies (build 313's makes 12 badges at 600,000 XP Amethyst, whose wall is now the cap) */
+              applyLoadedData({ lifetime: { points: p }, unitPerfects: perfFor(n), onboardingComplete: true, levelWallRule: 325, rankFloor: 0,
+                                academyLadderRule: (typeof ACADEMY_LADDER_RULE === 'number' ? ACADEMY_LADDER_RULE : 0) });
               retroHideBadges = null;
               const s = levelStateFor(store);
               out.floor.push({ p, n, badges: badgeCountOf(store), floor: store.levelFloor, curve: levelFromPoints(p),
@@ -746,8 +751,9 @@ def main():
             got = [lv for b, bc, lv in w["walls"]]
             check("the cap per badge count is the next rank's level (build 325)",
                   got == want and [bc for b, bc, lv in w["walls"]] == list(range(len(w["walls"]))), list(zip(want, got)))
-            check("...which is 21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, then 80",
-                  got[:15] == [21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, 80, 80, 80], got)
+            # 384.88: 9-15 badges cap at Amethyst's 70, 16 and up at the cap (Supernova's level is the cap)
+            check("...which is 21, 30, 30, 40, 40, 50, 50, 60, 60, then 70 up to 15 badges, then 80",
+                  got[:17] == [21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, 70, 70, 70, 70, 80], got)
             a0 = w["atWall"]
             check("at a cap the level is held and the bar is stopped, the XP past it still counted",
                   a0["level"] == 21 and a0["stopped"] and a0["into"] > a0["span"], a0)
