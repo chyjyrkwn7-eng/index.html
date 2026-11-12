@@ -39044,3 +39044,36 @@ WHAT WAS WRONG (each reproduced):
 - A saved copy whose index is from another build (index.v !== INDEX_VERSION) or missing was treated as no copy: anyone holding a saved book would be asked for it again the day INDEX_VERSION is raised. ifcEnsureBook now reads the index again from the saved PDF (buildIndex + checkEdition) and saves it. Only a PDF that is not the 2021 IFC, or no PDF, asks for the book.
 GATE tools/check-b384-bookonce.py (PDFJS_DIR + IFC_BOOK for S2, S3, S5; S1 and S4 need neither; ONLY=S2 runs one): S1 a write resolves no earlier than its commit; S2 the book loaded, a test shows the code with no prompt, again after a reload, pdf.js out of reach shows the try-again card and its button opens no file chooser, Try again draws it with no file picked, a stale index is rebuilt; S3 the reader failing while a book loads, then back: the same screen loads it; S4 a device with no book: the per-device card, one 44px button that opens the file chooser; S5 a write that does not stick is not "kept". Fails on main (--against main's index.html).
 NOT PROVEN: which of these the reporter hit. If it was none (a storage the browser cleared, or Safari tab vs installed app), the new card says so plainly. Not changed: the book is never stored in the cloud.
+## 384.60 - Fire Code's ranks climb to every chapter: 3, 8, 14, 22, 32, 44, 58 (branch claude/b384-ladder58, NOT on main, waiting for Madison)
+Madison (owner, he/him): "We need to change how many you need to reach ranks. Don't change how many for Bronze, Silver, but it should be 58 to reach Supernova and it needs to
+progressively get there." Fire Code only; the academy's ladder (TIER_UNLOCKS for the 16 units) and every level requirement are untouched. THE RANK NAMES (RANK_DISPLAY_NAME, the truth;
+an earlier brief of this build had them one off): key rookie = Bronze, ranger = Silver, veteran = Gold, vanguard = Platinum, adept = Sapphire, elite = Amethyst, titan = Supernova; Iron is
+the starting rank with no requirement and is not in TIER_UNLOCKS.
+- COUNTS (badges per rank, of Fire Code's 58 chapters, read off the bank): Bronze 3 -> 3, Silver 8 -> 8, Gold 13 -> 14, Platinum 19 -> 22, Sapphire 24 -> 32, Amethyst 32 -> 44, Supernova 38 -> 58.
+  Gaps 5, 6, 8, 10, 12, 14 (each bigger than the one before). `FIRE_BADGE_SHARE` is .05, .14, .24, .38, .55, .76, 1 (Bronze ... Supernova): Supernova is the share 1, so it is every chapter whatever
+  the bank holds; the label ("Reach level N and M badges") is still generated from the rule. `FIRE_BADGE_SHARE_384` (.05, .14, .225, .33, .415, .55, .655 = 3, 8, 13, 19, 24, 32, 38) is the previous
+  ladder, kept for the floor only. Nothing typed states a count: the Rank tab, the cards, tours and release notes read rule.badges / rule.label.
+- FEASIBILITY (measured on the page: computeRunXp for one imperfect run at ~70% and one perfect run a chapter, as check-b384-ifccurve does; Fire Code's curve, level 80 = 100,240 XP): the
+  mean chapter pays 932 XP, all 58 pay 54,070 XP, which is level 60 (53,380 XP); level 80 needs 46,170 XP more from practice, tests, daily questions and repeats. The badges' own XP as a share of
+  the XP each rank's level asks (Bronze ... Supernova): before 61, 71, 58, 51, 42, 40, 35%; after 61, 71, 63, 59, 56, 55, 54%. Inside check-b384-ifccurve (3)'s 25-85% band and falling from Silver
+  up, so the proposed counts were kept (no lumpiness to smooth). Supernova's 54% is the arithmetic of "every chapter" (54,070 / 100,240): the one rank where the badges are over half the climb.
+  Cheapest-chapters-first, 14 / 22 / 32 / 44 badges are level 24 / 29 / 35 / 44 by their own XP, so the badge never outruns the level wall by much; the wall (the NEXT rank's level, open at that
+  rank's badges) opens to the cap at 58 badges. Not impossible: the academy's top account made 295,000 XP in 45 days; Fire Code's 100,240 is ~17 study days at 6,000 XP.
+- THE LADDER IS HARDER FROM GOLD UP, so the old note "a rank only gets easier, so nobody drops one" no longer holds for Fire Code. `ifcLadderFloor384bOnce()` (once per device,
+  `class26e.ifcladder384b` in the class's own storage, written BEFORE the work so a crash costs one floor, not a loop; runs at boot beside ifcLadderFloorOnce) works out the rank the account held
+  on the previous ladder (FIRE_BADGE_SHARE_384 of this bank's chapters, same rounding, same levels, badgeCountOf and the curve's own level) and raises store.rankFloor to it. A floor only raises:
+  rankOf / rankOfEntry / rankWithFloor, mergeSameAccount and mergeLeavingAccount all take the max already (no new field, so applyLoadedData needs nothing). Everything a rank hands over is
+  derived when read from that rank (tierColorUnlocked honours rankFloor: theme colour, flare, Officer / Clown / Robot / Astronaut, the emblem on the boards) - no unlock mark is stored. The level
+  wall (wallRankIndex) starts after the floor, so no shown level moves: argued (a level above the new wall means holding a rank under the old ladder, which the floor keeps) and in the gate.
+- NOTHING RE-FIRES: the rank-up scene is owed only when the rank held is past store.rankUpShown, and the floor is not past it; newlyUnlockedColors diffs tierColorUnlocked before and after a run, and
+  the floor is in both. The published row carries rankFloor (boardNumbersOf), so rankOfEntry gives the same rank on every board and Virtual Room row; fixBoardLevel keeps its level. No "ranked
+  down" text exists anywhere in the app (grep) and the gate reads the Rank tab for one. KNOWN LIMIT: a classmate's row last published by a build before this one carries the old badges and
+  floor 0 until that phone updates and publishes (updates are forced), so for that window a reader on this build can see them one rank lower than they are.
+- THE METER: rankStepProgress / rankRoadFracOf / rankChallengesOf take the next rank after rankOf (floor included) and measure each half from the held rank's requirement to the next's, clamped
+  at 0. For somebody whose floor is above what their badges show (floor Platinum, 20 badges: Platinum now asks 22) the next rank is Sapphire (32), the badge half sits at 0 until they pass Platinum's
+  22 and then rises with every badge and the partial hundos towards the next, never to 100% before the rank. Their "Reached" cards for ranks held by the floor still print the new requirement
+  beside a smaller count.
+- ONE LOCALSTORAGE KEY: `class26e.ifcladder384b`. A device that clears its storage runs the floor again from its own state at that moment (it only raises, and can only give the rank the previous
+  ladder would have given for the badges held then). Fire Code has no account anybody else sees yet (0 of 45 list it), so this is the cautious route, not a measured need.
+- GATE `tools/check-b384-ladder58.py` (see its header; FAILS --against origin/main's index.html). `check-b382-ifc` section 6 ("the top rank asks for more than 14 from its own chapters" meant
+  fewer than all) was changed on purpose to <= the chapter count; its floor test is unchanged.
