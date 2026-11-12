@@ -46,7 +46,7 @@ file short - only rules every session must know go here.
   read, never stored.** The Smoke Diver was reported three times because its
   counter ticked on the same event as the miss counter, so a "clamp to the
   misses" could never bind (384.40: read the account's real numbers before
-  writing a bound). Fire Code counts distinct questions (`retakenKeys`).
+  writing a bound). Both classes count distinct questions (`retakenKeys`; the academy has a stats-based carry-over for what predates keys, 384.46).
 - **Never rename `STORE_KEY` (`"class26e.drill.v1"`) or `"class26e.synccode"`**,
   the Firebase project id or the IndexedDB name - it orphans real progress.
 - Never call Firestore `.onSnapshot()` directly - use `onSnapshotResilient()`.
