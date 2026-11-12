@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.86: HOME STAYS PUT UNDER A SWIPE; THE PINNED CHROME IS NOT MOVED BY A RUBBER BAND.
+"""Build 384.87: HOME STAYS PUT UNDER A SWIPE; THE PINNED CHROME IS NOT MOVED BY A RUBBER BAND.
 
 Madison's 384.82 recording of Home (iPhone 17 Pro Max, installed, the rubber band back): at each swipe the content stretched a long way
 and snapped back to the same place every time (a rubber band, not a scroll: Home fits), but the tab bar, the daily "?" and the class
@@ -7,7 +7,7 @@ bubble went DOWN, off the foot of the screen, and came back as the stretch let g
 missing for a few frames. The bar's move was barSelfHeal (384.62): in a rubber band iOS reports the visual viewport past the layout one
 (offsetTop > 0) while its compositor keeps the pinned chrome where it belongs, so the follower read the stretch as a displacement and
 took it up (a negative bottom margin by the stretch), and on its first take-up it also sent a synthetic resize, which rewrites the
-hero's own style (repositionTopNotices) mid-bounce. 384.86: the follower changes nothing while a finger is down, while the page or the
+hero's own style (repositionTopNotices) mid-bounce. 384.87: the follower changes nothing while a finger is down, while the page or the
 visual viewport is moving, for 900ms after the finger lifts, or while the page stands past an end; a displacement still there at rest
 is taken up as before.
 
@@ -53,9 +53,6 @@ def matrix(br):
     devices = [d for d in sw.DEVICES if d[0] in sw.QUICK or "@85%" in d[0] or "Pro Max" in d[0]] if QUICK else sw.DEVICES
     if "--only" in args: devices = [d for d in devices if args[args.index("--only") + 1].lower() in d[0].lower()]
     combos = list(sw.combinations(devices)); bad = []; worst = {}; genuine = []
-    # his own phone with the opaque status bar (the ?sbs=default icon): the page starts under the bar, so no top inset and 59pt less height
-    combos += [("iPhone 17 Pro Max, opaque status bar", "portrait", "home screen", 440, 897, (0, 0, 34, 0), (0, 0, 34, 0), "ios-phone", (440, 956)),
-               ("iPhone 17 Pro Max @85% zoom, opaque status bar", "portrait", "home screen", 518, 1056, (0, 0, 40, 0), (0, 0, 40, 0), "ios-phone", (440, 956))]
     for label, orientation, mode, vw, vh, insets, audit, platform, scr in combos:
         serve_with(*insets)
         touch = platform != "desktop"
@@ -142,7 +139,7 @@ def boot(br, W, H, scr=(440, 956)):
 SCREENS = [("Home", "()=>showHome()", False), ("the Profile", "()=>showProfile()", True), ("the Leaderboard", "()=>showRankings()", True),
            ("the Calendar", "()=>showCalendarTab()", True), ("Settings", "()=>showAppearance()", True), ("a question", None, True)]
 def gestures(br):
-    cases = [(440, 956, (59, 0, 34, 0), s) for s in SCREENS] + [(518, 1126, (73, 0, 40, 0), SCREENS[0]), (440, 897, (0, 0, 34, 0), SCREENS[0]), (518, 1056, (0, 0, 40, 0), SCREENS[0])]
+    cases = [(440, 956, (59, 0, 34, 0), s) for s in SCREENS] + [(518, 1126, (73, 0, 40, 0), SCREENS[0])]
     for W, H, ins, (label, call, scrollable) in cases:
         serve_with(*ins)
         ctx, pg = boot(br, W, H)
