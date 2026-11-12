@@ -26,7 +26,7 @@ The book never goes into the repo (it is public): its path is given when the gat
 Run:  PDFJS_DIR=<unpacked pdfjs-dist 5.4.149> IFC_BOOK=<the owner's 2021 IFC PDF> python3 tools/check-b384-ifcmarks.py [--against REV|FILE.html] [--quick] [--ids a,b]
           [--audit FILE.tsv]      writes the audit table: id, chapter, section, pointer keys, marked text, answer, verdict, what a fix would add
       --against REV (a commit: its index.html AND ifc/ifc-viewer.js are served; a FILE is an index.html and the viewer is origin/main's): against 384.48 (origin/main
-      before this) (1) FAILS on 14 questions (4 title only, 10 wrong place) and (2) FAILS on all fifteen it reads (the patch table's fourteen and ch9b-120's table row; chAppC-003's row was accepted by the audit as a computed answer, but its footnote e, which makes it 10, was never marked). ch22-014 (the 1/32 cell) is the one real gap left, judged and flagged NOT FIXED.
+      before this) (1) FAILS on 14 questions (4 title only, 10 wrong place) and (2) FAILS on all fifteen it reads (the patch table's fourteen and ch9b-120's table row; chAppC-003's row was accepted by the audit as a computed answer, but its footnote e, which makes it 10, was never marked). (384.71) ch22-014 (Table 2203.1, the answer 1/32, a stacked fraction) is asserted too: against 384.56 (06d2bc3, where it was judged and flagged NOT FIXED) (1) FAILS on it ("wrong place": the label cell and the sentence were marked, the answer cell was not), (2) FAILS (no gold on the lowered 32, in both views) and the centring check FAILS; the whole stacked 1/32 - the raised 1, the slash, the lowered 32 - stands inside the gold in both views with the print centred in it within 0.6 pt.
 OUT_JSON=<file> writes every question's record (marks, text) - kept out of the repo like the book."""
 import os, sys, json, subprocess, mimetypes, re, collections
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
@@ -107,6 +107,10 @@ DECIDING = {                                                  # id -> [(regex, h
     "ch7-009": [(r"KEEP CLOSED", "any")], "ch6-030": [(r"^1 month$", "any")], "ch62-702": [(r"^Class I\.", "any")],
     "ch62-703": [(r"^Class IV\.", "any")], "ch33-001": [(r"^site safety plan$", "any")],
     "ch9b-120": [(r"^75 feet$", "all")],                       # (the row's value cells: a row is marked whole)
+    "ch22-014": [(r"^32$", "any")],                            # (384.71) the lowered 32 of the stacked 1/32 (the raised 1 and the slash are read by the centring check below)
+    "ch32-052": [(r"^2,501.12,000$", "any")],                  # (384.72) the row 2,501-12,000 Open to the public, and the row above it (501-2,500) that gives the 2,500
+    "ch2-616": [(r"^Corrosives$", "any"), (r"^Highly toxic materials$", "any")],     # (384.72) the list items the question names, not the whole list
+    "ch2-618": [(r"^Beverages over 16-percent", "any")],       # (384.72) the one list item, not fourteen
 }
 judged = json.load(open(os.path.join(HERE, "b384-ifcmarks-judged.json"), encoding="utf-8"))
 bs = open(os.path.join(ROOT, "ifc", "bank.js"), encoding="utf-8").read(); bank = json.loads(bs[bs.index("{"): bs.rindex("}") + 1])
@@ -136,10 +140,16 @@ with sync_playwright() as pw:
         for view in ("page", "clip"):
             for attempt in range(3):
                 try:
-                    pix[(i, view)] = pg.evaluate("([id, w, s, v]) => __im.pixels(id, w, s, v)", [i, [{"re": r, "label": r} for r, _ in DECIDING[i]], SPAGE, view]); break
+                    pix[(i, view)] = pg.evaluate("([id, w, s, v]) => __im.pixels(id, w, s, v)", [i, [{"re": r, "label": r, "comp": True} for r, _ in DECIDING[i]], SPAGE, view]); break
                 except Exception as e:
                     pix[(i, view)] = {"id": i, "err": str(e)[:160], "words": []}
                     if "closed" in str(e).lower() or "crash" in str(e).lower(): break
+    # (384.71) the stacked 1/32 of ch22-014: the gold's box and the print's box inside it, in both views, at 4 px a point (a fraction is the one mark whose ink is not a line of letters)
+    frac = {}
+    if not IDS or "ch22-014" in IDS:
+        for view in ("page", "clip"):
+            try: frac[view] = pg.evaluate("([id, w, s, v]) => __im.pixels(id, w, s, v)", ["ch22-014", [{"re": r"^32$", "label": "32", "comp": True}], 4.0, view])
+            except Exception as e: frac[view] = {"err": str(e)[:160], "words": []}
     br.close()
 if os.environ.get("OUT_JSON"): json.dump(recs, open(os.environ["OUT_JSON"], "w"))
 
@@ -179,6 +189,21 @@ for (i, view), r in pix.items():
         if (mode == "all" and min(shares) < 0.6) or (mode == "any" and max(shares) < 0.6):
             fails2.append((i, view, "gold share %s" % [round(x, 2) for x in shares][:6]))
 chk("the pictures: for each of the %d pointers fixed (the patch table's %d, and ch9b-120, a table row of a three-line label fixed in the viewer) the decisive words stand on the strong gold, in the whole book page AND the code box (share >= 0.6 of the box's non-print pixels)" % (len(DECIDING), len(PATCHED)), not fails2, fails2[:6])
+# (384.71) THE FRACTION'S GOLD IS ROUND ITS WHOLE INK. ch22-014's answer is 1/32, printed stacked: a raised 1, a slash and a lowered 32 (no line of letters). The gold must hold
+# all three, with the room round them even - the print's box centred in the gold's box within 0.6 pt each way (the card's own pixels are 3.4 to a point) - and clear of its edges
+for view, r in frac.items():
+    ws = [w for w in r.get("words", []) if w.get("comp")]
+    if r.get("err") or not ws:
+        chk("ch22-014 (%s): the stacked 1/32 stands inside a gold mark" % view, False, r.get("err") or "no gold on the lowered 32"); continue
+    c = ws[0]["comp"]; sc = c["s"]
+    if c["ix1"] < 0:
+        chk("ch22-014 (%s): the stacked 1/32 stands inside a gold mark" % view, False, "no print inside the gold"); continue
+    room = [(c["ix0"] - c["gx0"]) / sc, (c["gx1"] - c["ix1"]) / sc, (c["iy0"] - c["gy0"]) / sc, (c["gy1"] - c["iy1"]) / sc]   # left, right, top, bottom, in points
+    off = [((c["ix0"] + c["ix1"]) - (c["gx0"] + c["gx1"])) / 2 / sc, ((c["iy0"] + c["iy1"]) - (c["gy0"] + c["gy1"])) / 2 / sc]
+    wide = (c["ix1"] - c["ix0"]) / sc
+    chk("ch22-014 (%s): the whole stacked 1/32 (raised 1, slash, lowered 32: %.1f pt wide, %.1f pt tall) is inside the gold, 0.4 pt clear on every side or more" % (view, wide, (c["iy1"] - c["iy0"]) / sc),
+        wide >= 4.5 and min(room) >= 0.4, "room l/r/t/b %s pt, ink %.1f pt wide" % ([round(x, 2) for x in room], wide))
+    chk("ch22-014 (%s): the print is centred in the gold within 0.6 pt (across %.2f, down %.2f)" % (view, off[0], off[1]), abs(off[0]) <= 0.6 and abs(off[1]) <= 0.6, "off x %.2f y %.2f pt; room l/r/t/b %s" % (off[0], off[1], [round(x, 2) for x in room]))
 for (i, view), r in sorted(pix.items())[:8]: print("    %s %s: %s" % (i, view, [(w["hit"][:20], round(w["share"], 2)) for w in r.get("words", [])][:5]))
 chk("no page errors", not errs, errs[:2])
 
