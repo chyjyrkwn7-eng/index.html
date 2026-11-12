@@ -208,10 +208,15 @@ with sync_playwright() as pw:
     br.close()
 for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the academy", "2", "4")):
     r, c, tiles, cards, errs, icons = res[cls]
-    # (384.61) A chapter with an icon (CHAPTER_ICON) is told from the others by its picture and its enamel, and its outline was chosen for
-    # ROOM (the roomy outlines no chapter used: octagon, gate, hex - the octagon is the coin to the pixel): a pair with one of those is
-    # not held to the outline-twin limits below (it is still printed, still held to colours). Nothing else is exempt.
-    exempt = set(u.split(":")[0][:22] for u in icons)
+    # (384.61, narrowed in 384.63) Two roomy outlines no Fire Code chapter used before the icons - the gate (the door's) and the hex (the airliner's) -
+    # are rounded polygons, and the 2px band reads them as kin of the coin and the cut triangle's hexagon: they are the ONLY pairs held apart
+    # from the 2px outline-twin limit, named one by one below, and only at the 2px band (the 1px edge, the 28px card and the stretched
+    # reading still hold every pair, these included). The octagon, which is the coin to the pixel (1.00 at every band), is NOT used by any
+    # chapter, so no two chapters share an outline. Set NO_EXEMPT=1 to see the five fail.
+    ICON_PAIRS_2PX = [("Chapter 10", "Chapter 31"), ("Chapter 20", "Appendix C"), ("Chapter 10", "Chapter 20"), ("Chapter 20", "Chapter 31"), ("Chapter 10", "Appendix C")]
+    held = set() if (os.environ.get("NO_EXEMPT") or cls != "ifc") else set(frozenset(p) for p in ICON_PAIRS_2PX)
+    # only while both chapters have an icon (a chapter with none keeps the full limit)
+    held = set(p for p in held if all(any(u.startswith(x + ":") for u in icons) for x in p))
     names, masks = {}, {}
     for i, (d, s) in enumerate(r["masks"].items()):
         k = "o%d" % i; masks[k] = np.array([ch == "1" for ch in s], bool).reshape(N, N)
@@ -220,11 +225,12 @@ for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the acad
     chk("(%sa) %s (%s): every unit has its own outline (%d units, %d outlines)" % (s1, label, r["cls"], n, len(masks)), len(masks) == n, [len(masks), n])
     for tag, band, small, what in (("b", 1, False, "the 1px edge"), ("c", 2, False, "the 2px edge"), ("d", 1, True, "a unit card's 28px")):
         rows = compare(masks, band, small)
-        bad = [(s, names[a], names[b]) for s, a, b in rows if s >= LIM and not (set(names[a]) & exempt or set(names[b]) & exempt)]
-        chk("(%s%s) %s: no two outlines alike turned or flipped, by %s - every pair under %.2f%s (closest: %s)" % (s1, tag, label, what, LIM, " - an icon chapter's pairs apart (%d)" % len(exempt) if exempt else "",
+        apart = lambda a, b: band == 2 and not small and any(frozenset((x, y)) in held for x in names[a] for y in names[b])
+        bad = [(s, names[a], names[b]) for s, a, b in rows if s >= LIM and not apart(a, b)]
+        chk("(%s%s) %s: no two outlines alike turned or flipped, by %s - every pair under %.2f%s (closest: %s)" % (s1, tag, label, what, LIM, " - five named gate/hex pairs apart (%d held)" % len(held) if held and band == 2 else "",
             ", ".join("%s/%s %.2f" % (names[a][0], names[b][0], s) for s, a, b in rows[:3])), not bad, bad[:6])
     rows = compare_stretch(masks)
-    bad = [(s, names[a], names[b]) for s, a, b in rows if s >= SLIM and not (set(names[a]) & exempt or set(names[b]) & exempt)]
+    bad = [(s, names[a], names[b]) for s, a, b in rows if s >= SLIM]
     chk("(%se) %s: no outline is another one stretched (each box squared, 8 turns and flips, 1px) - every pair under %.2f (closest: %s)" % (s1, label, SLIM,
         ", ".join("%s/%s %.2f" % (names[a][0], names[b][0], s) for s, a, b in rows[:3])), not bad, bad[:6])
     U_ = c["units"]

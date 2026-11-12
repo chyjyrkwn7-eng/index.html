@@ -265,3 +265,6 @@ check-b384-badgetwins - see section 9 on why that one needs a decision), and a v
 2. **The Egress door.** The owner's example is on the `gate` outline in phase 1 (it was the bolt). Keep, or give it a different roomy one.
 3. **Chapter 9.** Sprinkler (drawn) or fire-alarm bell for Fire Protection and Life Safety Systems.
 4. Whether a found badge's icon should also appear on the unit card / results (it already does: every place uses the struck token).
+
+## 10. What phase 2 decided (384.63)
+All 58 icons are drawn (part-1 .. part-5). Section 9 point 1 was taken as option (b), re-dealing outlines for room with NO two chapters sharing an outline: 17 chapters changed outline (docs/notes-archive.md, "384.63"), the C-ring and the tau are no longer used, and the octagon is not used because it is the coin to the pixel. The twins gate is loosened for five named gate/hex pairs at the 2px band only. The renderer keeps only the first 14 paths of an icon: the gate counts the raw markup and fails above 14. A one-arc circle (`M x y a r r 0 1 0 .01 0Z`) is right only from the circle's TOP and only for a small r: draw a larger one as two half arcs (the gate fails r over 12).

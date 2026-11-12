@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.61, chapter badges PHASE 1: the framework every Fire Code chapter's icon is drawn into.
+"""Build 384.61 (phase 1) and 384.63 (phase 2, all 58): Fire Code's chapter badges, a picture of the chapter on each.
 Madison: "Badges are gonna be designed based on what the chapter is about / the title (mostly the title). For example Means of
 Egress could be a door in the open position? Make them cool."
 Played in Chromium, in the Fire Code class and in the academy, and read off the page:
@@ -17,7 +17,12 @@ Played in Chromium, in the Fire Code class and in the academy, and read off the 
      draws - vector earned / empty / grey with ids normalised, and the struck earned and grey tokens;
  (5) ONE PAGE, ALL 58: every chapter earned on one page has unique ids, every url(#..) resolves, no icon group carries an id;
  (6) the part files and index.html are in step (tools/merge-chapter-icons.py --check) and the brief is there;
- (7) no page errors in either class.
+ (7) no page errors in either class;
+ (8) PHASE 2 (384.63): all 58 chapters have an icon; none has more than 14 paths (the renderer keeps the first 14 and drops the rest in
+     silence, so the gate counts the raw markup and FAILS instead); no single-arc circle ("M x y a r r 0 1 0 .01 0Z") larger than r 12 (that idiom
+     only places a circle right when it starts at its top, and only a small one is safe); no two chapters share an outline, the octagon
+     (the coin to the pixel) is not used beside the coin, every chapter's outline leaves its icon a square of at least 18 of 100 units, and the
+     icon's centre sits within 25 units of the outline's own (Chapter 59 had 4 units and drew nothing; Chapter 36's tau sat high).
 Run:  python3 tools/check-b384-chapterbadges.py   (--against OLD/index.html must FAIL; --base FILE is the build compared in (4),
 default origin/main's)"""
 import json, os, sys, subprocess, importlib.util
@@ -84,6 +89,8 @@ SPEC = r"""() => {
     if(!ops.length) problems.push('no paths');
     if(pathCount > CHAPTER_ICON_MAX_PATHS) problems.push('more than ' + CHAPTER_ICON_MAX_PATHS + ' paths (' + pathCount + ')');
     if(tagCount !== pathCount) problems.push('an element that is not a <path>');
+    (mk.match(/\sd="[^"]*"/g) || []).forEach(dd => { const m = /^\s*d="M\s*-?[\d.]+[ ,]-?[\d.]+\s*a\s*([\d.]+)[ ,]\1\s+0\s+1\s+[01]\s+(-?[\d.]+)[ ,](-?[\d.]+)\s*Z"$/i.exec(dd);
+      if(m && +m[1] > 12 && Math.hypot(+m[2], +m[3]) < 1) problems.push('a one-arc circle of radius ' + m[1] + ' (draw it as two half arcs)'); });
     if(/\bid=|filter|Gradient|url\(|transform=|<defs|<style|<image|<text|<use/i.test(mk)) problems.push('an id, filter, gradient, url(), transform, defs, style, image, text or use');
     const attrs = new Set(); (mk.match(/\s([a-z-]+)="/g) || []).forEach(a => attrs.add(a.replace(/[\s="]/g, '')));
     attrs.forEach(a => { if(CHAPTER_ICON_ATTRS.indexOf(a) < 0) problems.push('attribute ' + a); });
@@ -99,12 +106,19 @@ SPEC = r"""() => {
     ops.forEach(o => { const p = new Path2D(o.d); if(o.fill && o.fill !== 'none'){ g.fillStyle = '#000'; g.fill(p, o['fill-rule'] === 'evenodd' ? 'evenodd' : 'nonzero'); } if(o.stroke && o.stroke !== 'none'){ g.strokeStyle = '#000'; g.lineWidth = +o['stroke-width'] || 1; g.lineJoin = 'round'; g.lineCap = 'round'; g.stroke(p); } });
     const d = g.getImageData(0, 0, 48, 48).data, m = new Uint8Array(48 * 48); let area = 0; for(let i = 0; i < 48 * 48; i++){ m[i] = d[i * 4 + 3] > 127 ? 1 : 0; area += m[i]; }
     if(area < 48 * 48 * .12) problems.push('a figure under 12% of its box');
-    sets.push([u, m]); out.push({ u, problems, paths: ops.length, box: [x0, y0, x1, y1].map(v => +v.toFixed(0)) });
+    sets.push([u, m]); out.push({ u, problems, paths: ops.length, rawPaths: pathCount, box: [x0, y0, x1, y1].map(v => +v.toFixed(0)) });
   }
   holder.remove();
   let worst = [0, '', ''];
   for(let i = 0; i < sets.length; i++) for(let j = i + 1; j < sets.length; j++){ let a = 0, b = 0; const A = sets[i][1], B = sets[j][1]; for(let k = 0; k < A.length; k++){ if(A[k] && B[k]) a++; if(A[k] || B[k]) b++; } const v = b ? a / b : 0; if(v > worst[0]) worst = [+v.toFixed(3), sets[i][0], sets[j][0]]; }
   return { icons: out, worst }; }"""
+OUTLINES = r"""() => {
+  const us = unitsInTeachingOrder(), by = {}, ds = {}, rows = [];
+  us.forEach(u => { const k = IFC_BADGE_SHAPE[u]; (by[k] = by[k] || []).push(u); const sh = badgeShapeFor(u); (ds[sh.d] = ds[sh.d] || []).push(u);
+    const face = badgeFaceShapeFor(u), g = badgeStrikeGeometry(face), b = badgeIconBox(g, face);
+    rows.push({ u, key: k, side: b ? +(b.half * 2).toFixed(1) : 0, off: b ? +Math.hypot(b.x - face.c[0], b.y - face.c[1]).toFixed(1) : 99 }); });
+  return { shared: Object.keys(by).filter(k => by[k].length > 1).map(k => [k, by[k].map(u => u.slice(0, 14))]), sameD: Object.keys(ds).filter(d => ds[d].length > 1).length,
+           octagonAndCoin: !!by.octagon && !!by.coin, rows }; }"""
 ALLIDS = r"""async () => {
   const us = unitsInTeachingOrder(), box = document.createElement('div'); document.body.appendChild(box);
   us.forEach(u => box.appendChild(buildUnitBadgeSVG(u, true)));
@@ -127,9 +141,9 @@ with sync_playwright() as pw:
     chk("(1) the app's chapter list is the 58 units of tools/chapter-icons/units.json, in teaching order", pr["units"] == UNITS, [len(pr["units"]), [u for u in pr["units"] if u not in UNITS][:3]])
     chk("(1) all %d chapters draw earned, empty, grey, vector and struck without throwing (%s)" % (len(pr["units"]), pr["bad"][:3]), len(pr["units"]) == 58 and not pr["bad"], pr["bad"][:5])
     icon_units = pr["icon"]
-    chk("(2) at least six chapters have an icon (%d: the six samples)" % len(icon_units), len(icon_units) >= 6, icon_units)
+    chk("(2) every one of the 58 chapters has an icon (%d)" % len(icon_units), len(icon_units) == 58, [u for u in UNITS if u not in icon_units][:5])
     fb = [u for u in UNITS if u not in icon_units]
-    chk("(1) a chapter with no icon (%d of them) resolves to nothing and draws the fallback; a chapter added later would too" % len(fb), len(fb) == 58 - len(icon_units) and pg.evaluate("()=>typeof chapterIconFor === 'function' ? chapterIconFor('Chapter 99: Not Yet') : 'no resolver'") is None and pg.evaluate("()=>{ const s = buildUnitBadgeSVG('Chapter 99: Not Yet', true, { vector: true }); return !!s.getAttribute('viewBox') && !s.querySelector('.badge-chapter-icon'); }"), fb[:3])
+    chk("(1) a chapter with no icon (%d of them now) resolves to nothing and draws the fallback; a chapter added later would too" % len(fb), len(fb) == 58 - len(icon_units) and pg.evaluate("()=>typeof chapterIconFor === 'function' ? chapterIconFor('Chapter 99: Not Yet') : 'no resolver'") is None and pg.evaluate("()=>{ const s = buildUnitBadgeSVG('Chapter 99: Not Yet', true, { vector: true }); return !!s.getAttribute('viewBox') && !s.querySelector('.badge-chapter-icon'); }"), fb[:3])
     # (2)
     for u in icon_units:
         r = pg.evaluate(USES, u)
@@ -140,7 +154,17 @@ with sync_playwright() as pw:
     sp = pg.evaluate(SPEC) if pr["hasApi"] else {"icons": [], "worst": [0, "", ""]}
     badi = [(i["u"][:24], i["problems"]) for i in sp["icons"] if i["problems"]]
     chk("(3) every icon that exists (%d) meets the spec: %s" % (len(sp["icons"]), badi[:3] or "no problems"), len(sp["icons"]) >= 6 and not badi, badi[:4])
+    chk("(3) no icon has more than %d paths (the renderer would drop the rest in silence): the most is %d" % (14, max([i["rawPaths"] for i in sp["icons"]] or [0])),
+        sp["icons"] and max(i["rawPaths"] for i in sp["icons"]) <= 14, [(i["u"][:24], i["rawPaths"]) for i in sp["icons"] if i["rawPaths"] > 14])
     chk("(3) no two icons alike: the most alike pair's 48px silhouettes overlap %s (%s / %s)" % (sp["worst"][0], sp["worst"][1][:22], sp["worst"][2][:22]), sp["worst"][0] < .85, sp["worst"])
+    # (8) the outlines
+    ol = pg.evaluate(OUTLINES) if pr["hasApi"] else {"shared": [], "sameD": 0, "octagonAndCoin": False, "rows": []}
+    chk("(8) no two chapters share an outline (%d keys shared, %d identical paths), and the octagon - the coin to the pixel - is not used beside the coin" % (len(ol["shared"]), ol["sameD"]),
+        not ol["shared"] and not ol["sameD"] and not ol["octagonAndCoin"], ol)
+    lo = sorted(ol["rows"], key=lambda r: r["side"])[:3]
+    chk("(8) every chapter's outline leaves its icon room: the smallest square is %s of 100 (%s), at least 18" % (lo[0]["side"] if lo else "-", lo[0]["u"][:22] if lo else ""), ol["rows"] and all(r["side"] >= 18 for r in ol["rows"]), lo)
+    hi = sorted(ol["rows"], key=lambda r: -r["off"])[:3]
+    chk("(8) the icon sits in the middle of its plate: the furthest off-centre is %s units (%s), at most 25" % (hi[0]["off"] if hi else "-", hi[0]["u"][:22] if hi else ""), ol["rows"] and all(r["off"] <= 25 for r in ol["rows"]), hi)
     # (5)
     ai = pg.evaluate(ALLIDS)
     chk("(5) all 58 chapters x 3 drawings on one page (%d svgs, %d ids): no id twice, every url(#) resolves, no icon group has an id" % (ai["svgs"], ai["ids"]),
@@ -162,7 +186,7 @@ with sync_playwright() as pw:
 dif = [u for u in there_ac if here_ac.get(u) != there_ac[u]]
 chk("(4) the academy's %d units draw exactly what origin/main draws (vector earned, empty, grey; struck earned, grey; ids normalised): %s" % (len(there_ac), dif[:3] or "all identical"), len(there_ac) >= 16 and not dif, dif[:5])
 dif = [u for u in there_ifc if here_ifc.get(u) != there_ifc[u]]
-chk("(4) Fire Code's %d chapters with no icon draw exactly what origin/main draws: %s" % (len(there_ifc), dif[:3] or "all identical"), len(there_ifc) == len(fb) and len(fb) > 0 and not dif, dif[:5])
+chk("(4) Fire Code's %d chapters with no icon draw exactly what origin/main draws (none left once all 58 are drawn): %s" % (len(there_ifc), dif[:3] or "all identical"), len(there_ifc) == len(fb) and not dif, dif[:5])
 mg = subprocess.run([sys.executable, os.path.join(HERE, "merge-chapter-icons.py"), "--check"], capture_output=True, text=True)
 chk("(6) tools/chapter-icons/part-*.js and index.html are in step (%s)" % mg.stdout.strip(), mg.returncode == 0 or bool(against), mg.stdout + mg.stderr)
 chk("(6) tools/chapter-badges-brief.md is there and carries the spec and the 58-chapter table", os.path.exists(os.path.join(HERE, "chapter-badges-brief.md")) and all(u in open(os.path.join(HERE, "chapter-badges-brief.md"), encoding="utf-8").read() for u in UNITS), "")
