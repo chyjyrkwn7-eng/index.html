@@ -199,6 +199,9 @@ SCREENS = [
     "showGetStarted",
     # (384.23) the page a phone in a tab with no account is held on (add Nova to the Home Screen), and the one an in-app browser sees
     "showInstallFirst({device:'apple',inapp:false})", "showInstallFirst({device:'apple',inapp:true})", "showInstallFirst({device:'android',inapp:false})",
+    # (384.36) what its button opens (the video, the final state, the help page)
+    "showInstallFirst({device:'apple',view:'video'})", "showInstallFirst({device:'apple',view:'done'})", "showInstallFirst({device:'apple',view:'help'})",
+    "showInstallFirst({device:'android',view:'video'})", "showInstallFirst({device:'android',view:'help'})",
     "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showWelcomeNamePrompt",
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
     # the everyday screens
@@ -240,6 +243,8 @@ SCREENS = [
 # Reached only from Welcome, and only before the account exists.
 ONBOARDING_SCREENS = {
     "showGetStarted", "showInstallFirst({device:'apple',inapp:false})", "showInstallFirst({device:'apple',inapp:true})", "showInstallFirst({device:'android',inapp:false})",
+    "showInstallFirst({device:'apple',view:'video'})", "showInstallFirst({device:'apple',view:'done'})", "showInstallFirst({device:'apple',view:'help'})",
+    "showInstallFirst({device:'android',view:'video'})", "showInstallFirst({device:'android',view:'help'})",
     "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",

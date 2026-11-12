@@ -21,10 +21,15 @@ Read off the page, in Fire Code, for the app and bank on origin/main (BASE) and 
   python3 tools/check-b384-ifc543.py [--against OLD/index.html]   (BASE = the merge-base with origin/main by default)"""
 import os, sys, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-def _base():   # the commit this branch was cut from (origin/main moves as other branches merge; the keys to hold are the ones THIS bank started from)
-    r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
-    return r or "origin/main"
-BASE = os.environ.get("BASE") or _base()
+# (384.47) main holds the 5.4.3 change now, so the commit to compare with is the last one BEFORE it (efe84b3, main 384.45). What 384.47 did to the bank
+# besides (70 questions into Chapter 1, 17 removed: tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS) is read from the generator and left out of
+# the comparisons here; tools/check-b384-moveperm.py holds that move.
+BASE = os.environ.get("BASE") or "efe84b3"
+import ast
+def _gen(name):
+    for n in ast.parse(open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()).body:
+        if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
+MOVED47 = sorted(i for i, to in _gen("UNIT_MOVES").items() if to == "1"); REMOVED47 = sorted(_gen("UNIT_REMOVALS")); GONE47 = set(MOVED47) | set(REMOVED47)
 # id -> the unit id it moves to, in the order the generator appends them
 
 
@@ -85,15 +90,17 @@ chk("(1) %s as shown: options %s; keyed answer %r; wording, explanation and cita
     n["ch"] == NEWOPTS and ans_text == "hazardous materials management plan" and n["q"] == o["q"] and n["expl"] == o["expl"] and n["cit"] == o["cit"] and "operational permit application" not in n["ch"],
     (n["ch"], ans_text))
 # (2)
-diffs = [(i, sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].get(k))) for i in oq if oq[i] != nq[i]]
+diffs = [(i, sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].get(k))) for i in oq if i in nq and i not in GONE47 and oq[i] != nq[i]]
+moved_fields = [i for i in MOVED47 if sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].get(k)) != ["unit"]]   # a 384.47 move changes `unit` and nothing else
 chk("(2) the bank file: only %s differs from main's, in `options` alone (every other question, the units and the meta identical)" % ID,
-    diffs == [(ID, ["options"])] and ob["units"] == nb["units"] and ob["meta"] == nb["meta"] and set(oq) == set(nq) and len(nq) == 1812
+    diffs == [(ID, ["options"])] and not moved_fields and [{k: v for k, v in u.items() if k != "questionCount"} for u in ob["units"]] == [{k: v for k, v in u.items() if k != "questionCount"} for u in nb["units"]]
+    and {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and set(nq) == set(oq) - set(REMOVED47) and len(nq) == 1812 - len(REMOVED47)
     and [k for k in nq[ID]["options"] if nq[ID]["options"][k] != oq[ID]["options"][k]] == ["B"], diffs[:4])
 # (3)
-moved = sorted(i for i in O if O[i]["key"] != N.get(i, {}).get("key"))
+moved = sorted(i for i in O if i not in REMOVED47 and O[i]["key"] != N.get(i, {}).get("key"))
 allk = [r["key"] for r in new["rows"]]
-chk("(3) all %d questions' keys identical on main and here (%d differ), chAppH-805 included; all unique" % (len(N), len(moved)),
-    len(N) == len(O) == 1812 and not moved and len(set(allk)) == len(allk), moved[:6])
+chk("(3) all %d questions' keys identical on main and here but the %d the owner moved into Chapter 1 in 384.47 (%d differ), chAppH-805 included; all unique" % (len(N), len(MOVED47), len(moved)),
+    len(N) == len(O) - len(REMOVED47) and moved == MOVED47 and len(set(allk)) == len(allk), moved[:6])
 # (4)
 chk("(4) the stars on %s and on ch1-008 are kept" % ID, flags.get(O[ID]["key"]) == STAMP and flags.get(O["ch1-008"]["key"]) == STAMP + 1, flags)
 chk("(5) no page errors", not errs and not e0, (errs + e0)[:3])

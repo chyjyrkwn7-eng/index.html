@@ -547,6 +547,12 @@ SCREENS = [
     {"name": "signup/get started", "js": "store.onboardingComplete=false; showGetStarted();", "wait": 2600, "after": "store.onboardingComplete=true;"},
     {"name": "signup/welcome", "js": "store.onboardingComplete=false; showWelcome();", "wait": 1600, "after": "store.onboardingComplete=true;"},
     {"name": "signup/sign in", "js": "store.onboardingComplete=false; showWelcomeCodeEntry();", "wait": 1400, "after": "store.onboardingComplete=true;"},
+    # (384.36) the install page and what its button opens
+    {"name": "signup/install page", "js": "store.onboardingComplete=false; showInstallFirst({device:'apple'});", "wait": 1400, "after": "store.onboardingComplete=true;"},
+    {"name": "signup/install video", "js": "store.onboardingComplete=false; showInstallFirst({device:'apple',view:'video'});", "wait": 1400, "after": "store.onboardingComplete=true;"},
+    {"name": "signup/install done", "js": "store.onboardingComplete=false; showInstallFirst({device:'apple',view:'done'});", "wait": 1400, "after": "store.onboardingComplete=true;"},
+    {"name": "signup/install help", "js": "store.onboardingComplete=false; showInstallFirst({device:'apple',view:'help'});", "wait": 1400, "after": "store.onboardingComplete=true;"},
+    {"name": "signup/install in-app", "js": "store.onboardingComplete=false; showInstallFirst({device:'apple',inapp:true});", "wait": 1400, "after": "store.onboardingComplete=true;"},
     {"name": "signup/new here", "js": "store.onboardingComplete=false; showSignUpCheck();", "wait": 1400, "after": "store.onboardingComplete=true;"},
     {"name": "signup/class", "js": "store.onboardingComplete=false; showClassSelection();", "wait": 1400, "after": "store.onboardingComplete=true;"},
     {"name": "signup/class picked", "js": "store.onboardingComplete=false; showClassSelection(); setTimeout(()=>document.querySelector('.classselect-panel .class-card')?.click(), 500);", "wait": 1500, "after": "store.onboardingComplete=true;"},
