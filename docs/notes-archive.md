@@ -39256,3 +39256,52 @@ WHAT ONLY A PHONE CAN CONFIRM: whether the chat button and Pause look the same o
 
 ## 384.86 - 384.85 reverted (branch claude/b384-revert85; merged on the owner's word)
 Madison, after living with his default-style test icon: "the blurry thing is pretty bad but I think this may just be worse ... I'm not gonna have people redownload the app to see this ... Hurry up and revert it". PR #102 (384.85: html.sb-default, screenTopPaint, theme-color/manifest #0A0A0A, 12px strip, ojapp) is reverted in full with `git revert -m 1 0742abf`; the app is 384.83's again (rubber band, page lock, the solid strip of 384.80, the chat button's glass). No re-add, no status-bar-style change for anyone. The ?sbs test address still exists (it predates 384.85) but nothing is built for it any more.
+
+## 384.92 - the Leaderboard: no crown, and lines that mean something (branch claude/b384-lbclean; NOT merged - waiting for Madison's go)
+Madison, two screenshots of his board on 384.86 (Fire Code, seven people, his own row washed at #2), circling the crown on first place's
+medal and then the left ends of the lines between rows 3-6: "No crown. Also, why are there weird lines? Fix that".
+
+**The crown.** It was drawn in one place only: renderRankingRows put a `.lb-crown` span (an inline SVG, build 324, made upright in 384.18)
+inside first place's `.rank-place`. That block, `lbCrownSeq` and the three `.lb-crown` CSS rules are gone. The medal (`renderRankMarker`:
+the gold "1" circle, its struck edge) is untouched. Nothing else used it: the Virtual Room results, the podium of last week and the friend
+lists never drew one (renderRankingRows has one caller, showRankings); no tour points at it. check-behaviour check_b324l_board asserted it
+on purpose ("first place a crown") - CHANGED ON PURPOSE to assert no crown on any of the three boards.
+
+**The lines - what was wrong, measured off his PNG** (1186 px wide):
+- the line under each row (`::after`, `--lb-hair` rgba(255,255,255,.1)) started at the name (`--lb-hair-l`, x~265 of 921) and stopped at
+  the row's content edge (`--lb-pad` short of the card) - an iOS list's inset line, written for a list of identical rows. This list is
+  not one: the podium's metal tints and your accent wash run edge to edge, so a line that stops short of them reads as broken;
+- under every line, the full width of the card, ~1px at 25-31 (the page is 19/21/25, the rows 35/37/42): the page showing through where
+  two rows meet. The rows sit on a fractional y (309.52 in Chromium, from the heights above them); WebKit softens each row's top and bottom
+  edge there and the two half-covered pixels at a boundary let the page through. Chromium snaps the rows to whole CSS pixels and never
+  shows it - so a screenshot here cannot see it, and the gate holds what is UNDER the boundary instead;
+- the podium rows' light (a radial tile from the padding box) repeated into the rows' 1px side border: a lit gold/silver/bronze line down
+  the card's right edge on rows 1-3 (+26 levels in the outermost column).
+
+**Dividers: rendered both ways and looked at** (scratchpad lbclean/proto/compare.png): a full-width hairline between every row, and no lines
+at all. Without lines, first place's gold fades into second's silver with nothing between and rows 4-8 merge into one slab with wide
+gaps; the full-width line reads as one deliberate table. So: ONE LINE PER BOUNDARY, from the card's inner left edge to its inner right
+(`left:0; right:0`), the same 1px rgba(255,255,255,.1) everywhere, none above the first row or under the last, nothing doubled (rows have
+no top/bottom borders inside the card). `--lb-hair-l` is gone (it had no other user). Both the old "THE LIST" rule and the #stage
+"ONE LIST" rule carry it.
+- NO PAGE BETWEEN TWO ROWS: every row but the last paints `--lb-cell-under` (the list's cell colour as a 1px box-shadow, defined next to
+  `--lb-cell` in both places that set it, so the same tokens resolve at the same element) - it lies under the row below, which covers it:
+  nothing moves, and a boundary has the card behind it. Not on a row mid Find-me flash (`.rank-flash`; its box-shadow was already `none
+  !important`, as before).
+- THE SIDES: `background-origin:border-box` on the board's rows (#stage rule): the tints start at the outer edge, no repeat into the border.
+- Unchanged: row heights and positions (0px shift), the medal, the tints, the wash, the rank flares, the column header.
+- Superseded on purpose: check-b384-hairlines (1)-(3) ("the line never touches the sides", Madison's Delta note for Settings) no longer
+  measure the Leaderboard - Settings' lists keep the inset; check-b382-ios (3) wanted the line "inset to the name" (left > 8), now left 0.
+
+**Gate: tools/check-b384-lbclean.py** - iPhone 17 Pro Max (3x) and iPad Pro 11" (2x), installed, both classes, every board each class has
+(read off rankingBoardsFor(): academy This Week/Overall/Hundos; Fire Code Overall), eight people like his with the viewer on the podium in
+the academy and in the list in Fire Code: (1) no crown (no child in the place marker, no pseudo with content on it or the medal, nothing
+named crown), the gold 1 medal round; (2) one card - rows touch, one left and right edge, no borders inside; with the rows pulled 4px apart,
+under each boundary the cell colour (within 3), under the last row the page; (3) rows-1 lines, each on a boundary, none on the outer edges,
+none within 2px of another, each from inner left to inner right within 1px; (4) on the screenshot every line is lighter than its row at the
+left, the middle and the right; (5) the outermost pixel column on each side of every row is the row's colour (within 6); (6) no page errors.
+Serves version.json at the build under test (an --against build would otherwise be pushed to reload). FAILS on origin/main 384.86 on
+(1)-(5) for every board, device and class; ALL PASS (45) here.
+
+**What only his phone can confirm:** that the dark seam under each line is gone - it is WebKit's antialiasing at a fractional y and
+Chromium cannot draw it; the fix (the card under every boundary) is measured here, the seam itself is not.
