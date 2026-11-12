@@ -14,7 +14,7 @@ is taken up as before.
  (1) FITS     Home's document is no taller than the window (scrollHeight <= innerHeight + 1) on every device of the sweep matrix
               (tools/sweep-layout.py's DEVICES: installed, in a browser and Safari's bars over the page; portrait and landscape; his
               85% zoom is the "@85%" entry). Passes on 384.82 too: Home did not scroll there either; the travel is the stretch.
- (2) STILL    on Home, Profile, the Leaderboard, the Calendar, Settings and a question (440x956 installed, and 518x1126 at his zoom on
+ (2) STILL    on Home, Profile, the Leaderboard, the Calendar, Settings, Choose your mode and a question (440x956 installed, and 518x1126 at his zoom on
               Home): a touch goes down, the visual viewport stretches past the layout one (offsetTop 0 -> 240 -> 0, what iOS reports in a
               rubber band) while the page scrolls where it can, the finger lifts and the stretch snaps back; in every frame the tab bar,
               the daily "?", the class bubble, the chat button, the top strip, Pause / the test header and the version label are where
@@ -137,7 +137,7 @@ def boot(br, W, H, scr=(440, 956)):
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()"); pg.evaluate(UNOWE); pg.wait_for_timeout(400)
     return ctx, pg
 SCREENS = [("Home", "()=>showHome()", False), ("the Profile", "()=>showProfile()", True), ("the Leaderboard", "()=>showRankings()", True),
-           ("the Calendar", "()=>showCalendarTab()", True), ("Settings", "()=>showAppearance()", True), ("a question", None, True)]
+           ("the Calendar", "()=>showCalendarTab()", True), ("Settings", "()=>showAppearance()", True), ("Choose your mode", "()=>showModeSelect()", False), ("a question", None, True)]
 def gestures(br):
     cases = [(440, 956, (59, 0, 34, 0), s) for s in SCREENS] + [(518, 1126, (73, 0, 40, 0), SCREENS[0])]
     for W, H, ins, (label, call, scrollable) in cases:
