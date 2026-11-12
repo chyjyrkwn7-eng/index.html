@@ -31,7 +31,10 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 def _base():   # the commit this branch was cut from (the keys to hold are the ones THIS bank started from)
     r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
     return r or "origin/main"
-BASE = os.environ.get("BASE") or _base()
+# (384.73) main now HOLDS the 384.47 moves and removals: the commit to compare with is the last one before them, a3760c5 (main 384.62). The three questions
+# 384.73 removed come out of UNIT_REMOVALS too, so they are read as removed here as well: Chapters 2 and 4 join the affected chapters (36 -> 38), each holding
+# the badge with answered, starred removed questions, and every check below holds for them exactly as for the other 36 (nothing lowered, stars off once).
+BASE = os.environ.get("BASE") or "a3760c5"
 def _gen(name):
     for n in ast.parse(open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()).body:
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)

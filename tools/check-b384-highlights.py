@@ -159,6 +159,7 @@ if os.path.isfile(BOOK):
     blk = blk[: blk.index("\n};")] if blk else ""
     patched = _re.findall(r'^\s*"([A-Za-z0-9-]+)":\s*\{', blk, _re.M)
     ibank = [q["id"] for q in bank["questions"] if q["citation"].get("source") == "ifc" and q.get("type") == "content"]
+    patched = [i for i in patched if i in ibank]                # (384.72) the county pointers of the patch table (a `head` / an excerpt) are cut from the booklet: this leg reads the book's
     every = 60 if QUICK else 25
     ifc_ids = patched + [i for i in ibank[::every] if i not in patched]
     if IDS: ifc_ids = [i for i in ifc_ids if i in IDS]
