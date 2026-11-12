@@ -39,13 +39,12 @@ def boot(br, flag=True, extra="", url=None):
     pg.goto(url or cb.URL); pg.wait_for_timeout(3000)
     pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); }")
     return ctx, pg
-# (384.85) #oj-cover / #oj-panel are the ojapp nudge's own nodes (after the splash, gone in under a second by themselves), not the page's
 STATE = """()=>{
   const de = document.documentElement, b = document.body, q = s => document.querySelector(s);
   const r = s => { const e = q(s); if(!e) return null; const x = e.getBoundingClientRect(); return [Math.round(x.left), Math.round(x.top), Math.round(x.width), Math.round(x.height)]; };
   const g = document.getElementById('top-guard');
   return { metas: [...document.head.querySelectorAll('meta')].map(m => m.outerHTML).join('|'),
-           htmlStyle: de.getAttribute('style') || '', bodyStyle: b.getAttribute('style') || '', kids: [...b.children].map(e => e.id || e.className || e.tagName).filter(k => !/^rk-|^top-guard$|^oj-/.test(k)).sort().join(','),
+           htmlStyle: de.getAttribute('style') || '', bodyStyle: b.getAttribute('style') || '', kids: [...b.children].map(e => e.id || e.className || e.tagName).filter(k => !/^rk-|^top-guard$/.test(k)).sort().join(','),
            styles: [...document.querySelectorAll('style')].filter(e => !/^rk-/.test(e.id)).length, dx: document.querySelectorAll('style[id^=dx-]').length, strip: !!document.getElementById('dx-strip'),
            guard: g ? [getComputedStyle(g).display, g.dataset.color] : null,
            edge: (() => { const e = document.getElementById('top-edge'); return e ? [getComputedStyle(e).display, e.dataset.color || '', e.style.backgroundColor, getComputedStyle(e).pointerEvents] : null; })(), tc: document.getElementById('themecolor').content,
