@@ -124,7 +124,7 @@ def main():
             dest = arg(flag)
             if not dest: continue
             earned = arg("--earned", "samples")
-            ctx, pg, errs = open_page(br, port, SEED, w, h, 3 if w < 500 else 2)
+            ctx, pg, errs = open_page(br, port, SEED, w, h, int(arg("--sdsf", "3" if w < 500 else "2")))
             pg.evaluate("""(earned)=>{ const us = unitsInTeachingOrder(); const samples = (typeof CHAPTER_ICON === 'object') ? us.filter(u => chapterIconFor(u)) : [];
               const want = earned === 'all' ? us : earned === 'none' ? [] : earned === 'samples' ? samples : us.filter(u => earned.split(',').some(n => u.indexOf('Chapter ' + n + ':') === 0));
               want.forEach(u => { store.unitPerfects[u] = Math.max(store.unitPerfects[u] || 0, badgeThresholdFor(u)); });

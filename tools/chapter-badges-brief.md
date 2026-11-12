@@ -197,7 +197,7 @@ Five helpers, one file each, no shared files, so no conflicts. The icons already
 creates `tools/chapter-icons/part-N.js` containing ONLY `CHAPTER_ICON["..."] = ...;` statements for its chapters (a header comment
 is fine), nothing else.
 
-| file | chapters (numbers as in section 2) | count |
+| file | chapters (the chapters' own numbers - what `--only` takes; the # column in section 2 is only a row count) | count |
 |------|------------------------------------|-------|
 | part-1.js | 1, 3, 4, 5, 6, 7, 8, 11, 12, 21 | 10 |
 | part-2.js | 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 | 12 |
@@ -205,7 +205,7 @@ is fine), nothing else.
 | part-4.js | 54, 55, 56, 58, 59, 60, 61, 62, 63, 64 | 10 |
 | part-5.js | 65, 66, 67, 80, Appendix B, Appendix D, Appendix H, Appendix I, Exhibit B, Chapter and Section Finder | 10 |
 
-(Teaching order numbers; the chapter column in section 2 is the exact key.) A helper may change a concept if its drawing cannot be
+(The Chapter column in section 2 is the exact key.) A helper may change a concept if its drawing cannot be
 made to read - write why in a comment above the icon and in the hand-off, and pick something else nameable from the title.
 
 ### Working loop (never touches index.html)
