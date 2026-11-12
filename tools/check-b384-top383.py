@@ -9,16 +9,18 @@ git), on the same screens, in Chromium (docs/notes-archive.md "384.77"):
                  Profile, Settings and the Leaderboard (1px); --sat is the raw inset;
  (2) STILL       with the visual viewport reading offset by the scroll (what 384.62's heal read on his phone mid-scroll) the header, Pause and
                  the chat button do not move (as on 383, which had no follower);
- (3) BOUNCE      (384.80, changed on purpose: the owner's "when swiping down, the bottom tab breaks") the root does NOT bounce in the
-                 installed app (overscroll-behavior-y none; 383 had the rubber band);
- (4) BUTTONS     the chat button beyond Home and the round back button carry 383's look (no backdrop blur, the same background), Home's chat
-                 button 383's glass;
+ (3) BOUNCE      (384.82, back to 384.77's: the owner, "the rubber band thing, bring it back... That is vital") the root keeps its rubber
+                 band in the installed app (overscroll-behavior-y is 383's and not none; 384.80 had taken it away);
+ (4) BUTTONS     (384.78, CHANGED ON PURPOSE: the owner on 384.77, "all it did was change the color of the chat button, and now the chat
+                 button doesn't match") the chat button on every screen, Pause and the round back buttons wear ONE look, 384.70/384.76's
+                 unblurred glass (384 r17): no backdrop blur, and the same background, border and shadow everywhere. 384.77 (383's flat disc
+                 beyond Home, 384.1's blurred glass on Home and Pause) must FAIL this;
  (5) STRIP       (384.80) ONE strip, #top-edge, over the whole safe area (6px where there is none), in the markup ahead of every script in
                  <body>, one solid opaque colour, no image, taps going through; no #top-safe; a Profile scrolled 300 shows the same status-bar
                  area as at rest; theme-color and color-scheme are not written after launch;
  (6) VARIANTS    the display test lists A (class26e.topmatch), B (topdeep), C (top383); C takes both strips away and rewrites the tags as 383;
  (7) no page errors.
-Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2), (4), (6))"""
+Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2), (6); main 384.77 must FAIL (4))"""
 import os, sys, io, re, subprocess, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
@@ -44,7 +46,7 @@ DEVICES = [("promax", 440, 956, 59, 34, UA), ("ipad11", 834, 1194, 24, 20, UA_PA
 QSTART = """()=>{ showHome(); const u = 'Arrest, Search, and Seizure'; cfg.mode='drill'; cfg.units=[u]; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false; theme.autoAdvance=false; theme.reduceMotion=true;
   beginRun(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic===u), null); }"""
 READ = """()=>{ const R = s => { const e = document.querySelector(s); if(!e) return null; const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return null; const r = e.getBoundingClientRect(); if(!r.width) return null;
-    return { r: [r.left, r.top, r.right, r.bottom].map(v => Math.round(v * 10) / 10), bf: cs.backdropFilter, bg: cs.backgroundColor, bi: cs.backgroundImage.slice(0, 40) }; };
+    return { r: [r.left, r.top, r.right, r.bottom].map(v => Math.round(v * 10) / 10), bf: cs.backdropFilter, bg: cs.backgroundColor, bi: cs.backgroundImage.slice(0, 40), bc: cs.borderTopColor, sh: cs.boxShadow }; };
   const h = document.elementFromPoint(innerWidth / 2, 4);
   return { y: Math.round(scrollY), header: R('.wrap > .top'), pause: R('#pausebtn'), chat: R('#chatdock-btn'), back: R('#stage .settings-nav-back') || R('#stage .ios-nav > .back-link.ios-nav-back'),
     edge: R('#top-edge'), safe: R('#top-safe'), at4: h ? (h.id || h.tagName) : null, ob: getComputedStyle(document.documentElement).overscrollBehaviorY, cls: document.documentElement.className,
@@ -117,19 +119,23 @@ def run(br):
                 g0 = got[(key[0], 0)]
                 moved = {k: [g0[k] and g0[k]["r"], g[k] and g[k]["r"]] for k in kept if not same(g0[k], g[k], .5)}
                 chk("%s %s scrolled %d: Pause and the chat button where they were at 0 (%s)" % (name, key[0], key[1], "same" if not moved else moved), not moved, moved)
-            if key[0] != "home" and g.get("chat") and r.get("chat"):
-                chk("%s %s: the chat button beyond Home is 383's (backdrop %s / %s, background %s / %s)" % (name, key[0], g["chat"]["bf"], r["chat"]["bf"], g["chat"]["bg"], r["chat"]["bg"]),
-                    g["chat"]["bf"] == r["chat"]["bf"] and g["chat"]["bg"] == r["chat"]["bg"], [g["chat"], r["chat"]])
-            if key[0] == "home" and g.get("chat") and r.get("chat"):
-                chk("%s home: the chat button is 383's glass (backdrop %s / %s)" % (name, g["chat"]["bf"], r["chat"]["bf"]), g["chat"]["bf"] == r["chat"]["bf"], [g["chat"], r["chat"]])
-            if key[0] == "settings" and key[1] == 0 and r.get("back"):
-                chk("%s settings: the round back button is 383's (backdrop %s / %s, background %s / %s)" % (name, g["back"] and g["back"]["bf"], r["back"]["bf"], g["back"] and g["back"]["bg"], r["back"]["bg"]),
-                    g.get("back") and g["back"]["bf"] == r["back"]["bf"] and g["back"]["bg"] == r["back"]["bg"], [g.get("back"), r["back"]])
+        # (4) (384.78) ONE LOOK for the top band's buttons, screen by screen: the chat button (Home included), Pause and the round back buttons
+        # all wear Home's chat button's look, and it is 384.76's unblurred glass
+        LOOK = ("bf", "bg", "bi", "bc", "sh")
+        home = got.get(("home", 0), {}).get("chat")
+        hl = tuple(home[f] for f in LOOK) if home else None
+        chk("%s home: the chat button is 384.76's unblurred glass (backdrop %s, background %s)" % (name, home and home["bf"], home and home["bg"]),
+            bool(home) and home["bf"] in ("none", ""), home)
+        for key in [k for k in got if isinstance(k, tuple) and k != ("home", 0)]:
+            els = {el: got[key].get(el) for el in ("chat", "pause", "back") if got[key].get(el)}
+            off = {el: [v[f] for f in LOOK] for el, v in els.items() if tuple(v[f] for f in LOOK) != hl}
+            chk("%s %s y%d: %s wear%s Home's chat button's look (%s)" % (name, key[0], key[1], ", ".join(els) or "nothing read", "s" if len(els) == 1 else "",
+                "same" if not off else off), bool(els) and hl is not None and not off, off)
         worst = max(abs(v) for s in got["follow"] for v in s.values() if v is not None)
         chk("%s: with the visual viewport reading offset by the scroll the header, Pause and chat do not move (worst %.1f; 383 %s)" % (name, worst, ref["follow"]), worst <= .5, got["follow"])
         f = got["final"]
         chk("%s: --sat is the raw inset (%.1f vs %d)" % (name, f["sat"], top), abs(f["sat"] - top) < .6, f["sat"])
-        chk("%s: (384.80) the root does not bounce (overscroll-behavior-y %s; 383 %s)" % (name, f["ob"], ref["final"]["ob"]), f["ob"] == "none", f["ob"])
+        chk("%s: (384.82) the root keeps its rubber band (overscroll-behavior-y %s; 383 %s)" % (name, f["ob"], ref["final"]["ob"]), f["ob"] == ref["final"]["ob"] and f["ob"] != "none", f["ob"])
         e, s = f["edge"], f["safe"]
         # (384.80, changed on purpose: the owner's Safari 26 / r/PWA reports) ONE strip: #top-edge over the whole safe area (6px where there is none),
         # a solid opaque colour with no image, taps going through; #top-safe is folded into it
