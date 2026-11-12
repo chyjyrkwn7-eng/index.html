@@ -212,9 +212,9 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     base: "water",
     d: OBJ_poly(pts, rs),
     plates: [
-      ["water", OBJ_rrect(4, 54, 68, 38, 3), { dome: .8 }],                                         /* the box */
+      ["water", OBJ_rrect(4, 54, 68, 38, [3, 1, 1, 3]), { dome: .8 }],                               /* the box (384.90: its right corners the outline's own, where it meets the drawer) */
       ["cream", OBJ_rrect(10, 59, 56, 19, 3), { z: .6, bev: .8 }],                                    /* its label, raised */
-      ["wood", OBJ_rrect(4, 82, 68, 10, [0, 0, 3, 3]), { z: -.3, bev: .5 }],                         /* the striker */
+      ["wood", OBJ_rrect(4, 82, 68, 10, [0, 0, 1, 3]), { z: -.3, bev: .5 }],                         /* the striker */
       ["wood", hatch, { ln: 1.3, cut: .6, paint: 0 }],
       ["cream", OBJ_rrect(72, 57, 24, 32, [0, 2, 2, 0]), { z: .2 }],                                  /* the drawer */
       ["rubber", OBJ_rrect(74.5, 59.5, 19, 27, 1.5), { z: -1.2, bev: .7 }],                            /* its inside */
