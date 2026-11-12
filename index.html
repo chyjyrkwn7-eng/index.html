@@ -58279,6 +58279,7 @@ function runIfcAnalysis(file, opts){
   };
   const finish = () => {
     ov.classList.add("is-ok");
+    ov.dataset.kept = result.kept ? "1" : "0";   /* (384.58) read by check-b384-bookonce */
     /* (384) Madison: "After verified shouldn't it say success, IFC PDF SUCCESSFULLY REFERENCED? ... And then the button makes
        more sense? Like it could say enroll and get started or just enroll?" A success, said as one; what it means under it;
        and the button is the next step: Enroll and get started (the class list), Continue (sign-up, which goes on to make the
@@ -58327,12 +58328,13 @@ function runIfcAnalysis(file, opts){
     .catch(e => {
       failed = e;
       ov.classList.add("is-bad");
-      ov.querySelector(".ia-title").textContent = "That file can't be used";
+      ov.dataset.reason = e && e.loadFailed ? "reader" : (e && e.refused ? "file" : "error");   /* (384.58) read by check-b384-bookonce */
+      ov.querySelector(".ia-title").textContent = e && e.loadFailed ? "Could not load the PDF reader" : "That file can't be used";
       const res = ov.querySelector(".ia-result"); res.hidden = false;
       res.textContent = e && e.refused ? e.message : "Something went wrong reading that file: " + ((e && e.message) || e);
       const acts = ov.querySelector(".ia-actions"); acts.hidden = false;
-      const again = document.createElement("button"); again.type = "button"; again.className = "next playbtn"; again.textContent = "Choose another file";
-      again.addEventListener("click", () => { ov.remove(); ifcPickBook(opts); });
+      const again = document.createElement("button"); again.type = "button"; again.className = "next playbtn"; again.textContent = e && e.loadFailed ? "Try again" : "Choose another file";
+      again.addEventListener("click", () => { ov.remove(); if(e && e.loadFailed) runIfcAnalysis(file, opts); else ifcPickBook(opts); });
       const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "next ghost"; cancel.textContent = "Cancel";
       cancel.addEventListener("click", () => ov.remove());
       acts.append(again, cancel);
@@ -118483,10 +118485,23 @@ const IFC_PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.149/";
 let ifcViewerP = null, ifcPdfjsP = null, ifcBook = null, ifcBookP = null, ifcCountyP = null;
 const ifcCountyOpts = { cache: new Map(), fontBold: new Map() };
 const ifcNodeCache = new Map();
-function ifcViewer(){ return ifcViewerP || (ifcViewerP = import("./ifc/ifc-viewer.js")); }
+/* (384.58) A FAILED LOAD IS NOT KEPT FOR THE VISIT. These two were remembered as they came back, so one dropped request for the
+   reader (pdf.js comes from a CDN) or for ifc-viewer.js - a weak signal in a classroom, a phone that was asleep - left every code
+   box in the visit unable to open the book and the "Choose my IFC PDF" screen unable to read a file, until the app was closed.
+   A browser also keeps a module that failed to load for the life of the page, so the next try asks for it under a new address
+   (?r=N). The error is one plain sentence (e.refused: the analysing screen shows it as it is). */
+let ifcLoadTry = 0;
+function ifcLoadFailed(what){
+  const e = new Error("Nova could not load " + what + ". Check your connection and try again."); e.refused = true; e.loadFailed = true; return e;
+}
+function ifcViewer(){
+  return ifcViewerP || (ifcViewerP = import("./ifc/ifc-viewer.js" + (ifcLoadTry ? "?r=" + ifcLoadTry : ""))
+    .catch(() => { ifcViewerP = null; ifcLoadTry++; throw ifcLoadFailed("the part that reads the book"); }));
+}
 function ifcPdfjs(){
-  return ifcPdfjsP || (ifcPdfjsP = import(IFC_PDFJS + "build/pdf.min.mjs").then(lib => {
-    lib.GlobalWorkerOptions.workerSrc = IFC_PDFJS + "build/pdf.worker.min.mjs"; return lib; }));
+  return ifcPdfjsP || (ifcPdfjsP = import(IFC_PDFJS + "build/pdf.min.mjs" + (ifcLoadTry ? "?r=" + ifcLoadTry : "")).then(lib => {
+    lib.GlobalWorkerOptions.workerSrc = IFC_PDFJS + "build/pdf.worker.min.mjs"; return lib; })
+    .catch(() => { ifcPdfjsP = null; ifcLoadTry++; throw ifcLoadFailed("the PDF reader"); }));
 }
 async function ifcOpenPdf(bytes){
   const lib = await ifcPdfjs();
@@ -118504,27 +118519,50 @@ function ifcKv(mode, key, value){
     r.onerror = () => rej(r.error);
     r.onsuccess = () => {
       try{
-        const db = r.result, tx = db.transaction("kv", mode === "get" ? "readonly" : "readwrite"), os = tx.objectStore("kv");
+        const db = r.result, write = mode !== "get", tx = db.transaction("kv", write ? "readwrite" : "readonly"), os = tx.objectStore("kv");
         const rq = mode === "get" ? os.get(key) : mode === "put" ? os.put(value, key) : os.delete(key);
-        rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
-        tx.oncomplete = () => { try{ db.close(); }catch(e){} };
+        let got;
+        /* (384.58) A WRITE IS DONE WHEN THE BROWSER HAS COMMITTED IT, not when the request was accepted: a book is tens of
+           megabytes, the request is accepted at once and the file is written after, and "kept" was reported (and the class
+           switched, the page reloaded) in that gap - the reload cancelled the write and left the index without its book.
+           Measured: a 120 MB copy, saved, reloaded straight after - the index was there, the PDF was not. */
+        rq.onsuccess = () => { got = rq.result; if(!write) res(got); };
+        rq.onerror = () => rej(rq.error);
+        tx.oncomplete = () => { try{ db.close(); }catch(e){} if(write) res(got); };
+        tx.onabort = () => { try{ db.close(); }catch(e){} rej(tx.error || rq.error || new Error("The copy was not saved.")); };
       }catch(e){ rej(e); }
     };
   });
 }
-/* the saved copy, opened once; null when there is none (or it cannot be read) */
+/* the saved copy, opened once; null when there is none (or it cannot be read).
+   (384.58) WHY it is null is kept (ifcBookWhy), because the two are not the same thing to a person: "none" - nothing is saved on
+   THIS device (a new device, a browser that was cleared); "unreadable" - the copy IS here and could not be opened this time (the
+   PDF reader did not load, the device was short of memory). The first asks for the PDF; the second says try again, and never
+   asks for the PDF - the book was not lost. A saved copy whose notes are from an older build (index.v) or were cut short is
+   read again here from the copy itself, once, and the notes saved: nobody is asked for a book they already gave. */
+let ifcBookWhy = "";
 function ifcEnsureBook(){
   if(ifcBook) return Promise.resolve(ifcBook);
   if(ifcBookP) return ifcBookP;
   ifcBookP = (async () => {
+    ifcBookWhy = "";
+    let blob = null, index = null;
+    try{ [blob, index] = await Promise.all([ifcKv("get", "pdf").catch(() => null), ifcKv("get", "index").catch(() => null)]); }catch(e){}
+    if(!blob || typeof blob.arrayBuffer !== "function"){ ifcBookWhy = "none"; return null; }
     try{
-      const [blob, index] = await Promise.all([ifcKv("get", "pdf").catch(() => null), ifcKv("get", "index").catch(() => null)]);
       const V = await ifcViewer();
-      if(!blob || !index || index.v !== V.INDEX_VERSION) return null;
       const doc = await ifcOpenPdf(new Uint8Array(await blob.arrayBuffer()));
+      if(!index || index.v !== V.INDEX_VERSION){
+        try{
+          index = await V.buildIndex(doc, {});
+          const chk = V.checkEdition(index);
+          if(!chk.ok) throw new Error("not the 2021 IFC");
+        }catch(e){ try{ doc.destroy(); }catch(e2){} ifcBookWhy = "none"; return null; }
+        try{ await ifcKv("put", "index", index); }catch(e){}
+      }
       ifcBook = { doc, index, opts: { cache: new Map(), fontBold: new Map() } };
       return ifcBook;
-    }catch(e){ return null; }
+    }catch(e){ ifcBookWhy = "unreadable"; return null; }
   })();
   const p = ifcBookP; p.then(b => { if(!b) ifcBookP = null; });
   return p;
@@ -119329,6 +119367,26 @@ function ifcDrawAhead(box, fill){
   box._ifcAhead = fill;
   ifcAheadIO.observe(box);
 }
+/* (384.58) the card for a copy that is on this device and could not be opened this time: no request for the PDF, one button to try again */
+function ifcUnreadableCard(body, again){
+  const lock = ifcEl("div", "ifc-locked"); lock.dataset.why = "unreadable";
+  lock.appendChild(ifcEl("span", "ifc-lock-ic"));
+  const t = ifcEl("div");
+  t.append(ifcEl("strong", null, "Your IFC PDF is saved on this device, but could not be opened just now."),
+    ifcEl("span", null, "Nova needs a connection to load the PDF reader. Check it, then try again. You do not need to load the PDF again."));
+  lock.appendChild(t); body.appendChild(lock);
+  const b = ifcEl("button", "ifc-link", "Try again"); b.type = "button"; b.addEventListener("click", again);
+  body.appendChild(b);
+}
+/* a code box that could not be filled: a reader that did not load is a try-again, anything else says what it says */
+function ifcFillFailed(item, body, foot, e){
+  body.textContent = "";
+  if(e && e.loadFailed){
+    const again = () => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-busy", "Opening the code…")); ifcFillCode(item, body, foot).catch(e2 => ifcFillFailed(item, body, foot, e2)); };
+    ifcUnreadableCard(body, again); return;
+  }
+  body.appendChild(ifcEl("p", "ifc-note", "Could not open this reference: " + ((e && e.message) || e)));
+}
 async function ifcFillCode(item, body, foot){
   const c = item.ifc.citation, V = await ifcViewer();
   if(c.source === "amendment"){
@@ -119375,14 +119433,20 @@ async function ifcFillCode(item, body, foot){
   body.textContent = "";
   const book = await ifcEnsureBook();
   if(!book){
-    const lock = ifcEl("div", "ifc-locked");
+    /* (384) NOT A LOCK, and no "unlocks": the one way into Fire Code (showIfcEnroll) ends only on a verified PDF, so this card
+       says what is true of THIS device.
+       (384.58) Two different truths, two different cards. "device": nothing is saved here - a second phone, a computer, the
+       installed app after the browser tab (each keeps its own storage), a browser that was cleared - and the book is never in the
+       account (it is a licensed book), so it is loaded once per device; the words say that and the button loads it. "unreadable":
+       the copy is here and could not be opened this time; it asks for nothing but another try. Before this the first card was
+       shown for both, claiming "this browser let the saved copy go" to somebody whose copy was fine. */
+    const again = () => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-busy", "Opening the code…")); ifcFillCode(item, body, foot).catch(e => ifcFillFailed(item, body, foot, e)); };
+    if(ifcBookWhy === "unreadable"){ ifcUnreadableCard(body, again); return; }
+    const lock = ifcEl("div", "ifc-locked"); lock.dataset.why = "device";
     lock.appendChild(ifcEl("span", "ifc-lock-ic"));
     const t = ifcEl("div");
-    /* (384) NOT A LOCK. Madison: "You shouldn't be able to enroll into the CLASS AT ALL unless you upload the pdf. So the unlock
-       thing under the question isn't gonna be a thing". It isn't: the one way into Fire Code (showIfcEnroll) ends only on a
-       verified PDF. This card is only ever seen when the browser has since let the stored copy go (cleared site data, or a
-       browser that would not keep it - "open for this visit only"), so it says that, with no lock and no "unlocks". */
-    t.append(ifcEl("strong", null, "Your IFC PDF isn\u2019t on this device right now."), ifcEl("span", null, "This browser let the saved copy go. Load it again and the code shows here. Until then, the section and page above find it in your book."));
+    t.append(ifcEl("strong", null, "Your IFC PDF isn\u2019t on this device."),
+      ifcEl("span", null, "The book stays on the device you load it on. It is never uploaded or saved to your account, because the IFC is a licensed book. Load your PDF once on this device and it stays here. Until then, the section and page above find it in your book."));
     lock.appendChild(t);
     body.appendChild(lock);
     if(typeof ifcPickBook === "function"){
@@ -119456,7 +119520,7 @@ async function ifcAnalyzeBook(file, step){
   const buf = await file.arrayBuffer();
   let doc;
   try{ doc = await ifcOpenPdf(new Uint8Array(buf.slice(0))); }
-  catch(e){ throw refuse("That file could not be opened as a PDF."); }
+  catch(e){ if(e && e.loadFailed) throw e; throw refuse("That file could not be opened as a PDF."); }
   step("open", 1);
   if(doc.numPages < 650 || doc.numPages > 760){
     try{ doc.destroy(); }catch(e){}
@@ -119473,9 +119537,13 @@ async function ifcAnalyzeBook(file, step){
   step("verify", 1);
   let kept = true;
   try{
+    try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
     await ifcKv("put", "pdf", new Blob([buf], { type: "application/pdf" }));
     await ifcKv("put", "index", index);
-    try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+    /* (384.58) "kept" is what the device now holds, read back - both parts, the PDF at its full size - not that a save was
+       attempted. Only then does the screen say it is kept on this device. */
+    const back = await ifcKv("get", "pdf"), backIdx = await ifcKv("get", "index");
+    kept = !!back && back.size === buf.byteLength && !!backIdx && backIdx.v === index.v;
   }catch(e){ kept = false; }
   if(ifcBook){ try{ ifcBook.doc.destroy(); }catch(e){} }
   ifcBook = { doc, index, opts };
@@ -119591,7 +119659,7 @@ function buildIfcRef(item){
   det.append(sum, head, body, foot);
   let filling = null;
   const fill = () => {
-    if(!filling) filling = ifcFillCode(item, body, foot).catch(e => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-note", "Could not open this reference: " + ((e && e.message) || e))); });
+    if(!filling) filling = ifcFillCode(item, body, foot).catch(e => ifcFillFailed(item, body, foot, e));
     if(box._ifcAhead){ box._ifcAhead = null; try{ ifcAheadIO && ifcAheadIO.unobserve(box); }catch(e){} }
     return filling;
   };
