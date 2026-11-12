@@ -7615,18 +7615,14 @@
      dock: fixed to the screen and above the match's cutscene layer. */
   .vroom-leave-confirm{ position:fixed; z-index:460; }
   /* Leaving a group chat (build 279): an iOS action sheet, not a dialog. */
+  /* (384.52) ON <body>, SIZED TO THE PANEL. It was a child of #chatdock-panel (build 307), and the panel is a backdrop root
+     (will-change:backdrop-filter), so the sheet's blur could only ever sample the panel's own contents and never the page: it read as
+     a flat dark slab. confirmLeaveChat() now mounts it on <body> and writes the panel's rectangle and radius into left/top/width/height/
+     border-radius, so on an iPad it still covers only the corner popover. The dim is the shared --pop-scrim layer (.POP-UP GLASS). */
   .chatdock-confirm.chat-leavesheet{
-    position:fixed; inset:0; align-items:flex-end; padding:0 .75rem;
+    position:fixed; inset:auto; z-index:330; align-items:flex-end; padding:0 .75rem;
     padding-bottom:calc(.75rem + env(safe-area-inset-bottom, 0px));
-    background:rgba(0,0,0,.32); -webkit-backdrop-filter:none; backdrop-filter:none;
-  }
-  /* INSIDE THE CHAT, NOT OVER THE WHOLE APP (build 307). It was fixed to
-     the screen, which on a phone is roughly where the chat is anyway - but
-     on an iPad the chat is a panel in the top corner, and the question
-     rose from the bottom of the whole screen with everything dimmed.
-     Now it lives in the panel and covers only that. */
-  .chatdock-panel > .chatdock-confirm.chat-leavesheet{
-    position:absolute; inset:0; border-radius:inherit; overflow:hidden;
+    -webkit-backdrop-filter:none; backdrop-filter:none; overflow:hidden;
   }
   .chat-leavesheet-inner{ width:100%; max-width:24rem; display:flex; flex-direction:column; gap:.5rem;
     animation:chat-leavesheet-up .24s cubic-bezier(.2,.8,.25,1); }
@@ -39810,17 +39806,17 @@ html.is-browser{ --fade-paper: transparent; }
      colour), and full-screen takeovers (cutscenes, loading, the update screen). tools/check-b384-popglass.py reads every pop-up
      in b384_pop_lib.INVENTORY and asserts the shape; a new pop-up is added there, and takes .pop-glass on its card and
      .pop-glass-host on its overlay to inherit all of this. */
-  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm:not(.chat-leavesheet), .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host){
+  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm, .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host){
     opacity:1; background:transparent; transition:none; animation:none; overflow:visible;
     -webkit-backdrop-filter:none; backdrop-filter:none;
   }
-  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm:not(.chat-leavesheet), .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host)::before{
+  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm, .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host)::before{
     content:""; position:absolute; inset:0; background:var(--pop-scrim); pointer-events:none;
   }
   /* the dim: faded in by its own opacity where the overlay has a .show state, by a one-shot keyframe where it has none */
   html[data-theme][data-layout] body :is(.savecode-card, .resume-offer, .friend-moment, .unitver, .intro-pop, .invite-overlay, .pop-glass-host)::before{ opacity:0; transition:opacity .24s ease; }
   html[data-theme][data-layout] body :is(.savecode-card.show, .resume-offer.show, .friend-moment.show, .unitver.show, .intro-pop.show, .invite-overlay.invite-overlay-show, .pop-glass-host.show)::before{ opacity:1; }
-  html[data-theme][data-layout] body :is(.chatdock-confirm:not(.chat-leavesheet), .installguide-overlay)::before{ animation:pop-glass-in .2s ease-out both; }
+  html[data-theme][data-layout] body :is(.chatdock-confirm, .installguide-overlay)::before{ animation:pop-glass-in .2s ease-out both; }
   @keyframes pop-glass-in{ from{ opacity:0; } to{ opacity:1; } }
   /* the sheet: above the dim, and fading in by itself where the overlay has a .show state */
   html[data-theme][data-layout] body :is(.savecode-card, .resume-offer, .friend-moment, .unitver, .intro-pop, .invite-overlay, .pop-glass-host) > :is(.savecode-sheet, .resume-card, .friend-moment-card, .unitver-card, .intro-card, .a2hs-sheet, .invite-sheet, .pop-glass){
@@ -39839,6 +39835,12 @@ html.is-browser{ --fade-paper: transparent; }
   }
   /* a tall card scrolls inside itself, never its overlay */
   html[data-theme][data-layout] body .intro-card{ max-height:100%; overflow-y:auto; overscroll-behavior:contain; }
+  /* (384.52) the leave-chat sheet: its overlay is the panel's rectangle on <body> (see .chatdock-confirm.chat-leavesheet), so it clips its own
+     slide-up and the dim to the panel's corners; overflow:hidden is a plain clip, not a backdrop root. The shared reset above says
+     overflow:visible, and the sheet has to sit above the dim layer. */
+  html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet{ overflow:hidden; }
+  html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
+  html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
 </style>
 <script>
   (function(){
@@ -107880,6 +107882,7 @@ const CHAT_ROOM_KEY = "class26e.chatroom";
 let chatRoomCode = null;
 let chatMyKey = null;
 let chatPanelCleanup = null;
+let leaveSheetCleanup = null;   /* (384.52) the leave-chat sheet's listeners; declared up here with the other chat state (TDZ) */
 
 /* THIRTY. A class of thirty cannot be in more than thirty conversations
    that matter, and the list is pushed inside the progress document on
@@ -110460,13 +110463,27 @@ function closeChatRoom(){
    with it rather than leaving a question over some other screen, and
    never window.confirm(), which does nothing in an installed app. */
 function closeLeaveChatConfirm(){
+  if(leaveSheetCleanup){ try{ leaveSheetCleanup(); }catch(e){} leaveSheetCleanup = null; }
   document.querySelectorAll(".chatdock-confirm").forEach(n => n.remove());
+}
+/* (384.52) THE SHEET LIVES ON <body>, SIZED TO THE CHAT PANEL. It was a child of #chatdock-panel (build 307, so on an iPad it covers
+   the chat and not the whole screen), but the panel is a backdrop root (will-change:backdrop-filter), so the sheet's frosted glass could
+   only blur the panel's own contents and never the page: a flat dark slab. On <body> it is a sibling of the dock and blurs what is
+   under it. Its rectangle and corner radius are the panel's, read at open and again whenever the window or the keyboard resizes, and
+   it goes away with the dock (closeChatDock / closeChatRoom / syncChatDock all call closeLeaveChatConfirm), or here if the panel
+   itself has gone. */
+function placeLeaveSheet(wrap){
+  const panel = document.getElementById("chatdock-panel");
+  if(!panel || !panel.isConnected || !wrap.isConnected){ closeLeaveChatConfirm(); return; }
+  const r = panel.getBoundingClientRect();
+  if(r.width < 2 || r.height < 2) return;
+  const st = wrap.style, br = getComputedStyle(panel).borderRadius;
+  st.left = r.left + "px"; st.top = r.top + "px"; st.width = r.width + "px"; st.height = r.height + "px";
+  st.right = "auto"; st.bottom = "auto"; st.borderRadius = br || "0";
 }
 function confirmLeaveChat(code, onLeave){
   if(!code) return;
-  /* In the panel (build 307), so on an iPad it covers the chat and not
-     the whole screen. */
-  const host = document.getElementById("chatdock-panel") || document.getElementById("chatdock");
+  const host = document.getElementById("chatdock-panel");
   if(!host){ onLeave(); return; }
   closeLeaveChatConfirm();
   const entry = chatEntry(code);
@@ -110507,7 +110524,20 @@ function confirmLeaveChat(code, onLeave){
   inner.className = "chat-leavesheet-inner";
   inner.append(card, stay);
   wrap.appendChild(inner);
-  host.appendChild(wrap);
+  document.body.appendChild(wrap);
+  placeLeaveSheet(wrap);
+  const again = () => placeLeaveSheet(wrap);
+  window.addEventListener("resize", again);
+  window.addEventListener("orientationchange", again);
+  const vv = window.visualViewport;
+  if(vv) vv.addEventListener("resize", again);
+  const settle = setTimeout(again, 320);   /* the phone sheet may still be sliding in when this opens */
+  leaveSheetCleanup = () => {
+    clearTimeout(settle);
+    window.removeEventListener("resize", again);
+    window.removeEventListener("orientationchange", again);
+    if(vv) vv.removeEventListener("resize", again);
+  };
   focusQuietly(stay);
 }
 
