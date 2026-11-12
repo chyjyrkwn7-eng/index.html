@@ -39285,3 +39285,63 @@ WHAT CHANGED (index.html):
 GATE tools/check-b384-homescroll.py (new; --quick, --matrix, --gestures, --only DEVICE, --against FILE): (1) FITS Home's scrollHeight <= innerHeight + 1 on all 144 combinations of sweep-layout's DEVICES (installed, browser, bars over; portrait and landscape; the @85% entry); a combination whose words or button themselves run under the bar may scroll (a Safari tab with bars over a phone on its side, at most 48px) and is printed - none today; (2) STILL on Home, Profile, the Leaderboard, the Calendar, Settings, Choose your mode (added for his 15:35 recording on 384.86: the bar half off the foot there in a bounce, the same follower) and a question at 440x956 installed (59/34), Home also at 518x1126 (73/40): a touch, a 240px visual-viewport stretch with the page scrolling where it can, the lift and the snap-back - the tab bar, "?", class bubble, chat button, top strip, Pause / test header, version label and back-to-top (centres) the same in every frame within 1px, no resize sent by the page, nothing left taken up; (3) PLANETS the hero the same node, displayed, visible, not faded in every frame, its style never written during the gesture, and visible after scrolls past both ends and a wheel; (4) AT REST a visual viewport left 200px past the layout one with the page still is taken up and undone. RESULTS ON 384.87 (re-checked on 384.89 below) (gates one at a time on a shared machine whose load ran 13-19; a run that lost its renderer ("Target crashed") or was killed by another session's pkill was re-run, not counted): check-js 14 blocks ALL PASS; the page console only the two expected Firebase CDN ERR_TUNNEL_CONNECTION_FAILED; check-b384-homescroll --gestures 24/24 ALL PASS; `--against` main 384.86 FAILS 17 of 23 (STILL on every screen: the bar and the corner buttons carried down by the stretch, 170-236px, and a resize sent; the hero's style written twice mid-bounce on Home) and passes the PLANETS visibility checks and AT REST, which guard what must not change; --matrix 146/146 (144 + the two retired opaque-bar geometries, on the 384.83-merged build, the same Home code) and --matrix --quick 32/32 on 384.87 (Home over the window: 0 everywhere; 384.82 was over on 61 of 146, 383 on 45); check-b384-tabhotfix 44/44 (FOLLOW changed on purpose, above); check-b384-top383 63/63; check-b384-bouncefix 45/47 (its two root-overscroll checks fail on purpose since 384.82; the page-lock checks pass); check-behaviour check_launch, check_swipe, check_navigation, check_b318_planet ALL PASS (43); check-tours 24 runs, every step renders; check-positions (full, on the 384.83-merged build) Home rows identical to main's but iPad 10.2" button-to-furniture 56 -> 57 and its onboarding spread 1 -> 4 (re-measured: no margin is applied there and Home's rects are equal to main's, so timing jitter); sweep-layout --quick 20/20 clean on the 384.83-merged build; on 384.87 and 384.89 17-18 of 20 clean with every failure a renderer lost to the machine's load ("Target crashed" on random screens - a Home Screen sheet, Pick your class, Customize - not a layout hit; 31 crash lines, no audit finding); check-centering --quick 0 off centre (academy and IFC on 384.84 + main 384.83 after one crashed attempt; on 384.89 860 elements on 94 screens, 0 off centre, the run marked FAILED only for one sign-up screen that lost its renderer and the Virtual Room arrows not measured). RE-CHECKED ON 384.89 (main 384.88 merged in): check-js ALL PASS; console only the two Firebase CDN errors; check-b384-homescroll --gestures 24/24 (Choose your mode included) and --matrix --quick 32/32; check-b384-tabhotfix 44/44. The full sweep and the full matrix were not re-run on 384.89.
 GATES CHANGED ON PURPOSE: check-b384-tabhotfix (2) FOLLOW now waits 900ms after each scroll step (was 260): the follow happens once the page is still, not mid-scroll.
 WHAT ONLY HIS PHONE CAN CONFIRM: that the bar, "?" and class bubble stay put through a swipe and its bounce on Home (and everywhere); whether the planets still blink during the snap-back of a long stretch (if so it is WebKit's raster of the hero, a separate fix: a cheaper hero, 384.31's list); that the 384.62 bar-in-the-middle state, if it ever comes back, is still put right a moment after the page stops.
+
+## 384.92 - the Leaderboard: no crown, and lines that mean something (branch claude/b384-lbclean; NOT merged - waiting for Madison's go)
+Madison, two screenshots of his board on 384.86 (Fire Code, seven people, his own row washed at #2), circling the crown on first place's
+medal and then the left ends of the lines between rows 3-6: "No crown. Also, why are there weird lines? Fix that".
+
+**The crown.** It was drawn in one place only: renderRankingRows put a `.lb-crown` span (an inline SVG, build 324, made upright in 384.18)
+inside first place's `.rank-place`. That block, `lbCrownSeq` and the three `.lb-crown` CSS rules are gone. The medal (`renderRankMarker`:
+the gold "1" circle, its struck edge) is untouched. Nothing else used it: the Virtual Room results, the podium of last week and the friend
+lists never drew one (renderRankingRows has one caller, showRankings); no tour points at it. check-behaviour check_b324l_board asserted it
+on purpose ("first place a crown") - CHANGED ON PURPOSE to assert no crown on any of the three boards.
+
+**The lines - what was wrong, measured off his PNG** (1186 px wide):
+- the line under each row (`::after`, `--lb-hair` rgba(255,255,255,.1)) started at the name (`--lb-hair-l`, x~265 of 921) and stopped at
+  the row's content edge (`--lb-pad` short of the card) - an iOS list's inset line, written for a list of identical rows. This list is
+  not one: the podium's metal tints and your accent wash run edge to edge, so a line that stops short of them reads as broken;
+- under every line, the full width of the card, ~1px at 25-31 (the page is 19/21/25, the rows 35/37/42): the page showing through where
+  two rows meet. The rows sit on a fractional y (309.52 in Chromium, from the heights above them); WebKit softens each row's top and bottom
+  edge there and the two half-covered pixels at a boundary let the page through. Chromium snaps the rows to whole CSS pixels and never
+  shows it - so a screenshot here cannot see it, and the gate holds what is UNDER the boundary instead;
+- the podium rows' light (a radial tile from the padding box) repeated into the rows' 1px side border: a lit gold/silver/bronze line down
+  the card's right edge on rows 1-3 (+26 levels in the outermost column).
+
+**Dividers: rendered both ways and looked at** (scratchpad lbclean/proto/compare.png): a full-width hairline between every row, and no lines
+at all. Without lines, first place's gold fades into second's silver with nothing between and rows 4-8 merge into one slab with wide
+gaps; the full-width line reads as one deliberate table. So: ONE LINE PER BOUNDARY, from the card's inner left edge to its inner right
+(`left:0; right:0`), the same 1px rgba(255,255,255,.1) everywhere, none above the first row or under the last, nothing doubled (rows have
+no top/bottom borders inside the card). `--lb-hair-l` is gone (it had no other user). Both the old "THE LIST" rule and the #stage
+"ONE LIST" rule carry it.
+- NO PAGE BETWEEN TWO ROWS: every row but the last paints `--lb-cell-under` (the list's cell colour as a 1px box-shadow, defined next to
+  `--lb-cell` in both places that set it, so the same tokens resolve at the same element) - it lies under the row below, which covers it:
+  nothing moves, and a boundary has the card behind it. Not on a row mid Find-me flash (`.rank-flash`; its box-shadow was already `none
+  !important`, as before).
+- THE SIDES: `background-origin:border-box` on the board's rows (#stage rule): the tints start at the outer edge, no repeat into the border.
+- Unchanged: row heights and positions (0px shift), the medal, the tints, the wash, the rank flares, the column header.
+- Superseded on purpose: check-b384-hairlines (1)-(3) ("the line never touches the sides", Madison's Delta note for Settings) no longer
+  measure the Leaderboard - Settings' lists keep the inset; check-b382-ios (3) wanted the line "inset to the name" (left > 8), now left 0.
+
+**Gate: tools/check-b384-lbclean.py** - iPhone 17 Pro Max (3x) and iPad Pro 11" (2x), installed, both classes, every board each class has
+(read off rankingBoardsFor(): academy This Week/Overall/Hundos; Fire Code Overall), eight people like his with the viewer on the podium in
+the academy and in the list in Fire Code: (1) no crown (no child in the place marker, no pseudo with content on it or the medal, nothing
+named crown), the gold 1 medal round; (2) one card - rows touch, one left and right edge, no borders inside; with the rows pulled 4px apart,
+under each boundary the cell colour (within 3), under the last row the page; (3) rows-1 lines, each on a boundary, none on the outer edges,
+none within 2px of another, each from inner left to inner right within 1px; (4) on the screenshot every line is lighter than its row at the
+left, the middle and the right; (5) the outermost pixel column on each side of every row is the row's colour (within 6); (6) no page errors.
+Serves version.json at the build under test (an --against build would otherwise be pushed to reload). FAILS on origin/main 384.86 on
+(1)-(5) for every board, device and class; ALL PASS (45) here.
+
+**What only his phone can confirm:** that the dark seam under each line is gone - it is WebKit's antialiasing at a fractional y and
+Chromium cannot draw it; the fix (the card under every boundary) is measured here, the seam itself is not.
+- Also changed on purpose: check-behaviour check_b314h_board read ANY non-inset box-shadow on first place as "a glow" and then wanted
+  314's 8px/12px clearance under the header; it now counts only light thrown UP past the row's top (blur + spread - y > 0) - the 1px
+  `--lb-cell-under` reaches only below the row.
+- Gates, one at a time, on the tree with main 384.89 merged (build 384.92): check-js ok; console - only the two blocked-Firebase-CDN
+  loads, no page errors, both classes; check-b384-lbclean ALL PASS (45; FAILS 384.86 on (1)-(5) everywhere); check-behaviour
+  check_b324l_board / check_b314h_board / check_b313_lead / check_ranks 65 pass, 1 fail ("the board, the person card and the Profile
+  card show the same element") - the same failure on 384.86, not from this; check-tours 24 runs, every step renders; check-centering
+  --quick ALL PASS (a first run flagged the badge case lid on the Virtual Room screen and Fire Code's empty Friends card, then passed
+  clean on the rerun - timing under load, neither on the board); sweep-layout --quick 20/20 clean; check-b384-top383 ALL PASS;
+  check-b384-hairlines ALL PASS; check-b382-ios (3) passes (fails on main 384.89 as changed), (4) "the top three are the list's
+  first rows" fails identically on main 384.89 (its fixture has no .rank-podium-2 row), not from this.

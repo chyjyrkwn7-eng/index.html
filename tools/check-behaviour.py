@@ -10129,7 +10129,11 @@ def check_b314h_board(br):
           const hr = h.getBoundingClientRect(), fr = f.getBoundingClientRect(); const cs = getComputedStyle(h);
           const lab = [...h.querySelectorAll('.rank-col-head')].map(e => e.getBoundingClientRect().bottom);
           /* does first place throw any light out past its edge (a box-shadow that is not inset)? */
-          const glow = getComputedStyle(f).boxShadow.split(/,(?![^(]*\\))/).filter(s => s.trim() !== 'none' && !/inset/.test(s)).length > 0;
+          /* (384.92) ...upward, toward the header: a shadow that only reaches below the row (the board's 1px --lb-cell-under, the card
+             under each boundary) throws nothing at it - reach above = blur + spread - y offset */
+          const glow = getComputedStyle(f).boxShadow.split(/,(?![^(]*\\))/).filter(s => s.trim() !== 'none' && !/inset/.test(s)).some(s => {
+            const n = s.replace(/(rgba?|color)\\([^)]*\\)/g, '').trim().split(/\\s+/).map(parseFloat).filter(v => !isNaN(v));
+            return ((n[2] || 0) + (n[3] || 0) - (n[1] || 0)) > 0; });
           return { gap: Math.round(fr.top - hr.bottom), labGap: Math.round(fr.top - Math.max(...lab)), bf: cs.backdropFilter, bg: cs.backgroundColor, glow }; }""")
         # MOVED IN 382 (a330ee8, "the Leaderboard and the Calendar in Settings'
         # language"; 383 joined the top three to the list): first place is no
@@ -10139,8 +10143,10 @@ def check_b314h_board(br):
         # card, where 314 kept 8px clear and 12px for the glow. Held: the
         # header has its own line above first place, its labels clear of it,
         # no glass strip; and wherever first place does throw a glow, 314's
-        # 8px / 12px clearance still applies.
-        clear = (r["gap"] >= 8 and r["labGap"] >= 12) if r.get("glow") else (r["gap"] >= 4 and r["labGap"] >= 4)
+        # 8px / 12px clearance still applies. (384.92: a "glow" is light thrown
+        # UP past the row's top edge; the board's 1px shadow under each row,
+        # check-b384-lbclean, reaches only below it.)
+        clear =(r["gap"] >= 8 and r["labGap"] >= 12) if r.get("glow") else (r["gap"] >= 4 and r["labGap"] >= 4)
         check("%s: the Rank / Level / Badges header keeps its own line, clear of first place (and of any glow it throws), with no glass strip" % dn,
               clear and r["bf"] == "none", r)
         ctx.close()
@@ -26826,9 +26832,10 @@ def check_b324l_board(br):
                 four: { ring: ring(four), crown: !!(four && four.querySelector('.lb-crown')), sheen: !!(four && four.querySelector('.lb-podium-sheen')) },
                 crowns: document.querySelectorAll('.screen-rankings .lb-crown').length, hs }; }""")
         ctx.close()
-        ok = all(v["rings"] == [True, True, True] and v["crown"] and v["sheen"] == 0 and v["crowns"] == 1 for v in out.values())
+        ok = all(v["rings"] == [True, True, True] and not v["crown"] and v["sheen"] == 0 and v["crowns"] == 0 for v in out.values())
         # MOVED IN 327z5: "remove the reflection effect on the first place person" - no sheen
-        check("%s: on all three boards places 1-3 wear a metal ring, first place a crown (and no sheen, 327z5)" % dn, ok, out)
+        # CHANGED ON PURPOSE IN 384.92: Madison, "No crown." - first place's medal wears no crown on any board (check-b384-lbclean)
+        check("%s: on all three boards places 1-3 wear a metal ring, and nobody a crown (384.92; no sheen, 327z5)" % dn, ok, out)
         check("%s: #4 wears none of it" % dn, all(not v["four"]["ring"] and not v["four"]["crown"] and not v["four"]["sheen"] for v in out.values()), {k: v["four"] for k, v in out.items()})
         check("%s: the top three are no taller than #4 (the list does not move)" % dn,
               all(max(v["hs"][:3]) <= v["hs"][3] + 1 for v in out.values()), {k: v["hs"] for k, v in out.items()})
