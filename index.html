@@ -68859,6 +68859,9 @@ let storageHadData = false;
 /* Declared up here, ahead of `store`, because applyLoadedData() runs at
    boot and a const further down would still be in its dead zone. */
 const TEST_HISTORY_MAX = 50;
+/* (384.88) THE ACADEMY LADDER'S VERSION - see academyLadderMigrate38488(). Declared up here for the same reason: the store
+   literal below and applyLoadedData() both read it during boot. */
+const ACADEMY_LADDER_RULE = 38488;
 /* THE FRIENDS LIST, as one block (build 384 - see socialDb()): the same in every class, dated by `socialAt`. Declared up here
    for the same reason: applyLoadedData() reads it during boot. socialSigBase is what the block was when it was last loaded,
    copied or saved - a `var` with no value, so nothing resets it once boot has set it. */
@@ -68909,6 +68912,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
               rankFloor: 0,    /* build 314: see rankOf() */
               levelWallRule: 325,  /* build 325: a new account starts under the new wall - see levelWallMigrate325() */
+              academyLadderRule: ACADEMY_LADDER_RULE,  /* 384.88: a new account starts on the 16/25 ladder - see academyLadderMigrate38488() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -69344,6 +69348,14 @@ function applyLoadedData(got){
   if(store.levelWallRule < LEVEL_WALL_RULE){
     try{ levelWallMigrate325(got, store); }catch(e){}
     store.levelWallRule = LEVEL_WALL_RULE;
+  }
+  /* (384.88) AMETHYST AND SUPERNOVA ASK 16 AND 25 BADGES NOW (were 12 and 14). A copy without the flag (every account on the
+     update, and a copy an older build wrote) keeps the rank it held on the previous academy ladder as its rank floor, once;
+     then the flag is set. A floor only raises. Fire Code's ladder did not move, so there it only sets the flag. */
+  store.academyLadderRule = (typeof got.academyLadderRule === "number" && isFinite(got.academyLadderRule)) ? got.academyLadderRule : 0;
+  if(store.academyLadderRule < ACADEMY_LADDER_RULE){
+    try{ academyLadderMigrate38488(got, store); }catch(e){}
+    store.academyLadderRule = ACADEMY_LADDER_RULE;
   }
   /* Defaults to 0 for an existing account, like levelPreserved and for
      the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
@@ -71656,6 +71668,7 @@ function wipeLocalProgressAndSettings(){
   store.levelFloor = 0;   /* build 314: a reset starts under the badge wall like anybody new */
   store.rankFloor = 0;
   store.levelWallRule = LEVEL_WALL_RULE;   /* build 325: and under the new wall, with nothing to grandfather */
+  store.academyLadderRule = ACADEMY_LADDER_RULE;   /* 384.88: and on the 16/25 ladder, with no old rank to keep */
   store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
@@ -73136,6 +73149,7 @@ function mergeLeavingAccount(src, note){
   store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
   store.rankFloor = Math.max(num(store.rankFloor), num(src.rankFloor));
   store.levelWallRule = Math.max(num(store.levelWallRule), num(src.levelWallRule));
+  store.academyLadderRule = Math.max(num(store.academyLadderRule), num(src.academyLadderRule));   /* (384.88) */
   maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
   /* game records: per unit, per speed */
   ["unitGameBeat", "gameFarthest"].forEach(k => {
@@ -73546,6 +73560,8 @@ function mergeSameAccount(dst, src){
   /* build 325: the new wall's grandfathering ran on either copy - see
      levelWallMigrate325; a copy from an older build carries none */
   if(typeof src.levelWallRule === "number") maxInto(dst, "levelWallRule", src.levelWallRule);
+  /* (384.88) the academy ladder's floor ran on either copy - see academyLadderMigrate38488 */
+  if(typeof src.academyLadderRule === "number") maxInto(dst, "academyLadderRule", src.academyLadderRule);
   /* a rank-up shown on either copy is shown (build 319); a copy from an
      older build carries none and changes nothing */
   if(typeof src.rankUpShown === "number") maxInto(dst, "rankUpShown", src.rankUpShown);
@@ -75058,7 +75074,12 @@ const TIER_UNLOCKS = {
   veteran:  { level: 40, badges: 5,  label: "Reach level 40 and 5 badges" },
   vanguard: { level: 50, badges: 7,  label: "Reach level 50 and 7 badges" },
   adept:    { level: 60, badges: 9,  label: "Reach level 60 and 9 badges" },
-  elite:    { level: 70, badges: 12, label: "Reach level 70 and 12 badges" },
+  /* (384.88) AMETHYST 16, SUPERNOVA 25 - Madison: "Update the badge requirements for the amethyst and supernova for academy
+     class. 16 for amethyst. 25 for supernova." Levels unchanged (70, 80); Bronze to Sapphire unchanged. The academy has 24
+     units, so 24 badges is every badge there is and Supernova's 25 cannot be earned today - asked for as it stands, the same
+     way 20 was asked for over 16 units ("I know there isn't [20] units available but there will be eventually"). Nobody
+     loses a rank: academyLadderMigrate38488() keeps the rank held on the previous ladder (12 and 14) as the rank floor. */
+  elite:    { level: 70, badges: 16, label: "Reach level 70 and 16 badges" },
   /* Supernova, the genuine top of the ladder, now also requires
      finding every Mystery Star \u2014 not just points and stars from
      studying, but having fully explored the app itself. Named
@@ -75071,8 +75092,13 @@ const TIER_UNLOCKS = {
      available but there will be eventually." Supernova is the thing
      the extra units unlock, and it is the only rank that asks for the
      max level itself. */
-  titan:    { level: 80, badges: 14, label: "Reach level 80 and 14 badges" }
+  titan:    { level: 80, badges: 25, label: "Reach level 80 and 25 badges" }
 };
+/* THE ACADEMY LADDER BEFORE 384.88, [level, badges] per rank - kept for two jobs that are about the past: the academy's rank
+   floor (academyLadderMigrate38488, the rank an account held on it) and Fire Code's one-time floor from build 382
+   (ifcLadderFloorOnce reads TIER_UNLOCKS_ACADEMY, which is this ladder, so Fire Code's floor is exactly what it was). */
+const TIER_UNLOCKS_ACADEMY_PREV = { rookie: [21, 1], ranger: [30, 3], veteran: [40, 5], vanguard: [50, 7],
+                                    adept: [60, 9], elite: [70, 12], titan: [80, 14] };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
    the next-tier progress note). Kept in one place now that there are
@@ -75094,6 +75120,42 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
    a rank only gets easier here, so nobody drops one (384.60: no longer true from Gold up - see FIRE_BADGE_SHARE and the second floor below). */
 const TIER_UNLOCKS_ACADEMY = {};
 Object.keys(TIER_UNLOCKS).forEach(k => { TIER_UNLOCKS_ACADEMY[k] = Object.assign({}, TIER_UNLOCKS[k]); });
+/* (384.88) the academy's counts AS FIRE CODE'S FLOOR KNEW THEM (12 and 14 at the top), not the academy's new 16 and 25:
+   Fire Code is unchanged, so its one-time floor still reads the ladder it was written against. */
+TIER_ORDER_FULL.forEach(k => { const p = TIER_UNLOCKS_ACADEMY_PREV[k]; if(p && TIER_UNLOCKS_ACADEMY[k]) TIER_UNLOCKS_ACADEMY[k].badges = p[1]; });
+/* ---- NOBODY LOSES A RANK ON THE ACADEMY'S 16/25 LADDER (384.88, academy only) ----
+   Amethyst and Supernova ask for 16 and 25 badges (were 12 and 14), so a rank computed fresh from level and badges would take
+   Amethyst or Supernova off somebody who holds it, and the level wall (the next rank's level, opened by its badges) would hold an
+   Amethyst at 12-15 badges back to level 70. Once per account, on the first load of a copy without `academyLadderRule` (it lives
+   on `store`, syncs and merges by max, like levelWallRule), the rank the account held on the PREVIOUS ladder
+   (TIER_UNLOCKS_ACADEMY_PREV, with that ladder's own wall over the curve's level and the copy's level floor) becomes its rank
+   floor wherever that is higher. A floor only ever raises (rankOf, rankOfEntry, mergeSameAccount, mergeLeavingAccount take the
+   max), and with it the wall starts after the floor (wallRankIndex), so nobody's shown level moves either. Everything a rank
+   hands over is DERIVED from rank when read (tierColorUnlocked honours the floor): no unlock mark is stored. Nothing re-fires:
+   the rank-up scene is owed only past store.rankUpShown. A new account and a reset start with the flag. Fire Code's ladder did
+   not change, so there nothing is written. Returns the floor written, or 0.
+   On the live data when this shipped (read only): nobody held Amethyst or Supernova - the most badges on any account was 9. */
+function academyLadderMigrate38488(got, into){
+  if(window.NOVA_CLASS === "ifc") return 0;
+  if(!got || typeof got !== "object") return 0;
+  if(typeof got.academyLadderRule === "number" && got.academyLadderRule >= ACADEMY_LADDER_RULE) return 0;
+  const pts = got.lifetime ? Number(got.lifetime.points) || 0 : 0;
+  if(pts <= 0) return 0;
+  let b = 0; try{ b = badgeCountOf(got); }catch(e){}
+  const rf = Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(Number(into.rankFloor) || 0)));
+  const lf = Math.max(0, Math.floor(Number(into.levelFloor) || 0));
+  /* that ladder's wall: the level of the first rank past the floor whose badges these are short of */
+  let wall = LEVEL_CAP;
+  for(let i = rf; i < TIER_ORDER_FULL.length; i++){
+    const r = TIER_UNLOCKS_ACADEMY_PREV[TIER_ORDER_FULL[i]];
+    if(r && b < r[1]){ wall = Math.min(LEVEL_CAP, r[0]); break; }
+  }
+  const lvl = Math.min(levelFromPoints(pts), Math.min(LEVEL_CAP, Math.max(wall, lf)));
+  let held = 0;
+  TIER_ORDER_FULL.forEach((k, i) => { const r = TIER_UNLOCKS_ACADEMY_PREV[k]; if(r && lvl >= r[0] && b >= r[1]) held = i + 1; });
+  if(held > rf){ into.rankFloor = held; return held; }
+  return 0;
+}
 /* 384.60: THE TOP RANK ASKS FOR EVERY CHAPTER, AND THE GAPS GROW ALL THE WAY UP. Madison: "Don't change how many for Bronze, Silver, but it
    should be 58 to reach Supernova and it needs to progressively get there." Bronze and Silver are exactly as they were (5% and 14% = 3 and 8
    of 58); then Gold 24%, Platinum 38%, Sapphire 55%, Amethyst 76%, Supernova 100% = 14, 22, 32, 44, 58 - gaps 5, 6, 8, 10, 12, 14, each bigger

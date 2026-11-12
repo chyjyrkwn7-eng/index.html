@@ -5,7 +5,8 @@ Read off the pages, never typed (the OLD ladder is read from `git show origin/ma
  (1) Fire Code's badge counts rise rank by rank, the gaps never shrink and the last is bigger than the first; Bronze and Silver
      (rookie, ranger) are exactly the base build's; Supernova is the chapter count; the levels are the base build's; each label is generated
      from the rule ("Reach level N and M badges");
- (2) the academy's ladder is untouched (same counts as the base build) and ifcLadderFloor384bOnce does nothing there;
+ (2) the academy's ladder is untouched from Bronze to Sapphire (same counts as the base build; 384.88 moved its Amethyst and
+     Supernova, see check-b384-academyranks) and ifcLadderFloor384bOnce does nothing there;
  (3) NOBODY LOSES A RANK: an account sitting exactly on each rank of the BASE ladder (its badges, its level), booted through
      the real launch, still holds that rank - and Gold, Platinum, Sapphire and Amethyst are held by the rank floor (the raw level-and-badges
      rank is lower on this ladder), the floor written once under class26e.ifcladder384b before the work;
@@ -95,7 +96,9 @@ with sync_playwright() as pw:
     ctx, pg, eb = launch(br, NEW, G["academy"], active="academy")
     na = pg.evaluate(LADDER)
     did = pg.evaluate("()=>{ try{ localStorage.removeItem('class26e.ifcladder384b'); const f = store.rankFloor; const r = (typeof ifcLadderFloor384bOnce === 'function') ? ifcLadderFloor384bOnce() : 'none'; return { r, same: f === store.rankFloor }; }catch(e){ return { err: String(e) }; } }")
-    chk("(2) the academy's ladder is the base build's (%s) and the new floor does nothing there (%s)" % (na["b"], did), na["cls"] == "academy" and na["b"] == oa["b"] and na["l"] == oa["l"] and did.get("r") in (False, "none") and did.get("same", True), [na, oa, did])
+    # 384.88: the academy's own Amethyst and Supernova moved (16 and 25, check-b384-academyranks owns them), so Bronze to Sapphire
+    # and the levels are what this compares; Fire Code's floor still does nothing in the academy
+    chk("(2) the academy's ladder is the base build's from Bronze to Sapphire (%s) and the new floor does nothing there (%s)" % (na["b"], did), na["cls"] == "academy" and na["b"][:5] == oa["b"][:5] and na["l"] == oa["l"] and did.get("r") in (False, "none") and did.get("same", True), [na, oa, did])
     ctx.close()
 
     # ---- (3)(4) every rank of the BASE ladder, booted for real
