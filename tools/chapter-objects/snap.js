@@ -104,7 +104,7 @@ async (args) => {
           const ok = ca[i] >= .5 || L[i] === -2 || (pass === 0 && own[i] >= 0);
           if(ok && (M2[i - 1] || M2[i + 1] || M2[i - W] || M2[i + W])) M3[i] = 1; }
         M2.set(M3); }
-      /* traced: marching squares on the pixel grid (edge points at the half-way crossing), each loop simplified to .03 units */
+      /* traced: marching squares on the pixel grid (edge points at the half-way crossing), each loop simplified to .06 units */
       const val = (i, j) => (i < 0 || j < 0 || i >= W || j >= W) ? .5 : (M2[j * W + i] ? -.5 : .5);
       const ST = W + 2, ept = (key) => { const ev = key & 1, cI = key >> 1, i = cI % ST, j = (cI - i) / ST;
         return ev ? [i, j + .5] : [i + .5, j]; };
@@ -143,7 +143,7 @@ async (args) => {
       let add = "";
       loops.forEach(lp => {
         /* the loop's points are in sample (pixel-centre) coordinates, which toS takes */
-        let pts = simp(lp.map(p => toS(p[0], p[1])), .03);
+        let pts = simp(lp.map(p => toS(p[0], p[1])), .06);
         if(pts.length < 3) return;
         let d = "M" + pts.map(p => f2(p[0]) + " " + f2(p[1])).join("L") + "Z";
         /* a point of the part that this loop overlaps: if part + loop does not cover it, the loop winds against the part - turn it round */
