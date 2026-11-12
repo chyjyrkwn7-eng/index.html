@@ -119,19 +119,18 @@ def run(br):
                 g0 = got[(key[0], 0)]
                 moved = {k: [g0[k] and g0[k]["r"], g[k] and g[k]["r"]] for k in kept if not same(g0[k], g[k], .5)}
                 chk("%s %s scrolled %d: Pause and the chat button where they were at 0 (%s)" % (name, key[0], key[1], "same" if not moved else moved), not moved, moved)
-        # (4) (384.78) ONE LOOK for the top band's buttons, on every screen read here: the chat button (Home included), Pause and the round back buttons
+        # (4) (384.78) ONE LOOK for the top band's buttons, screen by screen: the chat button (Home included), Pause and the round back buttons
+        # all wear Home's chat button's look, and it is 384.76's unblurred glass
         LOOK = ("bf", "bg", "bi", "bc", "sh")
-        looks = {}
-        for key in [k for k in got if isinstance(k, tuple)]:
-            for el in ("chat", "pause", "back"):
-                v = got[key].get(el)
-                if v: looks.setdefault(tuple(v[f] for f in LOOK), []).append("%s %s y%d" % (el, key[0], key[1]))
-        chk("%s: the chat button, Pause and the round back buttons wear one look on every screen (%d look%s: %s)" % (name, len(looks), "" if len(looks) == 1 else "s",
-            "; ".join("%s <- %s" % (k[:2], v[:3]) for k, v in looks.items())[:400]), len(looks) == 1, looks)
-        chk("%s: ... and it is 384.76's unblurred glass (no backdrop blur)" % name, all(k[0] in ("none", "") for k in looks), list(looks)[:3])
-        chk("%s: ... read on Home, a question (with Pause) and beyond Home" % name,
-            any(x.startswith("chat home") for v in looks.values() for x in v) and any(x.startswith("pause question") for v in looks.values() for x in v)
-            and any(x.startswith("chat profile") for v in looks.values() for x in v), list(looks.values())[:1])
+        home = got.get(("home", 0), {}).get("chat")
+        hl = tuple(home[f] for f in LOOK) if home else None
+        chk("%s home: the chat button is 384.76's unblurred glass (backdrop %s, background %s)" % (name, home and home["bf"], home and home["bg"]),
+            bool(home) and home["bf"] in ("none", ""), home)
+        for key in [k for k in got if isinstance(k, tuple) and k != ("home", 0)]:
+            els = {el: got[key].get(el) for el in ("chat", "pause", "back") if got[key].get(el)}
+            off = {el: [v[f] for f in LOOK] for el, v in els.items() if tuple(v[f] for f in LOOK) != hl}
+            chk("%s %s y%d: %s wear%s Home's chat button's look (%s)" % (name, key[0], key[1], ", ".join(els) or "nothing read", "s" if len(els) == 1 else "",
+                "same" if not off else off), bool(els) and hl is not None and not off, off)
         worst = max(abs(v) for s in got["follow"] for v in s.values() if v is not None)
         chk("%s: with the visual viewport reading offset by the scroll the header, Pause and chat do not move (worst %.1f; 383 %s)" % (name, worst, ref["follow"]), worst <= .5, got["follow"])
         f = got["final"]
