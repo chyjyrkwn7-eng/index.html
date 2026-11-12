@@ -95990,8 +95990,27 @@ function writeFlareFindsOwed(a){
 }
 function oweFlareFind(c, all){
   const a = flareFindsOwed().filter(o => o.c !== c);
-  a.push({ c, all: !!all, s: 0 });
+  a.push({ c, all: !!all, s: 0, t: Date.now() });
   writeFlareFindsOwed(a);
+}
+/* A FIND BELONGS TO ITS TEST'S RESULTS WHILE THAT TEST CAN STILL BE FINISHED (384.59). "Secret flare pop ups, why did it happen on the
+   main menu? Is it because I left a test and left the app? They should be showing up in results." It was: a flare tapped in a test
+   whose app was then closed came back as an unfinished test (scheduleResumeOffer marks the lost run saved) and Home played the find's
+   scene and cards 2s after launch, with the test itself still waiting to be continued. The find is in that test's save slot
+   (flareFound), and resumeRunSession already carries it to the results of the test when it is finished - so while the slot holds
+   it, Home leaves it alone (its character, banner and the "A new secret" card with it). Home plays it, once, as before, when the
+   test is gone (Quit test, Start a new test, Delete) or the find is FLARE_HOLD_MS old - never lost. Muted, nothing is held (nothing
+   would ever be shown). Only a find nothing of which has been seen (s 0), and only one with a time on it: an older entry has none
+   and is not held. FLARE_HOLD_MS = 0 puts back what 384.48 did. */
+const FLARE_HOLD_MS = 24 * 3600 * 1000;
+function flareFindHeldForRun(o){
+  try{
+    if(!o || theme.muteBanners || (o.s | 0) >= 1) return false;
+    const age = Date.now() - (Number(o.t) || 0);
+    if(!(Number(o.t) > 0) || !(age >= 0) || age >= FLARE_HOLD_MS) return false;
+    const s = readRunSession();
+    return !!(s && s.flareFound === o.c);
+  }catch(e){ return false; }
 }
 /* stage 1: its scene has been seen; 2: its card too (the entry goes
    unless the character it completes is still to be announced); 3: done */
@@ -121339,7 +121358,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.48";
+const APP_BUILD = "2026-11-12-384.59";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -131700,7 +131719,7 @@ function attachNewDot(el, kind, id){
 }
 function pendingHomeUnlocks(){
   /* Held until the next finished test, which announces them itself. */
-  if(store.mergeHold) return { chars: [], banners: [], hints: [], fx: [], finds: [] };
+  if(store.mergeHold) return { chars: [], banners: [], hints: [], fx: [], finds: [], held: [] };
   /* THE COUNTERS FIRST (build 291). "The app gave me a pop for the
      character I unlocked (koi) ... after closing it out and opening
      again, that's when the other one came." The Koi reads the study log
@@ -131728,7 +131747,25 @@ function pendingHomeUnlocks(){
   /* a secret flare found and not yet seen through (build 318) */
   let finds = [];
   try{ finds = flareFindsOwed(); }catch(e){}
-  return { chars, banners, hints, fx, finds };
+  /* (384.59) a find whose own test is waiting to be finished is that test's results' (see flareFindHeldForRun): Home does not play
+     it, nor the banner it brings, nor the "A new secret" card its character opens - that card would arrive before the character's */
+  let held = [];
+  try{
+    held = finds.filter(flareFindHeldForRun);
+    if(held.length){
+      finds = finds.filter(o => held.indexOf(o) < 0);
+      const heldBanners = held.map(flareFindBannerId).filter(Boolean);
+      banners = banners.filter(id => heldBanners.indexOf(id) < 0);
+      hints = [];
+    }
+  }catch(e){ held = []; }
+  return { chars, banners, hints, fx, finds, held };
+}
+/* the banner a flare's character comes with, if it has one */
+function flareFindBannerId(o){
+  const ch = o ? flareFindCharacter(o.c, o.all) : null;
+  const b = ch ? BANNERS.find(x => x.flareChar === ch) : null;
+  return b ? b.id : null;
 }
 /* THE NEXT SECRET, ANNOUNCED (build 312): "Ensure when you go back to
    main menu, you get a banner pop up that says the you can now unlock
