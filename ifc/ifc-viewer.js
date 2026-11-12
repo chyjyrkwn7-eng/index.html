@@ -611,13 +611,16 @@ function sheetOf(segs, pageOf) {
     }
     return { sg, lines, ...r };
   });
-  const dxOf = (Q) => (Q.colLeft == null || P[0].colLeft == null ? 0 : P[0].colLeft - Q.colLeft);
+  // (384.72) a table that runs over two booklet pages (a county table's title and headings on one, the row on the next) is set where the pages print it: a
+  // table's rows are not running text, and lining up the left edge of the lines of the two pieces moved the row out of its table (chExhB-801)
+  const dxOf = (Q) => (segs.some(sg => sg.tbl) || Q.colLeft == null || P[0].colLeft == null ? 0 : P[0].colLeft - Q.colLeft);
   const pieces = [{ i: 0, dx: dxOf(P[0]), top: segs[0].y1, bot: segs[0].y0, gap: 0 }];
   for (let k = 1; k < P.length; k++) {
     const A = P[k - 1], B = P[k], pa = pieces[k - 1];
     const pb = { i: k, dx: dxOf(B), top: B.sg.y1, bot: B.sg.y0, gap: 0 };
     const a = A.lines[A.lines.length - 1], b = B.lines[0];
-    if (a && b) {
+    if (B.sg.omit) { pb.dx = 0; pb.gap = OMIT_GAP; pb.omit = true; }       // (384.72) rows of a table left out between two pieces: a gap that says so, the cuts as made
+    else if (a && b) {
       const fs = Math.max(a.fs, b.fs);
       const d = [];
       for (const ls of [A.lines.slice(-6), B.lines.slice(0, 6)]) for (let j = 1; j < ls.length; j++) { const v = ls[j - 1].y - ls[j].y; if (v >= 0.95 * fs && v <= 1.6 * fs) d.push(v); }
@@ -754,7 +757,25 @@ function findMarks(model, segs, find) {
     const rs = toks(spans[lo].it)[spaces(stream.slice(spans[lo].a, at))][0];
     const re = toks(spans[hi].it)[spaces(stream.slice(spans[hi].a, at + ql))][1];
     // the whole sentence or list item: a line that stops without closing punctuation runs on into the next line (up to seven lines each way)
-    const ends = (sp) => /[.;:!?]["”')\]]*$/.test(sp.it.s.trim());
+    const ends = (sp) => /[.;:!?]["”')\]]*$/.test(sp.it.s.trim()) || short(sp);
+    // (384.72) A LINE THAT STOPS SHORT OF THE COLUMN'S EDGE ENDS ITS ITEM. The book's running text is justified: every line but the last of an item runs to the
+    // right edge, so a line that is more than an em short of it (and is the last on its baseline) is the end of a list item, whatever its last character is -
+    // the items of a list of short names ("Baskets", "Belting: canvas and leather", "Beverages over 16-percent alcohol content") carry no full stop, and the
+    // rule that a line without one runs on into the next marked up to fourteen items for one (ch2-618), or three neighbours with it (ch2-610)
+    const short = (sp) => {
+      const seg = segs.find(g => centre(sp.it) >= g.x0 && centre(sp.it) <= g.x1 && sp.it.y >= g.y0 && sp.it.y <= g.y1);
+      if (!seg) return false;
+      const here = arr.filter(o => o.s.trim() && centre(o) >= seg.x0 && centre(o) <= seg.x1 && o.y >= seg.y0 && o.y <= seg.y1);
+      const hs = here.map(o => o.h).sort((a, b) => a - b), med = hs[hs.length >> 1];
+      if (!(sp.it.h >= 0.9 * med)) return false;                       // a raised or lowered figure ("m 2") is not the end of a line
+      let right = -Infinity, last = true;
+      for (const o of here) {
+        if (o.h < 0.9 * med) continue;
+        right = Math.max(right, o.x + o.w);
+        if (Math.abs(o.y - sp.it.y) < 2.5 && o.x > sp.it.x + 0.5) last = false;
+      }
+      return last && right - (sp.it.x + sp.it.w) > 1.0 * sp.it.h;
+    };
     const below = (a, b) => (a.it.y - b.it.y > -5 && a.it.y - b.it.y <= 22)     // b follows a: further along the same line (a superscript may sit a little higher), or the next line under it (same column)
       || (b.it.x > a.it.x + a.it.w && b.it.y - a.it.y > 150);                    // or the first line of the next column (to the right, far higher up the page)
     // a line of a table (a label and its value far apart on the same baseline) is a row, not running text: it never runs on into the next line.
@@ -1409,6 +1430,10 @@ function findRow(model, want, rect) {
   return { L, F, x0, x1, y0: Math.min(a.y0, b.y0) - 0.5, y1: Math.max(a.y1, b.y1) + 0.5, i0, i1, fs: Math.max(L.h, G.h), lt, lb };
 }
 
+const OMIT_GAP = 12;                                              // (384.72) points of paper, with the dots of an omission in it, between two pieces of a table
+const TABLE_ROWS = 30;                                            // (384.72) ... and only a table of this many printed lines (a short table with long notes - 1017.2 - is shown whole)
+const TABLE_SAVE = 0.6;                                           // (384.72) ... and only when the pieces are under this share of the whole cut
+const TABLE_TALL = 450;                                           // (384.72) points: a row clip taller than this is windowed (tableRowClip)
 async function tableRowClip(model, segs, caps, rows) {
   for (const seg of segs) {
     const hits = rows.map(r => findRow(model, norm(r), seg)).filter(Boolean);
@@ -1450,7 +1475,29 @@ async function tableRowClip(model, segs, caps, rows) {
     // rows, the notes - and shown as two or three pictures.
     let y0 = snapDown(rBot - 72);
     if (notes.length) y0 = Math.min(y0, Math.max(Math.min(...notes.map(it => bottom(it))) - 2, seg.y0));
-    const out = [{ page: seg.page, x0: seg.x0, x1: seg.x1, y0: Math.max(y0, seg.y0), y1: seg.y1, col: seg.col, context: true }];
+    let out = [{ page: seg.page, x0: seg.x0, x1: seg.x1, y0: Math.max(y0, seg.y0), y1: seg.y1, col: seg.col, context: true }];
+    // (384.72) A TABLE TOO TALL TO READ AT A GLANCE IS SHOWN AS ITS TITLE AND HEADINGS, THE ROWS AROUND THE ONE ASKED ABOUT, AND ITS NOTES - one picture. The cut
+    // above runs from the caption to the notes, so a row near the bottom of Table 1004.5 (40 rows) was a picture 1.2 phone screens tall with the row somewhere
+    // inside it (the audit's "very tall"). Past TABLE_TALL points the caption and column headings are one piece, the rows from four lines above the row to
+    // four below it another, and the notes a third; the pieces are set one under the other on one sheet (as a section's are, see sheetOf) and a piece that
+    // would start within a few lines of the one above is joined to it. Every row of the window is whole (a cut is made between rows).
+    if (out[0].y1 - out[0].y0 > TABLE_TALL && lines.length >= TABLE_ROWS) {
+      const snapUp = (y) => breaks.filter(b => b >= y).reduce((m, b) => Math.min(m, b), seg.y1);
+      const first = lines[0], headBot = Math.min(first.top + 1.5, seg.y1);
+      const tail = notes.length ? Math.max(Math.min(...notes.map(it => bottom(it))) - 2, seg.y0) : null;
+      const noteTop = notes.length ? snapUp(Math.max(...notes.map(it => top(it))) + 1) : null;
+      const winTop = snapUp(rTop + 48), winBot = Math.max(snapDown(rBot - 48), seg.y0);
+      const piece = (a, b) => ({ page: seg.page, x0: seg.x0, x1: seg.x1, y0: b, y1: a, col: seg.col, context: true });
+      const parts = winTop >= headBot - 14 ? [[seg.y1, winBot]] : [[seg.y1, headBot], [winTop, winBot]];
+      if (tail != null && noteTop != null) {
+        const last = parts[parts.length - 1];
+        if (last[1] <= noteTop + 14) last[1] = tail; else parts.push([noteTop, tail]);
+      }
+      const made = parts.map(([a, b], i) => Object.assign(piece(a, b), i ? { omit: true } : {}));      // omit: rows of the table are left out above this piece (sheetOf marks it)
+      // a window that saves little (Table 3206.2: its notes are as tall as its rows, its class labels are cells of several rows) is not worth the gaps: the table is shown whole
+      const full = out[0].y1 - out[0].y0, shown = made.reduce((t, m) => t + m.y1 - m.y0, 0);
+      if (shown < TABLE_SAVE * full) out = made;
+    }
     const marks = [];
     if (cap) marks.push(headMark(seg.page, cap));
     for (const h of hits) { const m = { page: seg.page, x0: h.x0, x1: h.x1, i0: h.i0, i1: h.i1, fs: h.fs, kind: 'row', lt: h.lt, lb: h.lb }; m.y0 = h.i0 - 0.12 * h.fs; m.y1 = h.i1 + 0.12 * h.fs; marks.push(m); }
@@ -1959,6 +2006,7 @@ export async function countyClip(doc, ptr, opts = {}) {
   }
   if (!cited.length) for (const sg of segments) cited.push(sg);
   const byPage = new Map(parts.map(pt => [pt.p, { items: pt.lines.flatMap(ln => ln.items.map(it => ({ ...it, b: false }))), g: null }]));
+  if (/ \| | › /.test(String(ptr.highlight || ''))) for (const sg of segments) sg.tbl = true;      // (384.72) see sheetOf
   return finishClip({ ok: true, segments, marks, text: texts.join(' '), pages, truncated: false, cited }, (p) => byPage.get(p) || { items: [], g: null });
 }
 
@@ -2346,8 +2394,9 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
         if (k === last) clearEdge(ctx, cv.width, cv.height, r1, -1, s);
       }
     }
+    const gapAt = y;
     y += Math.round((pc.gap || 0) * s);
-    parts.push({ seg, pc, cv, r0, r1, ry: rTop, x: Math.round((seg.x0 + pc.dx - X0) * s), y });
+    parts.push({ seg, pc, cv, r0, r1, ry: rTop, x: Math.round((seg.x0 + pc.dx - X0) * s), y, omit: pc.omit ? [gapAt, y] : null });
     y += r1 - r0;
   }
   let canvas;
@@ -2358,6 +2407,12 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
     const g = canvas.getContext('2d');
     g.fillStyle = '#fff'; g.fillRect(0, 0, canvas.width, canvas.height);
     for (const p of parts) if (p.r1 > p.r0) g.drawImage(p.cv, 0, p.r0, p.cv.width, p.r1 - p.r0, p.x, p.y, p.cv.width, p.r1 - p.r0);
+    // (384.72) rows of a table left out: three dots in the middle of the gap, the way an omission is set
+    for (const p of parts) if (p.omit) {
+      const cy = (p.omit[0] + p.omit[1]) / 2, cx = p.x + p.cv.width / 2, r = Math.max(1.2, 0.9 * s);
+      g.fillStyle = '#6b6330';
+      for (const dx of [-1, 0, 1]) { g.beginPath(); g.arc(cx + dx * 5 * s, cy, r, 0, 2 * Math.PI); g.fill(); }
+    }
     for (const p of parts) { p.cv.width = 0; p.cv.height = 0; }
   }
   canvas.style.width = (canvas.width / Math.min(dpr, 2)) + 'px';

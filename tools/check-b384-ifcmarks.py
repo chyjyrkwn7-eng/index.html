@@ -108,6 +108,9 @@ DECIDING = {                                                  # id -> [(regex, h
     "ch62-703": [(r"^Class IV\.", "any")], "ch33-001": [(r"^site safety plan$", "any")],
     "ch9b-120": [(r"^75 feet$", "all")],                       # (the row's value cells: a row is marked whole)
     "ch22-014": [(r"^32$", "any")],                            # (384.71) the lowered 32 of the stacked 1/32 (the raised 1 and the slash are read by the centring check below)
+    "ch32-052": [(r"^2,501.12,000$", "any")],                  # (384.72) the row 2,501-12,000 Open to the public, and the row above it (501-2,500) that gives the 2,500
+    "ch2-616": [(r"^Corrosives$", "any"), (r"^Highly toxic materials$", "any")],     # (384.72) the list items the question names, not the whole list
+    "ch2-618": [(r"^Beverages over 16-percent", "any")],       # (384.72) the one list item, not fourteen
 }
 judged = json.load(open(os.path.join(HERE, "b384-ifcmarks-judged.json"), encoding="utf-8"))
 bs = open(os.path.join(ROOT, "ifc", "bank.js"), encoding="utf-8").read(); bank = json.loads(bs[bs.index("{"): bs.rindex("}") + 1])

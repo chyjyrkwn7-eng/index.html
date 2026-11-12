@@ -32,6 +32,7 @@
       r.clipOk = !!(clip && clip.ok && clip.segments.length);
       if (!r.clipOk) return r;
       r.truncated = !!clip.truncated; r.pages = clip.pages.slice();
+      r.segs = clip.segments.map(sg => ({ page: sg.page, y0: sg.y0, y1: sg.y1, whole: !!sg.whole, omit: !!sg.omit }));      // (384.72) the pieces of the cut
       r.whole = clip.segments.some(sg => sg.whole);
       r.clipText = clip.text || '';
       r.marks = [];
