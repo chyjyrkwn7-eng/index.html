@@ -38815,6 +38815,13 @@ html.is-browser{ --fade-paper: transparent; }
     background:var(--clean-card-2) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
     -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
   }
+  /* and Settings' / the test setup's round back button as 383 drew it (its base .settings-nav-back rule: the surface tokens, no blur) */
+  html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back.settings-nav-back{
+    background:var(--surface-sheen), var(--surface-1) !important; background-repeat:repeat !important; background-origin:padding-box !important;
+    border:1px solid var(--surface-border) !important; box-shadow:var(--surface-shadow) !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back.settings-nav-back:active{ background:var(--surface-lift) !important; }
   /* (384) THE CHAT BUTTON IS HOME'S EVERYWHERE, AND THE ROUND BACK BUTTONS MATCH IT. Madison: "The Home Screen, the chat button
      looks good, it looks how it should look, but the chat button changed on like every other screen.. the chat button on home looks
      amazing, revert the chat button it looks like that everywhere still. I think the new back button needs to match it as well."
@@ -87151,6 +87158,30 @@ function topEdgeStripColor(color){
   }catch(e){}
   return color;
 }
+/* (384.77) THE STRIPS WEAR THE SKY ITSELF, NOT A COLOUR FOR IT. A flat colour, however well modelled, is one value where the sky is two radial
+   glows over paper: on Home it stood up to 12 levels off the sky beside it and read as a band under the clock in Chromium. So #top-edge and
+   #top-safe carry the sky layer's own gradients (body::before's computed background, laid over the same full-viewport box, which is where the
+   fixed sky starts in an installed app) on top of their opaque colour: the same pixels as the sky where there is no wash, still opaque. Not under
+   a pinned question header (the page's top there is the header's paper, and the strips are paper) and not with variant A (a lifted flat colour).
+   Recoloured in place, never replaced; run again after the sky's .6s dimming. */
+let topStripsSkyTimer = 0;
+function topStripsSky(){
+  try{
+    const root = document.documentElement;
+    const flat = root.classList.contains("top-match") || !!document.querySelector(".wrap.test-pinned");
+    const cs = flat ? null : getComputedStyle(document.body, "::before");
+    const img = cs && cs.backgroundImage && cs.backgroundImage !== "none" ? cs.backgroundImage : "none";
+    const base = cs ? cs.backgroundColor : "";
+    for(const id of ["top-edge", "top-safe", "top-deep"]){
+      const e = document.getElementById(id); if(!e) continue;
+      if(e.dataset.sky === img + base) continue;
+      e.dataset.sky = img + base;
+      e.style.backgroundImage = img;
+      if(img !== "none"){ e.style.backgroundSize = "100vw 100lvh"; e.style.backgroundPosition = "0 0"; e.style.backgroundRepeat = "no-repeat"; }
+      if(base && !/rgba\([^)]*,\s*0\)|transparent/.test(base)) e.style.backgroundColor = base;
+    }
+  }catch(e){}
+}
 const TOP_WASH_LIFT = [4, 3, 1];   /* (384.77) the band over the page at rest on his recording, in levels (R, G, B) */
 function topWashLift(hex){
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
@@ -87184,6 +87215,8 @@ function syncTopGuard(color){
         const s2 = document.getElementById(id);
         if(s2 && s2.dataset.color !== color){ s2.dataset.color = color; s2.style.backgroundColor = color; }
       }
+      topStripsSky();
+      clearTimeout(topStripsSkyTimer); topStripsSkyTimer = setTimeout(topStripsSky, 750);   /* again once the sky's .6s dimming has run */
       return;
     }
     const old = document.getElementById("top-guard");

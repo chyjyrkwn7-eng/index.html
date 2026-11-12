@@ -13,8 +13,8 @@ git), on the same screens, in Chromium (docs/notes-archive.md "384.77"):
  (4) BUTTONS     the chat button beyond Home and the round back button carry 383's look (no backdrop blur, the same background), Home's chat
                  button 383's glass;
  (5) STRIP       the in-place strip (B): #top-edge (12px) and #top-safe (the whole safe area) are in the markup ahead of every script in
-                 <body>, opaque, take touch, #top-edge is what is 4px down in the middle; the status bar's area on a scrolled Profile is one
-                 colour; theme-color and color-scheme are not written after launch;
+                 <body>, opaque, take touch, #top-edge is what is 4px down in the middle; a Profile scrolled 300 shows the same status-bar
+                 area as at rest; theme-color and color-scheme are not written after launch;
  (6) VARIANTS    the display test lists A (class26e.topmatch), B (topdeep), C (top383); C takes both strips away and rewrites the tags as 383;
  (7) no page errors.
 Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2), (4), (6))"""
@@ -77,10 +77,14 @@ def walk(br, raw, dev, mine):
         for y in ys:
             pg.evaluate("(y)=>window.scrollTo({top:y, behavior:'instant'})", y); pg.wait_for_timeout(450)
             out[(scr, y)] = pg.evaluate(READ)
-            if mine and scr == "profile" and y == 300:
+            if mine and scr == "profile":
+                # the status bar's area scrolled must be what it is at rest: nothing of the page runs up under the clock
                 im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB"); top = dev[3]
-                ref = im.getpixel((4, 4))[:3]; bad = [(x // 2, yy // 2) for yy in range(0, top * 2 - 1, 3) for x in range(4, im.width - 4, 6) if max(abs(a - b) for a, b in zip(im.getpixel((x, yy))[:3], ref)) > 3]
-                out["strip_px"] = (ref, len(bad), bad[:5])
+                if y == 0: out["strip0"] = im
+                else:
+                    im0 = out.pop("strip0")
+                    bad = [(x // 2, yy // 2) for yy in range(0, top * 2 - 1, 3) for x in range(4, im.width - 4, 6) if max(abs(a - b) for a, b in zip(im.getpixel((x, yy))[:3], im0.getpixel((x, yy))[:3])) > 3]
+                    out["strip_px"] = (len(bad), bad[:5])
         if scr == "question":
             pg.evaluate("()=>window.scrollTo({top:0, behavior:'instant'})"); pg.wait_for_timeout(400)
             a = pg.evaluate(READ); pg.evaluate("()=>{ window.__vvm.follow = true; }"); seen = []
@@ -102,8 +106,15 @@ def run(br):
         for key in [k for k in ref if isinstance(k, tuple)]:
             r, g = ref[key], got.get(key)
             if not g: chk("%s %s y%d: read" % (name, *key), False, g); continue
-            diff = {k: [r[k] and r[k]["r"], g[k] and g[k]["r"]] for k in ("header", "pause", "chat", "back") if not same(r[k], g[k])}
-            chk("%s %s scrolled %d: header, Pause, chat and back button on 383's rects (%s)" % (name, key[0], key[1], "same" if not diff else diff), not diff, diff)
+            # Pause on a question is 384 r5's (16px, 5.4rem; on an iPad the 384 text trim makes it 40px tall), and the chat button stands beside it:
+            # kept on purpose, so on a question those two are compared for staying put (below), not against 383
+            kept = ("pause", "chat") if key[0] == "question" else ()
+            diff = {k: [r[k] and r[k]["r"], g[k] and g[k]["r"]] for k in ("header", "pause", "chat", "back") if k not in kept and not same(r[k], g[k])}
+            chk("%s %s scrolled %d: header%s and back button on 383's rects (%s)" % (name, key[0], key[1], "" if kept else ", Pause, chat", "same" if not diff else diff), not diff, diff)
+            if kept and (key[0], 0) in got and key[1]:
+                g0 = got[(key[0], 0)]
+                moved = {k: [g0[k] and g0[k]["r"], g[k] and g[k]["r"]] for k in kept if not same(g0[k], g[k], .5)}
+                chk("%s %s scrolled %d: Pause and the chat button where they were at 0 (%s)" % (name, key[0], key[1], "same" if not moved else moved), not moved, moved)
             if key[0] != "home" and g.get("chat") and r.get("chat"):
                 chk("%s %s: the chat button beyond Home is 383's (backdrop %s / %s, background %s / %s)" % (name, key[0], g["chat"]["bf"], r["chat"]["bf"], g["chat"]["bg"], r["chat"]["bg"]),
                     g["chat"]["bf"] == r["chat"]["bf"] and g["chat"]["bg"] == r["chat"]["bg"], [g["chat"], r["chat"]])
@@ -121,11 +132,11 @@ def run(br):
         chk("%s: #top-edge is the opaque 12px strip at the top edge and what is 4px down (%s, %s)" % (name, e and e["r"], f["at4"]), e and e["r"][1] == 0 and e["r"][3] == 12 and "rgba" not in e["bg"] and f["at4"] == "top-edge", f)
         chk("%s: #top-safe covers the whole safe area, opaque, takes touch (%s, %s)" % (name, s and s["r"], f["pe"]), s and s["r"][1] == 0 and abs(s["r"][3] - top) < .6 and "rgba" not in s["bg"] and f["pe"] == "auto", s)
         px = got.get("strip_px")
-        chk("%s: a scrolled Profile's status-bar area is one colour, nothing of the page in it (%s)" % (name, px), px and px[1] == 0, px)
+        chk("%s: a Profile scrolled 300 shows the same status-bar area as at rest - nothing of the page under the clock (%s pixels off)" % (name, px and px[0]), px and px[0] == 0, px)
         tw = f["tw"] or {}
         chk("%s: theme-color and color-scheme were not written after launch (%s writes)" % (name, tw.get("tags")), tw.get("tags") == 0 and tw.get("tc0") == f["tc"], tw)
     # markup ahead of every script
-    serve = RAW; bi = serve.find("<body>"); ia, ie, ib = serve.find('id="top-safe"', bi), serve.find('id="top-edge"', bi), serve.find("<script", bi)
+    serve = RAW; bi = serve.find("\n<body>\n"); ia, ie, ib = serve.find('id="top-safe"', bi), serve.find('id="top-edge"', bi), serve.find("<script", bi)
     chk("the two strips are in the markup ahead of every script in <body> (%d, %d < %d)" % (ie, ia, ib), 0 < ie < ib and 0 < ia < ib, [ie, ia, ib])
     # (6) the variants
     dev = DEVICES[0]
