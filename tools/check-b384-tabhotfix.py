@@ -12,7 +12,7 @@ chrome stands from the screen and takes it up frame by frame (a negative bottom 
              wrongly so the code card opens): through a fling, both rubber bands and a wheel the bar's foot, Pause and .wrap/#stage are constant while nothing scrolls them, and the page
              never nudges the scroll itself while it is being scrolled;
  (2) FOLLOW  the visual viewport left riding below the layout one by the scroll offset (the state in the recordings, simulated through visualViewport.offsetTop): after each scroll step
-             (384.84, ON PURPOSE: once the page is still - 350ms after the scroll, a second look 150ms later agreeing; the wait per step is 900ms, was 260 - and not mid-scroll:
+             (384.86, ON PURPOSE: once the page is still - 350ms after the scroll, a second look 150ms later agreeing; the wait per step is 900ms, was 260 - and not mid-scroll:
              in a rubber band the in-flight reading moved a bar that had not moved; tools/check-b384-homescroll.py holds that) the bar
              and the back-to-top button are back at the screen's bottom (within 6px); and back at design when it clears. (384.77, on purpose: the test header and Pause are NOT
              moved by this reading any more - on the owner's phone it moved them ~100pt down mid-scroll; the reading is logged instead. check-b384-top383 holds that.)
@@ -126,7 +126,7 @@ def screens(br):
         pg.evaluate("()=>{ window.__vvm.follow = true; window.__scrollTos = 0; }")
         worst_b = worst_t = 0; seen = []
         for y in (150, 350, 500, 900, 400):
-            pg.evaluate("(y)=>window.scrollTo({top:y, behavior:'instant'})", y); pg.wait_for_timeout(900)   # (384.84) taken up once the page is still, not mid-scroll
+            pg.evaluate("(y)=>window.scrollTo({top:y, behavior:'instant'})", y); pg.wait_for_timeout(900)   # (384.86) taken up once the page is still, not mid-scroll
             s = pg.evaluate(S); off = min(500, round(s["y"]))
             if s["bar"] and s0["bar"]: worst_b = max(worst_b, abs((s["bar"][1] - s0["bar"][1]) - off))
             # (384.77) THE TOP IS READ, NOT MOVED: Pause (and the header) stay where they are; on his phone this reading moved them ~100pt down mid-scroll
