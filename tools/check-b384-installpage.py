@@ -60,7 +60,9 @@ STATE = """()=>{ const st = document.getElementById('stage'); const f = st && st
     ctlH: ctl.map(b => b.getBoundingClientRect().height), tabs: !!q('.a2hs-seg, [role=tablist], [role=radiogroup]'), lists: f ? f.querySelectorAll('.if-steps:not(.if-steps-card), .a2hs-steps').length : 0,
     notes: f ? f.querySelectorAll('.if-note:not(:empty), .if-after, .a2hs-note, .if-status:not([hidden])').length : 0,
     frame: r(q('.iv-frame')), head: r(q('.if-vhead')), headText: (q('.if-vhead') || {}).textContent || '', title: (q('.if-title') || {}).textContent || '',
-    after: (q('.if-after') || {}).textContent || '', line: (q('.if-line') || {}).textContent || '',
+    after: (q('.if-after') || {}).textContent || '', afterWeight: q('.if-after') ? parseInt(getComputedStyle(q('.if-after')).fontWeight) : 0, afterVis: vis(q('.if-after')),
+    device: (q('.if-device') || {}).textContent || '', deviceVis: vis(q('.if-device')), gsDevice: (q('.gs-device') || {}).textContent || '', gsDeviceVis: vis(q('.gs-device')),
+    lastStep: f && f.querySelector('.if-steps') ? [...f.querySelectorAll('.if-steps .if-step')].pop().textContent : '', line: (q('.if-line') || {}).textContent || '',
     video: v ? { paused: v.paused, muted: v.muted, pi: v.playsInline, loop: v.loop, auto: v.autoplay, src: v.getAttribute('src'), pos: getComputedStyle(v).objectPosition, t: v.currentTime } : null,
     frameAR: q('.iv-frame') ? q('.iv-frame').getBoundingClientRect().width / q('.iv-frame').getBoundingClientRect().height : 0,
     fontMin: f ? Math.min(...[...f.querySelectorAll('p, li, span, button, code, h1, h2')].filter(e => e.childElementCount === 0 && e.textContent.trim() && e.getBoundingClientRect().width > 0 && !e.closest('[hidden]')).map(e => parseFloat(getComputedStyle(e).fontSize))) : 0,
@@ -84,6 +86,8 @@ try:
                 s["screen"] == "installfirst" and s["icon"] and s["steps"] >= 3 and s["nums"] == s["steps"] and s["primary"] and s["skip"], s)
             chk("(1) %dx%d the old 'Show me how' link is gone, and it is the only quiet control" % (w, h), (not s["guide"]) and s["kinds"].count("quiet") == 1 and s["kinds"].count("primary") == 1, s)
             chk("(1) %dx%d it says to open Nova from the Home Screen once it is added (a line of its own, apart from the steps)" % (w, h), len(s["after"].strip()) > 20 and len(s["kicker"].strip()) > 3 and len(s["line"].strip()) > 20, s)
+            chk("(1) %dx%d it says plainly that this is the phone version and that there is a computer version (its own visible line), and the last line (to open Nova from its icon every time, not from the browser) is bold and visible" % (w, h),
+                len(s["device"].strip()) > 40 and s["deviceVis"] and len(s["after"].strip()) > 80 and s["afterWeight"] >= 600 and s["afterVis"] and len(s["lastStep"].strip()) > 25, [s["device"], s["after"], s["afterWeight"], s["lastStep"]])
             chk("(1) %dx%d text is 16px or more, controls 44px or more, nothing wider than the screen" % (w, h), s["fontMin"] >= 15.9 and min(s["ctlH"]) >= 43.5 and s["sw"] <= 0, [s["fontMin"], s["ctlH"], s["sw"]])
             chk("(1) %dx%d the button is inside the screen without scrolling (except a 320px phone, not run here)" % (w, h), s["primary"]["bottom"] <= s["vh"] + 0.5, [s["primary"], s["vh"]])
             ctx.close()
@@ -126,6 +130,8 @@ try:
         pg.click(".installvideo-panel .next.playbtn"); pg.wait_for_timeout(900)
         s = pg.evaluate(STATE)
         chk("(4) I've added it: the final state (the icon, a line to open Nova from the Home Screen, a line to close the page)", s["screen"] == "installdone" and s["icon"] and len(s["title"]) > 10 and len(s["line"]) > 8, s)
+        chk("(4) the final state says Nova is an app on the phone and to use that icon every time (a bold line of its own), and has the phone/computer-version line",
+            len(s["after"].strip()) > 80 and s["afterWeight"] >= 600 and s["afterVis"] and len(s["device"].strip()) > 40 and s["deviceVis"], [s["after"], s["afterWeight"], s["device"]])
         chk("(4) it does not lead into sign-up: no primary button, no Get Started, Welcome or Nova; no account was made", s["primary"] is None and not (s["gs"] or s["welcome"] or s["nova"] or s["home"]) and
             pg.evaluate("()=>!(store.firstName||store.onboardingComplete) && !syncCode"), s)
         chk("(4) the reminder bar's mark: the one-time showing counts as made and the bar is over (what the old answer did)",
@@ -184,10 +190,20 @@ try:
             pg.click(".next.playbtn"); pg.wait_for_timeout(700)
             chk("(6) %s: ... in-app mode kept" % ua, pg.evaluate(STATE)["mode"] == "inapp", "")
             ctx.close()
-        ctx, pg = open_dev(br, "win-chrome", w=1440, h=860)
+        ctx, pg = open_dev(br, "win-chrome", w=1440, h=900)
         s = pg.evaluate(STATE)
         chk("(6) a computer is unchanged: Get Started, no install page", s["gs"] and s["screen"] != "installfirst", s)
+        pg.wait_for_timeout(1800); s = pg.evaluate(STATE)
+        chk("(8) the computer's Get Started page says the other way round: Nova is made for a phone (its own visible line)", len(s["gsDevice"].strip()) > 60 and s["gsDeviceVis"], [s["gsDevice"], s["gsDeviceVis"]])
+        g = pg.evaluate("""()=>{ showHomeScreenSheet({from:'settings',device:'computer'}); const l=document.querySelector('#a2hs-sheet .a2hs-computer .a2hs-lead'); return l ? l.textContent : ''; }""")
+        chk("(8) and so does the computer branch of the Home Screen guide", len(g.strip()) > 60, g)
         ctx.close()
+        for lab, ua, inst in (("an iPhone with the install page skipped (Get Started on a phone)", "iphone-safari", False), ("the installed app", "iphone-safari", True)):
+            ctx, pg = L.new_page(br, SRC, url, ua=ua, installed=inst, w=440, h=956, insets=(62, 0, 34, 0), extra_init=("try{localStorage.setItem('class26e.installskip','1');}catch(e){}",))
+            L.boot(pg, url, 1800); pg.wait_for_timeout(1500)
+            s = pg.evaluate(STATE)
+            chk("(8) %s does not get the computer line" % lab, s["gs"] and not s["gsDevice"], s)
+            ctx.close()
         br.close()
 finally:
     srv.shutdown()

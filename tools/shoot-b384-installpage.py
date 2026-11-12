@@ -13,6 +13,7 @@ import b384_flow_lib as L
 from playwright.sync_api import sync_playwright
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "b384-installpage-shots"
+SUFFIX = sys.argv[2] if len(sys.argv) > 2 else ""      # e.g. -v2 (a second round of shots in the same folder)
 os.makedirs(OUT, exist_ok=True)
 SRC = L.load_src()
 SIZES = (("phone", 440, 956, (62, 0, 34, 0), "iphone-safari"), ("ipad", 834, 1194, (24, 0, 20, 0), "ipad-safari"))
@@ -29,7 +30,7 @@ names = []
 
 def snap(pg, tag, dev, top):
     pg.evaluate("(h)=>{ let b=document.getElementById('__sb'); if(!b){ b=document.createElement('div'); b.id='__sb'; b.style.cssText='position:fixed;left:0;right:0;top:0;height:'+h+'px;background:#000;z-index:99999;pointer-events:none'; document.body.appendChild(b); } }", top)
-    f = os.path.join(OUT, "%s-%s.png" % (dev, tag)); pg.screenshot(path=f); names.append(f)
+    f = os.path.join(OUT, "%s-%s%s.png" % (dev, tag, SUFFIX)); pg.screenshot(path=f); names.append(f)
     pg.evaluate("()=>{ for(const id of ['__sb']){ const b=document.getElementById(id); if(b) b.remove(); } }")
 
 
@@ -61,6 +62,11 @@ try:
             pg.click(".if-go"); pg.wait_for_timeout(900)
             snap(pg, "08-android-video-screen", dev, ins[0])
             ctx.close()
+        # the computer's Get Started page (it says Nova is made for a phone)
+        ctx, pg = L.new_page(br, SRC, url, ua="win-chrome", w=1440, h=900, insets=(0, 0, 0, 0))
+        L.boot(pg, url, 1800); pg.wait_for_timeout(2600)
+        snap(pg, "09-computer-get-started", "computer", 0)
+        ctx.close()
         br.close()
 finally:
     srv.shutdown()
