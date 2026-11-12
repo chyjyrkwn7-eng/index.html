@@ -38805,23 +38805,9 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .picks > label.pick > .box{
     box-shadow:0 0 6px 1px color-mix(in srgb, var(--pick-dot) 60%, transparent) !important;
   }
-  /* (384.77) BUILD 383'S CHAT AND BACK BUTTONS BEYOND HOME, BACK - see "THE TOP BAND'S BUTTONS AS BUILD 383 HAD THEM". After the 384 rules below
-     in the sheet's order would be safer, but these carry 383's own selectors with !important and a :not(), which out-weigh them. */
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #chatdock-btn#chatdock-btn{
-    background:var(--clean-card-2) !important; background-image:none !important; border-color:rgba(255,255,255,.06) !important;
-    box-shadow:0 4px 14px rgba(0,0,0,.35) !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
-  }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .ios-nav > .back-link.ios-nav-back.ios-nav-back{
-    background:var(--clean-card-2) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
-    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
-  }
-  /* and Settings' / the test setup's round back button as 383 drew it (its base .settings-nav-back rule: the surface tokens, no blur) */
-  html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back.settings-nav-back{
-    background:var(--surface-sheen), var(--surface-1) !important; background-repeat:repeat !important; background-origin:padding-box !important;
-    border:1px solid var(--surface-border) !important; box-shadow:var(--surface-shadow) !important;
-    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
-  }
-  html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back.settings-nav-back:active{ background:var(--surface-lift) !important; }
+  /* (384.78) 384.77's flat 383 chat and back buttons beyond Home are OUT again: the owner, on 384.77, "all it did was change the color of the
+     chat button, and now the chat button doesn't match" (and the top wash stayed). The top band's buttons are 384.76's again - see
+     "(384 r17) NOTHING IN THE TOP BAND OF A SCREEN BLURS WHAT IS BEHIND IT", restored below. */
   /* (384) THE CHAT BUTTON IS HOME'S EVERYWHERE, AND THE ROUND BACK BUTTONS MATCH IT. Madison: "The Home Screen, the chat button
      looks good, it looks how it should look, but the chat button changed on like every other screen.. the chat button on home looks
      amazing, revert the chat button it looks like that everywhere still. I think the new back button needs to match it as well."
@@ -39648,11 +39634,21 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pick-nexttest{ font-size:.78rem !important; }
     html[data-theme][data-layout] body #stage .picks > label.pick > .pcount{ font-size:.84rem !important; }
   }
-  /* (384.77) THE TOP BAND'S BUTTONS AS BUILD 383 HAD THEM. 384.1 gave the chat button, the round back buttons and Pause the tab bar's blurred
-     glass on every screen (the first backdrop blur at the top edge beyond Home - one of the research's triggers for the system's top wash,
-     and it arrived the day the wash was first reported); 384.4 took the blur off again but kept a glass of its own. Both are out: beyond Home
-     the chat button and the round back button are 383's flat solid discs again (rules below, at the end of the sheet), Home's chat button
-     is 383's glass. */
+  /* (384 r17) NOTHING IN THE TOP BAND OF A SCREEN BLURS WHAT IS BEHIND IT. Madison, on his iPhone: the screen title ("Profile"), the test's
+     "Drill" and its count, on EVERY screen, were soft and dim, the glass buttons beside them crisp ("What is happening at the top of the
+     screens? Fix this now" - and "Stop having me look for ways to fix it"). Chromium shows no layer over the title, so the cause could not be
+     read off; what changed in 384 is that the chat button (a flat disc on 383 beyond Home), the round back buttons and Pause were given the tab
+     bar's glass - backdrop-filter blur(7px) saturate(1.5) - and they are the only blurred elements in the top band of every screen. A
+     backdrop blur at the top edge is what iOS answers with its own soft band behind it. So the controls that stand in that band are the same
+     glass without the blur (a slightly fuller body so they read on any background); the blur stays on the bottom bar, the search circle and
+     the back-to-top button, which are not at the top edge.
+     (384.78) Back after 384.77 took it out: with it gone Home's chat button and Pause wore 384.1's blurred glass and the chat button
+     beyond Home a flat 383 disc, so the two no longer matched. This is the look every one of them had on 384.70 and 384.76. */
+  html[data-theme="dark"][data-layout="modern"] body :is(#chatdock-btn, #stage .ios-nav > .back-link.ios-nav-back, #stage .settings-nav-back, #stage .setup-nav-back, #pausebtn, .top #restart){
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.5) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+  }
   /* (384 r17) THE TITLE STAYS IN THE TOP LEFT. Madison, on the chapter picker: "The words should still be in the top left. If it is the
      next test then it would be moved down." Round 8 reserved the status strip on EVERY card so no title moved for carrying the mark, which
      left every title ~40px down from the corner. Now only a card that carries the next-test mark has the strip (the title is under it); any

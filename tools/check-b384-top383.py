@@ -10,14 +10,16 @@ git), on the same screens, in Chromium (docs/notes-archive.md "384.77"):
  (2) STILL       with the visual viewport reading offset by the scroll (what 384.62's heal read on his phone mid-scroll) the header, Pause and
                  the chat button do not move (as on 383, which had no follower);
  (3) BOUNCE      the root keeps its rubber band (overscroll-behavior-y is not none in the installed app), as 383;
- (4) BUTTONS     the chat button beyond Home and the round back button carry 383's look (no backdrop blur, the same background), Home's chat
-                 button 383's glass;
+ (4) BUTTONS     (384.78, CHANGED ON PURPOSE: the owner on 384.77, "all it did was change the color of the chat button, and now the chat
+                 button doesn't match") the chat button on every screen, Pause and the round back buttons wear ONE look, 384.70/384.76's
+                 unblurred glass (384 r17): no backdrop blur, and the same background, border and shadow everywhere. 384.77 (383's flat disc
+                 beyond Home, 384.1's blurred glass on Home and Pause) must FAIL this;
  (5) STRIP       the in-place strip (B): #top-edge (12px) and #top-safe (the whole safe area) are in the markup ahead of every script in
                  <body>, opaque, take touch, #top-edge is what is 4px down in the middle; a Profile scrolled 300 shows the same status-bar
                  area as at rest; theme-color and color-scheme are not written after launch;
  (6) VARIANTS    the display test lists A (class26e.topmatch), B (topdeep), C (top383); C takes both strips away and rewrites the tags as 383;
  (7) no page errors.
-Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2), (4), (6))"""
+Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2), (6); main 384.77 must FAIL (4))"""
 import os, sys, io, re, subprocess, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
@@ -43,7 +45,7 @@ DEVICES = [("promax", 440, 956, 59, 34, UA), ("ipad11", 834, 1194, 24, 20, UA_PA
 QSTART = """()=>{ showHome(); const u = 'Arrest, Search, and Seizure'; cfg.mode='drill'; cfg.units=[u]; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false; theme.autoAdvance=false; theme.reduceMotion=true;
   beginRun(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic===u), null); }"""
 READ = """()=>{ const R = s => { const e = document.querySelector(s); if(!e) return null; const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return null; const r = e.getBoundingClientRect(); if(!r.width) return null;
-    return { r: [r.left, r.top, r.right, r.bottom].map(v => Math.round(v * 10) / 10), bf: cs.backdropFilter, bg: cs.backgroundColor, bi: cs.backgroundImage.slice(0, 40) }; };
+    return { r: [r.left, r.top, r.right, r.bottom].map(v => Math.round(v * 10) / 10), bf: cs.backdropFilter, bg: cs.backgroundColor, bi: cs.backgroundImage.slice(0, 40), bc: cs.borderTopColor, sh: cs.boxShadow }; };
   const h = document.elementFromPoint(innerWidth / 2, 4);
   return { y: Math.round(scrollY), header: R('.wrap > .top'), pause: R('#pausebtn'), chat: R('#chatdock-btn'), back: R('#stage .settings-nav-back') || R('#stage .ios-nav > .back-link.ios-nav-back'),
     edge: R('#top-edge'), safe: R('#top-safe'), at4: h ? (h.id || h.tagName) : null, ob: getComputedStyle(document.documentElement).overscrollBehaviorY, cls: document.documentElement.className,
@@ -115,14 +117,19 @@ def run(br):
                 g0 = got[(key[0], 0)]
                 moved = {k: [g0[k] and g0[k]["r"], g[k] and g[k]["r"]] for k in kept if not same(g0[k], g[k], .5)}
                 chk("%s %s scrolled %d: Pause and the chat button where they were at 0 (%s)" % (name, key[0], key[1], "same" if not moved else moved), not moved, moved)
-            if key[0] != "home" and g.get("chat") and r.get("chat"):
-                chk("%s %s: the chat button beyond Home is 383's (backdrop %s / %s, background %s / %s)" % (name, key[0], g["chat"]["bf"], r["chat"]["bf"], g["chat"]["bg"], r["chat"]["bg"]),
-                    g["chat"]["bf"] == r["chat"]["bf"] and g["chat"]["bg"] == r["chat"]["bg"], [g["chat"], r["chat"]])
-            if key[0] == "home" and g.get("chat") and r.get("chat"):
-                chk("%s home: the chat button is 383's glass (backdrop %s / %s)" % (name, g["chat"]["bf"], r["chat"]["bf"]), g["chat"]["bf"] == r["chat"]["bf"], [g["chat"], r["chat"]])
-            if key[0] == "settings" and key[1] == 0 and r.get("back"):
-                chk("%s settings: the round back button is 383's (backdrop %s / %s, background %s / %s)" % (name, g["back"] and g["back"]["bf"], r["back"]["bf"], g["back"] and g["back"]["bg"], r["back"]["bg"]),
-                    g.get("back") and g["back"]["bf"] == r["back"]["bf"] and g["back"]["bg"] == r["back"]["bg"], [g.get("back"), r["back"]])
+        # (4) (384.78) ONE LOOK for the top band's buttons, on every screen read here: the chat button (Home included), Pause and the round back buttons
+        LOOK = ("bf", "bg", "bi", "bc", "sh")
+        looks = {}
+        for key in [k for k in got if isinstance(k, tuple)]:
+            for el in ("chat", "pause", "back"):
+                v = got[key].get(el)
+                if v: looks.setdefault(tuple(v[f] for f in LOOK), []).append("%s %s y%d" % (el, key[0], key[1]))
+        chk("%s: the chat button, Pause and the round back buttons wear one look on every screen (%d look%s: %s)" % (name, len(looks), "" if len(looks) == 1 else "s",
+            "; ".join("%s <- %s" % (k[:2], v[:3]) for k, v in looks.items())[:400]), len(looks) == 1, looks)
+        chk("%s: ... and it is 384.76's unblurred glass (no backdrop blur)" % name, all(k[0] in ("none", "") for k in looks), list(looks)[:3])
+        chk("%s: ... read on Home, a question (with Pause) and beyond Home" % name,
+            any(x.startswith("chat home") for v in looks.values() for x in v) and any(x.startswith("pause question") for v in looks.values() for x in v)
+            and any(x.startswith("chat profile") for v in looks.values() for x in v), list(looks.values())[:1])
         worst = max(abs(v) for s in got["follow"] for v in s.values() if v is not None)
         chk("%s: with the visual viewport reading offset by the scroll the header, Pause and chat do not move (worst %.1f; 383 %s)" % (name, worst, ref["follow"]), worst <= .5, got["follow"])
         f = got["final"]
