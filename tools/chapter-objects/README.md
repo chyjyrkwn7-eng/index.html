@@ -113,6 +113,7 @@ the finished string. (gen-part-2.js uses the same file.)
 
 The loop:
 ```
+python3 tools/chapter-objects/snap.py          # (384.90) after ANY edit to a part file: re-trace the snaps (below), then merge
 python3 tools/merge-chapter-icons.py --out /tmp/<you>/index.html
 python3 tools/render-chapter-badges.py /tmp/<you>/sheet.png --index /tmp/<you>/index.html --only 10,9 --cols 2 --px 200
 python3 tools/check-b384-objbadges.py --index /tmp/<you>/index.html
@@ -137,6 +138,16 @@ run of rounded corners, to join with arcs), `OBJ_walk(d)` (a path's points). Ari
    EXIT sign carries the word, as raised lit strokes (at 44px and 26px it is a glowing bar, as a real sign is at a distance).
 8b. **Every piece joins** (384.79): a hose, spout, strand, handle, fuse, flame, spray or pennant comes OUT of its object - part of the one
    silhouette, in its object's colour where it is the same material, starting on the object's surface - never a piece beside it.
+8c. **Every edge meets what it meets** (384.90, Madison: "I still see a few spots on some where the connections of pieces aren't right.
+   Ensure all the edges are perfect"). Draw a part to the outline, or to its neighbour, on the SAME coordinates (the outline's own points
+   and corner radii: a part with a 3-unit corner inside a 0.5-unit outline corner leaves a speck of the base in it). What is left is
+   snapped for you: `tools/chapter-objects/snap.py` finds every sliver of the base 0.8 units wide or less between a fill part and the
+   outline or another part (and every small corner speck), gives it to the nearest part, and traces it into that part's path, so its
+   colour, material, height and bevel run to the edge it meets; the merge bakes it (snaps.json, applied only to the exact path it was
+   traced for). A sliver already the colour of a part it borders is left to read as that part. A real gap you mean to show (mortar, the
+   gap between two boxes) is wider than 0.8 units or long - draw it at least 1.2 wide. The renderer also strokes every fill part a hair
+   round its edge before filling it and no longer clips parts to the outline, so two parts meeting never let the base's colour through
+   along their join (the conflation seam). The gate measures what is left (tools/chapter-objects/joins.js): no sliver, no seam, no nub.
    A pin's glow (its card, the case, the cutscene) is its own commonest colour (chapterObjLight), so choose `col` and `base` to be the
    object's real main colour.
 9. **The back still holds the title** (the back is the pin's own silhouette and the title is laid out on it, from the foot of the bevel

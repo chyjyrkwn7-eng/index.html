@@ -83,20 +83,20 @@
 {
   const E = (cx, cy, rx, ry, a0, a1, n) => { const o = []; for(let i = 0; i <= n; i++){ const t = (a0 + (a1 - a0) * i / n) * Math.PI / 180; o.push([cx + rx * Math.cos(t), cy + ry * Math.sin(t)]); } return o; };
   const mouth = E(84, 46, 9, 31, -90, 90, 12);
-  const cone = (x) => 9 + (x - 22) * (22 / 62);       /* the horn's half height at x */
+  const cone = (x) => 10 + (x - 22) * (21 / 62);      /* the horn's half height at x (384.90: from the housing's own 10, no step) */
   const band = (x0, x1) => OBJ_poly([[x0, 46 - cone(x0)], [x1, 46 - cone(x1)], [x1, 46 + cone(x1)], [x0, 46 + cone(x0)]], 1);
-  const pts = [[6, 36], [22, 36], [22, 37]].concat(mouth).concat([[48, 46 + cone(48)], [45, 89], [33, 89], [35, 46 + cone(35)], [22, 55], [22, 56], [6, 56]]);
-  const rs = [4, 1, 1].concat(mouth.map((p, i) => (i === 0 || i === mouth.length - 1) ? 1.5 : 4)).concat([1, 2.5, 2.5, 1, 1, 1, 4]);
+  const pts = [[6, 36], [22, 36]].concat(mouth).concat([[48, 46 + cone(48)], [45, 89], [33, 89], [35, 46 + cone(35)], [22, 56], [6, 56]]);
+  const rs = [4, .5].concat(mouth.map((p, i) => (i === 0 || i === mouth.length - 1) ? 1.5 : 4)).concat([1, 2.5, 2.5, 1, .5, 4]);
   CHAPTER_OBJ["Chapter 4: Emergency Planning and Preparedness"] = {
     d: OBJ_poly(pts, rs),
     base: "hot",
     plates: [
-      ["hot", OBJ_poly([[22, 37], [84, 15], [84, 77], [22, 55]], 1), { dome: 2 }],                      /* the horn */
+      ["hot", OBJ_poly([[22, 36], [84, 15], [84, 77], [22, 56]], [.5, 1, 1, .5]), { dome: 2 }],         /* the horn */
       ["cream", band(30, 36), { z: .7, bev: .6 }],                                                          /* its bands */
       ["cream", band(64, 71), { z: .7, bev: .6 }],
       ["cream", OBJ_ellipse(84, 46, 9, 31), { z: .8, bev: .7, dome: .6 }],                                  /* the mouth's rim */
       ["rubber", OBJ_ellipse(85, 46, 5, 26), { z: -1.8, bev: .9 }],                                           /* its opening */
-      ["rubber", OBJ_rrect(6, 36, 18, 20, 4), { dome: 1.4 }],                                              /* the rear housing */
+      ["rubber", OBJ_rrect(6, 36, 16.6, 20, [4, .5, .5, 4]), { dome: 1.4 }],                               /* the rear housing: square where it meets the horn */
       ["rubber", OBJ_poly([[35, 57], [48, 61], [45, 89], [33, 89]], [1, 1, 2.5, 2.5]), { dome: 1 }],       /* the grip */
       ["rubber", "M36 70H45.5M35.6 76H45M35.2 82H44.5", { ln: 1.3, cut: .7, paint: 0 }],
     ],

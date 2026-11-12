@@ -78,8 +78,8 @@
         ["red", OBJ_poly([[19.5, 58], [80.5, 58], [62, 93], [38, 93]], [0, 0, 4, 4]), { gem: 1.4, gw: 9 }],   /* the chin, faceted */
         /* (384.68) the lens holder across the whole front and the lens a welder's dark green glass: with a small dark window and a
            crown ridge over it, the helmet read as a face */
-        ["rubber", OBJ_rrect(21, 25, 58, 28, 3.5), { z: 1, bev: .9 }],                                     /* the lens holder */
-        ["glass", OBJ_rrect(26, 30, 48, 18, 1.5), { z: -1.1, bev: .6, col: "#2C5E45" }],                  /* the lens */
+        ["rubber", OBJ_rrect(24.5, 26, 51, 27, 4), { z: 1, bev: .9 }],                                     /* the lens holder (384.90: an even margin of shell round it) */
+        ["glass", OBJ_rrect(29, 30.5, 42, 18, 1.5), { z: -1.1, bev: .6, col: "#2C5E45" }],                /* the lens */
         ["rubber", OBJ_circle(85.5, 47, 6.5), { dome: 1.6 }],                                               /* the headgear knobs */
         ["rubber", OBJ_circle(14.5, 47, 6.5), { dome: 1.6 }],
         ["steel", OBJ_circle(85.5, 47, 2.6), { dome: .9 }],

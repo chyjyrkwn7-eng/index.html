@@ -14,7 +14,11 @@ in index.html, so helpers can draw into separate files without ever editing inde
 (384.67) THE OBJECTS ARE BAKED: the object files are RUN here (by tools/chapter-objects/measure.js, under node) and what is written into
 index.html is each entry as plain data - CHAPTER_OBJ["..."] = {"d":"...","plates":[...]}; - not the files' code. A part file may compute
 its outlines (trace an arc into points, ring a disc with teeth, offset a curve) as freely as it likes: that runs once, at merge time, and
-the page reads finished strings (a part file that traced its curves at load cost ~860ms of boot). The part files stay the source. After the object
+the page reads finished strings (a part file that traced its curves at load cost ~860ms of boot). The part files stay the source.
+(384.90) THE SNAPS: tools/chapter-objects/snaps.json (written by tools/chapter-objects/snap.py) holds, per chapter and part, the slivers
+that part should own - where it stops a fraction short of the outline or of its neighbour - traced to a polygon in its own units. The
+bake appends each to its part's path, but only when the part's path is the very one the snap was traced for (a hash): a part file edited
+since bakes unsnapped until snap.py is run again. NOVA_NO_SNAP=1 bakes without them (snap.py itself reads the parts that way). After the object
 files it writes a generated table of every silhouette's box (measured by tools/chapter-objects/measure.js under node: the paths are
 produced by JavaScript, so only running the files can know them), so the page never has to lay out an SVG to measure a badge.
   python3 tools/merge-chapter-icons.py            write index.html
@@ -44,6 +48,28 @@ def collect(names, kind, var):
         stray = [l for l in text.split("\n") if l.lstrip().startswith(var) and not re.match(r'^[ \t]*%s\["' % var, l)]
         if stray: print("%s: a %s line that is not %s[\"...\"] =: %r" % (fn, var, var, stray[0][:80])); sys.exit(2)
     return seen
+def fnv(s):
+    h = 2166136261
+    for ch in s:
+        h ^= ord(ch); h = (h * 16777619) & 0xffffffff
+    d = "0123456789abcdefghijklmnopqrstuvwxyz"; o = ""
+    while True:
+        o = d[h % 36] + o; h //= 36
+        if not h: return o
+def apply_snaps(baked):
+    """(384.90) each part's slivers appended to its path, where its path is the one they were traced for"""
+    f = os.path.join(ROOT, "tools", "chapter-objects", "snaps.json")
+    if os.environ.get("NOVA_NO_SNAP") or not os.path.exists(f): return 0
+    snaps = json.load(open(f, encoding="utf-8")); n = 0
+    for fn, entries in baked:
+        for k, e in entries:
+            sn = snaps.get(k)
+            if not sn or sn.get("sil") != fnv(e.get("d", "")): continue
+            for idx, v in sn.get("plates", {}).items():
+                i = int(idx); pl = e.get("plates") or []
+                if i < len(pl) and isinstance(pl[i], list) and len(pl[i]) > 1 and isinstance(pl[i][1], str) and fnv(pl[i][1]) == v["h"]:
+                    pl[i][1] = pl[i][1] + " " + v["add"]; n += 1
+    return n
 def main():
     units = json.load(open(os.path.join(ROOT, "tools", "chapter-icons", "units.json"), encoding="utf-8"))
     names = [u[0] for u in units]
@@ -68,6 +94,7 @@ def main():
         missing = [k for k in objs if k not in m["bbox"]]
         if missing: print("not measured: %r" % missing[:3]); sys.exit(2)
         # the entries as the part files leave them, file by file, as plain data (baked: nothing a part file computes runs at boot)
+        apply_snaps(m.get("baked", []))
         for fn, entries in m.get("baked", []):
             obody += "/* ---- %s (baked by tools/merge-chapter-icons.py: edit the part file, then merge) ---- */\n" % fn
             for k, e in entries:

@@ -45,6 +45,10 @@ never draws its subject. Played in Chromium (the Fire Code class and the academy
      BACK_RANGE_MIN), and on the cutscene coin the back is drawn at the same device pixels as the front;
  (5b) (384.79) EVERY BACK'S WORDS: the exact chapter title, the class line ("FIRE CODE") on every one, and the name at least 9.2 CSS px tall in
      the badge in your hand (FAILS on 384.68: Chapter 65's and Appendix B's backs had no class line, Chapter 56's name was 8.9 px);
+ (4e) (384.90) JOINS AND EDGES: no sliver of the base between two parts or a part and the outline (thin everywhere or a speck, visibly
+     not the colour of any part it borders, at least .25 square units), no join pulled toward the base's colour (the conflation seam), no nub
+     or notch on any outline (tools/chapter-objects/joins.js). FAILS on 384.90 before the snap (168 slivers on 36 chapters, 1,753 seam
+     pixels on 17, 6 nubs on 1). And (9): tools/chapter-objects/snaps.json in step with the part files (snap.py --check).
  (6) NO TWINS (384.67, Madison: "make the color of stuff relevant, you don't need to keep the old colors"): an object takes its natural
      colours, so the per-chapter enamel families and "58 distinct enamels" are retired; instead no two chapters may have BOTH a near-identical
      silhouette (IoU at least TWIN_IOU, 0.80, as 48px shapes; 0.70 flagged a red tent against the red jerry can) AND a near-identical main colour (CIELAB distance under TWIN_DE; an authored
@@ -385,6 +389,16 @@ with sync_playwright() as pw:
         chk("(4) a hole is at least %d across: %s" % (MIN_HOLE, sm[:3] or "none or all big enough"), not sm, sm[:5])
         slow = [(r["u"][:24], round(r["warmX"], 2), round(r["coldX"], 2)) for r in g2 if r["warmX"] > PERF_WARM_X or r["coldX"] > PERF_COLD_X]
         chk("(4) PERF: a case-sized pin at 3x (132px) costs at most %.1fx an academy struck token rendered in the same moment with its geometry cached, and %.1fx cold (medians, interleaved: the ratio measures the code, not the machine's load): the slowest are %s (warm, cold)" % (PERF_WARM_X, PERF_COLD_X, (max([(round(r["warmX"], 2), r["u"][:22]) for r in g2] or [(0, "")]), max([(round(r["coldX"], 2), r["u"][:22]) for r in g2] or [(0, "")]))), g2 and not slow, slow[:5])
+        # (384.90) JOINS AND EDGES (Madison: "I still see a few spots on some where the connections of pieces aren't right. Ensure all
+        # the edges are perfect"), measured by tools/chapter-objects/joins.js on every pin's own parts at ~7.5 px a unit
+        jn = pg.evaluate(open(os.path.join(HERE, "chapter-objects", "joins.js"), encoding="utf-8").read(), None)
+        sl = [(r["u"][:24], g["area"], g["at"], g["pair"]) for r in jn for g in r["gaps"]]
+        print("     joins (chapter, slivers, fringe [worst pull, pixels], spikes): %s" % [(r["u"][:16], r["gapN"], r["fringe"][:2], len(r["spikes"])) for r in jn if r["gapN"] or r["fringe"][1] or r["spikes"]], flush=True)
+        chk("(4e) NO SLIVERS: no piece of the base showing between two parts, or between a part and the outline, that is thin everywhere (0.8 units or less) or a speck (1.5 square units, 2 across), of another colour than every part it borders, and a quarter of a square unit or more: %s" % (sl[:3] or "none"), jn and not sl, sl[:8])
+        fr = [(r["u"][:24], r["fringe"]) for r in jn if r["fringe"][1]]
+        chk("(4e) NO SEAM OF THE BASE'S COLOUR where two parts meet: no pixel on a join pulled 15%% or more of the way toward the base under them (the conflation seam; the colour map's halo, 384.90): %s" % (fr[:3] or "none"), jn and not fr, fr[:6])
+        spk = [(r["u"][:24], r["spikes"][:2]) for r in jn if r["spikes"]]
+        chk("(4e) NO NUB OR NOTCH on any outline or hole: nowhere within 2 units does the path turn 150 degrees back and forth while netting under 60: %s" % (spk[:3] or "none"), jn and not spk, spk[:6])
         box = [r["u"][:24] for r in rows if r["fillsRect"]]
         chk("(4) no silhouette is a plain box (its area is under 96%% of its bounding rectangle's): %s" % (box[:3] or "none"), rows and not box, box[:4])
         worst = (0, "", "")
@@ -453,6 +467,9 @@ chk("(8) the academy's %d units draw exactly what the previous build draws (vect
 dif = [u for u in there_ifc if here_ifc.get(u) != there_ifc[u]]
 chk("(8) Fire Code's %d chapters with no object draw exactly what the previous build draws (the picture in the outline): %s" % (len(there_ifc), dif[:3] or "all identical"), len(there_ifc) + len(objs) == 58 and not dif, dif[:5])
 mg = subprocess.run([sys.executable, os.path.join(HERE, "merge-chapter-icons.py"), "--check"], capture_output=True, text=True)
+# (384.90) the snaps were traced for the part files as they are now (tools/chapter-objects/snap.py --check: a browser, ~1 minute)
+sn = subprocess.run([sys.executable, os.path.join(HERE, "chapter-objects", "snap.py"), "--check"], capture_output=True, text=True) if not against else None
+if sn is not None: chk("(9) tools/chapter-objects/snaps.json is in step with the part files (%s)" % (sn.stdout.strip().splitlines() or ["?"])[-1], sn.returncode == 0, (sn.stdout + sn.stderr)[-300:])
 chk("(9) tools/chapter-objects/part-*.js and index.html are in step (%s)" % mg.stdout.strip(), mg.returncode == 0 or bool(against), mg.stdout + mg.stderr)
 chk("(9) tools/chapter-objects/README.md (the authoring guide) is there and carries the checklist", os.path.exists(os.path.join(HERE, "chapter-objects", "README.md")) and "Checklist" in open(os.path.join(HERE, "chapter-objects", "README.md"), encoding="utf-8").read())
 chk("(10) no page errors", not errs_all, errs_all[:3])

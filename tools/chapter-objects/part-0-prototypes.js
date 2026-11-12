@@ -31,8 +31,8 @@
       [2.5, 0, .5, .5, 2.5, 2.5, .5, 1.5, 1.5, 0, 2.5]),
     plates: [
       ["steel", OBJ_rrect(44, 14, 46, 80, [1.5, 1.5, 0, 0]), { z: .5, bev: .6 }],                    /* the frame: jambs and head, 6 each */
-      ["ink", OBJ_rrect(50, 20, 34, 74, [1, 1, 0, 0]), { z: -2.3, bev: .8 }],                          /* the opening, a clean dark recess */
-      ["glow", OBJ_poly([[50, 94], [50, 83], [84, 76], [84, 94]], [0, 1, 1, 0]), { z: -2.3, bev: .8, col: "#BFE6CB" }],   /* daylight on its floor */
+      ["ink", OBJ_rrect(49, 20, 35, 74, [1, 1, 0, 0]), { z: -2.3, bev: .8 }],                          /* the opening, a clean dark recess (on under the leaf: 384.90) */
+      ["glow", OBJ_poly([[49, 94], [49, 83.2], [84, 76], [84, 94]], [0, 1, 1, 0]), { z: -2.3, bev: .8, col: "#BFE6CB" }],   /* daylight on its floor */
       ["steel", OBJ_rrect(47, 0, 40, 14.5, 2.5), { z: .5, bev: .5 }],                                /* the sign's housing, on the head */
       ["ink", OBJ_rrect(49.5, 2.2, 35, 10.1, 1.6), { z: -.6, bev: .4, col: "#0E2A1A" }],             /* its dark face */
       ["glow", OBJ_rrect(51, 3.3, 32, 7.9, 1.4), { z: .25, bev: .6, col: "#2C9A5C" }],               /* the diffuser's glow */
@@ -118,6 +118,8 @@
       ["body", OBJ_rrect(35, 37, 18, 18, 1.5), { z: .7, bev: .6 }],                              /* the lockers */
       ["body", OBJ_rrect(56, 37, 18, 18, 1.5), { z: .7, bev: .6 }],
       ["body", OBJ_rrect(77, 37, 16, 18, 1.5), { z: .7, bev: .6 }],
+      ["ink", OBJ_circle(26, 74, 13.8), { z: -.5, bev: .5 }],                                    /* the wheel wells (384.90) */
+      ["ink", OBJ_circle(76, 74, 13.8), { z: -.5, bev: .5 }],
       ["rubber", OBJ_circle(26, 74, 12), { z: .9, bev: 1.2 }],                                   /* the wheels */
       ["rubber", OBJ_circle(76, 74, 12), { z: .9, bev: 1.2 }],
       ["steel", OBJ_circle(26, 74, 5.5), { dome: 1.6 }],                                         /* their hubs */
@@ -162,9 +164,9 @@
       ["shade", OBJ_rrect(42.5, 32, 15, 17, 0), { dome: .8 }],                                   /* the neck */
       ["shade", "M42 38H58M42 43H58", { ln: 1.6, cut: .8, paint: 0 }],                           /* its grooves */
       ["body", OBJ_rrect(22, 48, 56, 14, 3), { gem: 1.4, gw: 3 }],                               /* the flange */
-      ["deep", OBJ_rrect(10, 62, 80, 24, 3), { z: .4 }],                                         /* the base */
+      ["deep", OBJ_rrect(10, 62, 80, 24, [3, 3, 0, 0]), { z: .4 }],                              /* the base (384.90: square below, where the die meets it) */
       ["lite", OBJ_rrect(14, 66, 72, 3, 1.5), { z: .3, bev: .4 }],                                /* its lip */
-      ["red", OBJ_rrect(12, 86, 76, 8, [0, 0, 3, 3]), { z: -.4, bev: .5 }],                      /* the inked rubber die */
+      ["red", OBJ_poly([[10, 86], [90, 86], [88, 94], [12, 94]], [0, 0, 2, 2]), { z: -.4, bev: .5 }],   /* the inked rubber die: the outline's own sides and corners (384.90) */
     ],
   };
 }
