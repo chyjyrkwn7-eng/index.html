@@ -62,19 +62,22 @@
      own top colour, changed IN PLACE (syncTopGuard) - never removed, never replaced. iOS 26/27 reports (folio #1026) say the system's top blur
      latches on the first time the top-edge element or the theme-color / color-scheme tags change after launch. .top-edge-old is the old
      behaviour (a new strip each colour, the tags rewritten) for the display test's A/B; .top-edge-none makes the strip ignore touch. */
+  /* (384.80) ONE SOLID STRIP OVER THE STATUS BAR'S AREA, AND NOTHING ELSE THERE. What WebKit tints the status bar from (and, reported in
+     production on iOS 26/27 by r/PWA developers, what removes the system's top blur) is a REAL fixed element at the very top - within 4px
+     of it, at least 80% of the width, over 4px tall (6px and up) - with a SOLID background-colour: not a gradient, not an image, not a
+     pseudo-element, not transparent. 384.77 had two (#top-edge 12px, #top-safe the inset) carrying the sky's gradients over their colour.
+     Now there is #top-edge alone: the whole safe area (6px where there is none), pointer-events:none so taps go through, over the
+     page and everything else (z 2147483647, as the r/PWA element; it holds the status bar's area only) - one inline opaque colour (the splash's #0A0A0A, then the
+     colour of the screen's top: the sky's at the top edge, the paper under a question's header), recoloured in place by syncTopGuard,
+     never removed, never replaced, never transparent. The sky no longer shows behind the clock: that area is one solid colour. */
   #top-edge{ display:none; }
-  html.top-edge-on:not(.top-edge-old) #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:12px; z-index:2147483000;
-    background-color:var(--splash-bg,#0A0A0A); transition:background-color .6s ease; pointer-events:auto; }
-  html.top-edge-on.top-edge-none:not(.top-edge-old) #top-edge{ pointer-events:none; }
-  /* (384.77) THE STATUS BAR'S AREA IS ONE OPAQUE STRIP, IN THE PAGE'S OWN TOP COLOUR. #top-safe: the whole safe-area height, in the markup from
-     the first byte of <body> beside #top-edge, recoloured in place with it (syncTopGuard), never replaced, takes touch; z 130 - under a pinned
-     test header (140), the tab bar (200) and every sheet and pop-up, over the page - so nothing scrolled ever runs up under the clock. It is
-     the sky's (paper's, under a question) own colour, so where the system draws no wash it reads as the page. #top-edge (12px, above everything)
-     is what sits at WebKit's sample point 4px down. Installed iPhone/iPad only (html.top-edge-on); the display test's C (html.top-383) takes
-     both away and gives the tags back to the app, as build 383 had it. */
-  #top-safe{ display:none; }
-  html.top-edge-on:not(.top-edge-old):not(.top-383) #top-safe{ display:block; position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top, 0px); z-index:130;
-    background-color:var(--splash-bg,#0A0A0A); transition:background-color .6s ease; pointer-events:auto; }
+  html.top-edge-on:not(.top-edge-old) #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:max(env(safe-area-inset-top, 0px), 6px); z-index:2147483647;
+    background-image:none; pointer-events:none; }
+  /* (384.80) the display test's "clip" (class26e.topclip; r/PWA "A quick workaround for the iOS 27 status bar/header blur glitch", a commenter's
+     element others confirmed): the same strip 11px tall with background-clip:text - its background-colour is still set, so WebKit samples it,
+     but it paints nothing, so the page shows under the clock as before */
+  html.top-edge-on.top-clip:not(.top-edge-old) #top-edge{ height:11px; -webkit-background-clip:text; background-clip:text; }
+  #top-safe{ display:none !important; }   /* (384.80) folded into #top-edge; the id is gone from the markup */
   html.top-383 #top-edge{ display:none !important; }
   /* variant B: a flat backdrop under the wash's measured depth (~46pt below the inset on his recording, +16px soft foot), BEHIND the content */
   #top-deep{ display:none; }
@@ -511,6 +514,7 @@
         if(localStorage.getItem("class26e.topmatch") === "1") te.add("top-match");     /* A: the strips in the colour the wash makes of the page */
         if(localStorage.getItem("class26e.topdeep") === "1") te.add("top-deep");       /* B: a flat backdrop under the wash's whole depth, behind the content */
         if(localStorage.getItem("class26e.top383") === "1") te.add("top-383");         /* C: build 383 exactly - no strips, the tags rewritten as 383 did */
+        if(localStorage.getItem("class26e.topclip") === "1") te.add("top-clip");       /* (384.80) clip: the strip sampled but painting nothing */
       }
     }
     if(!inApp){
@@ -707,8 +711,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 </head>
 <body>
-<div id="top-edge" aria-hidden="true"></div>
-<div id="top-safe" aria-hidden="true"></div>
+<div id="top-edge" aria-hidden="true" style="background-color:#0A0A0A"></div>
 <div id="top-deep" aria-hidden="true"></div>
 
 <div id="splashscreen">
@@ -13551,7 +13554,7 @@
   .wrap.test-pinned.race-pinned > #vroomracebar{ position:fixed; margin:0; z-index:141; box-sizing:border-box; isolation:isolate; }
   [data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{
     bottom:calc(-1 * var(--test-race-h, 0px));
-    background:color-mix(in srgb, var(--paper) 96%, transparent);
+    background:var(--paper);   /* (384.80) opaque, as the header's own (was 96%) */
   }
   .wrap.test-pinned.race-pinned > #vroomracebar::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
@@ -13564,9 +13567,11 @@
   [data-layout="modern"] .wrap.test-pinned > .top::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
     top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
+    /* (384.80) OPAQUE: the strip over the status bar's area is solid paper on a question, and the header under it is the same solid paper
+       (it was 97% / 95%) down to where it fades, so the two read as one colour */
     background:linear-gradient(to bottom,
-      color-mix(in srgb, var(--paper) 97%, transparent) 0%,
-      color-mix(in srgb, var(--paper) 95%, transparent) 70%,
+      var(--paper) 0%,
+      var(--paper) 70%,
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   .wrap:has(.fc-screen) .top .test-qcounter,
@@ -34277,6 +34282,18 @@
      extend. Made by refreshEdgeTints() once the splash has gone (see
      there: Safari reads a strip only when it appears). */
 html.is-browser{ overscroll-behavior-y:none; }
+/* (384.80) THE INSTALLED APP DOES NOT BOUNCE PAST ITS ENDS EITHER. Madison's 384.77 recording (iPhone 17 Pro Max, installed): pulled
+   down on Home the whole page rubber-banded (the planet system with it) and the tab bar dropped off the foot and came back broken; on a
+   question the pinned header was dragged with the page; on the Pause card the card rode up and down. The rubber band moves the whole
+   document under the fixed chrome, and that is what WebKit gets wrong with fixed layers (384.62). So the root does not overscroll in the
+   app either (a Safari tab has had this since 327z; 384.75 did the same). Normal scrolling and its momentum stay; only the bounce past
+   the top and the bottom goes. Inner scrollers keep their own. */
+html{ overscroll-behavior-y:none; }
+/* (384.80) THE PAGE BEHIND A CARD IS LOCKED. html.page-locked is set by syncPageLock() while the Pause card (and the screens that share
+   it: Quit's confirmation, a review's pause, a room's leave) fits the screen, or while a full-screen overlay is up on <body>. The root
+   cannot scroll (a script's own scrollTo still can), and pageLockTouch() stops a drag that would move it on iOS; a scroller inside the
+   card or the overlay scrolls as before. overflow:hidden does not move the scroll, so the page is where it was when the card goes. */
+html.page-locked, html.page-locked body{ overflow:hidden; }   /* the unit card's lock (html.unitdetail-lock), the same shape */
 /* THE SKY RUNS UNDER SAFARI'S BARS (build 327z13). "Safari version of the
    app has a bad problem and something that isn't fixed that I've mentioned
    so many times. The boxes at the top and bottom are still there." With
@@ -56072,6 +56089,8 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
     flagTrial("tvmatch", "A: top strips in the colour the wash makes", "class26e.topmatch", "1", "top-match"),
     flagTrial("tvdeep", "B: a flat backdrop under the whole wash, behind the content", "class26e.topdeep", "1", "top-deep"),
     flagTrial("tv383", "C: build 383 exactly (no strips, the tags rewritten as 383 did)", "class26e.top383", "1", "top-383", true),
+    /* (384.80) the r/PWA commenter's element: sampled (its colour is set) but invisible (background-clip:text), 11px */
+    flagTrial("clip", "clip: the top strip sampled but invisible (11px, background-clip:text)", "class26e.topclip", "1", "top-clip"),
     /* ---- 1. a strip at the very top edge (radio) ---- */
     { id: "s1",   rg: "strip", label: "1px solid strip at the top edge, page colour", on(){ stripOn({ h: 1, bg: "sky" }); }, off: stripOff },
     { id: "s8",   rg: "strip", label: "8px solid strip that takes touch (today's is 8px and ignores touch)", on(){ stripOn({ h: 8, bg: "sky" }); }, off: stripOff },
@@ -56780,7 +56799,11 @@ function syncSky(isQuestion){
   b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]') || preAccount);
   /* 383 round 3: beyond Home the sky is turned down, so the status-bar strip (--statusbar-mix2/3) follows it, as it follows
      a question - only when Home's sky actually goes on or off (screen changes, not every mutation) */
-  if(wasHome !== b.classList.contains("sky-home")) syncStatusBarColorSoon();
+  if(wasHome !== b.classList.contains("sky-home")){
+    /* (384.80) the top strip in THIS frame, easing with the sky (syncTopGuard); the tag cache and the rest still go after the first frame */
+    try{ if(topEdgeStill() && !splashOwnsFrame()){ const c = appTopEdgeColor(); if(c) syncTopGuard(c); } }catch(e){}
+    syncStatusBarColorSoon();
+  }
   /* build 327 round 12: "the result screen, shouldn't the starry background be
      there too?" Results had been calm (no stars) since 323 along with the
      question; only a question or a flashcard on screen is now. */
@@ -87386,7 +87409,9 @@ function topStripsSky(){
     const cs = flat ? null : getComputedStyle(document.body, "::before");
     const img = cs && cs.backgroundImage && cs.backgroundImage !== "none" ? cs.backgroundImage : "none";
     const base = cs ? cs.backgroundColor : "";
-    for(const id of ["top-edge", "top-safe", "top-deep"]){
+    /* (384.80) not #top-edge: it is the element WebKit samples, and WebKit reads its background-COLOUR only - so it is one solid colour
+       (syncTopGuard), with no image over it, and #top-safe below it carries the sky's pixels */
+    for(const id of ["top-safe", "top-deep"]){
       const e = document.getElementById(id); if(!e) continue;
       if(e.dataset.sky === img + base) continue;
       e.dataset.sky = img + base;
@@ -87401,6 +87426,60 @@ function topWashLift(hex){
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
   if(!m) return hex;
   return "#" + [m[1], m[2], m[3]].map((h, i) => Math.min(255, parseInt(h, 16) + TOP_WASH_LIFT[i]).toString(16).padStart(2, "0")).join("");
+}
+/* (384.80) THE SAMPLED STRIP AND THE "fe" DANCE. Madison found a write-up of how Safari 26 / iOS 26 tints the top (Ian Febi Sastrataruna,
+   "Safari 26 Status Bar Tinting - How It Actually Works", Jun 2026): WebKit samples the BACKGROUND-COLOR - not a background-image, a gradient,
+   a pseudo-element or a backdrop filter - of a position:fixed/sticky element within 4px of the top, at least 80% of the viewport wide on iOS
+   and taller than 4px (11px and up: solid while scrolling, a colour change taken at once); visibility:hidden and pointer-events:none are
+   still sampled, display:none is not; the colour should be an inline value that is always there (never removed, never a flip to or from
+   transparent, which its observer often misses); and a TRANSPARENT top element is the case where content flows behind the status bar.
+   384.77's #top-edge wore the sky's gradients as an image over its colour, so what WebKit read was the colour under them, not what showed.
+   Now #top-edge (12px, fixed at y 0, full width, above everything, in the markup from the first byte) is one solid inline colour - the
+   sky's colour at the top edge (appTopEdgeColor), the paper under a pinned question header - recoloured in place, never removed or made
+   transparent; #top-safe under it keeps the sky's pixels for the eye. And whenever that colour changes (the splash handing over, Home and
+   the other screens, a question's header, a theme), theme-color is set to it and then "danced": the colour, the next frame the colour +
+   "fe", the frame after the colour again - the change the write-up found wakes WebKit's observer into re-sampling every tinting source.
+   This reverses 384.27's "the tags are never written after launch" for theme-color (color-scheme is still never written): the tag now
+   always equals the strip. Whether this takes the wash away can only be seen on his phone. */
+var topTintGen = 0;
+function topTintDance(color){
+  try{
+    const m = document.getElementById("themecolor");
+    if(!m || !color) return;
+    const gen = ++topTintGen;
+    m.setAttribute("content", color);
+    requestAnimationFrame(() => {
+      if(gen !== topTintGen) return;
+      m.setAttribute("content", color + "fe");
+      requestAnimationFrame(() => { if(gen === topTintGen) m.setAttribute("content", color); });
+    });
+    /* a hidden page runs no frames: the clean value is never left behind */
+    setTimeout(() => { if(gen === topTintGen && m.getAttribute("content") !== color) m.setAttribute("content", color); }, 600);
+  }catch(e){}
+}
+/* (384.80) ONE RE-SAMPLE AFTER THE SPLASH. r/PWA (the iOS 27 blur thread): "when the page initially loads the blur is there, but after
+   pulling down the page a bit the blur disappears" - WebKit samples the top again on a scroll or a layout. So once, when the strip first
+   takes the app's colour after the splash: the strip one pixel taller for one frame (a layout of the sampled element, inside the status
+   bar's area, the same colour), and where the page can scroll and is at its top, a one-pixel programmatic scroll and back in the next
+   frame. Nothing visible moves; never under a tour or a locked page. */
+var topResampleDone = false;
+function topResampleOnce(el){
+  if(topResampleDone || !el) return;
+  topResampleDone = true;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    try{
+      el.style.height = "calc(max(env(safe-area-inset-top, 0px), 6px) + 1px)";
+      void el.offsetHeight;
+      requestAnimationFrame(() => { el.style.height = ""; });
+      const de = document.documentElement;
+      if((window.scrollY || 0) === 0 && de.scrollHeight > window.innerHeight + 1 && !document.getElementById("tour-overlay") && !de.classList.contains("page-locked")){
+        const was = de.style.scrollBehavior;
+        de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior;
+        window.scrollTo(0, 1);
+        requestAnimationFrame(() => { try{ if((window.scrollY || 0) <= 1) window.scrollTo(0, 0); }catch(e){} de.style.scrollBehavior = was; });
+      }
+    }catch(e){}
+  }));
 }
 function syncTopGuard(color){
   try{
@@ -87424,7 +87503,17 @@ function syncTopGuard(color){
       /* (384.77) variant A (html.top-match): the strips take the colour the system's wash makes of the page - his 384.70 recording reads the band
          under the status bar 4, 3 and 1 levels above the page below it, neutral - so a wash still drawn over them meets the page with no step */
       if(document.documentElement.classList.contains("top-match")) color = topWashLift(color);
-      if(el.dataset.color !== color){ el.dataset.color = color; el.style.backgroundColor = color; }
+      if(el.dataset.color !== color){
+        /* (384.80) NO JUMP IN THE STATUS BAR. "transition color changes will look janky" (the r/PWA thread): the strip changes in the frame the
+           screen does - onto a question's paper at once (the pinned header is paper in that same frame, syncTestPin), and from one sky to
+           the other over the sky's own .6s ease (body::before's --sky-k), set in the frame the sky's class changes (syncSky). Only three
+           colours ever: Home's sky, the quieter sky beyond Home, a question's paper. Every value on the way is solid. */
+        let instant = !!document.querySelector(".wrap.test-pinned") || !el.dataset.color;
+        try{ if(theme && theme.reduceMotion) instant = true; }catch(e){}
+        el.style.transition = instant ? "none" : "background-color .6s ease";
+        el.dataset.color = color; el.style.backgroundColor = color; topTintDance(color); topResampleOnce(el);
+      }
+      if(el.style.backgroundImage){ el.style.backgroundImage = ""; delete el.dataset.sky; }   /* (384.80) solid, never an image (384.77 laid the sky on it) */
       for(const id of ["top-safe", "top-deep"]){   /* (384.77) the safe-area strip and variant B's backdrop: the same colour, in place, never replaced */
         const s2 = document.getElementById(id);
         if(s2 && s2.dataset.color !== color){ s2.dataset.color = color; s2.style.backgroundColor = color; }
@@ -95146,8 +95235,11 @@ function pauseRun(){
   saveRunSession();
   /* (384 vr2) a race: the room is told, so it does not wait on you - see vroomNotePaused */
   vroomNotePaused(true);
+  /* (384.80) where the question was scrolled to: the Pause card goes up at the top of a locked page, and Resume gives it back */
+  pauseScrollY = Math.max(0, Math.round(window.scrollY || 0));
   renderPausedScreen();
 }
+var pauseScrollY = 0;
 
 /* ---- PAUSE ONLY PAUSES YOU (384, Virtual Room round 2) ----
    Madison: "Pausing should only pause you.. and yeah if you pause it would let you leave." A race's Pause held the whole room:
@@ -95492,6 +95584,7 @@ function centerPauseStack(panel, stack){
     let dy = first ? bandTop + line - first.getBoundingClientRect().top : bandTop + vh / 2 - (r.top + r.height / 2);
     dy = Math.max(dy, pr.top + 8 - r.top);
     stack.style.transform = Math.abs(dy) >= 0.01 ? "translateY(" + dy.toFixed(2) + "px)" : "";
+    syncPageLock();   /* (384.80) placed: does the card fit, so the page behind it can be held still */
   };
   requestAnimationFrame(place);
   setTimeout(place, 450);
@@ -95499,6 +95592,79 @@ function centerPauseStack(panel, stack){
   /* (384) and when the visible band changes under it - a held zoom being given back */
   try{ window.visualViewport.addEventListener("resize", place); }catch(e){}
 }
+
+/* ---- THE PAGE BEHIND A CARD DOES NOT MOVE (384.80) ----
+   Madison (iPhone 17 Pro Max, installed, 384.77): "when on the pause menu, it starts moving when swiping too?" The Pause card is
+   a screen of its own on #stage, centred on the visible screen by a transform - but its panel left the document 66px taller than
+   a Pro Max (1022 of 956), so a swipe scrolled it and the card rode up and down with the page. While a card that fits the screen
+   is up, or a full-screen overlay is up on <body>, the page is locked:
+   - html.page-locked (html and body overflow:hidden, as the unit card's lock): no scroll by a finger or a wheel; a script's own
+     scrollTo still works, and the scroll position is not touched, so the page is where it was when the card goes;
+   - pageLockTouch: a drag that would move the page is stopped (iOS), unless it starts in something that scrolls by itself (a list
+     inside the card or the overlay) or a text field;
+   - a card that does NOT fit (a phone on its side) leaves the page scrollable so its buttons can be reached; there is no bounce.
+   Kept in step by a look whenever #stage or <body> gains or loses a child, when the card is placed (centerPauseStack), and at a
+   touch while locked - so a lock whose overlay was hidden without being removed lets go at the next touch. The chat sheet keeps its
+   own (body.chatdock-open, build 327); the tour's dim is not a card and does not lock. */
+var pageLockOn = false;
+var pageLockQueued = false;
+var PAGE_LOCK_SKIP = { "top-edge": 1, "top-safe": 1, "top-deep": 1, "top-guard": 1, "splashscreen": 1, "tour-overlay": 1, "stage": 1 };
+function pageLockCardFits(){
+  const st = document.getElementById("stage");
+  const ps = st && st.querySelector(".pausepanel.is-pause > .pause-stack");
+  if(!ps || !ps.isConnected) return false;
+  const r = ps.getBoundingClientRect();
+  if(!r.height) return false;
+  const vv = window.visualViewport;
+  const top = vv && vv.offsetTop > 0 ? vv.offsetTop : 0, h = (vv && vv.height) || window.innerHeight;
+  return r.top >= top - 1 && r.bottom <= top + h + 1;
+}
+function pageLockOverlay(){
+  const b = document.body;
+  if(!b) return null;
+  const W = window.innerWidth, H = window.innerHeight;
+  for(let i = b.children.length - 1; i >= 0; i--){
+    const e = b.children[i];
+    if((e.id && PAGE_LOCK_SKIP[e.id]) || /^(SCRIPT|STYLE|LINK|TEMPLATE|NOSCRIPT)$/.test(e.tagName) || e.classList.contains("wrap")) continue;
+    const cs = getComputedStyle(e);
+    if(cs.position !== "fixed" || cs.display === "none" || cs.visibility === "hidden" || cs.pointerEvents === "none") continue;
+    const r = e.getBoundingClientRect();
+    if(r.width >= W * 0.9 && r.height >= H * 0.9) return e;
+  }
+  return null;
+}
+function syncPageLock(){
+  pageLockQueued = false;
+  let on = false;
+  try{ on = pageLockCardFits() || !!pageLockOverlay(); }catch(e){ on = false; }
+  if(on === pageLockOn) return;
+  pageLockOn = on;
+  document.documentElement.classList.toggle("page-locked", on);
+}
+function queuePageLock(){
+  if(pageLockQueued) return;
+  pageLockQueued = true;
+  requestAnimationFrame(syncPageLock);
+  setTimeout(syncPageLock, 120);   /* a hidden page runs no frames */
+}
+function pageLockTouch(e){
+  if(!pageLockOn || !e.cancelable || (e.touches && e.touches.length > 1)) return;
+  for(let n = e.target; n && n.nodeType === 1 && n !== document.body && n !== document.documentElement; n = n.parentElement){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName) || n.isContentEditable) return;
+    if(n.scrollHeight > n.clientHeight + 1 || n.scrollWidth > n.clientWidth + 1){
+      const cs = getComputedStyle(n);
+      if(/(auto|scroll)/.test(cs.overflowY + " " + cs.overflowX)) return;
+    }
+  }
+  e.preventDefault();
+}
+try{
+  document.addEventListener("touchstart", () => { if(pageLockOn) syncPageLock(); }, { capture: true, passive: true });
+  document.addEventListener("touchmove", pageLockTouch, { capture: true, passive: false });
+  const pageLockMO = new MutationObserver(queuePageLock);
+  pageLockMO.observe(document.getElementById("stage"), { childList: true });
+  pageLockMO.observe(document.body, { childList: true });
+}catch(e){}
 
 /* A custom, in-page confirmation for leaving mid-test — deliberately NOT
    window.confirm(), which can be unreliable (or silently no-op) inside a
@@ -95836,6 +96002,14 @@ function resumeRun(){
     startTimer(true);
   }
   render();
+  /* (384.80) the question back where it was scrolled to when Pause was tapped (the lock lets go first: the card has gone) */
+  syncPageLock();
+  if(pauseScrollY > 0){
+    const de = document.documentElement, was = de.style.scrollBehavior;
+    try{ de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior; window.scrollTo(0, pauseScrollY); }catch(e){}
+    de.style.scrollBehavior = was;
+  }
+  pauseScrollY = 0;
   if(raceTimed) runRaceClock();
 }
 
@@ -122442,7 +122616,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.78";
+const APP_BUILD = "2026-11-12-384.81";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
