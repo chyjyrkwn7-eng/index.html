@@ -91,7 +91,7 @@ COLOURS = r"""async (W) => {
       const R = lin(d[j]), Gg = lin(d[j + 1]), B = lin(d[j + 2]); r += R; g += Gg; b += B; n++;
       const Y = .2126 * R + .7152 * Gg + .0722 * B;
       if(!m[i - 1] || !m[i + 1] || !m[i - W] || !m[i + W]){ eY += Y; eN++; } else { fY += Y; fN++; } }
-    out.push({ u, p: String(bt.p), g: String(bt.g || bt.p), mean: hex([r / n, g / n, b / n]),
+    out.push({ u, p: String(bt.p), g: String(bt.g || bt.p), mean: hex([r / n, g / n, b / n]), obj: !!(typeof chapterObjFor === 'function' && chapterObjFor(u)),
                pale: typeof badgeEnamelPale === 'function' ? badgeEnamelPale(bt.p) : false, edgeY: eN ? eY / eN : 0, fieldY: fN ? fY / fN : 0 });
   }
   return { cls: window.NOVA_CLASS, units: out, cols: badgeCaseGrid(out.length).cols }; }"""
@@ -242,6 +242,16 @@ for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the acad
     chk("(%se) %s: no outline is another one stretched (each box squared, 8 turns and flips, 1px) - every pair under %.2f (closest: %s)" % (s1, label, SLIM,
         ", ".join("%s/%s %.2f" % (names[a][0], names[b][0], s) for s, a, b in rows[:3])), not bad, bad[:6])
     U_ = c["units"]
+    # (384.79) A CHAPTER DRAWN AS ITS OBJECT HAS NO ENAMEL OF ITS OWN TO HOLD APART: Madison, "make the color of stuff relevant, you don't
+    # need to keep the old colors" - a red jerry can, a red hydrant and a red fire engine are all red, and badgeThemeFor(u) is now the
+    # object's own commonest colour. Their colours are held by check-b384-objbadges (6) instead (no two chapters with BOTH a near-identical
+    # outline AND a near-identical main colour). (3a)-(3e) hold every unit that is not an object, as before; the academy is unchanged.
+    nobj = sum(1 for x in U_ if x.get("obj"))
+    U_ = [x for x in U_ if not x.get("obj")]
+    if len(U_) < 2:
+        chk("(%sa-e) %s: all %d units are drawn as their objects - their colours are natural and held by check-b384-objbadges (6) no twins, not here" % (s2, label, nobj), nobj > 0)
+        chk("(5) %s: no page errors" % label, not errs, errs[:3])
+        continue
     ps = [x["p"].upper() for x in U_]
     rep = sorted({p for p in ps if ps.count(p) > 1})
     chk("(%sa) %s: every unit its own enamel (%d units, %d enamels)" % (s2, label, len(U_), len(set(ps))), not rep, rep)
@@ -263,6 +273,7 @@ for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the acad
     for (i, a), (j, b) in itertools.combinations(tl, 2):
         if abs(a["x"] - b["x"]) <= a["w"] * 1.6 and abs(a["y"] - b["y"]) <= a["h"] * 1.6: nb.add(tuple(sorted((i, j))))
     cl = [(idx[k["u"]], k) for k in cards if k["u"] in idx]
+    # (384.79) only the units held here (not objects) are counted against the tiles and cards below
     for (i, a), (j, b) in itertools.combinations(cl, 2):
         if abs(a["x"] - b["x"]) <= a["w"] * 1.6 and abs(a["y"] - b["y"]) <= a["h"] * 1.6: nb.add(tuple(sorted((i, j))))
     sd = sorted((round(de00(U_[i]["mean"], U_[j]["mean"]), 1), U_[i]["u"][:18], U_[j]["u"][:18]) for i, j in nb)

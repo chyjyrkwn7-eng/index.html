@@ -133,7 +133,12 @@ run of rounded corners, to join with arcs), `OBJ_walk(d)` (a path's points). Ari
 5. **Circles are two half arcs** (`OBJ_circle`); a one-arc circle over r 12 fails the gate.
 6. **No gradients, no filters, no opacity, no hex colours, no markup in a path**; at most 24 parts (counted on the raw list).
 7. **Round corners** (radius at least 1); light comes from the top-left.
-8. **No text, numbers, letters, people, trademarks.** Official, not cute.
+8. **No text, numbers, letters, people, trademarks.** Official, not cute. The one exception, asked for by Madison (384.79): Chapter 10's
+   EXIT sign carries the word, as raised lit strokes (at 44px and 26px it is a glowing bar, as a real sign is at a distance).
+8b. **Every piece joins** (384.79): a hose, spout, strand, handle, fuse, flame, spray or pennant comes OUT of its object - part of the one
+   silhouette, in its object's colour where it is the same material, starting on the object's surface - never a piece beside it.
+   A pin's glow (its card, the case, the cutscene) is its own commonest colour (chapterObjLight), so choose `col` and `base` to be the
+   object's real main colour.
 9. **The back still holds the title** (the back is the pin's own silhouette and the title is laid out on it, from the foot of the bevel
    in; a silhouette with no broad area - all thin arms - leaves it no room; the gate reads its plan).
 10. **Distinct from every other chapter's silhouette** at 48px (overlap under 0.85), and **no twin** (a silhouette 0.80+ alike AND the
