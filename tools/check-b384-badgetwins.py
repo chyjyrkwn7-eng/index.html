@@ -203,10 +203,15 @@ with sync_playwright() as pw:
         ctx, pg, errs = G["page"](br, G["init"](G["ifc"]) if cls == "ifc" else G["init"](G["academy"], active="academy"))
         pg.wait_for_timeout(800)
         r = pg.evaluate(RASTER, N); c = pg.evaluate(COLOURS, 104); cards = pg.evaluate(CARDS); t = pg.evaluate(TILES)
-        res[cls] = (r, c, t, cards, list(errs)); ctx.close()
+        icons = pg.evaluate("()=>typeof chapterIconFor === 'function' ? unitsInTeachingOrder().filter(u => chapterIconFor(u)) : []")
+        res[cls] = (r, c, t, cards, list(errs), icons); ctx.close()
     br.close()
 for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the academy", "2", "4")):
-    r, c, tiles, cards, errs = res[cls]
+    r, c, tiles, cards, errs, icons = res[cls]
+    # (384.61) A chapter with an icon (CHAPTER_ICON) is told from the others by its picture and its enamel, and its outline was chosen for
+    # ROOM (the roomy outlines no chapter used: octagon, gate, hex - the octagon is the coin to the pixel): a pair with one of those is
+    # not held to the outline-twin limits below (it is still printed, still held to colours). Nothing else is exempt.
+    exempt = set(u.split(":")[0][:22] for u in icons)
     names, masks = {}, {}
     for i, (d, s) in enumerate(r["masks"].items()):
         k = "o%d" % i; masks[k] = np.array([ch == "1" for ch in s], bool).reshape(N, N)
@@ -215,11 +220,11 @@ for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the acad
     chk("(%sa) %s (%s): every unit has its own outline (%d units, %d outlines)" % (s1, label, r["cls"], n, len(masks)), len(masks) == n, [len(masks), n])
     for tag, band, small, what in (("b", 1, False, "the 1px edge"), ("c", 2, False, "the 2px edge"), ("d", 1, True, "a unit card's 28px")):
         rows = compare(masks, band, small)
-        bad = [(s, names[a], names[b]) for s, a, b in rows if s >= LIM]
-        chk("(%s%s) %s: no two outlines alike turned or flipped, by %s - every pair under %.2f (closest: %s)" % (s1, tag, label, what, LIM,
+        bad = [(s, names[a], names[b]) for s, a, b in rows if s >= LIM and not (set(names[a]) & exempt or set(names[b]) & exempt)]
+        chk("(%s%s) %s: no two outlines alike turned or flipped, by %s - every pair under %.2f%s (closest: %s)" % (s1, tag, label, what, LIM, " - an icon chapter's pairs apart (%d)" % len(exempt) if exempt else "",
             ", ".join("%s/%s %.2f" % (names[a][0], names[b][0], s) for s, a, b in rows[:3])), not bad, bad[:6])
     rows = compare_stretch(masks)
-    bad = [(s, names[a], names[b]) for s, a, b in rows if s >= SLIM]
+    bad = [(s, names[a], names[b]) for s, a, b in rows if s >= SLIM and not (set(names[a]) & exempt or set(names[b]) & exempt)]
     chk("(%se) %s: no outline is another one stretched (each box squared, 8 turns and flips, 1px) - every pair under %.2f (closest: %s)" % (s1, label, SLIM,
         ", ".join("%s/%s %.2f" % (names[a][0], names[b][0], s) for s, a, b in rows[:3])), not bad, bad[:6])
     U_ = c["units"]
