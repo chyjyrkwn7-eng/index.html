@@ -2154,10 +2154,15 @@ def check_b232(br):
       // Characters
       T('order', () => AVATAR_CHARACTERS.filter(c => c.feat).map(c => c.id));
       T('masked', () => { const d = AVATAR_CHARACTERS.find(c => c.id === 'masked');
-        store.unitGameBeat = {}; store.retakenQuestions = 99;
+        /* 384.46 (merged in 384.70): the academy's Masked One counts DIFFERENT questions - a question counts once, from a second miss on its key or
+           a recorded retake - so the fixture is 99 then 100 distinct questions with a second miss, not the old retakenQuestions counter */
+        const savedStats = store.stats, savedKeys = store.retakenKeys; store.unitGameBeat = {}; store.retakenKeys = []; store.stats = {};
+        const U = [...new Set(KEYS)]; for(let i = 0; i < 99; i++) store.stats[U[i]] = { n: 3, m: 2, c: 1 };
         const before = isLockedCharacter('masked'), msg = characterLockMessage('masked');
-        store.retakenQuestions = 100;
-        return { feat: d && d.feat, before, msg, after: isLockedCharacter('masked') }; });
+        store.stats[U[99]] = { n: 3, m: 2, c: 1 };
+        const res = { feat: d && d.feat, before, msg, after: isLockedCharacter('masked') };
+        store.stats = savedStats; store.retakenKeys = savedKeys;
+        return res; });
       T('poseidon', () => {
         store.weeklyTop3 = 2; store.pendingCharUnlocks = [];
         store.weekRankSeen = { week: '1999-W01', rank: 3 };

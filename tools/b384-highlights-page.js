@@ -19,6 +19,7 @@
   const GAP = 0.22;                                                              // em: a wider gap in the print than this is a space
   // a citation inside a table: a cell or a row ("cell | cell"), a TABLE's rows, or the short lines of a table's continuation page ("Toxic materials / Gases / See Section ...")
   const tabular = (c) => {
+    if (c.source === "ifc" && (c.row || /^table/i.test(String(c.section || "")))) return true;      // (the IFC leg) a table's clipping: its rows run rule to rule
     const ex = String(c.excerpt || ""), ls = ex.split("\n");
     return / \| | \u203a /.test(String(c.highlight || "")) || /\bTABLE\b/.test(ex) || (ls.length >= 4 && ls.filter(l => l.length < 34).length >= 0.75 * ls.length);
   };
@@ -155,6 +156,100 @@
             if (res.missing.length) res.bad.push(["a cited word is left outside the band", res.missing.slice(0, 3).join(", ")]);
             if (res.extra.length) res.bad.push(["a word that is not cited is inside the band", res.extra.slice(0, 3).join(", ")]);
           } else res.bad.push(["the cited words are not found in the page's text", toks.slice(0, 4).join(" ")]);
+        }
+      } finally { box.remove(); }
+      return res;
+    },
+    // ---- (384.56) the IFC leg. The owner's own book; the clipping the app cuts for the question (its citation, patches and all), painted as the two views paint it
+    // ("page": V.paintPages, "Show the whole book page"; "box": V.paint, the code box). For every highlighted sentence or list item (a `find` mark, kind cite) and
+    // table row (kind row) the PIXELS are read, as for the county: the print's word columns on the marked line (from the page drawn without marks) against the
+    // darker gold's columns (from the picture) -
+    //   (1) no word of the marked line is cut by an edge of the band,
+    //   (2) a sentence's band begins at the first glyph of its first word and ends at the last glyph of its last (the full stop included, no more than the marker's
+    //       own room beyond it); a row runs rule to rule on purpose: (1) only.
+    // The kit's marks say only WHICH lines to look at and between which x a sentence runs (it may begin or end inside a line); what is gold and what is printed is
+    // read off the pictures. Everything is worked in pdf points. The code box is one sheet of the clipping's pieces set one under another (paint(): clip.sheet), so
+    // a point of the page is found in it through that layout.
+    async ifcEnds(id, S, view, dump) {
+      await boot();
+      const book = await ifcEnsureBook();
+      const q = QUESTIONS.find(q => q.ifc && q.ifc.id === id), c = q.ifc.citation;
+      const res = { id, view, bad: [], checked: 0, marks: 0 };
+      if (!book) { res.nobook = true; return res; }
+      const loc = V.locate(book.index, c);
+      if (!loc.ok || loc.kind === "pages") { res.noclip = true; return res; }
+      const clip = await V.computeClip(book.doc, book.index, loc, c, book.opts);
+      if (!clip.ok || !clip.segments.length) { res.noclip = true; return res; }
+      const box = document.createElement("div"); document.body.appendChild(box);
+      try {
+        let cvs, frameOf;
+        if (view === "page") {
+          await V.paintPages(book.doc, clip.pages, box, { scale: S, ...book.opts, clip });
+          cvs = [...box.querySelectorAll("canvas.ifc-page")];
+          frameOf = async (m) => {
+            const cv = cvs[clip.pages.indexOf(m.page)]; if (!cv) return null;
+            const page = await book.doc.getPage(m.page);
+            return { cv, page, s: cv.width / page.view[2], ox: 0, oy: page.view[3] };
+          };
+        } else {
+          await V.paint(book.doc, clip, box, { scale: S });
+          cvs = [...box.querySelectorAll("canvas")];
+          const segs = clip.segments, sheet = segs.length === 1 ? { pieces: [{ i: 0, dx: 0, top: segs[0].y1, bot: segs[0].y0, gap: 0 }] }
+            : (clip.sheet || { pieces: segs.map((sg, i) => ({ i, dx: 0, top: sg.y1, bot: sg.y0, gap: i ? 4 : 0 })) });
+          const cv0 = cvs[0];
+          let X0 = Infinity, X1 = -Infinity;
+          for (const pc of sheet.pieces) { X0 = Math.min(X0, segs[pc.i].x0 + pc.dx); X1 = Math.max(X1, segs[pc.i].x1 + pc.dx); }
+          const sc = cv0 ? cv0.width / (X1 - X0) : 1;
+          let yy = 0; const placed = [];
+          for (const pc of sheet.pieces) { yy += Math.round((pc.gap || 0) * sc); placed.push({ pc, seg: segs[pc.i], y: yy }); yy += Math.round((pc.top - pc.bot) * sc); }
+          frameOf = async (m) => {
+            const my = (m.i0 + m.i1) / 2, mx = (m.x0 + m.x1) / 2;
+            const pl = placed.find(q => q.seg.page === m.page && mx >= q.seg.x0 - 2 && mx <= q.seg.x1 + 2 && my <= q.pc.top + 6 && my >= q.pc.bot - 6);
+            if (!pl || !cv0) return null;
+            // pdf x -> sheet x: (x + dx - X0) * sc;  pdf y -> sheet y: the piece's top (pc.top) is at pl.y
+            return { cv: cv0, page: await book.doc.getPage(m.page), s: sc, ox: X0 - pl.pc.dx, oy: pl.pc.top + pl.y / sc };
+          };
+        }
+        if (dump) res.img = cvs.map(cv => cv.toDataURL("image/png"));
+        const raws = new Map(), his = new Map();
+        const groupsPts = (pts, gap) => { const out = []; let a = null, l = null; for (const v of pts) { if (a == null) { a = v; l = v; } else if (v - l > gap) { out.push([a, l]); a = v; l = v; } else l = v; } if (a != null) out.push([a, l]); return out; };
+        for (const m of clip.marks || []) {
+          if (m.kind !== "cite" && m.kind !== "row") continue;
+          const f = await frameOf(m);
+          if (!f) { res.bad.push(["a mark is not inside any picture", m.kind + " p" + m.page + " x" + Math.round(m.x0) + "-" + Math.round(m.x1) + " y" + Math.round(m.i0) + "-" + Math.round(m.i1)]); continue; }
+          const { cv, page, s, ox, oy } = f, PH = page.view[3];
+          const rk = m.page + ":" + s;
+          if (!raws.has(rk)) raws.set(rk, await rawImage(page, s));
+          if (!his.has(cv)) his.set(cv, cv.getContext("2d").getImageData(0, 0, cv.width, cv.height));
+          const raw = raws.get(rk), hi = his.get(cv);
+          const ink0 = m.i0 != null ? m.i0 : m.y0, ink1 = m.i1 != null ? m.i1 : m.y1, fs = m.fs || 10, shrink = 0.14 * (ink1 - ink0);
+          const em = fs * s;
+          // rows: the mark's own line, a little inside its ink extent (the band of a line above or below is one outline with this one)
+          const rr0 = Math.round((PH - (ink1 - shrink)) * s), rr1 = Math.round((PH - (ink0 + shrink)) * s);      // in the raw page
+          const hr0 = Math.round((oy - (ink1 - shrink)) * s), hr1 = Math.round((oy - (ink0 + shrink)) * s);       // in the picture
+          if (hr0 < 1.1 * em || hr1 > cv.height - 1.1 * em) { res.edge = (res.edge || 0) + 1; continue; }                           // (the code box trims its first and last piece to a clean row: a line within a line of its top or bottom edge is read in the whole-page view only)
+          const ink = readLine(raw, raw.width, rr0, rr1, em, raw).ink, deep = readLine(hi, cv.width, hr0, hr1, em, null).deep;
+          const inkPts = [], deepPts = [];
+          for (let x = Math.floor((m.x0 - 3) * s); x <= Math.ceil((m.x1 + 3) * s); x++) if (x >= 0 && x < raw.width && ink[x]) inkPts.push(x / s);
+          for (let x = Math.floor((m.x0 - 8 - ox) * s); x <= Math.ceil((m.x1 + 8 - ox) * s); x++) if (x >= 0 && x < cv.width && deep[x]) deepPts.push(x / s + ox);
+          const words = groupsPts(inkPts, GAP * fs).filter(([a, b]) => (a + b) / 2 >= m.x0 + 1 && (a + b) / 2 <= m.x1 - 1);
+          const bands = groupsPts(deepPts, Math.max(2 / s, 0.22 * fs));      // (a hairline hole in the gold at a word space is not an edge)
+          const where = "p" + m.page + " y" + Math.round((ink0 + ink1) / 2) + " x" + Math.round(m.x0);
+          res.marks++;
+          if (!bands.length) { res.bad.push(["no gold under a mark", m.kind + " " + where]); continue; }
+          if (!words.length) continue;
+          res.checked++;
+          const tol = 0.6 + 0.6 / s, room = (fs >= 9 ? 0.34 : 0.55) * fs + 0.8;      // (a table cell is set at 7 to 9 pt and its marker is a whole cell wide)
+          const band = bands.find(([a, b]) => words.some(([wa, wb]) => wb >= a - tol && wa <= b + tol));
+          if (!band) { res.bad.push(["the marked words are outside every band", where]); continue; }
+          // (a word may stand in another band of the same line: a table row's cells are cut by the rules between them)
+          const holds = ([wa, wb]) => bands.some(([a, b]) => wa >= a - tol && wb <= b + tol);
+          for (const w of words) if (!holds(w)) res.bad.push(["a word is cut by the band's edge", "word " + w.map(v => v.toFixed(1)) + " bands " + JSON.stringify(bands.map(b => b.map(v => +v.toFixed(1)))) + ", " + where]);
+          if (m.kind === "cite") {
+            const gl = words[0][0] - band[0], gr = band[1] - words[words.length - 1][1];
+            if (gl > room) res.bad.push(["the band starts before its first glyph", gl.toFixed(1) + "pt early, " + where]);
+            if (gr > room) res.bad.push(["the band ends after its last glyph", gr.toFixed(1) + "pt late, " + where]);
+          }
         }
       } finally { box.remove(); }
       return res;

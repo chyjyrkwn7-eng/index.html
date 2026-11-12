@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Build 384.23 check: INSTALL FIRST, and the white button that opens the share menu.
+"""Build 384.23 check (reworked for 384.36's friendly install page): INSTALL FIRST, and the button that opens the share menu.
+(384.36: the page is friendlier, its button is "Show me how to add it" and opens the VIDEO screen with the share menu over it, "I can't add it"
+opens a help page, and the old "Show me how" link is gone. This gate keeps its intent: who gets the page, in-app, Android, computer, the way out,
+the account paths. The new screens themselves are held by check-b384-installpage.py.)
 
 The owner, watching classmates: "Someone clicks the link, they get the start up page. They create an account, then the Nova intro, then
 the tips ... When people add it to their Home Screen and click it, the first thing they see is the start up page again even though they
@@ -16,14 +19,14 @@ Asserted by shape (nothing here names a label, a build or a typed address):
      (a finished store, or a name, a sync code, or signed out): not held.
  (3) IN-APP BROWSERS  Instagram, Facebook (iOS and Android), TikTok, an iOS web view with no Safari token and an Android web view: the
      page asks for the browser first (data-mode=inapp), has the copyable link, and is not the share-menu page.
- (4) THE WAY OUT  "I can't add it" is at least 44px tall, goes on to Get Started and Welcome as before, is remembered (a reload does not
-     show the install page again), and the in-app page has it too.
- (5) THE WHITE BUTTON  on iPhone and iPad, Open Share menu calls navigator.share from the tap with the page's own canonical address
-     (read from og:url, never the address this page was served at) and the title; when it resolves the page says what to do next; when it
-     rejects (cancelled or not), or the browser has no navigator.share, the guide (the Home Screen sheet) opens: no dead end. The same
-     white button is the sheet's primary button wherever the sheet shows (Settings), with "I've added it" beside Not now as the quiet answers.
+ (4) THE WAY OUT  "I can't add it" is at least 44px tall and opens the help page; there "Still can't add it" goes on to Get Started and Welcome as before,
+     is remembered (a reload does not show the install page again); the in-app page has it too.
+ (5) THE BUTTON  on iPhone and iPad, the primary calls navigator.share from the tap with the page's own canonical address
+     (read from og:url, never the address this page was served at) and the title, and the page becomes the video screen in the same task,
+     whatever the menu then does (shared, cancelled, failed) or with no navigator.share at all: no dead end. The white button is still the
+     Home Screen sheet's primary wherever the sheet shows (Settings), with "I've added it" beside Not now as the quiet answers; so is the bar's pill.
  (6) ANDROID  with the browser's install prompt (a stubbed beforeinstallprompt), the primary button calls prompt() and says what happened;
-     with none (Firefox, Samsung), it opens the browser's menu steps (the sheet on Android).
+     with none (Firefox, Samsung), it opens the video screen (the menu steps, two answers) and never calls navigator.share.
  (7) BOOT  the page is built after boot like Get Started (the splash is still the first thing in the body, and the head gained no script or
      style for it); every button on the page is at least 44px.
 
@@ -53,7 +56,7 @@ STATE = """()=>{ const st = document.getElementById('stage'); const f = st && st
   const q = s => document.querySelector(s); const bt = e => { if(!e) return null; const r = e.getBoundingClientRect(); return { h: r.height, w: r.width, text: e.textContent.trim() }; };
   return { inst: !!(f && f.dataset && f.dataset.screen === 'installfirst'), mode: f && f.dataset ? f.dataset.mode : '', dev: f && f.dataset ? f.dataset.dev : '',
     gs: !!q('.gs-page'), welcome: !!q('.cosmic-welcome'), home: !!q('[data-screen=home]'),
-    go: bt(q('.if-go')), skip: bt(q('.if-out')), guide: bt(q('.if-guide')), copy: bt(q('.if-copy')), link: !!q('.if-link-addr'),
+    go: bt(q('.if-go')), skip: bt(q('.if-out')), guide: bt(q('.if-guide')), vid: !!q('.iv-frame'), screen: f && f.dataset ? f.dataset.screen : '', copy: bt(q('.if-copy')), link: !!q('.if-link-addr'),
     status: (q('.if-status') || {}).textContent || '', sheet: !!q('#a2hs-sheet'), sheetDev: (q('#a2hs-sheet') || {}).dataset ? q('#a2hs-sheet').dataset.dev : '',
     title: (q('.if-title') || {}).textContent || '' }; }"""
 
@@ -103,7 +106,7 @@ try:
             ctx, pg = open_dev(br, ua)
             s = pg.evaluate(STATE)
             chk("(3) %s: the open-it-in-a-browser page, with the link to copy, and not the share-menu page" % ua,
-                s["inst"] and s["mode"] == "inapp" and s["link"] and s["go"] is not None and (s["guide"] is None), s)
+                s["inst"] and s["mode"] == "inapp" and s["link"] and s["go"] is not None, s)
             if ua == "iphone-instagram":
                 chk("(4) the in-app page has the way out, at least 44px tall", s["skip"] and s["skip"]["h"] >= 43.5, s)
                 tgt = pg.evaluate("()=>safariHandoffTarget()")
@@ -113,9 +116,13 @@ try:
         ctx, pg = open_dev(br, "iphone-safari")
         s = pg.evaluate(STATE)
         chk("(4) the way out is at least 44px tall and wide", s["skip"] and s["skip"]["h"] >= 43.5 and s["skip"]["w"] >= 43.5, s)
+        pg.click(".if-out"); pg.wait_for_timeout(900)
+        sh = pg.evaluate(STATE)
+        chk("(4) it opens the help page first (not Get Started)", sh["screen"] == "installhelp" and not sh["gs"], sh)
+        chk("(4) and the help page's own way on is at least 44px tall", sh["skip"] and sh["skip"]["h"] >= 43.5, sh)
         pg.click(".if-out"); pg.wait_for_timeout(1500)
         s2 = pg.evaluate(STATE)
-        chk("(4) it goes on as before: Get Started, not the install page", s2["gs"] and not s2["inst"], s2)
+        chk("(4) its way on goes on as before: Get Started, not the install page", s2["gs"] and not s2["inst"], s2)
         mem = pg.evaluate("()=>{ try{ return Object.keys(localStorage).filter(k=>/^class26e\\./.test(k)&&/install/.test(k)).length; }catch(e){ return -1; } }")
         chk("(4) and it is remembered under a class26e. key", mem >= 1, mem)
         pg.reload(); pg.wait_for_timeout(2500)
@@ -131,24 +138,21 @@ try:
         canon = og.group(1) if og else None
         chk("(5) the page declares its canonical address (og:url)", bool(canon), canon)
         for ua, w, h in (("iphone-safari", 440, 956), ("ipad-safari", 834, 1194), ("iphone-chrome", 440, 956)):
-            ctx, pg = open_dev(br, ua, extra=(SHARE_STUB,), w=w, h=h)
-            s = pg.evaluate(STATE)
-            chk("(5) %s: the primary button is at least 44px and says it opens the share menu (not that it adds itself)" % ua,
-                s["go"] and s["go"]["h"] >= 43.5 and re.search(r"share", s["go"]["text"], re.I) and not re.search(r"\badded\b|\binstalled\b", s["go"]["text"], re.I), s)
-            pg.click(".if-go"); pg.wait_for_timeout(700)
-            sh = pg.evaluate("()=>window.__shares"); s = pg.evaluate(STATE)
-            chk("(5) %s: the tap calls navigator.share once with the canonical address and a title" % ua,
-                len(sh) == 1 and sh[0]["url"] == canon and sh[0]["title"], sh)
-            chk("(5) %s: shared, it says what to do next and does not open the guide over it" % ua, s["status"].strip() and not s["sheet"], s)
-            for mode in ("abort", "fail"):
-                pg.evaluate("(m)=>{ window.__shareMode = m; document.getElementById('a2hs-sheet') && document.getElementById('a2hs-sheet').remove(); }", mode)
-                pg.click(".if-go"); pg.wait_for_timeout(900)
+            for mode in ("resolve", "abort", "fail"):
+                ctx, pg = open_dev(br, ua, extra=(SHARE_STUB,), w=w, h=h)
+                pg.evaluate("(m)=>{ window.__shareMode = m; }", mode)
                 s = pg.evaluate(STATE)
-                chk("(5) %s: share %s -> the guide opens (no dead end)" % (ua, "cancelled" if mode == "abort" else "failed"), s["sheet"] and s["sheetDev"] == "apple", s)
-            ctx.close()
+                chk("(5) %s: the primary button is at least 44px and does not say it adds itself" % ua,
+                    s["go"] and s["go"]["h"] >= 43.5 and not re.search(r"\badded\b|\binstalled\b", s["go"]["text"], re.I), s)
+                pg.click(".if-go"); pg.wait_for_timeout(700)
+                sh = pg.evaluate("()=>window.__shares"); s = pg.evaluate(STATE)
+                chk("(5) %s, share %s: the tap calls navigator.share once with the canonical address and a title" % (ua, mode),
+                    len(sh) == 1 and sh[0]["url"] == canon and sh[0]["title"], sh)
+                chk("(5) %s, share %s: and the page is the video screen (no dead end), not the sheet" % (ua, mode), s["screen"] == "installvideo" and s["vid"] and not s["sheet"], s)
+                ctx.close()
         ctx, pg = open_dev(br, "iphone-safari", extra=(NO_SHARE,))
         pg.click(".if-go"); pg.wait_for_timeout(900); s = pg.evaluate(STATE)
-        chk("(5) no navigator.share: the guide opens", s["sheet"] and s["sheetDev"] == "apple", s)
+        chk("(5) no navigator.share: the video screen all the same", s["screen"] == "installvideo" and s["vid"] and not s["sheet"], s)
         ctx.close()
         # the sheet's own white button (Settings > Add to Home Screen, on an iPhone with an account)
         ctx, pg = open_dev(br, "iphone-safari", seeded=True, extra=(SHARE_STUB,))
@@ -194,20 +198,21 @@ try:
         before = pg.evaluate(STATE)
         pg.evaluate("()=>window.__fire('accepted')"); pg.wait_for_timeout(500)
         s = pg.evaluate(STATE)
-        chk("(6) Android Chrome with the install prompt: the button changes to Install and the guide stays reachable beside it (before the prompt the button is the guide, so the link is hidden then) (was %r, now %r)" % (before["go"] and before["go"]["text"], s["go"] and s["go"]["text"]),
-            s["go"] and s["go"]["text"] != (before["go"] or {}).get("text") and (before["guide"] or {"h": 0})["h"] == 0 and s["guide"] is not None and s["guide"]["h"] >= 43.5, [before["guide"], s["guide"]])
+        chk("(6) Android Chrome with the install prompt: the button changes to Install (was %r, now %r) and the way out is still there at 44px" % (before["go"] and before["go"]["text"], s["go"] and s["go"]["text"]),
+            s["go"] and s["go"]["text"] != (before["go"] or {}).get("text") and s["skip"] and s["skip"]["h"] >= 43.5, [before["go"], s["go"], s["skip"]])
         pg.click(".if-go"); pg.wait_for_timeout(700)
         n = pg.evaluate("()=>window.__prompts"); s = pg.evaluate(STATE)
         chk("(6) its tap calls the browser's prompt() once and says what happened", n == 1 and s["status"].strip() and not s["sheet"], [n, s])
         ctx.close()
         for ua in ("android-firefox", "android-samsung"):
-            ctx, pg = open_dev(br, ua)
+            ctx, pg = open_dev(br, ua, extra=(SHARE_STUB,))
             pg.click(".if-go"); pg.wait_for_timeout(900); s = pg.evaluate(STATE)
-            chk("(6) %s without an install prompt: the button opens the browser's menu steps (the sheet on Android)" % ua, s["sheet"] and s["sheetDev"] == "android", s)
+            chk("(6) %s without an install prompt: the button opens the video screen (the menu steps), with no sheet and no share menu" % ua,
+                s["screen"] == "installvideo" and s["vid"] and not s["sheet"] and not pg.evaluate("()=>window.__shares.length"), s)
             ctx.close()
         # ---- (7) boot
-        order = re.search(r"<body>\s*<div id=\"splashscreen\">", SRC) is not None
-        chk("(7) the splash is still the first thing in <body>", order, "")
+        order = re.search(r"<body>\s*(?:<div id=\"top-edge\"[^>]*></div>\s*)?<div id=\"splashscreen\">", SRC) is not None
+        chk("(7) the splash is still the first thing in <body> (after 384.34's one-pixel-strip #top-edge, which is not content)", order, "")
         head = SRC[:SRC.index("</head>")]
         chk("(7) nothing of the install page is in the head", "installfirst" not in head and "showInstallFirst" not in head, "")
         ctx, pg = open_dev(br, "iphone-safari")

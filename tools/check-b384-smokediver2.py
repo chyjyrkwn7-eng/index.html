@@ -26,7 +26,7 @@ count while stats still hold a miss and the key is in the bank). Nothing is gran
      none, every one is taken off; a store that has earned exactly one keeps that one (queued, marked, worn) and loses the rest;
  (F) PERSISTENCE: `retakenKeys` defaults to nothing for an older copy, drops what is not a string, is a union on a merge between devices
      (kept from both) (the reset's line is read in the source, not run: it reloads the page);
- (G) THE ACADEMY is unaffected: 640 retakes on 1 miss still hold the Masked One, nothing is written to retakenKeys, the challenge's text is its own.
+ (G) THE ACADEMY (384.46 changed it; its own gate is check-b384-masked.py): 640 retakes on 1 miss no longer hold the Masked One, only its Hardcore units do.
 Run:  python3 tools/check-b384-smokediver2.py [--against OLD/index.html]     (--against 384.38 must FAIL)"""
 import json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -288,14 +288,14 @@ with sync_playwright() as pw:
         ctx.close()
 
     # ---------------- (G) the academy ----------------
+    # (384.46) the academy counts different questions too now (tools/check-b384-masked.py is its gate). Here: what is left of the old exception.
     with section("G"):
         G["academy"].clear(); G["academy"].update(heavy_academy(avatarChar="masked", stats={"a": {"n": 3, "m": 1, "r": []}}))
         ctx, pg, errs = G["page"](br, G["init"]("academy"), seed=cloud_with())
         pg.wait_for_timeout(2500)
         v = pg.evaluate("""()=>{ const m = AVATAR_CHARACTERS.find(c => c.feat === 'retake100'); return { cls: window.NOVA_CLASS, locked: isLockedCharacter(m.id), avatar: store.avatarChar, id: m.id, retaken: store.retakenQuestions,
-          note: CHARACTER_FEATS.retake100.note, keys: (store.retakenKeys || []).length, hasFn: typeof retakeDistinctCount === 'function' }; }""")
-        chk("G the academy's 640 retakes on 1 miss still hold the Masked One, worn (the rule is Fire Code's) (%s)" % v, v["cls"] == "academy" and v["locked"] is False and v["avatar"] == v["id"] and v["retaken"] == 640 and v["keys"] == 0, v)
-        chk("G and its challenge's text is its own (no 'earlier Drill')", "earlier" not in v["note"], v)
+          note: CHARACTER_FEATS.retake100.note, keys: (store.retakenKeys || []).length, hc: hardcoreUnitsBeaten(), count: retakeDistinctCount() }; }""")
+        chk("G the academy's 640 retakes on 1 miss no longer hold the Masked One by the counter (count %s); its twelve Hardcore units still do (%s)" % (v["count"], v), v["cls"] == "academy" and v["count"] == 0 and v["hc"] >= 10 and v["locked"] is False and v["avatar"] == v["id"], v)
         chk("G no script error", not errs, errs)
         ctx.close()
     br.close()
