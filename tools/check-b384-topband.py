@@ -41,7 +41,10 @@ try:
                 page.evaluate("()=>{ try{ %s }catch(e){} }" % scr); page.wait_for_timeout(1200)
                 page.evaluate("()=>{document.getElementById('tour-overlay')?.remove();document.getElementById('tour-tooltip')?.remove();}")
                 r = page.evaluate(READ)
-                if r["blurred"]: bad.append((scr[:24], r["blurred"][:2]))
+                # (384.77, ON PURPOSE) build 383's top is back: Home's chat button wears 383's glass (with its blur), as it did all of 383's life;
+                # every other top-band control stays unblurred (383's flat chat and back buttons beyond Home)
+                blurred = [x for x in r["blurred"] if not (scr == "showHome()" and "#chatdock-btn" in x)]
+                if blurred: bad.append((scr[:24], blurred[:2]))
                 if not r["chat"] or not r["chat"]["vis"]: nochat.append(scr[:24])
                 elif r["chat"]["bg"] in ("rgba(0, 0, 0, 0)", "transparent") and "gradient" not in r["chat"]["bgi"]: nochat.append(("transparent", scr[:24]))
             chk("%s: nothing in the top band of any of %d screens computes a backdrop blur" % (name, len(SCREENS)), not bad, bad[:3])
