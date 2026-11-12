@@ -31,6 +31,8 @@ SHOTS = None
 if "--shots" in args:
     i = args.index("--shots"); SHOTS = os.path.abspath(args[i + 1]); os.makedirs(SHOTS, exist_ok=True)
 RAW = open(args[args.index("--against") + 1] if "--against" in args else cb.SRC, encoding="utf-8").read()
+_bm = re.search(r'const APP_BUILD = "([^"]+)"', RAW)
+if _bm: cb.SERVED_BUILD = _bm.group(1)   # --against: version.json says the page's own build, or the update check reloads it mid-run
 def serve_with(top, bottom):
     ins = {"top": "%gpx" % top, "bottom": "%gpx" % bottom, "left": "0px", "right": "0px"}
     cb.BODY = cb.INSET_RE.sub(lambda m: ins[m.group(1)], RAW).replace("let fbDb = null;", "let fbDb = null;" + cb.FIRESTORE_STUB, 1)
@@ -261,10 +263,66 @@ def safari_tab(br):
     chk("Safari tab, the toolbar collapses (797 -> 870px): the tab bar keeps its distance from the bottom (%s -> %s) and nothing scrolls sideways" % (a and a["gap"], b and b["gap"]),
         a and b and abs(a["gap"] - b["gap"]) < 1.5 and b["sw"] <= 0, [a, b])
     ctx.close()
-retry(lambda br: phone_pass(br, "Pro Max 440x956", 440, 956, None, 59))
-retry(lambda br: phone_pass(br, "Pro Max at 85% page zoom (518x1126 on 440x956pt)", 518, 1126, (440, 956), 73))
-retry(elsewhere)
-retry(safari_tab)
+BAR = """()=>{ const b = document.querySelector('.bottomtabs'); if(!b) return null; const r = b.getBoundingClientRect(); const t = document.querySelector('.backtotop'); const tr = t && getComputedStyle(t).display !== 'none' ? t.getBoundingClientRect() : null;
+  return { bottom: r.bottom, top: r.top, stale: getComputedStyle(document.documentElement).getPropertyValue('--vp-stale').trim(), cls: document.documentElement.classList.contains('vp-stale'), up: tr ? tr.bottom : null,
+           log: (window.__barHeal || []).slice(), ih: innerHeight }; }"""
+VVM = ("window.__vvm = {top: 0}; try{ Object.defineProperty(window.visualViewport, 'offsetTop', { get(){ return window.__vvm.top; }, configurable: true }); }catch(e){}")
+def barheal(br):
+    # (8) THE BAR IN THE MIDDLE OF THE SCREEN (the Leaderboard, scrolled): the layout viewport's bottom left above the screen's. The bar finds it and
+    # puts itself back; it never moves in a healthy page, with a field focused, in a Safari tab, or at his zoom.
+    serve_with(59, 34)
+    ctx, pg = boot(br, 440, 956, None, ua=UA)
+    ctx.add_init_script(VVM)
+    pg.on("pageerror", lambda e: errs.append(str(e)[:140]))
+    pg.reload(); pg.wait_for_timeout(2600); pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); }")
+    mount(pg, "leaderboard"); pg.evaluate("()=>window.scrollTo(0, 600)"); pg.wait_for_timeout(1500)
+    b0 = pg.evaluate(BAR)
+    chk("(8) Leaderboard scrolled, a healthy installed page: the bar is where it is designed and nothing is stale (%s)" % ([b0 and b0["bottom"], b0 and b0["stale"]],), b0 and not b0["cls"] and b0["bottom"] > b0["ih"] - 60, b0)
+    pg.wait_for_timeout(2600); b1 = pg.evaluate(BAR)
+    chk("(8) ...and still nothing 2.6s later (%s)" % (b1 and b1["cls"]), b1 and not b1["cls"] and abs(b1["bottom"] - b0["bottom"]) < 1, b1)
+    pg.evaluate("()=>{ window.__vvm.top = 270; visualViewport.dispatchEvent(new Event('scroll')); }"); pg.wait_for_timeout(3400)
+    b2 = pg.evaluate(BAR)
+    chk("(8) the visual viewport left 270px below the layout one (the keyboard's pan kept): the bar nudges the scroll, then takes up the 270px (%s -> %s; --vp-stale %s; %s)" % (round(b0["bottom"]), round(b2["bottom"]), b2["stale"], b2["log"]),
+        b2["cls"] and abs((b2["bottom"] - b0["bottom"]) - 270) <= 10 and len(b2["log"]) >= 2 and "nudged" in b2["log"][0], b2)
+    if b0["up"] and b2["up"]: chk("(8) the button above it (back to top) goes with it (%s -> %s)" % (round(b0["up"]), round(b2["up"])), abs((b2["up"] - b0["up"]) - 270) <= 10, [b0, b2])
+    pg.evaluate("()=>{ window.__vvm.top = 0; visualViewport.dispatchEvent(new Event('scroll')); }"); pg.wait_for_timeout(1800)
+    b3 = pg.evaluate(BAR)
+    chk("(8) the viewport comes right: the bar goes back to where it was (%s vs %s) and the margin is gone (%s)" % (round(b3["bottom"]), round(b0["bottom"]), b3["stale"]), not b3["cls"] and abs(b3["bottom"] - b0["bottom"]) < 1.5, b3)
+    # a field is focused (the keyboard's own pan is real and correct): nothing is touched
+    pg.evaluate("()=>{ const i = document.createElement('input'); i.id = 'probein'; i.style.cssText = 'position:fixed;left:-300px;top:0;font-size:16px'; document.body.appendChild(i); i.focus(); window.__vvm.top = 270; visualViewport.dispatchEvent(new Event('scroll')); }")
+    pg.wait_for_timeout(3000); b4 = pg.evaluate(BAR)
+    chk("(8) with a text field focused the bar is left alone (--vp-stale %s)" % b4["stale"], not b4["cls"] and abs(b4["bottom"] - b0["bottom"]) < 1.5, b4)
+    pg.evaluate("()=>{ document.getElementById('probein').remove(); window.__vvm.top = 0; visualViewport.dispatchEvent(new Event('scroll')); }")
+    ctx.close()
+    # (B) the layout viewport short of the whole screen in an installed phone app (a real short viewport, 686 on a 956pt screen)
+    serve_with(59, 34)
+    ctx, pg = boot(br, 440, 686, (440, 956), ua=UA, mobile=False)
+    pg.on("pageerror", lambda e: errs.append(str(e)[:140]))
+    mount(pg, "leaderboard"); pg.wait_for_timeout(4200)
+    c = pg.evaluate(BAR)
+    pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(1800)
+    c2 = pg.evaluate(BAR)
+    chk("(8) an installed phone whose layout viewport (686) is 270 short of its 956pt screen: found and taken up (--vp-stale %s; %s)" % (c and c["stale"], c and c["log"]),
+        c and c["cls"] and abs(float(c["stale"].replace("px", "")) - 270) <= 12 and any("short of the screen" in x for x in c["log"]), c)
+    chk("(8) ...and undone when the viewport is whole again (%s)" % (c2 and c2["stale"]), c2 and not c2["cls"] and c2["bottom"] > c2["ih"] - 60, c2)
+    ctx.close()
+    # no false alarms: his page zoom, a Safari tab (440x797 on a 956pt screen)
+    serve_with(73, 40)
+    ctx, pg = boot(br, 518, 1126, (440, 956), ua=UA, mobile=False)
+    mount(pg, "leaderboard"); pg.wait_for_timeout(4200); z = pg.evaluate(BAR)
+    chk("(8) at his 518px page zoom nothing is taken up (%s)" % (z and z["stale"]), z and not z["cls"], z)
+    ctx.close()
+    serve_with(0, 0)
+    ctx, pg = boot(br, 440, 797, (440, 956), standalone=False, ua=UA_TAB, mobile=False)
+    mount(pg, "leaderboard"); pg.wait_for_timeout(4200); z = pg.evaluate(BAR)
+    chk("(8) a Safari tab (the page between the bars, 797 of 956) is not taken for a short installed app (%s)" % (z and z["stale"]), z and not z["cls"], z)
+    ctx.close()
+ONLY = args[args.index("--only") + 1] if "--only" in args else ""
+if not ONLY: retry(lambda br: phone_pass(br, "Pro Max 440x956", 440, 956, None, 59))
+if not ONLY: retry(lambda br: phone_pass(br, "Pro Max at 85% page zoom (518x1126 on 440x956pt)", 518, 1126, (440, 956), 73))
+if not ONLY: retry(elsewhere)
+if not ONLY: retry(safari_tab)
+retry(barheal)
 chk("no page errors", not errs, errs)
 print("ALL PASS" if ok else "FAILED")
 sys.exit(0 if ok else 1)
