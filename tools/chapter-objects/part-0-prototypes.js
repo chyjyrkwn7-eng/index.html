@@ -11,9 +11,10 @@
   const leaf = (u, v) => [lerp(12, 50, u), lerp(lerp(16, 1, u), lerp(84, 99, u), v)];
   const quad = (u0, u1, v0, v1, r) => OBJ_poly([leaf(u0, v0), leaf(u1, v0), leaf(u1, v1), leaf(u0, v1)], r);
   CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
+    col: "#2F9A5A",   /* (384.67) natural colours: a green door */
     d: OBJ_poly([[12, 16], [50, 1], [50, 12], [88, 12], [88, 90], [50, 90], [50, 99], [12, 84]], [2.5, 2, 1, 3, 3, 1, 2, 2.5]),
     plates: [
-      ["deep", OBJ_rrect(50, 12, 38, 78, 2)],                                                  /* the frame */
+      ["steel", OBJ_rrect(50, 12, 38, 78, 2)],                                                 /* the frame: hollow metal (384.67) */
       ["ink", OBJ_rrect(57, 19, 24, 71, 1.5), { z: -1.8, bev: .9 }],                           /* the doorway, a deep recess */
       ["shade", OBJ_poly([[57, 62], [81, 52], [81, 90], [57, 90]], 1), { z: -1.8, bev: .9 }],   /* the light on its floor */
       ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 1.5), { z: 1.6, bev: 1.4 }],   /* the leaf, raised */
@@ -42,23 +43,24 @@
   CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {
     d: OBJ_poly([[41, 3], [59, 3], [59, 15], [68, 15], [73, 22.5], [68, 30], [65, 30], [59, 59.5]].concat(pts).concat([[41, 59.5], [35, 30], [32, 30], [27, 22.5], [32, 15], [41, 15]]),
       [1.5, 1.5, 1, 1, 1.5, 1, 1, 2].concat(rs).concat([2, 1, 1, 1.5, 1, 1])),
+    base: "brass", col: "#C9972F",   /* (384.67) natural colours: a brass head, polished metal all over, its red glass bulb */
     plates: [
       ["brass", OBJ_rrect(41, 3, 18, 12, 1.5), { z: .4 }],                                     /* the nipple */
       ["brass", "M41 6.5H59M41 10H59M41 13.5H59", { ln: 1.4, cut: .8, paint: 0 }],             /* its threads */
-      ["body", OBJ_poly([[32, 15], [68, 15], [73, 22.5], [68, 30], [32, 30], [27, 22.5]], 1), { gem: 1.4, gw: 3 }],   /* the hex body */
+      ["brass", OBJ_poly([[32, 15], [68, 15], [73, 22.5], [68, 30], [32, 30], [27, 22.5]], 1), { gem: 1.4, gw: 3 }],   /* the hex body */
       ["body", "M41 16V29M59 16V29", { ln: 1.4, cut: .7, paint: 0 }],                            /* its flats */
-      ["shade", OBJ_poly([[35, 30], [65, 30], [59, 62], [41, 62]], 1), { z: .5 }],              /* the frame */
+      ["brass", OBJ_poly([[35, 30], [65, 30], [59, 62], [41, 62]], 1), { z: .5 }],              /* the frame */
       ["ink", OBJ_poly([[39, 33], [45.5, 33], [45.5, 57], [42.5, 57]], 1), { z: -1.7, bev: .6 }],   /* its two windows */
       ["ink", OBJ_poly([[61, 33], [54.5, 33], [54.5, 57], [57.5, 57]], 1), { z: -1.7, bev: .6 }],
       ["red", OBJ_ellipse(50, 45, 4.4, 12), { dome: 2.6 }],                                     /* the glass bulb */
-      ["lite", OBJ_ellipse(CX, CY - 2, RX - 5, RY - 5), { z: .6, bev: 1, dome: .6 }],           /* the deflector's top face */
-      ["body", OBJ_rrect(43, 54, 14, 9, 2), { dome: 1.4 }],                                     /* the boss on it */
+      ["brass", OBJ_ellipse(CX, CY - 2, RX - 5, RY - 5), { z: .6, bev: 1, dome: .6 }],          /* the deflector's top face */
+      ["brass", OBJ_rrect(43, 54, 14, 9, 2), { dome: 1.4 }],                                    /* the boss on it */
     ],
   };
 }
 
-/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can: the carry handle with its open loop (a real hole), the embossed X on its
-   side, the black spout with its amber cap. ---- */
+/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can in classic jerry-can red: the carry handle with its open loop (a real hole),
+   the pressed panel with its embossed X, the black spout with its amber cap. ---- */
 {
   const A = [72, 31], B = [89, 9], ux = B[0] - A[0], uy = B[1] - A[1], L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
   const at = (t, w) => [A[0] + dx * t + nx * w, A[1] + dy * t + ny * w];
@@ -67,11 +69,12 @@
     d: OBJ_poly([[8, 94], [8, 34], [13, 30], [13, 14], [17, 10], [48, 10], [52, 14], [52, 30], [bl[0], 30], bl, tl, cl, ct, cu, cr, tr, br, [br[0], 30], [84, 31], [88, 36], [88, 94]],
       [6, 3, 2, 4, 2, 2, 4, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 3, 4, 6]),
     holes: [OBJ_rrect(20, 16, 25, 9, 3.5)],
+    base: "red",
     plates: [
-      ["body", OBJ_rrect(8, 30, 80, 64, [0, 0, 6, 6])],                                         /* the can */
-      ["field", OBJ_rrect(15, 40, 66, 46, 4), { z: -.9, bev: 1 }],                              /* the panel pressed into its side */
-      ["body", "M21 46L75 80M75 46L21 80", { ln: 6, z: 1.4, bev: 1.4 }],                       /* the embossed X */
-      ["deep", OBJ_rrect(13, 10, 39, 22, 4)],                                                   /* the handle */
+      ["red", OBJ_rrect(8, 30, 80, 64, [0, 0, 6, 6])],                                          /* the can */
+      ["red", OBJ_rrect(15, 40, 66, 46, 4), { z: -.9, bev: 1 }],                                /* the panel pressed into its side */
+      ["red", "M21 46L75 80M75 46L21 80", { ln: 6, z: 1.4, bev: 1.4 }],                         /* the embossed X */
+      ["red", OBJ_rrect(13, 10, 39, 22, 4), { z: .3, bev: .8 }],                                /* the handle */
       ["rubber", OBJ_poly([bl, tl, tr, br], 1), { z: .4, dome: .8 }],                           /* the spout */
       ["hot", OBJ_poly([cl, ct, cu, cr], 1.5), { dome: 1.4 }],                                  /* its cap */
     ],
@@ -83,14 +86,15 @@
 {
   let rungs = ""; for(let x = 28; x <= 92; x += 8) rungs += "M" + x + " 25V31";
   CHAPTER_OBJ["Appendix D: Fire Apparatus Access Roads"] = {
+    col: "#C8302B",   /* (384.67) natural colours: a red engine, a white stripe, an amber light bar */
     d: "M14 74" + OBJ_chain([[14, 74], [6, 74], [6, 58], [12, 46], [13, 41], [27, 41], [28, 46], [31, 46], [31, 33], [22, 33], [22, 23], [96, 23], [96, 74], [88, 74]], [0, 3, 4, 3, 1.5, 1.5, 1, 1, 1, 2, 2, 2, 3, 0]) +
        "A12 12 0 0 1 64 74" + OBJ_chain([[64, 74], [38, 74]], 0) + "A12 12 0 0 1 14 74Z",
     plates: [
       ["steel", OBJ_rrect(22, 23, 74, 10, 2), { z: .8, bev: .6 }],                              /* the ladder */
       ["steel", rungs, { ln: 1.4, cut: .8, paint: 0 }],                                         /* its rungs */
-      ["red", OBJ_rrect(6, 58, 90, 6, 0), { z: .4, bev: .5 }],                                  /* the stripe */
+      ["cream", OBJ_rrect(6, 58, 90, 6, 0), { z: .4, bev: .5 }],                                /* the stripe */
       ["glass", OBJ_poly([[8, 56], [13, 47], [27, 47], [27, 56]], 1.5), { z: -.8, bev: .6 }],   /* the windscreen */
-      ["red", OBJ_rrect(13, 41, 14, 5, 2), { dome: 1.4 }],                                       /* the light bar */
+      ["hot", OBJ_rrect(13, 41, 14, 5, 2), { dome: 1.4 }],                                       /* the light bar */
       ["body", OBJ_rrect(35, 37, 18, 18, 1.5), { z: .7, bev: .6 }],                              /* the lockers */
       ["body", OBJ_rrect(56, 37, 18, 18, 1.5), { z: .7, bev: .6 }],
       ["body", OBJ_rrect(77, 37, 16, 18, 1.5), { z: .7, bev: .6 }],
@@ -102,20 +106,27 @@
   };
 }
 
-/* ---- Chapter 53: Compressed Gases - a gas cylinder: the handwheel on top of the brass valve, the brass collar, the domed shoulder, the long
-   body with its two grooves and label band. The tallest, narrowest pin. (A side outlet made it read as a soap pump: dropped.) ---- */
+/* ---- Chapter 53: Compressed Gases - an industrial gas cylinder: straight sides, a rounded shoulder, the brass collar ring and the steel
+   valve-protection cap open at the front on the brass valve, a cream label band, a dark foot ring. The tallest, narrowest pin. (It read as a
+   bottle with a tapered neck and a soap pump with a side outlet: both dropped. Chapter 61's squat propane tank is another chapter's.) ---- */
 {
+  const arc = (cx, cy, rx, ry, a0, a1, n) => { const o = []; for(let k = 0; k <= n; k++){ const t = (a0 + (a1 - a0) * k / n) * Math.PI / 180; o.push([cx + rx * Math.cos(t), cy + ry * Math.sin(t)]); } return o; };
+  const right = arc(57, 33, 12, 14, 270, 360, 6), left = arc(43, 33, 12, 14, 180, 270, 6);
+  const pts = [[38, 15], [38, 8], [42, 3], [58, 3], [62, 8], [62, 15], [58, 15], [58, 19]].concat(right.slice(1)).concat([[69, 92], [31, 92]]).concat(left).concat([[42, 19], [42, 15]]);
+  const rs = [1, 3, 3, 3, 3, 1, 1, 1].concat(right.slice(1).map(() => 0)).concat([4, 4]).concat(left.map(() => 0)).concat([1, 1]);
   CHAPTER_OBJ["Chapter 53: Compressed Gases"] = {
-    d: OBJ_poly([[38, 3], [62, 3], [62, 9], [57, 9], [57, 16], [62, 16], [62, 22], [70, 27], [74, 38], [74, 94], [26, 94], [26, 38], [30, 27], [38, 22], [38, 16], [43, 16], [43, 9], [38, 9]],
-      [2.5, 2.5, 1, 1, 1, 1.5, 1, 6, 8, 8, 8, 8, 6, 1, 1.5, 1, 1, 2.5]),
+    col: "#3F8A3C",   /* (384.67) natural colours: a green industrial cylinder */
+    d: OBJ_poly(pts, rs),
     plates: [
-      ["rubber", OBJ_rrect(38, 3, 24, 6, 2.5), { dome: .9 }],                                    /* the handwheel */
-      ["brass", OBJ_rrect(43, 9, 14, 7, 1), { gem: .9, gw: 2 }],                                 /* the valve */
-      ["brass", OBJ_rrect(38, 16, 24, 7, 2), { dome: .9 }],                                      /* the collar */
-      ["shade", "M26 40C26 27 40 22 50 22C60 22 74 27 74 40Z", { dome: 1.8 }],                   /* the domed shoulder */
-      ["body", OBJ_rrect(26, 40, 48, 54, [0, 0, 8, 8]), { dome: 1.4 }],                          /* the body */
-      ["cream", OBJ_rrect(26, 58, 48, 17, 0), { z: .5, bev: .6 }],                               /* the label band */
-      ["body", "M27 46H73M27 51H73", { ln: 1.6, cut: .9, paint: 0 }],                            /* the grooves */
+      ["steel", OBJ_rrect(38, 3, 24, 12, [4, 4, 1, 1]), { dome: .8 }],                          /* the valve-protection cap */
+      ["ink", OBJ_rrect(43, 5.5, 14, 7.5, 2), { z: -1.3, bev: .6 }],                           /* its open front */
+      ["brass", OBJ_circle(50, 9.3, 2.6), { dome: 1.2 }],                                       /* the valve inside it */
+      ["brass", OBJ_rrect(42, 15, 16, 5, 1), { z: .4, bev: .5 }],                               /* the collar ring */
+      ["body", OBJ_rrect(31, 19, 38, 73, [12, 12, 4, 4]), { dome: 1.6 }],                        /* the cylinder */
+      ["shade", OBJ_rrect(31, 19, 38, 18, [12, 12, 0, 0])],                                     /* the shoulder, its own colour */
+      ["body", "M32 38H68M32 42H68", { ln: 1.4, cut: .8, paint: 0 }],                            /* the shoulder grooves */
+      ["cream", OBJ_rrect(31, 52, 38, 14, 0), { z: .5, bev: .6 }],                               /* the label band */
+      ["deep", OBJ_rrect(31, 84, 38, 8, [0, 0, 4, 4]), { z: .4, bev: .6 }],                       /* the foot ring */
     ],
   };
 }
@@ -124,6 +135,7 @@
    inked rubber die. ---- */
 {
   CHAPTER_OBJ["Chapter 1: Scope and Administration"] = {
+    col: "#A0662F",   /* (384.67) natural colours: a wooden stamp, its red inked die */
     d: "M35 20A15 15 0 0 1 65 20A15 15 0 0 1 57.5 33" + OBJ_chain([[57.5, 33], [57.5, 48], [78, 50], [78, 62], [90, 64], [90, 86], [88, 94], [12, 94], [10, 86], [10, 64], [22, 62], [22, 50], [42.5, 48], [42.5, 33]], [0, 2, 3, 2, 3, 2, 2, 2, 2, 3, 2, 3, 2, 0]) + "A15 15 0 0 1 35 20Z",
     plates: [
       ["body", OBJ_circle(50, 20, 15), { dome: 3.2 }],                                            /* the knob */
@@ -146,6 +158,7 @@
   const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2), along = (t, w) => [C[0] + (R + t) * dir[0] + w * nrm[0], C[1] + (R + t) * dir[1] + w * nrm[1]];
   let grip = ""; for(let t = 14; t <= 34; t += 5) grip += "M" + f(along(t, -W - 1)) + "L" + f(along(t, W + 1));
   CHAPTER_OBJ["Chapter and Section Finder"] = {
+    col: "#4A4F58",   /* (384.67) natural colours: a dark handle, a brass collar, glass */
     d: "M" + f(P1) + "A" + R + " " + R + " 0 1 0 " + f(P2) + "L" + f(E2) + "A" + W + " " + W + " 0 0 0 " + f(E1) + "Z",
     plates: [
       ["glass", OBJ_circle(40, 40, 26), { z: -.6, bev: .8, dome: 2.4 }],                          /* the glass, domed, set into the ring */
@@ -160,6 +173,7 @@
    the two side outlets with their faceted caps, the base flange and its bolts. ---- */
 {
   CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {
+    col: "#D23A2E",   /* (384.67) natural colours: a red hydrant */
     d: OBJ_poly([[42, 4], [58, 4], [60, 14], [72, 18], [76, 32], [70, 34], [70, 44], [86, 44], [86, 40], [94, 40], [94, 64], [86, 64], [86, 60], [70, 60], [70, 80], [80, 82], [82, 94], [18, 94], [20, 82], [30, 80], [30, 60], [14, 60], [14, 64], [6, 64], [6, 40], [14, 40], [14, 44], [30, 44], [30, 34], [24, 32], [28, 18], [40, 14]],
       [2, 2, 2, 6, 3, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 3, 6, 2]),
     plates: [

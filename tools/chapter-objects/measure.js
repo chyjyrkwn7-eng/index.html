@@ -5,7 +5,11 @@
    a silhouette can only be known by running them: the helpers (and OBJ_walk, the one path walker the page uses too) are lifted out of
    index.html (from `const CHAPTER_OBJ = {}` up to the merge marker), the part files are run after them, and each silhouette's path is
    walked and measured. A path may use M L H V C Q A Z (either case). Anything else is an error (S and T are not supported on purpose:
-   write the curve out). The box is the OUTLINE's (d), never the holes'. */
+   write the curve out). The box is the OUTLINE's (d), never the holes'.
+   (384.67) It also prints `baked`: every entry as the part files leave it, as plain data, file by file ([[file, [[key, entry], ...]], ...]).
+   The merge writes THAT into index.html, not the part files' code: whatever a part file computes (an arc traced into points, a ring of
+   teeth, a curve offset) is computed once here, at merge time, and the page only reads finished strings - nothing a helper writes costs
+   anything at boot. */
 const fs = require("fs"), path = require("path");
 const ROOT = path.resolve(__dirname, "..", "..");
 const ai = process.argv.indexOf("--index");
@@ -15,10 +19,12 @@ if(i0 < 0 || i1 < 0){ console.log(JSON.stringify({ bbox: {}, errors: ["index.htm
 const helpers = index.slice(i0, i1);
 const files = fs.readdirSync(__dirname).filter(f => /^part-.*\.js$/.test(f)).sort();
 const errors = [];
-let src = helpers;
-files.forEach(f => { src += "\n" + fs.readFileSync(path.join(__dirname, f), "utf8"); });
-let OBJ, walk;
-try{ const r = new Function(src + "\n;return { O: CHAPTER_OBJ, w: OBJ_walk };")(); OBJ = r.O; walk = r.w; }
+let src = helpers + "\nconst __FILES = [];";
+/* each file in its own block, so one file's consts cannot meet another's; the keys it added are noted after it */
+files.forEach(f => { src += "\n{\nconst __k0 = Object.keys(CHAPTER_OBJ);\n" + fs.readFileSync(path.join(__dirname, f), "utf8") +
+  "\n;__FILES.push([" + JSON.stringify(f) + ", Object.keys(CHAPTER_OBJ).filter(k => __k0.indexOf(k) < 0)]);\n}"; });
+let OBJ, walk, FILES;
+try{ const r = new Function(src + "\n;return { O: CHAPTER_OBJ, w: OBJ_walk, F: __FILES };")(); OBJ = r.O; walk = r.w; FILES = r.F; }
 catch(e){ console.log(JSON.stringify({ bbox: {}, errors: ["evaluating the part files: " + e.message] })); process.exit(0); }
 const bbox = {};
 Object.keys(OBJ).forEach(k => {
@@ -34,4 +40,5 @@ Object.keys(OBJ).forEach(k => {
     (e.holes || []).forEach((h, n) => { try{ walk(h, 8); }catch(err){ errors.push(k + " hole " + n + ": " + err.message); } });
   }catch(err){ errors.push(k + ": " + err.message); }
 });
-console.log(JSON.stringify({ bbox, errors }));
+const baked = FILES.map(([f, keys]) => [f, keys.map(k => [k, OBJ[k]])]);
+console.log(JSON.stringify({ bbox, errors, baked }));

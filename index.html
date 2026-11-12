@@ -76297,189 +76297,17 @@ function chapterObjShape(name){
   return (CHAPTER_OBJ_SHAPES[k] = out);
 }
 /* @@CHAPTER_OBJ_BEGIN */
-/* ---- part-0-prototypes.js ---- */
-/* Fire Code chapter objects - PROTOTYPES, round 3 (build 384.66): eight chapters drawn as RAISED PINS. Madison, of round 2: "the badges
-   don't look good ... We may just have to go away with the silver border entirely or make it thin ... you can see how these badges have
-   risen effect, that nice 3d effect ... Make this great." Each entry is the pin's silhouette and its parts; a part carries a colour and its
-   relief: raised or recessed (z, bev), domed (dome), cut into facets (gem, gw) or a V-groove (cut, with ln). Identity is the silhouette and
-   the sculpture, never a sticker; every pin has to read in plain grey too. See tools/chapter-objects/README.md. */
-
-/* ---- Chapter 10: Means of Egress - an open door. The leaf (raised, with raised panels and a brass knob) swung toward you so its free edge
-   is the tallest thing; the frame beside it, and the doorway a deep recess. ---- */
-{
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const leaf = (u, v) => [lerp(12, 50, u), lerp(lerp(16, 1, u), lerp(84, 99, u), v)];
-  const quad = (u0, u1, v0, v1, r) => OBJ_poly([leaf(u0, v0), leaf(u1, v0), leaf(u1, v1), leaf(u0, v1)], r);
-  CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
-    d: OBJ_poly([[12, 16], [50, 1], [50, 12], [88, 12], [88, 90], [50, 90], [50, 99], [12, 84]], [2.5, 2, 1, 3, 3, 1, 2, 2.5]),
-    plates: [
-      ["deep", OBJ_rrect(50, 12, 38, 78, 2)],                                                  /* the frame */
-      ["ink", OBJ_rrect(57, 19, 24, 71, 1.5), { z: -1.8, bev: .9 }],                           /* the doorway, a deep recess */
-      ["shade", OBJ_poly([[57, 62], [81, 52], [81, 90], [57, 90]], 1), { z: -1.8, bev: .9 }],   /* the light on its floor */
-      ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 1.5), { z: 1.6, bev: 1.4 }],   /* the leaf, raised */
-      ["deep", quad(.86, 1, 0, 1, .8), { z: 1.6, bev: .5 }],                                 /* its thick edge */
-      ["lite", quad(.12, .7, .08, .44, 1.5), { z: .9, bev: .8 }],                             /* its upper panel */
-      ["lite", quad(.12, .7, .56, .92, 1.5), { z: .9, bev: .8 }],                             /* its lower panel */
-      ["brass", OBJ_circle(leaf(.8, .5)[0], leaf(.8, .5)[1], 3.2), { dome: 2.2 }],           /* the knob */
-      ["brass", quad(0, .08, .12, .2, .6), { z: .6, bev: .4 }],                               /* the hinges */
-      ["brass", quad(0, .08, .8, .88, .6), { z: .6, bev: .4 }],
-    ],
-  };
-}
-
-/* ---- Chapter 9: Fire Protection and Life Safety Systems - a pendant sprinkler head (Madison chose the sprinkler): the brass nipple with its
-   threads, the faceted hex body, the frame narrowing to the boss with the red glass bulb in its windows, and the round deflector seen a
-   little from above - its lit top face, its toothed rim. With no rim to swallow them, the thin parts are the sprinkler again. (A disc, not
-   a flat bar: the back's title is laid out on the silhouette and the disc gives it room; a thick bar read as a comb.) ---- */
-{
-  const CX = 50, CY = 76, RX = 45, RY = 18, pts = [], rs = [];
-  const ell = (t, k) => [CX + RX * k * Math.cos(t), CY + RY * k * Math.sin(t)];
-  /* the top of the disc, from where the frame meets it round to the right */
-  for(let d = 284; d <= 360; d += 19) { pts.push(ell(d * Math.PI / 180, 1)); rs.push(3); }
-  /* its lower rim, toothed */
-  for(let d = 9; d <= 171; d += 9){ pts.push(ell(d * Math.PI / 180, (d / 9) % 2 ? .9 : 1)); rs.push(.8); }
-  for(let d = 180; d <= 256; d += 19) { pts.push(ell(d * Math.PI / 180, 1)); rs.push(3); }
-  CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {
-    d: OBJ_poly([[41, 3], [59, 3], [59, 15], [68, 15], [73, 22.5], [68, 30], [65, 30], [59, 59.5]].concat(pts).concat([[41, 59.5], [35, 30], [32, 30], [27, 22.5], [32, 15], [41, 15]]),
-      [1.5, 1.5, 1, 1, 1.5, 1, 1, 2].concat(rs).concat([2, 1, 1, 1.5, 1, 1])),
-    plates: [
-      ["brass", OBJ_rrect(41, 3, 18, 12, 1.5), { z: .4 }],                                     /* the nipple */
-      ["brass", "M41 6.5H59M41 10H59M41 13.5H59", { ln: 1.4, cut: .8, paint: 0 }],             /* its threads */
-      ["body", OBJ_poly([[32, 15], [68, 15], [73, 22.5], [68, 30], [32, 30], [27, 22.5]], 1), { gem: 1.4, gw: 3 }],   /* the hex body */
-      ["body", "M41 16V29M59 16V29", { ln: 1.4, cut: .7, paint: 0 }],                            /* its flats */
-      ["shade", OBJ_poly([[35, 30], [65, 30], [59, 62], [41, 62]], 1), { z: .5 }],              /* the frame */
-      ["ink", OBJ_poly([[39, 33], [45.5, 33], [45.5, 57], [42.5, 57]], 1), { z: -1.7, bev: .6 }],   /* its two windows */
-      ["ink", OBJ_poly([[61, 33], [54.5, 33], [54.5, 57], [57.5, 57]], 1), { z: -1.7, bev: .6 }],
-      ["red", OBJ_ellipse(50, 45, 4.4, 12), { dome: 2.6 }],                                     /* the glass bulb */
-      ["lite", OBJ_ellipse(CX, CY - 2, RX - 5, RY - 5), { z: .6, bev: 1, dome: .6 }],           /* the deflector's top face */
-      ["body", OBJ_rrect(43, 54, 14, 9, 2), { dome: 1.4 }],                                     /* the boss on it */
-    ],
-  };
-}
-
-/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can: the carry handle with its open loop (a real hole), the embossed X on its
-   side, the black spout with its amber cap. ---- */
-{
-  const A = [72, 31], B = [89, 9], ux = B[0] - A[0], uy = B[1] - A[1], L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
-  const at = (t, w) => [A[0] + dx * t + nx * w, A[1] + dy * t + ny * w];
-  const bl = at(0, -6), br = at(0, 6), tl = at(L - 4, -6), tr = at(L - 4, 6), cl = at(L - 4, -8), cr = at(L - 4, 8), ct = at(L + 4, -8), cu = at(L + 4, 8);
-  CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {
-    d: OBJ_poly([[8, 94], [8, 34], [13, 30], [13, 14], [17, 10], [48, 10], [52, 14], [52, 30], [bl[0], 30], bl, tl, cl, ct, cu, cr, tr, br, [br[0], 30], [84, 31], [88, 36], [88, 94]],
-      [6, 3, 2, 4, 2, 2, 4, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 3, 4, 6]),
-    holes: [OBJ_rrect(20, 16, 25, 9, 3.5)],
-    plates: [
-      ["body", OBJ_rrect(8, 30, 80, 64, [0, 0, 6, 6])],                                         /* the can */
-      ["field", OBJ_rrect(15, 40, 66, 46, 4), { z: -.9, bev: 1 }],                              /* the panel pressed into its side */
-      ["body", "M21 46L75 80M75 46L21 80", { ln: 6, z: 1.4, bev: 1.4 }],                       /* the embossed X */
-      ["deep", OBJ_rrect(13, 10, 39, 22, 4)],                                                   /* the handle */
-      ["rubber", OBJ_poly([bl, tl, tr, br], 1), { z: .4, dome: .8 }],                           /* the spout */
-      ["hot", OBJ_poly([cl, ct, cu, cr], 1.5), { dome: 1.4 }],                                  /* its cap */
-    ],
-  };
-}
-
-/* ---- Appendix D: Fire Apparatus Access Roads - a fire engine, side on, facing left: the cab with its windscreen and light bar, the
-   chrome ladder along the roof, the lockers, the red stripe, two big wheels. The widest, lowest pin. ---- */
-{
-  let rungs = ""; for(let x = 28; x <= 92; x += 8) rungs += "M" + x + " 25V31";
-  CHAPTER_OBJ["Appendix D: Fire Apparatus Access Roads"] = {
-    d: "M14 74" + OBJ_chain([[14, 74], [6, 74], [6, 58], [12, 46], [13, 41], [27, 41], [28, 46], [31, 46], [31, 33], [22, 33], [22, 23], [96, 23], [96, 74], [88, 74]], [0, 3, 4, 3, 1.5, 1.5, 1, 1, 1, 2, 2, 2, 3, 0]) +
-       "A12 12 0 0 1 64 74" + OBJ_chain([[64, 74], [38, 74]], 0) + "A12 12 0 0 1 14 74Z",
-    plates: [
-      ["steel", OBJ_rrect(22, 23, 74, 10, 2), { z: .8, bev: .6 }],                              /* the ladder */
-      ["steel", rungs, { ln: 1.4, cut: .8, paint: 0 }],                                         /* its rungs */
-      ["red", OBJ_rrect(6, 58, 90, 6, 0), { z: .4, bev: .5 }],                                  /* the stripe */
-      ["glass", OBJ_poly([[8, 56], [13, 47], [27, 47], [27, 56]], 1.5), { z: -.8, bev: .6 }],   /* the windscreen */
-      ["red", OBJ_rrect(13, 41, 14, 5, 2), { dome: 1.4 }],                                       /* the light bar */
-      ["body", OBJ_rrect(35, 37, 18, 18, 1.5), { z: .7, bev: .6 }],                              /* the lockers */
-      ["body", OBJ_rrect(56, 37, 18, 18, 1.5), { z: .7, bev: .6 }],
-      ["body", OBJ_rrect(77, 37, 16, 18, 1.5), { z: .7, bev: .6 }],
-      ["rubber", OBJ_circle(26, 74, 12), { z: .9, bev: 1.2 }],                                   /* the wheels */
-      ["rubber", OBJ_circle(76, 74, 12), { z: .9, bev: 1.2 }],
-      ["steel", OBJ_circle(26, 74, 5.5), { dome: 1.6 }],                                         /* their hubs */
-      ["steel", OBJ_circle(76, 74, 5.5), { dome: 1.6 }],
-    ],
-  };
-}
-
-/* ---- Chapter 53: Compressed Gases - a gas cylinder: the handwheel on top of the brass valve, the brass collar, the domed shoulder, the long
-   body with its two grooves and label band. The tallest, narrowest pin. (A side outlet made it read as a soap pump: dropped.) ---- */
-{
-  CHAPTER_OBJ["Chapter 53: Compressed Gases"] = {
-    d: OBJ_poly([[38, 3], [62, 3], [62, 9], [57, 9], [57, 16], [62, 16], [62, 22], [70, 27], [74, 38], [74, 94], [26, 94], [26, 38], [30, 27], [38, 22], [38, 16], [43, 16], [43, 9], [38, 9]],
-      [2.5, 2.5, 1, 1, 1, 1.5, 1, 6, 8, 8, 8, 8, 6, 1, 1.5, 1, 1, 2.5]),
-    plates: [
-      ["rubber", OBJ_rrect(38, 3, 24, 6, 2.5), { dome: .9 }],                                    /* the handwheel */
-      ["brass", OBJ_rrect(43, 9, 14, 7, 1), { gem: .9, gw: 2 }],                                 /* the valve */
-      ["brass", OBJ_rrect(38, 16, 24, 7, 2), { dome: .9 }],                                      /* the collar */
-      ["shade", "M26 40C26 27 40 22 50 22C60 22 74 27 74 40Z", { dome: 1.8 }],                   /* the domed shoulder */
-      ["body", OBJ_rrect(26, 40, 48, 54, [0, 0, 8, 8]), { dome: 1.4 }],                          /* the body */
-      ["cream", OBJ_rrect(26, 58, 48, 17, 0), { z: .5, bev: .6 }],                               /* the label band */
-      ["body", "M27 46H73M27 51H73", { ln: 1.6, cut: .9, paint: 0 }],                            /* the grooves */
-    ],
-  };
-}
-
-/* ---- Chapter 1: Scope and Administration - a rubber hand stamp: the domed knob, the grooved neck, the chamfered flange, the base and its
-   inked rubber die. ---- */
-{
-  CHAPTER_OBJ["Chapter 1: Scope and Administration"] = {
-    d: "M35 20A15 15 0 0 1 65 20A15 15 0 0 1 57.5 33" + OBJ_chain([[57.5, 33], [57.5, 48], [78, 50], [78, 62], [90, 64], [90, 86], [88, 94], [12, 94], [10, 86], [10, 64], [22, 62], [22, 50], [42.5, 48], [42.5, 33]], [0, 2, 3, 2, 3, 2, 2, 2, 2, 3, 2, 3, 2, 0]) + "A15 15 0 0 1 35 20Z",
-    plates: [
-      ["body", OBJ_circle(50, 20, 15), { dome: 3.2 }],                                            /* the knob */
-      ["shade", OBJ_rrect(42.5, 32, 15, 17, 0), { dome: .8 }],                                   /* the neck */
-      ["shade", "M42 38H58M42 43H58", { ln: 1.6, cut: .8, paint: 0 }],                           /* its grooves */
-      ["body", OBJ_rrect(22, 48, 56, 14, 3), { gem: 1.4, gw: 3 }],                               /* the flange */
-      ["deep", OBJ_rrect(10, 62, 80, 24, 3), { z: .4 }],                                         /* the base */
-      ["lite", OBJ_rrect(14, 66, 72, 3, 1.5), { z: .3, bev: .4 }],                                /* its lip */
-      ["red", OBJ_rrect(12, 86, 76, 8, [0, 0, 3, 3]), { z: -.4, bev: .5 }],                      /* the inked rubber die */
-    ],
-  };
-}
-
-/* ---- Chapter and Section Finder - a magnifying glass: the ring, the domed glass set into it, the brass collar, the grooved handle. ---- */
-{
-  const C = [40, 40], R = 34, W = 7, L = 40, s2 = Math.SQRT1_2;
-  const dir = [s2, s2], nrm = [s2, -s2], a = Math.sqrt(R * R - W * W);
-  const P1 = [C[0] + a * dir[0] + W * nrm[0], C[1] + a * dir[1] + W * nrm[1]], P2 = [C[0] + a * dir[0] - W * nrm[0], C[1] + a * dir[1] - W * nrm[1]];
-  const E1 = [P1[0] + L * dir[0], P1[1] + L * dir[1]], E2 = [P2[0] + L * dir[0], P2[1] + L * dir[1]];
-  const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2), along = (t, w) => [C[0] + (R + t) * dir[0] + w * nrm[0], C[1] + (R + t) * dir[1] + w * nrm[1]];
-  let grip = ""; for(let t = 14; t <= 34; t += 5) grip += "M" + f(along(t, -W - 1)) + "L" + f(along(t, W + 1));
-  CHAPTER_OBJ["Chapter and Section Finder"] = {
-    d: "M" + f(P1) + "A" + R + " " + R + " 0 1 0 " + f(P2) + "L" + f(E2) + "A" + W + " " + W + " 0 0 0 " + f(E1) + "Z",
-    plates: [
-      ["glass", OBJ_circle(40, 40, 26), { z: -.6, bev: .8, dome: 2.4 }],                          /* the glass, domed, set into the ring */
-      ["deep", "M" + f(along(6, -W - 1)) + "L" + f(along(L + 2, -W - 1)) + "L" + f(along(L + 2, W + 1)) + "L" + f(along(6, W + 1)) + "Z", { dome: 1 }],   /* the handle */
-      ["deep", grip, { ln: 1.4, cut: .7, paint: 0 }],                                              /* its grip */
-      ["brass", "M" + f(along(-1, -W - 1)) + "L" + f(along(7, -W - 1)) + "L" + f(along(7, W + 1)) + "L" + f(along(-1, W + 1)) + "Z", { z: .7, bev: .6 }],   /* the collar */
-    ],
-  };
-}
-
-/* ---- Chapter 5: Fire Service Features - a fire hydrant (Madison's own suggestion): the faceted operating nut, the domed bonnet, the barrel,
-   the two side outlets with their faceted caps, the base flange and its bolts. ---- */
-{
-  CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {
-    d: OBJ_poly([[42, 4], [58, 4], [60, 14], [72, 18], [76, 32], [70, 34], [70, 44], [86, 44], [86, 40], [94, 40], [94, 64], [86, 64], [86, 60], [70, 60], [70, 80], [80, 82], [82, 94], [18, 94], [20, 82], [30, 80], [30, 60], [14, 60], [14, 64], [6, 64], [6, 40], [14, 40], [14, 44], [30, 44], [30, 34], [24, 32], [28, 18], [40, 14]],
-      [2, 2, 2, 6, 3, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 3, 6, 2]),
-    plates: [
-      ["field", OBJ_rrect(30, 32, 40, 50, 2), { dome: 1.6 }],                                    /* the barrel */
-      ["field", "M24 32C24 20 36 14 50 14C64 14 76 20 76 32Z", { dome: 2.2 }],                   /* the bonnet */
-      ["steel", OBJ_poly([[42, 4], [58, 4], [60, 14], [40, 14]], 1), { gem: 1.4, gw: 2.6 }],     /* the operating nut */
-      ["field", OBJ_rrect(14, 44, 16, 16, 1.5), { dome: 1 }],                                    /* the outlets */
-      ["field", OBJ_rrect(70, 44, 16, 16, 1.5), { dome: 1 }],
-      ["steel", OBJ_rrect(6, 40, 8, 24, 2), { gem: 1.2, gw: 2 }],                                /* their caps */
-      ["steel", OBJ_rrect(86, 40, 8, 24, 2), { gem: 1.2, gw: 2 }],
-      ["deep", OBJ_rrect(18, 80, 64, 14, 2), { z: .5 }],                                         /* the base flange */
-      ["steel", OBJ_circle(26, 87, 2.4), { dome: 1.1 }],                                         /* its bolts */
-      ["steel", OBJ_circle(42, 87, 2.4), { dome: 1.1 }],
-      ["steel", OBJ_circle(58, 87, 2.4), { dome: 1.1 }],
-      ["steel", OBJ_circle(74, 87, 2.4), { dome: 1.1 }],
-    ],
-  };
-}
+/* ---- part-0-prototypes.js (baked by tools/merge-chapter-icons.py: edit the part file, then merge) ---- */
+CHAPTER_OBJ["Chapter 10: Means of Egress"] = {"col":"#2F9A5A","d":"M12 18.5Q12 16 14.33 15.08L48.14 1.73Q50 1 50 3L50 11Q50 12 51 12L85 12Q88 12 88 15L88 87Q88 90 85 90L51 90Q50 90 50 91L50 97Q50 99 48.14 98.27L14.33 84.92Q12 84 12 81.5Z","plates":[["steel","M52 12H86A2 2 0 0 1 88 14V88A2 2 0 0 1 86 90H52A2 2 0 0 1 50 88V14A2 2 0 0 1 52 12Z"],["ink","M58.5 19H79.5A1.5 1.5 0 0 1 81 20.5V88.5A1.5 1.5 0 0 1 79.5 90H58.5A1.5 1.5 0 0 1 57 88.5V20.5A1.5 1.5 0 0 1 58.5 19Z",{"z":-1.8,"bev":0.9}],["shade","M57 63Q57 62 57.92 61.62L80.08 52.38Q81 52 81 53L81 89Q81 90 80 90L58 90Q57 90 57 89Z",{"z":-1.8,"bev":0.9}],["body","M12 17.5Q12 16 13.4 15.45L48.6 1.55Q50 1 50 2.5L50 97.5Q50 99 48.6 98.45L13.4 84.55Q12 84 12 82.5Z",{"z":1.6,"bev":1.4}],["deep","M44.68 3.9Q44.68 3.1 45.42 2.81L49.26 1.29Q50 1 50 1.8L50 98.2Q50 99 49.26 98.71L45.42 97.19Q44.68 96.9 44.68 96.1Z",{"z":1.6,"bev":0.5}],["lite","M16.56 21.43Q16.56 19.93 17.98 19.46L37.18 13.09Q38.6 12.62 38.6 14.12L38.6 43.16Q38.6 44.66 37.1 44.73L18.06 45.63Q16.56 45.7 16.56 44.2Z",{"z":0.9,"bev":0.8}],["lite","M16.56 55.8Q16.56 54.3 18.06 54.37L37.1 55.27Q38.6 55.34 38.6 56.84L38.6 85.88Q38.6 87.38 37.18 86.91L17.98 80.54Q16.56 80.07 16.56 78.57Z",{"z":0.9,"bev":0.8}],["brass","M39.2 50A3.2 3.2 0 1 1 45.6 50A3.2 3.2 0 1 1 39.2 50Z",{"dome":2.2}],["brass","M12 24.76Q12 24.16 12.57 23.99L14.47 23.42Q15.04 23.25 15.04 23.85L15.04 28.28Q15.04 28.88 14.46 29.02L12.58 29.46Q12 29.6 12 29Z",{"z":0.6,"bev":0.4}],["brass","M12 71Q12 70.4 12.58 70.54L14.46 70.98Q15.04 71.12 15.04 71.72L15.04 76.15Q15.04 76.75 14.47 76.58L12.57 76.01Q12 75.84 12 75.24Z",{"z":0.6,"bev":0.4}]]};
+CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {"d":"M41 4.5Q41 3 42.5 3L57.5 3Q59 3 59 4.5L59 14Q59 15 60 15L67 15Q68 15 68.55 15.83L72.17 21.25Q73 22.5 72.17 23.75L68.55 29.17Q68 30 67 30L66 30Q65 30 64.8 30.98L59.4 57.54Q59 59.5 59.94 59.02L59.94 59.02Q60.89 58.53 63.84 59.05L71.55 60.39Q74.51 60.9 77.33 61.94L82.64 63.89Q85.46 64.92 87.88 66.7L90.13 68.36Q92.55 70.14 93.71 72.91L93.84 73.23Q95 76 92.5 77.27L90.71 78.17Q90 78.53 90.54 79.12L92.25 80.97Q92.8 81.56 92.02 81.77L86.86 83.15Q86.09 83.35 86.16 84.15L86.33 85.78Q86.41 86.58 85.61 86.67L79.43 87.37Q78.64 87.46 78.18 88.11L76.91 89.91Q76.45 90.56 75.65 90.55L69.19 90.45Q68.39 90.43 67.7 90.85L64.59 92.71Q63.91 93.12 63.11 93L57.13 92.12Q56.34 92 55.57 92.24L50.76 93.76Q50 94 49.24 93.76L44.43 92.24Q43.66 92 42.87 92.12L36.89 93Q36.09 93.12 35.41 92.71L32.3 90.85Q31.61 90.43 30.81 90.45L24.35 90.55Q23.55 90.56 23.09 89.91L21.82 88.11Q21.36 87.46 20.57 87.37L14.39 86.67Q13.59 86.58 13.67 85.78L13.84 84.15Q13.91 83.35 13.14 83.15L7.98 81.77Q7.2 81.56 7.75 80.97L9.46 79.12Q10 78.53 9.29 78.17L7.5 77.27Q5 76 6.16 73.23L6.29 72.91Q7.45 70.14 9.87 68.36L12.12 66.7Q14.54 64.92 17.36 63.89L22.67 61.94Q25.49 60.9 28.45 60.39L36.16 59.05Q39.11 58.53 40.06 59.02L40.06 59.02Q41 59.5 40.6 57.54L35.2 30.98Q35 30 34 30L33 30Q32 30 31.45 29.17L27.83 23.75Q27 22.5 27.83 21.25L31.45 15.83Q32 15 33 15L40 15Q41 15 41 14Z","base":"brass","col":"#C9972F","plates":[["brass","M42.5 3H57.5A1.5 1.5 0 0 1 59 4.5V13.5A1.5 1.5 0 0 1 57.5 15H42.5A1.5 1.5 0 0 1 41 13.5V4.5A1.5 1.5 0 0 1 42.5 3Z",{"z":0.4}],["brass","M41 6.5H59M41 10H59M41 13.5H59",{"ln":1.4,"cut":0.8,"paint":0}],["brass","M31.45 15.83Q32 15 33 15L67 15Q68 15 68.55 15.83L72.45 21.67Q73 22.5 72.45 23.33L68.55 29.17Q68 30 67 30L33 30Q32 30 31.45 29.17L27.55 23.33Q27 22.5 27.55 21.67Z",{"gem":1.4,"gw":3}],["body","M41 16V29M59 16V29",{"ln":1.4,"cut":0.7,"paint":0}],["brass","M35.18 30.98Q35 30 36 30L64 30Q65 30 64.82 30.98L59.18 61.02Q59 62 58 62L42 62Q41 62 40.82 61.02Z",{"z":0.5}],["ink","M39.14 33.99Q39 33 40 33L44.5 33Q45.5 33 45.5 34L45.5 56Q45.5 57 44.5 57L43.5 57Q42.5 57 42.36 56.01Z",{"z":-1.7,"bev":0.6}],["ink","M60.86 33.99Q61 33 60 33L55.5 33Q54.5 33 54.5 34L54.5 56Q54.5 57 55.5 57L56.5 57Q57.5 57 57.64 56.01Z",{"z":-1.7,"bev":0.6}],["red","M45.6 45A4.4 12 0 1 1 54.4 45A4.4 12 0 1 1 45.6 45Z",{"dome":2.6}],["brass","M10 74A40 13 0 1 1 90 74A40 13 0 1 1 10 74Z",{"z":0.6,"bev":1,"dome":0.6}],["brass","M45 54H55A2 2 0 0 1 57 56V61A2 2 0 0 1 55 63H45A2 2 0 0 1 43 61V56A2 2 0 0 1 45 54Z",{"dome":1.4}]]};
+CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {"d":"M14 94Q8 94 8 88L8 37Q8 34 10.34 32.13L11.44 31.25Q13 30 13 28L13 18Q13 14 15 12L15.59 11.41Q17 10 19 10L46 10Q48 10 49.41 11.41L50 12Q52 14 52 18L52 28Q52 30 54 30L65.25 30Q67.25 30 67.25 28.67L67.25 28.33Q67.25 27.33 67.86 26.54L81.2 9.29Q81.81 8.5 81.02 7.89L81.02 7.89Q80.22 7.27 80.84 6.48L83.89 2.53Q85.12 0.94 86.7 2.17L96.19 9.5Q97.78 10.73 96.55 12.31L93.5 16.27Q92.88 17.06 92.09 16.45L92.09 16.45Q91.3 15.83 90.69 16.63L77.36 33.88Q76.75 34.67 76.75 33.67L76.75 32Q76.75 30 78.73 30.27L81.03 30.59Q84 31 85.87 33.34L86 33.5Q88 36 88 40L88 88Q88 94 82 94Z","holes":["M23.5 16H41.5A3.5 3.5 0 0 1 45 19.5V21.5A3.5 3.5 0 0 1 41.5 25H23.5A3.5 3.5 0 0 1 20 21.5V19.5A3.5 3.5 0 0 1 23.5 16Z"],"base":"red","plates":[["red","M8 30H88V88A6 6 0 0 1 82 94H14A6 6 0 0 1 8 88V30Z"],["red","M19 40H77A4 4 0 0 1 81 44V82A4 4 0 0 1 77 86H19A4 4 0 0 1 15 82V44A4 4 0 0 1 19 40Z",{"z":-0.9,"bev":1}],["red","M21 46L75 80M75 46L21 80",{"ln":6,"z":1.4,"bev":1.4}],["red","M17 10H48A4 4 0 0 1 52 14V28A4 4 0 0 1 48 32H17A4 4 0 0 1 13 28V14A4 4 0 0 1 17 10Z",{"z":0.3,"bev":0.8}],["rubber","M68.04 27.94Q67.25 27.33 67.86 26.54L81.2 9.29Q81.81 8.5 82.6 9.11L90.51 15.22Q91.3 15.83 90.69 16.63L77.36 33.88Q76.75 34.67 75.96 34.06Z",{"z":0.4,"dome":0.8}],["hot","M81.41 8.19Q80.22 7.27 81.14 6.09L84.2 2.13Q85.12 0.94 86.3 1.86L96.59 9.81Q97.78 10.73 96.86 11.91L93.8 15.87Q92.88 17.06 91.7 16.14Z",{"dome":1.4}]]};
+CHAPTER_OBJ["Appendix D: Fire Apparatus Access Roads"] = {"col":"#C8302B","d":"M14 74L9 74Q6 74 6 71L6 62Q6 58 7.79 54.42L10.66 48.68Q12 46 12.5 43.5L12.71 42.47Q13 41 14.5 41L25.5 41Q27 41 27.29 42.47L27.8 45.02Q28 46 29 46L30 46Q31 46 31 45L31 34Q31 33 30 33L24 33Q22 33 22 31L22 25Q22 23 24 23L94 23Q96 23 96 25L96 71Q96 74 93 74L88 74A12 12 0 0 1 64 74L38 74A12 12 0 0 1 14 74Z","plates":[["steel","M24 23H94A2 2 0 0 1 96 25V31A2 2 0 0 1 94 33H24A2 2 0 0 1 22 31V25A2 2 0 0 1 24 23Z",{"z":0.8,"bev":0.6}],["steel","M28 25V31M36 25V31M44 25V31M52 25V31M60 25V31M68 25V31M76 25V31M84 25V31M92 25V31",{"ln":1.4,"cut":0.8,"paint":0}],["cream","M6 58H96V64H6V58Z",{"z":0.4,"bev":0.5}],["glass","M9.5 56Q8 56 8.73 54.69L12.27 48.31Q13 47 14.5 47L25.5 47Q27 47 27 48.5L27 54.5Q27 56 25.5 56Z",{"z":-0.8,"bev":0.6}],["hot","M15 41H25A2 2 0 0 1 27 43V44A2 2 0 0 1 25 46H15A2 2 0 0 1 13 44V43A2 2 0 0 1 15 41Z",{"dome":1.4}],["body","M36.5 37H51.5A1.5 1.5 0 0 1 53 38.5V53.5A1.5 1.5 0 0 1 51.5 55H36.5A1.5 1.5 0 0 1 35 53.5V38.5A1.5 1.5 0 0 1 36.5 37Z",{"z":0.7,"bev":0.6}],["body","M57.5 37H72.5A1.5 1.5 0 0 1 74 38.5V53.5A1.5 1.5 0 0 1 72.5 55H57.5A1.5 1.5 0 0 1 56 53.5V38.5A1.5 1.5 0 0 1 57.5 37Z",{"z":0.7,"bev":0.6}],["body","M78.5 37H91.5A1.5 1.5 0 0 1 93 38.5V53.5A1.5 1.5 0 0 1 91.5 55H78.5A1.5 1.5 0 0 1 77 53.5V38.5A1.5 1.5 0 0 1 78.5 37Z",{"z":0.7,"bev":0.6}],["rubber","M14 74A12 12 0 1 1 38 74A12 12 0 1 1 14 74Z",{"z":0.9,"bev":1.2}],["rubber","M64 74A12 12 0 1 1 88 74A12 12 0 1 1 64 74Z",{"z":0.9,"bev":1.2}],["steel","M20.5 74A5.5 5.5 0 1 1 31.5 74A5.5 5.5 0 1 1 20.5 74Z",{"dome":1.6}],["steel","M70.5 74A5.5 5.5 0 1 1 81.5 74A5.5 5.5 0 1 1 70.5 74Z",{"dome":1.6}]]};
+CHAPTER_OBJ["Chapter 53: Compressed Gases"] = {"col":"#3F8A3C","d":"M39 15Q38 15 38 14L38 11Q38 8 39.87 5.66L40.13 5.34Q42 3 45 3L55 3Q58 3 59.87 5.34L60.13 5.66Q62 8 62 11L62 14Q62 15 61 15L59 15Q58 15 58 16L58 18Q58 19 58.98 19.22L60.11 19.48L63 20.88L65.49 23.1L67.39 26L68.59 29.38L69 33L69 88Q69 92 65 92L35 92Q31 92 31 88L31 33L31.41 29.38L32.61 26L34.51 23.1L37 20.88L39.89 19.48L43 19L42.5 19Q42 19 42 18L42 16Q42 15 41 15Z","plates":[["steel","M42 3H58A4 4 0 0 1 62 7V14A1 1 0 0 1 61 15H39A1 1 0 0 1 38 14V7A4 4 0 0 1 42 3Z",{"dome":0.8}],["ink","M45 5.5H55A2 2 0 0 1 57 7.5V11A2 2 0 0 1 55 13H45A2 2 0 0 1 43 11V7.5A2 2 0 0 1 45 5.5Z",{"z":-1.3,"bev":0.6}],["brass","M47.4 9.3A2.6 2.6 0 1 1 52.6 9.3A2.6 2.6 0 1 1 47.4 9.3Z",{"dome":1.2}],["brass","M43 15H57A1 1 0 0 1 58 16V19A1 1 0 0 1 57 20H43A1 1 0 0 1 42 19V16A1 1 0 0 1 43 15Z",{"z":0.4,"bev":0.5}],["body","M43 19H57A12 12 0 0 1 69 31V88A4 4 0 0 1 65 92H35A4 4 0 0 1 31 88V31A12 12 0 0 1 43 19Z",{"dome":1.6}],["shade","M40 19H60A9 9 0 0 1 69 28V37H31V28A9 9 0 0 1 40 19Z"],["body","M32 38H68M32 42H68",{"ln":1.4,"cut":0.8,"paint":0}],["cream","M31 52H69V66H31V52Z",{"z":0.5,"bev":0.6}],["deep","M31 84H69V88A4 4 0 0 1 65 92H35A4 4 0 0 1 31 88V84Z",{"z":0.4,"bev":0.6}]]};
+CHAPTER_OBJ["Chapter 1: Scope and Administration"] = {"col":"#A0662F","d":"M35 20A15 15 0 0 1 65 20A15 15 0 0 1 57.5 33L57.5 46Q57.5 48 59.49 48.19L75.01 49.71Q78 50 78 53L78 60Q78 62 79.97 62.33L87.04 63.51Q90 64 90 67L90 84Q90 86 89.51 87.94L88.49 92.06Q88 94 86 94L14 94Q12 94 11.51 92.06L10.49 87.94Q10 86 10 84L10 67Q10 64 12.96 63.51L20.03 62.33Q22 62 22 60L22 53Q22 50 24.99 49.71L40.51 48.19Q42.5 48 42.5 46L42.5 33A15 15 0 0 1 35 20Z","plates":[["body","M35 20A15 15 0 1 1 65 20A15 15 0 1 1 35 20Z",{"dome":3.2}],["shade","M42.5 32H57.5V49H42.5V32Z",{"dome":0.8}],["shade","M42 38H58M42 43H58",{"ln":1.6,"cut":0.8,"paint":0}],["body","M25 48H75A3 3 0 0 1 78 51V59A3 3 0 0 1 75 62H25A3 3 0 0 1 22 59V51A3 3 0 0 1 25 48Z",{"gem":1.4,"gw":3}],["deep","M13 62H87A3 3 0 0 1 90 65V83A3 3 0 0 1 87 86H13A3 3 0 0 1 10 83V65A3 3 0 0 1 13 62Z",{"z":0.4}],["lite","M15.5 66H84.5A1.5 1.5 0 0 1 86 67.5V67.5A1.5 1.5 0 0 1 84.5 69H15.5A1.5 1.5 0 0 1 14 67.5V67.5A1.5 1.5 0 0 1 15.5 66Z",{"z":0.3,"bev":0.4}],["red","M12 86H88V91A3 3 0 0 1 85 94H15A3 3 0 0 1 12 91V86Z",{"z":-0.4,"bev":0.5}]]};
+CHAPTER_OBJ["Chapter and Section Finder"] = {"col":"#4A4F58","d":"M68.48 58.58A34 34 0 1 0 58.58 68.48L86.86 96.76A7 7 0 0 0 96.76 86.86Z","plates":[["glass","M14 40A26 26 0 1 1 66 40A26 26 0 1 1 14 40Z",{"z":-0.6,"bev":0.8,"dome":2.4}],["deep","M62.63 73.94L88.08 99.40L99.40 88.08L73.94 62.63Z",{"dome":1}],["deep","M68.28 79.60L79.60 68.28M71.82 83.13L83.13 71.82M75.36 86.67L86.67 75.36M78.89 90.20L90.20 78.89M82.43 93.74L93.74 82.43",{"ln":1.4,"cut":0.7,"paint":0}],["brass","M57.68 68.99L63.33 74.65L74.65 63.33L68.99 57.68Z",{"z":0.7,"bev":0.6}]]};
+CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {"col":"#D23A2E","d":"M41.61 5.96Q42 4 44 4L56 4Q58 4 58.39 5.96L59.61 12.04Q60 14 61.9 14.63L66.31 16.1Q72 18 73.65 23.77L75.18 29.12Q76 32 73.15 32.95L70.95 33.68Q70 34 70 35L70 43Q70 44 71 44L85 44Q86 44 86 43L86 41Q86 40 87 40L92 40Q94 40 94 42L94 62Q94 64 92 64L87 64Q86 64 86 63L86 61Q86 60 85 60L71 60Q70 60 70 61L70 79Q70 80 70.98 80.2L78.04 81.61Q80 82 80.33 83.97L81.67 92.03Q82 94 80 94L20 94Q18 94 18.33 92.03L19.67 83.97Q20 82 21.96 81.61L29.02 80.2Q30 80 30 79L30 61Q30 60 29 60L15 60Q14 60 14 61L14 63Q14 64 13 64L8 64Q6 64 6 62L6 42Q6 40 8 40L13 40Q14 40 14 41L14 43Q14 44 15 44L29 44Q30 44 30 43L30 35Q30 34 29.05 33.68L26.85 32.95Q24 32 24.82 29.12L26.35 23.77Q28 18 33.69 16.1L38.1 14.63Q40 14 40.39 12.04Z","plates":[["field","M32 32H68A2 2 0 0 1 70 34V80A2 2 0 0 1 68 82H32A2 2 0 0 1 30 80V34A2 2 0 0 1 32 32Z",{"dome":1.6}],["field","M24 32C24 20 36 14 50 14C64 14 76 20 76 32Z",{"dome":2.2}],["steel","M41.8 4.98Q42 4 43 4L57 4Q58 4 58.2 4.98L59.8 13.02Q60 14 59 14L41 14Q40 14 40.2 13.02Z",{"gem":1.4,"gw":2.6}],["field","M15.5 44H28.5A1.5 1.5 0 0 1 30 45.5V58.5A1.5 1.5 0 0 1 28.5 60H15.5A1.5 1.5 0 0 1 14 58.5V45.5A1.5 1.5 0 0 1 15.5 44Z",{"dome":1}],["field","M71.5 44H84.5A1.5 1.5 0 0 1 86 45.5V58.5A1.5 1.5 0 0 1 84.5 60H71.5A1.5 1.5 0 0 1 70 58.5V45.5A1.5 1.5 0 0 1 71.5 44Z",{"dome":1}],["steel","M8 40H12A2 2 0 0 1 14 42V62A2 2 0 0 1 12 64H8A2 2 0 0 1 6 62V42A2 2 0 0 1 8 40Z",{"gem":1.2,"gw":2}],["steel","M88 40H92A2 2 0 0 1 94 42V62A2 2 0 0 1 92 64H88A2 2 0 0 1 86 62V42A2 2 0 0 1 88 40Z",{"gem":1.2,"gw":2}],["deep","M20 80H80A2 2 0 0 1 82 82V92A2 2 0 0 1 80 94H20A2 2 0 0 1 18 92V82A2 2 0 0 1 20 80Z",{"z":0.5}],["steel","M23.6 87A2.4 2.4 0 1 1 28.4 87A2.4 2.4 0 1 1 23.6 87Z",{"dome":1.1}],["steel","M39.6 87A2.4 2.4 0 1 1 44.4 87A2.4 2.4 0 1 1 39.6 87Z",{"dome":1.1}],["steel","M55.6 87A2.4 2.4 0 1 1 60.4 87A2.4 2.4 0 1 1 55.6 87Z",{"dome":1.1}],["steel","M71.6 87A2.4 2.4 0 1 1 76.4 87A2.4 2.4 0 1 1 71.6 87Z",{"dome":1.1}]]};
 /* ---- generated by tools/merge-chapter-icons.py: every silhouette's box [x, y, w, h] ---- */
-Object.assign(CHAPTER_OBJ_BBOX, {"Appendix D: Fire Apparatus Access Roads":[6,23,90,63],"Chapter 10: Means of Egress":[12,1.53,76,96.93],"Chapter 1: Scope and Administration":[10,5,80,89],"Chapter 53: Compressed Gases":[26,3,48,91],"Chapter 57: Flammable and Combustible Liquids":[8,1.63,89.09,92.37],"Chapter 5: Fire Service Features":[6,4,88,90],"Chapter 9: Fire Protection and Life Safety Systems":[5.79,3,88.41,90.88],"Chapter and Section Finder":[6.01,6.01,92.8,92.8]});
+Object.assign(CHAPTER_OBJ_BBOX, {"Appendix D: Fire Apparatus Access Roads":[6,23,90,63],"Chapter 10: Means of Egress":[12,1.53,76,96.93],"Chapter 1: Scope and Administration":[10,5,80,89],"Chapter 53: Compressed Gases":[31,3,38,89],"Chapter 57: Flammable and Combustible Liquids":[8,1.63,89.09,92.37],"Chapter 5: Fire Service Features":[6,4,88,90],"Chapter 9: Fire Protection and Life Safety Systems":[5.79,3,88.41,90.88],"Chapter and Section Finder":[6.01,6.01,92.8,92.8]});
 /* @@CHAPTER_OBJ_END */
 function badgeShapeFor(unitName){
   const name = String(unitName || "");
@@ -77743,21 +77571,31 @@ function chapterObjFor(unitName){
   const e = CHAPTER_OBJ[String(unitName || "")];
   return e && typeof e === "object" && e.d ? e : null;
 }
+/* (384.67) THE OBJECT'S OWN COLOUR. Madison: "make the color of stuff relevant, you don't need to keep the old colors." An entry may name
+   its main colour (col: "#RRGGBB" - a red extinguisher, a brass sprinkler, a green door) and its tones (lite, body, field, shade, deep,
+   ink) are made from that; without it they are made from the chapter's enamel, as before. Optional, so every entry written before it
+   is unchanged. */
+const OBJ_HEX = /^#[0-9a-fA-F]{6}$/;
+function chapterObjMain(unitName){
+  const e = chapterObjFor(unitName);
+  return e && OBJ_HEX.test(e.col || "") ? e.col : badgeThemeFor(unitName).p;
+}
 /* The tones: the chapter's own enamel p, five steps of it (lite > body > field > shade > deep > ink; the ladder is moved up for a
    dark enamel and its top is lower for a pale one, so every role stays distinguishable on every enamel), and three that are not
    its own - glow (light), steel (metal) and hot (the warmth of a flame, a brass handle) - so a lamp is a lamp on every chapter. */
 function chapterObjPalette(unitName, grey){
   /* (384.66) a plain grey for every role: the relief test (does the sculpture read with no colour at all?) and the grey,
      seen-not-found token, which shows the pin's form and none of its colour */
-  if(grey){ const G = "#7F868E", o = {}; CHAPTER_OBJ_ROLES.forEach(r => { o[r] = G; }); return o; }
-  const p = badgeThemeFor(unitName).p, L = badgeEnamelLuma(p);
+  if(grey){ const G = "#7F868E", o = { grey: 1 }; CHAPTER_OBJ_ROLES.forEach(r => { o[r] = G; }); return o; }
+  const p = chapterObjMain(unitName), L = badgeEnamelLuma(p);
   /* lite, body, shade, deep, ink as a lift (+) or a shading (-) of p */
   const T = L < .10 ? [.62, .38, .20, -.34, -.74] : L < .50 ? [.36, .16, -.26, -.52, -.80] : [.50, .24, -.30, -.56, -.82];
-  const mix = (hex, to, k) => { const a = badgeHexRgb(hex), b = badgeHexRgb(to); return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",") + ")"; };
   return { field: p, lite: badgeShade(p, T[0]), body: badgeShade(p, T[1]), shade: badgeShade(p, T[2]), deep: badgeShade(p, T[3]), ink: badgeShade(p, T[4]),
-    glow: mix("#FFFBE6", p, .05), steel: mix("#B4BEC9", p, .16), hot: mix("#FF9A38", p, .08),
+    /* (384.67) glow, steel and hot are natural colours now, as the rest below: they took 5-16% of the chapter's enamel, so steel read
+       lilac, pink or green by chapter (the part helpers' finding). Chrome is steel, gold is brass. */
+    glow: "#FFFBE6", steel: "#B4BEC9", hot: "#FF9A38",
     /* (384.66) a part's own natural colour, the same on every chapter: a pin's brass, a flame's red, water, glass, rubber, cream, wood */
-    brass: "#D9A63E", red: "#D8352C", water: "#3C92DA", glass: "#CDE8F5", rubber: "#2C2E33", cream: "#EEE2C6", wood: "#8E5B2F" };
+    brass: "#D9A63E", red: "#D8352C", water: "#3C92DA", glass: "#86BCD8", rubber: "#2C2E33", cream: "#EEE2C6", wood: "#8E5B2F" };
 }
 /* The plates as plain objects: only the roles and options the data format allows, at most CHAPTER_OBJ_MAX_PLATES.
    (384.66) a plate is a PART of the pin: besides its colour it may be raised or recessed (z, with its own bevel bev), domed (dome),
@@ -77773,14 +77611,14 @@ function chapterObjPlates(unitName){
     const o = q[2] || {};
     out.push({ r: q[0], d: q[1], sh: !!o.sh, e: +o.e > 0 ? +o.e : 0, ln: +o.ln > 0 ? +o.ln : 0,
       z: num(o.z, 0), bev: Math.max(.3, num(o.bev, 1.2)), dome: num(o.dome, 0), gem: num(o.gem, 0), gw: Math.max(.5, num(o.gw, 3)),
-      cut: Math.max(0, num(o.cut, 0)), paint: o.paint === 0 ? 0 : 1 });
+      cut: Math.max(0, num(o.cut, 0)), paint: o.paint === 0 ? 0 : 1, col: OBJ_HEX.test(o.col || "") ? o.col : null });
   }
   return out;
 }
 /* One plate onto a 2d context already in the outline's units: its soft shadow, its fill (or its line), its thin dark edge. */
 function chapterObjPaintPlate(o, pl, pal, Pth){
   if(!pl.paint) return;
-  const col = pal[pl.r] || pal.field;
+  const col = (!pal.grey && pl.col) || pal[pl.r] || pal.field;
   if(pl.sh && !pl.ln){ o.save(); o.translate(1.5, 2.1); o.globalAlpha = .38; o.fillStyle = "#000"; o.fill(Pth); o.restore(); }
   if(pl.ln){ o.strokeStyle = col; o.lineWidth = pl.ln; o.lineJoin = "round"; o.lineCap = "round"; o.stroke(Pth); return; }
   o.fillStyle = col; o.fill(Pth);
@@ -77815,7 +77653,7 @@ function chapterObjVector(parent, face, unitName){
   mk(face.d, Object.assign({ fill: pal[chapterObjFor(unitName).base] || pal.field, stroke: "none" }, base));
   pl.forEach(q => {
     if(!q.paint) return;
-    const col = pal[q.r] || pal.field;
+    const col = q.col || pal[q.r] || pal.field;
     if(q.sh && !q.ln) mk(q.d, { fill: "#000", opacity: ".38", transform: "translate(1.5 2.1)" });
     if(q.ln) mk(q.d, Object.assign({ fill: "none", stroke: col, "stroke-width": String(q.ln) }, base));
     else mk(q.d, Object.assign({ fill: col, stroke: q.e ? pal.ink : "none", "stroke-width": String(q.e || 0) }, base));
@@ -77823,44 +77661,52 @@ function chapterObjVector(parent, face, unitName){
   parent.appendChild(grp);
 }
 
-/* ---- A FIRE CODE BADGE IS A RAISED PIN (build 384.66, round 3) ----
+/* ---- A FIRE CODE BADGE IS A RAISED PIN (build 384.66, round 3; 384.67, round 4) ----
    Madison, of round 2: "the badges don't look good ... We can keep the back of the badges the same look and everything. But the front and
    side/edges I think we are gonna have to update for the ifc. We may just have to go away with the silver border entirely or make it thin.
    I sent some examples, the mostly grey ones I'm showing because you can see how these badges have risen effect, that nice 3d effect. And
    then the other you can see that it's 3d, color ... Make it super nice though. Make this great." (His references: Kanto gym badges
    3D-printed in grey - a drop, a heart split by a crease, a gem with chamfered facets, a button with a raised disc, a flower of domed
-   petals, a leaf with cut veins - and the same badges as coloured enamel pins.)
-   So a chapter drawn as its object is no longer a token in a silver rim: it is a PIN, sculpted from a height map and lit.
-     - the silhouette rises from the case by a rounded BEVEL (OBJ_PIN.bevel wide) to a flat top with a gentle dome;
-     - each part adds its own relief: raised or recessed (z, with its own bevel), domed (dome), cut into planar facets (gem), or a V-groove
-       (cut) - read off each part's own distance field, so a groove follows its path and a facet is a true plane;
-     - the face is shaded from the height map's normals (one light, top-left, as everywhere: Lambert plus a restrained specular), in each
-       part's colour; its edge is either a fine darker line of its own colour (EDGE A, the default) or a hairline of polished metal
-       (EDGE B, OBJ_PIN.hair wide);
-     - the pin's THICKNESS shows as a side wall along its lower-right (OBJ_PIN.wall deep, each point the colour of the face above it, darker),
-       and it throws a soft contact shadow.
-   No SVG filter anywhere; a canvas render cached per badge, size and state (the strike cache), with the same draft-then-finish path the
-   struck tokens use. The back of a pin is the struck back, unchanged. The no-canvas fallback draws the parts flat with a darker wall. */
-let CHAPTER_OBJ_EDGE = "A";
-const OBJ_PIN = { geoW: 256, bevel: 2.4, top: 1.7, domeK: .9, domeR: 18, relief: 1.15, wall: 3.0, wallDir: [.5, .866],
-  shadow: [1.8, 3.2], shadowBlur: 2.6, shadowA: .55, outline: .55, outlineK: .5, hair: 1.8, amb: .3, spec: .32, specP: 52, sheen: .03,
-  wallK: [.6, .32], slotGap: 2.2, slotLip: 1.2, slotWall: 2.4 };
-/* switch the edge (A or B) and drop every pin render cached with the other one (the contact sheets show both) */
-function setChapterObjEdge(v){
-  CHAPTER_OBJ_EDGE = v === "B" ? "B" : "A";
-  Object.keys(BADGE_STRIKE_CACHE).forEach(k => { if(chapterObjShape(k.split("|")[0])) delete BADGE_STRIKE_CACHE[k]; });
-  return CHAPTER_OBJ_EDGE;
-}
+   petals, a leaf with cut veins - and the same badges as coloured enamel pins.) Of round 3: "Do the badges with no rim. Now, our old badge
+   look, the reflective look was near perfect, we need that now, and we need to ensure the design of these new ones are perfect, super
+   crisp and hd."
+   So a chapter drawn as its object is a PIN, sculpted from a height map and lit, with no rim:
+     - the silhouette rises from the case by a rounded BEVEL (OBJ_PIN.bevel wide) to a top with a gentle dome; each part adds its own
+       relief (z with its own bevel, dome, gem for planar facets, cut for a V-groove), read off each part's own distance field;
+     - THE FINISH IS THE OLD BADGE'S (round 4): the face is lit exactly the way renderBadgeStrike lights a struck token - the same studio
+       (badgeLightTables: the lit ceiling with its softbox edge, the dark horizon, the softbox at the top-left, a Fresnel clear coat) and the
+       same constants (BADGE_STRIKE: the enamel's tilt through its polished ramp, its clear coat and specular; BADGE_DIRT stage 0: the fine
+       grain and the soft film every found badge wears). Enamel parts read as glossy lacquered enamel; brass and steel parts as polished
+       metal reflecting the studio, tinted by their own colour (chapterObjMaterialMap); rubber as a satin enamel;
+     - the edge is a fine darker line of the pin's own colour where the face turns down into its wall (the only edge style: no rim);
+     - the pin's THICKNESS shows as a side wall along its lower-right (OBJ_PIN.wall deep, each point the colour of the face above it,
+       darker), and it throws a soft contact shadow;
+     - CRISP: a pin is rendered at exactly its displayed size times the device pixel ratio (badgeRenderW), supersampled 2x, its geometry at a
+       resolution matched to that size (256, 512 or 768 across), never an upscaled bitmap; a change of the pixel ratio re-renders it.
+   No SVG filter anywhere; a canvas render cached per badge, size and state (the strike cache, exact size for a pin), with the same
+   draft-then-finish path the struck tokens use. The no-canvas fallback draws the parts flat with a darker wall.
+   THE BACK MATCHES THE PIN (384.67, Madison: "Yes, match the back"): the same silhouette, mirrored (no larger rimmed back), the same
+   bevel, dome, side wall, contact shadow and edge, in the old badges' polished metal, with the title cut into it exactly as the struck
+   back cuts it (renderObjPinBack); a flip in the hand or on the cutscene coin shows front and back the same size and outline. */
+const OBJ_PIN = { bevel: 2.4, top: 1.7, domeK: .9, domeR: 18, relief: 1.15, wall: 3.0, wallDir: [.5, .866],
+  shadow: [1.8, 3.2], shadowBlur: 2.6, shadowA: .55, outline: .55, outlineK: .5, wallK: [.6, .32], satinCoat: .35,
+  slotGap: 2.2, slotLip: 1.2, slotWall: 2.4 };
+/* the parts that are metal (polished, reflecting the studio) and the one that is satin (rubber: a thin coat) */
+const OBJ_METAL_ROLES = { brass: 1, steel: 1 }, OBJ_SATIN_ROLES = { rubber: 1 };
 const OBJ_PIN_GEOM = {};
-/* The pin's form, once per chapter: its height (units) and normal at OBJ_PIN.geoW across the badge's frame, and the silhouette's signed
-   distance (units, negative inside). */
-function objPinGeometry(face, unitName){
-  const key = String(unitName) + "|" + face.d.length;
+/* The pin's form, once per chapter and resolution: its height (units) and normal at GW across the badge's frame (256, 512 or 768, chosen
+   by the caller from the size it is drawn at, so a big pin's bevel is as sharp as a small one's), and the silhouette's signed distance
+   (units, negative inside). */
+function objPinGeometry(face, unitName, GWin, back){
+  const GW = GWin || 256, key = String(unitName) + "|" + face.d.length + "|" + GW + (back ? "|back" : "");
   if(OBJ_PIN_GEOM[key]) return OBJ_PIN_GEOM[key];
   const P = OBJ_PIN, S = BADGE_GEOM.scale, cx = face.c[0], cy = face.c[1];
   const vb = badgeViewBoxFor(face.d).split(/\s+/).map(Number), vx = vb[0], vy = vb[1], vw = vb[2];
-  const GW = P.geoW, pxPerF = GW / vw, k = pxPerF * S, N = GW * GW;
-  const setT = g => { g.setTransform(pxPerF, 0, 0, pxPerF, -vx * pxPerF, -vy * pxPerF); g.translate(cx, cy); g.scale(S, S); g.translate(-cx, -cy); };
+  const pxPerF = GW / vw, k = pxPerF * S, N = GW * GW;
+  /* (384.67) the back: the same outline seen from behind - mirrored about the frame's middle, as the struck back is - so a flip shows
+     the front's outline, the same size */
+  const setT = g => { if(back) g.setTransform(-pxPerF, 0, 0, pxPerF, GW + vx * pxPerF, -vy * pxPerF); else g.setTransform(pxPerF, 0, 0, pxPerF, -vx * pxPerF, -vy * pxPerF);
+    g.translate(cx, cy); g.scale(S, S); g.translate(-cx, -cy); };
   const sil = new Path2D(face.d);
   const cov = badgeCoverage(GW, g => { setT(g); g.fillStyle = "#000"; g.fill(sil); });
   const sdPx = badgeSignedDistance(cov, GW), SD = new Float32Array(N), H = new Float32Array(N);
@@ -77870,7 +77716,7 @@ function objPinGeometry(face, unitName){
     if(d <= 0) continue;
     H[i] = P.top * bev(d / P.bevel) + P.domeK * (d >= P.domeR ? 1 : (d / P.domeR) * (2 - d / P.domeR));
   }
-  chapterObjPlates(unitName).forEach(pl => {
+  (back ? [] : chapterObjPlates(unitName)).forEach(pl => {
     if(!pl.z && !pl.dome && !pl.gem && !pl.cut) return;
     const pth = new Path2D(pl.d);
     const c2 = badgeCoverage(GW, g => { setT(g); g.save(); g.clip(sil); g.fillStyle = g.strokeStyle = "#000";
@@ -77890,7 +77736,7 @@ function objPinGeometry(face, unitName){
       const i = gy * GW + gx, d = -sdSub[yy * w + xx] / k; if(d <= 0 || SD[i] >= 0) continue;
       let h = 0;
       if(pl.z) h += pl.z * bev(d / pl.bev);
-      if(pl.dome) h += pl.dome * Math.sqrt(Math.min(1, d / maxD));
+      if(pl.dome){ const t = 1 - Math.min(1, d / maxD); h += pl.dome * Math.sqrt(1 - t * t); }
       if(pl.gem) h += pl.gem * Math.min(1, d / pl.gw);
       if(pl.cut) h -= pl.cut * Math.min(1, d / maxD);
       H[i] += h;
@@ -77906,27 +77752,64 @@ function objPinGeometry(face, unitName){
     NX[i] = -gx * l; NY[i] = -gy * l; NZ[i] = l;
   }
   const keys = Object.keys(OBJ_PIN_GEOM); if(keys.length > 16) delete OBJ_PIN_GEOM[keys[0]];
-  return (OBJ_PIN_GEOM[key] = { NX, NY, NZ, SD, H: Hs, vx, vy, vw, cx, cy, S, W: GW, k });
+  return (OBJ_PIN_GEOM[key] = { NX, NY, NZ, SD, H: Hs, vx, vy, vw, cx, cy, S, W: GW, k, back: !!back });
 }
-/* One pin, W device pixels across its frame, as a canvas: the contact shadow, the side wall, the lit face. */
+/* What each pixel of the face is made of, W x W in the same frame as the colour map: red = metal (brass, steel), green = satin (rubber),
+   neither = enamel. Painted in the same order as the colour map, so a part's material is wherever its colour is. */
+function chapterObjMaterialMap(face, g, W, unitName){
+  const pl = chapterObjPlates(unitName);
+  if(!pl.some(q => q.paint && (OBJ_METAL_ROLES[q.r] || OBJ_SATIN_ROLES[q.r]))) return null;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
+  const o = cv.getContext("2d", { willReadFrequently: true });
+  const pxPerF = W / g.vw, sil = new Path2D(face.d), b = (chapterObjFor(unitName) || {}).base;
+  const paint = r => OBJ_METAL_ROLES[r] ? "#FF0000" : OBJ_SATIN_ROLES[r] ? "#00FF00" : "#000000";
+  o.setTransform(pxPerF, 0, 0, pxPerF, -g.vx * pxPerF, -g.vy * pxPerF);
+  o.translate(g.cx, g.cy); o.scale(g.S, g.S); o.translate(-g.cx, -g.cy);
+  o.fillStyle = paint(b); o.fill(sil);
+  o.save(); o.clip(sil);
+  pl.forEach(q => { if(!q.paint) return; const P2 = new Path2D(q.d), c = paint(q.r);
+    if(q.ln){ o.strokeStyle = c; o.lineWidth = q.ln; o.lineJoin = "round"; o.lineCap = "round"; o.stroke(P2); } else { o.fillStyle = c; o.fill(P2); } });
+  o.restore();
+  return o.getImageData(0, 0, W, W).data;
+}
+/* The exact device-pixel size a badge is rendered at for a displayed size px (CSS px times the pixel ratio): a pin at exactly that, so its
+   bitmap is never scaled (round 4: "super crisp and hd"); every other badge as before (badgeStrikeSize's steps of 4, and the caller's cap). */
+function badgeRenderW(px, unitName, cap){
+  if(unitName && chapterObjShape(unitName)) return Math.max(16, Math.min(1400, Math.round(px)));
+  const w = badgeStrikeSize(px);
+  return cap ? Math.min(cap, w) : w;
+}
+/* One pin, Wout device pixels across its frame, as a canvas: the contact shadow, the side wall, the face lit as the old badges are lit. */
 function renderObjPin(unitName, grey, Wout, ssForce, face){
-  const P = OBJ_PIN, g = objPinGeometry(face, unitName), Lt = badgeLightTables(), TOL = Lt.TO_LIN, ENC = Lt.ENC;
+  const P = OBJ_PIN, SP = BADGE_STRIKE, DK = BADGE_DIRT;
+  const g = objPinGeometry(face, unitName, Wout <= 200 ? 256 : Wout <= 420 ? 512 : 768);
+  const Lt = badgeLightTables(), TOL = Lt.TO_LIN, ENC = Lt.ENC, LN = BADGE_LIGHT_N, LN1 = LN - 1;
+  const EE = Lt.E, SPT = Lt.SP, SPE = Lt.SPE, DIF = Lt.DIF, FR = Lt.FR;
   const SS = ssForce || 2, W = Wout * SS, N = W * W, GW = g.W, GM = GW - 1, sc = GW / W;
   const pxPerF = W / g.vw, kW = pxPerF * g.S;
   const setT = c => { c.setTransform(pxPerF, 0, 0, pxPerF, -g.vx * pxPerF, -g.vy * pxPerF); c.translate(g.cx, g.cy); c.scale(g.S, g.S); c.translate(-g.cx, -g.cy); };
   const sil = new Path2D(face.d);
   const cov = badgeCoverage(W, c => { setT(c); c.fillStyle = "#000"; c.fill(sil); });
   let CM = null; try{ CM = chapterObjColourMap(face, g, W, unitName, grey); }catch(e){ CM = null; }
+  let MM = null; try{ MM = chapterObjMaterialMap(face, g, W, unitName); }catch(e){ MM = null; }
   const pal = chapterObjPalette(unitName, grey), base = badgeHexRgb(pal[(chapterObjFor(unitName) || {}).base] || pal.field).map(v => TOL[v]);
   const alb = new Float32Array(N * 3);
   for(let i = 0; i < N; i++){ const j = i * 4, o = i * 3;
     if(CM && CM[j + 3] > 0){ alb[o] = TOL[CM[j]]; alb[o + 1] = TOL[CM[j + 1]]; alb[o + 2] = TOL[CM[j + 2]]; }
     else { alb[o] = base[0]; alb[o + 1] = base[1]; alb[o + 2] = base[2]; } }
-  /* the light: one, top-left, a little in front - and the half vector for the specular */
-  const L = [-.52, -.66, .9], Ll = Math.hypot(L[0], L[1], L[2]); L[0] /= Ll; L[1] /= Ll; L[2] /= Ll;
-  const Hh = [L[0], L[1], L[2] + 1], Hl = Math.hypot(Hh[0], Hh[1], Hh[2]); Hh[0] /= Hl; Hh[1] /= Hl; Hh[2] /= Hl;
-  const edgeB = CHAPTER_OBJ_EDGE === "B";
-  const metal = [.62, .64, .67];
+  /* THE OLD BADGE'S LIGHT (renderBadgeStrike's): the light's direction in the plane, the enamel's polished ramp, its clear coat */
+  const l = Lt.l, ll = Math.sqrt(l[0] * l[0] + l[1] * l[1]), ldx = l[0] / ll, ldy = l[1] / ll;
+  const RAMP = SP.enRamp, RL = RAMP.length - 1, EM = SP.enMetal, ED = SP.enDiff, CK = SP.coatK;
+  /* ...and the wear every found badge wears (BADGE_DIRT stage 0: a fine grain, a soft film); a grey token wears none */
+  const WEAR = !grey, dSeed = WEAR ? (parseInt(hashOf(String(unitName)), 36) >>> 0) : 0, NT = badgeNoiseTable();
+  const gOx = (dSeed & 255) * .71, gOy = ((dSeed >>> 8) & 255) * .43, kO = kW / SS, pcxO = (g.cx - g.vx) * pxPerF / SS, pcyO = (g.cy - g.vy) * pxPerF / SS;
+  const gF = Math.max(0, Math.min(1, (kO - 1.6) / 2.2)), pcxS = (g.cx - g.vx) * pxPerF, pcyS = (g.cy - g.vy) * pxPerF;
+  const W_GLOSS = DK.gloss[0], W_FLAT = DK.flat[0], W_TARN = DK.tarnish[0], W_COAT = DK.coat[0], W_DIM = DK.dim[0], W_FILM = DK.film[0], W_FILME = DK.filmE[0], W_GRAIN = DK.grain[0], W_GRAINE = DK.grainE[0];
+  const WSM = new Float32Array(Wout), WGR = new Float32Array(Wout);
+  let wRow = -1;
+  const wearRow = oy => { wRow = oy; const ty = (oy + .5 - pcyO) / kO;
+    for(let ox = 0; ox < Wout; ox++){ const tx = (ox + .5 - pcxO) / kO; WSM[ox] = badgeSmudge(dSeed, tx, ty);
+      WGR[ox] = (badgeNoiseAt(NT, tx * 1.3 + gOx, ty * 1.3 + gOy) - .5) * 1.4 + (gF > 0 ? gF * (badgeNoiseAt(NT, ty * 4.4 + gOy + 57.1, tx * 4.4 + gOx + 13.3) - .5) * 1.8 : 0); } };
   /* the side wall: for each pixel off the face, the first face pixel up-left along the wall direction within its depth */
   const dx = P.wallDir[0], dy = P.wallDir[1], D = Math.max(1, Math.round(P.wall * kW));
   const wallT = new Float32Array(N), wallSrc = new Int32Array(N).fill(-1);
@@ -77939,12 +77822,13 @@ function renderObjPin(unitName, grey, Wout, ssForce, face){
     }
   }
   /* the contact shadow: the silhouette with its wall, moved down-right and softened */
-  const shc = new Float32Array(N), ox = Math.round(P.shadow[0] * kW), oy = Math.round(P.shadow[1] * kW);
-  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ const sx = x - ox, sy = y - oy; if(sx < 0 || sy < 0 || sx >= W || sy >= W) continue;
+  const shc = new Float32Array(N), ox0 = Math.round(P.shadow[0] * kW), oy0 = Math.round(P.shadow[1] * kW);
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ const sx = x - ox0, sy = y - oy0; if(sx < 0 || sy < 0 || sx >= W || sy >= W) continue;
     const q = sy * W + sx; shc[y * W + x] = Math.max(cov[q], wallSrc[q] >= 0 ? 1 : 0); }
   const r = Math.max(1, Math.round(P.shadowBlur * kW / 2)), shb = badgeBoxBlur(badgeBoxBlur(shc, W, r), W, r);
   const AR = new Float32Array(N), AG = new Float32Array(N), AB = new Float32Array(N), AA = new Float32Array(N);
   for(let y = 0; y < W; y++){
+    if(WEAR && ((y / SS) | 0) !== wRow) wearRow((y / SS) | 0);
     let fy = (y + .5) * sc - .5; if(fy < 0) fy = 0; if(fy > GM) fy = GM;
     const iy = fy | 0, ay = fy - iy, iy1 = iy < GM ? iy + 1 : iy;
     for(let x = 0; x < W; x++){
@@ -77955,9 +77839,7 @@ function renderObjPin(unitName, grey, Wout, ssForce, face){
       if(ws >= 0){
         const t = wallT[i], k0 = P.wallK[0] + (P.wallK[1] - P.wallK[0]) * t, o = ws * 3;
         ur = alb[o] * k0; ug = alb[o + 1] * k0; ub = alb[o + 2] * k0; ua = 1;
-      } else {
-        const sa = shb[i] * P.shadowA; ua = sa;
-      }
+      } else ua = shb[i] * P.shadowA;
       if(a > 0){
         let fx = (x + .5) * sc - .5; if(fx < 0) fx = 0; if(fx > GM) fx = GM;
         const ix = fx | 0, ax = fx - ix, ix1 = ix < GM ? ix + 1 : ix;
@@ -77966,25 +77848,48 @@ function renderObjPin(unitName, grey, Wout, ssForce, face){
         let nx = g.NX[i00] * w00 + g.NX[i01] * w01 + g.NX[i10] * w10 + g.NX[i11] * w11;
         let ny = g.NY[i00] * w00 + g.NY[i01] * w01 + g.NY[i10] * w10 + g.NY[i11] * w11;
         let nz = g.NZ[i00] * w00 + g.NZ[i01] * w01 + g.NZ[i10] * w10 + g.NZ[i11] * w11;
-        const nl = 1 / Math.sqrt(nx * nx + ny * ny + nz * nz); nx *= nl; ny *= nl; nz *= nl;
-        const sd = g.SD[i00] * w00 + g.SD[i01] * w01 + g.SD[i10] * w10 + g.SD[i11] * w11, din = -sd;
-        let dif = (nx * L[0] + ny * L[1] + nz * L[2]) / L[2]; if(dif < 0) dif = 0; if(dif > 1.45) dif = 1.45;
-        const sh = P.amb + (1 - P.amb) * dif;
-        const nh = Math.max(0, nx * Hh[0] + ny * Hh[1] + nz * Hh[2]);
-        let sp = Math.pow(nh, P.specP) * P.spec + Math.pow(nh, 6) * P.sheen;
-        const o = i * 3;
+        /* the struck token's own dome over the whole face (BADGE_STRIKE.enDome a token unit from the pin's centre - more for enamel than
+           for metal, as there): the sweep of light giving way to shade across a face that makes it read as glossy, not as flat paint */
+        { const iz = 1 / (nz > .05 ? nz : .05), dmT = (MM && MM[i * 4] > 127) ? SP.dome : SP.enDome;
+          const sx = -nx * iz - (x - pcxS) / kW * dmT, sy = -ny * iz - (y - pcyS) / kW * dmT, q = 1 / Math.sqrt(sx * sx + sy * sy + 1);
+          nx = -sx * q; ny = -sy * q; nz = q; }
+        const din = -(g.SD[i00] * w00 + g.SD[i01] * w01 + g.SD[i10] * w10 + g.SD[i11] * w11);
+        /* the studio, read by this point's normal (bilinear, as the struck token reads it) */
+        const lfx = (nx + 1) * .5 * LN1, lfy = (ny + 1) * .5 * LN1, lix = lfx | 0, liy = lfy | 0, lax = lfx - lix, lay = lfy - liy;
+        const li = lix + liy * LN, li1 = li + (lix < LN1 ? 1 : 0), li2 = li + (liy < LN1 ? LN : 0), li3 = li2 + (lix < LN1 ? 1 : 0);
+        const v0 = (1 - lax) * (1 - lay), v1 = lax * (1 - lay), v2 = (1 - lax) * lay, v3 = lax * lay;
+        const ev = EE[li] * v0 + EE[li1] * v1 + EE[li2] * v2 + EE[li3] * v3;
+        const spk = SPT[li] * v0 + SPT[li1] * v1 + SPT[li2] * v2 + SPT[li3] * v3;
+        const spe = SPE[li] * v0 + SPE[li1] * v1 + SPE[li2] * v2 + SPE[li3] * v3;
+        const dfl = DIF[li] * v0 + DIF[li1] * v1 + DIF[li2] * v2 + DIF[li3] * v3;
+        const frs = FR[li] * v0 + FR[li1] * v1 + FR[li2] * v2 + FR[li3] * v3;
+        const ox = (x / SS) | 0, sm = WEAR ? WSM[ox] : 0, gr = WEAR ? WGR[ox] : 0;
+        const o = i * 3, j4 = i * 4;
         let cr = alb[o], cg = alb[o + 1], cb = alb[o + 2];
-        if(edgeB && din < P.hair){
-          /* EDGE B: a hairline of polished metal, lit by the same normals but brighter in its specular */
-          const m = din < P.hair - .35 ? 1 : (P.hair - din) / .35;
-          cr = cr * (1 - m) + metal[0] * m; cg = cg * (1 - m) + metal[1] * m; cb = cb * (1 - m) + metal[2] * m; sp *= 1 + 1.6 * m;
-        } else if(!edgeB && din < P.outline + .35){
-          /* EDGE A: the pin's own colour, darker, as a fine line where the face turns down into its wall */
-          const m = din < P.outline ? 1 : (P.outline + .35 - din) / .35, f = 1 - (1 - P.outlineK) * m;
-          cr *= f; cg *= f; cb *= f;
+        const metal = MM ? MM[j4] / 255 : 0, satin = MM ? MM[j4 + 1] / 255 : 0;
+        /* ENAMEL: its tilt through the polished ramp, a little of its flat colour, the clear coat (the studio in it, Fresnel at the slopes) */
+        let tt = .5 - (nx * ldx + ny * ldy) / (2 * SP.enTilt); tt = tt < 0 ? 0 : tt > 1 ? 1 : tt;
+        const rq = tt * RL, r0 = rq | 0, r1 = r0 < RL ? r0 + 1 : r0, rf = rq - r0, rs = rf * rf * (3 - 2 * rf);
+        let dd = (.6 + .4 * dfl) * ED + (RAMP[r0] * (1 - rs) + RAMP[r1] * rs) * EM;
+        let cc = ((SP.coat + .6 * frs) * ev + .45 * spe) * CK * (1 - (1 - P.satinCoat) * satin);
+        if(WEAR){ const cl = W_COAT + DK.coatSm * sm; cc *= (cl >= .97 ? .03 : 1 - cl) * (1 + 1.6 * W_GRAINE * gr); if(cc < 0) cc = 0; dd *= (1 - W_DIM) * (1 + W_GRAINE * gr); }
+        let er = cr * dd + cc, eg = cg * dd + cc, eb = cb * dd + cc;
+        if(WEAR){ const fq = W_FILME * sm; er = er * (1 - fq) + DK.fc[0] * fq; eg = eg * (1 - fq) + DK.fc[1] * fq; eb = eb * (1 - fq) + DK.fc[2] * fq; }
+        if(metal > 0){
+          /* METAL: the studio itself, tinted by the part's own colour (normalised, so brass is warm and steel is cool), and the sharp
+             specular, as the silver of a struck token */
+          const mx = Math.max(cr, cg, cb, 1e-4), tr = cr / mx, tg = cg / mx, tb = cb / mx;
+          let mm = ev * .95, sp = spk;
+          if(WEAR){ const gl = W_GLOSS + DK.glossSm * sm; sp *= (gl >= .97 ? .03 : 1 - gl) * (1 + 2.2 * W_GRAIN * gr); if(sp < 0) sp = 0;
+            mm = (mm * (1 - W_FLAT) + DK.flatTo * W_FLAT) * (1 + W_GRAIN * gr); }
+          let mr = mm * tr + sp * (.55 + .45 * tr), mg = mm * tg + sp * (.55 + .45 * tg), mb = mm * tb + sp * (.55 + .45 * tb);
+          if(WEAR){ const T = DK.tint, fq = W_FILM * sm; mr *= 1 + (T[0] - 1) * W_TARN; mg *= 1 + (T[1] - 1) * W_TARN; mb *= 1 + (T[2] - 1) * W_TARN;
+            mr = mr * (1 - fq) + DK.fc[0] * fq; mg = mg * (1 - fq) + DK.fc[1] * fq; mb = mb * (1 - fq) + DK.fc[2] * fq; }
+          er = er * (1 - metal) + mr * metal; eg = eg * (1 - metal) + mg * metal; eb = eb * (1 - metal) + mb * metal;
         }
-        const fr = cr * sh + sp, fg = cg * sh + sp, fb = cb * sh + sp;
-        AR[i] = fr * a + ur * (1 - a); AG[i] = fg * a + ug * (1 - a); AB[i] = fb * a + ub * (1 - a); AA[i] = a + ua * (1 - a);
+        /* THE EDGE: the pin's own colour, darker, as a fine line where the face turns down into its wall */
+        if(din < P.outline + .35){ const m = din < P.outline ? 1 : (P.outline + .35 - din) / .35, f = 1 - (1 - P.outlineK) * m; er *= f; eg *= f; eb *= f; }
+        AR[i] = er * a + ur * (1 - a); AG[i] = eg * a + ug * (1 - a); AB[i] = eb * a + ub * (1 - a); AA[i] = a + ua * (1 - a);
       } else { AR[i] = ur; AG[i] = ug; AB[i] = ub; AA[i] = ua; }
     }
   }
@@ -78005,6 +77910,189 @@ function renderObjPin(unitName, grey, Wout, ssForce, face){
   }
   ctx.putImageData(img, 0, 0);
   return cv;
+}
+/* The back's silhouette distance (units, negative inside) at W across the frame, from the back's geometry (already mirrored). */
+function objPinBackField(g, W){
+  const D = new Float32Array(W * W), GW = g.W, GM = GW - 1, sc = GW / W, SD = g.SD;
+  for(let y = 0; y < W; y++){
+    let fy = (y + .5) * sc - .5; if(fy < 0) fy = 0; if(fy > GM) fy = GM;
+    const iy = fy | 0, ay = fy - iy, iy1 = iy < GM ? iy + 1 : iy;
+    for(let x = 0; x < W; x++){
+      let fx = (x + .5) * sc - .5; if(fx < 0) fx = 0; if(fx > GM) fx = GM;
+      const ix = fx | 0, ax = fx - ix, ix1 = ix < GM ? ix + 1 : ix;
+      D[y * W + x] = SD[iy * GW + ix] * (1 - ax) * (1 - ay) + SD[iy * GW + ix1] * ax * (1 - ay) + SD[iy1 * GW + ix] * (1 - ax) * ay + SD[iy1 * GW + ix1] * ax * ay;
+    }
+  }
+  return D;
+}
+/* THE BACK OF A PIN (384.67). Madison: "Yes, match the back." The struck back was the old badge's: a bigger token with a polished rim
+   6.5 units outside the outline, so a flip showed a back larger than the pin and a different shape. Now it is the pin from behind: the
+   SAME silhouette (mirrored, as any object's back is), the same bevel and dome, the same side wall and contact shadow and the same fine
+   dark edge, all in the old badges' polished silver lit by the same studio - with the title cut into it exactly as the struck back cuts
+   its words (badgeBackPlan on the pin's own field, the cut's walls lit, its catch-light, its blackened floor; the field inside the bevel
+   brushed satin, as the struck back's field is, so the words read). Wout device pixels across the frame, as the front. */
+function renderObjPinBack(unitName, Wout, ssForce){
+  const P = OBJ_PIN, SP = BADGE_STRIKE, DK = BADGE_DIRT, R = BADGE_BACK_RELIEF;
+  const face = badgeFaceShapeFor(unitName);
+  const g = objPinGeometry(face, unitName, Wout <= 200 ? 256 : Wout <= 420 ? 512 : 768, true);
+  const Lt = badgeLightTables(), TOL = Lt.TO_LIN, ENC = Lt.ENC, LN = BADGE_LIGHT_N, LN1 = LN - 1, EE = Lt.E, SPT = Lt.SP;
+  const SS = ssForce || 2, W = Wout * SS, N = W * W, GW = g.W, GM = GW - 1, sc = GW / W;
+  const pxPerF = W / g.vw, kW = pxPerF * g.S, kO = kW / SS;
+  const setT = c => { c.setTransform(-pxPerF, 0, 0, pxPerF, W + g.vx * pxPerF, -g.vy * pxPerF); c.translate(g.cx, g.cy); c.scale(g.S, g.S); c.translate(-g.cx, -g.cy); };
+  const sil = new Path2D(face.d);
+  const cov = badgeCoverage(W, c => { setT(c); c.fillStyle = "#000"; c.fill(sil); });
+  const pcx = W - (g.cx - g.vx) * pxPerF, pcy = (g.cy - g.vy) * pxPerF, pcxO = pcx / SS, pcyO = pcy / SS;
+  /* the back plate is metal through: its side wall is the same silver, darker down its depth, as the front's wall is its own colour
+     (a wall in the front's enamel read as a coloured shadow under a silver back) */
+  const tint = [.92, .955, 1], wc = tint.map(v => v * .55);
+  /* the words: the struck back's cut (build 326), on the pin's own field */
+  const M0 = badgeBackLayout(unitName, g, Wout), SDm = badgeEDT(M0, Wout);
+  const cutPx = Math.max(.9, R.cut * kO);
+  const HW = badgeMaxFilter(SDm, Wout, Math.min(12, Math.ceil(cutPx * 2.5) + 1));
+  const MB0 = new Float32Array(Wout * Wout);
+  for(let i = 0; i < MB0.length; i++){ const sd = SDm[i]; if(sd <= 0){ MB0[i] = 0; continue; }
+    const cw = Math.max(.6, Math.min(cutPx, HW[i] * R.cutK)); const t = sd / cw;
+    MB0[i] = t >= 1 ? 1 : (t - (t > .8 ? (t - .8) * (t - .8) / .4 : 0)) / .9; }
+  const MB = badgeBoxBlur(MB0, Wout, 1), WM = Wout - 1;
+  const mAt = (x, y) => { x = x < 0 ? 0 : x > WM ? WM : x; y = y < 0 ? 0 : y > WM ? WM : y;
+    const xi = x | 0, yi = y | 0, ax = x - xi, ay = y - yi, x1 = xi < WM ? xi + 1 : xi, y1 = yi < WM ? yi + 1 : yi;
+    return MB[yi * Wout + xi] * (1 - ax) * (1 - ay) + MB[yi * Wout + x1] * ax * (1 - ay) + MB[y1 * Wout + xi] * (1 - ax) * ay + MB[y1 * Wout + x1] * ax * ay; };
+  const l = Lt.l, ll = Math.sqrt(l[0] * l[0] + l[1] * l[1]), ldx = l[0] / ll, ldy = l[1] / ll;
+  const dSeed = (parseInt(hashOf(String(unitName)), 36) >>> 0) || 7, NT = badgeNoiseTable(), gOx = (dSeed & 255) * .71, gOy = ((dSeed >>> 8) & 255) * .43;
+  /* stage 0, as the front: the fine grain and the soft film every found badge wears */
+  const W_GLOSS = DK.gloss[0], W_FLAT = DK.flat[0], W_TARN = DK.tarnish[0], W_GRIME = DK.grime[0], W_FILM = DK.film[0], W_GRAIN = DK.grain[0];
+  const shOff = R.shadowU * kO, depth = R.depth;
+  const RCV = new Float32Array(Wout), RTM = new Float32Array(Wout), RMK = new Float32Array(Wout), RDX = new Float32Array(Wout), RDY = new Float32Array(Wout), RSH = new Float32Array(Wout),
+        RSM = new Float32Array(Wout), RGR = new Float32Array(Wout), RBR = new Float32Array(Wout);
+  let row = -1;
+  const fillRow = oy => {
+    row = oy;
+    const ty = (oy + .5 - pcyO) / kO;
+    for(let ox = 0; ox < Wout; ox++){
+      const tx = (ox + .5 - pcxO) / kO, mk = MB[oy * Wout + ox], cv = M0[oy * Wout + ox];
+      RMK[ox] = mk; RCV[ox] = cv; RDX[ox] = 0; RDY[ox] = 0; RSH[ox] = 0; RTM[ox] = 0;
+      if(cv > .002 || mk > .002){
+        RDX[ox] = -depth * (mAt(ox + 1, oy) - mAt(ox - 1, oy)) * .5 * kO;
+        RDY[ox] = -depth * (mAt(ox, oy + 1) - mAt(ox, oy - 1)) * .5 * kO;
+        RSH[ox] = Math.max(0, mk - mAt(ox + ldx * shOff, oy + ldy * shOff));
+        const ru = tx * .8 + ty * .6, rv = -tx * .6 + ty * .8;
+        RTM[ox] = (badgeNoiseAt(NT, ru * .35 + gOx, rv * 6.5 + gOy) - .5) * 2;
+      }
+      RSM[ox] = badgeSmudge(dSeed ^ 0x9e3779b9, tx, ty);
+      RGR[ox] = (badgeNoiseAt(NT, tx * 1.3 + gOx, ty * 1.3 + gOy) - .5) * 1.4;
+      RBR[ox] = (badgeNoiseAt(NT, tx * .22 + gOx, ty * 7.5 + gOy) - .5) + .6 * (badgeNoiseAt(NT, tx * .5 + gOy + 40.2, ty * 15 + gOx + 9.7) - .5);
+    }
+  };
+  /* the side wall and the contact shadow, exactly as the front's (the light is the same top-left light: the wall is down-right here too) */
+  const dx = P.wallDir[0], dy = P.wallDir[1], D = Math.max(1, Math.round(P.wall * kW));
+  const wallT = new Float32Array(N), wallOn = new Uint8Array(N);
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){
+    const i = y * W + x; if(cov[i] >= .999) continue;
+    for(let t = 1; t <= D; t++){
+      const qx = Math.round(x - dx * t), qy = Math.round(y - dy * t);
+      if(qx < 0 || qy < 0 || qx >= W || qy >= W) break;
+      if(cov[qy * W + qx] > .5){ wallT[i] = t / D; wallOn[i] = 1; break; }
+    }
+  }
+  const shc = new Float32Array(N), ox0 = Math.round(P.shadow[0] * kW), oy0 = Math.round(P.shadow[1] * kW);
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ const sx = x - ox0, sy = y - oy0; if(sx < 0 || sy < 0 || sx >= W || sy >= W) continue;
+    const q = sy * W + sx; shc[y * W + x] = Math.max(cov[q], wallOn[q]); }
+  const rb = Math.max(1, Math.round(P.shadowBlur * kW / 2)), shb = badgeBoxBlur(badgeBoxBlur(shc, W, rb), W, rb);
+  const AR = new Float32Array(N), AG = new Float32Array(N), AB = new Float32Array(N), AA = new Float32Array(N);
+  const pcxS = pcx, pcyS = pcy, dmT = SP.dome;
+  for(let y = 0; y < W; y++){
+    if(((y / SS) | 0) !== row) fillRow((y / SS) | 0);
+    let fy = (y + .5) * sc - .5; if(fy < 0) fy = 0; if(fy > GM) fy = GM;
+    const iy = fy | 0, ay = fy - iy, iy1 = iy < GM ? iy + 1 : iy;
+    for(let x = 0; x < W; x++){
+      const i = y * W + x, a = cov[i];
+      let ur = 0, ug = 0, ub = 0, ua = 0;
+      if(wallOn[i]){ const k0 = P.wallK[0] + (P.wallK[1] - P.wallK[0]) * wallT[i]; ur = wc[0] * k0; ug = wc[1] * k0; ub = wc[2] * k0; ua = 1; }
+      else ua = shb[i] * P.shadowA;
+      if(a <= 0){ AR[i] = ur; AG[i] = ug; AB[i] = ub; AA[i] = ua; continue; }
+      let fx = (x + .5) * sc - .5; if(fx < 0) fx = 0; if(fx > GM) fx = GM;
+      const ix = fx | 0, ax = fx - ix, ix1 = ix < GM ? ix + 1 : ix;
+      const i00 = iy * GW + ix, i01 = iy * GW + ix1, i10 = iy1 * GW + ix, i11 = iy1 * GW + ix1;
+      const w00 = (1 - ax) * (1 - ay), w01 = ax * (1 - ay), w10 = (1 - ax) * ay, w11 = ax * ay;
+      const nx0 = g.NX[i00] * w00 + g.NX[i01] * w01 + g.NX[i10] * w10 + g.NX[i11] * w11;
+      const ny0 = g.NY[i00] * w00 + g.NY[i01] * w01 + g.NY[i10] * w10 + g.NY[i11] * w11;
+      const nz0 = g.NZ[i00] * w00 + g.NZ[i01] * w01 + g.NZ[i10] * w10 + g.NZ[i11] * w11;
+      const din = -(g.SD[i00] * w00 + g.SD[i01] * w01 + g.SD[i10] * w10 + g.SD[i11] * w11);
+      const ox = (x / SS) | 0, field = din > P.bevel;
+      /* the slopes: the pin's form, the cut, and the struck token's dome over the whole back */
+      const iz = 1 / (nz0 > .05 ? nz0 : .05);
+      let sx = -nx0 * iz - (x - pcxS) / kW * dmT, sy = -ny0 * iz - (y - pcyS) / kW * dmT;
+      let mk = 0, sh = 0, cv = 0, tm = 0;
+      if(din > P.bevel * .5){ mk = RMK[ox]; cv = RCV[ox];
+        if(mk > .002 || cv > .002){ sx += RDX[ox] * SP.relief; sy += RDY[ox] * SP.relief; sh = RSH[ox]; tm = RTM[ox]; } }
+      const q = 1 / Math.sqrt(sx * sx + sy * sy + 1), nx = -sx * q, ny = -sy * q;
+      const lx = (nx + 1) * .5 * LN1, ly = (ny + 1) * .5 * LN1, jx = lx | 0, jy = ly | 0, bx = lx - jx, by = ly - jy;
+      const li = jx + jy * LN, li1 = li + (jx < LN1 ? 1 : 0), li2 = li + (jy < LN1 ? LN : 0), li3 = li2 + (jx < LN1 ? 1 : 0);
+      const q0 = (1 - bx) * (1 - by), q1 = bx * (1 - by), q2 = (1 - bx) * by, q3 = bx * by;
+      const ev = EE[li] * q0 + EE[li1] * q1 + EE[li2] * q2 + EE[li3] * q3;
+      let sp = SPT[li] * q0 + SPT[li1] * q1 + SPT[li2] * q2 + SPT[li3] * q3;
+      let mm = ev * .95;
+      const gr = RGR[ox];
+      if(field){
+        /* inside the bevel: brushed satin, eased in from the bevel's foot, as the struck back's field (the words read on it) */
+        const br = RBR[ox];
+        mm *= 1 + R.brush * br * 2; sp *= 1 + .9 * br;
+        const ff = R.fieldFlat * Math.min(1, (din - P.bevel) / 1.6) * Math.max(0, 1 - cv * 5);
+        mm = mm * (1 - ff) + R.fieldLevel * ff; sp *= 1 - ff * .45;
+      }
+      if(mk > 0){ const fl = mk * mk; mm *= (1 - (1 - R.floor) * fl) * (1 + R.toolK * tm * fl); sp *= 1 - (1 - R.floorSp) * fl; }
+      if(sh > 0){ const qq = Math.min(1, sh * R.shadowK); mm *= 1 - qq; sp *= 1 - qq; }
+      if(cv > .02 && mk < .55){ const rx = RDX[ox], ry = RDY[ox], rl = Math.sqrt(rx * rx + ry * ry);
+        if(rl > 1e-4){ const f = -(rx * ldx + ry * ldy) / rl; if(f > 0) sp += R.lipK * f * f * (1 - mk / .55) * Math.min(1, cv * 2); } }
+      const ink = mk * mk * mk, sm = RSM[ox];
+      const gl = W_GLOSS + DK.glossSm * sm;
+      sp *= (gl >= .97 ? .03 : 1 - gl) * (1 + 2.2 * W_GRAIN * gr); if(sp < 0) sp = 0;
+      const fk = field ? R.fieldDirt : 1;
+      mm = (mm * (1 - W_FLAT * fk) + DK.flatTo * W_FLAT * fk) * (1 + W_GRAIN * gr);
+      let mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mbb = mm * tint[2] + sp;
+      const T = DK.tint, fq = W_FILM * sm * fk, gq = W_GRIME * mk * .7;
+      mr *= 1 + (T[0] - 1) * W_TARN; mg *= 1 + (T[1] - 1) * W_TARN; mbb *= 1 + (T[2] - 1) * W_TARN;
+      mr = mr * (1 - fq) + DK.fc[0] * fq; mg = mg * (1 - fq) + DK.fc[1] * fq; mbb = mbb * (1 - fq) + DK.fc[2] * fq;
+      mr = mr * (1 - gq) + DK.gc[0] * gq; mg = mg * (1 - gq) + DK.gc[1] * gq; mbb = mbb * (1 - gq) + DK.gc[2] * gq;
+      if(ink > 0){ const iq = ink * R.inkK; mr = mr * (1 - iq) + R.ink[0] * .06 * iq; mg = mg * (1 - iq) + R.ink[1] * .06 * iq; mbb = mbb * (1 - iq) + R.ink[2] * .06 * iq; }
+      /* the edge: the same fine darker line as the front's */
+      if(din < P.outline + .35){ const m = din < P.outline ? 1 : (P.outline + .35 - din) / .35, f = 1 - (1 - P.outlineK) * m; mr *= f; mg *= f; mbb *= f; }
+      AR[i] = mr * a + ur * (1 - a); AG[i] = mg * a + ug * (1 - a); AB[i] = mbb * a + ub * (1 - a); AA[i] = a + ua * (1 - a);
+    }
+  }
+  const cvs = document.createElement("canvas"); cvs.width = Wout; cvs.height = Wout;
+  const ctx = cvs.getContext("2d"), img = ctx.createImageData(Wout, Wout), od = img.data, inv = 1 / (SS * SS);
+  for(let y = 0; y < Wout; y++) for(let x = 0; x < Wout; x++){
+    let rr = 0, gg = 0, bb = 0, aa = 0;
+    for(let v = 0; v < SS; v++){ const rw = (y * SS + v) * W + x * SS;
+      for(let u = 0; u < SS; u++){ const qd = rw + u, al = AA[qd]; if(al <= 0) continue; rr += AR[qd]; gg += AG[qd]; bb += AB[qd]; aa += al; } }
+    if(aa <= 0) continue;
+    const Rr = rr / aa, Gc = gg / aa, B = bb / aa, j = (y * Wout + x) * 4;
+    od[j] = ENC[Rr <= 0 ? 0 : Rr >= 1 ? 4096 : (Rr * 4096) | 0];
+    od[j + 1] = ENC[Gc <= 0 ? 0 : Gc >= 1 ? 4096 : (Gc * 4096) | 0];
+    od[j + 2] = ENC[B <= 0 ? 0 : B >= 1 ? 4096 : (B * 4096) | 0];
+    od[j + 3] = (255 * aa * inv + .5) | 0;
+  }
+  ctx.putImageData(img, 0, 0);
+  return cvs;
+}
+/* The back of a pin drawn flat, only if the render cannot run: the same outline mirrored, silver, its dark edge, its words. */
+function objPinBackFlatURL(unitName, W){
+  const face = badgeFaceShapeFor(unitName), S = BADGE_GEOM.scale, cx = face.c[0], cy = face.c[1];
+  const vb = badgeViewBoxFor(face.d).split(/\s+/).map(Number), f = W / vb[2];
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
+  const g = cv.getContext("2d"), path = new Path2D(face.d);
+  g.setTransform(-f, 0, 0, f, W + vb[0] * f, -vb[1] * f); g.translate(cx, cy); g.scale(S, S); g.translate(-cx, -cy);
+  const b = badgeBBoxFor(face.d) || { x: 6, y: 6, w: 88, h: 88 };
+  const gr = g.createLinearGradient(b.x + b.w, b.y, b.x, b.y + b.h);
+  [[0, "#E4E9EE"], [.45, "#AEB6BF"], [1, "#78818B"]].forEach(([o, c]) => gr.addColorStop(o, c));
+  g.fillStyle = gr; g.fill(path);
+  g.save(); g.clip(path); g.lineJoin = "round"; g.strokeStyle = "rgba(20,24,30,.55)"; g.lineWidth = 2 * OBJ_PIN.outline; g.stroke(path); g.restore();
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const plan = badgeBackPlan(unitName), lip = Math.max(1, W * .004);
+  g.save(); g.translate(0, lip); badgeBackDrawPlan(g, plan, W, "rgba(255,255,255,.55)"); g.restore();
+  badgeBackDrawPlan(g, plan, W, "rgba(26,30,36,.92)");
+  return cv.toDataURL("image/png");
 }
 /* A pin as buildUnitBadgeSVG draws it (its slot, its token, its glisten), in the same frame as every other badge, so every place a badge
    appears takes it with no change. earned true: the pin in its recess; false: the recess alone, cut to the object's outline; "grey": the
@@ -78484,6 +78572,15 @@ function badgeDefaultPx(){
   }catch(e){ return BADGE_STRIKE_PX; }
 }
 function badgeDpr(){ return Math.min(3, Math.max(1, window.devicePixelRatio || 1)); }
+/* (384.67) when the pixel ratio changes, every pin on screen is measured again and re-rendered at the new one */
+(function watchBadgeDpr(){
+  try{
+    if(!window.matchMedia) return;
+    const mq = window.matchMedia("(resolution: " + (window.devicePixelRatio || 1) + "dppx)");
+    const on = () => { try{ document.querySelectorAll("image.badge-raster").forEach(im => { if(im.__strike && im.__strike.pin){ im.__strike.tries = 0; badgeStrikeWatch(im); } }); }catch(e){} watchBadgeDpr(); };
+    if(mq.addEventListener) mq.addEventListener("change", on, { once: true }); else if(mq.addListener) mq.addListener(on);
+  }catch(e){}
+})();
 /* Rendered at the size it is shown at, to 4 device pixels: a render
    scaled down by the browser turns a polished edge's one-pixel highlight
    into a dotted line. */
@@ -79051,7 +79148,8 @@ function badgeStrikeEntry(unitName, grey, W, draft, dirt){
   const key = String(unitName) + (grey ? "|g" : "|c") + (dz ? "|d" + dz : "");
   const list = BADGE_STRIKE_CACHE[key] || (BADGE_STRIKE_CACHE[key] = []);
   let best = null;
-  list.forEach(e => { if(e.W >= W && e.W <= W * 1.08 && (draft || !e.draft) && (!best || (best.draft && !e.draft) || (best.draft === e.draft && e.W < best.W))) best = e; });
+  const exact = !!chapterObjShape(unitName);   /* (384.67) a pin is never drawn from a bigger bitmap: exactly its size */
+  list.forEach(e => { if((exact ? e.W === W : e.W >= W && e.W <= W * 1.08) && (draft || !e.draft) && (!best || (best.draft && !e.draft) || (best.draft === e.draft && e.W < best.W))) best = e; });
   if(best) return best;
   try{
     const url = renderBadgeStrike(unitName, grey, W, draft ? 1 : 0, dz).toDataURL("image/png");
@@ -79107,8 +79205,8 @@ function badgeStrikeUpgrade(){
     const w = svg && svg.isConnected ? svg.getBoundingClientRect().width : 0;
     if(!w){ if(st.tries > 40) BADGE_STRIKE_WATCH.delete(im); return; }
     BADGE_STRIKE_WATCH.delete(im);
-    const need = badgeStrikeSize(w * dpr);
-    if(need > st.W || need < st.W * .92) todo.push([im, need]);
+    const need = badgeRenderW(w * dpr, st.unit);
+    if(st.pin ? need !== st.W : (need > st.W || need < st.W * .92)) todo.push([im, need]);
   });
   const t0 = performance.now();
   todo.forEach(([im, need]) => {
@@ -79120,7 +79218,7 @@ function badgeStrikeUpgrade(){
 }
 /* The token as an <image> for buildUnitBadgeSVG, or null. */
 function badgeStrikeImage(unitName, grey, opts){
-  const W = badgeStrikeSize((opts.px || badgeDefaultPx()) * badgeDpr());
+  const W = badgeRenderW((opts.px || badgeDefaultPx()) * badgeDpr(), unitName);
   const dirt = grey ? 0 : (opts.dirt | 0);
   const e = badgeStrikeEntry(unitName, grey, W, true, dirt);
   if(!e) return null;
@@ -79130,10 +79228,10 @@ function badgeStrikeImage(unitName, grey, opts){
   im.setAttribute("preserveAspectRatio", "none");
   /* what the enamel was rendered in (none for grey: no unit colour
      reaches a badge not yet earned) */
-  if(!grey) im.setAttribute("data-enamel", String(badgeThemeFor(unitName).p));
+  if(!grey) im.setAttribute("data-enamel", String(chapterObjShape(unitName) ? chapterObjMain(unitName) : badgeThemeFor(unitName).p));
   /* how dirty it was drawn (build 320, b320g): 0 clean to 4 */
   im.setAttribute("data-dirt", String(dirt));
-  im.__strike = { unit: unitName, grey, W, tries: 0, draft: e.draft, dirt };
+  im.__strike = { unit: unitName, grey, W, tries: 0, draft: e.draft, dirt, pin: !!chapterObjShape(unitName) };
   if(e.draft) badgeStrikeFinish(im);
   if(!opts.px) badgeStrikeWatch(im);
   return im;
@@ -79148,14 +79246,13 @@ function warmBadgeStrikes(){
     /* nobody signed in has no badges to show yet (327v) */
     if(!store || !store.onboardingComplete){ setTimeout(warmBadgeStrikes, 15000); return; }
     const units = unitsInTeachingOrder();
-    const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
     const jobs = [];
     /* a unit's geometry, its render and - a found badge's - where the words go on its back (build 325, so the back's first
        render in your hand does not pay for it), one after another (384: so a geometry the cache has let go of - Fire Code
        has 58 - is never made twice in one warm-up) */
     units.forEach(u => {
       jobs.push(() => badgeStrikeGeometry(badgeFaceShapeFor(u)));
-      jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W, badgeDirtStage(u)));
+      jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), badgeRenderW(badgeDefaultPx() * badgeDpr(), u), badgeDirtStage(u)));
       if(unitBadgeEarned(u)) jobs.push(() => badgeBackPlan(u));
     });
     const ric = f => quietIdle(f, 3000);
@@ -105171,11 +105268,11 @@ function novaWarmProps(o){
   const jobs = [];
   /* badges first: they are on the stage before the crew */
   try{
-    const have = badgesEarnedList(), W = badgeStrikeSize(novaBadgePx() * badgeDpr());
+    const have = badgesEarnedList();
     classTopics().forEach(u => {
       const got = have.indexOf(u) >= 0;
       /* the finished strike, the expensive part, a job of its own */
-      if(got) jobs.push(() => { let d = 0; try{ d = badgeDirtStage(u); }catch(e){} badgeStrikeURL(u, false, W, d); });
+      if(got) jobs.push(() => { let d = 0; try{ d = badgeDirtStage(u); }catch(e){} badgeStrikeURL(u, false, badgeRenderW(novaBadgePx() * badgeDpr(), u), d); });
       jobs.push(() => novaWarmCache.set("badge:" + u, novaBadgeTile(u, got)));
     });
   }catch(e){}
@@ -116204,7 +116301,7 @@ function cardBadgeSVG(name, earned){
     key = name + "|" + String(earned) + "|" + dirt + "|" + badgeDpr() + "|" + Math.round(badgeDefaultPx()) + "|noslot";
     /* which token render a found badge would carry right now (a draft until its finish exists) */
     if(earned === true){
-      const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
+      const W = badgeRenderW(badgeDefaultPx() * badgeDpr(), name);
       const e = badgeStrikeEntry(name, false, W, true, dirt);
       key += "|" + (e ? (e.draft ? "d" : "f") + e.W : "x");
     }
@@ -123413,7 +123510,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.66";
+const APP_BUILD = "2026-11-12-384.67";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -130760,7 +130857,7 @@ function badgeEdgeURL(unitName, tone, stage){
     else if(lift > 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#fff"); r.setAttribute("opacity", ((lift - 1) * .6).toFixed(3)); grp.appendChild(r); }
     if(st > 0){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#8A6A3E"); r.setAttribute("opacity", (.045 * st).toFixed(3)); grp.appendChild(r); }
     /* (384.66) a pin's side is its own enamel, darker, not silver */
-    if(shape.obj){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", badgeShade(badgeThemeFor(unitName).p, -.3)); r.setAttribute("opacity", ".72"); grp.appendChild(r); }
+    if(shape.obj){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", badgeShade(chapterObjMain(unitName), -.3)); r.setAttribute("opacity", ".72"); grp.appendChild(r); }
     svg.appendChild(grp);
   } else {
     p.setAttribute("fill", "#8E98A3"); p.setAttribute("stroke", "#8E98A3");
@@ -130775,7 +130872,7 @@ function badgeCoinFaceURL(unitName){
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
   const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
-  return badgeStrikeURL(unitName, false, badgeStrikeSize(css * badgeDpr())) ||
+  return badgeStrikeURL(unitName, false, badgeRenderW(css * badgeDpr(), unitName)) ||
     badgeImageURL(buildUnitBadgeSVG(unitName, true, { slot: false, fine: true, vector: true }));
 }
 /* A SEATED BADGE IS RENDERED FOR THE OPEN CASE (build 318). The slots
@@ -130824,6 +130921,14 @@ function badgeCoinBackPx(){
   const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
   return Math.min(864, badgeStrikeSize(css * badgeDpr()));
 }
+/* (384.67) the coin's back at the size of its front: a pin's exactly (its front is), every other badge's as before */
+function badgeCoinBackW(unitName){
+  if(!chapterObjShape(unitName)) return badgeCoinBackPx();
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+  const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
+  return badgeRenderW(css * badgeDpr(), unitName);
+}
 /* build 380: THE PICTURES ARE DECODED BEFORE THE BADGE COMES UP. "The badge unlock cutscene is good but when the badge comes up it lags
    like it not shiny for a second or something and then is." The coin is ~22 images (its faces, its side's slices) and its shine is drawn
    through a mask (the silhouette, an SVG) - all data: URLs, which the browser decodes after they are put in the page, so the coin's first
@@ -130849,9 +130954,8 @@ function warmBadgeCoinFaces(units){
     /* ...and its side's five tones (build 326: each a small lit image) - and the very slices buildBadgeCoin puts on, decoded */
     (units || []).slice(0, 4).forEach(u => ric(() => { try{ for(let t = 0; t <= 4; t++) badgeEdgeURL(u, t / 4, 0); for(let i = 0; i < BC_EDGE_LAYERS; i++) bcPredecode(badgeEdgeURL(u, Math.sin(Math.PI * i / (BC_EDGE_LAYERS - 1)), 0)); }catch(e){} }));
     /* ...and its back (build 321: rendered like the front, about as dear) */
-    (units || []).slice(0, 4).forEach(u => ric(() => { try{ bcPredecode(badgeBackFaceURL(u, badgeCoinBackPx(), 0)); }catch(e){} }));
-    const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
-    unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, W, badgeDirtStage(u)); }catch(e){} }));
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ bcPredecode(badgeBackFaceURL(u, badgeCoinBackW(u), 0)); }catch(e){} }));
+    unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, badgeRenderW(badgeCaseSlotPx() * badgeDpr(), u), badgeDirtStage(u)); }catch(e){} }));
   }catch(e){}
 }
 /* The token: .bc-coin (its pop in) > .bc-sway (its sway at rest, its tilt
@@ -130880,7 +130984,7 @@ function buildBadgeCoin(unitName){
     const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
     /* build 321: the back is a render now - the one warmed in idle time
        (warmBadgeCoinFaces), or its quick draft, never the finish here */
-    if(typeof badgeBackFaceURL === "function") backSrc = badgeBackFaceURL(unitName, Math.min(864, badgeStrikeSize(css * badgeDpr())), 0, true);
+    if(typeof badgeBackFaceURL === "function") backSrc = badgeBackFaceURL(unitName, chapterObjShape(unitName) ? badgeCoinBackW(unitName) : Math.min(864, badgeStrikeSize(css * badgeDpr())), 0, true);
   }catch(e){ backSrc = null; }
   const face = side => {
     const real = side === "is-back" && !!backSrc;
@@ -158217,8 +158321,10 @@ function badgeBackField(g, W){
 function badgeBackPlan(unitName){
   const key = String(unitName);
   if(BADGE_BACK_PLAN[key]) return BADGE_BACK_PLAN[key];
-  const R = BADGE_BACK_RELIEF, shape = badgeShapeFor(unitName), g = badgeStrikeGeometry(shape);
-  const WR = R.planW, D = badgeBackField(g, WR), u = WR / g.vw * g.S, thr = -(R.rimIn + R.margin);
+  const R = BADGE_BACK_RELIEF, shape = badgeShapeFor(unitName), pin = !!chapterObjShape(unitName);
+  /* (384.67) a pin's back has no rim: its field is the silhouette itself (mirrored), from the foot of its bevel in */
+  const g = pin ? objPinGeometry(badgeFaceShapeFor(unitName), unitName, 256, true) : badgeStrikeGeometry(shape);
+  const WR = R.planW, D = pin ? objPinBackField(g, WR) : badgeBackField(g, WR), u = WR / g.vw * g.S, thr = -((pin ? OBJ_PIN.bevel : R.rimIn) + R.margin);
   const toPx = (fx, fy) => [WR - (fx - g.vx) * WR / g.vw, (fy - g.vy) * WR / g.vw];
   const b = badgeBBoxFor(shape.d) || { x: 6, y: 6, w: 88, h: 88 };
   const [mx, my] = toPx(g.cx + g.S * (b.x + b.w / 2 - g.cx), g.cy + g.S * (b.y + b.h / 2 - g.cy));
@@ -158507,6 +158613,7 @@ function badgeBackLayout(unitName, g, Wout){
   return M;
 }
 function renderBadgeBack(unitName, Wout, ssForce, dirt){
+  if(chapterObjShape(unitName)) return renderObjPinBack(unitName, Wout, ssForce);
   const P = BADGE_STRIKE, G = BADGE_GEOM, DK = BADGE_DIRT, R = BADGE_BACK_RELIEF;
   const ST = Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0));
   const dSeed = (parseInt(hashOf(String(unitName)), 36) >>> 0) || 7;
@@ -158709,7 +158816,8 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
 /* The back at a size and stage, cached: a one-sample draft (draft) or the
    supersampled finish. */
 function badgeBackEntry(unitName, W, dirt, draft){
-  const dz = Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)), key = unitName + "|" + W + "|" + dz;
+  /* (384.67) a pin's back wears what its front wears (stage 0) at every stage: one render, not five */
+  const dz = chapterObjShape(unitName) ? 0 : Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)), key = unitName + "|" + W + "|" + dz;
   const e = BADGE_BACK_CACHE[key];
   if(e && (draft || !e.draft)) return e;
   try{
@@ -158725,6 +158833,7 @@ function badgeBackFaceURL(unitName, W, dirt, draft){
 }
 /* build 320's back, drawn flat: only if the render above cannot run */
 function badgeBackFaceFlatURL(unitName, W){
+  if(chapterObjShape(unitName)) return objPinBackFlatURL(unitName, W);
   const shape = badgeShapeFor(unitName), d = shape.d, G = BADGE_GEOM, S = G.scale, cx = shape.c[0], cy = shape.c[1];
   const vb = badgeViewBoxFor(d).split(/\s+/).map(Number), f = W / vb[2];
   const b = badgeBBoxFor(d) || { x: 6, y: 6, w: 88, h: 88 };
@@ -158785,7 +158894,7 @@ function badgeInspectPrewarm(unit){
     const probe = document.createElement("div"); probe.className = "binspect"; probe.style.visibility = "hidden"; probe.style.pointerEvents = "none";
     const f = document.createElement("div"); f.className = "binspect-float"; probe.appendChild(f); document.body.appendChild(probe);
     const size = Math.max(60, f.getBoundingClientRect().width || 280); probe.remove();
-    badgeStrikeEntry(unit, false, Math.min(864, badgeStrikeSize(size * badgeDpr())), true, badgeDirtStage(unit));
+    badgeStrikeEntry(unit, false, badgeRenderW(size * badgeDpr(), unit, 864), true, badgeDirtStage(unit));
   }catch(e){}
 }
 /* What is open now, for the gates and the recorder. */
@@ -158803,6 +158912,14 @@ function binspectW(){
   const size = Math.max(60, fl.getBoundingClientRect().width || 280); ov.remove();
   return Math.min(864, badgeStrikeSize(size * badgeDpr()));
 }
+/* (384.67) the in-hand face size for a pin: the float's width times the pixel ratio, exactly */
+function binspectPinW(){
+  const ov = document.createElement("div"); ov.className = "binspect"; ov.style.visibility = "hidden"; ov.style.pointerEvents = "none";
+  const st = document.createElement("div"); st.className = "binspect-stage"; const fl = document.createElement("div"); fl.className = "binspect-float";
+  st.appendChild(fl); ov.appendChild(st); document.body.appendChild(ov);
+  const size = Math.max(60, fl.getBoundingClientRect().width || 280); ov.remove();
+  return Math.max(16, Math.min(1400, Math.round(size * badgeDpr())));
+}
 var binspectWarmT = 0, binspectWarmJobs = [];
 function binspectWarmSoon(){
   clearTimeout(binspectWarmT); binspectWarmJobs = [];
@@ -158810,8 +158927,8 @@ function binspectWarmSoon(){
     let W = 0; try{ W = binspectW(); }catch(e){ return; }
     let units = []; try{ units = unitsInTeachingOrder().filter(u => unitBadgeEarned(u)); }catch(e){}
     units.forEach(u => {
-      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, W, false, d); });
-      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeBackEntry(u, W, d, false); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, chapterObjShape(u) ? binspectPinW() : W, false, d); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeBackEntry(u, chapterObjShape(u) ? binspectPinW() : W, d, false); });
       binspectWarmJobs.push(() => { const d = badgeDirtStage(u); for(let i = 0; i < BINSPECT.edges; i++) badgeEdgeURL(u, Math.sin(Math.PI * i / (BINSPECT.edges - 1)), d); });
     });
     const step = () => {
@@ -158867,7 +158984,9 @@ function openBadgeInspect(unit, tile){
      costs ~W*W samples, and past that a phone pays for pixels it barely
      shows */
   const W = Math.min(864, badgeStrikeSize(size * dpr));
-  const faceEntry = (s, draft) => badgeStrikeEntry(unit, false, W, draft, s);
+  /* (384.67) a pin's face at exactly its size (up to 1400): never a scaled bitmap in your hand */
+  const WF = badgeRenderW(size * dpr, unit, 864);
+  const faceEntry = (s, draft) => badgeStrikeEntry(unit, false, WF, draft, s);
   /* a face already rendered, without rendering one */
   const peekFace = s => { let best = null;
     (BADGE_STRIKE_CACHE[String(unit) + "|c" + (s ? "|d" + s : "")] || []).forEach(e => {
@@ -159023,7 +159142,7 @@ function openBadgeInspect(unit, tile){
   const ensureBack = draft => {
     if(!backImg || closed) return;
     try{
-      const e = badgeBackEntry(unit, W, dirt, draft);
+      const e = badgeBackEntry(unit, chapterObjShape(unit) ? WF : W, dirt, draft);
       if(backImg.getAttribute("src") !== e.url) backImg.src = e.url;
       backAt = dirt; backFinal = !e.draft;
     }catch(err){}

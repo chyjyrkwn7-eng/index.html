@@ -18,6 +18,14 @@ never draws its subject. Played in Chromium (the Fire Code class and the academy
      enamel (what is left inside the rim) at least 12% of it (the plates have room), the silhouette is not a plain rounded box, and no two
      chapters' silhouettes overlap 0.85 or more as 48px shapes (an authored chapter against every other chapter's outline too: the
      shape tells chapters apart, not only the colour);
+ (4d) ROUND 4 (384.67, Madison: "Do the badges with no rim. Now, our old badge look, the reflective look was near perfect, we need that now
+     ... super crisp and hd"): one edge style (no setChapterObjEdge / CHAPTER_OBJ_EDGE / OBJ_PIN.hair: this FAILS on round 3, 1032ba6); the old
+     badge's reflective finish (an enamel clear-coat highlight and a polished range on every metal part, measured); and every pin rendered at
+     exactly its CSS size times the pixel ratio, given a px or measured in a box (round 3 rounded to steps of 4: fails at 43px). Edge B's
+     hairline check is retired with edge B.
+     (384.67, after the part helpers' round) THE RENDER TIME IS A RATIO: the median of each pin render's ratio (5 cold, 7 warm) to an academy struck token
+     rendered right after it, in the same moment (PERF_WARM_X, PERF_COLD_X) - absolute milliseconds swung 10-415ms with the machine's
+     load and failed every helper. Options `col` (a plate's own colour) and an entry's `col` (the object's main colour) are allowed, as #RRGGBB.
  (4c) ROUND 3 (384.66, Madison: "We may just have to go away with the silver border entirely or make it thin ... these badges have risen
      effect, that nice 3d effect ... Make this great"): a chapter is a RAISED PIN. Checked: the API (renderObjPin, setChapterObjEdge,
      objPinGeometry: a round-2 build has none, so this gate FAILS there); no part thinner than two bevels (opened by a 2.4 disc, at most 3% lost);
@@ -31,9 +39,14 @@ never draws its subject. Played in Chromium (the Fire Code class and the academy
      inside a part (round 1's flame, bulb and handle-glint stickers); a hole at least 22 across. It FAILS on round 1 (be5d880) for the sprinkler, the
      can, the truck, the cylinder and the stickers: `--against` that build's index.html.
  (5) THE BACK: the title still fits the silhouette (badgeBackPlan, at least the plan's own floor of 0.026 of the frame), the smallest
-     reported;
- (6) 58 DISTINCT ENAMELS and every authored chapter's plates draw in its own enamel's family (the struck token's colour of an authored
-     chapter is nearer its own enamel than any other chapter's);
+     reported. (384.67, Madison: "Yes, match the back") THE BACK MATCHES THE PIN: its silhouette is the front's, mirrored (IoU of the two
+     geometries at least BACK_IOU_MIN), its rendered token is the front's size (opaque box within BACK_BOX_PX device pixels at 132; the struck
+     back of round 3/4, 6.5 units of rim larger all round, is ~18px bigger and FAILS), its bevel is polished metal (luminance range at least
+     BACK_RANGE_MIN), and on the cutscene coin the back is drawn at the same device pixels as the front;
+ (6) NO TWINS (384.67, Madison: "make the color of stuff relevant, you don't need to keep the old colors"): an object takes its natural
+     colours, so the per-chapter enamel families and "58 distinct enamels" are retired; instead no two chapters may have BOTH a near-identical
+     silhouette (IoU at least TWIN_IOU as 48px shapes) AND a near-identical main colour (CIELAB distance under TWIN_DE; an authored
+     chapter's main colour is the commonest colour of its painted face, any other chapter's is its enamel);
  (7) ONE PAGE, ALL 58 x 3 drawings: no id twice, every url(#..) resolves; every authored chapter's enamel share (what the rim leaves) is
      checked in (4);
  (8) NOTHING ELSE MOVED: every chapter with no object entry draws byte for byte what the previous build (384.63, the picture-in-an-outline;
@@ -53,7 +66,13 @@ sys.argv = saved
 from playwright.sync_api import sync_playwright
 ok = True
 # ROUND 3 (384.66, pins): the thresholds were read off the eight on this build; see the notes ("384.66") for each measured value
-THIN_MAX, MIN_HOLE, WALL_MIN, BEVEL_MIN, RELIEF_MIN, HAIR_MAX, PERF_WARM_MS, PERF_COLD_MS = 0.03, 5, 0.02, 18, 7, 2.6, 80, 400
+THIN_MAX, MIN_HOLE, WALL_MIN, BEVEL_MIN, RELIEF_MIN = 0.03, 5, 0.02, 18, 7
+# 384.67: the render time as a ratio to an academy struck token rendered in the same moment (medians, interleaved)
+PERF_WARM_X, PERF_COLD_X = 2.0, 6.0
+# ROUND 4 (384.67): the old badge's reflective finish on every pin, and exact device-pixel renders
+ENAMEL_SPEC_MIN, METAL_RANGE_MIN = 28, 90
+# 384.67: the back matches the pin; twins are a silhouette AND a colour alike
+BACK_IOU_MIN, BACK_BOX_PX, BACK_RANGE_MIN, TWIN_IOU, TWIN_DE = 0.985, 2, 60, 0.70, 18
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:900], flush=True)
 def base_body():
@@ -71,7 +90,7 @@ SNAP = """async (skip) => { %s const out = {}; const norm = s => s.replace(/bdg\
               H(norm(buildUnitBadgeSVG(u, 'grey', { vector: true }).outerHTML)), e ? H(e.url) : null, g ? H(g.url) : null]; }
   return out; }""" % HASH
 PROBE = r"""async () => {
-  const r = { cls: window.NOVA_CLASS, units: unitsInTeachingOrder(), hasApi: typeof CHAPTER_OBJ === 'object' && typeof chapterObjShape === 'function' && typeof chapterObjPalette === 'function' && typeof OBJ_circle === 'function' && typeof renderObjPin === 'function' && typeof setChapterObjEdge === 'function' && typeof objPinGeometry === 'function',
+  const r = { cls: window.NOVA_CLASS, units: unitsInTeachingOrder(), hasApi: typeof CHAPTER_OBJ === 'object' && typeof chapterObjShape === 'function' && typeof chapterObjPalette === 'function' && typeof OBJ_circle === 'function' && typeof renderObjPin === 'function' && typeof objPinGeometry === 'function' && typeof badgeRenderW === 'function' && typeof chapterObjMaterialMap === 'function',
               obj: [], bad: [], cap: typeof CHAPTER_OBJ_MAX_PLATES === 'number' ? CHAPTER_OBJ_MAX_PLATES : null };
   if(!r.hasApi) return r;
   for(const u of r.units){
@@ -105,7 +124,7 @@ USES = r"""async (u) => {
            vecObj: vec.querySelectorAll('.badge-chapter-obj').length, vecPaths: vec.querySelectorAll('.badge-chapter-obj path').length,
            raster: !!buildUnitBadgeSVG(u, true).querySelector('image.badge-raster'), greyHasObj: !!buildUnitBadgeSVG(u, 'grey', { vector: true }).querySelector('.badge-chapter-obj') }; }"""
 SPEC = r"""() => {
-  const out = [], ROLES = CHAPTER_OBJ_ROLES.slice(), OPTS = ['sh','e','ln','z','bev','dome','gem','gw','cut','paint'];
+  const out = [], ROLES = CHAPTER_OBJ_ROLES.slice(), OPTS = ['sh','e','ln','z','bev','dome','gem','gw','cut','paint','col'], HEX = /^#[0-9a-fA-F]{6}$/;
   const circleRe = (d) => { const bad = []; const re = /([MmLlHhVvCcQqAaZz])([^MmLlHhVvCcQqAaZz]*)/g; let m, cx = 0, cy = 0, sx = 0, sy = 0;
     while((m = re.exec(d))){ const c = m[1], n = (m[2].match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi) || []).map(Number);
       if(c === 'M'){ cx = n[0]; cy = n[1]; sx = cx; sy = cy; }
@@ -124,6 +143,7 @@ SPEC = r"""() => {
       if(/NaN|undefined/.test(e.d)) pr.push('NaN in d');
       circleRe(e.d).forEach(r => pr.push('single-arc circle r ' + r + ' in d'));
     }
+    if(e.col != null && !HEX.test(e.col)) pr.push('col is not #RRGGBB');
     const pl = Array.isArray(e.plates) ? e.plates : [];
     if(!pl.length) pr.push('no plates');
     if(pl.length > CHAPTER_OBJ_MAX_PLATES) pr.push(pl.length + ' plates, the renderer keeps ' + CHAPTER_OBJ_MAX_PLATES);
@@ -132,6 +152,7 @@ SPEC = r"""() => {
       if(ROLES.indexOf(q[0]) < 0 && q[0] !== 'ln') pr.push('plate ' + i + ' role ' + q[0]);
       if(q[0] === 'ln') pr.push('plate ' + i + ' has the role "ln": a line is a role with { ln: width }');
       Object.keys(q[2] || {}).forEach(k => { if(OPTS.indexOf(k) < 0) pr.push('plate ' + i + ' option ' + k); });
+      if(q[2] && q[2].col != null && !HEX.test(q[2].col)) pr.push('plate ' + i + ' col is not #RRGGBB');
       if(/url\(|id=|filter|transform|gradient|style/.test(q[1])) pr.push('plate ' + i + ' carries markup');
       if(/NaN|undefined/.test(q[1])) pr.push('plate ' + i + ' has NaN');
       circleRe(q[1]).forEach(r => pr.push('single-arc circle r ' + r + ' in plate ' + i));
@@ -160,6 +181,8 @@ GEOM = r"""async () => {
   return { rows, masks };
 }"""
 GEOM2 = r"""async () => {
+  /* the reference for the render time: an academy struck token (Penal Code), drawn by renderBadgeStrike in any class */
+  const REF_UNIT = 'Penal Code';
   /* ROUND 3 (384.66): a pin. Read off the page per authored chapter: the parts' thinness (the silhouette opened by a disc of the bevel's
      width), holes, a side wall down-right, a lit bevel (top-left brighter than bottom-right), relief that reads in plain grey, edge B a
      hairline only, accent stickers (a flat painted plate floating in a part), and the render time. */
@@ -195,8 +218,7 @@ GEOM2 = r"""async () => {
       if(n > 0 && !touch && n < .15 * area) floaters.push([i, q[0], Math.round(n / (SC * SC))]);
     });
     /* the pin, rendered in grey at the geometry's own resolution (one sample a pixel: the same frame as its fields) */
-    const g = objPinGeometry(face, u), GW = g.W;
-    setChapterObjEdge('A');
+    const g = objPinGeometry(face, u, 256), GW = g.W;
     const ga = renderObjPin(u, true, GW, 1, face).getContext('2d').getImageData(0, 0, GW, GW).data;
     let wallN = 0, wx = 0, wy = 0, faceN = 0, fx = 0, fy = 0, ul = 0, uln = 0, dr = 0, drn = 0, s1 = 0, s2 = 0, sn = 0;
     for(let yy = 1; yy < GW - 1; yy++) for(let xx = 1; xx < GW - 1; xx++){
@@ -208,20 +230,42 @@ GEOM2 = r"""async () => {
         if(sd < -(BEV + 1.5)){ const L = lum(ga, j); s1 += L; s2 += L * L; sn++; } } }
     const wallShare = wallN / Math.max(1, faceN), wallDx = wallN ? (wx / wallN - fx / faceN) / g.k : 0, wallDy = wallN ? (wy / wallN - fy / faceN) / g.k : 0;
     const bevel = (uln ? ul / uln : 0) - (drn ? dr / drn : 0), mean = sn ? s1 / sn : 0, relief = sn ? Math.sqrt(Math.max(0, s2 / sn - mean * mean)) : 0;
-    /* edge B against edge A: every pixel that differs lies within a hairline of the outline */
+    /* THE REFLECTIVE FINISH (round 4): on the enamel, the clear coat's highlight (its 99th percentile of luminance over its median, inside
+       the bevel); on the metal parts, a polished range (98th over 10th percentile) - the studio reflected, not a flat grey */
     const fa = renderObjPin(u, false, GW, 1, face).getContext('2d').getImageData(0, 0, GW, GW).data;
-    setChapterObjEdge('B');
-    const fb = renderObjPin(u, false, GW, 1, face).getContext('2d').getImageData(0, 0, GW, GW).data;
-    setChapterObjEdge('A');
-    let hairDepth = 0;
-    for(let i = 0; i < GW * GW; i++){ const j = i * 4; if(Math.abs(fa[j] - fb[j]) + Math.abs(fa[j + 1] - fb[j + 1]) + Math.abs(fa[j + 2] - fb[j + 2]) > 24 && g.SD[i] < 0) hairDepth = Math.max(hairDepth, -g.SD[i]); }
+    const mat = chapterObjMaterialMap(face, g, GW, u);
+    const en = [], me = [];
+    for(let i = 0; i < GW * GW; i++){ if(g.SD[i] >= -(BEV + .5)) continue; const j = i * 4, L = lum(fa, j); if(mat && mat[j] > 127) me.push(L); else en.push(L); }
+    const pct = (a, q) => { if(!a.length) return 0; const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(q * b.length))]; };
+    const enSpec = pct(en, .99) - pct(en, .5), metalRange = me.length > 40 ? pct(me, .98) - pct(me, .1) : null;
     /* the time one costs: a case-sized badge at 3x, its geometry cold and then warm */
-    for(const k in OBJ_PIN_GEOM) delete OBJ_PIN_GEOM[k];
-    const t0 = performance.now(); renderObjPin(u, false, 132, 0, face); const t1 = performance.now(); renderObjPin(u, false, 132, 0, face); const t2 = performance.now();
-    out.push({ u, thin: lost / Math.max(1, area), floaters, wallShare, wallDx, wallDy, bevel, relief, hairDepth, cold: t1 - t0, warm: t2 - t1,
+    /* the best of a few runs (this machine is shared: one slow run is the machine, not the pin) */
+    /* (384.67) MEASURE THE CODE, NOT THE MACHINE: on a loaded machine one render swung 10-415ms. Each pin render is timed next to a
+       REFERENCE render made in the same moment - the academy's struck token at the same size, the badge every phone already draws - and
+       the gate holds the MEDIAN OF THE PAIRWISE RATIOS (each pin render over the reference render right after it), so a busy spell slows
+       both halves of a pair alike and cancels. */
+    const med = a => { const b = a.slice().sort((x, y) => x - y); return b[b.length >> 1]; };
+    const ref = () => { const a = performance.now(); renderBadgeStrike(REF_UNIT, false, 132, 0, 0); return performance.now() - a; };
+    ref();
+    const PC = [], PW = [], RC = [], RW = [];
+    for(let rep = 0; rep < 5; rep++){ for(const k in OBJ_PIN_GEOM) delete OBJ_PIN_GEOM[k]; const a = performance.now(); renderObjPin(u, false, 132, 0, face); PC.push(performance.now() - a); RC.push(ref()); }
+    for(let rep = 0; rep < 7; rep++){ const a = performance.now(); renderObjPin(u, false, 132, 0, face); PW.push(performance.now() - a); RW.push(ref()); }
+    const cold = med(PC), warm = med(PW), refMs = med(RC.concat(RW)), coldX = med(PC.map((v, i) => v / RC[i])), warmX = med(PW.map((v, i) => v / RW[i]));
+    out.push({ u, thin: lost / Math.max(1, area), floaters, wallShare, wallDx, wallDy, bevel, relief, enSpec, metalRange, metalN: me.length, cold, warm, refMs, coldX, warmX,
                holes: (e.holes || []).map(h => { const pts = OBJ_walk(h, 12); const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); return Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)); }) });
   }
   return out;
+}"""
+SCALE = r"""async () => {
+  /* a pin drawn at a given CSS size (px), and one measured in a box (no px: the strike watch re-renders it at its real size) */
+  const u = Object.keys(CHAPTER_OBJ)[0], dpr = devicePixelRatio, rows = [];
+  [43, 26, 61, 97].forEach(px => { const s = buildUnitBadgeSVG(u, true, { px, dirt: 0 }), im = s.querySelector('image.badge-raster'); rows.push(['px', px, im ? im.__strike.W : -1, Math.round(px * dpr)]); });
+  const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:37px;height:37px'; document.body.appendChild(box);
+  const s2 = buildUnitBadgeSVG(u, true, { dirt: 0 }); s2.style.cssText = 'width:100%;height:100%;display:block'; box.appendChild(s2);
+  for(let i = 0; i < 40; i++){ await new Promise(r => setTimeout(r, 100)); const im = s2.querySelector('image.badge-raster'); if(im && im.__strike.W === Math.round(37 * dpr)) break; }
+  const im2 = s2.querySelector('image.badge-raster'); rows.push(['measured box', 37, im2 ? im2.__strike.W : -1, Math.round(37 * dpr)]);
+  box.remove();
+  return { dpr, rows };
 }"""
 ALLIDS = r"""() => {
   const box = document.createElement('div'); document.body.appendChild(box);
@@ -234,23 +278,46 @@ ALLIDS = r"""() => {
   ids.forEach(i => { if(seen[i]) dup.push(i); seen[i] = 1; });
   const refs = []; box.querySelectorAll('*').forEach(e => [...e.attributes].forEach(a => { const m = /url\(#([^)]+)\)/.exec(a.value); if(m) refs.push(m[1]); }));
   return { svgs: box.querySelectorAll('svg').length, ids: ids.length, dup: dup.slice(0, 5), dangling: refs.filter(r => !seen[r]).slice(0, 5), objIds: box.querySelectorAll('.badge-chapter-obj [id], .badge-chapter-obj[id]').length }; }"""
-FAMILY = r"""async () => {
-  /* the struck token's enamel colour (the mean of the plates' colours as painted, in the middle) against every chapter's own enamel */
-  const hex = h => badgeHexRgb(h), out = [];
-  const lab = ([r, g, b]) => { const f = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; const R = f(r), G = f(g), B = f(b);
-    const X = (R * .4124 + G * .3576 + B * .1805) / .95047, Y = R * .2126 + G * .7152 + B * .0722, Z = (R * .0193 + G * .1192 + B * .9505) / 1.08883;
-    const t = v => v > .008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116; return [116 * t(Y) - 16, 500 * (t(X) - t(Y)), 200 * (t(Y) - t(Z))]; };
-  const hue = ([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if(d < 18) return null; let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (h * 60 + 360) % 360; };
-  const all = unitsInTeachingOrder().map(u => ({ u, p: badgeThemeFor(u).p }));
+BACKS = r"""async () => {
+  const lum = (d, j) => .2126 * d[j] + .7152 * d[j + 1] + .0722 * d[j + 2];
+  const pct = (a, q) => { if(!a.length) return 0; const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(q * b.length))]; };
+  const box = c => { const W = c.width, d = c.getContext('2d').getImageData(0, 0, W, W).data; let x0 = W, y0 = W, x1 = -1, y1 = -1, n = 0;
+    for(let y = 0; y < W; y++) for(let x = 0; x < W; x++) if(d[(y * W + x) * 4 + 3] > 200){ n++; if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+    return { w: x1 - x0 + 1, h: y1 - y0 + 1, n, d }; };
+  const out = [];
   for(const u of Object.keys(CHAPTER_OBJ)){
-    const W = 96, d = renderBadgeStrike(u, false, W, 1, 0).getContext('2d').getImageData(0, 0, W, W).data;
-    /* the chromatic pixels of the token that are not silver (silver is neutral): their mean hue, circular */
-    let sx = 0, sy = 0, n = 0;
-    for(let i = 0; i < d.length; i += 4){ if(d[i + 3] < 250) continue; const h = hue([d[i], d[i + 1], d[i + 2]]); if(h == null) continue; sx += Math.cos(h * Math.PI / 180); sy += Math.sin(h * Math.PI / 180); n++; }
-    const own = hue(hex(badgeThemeFor(u).p));
-    out.push({ u, n, tokenHue: n ? (Math.atan2(sy, sx) * 180 / Math.PI + 360) % 360 : null, ownHue: own, own: badgeThemeFor(u).p });
+    const face = badgeFaceShapeFor(u), r = { u };
+    if(typeof objPinGeometry === 'function'){
+      const f = objPinGeometry(face, u, 256), b = objPinGeometry(face, u, 256, true), W = f.W;
+      let i = 0, un = 0; for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ const p = f.SD[y * W + x] < 0, q = b.SD[y * W + (W - 1 - x)] < 0; if(p && q) i++; if(p || q) un++; }
+      r.iou = i / Math.max(1, un);
+    } else r.iou = 0;
+    const F = box(renderBadgeStrike(u, false, 132, 1, 0)), B = box(renderBadgeBack(u, 132, 1, 0));
+    r.fw = F.w; r.fh = F.h; r.bw = B.w; r.bh = B.h; r.area = B.n / Math.max(1, F.n);
+    /* the back's bevel: polished, so the studio shows in it (98th over 10th percentile of luminance) */
+    const bg = typeof objPinGeometry === 'function' ? objPinGeometry(face, u, 256, true) : null, L = [];
+    if(bg){ const W = 132, sc = bg.W / W; for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ const sd = bg.SD[Math.floor((y + .5) * sc) * bg.W + Math.floor((x + .5) * sc)];
+      if(sd < -(OBJ_PIN.outline + .6) && sd > -OBJ_PIN.bevel && B.d[(y * W + x) * 4 + 3] > 250) L.push(lum(B.d, (y * W + x) * 4)); } }
+    r.range = L.length > 20 ? pct(L, .98) - pct(L, .1) : 0;
+    /* the cutscene coin: its back at the device pixels of its front */
+    try{ const c = buildBadgeCoin(u), fi = c.querySelector('.bc-face.is-front img'), bi = c.querySelector('.bc-face.is-back img');
+      const dim = src => new Promise(res => { const im = new Image(); im.onload = () => res(im.naturalWidth); im.onerror = () => res(-1); im.src = src; });
+      r.coin = [fi ? await dim(fi.src) : -1, bi ? await dim(bi.src) : -1]; }catch(e){ r.coin = [-1, -2, String(e)]; }
+    out.push(r);
   }
-  return { rows: out, enamels: all.map(a => a.p) }; }"""
+  return out; }"""
+MAINCOL = r"""async () => {
+  /* each chapter's main colour: an authored chapter's commonest painted colour (its colour map, quantised), any other's enamel */
+  const out = {};
+  unitsInTeachingOrder().forEach(u => {
+    if(!chapterObjShape(u)){ out[u] = badgeHexRgb(badgeThemeFor(u).p); return; }
+    const face = badgeFaceShapeFor(u), g = objPinGeometry(face, u, 64), d = chapterObjColourMap(face, g, 64, u, false);
+    const n = {}; let best = null;
+    if(d) for(let i = 0; i < d.length; i += 4){ if(d[i + 3] < 250) continue; const k = (d[i] >> 4) + ',' + (d[i + 1] >> 4) + ',' + (d[i + 2] >> 4);
+      const e = n[k] || (n[k] = [0, 0, 0, 0]); e[0]++; e[1] += d[i]; e[2] += d[i + 1]; e[3] += d[i + 2]; if(!best || e[0] > best[0]) best = e; }
+    out[u] = best ? [best[1] / best[0], best[2] / best[0], best[3] / best[0]] : badgeHexRgb(chapterObjMain(u));
+  });
+  return out; }"""
 def load(br, body=None, cls="ifc"):
     return R.open_page(br, port, R.SEED, 440, 956, 2, cls, body)
 def iou(a, b):
@@ -275,7 +342,7 @@ with sync_playwright() as pw:
             # not found) token is the pin's FORM with no colour (achromatic), the empty slot is its own outline
             chk("(2) %s: its parts colour the pin (%.0f a pixel), the empty slot is its own outline, no channels/icon on its face, vector group %d (%d paths) and no icon group, the grey token has no colour (spread %d) and no plates in its fallback"
                 % (u[:32], r["all"], r["vecObj"], r["vecPaths"], r["greyChroma"]),
-                r["all"] > 6 and r["sameD"] and r["face"] and r["noIcon"] and r["vecObj"] == 1 and r["vecPaths"] >= 3 and r["raster"] and not r["greyHasObj"] and r["greyChroma"] <= 24, r)   # the plain grey is a cool grey (#7F868E: spread 15); any part colour spreads 40+
+                r["all"] > 6 and r["sameD"] and r["face"] and r["noIcon"] and r["vecObj"] == 1 and r["vecPaths"] >= 3 and r["raster"] and not r["greyHasObj"] and r["greyChroma"] <= 32, r)   # the plain grey is a cool grey (#7F868E: spread 15) under a cool studio (up to ~26); any part colour spreads 40+
         sp = pg.evaluate(SPEC)
         badp = [(i["u"][:24], i["problems"]) for i in sp if i["problems"]]
         chk("(3) every authored chapter (%d) meets the spec: %s" % (len(sp), badp[:3] or "no problems"), len(sp) >= 8 and not badp, badp[:4])
@@ -285,8 +352,8 @@ with sync_playwright() as pw:
         bad = [(r["u"][:24], round(max(r["w"], r["h"]), 1), r["area"]) for r in rows if max(r["w"], r["h"]) < 80 or r["area"] < 2000 or not r["bbox"]]
         chk("(4) every silhouette fills its box (longest side at least 80 of 100, area at least 2000 of 10000, box measured by the merge): smallest area %s" % min([r["area"] for r in rows] or [0]), rows and not bad, bad[:4])
         g2 = pg.evaluate(GEOM2)
-        R3 = [(r["u"][:20], round(r["thin"], 3), round(r["wallShare"], 3), round(r["bevel"]), round(r["relief"], 1), round(r["hairDepth"], 2), round(r["warm"]), round(r["cold"])) for r in g2]
-        print("     measured (chapter, thin, wall share, bevel lum UL-DR, grey relief sd, edge-B depth, warm ms, cold ms):", R3, flush=True)
+        R3 = [(r["u"][:20], round(r["thin"], 3), round(r["wallShare"], 3), round(r["bevel"]), round(r["relief"], 1), round(r["enSpec"]), r["metalRange"] if r["metalRange"] is None else round(r["metalRange"]), round(r["warm"]), round(r["cold"]), round(r["refMs"]), round(r["warmX"], 2), round(r["coldX"], 2)) for r in g2]
+        print("     measured (chapter, thin, wall share, bevel lum UL-DR, grey relief sd, enamel highlight, metal range, warm ms, cold ms, reference ms, warm x, cold x):", R3, flush=True)
         thin = [(r["u"][:24], round(r["thin"], 3)) for r in g2 if r["thin"] > THIN_MAX]
         chk("(4) NO PART TOO THIN FOR ITS BEVEL (MIN_PART): opening each silhouette by a disc of the bevel's width (%.1f) loses at most %.0f%% of its area; the most is %s" % (2 * 2.4, THIN_MAX * 100, max([(round(r["thin"], 3), r["u"][:22]) for r in g2] or [(0, "")])), g2 and not thin, thin[:5])
         wall = [(r["u"][:24], round(r["wallShare"], 3), round(r["wallDx"], 1), round(r["wallDy"], 1)) for r in g2 if r["wallShare"] < WALL_MIN or r["wallDx"] <= 0 or r["wallDy"] <= 0]
@@ -295,14 +362,19 @@ with sync_playwright() as pw:
         chk("(4) A LIT BEVEL: in plain grey the bevel facing the top-left is at least %d levels brighter than the one facing the bottom-right: %s" % (BEVEL_MIN, bev[:3] or "all"), g2 and not bev, bev[:5])
         rel = [(r["u"][:24], round(r["relief"], 1)) for r in g2 if r["relief"] < RELIEF_MIN]
         chk("(4) THE SCULPTURE READS IN GREY: the face's luminance inside the bevel varies by at least %d levels (standard deviation; a flat pin has almost none): the least is %s" % (RELIEF_MIN, min([(round(r["relief"], 1), r["u"][:22]) for r in g2] or [(0, "")])), g2 and not rel, rel[:5])
-        hair = [(r["u"][:24], round(r["hairDepth"], 2)) for r in g2 if r["hairDepth"] > HAIR_MAX]
-        chk("(4) EDGE B IS A HAIRLINE: every pixel edge B changes lies within %.1f units of the outline (OBJ_PIN.hair %s): the deepest is %s" % (HAIR_MAX, 1.8, max([(round(r["hairDepth"], 2), r["u"][:22]) for r in g2] or [(0, "")])), g2 and not hair, hair[:5])
+        refl = [(r["u"][:24], round(r["enSpec"]), r["metalRange"]) for r in g2 if r["enSpec"] < ENAMEL_SPEC_MIN or (r["metalRange"] is not None and r["metalRange"] < METAL_RANGE_MIN)]
+        chk("(4) THE OLD BADGE'S REFLECTIVE FINISH: the enamel's clear-coat highlight at least %d levels over its median, and every metal part's polished range at least %d levels (98th over 10th percentile): %s" % (ENAMEL_SPEC_MIN, METAL_RANGE_MIN, refl[:3] or "all"), g2 and not refl, refl[:5])
+        ed = pg.evaluate("() => ({ noB: typeof setChapterObjEdge === 'undefined' && typeof CHAPTER_OBJ_EDGE === 'undefined' && typeof OBJ_PIN === 'object' && !('hair' in OBJ_PIN) })")
+        chk("(4) ONE EDGE STYLE: no edge B in the code (no setChapterObjEdge, no CHAPTER_OBJ_EDGE, no OBJ_PIN.hair)", ed["noB"], ed)
+        sc = pg.evaluate(SCALE)
+        bad_sc = [x for x in sc["rows"] if x[2] != x[3]]
+        chk("(4) CRISP: every pin is rendered at exactly its displayed size times the pixel ratio (%s): %s" % (sc["dpr"], bad_sc[:4] or [r[:4] for r in sc["rows"][:4]]), sc["rows"] and not bad_sc, bad_sc[:6])
         fl = [(r["u"][:24], r["floaters"]) for r in g2 if r["floaters"]]
         chk("(4) NO STICKERS: no flat painted plate floats inside a part (a raised, domed, faceted or cut part is sculpture, not a sticker): %s" % (fl[:3] or "none"), g2 and not fl, fl[:5])
         sm = [(r["u"][:24], r["holes"]) for r in g2 if any(h < MIN_HOLE for h in r["holes"])]
         chk("(4) a hole is at least %d across: %s" % (MIN_HOLE, sm[:3] or "none or all big enough"), not sm, sm[:5])
-        slow = [(r["u"][:24], round(r["warm"]), round(r["cold"])) for r in g2 if r["warm"] > PERF_WARM_MS or r["cold"] > PERF_COLD_MS]
-        chk("(4) PERF: a case-sized pin at 3x (132px) renders in at most %d ms with its geometry cached and %d ms cold (here, unthrottled): the slowest is %s" % (PERF_WARM_MS, PERF_COLD_MS, max([(round(r["warm"]), round(r["cold"]), r["u"][:22]) for r in g2] or [(0, 0, "")])), g2 and not slow, slow[:5])
+        slow = [(r["u"][:24], round(r["warmX"], 2), round(r["coldX"], 2)) for r in g2 if r["warmX"] > PERF_WARM_X or r["coldX"] > PERF_COLD_X]
+        chk("(4) PERF: a case-sized pin at 3x (132px) costs at most %.1fx an academy struck token rendered in the same moment with its geometry cached, and %.1fx cold (medians, interleaved: the ratio measures the code, not the machine's load): the slowest are %s (warm, cold)" % (PERF_WARM_X, PERF_COLD_X, (max([(round(r["warmX"], 2), r["u"][:22]) for r in g2] or [(0, "")]), max([(round(r["coldX"], 2), r["u"][:22]) for r in g2] or [(0, "")]))), g2 and not slow, slow[:5])
         box = [r["u"][:24] for r in rows if r["fillsRect"]]
         chk("(4) no silhouette is a plain box (its area is under 96%% of its bounding rectangle's): %s" % (box[:3] or "none"), rows and not box, box[:4])
         worst = (0, "", "")
@@ -316,14 +388,37 @@ with sync_playwright() as pw:
         bk = [(r["u"][:24], round(r["back"], 4), r["items"]) for r in rows if r["back"] < .026 or r["items"] < 1]
         lo = min(rows, key=lambda r: r["back"]) if rows else None
         chk("(5) the title still fits every silhouette's back (the smallest plan is %s of the frame at %s; the floor is 0.026)" % (round(lo["back"], 4) if lo else "-", lo["u"][:26] if lo else ""), rows and not bk, bk[:4])
-        fam = pg.evaluate(FAMILY)
-        chk("(6) the 58 enamels are 58 distinct colours", len(set(fam["enamels"])) == 58, len(set(fam["enamels"])))
-        offh = []
-        for r in fam["rows"]:
-            if r["ownHue"] is None or r["tokenHue"] is None: continue
-            d = abs((r["tokenHue"] - r["ownHue"] + 180) % 360 - 180)
-            if d > 60: offh.append((r["u"][:24], round(d)))
-        chk("(6) every authored chapter's token is in its own enamel's hue family (the mean hue of its coloured pixels within 60 degrees of the enamel's; a warm accent plate is allowed): %s" % (offh[:3] or "all"), not offh, offh[:5])
+        bs = pg.evaluate(BACKS)
+        print("     backs (chapter, front/back IoU, front box, back box, back/front area, back bevel range, coin front/back px):",
+              [(r["u"][:18], round(r["iou"], 3), (r["fw"], r["fh"]), (r["bw"], r["bh"]), round(r["area"], 3), round(r["range"]), r["coin"][:2]) for r in bs], flush=True)
+        b1 = [(r["u"][:24], round(r["iou"], 3)) for r in bs if r["iou"] < BACK_IOU_MIN]
+        chk("(5) THE BACK MATCHES THE PIN: its silhouette is the front's, mirrored (IoU at least %.3f): the least is %s" % (BACK_IOU_MIN, min([(round(r["iou"], 3), r["u"][:22]) for r in bs] or [(0, "")])), bs and not b1, b1[:5])
+        b2 = [(r["u"][:24], (r["fw"], r["fh"]), (r["bw"], r["bh"])) for r in bs if abs(r["fw"] - r["bw"]) > BACK_BOX_PX or abs(r["fh"] - r["bh"]) > BACK_BOX_PX]
+        chk("(5) THE BACK IS THE FRONT'S SIZE: at 132 device pixels its opaque box is the front's within %d px (no larger rimmed back): %s" % (BACK_BOX_PX, b2[:3] or "all"), bs and not b2, b2[:5])
+        b3 = [(r["u"][:24], round(r["range"])) for r in bs if r["range"] < BACK_RANGE_MIN]
+        chk("(5) THE BACK'S FINISH: its bevel is polished metal (luminance range at least %d, 98th over 10th percentile): the least is %s" % (BACK_RANGE_MIN, min([(round(r["range"]), r["u"][:22]) for r in bs] or [(0, "")])), bs and not b3, b3[:5])
+        b4 = [(r["u"][:24], r["coin"]) for r in bs if r["coin"][0] < 1 or r["coin"][0] != r["coin"][1]]
+        chk("(5) THE COIN FLIPS ONE SIZE: on the cutscene coin the back is drawn at the same device pixels as the front: %s" % (b4[:3] or [r["coin"][:2] for r in bs[:2]]), bs and not b4, b4[:5])
+        mc = pg.evaluate(MAINCOL)
+        def lab(c):
+            def f(v):
+                v /= 255.0
+                return v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4
+            R_, G_, B_ = f(c[0]), f(c[1]), f(c[2])
+            X = (R_ * .4124 + G_ * .3576 + B_ * .1805) / .95047; Y = R_ * .2126 + G_ * .7152 + B_ * .0722; Z = (R_ * .0193 + G_ * .1192 + B_ * .9505) / 1.08883
+            t = lambda v: v ** (1 / 3.0) if v > .008856 else 7.787 * v + 16 / 116.0
+            return (116 * t(Y) - 16, 500 * (t(X) - t(Y)), 200 * (t(Y) - t(Z)))
+        LB = {u: lab(c) for u, c in mc.items()}
+        de = lambda a, b: sum((x - y) ** 2 for x, y in zip(LB[a], LB[b])) ** .5
+        twins, near_s, near_c = [], (0, 0, "", ""), (999, 0, "", "")
+        for o in objs:
+            for u in UNITS:
+                if u == o or (u in objs and u < o) or u not in LB or o not in LB: continue
+                v, e = iou(masks[o], masks[u]), de(o, u)
+                if v >= TWIN_IOU and e < TWIN_DE: twins.append((o[:22], u[:22], round(v, 3), round(e, 1)))
+                if v > near_s[0]: near_s = (round(v, 3), round(e, 1), o[:22], u[:22])
+                if e < near_c[0]: near_c = (round(e, 1), round(v, 3), o[:22], u[:22])
+        chk("(6) NO TWINS: no two chapters share both a near-identical silhouette (IoU >= %.2f) and a near-identical main colour (CIELAB < %d): most alike outline %s (IoU, dE, pair), nearest colour %s (dE, IoU, pair)" % (TWIN_IOU, TWIN_DE, near_s, near_c), not twins, twins[:5])
         ai = pg.evaluate(ALLIDS)
         chk("(7) all 58 chapters x 4 drawings on one page (%d svgs, %d ids): no id twice, every url(#) resolves, no object group has an id" % (ai["svgs"], ai["ids"]),
             ai["svgs"] == 58 * 4 and not ai["dup"] and not ai["dangling"] and ai["objIds"] == 0, ai)
