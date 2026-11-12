@@ -87666,10 +87666,19 @@ function sbTint(color, late){
   }catch(e){}
 }
 /* the screen changed (a mount on #stage, something added to or taken off <body>, a surface's fade-in ending): the top, again */
-var sbTopQueued = false;
+var sbTopQueued = false, sbTopLate = 0, sbAttrMO = null;
 function sbSyncTop(){
   sbTopQueued = false;
   if(!sbDefaultOn()) return;
+  /* a layer on <body> that is shown or put away by a class (a cutscene's .bc-out fading it, a sheet's .show) changes the top without
+     a child being added or removed: those classes are watched too, from the first time the opaque bar is on */
+  if(!sbAttrMO && window.MutationObserver){
+    try{
+      sbAttrMO = new MutationObserver(recs => { for(const r of recs){ const t = r.target;
+        if((t === document.body || t.parentElement === document.body) && !(t.id && SB_SKIP[t.id])){ sbQueueTop(); return; } } });
+      sbAttrMO.observe(document.body, { attributes: true, subtree: true, attributeFilter: ["class", "hidden", "style"] });
+    }catch(e){}
+  }
   try{ syncTopGuard(lastTopEdgeModel || appTopEdgeColor()); }catch(e){}
 }
 function sbQueueTop(){
@@ -87677,6 +87686,8 @@ function sbQueueTop(){
   sbTopQueued = true;
   requestAnimationFrame(sbSyncTop);
   setTimeout(() => { if(sbTopQueued) sbSyncTop(); }, 150);   /* a hidden page runs no frames */
+  /* and once more when a fade started by that change has run (the app's fades are .2-.45s) */
+  clearTimeout(sbTopLate); sbTopLate = setTimeout(() => { if(!sbTopQueued) sbSyncTop(); }, 520);
 }
 try{
   const sbMO = new MutationObserver(() => { if(sbDefaultOn()) sbSyncTop(); });
