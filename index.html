@@ -1559,6 +1559,10 @@
   :root{ --tabs-drop: calc(.6rem + env(safe-area-inset-bottom, 0px) - var(--tabs-bottom)); }
   /* (384.77) --sat is exactly env(safe-area-inset-top), what build 383 wrote in every one of these places (384.54's 42pt clearance is gone) */
   :root{ --sat: env(safe-area-inset-top, 0px); }
+  /* (384.85) an iPad under an opaque status bar has no top inset, and its panels' min-height then counted no room for the 2px header
+     row: Home 2px past the screen (a scroll on a screen that fits; the same in an iPad Safari tab). The translucent iPad's value (its
+     24px inset less 1.25rem = 4px) - the same layout as the installed iPad today, in a page the bar's height shorter. */
+  @media (min-width:40rem){ html.sb-default{ --pad-inset-top:4px; } }
   :root{
     --pad-inset-top: max(0px, var(--sat) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
@@ -36646,10 +36650,9 @@ html.is-browser{ --fade-paper: transparent; }
   @media (min-width:40rem) and (orientation:portrait){
     html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap,
     html[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60vh, 84vw, calc(100dvh - 31rem)) !important; }   /* the last term keeps Start Studying above the bar on the shorter iPads (mini, 10.2") */
-    /* (384.85) under an opaque status bar: vh is not trusted (WebKit 316008) and the page is the bar's height shorter - an 11" is
-       1170 tall, where 31rem left Home 2px past the screen (a scroll on a screen that fits). dvh, and 4px more room. */
+    /* (384.85) under an opaque status bar vh is not trusted (WebKit 316008: it can be the screen's height, not the page's): dvh */
     html.sb-default[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap,
-    html.sb-default[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60dvh, 84vw, calc(100dvh - 31.25rem)) !important; }
+    html.sb-default[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60dvh, 84vw, calc(100dvh - 31rem)) !important; }
   }
   /* ---- HOME ON EVERY PHONE, ONE LAYOUT (build 328) ----
      "We need to maximize the size of the planet system but still make it look good for

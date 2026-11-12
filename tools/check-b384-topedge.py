@@ -70,10 +70,10 @@ with sync_playwright() as pw:
         ctx, pg = boot(br, wait=250)
         pg.on("pageerror", lambda e: errs.append(str(e)[:140]))
         r = pg.evaluate(EDGE); r["splash"] = pg.evaluate("()=>{ const s = document.getElementById('splashscreen'); return !!s && !s.classList.contains('splash-hide'); }")
-        # (384.80, changed on purpose: r/PWA's production fix) the whole safe area, 6px where there is none (this gate's insets are 0), above everything,
+        # (384.80, changed on purpose: r/PWA's production fix) the whole safe area, 12px where there is none since 384.85 (was 6; febbbi: 11px+ is the reliable height) (this gate's insets are 0), above everything,
         # (z 2147483647, as the r/PWA element; it holds the status bar's area only), taps going through
-        chk("(1) installed on an iPhone, before the splash goes: the splash's colour, fixed at the top, full width, max(inset, 6px), above everything, taps through (%s)" % r,
-            r and r["disp"] == "block" and r["pos"] == "fixed" and r["top"] == 0 and r["left"] == 0 and abs(r["w"] - r["vw"]) < 1 and r["h"] == 6 and r["z"] > 1000000 and r["pe"] == "none"
+        chk("(1) installed on an iPhone, before the splash goes: the splash's colour, fixed at the top, full width, max(inset, 12px), above everything, taps through (%s)" % r,
+            r and r["disp"] == "block" and r["pos"] == "fixed" and r["top"] == 0 and r["left"] == 0 and abs(r["w"] - r["vw"]) < 1 and r["h"] == 12 and r["z"] > 1000000 and r["pe"] == "none"
             and r["aria"] == "true" and hexof(r["first"]) == "#0a0a0a" and r["kids"][0] == "top-edge", r)
         chk("(1) while the splash is up the strip stays the splash's colour (it does not show as a band of sky over it) (%s)" % (r and [r["splash"], r["inline"]]), r and r["splash"] and hexof(r["inline"]) == "#0a0a0a" and r["data"] == "", r)   # (384.80) an inline colour from the first byte
         # ---------------- (2) the same node, following the sky ----------------

@@ -89,8 +89,8 @@ USED = [("Home", "()=>showHome()", "sky"), ("Profile", "()=>showProfile()", "sky
         ("Pause", "()=>pauseRun()", "sky"), ("Home again", "()=>{ showHome(); }", "sky"), ("the chat", "()=>openChatDock()", "sky"),
         ("install guide", "()=>{ try{ closeChatDock(); }catch(e){} showHome(); showInstallGuide('ios'); }", "dim"), ("save-code card", "()=>{ document.querySelectorAll('.installguide-overlay').forEach(n=>n.remove()); showHome(); showSaveCodeCard(); }", "dim"),
         ("code viewer", "()=>{ document.querySelectorAll('.savecode-card').forEach(n=>n.remove()); showHome(); ifcOpenViewer({ title: 'Section 101', sub: 'Scope' }); }", "solid"),
-        ("rank cutscene", "()=>{ try{ ifcCloseViewer(); }catch(e){} showHome(); playTierCutscene('vanguard'); }", "solid"),
-        ("badge cutscene", "()=>{ document.querySelectorAll('#supernova-cutscene,.tier-cutscene').forEach(n=>n.remove()); showHome(); playBadgeCaseScene(['Identity Crimes'], ()=>{}); }", "solid")]
+        ("rank cutscene", "()=>{ try{ ifcCloseViewer(); }catch(e){} showHome(); playTierCutscene('vanguard'); }", "scene"),
+        ("badge cutscene", "()=>{ document.querySelectorAll('#supernova-cutscene,.tier-cutscene').forEach(n=>n.remove()); showHome(); playBadgeCaseScene(['Identity Crimes'], ()=>{}); }", "scene")]
 READ = """()=>{ const e = document.getElementById('top-edge'), m = document.getElementById('themecolor'), r = e ? e.getBoundingClientRect() : null, cs = e ? getComputedStyle(e) : null;
   return { strip: cs ? cs.backgroundColor : null, inl: e ? e.style.backgroundColor : null, h: r ? r.height : 0, top: r ? r.top : 99, w: r ? r.width : 0, pos: cs ? cs.position : null, pe: cs ? cs.pointerEvents : null,
     disp: cs ? cs.display : null, bi: cs ? cs.backgroundImage : null, tc: m ? m.getAttribute('content') : null, html: document.documentElement.style.backgroundColor,
@@ -127,7 +127,9 @@ def screens_default(br, dev):
                 one = st and st == tc and st == ht and s["inl"]
                 # 60px down: a solid surface is still itself; the sky is Chromium's paint of it (a few levels off the hardware model);
                 # a question's header is paper to 70% of its height and then fades (on an iPad 60px is in the fade)
-                near = diff(rw[13], st) <= 3 and (kind in ("sky", "header") and diff(rw[60], st) <= 12 or kind not in ("sky", "header") and diff(rw[60], st) <= 3)
+                # a cutscene's backdrop is a near-black field with its own faint glow and stars (6)
+                lim60 = {"sky": 12, "header": 12, "scene": 6}.get(kind, 3)
+                near = diff(rw[13], st) <= 3 and diff(rw[60], st) <= lim60
                 extra = ""
                 if scr == "Get Started": extra = " (#05060D)"; one = one and s["tc"].lower() == "#05060d"
                 chk("%s default %s: the bar's colour is ONE - strip %s, theme-color %s, <html> %s - and the page's top: under the strip %s, 60px down %s%s" % (
