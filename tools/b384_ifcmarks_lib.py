@@ -78,7 +78,7 @@ def numbers_in(s):
         if m.group(2): v += int(m.group(2)) / int(m.group(3))
         elif m.group(4): v = v / int(m.group(4))
         out.append(v)
-    out += [float(x) for x in re.findall(r"(?<![\w.])\d+(?![\d.]|/)", t)] + [float(x) for x in re.findall(r"(?<=/)\d+", t)]      # the digits of a mixed number on their own ("4 1/2": 4, 1, 2)
+    out += [float(x) for x in re.findall(r"(?<![\w.])\d+(?![\d.])", t)] + [float(x) for x in re.findall(r"(?<=/)\d+", t)]      # the digits of a mixed number on their own ("4 1/2": 4, 1, 2)
     for w in toks(s):
         if w.isdigit(): out.append(float(w))
     return out

@@ -55420,17 +55420,18 @@ const IFC_KEY_CHOICES = {
 /* ---- (384.56) THE MARKS COVER WHAT DECIDES THE ANSWER ----
    Madison (iPhone, Appendix C, hydrant spacing "increase by _____ percent where the building is sprinklered", answer 50): "It doesn't even
    highlight the answer.. it's just highlighting the title of the table?? These need to be fixed." The bank's pointer for that question
-   (and for 3 more in Appendix C, and one in Chapter 61) names the table and nothing else, so the code box and the whole page mark the
+   (and for 2 more in Appendix C and one in Chapter 61) names the table and nothing else, so the code box and the whole page mark the
    caption and none of the table's footnote that holds the 50. The audit (tools/check-b384-ifcmarks.py) reads what every one of the 1,270
    Fire Code content questions marks, in the app's own pictures from his own copy of the book, and holds it to the keyed answer: the
-   words that decide it must be inside a gold mark. 14 pointers fell short; this table is what they need.
+   words that decide it must be inside a gold mark. 14 pointers fell short (4 table captions alone, 3 table rows without the note that
+   decides, 7 sections that marked a lead-in, a label or a cell and not the wording or items that answer); this table is what they need.
    Each entry is added to the question's citation as the keys the viewer already reads (ifc/ifc-viewer.js header): `find` = the DECIDING
    words as printed (a sentence, a note, a list item, a cell: the mark runs to the end of it), `row` = a table row label. A `find` on a
    table pointer is read from this build on (a footnote or a cell); with a `row` the row and the note are both marked. A key listed here
    REPLACES the bank's own of that name, so a `find` here repeats the phrases the bank already had. The bank's question, options, answer,
    explanation, topic and position are untouched (a question's identity is those), only its pointer's reading; the shared bank object is
-   copied, never changed. The next hand-off bank should carry these keys itself (the same table is written out as JSON for that:
-   docs/ifc-pointer-patches.json); then an entry here is redundant and harmless. */
+   copied, never changed. The next hand-off bank should carry these keys itself (this table is also written out as id -> keys JSON for
+   the owner's helper to fold into the bank file); then an entry here is redundant and harmless. */
 const IFC_POINTER_PATCH = {
   "chAppC-004": { find: "Reduce by 100 feet for dead-end streets" },
   "chAppC-005": { find: "A 50-percent spacing increase shall be permitted" },
@@ -55443,7 +55444,6 @@ const IFC_POINTER_PATCH = {
   "ch66-712": { find: ["classrooms in Group B, F or M", "shall be stored in hazardous material storage", "shall not contain other storage"] },
   "ch7-009": { find: ["doors designed to be kept normally closed", "FIRE DOOR KEEP CLOSED"] },
   "ch6-030": { find: ["operations utilizing solid fuel-burning cooking appliances", "1 month"] },
-  "ch22-014": { find: ["All other dusts", "not exceed the critical depth layer", "1/32"] },
   "ch62-702": { find: ["Class I Describes those formulations that are capable", "deflagration but not detonation"] },
   "ch62-703": { find: ["Class IV Describes those formulations that burn", "same manner as ordinary combustibles", "minimal reactivity hazard"] },
   "ch33-001": { find: ["written site safety plan", "approved before a building permit is issued"] }
