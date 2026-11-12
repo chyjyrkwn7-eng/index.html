@@ -491,6 +491,7 @@
         te.add("top-edge-on");
         if(localStorage.getItem("class26e.topedgeold") === "1") te.add("top-edge-old");
         if(localStorage.getItem("class26e.topedgepe") === "none") te.add("top-edge-none");
+        if(localStorage.getItem("class26e.topclear") !== "1") te.add("top-clear-off");   /* (384.76) the 42pt clearance is OFF by default: it pushed every header down and opened a band the page scrolled through; "1" brings it back */
       }
     }
     if(!inApp){
@@ -1469,8 +1470,25 @@
      page's reservation for the bar gives that much back, so screens end
      the same distance above the bar as before rather than further off. */
   :root{ --tabs-drop: calc(.6rem + env(safe-area-inset-bottom, 0px) - var(--tabs-bottom)); }
+  /* (384.54) THE TOP OF THE SCREEN IS TWO THINGS, NOT ONE: the status bar, and the soft wash the system draws under it. In an installed
+     iPhone app with `black-translucent` iOS 26 draws a fade over the top ~100pt (his Home, Drill and paused screenshots: the title
+     "Drill", "8/8" and Pause are blurred to nothing at 62-99pt, the chat button faded, and the effect ends level with the bottom of
+     that row; CSS cannot remove it - docs/notes-archive.md "384.54"). Every header, title and button sat at the safe-area line, i.e.
+     inside it. So the line every CSS `top`/padding clears is now --sat: the notch plus --edge-extra, the depth of that wash. It is
+     written in points on the glass (x --zc: his page is laid out 518px wide on a 440pt screen, so a CSS px is 0.85pt), only in an
+     installed iPhone held upright (html.top-edge-on is the head script's "installed iOS"; a Safari tab, an iPad, a laptop, Android
+     and a phone on its side keep --sat = env() exactly), and only on a phone with a notch or island (inset > 30px: an SE-sized phone
+     has no room to give and a shorter status bar). `class26e.topclear = "0"` puts it back (html.top-clear-off). Everything that
+     measures itself against the old line does it through --sat (63 places), so --pad-inset-top below still collapses to its old value. */
+  :root{ --sat: env(safe-area-inset-top, 0px); --edge-extra: 0px; }
+  @media (orientation:portrait) and (max-width:39.99rem){
+    html.top-edge-on:not(.top-clear-off){
+      --edge-extra: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 42px) * var(--zc, 1));
+      --sat: calc(env(safe-area-inset-top, 0px) + var(--edge-extra));
+    }
+  }
   :root{
-    --pad-inset-top: max(0px, env(safe-area-inset-top, 0px) - 1.25rem);
+    --pad-inset-top: max(0px, var(--sat) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
     /* What .wrap's padding costs a panel, top and bottom together. 9rem
        was a single constant covering the bottom-tab-bar case (1.25rem top
@@ -1814,7 +1832,7 @@
      - White stars at low alpha, not tinted ones: over each theme's own
        glow triad they take that theme's colour on their own, so a set
        theme still only recolours. */
-  :root{ --sky-clear: max(1.5rem, env(safe-area-inset-top, 0px)); }
+  :root{ --sky-clear: max(1.5rem, var(--sat)); }
   [data-layout="modern"] body::after{
     content:""; position:fixed; left:0; right:0; bottom:0; height:100lvh;
     z-index:-1; pointer-events:none;
@@ -2464,7 +2482,7 @@
      finish the line, again for the next; Skip in the corner. */
   .nova-talk{
     position:fixed; inset:0; z-index:360; display:flex; flex-direction:column;
-    padding-top:calc(env(safe-area-inset-top, 0px) + .6rem);
+    padding-top:calc(var(--sat) + .6rem);
     padding-left:calc(env(safe-area-inset-left, 0px) + 1rem);
     padding-right:calc(env(safe-area-inset-right, 0px) + 1rem);
     color:#FFFFFF; cursor:pointer; user-select:none; -webkit-user-select:none;
@@ -3490,7 +3508,7 @@
     max-width:44rem; margin:0 auto; padding:1.5rem 1.5rem 4rem;
     padding-left:max(1.5rem, env(safe-area-inset-left));
     padding-right:max(1.5rem, env(safe-area-inset-right));
-    padding-top:max(1.5rem, env(safe-area-inset-top));
+    padding-top:max(1.5rem, var(--sat));
     padding-bottom:max(4rem, env(safe-area-inset-bottom));
   }
   /* Genuinely wider on a tablet, not just a phone layout stranded in
@@ -3624,7 +3642,7 @@
        top inset (the notch moves to the edge, which left/right cover), but
        it does keep a home indicator. */
     .wrap{
-      padding-top:max(.75rem, env(safe-area-inset-top));
+      padding-top:max(.75rem, var(--sat));
       padding-bottom:max(2rem, env(safe-area-inset-bottom));
     }
     .top{ padding-bottom:.5rem; }
@@ -7380,7 +7398,7 @@
      colour, the one their marker carries on the race line. */
   .vroom-chat-alert{
     position:fixed; left:50%; transform:translateX(-50%) translateY(-8px);
-    top:calc(env(safe-area-inset-top, 0px) + .75rem);
+    top:calc(var(--sat) + .75rem);
     z-index:330; max-width:min(26rem, calc(100vw - 2rem));
     display:flex; align-items:center; gap:.55rem;
     padding:.6rem .85rem; border-radius:14px;
@@ -7487,7 +7505,7 @@
        top where there is not. */
     display:flex; align-items:flex-start; justify-content:center;
     padding:1.25rem;
-    padding-top:calc(1.25rem + env(safe-area-inset-top, 0px));
+    padding-top:calc(1.25rem + var(--sat));
     padding-bottom:calc(1.25rem + env(safe-area-inset-bottom, 0px));
     background:rgba(6,8,11,.62);
     opacity:0; transition:opacity .24s ease;
@@ -7615,18 +7633,14 @@
      dock: fixed to the screen and above the match's cutscene layer. */
   .vroom-leave-confirm{ position:fixed; z-index:460; }
   /* Leaving a group chat (build 279): an iOS action sheet, not a dialog. */
+  /* (384.52) ON <body>, SIZED TO THE PANEL. It was a child of #chatdock-panel (build 307), and the panel is a backdrop root
+     (will-change:backdrop-filter), so the sheet's blur could only ever sample the panel's own contents and never the page: it read as
+     a flat dark slab. confirmLeaveChat() now mounts it on <body> and writes the panel's rectangle and radius into left/top/width/height/
+     border-radius, so on an iPad it still covers only the corner popover. The dim is the shared --pop-scrim layer (.POP-UP GLASS). */
   .chatdock-confirm.chat-leavesheet{
-    position:fixed; inset:0; align-items:flex-end; padding:0 .75rem;
+    position:fixed; inset:auto; z-index:330; align-items:flex-end; padding:0 .75rem;
     padding-bottom:calc(.75rem + env(safe-area-inset-bottom, 0px));
-    background:rgba(0,0,0,.32); -webkit-backdrop-filter:none; backdrop-filter:none;
-  }
-  /* INSIDE THE CHAT, NOT OVER THE WHOLE APP (build 307). It was fixed to
-     the screen, which on a phone is roughly where the chat is anyway - but
-     on an iPad the chat is a panel in the top corner, and the question
-     rose from the bottom of the whole screen with everything dimmed.
-     Now it lives in the panel and covers only that. */
-  .chatdock-panel > .chatdock-confirm.chat-leavesheet{
-    position:absolute; inset:0; border-radius:inherit; overflow:hidden;
+    -webkit-backdrop-filter:none; backdrop-filter:none; overflow:hidden;
   }
   .chat-leavesheet-inner{ width:100%; max-width:24rem; display:flex; flex-direction:column; gap:.5rem;
     animation:chat-leavesheet-up .24s cubic-bezier(.2,.8,.25,1); }
@@ -7674,7 +7688,7 @@
        screen - which is why the chat button disappeared off the top of
        Home the moment you tapped into the chat. It is 0 whenever there
        is no keyboard, so this costs nothing anywhere else. */
-    top:calc(env(safe-area-inset-top, 0px) + .75rem + var(--vv-shift, 0px));
+    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
     right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     width:44px; height:44px; padding:0; margin:0;
     display:flex; align-items:center; justify-content:center;
@@ -7695,11 +7709,11 @@
      rather than going away - the chat is supposed to be reachable
      mid-test, which is most of the point of it. */
   .chatdock.in-test .chatdock-btn{
-    top:calc(env(safe-area-inset-top, 0px) + 4.4rem + var(--vv-shift, 0px));
+    top:calc(var(--sat) + 4.4rem + var(--vv-shift, 0px));
   }
   @media (min-width:40rem){
     .chatdock.in-test .chatdock-panel{
-      top:calc(env(safe-area-inset-top, 0px) + 4.4rem + 52px + .5rem);
+      top:calc(var(--sat) + 4.4rem + 52px + .5rem);
     }
   }
   @media (min-width:40rem){
@@ -7765,18 +7779,18 @@
      selector is one class more specific than that rule, whatever order
      the two end up in. */
   body.chatdock-open .toast,
-  body.chatdock-open.has-bottomtabs .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  body.chatdock-open.has-bottomtabs .toast{ z-index:390; top:calc(var(--sat) + .75rem); bottom:auto; }
   /* OVER AN OPEN START SHEET (build 267): "In game mode, when clicking the
      mode I don't have unlocked, the pop up is appearing behind the start
      menu." The toast was z-index 70 under the sheet's 210, and at the
      bottom where the sheet is. It goes on top, and to the top of the
      screen, where the sheet is not. */
-  body:has(.unitoptions-modal:not([hidden])) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  body:has(.unitoptions-modal:not([hidden])) .toast{ z-index:390; top:calc(var(--sat) + .75rem); bottom:auto; }
   /* (384 review) and over the invite sheet: "<Name> isn't enrolled in Fire Code." landed under the sheet (340) and the room's
      Ready bar, where nobody could read it. */
   /* (384 r5) over the save-your-code card (420) the toast says Copied on top of the dim, not behind it */
-  body:has(.savecode-card) .toast{ z-index:430; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
-  body:has(.invite-overlay) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  body:has(.savecode-card) .toast{ z-index:430; top:calc(var(--sat) + .75rem); bottom:auto; }
+  body:has(.invite-overlay) .toast{ z-index:390; top:calc(var(--sat) + .75rem); bottom:auto; }
   body.chatdock-open .vroom-chat-alert{
     opacity:0 !important; pointer-events:none !important;
   }
@@ -8152,7 +8166,7 @@
     .chatdock-panel{
       /* Cleared by the BUTTON'S OWN SIZE, which grows below - so this
          has to be the same number, or the panel tucks under it. */
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 52px + .5rem);
+      top:calc(var(--sat) + .75rem + 52px + .5rem);
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
       left:auto; bottom:auto;
       /* REPORTED AS TOO SMALL ON A LARGER DEVICE, and it was: a 24rem
@@ -8174,7 +8188,7 @@
     }
     /* the popover runs from its own top down to the keyboard (build 314) */
     .chatdock-panel.is-kb{
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 52px + .5rem + var(--kb-top, 0px));
+      top:calc(var(--sat) + .75rem + 52px + .5rem + var(--kb-top, 0px));
       bottom:var(--kb-bottom, 0px); height:auto; min-height:0; max-height:none;
       border-bottom-left-radius:0; border-bottom-right-radius:0;
     }
@@ -8374,7 +8388,7 @@
     background-size:200% 100%; animation:chatphoto-shimmer 1.2s ease-in-out infinite alternate; }
   @keyframes chatphoto-shimmer{ from{ background-position:100% 0 } to{ background-position:-100% 0 } }
   .vroom-chat-photo.is-missing{ aspect-ratio:auto; width:auto; }
-  .chat-photo-close{ position:absolute; top:calc(env(safe-area-inset-top,0px) + .75rem); right:calc(env(safe-area-inset-right,0px) + .75rem);
+  .chat-photo-close{ position:absolute; top:calc(var(--sat) + .75rem); right:calc(env(safe-area-inset-right,0px) + .75rem);
     width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.2); background:rgba(0,0,0,.5);
     color:#fff; font-size:1.5rem; line-height:1; cursor:pointer; }
   .vroom-chat-photo.is-missing::after{ content:"Photo no longer available"; display:block; padding:1rem; font-size:.75rem; color:var(--soft); }
@@ -9052,7 +9066,7 @@
      the page (mountRoomChatFab), and it is the dock button's size. */
   .roomchat-fab{
     position:fixed; z-index:445;
-    top:calc(env(safe-area-inset-top, 0px) + .75rem + var(--vv-shift, 0px));
+    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
     right:calc(max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) + 44px + .5rem);
     height:44px; padding:0 .85rem 0 .7rem; margin:0; border-radius:999px; box-sizing:border-box;
     display:flex; align-items:center; gap:.4rem;
@@ -9087,15 +9101,15 @@
      pushed down by its height so nothing is under it. The window is inset
      5% of the height and 3% of the width with a 9px rim (.vrc-window). */
   body:has(#vroom-race-cut) .roomchat-fab{
-    top:max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) !important;
+    top:max(calc(5vh + 9px + .55rem), calc(var(--sat) + .55rem)) !important;
     right:calc(3vw + 9px + .7rem) !important;
   }
   body:has(#roomchat-fab) .vrc{
-    padding-top:calc(max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) + 44px + .5rem);
+    padding-top:calc(max(calc(5vh + 9px + .55rem), calc(var(--sat) + .55rem)) + 44px + .5rem);
   }
   @media (min-width:40rem){
     body:has(#roomchat-fab) .vrc{
-      padding-top:calc(max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) + 52px + .5rem);
+      padding-top:calc(max(calc(5vh + 9px + .55rem), calc(var(--sat) + .55rem)) + 52px + .5rem);
     }
   }
   .roomchat-sheet{ display:flex; flex-direction:column; max-height:min(80vh, 44rem); }
@@ -11843,7 +11857,7 @@
        because no status bar is drawn - the gap was real, just smaller
        than it looked. tools/shoot-flow.py draws the inset now so the
        next judgement call is made against what the device shows. */
-    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:80;
+    top:calc(var(--sat) + .35rem); z-index:80;
     max-width:26rem; margin:0 auto; padding:.8rem .9rem .8rem 1.1rem;
     display:flex; align-items:center; gap:.75rem;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#FFFFFF; border-radius:16px;
@@ -12089,21 +12103,83 @@
   .signupcheck-panel .signupcheck-text{ max-width:26rem; }
   .signupcheck-panel .signupcheck-signin{ position:relative; z-index:1; width:100%; max-width:22rem; margin-top:1.2rem; }
   /* (384.23) the install-first page (showInstallFirst) wears the New to Nova? step's layout (.signupcheck-panel); these are its own parts */
-  .installfirst-panel .if-note, .installfirst-panel .if-status{ position:relative; z-index:1; margin:.9rem auto 0; max-width:22rem;
-    font-size:.95rem; line-height:1.45; text-align:center; text-wrap:balance; }
+  /* (384.36) the install page, friendly: the app icon, a welcome, three numbered steps, one button. Four screens share these parts
+     (main, video, done, help; see showInstallFirst). Tokens only; text is 16px or more; every control is 44px or more. */
+  .installfirst-panel > *, .installvideo-panel > *{ position:relative; z-index:1; }
+  .installfirst-panel > .homeglow{ position:absolute; }
+  .if-appicon{ display:block; flex:none; width:4.4rem; height:4.4rem; margin:0 auto 1rem; border-radius:22.5%; overflow:hidden;
+    background:var(--surface-1); box-shadow:var(--surface-shadow), 0 0 0 1px var(--surface-border); }
+  .if-appicon img{ display:block; width:100%; height:100%; }
+  .if-kicker{ margin:0 0 .25rem; font-size:1rem; font-weight:600; line-height:1.3; color:var(--soft); text-align:center; }
+  .installfirst-panel .if-title{ margin:0; max-width:24rem; font-size:clamp(1.35rem, 5.7vw, 1.9rem); font-weight:700; line-height:1.15; letter-spacing:-.01em;
+    color:var(--ink); text-align:center; text-wrap:balance; font-family:inherit; text-transform:none; }
+  .installfirst-panel .if-line{ margin:.55rem auto 0; max-width:22rem; font-size:1rem; line-height:1.45; color:var(--soft); text-align:center; text-wrap:balance; }
+  .if-steps{ list-style:none; margin:1rem auto 0; padding:0; width:100%; max-width:22rem; display:flex; flex-direction:column; gap:.4rem; text-align:left; }
+  .if-step{ display:flex; align-items:center; gap:.65rem; min-height:2.9rem; box-sizing:border-box; padding:.4rem .7rem .4rem .6rem; border-radius:14px;
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); color:var(--ink); font-size:1rem; line-height:1.3; }
+  .if-num{ flex:none; display:flex; align-items:center; justify-content:center; width:1.9rem; height:1.9rem; border-radius:50%; box-sizing:border-box;
+    border:1.5px solid var(--soft); font-size:1rem; font-weight:800; line-height:1; color:var(--ink); }
+  .if-step-text{ display:flex; flex-direction:column; gap:.2rem; min-width:0; }
+  .if-step-note{ font-size:1rem; line-height:1.35; color:var(--soft); }
+  .if-step .installguide-btn{ font-weight:800; color:var(--ink); }
+  .if-step .installguide-inline-icon{ width:1.4rem; height:1.4rem; }
+  .if-step .installguide-style-plain, .if-step .installguide-style-plain .installguide-glyph{ color:inherit; }
+  .installfirst-panel .if-device{ margin:.5rem auto 0; max-width:22rem; font-size:1rem; line-height:1.4; color:var(--soft); text-align:center; text-wrap:balance; }
+  .installfirst-panel .if-after{ margin:.65rem auto 0; max-width:22rem; font-size:1rem; line-height:1.4; font-weight:600; color:var(--ink); text-align:center; text-wrap:balance; }
+  .installfirst-panel.if-helppanel .if-after{ font-weight:500; color:var(--soft); }
+  .installfirst-panel .if-note, .installfirst-panel .if-status{ margin:.9rem auto 0; max-width:22rem;
+    font-size:1rem; line-height:1.45; text-align:center; text-wrap:balance; }
   .installfirst-panel .if-note{ color:var(--soft); }
+  .installfirst-panel .if-note:empty{ display:none; }
   .installfirst-panel .if-status{ color:var(--ink); font-weight:600; }
   .installfirst-panel .if-status[hidden]{ display:none; }
-  .installfirst-panel .if-icon{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; width:5.2rem; height:5.2rem; margin:0 auto 1.3rem;
-    border-radius:50%; background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); color:var(--ink); }
-  .installfirst-panel .if-icon svg{ width:2.5rem; height:2.5rem; }
-  .installfirst-panel .if-guide[hidden]{ display:none; }
-  .installfirst-panel .if-skip, .installfirst-panel .if-guide{ position:relative; z-index:1; align-self:center; display:block; min-height:44px; min-width:44px; margin:.6rem auto 0; padding:.6rem 1rem;
-    background:none; border:0; border-radius:12px; color:var(--soft); font-family:inherit; font-size:.9rem; line-height:1.3; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
-  .installfirst-panel .if-guide{ margin-top:1rem; }
-  .installfirst-panel .if-link{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:.6rem; width:100%; margin-top:1rem; }
-  .installfirst-panel .if-link-addr{ max-width:100%; font-size:.85rem; line-height:1.4; color:var(--soft); text-align:center; overflow-wrap:anywhere; }
+  .if-skip{ align-self:center; display:block; min-height:44px; min-width:44px; margin:.4rem auto 0; padding:.6rem 1rem;
+    background:none; border:0; border-radius:12px; color:var(--soft); font-family:inherit; font-size:1rem; line-height:1.3; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+  .installfirst-panel .if-link{ display:flex; flex-direction:column; align-items:center; gap:.6rem; width:100%; margin-top:1rem; }
+  .installfirst-panel .if-link-addr{ max-width:100%; font-size:1rem; line-height:1.4; color:var(--soft); text-align:center; overflow-wrap:anywhere; }
   .installfirst-panel .if-copy{ width:100%; max-width:22rem; }
+  /* the video screen: the heading and the clip stay in the top ~40% of the screen, above the share menu that rises over the rest.
+     The clip's box is these three properties (a new recording is cropped here, not in code): --iv-ar is the box's width / height,
+     --iv-pos which part of the frame is kept (x y), --iv-scale a zoom into it. --iv-h is the height the top 40% leaves. */
+  .installvideo-panel{ --iv-ar:1.4; --iv-pos:50% 92%; --iv-scale:1;
+    --iv-h:max(7rem, calc(40vh - env(safe-area-inset-top, 0px) - 6.5rem)); --iv-h:max(7rem, calc(40dvh - env(safe-area-inset-top, 0px) - 6.5rem)); }
+  .if-vhead{ margin:0 0 .75rem; font-size:clamp(1.15rem, 5vw, 1.55rem); font-weight:700; line-height:1.2; color:var(--ink); text-align:center; text-wrap:balance; font-family:inherit; text-transform:none; }
+  .iv-frame{ position:relative; flex:none; box-sizing:border-box; width:min(100%, 30rem, calc(var(--iv-h) * var(--iv-ar))); aspect-ratio:var(--iv-ar);
+    border-radius:18px; overflow:hidden; background:var(--surface-inset); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); cursor:pointer; }
+  .iv-frame video{ position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; object-position:var(--iv-pos);
+    transform:scale(var(--iv-scale)); transform-origin:var(--iv-pos); }
+  .iv-play{ position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; padding:0; border:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:var(--ink); background:var(--surface-2); cursor:pointer;
+    opacity:0; transform:scale(.85); transition:opacity .2s ease, transform .2s ease; pointer-events:none; }
+  .iv-play svg{ width:26px; height:26px; margin-left:3px; }
+  .iv-frame.is-paused .iv-play{ opacity:1; transform:none; pointer-events:auto; }
+  .iv-frame.is-card{ aspect-ratio:auto; width:min(100%, 24rem); padding:.6rem; cursor:default; }
+  .iv-frame.is-card .if-steps{ margin:0; max-width:none; }
+  /* where the screens sit (the sign-up steps' own rules centre or floor things; these four say it for themselves) */
+  html[data-layout] body #stage > .installfirst-panel.if-mainpanel, html[data-layout] body #stage > .installfirst-panel.if-helppanel{ padding-top:clamp(.9rem, 3vh, 3rem) !important; }
+  html[data-layout] body #stage > .installfirst-panel.if-mainpanel .if-appicon{ width:clamp(3.2rem, 8vh, 4.6rem); height:clamp(3.2rem, 8vh, 4.6rem); margin-bottom:.5rem; }
+  /* a short phone (an SE, 667px): the page has more to say now, so the icon and the why-line give way (the steps, the last line and the
+     phone-version line stay) and everything still fits without scrolling */
+  @media (max-height:46rem) and (max-width:32rem){
+    html[data-layout] body #stage > .installfirst-panel.if-mainpanel .if-appicon, html[data-layout] body #stage > .installfirst-panel.if-mainpanel .if-line{ display:none; }
+  }
+  html[data-layout] body #stage > .installfirst-panel.if-donepanel{ padding-top:clamp(2rem, 14vh, 11rem) !important; }
+  html[data-layout] body #stage > .installfirst-panel.if-donepanel .if-appicon{ width:6rem; height:6rem; margin-bottom:1.3rem; }
+  html[data-layout] body #stage > .installvideo-panel{
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start !important; min-height:0 !important; box-sizing:border-box;
+    padding-top:clamp(.75rem, 3vh, 2rem) !important; padding-bottom:1rem !important; text-align:center; }
+  html[data-layout] body #stage > .installvideo-panel::before{ content:none !important; }
+  html[data-layout] body #stage > .installvideo-panel > .next.playbtn{ margin:1.2rem auto 0 !important; width:min(100%, 22rem) !important; min-height:52px; box-sizing:border-box;
+    display:flex; align-items:center; justify-content:center; }
+  @media (min-width:40rem){
+    html[data-layout] body #stage > .installfirst-panel .if-title{ font-size:2.2rem; max-width:30rem; }
+    html[data-layout] body #stage > .installfirst-panel .if-line, html[data-layout] body #stage > .installfirst-panel .if-after{ font-size:1.1rem; max-width:26rem; }
+    html[data-layout] body #stage > .installfirst-panel .if-steps{ max-width:26rem; }
+    html[data-layout] body #stage > .installfirst-panel .if-step{ font-size:1.1rem; }
+    html[data-layout] body #stage > .installfirst-panel .if-appicon{ width:5.5rem; height:5.5rem; }
+    html[data-layout] body #stage > .installvideo-panel{ padding-top:clamp(1.5rem, 4.5vh, 4rem) !important; }
+    .if-vhead{ font-size:1.7rem; }
+  }
   /* Without this, any toast on a screen with the bottom tab bar
      visible renders directly underneath it (both were anchored to
      the same bottom:1rem), completely hidden behind the bar's own
@@ -12142,7 +12218,7 @@
     position:fixed;
     left:max(1rem, env(safe-area-inset-left, 0px));
     right:max(1rem, env(safe-area-inset-right, 0px));
-    top:calc(env(safe-area-inset-top, 0px) + .35rem); z-index:75;
+    top:calc(var(--sat) + .35rem); z-index:75;
     max-width:26rem; margin:0 auto; padding:.9rem 1.1rem;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#FFFFFF; border-radius:16px;
     border:1px solid rgba(255,255,255,.11);
@@ -12250,7 +12326,7 @@
      they were landing right on top of the floating Next-question
      button, covering the one thing someone would tap next. */
   .toast-flag{
-    top:max(1rem, env(safe-area-inset-top)); bottom:auto;
+    top:max(1rem, var(--sat)); bottom:auto;
     transform:translateY(-8px);
   }
   .toast-flag.show{ transform:translateY(0); }
@@ -13304,7 +13380,7 @@
        Nothing caught it because Chromium reports every inset as 0, so the
        max() and the shorthand look identical locally. */
     .wrap{
-      padding-top:max(1.25rem, env(safe-area-inset-top));
+      padding-top:max(1.25rem, var(--sat));
       padding-right:max(1.25rem, env(safe-area-inset-right));
       padding-bottom:max(3rem, env(safe-area-inset-bottom));
       padding-left:max(1.25rem, env(safe-area-inset-left));
@@ -14997,7 +15073,7 @@
   .rank-home-preview{
     position:absolute; inset:0; z-index:5; pointer-events:none;
     display:flex; align-items:center; justify-content:center;
-    padding:calc(env(safe-area-inset-top, 0px) + 2rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3rem);
+    padding:calc(var(--sat) + 2rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3rem);
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--theme-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--theme-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
@@ -15449,7 +15525,7 @@
        phone, which is what "it looks like the banners aren't all showing
        up at the top" was pointing at - they were at the top of the
        document and behind the status bar. */
-    position:fixed; top:calc(env(safe-area-inset-top, 0px) + .35rem);
+    position:fixed; top:calc(var(--sat) + .35rem);
     left:50%; transform:translateX(-50%) translateY(-8rem);
     z-index:300; display:flex; align-items:center; gap:.85rem;
     padding:.85rem 1.2rem .85rem .85rem; border-radius:999px; cursor:pointer;
@@ -16631,7 +16707,7 @@
   .welcome-build{
     position:fixed; z-index:1; pointer-events:none;
     left:max(1.25rem, calc(env(safe-area-inset-left, 0px) + 1rem));
-    top:calc(env(safe-area-inset-top, 0px) + .3rem);
+    top:calc(var(--sat) + .3rem);
     font-size:.6rem; letter-spacing:.04em; color:var(--soft); opacity:.38;
     /* A <p>'s default margin is 1em top and bottom, which pushed this
        9px down and straight into the hero on both SEs - measured, a
@@ -17410,7 +17486,7 @@
   @media (max-width:639px){
     .homeversion, .homeversion.homeversion-btn{
       display:block; z-index:1;
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 22px); bottom:auto; right:auto;
+      top:calc(var(--sat) + .75rem + 22px); bottom:auto; right:auto;
       transform:translateY(-50%);
       left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem));
       font-size:.84rem; line-height:1.15em; opacity:.72; font-weight:600;
@@ -20541,13 +20617,13 @@
   /* The value is .wrap's own top padding at each width (it is .wrap's
      first child), so these three have to follow .wrap's three. */
   @media (max-width:39.99rem){
-    [data-layout="modern"] .top{ top:max(1.5rem, env(safe-area-inset-top, 0px)); }
+    [data-layout="modern"] .top{ top:max(1.5rem, var(--sat)); }
   }
   @media (max-width:32rem){
-    [data-layout="modern"] .top{ top:max(1.25rem, env(safe-area-inset-top, 0px)); }
+    [data-layout="modern"] .top{ top:max(1.25rem, var(--sat)); }
   }
   @media (max-width:39.99rem) and (max-height:480px) and (orientation:landscape){
-    [data-layout="modern"] .top{ top:max(.75rem, env(safe-area-inset-top, 0px)); }
+    [data-layout="modern"] .top{ top:max(.75rem, var(--sat)); }
   }
   [data-theme="dark"][data-layout="modern"] .top{
     background:none; box-shadow:none;
@@ -20590,7 +20666,7 @@
   @media (min-width:40rem){
     [data-layout="modern"] .top #pausebtn:not([hidden]){
       position:fixed;
-      top:calc(env(safe-area-inset-top, 0px) + 1.1rem);
+      top:calc(var(--sat) + 1.1rem);
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
       z-index:150;
       padding:.8rem 1.6rem; font-size:1.05rem;
@@ -20609,7 +20685,7 @@
        where nothing moves. */
     [data-layout="modern"] .wrap:has(#pausebtn:not([hidden])) .timerline,
     [data-layout="modern"] .wrap:has(.pausepanel) .timerline{
-      margin-top:calc(.55rem + env(safe-area-inset-top, 0px));
+      margin-top:calc(.55rem + var(--sat));
     }
   }
   /* ...and a short, wide screen - a phone held sideways - starts the test's
@@ -20619,7 +20695,7 @@
   @media (min-width:40rem) and (max-height:36rem){
     [data-layout="modern"] .wrap:has(#pausebtn:not([hidden])) .timerline,
     [data-layout="modern"] .wrap:has(.pausepanel) .timerline{
-      margin-top:calc(1.1rem + env(safe-area-inset-top, 0px));
+      margin-top:calc(1.1rem + var(--sat));
     }
   }
   /* The hidden-choices reveal (build 240): a centred block, not a
@@ -20654,7 +20730,7 @@
   @media (max-width:39.99rem){
     [data-layout="modern"] .top #pausebtn:not([hidden]){
       position:fixed;
-      top:calc(max(1.25rem, env(safe-area-inset-top, 0px)) + .35rem);
+      top:calc(max(1.25rem, var(--sat)) + .35rem);
       right:max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1.1rem));
       z-index:150; transform:none;
       min-height:44px; min-width:5.4rem; padding:.55rem 1.3rem; font-size:1rem;   /* (384 r5) "why is the pause button so small": the label was 15px in a 74px pill */
@@ -22966,7 +23042,7 @@
      rows. Above the tab bar and the chat dock, like every other pop-up. */
   .unitver{
     position:fixed; inset:0; z-index:460; display:flex; align-items:center; justify-content:center;
-    padding:calc(env(safe-area-inset-top, 0px) + 1rem) calc(env(safe-area-inset-right, 0px) + 1rem)
+    padding:calc(var(--sat) + 1rem) calc(env(safe-area-inset-right, 0px) + 1rem)
             calc(env(safe-area-inset-bottom, 0px) + 1rem) calc(env(safe-area-inset-left, 0px) + 1rem);
     background:rgba(4,6,10,.62); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
     opacity:0; transition:opacity .22s ease;
@@ -23312,7 +23388,7 @@
      Scoped to .is-setup: the Virtual Room's Match settings sheet shares the base class and is untouched. */
   .unitoptions-modal-sheet.is-setup{
     display:flex; flex-direction:column; overflow:hidden; padding:0;
-    max-height:min(92%, calc(100% - env(safe-area-inset-top, 0px) - 4.25rem));
+    max-height:min(92%, calc(100% - var(--sat) - 4.25rem));
   }
   /* 4.25rem under the top safe area is where the page's own header (back and chat buttons, its title) ends on a phone, in an
      installed app and in a tab alike - measured on a 440x956 standalone, a 375x667 and a 393x742 tab. Taller and the sheet's
@@ -23321,7 +23397,7 @@
     .unitoptions-modal-sheet.is-setup{ left:0; right:0; margin-left:auto; margin-right:auto; width:min(100%, 38rem); border-left:1px solid rgba(255,255,255,.12); border-right:1px solid rgba(255,255,255,.12);
       /* a narrow sheet in the middle of a wide screen covers the page's centred title entirely or not at all - at 4.25rem under
          the top it cut the title in half on a 1366x768 laptop. Its buttons are out at the sides, so nothing is in the way. */
-      max-height:min(94%, calc(100% - env(safe-area-inset-top, 0px) - 1.5rem)); }
+      max-height:min(94%, calc(100% - var(--sat) - 1.5rem)); }
   }
   .unitoptions-modal-sheet.is-setup .optionsmodal-body{
     flex:1 1 auto; min-height:0; position:relative; overflow-x:hidden; overflow-y:auto;
@@ -23422,7 +23498,7 @@
      a full-width Begin stacked are ~300px of 390. So the foot is one row (the box beside Begin, the unit names left to the
      body's own heading) and the head is slimmer; the body keeps what is left. */
   @media (max-height:30rem){
-    .unitoptions-modal-sheet.is-setup{ max-height:min(96%, calc(100% - env(safe-area-inset-top, 0px) - .5rem)); }
+    .unitoptions-modal-sheet.is-setup{ max-height:min(96%, calc(100% - var(--sat) - .5rem)); }
     .unitoptions-modal-sheet.is-setup .unitoptions-modal-handle{ height:.8rem; background-position:50% .3rem; }
     .unitoptions-modal-sheet.is-setup .unitoptions-modal-title{ font-size:1.3rem; }
     .unitoptions-modal-sheet.is-setup .unitoptions-modal-head{ margin-bottom:0; }
@@ -27122,7 +27198,7 @@
   .battle-ice-t{ font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#E0F2FE; text-shadow:0 0 12px rgba(125,211,252,.9); }
   .battle-ice-left{ font-family:var(--mono); font-weight:800; color:#E0F2FE; }
   .battle-alert{
-    position:fixed; left:50%; top:calc(env(safe-area-inset-top) + .75rem); z-index:360;
+    position:fixed; left:50%; top:calc(var(--sat) + .75rem); z-index:360;
     transform:translateX(-50%) translateY(-8px); max-width:min(26rem, calc(100vw - 2rem));
     padding:.6rem 1rem; border-radius:999px; text-align:center; font-weight:800; font-size:.85rem;
     color:var(--ink); background:rgba(20,22,28,.82); border:1px solid rgba(255,255,255,.14);
@@ -30338,6 +30414,11 @@
   }
   .rs-screen .rs-unlocked .rs-unlock + .rs-unlock{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
   .rs-unlocked .rs-kicker + .rs-unlock{ padding-top:0; }
+  /* (384.50) the line that says celebrations are off, under the rows of a run that earned something, with its one button */
+  .rs-unlocked .rs-celebrate-off{ display:flex; align-items:center; gap:.8rem; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(255,255,255,.06); }
+  .rs-celebrate-off-text{ flex:1 1 auto; min-width:0; margin:0; font-size:.8rem; line-height:1.4; color:var(--soft); overflow-wrap:break-word; }
+  .rs-celebrate-off-btn{ flex:none; min-height:44px; min-width:44px; padding:0 1.1rem; border-radius:999px; font:inherit; font-size:.85rem; font-weight:700;
+    color:var(--ink); background:var(--surface-lift); border:1px solid var(--surface-border); cursor:pointer; -webkit-tap-highlight-color:transparent; }
   /* The slot each row waits in (build 313) - see the row builder. */
   .rs-unlock-slot{ position:relative; }
   .rs-screen .rs-unlocked .rs-unlock-slot + .rs-unlock-slot{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
@@ -30409,7 +30490,7 @@
   /* One unlock at a time, centre screen. */
   .rs-spot{
     position:fixed; inset:0; z-index:320; display:flex; align-items:center; justify-content:center;
-    padding:calc(env(safe-area-inset-top, 0px) + 1.5rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+    padding:calc(var(--sat) + 1.5rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
     background:rgba(6,8,12,0); transition:background .3s ease; cursor:pointer;
   }
   .rs-spot.is-up{ background:rgba(6,8,12,.72); transition:background .6s ease; }
@@ -31220,7 +31301,7 @@
      the streak climbs: the colour warms from blue through gold to red,
      and from 50 up it carries a ring. */
   .streak-pop{
-    position:fixed; left:50%; top:calc(env(safe-area-inset-top, 0px) + 4.6rem); z-index:250;
+    position:fixed; left:50%; top:calc(var(--sat) + 4.6rem); z-index:250;
     transform:translateX(-50%); pointer-events:none;
     display:flex; align-items:baseline; gap:.45rem;
     padding:.5rem 1rem; border-radius:999px;
@@ -31530,7 +31611,7 @@
     /* one hundredth of the case's width: the hardware's unit (build 321) */
     --cu:calc(var(--cw) / 100); --hw-r:var(--bc-r);
     position:fixed; inset:0; z-index:420; overflow:hidden; cursor:pointer;
-    padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    padding:var(--sat) 0 env(safe-area-inset-bottom, 0px);
     background:rgba(5,7,11,0); transition:background .26s ease, opacity .45s ease;
   }
   /* the open case is about 1.75 of its own width tall with its lid up, so
@@ -32527,7 +32608,7 @@
        so the padding clears that plus its 9px rim. Vertical percentages
        would resolve against the WIDTH, hence lvh; the safe-area term wins
        only where a notch or home indicator reaches further in. */
-    padding:max(calc(5lvh + 1.4rem), calc(env(safe-area-inset-top, 0px) + 1.2rem))
+    padding:max(calc(5lvh + 1.4rem), calc(var(--sat) + 1.2rem))
             calc(3% + 1.05rem)
             max(calc(5lvh + 1.2rem), calc(env(safe-area-inset-bottom, 0px) + 1.2rem));
     background:radial-gradient(120% 80% at 50% 0%, #1B2140 0%, #0A0C18 55%, #04050A 100%);
@@ -33003,7 +33084,7 @@
   .binspect-stage{
     position:relative; box-sizing:border-box; min-height:100%;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.6rem;
-    padding:calc(env(safe-area-inset-top, 0px) + 1.4rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.6rem);
+    padding:calc(var(--sat) + 1.4rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.6rem);
   }
   .binspect-float{ position:relative; flex:none; width:var(--bi); height:var(--bi); transform-origin:50% 50%; will-change:transform; }
   .binspect-glow{
@@ -33076,8 +33157,8 @@
      transition is overridden. Anything that would interrupt is held in JS
      (holdForCutscene); a banner already up when a scene starts is hidden
      here and comes back with the controls. */
-  @keyframes cs-up-out{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - env(safe-area-inset-top, 0px)); } }
-  @keyframes cs-up-in{ from{ translate:0 calc(-100% - 1.5rem - env(safe-area-inset-top, 0px)); } to{ translate:0 0; } }
+  @keyframes cs-up-out{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - var(--sat)); } }
+  @keyframes cs-up-in{ from{ translate:0 calc(-100% - 1.5rem - var(--sat)); } to{ translate:0 0; } }
   @keyframes cs-down-out{ from{ translate:0 0; } to{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } }
   @keyframes cs-down-in{ from{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } to{ translate:0 0; } }
   /* A ROOM'S CHAT BUTTON LEAVES UPWARD, like the dock's (build 324). It is
@@ -33096,8 +33177,8 @@
   /* (327 round 6) over the race leaderboard the Room button sits INSIDE the
      ship's window, lower than the screen's corner, so its slide has to clear
      the window's top as well as its own height or it stops in frame. */
-  @keyframes cs-up-out-vrc{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - env(safe-area-inset-top, 0px)); } }
-  @keyframes cs-up-in-vrc{ from{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - env(safe-area-inset-top, 0px)); } to{ translate:0 0; } }
+  @keyframes cs-up-out-vrc{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - var(--sat)); } }
+  @keyframes cs-up-in-vrc{ from{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - var(--sat)); } to{ translate:0 0; } }
   body.cutscene-focus:not(.cutscene-soft):has(#vroom-race-cut) .roomchat-fab{ animation-name:cs-up-out-vrc; }
   body.cutscene-return:not(.cutscene-focus):has(#vroom-race-cut) .roomchat-fab{ animation-name:cs-up-in-vrc; }
   body.cutscene-focus :is(.daily-alert, .app-banner, .vroom-chat-alert, .toast, .update-banner){ visibility:hidden !important; pointer-events:none !important; }
@@ -34251,7 +34332,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
    - At the top, what the safe-area inset does not already cover (the iPad's Safari bar; an iPhone's status bar when Safari
      gives no inset) moves the page and the controls pinned to the top down by that much. */
 html.is-browser.safari-bars-over{
-  --sb-top-x: max(0px, calc(var(--sb-top, 0px) - env(safe-area-inset-top, 0px)));
+  --sb-top-x: max(0px, calc(var(--sb-top, 0px) - var(--sat)));
   --sb-bottom-x: max(0px, calc(var(--sb-bottom, 0px) - env(safe-area-inset-bottom, 0px)));
   --tabs-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px), calc(env(safe-area-inset-bottom, 0px) * .6), calc(var(--sb-bottom, 0px) + 8px));
 }
@@ -34282,6 +34363,17 @@ html.vp-stale :is(.bottomtabs, .backtotop, .daily-question-fab, .homeversion, .c
 html.vp-top :is(.wrap.test-pinned > .top, #pausebtn, .update-banner, .daily-alert, .tierup-banner, .battle-alert, .streak-pop){
   margin-top:calc(var(--sb-top-x, 0px) + var(--vp-top, 0px)) !important;
 }
+/* (384.54) IN A BROWSER TAB A TEST'S PINNED HEADER FADES IN FROM THE ROOT'S COLOUR, NOT FROM PAPER. The header's fade is the page's own first
+   rows, and Safari fills the band above the page with the root's colour (--band). Paper at 97% from y=0 left a step between the two: 9 levels
+   at 440x797, (17,21,27) against (26,27,30), a line across the top of every question in a tab. The same fade in --band meets it. The installed
+   app is untouched (its status bar sits over the page, and the strip under it follows the paper: topEdgeStripColor). */
+html.is-browser[data-layout="modern"] .wrap.test-pinned:not(.race-pinned) > .top::before{
+  background:linear-gradient(to bottom,
+    color-mix(in srgb, var(--band, var(--paper)) 97%, transparent) 0%,
+    color-mix(in srgb, var(--band, var(--paper)) 95%, transparent) 70%,
+    color-mix(in srgb, var(--band, var(--paper)) 0%, transparent) 100%);
+}
+html.is-browser[data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{ background:color-mix(in srgb, var(--band, var(--paper)) 96%, transparent); }
 /* and the notices pinned to the bottom sit above the toolbar */
 html.is-browser.safari-bars-over :is(.toast, .vroom-prep){ margin-bottom:calc(var(--sb-bottom-x) + 8px); }
 /* Welcome is measured to end just over the home indicator (its hint, --pad-inset-bottom): it ends that much over the toolbar
@@ -34495,7 +34587,7 @@ html.is-browser.safari-bars-over :is(.gs-bar, .cosmic-welcome > .cosmic-welcome-
      fixed, so nothing passes under it). A test keeps its own header - the
      mode, the count and the progress line belong together there. */
   html[data-layout] body .wrap:not(:has(> .meter:not([hidden]))) > #count{
-    position:absolute; z-index:5; left:calc(env(safe-area-inset-left, 0px) + 1.5rem); top:calc(env(safe-area-inset-top, 0px) + .75rem + 35px); translate:0 -50%;
+    position:absolute; z-index:5; left:calc(env(safe-area-inset-left, 0px) + 1.5rem); top:calc(var(--sat) + .75rem + 35px); translate:0 -50%;
     margin:0; padding:0 !important; border:0; font-size:1.02rem; letter-spacing:.01em;
   }
   /* the daily question's card (round 31): under NOVA's line, ranged to the
@@ -34533,8 +34625,8 @@ html.is-browser.safari-bars-over :is(.gs-bar, .cosmic-welcome > .cosmic-welcome-
   /* round 26: "When the chat is open, it's covering the actual chat
      button" - the panel opens under the button's own size here (it was
      cleared for the 52px button, so the 4.4rem one sat 10px under it) */
-  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem); }
-  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel.is-kb{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem + var(--kb-top, 0px)); }
+  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(var(--sat) + .75rem + 4.4rem + .6rem); }
+  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel.is-kb{ top:calc(var(--sat) + .75rem + 4.4rem + .6rem + var(--kb-top, 0px)); }
   html[data-layout] body .chatdock-btn svg{ width:1.65rem; height:1.65rem; }
   /* the 69dvh floor above is for laptops (the Dell's 638px). A phone held sideways in a zoomed-out
      browser tab (Pro Max at 85%, 1125x458) is this layout too, and there the floor made the planet
@@ -35912,7 +36004,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz{ position:fixed; inset:0; z-index:1500; display:flex; justify-content:center; }
   .ifc-vz-dim{ position:absolute; inset:0; background:rgba(6,7,12,.6); opacity:0; transition:opacity .26s ease; touch-action:none; }
   .ifc-vz-card{ position:relative; display:flex; flex-direction:column; flex:0 1 64rem; min-width:0; overflow:hidden; border-radius:1.3rem;
-    margin:max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    margin:max(10px, var(--sat)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
     background:rgb(22,24,34); border:1px solid var(--surface-border); box-shadow:0 18px 50px rgba(0,0,0,.55);
     opacity:0; transform:translateY(18px) scale(.96); transition:transform .34s cubic-bezier(.2,.9,.3,1), opacity .26s ease; }
   .ifc-vz.is-in .ifc-vz-dim{ opacity:1; }
@@ -35950,7 +36042,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz-hint.is-gone, .ifc-vz.is-zoomed .ifc-vz-hint{ opacity:0; transform:translate(-50%, 6px); }
   @media (min-width:64rem){
     .ifc-vz-dim{ background:rgba(6,7,12,.72); }
-    .ifc-vz-card{ margin-top:max(18px, env(safe-area-inset-top, 0px)); margin-bottom:max(18px, env(safe-area-inset-bottom, 0px)); }
+    .ifc-vz-card{ margin-top:max(18px, var(--sat)); margin-bottom:max(18px, env(safe-area-inset-bottom, 0px)); }
     .ifc-vz-bar{ padding:.45rem .7rem .45rem 1.1rem; gap:.6rem; }
     .ifc-vz-title strong{ font-size:.92rem; }
     .ifc-vz-title span{ font-size:.78rem; }
@@ -36110,7 +36202,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* bigger screens: the way the daily question grows, and up in the top-left corner (the chat button's
      opposite) where there is room */
   @media (min-width:40rem){
-    .class-bubble-wrap{ --cb:4.6rem; top:calc(env(safe-area-inset-top, 0px) + .75rem) !important; left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)); }
+    .class-bubble-wrap{ --cb:4.6rem; top:calc(var(--sat) + .75rem) !important; left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)); }
     .class-bubble > svg{ width:38px; height:38px; }
   }
   /* ON A PHONE, THE DAILY QUESTION'S MIRROR (build 333): "the bubble doesn't go with the Home Screen". It sat
@@ -36182,6 +36274,7 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-logo{ margin:0; font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif; font-size:clamp(4rem, 17vw, 8rem); font-weight:700; letter-spacing:.12em; line-height:1; text-indent:.12em;
     background:linear-gradient(180deg, #fff 20%, #aab8ff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
   .gs-tag{ margin:1rem 0 0; font-size:1.05rem; color:rgba(236,240,255,.82); }
+  .gs-device{ margin:1rem auto 0; max-width:30rem; font-size:1rem; line-height:1.45; color:rgba(236,240,255,.82); text-wrap:balance; }
   .gs-scrollcue{ margin:2.4rem 0 0; font-size:.72rem; letter-spacing:.3em; text-transform:uppercase; color:rgba(220,228,255,.5); animation:gs-bob 2.2s ease-in-out infinite; }
   @keyframes gs-bob{ 0%,100%{ transform:translateY(0); opacity:.45; } 50%{ transform:translateY(6px); opacity:.9; } }
   .gs-phone{ position:relative; flex:none; width:clamp(200px, 58vw, 270px); aspect-ratio:9 / 19.5; border-radius:34px; overflow:hidden; background:#0A0B14;
@@ -36196,7 +36289,7 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-title{ margin:0 0 .7rem; font-size:clamp(1.7rem, 6.4vw, 2.5rem); line-height:1.12; font-weight:750; }
   .gs-body{ margin:0; font-size:1.02rem; line-height:1.5; color:rgba(230,236,255,.74); }
   .gs-end{ position:relative; z-index:1; text-align:center; padding:4rem 1.4rem 2rem; opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
-  .gs-signin{ position:absolute; z-index:4; top:calc(env(safe-area-inset-top, 0px) + 10px); right:calc(env(safe-area-inset-right, 0px) + 14px);
+  .gs-signin{ position:absolute; z-index:4; top:calc(var(--sat) + 10px); right:calc(env(safe-area-inset-right, 0px) + 14px);
     min-height:44px; padding:0 1.05rem; border-radius:999px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06);
     color:#FFFFFF; font:inherit; font-size:.95rem; font-weight:650; letter-spacing:.01em; cursor:pointer; -webkit-tap-highlight-color:transparent;
     transition:background-color .2s ease, transform .15s ease; }
@@ -36496,7 +36589,7 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout][data-theme] body:has(.screen-home-actual){ --hg:clamp(10px, 2.4dvh, 22px); --home-bar:5rem; --home-pb:calc(var(--tabs-bottom) + var(--home-bar) + 6px); }
     html[data-layout][data-theme]:not(.x) body.has-bottomtabs:has(.screen-home-actual) .wrap{ padding-bottom:var(--home-pb) !important; }
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{
-      height:calc(100dvh - max(1.25rem, env(safe-area-inset-top, 0px)) - var(--home-pb) - 4px) !important; min-height:0 !important;
+      height:calc(100dvh - max(1.25rem, var(--sat)) - var(--home-pb) - 4px) !important; min-height:0 !important;
       display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
       padding-top:1.25rem !important; padding-bottom:calc(var(--hg) * 2.4) !important; box-sizing:border-box !important;
     }
@@ -37436,7 +37529,7 @@ html.is-browser{ --fade-paper: transparent; }
      move. Above Nova's talk (360), since his sign-up line asks it. */
   .savecode-card{
     position:fixed; inset:0; z-index:420; display:flex; align-items:center; justify-content:center;
-    padding-top:calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);
+    padding-top:calc(var(--sat) + 16px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);
     padding-left:calc(env(safe-area-inset-left, 0px) + 16px); padding-right:calc(env(safe-area-inset-right, 0px) + 16px);
     background:transparent; cursor:default;   /* (384 r16) the dim is the ::before layer (.POP-UP GLASS); the overlay no longer scrolls or fades - the sheet does both for itself */
   }
@@ -37504,7 +37597,7 @@ html.is-browser{ --fade-paper: transparent; }
      move; the clip's frame has no filter. */
   .invite-overlay.a2hs-overlay{
     z-index:420; align-items:center; justify-content:center; background:transparent;
-    padding-top:calc(env(safe-area-inset-top, 0px) + 12px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding-top:calc(var(--sat) + 12px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
     padding-left:calc(env(safe-area-inset-left, 0px) + 12px); padding-right:calc(env(safe-area-inset-right, 0px) + 12px);
   }
   .a2hs-sheet{
@@ -38856,10 +38949,10 @@ html.is-browser{ --fade-paper: transparent; }
      two share one line. Only where there is a back button: on Home and the tab screens the chat button keeps its place beside the
      big page title. */
   html[data-layout] body #stage .settings-nav.settings-nav{ margin-top:calc(.2rem - .6rem); }
-  html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(env(safe-area-inset-top, 0px) + .75rem + .6rem + var(--vv-shift, 0px)); }
+  html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem + var(--vv-shift, 0px)); }
   /* a tablet's chat button is 52px against the back button's 44: its top 4px higher puts the two middles on one line */
   @media (min-width:40rem){
-    html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(env(safe-area-inset-top, 0px) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
+    html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
   }
   /* (384) "The back button flashed white or something when you hit it." The press shimmer (setupBubbleButtons: .glass-pressed,
      a pool of white in ::after) reached the back links - and a back link's ::after is its invisible 44px tap target, centred by
@@ -39805,17 +39898,17 @@ html.is-browser{ --fade-paper: transparent; }
      colour), and full-screen takeovers (cutscenes, loading, the update screen). tools/check-b384-popglass.py reads every pop-up
      in b384_pop_lib.INVENTORY and asserts the shape; a new pop-up is added there, and takes .pop-glass on its card and
      .pop-glass-host on its overlay to inherit all of this. */
-  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm:not(.chat-leavesheet), .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host){
+  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm, .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host){
     opacity:1; background:transparent; transition:none; animation:none; overflow:visible;
     -webkit-backdrop-filter:none; backdrop-filter:none;
   }
-  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm:not(.chat-leavesheet), .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host)::before{
+  html[data-theme][data-layout] body :is(.savecode-card, .chatdock-confirm, .resume-offer, .friend-moment, .installguide-overlay, .unitver, .invite-overlay, .intro-pop, .pop-glass-host)::before{
     content:""; position:absolute; inset:0; background:var(--pop-scrim); pointer-events:none;
   }
   /* the dim: faded in by its own opacity where the overlay has a .show state, by a one-shot keyframe where it has none */
   html[data-theme][data-layout] body :is(.savecode-card, .resume-offer, .friend-moment, .unitver, .intro-pop, .invite-overlay, .pop-glass-host)::before{ opacity:0; transition:opacity .24s ease; }
   html[data-theme][data-layout] body :is(.savecode-card.show, .resume-offer.show, .friend-moment.show, .unitver.show, .intro-pop.show, .invite-overlay.invite-overlay-show, .pop-glass-host.show)::before{ opacity:1; }
-  html[data-theme][data-layout] body :is(.chatdock-confirm:not(.chat-leavesheet), .installguide-overlay)::before{ animation:pop-glass-in .2s ease-out both; }
+  html[data-theme][data-layout] body :is(.chatdock-confirm, .installguide-overlay)::before{ animation:pop-glass-in .2s ease-out both; }
   @keyframes pop-glass-in{ from{ opacity:0; } to{ opacity:1; } }
   /* the sheet: above the dim, and fading in by itself where the overlay has a .show state */
   html[data-theme][data-layout] body :is(.savecode-card, .resume-offer, .friend-moment, .unitver, .intro-pop, .invite-overlay, .pop-glass-host) > :is(.savecode-sheet, .resume-card, .friend-moment-card, .unitver-card, .intro-card, .a2hs-sheet, .invite-sheet, .pop-glass){
@@ -39834,6 +39927,12 @@ html.is-browser{ --fade-paper: transparent; }
   }
   /* a tall card scrolls inside itself, never its overlay */
   html[data-theme][data-layout] body .intro-card{ max-height:100%; overflow-y:auto; overscroll-behavior:contain; }
+  /* (384.52) the leave-chat sheet: its overlay is the panel's rectangle on <body> (see .chatdock-confirm.chat-leavesheet), so it clips its own
+     slide-up and the dim to the panel's corners; overflow:hidden is a plain clip, not a backdrop root. The shared reset above says
+     overflow:visible, and the sheet has to sit above the dim layer. */
+  html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet{ overflow:hidden; }
+  html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
+  html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
 </style>
 <script>
   (function(){
@@ -55396,21 +55495,131 @@ const IFC_KEY_TEXT = {
      only way its history and the Stats ring's "answered right once" keep it). A hundo in a chapter stays: hundos, badges, stars
      and ranks are per chapter NAME (unitPerfects), never per question, and Fire Code's badge is one hundo; a full-chapter run
      covers the chapter as it is now: Chapter 2 111, Chapter 4 40, Chapter 12 43, Chapter 55 16, Chapter 62 10, Chapter 64 10. */
-const IFC_SRC_GAPS = { "4": [19], "12": [1, 9, 10], "55": [12], "62": [8, 9], "64": [1] };
+const IFC_SRC_GAPS = { "4": [19], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1, 12], "21": [1], "22": [1], "25": [1],
+  "26": [1, 13], "27": [7], "28": [9], "29": [1], "30": [5, 6, 9], "31": [1], "32": [31], "34": [1, 2], "35": [1, 2],
+  "37": [1, 15], "39": [1, 2], "50": [1, 2, 3], "51": [1], "53": [1, 2, 17, 18, 19], "54": [1, 2, 3],
+  "55": [1, 2, 3, 4, 9, 10, 11, 12, 17], "56": [37], "57": [1, 2, 3, 4, 5], "58": [4, 5, 6], "59": [3, 18],
+  "60": [9, 10, 11, 12], "61": [25, 26], "62": [1, 2, 5, 6, 7, 8, 9], "63": [4, 9, 10, 11, 12, 13], "64": [1, 2], "65": [1],
+  "66": [6, 7, 8, 9], "67": [11, 12, 13], "AppC": [8, 9, 10, 11] };
+/* ---- (384.47) THE COUNTY PERMIT QUESTIONS MOVE TO CHAPTER 1; THE REPEATS AND THE WEAK ONES GO ----
+   The owner: a test of the chapters you selected must not show references to chapters you did not select, so the 87 Fire Code
+   questions that cite the county's Chapter 1 (sections 101-199: 105.5.x operational permits, 105.6.x construction permits, the
+   citation table) but sat in other chapters go to Chapter 1 - "I don't want repeat questions and I don't want bad questions ... I want
+   the best questions out of what we got." 70 move (Chapter 1: 88 -> 158, appended in citation order, positions 89-158, so none of its own 88 shifts); 17 are deleted: 15 that ask the same fact as one that stays, and ch20-508 (rooftop heliport) and ch30-505 (industrial ovens: its article gave the answer away), which the owner took out himself (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the
+   table of each with its reason is in docs/notes-archive.md, 384.47). No question was reworded: the moved ones differ from main's
+   only in `unit`. Same mechanism as 384.42, for the same reasons:
+   - every moved question's old position stays taken in its old chapter (IFC_SRC_GAPS), so no other question's key moves
+     (1,725 of the 1,725 kept questions that did not change chapter keep main's key);
+   - a removed question's position stays taken too, its key is un-starred once (IFC_RETIRED_KEYS, the 5.4.2 precedent), its answer
+     counts are left where they are (nothing lowers progress; nothing reads them);
+   - each moved question's old key is in IFC_MOVED_KEYS, and the boot copy below carries its answer counts and its star to its
+     new key (once, at boot, one id -> index map, no per-question scan). A hundo, a badge, a star, a rank, points, level and the
+     leaderboard row are per chapter NAME and are not touched; the next full-chapter run covers the chapter as it stands now. */
 /* [the key a moved question was stored under (generated from the 5.4.2 bank), its id] */
 const IFC_MOVED_KEYS = [
   ["Chapter 12: Energy Systems|1|yahkhw", "ch12-012"],
   ["Chapter 55: Cryogenic Fluids|12|1qsi68l", "ch55-702"],
   ["Chapter 62: Organic Peroxides|8|ulabyl", "ch62-702"],
   ["Chapter 62: Organic Peroxides|9|w1tgss", "ch62-703"],
-  ["Chapter 64: Pyrophoric Materials|1|1pska3k", "ch64-001"]
+  ["Chapter 64: Pyrophoric Materials|1|1pska3k", "ch64-001"],
+  /* (384.47) the county permit questions that moved to Chapter 1, in the order they now sit there (positions 89-158) */
+  ["Chapter 51: Aerosols|1|1es3xwy", "ch51-020"],
+  ["Chapter 20: Aviation Facilities|1|rvuis0", "ch20-003"],
+  ["Chapter 22: Combustible Dust-Producing Operations|1|sq5x17", "ch22-001"],
+  ["Chapter 37: Combustible Fibers|15|2rkn17", "ch37-710"],
+  ["Chapter 53: Compressed Gases|1|y038o3", "ch53-024"],
+  ["Chapter 53: Compressed Gases|2|xfxnu", "ch53-025"],
+  ["Chapter 53: Compressed Gases|18|1nzunei", "ch53-602"],
+  ["Chapter 53: Compressed Gases|19|71mv11", "ch53-603"],
+  ["Chapter 54: Corrosive Materials|1|pxbofz", "ch54-010"],
+  ["Chapter 58: Flammable Gases and Flammable Cryogenic Fluids|4|1y3y9cl", "ch58-501"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|10|c3az6i", "ch60-514"],
+  ["Chapter 64: Pyrophoric Materials|2|3gurqg", "ch64-204"],
+  ["Chapter 55: Cryogenic Fluids|1|1mlgyu1", "ch55-019"],
+  ["Chapter 55: Cryogenic Fluids|2|1rvh9x2", "ch55-020"],
+  ["Chapter 55: Cryogenic Fluids|3|1fu6vzu", "ch55-021"],
+  ["Chapter 55: Cryogenic Fluids|4|10oepdh", "ch55-022"],
+  ["Chapter 55: Cryogenic Fluids|17|fbnkwa", "ch55-717"],
+  ["Chapter 58: Flammable Gases and Flammable Cryogenic Fluids|5|1hg4iok", "ch58-502"],
+  ["Chapter 58: Flammable Gases and Flammable Cryogenic Fluids|6|1t1s0qq", "ch58-503"],
+  ["Chapter 21: Dry Cleaning|1|1ujdz92", "ch21-012"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|11|18g2byq", "chAppC-704"],
+  ["Chapter 57: Flammable and Combustible Liquids|1|1ido1ew", "ch57-001"],
+  ["Chapter 57: Flammable and Combustible Liquids|2|4w4rv0", "ch57-002"],
+  ["Chapter 57: Flammable and Combustible Liquids|3|1sutiwp", "ch57-003"],
+  ["Chapter 57: Flammable and Combustible Liquids|4|scbs01", "ch57-004"],
+  ["Chapter 57: Flammable and Combustible Liquids|5|oy9rem", "ch57-005"],
+  ["Chapter 25: Fruit and Crop Ripening|1|a7i2hp", "ch25-001"],
+  ["Chapter 26: Fumigation and Insecticidal Fogging|1|1pun5yz", "ch26-001"],
+  ["Chapter 26: Fumigation and Insecticidal Fogging|13|1r566cu", "ch26-712"],
+  ["Chapter 50: Hazardous Materials—General Provisions|3|v9xsi1", "ch50-076"],
+  ["Chapter 54: Corrosive Materials|3|argc5u", "ch54-011"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|9|nvbpua", "ch60-511"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|11|1fghxpg", "ch60-701"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|12|1wq4zlb", "ch60-702"],
+  ["Chapter 62: Organic Peroxides|1|10485d0", "ch62-205"],
+  ["Chapter 62: Organic Peroxides|2|rgg72a", "ch62-206"],
+  ["Chapter 62: Organic Peroxides|5|1gd094c", "ch62-506"],
+  ["Chapter 62: Organic Peroxides|6|1cu256y", "ch62-507"],
+  ["Chapter 62: Organic Peroxides|7|su12dk", "ch62-701"],
+  ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|11|1m2zqvp", "ch63-702"],
+  ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|12|97ic1l", "ch63-703"],
+  ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|13|1pakt0b", "ch63-704"],
+  ["Chapter 66: Unstable (Reactive) Materials|6|1p6zioe", "ch66-701"],
+  ["Chapter 66: Unstable (Reactive) Materials|7|zwrgnf", "ch66-702"],
+  ["Chapter 66: Unstable (Reactive) Materials|8|p0zz9m", "ch66-703"],
+  ["Chapter 66: Unstable (Reactive) Materials|9|1rr1xv0", "ch66-704"],
+  ["Chapter 67: Water-Reactive Solids and Liquids|11|1ovu6yq", "ch67-711"],
+  ["Chapter 67: Water-Reactive Solids and Liquids|12|nvxtw0", "ch67-712"],
+  ["Chapter 67: Water-Reactive Solids and Liquids|13|1evvmv9", "ch67-713"],
+  ["Chapter 27: Semiconductor Fabrication Facilities|7|1v231xp", "ch27-518"],
+  ["Chapter 35: Welding and Other Hot Work|1|r22wow", "ch35-001"],
+  ["Chapter 35: Welding and Other Hot Work|2|1us7q2t", "ch35-002"],
+  ["Chapter 61: Liquefied Petroleum Gases|26|1678rsg", "ch61-716"],
+  ["Chapter 39: Processing and Extraction Facilities|1|aodsii", "ch39-001"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|8|1flmha6", "chAppC-701"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|10|souzda", "chAppC-703"],
+  ["Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics|1|17h6d8p", "ch65-006"],
+  ["Chapter 34: Tire Rebuilding and Tire Storage|1|x4buh2", "ch34-007"],
+  ["Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures|1|5gvnvw", "ch31-031"],
+  ["Chapter 61: Liquefied Petroleum Gases|25|4x201x", "ch61-715"],
+  ["Chapter 34: Tire Rebuilding and Tire Storage|2|183r7an", "ch34-008"],
+  ["Chapter 55: Cryogenic Fluids|11|stminm", "ch55-503"],
+  ["Chapter 12: Energy Systems|38|1dy4mlg", "ch12-320"],
+  ["Chapter 32: High-Piled Combustible Storage|31|wl72ls", "ch32-612"],
+  ["Chapter 30: Industrial Ovens|6|1vcinxg", "ch30-506"],
+  ["Chapter 30: Industrial Ovens|9|18adw3x", "ch30-709"],
+  ["Chapter 39: Processing and Extraction Facilities|2|aj3a0x", "ch39-002"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|9|45fo4e", "chAppC-702"],
+  ["Chapter 12: Energy Systems|37|1xyl85u", "ch12-319"],
+  ["Chapter 10: Means of Egress|1|2njh7i", "ch10-108"]
 ];
-const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j"];
-/* The bank's own count ("1,812"), read from it where it is loaded; the 5.4.2 count where it is not (the academy's class list) */
+const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j",
+  /* (384.47) the fifteen repeats the owner took out (tools/gen-ifc-bank.py UNIT_REMOVALS; two more follow the list) */
+  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities|9|1wts5n9",
+  "Chapter 37: Combustible Fibers|1|ymtyre",
+  "Chapter 56: Explosives and Fireworks|37|44roqb",
+  "Chapter 59: Flammable Solids|18|faac29",
+  "Chapter 29: Manufacture of Organic Coatings|1|7aenwy",
+  "Chapter 50: Hazardous Materials—General Provisions|1|1fv2qkr",
+  "Chapter 54: Corrosive Materials|2|1mk9l44",
+  "Chapter 50: Hazardous Materials—General Provisions|2|145p1eg",
+  "Chapter 59: Flammable Solids|3|h8hpu7",
+  "Chapter 53: Compressed Gases|17|y8oqqu",
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|4|1rs5b13",
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|9|1av8bji",
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|10|6rcore",
+  "Chapter 55: Cryogenic Fluids|9|1idq5kc",
+  "Chapter 55: Cryogenic Fluids|10|hzyocq",
+  /* (384.47) and the one the owner took out himself: ch20-508, the rooftop-heliport question (its wrong options are not stated not to need a permit) */
+  "Chapter 20: Aviation Facilities|12|1ikiga7",
+  /* (384.47) and ch30-505, industrial ovens: "an _____ permit" - the article fits only "operational", so the grammar gave the answer away (the owner removed it) */
+  "Chapter 30: Industrial Ovens|5|kaggfi"];
+/* The bank's own count ("1,795"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1812).toLocaleString("en-US");
+  return (n || 1795).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
@@ -55424,6 +55633,41 @@ function ifcQuestionCountText(){
 const IFC_KEY_CHOICES = {
   "chAppH-805": ["hazardous materials inventory statement", "operational permit application", "site plan", "hazardous materials management plan"]
 };
+/* ---- (384.56) THE MARKS COVER WHAT DECIDES THE ANSWER ----
+   Madison (iPhone, Appendix C, hydrant spacing "increase by _____ percent where the building is sprinklered", answer 50): "It doesn't even
+   highlight the answer.. it's just highlighting the title of the table?? These need to be fixed." The bank's pointer for that question
+   (and for 2 more in Appendix C and one in Chapter 61) names the table and nothing else, so the code box and the whole page mark the
+   caption and none of the table's footnote that holds the 50. The audit (tools/check-b384-ifcmarks.py) reads what every one of the 1,270
+   Fire Code content questions marks, in the app's own pictures from his own copy of the book, and holds it to the keyed answer: the
+   words that decide it must be inside a gold mark. 14 pointers fell short (4 table captions alone, 3 table rows without the note that
+   decides, 7 sections that marked a lead-in, a label or a cell and not the wording or items that answer); this table is what they need.
+   Each entry is added to the question's citation as the keys the viewer already reads (ifc/ifc-viewer.js header): `find` = the DECIDING
+   words as printed (a sentence, a note, a list item, a cell: the mark runs to the end of it), `row` = a table row label. A `find` on a
+   table pointer is read from this build on (a footnote or a cell); with a `row` the row and the note are both marked. A key listed here
+   REPLACES the bank's own of that name, so a `find` here repeats the phrases the bank already had. The bank's question, options, answer,
+   explanation, topic and position are untouched (a question's identity is those), only its pointer's reading; the shared bank object is
+   copied, never changed. The next hand-off bank should carry these keys itself (this table is also written out as id -> keys JSON for
+   the owner's helper to fold into the bank file); then an entry here is redundant and harmless. */
+const IFC_POINTER_PATCH = {
+  "chAppC-004": { find: "Reduce by 100 feet for dead-end streets" },
+  "chAppC-005": { find: "A 50-percent spacing increase shall be permitted" },
+  "chAppC-009": { find: "hydrant spacing shall average 500 feet" },
+  "chAppC-003": { find: "One hydrant for each 1,000 gallons per minute" },
+  "chAppB-011": { find: "not less than 1,000 gallons per minute" },
+  "chAppB-012": { find: "not less than 1,500 gallons per minute" },
+  "ch61-022": { find: ["Motor vehicle fuel dispenser", "20"] },
+  "ch57-066": { find: ["conspicuous label in red letters on contrasting", "FLAMMABLE KEEP FIRE AWAY"] },
+  "ch66-712": { find: ["classrooms in Group B, F or M", "shall be stored in hazardous material storage", "shall not contain other storage"] },
+  "ch7-009": { find: ["doors designed to be kept normally closed", "FIRE DOOR KEEP CLOSED"] },
+  "ch6-030": { find: ["operations utilizing solid fuel-burning cooking appliances", "1 month"] },
+  "ch62-702": { find: ["Class I Describes those formulations that are capable", "deflagration but not detonation"] },
+  "ch62-703": { find: ["Class IV Describes those formulations that burn", "same manner as ordinary combustibles", "minimal reactivity hazard"] },
+  "ch33-001": { find: ["written site safety plan", "approved before a building permit is issued"] }
+};
+function ifcWithPatch(q){
+  const p = IFC_POINTER_PATCH[q && q.id];
+  return p ? Object.assign({}, q, { citation: Object.assign({}, q.citation, p) }) : q;
+}
 /* (384) a function of the bank, so the academy can build the same list when a Fire Code room is joined (classBankReady) */
 function ifcQuestionsFrom(B){
   if(!B || !Array.isArray(B.questions)) return [];
@@ -55440,7 +55684,7 @@ function ifcQuestionsFrom(B){
     const letters = ["A", "B", "C", "D"];
     const it = { topic: ifcUnitTopic(u), src: seen[q.unit], q: q.question,
                choices: letters.map(k => q.options[k]), answer: letters.indexOf(q.answer),
-               explanation: q.explanation, ifc: q };
+               explanation: q.explanation, ifc: ifcWithPatch(q) };
     /* (384, 5.4.2) a reworded question keeps its identity */
     if(Object.prototype.hasOwnProperty.call(IFC_KEY_TEXT, q.id)) it.keyText = IFC_KEY_TEXT[q.id];
     /* (384.48, 5.4.3) a question whose wrong option was replaced keeps its identity */
@@ -56329,7 +56573,7 @@ function syncTestPin(force){
      is pinned the dots ride at the top of it - header, dots, line - and they go back to their own place when it is not. */
   const meter = document.getElementById("meter");
   if(meter && rb && meter.parentElement === rb && !raceWant){ rb.after(meter); rb.classList.remove("has-meter"); }
-  if(!want) return;
+  if(!want){ try{ if(lastTopEdgeModel) syncTopGuard(lastTopEdgeModel); }catch(e){} return; }
   const y = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
   wrap.style.setProperty("--test-top-y", y + "px");
   wrap.style.setProperty("--test-top-h", top.offsetHeight + "px");
@@ -56343,6 +56587,7 @@ function syncTestPin(force){
     wrap.classList.add("race-pinned");
   }
   wrap.classList.add("test-pinned");
+  try{ if(lastTopEdgeModel) syncTopGuard(lastTopEdgeModel); }catch(e){}   /* (384.54) the strip follows the pin: paper under it */
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
@@ -58034,6 +58279,7 @@ function runIfcAnalysis(file, opts){
   };
   const finish = () => {
     ov.classList.add("is-ok");
+    ov.dataset.kept = result.kept ? "1" : "0";   /* (384.58) read by check-b384-bookonce */
     /* (384) Madison: "After verified shouldn't it say success, IFC PDF SUCCESSFULLY REFERENCED? ... And then the button makes
        more sense? Like it could say enroll and get started or just enroll?" A success, said as one; what it means under it;
        and the button is the next step: Enroll and get started (the class list), Continue (sign-up, which goes on to make the
@@ -58082,12 +58328,13 @@ function runIfcAnalysis(file, opts){
     .catch(e => {
       failed = e;
       ov.classList.add("is-bad");
-      ov.querySelector(".ia-title").textContent = "That file can't be used";
+      ov.dataset.reason = e && e.loadFailed ? "reader" : (e && e.refused ? "file" : "error");   /* (384.58) read by check-b384-bookonce */
+      ov.querySelector(".ia-title").textContent = e && e.loadFailed ? "Could not load the PDF reader" : "That file can't be used";
       const res = ov.querySelector(".ia-result"); res.hidden = false;
       res.textContent = e && e.refused ? e.message : "Something went wrong reading that file: " + ((e && e.message) || e);
       const acts = ov.querySelector(".ia-actions"); acts.hidden = false;
-      const again = document.createElement("button"); again.type = "button"; again.className = "next playbtn"; again.textContent = "Choose another file";
-      again.addEventListener("click", () => { ov.remove(); ifcPickBook(opts); });
+      const again = document.createElement("button"); again.type = "button"; again.className = "next playbtn"; again.textContent = e && e.loadFailed ? "Try again" : "Choose another file";
+      again.addEventListener("click", () => { ov.remove(); if(e && e.loadFailed) runIfcAnalysis(file, opts); else ifcPickBook(opts); });
       const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "next ghost"; cancel.textContent = "Cancel";
       cancel.addEventListener("click", () => ov.remove());
       acts.append(again, cancel);
@@ -58904,11 +59151,26 @@ function retakeKeySet(){
     return retakeKeyCache.s;
   }catch(e){ return null; }   /* the bank is not built yet (boot): the stats alone are read */
 }
+/* (384.46) THE ACADEMY'S MASKED ONE, THE SAME RULE. Before keys existed the academy kept no record of WHICH question was retaken, so an
+   account that really did retake 100 different questions in an earlier build has no keys. What its stats do hold per question is `n`
+   (times answered), `m` (misses) and `r` (the last 20 miss times, absent on old entries). A question with a single miss and two or more
+   answers was answered again after that miss UNLESS the miss was its last answer: the stats do not keep the order, so this is an upper
+   estimate of the real count (a question answered right first and missed afterwards is counted too), and it is generous on purpose - a
+   genuine earner is kept when the record clearly supports it. It is also the carry-over ONLY: a miss made after RETAKE_CARRY_BEFORE_MS
+   (a little after this build goes live) never takes this path, so from then on a question counts through its own key or a second miss
+   and nothing is guessed. Fire Code has nothing to carry over (it counted from its first answer and nobody there earned it). */
+var RETAKE_CARRY_BEFORE_MS = Date.UTC(2026, 10, 13);
+function retakeCarriedOver(e){
+  if(!e || Number(e.m) !== 1 || !(Number(e.n) >= 2)) return false;
+  const r = Array.isArray(e.r) ? e.r : [];
+  return !r.some(t => Number(t) >= RETAKE_CARRY_BEFORE_MS);     /* no stamp (an old entry) or only old ones: carried over */
+}
 function retakeDistinctCount(d){
   d = d || store;
   const stats = (d && d.stats && typeof d.stats === "object") ? d.stats : {};
   const real = retakeKeySet();
   const seen = new Set();
+  const academy = window.NOVA_CLASS !== "ifc";
   const take = k => {
     if(typeof k !== "string" || seen.has(k)) return;
     const e = stats[k];
@@ -58917,8 +59179,19 @@ function retakeDistinctCount(d){
     seen.add(k);
   };
   (Array.isArray(d.retakenKeys) ? d.retakenKeys : []).forEach(take);
-  Object.keys(stats).forEach(k => { const e = stats[k]; if(e && Number(e.m) >= 2) take(k); });
+  Object.keys(stats).forEach(k => { const e = stats[k]; if(e && (Number(e.m) >= 2 || (academy && retakeCarriedOver(e)))) take(k); });
   return seen.size;
+}
+/* the Masked One's other door is the old Game mode's Hardcore on 10 units (retired in 283: nothing new reaches it); read from a store or a document */
+function hardcoreUnitsOf(d){
+  return Object.values((d && d.unitGameBeat) || {}).filter(g => g && g.hardcore).length;
+}
+if(window.NOVA_CLASS !== "ifc"){
+  /* (384.46) the academy's Masked One counts DIFFERENT questions too (build 289's rule counted every wrong pick followed by the right one) */
+  CHARACTER_FEATS.retake100 = { label: "Retake 100 missed questions",
+    done: () => retakeDistinctCount() >= RETAKE_NEED || hardcoreUnitsBeaten() >= 10,
+    have: () => Math.min(retakeDistinctCount(), RETAKE_NEED), need: RETAKE_NEED,
+    note: "Answer a question you missed in an earlier Drill or test again, in a Drill or through Retake missed questions. Each question counts once." };
 }
 if(window.NOVA_CLASS === "ifc"){
   CHARACTER_FEATS.retake100 = { label: "Retake 100 missed questions",
@@ -58929,7 +59202,7 @@ if(window.NOVA_CLASS === "ifc"){
 /* the question's key goes on the account the moment it is answered right with a miss of it already on record (Fire Code; see above).
    Called from choose() BEFORE recordResult, so a miss made in this very sitting is not yet on record and does not count. */
 function noteRetakenKey(qi){
-  if(window.NOVA_CLASS !== "ifc" || runLabel === "Daily question") return;
+  if(runLabel === "Daily question") return;      /* (384.46) both classes; the Daily question is never a retake */
   try{ if(vroomForeign()) return; }catch(e){}   /* recordResult() takes nothing of another class's question either */
   const k = KEYS[qi];
   if(typeof k !== "string") return;
@@ -59452,8 +59725,17 @@ function ifcChallengeClamp(d){
      keys (retakeDistinctCount). What is left to do on a document - the copy about to be written, the account's and its floor's - is to take
      the character's traces off it when that count does not support it: not queued to be announced, not marked announced or seen (a real earn
      is then announced as it should be), not the worn character (the class's first starter; the rest of the look is not touched). */
+  if(retakeTracesClamp(d)) changed = true;
+  return changed;
+}
+/* (384.46) the Smoke Diver's / the Masked One's traces on a store or a document, in either class: when its own count does not support the
+   character (100 different questions retaken, or - academy only, retired - Hardcore on 10 units) it is not queued, not marked announced or
+   seen, and not worn (the class's first starter, the rest of the look untouched). The count is never edited: it is derived. */
+function retakeTracesClamp(d){
+  if(!d || typeof d !== "object") return false;
+  let changed = false;
   try{
-    if(retakeDistinctCount(d) < RETAKE_NEED){
+    if(retakeDistinctCount(d) < RETAKE_NEED && !(window.NOVA_CLASS !== "ifc" && hardcoreUnitsOf(d) >= 10)){
       AVATAR_CHARACTERS.filter(c => c.feat === "retake100").forEach(c => {
         if(Array.isArray(d.pendingCharUnlocks) && d.pendingCharUnlocks.indexOf(c.id) >= 0){ d.pendingCharUnlocks = d.pendingCharUnlocks.filter(x => x !== c.id); changed = true; }
         [d.unlocksShown, d.seenUnlocks].forEach(u => {
@@ -59463,6 +59745,19 @@ function ifcChallengeClamp(d){
       });
     }
   }catch(e){}
+  return changed;
+}
+/* (384.46) THE ACADEMY'S MASKED ONE, REPAIRED THE WAY THE SMOKE DIVER WAS. The lock is derived (isLockedCharacter -> retakeDistinctCount),
+   so on every surface that asks it reads locked from the first launch that has the server's copy; what is stored around it is cleaned here:
+   not queued, not marked announced or seen (a real earn is announced as it should be), not worn (first starter, quietly). Runs where
+   ifcChallengesRepair384 does, once the server's copy is in; only this one character, because a feat read from data that arrives later
+   must never cost anybody another character (build 246). */
+function academyMaskedRepair384(){
+  if(window.NOVA_CLASS === "ifc" || !store) return false;
+  const wore = store.avatarChar;
+  const changed = retakeTracesClamp(store);
+  if(store.avatarChar !== wore){ try{ updateHeaderTitle(); }catch(e){} }
+  if(changed){ try{ saveStore(); }catch(e){} }
   return changed;
 }
 /* (384.40) AFTER EVERY MERGE (see the places it is called from): a challenge or rank character this class holds LOCKED - however it came to be
@@ -68106,6 +68401,7 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
   function apply(b, t, why){
     if(b === compB && t === compT) return;
     const was = compB || compT;
+    t = 0;   /* (384.76) the top is never moved: his 384.70 recording showed it moving a header that was where it belonged (in-flight reading); the bottom half is unchanged */
     compB = b; compT = t;
     if(b){ root.style.setProperty("--vp-stale", b + "px"); root.classList.add("vp-stale"); } else { root.style.removeProperty("--vp-stale"); root.classList.remove("vp-stale"); }
     if(t){ root.style.setProperty("--vp-top", t + "px"); root.classList.add("vp-top"); } else { root.style.removeProperty("--vp-top"); root.classList.remove("vp-top"); }
@@ -68377,7 +68673,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, badgeSceneOwed: null, badgeScenePlayed: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -68660,6 +68956,10 @@ function applyLoadedData(got){
      of filthy badges. */
   store.badgeCleanedAt = badgeCleanMap(got.badgeCleanedAt) || badgeCleanMap(store.badgeCleanedAt) || {};
   try{ ensureBadgeCleanedAt(false); }catch(e){}
+  /* (384.50) the badge scenes still owed, and the ones that have played to their end: unit -> when. An older copy has neither,
+     so nothing is owed for what was earned before this build (nothing is replayed). */
+  store.badgeSceneOwed = badgeCleanMap(got.badgeSceneOwed) || badgeCleanMap(store.badgeSceneOwed) || {};
+  store.badgeScenePlayed = badgeCleanMap(got.badgeScenePlayed) || badgeCleanMap(store.badgeScenePlayed) || {};
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string"),
@@ -71170,7 +71470,7 @@ function wipeLocalProgressAndSettings(){
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
-  store.badgeCleanedAt = {};
+  store.badgeCleanedAt = {}; store.badgeSceneOwed = {}; store.badgeScenePlayed = {};
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrHosted = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
@@ -71981,6 +72281,7 @@ function markCloudConfirmed(docExists){
     try{ ifcChallengesRepair384(); }catch(e){}   /* (384 r23) before the look is judged: a character this class has not earned is not worn */
     try{ ifcLookCheck(true); }catch(e){}
     try{ ifcCharsRepair384(); }catch(e){}
+    try{ academyMaskedRepair384(); }catch(e){}   /* (384.46) the academy's Masked One, on the merged copy */
     /* build 382: the save-your-code card waits for this */
     setTimeout(() => { try{ checkSaveCodeReminder(); }catch(e){} }, 900);
     /* a held save carries the held row with it - pushToCloud publishes
@@ -72155,6 +72456,7 @@ function writeAccount(code, withMain, withFloor, leaving){
     /* (384 r23) what is written is never what the rule would take down again: the merge above puts the cloud's and the floor's
        max back, and the account and its floor are written from this copy (see ifcChallengeClamp) */
     try{ ifcChallengeClamp(doc); }catch(e){}
+    try{ if(window.NOVA_CLASS !== "ifc") retakeTracesClamp(doc); }catch(e){}   /* (384.46) the academy's Masked One, on the account and its floor */
     return { doc, ahead };
   };
   let run;
@@ -73122,6 +73424,9 @@ function mergeSameAccount(dst, src){
   /* when each badge was last clean (build 320, b320g): the newer time,
      badge by badge - cleaned on either device is cleaned */
   if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
+  /* (384.50) a badge scene owed on either device stays owed until it has played on either: both maps only ever grow */
+  if(dst.badgeSceneOwed || src.badgeSceneOwed) maxMap("badgeSceneOwed");
+  if(dst.badgeScenePlayed || src.badgeScenePlayed) maxMap("badgeScenePlayed");
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384", "ifcCharsFixed384",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295", "savedCodeSaved",
    /* (384) the class button's tip, once per account */
@@ -73204,6 +73509,7 @@ function syncSameAccount(cloud){
     try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
     /* (384 r20) Fire Code, once this launch has heard the server: a copy that arrives wearing what this class has not unlocked */
     try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ if(ifcChallengesRepair384()) r.gained = true; if(ifcLookCheck(true)) r.gained = true; if(ifcCharsRepair384()) r.gained = true; } }catch(e){}
+    try{ if(window.NOVA_CLASS !== "ifc" && cloudConfirmedFor === syncCode && academyMaskedRepair384()) r.gained = true; }catch(e){}   /* (384.46) */
     /* `gained` here means this device brought something the cloud lacks */
     themeFollowStore();
     if(r.gained) saveStore(); else persistLocally();
@@ -73212,6 +73518,7 @@ function syncSameAccount(cloud){
   const r = mergeSameAccount(store, cloud);
   try{ if(applyWeekWinVoids()){ r.gained = true; r.otherHadLess = true; } }catch(e){}
   try{ if(window.NOVA_CLASS === "ifc" && cloudConfirmedFor === syncCode){ const c = ifcChallengesRepair384(), a = ifcLookCheck(true), b = ifcCharsRepair384(); if(a || b || c){ r.gained = true; r.otherHadLess = true; } } }catch(e){}
+  try{ if(window.NOVA_CLASS !== "ifc" && cloudConfirmedFor === syncCode && academyMaskedRepair384()){ r.gained = true; r.otherHadLess = true; } }catch(e){}   /* (384.46) */
   themeFollowStore();
   if(r.gained) persistLocally();
   /* This device is the newer side, or holds something the cloud lacks:
@@ -74553,14 +74860,27 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
    is 61%, 71%, 58%, 51%, 42%, 40% and 35% of its level's XP: the academy's own proportions (55, 71, 60, 51, 42, 40, 35), practice and tests and the rest of
    what people do covering the remainder. Levels are unchanged (they are the XP curve's, not the bank's). Read off the bank, never
    typed: a chapter added moves it. The academy copy is kept (TIER_UNLOCKS_ACADEMY) for the one-time rank floor (ifcLadderFloorOnce);
-   a rank only gets easier here, so nobody drops one. */
+   a rank only gets easier here, so nobody drops one (384.60: no longer true from Gold up - see FIRE_BADGE_SHARE and the second floor below). */
 const TIER_UNLOCKS_ACADEMY = {};
 Object.keys(TIER_UNLOCKS).forEach(k => { TIER_UNLOCKS_ACADEMY[k] = Object.assign({}, TIER_UNLOCKS[k]); });
-const FIRE_BADGE_SHARE = { rookie: .05, ranger: .14, veteran: .225, vanguard: .33, adept: .415, elite: .55, titan: .655 };
+/* 384.60: THE TOP RANK ASKS FOR EVERY CHAPTER, AND THE GAPS GROW ALL THE WAY UP. Madison: "Don't change how many for Bronze, Silver, but it
+   should be 58 to reach Supernova and it needs to progressively get there." Bronze and Silver are exactly as they were (5% and 14% = 3 and 8
+   of 58); then Gold 24%, Platinum 38%, Sapphire 55%, Amethyst 76%, Supernova 100% = 14, 22, 32, 44, 58 - gaps 5, 6, 8, 10, 12, 14, each bigger
+   than the one before. Supernova is the share 1, so a chapter added moves it to the new total (read off the bank, never typed). The keys are
+   rookie Bronze, ranger Silver, veteran Gold, vanguard Platinum, adept Sapphire, elite Amethyst, titan Supernova (RANK_DISPLAY_NAME).
+   The badges' own XP (a chapter's one imperfect and one perfect run, ~932 on average) is 61, 71, 63, 59, 56, 55 and 54% of the XP each
+   rank's level asks: inside the 25-85 band and falling from Silver up (every chapter once is ~54,000 XP, level 60, against level 80's
+   100,240 - the other ~46% is practice and tests). Levels are unchanged. THIS LADDER IS HARDER FROM GOLD UP (the previous one asked 13, 19,
+   24, 32 and 38), so it is not "a rank only gets easier": ifcLadderFloor384bOnce below keeps every rank somebody held on the previous
+   ladder. FIRE_BADGE_SHARE_384 is that previous ladder, kept for the floor alone. */
+const FIRE_BADGE_SHARE = { rookie: .05, ranger: .14, veteran: .24, vanguard: .38, adept: .55, elite: .76, titan: 1 };
+const FIRE_BADGE_SHARE_384 = { rookie: .05, ranger: .14, veteran: .225, vanguard: .33, adept: .415, elite: .55, titan: .655 };
+var IFC_CHAPTER_COUNT = 0;
 if(window.NOVA_CLASS === "ifc"){
   try{
     const seen = {}; QUESTIONS.forEach(q => { const t = q && (q.topic || "").trim(); if(t) seen[t] = 1; });
     const n = Object.keys(seen).length;
+    IFC_CHAPTER_COUNT = n;
     if(n > 2) TIER_ORDER_FULL.forEach(k => {
       const r = TIER_UNLOCKS[k]; if(!r) return;
       r.badges = Math.max(1, Math.round((FIRE_BADGE_SHARE[k] || 1) * n));
@@ -74587,6 +74907,34 @@ function ifcLadderFloorOnce(){
     const lvl = levelFromPoints(store.lifetime ? Number(store.lifetime.points) || 0 : 0);
     let held = 0;
     TIER_ORDER_FULL.forEach((k, i) => { const r = TIER_UNLOCKS_ACADEMY[k]; if(r && lvl >= (r.level || 0) && b >= (r.badges || 0)) held = i + 1; });
+    if(held > (Number(store.rankFloor) || 0)){ store.rankFloor = held; saveStore(); return true; }
+  }catch(e){}
+  return false;
+}
+/* NOBODY LOSES A RANK ON THE 58-CHAPTER LADDER (build 384.60, Fire Code only). Gold to Supernova now ask for more badges (14, 22, 32, 44, 58
+   against 13, 19, 24, 32, 38), so a rank computed fresh from level and badges would take Gold, Platinum, Sapphire or Amethyst off somebody
+   who holds it. The rank this account held on the PREVIOUS Fire Code ladder (FIRE_BADGE_SHARE_384 of this bank's chapters, the same rounding the
+   ladder uses, and the same levels) becomes its rank floor, once (class26e.ifcladder384b, kept in the class's own storage and written
+   BEFORE the work, so a crash costs one floor rather than a loop). A floor only ever raises (here, rankOf, mergeSameAccount and
+   mergeLeavingAccount take the max), and everything a rank hands over is DERIVED from rank when read (tierColorUnlocked honours the
+   floor: the colour, the flare, the character, the rank's emblem on the boards, the published row's rankFloor) - no unlock mark is
+   stored. The level wall starts after the floor (wallRankIndex), so nobody's shown level moves either. Nothing re-fires: the rank-up
+   scene is owed only past store.rankUpShown, and the floor is not past it. The level is the curve's own (levelFromPoints), which is
+   what a held rank's level asks (the wall is the NEXT rank's level, never below a held one's). */
+function ifcLadderFloor384bOnce(){
+  if(window.NOVA_CLASS !== "ifc") return false;
+  const K = "class26e.ifcladder384b";
+  try{ if(localStorage.getItem(K)) return false; localStorage.setItem(K, "1"); }catch(e){ return false; }
+  try{
+    const n = IFC_CHAPTER_COUNT;
+    if(!(n > 2)) return false;
+    const b = badgeCountOf(store);
+    const lvl = levelFromPoints(store.lifetime ? Number(store.lifetime.points) || 0 : 0);
+    let held = 0;
+    TIER_ORDER_FULL.forEach((k, i) => {
+      const r = TIER_UNLOCKS[k], need = Math.max(1, Math.round((FIRE_BADGE_SHARE_384[k] || 1) * n));
+      if(r && lvl >= (r.level || 0) && b >= need) held = i + 1;
+    });
     if(held > (Number(store.rankFloor) || 0)){ store.rankFloor = held; saveStore(); return true; }
   }catch(e){}
   return false;
@@ -78460,6 +78808,32 @@ function badgeSmudge(seed, x, y){
   const n = .62 * badgeNoiseAt(T, x * (4 / 15) + ox, y * (4 / 15) + oy) + .38 * badgeNoiseAt(T, y * (4 / 6.5) + oy + 31.7, -x * (4 / 6.5) + ox + 17.9);
   const t = (n - .4) / .36;
   return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+}
+/* ---- (384.50) A BADGE'S SCENE IS OWED UNTIL IT HAS PLAYED TO ITS END ----
+   The case scene is the results' (playBadgeCaseScene), and it takes ~17s to come round after the grade and the XP. A results screen
+   that goes before it does (the app put away and evicted by the phone, a relaunch) used to take the scene with it - the badge was
+   earned and saved and nothing ever said so. summarize() now writes each badge it finds into store.badgeSceneOwed (unit -> when);
+   the scene writes store.badgeScenePlayed when it reaches its own end (finish - never when a screen replaced it); and Home plays
+   whatever is still owed (playOwedBadgeScenes). Only badges earned from this build on are ever owed. Both maps only grow
+   (mergeSameAccount takes the later time per unit), so a scene played on one device is not owed on another. */
+function badgeSceneMaps(){
+  if(!store.badgeSceneOwed || typeof store.badgeSceneOwed !== "object" || Array.isArray(store.badgeSceneOwed)) store.badgeSceneOwed = {};
+  if(!store.badgeScenePlayed || typeof store.badgeScenePlayed !== "object" || Array.isArray(store.badgeScenePlayed)) store.badgeScenePlayed = {};
+  return { owed: store.badgeSceneOwed, played: store.badgeScenePlayed };
+}
+function oweBadgeScenes(units){
+  const m = badgeSceneMaps(), now = Date.now();
+  (units || []).forEach(u => { if(!m.played[u] && !m.owed[u]) m.owed[u] = now; });
+}
+function markBadgeScenesPlayed(units){
+  const m = badgeSceneMaps(), now = Date.now();
+  let changed = false;
+  (units || []).forEach(u => { if(!m.played[u]){ m.played[u] = now; changed = true; } });
+  if(changed) saveStore();
+}
+function badgeScenesOwed(){
+  const m = badgeSceneMaps();
+  return Object.keys(m.owed).filter(u => !m.played[u] && unitBadgeEarned(u)).sort((a, b) => m.owed[a] - m.owed[b]);
 }
 function badgeCleanMap(v){
   if(!v || typeof v !== "object" || Array.isArray(v)) return null;
@@ -88751,8 +89125,14 @@ function syncStatusBarColor(){
   const holdForSplash = !owns && !!document.getElementById("splashscreen") && !document.getElementById("splashscreen").classList.contains("splash-hide");
   /* (384.27) NOT IN THE STILL TOP EDGE (an installed iPhone/iPad app): the tag was set once, before first paint, by the head script; after
      that nothing rewrites it. Only the strip's colour (syncTopGuard) and the cache for the NEXT launch follow the sky. */
-  if(!topEdgeStill() && !holdForSplash && tcMeta.content !== (owns ? splashBg : color)) tcMeta.content = owns ? splashBg : color;
+  /* (384.54) IN A BROWSER TAB THE TAG SAYS WHAT THE PAGE PAINTS AT ITS TOP EDGE. The page's first rows are --band (the sky eases into it over
+     its first 3rem, and Safari fills the band beyond the page with the same colour); the tag carried the sky's own top colour, 13 levels
+     apart on Home ((46,32,37) against (33,29,33)), so any browser that tints its bar from the tag (Safari before 26, Chrome on Android) showed
+     a band of one colour over a page that starts in another. Same colour in both now. The installed app's tag and the cache are the sky's, as before. */
   refreshEdgeTints(color);
+  let tagColor = color;
+  try{ if(document.documentElement.classList.contains("is-browser")){ const bnd = document.documentElement.style.getPropertyValue("--band").trim(); if(/^#[0-9a-f]{6}$/i.test(bnd)) tagColor = bnd; } }catch(e){}
+  if(!topEdgeStill() && !holdForSplash && tcMeta.content !== (owns ? splashBg : tagColor)) tcMeta.content = owns ? splashBg : tagColor;
   syncTopGuard(color);
   /* The cache always holds the APP's colour, never the splash's - it is
      replayed before first paint on the next launch to get a standalone
@@ -88781,8 +89161,22 @@ function topEdgeStill(){
   const c = document.documentElement.classList;
   return c.contains("top-edge-on") && !c.contains("top-edge-old");
 }
+/* (384.54) UNDER A PINNED TEST HEADER THE PAGE'S TOP IS PAPER, NOT THE SKY. .wrap.test-pinned > .top::before paints --paper at 97% from the very
+   top of the screen to under the header, so on a question the glow the model in appTopEdgeColor() describes is not what is there; the strip
+   (12px, above everything) kept the model's colour and showed as a lighter band across the top of every question (measured 10 levels at
+   440x956: (27,25,30) against (17,21,26)). While that fade is up the strip takes the paper's colour, recoloured in place like every other
+   change; syncTestPin calls this again when the pin comes or goes. The tag and the next launch's cache are untouched (they are the sky's). */
+var lastTopEdgeModel = null;
+function topEdgeStripColor(color){
+  try{
+    if(document.querySelector(".wrap.test-pinned")){ const p = cssColorHex("var(--paper)"); if(p) return p; }
+  }catch(e){}
+  return color;
+}
 function syncTopGuard(color){
   try{
+    if(color) lastTopEdgeModel = color;
+    color = topEdgeStripColor(color);
     if(topEdgeStill()){
       /* the one strip (#top-edge, in the markup): its colour is changed in place and it is never removed or replaced. Under the splash it
          keeps the splash's colour (it is above the splash, so it must not show as a band of sky over it); finishSplash calls this again
@@ -95361,7 +95755,7 @@ function showHomeScreenSheet(opts){
     { parts: [{ text: "On your phone, open the same address and add Nova to your Home Screen. Sign in there with your sync code." }] }
   ]);
   compSteps.items[2].querySelector(".a2hs-step-text").appendChild(mk("span", "a2hs-address", A2HS_ADDRESS));
-  computer.append(mk("p", "a2hs-lead", "Nova works here as a website. There is nothing to install."), installBox(), compSteps.ol);
+  computer.append(mk("p", "a2hs-lead", "Nova is made for your phone. Open this link on your phone and add it to your Home Screen to use it as an app. This computer version works the same way in a browser."), installBox(), compSteps.ol);
 
   body.append(apple, android, computer);
   const foot = mk("div", "a2hs-foot");
@@ -98161,8 +98555,27 @@ function writeFlareFindsOwed(a){
 }
 function oweFlareFind(c, all){
   const a = flareFindsOwed().filter(o => o.c !== c);
-  a.push({ c, all: !!all, s: 0 });
+  a.push({ c, all: !!all, s: 0, t: Date.now() });
   writeFlareFindsOwed(a);
+}
+/* A FIND BELONGS TO ITS TEST'S RESULTS WHILE THAT TEST CAN STILL BE FINISHED (384.59). "Secret flare pop ups, why did it happen on the
+   main menu? Is it because I left a test and left the app? They should be showing up in results." It was: a flare tapped in a test
+   whose app was then closed came back as an unfinished test (scheduleResumeOffer marks the lost run saved) and Home played the find's
+   scene and cards 2s after launch, with the test itself still waiting to be continued. The find is in that test's save slot
+   (flareFound), and resumeRunSession already carries it to the results of the test when it is finished - so while the slot holds
+   it, Home leaves it alone (its character, banner and the "A new secret" card with it). Home plays it, once, as before, when the
+   test is gone (Quit test, Start a new test, Delete) or the find is FLARE_HOLD_MS old - never lost. Muted, nothing is held (nothing
+   would ever be shown). Only a find nothing of which has been seen (s 0), and only one with a time on it: an older entry has none
+   and is not held. FLARE_HOLD_MS = 0 puts back what 384.48 did. */
+const FLARE_HOLD_MS = 24 * 3600 * 1000;
+function flareFindHeldForRun(o){
+  try{
+    if(!o || theme.muteBanners || (o.s | 0) >= 1) return false;
+    const age = Date.now() - (Number(o.t) || 0);
+    if(!(Number(o.t) > 0) || !(age >= 0) || age >= FLARE_HOLD_MS) return false;
+    const s = readRunSession();
+    return !!(s && s.flareFound === o.c);
+  }catch(e){ return false; }
 }
 /* stage 1: its scene has been seen; 2: its card too (the entry goes
    unless the character it completes is still to be announced); 3: done */
@@ -98255,7 +98668,7 @@ function foundMysteryFlare(btn){
 }
 
 function showFlareFoundBanner(color, all){
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([{ kind: "flare" }]); return; }
   const banner = document.createElement("div");
   banner.className = "tierup-banner flare-banner";
   banner.style.setProperty("--tier-color", MYSTERY_COLOR[color]);
@@ -102915,6 +103328,14 @@ function showGetStarted(){
   const hl = vid("hundo"), hr = vid("rank"); hl.classList.add("gs-side", "is-left"); hr.classList.add("gs-side", "is-right");
   const hc = document.createElement("div"); hc.className = "gs-hero-copy";
   hc.innerHTML = '<p class="gs-eyebrow">Welcome to</p><h1 class="gs-logo">NOVA</h1><p class="gs-tag">Study smarter. Rank up. Explore.</p><p class="gs-scrollcue" aria-hidden="true">Scroll</p>';
+  /* (384.53) on a computer: Nova is built to be an app on a phone (the phone page says the other way round) */
+  try{
+    if(a2hsDeviceGuess() === "computer" && !isStandaloneApp()){
+      const dv = document.createElement("p"); dv.className = "gs-device";
+      dv.textContent = "Nova is made for your phone. Open this link on your phone and add it to your Home Screen to use it as an app. This computer version works the same way in a browser.";
+      hc.querySelector(".gs-tag").after(dv);
+    }
+  }catch(e){}
   hero.append(warp, hl, hc, hr);
   scroll.appendChild(hero);
   GS_SCENES.forEach((sc, i) => {
@@ -103198,35 +103619,196 @@ function a2hsShare(){
       e => (e && e.name === "AbortError") ? "cancelled" : "failed");
   }catch(e){ return Promise.resolve("failed"); }
 }
-function showInstallFirst(o){
-  o = o || {};
+/* (384.36) THE INSTALL PAGE, FRIENDLY. "Could this look better, friendly? Like welcome to nova, before we get started ... We need
+   very clear instructions ... very simple for them to understand that they must add it to home." It is four screens, one function
+   (showInstallFirst, o.view picks):
+     "main"  the page a phone or tablet in a tab is held on: the app icon, a welcome, three numbered steps, and one button.
+     "video" what that button opens on iPhone and iPad: navigator.share is called in the tap (the share menu rises over the lower part
+             of the screen) and, in the same task, the page becomes a short video in the TOP of the screen, above where the menu
+             sits, with only two answers under it: I've added it, I can't add it.
+     "done"  after I've added it: open Nova from the Home Screen, you can close this page. It never leads into sign-up (the account is
+             made in the icon).
+     "help"  after I can't add it: what usually goes wrong, in four steps, and Try again / Still can't add it (the old escape: on
+             in the browser, remembered).
+   THE VIDEO: INSTALL_CLIP names it (one place). Its box is CSS custom properties on .installvideo-panel (--iv-ar the box's
+   width / height, --iv-pos the part of the frame kept, --iv-scale a zoom into it), so a new recording is cropped without code. */
+var INSTALL_CLIP = { src: "landing/a2hs-iphone.mp4", poster: "landing/a2hs-iphone.jpg" };
+/* the app's own icon, as the page already carries it (the 192px icon link, else the data-URI favicon) */
+function installAppIcon(){
+  const wrap = document.createElement("span");
+  wrap.className = "if-appicon"; wrap.setAttribute("aria-hidden", "true");
+  try{
+    const lk = document.querySelector('link[rel="icon"][sizes="192x192"]') || document.querySelector('link[rel="icon"][href^="data:image"]') || document.querySelector('link[rel="apple-touch-icon"]');
+    if(lk && lk.href){
+      const img = document.createElement("img");
+      img.src = lk.href; img.alt = ""; img.width = 96; img.height = 96; img.draggable = false;
+      wrap.appendChild(img);
+    }
+  }catch(e){}
+  return wrap;
+}
+function installPrep(){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true; timerlineEl.hidden = true;
   appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true; pauseBtn.hidden = true;
   countEl.textContent = "";
   setOnboardingHeader();
+}
+function installMk(tag, cls, text){ const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; }
+/* (384.53) "mention that this is the phone version and that there is also a computer version ... more clear so people understand the app is
+   meant to be used as an app on the phone": the phone pages say it is the phone version (and where the computer one is), and what to do
+   once it is added. The computer's Get Started page says the other way round (gs-device). */
+var INSTALL_DEVICE_LINE = "This is the phone version. Nova also has a computer version: open this same link on a computer.";
+function installAfterText(dev){
+  const where = dev === "apple" ? "Safari" : "your browser";
+  return "After you add it, close this page and open Nova from the icon on your Home Screen. Use that icon every time. Do not keep using Nova in " + where + ".";
+}
+/* a list of numbered steps; each is a string or an array of parts for renderInlineParts */
+function installSteps(list, cls){
+  const ol = installMk("ol", "if-steps" + (cls ? " " + cls : ""));
+  list.forEach((s, i) => {
+    const li = installMk("li", "if-step");
+    const num = installMk("span", "if-num", String(i + 1)); num.setAttribute("aria-hidden", "true");
+    const tx = installMk("span", "if-step-text");
+    if(typeof s === "string") tx.textContent = s;
+    else { const main = installMk("span", "if-step-main"); renderInlineParts(s.parts || s, main); tx.appendChild(main);
+      if(s.note){ const nt = installMk("span", "if-step-note"); renderInlineParts(s.note, nt); tx.appendChild(nt); } }
+    li.append(num, tx);
+    ol.appendChild(li);
+  });
+  return ol;
+}
+/* "I can't add it" goes to the help page; "Still can't add it" there goes on as before, in the browser */
+function installHelpLink(dev, inApp){
+  const b = installMk("button", "if-skip if-out", "I can’t add it"); b.type = "button";
+  b.addEventListener("click", () => showInstallFirst({ view: "help", device: dev, inapp: inApp }));
+  return b;
+}
+function showInstallFirst(o){
+  o = o || {};
+  installPrep();
   let dev = o.device || a2hsDeviceGuess();
   if(dev !== "android") dev = "apple";
   const inApp = o.inapp != null ? !!o.inapp : inAppBrowser();
-  const mk = (tag, cls, text) => { const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; };
-  const panel = mk("section", "panel home onboarding-shortform-panel signupcheck-panel installfirst-panel");
-  panel.setAttribute("data-screen", "installfirst");
-  panel.dataset.mode = inApp ? "inapp" : "install"; panel.dataset.dev = dev;
+  const view = o.view || "main";
+  const mk = installMk;
   const glow = mk("div", "homeglow"); glow.setAttribute("aria-hidden", "true");
   const browserName = dev === "apple" ? "Safari" : "your browser";
-  const title = mk("p", "hometitle if-title", inApp ? "Open this page in " + browserName + " first" : "Add Nova to your Home Screen");
-  const line = mk("p", "hometagline signupcheck-text if-line", inApp
+
+  /* ---- the video: what the button opens ---- */
+  if(view === "video"){
+    const panel = mk("section", "panel home installvideo-panel");
+    panel.setAttribute("data-screen", "installvideo"); panel.dataset.dev = dev;
+    const head = mk("h1", "if-vhead", "Add Nova to your Home Screen");
+    const frame = mk("div", "iv-frame");
+    let video = null;
+    if(dev === "apple"){
+      video = document.createElement("video");
+      video.muted = true; video.defaultMuted = true; video.loop = true; video.playsInline = true; video.autoplay = true; video.preload = "auto";
+      video.setAttribute("muted", ""); video.setAttribute("playsinline", ""); video.setAttribute("webkit-playsinline", ""); video.setAttribute("autoplay", "");
+      video.setAttribute("disablepictureinpicture", ""); video.setAttribute("disableremoteplayback", "");
+      video.poster = INSTALL_CLIP.poster; video.src = INSTALL_CLIP.src;
+      video.setAttribute("aria-label", "Video: adding Nova to the Home Screen");
+      const play = mk("button", "iv-play"); play.type = "button"; play.setAttribute("aria-label", "Play the video");
+      play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.2v13.6L18.6 12z" fill="currentColor"/></svg>';
+      frame.append(video, play);
+      const start = () => { try{ const pr = video.play(); if(pr && pr.catch) pr.catch(() => frame.classList.add("is-paused")); }catch(e){ frame.classList.add("is-paused"); } };
+      video.addEventListener("play", () => frame.classList.remove("is-paused"));
+      video.addEventListener("pause", () => frame.classList.add("is-paused"));
+      frame.addEventListener("click", () => { if(video.paused) start(); else video.pause(); });
+      let calm = false;
+      try{ calm = !!(theme && theme.reduceMotion) || window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+      if(calm){ video.autoplay = false; video.removeAttribute("autoplay"); frame.classList.add("is-paused"); } else start();
+      const gone = new MutationObserver(() => { if(!panel.isConnected){ gone.disconnect(); try{ video.pause(); video.removeAttribute("src"); video.load(); }catch(e){} } });
+      try{ gone.observe(stage, { childList: true }); }catch(e){}
+    } else {
+      /* no Android recording yet: the same box, with the menu steps in it */
+      frame.classList.add("is-card");
+      frame.appendChild(installSteps([
+        "Open your browser’s menu (three dots or lines).",
+        [{ text: "Tap " }, { text: "Add to Home screen", b: true }, { text: " or " }, { text: "Install app", b: true }, { text: "." }],
+        [{ text: "Tap " }, { text: "Add", b: true }, { text: "." }]
+      ], "if-steps-card"));
+    }
+    const added = mk("button", "next playbtn if-added", "I’ve added it"); added.type = "button"; added.id = "nextbtn";
+    added.addEventListener("click", () => {
+      /* what the old guide's "I've added it" did: the one-time showing counts as made, and the reminder bar is over for good */
+      try{ if(!a2hsShownBefore()) localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){}
+      try{ a2hsBarEnd("added"); }catch(e){}
+      showInstallFirst({ view: "done", device: dev, inapp: inApp });
+    });
+    panel.append(head, frame, added, installHelpLink(dev, inApp));
+    stage.replaceChildren(panel);
+    toTop();
+    return panel;
+  }
+
+  /* ---- the final state ---- */
+  if(view === "done"){
+    const panel = mk("section", "panel home onboarding-shortform-panel signupcheck-panel installfirst-panel if-donepanel");
+    panel.setAttribute("data-screen", "installdone"); panel.dataset.dev = dev;
+    const back = mk("button", "if-skip if-back", "I haven’t added it yet"); back.type = "button";
+    back.addEventListener("click", () => showInstallFirst({ device: dev, inapp: inApp }));
+    panel.append(glow, installAppIcon(), mk("p", "if-kicker", "All set"), mk("h1", "if-title", "Now open Nova from your Home Screen"),
+      mk("p", "if-line", "You can close this page."),
+      mk("p", "if-after", "Nova is an app on your phone, not a website. " + installAfterText(dev).replace(/^After you add it, close this page and open/, "Open")),
+      mk("p", "if-device", INSTALL_DEVICE_LINE), back);
+    stage.replaceChildren(panel);
+    toTop();
+    return panel;
+  }
+
+  /* ---- help: what usually goes wrong ---- */
+  if(view === "help"){
+    const panel = mk("section", "panel home onboarding-shortform-panel signupcheck-panel installfirst-panel if-helppanel");
+    panel.setAttribute("data-screen", "installhelp"); panel.dataset.dev = dev;
+    const steps = dev === "apple" ? [
+      [{ text: "Open this page in " }, { text: "Safari", b: true }, { text: "." }],
+      [{ text: "Tap the " }, { text: "Share", b: true }, { text: " button " }, { icon: buildShareIcon, style: "plain" }, { text: " in Safari’s toolbar." }],
+      { parts: [{ text: "Scroll the menu down and tap " }, { text: "Add to Home Screen", b: true }, { text: "." }],
+        note: [{ text: "Not in the list? Scroll to the bottom of the menu, tap " }, { text: "Edit Actions", b: true }, { text: " (or " }, { text: "More", b: true }, { text: ") and add it." }] },
+      [{ text: "Tap " }, { text: "Add", b: true }, { text: "." }]
+    ] : [
+      [{ text: "Open this page in " }, { text: "Chrome", b: true }, { text: " or your browser." }],
+      "Open the browser’s menu (three dots or lines).",
+      { parts: [{ text: "Tap " }, { text: "Add to Home screen", b: true }, { text: " or " }, { text: "Install app", b: true }, { text: "." }],
+        note: [{ text: "Not in the list? Scroll down in the menu, or look under " }, { text: "More", b: true }, { text: "." }] },
+      [{ text: "Tap " }, { text: "Add", b: true }, { text: "." }]
+    ];
+    const again = mk("button", "next playbtn if-go", "Try again"); again.type = "button"; again.id = "nextbtn";
+    again.addEventListener("click", () => showInstallFirst({ device: dev, inapp: inApp }));
+    const still = mk("button", "if-skip if-out", "Still can’t add it"); still.type = "button";
+    /* goes on as before, in the browser: Get Started, then Welcome */
+    still.addEventListener("click", () => { installSkip(); showWelcomeFirst(); });
+    panel.append(glow, mk("h1", "if-title", "Having trouble adding Nova?"), installSteps(steps),
+      mk("p", "if-after", "You can still use Nova in this browser. Your progress will then stay in this browser."), still, again);
+    stage.replaceChildren(panel);
+    toTop();
+    return panel;
+  }
+
+  /* ---- main ---- */
+  const panel = mk("section", "panel home onboarding-shortform-panel signupcheck-panel installfirst-panel if-mainpanel");
+  panel.setAttribute("data-screen", "installfirst");
+  panel.dataset.mode = inApp ? "inapp" : "install"; panel.dataset.dev = dev;
+  const title = mk("h1", "if-title", inApp ? "Open this page in " + browserName + " first" : "Before we get started, add Nova to your Home Screen");
+  const line = mk("p", "if-line", inApp
     ? "This app cannot add Nova to your Home Screen. Open the page in " + browserName + ", then add it from there."
-    : "Add it first, then open Nova from the new icon to get started.");
+    : "It opens full screen like any other app and keeps your progress.");
   const note = mk("p", "if-note");
   const status = mk("p", "if-status"); status.setAttribute("role", "status");
-  const guide = mk("button", "if-guide", "Show me how"); guide.type = "button";
-  const skip = mk("button", "if-skip if-out", "I can’t add it"); skip.type = "button";
-  /* the glyph of what the button opens: the share arrow on iPhone and iPad, the plus on Android */
-  const icon = mk("span", "if-icon"); icon.setAttribute("aria-hidden", "true");
-  try{ icon.appendChild(dev === "apple" && !inApp ? buildShareIcon() : buildAddSquareIcon()); }catch(e){}
+  const skip = installHelpLink(dev, inApp);
   const go = mk("button", "next playbtn if-go"); go.type = "button"; go.id = "nextbtn";
-  panel.append(glow, icon, title, line, note, status);
+  panel.append(glow, installAppIcon(), mk("p", "if-kicker", "Welcome to Nova"), title, line);
+  const device = mk("p", "if-device", INSTALL_DEVICE_LINE);
+  panel.appendChild(device);
+  const openStep = dev === "apple" ? "Open Nova from its Home Screen icon (not from Safari)." : "Open Nova from its Home Screen icon (not from your browser).";
+  let stepsEl = null;
+  if(!inApp){
+    stepsEl = installSteps(["Tap the button below.", [{ text: "Tap " }, { text: "Add to Home Screen", b: true }, { text: "." }], openStep]);
+    panel.append(stepsEl, mk("p", "if-after", installAfterText(dev)));
+  }
+  panel.append(note, status);
   let linkRow = null;
   if(inApp){
     /* the page's address, to copy and paste into the browser, where the hand-off does nothing */
@@ -103242,13 +103824,17 @@ function showInstallFirst(o){
     if(dev === "apple") linkRow.append(copy);   /* Android's primary button is the copy */
     panel.appendChild(linkRow);
   }
-  if(!inApp) panel.appendChild(guide);
   panel.append(skip, go);
 
   let busy = false;
   const setStatus = t => { status.textContent = t; status.hidden = !t; };
   setStatus("");
-  const openGuide = () => { try{ showHomeScreenSheet({ from: "installfirst", device: dev }); }catch(e){} };
+  const openVideo = share => {
+    /* the share menu is asked for FIRST, in the tap (it needs the tap); the page then becomes the video in the same task, whatever
+       the menu does. Shared, cancelled or never opened, the screen stays as it is. */
+    if(share){ try{ a2hsShare(); }catch(e){} }
+    showInstallFirst({ view: "video", device: dev, inapp: inApp });
+  };
   if(inApp){
     go.textContent = dev === "apple" ? "Open in Safari" : "Copy link";
     note.textContent = dev === "apple"
@@ -103270,25 +103856,17 @@ function showInstallFirst(o){
       }
     });
   } else if(dev === "apple"){
-    go.textContent = "Open Share menu";
-    note.textContent = "This opens your phone’s share menu. Tap Add to Home Screen in it, then open Nova from the new icon.";
-    go.addEventListener("click", () => {
-      if(busy) return;
-      busy = true;
-      /* called in the tap, before anything else: the share menu needs the tap that opened it */
-      a2hsShare().then(r => {
-        busy = false;
-        if(!panel.isConnected) return;
-        if(r === "shared") setStatus("Now open Nova from the new icon on your Home Screen.");
-        else { setStatus("Use the steps to add it by hand."); openGuide(); }
-      });
-    });
+    go.textContent = "Show me how to add it";
+    go.addEventListener("click", () => openVideo(true));
   } else {
-    note.textContent = "Add Nova to your Home Screen, then open Nova from the new icon.";
+    const stepText = has => has
+      ? ["Tap Install Nova below.", "Tap Install when your phone asks.", openStep]
+      : ["Tap the button below.", [{ text: "Add Nova from your browser’s menu." }], openStep];
     const paint = () => {
       const has = !!window.__deferredInstallPrompt;
       go.textContent = has ? "Install Nova" : "Show me how to add it";
-      guide.hidden = !has;
+      const fresh = installSteps(stepText(has));
+      stepsEl.replaceWith(fresh); stepsEl = fresh;
     };
     paint();
     const onPrompt = () => setTimeout(() => { if(panel.isConnected) paint(); }, 0);
@@ -103301,7 +103879,7 @@ function showInstallFirst(o){
     }catch(e){}
     go.addEventListener("click", () => {
       const p = window.__deferredInstallPrompt;
-      if(!p){ openGuide(); return; }
+      if(!p){ openVideo(false); return; }
       if(busy) return;
       busy = true;
       try{
@@ -103312,12 +103890,9 @@ function showInstallFirst(o){
           if(c && c.outcome === "accepted") setStatus("Nova is being added. Open it from your Home Screen.");
           else { setStatus("Not added. Tap Install Nova to try again."); paint(); }
         }).catch(() => { busy = false; });
-      }catch(e){ busy = false; openGuide(); }
+      }catch(e){ busy = false; openVideo(false); }
     });
   }
-  guide.addEventListener("click", openGuide);
-  /* goes on as before, in the browser: Get Started, then Welcome */
-  skip.addEventListener("click", () => { installSkip(); showWelcomeFirst(); });
 
   stage.replaceChildren(panel);
   toTop();
@@ -108411,7 +108986,7 @@ function playTierCutscene(tierKey, opts){
    Settings uses, so the banner and the dot you go and tap cannot be
    two different colours. */
 function showThemeUnlockBanner(tierKey){
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([{ kind: "theme", name: ACCENT_DISPLAY_NAME[tierKey] || tierKey }]); return; }
   const swatch = ACCENT_SWATCH[tierKey];
   if(!swatch) return;
   const banner = document.createElement("div");
@@ -108449,7 +109024,7 @@ function showThemeUnlockBanner(tierKey){
 
 function showCharacterUnlockBanner(id){
   markUnlocksShown([id], []);
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([characterUnlockItem(id)]); return; }
   const banner = document.createElement("div");
   banner.className = "tierup-banner charup-banner";
   banner.style.setProperty("--tier-color", avatarGlowColor(id));
@@ -108509,7 +109084,7 @@ function announceCharacterUnlocks(before){
    the challenge was. Call of duty style." */
 function showChallengeUnlock(id){
   markUnlocksShown([id], []);
-  if(theme.muteBanners) return;
+  if(theme.muteBanners){ celebrationsOffBanner([characterUnlockItem(id)]); return; }
   setTimeout(() => {
     try{
       playUnlockSpotlight({ kind: "character", character: id, feat: true, kicker: "Character unlocked",
@@ -109708,6 +110283,7 @@ const CHAT_ROOM_KEY = "class26e.chatroom";
 let chatRoomCode = null;
 let chatMyKey = null;
 let chatPanelCleanup = null;
+let leaveSheetCleanup = null;   /* (384.52) the leave-chat sheet's listeners; declared up here with the other chat state (TDZ) */
 
 /* THIRTY. A class of thirty cannot be in more than thirty conversations
    that matter, and the list is pushed inside the progress document on
@@ -112288,13 +112864,27 @@ function closeChatRoom(){
    with it rather than leaving a question over some other screen, and
    never window.confirm(), which does nothing in an installed app. */
 function closeLeaveChatConfirm(){
+  if(leaveSheetCleanup){ try{ leaveSheetCleanup(); }catch(e){} leaveSheetCleanup = null; }
   document.querySelectorAll(".chatdock-confirm").forEach(n => n.remove());
+}
+/* (384.52) THE SHEET LIVES ON <body>, SIZED TO THE CHAT PANEL. It was a child of #chatdock-panel (build 307, so on an iPad it covers
+   the chat and not the whole screen), but the panel is a backdrop root (will-change:backdrop-filter), so the sheet's frosted glass could
+   only blur the panel's own contents and never the page: a flat dark slab. On <body> it is a sibling of the dock and blurs what is
+   under it. Its rectangle and corner radius are the panel's, read at open and again whenever the window or the keyboard resizes, and
+   it goes away with the dock (closeChatDock / closeChatRoom / syncChatDock all call closeLeaveChatConfirm), or here if the panel
+   itself has gone. */
+function placeLeaveSheet(wrap){
+  const panel = document.getElementById("chatdock-panel");
+  if(!panel || !panel.isConnected || !wrap.isConnected){ closeLeaveChatConfirm(); return; }
+  const r = panel.getBoundingClientRect();
+  if(r.width < 2 || r.height < 2) return;
+  const st = wrap.style, br = getComputedStyle(panel).borderRadius;
+  st.left = r.left + "px"; st.top = r.top + "px"; st.width = r.width + "px"; st.height = r.height + "px";
+  st.right = "auto"; st.bottom = "auto"; st.borderRadius = br || "0";
 }
 function confirmLeaveChat(code, onLeave){
   if(!code) return;
-  /* In the panel (build 307), so on an iPad it covers the chat and not
-     the whole screen. */
-  const host = document.getElementById("chatdock-panel") || document.getElementById("chatdock");
+  const host = document.getElementById("chatdock-panel");
   if(!host){ onLeave(); return; }
   closeLeaveChatConfirm();
   const entry = chatEntry(code);
@@ -112335,7 +112925,20 @@ function confirmLeaveChat(code, onLeave){
   inner.className = "chat-leavesheet-inner";
   inner.append(card, stay);
   wrap.appendChild(inner);
-  host.appendChild(wrap);
+  document.body.appendChild(wrap);
+  placeLeaveSheet(wrap);
+  const again = () => placeLeaveSheet(wrap);
+  window.addEventListener("resize", again);
+  window.addEventListener("orientationchange", again);
+  const vv = window.visualViewport;
+  if(vv) vv.addEventListener("resize", again);
+  const settle = setTimeout(again, 320);   /* the phone sheet may still be sliding in when this opens */
+  leaveSheetCleanup = () => {
+    clearTimeout(settle);
+    window.removeEventListener("resize", again);
+    window.removeEventListener("orientationchange", again);
+    if(vv) vv.removeEventListener("resize", again);
+  };
   focusQuietly(stay);
 }
 
@@ -115721,6 +116324,8 @@ function showHome(){
        (see noticeAllowedHere). A badge earned in that window is still
        queued and still plays - just on the next visit to Home. */
     setTimeout(playQueuedBadgeCutscenes, 500);
+    /* (384.50) a badge's scene that never reached its end on the results (the app put away, a relaunch) */
+    setTimeout(() => playOwedBadgeScenes(0), 900);
     /* And anything unlocked away from a results screen, after the
        badges - see playHomeUnlocks. Straight away when a cutscene has
        just handed over (build 268): the bridge it left is holding the
@@ -115769,6 +116374,26 @@ const BADGE_CUTSCENE_MS = 4200;
 /* Entrance plus flight, for anything that needs the whole thing. */
 const BADGE_CUTSCENE_TOTAL_MS = BADGE_CUTSCENE_MS + 800;
 
+/* (384.50) Home plays the case for any badge whose scene is still owed (see badgeSceneMaps). Waits (a second at a time, 40 times) for
+   whatever owns the screen - the same list Home's unlock cards wait for; with "Skip celebrations and pop-ups" on it is told once
+   (celebrationsOffBanner) and no longer owed. */
+function playOwedBadgeScenes(tries){
+  try{
+    if(!store || !store.onboardingComplete) return;
+    const units = badgeScenesOwed();
+    if(!units.length) return;
+    if(!stage || !stage.querySelector('[data-screen="home"]')) return;
+    if(window.__owedBadgePlaying && Date.now() - window.__owedBadgePlaying < 60000) return;
+    if(theme.muteBanners){
+      markBadgeScenesPlayed(units);
+      celebrationsOffBanner(units.map(u => ({ kind: "badge", name: badgeTitle(u) })));
+      return;
+    }
+    if(homeUnlockBlocked()){ if((tries || 0) < 40) setTimeout(() => playOwedBadgeScenes((tries || 0) + 1), 1000); return; }
+    window.__owedBadgePlaying = Date.now();
+    playBadgeCaseScene(units.slice(), () => { window.__owedBadgePlaying = 0; }, [], { alive: () => !!(stage && stage.querySelector('[data-screen="home"]')) });
+  }catch(e){ window.__owedBadgePlaying = 0; }
+}
 function playQueuedBadgeCutscenes(){
   const queue = store.pendingBadgeUnlocks || [];
   if(!queue.length) return;
@@ -115797,6 +116422,8 @@ function playQueuedBadgeCutscenes(){
   if(theme.muteBanners){
     store.pendingBadgeUnlocks = [];
     saveStore();
+    /* (384.50) said once, as the queue is cleared */
+    celebrationsOffBanner(queue.map(u => ({ kind: "badge", name: badgeTitle(u) })));
     return;
   }
 
@@ -119928,10 +120555,23 @@ const IFC_PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.149/";
 let ifcViewerP = null, ifcPdfjsP = null, ifcBook = null, ifcBookP = null, ifcCountyP = null;
 const ifcCountyOpts = { cache: new Map(), fontBold: new Map() };
 const ifcNodeCache = new Map();
-function ifcViewer(){ return ifcViewerP || (ifcViewerP = import("./ifc/ifc-viewer.js")); }
+/* (384.58) A FAILED LOAD IS NOT KEPT FOR THE VISIT. These two were remembered as they came back, so one dropped request for the
+   reader (pdf.js comes from a CDN) or for ifc-viewer.js - a weak signal in a classroom, a phone that was asleep - left every code
+   box in the visit unable to open the book and the "Choose my IFC PDF" screen unable to read a file, until the app was closed.
+   A browser also keeps a module that failed to load for the life of the page, so the next try asks for it under a new address
+   (?r=N). The error is one plain sentence (e.refused: the analysing screen shows it as it is). */
+let ifcLoadTry = 0;
+function ifcLoadFailed(what){
+  const e = new Error("Nova could not load " + what + ". Check your connection and try again."); e.refused = true; e.loadFailed = true; return e;
+}
+function ifcViewer(){
+  return ifcViewerP || (ifcViewerP = import("./ifc/ifc-viewer.js" + (ifcLoadTry ? "?r=" + ifcLoadTry : ""))
+    .catch(() => { ifcViewerP = null; ifcLoadTry++; throw ifcLoadFailed("the part that reads the book"); }));
+}
 function ifcPdfjs(){
-  return ifcPdfjsP || (ifcPdfjsP = import(IFC_PDFJS + "build/pdf.min.mjs").then(lib => {
-    lib.GlobalWorkerOptions.workerSrc = IFC_PDFJS + "build/pdf.worker.min.mjs"; return lib; }));
+  return ifcPdfjsP || (ifcPdfjsP = import(IFC_PDFJS + "build/pdf.min.mjs" + (ifcLoadTry ? "?r=" + ifcLoadTry : "")).then(lib => {
+    lib.GlobalWorkerOptions.workerSrc = IFC_PDFJS + "build/pdf.worker.min.mjs"; return lib; })
+    .catch(() => { ifcPdfjsP = null; ifcLoadTry++; throw ifcLoadFailed("the PDF reader"); }));
 }
 async function ifcOpenPdf(bytes){
   const lib = await ifcPdfjs();
@@ -119949,27 +120589,50 @@ function ifcKv(mode, key, value){
     r.onerror = () => rej(r.error);
     r.onsuccess = () => {
       try{
-        const db = r.result, tx = db.transaction("kv", mode === "get" ? "readonly" : "readwrite"), os = tx.objectStore("kv");
+        const db = r.result, write = mode !== "get", tx = db.transaction("kv", write ? "readwrite" : "readonly"), os = tx.objectStore("kv");
         const rq = mode === "get" ? os.get(key) : mode === "put" ? os.put(value, key) : os.delete(key);
-        rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
-        tx.oncomplete = () => { try{ db.close(); }catch(e){} };
+        let got;
+        /* (384.58) A WRITE IS DONE WHEN THE BROWSER HAS COMMITTED IT, not when the request was accepted: a book is tens of
+           megabytes, the request is accepted at once and the file is written after, and "kept" was reported (and the class
+           switched, the page reloaded) in that gap - the reload cancelled the write and left the index without its book.
+           Measured: a 120 MB copy, saved, reloaded straight after - the index was there, the PDF was not. */
+        rq.onsuccess = () => { got = rq.result; if(!write) res(got); };
+        rq.onerror = () => rej(rq.error);
+        tx.oncomplete = () => { try{ db.close(); }catch(e){} if(write) res(got); };
+        tx.onabort = () => { try{ db.close(); }catch(e){} rej(tx.error || rq.error || new Error("The copy was not saved.")); };
       }catch(e){ rej(e); }
     };
   });
 }
-/* the saved copy, opened once; null when there is none (or it cannot be read) */
+/* the saved copy, opened once; null when there is none (or it cannot be read).
+   (384.58) WHY it is null is kept (ifcBookWhy), because the two are not the same thing to a person: "none" - nothing is saved on
+   THIS device (a new device, a browser that was cleared); "unreadable" - the copy IS here and could not be opened this time (the
+   PDF reader did not load, the device was short of memory). The first asks for the PDF; the second says try again, and never
+   asks for the PDF - the book was not lost. A saved copy whose notes are from an older build (index.v) or were cut short is
+   read again here from the copy itself, once, and the notes saved: nobody is asked for a book they already gave. */
+let ifcBookWhy = "";
 function ifcEnsureBook(){
   if(ifcBook) return Promise.resolve(ifcBook);
   if(ifcBookP) return ifcBookP;
   ifcBookP = (async () => {
+    ifcBookWhy = "";
+    let blob = null, index = null;
+    try{ [blob, index] = await Promise.all([ifcKv("get", "pdf").catch(() => null), ifcKv("get", "index").catch(() => null)]); }catch(e){}
+    if(!blob || typeof blob.arrayBuffer !== "function"){ ifcBookWhy = "none"; return null; }
     try{
-      const [blob, index] = await Promise.all([ifcKv("get", "pdf").catch(() => null), ifcKv("get", "index").catch(() => null)]);
       const V = await ifcViewer();
-      if(!blob || !index || index.v !== V.INDEX_VERSION) return null;
       const doc = await ifcOpenPdf(new Uint8Array(await blob.arrayBuffer()));
+      if(!index || index.v !== V.INDEX_VERSION){
+        try{
+          index = await V.buildIndex(doc, {});
+          const chk = V.checkEdition(index);
+          if(!chk.ok) throw new Error("not the 2021 IFC");
+        }catch(e){ try{ doc.destroy(); }catch(e2){} ifcBookWhy = "none"; return null; }
+        try{ await ifcKv("put", "index", index); }catch(e){}
+      }
       ifcBook = { doc, index, opts: { cache: new Map(), fontBold: new Map() } };
       return ifcBook;
-    }catch(e){ return null; }
+    }catch(e){ ifcBookWhy = "unreadable"; return null; }
   })();
   const p = ifcBookP; p.then(b => { if(!b) ifcBookP = null; });
   return p;
@@ -120774,6 +121437,26 @@ function ifcDrawAhead(box, fill){
   box._ifcAhead = fill;
   ifcAheadIO.observe(box);
 }
+/* (384.58) the card for a copy that is on this device and could not be opened this time: no request for the PDF, one button to try again */
+function ifcUnreadableCard(body, again){
+  const lock = ifcEl("div", "ifc-locked"); lock.dataset.why = "unreadable";
+  lock.appendChild(ifcEl("span", "ifc-lock-ic"));
+  const t = ifcEl("div");
+  t.append(ifcEl("strong", null, "Your IFC PDF is saved on this device, but could not be opened just now."),
+    ifcEl("span", null, "Nova needs a connection to load the PDF reader. Check it, then try again. You do not need to load the PDF again."));
+  lock.appendChild(t); body.appendChild(lock);
+  const b = ifcEl("button", "ifc-link", "Try again"); b.type = "button"; b.addEventListener("click", again);
+  body.appendChild(b);
+}
+/* a code box that could not be filled: a reader that did not load is a try-again, anything else says what it says */
+function ifcFillFailed(item, body, foot, e){
+  body.textContent = "";
+  if(e && e.loadFailed){
+    const again = () => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-busy", "Opening the code…")); ifcFillCode(item, body, foot).catch(e2 => ifcFillFailed(item, body, foot, e2)); };
+    ifcUnreadableCard(body, again); return;
+  }
+  body.appendChild(ifcEl("p", "ifc-note", "Could not open this reference: " + ((e && e.message) || e)));
+}
 async function ifcFillCode(item, body, foot){
   const c = item.ifc.citation, V = await ifcViewer();
   if(c.source === "amendment"){
@@ -120820,14 +121503,20 @@ async function ifcFillCode(item, body, foot){
   body.textContent = "";
   const book = await ifcEnsureBook();
   if(!book){
-    const lock = ifcEl("div", "ifc-locked");
+    /* (384) NOT A LOCK, and no "unlocks": the one way into Fire Code (showIfcEnroll) ends only on a verified PDF, so this card
+       says what is true of THIS device.
+       (384.58) Two different truths, two different cards. "device": nothing is saved here - a second phone, a computer, the
+       installed app after the browser tab (each keeps its own storage), a browser that was cleared - and the book is never in the
+       account (it is a licensed book), so it is loaded once per device; the words say that and the button loads it. "unreadable":
+       the copy is here and could not be opened this time; it asks for nothing but another try. Before this the first card was
+       shown for both, claiming "this browser let the saved copy go" to somebody whose copy was fine. */
+    const again = () => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-busy", "Opening the code…")); ifcFillCode(item, body, foot).catch(e => ifcFillFailed(item, body, foot, e)); };
+    if(ifcBookWhy === "unreadable"){ ifcUnreadableCard(body, again); return; }
+    const lock = ifcEl("div", "ifc-locked"); lock.dataset.why = "device";
     lock.appendChild(ifcEl("span", "ifc-lock-ic"));
     const t = ifcEl("div");
-    /* (384) NOT A LOCK. Madison: "You shouldn't be able to enroll into the CLASS AT ALL unless you upload the pdf. So the unlock
-       thing under the question isn't gonna be a thing". It isn't: the one way into Fire Code (showIfcEnroll) ends only on a
-       verified PDF. This card is only ever seen when the browser has since let the stored copy go (cleared site data, or a
-       browser that would not keep it - "open for this visit only"), so it says that, with no lock and no "unlocks". */
-    t.append(ifcEl("strong", null, "Your IFC PDF isn\u2019t on this device right now."), ifcEl("span", null, "This browser let the saved copy go. Load it again and the code shows here. Until then, the section and page above find it in your book."));
+    t.append(ifcEl("strong", null, "Your IFC PDF isn\u2019t on this device."),
+      ifcEl("span", null, "The book stays on the device you load it on. It is never uploaded or saved to your account, because the IFC is a licensed book. Load your PDF once on this device and it stays here. Until then, the section and page above find it in your book."));
     lock.appendChild(t);
     body.appendChild(lock);
     if(typeof ifcPickBook === "function"){
@@ -120901,7 +121590,7 @@ async function ifcAnalyzeBook(file, step){
   const buf = await file.arrayBuffer();
   let doc;
   try{ doc = await ifcOpenPdf(new Uint8Array(buf.slice(0))); }
-  catch(e){ throw refuse("That file could not be opened as a PDF."); }
+  catch(e){ if(e && e.loadFailed) throw e; throw refuse("That file could not be opened as a PDF."); }
   step("open", 1);
   if(doc.numPages < 650 || doc.numPages > 760){
     try{ doc.destroy(); }catch(e){}
@@ -120913,14 +121602,18 @@ async function ifcAnalyzeBook(file, step){
   step("verify", 0);
   const opts = { cache: new Map(), fontBold: new Map() };
   const bank = await ifcBankReady();
-  const ver = await V.verifyCopy(doc, index, bank.questions, { ...opts, onProgress: (p, n) => step("verify", n ? p / n : 0) });
+  const ver = await V.verifyCopy(doc, index, bank.questions.map(ifcWithPatch), { ...opts, onProgress: (p, n) => step("verify", n ? p / n : 0) });
   if(!ver.ok){ try{ doc.destroy(); }catch(e){} throw refuse("This is not the book these questions were written from: " + ver.reason + ". Load the 2021 International Fire Code PDF you bought, not another edition."); }
   step("verify", 1);
   let kept = true;
   try{
+    try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
     await ifcKv("put", "pdf", new Blob([buf], { type: "application/pdf" }));
     await ifcKv("put", "index", index);
-    try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+    /* (384.58) "kept" is what the device now holds, read back - both parts, the PDF at its full size - not that a save was
+       attempted. Only then does the screen say it is kept on this device. */
+    const back = await ifcKv("get", "pdf"), backIdx = await ifcKv("get", "index");
+    kept = !!back && back.size === buf.byteLength && !!backIdx && backIdx.v === index.v;
   }catch(e){ kept = false; }
   if(ifcBook){ try{ ifcBook.doc.destroy(); }catch(e){} }
   ifcBook = { doc, index, opts };
@@ -121036,7 +121729,7 @@ function buildIfcRef(item){
   det.append(sum, head, body, foot);
   let filling = null;
   const fill = () => {
-    if(!filling) filling = ifcFillCode(item, body, foot).catch(e => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-note", "Could not open this reference: " + ((e && e.message) || e))); });
+    if(!filling) filling = ifcFillCode(item, body, foot).catch(e => ifcFillFailed(item, body, foot, e));
     if(box._ifcAhead){ box._ifcAhead = null; try{ ifcAheadIO && ifcAheadIO.unobserve(box); }catch(e){} }
     return filling;
   };
@@ -123510,7 +124203,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.67";
+const APP_BUILD = "2026-11-12-384.68";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -131342,7 +132035,9 @@ function bcLeakLayers(all, held, o){
 }
 
 function playBadgeCaseScene(units, done, retro, opts){
-  if(!units || !units.length || theme.muteBanners){ done(); return null; }
+  if(!units || !units.length){ done(); return null; }
+  /* skipped on purpose: nothing is owed after it (and the results' box, or Home's banner, says so - celebrationsOffNote) */
+  if(theme.muteBanners){ try{ markBadgeScenesPlayed(units); }catch(e){} done(); return null; }
   const still = resultsMotionOff();
   /* the case these badges belong in, and its slots (build 320) */
   const caseDef = badgeCaseOf(units[0]);
@@ -131415,6 +132110,8 @@ function playBadgeCaseScene(units, done, retro, opts){
     timers.forEach(clearTimeout);
     document.body.classList.remove("bc-covering");
     overlay.classList.add("bc-out");
+    /* (384.50) it has played to its end: no longer owed */
+    try{ markBadgeScenesPlayed(units); }catch(e){}
     openSceneBridge(col);
     setTimeout(() => { overlay.remove(); done(); }, 450);
   }
@@ -133491,6 +134188,65 @@ function bannerUnlockItem(id){
                  w.appendChild(buildBannerArt(id)); return w; } };
 }
 
+/* ---- (384.50) CELEBRATIONS OFF IS SAID, NEVER SILENT ----
+   Settings > Motion & Effects > "Skip celebrations and pop-ups" (theme.muteBanners) stops every badge, character, banner, hundo-effect
+   and flare scene and card, by design and by request - and until now it stopped them without a word, so a person who had it on (a
+   row is a whole-row tap in a list) earned a badge and saw nothing, and could not tell why. With it ON, anything earned is now
+   told ONCE, plainly, where it was earned: in the results' "Found & unlocked" box (celebrationsOffNote, a line and a "Turn on"
+   button) or, where the scene would have played on Home or over another screen, as one top banner (celebrationsOffBanner). Nothing is
+   said when the setting is OFF. The line names what was earned (an item's own kicker/name, as the results' rows do). */
+function celebrationWhat(it){
+  if(!it) return "";
+  const nm = String(it.name || "").trim();
+  if(it.kind === "badge") return "the " + (nm.replace(/\s*badge$/i, "") || "new") + " badge";
+  if(it.kind === "character") return "the " + nm + " character";
+  if(it.kind === "banner") return "the " + nm + " banner";
+  if(it.kind === "fx") return "the " + nm + " hundo effect";
+  if(it.kind === "theme") return "the " + nm + " theme colour";
+  if(it.kind === "flare" || it.kind === "flarechar") return "a new flare";
+  return nm || "something new";
+}
+function celebrationsOffLine(items){
+  const w = (items || []).map(celebrationWhat).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i);
+  if(!w.length) return "";
+  const what = w.length === 1 ? w[0] : w.length === 2 ? w[0] + " and " + w[1] : w[0] + ", " + w[1] + " and " + (w.length - 2) + " more";
+  return "You earned " + what + ".";
+}
+/* Opens Settings on the page that holds the switch, with its row lit (the settings page shows what it does in its own words) */
+function openCelebrationSetting(){
+  try{ endResultsReveal(); }catch(e){}
+  /* the tab bar comes back (a results screen holds it down: its nav buttons are hidden, and the bar follows them) */
+  try{ appearanceBtn.hidden = false; homeBtn.hidden = false; profileBtn.hidden = false; setActiveNav("settings"); }catch(e){}
+  showAppearance({ page: "motion", focus: "celebrations" });
+}
+function buildCelebrationsOffNote(items){
+  const line = celebrationsOffLine(items);
+  if(!line) return null;
+  const box = document.createElement("div");
+  box.className = "rs-celebrate-off";
+  const p = document.createElement("p");
+  p.className = "rs-celebrate-off-text";
+  p.textContent = line + " Celebrations are off.";
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "rs-celebrate-off-btn"; b.textContent = "Turn on";
+  b.addEventListener("click", e => {
+    if(rsTapAt(e) < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; }
+    openCelebrationSetting();
+  });
+  box.append(p, b);
+  return box;
+}
+/* One top banner, for a thing earned where its scene would have played over Home or another screen. A tap on it opens the setting. */
+function celebrationsOffBanner(items){
+  try{
+    if(!theme.muteBanners) return null;
+    const line = celebrationsOffLine(items);
+    if(!line) return null;
+    return showDailyAlert("Celebrations are off. Tap to turn them on.",
+      { kind: "celebrations", id: "celebrations-off", title: line.replace(/\.$/, ""), stay: 9000, onTap: openCelebrationSetting });
+  }catch(e){ return null; }
+}
+
 /* A hundo effect crossed by this run (build 313): a challenge like a
    challenge banner, so it carries the same strip. The row shows the
    effect's still; the pop-up plays it in a small 100% box. */
@@ -133880,7 +134636,7 @@ function attachNewDot(el, kind, id){
 }
 function pendingHomeUnlocks(){
   /* Held until the next finished test, which announces them itself. */
-  if(store.mergeHold) return { chars: [], banners: [], hints: [], fx: [], finds: [] };
+  if(store.mergeHold) return { chars: [], banners: [], hints: [], fx: [], finds: [], held: [] };
   /* THE COUNTERS FIRST (build 291). "The app gave me a pop for the
      character I unlocked (koi) ... after closing it out and opening
      again, that's when the other one came." The Koi reads the study log
@@ -133908,7 +134664,25 @@ function pendingHomeUnlocks(){
   /* a secret flare found and not yet seen through (build 318) */
   let finds = [];
   try{ finds = flareFindsOwed(); }catch(e){}
-  return { chars, banners, hints, fx, finds };
+  /* (384.59) a find whose own test is waiting to be finished is that test's results' (see flareFindHeldForRun): Home does not play
+     it, nor the banner it brings, nor the "A new secret" card its character opens - that card would arrive before the character's */
+  let held = [];
+  try{
+    held = finds.filter(flareFindHeldForRun);
+    if(held.length){
+      finds = finds.filter(o => held.indexOf(o) < 0);
+      const heldBanners = held.map(flareFindBannerId).filter(Boolean);
+      banners = banners.filter(id => heldBanners.indexOf(id) < 0);
+      hints = [];
+    }
+  }catch(e){ held = []; }
+  return { chars, banners, hints, fx, finds, held };
+}
+/* the banner a flare's character comes with, if it has one */
+function flareFindBannerId(o){
+  const ch = o ? flareFindCharacter(o.c, o.all) : null;
+  const b = ch ? BANNERS.find(x => x.flareChar === ch) : null;
+  return b ? b.id : null;
 }
 /* THE NEXT SECRET, ANNOUNCED (build 312): "Ensure when you go back to
    main menu, you get a banner pop up that says the you can now unlock
@@ -133972,7 +134746,7 @@ function homeUnlockBlocked(){
   return !!(document.getElementById("genprofile-overlay") || document.getElementById("splashscreen") ||
     document.getElementById("tour-overlay") || document.getElementById("badge-cutscene") ||
     document.getElementById("supernova-cutscene") || document.getElementById("void-cutscene") ||
-    document.getElementById("vroom-cutscene") || document.querySelector(".rs-spot") ||
+    document.getElementById("vroom-cutscene") || document.querySelector(".rs-spot") || document.querySelector(".bc-scene") ||
     /* nor under a secret-flare scene (build 317): Home's card started 1.4s
        into an Umbra scene played on Home and showed through it */
     document.querySelector(".fl-scene, .ff-scene") ||
@@ -134041,7 +134815,15 @@ function playHomeUnlocks(tries){
   }
   /* Muted: recorded as shown and never played, the same as the badge
      queue, so unmuting weeks later does not ambush anybody. */
-  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners, p.fx); p.hints.forEach(markFlareHintShown); (p.finds || []).forEach(o => markFlareFind(o.c, 3)); return; }
+  if(theme.muteBanners){
+    markUnlocksShown(p.chars, p.banners, p.fx); p.hints.forEach(markFlareHintShown); (p.finds || []).forEach(o => markFlareFind(o.c, 3));
+    /* (384.50) said once, as it is marked */
+    try{
+      celebrationsOffBanner([].concat(p.chars.map(characterUnlockItem), p.banners.map(bannerUnlockItem), (p.fx || []).map(hundoFxUnlockItem),
+        (p.finds || []).map(() => ({ kind: "flare" }))).filter(Boolean));
+    }catch(e){}
+    return;
+  }
   /* A FIND ITS RESULTS NEVER PLAYED (build 318): its character and banner
      wait for it, so they come in the results' order - the scene, the
      flare's card, the character, its banner. */
@@ -135064,7 +135846,7 @@ function showRunRewards(run, hooks, opts){
      The card lands, and then each unlock comes through centre screen
      and drops into it, one at a time - never all at once up front. */
   const unlockItems = rsUnlockItems(run);
-  let unlocked = null;
+  let unlocked = null, celebNote = null;
   const unlockRows = [];
   if(unlockItems.length){
     unlocked = document.createElement("div");
@@ -135113,6 +135895,11 @@ function showRunRewards(run, hooks, opts){
       unlocked.appendChild(slotEl);
       unlockRows.push(row);
     });
+    /* (384.50) with "Skip celebrations and pop-ups" on, nothing of this plays - the box says so, once, under its rows */
+    if(theme.muteBanners){
+      celebNote = buildCelebrationsOffNote(unlockItems);
+      if(celebNote){ celebNote.classList.add("rs-land"); unlocked.appendChild(celebNote); }
+    }
     panel.appendChild(unlocked);
   }
 
@@ -135437,12 +136224,12 @@ function showRunRewards(run, hooks, opts){
        the Unlocked box only once the scenes are over. */
     const holdBox = !!unlocked && !(opts && opts.instant) && !theme.muteBanners &&
       ((run.badges && run.badges.length && typeof playBadgeCaseScene === "function") || (run.flare && typeof playFlareFoundScene === "function"));
-    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows])].forEach(el => rsLand(el, true));
+    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows, celebNote])].forEach(el => rsLand(el, true));
     /* back from the review the screen is drawn at once, and its buttons
        still come up from below (build 325); the page is not scrolled */
     if(actions) rsRise(actions, { delay: 160, follow: false });
     let boxDown = !holdBox;
-    const boxNow = () => { if(boxDown || !panel.isConnected) return; boxDown = true; [unlocked, ...unlockRows].forEach(el => rsLand(el, true)); };
+    const boxNow = () => { if(boxDown || !panel.isConnected) return; boxDown = true; [unlocked, ...unlockRows, celebNote].forEach(el => rsLand(el, true)); };
     if(holdBox) setTimeout(boxNow, 30000);
     /* THE BOX IN ITS EFFECT'S COLOURS, STILL (build 314). With reduce
        motion (or coming back from the review) the reveal is skipped and
@@ -135617,6 +136404,7 @@ function showRunRewards(run, hooks, opts){
         : row.classList.contains("rs-unlock-character") ? "res.found.character" : "res.unlock.reveal");
       if(onRow[n]) onRow[n]();
     }));
+    if(celebNote) seq.add(520, instant => rsLand(celebNote, instant));
   }
   /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
   if(actions) seq.add(unlocked ? 650 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); hint.hide(); rsRise(actions, { instant }); });
@@ -136288,6 +137076,8 @@ function summarize(){
       saveStore();
     }
     if(badgesEarnedThisRun.length){
+      /* (384.50) owed until the scene has played to its end (playBadgeCaseScene's finish), wherever that turns out to be */
+      try{ oweBadgeScenes(badgesEarnedThisRun); }catch(e){}
       /* Not queued for Home any more: the badge case plays on the results
          screen the moment the badge box lands (playBadgeCaseScene). */
       /* Paid off the same diff the cutscene is queued off, so the XP and
@@ -138130,7 +138920,7 @@ function showAppearance(opts){
   studyDetails.appendChild(autoAdvRow);
 
   const bannerRow = document.createElement("label");
-  bannerRow.className = "opt";
+  bannerRow.className = "opt"; bannerRow.id = "settings-celebrations";
   const bannerCb = document.createElement("input");
   bannerCb.type = "checkbox"; bannerCb.checked = theme.muteBanners;
   bannerCb.addEventListener("change", () => {
@@ -138891,6 +139681,15 @@ function showAppearance(opts){
      back to the top. That is the whole reason the section flashed
      correctly while sitting 1045px below the fold. */
   if(opts && opts.focus) toTop(true);
+  /* (384.50) sent here by "Celebrations are off": the switch's row is lit once the page is up */
+  if(opts && opts.focus === "celebrations"){
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const r = document.getElementById("settings-celebrations");
+      if(!r) return;
+      r.classList.remove("settings-flash"); void r.offsetWidth; r.classList.add("settings-flash");
+      r.addEventListener("animationend", () => r.classList.remove("settings-flash"), { once: true });
+    }));
+  }
   /* SCROLLED TO AND LIT UP, after the screen is mounted and laid out -
      a getBoundingClientRect on a node that is not in the document yet
      has no box, and scrollIntoView on it does nothing. Two frames,
@@ -141086,6 +141885,9 @@ const BANNER_KINDS = {
   /* XP earned (build 380: the daily question's XP on Home's banner glass): the XP blue, a spark */
   xp: { tag: "XP EARNED", color: "#4B9BFF",
     svg: '<path fill="currentColor" d="M12 2.9l2.35 6.15 6.15 2.35-6.15 2.35L12 19.9l-2.35-6.15-6.15-2.35 6.15-2.35z"/><path fill="currentColor" opacity=".7" d="M19 15.6l.85 2.15 2.15.85-2.15.85L19 21.6l-.85-2.15-2.15-.85 2.15-.85z"/>' },
+  /* (384.50) a thing earned while "Skip celebrations and pop-ups" is on: a bell, struck through */
+  celebrations: { tag: "CELEBRATIONS OFF", color: "#E8C770",
+    svg: '<path d="M6.6 16.4h10.8l-1.5-2.1V10.2a3.9 3.9 0 0 0-7.8 0v4.1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10.3 19.2a1.9 1.9 0 0 0 3.4 0M4.6 4.6l14.8 14.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' },
   savedtest: { tag: "SAVED TEST", color: "#7CB8FF",
     svg: '<path d="M7.2 3.6h9.6a1.2 1.2 0 0 1 1.2 1.2v15.5l-6-4.3-6 4.3V4.8a1.2 1.2 0 0 1 1.2-1.2z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>' },
   /* The passive lines on the same glass (build 327z3, showDailyAlert's
@@ -144341,7 +145143,10 @@ function novaVrAfterMatch(data, opts){
       try{ playUnlockSpotlight(characterUnlockItem("poseidon"), 1, 1, () => setTimeout(say, 700)); }
       catch(e){ say(); }
     }, lead);
-  } else setTimeout(say, lead + 2500);
+  } else {
+    if(earned && theme.muteBanners) celebrationsOffBanner([characterUnlockItem("poseidon")]);   /* (384.50) */
+    setTimeout(say, lead + 2500);
+  }
   return out;
 }
 
@@ -161535,6 +162340,8 @@ async function rankUpCards(scene){
       seen(o.k);
     });
     todo.forEach(seen);
+    /* (384.50) a rank's character and banner are told once, in one line */
+    try{ celebrationsOffBanner([].concat(...cards.map(o => o.parts.filter(p => p.kind === "character" || p.kind === "banner")))); }catch(e){}
     return;
   }
   scene.phase = "cards";
@@ -165086,8 +165893,9 @@ if(window.NOVA_CLASS === "ifc"){
   try{
     let changed = false;
     const unf = () => { if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {}; return store.unflagged; };
+    const qiById = {}; QUESTIONS.forEach((q, i) => { if(q.ifc) qiById[q.ifc.id] = i; });   /* (384.47) once, not a scan per moved question */
     IFC_MOVED_KEYS.forEach(m => {
-      const qi = QUESTIONS.findIndex(q => q.ifc && q.ifc.id === m[1]);
+      const qi = Object.prototype.hasOwnProperty.call(qiById, m[1]) ? qiById[m[1]] : -1;
       if(qi < 0) return;
       const nk = KEYS[qi];
       if(nk === m[0]) return;
@@ -165138,6 +165946,7 @@ try{ ifcSignupOwed(); }catch(e){}
 try{ ifcLookCheck(false); }catch(e){}
 /* (384 r20) and a copy with no sync has nothing still to arrive: its repair is now (see ifcCharsRepair384) */
 if(window.NOVA_CLASS === "ifc" && !syncCode){ try{ ifcChallengesRepair384(); ifcLookCheck(true); ifcCharsRepair384(); }catch(e){} }
+if(window.NOVA_CLASS !== "ifc" && !syncCode){ try{ academyMaskedRepair384(); }catch(e){} }   /* (384.46) nothing is still to arrive for a copy with no sync */
 if(window.NOVA_CLASS === "academy"){
   try{
     const arr = window.NOVA_CLASS_ARRIVE;
@@ -165380,6 +166189,7 @@ if(store.onboardingComplete && !syncCode && !syncOff){
    change declining to cost somebody something they earned. */
 /* Fire Code's new ladder keeps every rank held (build 382), before anything below asks for a rank */
 if(store.onboardingComplete) try{ ifcLadderFloorOnce(); }catch(e){}
+if(store.onboardingComplete) try{ ifcLadderFloor384bOnce(); }catch(e){}
 if(store.onboardingComplete) preserveLegacyLevel();
 /* Existing accounts only. A fresh device has nothing to hand out, and
    writing a store before the account exists would get in the way of the

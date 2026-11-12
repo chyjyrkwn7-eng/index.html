@@ -768,7 +768,9 @@ function findMarks(model, segs, find) {
       return gaps.length > 0 && (gaps[0] >= 24 || (gaps[0] >= 14 && gaps.length > 1 && gaps[1] < 0.5 * gaps[0]));
     };
     let cutL = null, cutH = null;                                  // the boundary (inside one run) where the sentence starts / stops
-    if (!spans.slice(lo, hi + 1).some(rowLike)) {
+    // (384.56) nor is a CELL of a table (a float, set at 9 pt: "1 month") running text: it is the cell and no more - the sentence rules would run it on into the next row's label
+    const cellLike = (sp) => model.hasBody && sp.it.i >= model.F && sp.it.h >= 8.6;
+    if (!spans.slice(lo, hi + 1).some(sp => rowLike(sp) || cellLike(sp))) {
       // (the limits count lines, not runs: a justified line is cut into one run per word)
       const bl = sentBounds(spans[lo].it.s).filter(x => x.start <= rs).pop();
       if (bl) cutL = { k: lo, b: bl };
@@ -1284,10 +1286,26 @@ async function tableClip(doc, index, loc, ptr, opts, fontBold, cache) {
       if (model.rot) continue;
       const rowClip = await tableRowClip(model, segments.filter(sg => sg.page === p && !sg.whole), headsOn(p).filter(h => h.token === loc.token), rows);
       // (r15) the picture is cut from the page that holds the row; the whole-page view shows - and tints - the whole table, on every page it runs over
-      if (rowClip) return { ok: true, ...rowClip, cited: segments.filter(sg => !sg.whole && !sg.figure).map(sg => ({ ...sg, table: true })), pages: pages.slice(), truncated: false };
+      if (rowClip) {
+        await tableFindMarks(rowClip.segments, rowClip.marks, ptr, fontBold, cache);
+        return { ok: true, ...rowClip, cited: segments.filter(sg => !sg.whole && !sg.figure).map(sg => ({ ...sg, table: true })), pages: pages.slice(), truncated: false };
+      }
     }
   }
+  await tableFindMarks(segments, marks, ptr, fontBold, cache);
   return { ok: true, segments, marks, text: textParts.join(' '), pages, truncated };
+
+  // (384.56) `find` in a table: the deciding words are a footnote of the table ("f. A 50-percent spacing increase shall be permitted where ...") or a cell, not the
+  // caption. They are looked for in what the clipping shows (the notes are inside it: the cut runs on through them) and marked like a section's: the sentence
+  // or note that holds them, to its full stop - alone, or beside a marked `row`. A phrase that is not found marks nothing, as for a section.
+  async function tableFindMarks(segs, into, ptr, fontBold, cache) {
+    if (!ptr || !ptr.find) return;
+    for (const p of [...new Set(segs.filter(sg => !sg.whole).map(sg => sg.page))]) {
+      const model = await pageModel(doc, p, fontBold, cache);
+      if (model.rot) continue;
+      for (const m of findMarks(model, segs.filter(sg => sg.page === p && !sg.whole), ptr.find)) into.push(m);
+    }
+  }
 }
 
 // the row label (and its factor, on the same line) inside a table rectangle
@@ -1323,6 +1341,24 @@ function findRow(model, want, rect) {
     for (const o of [L, G]) if (it.x >= o.x + o.w - 0.5 && it.x - (o.x + o.w) <= 3 && it.y > o.y - 0.2 * o.h && it.y < o.y + 0.7 * o.h) x1 = Math.max(x1, it.x + it.w);
   }
   let i0 = Math.min(L.y - DSC * L.h, G.y - DSC * G.h), i1 = Math.max(L.y + ASC * L.h, G.y + ASC * G.h);
+  // (384.56) A LABEL SET ON SEVERAL LINES IS ALL OF THE ROW'S LABEL. "Maximum distance of" / "travel to" / "extinguisher" stands on three lines and its
+  // value ("75 feet") is centred on the middle one, a whole line below the line the label was found by: the gold then covered the label alone and the row's
+  // value stood outside it. The wrapped lines of the label - set a hanging indent in, one line's pitch apart (1.1 em; the next row starts 2.5 em down) - are
+  // part of the row's band, so the cells beside any of them are taken in by the pass below. (A label that is centred in its cell is not read this way:
+  // the rows of a centred column are the same width, and a line of the next row cannot be told from a line of this one.)
+  for (let cur = L, n = 0; n < 4; n++) {
+    let nx = null;
+    for (const it of model.items) {
+      if (!it.t || !inBody(it) || it === cur || it.h < 0.8 * L.h || it.h > 1.2 * L.h) continue;
+      const c = centre(it);
+      if (c < rect.x0 || c > rect.x1) continue;
+      const wrapped = it.x > L.x + 3 && it.x <= L.x + 2.4 * L.h;                  // indented under the label's first line
+      const dy = cur.y - it.y;
+      if (wrapped && dy > 0.5 * L.h && dy <= 1.35 * L.h && (!nx || dy < cur.y - nx.y)) nx = it;
+    }
+    if (!nx) break;
+    i0 = Math.min(i0, nx.y - DSC * nx.h); cur = nx;
+  }
   const x0 = Math.min(a.x0, b.x0);
   // (384) THE WHOLE ROW. The gold ran from the label to the one cell nearest it, so in a table of four columns half the row asked
   // about was marked and half was not. It runs on to the row's last cell now: every line of print to the right of the label whose

@@ -11,8 +11,8 @@ Every pop-up in tools/b384_pop_lib.INVENTORY is opened by the app's own function
   (1) glass: a translucent fill (alpha < .75) and a backdrop blur >= 16px with a saturate, on every sheet, settled;
   (2) one glass: every sheet's fill and backdrop-filter is the same pair (the shared tokens), so a new pop-up cannot drift;
   (3) no backdrop root above the sheet: no ancestor up to <body> with opacity < 1, a filter, a backdrop-filter, a mask, a clip-path,
-      or its own scroll (overflow auto / scroll), in its settled state (the chat's leave sheet lives inside the chat panel, which is
-      itself the glass, and is read without this one);
+      or its own scroll (overflow auto / scroll), in its settled state (384.52: the chat's leave sheet is on <body> now, like the rest, and
+      is read with this one too; tools/check-b384-leavefrost.py proves the blur reaches the page with pixels);
   (4) the dim is thin: the scrim a confirm sits on is <= .5 alpha (every other overlay is read and reported);
   (5) a confirm's title is the app's sans, not a serif stack;
   (6) a tall card scrolls inside itself, never its overlay (a short window, the save-code card).
@@ -83,12 +83,10 @@ def run(br, cls, w, h, tag):
         r = pg.evaluate(READ, [sel, host])
         if not r: chk("%s %s: the sheet is on screen (%s)" % (tag, key, sel), False); continue
         if shots: pg.screenshot(path=os.path.join(shots, "%s-%s-%s.png" % (key, cls, "tablet" if w > 600 else "phone")))
-        inpanel = key == "chat-leave"
         chk("%s %-18s (1) glass: fill alpha %s < .75, blur %spx >= 16, saturate %s, opacity %s" % (tag, key, r["alpha"], r["blur"], r["sat"], r["op"]),
             r["alpha"] is not None and r["alpha"] < .75 and r["blur"] and float(r["blur"]) >= 16 and r["sat"] and float(r["op"]) == 1, r)
         pairs.add((r["img"], r["bf"]))
-        if not inpanel:
-            chk("%s %-18s (3) nothing above the sheet is a backdrop root (%s)" % (tag, key, " > ".join(reversed(r["chain"]))), not r["bad"], r["bad"])
+        chk("%s %-18s (3) nothing above the sheet is a backdrop root (%s)" % (tag, key, " > ".join(reversed(r["chain"]))), not r["bad"], r["bad"])
         if kind == "confirm":
             chk("%s %-18s (4) the dim is thin: %s <= .5" % (tag, key, r["scrim"]), r["scrim"] is not None and r["scrim"] <= .5, r["scrim"])
             chk("%s %-18s (5) the title is the app's sans (%s)" % (tag, key, (r["title"] or "")[:60]), r["title"] and not serif(r["title"]), r["title"])
