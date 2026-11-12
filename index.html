@@ -68685,15 +68685,56 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
     if(!was && (b || t)){ requestAnimationFrame(() => { try{ window.dispatchEvent(new Event("resize")); }catch(e){} }); }   /* the search circle is placed from the bar's rect */
   }
   let lastMeasure = 0, lastTopNote = 0;
+  /* (384.89) IT ACTS ONLY ON A STILL PAGE. Madison's 384.82 recording of Home (iPhone 17 Pro Max, installed, the rubber band back): at each
+     swipe the content stretched up and the tab bar, the daily "?" and the class bubble went DOWN, off the foot of the screen, and came
+     back as the stretch let go. That was this follower: in a rubber band iOS reports the visual viewport past the layout one
+     (offsetTop > 0) while its compositor holds the pinned chrome where it belongs, so (A) read the stretch as "the chrome stands that
+     far high" and took it up with --vp-stale - moving a bar that had not moved, by the stretch, every look. The same in-flight reading
+     384.76 took off the top half for. Now nothing is changed while a finger is down, while the page or the visual viewport has moved in
+     the last QUIET ms, for SETTLE ms after the finger lifts (the bounce's snap-back and a fling's momentum) or while the page stands past
+     its ends; what is taken up stays as it is through the gesture, and a new reading is applied only once the page is still and a
+     second look STABLE ms later agrees. The readings in motion go to the log ("read in motion, not applied"). A displacement that is
+     still there at rest (the 384.62 state: the bar in the middle of the screen with the page still) is taken up as before. */
+  const QUIET = 350, SETTLE = 900, STABLE = 150;
+  let touching = false, touchAt = 0, touchEndAt = 0, lastVV = 0, restTimer = 0, pendingB = -1, lastMotionNote = 0, motionReadAt = 0;
+  const atRestIn = () => {
+    const now = Date.now();
+    if(touching && now - touchAt < 8000) return 120;   /* a touch that never ended (the page lost it) stops counting after 8s */
+    let w = Math.max(lastScroll + QUIET - now, lastVV + QUIET - now, touchEndAt + SETTLE - now);
+    try{
+      const y = window.scrollY, max = Math.max(0, (document.scrollingElement || root).scrollHeight - window.innerHeight);
+      if(y < -0.5 || y > max + 1) w = Math.max(w, 120);   /* standing past an end: a rubber band */
+      if(vv && vv.pageTop != null && (vv.pageTop < -0.5 || vv.pageTop + vv.height > (document.scrollingElement || root).scrollHeight + 1)) w = Math.max(w, 120);
+    }catch(e){}
+    return w > 0 ? w : 0;
+  };
   function check(){
     raf = 0;
     if(busy()){ return; }
-    /* healthy and scrolling: a look every 120ms, not every frame (it reads layout); once something is taken up it follows every frame */
+    const wait = atRestIn();
+    if(wait){
+      /* moving: nothing is changed; a reading now and then goes to the log, and the look is made again once the page is still */
+      const t1 = performance.now();
+      if(t1 - motionReadAt > 250){
+        motionReadAt = t1;
+        const mm = measure();
+        if(mm && mm.bottom && mm.bottom !== compB && Date.now() - lastMotionNote > 1000){ lastMotionNote = Date.now(); note("read in motion, not applied: " + mm.bottom + " low (" + mm.why + ") y " + Math.round(window.scrollY)); }
+      }
+      pendingB = -1;
+      if(!restTimer) restTimer = setTimeout(() => { restTimer = 0; kick(); }, wait + 20);
+      return;
+    }
+    /* still and healthy: a look every 120ms at most (it reads layout) */
     const t0 = performance.now();
-    if(!compB && !compT && t0 - lastMeasure < 120){ if(Date.now() - lastScroll < 200 && !raf) setTimeout(kick, 130); return; }
+    if(!compB && !compT && t0 - lastMeasure < 120){ return; }
     lastMeasure = t0;
     const m = measure();
     if(!m){ return; }
+    /* a new displacement is applied only when a second look agrees (a reading taken as the page came to rest can still be in flight) */
+    if(m.bottom && Math.abs(m.bottom - compB) > THRESH){
+      if(pendingB < 0 || Math.abs(pendingB - m.bottom) > THRESH){ pendingB = m.bottom; setTimeout(kick, STABLE); return; }
+    }
+    pendingB = -1;
     /* (384.77) THE TOP IS READ, NOT MOVED, as build 383 moved nothing at the top. On his iPhone (384.70 recording, a Drill question scrolled)
        the header row and Pause sat ~100pt LOW while the dots and the question scrolled up normally: html.vp-top moved them by a displacement
        the main thread read while the scroll was in flight, on a page whose pinned chrome was not riding. The reading goes to the log for
@@ -68708,13 +68749,16 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
         try{ const y = window.scrollY; window.scrollTo(0, y + 1); window.scrollTo(0, y); }catch(e){}
         try{ if(typeof resetStuckZoom === "function") resetStuckZoom(); }catch(e){}
       }
-      if(Date.now() - lastScroll < 400) raf = requestAnimationFrame(check);   /* follow the scroll frame by frame */
     } else { since = 0; nudged = 0; }
   }
   const kick = () => { if(!raf) raf = requestAnimationFrame(check); };
   try{
-    if(vv){ vv.addEventListener("resize", kick); vv.addEventListener("scroll", kick); }
+    if(vv){ const vk = () => { lastVV = Date.now(); kick(); }; vv.addEventListener("resize", vk); vv.addEventListener("scroll", vk); }
     window.addEventListener("scroll", () => { lastScroll = Date.now(); kick(); }, { passive: true });
+    window.addEventListener("touchstart", () => { touching = true; touchAt = Date.now(); }, { passive: true, capture: true });
+    const lift = (e) => { if(e && e.touches && e.touches.length) return; touching = false; touchEndAt = Date.now(); kick(); };
+    window.addEventListener("touchend", lift, { passive: true, capture: true });
+    window.addEventListener("touchcancel", lift, { passive: true, capture: true });
     window.addEventListener("resize", kick); window.addEventListener("pageshow", kick); window.addEventListener("focus", kick);
     window.addEventListener("orientationchange", () => setTimeout(kick, 350));
     document.addEventListener("focusout", () => { setTimeout(kick, 450); setTimeout(kick, 1300); }, true);   /* a keyboard has just gone */
@@ -114398,6 +114442,46 @@ function sayClassArrival(){
                  linked: "Linked — this device is now synced." }[arr.note];
   if(said){ try{ holdNoticesAfterTour(); }catch(e){} showWelcomeBackBanner(said); }
 }
+/* (384.89) HOME FITS THE WINDOW. Home is one screen: the planets, the greeting, NOVA, Start Studying, the tab bar. Where its document came out
+   a few px taller than the window (2-9px on most tablets and laptops and his 85% zoom on its side, 40-48px with Safari's bars over an iPad's
+   page - the bottom reserve for furniture that sits lower than the reserve assumes; build 383 had most of the small ones too) the page
+   could be scrolled by that much, which on a phone is a real scroll under the rubber band. That slack is taken back with a negative bottom
+   margin on the panel - nothing on the screen moves - and only when it IS slack: everything Home shows ends above the tab bar (or the
+   window's foot), so nothing that has to be reached is put out of reach. Where the content itself runs under the bar (none in the matrix today;
+   tools/check-b384-homescroll.py) the page keeps its scroll. Measured again after the entrance, once the tab bar has settled, on fonts and on resize. */
+function homeFitNow(panel){
+  try{
+    if(!panel || !panel.isConnected) return;
+    panel.style.marginBottom = "";
+    const se = document.scrollingElement || document.documentElement, ih = window.innerHeight;
+    const over = se.scrollHeight - ih;
+    if(over <= 0 || over > 120) return;
+    const y = window.scrollY || 0;
+    let floor = ih;
+    const bar = document.getElementById("bottomtabs");
+    if(bar && !bar.hidden){ const r = bar.getBoundingClientRect(); if(r.height && r.top > ih * .5) floor = Math.min(floor, r.top + y); }
+    let bottom = 0;
+    for(const c of panel.children){
+      if(c.classList.contains("cosmic-hero-wrap")) continue;   /* the planets' box carries their glow; the words and the button are what must clear */
+      const r = c.getBoundingClientRect();
+      if(r.height > 0 && getComputedStyle(c).position !== "fixed") bottom = Math.max(bottom, r.bottom + y);
+    }
+    if(!bottom || bottom > floor + .5) return;   /* the content itself runs under the bar: a real scroll (nothing moves either way, so what is above the bar stays reachable) */
+    panel.style.marginBottom = (-over) + "px";
+  }catch(e){}
+}
+var homeFitResizeOn = false;
+function homeFitWindow(panel){
+  homeFitNow(panel);
+  requestAnimationFrame(() => homeFitNow(panel));
+  setTimeout(() => homeFitNow(panel), 450);
+  setTimeout(() => homeFitNow(panel), 1100);
+  try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => homeFitNow(panel)); }catch(e){}
+  if(!homeFitResizeOn){
+    homeFitResizeOn = true;
+    try{ window.addEventListener("resize", () => { const p = document.querySelector(".panel.home.screen-home-actual"); if(p) requestAnimationFrame(() => homeFitNow(p)); }, { passive: true }); }catch(e){}
+  }
+}
 function showHome(){
   /* (384 r16) a leave asked for in Fire Code is finished here before anything is built; one that goes straight on to Fire Code builds no Home */
   try{ if(runPendingClassLeave()) return; }catch(e){}
@@ -114724,6 +114808,7 @@ function showHome(){
   }
   syncLoopClock(panel);
   heroSettleSkip(panel);
+  homeFitWindow(panel);   /* 384.89: no scroll on Home where it is only slack */
   /* the Supernova streak with every fourth pulse (b321h) */
   try{ homeStreakArm(heroWrap); }catch(e){}
   /* build 380: a size with no sheets yet (an iPad turned) moves at once on another size's, until its own are made (orbitStandIns) */
