@@ -8,6 +8,14 @@ the classes that's okay too." Then: "I don't like the acorn badge.. please don't
 ALSO why are there so many repeating colors. Make that right. Make colors darker lighter, do some whites, some blacks? Idk make
 them great." And, of the academy: "if the academy has look a like badges as well then get on that too."
 
+(384.65) PREMISE, AS IT STANDS: this gate was written for 62 hand-drawn outlines that carry a picture inside. Fire Code's chapters are now being
+drawn as their OBJECT (CHAPTER_OBJ: the silhouette of an open door IS the badge, tools/chapter-objects/README.md), and badgeShapeFor(unit) returns
+that silhouette, so every reading below already runs on the objects: the 1px / 2px / 28px bands and the stretched comparison hold an authored
+silhouette apart from every other outline, turned, flipped and stretched. Nothing needed rewriting: the premise "no two badges are one shape" is
+the same for a door as for a gem. check-b384-objbadges.py adds the object-only checks (box, enamel room, 48px overlap against every chapter, the
+back's title). The five named gate/hex pairs below are the outlines of Chapters 10 and 20 and 31 from 384.63's re-deal; an object takes Chapter 10
+out of that pair (Means of Egress is no longer the gate outline), and the exemption list is left as it was, now only ever looser than needed.
+
 OUTLINES. Each outline is drawn by the app (badgeShapeFor(unit).d) at 200px, centred on its centroid and scaled by its area,
 and its edge compared with every other's at every 3 degrees and both flips; the score is the share of each edge that lies on
 the other's, the worse of the two. Three readings, each held under 0.85 within a class (a cheap radial profile picks the 90

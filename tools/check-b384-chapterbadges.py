@@ -57,6 +57,7 @@ PROBE = r"""async () => {
       if(!a.getAttribute('viewBox') || !b.getAttribute('viewBox') || !c.getAttribute('viewBox') || !d.getAttribute('viewBox') || !e || !e.url || !g || !g.url) r.bad.push([u, 'empty']);
     }catch(x){ r.bad.push([u, String(x).slice(0, 100)]); }
     if(r.hasApi && chapterIconFor(u)) r.icon.push(u);
+    if(typeof chapterObjShape === 'function' && chapterObjShape(u)) r.obj = (r.obj || []).concat([u]);
   }
   return r; }"""
 USES = r"""async (u) => {
@@ -144,8 +145,13 @@ with sync_playwright() as pw:
     chk("(2) every one of the 58 chapters has an icon (%d)" % len(icon_units), len(icon_units) == 58, [u for u in UNITS if u not in icon_units][:5])
     fb = [u for u in UNITS if u not in icon_units]
     chk("(1) a chapter with no icon (%d of them now) resolves to nothing and draws the fallback; a chapter added later would too" % len(fb), len(fb) == 58 - len(icon_units) and pg.evaluate("()=>typeof chapterIconFor === 'function' ? chapterIconFor('Chapter 99: Not Yet') : 'no resolver'") is None and pg.evaluate("()=>{ const s = buildUnitBadgeSVG('Chapter 99: Not Yet', true, { vector: true }); return !!s.getAttribute('viewBox') && !s.querySelector('.badge-chapter-icon'); }"), fb[:3])
-    # (2)
-    for u in icon_units:
+    # (2) (384.65) a chapter drawn as its OBJECT (CHAPTER_OBJ, check-b384-objbadges) takes the silhouette and no icon: its picture is the badge,
+    # so its old icon is only the fallback it would draw if the object entry were removed; every other icon chapter is held to the checks below
+    objd = pr.get("obj") or []
+    for u in objd:
+        r = pg.evaluate(USES, u)
+        chk("(2) %s: drawn as its object, it paints no icon on its face (mid change %.0f, vector icon groups %d) - see tools/check-b384-objbadges.py" % (u[:30], r["mid"], r["vecIcon"]), r["mid"] == 0 and r["vecIcon"] == 0, r)
+    for u in [x for x in icon_units if x not in objd]:
         r = pg.evaluate(USES, u)
         chk("(2) %s: its struck token draws the icon on the plate (mid change %.0f, rim change %.1f), no channels (%d on the outline), vector group %d (%d paths), a raster token, none on a grey (diff %s)"
             % (u[:30], r["mid"], r["rim"], r["orig"], r["vecIcon"], r["vecPaths"], r["greyDiff"]),

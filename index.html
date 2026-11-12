@@ -76160,8 +76160,259 @@ Object.assign(BADGE_SHAPE, {
   scoopsq:   { c: [45.3, 54.7], cuts: ["M-10 62H110"],
     d: "M14.0 10.0L12.5 10.3L11.2 11.1L10.4 12.4L10.0 13.8L10.0 86.1L10.3 87.5L11.1 88.7L12.4 89.7L14.0 90.0L86.1 90.0L87.5 89.7L88.7 88.9L89.7 87.6L90.0 86.0L90.0 49.7L89.7 48.3L88.9 47.0L88.1 46.4L87.2 46.0L83.4 45.4L80.4 44.7L77.5 43.8L74.6 42.5L71.9 41.1L69.3 39.5L66.8 37.6L64.6 35.5L60.8 31.1L57.8 26.2L56.4 23.0L55.4 20.0L54.7 17.0L54.0 12.6L53.2 11.3L52.0 10.4L50.2 10.0Z" }
 });
+/* ---- FIRE CODE CHAPTER OBJECTS (build 384.65) ----
+   Madison, shown 384.63's picture-in-an-outline: "those badges aren't what I had in mind, you just put stuff in the badge.. the badge
+   needs to be the actual thing. I know I've said in the past not to do that, but now we will." So for Fire Code's chapters the
+   badge's SILHOUETTE IS THE OBJECT: Means of Egress is an open door and the badge is cut to the door's own outline. This reverses,
+   for the 58 chapters, the academy's rule that a badge never draws its subject (twice rejected there) and 384.61's picture-in-an-
+   outline; the newer instruction wins and the academy's sixteen-plus are untouched.
+   A chapter's entry is plain data, CHAPTER_OBJ["<exact unit title>"] = { d, c?, plates }:
+     d       the silhouette: ONE closed path in the 100 x 100 frame the outlines use (rounded corners, no holes) - the badge's outline,
+             so the metal rim, the slot, the empty slot and the back's title all follow it exactly as they follow any other outline
+     c       [x, y] the point the badge is scaled about (default: the middle of the silhouette's box)
+     base    the colour role of the silhouette itself under the plates (default field, the enamel; steel for a thing of metal)
+     plates  what the enamel is inlaid with, painted in order over the silhouette's base colour: [role, d, opts?]
+               role  field lite body shade deep ink (the chapter's enamel and five tones of it) or glow steel hot (light, metal,
+                     a flame's warmth - the only colours that are not the chapter's own)
+               opts  { sh: 1 } casts a soft shadow down-right on what is under it; { e: 0 } no dark edge (default: a thin ink edge);
+                     { ln: w } the path is a stroked line of width w in the role's colour instead of a filled plate
+   A part of the object thinner than about 16 units has no room for enamel inside the rim: it comes out as the rim's own silver, which
+   is how an arm, a handle or a rail is meant to read. Authoring guide: tools/chapter-objects/README.md.
+   The data is merged between the markers below from tools/chapter-objects/part-*.js by tools/merge-chapter-icons.py (never hand-edit
+   between them). A chapter with no entry draws what it drew before (its picture in the outline of 384.63, else the plain outline). */
+const CHAPTER_OBJ = {};
+const CHAPTER_OBJ_BBOX = {};
+const CHAPTER_OBJ_MAX_PLATES = 24;
+const CHAPTER_OBJ_ROLES = ["field", "lite", "body", "shade", "deep", "ink", "glow", "steel", "hot"];
+const OBJ_N = v => String(Math.round(v * 100) / 100);
+/* a circle / ellipse as two half arcs (a single arc that returns to its start draws nothing or the wrong circle) */
+function OBJ_ellipse(cx, cy, rx, ry){
+  const x0 = OBJ_N(cx - rx), x1 = OBJ_N(cx + rx), y = OBJ_N(cy);
+  return "M" + x0 + " " + y + "A" + OBJ_N(rx) + " " + OBJ_N(ry) + " 0 1 1 " + x1 + " " + y + "A" + OBJ_N(rx) + " " + OBJ_N(ry) + " 0 1 1 " + x0 + " " + y + "Z";
+}
+function OBJ_circle(cx, cy, r){ return OBJ_ellipse(cx, cy, r, r); }
+/* a rectangle with round corners: r a number, or [top-left, top-right, bottom-right, bottom-left] */
+function OBJ_rrect(x, y, w, h, r){
+  const q = Array.isArray(r) ? r : [r, r, r, r], k = v => Math.max(0, Math.min(v || 0, w / 2, h / 2));
+  const a = k(q[0]), b = k(q[1]), c = k(q[2]), d = k(q[3]), N = OBJ_N;
+  const arc = (rr, ex, ey) => rr ? "A" + N(rr) + " " + N(rr) + " 0 0 1 " + N(ex) + " " + N(ey) : "";
+  return "M" + N(x + a) + " " + N(y) + "H" + N(x + w - b) + arc(b, x + w, y + b) + "V" + N(y + h - c) + arc(c, x + w - c, y + h) +
+    "H" + N(x + d) + arc(d, x, y + h - d) + "V" + N(y + a) + arc(a, x + a, y) + "Z";
+}
+/* a polygon with every corner rounded by a quadratic through the vertex: r a number or one per vertex (0 keeps a corner sharp) */
+function OBJ_poly(pts, r){
+  const n = pts.length, rs = Array.isArray(r) ? r : pts.map(() => (r == null ? 2 : r)), f = p => OBJ_N(p[0]) + " " + OBJ_N(p[1]);
+  let d = "";
+  for(let i = 0; i < n; i++){
+    const p0 = pts[(i + n - 1) % n], p1 = pts[i], p2 = pts[(i + 1) % n], rr = rs[i] || 0;
+    const l1 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1, l2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1;
+    const t1 = Math.min(rr, l1 / 2), t2 = Math.min(rr, l2 / 2);
+    const a = [p1[0] + (p0[0] - p1[0]) * t1 / l1, p1[1] + (p0[1] - p1[1]) * t1 / l1], b = [p1[0] + (p2[0] - p1[0]) * t2 / l2, p1[1] + (p2[1] - p1[1]) * t2 / l2];
+    d += (i ? "L" : "M") + f(a) + (rr ? "Q" + f(p1) + " " + f(b) : "");
+  }
+  return d + "Z";
+}
+/* an open run of straight edges with every inside corner rounded (the first point is where the path already is, the last is where it
+   ends): "L a Q p b L a Q p b ... L last". Compose an outline from runs and arcs: "M" + p0 + OBJ_chain([p0, p1, ..], 3) + "A 14 14 0 0 1 x y" + ... + "Z" */
+function OBJ_chain(pts, r){
+  const n = pts.length, rs = Array.isArray(r) ? r : pts.map(() => (r == null ? 2 : r)), f = p => OBJ_N(p[0]) + " " + OBJ_N(p[1]);
+  let d = "";
+  for(let i = 1; i < n - 1; i++){
+    const p0 = pts[i - 1], p1 = pts[i], p2 = pts[i + 1], rr = rs[i] || 0;
+    const l1 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1, l2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1;
+    const t1 = Math.min(rr, l1 / 2), t2 = Math.min(rr, l2 / 2);
+    const a = [p1[0] + (p0[0] - p1[0]) * t1 / l1, p1[1] + (p0[1] - p1[1]) * t1 / l1], b = [p1[0] + (p2[0] - p1[0]) * t2 / l2, p1[1] + (p2[1] - p1[1]) * t2 / l2];
+    d += "L" + f(a) + (rr ? "Q" + f(p1) + " " + f(b) : "");
+  }
+  return d + "L" + f(pts[n - 1]);
+}
+/* the chapter's silhouette as an outline the badge code takes ({ c, d, cuts }), or null. Memoised: one object per chapter, so
+   everything that caches by it (the geometry, the back's plan) sees one. */
+const CHAPTER_OBJ_SHAPES = {};
+function chapterObjShape(name){
+  const k = String(name || "");
+  if(CHAPTER_OBJ_SHAPES[k] !== undefined) return CHAPTER_OBJ_SHAPES[k];
+  const e = CHAPTER_OBJ[k];
+  let out = null;
+  if(e && typeof e === "object" && typeof e.d === "string" && e.d){
+    const bb = CHAPTER_OBJ_BBOX[k];
+    const c = Array.isArray(e.c) && e.c.length === 2 ? e.c : bb ? [bb[0] + bb[2] / 2, bb[1] + bb[3] / 2] : [50, 50];
+    out = { c: [Math.round(c[0] * 100) / 100, Math.round(c[1] * 100) / 100], d: e.d, cuts: [], obj: k };
+  }
+  return (CHAPTER_OBJ_SHAPES[k] = out);
+}
+/* @@CHAPTER_OBJ_BEGIN */
+/* ---- part-0-prototypes.js ---- */
+/* Fire Code chapter objects - PROTOTYPES (build 384.65): eight chapters that prove the recipe across very different kinds of thing.
+   Each entry is the chapter's silhouette (the badge's outline) and the plates inlaid in it. See tools/chapter-objects/README.md. */
+
+/* ---- Chapter 10: Means of Egress - an open door. The leaf is swung toward you, so its free edge is the nearest and the tallest
+   thing: it stands out past the top and the bottom of the frame. The doorway beside it is the lit rectangle, bright with the way out. ---- */
+{
+  const lerp = (a, b, t) => a + (b - a) * t;
+  /* a point on the leaf: u 0 at the hinge to 1 at the free edge, v 0 at the top to 1 at the bottom (perspective: the free edge is taller) */
+  const leaf = (u, v) => [lerp(16, 52, u), lerp(lerp(12, 2, u), lerp(88, 98, u), v)];
+  const quad = (u0, u1, v0, v1, r) => OBJ_poly([leaf(u0, v0), leaf(u1, v0), leaf(u1, v1), leaf(u0, v1)], r);
+  CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
+    d: OBJ_poly([[16, 12], [52, 2], [52, 12], [90, 12], [90, 88], [52, 88], [52, 98], [16, 88]], [3, 2, 1, 3, 3, 1, 2, 3]),
+    plates: [
+      ["deep", OBJ_rrect(16, 12, 74, 76, 3), { e: 0 }],                                   /* the frame */
+      ["glow", OBJ_rrect(24, 20, 58, 68, 1), { e: 1.4 }],                                    /* the way out, lit */
+      ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 2), { sh: 1, e: 1.6 }],   /* the leaf */
+      ["shade", quad(.86, 1, 0, 1, 1), { e: 0 }],                                          /* its thick edge */
+      ["lite", quad(.16, .72, .1, .45, 2), { e: 1.3 }],                                 /* upper panel */
+      ["lite", quad(.16, .72, .55, .9, 2), { e: 1.3 }],                                 /* lower panel */
+      ["hot", OBJ_circle(leaf(.8, .5)[0], leaf(.8, .5)[1], 3.2), { e: 1.2 }],             /* the handle */
+    ],
+  };
+}
+
+/* ---- Chapter 9: Fire Protection and Life Safety Systems - a pendant sprinkler on its pipe, spraying (a device; Madison chose the sprinkler
+   over an extinguisher or an alarm bell): the supply pipe across the top, the nipple and hex body hanging from it, the frame with its two
+   arms round the red glass bulb, the wide flat deflector, and the cone of water it throws, which is where the chapter's blue lives. The
+   pipe, nipple, arms and deflector are too thin to hold enamel: bare metal. A sprinkler's arms alone are thin (no enamel, a blob under
+   the rim), so the frame is drawn solid and the arms and the bulb are plates in it; the pipe across the top is what stops the whole
+   from reading as a chess piece. ---- */
+{
+  const dots = (y, x0, x1, step) => { let d = ""; for(let x = x0; x <= x1; x += step) d += "M" + x + " " + y + "h.01"; return d; };
+  CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {
+    base: "steel",
+    d: "M50 4" + OBJ_chain([[50, 4], [92, 4], [92, 18], [58, 18], [58, 22], [68, 26], [68, 38], [64, 42], [70, 60], [90, 62], [90, 70], [68, 72], [82, 94], [18, 94], [32, 72], [10, 70], [10, 62], [30, 60], [36, 42], [32, 38], [32, 26], [42, 22], [42, 18], [8, 18], [8, 4], [50, 4]],
+      [0, 5, 5, 2, 2, 3, 3, 3, 3, 5, 5, 3, 8, 8, 3, 5, 5, 3, 3, 3, 3, 2, 2, 5, 5, 0]) + "Z",
+    plates: [
+      ["body", OBJ_rrect(32, 26, 36, 12, 3), { e: 1.4 }],                                    /* the hex body, lit */
+      ["deep", OBJ_poly([[36, 42], [64, 42], [70, 60], [30, 60]], 1), { e: 0 }],             /* the dark between the arms */
+      ["steel", OBJ_poly([[36, 42], [42, 42], [38, 60], [30, 60]], 1), { e: 1 }],            /* the frame arms */
+      ["steel", OBJ_poly([[64, 42], [58, 42], [62, 60], [70, 60]], 1), { e: 1 }],
+      ["hot", OBJ_ellipse(50, 51, 7, 11), { sh: 1, e: 1.4 }],                                /* the glass bulb, red with its liquid */
+      ["lite", OBJ_ellipse(47.5, 47, 2, 4), { e: 0 }],                                       /* its glint */
+      ["body", OBJ_poly([[32, 72], [68, 72], [82, 94], [18, 94]], 2), { e: 0 }],             /* the cone of spray */
+      ["lite", dots(79, 38, 62, 6), { ln: 4 }],                                              /* its drops */
+      ["lite", dots(86, 30, 70, 6), { ln: 3.6 }],
+    ],
+  };
+}
+
+/* ---- Chapter 57: Flammable and Combustible Liquids - a safety can (a hazardous-material container). The handle hump on the left,
+   the angled spout on the right, a flame on its face. The spout and the handle are thin enough to be the bare metal. ---- */
+{
+  /* a flame: a bold teardrop leaning left with a curl, centred on (cx, cy), h tall */
+  const flame = (cx, cy, h) => {
+    const k = h / 40, X = x => (cx + x * k).toFixed(2), Y = y => (cy + y * k).toFixed(2);
+    return "M" + X(2) + " " + Y(-20) + "C" + X(4) + " " + Y(-10) + " " + X(15) + " " + Y(-6) + " " + X(15) + " " + Y(6) +
+      "C" + X(15) + " " + Y(14) + " " + X(8) + " " + Y(20) + " " + X(0) + " " + Y(20) +
+      "C" + X(-9) + " " + Y(20) + " " + X(-15) + " " + Y(14) + " " + X(-15) + " " + Y(5) +
+      "C" + X(-15) + " " + Y(-2) + " " + X(-10) + " " + Y(-6) + " " + X(-8) + " " + Y(-12) +
+      "C" + X(-4) + " " + Y(-8) + " " + X(-2) + " " + Y(-5) + " " + X(-2) + " " + Y(-1) + "C" + X(-1) + " " + Y(-8) + " " + X(0) + " " + Y(-14) + " " + X(2) + " " + Y(-20) + "Z";
+  };
+  CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {
+    d: "M40 92" + OBJ_chain([[40, 92], [10, 92], [10, 40], [20, 14], [44, 12], [50, 40], [60, 40], [81, 11], [92, 21], [73, 40], [84, 40], [84, 92], [40, 92]], [0, 9, 6, 5, 5, 3, 2, 4, 4, 2, 5, 9, 0]) + "Z",
+    plates: [
+      ["body", OBJ_rrect(10, 40, 74, 52, [0, 0, 9, 9]), { e: 0 }],                            /* the can */
+      ["ink", OBJ_poly([[26, 20], [40, 19], [43, 36], [24, 37]], 2), { e: 0 }],                /* the handle's hollow */
+      ["deep", "M12 58H82", { ln: 2.2 }],                                                    /* a rib across the can */
+      ["shade", OBJ_rrect(66, 48, 18, 44, 2), { e: 0 }],                                      /* its turned-away side */
+      ["glow", flame(46, 66, 38), { sh: 1, e: 1.5 }],                                         /* the flame */
+      ["hot", flame(46, 71, 20), { e: 0 }],                                                   /* its core */
+    ],
+  };
+}
+
+/* ---- Appendix D: Fire Apparatus Access Roads - a ladder truck (a vehicle), side on, facing left: the ladder rack runs the whole roof
+   and reaches out over the cab, two big wheels. The widest, lowest silhouette in the set. ---- */
+{
+  let rungs = ""; for(let x = 16; x <= 90; x += 6) rungs += "M" + x + " 25.5V34.5";
+  CHAPTER_OBJ["Appendix D: Fire Apparatus Access Roads"] = {
+    d: "M10 71" + OBJ_chain([[10, 71], [6, 71], [6, 60], [14, 48], [38, 48], [38, 38], [10, 38], [10, 22], [94, 22], [94, 71], [86, 71]], [0, 4, 4, 5, 2, 2, 3, 3, 3, 3, 0]) +
+       "A12 12 0 0 1 62 71" + OBJ_chain([[62, 71], [38, 71]], 0) + "A12 12 0 0 1 14 71" + OBJ_chain([[14, 71], [10, 71]], 0) + "Z",
+    plates: [
+      ["deep", OBJ_rrect(38, 38, 56, 33, 2), { e: 0 }],                                     /* the body */
+      ["steel", OBJ_rrect(10, 22, 84, 16, 3), { e: 0 }],                                    /* the ladder rack */
+      ["deep", rungs, { ln: 1.6 }],                                                          /* the ladder's rungs */
+      ["shade", OBJ_rrect(42, 44, 14, 22, 2), { e: 1.2 }],                                   /* the locker doors */
+      ["shade", OBJ_rrect(59, 44, 14, 22, 2), { e: 1.2 }],
+      ["shade", OBJ_rrect(76, 44, 14, 22, 2), { e: 1.2 }],
+      ["hot", OBJ_rrect(38, 58, 56, 4, 0), { e: 0 }],                                        /* the stripe */
+      ["glow", OBJ_poly([[10, 62], [17, 52], [34, 52], [34, 62]], 2), { e: 1.4 }],           /* the cab's windows */
+      ["steel", OBJ_circle(26, 71, 6.5), { e: 1.2 }],                                        /* the hubs */
+      ["steel", OBJ_circle(74, 71, 6.5), { e: 1.2 }],
+    ],
+  };
+}
+
+/* ---- Chapter 53: Compressed Gases - a gas cylinder (a hazardous-material container; the tall, narrow silhouette): the valve with its
+   handwheel across the top, the collar, the domed shoulder, the long body with a band round it. ---- */
+{
+  CHAPTER_OBJ["Chapter 53: Compressed Gases"] = {
+    d: "M50 4" + OBJ_chain([[50, 4], [72, 4], [72, 15], [58, 15], [58, 26], [66, 28], [74, 42], [74, 92], [26, 92], [26, 42], [34, 28], [42, 26], [42, 15], [28, 15], [28, 4], [50, 4]],
+      [0, 5, 5, 2, 2, 2, 14, 9, 9, 14, 2, 2, 2, 5, 5, 0]) + "Z",
+    plates: [
+      ["body", OBJ_rrect(26, 30, 48, 62, [18, 18, 9, 9]), { e: 0 }],                         /* the cylinder */
+      ["shade", "M26 44C26 28 42 28 50 28C58 28 74 28 74 44Z", { e: 1.2 }],                    /* the domed shoulder */
+      ["lite", OBJ_rrect(32, 40, 7, 40, 3), { e: 0 }],                                       /* the light down its left */
+      ["shade", OBJ_rrect(64, 40, 10, 48, 3), { e: 0 }],                                     /* the turning away on its right */
+      ["glow", OBJ_rrect(26, 50, 48, 14, 1), { e: 1.4 }],                                    /* the label band */
+      ["deep", OBJ_rrect(26, 82, 48, 10, [0, 0, 9, 9]), { e: 0 }],                           /* the foot ring */
+    ],
+  };
+}
+
+/* ---- Chapter 1: Scope and Administration - a rubber hand stamp (an idea, drawn as the thing that makes it official): a round
+   handle, a neck, a stepped base with its rubber die. ---- */
+{
+  CHAPTER_OBJ["Chapter 1: Scope and Administration"] = {
+    d: "M33 26A17 17 0 0 1 67 26A17 17 0 0 1 60 40" + OBJ_chain([[60, 40], [60, 52], [80, 52], [80, 66], [92, 66], [92, 92], [8, 92], [8, 66], [20, 66], [20, 52], [40, 52], [40, 40]], [0, 3, 4, 3, 3, 5, 5, 3, 3, 4, 3, 0]) + "A17 17 0 0 1 33 26Z",
+    plates: [
+      ["body", OBJ_circle(50, 26, 17), { sh: 1, e: 1.5 }],                                    /* the knob */
+      ["lite", OBJ_circle(44, 20, 5), { e: 0 }],
+      ["shade", OBJ_rrect(40, 40, 20, 14, 0), { e: 0 }],                                      /* the neck */
+      ["body", OBJ_rrect(20, 52, 60, 14, 3), { sh: 1, e: 1.5 }],                              /* the plate */
+      ["deep", OBJ_rrect(8, 66, 84, 26, [2, 2, 5, 5]), { e: 0 }],                              /* the base */
+      ["lite", OBJ_rrect(14, 70, 72, 3, 1), { e: 0 }],
+      ["hot", OBJ_rrect(14, 78, 72, 8, 1), { e: 1.2 }],                                      /* the rubber die, inked */
+    ],
+  };
+}
+
+/* ---- Chapter and Section Finder - a magnifying glass (a lookup, drawn as the tool you look things up with): a round lens, a
+   collar and a handle at 45 degrees. The lens's rim is the badge's own. ---- */
+{
+  const C = [40, 40], R = 33, W = 8, L = 40, s2 = Math.SQRT1_2;
+  const dir = [s2, s2], nrm = [s2, -s2], a = Math.sqrt(R * R - W * W);
+  const P1 = [C[0] + a * dir[0] + W * nrm[0], C[1] + a * dir[1] + W * nrm[1]], P2 = [C[0] + a * dir[0] - W * nrm[0], C[1] + a * dir[1] - W * nrm[1]];
+  const E1 = [P1[0] + L * dir[0], P1[1] + L * dir[1]], E2 = [P2[0] + L * dir[0], P2[1] + L * dir[1]];
+  const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
+  CHAPTER_OBJ["Chapter and Section Finder"] = {
+    d: "M" + f(P1) + "A" + R + " " + R + " 0 1 0 " + f(P2) + "L" + f(E2) + "A" + W + " " + W + " 0 0 0 " + f(E1) + "Z",
+    plates: [
+      ["lite", OBJ_circle(40, 40, 26), { e: 1.6 }],                                           /* the glass */
+      ["glow", "M22 40A18 18 0 0 1 40 22", { ln: 3.4 }],                                      /* the light across it */
+      ["deep", "M" + f([P1[0] + 6 * dir[0], P1[1] + 6 * dir[1]]) + "L" + f(E1) + "L" + f(E2) + "L" + f([P2[0] + 6 * dir[0], P2[1] + 6 * dir[1]]) + "Z", { e: 1.3 }],   /* the grip */
+      ["steel", "M" + f(P1) + "L" + f([P1[0] + 7 * dir[0], P1[1] + 7 * dir[1]]) + "L" + f([P2[0] + 7 * dir[0], P2[1] + 7 * dir[1]]) + "L" + f(P2) + "Z", { e: 1.2 }],   /* the collar */
+    ],
+  };
+}
+
+/* ---- Chapter 5: Fire Service Features - a fire helmet, side on: the high crown with its comb, the long swept-back tail, the front shield. ---- */
+{
+  CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {
+    d: "M10 68Q10 62 18 60L22 48C22 24 40 8 58 8C78 8 82 34 84 56C88 62 95 70 93 80Q92 86 86 83C70 77 40 77 22 75Q10 74 10 68Z",
+    plates: [
+      ["body", "M20 60L24 46C25 26 40 12 58 12C74 12 80 30 82 52L82 62L20 62Z", { e: 0 }],       /* the crown */
+      ["deep", "M10 62L84 58C88 62 94 70 93 80Q92 86 86 83C70 77 40 77 22 75Q10 74 10 62Z", { e: 0 }],   /* the brim */
+      ["shade", "M32 20C42 12 58 10 66 16C75 22 79 34 81 50L74 48C72 36 66 26 58 24C50 22 40 26 36 32Z", { e: 0 }],   /* the comb */
+      ["lite", "M24 34L46 34L46 54Q35 62 24 54Z", { sh: 1, e: 1.5 }],                           /* the front shield */
+      ["hot", OBJ_circle(35, 44, 5), { e: 1.2 }],
+    ],
+  };
+}
+/* ---- generated by tools/merge-chapter-icons.py: every silhouette's box [x, y, w, h] ---- */
+Object.assign(CHAPTER_OBJ_BBOX, {"Appendix D: Fire Apparatus Access Roads":[6,22,88,61],"Chapter 10: Means of Egress":[16,2.43,74,95.15],"Chapter 1: Scope and Administration":[8,9,84,83],"Chapter 53: Compressed Gases":[26,4,48,88],"Chapter 57: Flammable and Combustible Liquids":[10,12.39,80.55,79.61],"Chapter 5: Fire Service Features":[10,8,83.35,76],"Chapter 9: Fire Protection and Life Safety Systems":[8,4,84,90],"Chapter and Section Finder":[7.01,7.01,91.77,91.77]});
+/* @@CHAPTER_OBJ_END */
 function badgeShapeFor(unitName){
   const name = String(unitName || "");
+  const ob = chapterObjShape(name);   /* (384.65) a chapter drawn as its object: the object's own silhouette is its outline */
+  if(ob) return ob;
   const key = UNIT_BADGE_SHAPE[name] || IFC_BADGE_SHAPE[name];
   if(key && BADGE_SHAPE[key]) return BADGE_SHAPE[key];
   const i = (parseInt(hashOf(name), 36) >>> 0) % BADGE_SHAPE_KEYS.length;
@@ -77310,6 +77561,7 @@ function chapterIconMarkup(unitName){
 const BADGE_FACE_MEMO = {};
 function badgeFaceShapeFor(unitName){
   const sh = badgeShapeFor(unitName);
+  if(sh.obj) return sh;   /* (384.65) an object chapter: its silhouette has no channels of its own and no icon on it */
   if(!chapterIconFor(unitName)) return sh;
   const k = String(unitName), m = BADGE_FACE_MEMO[k];
   if(m && m.d === sh.d && m.c === sh.c) return m;
@@ -77409,6 +77661,83 @@ function chapterIconVector(parent, face, unitName){
   parent.appendChild(grp);
 }
 
+/* ---- THE OBJECT'S ENAMEL (build 384.65) ----
+   A chapter drawn as its object keeps everything the other badges have - the dark keyline, the polished rim that follows the
+   silhouette, the lit and domed enamel, the slot - and changes one thing: the enamel is not one colour but a small set of plates
+   (a door's leaf, its frame, the light beyond it), each a tone of the chapter's own enamel, laid in the face before it is lit.
+   The rim's inner edge is a uniform 6.4 units in from the silhouette, so every part of the object narrower than ~16 units is all
+   rim: an arm or a handle comes out as silver, which is how it should read. */
+function chapterObjFor(unitName){
+  const e = CHAPTER_OBJ[String(unitName || "")];
+  return e && typeof e === "object" && e.d ? e : null;
+}
+/* The tones: the chapter's own enamel p, five steps of it (lite > body > field > shade > deep > ink; the ladder is moved up for a
+   dark enamel and its top is lower for a pale one, so every role stays distinguishable on every enamel), and three that are not
+   its own - glow (light), steel (metal) and hot (the warmth of a flame, a brass handle) - so a lamp is a lamp on every chapter. */
+function chapterObjPalette(unitName){
+  const p = badgeThemeFor(unitName).p, L = badgeEnamelLuma(p);
+  /* lite, body, shade, deep, ink as a lift (+) or a shading (-) of p */
+  const T = L < .10 ? [.62, .38, .20, -.34, -.74] : L < .50 ? [.36, .16, -.26, -.52, -.80] : [.50, .24, -.30, -.56, -.82];
+  const mix = (hex, to, k) => { const a = badgeHexRgb(hex), b = badgeHexRgb(to); return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",") + ")"; };
+  return { field: p, lite: badgeShade(p, T[0]), body: badgeShade(p, T[1]), shade: badgeShade(p, T[2]), deep: badgeShade(p, T[3]), ink: badgeShade(p, T[4]),
+    glow: mix("#FFFBE6", p, .05), steel: mix("#B4BEC9", p, .16), hot: mix("#FF9A38", p, .08) };
+}
+/* The plates as plain objects: only the roles and options the data format allows, at most CHAPTER_OBJ_MAX_PLATES. */
+function chapterObjPlates(unitName){
+  const e = chapterObjFor(unitName), out = [];
+  if(!e || !Array.isArray(e.plates)) return out;
+  for(let i = 0; i < e.plates.length && out.length < CHAPTER_OBJ_MAX_PLATES; i++){
+    const q = e.plates[i];
+    if(!Array.isArray(q) || typeof q[1] !== "string" || CHAPTER_OBJ_ROLES.indexOf(q[0]) < 0) continue;
+    const o = q[2] || {};
+    out.push({ r: q[0], d: q[1], sh: !!o.sh, e: o.e === 0 ? 0 : (+o.e > 0 ? +o.e : 1.25), ln: +o.ln > 0 ? +o.ln : 0 });
+  }
+  return out;
+}
+/* One plate onto a 2d context already in the outline's units: its soft shadow, its fill (or its line), its thin dark edge. */
+function chapterObjPaintPlate(o, pl, pal, Pth){
+  const col = pal[pl.r] || pal.field;
+  if(pl.sh && !pl.ln){ o.save(); o.translate(1.5, 2.1); o.globalAlpha = .38; o.fillStyle = "#000"; o.fill(Pth); o.restore(); }
+  if(pl.ln){ o.strokeStyle = col; o.lineWidth = pl.ln; o.lineJoin = "round"; o.lineCap = "round"; o.stroke(Pth); return; }
+  o.fillStyle = col; o.fill(Pth);
+  if(pl.e){ o.strokeStyle = pal.ink; o.lineWidth = pl.e; o.lineJoin = "round"; o.lineCap = "round"; o.stroke(Pth); }
+}
+/* The face's colour, W x W, in the same frame the distance fields are made in (so a plate lands on the enamel it belongs to): the
+   silhouette in the base enamel, the plates over it. The caller reads it back sample by sample in place of the one enamel colour. */
+function chapterObjColourMap(face, g, W, unitName){
+  const pl = chapterObjPlates(unitName);
+  if(!pl.length) return null;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
+  const o = cv.getContext("2d", { willReadFrequently: true });
+  const pxPerF = W / g.vw, pal = chapterObjPalette(unitName), sil = new Path2D(face.d);
+  o.setTransform(pxPerF, 0, 0, pxPerF, -g.vx * pxPerF, -g.vy * pxPerF);
+  o.translate(g.cx, g.cy); o.scale(g.S, g.S); o.translate(-g.cx, -g.cy);
+  o.fillStyle = pal[chapterObjFor(unitName).base] || pal.field; o.fill(sil);
+  o.save(); o.clip(sil);
+  pl.forEach(q => chapterObjPaintPlate(o, q, pal, new Path2D(q.d)));
+  o.restore();
+  return o.getImageData(0, 0, W, W).data;
+}
+/* The same plates as SVG, for the vector token: one group in the outline's own units, clipped by the plate group it is put in. */
+function chapterObjVector(parent, face, unitName){
+  const pl = chapterObjPlates(unitName);
+  if(!pl.length) return;
+  const NS = "http://www.w3.org/2000/svg", pal = chapterObjPalette(unitName);
+  const grp = document.createElementNS(NS, "g");
+  grp.setAttribute("class", "badge-chapter-obj");
+  const mk = (d, at) => { const el = document.createElementNS(NS, "path"); el.setAttribute("d", d);
+    Object.keys(at).forEach(k => el.setAttribute(k, at[k])); grp.appendChild(el); };
+  const base = Object.assign({ "stroke-linejoin": "round", "stroke-linecap": "round" });
+  mk(face.d, Object.assign({ fill: pal[chapterObjFor(unitName).base] || pal.field, stroke: "none" }, base));
+  pl.forEach(q => {
+    const col = pal[q.r] || pal.field;
+    if(q.sh && !q.ln) mk(q.d, { fill: "#000", opacity: ".38", transform: "translate(1.5 2.1)" });
+    if(q.ln) mk(q.d, Object.assign({ fill: "none", stroke: col, "stroke-width": String(q.ln) }, base));
+    else mk(q.d, Object.assign({ fill: col, stroke: q.e ? pal.ink : "none", "stroke-width": String(q.e || 0) }, base));
+  });
+  parent.appendChild(grp);
+}
+
 let badgeSvgSeq = 0;
 
 /* ---- A STRUCK BADGE, BUILT IN BANDS (build 317, badge round) ----
@@ -77505,6 +77834,13 @@ Object.assign(BADGE_BBOX_PRESET, {"coin":[7,7,86,86],"cinquefoil":[0.5961,1.0201
 Object.keys(BADGE_BBOX_PRESET).forEach(k => {
   const b = BADGE_BBOX_PRESET[k], sh = BADGE_SHAPE[k];
   if(sh && b) BADGE_BBOX_CACHE[sh.d] = { x: b[0], y: b[1], w: b[2], h: b[3] };
+});
+/* (384.65) the chapters drawn as their object: centre and box from the merge's table, so no layout is ever forced for them either */
+Object.keys(CHAPTER_OBJ).forEach(k => {
+  const sh = chapterObjShape(k), b = CHAPTER_OBJ_BBOX[k];
+  if(!sh) return;
+  BADGE_CENTRE_OF[sh.d] = sh.c;
+  if(b) BADGE_BBOX_CACHE[sh.d] = { x: b[0], y: b[1], w: b[2], h: b[3] };
 });
 /* One host, every outline asked for in it, one layout. */
 function badgeMeasure(ds){
@@ -78210,6 +78546,9 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
   }
   const Lt = badgeLightTables(), LN = BADGE_LIGHT_N, LN1 = LN - 1, EE = Lt.E, ENC = Lt.ENC;
   const en = badgeHexRgb(grey ? "#6B6E73" : badgeThemeFor(unitName).p).map(c => Lt.TO_LIN[Math.max(0, Math.min(255, Math.round(c)))]);
+  /* (384.65) a chapter drawn as its object: the enamel's colour is read per sample off its plates (a grey token has none) */
+  let PMD = null; const TOL = Lt.TO_LIN;
+  if(!grey && face.obj){ try{ PMD = chapterObjColourMap(face, g, W, unitName); }catch(e){ PMD = null; } }
   const PALE = !grey && badgeEnamelPale(badgeThemeFor(unitName).p);
   const tint = grey ? [1, 1, 1] : [.92, .955, 1];
   const l = Lt.l, ll = Math.sqrt(l[0] * l[0] + l[1] * l[1]);
@@ -78317,7 +78656,9 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
           if(cc < 0) cc = 0;
           dd *= (1 - W_DIM) * (1 + W_GRAINE * gr);
         }
-        er = en[0] * dd * shade + cc; eg = en[1] * dd * shade + cc; eb = en[2] * dd * shade + cc;
+        let cr = en[0], cg = en[1], cb = en[2];
+        if(PMD){ const j4 = i * 4; if(PMD[j4 + 3] > 0){ cr = TOL[PMD[j4]]; cg = TOL[PMD[j4 + 1]]; cb = TOL[PMD[j4 + 2]]; } }
+        er = cr * dd * shade + cc; eg = cg * dd * shade + cc; eb = cb * dd * shade + cc;
         if(WEAR){
           const gq = W_GRIMEE * rE, fq = W_FILME * sm;
           er = er * (1 - fq) + DK.fc[0] * fq; eg = eg * (1 - fq) + DK.fc[1] * fq; eb = eb * (1 - fq) + DK.fc[2] * fq;
@@ -78704,6 +79045,8 @@ function buildUnitBadgeSVG(unitName, earned, opts){
     add(c, { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.3", opacity: ".6",
              transform: vert ? "translate(-2.2 0)" : /L/.test(c) ? "translate(" + (-2.2 * nx).toFixed(2) + " " + (-2.2 * ny).toFixed(2) + ")" : "translate(0 -2.2)" }, plate);
   });
+  /* (384.65) a chapter drawn as its object: its plates (the struck token reads them off renderBadgeStrike's colour map) */
+  if(shape.obj && !grey){ try{ chapterObjVector(plate, shape, unitName); }catch(e){} }
   /* (384.61) a Fire Code chapter's icon, inlaid (the vector token; the struck one paints it in renderBadgeStrike) */
   if(shape.icon && !grey){ try{ chapterIconVector(plate, shape, unitName); }catch(e){} }
   /* The silver: inside the outline (clipped), then outside it over the
@@ -122729,7 +123072,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.63";
+const APP_BUILD = "2026-11-12-384.65";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";

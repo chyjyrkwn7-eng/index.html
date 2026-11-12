@@ -42,6 +42,13 @@ file short - only rules every session must know go here.
 
 ## Hard rules
 
+- **Fire Code chapter badges ARE the object (384.65).** The badge's silhouette
+  is the thing (Means of Egress = an open door), set in `CHAPTER_OBJ`, authored
+  in `tools/chapter-objects/` (read its README first). Madison asked for this
+  on purpose ("the badge needs to be the actual thing... I know I've said in
+  the past not to do that, but now we will"), so the older "a badge never
+  draws its subject" rule no longer applies to those 58 chapters; it still
+  holds for the academy's badges.
 - **A challenge counts what its label says, and an unlock is derived when
   read, never stored.** The Smoke Diver was reported three times because its
   counter ticked on the same event as the miss counter, so a "clamp to the
