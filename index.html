@@ -76186,7 +76186,7 @@ Object.assign(BADGE_SHAPE, {
 const CHAPTER_OBJ = {};
 const CHAPTER_OBJ_BBOX = {};
 const CHAPTER_OBJ_MAX_PLATES = 24;
-const CHAPTER_OBJ_ROLES = ["field", "lite", "body", "shade", "deep", "ink", "glow", "steel", "hot"];
+const CHAPTER_OBJ_ROLES = ["field", "lite", "body", "shade", "deep", "ink", "glow", "steel", "hot", "brass", "red", "water", "glass", "rubber", "cream", "wood"];
 const OBJ_N = v => String(Math.round(v * 100) / 100);
 /* a circle / ellipse as two half arcs (a single arc that returns to its start draws nothing or the wrong circle) */
 function OBJ_ellipse(cx, cy, rx, ry){
@@ -76298,162 +76298,188 @@ function chapterObjShape(name){
 }
 /* @@CHAPTER_OBJ_BEGIN */
 /* ---- part-0-prototypes.js ---- */
-/* Fire Code chapter objects - PROTOTYPES, round 2 (build 384.65): eight chapters that prove the recipe across very different kinds of thing.
-   Round 1 (be5d880) put its identity in bare silver (a pipe, arms, a spout drawn by the rim) and in small stickers (a flame, a pocket
-   badge, a lit rectangle). Madison: "I feel like you are just throwing stickers in the middle of the badges ... the silver part is making
-   the actual design." So now: the rim is an even band all round and never the design; EVERY part of an object is at least MIN_PART (20)
-   wide so it holds its own rim and its own enamel; identity is the silhouette; interior plates only colour-block the object's own parts.
-   See tools/chapter-objects/README.md. */
+/* Fire Code chapter objects - PROTOTYPES, round 3 (build 384.66): eight chapters drawn as RAISED PINS. Madison, of round 2: "the badges
+   don't look good ... We may just have to go away with the silver border entirely or make it thin ... you can see how these badges have
+   risen effect, that nice 3d effect ... Make this great." Each entry is the pin's silhouette and its parts; a part carries a colour and its
+   relief: raised or recessed (z, bev), domed (dome), cut into facets (gem, gw) or a V-groove (cut, with ln). Identity is the silhouette and
+   the sculpture, never a sticker; every pin has to read in plain grey too. See tools/chapter-objects/README.md. */
 
-/* ---- Chapter 10: Means of Egress - an open door in its frame. The leaf is swung toward you (its free edge the nearest and the tallest thing);
-   the frame is a lintel and a post, and the doorway between the leaf and the post is open to the case behind (a notch, 28 wide). The
-   rim is even all round; every part (leaf, lintel, post) holds its own enamel. A real HOLE for the doorway was tried (the renderer
-   supports holes now) and read as a letter O and a mail slot, so it is a notch. ---- */
+/* ---- Chapter 10: Means of Egress - an open door. The leaf (raised, with raised panels and a brass knob) swung toward you so its free edge
+   is the tallest thing; the frame beside it, and the doorway a deep recess. ---- */
 {
   const lerp = (a, b, t) => a + (b - a) * t;
-  /* a point on the leaf: u 0 at the hinge to 1 at the free edge, v 0 at the top to 1 at the bottom (perspective: the free edge is taller) */
-  const leaf = (u, v) => [lerp(12, 42, u), lerp(lerp(16, 4, u), lerp(84, 96, u), v)];
+  const leaf = (u, v) => [lerp(12, 50, u), lerp(lerp(16, 1, u), lerp(84, 99, u), v)];
   const quad = (u0, u1, v0, v1, r) => OBJ_poly([leaf(u0, v0), leaf(u1, v0), leaf(u1, v1), leaf(u0, v1)], r);
   CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
-    d: OBJ_poly([[12, 16], [42, 4], [42, 8], [94, 8], [94, 94], [74, 94], [74, 28], [42, 28], [42, 96], [12, 84]], [4, 3, 2, 5, 5, 4, 3, 3, 3, 4]),
+    d: OBJ_poly([[12, 16], [50, 1], [50, 12], [88, 12], [88, 90], [50, 90], [50, 99], [12, 84]], [2.5, 2, 1, 3, 3, 1, 2, 2.5]),
     plates: [
-      ["deep", OBJ_rrect(42, 8, 52, 20, 2), { e: 0 }],                                   /* the lintel */
-      ["deep", OBJ_rrect(74, 8, 20, 86, 2), { e: 0 }],                                   /* the post */
-      ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 2), { sh: 1, e: 1.6 }],   /* the leaf */
-      ["shade", quad(.8, 1, 0, 1, 1), { e: 0 }],                                           /* its thick edge */
-      ["lite", quad(.1, .66, .1, .46, 2), { e: 1.3 }],                                   /* its upper panel */
-      ["lite", quad(.1, .66, .54, .9, 2), { e: 1.3 }],                                   /* its lower panel */
+      ["deep", OBJ_rrect(50, 12, 38, 78, 2)],                                                  /* the frame */
+      ["ink", OBJ_rrect(57, 19, 24, 71, 1.5), { z: -1.8, bev: .9 }],                           /* the doorway, a deep recess */
+      ["shade", OBJ_poly([[57, 62], [81, 52], [81, 90], [57, 90]], 1), { z: -1.8, bev: .9 }],   /* the light on its floor */
+      ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 1.5), { z: 1.6, bev: 1.4 }],   /* the leaf, raised */
+      ["deep", quad(.86, 1, 0, 1, .8), { z: 1.6, bev: .5 }],                                 /* its thick edge */
+      ["lite", quad(.12, .7, .08, .44, 1.5), { z: .9, bev: .8 }],                             /* its upper panel */
+      ["lite", quad(.12, .7, .56, .92, 1.5), { z: .9, bev: .8 }],                             /* its lower panel */
+      ["brass", OBJ_circle(leaf(.8, .5)[0], leaf(.8, .5)[1], 3.2), { dome: 2.2 }],           /* the knob */
+      ["brass", quad(0, .08, .12, .2, .6), { z: .6, bev: .4 }],                               /* the hinges */
+      ["brass", quad(0, .08, .8, .88, .6), { z: .6, bev: .4 }],
     ],
   };
 }
 
-/* ---- Chapter 9: Fire Protection and Life Safety Systems - a sprinkler head spraying (Madison chose the sprinkler): the pipe stub, the hex
-   body, the wide flat deflector, and three bold drops of water falling from it, which are part of the outline (the notches between them
-   are what say "spray"). Every part is wide enough to hold enamel; nothing is a sticker. ---- */
+/* ---- Chapter 9: Fire Protection and Life Safety Systems - a pendant sprinkler head (Madison chose the sprinkler): the brass nipple with its
+   threads, the faceted hex body, the frame narrowing to the boss with the red glass bulb in its windows, and the round deflector seen a
+   little from above - its lit top face, its toothed rim. With no rim to swallow them, the thin parts are the sprinkler again. (A disc, not
+   a flat bar: the back's title is laid out on the silhouette and the disc gives it room; a thick bar read as a comb.) ---- */
 {
+  const CX = 50, CY = 76, RX = 45, RY = 18, pts = [], rs = [];
+  const ell = (t, k) => [CX + RX * k * Math.cos(t), CY + RY * k * Math.sin(t)];
+  /* the top of the disc, from where the frame meets it round to the right */
+  for(let d = 284; d <= 360; d += 19) { pts.push(ell(d * Math.PI / 180, 1)); rs.push(3); }
+  /* its lower rim, toothed */
+  for(let d = 9; d <= 171; d += 9){ pts.push(ell(d * Math.PI / 180, (d / 9) % 2 ? .9 : 1)); rs.push(.8); }
+  for(let d = 180; d <= 256; d += 19) { pts.push(ell(d * Math.PI / 180, 1)); rs.push(3); }
   CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {
-    d: OBJ_poly([[37, 4], [63, 4], [63, 18], [74, 20], [74, 38], [94, 40], [94, 74], [86, 87], [80, 95], [74, 87], [66, 76], [65, 62], [64, 76], [56, 87], [50, 95], [44, 87], [36, 76], [35, 62], [34, 76], [26, 87], [20, 95], [14, 87], [6, 74], [6, 40], [26, 38], [26, 20], [37, 18]],
-      [3, 3, 3, 3, 3, 4, 8, 6, 4, 6, 6, 1, 6, 6, 4, 6, 6, 1, 6, 6, 4, 6, 8, 4, 3, 3, 3]),
+    d: OBJ_poly([[41, 3], [59, 3], [59, 15], [68, 15], [73, 22.5], [68, 30], [65, 30], [59, 59.5]].concat(pts).concat([[41, 59.5], [35, 30], [32, 30], [27, 22.5], [32, 15], [41, 15]]),
+      [1.5, 1.5, 1, 1, 1.5, 1, 1, 2].concat(rs).concat([2, 1, 1, 1.5, 1, 1])),
     plates: [
-      ["deep", OBJ_rrect(37, 4, 26, 16, 3), { e: 0 }],                                       /* the stub */
-      ["body", OBJ_rrect(26, 20, 48, 18, 0), { e: 0 }],                                      /* the hex body, in its faces */
-      ["shade", OBJ_rrect(26, 20, 14, 18, 0), { e: 0 }],
-      ["deep", OBJ_rrect(6, 38, 88, 22, 6), { sh: 1, e: 0 }],                                /* the deflector */
-      ["lite", OBJ_rrect(10, 42, 80, 7, 3), { e: 0 }],
-      ["body", OBJ_poly([[6, 60], [94, 60], [94, 96], [6, 96]], 0), { e: 0 }],              /* the water */
-      ["lite", OBJ_poly([[6, 60], [94, 60], [94, 70], [6, 70]], 0), { e: 0 }],
-      ["shade", OBJ_poly([[6, 84], [94, 84], [94, 96], [6, 96]], 0), { e: 0 }],
+      ["brass", OBJ_rrect(41, 3, 18, 12, 1.5), { z: .4 }],                                     /* the nipple */
+      ["brass", "M41 6.5H59M41 10H59M41 13.5H59", { ln: 1.4, cut: .8, paint: 0 }],             /* its threads */
+      ["body", OBJ_poly([[32, 15], [68, 15], [73, 22.5], [68, 30], [32, 30], [27, 22.5]], 1), { gem: 1.4, gw: 3 }],   /* the hex body */
+      ["body", "M41 16V29M59 16V29", { ln: 1.4, cut: .7, paint: 0 }],                            /* its flats */
+      ["shade", OBJ_poly([[35, 30], [65, 30], [59, 62], [41, 62]], 1), { z: .5 }],              /* the frame */
+      ["ink", OBJ_poly([[39, 33], [45.5, 33], [45.5, 57], [42.5, 57]], 1), { z: -1.7, bev: .6 }],   /* its two windows */
+      ["ink", OBJ_poly([[61, 33], [54.5, 33], [54.5, 57], [57.5, 57]], 1), { z: -1.7, bev: .6 }],
+      ["red", OBJ_ellipse(50, 45, 4.4, 12), { dome: 2.6 }],                                     /* the glass bulb */
+      ["lite", OBJ_ellipse(CX, CY - 2, RX - 5, RY - 5), { z: .6, bev: 1, dome: .6 }],           /* the deflector's top face */
+      ["body", OBJ_rrect(43, 54, 14, 9, 2), { dome: 1.4 }],                                     /* the boss on it */
     ],
   };
 }
 
-/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can (a hazardous-material container). The silhouette is the whole point: the
-   round handle hump on the left, the long angled spout with its wider cap on the right, a valley between them. No flame sticker. ---- */
+/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can: the carry handle with its open loop (a real hole), the embossed X on its
+   side, the black spout with its amber cap. ---- */
 {
-  const hump = []; for(let k = 0; k <= 8; k++){ const t = (180 + 180 * k / 8) * Math.PI / 180; hump.push([24 + 18 * Math.cos(t), 40 + 22 * Math.sin(t)]); }
-  /* the spout: an axis from its base on the can's top to its cap, a tube 22 wide and a cap 28 wide */
-  const A = [66, 42], B = [88, 14], ux = (B[0] - A[0]), uy = (B[1] - A[1]), L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
+  const A = [72, 31], B = [89, 9], ux = B[0] - A[0], uy = B[1] - A[1], L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
   const at = (t, w) => [A[0] + dx * t + nx * w, A[1] + dy * t + ny * w];
-  const bl = at(0, -11), br = at(0, 11), tl = at(L - 8, -11), tr = at(L - 8, 11), cl = at(L - 8, -14), cr = at(L - 8, 14), ct = at(L + 2, -14), cu = at(L + 2, 14);
+  const bl = at(0, -6), br = at(0, 6), tl = at(L - 4, -6), tr = at(L - 4, 6), cl = at(L - 4, -8), cr = at(L - 4, 8), ct = at(L + 4, -8), cu = at(L + 4, 8);
   CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {
-    d: OBJ_poly([[6, 92], [6, 40]].concat(hump.slice(1, 8)).concat([[42, 40], [bl[0] - 2, 40], bl, tl, cl, ct, cu, cr, tr, [br[0] + 4, 40], [94, 44], [94, 92]]),
-      [9, 4].concat(hump.slice(1, 8).map(() => 2), [3, 3, 3, 2, 2, 2, 4, 4, 2, 2, 3, 4, 4, 9])),
+    d: OBJ_poly([[8, 94], [8, 34], [13, 30], [13, 14], [17, 10], [48, 10], [52, 14], [52, 30], [bl[0], 30], bl, tl, cl, ct, cu, cr, tr, br, [br[0], 30], [84, 31], [88, 36], [88, 94]],
+      [6, 3, 2, 4, 2, 2, 4, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 3, 4, 6]),
+    holes: [OBJ_rrect(20, 16, 25, 9, 3.5)],
     plates: [
-      ["body", OBJ_rrect(6, 40, 88, 52, [0, 0, 9, 9]), { e: 0 }],                            /* the can */
-      ["shade", OBJ_rrect(6, 68, 88, 24, [0, 0, 9, 9]), { e: 0 }],                           /* its lower band */
-      ["lite", OBJ_rrect(6, 44, 88, 9, 0), { e: 0 }],                                       /* the light along its shoulder */
-      ["deep", OBJ_poly([[6, 40]].concat(hump.slice(1, 8)).concat([[42, 40], [42, 44], [6, 44]]), 1), { e: 0 }],   /* the handle hump */
-      ["deep", OBJ_poly([bl, tl, tr, br], 1), { e: 0 }],                                    /* the spout */
-      ["hot", OBJ_poly([cl, ct, cu, cr], 2), { e: 0 }],                                     /* its cap */
+      ["body", OBJ_rrect(8, 30, 80, 64, [0, 0, 6, 6])],                                         /* the can */
+      ["field", OBJ_rrect(15, 40, 66, 46, 4), { z: -.9, bev: 1 }],                              /* the panel pressed into its side */
+      ["body", "M21 46L75 80M75 46L21 80", { ln: 6, z: 1.4, bev: 1.4 }],                       /* the embossed X */
+      ["deep", OBJ_rrect(13, 10, 39, 22, 4)],                                                   /* the handle */
+      ["rubber", OBJ_poly([bl, tl, tr, br], 1), { z: .4, dome: .8 }],                           /* the spout */
+      ["hot", OBJ_poly([cl, ct, cu, cr], 1.5), { dome: 1.4 }],                                  /* its cap */
     ],
   };
 }
 
-/* ---- Appendix D: Fire Apparatus Access Roads - a ladder truck (a vehicle), side on, facing left: the low cab, the tall body with one fat ladder
-   bar along its roof, two big wheels. The widest, lowest silhouette in the set. ---- */
+/* ---- Appendix D: Fire Apparatus Access Roads - a fire engine, side on, facing left: the cab with its windscreen and light bar, the
+   chrome ladder along the roof, the lockers, the red stripe, two big wheels. The widest, lowest pin. ---- */
 {
+  let rungs = ""; for(let x = 28; x <= 92; x += 8) rungs += "M" + x + " 25V31";
   CHAPTER_OBJ["Appendix D: Fire Apparatus Access Roads"] = {
-    d: "M20 78" + OBJ_chain([[20, 78], [8, 78], [8, 62], [16, 48], [42, 48], [42, 14], [96, 14], [96, 78], [86, 78]], [0, 4, 6, 6, 2, 3, 4, 4, 0]) +
-       "A13 13 0 0 1 60 78" + OBJ_chain([[60, 78], [42, 78]], 0) + "A13 13 0 0 1 20 78Z",
+    d: "M14 74" + OBJ_chain([[14, 74], [6, 74], [6, 58], [12, 46], [13, 41], [27, 41], [28, 46], [31, 46], [31, 33], [22, 33], [22, 23], [96, 23], [96, 74], [88, 74]], [0, 3, 4, 3, 1.5, 1.5, 1, 1, 1, 2, 2, 2, 3, 0]) +
+       "A12 12 0 0 1 64 74" + OBJ_chain([[64, 74], [38, 74]], 0) + "A12 12 0 0 1 14 74Z",
     plates: [
-      ["deep", OBJ_rrect(42, 34, 54, 44, 2), { e: 0 }],                                     /* the body */
-      ["lite", OBJ_rrect(42, 14, 54, 20, 3), { e: 0 }],                                     /* the ladder bar, along its roof */
-      ["deep", "M54 14V34M66 14V34M78 14V34M90 14V34", { ln: 2 }],                          /* its rungs */
-      ["hot", OBJ_rrect(8, 62, 88, 7, 0), { e: 0 }],                                         /* the stripe, cab to tail */
-      ["shade", OBJ_rrect(48, 40, 18, 18, 2), { e: 1.2 }],                                  /* the lockers */
-      ["shade", OBJ_rrect(70, 40, 20, 18, 2), { e: 1.2 }],
-      ["lite", OBJ_poly([[10, 62], [18, 50], [40, 50], [40, 62]], 2), { e: 1.2 }],          /* the cab's windows */
+      ["steel", OBJ_rrect(22, 23, 74, 10, 2), { z: .8, bev: .6 }],                              /* the ladder */
+      ["steel", rungs, { ln: 1.4, cut: .8, paint: 0 }],                                         /* its rungs */
+      ["red", OBJ_rrect(6, 58, 90, 6, 0), { z: .4, bev: .5 }],                                  /* the stripe */
+      ["glass", OBJ_poly([[8, 56], [13, 47], [27, 47], [27, 56]], 1.5), { z: -.8, bev: .6 }],   /* the windscreen */
+      ["red", OBJ_rrect(13, 41, 14, 5, 2), { dome: 1.4 }],                                       /* the light bar */
+      ["body", OBJ_rrect(35, 37, 18, 18, 1.5), { z: .7, bev: .6 }],                              /* the lockers */
+      ["body", OBJ_rrect(56, 37, 18, 18, 1.5), { z: .7, bev: .6 }],
+      ["body", OBJ_rrect(77, 37, 16, 18, 1.5), { z: .7, bev: .6 }],
+      ["rubber", OBJ_circle(26, 74, 12), { z: .9, bev: 1.2 }],                                   /* the wheels */
+      ["rubber", OBJ_circle(76, 74, 12), { z: .9, bev: 1.2 }],
+      ["steel", OBJ_circle(26, 74, 5.5), { dome: 1.6 }],                                         /* their hubs */
+      ["steel", OBJ_circle(76, 74, 5.5), { dome: 1.6 }],
     ],
   };
 }
 
-/* ---- Chapter 53: Compressed Gases - a gas cylinder (a hazardous-material container; the tall, narrow silhouette): a fat valve block, the
-   domed shoulder, the long body. Its shoulder and its band are colour blocks of the cylinder. ---- */
+/* ---- Chapter 53: Compressed Gases - a gas cylinder: the handwheel on top of the brass valve, the brass collar, the domed shoulder, the long
+   body with its two grooves and label band. The tallest, narrowest pin. (A side outlet made it read as a soap pump: dropped.) ---- */
 {
   CHAPTER_OBJ["Chapter 53: Compressed Gases"] = {
-    d: "M50 4" + OBJ_chain([[50, 4], [68, 4], [68, 26], [74, 32], [76, 46], [76, 92], [24, 92], [24, 46], [26, 32], [32, 26], [32, 4], [50, 4]],
-      [0, 5, 3, 8, 14, 9, 9, 14, 8, 3, 5, 0]) + "Z",
+    d: OBJ_poly([[38, 3], [62, 3], [62, 9], [57, 9], [57, 16], [62, 16], [62, 22], [70, 27], [74, 38], [74, 94], [26, 94], [26, 38], [30, 27], [38, 22], [38, 16], [43, 16], [43, 9], [38, 9]],
+      [2.5, 2.5, 1, 1, 1, 1.5, 1, 6, 8, 8, 8, 8, 6, 1, 1.5, 1, 1, 2.5]),
     plates: [
-      ["body", OBJ_rrect(24, 30, 52, 62, [18, 18, 9, 9]), { e: 0 }],                         /* the cylinder */
-      ["shade", "M24 50C24 30 38 28 50 28C62 28 76 30 76 50Z", { e: 0 }],                    /* the domed shoulder */
-      ["deep", OBJ_rrect(32, 4, 36, 24, 3), { e: 0 }],                                       /* the valve */
-      ["lite", OBJ_rrect(24, 56, 52, 16, 0), { e: 0 }],                                      /* the band round it */
-      ["shade", OBJ_rrect(24, 80, 52, 12, [0, 0, 9, 9]), { e: 0 }],                          /* its foot */
+      ["rubber", OBJ_rrect(38, 3, 24, 6, 2.5), { dome: .9 }],                                    /* the handwheel */
+      ["brass", OBJ_rrect(43, 9, 14, 7, 1), { gem: .9, gw: 2 }],                                 /* the valve */
+      ["brass", OBJ_rrect(38, 16, 24, 7, 2), { dome: .9 }],                                      /* the collar */
+      ["shade", "M26 40C26 27 40 22 50 22C60 22 74 27 74 40Z", { dome: 1.8 }],                   /* the domed shoulder */
+      ["body", OBJ_rrect(26, 40, 48, 54, [0, 0, 8, 8]), { dome: 1.4 }],                          /* the body */
+      ["cream", OBJ_rrect(26, 58, 48, 17, 0), { z: .5, bev: .6 }],                               /* the label band */
+      ["body", "M27 46H73M27 51H73", { ln: 1.6, cut: .9, paint: 0 }],                            /* the grooves */
     ],
   };
 }
 
-/* ---- Chapter 1: Scope and Administration - a rubber hand stamp (an idea, drawn as the thing that makes it official): a round handle, a
-   neck, a flange, a base with its rubber die. ---- */
+/* ---- Chapter 1: Scope and Administration - a rubber hand stamp: the domed knob, the grooved neck, the chamfered flange, the base and its
+   inked rubber die. ---- */
 {
   CHAPTER_OBJ["Chapter 1: Scope and Administration"] = {
-    d: "M33 22A17 17 0 0 1 67 22A17 17 0 0 1 60 36" + OBJ_chain([[60, 36], [60, 50], [80, 52], [80, 70], [94, 72], [94, 94], [6, 94], [6, 72], [20, 70], [20, 52], [40, 50], [40, 36]], [0, 3, 4, 3, 4, 5, 5, 4, 3, 4, 3, 0]) + "A17 17 0 0 1 33 22Z",
+    d: "M35 20A15 15 0 0 1 65 20A15 15 0 0 1 57.5 33" + OBJ_chain([[57.5, 33], [57.5, 48], [78, 50], [78, 62], [90, 64], [90, 86], [88, 94], [12, 94], [10, 86], [10, 64], [22, 62], [22, 50], [42.5, 48], [42.5, 33]], [0, 2, 3, 2, 3, 2, 2, 2, 2, 3, 2, 3, 2, 0]) + "A15 15 0 0 1 35 20Z",
     plates: [
-      ["body", OBJ_circle(50, 22, 17), { sh: 1, e: 1.5 }],                                    /* the knob */
-      ["shade", OBJ_rrect(40, 36, 20, 16, 0), { e: 0 }],                                      /* the neck */
-      ["body", OBJ_rrect(20, 50, 60, 22, 3), { sh: 1, e: 1.5 }],                              /* the flange */
-      ["deep", OBJ_rrect(6, 70, 88, 24, [2, 2, 6, 6]), { e: 0 }],                              /* the base */
-      ["lite", OBJ_rrect(6, 80, 88, 14, [0, 0, 6, 6]), { e: 0 }],                              /* the rubber die */
+      ["body", OBJ_circle(50, 20, 15), { dome: 3.2 }],                                            /* the knob */
+      ["shade", OBJ_rrect(42.5, 32, 15, 17, 0), { dome: .8 }],                                   /* the neck */
+      ["shade", "M42 38H58M42 43H58", { ln: 1.6, cut: .8, paint: 0 }],                           /* its grooves */
+      ["body", OBJ_rrect(22, 48, 56, 14, 3), { gem: 1.4, gw: 3 }],                               /* the flange */
+      ["deep", OBJ_rrect(10, 62, 80, 24, 3), { z: .4 }],                                         /* the base */
+      ["lite", OBJ_rrect(14, 66, 72, 3, 1.5), { z: .3, bev: .4 }],                                /* its lip */
+      ["red", OBJ_rrect(12, 86, 76, 8, [0, 0, 3, 3]), { z: -.4, bev: .5 }],                      /* the inked rubber die */
     ],
   };
 }
 
-/* ---- Chapter and Section Finder - a magnifying glass (a lookup, drawn as the tool you look things up with): the fat round lens and the fat
-   handle at 45 degrees. The benchmark: the rim even all round, the lens the badge's own enamel. ---- */
+/* ---- Chapter and Section Finder - a magnifying glass: the ring, the domed glass set into it, the brass collar, the grooved handle. ---- */
 {
-  const C = [40, 40], R = 36, W = 10, L = 40, s2 = Math.SQRT1_2;
+  const C = [40, 40], R = 34, W = 7, L = 40, s2 = Math.SQRT1_2;
   const dir = [s2, s2], nrm = [s2, -s2], a = Math.sqrt(R * R - W * W);
   const P1 = [C[0] + a * dir[0] + W * nrm[0], C[1] + a * dir[1] + W * nrm[1]], P2 = [C[0] + a * dir[0] - W * nrm[0], C[1] + a * dir[1] - W * nrm[1]];
   const E1 = [P1[0] + L * dir[0], P1[1] + L * dir[1]], E2 = [P2[0] + L * dir[0], P2[1] + L * dir[1]];
-  const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
+  const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2), along = (t, w) => [C[0] + (R + t) * dir[0] + w * nrm[0], C[1] + (R + t) * dir[1] + w * nrm[1]];
+  let grip = ""; for(let t = 14; t <= 34; t += 5) grip += "M" + f(along(t, -W - 1)) + "L" + f(along(t, W + 1));
   CHAPTER_OBJ["Chapter and Section Finder"] = {
     d: "M" + f(P1) + "A" + R + " " + R + " 0 1 0 " + f(P2) + "L" + f(E2) + "A" + W + " " + W + " 0 0 0 " + f(E1) + "Z",
     plates: [
-      ["lite", OBJ_circle(40, 40, 25), { e: 1.6 }],                                           /* the glass */
-      ["deep", "M" + f([P1[0] + 4 * dir[0], P1[1] + 4 * dir[1]]) + "L" + f(E1) + "L" + f(E2) + "L" + f([P2[0] + 4 * dir[0], P2[1] + 4 * dir[1]]) + "Z", { e: 0 }],   /* the handle */
+      ["glass", OBJ_circle(40, 40, 26), { z: -.6, bev: .8, dome: 2.4 }],                          /* the glass, domed, set into the ring */
+      ["deep", "M" + f(along(6, -W - 1)) + "L" + f(along(L + 2, -W - 1)) + "L" + f(along(L + 2, W + 1)) + "L" + f(along(6, W + 1)) + "Z", { dome: 1 }],   /* the handle */
+      ["deep", grip, { ln: 1.4, cut: .7, paint: 0 }],                                              /* its grip */
+      ["brass", "M" + f(along(-1, -W - 1)) + "L" + f(along(7, -W - 1)) + "L" + f(along(7, W + 1)) + "L" + f(along(-1, W + 1)) + "Z", { z: .7, bev: .6 }],   /* the collar */
     ],
   };
 }
 
-/* ---- Chapter 5: Fire Service Features - a fire hydrant (Madison's own suggestion; a helmet read as a hat): the nut on top, the bonnet, the
-   barrel, the two fat side outlets, the base flange. (Appendix C, Fire Hydrant Locations, wants a different object now.) ---- */
+/* ---- Chapter 5: Fire Service Features - a fire hydrant (Madison's own suggestion): the faceted operating nut, the domed bonnet, the barrel,
+   the two side outlets with their faceted caps, the base flange and its bolts. ---- */
 {
   CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {
-    d: OBJ_poly([[38, 4], [62, 4], [62, 22], [76, 24], [76, 46], [72, 48], [94, 50], [94, 76], [80, 78], [82, 94], [18, 94], [20, 78], [6, 76], [6, 50], [28, 48], [24, 46], [24, 24], [38, 22]],
-      [4, 4, 3, 7, 4, 2, 5, 5, 3, 5, 5, 3, 5, 5, 2, 4, 7, 3]),
+    d: OBJ_poly([[42, 4], [58, 4], [60, 14], [72, 18], [76, 32], [70, 34], [70, 44], [86, 44], [86, 40], [94, 40], [94, 64], [86, 64], [86, 60], [70, 60], [70, 80], [80, 82], [82, 94], [18, 94], [20, 82], [30, 80], [30, 60], [14, 60], [14, 64], [6, 64], [6, 40], [14, 40], [14, 44], [30, 44], [30, 34], [24, 32], [28, 18], [40, 14]],
+      [2, 2, 2, 6, 3, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 3, 6, 2]),
     plates: [
-      ["body", OBJ_rrect(24, 22, 52, 56, 3), { e: 0 }],                                      /* the body */
-      ["shade", OBJ_poly([[24, 24], [76, 24], [76, 46], [24, 46]], 4), { e: 0 }],           /* the bonnet */
-      ["deep", OBJ_rrect(38, 4, 24, 20, 3), { e: 0 }],                                       /* the nut */
-      ["lite", OBJ_rrect(32, 48, 10, 30, 3), { e: 0 }],                                      /* the light down its barrel */
-      ["deep", OBJ_rrect(6, 50, 12, 26, 3), { e: 0 }],                                       /* the outlet caps */
-      ["deep", OBJ_rrect(82, 50, 12, 26, 3), { e: 0 }],
-      ["deep", OBJ_rrect(18, 78, 64, 16, 3), { e: 0 }],                                      /* the base flange */
+      ["field", OBJ_rrect(30, 32, 40, 50, 2), { dome: 1.6 }],                                    /* the barrel */
+      ["field", "M24 32C24 20 36 14 50 14C64 14 76 20 76 32Z", { dome: 2.2 }],                   /* the bonnet */
+      ["steel", OBJ_poly([[42, 4], [58, 4], [60, 14], [40, 14]], 1), { gem: 1.4, gw: 2.6 }],     /* the operating nut */
+      ["field", OBJ_rrect(14, 44, 16, 16, 1.5), { dome: 1 }],                                    /* the outlets */
+      ["field", OBJ_rrect(70, 44, 16, 16, 1.5), { dome: 1 }],
+      ["steel", OBJ_rrect(6, 40, 8, 24, 2), { gem: 1.2, gw: 2 }],                                /* their caps */
+      ["steel", OBJ_rrect(86, 40, 8, 24, 2), { gem: 1.2, gw: 2 }],
+      ["deep", OBJ_rrect(18, 80, 64, 14, 2), { z: .5 }],                                         /* the base flange */
+      ["steel", OBJ_circle(26, 87, 2.4), { dome: 1.1 }],                                         /* its bolts */
+      ["steel", OBJ_circle(42, 87, 2.4), { dome: 1.1 }],
+      ["steel", OBJ_circle(58, 87, 2.4), { dome: 1.1 }],
+      ["steel", OBJ_circle(74, 87, 2.4), { dome: 1.1 }],
     ],
   };
 }
 /* ---- generated by tools/merge-chapter-icons.py: every silhouette's box [x, y, w, h] ---- */
-Object.assign(CHAPTER_OBJ_BBOX, {"Appendix D: Fire Apparatus Access Roads":[8,14,88,77],"Chapter 10: Means of Egress":[12,4.71,82,90.48],"Chapter 1: Scope and Administration":[6,5,88,89],"Chapter 53: Compressed Gases":[24,4,52,88],"Chapter 57: Flammable and Combustible Liquids":[6,4.47,92.86,87.53],"Chapter 5: Fire Service Features":[6,4,88,90],"Chapter 9: Fire Protection and Life Safety Systems":[6,4,88,89.4],"Chapter and Section Finder":[4,4,98.61,98.61]});
+Object.assign(CHAPTER_OBJ_BBOX, {"Appendix D: Fire Apparatus Access Roads":[6,23,90,63],"Chapter 10: Means of Egress":[12,1.53,76,96.93],"Chapter 1: Scope and Administration":[10,5,80,89],"Chapter 53: Compressed Gases":[26,3,48,91],"Chapter 57: Flammable and Combustible Liquids":[8,1.63,89.09,92.37],"Chapter 5: Fire Service Features":[6,4,88,90],"Chapter 9: Fire Protection and Life Safety Systems":[5.79,3,88.41,90.88],"Chapter and Section Finder":[6.01,6.01,92.8,92.8]});
 /* @@CHAPTER_OBJ_END */
 function badgeShapeFor(unitName){
   const name = String(unitName || "");
@@ -77720,42 +77746,54 @@ function chapterObjFor(unitName){
 /* The tones: the chapter's own enamel p, five steps of it (lite > body > field > shade > deep > ink; the ladder is moved up for a
    dark enamel and its top is lower for a pale one, so every role stays distinguishable on every enamel), and three that are not
    its own - glow (light), steel (metal) and hot (the warmth of a flame, a brass handle) - so a lamp is a lamp on every chapter. */
-function chapterObjPalette(unitName){
+function chapterObjPalette(unitName, grey){
+  /* (384.66) a plain grey for every role: the relief test (does the sculpture read with no colour at all?) and the grey,
+     seen-not-found token, which shows the pin's form and none of its colour */
+  if(grey){ const G = "#7F868E", o = {}; CHAPTER_OBJ_ROLES.forEach(r => { o[r] = G; }); return o; }
   const p = badgeThemeFor(unitName).p, L = badgeEnamelLuma(p);
   /* lite, body, shade, deep, ink as a lift (+) or a shading (-) of p */
   const T = L < .10 ? [.62, .38, .20, -.34, -.74] : L < .50 ? [.36, .16, -.26, -.52, -.80] : [.50, .24, -.30, -.56, -.82];
   const mix = (hex, to, k) => { const a = badgeHexRgb(hex), b = badgeHexRgb(to); return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",") + ")"; };
   return { field: p, lite: badgeShade(p, T[0]), body: badgeShade(p, T[1]), shade: badgeShade(p, T[2]), deep: badgeShade(p, T[3]), ink: badgeShade(p, T[4]),
-    glow: mix("#FFFBE6", p, .05), steel: mix("#B4BEC9", p, .16), hot: mix("#FF9A38", p, .08) };
+    glow: mix("#FFFBE6", p, .05), steel: mix("#B4BEC9", p, .16), hot: mix("#FF9A38", p, .08),
+    /* (384.66) a part's own natural colour, the same on every chapter: a pin's brass, a flame's red, water, glass, rubber, cream, wood */
+    brass: "#D9A63E", red: "#D8352C", water: "#3C92DA", glass: "#CDE8F5", rubber: "#2C2E33", cream: "#EEE2C6", wood: "#8E5B2F" };
 }
-/* The plates as plain objects: only the roles and options the data format allows, at most CHAPTER_OBJ_MAX_PLATES. */
+/* The plates as plain objects: only the roles and options the data format allows, at most CHAPTER_OBJ_MAX_PLATES.
+   (384.66) a plate is a PART of the pin: besides its colour it may be raised or recessed (z, with its own bevel bev), domed (dome),
+   cut into facets (gem, over a facet width gw), or be a V-groove cut into what is under it (cut, usually a line: ln); paint: 0 makes it
+   relief only. A plate's dark edge is off unless asked for (e). */
 function chapterObjPlates(unitName){
   const e = chapterObjFor(unitName), out = [];
   if(!e || !Array.isArray(e.plates)) return out;
+  const num = (v, d) => (typeof v === "number" && isFinite(v) ? v : d);
   for(let i = 0; i < e.plates.length && out.length < CHAPTER_OBJ_MAX_PLATES; i++){
     const q = e.plates[i];
     if(!Array.isArray(q) || typeof q[1] !== "string" || CHAPTER_OBJ_ROLES.indexOf(q[0]) < 0) continue;
     const o = q[2] || {};
-    out.push({ r: q[0], d: q[1], sh: !!o.sh, e: o.e === 0 ? 0 : (+o.e > 0 ? +o.e : 1.25), ln: +o.ln > 0 ? +o.ln : 0 });
+    out.push({ r: q[0], d: q[1], sh: !!o.sh, e: +o.e > 0 ? +o.e : 0, ln: +o.ln > 0 ? +o.ln : 0,
+      z: num(o.z, 0), bev: Math.max(.3, num(o.bev, 1.2)), dome: num(o.dome, 0), gem: num(o.gem, 0), gw: Math.max(.5, num(o.gw, 3)),
+      cut: Math.max(0, num(o.cut, 0)), paint: o.paint === 0 ? 0 : 1 });
   }
   return out;
 }
 /* One plate onto a 2d context already in the outline's units: its soft shadow, its fill (or its line), its thin dark edge. */
 function chapterObjPaintPlate(o, pl, pal, Pth){
+  if(!pl.paint) return;
   const col = pal[pl.r] || pal.field;
   if(pl.sh && !pl.ln){ o.save(); o.translate(1.5, 2.1); o.globalAlpha = .38; o.fillStyle = "#000"; o.fill(Pth); o.restore(); }
   if(pl.ln){ o.strokeStyle = col; o.lineWidth = pl.ln; o.lineJoin = "round"; o.lineCap = "round"; o.stroke(Pth); return; }
   o.fillStyle = col; o.fill(Pth);
   if(pl.e){ o.strokeStyle = pal.ink; o.lineWidth = pl.e; o.lineJoin = "round"; o.lineCap = "round"; o.stroke(Pth); }
 }
-/* The face's colour, W x W, in the same frame the distance fields are made in (so a plate lands on the enamel it belongs to): the
-   silhouette in the base enamel, the plates over it. The caller reads it back sample by sample in place of the one enamel colour. */
-function chapterObjColourMap(face, g, W, unitName){
+/* The face's colour, W x W, in the frame { vx, vy, vw, cx, cy, S } (so a plate lands on the part it belongs to): the silhouette in its
+   base colour, the plates over it. The pin renderer reads it back sample by sample. */
+function chapterObjColourMap(face, g, W, unitName, grey){
   const pl = chapterObjPlates(unitName);
   if(!pl.length) return null;
   const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
   const o = cv.getContext("2d", { willReadFrequently: true });
-  const pxPerF = W / g.vw, pal = chapterObjPalette(unitName), sil = new Path2D(face.d);
+  const pxPerF = W / g.vw, pal = chapterObjPalette(unitName, grey), sil = new Path2D(face.d);
   o.setTransform(pxPerF, 0, 0, pxPerF, -g.vx * pxPerF, -g.vy * pxPerF);
   o.translate(g.cx, g.cy); o.scale(g.S, g.S); o.translate(-g.cx, -g.cy);
   o.fillStyle = pal[chapterObjFor(unitName).base] || pal.field; o.fill(sil);
@@ -77764,7 +77802,7 @@ function chapterObjColourMap(face, g, W, unitName){
   o.restore();
   return o.getImageData(0, 0, W, W).data;
 }
-/* The same plates as SVG, for the vector token: one group in the outline's own units, clipped by the plate group it is put in. */
+/* The same plates as SVG, flat, for the no-canvas fallback: one group in the outline's own units, clipped by the group it is put in. */
 function chapterObjVector(parent, face, unitName){
   const pl = chapterObjPlates(unitName);
   if(!pl.length) return;
@@ -77776,12 +77814,266 @@ function chapterObjVector(parent, face, unitName){
   const base = Object.assign({ "stroke-linejoin": "round", "stroke-linecap": "round" });
   mk(face.d, Object.assign({ fill: pal[chapterObjFor(unitName).base] || pal.field, stroke: "none" }, base));
   pl.forEach(q => {
+    if(!q.paint) return;
     const col = pal[q.r] || pal.field;
     if(q.sh && !q.ln) mk(q.d, { fill: "#000", opacity: ".38", transform: "translate(1.5 2.1)" });
     if(q.ln) mk(q.d, Object.assign({ fill: "none", stroke: col, "stroke-width": String(q.ln) }, base));
     else mk(q.d, Object.assign({ fill: col, stroke: q.e ? pal.ink : "none", "stroke-width": String(q.e || 0) }, base));
   });
   parent.appendChild(grp);
+}
+
+/* ---- A FIRE CODE BADGE IS A RAISED PIN (build 384.66, round 3) ----
+   Madison, of round 2: "the badges don't look good ... We can keep the back of the badges the same look and everything. But the front and
+   side/edges I think we are gonna have to update for the ifc. We may just have to go away with the silver border entirely or make it thin.
+   I sent some examples, the mostly grey ones I'm showing because you can see how these badges have risen effect, that nice 3d effect. And
+   then the other you can see that it's 3d, color ... Make it super nice though. Make this great." (His references: Kanto gym badges
+   3D-printed in grey - a drop, a heart split by a crease, a gem with chamfered facets, a button with a raised disc, a flower of domed
+   petals, a leaf with cut veins - and the same badges as coloured enamel pins.)
+   So a chapter drawn as its object is no longer a token in a silver rim: it is a PIN, sculpted from a height map and lit.
+     - the silhouette rises from the case by a rounded BEVEL (OBJ_PIN.bevel wide) to a flat top with a gentle dome;
+     - each part adds its own relief: raised or recessed (z, with its own bevel), domed (dome), cut into planar facets (gem), or a V-groove
+       (cut) - read off each part's own distance field, so a groove follows its path and a facet is a true plane;
+     - the face is shaded from the height map's normals (one light, top-left, as everywhere: Lambert plus a restrained specular), in each
+       part's colour; its edge is either a fine darker line of its own colour (EDGE A, the default) or a hairline of polished metal
+       (EDGE B, OBJ_PIN.hair wide);
+     - the pin's THICKNESS shows as a side wall along its lower-right (OBJ_PIN.wall deep, each point the colour of the face above it, darker),
+       and it throws a soft contact shadow.
+   No SVG filter anywhere; a canvas render cached per badge, size and state (the strike cache), with the same draft-then-finish path the
+   struck tokens use. The back of a pin is the struck back, unchanged. The no-canvas fallback draws the parts flat with a darker wall. */
+let CHAPTER_OBJ_EDGE = "A";
+const OBJ_PIN = { geoW: 256, bevel: 2.4, top: 1.7, domeK: .9, domeR: 18, relief: 1.15, wall: 3.0, wallDir: [.5, .866],
+  shadow: [1.8, 3.2], shadowBlur: 2.6, shadowA: .55, outline: .55, outlineK: .5, hair: 1.8, amb: .3, spec: .32, specP: 52, sheen: .03,
+  wallK: [.6, .32], slotGap: 2.2, slotLip: 1.2, slotWall: 2.4 };
+/* switch the edge (A or B) and drop every pin render cached with the other one (the contact sheets show both) */
+function setChapterObjEdge(v){
+  CHAPTER_OBJ_EDGE = v === "B" ? "B" : "A";
+  Object.keys(BADGE_STRIKE_CACHE).forEach(k => { if(chapterObjShape(k.split("|")[0])) delete BADGE_STRIKE_CACHE[k]; });
+  return CHAPTER_OBJ_EDGE;
+}
+const OBJ_PIN_GEOM = {};
+/* The pin's form, once per chapter: its height (units) and normal at OBJ_PIN.geoW across the badge's frame, and the silhouette's signed
+   distance (units, negative inside). */
+function objPinGeometry(face, unitName){
+  const key = String(unitName) + "|" + face.d.length;
+  if(OBJ_PIN_GEOM[key]) return OBJ_PIN_GEOM[key];
+  const P = OBJ_PIN, S = BADGE_GEOM.scale, cx = face.c[0], cy = face.c[1];
+  const vb = badgeViewBoxFor(face.d).split(/\s+/).map(Number), vx = vb[0], vy = vb[1], vw = vb[2];
+  const GW = P.geoW, pxPerF = GW / vw, k = pxPerF * S, N = GW * GW;
+  const setT = g => { g.setTransform(pxPerF, 0, 0, pxPerF, -vx * pxPerF, -vy * pxPerF); g.translate(cx, cy); g.scale(S, S); g.translate(-cx, -cy); };
+  const sil = new Path2D(face.d);
+  const cov = badgeCoverage(GW, g => { setT(g); g.fillStyle = "#000"; g.fill(sil); });
+  const sdPx = badgeSignedDistance(cov, GW), SD = new Float32Array(N), H = new Float32Array(N);
+  const bev = x => x >= 1 ? 1 : x <= 0 ? 0 : Math.sin(x * Math.PI / 2);
+  for(let i = 0; i < N; i++){
+    const d = -sdPx[i] / k; SD[i] = -d;
+    if(d <= 0) continue;
+    H[i] = P.top * bev(d / P.bevel) + P.domeK * (d >= P.domeR ? 1 : (d / P.domeR) * (2 - d / P.domeR));
+  }
+  chapterObjPlates(unitName).forEach(pl => {
+    if(!pl.z && !pl.dome && !pl.gem && !pl.cut) return;
+    const pth = new Path2D(pl.d);
+    const c2 = badgeCoverage(GW, g => { setT(g); g.save(); g.clip(sil); g.fillStyle = g.strokeStyle = "#000";
+      if(pl.ln){ g.lineWidth = pl.ln; g.lineCap = "round"; g.lineJoin = "round"; g.stroke(pth); } else g.fill(pth); g.restore(); });
+    /* the part's own distance field, on the square round it only (a part is small; the whole frame each time was most of the cost) */
+    let x0 = GW, y0 = GW, x1 = -1, y1 = -1;
+    for(let y = 0; y < GW; y++) for(let x = 0; x < GW; x++) if(c2[y * GW + x] > 0){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+    if(x1 < 0) return;
+    x0 = Math.max(0, x0 - 3); y0 = Math.max(0, y0 - 3);
+    const w = Math.max(x1 + 4 - x0, y1 + 4 - y0), sub = new Float32Array(w * w);
+    for(let y = 0; y < w; y++) for(let x = 0; x < w; x++){ const gx = x0 + x, gy = y0 + y; if(gx < GW && gy < GW) sub[y * w + x] = c2[gy * GW + gx]; }
+    const sdSub = badgeSignedDistance(sub, w);
+    let maxD = 0; for(let i = 0; i < w * w; i++){ const d = -sdSub[i] / k; if(d > maxD) maxD = d; }
+    if(maxD <= 0) return;
+    for(let yy = 0; yy < w; yy++) for(let xx = 0; xx < w; xx++){
+      const gx = x0 + xx, gy = y0 + yy; if(gx >= GW || gy >= GW) continue;
+      const i = gy * GW + gx, d = -sdSub[yy * w + xx] / k; if(d <= 0 || SD[i] >= 0) continue;
+      let h = 0;
+      if(pl.z) h += pl.z * bev(d / pl.bev);
+      if(pl.dome) h += pl.dome * Math.sqrt(Math.min(1, d / maxD));
+      if(pl.gem) h += pl.gem * Math.min(1, d / pl.gw);
+      if(pl.cut) h -= pl.cut * Math.min(1, d / maxD);
+      H[i] += h;
+    }
+  });
+  /* a pixel's softening, so a crease is a crisp line and not a stair */
+  const Hs = badgeBoxBlur(H, GW, 1);
+  const NX = new Float32Array(N), NY = new Float32Array(N), NZ = new Float32Array(N);
+  for(let y = 0; y < GW; y++) for(let x = 0; x < GW; x++){
+    const i = y * GW + x;
+    const gx = (Hs[x < GW - 1 ? i + 1 : i] - Hs[x > 0 ? i - 1 : i]) * .5 * k * P.relief, gy = (Hs[y < GW - 1 ? i + GW : i] - Hs[y > 0 ? i - GW : i]) * .5 * k * P.relief;
+    const l = 1 / Math.sqrt(gx * gx + gy * gy + 1);
+    NX[i] = -gx * l; NY[i] = -gy * l; NZ[i] = l;
+  }
+  const keys = Object.keys(OBJ_PIN_GEOM); if(keys.length > 16) delete OBJ_PIN_GEOM[keys[0]];
+  return (OBJ_PIN_GEOM[key] = { NX, NY, NZ, SD, H: Hs, vx, vy, vw, cx, cy, S, W: GW, k });
+}
+/* One pin, W device pixels across its frame, as a canvas: the contact shadow, the side wall, the lit face. */
+function renderObjPin(unitName, grey, Wout, ssForce, face){
+  const P = OBJ_PIN, g = objPinGeometry(face, unitName), Lt = badgeLightTables(), TOL = Lt.TO_LIN, ENC = Lt.ENC;
+  const SS = ssForce || 2, W = Wout * SS, N = W * W, GW = g.W, GM = GW - 1, sc = GW / W;
+  const pxPerF = W / g.vw, kW = pxPerF * g.S;
+  const setT = c => { c.setTransform(pxPerF, 0, 0, pxPerF, -g.vx * pxPerF, -g.vy * pxPerF); c.translate(g.cx, g.cy); c.scale(g.S, g.S); c.translate(-g.cx, -g.cy); };
+  const sil = new Path2D(face.d);
+  const cov = badgeCoverage(W, c => { setT(c); c.fillStyle = "#000"; c.fill(sil); });
+  let CM = null; try{ CM = chapterObjColourMap(face, g, W, unitName, grey); }catch(e){ CM = null; }
+  const pal = chapterObjPalette(unitName, grey), base = badgeHexRgb(pal[(chapterObjFor(unitName) || {}).base] || pal.field).map(v => TOL[v]);
+  const alb = new Float32Array(N * 3);
+  for(let i = 0; i < N; i++){ const j = i * 4, o = i * 3;
+    if(CM && CM[j + 3] > 0){ alb[o] = TOL[CM[j]]; alb[o + 1] = TOL[CM[j + 1]]; alb[o + 2] = TOL[CM[j + 2]]; }
+    else { alb[o] = base[0]; alb[o + 1] = base[1]; alb[o + 2] = base[2]; } }
+  /* the light: one, top-left, a little in front - and the half vector for the specular */
+  const L = [-.52, -.66, .9], Ll = Math.hypot(L[0], L[1], L[2]); L[0] /= Ll; L[1] /= Ll; L[2] /= Ll;
+  const Hh = [L[0], L[1], L[2] + 1], Hl = Math.hypot(Hh[0], Hh[1], Hh[2]); Hh[0] /= Hl; Hh[1] /= Hl; Hh[2] /= Hl;
+  const edgeB = CHAPTER_OBJ_EDGE === "B";
+  const metal = [.62, .64, .67];
+  /* the side wall: for each pixel off the face, the first face pixel up-left along the wall direction within its depth */
+  const dx = P.wallDir[0], dy = P.wallDir[1], D = Math.max(1, Math.round(P.wall * kW));
+  const wallT = new Float32Array(N), wallSrc = new Int32Array(N).fill(-1);
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){
+    const i = y * W + x; if(cov[i] >= .999) continue;
+    for(let t = 1; t <= D; t++){
+      const qx = Math.round(x - dx * t), qy = Math.round(y - dy * t);
+      if(qx < 0 || qy < 0 || qx >= W || qy >= W) break;
+      const q = qy * W + qx; if(cov[q] > .5){ wallT[i] = t / D; wallSrc[i] = q; break; }
+    }
+  }
+  /* the contact shadow: the silhouette with its wall, moved down-right and softened */
+  const shc = new Float32Array(N), ox = Math.round(P.shadow[0] * kW), oy = Math.round(P.shadow[1] * kW);
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ const sx = x - ox, sy = y - oy; if(sx < 0 || sy < 0 || sx >= W || sy >= W) continue;
+    const q = sy * W + sx; shc[y * W + x] = Math.max(cov[q], wallSrc[q] >= 0 ? 1 : 0); }
+  const r = Math.max(1, Math.round(P.shadowBlur * kW / 2)), shb = badgeBoxBlur(badgeBoxBlur(shc, W, r), W, r);
+  const AR = new Float32Array(N), AG = new Float32Array(N), AB = new Float32Array(N), AA = new Float32Array(N);
+  for(let y = 0; y < W; y++){
+    let fy = (y + .5) * sc - .5; if(fy < 0) fy = 0; if(fy > GM) fy = GM;
+    const iy = fy | 0, ay = fy - iy, iy1 = iy < GM ? iy + 1 : iy;
+    for(let x = 0; x < W; x++){
+      const i = y * W + x, a = cov[i];
+      /* under the face: the wall, then the shadow */
+      let ur = 0, ug = 0, ub = 0, ua = 0;
+      const ws = wallSrc[i];
+      if(ws >= 0){
+        const t = wallT[i], k0 = P.wallK[0] + (P.wallK[1] - P.wallK[0]) * t, o = ws * 3;
+        ur = alb[o] * k0; ug = alb[o + 1] * k0; ub = alb[o + 2] * k0; ua = 1;
+      } else {
+        const sa = shb[i] * P.shadowA; ua = sa;
+      }
+      if(a > 0){
+        let fx = (x + .5) * sc - .5; if(fx < 0) fx = 0; if(fx > GM) fx = GM;
+        const ix = fx | 0, ax = fx - ix, ix1 = ix < GM ? ix + 1 : ix;
+        const i00 = iy * GW + ix, i01 = iy * GW + ix1, i10 = iy1 * GW + ix, i11 = iy1 * GW + ix1;
+        const w00 = (1 - ax) * (1 - ay), w01 = ax * (1 - ay), w10 = (1 - ax) * ay, w11 = ax * ay;
+        let nx = g.NX[i00] * w00 + g.NX[i01] * w01 + g.NX[i10] * w10 + g.NX[i11] * w11;
+        let ny = g.NY[i00] * w00 + g.NY[i01] * w01 + g.NY[i10] * w10 + g.NY[i11] * w11;
+        let nz = g.NZ[i00] * w00 + g.NZ[i01] * w01 + g.NZ[i10] * w10 + g.NZ[i11] * w11;
+        const nl = 1 / Math.sqrt(nx * nx + ny * ny + nz * nz); nx *= nl; ny *= nl; nz *= nl;
+        const sd = g.SD[i00] * w00 + g.SD[i01] * w01 + g.SD[i10] * w10 + g.SD[i11] * w11, din = -sd;
+        let dif = (nx * L[0] + ny * L[1] + nz * L[2]) / L[2]; if(dif < 0) dif = 0; if(dif > 1.45) dif = 1.45;
+        const sh = P.amb + (1 - P.amb) * dif;
+        const nh = Math.max(0, nx * Hh[0] + ny * Hh[1] + nz * Hh[2]);
+        let sp = Math.pow(nh, P.specP) * P.spec + Math.pow(nh, 6) * P.sheen;
+        const o = i * 3;
+        let cr = alb[o], cg = alb[o + 1], cb = alb[o + 2];
+        if(edgeB && din < P.hair){
+          /* EDGE B: a hairline of polished metal, lit by the same normals but brighter in its specular */
+          const m = din < P.hair - .35 ? 1 : (P.hair - din) / .35;
+          cr = cr * (1 - m) + metal[0] * m; cg = cg * (1 - m) + metal[1] * m; cb = cb * (1 - m) + metal[2] * m; sp *= 1 + 1.6 * m;
+        } else if(!edgeB && din < P.outline + .35){
+          /* EDGE A: the pin's own colour, darker, as a fine line where the face turns down into its wall */
+          const m = din < P.outline ? 1 : (P.outline + .35 - din) / .35, f = 1 - (1 - P.outlineK) * m;
+          cr *= f; cg *= f; cb *= f;
+        }
+        const fr = cr * sh + sp, fg = cg * sh + sp, fb = cb * sh + sp;
+        AR[i] = fr * a + ur * (1 - a); AG[i] = fg * a + ug * (1 - a); AB[i] = fb * a + ub * (1 - a); AA[i] = a + ua * (1 - a);
+      } else { AR[i] = ur; AG[i] = ug; AB[i] = ub; AA[i] = ua; }
+    }
+  }
+  const cv = document.createElement("canvas"); cv.width = Wout; cv.height = Wout;
+  const ctx = cv.getContext("2d"), img = ctx.createImageData(Wout, Wout), od = img.data, inv = 1 / (SS * SS);
+  for(let y = 0; y < Wout; y++) for(let x = 0; x < Wout; x++){
+    let rr = 0, gg = 0, bb = 0, aa = 0;
+    for(let v = 0; v < SS; v++){ const row = (y * SS + v) * W + x * SS;
+      for(let u = 0; u < SS; u++){ const q = row + u, al = AA[q]; if(al <= 0) continue;
+        /* the shadow is black: its colour sums are zero, which is right premultiplied */
+        rr += AR[q]; gg += AG[q]; bb += AB[q]; aa += al; } }
+    if(aa <= 0) continue;
+    const R = rr / aa, Gc = gg / aa, B = bb / aa, j = (y * Wout + x) * 4;
+    od[j] = ENC[R <= 0 ? 0 : R >= 1 ? 4096 : (R * 4096) | 0];
+    od[j + 1] = ENC[Gc <= 0 ? 0 : Gc >= 1 ? 4096 : (Gc * 4096) | 0];
+    od[j + 2] = ENC[B <= 0 ? 0 : B >= 1 ? 4096 : (B * 4096) | 0];
+    od[j + 3] = (255 * aa * inv + .5) | 0;
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+/* A pin as buildUnitBadgeSVG draws it (its slot, its token, its glisten), in the same frame as every other badge, so every place a badge
+   appears takes it with no change. earned true: the pin in its recess; false: the recess alone, cut to the object's outline; "grey": the
+   pin's form in grey. */
+function buildObjPinSVG(unitName, earned, opts, shape){
+  const NS = "http://www.w3.org/2000/svg", grey = earned === "grey", G = BADGE_GEOM, P = OBJ_PIN;
+  const outline = shape.d, cx = shape.c[0], cy = shape.c[1], uid = "bdg" + (++badgeSvgSeq);
+  const svg = document.createElementNS(NS, "svg");
+  const vbs = badgeViewBoxFor(outline), vb = vbs.split(/\s+/).map(Number);
+  svg.setAttribute("viewBox", vbs);
+  svg.setAttribute("class", "badge-art is-pin" + (earned === true ? " is-earned" : " is-locked") + (grey ? " is-grey" : "") + (opts.slot === false ? " is-token" : ""));
+  svg.setAttribute("aria-hidden", "true");
+  const defs = document.createElementNS(NS, "defs"); svg.appendChild(defs);
+  const add = (d, attrs, parent) => { const el = document.createElementNS(NS, "path"); el.setAttribute("d", d); Object.keys(attrs).forEach(k => el.setAttribute(k, attrs[k])); (parent || svg).appendChild(el); return el; };
+  const group = (attrs, parent) => { const g = document.createElementNS(NS, "g"); Object.keys(attrs).forEach(k => g.setAttribute(k, attrs[k])); (parent || svg).appendChild(g); return g; };
+  const b = badgeBBoxFor(outline) || { x: 6, y: 6, w: 88, h: 88 };
+  const lit = (id, stops) => { const gr = document.createElementNS(NS, "linearGradient"); gr.setAttribute("id", id); gr.setAttribute("gradientUnits", "userSpaceOnUse");
+    gr.setAttribute("x1", b.x - 4); gr.setAttribute("y1", b.y - 4); gr.setAttribute("x2", b.x + b.w + 4); gr.setAttribute("y2", b.y + b.h + 4);
+    stops.forEach(([o, c, a]) => { const st = document.createElementNS(NS, "stop"); st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c); if(a !== undefined) st.setAttribute("stop-opacity", String(a)); gr.appendChild(st); });
+    defs.appendChild(gr); return "url(#" + id + ")"; };
+  const solid = (r, paint, parent, extra) => add(outline, Object.assign({ fill: paint, stroke: paint, "stroke-width": String(2 * r), "stroke-linejoin": "round" }, extra || {}), parent);
+  const root = group({ transform: "translate(" + cx + " " + cy + ") scale(" + G.scale + ") translate(" + (-cx) + " " + (-cy) + ")" });
+  /* the recess cut to the object's own outline: a narrow clearance (a pin has no rim to clear), its lit far lip, its shaded wall */
+  if(opts.slot !== false){
+    const hole = P.slotGap;
+    solid(hole + P.slotLip, lit(uid + "-lip", [[0, "#000000", .38], [.5, "#7D8896", .10], [1, "#D2E2F6", .46]]), root);
+    solid(hole, lit(uid + "-wall", [[0, "#040507"], [.5, "#0E1218"], [.8, "#27303A"], [1, "#46525F"]]), root);
+    if(!earned){
+      const fl = hole - P.slotWall;
+      solid(fl, lit(uid + "-f1", [[0, "#05070A"], [.6, "#121820"], [1, "#1B222B"]]), root);
+      solid(fl - 1.1, lit(uid + "-f2", [[0, "#0A0D12"], [.6, "#141A22"], [1, "#1C232C"]]), root);
+      solid(fl - 2.2, lit(uid + "-f3", [[0, "#10141A"], [.6, "#161C24"], [1, "#1E252E"]]), root);
+      return svg;
+    }
+  }
+  const tok = group(grey ? { opacity: ".78", class: "badge-token" } : { class: "badge-token" }, root);
+  const strike = opts.vector ? null : badgeStrikeImage(unitName, grey, opts);
+  if(strike){
+    strike.setAttribute("x", String(cx + (vb[0] - cx) / G.scale)); strike.setAttribute("y", String(cy + (vb[1] - cy) / G.scale));
+    strike.setAttribute("width", String(vb[2] / G.scale)); strike.setAttribute("height", String(vb[3] / G.scale));
+    tok.appendChild(strike);
+  } else {
+    /* no canvas: the parts flat, the wall a darker copy down-right, a fine edge */
+    const pal = chapterObjPalette(unitName, grey), fill = pal[(chapterObjFor(unitName) || {}).base] || pal.field;
+    add(outline, { fill: "rgba(0,0,0,.35)", transform: "translate(" + (P.shadow[0] + .4) + " " + (P.shadow[1] + .6) + ")" }, tok);
+    add(outline, { fill: badgeShade(fill, -.5), transform: "translate(" + (P.wall * P.wallDir[0]).toFixed(2) + " " + (P.wall * P.wallDir[1]).toFixed(2) + ")" }, tok);
+    const cp = document.createElementNS(NS, "clipPath"); cp.setAttribute("id", uid + "-in"); const cpp = document.createElementNS(NS, "path"); cpp.setAttribute("d", outline); cp.appendChild(cpp); defs.appendChild(cp);
+    const face = group({ "clip-path": "url(#" + uid + "-in)" }, tok);
+    add(outline, { fill }, face);
+    if(!grey){ try{ chapterObjVector(face, shape, unitName); }catch(e){} }
+    add(outline, { fill: "none", stroke: "rgba(0,0,0,.35)", "stroke-width": "1.1", "stroke-linejoin": "round" }, tok);
+  }
+  if(grey) return svg;
+  /* the glisten, masked to the pin's own silhouette (invisible until something animates it) */
+  const mask = document.createElementNS(NS, "mask");
+  mask.setAttribute("id", uid + "-sil"); mask.setAttribute("maskUnits", "userSpaceOnUse");
+  mask.setAttribute("x", "-80"); mask.setAttribute("y", "-80"); mask.setAttribute("width", "260"); mask.setAttribute("height", "260");
+  const mp = document.createElementNS(NS, "path"); mp.setAttribute("d", outline); mp.setAttribute("fill", "#FFFFFF");
+  mask.appendChild(mp); defs.appendChild(mask);
+  const sg = document.createElementNS(NS, "linearGradient"); sg.setAttribute("id", uid + "-shn"); sg.setAttribute("x1", "0"); sg.setAttribute("y1", "0"); sg.setAttribute("x2", "1"); sg.setAttribute("y2", "0");
+  [[0, 0], [.5, .8], [1, 0]].forEach(([o, a]) => { const st = document.createElementNS(NS, "stop"); st.setAttribute("offset", String(o)); st.setAttribute("stop-color", "#FFFFFF"); st.setAttribute("stop-opacity", String(a)); sg.appendChild(st); });
+  defs.appendChild(sg);
+  const shine = group({ mask: "url(#" + uid + "-sil)", class: "badge-shine" }, tok);
+  const tilt = group({ transform: "rotate(24 50 50)" }, shine);
+  const band = document.createElementNS(NS, "rect");
+  band.setAttribute("x", "-46"); band.setAttribute("y", "-30"); band.setAttribute("width", "30"); band.setAttribute("height", "160");
+  band.setAttribute("fill", "url(#" + uid + "-shn)"); band.setAttribute("class", "badge-shine-band");
+  tilt.appendChild(band);
+  return svg;
 }
 
 let badgeSvgSeq = 0;
@@ -78522,6 +78814,8 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
   const WEAR = !grey, ST = Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)), DK = BADGE_DIRT;
   const dSeed = WEAR ? (parseInt(hashOf(String(unitName)), 36) >>> 0) : 0;
   const face = badgeFaceShapeFor(unitName);
+  /* (384.66) a Fire Code chapter drawn as its object is a raised pin, not a struck token */
+  if(face.obj) return renderObjPin(unitName, grey, Wout, ssForce, face);
   const g = badgeStrikeGeometry(face);
   badgeProfileTables();
   const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N, PIN = BADGE_PROF_IN, DPIN = BADGE_DPROF_IN;
@@ -78898,6 +79192,7 @@ function buildUnitBadgeSVG(unitName, earned, opts){
   }
   const NS = "http://www.w3.org/2000/svg";
   const shape = badgeFaceShapeFor(unitName);   /* (384.61) the same object badgeShapeFor gives, unless the chapter has an icon */
+  if(shape.obj) return buildObjPinSVG(unitName, earned, opts, shape);   /* (384.66) a Fire Code chapter drawn as its object: a raised pin */
   /* A BADGE NOT YET EARNED IS SEEN, NOT SHOWN (build 314). "The badges
      you have not unlocked yet in badges, when clicking them, they
      shouldn't be visible ... grey them out. Make it so you only see the
@@ -123118,7 +123413,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.65";
+const APP_BUILD = "2026-11-12-384.66";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -130446,7 +130741,7 @@ function badgeEdgeURL(unitName, tone, stage){
   const tr = "translate(" + c[0] + " " + c[1] + ") scale(" + G.scale + ") translate(" + (-c[0]) + " " + (-c[1]) + ")";
   const p = document.createElementNS(NS, "path");
   p.setAttribute("d", d); p.setAttribute("transform", tr);
-  p.setAttribute("stroke-width", String(2 * G.key)); p.setAttribute("stroke-linejoin", "round");
+  p.setAttribute("stroke-width", String(shape.obj ? .8 : 2 * G.key)); p.setAttribute("stroke-linejoin", "round");   /* (384.66) a pin has no rim */
   const box = el => { el.setAttribute("x", String(vb[0])); el.setAttribute("y", String(vb[1])); el.setAttribute("width", String(vb[2])); el.setAttribute("height", String(vb[3])); return el; };
   if(lightHref){
     const defs = document.createElementNS(NS, "defs"), m = box(document.createElementNS(NS, "mask"));
@@ -130464,6 +130759,8 @@ function badgeEdgeURL(unitName, tone, stage){
     if(lift < 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#000"); r.setAttribute("opacity", (1 - lift).toFixed(3)); grp.appendChild(r); }
     else if(lift > 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#fff"); r.setAttribute("opacity", ((lift - 1) * .6).toFixed(3)); grp.appendChild(r); }
     if(st > 0){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#8A6A3E"); r.setAttribute("opacity", (.045 * st).toFixed(3)); grp.appendChild(r); }
+    /* (384.66) a pin's side is its own enamel, darker, not silver */
+    if(shape.obj){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", badgeShade(badgeThemeFor(unitName).p, -.3)); r.setAttribute("opacity", ".72"); grp.appendChild(r); }
     svg.appendChild(grp);
   } else {
     p.setAttribute("fill", "#8E98A3"); p.setAttribute("stroke", "#8E98A3");

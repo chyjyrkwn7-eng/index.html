@@ -1,164 +1,124 @@
-# Fire Code chapter badges: the badge IS the object (build 384.65)
+# Fire Code chapter badges: each badge is a raised PIN of the chapter's object (build 384.66, round 3)
 
-Owner, shown 384.63 (a picture inside a generic outline): "those badges aren't what I had in mind, you just put stuff in the badge.. the
-badge needs to be the actual thing. I know I've said in the past not to do that, but now we will." Original brief: "Badges are gonna be
-designed based on what the chapter is about / the title (mostly the title). For example Means of Egress could be a door in the open
-position? Make them cool."
+How we got here, in the owner's words:
+- 384.63 put a picture inside a generic outline: "those badges aren't what I had in mind, you just put stuff in the badge.. the badge needs
+  to be the actual thing. I know I've said in the past not to do that, but now we will." (The silhouette IS the object. This reverses,
+  for Fire Code's 58 chapters only, the older rule that a badge never draws its subject; the academy's badges are untouched.)
+- Round 1 (be5d880): "I feel like you are just throwing stickers in the middle of the badges ... you are using the silver part to make the
+  actual design." Round 2 (4273698) made every part enamel inside an even silver rim.
+- Round 2: "the badges don't look good ... We can keep the back of the badges the same look and everything. But the front and side/edges
+  I think we are gonna have to update for the ifc. We may just have to go away with the silver border entirely or make it thin. I sent some
+  examples, the mostly grey ones I'm showing because you can see how these badges have risen effect, that nice 3d effect. And then the other
+  you can see that it's 3d, color ... Make it super nice though. Make this great." (His references: the Kanto gym badges 3D-printed in grey -
+  a drop, a heart split by a crease, a gem with chamfered facets, a button with a raised disc, a flower of domed petals, a leaf with cut
+  veins - and the same as coloured enamel pins.)
 
-Shown the first eight objects (round 1): "Some potential. It's hard to tell what some of them are ... I feel like you are just throwing
-stickers in the middle of the badges. Look at the magnifying glass, it's probably the best one, because the majority of it still has that
-nice badge look, and the silver border is perfectly even and looks good. But the sprinkler: you are using the silver part to make the
-actual design." That is round 2's brief, and it is the first two rules below.
+So a chapter drawn as its object is now a **raised pin**: no silver rim, a sculpted face, a visible side wall, a contact shadow. The back
+(the struck back with the engraved title) is unchanged. A chapter with no entry here still draws its 384.63 picture-in-an-outline.
 
-So for Fire Code's 58 chapters the badge's **silhouette is the object**: Means of Egress is cut to the outline of an open door. This
-deliberately reverses the older rule ("a badge that draws its subject was rejected twice") for these chapters only; the academy's badges
-are untouched. A chapter with no entry here still draws its 384.63 picture-in-an-outline, so the app never breaks mid-migration.
+## 0. The rules
 
-## 0. The five rules (the gate holds the mechanical ones)
+1. **The badge is the object, as a raised 3D pin.** No rim. Edge A (the default): a fine darker line of the object's own colour where the
+   face turns down into its wall. Edge B (Madison to choose): a hairline of polished metal, `OBJ_PIN.hair` = 1.8 units of 100. Switch with
+   `setChapterObjEdge("A" | "B")`.
+2. **Identity is the silhouette plus the sculpture** (raised and recessed parts, domes, facets, grooves), never a flat picture printed on the
+   face. A raised, domed, faceted or cut part is sculpture; a FLAT painted plate floating inside a part is a sticker and the gate fails it.
+3. **It must read in plain grey.** Render every pin with no colour (the relief sheet, the 3D-printed reference): if it does not read as the
+   object, the sculpture is not doing its job. The gate measures it (the face's luminance varies inside the bevel).
+4. **Colour: each part its natural colour, saturated**, the chapter's own enamel the dominant one (58 distinct): `field`/`body`/`shade`/
+   `deep`/`lite`/`ink` are the chapter's family; `brass`, `red`, `water`, `glass`, `rubber`, `cream`, `wood`, `steel`, `hot`, `glow` are natural
+   colours, the same on every chapter. The token's mean hue stays within 60 degrees of the chapter's enamel (gated).
+5. **MIN_PART (re-measured for pins): a part at least 5 across** (two bevels of 2.4: narrower and it is all slope, no top); aim for 8+ where
+   it must read at the case's 44px. **Holes at least 5 across** (the wall and shadow show inside a hole; 8+ to see through at 44px). Gaps:
+   at least 4 (the side wall is 3 deep down-right). The gate fails a silhouette that loses more than 3% of its area to a 2.4 disc opening.
+6. **Recognisable in two seconds, no label, at 96px, at the case's 44px and at 26px.** The sheet shows all four.
 
-1. **The silver rim is a perfectly even border, all the way round the silhouette (and round every hole), and it is NEVER the object.**
-   Round 1's pipe, arms and deflector, a can's spout and handle, were drawn by the rim: that is the failure. The magnifier is the benchmark
-   (fat ring, fat handle, an even rim, a lens of enamel).
-2. **Every part of the object must be wide enough to hold its own rim AND its own enamel: MIN_PART.** Measured from the renderer
-   (`BADGE_GEOM`): the rim eats **6.4 units inside the outline** (4.4 silver + a 2.0 dark edge before the enamel starts) and shows 4.5 of
-   metal and 6.5 of keyline outside it. A part W wide therefore shows W - 12.8 of enamel, and under about 16 none at all (the renderer drops
-   enamel under 3 wide). **MIN_PART = 18 across is the floor the gate fails on; aim for 22 or more (about 3.4 x the 6.4 rim: 9+ of
-   enamel). Gaps between parts: at least 20** (two keylines meet under 13); **holes: at least 22 across** (the rim lines the hole's edge
-   too). Exaggerate and simplify: chunky, cartoon-bold, like the magnifier. Drop any detail thinner than this rather than letting the rim
-   swallow it. (A small junction, like a short neck between two big parts, may be thinner than 18: the gate allows 5.5% of the
-   silhouette's area under the floor, which is what rounded corners and pointed tips cost.)
-3. **No stickers: identity comes from the SILHOUETTE** (what the outline says), never from a small picture laid in the middle. Interior
-   plates are only colour-blocking / shading of the object's own parts (leaf vs frame, lid vs body, a stripe along a truck), never a symbol
-   (a flame on a can, a pocket badge on a helmet, a lit rectangle for a doorway). If a flame is needed the object must BE flame-shaped or the
-   flame is dropped. Mechanically the gate fails an accent plate (`glow`, `steel`, `hot`) that floats inside a part instead of reaching the
-   object's edge (a spout's cap, a stripe, a tip); whether a block is a sticker is finally a judgement: look at the sheet.
-4. **Identifiable in two seconds with no label, at 96px and at 26px.** If the silhouette alone does not say the object, change the object or
-   the view; do not add detail.
-5. **Colour stays the chapter's own family** plus `glow` / `hot` for light and flame; `steel` reads as silver and tempts the rim-as-design
-   failure: use it for nothing round 2 needs.
+## 1. The recipe, in plain words (index.html: objPinGeometry, renderObjPin, buildObjPinSVG)
 
-## 1. The recipe, in plain words
-
-The badge keeps the app's whole badge language and changes one thing: where the outline comes from, and what colours the enamel.
-
-- the **outline is the object's silhouette** (one closed rounded path in the 100 x 100 frame every outline uses, plus optional holes);
-- a dark **keyline** outside it and a polished silver **rim** following it, exactly as on every other badge; the enamel is lit from the
-  top-left, domed, with a clear coat; nothing is added to the rim code;
-- the enamel is not one colour but a small set of flat **plates**, each a tone of the chapter's own enamel, each with a thin dark edge,
-  optionally casting a soft shadow down-right;
-- the **empty slot** is cut to the object's own outline (lit from the top-left), so an empty slot still tells you the shape;
-- a **grey** (seen, not yet found) token is the plain silhouette in grey with no plates;
-- the **back** (title, and FIRE CODE where it fits) is laid out on the silhouette like on any outline;
-- nothing is a filter, a gradient on a line, or an id: the struck token reads the plates off a colour map the renderer paints, the vector
-  token (the no-canvas fallback, tests) draws the same plates as SVG paths; both go through `buildUnitBadgeSVG`, so the case, Profile >
-  Badges, the unit card, the cutscene's coin, the badge pill, the results row and the badge in your hand all show it.
+- A **height map** at `OBJ_PIN.geoW` (320) across the badge's frame, once per chapter: the silhouette rises from the case by a rounded
+  **bevel** (`bevel` 2.4 units wide, a quarter-sine) to a top (`top` 1.7) with a gentle dome (`domeK` .9 over `domeR` 18 units in); each part
+  adds its relief, read off **its own distance field**: `z` raises or recesses it with its own bevel `bev`, `dome` domes it (by its inner
+  radius), `gem` cuts it into **planar facets** (a linear ramp over `gw` from its edge - a straight edge gives a true plane, a corner a crease),
+  `cut` sinks a **V-groove** (usually a line: `ln`).
+- **Normals** from the height map; one light, top-left as everywhere in the app: Lambert (ambient `amb` .3) plus a restrained specular
+  (`spec` .32, `specP` 52) and a faint sheen; each pixel's colour from the parts' colour map (`chapterObjColourMap`), in linear light.
+- The **side wall**: the pin's thickness (`wall` 3 units deep, along `wallDir` - down-right), each point the colour of the face above it,
+  darker (`wallK` .6 at the top to .32 at the foot). A **contact shadow** under it (offset `shadow`, softened `shadowBlur`, `shadowA` .55).
+- **Edge A**: the outer `outline` .55 units of the face darkened to `outlineK` .5 of its colour. **Edge B**: the outer `hair` 1.8 units in
+  polished metal (brighter specular).
+- Supersampled (3x under 180px, else 2x), cached per badge, size and state in the strike cache with the same draft-then-finish path the
+  struck tokens use. No SVG filter anywhere. The empty slot is the recess cut to the object's own outline (a narrow clearance, `slotGap`
+  2.2, since a pin has no rim to clear). The grey (seen, not found) token is the pin rendered in plain grey. With no canvas, the parts are
+  drawn flat with a darker wall and a fine edge. The coin's edge slices for a pin are its own outline in its own colour.
 
 ## 2. What you write (one block per chapter, in your own part file)
 
-`tools/chapter-objects/part-N.js` holds only blocks of this shape (a `{ ... }` block per chapter keeps your helper `const`s private):
-
 ```js
 {
-  CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
-    d: OBJ_poly([[12, 16], [42, 4], [42, 8], [94, 8], [94, 94], [74, 94], [74, 28], [42, 28], [42, 96], [12, 84]], [4, 3, 2, 5, 5, 4, 3, 3, 3, 4]),   // the silhouette
-    holes: [ OBJ_rrect(30, 30, 24, 24, 4) ],   // optional: closed paths cut out of it (any way round); at least 22 across
-    c: [50, 50],       // optional: the point the badge is scaled about (default: the middle of the silhouette's box)
-    base: "field",     // optional: the colour of the silhouette under the plates (default field = the enamel)
-    plates: [          // painted in order over the base; at most 24
-      ["deep", OBJ_rrect(42, 8, 52, 20, 2), { e: 0 }],         // [role, path, options?]
-      ["body", leafPath, { sh: 1, e: 1.6 }],                   // sh: casts a soft shadow down-right on what is under it
-      ["deep", "M54 14V34M66 14V34", { ln: 2 }],               // ln: w - the path is a stroked line, width w, round caps, in the role's colour
+  CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {
+    d: OBJ_poly([...], [...]),                 // the silhouette: ONE closed path, rounded corners
+    holes: [OBJ_rrect(20, 16, 25, 9, 3.5)],    // optional see-throughs (any way round), at least 5 across
+    base: "field",                             // optional: the colour of the silhouette under the parts
+    plates: [                                  // the PARTS, painted and sculpted in order; at most 24
+      ["body",   OBJ_rrect(8, 30, 80, 64, 6)],                          // a part: colour only (rises with the silhouette)
+      ["field",  OBJ_rrect(15, 40, 66, 46, 4), { z: -.9, bev: 1 }],     // a panel pressed in
+      ["body",   "M21 46L75 80M75 46L21 80", { ln: 6, z: 1.4, bev: 1.4 }],   // an embossed X (a raised line)
+      ["rubber", spoutPath, { z: .4, dome: .8 }],                       // a domed part in a natural colour
+      ["brass",  "M41 8.5H59M41 12.5H59", { ln: 1.6, cut: .9, paint: 0 }],  // V-grooves only (threads)
+      ["body",   hexPath, { gem: 1.4, gw: 3.2 }],                       // planar facets (a hex nut, a gem)
     ],
   };
 }
 ```
+Options: `z` (units; + raised, - recessed), `bev` (that part's bevel width, default 1.2), `dome` (units), `gem` (units) with `gw` (facet width,
+default 3), `cut` (groove depth), `ln` (stroke width: the part is a line), `paint: 0` (relief only), `e` (a dark painted edge, off by default),
+`sh` (a painted drop shadow: avoid on pins, the relief casts its own light). Heights are a few units at most: the whole pin is ~2.6 thick.
 
-The key is the unit's **exact title** (`tools/chapter-icons/units.json`; em dash and all). Merge, render, gate:
-
+The loop:
 ```
-python3 tools/merge-chapter-icons.py --out /tmp/<you>/index.html          # your part files merged into a scratch page (index.html untouched)
+python3 tools/merge-chapter-icons.py --out /tmp/<you>/index.html
 python3 tools/render-chapter-badges.py /tmp/<you>/sheet.png --index /tmp/<you>/index.html --only 10,9 --cols 2 --px 200
-python3 tools/check-b384-objbadges.py --index /tmp/<you>/index.html        # the gate on the scratch page
-python3 tools/merge-chapter-icons.py                                       # (integration only) write index.html
+python3 tools/check-b384-objbadges.py --index /tmp/<you>/index.html
 ```
-`--only` takes chapter numbers or title prefixes ("Appendix D"). The sheet shows earned and empty at 96px and 26px (`--px 200` for a big
-look) on the real dark card. The merge refuses a key that is not one of the 58, a key drawn twice, a path the measurer cannot walk, and a
-file with code the page cannot run; it measures every silhouette under node and writes the boxes into index.html.
+In the page: `setChapterObjEdge("B")` to see edge B; `renderObjPin(unit, true, 400, 0, badgeFaceShapeFor(unit))` for the plain-grey relief.
 
-### Holes
-`holes: [path, ...]`: a handle's loop, a window, a ring's middle. Draw each any way round (the loader winds it opposite to the outline
-and lays it in as a dense polyline); the rim lines its edge exactly as evenly as the outline's (4.5 of metal and the keyline inside the
-hole), so the see-through part is the hole shrunk by about 13 each way: **a hole under ~22 across plugs**, and one barely bigger shows
-as a dark slot. Plates are clipped to the silhouette, holes excluded. Try it before you rely on it: the first doorway drawn as a hole
-read as a letter O.
+### Helpers (index.html)
+`OBJ_poly(points, r)` (rounded polygon), `OBJ_rrect(x, y, w, h, r)`, `OBJ_circle`, `OBJ_ellipse` (two half arcs), `OBJ_chain(points, r)` (an open
+run of rounded corners, to join with arcs), `OBJ_walk(d)` (a path's points). Arithmetic and local helpers are fine.
 
-### Roles (the colour of a plate)
-| role | what it is | use it for |
-|---|---|---|
-| `field` | the chapter's enamel itself | the base |
-| `body` | the enamel lifted | the object's main lit plate |
-| `shade` | the enamel darkened | the turned-away side (right / bottom), panels |
-| `deep` | much darker | frames, undersides, bases, a dark gap |
-| `lite` | much lighter | highlights, glass, a panel catching the light |
-| `ink` | nearly black in the chapter's hue | dark openings |
-| `glow` | warm white (the same on every chapter) | light |
-| `steel` | cool silver | (avoid: it reads as the rim) |
-| `hot` | amber (the same on every chapter) | a stripe, a cap, a flame's warmth where it is part of the edge |
+## 3. Pitfalls (each one cost a drawing)
 
-The ladder is moved up for a dark enamel (onyx) and its top is lower for a pale one, so every role stays distinguishable on every enamel;
-look at your chapter on its own enamel. Use only these nine, by name; no hex colours, no opacity, no gradients.
-
-### Helpers (defined in index.html; available to every part file)
-`OBJ_poly(points, r)` a polygon, every corner rounded by a quadratic through the vertex (r a number or one per vertex; 0 keeps a corner);
-`OBJ_rrect(x, y, w, h, r)` a rounded rectangle (r a number or [tl, tr, br, bl]); `OBJ_circle(cx, cy, r)` and `OBJ_ellipse(cx, cy, rx, ry)`
-(two half arcs); `OBJ_chain(points, r)` an open run of rounded corners, "L .. Q .." (start the path with "M" + the first point, join runs with
-arcs: `"M20 78" + OBJ_chain([...]) + "A13 13 0 0 1 60 78" + OBJ_chain([...]) + "Z"`); `OBJ_walk(d)` a path's points. Arithmetic and local helper
-functions are fine (the magnifier's geometry, the gas can's spout and the hydrant's arcs are computed); keep the strings to the commands below.
-
-## 3. More pitfalls (each one cost a drawing)
-
-1. **One silhouette path**: exactly one `M` and one `Z` in `d`, commands `M L H V C Q A Z` only (absolute). Overlapping subpaths are NOT a union
-   (the rim is stroked along every subpath, and each interior edge would carve a groove): trace the union outline by hand with `OBJ_poly` /
-   `OBJ_chain`. A see-through is `holes`, not a second subpath in `d`.
-2. **The rim rounds every convex corner** (about 11 across) and closes gaps: steps under ~10 melt into a bump (a stepped skyscraper became a
-   baby bottle, twice); a notch under ~20 wide closes up. Put the identity in the big silhouette features (a spout, an overhang, a hump, a flare).
-3. **Smooth tapers read as pawns and flasks.** A stack of widening parts (a sprinkler's stub, body, frame, deflector) reads as a chess piece,
-   a bell or a flask however it is coloured; a silhouette needs a feature no other object has.
-4. **Round corners** on every vertex (radius at least 2); the rim rounds anything you leave sharp. Circles are two half arcs: a one-arc circle
-   puts the circle in the wrong place (the gate fails one over r 12); `OBJ_circle` is always right.
-5. **No gradients and no line gradients** (a gradient on a line has a zero-width box and paints black: this app has been bitten three times):
-   plates are flat; light comes from the renderer. Stack two flat plates for a shine. A plate path may not carry `url(`, an id, a filter or a
-   transform: the gate greps for all of it.
-6. **At most 24 plates** (the renderer drops the rest in silence, so the gate counts the raw list). A plate whose role is not one of the nine
-   is dropped silently: the gate fails it. Repeats (rungs, ribs) are one plate: a `ln` path of many subpaths.
-7. **A plate outside the silhouette is clipped; one over the rim is hidden by it.** The colour you see is only inside the rim (6.4 in): draw a
-   part's plate to its full outline and let the rim cover its edge.
-8. **Light from the top-left**: highlights up and left, shade down and right; a raised plate gets `{ sh: 1 }`.
-9. **No text, numbers, letters or people**, no trademark or brand mark. Official, not cute.
-10. **The back must still hold the title**: the gate reads the back's plan off the app (the floor is 0.026 of the frame; FIRE CODE drops off
-    a back that has no room for it, as designed). Long names (Appendix H, Chapter 28) want a roomy silhouette.
-11. **Distinct from every other chapter's shape at 48px** (overlap under 0.85): two upright rounded boxes are the same badge whatever is inside.
+1. **One silhouette path** in `d` (one M, one Z, M L H V C Q A Z only); overlapping subpaths are not a union. See-throughs are `holes`.
+2. **A smooth stack of widening parts reads as a bottle, a pawn or a flask**; a side outlet on a cylinder read as a soap pump. Give the
+   silhouette a feature no other object has (a toothed deflector, an X-embossed can with a spout, side outlets with caps, a ladder on a roof).
+3. **Relief, not paint, carries the detail**: a groove, a raised panel, a domed knob read in grey and at 44px; a thin painted line does not.
+4. **Keep heights small** (a raised part 0.5-1.8, a dome up to ~3): taller and the slopes go black and the specular hot.
+5. **Circles are two half arcs** (`OBJ_circle`); a one-arc circle over r 12 fails the gate.
+6. **No gradients, no filters, no opacity, no hex colours, no markup in a path**; at most 24 parts (counted on the raw list).
+7. **Round corners** (radius at least 1); light comes from the top-left.
+8. **No text, numbers, letters, people, trademarks.** Official, not cute.
+9. **The back still holds the title** (the back is unchanged and lays the title out on the silhouette; the gate reads its plan).
+10. **Distinct from every other chapter's silhouette** at 48px (overlap under 0.85).
 
 ## 4. Checklist (every chapter, before hand-off)
 
-1. The key is the exact unit title; the merge accepts it.
-2. One `d` (one M, one Z, M L H V C Q A Z only), rounded corners, the box 80+ of 100 one way, area 2000+, not a plain box.
-3. Every part at least 18 across (aim 22+), every gap at least 20, every hole at least 22; the gate's MIN_PART and enamel checks are green.
-4. The rim is the border and nothing else: no part of the object is bare silver.
-5. No stickers: every plate colour-blocks one of the object's own parts; no `glow` / `steel` / `hot` plate floating inside a part.
-6. Plates: at most 24, roles from the nine, options `sh` / `e` / `ln` only, no markup in any path, no single-arc circle over r 12.
-7. Identifiable in two seconds with no label at 96px AND at 26px: look at the sheet and say what it is aloud.
-8. Reads on its own enamel (dark and pale ones especially) and stays in its chapter's colour family.
-9. Different from every other chapter's silhouette (look at the whole sheet, not only your twelve).
-10. Light top-left; raised plates cast a shadow; no gradient, no opacity, no hex.
-11. No letters, numbers, text, people, trademarks.
-12. `python3 tools/check-b384-objbadges.py --index /tmp/<you>/index.html` is green (the merge-in-step check is skipped on a scratch page).
+1. Exact unit title; the merge accepts it.
+2. One `d`, rounded corners, the box 80+ of 100 one way, area 2000+, not a plain box.
+3. Every part at least 5 across (8+ where it must read at 44px); holes at least 5; gaps at least 4.
+4. Reads as the object in PLAIN GREY (render it) and in colour, at 96, 44 and 26px, in two seconds with no label.
+5. No flat sticker floating in a part; identity from silhouette and sculpture.
+6. The chapter's enamel dominant, natural colours for the rest, saturated.
+7. Parts: at most 24, known roles and options, no single-arc circle over r 12.
+8. Edge A and edge B both look right (`setChapterObjEdge`).
+9. `python3 tools/check-b384-objbadges.py --index /tmp/<you>/index.html` is green.
 
-## 5. The eight prototypes (tools/chapter-objects/part-0-prototypes.js, round 2)
+## 5. The eight prototypes (tools/chapter-objects/part-0-prototypes.js, round 3)
 
-Means of Egress (an open door: a leaf swung toward you beside a lintel-and-post frame, the doorway an open notch), Chapter 9 (a sprinkler
-spraying: pipe stub, hex body, flat deflector, three bold drops that are part of the outline; the weakest, still), Chapter 57 (a gas can: the
-handle hump, the long angled spout and its cap), Appendix D (a ladder truck: low cab, tall body, one fat ladder bar, two big wheels; the
-widest and lowest), Chapter 53 (a gas cylinder: a fat valve, a domed shoulder; the tallest and narrowest), Chapter 1 (a rubber hand stamp),
-Chapter and Section Finder (a magnifying glass: the benchmark), Chapter 5 (a fire hydrant: Madison's own suggestion, after a helmet read as a
-hat; Appendix C, Fire Hydrant Locations, will need a different object). Copy the nearest one.
+Means of Egress (an open door: a raised leaf with raised panels and a brass knob, the frame, the doorway a deep recess), Chapter 9 (a pendant
+sprinkler: brass threaded nipple, faceted hex body, the frame with its two windows and the red glass bulb, the toothed deflector), Chapter 57
+(a gas can: the carry handle with a real hole, the embossed X, the black spout and amber cap), Appendix D (a fire engine: cab, windscreen, light
+bar, chrome ladder with cut rungs, raised lockers, red stripe, rubber wheels with chrome hubs; the widest, lowest pin), Chapter 53 (a gas
+cylinder: handwheel, brass valve and collar, domed shoulder, grooves, label band; the tallest, narrowest), Chapter 1 (a rubber hand stamp: domed
+knob, grooved neck, faceted flange, base, inked die), Chapter and Section Finder (a magnifying glass: the domed glass set into the ring, brass
+collar, grooved handle), Chapter 5 (a fire hydrant: faceted nut, domed bonnet, barrel, side outlets with faceted caps, base flange with bolts).
+Copy the nearest one.
