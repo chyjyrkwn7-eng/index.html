@@ -147,25 +147,31 @@
   };
 }
 
-/* ---- Chapter 8: Interior Finish, Decorative Materials and Furnishings - an armchair, front on: the tall back with its channel-stitched cushion,
-   the two rolled arms with their scrolled fronts, the domed seat cushion, the skirt and the turned wooden legs. ---- */
+/* ---- Chapter 8: Interior Finish, Decorative Materials and Furnishings - a leather armchair, front on: the tall back with its
+   channel-stitched cushion, the two rolled arms with their scrolled fronts, the domed seat cushion, dark piping round the cushions and the
+   scrolls, the skirt and the dark turned legs. ---- */
 {
   CHAPTER_OBJ["Chapter 8: Interior Finish, Decorative Materials and Furnishings"] = {
     d: "M20 36" + OBJ_chain([[20, 36], [20, 8], [80, 8], [80, 36]], [0, 13, 13, 0]) + "A10 10 0 0 1 96 44" +
        OBJ_chain([[96, 44], [96, 84], [88, 84], [87, 94], [81, 94], [80, 84], [20, 84], [19, 94], [13, 94], [12, 84], [4, 84], [4, 44]], [0, 2, 1, 1.5, 1.5, 1, 1, 1.5, 1.5, 1, 2, 0]) + "A10 10 0 0 1 20 36Z",
+    base: "wood",                                                                                              /* warm brown leather */
     plates: [
-      ["field", OBJ_rrect(20, 8, 60, 50, [13, 13, 0, 0]), { dome: 1.2 }],                                    /* the back */
-      ["lite", OBJ_rrect(27, 14, 46, 38, [10, 10, 3, 3]), { z: .5, bev: .8, dome: 1.2 }],                     /* its cushion */
-      ["lite", "M42.5 19V47M57.5 19V47", { ln: 1.5, cut: .8, paint: 0 }],                                       /* its channel stitching */
-      ["field", OBJ_rrect(6, 70, 88, 14, 3), { z: .2 }],                                                       /* the skirt */
-      ["shade", "M8 76H92", { ln: 1.3, cut: .6, paint: 0 }],
-      ["lite", OBJ_rrect(22, 52, 56, 19, 5), { z: .6, bev: .8, dome: 1.4 }],                                  /* the seat cushion */
-      ["body", OBJ_rrect(4, 34, 20, 50, [10, 10, 2, 2]), { z: .7, bev: .8, dome: 1.6 }],                       /* the arms */
-      ["body", OBJ_rrect(76, 34, 20, 50, [10, 10, 2, 2]), { z: .7, bev: .8, dome: 1.6 }],
-      ["lite", OBJ_circle(14, 45, 6.5), { z: .5, bev: .7, dome: .8 }],                                         /* their scrolled fronts */
-      ["lite", OBJ_circle(86, 45, 6.5), { z: .5, bev: .7, dome: .8 }],
-      ["wood", OBJ_poly([[12, 84], [20, 84], [19, 94], [13, 94]], [.5, .5, 1.5, 1.5]), { dome: .8 }],          /* the legs */
-      ["wood", OBJ_poly([[80, 84], [88, 84], [87, 94], [81, 94]], [.5, .5, 1.5, 1.5]), { dome: .8 }],
+      ["wood", OBJ_rrect(20, 8, 60, 50, [13, 13, 0, 0]), { dome: 1.2 }],                                     /* the back */
+      ["wood", OBJ_rrect(27, 14, 46, 38, [10, 10, 3, 3]), { z: .5, bev: .8, dome: 1.2 }],                    /* its cushion */
+      ["rubber", OBJ_rrect(27, 14, 46, 38, [10, 10, 3, 3]), { ln: 1.4, z: .3, bev: .4 }],                    /* its piping */
+      ["rubber", "M42.5 20V46M57.5 20V46", { ln: 1.3, cut: .8 }],                                            /* its channel stitching */
+      ["wood", OBJ_rrect(6, 70, 88, 14, 3), { z: .2 }],                                                      /* the skirt */
+      ["rubber", "M8 76H92", { ln: 1.3, cut: .6 }],
+      ["wood", OBJ_rrect(22, 52, 56, 19, 5), { z: .6, bev: .8, dome: 1.4 }],                                 /* the seat cushion */
+      ["rubber", OBJ_rrect(22, 52, 56, 19, 5), { ln: 1.4, z: .3, bev: .4 }],                                 /* its piping */
+      ["wood", OBJ_rrect(4, 34, 20, 50, [10, 10, 2, 2]), { z: .7, bev: .8, dome: 1.6 }],                      /* the arms */
+      ["wood", OBJ_rrect(76, 34, 20, 50, [10, 10, 2, 2]), { z: .7, bev: .8, dome: 1.6 }],
+      ["wood", OBJ_circle(14, 45, 6.5), { z: .5, bev: .7, dome: .8 }],                                        /* their scrolled fronts */
+      ["wood", OBJ_circle(86, 45, 6.5), { z: .5, bev: .7, dome: .8 }],
+      ["rubber", OBJ_circle(14, 45, 6.5), { ln: 1.3, z: .3, bev: .4 }],                                       /* their piping */
+      ["rubber", OBJ_circle(86, 45, 6.5), { ln: 1.3, z: .3, bev: .4 }],
+      ["rubber", OBJ_poly([[12, 84], [20, 84], [19, 94], [13, 94]], [.5, .5, 1.5, 1.5]), { dome: .8 }],      /* the legs */
+      ["rubber", OBJ_poly([[80, 84], [88, 84], [87, 94], [81, 94]], [.5, .5, 1.5, 1.5]), { dome: .8 }],
     ],
   };
 }
