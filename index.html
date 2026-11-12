@@ -34275,6 +34275,13 @@ html.is-browser.safari-bars-over :is(.chatdock-btn, .chatdock-panel, .roomchat-f
 }
 /* a test's header, pinned where it rests (syncTestPin measures .wrap's padding, not the margin above it) */
 html.is-browser.safari-bars-over[data-layout="modern"] .wrap.test-pinned > .top{ top:calc(var(--test-top-y, 1.25rem) + var(--sb-top-x)); }
+/* (384.62) barSelfHeal: the viewport was left short, so what is pinned to the bottom stands --vp-stale too high; this puts it back down */
+html.vp-stale :is(.bottomtabs, .backtotop, .daily-question-fab, .homeversion, .class-bubble-wrap, .foot > .floatbtn, .startbar, #stage > .dq-card){
+  margin-bottom:calc(-1 * var(--vp-stale, 0px)) !important;
+}
+html.vp-top :is(.wrap.test-pinned > .top, #pausebtn, .update-banner, .daily-alert, .tierup-banner, .battle-alert, .streak-pop){
+  margin-top:calc(var(--sb-top-x, 0px) + var(--vp-top, 0px)) !important;
+}
 /* and the notices pinned to the bottom sit above the toolbar */
 html.is-browser.safari-bars-over :is(.toast, .vroom-prep){ margin-bottom:calc(var(--sb-bottom-x) + 8px); }
 /* Welcome is measured to end just over the home indicator (its hint, --pad-inset-bottom): it ends that much over the toolbar
@@ -68009,6 +68016,142 @@ window.addEventListener("resize", syncSafariBars);
 window.addEventListener("orientationchange", () => setTimeout(syncSafariBars, 300));
 window.addEventListener("pageshow", syncSafariBars);
 try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", syncSafariBars); }catch(e){}
+/* ---- (384.62) THE FIXED CHROME THAT RIDES WITH THE PAGE: A WATCH THAT KNOWS WHERE IT SHOULD BE, AND PUTS IT THERE ----
+   Madison, four screen recordings and a screenshot (iPhone 17 Pro Max, the installed app; "Bottom tab broke", "massive problem", "this getting
+   broken"): the glass tab bar, and the round back-to-top button above it, RIDE UP THE SCREEN WITH THE PAGE as it is scrolled (Fire Code's
+   "Choose your chapters", the Profile, the Leaderboard; to the middle, off the top, back in as the list scrolls back, home at the bottom when the page
+   is at its top); on a test question the pinned header (progress strip, Pause, chat) leaves the top and the page seems to jump (it is the page
+   scrolling, the header not staying), with a lighter band at the foot where the page ends. Everything pinned (`position:fixed`) goes with the
+   document while the page is scrolled; at the top of the page all of it is where it belongs. 383 had the same ("the bottom tab ... in the middle of the
+   screen of review and the unit selection screen"; traced then to a held page zoom, fixed in 384).
+   WHAT IS KNOWN, from the code and from driving it: nothing in the app moves any of it. No script writes a transform, translate, top or bottom on the
+   bar, the button or the header's pins (the lens / swell / hold code only toggles classes; the search circle is placed FROM the bar's rect); the bar is
+   `position:fixed; bottom:var(--tabs-bottom)`; no ancestor has a transform, filter, contain, will-change, overflow or zoom (computed on Profile, the
+   Leaderboard and both unit lists after real tab taps); and in Chromium every one is the same pixel through every fling, rubber band and wheel the gate
+   drives, on every one of those screens and on a question. So the thing they are pinned to - WebKit's layout viewport - was not moving with the
+   page. The visual viewport says so when it is the visual one that moved (offsetTop, height); the app already corrects the chat button by it
+   (--vv-shift, for the keyboard) and nothing else. It cannot be reproduced in Chromium and WHICH WebKit state it is, is not proven.
+   WHAT THIS DOES: it follows. Every frame the page scrolls (and when the visual viewport changes, on a turn, on coming back, every 2.5s) it works out how
+   far the pinned chrome stands from where the screen is, from numbers the page has, and takes it up: BOTTOM = the largest of (A) the visual
+   viewport reaching below the layout one (offsetTop + height - innerHeight), (B) in an installed phone app the layout viewport being short of the screen
+   (innerHeight under screen height x zoom by 90pt or more), (C) the tab bar's own foot standing higher over the layout viewport's bottom than its design
+   (the bar is a fixed element measured in the page's own pixels: it only reads high if the page thinks it rides). TOP = the larger of the visual viewport's
+   offsetTop and (C) a fixed probe at top:0 reading above 0. The bottom is taken up with a negative bottom margin on what is pinned to the bottom
+   (html.vp-stale, --vp-stale); the top with a margin on the test header, Pause and the notices (html.vp-top, --vp-top; the chat button has its own
+   --vv-shift). Nothing is done with a field focused, a keyboard up, a pinch zoom (resetStuckZoom's) or while the page is hidden; a gesture flag that stays
+   on for 6s is ignored. If the displacement is still there 1.5s after the page stopped, the scroll is nudged a pixel and back once (what reconciles the
+   two viewports, as the keyboard unwind does). When it clears the margins come off. A healthy page: zero everywhere, nothing written.
+   LOG: every state change and what the numbers were (scroll offset, visual viewport scale / size / offset / page top, layout viewport, screen) is in
+   window.__barHeal (last 16 lines); Report a bug carries it in `edges` after BARHEAL, so the next one says which state it was. */
+(function barSelfHeal(){
+  const root = document.documentElement, vv = window.visualViewport;
+  const LOG = window.__barHeal = [];
+  const note = (s) => { try{ LOG.push(Math.round(performance.now() / 100) / 10 + "s " + s); if(LOG.length > 16) LOG.shift(); }catch(e){} };
+  let compB = 0, compT = 0, raf = 0, lastScroll = 0, since = 0, nudged = 0, lastNoteAt = 0, probeLen = null, probeTop = null;
+  const THRESH = 6;
+  let gestureSince = 0;
+  const busy = () => {
+    try{
+      const c = root.classList, b = document.body, a = document.activeElement;
+      if(document.visibilityState !== "visible" || !b) return true;
+      if(b.classList.contains("tabsearch-open") || b.classList.contains("chatdock-open") || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || ""))) return true;
+      const moving = c.contains("tab-held") || c.contains("tab-dragging") || b.classList.contains("cutscene-focus") || b.classList.contains("cutscene-return") ||
+        !!document.querySelector(".bottomtabs.lens-up, .bottomtabs.ts-anim");
+      if(!moving){ gestureSince = 0; return false; }
+      if(!gestureSince) gestureSince = Date.now();
+      return Date.now() - gestureSince < 6000;
+    }catch(e){ return true; }
+  };
+  function probes(){
+    if(!probeLen || !probeLen.isConnected){
+      probeLen = document.createElement("i"); probeLen.setAttribute("aria-hidden", "true");
+      probeLen.style.cssText = "position:absolute;left:0;top:0;width:0;visibility:hidden;pointer-events:none;height:var(--tabs-bottom, 12px)";   /* a plain length: not pinned, so it cannot be displaced */
+      probeTop = document.createElement("i"); probeTop.setAttribute("aria-hidden", "true");
+      probeTop.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none";
+      (document.body || root).append(probeLen, probeTop);
+    }
+  }
+  /* how far the pinned chrome stands from where the screen is: { bottom, top, why } in px, 0 when nothing is wrong */
+  function measure(){
+    const ih = window.innerHeight, scale = vv ? vv.scale : 1;
+    if(scale > 1.01) return null;   /* a held zoom is resetStuckZoom's */
+    let bottom = 0, top = 0, why = "";
+    if(vv){
+      const ot = vv.offsetTop || 0, over = ot + vv.height - ih;
+      if(ot > THRESH){ top = ot; why = "visual viewport offset " + Math.round(ot); }
+      if(over > THRESH){ bottom = over; why += (why ? "; " : "") + "visual viewport " + Math.round(vv.height) + "+" + Math.round(ot) + " reaches past the layout one " + ih; }
+    }
+    try{
+      const sS = Math.min(screen.width, screen.height), sL = Math.max(screen.width, screen.height);
+      if(sS && sS < 600 && isStandaloneApp()){
+        const land = window.innerWidth > ih, zr = window.innerWidth / (land ? sL : sS), want = (land ? sS : sL) * zr, missing = want - ih;
+        if(missing > 90 && missing < ih * .6 && missing > bottom){ bottom = missing; why += (why ? "; " : "") + "layout viewport " + ih + " is " + Math.round(missing) + " short of the screen (" + Math.round(want) + ")"; }
+      }
+    }catch(e){}
+    const bar = document.querySelector(".bottomtabs");
+    if(bar && !bar.hidden){
+      const r = bar.getBoundingClientRect();
+      if(r.height && getComputedStyle(bar).position === "fixed"){
+        probes();
+        const c = (ih - r.bottom) - probeLen.getBoundingClientRect().height + compB;   /* the bar's true displacement, whatever is already taken up */
+        if(c > THRESH && c > bottom){ bottom = c; why += (why ? "; " : "") + "the bar stands " + Math.round(c) + "px above its design over the layout viewport (pinned chrome is riding with the page)"; }
+      }
+    }
+    if(!probeTop || !probeTop.isConnected) probes();
+    const pt = -probeTop.getBoundingClientRect().top;
+    if(pt > THRESH && pt > top){ top = pt; why += (why ? "; " : "") + "a fixed probe at top:0 reads " + Math.round(-pt) + " (pinned chrome is riding with the page)"; }
+    bottom = Math.min(bottom, ih * .6); top = Math.min(top, ih * .6);
+    return { bottom: bottom > THRESH ? Math.round(bottom) : 0, top: top > THRESH ? Math.round(top) : 0, why };
+  }
+  function apply(b, t, why){
+    if(b === compB && t === compT) return;
+    const was = compB || compT;
+    compB = b; compT = t;
+    if(b){ root.style.setProperty("--vp-stale", b + "px"); root.classList.add("vp-stale"); } else { root.style.removeProperty("--vp-stale"); root.classList.remove("vp-stale"); }
+    if(t){ root.style.setProperty("--vp-top", t + "px"); root.classList.add("vp-top"); } else { root.style.removeProperty("--vp-top"); root.classList.remove("vp-top"); }
+    const now = Date.now();
+    if(!was || !(b || t) || now - lastNoteAt > 1000){
+      lastNoteAt = now;
+      const v = vv || {};
+      note((b || t ? "pinned chrome " + b + " low / " + t + " top" : "back in place") + (why ? " (" + why + ")" : "") + " y " + Math.round(window.scrollY) + " vv scale " + (v.scale != null ? +v.scale.toFixed(3) : "-") +
+        " " + Math.round(v.width || 0) + "x" + Math.round(v.height || 0) + "+" + Math.round(v.offsetTop || 0) + " page " + Math.round(v.pageTop || 0) + " inner " + window.innerWidth + "x" + window.innerHeight + " screen " + screen.width + "x" + screen.height);
+    }
+    if(!was && (b || t)){ requestAnimationFrame(() => { try{ window.dispatchEvent(new Event("resize")); }catch(e){} }); }   /* the search circle is placed from the bar's rect */
+  }
+  let lastMeasure = 0;
+  function check(){
+    raf = 0;
+    if(busy()){ return; }
+    /* healthy and scrolling: a look every 120ms, not every frame (it reads layout); once something is taken up it follows every frame */
+    const t0 = performance.now();
+    if(!compB && !compT && t0 - lastMeasure < 120){ if(Date.now() - lastScroll < 200 && !raf) setTimeout(kick, 130); return; }
+    lastMeasure = t0;
+    const m = measure();
+    if(!m){ return; }
+    apply(m.bottom, m.top, m.why);
+    if(m.bottom || m.top){
+      if(!since) since = Date.now();
+      /* still out 1.5s after the page stopped: a nudge, once per episode */
+      if(!nudged && Date.now() - since > 1500 && Date.now() - lastScroll > 1500){
+        nudged = 1; note("still out at rest: nudged the scroll");
+        try{ const y = window.scrollY; window.scrollTo(0, y + 1); window.scrollTo(0, y); }catch(e){}
+        try{ if(typeof resetStuckZoom === "function") resetStuckZoom(); }catch(e){}
+      }
+      if(Date.now() - lastScroll < 400) raf = requestAnimationFrame(check);   /* follow the scroll frame by frame */
+    } else { since = 0; nudged = 0; }
+  }
+  const kick = () => { if(!raf) raf = requestAnimationFrame(check); };
+  try{
+    if(vv){ vv.addEventListener("resize", kick); vv.addEventListener("scroll", kick); }
+    window.addEventListener("scroll", () => { lastScroll = Date.now(); kick(); }, { passive: true });
+    window.addEventListener("resize", kick); window.addEventListener("pageshow", kick); window.addEventListener("focus", kick);
+    window.addEventListener("orientationchange", () => setTimeout(kick, 350));
+    document.addEventListener("focusout", () => { setTimeout(kick, 450); setTimeout(kick, 1300); }, true);   /* a keyboard has just gone */
+    document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible"){ kick(); setTimeout(kick, 500); } });
+    setInterval(() => { if(document.visibilityState === "visible") kick(); }, 2500);
+  }catch(e){}
+  window.__barHealCheck = () => ({ m: measure(), compB, compT, log: LOG.slice() });
+})();
 function syncBottomTabAvatar(){
   const tabIcon = document.querySelector("#bottomtab-profile .bottomtab-icon");
   if(!tabIcon) return;
@@ -121339,7 +121482,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.48";
+const APP_BUILD = "2026-11-11-384.62";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -135245,7 +135388,7 @@ function showBugReport(){
           return ("screen " + s.screen.join("x") + " inner " + s.inner.join("x") + " zoom " + s.zoom + " missing " + s.missing +
             "pt env " + s.env.join(",") + " vv " + (v ? Math.round(v.width) + "x" + Math.round(v.height) + "+" + Math.round(v.offsetTop) : "-") +
             " over " + (s.over ? s.top + "/" + s.bottom : "no") + " scrollY " + Math.round(window.scrollY) +
-            " doc " + Math.round(document.documentElement.scrollHeight) + " lvh " + Math.round(lvhPx()) + " tabs " + tabsBottomPx()).slice(0, 300); }catch(e){ return ""; } })(),
+            " doc " + Math.round(document.documentElement.scrollHeight) + " lvh " + Math.round(lvhPx()) + " tabs " + tabsBottomPx() + " sc " + (v ? +v.scale.toFixed(3) : "-") + ((window.__barHeal && window.__barHeal.length) ? " BARHEAL " + window.__barHeal.join(" | ") : "")).slice(0, 900); }catch(e){ return ""; } })(),
         perf: (typeof tabPerfText === "function") ? tabPerfText() : "",
         at: Date.now()
       }).then(() => {
