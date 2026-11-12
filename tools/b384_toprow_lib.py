@@ -97,9 +97,9 @@ INK = """()=>{
     const g = document.createRange(); g.selectNodeContents(t);
     for(const r of g.getClientRects()) add(e, { top: r.top + Math.max(0, off), bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height }, 'text'); }
   /* a control's box is ink only where it is painted (a fill, a rim, a shadow): a bare text button's box is air, its words are measured above */
-  const painted = e => { const s = getComputedStyle(e); const c = s.backgroundColor.match(/[\d.]+/g);
-    return (c && (c.length < 4 || parseFloat(c[3]) > .05) && !/^rgba\(0, 0, 0, 0\)$/.test(s.backgroundColor)) || s.backgroundImage !== 'none' || s.boxShadow !== 'none' ||
-      (parseFloat(s.borderTopWidth) > 0 && !/rgba\([^)]*, 0\)$/.test(s.borderTopColor) && s.borderTopStyle !== 'none'); };
+  const painted = e => { const s = getComputedStyle(e); const c = s.backgroundColor.match(/[\\d.]+/g);
+    return (c && (c.length < 4 || parseFloat(c[3]) > .05) && !/^rgba\\(0, 0, 0, 0\\)$/.test(s.backgroundColor)) || s.backgroundImage !== 'none' || s.boxShadow !== 'none' ||
+      (parseFloat(s.borderTopWidth) > 0 && !/rgba\\([^)]*, 0\\)$/.test(s.borderTopColor) && s.borderTopStyle !== 'none'); };
   for(const e of document.querySelectorAll('body button, body a[href], body img, body svg, body [role="button"], body .qdot, body .back-link')){
     if(skip(e) || !vis(e) || (e.closest('svg') && e.closest('svg') !== e)) continue;
     if(!/^(IMG|svg)$/.test(e.tagName) && !e.classList.contains('qdot') && !painted(e)) continue;

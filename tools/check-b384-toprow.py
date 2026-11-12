@@ -197,7 +197,11 @@ def check_screens(dev, cls, M, B):
         c = geo["chat"]
         if c and hc and scr not in ("rank cutscene",):   # a cutscene flies the corner buttons away on purpose
             if scr in TEST and geo["inTest"]:
-                if abs(c[1] - max(hc[1], E)) > .5 and abs(c[1] - hc[1]) > .5: chat_off.append((scr, "in test", [round(v, 1) for v in c])); good = False
+                # beside Pause, centred on Pause's line (Pause owns the corner): under the band that line IS the chat button's (E);
+                # where there is no band (an SE, an iPad, a Safari tab) the test row stays on the page's own floor, as before
+                p = geo["pause"]
+                if gated and abs(c[1] - hc[1]) > .5: chat_off.append((scr, "in test, off the line", [round(v, 1) for v in c])); good = False
+                elif p and abs((c[1] + c[3] / 2) - (p[1] + p[3] / 2)) > 1: chat_off.append((scr, "in test, not level with Pause", [round(v, 1) for v in c], [round(v, 1) for v in p])); good = False
             elif not eq(c, hc): chat_off.append((scr, [round(v, 1) for v in c], "Home", [round(v, 1) for v in hc])); good = False
         if c and geo["back"] and not geo["inTest"]:
             bk = geo["back"]; d = abs((bk[1] + bk[3] / 2) - (c[1] + c[3] / 2)); dx = abs(bk[0] - (geo["W"] - c[0] - c[2])) if phone else 0
@@ -224,7 +228,7 @@ def check_screens(dev, cls, M, B):
         ys = range(top_strip + 2, int((cap["foot"] - 1) * sc))
         bad = [(round(y / sc, 1), im.getpixel((int(6 * sc), y))) for y in ys if pc and max(abs(a - b) for a, b in zip(im.getpixel((int(6 * sc), y)), pc)) > 3]
         chk("%s (5): a question scrolled %dpx: the header is solid paper %s from the strip to its foot (y %.0f) - nothing shows through" % (tag, cap["sy"], pap, cap["foot"]), cap["sy"] >= 150 and not bad, bad[:5])
-def transitions(br, dev, cls):
+def transitions(br, dev, cls, qtop=None):
     name, W, H, ins, installed, ua, gated = L.DEVICES[dev]
     tag = "%s, %s" % (name, "Fire Code" if cls == "ifc" else "academy")
     for attempt in range(3):
@@ -247,7 +251,10 @@ def transitions(br, dev, cls):
                 cs = [f["chat"] for f in fr if f["chat"]]
                 if hc:
                     tops = sorted(set(round(c[1], 1) for c in cs))
-                    if any(abs(t - hc[1]) > .5 for t in tops): bad.append("chat top %s (line %.1f)" % (tops[:5], hc[1]))
+                    # into and out of a question the button goes beside Pause: on the band's line that is the same top; elsewhere it is
+                    # Pause's line (measured on the question screen), and nothing else
+                    ok_tops = [hc[1]] + ([qtop] if (test_move and qtop is not None and not gated) else [])
+                    if any(min(abs(t - o) for o in ok_tops) > .5 for t in tops): bad.append("chat top %s (line %.1f%s)" % (tops[:5], hc[1], "" if len(ok_tops) == 1 else ", Pause's %.1f" % qtop))
                     if not test_move:
                         lefts = sorted(set(round(c[0], 1) for c in cs))
                         if any(abs(x - hc[0]) > .5 for x in lefts): bad.append("chat left %s" % lefts[:5])
@@ -307,7 +314,8 @@ with sync_playwright() as pw:
             M = measure(br, RAW, dev, cls)
             B = None if NOBASE else measure(br, BASE, dev, cls, base=True)
             check_screens(dev, cls, M, B)
-            if TRANS: transitions(br, dev, cls)
+            qg = M.get("question: drill", (None, None))[1]
+            if TRANS: transitions(br, dev, cls, qg["chat"][1] if isinstance(qg, dict) and qg.get("chat") else None)
             print("    (%s %s: %.0fs)" % (dev, cls, time.time() - t0), flush=True)
     br.close()
 chk("(7) no page errors", not errs, errs[:6])
