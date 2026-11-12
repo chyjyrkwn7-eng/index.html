@@ -49,6 +49,9 @@ file short - only rules every session must know go here.
   the past not to do that, but now we will"), so the older "a badge never
   draws its subject" rule no longer applies to those 58 chapters; it still
   holds for the academy's badges.
+  Round-2 rules (Madison): the silver rim is an even border and never the
+  object, every part is at least 18 across (aim 22+) so it holds enamel, and
+  no stickers - identity is the silhouette.
 - **A challenge counts what its label says, and an unlock is derived when
   read, never stored.** The Smoke Diver was reported three times because its
   counter ticked on the same event as the miss counter, so a "clamp to the

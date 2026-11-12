@@ -76167,8 +76167,11 @@ Object.assign(BADGE_SHAPE, {
    for the 58 chapters, the academy's rule that a badge never draws its subject (twice rejected there) and 384.61's picture-in-an-
    outline; the newer instruction wins and the academy's sixteen-plus are untouched.
    A chapter's entry is plain data, CHAPTER_OBJ["<exact unit title>"] = { d, c?, plates }:
-     d       the silhouette: ONE closed path in the 100 x 100 frame the outlines use (rounded corners, no holes) - the badge's outline,
+     d       the silhouette: ONE closed path in the 100 x 100 frame the outlines use (rounded corners) - the badge's outline,
              so the metal rim, the slot, the empty slot and the back's title all follow it exactly as they follow any other outline
+     holes   optional: closed paths cut out of it (a handle's loop, a window), any way round; the rim follows a hole's edge as evenly as the
+             outline's. The rim is an even band all round and is never the object's design: every part of the object, and every hole,
+             must be wide enough to hold its rim and its own enamel (see MIN_PART in tools/chapter-objects/README.md)
      c       [x, y] the point the badge is scaled about (default: the middle of the silhouette's box)
      base    the colour role of the silhouette itself under the plates (default field, the enamel; steel for a thing of metal)
      plates  what the enamel is inlaid with, painted in order over the silhouette's base colour: [role, d, opts?]
@@ -76226,6 +76229,47 @@ function OBJ_chain(pts, r){
   }
   return d + "L" + f(pts[n - 1]);
 }
+/* a path's points, densely (M L H V C Q A Z, either case; S and T are not supported on purpose: write the curve out). One source: the
+   page uses it to wind a hole opposite to its outline, tools/chapter-objects/measure.js to measure a silhouette. Throws on anything else. */
+function OBJ_walk(d, steps){
+  const n = steps || 24, t = [], re = /([MmLlHhVvCcQqAaZz])|(-?\d*\.?\d+(?:e[-+]?\d+)?)/gi, pts = [];
+  let m; while((m = re.exec(d))){ t.push(m[1] ? m[1] : parseFloat(m[2])); }
+  let i = 0, cmd = "", x = 0, y = 0, sx = 0, sy = 0;
+  const num = () => { const v = t[i++]; if(typeof v !== "number") throw new Error("a number was expected in " + String(d).slice(0, 40)); return v; };
+  while(i < t.length){
+    if(typeof t[i] === "string") cmd = t[i++]; else if(cmd === "M") cmd = "L"; else if(cmd === "m") cmd = "l";
+    const rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase(), ox = rel ? x : 0, oy = rel ? y : 0;
+    if(C === "M"){ x = ox + num(); y = oy + num(); sx = x; sy = y; pts.push([x, y]); }
+    else if(C === "L"){ x = ox + num(); y = oy + num(); pts.push([x, y]); }
+    else if(C === "H"){ x = ox + num(); pts.push([x, y]); }
+    else if(C === "V"){ y = oy + num(); pts.push([x, y]); }
+    else if(C === "Q"){ const a = ox + num(), b = oy + num(), ex = ox + num(), ey = oy + num();
+      for(let k = 1; k <= n; k++){ const u = k / n, v = 1 - u; pts.push([v * v * x + 2 * v * u * a + u * u * ex, v * v * y + 2 * v * u * b + u * u * ey]); } x = ex; y = ey; }
+    else if(C === "C"){ const a = ox + num(), b = oy + num(), c2 = ox + num(), d2 = oy + num(), ex = ox + num(), ey = oy + num();
+      for(let k = 1; k <= n; k++){ const u = k / n, v = 1 - u; pts.push([v * v * v * x + 3 * v * v * u * a + 3 * v * u * u * c2 + u * u * u * ex, v * v * v * y + 3 * v * v * u * b + 3 * v * u * u * d2 + u * u * u * ey]); } x = ex; y = ey; }
+    else if(C === "A"){
+      let rx = Math.abs(num()), ry = Math.abs(num()); const phi = num(), fa = num(), fs = num(), ex = ox + num(), ey = oy + num();
+      if(rx && ry){
+        const c = Math.cos(phi * Math.PI / 180), sn = Math.sin(phi * Math.PI / 180), dx = (x - ex) / 2, dy = (y - ey) / 2, x1p = c * dx + sn * dy, y1p = -sn * dx + c * dy;
+        const lam = x1p * x1p / (rx * rx) + y1p * y1p / (ry * ry); if(lam > 1){ const q = Math.sqrt(lam); rx *= q; ry *= q; }
+        const sign = fa === fs ? -1 : 1, num2 = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p, den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
+        const co = sign * Math.sqrt(Math.max(0, num2 / den)), cxp = co * rx * y1p / ry, cyp = -co * ry * x1p / rx;
+        const cx = c * cxp - sn * cyp + (x + ex) / 2, cy = sn * cxp + c * cyp + (y + ey) / 2;
+        const ang = (ux, uy, vx, vy) => Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+        const th1 = ang(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
+        let dth = ang((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+        if(!fs && dth > 0) dth -= 2 * Math.PI; else if(fs && dth < 0) dth += 2 * Math.PI;
+        const na = Math.max(8, n * 2);
+        for(let k = 1; k <= na; k++){ const th = th1 + dth * k / na; pts.push([cx + c * rx * Math.cos(th) - sn * ry * Math.sin(th), cy + sn * rx * Math.cos(th) + c * ry * Math.sin(th)]); }
+      } else pts.push([ex, ey]);
+      x = ex; y = ey; }
+    else if(C === "Z"){ x = sx; y = sy; pts.push([x, y]); }
+    else throw new Error("unsupported command " + cmd);
+  }
+  return pts;
+}
+/* the signed area of a polyline (shoelace; positive one way round, negative the other) */
+function OBJ_area(pts){ let a = 0; for(let i = 0, n = pts.length; i < n; i++){ const p = pts[i], q = pts[(i + 1) % n]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
 /* the chapter's silhouette as an outline the badge code takes ({ c, d, cuts }), or null. Memoised: one object per chapter, so
    everything that caches by it (the geometry, the back's plan) sees one. */
 const CHAPTER_OBJ_SHAPES = {};
@@ -76237,147 +76281,147 @@ function chapterObjShape(name){
   if(e && typeof e === "object" && typeof e.d === "string" && e.d){
     const bb = CHAPTER_OBJ_BBOX[k];
     const c = Array.isArray(e.c) && e.c.length === 2 ? e.c : bb ? [bb[0] + bb[2] / 2, bb[1] + bb[3] / 2] : [50, 50];
-    out = { c: [Math.round(c[0] * 100) / 100, Math.round(c[1] * 100) / 100], d: e.d, cuts: [], obj: k };
+    /* HOLES (build 384.65 r2): e.holes is a list of closed paths cut out of the silhouette (a handle's loop, a window). The rim code
+       fills with the nonzero rule, so a hole must wind the OPPOSITE way to the outline: it is walked to a dense polyline and laid in
+       the right way round whatever way it was drawn. The rim then follows the hole's edge exactly as it follows the outline's. */
+    let d = e.d;
+    if(Array.isArray(e.holes) && e.holes.length){
+      try{
+        const outer = OBJ_area(OBJ_walk(e.d, 12));
+        e.holes.forEach(h => { let pts = OBJ_walk(h, 28); if(OBJ_area(pts) * outer > 0) pts = pts.slice().reverse();
+          d += "M" + pts.map(p => OBJ_N(p[0]) + " " + OBJ_N(p[1])).join("L") + "Z"; });
+      }catch(err){ d = e.d; }
+    }
+    out = { c: [Math.round(c[0] * 100) / 100, Math.round(c[1] * 100) / 100], d: d, cuts: [], obj: k };
   }
   return (CHAPTER_OBJ_SHAPES[k] = out);
 }
 /* @@CHAPTER_OBJ_BEGIN */
 /* ---- part-0-prototypes.js ---- */
-/* Fire Code chapter objects - PROTOTYPES (build 384.65): eight chapters that prove the recipe across very different kinds of thing.
-   Each entry is the chapter's silhouette (the badge's outline) and the plates inlaid in it. See tools/chapter-objects/README.md. */
+/* Fire Code chapter objects - PROTOTYPES, round 2 (build 384.65): eight chapters that prove the recipe across very different kinds of thing.
+   Round 1 (be5d880) put its identity in bare silver (a pipe, arms, a spout drawn by the rim) and in small stickers (a flame, a pocket
+   badge, a lit rectangle). Madison: "I feel like you are just throwing stickers in the middle of the badges ... the silver part is making
+   the actual design." So now: the rim is an even band all round and never the design; EVERY part of an object is at least MIN_PART (20)
+   wide so it holds its own rim and its own enamel; identity is the silhouette; interior plates only colour-block the object's own parts.
+   See tools/chapter-objects/README.md. */
 
-/* ---- Chapter 10: Means of Egress - an open door. The leaf is swung toward you, so its free edge is the nearest and the tallest
-   thing: it stands out past the top and the bottom of the frame. The doorway beside it is the lit rectangle, bright with the way out. ---- */
+/* ---- Chapter 10: Means of Egress - an open door in its frame. The leaf is swung toward you (its free edge the nearest and the tallest thing);
+   the frame is a lintel and a post, and the doorway between the leaf and the post is open to the case behind (a notch, 28 wide). The
+   rim is even all round; every part (leaf, lintel, post) holds its own enamel. A real HOLE for the doorway was tried (the renderer
+   supports holes now) and read as a letter O and a mail slot, so it is a notch. ---- */
 {
   const lerp = (a, b, t) => a + (b - a) * t;
   /* a point on the leaf: u 0 at the hinge to 1 at the free edge, v 0 at the top to 1 at the bottom (perspective: the free edge is taller) */
-  const leaf = (u, v) => [lerp(16, 52, u), lerp(lerp(12, 2, u), lerp(88, 98, u), v)];
+  const leaf = (u, v) => [lerp(12, 42, u), lerp(lerp(16, 4, u), lerp(84, 96, u), v)];
   const quad = (u0, u1, v0, v1, r) => OBJ_poly([leaf(u0, v0), leaf(u1, v0), leaf(u1, v1), leaf(u0, v1)], r);
   CHAPTER_OBJ["Chapter 10: Means of Egress"] = {
-    d: OBJ_poly([[16, 12], [52, 2], [52, 12], [90, 12], [90, 88], [52, 88], [52, 98], [16, 88]], [3, 2, 1, 3, 3, 1, 2, 3]),
+    d: OBJ_poly([[12, 16], [42, 4], [42, 8], [94, 8], [94, 94], [74, 94], [74, 28], [42, 28], [42, 96], [12, 84]], [4, 3, 2, 5, 5, 4, 3, 3, 3, 4]),
     plates: [
-      ["deep", OBJ_rrect(16, 12, 74, 76, 3), { e: 0 }],                                   /* the frame */
-      ["glow", OBJ_rrect(24, 20, 58, 68, 1), { e: 1.4 }],                                    /* the way out, lit */
+      ["deep", OBJ_rrect(42, 8, 52, 20, 2), { e: 0 }],                                   /* the lintel */
+      ["deep", OBJ_rrect(74, 8, 20, 86, 2), { e: 0 }],                                   /* the post */
       ["body", OBJ_poly([leaf(0, 0), leaf(1, 0), leaf(1, 1), leaf(0, 1)], 2), { sh: 1, e: 1.6 }],   /* the leaf */
-      ["shade", quad(.86, 1, 0, 1, 1), { e: 0 }],                                          /* its thick edge */
-      ["lite", quad(.16, .72, .1, .45, 2), { e: 1.3 }],                                 /* upper panel */
-      ["lite", quad(.16, .72, .55, .9, 2), { e: 1.3 }],                                 /* lower panel */
-      ["hot", OBJ_circle(leaf(.8, .5)[0], leaf(.8, .5)[1], 3.2), { e: 1.2 }],             /* the handle */
+      ["shade", quad(.8, 1, 0, 1, 1), { e: 0 }],                                           /* its thick edge */
+      ["lite", quad(.1, .66, .1, .46, 2), { e: 1.3 }],                                   /* its upper panel */
+      ["lite", quad(.1, .66, .54, .9, 2), { e: 1.3 }],                                   /* its lower panel */
     ],
   };
 }
 
-/* ---- Chapter 9: Fire Protection and Life Safety Systems - a pendant sprinkler on its pipe, spraying (a device; Madison chose the sprinkler
-   over an extinguisher or an alarm bell): the supply pipe across the top, the nipple and hex body hanging from it, the frame with its two
-   arms round the red glass bulb, the wide flat deflector, and the cone of water it throws, which is where the chapter's blue lives. The
-   pipe, nipple, arms and deflector are too thin to hold enamel: bare metal. A sprinkler's arms alone are thin (no enamel, a blob under
-   the rim), so the frame is drawn solid and the arms and the bulb are plates in it; the pipe across the top is what stops the whole
-   from reading as a chess piece. ---- */
+/* ---- Chapter 9: Fire Protection and Life Safety Systems - a sprinkler head spraying (Madison chose the sprinkler): the pipe stub, the hex
+   body, the wide flat deflector, and three bold drops of water falling from it, which are part of the outline (the notches between them
+   are what say "spray"). Every part is wide enough to hold enamel; nothing is a sticker. ---- */
 {
-  const dots = (y, x0, x1, step) => { let d = ""; for(let x = x0; x <= x1; x += step) d += "M" + x + " " + y + "h.01"; return d; };
   CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {
-    base: "steel",
-    d: "M50 4" + OBJ_chain([[50, 4], [92, 4], [92, 18], [58, 18], [58, 22], [68, 26], [68, 38], [64, 42], [70, 60], [90, 62], [90, 70], [68, 72], [82, 94], [18, 94], [32, 72], [10, 70], [10, 62], [30, 60], [36, 42], [32, 38], [32, 26], [42, 22], [42, 18], [8, 18], [8, 4], [50, 4]],
-      [0, 5, 5, 2, 2, 3, 3, 3, 3, 5, 5, 3, 8, 8, 3, 5, 5, 3, 3, 3, 3, 2, 2, 5, 5, 0]) + "Z",
+    d: OBJ_poly([[37, 4], [63, 4], [63, 18], [74, 20], [74, 38], [94, 40], [94, 74], [86, 87], [80, 95], [74, 87], [66, 76], [65, 62], [64, 76], [56, 87], [50, 95], [44, 87], [36, 76], [35, 62], [34, 76], [26, 87], [20, 95], [14, 87], [6, 74], [6, 40], [26, 38], [26, 20], [37, 18]],
+      [3, 3, 3, 3, 3, 4, 8, 6, 4, 6, 6, 1, 6, 6, 4, 6, 6, 1, 6, 6, 4, 6, 8, 4, 3, 3, 3]),
     plates: [
-      ["body", OBJ_rrect(32, 26, 36, 12, 3), { e: 1.4 }],                                    /* the hex body, lit */
-      ["deep", OBJ_poly([[36, 42], [64, 42], [70, 60], [30, 60]], 1), { e: 0 }],             /* the dark between the arms */
-      ["steel", OBJ_poly([[36, 42], [42, 42], [38, 60], [30, 60]], 1), { e: 1 }],            /* the frame arms */
-      ["steel", OBJ_poly([[64, 42], [58, 42], [62, 60], [70, 60]], 1), { e: 1 }],
-      ["hot", OBJ_ellipse(50, 51, 7, 11), { sh: 1, e: 1.4 }],                                /* the glass bulb, red with its liquid */
-      ["lite", OBJ_ellipse(47.5, 47, 2, 4), { e: 0 }],                                       /* its glint */
-      ["body", OBJ_poly([[32, 72], [68, 72], [82, 94], [18, 94]], 2), { e: 0 }],             /* the cone of spray */
-      ["lite", dots(79, 38, 62, 6), { ln: 4 }],                                              /* its drops */
-      ["lite", dots(86, 30, 70, 6), { ln: 3.6 }],
+      ["deep", OBJ_rrect(37, 4, 26, 16, 3), { e: 0 }],                                       /* the stub */
+      ["body", OBJ_rrect(26, 20, 48, 18, 0), { e: 0 }],                                      /* the hex body, in its faces */
+      ["shade", OBJ_rrect(26, 20, 14, 18, 0), { e: 0 }],
+      ["deep", OBJ_rrect(6, 38, 88, 22, 6), { sh: 1, e: 0 }],                                /* the deflector */
+      ["lite", OBJ_rrect(10, 42, 80, 7, 3), { e: 0 }],
+      ["body", OBJ_poly([[6, 60], [94, 60], [94, 96], [6, 96]], 0), { e: 0 }],              /* the water */
+      ["lite", OBJ_poly([[6, 60], [94, 60], [94, 70], [6, 70]], 0), { e: 0 }],
+      ["shade", OBJ_poly([[6, 84], [94, 84], [94, 96], [6, 96]], 0), { e: 0 }],
     ],
   };
 }
 
-/* ---- Chapter 57: Flammable and Combustible Liquids - a safety can (a hazardous-material container). The handle hump on the left,
-   the angled spout on the right, a flame on its face. The spout and the handle are thin enough to be the bare metal. ---- */
+/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can (a hazardous-material container). The silhouette is the whole point: the
+   round handle hump on the left, the long angled spout with its wider cap on the right, a valley between them. No flame sticker. ---- */
 {
-  /* a flame: a bold teardrop leaning left with a curl, centred on (cx, cy), h tall */
-  const flame = (cx, cy, h) => {
-    const k = h / 40, X = x => (cx + x * k).toFixed(2), Y = y => (cy + y * k).toFixed(2);
-    return "M" + X(2) + " " + Y(-20) + "C" + X(4) + " " + Y(-10) + " " + X(15) + " " + Y(-6) + " " + X(15) + " " + Y(6) +
-      "C" + X(15) + " " + Y(14) + " " + X(8) + " " + Y(20) + " " + X(0) + " " + Y(20) +
-      "C" + X(-9) + " " + Y(20) + " " + X(-15) + " " + Y(14) + " " + X(-15) + " " + Y(5) +
-      "C" + X(-15) + " " + Y(-2) + " " + X(-10) + " " + Y(-6) + " " + X(-8) + " " + Y(-12) +
-      "C" + X(-4) + " " + Y(-8) + " " + X(-2) + " " + Y(-5) + " " + X(-2) + " " + Y(-1) + "C" + X(-1) + " " + Y(-8) + " " + X(0) + " " + Y(-14) + " " + X(2) + " " + Y(-20) + "Z";
-  };
+  const hump = []; for(let k = 0; k <= 8; k++){ const t = (180 + 180 * k / 8) * Math.PI / 180; hump.push([24 + 18 * Math.cos(t), 40 + 22 * Math.sin(t)]); }
+  /* the spout: an axis from its base on the can's top to its cap, a tube 22 wide and a cap 28 wide */
+  const A = [66, 42], B = [88, 14], ux = (B[0] - A[0]), uy = (B[1] - A[1]), L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
+  const at = (t, w) => [A[0] + dx * t + nx * w, A[1] + dy * t + ny * w];
+  const bl = at(0, -11), br = at(0, 11), tl = at(L - 8, -11), tr = at(L - 8, 11), cl = at(L - 8, -14), cr = at(L - 8, 14), ct = at(L + 2, -14), cu = at(L + 2, 14);
   CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {
-    d: "M40 92" + OBJ_chain([[40, 92], [10, 92], [10, 40], [20, 14], [44, 12], [50, 40], [60, 40], [81, 11], [92, 21], [73, 40], [84, 40], [84, 92], [40, 92]], [0, 9, 6, 5, 5, 3, 2, 4, 4, 2, 5, 9, 0]) + "Z",
+    d: OBJ_poly([[6, 92], [6, 40]].concat(hump.slice(1, 8)).concat([[42, 40], [bl[0] - 2, 40], bl, tl, cl, ct, cu, cr, tr, [br[0] + 4, 40], [94, 44], [94, 92]]),
+      [9, 4].concat(hump.slice(1, 8).map(() => 2), [3, 3, 3, 2, 2, 2, 4, 4, 2, 2, 3, 4, 4, 9])),
     plates: [
-      ["body", OBJ_rrect(10, 40, 74, 52, [0, 0, 9, 9]), { e: 0 }],                            /* the can */
-      ["ink", OBJ_poly([[26, 20], [40, 19], [43, 36], [24, 37]], 2), { e: 0 }],                /* the handle's hollow */
-      ["deep", "M12 58H82", { ln: 2.2 }],                                                    /* a rib across the can */
-      ["shade", OBJ_rrect(66, 48, 18, 44, 2), { e: 0 }],                                      /* its turned-away side */
-      ["glow", flame(46, 66, 38), { sh: 1, e: 1.5 }],                                         /* the flame */
-      ["hot", flame(46, 71, 20), { e: 0 }],                                                   /* its core */
+      ["body", OBJ_rrect(6, 40, 88, 52, [0, 0, 9, 9]), { e: 0 }],                            /* the can */
+      ["shade", OBJ_rrect(6, 68, 88, 24, [0, 0, 9, 9]), { e: 0 }],                           /* its lower band */
+      ["lite", OBJ_rrect(6, 44, 88, 9, 0), { e: 0 }],                                       /* the light along its shoulder */
+      ["deep", OBJ_poly([[6, 40]].concat(hump.slice(1, 8)).concat([[42, 40], [42, 44], [6, 44]]), 1), { e: 0 }],   /* the handle hump */
+      ["deep", OBJ_poly([bl, tl, tr, br], 1), { e: 0 }],                                    /* the spout */
+      ["hot", OBJ_poly([cl, ct, cu, cr], 2), { e: 0 }],                                     /* its cap */
     ],
   };
 }
 
-/* ---- Appendix D: Fire Apparatus Access Roads - a ladder truck (a vehicle), side on, facing left: the ladder rack runs the whole roof
-   and reaches out over the cab, two big wheels. The widest, lowest silhouette in the set. ---- */
+/* ---- Appendix D: Fire Apparatus Access Roads - a ladder truck (a vehicle), side on, facing left: the low cab, the tall body with one fat ladder
+   bar along its roof, two big wheels. The widest, lowest silhouette in the set. ---- */
 {
-  let rungs = ""; for(let x = 16; x <= 90; x += 6) rungs += "M" + x + " 25.5V34.5";
   CHAPTER_OBJ["Appendix D: Fire Apparatus Access Roads"] = {
-    d: "M10 71" + OBJ_chain([[10, 71], [6, 71], [6, 60], [14, 48], [38, 48], [38, 38], [10, 38], [10, 22], [94, 22], [94, 71], [86, 71]], [0, 4, 4, 5, 2, 2, 3, 3, 3, 3, 0]) +
-       "A12 12 0 0 1 62 71" + OBJ_chain([[62, 71], [38, 71]], 0) + "A12 12 0 0 1 14 71" + OBJ_chain([[14, 71], [10, 71]], 0) + "Z",
+    d: "M20 78" + OBJ_chain([[20, 78], [8, 78], [8, 62], [16, 48], [42, 48], [42, 14], [96, 14], [96, 78], [86, 78]], [0, 4, 6, 6, 2, 3, 4, 4, 0]) +
+       "A13 13 0 0 1 60 78" + OBJ_chain([[60, 78], [42, 78]], 0) + "A13 13 0 0 1 20 78Z",
     plates: [
-      ["deep", OBJ_rrect(38, 38, 56, 33, 2), { e: 0 }],                                     /* the body */
-      ["steel", OBJ_rrect(10, 22, 84, 16, 3), { e: 0 }],                                    /* the ladder rack */
-      ["deep", rungs, { ln: 1.6 }],                                                          /* the ladder's rungs */
-      ["shade", OBJ_rrect(42, 44, 14, 22, 2), { e: 1.2 }],                                   /* the locker doors */
-      ["shade", OBJ_rrect(59, 44, 14, 22, 2), { e: 1.2 }],
-      ["shade", OBJ_rrect(76, 44, 14, 22, 2), { e: 1.2 }],
-      ["hot", OBJ_rrect(38, 58, 56, 4, 0), { e: 0 }],                                        /* the stripe */
-      ["glow", OBJ_poly([[10, 62], [17, 52], [34, 52], [34, 62]], 2), { e: 1.4 }],           /* the cab's windows */
-      ["steel", OBJ_circle(26, 71, 6.5), { e: 1.2 }],                                        /* the hubs */
-      ["steel", OBJ_circle(74, 71, 6.5), { e: 1.2 }],
+      ["deep", OBJ_rrect(42, 34, 54, 44, 2), { e: 0 }],                                     /* the body */
+      ["lite", OBJ_rrect(42, 14, 54, 20, 3), { e: 0 }],                                     /* the ladder bar, along its roof */
+      ["deep", "M54 14V34M66 14V34M78 14V34M90 14V34", { ln: 2 }],                          /* its rungs */
+      ["hot", OBJ_rrect(8, 62, 88, 7, 0), { e: 0 }],                                         /* the stripe, cab to tail */
+      ["shade", OBJ_rrect(48, 40, 18, 18, 2), { e: 1.2 }],                                  /* the lockers */
+      ["shade", OBJ_rrect(70, 40, 20, 18, 2), { e: 1.2 }],
+      ["lite", OBJ_poly([[10, 62], [18, 50], [40, 50], [40, 62]], 2), { e: 1.2 }],          /* the cab's windows */
     ],
   };
 }
 
-/* ---- Chapter 53: Compressed Gases - a gas cylinder (a hazardous-material container; the tall, narrow silhouette): the valve with its
-   handwheel across the top, the collar, the domed shoulder, the long body with a band round it. ---- */
+/* ---- Chapter 53: Compressed Gases - a gas cylinder (a hazardous-material container; the tall, narrow silhouette): a fat valve block, the
+   domed shoulder, the long body. Its shoulder and its band are colour blocks of the cylinder. ---- */
 {
   CHAPTER_OBJ["Chapter 53: Compressed Gases"] = {
-    d: "M50 4" + OBJ_chain([[50, 4], [72, 4], [72, 15], [58, 15], [58, 26], [66, 28], [74, 42], [74, 92], [26, 92], [26, 42], [34, 28], [42, 26], [42, 15], [28, 15], [28, 4], [50, 4]],
-      [0, 5, 5, 2, 2, 2, 14, 9, 9, 14, 2, 2, 2, 5, 5, 0]) + "Z",
+    d: "M50 4" + OBJ_chain([[50, 4], [68, 4], [68, 26], [74, 32], [76, 46], [76, 92], [24, 92], [24, 46], [26, 32], [32, 26], [32, 4], [50, 4]],
+      [0, 5, 3, 8, 14, 9, 9, 14, 8, 3, 5, 0]) + "Z",
     plates: [
-      ["body", OBJ_rrect(26, 30, 48, 62, [18, 18, 9, 9]), { e: 0 }],                         /* the cylinder */
-      ["shade", "M26 44C26 28 42 28 50 28C58 28 74 28 74 44Z", { e: 1.2 }],                    /* the domed shoulder */
-      ["lite", OBJ_rrect(32, 40, 7, 40, 3), { e: 0 }],                                       /* the light down its left */
-      ["shade", OBJ_rrect(64, 40, 10, 48, 3), { e: 0 }],                                     /* the turning away on its right */
-      ["glow", OBJ_rrect(26, 50, 48, 14, 1), { e: 1.4 }],                                    /* the label band */
-      ["deep", OBJ_rrect(26, 82, 48, 10, [0, 0, 9, 9]), { e: 0 }],                           /* the foot ring */
+      ["body", OBJ_rrect(24, 30, 52, 62, [18, 18, 9, 9]), { e: 0 }],                         /* the cylinder */
+      ["shade", "M24 50C24 30 38 28 50 28C62 28 76 30 76 50Z", { e: 0 }],                    /* the domed shoulder */
+      ["deep", OBJ_rrect(32, 4, 36, 24, 3), { e: 0 }],                                       /* the valve */
+      ["lite", OBJ_rrect(24, 56, 52, 16, 0), { e: 0 }],                                      /* the band round it */
+      ["shade", OBJ_rrect(24, 80, 52, 12, [0, 0, 9, 9]), { e: 0 }],                          /* its foot */
     ],
   };
 }
 
-/* ---- Chapter 1: Scope and Administration - a rubber hand stamp (an idea, drawn as the thing that makes it official): a round
-   handle, a neck, a stepped base with its rubber die. ---- */
+/* ---- Chapter 1: Scope and Administration - a rubber hand stamp (an idea, drawn as the thing that makes it official): a round handle, a
+   neck, a flange, a base with its rubber die. ---- */
 {
   CHAPTER_OBJ["Chapter 1: Scope and Administration"] = {
-    d: "M33 26A17 17 0 0 1 67 26A17 17 0 0 1 60 40" + OBJ_chain([[60, 40], [60, 52], [80, 52], [80, 66], [92, 66], [92, 92], [8, 92], [8, 66], [20, 66], [20, 52], [40, 52], [40, 40]], [0, 3, 4, 3, 3, 5, 5, 3, 3, 4, 3, 0]) + "A17 17 0 0 1 33 26Z",
+    d: "M33 22A17 17 0 0 1 67 22A17 17 0 0 1 60 36" + OBJ_chain([[60, 36], [60, 50], [80, 52], [80, 70], [94, 72], [94, 94], [6, 94], [6, 72], [20, 70], [20, 52], [40, 50], [40, 36]], [0, 3, 4, 3, 4, 5, 5, 4, 3, 4, 3, 0]) + "A17 17 0 0 1 33 22Z",
     plates: [
-      ["body", OBJ_circle(50, 26, 17), { sh: 1, e: 1.5 }],                                    /* the knob */
-      ["lite", OBJ_circle(44, 20, 5), { e: 0 }],
-      ["shade", OBJ_rrect(40, 40, 20, 14, 0), { e: 0 }],                                      /* the neck */
-      ["body", OBJ_rrect(20, 52, 60, 14, 3), { sh: 1, e: 1.5 }],                              /* the plate */
-      ["deep", OBJ_rrect(8, 66, 84, 26, [2, 2, 5, 5]), { e: 0 }],                              /* the base */
-      ["lite", OBJ_rrect(14, 70, 72, 3, 1), { e: 0 }],
-      ["hot", OBJ_rrect(14, 78, 72, 8, 1), { e: 1.2 }],                                      /* the rubber die, inked */
+      ["body", OBJ_circle(50, 22, 17), { sh: 1, e: 1.5 }],                                    /* the knob */
+      ["shade", OBJ_rrect(40, 36, 20, 16, 0), { e: 0 }],                                      /* the neck */
+      ["body", OBJ_rrect(20, 50, 60, 22, 3), { sh: 1, e: 1.5 }],                              /* the flange */
+      ["deep", OBJ_rrect(6, 70, 88, 24, [2, 2, 6, 6]), { e: 0 }],                              /* the base */
+      ["lite", OBJ_rrect(6, 80, 88, 14, [0, 0, 6, 6]), { e: 0 }],                              /* the rubber die */
     ],
   };
 }
 
-/* ---- Chapter and Section Finder - a magnifying glass (a lookup, drawn as the tool you look things up with): a round lens, a
-   collar and a handle at 45 degrees. The lens's rim is the badge's own. ---- */
+/* ---- Chapter and Section Finder - a magnifying glass (a lookup, drawn as the tool you look things up with): the fat round lens and the fat
+   handle at 45 degrees. The benchmark: the rim even all round, the lens the badge's own enamel. ---- */
 {
-  const C = [40, 40], R = 33, W = 8, L = 40, s2 = Math.SQRT1_2;
+  const C = [40, 40], R = 36, W = 10, L = 40, s2 = Math.SQRT1_2;
   const dir = [s2, s2], nrm = [s2, -s2], a = Math.sqrt(R * R - W * W);
   const P1 = [C[0] + a * dir[0] + W * nrm[0], C[1] + a * dir[1] + W * nrm[1]], P2 = [C[0] + a * dir[0] - W * nrm[0], C[1] + a * dir[1] - W * nrm[1]];
   const E1 = [P1[0] + L * dir[0], P1[1] + L * dir[1]], E2 = [P2[0] + L * dir[0], P2[1] + L * dir[1]];
@@ -76385,29 +76429,31 @@ function chapterObjShape(name){
   CHAPTER_OBJ["Chapter and Section Finder"] = {
     d: "M" + f(P1) + "A" + R + " " + R + " 0 1 0 " + f(P2) + "L" + f(E2) + "A" + W + " " + W + " 0 0 0 " + f(E1) + "Z",
     plates: [
-      ["lite", OBJ_circle(40, 40, 26), { e: 1.6 }],                                           /* the glass */
-      ["glow", "M22 40A18 18 0 0 1 40 22", { ln: 3.4 }],                                      /* the light across it */
-      ["deep", "M" + f([P1[0] + 6 * dir[0], P1[1] + 6 * dir[1]]) + "L" + f(E1) + "L" + f(E2) + "L" + f([P2[0] + 6 * dir[0], P2[1] + 6 * dir[1]]) + "Z", { e: 1.3 }],   /* the grip */
-      ["steel", "M" + f(P1) + "L" + f([P1[0] + 7 * dir[0], P1[1] + 7 * dir[1]]) + "L" + f([P2[0] + 7 * dir[0], P2[1] + 7 * dir[1]]) + "L" + f(P2) + "Z", { e: 1.2 }],   /* the collar */
+      ["lite", OBJ_circle(40, 40, 25), { e: 1.6 }],                                           /* the glass */
+      ["deep", "M" + f([P1[0] + 4 * dir[0], P1[1] + 4 * dir[1]]) + "L" + f(E1) + "L" + f(E2) + "L" + f([P2[0] + 4 * dir[0], P2[1] + 4 * dir[1]]) + "Z", { e: 0 }],   /* the handle */
     ],
   };
 }
 
-/* ---- Chapter 5: Fire Service Features - a fire helmet, side on: the high crown with its comb, the long swept-back tail, the front shield. ---- */
+/* ---- Chapter 5: Fire Service Features - a fire hydrant (Madison's own suggestion; a helmet read as a hat): the nut on top, the bonnet, the
+   barrel, the two fat side outlets, the base flange. (Appendix C, Fire Hydrant Locations, wants a different object now.) ---- */
 {
   CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {
-    d: "M10 68Q10 62 18 60L22 48C22 24 40 8 58 8C78 8 82 34 84 56C88 62 95 70 93 80Q92 86 86 83C70 77 40 77 22 75Q10 74 10 68Z",
+    d: OBJ_poly([[38, 4], [62, 4], [62, 22], [76, 24], [76, 46], [72, 48], [94, 50], [94, 76], [80, 78], [82, 94], [18, 94], [20, 78], [6, 76], [6, 50], [28, 48], [24, 46], [24, 24], [38, 22]],
+      [4, 4, 3, 7, 4, 2, 5, 5, 3, 5, 5, 3, 5, 5, 2, 4, 7, 3]),
     plates: [
-      ["body", "M20 60L24 46C25 26 40 12 58 12C74 12 80 30 82 52L82 62L20 62Z", { e: 0 }],       /* the crown */
-      ["deep", "M10 62L84 58C88 62 94 70 93 80Q92 86 86 83C70 77 40 77 22 75Q10 74 10 62Z", { e: 0 }],   /* the brim */
-      ["shade", "M32 20C42 12 58 10 66 16C75 22 79 34 81 50L74 48C72 36 66 26 58 24C50 22 40 26 36 32Z", { e: 0 }],   /* the comb */
-      ["lite", "M24 34L46 34L46 54Q35 62 24 54Z", { sh: 1, e: 1.5 }],                           /* the front shield */
-      ["hot", OBJ_circle(35, 44, 5), { e: 1.2 }],
+      ["body", OBJ_rrect(24, 22, 52, 56, 3), { e: 0 }],                                      /* the body */
+      ["shade", OBJ_poly([[24, 24], [76, 24], [76, 46], [24, 46]], 4), { e: 0 }],           /* the bonnet */
+      ["deep", OBJ_rrect(38, 4, 24, 20, 3), { e: 0 }],                                       /* the nut */
+      ["lite", OBJ_rrect(32, 48, 10, 30, 3), { e: 0 }],                                      /* the light down its barrel */
+      ["deep", OBJ_rrect(6, 50, 12, 26, 3), { e: 0 }],                                       /* the outlet caps */
+      ["deep", OBJ_rrect(82, 50, 12, 26, 3), { e: 0 }],
+      ["deep", OBJ_rrect(18, 78, 64, 16, 3), { e: 0 }],                                      /* the base flange */
     ],
   };
 }
 /* ---- generated by tools/merge-chapter-icons.py: every silhouette's box [x, y, w, h] ---- */
-Object.assign(CHAPTER_OBJ_BBOX, {"Appendix D: Fire Apparatus Access Roads":[6,22,88,61],"Chapter 10: Means of Egress":[16,2.43,74,95.15],"Chapter 1: Scope and Administration":[8,9,84,83],"Chapter 53: Compressed Gases":[26,4,48,88],"Chapter 57: Flammable and Combustible Liquids":[10,12.39,80.55,79.61],"Chapter 5: Fire Service Features":[10,8,83.35,76],"Chapter 9: Fire Protection and Life Safety Systems":[8,4,84,90],"Chapter and Section Finder":[7.01,7.01,91.77,91.77]});
+Object.assign(CHAPTER_OBJ_BBOX, {"Appendix D: Fire Apparatus Access Roads":[8,14,88,77],"Chapter 10: Means of Egress":[12,4.71,82,90.48],"Chapter 1: Scope and Administration":[6,5,88,89],"Chapter 53: Compressed Gases":[24,4,52,88],"Chapter 57: Flammable and Combustible Liquids":[6,4.47,92.86,87.53],"Chapter 5: Fire Service Features":[6,4,88,90],"Chapter 9: Fire Protection and Life Safety Systems":[6,4,88,89.4],"Chapter and Section Finder":[4,4,98.61,98.61]});
 /* @@CHAPTER_OBJ_END */
 function badgeShapeFor(unitName){
   const name = String(unitName || "");

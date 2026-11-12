@@ -116,6 +116,7 @@ SPEC = r"""() => {
 OUTLINES = r"""() => {
   const us = unitsInTeachingOrder(), by = {}, ds = {}, rows = [];
   us.forEach(u => { const k = IFC_BADGE_SHAPE[u]; (by[k] = by[k] || []).push(u); const sh = badgeShapeFor(u); (ds[sh.d] = ds[sh.d] || []).push(u);
+    if(typeof chapterObjShape === 'function' && chapterObjShape(u)) return;   /* (384.65) an object chapter has no icon to give room to: check-b384-objbadges holds its silhouette */
     const face = badgeFaceShapeFor(u), g = badgeStrikeGeometry(face), b = badgeIconBox(g, face);
     rows.push({ u, key: k, side: b ? +(b.half * 2).toFixed(1) : 0, off: b ? +Math.hypot(b.x - face.c[0], b.y - face.c[1]).toFixed(1) : 99 }); });
   return { shared: Object.keys(by).filter(k => by[k].length > 1).map(k => [k, by[k].map(u => u.slice(0, 14))]), sameD: Object.keys(ds).filter(d => ds[d].length > 1).length,
