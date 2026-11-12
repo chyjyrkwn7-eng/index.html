@@ -9,8 +9,8 @@ git), on the same screens, in Chromium (docs/notes-archive.md "384.77"):
                  Profile, Settings and the Leaderboard (1px); --sat is the raw inset;
  (2) STILL       with the visual viewport reading offset by the scroll (what 384.62's heal read on his phone mid-scroll) the header, Pause and
                  the chat button do not move (as on 383, which had no follower);
- (3) BOUNCE      (384.80, changed on purpose: the owner's "when swiping down, the bottom tab breaks") the root does NOT bounce in the
-                 installed app (overscroll-behavior-y none; 383 had the rubber band);
+ (3) BOUNCE      (384.82, back to 384.77's: the owner, "the rubber band thing, bring it back... That is vital") the root keeps its rubber
+                 band in the installed app (overscroll-behavior-y is 383's and not none; 384.80 had taken it away);
  (4) BUTTONS     (384.78, CHANGED ON PURPOSE: the owner on 384.77, "all it did was change the color of the chat button, and now the chat
                  button doesn't match") the chat button on every screen, Pause and the round back buttons wear ONE look, 384.70/384.76's
                  unblurred glass (384 r17): no backdrop blur, and the same background, border and shadow everywhere. 384.77 (383's flat disc
@@ -135,7 +135,7 @@ def run(br):
         chk("%s: with the visual viewport reading offset by the scroll the header, Pause and chat do not move (worst %.1f; 383 %s)" % (name, worst, ref["follow"]), worst <= .5, got["follow"])
         f = got["final"]
         chk("%s: --sat is the raw inset (%.1f vs %d)" % (name, f["sat"], top), abs(f["sat"] - top) < .6, f["sat"])
-        chk("%s: (384.80) the root does not bounce (overscroll-behavior-y %s; 383 %s)" % (name, f["ob"], ref["final"]["ob"]), f["ob"] == "none", f["ob"])
+        chk("%s: (384.82) the root keeps its rubber band (overscroll-behavior-y %s; 383 %s)" % (name, f["ob"], ref["final"]["ob"]), f["ob"] == ref["final"]["ob"] and f["ob"] != "none", f["ob"])
         e, s = f["edge"], f["safe"]
         # (384.80, changed on purpose: the owner's Safari 26 / r/PWA reports) ONE strip: #top-edge over the whole safe area (6px where there is none),
         # a solid opaque colour with no image, taps going through; #top-safe is folded into it
