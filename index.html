@@ -34275,6 +34275,10 @@ html.is-browser.safari-bars-over :is(.chatdock-btn, .chatdock-panel, .roomchat-f
 }
 /* a test's header, pinned where it rests (syncTestPin measures .wrap's padding, not the margin above it) */
 html.is-browser.safari-bars-over[data-layout="modern"] .wrap.test-pinned > .top{ top:calc(var(--test-top-y, 1.25rem) + var(--sb-top-x)); }
+/* (384.62) barSelfHeal: the viewport was left short, so what is pinned to the bottom stands --vp-stale too high; this puts it back down */
+html.vp-stale :is(.bottomtabs, .backtotop, .daily-question-fab, .homeversion, .class-bubble-wrap, .foot > .floatbtn, .startbar, #stage > .dq-card){
+  margin-bottom:calc(-1 * var(--vp-stale, 0px)) !important;
+}
 /* and the notices pinned to the bottom sit above the toolbar */
 html.is-browser.safari-bars-over :is(.toast, .vroom-prep){ margin-bottom:calc(var(--sb-bottom-x) + 8px); }
 /* Welcome is measured to end just over the home indicator (its hint, --pad-inset-bottom): it ends that much over the toolbar
@@ -68009,6 +68013,132 @@ window.addEventListener("resize", syncSafariBars);
 window.addEventListener("orientationchange", () => setTimeout(syncSafariBars, 300));
 window.addEventListener("pageshow", syncSafariBars);
 try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", syncSafariBars); }catch(e){}
+/* ---- (384.62) THE TAB BAR IN THE MIDDLE OF THE SCREEN: A BAR THAT KNOWS WHERE IT SHOULD BE, AND PUTS ITSELF THERE ----
+   Madison: the glass tab bar over rows #9/#10 of a scrolled Leaderboard, ~270pt above its place, the round back-to-top button above its right
+   end the same ~270pt too high; and a screen recording of "Choose your chapters" (Fire Code's unit list, Drill) where the pill with its Start
+   button rides UP the screen as the list is scrolled (to the middle, to the top, back down as the list scrolls back) and returns when it stops.
+   (And in 383: "the bottom tab is ... showing up in the middle of the screen of review and the unit selection screen".) The top-pinned
+   controls (back, chat) stay where they are in the same frames; only what is pinned to the BOTTOM goes.
+   WHAT IS KNOWN, from the code and from driving it: nothing in the app moves the bar or that button. No script writes a transform, translate,
+   top or bottom on them (the lens / swell / hold code only toggles classes; the search circle is placed FROM the bar's rect); both are
+   `position:fixed; bottom: ...--tabs-bottom` and --tabs-bottom is a constant of the inset; in Chromium the bar's foot is the same pixel
+   through every scroll, fling and rubber band the gate drives on both screens. Two elements with different CSS, displaced together, while
+   what is pinned to the top is not: the layout viewport's BOTTOM EDGE is not where the screen's is. That is WebKit's (the visual viewport
+   panned past the layout one after a keyboard or a return to the app, or the layout viewport left short), and it is not reproducible here.
+   What the page CAN do is what this does: watch the bar, with numbers it has. (A) the visual viewport reaches below the layout one
+   (offsetTop + height > innerHeight); (B) in an installed phone app the layout viewport is the whole screen, so innerHeight short of the
+   screen's height x the page zoom (by 90pt or more) is the same fault. When the bar's foot is not at its designed gap above what is visible,
+   on two frames in a row, with the page NOT scrolling (a nudge mid-fling would stop the fling), no field focused, no keyboard, drag, slide,
+   search, chat or cutscene going on: (1) the scroll is nudged a pixel and back (what reconciles the two viewports, as the keyboard unwind
+   does) and it is logged; (2) if still out 700ms later, the difference is taken up with a negative bottom margin on what is pinned to the
+   bottom (html.vp-stale / --vp-stale), undone when the viewport comes right. While the page IS scrolling it only watches: a bar that is more
+   than 24px off its place during a scroll is written down (scroll offset, visual viewport scale / offset / height, layout viewport, screen,
+   the bar's foot) - the one thing the recording cannot say. All of it is window.__barHeal (the last 14 lines), which Report a bug carries
+   in `edges` after "BARHEAL", so the next time says which case it is. Android's own version (liftFloatForAndroidBars) is the other sign. */
+(function barSelfHeal(){
+  const root = document.documentElement, vv = window.visualViewport;
+  const LOG = window.__barHeal = [];
+  const note = (s) => { try{ LOG.push(Math.round(performance.now() / 100) / 10 + "s " + s); if(LOG.length > 14) LOG.shift(); }catch(e){} };
+  let comp = 0, hits = 0, raf = 0, jiggledAt = 0, probe = null, lastScroll = 0, seenDuringScroll = 0;
+  const THRESH = 8;
+  /* a gesture or animation is "going on" for at most 6s: a touchcancel that left html.tab-held or the bar's lens-up on must not switch the
+     watching off for good */
+  let gestureSince = 0;
+  const busy = () => {
+    try{
+      const c = root.classList, b = document.body, a = document.activeElement;
+      if(document.visibilityState !== "visible" || !b) return true;
+      if(b.classList.contains("tabsearch-open") || b.classList.contains("chatdock-open") || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || ""))) return true;
+      const moving = c.contains("tab-held") || c.contains("tab-dragging") || b.classList.contains("cutscene-focus") || b.classList.contains("cutscene-return") ||
+        !!document.querySelector(".bottomtabs.lens-up, .bottomtabs.ts-anim");
+      if(!moving){ gestureSince = 0; return false; }
+      if(!gestureSince) gestureSince = Date.now();
+      return Date.now() - gestureSince < 6000;
+    }catch(e){ return true; }
+  };
+  function designedGap(){
+    if(!probe || !probe.isConnected){
+      probe = document.createElement("i"); probe.setAttribute("aria-hidden", "true");
+      probe.style.cssText = "position:fixed;left:0;width:0;height:0;visibility:hidden;pointer-events:none;bottom:var(--tabs-bottom, 12px)";
+      (document.body || root).appendChild(probe);
+    }
+    return window.innerHeight - probe.getBoundingClientRect().bottom;
+  }
+  /* how far the bar stands above where it should: > 0 up, null when there is nothing to judge */
+  function read(){
+    const bar = document.querySelector(".bottomtabs");
+    if(!bar || bar.hidden) return null;
+    const r = bar.getBoundingClientRect();
+    if(!r.height || getComputedStyle(bar).position !== "fixed") return null;
+    const ih = window.innerHeight, scale = vv ? vv.scale : 1;
+    if(scale > 1.01) return null;   /* a held zoom is resetStuckZoom's */
+    let vis = ih, why = "";
+    if(vv && vv.offsetTop + vv.height > ih + THRESH){ vis = vv.offsetTop + vv.height; why = "visual viewport " + Math.round(vv.height) + "+" + Math.round(vv.offsetTop) + " reaches past the layout one " + ih; }
+    try{
+      const sS = Math.min(screen.width, screen.height), sL = Math.max(screen.width, screen.height);
+      if(sS && sS < 600 && isStandaloneApp()){
+        const land = window.innerWidth > ih, zr = window.innerWidth / (land ? sL : sS), want = (land ? sS : sL) * zr, missing = want - ih;
+        if(missing > 90 && missing < ih * .6 && ih + missing > vis){ vis = ih + missing; why = "layout viewport " + ih + " is " + Math.round(missing) + " short of the screen (" + Math.round(want) + ")"; }
+      }
+    }catch(e){}
+    if(vis <= ih && !comp) return { resid: 0, why: "", bar: r.bottom };
+    const resid = (vis - r.bottom) - designedGap();
+    return { resid, why: why || "gone", vis, bar: r.bottom };
+  }
+  function apply(v){
+    comp = Math.max(0, Math.round(v));
+    if(comp){ root.style.setProperty("--vp-stale", comp + "px"); root.classList.add("vp-stale"); }
+    else { root.style.removeProperty("--vp-stale"); root.classList.remove("vp-stale"); }
+    requestAnimationFrame(() => { try{ window.dispatchEvent(new Event("resize")); }catch(e){} });   /* the search circle is placed from the bar's rect */
+  }
+  /* while the page is being scrolled: only write down what is seen */
+  function watchScroll(){
+    const now = Date.now();
+    if(now - seenDuringScroll < 700) return;
+    const bar = document.querySelector(".bottomtabs");
+    if(!bar || bar.hidden) return;
+    const r = bar.getBoundingClientRect(); if(!r.height) return;
+    const ih = window.innerHeight, d = (ih - r.bottom) - designedGap();
+    if(Math.abs(d) < 24) return;
+    seenDuringScroll = now;
+    const v = vv || {};
+    note("DURING SCROLL bar foot " + Math.round(r.bottom) + " is " + Math.round(d) + "px off: y " + Math.round(window.scrollY) + " vv scale " + (v.scale != null ? +v.scale.toFixed(3) : "-") +
+      " " + Math.round(v.width || 0) + "x" + Math.round(v.height || 0) + "+" + Math.round(v.offsetTop || 0) + " page " + Math.round(v.pageTop || 0) + " inner " + window.innerWidth + "x" + ih + " screen " + screen.width + "x" + screen.height);
+  }
+  function check(){
+    raf = 0;
+    if(busy()){ hits = 0; return; }
+    if(Date.now() - lastScroll < 300){ hits = 0; watchScroll(); setTimeout(kick, 320); return; }   /* a nudge in a fling would stop it: at rest only */
+    const m = read();
+    if(!m || Math.abs(m.resid) < THRESH){ hits = 0; jiggledAt = 0; return; }
+    hits++;
+    if(hits < 2){ raf = requestAnimationFrame(check); return; }
+    hits = 0;
+    if(m.resid < 0){ note("bar " + Math.round(-m.resid) + "px low: " + m.why + "; margin " + comp + " -> " + Math.max(0, Math.round(comp + m.resid))); apply(comp + m.resid); return; }
+    const now = Date.now();
+    if(!jiggledAt){
+      jiggledAt = now; note("bar " + Math.round(m.resid) + "px high (" + m.why + "): nudged the scroll");
+      try{ const y = window.scrollY; window.scrollTo(0, y + 1); window.scrollTo(0, y); }catch(e){}
+      try{ if(typeof resetStuckZoom === "function") resetStuckZoom(); }catch(e){}
+      setTimeout(kick, 760);
+      return;
+    }
+    if(now - jiggledAt >= 700){ note("still " + Math.round(m.resid) + "px high: margin " + comp + " -> " + Math.round(comp + m.resid)); apply(comp + m.resid); jiggledAt = 0; }
+    else setTimeout(kick, 760 - (now - jiggledAt));
+  }
+  const kick = () => { if(!raf) raf = requestAnimationFrame(check); };
+  try{
+    if(vv){ vv.addEventListener("resize", kick); vv.addEventListener("scroll", kick); }
+    window.addEventListener("resize", kick); window.addEventListener("pageshow", kick); window.addEventListener("focus", kick);
+    window.addEventListener("orientationchange", () => setTimeout(kick, 350));
+    document.addEventListener("focusout", () => { setTimeout(kick, 450); setTimeout(kick, 1300); }, true);   /* a keyboard has just gone */
+    let lastScrollKick = 0;
+    window.addEventListener("scroll", () => { const t = Date.now(); lastScroll = t; if(t - lastScrollKick > 150){ lastScrollKick = t; kick(); } }, { passive: true });
+    document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible"){ kick(); setTimeout(kick, 500); } });
+    setInterval(() => { if(document.visibilityState === "visible") kick(); }, 2500);
+  }catch(e){}
+  window.__barHealCheck = () => { const m = read(); return { m, comp, log: LOG.slice() }; };
+})();
 function syncBottomTabAvatar(){
   const tabIcon = document.querySelector("#bottomtab-profile .bottomtab-icon");
   if(!tabIcon) return;
@@ -121339,7 +121469,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.48";
+const APP_BUILD = "2026-11-11-384.62";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -135245,7 +135375,7 @@ function showBugReport(){
           return ("screen " + s.screen.join("x") + " inner " + s.inner.join("x") + " zoom " + s.zoom + " missing " + s.missing +
             "pt env " + s.env.join(",") + " vv " + (v ? Math.round(v.width) + "x" + Math.round(v.height) + "+" + Math.round(v.offsetTop) : "-") +
             " over " + (s.over ? s.top + "/" + s.bottom : "no") + " scrollY " + Math.round(window.scrollY) +
-            " doc " + Math.round(document.documentElement.scrollHeight) + " lvh " + Math.round(lvhPx()) + " tabs " + tabsBottomPx()).slice(0, 300); }catch(e){ return ""; } })(),
+            " doc " + Math.round(document.documentElement.scrollHeight) + " lvh " + Math.round(lvhPx()) + " tabs " + tabsBottomPx() + " sc " + (v ? +v.scale.toFixed(3) : "-") + ((window.__barHeal && window.__barHeal.length) ? " BARHEAL " + window.__barHeal.join(" | ") : "")).slice(0, 900); }catch(e){ return ""; } })(),
         perf: (typeof tabPerfText === "function") ? tabPerfText() : "",
         at: Date.now()
       }).then(() => {
