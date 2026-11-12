@@ -5,20 +5,20 @@ The owner: "the 87 questions we are gonna take them and put them in chapter 1. H
 want repeat questions and I don't want bad questions ... I want the best questions out of what we got." A test of the chapters you selected
 must not show references to chapters you did not select: a question lives in the unit of the chapter whose text it cites.
 The 87 are the Fire Code questions whose citation is the county's Chapter 1 (sections 101-199, source 'amendment') in a unit that is not
-Chapter 1, the Finder (NAV) or Exhibit B. 70 of them move to Chapter 1 (appended after its own 88, positions 89-158, in citation order) and
-17 are taken out (15 that repeat a fact another question already asks, and ch20-508 (rooftop heliport) and ch30-505 (the article 'an' gives the answer away), which the owner removed himself) (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the reasons are in
+Chapter 1, the Finder (NAV) or Exhibit B. 69 of them move to Chapter 1 (appended after its own 88, positions 89-157, in citation order) and
+18 are taken out (15 that repeat a fact another question already asks, and ch20-508 (rooftop heliport), ch30-505 (the article 'an' gives the answer away) and (384.70) ch30-709 (industrial-oven emergency repair, the fact ch30-506 asks), which the owner removed himself) (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the reasons are in
 docs/notes-archive.md, "384.47"). Wording, options, answer, explanation, citation, highlight and every id are the bank's, unchanged: only `unit`.
 A question's key is chapter | position in the chapter | hash(wording + choices), so a move changes THAT question's key and must change no other.
 Everything is read off the page, in Fire Code, for the app and bank on origin/main (BASE) and for this build (the app's own KEYS for both):
-(1) THE QUESTIONS: each of the 70 is in unit 1 (and the unit it left no longer has it); in the bank file and as the app shows it, its question,
-    options, answer, explanation, citation and every other field are byte-identical to main's (only `unit` differs); the 17 are gone from the
+(1) THE QUESTIONS: each of the 69 is in unit 1 (and the unit it left no longer has it); in the bank file and as the app shows it, its question,
+    options, answer, explanation, citation and every other field are byte-identical to main's (only `unit` differs); the 18 are gone from the
     bank and from the app; the ids that stay are main's;
 (2) THE IDENTITY GUARANTEE: every question that STAYS keeps the key it had on main (1,725 of 1,725 here, none moves), the 70 moved ones' keys change
     (the wording hash stays), all keys are unique; IFC_MOVED_KEYS holds each moved question's old key, IFC_RETIRED_KEYS each removed one's,
     IFC_SRC_GAPS each old position;
-(3) ORDER: the 70 are at the END of Chapter 1 in the table's order (89-158), Chapter 1's own 88 keep their positions, each old chapter keeps
+(3) ORDER: the 69 are at the END of Chapter 1 in the table's order (89-157), Chapter 1's own 88 keep their positions, each old chapter keeps
     every other question's position (the moved/removed one's number stays taken), every other question has main's chapter and position;
-(4) THE COUNTS: every unit's size is what the table says (main's size, less what left it, plus what came in); Chapter 1 158, the bank 1,795 -
+(4) THE COUNTS: every unit's size is what the table says (main's size, less what left it, plus what came in); Chapter 1 157, the bank 1,794 -
     the bank's own unit sizes, unitQuestionCount (what a full-chapter run must cover, isFullUnitRun), a full-chapter question count and the "N
     questions" on the chapter cards all agree; a run of Chapter 1's old 88 is no longer the chapter;
 (5) STARS: a star on a moved question goes with it (new key, same stamp, the old key gets the tombstone), a star on a removed question comes off
@@ -38,9 +38,9 @@ def _gen(name):   # the owner's table, read from the generator's own file
     for n in ast.parse(open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()).body:
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 FIVE = ["ch12-012", "ch55-702", "ch62-702", "ch62-703", "ch64-001"]                 # 384.42: already on main
-MOVES = [i for i, to in _gen("UNIT_MOVES").items() if to == "1"]                    # the 70, in the order the generator appends them
-REMOVED = list(_gen("UNIT_REMOVALS"))                                               # the 17
-assert len(MOVES) == 70 and len(REMOVED) == 17 and {"ch20-508", "ch30-505"} <= set(REMOVED) and not ({"ch20-508", "ch30-505"} & set(MOVES))
+MOVES = [i for i, to in _gen("UNIT_MOVES").items() if to == "1"]                    # the 69 (70 in 384.47; ch30-709 came off in 384.70), in the order the generator appends them
+REMOVED = list(_gen("UNIT_REMOVALS"))                                               # the 18
+assert len(MOVES) == 69 and len(REMOVED) == 18 and {"ch20-508", "ch30-505", "ch30-709"} <= set(REMOVED) and not ({"ch20-508", "ch30-505", "ch30-709"} & set(MOVES))
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384moveperm"}
 exec(src, G)
@@ -159,7 +159,7 @@ bank_same = {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k:
     all({k: v for k, v in a.items() if k != "questionCount"} == {k: v for k, v in b.items() if k != "questionCount"} for a, b in zip(ob["units"], nb["units"])) and \
     all(u["questionCount"] == sum(1 for q in nb["questions"] if q["unit"] == u["id"]) for u in nb["units"])
 chk("(4) Chapter 1 %d (bank, unitQuestionCount, a full run, its card %s); every unit = main's size less what left it plus what came in; %s questions in all (the bank's own count; main %d); a run of Chapter 1's old 88 is no longer the whole chapter (isFullUnitRun on 88 of 158 -> %s)" % (
-    S["1"]["n"], card_for(t1), new["meta"], old["meta"], oldrun), not bad4 and S["1"]["n"] == 158 and new["meta"] == 1795 and bank_same and oldrun["part"] is False and oldrun["full"] is True,
+    S["1"]["n"], card_for(t1), new["meta"], old["meta"], oldrun), not bad4 and S["1"]["n"] == 157 and new["meta"] == 1794 and bank_same and oldrun["part"] is False and oldrun["full"] is True,
     {"bad": bad4, "bank_same": bank_same, "oldrun": oldrun})
 # (5) the stars
 bad5 = []

@@ -14,6 +14,7 @@ slot (flareFound) and the test's own results would have played it. Finishing a t
 (D) "Skip celebrations and pop-ups" on: a lost run's find plays nothing, anywhere, and is no longer owed.
 (E) THE HOLD ENDS: a lost run's find a day old plays on Home (never lost).
 (F) THE THIRD FLARE (Void), lost run: Home plays none of its scene, card, character, banner or the "A new secret" card while the test waits.
+(H) (384.70, the owner's rule for leaving a test) SAVE AND EXIT holds the find for its test's results (Home plays nothing, it stays owed, Resume test and finish plays it on the results); QUIT TEST (B) releases it to Home.
 (G) no page errors.
 
 Run:  python3 tools/check-b384-flareresults.py   (--against OLD/index.html must FAIL (A, F); ONLY=A,B runs those)"""
@@ -227,9 +228,33 @@ def scen_F(br, errs_all):
     chk("(F) ... and the find is still owed to the test", bool(pg.evaluate(OWED)), pg.evaluate(OWED))
     errs_all += errs; ctx.close()
 
+def scen_H(br, errs_all):
+    # (H) Save and exit: the find is held for the test it was found in; the test's own results play it (Quit test, (B), is what releases it to Home)
+    ctx, pg, errs = page(br)
+    pg.evaluate(LOGGER)
+    chk("(H) setup: the flare was there and tapped, and it is owed", find_in_test(pg) and bool(pg.evaluate(OWED)), pg.evaluate(OWED))
+    pg.evaluate("()=>saveAndExitTest()"); pg.wait_for_timeout(800)
+    on_home = pg.evaluate(HOME)
+    seen = watch_home(pg, 9)
+    chk("(H) Save and exit: Home is up and plays nothing of the find for 9s (%s)" % [e["kind"] + "@" + e["screen"] for e in seen], on_home and not seen, [on_home, seen])
+    chk("(H) ... the find is still owed, and the saved test is still there to continue", bool(pg.evaluate(OWED)) and pg.evaluate("()=>!!(readRunSession() && readRunSession().saved)"), [pg.evaluate(OWED), pg.evaluate("()=>!!readRunSession()")])
+    pg.evaluate("()=>startStudying()"); pg.wait_for_timeout(700)
+    has_offer = pg.evaluate("()=>!!document.getElementById('resume-go')")
+    chk("(H) Start Studying offers the saved test back", has_offer)
+    if has_offer:
+        pg.evaluate("()=>document.getElementById('resume-go').click()")
+        got = until(pg, "()=>!!document.querySelector('.choice') && typeof order !== 'undefined' && testInProgress", 30)
+        pg.evaluate(LOGGER)
+        reached = got and finish_to_results(pg)
+        played = reached and until(pg, "()=>window.__log.some(e => e.kind === 'flare')", 80, 250)
+        lg = log(pg)
+        chk("(H) the saved test finished: its results play the find (scene, then card) on the results screen (%s)" % [e["kind"] + "@" + e["screen"] for e in lg],
+            played and [e["kind"] for e in lg][:2] == ["scene", "flare"] and all(e["screen"] == "results" for e in lg), lg)
+    errs_all += errs; ctx.close()
+
 with sync_playwright() as pw:
     errs_all = []
-    for key, fn in (("A", scen_A), ("B", scen_B), ("C", scen_C), ("D", scen_D), ("E", scen_E), ("F", scen_F)):
+    for key, fn in (("A", scen_A), ("B", scen_B), ("C", scen_C), ("D", scen_D), ("E", scen_E), ("F", scen_F), ("H", scen_H)):
         if not want(key): continue
         for attempt in range(3):
             br = pw.chromium.launch(executable_path=CHROME, args=ARGS)

@@ -79,7 +79,7 @@ SNAP = """(UN)=>{ const T = UN.map(t => t);
     acc: unitAccuracyOf(t), answered: QUESTIONS.filter((q, i) => (q.topic || '').trim() === t && store.stats[KEYS[i]] && (store.stats[KEYS[i]].n || 0) > 0).length,
     nm: QUESTIONS.reduce((a, q, i) => (q.topic || '').trim() === t && store.stats[KEYS[i]] ? [a[0] + (store.stats[KEYS[i]].n || 0), a[1] + (store.stats[KEYS[i]].m || 0)] : a, [0, 0]) }));
   let ring = 0; [...new Set(KEYS)].forEach(k => { const st = store.stats && store.stats[k]; if(st && (Number(st.n) || 0) > (Number(st.m) || 0)) ring++; });
-  const strip = o => { const c = JSON.parse(JSON.stringify(o)); delete c.stats; delete c.flagged; delete c.unflagged; delete c.lastModified; return c; };
+  const strip = o => { const c = JSON.parse(JSON.stringify(o)); delete c.stats; delete c.flagged; delete c.unflagged; delete c.lastModified; delete c.badgeScenePlayed; delete c.badgeSceneOwed; return c; };   /* 384.70: 384.50 defaults these two to {} (nothing owed) */
   let row = null; try{ row = JSON.parse(JSON.stringify(buildLeaderboardRow())); delete row.at; delete row.updatedAt; delete row.ts; delete row.lastModified; delete row.seenAt; }catch(e){ row = String(e); }
   let rank = null; try{ rank = JSON.stringify(rankOf(store)); }catch(e){ rank = String(e); }
   let lvl = null; try{ lvl = JSON.stringify(levelProgress(store.lifetime.points)); }catch(e){ lvl = null; }

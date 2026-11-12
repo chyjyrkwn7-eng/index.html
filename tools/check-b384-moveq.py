@@ -61,6 +61,8 @@ from playwright.sync_api import sync_playwright
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:600], flush=True)
+def _nofind(d):   # 384.70: 384.56 (ifcmarks) adds the deciding text to a citation's `find` hints at run time; what the question says and shows is compared in full
+    d = json.loads(json.dumps(d)); (d.get("citation") or {}).pop("find", None); return d
 def bank_of(js): return json.loads(js[js.index("window.IFC_BANK = ") + 18:].rstrip().rstrip(";"))
 def open_class(br, html, bank, init_extra=""):
     ctx = br.new_context(viewport={"width": 440, "height": 956}, has_touch=True)
@@ -104,7 +106,7 @@ topic_of_unit = {s["id"]: s["topic"] for s in new["sizes"]}
 bad1 = []
 for i, to in MOVES.items():
     same_fields = set(oq[i]) == set(nq[i]) and all(oq[i][k] == nq[i][k] for k in oq[i] if k != "unit")
-    shown_same = all(O[i][k] == N[i][k] for k in ("q", "ch", "ans", "expl")) and json.loads(N[i]["ifc"]) == dict(json.loads(O[i]["ifc"]), unit=to)
+    shown_same = all(O[i][k] == N[i][k] for k in ("q", "ch", "ans", "expl")) and _nofind(json.loads(N[i]["ifc"])) == _nofind(dict(json.loads(O[i]["ifc"]), unit=to))
     if not (N[i]["topic"] == topic_of_unit[to] and O[i]["topic"] != N[i]["topic"] and nq[i]["unit"] == to and oq[i]["unit"] != to and same_fields and shown_same):
         bad1.append((i, N[i]["topic"], same_fields, shown_same))
 chk("(1) %d questions each in its new chapter (%s), not its old; bank file: every field but `unit` identical; as shown: wording, options, answer, explanation, citation identical" % (
