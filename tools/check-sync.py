@@ -1158,7 +1158,7 @@ with sync_playwright() as pw:
       const solar = AVATAR_CHARACTERS.find(c => c.id === 'solar');
       const odin = clone(store);
       odin.publicId = 'kdxnp7smgcre'; odin.weeklyWins = 1; odin.avatarChar = zeus.id;
-      odin.pendingCharUnlocks = [zeus.id]; odin.weekWinWeeks = [];
+      odin.pendingCharUnlocks = [zeus.id]; odin.weekWinWeeks = []; odin.weekWinBase = null;   /* (384.51) a hand-set count, no base worked out yet: how a grant arrives */
       applyLoadedData(clone(odin));
       const load = { ww: store.weeklyWins, char: store.avatarChar, locked: isLockedCharacter(zeus.id),
                      pend: (store.pendingCharUnlocks || []).indexOf(zeus.id) };
