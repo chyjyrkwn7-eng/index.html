@@ -119,7 +119,7 @@ with sync_playwright() as pw:
     print("  Fire Code ladder:", lad)
     b = lad["b"]
     chk("6. every rank's badges fit in Fire Code's %d chapters and rise rank by rank (%s)" % (lad["n"], b), all(x <= lad["n"] for x in b) and all(b[i] < b[i + 1] for i in range(len(b) - 1)), lad)
-    chk("6. the top rank asks for more than the academy's 14, from Fire Code's own chapters (%s of %d)" % (b[-1], lad["n"]), 14 < b[-1] < lad["n"], lad)
+    chk("6. the top rank asks for more than the academy's 14, from Fire Code's own chapters (%s of %d; 384.60: every chapter)" % (b[-1], lad["n"]), 14 < b[-1] <= lad["n"], lad)
     chk("6. the labels say the new counts (%s)" % lad["lab"], str(b[-1]) in lad["lab"], lad)
     flo = pg.evaluate("""()=>{ if(typeof ifcLadderFloorOnce!=='function') return null;
       const t=topicsIn(QUESTIONS).filter(u=>unitQuestionCount(u)<=25).slice(0,3);  // 3 badges at the old bands' 10 hundos
