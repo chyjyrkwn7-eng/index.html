@@ -34288,7 +34288,8 @@ html.is-browser{ overscroll-behavior-y:none; }
    document under the fixed chrome, and that is what WebKit gets wrong with fixed layers (384.62). So the root does not overscroll in the
    app either (a Safari tab has had this since 327z; 384.75 did the same). Normal scrolling and its momentum stay; only the bounce past
    the top and the bottom goes. Inner scrollers keep their own. */
-html{ overscroll-behavior-y:none; }
+/* (384.82) The owner: "the rubber band thing, bring it back... That is vital." The installed app bounces again (as 383 and 384.77);
+   the page lock behind the Pause card and the overlays (below) stays. */
 /* (384.80) THE PAGE BEHIND A CARD IS LOCKED. html.page-locked is set by syncPageLock() while the Pause card (and the screens that share
    it: Quit's confirmation, a review's pause, a room's leave) fits the screen, or while a full-screen overlay is up on <body>. The root
    cannot scroll (a script's own scrollTo still can), and pageLockTouch() stops a drag that would move it on iOS; a scroller inside the
@@ -122402,7 +122403,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.80";
+const APP_BUILD = "2026-11-12-384.82";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
