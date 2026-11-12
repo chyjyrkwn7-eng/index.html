@@ -68402,6 +68402,7 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
   function apply(b, t, why){
     if(b === compB && t === compT) return;
     const was = compB || compT;
+    t = 0;   /* (384.76) the top is never moved: his 384.70 recording showed it moving a header that was where it belonged (in-flight reading); the bottom half is unchanged */
     compB = b; compT = t;
     if(b){ root.style.setProperty("--vp-stale", b + "px"); root.classList.add("vp-stale"); } else { root.style.removeProperty("--vp-stale"); root.classList.remove("vp-stale"); }
     if(t){ root.style.setProperty("--vp-top", t + "px"); root.classList.add("vp-top"); } else { root.style.removeProperty("--vp-top"); root.classList.remove("vp-top"); }
