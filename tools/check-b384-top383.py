@@ -9,11 +9,12 @@ git), on the same screens, in Chromium (docs/notes-archive.md "384.77"):
                  Profile, Settings and the Leaderboard (1px); --sat is the raw inset;
  (2) STILL       with the visual viewport reading offset by the scroll (what 384.62's heal read on his phone mid-scroll) the header, Pause and
                  the chat button do not move (as on 383, which had no follower);
- (3) BOUNCE      the root keeps its rubber band (overscroll-behavior-y is not none in the installed app), as 383;
+ (3) BOUNCE      (384.80, changed on purpose: the owner's "when swiping down, the bottom tab breaks") the root does NOT bounce in the
+                 installed app (overscroll-behavior-y none; 383 had the rubber band);
  (4) BUTTONS     the chat button beyond Home and the round back button carry 383's look (no backdrop blur, the same background), Home's chat
                  button 383's glass;
- (5) STRIP       the in-place strip (B): #top-edge (12px) and #top-safe (the whole safe area) are in the markup ahead of every script in
-                 <body>, opaque, take touch, #top-edge is what is 4px down in the middle; a Profile scrolled 300 shows the same status-bar
+ (5) STRIP       (384.80) ONE strip, #top-edge, over the whole safe area (6px where there is none), in the markup ahead of every script in
+                 <body>, one solid opaque colour, no image, taps going through; no #top-safe; a Profile scrolled 300 shows the same status-bar
                  area as at rest; theme-color and color-scheme are not written after launch;
  (6) VARIANTS    the display test lists A (class26e.topmatch), B (topdeep), C (top383); C takes both strips away and rewrites the tags as 383;
  (7) no page errors.
@@ -36,7 +37,7 @@ SEEN = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('c
         "localStorage.setItem('class26e.weekrecap.v1','9999-12-31');localStorage.setItem('class26e.savecode.card','1');localStorage.setItem('class26e.a2hs','1790500000000');")
 VVM = "window.__vvm = {follow: false}; try{ const d = Object.getOwnPropertyDescriptor(VisualViewport.prototype, 'offsetTop'); Object.defineProperty(window.visualViewport, 'offsetTop', { get(){ return window.__vvm.follow ? Math.min(500, Math.round(window.scrollY)) : d.get.call(this); }, configurable: true }); }catch(e){}"
 WATCH = """(()=>{ window.__tw = { tags: 0 }; addEventListener('load', () => setTimeout(() => {
-    const mo = new MutationObserver(ms => { for(const m of ms) if(m.type === 'attributes') window.__tw.tags++; });
+    const mo = new MutationObserver(ms => { for(const m of ms) if(m.type === 'attributes'){ if(m.target.id === 'colorscheme') window.__tw.cs = (window.__tw.cs || 0) + 1; else window.__tw.tags++; } });
     ['themecolor', 'colorscheme'].forEach(id => { const e = document.getElementById(id); if(e) mo.observe(e, { attributes: true, attributeFilter: ['content'] }); });
     window.__tw.tc0 = (document.getElementById('themecolor') || {}).content; }, 4200)); })();"""
 DEVICES = [("promax", 440, 956, 59, 34, UA), ("ipad11", 834, 1194, 24, 20, UA_PAD)]
@@ -48,7 +49,8 @@ READ = """()=>{ const R = s => { const e = document.querySelector(s); if(!e) ret
   return { y: Math.round(scrollY), header: R('.wrap > .top'), pause: R('#pausebtn'), chat: R('#chatdock-btn'), back: R('#stage .settings-nav-back') || R('#stage .ios-nav > .back-link.ios-nav-back'),
     edge: R('#top-edge'), safe: R('#top-safe'), at4: h ? (h.id || h.tagName) : null, ob: getComputedStyle(document.documentElement).overscrollBehaviorY, cls: document.documentElement.className,
     sat: (() => { const q = document.createElement('i'); q.style.cssText = 'position:fixed;top:0;width:0;height:var(--sat, env(safe-area-inset-top, 0px))'; document.body.appendChild(q); const x = q.getBoundingClientRect().height; q.remove(); return x; })(),
-    tw: window.__tw, tc: (document.getElementById('themecolor') || {}).content, pe: (() => { const e = document.getElementById('top-safe'); return e ? getComputedStyle(e).pointerEvents : null; })() }; }"""
+    tw: window.__tw, tc: (document.getElementById('themecolor') || {}).content, pe: (() => { const e = document.getElementById('top-edge'); return e ? getComputedStyle(e).pointerEvents : null; })(),
+    ebi: (() => { const e = document.getElementById('top-edge'); return e ? getComputedStyle(e).backgroundImage : null; })() }; }"""
 SCREENS = [("home", "()=>showHome()", [0]), ("question", QSTART, [0, 120, 400]), ("profile", "()=>showProfile()", [0, 300]), ("settings", "()=>showAppearance()", [0, 300]), ("leaderboard", "()=>showRankings()", [0])]
 errs = []
 def boot(br, raw, dev, extra=""):
@@ -127,17 +129,22 @@ def run(br):
         chk("%s: with the visual viewport reading offset by the scroll the header, Pause and chat do not move (worst %.1f; 383 %s)" % (name, worst, ref["follow"]), worst <= .5, got["follow"])
         f = got["final"]
         chk("%s: --sat is the raw inset (%.1f vs %d)" % (name, f["sat"], top), abs(f["sat"] - top) < .6, f["sat"])
-        chk("%s: the root keeps its rubber band (overscroll-behavior-y %s; 383 %s)" % (name, f["ob"], ref["final"]["ob"]), f["ob"] == ref["final"]["ob"] and f["ob"] != "none", f["ob"])
+        chk("%s: (384.80) the root does not bounce (overscroll-behavior-y %s; 383 %s)" % (name, f["ob"], ref["final"]["ob"]), f["ob"] == "none", f["ob"])
         e, s = f["edge"], f["safe"]
-        chk("%s: #top-edge is the opaque 12px strip at the top edge and what is 4px down (%s, %s)" % (name, e and e["r"], f["at4"]), e and e["r"][1] == 0 and e["r"][3] == 12 and "rgba" not in e["bg"] and f["at4"] == "top-edge", f)
-        chk("%s: #top-safe covers the whole safe area, opaque, takes touch (%s, %s)" % (name, s and s["r"], f["pe"]), s and s["r"][1] == 0 and abs(s["r"][3] - top) < .6 and "rgba" not in s["bg"] and f["pe"] == "auto", s)
+        # (384.80, changed on purpose: the owner's Safari 26 / r/PWA reports) ONE strip: #top-edge over the whole safe area (6px where there is none),
+        # a solid opaque colour with no image, taps going through; #top-safe is folded into it
+        chk("%s: #top-edge is the one opaque strip over the status bar's area, solid, taps through (%s, %s, %s, %s)" % (name, e and e["r"], e and e["bg"], f["ebi"], f["pe"]),
+            e and e["r"][1] == 0 and abs(e["r"][3] - max(top, 6)) < .6 and "rgba" not in e["bg"] and f["ebi"] == "none" and f["pe"] == "none", f)
+        chk("%s: no second strip (#top-safe %s)" % (name, s), s is None, s)
         px = got.get("strip_px")
         chk("%s: a Profile scrolled 300 shows the same status-bar area as at rest - nothing of the page under the clock (%s pixels off)" % (name, px and px[0]), px and px[0] == 0, px)
         tw = f["tw"] or {}
-        chk("%s: theme-color and color-scheme were not written after launch (%s writes)" % (name, tw.get("tags")), tw.get("tags") == 0 and tw.get("tc0") == f["tc"], tw)
+        # (384.80, changed on purpose) theme-color follows the sampled strip with the "fe" dance; color-scheme is still never written
+        tch = (f["tc"] or "").lstrip("#"); tcr = "rgb(%d, %d, %d)" % tuple(int(tch[i:i + 2], 16) for i in (0, 2, 4)) if len(tch) == 6 else None
+        chk("%s: color-scheme not written after launch (%s writes); theme-color is #top-edge's colour (%s / %s)" % (name, tw.get("cs", 0), f["tc"], e and e["bg"]), not tw.get("cs") and e and tcr == e["bg"], tw)
     # markup ahead of every script
-    serve = RAW; bi = serve.find("\n<body>\n"); ia, ie, ib = serve.find('id="top-safe"', bi), serve.find('id="top-edge"', bi), serve.find("<script", bi)
-    chk("the two strips are in the markup ahead of every script in <body> (%d, %d < %d)" % (ie, ia, ib), 0 < ie < ib and 0 < ia < ib, [ie, ia, ib])
+    serve = RAW; bi = serve.find("\n<body>\n"); ie, ib = serve.find('id="top-edge"', bi), serve.find("<script", bi)
+    chk("the strip is in the markup ahead of every script in <body>, with an inline colour (%d < %d)" % (ie, ib), 0 < ie < ib and 'id="top-edge" aria-hidden="true" style="background-color:' in serve, [ie, ib])
     # (6) the variants
     dev = DEVICES[0]
     ctx, pg = boot(br, RAW, dev, "localStorage.setItem('class26e.displaytest','1');")
