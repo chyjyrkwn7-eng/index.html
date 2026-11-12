@@ -946,7 +946,7 @@ ADD_COUNTERS = ("vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3",
 MAX_FIELDS = ("dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak",
               "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest",
               "dayAnsweredBest", "friendsBest")
-UNION_LISTS = ("vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "retakenKeys")
+UNION_LISTS = ("vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "weekWinLost", "retakenKeys")
 OR_FLAGS = ("practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed",
             "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324")
 TEST_HISTORY_MAX = 50                    # TEST_HISTORY_MAX in index.html
@@ -1166,6 +1166,17 @@ def merge_leaving_account(dst, src, note=None, now_ms=0, week_key=None, hold_set
     hist = list(dst.get("testHistory") or []) + list(src.get("testHistory") or [])
     hist.sort(key=lambda h: -_num(h.get("playedAt") if isinstance(h, dict) else 0))
     dst["testHistory"] = hist[:TEST_HISTORY_MAX]
+    # (384.51) the wins no listed week backs are summed with the wins, before they are (the app's mergeLeavingAccount)
+    def _wb(o):
+        if isinstance(o.get("weekWinBase"), (int, float)) and not isinstance(o.get("weekWinBase"), bool):
+            return o["weekWinBase"]
+        return max(0, _num(o.get("weeklyWins")) - len({w for w in (o.get("weekWinWeeks") or []) if isinstance(w, str)}))
+    dst["weekWinBase"] = _wb(dst) + _wb(src)
+    if isinstance(src.get("weekWinPts"), dict) or isinstance(dst.get("weekWinPts"), dict):
+        wp = dst["weekWinPts"] = dict(dst.get("weekWinPts") or {})
+        for w, v in (src.get("weekWinPts") or {}).items():
+            if _num(v) > _num(wp.get(w)):
+                wp[w] = _num(v)
     for k in ADD_COUNTERS:
         dst[k] = _num(dst.get(k)) + _num(src.get(k))
     for k in MAX_FIELDS:

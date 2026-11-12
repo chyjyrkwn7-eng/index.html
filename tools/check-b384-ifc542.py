@@ -3,15 +3,15 @@ questions as the update says. Madison: "Fix these questions (attached file for u
 PERFECTLY. We can't mess up questions." The update (class26e-ifc-update-5.4.2): 43 rewordings (42 questions, 3 explanations),
 36 Finder questions added, 3 removed (ch12-008, ch12-071, ch4-040), nothing else changed.
 Read off the page, in Fire Code, against the 5.4.1 bank and app (git: BASE below):
-(1) the class holds the 5.4.2 bank as the owner has cut it: 1,795 questions (384.47 took 17 out: 15 repeats, ch20-508 and ch30-505), and each unit's size is the bank's own questionCount (Chapter 1 158,
-    Chapter 2 111, Chapter 4 40, Chapter 12 41, the Finder 138; 384.42 moved five questions between chapters and 384.47 70 into Chapter 1);
+(1) the class holds the 5.4.2 bank as the owner has cut it: 1,792 questions (384.47 took 17 out: 15 repeats, ch20-508 and ch30-505; 384.73 took out three more, the weaker twin of three same-question pairs), and each unit's size is the bank's own questionCount (Chapter 1 158,
+    Chapter 2 109, Chapter 4 39, Chapter 12 41, the Finder 138; 384.42 moved five questions between chapters and 384.47 70 into Chapter 1);
 (2) every question kept from 5.4.1 (1,776) has exactly the key (topic|position|wording hash) it had - so no one's answers,
     stars, badges or saved tests on them move - EXCEPT the five questions the owner moved in 384.42 (ch12-012 to Chapter 4, ch55-702, ch62-702,
     ch62-703 and ch64-001 to Chapter 2: their keys change on purpose; check-b384-moveq holds the moves: 1,771 of 1,771 others unchanged) - and the 36 new keys are new (no clash with any old key), all keys unique;
-(3) the 42 reworded questions show the new wording and the 3 explanations the new explanation; every question, explanation
+(3) the 42 reworded questions (47 with 384.73's five stems) show the new wording and the 3 explanations (5 with 384.73's two) the new explanation; every question, explanation
     and keyed answer shown is the bank's word for word; no answer changed;
 (4) the 3 removed questions are gone, and a star left on one comes off once (a tombstone in `unflagged`), other stars kept;
-(5) the class list says "Harris County Fire Code Amendments" and the bank's count (1,795), the analysis step the same count;
+(5) the class list says "Harris County Fire Code Amendments" and the bank's count (1,792), the analysis step the same count;
 (6) WITH THE BOOK (PDFJS_DIR and IFC_BOOK as for check-b383-ifcbook - the book never goes in the repo): the owner's IFC is
     accepted, and every new Finder question's "Show the code" draws its picture from the book (an IFC chapter/appendix) or
     the county booklet (Chapter 1 / Exhibit B), with a highlight in it; no page errors.
@@ -24,8 +24,8 @@ def _gen(name):   # the owner's moves and removals, read from the generator's ow
     for n in ast.parse(open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()).body:
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 MOVED_BY_OWNER = sorted(_gen("UNIT_MOVES"))      # 384.42 (5) + 384.47 (70 into Chapter 1): see tools/check-b384-moveq.py, check-b384-moveperm.py
-REMOVED_BY_OWNER = sorted(_gen("UNIT_REMOVALS"))   # 384.47: 17 taken out of the bank (15 repeats, ch20-508, ch30-505)
-EXPECT_TOTAL = 1812 - len(REMOVED_BY_OWNER)       # 1,795
+REMOVED_BY_OWNER = sorted(_gen("UNIT_REMOVALS"))   # 384.47: 17 taken out of the bank (15 repeats, ch20-508, ch30-505); 384.73: ch12-012, ch55-702, ch2-047
+EXPECT_TOTAL = 1812 - len(REMOVED_BY_OWNER)       # 1,792 (384.47 removed 17, 384.73 three more)
 BASE = os.environ.get("BASE", "1982cbf")   # the last commit with the 5.4.1 bank
 PDFJS = os.environ.get("PDFJS_DIR", "").rstrip("/") + "/"
 BOOK = os.environ.get("IFC_BOOK", "")
@@ -92,13 +92,13 @@ with sync_playwright() as pw:
     wrong = {k: v for k, v in sizes.items() if v[0] != v[1]}
     chk("(1) the 5.4.2 bank: %d questions (bank says %s); Chapter 2 %s, Chapter 4 %s, Chapter 12 %s, the Finder %s; every unit its bank size" % (
         len(new["rows"]), new["meta"], sizes.get("2"), sizes.get("4"), sizes.get("12"), sizes.get("NAV")),
-        len(new["rows"]) == new["meta"] == EXPECT_TOTAL and sizes.get("1") == (158, 158) and sizes.get("2") == (111, 111) and sizes.get("4") == (40, 40) and sizes.get("12") == (41, 41) and sizes.get("NAV") == (138, 138) and not wrong, wrong)
+        len(new["rows"]) == new["meta"] == EXPECT_TOTAL and sizes.get("1") == (158, 158) and sizes.get("2") == (109, 109) and sizes.get("4") == (39, 39) and sizes.get("12") == (41, 41) and sizes.get("NAV") == (138, 138) and not wrong, wrong)
     # (2)
     kept = sorted(set(O) & set(N)); moved = [i for i in kept if O[i]["key"] != N[i]["key"]]
     added = sorted(set(N) - set(O)); oldkeys = {r["key"] for r in old["rows"]}
     clash = [i for i in added if N[i]["key"] in oldkeys]
     allk = [r["key"] for r in new["rows"]]
-    chk("(2) %d kept questions, every one's key unchanged but the %d the owner moved (384.42: 5, 384.47: 70 into Chapter 1) (%d moved); %d new, none clashing (%s); all keys unique" % (len(kept), len(MOVED_BY_OWNER), len(moved), len(added), clash[:3]),
+    chk("(2) %d kept questions, every one's key unchanged but the %d the owner moved (384.42: 5, two of which 384.73 then removed, so 3; 384.47: 70 into Chapter 1) (%d moved); %d new, none clashing (%s); all keys unique" % (len(kept), len(MOVED_BY_OWNER), len(moved), len(added), clash[:3]),
         len(kept) == 1776 - len(REMOVED_BY_OWNER) and moved == sorted(MOVED_BY_OWNER) and len(added) == 36 and not clash and len(set(allk)) == len(allk), moved[:5])
     # (3)
     oq = {q["id"]: q for q in ob["questions"]}; nq = {q["id"]: q for q in nb["questions"]}
@@ -107,14 +107,14 @@ with sync_playwright() as pw:
     newtext = [i for i in reworded if N[i]["q"] != nq[i]["question"]] + [i for i in reexp if N[i]["expl"] != nq[i]["explanation"]]
     answers = [i for i in kept if O[i]["ans"] != N[i]["ans"]]
     chk("(3) %d reworded questions and %d explanations show the new text; everything shown is the bank's word for word; no answer changed" % (len(reworded), len(reexp)),
-        len(reworded) == 42 and len(reexp) == 3 and not shows and not newtext and not answers, {"shows": shows[:3], "newtext": newtext[:3], "answers": answers[:3]})
+        len(reworded) == 42 + 5 and len(reexp) == 3 + 2 and not shows and not newtext and not answers, {"shows": shows[:3], "newtext": newtext[:3], "answers": answers[:3]})
     # (4)
     gone = [i for i in ("ch12-008", "ch12-071", "ch4-040") if i in N]
     chk("(4) the 3 removed questions are gone (%s); a star on one comes off with a tombstone, a kept star stays" % (gone or "none left"),
         not gone and len(gone_keys) == 3 and all(k not in flags["flagged"] and k in flags["unflagged"] for k in gone_keys) and keep_key in flags["flagged"], flags)
     # (5)
     txt = pg.evaluate("()=>({ desc: NOVA_CLASS_INFO.ifc && NOVA_CLASS_INFO.ifc.desc, count: typeof ifcQuestionCountText === 'function' ? ifcQuestionCountText() : null })")
-    chk("(5) the class list: %r" % txt["desc"], "Harris County Fire Code Amendments" in (txt["desc"] or "") and "1,795 questions" in (txt["desc"] or "") and txt["count"] == "1,795", txt)
+    chk("(5) the class list: %r" % txt["desc"], "Harris County Fire Code Amendments" in (txt["desc"] or "") and "{:,} questions".format(EXPECT_TOTAL) in (txt["desc"] or "") and txt["count"] == "{:,}".format(EXPECT_TOTAL), txt)
     # (6) with the book
     if not WITH_BOOK:
         print("(6) skipped: set PDFJS_DIR and IFC_BOOK to run every new Finder question's code with the book")

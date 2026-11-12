@@ -33,7 +33,11 @@ def _gen(name):   # the owner's moves and removals of 384.47, read from the gene
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch64-001": "2"}
 UNITS = ["2", "4", "12", "55", "62", "64"]
-SIZES = {"2": 111, "4": 40, "12": 41, "55": 8, "62": 5, "64": 9}     # 384.42's 111/40/43/16/10/10 with 384.47's moves out of 12, 55, 62, 64
+# (384.73) ch12-012 and ch55-702 are REMOVED (each repeats a question that stays) and so is ch2-047: the fixture still answers and stars the five, and what is
+# measured for the two that went is that nothing of theirs is LOWERED (their tallies stay) while they no longer count in a chapter; the sizes are 384.42's 111/40/43/16/10/10
+# with 384.47's moves out of 12, 55, 62, 64 and 384.73's removals (ch55-702 and ch2-047 out of 2, ch12-012 out of 4) taken off.
+GONE73 = {"ch12-012", "ch55-702"}
+SIZES = {"2": 109, "4": 39, "12": 41, "55": 8, "62": 5, "64": 9}
 GONE47 = set(_gen("UNIT_MOVES")) | set(_gen("UNIT_REMOVALS"))
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384moveqkeep"}
@@ -158,15 +162,15 @@ tot = lambda s, k: [sum(p[k][0] if k == "nm" else 0 for p in s["per"]), sum(p[k]
 ans_b, ans_a = sum(p["answered"] for p in before["per"]), sum(p["answered"] for p in after["per"])
 # a chapter's answered count may fall only by the moved questions that LEFT it (and the old chapters' sums are conserved in total)
 left = {A["topics"][u]: sum(1 for i, to in MOVES.items() if [r for r in A["rows"] if r["id"] == i][0]["topic"] == A["topics"][u]) for u in UNITS}
-exact = all(Af[t]["answered"] == B[t]["answered"] - left[t] + sum(1 for i, to in MOVES.items() if A["topics"][to] == t) for t in topics)
+exact = all(Af[t]["answered"] == B[t]["answered"] - left[t] + sum(1 for i, to in MOVES.items() if A["topics"][to] == t and i not in GONE73) for t in topics)
 chk("(d) answered-at-least-once over the six chapters %d -> %d; right/wrong totals %s -> %s; the Stats ring's answered-right count %d -> %d; each chapter's count moves only by the moved questions (%s)" % (
     ans_b, ans_a, tot(before, "nm"), tot(after, "nm"), before["ring"], after["ring"], exact),
-    ans_b == ans_a and tot(before, "nm") == tot(after, "nm") and before["ring"] == after["ring"] and exact
+    ans_b - len(GONE73) == ans_a and [x - 6 * len(GONE73) if j == 0 else x - 2 * len(GONE73) for j, x in enumerate(tot(before, "nm"))] == tot(after, "nm") and before["ring"] - len(GONE73) == after["ring"] and exact
     and all(Af[t]["size"] == SIZES[u] for u, t in zip(UNITS, topics)),
     {"sizes": [Af[t]["size"] for t in topics], "per": [(t[:12], B[t]["answered"], Af[t]["answered"]) for t in topics]})
 # the old tallies stay where they are
 old_left = all(json.dumps(after["stats"].get(k), sort_keys=True) == json.dumps(v, sort_keys=True) for k, v in stats.items())
-chk("(d) the moved questions' old tallies are left where they are (nothing lowered or removed); each also sits on its new key", old_left and len(after["stats"]) >= len(before["stats"]) + len(MOVES), len(after["stats"]) - len(before["stats"]))
+chk("(d) the moved questions' old tallies are left where they are (nothing lowered or removed); each also sits on its new key", old_left and len(after["stats"]) >= len(before["stats"]) + len(MOVES) - len(GONE73), len(after["stats"]) - len(before["stats"]))
 chk("(e) two devices of one account (old bank, new bank), merged either way: nothing lower than the higher of the two (%s, %s), merging again changes nothing (%s); adding the other account in lowers nothing (%s)" % (
     merged["ab"][:2], merged["ba"][:2], merged["again"], merged["leave"][:2]), not merged["ab"] and not merged["ba"] and merged["again"] and not merged["leave"], merged)
 chk("no page errors (%s)" % errs_all[:2], not errs_all, errs_all[:3])
