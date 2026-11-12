@@ -17,7 +17,7 @@ the app and bank on origin/main (BASE) and for this build:
 (3) ORDER: each moved question is at the END of its new chapter, after every question that was there (Chapter 4: 41; Chapter 2:
     108-111 in the order listed), and its old chapter has the gap (the others' positions are main's), every other question's
     position the same as on main;
-(4) THE COUNTS: Chapter 2 111, Chapter 4 40, Chapter 12 43, Chapter 55 16, Chapter 62 10, Chapter 64 10 - the bank's own unit sizes,
+(4) THE COUNTS (as of 384.47, which also took questions out of 12, 55, 62 and 64): Chapter 2 111, Chapter 4 40, Chapter 12 41, Chapter 55 8, Chapter 62 5, Chapter 64 9 - the bank's own unit sizes,
     the app's unitQuestionCount (what a full-chapter run must cover, isFullUnitRun), a full-chapter question count and the "N
     questions" on the chapter cards; the bank's 1,812 unchanged; the bank file's other questions in the same order as main's, every
     other unit and the meta untouched;
@@ -29,13 +29,20 @@ Adding a move later: one line in MOVES here, and UNIT_MOVES / IFC_SRC_GAPS / IFC
   python3 tools/check-b384-moveq.py [--against OLD/index.html]   (BASE = the merge-base with origin/main by default)"""
 import os, sys, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-def _base():   # the commit this branch was cut from (origin/main moves as other branches merge; the keys to hold are the ones THIS bank started from)
-    r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
-    return r or "origin/main"
-BASE = os.environ.get("BASE") or _base()
+# (384.47) main now HOLDS the five moves, so the commit to compare with is the last one before them: 6c1d14a (main 384.44, five questions still where
+# the study guide put them). What 384.47 did to the bank besides (70 questions into Chapter 1, 17 removed) is read from the generator's tables and
+# left out of every "nobody else changed" comparison here; tools/check-b384-moveperm.py holds that move.
+BASE = os.environ.get("BASE") or "6c1d14a"
+import ast
+def _gen(name):   # the owner's moves and removals of 384.47, read from the generator's own tables
+    for n in ast.parse(open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()).body:
+        if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 # id -> the unit id it moves to, in the order the generator appends them
 MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch64-001": "2"}
-EXPECT = {"2": 111, "4": 40, "12": 43, "55": 16, "62": 10, "64": 10}      # the owner's numbers
+EXPECT = {"2": 111, "4": 40, "12": 41, "55": 8, "62": 5, "64": 9}      # the owner's numbers for the five (384.42: 111, 40, 43, 16, 10, 10) with 384.47's moves out of 12, 55, 62, 64 taken off
+M47 = [i for i in _gen("UNIT_MOVES") if i not in MOVES]; RM47 = list(_gen("UNIT_REMOVALS"))
+GONE = set(MOVES) | set(M47) | set(RM47)
+S543 = {"chAppH-805"}   # 384.48 (5.4.3): one wrong option changed on main after the base this gate compares with; not a move
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384moveq"}
 exec(src, G)
@@ -105,9 +112,9 @@ chk("(1) %d questions each in its new chapter (%s), not its old; bank file: ever
 # (2) the identity guarantee
 moved_keys = sorted(i for i in O if i in N and O[i]["key"] != N[i]["key"])
 allk = [r["key"] for r in new["rows"]]
-chk("(2) %d questions in the bank; of the other %d every key is identical on main and here (%d moved); the %d moved ones' keys changed; all keys unique" % (
-    len(N), len(N) - len(MOVES), len([i for i in moved_keys if i not in MOVES]), len(moved_keys)),
-    len(N) == len(O) == 1812 and set(N) == set(O) and moved_keys == sorted(MOVES) and len(set(allk)) == len(allk), moved_keys[:8])
+chk("(2) %d questions in the bank (%d before, %d removed by 384.47); of the other %d every key is identical on main and here (%d moved); the %d moved ones' keys changed (the five + the %d of 384.47); all keys unique" % (
+    len(N), len(O), len(RM47), len(N) - len(MOVES) - len(M47), len([i for i in moved_keys if i not in MOVES and i not in M47]), len(moved_keys), len(M47)),
+    len(O) == 1812 and len(N) == len(O) - len(RM47) and set(N) == set(O) - set(RM47) and moved_keys == sorted(set(MOVES) | set(M47)) and len(set(allk)) == len(allk), moved_keys[:8])
 # (3) order and positions
 def rows(R, t): return [r for r in R if r["topic"] == t]
 bad3 = []
@@ -120,24 +127,23 @@ for to in sorted(set(MOVES.values())):
     if not ok3: bad3.append((t, [r["id"] for r in now[len(was):]], [N[i]["src"] for i in mine], top))
 for fr in sorted({O[i]["topic"] for i in MOVES}):
     was = rows(old["rows"], fr); now = rows(new["rows"], fr); gone = [r["id"] for r in was if r["id"] in MOVES]
-    ok3 = [r["id"] for r in now] == [r["id"] for r in was if r["id"] not in MOVES] and all(N[r["id"]]["src"] == r["src"] for r in now)
+    ok3 = [r["id"] for r in now] == [r["id"] for r in was if r["id"] not in GONE] and all(N[r["id"]]["src"] == r["src"] for r in now)
     if not ok3: bad3.append((fr, "gap", gone))
-pos_same = all(O[i]["src"] == N[i]["src"] and O[i]["topic"] == N[i]["topic"] for i in O if i not in MOVES)
+pos_same = all(O[i]["src"] == N[i]["src"] and O[i]["topic"] == N[i]["topic"] for i in O if i not in GONE)
 chk("(3) each moved question last in its new chapter (%s); each old chapter keeps the others' positions (gaps at %s); every other question has main's chapter and position (%s)" % (
     ", ".join("%s %s" % (i, N[i]["src"]) for i in MOVES), ", ".join("%s %s" % (i, O[i]["src"]) for i in MOVES), pos_same), not bad3 and pos_same, bad3)
 # (4) counts
 S = {s["id"]: s for s in new["sizes"]}
 card = {c["name"]: c["count"] for c in cards}
 card_for = lambda t: next((v for k, v in card.items() if k and (k == t or k == t.split(": ", 1)[-1])), None)
-bank_same = [q["id"] for q in ob["questions"] if q["id"] not in MOVES] == [q["id"] for q in nb["questions"] if q["id"] not in MOVES] and \
-    all(oq[i] == nq[i] for i in oq if i not in MOVES) and ob["meta"] == nb["meta"] and \
+bank_same = [q["id"] for q in ob["questions"] if q["id"] not in GONE] == [q["id"] for q in nb["questions"] if q["id"] not in GONE] and \
+    all(oq[i] == nq[i] for i in oq if i not in GONE and i not in S543) and {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and \
     all({k: v for k, v in a.items() if k != "questionCount"} == {k: v for k, v in b.items() if k != "questionCount"} for a, b in zip(ob["units"], nb["units"])) and \
-    all(a["questionCount"] == b["questionCount"] for a, b in zip(ob["units"], nb["units"]) if a["id"] not in EXPECT) and \
     all(u["questionCount"] == sum(1 for q in nb["questions"] if q["unit"] == u["id"]) for u in nb["units"])
 bad4 = {u: (S[u]["n"], S[u]["cache"], S[u]["run"], len(rows(new["rows"], S[u]["topic"])), card_for(S[u]["topic"])) for u, n in EXPECT.items()
         if not (S[u]["n"] == S[u]["cache"] == S[u]["run"] == len(rows(new["rows"], S[u]["topic"])) == n and card_for(S[u]["topic"]) == "%d questions" % n)}
 chk("(4) %s (bank, unitQuestionCount, a full run, the chapter card all agree); %s questions in all; the rest of the bank is main's" % (
-    ", ".join("Chapter %s %d" % (u, S[u]["n"]) for u in EXPECT), new["meta"]), not bad4 and new["meta"] == 1812 and bank_same, {"bad": bad4, "bank_same": bank_same})
+    ", ".join("Chapter %s %d" % (u, S[u]["n"]) for u in EXPECT), new["meta"]), not bad4 and new["meta"] == len(O) - len(RM47) and bank_same, {"bad": bad4, "bank_same": bank_same})
 # (5) the stars
 bad5 = []
 for i in MOVES:

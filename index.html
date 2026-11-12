@@ -55401,21 +55401,131 @@ const IFC_KEY_TEXT = {
      only way its history and the Stats ring's "answered right once" keep it). A hundo in a chapter stays: hundos, badges, stars
      and ranks are per chapter NAME (unitPerfects), never per question, and Fire Code's badge is one hundo; a full-chapter run
      covers the chapter as it is now: Chapter 2 111, Chapter 4 40, Chapter 12 43, Chapter 55 16, Chapter 62 10, Chapter 64 10. */
-const IFC_SRC_GAPS = { "4": [19], "12": [1, 9, 10], "55": [12], "62": [8, 9], "64": [1] };
+const IFC_SRC_GAPS = { "4": [19], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1, 12], "21": [1], "22": [1], "25": [1],
+  "26": [1, 13], "27": [7], "28": [9], "29": [1], "30": [5, 6, 9], "31": [1], "32": [31], "34": [1, 2], "35": [1, 2],
+  "37": [1, 15], "39": [1, 2], "50": [1, 2, 3], "51": [1], "53": [1, 2, 17, 18, 19], "54": [1, 2, 3],
+  "55": [1, 2, 3, 4, 9, 10, 11, 12, 17], "56": [37], "57": [1, 2, 3, 4, 5], "58": [4, 5, 6], "59": [3, 18],
+  "60": [9, 10, 11, 12], "61": [25, 26], "62": [1, 2, 5, 6, 7, 8, 9], "63": [4, 9, 10, 11, 12, 13], "64": [1, 2], "65": [1],
+  "66": [6, 7, 8, 9], "67": [11, 12, 13], "AppC": [8, 9, 10, 11] };
+/* ---- (384.47) THE COUNTY PERMIT QUESTIONS MOVE TO CHAPTER 1; THE REPEATS AND THE WEAK ONES GO ----
+   The owner: a test of the chapters you selected must not show references to chapters you did not select, so the 87 Fire Code
+   questions that cite the county's Chapter 1 (sections 101-199: 105.5.x operational permits, 105.6.x construction permits, the
+   citation table) but sat in other chapters go to Chapter 1 - "I don't want repeat questions and I don't want bad questions ... I want
+   the best questions out of what we got." 70 move (Chapter 1: 88 -> 158, appended in citation order, positions 89-158, so none of its own 88 shifts); 17 are deleted: 15 that ask the same fact as one that stays, and ch20-508 (rooftop heliport) and ch30-505 (industrial ovens: its article gave the answer away), which the owner took out himself (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the
+   table of each with its reason is in docs/notes-archive.md, 384.47). No question was reworded: the moved ones differ from main's
+   only in `unit`. Same mechanism as 384.42, for the same reasons:
+   - every moved question's old position stays taken in its old chapter (IFC_SRC_GAPS), so no other question's key moves
+     (1,725 of the 1,725 kept questions that did not change chapter keep main's key);
+   - a removed question's position stays taken too, its key is un-starred once (IFC_RETIRED_KEYS, the 5.4.2 precedent), its answer
+     counts are left where they are (nothing lowers progress; nothing reads them);
+   - each moved question's old key is in IFC_MOVED_KEYS, and the boot copy below carries its answer counts and its star to its
+     new key (once, at boot, one id -> index map, no per-question scan). A hundo, a badge, a star, a rank, points, level and the
+     leaderboard row are per chapter NAME and are not touched; the next full-chapter run covers the chapter as it stands now. */
 /* [the key a moved question was stored under (generated from the 5.4.2 bank), its id] */
 const IFC_MOVED_KEYS = [
   ["Chapter 12: Energy Systems|1|yahkhw", "ch12-012"],
   ["Chapter 55: Cryogenic Fluids|12|1qsi68l", "ch55-702"],
   ["Chapter 62: Organic Peroxides|8|ulabyl", "ch62-702"],
   ["Chapter 62: Organic Peroxides|9|w1tgss", "ch62-703"],
-  ["Chapter 64: Pyrophoric Materials|1|1pska3k", "ch64-001"]
+  ["Chapter 64: Pyrophoric Materials|1|1pska3k", "ch64-001"],
+  /* (384.47) the county permit questions that moved to Chapter 1, in the order they now sit there (positions 89-158) */
+  ["Chapter 51: Aerosols|1|1es3xwy", "ch51-020"],
+  ["Chapter 20: Aviation Facilities|1|rvuis0", "ch20-003"],
+  ["Chapter 22: Combustible Dust-Producing Operations|1|sq5x17", "ch22-001"],
+  ["Chapter 37: Combustible Fibers|15|2rkn17", "ch37-710"],
+  ["Chapter 53: Compressed Gases|1|y038o3", "ch53-024"],
+  ["Chapter 53: Compressed Gases|2|xfxnu", "ch53-025"],
+  ["Chapter 53: Compressed Gases|18|1nzunei", "ch53-602"],
+  ["Chapter 53: Compressed Gases|19|71mv11", "ch53-603"],
+  ["Chapter 54: Corrosive Materials|1|pxbofz", "ch54-010"],
+  ["Chapter 58: Flammable Gases and Flammable Cryogenic Fluids|4|1y3y9cl", "ch58-501"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|10|c3az6i", "ch60-514"],
+  ["Chapter 64: Pyrophoric Materials|2|3gurqg", "ch64-204"],
+  ["Chapter 55: Cryogenic Fluids|1|1mlgyu1", "ch55-019"],
+  ["Chapter 55: Cryogenic Fluids|2|1rvh9x2", "ch55-020"],
+  ["Chapter 55: Cryogenic Fluids|3|1fu6vzu", "ch55-021"],
+  ["Chapter 55: Cryogenic Fluids|4|10oepdh", "ch55-022"],
+  ["Chapter 55: Cryogenic Fluids|17|fbnkwa", "ch55-717"],
+  ["Chapter 58: Flammable Gases and Flammable Cryogenic Fluids|5|1hg4iok", "ch58-502"],
+  ["Chapter 58: Flammable Gases and Flammable Cryogenic Fluids|6|1t1s0qq", "ch58-503"],
+  ["Chapter 21: Dry Cleaning|1|1ujdz92", "ch21-012"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|11|18g2byq", "chAppC-704"],
+  ["Chapter 57: Flammable and Combustible Liquids|1|1ido1ew", "ch57-001"],
+  ["Chapter 57: Flammable and Combustible Liquids|2|4w4rv0", "ch57-002"],
+  ["Chapter 57: Flammable and Combustible Liquids|3|1sutiwp", "ch57-003"],
+  ["Chapter 57: Flammable and Combustible Liquids|4|scbs01", "ch57-004"],
+  ["Chapter 57: Flammable and Combustible Liquids|5|oy9rem", "ch57-005"],
+  ["Chapter 25: Fruit and Crop Ripening|1|a7i2hp", "ch25-001"],
+  ["Chapter 26: Fumigation and Insecticidal Fogging|1|1pun5yz", "ch26-001"],
+  ["Chapter 26: Fumigation and Insecticidal Fogging|13|1r566cu", "ch26-712"],
+  ["Chapter 50: Hazardous Materials—General Provisions|3|v9xsi1", "ch50-076"],
+  ["Chapter 54: Corrosive Materials|3|argc5u", "ch54-011"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|9|nvbpua", "ch60-511"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|11|1fghxpg", "ch60-701"],
+  ["Chapter 60: Highly Toxic and Toxic Materials|12|1wq4zlb", "ch60-702"],
+  ["Chapter 62: Organic Peroxides|1|10485d0", "ch62-205"],
+  ["Chapter 62: Organic Peroxides|2|rgg72a", "ch62-206"],
+  ["Chapter 62: Organic Peroxides|5|1gd094c", "ch62-506"],
+  ["Chapter 62: Organic Peroxides|6|1cu256y", "ch62-507"],
+  ["Chapter 62: Organic Peroxides|7|su12dk", "ch62-701"],
+  ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|11|1m2zqvp", "ch63-702"],
+  ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|12|97ic1l", "ch63-703"],
+  ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|13|1pakt0b", "ch63-704"],
+  ["Chapter 66: Unstable (Reactive) Materials|6|1p6zioe", "ch66-701"],
+  ["Chapter 66: Unstable (Reactive) Materials|7|zwrgnf", "ch66-702"],
+  ["Chapter 66: Unstable (Reactive) Materials|8|p0zz9m", "ch66-703"],
+  ["Chapter 66: Unstable (Reactive) Materials|9|1rr1xv0", "ch66-704"],
+  ["Chapter 67: Water-Reactive Solids and Liquids|11|1ovu6yq", "ch67-711"],
+  ["Chapter 67: Water-Reactive Solids and Liquids|12|nvxtw0", "ch67-712"],
+  ["Chapter 67: Water-Reactive Solids and Liquids|13|1evvmv9", "ch67-713"],
+  ["Chapter 27: Semiconductor Fabrication Facilities|7|1v231xp", "ch27-518"],
+  ["Chapter 35: Welding and Other Hot Work|1|r22wow", "ch35-001"],
+  ["Chapter 35: Welding and Other Hot Work|2|1us7q2t", "ch35-002"],
+  ["Chapter 61: Liquefied Petroleum Gases|26|1678rsg", "ch61-716"],
+  ["Chapter 39: Processing and Extraction Facilities|1|aodsii", "ch39-001"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|8|1flmha6", "chAppC-701"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|10|souzda", "chAppC-703"],
+  ["Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics|1|17h6d8p", "ch65-006"],
+  ["Chapter 34: Tire Rebuilding and Tire Storage|1|x4buh2", "ch34-007"],
+  ["Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures|1|5gvnvw", "ch31-031"],
+  ["Chapter 61: Liquefied Petroleum Gases|25|4x201x", "ch61-715"],
+  ["Chapter 34: Tire Rebuilding and Tire Storage|2|183r7an", "ch34-008"],
+  ["Chapter 55: Cryogenic Fluids|11|stminm", "ch55-503"],
+  ["Chapter 12: Energy Systems|38|1dy4mlg", "ch12-320"],
+  ["Chapter 32: High-Piled Combustible Storage|31|wl72ls", "ch32-612"],
+  ["Chapter 30: Industrial Ovens|6|1vcinxg", "ch30-506"],
+  ["Chapter 30: Industrial Ovens|9|18adw3x", "ch30-709"],
+  ["Chapter 39: Processing and Extraction Facilities|2|aj3a0x", "ch39-002"],
+  ["Appendix C: Fire Hydrant Locations and Distribution|9|45fo4e", "chAppC-702"],
+  ["Chapter 12: Energy Systems|37|1xyl85u", "ch12-319"],
+  ["Chapter 10: Means of Egress|1|2njh7i", "ch10-108"]
 ];
-const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j"];
-/* The bank's own count ("1,812"), read from it where it is loaded; the 5.4.2 count where it is not (the academy's class list) */
+const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j",
+  /* (384.47) the fifteen repeats the owner took out (tools/gen-ifc-bank.py UNIT_REMOVALS; two more follow the list) */
+  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities|9|1wts5n9",
+  "Chapter 37: Combustible Fibers|1|ymtyre",
+  "Chapter 56: Explosives and Fireworks|37|44roqb",
+  "Chapter 59: Flammable Solids|18|faac29",
+  "Chapter 29: Manufacture of Organic Coatings|1|7aenwy",
+  "Chapter 50: Hazardous Materials—General Provisions|1|1fv2qkr",
+  "Chapter 54: Corrosive Materials|2|1mk9l44",
+  "Chapter 50: Hazardous Materials—General Provisions|2|145p1eg",
+  "Chapter 59: Flammable Solids|3|h8hpu7",
+  "Chapter 53: Compressed Gases|17|y8oqqu",
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|4|1rs5b13",
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|9|1av8bji",
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids|10|6rcore",
+  "Chapter 55: Cryogenic Fluids|9|1idq5kc",
+  "Chapter 55: Cryogenic Fluids|10|hzyocq",
+  /* (384.47) and the one the owner took out himself: ch20-508, the rooftop-heliport question (its wrong options are not stated not to need a permit) */
+  "Chapter 20: Aviation Facilities|12|1ikiga7",
+  /* (384.47) and ch30-505, industrial ovens: "an _____ permit" - the article fits only "operational", so the grammar gave the answer away (the owner removed it) */
+  "Chapter 30: Industrial Ovens|5|kaggfi"];
+/* The bank's own count ("1,795"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1812).toLocaleString("en-US");
+  return (n || 1795).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
@@ -163244,8 +163354,9 @@ if(window.NOVA_CLASS === "ifc"){
   try{
     let changed = false;
     const unf = () => { if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {}; return store.unflagged; };
+    const qiById = {}; QUESTIONS.forEach((q, i) => { if(q.ifc) qiById[q.ifc.id] = i; });   /* (384.47) once, not a scan per moved question */
     IFC_MOVED_KEYS.forEach(m => {
-      const qi = QUESTIONS.findIndex(q => q.ifc && q.ifc.id === m[1]);
+      const qi = Object.prototype.hasOwnProperty.call(qiById, m[1]) ? qiById[m[1]] : -1;
       if(qi < 0) return;
       const nk = KEYS[qi];
       if(nk === m[0]) return;
