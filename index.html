@@ -9092,7 +9092,7 @@
      the page (mountRoomChatFab), and it is the dock button's size. */
   .roomchat-fab{
     position:fixed; z-index:445;
-    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
+    top:calc(max(var(--sat) + .75rem, var(--top-e)) + var(--vv-shift, 0px));   /* (384.89) the dock button's line */
     right:calc(max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) + 44px + .5rem);
     height:44px; padding:0 .85rem 0 .7rem; margin:0; border-radius:999px; box-sizing:border-box;
     display:flex; align-items:center; gap:.4rem;
@@ -36550,6 +36550,8 @@ html.is-browser{ --fade-paper: transparent; }
   @supports (text-box:trim-both cap alphabetic){
     html[data-layout] body .classselect-panel > .next.playbtn{ text-box:trim-both cap alphabetic; height:auto; padding-top:calc((45.6px - 1cap)/2); padding-bottom:calc((45.6px - 1cap)/2); }
   }
+  /* (384.89) the intro's back button sits 20px into its panel (the others 24px): at his 85% zoom the line is 21.2px under the inset */
+  html[data-layout] body #stage .welcomeintro-panel > .back-link{ top:max(0px, calc(var(--edge-e) - 20px)); }
   html[data-layout] body #stage .back-link{ font-size:.85rem !important; min-height:calc(1em + 1rem) !important; padding-top:.5rem !important; padding-bottom:.5rem !important; }
   .pf-xp-to:empty{ display:none; }
   /* ---- THE UNIT CARD WITHOUT ITS CIRCLE (build 328) ----

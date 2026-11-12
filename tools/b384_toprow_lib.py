@@ -35,6 +35,9 @@ INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1') || localStorage.ge
 def seed():
     d = json.loads(g["SEED"].replace("__WEEK__", g["week_key_now"]())); d["publicId"] = "xph5b57jbp5a"; d["firstName"] = "Casey"; d["novaMet"] = 99
     d["unlocksShown"] = {"chars": [], "banners": ["hundos100"], "fx": ["fireworks", "blackhole", "underwater", "worldtree", "bubbles", "ufo"]}
+    import time as _t
+    d["testHistory"] = [{"label": "Identity Crimes", "units": ["Identity Crimes"], "mode": m, "pct": 60 + 8 * j, "elapsedMs": 900000 + j * 137000,
+                         "playedAt": int(_t.time() * 1000) - j * 172800000, "score": 12 + j, "total": 20, "seconds": 300 + 20 * j} for j, m in enumerate(("drill", "exam", "game"))]
     return d
 _srv = None
 def url():
@@ -74,7 +77,13 @@ INK = """()=>{
   const H = innerHeight, W = innerWidth, lim = H * .4, out = [];
   const skip = e => e.closest('#top-edge, #top-deep, #top-guard, .bottomtabs, #splashscreen, #tour-overlay, .chatdock-panel, [aria-hidden="true"].sky, #sb-probe');
   const vis = e => { for(let n = e; n && n !== document.body; n = n.parentElement){ const s = getComputedStyle(n); if(s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) < .05) return false; } return true; };
-  const add = (e, r, kind) => { if(r.width < 2 || r.height < 2 || r.bottom <= 0 || r.top >= lim || r.right <= 0 || r.left >= W) return;
+  /* (a box that starts above the screen is cut by the screen's edge - a backdrop or a page scrolled under the top - not a top-row element) */
+  /* what an ancestor that clips (overflow other than visible) cuts away is not ink: the box is cut to it */
+  const clipTop = (e, top, bottom) => { for(let n = e.parentElement; n && n !== document.body; n = n.parentElement){ const s = getComputedStyle(n);
+      if(s.overflowY !== 'visible' || s.overflowX !== 'visible'){ const q = n.getBoundingClientRect(); top = Math.max(top, q.top); bottom = Math.min(bottom, q.bottom); } }
+    return bottom - top >= 2 ? top : null; };
+  const add = (e, r0, kind) => { const ct = clipTop(e, r0.top, r0.bottom); if(ct === null) return; const r = { top: ct, bottom: r0.bottom, left: r0.left, right: r0.right, width: r0.width, height: r0.bottom - ct };
+    if(r.width < 2 || r.height < 2 || r.top < 0 || r.top >= lim || r.right <= 0 || r.left >= W) return;
     out.push({ top: Math.round(r.top * 10) / 10, bottom: Math.round(r.bottom * 10) / 10, kind, what: (e.id ? '#' + e.id : '') + (e.className && e.className.baseVal === undefined ? '.' + String(e.className).trim().split(/\\s+/).slice(0, 2).join('.') : '') + ' ' + (kind === 'text' ? JSON.stringify((e.textContent || '').trim().slice(0, 24)) : e.tagName.toLowerCase()) }); };
   /* a text line's INK: its box is the font's content area (ascent + descent), so the baseline is the box's top plus the font's
      ascent and the glyphs' top is the baseline less what these letters actually reach (canvas measureText, the same font) */
@@ -87,8 +96,14 @@ INK = """()=>{
     const m = cv.measureText(t.textContent.trim()); const off = (m.fontBoundingBoxAscent || 0) - (m.actualBoundingBoxAscent || 0);
     const g = document.createRange(); g.selectNodeContents(t);
     for(const r of g.getClientRects()) add(e, { top: r.top + Math.max(0, off), bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height }, 'text'); }
+  /* a control's box is ink only where it is painted (a fill, a rim, a shadow): a bare text button's box is air, its words are measured above */
+  const painted = e => { const s = getComputedStyle(e); const c = s.backgroundColor.match(/[\d.]+/g);
+    return (c && (c.length < 4 || parseFloat(c[3]) > .05) && !/^rgba\(0, 0, 0, 0\)$/.test(s.backgroundColor)) || s.backgroundImage !== 'none' || s.boxShadow !== 'none' ||
+      (parseFloat(s.borderTopWidth) > 0 && !/rgba\([^)]*, 0\)$/.test(s.borderTopColor) && s.borderTopStyle !== 'none'); };
   for(const e of document.querySelectorAll('body button, body a[href], body img, body svg, body [role="button"], body .qdot, body .back-link')){
-    if(skip(e) || !vis(e) || (e.closest('svg') && e.closest('svg') !== e)) continue; add(e, e.getBoundingClientRect(), e.tagName.toLowerCase()); }
+    if(skip(e) || !vis(e) || (e.closest('svg') && e.closest('svg') !== e)) continue;
+    if(!/^(IMG|svg)$/.test(e.tagName) && !e.classList.contains('qdot') && !painted(e)) continue;
+    add(e, e.getBoundingClientRect(), e.tagName.toLowerCase()); }
   out.sort((a, b) => a.top - b.top);
   const de = document.documentElement;
   return { items: out.slice(0, 8), min: out.length ? out[0].top : null, scroll: Math.max(0, de.scrollHeight - innerHeight), sy: scrollY,

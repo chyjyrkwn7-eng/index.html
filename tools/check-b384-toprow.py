@@ -87,6 +87,7 @@ USED = [
     ("review list", "showHome(); " + Q + " showAnswerReview([pickUnit()], 'all')"), ("flashcards", "showHome(); " + Q + " showFlashcards([pickUnit()], 'all')"),
     ("daily question", "showHome(); " + Q + " startDailyQuestion()"),
     ("results", "showHome(); __sweepResults('drill')"), ("results: retake", "showHome(); __sweepResults('retake')"),
+    ("Nova's meeting", "showHome(); store.novaMet = 0; playNovaMeeting()"),   # last: it holds the pop-ups while he talks
 ]
 FRESH = [("Get Started", "showGetStarted()"), ("Welcome", "showWelcome()"), ("sign-up check", "showWelcome(); showSignUpCheck()"),
          ("intro", "showWelcome(); showWelcomeIntro()"), ("class pick", "showWelcome(); showClassSelection()"),
@@ -98,7 +99,7 @@ GEOM = """()=>{ const R = s => { const e = document.querySelector(s); if(!e || !
     const r = e.getBoundingClientRect(); return r.width ? [r.left, r.top, r.width, r.height] : null; };
   const back = R('#stage .settings-nav > :is(.ios-nav-back, .settings-nav-back)');
   return { chat: (() => { const b = document.getElementById('chatdock-btn'); return b && !b.closest('[hidden]') ? R('#chatdock-btn') : null; })(), back, pause: R('#pausebtn:not([hidden])'),
-    inTest: !!document.querySelector('.chatdock.in-test'), W: innerWidth }; }"""
+    inTest: !!document.querySelector('.chatdock.in-test'), W: innerWidth, scr: ((document.querySelector('#stage > *') || {}).className || '') + '' }; }"""
 CAP = """()=>{ const t = document.querySelector('.wrap.test-pinned > .top'); const p = document.querySelector('#pausebtn:not([hidden])');
   if(!t) return null; const r = t.getBoundingClientRect(); return { foot: Math.max(r.bottom, p ? p.getBoundingClientRect().bottom : 0), paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(), sy: scrollY }; }"""
 REC = """(ms)=>{ let n = 0; const tag = e => { if(!e) return null; if(!e.dataset.trk) e.dataset.trk = 'k' + (++window.__trkN || (window.__trkN = 1)); return e.dataset.trk; };
@@ -167,12 +168,14 @@ def measure(br, raw, dev, cls, base=False):
                 if not base: errs.extend("%s %s: %s" % (dev, cls, x) for x in e)
                 ctx.close()
             except Exception as ex:
-                crashed = "rash" in str(ex) or "closed" in str(ex)
+                crashed = True   # a crash, a page that never loads on a loaded machine: again (3 times), then it is reported
                 try: ctx.close()
                 except Exception: pass
                 if not crashed: raise
             if not crashed: break
-            print("    (renderer crashed on a loaded machine: again)", flush=True)
+            print("    (renderer crashed or the page did not load on a loaded machine: again)", flush=True)
+        if crashed:
+            for item in lst: res.setdefault(item[0], (None, "the page never came up in 3 tries"))
         out.update(res)
     return out
 def eq(a, b, tol=.5): return a is not None and b is not None and all(abs(x - y) <= tol for x, y in zip(a, b))
@@ -199,7 +202,7 @@ def check_screens(dev, cls, M, B):
         if c and geo["back"] and not geo["inTest"]:
             bk = geo["back"]; d = abs((bk[1] + bk[3] / 2) - (c[1] + c[3] / 2)); dx = abs(bk[0] - (geo["W"] - c[0] - c[2])) if phone else 0
             if d > 1 or dx > 1: back_off.append((scr, "mid %.1f vs %.1f, left %.1f vs right %.1f" % (bk[1] + bk[3] / 2, c[1] + c[3] / 2, bk[0], geo["W"] - c[0] - c[2]))); good = False
-        if B is not None and scr in B and B[scr][0] is not None:
+        if B is not None and scr in B and B[scr][0] is not None and isinstance(B[scr][1], dict) and B[scr][1].get("scr") == geo.get("scr"):   # the same screen on both builds
             if B[scr][0]["scroll"] <= 1 and ink["scroll"] > 1: newscroll.append((scr, "%d (was %d)" % (ink["scroll"], B[scr][0]["scroll"]))); good = False
         row[(dev, cls)] = "ok" if good else "FAIL"
     n = len([k for k in M if not k.startswith("__")])
