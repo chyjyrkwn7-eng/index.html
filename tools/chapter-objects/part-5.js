@@ -12,7 +12,9 @@
       [5, 5, 4, 1.5, 6, 2, 3, 5, 2.2, 5, 3, 2, 6, 1.5, 4, 5, 5]),
     base: "rubber",
     plates: [
-      ["red", OBJ_rrect(0, 0, 100, 62, 0)],                                                                                                              /* the flames */
+      /* (384.90) the flames flame-orange, not the tent's red: with the outline following the stone's edge the two outlines came to 0.81
+         alike, and the same red made them twins (check-b384-objbadges (6)) */
+      ["red", OBJ_rrect(0, 0, 100, 62, 0), { col: "#F36A21" }],                                                                                       /* the flames */
       ["hot", OBJ_poly([[38, 58], [37, 42], [44, 30], [50, 17], [56, 30], [63, 42], [62, 58]], [2, 6, 4, 2, 4, 6, 2]), { z: .6, bev: .9, dome: 1.2 }],   /* the hot inner flame */
       ["glow", OBJ_poly([[44, 58], [45, 47], [50, 36], [55, 47], [56, 58]], [2, 4, 2, 4, 2]), { z: .5, bev: .7, dome: .8 }],                             /* its white-hot core */
       ["hot", OBJ_poly([[21, 58], [19, 46], [23, 34], [30, 48], [30, 58]], [2, 4, 2, 3, 2]), { z: .4, bev: .7, dome: .8 }],                             /* the side flames' hearts */
