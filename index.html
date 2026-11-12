@@ -75841,7 +75841,7 @@ const UNIT_BADGE_SHAPE = {
    dished hexagon now (0.0631). */
 const IFC_BADGE_SHAPE = {
   "Chapter 1: Scope and Administration":                             "crown",
-  "Chapter 2: Definitions":                                          "dart",
+  "Chapter 2: Definitions":                                          "octagon",   /* (384.61) a roomy outline for its icon (was the dart) */
   "Chapter 3: General Requirements":                                 "bowhex",
   "Chapter 4: Emergency Planning and Preparedness":                  "shield",
   "Chapter 5: Fire Service Features":                                "maltese",
@@ -75849,10 +75849,10 @@ const IFC_BADGE_SHAPE = {
   "Chapter 7: Fire and Smoke Protection Features":                   "gem",
   "Chapter 8: Interior Finish, Decorative Materials and Furnishings": "scoopsq",
   "Chapter 9: Fire Protection and Life Safety Systems":              "cinquefoil",
-  "Chapter 10: Means of Egress":                                     "bolt",
+  "Chapter 10: Means of Egress":                                     "gate",      /* (384.61) a roomy outline for its icon (was the bolt) */
   "Chapter 11: Construction Requirements for Existing Buildings":    "wave",
   "Chapter 12: Energy Systems":                                      "bilobe",
-  "Chapter 20: Aviation Facilities":                                 "star5",
+  "Chapter 20: Aviation Facilities":                                 "hex",       /* (384.61) a roomy outline for its icon (was the five-point star) */
   "Chapter 21: Dry Cleaning":                                        "hourglass",
   "Chapter 22: Combustible Dust-Producing Operations":               "fan",
   "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages": "disc",
@@ -76023,6 +76023,251 @@ function badgeShapeFor(unitName){
   if(key && BADGE_SHAPE[key]) return BADGE_SHAPE[key];
   const i = (parseInt(hashOf(name), 36) >>> 0) % BADGE_SHAPE_KEYS.length;
   return BADGE_SHAPE[BADGE_SHAPE_KEYS[i]];
+}
+
+/* ---- FIRE CODE CHAPTER ICONS (build 384.61, phase 1) ----
+   Madison: "Big change. Badges are gonna be designed based on what the chapter is about / the title (mostly the title). For
+   example Means of Egress could be a door in the open position? Make them cool." For Fire Code only; this reverses, for these 58
+   chapters, the academy's rule that a badge never draws its subject (the academy's sixteen are untouched and have no icon).
+   A chapter's badge keeps its outline, its enamel and its back (title, FIRE CODE); what changes is the face: its channels
+   come off (one open plate, so an icon is not cut across) and the chapter's icon is inlaid on it, in a figure lit from the
+   top-left. The spec every icon is drawn to is tools/chapter-badges-brief.md; the icons themselves live in
+   tools/chapter-icons/part-*.js and are copied between the two markers below by tools/merge-chapter-icons.py (never hand-edit
+   between them). A chapter with no entry draws exactly what it drew before, so the app never breaks on a chapter added later.
+   An icon is a function (c) => '<path .../>...': 96x96 box, paths only, no ids, no filters, no gradients, colours from the
+   palette `c` (chapterIconPalette). ONE source for both drawings: chapterIconOps() reads the markup, the struck token paints
+   it on its canvas (chapterIconPaintStrike) and the vector token builds SVG from it (chapterIconVector).
+   Nothing is painted on a grey (not yet found) token: the shape is a hint, the picture is the reward. */
+const CHAPTER_ICON = {};
+/* @@CHAPTER_ICON_BEGIN */
+/* ---- part-0-samples.js ---- */
+/* Phase 1 samples (build 384.61): six chapters, drawn to the spec in tools/chapter-badges-brief.md - the exemplars phase 2 is held to.
+   Each is (c) => markup; palette c = { field, lite, body, shade, ink }; 96 x 96 box, paths only, no ids, no filters. */
+
+/* Chapter 10 - an open door: the frame, the bright opening, the leaf swung back into the room with its two panels and its knob. */
+CHAPTER_ICON["Chapter 10: Means of Egress"] = (c) => {
+  const K = `stroke="${c.ink}" stroke-width="2.4"`, k = `stroke="${c.ink}" stroke-width="1.6"`;
+  return `
+<path d="M16 8H80V90H16Z" fill="${c.body}" ${K}/>
+<path d="M25 16H71V90H25Z" fill="${c.lite}" ${K}/>
+<path d="M25 90L71 90L71 80L56 76Z" fill="${c.body}" opacity=".55"/>
+<path d="M25 16L57 26V79L25 90Z" fill="${c.shade}" ${K}/>
+<path d="M30 23L52 29.6V46L30 48Z" fill="${c.body}" ${k}/>
+<path d="M30 56L52 54.4V71.5L30 82Z" fill="${c.body}" ${k}/>
+<path d="M52.5 61.5a2.7 2.7 0 1 0 .1 0Z" fill="${c.lite}" ${k}/>`;
+};
+
+/* Chapter 9 - a pendant sprinkler head with the water it throws: pipe, fitting, frame, glass bulb, deflector, drops. */
+CHAPTER_ICON["Chapter 9: Fire Protection and Life Safety Systems"] = (c) => {
+  const K = `stroke="${c.ink}" stroke-width="2.4"`, k = `stroke="${c.ink}" stroke-width="1.6"`;
+  const drop = (x, y, s) => `<path d="M${x} ${y - 7.5 * s}C${x + 2 * s} ${y - 3.5 * s} ${x + 5.2 * s} ${y - 1 * s} ${x + 5.2 * s} ${y + 2.6 * s}A${5.2 * s} ${5.2 * s} 0 0 1 ${x - 5.2 * s} ${y + 2.6 * s}C${x - 5.2 * s} ${y - 1 * s} ${x - 2 * s} ${y - 3.5 * s} ${x} ${y - 7.5 * s}Z" fill="${c.lite}" stroke="${c.ink}" stroke-width="${(1.7 * Math.max(s, .8)).toFixed(2)}"/>`;
+  return `
+<path d="M42 5H54V22H42Z" fill="${c.body}" ${K}/>
+<path d="M42 11H54M42 16H54" fill="none" ${k}/>
+<path d="M36 22H60L62 25V30L60 33H36L34 30V25Z" fill="${c.body}" ${K}/>
+<path d="M39.5 24.5V30.5" fill="none" stroke="${c.lite}" stroke-width="2.4"/>
+<path d="M40 33L45.5 55M56 33L50.5 55" fill="none" stroke="${c.ink}" stroke-width="7.6"/>
+<path d="M40 33L45.5 55M56 33L50.5 55" fill="none" stroke="${c.body}" stroke-width="4.4"/>
+<path d="M48 36C51.6 36 53.2 40 53.2 44.2S51.6 52 48 52S42.8 48.4 42.8 44.2S44.4 36 48 36Z" fill="${c.lite}" ${k}/>
+<path d="M26 62C26 58.6 36 56.4 48 56.4S70 58.6 70 62C70 65.2 60 67 48 67S26 65.2 26 62Z" fill="${c.body}" ${K}/>
+<path d="M48 51.5a4.6 4.6 0 1 0 .1 0Z" fill="${c.shade}" ${k}/>
+${drop(17, 70, .66)}${drop(31, 79, .84)}${drop(48, 83, 1.02)}${drop(65, 79, .84)}${drop(79, 70, .66)}`;
+};
+
+/* Chapter 57 - a drop with a flame in it: flammable and combustible LIQUIDS. The flame is a window onto the enamel. */
+CHAPTER_ICON["Chapter 57: Flammable and Combustible Liquids"] = (c) => {
+  const K = `stroke="${c.ink}" stroke-width="2.6"`;
+  return `
+<path d="M48 6C48 6 20 37 20 60A28 28 0 0 0 76 60C76 37 48 6 48 6Z" fill="${c.body}" ${K}/>
+<path d="M48 6C48 6 76 37 76 60A28 28 0 0 1 44 87.6C62 82 68 64 63 46C59.5 31 51 15 48 6Z" fill="${c.shade}"/>
+<path d="M29.5 58C29.5 49 34 41 40 33" fill="none" stroke="${c.lite}" stroke-width="3.4"/>
+<path d="M48 36C52.4 45 63 51 63 65A15 15 0 0 1 33 65C33 58 37 53.6 40.5 48.6C42 52.6 43.6 54 46 54.6C44.4 48 45.8 42 48 36Z" fill="${c.field}" stroke="${c.ink}" stroke-width="2.2"/>
+<path d="M48 55C51.4 59.4 55.6 61.6 55.6 67A7.6 7.6 0 0 1 40.4 67C40.4 63.6 43.2 61.6 44.4 58.6C45.4 60.6 46.6 61.4 48 61.6Z" fill="${c.lite}"/>`;
+};
+
+/* Chapter 2 - an open dictionary, a ribbon marking the place: DEFINITIONS, which is a chapter of a book of words, drawn as the book. */
+CHAPTER_ICON["Chapter 2: Definitions"] = (c) => {
+  const K = `stroke="${c.ink}" stroke-width="2.4"`, line = (d) => `<path d="${d}" fill="none" stroke="${c.shade}" stroke-width="2.4"/>`;
+  return `
+<path d="M48 83C40 76 22 75 6 80V26C22 21 40 22 48 28C56 22 74 21 90 26V80C74 75 56 76 48 83Z" fill="${c.shade}" ${K}/>
+<path d="M48 76C40 69.5 24 68.5 11 72V24.5C24 21.5 40 22.5 48 28Z" fill="${c.body}" ${K}/>
+<path d="M48 76C56 69.5 72 68.5 85 72V24.5C72 21.5 56 22.5 48 28Z" fill="${c.lite}" ${K}/>
+${line("M17 34C24 32.4 31 32.6 41 36")}${line("M17 43C24 41.4 31 41.6 41 45")}${line("M17 52C24 50.4 31 50.6 41 54")}${line("M17 61C22 59.6 28 59.8 34 61.4")}
+${line("M55 36C65 32.6 72 32.4 79 34")}${line("M55 45C65 41.6 72 41.4 79 43")}${line("M55 54C65 50.6 72 50.4 79 52")}
+<path d="M48 76V90L53 85.4L58 90V74Z" fill="${c.field}" stroke="${c.ink}" stroke-width="2"/>`;
+};
+
+/* Appendix C - a fire hydrant: bonnet and top nut, the barrel with its two side outlets and the pumper nozzle, the flared base. */
+CHAPTER_ICON["Appendix C: Fire Hydrant Locations and Distribution"] = (c) => {
+  const K = `stroke="${c.ink}" stroke-width="2.4"`, k = `stroke="${c.ink}" stroke-width="1.6"`;
+  return `
+<path d="M41 8H55V14H41Z" fill="${c.body}" ${K}/>
+<path d="M30 34C30 22 37 15 48 15S66 22 66 34Z" fill="${c.body}" ${K}/>
+<path d="M14 42H31V60H14Z" fill="${c.shade}" ${K}/>
+<path d="M65 42H82V60H65Z" fill="${c.shade}" ${K}/>
+<path d="M9 40H16V62H9Z" fill="${c.body}" ${K}/>
+<path d="M80 40H87V62H80Z" fill="${c.body}" ${K}/>
+<path d="M31 34H65V80H31Z" fill="${c.body}" ${K}/>
+<path d="M57 34H65V80H57Z" fill="${c.shade}"/>
+<path d="M28 33H68V40H28Z" fill="${c.shade}" ${K}/>
+<path d="M48 47.5a8.5 8.5 0 1 0 .1 0Z" fill="${c.lite}" ${K}/>
+<path d="M48 52a4 4 0 1 0 .1 0Z" fill="${c.shade}" ${k}/>
+<path d="M30 74H66L72 83H24Z" fill="${c.shade}" ${K}/>
+<path d="M22 83H74V89H22Z" fill="${c.body}" ${K}/>`;
+};
+
+/* Chapter 20 - an airliner climbing, seen from above: the left half in shade, the right in light. Points are drawn nose-up
+   and turned 42 degrees in the function, which is what a program may do and a path alone may not. */
+CHAPTER_ICON["Chapter 20: Aviation Facilities"] = (c) => {
+  const a = 42 * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a), K = .88;
+  const P = (x, y) => [(48 + (x * cs - y * sn) * K).toFixed(1), (48 + (x * sn + y * cs) * K).toFixed(1)].join(" ");
+  const half = [[0, -43], [2.2, -42], [3.8, -37], [4.4, -28], [4.4, -9], [41, 17], [41, 24], [4.4, 11], [3.6, 28], [17, 38], [17, 42.5], [2.6, 39], [1.6, 43.5]];
+  const mir = p => half.map(([x, y]) => [-x, y]);
+  const right = "M" + half.map(([x, y]) => P(x, y)).join("L") + "L" + P(0, 44) + "Z";
+  const L = mir().reverse();
+  const left = "M" + P(0, -43) + "L" + P(0, 44) + "L" + half.slice().reverse().map(([x, y]) => P(-x, y)).join("L") + "Z";
+  const whole = "M" + half.map(([x, y]) => P(x, y)).join("L") + "L" + P(0, 44) + "L" + half.slice().reverse().map(([x, y]) => P(-x, y)).join("L") + "Z";
+  return `
+<path d="${whole}" fill="${c.body}" stroke="${c.ink}" stroke-width="2.6"/>
+<path d="${left}" fill="${c.shade}"/>
+<path d="M${P(0, -43)}L${P(0, 44)}" fill="none" stroke="${c.ink}" stroke-width="1.4"/>
+<path d="M${P(2.2, -37)}L${P(2.8, -24)}" fill="none" stroke="${c.lite}" stroke-width="2.2"/>`;
+};
+/* @@CHAPTER_ICON_END */
+const CHAPTER_ICON_MAX_PATHS = 14;
+const CHAPTER_ICON_ATTRS = ["d", "fill", "stroke", "stroke-width", "stroke-linejoin", "stroke-linecap", "opacity", "fill-rule"];
+function chapterIconFor(unitName){
+  const f = CHAPTER_ICON[String(unitName || "")];
+  return typeof f === "function" ? f : null;
+}
+/* The figure's colours, from the chapter's own enamel p. A dark or mid enamel carries a light figure, a pale one a dark figure;
+   the roles run lite > body > shade in lightness either way, so an icon drawn with them reads the same on every enamel.
+     field - the enamel itself (a cut-out, a window: the colour showing through)
+     lite  - the figure's highlight   body - its main plate   shade - its turned-away plate   ink - the keyline */
+function chapterIconPalette(unitName){
+  const p = badgeThemeFor(unitName).p, light = badgeEnamelLuma(p) < .30;
+  const t = light ? [.97, .86, .58, -.78] : [-.34, -.58, -.78, -.92];
+  return { field: p, lite: badgeShade(p, t[0]), body: badgeShade(p, t[1]), shade: badgeShade(p, t[2]), ink: badgeShade(p, t[3]), onDark: light };
+}
+/* The markup's <path> elements as plain objects (only the attributes the spec allows, at most CHAPTER_ICON_MAX_PATHS). */
+function chapterIconOps(markup){
+  const ops = [], re = /<path\b([^>]*?)\/?>/g;
+  let m;
+  while((m = re.exec(String(markup || ""))) && ops.length < CHAPTER_ICON_MAX_PATHS){
+    const at = {};
+    String(m[1]).replace(/([a-z-]+)="([^"]*)"/g, (_, k, v) => { if(CHAPTER_ICON_ATTRS.indexOf(k) >= 0) at[k] = v; return ""; });
+    if(at.d) ops.push(at);
+  }
+  return ops;
+}
+/* The icon's markup for a unit, or "" - the one place an icon's function is called, so a throwing one costs its icon and nothing else. */
+function chapterIconMarkup(unitName){
+  const f = chapterIconFor(unitName);
+  if(!f) return "";
+  try{ return String(f(chapterIconPalette(unitName)) || ""); }catch(e){ return ""; }
+}
+/* The face a badge is struck from: the chapter's outline with no channels when it has an icon (a flagged copy, so its fields
+   are its own), else exactly the shape badgeShapeFor gives - the same object, so every other unit is untouched. */
+const BADGE_FACE_MEMO = {};
+function badgeFaceShapeFor(unitName){
+  const sh = badgeShapeFor(unitName);
+  if(!chapterIconFor(unitName)) return sh;
+  const k = String(unitName), m = BADGE_FACE_MEMO[k];
+  if(m && m.d === sh.d && m.c === sh.c) return m;
+  return (BADGE_FACE_MEMO[k] = { c: sh.c, d: sh.d, cuts: [], icon: true });
+}
+/* Where the icon sits: the biggest square that fits wholly inside the open plate (a summed-area table of the enamel's distance
+   field, 1.3 units in from its edge, each centre's largest square found by halving), nearest the outline's centre among the
+   biggest. {x, y} its centre and `half` its half-side, in the outline's own units; `r` is what the painters scale by (the 96
+   box scales by r / 42). Read once per shape, off the geometry badgeStrikeGeometry already made. */
+const CHAPTER_ICON_FILL = 1.12;
+function badgeIconBox(g, face){
+  if(g.icon) return g.icon;
+  const E = g.E, W = g.W, pxPerF = W / g.vw, cellO = 1 / pxPerF / g.S, SW = W + 1;
+  const sat = new Int32Array(SW * SW);
+  for(let y = 0; y < W; y++){
+    let row = 0;
+    for(let x = 0; x < W; x++){ row += E[y * W + x] < -1.3 ? 1 : 0; sat[(y + 1) * SW + x + 1] = sat[y * SW + x + 1] + row; }
+  }
+  const full = (x0, y0, x1, y1) => (sat[y1 * SW + x1] - sat[y0 * SW + x1] - sat[y1 * SW + x0] + sat[y0 * SW + x0]) === (x1 - x0) * (y1 - y0);
+  const toOutline = (ix, iy) => {
+    const fx = g.vx + ix / pxPerF, fy = g.vy + iy / pxPerF;
+    return [g.cx + (fx - g.cx) / g.S, g.cy + (fy - g.cy) / g.S];
+  };
+  let bestH = 0, pick = null, pd = 1e18;
+  for(let cy = 2; cy < W - 1; cy += 2) for(let cx = 2; cx < W - 1; cx += 2){
+    if(E[cy * W + cx] >= -1.3) continue;
+    let lo = 0, hi = Math.min(cx, cy, W - cx, W - cy);
+    while(lo < hi){ const m = (lo + hi + 1) >> 1; if(full(cx - m, cy - m, cx + m, cy + m)) lo = m; else hi = m - 1; }
+    if(lo < bestH - 1) continue;
+    const q = toOutline(cx, cy), d = (q[0] - face.c[0]) * (q[0] - face.c[0]) + (q[1] - face.c[1]) * (q[1] - face.c[1]);
+    if(lo > bestH){ bestH = lo; pick = q; pd = d; } else if(d < pd){ pick = q; pd = d; }
+  }
+  if(!pick || bestH < 1) return null;
+  const half = bestH * cellO;
+  return (g.icon = { x: pick[0], y: pick[1], half: half, r: half * 2 * CHAPTER_ICON_FILL * 42 / 96 });
+}
+/* ONE LAYER OF LIGHT ON TOP OF THE FLAT PLATES (the author draws flat colour; this is what makes every icon read as lit metal and
+   enamel in the same light): a soft shadow under the figure down and to the right, and over the figure a lacquer - light at its
+   top-left, a little shade at its bottom-right - clipped to the figure's own pixels (source-atop). Canvas shadow and gradient, no filter. */
+function chapterIconPaintOps(o, ops){
+  ops.forEach(op => {
+    const p = new Path2D(op.d);
+    o.globalAlpha = op.opacity != null ? Math.max(0, Math.min(1, +op.opacity)) : 1;
+    if(op.fill && op.fill !== "none"){ o.fillStyle = op.fill; o.fill(p, op["fill-rule"] === "evenodd" ? "evenodd" : "nonzero"); }
+    if(op.stroke && op.stroke !== "none"){
+      o.strokeStyle = op.stroke; o.lineWidth = +op["stroke-width"] || 1;
+      o.lineJoin = op["stroke-linejoin"] || "round"; o.lineCap = op["stroke-linecap"] || "round"; o.stroke(p);
+    }
+  });
+  o.globalAlpha = 1;
+}
+function chapterIconPaintStrike(ctx, Wout, g, face, unitName){
+  const ops = chapterIconOps(chapterIconMarkup(unitName));
+  if(!ops.length) return;
+  const box = badgeIconBox(g, face);
+  if(!box || box.half < 2.5) return;
+  const off = document.createElement("canvas"); off.width = Wout; off.height = Wout;
+  const o = off.getContext("2d");
+  const pxPerF = Wout / g.vw, s = box.r / 42;
+  o.setTransform(pxPerF, 0, 0, pxPerF, -g.vx * pxPerF, -g.vy * pxPerF);
+  o.translate(g.cx, g.cy); o.scale(g.S, g.S); o.translate(-g.cx, -g.cy);
+  o.translate(box.x, box.y); o.scale(s, s); o.translate(-48, -48);
+  chapterIconPaintOps(o, ops);
+  /* the lacquer, over the figure alone */
+  const px = (box.x - g.cx) * g.S + g.cx, py = (box.y - g.cy) * g.S + g.cy;
+  const X = (px - g.vx) * pxPerF, Y = (py - g.vy) * pxPerF, R = box.half * 1.25 * g.S * pxPerF;
+  o.setTransform(1, 0, 0, 1, 0, 0);
+  o.globalCompositeOperation = "source-atop";
+  const lq = o.createLinearGradient(X - R, Y - R, X + R, Y + R);
+  lq.addColorStop(0, "rgba(255,255,255,.34)"); lq.addColorStop(.42, "rgba(255,255,255,0)"); lq.addColorStop(.62, "rgba(0,0,0,0)"); lq.addColorStop(1, "rgba(0,0,0,.26)");
+  o.fillStyle = lq; o.fillRect(0, 0, Wout, Wout);
+  o.globalCompositeOperation = "source-over";
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = Wout * .012; ctx.shadowOffsetX = Wout * .006; ctx.shadowOffsetY = Wout * .01;
+  ctx.drawImage(off, 0, 0);
+  ctx.restore();
+}
+/* The same icon as SVG, for the vector token: one group in the outline's own units, a shadow copy of every filled plate under it. */
+function chapterIconVector(parent, face, unitName){
+  const ops = chapterIconOps(chapterIconMarkup(unitName));
+  if(!ops.length) return;
+  const box = badgeIconBox(badgeStrikeGeometry(face), face);
+  if(!box || box.half < 2.5) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const grp = document.createElementNS(NS, "g");
+  grp.setAttribute("class", "badge-chapter-icon");
+  grp.setAttribute("transform", "translate(" + box.x + " " + box.y + ") scale(" + (box.r / 42) + ") translate(-48 -48)");
+  const mk = (op, over) => {
+    const el = document.createElementNS(NS, "path");
+    el.setAttribute("d", op.d);
+    const at = Object.assign({ fill: "none", "stroke-linejoin": "round", "stroke-linecap": "round" }, op, over || {});
+    Object.keys(at).forEach(k => { if(k !== "d") el.setAttribute(k, at[k]); });
+    grp.appendChild(el);
+  };
+  ops.forEach(op => { if(op.fill && op.fill !== "none") mk(op, { fill: "rgba(0,0,0,.4)", stroke: "none", transform: "translate(1.4 1.9)" }); });
+  ops.forEach(op => mk(op));
+  parent.appendChild(grp);
 }
 
 let badgeSvgSeq = 0;
@@ -76610,8 +76855,9 @@ const BADGE_STRIKE_GEOM = {};
 const BADGE_STRIKE_GEOM_MAX = 24;
 function badgeStrikeGeometry(shape){
   const d = shape.d;
-  const hit = BADGE_STRIKE_GEOM[d];
-  if(hit){ delete BADGE_STRIKE_GEOM[d]; BADGE_STRIKE_GEOM[d] = hit; return hit; }   /* the newest last */
+  const gk = shape.icon ? d + "|ic" : d;   /* (384.61) a chapter with an icon has no channels: its own fields */
+  const hit = BADGE_STRIKE_GEOM[gk];
+  if(hit){ delete BADGE_STRIKE_GEOM[gk]; BADGE_STRIKE_GEOM[gk] = hit; return hit; }   /* the newest last */
   const P = BADGE_STRIKE, G = BADGE_GEOM, S = G.scale, cx = shape.c[0], cy = shape.c[1];
   const vb = badgeViewBoxFor(d).split(/\s+/).map(Number);
   const vx = vb[0], vy = vb[1], vw = vb[2];
@@ -76653,7 +76899,7 @@ function badgeStrikeGeometry(shape){
      line round every plate. */
   const kept = Object.keys(BADGE_STRIKE_GEOM);
   if(kept.length >= BADGE_STRIKE_GEOM_MAX) delete BADGE_STRIKE_GEOM[kept[0]];
-  return (BADGE_STRIKE_GEOM[d] = { O: Os, E: Es, Ox, Oy, Ex, Ey, vx, vy, vw, cx, cy, S, W });
+  return (BADGE_STRIKE_GEOM[gk] = { O: Os, E: Es, Ox, Oy, Ex, Ey, vx, vy, vw, cx, cy, S, W });
 }
 /* The profile and its slope, as tables. */
 let BADGE_PROF = null, BADGE_DPROF = null, BADGE_PROF_IN = null, BADGE_DPROF_IN = null;
@@ -76754,7 +77000,8 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
      the grain and patina, not a bare render. A grey token wears none. */
   const WEAR = !grey, ST = Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)), DK = BADGE_DIRT;
   const dSeed = WEAR ? (parseInt(hashOf(String(unitName)), 36) >>> 0) : 0;
-  const g = badgeStrikeGeometry(badgeShapeFor(unitName));
+  const face = badgeFaceShapeFor(unitName);
+  const g = badgeStrikeGeometry(face);
   badgeProfileTables();
   const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N, PIN = BADGE_PROF_IN, DPIN = BADGE_DPROF_IN;
   const k1 = Wout / g.vw * g.S;
@@ -76959,6 +77206,8 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
     od[j + 3] = (255 * a * inv + .5) | 0;
   }
   ctx.putImageData(img, 0, 0);
+  /* (384.61) a Fire Code chapter's icon, inlaid on the plate - never on a grey (not yet found) token */
+  if(!grey && face.icon){ try{ chapterIconPaintStrike(ctx, Wout, g, face, unitName); }catch(e){} }
   return cv;
 }
 /* Rendered tokens, by badge and size. A cached one at most 8% bigger
@@ -77085,7 +77334,7 @@ function warmBadgeStrikes(){
        render in your hand does not pay for it), one after another (384: so a geometry the cache has let go of - Fire Code
        has 58 - is never made twice in one warm-up) */
     units.forEach(u => {
-      jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u)));
+      jobs.push(() => badgeStrikeGeometry(badgeFaceShapeFor(u)));
       jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W, badgeDirtStage(u)));
       if(unitBadgeEarned(u)) jobs.push(() => badgeBackPlan(u));
     });
@@ -77122,7 +77371,7 @@ function buildUnitBadgeSVG(unitName, earned, opts){
     opts = Object.assign({}, opts, { dirt: d });
   }
   const NS = "http://www.w3.org/2000/svg";
-  const shape = badgeShapeFor(unitName);
+  const shape = badgeFaceShapeFor(unitName);   /* (384.61) the same object badgeShapeFor gives, unless the chapter has an icon */
   /* A BADGE NOT YET EARNED IS SEEN, NOT SHOWN (build 314). "The badges
      you have not unlocked yet in badges, when clicking them, they
      shouldn't be visible ... grey them out. Make it so you only see the
@@ -77316,6 +77565,8 @@ function buildUnitBadgeSVG(unitName, earned, opts){
     add(c, { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.3", opacity: ".6",
              transform: vert ? "translate(-2.2 0)" : /L/.test(c) ? "translate(" + (-2.2 * nx).toFixed(2) + " " + (-2.2 * ny).toFixed(2) + ")" : "translate(0 -2.2)" }, plate);
   });
+  /* (384.61) a Fire Code chapter's icon, inlaid (the vector token; the struck one paints it in renderBadgeStrike) */
+  if(shape.icon && !grey){ try{ chapterIconVector(plate, shape, unitName); }catch(e){} }
   /* The silver: inside the outline (clipped), then outside it over the
      seam, from one ramp in one space, so the two halves are one piece. */
   ring(G.inner, AG, plate);
@@ -121339,7 +121590,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.48";
+const APP_BUILD = "2026-11-12-384.61";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
