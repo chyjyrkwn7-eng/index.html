@@ -29,7 +29,8 @@ import ast
 def _gen(name):
     for n in ast.parse(open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()).body:
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
-MOVED47 = sorted(i for i, to in _gen("UNIT_MOVES").items() if to == "1"); REMOVED47 = sorted(_gen("UNIT_REMOVALS")); GONE47 = set(MOVED47) | set(REMOVED47)
+MOVED47 = sorted(i for i, to in _gen("UNIT_MOVES").items() if to == "1"); REMOVED47 = sorted(_gen("UNIT_REMOVALS")); GONE47 = set(MOVED47) | set(REMOVED47)   # (384.73) REMOVED47 is every removal (17 of 384.47, ch12-012 / ch55-702 / ch2-047 of 384.73)
+EDIT73 = set(_gen("QUESTION_EDITS"))   # (384.73) the eight questions whose wording the audit fixes changed (tools/check-b384-qfix.py holds them)
 # id -> the unit id it moves to, in the order the generator appends them
 
 
@@ -90,7 +91,7 @@ chk("(1) %s as shown: options %s; keyed answer %r; wording, explanation and cita
     n["ch"] == NEWOPTS and ans_text == "hazardous materials management plan" and n["q"] == o["q"] and n["expl"] == o["expl"] and n["cit"] == o["cit"] and "operational permit application" not in n["ch"],
     (n["ch"], ans_text))
 # (2)
-diffs = [(i, sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].get(k))) for i in oq if i in nq and i not in GONE47 and oq[i] != nq[i]]
+diffs = [(i, sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].get(k))) for i in oq if i in nq and i not in GONE47 and i not in EDIT73 and oq[i] != nq[i]]
 moved_fields = [i for i in MOVED47 if sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].get(k)) != ["unit"]]   # a 384.47 move changes `unit` and nothing else
 chk("(2) the bank file: only %s differs from main's, in `options` alone (every other question, the units and the meta identical)" % ID,
     diffs == [(ID, ["options"])] and not moved_fields and [{k: v for k, v in u.items() if k != "questionCount"} for u in ob["units"]] == [{k: v for k, v in u.items() if k != "questionCount"} for u in nb["units"]]

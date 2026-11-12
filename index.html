@@ -55485,7 +55485,13 @@ const IFC_KEY_TEXT = {
   "nav-NAVB-258": "Which chapter of the Harris County Fire Code contains the requirements for repair garages and motor fuel-dispensing facilities?",
   "nav-NAVB-284": "Which chapter of the Harris County Fire Code contains the requirements for explosive materials and blasting?",
   "nav-NAVB-301": "Which chapter of the Harris County Fire Code contains the construction requirements for existing buildings?",
-  "nav-NAVB-319": "Which appendix of the Harris County Fire Code contains the minimum fire-flow requirements for buildings?"
+  "nav-NAVB-319": "Which appendix of the Harris County Fire Code contains the minimum fire-flow requirements for buildings?",
+  /* (384.73) the wording the audit fixes changed (docs/notes-archive.md, "384.73"): the question shows the new stem, its identity is the old one */
+  "ch1-081": "Harris County requires a _____ permit to install or modify a gate across a fire apparatus access road.",
+  "ch1-612": "In Harris County, an industrial facility may be approved for exemption from the fire code, including operational permits, if it has a _____.",
+  "ch3-099": "In Harris County, the occupant load of a mobile food vendor vehicle park whose perimeter is enclosed more than 50 percent is calculated at _____ square feet per occupant.",
+  "ch35-009": "At least one portable fire extinguisher rated not less than _____ shall be within 30 feet of hot work being performed.",
+  "ch1-112": "In Harris County, a citation for working without permits carries a $200 to $500 fine plus _____ permit fees."
 };
 /* ---- (384.42) FIVE QUESTIONS MOVED BETWEEN CHAPTERS, EVERY OTHER KEY UNTOUCHED ----
    The owner moved ch12-012 (Group I-1 backup power within 3 hours - it cites county 403.7.1.1, Chapter 4's Fire safety and
@@ -55507,7 +55513,7 @@ const IFC_KEY_TEXT = {
      only way its history and the Stats ring's "answered right once" keep it). A hundo in a chapter stays: hundos, badges, stars
      and ranks are per chapter NAME (unitPerfects), never per question, and Fire Code's badge is one hundo; a full-chapter run
      covers the chapter as it is now: Chapter 2 111, Chapter 4 40, Chapter 12 43, Chapter 55 16, Chapter 62 10, Chapter 64 10. */
-const IFC_SRC_GAPS = { "4": [19], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1, 12], "21": [1], "22": [1], "25": [1],
+const IFC_SRC_GAPS = { "2": [38, 108], "4": [19, 41], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1, 12], "21": [1], "22": [1], "25": [1],
   "26": [1, 13], "27": [7], "28": [9], "29": [1], "30": [5, 6, 9], "31": [1], "32": [31], "34": [1, 2], "35": [1, 2],
   "37": [1, 15], "39": [1, 2], "50": [1, 2, 3], "51": [1], "53": [1, 2, 17, 18, 19], "54": [1, 2, 3],
   "55": [1, 2, 3, 4, 9, 10, 11, 12, 17], "56": [37], "57": [1, 2, 3, 4, 5], "58": [4, 5, 6], "59": [3, 18],
@@ -55626,12 +55632,18 @@ const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru
   /* (384.47) and the one the owner took out himself: ch20-508, the rooftop-heliport question (its wrong options are not stated not to need a permit) */
   "Chapter 20: Aviation Facilities|12|1ikiga7",
   /* (384.47) and ch30-505, industrial ovens: "an _____ permit" - the article fits only "operational", so the grammar gave the answer away (the owner removed it) */
-  "Chapter 30: Industrial Ovens|5|kaggfi"];
-/* The bank's own count ("1,795"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
+  "Chapter 30: Industrial Ovens|5|kaggfi",
+  /* (384.73) the weaker twin of three same-question pairs (the owner: "do what is best"; docs/notes-archive.md, "384.73"). ch12-012 (Group I-1 backup
+     power, 3 hours) repeats ch4-001; ch55-702 (cryogenic fluid, lower than -130 F) repeats ch2-086; ch2-047 (special event outdoors, 100 or more)
+     repeats ch1-071. The first two had moved in 384.42, so each is listed under the key it holds now AND the key it was stored under before. */
+  "Chapter 4: Emergency Planning and Preparedness|41|yahkhw", "Chapter 12: Energy Systems|1|yahkhw",
+  "Chapter 2: Definitions|108|1qsi68l", "Chapter 55: Cryogenic Fluids|12|1qsi68l",
+  "Chapter 2: Definitions|38|1bryhty"];
+/* The bank's own count ("1,792"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1795).toLocaleString("en-US");
+  return (n || 1792).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
@@ -55643,7 +55655,10 @@ function ifcQuestionCountText(){
    started again. IFC_KEY_CHOICES keeps the choices it was first stored under (identity only: the question shows the new ones),
    in the bank's order A-D. Generated from the 5.4.2 bank, not typed. */
 const IFC_KEY_CHOICES = {
-  "chAppH-805": ["hazardous materials inventory statement", "operational permit application", "site plan", "hazardous materials management plan"]
+  "chAppH-805": ["hazardous materials inventory statement", "operational permit application", "site plan", "hazardous materials management plan"],
+  /* (384.73) ch1-040: option A was "Compliance" - the fire code official may issue a conditional or partial certificate of compliance (105.3.4), so it was
+     arguable; it reads "Completion" now and the choices it was first stored under stay its identity */
+  "ch1-040": ["Compliance", "Exemption", "Inspection", "Occupancy"]
 };
 /* ---- (384.56) THE MARKS COVER WHAT DECIDES THE ANSWER ----
    Madison (iPhone, Appendix C, hydrant spacing "increase by _____ percent where the building is sprinklered", answer 50): "It doesn't even
