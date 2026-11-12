@@ -9,6 +9,8 @@ this gate holds is what is OURS and what puts content inside it:
  (1) CLEAR   on Home, a Drill question, the answered state, the paused state, the results, Settings, Profile and the Leaderboard, in an installed iPhone held upright
              (440x956 with the 59px island inset, and his 518px-wide page-zoomed layout on a 440pt screen with the same inset in CSS px): the first control or line of
              text starts at least CLEAR_PT (40pt) below the safe-area line, measured in points on the glass; no header, title or button is inside the system's ~100pt;
+             (384.77, REVERSED ON PURPOSE: the push-down is off by default - it left a band of scrolled page between the status bar and the header and did not
+             remove the wash; CLEAR_PT is 0 now, i.e. nothing starts under the status bar, and the 42pt clearance is checked only with class26e.topclear = "1")
  (2) INK     the header's text and buttons are at their true colour: the brightest ink pixel of each against the colour round it, as a share of what its CSS colour says,
              is at least INK_MIN (a positive control - a 55% scrim laid over the row - must drop below it, so the check can fail);
  (3) LAYERS  the only fixed full-width layers in the top 200px are the 12px strip (inside the status bar, never lower than the inset) and the header's own fade
@@ -37,7 +39,7 @@ def serve_with(top, bottom):
     cb.BODY = cb.INSET_RE.sub(lambda m: ins[m.group(1)], RAW).replace("let fbDb = null;", "let fbDb = null;" + cb.FIRESTORE_STUB, 1)
 from playwright.sync_api import sync_playwright
 from PIL import Image
-CLEAR_PT, INK_MIN, STEP_MAX, TAB_STEP, ZONE_PT = 40, 0.75, 3, 4, 100
+CLEAR_PT, INK_MIN, STEP_MAX, TAB_STEP, ZONE_PT = 0, 0.75, 3, 4, 100   # (384.77) CLEAR_PT was 40: the 42pt push-down is reversed on purpose; nothing starts under the status bar
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:420], flush=True)
@@ -166,7 +168,7 @@ def phone_pass(br, label, W, H, scr, inset_css):
         first = min((r["t"] for r in rows), default=None)
         first_pt = first * k if first is not None else None
         who = [r["w"] for r in rows if r["t"] == first][:2]
-        chk("%s %s: the first control or line starts %.0fpt below the safe-area line (%.1fpt, needs >= %d; %s)" % (label, name, (first_pt or 0) - inset_pt, first_pt or 0, CLEAR_PT, who),
+        chk("%s %s: the first control or line starts %.0fpt below the safe-area line (%.1fpt, needs >= %d - 384.77: not pushed down, never under the status bar; %s)" % (label, name, (first_pt or 0) - inset_pt, first_pt or 0, CLEAR_PT, who),
             first_pt is not None and first_pt - inset_pt >= CLEAR_PT - 0.6, [first_pt, inset_pt, who])
         # (2) ink: every text/control row that is in the top ZONE_PT of the glass
         zone = [r for r in rows if r["t"] * k < ZONE_PT + 60 and r["own"]]
@@ -174,7 +176,7 @@ def phone_pass(br, label, W, H, scr, inset_css):
         low = [x for x in ratios if x[0] < INK_MIN]
         chk("%s %s: the header's text is at its true colour (%d rows, lowest %.2f >= %.2f)" % (label, name, len(ratios), min([x[0] for x in ratios], default=1), INK_MIN), not low, low)
         # (3) layers
-        bad = [l for l in d["layers"] if l["w"] != "div#top-edge" and not (l["w"].startswith("div#splash"))]
+        bad = [l for l in d["layers"] if l["w"] not in ("div#top-edge", "div#top-safe") and not (l["w"].startswith("div#splash"))]   # (384.77) #top-safe: the status bar's area, opaque, under every layer
         chk("%s %s: no fixed full-width layer in the top 200px but the strip (%s)" % (label, name, [l["w"] for l in bad]), not bad, bad)
         e = d["edge"]
         chk("%s %s: the strip is %spx, inside the status bar (its foot %spx, the inset %spx)" % (label, name, e and e["h"], e and e["b"], inset_css), e and e["b"] <= inset_css + .5 and e["disp"] == "block", e)
@@ -205,16 +207,17 @@ def elsewhere(br):
     one("an iPad Pro 11 (834x1194)", 834, 1194, None, 24, UA.replace("iPhone; CPU iPhone OS", "iPad; CPU OS"), True)
     one("a Safari tab on a Pro Max (440x797)", 440, 797, None, 0, UA_TAB, False)
     one("class26e.topclear = 0 on a Pro Max", 440, 956, None, 59, UA, True, extra="localStorage.setItem('class26e.topclear','0');")
+    one("a Pro Max by default (384.77: the clearance is off)", 440, 956, None, 59, UA, True)
     serve_with(59, 34)
-    ctx, pg = boot(br, 440, 956, None, ua=UA)
+    ctx, pg = boot(br, 440, 956, None, ua=UA, extra="localStorage.setItem('class26e.topclear','1');")   # (384.77) only when asked for
     d = pg.evaluate(ROWS)
     px = pg.evaluate("()=>{ const p = document.createElement('i'); p.style.cssText = 'position:fixed;top:0;height:var(--edge-extra);width:0'; document.body.appendChild(p); const h = p.getBoundingClientRect().height; p.remove(); return h; }")
-    chk("a Pro Max at 100%%: the clearance is 42 CSS px = 42pt (%s)" % px, abs(px - 42) < .6, px)
+    chk("a Pro Max at 100%% even with class26e.topclear = 1: no clearance (384.77: build 383's top; %s)" % px, abs(px) < .6, px)
     ctx.close()
     serve_with(73, 40)
-    ctx, pg = boot(br, 518, 1126, (440, 956), ua=UA, mobile=False)
+    ctx, pg = boot(br, 518, 1126, (440, 956), ua=UA, mobile=False, extra="localStorage.setItem('class26e.topclear','1');")
     px = pg.evaluate("()=>{ const p = document.createElement('i'); p.style.cssText = 'position:fixed;top:0;height:var(--edge-extra);width:0'; document.body.appendChild(p); const h = p.getBoundingClientRect().height; p.remove(); return [h, innerWidth / screen.width]; }")
-    chk("his 518px page on a 440pt screen: the clearance is 42pt on the glass (%.1f CSS px x %.3f = %.1fpt)" % (px[0], 1 / px[1], px[0] / px[1]), abs(px[0] / px[1] - 42) < 1, px)
+    chk("his 518px page on a 440pt screen: no clearance (384.77: build 383's top; %.1f CSS px)" % px[0], abs(px[0]) < .6, px)
     ctx.close()
 def safari_tab(br):
     # at rest: the page between the bars (the repo's model: 440x797, no insets)
@@ -223,13 +226,9 @@ def safari_tab(br):
     pg.on("pageerror", lambda e: errs.append(str(e)[:140]))
     for name in ("home", "drill", "settings"):
         mount(pg, name); im = shot(pg, os.path.join(SHOTS, "tab-rest-%s.png" % name) if SHOTS else None)
-        info = pg.evaluate("""()=>({ tc: document.getElementById('themecolor').content, band: getComputedStyle(document.documentElement).getPropertyValue('--band').trim() })""")
-        tcv = tuple(int(info["tc"][i:i + 2], 16) for i in (1, 3, 5)); top = med_row(im, 1)
-        step = max(abs(a - b) for a, b in zip(tcv, top))
-        chk("Safari tab, %s: the theme-color tag is what the page paints at its top row (%s vs %s: %d <= %d)" % (name, info["tc"], top, step, TAB_STEP), step <= TAB_STEP, (info, top))
-        if name == "drill":
-            band = tuple(int(info["band"][i:i + 2], 16) for i in (1, 3, 5)); step = max(abs(a - b) for a, b in zip(band, top))
-            chk("Safari tab, a question: the page's first row meets the colour Safari fills above it (%s vs %s: %d <= %d)" % (top, band, step, STEP_MAX), step <= STEP_MAX, (band, top))
+        info = pg.evaluate("""()=>({ tc: document.getElementById('themecolor').content, band: getComputedStyle(document.documentElement).getPropertyValue('--band').trim(), sky: appTopEdgeColor() })""")
+        # (384.77, REVERSED ON PURPOSE) a Safari tab's tag is the sky's top colour again, as build 383 had it (384.54 had made it --band)
+        chk("Safari tab, %s: the theme-color tag is the sky's top colour, as build 383 (%s vs %s)" % (name, info["tc"], info["sky"]), (info["tc"] or "").lower() == (info["sky"] or "").lower(), info)
     ctx.close()
     # the bars over a full-height page: 62pt status bar, 83pt toolbar (the model), insets 62 / 34 as the sweep's
     serve_with(62, 34)

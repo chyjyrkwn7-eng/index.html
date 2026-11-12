@@ -12,9 +12,10 @@ chrome stands from the screen and takes it up frame by frame (a negative bottom 
              wrongly so the code card opens): through a fling, both rubber bands and a wheel the bar's foot, Pause and .wrap/#stage are constant while nothing scrolls them, and the page
              never nudges the scroll itself while it is being scrolled;
  (2) FOLLOW  the visual viewport left riding below the layout one by the scroll offset (the state in the recordings, simulated through visualViewport.offsetTop): after each scroll step the bar
-             and the back-to-top button are back at the screen's bottom (within 6px) and the test header and Pause at the screen's top; and back at design when it clears;
+             and the back-to-top button are back at the screen's bottom (within 6px); and back at design when it clears. (384.77, on purpose: the test header and Pause are NOT
+             moved by this reading any more - on the owner's phone it moved them ~100pt down mid-scroll; the reading is logged instead. check-b384-top383 holds that.)
  (3) RIDING  the pinned chrome made to ride with the page (every fixed element translated by -scrollY, the state itself, seen only by the page's own geometry): the page sees it, takes it up
-             on both screens' bottoms and the question's top, and is back at design after;
+             on both screens' bottoms (384.77: the question's top is logged, not taken up), and is back at design after;
  (4) SHORT   an installed phone whose real layout viewport (686) is 270pt short of its 956pt screen: found and taken up, undone when whole;
  (5) NEVER   with a text field focused, in a Safari tab (797 of 956), at his 518px page zoom, in a healthy page for 5s: nothing logged or moved;
  (6) LOG     every state change is in window.__barHeal and Report a bug carries it in `edges` after BARHEAL (with the visual viewport's scale).
@@ -126,9 +127,10 @@ def screens(br):
             pg.evaluate("(y)=>window.scrollTo({top:y, behavior:'instant'})", y); pg.wait_for_timeout(260)
             s = pg.evaluate(S); off = min(500, round(s["y"]))
             if s["bar"] and s0["bar"]: worst_b = max(worst_b, abs((s["bar"][1] - s0["bar"][1]) - off))
-            if s["pause"] and s0["pause"]: worst_t = max(worst_t, abs((s["pause"][0] - s0["pause"][0]) - off))
+            # (384.77) THE TOP IS READ, NOT MOVED: Pause (and the header) stay where they are; on his phone this reading moved them ~100pt down mid-scroll
+            if s["pause"] and s0["pause"]: worst_t = max(worst_t, abs(s["pause"][0] - s0["pause"][0]))
             seen.append([off, s["bar"] and round(s["bar"][1] - s0["bar"][1]), s["pause"] and round(s["pause"][0] - s0["pause"][0])])
-        chk("%s: with the visual viewport riding below by the scroll offset the bar is carried to the screen's foot and the header/Pause to its top (worst error bottom %.1f, top %.1f; [offset, bar moved, Pause moved] %s)" % (label, worst_b, worst_t, seen),
+        chk("%s: with the visual viewport riding below by the scroll offset the bar is carried to the screen's foot, and (384.77) the header/Pause stay where they are (worst error bottom %.1f, top %.1f; [offset, bar moved, Pause moved] %s)" % (label, worst_b, worst_t, seen),
             worst_b <= 6 and worst_t <= 6 and (s0["bar"] is not None or s0["pause"] is not None), seen)
         n = pg.evaluate("()=>window.__scrollTos")
         chk("%s: the page did not nudge the scroll while it was being scrolled (%d calls of its own besides the test's %d)" % (label, max(0, n - 5), 5), n - 5 <= 0, n)
@@ -143,10 +145,11 @@ def screens(br):
             pg.evaluate("(y)=>window.scrollTo({top:y, behavior:'instant'})", y); pg.wait_for_timeout(1300)
             s = pg.evaluate(S)
             if s["bar"] and s0["bar"]: worst_b = max(worst_b, abs(s["bar"][1] - s0["bar"][1]))
-            if s["pause"] and s0["pause"]: worst_t = max(worst_t, abs(s["pause"][0] - s0["pause"][0]))
+            # (384.77) the top is not taken up any more (it is logged): Pause carries the simulation's own -scrollY and nothing adds a margin to it
+            if s["pause"] and s0["pause"]: worst_t = max(worst_t, abs((s["pause"][0] - s0["pause"][0]) + round(s["y"])))
             seen.append([round(s["y"]), s["bar"] and round(s["bar"][1] - s0["bar"][1]), s["pause"] and round(s["pause"][0] - s0["pause"][0]), s["stale"], s["vtop"]])
-        chk("%s: the pinned chrome made to ride with the page is seen and taken up (worst error bottom %.1f, top %.1f; [scrollY, bar off, Pause off, margins] %s; %s)" % (label, worst_b, worst_t, seen, s["log"][-1:]),
-            worst_b <= 8 and worst_t <= 8 and (s0["bar"] is not None or s0["pause"] is not None), seen)
+        chk("%s: the pinned chrome made to ride with the page is seen and taken up at the bottom; the top is logged and not moved (384.77) (worst error bottom %.1f, top %.1f; [scrollY, bar off, Pause off, margins] %s; %s)" % (label, worst_b, worst_t, seen, s["log"][-1:]),
+            worst_b <= 8 and worst_t <= 8 and not s["vtop"] and (s0["bar"] is not None or s0["pause"] is not None), seen)
         pg.evaluate("()=>{ window.__ride = false; document.querySelectorAll('*').forEach(e => { if(e.style && e.style.translate && /^0px -?\\d/.test(e.style.translate)) e.style.translate = ''; }); }")
         pg.evaluate("()=>window.scrollTo({top:0, behavior:'instant'})"); pg.wait_for_timeout(1200)
         if name == "profile" or name == "board":
