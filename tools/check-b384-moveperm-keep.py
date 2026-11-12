@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build 384.47: nobody loses a badge, a hundo, a star, a level, a rank or an answer to the county permit questions moving to Chapter 1.
 
-The owner's rule for every question move: no one loses anything. 69 Fire Code questions moved into Chapter 1 and 18 were taken out (15 repeats, ch20-508, ch30-505 and, in 384.70, ch30-709, which the owner removed),
-from 35 chapters (and Chapter 1 itself grew from 88 to 157). The Fire Code badge is ONE hundo per chapter, stored per chapter NAME
+The owner's rule for every question move: no one loses anything. 70 Fire Code questions moved into Chapter 1 and 17 were taken out (15 repeats, ch20-508 and ch30-505, which the owner removed),
+from 35 chapters (and Chapter 1 itself grew from 88 to 158). The Fire Code badge is ONE hundo per chapter, stored per chapter NAME
 (store.unitPerfects), never recomputed from a chapter's size. A Fire Code account that ALREADY holds the badge in every chapter the move
 touches (a hundo count beyond it in one), with answered questions in each, partly-answered chapters, the moved and the removed questions
 answered and starred, and points, hundos and a rank on top, is booted on the app and bank on origin/main (BASE), its saved state is taken as
@@ -17,14 +17,14 @@ it stands, and that same state is booted on this build. Everything is read off t
     and no cutscene or unlock card is on the page;
 (d) THE ANSWER COUNTS: every stored answer entry is still there and not one is lower (nothing is removed or lowered, the removed questions'
     entries too); each moved question's tally also sits on its new key (copied once at boot), so the answered-at-least-once and right / wrong
-    totals over the chapters, and the Stats ring's "answered right once" count, change by EXACTLY what the 18 removed questions held (their
+    totals over the chapters, and the Stats ring's "answered right once" count, change by EXACTLY what the 17 removed questions held (their
     entries stay in the store, but no chapter lists them any more) and not by one more; Chapter 1's answered count rises by the moved questions
     answered (they arrive with their history);
 (e) two devices of one account, one on the old bank and one on the new, merged either way with mergeSameAccount (and added with
     mergeLeavingAccount): no hundo counter, count, best or answer count is lower afterwards than the higher of the two;
 (f) a person's NEXT full run of a chapter is judged by the chapter as it stands: the sizes of the affected chapters on this page are the ones the
-    move gives (Chapter 1 157), and the old 88-question run of Chapter 1 is a partial run (no hundo for it);
-and the move is in effect on this page (Chapter 1 is 157) - which is what fails on main.
+    move gives (Chapter 1 158), and the old 88-question run of Chapter 1 is a partial run (no hundo for it);
+and the move is in effect on this page (Chapter 1 is 158) - which is what fails on main.
   python3 tools/check-b384-moveperm-keep.py [--against OLD/index.html]    (BASE = merge-base with origin/main; OLD_BANK=<its ifc/bank.js> with --against)"""
 import os, sys, json, subprocess, ast
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
@@ -180,7 +180,7 @@ chk("(e) two devices of one account (old bank, new bank), merged either way: not
     merged["ab"][:2], merged["ba"][:2], merged["again"], merged["leave"][:2]), not merged["ab"] and not merged["ba"] and merged["again"] and not merged["leave"], merged)
 chk("(f) the sizes of the affected chapters on this page are the bank's (Chapter 1 %s); a run of Chapter 1's old 88 is no longer the whole chapter (88 of %s -> full run? %s; all %s -> %s)" % (
     Af[A["topics"]["1"]]["size"], full["n"], full["r88"], full["n"], full["rfull"]),
-    Af[A["topics"]["1"]]["size"] == full["n"] == 157 and full["r88"] is False and full["rfull"] is True, {"sizes": [(t[:10], Af[t]["size"]) for t in topics[:6]], "full": full})
+    Af[A["topics"]["1"]]["size"] == full["n"] == 158 and full["r88"] is False and full["rfull"] is True, {"sizes": [(t[:10], Af[t]["size"]) for t in topics[:6]], "full": full})
 chk("no page errors (%s)" % errs_all[:2], not errs_all, errs_all[:3])
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

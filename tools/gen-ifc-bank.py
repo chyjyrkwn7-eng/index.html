@@ -30,11 +30,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ---- UNIT_REMOVALS (build 384.47): questions the OWNER took OUT of the bank ----
 # "the 87 questions we are gonna take them and put them in chapter 1 ... I don't want repeat questions and I don't want bad
 # questions ... I want the best questions out of what we got." The 87 Fire Code questions whose citation is the county's Chapter 1
-# (sections 101-199, source 'amendment') and that sat in other chapters move to Chapter 1 (UNIT_MOVES above: 69 of them after 384.70; 70 in 384.47); 18 are not
+# (sections 101-199, source 'amendment') and that sat in other chapters move to Chapter 1 (UNIT_MOVES above: 70 of them); 17 are not
 # moved and are not kept: 15 ask the same fact as one that stays (the same table cell or the same limit), and two the owner took out himself: ch20-508 (the
 # rooftop-heliport question; its wrong options are not stated not to need a permit) and ch30-505 (industrial ovens: 'an _____ permit' -
-# the article fits only 'operational', so the grammar gives the answer away; the fact itself, 105.5.26, is right), and (384.70) ch30-709
-# (industrial ovens: emergency repair work, application due within 2 working days - it asks the fact ch30-506 already asks; it was on the move list and comes off it). They are DELETED
+# the article fits only 'operational', so the grammar gives the answer away; the fact itself, 105.5.26, is right). They are DELETED
 # here. A removed question's position stays taken in its old chapter (IFC_SRC_GAPS), its key is un-starred once
 # (IFC_RETIRED_KEYS) and its answer counts are left alone - the 5.4.2 precedent. Never reword a question to fix it: it goes or it is
 # reported. The table of what was kept and removed, with the reason for each, is in docs/notes-archive.md ("384.47").
@@ -52,10 +51,10 @@ UNIT_MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2"
     "ch67-713": "1", "ch27-518": "1", "ch35-001": "1", "ch35-002": "1", "ch61-716": "1",
     "ch39-001": "1", "chAppC-701": "1", "chAppC-703": "1", "ch65-006": "1", "ch34-007": "1",
     "ch31-031": "1", "ch61-715": "1", "ch34-008": "1", "ch55-503": "1", "ch12-320": "1", "ch32-612": "1",
-    "ch30-506": "1", "ch39-002": "1", "chAppC-702": "1", "ch12-319": "1", "ch10-108": "1"}
+    "ch30-506": "1", "ch30-709": "1", "ch39-002": "1", "chAppC-702": "1", "ch12-319": "1", "ch10-108": "1"}
 
 UNIT_REMOVALS = ["ch28-501", "ch37-001", "ch56-312", "ch59-711", "ch29-201", "ch50-074", "ch54-009", "ch50-075", "ch59-207",
-    "ch53-601", "ch63-210", "ch63-510", "ch63-701", "ch55-501", "ch55-502", "ch20-508", "ch30-505", "ch30-709"]
+    "ch53-601", "ch63-210", "ch63-510", "ch63-701", "ch55-501", "ch55-502", "ch20-508", "ch30-505"]
 
 def apply_moves(bank):
     qs, units = bank["questions"], bank["units"]

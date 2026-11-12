@@ -55505,7 +55505,7 @@ const IFC_SRC_GAPS = { "4": [19], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1,
    The owner: a test of the chapters you selected must not show references to chapters you did not select, so the 87 Fire Code
    questions that cite the county's Chapter 1 (sections 101-199: 105.5.x operational permits, 105.6.x construction permits, the
    citation table) but sat in other chapters go to Chapter 1 - "I don't want repeat questions and I don't want bad questions ... I want
-   the best questions out of what we got." 69 move (Chapter 1: 88 -> 157 as of 384.70, appended in citation order, positions 89-157, so none of its own 88 shifts); 18 are deleted: 15 that ask the same fact as one that stays, and ch20-508 (rooftop heliport), ch30-505 (industrial ovens: its article gave the answer away) and (384.70) ch30-709 (industrial ovens, emergency repair: the fact ch30-506 asks), which the owner took out himself (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the
+   the best questions out of what we got." 70 move (Chapter 1: 88 -> 158, appended in citation order, positions 89-158, so none of its own 88 shifts); 17 are deleted: 15 that ask the same fact as one that stays, and ch20-508 (rooftop heliport) and ch30-505 (industrial ovens: its article gave the answer away), which the owner took out himself (tools/gen-ifc-bank.py UNIT_MOVES / UNIT_REMOVALS; the
    table of each with its reason is in docs/notes-archive.md, 384.47). No question was reworded: the moved ones differ from main's
    only in `unit`. Same mechanism as 384.42, for the same reasons:
    - every moved question's old position stays taken in its old chapter (IFC_SRC_GAPS), so no other question's key moves
@@ -55588,6 +55588,7 @@ const IFC_MOVED_KEYS = [
   ["Chapter 12: Energy Systems|38|1dy4mlg", "ch12-320"],
   ["Chapter 32: High-Piled Combustible Storage|31|wl72ls", "ch32-612"],
   ["Chapter 30: Industrial Ovens|6|1vcinxg", "ch30-506"],
+  ["Chapter 30: Industrial Ovens|9|18adw3x", "ch30-709"],
   ["Chapter 39: Processing and Extraction Facilities|2|aj3a0x", "ch39-002"],
   ["Appendix C: Fire Hydrant Locations and Distribution|9|45fo4e", "chAppC-702"],
   ["Chapter 12: Energy Systems|37|1xyl85u", "ch12-319"],
@@ -55613,15 +55614,12 @@ const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru
   /* (384.47) and the one the owner took out himself: ch20-508, the rooftop-heliport question (its wrong options are not stated not to need a permit) */
   "Chapter 20: Aviation Facilities|12|1ikiga7",
   /* (384.47) and ch30-505, industrial ovens: "an _____ permit" - the article fits only "operational", so the grammar gave the answer away (the owner removed it) */
-  "Chapter 30: Industrial Ovens|5|kaggfi",
-  /* (384.70) and ch30-709, industrial ovens: emergency repair work, application due within 2 working days - it asks the fact ch30-506 asks (the owner removed it; it had been on the move
-     list to Chapter 1 and comes off it, so the key it was stored under in Chapter 30 is the one retired, and Chapter 1 is 157) */
-  "Chapter 30: Industrial Ovens|9|18adw3x"];
-/* The bank's own count ("1,794"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
+  "Chapter 30: Industrial Ovens|5|kaggfi"];
+/* The bank's own count ("1,795"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1794).toLocaleString("en-US");
+  return (n || 1795).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
