@@ -66,6 +66,16 @@
   html.top-edge-on:not(.top-edge-old) #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:12px; z-index:2147483000;
     background-color:var(--splash-bg,#0A0A0A); transition:background-color .6s ease; pointer-events:auto; }
   html.top-edge-on.top-edge-none:not(.top-edge-old) #top-edge{ pointer-events:none; }
+  /* (384.75) THE STATUS BAR'S AREA IS NEVER SCROLLED CONTENT. One opaque strip the height of the safe area, in the markup from the first byte
+     of <body> beside #top-edge, recoloured in place with it (syncTopGuard: the sky's top colour, paper under a question), never removed or
+     replaced, taking touch. It sits under every sheet, pop-up and pinned header (z 130: a pinned test header is 140, the tab bar 200) and over
+     the page, so a scrolled Profile, Settings or Leaderboard runs beneath it instead of up under the clock. Installed iPhone/iPad only, like
+     #top-edge; where the inset is 0 (a phone on its side) it has no height. And the document does not bounce in the installed app any more
+     (a Safari tab has had this since 327z): a rubber band dragged the page under the pinned chrome and back. */
+  #top-safe{ display:none; }
+  html.top-edge-on:not(.top-edge-old) #top-safe{ display:block; position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top, 0px); z-index:130;
+    background-color:var(--splash-bg,#0A0A0A); pointer-events:auto; }
+  html.top-edge-on{ overscroll-behavior-y:none; }
 </style>
 <script>
   /* INTERNET EXPLORER (build 384). Nova cannot run in it (custom properties, color-mix(), modern script throughout), and
@@ -491,7 +501,7 @@
         te.add("top-edge-on");
         if(localStorage.getItem("class26e.topedgeold") === "1") te.add("top-edge-old");
         if(localStorage.getItem("class26e.topedgepe") === "none") te.add("top-edge-none");
-        if(localStorage.getItem("class26e.topclear") === "0") te.add("top-clear-off");   /* (384.54) the clearance under the system's wash: off */
+        if(localStorage.getItem("class26e.topclear") === "1") te.add("top-clear-on");   /* (384.54) the clearance under the system's wash; (384.75) off unless asked for */
       }
     }
     if(!inApp){
@@ -689,6 +699,7 @@
 </head>
 <body>
 <div id="top-edge" aria-hidden="true"></div>
+<div id="top-safe" aria-hidden="true"></div>
 
 <div id="splashscreen">
   <div id="splash-group">
@@ -1479,10 +1490,13 @@
      installed iPhone held upright (html.top-edge-on is the head script's "installed iOS"; a Safari tab, an iPad, a laptop, Android
      and a phone on its side keep --sat = env() exactly), and only on a phone with a notch or island (inset > 30px: an SE-sized phone
      has no room to give and a shorter status bar). `class26e.topclear = "0"` puts it back (html.top-clear-off). Everything that
-     measures itself against the old line does it through --sat (63 places), so --pad-inset-top below still collapses to its old value. */
+     measures itself against the old line does it through --sat (63 places), so --pad-inset-top below still collapses to its old value.
+     (384.75) OFF BY DEFAULT. It did not take the wash away (nothing on the page can) and it moved every header 42pt down, leaving a band of
+     the scrolled page showing between the status bar and the header ("All you did was move stuff down"). --sat is the raw inset again
+     everywhere; `class26e.topclear = "1"` (html.top-clear-on) is the only way to put the clearance back, for a comparison on a phone. */
   :root{ --sat: env(safe-area-inset-top, 0px); --edge-extra: 0px; }
   @media (orientation:portrait) and (max-width:39.99rem){
-    html.top-edge-on:not(.top-clear-off){
+    html.top-edge-on.top-clear-on{
       --edge-extra: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 42px) * var(--zc, 1));
       --sat: calc(env(safe-area-inset-top, 0px) + var(--edge-extra));
     }
@@ -13538,15 +13552,14 @@
     max-width:inherit; padding-left:inherit; padding-right:inherit; box-sizing:border-box;
     min-height:var(--test-top-h, 0px); z-index:140; isolation:isolate;
   }
-  .wrap.test-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px)) !important; }
+  .wrap.test-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px) + var(--test-cap-pad, 0px)) !important; }
+  /* (384.75) the pieces between the header and the question (dots, timer line, the line under them), pinned where they rest - see pinTestCap */
+  .wrap.test-pinned > .cap-pin{ position:fixed !important; margin:0 !important; z-index:141; box-sizing:border-box; }
   /* The live race line pinned under the header (build 327, round 6) - see
      syncTestPin. Its place is measured; it carries the header's fade. */
-  .wrap.test-pinned.race-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px) + var(--test-race-h, 0px)) !important; }
+  .wrap.test-pinned.race-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px) + var(--test-race-h, 0px) + var(--test-cap-pad, 0px)) !important; }
   .wrap.test-pinned.race-pinned > #vroomracebar{ position:fixed; margin:0; z-index:141; box-sizing:border-box; isolation:isolate; }
-  [data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{
-    bottom:calc(-1 * var(--test-race-h, 0px));
-    background:color-mix(in srgb, var(--paper) 96%, transparent);
-  }
+  /* (384.75) in a race the cap runs to the race line's foot like any other pinned piece: --test-cap-x is measured from it (pinTestCap) */
   .wrap.test-pinned.race-pinned > #vroomracebar::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
     top:.7rem; bottom:-.9rem; pointer-events:none; z-index:-1;   /* (384 r5) from .7rem down, not 0: the header's own fade already covers the top, and this one painted over the bottom of Pause (it sits in the header's layer, which is under the race bar's) */
@@ -13555,12 +13568,16 @@
       color-mix(in srgb, var(--paper) 95%, transparent) 70%,
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
+  /* (384.75) THE CAP: SOLID paper from the top of the screen (the status bar's area) to the foot of the lowest pinned piece
+     (--test-cap-x below the header row: the dots, the timer line, the line), then a .75rem fade into the page. It was a fade over its
+     whole height - 97% at the top, thinning from 70% down, i.e. right across the header's own words - so a scrolled question showed
+     through the row. It takes the touches that land on it (the content under it is not there to be tapped). */
   [data-layout="modern"] .wrap.test-pinned > .top::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
-    top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
+    top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:calc(-1 * (var(--test-cap-x, 0px) + .75rem)); pointer-events:auto; z-index:-1;
     background:linear-gradient(to bottom,
-      color-mix(in srgb, var(--paper) 97%, transparent) 0%,
-      color-mix(in srgb, var(--paper) 95%, transparent) 70%,
+      var(--paper) 0%,
+      var(--paper) calc(100% - .75rem),
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   .wrap:has(.fc-screen) .top .test-qcounter,
@@ -34367,13 +34384,13 @@ html.vp-top :is(.wrap.test-pinned > .top, #pausebtn, .update-banner, .daily-aler
    rows, and Safari fills the band above the page with the root's colour (--band). Paper at 97% from y=0 left a step between the two: 9 levels
    at 440x797, (17,21,27) against (26,27,30), a line across the top of every question in a tab. The same fade in --band meets it. The installed
    app is untouched (its status bar sits over the page, and the strip under it follows the paper: topEdgeStripColor). */
-html.is-browser[data-layout="modern"] .wrap.test-pinned:not(.race-pinned) > .top::before{
+/* (384.75) solid like the installed app's cap (see .wrap.test-pinned > .top::before), in --band */
+html.is-browser[data-layout="modern"] .wrap.test-pinned > .top::before{
   background:linear-gradient(to bottom,
-    color-mix(in srgb, var(--band, var(--paper)) 97%, transparent) 0%,
-    color-mix(in srgb, var(--band, var(--paper)) 95%, transparent) 70%,
+    var(--band, var(--paper)) 0%,
+    var(--band, var(--paper)) calc(100% - .75rem),
     color-mix(in srgb, var(--band, var(--paper)) 0%, transparent) 100%);
 }
-html.is-browser[data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{ background:color-mix(in srgb, var(--band, var(--paper)) 96%, transparent); }
 /* and the notices pinned to the bottom sit above the toolbar */
 html.is-browser.safari-bars-over :is(.toast, .vroom-prep){ margin-bottom:calc(var(--sb-bottom-x) + 8px); }
 /* Welcome is measured to end just over the home indicator (its hint, --pad-inset-bottom): it ends that much over the toolbar
@@ -56519,9 +56536,13 @@ if(window.visualViewport){
      this measured no different there); it costs nothing to not depend
      on WebKit doing the same while somebody flings down Profile. */
   let lastShift = null;
+  /* (384.75) ONLY WHILE A FIELD HAS THE KEYBOARD. With nothing focused this read the visual viewport against scrollY in the middle of a
+     scroll, and on his iPhone the chat button came down ~20pt from the header beside it while a question was scrolled (384.70 recording).
+     The keyboard's pan is the only thing it is for, so with no text field focused it is 0. */
+  const typing = () => { try{ const a = document.activeElement; return !!a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || "") || a.isContentEditable); }catch(e){ return false; } };
   const setShift = () => {
     let px = 0;
-    try{ px = Math.max(0, Math.round((vv.pageTop || 0) - (window.scrollY || 0))); }
+    try{ px = typing() ? Math.max(0, Math.round((vv.pageTop || 0) - (window.scrollY || 0))) : 0; }
     catch(e){ px = 0; }
     if(px === lastShift) return;
     lastShift = px;
@@ -56531,6 +56552,8 @@ if(window.visualViewport){
   vv.addEventListener("resize", setShift);
   vv.addEventListener("scroll", setShift);
   window.addEventListener("scroll", setShift, { passive: true });
+  document.addEventListener("focusin", () => setTimeout(setShift, 0), true);
+  document.addEventListener("focusout", () => { setTimeout(setShift, 0); setTimeout(setShift, 450); }, true);
   setShift();
 }
 
@@ -56563,7 +56586,10 @@ function syncTestPin(force){
   const rb = document.getElementById("vroomracebar");
   const raceWant = !!(want && rb && !rb.hidden);
   const hasRace = wrap.classList.contains("race-pinned");
-  if(want === has && raceWant === hasRace && !force) return;
+  /* (384.75) the cap is re-measured when what sits in it changes size (the timer line shown or hidden, a meter re-laid) */
+  const capSig = want ? testCapSig(wrap) : "";
+  if(want === has && raceWant === hasRace && !force && capSig === (wrap.dataset.capSig || "")) return;
+  unpinTestCap(wrap);
   wrap.classList.remove("test-pinned", "race-pinned");
   if(rb){ rb.style.top = ""; rb.style.left = ""; rb.style.width = ""; }
   /* (384 r8) THE QUESTION DOTS STAY IN THEIR OWN PLACE, straight under the header, in a race too. Madison: "the amount of
@@ -56573,7 +56599,7 @@ function syncTestPin(force){
      is pinned the dots ride at the top of it - header, dots, line - and they go back to their own place when it is not. */
   const meter = document.getElementById("meter");
   if(meter && rb && meter.parentElement === rb && !raceWant){ rb.after(meter); rb.classList.remove("has-meter"); }
-  if(!want){ try{ if(lastTopEdgeModel) syncTopGuard(lastTopEdgeModel); }catch(e){} return; }
+  if(!want){ delete wrap.dataset.capSig; try{ if(lastTopEdgeModel) syncTopGuard(lastTopEdgeModel); }catch(e){} return; }
   const y = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
   wrap.style.setProperty("--test-top-y", y + "px");
   wrap.style.setProperty("--test-top-h", top.offsetHeight + "px");
@@ -56586,8 +56612,75 @@ function syncTestPin(force){
     rb.style.width = rr.width + "px";
     wrap.classList.add("race-pinned");
   }
+  /* (384.75) measured BEFORE the header is pinned, while everything is still in the flow: where the question's content starts */
+  const stageAt0 = stage.getBoundingClientRect().top + window.scrollY;
   wrap.classList.add("test-pinned");
+  try{ pinTestCap(wrap, top, stageAt0); }catch(e){}
+  wrap.dataset.capSig = testCapSig(wrap);
   try{ if(lastTopEdgeModel) syncTopGuard(lastTopEdgeModel); }catch(e){}   /* (384.54) the strip follows the pin: paper under it */
+}
+/* (384.75) THE TOP OF A QUESTION IS ONE PINNED, OPAQUE UNIT. Madison's recording of 384.70 (iPhone 17 Pro Max, installed, a Fire Code Drill):
+   the header row (mode, count, Pause), the progress dots and the chat button sat at different heights from frame to frame, scrolled content
+   showed between the status bar and the header, and the question's words ran up through the header row. Three causes, each read off the
+   code and his frames (docs/notes-archive.md "384.75"): (1) only the header row was pinned - the dots and the line under them scrolled with
+   the page, so they slid up past and over the header; (2) the header's backing was a FADE (97% paper at the top, falling to nothing from 70%
+   of its height, which put the fade's thin part right across the header's own text), so the question showed through the row; (3) 384.62's
+   barSelfHeal moved the header and Pause DOWN (html.vp-top) by whatever displacement it read while a scroll was moving, and the chat button
+   moved by its own, different reading (--vv-shift) - his frames have header and Pause together ~100pt low while the dots scrolled up
+   normally, and the chat button ~20pt low: the follower firing on a page whose pinned chrome was not riding at all.
+   So: the header row stays pinned as before; every piece between it and the question (the dots, the timer line, the line under them) is
+   pinned where it rests, in the same pass, at a fixed top that nothing moves afterwards; .top::before is SOLID paper from y = 0 (the status
+   bar's area) to the foot of the lowest pinned piece, with a short fade below that; .wrap keeps the content where it was by the measured
+   difference. The heal no longer moves anything at the top (it logs what it reads), the chat button's keyboard correction only runs with a
+   field focused. Where the unit would take more than TEST_CAP_MAX of the screen (a 358-question unit's dots on a phone, a phone on its side)
+   only the header row is pinned and the dots scroll beneath the solid cap like the question does. The question's star is the question's
+   own control and stays with it (inside #stage, which slides on every question): it scrolls beneath the cap and is never shown through it. */
+const TEST_CAP_MAX = .45;
+const TEST_CAP_PIECES = ["meter", "timerline", "count"];
+function testCapSig(wrap){
+  try{
+    return TEST_CAP_PIECES.map(id => { const e = document.getElementById(id); return e && e.parentElement === wrap ? (e.hidden ? "h" : e.offsetHeight + "x" + e.offsetWidth) : "-"; }).join(",") + "|" + innerWidth + "x" + innerHeight;
+  }catch(e){ return ""; }
+}
+function unpinTestCap(wrap){
+  if(!wrap) return;
+  wrap.classList.remove("cap-pieces");
+  wrap.style.removeProperty("--test-cap-x"); wrap.style.removeProperty("--test-cap-pad");
+  for(const id of TEST_CAP_PIECES){
+    const e = document.getElementById(id);
+    if(e && e.classList.contains("cap-pin")){ e.classList.remove("cap-pin"); ["top", "left", "width"].forEach(p => e.style.removeProperty(p)); }
+  }
+}
+function pinTestCap(wrap, top, stageAt0){
+  const tr = top.getBoundingClientRect();
+  let foot = tr.bottom;
+  /* Pause and the chat button stand a little taller than the row: the cap covers to their feet too */
+  for(const id of ["pausebtn", "chatdock-btn"]){
+    const e = document.getElementById(id); if(!e) continue;
+    const r = e.getBoundingClientRect(); if(r.height && r.top < tr.bottom && getComputedStyle(e).position === "fixed") foot = Math.max(foot, r.bottom);
+  }
+  const raced = wrap.classList.contains("race-pinned");
+  if(raced){ const rb = document.getElementById("vroomracebar"); if(rb) foot = Math.max(foot, rb.getBoundingClientRect().bottom); }
+  /* the pieces, read in the flow at the page's own scroll (a rest position is the box's place in the document) */
+  const sy = window.scrollY, pieces = [];
+  for(const id of TEST_CAP_PIECES){
+    const e = document.getElementById(id);
+    if(!e || e.parentElement !== wrap || e.hidden) continue;
+    const cs = getComputedStyle(e); if(cs.display === "none" || cs.position === "fixed") continue;
+    const r = e.getBoundingClientRect(); if(!r.height) continue;
+    pieces.push({ e, t: r.top + sy, l: r.left, w: r.width, b: r.bottom + sy });
+  }
+  const lowest = pieces.reduce((m, p) => Math.max(m, p.b), foot);
+  const fits = pieces.length && lowest <= window.innerHeight * TEST_CAP_MAX;
+  if(fits){
+    for(const p of pieces){ p.e.style.setProperty("top", p.t + "px"); p.e.style.setProperty("left", p.l + "px"); p.e.style.setProperty("width", p.w + "px"); p.e.classList.add("cap-pin"); }
+    wrap.classList.add("cap-pieces");
+    foot = lowest;
+  }
+  wrap.style.setProperty("--test-cap-x", Math.max(0, Math.round((foot - tr.bottom) * 10) / 10) + "px");
+  /* the question starts where it did before anything was pinned: the pinned pieces' flow is given back to .wrap's top padding */
+  const now = stage.getBoundingClientRect().top + window.scrollY, d = stageAt0 - now;
+  if(Math.abs(d) > .25) wrap.style.setProperty("--test-cap-pad", (Math.round(d * 10) / 10) + "px");
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
@@ -68413,7 +68506,7 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
     }
     if(!was && (b || t)){ requestAnimationFrame(() => { try{ window.dispatchEvent(new Event("resize")); }catch(e){} }); }   /* the search circle is placed from the bar's rect */
   }
-  let lastMeasure = 0;
+  let lastMeasure = 0, lastTopNote = 0;
   function check(){
     raf = 0;
     if(busy()){ return; }
@@ -68423,8 +68516,13 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
     lastMeasure = t0;
     const m = measure();
     if(!m){ return; }
-    apply(m.bottom, m.top, m.why);
-    if(m.bottom || m.top){
+    /* (384.75) THE TOP IS READ, NOT MOVED. On his iPhone (384.70 recording, a Drill question scrolled) the header row and Pause sat ~100pt
+       LOW while the dots and the question scrolled up normally: html.vp-top was moving them by a displacement the main thread read while
+       the scroll was in flight, on a page whose pinned chrome was not riding. Whatever the top reading is, it goes to the log for Report a
+       bug (so a real ride would still show up there) and nothing at the top of the screen moves. The bottom (the tab bar) is unchanged. */
+    if(m.top && Date.now() - lastTopNote > 1000){ lastTopNote = Date.now(); note("top read " + m.top + " (not applied) y " + Math.round(window.scrollY)); }
+    apply(m.bottom, 0, m.why);
+    if(m.bottom){
       if(!since) since = Date.now();
       /* still out 1.5s after the page stopped: a nudge, once per episode */
       if(!nudged && Date.now() - since > 1500 && Date.now() - lastScroll > 1500){
@@ -87164,6 +87262,8 @@ function syncTopGuard(color){
         return;
       }
       if(el.dataset.color !== color){ el.dataset.color = color; el.style.backgroundColor = color; }
+      const safe = document.getElementById("top-safe");   /* (384.75) the safe-area strip under it, the same colour, in place */
+      if(safe && safe.dataset.color !== color){ safe.dataset.color = color; safe.style.backgroundColor = color; }
       return;
     }
     const old = document.getElementById("top-guard");
@@ -122174,7 +122274,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.70";
+const APP_BUILD = "2026-11-12-384.75";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
