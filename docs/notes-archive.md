@@ -39334,3 +39334,14 @@ Serves version.json at the build under test (an --against build would otherwise 
 
 **What only his phone can confirm:** that the dark seam under each line is gone - it is WebKit's antialiasing at a fractional y and
 Chromium cannot draw it; the fix (the card under every boundary) is measured here, the seam itself is not.
+- Also changed on purpose: check-behaviour check_b314h_board read ANY non-inset box-shadow on first place as "a glow" and then wanted
+  314's 8px/12px clearance under the header; it now counts only light thrown UP past the row's top (blur + spread - y > 0) - the 1px
+  `--lb-cell-under` reaches only below the row.
+- Gates, one at a time, on the tree with main 384.89 merged (build 384.92): check-js ok; console - only the two blocked-Firebase-CDN
+  loads, no page errors, both classes; check-b384-lbclean ALL PASS (45; FAILS 384.86 on (1)-(5) everywhere); check-behaviour
+  check_b324l_board / check_b314h_board / check_b313_lead / check_ranks 65 pass, 1 fail ("the board, the person card and the Profile
+  card show the same element") - the same failure on 384.86, not from this; check-tours 24 runs, every step renders; check-centering
+  --quick ALL PASS (a first run flagged the badge case lid on the Virtual Room screen and Fire Code's empty Friends card, then passed
+  clean on the rerun - timing under load, neither on the board); sweep-layout --quick 20/20 clean; check-b384-top383 ALL PASS;
+  check-b384-hairlines ALL PASS; check-b382-ios (3) passes (fails on main 384.89 as changed), (4) "the top three are the list's
+  first rows" fails identically on main 384.89 (its fixture has no .rank-podium-2 row), not from this.
