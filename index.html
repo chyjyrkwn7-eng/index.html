@@ -74410,14 +74410,26 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
    is 61%, 71%, 58%, 51%, 42%, 40% and 35% of its level's XP: the academy's own proportions (55, 71, 60, 51, 42, 40, 35), practice and tests and the rest of
    what people do covering the remainder. Levels are unchanged (they are the XP curve's, not the bank's). Read off the bank, never
    typed: a chapter added moves it. The academy copy is kept (TIER_UNLOCKS_ACADEMY) for the one-time rank floor (ifcLadderFloorOnce);
-   a rank only gets easier here, so nobody drops one. */
+   a rank only gets easier here, so nobody drops one (384.60: no longer true from Gold up - see FIRE_BADGE_SHARE and the second floor below). */
 const TIER_UNLOCKS_ACADEMY = {};
 Object.keys(TIER_UNLOCKS).forEach(k => { TIER_UNLOCKS_ACADEMY[k] = Object.assign({}, TIER_UNLOCKS[k]); });
-const FIRE_BADGE_SHARE = { rookie: .05, ranger: .14, veteran: .225, vanguard: .33, adept: .415, elite: .55, titan: .655 };
+/* 384.60: THE TOP RANK ASKS FOR EVERY CHAPTER, AND THE GAPS GROW ALL THE WAY UP. Madison: "Don't change how many for Bronze, Silver, but it
+   should be 58 to reach Supernova and it needs to progressively get there." Iron, Bronze and Silver are exactly as they were (5%, 14%,
+   22.5% = 3, 8, 13 of 58); then Gold 36.5%, Sapphire 53.5%, Amethyst 74%, Supernova 100% = 21, 31, 43, 58 - gaps 5, 5, 8, 10, 12, 15, each
+   bigger than the one before. Supernova is the share 1, so a chapter added moves it to the new total (read off the bank, never typed).
+   The badges' own XP (a chapter's one imperfect and one perfect run, ~932 on average) is 61, 71, 58, 57, 54, 54 and 54% of the XP each
+   rank's level asks: still inside the 25-85 band and flat from Gold up (every chapter once is ~54,000 XP, level 60, against level 80's
+   100,240 - the other ~46% is practice and tests). Levels are unchanged. THIS LADDER IS HARDER FROM GOLD UP (the previous one asked 19, 24,
+   32 and 38), so it is not "a rank only gets easier": ifcLadderFloor384bOnce below keeps every rank somebody held on the previous
+   ladder. FIRE_BADGE_SHARE_384 is that previous ladder, kept for the floor alone. */
+const FIRE_BADGE_SHARE = { rookie: .05, ranger: .14, veteran: .225, vanguard: .365, adept: .535, elite: .74, titan: 1 };
+const FIRE_BADGE_SHARE_384 = { rookie: .05, ranger: .14, veteran: .225, vanguard: .33, adept: .415, elite: .55, titan: .655 };
+var IFC_CHAPTER_COUNT = 0;
 if(window.NOVA_CLASS === "ifc"){
   try{
     const seen = {}; QUESTIONS.forEach(q => { const t = q && (q.topic || "").trim(); if(t) seen[t] = 1; });
     const n = Object.keys(seen).length;
+    IFC_CHAPTER_COUNT = n;
     if(n > 2) TIER_ORDER_FULL.forEach(k => {
       const r = TIER_UNLOCKS[k]; if(!r) return;
       r.badges = Math.max(1, Math.round((FIRE_BADGE_SHARE[k] || 1) * n));
@@ -74444,6 +74456,34 @@ function ifcLadderFloorOnce(){
     const lvl = levelFromPoints(store.lifetime ? Number(store.lifetime.points) || 0 : 0);
     let held = 0;
     TIER_ORDER_FULL.forEach((k, i) => { const r = TIER_UNLOCKS_ACADEMY[k]; if(r && lvl >= (r.level || 0) && b >= (r.badges || 0)) held = i + 1; });
+    if(held > (Number(store.rankFloor) || 0)){ store.rankFloor = held; saveStore(); return true; }
+  }catch(e){}
+  return false;
+}
+/* NOBODY LOSES A RANK ON THE 58-CHAPTER LADDER (build 384.60, Fire Code only). Gold to Supernova now ask for more badges (21, 31, 43, 58
+   against 19, 24, 32, 38), so a rank computed fresh from level and badges would take Gold, Sapphire or Amethyst off somebody who holds
+   it. The rank this account held on the PREVIOUS Fire Code ladder (FIRE_BADGE_SHARE_384 of this bank's chapters, the same rounding the
+   ladder uses, and the same levels) becomes its rank floor, once (class26e.ifcladder384b, kept in the class's own storage and written
+   BEFORE the work, so a crash costs one floor rather than a loop). A floor only ever raises (here, rankOf, mergeSameAccount and
+   mergeLeavingAccount take the max), and everything a rank hands over is DERIVED from rank when read (tierColorUnlocked honours the
+   floor: the colour, the flare, the character, the rank's emblem on the boards, the published row's rankFloor) - no unlock mark is
+   stored. The level wall starts after the floor (wallRankIndex), so nobody's shown level moves either. Nothing re-fires: the rank-up
+   scene is owed only past store.rankUpShown, and the floor is not past it. The level is the curve's own (levelFromPoints), which is
+   what a held rank's level asks (the wall is the NEXT rank's level, never below a held one's). */
+function ifcLadderFloor384bOnce(){
+  if(window.NOVA_CLASS !== "ifc") return false;
+  const K = "class26e.ifcladder384b";
+  try{ if(localStorage.getItem(K)) return false; localStorage.setItem(K, "1"); }catch(e){ return false; }
+  try{
+    const n = IFC_CHAPTER_COUNT;
+    if(!(n > 2)) return false;
+    const b = badgeCountOf(store);
+    const lvl = levelFromPoints(store.lifetime ? Number(store.lifetime.points) || 0 : 0);
+    let held = 0;
+    TIER_ORDER_FULL.forEach((k, i) => {
+      const r = TIER_UNLOCKS[k], need = Math.max(1, Math.round((FIRE_BADGE_SHARE_384[k] || 1) * n));
+      if(r && lvl >= (r.level || 0) && b >= need) held = i + 1;
+    });
     if(held > (Number(store.rankFloor) || 0)){ store.rankFloor = held; saveStore(); return true; }
   }catch(e){}
   return false;
@@ -121339,7 +121379,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-11-384.48";
+const APP_BUILD = "2026-11-12-384.60";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -163185,6 +163225,7 @@ if(store.onboardingComplete && !syncCode && !syncOff){
    change declining to cost somebody something they earned. */
 /* Fire Code's new ladder keeps every rank held (build 382), before anything below asks for a rank */
 if(store.onboardingComplete) try{ ifcLadderFloorOnce(); }catch(e){}
+if(store.onboardingComplete) try{ ifcLadderFloor384bOnce(); }catch(e){}
 if(store.onboardingComplete) preserveLegacyLevel();
 /* Existing accounts only. A fresh device has nothing to hand out, and
    writing a store before the account exists would get in the way of the
