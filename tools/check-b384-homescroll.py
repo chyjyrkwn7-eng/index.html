@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.87: HOME STAYS PUT UNDER A SWIPE; THE PINNED CHROME IS NOT MOVED BY A RUBBER BAND.
+"""Build 384.89: HOME STAYS PUT UNDER A SWIPE; THE PINNED CHROME IS NOT MOVED BY A RUBBER BAND.
 
 Madison's 384.82 recording of Home (iPhone 17 Pro Max, installed, the rubber band back): at each swipe the content stretched a long way
 and snapped back to the same place every time (a rubber band, not a scroll: Home fits), but the tab bar, the daily "?" and the class
@@ -7,7 +7,7 @@ bubble went DOWN, off the foot of the screen, and came back as the stretch let g
 missing for a few frames. The bar's move was barSelfHeal (384.62): in a rubber band iOS reports the visual viewport past the layout one
 (offsetTop > 0) while its compositor keeps the pinned chrome where it belongs, so the follower read the stretch as a displacement and
 took it up (a negative bottom margin by the stretch), and on its first take-up it also sent a synthetic resize, which rewrites the
-hero's own style (repositionTopNotices) mid-bounce. 384.87: the follower changes nothing while a finger is down, while the page or the
+hero's own style (repositionTopNotices) mid-bounce. 384.89: the follower changes nothing while a finger is down, while the page or the
 visual viewport is moving, for 900ms after the finger lifts, or while the page stands past an end; a displacement still there at rest
 is taken up as before.
 
