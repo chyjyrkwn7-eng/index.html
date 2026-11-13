@@ -102,7 +102,7 @@ def page(br, active="ifc", w=440, h=956, dpr=1):
     # the update check answers with the page's own build, so no reload lands in the middle of a check
     pg.route("**/version.json*", lambda r, q: r.fulfill(status=200, headers={"content-type": "application/json"}, body=json.dumps({"build": BUILD, "frameId": "", "note": ""})))
     pg.add_init_script(INIT.replace("ACTIVE", active))
-    pg.goto("http://127.0.0.1:%d/index.html" % port)
+    pg.goto("http://127.0.0.1:%d/index.html" % port, timeout=180000)
     for _ in range(60):
         try:
             if pg.evaluate("() => typeof showHome === 'function' && !!document.getElementById('stage')"): break

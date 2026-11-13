@@ -352,7 +352,7 @@ class Rec:
         pg.route("**/index.html", lambda r: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
         pg.route("**/version.json*", lambda r: r.fulfill(status=200, headers={"content-type": "application/json"},
                                                           body='{"build":"%s","frameId":"","note":""}' % BUILD))
-        pg.goto(URL)
+        pg.goto(URL, timeout=180000)
         pg.wait_for_timeout(2600)
         pg.evaluate(FRESH_SETUP if mode == "fresh" else SETUP)
         pg.evaluate(LOG_PLAYS)
