@@ -47,7 +47,8 @@ def load(br, dev, cls, pick=False, query=""):
     pg.evaluate(QUIET); pg.wait_for_timeout(1800); G.clear_popups(pg)
     # the picked build (5f85d51, from 384.88) still opens its intro pop-up (#intro-pop, a full-screen dim) over Home for this fixture;
     # it is not the button and comes off on both sides, so only the button is compared
-    pg.evaluate("()=>document.querySelectorAll('#intro-pop, .intro-pop').forEach(n => n.remove())"); pg.wait_for_timeout(400)
+    # (a rule, not a removal: it can open after any one moment the harness picks, as it did on the laptop)
+    pg.add_style_tag(content="#intro-pop, .intro-pop{ display:none !important; }"); pg.wait_for_timeout(400)
     return pg
 
 with sync_playwright() as pw:
