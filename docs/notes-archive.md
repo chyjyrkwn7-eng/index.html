@@ -39481,7 +39481,7 @@ sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre
 
 ### 384.105 (nodiag)
 
-Branch `claude/b384-nodiag` from main 384.95 (562b1ed); built as 384.105 (the lead renumbers at merge). NOT merged: waiting for the owner's go.
+Branch `claude/b384-nodiag` from main 384.95 (562b1ed), main 384.97 (93d18a9) merged in before the final gates; built as 384.105 (the lead renumbers at merge). NOT merged: waiting for the owner's go.
 
 Madison: "Remove the 'show the display test panel' stuff from settings by the way." The display test (384 r17 to 384.85, see "384 r17",
 "384.26", "384.27", "384.77", "384.80") was the panel of switches for chasing the iOS 26 top-of-screen blur; he has decided the blur is the
@@ -39490,7 +39490,7 @@ system's, not fixable, and not to be chased further.
 **Removed (commit b6c0b68, index.html only, so `git revert b6c0b68` puts it back; `retired/display-test.md` + `.patch`):**
 - Settings > Advanced > Troubleshooting: its header, its one row ("Show / Hide the display test panel") and its note. Troubleshooting held
   nothing else, so the section is gone and Reset is Advanced's last section. Nothing above it moved (gate N1: every Settings screen on
-  384.95's rects; Advanced is 384.95's page less its last header, card, row and note).
+  384.97's rects; Advanced is 384.97's page less its last header, card, row and note).
 - The panel itself and its `?diag` entry (the 309-line IIFE: suspect switches, Run auto test, trials, readout, "keep for the next launch",
   `window.__diagTrials`), and the `?sbs=default|black` test-install head script (only the panel's text pointed at it).
 - What only honoured its flags: the head script's reads of `class26e.topguard/topedgeold/topedgepe/topmatch/topdeep/top383/topclip` (it now
@@ -39521,15 +39521,15 @@ top edge itself (`#top-edge`, `syncTopGuard`, the theme-color dance) - the shipp
 something?"). The row (`settingsPageRow("install", ...)`) opens the steps; it adds nothing itself. The sheet it opens is titled "Add Nova to
 your Home Screen", which does not repeat the row's name, so it is unchanged; the steps keep Safari's own words ("Add to Home Screen").
 One line on a 320x568 phone, the SE, the Pro Max at 85%, the iPad and a laptop (check-b382-settings (4), new guard; rects on the Share &
-Install page identical to 384.95's, gate N1).
+Install page identical to 384.97's, gate N1).
 
 **Gates.**
 - NEW `tools/check-b384-nodiag.py`: N1 no "display test" words or panel on any of 10 Settings screens (both classes, the panel's flag
-  set beforehand), Advanced's sections whole, every Settings screen on 384.95's rects (Advanced: 384.95's less its last section);
+  set beforehand), Advanced's sections whole, every Settings screen on 384.97's rects (Advanced: 384.97's less its last section);
   N2 `?diag`, `?diag=1`, `?x=1&diag` show nothing; N3 every flag above set in both copies before load: none left after boot, and
   the top is the default's - <html> classes, #top-edge's computed box/colour/touch/layer, theme-color, and the top band (strip + 100px)
-  pixel for pixel on Home, a question and Profile (Pro Max both classes, SE, Safari tab); N4 with no flags that band is 384.95's pixel
-  for pixel (562b1ed, read from git); N5 no page errors.
+  pixel for pixel on Home, a question and Profile (Pro Max both classes, SE, Safari tab); N4 with no flags that band is 384.97's pixel
+  for pixel (93d18a9, read from git; it was 384.95, 562b1ed, before the merge); N5 no page errors.
 - RETIRED to `retired/display-test/`: `check-b384-displaytest.py`, `check-b384-autotest.py`, `check-b384-topguard.py` (the panel, its
   auto test, the old 8px strip behind topedgeold).
 - CHANGED ON PURPOSE (each held a switch): `check-b384-topedge` (4) topguard and (5) - now each of topguard/topedgeold/topedgepe is
