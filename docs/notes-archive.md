@@ -39478,6 +39478,150 @@ Also: check-js OK (14 blocks); check-behaviour check_swipe, check_b229, check_b3
 (the run was cut at its time limit after those); check-b384-tabhotfix ALL PASS (45) on a quieter machine (a first run under
 load ~80 failed one scroll-nudge count and a timed-out class switch; main under the same load failed a different section);
 sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre (1255s).
+
+### 384.98 (newdot) - the new dot is a small lit flare in your theme's colour; the class button goes back to A, the lit ring (claude/b384-newdot, cut from main 384.92 bba82e5, main 384.94, 384.95 and 384.97 merged in; NOT on main)
+Madison: "The yellow dot for the notification, doesn't match the theme, it should almost look a little like the secret flare.."
+
+WHAT IT WAS (384 "THE NEW DOT, ONE LOOK" + r8's glow): a solid 9px #FFD43B circle, a 2px ring in the surface's colour and two yellow
+box-shadow glows, the same on every theme. Yellow was chosen in 299 because red is the chat's unread count and an accent can be grey.
+
+WHAT IT IS NOW (the ONE LOOK block at the end of the main style; its place, its 9px and its ring are unchanged):
+- Drawn the way a FOUND secret flare is (.cosmic-flare-dot.is-found), small. The BODY is a radial gradient lit from the top left
+  (circle 5.2px at 44% 42%: a white core to 17%, --nd-hot at 36%, the theme colour --nd-c at 64%, a deeper rim --nd-rim at 100%).
+  The RING is still an opaque 2px box-shadow (it keeps the dot apart from the icon under it) but tinted 42% with the dot's own light,
+  so the glow runs on from the body instead of sitting outside a dark bezel (24% still read as a bezel). The HALO is a --nd-h (25px)
+  radial gradient behind the body, the colour fading to nothing, and it BREATHES: nd-breathe 3.6s, scale .8 -> 1.04 and opacity
+  .62 -> 1, transform and opacity only. Under Reduce motion (data-reduce-motion) and prefers-reduced-motion nothing runs and the
+  halo rests at scale .92 / opacity .86. No filter or backdrop-filter anywhere in it.
+- LAYERS. A .new-dot is now a frame for two pseudo layers: ::before the halo, ::after the body; the element paints nothing (a child's
+  halo would paint OVER its parent's own background, so the body cannot be the element). The Profile tab keeps its pseudo dot: the
+  icon's ::after is the body and its ::before (unused until now) the halo, placed on the same corner by the same --nd-r formula with
+  --nd-h. The class button's dot WAS its ::after, and its ::before is the button's own pulsing ring (329), so there was no layer for a
+  halo: its dot is now a .new-dot child of the button (.is-cb, appended in mountClassBubble right after the button's icon), shown by
+  CSS only while the wrap has-new. The old 12px #FF9648 ::after rule (36204) is gone. Every dot in the app is now one of these two
+  structures with one paint rule each for the body and the halo.
+- COLOUR, read off <html> once: the --nd-* properties are declared on html and inherited, so a dot inside something that wears
+  another theme's colours (a banner, a classmate's row) is still in yours.
+  --nd-c = color-mix(--rank-accent 35%, --theme-c2), the rank's own colour with a third of its lifted dark-screen version in it (with
+  the lifted one alone Bronze came out as the default's amber, 23 apart on the measure below); --nd-hot = nd-c 42% into white;
+  --nd-rim = --theme-c2 66% into black; --nd-halo = --rank-accent (the lifted one reads as light on the glass).
+  Drawn by hand, three:
+  - THE DEFAULT (no data-accent, and "ink"): its orange #F5804D on its own reads coral beside the chat's #FF5F56. Taken 30% towards its
+    own gold #FFD37A with the core running hot through the gold: Nova's sun, the wordmark's first two stops (hue ~24-29).
+  - SUPERNOVA: its colour is red (#FF3B30, hue 3; the chat's count is hue 3). Its yellow-hot side instead: #FFE27A hot, #FF8C3C body,
+    #C2541C rim, #FF9440 light (hue ~33). Never red.
+  - SILVER: a grey, and a grey bead is what a NOT-found secret flare looks like (r15's pearl). Moonlight instead: a white core, a
+    #DFE2E7 body over a #666B74 slate rim, a #F2F6FF light. The first rim (#878C95) was too flat: core to rim under 1.5:1.
+  Gold's dot is still yellow because Gold is a yellow theme. --new-dot keeps #FFD43B for the chat's friend-request button, which reads
+  it and is not the dot.
+- MEASURED on the tab bar's glass beside the Profile tab (iPhone 17 Pro Max, 3x): the dot's colour band against the glass - default
+  7.8:1, Bronze 6.8, Silver 10.3, Sapphire 5.7, Supernova 7.6; the light its halo adds to the ring of glass round it (luminance) -
+  Silver 0.083, the coloured themes 0.036-0.043. Hues: default 29 (theme 18), Bronze 29 (28), Sapphire 222 (221), Supernova 33.
+- Coming back to the app does not restart the breathe (no animationstart on a dot after pagehide/pageshow; it was running before).
+- Where a dot can be (every buildNewDot / attachNewDot / wrapWithNewDot call): the Profile tab, the class button, Profile's
+  Customize and badge case rows (their .settings-row-icon tiles) and the rank word, Customize's character / banner / theme / hundo
+  tiles, the badge case's tiles. Settings itself puts no dot anywhere in this build.
+- The class button's pulsing ring (329) is still its fixed orange; it is the button's, not the dot's, and was left as it was.
+
+GATE tools/check-b384-newdot.py [--against REV] [--ref REV] - iPhone 17 Pro Max (440x956, 3x) and, for place, iPad Pro 11" (2x),
+everything new (seen-unlocks cleared, a rank not yet shown, a class not yet looked at). Places: the Profile tab, the class button,
+Profile's rows (Customize, the badge case, the rank word), Customize's character / banner / theme / hundo tiles, the badge case's
+tiles (29 dots a device). (1) every place has a dot, drawn, with its centre and size where the reference build (default: the
+merge-base with origin/main) has them within 0.75px, on its host's corner on the 45-degree line; (2) on the default, Bronze, Silver,
+Sapphire and Supernova, off the pixels: a white-hot core brighter than its rim (1.5:1), the colour the theme's (the same hue within
+15 degrees; a red theme on its warm side between the chat's red and its c1; a grey theme grey), never within 14 degrees of the chat's
+count (read off the chat's own count), one colour everywhere on a theme, no two themes the same colour (further apart than one
+theme's own dots vary), 3:1 on the tab bar's glass and a halo of its own in the theme's hue (hidden, the glass round it goes darker),
+Silver's light no weaker than the coloured themes'; (3) with motion every dot's halo breathes and every dot animation is
+transform/opacity only; with Reduce motion and with prefers-reduced-motion nothing runs; (4) no page errors. Dots under the tab bar's
+shade (a banner tile at the bottom of the screen) or not wholly on the screen count for place, not for colour.
+ALL PASS here (46). FAILS on 384.92 (--against bba82e5), 19 checks: (2a) on all five themes (core 0.69 against rim 0.60-0.69: a flat
+fill), (2b) default / Bronze / Silver / Sapphire (hue 47, sat .77 on every theme), (2e) (all five the same colour), (2f) all five +
+Silver's (no halo layer: lift 0), and
+(3) "every dot breathes" on Home, Profile and Character (no animation); place (1), never-red (2c), one-look (2d) and the reduced-motion
+checks hold on both.
+
+OTHER GATES, revised because they asserted the old decision:
+- check-b384-board2 (5): "each a solid fill, no gradient, with the same small glow" -> "each a small lit flare: a radial-gradient body
+  with its ring, a halo layer round it, no filter"; "one fill" -> "one paint" (the body's gradient). Reads a .new-dot's body from its
+  ::after and its halo from its ::before (the tab: the icon's two pseudos). Passes here; FAILS on 384.92 (19 dots, no gradient, no halo).
+- check-behaviour check_b299 "the dot is yellow, the same on the tab and on the card" -> "the dot is one lit flare, painted the same on
+  the tab and on the card" (one gradient on both; its colour per theme is this gate's). Passes here; FAILS on 384.92 (a flat fill).
+
+THE CLASS BUTTON GOES BACK TO OPTION A, THE LIT RING (same build, approved with the dot; both ship together).
+Madison, with the medallion (C, 384.94) live: "I don't like the class button after all. Try option a, the lit ring." He had picked C
+from the three looks behind ?classbtn=a|b|c (5f85d51: "Option c for the class thing."); seen in place on Home, C's enamel coin was
+dropped for A.
+- A is permanent with no query parameter, exactly as it was under ?classbtn=a in 5f85d51: a ring in the class's colour lifted towards
+  white (--cb-ring = --cbc 78% into white) just inside the rim, a soft pool of the colour behind the mark (at 50% 54%), the button's
+  glass gradient under both, a rim tinted with the colour (--cbc 44% into rgba(255,255,255,.16)), and a soft light off the outside
+  plus a faint inner one. --cbc is #FF7A3A (Fire Code) and #7C93FF (the academy), as before.
+- The medallion's CSS is gone (the coin and bezel layers, --coin-a/b/c and --bezel, the 26px / 46% mark sizes: the mark is the
+  button's own 30px again, as under A). The doubled class (.class-bubble.class-bubble) keeps the specificity the option had under
+  html[data-classbtn="a"], which is what beats the button's own glass rules; the mark keeps position:relative; z-index:1.
+- classBtnIcon(key) draws one mark per class in its full colours, on the button and in the class list alike (A's marks); the light
+  "coin" colours were the medallion's and nothing else used them, so they are gone and the "where" argument with them.
+- The new dot stays a .new-dot child of the button (.is-cb) and sits on A's corner (8.6px in and down on a phone, 8.3 on an iPad).
+GATE tools/check-b384-classbtn.py, rewritten for A: K1 the button on Home, both classes, iPhone 17 Pro Max / iPad Pro 11" / laptop, is
+pixel for pixel 5f85d51 loaded with ?classbtn=a, the dot hidden by rule on both sides (a rule specific enough to beat both builds'
+own !important "has-new" dot rules - the first draft's lost to them and compared the dots); K1b the same with the button's has-new
+state on both sides (the 329 ring, still under Reduce motion); K1c the new dot is drawn on A's button on its corner; K2 the mark is
+classBtnIcon's full-colour drawing on the lit ring (--cb-ring set); K3 the class list's mark; K4 ?classbtn=c changes nothing. #intro-pop
+is still hidden by rule. ALL PASS here (K1 mean 0.00 / max 0 on phone and iPad, 0.05 / 2 on the laptop). FAILS on main 384.95 (the
+medallion): 12 - K1 on all six, K1b on all four, K2 both classes.
+
+GATES RUN on the tree merged with main 384.95 (562b1ed), one at a time (another helper's gates on the machine too): check-js ALL PASS
+(APP_BUILD = version.json = 2026-11-13-384.98); the console - only the two blocked Firebase CDN loads, no page errors (A's ring and
+the full-colour marks read off the page); check-b384-classbtn ALL PASS (fails 384.95 as above); check-b384-newdot ALL PASS (46; every
+dot's centre and size where 384.95 has them, phone and iPad, 29 each); check-b384-board2 --only 5 ALL PASS; check-behaviour's dot
+sections (check_b299/b314h_tabs/b317_pfcard/b319_badges/b320g_inspect): the dot checks pass ("the dot is one lit flare, painted the same
+on the tab and on the card", phone and iPad); "something new puts a dot on the Profile tab" and "every flare on Home moves" fail the
+same way on main 384.95 (run --against it); three timing checks failed on two runs at a load of 60-85 (the tab-switch median, "Close
+turns it all back", "Reduce motion: the view fades in") and could not be run on 384.95 then (its page timed out loading).
+On the tree merged with main 384.97 (93d18a9, build 384.98), through the shared slot script after the container restart:
+check-centering --quick ALL PASS (0 off centre, 1270 elements on 152 screens, both classes); sweep-layout --quick 20/20 clean.
+Before the merges (on 384.92's tree): check-b329 (the class button's pulse/banner/seen checks pass; three Nova-copy checks fail
+identically on 384.92), check-b384-classes-open (8 fail here, 17 on 384.92, all from (7b) "Nova's good-luck message in Fire Code's
+chat", none the dot), check-b383-profile ALL PASS, check-b384-board2 --only 2 ALL PASS.
+
+NOT confirmable in Chromium: the breathe on a real iPhone's compositor (transform/opacity on a pseudo-element, which WebKit composites)
+and the colours on an OLED.
+### 384.99 (boardshake; built as 384.112, the code comments say 384.112)
+
+Branch `claude/b384-boardshake`, cut from origin/main 384.95 (562b1ed), main 384.97 and 384.98 merged in, shipped as 384.99. NOT on main. Madison, a screen recording of the Leaderboard on his installed iPhone 17 Pro Max: "Other leaderboard fix, do you see how the characters are slightly shaking randomly? I've mentioned this problem before. Fix this." The third report of the same thing: build 313/314 ("The shaking characters": the flip-book carried the board's .94), 384.20 ("FLIP-BOOK LOOPS WERE SCALED TWICE ON THE BOARD"). Each was fixed and verified in Chromium at 100% and came back on his phone.
+
+READ OFF HIS RECORDING, FRAME BY FRAME (4.86s, 1320x2868 HEVC 10-bit, 289 frames at ~59.5 a second, decoded with /usr/bin/ffmpeg to 16-bit luma; the board: 8 rows, nothing touched). Every character tracked inside its circle (sub-pixel phase correlation + Lucas-Kanade on a 72px crop of the face, each frame against the one before and against the first), the circle's rim and each row's name as the static references:
+- THE ROWS NEVER MOVED: every name 0.00px (x and y) over all 289 frames, every circle's rim static. No scroll, no snapshot or re-render that moved a row, nothing that moved all the characters together.
+- INSIDE EVERY CIRCLE THE DRAWING JUMPED, every character the same way: a whole device pixel sideways (|dx| 0.98-1.00px = 0.33pt), and at some steps down as well (|dy| 0.28-0.87px), twice per sheet row - once at the row's wrap (-1.0px in one step) and once part way along it in two consecutive steps (+0.6 then +0.4). The whole-pixel jump came every 0.500s exactly (gaps 0.492-0.508s = 12 steps of the 24-a-second sheet: one row of its 12 columns), 5.8-7.2 jump events a second per character.
+- Per character (whole-px jump, worst vertical, events a second, phase in the 0.5s cycle): masooooon 1.00 / 0.52 / 5.8 / 0.125s; Maddog 1.00 / 0.35 / 6.2 / 0.283; Logang 1.00 / 0.62 / 6.6 / 0.483; Sauce 0.99 / 0.87 / 6.4 / 0.367; Matt Martinez 0.99 / 0.60 / 6.4 / 0.450; Cody Smart 0.99 / 0.28 / 6.4 / 0.300; Dill Pickle 0.98 / 0.72 / 7.2 / 0.142; Z 0.98 / 0.86 / 6.8 / 0.267.
+- INDEPENDENT, NOT GLOBAL: each character on its own phase (the eight above all different: each tile's own flipPhase), on its own flip-book's steps (12 of them, 0.500s, between whole-pixel jumps). Nothing lines up with a scroll (there was none) or a snapshot (no row moved); frames where two characters jump together are just two 24-a-second clocks landing on the same 60Hz frame.
+- The rank flares in the same rows (Gold, Silver, two Bronze) shiver too, smaller: +-0.2-0.57px back and forth on the 30-a-second emblem sheet, all four on the same frames (they share one clock). Same mechanism; not changed in this build (below).
+
+THE CAUSE. His phone runs Safari's page zoom at 85%: the layout is 518x1125 CSS px on a 440x956pt screen, and devicePixelRatio still reads 3 (his own bug reports, `firestore-admin.py bugs`: "518x1125 ... dpr 3" on every build since 349). A CSS px is 0.85 x 3 = 2.55 device px, and the board's rows (.rank-rows, 384 r10) carry `zoom:var(--zc)` = 1.177 to undo the zoom, so a CSS px inside a row is 1.177 x 2.55 = 3.0014 device px. A loop was its whole sheet slid under a window by one cell (34 CSS px) a step - in the paint mode by left/top, in the layer mode by a transform - and a step was 34 x 3.0014 = 102.05 device px, not 102. Every column of the sheet landed on another fraction of a pixel (0.05 more a column, ~0.55 by the row's end), and the phone's painting rounds where it draws: a whole pixel one way part way along the row, back at the wrap. That is the 12-step, 0.5s period, the per-tile phase and the whole-pixel size in the recording. (Which rounding stage in WebKit splits the mid-row move into 0.6 + 0.4 cannot be seen from here; the period and phase pin it to the per-column offset.)
+WHY THE EARLIER FIXES DID NOT HOLD ON HIS PHONE: 313/314 and 384.20 made a step a whole number of device px with devicePixelRatio as the scale (cell = px / min(dpr,2), snapped by Math.round(v * dpr) / dpr), and every gate measured at 100%, where that is 3 x an integer exactly. Under his zoom devicePixelRatio is not the screen's scale (3 reported, 2.55 or 3.0014 real), so the "whole device pixel" was a whole pixel of a grid that does not exist on his glass; at 100% every gate stayed green.
+
+REPRODUCED HERE: Chromium with the layout viewport at 518x1125, the screen 440x956, 2.55 device px per CSS px and devicePixelRatio reading 3 (an init script, as Safari reports it); a still sheet in every cell (any change between steps is the flip-book moving). On 384.95 every character's frame lands on 15 different sub-pixel phases in 40 frames (cell 34 CSS px, window 40.016 page px), and the avatar column captured at device scale on 16 different steps moves up to 0.49 device px (64-128 grey levels) - Chromium rounds to its own pixels, a half pixel; the phone a whole one. Rows through snapshots and a scroll: 0.0000 device px (as on the phone).
+
+THE FIX: A CHARACTER'S LOOP IS COPIED INTO A BOX THAT NEVER MOVES (index.html, charFlipCanvas and its clock). Nothing is slid any more. The window (.char-flip-play, same box, same masks, same place) holds a canvas exactly one cell of the sheet in size (sp.px square, laid at 100% of the window), and each step COPIES that cell's pixels into it - drawImage with a whole-pixel source rect, 1:1. The crop is made in the sheet's own pixels, where it is exact at any zoom, and the box on the screen does not move, so every frame is drawn on the same device pixels as the one before whatever the page zoom, the CSS zoom, the dpr or the engine's rounding. Nothing to compute from the device's scale at all - that is the point.
+- Same clock: the frame shown is the one the step-end animation showed at that moment (charFlipFrameAt: the tile's flipPhase on Date.now(), CHAR_ANIM_FRAMES in CHAR_ANIM_LOOP_MS), so a tile carried to a rebuilt row (charFlipResync), a live drawing handing back (charSyncLiveToSheet) and a special all still meet it.
+- One loop for every canvas (charFlipTick on requestAnimationFrame), woken only when some tile's next frame is due (a timer to just before it, then a frame); canvases are held weakly (WeakRef), a lifted-out one waits, a collected one leaves. Held frames, as the animations were held: a row not yet let go (.rank-rows.lb-still > .rank-row:not(.lb-go)), a skipped row (.rank-row.is-offscreen), Reduce motion, and a finger on the tab bar (barUnderPause paused the rows', the card's and the under-the-bar animations for the slide's frames, 383 / 384 r15: the canvases hold with them, all of them, so no rect is read in a slide's frame; released in slideHeldResume / barUnderResume, and after 4s whatever happens). lbStillGo and charFlipWake wake it.
+- The sheet's decoded picture is the one kept with it (sp.pre, charPreKeep) or a fresh Image the canvas holds; the drawing under the window is only hidden (char-under-flip) once the canvas has a frame on it (always at once for a sheet in memory).
+- The window goes exactly on its drawing, centre on centre: devicePixelRatio is not the screen's scale under Safari's page zoom, so rounding by it put the picture up to 0.47 device px off. Whole device pixels are kept only where the canvas's pixels ARE device pixels, one for one (charFlipSnapFor: a 1x or 2x screen at 100%, no CSS zoom, no transform), where that keeps it crisp.
+- .char-flip-play.is-cv is a small layer of its own (will-change:transform, as html.loops-paint gave the old window in 380), so a frame repaints the window and not the row.
+- lbFlipKnown (the board's loops from the kept geometry) makes the same canvas; LB_GEOM_REV 3, so geometry kept by 384.95 (rounded) is measured again once.
+- Sheets, recordings, cache keys, sizes and the 2x cap are unchanged: no character is recorded again, the look and the motion are the same frames.
+EVERY PLACE A CHARACTER LOOPS goes through the one path (setCharState -> charFlipAttach -> charFlipThen): the boards (rows, last week's podium), the Virtual Room lobby and its results podium, friends, the chat's invite sheet, Customize, the rank rewards' tiles and the results character. The person card and the Profile hero are over CHAR_FLIP_MAX_CSS (live drawings, untouched); the tab bar's character is a still (build 349).
+
+NOT CHANGED, REPORTED: the rank emblems' sheets (the board's flares and Home's planet bubbles, attachOrbitSheet) are slid the same way, and at his zoom shiver the same way (the recording: +-0.2-0.57px on the board). They have their own clock, pausing and cutscene states; the canvas player here can take them, as its own change.
+
+GATE tools/check-b384-boardshake.py (new; `--zooms`, `--frames`, `--shots`, `--dump DIR`, `--against FILE`). The page laid out as his phone lays it out at page zoom 1.0, 0.85 and 1.15 (layout = screen / zoom, the screen 440x956, Chromium painting at 3 x zoom device px per CSS px, devicePixelRatio reading 3 by an init script, as Safari's does), the Leaderboard with a board of classmates, every character's sheet a STILL picture (each of its 144 cells the same drawing with a fine grid over it, so anything that moves between steps is the flip-book moving). Over 90 frames, snapshots (every number changes, nobody changes place) and a 41px scroll: (1) the frame on show is on ONE sub-pixel phase in device px at every step, its centre within 0.1 device px of its drawing's through every step, snapshot and scroll; (2) the avatar column captured at device scale (plain CDP captures) on 20+ different steps is the same picture every time (sub-pixel registration, <= 0.1 device px); (3) a snapshot or the scroll leaves every row on the device pixel it was on (0.01); (4) no page errors; (5) the phase test on the other boards and on Customize's character grid. At 1.15 the layout is 383px, and at 24rem and under no board shows a character (the Rank column carries the coin), so there (1), (2) and (5) are asked of Customize's character grid and (3) is not asked.
+- THIS BUILD (384.99, main 384.98 merged): ALL PASS at all three, on a quiet machine and earlier under load. 1.00: 1 phase (11 characters), offset 0.043, rows 0.0000 over 70 readings, pixels 0.000px / 0 grey levels over 23 steps, (5) 36 loops in 4 places; 0.85: 1 phase, offset 0.040, rows 0.0000, pixels 0.000 / 0 over 24 steps, (5) 36 loops; 1.15: 1 phase (3 Customize characters, 75+ steps), offset 0.027, pixels 0.000 / 0.
+- `--against` 384.95 (and 384.97, the same): FAILS. 0.85: 13-15 phases per character, the frame up to 0.44 device px off its drawing and varying 0.04, (5) 14-20 phases on every board and 4 on Customize; 1.15: 66-80 phases; 1.00: one phase (the steps are whole device px at 100%, as 313 / 384.20 made them) but the frame 0.47 device px off its drawing (rounded by devicePixelRatio). Rows 0.0000 on main too: the rows were never the shake.
+- WHAT CHROMIUM CANNOT SHOW, measured: the PIXELS of main at 0.85 on a quiet machine pass (2) - 0.016-0.024 device px, 10-13 grey levels - because Chromium draws a step that is a fraction of a pixel smoothly, where the phone rounds it (his recording: whole-pixel jumps). Under load the same captures moved 0.41-0.49 px. That is why every Chromium check of the earlier fixes passed: the gate's (1), the phase in device px at his real scale, is the part that fails on main wherever the phone rounds, and this build removes the step altogether, so there is nothing left to round.
+- MACHINE: the sandbox's memory cgroup ran out several times while this was measured (renderers OOM-killed, ours and others'); the gate gives each zoom a browser of its own and tries a lost one up to three times. Playwright's page.screenshot injects a style to hide the caret (a restyle of the 2.9MB stylesheet per capture) and timed out under load, so the captures are plain CDP captureScreenshot at the device scale.
+OTHER GATES, 384.99, one at a time in the express lane: check-js 14 blocks ALL PASS; check-b384-boardshake ALL PASS (above); check-behaviour check_b314h_board ALL PASS (3 canvases, 1 phase each, 29-30 steps in 45 frames, centre within 0.01px, size 0.4px), check_b314_chars ALL PASS (phone: 3 of 3 near tiles playing as flip-books; iPad: 3 live over the 80px cap; the tab's character still), check_b313_alive ALL PASS; check_b313_chars_centred: every geometry line PASSES (centre 0.01px on the phone against main's 0.16, circle 0.09 against 0.22; iPad 0.13 / 0.00; size 1.3% / 1.6%; steady across the loop) but "flip-books measured on N rows" wants 4 inside its 100s wait and got 2-3 - real sheets are recorded first, 5-50s each here - and main fails the same line the same way beside it (384.95 and 384.97 under load: 2 rows on both devices, and the iPad's Astral/Celestial/Zenith 2 of 3; 384.98 on the quiet machine: 3 rows on the phone); check-friends ALL PASS (77); check-centering --quick ALL PASS (0 off centre); sweep-layout --quick 20/20 clean; check-vroom ALL PASS (on a quiet machine; under load its 313 races timed out on 384.95 as here); the page's console (Home, the Leaderboard, Profile, Customize, Friends, at 85% and at 100%): no page error, only the two blocked Firebase CDN loads.
+GATES UPDATED TO READ THE CANVAS (a loop is a canvas now; each still reads 384.95's <img> for --against): check-behaviour check_b314h_board (the frame's phase in its window, and that it steps), check_b313_chars_centred (each loop's sheet: the canvas's sheet url), check_b314_chars (playing = charFlipIsPlaying for a canvas), the tab-plate section's wait; check-b327z15 (the special's tile), check-b384-board2 and check-b384-desktop (a row's character is shown: a canvas with a frame on it). Not touched: check-b378 / b379 / b380 count `.char-flip-play img` among the loops of their loops-paint / layer modes (378-380), which characters no longer use - they now count the rank flares' loops only; b384_leave_lib and check-b384-a2hsbar only label paint sources.
+WHAT ONLY THE PHONE CAN CONFIRM: that the characters hold still on his glass at 85% (Chromium does not round a fractional step, so it never showed the shake; the invariant here - no step at all, the box never moves - holds in any engine, but WebKit's canvas path is the phone's); that a canvas frame a step is as smooth as the old loop on his phone (WebKit ran the stepped animations on the main thread already; a canvas frame is a 68px drawImage); the slide hold (the canvases hold while a finger is on the bar, as the rows' animations did).
 ### 384.107 (toghaptic) - a swipe on a toggle is the native switch's own gesture, so iOS ticks for it (branch claude/b384-toghaptic, cut from origin/main 384.95 562b1ed; NOT on main, waiting for Madison's go; the lead re-bumps at merge)
 
 Madison, on his installed iPhone: "The toggle switches, when tapping them, the Haptic Touch is there, when swiping them it's not though, fix that." The toggles are every `.opt` row with a checkbox and a `.box`: Settings > Sound & Haptics, Study, Motion & Effects, Leaderboard & Privacy, and the start sheets (Drill, Review, Exam, Game).
