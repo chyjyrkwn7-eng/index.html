@@ -75,8 +75,12 @@ def section1():
                 pg.wait_for_timeout(2000)
                 c = L.center(pg, ".playbtn"); L.tap(s, c[0], c[1], 60, pg)
                 pg.wait_for_selector("#stage > .modeselect", timeout=60000)
-                # the mode screen as a person meets it: a few seconds on it (idle time)
-                pg.wait_for_timeout(5500)
+                # the mode screen as a person meets it: a few seconds on it (idle time; on a build that warms the badges, until done)
+                pg.wait_for_timeout(3000)
+                for _ in range(60):
+                    if pg.evaluate("()=>typeof cardBadgeWarmBusy === 'undefined' || !cardBadgeWarmBusy"): break
+                    pg.wait_for_timeout(250)
+                pg.wait_for_timeout(1500)
                 L.throttle(s, 4); pg.wait_for_timeout(800)
                 pg.evaluate(FRAMES)
                 c = L.center(pg, '.modecard[data-mode="drill"]'); L.tap(s, c[0], c[1], 70, pg)
@@ -102,8 +106,9 @@ def section1():
                     f1["anim"] and f1["s"] is None and f1["m"] is not None, f1)
                 ops = [f["s"] for f in up]
                 cont = (last_m[-1]["m"] if last_m else 1)
-                chk("(1b) %s: the units are up within 2.5s, their opacity never falls and ends at 1, from no dimmer than the mode screen left off (%s .. %s, mode ended %.2f)" % (tag, ops[:1], ops[-1:], cont),
-                    first_up is not None and first_up["t"] - ck < 2500 and all(b >= a - .005 for a, b in zip(ops, ops[1:])) and ops[-1] >= .999 and ops[0] >= cont - .06, ops[:12])
+                chk("(1b) %s: the units are up within 2.5s, their opacity never falls and ends at 1, starting where the mode screen left off - no flash (%s .. %s, mode ended %.2f)" % (tag, ops[:1], ops[-1:], cont),
+                    first_up is not None and first_up["t"] - ck < 2500 and all(b >= a - .005 for a, b in zip(ops, ops[1:])) and ops[-1] >= .999
+                    and cont - .2 <= ops[0] <= cont + .06, ops[:12])
                 chk("(1c) %s: in the units' first frame every badge picture in view is decoded (%s in view, %s not)" % (tag, first_up and first_up["vis"], first_up and first_up["nd"]),
                     first_up is not None and first_up["vis"] > 0 and first_up["nd"] == 0, first_up)
                 ctx.close()

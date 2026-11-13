@@ -120596,7 +120596,14 @@ function ifcDropClip(el){
 }
 function ifcDropRound(el){ try{ return getComputedStyle(el).borderBottomLeftRadius || "0px"; }catch(e){ return "0px"; } }
 function ifcDropAnim(el, kf, ms){ try{ return el.animate(kf, { duration: ms || IFC_DROP_MS, easing: IFC_DROP_EASE, fill: "forwards" }); }catch(e){ return null; } }
-function ifcDropMove(el, from, to, ms){ return (Math.abs(from) < .25 && Math.abs(to) < .25) ? null : ifcDropAnim(el, [{ translate: "0 " + from.toFixed(2) + "px" }, { translate: "0 " + to.toFixed(2) + "px" }], ms); }
+function ifcDropMove(el, from, to, ms){
+  if(Math.abs(from) < .25 && Math.abs(to) < .25) return null;
+  /* a box off the screen for the whole move (a long Review list's far questions) is left where the layout puts it: nobody sees it,
+     and a hundred animated layers is what a phone would pay for nothing */
+  try{ const r = el.getBoundingClientRect(), top = r.top + Math.min(from, to), bot = r.bottom + Math.max(from, to);
+    if(bot < -40 || top > innerHeight + 40) return null; }catch(e){}
+  return ifcDropAnim(el, [{ translate: "0 " + from.toFixed(2) + "px" }, { translate: "0 " + to.toFixed(2) + "px" }], ms);
+}
 /* a move's end dropped (its timer, its observer); its animations go on until they are read (ifcDropCollect) */
 function ifcDropHalt(r){
   if(!r) return;
