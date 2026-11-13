@@ -39586,3 +39586,30 @@ chat", none the dot), check-b383-profile ALL PASS, check-b384-board2 --only 2 AL
 
 NOT confirmable in Chromium: the breathe on a real iPhone's compositor (transform/opacity on a pseudo-element, which WebKit composites)
 and the colours on an OLED.
+
+### 384.108 (classmarks) - every place a class is shown or picked has Home's class button's mark and lit ring (claude/b384-classmarks, cut from claude/b384-newdot e817059 = 384.98; NOT on main)
+Madison: "When selecting classes, ensure the two classes are updated (the logos and circles) to match what the Home Screen has now."
+
+WHERE A CLASS WAS STILL ITS OLD SELF (on 384.98): the sign-up's Select your classes cards and Classes (Add a class) drew NOVA_CLASSES'
+own icons (the academy's lilac-and-coral mark, Fire Code's old flame) on their own grey coins (.cc-emblem) with a corner wash that
+had a pink tail (.cc-glow); Fire Code's enroll page drew the old flame in an orange disc (.ce-emblem); the three class banners (the
+"Fire Code is open to join" banner, You're enrolled, Welcome back to) drew the old icons bare in the banner's face; and the class
+button's own list already had the new marks (classBtnIcon) but on its old glass bubble, not the lit ring.
+
+WHAT CHANGED:
+- ONE BUILDER. classMarkHtml(key, cls) / classMarkEl(key, cls) put classBtnIcon(key) (the class button's full-colour mark) in a
+  .class-ring.is-<key> circle; NOVA_CLASSES' icons are only the fallback for a class with no drawing. Every place above now uses it:
+  the cards' .cc-emblem, the enroll page's .ce-emblem, the list's .csi-bubble, and each banner's face (showDailyAlert marks a face
+  holding a class ring .is-class so its glow is not clipped).
+- ONE CIRCLE. The class button's lit-ring rule now draws :is(.class-bubble.class-bubble, .class-ring.class-ring) - the same ring
+  (--cb-ring = --cbc 78% into white), pool, glass, tinted rim and the two glows, the same --cbc (#FF7A3A Fire Code, #7C93FF the
+  academy). The button's numbers are the defaults, so the button is unchanged (check-b384-classbtn still pixel for pixel). A circle
+  of another size takes the ring's four stops as the same share of its radius (--cr-a..d = the button's 4.3 / 3.8 / 2 / 1.5px of its
+  26px radius) and its glows scaled by --crs, set beside each place's own size (.cc-emblem 52px .963, 42px .778, 38px .704; .ce-emblem
+  84px .. 86 with its rim, 1.593; the banner face .56). The list's bubbles are the button's size and keep its px, with their own
+  opaque body and shadow (--cr-base, --cr-drop); circles on a card or a banner have no drop shadow of their own.
+- THE CARDS' OWN LIGHT. Each card's corner wash (.cc-glow) and its picked glow (--cc) are the class's --cbc now (the academy's pink
+  tail belonged to its old mark). Layout, text, chips and taps are unchanged; picked (is-picked) and "you are here" (is-here) keep
+  their edges and light.
+
+GATE tools/check-b384-classmarks.py [--against REV|DIR]: RESULTS PENDING.

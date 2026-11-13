@@ -35902,7 +35902,7 @@ html.is-browser{ --fade-paper: transparent; }
      bottom. The fill is clipped to inside the rim and does not repeat; the rim is the same white at every angle; the only
      shadow is a soft halo no wider than the card's smallest padding (8px), so the card never cuts it. The mark is
      centred (grid) and sits on a fill that is lit from its middle, so nothing about the coin has a top or a bottom. */
-  .cc-emblem{ position:relative; flex:none; box-sizing:border-box; width:52px; height:52px; border-radius:50%; display:grid; place-items:center;
+  .cc-emblem{ position:relative; flex:none; box-sizing:border-box; width:52px; height:52px; --crs:.963; border-radius:50%; display:grid; place-items:center;
     background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.09), rgba(255,255,255,.025) 72%) padding-box no-repeat, rgba(24,26,36,.78) padding-box;
     background-clip:padding-box; border:1px solid rgba(255,255,255,.2); box-shadow:0 0 8px rgba(255,255,255,.07); }
   .class-card.is-academy .cc-emblem{ box-shadow:0 0 8px rgba(150,170,255,.32); }
@@ -35945,7 +35945,7 @@ html.is-browser{ --fade-paper: transparent; }
   @media (max-width:22.5rem){
     .class-cards{ gap:.55rem; }
     .class-card{ min-height:0; padding:.7rem .6rem .65rem; gap:.3rem; border-radius:1.15rem; }
-    .cc-emblem{ width:42px; height:42px; }
+    .cc-emblem{ width:42px; height:42px; --crs:.778; }
     .cc-emblem svg{ width:24px; height:24px; }
     .cc-title{ font-size:1.02rem; margin:.1rem 0 .25rem; }
     .cc-desc{ font-size:.76rem; line-height:1.35; }
@@ -35958,7 +35958,7 @@ html.is-browser{ --fade-paper: transparent; }
     .panel.home.charselect-panel > .avatarchar-grid{ margin-top:.4rem !important; margin-bottom:.2rem !important; }
   }
   .class-enroll{ display:flex; flex-direction:column; }
-  .ce-emblem{ width:84px; height:84px; margin:1rem 0 .4rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  .ce-emblem{ width:84px; height:84px; --crs:1.593; margin:1rem 0 .4rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 60%, rgba(255,122,26,.35), rgba(255,122,26,.05) 70%); border:1px solid rgba(255,140,60,.35); box-shadow:0 0 40px rgba(255,110,30,.25); }
   .ce-emblem svg{ width:46px; height:46px; overflow:visible; }
   .ce-kicker{ margin:0 0 .9rem; font-size:.78rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#FFB35C; }
@@ -38386,7 +38386,7 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ gap:.4rem; min-height:0 !important; }
     /* (under 600px tall the step's own rule already pads them 8px top and bottom) */
     @media (min-height:37.5rem){ html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ padding:.75rem .8rem .8rem !important; } }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ width:38px; height:38px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ width:38px; height:38px; --crs:.704; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem svg{ width:22px; height:22px; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ margin:.1rem 0 .25rem; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-desc{ font-size:.76rem; line-height:1.35; }
@@ -38437,7 +38437,7 @@ html.is-browser{ --fade-paper: transparent; }
      title and the small print a little closer. */
   @media (max-width:39.99rem) and (min-height:737px) and (max-height:816px){
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ gap:.4rem; min-height:0 !important; padding:.75rem .8rem .8rem !important; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ width:38px; height:38px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ width:38px; height:38px; --crs:.704; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem svg{ width:22px; height:22px; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ margin:.1rem 0 .25rem; }
     html[data-layout] body #stage > .classselect-panel > .classselect-sub{ margin-bottom:.8rem !important; }
@@ -38452,7 +38452,7 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] body #stage > .classselect-panel > .classselect-sub{ margin-bottom:1rem !important; max-width:34rem !important; }
     html[data-layout] body #stage > .classselect-panel > .classselect-cards{ gap:1rem !important; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card{ gap:.4rem; min-height:0 !important; padding:.75rem .8rem .8rem !important; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-emblem{ width:38px; height:38px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-emblem{ width:38px; height:38px; --crs:.704; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-emblem svg{ width:22px; height:22px; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-title{ margin:.1rem 0 .25rem; }
     html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-top:.75rem !important; margin-bottom:.5rem !important; max-width:42rem; }
@@ -40113,19 +40113,42 @@ html.is-browser{ --fade-paper: transparent; }
      pulsing ring for a class not yet seen, 329, and the new dot are the button's other two things and are left as they were).
      The doubled class keeps the specificity the option had under html[data-classbtn="a"], which is what beats the button's own
      glass rules. */
-  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; }
-  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; }
-  html .class-bubble.class-bubble > svg{ position:relative; z-index:1; }
-  html[data-theme][data-layout] body:not(.x384cb) .class-bubble.class-bubble{
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble, .class-ring.is-ifc, .class-card.is-ifc{ --cbc:#FF7A3A; }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble, .class-ring.is-academy, .class-card.is-academy{ --cbc:#7C93FF; }
+  html :is(.class-bubble.class-bubble, .class-ring.class-ring) > svg{ position:relative; z-index:1; }
+  /* (384.108) THE SAME CIRCLE WHEREVER A CLASS IS SHOWN OR PICKED: this one rule draws the class button and every .class-ring (the
+     class list's bubbles, the sign-up's and Classes' card emblems, Fire Code's enroll emblem, a class's banner face; classMarkHtml).
+     The button's numbers are the defaults, so the button is drawn exactly as before (check-b384-classbtn holds it to 5f85d51 ?classbtn=a,
+     pixel for pixel). A circle of another size takes the ring's four stops as the same share of its radius (--cr-a..d: the button's
+     4.3 / 3.8 / 2 / 1.5px of its 26px radius) and its two glows scaled by --crs (its width over the button's 54px), so the ring and
+     glow are the button's at that size. The list's bubbles are the button's size and keep the button's px, with their own opaque
+     body (a moon behind them showed through, 329) and their own shadow (--cr-base, --cr-drop); a circle on a card or a banner has
+     no drop shadow of its own (it sits on a surface, not over the scene). */
+  html[data-theme][data-layout] body:not(.x384cb) :is(.class-bubble.class-bubble, .class-ring.class-ring){
     --cb-ring:color-mix(in srgb, var(--cbc) 78%, #FFFFFF);
     background:
-      radial-gradient(circle closest-side, transparent calc(100% - 4.3px), var(--cb-ring) calc(100% - 3.8px), var(--cb-ring) calc(100% - 2px), transparent calc(100% - 1.5px)) padding-box,
+      radial-gradient(circle closest-side, transparent calc(100% - var(--cr-a, 4.3px)), var(--cb-ring) calc(100% - var(--cr-b, 3.8px)), var(--cb-ring) calc(100% - var(--cr-c, 2px)), transparent calc(100% - var(--cr-d, 1.5px))) padding-box,
       radial-gradient(circle closest-side at 50% 54%, color-mix(in srgb, var(--cbc) 42%, transparent), color-mix(in srgb, var(--cbc) 12%, transparent) 62%, transparent 86%) padding-box,
       linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%) padding-box,
-      rgba(12,13,19,.26) !important;
+      var(--cr-base, rgba(12,13,19,.26)) !important;
     border:1px solid color-mix(in srgb, var(--cbc) 44%, rgba(255,255,255,.16)) !important;
-    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 10px 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 9px color-mix(in srgb, var(--cbc) 22%, transparent) !important;
+    box-shadow:var(--cr-drop, 0 8px 32px rgba(0,0,0,.5)), 0 0 calc(10px * var(--crs, 1)) 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 calc(9px * var(--crs, 1)) color-mix(in srgb, var(--cbc) 22%, transparent) !important;
   }
+  /* a circle that is not the button's size: the ring as a share of its radius, no drop shadow */
+  .class-ring{ --cr-a:16.54%; --cr-b:14.62%; --cr-c:7.69%; --cr-d:5.77%; --cr-drop:0 0 0 transparent; }
+  /* the class list's bubbles: the button's size, the button's ring in px, their own body and shadow */
+  .csi-bubble.class-ring{ --cr-a:4.3px; --cr-b:3.8px; --cr-c:2px; --cr-d:1.5px; --crs:1; --cr-base:rgba(18,19,27,.9); --cr-drop:0 6px 20px rgba(0,0,0,.45); }
+  /* each card's own corner light and its picked glow in the same class colour as its circle (the academy's had a pink tail from
+     its old lilac-and-coral mark; the mark is the blue shield now) */
+  .class-card:is(.is-academy, .is-ifc){ --cc:color-mix(in srgb, var(--cbc) 34%, transparent); }
+  .class-card:is(.is-academy, .is-ifc) .cc-glow{
+    background:radial-gradient(ellipse 82% 78% at 18% 22%, color-mix(in srgb, var(--cbc) 38%, transparent), color-mix(in srgb, var(--cbc) 22%, transparent) 32%,
+      color-mix(in srgb, var(--cbc) 9%, transparent) 62%, color-mix(in srgb, var(--cbc) 3%, transparent) 84%, transparent 100%);
+  }
+  /* a class's banner (a new class, You're enrolled, Welcome back to): the face is the circle, its glow outside it */
+  .app-banner-icon.app-banner-face.is-class{ overflow:visible; }
+  .app-banner-face > .class-ring{ box-sizing:border-box; width:100%; height:100%; border-radius:50%; display:grid; place-items:center; --crs:.56; }
+  .app-banner-icon.app-banner-face > .class-ring svg{ width:58%; height:58%; }
 </style>
 <script>
   (function(){
@@ -57636,6 +57659,20 @@ function classBtnIcon(key){
     '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7Z" fill="#FFFFFF" fill-opacity=".09"/>' +
     '<path d="M12 7.6 13.06 10.34 16 10.5 13.72 12.36 14.47 15.2 12 13.6 9.53 15.2 10.28 12.36 8 10.5 10.94 10.34Z" fill="' + s + '" stroke="' + s + '" stroke-width=".5" stroke-linejoin="round"/></svg>';
 }
+/* (384.108) ONE MARK AND ONE CIRCLE FOR A CLASS, WHEREVER A CLASS IS SHOWN OR PICKED. Madison: "When selecting classes, ensure the
+   two classes are updated (the logos and circles) to match what the Home Screen has now." Every place a class is drawn - the sign-up's
+   Select your classes cards, Classes (Add a class), Fire Code's enroll page, the class button's own list, and the three banners
+   (a new class, You're enrolled, Welcome back to) - takes its mark from classBtnIcon and its circle from the class button's lit
+   ring (.class-ring with is-<key>: "THE CLASS BUTTON IS A LIT RING" in the stylesheet, scaled to the place's size). NOVA_CLASSES'
+   own icons are only the fallback for a class with no drawing here. */
+function classMarkHtml(key, cls){
+  const c = NOVA_CLASSES.find(x => x.key === key) || {};
+  return '<span class="' + (cls ? cls + " " : "") + 'class-ring is-' + key + '">' + (classBtnIcon(key) || c.icon || "") + '</span>';
+}
+function classMarkEl(key, cls){
+  const t = document.createElement("span"); t.innerHTML = classMarkHtml(key, cls);
+  return t.firstElementChild;
+}
 function classSwitchAllowed(){
   /* (384) every account: the head script lets a page into a class only for an account enrolled in it, and in the academy any
      account that has finished signing up has the button (before 384, the owner's alone) */
@@ -57776,9 +57813,8 @@ function maybeNewClassBanner(){
       const c = NOVA_CLASSES.find(x => x.key === "ifc"), info = NOVA_CLASS_INFO.ifc || {};
       newClassPulseOn = true;
       const w = document.querySelector(".class-bubble-wrap"); if(w) w.classList.add("has-new");
-      const ic = document.createElement("span"); ic.innerHTML = c.icon;
       showDailyAlert("Tap to see the class list", { kind: "enrolled", tag: "NEW CLASS", title: (info.title || c.name) + " is open to join",
-        color: "#FF9648", iconEl: ic.firstElementChild, id: "newclass-banner", stay: 7000,
+        color: "#FF9648", iconEl: classMarkEl("ifc", "class-mark"), id: "newclass-banner", stay: 7000,
         onTap: () => { try{ showClassCatalog("home"); }catch(e){} } });
     };
     newClassTimer = setTimeout(attempt, 2400);
@@ -57802,14 +57838,14 @@ function mountClassBubble(){
   const stack = document.createElement("div");
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
-  const items = others.map(c => ({ cls: "is-" + c.key, icon: classBtnIcon(c.key) || c.icon, label: c.name, run: () => switchClass(c.key) }));
+  const items = others.map(c => ({ cls: "is-" + c.key, key: c.key, label: c.name, run: () => switchClass(c.key) }));
   items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog("home"); } });
   wrap.style.setProperty("--n", items.length);
   items.forEach((it, k) => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "class-stack-item " + it.cls; b.tabIndex = -1;
     b.style.setProperty("--k", k);
-    b.innerHTML = '<span class="csi-bubble">' + it.icon + '</span><span class="csi-label"></span>';
+    b.innerHTML = (it.key ? classMarkHtml(it.key, "csi-bubble") : '<span class="csi-bubble">' + it.icon + '</span>') + '<span class="csi-label"></span>';
     b.querySelector(".csi-label").textContent = it.label;
     b.addEventListener("click", it.run);
     stack.appendChild(b);
@@ -58142,7 +58178,7 @@ function showClassCatalog(from){
     const card = document.createElement("button");
     card.type = "button"; card.className = "class-card is-" + c.key + (enrolled ? " is-enrolled" : "") + (here ? " is-here" : "");
     card.style.setProperty("--k", k);
-    card.innerHTML = '<span class="cc-glow" aria-hidden="true"></span><span class="cc-emblem">' + c.icon + '</span>' +
+    card.innerHTML = '<span class="cc-glow" aria-hidden="true"></span>' + classMarkHtml(c.key, "cc-emblem") +
       '<span class="cc-text"><span class="cc-kicker"></span><span class="cc-title"></span><span class="cc-desc"></span></span>' +
       '<span class="cc-foot"><span class="cc-status"></span></span>';
     card.querySelector(".cc-kicker").textContent = info.kicker || c.sub;
@@ -58498,7 +58534,6 @@ function showEnrolledBanner(key){
   const c = NOVA_CLASSES.find(x => x.key === keys[0]);
   const info = NOVA_CLASS_INFO[keys[0]] || {};
   const names = keys.map(k => (NOVA_CLASS_INFO[k] || {}).title || NOVA_CLASSES.find(x => x.key === k).name);
-  const wrap = document.createElement("span"); wrap.innerHTML = c.icon;
   let waits = 0;
   const show = () => {
     /* (384) after a sign-up's Add to Home Screen sheet, not under it */
@@ -58506,7 +58541,7 @@ function showEnrolledBanner(key){
     if(!onNovaHome()) return;
     showDailyAlert(keys.length > 1 ? "Switch classes with the class button" : (info.kicker || ""), { kind: "enrolled", tag: "ENROLLED",
       title: "You’re enrolled in " + names.join(" and "),
-      color: keys[0] === "ifc" ? "#FF9648" : "#93B5FF", iconEl: wrap.firstElementChild, id: "enrolled-banner", stay: keys.length > 1 ? 7000 : 6000 });
+      color: keys[0] === "ifc" ? "#FF9648" : "#93B5FF", iconEl: classMarkEl(c.key, "class-mark"), id: "enrolled-banner", stay: keys.length > 1 ? 7000 : 6000 });
   };
   setTimeout(show, 700);
 }
@@ -58520,7 +58555,7 @@ function showIfcEnroll(opts){
   panel.className = "panel class-enroll is-ifc" + (opts.signup ? " is-signup" : "");
   /* (383: "the add class thing didn't get the new back button and stuff" - the round back button and centred title every pushed screen has) */
   panel.appendChild(iosNavBar("Fire Code", opts.signup ? buildBackLink("Back", showClassSelection) : buildBackLink("Classes", () => showClassCatalog(classCatalogFrom))));
-  panel.insertAdjacentHTML("beforeend", '<div class="ce-emblem">' + c.icon + '</div>');
+  panel.insertAdjacentHTML("beforeend", classMarkHtml("ifc", "ce-emblem"));
   const h = document.createElement("h1"); h.className = "ce-title"; h.textContent = "Enroll in Fire Code";
   const k = document.createElement("p"); k.className = "ce-kicker"; k.textContent = "2021 IFC + HC Amendments";
   const p1 = document.createElement("p"); p1.className = "ce-body";
@@ -102839,7 +102874,7 @@ function showClassSelection(){
     const card = document.createElement("button");
     card.type = "button"; card.className = "class-card is-" + c.key;
     card.style.setProperty("--k", k);
-    card.innerHTML = '<span class="cc-glow" aria-hidden="true"></span><span class="cc-emblem">' + c.icon + '</span>' +
+    card.innerHTML = '<span class="cc-glow" aria-hidden="true"></span>' + classMarkHtml(c.key, "cc-emblem") +
       '<span class="cc-text"><span class="cc-kicker"></span><span class="cc-title"></span><span class="cc-desc"></span></span>' +
       '<span class="cc-foot"><span class="cc-status is-enroll">Select</span></span>';
     card.querySelector(".cc-kicker").textContent = info.kicker || c.sub;
@@ -108357,9 +108392,9 @@ function showDailyAlert(msg, opts){
     el.setAttribute("role", "status");
     let icon;
     if(o.iconEl){
-      /* a drawn mark of its own - the badge itself (327z15) */
+      /* a drawn mark of its own - the badge itself (327z15); (384.108) a class's lit ring keeps its glow outside the face */
       icon = document.createElement("span");
-      icon.className = "app-banner-icon app-banner-face";
+      icon.className = "app-banner-icon app-banner-face" + (o.iconEl.classList && o.iconEl.classList.contains("class-ring") ? " is-class" : "");
       icon.appendChild(o.iconEl);
     } else if(o.character){
       icon = document.createElement("span");
@@ -114606,9 +114641,8 @@ function maybeSwitchWelcome(){
     if(++calm < 2){ switchWelcomeTimer = setTimeout(attempt, 400); return; }
     switchWelcomeDone = true;
     const c = NOVA_CLASSES.find(x => x.key === key), info = NOVA_CLASS_INFO[key] || {};
-    const ic = document.createElement("span"); ic.innerHTML = c.icon;
     showDailyAlert(info.kicker || "", { kind: "enrolled", tag: "YOUR CLASS", title: "Welcome back to " + (key === "ifc" ? "Fire Code" : "the Police Academy"),
-      color: key === "ifc" ? "#FF9648" : "#93B5FF", iconEl: ic.firstElementChild, id: "classback-banner", stay: 4500 });
+      color: key === "ifc" ? "#FF9648" : "#93B5FF", iconEl: classMarkEl(c.key, "class-mark"), id: "classback-banner", stay: 4500 });
   };
   switchWelcomeTimer = setTimeout(attempt, 600);
 }
@@ -123021,7 +123055,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.98";
+const APP_BUILD = "2026-11-13-384.108";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
