@@ -5534,6 +5534,43 @@
   input[type="text"], input[type="search"], input[type="email"],
   input[type="number"], input[type="tel"], input[type="password"],
   textarea, select{ font-size:max(17px, 1rem); }
+  /* ...AND NOTHING OF THE BROWSER'S OWN IS DRAWN IN ONE (384.109). Madison, on his installed iPhone: "When clicking change
+     on my name, a weird white box shows up, fix that." The name field (Settings > Account > Name) was the one text field
+     in the app that told Safari it holds a person's name ("Your name", "First and last name", autocapitalised words, no
+     autocomplete) - every other live one is a code, a search or a message - so it is the one Safari offers contact
+     AutoFill on, and a field AutoFill fills is painted by WebKit's own sheet: a pale fill (#FAFFBD) with black letters,
+     both !important, which no page rule can take back. The same net as the 16px floor, for every field now and later:
+     - no native look and no browser white: appearance none and the field colour from the tokens, at ZERO specificity
+       (:where), so a field's own class always wins and only a field nobody styled falls back to it. A type=search field
+       without appearance:none is iOS's own search field (the starred / most-missed list's search was one);
+     - AutoFill cannot paint one: a filled field is covered by the field colour (an inset shadow - the one thing drawn over
+       a background the page still controls) with the app's white letters. In a LAYER: an !important inside a layer
+       outranks every unlayered !important, so a field's own rim rule (Manage friends', the name's) cannot undo it;
+     - Safari's AutoFill buttons (the contacts card, the key) are never drawn inside one (as Nova's username field, 384 r4).
+     Unknown pseudo-classes drop out of a :where() list on their own; each button gets its own rule, so a browser that does
+     not know one name keeps the others. */
+  :where(input[type="text"], input[type="search"], input[type="email"], input[type="number"], input[type="tel"],
+    input[type="password"], input[type="url"], input:not([type]), textarea){
+    -webkit-appearance:none; appearance:none; background-color:var(--clean-card, #23272C); color:var(--ink, #FFFFFF);
+  }
+  @layer field-autofill{
+    :where(input, textarea):where(:-webkit-autofill, :autofill, :-webkit-autofill-strong-password,
+      :-webkit-autofill-strong-password-viewable, :-webkit-autofill-and-obscured){
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.11), inset 0 0 0 100vmax var(--clean-card, #23272C) !important;
+      -webkit-text-fill-color:var(--ink, #FFFFFF) !important;
+      /* an inset shadow is drawn inside the border, and a background runs under it: a field's transparent 1px border would
+         show the pale fill as a white ring round the cover. The fill stops at the border, so the border shows what is behind. */
+      -webkit-background-clip:padding-box !important; background-clip:padding-box !important;
+      transition:none !important;   /* the cover is there in the same frame as the fill, never eased in over it */
+    }
+    /* the white letters are the value's: a hint still showing (a fill being previewed) keeps its own grey */
+    :where(input, textarea):where(:-webkit-autofill, :autofill)::placeholder{ -webkit-text-fill-color:currentColor !important; }
+  }
+  :where(input, textarea):where(:-webkit-autofill, :autofill){ caret-color:var(--ink, #FFFFFF); }
+  input::-webkit-contacts-auto-fill-button{ visibility:hidden; display:none !important; pointer-events:none; width:0; margin:0; }
+  input::-webkit-credentials-auto-fill-button{ visibility:hidden; display:none !important; pointer-events:none; width:0; margin:0; }
+  input::-webkit-strong-password-auto-fill-button{ visibility:hidden; display:none !important; pointer-events:none; width:0; margin:0; }
+  input::-webkit-credit-card-auto-fill-button{ visibility:hidden; display:none !important; pointer-events:none; width:0; margin:0; }
   /* .searchbox's own left padding (2.5rem) is sized for the magnifying
      icon that sits inside the actual unit-search field \u2014 every other
      text input in the app (username, sync codes, name changes) reuses
@@ -38659,6 +38696,13 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-nameedit{ padding:1rem; }
   /* (383) on its Settings page the field keeps Customize's room inside it (Settings' own inputs are tighter) */
   html[data-layout] body #stage .settings-page-account .customize-nameedit input.searchbox{ padding-top:.95rem !important; padding-bottom:.95rem !important; padding-left:1.15rem !important; padding-right:1.15rem !important; }
+  /* (384.109) THE FIELD READS AS A FIELD IN ITS CARD. The clean look paints a field the card's own colour (--clean-card), so
+     inside the name's card it had no edge at all: the name and a caret floating in the card. Manage friends' field sits in a
+     card the same way and carries a hairline rim for exactly that; this one now does too (the same rim, kept while typing -
+     no accent ring: on the default theme the accent is white). */
+  html[data-theme][data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-nameedit input.searchbox{
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.11) !important;
+  }
   /* Your look: the four rows are one inset group - edge to edge, a hairline between, the corners on the group */
   html[data-layout] body #stage .screen-customize .cz-list{ gap:0; }
   html[data-layout] body #stage .screen-customize .cz-list > .cz-bar{ margin-bottom:var(--ios-head-gap) !important; }
@@ -102931,6 +102975,8 @@ function showWelcomeNamePrompt(){
      own built-in behavior rather than something reimplemented by
      hand. */
   input.setAttribute("autocapitalize", "words");
+  /* (384.109) a username, not a contact or a login: nothing for Safari to fill (as the Account name field) */
+  input.setAttribute("autocomplete", "off"); input.name = "nova-callsign"; input.setAttribute("data-form-type", "other");
   inputWrap.appendChild(input);
   panel.appendChild(inputWrap);
 
@@ -122940,7 +122986,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.109";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -151472,6 +151518,10 @@ function buildCustomizeNameSect(){
   nameInput.spellcheck = false;
   nameInput.setAttribute("autocorrect", "off");
   nameInput.setAttribute("autocapitalize", "words");
+  /* (384.109) "a weird white box": nothing for Safari to fill. This was the one field in the app that read as a person's
+     name with no autocomplete, so it was offered contact AutoFill, which paints a filled field pale with black letters.
+     Named as nothing Safari fills (Nova's username field's answer, 384 r4); the CSS net covers a fill that happens anyway. */
+  nameInput.setAttribute("autocomplete", "off"); nameInput.name = "nova-callsign"; nameInput.setAttribute("data-form-type", "other");
   nameInput.value = store.firstName || "";
   nameInput.hidden = true;
 
@@ -155475,6 +155525,8 @@ function showProfile(defaultTab, opts){
   nameInput.spellcheck = false;
   nameInput.setAttribute("autocorrect", "off");
   nameInput.setAttribute("autocapitalize", "words");
+  /* (384.109) the same as Settings > Account's name field (buildCustomizeNameSect): nothing for Safari to fill */
+  nameInput.setAttribute("autocomplete", "off"); nameInput.name = "nova-callsign"; nameInput.setAttribute("data-form-type", "other");
   nameInput.value = store.firstName || "";
   nameInput.hidden = true;
 
