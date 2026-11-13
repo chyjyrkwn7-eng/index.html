@@ -28,7 +28,7 @@ WHAT IT HOLDS (this build's index.html + ifc/bank.js + ifc/ifc-viewer.js against
    (2d) the app's own check of the book (verifyCopy, every new reference) finds every one where the bank says.
  (3) IDENTITY: every one of BASE's questions keeps its exact key (chapter | position | wording), all keys unique; the new ones take
      Chapter 10's positions after its last (133-158); the identity tables (gaps, moved, retired, pinned wording / choices) are BASE's.
- (4) NOTHING LOST: an account that has MASTERED Chapter 10 (two hundos, every one of its 131 questions answered right, stars on some, three
+ (4) NOTHING LOST: an account that has MASTERED Chapter 10 (35 hundos: badge, star and "Advanced", every one of its 131 questions answered right, stars on some, three
      other badges) is booted on BASE and its saved state on this build: the badge, the star, the chapter's level, hundos, badge count,
      rank, level, the published row and every stored field are identical; no answer tally is lowered, the chapter's answered count and the
      Stats ring's count are the same (its share is reported: the bank is larger); nothing is owed or re-fired; the card still shows the
@@ -198,6 +198,7 @@ def open_book(br, html, viewer, bank):
     ctx.route("**/ifc/bank.js*", lambda route, request, b=bank: route.fulfill(status=200, body=b, content_type="text/javascript; charset=utf-8"))
     ctx.add_init_script("window.__cloudSeed = {};"); ctx.add_init_script(G["FAKE"]); ctx.add_init_script(G["g"]["STANDALONE"]); ctx.add_init_script(G["init"](G["ifc"]))
     pg = ctx.new_page(); errs = []
+    pg.set_default_timeout(240000)                             # (a loaded machine: choosing the 7.5 MB book took over 30 s)
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     v = re.search(r'const APP_BUILD = "([^"]+)"', html).group(1)
     pg.route("**/version.json*", lambda route, request: route.fulfill(status=200, headers={"content-type": "application/json"}, body=json.dumps({"build": v, "force": False, "frameId": ""})))
@@ -239,12 +240,22 @@ else:
             except Exception: pass
     acc = None
     with sync_playwright() as pw:
-        for attempt in range(4):
+        import time
+        def mem_free_mb():
+            try: return int(next(l for l in open("/proc/meminfo") if l.startswith("MemAvailable")).split()[1]) // 1024
+            except Exception: return 1 << 20
+        for attempt in range(8):
+            # (reading the 697-page book takes the renderer about 1 GB; on a machine shared with other sessions' browsers the kernel's
+            # memory-cgroup OOM killer took it mid-read: wait, up to 20 minutes, for room before each try)
+            for _ in range(120):
+                if mem_free_mb() >= 2500: break
+                time.sleep(10)
             try:
                 errs_all += book_pass(pw); break
             except Exception as e:
-                if not any(w in str(e).lower() for w in ("crash", "closed", "timeout")) or attempt == 3: raise
+                if not any(w in str(e).lower() for w in ("crash", "closed", "timeout")) or attempt == 7: raise
                 print("    (the renderer crashed reading the book: %s - again, in a fresh browser)" % str(e).splitlines()[0][:90], flush=True)
+                time.sleep(30)
     chk("the owner's IFC PDF is accepted by the app", acc, acc)
     # ---- (2a) every row of the table, from the book
     vals = re.findall(r"\b\d+ (?:gross|net)\b|See Section", cited)
@@ -358,6 +369,10 @@ MERGE = """(args)=>{ const a = args.a, b = args.b; const C = o => JSON.parse(JSO
   const d1 = C(a); mergeSameAccount(d1, C(b)); const d2 = C(b); mergeSameAccount(d2, C(a)); return { ab: lower(d1, a, b), ba: lower(d2, a, b) }; }"""
 with sync_playwright() as pw:
     rig = L.Rig(G, pw)
+    _nc = rig.br.new_context
+    def _patient(**kw):                                        # (a loaded machine: a page load over 30 s is slow, not wrong)
+        c = _nc(**kw); c.set_default_timeout(240000); c.set_default_navigation_timeout(240000); return c
+    rig.br.new_context = _patient
     try:
         old, e0 = rig.read(OLD_PAGE, OLD_BANK); new, e1 = rig.read(NEW_PAGE, NEW_BANK)
         errs_all += e0 + e1
@@ -380,9 +395,9 @@ with sync_playwright() as pw:
         for t in others:
             for r in [x for x in old["rows"] if x["topic"] == t][:20]: stats[r["key"]] = {"n": 3, "m": 1, "r": []}
         flagged = {k: 1790000000123 + n for n, k in enumerate(ch10_keys[:5])}
-        perf = dict({T10: 2}, **{t: 1 for t in others})
+        perf = dict({T10: 35}, **{t: 1 for t in others})                  # 35 hundos: Chapter 10 reads "Advanced" (unitLevel mastery) as well as badged and starred
         fields = {"unitPerfects": perf, "stats": stats, "pendingBadgeUnlocks": [], "flagged": flagged, "unitBestPct": {t: 100 for t in perf}, "unitRuns": {t: 4 for t in perf},
-                  "lifetime": {"points": 61000, "perfectTests": 5, "answered": 1200, "correct": 1000}}
+                  "lifetime": {"points": 61000, "perfectTests": 38, "answered": 6000, "correct": 5800}}
         ctx, pg, e = rig.open(OLD_PAGE, OLD_BANK, seed_js(fields))
         pg.evaluate("()=>{ try{ const p=pendingHomeUnlocks(); markUnlocksShown(p.chars,p.banners,p.fx); }catch(e){} }")
         before = pg.evaluate(SNAP, T10); saved = pg.evaluate("()=>JSON.parse(JSON.stringify(store))"); errs_all += e; ctx.close()
@@ -399,7 +414,7 @@ with sync_playwright() as pw:
             json.dumps(before["row"], sort_keys=True) == json.dumps(after["row"], sort_keys=True)
         chk("(4a) an account that has MASTERED Chapter 10 (badge, star, '%s', %d hundos there) keeps all of it on this build: the badge, the star, the level, hundos %s -> %s, badges %s -> %s, rank, level and the published row the same; every stored field identical (%d differ: %s); nothing owed or re-fired" % (
             before["level"], before["perf"], before["hundos"], after["hundos"], before["badgeCount"], after["badgeCount"], len(rest_diff), rest_diff[:4]),
-            held and before["earned"] and before["star"] and not rest_diff and after["pending"] == [] and not after["overlay"],
+            held and before["earned"] and before["star"] and before["level"] == "mastery" and not rest_diff and after["pending"] == [] and not after["overlay"],
             {"held": held, "rest": rest_diff[:5], "b": {k: before[k] for k in ("perf", "earned", "star", "level", "badgeCount", "hundos")}, "a": {k: after[k] for k in ("perf", "earned", "star", "level", "badgeCount", "hundos")}})
         lowered = [k for k, v in before["stats"].items() if after["stats"].get(k, {}).get("n", 0) < v.get("n", 0) or after["stats"].get(k, {}).get("m", 0) < v.get("m", 0)]
         card = next((c for n, c in cards.items() if n and (n == T10 or n == T10.split(": ", 1)[-1])), None)
