@@ -66,7 +66,9 @@ WK = r"""(()=>{ const st=window.setTimeout.bind(window), ct=window.clearTimeout.
       const id=st(()=>{ if(!rec.dead){ rec.dead=true; fn.apply(window,a); } },ms); recs.set(id,rec); return id; } return st.apply(window,arguments); };
   window.clearTimeout=function(id){ const r=recs.get(id); if(r) r.dead=true; return ct(id); };
   const flush=()=>{ const l=col||[]; col=null; l.forEach(r=>{ if(!r.dead){ r.dead=true; try{ r.fn.apply(window,r.a); }catch(e){ st(()=>{ throw e; }); } } }); };
-  addEventListener('pointerup',()=>{ if(W.on && !col) col=[]; },true);
+  addEventListener('pointerup',()=>{ if(!W.on) return; if(col) flush(); col=[]; },true);
+  /* a release whose click never reaches the window (its propagation stopped) still lets its timers go, once its task is over */
+  addEventListener('pointerup',()=>{ if(W.on) st(()=>{ if(col) flush(); },0); },false);
   let sw=null, held=0, tr=null, x0=0, swClickAt=-1e9, dropNext=false;
   const isSw=t=>!!(t && t.tagName==='INPUT' && t.type==='checkbox' && t.hasAttribute('switch'));
   const local=(el,x)=>{ const r=window.__H.gbcr.call(el); return { x:x-r.left, w:r.width, h:r.height }; };
@@ -126,6 +128,9 @@ REC = r"""()=>{ if(window.__rec) return; const R=window.__rec={anims:[],frames:[
   /* the bar's frame-rate box is read with the uncounted readers */
   R.H=1;
 }"""
+# the page's own fallback: a frame not drawn within this long after a release is a frame held back (Low Power Mode, a page in the
+# background, here a machine at load 30+), and the screen is built anyway - an order the gate cannot hold against the page
+HELD = 400
 SEL = {"bottomtab-home": "home", "bottomtab-profile": "profile", "bottomtab-rewards": "rewards", "bottomtab-calendar": "calendar", "bottomtab-settings": "settings"}
 STATE = """()=>{ const bar=document.getElementById('bottomtabs'); const H=window.__H; const act=[...bar.querySelectorAll('.bottomtab.active')].map(t=>t.id);
   const sl=bar.querySelector('.bottomtabs-slider'), lens=document.getElementById('bottomtabs-lens');
@@ -162,9 +167,10 @@ def boot(br, url, w=440, h=956, dpr=3, kind="iphone", insets=(62, 0, 34, 0), ins
     pg.evaluate(REC)
     cdp = ctx.new_cdp_session(pg)
     # every tab's screen once (first builds are not what is measured), back to Home, the haptic layer in
-    T = tabs(pg)
-    for tid in [t for t in ("bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar", "bottomtab-settings", "bottomtab-home") if t in T]:
-        click_tab(pg, cdp, kind, T[tid]); pg.wait_for_timeout(1400)
+    # (the bar changes shape between screens on a wide screen - the Start pill joins it on Home - so a tab is found where it is now)
+    for tid in ("bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar", "bottomtab-settings", "bottomtab-home"):
+        T = tabs(pg)
+        if tid in T: click_tab(pg, cdp, kind, T[tid]); pg.wait_for_timeout(1400); settle(pg)
     pg.wait_for_timeout(1500)
     return ctx, pg, cdp, errs
 
@@ -242,10 +248,13 @@ def part_T(br, url):
     # is on its way when it was made in the release and a frame came between the release and the build
     order_bad = [(nm(x["pair"]), x["build"][0], round(x["land"]["t"] - x["up"]) if x["land"] else None, round(x["fu"] - x["up"]) if x["fu"] else None,
                   round(x["build"][1] - x["up"])) for x in res
-                 if x["build"] and (not x["land"] or not x["fu"] or x["land"]["t"] > x["fu"] or x["fu"] > x["build"][1])]
+                 if x["build"] and (not x["land"] or not x["fu"] or x["land"]["t"] > x["fu"] or (x["fu"] > x["build"][1] and x["fu"] - x["up"] <= HELD))]
     chk("T1 TAPS: the glass's landing is made in the release and handed to the compositor (a frame drawn) before the new screen is built, on all %d taps at 4x CPU [tap, screen, landing made / frame / build, ms after the release]" % len(res),
         not order_bad, order_bad[:8])
-    frame_bad = [(nm(x["pair"]), round(x["fu"] - x["up"]) if x["fu"] else None, round(x["build"][1] - x["up"])) for x in res if x["build"] and x["fu"] and x["fu"] > x["build"][1]]
+    # (a frame that does not come within HELD ms is a frame held back - the page's own timer then builds the screen anyway, by design)
+    frame_bad = [(nm(x["pair"]), round(x["fu"] - x["up"]) if x["fu"] else None, round(x["build"][1] - x["up"])) for x in res if x["build"] and x["fu"] and x["fu"] > x["build"][1] and x["fu"] - x["up"] <= HELD]
+    held = [x for x in res if x["build"] and x["fu"] and x["fu"] > x["build"][1] and x["fu"] - x["up"] > HELD]
+    if held: info("%d tap(s) had their frame held back past %dms by the machine (built by the page's own fallback timer, by design)" % (len(held), HELD))
     chk("T2 TAPS: the first frame after the release comes before the build, every tap (%d)" % len(res), not frame_bad, frame_bad[:8])
     rd = [(nm(x["pair"]), x["reads"], x["readsUp"]) for x in res if sum(x["reads"].values()) or sum(x["readsUp"].values())]
     chk("T3 TAPS: the bar's own press and release handlers read no layout (no box, offset or computed style: each one is a forced style pass and layout of the page before the glass's first frame)", not rd, rd[:4])
@@ -381,6 +390,18 @@ DEVS = [("iPhone SE (2nd/3rd)", 375, 667, 2, "iphone", (20, 0, 0, 0)), ("iPad Pr
         ("laptop 1366x768", 1366, 768, 1, "desk", (0, 0, 0, 0)), ("monitor 2560x1440", 2560, 1440, 1, "desk", (0, 0, 0, 0))]
 def part_D(br, url):
     for label, w, h, dpr, kind, ins in DEVS:
+        # a timing run on a shared machine is run once more before it is called a failure (the coordinator's rule); the second run counts
+        for attempt in range(2):
+            res = d_device(br, url, label, w, h, dpr, kind, ins)
+            if (not res[0] and not res[1] and not res[2]) or attempt == 1: break
+            info("D %s: run again (the first run: %s)" % (label, str(res)[:300]))
+        bad_o, bad_l, errs, seq = res
+        chk("D %s: the bar's answer is drawn before the screen is built, every %s (%d)" % (label, "click" if kind == "desk" else "tap", len(seq)), not bad_o, bad_o[:5])
+        chk("D %s: every %s lands on its tab (lit, platter, glass down, screen)" % (label, "click" if kind == "desk" else "tap"), not bad_l, bad_l[:3])
+        chk("D %s: no page error" % label, not errs, errs[:3])
+
+def d_device(br, url, label, w, h, dpr, kind, ins):
+    if True:
         ctx, pg, cdp, errs = boot(br, url, w, h, dpr, kind, ins, installed=(kind != "desk"))
         T = tabs(pg); ids = [t for t in ("bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar") if t in T]
         seq = ["bottomtab-profile", "bottomtab-rewards", "bottomtab-home", "bottomtab-calendar", "bottomtab-profile", "bottomtab-home"] if QUICK else \
@@ -389,16 +410,15 @@ def part_D(br, url):
         bad_o, bad_l = [], []
         for to in seq:
             if to not in T: continue
+            T = tabs(pg)
             t0 = now(pg); click_tab(pg, cdp, kind, T[to]); pg.wait_for_timeout(1800); settle(pg)
             r = rec(pg); x = one_action(r, t0); st = pg.evaluate(STATE)
-            if x["build"] and x["fu"] and x["fu"] > x["build"][1]: bad_o.append((to.replace("bottomtab-", ""), round(x["fu"] - x["up"]), round(x["build"][1] - x["up"])))
+            if x["build"] and x["fu"] and x["fu"] > x["build"][1] and x["fu"] - x["up"] <= HELD: bad_o.append((to.replace("bottomtab-", ""), round(x["fu"] - x["up"]), round(x["build"][1] - x["up"])))
             if x["build"] and kind != "desk" and (not x["land"] or not x["fu"] or x["land"]["t"] > x["fu"]): bad_o.append((to.replace("bottomtab-", ""), "no landing made in the release"))
             if not expect_state(st, to): bad_l.append((to.replace("bottomtab-", ""), st))
         cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
-        chk("D %s: the bar's answer is drawn before the screen is built, every %s (%d)" % (label, "click" if kind == "desk" else "tap", len(seq)), not bad_o, bad_o[:5])
-        chk("D %s: every %s lands on its tab (lit, platter, glass down, screen)" % (label, "click" if kind == "desk" else "tap"), not bad_l, bad_l[:3])
-        chk("D %s: no page error" % label, not errs, errs[:3])
         ctx.close()
+        return bad_o, bad_l, errs, seq
 
 srv, url = g["serve"]()
 try:

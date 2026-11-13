@@ -162451,14 +162451,14 @@ function tabPerfText(){
            glass's track only reached the compositor after it. Now a slide's build waits for the next frame and runs straight after
            it (a timer set inside requestAnimationFrame fires once that frame has been committed): the tab lights at once and the
            glass glides onto it on the compositor while the screen is built. A frame held back (Low Power Mode, a page in the
-           background) never holds the build more than 50ms. Taps keep TAB_SCREEN_AFTER (their glide has been on the compositor
-           since the press). */
+           background) never holds the build more than 400ms (384.102: was 50 - a frame slower than that, a slow or busy phone, had the
+           build run first after all; taps now wait for the frame too, see afterFrame below). */
         if(afterFrame){
           afterFrame = false;
           let went = false;
           const afterIt = () => { if(went) return; went = true; me.timers.push(setTimeout(run, rapidRun)); };
           requestAnimationFrame(afterIt);
-          me.timers.push(setTimeout(afterIt, 50));
+          me.timers.push(setTimeout(afterIt, 400));
           return;
         }
         me.timers.push(setTimeout(run, wait));
