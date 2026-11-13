@@ -23,8 +23,9 @@ states are read off the page (a spinner, a button or none, the build numbers, a 
      sight asks nothing; a row that comes into view with no fresh answer asks ONCE, and a second visit within the minute reuses it;
      when the app's own check has just run the row reuses its answer and asks nothing; a failed check, a check still out and an
      answer over a minute old all show nothing;
-(10) the pill's shape, Delta's: a capsule ~1.1x the row's words tall, its words ~0.7 of theirs and semibold, on one line, on the
-     row's middle, between the label and the chevron - at 440px, at 320px and on an iPad;
+(10) the pill's shape, Delta's (1.09x and 0.65 on his screenshot): a capsule 0.95-1.3x the row's words' size tall, its words
+     0.6-0.82 of theirs and semibold, 6-12px of air each side and even, on one line, on the row's middle, between the label and the
+     chevron - at 440px, at 320px and on an iPad;
 (11) every state on a phone and an iPad both ways and a 320px phone: no sideways scroll, nothing past the edge, buttons 44px+; in
      every theme the button and the update pill are the theme's colour, their words readable on it (3:1+);
 (12) no page errors.
