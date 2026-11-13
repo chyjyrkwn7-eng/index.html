@@ -29,7 +29,8 @@ and drawn under the dark while two planet systems and the cutscene's depth layer
      inside the cutscene a second time in a row, the next launch plays it as the short still scene (no hand-off, no whirl), once,
      and owes nothing after.
 
-Fails on 384.94 (origin/main) in A2, A3, B1, B3, B4, C1 and C3.
+Fails on 384.94 (origin/main) in A1 (it reloads under Nova's words after the journey), A2, A3, B1, B3, B4, C1 and C3 - and in B2 and
+C2, where the old journey ends on Profile, not Home.
 """
 import io, json, os, re, subprocess, sys, tempfile, time
 from playwright.sync_api import sync_playwright
@@ -236,13 +237,20 @@ def a_journey(pw):
         if st["sc"] and not armed["v"]:
             armed["v"] = True; C.newer = True; pg.evaluate(ARM)
     secs = journey(pg, tick=tick)
+    # Nova's words come up after the journey and are read through, as a person would (they hold the update too)
+    for _ in range(200):
+        pg.evaluate(PERSON)
+        pg.wait_for_timeout(300)
+        if not pg.evaluate("()=>!!document.querySelector('.nova-talk')"):
+            break
     pg.wait_for_timeout(6000)
-    U = pg.evaluate("()=>({ fired: __up.fired, bad: __up.bad, frames: __up.frames, scene: __up.scene, last: Math.round(__up.lastScene), now: Math.round(performance.now()), info: !!forcedUpdateInfo })")
+    U = pg.evaluate("()=>({ fired: __up.fired, bad: __up.bad, frames: __up.frames, scene: __up.scene, last: Math.round(__up.lastScene), now: Math.round(performance.now()), info: !!forcedUpdateInfo,"
+                    " held: forcedUpdateBlocked(), nova: !!document.querySelector('.nova-talk'), focus: cutsceneFocusActive() })")
     ck("A1 the journey ran to its end (%ss) with a newer build advertised mid-way (known to the page: %s)" % (secs, U["info"]), secs is not None and armed["v"] and U["info"], U)
     ck("A1 on every one of %d frames a scene was up, the forced update was held (frames not held: %s)" % (U["scene"], U["bad"][:4]), U["scene"] > 20 and not U["bad"], U["bad"][:6])
     early = [f for f in U["fired"] if f[1]]
     ck("A1 it did not go while any scene was up (%s), and went after the last one ended, within 6s (%s)" % (early, [round((f[0] - U["last"]) / 1000, 1) for f in U["fired"]]),
-       not early and len(U["fired"]) >= 1 and 0 <= U["fired"][0][0] - U["last"] <= 6000, U["fired"])
+       not early and len(U["fired"]) >= 1 and 0 <= U["fired"][0][0] - U["last"] <= 6000, U)
     ck("A1 no page errors", not C.errs, C.errs[:3])
     br.close()
 
