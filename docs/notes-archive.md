@@ -39530,3 +39530,7 @@ GATES (TMPDIR=/dev/shm, one at a time, on a shared machine at load 70-110):
 - --against origin/main 384.95 (Pro Max, academy, all six screens): FAILS (1) on five screens (corners 12px on 44px), (2) (two fills:
   the clean card and the unit card's .07 white), (5) (Review's field has no x; the unit card's is a 55x36 "Clear" pill; its field no
   magnifier), (7) both (your row 37 levels off its neighbours), (8) all three, (9), (10).
+- NOT RUN YET - the lead paused all browser work (the machine at load 80, ~220 Chrome processes): check-behaviour's board and Find me
+  sections (ONLY_FN=check_audit_a,check_b218,check_b304,check_b318_one_chat,check_b318h_legacy_rows,check_b324l_board - stopped before
+  its first result), check-fixes (--only "16 Pro Max", "SE (1st gen)", "iPad Pro 11"), check-centering --quick, sweep-layout --quick,
+  check-b384-searchink, check-b384-lbclean, check-sync's Find me, and the Find me clip.
