@@ -39507,7 +39507,26 @@ tall there; the words are drawn by the zoom floor (--field-floor, 20px -> ~20pt)
 that floor inside a zoomed block would risk iOS zooming in on the tap, so it is left. The units, room and Review fields are not in a
 --zc block (as before), so on his phone they are 85% of the Leaderboard's.
 
-GATE (new): tools/check-b384-searchbar.py - see its docstring.
+GATE (new): tools/check-b384-searchbar.py - see its docstring. Fields found by shape (an input of type search, or one sharing its
+wrapper with an svg glyph), the button beside one by place (a button sibling of the wrapper on the field's line), the flash's overlay by
+shape (a painted absolute box covering the row); no label strings. A FLASH IS TIMED ON ITS OWN CLOCK AS WELL AS IN FRAMES: on this
+sandbox under load (load average 70-110) the page drew frames 1-6s apart after a tap, so a wall-clock "within 300ms" measured the
+machine - the first version of (8)/(9) failed that way on the branch with the overlay plainly there. The tap and every reading of the
+overlay's own animation now happen in one task (CLOCKRUN), and the frames are still read for what was drawn (the tint shows, the row's
+background never changes, it ends at 0, the row is on screen); a wall-clock 300ms is still required wherever the frames came regularly.
 GATES CHANGED ON PURPOSE: check-behaviour check_b304 found your row by .rank-row.lb-row-me; it reads [data-me="1"] (on both builds).
 SUPERSEDED: check-b382-board (it asked for your row's accent ring and wash); check-b383-feedback 4/5's "with a rim" (the clean look took
 the rim off before this).
+
+GATES (TMPDIR=/dev/shm, one at a time, on a shared machine at load 70-110):
+- check-js: 14 blocks ALL PASS. The page's console in every gate run: the two blocked Firebase CDN loads only, no page error.
+- check-b384-searchbar, the whole matrix (Pro Max both classes, iPad Pro 11" academy, 320x568 both classes, Pro Max on its side;
+  six screens each): every field check passed - (1) capsules, (2) ONE fill everywhere [rgba(118,118,128,.24)], (3) Find me / Select
+  all the field's height on its line, (4) 17px words and placeholders, (5) 44px targets and the x, (6) nothing over the edge at 320px
+  ("Search" 56px in a 104-122px text box), (7) your row as its neighbours (computed equal, pixels 0 off) on the phone and the iPad,
+  (11) no page errors. Its first-version flash checks failed on frame timing as above (and the iPad page crashed once, "Target
+  crashed", the machine out of memory); after the rewrite the board part, Pro Max and iPad: ALL PASS (37) - on its clock the tint is
+  .22 at 50ms, .92 at 150ms, 0 at 1400ms; a second tap at 700ms (.38) leaves one overlay, its clock at 0, back to 1.00.
+- --against origin/main 384.95 (Pro Max, academy, all six screens): FAILS (1) on five screens (corners 12px on 44px), (2) (two fills:
+  the clean card and the unit card's .07 white), (5) (Review's field has no x; the unit card's is a 55x36 "Clear" pill; its field no
+  magnifier), (7) both (your row 37 levels off its neighbours), (8) all three, (9), (10).

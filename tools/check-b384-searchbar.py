@@ -162,7 +162,7 @@ FLASH = r"""async ([taps, span]) => {
     [...row.children].forEach(c => consider(c)); consider(row, '::before'); consider(row, '::after'); return out; };
   /* a tap is a time in ms, or "fading": the moment the tint, having been near its peak, has fallen under .7 (a loaded machine draws
      frames far apart, so a fixed 700ms can land before the first tint was ever drawn) - with 3000ms as the latest */
-  let peakSeen = 0, lastOp = 0, end = span, hd = [];
+  let peakSeen = 0, lastOp = 0, end = span, hd = [], firstOn = 0;
   return await new Promise(res => {
     const step = () => { const t = performance.now() - t0;
       while(k < taps.length && (typeof taps[k] === 'number' ? t >= taps[k] : ((peakSeen >= .9 && lastOp < .7 && lastOp > 0) || t >= 3000))){
@@ -170,6 +170,8 @@ FLASH = r"""async ([taps, span]) => {
       const row = document.querySelector('#stage .screen-rankings .rank-rows > .rank-row[data-me="1"]');
       if(row){ const ov = overlays(row); const s = getComputedStyle(row); const b = row.getBoundingClientRect();
         const op = ov.length ? Math.max(...ov.map(o => o.op)) : 0; lastOp = op; if(k === 1) peakSeen = Math.max(peakSeen, op);
+        /* frames seconds apart (a loaded machine): keep reading until 2.3s after the tint was first drawn, up to 12s */
+        if(op > 0 && !firstOn){ firstOn = t; end = Math.min(12000, Math.max(end, t + 2300)); }
         series.push({ t: Math.round(t), taps: k, op, ov: ov.length ? ov[0] : null, bg: s.backgroundImage + '|' + s.backgroundColor, tf: s.transform,
           top: b.top, bot: b.bottom, vis0: top ? top.getBoundingClientRect().bottom : 0, vis1: tb && tb.getBoundingClientRect().height ? tb.getBoundingClientRect().top : innerHeight, hd: hd.slice() }); }
       else series.push({ t: Math.round(t), op: -1, taps: k });
