@@ -36201,7 +36201,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* a class you have not looked at yet: a soft ring breathes out from the bubble (transform and
      opacity only - nothing blurred moves) and a small dot sits on its corner */
   .class-bubble-wrap.has-new .class-bubble::before{ content:""; position:absolute; inset:-2px; border-radius:50%; border:2px solid rgba(255,150,72,.7); opacity:0; pointer-events:none; animation:cb-new 2.6s ease-out infinite; }
-  .class-bubble-wrap.has-new .class-bubble::after{ content:""; position:absolute; top:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:#FF9648; border:2px solid rgba(14,16,24,.9); box-sizing:border-box; }
+  /* (384.95) the small dot on its corner is a .new-dot child of the button (.is-cb) - see THE NEW DOT, ONE LOOK */
   @keyframes cb-new{ 0%{ transform:scale(1); opacity:.85; } 100%{ transform:scale(1.55); opacity:0; } }
   [data-reduce-motion="true"] .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; }
   @media (prefers-reduced-motion:reduce){ .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; } }
@@ -39076,16 +39076,82 @@ html.is-browser{ --fade-paper: transparent; }
      Maybe a small glow?" The dot stays the solid 9px circle with its ring (above); a light comes off it, outside the ring:
      a tight bright halo and a wider soft one (--new-dot-light), so it reads as lit on the tab bar's glass. */
   :root{ --new-dot-light:0 0 6px 1px rgba(255,212,59,.85), 0 0 14px 3px rgba(255,186,40,.42); }
+  /* (384.95) A SMALL LIT FLARE IN YOUR THEME'S COLOUR. Madison: "The yellow dot for the notification, doesn't match the theme, it
+     should almost look a little like the secret flare.." The dot is drawn the way a FOUND secret flare is (.cosmic-flare-dot
+     .is-found): a white-hot core, the theme's colour round it, a deeper rim, and its light pooled round it (a round gradient,
+     never a filter) that breathes. Where it sits, its 9px and its ring are unchanged: the dot's box (a .new-dot, or the Profile
+     tab icon's ::after) is placed exactly as before; what changed is what is painted in and round it.
+       THE PARTS: the BODY (the .new-dot's ::after; the tab icon's ::after) - the core, the colour, the rim, in the 9px circle -
+     with the RING round it (box-shadow, still opaque so it keeps the dot apart from the icon under it, now tinted a little with
+     the dot's own light so the glow runs on from the body with no dark gap); the HALO (the .new-dot's ::before; the tab icon's
+     ::before) - a --nd-h disc behind the body, the colour fading out, breathing (transform + opacity only; still under Reduce
+     motion and prefers-reduced-motion). The class button's dot is a .new-dot child of the button now (.is-cb), because its
+     ::before is the button's own pulsing ring (329) and the halo needs a layer of its own.
+       THE COLOUR is the theme's: the rank's own colour (--theme-c2, RANK_COLOR) with a third of its lifted dark-screen
+     version (--rank-accent) in it, so Bronze is bronze and not the default's amber, and the halo in the lifted one, which
+     reads as light on the glass. Read off <html> once, so a dot inside something that wears another theme's colours (a
+     banner, a classmate's row) is still in yours. Three themes are drawn by hand:
+       - THE DEFAULT (no data-accent): its orange taken a step towards its own gold, below.
+       - SUPERNOVA's colour is red, and red is the chat's unread count. Its dot is its yellow-hot side instead: a gold core, a
+         molten orange body and rim, never red.
+       - SILVER is a grey, and a grey bead is what a secret flare NOT found looks like (the pearl). Its dot is moonlight: a white
+         core and a bright silver body over a slate rim, in a white light - lit, not a pearl. A new grey theme needs the same
+         (tools/check-b384-newdot.py holds Silver's light to the coloured themes').
+     Gold's dot is still yellow: Gold is a yellow theme. --new-dot keeps #FFD43B for the other yellow thing that reads it (the
+     chat's friend-request button), which is not the dot. */
+  html{
+    --nd-c:color-mix(in srgb, var(--rank-accent, var(--theme-c2, #F5804D)) 35%, var(--theme-c2, #F5804D));
+    --nd-hot:color-mix(in srgb, var(--nd-c) 42%, #FFFFFF);
+    --nd-rim:color-mix(in srgb, var(--theme-c2, #F5804D) 66%, #000000);
+    --nd-halo:var(--rank-accent, var(--nd-c));
+    --nd-core:#FFFFFF;
+    --nd-h:25px;
+  }
+  /* the default: its orange taken a step towards its own gold (the wordmark's first two stops), so it is Nova's sun and not the
+     chat's coral-red; the core runs hot through the gold */
+  html:not([data-accent]), html[data-accent="ink"]{ --nd-c:color-mix(in srgb, var(--theme-c1, #FFD37A) 30%, var(--theme-c2, #F5804D));
+    --nd-hot:color-mix(in srgb, var(--theme-c1, #FFD37A) 70%, #FFFFFF); --nd-rim:color-mix(in srgb, var(--nd-c) 62%, #000000); }
+  html[data-accent="titan"]{ --nd-c:#FF8C3C; --nd-hot:#FFE27A; --nd-rim:#C2541C; --nd-halo:#FF9440; }
+  html[data-accent="ranger"]{ --nd-c:#DFE2E7; --nd-hot:#FFFFFF; --nd-rim:#666B74; --nd-halo:#F2F6FF; }
   html body .new-dot,
-  html body #bottomtab-profile.has-new .bottomtab-icon::after,
-  html body .class-bubble-wrap.has-new .class-bubble::after{
+  html body #bottomtab-profile.has-new .bottomtab-icon::after{
     content:""; position:absolute !important; display:block !important; box-sizing:border-box !important;
     width:var(--nd-d) !important; height:var(--nd-d) !important; aspect-ratio:1 / 1; flex:none; padding:0 !important; border:0 !important; border-radius:50% !important;
-    background:var(--new-dot) !important; background-image:none !important; box-shadow:0 0 0 var(--nd-ring) var(--nd-ring-c), var(--new-dot-light) !important;
     filter:none !important; opacity:1 !important; animation:none !important; transform:none !important;
     top:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important; right:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important;
     left:auto !important; bottom:auto !important; margin:0 !important; pointer-events:none; z-index:6;
   }
+  /* the .new-dot itself is the frame its two layers hang in; the tab's ::after is the body directly */
+  html body .new-dot{ background:none !important; box-shadow:none !important; overflow:visible !important; }
+  html body .new-dot::after{ content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+  html body .new-dot::before{ content:""; position:absolute; left:calc((var(--nd-d) - var(--nd-h)) / 2); top:calc((var(--nd-d) - var(--nd-h)) / 2);
+    width:var(--nd-h); height:var(--nd-h); border-radius:50%; pointer-events:none; }
+  html body #bottomtab-profile.has-new .bottomtab-icon::before{
+    content:""; position:absolute; display:block; box-sizing:border-box; width:var(--nd-h); height:var(--nd-h); padding:0; border:0; margin:0;
+    border-radius:50%; top:calc(var(--nd-r, 0px) * .29289 - var(--nd-h) / 2); right:calc(var(--nd-r, 0px) * .29289 - var(--nd-h) / 2);
+    left:auto; bottom:auto; pointer-events:none; z-index:5;
+  }
+  /* THE BODY: lit from the top left, as the found flare is */
+  html body .new-dot::after,
+  html body #bottomtab-profile.has-new .bottomtab-icon::after{
+    background:radial-gradient(circle 5.2px at 44% 42%, var(--nd-core) 0 17%, var(--nd-hot) 36%, var(--nd-c) 64%, var(--nd-rim) 100%) !important;
+    box-shadow:0 0 0 var(--nd-ring) color-mix(in srgb, var(--nd-halo) 42%, var(--nd-ring-c)) !important;
+  }
+  /* THE HALO: the colour pooled round it, fading to nothing */
+  html body .new-dot::before,
+  html body #bottomtab-profile.has-new .bottomtab-icon::before{
+    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--nd-halo) 72%, transparent) 0 48%, color-mix(in srgb, var(--nd-halo) 34%, transparent) 64%,
+      color-mix(in srgb, var(--nd-halo) 10%, transparent) 84%, transparent 100%);
+    transform:scale(.92); opacity:.86;
+  }
+  @media (prefers-reduced-motion:no-preference){
+    html:not([data-reduce-motion="true"]) body .new-dot::before,
+    html:not([data-reduce-motion="true"]) body #bottomtab-profile.has-new .bottomtab-icon::before{ animation:nd-breathe 3.6s ease-in-out infinite; }
+  }
+  @keyframes nd-breathe{ 0%, 100%{ transform:scale(.8); opacity:.62; } 50%{ transform:scale(1.04); opacity:1; } }
+  /* the class button's dot: there while the button has something new (329's has-new), the button's own ring left as it was */
+  html body .class-bubble > .new-dot.is-cb{ display:none !important; }
+  html body .class-bubble-wrap.has-new .class-bubble > .new-dot.is-cb{ display:block !important; }
   /* the hosts: what the dot marks, and that thing's corner */
   #bottomtab-profile .bottomtab-icon, .class-bubble, .avatarchar-option, .swatch, .badge-tile-art{ --nd-r:50%; }
   .banner-opt, .hfx-opt{ --nd-r:12px; }
@@ -57581,6 +57647,9 @@ function mountClassBubble(){
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
   btn.innerHTML = cur.icon;
+  /* (384.95) the new dot, shown by CSS while the wrap has-new (a child, not ::after: the dot's halo needs its own layer, and
+     the button's ::before is its pulsing ring) */
+  const cbDot = buildNewDot(); cbDot.classList.add("is-cb"); btn.appendChild(cbDot);
   const stack = document.createElement("div");
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
@@ -122783,7 +122852,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.92";
+const APP_BUILD = "2026-11-13-384.95";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
