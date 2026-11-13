@@ -39534,3 +39534,18 @@ glisten block at the end of `buildObjPinSVG` (the `-sil` mask, the `-shn` gradie
 `badge-shine-band` rect, after `if(grey) return svg;`) - it is display:none here and never animated, but every pin still
 carries the mask. On that branch alone its pins also showed the coin's light past their edge: the mask had the 6.5-unit rim a
 pin does not have.
+
+**Trace, before -> after** (main 384.97 against this build, each run alone on the machine (load ~3), Chromium 153, 440x956 at
+3x, CPU x4, the same fixture: the academy, a case of four, the fifth unit new; windows read off the page's own markers).
+- THE SLOT'S GLINT (its active phase: 1.3s before, 1.6s after): Paint events naming the badge's svg 33 -> 0; its 276x276 layer
+  repainted 33 times -> not at all; raster tasks 34 -> 0 (28.7ms -> 0); paint time 110.6 -> 33.0ms (what is left is the
+  document's own per-frame paint record, 24 events, no raster); cc frames dropped 40 -> 7; frames presented whole 39 -> 92 and
+  partial (the main thread late) 73 -> 7. Composited layers mid-window 73 -> 73 (the glint's two are in place of the svg's).
+- THE SEAT AND ITS GLINT (2.4s from the seat): badge-svg paints 37 -> 1 (the seat's own swap), raster tasks 56 -> 14 (70.3 ->
+  23.4ms), dropped 54 -> 25.
+- THE COIN (the spin and its glint at rest were HTML already): no paint of a badge in either; the glint's 1.6s 76 -> 55 dropped.
+  The spin is unchanged in cost (its ~390 keyframes are the compositor's).
+- What is NOT the glint, seen in passing: the main thread's 4x-throttled frames run 13-33/s through the whole scene on both
+  builds (the document's style for `body.bc-covering`, a 60-90ms recalc at 4x just after the coin appears; the case's 3D
+  layerization; a rAF render of a badge picture, 120-130ms at 4x, as the coin's glint ends). None of it moves the glint or the
+  spin, which are the compositor's on both engines; left as it is.
