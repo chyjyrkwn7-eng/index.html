@@ -81,12 +81,13 @@ def check_settings_and_soundtest(br):
         check("%s: the auto-advance row's title and line name no mode, and the title is short" % label,
               bool(row) and not words(row["title"]) and not words(row["hint"]) and 0 < len(row["title"]) <= 24
               and len(row["hint"]) > 20, row)
-        # (the build line is on the Settings menu itself, Check for update's second line)
-        pg.evaluate("() => showProfile('settings')"); pg.wait_for_timeout(1200)
+        # (the build line was the Settings menu's Check for update row's second line; since 384.106 it is the head of the
+        # Software Update page that row opens - changed on purpose, the hold that must open nothing is the same)
+        pg.evaluate("() => { if(typeof showSoftwareUpdate === 'function') showSoftwareUpdate(); else showProfile('settings'); }"); pg.wait_for_timeout(1200)
         st = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
           const out = { fn: typeof window.showSoundTest, css: 0 };
           for(const sh of document.styleSheets){ try{ for(const r of sh.cssRules){ if(/soundtest|\\.snd-row/.test(r.cssText)) out.css++; } }catch(e){} }
-          const bl = document.querySelector('.settings-buildline'); out.line = !!bl;
+          const bl = document.querySelector('.settings-buildline, .swu-app-build'); out.line = !!bl;
           if(bl){ bl.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(200);
             const r = bl.getBoundingClientRect(); out.at = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
           return out; }""")

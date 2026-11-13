@@ -515,6 +515,10 @@ SCREENS = [
     {"name": "settings/advanced", "js": "showAdvancedSettings();"},
     {"name": "settings/credits", "js": "showCredits();"},
     {"name": "settings/terms", "js": "showSettingsText('terms');"},
+    # (384.106) Software Update, its three answers (the checking state only turns); the menu's row carries its pill (settings, above)
+    {"name": "settings/software update", "js": "showSoftwareUpdate();", "wait": 1800, "ready": "document.querySelector('#stage .screen-swupdate[data-state=current]')"},
+    {"name": "settings/software update, available", "js": "window.__swuF = window.__swuF || window.fetch; window.fetch = function(u, o){ if(String(u).indexOf('version.json') >= 0 && o && o.cache === 'reload') return Promise.resolve(new Response(JSON.stringify({ build: APP_BUILD + '-next', note: 'A line of what this build fixes.', force: false }), { status: 200, headers: { 'content-type': 'application/json' } })); return window.__swuF.apply(this, arguments); }; showSoftwareUpdate();", "wait": 1800, "ready": "document.querySelector('#stage .screen-swupdate[data-state=available]')", "after": "window.fetch = window.__swuF;"},
+    {"name": "settings/software update, can't reach", "js": "window.__swuF = window.__swuF || window.fetch; window.fetch = function(u, o){ if(String(u).indexOf('version.json') >= 0 && o && o.cache === 'reload') return Promise.resolve(new Response('not found', { status: 404, headers: { 'content-type': 'application/json' } })); return window.__swuF.apply(this, arguments); }; showSoftwareUpdate();", "wait": 1800, "ready": "document.querySelector('#stage .screen-swupdate[data-state=error]')", "after": "window.fetch = window.__swuF;"},
     {"name": "settings/whats new list", "js": "showReleaseHistory();"},
     {"name": "settings/feedback", "js": "showBugReport();"},
     # classes

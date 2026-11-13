@@ -209,9 +209,11 @@ with sync_playwright() as pw:
         chk("%s Add to Home Screen runs the walkthrough" % tag, "install" in pg.evaluate("__hit"), pg.evaluate("__hit"))
         pg.evaluate("()=>{ window.handleInstallTap = window.__realInstall; }")
         fresh("window.__realFetch = window.__realFetch || window.fetch; window.fetch = function(u){ __hit.push('fetch:' + String(u)); return window.__realFetch.apply(this, arguments); };")
-        tap(pg, "Check for update"); pg.wait_for_timeout(1500)
-        up = pg.evaluate("()=>({ hit: __hit, line: [...document.querySelectorAll('#stage .settings-buildline')].map(e=>e.textContent).join('|') })")
-        chk("%s Check for update asks for version.json and says so on its line" % tag, any(h.startswith("fetch:version.json") for h in up["hit"]) and "up to date" in up["line"], up)
+        # (384.106, changed on purpose) "Check for update" became "Software Update", a row that opens its own page; the page asks
+        # for version.json and says what it found there (the build running, no button: up to date) - check-b384-swupdate is its gate
+        pg.evaluate("()=>{ const r=document.querySelector('#stage [data-row=update]'); if(r){ r.scrollIntoView({block:'center'}); r.click(); } }"); pg.wait_for_timeout(1500)
+        up = pg.evaluate("()=>({ hit: __hit, page: !!document.querySelector('#stage .screen-settings-sub [role=status]'), status: (document.querySelector('#stage .screen-settings-sub [role=status]') || {}).innerText || '', buttons: document.querySelectorAll('#stage .screen-settings-sub [role=status] button').length })")
+        chk("%s the update row opens Software Update, which asks for version.json and says so on the page" % tag, up["page"] and any(h.startswith("fetch:version.json") for h in up["hit"]) and BUILD in up["status"] and up["buttons"] == 0, up)
         pg.evaluate("()=>{ window.fetch = window.__realFetch; }")
         fresh("window.__realBug = window.__realBug || showBugReport; window.showBugReport = () => __hit.push('bug');")
         tap(pg, "Report a bug"); pg.wait_for_timeout(400)

@@ -39962,6 +39962,75 @@ html.is-browser{ --fade-paper: transparent; }
     display:block; width:76px; height:76px; margin:2.25rem auto 1.5rem; border-radius:17px; object-fit:cover;
     box-shadow:0 6px 18px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); -webkit-user-drag:none; user-select:none; pointer-events:none;
   }
+  /* ---- A STATUS PILL ON A SETTINGS ROW (384.106, settingsPill) ----
+     Delta's "Up-to-date" / "Patrons": a capsule before the chevron, white semibold words that never wrap. Sized off Delta's (his
+     screenshot: a capsule 18.6pt tall beside 17pt row words, its capitals 66% of theirs, ~9pt of air each side): 19px tall, 12px
+     semibold words, 9px each side, beside the menu's 15.5px words. The words are centred by their capitals (text-box), the capsule
+     on the row's middle (the row is a flex line). */
+  html{ --settings-good:#5EC463; }   /* Delta's "Up-to-date" green: the row's pill and the page's up-to-date mark */
+  html[data-layout] body .settings-row > .settings-pill{
+    flex:0 0 auto; align-self:center; box-sizing:border-box; height:19px; margin-left:.4rem; padding:0 9px; border-radius:999px;
+    font-size:12px; font-weight:600; line-height:19px; letter-spacing:.01em; white-space:nowrap; color:#FFFFFF;
+    background:color-mix(in srgb, var(--ink) 22%, transparent);
+  }
+  html[data-layout] body .settings-row > .settings-pill.is-good{ background:var(--settings-good); }
+  html[data-layout] body .settings-row > .settings-pill.is-accent{ background:var(--theme-sig); color:var(--rank-accent-ink, #FFFFFF); }
+  @supports (text-box: trim-both cap alphabetic){
+    html[data-layout] body .settings-row > .settings-pill{ text-box:trim-both cap alphabetic; line-height:1; padding-block:calc((19px - 1cap) / 2); }
+  }
+  /* ---- SOFTWARE UPDATE (384.106): a Settings page, iOS's Software Update in Settings' own cards ----
+     The app card (icon, name, the build running) and the status card are .settings-card, so they take the pages' solid surface, the
+     page zoom and the tablet column like every other card here. The status card holds one state at a time, centred: a 48px circle
+     (the app's ring spinner while it checks - vroom-prep-spin's ring and turn, in the theme's colour; then a glyph: up to date the
+     row pill's green, an update the theme's colour as the row's pill and the button are, can't reach a quiet grey), a title,
+     grey lines, and at most one button. Its min-height keeps the card from jumping as "Checking" becomes an answer. The buttons are
+     the theme's colour (--theme-sig: the rank theme's own colour, the default's coral-rose; the rank's own ink on it, white on the
+     default), 50px, the press a scale only. */
+  html[data-layout] body #stage .screen-swupdate .settings-card.swu-app{
+    display:flex; align-items:center; gap:14px; padding:14px 18px; min-height:88px; box-sizing:border-box;
+  }
+  html[data-layout] body #stage .screen-swupdate .swu-app-icon{
+    flex:0 0 60px; width:60px; height:60px; border-radius:13.5px; object-fit:cover; display:block;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08); -webkit-user-drag:none; user-select:none; pointer-events:none;
+  }
+  html[data-layout] body #stage .screen-swupdate .swu-app-words{ flex:1 1 auto; min-width:0; }
+  html[data-layout] body #stage .screen-swupdate .swu-app-name{ margin:0; font-size:17px; font-weight:600; line-height:1.25; color:var(--ink); }
+  html[data-layout] body #stage .screen-swupdate .swu-app-build{ margin:3px 0 0; font-size:15px; font-weight:400; line-height:1.3; color:var(--soft); overflow-wrap:anywhere; }
+  html[data-layout] body #stage .screen-swupdate .settings-card.swu-status{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    min-height:196px; padding:22px 20px; box-sizing:border-box;
+  }
+  html[data-layout] body #stage .screen-swupdate .swu-art{
+    flex:0 0 auto; width:48px; height:48px; margin:0 0 12px; border-radius:50%; display:grid; place-items:center;
+    background:var(--theme-sig); color:var(--rank-accent-ink, #FFFFFF);
+  }
+  html[data-layout] body #stage .screen-swupdate .swu-art svg{ width:24px; height:24px; display:block; }
+  html[data-layout] body #stage .screen-swupdate .swu-art.swu-art-checking{ background:none; }
+  html[data-layout] body #stage .screen-swupdate .swu-art.swu-art-current{ background:var(--settings-good); color:#FFFFFF; }
+  html[data-layout] body #stage .screen-swupdate .swu-art.swu-art-error{ background:color-mix(in srgb, var(--ink) 10%, transparent); color:var(--soft); }
+  html[data-layout] body #stage .screen-swupdate .swu-spin{
+    width:30px; height:30px; box-sizing:border-box; border-radius:50%;
+    border:2.5px solid color-mix(in srgb, var(--theme-sig) 24%, transparent); border-top-color:var(--theme-sig);
+    animation:vroom-prep-spin .8s linear infinite;
+  }
+  html[data-layout] body #stage .screen-swupdate .swu-title{ margin:0; font-size:17px; font-weight:600; line-height:1.3; color:var(--ink); }
+  html[data-layout] body #stage .screen-swupdate .swu-line{ margin:4px 0 0; font-size:15px; line-height:1.35; color:var(--soft); overflow-wrap:anywhere; }
+  html[data-layout] body #stage .screen-swupdate .swu-btn{
+    display:block; box-sizing:border-box; width:100%; max-width:380px; min-height:50px; margin:18px auto 0; padding:0 20px; border:0; border-radius:999px;
+    font:inherit; font-size:17px; font-weight:600; line-height:50px; letter-spacing:0; text-align:center; white-space:nowrap; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; transition:transform .12s ease;
+  }
+  html[data-layout] body #stage .screen-swupdate .swu-btn.swu-go{ background:var(--theme-sig); color:var(--rank-accent-ink, #FFFFFF); }
+  html[data-layout] body #stage .screen-swupdate .swu-btn.swu-again{
+    background:color-mix(in srgb, var(--theme-sig) 18%, transparent); color:color-mix(in srgb, var(--theme-sig) 82%, #FFFFFF);
+  }
+  html[data-layout] body #stage .screen-swupdate .swu-btn:active{ transform:scale(.97); }
+  html[data-layout] body #stage .screen-swupdate .swu-btn:disabled{ opacity:.6; cursor:default; transform:none; }
+  [data-reduce-motion="true"] body #stage .screen-swupdate .swu-btn:active{ transform:none; }
+  /* the words centred by their capitals, not their line box (the app's text-box rule), the button still 50px */
+  @supports (text-box: trim-both cap alphabetic){
+    html[data-layout] body #stage .screen-swupdate .swu-btn{ text-box:trim-both cap alphabetic; line-height:1.2; padding-block:calc((50px - 1cap) / 2); }
+  }
   /* ---- .POP-UP GLASS: EVERY CARD AND SHEET THAT OPENS OVER A SCREEN IS THE SAME FROSTED GLASS (build 384, r16) ----
      Madison, the "Leave Police Academy?" confirm on his iPhone 17 Pro Max: "These pop ups need the Frosted look, why does the font
      look weird here by the way??" It read as a flat dark navy slab. Three things made it so, and they are the same on every
@@ -122940,7 +123009,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.106";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -122961,6 +123030,17 @@ const FRAME_OK_KEY = "class26e.frame.ok";
    on GitHub Pages, not a Firestore read. */
 const UPDATE_CHECK_MIN_GAP_MS = 10 * 1000;
 let lastUpdateCheck = 0;
+/* (384.106) the last version.json answer anybody had - this check's or Settings' Software Update page's - and when, for the Software
+   Update row's pill (swuNoteVersion / swuPaintRow, by showSoftwareUpdate); the rows waiting on it. Declared here, above the first
+   check, so nothing reads them before they exist. */
+let swuKnown = null;
+let swuRowWatch = new Set();
+const SWU_FRESH_MS = 60 * 1000;   /* an answer is shown on the row while it is under a minute old, and spares the row a request */
+let swuRowAskedAt = 0;
+let swuRowIO = null;
+const SWU_MIN_CHECK_MS = 800;     /* "Checking for update" stays long enough to read as a state rather than a flash */
+const SWU_TIMEOUT_MS = 12000;     /* a request that never answers ends as "couldn't reach the server", not a spinner for good */
+let swuCheckOut = null;           /* the page's or the row's request now out, shared by every caller until it settles */
 /* When the request now out was sent, or 0. A timestamp rather than a
    flag so a request that never comes back (a dead connection) cannot
    stop every later check for the rest of the session. */
@@ -123368,6 +123448,8 @@ async function checkForUpdate(force){
   }catch(e){ return; }
   finally{ updateCheckInFlight = 0; }
   if(!info) return;
+  /* (384.106) the answer is kept for Settings' Software Update row, which shows it rather than asking again; nothing here changes */
+  try{ swuNoteVersion(info); }catch(e){}
   /* THE SAFARI SOUND SWITCH (build 327z9): "safariSound": false in
      version.json turns sound and haptics off in iPhone browser tabs again
      at the next check, with no build - the escape hatch if Safari ever
@@ -137149,6 +137231,23 @@ function pfActFill(btn, kind, label, sub, tile){
   btn.replaceChildren(t, words, chev);
   return { tile: t, words, label: l, sub: sb, chev };
 }
+/* (384.106) A STATUS PILL AT A ROW'S RIGHT, BEFORE ITS CHEVRON - Delta's "Up-to-date" on Sync Status, its "Patrons" on
+   Experimental. Madison: "For check for update, maybe ours can say up to date similar to how Delta does it?" A capsule in a tone's
+   colour, its words white and semibold, never wrapping; sized off Delta's (measured on his screenshot: the capsule about 1.1x the
+   row's words' size tall, its words' capitals about two thirds of the row's, ~9px of air either side). Any row can take one:
+   settingsSetPill(row, pill) puts it where a grey value would go and replaces the last one; settingsSetPill(row, null) clears it.
+   tone: "good" (Delta's green), "accent" (the theme's colour and its ink), or none (a quiet grey). */
+function settingsPill(text, tone){
+  const p = document.createElement("span");
+  p.className = "settings-pill" + (tone ? " is-" + tone : "");
+  p.textContent = text;
+  return p;
+}
+function settingsSetPill(row, pill){
+  if(!row) return;
+  row.querySelectorAll(":scope > .settings-pill").forEach(n => n.remove());
+  if(pill) row.insertBefore(pill, row.querySelector(":scope > .settings-row-chev"));
+}
 function settingsRowSub(text){
   const sub = document.createElement("span");
   sub.className = "settings-row-sub";
@@ -137472,6 +137571,7 @@ function showAppearance(opts){
      control is still built here, exactly as before, into a holder that is
      never shown; the menu or the page then takes its part. */
   const page = opts && typeof opts === "object" && typeof opts.page === "string" ? opts.page : "";
+  if(!into && page === "update") return showSoftwareUpdate();   /* (384.106) Software Update is a page of its own */
   if(!into && !page){
     /* the save-your-code banner lands on the Sync page itself */
     if(opts && opts.focus === "sync") return showAppearance({ page: "sync", focus: "sync" });
@@ -137520,34 +137620,21 @@ function showAppearance(opts){
   /* BUILD 382: A ROW, NOT A PILL. "I really dislike this part of settings,
      please get all these buttons and things looking better." Help, Share
      & install and Advanced are lists of rows now (settingsRow()), the way
-     iOS Settings lists things you tap to go somewhere. The build line is
-     this row's own second line (still .settings-buildline, still where
-     "up to date" / "couldn't reach the server" is written), and the label
-     is what reads "Checking..." while it looks. */
-  const updBtn = settingsRow("update", "Check for update", "Build " + APP_BUILD);
-  const updLabel = updBtn.querySelector(".settings-row-label");
-  const updNow = updBtn.querySelector(".settings-row-sub");
-  updNow.classList.add("settings-buildline");
-  updBtn.addEventListener("click", () => {
-    updBtn.disabled = true; updLabel.textContent = "Checking\u2026";
-    /* Straight past every gate - this IS somebody asking for it. */
-    fetch("version.json", { cache: "reload" })
-      .then(r => r.json())
-      .then(info => {
-        if(info && info.build && info.build !== APP_BUILD){
-          updNow.textContent = "Updating to build " + info.build + "\u2026";
-          showPushingUpdate();
-          setTimeout(applyUpdate, 900);
-        } else {
-          updBtn.disabled = false; updLabel.textContent = "Check for update";
-          updNow.textContent = "Build " + APP_BUILD + " \u2014 up to date.";
-        }
-      })
-      .catch(() => {
-        updBtn.disabled = false; updLabel.textContent = "Check for update";
-        updNow.textContent = "Build " + APP_BUILD + " \u2014 couldn\u2019t reach the server.";
-      });
-  });
+     iOS Settings lists things you tap to go somewhere. The build line was
+     this row's own second line (.settings-buildline), where "up to date" /
+     "couldn't reach the server" was written, until 384.106: the build is the
+     Software Update page's head now and the answer the row's pill. */
+  /* (384.106) A ROW THAT GOES SOMEWHERE. It checked where it stood and, finding a build, reloaded into it with nothing on screen
+     to say what was found; Madison: "shouldn't it open a screen and then have it in there?" It opens Software Update now
+     (showSoftwareUpdate), which does the asking, says what it found and holds Update Now. And "maybe ours can say up to date
+     similar to how Delta does it?": the row is one line like its neighbours, and what the last check found is a pill at its right
+     ("Up to date" green, "Update available" in the theme's colour; nothing until a check has answered - see swuWatchRow). The
+     build running moved to the page's head with the pill saying what it needs to here. */
+  /* (a page of its own, like Advanced: not one of showAppearance's PAGES, so not a .settings-cat row - those are the categories) */
+  const updBtn = settingsRow("update", "Software Update");
+  updBtn.id = "settings-row-update";
+  updBtn.addEventListener("click", () => showSoftwareUpdate());
+  swuWatchRow(updBtn);
 
   const studyDetails = document.createElement("div");
   studyDetails.className = "motion-details";
@@ -138557,6 +138644,172 @@ function showAdvancedSettings(){
 
   stage.replaceChildren(panel);
   toTop(true);
+}
+/* ---- SOFTWARE UPDATE, A PAGE OF ITS OWN (384.106) ----
+   Madison: "When selecting the check for update button, it just checks for an update right there, shouldn't it open a screen and
+   then have it in there? And if you have one available it would say update available update now? Idk". The row opened nothing: it
+   fetched version.json where it stood and either reloaded straight into the update or wrote its answer into its own second line. It
+   is a page now, the way iOS's Settings > General > Software Update is one: the app's icon, name and running build at the top, then
+   the check, which starts as the page opens ("Checking for update..." under the app's spinner) and ends in one of three states
+   (panel.dataset.state):
+     "current"    Nova is up to date, the build, and when it checked;
+     "available"  Update available, the new build, what's new when there is something real to say (version.json's `note`, the line
+                  the update banner already shows - the running page's RELEASE_NOTES end at the running build, so they can never
+                  describe a newer one; with no note there is nothing), and Update Now: the old row's path exactly,
+                  showPushingUpdate() and then applyUpdate();
+     "error"      Couldn't reach the server (a failed request, a 404, a reply with no build, no answer in SWU_TIMEOUT_MS), and Try again.
+   The request is the old row's too: version.json with cache:"reload", past every gate - this IS somebody asking. One at a time:
+   swuFetchVersion() hands a second caller the request already out, so a row tapped twice or Try again tapped twice asks once.
+   checkForUpdate(), the banner, the forced update, frameId's re-add notice and their gating to Welcome and Home are untouched. */
+/* (SWU_MIN_CHECK_MS, SWU_TIMEOUT_MS, swuCheckOut and the row's state are declared with swuKnown, above checkForUpdate: Settings
+   can be built during boot, before this line runs) */
+function swuFetchVersion(){
+  if(swuCheckOut) return swuCheckOut;
+  const ctl = (typeof AbortController === "function") ? new AbortController() : null;
+  let timer = 0;
+  const req = fetch("version.json", ctl ? { cache: "reload", signal: ctl.signal } : { cache: "reload" })
+    .then(r => { if(!r.ok) throw new Error("version.json " + r.status); return r.json(); })
+    .then(info => { if(!info || typeof info.build !== "string" || !info.build) throw new Error("version.json has no build"); swuNoteVersion(info); return info; });
+  const late = new Promise((ok, no) => { timer = setTimeout(() => { try{ if(ctl) ctl.abort(); }catch(e){} no(new Error("timeout")); }, SWU_TIMEOUT_MS); });
+  swuCheckOut = Promise.race([req, late]).finally(() => { clearTimeout(timer); swuCheckOut = null; });
+  return swuCheckOut;
+}
+/* ---- THE ROW'S PILL: what the last check found, never a guess ----
+   swuKnown is the last version.json answer (the app's own checkForUpdate or this page's), with when. The row shows it as a pill only
+   while it is under SWU_FRESH_MS old; otherwise nothing until a check answers. A row that comes into view (an IntersectionObserver:
+   Profile builds Settings hidden as its third tab, and a hidden row asks nothing) with no fresh answer asks once, quietly, through
+   swuFetchVersion - unless the app's own check ran or is out within the minute (its answer arrives through swuNoteVersion), or this
+   row-check already asked within it. So a visit to Settings costs at most one request, usually none: the app checks every 15s and on
+   each screen change anyway. A failed check shows nothing. */
+function swuNoteVersion(info){
+  if(!info || typeof info.build !== "string" || !info.build) return;
+  swuKnown = { build: info.build, at: Date.now() };
+  swuRowWatch.forEach(r => { if(r.isConnected) swuPaintRow(r); });
+}
+function swuPaintRow(row){
+  const k = swuKnown;
+  const fresh = !!(k && Date.now() - k.at < SWU_FRESH_MS);
+  const state = fresh ? (k.build !== APP_BUILD ? "available" : "current") : "";
+  if((row.dataset.swu || "") === state && (!state || row.querySelector(":scope > .settings-pill"))) return fresh;
+  row.dataset.swu = state;
+  settingsSetPill(row, !state ? null : state === "available" ? settingsPill("Update available", "accent") : settingsPill("Up to date", "good"));
+  return fresh;
+}
+function swuRowShown(row){
+  if(!row.isConnected || swuPaintRow(row)) return;
+  const now = Date.now();
+  let appRecent = false;
+  try{ appRecent = (now - lastUpdateCheck < SWU_FRESH_MS) || !!updateCheckInFlight; }catch(e){}
+  if(appRecent || swuCheckOut || now - swuRowAskedAt < SWU_FRESH_MS) return;
+  swuRowAskedAt = now;
+  swuFetchVersion().catch(() => {});
+}
+function swuWatchRow(row){
+  swuRowWatch.forEach(r => { if(!r.isConnected){ swuRowWatch.delete(r); try{ if(swuRowIO) swuRowIO.unobserve(r); }catch(e){} } });
+  swuRowWatch.add(row);
+  if(swuPaintRow(row)) return;
+  try{
+    if(!swuRowIO) swuRowIO = new IntersectionObserver(es => es.forEach(e => {
+      if(e.isIntersecting){ try{ swuRowIO.unobserve(e.target); }catch(x){} swuRowShown(e.target); }
+    }), { rootMargin: "0px 0px 100% 0px" });
+    swuRowIO.observe(row);
+  }catch(e){ setTimeout(() => swuRowShown(row), 0); }
+}
+/* the glyphs in the circle over each state: Settings' line drawings, on the same 24 grid */
+const SWU_GLYPH = {
+  current: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 12.4l4.3 4.3 8.5-9.4"/></svg>',
+  available: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.3v13.4"/><path d="M6.6 13.3 12 18.7l5.4-5.4"/></svg>',
+  error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5v8.4"/><path d="M12 18.5h.01"/></svg>'
+};
+function swuCheckedLine(at){
+  let t = "";
+  try{ t = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
+  catch(e){ t = at.getHours() + ":" + String(at.getMinutes()).padStart(2, "0"); }
+  return "Last checked today at " + t;
+}
+function showSoftwareUpdate(){
+  const panel = settingsSubPage("Software Update", "screen-swupdate");
+  /* the app, the way iOS heads its own page: the icon (the Home Screen icon the page already holds), the name, the build running */
+  const app = document.createElement("div");
+  app.className = "settings-card swu-app";
+  try{
+    const lk = document.querySelector('link[rel="icon"][href^="data:image"]') || document.querySelector('link[rel="apple-touch-icon"]');
+    if(lk && lk.href){
+      const img = document.createElement("img");
+      img.className = "swu-app-icon"; img.src = lk.href; img.alt = ""; img.width = 60; img.height = 60; img.draggable = false;
+      app.appendChild(img);
+    }
+  }catch(e){}
+  const words = document.createElement("div");
+  words.className = "swu-app-words";
+  const nm = document.createElement("p"); nm.className = "swu-app-name"; nm.textContent = "Nova";
+  const bl = document.createElement("p"); bl.className = "swu-app-build"; bl.textContent = "Build " + APP_BUILD;
+  words.append(nm, bl);
+  app.appendChild(words);
+  /* the check: one card, its contents the state it is in; what's new (only ever real text) under it */
+  const box = document.createElement("div");
+  box.className = "settings-card swu-status";
+  box.setAttribute("role", "status"); box.setAttribute("aria-live", "polite");
+  const notes = document.createElement("div");
+  notes.className = "swu-notes";
+  panel.append(app, box, notes);
+
+  const line = (cls, text) => { const p = document.createElement("p"); if(cls) p.className = cls; p.textContent = text; return p; };
+  const art = kind => {
+    const a = document.createElement("span");
+    a.className = "swu-art swu-art-" + kind; a.setAttribute("aria-hidden", "true");
+    if(kind === "checking"){ const s = document.createElement("span"); s.className = "swu-spin"; a.appendChild(s); }
+    else a.innerHTML = SWU_GLYPH[kind];
+    return a;
+  };
+  const button = (cls, text, fn) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "swu-btn " + cls; b.textContent = text;
+    b.addEventListener("click", fn);
+    return b;
+  };
+  const show = (state, nodes) => {
+    panel.dataset.state = state;
+    box.setAttribute("aria-busy", state === "checking" ? "true" : "false");
+    box.replaceChildren(...nodes);
+  };
+  let checking = false;
+  const current = at => show("current", [art("current"), line("swu-title", "Nova is up to date"),
+    line("swu-line", "Build " + APP_BUILD), line("swu-line swu-when", swuCheckedLine(at))]);
+  const available = info => {
+    const go = button("swu-go", "Update Now", () => {
+      if(go.disabled || document.getElementById("pushing-update")) return;
+      go.disabled = true; go.textContent = "Updating…";
+      /* the old row's path, exactly: the "Pushing update" bar, then the reload into the new build */
+      showPushingUpdate();
+      setTimeout(applyUpdate, 900);
+    });
+    show("available", [art("available"), line("swu-title", "Update available"), line("swu-line", "Build " + info.build), go]);
+    const note = typeof info.note === "string" ? info.note.trim() : "";
+    if(note){
+      const c = document.createElement("div");
+      c.className = "settings-card settings-prose swu-whatsnew";
+      c.appendChild(line("", note));
+      notes.replaceChildren(settingsHeader("What’s new"), c);
+    }
+  };
+  const failed = () => show("error", [art("error"), line("swu-title", "Couldn’t reach the server"),
+    line("swu-line", "Check your connection, then try again."), button("swu-again", "Try again", () => run())]);
+  function run(){
+    if(checking) return;   /* a second tap while it checks does nothing */
+    checking = true;
+    notes.replaceChildren();
+    show("checking", [art("checking"), line("swu-title", "Checking for update…")]);
+    const t0 = Date.now();
+    const settle = fn => setTimeout(() => { checking = false; if(panel.isConnected) fn(); }, Math.max(0, SWU_MIN_CHECK_MS - (Date.now() - t0)));
+    swuFetchVersion().then(info => {
+      const at = new Date();
+      settle(() => info.build !== APP_BUILD ? available(info) : current(at));
+    }, () => settle(failed));
+  }
+  stage.replaceChildren(panel);
+  toTop(true);
+  run();
 }
 
 /* ---------- profile / analytics screen ----------------------------------- */

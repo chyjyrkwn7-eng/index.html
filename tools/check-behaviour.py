@@ -1610,15 +1610,17 @@ def check_b218(br):
     # Share & install are each ONE list card of full-width rows, stacked, 44px+.
     # build 382 (Settings is a menu): Check for update and Share & Install are rows of one menu card;
     # Share this app and Add to Home Screen are the Share & Install page's card.
-    rows = pg.evaluate("""async ()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
-      const o = { upd: row('Check for update'), bug: row('Share & Install') };
+    # (384.106) the update row found by its kind (data-row), not its words: "Check for update" became "Software Update"
+    rows = pg.evaluate("""async ()=>{ const at=b=>{ if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
+      const row=t=>at([...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)));
+      const o = { upd: at(document.querySelector('button.settings-row[data-row=update]')), bug: row('Share & Install') };
       showAppearance({ page: 'share' }); await new Promise(r=>setTimeout(r,500));
       o.share = row('Share this app'); o.install = row('Add to Home Screen');
       const same = (a,b)=>!!(o[a]&&o[b]) && o[a].card===o[b].card;
       const out = { helpOneCard: same('upd','bug'), shareOneCard: same('share','install') };
       for(const k in o){ out[k] = o[k] && { top:o[k].top, h:o[k].h, full:o[k].full }; } return out; }""")
     ok_row = lambda k: bool(rows[k]) and rows[k]["h"] >= 44 and rows[k]["full"]
-    check("Check for update and Share & Install are full-width rows in one menu card", rows["helpOneCard"] and ok_row("upd") and ok_row("bug"), rows)
+    check("Software Update (was Check for update) and Share & Install are full-width rows in one menu card", rows["helpOneCard"] and ok_row("upd") and ok_row("bug"), rows)
     check("so are Share and Add to Home Screen", rows["shareOneCard"] and ok_row("share") and ok_row("install") and rows["install"]["top"] > rows["share"]["top"], rows)
     # Find me wears the search field's glass, at its height.
     pg.evaluate("()=>{ showRankings(); }")

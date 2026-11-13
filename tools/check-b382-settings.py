@@ -53,8 +53,9 @@ def page(br, w, h, ins, installed, cls="academy"):
     pg.evaluate("()=>{ try{ homeUnlocksOwed=()=>false; }catch(e){} }")
     return ctx, pg
 
-LABELS = ["Share this app", "Add to Home Screen", "Check for update", "Report a bug", "Version history", "Advanced settings"]
-WHERE = {"Share this app": "share", "Add to Home Screen": "share", "Check for update": "", "Report a bug": "",
+# (384.106) "Check for update" is "Software Update" now, a row that opens its own page (check-b384-swupdate)
+LABELS = ["Share this app", "Add to Home Screen", "Software Update", "Report a bug", "Version history", "Advanced settings"]
+WHERE = {"Share this app": "share", "Add to Home Screen": "share", "Software Update": "", "Report a bug": "",
          "Version history": "", "Advanced settings": ""}
 WORDS = ("Report a bug", "Version history")   # Support's word rows: no icon by design
 def open_for(pg, label):
@@ -117,10 +118,11 @@ with sync_playwright() as pw:
     chk("Add to Home Screen runs the install walkthrough", "install" in pg.evaluate("__hit"), pg.evaluate("__hit"))
     pg.evaluate("()=>{ window.handleInstallTap = window.__realInstall; }")
     fresh("""window.__realFetch = window.__realFetch || window.fetch; window.fetch = function(u){ __hit.push('fetch:' + String(u)); return window.__realFetch.apply(this, arguments); };""")
-    tap("Check for update"); pg.wait_for_timeout(1500)
-    up = pg.evaluate("""()=>({ hit: __hit, line: [...document.querySelectorAll('#stage .settings-buildline')].map(e=>e.textContent).join('|') })""")
-    chk("Check for update asks for version.json and says the result on the build line (%s)" % (up,),
-        any(h.startswith("fetch:version.json") for h in up["hit"]) and "up to date" in up["line"], up)
+    # (384.106, changed on purpose) the row opens Software Update; the page asks for version.json and says the result there
+    tap("Software Update"); pg.wait_for_timeout(1500)
+    up = pg.evaluate("()=>({ hit: __hit, page: !!document.querySelector('#stage .screen-settings-sub [role=status]'), status: (document.querySelector('#stage .screen-settings-sub [role=status]') || {}).innerText || '', buttons: document.querySelectorAll('#stage .screen-settings-sub [role=status] button').length })")
+    chk("Software Update opens its page, which asks for version.json and says the result (the build running, no button) (%s)" % (up,),
+        up["page"] and any(h.startswith("fetch:version.json") for h in up["hit"]) and BUILD in up["status"] and up["buttons"] == 0, up)
     pg.evaluate("()=>{ window.fetch = window.__realFetch; }")
     fresh("window.__realBug = window.__realBug || showBugReport; window.showBugReport = () => __hit.push('bug');")
     tap("Report a bug"); pg.wait_for_timeout(400)
