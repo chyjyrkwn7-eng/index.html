@@ -39469,6 +39469,11 @@ WHAT CHANGED (index.html):
    the sleep rule's id-weight `:is(#cx-none, ...)` still wins (lids on and still). Only opacity animates; no filter.
 4. THE COMET: its sockets shut under plates of its own ice (the `ice` gradient, edged #E8F8FF .12 like its other planes), with a
    #0E2A52 lash line (.5) following each socket's slant, again one M..Q path per eye.
+4b. A RESULT'S HAPPY EYES ON THE SOCKETS: the generic 100 / 90+ reactions (Fire Code has no own moves) turn the whole closed-eye
+   group over (cx-joy-shut, scaleY(-1) about the group's middle) - right for two curves on one line, but it carried the Spill's top
+   lid down to the others and the Comet's plates off their slanted sockets. For `.cx-k-fcspill` / `.cx-k-fccomet` the group only fades
+   (cx-joy-lids) and each lash line, in its own `cx-lash` group, turns over where it is (the rulers' `cx-lid` is their open eyes' lid
+   band, a different thing - hence the new name).
 5. CHAR_ANIM_VER c5 -> c6. A sheet is keyed by a hash of its DRAWING; (3.) changes no drawing but every character's motion, so only the
    version makes every flip-book re-record (and clears the old sheets: charAnimCachePut drops every /__ch/ path not under the current
    version). charFlipAttach and the recorder are untouched.

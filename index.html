@@ -21457,6 +21457,13 @@
     .char-react-perfect:not(.char-rx) .avatarchar-svg .cx-eyes{ animation:cx-joy-open 1.3s ease-in-out both; }
     .char-react-perfect:not(.char-rx) .avatarchar-svg .cx-eyes-closed{ animation:cx-joy-shut 1.3s ease-in-out both; }
     .char-react-perfect:not(.char-rx) .avatarchar-svg .cx-k-alien .cx-eyes, .char-react-perfect:not(.char-rx) .avatarchar-svg .cx-k-alien .cx-eyes-closed{ animation:none; }
+    /* (384.113) LIDDED CLOSED EYES TURN OVER ONE BY ONE: cx-joy-shut turns the whole closed-eye group over about its middle, which is
+       right for two curves on one line - but the Toxic Spill's three eyes sit at three heights and its closed eyes and the Comet's are
+       lids over sockets, so turning the set over carried them off their sockets. For these two the group only fades (cx-joy-lids)
+       and each lash line (cx-lash) turns over where it is: the same happy eyes, on the sockets. */
+    .char-react-perfect:not(.char-rx) .avatarchar-svg :is(.cx-k-fcspill, .cx-k-fccomet) .cx-eyes-closed{ animation:cx-joy-lids 1.3s ease-in-out both; }
+    .char-react-great:not(.char-rx) .avatarchar-svg :is(.cx-k-fcspill, .cx-k-fccomet) .cx-eyes-closed{ animation:cx-joy-lids 1.3s ease-in-out .1s both; }
+    :is(.char-react-perfect, .char-react-great):not(.char-rx) .avatarchar-svg :is(.cx-k-fcspill, .cx-k-fccomet) .cx-lash{ transform:scaleY(-1); }
     .char-react-perfect:not(.char-rx) .avatarchar-svg .cx-fx-sparkles,
     .char-react-win .avatarchar-svg .cx-fx-sparkles{ opacity:1; }
     .char-react-perfect:not(.char-rx) .avatarchar-svg .cx-spark,
@@ -22387,6 +22394,7 @@
   @keyframes cx-hop-loop{ 0%, 60%, 100%{ transform:none; } 25%{ transform:translateY(-2.4px); } 42%{ transform:translateY(.3px) scale(1.03, .97); } }
   @keyframes cx-joy-open{ 0%, 100%{ opacity:1; } 12%, 80%{ opacity:0; } }
   @keyframes cx-joy-shut{ 0%, 100%{ opacity:0; transform:scaleY(-1); } 12%, 80%{ opacity:1; transform:scaleY(-1); } }
+  @keyframes cx-joy-lids{ 0%, 100%{ opacity:0; } 12%, 80%{ opacity:1; } }
   @keyframes cx-spark{ 0%, 100%{ transform:scale(0); } 50%{ transform:scale(1) rotate(45deg); } }
   @keyframes cx-nod{ 0%, 100%{ transform:none; } 30%{ transform:translateY(.7px) rotate(2deg); } 60%{ transform:translateY(-.3px); } }
   @keyframes cx-nod-small{ 0%, 100%{ transform:none; } 40%{ transform:translateY(.5px); } }
@@ -62591,9 +62599,13 @@ var IFC_CHAR_DRAW = {
       k.add("circle", { cx: x, cy: y, r: fcF(R - .12), fill: "none", stroke: "#5A189E", "stroke-width": ".24", opacity: ".7" });
       k.add("circle", { cx: fcF(x - r * .28), cy: fcF(y - r * .5), r: fcF(r * .16), fill: "#FFFFFF", opacity: ".55" });
     });
+    /* each lash line in a group of its own (cx-lash), so the happy eyes of a 100 / 90+ result turn each one over where it is, not the
+       whole set about its middle (that carried the top eye's lid down to the others' - see the cx-joy-lids rules) */
     EYES.forEach(([x, y, r]) => {
       const w = fcF(r * .92), yy = fcF(y + r * .12);
+      k.open("cx-lash");
       k.add("path", { d: "M" + fcF(x - w) + " " + yy + " Q" + x + " " + fcF(yy + w * .62) + " " + fcF(x + w) + " " + yy, fill: "none", stroke: "#1E0434", "stroke-width": r > 2 ? ".62" : ".5", "stroke-linecap": "round" });
+      k.close();
     });
     k.close();
     /* the grin: teeth along the top, two fangs up from below, drool off the corner */
@@ -63203,7 +63215,9 @@ var IFC_CHAR_DRAW = {
     });
     [1, -1].forEach(s => {
       const X = v => F(20 + (v - 20) * s);
+      k.open("cx-lash");   /* turned over where it is for a result's happy eyes, the plate left over the socket (cx-joy-lids) */
       k.add("path", { d: "M" + X(14.6) + " 22.05 Q" + X(16.8) + " 23.55 " + X(18.85) + " 22.95", fill: "none", stroke: "#0E2A52", "stroke-width": ".5", "stroke-linecap": "round" });
+      k.close();
     });
     k.close();
     /* a hard flat mouth, one corner pulled */
