@@ -1980,6 +1980,7 @@ def check_b229(br):
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""()=>{
       const out = { shuffleOn: cfg.shuffle };
+      cfg.shuffle = true;   /* (384.97) off by default now; the shuffle itself is still measured, switched on */
       runMode = 'drill';
       /* a question that is meant to shuffle: since build 298 one whose
          choices point at each other ("A, B, and C") keeps its order */
@@ -2025,7 +2026,7 @@ def check_b229(br):
       out.sauce = WEEK_RESULTS_KNOWN['2026-09-21'];
       host.remove();
       return out; }""")
-    check("answer positions are shuffled by default", r["shuffleOn"] is True, r)
+    check("answer positions are NOT shuffled by default (384.97: 'Turn off that.')", r["shuffleOn"] is False, r)
     check("the right answer never lands where it was last time, or in the book's order",
           r["repeats"] == 0 and r["bank"] == 0 and r["slotsUsed"] == 4, r)
     check("consecutive runs of a small unit open with different questions", r["overlap"] == 0, r)
@@ -8146,8 +8147,11 @@ def check_b299(br):
             out.tabDot = tab.classList.contains('has-new');
             const dcs = getComputedStyle(tab.querySelector('.bottomtab-icon'), '::after');
             out.tabDotShown = dcs.content !== 'none' && parseFloat(dcs.width) > 6;
-            /* the dot is a lit ball now (build 317) - its yellow is in the gradient, not the flat colour */
-            out.tabDotColor = (dcs.backgroundImage.match(/rgb\(255, 212, 59\)/) || [dcs.backgroundColor])[0];
+            /* the dot is a lit ball now (build 317) - its yellow is in the gradient, not the flat colour. REVISED IN 384.98: it is a
+               small lit flare in the theme's colour ("doesn't match the theme, it should almost look a little like the secret
+               flare"), so what is held here is that the tab and the card paint the SAME dot (one gradient); its colour per theme is
+               tools/check-b384-newdot.py's. A .new-dot's body is its ::after where it has one. */
+            out.tabDotColor = dcs.backgroundImage !== 'none' ? dcs.backgroundImage : dcs.backgroundColor;
             markUnlockSeen('chars', ch); await wait(50);
             out.tabDotAfter = tab.classList.contains('has-new');
             /* the dot inside, same colour */
@@ -8157,7 +8161,8 @@ def check_b299(br):
                "the 'something new' dot sits inside its right end" (.profile-customize-row) - the card's dot is read wherever
                the card puts it, as profileDot above already is */
             const d = document.querySelector('.profile-hero .new-dot, .namedisplay-row .new-dot');
-            out.dotColor = d ? ((getComputedStyle(d).backgroundImage.match(/rgb\(255, 212, 59\)/) || [getComputedStyle(d).backgroundColor])[0]) : null;
+            const dBody = d ? (/^(none|normal)$/.test(getComputedStyle(d, '::after').content) ? getComputedStyle(d) : getComputedStyle(d, '::after')) : null;
+            out.dotColor = dBody ? (dBody.backgroundImage !== 'none' ? dBody.backgroundImage : dBody.backgroundColor) : null;
             markUnlockSeen('chars', ch);
             /* every flare moves, locked ones included */
             store.lifetime.points = 0; topicsIn(QUESTIONS).forEach(x => store.unitPerfects[x] = 0);
@@ -8180,8 +8185,10 @@ def check_b299(br):
         check(f"{dev}: something new puts a dot on the Profile tab in the bottom bar, and seeing it clears it",
               r3.get("tabDotNone") is False and r3.get("tabDot") and r3.get("tabDotShown") and not r3.get("tabDotAfter"),
               (r3.get("tabDotNone"), r3.get("tabDot"), r3.get("tabDotShown"), r3.get("tabDotAfter")))
-        check(f"{dev}: the dot is yellow, the same on the tab and on the card",
-              r3.get("dotColor") == "rgb(255, 212, 59)" and r3.get("tabDotColor") == "rgb(255, 212, 59)", (r3.get("dotColor"), r3.get("tabDotColor")))
+        # REVISED IN 384.98 (was "the dot is yellow, ..."): one lit dot, painted the same on the tab and on the card
+        check(f"{dev}: the dot is one lit flare, painted the same on the tab and on the card",
+              bool(r3.get("dotColor")) and r3.get("dotColor") == r3.get("tabDotColor") and str(r3.get("dotColor")).startswith("radial-gradient"),
+              (str(r3.get("dotColor"))[:120], str(r3.get("tabDotColor"))[:120]))
         check(f"{dev}: every flare on Home moves, the locked ones too (in their grey)",
               (r3.get("locked") or 0) > 0 and r3.get("lockedPlaying") == r3.get("locked") and r3.get("lockedGrey"),
               (r3.get("flares"), r3.get("locked"), r3.get("lockedPlaying"), r3.get("lockedGrey")))
