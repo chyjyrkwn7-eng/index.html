@@ -8,7 +8,8 @@ section and open it, there are icons within them? But there shouldn't be.."
 On every screen it can reach, in BOTH classes (iPhone 17 Pro Max; Profile and Stats on the iPad Pro 11" as well), every visible row
 tile (.settings-row-icon, [data-tile]) is read:
 (1) the Settings menu keeps its tiles: every row tiled on cd34de2 (the reference build, loaded from git and measured in the same
-    run) still has one, the same size in the same superellipse mask (on the tile or its layers). (Their material and colours did
+    run) still has one, the same size, masked (on the tile or its layers) - (384.110) the mask itself is iOS's continuous corner now,
+    so it is no longer cd34de2's string. (Their material and colours did
     change, on purpose, in 384 r8's Delta pass - check-b384-tilematerial holds those);
 (2) every row tile OUTSIDE the menu is the menu's tile in shape: 27-29px, the menu's own superellipse mask (on the tile or on the
     ::before that carries its fill), the menu's sheen, the menu's glyph size and stroke;
@@ -92,7 +93,10 @@ with sync_playwright() as pw:
             counts[(cls, w, "menu")] = len(menu)
             if w == 440:
                 for t in menu:
-                    if refsig.get(t["name"]) != t["sig"]: bad1.append((cls, t["name"], t["sig"][:140], (refsig.get(t["name"]) or "missing")[:140]))
+                    # (384.110) the corner was re-fitted to iOS's continuous curve (Delta's tiles, mse .06px), so the mask is no longer
+                    # cd34de2's string: the same SIZE as there, and a mask on the tile or its layers (check-b384-settingslook holds its curve)
+                    ref = refsig.get(t["name"])
+                    if not ref or ref.split(" | ")[0] != t["sig"].split(" | ")[0] or t["mask"] in ("", "none"): bad1.append((cls, t["name"], t["sig"][:140], (ref or "missing")[:140]))
                 gone = [n for n in refsig if n not in set(t["name"] for t in menu)]
                 if gone: bad1.append((cls, "rows that lost their tile", gone))
             outside, greys = [], set()
@@ -115,7 +119,7 @@ with sync_playwright() as pw:
     br.close()
 cb.SERVER.shutdown()
 print("tiles read:", counts)
-chk("(1) the Settings menu keeps every tile it had on %s, the same size in the same mask, in both classes" % REF, not bad1 and all(counts.get((c, 440, "menu"), 0) >= 8 for c in ("academy", "ifc")), bad1[:6])
+chk("(1) the Settings menu keeps every tile it had on %s, the same size, masked, in both classes" % REF, not bad1 and all(counts.get((c, 440, "menu"), 0) >= 8 for c in ("academy", "ifc")), bad1[:6])
 chk("(2) every row tile outside the menu is the menu's tile: 27-29px, the menu's squircle mask, its sheen, its glyph and stroke", not bad2, bad2[:6])
 chk("(3) ...and one neutral grey, the same on every one (no colour outside the menu)", not bad3, bad3[:6])
 chk("(4) no tile on any page Settings opens", not bad4, bad4[:6])

@@ -3,7 +3,8 @@ Madison, Delta's Settings beside ours: "Why are our icons and sections not the s
 His phone runs Safari's page zoom at ~85%: the page lays out 518 CSS px wide on a 440pt screen, so every CSS px is 0.85pt. Ours drew
 23.4pt tiles / 43.5pt rows against Delta's 27pt / 51pt. Here the page is served at 518 CSS px with a 440pt screen (as his is) and the
 glass size is read as CSS px x (screen / layout width):
- (1) the Settings menu: tiles 26.5-29pt, row pitch 49-53pt, the card as wide as the screen's grouped list (edge inset 15-19pt);
+ (1) the Settings menu: tiles 26.5-29pt, row pitch 49-53pt, the card 19-21pt in from the screen's edges (384.110: Delta's 20pt; it
+     was 15-19, our own 17pt as his screenshot read it);
  (2) a word's line box 18-21pt (15.5pt type) and a section heading's 17-22pt line (15pt type);
  (3) on a page Settings opens (Sound & Haptics, Study): every row is the height on the glass it has at 100% (within 1.5pt);
  (4) at 100% (440 CSS px on a 440pt screen) nothing is scaled: tile 28px, pitch 51px, and page-zoomed is not set;
@@ -46,7 +47,7 @@ with sync_playwright() as pw:
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(1300)
     r = pg.evaluate(READ, k)
     chk("(1) at his zoom the tile is 26.5-29pt on the glass (%.1f) and the row pitch 49-53pt (%.1f)" % (r["tile"], r["pitch"]), 26.5 <= r["tile"] <= 29 and 49 <= r["pitch"] <= 53, r)
-    chk("(1) the grouped list is inset 15-19pt from the screen's edge (%.1f)" % r["inset"], 15 <= r["inset"] <= 19, r)
+    chk("(1) the grouped list is inset 19-21pt from the screen's edge (%.1f)" % r["inset"], 19 <= r["inset"] <= 21, r)   # (384.110) Delta's 20pt (his screenshot of OUR app read 17 - the page's 20px at his zoom; Settings takes the 3pt back now)
     chk("(2) a word's line box is 18-21pt (%.1f) and a section heading's 17-22pt (%.1f)" % (r["word"], r["head"]), 18 <= r["word"] <= 21 and 17 <= r["head"] <= 22, r)
     chk("(5) nothing scrolls sideways at his zoom (%d)" % r["sw"], r["sw"] <= 0, r)
     SUB = "(k)=>[...document.querySelectorAll('.screen-settings-sub .settings-card > *')].map(o=>o.getBoundingClientRect().height*k)"

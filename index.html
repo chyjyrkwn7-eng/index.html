@@ -40044,6 +40044,150 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
   @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
+  /* ---- 384.110 SETTINGS, DELTA'S LOOK ON THE GLASS (the fourth round; measured, not eyeballed) ----
+     Madison, with two new screenshots of Delta's Settings: "I can't really put my finger on it but Delta still looks so much better
+     than ours ... evaluate this extremely closely, the exact look and feel of theirs and make ours better." Read off them at
+     2.695px/pt (1186px across a 440pt screen) and off ours rendered at the same scale, at 100% and at his 85% page zoom
+     (docs/notes-archive.md, 384.110, has the whole table). What was different, and what this block does:
+     - TYPE. His phone runs Dynamic Type one step under the default: Delta's words are 16pt (cap height 11.33pt, SF's .7046 em), its
+       section names 16pt semibold, its footnotes 12pt on a 16pt line, its large title 33pt bold, its inline title 17pt semibold. Our
+       15.5px was set against Inter's taller capitals in Chromium; on the phone the page draws SF, so the words were 4% short.
+     - COLOUR. Delta's cards are iOS's own #2C2C2E on #1C1C1E - a neutral grey; ours were a darker blue-black (35,38,43). Its grey
+       words (values, section names, footnotes) are a neutral rgba(235,235,245,.62-.68); ours were a blue grey (160,172,182).
+     - SHAPE. Card corners 26pt (ours 22); a row's tile 17.5pt in from the card's edge and its words 14pt after it; the hairline from
+       the words to 20pt short of the card's right edge, 2 device pixels; the chevron's ink 6.3 x 10.8pt on a 1.65pt stroke, 22.3pt in
+       from the card's edge, 13pt after a value.
+     - THE TILE. iOS's continuous corner (radius .235 of the side, fitted to three of Delta's tiles to .06px), a flat fill, a white
+       lit edge strong along the top and bottom and faint down the sides, a thin dark keyline; glyphs on a 1.27pt stroke (see
+       settingsRowIcon).
+     - THE HEADER. Scrolled, Delta's large title gives way to a frosted bar with the title centred on the close button's line and a
+       hairline under it; ours had no bar at all. #settings-bar (syncSettingsBar) is that bar; a page's own back button and title
+       stay pinned in it (position:sticky, placed by alignNavChat).
+     Under html.page-zoomed the cards, headings and footnotes are already zoomed by --zc (384 r9), so a px here is a pt on his
+     glass; the title, the inline titles and the bar sit outside that zoom and multiply by --zc themselves. */
+  html[data-theme][data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card.settings-card,
+  html[data-theme][data-layout] body #stage .settings-page-account :is(.customize-namerow, .customize-nameedit).customize-namerow{
+    background-color:#2C2C2E !important; background-image:none !important; border-radius:26px !important;
+  }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-row, .settings-card, .slab, .settings-footnote, .sync-note-plain){
+    font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans);
+  }
+  /* the column: Delta's cards are 20pt in from the screen's edges. At 100% ours are (the page's 20px); at his 85% page zoom the
+     page's 20px is 17pt and the cards ran 6pt wider than at 100% - enough that a switch's description wrapped one line fewer than it
+     does at 100%. Settings and its pages take the 3pt back (20px x (--zc - 1) each side), so they are 20pt in and one width at both. */
+  @media (max-width:39.99rem){
+    html.page-zoomed[data-layout] body #stage .screen-profile > .screen-settings.screen-settings,
+    html.page-zoomed[data-layout] body #stage > .panel.screen-settings-sub.screen-settings-sub{
+      padding-left:calc(20px * (var(--zc, 1) - 1)) !important; padding-right:calc(20px * (var(--zc, 1) - 1)) !important;
+    }
+  }
+  /* rows: the tile 17.5pt in from the card's edge (16.5 + the card's 1px rim), words 14pt after it, the content edge 20pt in from the
+     right (where the hairline ends, as Delta's does) and the chevron's ink 22.3pt in (its box 3px past that edge) */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) .settings-row.settings-row{ padding-right:19px; }   /* the content edge 20pt in, where the hairline ends; the chevron reaches 3px past it */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) .settings-row.settings-row:has(> .settings-row-icon){ padding-left:16.5px; gap:14px; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-label.settings-row-label,
+  html[data-layout] body #stage .screen-settings-sub :is(.settings-row.settings-textrow, .settings-row.settings-linkrow, .credits-card > .credits-item, .credits-card > .credits-item .settings-row-label, .credits-card > .credits-name-row > .credits-name),
+  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-name-display.profile-name-display,
+  html[data-layout] body #stage .screen-settings-sub .sync-code-row .sync-code-label.sync-code-label{
+    font-size:16px; letter-spacing:normal;
+  }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-label.settings-row-label{ font-weight:400; color:#fff; }
+  html[data-layout] body #stage .screen-settings .settings-row.settings-linkrow{ font-size:16px; }
+  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt > .otext.otext{ font-size:16px; letter-spacing:normal; }
+  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt .ohint.ohint{ font-size:13px; font-weight:400; color:rgba(235,235,245,.6); }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-value.settings-row-value{
+    font-size:16px; font-weight:400; letter-spacing:normal; color:rgba(235,235,245,.68);
+  }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) .settings-row-sub.settings-row-sub{ font-size:13px; font-weight:400; color:rgba(235,235,245,.6); }
+  /* the chevron: Delta's ink (6.3 x 10.8pt, 1.65pt stroke) is drawn by the row builders; here its colour, and 13pt after a value or a pill */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) .settings-row .settings-row-chev.settings-row-chev{ color:rgba(235,235,245,.33); opacity:1; margin-left:-7px; margin-right:-3px; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) button.settings-row:disabled .settings-row-chev.settings-row-chev{ opacity:.35; }
+  /* the hairline: from the words to 20pt short of the card's right edge, 2 device pixels (2/3 of a point), white 12% (Delta's
+     separator, measured on its card: +22 levels) */
+  html[data-layout="modern"] body #stage :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row + .settings-row::before{
+    height:.667px; right:19px; background:rgba(255,255,255,.12);
+  }
+  html[data-layout="modern"] body #stage :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row + .settings-row:has(> .settings-row-icon)::before{ left:calc(16.5px + 28px + 14px); }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > :is(label.opt, .settings-volume) + label.opt::before{ height:.667px; background:rgba(255,255,255,.12); }
+  /* section names: 16pt semibold in a neutral grey; 27pt under the card above (13pt under a footnote), their baseline 14.3pt over
+     the card they name */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page):is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.slab.motion-summary, .sect-label, .slab).slab{
+    font-size:16px !important; font-weight:600 !important; line-height:20px !important; letter-spacing:normal !important;
+    color:rgba(235,235,245,.62) !important; margin-bottom:10px !important;
+  }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) .settings-card + .slab.motion-summary.slab{ margin-top:27px !important; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) :is(.settings-footnote, .settings-footnotes, .confirm-ask) + .slab.motion-summary.slab{ margin-top:13px !important; }
+  /* footnotes: 12pt on a 16pt line, the grey of the section names, 20pt in like them */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) :is(.settings-footnote, .sync-note-plain).settings-footnote,
+  html[data-layout] body #stage .screen-settings-sub .sync-note-plain.sync-note-plain{
+    font-size:12px; line-height:16px; letter-spacing:normal; color:rgba(235,235,245,.64); margin-top:6.5px;
+  }
+  /* THE TILE (every row tile: the menu, Profile's three, Stats' Test history). ::before is the keyline (the continuous-corner shape
+     .4px bigger all round, darkest down the sides), ::after the flat fill, the first svg the glyph, the second the lit edge. */
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon.settings-row-icon{ --nd-r:6.6px; }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon.settings-row-icon::before,
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon.settings-row-icon::after{
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M35.924 0L64.076 0C74.42 0 79.592 0 84.257 1.539L85.16 1.76C91.239 3.973 96.027 8.761 98.24 14.84L98.461 15.743C100 20.408 100 25.58 100 35.924L100 64.076C100 74.42 100 79.592 98.461 84.257L98.24 85.16C96.027 91.239 91.239 96.027 85.16 98.24L84.257 98.461C79.592 100 74.42 100 64.076 100L35.924 100C25.58 100 20.408 100 15.743 98.461L14.84 98.24C8.761 96.027 3.973 91.239 1.76 85.16L1.539 84.257C0 79.592 0 74.42 0 64.076L0 35.924C0 25.58 0 20.408 1.539 15.743L1.76 14.84C3.973 8.761 8.761 3.973 14.84 1.76L15.743 1.539C20.408 0 25.58 0 35.924 0Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+            mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M35.924 0L64.076 0C74.42 0 79.592 0 84.257 1.539L85.16 1.76C91.239 3.973 96.027 8.761 98.24 14.84L98.461 15.743C100 20.408 100 25.58 100 35.924L100 64.076C100 74.42 100 79.592 98.461 84.257L98.24 85.16C96.027 91.239 91.239 96.027 85.16 98.24L84.257 98.461C79.592 100 74.42 100 64.076 100L35.924 100C25.58 100 20.408 100 15.743 98.461L14.84 98.24C8.761 96.027 3.973 91.239 1.76 85.16L1.539 84.257C0 79.592 0 74.42 0 64.076L0 35.924C0 25.58 0 20.408 1.539 15.743L1.76 14.84C3.973 8.761 8.761 3.973 14.84 1.76L15.743 1.539C20.408 0 25.58 0 35.924 0Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon.settings-row-icon::before{
+    inset:-.4px; background:linear-gradient(180deg, rgba(0,0,0,.34), rgba(0,0,0,.62) 24%, rgba(0,0,0,.62) 76%, rgba(0,0,0,.34));
+  }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon.settings-row-icon::after{ inset:0; background:var(--tile, #939297); }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg:is(.tile-glyph, .tile-rim){
+    position:absolute; inset:0; width:28px; height:28px; display:block; overflow:visible; pointer-events:none; shape-rendering:geometricPrecision;
+  }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg.tile-glyph{ z-index:2; stroke-width:1.27px; }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg.tile-rim{ z-index:1; }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg.tile-glyph.tile-glyph :is(path, circle, rect, line, polyline, polygon, ellipse){ vector-effect:none; stroke-width:calc(1.27px / var(--gs, 1)); }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg.tile-glyph.tile-glyph .g-fill{ fill:currentColor; }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg.tile-rim.tile-rim :is(path, circle, rect){ vector-effect:none; }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg.tile-rim.tile-rim g > path:first-child{ stroke-width:3.4px; }
+  html[data-layout] body #stage .settings-row-icon.settings-row-icon > svg.tile-rim.tile-rim g > path:last-child{ stroke-width:1.05px; }
+  /* the large title (Profile's three segments, the Leaderboard, the Calendar): iOS's, 33pt bold at his text size, its own tracking */
+  html[data-layout][data-layout] body .wrap:has(> #stage > :is(.screen-profile, .screen-rankings, .screen-calendar-tab)) > #count:not(:empty){
+    font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans); font-size:calc(33px * var(--zc, 1)); font-weight:700; letter-spacing:normal;
+  }
+  /* a page's inline title: 17pt semibold, and its nav row stays pinned at the top as the page scrolls (Delta's sheets keep theirs) */
+  html[data-layout] body #stage .settings-nav > .settings-nav-title.settings-nav-title{
+    font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans); font-size:calc(17px * var(--zc, 1)); font-weight:600; letter-spacing:normal;
+  }
+  html[data-layout] body #stage > .panel.screen-settings-sub > .settings-nav.settings-nav{ position:sticky; z-index:62; }   /* over the bar (60), under the toasts (70) and the top banners (75) */
+  /* THE FROSTED BAR (#settings-bar, syncSettingsBar). From the status bar's strip (which keeps its own colour and stays the one
+     thing WebKit samples at the top edge: this bar starts under it, at the inset, and paints with an image, never a
+     background-colour) down to 9pt under the round buttons, the screen's top colour at 86% over a blur, a 2/3pt hairline at its
+     foot; the inline title on the round buttons' middle. Hidden (visibility) until the large title has gone under it, or a page
+     has scrolled. */
+  #settings-bar{
+    position:fixed; left:0; right:0; top:var(--sat, 0px); height:max(0px, calc(var(--sb-foot, 0px) - var(--sat, 0px)));
+    z-index:60; pointer-events:none; opacity:0; visibility:hidden;   /* over the page, under a toast (70), a top banner (75), the tab bar and the chat button */
+    background-color:transparent; background-image:linear-gradient(var(--sb-c, rgba(28,28,30,.86)), var(--sb-c, rgba(28,28,30,.86)));
+    -webkit-backdrop-filter:blur(20px) saturate(1.6); backdrop-filter:blur(20px) saturate(1.6);
+    transition:opacity .18s ease, visibility 0s linear .18s;
+  }
+  #settings-bar.is-on{ opacity:1; visibility:visible; transition:opacity .18s ease, visibility 0s; }
+  #settings-bar.is-instant{ transition:none !important; }
+  #settings-bar::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:.667px; background:rgba(255,255,255,.1); box-shadow:0 .667px 0 rgba(0,0,0,.22); }
+  #settings-bar > .settings-bar-title{
+    position:absolute; left:4.5rem; right:4.5rem; top:calc(var(--sb-mid, 0px) - var(--sat, 0px)); transform:translateY(-50%);
+    text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font:600 calc(17px * var(--zc, 1))/1.25 -apple-system, system-ui, BlinkMacSystemFont, var(--sans); letter-spacing:normal; color:#fff;
+  }
+  #settings-bar.is-page > .settings-bar-title{ display:none; }
+  [data-reduce-motion="true"] #settings-bar{ transition:none; }
+  /* A STATUS PILL (settingsPill): Delta's - a 20pt capsule, flat, the tiles' lit edge, white 11pt bold words */
+  .settings-pill{
+    flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; margin-left:.25rem;
+    border-radius:999px; white-space:nowrap; color:#fff; background-color:var(--pill, #939297);
+    font:700 11px/1 -apple-system, system-ui, BlinkMacSystemFont, var(--sans); letter-spacing:normal;
+    box-shadow:inset 0 .6px 0 rgba(255,255,255,.4), inset 0 -.6px 0 rgba(255,255,255,.3), 0 0 0 .4px rgba(0,0,0,.55);
+  }
+  .settings-pill.is-green{ --pill:#68CE68; }
+  .settings-pill.is-purple{ --pill:#8030EE; }
+  .settings-pill.is-blue{ --pill:#4292F8; }
+  .settings-pill.is-orange{ --pill:#F19B4E; }
+  .settings-pill.is-red{ --pill:#EC5954; }
+  .settings-pill.is-grey{ --pill:#939297; }
 </style>
 <script>
   (function(){
@@ -56769,6 +56913,10 @@ function alignNavChat(){
     const nav = back ? back.parentElement : null;
     if(!chat || !back || !nav || !nav.offsetParent) return;
     if(chat.closest(".chatdock.in-test")) return;
+    /* (384.110) a page Settings opens keeps its nav pinned (position:sticky): read only at the page's top, where its box is its
+       place in the flow (scrolled, a stuck nav's box is the screen's, not the page's) */
+    const sticky = getComputedStyle(nav).position === "sticky";
+    if(sticky && (window.scrollY || 0) > 1) return;
     const cs = getComputedStyle(chat);
     const cTop = parseFloat(cs.top) + (parseFloat(cs.marginTop) || 0), cH = chat.offsetHeight, cRight = parseFloat(cs.right) + (parseFloat(cs.marginRight) || 0);
     if(!(cH > 0) || !isFinite(cTop) || !isFinite(cRight)) return;
@@ -56794,8 +56942,91 @@ function alignNavChat(){
     const dx = cRight - backLeft;
     const want = Math.abs(dx) <= 8 ? dx.toFixed(2) + "px 0" : "";
     if(back.style.translate !== want) back.style.translate = want;
+    /* (384.110) ...and it sticks exactly where it rests: its top on the screen once its back button is on the chat button's middle */
+    if(sticky){
+      const top = (cTop + cH / 2) - (br.top - nr.top) - br.height / 2;
+      const t = top.toFixed(2) + "px";
+      if(nav.style.top !== t) nav.style.top = t;
+    }
   }catch(e){}
 }
+/* ---- (384.110) THE FROSTED BAR: Delta's large title giving way to an inline title as the page scrolls ----
+   Delta's Settings at rest: the close button, a 33pt "Settings" under it. Scrolled: a frosted bar from the top of its sheet down to
+   9pt under the close button, "Settings" in 17pt semibold centred on the close button's line, a hairline at the bar's foot. Ours
+   had no bar: the big title, the switcher and the cards ran up under the status bar's strip and nothing came in their place. Now
+   #settings-bar does that on the Profile screen (its three segments share the one big title, #count, so the bar is the same on all
+   three, and on Fire Code's Settings tab) and on every page Settings opens (whose nav row - back button and name - stays pinned
+   inside it). One element, made once, under <body> (it is position:fixed: #stage animates); every mount on #stage hides it at once
+   (no fade from the last screen) and then reads the new one. It takes no touch and paints no background-colour (an image), and it
+   starts at the inset, under the status bar's strip - so the strip stays the one thing WebKit samples at the top edge (384.80). */
+var settingsBarEl = null, settingsBarRaf = 0, settingsBarKey = "";
+function settingsBarHost(){
+  const st = document.getElementById("stage");
+  if(!st) return null;
+  const sub = st.querySelector(":scope > .panel.screen-settings-sub");
+  if(sub){
+    const nav = sub.querySelector(":scope > .settings-nav");
+    return nav ? { kind: "page", el: sub, title: "" } : null;
+  }
+  const prof = st.querySelector(":scope > .panel.screen-profile");
+  const c = document.getElementById("count");
+  if(prof && c && c.textContent.trim() && c.getClientRects().length) return { kind: "tab", el: prof, title: c.textContent.trim(), anchor: c };
+  return null;
+}
+function syncSettingsBar(){
+  settingsBarRaf = 0;
+  try{
+    const host = settingsBarHost();
+    let bar = settingsBarEl;
+    if(!host){ if(bar && bar.classList.contains("is-on")) bar.classList.remove("is-on"); return; }
+    if(!bar || !bar.isConnected){
+      bar = settingsBarEl = document.createElement("div");
+      bar.id = "settings-bar"; bar.setAttribute("aria-hidden", "true");
+      bar.innerHTML = '<span class="settings-bar-title"></span>';
+      document.body.appendChild(bar);
+    }
+    const de = document.documentElement, cs = getComputedStyle(de);
+    const zc = parseFloat(cs.getPropertyValue("--zc")) || 1;
+    const chat = document.getElementById("chatdock-btn");
+    let cr = null;
+    if(chat && chat.getClientRects().length && getComputedStyle(chat).visibility !== "hidden"){ cr = chat.getBoundingClientRect(); if(!(cr.height > 0)) cr = null; }
+    const sat = parseFloat(cs.getPropertyValue("--sat")) || 0;
+    const mid = cr ? cr.top + cr.height / 2 : sat + 34 * zc;
+    const foot = cr ? cr.bottom + 9 * zc : sat + 62 * zc;
+    bar.style.setProperty("--sb-mid", mid.toFixed(2) + "px");
+    bar.style.setProperty("--sb-foot", foot.toFixed(2) + "px");
+    /* the screen's own top colour (the status bar's strip wears it in an installed app), 86% over the blur */
+    let col = "";
+    const te = document.getElementById("top-edge");
+    if(te && te.dataset.color && de.classList.contains("top-edge-on")) col = te.dataset.color;
+    if(!col){ try{ col = appTopEdgeColor() || ""; }catch(e){ col = ""; } }
+    const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(col);
+    bar.style.setProperty("--sb-c", m ? "rgba(" + parseInt(m[1], 16) + "," + parseInt(m[2], 16) + "," + parseInt(m[3], 16) + ",.86)" : "rgba(28,28,30,.86)");
+    bar.classList.toggle("is-page", host.kind === "page");
+    const t = bar.firstChild;
+    if(t && t.textContent !== host.title) t.textContent = host.title;
+    /* on: the big title has risen past the round buttons' middle (the inline title's line); a page, as soon as it scrolls */
+    let on;
+    if(host.kind === "tab") on = host.anchor.getBoundingClientRect().bottom <= mid;
+    else on = (window.scrollY || 0) > 1;
+    if(document.getElementById("tour-overlay") || de.classList.contains("page-locked")) on = false;
+    const key = host.kind + "|" + host.title;
+    if(key !== settingsBarKey){ settingsBarKey = key; bar.classList.add("is-instant"); bar.classList.toggle("is-on", on); void bar.offsetWidth; bar.classList.remove("is-instant"); }
+    else if(bar.classList.contains("is-on") !== on) bar.classList.toggle("is-on", on);
+  }catch(e){}
+}
+function syncSettingsBarSoon(){ if(!settingsBarRaf) settingsBarRaf = requestAnimationFrame(syncSettingsBar); }
+try{
+  addEventListener("scroll", syncSettingsBarSoon, { passive: true });
+  addEventListener("resize", syncSettingsBarSoon);
+  new MutationObserver(() => {
+    /* a new screen: the bar goes at once (no fade over the next screen), then the new one is read */
+    if(settingsBarEl){ settingsBarEl.classList.add("is-instant"); settingsBarEl.classList.remove("is-on"); void settingsBarEl.offsetWidth; settingsBarEl.classList.remove("is-instant"); }
+    settingsBarKey = ""; syncSettingsBarSoon();
+  }).observe(document.getElementById("stage"), { childList: true });
+  const cnt = document.getElementById("count");
+  if(cnt) new MutationObserver(syncSettingsBarSoon).observe(cnt, { childList: true, characterData: true, subtree: true });
+}catch(e){}
 try{
   new MutationObserver(alignNavChat).observe(document.getElementById("stage"), { childList: true });
 }catch(e){}
@@ -122940,7 +123171,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.110";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -137022,10 +137253,14 @@ function settingsTileColor(kind){
      Experimental) three of the one grey, its Controls card a short step pink - red. So the menu's cards: General a short warm step
      (Delta's Skins pink, Touch red, then a red-orange a step on), Account all Delta's Sync indigo, App - Share, Check for update,
      Advanced, the utility card - all Delta's grey. Neighbouring cards are never one family. Colours sampled flat off its tiles. */
-  const MENU = { sound: PINK, study: RED, effects: "#F0603F",
-    person: INDIGO, classes: INDIGO, sync: INDIGO, trophy: INDIGO,
-    share: "#8E8E93", update: "#8E8E93", advanced: "#8E8E93" };
-  return MENU[kind] || C[kind] || "#8E8E93";
+  /* (384.110) DELTA'S COLOURS, PER POSITION. Re-sampled off his two new screenshots (the median of each tile's flat fill, clear of
+     the rim and the glyph; the same JPEG reads iOS's #1C1C1E / #2C2C2E exactly, so its colours are trustworthy): the Controls card
+     runs Controllers #CD4AEC, Skins #EC516A, Touch #EC5954 - a warm step, purple to red - so General's three take those three in
+     order; the Sync card is three of one indigo #7984F8 (Account's four); the utility card three of one grey #939297 (App's three). */
+  const MENU = { sound: "#CD4AEC", study: "#EC516A", effects: "#EC5954",
+    person: "#7984F8", classes: "#7984F8", sync: "#7984F8", trophy: "#7984F8",
+    share: "#939297", update: "#939297", advanced: "#939297" };
+  return MENU[kind] || C[kind] || "#939297";
 }
 /* (384 r8) THE TILE'S RIM: Delta's tile is a flat fill inside a thin inner edge that is BRIGHTER and pushed towards the next bright
    hue, never white - purple to magenta, orange to yellow, blue to cyan - which is what reads as lit glass. Sampled off its tiles
@@ -137099,18 +137334,64 @@ function settingsRowIcon(kind, tone){
      settingsIconFit[kind] = [scale, dx, dy] (read off each glyph's own geometry, getBBox) so its drawing is centred on the tile and its
      longer side is the same length on every tile - with the 1.5px stroke (non-scaling, so one weight whatever the scale) the ink is
      55% of the tile, as Delta's heart is. */
-  const fit = (typeof settingsIconFit !== "undefined" && settingsIconFit) ? settingsIconFit[kind] : null;   /* var, below: safe if a screen is built before it is assigned (TDZ) */
-  const body = (paths[kind] || "");
+  /* (384.110) DELTA'S DRAWING LANGUAGE, ON THE TILE'S OWN 28 GRID. Madison, with two new screenshots of Delta's Settings: "try to
+     copy/replicate what their app icon logos look like to a T". Read off them at 2.695px/pt: every glyph is an SF-Symbols-style
+     outline on ONE ~1.27pt stroke (1.23-1.33 across the sliders, the flask, the heart; ours was 1.5, 18% heavier), round caps and
+     joins, sized like symbols of one point size - a square one's ink ~15.5pt of the 28pt tile (55%), a wide one wider (the
+     gamepad 22pt, the cloud 19), a tall one taller - with SOLID details where SF has them (Delta Sync's two arrowheads, the palette's
+     holes). So each glyph is drawn here in tile units (1 unit = 1pt on the glass), one stroke, its ink centred on 14,14 (the few
+     that are not, by their geometry, are moved and sized by SETTINGS_GLYPH_FIT, read off getBBox). Rows with Delta's
+     meaning take Delta's shape: Sound a speaker and its waves (Audio), Sync two arcs with solid heads (Delta Sync), Advanced a gear
+     (Advanced). The old 24-grid drawings stay below for any other kind (no row draws one today). */
+  const G28 = {
+    sound: '<path d="M9.4 11.05 12.75 8.3c.55-.45 1.05-.2 1.05.5v10.4c0 .7-.5.95-1.05.5L9.4 16.95H7.35c-.75 0-1.25-.5-1.25-1.25v-3.4c0-.75.5-1.25 1.25-1.25z"/><path d="M16.75 11.25a3.9 3.9 0 0 1 0 5.5"/><path d="M19.2 8.85a7.3 7.3 0 0 1 0 10.3"/>',
+    study: '<path d="M14 9.55C12.35 8.2 9.85 7.6 6.75 7.7c-.45 0-.75.3-.75.75v10.3c0 .45.3.75.75.75 3.1-.1 5.6.5 7.25 1.85"/><path d="M14 9.55c1.65-1.35 4.15-1.95 7.25-1.85.45 0 .75.3.75.75v10.3c0 .45-.3.75-.75.75-3.1-.1-5.6.5-7.25 1.85"/><path d="M14 9.55v11.8"/>',
+    effects: '<path d="M12.3 9Q13.56 14.04 18.6 15.3Q13.56 16.56 12.3 21.6Q11.04 16.56 6 15.3Q11.04 14.04 12.3 9Z"/><path d="M19.4 5.9Q19.94 8.06 22.1 8.6Q19.94 9.14 19.4 11.3Q18.86 9.14 16.7 8.6Q18.86 8.06 19.4 5.9Z"/><path d="M20 17.5Q20.38 19.02 21.9 19.4Q20.38 19.78 20 21.3Q19.62 19.78 18.1 19.4Q19.62 19.02 20 17.5Z"/>',
+    person: '<circle cx="14" cy="10.15" r="3.55"/><path d="M7.75 20.9c.35-3.45 2.85-5.4 6.25-5.4s5.9 1.95 6.25 5.4c.05.5-.3.85-.8.85H8.55c-.5 0-.85-.35-.8-.85z"/>',
+    classes: '<path d="M14 7.6 22.5 11.5 14 15.4 5.5 11.5z"/><path d="M9.1 13.75v3.6c1.3 1.35 2.95 2.05 4.9 2.05s3.6-.7 4.9-2.05v-3.6"/><path d="M22.5 11.5v4.7"/>',
+    sync: '<path d="M7.52 10.98A7.15 7.15 0 0 1 20.37 10.75"/><path class="g-fill" d="M22.24 9.35 21.76 13.47 18.14 11.44z"/><path d="M20.48 17.02A7.15 7.15 0 0 1 7.63 17.25"/><path class="g-fill" d="M5.76 18.65 6.24 14.53 9.86 16.56z"/>',
+    trophy: '<path d="M9.6 7.4h8.8v4.75a4.4 4.4 0 0 1-8.8 0z"/><path d="M9.6 8.95H7.65c-.6 0-1.05.45-1.05 1.05v.6a3.25 3.25 0 0 0 3.35 3.25"/><path d="M18.4 8.95h1.95c.6 0 1.05.45 1.05 1.05v.6a3.25 3.25 0 0 1-3.35 3.25"/><path d="M14 16.55v2.95"/><path d="M10.85 20.35h6.3"/>',
+    share: '<path d="M10.75 12.05H9.35c-.95 0-1.6.65-1.6 1.6v6.95c0 .95.65 1.6 1.6 1.6h9.3c.95 0 1.6-.65 1.6-1.6v-6.95c0-.95-.65-1.6-1.6-1.6h-1.4"/><path d="M14 5.75v10.4"/><path d="M10.95 8.8 14 5.75l3.05 3.05"/>',
+    update: '<circle cx="14" cy="14" r="7.3"/><path d="M14 10.1v7.55"/><path d="M10.95 14.65 14 17.7l3.05-3.05"/>',
+    advanced: '<path d="M12.36 8.07 12.76 6.15 15.24 6.15 15.64 8.07 17.03 8.65 18.67 7.57 20.43 9.33 19.35 10.97 19.93 12.36 21.85 12.76 21.85 15.24 19.93 15.64 19.35 17.03 20.43 18.67 18.67 20.43 17.03 19.35 15.64 19.93 15.24 21.85 12.76 21.85 12.36 19.93 10.97 19.35 9.33 20.43 7.57 18.67 8.65 17.03 8.07 15.64 6.15 15.24 6.15 12.76 8.07 12.36 8.65 10.97 7.57 9.33 9.33 7.57 10.97 8.65z"/><circle cx="14" cy="14" r="2.6"/>',
+    personcircle: '<circle cx="14" cy="14" r="7.45"/><circle cx="14" cy="12.15" r="2.65"/><path d="M9.15 19.5c1.05-1.95 2.75-2.95 4.85-2.95s3.8 1 4.85 2.95"/>',
+    badgecase: '<path d="M8.4 10.35h11.2c1.05 0 1.75.7 1.75 1.75v7.15c0 1.05-.7 1.75-1.75 1.75H8.4c-1.05 0-1.75-.7-1.75-1.75V12.1c0-1.05.7-1.75 1.75-1.75z"/><path d="M11.55 10.35V8.95c0-.75.45-1.2 1.2-1.2h2.5c.75 0 1.2.45 1.2 1.2v1.4"/><path d="M6.65 14.75h5.95M15.4 14.75h5.95"/><path d="M12.6 13.75h2.8v2.05h-2.8z"/>',
+    ladder: '<path d="M10.35 6.6v14.8M17.65 6.6v14.8"/><path d="M10.35 10.3h7.3M10.35 14h7.3M10.35 17.7h7.3"/>',
+    history: '<path d="M8.29 9.95A7.25 7.25 0 1 1 7.49 16.48"/><path class="g-fill" d="M6.77 8.44 6.72 12.27 10.25 10.79z"/><path d="M14.3 10.2v4.2l2.75 1.75"/>'
+  };
+  /* [scale, dx, dy]: a few drawn a touch small for Delta's sizes (its median glyph is 61.7% of the tile on its longer side, ours
+     read 58.7%), and the ink centred on 14,14; a scaled glyph's stroke is divided by its scale (--gs) so every one draws 1.27 */
+  const SETTINGS_GLYPH_FIT = { sound: [1.08, .31, 0], study: [1, 0, -.52], effects: [1, -.05, .25], person: [1.03, 0, -.17], classes: [1, 0, .5], trophy: [1.06, 0, .12],
+    update: [1.035, 0, 0], personcircle: [1.02, 0, 0], badgecase: [1.04, 0, -.4], ladder: [1.06, 0, 0], history: [1, -.2, 0] };
+  const body = G28[kind] || "";
+  const old = body ? "" : (paths[kind] || "");
+  const fit = SETTINGS_GLYPH_FIT[kind];
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
   tile.dataset.tile = kind;
   tile.style.setProperty("--tile", settingsTileColor(kind));
   tile.style.setProperty("--tile-rim", settingsTileRim(settingsTileColor(kind)));
   tile.setAttribute("aria-hidden", "true");
-  tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
-    + (fit && body ? '<g transform="matrix(' + fit[0] + ' 0 0 ' + fit[0] + ' ' + fit[1] + ' ' + fit[2] + ')">' + body + "</g>" : body) + "</svg>";
+  /* THE MATERIAL, read off Delta's tiles (every colour the same): a FLAT fill (::after, unchanged), a white light on the inner edge
+     that is strong along the top and the bottom (~.6 white, a third of a point wide, with a soft ~1.5pt glow inside it) and faint
+     down the sides (~.12) - the iOS 26 lit glass edge, not a coloured outline - and a thin dark keyline just outside the edge
+     (::before). The light is the second svg: the tile's own continuous-corner outline, stroked with a top-to-bottom gradient and
+     clipped to the tile, so it follows the corners; its ids are unique per tile (settingsTileSeq). No filter anywhere. */
+  const n = (typeof settingsTileSeq === "number" ? ++settingsTileSeq : 0);
+  const SQ = "M10.059 0L17.941 0C20.838 0 22.286 0 23.592 .431L23.845 .493C25.547 1.112 26.888 2.453 27.507 4.155L27.569 4.408C28 5.714 28 7.162 28 10.059L28 17.941C28 20.838 28 22.286 27.569 23.592L27.507 23.845C26.888 25.547 25.547 26.888 23.845 27.507L23.592 27.569C22.286 28 20.838 28 17.941 28L10.059 28C7.162 28 5.714 28 4.408 27.569L4.155 27.507C2.453 26.888 1.112 25.547 .493 23.845L.431 23.592C0 22.286 0 20.838 0 17.941L0 10.059C0 7.162 0 5.714 .431 4.408L.493 4.155C1.112 2.453 2.453 1.112 4.155 .493L4.408 .431C5.714 0 7.162 0 10.059 0Z";
+  const stop = (o, a) => '<stop offset="' + o + '" stop-color="#fff" stop-opacity="' + a + '"/>';
+  const rim = '<svg class="tile-rim" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><defs><clipPath id="trc' + n + '"><path d="' + SQ + '"/></clipPath>'
+    + '<linearGradient id="trl' + n + '" x1="0" y1="0" x2="0" y2="28" gradientUnits="userSpaceOnUse">' + stop(0, .62) + stop(.07, .2) + stop(.2, .12) + stop(.8, .12) + stop(.93, .2) + stop(1, .58) + '</linearGradient>'
+    + '<linearGradient id="trg' + n + '" x1="0" y1="0" x2="0" y2="28" gradientUnits="userSpaceOnUse">' + stop(0, .12) + stop(.1, 0) + stop(.9, 0) + stop(1, .1) + '</linearGradient></defs>'
+    + '<g clip-path="url(#trc' + n + ')" fill="none"><path d="' + SQ + '" stroke="url(#trg' + n + ')" stroke-width="3.4"/><path d="' + SQ + '" stroke="url(#trl' + n + ')" stroke-width="1.05"/></g></svg>';
+  const glyph = body
+    ? (fit ? '<g transform="translate(' + (fit[1] + 14) + ' ' + (fit[2] + 14) + ') scale(' + fit[0] + ') translate(-14 -14)" style="--gs:' + fit[0] + '">' + body + "</g>" : body)
+    : (old ? '<g transform="translate(2 2)">' + old + "</g>" : "");
+  tile.innerHTML = '<svg class="tile-glyph" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.27" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+    + glyph + "</svg>" + rim;
   return tile;
 }
+var settingsTileSeq = 0;   /* (384.110) var, not let: a tile can be built during boot, before this line has run (TDZ) */
 /* (384 r8) [scale, dx, dy] per glyph, from its getBBox: centred on 12,12, the longer side 56.5% of the tile with the stroke (the round
    ones - a circle, the sparkles - 96.5% of that, as iOS draws them, or they read bigger than their neighbours) */
 var settingsIconFit = {sound: [0.9462, 0.783, 0.646], study: [0.9525, 0.569, 0.016], effects: [0.8993, 1.074, 1.299], person: [1.0346, -0.415, -0.673], classes: [0.849, 1.812, 2.321], sync: [0.9299, 0.842, 0.842], trophy: [1.0278, -0.333, -0.333], share: [0.9299, 0.842, 0.842], update: [0.8939, 1.273, 1.273], advanced: [0.9764, 0.284, 0.284], personcircle: [0.8731, 1.522, 1.522], badgecase: [0.9299, 0.842, 0.935], ladder: [0.9299, 0.842, 0.842], history: [0.9627, 0.448, 0.418]};
@@ -137132,7 +137413,7 @@ var settingsIconFit = {sound: [0.9462, 0.783, 0.646], study: [0.9525, 0.569, 0.0
 /* (384 r9) ...AND THAT GREY IS SETTINGS' GREY. Madison, Stats' Test history tile beside the Settings menu: "Why does this icon not look
    like the others?" The row grey was a darker #48484A, so the tile read as a different kind of thing from Share / Check for
    update / Advanced, which are Delta's #8E8E93. One grey, the menu's, with the menu's rim. */
-const PF_ROW_GREY = "#8E8E93";
+const PF_ROW_GREY = "#939297";   /* (384.110) Delta's utility grey, re-sampled off the new screenshots (it read #8E8E93 off the old ones) */
 const PF_ROW_TILE = { customize: PF_ROW_GREY, ladder: PF_ROW_GREY, badgecase: PF_ROW_GREY };
 function pfActFill(btn, kind, label, sub, tile){
   const t = settingsRowIcon(kind);
@@ -137144,7 +137425,7 @@ function pfActFill(btn, kind, label, sub, tile){
   let sb = null;
   if(sub){ sb = document.createElement("span"); sb.className = "pf-act-sub"; sb.textContent = sub; words.appendChild(sb); }
   const chev = document.createElement("span"); chev.className = "pf-act-chev"; chev.setAttribute("aria-hidden", "true");
-  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.33" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 5.5 15.45 12 8.9 18.5"/></svg>';
   btn.classList.add("pf-act");
   btn.replaceChildren(t, words, chev);
   return { tile: t, words, label: l, sub: sb, chev };
@@ -137171,7 +137452,7 @@ function settingsRow(kind, label, sub, tone, value){
   const chev = document.createElement("span");
   chev.className = "settings-row-chev";
   chev.setAttribute("aria-hidden", "true");
-  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
+  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.33" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 5.5 15.45 12 8.9 18.5"/></svg>';
   if(tone === "plain") b.classList.add("settings-row-plain");
   else b.append(settingsRowIcon(kind, tone));
   b.append(txt);
@@ -137189,6 +137470,19 @@ function settingsRow(kind, label, sub, tone, value){
    every page's row is this: the same row with no tile, its words at the card's padding (the hairline already starts there for a row
    with no tile). `kind` stays on data-row, which gates and taps find rows by. */
 function settingsPageRow(kind, label, sub, value){ return settingsRow(kind, label, sub, "plain", value); }
+/* (384.110) A STATUS PILL, DELTA'S: "Up-to-date" (green) and "Patrons" (purple) on its Settings, measured at 2.695px/pt - a capsule
+   20pt tall, a flat fill (#68CE68 / #8030EE) with the tiles' lit edge, white 11pt bold words 8.5pt in from each end, 12pt clear of the
+   chevron. Put it where a row's grey value goes (it takes the value's place before the chevron). `tone`: green / ok / done, purple /
+   new / accent, blue / info, orange / warn, red / danger / off, grey / muted (the default). The look is .settings-pill in the 384.110
+   block. */
+function settingsPill(text, tone){
+  const TONES = { green: "green", ok: "green", done: "green", good: "green", success: "green", purple: "purple", new: "purple", accent: "purple",
+    blue: "blue", info: "blue", orange: "orange", warn: "orange", warning: "orange", red: "red", danger: "red", off: "red", error: "red", grey: "grey", gray: "grey", muted: "grey" };
+  const p = document.createElement("span");
+  p.className = "settings-pill is-" + (TONES[String(tone || "").toLowerCase()] || "grey");
+  p.textContent = text;
+  return p;
+}
 /* A row that is only words: red for a one-way action (iOS "Reset Online
    Settings"). Its text is the button's own text node, so armConfirm() can
    relabel it ("Tap again to clear") the way it always has. */
@@ -137210,7 +137504,7 @@ function settingsPlainRow(label){
   const chev = document.createElement("span");
   chev.className = "settings-row-chev";
   chev.setAttribute("aria-hidden", "true");
-  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
+  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.33" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 5.5 15.45 12 8.9 18.5"/></svg>';
   b.append(lab, chev);
   return b;
 }
@@ -137372,7 +137666,7 @@ function showCredits(){
         lab.className = "settings-row-label"; lab.textContent = d.t;
         const chev = document.createElement("span");
         chev.className = "settings-row-chev"; chev.setAttribute("aria-hidden", "true");
-        chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
+        chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.33" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 5.5 15.45 12 8.9 18.5"/></svg>';
         r.append(lab, chev);
         r.addEventListener("click", () => d.open());
         card.appendChild(r);

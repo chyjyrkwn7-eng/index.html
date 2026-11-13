@@ -4,8 +4,9 @@ smaller too, our icons don't look as nice/hd/crispy either. It's also missing th
 our words are smaller. You see how ours has the gold text and the word nova in the default color? That needs to match your theme
 too.. would be a nice touch. The word nova 'Davis' is like white and bold. Make that entire 'made by Davis' cohesive there."
 iPhone 17 Pro Max (440x956), dark, Settings:
-(1) (384 r5, Delta's numbers) the rows are 49-53px, their tiles 27-29px, their glyphs' boxes 55-85% of the tile (384 r8: the ink itself,
-    55% of the tile as Delta's, is check-b384-tilematerial's) on one stroke weight, their labels 15-16.5px;
+(1) (384 r5, Delta's numbers) the rows are 49-53px, their tiles 27-29px, their glyphs' drawings 55-85% of the tile (384.110: read as
+    the ink, the svg being the tile's own 28 grid now) on one stroke weight of 1.18-1.36px as drawn (384.110: Delta's 1.23-1.33pt),
+    their labels 15-16.5px;
 (2) between two rows of a card a hairline shows (white, 8%+), starting at the label (an icon row) and running to the row's content
     edge - (384, round 2) "Theirs don't touch the sides, why would ours?": clear of the card's edge by the row's padding;
 (3) the theme's colour at the foot: the Support links, the NOVA wordmark's middle and both halves of "MADE BY DAVIS" are in the
@@ -54,14 +55,19 @@ with sync_playwright() as pw:
     m = pg.evaluate("""()=>{ const rows=[...document.querySelectorAll('#stage .settings-list > .settings-row')].filter(r=>r.querySelector('.settings-row-icon'));
       if(rows.length < 2) return { h: 0, tile: 0, glyph: 0, label: 0, strokes: [], sepBg: '', sepLeft: 0, labelLeft: 99, sepRight: 0, cardRight: 0, contentRight: 99, none: true };   /* (384 r8) a menu with no tiled rows fails (1)/(2), it does not stop the gate */
       const r=rows[0], ic=r.querySelector('.settings-row-icon'), sv=ic.querySelector('svg'), lab=r.querySelector('.settings-row-label');
-      const parts=[sv, ...sv.querySelectorAll('[stroke], path, circle, rect, line, polyline')].map(e=>parseFloat(getComputedStyle(e).strokeWidth)).filter(v=>v>0);
+      /* (384.110) the stroke as drawn: its width times the scale it is drawn at (a glyph drawn a touch larger divides its stroke by that scale) */
+      const parts=[...sv.querySelectorAll('path, circle, rect, line, polyline')].filter(e=>!e.closest('defs, clipPath')).map(e=>{ const m=e.getScreenCTM(); return parseFloat(getComputedStyle(e).strokeWidth)*Math.sqrt(Math.abs(m.a*m.d-m.b*m.c)); }).filter(v=>v>0);
+      /* (384.110) the glyph's drawing, not its box: the svg is the tile's own 28 grid now; the ink (getBBox + the stroke) */
+      let ink=0; { let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; for(const e of sv.querySelectorAll('path, circle, rect, line, polyline')){ if(e.closest('defs, clipPath')) continue; const b=e.getBBox(), m=e.getScreenCTM();
+        const xs=[m.a*b.x+m.e, m.a*(b.x+b.width)+m.e], ys=[m.d*b.y+m.f, m.d*(b.y+b.height)+m.f]; x0=Math.min(x0,...xs); x1=Math.max(x1,...xs); y0=Math.min(y0,...ys); y1=Math.max(y1,...ys); }
+        ink=Math.max(x1-x0, y1-y0) + (parts.length ? parts[0] : 0); }
       const b=rows[1], sep=getComputedStyle(b,'::before'), lr=b.querySelector('.settings-row-label').getBoundingClientRect(), br=b.getBoundingClientRect(), card=b.parentElement.getBoundingClientRect();
-      return { h: r.getBoundingClientRect().height, tile: ic.getBoundingClientRect().width, glyph: sv.getBoundingClientRect().width, label: parseFloat(getComputedStyle(lab).fontSize),
+      return { h: r.getBoundingClientRect().height, tile: ic.getBoundingClientRect().width, glyph: ink, label: parseFloat(getComputedStyle(lab).fontSize),
                strokes: [...new Set(parts.map(v=>Math.round(v*100)/100))], sepBg: sep.backgroundColor, sepLeft: br.left + parseFloat(sep.left), labelLeft: lr.left,
                sepRight: br.right - parseFloat(sep.right || '0'), cardRight: card.right,
                contentRight: br.right - parseFloat(getComputedStyle(b).paddingRight) - parseFloat(getComputedStyle(b).borderRightWidth) }; }""")
-    ck("(1) rows %spx, tiles %spx, glyph boxes %spx on one stroke %s, labels %spx" % (m["h"], m["tile"], m["glyph"], m["strokes"], m["label"]),
-       49 <= m["h"] <= 53 and 27 <= m["tile"] <= 29 and .55 * m["tile"] <= m["glyph"] <= .85 * m["tile"] and len(m["strokes"]) == 1 and m["strokes"][0] >= 1.5 and 15 <= m["label"] <= 16.5, m)   # (384 r5) Delta measured off his two screenshots: row 51, tile 27.6, label ~15.5   # (384 r5: one even weight - the lighter 1.75 of the glass tiles)
+    ck("(1) rows %spx, tiles %spx, glyph ink %spx on one stroke %s, labels %spx" % (m["h"], m["tile"], round(m["glyph"], 1), m["strokes"], m["label"]),
+       49 <= m["h"] <= 53 and 27 <= m["tile"] <= 29 and .55 * m["tile"] <= m["glyph"] <= .85 * m["tile"] and m["strokes"] and max(m["strokes"]) - min(m["strokes"]) <= .03 and 1.18 <= m["strokes"][0] <= 1.36 and 15 <= m["label"] <= 16.5, m)   # (384.110) Delta's glyph stroke off the new screenshots: 1.23-1.33pt (it was held at 1.5+ here); the drawing 55-85% of the tile, read as ink   # (384 r5) Delta measured off his two screenshots: row 51, tile 27.6, label ~15.5   # (384 r5: one even weight - the lighter 1.75 of the glass tiles)
     sa = re.findall(r"[\d.]+", m["sepBg"] or ""); alpha = float(sa[3]) if len(sa) > 3 else (1 if sa else 0)
     ck("(2) a hairline between rows (%s), from the label (%s / %s) to the row's content edge (%s / %s), clear of the card's (%s)" % (m["sepBg"], round(m["sepLeft"]), round(m["labelLeft"]), round(m["sepRight"]), round(m["contentRight"]), round(m["cardRight"])),
        alpha >= .08 and abs(m["sepLeft"] - m["labelLeft"]) <= 2 and abs(m["sepRight"] - m["contentRight"]) <= 2 and m["cardRight"] - m["sepRight"] >= 8, m)
