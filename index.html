@@ -18746,7 +18746,8 @@
      specificity, and Gold's swing was still running in every orbit. */
   /* (not the road map's flare carried into a bubble by the rank-up's
      hand-off, build 321: it keeps moving on its own clock - ruClockSnap) */
-  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *) .rk-a{ animation:none !important; }
+  /* (384.117) ...nor a single big flare shown on its own (.rk-live: the rank flare's unlock card, "This isn't animated") */
+  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *):not(.rk-live *) .rk-a{ animation:none !important; }
   /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
   .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
   .bnr.rk-idle, .bnr.rk-idle *{ animation:none !important; }

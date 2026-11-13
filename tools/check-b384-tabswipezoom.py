@@ -65,7 +65,7 @@ PROF_TAB = "()=>{ const b = document.querySelector('.profiletabs .iconbtn.active
 BOARD = "()=>{ const b = document.querySelector('.navsegment.has-seg-thumb .active'); return b ? b.textContent.trim() : ''; }"
 
 def open_retry(br, dev):
-    for k in range(3):   # a loaded machine can take longer than a page load's 30s
+    for k in range(6):   # a loaded machine can take longer than a page load's 30s
         try: return G.open_dev(br, dev, inits=[G.seed_init()], wait=4000)
         except Exception as e:
             print("  (retrying the page load: %s)" % str(e)[:80], flush=True)
@@ -99,6 +99,18 @@ def run_dev(br, dev):
         pt = pg.evaluate("""()=>{ const l=[...document.querySelectorAll('.timer-sect .opt')].find(r=>/Time limit/.test(r.textContent)); if(!l) return null; l.scrollIntoView({block:'center'}); const b=l.querySelector('.box')||l; const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
         if pt:
             pg.wait_for_timeout(400); pg.touchscreen.tap(pt[0], pt[1]); pg.wait_for_timeout(700)
+        # Chromium does not count a tap's focus as :focus-visible and iOS WebKit does: force the state on the switch the tap
+        # focused (CDP CSS.forcePseudoState), as the phone has it, and read the ring off its .box
+        pg.evaluate("""()=>{ const l=[...document.querySelectorAll('.timer-sect .opt')].find(r=>/Time limit/.test(r.textContent)); if(l) l.querySelector('input').id = '__gate_tl'; }""")
+        try:
+            cdp = getattr(pg, "cdp", None) or pg.ctx.new_cdp_session(pg); pg.cdp = cdp
+            cdp.send("DOM.enable"); cdp.send("CSS.enable")
+            root = cdp.send("DOM.getDocument", {"depth": 1})["root"]["nodeId"]
+            nid = cdp.send("DOM.querySelector", {"nodeId": root, "selector": "#__gate_tl"})["nodeId"]
+            if nid: cdp.send("CSS.forcePseudoState", {"nodeId": nid, "forcedPseudoClasses": ["focus", "focus-visible"]})
+        except Exception as e:
+            print("  (could not force focus-visible: %s)" % str(e)[:80])
+        pg.wait_for_timeout(200)
         ring = pg.evaluate("""()=>{ const l=[...document.querySelectorAll('.timer-sect .opt')].find(r=>/Time limit/.test(r.textContent)); if(!l) return 'no row'; const b=l.querySelector('.box'); const cs=getComputedStyle(b);
           return { on: l.querySelector('input').checked, outline: cs.outlineStyle, w: cs.outlineWidth, focused: document.activeElement === l.querySelector('input') }; }""")
         chk("[%s] T8 a tap on Time limit turns it on and leaves no ring round its switch" % dev, isinstance(ring, dict) and ring["on"] and ring["outline"] == "none", ring)
