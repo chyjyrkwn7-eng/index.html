@@ -127,14 +127,13 @@ def traced(br):
       window.__sh.scene = performance.now();
       window.__done = 0; playBadgeCaseScene([u], () => { window.__done = 1; }, [], {}); }""", unit)
     slot = coin = None; t0 = time.time()
-    while time.time() - t0 < 45:
+    while time.time() - t0 < 120:
         if coin is None and pg.evaluate("()=>!!document.querySelector('.bc-flyer .bc-face.is-front') && document.getAnimations().some(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.bc-face.is-front') && a.playState === 'running')"):
             pg.wait_for_timeout(200); coin = pg.evaluate(FIND, "coin")
         if slot is None and pg.evaluate("()=>!!window.__sh.seat"):
             pg.wait_for_timeout(120); slot = pg.evaluate(FIND, "slot")
         if pg.evaluate("()=>window.__done"): break
         pg.wait_for_timeout(100)
-    coin_late = None
     sh = pg.evaluate("()=>window.__sh")
     cdp.send("Tracing.end")
     for _ in range(1200):
@@ -147,12 +146,15 @@ def traced_coin_glint(br):
     """the coin's glint at rest, as the page makes it (BC_T.glint), read on the real clock"""
     ctx, pg, errs, unit = page(br)
     pg.evaluate("(u) => { playBadgeCaseScene([u], () => {}, [], {}); }", unit)
-    g = None; t0 = time.time()
     gl = pg.evaluate("()=>BC_T.glint")
-    pg.wait_for_timeout(gl + 250)
-    g = pg.evaluate(FIND, "coin")
+    pg.wait_for_timeout(gl)
+    g = []; t0 = time.time()
+    while time.time() - t0 < 30:     # the scene's own timer, however late a busy machine runs it
+        g = pg.evaluate(FIND, "coin") or []
+        if any(x["n"] <= 60 for x in g): break
+        pg.wait_for_timeout(150)
     ctx.close()
-    return g or [], errs
+    return g, errs
 
 # ---- the clock stopped: every animation seeked to t (as check-behaviour's _Stepper) ----
 SEEK = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
@@ -357,9 +359,10 @@ with sync_playwright() as pw:
                     % (label, h["changed"], h["of"], h["max"]), h["changed"] <= h["of"] * .002, h)
     if want(7):
         ctx, pg, errs, unit = page(br)
-        res = pg.evaluate(r"""(u) => { playBadgeCaseScene([u], () => {}, [], {}); return new Promise(res => setTimeout(() => {
+        res = pg.evaluate(r"""(u) => { playBadgeCaseScene([u], () => {}, [], {}); const t0 = performance.now(); return new Promise(res => { const look = () => {
           const sp = document.querySelector('.bc-flyer .bc-spin'), out = {};
           const spinA = sp && sp.getAnimations()[0];
+          if(!spinA && performance.now() - t0 < 30000){ setTimeout(look, 150); return; }   /* the scene's own timer, however late */
           const th = spinA ? spinA.effect.getKeyframes().map(k => parseFloat(/rotateY\(([-\d.]+)deg\)/.exec(k.transform)[1])) : [];
           out.maxStep = th.reduce((m, v, i) => i ? Math.max(m, Math.abs(v - th[i - 1])) : m, 0);
           out.passes = {};
@@ -368,7 +371,7 @@ with sync_playwright() as pw:
             const o = a ? a.effect.getKeyframes().map(k => +k.opacity) : [];
             const pk = []; for(let k = 1; k < o.length - 1; k++) if(o[k] >= o[k - 1] && o[k] > o[k + 1] && o[k] > .05) pk.push(+o[k].toFixed(2));
             out.passes[side] = pk; });
-          res(out); }, BC_T.coin + 200)); }""", unit)
+          res(out); }; setTimeout(look, BC_T.coin + 200); }); }""", unit)
         errs_all += errs; ctx.close()
         allp = res["passes"].get("is-front", []) + res["passes"].get("is-back", [])
         chk("(7) every pass of the spin's light over a face peaks at >= .9 of the brightest (front %s, back %s)" % (res["passes"].get("is-front"), res["passes"].get("is-back")),
