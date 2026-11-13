@@ -15,7 +15,8 @@ font size (em), so a font or a zoom change does not move the bar.
 
   1 COMPACT    the segments are equal and each is no wider than its widest label plus 1.7em a side, or 5.6em (Delta: 82pt for 33pt of
                words at 15pt - 1.63em a side, 5.47em), so the control is never stretched past its labels; and it is centred in its
-               column (the chat sheet's: in the room beside its close button) within 1px.
+               column within 1px (the chat sheet's on the sheet's middle too, unless the room either side of it would be narrower
+               than the close button beside it - a 320px phone - and then it ends before that button).
   2 RAISED     the track is raised glass, not set in: a backdrop blur on it; a shadow BELOW it (an outer box-shadow, y > 0) and a lighter
                rim along its top (an inset shadow, y > 0, white) - and on the screen its top rim is >= 12 levels over its middle and its
                bottom rim >= 8; the thumb is >= 12 levels DARKER than the track, and flat: its top edge (1px in) is no darker than its
