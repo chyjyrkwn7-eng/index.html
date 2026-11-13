@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.96: the new dot is a small lit flare in the person's theme colour.
+"""Build 384.98: the new dot is a small lit flare in the person's theme colour.
 Madison: "The yellow dot for the notification, doesn't match the theme, it should almost look a little like the secret flare.."
 
 Every place the dot appears - the Profile tab, the class button, Profile's rows (Customize, the badge case, the rank), Customize's
@@ -108,7 +108,7 @@ def visit(pg, name, js):
     clear(pg); pg.wait_for_timeout(150)
 
 # Every dot on the screen, whichever way a build draws it: a .new-dot element (its body is its ::after when it has one, else
-# itself), the Profile tab icon's ::after, the class button's ::after (384.92) or its .new-dot child (384.96).
+# itself), the Profile tab icon's ::after, the class button's ::after (384.92) or its .new-dot child (384.98).
 DOTS = r"""(screen)=>{ const out=[]; const px=v=>parseFloat(v)||0; const seen={};
   const keyOf=h=>{ let k=h.id?('#'+h.id):(((typeof h.className==='string')?h.className:((h.className&&h.className.baseVal)||'')).trim().split(/\s+/)[0]||h.tagName.toLowerCase());
     seen[k]=(seen[k]||0)+1; return screen+':'+k+'#'+seen[k]; };

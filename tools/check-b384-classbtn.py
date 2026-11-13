@@ -1,10 +1,10 @@
-"""Build 384.96 (was 384.94): the class button is option A, the lit ring - exactly the one Madison saw.
+"""Build 384.98 (was 384.94): the class button is option A, the lit ring - exactly the one Madison saw.
 Madison, shown three looks behind ?classbtn=a|b|c (branch claude/b384-classbtn, 5f85d51): "Option c for the class thing." (384.94,
-the medallion), and then, with C live: "I don't like the class button after all. Try option a, the lit ring." (384.96)
+the medallion), and then, with C live: "I don't like the class button after all. Try option a, the lit ring." (384.98)
 
   K1  the button on Home, both classes, on an iPhone 17 Pro Max (installed), an iPad Pro 11" and a laptop, is pixel for pixel the
       preview he saw (5f85d51 loaded with ?classbtn=a): the same ring, glow, rim and mark (mean channel difference under 1.0, no
-      pixel more than 24 out - antialiasing only). Reduce motion on both, so nothing behind it moves. The new dot (384.96, a
+      pixel more than 24 out - antialiasing only). Reduce motion on both, so nothing behind it moves. The new dot (384.98, a
       .new-dot child of the button while the class list has something new) is hidden by rule on both sides, as is the old one
       (the button's ::after), so this compares the button and not the dot.
   K1b the same with the button's "something new" state on, on both sides (the 329 ring round it, still under Reduce motion), the
@@ -56,7 +56,7 @@ def load(br, dev, cls, pick=False, query=""):
     # (a rule, not a removal: it can open after any one moment the harness picks, as it did on the laptop)
     pg.add_style_tag(content="#intro-pop, .intro-pop{ display:none !important; }"); pg.wait_for_timeout(400)
     return pg
-# the new dot (384.96) and the old one (the button's ::after) off, by rule, on both sides: the button is compared, not the dot
+# the new dot (384.98) and the old one (the button's ::after) off, by rule, on both sides: the button is compared, not the dot
 # (specific enough to beat both builds' own "has-new" rules for the dot, which are !important too)
 NODOT = ("html body .class-bubble-wrap.class-bubble-wrap .class-bubble.class-bubble > .new-dot, "
          "html body .class-bubble-wrap.class-bubble-wrap .class-bubble.class-bubble::after{ display:none !important; }")
