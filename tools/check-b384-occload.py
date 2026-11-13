@@ -23,7 +23,7 @@ WHAT IT HOLDS (this build's index.html + ifc/bank.js + ifc/ifc-viewer.js against
         that factor (the stem's gross / net the same), a calculation's key is the stem's area over it, a bench / booth one the stem's
         length over the book's inches;
    (2c) each renders as ONE picture in the code box (the app's own kit paint) with exactly one lit band: a row question's gold runs from
-        the table's left border to its right border (within 3 px at 2x) on the row asked about and nowhere else; a section question's on
+        the table's left border to its right border (within 1.2 pt: it stops one rule's width inside) on the row asked about and nowhere else; a section question's on
         its one sentence; the row's label and its factor stand on the strong gold in the code box and on the whole page;
    (2d) the app's own check of the book (verifyCopy, every new reference) finds every one where the bank says.
  (3) IDENTITY: every one of BASE's questions keeps its exact key (chapter | position | wording), all keys unique; the new ones take
@@ -326,15 +326,16 @@ else:
         bd = p["bands"][0]
         if q["citation"].get("row"):
             fr = p["frame"]
-            if not fr or abs(bd["gx0"] - fr[0]) > 3 or abs(bd["gx1"] - fr[1]) > 3: badpic.append((i, "the row's gold %s..%s, the table %s" % (bd["gx0"], bd["gx1"], fr))); continue
-            rows_read.append(max(abs(bd["gx0"] - fr[0]), abs(bd["gx1"] - fr[1])))
+            off = max(abs(bd["gx0"] - fr[0]), abs(bd["gx1"] - fr[1])) / p["s"] if fr else 99      # in points: the gold stops one rule's width inside the border
+            if off > 1.2: badpic.append((i, "the row's gold %s..%s px, the table %s (%.1f pt off)" % (bd["gx0"], bd["gx1"], fr, off))); continue
+            rows_read.append(round(off, 2))
             sh = shares.get(i) or {}
             for v in ("clip", "page"):
                 ws = (sh.get(v) or {}).get("words") or []
                 for lab in ("label", "value"):
                     best = max([w["share"] for w in ws if w["label"] == lab] or [0])
                     if best < 0.6: badpic.append((i, v, lab, round(best, 2)))
-    chk("(2c) each new question is ONE picture in the code box with ONE lit band: a row question's gold runs from the table's left border to its right (%d rows, worst %s px at 2x), its label and factor on the strong gold in the code box and on the whole page; a section question's on its one sentence" % (
+    chk("(2c) each new question is ONE picture in the code box with ONE lit band: a row question's gold runs from the table's left border to its right (%d rows, worst %s pt inside the border, one rule's width), its label and factor on the strong gold in the code box and on the whole page; a section question's on its one sentence" % (
         len(rows_read), max(rows_read or [None])), not badpic and len(rows_read) == sum(1 for i in NEW if i in nq and nq[i]["citation"].get("row")), badpic[:6])
     chk("(2d) the app's own check of the book (verifyCopy, all %d new references): %s, none differs (%s)" % (ver["n"], ver["level"], ver["differences"][:4] or "none"),
         ver["n"] == len(NEW) and ver["level"] == "exact" and not ver["differences"], ver)
