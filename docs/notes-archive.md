@@ -39345,3 +39345,26 @@ Chromium cannot draw it; the fix (the card under every boundary) is measured her
   clean on the rerun - timing under load, neither on the board); sweep-layout --quick 20/20 clean; check-b384-top383 ALL PASS;
   check-b384-hairlines ALL PASS; check-b382-ios (3) passes (fails on main 384.89 as changed), (4) "the top three are the list's
   first rows" fails identically on main 384.89 (its fixture has no .rank-podium-2 row), not from this.
+
+### 384.93 (casescroll): a finger on the badge case scrolls the page; every grid of small controls the same
+
+Madison: "When looking at the badge case, you can't use the case to scroll up and down."
+
+**Cause.** On an iPhone NovaSound lays a native `<input type=checkbox switch>` over each small control (the only way a page gets the Taptic
+tick), and WebKit gives a touch that starts on a native switch to the switch: the page does not pan. Every badge slot is a small button
+(`.badge-tile.ncase-cell`), so each took one. Read on main 384.92 as an iPhone: all 24 slots of the academy case and all 58 of Fire Code's
+were switches (47% of Fire Code's Badges screen), and the same wall stood on Customize > Character (26 characters, 23% of the screen) and the
+theme swatches. The calendar's month was the first of these (327z12) and was fixed by hand (`data-hsw-soft`, labels instead); the badge
+case was never marked.
+
+**Fix.** A rule rather than another mark: `hswInGrid(h)` - a control repeated `HSW_GRID_N` (6) or more times beside its own kind (same first
+class), or sitting in a cell that is - counts as soft in `hswMode`, so it gets the LABEL (`.nova-hlb`, its 1px switch out of a finger's
+reach): a finger on it scrolls the page, a tap still clicks the switch (the tick) and the control. `HSW_ALWAYS` (the planet system, an
+answer, a tab) and the mode cards are judged before it and keep their switches. And every Customize grid (`buildCustomizeGroup`) carries
+`data-hsw-soft` whatever its size, so a group of four characters does not keep switches beside a group of seven that lost them.
+
+**Gate.** NEW `tools/check-b384-casescroll.py` (Pro Max installed + SE, both classes): S1 every slot of the case lands on its own label;
+S2 every character and swatch the same; S3 no 150px band of 18 scrolling screens is more than 30% native switch (scrolled top to bottom,
+fixed chrome left out); S4 a tap on a badge opens its card, clicks once and toggles its label's switch, a character and a swatch still
+select; S5 a drag from the case scrolls (passes on both builds - Chromium does not hand a touch to a switch, which is why only S1-S3 can see
+the bug). Only a phone can confirm the scroll itself.

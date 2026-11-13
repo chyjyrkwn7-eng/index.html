@@ -91178,6 +91178,24 @@ const NovaSound = (function(){
     for(const sib of par.children){ if(sib.classList && sib.classList.contains(c) && ++n >= 2) return true; }
     return false;
   };
+  /* ...AND A GRID OF SMALL ONES IS A WALL TOO (384.93). Madison: "When looking at the badge case, you can't use the case to
+     scroll up and down." Each slot is a small button, so each took a native switch: 24 in the academy's case, 58 in Fire
+     Code's, laid edge to edge - a finger that lands on one drags the switch, not the page (WebKit gives a touch on a switch to
+     the switch). Read on main 384.92: 47% of Fire Code's Badges screen and 23% of Customize > Character (26 characters) were
+     switch, the theme swatches the same. The calendar's month was the first of these (327z12, data-hsw-soft); this is the
+     rule for all of them, so a grid added later is covered without anyone knowing it: a control repeated HSW_GRID_N or more
+     times beside its own kind (the same first class), or sitting in a cell that is, gets the LABEL instead (hswMode) - a
+     finger on a label scrolls the page, and a tap on it still ticks. The planet system, an answer and a tab are HSW_ALWAYS
+     and never reach this; a mode card is judged before it. */
+  const HSW_GRID_N = 6;
+  const hswRepeated = e => {
+    const c = e && e.classList ? e.classList[0] : null, par = e && e.parentElement;
+    if(!c || !par) return false;
+    let n = 0;
+    for(const sib of par.children){ if(sib.classList && sib.classList.contains(c) && ++n >= HSW_GRID_N) return true; }
+    return false;
+  };
+  const hswInGrid = h => hswRepeated(h) || hswRepeated(h.parentElement);
   const hswTooBig = h => h.offsetHeight > HSW_MAX_H
     || (h.offsetWidth > HSW_MAX_W && !(h.offsetHeight <= HSW_WIDE_H && h.matches("button, [role='button']") && !hswListRow(h)));
   /* THE SWITCH ROWS' OWN INPUT IS THE SWITCH (build 327z10). A .opt row (every
@@ -91236,7 +91254,7 @@ const NovaSound = (function(){
     if(h.matches(".modecard")) return h.querySelector(HLB_INNER) ? 1 : 3;
     if(h.matches(HSW_ALWAYS)) return 1;
     /* a grid of small controls a page is scrolled by (the calendar's month): labels, never switches */
-    const soft = !!h.closest("[data-hsw-soft]");
+    const soft = !!h.closest("[data-hsw-soft]") || hswInGrid(h);
     if(!soft && hswOk(h)) return 1;
     /* too big or too many for a switch: a label - unless something inside it answers taps of its own (the label
        would cover it), or it submits a form (a label's click is not a button's) */
@@ -122783,7 +122801,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.92";
+const APP_BUILD = "2026-11-13-384.93";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -151131,6 +151149,10 @@ function buildCustomizeGroup(key, title, note, have, total, gridClass, titleClas
   head.appendChild(c);
   const grid = document.createElement("div");
   grid.className = gridClass;
+  /* (384.93) A GRID YOU SCROLL BY: labels, never switches (see NovaSound hswInGrid). Each group is its own grid, and a group
+     of four or five would have kept its switches beside one of seven that lost them - one page of characters that a finger
+     scrolls by in some rows and not in others. Every Customize grid is soft, whatever its size; a tap still ticks. */
+  grid.setAttribute("data-hsw-soft", "");
   card.append(head, grid);
   return { card, grid, head };
 }
