@@ -5,8 +5,8 @@ laptop (1440x900):
 (2) the board switch is a segmented control: one track, its segments side by side in one row, each >= 44px tall, the track spans
     most of the column (>= 80% of the rows' width), no frost on it;
 (3) the list is grouped (383: from FIRST place down - "why is the top 3 disconnected from the rest"): the rows touch (no gap between neighbours), only the group's first row has top
-    corners and only its last bottom corners, a hairline (::after, 1px) under every row but the last, starting right of the row's
-    left edge (inset to the name), every row >= 44px, and no row carries a backdrop-filter;
+    corners and only its last bottom corners, a hairline (::after, 1px) under every row but the last, starting at the row's inner
+    left edge (384.92: across the card; it was inset to the name), every row >= 44px, and no row carries a backdrop-filter;
 (4) (383) the top three are the list's first rows: no gap under them, no bottom corners;
 (5) the search field and Find me are each >= 44px tall, the placeholder at the left beside the magnifier (383, Madison: "The
     word search shouldn't be centered, it should be centered left" - replacing 381's centring);
@@ -79,7 +79,9 @@ with sync_playwright() as pw:
         s = b["seg"]
         chk("%s board: the switch is a segmented control - one row %s, segments %s tall, %s of the rows' width, frost %s" % (dev, s and s["tops"], s and s["hs"], s and s["span"], s and s["blur"]),
             s and len(s["tops"]) >= 3 and max(s["tops"]) - min(s["tops"]) <= 1 and min(s["hs"]) >= 44 and s["span"] >= .8 and s["blur"] == "none", s)
-        hair_ok = all(x["on"] and x["h"] >= .5 and x["l"] > 8 for x in b["hair"][:-1]) if len(b["hair"]) > 1 else False
+        # CHANGED ON PURPOSE IN 384.92: the line under each row runs across the card from its inner left edge (left 0), no longer
+        # inset to the name - Madison, "why are there weird lines? Fix that" (check-b384-lbclean measures it)
+        hair_ok = all(x["on"] and x["h"] >= .5 and abs(x["l"]) <= 1 for x in b["hair"][:-1]) if len(b["hair"]) > 1 else False
         corner_ok = len(b["corners"]) > 2 and b["corners"][0][0] >= 12 and all(c[0] == 0 for c in b["corners"][1:]) and all(c[1] == 0 for c in b["corners"][:-1])
         chk("%s board: the list is grouped - gaps between rows %s, corners %s, hairlines %s, rows >= 44px (%s), blurred rows %d" % (dev, b["gaps"][:6], b["corners"][:4], b["hair"][:3], round(b["hmin"], 1), b["blur"]),
             b["gaps"] and max(abs(x) for x in b["gaps"]) <= 0.6 and corner_ok and hair_ok and b["hmin"] >= 44 and b["blur"] == 0, b)

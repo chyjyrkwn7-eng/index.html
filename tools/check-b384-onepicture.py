@@ -206,13 +206,28 @@ window.__gold = function(D, W, H, s){
     if(T.em < 6 * s || B.em < 6 * s){ rec.skip = 'no line of print read under an edge (under 6pt)'; out.push(rec); continue; }
     /* a block over more lines than this part of it holds (a table row's cell whose words are on one of the row's lines) */
     if((c.y1 - c.y0 + 1) - (B.b - T.a + 1) > 0.9 * T.em){ rec.skip = 'part of a row block: its words on one of the row\'s lines'; out.push(rec); continue; }
+    /* (384.71) A STACKED FRACTION is not a line of letters: a raised figure, a slash and a lowered figure ("1/32": the book prints the table's answer 1 over to the left, 32 set down to the right).
+       Its ink is 1.05 em tall, so the em read off its height (asc / 0.68) is 1.5 times too big, and a figure line is given a descender's room (0.2 em of that em) it does not have: the
+       gold was measured 3.4px "inside" the ink it stands 6px clear of. It is read by its own ink: the room over the first row of print and under the last, in the picture's pixels
+       (the ink's top rows lean left of its bottom rows by a fifth of its width or more, in a box no wider than 1.6 times its height: no line of words is) */
+    let frac = false;
+    if(lines.length === 1){
+      const hh = T.b - T.a + 1, cut = Math.max(1, Math.round(0.3 * hh)); let sT = 0, nT = 0, sB = 0, nB = 0, i0 = 1e9, i1 = -1;
+      for(let y = T.a; y <= T.b; y++) for(let x = c.x0; x <= c.x1; x++){
+        if(rcol(x) || !ink((y * W + x) * 4)) continue;
+        if(x < i0) i0 = x; if(x > i1) i1 = x;
+        if(y < T.a + cut){ sT += x; nT++; } if(y > T.b - cut){ sB += x; nB++; }
+      }
+      frac = nT > 0 && nB > 0 && i1 >= i0 && (sB / nB - sT / nT) >= 0.2 * (i1 - i0 + 1) && (i1 - i0 + 1) <= 1.6 * hh;
+    }
     const above = T.a - c.y0;
-    const inkBot = B.desc ? B.b + 1 : B.base + 1 + 0.2 * B.em;
+    const inkBot = frac ? B.b + 1 : (B.desc ? B.b + 1 : B.base + 1 + 0.2 * B.em);
     const below = c.y1 + 1 - inkBot;
-    rec.above = +above.toFixed(2); rec.below = +below.toFixed(2); rec.em = +T.em.toFixed(1); rec.viaFont = !B.desc; rec.lines = lines.length;
+    const emUse = frac ? (T.b - T.a + 1) / 1.05 : T.em;
+    rec.above = +above.toFixed(2); rec.below = +below.toFixed(2); rec.em = +emUse.toFixed(1); rec.viaFont = !B.desc; rec.lines = lines.length; rec.frac = frac;
     if(!T.tall){ rec.skip = 'no tall letter in the top line'; out.push(rec); continue; }
     rec.diff = +(below - above).toFixed(2);
-    rec.tol = +(1.5 + 0.04 * T.em).toFixed(2);
+    rec.tol = +(1.5 + 0.04 * emUse).toFixed(2);
     rec.ok = Math.abs(rec.diff) <= rec.tol;
     out.push(rec);
   }

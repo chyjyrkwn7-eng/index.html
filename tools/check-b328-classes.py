@@ -60,7 +60,7 @@ with sync_playwright() as pw:
         chk("Home shows with the flame bubble", st["home"] and "is-ifc" in (st["icon"] or ""), st)
         # (384, kit 5.4.2) the bank's own count, read off it (Madison's update: "do not hard-code" - 1,812 in 5.4.2)
         bank_n = page.evaluate("()=>window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount")
-        chk("Fire Code's own bank is loaded: %s questions, the bank's own count (%s; kit 5.4.2 has 1,812; 384.47 took 17 out: 1,795)" % (st["q"], bank_n), st["q"] == bank_n and st["q"] >= 1795, [st["q"], bank_n])
+        chk("Fire Code's own bank is loaded: %s questions, the bank's own count (%s; kit 5.4.2 has 1,812; 384.47 took 17 out: 1,795; 384.73 three more: 1,792)" % (st["q"], bank_n), st["q"] == bank_n and st["q"] >= 1792, [st["q"], bank_n])
         # the academy's copy, untouched (read raw, past the shim)
         raw = page.evaluate("""()=>{ const k='class26e.drill.v1'; const n=localStorage.length; for(let i=0;i<n;i++){ if(localStorage.key(i)===k) return localStorage[k]; } return null; }""")
         chk("academy's saved copy byte-for-byte unchanged", raw==before)

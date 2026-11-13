@@ -946,7 +946,7 @@ ADD_COUNTERS = ("vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3",
 MAX_FIELDS = ("dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak",
               "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest",
               "dayAnsweredBest", "friendsBest")
-UNION_LISTS = ("vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "retakenKeys")
+UNION_LISTS = ("vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "weekWinLost", "retakenKeys")
 OR_FLAGS = ("practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed",
             "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324")
 TEST_HISTORY_MAX = 50                    # TEST_HISTORY_MAX in index.html
@@ -1166,6 +1166,17 @@ def merge_leaving_account(dst, src, note=None, now_ms=0, week_key=None, hold_set
     hist = list(dst.get("testHistory") or []) + list(src.get("testHistory") or [])
     hist.sort(key=lambda h: -_num(h.get("playedAt") if isinstance(h, dict) else 0))
     dst["testHistory"] = hist[:TEST_HISTORY_MAX]
+    # (384.51) the wins no listed week backs are summed with the wins, before they are (the app's mergeLeavingAccount)
+    def _wb(o):
+        if isinstance(o.get("weekWinBase"), (int, float)) and not isinstance(o.get("weekWinBase"), bool):
+            return o["weekWinBase"]
+        return max(0, _num(o.get("weeklyWins")) - len({w for w in (o.get("weekWinWeeks") or []) if isinstance(w, str)}))
+    dst["weekWinBase"] = _wb(dst) + _wb(src)
+    if isinstance(src.get("weekWinPts"), dict) or isinstance(dst.get("weekWinPts"), dict):
+        wp = dst["weekWinPts"] = dict(dst.get("weekWinPts") or {})
+        for w, v in (src.get("weekWinPts") or {}).items():
+            if _num(v) > _num(wp.get(w)):
+                wp[w] = _num(v)
     for k in ADD_COUNTERS:
         dst[k] = _num(dst.get(k)) + _num(src.get(k))
     for k in MAX_FIELDS:
@@ -1910,7 +1921,11 @@ UNIT_QUESTIONS = {
 }
 # build 328: "anything at 15 goes to 10. 12 will go to 8 and so on"
 BADGE_BANDS = [(25, 10), (50, 8), (100, 6), (200, 3), (float("inf"), 2)]
-RANKS = [(21, 1), (30, 3), (40, 5), (50, 7), (60, 9), (70, 12), (80, 14)]
+# 384.88: Amethyst 16 and Supernova 25 badges (were 12 and 14). RANKS_PREV is the ladder before, for the
+# rank floor the app keeps from it (academyLadderMigrate38488) on a copy without academyLadderRule.
+RANKS = [(21, 1), (30, 3), (40, 5), (50, 7), (60, 9), (70, 16), (80, 25)]
+RANKS_PREV = [(21, 1), (30, 3), (40, 5), (50, 7), (60, 9), (70, 12), (80, 14)]
+ACADEMY_LADDER_RULE = 38488
 
 
 def badge_threshold(unit):
@@ -1924,12 +1939,12 @@ def badges_of(f):
     return sum(1 for u in UNIT_QUESTIONS if (up.get(u) or 0) >= badge_threshold(u))
 
 
-def badge_wall(badges, rank_floor=0):
+def badge_wall(badges, rank_floor=0, ranks=None):
     """badgeWallLevel() (build 325): the level of the next rank you do not
     hold - the first rank from the one past rank_floor whose badges you do
-    not have. 0 badges caps at 21, 1-2 at 30, 3-4 at 40 ... 12 or more at
-    the cap."""
-    for lv, b in RANKS[max(0, int(rank_floor or 0)):]:
+    not have. 0 badges caps at 21, 1-2 at 30, 3-4 at 40 ... 25 or more at
+    the cap (384.88; 14 before)."""
+    for lv, b in (ranks or RANKS)[max(0, int(rank_floor or 0)):]:
         if badges < b:
             return min(LEVEL_CAP, lv)
     return LEVEL_CAP
@@ -1956,6 +1971,14 @@ def effective_level(f):
     rf = f.get("rankFloor")
     rf = int(rf) if isinstance(rf, (int, float)) else 0
     b, curve = badges_of(f), level_of(pts)
+    # 384.88: a copy the app has not loaded since keeps the rank it held on
+    # the previous ladder as its rank floor (academyLadderMigrate38488)
+    if pts > 0 and not (isinstance(f.get("academyLadderRule"), (int, float)) and f.get("academyLadderRule") >= ACADEMY_LADDER_RULE):
+        lv_prev = min(curve, max(badge_wall(b, rf, RANKS_PREV), fl), LEVEL_CAP)
+        held = 0
+        for i, (lv, need) in enumerate(RANKS_PREV):
+            if lv_prev >= lv and b >= need: held = i + 1
+        rf = max(rf, held)
     rule = f.get("levelWallRule")
     # 327: no grandfather floor (the app's LEVEL_WALL_NO_GRANDFATHER) - the
     # branch below is kept only so the tool can be set back with the app.

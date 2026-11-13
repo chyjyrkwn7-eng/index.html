@@ -264,7 +264,7 @@ def measure_cand(c, A1, A2, B, C, dpr, org):
     if not parts: return {"empty": True}
     L = min(p[0] for p in parts); T = min(p[1] for p in parts); Rr = max(p[2] for p in parts); Bb = max(p[3] for p in parts)
     # the shape is drawn on the device's pixel grid (its edges rounded to device pixels), so it is compared as drawn
-    q = lambda v: round(v * dpr) / dpr
+    q = lambda v: math.floor(v * dpr + .5) / dpr    # (half a device pixel rounds UP, as the browser snaps it: Python's round() takes 2980.5 to 2980 and read a disc at x 993.5 a third of a pixel off)
     gl, gr, gt, gb = L - q(S["l"]), q(S["r"]) - Rr, T - q(S["t"]), q(S["b"]) - Bb
     if SHOTS:
         c["_crop"] = (A1[sl].astype(np.uint8), C[sl].astype(np.uint8), (x0, y0), [L, T, Rr, Bb])
@@ -291,6 +291,7 @@ def tol_for(c):
     # CENTER_TOL_SCALE=.6 asks for .3px (.6 for a wide shape): a tighter look for what a person can see but .5px lets through (384 r4:
     # every Settings icon leaned .38px right and the gate, at .5, passed them all)
     k = float(os.environ.get("CENTER_TOL_SCALE", "1"))
+    if c.get("tol"): return k * c["tol"]            # (384.71) a candidate that asks for its own: the mode tiles' arrow discs, 0.3px
     return k * (1.0 if (c["S"]["r"] - c["S"]["l"]) > 120 else 0.5)
 
 def batches(cands):
@@ -623,6 +624,18 @@ if __name__ == "__main__":
             os.makedirs(SHOTS, exist_ok=True)
             save_crop(r, os.path.join(SHOTS, re.sub(r"[^\w.@-]+", "_", "%s_%s_%s" % (r["tag"], r["name"], r["txt"]))[:150] + ".png"))
     measured = [r for r in rows if r.get("m") and "dx" in r["m"]]
+    # (384.71) THE MODE TILES' ARROWS ARE MEASURED, and a run that never found them is a failure, not a pass: Choose your mode has four tiles in the academy and three in Fire Code,
+    # the Virtual Room's Host / Join two in both - each tile's arrow disc is a candidate of its own (check-centering.js), held to 0.3px
+    uncovered = []
+    for scr, want in (("modes", {"academy": 4, "ifc": 3}), ("virtual room", {"academy": 2, "ifc": 2})):
+        if ONLY and not ONLY.search(scr): continue
+        for d in DEVICES:
+            for cl in CLASSES:
+                got = sum(1 for r in rows if r["name"].startswith("modecard::after") and [r["tag"].split("|")[0], r["tag"].split("|")[1], r["tag"].split("|")[2].split("@")[0]] == [d[0], cl, scr] and r.get("m") and "dx" in r["m"])
+                if got < want[cl]: uncovered.append("%s / %s / %s: %d of %d arrows measured" % (d[0], cl, scr, got, want[cl]))
+    if uncovered:
+        complete = False
+        print("\nMODE ARROWS NOT MEASURED:\n  " + "\n  ".join(uncovered))
     print("Centring by the ink: %d elements measured on %d screens (%s; %s)" % (
         len(measured), len({r["tag"].split("@")[0] for r in rows}), ", ".join(d[0] for d in DEVICES), " and ".join(CLASSES)))
     if fails:

@@ -62,10 +62,28 @@
      own top colour, changed IN PLACE (syncTopGuard) - never removed, never replaced. iOS 26/27 reports (folio #1026) say the system's top blur
      latches on the first time the top-edge element or the theme-color / color-scheme tags change after launch. .top-edge-old is the old
      behaviour (a new strip each colour, the tags rewritten) for the display test's A/B; .top-edge-none makes the strip ignore touch. */
+  /* (384.80) ONE SOLID STRIP OVER THE STATUS BAR'S AREA, AND NOTHING ELSE THERE. What WebKit tints the status bar from (and, reported in
+     production on iOS 26/27 by r/PWA developers, what removes the system's top blur) is a REAL fixed element at the very top - within 4px
+     of it, at least 80% of the width, over 4px tall (6px and up) - with a SOLID background-colour: not a gradient, not an image, not a
+     pseudo-element, not transparent. 384.77 had two (#top-edge 12px, #top-safe the inset) carrying the sky's gradients over their colour.
+     Now there is #top-edge alone: the whole safe area (6px where there is none), pointer-events:none so taps go through, over the
+     page and everything else (z 2147483647, as the r/PWA element; it holds the status bar's area only) - one inline opaque colour (the splash's #0A0A0A, then the
+     colour of the screen's top: the sky's at the top edge, the paper under a question's header), recoloured in place by syncTopGuard,
+     never removed, never replaced, never transparent. The sky no longer shows behind the clock: that area is one solid colour. */
   #top-edge{ display:none; }
-  html.top-edge-on:not(.top-edge-old) #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:12px; z-index:2147483000;
-    background-color:var(--splash-bg,#0A0A0A); transition:background-color .6s ease; pointer-events:auto; }
-  html.top-edge-on.top-edge-none:not(.top-edge-old) #top-edge{ pointer-events:none; }
+  html.top-edge-on:not(.top-edge-old) #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:max(env(safe-area-inset-top, 0px), 6px); z-index:2147483647;
+    background-image:none; pointer-events:none; }
+  /* (384.80) the display test's "clip" (class26e.topclip; r/PWA "A quick workaround for the iOS 27 status bar/header blur glitch", a commenter's
+     element others confirmed): the same strip 11px tall with background-clip:text - its background-colour is still set, so WebKit samples it,
+     but it paints nothing, so the page shows under the clock as before */
+  html.top-edge-on.top-clip:not(.top-edge-old) #top-edge{ height:11px; -webkit-background-clip:text; background-clip:text; }
+  #top-safe{ display:none !important; }   /* (384.80) folded into #top-edge; the id is gone from the markup */
+  html.top-383 #top-edge{ display:none !important; }
+  /* variant B: a flat backdrop under the wash's measured depth (~46pt below the inset on his recording, +16px soft foot), BEHIND the content */
+  #top-deep{ display:none; }
+  html.top-edge-on.top-deep:not(.top-edge-old):not(.top-383) #top-deep{ display:block; position:fixed; top:0; left:0; right:0; height:calc(env(safe-area-inset-top, 0px) + 62px); z-index:-1;
+    pointer-events:none; background-color:var(--splash-bg,#0A0A0A);
+    -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image:linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
 </style>
 <script>
   /* INTERNET EXPLORER (build 384). Nova cannot run in it (custom properties, color-mix(), modern script throughout), and
@@ -491,7 +509,12 @@
         te.add("top-edge-on");
         if(localStorage.getItem("class26e.topedgeold") === "1") te.add("top-edge-old");
         if(localStorage.getItem("class26e.topedgepe") === "none") te.add("top-edge-none");
-        if(localStorage.getItem("class26e.topclear") === "0") te.add("top-clear-off");   /* (384.54) the clearance under the system's wash: off */
+        /* (384.77) the in-place variants for the system's top wash, tried on the EXISTING icon from the display test (no re-add): flags read
+           here, before the first paint, kept until the panel's All off. docs/notes-archive.md "384.77". */
+        if(localStorage.getItem("class26e.topmatch") === "1") te.add("top-match");     /* A: the strips in the colour the wash makes of the page */
+        if(localStorage.getItem("class26e.topdeep") === "1") te.add("top-deep");       /* B: a flat backdrop under the wash's whole depth, behind the content */
+        if(localStorage.getItem("class26e.top383") === "1") te.add("top-383");         /* C: build 383 exactly - no strips, the tags rewritten as 383 did */
+        if(localStorage.getItem("class26e.topclip") === "1") te.add("top-clip");       /* (384.80) clip: the strip sampled but painting nothing */
       }
     }
     if(!inApp){
@@ -688,7 +711,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 </head>
 <body>
-<div id="top-edge" aria-hidden="true"></div>
+<div id="top-edge" aria-hidden="true" style="background-color:#0A0A0A"></div>
+<div id="top-deep" aria-hidden="true"></div>
 
 <div id="splashscreen">
   <div id="splash-group">
@@ -1470,23 +1494,8 @@
      page's reservation for the bar gives that much back, so screens end
      the same distance above the bar as before rather than further off. */
   :root{ --tabs-drop: calc(.6rem + env(safe-area-inset-bottom, 0px) - var(--tabs-bottom)); }
-  /* (384.54) THE TOP OF THE SCREEN IS TWO THINGS, NOT ONE: the status bar, and the soft wash the system draws under it. In an installed
-     iPhone app with `black-translucent` iOS 26 draws a fade over the top ~100pt (his Home, Drill and paused screenshots: the title
-     "Drill", "8/8" and Pause are blurred to nothing at 62-99pt, the chat button faded, and the effect ends level with the bottom of
-     that row; CSS cannot remove it - docs/notes-archive.md "384.54"). Every header, title and button sat at the safe-area line, i.e.
-     inside it. So the line every CSS `top`/padding clears is now --sat: the notch plus --edge-extra, the depth of that wash. It is
-     written in points on the glass (x --zc: his page is laid out 518px wide on a 440pt screen, so a CSS px is 0.85pt), only in an
-     installed iPhone held upright (html.top-edge-on is the head script's "installed iOS"; a Safari tab, an iPad, a laptop, Android
-     and a phone on its side keep --sat = env() exactly), and only on a phone with a notch or island (inset > 30px: an SE-sized phone
-     has no room to give and a shorter status bar). `class26e.topclear = "0"` puts it back (html.top-clear-off). Everything that
-     measures itself against the old line does it through --sat (63 places), so --pad-inset-top below still collapses to its old value. */
-  :root{ --sat: env(safe-area-inset-top, 0px); --edge-extra: 0px; }
-  @media (orientation:portrait) and (max-width:39.99rem){
-    html.top-edge-on:not(.top-clear-off){
-      --edge-extra: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 42px) * var(--zc, 1));
-      --sat: calc(env(safe-area-inset-top, 0px) + var(--edge-extra));
-    }
-  }
+  /* (384.77) --sat is exactly env(safe-area-inset-top), what build 383 wrote in every one of these places (384.54's 42pt clearance is gone) */
+  :root{ --sat: env(safe-area-inset-top, 0px); }
   :root{
     --pad-inset-top: max(0px, var(--sat) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
@@ -6813,11 +6822,7 @@
   .screen-rankings .rank-row .lb-rank-1{ box-shadow:0 2px 10px rgba(214,160,40,.45), inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.55), inset 0 1px 0 rgba(255,255,255,.6); }
   .screen-rankings .rank-row .lb-rank-2{ box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.5), inset 0 1px 0 rgba(255,255,255,.6); }
   .screen-rankings .rank-row .lb-rank-3{ box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.45), inset 0 1px 0 rgba(255,255,255,.45); }
-  /* the crown, set on first place's medal */
-  .lb-crown{ position:absolute; left:50%; bottom:calc(100% - .18rem); width:1.2rem; height:.8rem; translate:-50% 0; rotate:0deg;
-    pointer-events:none; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55)) drop-shadow(0 0 4px rgba(255,205,90,.45)); }
-  .lb-crown svg{ display:block; width:100%; height:100%; overflow:visible; }
-  @media (min-width:40rem){ .lb-crown{ width:1.4rem; height:.93rem; } }
+  /* (384.92) no crown on first place's medal - Madison: "No crown." The gold 1 medal is the whole mark (renderRankingRows). */
   /* Your own row keeps its accent ring even on the podium - being
      first should not cost you the ability to find yourself. Stated
      after the podium rules so it wins on source order. */
@@ -13545,7 +13550,7 @@
   .wrap.test-pinned.race-pinned > #vroomracebar{ position:fixed; margin:0; z-index:141; box-sizing:border-box; isolation:isolate; }
   [data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{
     bottom:calc(-1 * var(--test-race-h, 0px));
-    background:color-mix(in srgb, var(--paper) 96%, transparent);
+    background:var(--paper);   /* (384.80) opaque, as the header's own (was 96%) */
   }
   .wrap.test-pinned.race-pinned > #vroomracebar::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
@@ -13558,9 +13563,11 @@
   [data-layout="modern"] .wrap.test-pinned > .top::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
     top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
+    /* (384.80) OPAQUE: the strip over the status bar's area is solid paper on a question, and the header under it is the same solid paper
+       (it was 97% / 95%) down to where it fades, so the two read as one colour */
     background:linear-gradient(to bottom,
-      color-mix(in srgb, var(--paper) 97%, transparent) 0%,
-      color-mix(in srgb, var(--paper) 95%, transparent) 70%,
+      var(--paper) 0%,
+      var(--paper) 70%,
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   .wrap:has(.fc-screen) .top .test-qcounter,
@@ -34303,6 +34310,19 @@
      extend. Made by refreshEdgeTints() once the splash has gone (see
      there: Safari reads a strip only when it appears). */
 html.is-browser{ overscroll-behavior-y:none; }
+/* (384.80) THE INSTALLED APP DOES NOT BOUNCE PAST ITS ENDS EITHER. Madison's 384.77 recording (iPhone 17 Pro Max, installed): pulled
+   down on Home the whole page rubber-banded (the planet system with it) and the tab bar dropped off the foot and came back broken; on a
+   question the pinned header was dragged with the page; on the Pause card the card rode up and down. The rubber band moves the whole
+   document under the fixed chrome, and that is what WebKit gets wrong with fixed layers (384.62). So the root does not overscroll in the
+   app either (a Safari tab has had this since 327z; 384.75 did the same). Normal scrolling and its momentum stay; only the bounce past
+   the top and the bottom goes. Inner scrollers keep their own. */
+/* (384.82) The owner: "the rubber band thing, bring it back... That is vital." The installed app bounces again (as 383 and 384.77);
+   the page lock behind the Pause card and the overlays (below) stays. */
+/* (384.80) THE PAGE BEHIND A CARD IS LOCKED. html.page-locked is set by syncPageLock() while the Pause card (and the screens that share
+   it: Quit's confirmation, a review's pause, a room's leave) fits the screen, or while a full-screen overlay is up on <body>. The root
+   cannot scroll (a script's own scrollTo still can), and pageLockTouch() stops a drag that would move it on iOS; a scroller inside the
+   card or the overlay scrolls as before. overflow:hidden does not move the scroll, so the page is where it was when the card goes. */
+html.page-locked, html.page-locked body{ overflow:hidden; }   /* the unit card's lock (html.unitdetail-lock), the same shape */
 /* THE SKY RUNS UNDER SAFARI'S BARS (build 327z13). "Safari version of the
    app has a bad problem and something that isn't fixed that I've mentioned
    so many times. The boxes at the top and bottom are still there." With
@@ -34395,17 +34415,6 @@ html.vp-stale :is(.bottomtabs, .backtotop, .daily-question-fab, .homeversion, .c
 html.vp-top :is(.wrap.test-pinned > .top, #pausebtn, .update-banner, .daily-alert, .tierup-banner, .battle-alert, .streak-pop){
   margin-top:calc(var(--sb-top-x, 0px) + var(--vp-top, 0px)) !important;
 }
-/* (384.54) IN A BROWSER TAB A TEST'S PINNED HEADER FADES IN FROM THE ROOT'S COLOUR, NOT FROM PAPER. The header's fade is the page's own first
-   rows, and Safari fills the band above the page with the root's colour (--band). Paper at 97% from y=0 left a step between the two: 9 levels
-   at 440x797, (17,21,27) against (26,27,30), a line across the top of every question in a tab. The same fade in --band meets it. The installed
-   app is untouched (its status bar sits over the page, and the strip under it follows the paper: topEdgeStripColor). */
-html.is-browser[data-layout="modern"] .wrap.test-pinned:not(.race-pinned) > .top::before{
-  background:linear-gradient(to bottom,
-    color-mix(in srgb, var(--band, var(--paper)) 97%, transparent) 0%,
-    color-mix(in srgb, var(--band, var(--paper)) 95%, transparent) 70%,
-    color-mix(in srgb, var(--band, var(--paper)) 0%, transparent) 100%);
-}
-html.is-browser[data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{ background:color-mix(in srgb, var(--band, var(--paper)) 96%, transparent); }
 /* and the notices pinned to the bottom sit above the toolbar */
 html.is-browser.safari-bars-over :is(.toast, .vroom-prep){ margin-bottom:calc(var(--sb-bottom-x) + 8px); }
 /* Welcome is measured to end just over the home indicator (its hint, --pad-inset-bottom): it ends that much over the toolbar
@@ -37770,10 +37779,10 @@ html.is-browser{ --fade-paper: transparent; }
     --lb-pad:.9rem; --lb-gap:.65rem; --lb-av:2.5rem; --lb-group-r:18px;
     --lb-cell:linear-gradient(var(--surface-lift), var(--surface-lift)), linear-gradient(var(--surface-1), var(--surface-1)), var(--surface-1);
     --lb-hair:color-mix(in srgb, var(--surface-border) 60%, transparent);
-    --lb-hair-l:calc(var(--lb-pad) + var(--lb-place-w) + var(--lb-gap) + var(--lb-av) + var(--lb-gap));
+    /* (384.92) --lb-cell as a 1px shadow under a row (NO PAGE BETWEEN TWO ROWS, below): the same tokens, resolved here like it */
+    --lb-cell-under:0 1px 0 var(--surface-lift), 0 1px 0 var(--surface-1), 0 1px 0 var(--surface-1);
   }
   @media (max-width:29rem){ .screen-rankings{ --lb-pad:.75rem; --lb-gap:.5rem; --lb-av:2.25rem; } }
-  @media (max-width:24rem){ .screen-rankings{ --lb-hair-l:calc(var(--lb-pad) + var(--lb-place-w) + var(--lb-gap)); } }
   @media (min-width:40rem){ .screen-rankings{ --lb-pad:1.1rem; --lb-gap:.85rem; --lb-av:2.75rem; --lb-group-r:20px; } }
   /* (384) the line between rows is Settings' own: 383's clean look made --surface-border transparent beyond Home, and the board's
      line, mixed from it, went with it - every hairline in the list (and last week's top 3) was there and drawn in nothing */
@@ -37822,7 +37831,7 @@ html.is-browser{ --fade-paper: transparent; }
     color:var(--accent); font-size:.95rem; font-weight:600; letter-spacing:0;
   }
   html[data-layout] body .screen-rankings .rank-tools > .rank-me-btn:active{ opacity:.7; }
-  /* every row: one geometry (the hairline's inset is worked out from it), never a frost */
+  /* every row: one geometry, never a frost */
   html[data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head){
     padding:.45rem var(--lb-pad) !important; gap:var(--lb-gap) !important;
     backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
@@ -37835,7 +37844,8 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .screen-rankings .rank-col-head{
     text-transform:none; letter-spacing:0 !important; font-size:.78rem; font-weight:600; opacity:1 !important; color:var(--soft);
   }
-  /* THE LIST: everyone from fourth down is one grouped card - rows edge to edge, a hairline between them that starts at the name */
+  /* THE LIST: everyone from fourth down is one grouped card - rows edge to edge, a hairline between them across the card
+     (384.92: edge to edge; it started at the name - see ONE LIST FROM FIRST PLACE DOWN below) */
   html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium){
     position:relative; margin:0 !important; border-radius:0 !important;
     background:var(--lb-cell) !important; border:solid var(--surface-border) !important; border-width:0 1px !important;
@@ -37849,7 +37859,7 @@ html.is-browser{ --fade-paper: transparent; }
     border-bottom-width:1px !important; border-bottom-left-radius:var(--lb-group-r) !important; border-bottom-right-radius:var(--lb-group-r) !important;
   }
   html[data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium):not(:last-child)::after{
-    content:""; position:absolute; left:var(--lb-hair-l); right:var(--lb-pad); bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
+    content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
   }
   /* a press lights the row, as a Settings row does (no shrink inside a grouped card) */
   html[data-layout] body .screen-rankings .rank-rows > .rank-row.is-tappable:not(.rank-podium-1, .rank-podium-2, .rank-podium-3):active{ transform:none; }
@@ -37894,6 +37904,9 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head){
     position:relative; margin:0 !important; border-radius:0 !important; box-shadow:none !important;
     border:solid var(--surface-border) !important; border-width:0 1px !important;
+    /* (384.92) the row's paint starts at its outer edge: from the padding box, the podium's light (a radial tile) repeated into
+       the 1px side border - its bright gold/silver/bronze end showed as a lit line down the card's right edge on rows 1-3 */
+    background-origin:border-box !important;
   }
   html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head):first-child,
   html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > :is(:not(.rank-row), .rank-row-head) + .rank-row:not(.rank-row-head){
@@ -37902,8 +37915,26 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head):last-child{
     border-bottom-width:1px !important; border-bottom-left-radius:var(--lb-group-r) !important; border-bottom-right-radius:var(--lb-group-r) !important;
   }
+  /* (384.92) THE LINE BETWEEN ROWS RUNS ACROSS THE CARD. Madison: "why are there weird lines? Fix that". It started at the name
+     (--lb-hair-l) and stopped at the content edge, which suits a list of identical rows but not this one: the podium's tinted
+     rows and your accent-washed row run edge to edge, so a line that stops short of them reads as broken - and on his iPhone a
+     dark seam (below) ran the full width under it. Rendered both ways (a line across the card, and no line at all): without
+     lines the podium's tints and the plain rows blur into one slab, so the line stays and runs from the card's inner left edge
+     to its inner right, one weight and colour everywhere, under every row but the last (none above the first: the card's own
+     edge is there). check-b384-lbclean holds it. */
   html[data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head):not(:last-child)::after{
-    content:""; position:absolute; left:var(--lb-hair-l); right:var(--lb-pad); bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
+    content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
+  }
+  /* (384.92) NO PAGE BETWEEN TWO ROWS. Sampled off his 384.86 screenshot: at every row boundary, the full width of the card,
+     ~1px of nearly the page's own colour (25-31 against the page's 19/21/25 and the rows' 35/37/42) - the page showing through
+     where two rows meet. The rows sit on a fractional y (309.52 in Chromium, from the heights above them) and WebKit softens
+     each row's top and bottom edge there, so the two half-covered pixels at a boundary let the page through (Chromium snaps the
+     rows to whole pixels and never shows it). Each row but the last now paints its own surface 1px past its bottom - the
+     list's cell colour, the lift over the card exactly as --lb-cell stacks it - under the row below, which covers it: nothing
+     moves, and a boundary has the card behind it rather than the page. (Not on a row mid Find-me flash: its ring keeps the
+     box-shadow it had.) */
+  html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head):not(:last-child, .rank-flash){
+    box-shadow:var(--lb-cell-under) !important;
   }
   html[data-layout] body #stage .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3)::before{ display:none !important; }
   /* your row on the podium: the list's accent wash, no ring of its own */
@@ -38248,7 +38279,8 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-theme][data-layout] body #stage .picks > label.pick{ border-radius:var(--ios-group-r); }
   html[data-theme][data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard{ border-radius:var(--ios-group-r); }
-  .screen-rankings{ --lb-cell:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1); --lb-group-r:var(--ios-group-r); }
+  .screen-rankings{ --lb-cell:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1); --lb-group-r:var(--ios-group-r);
+    --lb-cell-under:0 1px 0 var(--ios-card-fill), 0 1px 0 var(--surface-1); /* (384.92) --lb-cell as a 1px shadow: keep the two in step */ }
   html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head){ border-color:transparent !important; }
   /* Profile's switch has no line under it (the board's has its blurb): a little more room above the card */
   html[data-theme][data-layout] body #stage .screen-profile > .navsegment.profiletabs{ margin-bottom:1.1rem; }
@@ -38842,6 +38874,9 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .picks > label.pick > .box{
     box-shadow:0 0 6px 1px color-mix(in srgb, var(--pick-dot) 60%, transparent) !important;
   }
+  /* (384.78) 384.77's flat 383 chat and back buttons beyond Home are OUT again: the owner, on 384.77, "all it did was change the color of the
+     chat button, and now the chat button doesn't match" (and the top wash stayed). The top band's buttons are 384.76's again - see
+     "(384 r17) NOTHING IN THE TOP BAND OF A SCREEN BLURS WHAT IS BEHIND IT", restored below. */
   /* (384) THE CHAT BUTTON IS HOME'S EVERYWHERE, AND THE ROUND BACK BUTTONS MATCH IT. Madison: "The Home Screen, the chat button
      looks good, it looks how it should look, but the chat button changed on like every other screen.. the chat button on home looks
      amazing, revert the chat button it looks like that everywhere still. I think the new back button needs to match it as well."
@@ -39675,7 +39710,9 @@ html.is-browser{ --fade-paper: transparent; }
      bar's glass - backdrop-filter blur(7px) saturate(1.5) - and they are the only blurred elements in the top band of every screen. A
      backdrop blur at the top edge is what iOS answers with its own soft band behind it. So the controls that stand in that band are the same
      glass without the blur (a slightly fuller body so they read on any background); the blur stays on the bottom bar, the search circle and
-     the back-to-top button, which are not at the top edge. */
+     the back-to-top button, which are not at the top edge.
+     (384.78) Back after 384.77 took it out: with it gone Home's chat button and Pause wore 384.1's blurred glass and the chat button
+     beyond Home a flat 383 disc, so the two no longer matched. This is the look every one of them had on 384.70 and 384.76. */
   html[data-theme="dark"][data-layout="modern"] body :is(#chatdock-btn, #stage .ios-nav > .back-link.ios-nav-back, #stage .settings-nav-back, #stage .setup-nav-back, #pausebtn, .top #restart){
     -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto !important;
     background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.5) !important;
@@ -39886,10 +39923,18 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"] > .modecard.modecard{ --mi:calc(88 * var(--u)); }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecardtitle.modecardtitle{ font-size:calc(28 * var(--u)); }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-tall="2"]:not([data-cols="1"]) .modecard .modecarddesc.modecarddesc{ font-size:calc(17 * var(--u)); }
-  /* the chevron: the tile is one tap, and this says where it goes */
+  /* the chevron: the tile is one tap, and this says where it goes.
+     (384.71) CENTRED BY ITS INK. The drawing is a 24-unit box with the chevron's two arms from x 9 to 15 and round caps and a round join 1.2 units
+     past that, so its ink runs 7.8 to 16.2 - the middle of the box, 12. It was drawn from 9.5 to 15.5 (ink 8.3 to 16.7, middle 12.5): half a unit
+     right of the middle, which on the disc's 50% picture (15px on a phone's 30px disc, 17px on a 34px one) is 0.3 to 0.35px right - and 0.45 / 0.35
+     as measured at 3x / 2x, the picture's own placement on the device pixel grid included. It reads "not centred" because a chevron's ink is a
+     thin line: the gap left of it and the gap right of it are what the eye compares. Move the path, not the picture or the disc.
+     And the picture is 16px on the 34px disc and 14px on the 30px one - 50% of the disc was 17 and 15, and 15px at 3x is 45 device pixels in a
+     90-pixel disc: a picture set half a device pixel off the middle, which the phone rounds right (+0.17px). Whole device pixels at 1x, 2x and 3x
+     (16 -> 32 / 48, 14 -> 28 / 42; the room round them is even), so the middle of the drawing is the middle of the disc. */
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards > .modecard.modecard::after{
     content:""; grid-column:2; grid-row:1; justify-self:end; width:calc(34 * var(--u)); height:calc(34 * var(--u)); border-radius:50%;
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.85' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6l6 6-6 6'/%3E%3C/svg%3E") center / 50% no-repeat,
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.85' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / calc(16 * var(--u)) no-repeat,
       color-mix(in srgb, var(--mc) 16%, transparent);
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--mc) 26%, transparent);
   }
@@ -39899,7 +39944,7 @@ html.is-browser{ --fade-paper: transparent; }
     grid-template-columns:auto 1fr auto; grid-template-rows:auto auto; align-content:center; align-items:center; column-gap:calc(12 * var(--u)); row-gap:calc(6 * var(--u));
   }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecardtitle.modecardtitle{ grid-column:2; grid-row:1; }
-  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); }
+  html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard.modecard::after{ grid-column:3; width:calc(30 * var(--u)); height:calc(30 * var(--u)); background-size:calc(14 * var(--u)); }
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="snug"] > .modecard .modecarddesc.modecarddesc{ grid-row:2; margin:0; font-size:calc(14.5 * var(--u)); line-height:1.4; }
   /* the iPhone's switch under the head of a card is the medallion's height now (it was the 64px of the old row) */
   html[data-layout] body #stage > :is(.panel.modeselect, .panel.screen-vroom-choice) > .modecards[data-build="stack"] > .modecard > .nova-hsw{ height:calc(96 * var(--u)); }
@@ -39965,6 +40010,32 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet{ overflow:hidden; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
+
+  /* ==== THE CLASS BUTTON IS A MEDALLION (384.94) ====================================================================
+     Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's
+     circle needs a better border? Could just be better.." Shown three looks (A lit ring, B liquid glass, C medallion) behind
+     ?classbtn=a|b|c, he picked C: "Option c for the class thing." The mark is struck on an enamel coin in the class's colour with a
+     fine bright bezel, inside the button's glass, and a soft light in that colour comes off it. Same size and place as before
+     (--cb and place() are untouched), the tap target is the button's own box (54px on a phone, the chat button's 52px on a
+     tablet). The coin is a closest-side circle on the padding box, so it is round and centred at any --cb; every ring and glow is
+     a background layer or a box-shadow, no SVG filter, nothing moves. The marks are classBtnIcon's (a flame with two side
+     tongues; a police shield with a white star), in light colours on the coin and in full colour in the class list.
+     The doubled class keeps the specificity the picked option had under html[data-classbtn="c"], which is what beats the
+     button's own glass rules. */
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; --coin-a:#EC6436; --coin-b:#BE341E; --coin-c:#741810; --bezel:#FFD7A0; }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; --coin-a:#4C68E4; --coin-b:#2A3BAA; --coin-c:#131850; --bezel:#D3DBFF; }
+  html .class-bubble.class-bubble > svg{ position:relative; z-index:1; }
+  html[data-theme][data-layout] body:not(.x384cb) .class-bubble.class-bubble{
+    background:
+      radial-gradient(ellipse 46% 26% at 50% 24%, rgba(255,255,255,.2), rgba(255,255,255,0) 100%) padding-box,
+      radial-gradient(circle closest-side, var(--coin-a) 0%, var(--coin-b) calc(100% - 9.5px), var(--coin-c) calc(100% - 4.4px), var(--bezel) calc(100% - 3.9px), var(--bezel) calc(100% - 3px), transparent calc(100% - 2.5px)) padding-box,
+      linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%) padding-box,
+      rgba(12,13,19,.26) !important;
+    border:1px solid rgba(255,255,255,.2) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 14px -2px color-mix(in srgb, var(--cbc) 46%, transparent) !important;
+  }
+  html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
+  @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
 </style>
 <script>
   (function(){
@@ -40291,7 +40362,7 @@ html.is-browser{ --fade-paper: transparent; }
             var tc = document.getElementById("themecolor");
             var saved = localStorage.getItem("class26e.statusbar.v1");
             /* (384.27) not in the still top edge: the tag is never written after first paint there */
-            var stillEdge = document.documentElement.classList.contains("top-edge-on") && !document.documentElement.classList.contains("top-edge-old");
+            var stillEdge = document.documentElement.classList.contains("top-edge-on") && !document.documentElement.classList.contains("top-edge-old") && !document.documentElement.classList.contains("top-383");
             if(!stillEdge && tc && saved && /^#[0-9a-fA-F]{6}$/.test(saved)) tc.content = saved;
           }
         }catch(e){}
@@ -55505,7 +55576,13 @@ const IFC_KEY_TEXT = {
   "nav-NAVB-258": "Which chapter of the Harris County Fire Code contains the requirements for repair garages and motor fuel-dispensing facilities?",
   "nav-NAVB-284": "Which chapter of the Harris County Fire Code contains the requirements for explosive materials and blasting?",
   "nav-NAVB-301": "Which chapter of the Harris County Fire Code contains the construction requirements for existing buildings?",
-  "nav-NAVB-319": "Which appendix of the Harris County Fire Code contains the minimum fire-flow requirements for buildings?"
+  "nav-NAVB-319": "Which appendix of the Harris County Fire Code contains the minimum fire-flow requirements for buildings?",
+  /* (384.73) the wording the audit fixes changed (docs/notes-archive.md, "384.73"): the question shows the new stem, its identity is the old one */
+  "ch1-081": "Harris County requires a _____ permit to install or modify a gate across a fire apparatus access road.",
+  "ch1-612": "In Harris County, an industrial facility may be approved for exemption from the fire code, including operational permits, if it has a _____.",
+  "ch3-099": "In Harris County, the occupant load of a mobile food vendor vehicle park whose perimeter is enclosed more than 50 percent is calculated at _____ square feet per occupant.",
+  "ch35-009": "At least one portable fire extinguisher rated not less than _____ shall be within 30 feet of hot work being performed.",
+  "ch1-112": "In Harris County, a citation for working without permits carries a $200 to $500 fine plus _____ permit fees."
 };
 /* ---- (384.42) FIVE QUESTIONS MOVED BETWEEN CHAPTERS, EVERY OTHER KEY UNTOUCHED ----
    The owner moved ch12-012 (Group I-1 backup power within 3 hours - it cites county 403.7.1.1, Chapter 4's Fire safety and
@@ -55527,7 +55604,7 @@ const IFC_KEY_TEXT = {
      only way its history and the Stats ring's "answered right once" keep it). A hundo in a chapter stays: hundos, badges, stars
      and ranks are per chapter NAME (unitPerfects), never per question, and Fire Code's badge is one hundo; a full-chapter run
      covers the chapter as it is now: Chapter 2 111, Chapter 4 40, Chapter 12 43, Chapter 55 16, Chapter 62 10, Chapter 64 10. */
-const IFC_SRC_GAPS = { "4": [19], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1, 12], "21": [1], "22": [1], "25": [1],
+const IFC_SRC_GAPS = { "2": [38, 108], "4": [19, 41], "10": [1], "12": [1, 9, 10, 37, 38], "20": [1, 12], "21": [1], "22": [1], "25": [1],
   "26": [1, 13], "27": [7], "28": [9], "29": [1], "30": [5, 6, 9], "31": [1], "32": [31], "34": [1, 2], "35": [1, 2],
   "37": [1, 15], "39": [1, 2], "50": [1, 2, 3], "51": [1], "53": [1, 2, 17, 18, 19], "54": [1, 2, 3],
   "55": [1, 2, 3, 4, 9, 10, 11, 12, 17], "56": [37], "57": [1, 2, 3, 4, 5], "58": [4, 5, 6], "59": [3, 18],
@@ -55646,12 +55723,18 @@ const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru
   /* (384.47) and the one the owner took out himself: ch20-508, the rooftop-heliport question (its wrong options are not stated not to need a permit) */
   "Chapter 20: Aviation Facilities|12|1ikiga7",
   /* (384.47) and ch30-505, industrial ovens: "an _____ permit" - the article fits only "operational", so the grammar gave the answer away (the owner removed it) */
-  "Chapter 30: Industrial Ovens|5|kaggfi"];
-/* The bank's own count ("1,795"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
+  "Chapter 30: Industrial Ovens|5|kaggfi",
+  /* (384.73) the weaker twin of three same-question pairs (the owner: "do what is best"; docs/notes-archive.md, "384.73"). ch12-012 (Group I-1 backup
+     power, 3 hours) repeats ch4-001; ch55-702 (cryogenic fluid, lower than -130 F) repeats ch2-086; ch2-047 (special event outdoors, 100 or more)
+     repeats ch1-071. The first two had moved in 384.42, so each is listed under the key it holds now AND the key it was stored under before. */
+  "Chapter 4: Emergency Planning and Preparedness|41|yahkhw", "Chapter 12: Energy Systems|1|yahkhw",
+  "Chapter 2: Definitions|108|1qsi68l", "Chapter 55: Cryogenic Fluids|12|1qsi68l",
+  "Chapter 2: Definitions|38|1bryhty"];
+/* The bank's own count ("1,792"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1795).toLocaleString("en-US");
+  return (n || 1792).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
@@ -55663,7 +55746,10 @@ function ifcQuestionCountText(){
    started again. IFC_KEY_CHOICES keeps the choices it was first stored under (identity only: the question shows the new ones),
    in the bank's order A-D. Generated from the 5.4.2 bank, not typed. */
 const IFC_KEY_CHOICES = {
-  "chAppH-805": ["hazardous materials inventory statement", "operational permit application", "site plan", "hazardous materials management plan"]
+  "chAppH-805": ["hazardous materials inventory statement", "operational permit application", "site plan", "hazardous materials management plan"],
+  /* (384.73) ch1-040: option A was "Compliance" - the fire code official may issue a conditional or partial certificate of compliance (105.3.4), so it was
+     arguable; it reads "Completion" now and the choices it was first stored under stay its identity */
+  "ch1-040": ["Compliance", "Exemption", "Inspection", "Occupancy"]
 };
 /* ---- (384.56) THE MARKS COVER WHAT DECIDES THE ANSWER ----
    Madison (iPhone, Appendix C, hydrant spacing "increase by _____ percent where the building is sprinklered", answer 50): "It doesn't even
@@ -55694,11 +55780,38 @@ const IFC_POINTER_PATCH = {
   "ch6-030": { find: ["operations utilizing solid fuel-burning cooking appliances", "1 month"] },
   "ch62-702": { find: ["Class I Describes those formulations that are capable", "deflagration but not detonation"] },
   "ch62-703": { find: ["Class IV Describes those formulations that burn", "same manner as ordinary combustibles", "minimal reactivity hazard"] },
-  "ch33-001": { find: ["written site safety plan", "approved before a building permit is issued"] }
+  "ch33-001": { find: ["written site safety plan", "approved before a building permit is issued"] },
+  "ch22-014": { find: ["All other dusts", "not exceed the critical depth layer", "1 / 32"] },
+  "ch32-052": { row: ["I\u2013IV", "501\u20132,500", "Open to the"] },
+  "ch2-616": { find: ["materials that are health hazards", "Corrosives Highly toxic materials Toxic materials"] },
+  /* (384.72) THE COUNTY TABLES SHOW WHAT THEY ARE. The booklet prints Table 105.5.22's title and its column heading at the foot of page 17 and the rows
+     of oxidizing, unstable (reactive) and water-reactive materials on page 18, so a picture of one of those rows had neither (the audit's "a table row
+     without the table's title or column headings"). `head` is put in front of the question's own excerpt (a title line, the subtitle, the column
+     headings), and the pointer runs over both pages, so the picture is the table's title and headings with the row's group under them and the row
+     marked, as the rows that sit on page 17 already were. Table 1004.5 of Exhibit B is the same with an excerpt that began on the table's second
+     title line: it starts at the table's title and column headings now (and 801's row is the top of the next page: the table's title, its headings
+     and the group, from page 90, and the row from page 91). */
+  "ch63-702": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch63-703": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch63-704": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch66-701": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch66-702": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch66-703": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch66-704": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch67-711": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch67-712": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "ch67-713": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
+  "chExhB-701": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nConcentrated (chairs only\u2014not fixed) | 7 net" },
+  "chExhB-702": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nStanding space | 5 net" },
+  "chExhB-801": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nAssembly without fixed seats\nUnconcentrated (tables and chairs) | 15 net", pdfPage: 90, pdfPageEnd: 91 }
 };
 function ifcWithPatch(q){
   const p = IFC_POINTER_PATCH[q && q.id];
-  return p ? Object.assign({}, q, { citation: Object.assign({}, q.citation, p) }) : q;
+  if(!p) return q;
+  const c = Object.assign({}, q.citation, p);
+  delete c.head;
+  if(p.head) c.excerpt = p.head + "\n" + q.citation.excerpt;       /* (384.72) `head`: lines printed before the question's excerpt */
+  return Object.assign({}, q, { citation: c });
 }
 /* (384) a function of the bank, so the academy can build the same list when a Fire Code room is joined (classBankReady) */
 function ifcQuestionsFrom(B){
@@ -56050,6 +56163,12 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
     /* ---- 0. the top edge's behaviour (kept across launches until All off) ---- */
     flagTrial("old", "OLD top edge behaviour (replace strip, rewrite tags)", "class26e.topedgeold", "1", "top-edge-old", true),
     flagTrial("pe0", "The top edge strip ignores touch (pointer-events:none)", "class26e.topedgepe", "none", "top-edge-none"),
+    /* (384.77) the in-place alternatives for the wash, from the first paint of the next launch (force-quit and reopen) */
+    flagTrial("tvmatch", "A: top strips in the colour the wash makes", "class26e.topmatch", "1", "top-match"),
+    flagTrial("tvdeep", "B: a flat backdrop under the whole wash, behind the content", "class26e.topdeep", "1", "top-deep"),
+    flagTrial("tv383", "C: build 383 exactly (no strips, the tags rewritten as 383 did)", "class26e.top383", "1", "top-383", true),
+    /* (384.80) the r/PWA commenter's element: sampled (its colour is set) but invisible (background-clip:text), 11px */
+    flagTrial("clip", "clip: the top strip sampled but invisible (11px, background-clip:text)", "class26e.topclip", "1", "top-clip"),
     /* ---- 1. a strip at the very top edge (radio) ---- */
     { id: "s1",   rg: "strip", label: "1px solid strip at the top edge, page colour", on(){ stripOn({ h: 1, bg: "sky" }); }, off: stripOff },
     { id: "s8",   rg: "strip", label: "8px solid strip that takes touch (today's is 8px and ignores touch)", on(){ stripOn({ h: 8, bg: "sky" }); }, off: stripOff },
@@ -56758,7 +56877,11 @@ function syncSky(isQuestion){
   b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]') || preAccount);
   /* 383 round 3: beyond Home the sky is turned down, so the status-bar strip (--statusbar-mix2/3) follows it, as it follows
      a question - only when Home's sky actually goes on or off (screen changes, not every mutation) */
-  if(wasHome !== b.classList.contains("sky-home")) syncStatusBarColorSoon();
+  if(wasHome !== b.classList.contains("sky-home")){
+    /* (384.80) the top strip in THIS frame, easing with the sky (syncTopGuard); the tag cache and the rest still go after the first frame */
+    try{ if(topEdgeStill() && !splashOwnsFrame()){ const c = appTopEdgeColor(); if(c) syncTopGuard(c); } }catch(e){}
+    syncStatusBarColorSoon();
+  }
   /* build 327 round 12: "the result screen, shouldn't the starry background be
      there too?" Results had been calm (no stars) since 323 along with the
      question; only a question or a flashcard on screen is now. */
@@ -57356,6 +57479,41 @@ const NOVA_CLASSES = [
   { key: "ifc", name: "Fire Code", sub: "IFC",
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
+/* THE CLASS BUTTON'S MARKS (384.94, option C - see "THE CLASS BUTTON IS A MEDALLION" in the stylesheet). The marks are redrawn
+   with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield with a
+   silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). On the
+   button ("button") they are drawn in light colours for the enamel coin; in the class list ("list") in full colour. Ids are
+   unique per copy (classBtnSeq): the button and its list can both be on the page, and a gradient id shared with a hidden copy
+   paints nothing in Safari. A class with no drawing here returns "" and the caller keeps NOVA_CLASSES' own mark. */
+let classBtnSeq = 0;
+function classBtnIcon(key, where){
+  if(key !== "ifc" && key !== "academy") return "";
+  const coin = where === "button";
+  const u = "cbx" + (++classBtnSeq) + "-";
+  if(key === "ifc"){
+    const o = coin ? ["#FFF1C4", "#FFD27A", "#FFB04A"] : ["#FFB25A", "#FF6B35", "#E5332E"];
+    const m = ["#FFD36A", "#FF9A3A"];
+    const c = coin ? ["#FFF6D8", "#FFD27A"] : ["#FFFBEA", "#FFE49A"];
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
+      '<linearGradient id="' + u + 'o" x1="12" y1="2.6" x2="12" y2="21.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + o[0] + '"/><stop offset=".45" stop-color="' + o[1] + '"/><stop offset="1" stop-color="' + o[2] + '"/></linearGradient>' +
+      '<linearGradient id="' + u + 'm" x1="12" y1="8" x2="12" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient>' +
+      '<linearGradient id="' + u + 'c" x1="12" y1="12.4" x2="12" y2="19.2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/></linearGradient></defs>' +
+      '<path d="M12 2.6C13.3 5.6 15.9 7.3 16.9 10.4C17.4 9.2 17.9 8 18.1 6.7C19.5 8.7 19.2 12.3 19.2 14.2A7.2 7.2 0 0 1 4.8 14.2C4.8 12.3 4.5 8.7 5.9 6.7C6.1 8 6.6 9.2 7.1 10.4C8.1 7.3 10.7 5.6 12 2.6Z" fill="url(#' + u + 'o)"/>' +
+      /* on the coin the middle is cut out in the coin's own red, a pale core left in it: an emblem, not a picture */
+      '<path d="M12 7.9C13 10.3 16 11.9 16 15.1A4 4 0 0 1 8 15.1C8 11.9 11 10.3 12 7.9Z" fill="' + (coin ? '#C93A22' : 'url(#' + u + 'm)') + '"/>' +
+      '<path d="M12 12.4C12.6 13.9 14.3 14.9 14.3 16.9A2.3 2.3 0 0 1 9.7 16.9C9.7 14.9 11.4 13.9 12 12.4Z" fill="url(#' + u + 'c)"/></svg>';
+  }
+  const r = coin ? ["#FFFFFF", "#E4EAFF", "#B9C6F2"] : ["#F2F5FF", "#B9C6F2", "#8496D8"];
+  const f = coin ? ["#DDE4FF", "#B4C2F4", "#8EA0E6"] : ["#8E86FF", "#5470F2", "#3442B8"];
+  const s = coin ? "#2F45C8" : "#FFFFFF";
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
+    '<linearGradient id="' + u + 'r" x1="6" y1="3" x2="18" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + r[0] + '"/><stop offset=".55" stop-color="' + r[1] + '"/><stop offset="1" stop-color="' + r[2] + '"/></linearGradient>' +
+    '<linearGradient id="' + u + 'f" x1="7" y1="4.6" x2="17" y2="19.6" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + f[0] + '"/><stop offset=".5" stop-color="' + f[1] + '"/><stop offset="1" stop-color="' + f[2] + '"/></linearGradient></defs>' +
+    '<path d="M12 2.5 19.4 5.3V11.4C19.4 16 16.4 19.5 12 21.5 7.6 19.5 4.6 16 4.6 11.4V5.3Z" fill="url(#' + u + 'r)"/>' +
+    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7 8.6 18.1 6.2 15.2 6.2 11.5V6.5Z" fill="url(#' + u + 'f)"/>' +
+    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7Z" fill="#FFFFFF" fill-opacity="' + (coin ? '.18' : '.09') + '"/>' +
+    '<path d="M12 7.6 13.06 10.34 16 10.5 13.72 12.36 14.47 15.2 12 13.6 9.53 15.2 10.28 12.36 8 10.5 10.94 10.34Z" fill="' + s + '" stroke="' + s + '" stroke-width=".5" stroke-linejoin="round"/></svg>';
+}
 function classSwitchAllowed(){
   /* (384) every account: the head script lets a page into a class only for an account enrolled in it, and in the academy any
      account that has finished signing up has the button (before 384, the owner's alone) */
@@ -57515,11 +57673,11 @@ function mountClassBubble(){
   btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
-  btn.innerHTML = cur.icon;
+  btn.innerHTML = classBtnIcon(cur.key, "button") || cur.icon;   /* (384.94) the coin's marks */
   const stack = document.createElement("div");
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
-  const items = others.map(c => ({ cls: "is-" + c.key, icon: c.icon, label: c.name, run: () => switchClass(c.key) }));
+  const items = others.map(c => ({ cls: "is-" + c.key, icon: classBtnIcon(c.key, "list") || c.icon, label: c.name, run: () => switchClass(c.key) }));
   items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog("home"); } });
   wrap.style.setProperty("--n", items.length);
   items.forEach((it, k) => {
@@ -59850,10 +60008,128 @@ function revokeRaisedCharacters(){
 const WEEK_WIN_VOIDS = {
   "kdxnp7smgcre": { from: "2026-09-28", keep: 0, wear: "solar" }
 };
-function applyWeekWinVoids(){
-  const v = WEEK_WIN_VOIDS[store && store.publicId];
-  if(!v) return false;
+/* ---- ONE WEEK, ONE WINNER (384.51) ----
+   Zeus is "first place on the weekly board", and a week has one first place. Six academy accounts held a weekly win, and two of the
+   weeks they listed (5 and 19 October) were each listed by TWO accounts - two different people who study on the same days, not friends,
+   so not one person's two accounts: a week settled twice.
+   WHY IT COULD HAPPEN. Every device settles ITS OWN win, against whatever rows the board shows at that moment, and nothing arbitrates
+   between devices: the winner is not written anywhere shared. Three ways in, all in the settle as it was: (1) the standing was read off
+   rows that can lag - a phone that closes before its last push leaves its row low, so two people could each look first against the
+   other's stale row; (2) a tie put both at rank 1 (a strict "more than"); (3) a week more than one back can no longer be read off the
+   rows (a row keeps one week back), so it fell back to the rank last SEEN - first on the board on a Monday is a win, by that reading -
+   and every phone in that state settled itself first. Nothing there shows which of the two was right, and the old weeks' numbers are gone
+   (the board keeps one week, the weekly tally is pruned to this week, the test history is the last 50 runs), so no record can be asked.
+   WHAT HOLDS NOW, as rules on the record rather than edits to it (the pattern of applyWeekWinVoids; both counters merge as a max / union,
+   so a lowered copy would be put straight back by the cloud document, the `__floor` backup or another device):
+   - a week counts for an account only if it is listed (`weekWinWeeks`) and not in `weekWinLost`; `weeklyWins` can never exceed
+     `weekWinBase` (the wins no listed week backs: the owner's hand-set grants of 312.3, Sauce's and Maddog's) plus those weeks;
+   - the settle adds a week once (a second device settling the same week adds nothing), skips a week already lost, breaks a tie by the
+     lower public id, never counts a week it can only read off a sighting, and records the points the claim was made with
+     (`weekWinPts`);
+   - every row publishes its claims (`wins`: week -> points, 0 where none were recorded), and when the server's board shows another
+     account with a BETTER claim on the same week (more points; a claim with points beats one without; then more lifetime XP; then the
+     lower public id) this account's claim on it goes into `weekWinLost`, for good: one total order, so exactly one claimant is never
+     beaten. `WEEK_WIN_PINS` is the owner's word on a week and beats all of it;
+   - the repair runs on the store after every load and merge, on the document about to be written (writeAccount, whose floor is written
+     from the same copy), and takes the character's traces off whatever the count does not support: not queued, not marked announced
+     or seen, not worn (quietly, to the class's first starter). Nothing is announced and no pop-up can result. */
+/* The two weeks two accounts listed. Each is pinned to the account that has the most lifetime XP of the pair (by far: about 342k against
+   154k, and 247k against 178k) because no number for either week survives; the owner can change a line here. A pin is the answer, not
+   a vote: every other account loses that week. Keyed by public id, which is not a sync code and is printed on the board. */
+const WEEK_WIN_PINS = {
+  "2026-10-05": "3gkuv79t4vzd",
+  "2026-10-19": "hhx364dust79"
+};
+function weekWinsLostSet(d){
+  const out = new Set((d && Array.isArray(d.weekWinLost) ? d.weekWinLost : []).filter(x => typeof x === "string"));
+  const me = d && d.publicId;
+  Object.keys(WEEK_WIN_PINS).forEach(w => { if(WEEK_WIN_PINS[w] !== me) out.add(w); });
+  return out;
+}
+/* the wins a copy can stand behind: its grants plus the weeks it lists that it has not lost */
+function weekWinsAllowed(d){
+  const lost = weekWinsLostSet(d);
+  const weeks = [];
+  (Array.isArray(d.weekWinWeeks) ? d.weekWinWeeks : []).forEach(w => { if(typeof w === "string" && weeks.indexOf(w) < 0) weeks.push(w); });
+  return (typeof d.weekWinBase === "number" ? d.weekWinBase : 0) + weeks.filter(w => !lost.has(w)).length;
+}
+/* Zeus's traces off a store or a document that has no win behind it. Returns whether anything changed. */
+function weekWinsTraces(d){
+  const z = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
+  if(!z) return false;
   let changed = false;
+  if(Array.isArray(d.pendingCharUnlocks) && d.pendingCharUnlocks.indexOf(z.id) >= 0){ d.pendingCharUnlocks = d.pendingCharUnlocks.filter(x => x !== z.id); changed = true; }
+  [d.unlocksShown, d.seenUnlocks].forEach(u => {
+    if(u && Array.isArray(u.chars) && u.chars.indexOf(z.id) >= 0){ u.chars = u.chars.filter(x => x !== z.id); changed = true; }
+  });
+  if(d.avatarChar === z.id){ d.avatarChar = classDefaultCharacter(); changed = true; }
+  return changed;
+}
+/* The rule, on any copy (the store, or a document about to be written). Academy only: Fire Code has no weekly board of its own. */
+function weekWinsRepair(d){
+  if(!d || typeof d !== "object" || window.NOVA_CLASS === "ifc") return false;
+  let changed = false;
+  if(typeof d.weekWinBase !== "number" || !isFinite(d.weekWinBase)){
+    const listed = new Set((Array.isArray(d.weekWinWeeks) ? d.weekWinWeeks : []).filter(w => typeof w === "string")).size;
+    d.weekWinBase = Math.max(0, Math.floor(Number(d.weeklyWins) || 0) - listed);
+    changed = true;
+  }
+  const allowed = weekWinsAllowed(d);
+  if((Number(d.weeklyWins) || 0) > allowed){ d.weeklyWins = allowed; changed = true; }
+  const kept = Array.isArray(d.legacyChars) && d.legacyChars.indexOf("zeus") >= 0;
+  if((Number(d.weeklyWins) || 0) < 1 && !kept && weekWinsTraces(d)) changed = true;
+  return changed;
+}
+function weekClaimBeats(a, b){
+  const ap = a.pts > 0, bp = b.pts > 0;
+  if(ap && bp && a.pts !== b.pts) return a.pts > b.pts;
+  if(ap !== bp) return ap;
+  if(a.xp !== b.xp) return a.xp > b.xp;
+  return a.pub < b.pub;
+}
+/* What this account's row says about the weeks it has won: week -> the points the claim was made with (0 where none were recorded).
+   Only the last twelve, only the ones it has not lost. */
+function weekWinsPublished(){
+  const out = {};
+  if(window.NOVA_CLASS === "ifc") return out;
+  const lost = weekWinsLostSet(store), pts = store.weekWinPts || {};
+  (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => typeof w === "string" && !lost.has(w)).slice(-12).forEach(w => { out[w] = Number(pts[w]) || 0; });
+  return out;
+}
+/* Called whenever the board has come from the SERVER (a cached snapshot can show a claim that has since been withdrawn). A claim only ever
+   loses to one that is on the board now; a board that cannot be read leaves every claim as it is. Returns whether a claim was lost. */
+function arbitrateWeekWins(){
+  if(window.NOVA_CLASS === "ifc" || !store || !store.publicId) return false;
+  if(!leaderboardRowsFromServer || !Array.isArray(leaderboardRows) || !leaderboardRows.length) return false;
+  const me = store.publicId, lost = weekWinsLostSet(store);
+  const myXp = Number(store.lifetime && store.lifetime.points) || 0;
+  const pts = store.weekWinPts || {};
+  let out = false;
+  (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => typeof w === "string" && !lost.has(w)).forEach(w => {
+    const mine = { pts: Number(pts[w]) || 0, xp: myXp, pub: me };
+    const beaten = leaderboardRows.some(e => {
+      if(!e || !e.pub || e.pub === me || !e.wins || typeof e.wins !== "object" || !Object.prototype.hasOwnProperty.call(e.wins, w)) return false;
+      return weekClaimBeats({ pts: Number(e.wins[w]) || 0, xp: Number(e.xp) || 0, pub: String(e.pub) }, mine);
+    });
+    if(beaten){
+      store.weekWinLost = (Array.isArray(store.weekWinLost) ? store.weekWinLost : []).filter(x => x !== w).concat([w]).slice(-60);
+      out = true;
+    }
+  });
+  if(out){
+    const wore = store.avatarChar;
+    try{ weekWinsRepair(store); }catch(e){}
+    if(store.avatarChar !== wore){ try{ updateHeaderTitle(); }catch(e){} }
+    saveStore();
+  }
+  return out;
+}
+function applyWeekWinVoids(){
+  let again = false;
+  try{ again = weekWinsRepair(store); }catch(e){}
+  const v = WEEK_WIN_VOIDS[store && store.publicId];
+  if(!v) return again;
+  let changed = again;
   const weeks = Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : [];
   const allowed = v.keep + weeks.filter(w => typeof w === "string" && w >= v.from).length;
   if((store.weeklyWins || 0) > allowed){ store.weeklyWins = allowed; changed = true; }
@@ -68433,6 +68709,7 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
   function apply(b, t, why){
     if(b === compB && t === compT) return;
     const was = compB || compT;
+    t = 0;   /* (384.76) the top is never moved: his 384.70 recording showed it moving a header that was where it belonged (in-flight reading); the bottom half is unchanged */
     compB = b; compT = t;
     if(b){ root.style.setProperty("--vp-stale", b + "px"); root.classList.add("vp-stale"); } else { root.style.removeProperty("--vp-stale"); root.classList.remove("vp-stale"); }
     if(t){ root.style.setProperty("--vp-top", t + "px"); root.classList.add("vp-top"); } else { root.style.removeProperty("--vp-top"); root.classList.remove("vp-top"); }
@@ -68445,18 +68722,64 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
     }
     if(!was && (b || t)){ requestAnimationFrame(() => { try{ window.dispatchEvent(new Event("resize")); }catch(e){} }); }   /* the search circle is placed from the bar's rect */
   }
-  let lastMeasure = 0;
+  let lastMeasure = 0, lastTopNote = 0;
+  /* (384.89) IT ACTS ONLY ON A STILL PAGE. Madison's 384.82 recording of Home (iPhone 17 Pro Max, installed, the rubber band back): at each
+     swipe the content stretched up and the tab bar, the daily "?" and the class bubble went DOWN, off the foot of the screen, and came
+     back as the stretch let go. That was this follower: in a rubber band iOS reports the visual viewport past the layout one
+     (offsetTop > 0) while its compositor holds the pinned chrome where it belongs, so (A) read the stretch as "the chrome stands that
+     far high" and took it up with --vp-stale - moving a bar that had not moved, by the stretch, every look. The same in-flight reading
+     384.76 took off the top half for. Now nothing is changed while a finger is down, while the page or the visual viewport has moved in
+     the last QUIET ms, for SETTLE ms after the finger lifts (the bounce's snap-back and a fling's momentum) or while the page stands past
+     its ends; what is taken up stays as it is through the gesture, and a new reading is applied only once the page is still and a
+     second look STABLE ms later agrees. The readings in motion go to the log ("read in motion, not applied"). A displacement that is
+     still there at rest (the 384.62 state: the bar in the middle of the screen with the page still) is taken up as before. */
+  const QUIET = 350, SETTLE = 900, STABLE = 150;
+  let touching = false, touchAt = 0, touchEndAt = 0, lastVV = 0, restTimer = 0, pendingB = -1, lastMotionNote = 0, motionReadAt = 0;
+  const atRestIn = () => {
+    const now = Date.now();
+    if(touching && now - touchAt < 8000) return 120;   /* a touch that never ended (the page lost it) stops counting after 8s */
+    let w = Math.max(lastScroll + QUIET - now, lastVV + QUIET - now, touchEndAt + SETTLE - now);
+    try{
+      const y = window.scrollY, max = Math.max(0, (document.scrollingElement || root).scrollHeight - window.innerHeight);
+      if(y < -0.5 || y > max + 1) w = Math.max(w, 120);   /* standing past an end: a rubber band */
+      if(vv && vv.pageTop != null && (vv.pageTop < -0.5 || vv.pageTop + vv.height > (document.scrollingElement || root).scrollHeight + 1)) w = Math.max(w, 120);
+    }catch(e){}
+    return w > 0 ? w : 0;
+  };
   function check(){
     raf = 0;
     if(busy()){ return; }
-    /* healthy and scrolling: a look every 120ms, not every frame (it reads layout); once something is taken up it follows every frame */
+    const wait = atRestIn();
+    if(wait){
+      /* moving: nothing is changed; a reading now and then goes to the log, and the look is made again once the page is still */
+      const t1 = performance.now();
+      if(t1 - motionReadAt > 250){
+        motionReadAt = t1;
+        const mm = measure();
+        if(mm && mm.bottom && mm.bottom !== compB && Date.now() - lastMotionNote > 1000){ lastMotionNote = Date.now(); note("read in motion, not applied: " + mm.bottom + " low (" + mm.why + ") y " + Math.round(window.scrollY)); }
+      }
+      pendingB = -1;
+      if(!restTimer) restTimer = setTimeout(() => { restTimer = 0; kick(); }, wait + 20);
+      return;
+    }
+    /* still and healthy: a look every 120ms at most (it reads layout) */
     const t0 = performance.now();
-    if(!compB && !compT && t0 - lastMeasure < 120){ if(Date.now() - lastScroll < 200 && !raf) setTimeout(kick, 130); return; }
+    if(!compB && !compT && t0 - lastMeasure < 120){ return; }
     lastMeasure = t0;
     const m = measure();
     if(!m){ return; }
-    apply(m.bottom, m.top, m.why);
-    if(m.bottom || m.top){
+    /* a new displacement is applied only when a second look agrees (a reading taken as the page came to rest can still be in flight) */
+    if(m.bottom && Math.abs(m.bottom - compB) > THRESH){
+      if(pendingB < 0 || Math.abs(pendingB - m.bottom) > THRESH){ pendingB = m.bottom; setTimeout(kick, STABLE); return; }
+    }
+    pendingB = -1;
+    /* (384.77) THE TOP IS READ, NOT MOVED, as build 383 moved nothing at the top. On his iPhone (384.70 recording, a Drill question scrolled)
+       the header row and Pause sat ~100pt LOW while the dots and the question scrolled up normally: html.vp-top moved them by a displacement
+       the main thread read while the scroll was in flight, on a page whose pinned chrome was not riding. The reading goes to the log for
+       Report a bug. The bottom (the tab bar in the middle of the screen, reported on build 383 too) is unchanged. */
+    if(m.top && Date.now() - lastTopNote > 1000){ lastTopNote = Date.now(); note("top read " + m.top + " (not applied) y " + Math.round(window.scrollY)); }
+    apply(m.bottom, 0, m.why);
+    if(m.bottom){
       if(!since) since = Date.now();
       /* still out 1.5s after the page stopped: a nudge, once per episode */
       if(!nudged && Date.now() - since > 1500 && Date.now() - lastScroll > 1500){
@@ -68464,13 +68787,16 @@ try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", 
         try{ const y = window.scrollY; window.scrollTo(0, y + 1); window.scrollTo(0, y); }catch(e){}
         try{ if(typeof resetStuckZoom === "function") resetStuckZoom(); }catch(e){}
       }
-      if(Date.now() - lastScroll < 400) raf = requestAnimationFrame(check);   /* follow the scroll frame by frame */
     } else { since = 0; nudged = 0; }
   }
   const kick = () => { if(!raf) raf = requestAnimationFrame(check); };
   try{
-    if(vv){ vv.addEventListener("resize", kick); vv.addEventListener("scroll", kick); }
+    if(vv){ const vk = () => { lastVV = Date.now(); kick(); }; vv.addEventListener("resize", vk); vv.addEventListener("scroll", vk); }
     window.addEventListener("scroll", () => { lastScroll = Date.now(); kick(); }, { passive: true });
+    window.addEventListener("touchstart", () => { touching = true; touchAt = Date.now(); }, { passive: true, capture: true });
+    const lift = (e) => { if(e && e.touches && e.touches.length) return; touching = false; touchEndAt = Date.now(); kick(); };
+    window.addEventListener("touchend", lift, { passive: true, capture: true });
+    window.addEventListener("touchcancel", lift, { passive: true, capture: true });
     window.addEventListener("resize", kick); window.addEventListener("pageshow", kick); window.addEventListener("focus", kick);
     window.addEventListener("orientationchange", () => setTimeout(kick, 350));
     document.addEventListener("focusout", () => { setTimeout(kick, 450); setTimeout(kick, 1300); }, true);   /* a keyboard has just gone */
@@ -68546,7 +68872,7 @@ const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
                          "hundos", "week", "weekPoints", "rankFloor"];
 /* Build 324: the weekly blocks Nova's recap reads change with every test,
    and nobody is watching them live - they ride with the next push. */
-ROW_LAZY_FIELDS.push("wk", "pwk");
+ROW_LAZY_FIELDS.push("wk", "pwk", "wins");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long.
    FIVE MINUTES, NOT 90s (build 327z15): "maybe to save space the
@@ -68689,6 +69015,9 @@ let storageHadData = false;
 /* Declared up here, ahead of `store`, because applyLoadedData() runs at
    boot and a const further down would still be in its dead zone. */
 const TEST_HISTORY_MAX = 50;
+/* (384.88) THE ACADEMY LADDER'S VERSION - see academyLadderMigrate38488(). Declared up here for the same reason: the store
+   literal below and applyLoadedData() both read it during boot. */
+const ACADEMY_LADDER_RULE = 38488;
 /* THE FRIENDS LIST, as one block (build 384 - see socialDb()): the same in every class, dated by `socialAt`. Declared up here
    for the same reason: applyLoadedData() reads it during boot. socialSigBase is what the block was when it was last loaded,
    copied or saved - a `var` with no value, so nothing resets it once boot has set it. */
@@ -68704,7 +69033,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, badgeSceneOwed: null, badgeScenePlayed: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], weekWinLost: [], weekWinPts: {}, weekWinBase: null, retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, badgeSceneOwed: null, badgeScenePlayed: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -68739,6 +69068,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
               rankFloor: 0,    /* build 314: see rankOf() */
               levelWallRule: 325,  /* build 325: a new account starts under the new wall - see levelWallMigrate325() */
+              academyLadderRule: ACADEMY_LADDER_RULE,  /* 384.88: a new account starts on the 16/25 ladder - see academyLadderMigrate38488() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -69175,6 +69505,14 @@ function applyLoadedData(got){
     try{ levelWallMigrate325(got, store); }catch(e){}
     store.levelWallRule = LEVEL_WALL_RULE;
   }
+  /* (384.88) AMETHYST AND SUPERNOVA ASK 16 AND 25 BADGES NOW (were 12 and 14). A copy without the flag (every account on the
+     update, and a copy an older build wrote) keeps the rank it held on the previous academy ladder as its rank floor, once;
+     then the flag is set. A floor only raises. Fire Code's ladder did not move, so there it only sets the flag. */
+  store.academyLadderRule = (typeof got.academyLadderRule === "number" && isFinite(got.academyLadderRule)) ? got.academyLadderRule : 0;
+  if(store.academyLadderRule < ACADEMY_LADDER_RULE){
+    try{ academyLadderMigrate38488(got, store); }catch(e){}
+    store.academyLadderRule = ACADEMY_LADDER_RULE;
+  }
   /* Defaults to 0 for an existing account, like levelPreserved and for
      the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
      people who are already here. */
@@ -69270,6 +69608,14 @@ function applyLoadedData(got){
   store.shadesFound = got.shadesFound === true;
   store.shadesAt = typeof got.shadesAt === "number" ? got.shadesAt : null;
   store.weekWinWeeks = Array.isArray(got.weekWinWeeks) ? got.weekWinWeeks.filter(x => typeof x === "string").slice(-60) : [];
+  /* (384.51) one week, one winner: the weeks this account lost to a better claim, the points each claim was made with, and the count of
+     wins no listed week backs (the owner's hand-set grants). None of them means anything to an account that has never had a win. */
+  store.weekWinLost = Array.isArray(got.weekWinLost) ? got.weekWinLost.filter(x => typeof x === "string").slice(-60) : [];
+  store.weekWinPts = {};
+  if(got.weekWinPts && typeof got.weekWinPts === "object" && !Array.isArray(got.weekWinPts)){
+    Object.keys(got.weekWinPts).slice(-60).forEach(k => { const v = Number(got.weekWinPts[k]); if(/^\d{4}-\d{2}-\d{2}$/.test(k) && isFinite(v) && v > 0) store.weekWinPts[k] = v; });
+  }
+  store.weekWinBase = typeof got.weekWinBase === "number" && isFinite(got.weekWinBase) ? Math.max(0, Math.floor(got.weekWinBase)) : null;
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
   try{ migrateSheriff324(); }catch(e){}
   try{ migrateHive384(); }catch(e){}
@@ -71478,6 +71824,7 @@ function wipeLocalProgressAndSettings(){
   store.levelFloor = 0;   /* build 314: a reset starts under the badge wall like anybody new */
   store.rankFloor = 0;
   store.levelWallRule = LEVEL_WALL_RULE;   /* build 325: and under the new wall, with nothing to grandfather */
+  store.academyLadderRule = ACADEMY_LADDER_RULE;   /* 384.88: and on the 16/25 ladder, with no old rank to keep */
   store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
@@ -71498,7 +71845,7 @@ function wipeLocalProgressAndSettings(){
   store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
-  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
+  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.weekWinLost = []; store.weekWinPts = {}; store.weekWinBase = null; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
   store.badgeCleanedAt = {}; store.badgeSceneOwed = {}; store.badgeScenePlayed = {};
@@ -71821,6 +72168,9 @@ function buildLeaderboardRow(){
         /* Last week's, so the board can show last week's top three. */
         prevWeek: store.prevWeekKey || "",
         prevWeekPoints: store.prevWeekPoints || 0,
+        /* (384.51) the weeks this account has won and the points each claim was made with (0: none recorded). Another account's
+           better claim on the same week is what takes a win back (arbitrateWeekWins). Week keys and numbers only. */
+        wins: weekWinsPublished(),
         /* Build 324: this week's and last week's numbers for Nova's
            Tuesday recap (weekBlockOf - tests, hundos, daily questions,
            study time, XP by day). Each carries its week; an older build
@@ -72349,6 +72699,8 @@ function markCloudConfirmed(docExists){
         const f = snap.data();
         if(f && (!FRESH_START_CUTOFF || (Number(f.lastModified) || 0) >= FRESH_START_CUTOFF)){
           tallyCapture(store); r = mergeSameAccount(store, f);
+          /* (384.51) what the floor brought back is held to the record too */
+          try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
           if(r.gained){ persistLocally(); try{ onLiveUpdateApplied(); }catch(e){} }
         }
       }
@@ -72488,6 +72840,8 @@ function writeAccount(code, withMain, withFloor, leaving){
        max back, and the account and its floor are written from this copy (see ifcChallengeClamp) */
     try{ ifcChallengeClamp(doc); }catch(e){}
     try{ if(window.NOVA_CLASS !== "ifc") retakeTracesClamp(doc); }catch(e){}   /* (384.46) the academy's Masked One, on the account and its floor */
+    /* (384.51) and a weekly win the record does not support is not written either: the floor comes down with the account */
+    try{ weekWinsRepair(doc); }catch(e){}
     return { doc, ahead };
   };
   let run;
@@ -72951,6 +73305,7 @@ function mergeLeavingAccount(src, note){
   store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
   store.rankFloor = Math.max(num(store.rankFloor), num(src.rankFloor));
   store.levelWallRule = Math.max(num(store.levelWallRule), num(src.levelWallRule));
+  store.academyLadderRule = Math.max(num(store.academyLadderRule), num(src.academyLadderRule));   /* (384.88) */
   maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
   /* game records: per unit, per speed */
   ["unitGameBeat", "gameFarthest"].forEach(k => {
@@ -72969,9 +73324,15 @@ function mergeLeavingAccount(src, note){
   if(store.unitRuns && src.unitRuns) sumMap("unitRuns"); else store.unitRuns = null;
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
+  /* (384.51) the wins no listed week backs are summed with the wins (before they are): the two accounts' grants both stay, and a week
+     both of them listed is one week, which weekWinsRepair then holds the sum to */
+  { const bs = o => (typeof o.weekWinBase === "number") ? o.weekWinBase : Math.max(0, num(o.weeklyWins) - new Set((Array.isArray(o.weekWinWeeks) ? o.weekWinWeeks : []).filter(w => typeof w === "string")).size);
+    store.weekWinBase = bs(store) + bs(src);
+    if(!store.weekWinPts || typeof store.weekWinPts !== "object") store.weekWinPts = {};
+    Object.keys(src.weekWinPts || {}).forEach(k => { if(num(src.weekWinPts[k]) > num(store.weekWinPts[k])) store.weekWinPts[k] = num(src.weekWinPts[k]); }); }
   ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
-  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "retakenKeys"].forEach(k => {
+  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "weekWinLost", "retakenKeys"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
@@ -73355,6 +73716,8 @@ function mergeSameAccount(dst, src){
   /* build 325: the new wall's grandfathering ran on either copy - see
      levelWallMigrate325; a copy from an older build carries none */
   if(typeof src.levelWallRule === "number") maxInto(dst, "levelWallRule", src.levelWallRule);
+  /* (384.88) the academy ladder's floor ran on either copy - see academyLadderMigrate38488 */
+  if(typeof src.academyLadderRule === "number") maxInto(dst, "academyLadderRule", src.academyLadderRule);
   /* a rank-up shown on either copy is shown (build 319); a copy from an
      older build carries none and changes nothing */
   if(typeof src.rankUpShown === "number") maxInto(dst, "rankUpShown", src.rankUpShown);
@@ -73410,7 +73773,16 @@ function mergeSameAccount(dst, src){
   ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
    "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
-  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
+  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks", "weekWinLost"].forEach(k => unionArr(k));
+  /* (384.51) the points a week's claim was made with: the higher of the two copies; the grants count: the higher too (a copy that has not
+     worked it out yet - null - takes the other's) */
+  { if(!dst.weekWinPts || typeof dst.weekWinPts !== "object" || Array.isArray(dst.weekWinPts)) dst.weekWinPts = {};
+    const sp = (src.weekWinPts && typeof src.weekWinPts === "object" && !Array.isArray(src.weekWinPts)) ? src.weekWinPts : {};
+    Object.keys(sp).forEach(k => maxInto(dst.weekWinPts, k, sp[k]));
+    Object.keys(dst.weekWinPts).forEach(k => { if(!(k in sp)) res.otherHadLess = true; });
+    const a = dst.weekWinBase, b = src.weekWinBase;
+    if(typeof b === "number" && (typeof a !== "number" || b > a)){ dst.weekWinBase = b; res.gained = true; }
+    else if(typeof a === "number" && (typeof b !== "number" || a > b)) res.otherHadLess = true; }
   unionArr("retakenKeys", RETAKEN_KEYS_CAP);   /* (384.40) a union: a question retaken on either device is retaken */
   /* The backfills ran once per ACCOUNT (build 327): a device whose copy
      says not-yet would scan the rooms again and count them twice. */
@@ -74858,7 +75230,12 @@ const TIER_UNLOCKS = {
   veteran:  { level: 40, badges: 5,  label: "Reach level 40 and 5 badges" },
   vanguard: { level: 50, badges: 7,  label: "Reach level 50 and 7 badges" },
   adept:    { level: 60, badges: 9,  label: "Reach level 60 and 9 badges" },
-  elite:    { level: 70, badges: 12, label: "Reach level 70 and 12 badges" },
+  /* (384.88) AMETHYST 16, SUPERNOVA 25 - Madison: "Update the badge requirements for the amethyst and supernova for academy
+     class. 16 for amethyst. 25 for supernova." Levels unchanged (70, 80); Bronze to Sapphire unchanged. The academy has 24
+     units, so 24 badges is every badge there is and Supernova's 25 cannot be earned today - asked for as it stands, the same
+     way 20 was asked for over 16 units ("I know there isn't [20] units available but there will be eventually"). Nobody
+     loses a rank: academyLadderMigrate38488() keeps the rank held on the previous ladder (12 and 14) as the rank floor. */
+  elite:    { level: 70, badges: 16, label: "Reach level 70 and 16 badges" },
   /* Supernova, the genuine top of the ladder, now also requires
      finding every Mystery Star \u2014 not just points and stars from
      studying, but having fully explored the app itself. Named
@@ -74871,8 +75248,13 @@ const TIER_UNLOCKS = {
      available but there will be eventually." Supernova is the thing
      the extra units unlock, and it is the only rank that asks for the
      max level itself. */
-  titan:    { level: 80, badges: 14, label: "Reach level 80 and 14 badges" }
+  titan:    { level: 80, badges: 25, label: "Reach level 80 and 25 badges" }
 };
+/* THE ACADEMY LADDER BEFORE 384.88, [level, badges] per rank - kept for two jobs that are about the past: the academy's rank
+   floor (academyLadderMigrate38488, the rank an account held on it) and Fire Code's one-time floor from build 382
+   (ifcLadderFloorOnce reads TIER_UNLOCKS_ACADEMY, which is this ladder, so Fire Code's floor is exactly what it was). */
+const TIER_UNLOCKS_ACADEMY_PREV = { rookie: [21, 1], ranger: [30, 3], veteran: [40, 5], vanguard: [50, 7],
+                                    adept: [60, 9], elite: [70, 12], titan: [80, 14] };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
    the next-tier progress note). Kept in one place now that there are
@@ -74894,6 +75276,42 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
    a rank only gets easier here, so nobody drops one (384.60: no longer true from Gold up - see FIRE_BADGE_SHARE and the second floor below). */
 const TIER_UNLOCKS_ACADEMY = {};
 Object.keys(TIER_UNLOCKS).forEach(k => { TIER_UNLOCKS_ACADEMY[k] = Object.assign({}, TIER_UNLOCKS[k]); });
+/* (384.88) the academy's counts AS FIRE CODE'S FLOOR KNEW THEM (12 and 14 at the top), not the academy's new 16 and 25:
+   Fire Code is unchanged, so its one-time floor still reads the ladder it was written against. */
+TIER_ORDER_FULL.forEach(k => { const p = TIER_UNLOCKS_ACADEMY_PREV[k]; if(p && TIER_UNLOCKS_ACADEMY[k]) TIER_UNLOCKS_ACADEMY[k].badges = p[1]; });
+/* ---- NOBODY LOSES A RANK ON THE ACADEMY'S 16/25 LADDER (384.88, academy only) ----
+   Amethyst and Supernova ask for 16 and 25 badges (were 12 and 14), so a rank computed fresh from level and badges would take
+   Amethyst or Supernova off somebody who holds it, and the level wall (the next rank's level, opened by its badges) would hold an
+   Amethyst at 12-15 badges back to level 70. Once per account, on the first load of a copy without `academyLadderRule` (it lives
+   on `store`, syncs and merges by max, like levelWallRule), the rank the account held on the PREVIOUS ladder
+   (TIER_UNLOCKS_ACADEMY_PREV, with that ladder's own wall over the curve's level and the copy's level floor) becomes its rank
+   floor wherever that is higher. A floor only ever raises (rankOf, rankOfEntry, mergeSameAccount, mergeLeavingAccount take the
+   max), and with it the wall starts after the floor (wallRankIndex), so nobody's shown level moves either. Everything a rank
+   hands over is DERIVED from rank when read (tierColorUnlocked honours the floor): no unlock mark is stored. Nothing re-fires:
+   the rank-up scene is owed only past store.rankUpShown. A new account and a reset start with the flag. Fire Code's ladder did
+   not change, so there nothing is written. Returns the floor written, or 0.
+   On the live data when this shipped (read only): nobody held Amethyst or Supernova - the most badges on any account was 9. */
+function academyLadderMigrate38488(got, into){
+  if(window.NOVA_CLASS === "ifc") return 0;
+  if(!got || typeof got !== "object") return 0;
+  if(typeof got.academyLadderRule === "number" && got.academyLadderRule >= ACADEMY_LADDER_RULE) return 0;
+  const pts = got.lifetime ? Number(got.lifetime.points) || 0 : 0;
+  if(pts <= 0) return 0;
+  let b = 0; try{ b = badgeCountOf(got); }catch(e){}
+  const rf = Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(Number(into.rankFloor) || 0)));
+  const lf = Math.max(0, Math.floor(Number(into.levelFloor) || 0));
+  /* that ladder's wall: the level of the first rank past the floor whose badges these are short of */
+  let wall = LEVEL_CAP;
+  for(let i = rf; i < TIER_ORDER_FULL.length; i++){
+    const r = TIER_UNLOCKS_ACADEMY_PREV[TIER_ORDER_FULL[i]];
+    if(r && b < r[1]){ wall = Math.min(LEVEL_CAP, r[0]); break; }
+  }
+  const lvl = Math.min(levelFromPoints(pts), Math.min(LEVEL_CAP, Math.max(wall, lf)));
+  let held = 0;
+  TIER_ORDER_FULL.forEach((k, i) => { const r = TIER_UNLOCKS_ACADEMY_PREV[k]; if(r && lvl >= r[0] && b >= r[1]) held = i + 1; });
+  if(held > rf){ into.rankFloor = held; return held; }
+  return 0;
+}
 /* 384.60: THE TOP RANK ASKS FOR EVERY CHAPTER, AND THE GAPS GROW ALL THE WAY UP. Madison: "Don't change how many for Bronze, Silver, but it
    should be 58 to reach Supernova and it needs to progressively get there." Bronze and Silver are exactly as they were (5% and 14% = 3 and 8
    of 58); then Gold 24%, Platinum 38%, Sapphire 55%, Amethyst 76%, Supernova 100% = 14, 22, 32, 44, 58 - gaps 5, 6, 8, 10, 12, 14, each bigger
@@ -78301,6 +78719,8 @@ function observeWeeklyRank(list){
    settleWeeklyWin() returning true IS the unlock. Called from Home and
    from every board load, since a settlement waits for server rows. */
 function settleWeeklyWinQueued(){
+  /* (384.51) first: a claim another account's better one has beaten is withdrawn before anything is settled or announced */
+  try{ arbitrateWeekWins(); }catch(e){}
   if(!settleWeeklyWin()) return false;
   const won = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
   if(won && !isLockedCharacter(won.id)){
@@ -78339,7 +78759,8 @@ function finalRankForWeek(wk){
   const mine = store.prevWeekKey === wk ? (store.prevWeekPoints || 0)
              : store.weekKey === wk ? (store.weekPoints || 0) : 0;
   if(!(mine > 0)) return leaderboardRows.length + 1;
-  return 1 + leaderboardRows.filter(e => e && e.pub && e.pub !== me && lastWeekPointsOfEntry(e) > mine).length;
+  /* (384.51) a tie goes to the lower public id, so equal totals are one winner and not two (the strict "more than" put both at 1) */
+  return 1 + leaderboardRows.filter(e => { if(!e || !e.pub || e.pub === me) return false; const p = lastWeekPointsOfEntry(e); return p > mine || (p === mine && e.pub < me); }).length;
 }
 /* Called from Home, which is the screen every launch and every finished
    test passes through, and again whenever the board arrives from the
@@ -78353,11 +78774,28 @@ function settleWeeklyWin(){
   /* Last week, and the board has not come from the server yet: wait. */
   if(final === null && seen.week === lastWeekKey()) return false;
   const rank = final === null ? seen.rank : final;
-  const won = rank === 1;
+  /* (384.51) A WIN IS COUNTED ONLY WHEN THE STANDINGS SUPPORT IT: a week read off the final standings (or a hand-recorded one). A week
+     more than one back can no longer be read off the rows, and the rank this phone last SAW is not proof of finishing first - it is how
+     two phones both settled the same week. Such a week is not a win (the podium below still reads the sighting). */
+  const won = rank === 1 && final !== null;
+  let counted = false;
   store.weekRankSeen = null;
   if(won){
-    store.weeklyWins = (store.weeklyWins || 0) + 1;
-    store.weekWinWeeks = (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => w !== seen.week).concat([seen.week]).slice(-60);
+    const listed = Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : [];
+    /* once: a week this account already holds (its other device settled it first) adds nothing, and a week it has lost to a better
+       claim is not taken back */
+    if(!weekWinsLostSet(store).has(seen.week)){
+      if(listed.indexOf(seen.week) < 0){
+        store.weeklyWins = (store.weeklyWins || 0) + 1;
+        store.weekWinWeeks = listed.concat([seen.week]).slice(-60);
+        counted = true;
+      }
+      const pts = storePointsForWeek(seen.week);
+      if(pts > 0){
+        if(!store.weekWinPts || typeof store.weekWinPts !== "object") store.weekWinPts = {};
+        store.weekWinPts[seen.week] = Math.max(Number(store.weekWinPts[seen.week]) || 0, pts);
+      }
+    }
   }
   if(rank >= 1 && rank <= 3){
     const before = store.weeklyTop3 || 0;
@@ -78367,7 +78805,7 @@ function settleWeeklyWin(){
        sheriff's new challenge now". Still counted.) */
   }
   saveStore();
-  return won;
+  return counted;
 }
 
 function hundosOf(st){
@@ -87133,8 +87571,8 @@ function syncStatusBarColor(){
      apart on Home ((46,32,37) against (33,29,33)), so any browser that tints its bar from the tag (Safari before 26, Chrome on Android) showed
      a band of one colour over a page that starts in another. Same colour in both now. The installed app's tag and the cache are the sky's, as before. */
   refreshEdgeTints(color);
-  let tagColor = color;
-  try{ if(document.documentElement.classList.contains("is-browser")){ const bnd = document.documentElement.style.getPropertyValue("--band").trim(); if(/^#[0-9a-f]{6}$/i.test(bnd)) tagColor = bnd; } }catch(e){}
+  /* (384.77) a Safari tab's tag is the sky's top colour again, as 383 (384.54's --band is out) */
+  const tagColor = color;
   if(!topEdgeStill() && !holdForSplash && tcMeta.content !== (owns ? splashBg : tagColor)) tcMeta.content = owns ? splashBg : tagColor;
   syncTopGuard(color);
   /* The cache always holds the APP's colour, never the splash's - it is
@@ -87162,7 +87600,7 @@ var topGuardWatch = null;
 /* (384.27) true in an installed iPhone/iPad app unless the display test has put the old behaviour back (class names set by the head script) */
 function topEdgeStill(){
   const c = document.documentElement.classList;
-  return c.contains("top-edge-on") && !c.contains("top-edge-old");
+  return c.contains("top-edge-on") && !c.contains("top-edge-old") && !c.contains("top-383");
 }
 /* (384.54) UNDER A PINNED TEST HEADER THE PAGE'S TOP IS PAPER, NOT THE SKY. .wrap.test-pinned > .top::before paints --paper at 97% from the very
    top of the screen to under the header, so on a question the glow the model in appTopEdgeColor() describes is not what is there; the strip
@@ -87175,6 +87613,92 @@ function topEdgeStripColor(color){
     if(document.querySelector(".wrap.test-pinned")){ const p = cssColorHex("var(--paper)"); if(p) return p; }
   }catch(e){}
   return color;
+}
+/* (384.77) THE STRIPS WEAR THE SKY ITSELF, NOT A COLOUR FOR IT. A flat colour, however well modelled, is one value where the sky is two radial
+   glows over paper: on Home it stood up to 12 levels off the sky beside it and read as a band under the clock in Chromium. So #top-edge and
+   #top-safe carry the sky layer's own gradients (body::before's computed background, laid over the same full-viewport box, which is where the
+   fixed sky starts in an installed app) on top of their opaque colour: the same pixels as the sky where there is no wash, still opaque. Not under
+   a pinned question header (the page's top there is the header's paper, and the strips are paper) and not with variant A (a lifted flat colour).
+   Recoloured in place, never replaced; run again after the sky's .6s dimming. */
+let topStripsSkyTimer = 0;
+function topStripsSky(){
+  try{
+    const root = document.documentElement;
+    const flat = root.classList.contains("top-match") || !!document.querySelector(".wrap.test-pinned");
+    const cs = flat ? null : getComputedStyle(document.body, "::before");
+    const img = cs && cs.backgroundImage && cs.backgroundImage !== "none" ? cs.backgroundImage : "none";
+    const base = cs ? cs.backgroundColor : "";
+    /* (384.80) not #top-edge: it is the element WebKit samples, and WebKit reads its background-COLOUR only - so it is one solid colour
+       (syncTopGuard), with no image over it, and #top-safe below it carries the sky's pixels */
+    for(const id of ["top-safe", "top-deep"]){
+      const e = document.getElementById(id); if(!e) continue;
+      if(e.dataset.sky === img + base) continue;
+      e.dataset.sky = img + base;
+      e.style.backgroundImage = img;
+      if(img !== "none"){ e.style.backgroundSize = "100vw 100lvh"; e.style.backgroundPosition = "0 0"; e.style.backgroundRepeat = "no-repeat"; }
+      if(base && !/rgba\([^)]*,\s*0\)|transparent/.test(base)) e.style.backgroundColor = base;
+    }
+  }catch(e){}
+}
+const TOP_WASH_LIFT = [4, 3, 1];   /* (384.77) the band over the page at rest on his recording, in levels (R, G, B) */
+function topWashLift(hex){
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
+  if(!m) return hex;
+  return "#" + [m[1], m[2], m[3]].map((h, i) => Math.min(255, parseInt(h, 16) + TOP_WASH_LIFT[i]).toString(16).padStart(2, "0")).join("");
+}
+/* (384.80) THE SAMPLED STRIP AND THE "fe" DANCE. Madison found a write-up of how Safari 26 / iOS 26 tints the top (Ian Febi Sastrataruna,
+   "Safari 26 Status Bar Tinting - How It Actually Works", Jun 2026): WebKit samples the BACKGROUND-COLOR - not a background-image, a gradient,
+   a pseudo-element or a backdrop filter - of a position:fixed/sticky element within 4px of the top, at least 80% of the viewport wide on iOS
+   and taller than 4px (11px and up: solid while scrolling, a colour change taken at once); visibility:hidden and pointer-events:none are
+   still sampled, display:none is not; the colour should be an inline value that is always there (never removed, never a flip to or from
+   transparent, which its observer often misses); and a TRANSPARENT top element is the case where content flows behind the status bar.
+   384.77's #top-edge wore the sky's gradients as an image over its colour, so what WebKit read was the colour under them, not what showed.
+   Now #top-edge (12px, fixed at y 0, full width, above everything, in the markup from the first byte) is one solid inline colour - the
+   sky's colour at the top edge (appTopEdgeColor), the paper under a pinned question header - recoloured in place, never removed or made
+   transparent; #top-safe under it keeps the sky's pixels for the eye. And whenever that colour changes (the splash handing over, Home and
+   the other screens, a question's header, a theme), theme-color is set to it and then "danced": the colour, the next frame the colour +
+   "fe", the frame after the colour again - the change the write-up found wakes WebKit's observer into re-sampling every tinting source.
+   This reverses 384.27's "the tags are never written after launch" for theme-color (color-scheme is still never written): the tag now
+   always equals the strip. Whether this takes the wash away can only be seen on his phone. */
+var topTintGen = 0;
+function topTintDance(color){
+  try{
+    const m = document.getElementById("themecolor");
+    if(!m || !color) return;
+    const gen = ++topTintGen;
+    m.setAttribute("content", color);
+    requestAnimationFrame(() => {
+      if(gen !== topTintGen) return;
+      m.setAttribute("content", color + "fe");
+      requestAnimationFrame(() => { if(gen === topTintGen) m.setAttribute("content", color); });
+    });
+    /* a hidden page runs no frames: the clean value is never left behind */
+    setTimeout(() => { if(gen === topTintGen && m.getAttribute("content") !== color) m.setAttribute("content", color); }, 600);
+  }catch(e){}
+}
+/* (384.80) ONE RE-SAMPLE AFTER THE SPLASH. r/PWA (the iOS 27 blur thread): "when the page initially loads the blur is there, but after
+   pulling down the page a bit the blur disappears" - WebKit samples the top again on a scroll or a layout. So once, when the strip first
+   takes the app's colour after the splash: the strip one pixel taller for one frame (a layout of the sampled element, inside the status
+   bar's area, the same colour), and where the page can scroll and is at its top, a one-pixel programmatic scroll and back in the next
+   frame. Nothing visible moves; never under a tour or a locked page. */
+var topResampleDone = false;
+function topResampleOnce(el){
+  if(topResampleDone || !el) return;
+  topResampleDone = true;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    try{
+      el.style.height = "calc(max(env(safe-area-inset-top, 0px), 6px) + 1px)";
+      void el.offsetHeight;
+      requestAnimationFrame(() => { el.style.height = ""; });
+      const de = document.documentElement;
+      if((window.scrollY || 0) === 0 && de.scrollHeight > window.innerHeight + 1 && !document.getElementById("tour-overlay") && !de.classList.contains("page-locked")){
+        const was = de.style.scrollBehavior;
+        de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior;
+        window.scrollTo(0, 1);
+        requestAnimationFrame(() => { try{ if((window.scrollY || 0) <= 1) window.scrollTo(0, 0); }catch(e){} de.style.scrollBehavior = was; });
+      }
+    }catch(e){}
+  }));
 }
 function syncTopGuard(color){
   try{
@@ -87195,10 +87719,30 @@ function syncTopGuard(color){
         }
         return;
       }
-      if(el.dataset.color !== color){ el.dataset.color = color; el.style.backgroundColor = color; }
+      /* (384.77) variant A (html.top-match): the strips take the colour the system's wash makes of the page - his 384.70 recording reads the band
+         under the status bar 4, 3 and 1 levels above the page below it, neutral - so a wash still drawn over them meets the page with no step */
+      if(document.documentElement.classList.contains("top-match")) color = topWashLift(color);
+      if(el.dataset.color !== color){
+        /* (384.80) NO JUMP IN THE STATUS BAR. "transition color changes will look janky" (the r/PWA thread): the strip changes in the frame the
+           screen does - onto a question's paper at once (the pinned header is paper in that same frame, syncTestPin), and from one sky to
+           the other over the sky's own .6s ease (body::before's --sky-k), set in the frame the sky's class changes (syncSky). Only three
+           colours ever: Home's sky, the quieter sky beyond Home, a question's paper. Every value on the way is solid. */
+        let instant = !!document.querySelector(".wrap.test-pinned") || !el.dataset.color;
+        try{ if(theme && theme.reduceMotion) instant = true; }catch(e){}
+        el.style.transition = instant ? "none" : "background-color .6s ease";
+        el.dataset.color = color; el.style.backgroundColor = color; topTintDance(color); topResampleOnce(el);
+      }
+      if(el.style.backgroundImage){ el.style.backgroundImage = ""; delete el.dataset.sky; }   /* (384.80) solid, never an image (384.77 laid the sky on it) */
+      for(const id of ["top-safe", "top-deep"]){   /* (384.77) the safe-area strip and variant B's backdrop: the same colour, in place, never replaced */
+        const s2 = document.getElementById(id);
+        if(s2 && s2.dataset.color !== color){ s2.dataset.color = color; s2.style.backgroundColor = color; }
+      }
+      topStripsSky();
+      clearTimeout(topStripsSkyTimer); topStripsSkyTimer = setTimeout(topStripsSky, 750);   /* again once the sky's .6s dimming has run */
       return;
     }
     const old = document.getElementById("top-guard");
+    if(document.documentElement.classList.contains("top-383")){ if(old) old.remove(); return; }   /* (384.77) C: 383 had no strip of any kind */
     const standalone = navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
     let off = false; try{ off = localStorage.getItem("class26e.topguard") === "0"; }catch(e){}
     if(!(isIOSDevice() && standalone) || off || !color || !document.body){ if(old) old.remove(); return; }
@@ -90727,6 +91271,24 @@ const NovaSound = (function(){
     for(const sib of par.children){ if(sib.classList && sib.classList.contains(c) && ++n >= 2) return true; }
     return false;
   };
+  /* ...AND A GRID OF SMALL ONES IS A WALL TOO (384.93). Madison: "When looking at the badge case, you can't use the case to
+     scroll up and down." Each slot is a small button, so each took a native switch: 24 in the academy's case, 58 in Fire
+     Code's, laid edge to edge - a finger that lands on one drags the switch, not the page (WebKit gives a touch on a switch to
+     the switch). Read on main 384.92: 47% of Fire Code's Badges screen and 23% of Customize > Character (26 characters) were
+     switch, the theme swatches the same. The calendar's month was the first of these (327z12, data-hsw-soft); this is the
+     rule for all of them, so a grid added later is covered without anyone knowing it: a control repeated HSW_GRID_N or more
+     times beside its own kind (the same first class), or sitting in a cell that is, gets the LABEL instead (hswMode) - a
+     finger on a label scrolls the page, and a tap on it still ticks. The planet system, an answer and a tab are HSW_ALWAYS
+     and never reach this; a mode card is judged before it. */
+  const HSW_GRID_N = 6;
+  const hswRepeated = e => {
+    const c = e && e.classList ? e.classList[0] : null, par = e && e.parentElement;
+    if(!c || !par) return false;
+    let n = 0;
+    for(const sib of par.children){ if(sib.classList && sib.classList.contains(c) && ++n >= HSW_GRID_N) return true; }
+    return false;
+  };
+  const hswInGrid = h => hswRepeated(h) || hswRepeated(h.parentElement);
   const hswTooBig = h => h.offsetHeight > HSW_MAX_H
     || (h.offsetWidth > HSW_MAX_W && !(h.offsetHeight <= HSW_WIDE_H && h.matches("button, [role='button']") && !hswListRow(h)));
   /* THE SWITCH ROWS' OWN INPUT IS THE SWITCH (build 327z10). A .opt row (every
@@ -90785,7 +91347,7 @@ const NovaSound = (function(){
     if(h.matches(".modecard")) return h.querySelector(HLB_INNER) ? 1 : 3;
     if(h.matches(HSW_ALWAYS)) return 1;
     /* a grid of small controls a page is scrolled by (the calendar's month): labels, never switches */
-    const soft = !!h.closest("[data-hsw-soft]");
+    const soft = !!h.closest("[data-hsw-soft]") || hswInGrid(h);
     if(!soft && hswOk(h)) return 1;
     /* too big or too many for a switch: a label - unless something inside it answers taps of its own (the label
        would cover it), or it submits a form (a label's click is not a button's) */
@@ -94910,8 +95472,11 @@ function pauseRun(){
   saveRunSession();
   /* (384 vr2) a race: the room is told, so it does not wait on you - see vroomNotePaused */
   vroomNotePaused(true);
+  /* (384.80) where the question was scrolled to: the Pause card goes up at the top of a locked page, and Resume gives it back */
+  pauseScrollY = Math.max(0, Math.round(window.scrollY || 0));
   renderPausedScreen();
 }
+var pauseScrollY = 0;
 
 /* ---- PAUSE ONLY PAUSES YOU (384, Virtual Room round 2) ----
    Madison: "Pausing should only pause you.. and yeah if you pause it would let you leave." A race's Pause held the whole room:
@@ -95256,6 +95821,7 @@ function centerPauseStack(panel, stack){
     let dy = first ? bandTop + line - first.getBoundingClientRect().top : bandTop + vh / 2 - (r.top + r.height / 2);
     dy = Math.max(dy, pr.top + 8 - r.top);
     stack.style.transform = Math.abs(dy) >= 0.01 ? "translateY(" + dy.toFixed(2) + "px)" : "";
+    syncPageLock();   /* (384.80) placed: does the card fit, so the page behind it can be held still */
   };
   requestAnimationFrame(place);
   setTimeout(place, 450);
@@ -95263,6 +95829,79 @@ function centerPauseStack(panel, stack){
   /* (384) and when the visible band changes under it - a held zoom being given back */
   try{ window.visualViewport.addEventListener("resize", place); }catch(e){}
 }
+
+/* ---- THE PAGE BEHIND A CARD DOES NOT MOVE (384.80) ----
+   Madison (iPhone 17 Pro Max, installed, 384.77): "when on the pause menu, it starts moving when swiping too?" The Pause card is
+   a screen of its own on #stage, centred on the visible screen by a transform - but its panel left the document 66px taller than
+   a Pro Max (1022 of 956), so a swipe scrolled it and the card rode up and down with the page. While a card that fits the screen
+   is up, or a full-screen overlay is up on <body>, the page is locked:
+   - html.page-locked (html and body overflow:hidden, as the unit card's lock): no scroll by a finger or a wheel; a script's own
+     scrollTo still works, and the scroll position is not touched, so the page is where it was when the card goes;
+   - pageLockTouch: a drag that would move the page is stopped (iOS), unless it starts in something that scrolls by itself (a list
+     inside the card or the overlay) or a text field;
+   - a card that does NOT fit (a phone on its side) leaves the page scrollable so its buttons can be reached; there is no bounce.
+   Kept in step by a look whenever #stage or <body> gains or loses a child, when the card is placed (centerPauseStack), and at a
+   touch while locked - so a lock whose overlay was hidden without being removed lets go at the next touch. The chat sheet keeps its
+   own (body.chatdock-open, build 327); the tour's dim is not a card and does not lock. */
+var pageLockOn = false;
+var pageLockQueued = false;
+var PAGE_LOCK_SKIP = { "top-edge": 1, "top-safe": 1, "top-deep": 1, "top-guard": 1, "splashscreen": 1, "tour-overlay": 1, "stage": 1 };
+function pageLockCardFits(){
+  const st = document.getElementById("stage");
+  const ps = st && st.querySelector(".pausepanel.is-pause > .pause-stack");
+  if(!ps || !ps.isConnected) return false;
+  const r = ps.getBoundingClientRect();
+  if(!r.height) return false;
+  const vv = window.visualViewport;
+  const top = vv && vv.offsetTop > 0 ? vv.offsetTop : 0, h = (vv && vv.height) || window.innerHeight;
+  return r.top >= top - 1 && r.bottom <= top + h + 1;
+}
+function pageLockOverlay(){
+  const b = document.body;
+  if(!b) return null;
+  const W = window.innerWidth, H = window.innerHeight;
+  for(let i = b.children.length - 1; i >= 0; i--){
+    const e = b.children[i];
+    if((e.id && PAGE_LOCK_SKIP[e.id]) || /^(SCRIPT|STYLE|LINK|TEMPLATE|NOSCRIPT)$/.test(e.tagName) || e.classList.contains("wrap")) continue;
+    const cs = getComputedStyle(e);
+    if(cs.position !== "fixed" || cs.display === "none" || cs.visibility === "hidden" || cs.pointerEvents === "none") continue;
+    const r = e.getBoundingClientRect();
+    if(r.width >= W * 0.9 && r.height >= H * 0.9) return e;
+  }
+  return null;
+}
+function syncPageLock(){
+  pageLockQueued = false;
+  let on = false;
+  try{ on = pageLockCardFits() || !!pageLockOverlay(); }catch(e){ on = false; }
+  if(on === pageLockOn) return;
+  pageLockOn = on;
+  document.documentElement.classList.toggle("page-locked", on);
+}
+function queuePageLock(){
+  if(pageLockQueued) return;
+  pageLockQueued = true;
+  requestAnimationFrame(syncPageLock);
+  setTimeout(syncPageLock, 120);   /* a hidden page runs no frames */
+}
+function pageLockTouch(e){
+  if(!pageLockOn || !e.cancelable || (e.touches && e.touches.length > 1)) return;
+  for(let n = e.target; n && n.nodeType === 1 && n !== document.body && n !== document.documentElement; n = n.parentElement){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName) || n.isContentEditable) return;
+    if(n.scrollHeight > n.clientHeight + 1 || n.scrollWidth > n.clientWidth + 1){
+      const cs = getComputedStyle(n);
+      if(/(auto|scroll)/.test(cs.overflowY + " " + cs.overflowX)) return;
+    }
+  }
+  e.preventDefault();
+}
+try{
+  document.addEventListener("touchstart", () => { if(pageLockOn) syncPageLock(); }, { capture: true, passive: true });
+  document.addEventListener("touchmove", pageLockTouch, { capture: true, passive: false });
+  const pageLockMO = new MutationObserver(queuePageLock);
+  pageLockMO.observe(document.getElementById("stage"), { childList: true });
+  pageLockMO.observe(document.body, { childList: true });
+}catch(e){}
 
 /* A custom, in-page confirmation for leaving mid-test — deliberately NOT
    window.confirm(), which can be unreliable (or silently no-op) inside a
@@ -95600,6 +96239,14 @@ function resumeRun(){
     startTimer(true);
   }
   render();
+  /* (384.80) the question back where it was scrolled to when Pause was tapped (the lock lets go first: the card has gone) */
+  syncPageLock();
+  if(pauseScrollY > 0){
+    const de = document.documentElement, was = de.style.scrollBehavior;
+    try{ de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior; window.scrollTo(0, pauseScrollY); }catch(e){}
+    de.style.scrollBehavior = was;
+  }
+  pauseScrollY = 0;
   if(raceTimed) runRaceClock();
 }
 
@@ -113864,6 +114511,46 @@ function sayClassArrival(){
                  linked: "Linked — this device is now synced." }[arr.note];
   if(said){ try{ holdNoticesAfterTour(); }catch(e){} showWelcomeBackBanner(said); }
 }
+/* (384.89) HOME FITS THE WINDOW. Home is one screen: the planets, the greeting, NOVA, Start Studying, the tab bar. Where its document came out
+   a few px taller than the window (2-9px on most tablets and laptops and his 85% zoom on its side, 40-48px with Safari's bars over an iPad's
+   page - the bottom reserve for furniture that sits lower than the reserve assumes; build 383 had most of the small ones too) the page
+   could be scrolled by that much, which on a phone is a real scroll under the rubber band. That slack is taken back with a negative bottom
+   margin on the panel - nothing on the screen moves - and only when it IS slack: everything Home shows ends above the tab bar (or the
+   window's foot), so nothing that has to be reached is put out of reach. Where the content itself runs under the bar (none in the matrix today;
+   tools/check-b384-homescroll.py) the page keeps its scroll. Measured again after the entrance, once the tab bar has settled, on fonts and on resize. */
+function homeFitNow(panel){
+  try{
+    if(!panel || !panel.isConnected) return;
+    panel.style.marginBottom = "";
+    const se = document.scrollingElement || document.documentElement, ih = window.innerHeight;
+    const over = se.scrollHeight - ih;
+    if(over <= 0 || over > 120) return;
+    const y = window.scrollY || 0;
+    let floor = ih;
+    const bar = document.getElementById("bottomtabs");
+    if(bar && !bar.hidden){ const r = bar.getBoundingClientRect(); if(r.height && r.top > ih * .5) floor = Math.min(floor, r.top + y); }
+    let bottom = 0;
+    for(const c of panel.children){
+      if(c.classList.contains("cosmic-hero-wrap")) continue;   /* the planets' box carries their glow; the words and the button are what must clear */
+      const r = c.getBoundingClientRect();
+      if(r.height > 0 && getComputedStyle(c).position !== "fixed") bottom = Math.max(bottom, r.bottom + y);
+    }
+    if(!bottom || bottom > floor + .5) return;   /* the content itself runs under the bar: a real scroll (nothing moves either way, so what is above the bar stays reachable) */
+    panel.style.marginBottom = (-over) + "px";
+  }catch(e){}
+}
+var homeFitResizeOn = false;
+function homeFitWindow(panel){
+  homeFitNow(panel);
+  requestAnimationFrame(() => homeFitNow(panel));
+  setTimeout(() => homeFitNow(panel), 450);
+  setTimeout(() => homeFitNow(panel), 1100);
+  try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => homeFitNow(panel)); }catch(e){}
+  if(!homeFitResizeOn){
+    homeFitResizeOn = true;
+    try{ window.addEventListener("resize", () => { const p = document.querySelector(".panel.home.screen-home-actual"); if(p) requestAnimationFrame(() => homeFitNow(p)); }, { passive: true }); }catch(e){}
+  }
+}
 function showHome(){
   /* (384 r16) a leave asked for in Fire Code is finished here before anything is built; one that goes straight on to Fire Code builds no Home */
   try{ if(runPendingClassLeave()) return; }catch(e){}
@@ -114190,6 +114877,7 @@ function showHome(){
   }
   syncLoopClock(panel);
   heroSettleSkip(panel);
+  homeFitWindow(panel);   /* 384.89: no scroll on Home where it is only slack */
   /* the Supernova streak with every fourth pulse (b321h) */
   try{ homeStreakArm(heroWrap); }catch(e){}
   /* build 380: a size with no sheets yet (an iPad turned) moves at once on another size's, until its own are made (orbitStandIns) */
@@ -118688,7 +119376,7 @@ function ifcPointerLine(c){
 }
 function ifcPageLine(c){
   const bits = [];
-  if(c.source === "amendment") bits.push("HC Amendments, PDF page " + c.pdfPage);
+  if(c.source === "amendment") bits.push(c.pdfPageEnd && c.pdfPageEnd > c.pdfPage ? "HC Amendments, PDF pages " + c.pdfPage + "\u2013" + c.pdfPageEnd : "HC Amendments, PDF page " + c.pdfPage);
   else { if(c.printedPage) bits.push("page " + c.printedPage); bits.push("PDF page " + c.pdfPage); }
   if(c.exception) bits.push(ifcExceptionName(c) + " is the one the question asks about");
   return bits.join(" \u00b7 ");
@@ -122223,7 +122911,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.74";
+const APP_BUILD = "2026-11-13-384.98";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -137834,7 +138522,7 @@ function showAdvancedSettings(){
   let diagOn = false; try{ diagOn = localStorage.getItem("class26e.displaytest") === "1"; }catch(e){}
   const diagBtn = settingsTextRow(diagOn ? "Hide the display test panel" : "Show the display test panel");
   diagBtn.addEventListener("click", () => {
-    try{ if(diagOn){ localStorage.removeItem("class26e.displaytest"); localStorage.removeItem("class26e.dxboot"); localStorage.removeItem("class26e.topedgeold"); localStorage.removeItem("class26e.topedgepe"); } else localStorage.setItem("class26e.displaytest", "1"); }catch(e){}
+    try{ if(diagOn){ localStorage.removeItem("class26e.displaytest"); localStorage.removeItem("class26e.dxboot"); localStorage.removeItem("class26e.topedgeold"); localStorage.removeItem("class26e.topedgepe"); ["topmatch", "topdeep", "top383"].forEach(k => localStorage.removeItem("class26e." + k)); } else localStorage.setItem("class26e.displaytest", "1"); }catch(e){}
     location.reload();
   });
   tcard.appendChild(diagBtn);
@@ -148692,7 +149380,6 @@ function playWeekRecap(r){
   return el;
 }
 let lbFindMeAt = 0;
-let lbCrownSeq = 0;
 /* ---- BANNERS ON THE BOARD (build 310, NOT SWITCHED ON) ----
    "Banners being displayed in the leaderboard, is there a way to do this
    while still being able to see gold silver and bronze placements? ...
@@ -148887,26 +149574,13 @@ function renderRankingRows(rows, entries, board, opts){
        top 3 so it's more prestigious?" The rows keep their tinted glass
        and their height; what is added is a metal ring in each place's own
        gold, silver or bronze (CSS, .rank-podium-N::before), a struck edge
-       on the medal, a small crown over first place's medal, and on first
+       on the medal, a small crown over first place's medal (taken off in
+       384.92, below), and on first
        place alone a slow light that crossed the glass now and then -
        removed in build 327z5 ("remove the reflection effect on the first
        place person"). */
-    if(place === 1){
-      const crown = document.createElement("span");
-      crown.className = "lb-crown"; crown.setAttribute("aria-hidden", "true");
-      const cid = "lbcrown-" + (++lbCrownSeq);
-      /* (384.18) UPRIGHT AND SYMMETRIC. Madison: "I don't like the leaning crown thing anymore, make that better". It was tilted 8 degrees
-         and drawn lopsided. Now: level, three points with a bead on each tip, a band with a jewel, and it sits on the medal's top edge. */
-      crown.innerHTML = "<svg viewBox=\"0 0 24 16\"><defs><linearGradient id=\"" + cid + "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">"
-        + "<stop offset=\"0\" stop-color=\"#FFF1B8\"/><stop offset=\".55\" stop-color=\"#F5C84A\"/><stop offset=\"1\" stop-color=\"#B9851A\"/></linearGradient></defs>"
-        + "<path d=\"M4 14.2 2.8 5.4 7.6 9.4 12 3.4 16.4 9.4 21.2 5.4 20 14.2Z\" fill=\"url(#" + cid + ")\" stroke=\"#7A5508\" stroke-width=\".9\" stroke-linejoin=\"round\"/>"
-        + "<path d=\"M4.3 11.6h15.4\" stroke=\"#7A5508\" stroke-width=\".7\" opacity=\".55\"/>"
-        + "<circle cx=\"2.8\" cy=\"4.6\" r=\"1.35\" fill=\"#FFF3C4\" stroke=\"#7A5508\" stroke-width=\".6\"/>"
-        + "<circle cx=\"12\" cy=\"2.6\" r=\"1.5\" fill=\"#FFF3C4\" stroke=\"#7A5508\" stroke-width=\".6\"/>"
-        + "<circle cx=\"21.2\" cy=\"4.6\" r=\"1.35\" fill=\"#FFF3C4\" stroke=\"#7A5508\" stroke-width=\".6\"/>"
-        + "<circle cx=\"12\" cy=\"12.9\" r=\"1.05\" fill=\"#FFF8E0\"/></svg>";
-      rank.appendChild(crown);
-    }
+    /* (384.92) NO CROWN. Madison, circling it on his board: "No crown." The small gold crown that sat on first place's medal
+       (build 324; made upright in 384.18) is gone from every board in both classes; the gold 1 medal itself is as it was. */
 
     if(entry.pub){ row.dataset.pub = entry.pub; row.dataset.av = entry.avatarChar || ""; }
     const keptKey = entry.pub ? entry.pub + "|" + (entry.avatarChar || "") : null;
@@ -150587,6 +151261,10 @@ function buildCustomizeGroup(key, title, note, have, total, gridClass, titleClas
   head.appendChild(c);
   const grid = document.createElement("div");
   grid.className = gridClass;
+  /* (384.93) A GRID YOU SCROLL BY: labels, never switches (see NovaSound hswInGrid). Each group is its own grid, and a group
+     of four or five would have kept its switches beside one of seven that lost them - one page of characters that a finger
+     scrolls by in some rows and not in others. Every Customize grid is soft, whatever its size; a tap still ticks. */
+  grid.setAttribute("data-hsw-soft", "");
   card.append(head, grid);
   return { card, grid, head };
 }

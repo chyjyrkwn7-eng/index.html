@@ -36,9 +36,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # the article fits only 'operational', so the grammar gives the answer away; the fact itself, 105.5.26, is right). They are DELETED
 # here. A removed question's position stays taken in its old chapter (IFC_SRC_GAPS), its key is un-starred once
 # (IFC_RETIRED_KEYS) and its answer counts are left alone - the 5.4.2 precedent. Never reword a question to fix it: it goes or it is
-# reported. The table of what was kept and removed, with the reason for each, is in docs/notes-archive.md ("384.47").
+# reported (384.73: the owner lifted that for the audit's items - QUESTION_EDITS below, each with its old text pinned). The table of what was kept and removed, with the reason for each, is in docs/notes-archive.md ("384.47").
 # A removal is applied BEFORE the moves and is a no-op for an id that is already gone (re-running on the shipped bank).
-UNIT_MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2", "ch64-001": "2",
+#   (384.73) ch12-012 and ch55-702 were moved here in 384.42 and are REMOVED in 384.73 (UNIT_REMOVALS: each repeats a question that stays), so
+#   they are no longer in this table; their moves are history (IFC_MOVED_KEYS keeps the entries, which nothing reads once the id is gone).
+UNIT_MOVES = {"ch62-702": "2", "ch62-703": "2", "ch64-001": "2",
     # (384.47) the county permit questions: Chapter 1 (sections 101-199), in citation order, after its own 88 (positions 89-158)
     "ch51-020": "1", "ch20-003": "1", "ch22-001": "1", "ch37-710": "1", "ch53-024": "1", "ch53-025": "1",
     "ch53-602": "1", "ch53-603": "1", "ch54-010": "1", "ch58-501": "1", "ch60-514": "1", "ch64-204": "1",
@@ -54,7 +56,42 @@ UNIT_MOVES = {"ch12-012": "4", "ch55-702": "2", "ch62-702": "2", "ch62-703": "2"
     "ch30-506": "1", "ch30-709": "1", "ch39-002": "1", "chAppC-702": "1", "ch12-319": "1", "ch10-108": "1"}
 
 UNIT_REMOVALS = ["ch28-501", "ch37-001", "ch56-312", "ch59-711", "ch29-201", "ch50-074", "ch54-009", "ch50-075", "ch59-207",
-    "ch53-601", "ch63-210", "ch63-510", "ch63-701", "ch55-501", "ch55-502", "ch20-508", "ch30-505"]
+    "ch53-601", "ch63-210", "ch63-510", "ch63-701", "ch55-501", "ch55-502", "ch20-508", "ch30-505",
+    # (384.73) the three same-question pairs the audit found, the weaker twin of each (the owner: "do what is best"):
+    # ch12-012 repeats ch4-001 (county 403.7.1.1, backup power within 3 hours), ch55-702 repeats ch2-086 (the IFC definition of a
+    # cryogenic fluid, boiling point lower than -130 F), ch2-047 repeats ch1-071 (a special event outdoors is 100 or more people).
+    "ch12-012", "ch55-702", "ch2-047"]
+
+# ---- QUESTION_EDITS (build 384.73): wording the OWNER had changed after the audit, applied to whatever the hand-off says ----
+# "The 85 flagged and any other issues mentioned in the attention document ... fix it now." {question id: {field: (old, new)}}; an
+# option is addressed as "options.B". A field already holding the new text is left alone (re-running on the shipped bank is a
+# no-op); one holding neither is an error (the bank is not what this table was written against). A question's key is its chapter,
+# its position and a hash of its wording and choices, so every edit to a stem or an option has its old text pinned in index.html
+# (IFC_KEY_TEXT / IFC_KEY_CHOICES) - an explanation is not part of the key and needs nothing. The reason for each is in
+# docs/notes-archive.md ("384.73").
+QUESTION_EDITS = {
+    # the article "a" in the stem ruled out "operational" (and "an" in 105.7 made the key the odd one out): the stem no longer has one
+    "ch1-081": {"question": ("Harris County requires a _____ permit to install or modify a gate across a fire apparatus access road.",
+                             "Which type of permit does Harris County require to install or modify a gate across a fire apparatus access road?")},
+    "ch1-612": {"question": ("In Harris County, an industrial facility may be approved for exemption from the fire code, including operational permits, if it has a _____.",
+                             "In Harris County, an industrial facility may be approved for exemption from the fire code, including operational permits, if it has which of these?")},
+    # 105.3.4 lets the fire code official issue a conditional or partial certificate of COMPLIANCE, so that wrong option was arguable
+    # (the 5.4.3 precedent for chAppH-805: the option is replaced, the old one stays in the key)
+    "ch1-040": {"options.A": ("Compliance", "Completion")},
+    # a figure the answer to another question depends on was printed in this stem (ch3-624 asks 50 percent, ch35-016 asks 30 feet,
+    # ch1-142 and ch1-609 ask $200 to $500): the stem keeps the question and drops the figure
+    "ch3-099": {"question": ("In Harris County, the occupant load of a mobile food vendor vehicle park whose perimeter is enclosed more than 50 percent is calculated at _____ square feet per occupant.",
+                             "In Harris County, the occupant load of a mobile food vendor vehicle park is calculated at _____ square feet per occupant.")},
+    "ch35-009": {"question": ("At least one portable fire extinguisher rated not less than _____ shall be within 30 feet of hot work being performed.",
+                              "At least one portable fire extinguisher provided for hot work must have a minimum rating of _____.")},
+    "ch1-112": {"question": ("In Harris County, a citation for working without permits carries a $200 to $500 fine plus _____ permit fees.",
+                             "In Harris County, a citation for working without permits carries a fine plus _____ permit fees.")},
+    # American spelling; and the hydrant row beside the 3,000 gpm row is 350 feet (the 3,251-4,000 row), not 300 (the row after that)
+    "ch28-701": {"explanation": ("The separation is one and one-half times the pile height, measured to buildings, property lines and neighbouring piles, with approved access roads in that space.",
+                                 "The separation is one and one-half times the pile height, measured to buildings, property lines and neighboring piles, with approved access roads in that space.")},
+    "chAppC-002": {"explanation": ("The 2,751 to 3,250 gpm row lists an average hydrant spacing of 400 feet, before any footnote adjustment. Neighbouring rows list 450 feet (lower flows) and 300 feet (higher flows).",
+                                   "The 2,751 to 3,250 gpm row lists an average hydrant spacing of 400 feet, before any footnote adjustment. The rows either side list 450 feet (lower flows) and 350 feet (higher flows).")},
+}
 
 def apply_moves(bank):
     qs, units = bank["questions"], bank["units"]
@@ -64,6 +101,13 @@ def apply_moves(bank):
         if q is not None:
             qs.remove(q)
     bank["meta"]["questionCount"] = len(qs)        # the bank's own count follows (the app reads it; nothing types it)
+    for qid, edits in QUESTION_EDITS.items():      # (384.73) the owner's wording changes
+        q = next((x for x in qs if x["id"] == qid), None)
+        assert q is not None, qid
+        for field, (old, new) in edits.items():
+            box, key = (q["options"], field.split(".")[1]) if field.startswith("options.") else (q, field)
+            assert box[key] in (old, new), (qid, field, box[key])
+            box[key] = new
     for qid, to in UNIT_MOVES.items():
         assert to in ids, (qid, to)
         q = next((x for x in qs if x["id"] == qid), None)

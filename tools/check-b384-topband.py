@@ -41,7 +41,10 @@ try:
                 page.evaluate("()=>{ try{ %s }catch(e){} }" % scr); page.wait_for_timeout(1200)
                 page.evaluate("()=>{document.getElementById('tour-overlay')?.remove();document.getElementById('tour-tooltip')?.remove();}")
                 r = page.evaluate(READ)
-                if r["blurred"]: bad.append((scr[:24], r["blurred"][:2]))
+                # (384.78, ON PURPOSE) 384.77's exemption for Home's chat button (383's blurred glass) is gone: the top band's buttons are 384.76's
+                # unblurred glass again on every screen, Home included ("now the chat button doesn't match"), so nothing up there may blur
+                blurred = list(r["blurred"])
+                if blurred: bad.append((scr[:24], blurred[:2]))
                 if not r["chat"] or not r["chat"]["vis"]: nochat.append(scr[:24])
                 elif r["chat"]["bg"] in ("rgba(0, 0, 0, 0)", "transparent") and "gradient" not in r["chat"]["bgi"]: nochat.append(("transparent", scr[:24]))
             chk("%s: nothing in the top band of any of %d screens computes a backdrop blur" % (name, len(SCREENS)), not bad, bad[:3])
