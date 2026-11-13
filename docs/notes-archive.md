@@ -39642,10 +39642,19 @@ WHAT CHANGED:
   academy). The button's numbers are the defaults, so the button is unchanged (check-b384-classbtn still pixel for pixel). A circle
   of another size takes the ring's four stops as the same share of its radius (--cr-a..d = the button's 4.3 / 3.8 / 2 / 1.5px of its
   26px radius) and its glows scaled by --crs, set beside each place's own size (.cc-emblem 52px .963, 42px .778, 38px .704; .ce-emblem
-  84px .. 86 with its rim, 1.593; the banner face .56). The list's bubbles are the button's size and keep its px, with their own
+  1.593; the banner face .56). The list's bubbles are the button's size and keep its px, with their own
   opaque body and shadow (--cr-base, --cr-drop); circles on a card or a banner have no drop shadow of their own.
 - THE CARDS' OWN LIGHT. Each card's corner wash (.cc-glow) and its picked glow (--cc) are the class's --cbc now (the academy's pink
   tail belonged to its old mark). Layout, text, chips and taps are unchanged; picked (is-picked) and "you are here" (is-here) keep
   their edges and light.
 
-GATE tools/check-b384-classmarks.py [--against REV|DIR]: RESULTS PENDING.
+GATE tools/check-b384-classmarks.py [--against REV|DIR] - both classes, iPhone 17 Pro Max and iPad Pro 11", every place above
+(signup, catalog, enroll, list, the three banners), each circle against a probe of Home's button for the same class read off the same
+page: M the mark is classBtnIcon's drawing (parsed and written out by the page, ids normalised); R the lit ring (the same --cb-ring,
+the four stops at the same share of the radius within 2 points, the same layer and rim colours, the two glows in the same colours,
+their blur the same share of the size within 25%); O no NOVA_CLASSES gradient id anywhere on the page; S picked and "you are here"
+still drawn apart. ALL PASS here (92). FAILS on the 384.98 head (e817059): 76 - M 34 (every card, the enroll page and the banners
+drew the old icons; only the list already had the new marks), R 38 (no ring anywhere but the button), O 4; S holds on both.
+A first draft compared the svg as source text (the page writes <stop></stop>) and read "you are here" from the border alone (the
+clean look's cards have no border colour); both fixed in the gate, not the app.
+(.ce-emblem's --crs is its 86px with the rim over the button's 54: 1.593.)

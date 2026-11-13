@@ -17,7 +17,7 @@ button's 54px, read off the same page):
      their blur the same share of the circle's size (within 25%);
   O  nowhere on the page is NOVA_CLASSES' old icon markup (its gradient ids);
   S  the states still read: on the sign-up a picked card's edge and light differ from an unpicked one's; on Classes the class you
-     are in ("you are here") has a stronger edge than the other.
+     are in ("you are here") is drawn apart from the other (its edge, light or fill).
 Run:  python3 tools/check-b384-classmarks.py [--against REV|DIR]   (--against the 384.98 head must FAIL M, R and O)"""
 import importlib.util, json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +31,9 @@ QUIET = "()=>{ theme.reduceMotion = true; try{ applyTheme(); }catch(e){} try{ ho
 READ = r"""(args)=>{ const [sel, key] = args;
   const px = v => parseFloat(v) || 0;
   const norm = h => String(h || '').replace(/cbx\d+-/g, 'cbx-');
-  const expect = (typeof classBtnIcon === 'function') ? norm(classBtnIcon(key)) : '';
+  /* the drawing as the page itself writes it out (parsed, so <stop/> reads <stop></stop> on both sides) */
+  const expect = (() => { if(typeof classBtnIcon !== 'function') return ''; const t = document.createElement('span'); t.innerHTML = classBtnIcon(key);
+    return t.firstElementChild ? norm(t.firstElementChild.outerHTML) : ''; })();
   const old = ((typeof NOVA_CLASSES !== 'undefined' ? NOVA_CLASSES : []).find(c => c.key === key) || {}).icon || '';
   const one = el => { if(!el) return null; const cs = getComputedStyle(el); const r = el.getBoundingClientRect();
     const svg = el.matches('svg') ? el : el.querySelector(':scope > svg');
@@ -110,9 +112,9 @@ with sync_playwright() as pw:
             pg.evaluate("()=>showClassCatalog('home')"); pg.wait_for_timeout(1300)
             for key in ("academy", "ifc"): judge(tag, "catalog", key, place_read(pg, ".class-catalog .class-card.is-%s .cc-emblem" % key, key))
             here = pg.evaluate("""()=>{ const h = document.querySelector('.class-catalog .class-card.is-here'), o = document.querySelector('.class-catalog .class-card:not(.is-here):not(.is-soon)');
-              const a = el => { const m = getComputedStyle(el).borderTopColor.match(/[\\d.]+/g) || []; return m.length > 3 ? +m[3] : 1; };
-              return h && o ? { here: a(h), other: a(o), hereC: getComputedStyle(h).borderTopColor, otherC: getComputedStyle(o).borderTopColor } : null; }""")
-            chk("[%s] S catalog: the class you are in has a stronger edge than the other (%s)" % (tag, here), here and here["here"] > here["other"], here)
+              const look = el => { const c = getComputedStyle(el); return [c.borderTopColor, c.boxShadow, c.backgroundImage, c.backgroundColor].join(' | '); };
+              return h && o ? { here: look(h), other: look(o) } : null; }""")
+            chk("[%s] S catalog: the class you are in is drawn apart from the other (its edge, light or fill)" % tag, here and here["here"] != here["other"], here)
             old_left += pg.evaluate(OLDIDS)
             # Fire Code's enroll page
             pg.evaluate("()=>showIfcEnroll()"); pg.wait_for_timeout(1100)
