@@ -402,12 +402,23 @@ def part_D(br, url):
 
 srv, url = g["serve"]()
 try:
-    with sync_playwright() as pw:
-        br = pw.chromium.launch(executable_path=g["CHROME"])
-        for name, fn in (("T", part_T), ("S", part_S), ("R", part_R), ("D", part_D)):
-            if name in ONLY:
-                print("== %s" % name, flush=True); fn(br, url)
-        br.close()
+    for name, fn in (("T", part_T), ("S", part_S), ("R", part_R), ("D", part_D)):
+        if name not in ONLY: continue
+        # one browser a part; a part whose page the shared machine kills ("Target crashed", the page closed) is run again, whole
+        for attempt in range(3):
+            print("== %s%s" % (name, "" if not attempt else " (again: the page was lost to the machine's load)"), flush=True)
+            try:
+                with sync_playwright() as pw:
+                    br = pw.chromium.launch(executable_path=g["CHROME"])
+                    try: fn(br, url)
+                    finally:
+                        try: br.close()
+                        except Exception: pass
+                break
+            except Exception as e:
+                m = repr(e).lower()
+                if attempt < 2 and ("crash" in m or "closed" in m or "destroyed" in m): continue
+                raise
 finally:
     srv.shutdown()
 print("ALL PASS" if ok else "FAILED")

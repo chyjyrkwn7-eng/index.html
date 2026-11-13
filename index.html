@@ -163884,15 +163884,17 @@ function tabPerfText(){
      transition, when it is the same as the stylesheet's. */
   function settleSliderOpacity(){
     const want = slider.classList.contains("ready") ? "1" : "0";
+    /* (384.102) no forced style pass (void offsetWidth) here either - it ran in a mouse's release (lensHide) and at every landing's
+       hand-over: the platter's transition is held off inline and given back once frames have been drawn without it (placeBubble) */
     slider.style.transition = "none";
     slider.style.opacity = want;
     if(slider._fade){ try{ slider._fade.cancel(); }catch(e){} slider._fade = null; }
-    void slider.offsetWidth;
-    slider.style.transition = "";
+    const tok = ++placeTok;
+    const giveBack = () => { if(tok === placeTok && slider.style.transition === "none") slider.style.transition = ""; };
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      if(lensG || bar.classList.contains("lens-up")) return;
-      if(want === "1"){ slider.style.transition = "none"; slider.style.opacity = ""; void slider.offsetWidth; slider.style.transition = ""; }
-      else slider.style.opacity = "";   /* a tab lit since then fades in as it always did */
+      if(lensG || bar.classList.contains("lens-up")){ giveBack(); return; }
+      if(want === "1"){ slider.style.opacity = ""; requestAnimationFrame(() => requestAnimationFrame(giveBack)); }
+      else { giveBack(); slider.style.opacity = ""; }   /* a tab lit since then fades in as it always did */
     }));
   }
   function lensFinish(){
