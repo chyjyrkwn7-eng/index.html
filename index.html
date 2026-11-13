@@ -55745,11 +55745,11 @@ const IFC_POINTER_PATCH = {
   "ch57-066": { find: ["conspicuous label in red letters on contrasting", "FLAMMABLE KEEP FIRE AWAY"] },
   "ch66-712": { find: ["classrooms in Group B, F or M", "shall be stored in hazardous material storage", "shall not contain other storage"] },
   "ch7-009": { find: ["doors designed to be kept normally closed", "FIRE DOOR KEEP CLOSED"] },
-  "ch6-030": { find: ["operations utilizing solid fuel-burning cooking appliances", "1 month"] },
+  "ch6-030": { find: ["operations utilizing solid fuel-burning cooking appliances", "1 month"], rows: true },
   "ch62-702": { find: ["Class I Describes those formulations that are capable", "deflagration but not detonation"] },
   "ch62-703": { find: ["Class IV Describes those formulations that burn", "same manner as ordinary combustibles", "minimal reactivity hazard"] },
   "ch33-001": { find: ["written site safety plan", "approved before a building permit is issued"] },
-  "ch22-014": { find: ["All other dusts", "not exceed the critical depth layer", "1 / 32"] },
+  "ch22-014": { find: ["All other dusts", "not exceed the critical depth layer", "1 / 32"], rows: true },
   "ch32-052": { row: ["I\u2013IV", "501\u20132,500", "Open to the"] },
   "ch2-616": { find: ["materials that are health hazards", "Corrosives Highly toxic materials Toxic materials"] },
   /* (384.72) THE COUNTY TABLES SHOW WHAT THEY ARE. The booklet prints Table 105.5.22's title and its column heading at the foot of page 17 and the rows
@@ -55777,7 +55777,21 @@ const IFC_POINTER_PATCH = {
      headings. The same patch as theirs; and the gold is the ROW, as on every other row of these tables ("Liquids | 10 gallons"), not the value alone. */
   "ch60-701": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18, highlight: "Liquids | 10 gallons" },
   "ch60-702": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18, highlight: "Solids | 100 pounds" },
-  "chExhB-703": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nAssembly\nGaming floors (keno, slots, etc.) | 11 gross", highlight: "Gaming floors (keno, slots, etc.) | 11 gross" }
+  "chExhB-703": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nAssembly\nGaming floors (keno, slots, etc.) | 11 gross", highlight: "Gaming floors (keno, slots, etc.) | 11 gross" },
+  /* (384 cropfix) WHOLE ROWS. Madison: "Yes, highlight entire rows but ensure it's accurate. Don't highlight incorrect stuff of course." A table answer marked
+     as one cell (the value, or the label and the value apart) is marked as its row, border to border: `rows: true` turns each `find` that is a table cell
+     into the row it stands in (ifc-viewer.js cellRows; ch6-030 and ch22-014 above carry it too); a county pointer names its row ("label | value").
+     Each row was read against its question: ch6-029 high-volume cooking (charbroiling or wok) | 3 months; ch12-040 Lithium-ion batteries | 20 kWh;
+     ch60-511 highly toxic Liquids | Any Amount; ch60-514 Toxic | Any Amount (the gold was on Highly toxic, the row above - the question asks about toxic
+     gas); ch62-205 organic peroxide liquids Class III | 1 gallon; ch62-506 organic peroxide solids Class III | 10 pounds; ch62-507 Class V | No Permit
+     Required. Left as they are: ch61-022 (the answer is a column: 20 feet "regardless of quantity") and ch62-206 (Classes I and II: two rows). */
+  "ch6-029": { rows: true },
+  "ch12-040": { rows: true },
+  "ch60-511": { highlight: "Liquids | Any Amount" },
+  "ch60-514": { highlight: "Toxic | Any Amount" },
+  "ch62-205": { highlight: "Class III | 1 gallon" },
+  "ch62-506": { highlight: "Class III | 10 pounds" },
+  "ch62-507": { highlight: "Class V | No Permit Required" }
 };
 function ifcWithPatch(q){
   const p = IFC_POINTER_PATCH[q && q.id];

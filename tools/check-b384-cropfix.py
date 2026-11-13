@@ -28,6 +28,11 @@ answer card on an iPhone 17 Pro Max (440x956 at 3x) and an iPad Pro 11" (834x119
       between either nothing (one rule: the table runs on) or a band of the table whose uprights run on through every row of it, with the dots of the
       omission in it - never a doubled rule, a torn edge or a missing line.
   (f) no page errors.
+  (g) (384.97, Madison: "Yes, highlight entire rows but ensure it's accurate") THE ANSWERS ONCE MARKED AS ONE CELL ARE THEIR ROW: for each of the 9 (CONV: ch6-029,
+      ch6-030, ch12-040, ch22-014 by `rows: true`; ch60-511, ch60-514, ch62-205, ch62-506, ch62-507 by a "label | value" pointer) the picture's table holds one gold
+      band; the page's own text inside its rows is the answer's row - its label and its value - and none of the rows above or below it; and it ends on the
+      table's border on both sides within 2px at dpr 2. The two left as cells (a column's answer, a two-row answer) are named with their reason. Against
+      origin/main (384.94) it FAILS on all 9 (a cell's gold; ch60-514's on Highly toxic, the row above the answer).
 Run:  PDFJS_DIR=<unpacked pdfjs-dist 5.4.149> IFC_BOOK=<the owner's 2021 IFC PDF> python3 tools/check-b384-cropfix.py [--against REV] [--ids a,b] [--only a,b,c,d,e]
       --against REV serves that commit's index.html AND ifc/ifc-viewer.js. Against origin/main (384.83) (a) FAILS on the 13 county 105.5.22 / Exhibit B rows
       (ch63-702 ...: the sentence above the table; chExhB-801: the amendment's own heading), (b) on the 20 Table 1004.5 pictures and the county rows,
@@ -53,7 +58,7 @@ passed = [True]
 def chk(name, cond, info=""):
     passed[0] = passed[0] and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:2400], flush=True)
 
-KIT = r"""async (ids) => {
+KIT = r"""async ([ids, CONV]) => {
   const V = await ifcViewer(); const book = await ifcEnsureBook(); const cdoc = await ifcCountyDoc(); const cache = new Map(); const out = [];
   const cn = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   for (const id of ids) {
@@ -168,6 +173,29 @@ KIT = r"""async (ids) => {
           rec.gold.push({ band: [y0, y1], gx: [gx0, gx1 + 1], frame: [fa, fb], inL: gx0 - fa, inR: fb - (gx1 + 1), onL, onR });
         }
       }
+      // (g) the converted rows: every gold band's own text (the print whose middle stands inside the band's rows, within the table's frame), and its ends
+      if (CONV[id] && rec.table) {
+        const gy = []; for (let y = 0; y < H; y++) { let n = 0; for (let x = 0; x < W; x += 2) if (gold(x, y)) n++; gy.push(n); }
+        rec.conv = [];
+        for (let y = 0; y < H; y++) {
+          if (gy[y] < 3) continue; let e = y; while (e + 1 < H && gy[e + 1] >= 3) e++;
+          // (a band of the table: a long rule above it and one below it - the section's own sentences above the table are gold too, and are not rows)
+          const inTable = allRules.some(g => g.y1 <= y + 2) && allRules.some(g => g.y0 >= e - 2);
+          if (e - y >= 3 * s && inTable) {
+            const mid = Math.round((y + e) / 2), p = parts.find(q => mid >= q.row0 && mid < q.row1) || parts[0];
+            const top = p.oy - (y + 2) / s, bot = p.oy - (e - 2) / s;
+            let gx0 = W, gx1 = -1; for (let yy = y + 2; yy <= e - 2; yy++) for (let x = 0; x < W; x++) if (gold(x, yy)) { if (x < gx0) gx0 = x; if (x > gx1) gx1 = x; }
+            const fr = rec.frame ? rec.frame : [0, W], fx0 = p.ox + fr[0] / s, fx1 = p.ox + fr[1] / s;
+            let words = [];
+            if (rec.src === 'county') { const cc = await V.countyChars(doc, p.page, cache); words = cc.lines.filter(l => l.y + 0.3 * l.fs < top && l.y + 0.3 * l.fs > bot && l.x1 > fx0 && l.x0 < fx1).map(l => l.text); }
+            else { const m = await V.pageModel(book.doc, p.page, book.opts.fontBold, book.opts.cache); words = m.items.filter(it => it.t && it.y + 0.3 * it.h < top && it.y + 0.3 * it.h > bot && it.x + it.w > fx0 && it.x < fx1).map(it => it.t); }
+            const g0 = Math.max(y + 2, y + 2), g1 = e - 2, up = (x) => { if (x < 0 || x >= W) return false; let n = 0; for (let yy = g0; yy <= g1; yy++) if (ink(x, yy)) n++; return n >= 0.9 * (g1 - g0 + 1); };
+            rec.conv.push({ band: [y, e], text: words.join(' | '), gx: [gx0, gx1 + 1], frame: rec.frame, inL: gx0 - fr[0], inR: fr[1] - (gx1 + 1),
+                            onL: [1, 2, 3].some(d => up(gx0 - d)), onR: [0, 1, 2].some(d => up(gx1 + 1 + d)) });
+          }
+          y = e;
+        }
+      }
       // (e) the joins between pieces of a table
       if (parts.length > 1 && rec.table) {
         rec.joins = [];
@@ -247,6 +275,22 @@ CARD = r"""async ([ids, info]) => {
 }"""
 
 DEVICES = [("iPhone 17 Pro Max", 440, 956, 3), ('iPad Pro 11"', 834, 1194, 2)]
+# (g) THE ROWS MADE WHOLE (384.97, Madison: "Yes, highlight entire rows but ensure it's accurate"): each picture whose answer was marked as one cell is marked as the row
+# that holds the answer, from the table's left border to its right, the full height of the row and no other row. id -> (the row's own words, the words of the
+# rows above and below it that must not be inside the gold), read off the page's text inside the gold band's rows. The two left as cells, and why, are listed.
+CONV = {
+    "ch6-029": (["High-volume cooking", "charbroiling or wok cooking", "3 months"], ["Low-volume", "TYPE OF COOKING"]),
+    "ch6-030": (["Cooking operations utilizing solid fuel-burning", "cooking appliances", "1 month"], ["Low-volume", "senior centers", "All other cooking"]),
+    "ch12-040": (["Lithium-ion batteries", "20 kWh"], ["Lead-acid", "Nickel metal hydride"]),
+    "ch22-014": (["All other dusts", "32"], ["Wood flour", "For SI"]),
+    "ch60-511": (["Liquids Any Amount"], ["Gases", "Solids", "Corrosive", "Flammable"]),
+    "ch60-514": (["Toxic Any Amount"], ["Highly toxic", "Pyrophoric"]),
+    "ch62-205": (["Class III 1 gallon"], ["Class II ", "Class IV"]),
+    "ch62-506": (["Class III 10 pounds"], ["Class II ", "Class I "]),
+    "ch62-507": (["Class V No Permit Required"], ["Class IV", "Solids"]),
+}
+LEFT = {"ch61-022": "the answer is a column (20 feet from a motor vehicle fuel dispenser, 'regardless of quantity'): the column heading and its first 20 stay marked",
+        "ch62-206": "the answer is two rows (Classes I and II of liquid organic peroxide, Any Amount)"}
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G0["G"]["g"]["CHROME"], args=["--disable-gpu", "--disable-dev-shm-usage"])
     ctx, pg, errs = G0["open_app"](br, 440, 956, 2)
@@ -258,7 +302,7 @@ with sync_playwright() as pw:
     recs = []
     for k in range(0, len(ids), 40):
         for attempt in range(2):
-            try: recs += pg.evaluate(KIT, ids[k:k + 40]); break
+            try: recs += pg.evaluate(KIT, [ids[k:k + 40], CONV]); break
             except Exception as e:
                 if attempt: recs += [{"id": i, "err": str(e)[:200]} for i in ids[k:k + 40]]
         if (k // 40) % 10 == 9: print("  ... %d / %d" % (min(k + 40, len(ids)), len(ids)), flush=True)
@@ -290,6 +334,20 @@ with sync_playwright() as pw:
         worst = max([max(abs(g["inL"]), abs(g["inR"])) for r, g in golds if g["frame"] and ok_row(g)] or [0])
         chk("(d) every table row's gold runs from the table's left edge to its right edge, on the border both sides (within 2 CSS px): %d rows, worst inset %s px at dpr 2; %s with a merged label cell"
             % (len(golds), worst, cells), not bad, bad[:20])
+    if want("g"):
+        bad = []
+        for i, (have, nothave) in CONV.items():
+            r = next((x for x in pics if x["id"] == i), None)
+            if r is None: continue
+            bands = r.get("conv") or []
+            if len(bands) != 1: bad.append((i, "%d gold bands in the table" % len(bands), [b.get("text") for b in bands])); continue
+            b = bands[0]; t = " " + b["text"].replace(" | ", " ") + " "
+            miss = [w for w in have if w not in t]; extra = [w for w in nothave if w in t]
+            span = b["onL"] and b["onR"] and 0 <= b["inL"] <= 4 and 0 <= b["inR"] <= 4
+            if miss or extra or not span: bad.append((i, {"missing": miss, "another row's": extra, "border to border": span, "inL": b["inL"], "inR": b["inR"]}, b["text"][:160]))
+        chk("(g) the %d answers marked as a cell are marked as their row: the row that holds the answer, all of it, no other row's words, from the left border to the right" % len(CONV),
+            not bad, bad)
+        print("    left as they are: " + "; ".join("%s - %s" % kv for kv in LEFT.items()), flush=True)
     if want("e"):
         joins = [(r, j) for r in pics for j in (r.get("joins") or []) if j["fq"] and (j["fp"] or j.get("omit"))]      # a join of two ruled pieces (a section's text above a table is not one)
         bad = []

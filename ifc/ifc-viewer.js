@@ -854,7 +854,8 @@ function findMarks(model, segs, find) {
       b.i0 = i0; b.i1 = i1; b.fs = H; b.y0 = i0 - 0.12 * H; b.y1 = i1 + 0.12 * H;
       delete b.its; delete b.fmax;
     }
-    for (const b of bands) out.push({ page: model.p, ...b, kind: 'cite' });
+    const cell = spans.slice(lo, hi + 1).every(cellLike);             // (384 cropfix) the phrase is a table cell (or cells): cellRows can make it its row
+    for (const b of bands) out.push({ page: model.p, ...b, kind: 'cite', ...(cell ? { cell: true } : {}) });
    } catch (e) { /* no highlight for this phrase */ }
   }
   // two phrases that fall on the same line (or touch) are one painted band: no stripe is painted twice
@@ -866,7 +867,7 @@ function findMarks(model, segs, find) {
     if (before) hit.cl = m.cl; else if (m.x0 === hit.x0) hit.cl = hit.cl && m.cl;
     if (m.x1 > hit.x1) hit.cr = m.cr; else if (m.x1 === hit.x1) hit.cr = hit.cr && m.cr;
     hit.x0 = Math.min(hit.x0, m.x0); hit.x1 = Math.max(hit.x1, m.x1); hit.y0 = Math.min(hit.y0, m.y0); hit.y1 = Math.max(hit.y1, m.y1);
-    hit.i0 = Math.min(hit.i0, m.i0); hit.i1 = Math.max(hit.i1, m.i1); hit.fs = Math.max(hit.fs, m.fs);
+    hit.i0 = Math.min(hit.i0, m.i0); hit.i1 = Math.max(hit.i1, m.i1); hit.fs = Math.max(hit.fs, m.fs); hit.cell = !!(hit.cell && m.cell);
     if (!hit.text.includes(m.text)) hit.text = before ? m.text + ' ' + hit.text : hit.text + ' ' + m.text;
   }
   return merged;
@@ -1037,7 +1038,10 @@ export async function computeClip(doc, index, loc, ptr, opts = {}) {
   if (!loc.ok) return { ok: false };
   const fontBold = opts.fontBold || (opts.fontBold = new Map());
   const cache = opts.cache || (opts.cache = new Map());
-  const done = async (r) => (r && r.ok ? finishClip(r, await bookPages(doc, r, fontBold, cache)) : r);
+  const done = async (r) => {
+    if (r && r.ok && ptr && ptr.rows) await cellRows(doc, r, fontBold, cache);
+    return r && r.ok ? finishClip(r, await bookPages(doc, r, fontBold, cache)) : r;
+  };
   if (loc.kind === 'table') return done(await tableClip(doc, index, loc, ptr, opts, fontBold, cache));
   if (loc.kind === 'entry') return done(await entryClip(doc, index, loc, ptr, opts, fontBold, cache));
   if (loc.kind === 'figure') return done(await figureClip(doc, index, loc, ptr, fontBold, cache));
@@ -1337,6 +1341,56 @@ async function tableClip(doc, index, loc, ptr, opts, fontBold, cache) {
   }
 }
 
+// (384 cropfix) A ROW, NOT A CELL. Madison: "Yes, highlight entire rows but ensure it's accurate." A pointer with `rows: true` (IFC_POINTER_PATCH) has each
+// `find` phrase that is a table cell (a float of the cells' size: cellLike in findMarks) marked as the whole row the cell is in - from the table's left
+// border to its right, the full height of the row (rowFromLabel: a label set on several lines, a value centred beside them) - as a `row` pointer's row is.
+// The row is found from the cell: its label is the print furthest left in the table whose middle stands within 0.8 em of the cell's, taken up to the
+// label's first line where it wraps (a wrapped line is indented under its first). Two cells of one row (its label and its value) are one row.
+// Opt-in per pointer, so a cell that is the answer of a whole column (ch61-022, "regardless of quantity") or of two rows stays a cell.
+function labelOfCell(model, m, rect) {
+  const fs = Math.max(m.fs || 9, 8.6), cy = (m.i0 + m.i1) / 2;
+  let L = null;
+  for (const it of model.items) {
+    if (!it.t || !inBody(it) || it.h < 0.85 * fs || it.h > 1.3 * fs) continue;
+    const c = centre(it);
+    if (c < rect.x0 || c > rect.x1 || it.y < rect.y0 || it.y > rect.y1) continue;
+    if (Math.abs(it.y + 0.25 * it.h - cy) > 0.8 * fs) continue;
+    if (!L || it.x < L.x - 2 || (Math.abs(it.x - L.x) <= 2 && it.y > L.y)) L = it;
+  }
+  for (let n = 0; L && n < 4; n++) {
+    let u = null;
+    for (const it of model.items) {
+      if (!it.t || !inBody(it) || Math.abs(it.h - L.h) > 0.2 * L.h) continue;
+      const c = centre(it);
+      if (c < rect.x0 || c > rect.x1 || it.y > rect.y1) continue;
+      const dy = it.y - L.y;
+      if (dy > 0.5 * L.h && dy <= 1.35 * L.h && it.x < L.x - 1 && it.x >= L.x - 2.4 * L.h && (!u || dy < u.y - L.y)) u = it;
+    }
+    if (!u) break;
+    L = u;
+  }
+  return L;
+}
+async function cellRows(doc, r, fontBold, cache) {
+  const out = [], done = new Set();
+  for (const m of r.marks || []) {
+    if (!m.cell) { out.push(m); continue; }
+    const cx = (m.x0 + m.x1) / 2, cy = (m.i0 + m.i1) / 2;
+    const seg = (r.segments || []).find(sg => !sg.whole && sg.page === m.page && cx >= sg.x0 && cx <= sg.x1 && cy >= sg.y0 && cy <= sg.y1);
+    const model = seg ? await pageModel(doc, m.page, fontBold, cache) : null;
+    const L = model ? labelOfCell(model, m, seg) : null;
+    const h = L ? rowFromLabel(model, L, seg) : null;
+    if (!h) { out.push(m); continue; }
+    const key = m.page + ':' + L.i;
+    if (done.has(key)) continue;
+    done.add(key);
+    const row = { page: m.page, x0: h.x0, x1: h.x1, i0: h.i0, i1: h.i1, fs: h.fs, kind: 'row', lt: h.lt, lb: h.lb, fromCell: true };
+    row.y0 = h.i0 - 0.12 * h.fs; row.y1 = h.i1 + 0.12 * h.fs;
+    out.push(row);
+  }
+  r.marks = out;
+}
+
 // the row label (and its factor, on the same line) inside a table rectangle
 function findRow(model, want, rect) {
   // (384) THE ROW'S OWN LABEL. A footnote letter raised against a value can spell a short label ("B" and the "b" in "250 b", a row
@@ -1353,6 +1407,10 @@ function findRow(model, want, rect) {
     }
   }
   if (!L) return null;
+  return rowFromLabel(model, L, rect);
+}
+// a row of a table from its label's first line L (findRow, and a cell found by `find` turned into its row: cellRows)
+function rowFromLabel(model, L, rect) {
   let F = null;
   for (const it of model.items) {
     if (!it.t || !inBody(it) || it === L || it.x < L.x + L.w - 1) continue;
@@ -1893,10 +1951,16 @@ export async function countyClip(doc, ptr, opts = {}) {
     for (const [x, y] of ranges) for (let k = x; k < y; k++) cut.add(lineOf(k));
     for (const [pt, add] of lead) for (const li of add) cut.add(pt.p + ':' + li);
     const E = cnorm(ptr.highlight);
+    // (384 cropfix) a row ("Toxic | Any Amount") is the row whose line starts with it: found first inside another row ("Highly toxic Any Amount", the
+    // row above it in Table 105.5.9), the gold went on the wrong row (ch60-514)
+    const rowWanted = / \| | › /.test(String(ptr.highlight));
+    let firstOn = null;
     if (E.length >= 6) for (let at = N.indexOf(E, a); at >= 0 && at + E.length <= b && !hl; at = N.indexOf(E, at + 1)) {
       let on = true; for (let k = at; k < at + E.length && on; k++) on = cut.has(lineOf(k));
-      if (on) hl = [at, at + E.length];
+      if (on && (!rowWanted || lineHead(at))) hl = [at, at + E.length];
+      else if (on && !firstOn) firstOn = [at, at + E.length];
     }
+    if (!hl && firstOn) hl = firstOn;
     if (!hl) { const h = findPiece(ptr.highlight, a); if (h && h[1] <= b) { hl = h; ranges.push(h); } }
   }
   // the lines of the booklet that hold the pieces. (384 one picture) ONE CUT A PAGE: from the first line of the first piece to the last
