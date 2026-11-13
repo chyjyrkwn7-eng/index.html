@@ -370,10 +370,10 @@ def touch_section(br):
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G.CHROME)
-    # a busy machine can take more than playwright's 30s to load a 10MB page: give each context's navigation two minutes
+    # a busy machine can take more than playwright's 30s to load a 10MB page: give each context's navigation three minutes
     _nc = br.new_context
     def _new_context(**kw):
-        c = _nc(**kw); c.set_default_navigation_timeout(120000); return c
+        c = _nc(**kw); c.set_default_navigation_timeout(180000); return c
     br.new_context = _new_context
     print("build %s" % G.BUILD, flush=True)
     if "T" in WANT: touch_section(br)

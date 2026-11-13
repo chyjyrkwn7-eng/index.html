@@ -67,6 +67,10 @@ if __name__ == "__main__":
     DPR = 3
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=G.CHROME)
+        _nc = br.new_context      # a busy machine: three minutes for the page to load
+        def _new_context(**kw):
+            c = _nc(**kw); c.set_default_navigation_timeout(180000); return c
+        br.new_context = _new_context
         pg = G.open_dev(br, "promax", inits=[G.seed_init("academy")], dsf=DPR)
         pg.evaluate("()=>{ theme.reduceMotion = false; try{ applyTheme(); }catch(e){} }")
         rows = measure(pg, DPR)
