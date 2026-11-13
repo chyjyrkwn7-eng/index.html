@@ -93,6 +93,162 @@ QUESTION_EDITS = {
                                    "The 2,751 to 3,250 gpm row lists an average hydrant spacing of 400 feet, before any footnote adjustment. The rows either side list 450 feet (lower flows) and 350 feet (higher flows).")},
 }
 
+# ---- QUESTION_ADDS (build 384.104): questions the OWNER asked for, written from the book, applied to whatever the hand-off says ----
+# "More occupant load questions. Chapter 10 is really good, it needs a few more occupant load questions though. There should be a question
+# over almost all of them. Ensure there is a question regarding the bench/pew stuff too." Every number and every word is IFC 2021 Table 1004.5
+# (book pages 10-3 / 10-4, PDF pages 200 / 201) or Section 1004.6 / 1004.8 (10-4) as printed in the owner's copy; the county amends only the
+# IBC's Table 1004.5 "Assembly" rows (Exhibit B: the same five factors, plus Escape/Puzzle rooms) and nothing of IFC Section 1004. The book
+# says "fixed seating without dividing arms" and (in the definition of FIXED SEATING) "bench-type seats"; it never says "pew", so no question
+# does. A new question is placed after its unit's LAST question in the array (in the order listed), so it takes the next positions of that
+# unit (Chapter 10: 133-158) and no existing question's position, and so no existing key, moves. Ids continue Chapter 10's numbering (the
+# highest ever was ch10-338). An id already in the bank must be identical (re-running on the shipped bank is a no-op). The coverage table,
+# row by row, is in docs/notes-archive.md ("384.104"); tools/check-b384-occload.py holds it against the book.
+_T1004 = {"source": "ifc", "section": "Table 1004.5", "heading": "Table 1004.5 — Maximum Floor Area Allowances per Occupant",
+          "label": "IFC 2021 Table 1004.5"}
+def _q(qid, question, options, answer, explanation, topic, kind, citation):
+    return {"id": qid, "unit": "10", "type": "content", "question": question, "options": dict(zip("ABCD", options)), "answer": answer,
+            "explanation": explanation, "topic": topic, "kind": kind, "citation": citation}
+def _row(qid, row, page, question, options, answer, explanation, topic):
+    # a row of Table 1004.5: PDF page 200 is book page 10-3 (the table's first eight rows), 201 is 10-4 (the rest)
+    return _q(qid, question, options, answer, explanation, topic, "measure",
+              dict(_T1004, pdfPage=page, printedPage={200: "10-3", 201: "10-4"}[page], row=row))
+def _sec(qid, section, heading, find, question, options, answer, explanation, topic, kind="measure"):
+    return _q(qid, question, options, answer, explanation, topic, kind,
+              {"source": "ifc", "section": section, "heading": heading, "label": "IFC 2021 " + section, "pdfPage": 201, "printedPage": "10-4", "find": [find]})
+QUESTION_ADDS = [
+    _row("ch10-339", "Accessory storage areas, mechanical", 200,
+         "Accessory storage areas and mechanical equipment rooms are figured at one occupant per _____ gross square feet.",
+         ["100", "200", "300", "500"], "C",
+         "Table 1004.5 lists accessory storage areas and mechanical equipment rooms at 300 gross square feet per occupant.",
+         "accessory storage occupant load"),
+    _row("ch10-340", "Agricultural building", 200,
+         "An agricultural building has 15,000 gross square feet. What is its occupant load?",
+         ["50", "75", "150", "300"], "A",
+         "Agricultural buildings are figured at 300 gross square feet per occupant: 15,000 ÷ 300 = 50.",
+         "agricultural building load"),
+    _row("ch10-341", "Aircraft hangars", 200,
+         "Aircraft hangars are figured at one occupant per _____ gross square feet.",
+         ["200", "240", "300", "500"], "D",
+         "Table 1004.5 sets aircraft hangars at 500 gross square feet per occupant.",
+         "aircraft hangar occupant load"),
+    _row("ch10-342", "Baggage claim", 200,
+         "An airport terminal's baggage claim area has 9,000 gross square feet. What is its occupant load?",
+         ["30", "90", "450", "600"], "C",
+         "Airport terminal baggage claim areas are figured at 20 gross square feet per occupant: 9,000 ÷ 20 = 450.",
+         "baggage claim load"),
+    _row("ch10-343", "Baggage handling", 200,
+         "In an airport terminal, baggage handling areas are figured at one occupant per _____ gross square feet.",
+         ["20", "100", "200", "300"], "D",
+         "Table 1004.5 lists airport terminal baggage handling areas at 300 gross square feet per occupant.",
+         "baggage handling occupant load"),
+    _row("ch10-344", "Concourse", 200,
+         "An airport terminal concourse has 30,000 gross square feet. What is its occupant load?",
+         ["100", "300", "1,500", "2,000"], "B",
+         "An airport terminal concourse is figured at 100 gross square feet per occupant: 30,000 ÷ 100 = 300.",
+         "concourse load"),
+    _row("ch10-345", "Waiting areas", 200,
+         "Airport terminal waiting areas are figured at one occupant per _____ gross square feet.",
+         ["15", "20", "50", "100"], "A",
+         "Table 1004.5 lists airport terminal waiting areas at 15 gross square feet per occupant.",
+         "terminal waiting area occupant load"),
+    _row("ch10-346", "Gaming floors (keno, slots, etc.)", 201,
+         "A casino gaming floor with slot machines and keno has 5,500 gross square feet. What is its occupant load?",
+         ["110", "220", "275", "500"], "D",
+         "Gaming floors (keno, slots and the like) are figured at 11 gross square feet per occupant: 5,500 ÷ 11 = 500.",
+         "gaming floor load"),
+    _row("ch10-347", "Exhibit gallery and museum", 201,
+         "A museum's exhibit gallery has 4,500 net square feet. What is its occupant load?",
+         ["90", "150", "300", "900"], "B",
+         "Exhibit galleries and museums are figured at 30 net square feet per occupant: 4,500 ÷ 30 = 150.",
+         "exhibit gallery load"),
+    _row("ch10-348", "Concentrated (chairs only—not fixed)", 201,
+         "An assembly room set up with chairs only, not fixed, has 2,100 net square feet. What is its occupant load?",
+         ["70", "140", "300", "420"], "C",
+         "Assembly without fixed seats, concentrated (chairs only, not fixed), is figured at 7 net square feet per occupant: 2,100 ÷ 7 = 300.",
+         "concentrated assembly load"),
+    _row("ch10-349", "Standing space", 201,
+         "Assembly standing space is figured at one occupant per _____ net square feet.",
+         ["3", "5", "7", "15"], "B",
+         "Table 1004.5 lists standing space, under assembly without fixed seats, at 5 net square feet per occupant.",
+         "standing space occupant load"),
+    _row("ch10-350", "Unconcentrated (tables and chairs)", 201,
+         "Unconcentrated assembly space, set with tables and chairs, is figured at one occupant per _____ net square feet.",
+         ["5", "7", "11", "15"], "D",
+         "Table 1004.5 lists unconcentrated assembly space (tables and chairs) at 15 net square feet per occupant.",
+         "unconcentrated assembly occupant load"),
+    _row("ch10-351", "Bowling centers, allow 5 persons for each", 201,
+         "A bowling center has 12 lanes, each including 15 feet of runway, and 1,400 net square feet of additional areas. What is its occupant load?",
+         ["60", "200", "260", "284"], "C",
+         "Table 1004.5 allows 5 persons for each lane including 15 feet of runway (12 × 5 = 60) and 7 net square feet per occupant for additional areas (1,400 ÷ 7 = 200), for 260 in all.",
+         "bowling center load"),
+    _row("ch10-352", "Group H-5 fabrication and manufacturing", 201,
+         "Group H-5 fabrication and manufacturing areas are figured at one occupant per _____ gross square feet.",
+         ["50", "100", "150", "200"], "D",
+         "Table 1004.5 sets Group H-5 fabrication and manufacturing areas at 200 gross square feet per occupant.",
+         "Group H-5 occupant load"),
+    _row("ch10-353", "Outpatient areas", 201,
+         "A hospital's outpatient area has 6,000 gross square feet. What is its occupant load?",
+         ["25", "50", "60", "120"], "C",
+         "Institutional outpatient areas are figured at 100 gross square feet per occupant: 6,000 ÷ 100 = 60.",
+         "outpatient area load"),
+    _row("ch10-354", "Sleeping areas", 201,
+         "Institutional sleeping areas are figured at one occupant per _____ gross square feet.",
+         ["100", "120", "200", "240"], "B",
+         "Table 1004.5 lists institutional sleeping areas at 120 gross square feet per occupant.",
+         "institutional sleeping occupant load"),
+    _row("ch10-355", "Stack area", 201,
+         "A library's stack area has 5,000 gross square feet. What is its occupant load?",
+         ["25", "50", "100", "250"], "B",
+         "Library stack areas are figured at 100 gross square feet per occupant: 5,000 ÷ 100 = 50.",
+         "library stack load"),
+    _row("ch10-356", "Locker rooms", 201,
+         "Locker rooms are figured at one occupant per _____ gross square feet.",
+         ["50", "100", "150", "200"], "A",
+         "Table 1004.5 sets locker rooms at 50 gross square feet per occupant.",
+         "locker room occupant load"),
+    _row("ch10-357", "Storage, stock, shipping areas", 201,
+         "A store's storage, stock and shipping area has 9,000 gross square feet. What is the occupant load of that area?",
+         ["18", "30", "90", "150"], "B",
+         "Mercantile storage, stock and shipping areas are figured at 300 gross square feet per occupant: 9,000 ÷ 300 = 30.",
+         "mercantile stock area load"),
+    _row("ch10-358", "Rink and pool", 201,
+         "For a skating rink, the rink itself is figured at one occupant per _____ gross square feet.",
+         ["15", "20", "30", "50"], "D",
+         "Table 1004.5 lists skating rinks with swimming pools: the rink or pool is figured at 50 gross square feet per occupant, and the decks at 15.",
+         "skating rink occupant load"),
+    _sec("ch10-359", "1004.8", "Concentrated business use areas", "not less than one occupant per 50 square feet",
+         "Where approved, the occupant load of a telephone call center is its actual occupant load, but not less than one occupant per _____ square feet of gross occupiable floor space.",
+         ["50", "100", "150", "200"], "A",
+         "Concentrated business use areas, such as telephone call centers, trading floors and data processing centers, may use the actual occupant load where approved, but not less than one occupant per 50 square feet of gross occupiable floor space.",
+         "concentrated business minimum"),
+    _sec("ch10-360", "1004.6", "Fixed seating", "determined by the number of fixed seats installed",
+         "An auditorium seating area of 4,200 net square feet has 450 fixed seats and aisles. What is the occupant load of the seating area?",
+         ["280", "450", "600", "840"], "B",
+         "Where an area has fixed seats and aisles, the occupant load is the number of fixed seats installed, 450, not a figure worked out from the floor area.",
+         "fixed seats occupant load"),
+    _sec("ch10-361", "1004.6", "Fixed seating", "added to the number of fixed seats",
+         "In an area with fixed seats, the occupant load of a part where fixed seating is not installed, such as a waiting space, is _____.",
+         ["not counted, because the fixed seats set the occupant load", "counted only where it holds more people than the fixed seats",
+          "determined under Section 1004.5 and added to the fixed seats", "assigned by the owner from the expected number of people"], "C",
+         "Where fixed seating is not installed, such as in waiting spaces, the occupant load is determined under Section 1004.5 and added to the number of fixed seats.",
+         "fixed seating with waiting space", kind="other"),
+    _sec("ch10-362", "1004.6", "Fixed seating", "one person for each 18 inches",
+         "For fixed seating without dividing arms, such as bench-type seats, the occupant load is not less than one person for each _____ of seating length.",
+         ["12 inches", "15 inches", "18 inches", "30 inches"], "C",
+         "For fixed seating without dividing arms, the occupant load is at least the number of seats based on one person for each 18 inches of seating length.",
+         "bench seating factor"),
+    _sec("ch10-363", "1004.6", "Fixed seating", "one person for each 18 inches",
+         "A chapel has 12 fixed benches without dividing arms, each 15 feet long. What is the minimum occupant load of the benches?",
+         ["72", "120", "144", "180"], "B",
+         "Each bench is 180 inches long, and at one person for each 18 inches of seating length that is 10 people a bench: 12 × 10 = 120.",
+         "bench rows occupant load"),
+    _sec("ch10-364", "1004.6", "Fixed seating", "one person for each 24 inches",
+         "A restaurant seating booth has 96 inches of booth seat length, measured at the backrest. What is its occupant load?",
+         ["4", "6", "8", "12"], "A",
+         "Seating booths are figured at one person for each 24 inches of booth seat length measured at the backrest: 96 ÷ 24 = 4.",
+         "booth seating occupant load"),
+]
+
 def apply_moves(bank):
     qs, units = bank["questions"], bank["units"]
     ids = {u["id"] for u in units}
@@ -117,6 +273,15 @@ def apply_moves(bank):
         qs.remove(q); q["unit"] = to
         last = max(i for i, x in enumerate(qs) if x["unit"] == to)
         qs.insert(last + 1, q)
+    for add in QUESTION_ADDS:                      # (384.104) the owner's new questions, after their unit's last question, in this order
+        assert add["unit"] in ids, add["id"]
+        q = next((x for x in qs if x["id"] == add["id"]), None)
+        if q is not None:
+            assert q == add, ("an added id is in the bank with other content", add["id"])
+            continue                               # already added (re-running on the shipped bank): nothing to do
+        last = max(i for i, x in enumerate(qs) if x["unit"] == add["unit"])
+        qs.insert(last + 1, json.loads(json.dumps(add)))
+    bank["meta"]["questionCount"] = len(qs)
     for u in units:                                # the unit sizes are the bank's own counts
         u["questionCount"] = sum(1 for x in qs if x["unit"] == u["id"])
 
