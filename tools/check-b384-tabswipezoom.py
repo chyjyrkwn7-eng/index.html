@@ -17,6 +17,10 @@ well after the next tab has landed: the document's scrollWidth against the scree
       your rank and your level/badges is too tight" (it measured ~9px; a classmate's card has ~19pt)
   T6  (the same build) a rank flare's card (tap a rank's Flare tile: "This isn't animated") moves: its emblem's own parts (.rk-a)
       are running their animations (or a recorded flip-book is on), within 10s
+  T7  (the same build) the start sheet's switches all start OFF - Shuffle answer choices too ("always on by default. Turn off
+      that") - after the sheet's own reset (resetSheetOptions) and at boot
+  T8  (the same build) a finger tapping Time limit leaves no focus ring (outline) round its switch ("puts a blue box around the
+      thing, don't do that part")
 Devices: iPhone 17 Pro Max installed (440x956) and at Safari's 85% page zoom (518 CSS px wide), and an iPhone SE.
 Run:  python3 tools/check-b384-tabswipezoom.py [--against REV|DIR]   (--against origin/main must FAIL T1-T3)"""
 import importlib.util, os, sys
@@ -84,6 +88,21 @@ def run_dev(br, dev):
         if pg.evaluate("()=>{ const a = document.querySelector('.unlock-card-rankflare .unlock-card-art'); if(!a) return false; if(a.querySelector('.cosmic-rank-anim')) return true; return [...a.querySelectorAll('.rk-a')].some(e => e.getAnimations().some(x => x.playState === 'running')); }"): got = True; break
     chk("[%s] T6 a rank flare's card puts the flare's loop on (it moves, as on Home)" % dev, got, pg.evaluate("()=>window.__t6err || document.querySelector('.unlock-card-rankflare .unlock-card-art')?.innerHTML.slice(0,160)"))
     pg.evaluate("()=>document.querySelectorAll('.invite-overlay').forEach(n=>n.remove())")
+    sh = pg.evaluate("()=>{ const boot = cfg.shuffle; resetSheetOptions(); return { boot, sheet: cfg.shuffle, recall: cfg.recall, flash: cfg.flashcards, timer: cfg.timer }; }")
+    chk("[%s] T7 the start sheet's switches start off (shuffle too)" % dev, sh["boot"] is False and sh["sheet"] is False and not sh["recall"] and not sh["flash"] and sh["timer"] == "off", sh)
+    if dev == "promax":
+        pg.evaluate("()=>{ cfg.mode='drill'; showSetup(); }"); pg.wait_for_timeout(1500); G.clear_popups(pg)
+        pt = pg.evaluate("""()=>{ const c=[...document.querySelectorAll('#stage *')].find(e=>/^\\d+ questions$/.test(e.textContent.trim()) && e.offsetParent); if(!c) return null; const r=(c.closest('button,[role=button],label')||c.parentElement).getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
+        if pt: pg.touchscreen.tap(pt[0], pt[1]); pg.wait_for_timeout(900)
+        pt = pg.evaluate("""()=>{ const b=[...document.querySelectorAll('button')].find(x=>/^Start$/.test(x.textContent.trim()) && x.offsetParent); if(!b) return null; const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
+        if pt: pg.touchscreen.tap(pt[0], pt[1]); pg.wait_for_timeout(1500)
+        pt = pg.evaluate("""()=>{ const l=[...document.querySelectorAll('.timer-sect .opt')].find(r=>/Time limit/.test(r.textContent)); if(!l) return null; l.scrollIntoView({block:'center'}); const b=l.querySelector('.box')||l; const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
+        if pt:
+            pg.wait_for_timeout(400); pg.touchscreen.tap(pt[0], pt[1]); pg.wait_for_timeout(700)
+        ring = pg.evaluate("""()=>{ const l=[...document.querySelectorAll('.timer-sect .opt')].find(r=>/Time limit/.test(r.textContent)); if(!l) return 'no row'; const b=l.querySelector('.box'); const cs=getComputedStyle(b);
+          return { on: l.querySelector('input').checked, outline: cs.outlineStyle, w: cs.outlineWidth, focused: document.activeElement === l.querySelector('input') }; }""")
+        chk("[%s] T8 a tap on Time limit turns it on and leaves no ring round its switch" % dev, isinstance(ring, dict) and ring["on"] and ring["outline"] == "none", ring)
+        pg.evaluate("()=>{ document.querySelectorAll('.unitoptions-modal, .optionsmodal, .invite-overlay').forEach(n=>n.remove()); }")
     pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(900); G.clear_popups(pg)
     # T1: a short drag towards Profile that is let go early (eases back)
     swipe_check(pg, "T1 Stats, a short drag let go (eases back)", 0.30, 0.52, False, PROF_TAB)

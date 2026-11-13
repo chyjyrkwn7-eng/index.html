@@ -10046,7 +10046,15 @@
   }
   /* 64 - 2 - 2 - 39: the knob's gap is 2px at either end */
   .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(21px); }
-  .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
+  /* (384.117) the focus ring is a KEYBOARD's, never a finger's: "The time limit when selected puts a blue box around the thing, don't do
+     that part." On an iPhone a tap on a toggle puts focus on its native switch (the haptic layer, .hsw-opt) and WebKit counts that as
+     :focus-visible, so the ring in the accent colour (blue on most themes) was drawn round the switch the moment it was tapped - most
+     visible on Time limit, whose minutes row opening under it keeps the focus on screen. A finger never sees it now; a keyboard on a
+     laptop still does. */
+  @media (hover:hover) and (pointer:fine){
+    .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
+  }
+  .opt > input.hsw-opt:focus, .opt > input.hsw-opt:focus-visible{ outline:none; }
   .opt > input:disabled ~ .box{ cursor:default; }
   /* (385 r17) a switch row that cannot be changed now (the leaderboard's class switches while the master is off): visible, in the off position, greyed */
   .opt.is-locked{ opacity:.45; cursor:default; }
@@ -74528,7 +74536,7 @@ const cfg = {
   mode: "drill",     // drill | exam | game
   source: "all",     // all | weak
   size: 0,           // 0 = everything selected
-  shuffle: true,
+  shuffle: false,    // (384.117) off by default: "The 'shuffle answer choices' is always on by default. Turn off that."
   recall: false,
   countdown: false,  // 3-2-1 countdown before the run begins
   revealCorrect: false, // unlocked once every unit has its black star
@@ -75091,12 +75099,10 @@ function applySaved(){
      `false` is almost always just the default nobody changed. The switch
      is still in the start sheet for anybody who wants it off, and that
      choice is kept from here on. */
-  try{
-    if(!localStorage.getItem("class26e.shuffleon")){
-      cfg.shuffle = true;
-      localStorage.setItem("class26e.shuffleon", "1");
-    }
-  }catch(e){ cfg.shuffle = true; }
+  /* OFF BY DEFAULT AGAIN (384.117), reversing build 229 above: "The 'shuffle answer choices' is always on by default. Turn off
+     that. Make whatever you have set always on off till you change, except the time limit of course." Every switch on the start
+     sheet now starts off (SHEET_DEFAULTS, put back each time the sheet opens - build 309); the one-time migration that switched
+     shuffling on for everybody is gone, and its class26e.shuffleon marker is simply never read again. */
   /* UNITS ARE NOT RESTORED, per explicit request - "if I select units
      and then leave that screen they shouldn't still be checked". They
      used to persist, so switching from Drill to Exam arrived with the
@@ -75147,7 +75153,7 @@ function settingsTitleOf(mode){
    countdown left on from last week's exam was quietly timing today's
    drill. The mode is not in the sheet (it is the screen you chose), so
    it is not reset. */
-const SHEET_DEFAULTS = { source: "all", size: 0, shuffle: true, recall: false,
+const SHEET_DEFAULTS = { source: "all", size: 0, shuffle: false, recall: false,
   timer: "off", timerMinutes: 15, examFeedback: false, flashcards: false };
 function resetSheetOptions(){
   Object.keys(SHEET_DEFAULTS).forEach(k => { cfg[k] = SHEET_DEFAULTS[k]; });

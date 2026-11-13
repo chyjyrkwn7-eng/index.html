@@ -1980,6 +1980,7 @@ def check_b229(br):
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""()=>{
       const out = { shuffleOn: cfg.shuffle };
+      cfg.shuffle = true;   /* (384.117) off by default now; the shuffle itself is still measured, switched on */
       runMode = 'drill';
       /* a question that is meant to shuffle: since build 298 one whose
          choices point at each other ("A, B, and C") keeps its order */
@@ -2025,7 +2026,7 @@ def check_b229(br):
       out.sauce = WEEK_RESULTS_KNOWN['2026-09-21'];
       host.remove();
       return out; }""")
-    check("answer positions are shuffled by default", r["shuffleOn"] is True, r)
+    check("answer positions are NOT shuffled by default (384.117: 'Turn off that.')", r["shuffleOn"] is False, r)
     check("the right answer never lands where it was last time, or in the book's order",
           r["repeats"] == 0 and r["bank"] == 0 and r["slotsUsed"] == 4, r)
     check("consecutive runs of a small unit open with different questions", r["overlap"] == 0, r)
