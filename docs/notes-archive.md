@@ -39345,6 +39345,34 @@ Chromium cannot draw it; the fix (the card under every boundary) is measured her
   clean on the rerun - timing under load, neither on the board); sweep-layout --quick 20/20 clean; check-b384-top383 ALL PASS;
   check-b384-hairlines ALL PASS; check-b382-ios (3) passes (fails on main 384.89 as changed), (4) "the top three are the list's
   first rows" fails identically on main 384.89 (its fixture has no .rank-podium-2 row), not from this.
+
+### 384.93 (casescroll): a finger on the badge case scrolls the page; every grid of small controls the same
+
+Madison: "When looking at the badge case, you can't use the case to scroll up and down."
+
+**Cause.** On an iPhone NovaSound lays a native `<input type=checkbox switch>` over each small control (the only way a page gets the Taptic
+tick), and WebKit gives a touch that starts on a native switch to the switch: the page does not pan. Every badge slot is a small button
+(`.badge-tile.ncase-cell`), so each took one. Read on main 384.92 as an iPhone: all 24 slots of the academy case and all 58 of Fire Code's
+were switches (47% of Fire Code's Badges screen), and the same wall stood on Customize > Character (26 characters, 23% of the screen) and the
+theme swatches. The calendar's month was the first of these (327z12) and was fixed by hand (`data-hsw-soft`, labels instead); the badge
+case was never marked.
+
+**Fix.** A rule rather than another mark: `hswInGrid(h)` - a control repeated `HSW_GRID_N` (6) or more times beside its own kind (same first
+class), or sitting in a cell that is - counts as soft in `hswMode`, so it gets the LABEL (`.nova-hlb`, its 1px switch out of a finger's
+reach): a finger on it scrolls the page, a tap still clicks the switch (the tick) and the control. `HSW_ALWAYS` (the planet system, an
+answer, a tab) and the mode cards are judged before it and keep their switches. And every Customize grid (`buildCustomizeGroup`) carries
+`data-hsw-soft` whatever its size, so a group of four characters does not keep switches beside a group of seven that lost them.
+
+**Gate.** NEW `tools/check-b384-casescroll.py` (Pro Max installed + SE, both classes): S1 every slot of the case lands on its own label;
+S2 every character and swatch the same; S3 no 200px band of 18 screens is more than 45% native switch (scrolled top to bottom, fixed chrome left out;
+200px is taller than any one-row strip - a segmented control or a full-width button reads 22-30% - so only a block fills it); S4 a tap on a badge opens its card, clicks once and toggles its label's switch, a character still selects and a
+swatch still to earn opens its card; S5 a drag from the case scrolls (passes on both builds - Chromium does not hand a touch to a switch, which is why only S1-S3 can see
+the bug). Only a phone can confirm the scroll itself.
+**Gate results (384.93, one at a time, TMPDIR=/dev/shm).** check-b384-casescroll ALL PASS (both classes, Pro Max + SE); `--against
+origin/main` (384.92) fails 16 - S1, S2 (characters and swatches) and S3 on every device and class (the case's worst 200px band
+64-74% switch there; the characters' 47-51%), S4/S5 pass on both as designed; check-b384-haptics ALL PASS (38: every surface still
+has its own switch or label under a finger, a label tap clicks once and ticks); sweep-layout --quick 20/20 clean; check-js clean.
+check-centering not run: nothing drawn changed (a label and a switch are both invisible).
 ## 384 (branch claude/b384-classbtn, NOT merged, waiting on the owner's pick): the class button, three options behind ?classbtn=a|b|c
 Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's circle needs a better border? Could just be better.." Three looks built side by side, behind a temporary address switch; nothing changes for anyone without it (`html[data-classbtn]` is set only by the head script's `/[?&]classbtn=([abc])/`; `classBtnIcon()` returns "" without it and the button keeps `NOVA_CLASSES`' own marks; every new CSS rule starts `html[data-classbtn...]`).
 - REDRAWN MARKS (all three options; the button and the class list's class bubbles - not the catalog / sign-up cards / Settings rows): Fire Code a flame with two side tongues, an orange middle and a pale core; the academy a police shield, silver rim, blue-violet field, white star. Both symmetric, ink 4.6-19.4 x 2.5-21.5 of the 24 box (centred). Gradient ids unique per copy (`classBtnSeq`).
