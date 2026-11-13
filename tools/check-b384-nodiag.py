@@ -5,8 +5,8 @@ of its switches were localStorage flags the head script read before the first pa
 "384.105"). Installed iPhone 17 Pro Max (440x956, 62/34 simulated) unless said:
   N1 SETTINGS  every Settings screen (the menu, its eight pages, Advanced), in the academy and in Fire Code, with the panel's own flag set
                beforehand: no "display test" words anywhere on the page and no panel; Advanced's sections are each a header, a card with
-               rows and its notes, none empty; and every element of every Settings screen sits on 384.97's rect (0.5px) - Advanced is
-               384.97's page with its LAST section (header, card, note) gone and nothing above it moved.
+               rows and its notes, none empty; and every element of every Settings screen sits on 384.99's rect (0.5px) - Advanced is
+               384.99's page with its LAST section (header, card, note) gone and nothing above it moved.
   N2 ?diag     ?diag, ?diag=1 and ?x=1&diag show nothing: no panel, no hook, none of its style or trial elements, the same <body>
                children and <html> classes as the plain address.
   N3 FLAGS     every flag the panel could set (and the investigation's others, both classes' copies: class26e.X and class26e.ifc.X) set
@@ -14,9 +14,9 @@ of its switches were localStorage flags the head script read before the first pa
                flags - the same <html> classes, the same #top-edge (display, box, colour, touch, layer), the same theme-color, and the
                top band (the strip and 100px under it) pixel for pixel on Home, a question and Profile. Pro Max in both classes, an SE,
                and a Safari tab.
-  N4 384.97    with no flags the same top band is 384.97's pixel for pixel on Home, a question and Profile (the default is untouched).
+  N4 384.99    with no flags the same top band is 384.99's pixel for pixel on Home, a question and Profile (the default is untouched).
   N5 no page errors.
-Run:  python3 tools/check-b384-nodiag.py [--against REV|DIR] [--only N1,N2,N3]   (--against origin/main 384.97 must FAIL N1, N2, N3)"""
+Run:  python3 tools/check-b384-nodiag.py [--against REV|DIR] [--only N1,N2,N3]   (--against origin/main 384.99 must FAIL N1, N2, N3)"""
 import importlib.util, io, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("glitches", os.path.join(HERE, "check-b384-glitches.py"))
@@ -24,9 +24,9 @@ G = importlib.util.module_from_spec(spec); spec.loader.exec_module(G)   # takes 
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageChops
 chk = G.chk
-REF_REV = "93d18a9"   # main 384.97, the last build with the display test (merged in before the final gates)
+REF_REV = "ac2f923"   # main 384.99, the last build with the display test (merged in before the final gates)
 REF = subprocess.run(["git", "-C", G.REPO, "show", REF_REV + ":index.html"], check=True, capture_output=True).stdout.decode("utf-8")
-assert 'APP_BUILD = "2026-11-13-384.97"' in REF, "384.97 not readable from git"
+assert 'APP_BUILD = "2026-11-13-384.99"' in REF, "384.99 not readable from git"
 FLAGS = {"displaytest": "1", "dxboot": '["s12","lo24"]', "topguard": "0", "topedgeold": "1", "topedgepe": "none", "topmatch": "1",
          "topdeep": "1", "top383": "1", "topclip": "1", "ojappoff": "1", "topclear": "0", "sbdefault": "1"}
 SET_FLAGS = """(()=>{ if(location.protocol !== 'http:' || sessionStorage.getItem('__flagsSet')) return; sessionStorage.setItem('__flagsSet','1');
@@ -121,18 +121,18 @@ with sync_playwright() as pw:
                 if a is None or b is None: moved[name] = ["not mounted", a is None, b is None]; continue
                 if a["words"] or a["panel"]: words.append(name)
                 if name == "advanced":
-                    # 384.97's page less its last section: the header, the card and its note
+                    # 384.99's page less its last section: the header, the card and its note
                     if not (len(a["els"]) == len(b["els"]) - 4 and a["els"] == b["els"][:len(a["els"])]):
-                        moved[name] = {"here": len(a["els"]), "384.97": len(b["els"]), "first off": next((i for i, (x, y) in enumerate(zip(a["els"], b["els"])) if x != y), None)}
+                        moved[name] = {"here": len(a["els"]), "384.99": len(b["els"]), "first off": next((i for i, (x, y) in enumerate(zip(a["els"], b["els"])) if x != y), None)}
                     shape = pg.evaluate(ADV_SHAPE)
                 elif a["els"] != b["els"] or a["sh"] != b["sh"]:
                     i = next((i for i, (x, y) in enumerate(zip(a["els"], b["els"])) if x != y), None)
-                    moved[name] = {"first off": i, "here": a["els"][i] if i is not None else len(a["els"]), "384.97": b["els"][i] if i is not None else len(b["els"]), "sh": [a["sh"], b["sh"]]}
+                    moved[name] = {"first off": i, "here": a["els"][i] if i is not None else len(a["els"]), "384.99": b["els"][i] if i is not None else len(b["els"]), "sh": [a["sh"], b["sh"]]}
             cl = pg.evaluate("window.NOVA_CLASS")
             chk("[N1 %s] no 'display test' words and no panel on any of the %d Settings screens, the panel's flag set beforehand (%s)" % (cl, len(SETTINGS), words or "none"), not words and cl == cls, words)
             chk("[N1 %s] Advanced: each section a header and a card with rows, no empty card, the page ending on a note (%s)" % (cl, shape),
                 shape and all(s["head"] and s["rows"] >= 1 for s in shape["sections"]) and shape["emptyCards"] == 0 and (shape["last"] or "").startswith("settings-footnote"), shape)
-            chk("[N1 %s] every Settings screen sits on 384.97's rects; Advanced is 384.97's less its last section, nothing above it moved (%s)" % (cl, moved or "same"), not moved, moved)
+            chk("[N1 %s] every Settings screen sits on 384.99's rects; Advanced is 384.99's less its last section, nothing above it moved (%s)" % (cl, moved or "same"), not moved, moved)
             close(pg, pr)
     # ---------------- N2 ?diag ----------------
     if "N2" in ONLY:
@@ -148,7 +148,7 @@ with sync_playwright() as pw:
                 % (q, {k: r[k] for k in ("panel", "hook", "styles", "trials")}, extra),
                 not r["panel"] and not r["hook"] and r["styles"] == 0 and r["trials"] == 0 and not extra and r["cls"] == p0["cls"], [r, p0])
             close(pg)
-    # ---------------- N3 the flags, N4 384.97 ----------------
+    # ---------------- N3 the flags, N4 384.99 ----------------
     if "N3" in ONLY:
         SCREENS = [("home", "()=>showHome()", False), ("question", QSTART, True), ("profile", "()=>showProfile()", False)]
         for dev, cls in (("promax", "academy"), ("promax", "ifc"), ("se", "academy"), ("promax-tab", "academy")):
@@ -165,13 +165,13 @@ with sync_playwright() as pw:
                 bf, bn, brf = band(pf), band(pn), band(pr)
                 d3, d4 = pxdiff(bf, bn), pxdiff(bn, brf)
                 if tf != tn or d3["n"]: out3[name] = {"flags": tf, "none": tn, "px": d3}
-                if d4["n"]: out4[name] = {"px": d4, "384.97": tr, "here": tn}
+                if d4["n"]: out4[name] = {"px": d4, "384.99": tr, "here": tn}
                 if os.environ.get("OUT"):
                     os.makedirs(os.environ["OUT"], exist_ok=True)
                     for lab, im in (("flags", bf), ("none", bn), ("38495", brf)): im.save(os.path.join(os.environ["OUT"], "%s-%s-%s-%s.png" % (dev, cls, name, lab)))
             chk("[N3 %s] with every flag set the top is the default's: <html> classes, #top-edge, theme-color and the top band pixel for pixel on Home, a question and Profile (%s)"
                 % (tag, out3 or "same"), not out3, out3)
-            chk("[N4 %s] with no flags the top band is 384.97's pixel for pixel on Home, a question and Profile (%s)" % (tag, out4 or "same"), not out4, out4)
+            chk("[N4 %s] with no flags the top band is 384.99's pixel for pixel on Home, a question and Profile (%s)" % (tag, out4 or "same"), not out4, out4)
             close(pf, pn, pr)
     br.close()
 chk("[N5] no page errors (%d)" % len(errs), not errs, errs[:4])
