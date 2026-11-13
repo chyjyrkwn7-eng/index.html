@@ -159530,7 +159530,9 @@ function buildRanksTab(){
   /* THE BANDS, SAID ONCE (build 314): the boxes below are exactly build
      313's - "I don't like how the road map boxes changed, that's a no go"
      - so the one new idea is a sentence here, not a change to the cards. */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your level goes as high as the next rank\u2019s level, and that rank\u2019s badges take it further. Tap a rank to see what it gives.";
+  /* ONE LINE (384.117): "Way too wordy, no one is reading that." Four sentences went; each stop below already shows its level, its
+     badges and what it unlocks, so the note only has to say the stops can be tapped. */
+  mapNote.textContent = "Tap a rank to see what it unlocks.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
