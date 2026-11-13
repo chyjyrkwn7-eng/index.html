@@ -1496,6 +1496,22 @@
   :root{ --tabs-drop: calc(.6rem + env(safe-area-inset-bottom, 0px) - var(--tabs-bottom)); }
   /* (384.77) --sat is exactly env(safe-area-inset-top), what build 383 wrote in every one of these places (384.54's 42pt clearance is gone) */
   :root{ --sat: env(safe-area-inset-top, 0px); }
+  /* (384.95) THE LINE UNDER THE SYSTEM'S TOP BLUR: E. In the installed iPhone app held upright with a notch or island, iOS 26 softens
+     whatever sits in the top band under the status bar; his 15:35 recording (Profile, Leaderboard, Settings pulled down a little at a
+     time, 120fps) reads the title's edge sharpness against where its ink starts: blurred to 74pt, softening at 76, fully sharp from
+     78pt - the 62pt inset plus 16. --edge-e is that depth plus 2pt, in points on the glass (x --zc: at his 85% page zoom a CSS pixel
+     is .85pt), and only where the band exists (html.top-edge-on: the head script's installed iOS; portrait, phone width, an inset
+     over 30px - an SE, an iPad, a phone on its side and a Safari tab keep 0, so nothing moves there). --top-e is the line itself:
+     the top of every control and the top of every title's ink sit on it, not above it (the chat button, the back buttons through
+     alignNavChat, the tab screens' titles, the test header's row and Pause). Unlike 384.54's 42pt this does not move the page:
+     each top-row element is brought down to the line and no further, and Home's flow is untouched (only its chat button moves). */
+  :root{ --edge-e: 0px; }
+  @media (orientation:portrait) and (max-width:39.99rem){
+    html.top-edge-on{ --edge-e: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 18px) * var(--zc, 1)); }
+  }
+  :root{ --top-e: calc(env(safe-area-inset-top, 0px) + var(--edge-e));
+    /* how far the test header's row comes down to put Pause's top on the line (0 wherever the line is not below Pause already) */
+    --test-lift: max(0px, calc(var(--top-e) - max(1.25rem, var(--sat)) - .35rem)); }
   :root{
     --pad-inset-top: max(0px, var(--sat) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
@@ -7693,7 +7709,8 @@
        screen - which is why the chat button disappeared off the top of
        Home the moment you tapped into the chat. It is 0 whenever there
        is no keyboard, so this costs nothing anywhere else. */
-    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
+    /* (384.95) on the line under the system's top blur where there is one (--top-e), its old .75rem below the inset everywhere else */
+    top:calc(max(var(--sat) + .75rem, var(--top-e)) + var(--vv-shift, 0px));
     right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     width:44px; height:44px; padding:0; margin:0;
     display:flex; align-items:center; justify-content:center;
@@ -9071,7 +9088,7 @@
      the page (mountRoomChatFab), and it is the dock button's size. */
   .roomchat-fab{
     position:fixed; z-index:445;
-    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
+    top:calc(max(var(--sat) + .75rem, var(--top-e)) + var(--vv-shift, 0px));   /* (384.95) the dock button's line */
     right:calc(max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) + 44px + .5rem);
     height:44px; padding:0 .85rem 0 .7rem; margin:0; border-radius:999px; box-sizing:border-box;
     display:flex; align-items:center; gap:.4rem;
@@ -13568,9 +13585,12 @@
     top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
     /* (384.80) OPAQUE: the strip over the status bar's area is solid paper on a question, and the header under it is the same solid paper
        (it was 97% / 95%) down to where it fades, so the two read as one colour */
+    /* (384.95) solid to Pause's foot (.35rem under the row's; this box ends .9rem under the row's), then a short fade that ends above
+       the dots: from 70% the paper thinned behind the lower half of Pause and the mode, so a question scrolled under the row showed
+       through between them */
     background:linear-gradient(to bottom,
       var(--paper) 0%,
-      var(--paper) 70%,
+      var(--paper) calc(100% - .55rem),
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   .wrap:has(.fc-screen) .top .test-qcounter,
@@ -20740,7 +20760,7 @@
   @media (max-width:39.99rem){
     [data-layout="modern"] .top #pausebtn:not([hidden]){
       position:fixed;
-      top:calc(max(1.25rem, var(--sat)) + .35rem);
+      top:calc(max(1.25rem, var(--sat)) + .35rem + var(--test-lift));   /* (384.95) its top on the line under the system's blur */
       right:max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1.1rem));
       z-index:150; transform:none;
       min-height:44px; min-width:5.4rem; padding:.55rem 1.3rem; font-size:1rem;   /* (384 r5) "why is the pause button so small": the label was 15px in a 74px pill */
@@ -20754,6 +20774,16 @@
        Paused, Pause hides and the row lost its 44px - everything under
        it rose 23px into the chat button. */
     [data-layout="modern"] .wrap:has(.pausepanel) > .top{ min-height:44px; }
+    /* (384.95) THE ROW COMES DOWN WITH PAUSE: the mode and the count stay centred on Pause's line, and the dots and the question
+       under them come down by the same few px. Padding inside the row, so syncTestPin's measure (the row's offsetHeight) carries it:
+       the pinned row is that much taller and its opaque paper (::before, from y 0 to the row's foot) grows with it - no gap. */
+    [data-layout="modern"] .wrap > .top:has(#pausebtn:not([hidden])),
+    [data-layout="modern"] .wrap:has(.pausepanel) > .top{ padding-top:var(--test-lift); min-height:calc(44px + var(--test-lift)); }
+    /* a header row with no Pause in it - the daily question's, a results screen's title - comes down onto the line the same way */
+    [data-layout="modern"] .wrap:has(.qnumrow, .fc-screen, .screen-answerreview, #stage > .rs-screen):not(:has(.pausepanel)) > .top:not(:has(#pausebtn:not([hidden]))){
+      padding-top:max(0px, calc(var(--edge-e) - 3px)); }
+    /* the count is centred on the row's padding box (absolute): half the lift puts it back on the content's middle, beside the mode */
+    [data-layout="modern"] .wrap:has(.qnumrow, .pausepanel) > .top .test-qcounter{ top:calc(50% + var(--test-lift) / 2); }
   }
   /* Ghost buttons (Sign in with a code, back buttons) previously just
      stripped the glass treatment entirely rather than getting their
@@ -36017,6 +36047,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz-dim{ position:absolute; inset:0; background:rgba(6,7,12,.6); opacity:0; transition:opacity .26s ease; touch-action:none; }
   .ifc-vz-card{ position:relative; display:flex; flex-direction:column; flex:0 1 64rem; min-width:0; overflow:hidden; border-radius:1.3rem;
     margin:max(10px, var(--sat)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    margin-top:max(10px, var(--sat), calc(var(--top-e) - 9.5px));   /* (384.95) its title and buttons (9.8px in) on the line under the system's blur */
     background:rgb(22,24,34); border:1px solid var(--surface-border); box-shadow:0 18px 50px rgba(0,0,0,.55);
     opacity:0; transform:translateY(18px) scale(.96); transition:transform .34s cubic-bezier(.2,.9,.3,1), opacity .26s ease; }
   .ifc-vz.is-in .ifc-vz-dim{ opacity:1; }
@@ -36301,7 +36332,8 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-title{ margin:0 0 .7rem; font-size:clamp(1.7rem, 6.4vw, 2.5rem); line-height:1.12; font-weight:750; }
   .gs-body{ margin:0; font-size:1.02rem; line-height:1.5; color:rgba(230,236,255,.74); }
   .gs-end{ position:relative; z-index:1; text-align:center; padding:4rem 1.4rem 2rem; opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
-  .gs-signin{ position:absolute; z-index:4; top:calc(var(--sat) + 10px); right:calc(env(safe-area-inset-right, 0px) + 14px);
+  .gs-signin{ position:absolute; z-index:4; top:max(calc(var(--sat) + 10px), var(--top-e));   /* (384.95) on the line under the system's blur */
+    right:calc(env(safe-area-inset-right, 0px) + 14px);
     min-height:44px; padding:0 1.05rem; border-radius:999px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06);
     color:#FFFFFF; font:inherit; font-size:.95rem; font-weight:650; letter-spacing:.01em; cursor:pointer; -webkit-tap-highlight-color:transparent;
     transition:background-color .2s ease, transform .15s ease; }
@@ -36517,6 +36549,8 @@ html.is-browser{ --fade-paper: transparent; }
   @supports (text-box:trim-both cap alphabetic){
     html[data-layout] body .classselect-panel > .next.playbtn{ text-box:trim-both cap alphabetic; height:auto; padding-top:calc((45.6px - 1cap)/2); padding-bottom:calc((45.6px - 1cap)/2); }
   }
+  /* (384.95) the intro's back button sits 20px into its panel (the others 24px): at his 85% zoom the line is 21.2px under the inset */
+  html[data-layout] body #stage .welcomeintro-panel > .back-link{ top:max(0px, calc(var(--edge-e) - 20px)); }
   html[data-layout] body #stage .back-link{ font-size:.85rem !important; min-height:calc(1em + 1rem) !important; padding-top:.5rem !important; padding-bottom:.5rem !important; }
   .pf-xp-to:empty{ display:none; }
   /* ---- THE UNIT CARD WITHOUT ITS CIRCLE (build 328) ----
@@ -36772,6 +36806,12 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] .vroom-chat-alert.is-glass .app-banner-text{ display:block; min-width:0; }
   html[data-layout] .vroom-chat-alert.is-glass .vroom-chat-alert-who{ flex:none; }
   html[data-layout] .vroom-chat-alert.is-glass .app-banner-sub{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* (384.97) ON A QUESTION THE ROW IS THE TEST HEADER'S, pinned at z-index 140 with an opaque paper cap from y 0 (384.95), so a
+     pop-up in the row (the daily alert at 75, a top toast at 70) was drawn half under it. While a pinned header is up - and not
+     the loading screen at 120, which nothing sits on - they go over it; everything else that drops in from the top (battle
+     alerts, chat alerts, the streak pop, rank banners) is above 140 already. Nova's note keeps its own 380. */
+  /* (:where keeps the weight to the pop-up's own classes, so a toast's 390 / 430 over an open sheet or card still wins) */
+  :where(body:has(.wrap.test-pinned):not(:has([id="teststart-overlay"]))) :is(.daily-alert:not(.nova-friend-note), .toast.is-top){ z-index:150; }
   /* (384.93) beside the chat button (popFitRow) a preview has less room: it wraps to two lines before it is cut */
   html[data-layout] .vroom-chat-alert.is-glass.pop-beside .app-banner-sub{ white-space:normal; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
   /* (round 48) one rhythm in every banner, whatever element carries it (a button sets its own
@@ -37743,6 +37783,16 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab)) > #count:not(:empty){
     font-size:2rem; font-weight:800; letter-spacing:-.02em; line-height:1.15; color:var(--ink); margin-bottom:1.25rem;
   }
+  /* (384.95) THE BIG TITLE'S INK STARTS ON THE LINE UNDER THE SYSTEM'S TOP BLUR (--top-e), level with the chat button's top. Its line
+     box starts at the inset and its tallest letters (the l, f, d of Profile, Leaderboard) .18em below that (a bold sans at 1.15 line
+     height, SF and Inter alike), so it comes down
+     by the rest of the band's depth. Relative: nothing under it moves, the gap to the switcher gives the few px back. Leaderboard,
+     Calendar, and Profile's three segments (rule below); 0 wherever there is no band. */
+  @media (orientation:portrait) and (max-width:39.99rem){
+    html.top-edge-on[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab, .screen-profile)) > #count:not(:empty){
+      position:relative; top:max(0px, calc(var(--edge-e) - .18em));
+    }
+  }
   @media (min-width:40rem){
     html[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab)) > #count:not(:empty){ font-size:2.25rem; }
   }
@@ -38211,10 +38261,9 @@ html.is-browser{ --fade-paper: transparent; }
      with each other? They should be perfectly symmetrical with each of their own corners?" The .6rem meet-in-the-middle (below)
      was arithmetic on one layout; the nav has moved since and they were 20px apart (and 20 vs 24px in from their edges).
      alignNavChat() measures the back button on every screen change and resize and puts the chat button level with it, as far
-     in from the right as the back button is from the left. */
-  html[data-layout] body.navchat-aligned .chatdock:not(.in-test) .chatdock-btn{
-    top:calc(var(--navchat-top, 0px) + var(--vv-shift, 0px)) !important; right:var(--navchat-right, 1.5rem) !important;
-  }
+     in from the right as the back button is from the left.
+     (384.95) REVERSED: the chat button keeps Home's corner on every screen ("when I hit Start Studying the chat button moves") and
+     alignNavChat() moves the nav row to it instead - see the function. No rule here moves the chat button any more. */
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:scale(.92); }
   [data-reduce-motion="true"] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:none; }
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron{ width:20px; height:20px; margin:0; }
@@ -38989,11 +39038,8 @@ html.is-browser{ --fade-paper: transparent; }
      two share one line. Only where there is a back button: on Home and the tab screens the chat button keeps its place beside the
      big page title. */
   html[data-layout] body #stage .settings-nav.settings-nav{ margin-top:calc(.2rem - .6rem); }
-  html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem + var(--vv-shift, 0px)); }
-  /* a tablet's chat button is 52px against the back button's 44: its top 4px higher puts the two middles on one line */
-  @media (min-width:40rem){
-    html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
-  }
+  /* (384.95) the chat button's half of this is gone: it keeps Home's corner on every screen, and alignNavChat() brings the nav row
+     (from this margin) the rest of the way to it */
   /* (384) "The back button flashed white or something when you hit it." The press shimmer (setupBubbleButtons: .glass-pressed,
      a pool of white in ::after) reached the back links - and a back link's ::after is its invisible 44px tap target, centred by
      translate(-50%,-50%). Pressed, the shimmer's inset:0 pinned that box to the button's corner and the translate threw it up
@@ -39983,6 +40029,32 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet{ overflow:hidden; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
+
+  /* ==== THE CLASS BUTTON IS A MEDALLION (384.94) ====================================================================
+     Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's
+     circle needs a better border? Could just be better.." Shown three looks (A lit ring, B liquid glass, C medallion) behind
+     ?classbtn=a|b|c, he picked C: "Option c for the class thing." The mark is struck on an enamel coin in the class's colour with a
+     fine bright bezel, inside the button's glass, and a soft light in that colour comes off it. Same size and place as before
+     (--cb and place() are untouched), the tap target is the button's own box (54px on a phone, the chat button's 52px on a
+     tablet). The coin is a closest-side circle on the padding box, so it is round and centred at any --cb; every ring and glow is
+     a background layer or a box-shadow, no SVG filter, nothing moves. The marks are classBtnIcon's (a flame with two side
+     tongues; a police shield with a white star), in light colours on the coin and in full colour in the class list.
+     The doubled class keeps the specificity the picked option had under html[data-classbtn="c"], which is what beats the
+     button's own glass rules. */
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; --coin-a:#EC6436; --coin-b:#BE341E; --coin-c:#741810; --bezel:#FFD7A0; }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; --coin-a:#4C68E4; --coin-b:#2A3BAA; --coin-c:#131850; --bezel:#D3DBFF; }
+  html .class-bubble.class-bubble > svg{ position:relative; z-index:1; }
+  html[data-theme][data-layout] body:not(.x384cb) .class-bubble.class-bubble{
+    background:
+      radial-gradient(ellipse 46% 26% at 50% 24%, rgba(255,255,255,.2), rgba(255,255,255,0) 100%) padding-box,
+      radial-gradient(circle closest-side, var(--coin-a) 0%, var(--coin-b) calc(100% - 9.5px), var(--coin-c) calc(100% - 4.4px), var(--bezel) calc(100% - 3.9px), var(--bezel) calc(100% - 3px), transparent calc(100% - 2.5px)) padding-box,
+      linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%) padding-box,
+      rgba(12,13,19,.26) !important;
+    border:1px solid rgba(255,255,255,.2) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 14px -2px color-mix(in srgb, var(--cbc) 46%, transparent) !important;
+  }
+  html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
+  @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
 </style>
 <script>
   (function(){
@@ -40291,6 +40363,8 @@ html.is-browser{ --fade-paper: transparent; }
         /* (384) Welcome rises in under the fading splash (welcomeArrive) - only when it is Welcome that is there */
         try{ if(document.querySelector("#stage .cosmic-welcome") && typeof welcomeArrive === "function") welcomeArrive(); }catch(e){}
         splash.classList.add("splash-hide");
+        /* (384.95) the chat button comes up with the screen, in this same task (syncChatDock: a fading splash is not a loading screen) */
+        try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
         /* Handed back as the fade STARTS, not when the element is
            removed, so Safari's bars cross-fade along with the splash
            instead of snapping to the app colour half a second late.
@@ -56689,20 +56763,52 @@ function syncTestPin(force){
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
-/* (384 r8) see body.navchat-aligned: the chat button mirrors the back button's corner on any pushed screen */
+/* (384.95) THE CHAT BUTTON NEVER MOVES; THE BACK BUTTON COMES TO IT. Madison: "Ensure the chat button's position is consistent
+   between screens, for example, when I hit Start Studying the chat button moves." 384 r8 put the chat button level with the back
+   button on every pushed screen (alignNavChat measured the back button two frames after the mount and moved the chat button there,
+   and Settings' pages lowered it .6rem by CSS), so it jumped 10px down and 4px right going Home -> Start Studying (30px in a Safari
+   tab) and jumped back two frames into the next screen. Now the chat button keeps its one corner (Home's: the safe area + .75rem,
+   1.5rem in) on every screen but a question (where Pause owns the corner), and the r8 symmetry is kept the other way round: the
+   pushed screen's nav row (the round back button and the title centred with it) is moved up or down so the back button's middle is
+   on the chat button's middle, and on a phone - where both are corner buttons - the back button is as far in from the left as the
+   chat button is from the right. Done in the stage's own mutation callback (a microtask after the mount, before its first frame),
+   from layout positions (offsets, which no entrance animation moves), so nothing is seen to move. */
 function alignNavChat(){
-  const b = document.body; if(!b) return;
-  const back = document.querySelector("#stage .ios-nav > .ios-nav-back");
-  const chat = document.getElementById("chatdock-btn");
-  const br = back ? back.getBoundingClientRect() : null;
-  if(!back || !chat || !br || br.width === 0 || window.scrollY > 4){ if(!back || !br || br.width === 0) b.classList.remove("navchat-aligned"); return; }
-  const ch = chat.getBoundingClientRect().height || br.height;
-  b.style.setProperty("--navchat-top", (br.top + (br.height - ch) / 2).toFixed(2) + "px");
-  b.style.setProperty("--navchat-right", br.left.toFixed(2) + "px");
-  b.classList.add("navchat-aligned");
+  try{
+    const chat = document.getElementById("chatdock-btn");
+    const back = document.querySelector("#stage .settings-nav > :is(.ios-nav-back, .settings-nav-back)");
+    const nav = back ? back.parentElement : null;
+    if(!chat || !back || !nav || !nav.offsetParent) return;
+    if(chat.closest(".chatdock.in-test")) return;
+    const cs = getComputedStyle(chat);
+    const cTop = parseFloat(cs.top) + (parseFloat(cs.marginTop) || 0), cH = chat.offsetHeight, cRight = parseFloat(cs.right) + (parseFloat(cs.marginRight) || 0);
+    if(!(cH > 0) || !isFinite(cTop) || !isFinite(cRight)) return;
+    /* the nav's place on the screen at rest at the page's top: its box less any transform an ancestor carries this frame (a slide,
+       a lift) and less the scroll (offsetTop would do it but rounds to whole px), the back button's place inside the nav */
+    const nr = nav.getBoundingClientRect(), br = back.getBoundingClientRect();
+    if(!br.height) return;
+    let tx = 0, ty = 0;
+    for(let n = nav; n && n !== document.documentElement; n = n.parentElement){
+      const s = getComputedStyle(n);
+      if(s.transform && s.transform !== "none"){ try{ const m = new DOMMatrixReadOnly(s.transform); tx += m.m41; ty += m.m42; }catch(e){} }
+      if(s.translate && s.translate !== "none"){ const p = s.translate.split(/\s+/); tx += parseFloat(p[0]) || 0; ty += parseFloat(p[1]) || 0; }
+    }
+    const x = nr.left - tx, y = nr.top - ty + window.scrollY;
+    const backMid = y + (br.top - nr.top) + br.height / 2;
+    const d = backMid - (cTop + cH / 2);
+    if(Math.abs(d) > .05){
+      const mt = parseFloat(getComputedStyle(nav).marginTop) || 0;
+      nav.style.marginTop = (mt - d).toFixed(2) + "px";
+    }
+    /* left: only where the back button is a corner button too (a phone: the nav spans the page, so it is near the left edge) */
+    const backLeft = x + (br.left - nr.left) - (parseFloat(back.style.translate) || 0);
+    const dx = cRight - backLeft;
+    const want = Math.abs(dx) <= 8 ? dx.toFixed(2) + "px 0" : "";
+    if(back.style.translate !== want) back.style.translate = want;
+  }catch(e){}
 }
 try{
-  new MutationObserver(() => requestAnimationFrame(() => requestAnimationFrame(alignNavChat))).observe(document.getElementById("stage"), { childList: true });
+  new MutationObserver(alignNavChat).observe(document.getElementById("stage"), { childList: true });
 }catch(e){}
 addEventListener("resize", () => requestAnimationFrame(alignNavChat));
 /* THE STARFIELD'S TILES (build 323) - see the body::after rule for the
@@ -57426,6 +57532,41 @@ const NOVA_CLASSES = [
   { key: "ifc", name: "Fire Code", sub: "IFC",
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
+/* THE CLASS BUTTON'S MARKS (384.94, option C - see "THE CLASS BUTTON IS A MEDALLION" in the stylesheet). The marks are redrawn
+   with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield with a
+   silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). On the
+   button ("button") they are drawn in light colours for the enamel coin; in the class list ("list") in full colour. Ids are
+   unique per copy (classBtnSeq): the button and its list can both be on the page, and a gradient id shared with a hidden copy
+   paints nothing in Safari. A class with no drawing here returns "" and the caller keeps NOVA_CLASSES' own mark. */
+let classBtnSeq = 0;
+function classBtnIcon(key, where){
+  if(key !== "ifc" && key !== "academy") return "";
+  const coin = where === "button";
+  const u = "cbx" + (++classBtnSeq) + "-";
+  if(key === "ifc"){
+    const o = coin ? ["#FFF1C4", "#FFD27A", "#FFB04A"] : ["#FFB25A", "#FF6B35", "#E5332E"];
+    const m = ["#FFD36A", "#FF9A3A"];
+    const c = coin ? ["#FFF6D8", "#FFD27A"] : ["#FFFBEA", "#FFE49A"];
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
+      '<linearGradient id="' + u + 'o" x1="12" y1="2.6" x2="12" y2="21.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + o[0] + '"/><stop offset=".45" stop-color="' + o[1] + '"/><stop offset="1" stop-color="' + o[2] + '"/></linearGradient>' +
+      '<linearGradient id="' + u + 'm" x1="12" y1="8" x2="12" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient>' +
+      '<linearGradient id="' + u + 'c" x1="12" y1="12.4" x2="12" y2="19.2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/></linearGradient></defs>' +
+      '<path d="M12 2.6C13.3 5.6 15.9 7.3 16.9 10.4C17.4 9.2 17.9 8 18.1 6.7C19.5 8.7 19.2 12.3 19.2 14.2A7.2 7.2 0 0 1 4.8 14.2C4.8 12.3 4.5 8.7 5.9 6.7C6.1 8 6.6 9.2 7.1 10.4C8.1 7.3 10.7 5.6 12 2.6Z" fill="url(#' + u + 'o)"/>' +
+      /* on the coin the middle is cut out in the coin's own red, a pale core left in it: an emblem, not a picture */
+      '<path d="M12 7.9C13 10.3 16 11.9 16 15.1A4 4 0 0 1 8 15.1C8 11.9 11 10.3 12 7.9Z" fill="' + (coin ? '#C93A22' : 'url(#' + u + 'm)') + '"/>' +
+      '<path d="M12 12.4C12.6 13.9 14.3 14.9 14.3 16.9A2.3 2.3 0 0 1 9.7 16.9C9.7 14.9 11.4 13.9 12 12.4Z" fill="url(#' + u + 'c)"/></svg>';
+  }
+  const r = coin ? ["#FFFFFF", "#E4EAFF", "#B9C6F2"] : ["#F2F5FF", "#B9C6F2", "#8496D8"];
+  const f = coin ? ["#DDE4FF", "#B4C2F4", "#8EA0E6"] : ["#8E86FF", "#5470F2", "#3442B8"];
+  const s = coin ? "#2F45C8" : "#FFFFFF";
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
+    '<linearGradient id="' + u + 'r" x1="6" y1="3" x2="18" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + r[0] + '"/><stop offset=".55" stop-color="' + r[1] + '"/><stop offset="1" stop-color="' + r[2] + '"/></linearGradient>' +
+    '<linearGradient id="' + u + 'f" x1="7" y1="4.6" x2="17" y2="19.6" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + f[0] + '"/><stop offset=".5" stop-color="' + f[1] + '"/><stop offset="1" stop-color="' + f[2] + '"/></linearGradient></defs>' +
+    '<path d="M12 2.5 19.4 5.3V11.4C19.4 16 16.4 19.5 12 21.5 7.6 19.5 4.6 16 4.6 11.4V5.3Z" fill="url(#' + u + 'r)"/>' +
+    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7 8.6 18.1 6.2 15.2 6.2 11.5V6.5Z" fill="url(#' + u + 'f)"/>' +
+    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7Z" fill="#FFFFFF" fill-opacity="' + (coin ? '.18' : '.09') + '"/>' +
+    '<path d="M12 7.6 13.06 10.34 16 10.5 13.72 12.36 14.47 15.2 12 13.6 9.53 15.2 10.28 12.36 8 10.5 10.94 10.34Z" fill="' + s + '" stroke="' + s + '" stroke-width=".5" stroke-linejoin="round"/></svg>';
+}
 function classSwitchAllowed(){
   /* (384) every account: the head script lets a page into a class only for an account enrolled in it, and in the academy any
      account that has finished signing up has the button (before 384, the owner's alone) */
@@ -57585,11 +57726,11 @@ function mountClassBubble(){
   btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
-  btn.innerHTML = cur.icon;
+  btn.innerHTML = classBtnIcon(cur.key, "button") || cur.icon;   /* (384.94) the coin's marks */
   const stack = document.createElement("div");
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
-  const items = others.map(c => ({ cls: "is-" + c.key, icon: c.icon, label: c.name, run: () => switchClass(c.key) }));
+  const items = others.map(c => ({ cls: "is-" + c.key, icon: classBtnIcon(c.key, "list") || c.icon, label: c.name, run: () => switchClass(c.key) }));
   items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog("home"); } });
   wrap.style.setProperty("--n", items.length);
   items.forEach((it, k) => {
@@ -91183,6 +91324,24 @@ const NovaSound = (function(){
     for(const sib of par.children){ if(sib.classList && sib.classList.contains(c) && ++n >= 2) return true; }
     return false;
   };
+  /* ...AND A GRID OF SMALL ONES IS A WALL TOO (384.93). Madison: "When looking at the badge case, you can't use the case to
+     scroll up and down." Each slot is a small button, so each took a native switch: 24 in the academy's case, 58 in Fire
+     Code's, laid edge to edge - a finger that lands on one drags the switch, not the page (WebKit gives a touch on a switch to
+     the switch). Read on main 384.92: 47% of Fire Code's Badges screen and 23% of Customize > Character (26 characters) were
+     switch, the theme swatches the same. The calendar's month was the first of these (327z12, data-hsw-soft); this is the
+     rule for all of them, so a grid added later is covered without anyone knowing it: a control repeated HSW_GRID_N or more
+     times beside its own kind (the same first class), or sitting in a cell that is, gets the LABEL instead (hswMode) - a
+     finger on a label scrolls the page, and a tap on it still ticks. The planet system, an answer and a tab are HSW_ALWAYS
+     and never reach this; a mode card is judged before it. */
+  const HSW_GRID_N = 6;
+  const hswRepeated = e => {
+    const c = e && e.classList ? e.classList[0] : null, par = e && e.parentElement;
+    if(!c || !par) return false;
+    let n = 0;
+    for(const sib of par.children){ if(sib.classList && sib.classList.contains(c) && ++n >= HSW_GRID_N) return true; }
+    return false;
+  };
+  const hswInGrid = h => hswRepeated(h) || hswRepeated(h.parentElement);
   const hswTooBig = h => h.offsetHeight > HSW_MAX_H
     || (h.offsetWidth > HSW_MAX_W && !(h.offsetHeight <= HSW_WIDE_H && h.matches("button, [role='button']") && !hswListRow(h)));
   /* THE SWITCH ROWS' OWN INPUT IS THE SWITCH (build 327z10). A .opt row (every
@@ -91241,7 +91400,7 @@ const NovaSound = (function(){
     if(h.matches(".modecard")) return h.querySelector(HLB_INNER) ? 1 : 3;
     if(h.matches(HSW_ALWAYS)) return 1;
     /* a grid of small controls a page is scrolled by (the calendar's month): labels, never switches */
-    const soft = !!h.closest("[data-hsw-soft]");
+    const soft = !!h.closest("[data-hsw-soft]") || hswInGrid(h);
     if(!soft && hswOk(h)) return 1;
     /* too big or too many for a switch: a label - unless something inside it answers taps of its own (the label
        would cover it), or it submits a form (a label's click is not a button's) */
@@ -113041,7 +113200,11 @@ function syncChatDock(){
      button, which is fixed in the same corner. That is a placement
      problem, not a reason to take the chat away: .in-test moves the
      dock clear of it instead - see the CSS. */
-  const loading = !!(document.getElementById("splashscreen")
+  /* (384.95) A SPLASH THAT IS FADING IS NOT A LOADING SCREEN. From .splash-hide on, the screen under it is what shows (the .wrap is
+     revealed in that frame and the splash only fades over it), so the button comes up with Home in the frame the fade starts - it used
+     to wait for the element's removal 0.8s later and pop in over a Home that had been up for most of a second. */
+  const splashUp = document.getElementById("splashscreen");
+  const loading = !!((splashUp && !splashUp.classList.contains("splash-hide"))
                   || document.getElementById("teststart-overlay")
                   || document.getElementById("genprofile-overlay"));
   if(loading){
@@ -122835,7 +122998,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.93";
+const APP_BUILD = "2026-11-13-384.97";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -123158,7 +123321,7 @@ function pushHomeHeroForNotice(bar){
    ends up not making it. Returns null for "nothing is in the way", which
    hands the position back to the CSS rule (the safe-area inset plus a
    small gap) rather than freezing whatever the last screen needed. */
-/* ---- EVERY TOP POP-UP IN THE CHAT BUTTON'S ROW (384.93; 384.91 put them under it) ----
+/* ---- EVERY TOP POP-UP IN THE CHAT BUTTON'S ROW (384.93, on 384.95's line in 384.97; 384.91 put them under it) ----
    Madison, on Home with "Done for today" up: "I feel like these pops need to be a little closer to the top. Not in the blurred
    area but yeah. They are in an awkward spot." Every pop-up that drops in from the top (the daily alert and every banner on its
    glass, the update and re-add notices, the rank / theme / character banners, battle alerts, the streak pop, Find me's answers,
@@ -123166,8 +123329,9 @@ function pushHomeHeroForNotice(bar){
    or a build that moves the button - claude/b384-polish86 moves the whole top row below the blur - moves them with it), and
    where it would reach the button it stops 8px short of the button's 44px hit box (popFitRow), its left edge staying on the
    usual safe-area margin. 384.91 put them 6px UNDER the button, which gained 4px on Home and would have sent them ~150px down
-   once the row moves. Never higher than the bottom of iOS 26's wash (popWashBottom: an installed iPhone upright with a notch,
-   the safe-area line + 42pt). A screen title in that row is covered for the pop-up's few seconds. With no chat button
+   once the row moves. Never higher than the bottom of iOS 26's top blur (popWashBottom: 384.95's line E, --top-e, the line the
+   whole top row sits on since 384.95 - 80 on a Pro Max, so a pop-up's top is level with the chat button's and Pause's). A
+   screen title in that row is covered for the pop-up's few seconds. With no chat button
    (Welcome, onboarding) the row is where the button would be (the safe-area line + .75rem) and the pop-up keeps its full
    width. iPad and a Safari tab: the same rule on their own geometry; a pop-up that already clears the button (an iPad's
    centred 26rem) keeps its width and place. Stacking is unchanged: the first is in the row, later ones go under it. */
@@ -123187,16 +123351,22 @@ function popAnchorRect(){
   }
   return null;
 }
-/* The bottom of iOS 26's wash in an installed iPhone held upright with a notch or island (html.top-edge-on is the head script's
-   "installed iOS"): the safe-area line plus 42pt (384.64's measurement off his screenshots; --zc turns points into CSS px for a
-   zoomed layout). 0 wherever there is no wash: an iPad, a Safari tab, an SE-sized phone, a phone on its side. */
+/* (384.97) The bottom of iOS 26's top blur: 384.95's line E, --top-e (the inset + 16pt measured + 2pt, x --zc, read off his 15:35
+   recording; only on an installed iPhone held upright with a notch or island - html.top-edge-on, phone width, inset over 30px). It
+   is the same line the whole top row (the chat button, the titles, Pause) now sits on, read off the CSS so one number moves both.
+   0 wherever there is no band (--top-e is then the bare inset): an iPad, a Safari tab, an SE-sized phone, a phone on its side.
+   (384.91-384.93 used the safe-area line + 42pt, 384.64's older reading off his screenshots: 22pt deeper than the measured band.) */
 function popWashBottom(){
-  const root = document.documentElement;
-  if(!root.classList.contains("top-edge-on") || window.innerWidth >= 640 || window.innerWidth > window.innerHeight) return 0;
-  const sat = popSafeTop();
-  if(sat <= 30) return 0;
-  const zc = parseFloat(getComputedStyle(root).getPropertyValue("--zc")) || 1;
-  return sat + 42 * zc;
+  try{
+    let q = document.getElementById("pop-tope-probe");
+    if(!q){
+      q = document.createElement("i"); q.id = "pop-tope-probe"; q.setAttribute("aria-hidden", "true");
+      q.style.cssText = "position:fixed;top:0;left:0;width:0;height:var(--top-e, 0px);visibility:hidden;pointer-events:none;overflow:hidden";
+      document.documentElement.appendChild(q);
+    }
+    const e = q.getBoundingClientRect().height || 0;
+    return e > popSafeTop() + .5 ? e : 0;
+  }catch(e){ return 0; }
 }
 /* the safe-area line in px: one zero-width probe, made once and kept, on <html> rather than <body> so the observers watching
    <body>'s children (the page lock, the top strip's guard, the cutscene focus) never see it come or go */
@@ -151347,6 +151517,10 @@ function buildCustomizeGroup(key, title, note, have, total, gridClass, titleClas
   head.appendChild(c);
   const grid = document.createElement("div");
   grid.className = gridClass;
+  /* (384.93) A GRID YOU SCROLL BY: labels, never switches (see NovaSound hswInGrid). Each group is its own grid, and a group
+     of four or five would have kept its switches beside one of seven that lost them - one page of characters that a finger
+     scrolls by in some rows and not in others. Every Customize grid is soft, whatever its size; a tap still ticks. */
+  grid.setAttribute("data-hsw-soft", "");
   card.append(head, grid);
   return { card, grid, head };
 }

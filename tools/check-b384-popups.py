@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.93 (384.91 reworked): EVERY TOP POP-UP IN THE CHAT BUTTON'S ROW, beside the button, never in the system's top wash.
+"""Build 384.97 (384.91, reworked in 384.93, on 384.95's top row): EVERY TOP POP-UP IN THE CHAT BUTTON'S ROW, beside the button, never in the system's top blur.
 
 Madison (iPhone 17 Pro Max, installed, build 384.86, Home with "DAILY QUESTION / Done for today" up): "I feel like these pops need
 to be a little closer to the top. Not in the blurred area but yeah. They are in an awkward spot." 384.91 put them 6px under the chat
@@ -9,14 +9,15 @@ button, which gained 4px on Home and would have sent them ~150px down once the t
 For each device and screen, each pop-up is opened by the app's own function and read once it has settled:
  (1) ROW      its top border edge is the chat button's top (read off the live button) within 1px - the same row on every screen
               (Home, Profile, the Leaderboard, Settings, a question) - or, where the button sits higher than the bottom of iOS 26's
-              wash (installed iPhone upright with a notch: the safe-area line + 42px; nowhere else), that line: never above it;
- (2) BESIDE   it does not overlap the chat button's hit box (the button grown to 44px at least); where it shares the button's
+              blur (installed iPhone upright with a notch: 384.95's line E, --top-e, the inset + 18pt - the line the whole top row
+              sits on; nowhere else), that line: never above it;
+ (2) BESIDE   it does not overlap the chat button's hit box (the button grown to 44px at least) or Pause; where it shares the button's
               rows its right edge is at most the hit box's left - 8 (within 1px), and on a phone an inset pop-up (the daily alert
               and every banner on its glass, the notices, a toast) runs from the safe-area margin to exactly that edge; on a tablet
               it keeps the 26rem it had (it does not stretch). Where there is under 180px beside the button (a 320px phone
               mid-test), or where the gate narrows the box to that span and it comes out more than 1.3x as tall (one word to a
               line), it sits 8px under the hit box at its own width instead - and only there;
- (3) FITS     every line of its text fits its box (wraps, never clipped) and the box is inside the screen - on a 320px phone too;
+ (3) FITS     it is drawn over the top row (on a question, over the pinned test header, not under its paper); every line of its text fits its box (wraps, never clipped) and the box is inside the screen - on a 320px phone too;
  (4) STACK    the update notice and the daily alert up together do not overlap, the notice in the row and the alert under it
               (whichever came first); in a Safari tab's Home the Home Screen reminder (a slim centred bar, under the chat button on a
               phone, 384 r19) comes first and every other pop-up stacks under it; a tour holds the update notice back and it comes
@@ -26,7 +27,7 @@ For each device and screen, each pop-up is opened by the app's own function and 
 Pop-ups: the daily alert ("Done for today"), Find me's answer, the rank-up banner, a toast said at the top, a battle alert, a
 Virtual Room chat alert, the tier banner (showTierUpBanner), the answer-streak pop (a question), the update notice and the re-add
 notice (Home: they are gated to Welcome and Home).
-Devices: installed iPhone 17 Pro Max (440x956, 59/34 simulated), installed SE-size (375x667, 20/0), an installed 320px phone
+Devices: installed iPhone 17 Pro Max (440x956, 62/34 simulated, the inset 384.95 measured), installed SE-size (375x667, 20/0), an installed 320px phone
 (320x568, 20/0), installed iPad Pro 11" (834x1194, 24/20), and the Safari-tab model (440x797, no insets, not installed).
 Run:  python3 tools/check-b384-popups.py [--against FILE] [--only DEVICE[,DEVICE]] [--screens home,profile,...] [--shots DIR --tag NAME]
       (origin/main must FAIL (1) and (2): there every pop-up is under the button or under the tab switcher / the question count,
@@ -53,7 +54,7 @@ SEEN = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('c
         "localStorage.setItem('class26e.weekrecap.v1','9999-12-31');localStorage.setItem('class26e.savecode.card','1');localStorage.setItem('class26e.a2hs','1790500000000');"
         "localStorage.setItem('class26e.unithold.tip','1');")
 # name, W, H, inset top, inset bottom, UA, installed, wash expected
-DEVICES = [("promax", 440, 956, 59, 34, UA, True, True), ("se", 375, 667, 20, 0, UA, True, False),
+DEVICES = [("promax", 440, 956, 62, 34, UA, True, True), ("se", 375, 667, 20, 0, UA, True, False),
            ("p320", 320, 568, 20, 0, UA, True, False),
            ("ipad11", 834, 1194, 24, 20, UA_PAD, True, False), ("safari", 440, 797, 0, 0, UA, False, False)]
 if ONLY: DEVICES = [d for d in DEVICES if any(o == d[0] or (o in d[0] and o != "se") for o in ONLY.split(","))]
@@ -85,7 +86,8 @@ REC = """(sel)=>{ window.__rec = []; const t0 = performance.now(); const tick = 
   if(performance.now() - t0 < 900 || (window.__rec.length < 3 && performance.now() - t0 < 3000)) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }"""
 READ = """(sel)=>{ const R = e => { if(!e) return null; const r = e.getBoundingClientRect(); return r.width ? [r.left, r.top, r.right, r.bottom].map(v=>Math.round(v*10)/10) : null; };
   const chat = document.querySelector('.chatdock-btn'); const cs = chat && getComputedStyle(chat);
-  const sat = (() => { const q = document.createElement('i'); q.style.cssText = 'position:fixed;top:0;width:0;height:var(--sat, 0px)'; document.body.appendChild(q); const x = q.getBoundingClientRect().height; q.remove(); return x; })();
+  const probe = v => { const q = document.createElement('i'); q.style.cssText = 'position:fixed;top:0;width:0;height:' + v; document.body.appendChild(q); const x = q.getBoundingClientRect().height; q.remove(); return x; };
+  const sat = probe('var(--sat, 0px)'), topE = probe('var(--top-e, 0px)');
   const all = [...document.querySelectorAll('#dailyalert,.daily-alert,.app-banner,#updatebanner,.tierup-banner,.battle-alert,.vroom-chat-alert,#toast,#a2hsbar,.streak-pop')].filter((e,i,a)=>a.indexOf(e)===i)
     .filter(e => !(e.id === 'a2hsbar' && (e.classList.contains('is-leaving') || document.body.classList.contains('chatdock-open')))).map(e => [e.id || e.className.split(' ')[0], R(e)]);
   /* the pop-up where it is laid out: the streak pop drifts up 8px over its whole life while it fades (its keyframes), so a
@@ -99,7 +101,14 @@ READ = """(sel)=>{ const R = e => { if(!e) return null; const r = e.getBoundingC
       const own = [...n.childNodes].some(c => c.nodeType === 3 && c.textContent.trim()); if(!own) return;
       if(n.scrollWidth > n.clientWidth + 1 && s.overflowX !== 'visible') clipped.push([n.className || n.tagName, n.scrollWidth, n.clientWidth, (n.textContent || '').trim().slice(0, 30)]);
       if(s.webkitLineClamp && s.webkitLineClamp !== 'none' && n.scrollHeight > n.clientHeight + 1) clipped.push([n.className || n.tagName, 'line-clamp', n.scrollHeight, n.clientHeight]); }); }
-  return { pop: P(el), chat: R(chat), chatShown: !!chat && cs.display !== 'none', sat, all, clipped, W: innerWidth,
+  /* drawn over the row, not under it: at a point inside its top edge the pop-up comes before the pinned test header */
+  let onTop = null;
+  if(el){ const r = el.getBoundingClientRect(); const pe = el.style.getPropertyValue('pointer-events'), pp = el.style.getPropertyPriority('pointer-events');
+    el.style.setProperty('pointer-events', 'auto', 'important');   /* passive pop-ups take no taps; the hit test needs them */
+    const stack = document.elementsFromPoint(Math.min(r.right - 4, r.left + 30), r.top + 8); el.style.setProperty('pointer-events', pe, pp);
+    const own = stack.findIndex(n => el.contains(n)); const hdr = document.querySelector('.wrap.test-pinned > .top');
+    const hd = hdr ? stack.findIndex(n => hdr.contains(n)) : -1; onTop = own >= 0 && (hd < 0 || own < hd); }
+  return { pop: P(el), onTop, chat: R(chat), chatShown: !!chat && cs.display !== 'none', sat, topE, all, clipped, W: innerWidth, pause: R(document.getElementById('pausebtn')),
            edgeOn: document.documentElement.classList.contains('top-edge-on'), rec: window.__rec || [] }; }"""
 # the box's height as it is, and narrowed to the margin..edge span (inset pop-ups: a right inset; centred ones: a centre and a max-width),
 # then put back
@@ -141,11 +150,14 @@ def open_pop(pg, key):
     pg.wait_for_timeout(1100)
     return pg.evaluate(READ, sel)
 def row_of(d, wash):
-    washY = (d["sat"] + 42) if (wash and d["edgeOn"]) else 0
+    # (384.97) the band's bottom is 384.95's line E (--top-e): the inset + 18pt on an installed notched iPhone upright, else none
+    washY = d["topE"] if (wash and d["edgeOn"] and d["topE"] > d["sat"] + .5) else 0
     c = d["chat"]
     return (max(c[1], washY) if c else None), washY
 def check_beside(lab, key, d, W, p):
     c = d["chat"]
+    if d.get("pause"):
+        chk("%s: clear of Pause (%s / %s)" % (lab, p, d["pause"]), not overlaps(p, d["pause"]), d)
     if not c: chk("%s: the chat button is up" % lab, False, d); return
     hb = hitbox(c)
     chk("%s: clear of the chat button's hit box (%s / %s)" % (lab, p, [round(v, 1) for v in hb]), not overlaps(p, hb), d)
@@ -157,6 +169,7 @@ def check_beside(lab, key, d, W, p):
                 abs(p[0] - REM) <= 1 and abs(p[2] - edge) <= 1, d)
     if W >= 640 and key in INSET:
         chk("%s: a tablet's pop-up keeps its 26rem (%spx wide)" % (lab, round(p[2] - p[0], 1)), p[2] - p[0] <= 26 * REM + 1, d)
+    chk("%s: drawn over the top row, not under the test header (%s)" % (lab, d.get("onTop")), d.get("onTop") is not False, d)
     chk("%s: inside the screen and every word fits (%s)" % (lab, d["clipped"] or "nothing cut"), p[0] >= -.5 and p[2] <= W + .5 and not d["clipped"], d)
 def placed(pg, key, d, wash):
     """Where a lone pop-up belongs: in the chat button's row (its top on the button's top, or on the wash line where the button
@@ -194,7 +207,7 @@ def run(br):
                 if SHOTS and key in ("daily", "streak") and name in ("promax", "ipad11", "p320") and scr != "home":
                     pg.screenshot(path=os.path.join(SHOTS, "%s_%s_%s_%s.png" % (TAG, name, scr, key)))
                 want, washY = row_of(d, wash)
-                if wash: chk("%s: the wash model is on here (installed iPhone, notch inset %s)" % (lab, d["sat"]), d["edgeOn"] and d["sat"] > 30, d)
+                if wash: chk("%s: the blur line is on here (installed iPhone, notch inset %s, line E %s)" % (lab, d["sat"], d["topE"]), d["edgeOn"] and d["sat"] > 30 and d["topE"] > d["sat"] + 10, d)
                 # the Home Screen reminder (a Safari tab's Home) comes first; a pop-up up with it stacks under it
                 ab = dict(d["all"]).get("a2hsbar") if key not in HOME_ONLY else None
                 if ab:
@@ -233,14 +246,15 @@ def run(br):
         pg.evaluate("()=>{ const b = document.querySelector('.chatdock-btn'); if(b) b.click(); }"); pg.wait_for_timeout(1300)
         pg.evaluate("()=>showToast('Chat muted')"); pg.wait_for_timeout(1000)
         q = pg.evaluate("""()=>{ const R = e => { if(!e) return null; const r = e.getBoundingClientRect(); return r.width ? [r.left, r.top, r.right, r.bottom].map(v=>Math.round(v*10)/10) : null; };
-            return { open: !!document.querySelector('.chatdock.is-open'), panel: R(document.querySelector('.chatdock.is-open .chatdock-panel')), toast: R(document.getElementById('toast')), chat: R(document.querySelector('.chatdock-btn')) }; }""")
+            const q = document.createElement('i'); q.style.cssText = 'position:fixed;top:0;width:0;height:var(--top-e, 0px)'; document.body.appendChild(q); const e = q.getBoundingClientRect().height; q.remove();
+            return { open: !!document.querySelector('.chatdock.is-open'), panel: R(document.querySelector('.chatdock.is-open .chatdock-panel')), toast: R(document.getElementById('toast')), chat: R(document.querySelector('.chatdock-btn')), topE: e }; }""")
         tp, pp, cc = q["toast"], q["panel"], q["chat"]
         on_panel = bool(tp and pp and overlaps(tp, pp))
         on_btn = bool(tp and cc and overlaps(tp, hitbox(cc)))
         if pp and cc and pp[1] < cc[3] + 60:
             chk("%s home, chat open (panel under the button): the toast is on neither the panel nor the button (%s / %s)" % (name, tp, pp), q["open"] and tp and not on_panel and not on_btn, q)
         else:
-            wy = (top + 42) if wash else 0
+            wy = q["topE"] if (wash and q["topE"] > top + .5) else 0
             chk("%s home, chat open (a sheet): the toast is in the row, beside the button, clear of the sheet (%s / %s)" % (name, tp, pp),
                 q["open"] and tp and cc and abs(tp[1] - max(cc[1], wy)) <= 1 and not on_panel and not on_btn, q)
         pg.evaluate("()=>{ const b = document.querySelector('.chatdock-btn'); if(b && document.querySelector('.chatdock.is-open')) b.click(); }"); pg.wait_for_timeout(900)
