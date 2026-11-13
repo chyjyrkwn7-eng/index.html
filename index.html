@@ -115760,6 +115760,7 @@ function screenHandoff(from, build){
   if(from._handoff) return;
   from._handoff = true;
   from.style.pointerEvents = "none";
+  const tapAt = performance.now();
   let dim = null;
   /* linear, so where it has got to can be worked out at any moment (below) */
   try{ dim = from.animate([{ opacity: 1 }, { opacity: HANDOFF_FLOOR }], { duration: HANDOFF_DIM_MS, easing: "linear", fill: "forwards" }); }catch(e){}
@@ -115772,9 +115773,10 @@ function screenHandoff(from, build){
     if(!to || to === from) return;
     /* the dim has gone on on the compositor all through the build; the page's own clock (document.timeline) stands still inside a
        long task, so where it is NOW is worked out from its start and the real time - and the units rise from exactly there */
-    /* (its start: as the compositor reported it, or - not reported yet when the build began - the frame it went out in) */
+    /* (its start: as the compositor reported it, or - not reported yet when the build began - the tap: the frame the dim went out
+       in can come before the one whose rAF ran here, measured 33ms) */
     let o = HANDOFF_FLOOR;
-    try{ const st = dim ? (dim.startTime != null ? dim.startTime : frameAt) : null;
+    try{ const st = dim ? (dim.startTime != null ? dim.startTime : tapAt) : null;
       if(st != null) o = 1 - (1 - HANDOFF_FLOOR) * Math.max(0, Math.min(1, (performance.now() - st) / HANDOFF_DIM_MS)); }catch(e){}
     if(o < .995){ try{ to.animate([{ opacity: o }, { opacity: 1 }], { duration: HANDOFF_IN_MS, easing: "cubic-bezier(.2,.8,.3,1)" }); }catch(e){} }
   }, 0));
@@ -120874,7 +120876,7 @@ function ifcDropTakeOver(chrome){
 }
 function ifcDropAdd(run, el, a, kind){ if(a) run.anims.push([el, a, kind || "y"]); }
 /* opening: change() puts the box in its new, taller layout. Called in the tap; the move is made in the next frame. */
-function ifcDropOpen(chrome, change, pending){
+function ifcDropOpen(chrome, change, pending, now){
   const after = ifcDropSide(chrome, true), before = ifcDropSide(chrome, false), next = ifcDropNext();
   /* what is on the screen now (the layout as it stands, a move's transforms included) */
   const a0 = after.length ? after[0].getBoundingClientRect().top : 0;
@@ -120884,7 +120886,8 @@ function ifcDropOpen(chrome, change, pending){
   change();
   if(ifcSlideStill() || !chrome.isConnected){ ifcDropCollect(prev); ifcDropPlace(next); return; }
   const run = ifcDropBegin(chrome, null, prev);
-  requestAnimationFrame(() => {
+  /* (in a tap: in its first frame; a picture arriving later, in a task of its own: at once, before that task's frame) */
+  const go = () => {
     if(ifcDropRun !== run) return;
     const live = ifcDropCollect(run);
     if(!chrome.isConnected){ ifcDropHalt(run); return; }
@@ -120929,7 +120932,8 @@ function ifcDropOpen(chrome, change, pending){
       ifcDropPlace(next);
     };
     run.timer = setTimeout(end, IFC_DROP_MS + 40);
-  });
+  };
+  if(now) go(); else requestAnimationFrame(go);
 }
 /* shutting: d() is what the box's layout loses when done() runs (margins included). Called in the tap; nothing is laid out
    anew until the end. */
@@ -121142,7 +121146,7 @@ function ifcPreAnswer(item, qtext, panel){
           const tmp = ifcEl("div");
           await V.paint(doc, { ...clip, hide: h.hide, hiddenText: h.hiddenText }, tmp, { scale: 1.5, ...opts, blur: true });
           ifcFrameClips(tmp, 1.5, false, clip);
-          if(shown && holder.isConnected) ifcDropOpen(holder, () => { holder.style.display = ""; holder.replaceChildren(...tmp.childNodes); });
+          if(shown && holder.isConnected) ifcDropOpen(holder, () => { holder.style.display = ""; holder.replaceChildren(...tmp.childNodes); }, null, true);
           else if(shown) holder.replaceChildren(...tmp.childNodes);
         }
         catch(e){ holder.textContent = ""; put(false); }
