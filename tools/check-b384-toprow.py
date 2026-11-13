@@ -191,7 +191,10 @@ def check_screens(dev, cls, M, B):
         if scr.startswith("__"): continue
         if ink is None: failed.append((scr, geo)); continue
         row = table.setdefault(scr, {})
-        E = ink["E"]; mn = ink["min"]
+        # the line is the gate's own (his recording: the inset + 16pt, + 2pt, in points: x the page zoom), not the page's word for it
+        zc = (W / 440.0) if dev == "zoom85" else 1.0
+        E = ins[0] + (18 * zc if gated else 0); mn = ink["min"]
+        if ink["E"] is None or abs(ink["E"] - E) > .5: below.append((scr, "the page's line (--top-e) is %s, not %.1f" % (ink["E"], E))); good = False
         good = True
         if gated and mn is not None and mn < E - .5:
             below.append((scr, "E %.1f" % E, [(i["what"], i["top"]) for i in ink["items"] if i["top"] < E - .5][:4])); good = False
@@ -213,9 +216,8 @@ def check_screens(dev, cls, M, B):
     n = len([k for k in M if not k.startswith("__")])
     for lst, what in ((below, "above E"), (chat_off, "chat"), (back_off, "back"), (newscroll, "scroll")):
         for x in lst: print("      %s: %s" % (what, x), flush=True)
-    if gated: chk("%s (1): every top row's ink is at or below E on all %d screens" % (tag, n), not below, below)
-    else: chk("%s (1): no band here - E is the inset (%s)" % (tag, ins[0]), all(v[0] is None or v[0]["E"] is None or abs(v[0]["E"] - ins[0]) <= .5 for k, v in M.items() if not k.startswith("__")),
-              [(k, v[0]["E"]) for k, v in M.items() if not k.startswith("__") and v[0]][:3])
+    chk("%s (1): %s on all %d screens" % (tag, "every top row's ink is at or below E (the inset + 18pt) and the page's line is E" if gated else
+        "no band here - the page's line is the inset (%s) and nothing has to clear it" % ins[0], n), not below, below)
     chk("%s (2): the chat button is in Home's place (%s) on every screen it shows on, beside Pause on its line in a question" % (tag, hc and [round(v, 1) for v in hc]), hc and not chat_off, chat_off)
     chk("%s (3): every round back button is level with the chat button%s" % (tag, " and mirrors its inset" if phone else ""), not back_off, back_off)
     if B is not None: chk("%s (4): no screen scrolls that did not before" % tag, not newscroll, newscroll)
