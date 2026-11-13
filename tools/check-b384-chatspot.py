@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.93: THE ROUND CHAT BUTTON IS IN ONE PLACE ON EVERY SCREEN, AND DOES NOT MOVE AS THE SCREEN CHANGES.
+"""Build 384.95: THE ROUND CHAT BUTTON IS IN ONE PLACE ON EVERY SCREEN, AND DOES NOT MOVE AS THE SCREEN CHANGES.
 
 Madison: "Ensure the chat button's position is consistent between screens, for example, when I hit Start Studying the chat button
 moves." On 384.86 it sat at Home's corner (the safe area + .75rem, 1.5rem in) on the tab screens and moved on every pushed screen:
@@ -20,7 +20,7 @@ Per device (installed Pro Max 440x956 59/34, installed SE 375x667 20/0, iPad Pro
  (4) THE EXCEPTIONS, reported: on a question the button sits beside Pause (Pause owns the corner; centred on Pause's line, one gap
      to its left) - checked to be level with Pause; the end-of-run results screen (Pro Max and iPad, academy) is in Home's place;
  (5) no page errors.
-  python3 tools/check-b384-chatspot.py [--against OLD/index.html] [--quick]   (384.92 must FAIL (1)-(3))
+  python3 tools/check-b384-chatspot.py [--against OLD/index.html] [--quick]   (384.94 must FAIL (1)-(3))
 """
 import json, os, sys, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))

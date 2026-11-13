@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.93: THE CHAT BUTTON IS UP IN THE FRAME HOME FIRST SHOWS, NOT 0.8s LATER.
+"""Build 384.95: THE CHAT BUTTON IS UP IN THE FRAME HOME FIRST SHOWS, NOT 0.8s LATER.
 
 Madison (iPhone 17 Pro Max, installed, a screen recording of a launch): "Chat takes a second to load when you load the app." The
 recording (15fps) has Home up through the fading splash and the round chat button popping in nine frames (~0.6s) later. Cause:
@@ -14,7 +14,7 @@ first frame in which the splash has .splash-hide (the first frame Home shows thr
 it, #chatdock-btn must be displayed (the dock not [hidden], the button laid out, visibility visible, opacity 1 on it and on the
 dock). Also: no page errors.
 
-  python3 tools/check-b384-chatfirst.py [--against OLD/index.html]   (384.92 must FAIL)
+  python3 tools/check-b384-chatfirst.py [--against OLD/index.html]   (384.94 must FAIL)
 """
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
