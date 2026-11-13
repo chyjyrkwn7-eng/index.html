@@ -39435,7 +39435,7 @@ WHAT ONLY HIS PHONE CAN CONFIRM: that 16pt + 2pt under the inset is enough on th
 SWEEP: sweep-layout, the full matrix: 138/144 combinations clean. The six that are not (iPhone Air, 16 Pro Max and 17 Pro Max @85% on their side, installed and bars-over: Choose your mode's cards 12px under the side insets) fail identically on main 384.92 (re-run there: the same two lines, the same numbers) - not this build's; left for its own fix.
 384.95 GATES (the tree merged with main 384.94, a82cdea; one at a time, TMPDIR=/dev/shm): check-js 14 blocks ALL PASS; the page console (check-b384-toprow's (7), every screen, both classes, four devices) no page error; check-b384-toprow on the Pro Max, the Pro Max at 85%, the SE and the iPad Pro 11" portrait, both classes (74 screens and 26 transitions each): 248 checks pass, one failed once - SE academy (4) "flashcards scrolls 14 (was 0)" - and passed on two re-runs of that screen against main; measured alone the SE's flashcards are identical on main 384.94 and this build (scroll 58, every box the same), so it was the sequence, not the layout; check-b384-chatspot 35/35; check-b384-chatfirst ALL PASS (0ms, phone and iPad); check-b384-top383 63/63; check-b384-tabhotfix 44/44; check-b384-homescroll 25/25; check-b384-classbtn ALL PASS - the class button is option C pixel for pixel (mean 0.00 max 0 on the Pro Max and the iPad, 0.04 / 2 on the laptop, both classes): the top-row move does not touch it (it sits at the bottom of Home on a phone, and from 40rem at sat + .75rem, which no band changes); check-b384-casescroll ALL PASS (28); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (1270 elements, 0 off centre; listed as moving while measured: the Fire Code code summaries (as on main) and once the chat button on a Virtual Room screen - a per-frame probe on that screen holds it at 372,80 from the first frame (main moves it 74 -> 83.6, 372 -> 376 three frames in)).
 
-### 384.96 (newdot) - the new dot is a small lit flare in your theme's colour (claude/b384-newdot, cut from main 384.92 bba82e5, main 384.94 merged in; NOT on main)
+### 384.96 (newdot) - the new dot is a small lit flare in your theme's colour; the class button goes back to A, the lit ring (claude/b384-newdot, cut from main 384.92 bba82e5, main 384.94 and 384.95 merged in; NOT on main)
 Madison: "The yellow dot for the notification, doesn't match the theme, it should almost look a little like the secret flare.."
 
 WHAT IT WAS (384 "THE NEW DOT, ONE LOOK" + r8's glow): a solid 9px #FFD43B circle, a 2px ring in the surface's colour and two yellow
@@ -39504,18 +39504,36 @@ OTHER GATES, revised because they asserted the old decision:
 - check-behaviour check_b299 "the dot is yellow, the same on the tab and on the card" -> "the dot is one lit flare, painted the same on
   the tab and on the card" (one gradient on both; its colour per theme is this gate's). Passes here; FAILS on 384.92 (a flat fill).
 
-GATES RUN, one at a time (the machine loaded): check-js ALL PASS (APP_BUILD = version.json = 2026-11-13-384.95); the page's console -
-only the two blocked Firebase CDN loads; check-b384-newdot ALL PASS (fails 384.92 as above); check-b384-board2 --only 5 ALL PASS (fails
-384.92), --only 2 ALL PASS (coming back: nothing re-animates); check-behaviour check_b299/b314h_tabs/b317_pfcard/b319_badges/
-b320g_inspect: the dot checks pass, three fail identically on 384.92 (iPad "every flare on Home moves" - sheets not recorded within the
-budget under load; "at Supernova the card says max rank" phone and iPad); check-b329: the class button's pulse/banner/seen checks pass,
-three Nova-copy checks fail identically on 384.92 ("the storm, and the word adventure", "the modes get more than one box", "the last
-tip points at ranking up"); check-b384-classes-open: 8 FAIL here, 17 on 384.92 - (7b) "Nova's good-luck message in Fire Code's chat"
-fails on both and the walk stops there, none is the dot; check-b383-profile ALL PASS (both); check-centering --quick ALL PASS (0 off
-centre); sweep-layout --quick 20/20 clean.
+THE CLASS BUTTON GOES BACK TO OPTION A, THE LIT RING (same build, approved with the dot; both ship together).
+Madison, with the medallion (C, 384.94) live: "I don't like the class button after all. Try option a, the lit ring." He had picked C
+from the three looks behind ?classbtn=a|b|c (5f85d51: "Option c for the class thing."); seen in place on Home, C's enamel coin was
+dropped for A.
+- A is permanent with no query parameter, exactly as it was under ?classbtn=a in 5f85d51: a ring in the class's colour lifted towards
+  white (--cb-ring = --cbc 78% into white) just inside the rim, a soft pool of the colour behind the mark (at 50% 54%), the button's
+  glass gradient under both, a rim tinted with the colour (--cbc 44% into rgba(255,255,255,.16)), and a soft light off the outside
+  plus a faint inner one. --cbc is #FF7A3A (Fire Code) and #7C93FF (the academy), as before.
+- The medallion's CSS is gone (the coin and bezel layers, --coin-a/b/c and --bezel, the 26px / 46% mark sizes: the mark is the
+  button's own 30px again, as under A). The doubled class (.class-bubble.class-bubble) keeps the specificity the option had under
+  html[data-classbtn="a"], which is what beats the button's own glass rules; the mark keeps position:relative; z-index:1.
+- classBtnIcon(key) draws one mark per class in its full colours, on the button and in the class list alike (A's marks); the light
+  "coin" colours were the medallion's and nothing else used them, so they are gone and the "where" argument with them.
+- The new dot stays a .new-dot child of the button (.is-cb) and sits on A's corner (8.6px in and down on a phone, 8.3 on an iPad).
+GATE tools/check-b384-classbtn.py, rewritten for A: K1 the button on Home, both classes, iPhone 17 Pro Max / iPad Pro 11" / laptop, is
+pixel for pixel 5f85d51 loaded with ?classbtn=a, the dot hidden by rule on both sides (a rule specific enough to beat both builds'
+own !important "has-new" dot rules - the first draft's lost to them and compared the dots); K1b the same with the button's has-new
+state on both sides (the 329 ring, still under Reduce motion); K1c the new dot is drawn on A's button on its corner; K2 the mark is
+classBtnIcon's full-colour drawing on the lit ring (--cb-ring set); K3 the class list's mark; K4 ?classbtn=c changes nothing. #intro-pop
+is still hidden by rule. ALL PASS here (K1 mean 0.00 / max 0 on phone and iPad, 0.05 / 2 on the laptop). FAILS on main 384.95 (the
+medallion): 12 - K1 on all six, K1b on all four, K2 both classes.
 
-MERGING: origin/main moved to 384.94 while this was built. 384.94 (the class button as a medallion) rewrote the line this build's
-class-button dot is appended after (btn.innerHTML = classBtnIcon(...) || cur.icon) - keep that line and the .is-cb append after it.
+GATES RUN on the tree merged with main 384.95 (562b1ed), one at a time (another helper's gates on the machine too): check-js ALL PASS
+(APP_BUILD = version.json = 2026-11-13-384.96); the console - only the two blocked Firebase CDN loads, no page errors (A's ring and
+the full-colour marks read off the page); check-b384-classbtn ALL PASS (fails 384.95 as above); check-b384-newdot ALL PASS (46; every
+dot's centre and size where 384.95 has them, phone and iPad, 29 each); check-b384-board2 --only 5 ALL PASS; check-behaviour's dot
+sections, check-centering --quick and sweep-layout --quick: RESULTS PENDING (the machine was too loaded to load the page in 30s).
+Before the merges (on 384.92's tree): check-b329 (the class button's pulse/banner/seen checks pass; three Nova-copy checks fail
+identically on 384.92), check-b384-classes-open (8 fail here, 17 on 384.92, all from (7b) "Nova's good-luck message in Fire Code's
+chat", none the dot), check-b383-profile ALL PASS, check-b384-board2 --only 2 ALL PASS.
 
 NOT confirmable in Chromium: the breathe on a real iPhone's compositor (transform/opacity on a pseudo-element, which WebKit composites)
 and the colours on an OLED.

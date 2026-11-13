@@ -57,7 +57,9 @@ def load(br, dev, cls, pick=False, query=""):
     pg.add_style_tag(content="#intro-pop, .intro-pop{ display:none !important; }"); pg.wait_for_timeout(400)
     return pg
 # the new dot (384.96) and the old one (the button's ::after) off, by rule, on both sides: the button is compared, not the dot
-NODOT = ".class-bubble > .new-dot, .class-bubble-wrap .class-bubble::after{ display:none !important; }"
+# (specific enough to beat both builds' own "has-new" rules for the dot, which are !important too)
+NODOT = ("html body .class-bubble-wrap.class-bubble-wrap .class-bubble.class-bubble > .new-dot, "
+         "html body .class-bubble-wrap.class-bubble-wrap .class-bubble.class-bubble::after{ display:none !important; }")
 def nodot(pg):
     pg.evaluate("(c)=>{ const s = document.createElement('style'); s.id = '__nodot'; s.textContent = c; document.body.appendChild(s); }", NODOT)
     pg.wait_for_timeout(250)
