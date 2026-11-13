@@ -39463,3 +39463,10 @@ code box, a retaken one's code opens and draws its picture inside the card. E a 
 misses marked, the end reached by scrolling, Back from there. F 320x568, 375x667, 440x956, 956x440, 834x1194, 1194x834: no sideways
 scroll, segment words inside their segments, cards inside the page, 44px targets (F found the 320px segments: "First try 11" ran 4px
 into the pill's own padding - the counts step out there now).
+
+GATE RESULTS (384.103, one at a time, TMPDIR=/dev/shm, on a shared machine at load 60-120 with ~200 browsers from other sessions):
+check-js 14 blocks ALL PASS; the page boots with only the two expected Firebase CDN errors and every new function defined;
+check-b384-reviewtest ALL PASS (53 checks, A-F); `--against origin/main` (384.94) FAILS 38 - no review button anywhere, so A1-A9,
+B, C, D's list, E and every F size fail; the checks that still pass there are the harness's own (the misses were played as meant, the
+Fire Code class is up, no page errors). Screenshots: scratchpad reviewtest/ (iPhone 17 Pro Max @3x and iPad Pro 11" @2x, installed,
+academy and Fire Code) and reviewtest/contact-sheet.png.
