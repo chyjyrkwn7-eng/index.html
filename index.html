@@ -10938,9 +10938,10 @@
      (not for a tap), and taken off BEFORE the release navigates, so the next screen's entrance is not held. */
   /* (build 375: TAKEN OUT - "when you start the swiping animation, the screen you are on stops moving for some reason? Fix that." The
      page keeps moving under a slide; html.tab-dragging is still set while one is going, for anything that wants to know.) */
-  /* the tabs under the glass are scaled by the lens (an inline transform);
-     a layer each so that is a composite, not a repaint */
-  .bottomtabs.lens-up .bottomtabs-navrow .bottomtab{ will-change:transform; }
+  /* the tabs under the glass were scaled by the lens (an inline transform), a layer each so that was a composite, not a repaint.
+     (384.102) Not since 363 (LENS.mag 0: the tabs never grow): the four layers were made at every press and thrown away at every
+     landing - layer churn and a re-raster of every tab in the press's first frame and the hand-over's - for nothing. Put back with
+     LENS.mag. */
   /* the press is the lens now: no grey wash, no shrink (build 323) -
      "normally the one you are on is like greyed out or something" */
   .bottomtabs .bottomtabs-navrow .bottomtab:active,
@@ -91785,7 +91786,8 @@ const NovaSound = (function(){
        this tap already made" made every button tapped mid-sentence give way
        to a blip - no thock, and no tick (build 327, round 9) */
     if(!(opts && opts.generic) && !e.ambient) st.lastAt = nowMs;
-    if(wantBuzz) haptic(e.hap);
+    /* (384.102) nativeTick: the native switch under the finger plays this touch's haptic itself (the tab bar's slide, as its tap) */
+    if(wantBuzz && !(opts && opts.nativeTick && canTaptic())) haptic(e.hap);
     if(!wantSound) return null;
     const ctx = st.ctx;
     /* a context still starting inside the gesture that woke it plays as soon as it runs */
@@ -122862,7 +122864,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.94";
+const APP_BUILD = "2026-11-13-384.102";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -162325,7 +162327,7 @@ function tabPerfText(){
         finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
           /* (384 r15) the screen a tap has just brought in is held while the glass is still over it (see lensDown); its first look is the
              frame after it is drawn, not inside the tap's own task */
-          requestAnimationFrame(() => { if(!slideNav && lensG && lens.classList.contains("is-up")) barUnderPause(true); });
+          requestAnimationFrame(() => setTimeout(() => { if(!slideNav && lensG && lens.classList.contains("is-up")) barUnderPause(true); }, 0));   /* (384.102) after that frame */
           /* build 375: the frame after the one that drew it - the glass may land now */
           requestAnimationFrame(() => requestAnimationFrame(() => { if(bar._lensScreenIn) bar._lensScreenIn(); }));
           if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++;
@@ -162383,7 +162385,17 @@ function tabPerfText(){
         }
         me.timers.push(setTimeout(run, wait));
       };
-      let afterFrame = slideNav;
+      /* (384.102) A TAP'S SCREEN WAITS FOR THE FRAME THAT DRAWS ITS RELEASE, AS A SLIDE'S HAS SINCE 384. "when tapping it's okay but
+         sometimes it's bad or randomly goes or moves where it shouldn't." The release plans the glass's landing as a new compositor
+         track (lensRelease) and the click lights the tab - and a tap's build was then a timer of 0ms (the press was more than
+         TAB_SCREEN_AFTER ago), which Safari runs before its next frame. WebKit hands a new animation to the compositor only when a
+         frame is drawn, so the whole build (Home ~170ms on his phone, Profile ~60-100ms) went first, and only then did the landing
+         start - from where the glass was at the release, while the press's glide had carried on to the tab on the compositor in the
+         meantime: the glass stood still, then jumped back and glided again ("goes where it shouldn't"), and how bad depended on the
+         screen and on how quickly the finger lifted ("sometimes"). Traced as an iPhone at 4x CPU with Safari's order emulated: on
+         every one of the 24 ordered taps the landing's first frame came after the build. Every navigation now builds in the task
+         after the frame that draws its release; the glass's landing, the lit tab and the platter are on the compositor by then. */
+      let afterFrame = true;
       me.cancel = () => { navRan = true; me.timers.forEach(clearTimeout); };
       bar._navPend = me;
       me.schedule();
@@ -162609,8 +162621,9 @@ function tabPerfText(){
     const activeTab = navrow.querySelector(".bottomtab.active");
     if(!activeTab){ slider.classList.remove("ready"); bubbleAt = null; return; }
     if(force !== true && bubbleAt === activeTab && slider.classList.contains("ready")) return;
-    if(!activeTab.offsetWidth){ bubbleAt = null; return; }
-    const tb = tabBox(activeTab);
+    /* (384.102) from the geometry kept at rest: a tap's click lit the tab a moment ago, and a read here was a whole-page style pass */
+    const tb = tabBoxKept(activeTab);
+    if(!tb || !(tb.w > 0)){ bubbleAt = null; return; }
     placeBubble(tb.x, tb.w, slider.classList.contains("ready") && force !== true);
     slider.classList.add("ready");
     bubbleAt = activeTab;
@@ -162639,6 +162652,8 @@ function tabPerfText(){
     if(!a.width || !r.width) return;
     const dc = (r.left + r.width / 2) - (a.left + a.width / 2), dw = r.width - a.width;
     if(Math.abs(dc) < .75 && Math.abs(dw) < 1.5) return;
+    /* (384.102) off: the kept geometry may be what is out of date - measure again */
+    barGeo = null;
     slideBubbleToActiveTab(true);
     const r2 = slider.getBoundingClientRect();
     const dc2 = (r2.left + r2.width / 2) - (a.left + a.width / 2), dw2 = r2.width - a.width;
@@ -162667,7 +162682,50 @@ function tabPerfText(){
   /* build 327 round 7: the plain bar's platter sits 4.5px inside the bar (his reference),
      so the vertical inset is read off the bar's --pill-in-y (5px elsewhere) */
   const PILL_IN_X = -4;
-  const pillInY = () => parseFloat(getComputedStyle(bar).getPropertyValue("--pill-in-y")) || 5;
+  const pillInY = () => (barGeo && barGeo.inY) || parseFloat(getComputedStyle(bar).getPropertyValue("--pill-in-y")) || 5;
+  /* ---- (384.102) THE BAR'S GEOMETRY IS MEASURED AT REST, NOT UNDER THE FINGER ----
+     Madison (384.94): "the bottom tab still lags, when tapping it's okay but sometimes it's bad". Traced at 4x CPU as an iPhone: the
+     press read the bar 45 times (every tab's box, the row's computed width, the bar's, the platter's, the glass's opacity, the swell)
+     and the release 26 times more - and each read on a page whose loops step every frame is a style pass and a layout of the whole
+     page, run in the handler, before the glass's first frame can be drawn. The bar's boxes only change when the bar does (a resize,
+     a turn, the Start pill coming or going, Profile's centring nudge, fonts), so they are measured once, when nothing is moving
+     (barGeoWarm, ~350ms after any of those), and the press, the release and the platter work from that. Anything that changes the
+     bar drops it (barGeoDrop); a press that finds none measures as it always did. The swell's room beside the daily circle is kept
+     per screen the same way. */
+  let barGeo = null, barGeoT = 0;
+  function barGeoDrop(){ barGeo = null; barGeoSoon(); }
+  function barGeoSoon(){ clearTimeout(barGeoT); barGeoT = setTimeout(barGeoWarm, 350); }
+  function barGeoWarm(){
+    barGeoT = 0;
+    if(bar.hidden || document.hidden) return;
+    if(document.documentElement.classList.contains("tab-held") || bar.classList.contains("lens-up") || (bar._swell && bar._swell.playState === "running")){ barGeoSoon(); return; }
+    try{ barGeoGet(); if(barGeo && barGeo.swell == null) barGeo.swell = lensSwellRead(); }catch(e){}
+  }
+  function barGeoGet(){
+    if(barGeo) return barGeo;
+    if(bar.hidden || !navrow.offsetWidth) return null;
+    const tabs = [...navrow.querySelectorAll(".bottomtab")].filter(t => !t.hidden && t.offsetWidth > 0).map(t => Object.assign({ el: t }, tabBox(t)));
+    if(!tabs.length) return null;
+    const inY = parseFloat(getComputedStyle(bar).getPropertyValue("--pill-in-y")) || 5;
+    const rowH = parseFloat(getComputedStyle(navrow).height) || navrow.offsetHeight;
+    let minW = Infinity;
+    tabs.forEach(t => { minW = Math.min(minW, t.w); });
+    const vb = { rowH, boxH: Math.min(rowH, minW - 2 * PILL_IN_X + 2 * inY) };
+    /* the row on the screen, at rest (the swell scales it; a reading taken while it plays is not kept) */
+    let row = null;
+    if(!(bar._swell && bar._swell.playState === "running")){
+      const rr = navrow.getBoundingClientRect();
+      const k = rr.width / (parseFloat(getComputedStyle(navrow).width) || rr.width || 1);
+      row = { left: rr.left, k: k || 1, sw: false };
+    }
+    barGeo = { tabs, inY, vb, row, rowW: navrow.offsetWidth, barH: bar.offsetHeight, lens: null, swell: null };
+    return barGeo;
+  }
+  function tabBoxKept(t){
+    const geo = barGeoGet(), k = geo && geo.tabs.find(x => x.el === t);
+    return k ? { c: k.c, w: k.w, x: k.x } : tabBox(t);
+  }
+  function pillBoxKept(){ const geo = barGeoGet(); return geo ? geo.vb : pillBoxH(); }
   function pillBoxH(){
     const rowH = parseFloat(getComputedStyle(navrow).height) || navrow.offsetHeight;
     let minW = Infinity;
@@ -162684,27 +162742,39 @@ function tabPerfText(){
      with a scaleX (FLIP), and only the transform animates: the whole
      move, size included, runs on the compositor, through the build. */
   let bubbleX = null, bubbleW = null;
+  /* (384.102) AND IT FORCES NO LAYOUT. Its FLIP was the stylesheet's transition, restarted by reading the platter's width between the
+     "from" and the "to" (void offsetWidth) - a forced style pass and layout of the whole page inside the click, before the build, on
+     every click of a mouse and every tap with reduced motion; and every landing put it in place the same way. Now the platter's own
+     CSS transition is held off inline while a position goes in and given back two frames later (once a frame has been drawn without
+     it), and the glide is a Web Animation from the old place and size to the new: the same curve and length as the stylesheet's
+     (.45s, cubic-bezier(.34, 1.56, .64, 1)), on the compositor, nothing read. */
+  let placeTok = 0;
+  const placeCalm = () => document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
   function placeBubble(x, w, animate){
     const fromX = bubbleX, fromW = bubbleW;
     bubbleX = x; bubbleW = w;
+    if(slider._mv){ try{ slider._mv.cancel(); }catch(e){} slider._mv = null; }
     slider.style.transition = "none";
     slider.style.width = w + "px";
-    const vb = pillBoxH();
+    const vb = pillBoxKept();
     if(vb.boxH < vb.rowH - .5){ slider.style.top = ((vb.rowH - vb.boxH) / 2).toFixed(2) + "px"; slider.style.height = vb.boxH + "px"; }
     else if(slider.style.height){ slider.style.top = ""; slider.style.height = ""; }
-    if(!animate || fromX == null || !fromW || slider.classList.contains("dragging")){
-      slider.style.transform = "translateX(" + x + "px)";
-      void slider.offsetWidth; slider.style.transition = "";
-      return;
-    }
-    slider.style.transform = "translateX(" + fromX + "px) scaleX(" + (fromW / w).toFixed(4) + ")";
-    void slider.offsetWidth;
-    slider.style.transition = "";
     slider.style.transform = "translateX(" + x + "px)";
-    /* the lens, only when it actually travels (build 312) */
+    const tok = ++placeTok;
+    requestAnimationFrame(() => requestAnimationFrame(() => { if(tok === placeTok && slider.style.transition === "none") slider.style.transition = ""; }));
+    if(!animate || fromX == null || !fromW || slider.classList.contains("dragging")) return;
+    if(typeof slider.animate === "function" && !placeCalm()){
+      try{
+        const a = slider._mv = slider.animate([{ transform: "translateX(" + fromX + "px) scaleX(" + (fromW / w).toFixed(4) + ")" }, { transform: "translateX(" + x + "px)" }],
+          { duration: 450, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" });
+        a.finished.then(() => { if(slider._mv === a) slider._mv = null; }, () => {});
+      }catch(e){ slider._mv = null; }
+    }
+    /* the lens, only when it actually travels (build 312); its ::before bump starts again on the next frame (no forced restyle) */
     if(Math.abs(fromX - x) > 2 && !bar.classList.contains("lens-up")){
-      slider.classList.remove("is-moving"); void slider.offsetWidth; slider.classList.add("is-moving");
-      clearTimeout(slider._lensT); slider._lensT = setTimeout(() => slider.classList.remove("is-moving"), 560);
+      slider.classList.remove("is-moving");
+      requestAnimationFrame(() => { if(!bar.classList.contains("lens-up")) slider.classList.add("is-moving"); });
+      clearTimeout(slider._lensT); slider._lensT = setTimeout(() => slider.classList.remove("is-moving"), 600);
     }
   }
   /* PROFILE CENTRED BETWEEN HOME AND LEADERBOARD (build 318). "I almost
@@ -162726,11 +162796,18 @@ function tabPerfText(){
     if(h == null || l == null || p0 == null) return;
     const p = p0 - (parseFloat(pfTab.style.left) || 0);
     const d = (h + l) / 2 - p;
+    const was = pfTab.style.left;
     pfTab.style.left = Math.abs(d) < .25 ? "" : d.toFixed(2) + "px";
+    if(pfTab.style.left !== was) barGeo = null;   /* (384.102) Profile moved: the kept boxes are measured again */
   }
-  const onBarResize = () => { centreProfileTab(); slideBubbleToActiveTab(true); };
+  const onBarResize = () => { barGeoDrop(); centreProfileTab(); slideBubbleToActiveTab(true); };
   window.addEventListener("resize", onBarResize);
-  try{ const ro = new ResizeObserver(onBarResize); ro.observe(navrow); [pfTab].concat(pfNeighbours).forEach(t => t && ro.observe(t)); }catch(e){}
+  try{ const ro = new ResizeObserver(onBarResize); ro.observe(navrow); ro.observe(bar); [pfTab].concat(pfNeighbours).forEach(t => t && ro.observe(t));
+    navrow.querySelectorAll(".bottomtab").forEach(t => { if(t !== pfTab && pfNeighbours.indexOf(t) < 0) ro.observe(t); }); }catch(e){}
+  /* (384.102) a page back from the background or a font arriving can change the boxes: measured again, at rest */
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) barGeoDrop(); });
+  try{ if(document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", () => barGeoDrop()); }catch(e){}
+  barGeoSoon();
 
   /* Real drag-to-switch on the tab bar itself, not just a swipe
      anywhere on the page \u2014 press on the bar and the glass bubble
@@ -162873,6 +162950,8 @@ function tabPerfText(){
   let tabDragX0 = 0;
   navrow.addEventListener("pointerdown", (e) => {
     if(bar.hidden) return;
+    bar._releaseChose = null;
+    bar._touchOnSwitch = !!(e.target && e.target.classList && e.target.classList.contains("nova-hsw"));
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
     tabDragStartTab = (e.target && e.target.closest && e.target.closest(".bottomtab")) || tabAtPoint(e.clientX);
     /* build 383: A SCREEN WITH NO TAB LIT SLIDES FROM ANY TAB. "While in the unit selection screen and using the bottom tab, you can only
@@ -162907,7 +162986,9 @@ function tabPerfText(){
          (SLIDE_HOLD_SEL), not by a class on <html>, which restyled the whole page as the slide started (see SLIDE_HOLD_SEL). */
       /* build 376: only what is BEHIND THE BAR holds still while the finger slides - looked for once, a frame after the slide starts
          (the frame it starts in already carries the capture and the classes) */
-      requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(); });
+      /* (384.102) in the task after that frame (a timer set in a frame callback runs once the frame is drawn): its listing of the
+         stage's animations was a main-thread piece of the very frame that carries the slide's first move */
+      requestAnimationFrame(() => setTimeout(() => { if(tabDragActive && tabDragMoved) barUnderPause(); }, 0));
       /* build 377: NO TICKS ON THE WAY. "The bottom tab swipe Haptic Touch ... does it even when you swipe over, pass other tabs on the
          way to the one you select." Each tab carries a real native switch for its tap's tick (NovaSound, "A REAL SWITCH UNDER THE FINGER");
          a finger that slides drags the switch it landed on, and every time it flips across its middle iOS plays a tick. The switches leave
@@ -162944,15 +163025,22 @@ function tabPerfText(){
     slider.classList.remove("dragging");
     /* the lens settles on the tab it was let go over and becomes the
        platter there; a cancelled touch takes it home */
+    /* (384.102) WHERE THE FINGER IS, WITHOUT READING THE PAGE: a finger that never went past the slop is still on the tab it pressed
+       (a tap) - the bar is not measured for it (with the swell playing, that was a style pass and a layout of the page in the release).
+       Only a finger that travelled is looked up, from the row the slide has been reading all along. */
+    const far = Math.abs(e.clientX - tabDragX0) >= TAB_DRAG_SLOP;
     if(e.type === "pointercancel" || (window.__dragTestOn && tabDragMoved)) lensRelease(null);
     else if(!tabDragFromActive){
-      /* build 380: a press on another tab - it lands there if the finger is still on that tab (its click opens it), home if not */
-      const over = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
+      /* build 380: a press on another tab - it lands there if the finger is still on that tab (its click opens it), home if not.
+         (384.102) A press that travelled is not a choice: its glass goes home, and its touch's end clicks nothing and ticks nothing
+         (bar._releaseChose; the switch it started on would otherwise click and tick at the lift). */
+      if(far && e.pointerType === "touch"){ bar._releaseChose = false; lensRelease(null); return; }
+      const over = !far ? tabDragStartTab : (lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
       lensRelease(over && over === tabDragStartTab ? over : null);
       return;
     }
     else {
-      const over = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
+      const over = !tabDragMoved ? tabDragStartTab : (lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
       /* build 382: a slide let go over another tab holds its glass up until that tab's screen has been drawn (lensHoldFor) */
       if(lensG && tabDragMoved && !window.__dragTestOn && over && !over.classList.contains("active") && over._navigate && bar.dataset.navigating !== "1"){
         /* (384.35) planned at the release like a tap's, unless the wait for the screen is put back (SLIDE_WAITS_FOR_SCREEN) */
@@ -162968,11 +163056,14 @@ function tabPerfText(){
        a second time and win. */
     e.preventDefault();
     const tab = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
+    /* (384.102) a slide's touch-end clicks the switch it started on (and plays the haptic) only when the slide chose another tab */
+    bar._releaseChose = !!(tab && !tab.classList.contains("active") && bar.dataset.navigating !== "1");
     /* one slide sound for a drag that lands somewhere new: the click a
        captured pointer releases is on the row, not a tab, so the shared
        tap layer says nothing for it (build 323) */
     if(tab && !tab.classList.contains("active") && bar.dataset.navigating !== "1" && typeof playSound === "function"){
-      try{ playSound("ui.tab.bottom"); }catch(err){}
+      /* (384.102) its haptic is the switch's own, as a tap's is (nativeTick): never a scripted one on top */
+      try{ playSound("ui.tab.bottom", { nativeTick: !!bar._touchOnSwitch }); }catch(err){}
       bar._dragLandAt = performance.now();
     }
     /* build 375: let go over the tab that is already lit, a slide changes nothing - it used to go through the tab's own tap, which
@@ -163001,11 +163092,30 @@ function tabPerfText(){
   /* build 376: THE TICK FOR A SLIDE'S LANDING, ON THE TOUCH'S OWN END. "The Haptic Touch feature, it works on the bottom tab taps but it
      also needs to work when you swipe to one." A slide's landing ticked from its pointerup, and a finger that has moved is, it seems, not
      a gesture iOS gives a haptic for there; the touchend of the same touch is tried as well (only after a slide that landed on another tab). */
-  navrow.addEventListener("touchend", () => {
+  /* (384.102) THE SLIDE'S HAPTIC IS THE TAP'S: ONE, FROM THE SWITCH, AT THE LIFT. "Sliding is better but doesn't feel the same, idk if
+     it's missing Haptic Touch on the slide for the one you choose?" Read off WebKit's own code (CheckboxInputType::handleTouchEvent,
+     updateIsSwitchVisuallyOnFromAbsoluteLocation, willDispatchClick; RenderThemeIOS::hasSwitchHapticFeedback is true for both
+     triggers): a touch that starts on a native switch belongs to it. 200ms after it lands the switch starts TRACKING the finger from
+     where it first touched, and from then every touchmove moves its thumb: the moment the finger crosses the change position (half
+     the tab's width, or 40% of it beyond the start) the switch flips and plays the haptic there and then - mid-slide, wherever the
+     finger is, for no tab at all. At the touch's end the switch dispatches its own click (after a drag too) and plays the haptic in
+     it - unless the drag already flipped it. So a slide from a tab felt its tick part-way when it went one way and at the lift when it
+     went the other, and the slide's own scripted ticks (playSound's, and this listener's NovaSound.haptic) do nothing at all on iOS
+     26.5+ (a script's click is not trusted). Now: no touchmove that starts on a tab reaches its switch (default prevented - the bar
+     never scrolls, touch-action:none), so the switch never tracks the finger; the touch's end is left to it when the slide chose
+     another tab - its click (swallowed at the window, as every dragged switch's is) plays the ONE haptic, at the lift, exactly as a
+     tap's does - and is stopped (default prevented: no click, no haptic) when it did not. A tab without a switch (a Safari tab, the
+     Haptics switch off) keeps the scripted tick at the lift. */
+  navrow.addEventListener("touchmove", e => {
+    if(e.cancelable && e.target && e.target.closest && e.target.closest(".bottomtab")) e.preventDefault();
+  }, { passive: false });
+  navrow.addEventListener("touchend", e => {
+    const chose = bar._releaseChose; bar._releaseChose = null;
+    if(chose === false){ if(e.cancelable) e.preventDefault(); return; }
     if(performance.now() - (bar._dragLandAt || -1e9) > 250) return;
     bar._dragLandAt = -1e9;
-    try{ NovaSound.haptic("tap", true); }catch(e){}
-  }, { passive: true });
+    if(!bar._touchOnSwitch){ try{ NovaSound.haptic("tap", true); }catch(err){} }
+  }, { passive: false });
   navrow.addEventListener("pointercancel", endTabDrag);
 
   /* ---- THE LENS, AS iOS 26 DRAWS IT (build 325) ----
@@ -163124,12 +163234,16 @@ function tabPerfText(){
     || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
   /* Measured once per touch, in the row's own (unscaled) coordinates. */
   function lensMeasure(){
-    const rowW = navrow.offsetWidth, barH = bar.offsetHeight;
+    /* (384.102) from the boxes kept at rest (barGeo): nothing is read under the finger. The result depends on nothing else, so it is
+       kept with them; each touch gets its own copy of the top level (magClear is set per touch) */
+    const geo = barGeoGet();
+    if(!geo) return null;
+    if(geo.lens) return Object.assign({}, geo.lens, { magClear: false });
+    const rowW = geo.rowW, barH = geo.barH;
     if(!rowW || !barH) return null;
-    const tabs = [...navrow.querySelectorAll(".bottomtab")].filter(t => !t.hidden && t.offsetWidth > 0)
-      .map(t => { const b = tabBox(t); return { el: t, c: b.c, w: b.w }; });
+    const tabs = geo.tabs.map(t => ({ el: t.el, c: t.c, w: t.w }));
     if(!tabs.length) return null;
-    const vb = pillBoxH();
+    const vb = geo.vb;
     const pillH = Math.max(8, vb.boxH - 2 * pillInY());
     /* the bar beside a Start pill has icon-only tabs half the width; a
        lens of the full height there would be a bubble twice its tab, so
@@ -163147,9 +163261,11 @@ function tabPerfText(){
     /* a half is W0 wide at scale 1; at its smallest it still has to reach
        past the centre line (and the 4px cross-fade band) by its own round end */
     const W0 = Math.ceil(maxW / (2 * kMin) + H0 / 2 + 12);
-    return { tabs, cy: vb.rowH / 2, pillH, lensH, H0, W0, B: 100,
+    const out = { tabs, cy: vb.rowH / 2, pillH, lensH, H0, W0, B: 100,
              CW: Math.ceil(maxW / 2 + 44), CH: Math.ceil(H0 * 1.3 + 64),
              lo: tabs[0].c, hi: tabs[tabs.length - 1].c };
+    geo.lens = out;
+    return Object.assign({}, out);
   }
   function lensSize(g){ glassLensSize(LENS_PARTS, g); }
   const lensInfo = el => lensG && lensG.tabs.find(t => t.el === el);
@@ -163164,6 +163280,8 @@ function tabPerfText(){
     const moving = !!(sw && sw.playState === "running");
     /* (a reading taken while it was swelling is taken again once it has stopped) */
     if(lensGeo && (moving ? now - lensGeo.t < 6 : !lensGeo.sw)) return lensGeo;
+    /* (384.102) at rest, the row kept with the bar's boxes (no read under the finger) */
+    if(!moving && barGeo && barGeo.row && swellNow() === "1 1"){ lensGeo = { left: barGeo.row.left, k: barGeo.row.k, t: now, sw: false }; return lensGeo; }
     const rr = navrow.getBoundingClientRect();
     const k = rr.width / (parseFloat(getComputedStyle(navrow).width) || rr.width || 1);
     lensGeo = { left: rr.left, k: k || 1, t: now, sw: moving };
@@ -163252,8 +163370,22 @@ function tabPerfText(){
      was started at the press has drawn a frame yet - so a release never
      reads "where it has got to" off the page; it says where it goes. */
   const lensOp = el => { const v = parseFloat(getComputedStyle(el).opacity); return isFinite(v) ? v : 0; };
+  /* (384.102) the opacity a fade has reached, worked out from its own points and clock (they are linear), never read off the page:
+     getComputedStyle here was a style pass of the whole page in the press and in the release */
+  function fadeNow(el){
+    const f = el._fadePlan;
+    if(el._fade && f){
+      const t = performance.now() - f.t0, p = f.pts;
+      if(t <= p[0][0]) return p[0][1];
+      for(let i = 1; i < p.length; i++) if(t <= p[i][0]){ const a = p[i - 1], b = p[i]; return a[1] + (b[1] - a[1]) * ((t - a[0]) / Math.max(1e-6, b[0] - a[0])); }
+      return p[p.length - 1][1];
+    }
+    const v = parseFloat(el.style.opacity);
+    return isFinite(v) ? v : (f ? f.pts[f.pts.length - 1][1] : 0);
+  }
   function lensFade(el, pts){
     if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; }
+    el._fadePlan = { pts, t0: performance.now() };
     const end = pts[pts.length - 1];
     if(el !== slider) el.style.opacity = String(end[1]);
     if(!canAnim) return null;
@@ -163268,6 +163400,13 @@ function tabPerfText(){
      px off its ends, and 8.4% of a 484px bar is 20px a side: it ran into
      the "?". The swell sideways is held to the room there is, less 4px. */
   function lensSwellNow(){
+    /* (384.102) kept per screen (barGeoWarm), read only when there is none */
+    if(barGeo && barGeo.swell) return barGeo.swell;
+    const v = lensSwellRead();
+    if(barGeo) barGeo.swell = v;
+    return v;
+  }
+  function lensSwellRead(){
     const br = bar.getBoundingClientRect(), w0 = bar.offsetWidth || br.width;
     const cx = br.left + br.width / 2;
     let room = Infinity;
@@ -163280,6 +163419,20 @@ function tabPerfText(){
     const sx = isFinite(room) ? Math.max(1, Math.min(1.084, 1 + 2 * Math.max(0, room - 4) / w0)) : 1.084;
     return sx.toFixed(4) + " 1.043";
   }
+  /* (384.102) the bar's swell now, from its own plan (linear between its points: near enough to start the next one from), never read */
+  function swellNow(){
+    const f = bar._swellPlan;
+    if(!f) return "1 1";
+    const t = performance.now() - f.t0, p = f.pts;
+    const num = v => String(v).split(" ").map(Number);
+    if(t >= p[p.length - 1][0]) return p[p.length - 1][1];
+    if(t <= p[0][0]) return p[0][1];
+    for(let i = 1; i < p.length; i++) if(t <= p[i][0]){
+      const a = num(p[i - 1][1]), b = num(p[i][1]), u = (t - p[i - 1][0]) / Math.max(1e-6, p[i][0] - p[i - 1][0]);
+      return (a[0] + (b[0] - a[0]) * u).toFixed(4) + " " + (a[1] + (b[1] - a[1]) * u).toFixed(4);
+    }
+    return p[p.length - 1][1];
+  }
   function lensBarSwell(pts){
     /* build 384: THE GLASS UNDER THE FINGER, NOT 10PX BEHIND IT ON HOME. The row is measured once a touch (lensRowGeo, 382) - and the
        press measured it BEFORE this swell began (lensDown finds the pressed tab first). A finger that rested longer than the swell
@@ -163290,6 +163443,7 @@ function tabPerfText(){
        Home since 382 (8.6-9.1px behind) and put it down to load. The swell changes the row's box, so a new swell drops the reading. */
     lensGeo = null;
     if(bar._swell){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
+    bar._swellPlan = pts ? { pts, t0: performance.now() } : null;
     if(!canAnim || !pts || window.__noSwell) return;
     const D = Math.max(1, pts[pts.length - 1][0]);
     try{
@@ -163363,10 +163517,10 @@ function tabPerfText(){
        nothing to hide it: it snapped across with no glass (his recording). The fade's end clears this. */
     slider.style.opacity = "0";
     /* the grey clears to glass in about two frames (b0324-b0325) */
-    const g0 = lensOp(LENS_GLASS[0]);
+    const g0 = fadeNow(LENS_GLASS[0]);
     LENS_GLASS.forEach(el => lensFade(el, [[0, g0], [70, 1]]));
     LENS_GREY.forEach(el => lensFade(el, [[0, 1 - g0], [70, 0]]));
-    const sw = getComputedStyle(bar).scale;
+    const sw = swellNow();
     LENS_SWELL = lensSwellNow();
     lensBarSwell([[0, sw && sw !== "none" ? sw : "1 1"], [160, LENS_SWELL]]);
     bar.classList.add("lens-up", "is-pressing");
@@ -163382,7 +163536,9 @@ function tabPerfText(){
        SLIDE_HOLD_SEL), and the glass, swelling over it, is redrawn at the same price. A tap's glide is 300-800ms; a loop that turns once
        in 52s is not missed for that long. Looked at once, a frame after the press (the same look a slide takes); the screen the tap
        brings in is looked at once more when it is built (navRun), and lensFinish gives it all back. */
-    requestAnimationFrame(() => { if(lensG && lens.classList.contains("is-up") && !tabDragMoved) barUnderPause(); });
+    /* (384.102) after the frame that shows the lift, not in it: listing the stage's animations (hundreds on Home, the board) was a
+       piece of the press's first frame, the one the glass is waiting for */
+    requestAnimationFrame(() => setTimeout(() => { if(lensG && lens.classList.contains("is-up") && !tabDragMoved) barUnderPause(); }, 0));
   }
   /* The drag: a spring after the finger, every frame, while the finger is down. */
   function lensStopFollow(){
@@ -163529,7 +163685,7 @@ function tabPerfText(){
     try{ settleUntil = Math.max(settleUntil, Date.now() + handAt + 160); }catch(e){}
     bar.classList.remove("is-pressing");
     /* the bar stays swollen while the lens is up, and goes back as it lands */
-    const sw = getComputedStyle(bar).scale;
+    const sw = swellNow();
     const swPts = [[0, sw && sw !== "none" ? sw : "1 1"]];
     if(hold > 0) swPts.push([Math.min(hold, 160), LENS_SWELL], [hold, LENS_SWELL]);
     swPts.push([Math.max(hold, 1) + 300, "1 1"]);
@@ -163537,14 +163693,14 @@ function tabPerfText(){
     /* the platter is already on the landing tab, unseen, and comes back on
        the lens's clock; a touch that lands where no tab will be lit (one
        cancelled with none lit) leaves it hidden */
-    const hb = tabBox(home);
+    const hb = tabBoxKept(home);
     placeBubble(hb.x, hb.w, false);
     bubbleAt = home;
     if(active || tab) slider.classList.add("ready");
     /* the glass finishes clearing (a tap's press and release can be one
        frame apart), holds, and turns grey from greyAt; the lens hands over
        to the platter in one frame at handAt */
-    const gl = lensOp(LENS_GLASS[0]), gIn = Math.max(1, Math.min(70, greyAt));
+    const gl = fadeNow(LENS_GLASS[0]), gIn = Math.max(1, Math.min(70, greyAt));
     /* 56ms, not 80: the round 7 bar is 62px, so the lens has 21px to shrink, not 27, and it greyed too late */
     LENS_GLASS.forEach(el => lensFade(el, [[0, gl], [gIn, 1], [greyAt, 1], [greyAt + 56, 0]]));
     LENS_GREY.forEach(el => lensFade(el, [[0, 1 - gl], [gIn, 0], [greyAt, 0], [greyAt + 56, 1]]));
@@ -163623,12 +163779,12 @@ function tabPerfText(){
     if(!now.s) return;
     /* on, or still arriving at, its tab at the held size: the platter stays hidden, the bar stays swollen */
     lensPlay(lensSpring(now.s, now.v, () => ({ cx: hi.c, W: hi.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
-    LENS_GLASS.forEach(el => lensFade(el, [[0, lensOp(el)], [70, 1]]));
-    LENS_GREY.forEach(el => lensFade(el, [[0, lensOp(el)], [70, 0]]));
+    LENS_GLASS.forEach(el => lensFade(el, [[0, fadeNow(el)], [70, 1]]));
+    LENS_GREY.forEach(el => lensFade(el, [[0, fadeNow(el)], [70, 0]]));
     lensFade(lens, [[0, 1], [1, 1]]);
     lensFade(slider, [[0, 0], [1, 0]]);
     slider.style.opacity = "0";
-    const sw = getComputedStyle(bar).scale;
+    const sw = swellNow();
     lensBarSwell([[0, sw && sw !== "none" ? sw : "1 1"], [160, LENS_SWELL]]);
     /* never sooner than it would have landed without waiting: a quick screen keeps the tap's own timing (its linger, minUp) */
     const upFor = performance.now() - lensPressT;
