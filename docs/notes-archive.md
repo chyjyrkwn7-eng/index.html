@@ -39395,3 +39395,8 @@ Madison, shown the three looks behind `?classbtn=a|b|c` (claude/b384-classbtn 5f
 - Gate: NEW `tools/check-b384-classbtn.py` - K1 the button on Home (both classes; Pro Max installed, iPad Pro 11", laptop) equals
   5f85d51 loaded with `?classbtn=c`, pixel for pixel, Reduce motion on both; K2 the coin and the coin's marks; K3 the class list's
   full-colour mark; K4 `?classbtn=a` changes nothing. Fails against main 384.92 (K1-K3: the old button).
+- Results (384.94, on the tree with main 384.93 merged): check-b384-classbtn ALL PASS (both classes; Pro Max, iPad Pro 11",
+  laptop - pixel for pixel, mean 0.00-0.04); `--against origin/main` fails 10 (K1-K3 everywhere; K4 passes there too, main never
+  had the switch). Harness note: the picked build (5f85d51, from 384.88) opens its intro pop-up over Home for this fixture, at a
+  moment that varies; the gate hides #intro-pop by rule on both pages, so only the button is compared. check-centering --quick ALL
+  PASS (1270, 0 off centre); sweep-layout --quick 20/20 clean; check-js clean.
