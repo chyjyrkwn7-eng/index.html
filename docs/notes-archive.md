@@ -39368,3 +39368,8 @@ S2 every character and swatch the same; S3 no 200px band of 18 screens is more t
 200px is taller than any one-row strip - a segmented control or a full-width button reads 22-30% - so only a block fills it); S4 a tap on a badge opens its card, clicks once and toggles its label's switch, a character still selects and a
 swatch still to earn opens its card; S5 a drag from the case scrolls (passes on both builds - Chromium does not hand a touch to a switch, which is why only S1-S3 can see
 the bug). Only a phone can confirm the scroll itself.
+**Gate results (384.93, one at a time, TMPDIR=/dev/shm).** check-b384-casescroll ALL PASS (both classes, Pro Max + SE); `--against
+origin/main` (384.92) fails 16 - S1, S2 (characters and swatches) and S3 on every device and class (the case's worst 200px band
+64-74% switch there; the characters' 47-51%), S4/S5 pass on both as designed; check-b384-haptics ALL PASS (38: every surface still
+has its own switch or label under a finger, a label tap clicks once and ticks); sweep-layout --quick 20/20 clean; check-js clean.
+check-centering not run: nothing drawn changed (a label and a switch are both invisible).
