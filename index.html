@@ -13961,6 +13961,10 @@
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
+  /* (384.117) and a top tab being swiped across (attachTabSwipe: Profile / Stats, the Leaderboard's boards): its content is carried
+     up to a screen's width off the side, and on an iPhone a page wider than the screen ZOOMS OUT to fit it - the whole app shrank to
+     a third, with a tiny tab bar in a corner and blank frames, then snapped back (the owner's recording, 384.94/95). */
+  html.tab-sliding, html.tab-sliding body{ overflow-x:clip; }
   /* build 382: "when swiping or auto swipe is on ensure the button doesn't leak over on the next page". Next question lives in the
      .foot, outside the question panel: a swipe moved the question away under it while it stayed put, over the one coming in, and
      an auto-advance dropped it in one frame. While a question is being dragged or slid (html.q-sliding) it fades out at once, and
@@ -156566,12 +156570,27 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     drag.els.forEach(el => { el.style.transform = ""; el.style.opacity = ""; el.style.transition = ""; el.style.willChange = ""; el.removeAttribute("data-tabdrag"); });
     if(drag.raf) cancelAnimationFrame(drag.raf);
     drag = null;
+    clipOff();
+  };
+  /* (384.117) THE PAGE IS CLIPPED SIDEWAYS FOR AS LONG AS A TAB IS MOVING (html.tab-sliding, beside html.q-sliding): from the moment
+     the drag takes the content until the next tab's content has landed (no drag and not busy). Without it an iPhone zoomed the whole
+     app out to fit the content carried off the side. Polled off, not taken off at one call site: a commit clears the drag BEFORE the
+     next tab comes in, and the clip has to outlast that too. */
+  let clipT = 0, clipTries = 0;
+  const clipOn = () => { clearTimeout(clipT); clipTries = 0; document.documentElement.classList.add("tab-sliding"); };
+  const clipOff = () => {
+    clearTimeout(clipT);
+    clipT = setTimeout(() => {
+      if((drag || busy) && ++clipTries < 40){ clipOff(); return; }
+      document.documentElement.classList.remove("tab-sliding");
+    }, 120);
   };
   const beginDrag = () => {
     if(!opts.content || reduced()) return;
     const els = (opts.content() || []).filter(Boolean);
     const i = order.indexOf(getCurrent());
     if(!els.length || i === -1) return;
+    clipOn();
     drag = { els, i, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth) };
     els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform"; el.setAttribute("data-tabdrag", "1"); });
   };

@@ -1,0 +1,89 @@
+"""Build 384.117: swiping between top tabs never makes the page wider than the screen (so an iPhone never zooms it out).
+
+Madison's recording (384.94/95, installed iPhone): a swipe from Stats to Profile shrank the whole app to about a third of the
+screen - a tiny tab bar in the middle of the bottom, the top tabs tiny in a corner, blank frames - then it snapped back, and
+the page came back shifted sideways. attachTabSwipe carries the tab's content up to a screen's width off the side with a
+transform while the finger drags and as it lets go (the new tab comes in from the other side); a transform adds to the page's
+scrollable overflow, and on an iPhone (and in Chromium's mobile view) a page wider than the screen is zoomed out to fit. The
+question slide has had html.q-sliding{overflow-x:clip} for this since build 311; the tab swipe never had it.
+
+Each check drags a real touch (CDP Input.dispatchTouchEvent) across the screen and samples, every frame from the first move to
+well after the next tab has landed: the document's scrollWidth against the screen's width, and visualViewport.scale.
+  T1  Profile <-> Stats, a slow drag that lets go short (eases back): never wider, never zoomed out
+  T2  Profile -> Stats -> Profile, drags that commit: never wider, never zoomed out, and the tab really changed
+  T3  the Leaderboard's boards, a committing drag: the same
+  T4  after it all the page is not left shifted sideways (scrollX 0) and the clip is off again (html.tab-sliding gone)
+Devices: iPhone 17 Pro Max installed (440x956) and at Safari's 85% page zoom (518 CSS px wide), and an iPhone SE.
+Run:  python3 tools/check-b384-tabswipezoom.py [--against REV|DIR]   (--against origin/main must FAIL T1-T3)"""
+import importlib.util, os, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location("glitches", os.path.join(HERE, "check-b384-glitches.py"))
+G = importlib.util.module_from_spec(spec); spec.loader.exec_module(G)   # takes --against from sys.argv
+from playwright.sync_api import sync_playwright
+chk = G.chk
+
+WATCH = """()=>{ window.__sw = { maxW: 0, minS: 9, n: 0, run: true };
+  const w0 = document.documentElement.clientWidth;
+  const tick = () => { if(!window.__sw.run) return; const s = window.__sw;
+    s.maxW = Math.max(s.maxW, document.documentElement.scrollWidth - w0, document.body.scrollWidth - w0);
+    s.minS = Math.min(s.minS, window.visualViewport ? visualViewport.scale : 1); s.n++;
+    requestAnimationFrame(tick); };
+  requestAnimationFrame(tick); }"""
+STOP = "()=>{ window.__sw.run = false; return window.__sw; }"
+
+def drag(pg, x0, x1, y, steps=14, ms=16):
+    cdp = getattr(pg, "cdp", None) or pg.ctx.new_cdp_session(pg); pg.cdp = cdp
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x0, "y": y}]})
+    for k in range(1, steps + 1):
+        x = x0 + (x1 - x0) * k / steps
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y + k * 0.3}]})
+        pg.wait_for_timeout(ms)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+
+def swipe_check(pg, name, x0, x1, want_change, cur_js):
+    w, h = pg.evaluate("[innerWidth, innerHeight]")
+    before = pg.evaluate(cur_js)
+    pg.evaluate(WATCH)
+    drag(pg, x0 * w, x1 * w, int(h * 0.45))
+    pg.wait_for_timeout(900)
+    s = pg.evaluate(STOP)
+    after = pg.evaluate(cur_js)
+    chk("[%s] %s: the page never got wider than the screen (%d frames)" % (pg.dev, name, s["n"]), s["maxW"] <= 1, s)
+    chk("[%s] %s: the page never zoomed out" % (pg.dev, name), s["minS"] >= 0.99, s)
+    if want_change is not None:
+        chk("[%s] %s: the tab %s" % (pg.dev, name, "changed" if want_change else "stayed"), (after != before) == want_change, (before, after))
+
+PROF_TAB = "()=>{ const b = document.querySelector('.navsegment [aria-selected=\"true\"], .navsegment .active, .navsegment .is-active'); return b ? b.textContent.trim() : (document.querySelector('[data-profile-tab]:not([hidden])')||{}).dataset?.profileTab || ''; }"
+BOARD = "()=>{ const b = document.querySelector('.navsegment [aria-selected=\"true\"], .navsegment .active, .navsegment .is-active'); return b ? b.textContent.trim() : ''; }"
+
+def run_dev(br, dev):
+    pg = G.open_dev(br, dev, inits=[G.seed_init()])
+    G.clear_popups(pg)
+    pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(900); G.clear_popups(pg)
+    # T1: a short drag towards Profile that is let go early (eases back)
+    swipe_check(pg, "T1 Stats, a short drag let go (eases back)", 0.30, 0.52, False, PROF_TAB)
+    # T2: commit to Profile, then back to Stats
+    swipe_check(pg, "T2 Stats -> Profile, a drag that commits", 0.15, 0.85, True, PROF_TAB)
+    swipe_check(pg, "T2 Profile -> Stats, a drag that commits", 0.85, 0.15, True, PROF_TAB)
+    # T3: the Leaderboard's boards
+    pg.evaluate("()=>showRankings('overall')"); pg.wait_for_timeout(1200); G.clear_popups(pg)
+    swipe_check(pg, "T3 Leaderboard, a drag to the next board", 0.85, 0.15, None, BOARD)
+    pg.wait_for_timeout(600)
+    end = pg.evaluate("()=>({ x: scrollX, clip: document.documentElement.classList.contains('tab-sliding'), w: document.documentElement.scrollWidth - document.documentElement.clientWidth })")
+    chk("[%s] T4 afterwards: not shifted sideways, no sideways overflow, the clip is off" % dev, end["x"] == 0 and end["w"] <= 1 and not end["clip"], end)
+    chk("[%s] no page errors" % dev, not pg.errs, pg.errs)
+    pg.ctx.close()
+
+def main():
+    print("build", G.BUILD, "from", G.ROOT)
+    with sync_playwright() as p:
+        br = p.chromium.launch()
+        for dev in ["promax", "pm85", "se"]:
+            print("\n" + dev)
+            run_dev(br, dev)
+        br.close()
+    print("\nALL PASS" if not G.fails else "\nFAIL - %d failed" % len(G.fails))
+    sys.exit(1 if G.fails else 0)
+
+if __name__ == "__main__":
+    main()
