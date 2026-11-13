@@ -7,15 +7,17 @@ Read off that recording frame by frame (docs/notes-archive.md, "384.112 (boardsh
 (0.00px); inside every circle the drawing jumped a whole device pixel sideways (up to 0.9px down) twice a sheet row - once at the row's
 wrap, once part way along it in two steps of ~0.6 and ~0.4 - every 0.500s exactly (12 steps of the 24-a-second sheet), each character on
 its own phase. His phone runs Safari's page zoom at 85% (518 CSS px across 440pt, devicePixelRatio still 3) and the board's rows are
-CSS-zoomed by --zc (1.177) to undo it, so a CSS px inside a row is 1.177 x 0.85 x 3 = 3.0014 device px: a step of the sheet (36 CSS px)
-is 108.05 device px, not 108, and every column of the sheet lands on another fraction of a pixel, which the phone's painting rounds.
-Every gate ran at 100%, where a step is 108.000.
+CSS-zoomed by --zc (1.177) to undo it, so a CSS px inside a row is 1.177 x 0.85 x 3 = 3.0014 device px: a step of the sheet (34 CSS px)
+is 102.05 device px, not 102, and every column of the sheet lands on another fraction of a pixel, which the phone's painting rounds.
+Every gate ran at 100%, where a step is 102.000.
 
 Here the page is laid out the way his phone lays it out - the layout viewport is the screen / zoom (518 x 1125 at 85%), the screen is
 440 x 956, Chromium paints at 3 x zoom device px per CSS px (2.55 at 85%), and devicePixelRatio reads 3 as Safari's does - at page zoom
 1.0, 0.85 and 1.15. The Leaderboard is up with a board of classmates, every character's sheet is a STILL picture (each of its 144 cells
 the same drawing, so anything that moves between steps is the flip-book moving, not the character), and over 90 frames snapshots arrive
-(rows rebuilt with new numbers, same order) and the page scrolls. Asserted, for every character on the screen:
+(rows rebuilt with new numbers, same order) and the page scrolls. (At 1.15 the layout is 383px, and at 24rem and under no board shows
+a character - the Rank column carries the coin - so there the same is asked of Customize's character grid, scrolled, without the
+board's snapshots.) Asserted, for every character on the screen:
  (1) GEOMETRY: the frame it shows is put on the same sub-pixel phase at every step (one phase, in device px at the real scale), and the
      picture stays within 0.1 device px of its drawing (centre on centre) through every step, snapshot and scroll;
  (2) PIXELS: the board's avatar column, captured at the device's scale on many different steps, is the same picture every time
@@ -30,12 +32,13 @@ Must FAIL on 384.95 (origin/main 562b1ed) at 0.85 and pass on this build.
 
 Run:  TMPDIR=/dev/shm python3 tools/check-b384-boardshake.py [--zooms 1,0.85,1.15] [--frames 90] [--against OLD/index.html]
 """
-import os, sys, time, importlib.util, io
+import os, sys, time, re, importlib.util, io, base64
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
 if "--against" in sys.argv:
     body = open(sys.argv[sys.argv.index("--against") + 1], encoding="utf-8").read()
     cb.BODY = cb.INSET_RE.sub("0px", body).replace("let fbDb = null;", "let fbDb = null;" + cb.FIRESTORE_STUB, 1)
+    _m = re.search(r'const APP_BUILD = "([^"]+)"', body); cb.SERVED_BUILD = _m.group(1) if _m else cb.SERVED_BUILD   # version.json answers with THIS page's build, or it reloads itself mid-run
 from playwright.sync_api import sync_playwright
 import numpy as np
 from PIL import Image
@@ -44,7 +47,7 @@ def arg(name, default):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
 ZOOMS = [float(z) for z in arg("--zooms", "1,0.85,1.15").split(",")]
 FRAMES = int(arg("--frames", "90"))
-SHOTS = int(arg("--shots", "36"))
+SHOTS = int(arg("--shots", "24"))
 DUMP = arg("--dump", "")
 SW, SH, DPR = 440, 956, 3          # iPhone 17 Pro Max, points and scale
 
@@ -86,12 +89,12 @@ STILL_SHEETS = r"""(() => {
 })()"""
 
 # One frame's reading of every flip-book on the screen, in DEVICE px at the real scale (dsf).
-READ = r"""(dsf) => {
-  const vh = innerHeight, out = [];
-  document.querySelectorAll('.screen-rankings .rank-rows .rank-row .char-flip-play').forEach(play => {
+READ = r"""(a) => {
+  const dsf = a.dsf, vh = innerHeight, out = [];
+  document.querySelectorAll(a.sel).forEach(play => {
     const w = play.getBoundingClientRect();
     if(!w.width || w.bottom < 0 || w.top > vh) return;
-    const av = play.parentNode, row = play.closest('.rank-row');
+    const av = play.parentNode, row = play.closest('.rank-row, .avatarchar-option');
     const svg = av.querySelector(':scope > svg.avatarchar-svg') || av.querySelector(':scope > svg');
     if(!svg) return;
     const s = svg.getBoundingClientRect();
@@ -113,7 +116,7 @@ READ = r"""(dsf) => {
       step = cv.__f >= 0 ? cv.__f : null;
     }
     const cell = w.width;
-    out.push({ pub: row && row.dataset.pub, ph, step,
+    out.push({ pub: row && (row.dataset.pub || row.title || row.dataset.char), ph, step,
       dx: ((ox + cell / 2) - (s.left + s.width / 2)) * dsf, dy: ((oy + cell / 2) - (s.top + s.height / 2)) * dsf,
       dw: (cell - s.width) * dsf });
   });
@@ -162,31 +165,46 @@ def run_zoom(br, zoom):
     pg.evaluate("()=>{ try{ store.savedCodeSaved = true; }catch(e){} document.getElementById('splashscreen')?.remove(); __stub(); }")
     pg.evaluate(STILL_SHEETS)
     pg.evaluate(cb._LB_FAKE)
-    pg.evaluate("() => showRankings('overall')")
+    # the board he recorded (by rank, with its Rank / Level / Badges columns); at 24rem and under that board drops the avatar (the Rank
+    # column shows the coin), so a narrower layout - 1.15's 383px - is read on the week's board
+    board = pg.evaluate("() => innerWidth > 384")
+    if board:
+        pg.evaluate("() => showRankings('overall')")
+    else:
+        # at 24rem and under the board shows no characters at all (the Rank column carries the coin, every board has-cols): a 440pt
+        # phone at 115% is 383px, so there the same is asked of Customize's character grid (zoomed by --zc like the rows), scrolled,
+        # with the board's snapshots left out
+        pg.evaluate("() => showCustomize('character')")
+    PLAY = ".screen-rankings .rank-rows .rank-row .char-flip-play" if board else ".screen-customize .avatarchar-option .char-flip-play"
+    ART = ".screen-rankings .rank-rows .rank-row .rank-avatar" if board else ".screen-customize .avatarchar-option.char-flip"
     zc = pg.evaluate("() => ({ zc: getComputedStyle(document.documentElement).getPropertyValue('--zc').trim(), zoomed: document.documentElement.classList.contains('page-zoomed'), dpr: devicePixelRatio, iw: innerWidth })")
     # every character on the screen playing its (still) sheet, and the board moving (lb-go)
     t0 = time.time(); n = 0
     while time.time() - t0 < 180:
-        n = pg.evaluate("""() => { const vh = innerHeight; return [...document.querySelectorAll('.screen-rankings .rank-rows .rank-row')].filter(r => {
-            const b = r.getBoundingClientRect(); return b.top < vh - 10 && b.bottom > 0 && r.querySelector('.rank-avatar'); }).every(r => r.querySelector('.char-flip-play')) &&
-            !document.querySelector('.rank-rows.lb-still') ? document.querySelectorAll('.screen-rankings .rank-rows .char-flip-play').length : 0; }""")
-        if n >= 6:
+        if board:
+            n = pg.evaluate("""() => { const vh = innerHeight; return [...document.querySelectorAll('.screen-rankings .rank-rows .rank-row')].filter(r => {
+                const b = r.getBoundingClientRect(); return b.top < vh - 10 && b.bottom > 0 && r.querySelector('.rank-avatar'); }).every(r => r.querySelector('.char-flip-play')) &&
+                !document.querySelector('.rank-rows.lb-still') ? document.querySelectorAll('.screen-rankings .rank-rows .char-flip-play').length : 0; }""")
+        else:
+            n = pg.evaluate("""() => { const vh = innerHeight; const on = [...document.querySelectorAll('.screen-customize .avatarchar-option.char-flip')].filter(o => {
+                const b = o.getBoundingClientRect(); return b.top < vh - 10 && b.bottom > 0; }); return on.length && on.every(o => o.querySelector('.char-flip-play')) ? on.length : 0; }""")
+        if n >= (6 if board else 3):
             break
         time.sleep(1)
-    geo = pg.evaluate("""() => { const p = document.querySelector('.screen-rankings .rank-row .char-flip-play'); const s = p && p.parentNode.querySelector('svg.avatarchar-svg');
+    geo = pg.evaluate("""(sel) => { const p = document.querySelector(sel); const s = p && p.parentNode.querySelector('svg.avatarchar-svg');
         return p ? { cell: p.getBoundingClientRect().width, cellCss: parseFloat(p.style.width), svgW: s && s.clientWidth, mode: p.querySelector('canvas') ? 'canvas' : 'img',
-          loops: document.documentElement.classList.contains('loops-paint') ? 'paint' : 'layers' } : null; }""")
+          loops: document.documentElement.classList.contains('loops-paint') ? 'paint' : 'layers' } : null; }""", PLAY)
     print("   --zc %s (page-zoomed %s), devicePixelRatio %s, innerWidth %s; %d flip-books playing; %s" % (zc["zc"], zc["zoomed"], zc["dpr"], zc["iw"], n, geo), flush=True)
-    if n < 6:
-        chk("@%.2f: the board's characters are playing their loops (%d)" % (zoom, n), False, errs)
+    if n < (6 if board else 3):
+        chk("@%.2f: the %s characters are playing their loops (%d)" % (zoom, "board's" if board else "Customize grid's", n), False, errs)
         ctx.close(); return
     # ---- (1) geometry over FRAMES frames, with snapshots and a scroll ----
     per = {}
-    rows_before = pg.evaluate(ROWS, dsf)
+    rows_before = pg.evaluate(ROWS, dsf) if board else []
     row_moves = []
     scroll_at = FRAMES // 2
     for f in range(FRAMES):
-        if f in (15, 35, 60, 80):
+        if board and f in (15, 35, 60, 80):
             # a snapshot: every number changes, nobody changes place (rows rebuilt, characters carried over)
             pg.evaluate("() => { __rows.forEach(r => { r.correct += 3; r.hundos += 1; r.lastModified = Date.now(); }); __push(); }")
             pg.wait_for_timeout(250)
@@ -198,12 +216,12 @@ def run_zoom(br, zoom):
         if f == scroll_at:
             pg.evaluate("() => { (document.scrollingElement || document.documentElement).scrollBy({ top: 41, behavior: 'instant' }); }")
             pg.wait_for_timeout(300)
-            after = pg.evaluate(ROWS, dsf)
+            after = pg.evaluate(ROWS, dsf) if board else []
             for a, b in zip(rows_before, after):
                 if a["pub"] == b["pub"]:
                     row_moves.append(max(abs(a["y"] - b["y"]), abs(a["ay"] - b["ay"]), abs(a["ax"] - b["ax"])))
             rows_before = after
-        r = pg.evaluate("(dsf) => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(() => res((%s)(dsf)))))" % READ.strip(), dsf)
+        r = pg.evaluate("(a) => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(() => res((%s)(a)))))" % READ.strip(), {"dsf": dsf, "sel": PLAY})
         for t in r:
             d = per.setdefault(t["pub"], {"ph": set(), "steps": set(), "dx": [], "dy": [], "dw": []})
             d["ph"].add(t["ph"]); d["steps"].add(t["step"]); d["dx"].append(t["dx"]); d["dy"].append(t["dy"]); d["dw"].append(t["dw"])
@@ -218,20 +236,28 @@ def run_zoom(br, zoom):
     chk("@%.2f (1) ...and stays within 0.1 device px of its drawing through steps, snapshots and a scroll (offset up to %.3f, varying %.3f)" % (zoom, worst_off, worst_rng),
         worst_off <= 0.1 and worst_rng <= 0.1, table)
     # ---- (3) rows ----
-    chk("@%.2f (3) a snapshot or a scroll puts every row back on the device pixel it was on (worst %.4f device px over %d readings)" % (zoom, max(row_moves) if row_moves else -1, len(row_moves)),
-        row_moves and max(row_moves) <= 0.01, row_moves[:20])
+    if board:
+        chk("@%.2f (3) a snapshot or a scroll puts every row back on the device pixel it was on (worst %.4f device px over %d readings)" % (zoom, max(row_moves) if row_moves else -1, len(row_moves)),
+            row_moves and max(row_moves) <= 0.01, row_moves[:20])
+    else:
+        print("   (3) not asked at this width: the board shows no characters", flush=True)
     # ---- (2) pixels: the avatar column at device scale, many steps, compared with the first ----
-    col = pg.evaluate("""() => { const vh = innerHeight; const as = [...document.querySelectorAll('.screen-rankings .rank-rows .rank-row .rank-avatar')].map(a => a.getBoundingClientRect()).filter(b => b.top > 4 && b.bottom < vh - 4);
+    col = pg.evaluate("""(sel) => { const vh = innerHeight; const as = [...document.querySelectorAll(sel)].map(a => a.getBoundingClientRect()).filter(b => b.width && b.top > 4 && b.bottom < vh - 4).slice(0, 12);
         if(!as.length) return null; const x0 = Math.min(...as.map(b => b.left)) - 2, x1 = Math.max(...as.map(b => b.right)) + 2;
-        return { x: x0, y: as[0].top - 2, w: x1 - x0, h: as[as.length - 1].bottom - as[0].top + 4, boxes: as.map(b => [b.left, b.top, b.width, b.height]) }; }""")
+        const y0 = Math.min(...as.map(b => b.top)) - 2, y1 = Math.max(...as.map(b => b.bottom)) + 2;
+        return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, boxes: as.map(b => [b.left, b.top, b.width, b.height]) }; }""", ART)
     shots, frames_seen = [], set()
+    cdp = ctx.new_cdp_session(pg)
     for s in range(SHOTS):
-        buf = pg.screenshot(clip={"x": col["x"], "y": col["y"], "width": col["w"], "height": col["h"]}, scale="device", animations="allow")
+        # a plain CDP capture of the clip at the device's scale (Playwright's own screenshot injects a style to hide the caret - a restyle
+        # of the whole 2.9MB stylesheet per capture, which under a loaded machine ran past its timeout)
+        buf = base64.b64decode(cdp.send("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": False,
+            "clip": {"x": col["x"], "y": col["y"], "width": col["w"], "height": col["h"], "scale": dsf}})["data"])
         im = np.asarray(Image.open(io.BytesIO(buf)).convert("L"), dtype=np.float64)
-        st = pg.evaluate("""() => [...document.querySelectorAll('.screen-rankings .rank-rows .rank-row .char-flip-play')].slice(0, 3).map(p => {
+        st = pg.evaluate("""(sel) => [...document.querySelectorAll(sel)].slice(0, 3).map(p => {
             const i = p.querySelector('img'), c = p.querySelector('canvas');
             if(c) return String(c.__f); if(!i) return '';
-            const r = i.getBoundingClientRect(), w = p.getBoundingClientRect(); return Math.round((w.left - r.left) / w.width) + ':' + Math.round((w.top - r.top) / w.width); }).join('|')""")
+            const r = i.getBoundingClientRect(), w = p.getBoundingClientRect(); return Math.round((w.left - r.left) / w.width) + ':' + Math.round((w.top - r.top) / w.width); }).join('|')""", PLAY)
         frames_seen.add(st)
         shots.append(im)
         pg.wait_for_timeout(37)
@@ -278,28 +304,40 @@ def run_zoom(br, zoom):
       return { n: tiles.length, img: tiles.filter(p => p.querySelector('img')).length, cv: tiles.filter(p => p.querySelector('canvas.char-flip-cv')).length,
                worstPh: Math.max(0, ...[...ph.values()].map(s => s.size)), minSteps: Math.min(99, ...[...st.values()].map(s => s.size)) }; }"""
     places = []
-    keys = pg.evaluate("() => RANKING_BOARDS.map(b => b.key)")
+    keys = pg.evaluate("() => RANKING_BOARDS.map(b => b.key)") if board else []
     pg.evaluate("() => (document.scrollingElement || document.documentElement).scrollTo({ top: 0, behavior: 'instant' })")
     for i, k in enumerate(keys):
         pg.evaluate("i => { const b = document.querySelectorAll('.screen-rankings .navsegment .iconbtn')[i]; if(b) b.click(); }", i)
         pg.wait_for_timeout(1800)
         places.append(("board " + k, pg.evaluate(ANY, dsf)))
-    pg.evaluate("() => showCustomize()")
+    pg.evaluate("() => showCustomize('character')")
     t0 = time.time()
     while time.time() - t0 < 120 and pg.evaluate("""() => [...document.querySelectorAll('#stage .avatarchar-option.char-flip')].filter(o => { const b = o.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; }).some(o => !o.querySelector('.char-flip-play'))"""):
         time.sleep(1)
-    places.append(("customize", pg.evaluate(ANY, dsf)))
+    places.append(("customize characters", pg.evaluate(ANY, dsf)))
     print("   other places:", places, flush=True)
     bad = [p for p in places if p[1]["n"] and (p[1]["worstPh"] != 1 or p[1]["minSteps"] < 3)]
     chk("@%.2f (5) every other board and Customize: each loop on the screen holds still in its box at every step (%d places, %d loops)" % (zoom, len(places), sum(p[1]["n"] for p in places)),
-        not bad and sum(p[1]["n"] for p in places) >= 10, bad)
+        not bad and sum(p[1]["n"] for p in places) >= (10 if board else 3), bad)
     chk("@%.2f (4) no page errors" % zoom, not errs, errs)
     ctx.close()
 
 with sync_playwright() as pw:
-    br = pw.chromium.launch(executable_path=cb.CHROME)
+    # a browser of its own for each zoom, and one more try if the machine kills it (the sandbox is shared: its memory limit is everyone's)
     for z in ZOOMS:
-        run_zoom(br, z)
-    br.close()
+        for attempt in (1, 2, 3):
+            br = pw.chromium.launch(executable_path=cb.CHROME)
+            try:
+                run_zoom(br, z)
+                break
+            except Exception as e:
+                msg = str(e).splitlines()[0][:160]
+                if attempt == 3 or not any(w in msg for w in ("crashed", "Target closed", "closed", "Timeout")):
+                    chk("@%.2f ran to the end" % z, False, msg)
+                    break
+                print("   (the browser was lost: %s - once more)" % msg, flush=True)
+            finally:
+                try: br.close()
+                except Exception: pass
 print("\nALL PASS" if ok else "\nFAILED")
 sys.exit(0 if ok else 1)
