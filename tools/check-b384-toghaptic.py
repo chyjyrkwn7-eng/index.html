@@ -39,9 +39,12 @@ theme you have set too?"), for the default theme and every rank colour, on Setti
       (the lowest theme measured 2.73 - Supernova's red; Silver, the one grey, is lit and measured 7.3);
   C3  no green anywhere in a switch (its on layer and glow, the glass's track and rim) unless the theme's own colour is
       green - none is (the start sheet's line of switched-on words is not a switch and stays green, build 250/251);
+  C5  (384.110, Madison: Silver's ON "looks like it's glowing") nothing paints OUTSIDE the track in any theme: no outer
+      box-shadow, glow or filter on the track or its on layer, the on layer is one flat colour, and the pixels just beyond an
+      ON track are the card's own (within 4 of 255);
   C4  the ON/OFF animation is the one it was in every theme (an opacity cross-fade on the on layer, the knob's slide), and
       Reduce motion still shortens the slide.
-Run:  python3 tools/check-b384-toghaptic.py [T] [C] [--against REV|DIR]   (--against origin/main must FAIL T1, T3, T4, T5, C1, C3)"""
+Run:  python3 tools/check-b384-toghaptic.py [T] [C] [--against REV|DIR]   (--against origin/main must FAIL T1, T3, T4, T5, C1, C3; --against 384.107 must FAIL C5 for Silver)"""
 import importlib.util, json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("glitches", os.path.join(HERE, "check-b384-glitches.py"))
@@ -200,6 +203,7 @@ def pick(pg, rows):
 WANT = set(a for a in G.args if a in ("T", "C")) or {"T", "C"}
 THEMES = ["ink", "rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]
 ON_OFF_MIN = 2.5
+HALO_MAX = 4.0     # 8-bit levels: the strip just outside an ON track against the card behind it
 # one theme on Settings > Study, its switches ON / OFF / ON; every colour a switch paints with; and the theme's own colour
 COLOURS = r"""async(k)=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
   theme.accent = k; applyTheme(); showAppearance({ page: 'study' }); await wait(900);
@@ -223,7 +227,10 @@ COLOURS = r"""async(k)=>{ const wait = ms => new Promise(r => setTimeout(r, ms))
   lens.remove();
   const anim = { layer: bf.transitionProperty + ' ' + bf.transitionDuration, knob: af.transitionProperty + ' ' + af.transitionDuration };
   const R = e => { const q = e.getBoundingClientRect(); return [q.left, q.top, q.width, q.height]; };
-  return { token, parts, anim, boxes: rows.map(r => ({ on: r.querySelector(':scope > input').checked, r: R(r.querySelector(':scope > .box')) })) }; }"""
+  const outer = v => String(v).split(/,(?![^(]*\))/).map(t => t.trim()).filter(t => t && t !== 'none' && !/\binset\b/.test(t));
+  const shadows = { 'on layer': outer(bf.boxShadow), 'track': outer(getComputedStyle(box).boxShadow), 'on layer filter': [bf.filter, bf.backdropFilter].filter(v => v && v !== 'none'),
+    'track filter': [getComputedStyle(box).filter].filter(v => v && v !== 'none'), 'on layer image': [bf.backgroundImage].filter(v => v && v !== 'none') };
+  return { token, parts, anim, shadows, boxes: rows.map(r => ({ on: r.querySelector(':scope > input').checked, r: R(r.querySelector(':scope > .box')) })) }; }"""
 
 def lum(rgb):
     def ch(c):
@@ -273,6 +280,18 @@ def colour_section(br):
         c_oo, c_on, c_off = cr(on, off), cr(on, card), cr(off, card)
         chk("[%s] C2 %s: ON and OFF apart - ON:OFF %.2f (at least %.1f), ON:card %.2f against OFF:card %.2f" % (tag, k, c_oo, ON_OFF_MIN, c_on, c_off),
             c_oo >= ON_OFF_MIN and c_on > c_off * 1.5, {"on": [round(v) for v in on], "off": [round(v) for v in off], "card": [round(v) for v in card]})
+        # C5 (384.110): nothing paints OUTSIDE the track - no outer shadow, glow or filter on the track or its on layer, the on layer is
+        # one flat colour (no gradient), and the pixels just beyond the ON track (above and below it, 3-8px out) are the card's own
+        halo = []
+        for b in r["boxes"]:
+            if not b["on"]: continue
+            x, y, w, h = [v * 2 for v in b["r"]]
+            for (y0, y1) in ((y - 8 * 2, y - 3 * 2), (y + h + 3 * 2, y + h + 8 * 2)):
+                seg = mean_px(img, (x + .25 * w, y0, x + .75 * w, y1))
+                halo.append(max(abs(seg[i] - card[i]) for i in range(3)))
+        sh = {n: v for n, v in r["shadows"].items() if v}
+        chk("[%s] C5 %s: nothing paints outside the ON track - no outer shadow/glow/filter, a flat on layer, the pixels 3-8px beyond it within %.0f of the card (worst %.1f)" % (tag, k, HALO_MAX, max(halo) if halo else -1),
+            not sh and halo and max(halo) <= HALO_MAX, {"shadows": sh, "halo": [round(v, 1) for v in halo]})
         anims[k] = r["anim"]
     base = anims["ink"]
     chk("[%s] C4 the ON/OFF animation is the same in every theme (%s; %s), and the on layer fades by its opacity" % (tag, base["layer"], base["knob"]),

@@ -10037,17 +10037,14 @@
      off". It is the theme's own colour now, from the same tokens as the rest of the theme: a rank's --rank-accent (its colour
      lifted for a dark screen, as the daily question and the banners use it) and the default's --theme-c2 (its orange). Off is
      the neutral track it was, the knob stays white, the cross-fade and the glass lens are unchanged (the lens's track and rim
-     take the same colour). The one theme whose colour is a grey, Silver, is LIT rather than flat - a silvered track brightest
-     at the top with a soft white glow off it - so it can never pass for an off track. check-b384-toghaptic (C) holds every
-     theme's on and off apart by their measured luminance against the card. */
-  :root{ --switch-on:var(--rank-accent, var(--theme-c2)); --switch-on-paint:var(--switch-on); --switch-on-glow:none; }
-  html[data-accent="ranger"]{
-    --switch-on-paint:linear-gradient(180deg, color-mix(in srgb, var(--switch-on) 22%, #FFFFFF) 0%, var(--switch-on) 55%, color-mix(in srgb, var(--switch-on) 80%, #000000) 100%);
-    --switch-on-glow:0 0 0 1px color-mix(in srgb, var(--switch-on) 45%, #FFFFFF), 0 0 10px 1px color-mix(in srgb, var(--switch-on) 60%, transparent);
-  }
+     take the same colour). Silver, the one grey, is a flat bright silver like every other theme's flat colour: NO
+     outer glow, halo or shadow round the track in any theme (384.110: "looks like it's glowing"). check-b384-toghaptic (C)
+     holds every theme's on and off apart by their measured luminance against the card, and (C5) that nothing paints outside
+     the track. */
+  :root{ --switch-on:var(--rank-accent, var(--theme-c2)); --switch-on-paint:var(--switch-on); }
   .opt > .box::before, .nsw::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
-    background:var(--switch-on-paint); box-shadow:var(--switch-on-glow); opacity:0; transition:opacity .25s ease;
+    background:var(--switch-on-paint); opacity:0; transition:opacity .25s ease;
   }
   .opt > input:checked ~ .box::before, [aria-checked="true"] > .nsw::before{ opacity:1; }
   /* the native switch under the track never shows (opacity 0); should iOS ever tint it, it is the same colour */
@@ -123292,7 +123289,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.110";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
