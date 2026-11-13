@@ -143,11 +143,22 @@ def goto(pg, scr, js):
     pg.wait_for_timeout(1300)
     pg.evaluate("()=>{ document.querySelectorAll('.intro-pop,#intro-pop,.unlock-card,.rs-spot,#tour-overlay,.tour-tip').forEach(n=>n.remove()); }")
     pg.evaluate(CLEAR); pg.wait_for_timeout(250)
+# settled: shown (opacity 1) and its entrance over (no translate left but the streak pop's own drift) - on a busy machine the
+# entrance can take seconds of starved frames, so the read waits for it (up to 8s) instead of a fixed 1.1s
+SETTLED = """(sel)=>{ const e = document.querySelector(sel); if(!e) return false; const cs = getComputedStyle(e);
+  if(parseFloat(cs.opacity) < .98) return false; if(e.classList.contains('streak-pop')) return true;
+  let ty = 0; try{ if(cs.transform && cs.transform !== 'none') ty = new DOMMatrixReadOnly(cs.transform).m42; }catch(x){}
+  return Math.abs(ty) < .5; }"""
+def settle(pg, sel, ms=8000):
+    try: pg.wait_for_function(SETTLED, arg=sel, timeout=ms, polling=100)
+    except Exception: pass
 def open_pop(pg, key):
     js, sel = POPS[key]
     pg.evaluate(REC, sel)
     pg.evaluate(js)
     pg.wait_for_timeout(1100)
+    settle(pg, sel)
+    pg.wait_for_timeout(150)
     return pg.evaluate(READ, sel)
 def row_of(d, wash):
     # (384.97) the band's bottom is 384.95's line E (--top-e): the inset + 18pt on an installed notched iPhone upright, else none
@@ -229,6 +240,7 @@ def run(br):
         # (4) the update notice and the daily alert together: no overlap, the notice in the row and the alert under it
         goto(pg, "home", "()=>showHome()")
         pg.evaluate(POPS["update"][0]); pg.wait_for_timeout(700); pg.evaluate(POPS["daily"][0]); pg.wait_for_timeout(1100)
+        settle(pg, "#updatebanner"); settle(pg, "#dailyalert"); pg.wait_for_timeout(150)
         a = pg.evaluate(READ, "#updatebanner"); b = pg.evaluate(READ, "#dailyalert")
         u, dl = a["pop"], b["pop"]; good, why = placed(pg, "update", a, wash)
         chk("%s home: update notice in its place (%s) and the daily alert under it, no overlap (%s / %s)" % (name, why, u, dl),
@@ -237,6 +249,7 @@ def run(br):
         if SHOTS and name in ("promax", "ipad11"): pg.screenshot(path=os.path.join(SHOTS, "%s_%s_update+daily.png" % (TAG, name)))
         # late notice: the alert first, the notice a moment later - the alert moves under it
         pg.evaluate(CLEAR); pg.evaluate(POPS["daily"][0]); pg.wait_for_timeout(900); pg.evaluate(POPS["update"][0]); pg.wait_for_timeout(1100)
+        settle(pg, "#updatebanner"); settle(pg, "#dailyalert"); pg.wait_for_timeout(150)
         a = pg.evaluate(READ, "#updatebanner"); b = pg.evaluate(READ, "#dailyalert")
         u, dl = a["pop"], b["pop"]
         chk("%s home: a notice arriving after the alert still stacks them (%s / %s)" % (name, u, dl), u and dl and dl[1] >= u[3] - .5, [u, dl])
@@ -263,7 +276,7 @@ def run(br):
         t = pg.evaluate("""()=>{ pendingNotice = { kind: 'update', info: {} }; const o = document.createElement('div'); o.id = 'tour-overlay'; document.body.appendChild(o);
             syncNoticeVisibility(); const held = !document.getElementById('updatebanner'); o.remove(); tourQuietUntil = 0; syncNoticeVisibility();
             return { held, back: !!document.getElementById('updatebanner') }; }""")
-        pg.wait_for_timeout(900)
+        pg.wait_for_timeout(900); settle(pg, "#updatebanner"); pg.wait_for_timeout(150)
         a = pg.evaluate(READ, "#updatebanner"); good, why = placed(pg, "update", a, wash)
         chk("%s home: a tour holds the update notice back (%s) and it comes up in its place after (%s: %s)" % (name, t, a["pop"], why),
             t["held"] and t["back"] and a["pop"] and good, [t, a["pop"], a["chat"]])
