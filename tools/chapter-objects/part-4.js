@@ -79,8 +79,10 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
 }
 
 /* ---- Chapter 54: Corrosive Materials - a chemical jug: the screw cap with its knurling, the neck, the moulded handle with a real hole
-   through it, the ribbed body with its panel pressed in, and the acid running down from the cap. ---- */
+   through it, the ribbed body with its panel pressed in, and (384.93 r9: Madison, "fix the blue part" - a blue trickle and ball read as a
+   pipette) a drip of acid-green liquid hanging from under the cap, glossy, as one drop. ---- */
 {
+  const S = OBJ_SDF, BB = [0, 0, 100, 100];
   CHAPTER_OBJ["Chapter 54: Corrosive Materials"] = {
     base: "cream",
     d: OBJ_poly([[20, 96], [20, 36], [26, 26], [33, 22], [33, 13], [31, 13], [31, 4], [51, 4], [51, 13], [49, 13], [49, 20], [55, 14], [73, 13], [80, 20], [80, 96]],
@@ -93,10 +95,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["cream", OBJ_rrect(33, 12, 16, 12, 1), { z: .3 }],                                         /* the neck */
       ["red", OBJ_rrect(31, 4, 20, 9.5, 2.5), { z: .6, bev: .6 }],                               /* the cap */
       ["deep", "M35 6.5V11M39 6.5V11M43 6.5V11M47 6.5V11", { ln: 1.3, cut: .6, paint: 0 }],       /* its knurling */
-      /* (384.79) the acid runs from under the cap down over the shoulder and gathers in a drop: a straight line with a ball on its end read
-         as a pipette standing on the jug */
-      ["water", "M37.5 13.5Q38 21 33.5 27.5", { ln: 3.4, z: .6, bev: .9 }],                          /* the acid running down */
-      ["water", OBJ_poly([[33.5, 26.5], [36.6, 31.6], [35.7, 35.3], [32.6, 36.6], [29.5, 35.3], [28.8, 31.6]], [.5, 2.2, 2.2, 2.2, 2.2, 2.2]), { z: .6, bev: .9, dome: 1.2 }],   /* its drop */
+      ["water", S.shape(S.cone(38.5, 13, 38.5, 25.5, 1.6, 4.8), BB), { z: .7, bev: .7, dome: 1.3, col: "#86C232" }],   /* the drip */
     ],
   };
 }
@@ -192,40 +191,29 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   };
 }
 
-/* ---- Chapter 59: Flammable Solids - a matchbox, its drawer pulled out with the match heads in a row, the striker along its side, and one
-   match laid across it with its head up. ---- */
+/* ---- Chapter 59: Flammable Solids - a box of matches with one alight, redrawn (384.93 r9: a matchbox with a long unlit match laid
+   across its label read as a box with a stick on it): the open blue tray, six red match heads standing out of it on their sticks, and
+   the tallest in the middle burning - an orange flame with its bright heart. ---- */
 {
-  const A = [28, 62], B = [62, 16], ux = (B[0] - A[0]), uy = (B[1] - A[1]), L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
-  const at = (t, w) => [A[0] + dx * t + nx * w, A[1] + dy * t + ny * w];
-  /* where the stick's two sides cross the box's top edge (y 54); the side at w -3 is the left one */
-  const cross = w => at((54 - A[1] - ny * w) / dy, w);
-  /* the head: an ellipse round t = L + 1.5, 7 along and 5.6 across; it meets the stick's sides at phi = +-147.6 degrees */
-  const HC = L + 1.5, ha = 7, hb = 5.6, ph = Math.acos(-Math.sqrt(1 - (3 / hb) * (3 / hb))) * 180 / Math.PI;
-  const head = []; for(let k = 0; k <= 16; k++){ const p = (-ph + 2 * ph * k / 16) * Math.PI / 180; head.push(at(HC + ha * Math.cos(p), hb * Math.sin(p))); }
-  const pts = [[4, 92], [4, 54], cross(-3)].concat(head).concat([cross(3), [72, 54], [72, 57], [96, 57], [96, 89], [72, 89], [72, 92]]);
-  const rs = [3, 3, 1].concat(head.map((p, i) => (i === 0 || i === head.length - 1) ? 1 : 0)).concat([1, 1, 1, 2, 2, 1, 1]);
-  const stick = OBJ_poly([at(0, 3), at(L - 3, 3), at(L - 3, -3), at(0, -3)], [3, 0, 0, 3]);
-  const headD = OBJ_poly(P4_arc(0, 0, 1, 1, 0, 345, 23).map(q => at(HC + ha * q[0], hb * q[1])), 0);
-  let hatch = ""; for(let x = 9; x <= 69; x += 5) hatch += "M" + x + " 84L" + (x - 4) + " 90.5";
-  const inMatches = [61.5, 67.5, 73.5, 79.5, 85.5];
+  const S = OBJ_SDF, BB = [0, 0, 100, 100], ALL = f => S.loops(f, BB).map(S.pathOf).join("");
+  const tray = S.box(8, 58, 84, 36, 3.5);
+  const X = [18, 29, 40, 60, 71, 82];
+  const sticks = S.union(X.map(x => S.box(x - 1.8, 46, 3.6, 14, .8)).concat([S.box(48.2, 30, 3.6, 30, .8)]), 0);
+  const heads = S.union(X.map(x => S.ellipse(x, 45, 4.4, 5.6)).concat([S.ellipse(50, 29, 4.6, 5.8)]), 0);
+  const flame = S.union([S.cone(50, 21, 50, 2.5, 7.4, 1.4), S.circle(50, 20, 7)], 2.5);
+  const all = S.union([tray, sticks, heads, flame], 0);
   CHAPTER_OBJ["Chapter 59: Flammable Solids"] = {
-    base: "water",
-    d: OBJ_poly(pts, rs),
+    d: S.shape(all, BB),
+    col: "#2E6FB8", base: "field",
     plates: [
-      ["water", OBJ_rrect(4, 54, 68, 38, [3, 1, 1, 3]), { dome: .8 }],                               /* the box (384.90: its right corners the outline's own, where it meets the drawer) */
-      ["cream", OBJ_rrect(10, 59, 56, 19, 3), { z: .6, bev: .8 }],                                    /* its label, raised */
-      ["wood", OBJ_rrect(4, 82, 68, 10, [0, 0, 1, 3]), { z: -.3, bev: .5 }],                         /* the striker */
-      ["wood", hatch, { ln: 1.3, cut: .6, paint: 0 }],
-      ["cream", OBJ_rrect(72, 57, 24, 32, [0, 2, 2, 0]), { z: .2 }],                                  /* the drawer */
-      ["rubber", OBJ_rrect(74.5, 59.5, 19, 27, 1.5), { z: -1.2, bev: .7 }],                            /* its inside */
-      ["wood", inMatches.map(y => "M76 " + y + "H86").join(""), { ln: 3, z: .5, bev: .6 }],           /* the matches in it */
-      ["red", OBJ_circle(88.5, 61.5, 2.7), { dome: 1.2 }],
-      ["red", OBJ_circle(88.5, 67.5, 2.7), { dome: 1.2 }],
-      ["red", OBJ_circle(88.5, 73.5, 2.7), { dome: 1.2 }],
-      ["red", OBJ_circle(88.5, 79.5, 2.7), { dome: 1.2 }],
-      ["red", OBJ_circle(88.5, 85.5, 2.7), { dome: 1.2 }],
-      ["wood", stick, { z: 1, bev: .9, dome: .5 }],                                                   /* the match */
-      ["red", headD, { z: 1, dome: 1.6 }],                                                            /* its head */
+      ["hot", S.shape(flame, BB), { dome: 1.4, col: "#FF8A2A" }],                                     /* the flame */
+      ["glow", S.shape(S.union([S.cone(50, 21, 50, 9, 3.4, .8), S.circle(50, 20.5, 3.4)], 1.5), BB), { z: .5, bev: .6, dome: .8, col: "#FFE9A8" }],   /* its heart */
+      ["wood", ALL(sticks), { dome: .6 }],                                                    /* the sticks */
+      ["red", ALL(heads), { dome: 1.6 }],                                                     /* the heads */
+      ["field", S.shape(tray, BB), { dome: 1 }],                                                      /* the tray */
+      ["shade", OBJ_rrect(8, 58, 84, 5, [3.5, 3.5, 0, 0]), { z: .5, bev: .5 }],                        /* its rim */
+      ["cream", OBJ_rrect(18, 68, 64, 18, 2.5), { z: .5, bev: .6, col: "#F4F1EA" }],                   /* its label */
+      ["red", "M27 77H73", { ln: 3, z: .3, bev: .4 }],                                                 /* a red stripe across it */
     ],
   };
 }
@@ -281,9 +269,15 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   };
 }
 
-/* ---- Chapter 62: Organic Peroxides - an insulated cooler (peroxides are kept cold): the carry handle standing up with a real hole under
-   it, the thick pale lid, the tapered body with its raised panel, the latch, and the grips at each end. ---- */
+/* ---- Chapter 62: Organic Peroxides - an insulated cooler (peroxides are kept cold), refined (384.93 r9: a teal box with a lid read as a
+   toolbox): the carry handle standing up with a real hole under it, the thick white lid, the tapered body with its raised panel and a
+   raised white SNOWFLAKE on it (cold storage, at a glance), the latch, and the grips at each end. ---- */
 {
+  const sf = (cx, cy, R) => { let p = ""; for(let k = 0; k < 3; k++){ const a = k * Math.PI / 3, c = Math.cos(a), s = Math.sin(a);
+      p += "M" + (cx - R * c).toFixed(2) + " " + (cy - R * s).toFixed(2) + "L" + (cx + R * c).toFixed(2) + " " + (cy + R * s).toFixed(2); }
+    for(let k = 0; k < 6; k++){ const a = k * Math.PI / 3, c = Math.cos(a), s = Math.sin(a), bx = cx + R * .58 * c, by = cy + R * .58 * s;
+      [1, -1].forEach(sg => { const b = a + sg * Math.PI / 4; p += "M" + bx.toFixed(2) + " " + by.toFixed(2) + "L" + (bx + R * .36 * Math.cos(b)).toFixed(2) + " " + (by + R * .36 * Math.sin(b)).toFixed(2); }); }
+    return p; };
   CHAPTER_OBJ["Chapter 62: Organic Peroxides"] = {
     d: OBJ_poly([[5, 42], [5, 26], [28, 26], [28, 8], [72, 8], [72, 26], [95, 26], [95, 42], [92, 42], [92, 54], [98, 54], [98, 70], [90.4, 70], [89, 94], [11, 94], [9.6, 70], [2, 70], [2, 54], [8, 54], [8, 42]],
       [1, 6, 1, 7, 7, 1, 6, 1, 1, 1, 3, 3, 1, 8, 8, 1, 3, 3, 1, 1]),
@@ -291,9 +285,10 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     plates: [
       ["field", OBJ_poly([[8, 42], [92, 42], [89, 94], [11, 94]], [0, 0, 8, 8]), { dome: 1 }],        /* the body */
       ["body", OBJ_poly([[16, 50], [84, 50], [82, 86], [18, 86]], 4), { z: .7, bev: .9 }],            /* its raised panel */
+      ["cream", sf(50, 68, 13.5), { ln: 2.6, z: .9, bev: .5, col: "#F7F9FA" }],                       /* the snowflake on it */
       ["shade", OBJ_rrect(28, 8, 44, 20, [7, 7, 0, 0]), { dome: .9 }],                                /* the carry handle */
-      ["cream", OBJ_rrect(5, 26, 90, 16, [6, 6, 1, 1]), { dome: 1 }],                                  /* the lid */
-      ["cream", OBJ_rrect(14, 29.5, 72, 7.5, 3), { z: .5, bev: .7 }],                                   /* its top */
+      ["cream", OBJ_rrect(5, 26, 90, 16, [6, 6, 1, 1]), { dome: 1, col: "#F4F2EC" }],                   /* the lid */
+      ["cream", OBJ_rrect(14, 29.5, 72, 7.5, 3), { z: .5, bev: .7, col: "#F4F2EC" }],                    /* its top */
       ["field", "M6 42.5H94", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the seal line */
       ["shade", OBJ_rrect(2, 54, 9, 16, 3), { dome: .9 }],                                             /* the end grips */
       ["shade", OBJ_rrect(89, 54, 9, 16, 3), { dome: .9 }],
@@ -302,30 +297,22 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   };
 }
 
-/* ---- Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids - an oxygen mask: the domed cup with its soft rim, its nose clip,
-   valve and ports, and the corrugated hose curling away from it to its connector. ---- */
+/* ---- Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids - the oxidizer's own sign as an object, redrawn (384.93 r9:
+   the oxygen mask read as a pear with a hose): a flame rising over a circle - the flame-over-circle every oxidizer is labelled with (the
+   oxidizer placard is yellow) - a thick yellow ring with a real hole, and a red-orange flame of three tongues with its bright heart,
+   standing on the ring. ---- */
 {
-  const hose = P4_resample([[50, 62], [50, 68], [51.5, 74], [55.5, 80], [61.5, 85], [69, 88], [77, 89.5], [92, 89.5]], 4.2);
-  const hw = hose.map((p, i) => i >= hose.length - 3 ? 13 : 11);
-  const tube = P4_ribbon(hose, hw);
-  const cup = [[42, 4], [58, 4], [80, 42], [71, 62], [29, 62], [20, 42]], cr = [6, 6, 14, 9, 9, 14];
-  const pts = cup.slice(0, 4).concat(tube).concat(cup.slice(4)), rs = cr.slice(0, 4).concat(tube.map((p, i) => (i === 0 || i === tube.length - 1) ? 1 : 0)).concat(cr.slice(4));
-  rs[3] = 9;
-  let ribs = ""; for(let i = 2; i < hose.length - 3; i++){ const a = hose[i - 1], b = hose[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy), nx = dy / l, ny = -dx / l, h = hw[i] / 2 - 1.6;
-    ribs += "M" + P4_f([hose[i][0] + nx * h, hose[i][1] + ny * h]) + "L" + P4_f([hose[i][0] - nx * h, hose[i][1] - ny * h]); }
-  const end = P4_ribbon(hose.slice(-3), [13, 13, 13]);
+  const S = OBJ_SDF, BB = [0, 0, 100, 100];
+  const ring = S.minus(S.circle(50, 70, 26), S.circle(50, 70, 12.5));
+  const flame = S.union([S.poly([[24, 50], [76, 50], [70, 30], [62, 36], [58, 14], [50, 2], [42, 14], [38, 36], [30, 30]]), S.ellipse(50, 46, 24, 8)], 4);
+  const all = S.union([ring, flame], 2), sil = S.trace(all, BB);
   CHAPTER_OBJ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids"] = {
-    d: OBJ_poly(pts, rs),
+    d: sil.d, holes: sil.holes,
+    base: "red",
     plates: [
-      ["glass", OBJ_poly(P4_ribbon([[50, 55]].concat(hose), [11].concat(hw)), 1), { dome: 1 }],         /* the hose */
-      ["glass", ribs, { ln: 1.6, cut: .8, paint: 0 }],                                                   /* its corrugations */
-      ["steel", OBJ_poly(end, 1), { z: .5, bev: .6 }],                                                  /* its connector */
-      ["shade", OBJ_poly(cup, cr), { z: .5, bev: .8 }],                                                 /* the cup's soft rim */
-      ["field", OBJ_poly([[43.5, 8.5], [56.5, 8.5], [75.5, 42], [68, 58], [32, 58], [24.5, 42]], [4, 4, 11, 7, 7, 11]), { dome: 2.4 }],   /* the cup */
-      ["steel", OBJ_rrect(43, 11, 14, 4.5, 2.2), { z: .5, bev: .6 }],                                   /* the nose clip */
-      ["lite", OBJ_circle(50, 39, 6.2), { z: .6, bev: .7, dome: .9 }],                                  /* the valve */
-      ["lite", OBJ_circle(35, 41, 3.2), { dome: 1.1 }],                                                 /* the ports */
-      ["lite", OBJ_circle(65, 41, 3.2), { dome: 1.1 }],
+      ["red", S.shape(S.grow(flame, .2), BB), { dome: 1.6, col: "#E8492A" }],                        /* the flame */
+      ["hot", S.shape(S.union([S.poly([[38, 48], [62, 48], [58, 32], [53, 34], [50, 18], [47, 34], [42, 32]]), S.ellipse(50, 46, 12, 4)], 3), BB), { z: .5, bev: .8, dome: .8, col: "#FFB13B" }],   /* its heart */
+      ["field", S.shape(ring, BB), { dome: 1.6, col: "#F2C230" }],                                      /* the ring */
     ],
   };
 }

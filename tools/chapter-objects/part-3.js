@@ -12,13 +12,15 @@
   const P3poly = runs => { const pts = [], rs = []; runs.forEach(([p, r]) => p.forEach(q => { pts.push(q); rs.push(r); })); return OBJ_poly(pts, rs); };
   const P3f = p => OBJ_N(p[0]) + " " + OBJ_N(p[1]);
 
-  /* ---- Chapter 32: High-Piled Combustible Storage - kraft cartons stacked three, two, one on a wooden pallet: every carton a raised block
-     with its tape strip, the pallet's deck and its three blocks with the fork openings between them. ---- */
+  /* ---- Chapter 32: High-Piled Combustible Storage - kraft cartons stacked three, two, one on a wooden pallet, recoloured (384.93 r9: pale
+     cartons with white strips read as loaves with windows): kraft-brown cartons, each a raised block with its brown tape run down the
+     middle of its top flap and the flap's seam across it, the pallet's deck and its three blocks with the fork openings between them. ---- */
   {
     const boxes = [[6, 56, 29.33], [35.33, 56, 29.34], [64.67, 56, 29.33], [20.67, 31, 29.33], [50, 31, 29.33], [35.33, 6, 29.34]];
     const plates = [];
-    boxes.forEach(([x, y, w]) => plates.push(["cardboard", OBJ_rrect(x + .6, y + .6, w - 1.2, 23.8, 1.6), { z: .8, bev: .9 }]));
-    boxes.forEach(([x, y, w]) => plates.push(["cream", OBJ_rrect(x + w / 2 - 3, y + .6, 6, 11, [0, 0, 1.5, 1.5]), { z: 1.2, bev: .5 }]));
+    boxes.forEach(([x, y, w]) => plates.push(["cardboard", OBJ_rrect(x + .6, y + .6, w - 1.2, 23.8, 1.6), { z: .8, bev: .9, col: "#B5814A" }]));
+    boxes.forEach(([x, y, w]) => plates.push(["cardboard", OBJ_rrect(x + w / 2 - 2.6, y + .6, 5.2, 23.8, 0), { z: 1.05, bev: .35, col: "#8C5A2B" }]));
+    boxes.forEach(([x, y, w]) => plates.push(["cardboard", "M" + (x + 2) + " " + (y + 8.5) + "H" + (x + w - 2), { ln: 1.1, cut: .5, paint: 0 }]));
     plates.push(["wood", OBJ_rrect(3, 81, 94, 7, 2), { z: .5, bev: .7 }]);
     plates.push(["wood", "M18 82V87M33 82V87M50 82V87M67 82V87M82 82V87", { ln: 1.4, cut: .7, paint: 0 }]);
     [[3, 12], [43, 14], [85, 12]].forEach(([x, w]) => plates.push(["wood", OBJ_rrect(x, 88, w, 8, [0, 0, 2, 2]), { z: .2, bev: .6 }]));
@@ -31,59 +33,75 @@
     };
   }
 
-  /* ---- Chapter 33: Fire Safety During Construction and Demolition - a safety-orange hard hat, front on: the domed shell with its raised
-     centre ridge and two side ribs, the brim curving down at the front. (No base colour of its own: the parts are what colour it.) ---- */
+  /* ---- Chapter 33: Fire Safety During Construction and Demolition - a safety-yellow hard hat, front on, refined (384.93 r9): a taller
+     domed shell with its raised centre ridge and two side ribs, the brim swept down at the front with its darker underside, and the round
+     badge on its front (an emblem, no letters). ---- */
   {
-    const brim = "M7 68H93Q97 68 97 72Q97 76 93 77Q50 89 7 77Q3 76 3 72Q3 68 7 68Z";
+    const brim = "M7 66H93Q97 66 97 70Q97 74 93 75Q50 88 7 75Q3 74 3 70Q3 66 7 66Z";
     CHAPTER_OBJ["Chapter 33: Fire Safety During Construction and Demolition"] = {
-      d: "M7 68H13A37 52 0 0 1 87 68" + brim.slice(brim.indexOf("H93")),
+      d: "M7 66H14A36 56 0 0 1 86 66" + brim.slice(brim.indexOf("H93")),
+      col: "#F4B400", base: "field",
       plates: [
-        ["hot", "M13 68A37 52 0 0 1 87 68Z", { dome: 2.8 }],                                      /* the shell */
-        ["hot", "M50 21V65", { ln: 11, z: 1, bev: 1.6 }],                                          /* the centre ridge */
-        ["hot", "M30 27Q20 44 20 66M70 27Q80 44 80 66", { ln: 2, cut: 1.1, paint: 0 }],           /* the side ribs */
-        ["hot", brim, { z: .5, bev: .8, dome: .5 }],                                              /* the brim */
+        ["field", "M14 66A36 56 0 0 1 86 66Z", { dome: 2.8 }],                                    /* the shell */
+        ["field", "M50 14V64", { ln: 10, z: 1, bev: 1.6 }],                                        /* the centre ridge */
+        ["field", "M31 21Q20 40 20.5 64M69 21Q80 40 79.5 64", { ln: 2.2, cut: 1.1, paint: 0 }],   /* the side ribs */
+        ["field", brim, { z: .5, bev: .8, dome: .5 }],                                            /* the brim */
+        ["shade", "M9 75.5Q50 87 91 75.5", { ln: 2.4, z: .2, bev: .5 }],                           /* its underside, at the front */
+        ["cream", OBJ_circle(50, 42, 7.5), { z: 1.6, bev: .6, dome: .6, col: "#F6F3EA" }],         /* the badge on its front */
+        ["red", OBJ_poly([[50, 37], [54.5, 40.5], [52.8, 46], [47.2, 46], [45.5, 40.5]], .8), { z: .4, bev: .4 }],   /* its emblem */
       ],
     };
   }
 
-  /* ---- Chapter 34: Tire Rebuilding and Tire Storage - a tyre: the deep rubber tread blocks round its edge, the domed slate-grey
-     sidewall with its ring, the steel wheel set into it, the hub and five lug nuts. ---- */
+  /* ---- Chapter 34: Tire Rebuilding and Tire Storage - a stack of three tyres, redrawn (384.93 r9: one tyre face on, its tread round its
+     edge, read as a gear at the case's size): three tyres stacked, seen from the side, each a rounded black band with its tread blocks
+     and centre groove, the top one's sidewall seen from above with its dark centre - the stack every tyre shop has. ---- */
   {
-    const runs = [], Ro = 47, Ri = 43.5;
-    /* (384.68) 30 shallower tread blocks, not 24 deep ones, and a black sidewall: at 26px the tyre read as a gear */
-    for(let i = 0; i < 30; i++){ const a = -90 + i * 12, p = (r, t) => [50 + r * Math.cos(t * D2R), 50 + r * Math.sin(t * D2R)];
-      runs.push([[p(Ro, a - 3.2)], 1], [[p(Ro, a + 3.2)], 1], [[p(Ri, a + 3.2)], .7], [[p(Ri, a + 8.8)], .7]); }
-    const plates = [
-      ["rubber", OBJ_circle(50, 50, 42.5), { z: .1 }],                                                /* the tread's floor */
-      ["field", OBJ_circle(50, 50, 39), { dome: 1.6 }],                                              /* the sidewall */
-      ["field", OBJ_circle(50, 50, 32), { ln: 1.4, cut: .7, paint: 0 }],                              /* its ring */
-      ["steel", OBJ_circle(50, 50, 23), { z: -.7, bev: 1.2 }],                                        /* the wheel, set in */
-      ["steel", OBJ_circle(50, 50, 18.5), { ln: 1.4, cut: .7, paint: 0 }],                            /* its rim */
-      ["steel", OBJ_circle(50, 50, 8.5), { dome: 2.2 }],                                               /* the hub */
-    ];
-    for(let i = 0; i < 5; i++){ const a = (-90 + i * 72) * D2R; plates.push(["steel", OBJ_circle(50 + 14 * Math.cos(a), 50 + 14 * Math.sin(a), 2.8), { dome: 1.2 }]); }
-    CHAPTER_OBJ["Chapter 34: Tire Rebuilding and Tire Storage"] = { d: P3poly(runs), base: "rubber", col: "#34373C", plates };
+    const S = OBJ_SDF, BB = [0, 0, 100, 100];
+    const T = [[72, 96], [48, 72], [24, 48]];                       /* each tyre's top and bottom */
+    const bands = T.map(([y0, y1]) => S.box(9, y0, 82, y1 - y0, 7.5));
+    const top = S.ellipse(50, 24.5, 41, 11);
+    const all = S.union(bands.concat([top]), .8);
+    let tread = "";
+    T.forEach(([y0, y1]) => { for(let x = 16; x <= 84; x += 6.8) tread += "M" + x.toFixed(1) + " " + (y0 + 4) + "L" + (x + 2.4).toFixed(1) + " " + (y0 + 10.5) + "M" + (x + 2.4).toFixed(1) + " " + (y0 + 13.5) + "L" + x.toFixed(1) + " " + (y1 - 4); });
+    CHAPTER_OBJ["Chapter 34: Tire Rebuilding and Tire Storage"] = {
+      d: S.shape(all, BB),
+      base: "rubber", col: "#34373C",
+      plates: [
+        ["rubber", S.shape(all, BB), { dome: .9 }],                                                     /* the stack */
+        ["rubber", "M10 48H90M10 72H90", { ln: 1.6, cut: 1.3, paint: 0 }],                              /* where one tyre sits on the next */
+        ["rubber", tread, { ln: 1.4, cut: .8, paint: 0 }],                                              /* the tread blocks */
+        ["rubber", "M12 60H88M12 84H88M12 36H88", { ln: 1.1, cut: .6, paint: 0 }],                      /* the centre grooves */
+        ["field", OBJ_ellipse(50, 24.5, 40, 10.2), { z: .4, bev: .8, dome: .6, col: "#4A4E55" }],       /* the top tyre's sidewall */
+        ["ink", OBJ_ellipse(50, 24.5, 21, 5.2), { z: -1.8, bev: .8, col: "#16181B" }],                  /* its centre */
+      ],
+    };
   }
 
-  /* ---- Chapter 35: Welding and Other Hot Work - a red welding helmet, front on: the shell narrowing to a faceted chin, the raised black
-     lens holder with its dark lens pressed in, the headgear knobs at either side. ---- */
+  /* ---- Chapter 35: Welding and Other Hot Work - an oxy-fuel welding torch alight, redrawn (384.93 r9: the welding helmet, front on, read
+     as a face): the black grip with its grooves, the two valve knobs at its back (red for the fuel, green for the oxygen), the brass head,
+     the steel tip and its nozzle, and the flame - the hot blue cone inside the orange. ---- */
   {
-    const knob = (cx, a0, a1) => P3arc(cx, 47, 6.5, 6.5, a0, a1, 8);
-    const d = P3poly([[P3arc(50, 36, 30.5, 31, 180, 360, 6), 0], [knob(85.5, -140.3, 140.3), 0], [[[80.5, 62]], 5], [[[62, 93]], 4], [[[38, 93]], 4],
-      [[[19.5, 62]], 5], [knob(14.5, 39.7, 320.3), 0]]);
+    const S = OBJ_SDF, BB = [0, 0, 100, 100];
+    const grip = S.capsule(19, 81, 44, 56, 9.8), head = S.capsule(43, 57, 55, 45, 7.6);
+    const tip = S.capsule(54, 46, 67, 33, 4), noz = S.cone(66, 34, 72.5, 27.5, 4.2, 5.8);
+    const knobR = S.circle(9.5, 72.5, 7.2), knobG = S.circle(27.5, 90.5, 7.2);
+    const flame = S.union([S.circle(80.5, 19.5, 9.4), S.cone(80.5, 19.5, 96, 4, 9.4, .8)], 0);
+    const all = S.union([grip, head, tip, noz, knobR, knobG, flame], 1.4);
     CHAPTER_OBJ["Chapter 35: Welding and Other Hot Work"] = {
-      d,
-      base: "red",
+      d: S.shape(all, BB),
+      base: "rubber",
       plates: [
-        ["red", OBJ_poly([[19.5, 58], [80.5, 58], [62, 93], [38, 93]], [0, 0, 4, 4]), { gem: 1.4, gw: 9 }],   /* the chin, faceted */
-        /* (384.68) the lens holder across the whole front and the lens a welder's dark green glass: with a small dark window and a
-           crown ridge over it, the helmet read as a face */
-        ["rubber", OBJ_rrect(24.5, 26, 51, 27, 4), { z: 1, bev: .9 }],                                     /* the lens holder (384.90: an even margin of shell round it) */
-        ["glass", OBJ_rrect(29, 30.5, 42, 18, 1.5), { z: -1.1, bev: .6, col: "#2C5E45" }],                /* the lens */
-        ["rubber", OBJ_circle(85.5, 47, 6.5), { dome: 1.6 }],                                               /* the headgear knobs */
-        ["rubber", OBJ_circle(14.5, 47, 6.5), { dome: 1.6 }],
-        ["steel", OBJ_circle(85.5, 47, 2.6), { dome: .9 }],
-        ["steel", OBJ_circle(14.5, 47, 2.6), { dome: .9 }],
+        ["hot", S.shape(flame, BB), { dome: 1.4, col: "#FF8A2A" }],                                       /* the flame */
+        ["glow", S.shape(S.union([S.circle(79.6, 20.4, 5.2), S.cone(79.6, 20.4, 89.5, 10.5, 5.2, .7)], 0), BB), { z: .5, bev: .6, dome: .8, col: "#FFE08A" }],   /* its yellow heart */
+        ["water", S.shape(S.cone(73.8, 26.2, 77.4, 22.6, 2.3, 2.7), BB), { z: .8, bev: .5, dome: .6, col: "#5FB6FF" }],   /* the hot blue cone at the nozzle */
+        ["steel", S.shape(tip, BB), { dome: .8 }],                                                         /* the tip */
+        ["brass", S.shape(noz, BB), { dome: .8 }],                                                         /* its nozzle */
+        ["brass", S.shape(head, BB), { dome: 1.2 }],                                                       /* the head */
+        ["rubber", S.shape(grip, BB), { dome: 1.4 }],                                                      /* the grip */
+        ["rubber", "M29.5 83.5L21.5 75.5M34.5 78.5L26.5 70.5M39.5 73.5L31.5 65.5", { ln: 1.6, cut: .9, paint: 0 }],   /* its grooves */
+        ["red", S.shape(knobR, BB), { dome: 1.5, col: "#D8352C" }],                                        /* the fuel valve */
+        ["red", S.shape(knobG, BB), { dome: 1.5, col: "#2E9B4F" }],                                        /* the oxygen valve */
       ],
     };
   }

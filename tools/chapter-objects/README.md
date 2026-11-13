@@ -148,6 +148,11 @@ run of rounded corners, to join with arcs), `OBJ_walk(d)` (a path's points). Ari
    gap between two boxes) is wider than 0.8 units or long - draw it at least 1.2 wide. The renderer also strokes every fill part a hair
    round its edge before filling it and no longer clips parts to the outline, so two parts meeting never let the base's colour through
    along their join (the conflation seam). The gate measures what is left (tools/chapter-objects/joins.js): no sliver, no seam, no nub.
+8d. **`OBJ_SDF.shape` keeps ONE loop, the largest** (384.93 r9). A plate of several separate pieces - a row of match heads, five jets of
+   water, a frame's two arms - drawn with `S.shape(S.union([...]))` paints the biggest piece and leaves every other one in the base colour
+   (the matches came out with one red head and six blue ones). Use every loop: `S.loops(f, BB).map(S.pathOf).join("")`. And a part that
+   sits between two others (a sprinkler's bulb between its frame arms) must be in the silhouette's union too, or it paints outside the
+   outline and is never seen.
    A pin's glow (its card, the case, the cutscene) is its own commonest colour (chapterObjLight), so choose `col` and `base` to be the
    object's real main colour.
 9. **The back still holds the title** (the back is the pin's own silhouette and the title is laid out on it, from the foot of the bevel

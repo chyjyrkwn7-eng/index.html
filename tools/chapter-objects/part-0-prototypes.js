@@ -48,33 +48,34 @@
   };
 }
 
-/* ---- Chapter 9: Fire Protection and Life Safety Systems - a pendant sprinkler head (Madison chose the sprinkler): the brass nipple with its
-   threads, the faceted hex body, the frame narrowing to the boss with the red glass bulb in its windows, and the round deflector seen a
-   little from above - its lit top face, its toothed rim. With no rim to swallow them, the thin parts are the sprinkler again. (A disc, not
-   a flat bar: the back's title is laid out on the silhouette and the disc gives it room; a thick bar read as a comb.) ---- */
+/* ---- Chapter 9: Fire Protection and Life Safety Systems - a sprinkler head going off, redrawn (384.93 r9: Madison, "Chapter 9, update" -
+   with its deflector a broad disc seen from above, the brass head read as a goblet or a lamp): the brass head upright - the threaded
+   nipple, the hex body, the two frame arms holding the red glass bulb, the boss and the toothed deflector seen edge on - hanging from
+   the red sprinkler main across the top, with the water it throws: five jets fanning out of the deflector, widening as they go. ---- */
 {
-  const CX = 50, CY = 76, RX = 45, RY = 18, pts = [], rs = [];
-  const ell = (t, k) => [CX + RX * k * Math.cos(t), CY + RY * k * Math.sin(t)];
-  /* the top of the disc, from where the frame meets it round to the right */
-  for(let d = 284; d <= 360; d += 19) { pts.push(ell(d * Math.PI / 180, 1)); rs.push(3); }
-  /* its lower rim, toothed */
-  for(let d = 9; d <= 171; d += 9){ pts.push(ell(d * Math.PI / 180, (d / 9) % 2 ? .9 : 1)); rs.push(.8); }
-  for(let d = 180; d <= 256; d += 19) { pts.push(ell(d * Math.PI / 180, 1)); rs.push(3); }
+  const S = OBJ_SDF, BB = [0, 0, 100, 100], ALL = f => S.loops(f, BB).map(S.pathOf).join("");
+  const pipe = S.box(3, 3, 94, 10, 4), tee = S.box(37, 1, 26, 14, 3);
+  const nipple = S.box(43, 14, 14, 5, 1), hex = S.poly([[34, 18], [66, 18], [70, 23], [66, 28], [34, 28], [30, 23]]);
+  const arms = S.union([S.capsule(35.5, 27, 43.5, 46, 3), S.capsule(64.5, 27, 56.5, 46, 3)], 0);
+  const boss = S.box(42, 43, 16, 6, 2), defl = S.box(24, 48, 52, 6, 2);
+  const J = [[32, 53, 7, 76], [41, 53, 25, 88], [50, 53, 50, 94], [59, 53, 75, 88], [68, 53, 93, 76]];
+  const jets = S.union(J.map(([a, b, c, d]) => S.cone(a, b, c, d, 1.9, 3.9)), 2);
+  const bulb = S.ellipse(50, 36.5, 3.4, 8), head = S.union([nipple, hex, arms, bulb, boss, defl], 1.2);
+  const sil = S.trace(S.union([pipe, tee, head, jets], 1.5), BB);
   CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {
-    d: OBJ_poly([[41, 3], [59, 3], [59, 15], [68, 15], [73, 22.5], [68, 30], [65, 30], [59, 59.5]].concat(pts).concat([[41, 59.5], [35, 30], [32, 30], [27, 22.5], [32, 15], [41, 15]]),
-      [1.5, 1.5, 1, 1, 1.5, 1, 1, 2].concat(rs).concat([2, 1, 1, 1.5, 1, 1])),
-    base: "brass", col: "#C9972F",   /* (384.67) natural colours: a brass head, polished metal all over, its red glass bulb */
+    d: sil.d, holes: sil.holes,
+    base: "brass", col: "#C9972F",
     plates: [
-      ["brass", OBJ_rrect(41, 3, 18, 12, 1.5), { z: .4 }],                                     /* the nipple */
-      ["brass", "M41 6.5H59M41 10H59M41 13.5H59", { ln: 1.4, cut: .8, paint: 0 }],             /* its threads */
-      ["brass", OBJ_poly([[32, 15], [68, 15], [73, 22.5], [68, 30], [32, 30], [27, 22.5]], 1), { gem: 1.4, gw: 3 }],   /* the hex body */
-      ["body", "M41 16V29M59 16V29", { ln: 1.4, cut: .7, paint: 0 }],                            /* its flats */
-      ["brass", OBJ_poly([[35, 30], [65, 30], [59, 62], [41, 62]], 1), { z: .5 }],              /* the frame */
-      ["ink", OBJ_poly([[39, 33], [45.5, 33], [45.5, 57], [42.5, 57]], 1), { z: -1.7, bev: .6 }],   /* its two windows */
-      ["ink", OBJ_poly([[61, 33], [54.5, 33], [54.5, 57], [57.5, 57]], 1), { z: -1.7, bev: .6 }],
-      ["red", OBJ_ellipse(50, 45, 4.4, 12), { dome: 2.6 }],                                     /* the glass bulb */
-      ["brass", OBJ_ellipse(CX, CY - 2, RX - 5, RY - 5), { z: .6, bev: 1, dome: .6 }],          /* the deflector's top face */
-      ["brass", OBJ_rrect(43, 54, 14, 9, 2), { dome: 1.4 }],                                    /* the boss on it */
+      ["red", S.shape(pipe, BB), { dome: 1.2 }],                                                          /* the sprinkler main */
+      ["red", S.shape(tee, BB), { z: .6, bev: .6, dome: .6, col: "#B52A22" }],                             /* its tee */
+      ["water", ALL(jets), { dome: 1.4 }],                                                        /* the jets */
+      ["brass", S.shape(nipple, BB), { z: .4 }],                                                          /* the nipple */
+      ["brass", S.shape(hex, BB), { gem: 1.4, gw: 3 }],                                                   /* the hex body */
+      ["brass", ALL(arms), { dome: 1 }],                                                                  /* the frame */
+      ["red", OBJ_ellipse(50, 36.5, 3.4, 8), { dome: 2.2 }],                                              /* the glass bulb */
+      ["brass", S.shape(boss, BB), { dome: 1 }],                                                          /* the boss */
+      ["brass", S.shape(defl, BB), { z: .6, bev: .6 }],                                                   /* the deflector */
+      ["brass", "M30 49V53M38 49V53M46 49V53M54 49V53M62 49V53M70 49V53", { ln: 1.3, cut: .7, paint: 0 }],   /* its teeth */
     ],
   };
 }
@@ -191,22 +192,26 @@
   };
 }
 
-/* ---- Chapter 5: Fire Service Features - a fire hydrant (Madison's own suggestion): the faceted operating nut, the domed bonnet, the barrel,
-   the two side outlets with their faceted caps, the base flange and its bolts. ---- */
+/* ---- Chapter 5: Fire Service Features - a fire hydrant, refined (384.93 r9): the faceted operating nut, the domed bonnet and the flange
+   ring under it, the barrel with its big pumper cap facing you (the outlet a hydrant is known by), the two side outlets short and capped
+   with chrome hex caps (they were long grey blocks, like ears), the base flange in the hydrant's own red with its bolts. ---- */
 {
   CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {
-    col: "#D23A2E",   /* (384.67) natural colours: a red hydrant */
-    d: OBJ_poly([[42, 4], [58, 4], [60, 14], [72, 18], [76, 32], [70, 34], [70, 44], [86, 44], [86, 40], [94, 40], [94, 64], [86, 64], [86, 60], [70, 60], [70, 80], [80, 82], [82, 94], [18, 94], [20, 82], [30, 80], [30, 60], [14, 60], [14, 64], [6, 64], [6, 40], [14, 40], [14, 44], [30, 44], [30, 34], [24, 32], [28, 18], [40, 14]],
+    col: "#D23A2E",
+    d: OBJ_poly([[42, 4], [58, 4], [60, 14], [72, 18], [76, 32], [70, 34], [70, 45], [80, 45], [80, 42], [88, 42], [88, 62], [80, 62], [80, 59], [70, 59], [70, 80], [80, 82], [82, 94], [18, 94], [20, 82], [30, 80], [30, 59], [20, 59], [20, 62], [12, 62], [12, 42], [20, 42], [20, 45], [30, 45], [30, 34], [24, 32], [28, 18], [40, 14]],
       [2, 2, 2, 6, 3, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 3, 6, 2]),
     plates: [
       ["field", OBJ_rrect(30, 32, 40, 50, 2), { dome: 1.6 }],                                    /* the barrel */
       ["field", "M24 32C24 20 36 14 50 14C64 14 76 20 76 32Z", { dome: 2.2 }],                   /* the bonnet */
+      ["lite", OBJ_rrect(25, 30, 50, 5, 2), { z: .5, bev: .5 }],                                 /* the flange ring under it */
       ["steel", OBJ_poly([[42, 4], [58, 4], [60, 14], [40, 14]], 1), { gem: 1.4, gw: 2.6 }],     /* the operating nut */
-      ["field", OBJ_rrect(14, 44, 16, 16, 1.5), { dome: 1 }],                                    /* the outlets */
-      ["field", OBJ_rrect(70, 44, 16, 16, 1.5), { dome: 1 }],
-      ["steel", OBJ_rrect(6, 40, 8, 24, 2), { gem: 1.2, gw: 2 }],                                /* their caps */
-      ["steel", OBJ_rrect(86, 40, 8, 24, 2), { gem: 1.2, gw: 2 }],
-      ["deep", OBJ_rrect(18, 80, 64, 14, 2), { z: .5 }],                                         /* the base flange */
+      ["field", OBJ_rrect(20, 45, 10, 14, 1.5), { dome: 1 }],                                    /* the side outlets */
+      ["field", OBJ_rrect(70, 45, 10, 14, 1.5), { dome: 1 }],
+      ["steel", OBJ_rrect(12, 42, 8, 20, 2), { gem: 1.2, gw: 2 }],                               /* their caps */
+      ["steel", OBJ_rrect(80, 42, 8, 20, 2), { gem: 1.2, gw: 2 }],
+      ["steel", OBJ_circle(50, 56, 10.5), { z: .7, bev: .7, dome: .6 }],                          /* the pumper cap */
+      ["steel", OBJ_poly([[50, 50.5], [55.2, 54.3], [53.2, 60.5], [46.8, 60.5], [44.8, 54.3]], .8), { gem: 1.1, gw: 2 }],   /* its nut */
+      ["shade", OBJ_rrect(18, 80, 64, 14, 2), { z: .5 }],                                        /* the base flange */
       ["steel", OBJ_circle(26, 87, 2.4), { dome: 1.1 }],                                         /* its bolts */
       ["steel", OBJ_circle(42, 87, 2.4), { dome: 1.1 }],
       ["steel", OBJ_circle(58, 87, 2.4), { dome: 1.1 }],

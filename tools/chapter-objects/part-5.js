@@ -174,13 +174,15 @@
 
 /* ---- Appendix H: HMMP and HMIS Instructions - a clipboard with its pencil: the board, the steel clip with its hole, the sheet, three
    checklist rows (a box pressed in, a raised tick, the line's grooves), and the pencil laid across its corner, standing out past the
-   board's edge (the shape a plain board does not have). ---- */
+   board's edge (the shape a plain board does not have). (384.93 r9: Madison, "Appendix H update (pencil)" - it was brass, a polished rod:
+   now a yellow-painted pencil with its facets, a pink eraser in a steel ferrule, the sharpened wood and the graphite point, a little
+   thicker.) ---- */
 {
   const X0 = 8, X1 = 80, Y0 = 12, Y1 = 96, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  const E = [91, 33], TP = [64, 93], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
+  const E = [92, 31], TP = [64, 94], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 5.6;
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
   const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
-  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 11;
+  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13;
   const rows = [36, 55, 74], plates = [
     ["wood", OBJ_rrect(X0, Y0, X1 - X0, Y1 - Y0, 4), { dome: .6 }],                                   /* the board */
     ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 68, 2), { z: .5, bev: .6 }],                    /* the sheet */
@@ -191,15 +193,16 @@
     plates.push(["water", "M22.5 " + (y - .5) + "L25.5 " + (y + 3) + "L32 " + (y - 7), { ln: 3, z: 1.1, bev: .6 }]);
     plates.push(["cream", "M36 " + (y - 2.5) + "H" + (y > 60 ? 54 : 62) + "M36 " + (y + 3) + "H" + (y > 60 ? 48 : 56), { ln: 2.2, cut: .7, paint: 0 }]);
   });
-  plates.push(["brass", OBJ_poly([Q(7, -HW), Q(CONE, -HW), Q(CONE, HW), Q(7, HW)], 1), { z: 1.3, bev: .7, dome: .9 }]);   /* the pencil */
-  plates.push(["brass", "M" + f(Q(9, 0)) + "L" + f(Q(CONE - 1, 0)), { ln: 1.2, cut: .6, paint: 0 }]);                      /* its facet */
-  plates.push(["red", OBJ_poly([Q(0, -HW), Q(7, -HW), Q(7, HW), Q(0, HW)], [2, 0, 0, 2]), { z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
-  plates.push(["steel", OBJ_poly([Q(5.5, -HW), Q(11, -HW), Q(11, HW), Q(5.5, HW)], .5), { z: 1.4, bev: .5, dome: .9 }]);   /* the ferrule */
-  plates.push(["cream", OBJ_poly([Q(CONE, -HW), Q(L - 1, -.8), Q(L - 1, .8), Q(CONE, HW)], [0, 1, 1, 0]), { z: 1.3, bev: .7 }]);   /* the sharpened wood */
-  plates.push(["rubber", OBJ_poly([Q(L - 4.5, -1.9), Q(L - .5, -.4), Q(L - .5, .4), Q(L - 4.5, 1.9)], .6), { z: 1.4, bev: .4 }]);   /* the lead */
+  plates.push(["field", OBJ_poly([Q(9, -HW), Q(CONE, -HW), Q(CONE, HW), Q(9, HW)], 1), { z: 1.3, bev: .7, gem: .9, gw: 3.4, col: "#F2B90F" }]);   /* the pencil, painted yellow */
+  plates.push(["field", "M" + f(Q(10, -HW * .34)) + "L" + f(Q(CONE - 1, -HW * .34)) + "M" + f(Q(10, HW * .34)) + "L" + f(Q(CONE - 1, HW * .34)), { ln: .9, cut: .5, paint: 0 }]);   /* its facets */
+  plates.push(["red", OBJ_poly([Q(0, -HW), Q(8, -HW), Q(8, HW), Q(0, HW)], [2.4, 0, 0, 2.4]), { z: 1.3, bev: .7, dome: .9, col: "#F08BA0" }]);   /* its pink eraser */
+  plates.push(["steel", OBJ_poly([Q(6.5, -HW - .3), Q(12.5, -HW - .3), Q(12.5, HW + .3), Q(6.5, HW + .3)], .5), { z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
+  plates.push(["steel", "M" + f(Q(8.5, -HW)) + "L" + f(Q(8.5, HW)) + "M" + f(Q(10.5, -HW)) + "L" + f(Q(10.5, HW)), { ln: .8, cut: .5, paint: 0 }]);   /* its crimps */
+  plates.push(["wood", OBJ_poly([Q(CONE, -HW), Q(L - 2.2, -1.4), Q(L - 2.2, 1.4), Q(CONE, HW)], [0, 1, 1, 0]), { z: 1.3, bev: .7, col: "#E7C48F" }]);   /* the sharpened wood */
+  plates.push(["rubber", OBJ_poly([Q(L - 5.2, -2.1), Q(L - .4, -.5), Q(L - .4, .5), Q(L - 5.2, 2.1)], .7), { z: 1.4, bev: .4 }]);   /* the graphite */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
     d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [23, Y0], [29, 1], [59, 1], [65, Y0], [X1, Y0], [X1, Q(tl, HW)[1]], Q(0, HW), Q(0, -HW), [X1, Q(tr, -HW)[1]], [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
-      [0, 1, 3, 3, 1, 4, 1.5, 2, 2, 1.5, 4, 4, 4, 0]) + "Z",
+      [0, 1, 3, 3, 1, 4, 1.5, 2.4, 2.4, 1.5, 4, 4, 4, 0]) + "Z",
     holes: [OBJ_rrect(36, 6, 16, 6, 2.5)],
     base: "wood",
     plates,

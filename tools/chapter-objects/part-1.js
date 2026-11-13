@@ -47,57 +47,59 @@
   };
 }
 
-/* ---- Chapter 3: General Requirements - a portable fire extinguisher: the squeeze lever over the carry handle, the valve head with its
-   domed gauge, the faceted brass collar, the domed shoulder and body, the black hose curving down the side to its horn. ---- */
+/* ---- Chapter 3: General Requirements - a portable fire extinguisher, redrawn (384.93 r9: Madison, "General requirements" - it read as a
+   stack of grey levers on a red box, the hose hanging loose): the red cylinder with its domed shoulder, the white instruction label, the
+   brass collar and the chrome valve head, the black squeeze lever over the black carry handle, the pressure gauge, and the black hose
+   looping from the valve down the side to its horn, clipped to the body (the loop is a real hole). Built as one filleted union (OBJ_SDF). ---- */
 {
-  const C = [[60, 15], [69, 15]];
-  for(let a = -80; a <= 0; a += 10){ const t = a * Math.PI / 180; C.push([69 + 10 * Math.cos(t), 25 + 10 * Math.sin(t)]); }
-  C.push([79, 42], [79, 58]);
-  const side = (k) => C.map((p, i) => { const q = C[Math.max(0, i - 1)], r = C[Math.min(C.length - 1, i + 1)], tx = r[0] - q[0], ty = r[1] - q[1], l = Math.hypot(tx, ty) || 1; return [p[0] - ty / l * k, p[1] + tx / l * k]; });
-  const outer = side(-3), inner = side(3);
-  const pts = [[27, 94], [27, 30], [43, 30], [43, 22], [14, 22], [14, 17], [34, 17], [34, 12], [12, 11], [12, 5], [40, 8], [60, 9], [60, 12]]
-    .concat(outer.slice(1)).concat([[84, 59], [84, 76], [74, 76], [74, 59]]).concat(inner.slice(1).reverse()).concat([[60, 18], [60, 22], [53, 22], [53, 30], [69, 30], [69, 94]]);
-  const rs = [6, 13, 1, 1, 2.5, 2.5, 1, 1, 2.5, 2.5, 1.5, 2, 1].concat(outer.slice(1).map(() => 3)).concat([1, 2, 2, 1]).concat(inner.slice(1).map(() => 3)).concat([1, 2, 1, 1, 13, 6]);
-  const hose = OBJ_poly(outer.concat([[82, 62]]).concat([[76, 62]]).concat(inner.slice().reverse()), 2);
+  const S = OBJ_SDF, BB = [0, 0, 100, 100];
+  const body = S.union([S.box(31, 34, 36, 62, 5), S.ellipse(49, 37, 18, 12)], 0);
+  const neck = S.box(44, 19, 10, 10, 1.5), valve = S.box(38, 13, 22, 8, 2.5);
+  const lever = S.capsule(53, 10.6, 77, 5.6, 2.5), handle = S.capsule(55, 17.6, 79, 19, 2.5);
+  const gauge = S.circle(32.5, 15.5, 5.4), gstem = S.box(33, 14, 7, 3, 1);
+  const hose = S.tube([40, 21], [15, 22], [19, 62], () => 2.9, 22), horn = S.cone(19.4, 60, 21.6, 80, 3.2, 4.8), clip = S.box(21, 71, 12, 6, 1.5);
+  const all = S.union([body, neck, valve, lever, handle, gauge, gstem, hose, horn, clip], 1.2), sil = S.trace(all, BB);
   CHAPTER_OBJ["Chapter 3: General Requirements"] = {
-    d: OBJ_poly(pts, rs),
-    base: "red",
+    d: sil.d, holes: sil.holes, base: "red",
     plates: [
-      ["red", OBJ_poly([[27, 94], [27, 30], [69, 30], [69, 94]], [6, 13, 13, 6]), { dome: 2.4 }],      /* the body */
-      ["red", OBJ_rrect(36, 48, 24, 34, 3), { z: -.7, bev: .8 }],                                      /* its pressed-in label panel */
-      ["red", "M28 88H68", { ln: 1.6, cut: .8, paint: 0 }],                                            /* the foot ring */
-      ["brass", OBJ_rrect(43, 21, 10, 10, 1), { gem: 1, gw: 2.2 }],                                      /* the collar */
-      ["steel", OBJ_rrect(36, 8.5, 24, 13.5, 2.5), { z: .5, bev: .7, dome: .6 }],                         /* the valve head */
-      ["glass", OBJ_circle(48, 15, 4), { z: -.3, bev: .5, dome: 1.4 }],                                    /* its gauge */
-      ["steel", OBJ_rrect(14, 17, 23, 5, 2.5), { dome: .9 }],                                             /* the carry handle */
-      ["steel", OBJ_poly([[12, 5], [40, 8], [40, 12.5], [12, 11]], 2.5), { dome: .9 }],                   /* the squeeze lever */
-      ["rubber", hose, { dome: 1 }],                                                                      /* the hose */
-      ["rubber", OBJ_poly([[74, 59], [84, 59], [84, 76], [74, 76]], [1, 1, 2, 2]), { dome: 1.2 }],        /* its horn */
-      ["rubber", "M75 64H83M75 69H83", { ln: 1.2, cut: .6, paint: 0 }],
+      ["red", S.shape(body, BB), { dome: 1.7 }],                                                          /* the cylinder */
+      ["cream", OBJ_rrect(33, 54, 32, 23, 2), { z: .5, bev: .6, col: "#F4F1EA" }],                         /* its label */
+      ["cream", "M37 61H61M37 66H61M37 71H54", { ln: 1.5, cut: .6, paint: 0 }],                           /* its lines of instructions */
+      ["deep", OBJ_rrect(31, 90, 36, 6, [0, 0, 5, 5]), { z: .3, bev: .5 }],                               /* the foot ring */
+      ["rubber", S.shape(S.union([hose, horn], .6), BB), { dome: .9 }],                                    /* the hose and its horn */
+      ["steel", S.shape(clip, BB), { z: .5, bev: .5 }],                                                    /* the clip */
+      ["brass", S.shape(neck, BB), { z: .4, bev: .5 }],                                                    /* the collar */
+      ["steel", S.shape(S.union([valve, gstem], .8), BB), { dome: .9 }],                                   /* the valve head */
+      ["rubber", S.shape(handle, BB), { dome: .8 }],                                                      /* the carry handle */
+      ["rubber", S.shape(lever, BB), { dome: .8 }],                                                       /* the squeeze lever */
+      ["steel", S.shape(gauge, BB), { dome: .7 }],                                                        /* the gauge */
+      ["cream", OBJ_circle(32.5, 15.5, 3.4), { z: -.4, bev: .4, col: "#F4F1EA" }],                        /* its face */
+      ["red", "M32.5 15.5L35 13", { ln: 1, z: .3, bev: .3 }],                                             /* its needle */
     ],
   };
 }
 
-/* ---- Chapter 4: Emergency Planning and Preparedness - a megaphone: the flared horn with its raised bands, the mouth's rim and dark
-   opening seen a little from the side, the rear housing and the pistol grip with its grooves. ---- */
+/* ---- Chapter 4: Emergency Planning and Preparedness - a megaphone, recoloured (384.93 r9: an orange horn with two white bands read
+   as a traffic cone on its side): a white horn with a red rim at its mouth and a red collar where it meets the black rear housing, the
+   dark opening with its grille rings, the black pistol grip with its grooves. ---- */
 {
   const E = (cx, cy, rx, ry, a0, a1, n) => { const o = []; for(let i = 0; i <= n; i++){ const t = (a0 + (a1 - a0) * i / n) * Math.PI / 180; o.push([cx + rx * Math.cos(t), cy + ry * Math.sin(t)]); } return o; };
   const mouth = E(84, 46, 9, 31, -90, 90, 12);
-  const cone = (x) => 10 + (x - 22) * (21 / 62);      /* the horn's half height at x (384.90: from the housing's own 10, no step) */
+  const cone = (x) => 10 + (x - 22) * (21 / 62);      /* the horn's half height at x: from the housing's own 10, no step (384.90) */
   const band = (x0, x1) => OBJ_poly([[x0, 46 - cone(x0)], [x1, 46 - cone(x1)], [x1, 46 + cone(x1)], [x0, 46 + cone(x0)]], 1);
   const pts = [[6, 36], [22, 36]].concat(mouth).concat([[48, 46 + cone(48)], [45, 89], [33, 89], [35, 46 + cone(35)], [22, 56], [6, 56]]);
   const rs = [4, .5].concat(mouth.map((p, i) => (i === 0 || i === mouth.length - 1) ? 1.5 : 4)).concat([1, 2.5, 2.5, 1, .5, 4]);
   CHAPTER_OBJ["Chapter 4: Emergency Planning and Preparedness"] = {
     d: OBJ_poly(pts, rs),
-    base: "hot",
+    col: "#F3F1EA", base: "field",
     plates: [
-      ["hot", OBJ_poly([[22, 36], [84, 15], [84, 77], [22, 56]], [.5, 1, 1, .5]), { dome: 2 }],         /* the horn */
-      ["cream", band(30, 36), { z: .7, bev: .6 }],                                                          /* its bands */
-      ["cream", band(64, 71), { z: .7, bev: .6 }],
-      ["cream", OBJ_ellipse(84, 46, 9, 31), { z: .8, bev: .7, dome: .6 }],                                  /* the mouth's rim */
-      ["rubber", OBJ_ellipse(85, 46, 5, 26), { z: -1.8, bev: .9 }],                                           /* its opening */
-      ["rubber", OBJ_rrect(6, 36, 16.6, 20, [4, .5, .5, 4]), { dome: 1.4 }],                               /* the rear housing: square where it meets the horn */
-      ["rubber", OBJ_poly([[35, 57], [48, 61], [45, 89], [33, 89]], [1, 1, 2.5, 2.5]), { dome: 1 }],       /* the grip */
+      ["field", OBJ_poly([[22, 36], [84, 15], [84, 77], [22, 56]], [.5, 1, 1, .5]), { dome: 2 }],       /* the white horn */
+      ["red", band(22, 28), { z: .6, bev: .6 }],                                                            /* its collar */
+      ["red", OBJ_ellipse(84, 46, 9, 31), { z: .8, bev: .7, dome: .6 }],                                    /* the red rim of its mouth */
+      ["rubber", OBJ_ellipse(85, 46, 5, 26), { z: -1.8, bev: .9 }],                                         /* its opening */
+      ["rubber", OBJ_ellipse(85, 46, 2.6, 15), { ln: 1.2, cut: .6, paint: 0 }],                             /* the grille */
+      ["rubber", OBJ_rrect(6, 36, 16.6, 20, [4, .5, .5, 4]), { dome: 1.4 }],                                 /* the rear housing */
+      ["rubber", OBJ_poly([[35, 57], [48, 61], [45, 89], [33, 89]], [1, 1, 2.5, 2.5]), { dome: 1 }],         /* the grip */
       ["rubber", "M36 70H45.5M35.6 76H45M35.2 82H44.5", { ln: 1.3, cut: .7, paint: 0 }],
     ],
   };
