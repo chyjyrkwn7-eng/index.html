@@ -57,6 +57,15 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from PIL import Image
 from playwright.sync_api import sync_playwright
+from playwright.sync_api._generated import Browser
+# a 10.7MB page on a shared, loaded machine: every context this gate opens (through the glitches harness too) waits up to 180s
+# for a page load and 120s for anything else, not Playwright's 30s
+_new_context = Browser.new_context
+def _patient_context(self, *a, **kw):
+    ctx = _new_context(self, *a, **kw)
+    ctx.set_default_navigation_timeout(180000); ctx.set_default_timeout(120000)
+    return ctx
+Browser.new_context = _patient_context
 chk = G.chk
 SOLID_MAX = 25
 LIGHT_ADD_MAX = 30   # near-white pixels AutoFill may add to a field (anti-aliasing of the same letters); a 1px ring round one is hundreds

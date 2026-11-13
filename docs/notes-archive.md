@@ -39561,9 +39561,18 @@ device/class runs (E6: 17,927 / 36,611 solid near-white pixels, the field 239 ag
 search and the chat's field `appearance:auto`), F4 (every field, 9,000-53,000 solid pixels), F5 - and its guards pass (one Fire Code
 tab-bar-search screen not opened under load, since polled for); `--against` a copy of this build without the padding-box clip FAILS
 E6 (109 -> 748 near-white pixels on the phone, 1,440 on the iPad) and F4 (every field, 470-810 added), which is the ring.
-PAUSED by the coordinator (machine overload) before: check-fixes (the full matrix; one run died on a 30s page load at load 83, the
-re-run with raised Playwright timeouts was stopped), check-sound, check-b384-casescroll, check-centering --quick, sweep-layout --quick,
-and a final `--against origin/main` of the finished gate. Results to follow below.
+PAUSED twice by the coordinator (machine overload). Between the pauses, on the tree merged with main 384.97 (768f315; the merge also
+gives `.nova-hsw` no focus ring - 384.97 found a tap on an iPhone focuses the switch under the finger, :focus-visible and all; nothing
+styles a switch's host on focus-within, and opacity 0 already hid one, so this is a guard, not a cause): check-js 14 blocks ALL PASS;
+check-b384-namebox ALL PASS; the finished gate `--against origin/main` (384.97) FAILS exactly its 14 [fix] lines - E1, E2, E6 on all
+three runs (E6: 17,927 / 36,611 solid, 109 -> 20,104 / 40,172 near-white pixels), F1 and F4 in both classes, F5 - and passes every
+guard. The gate now gives every context it opens a 180s page load. check-sound (through a wrapper that only raises Playwright's
+timeouts): sections 1-5 pass (31 checks) on the first run; section 6 (all 139 sounds rendered offline in one evaluate) crashed the
+renderer ("Target crashed", 0-3GB of memory free) on both runs, and the second run also failed 4's cooldown ("the same sound twice at
+once plays once") that the first passed - a timing check under load. No audio is touched by this build. check-b384-casescroll: 16/16
+pass before the second pause stopped it (academy Pro Max S1-S5, academy SE S1-S3, Fire Code Pro Max S1-S2); Fire Code's S3-S5 and SE
+not yet run. Still to run: check-fixes, check-centering --quick, sweep-layout --quick, the rest of casescroll, check-sound against main
+(is section 6's crash the machine's?). Results to follow below.
 WHAT ONLY HIS PHONE CAN CONFIRM: that the white box he saw was AutoFill's paint (or its offer) and is gone - Chromium can force the
 :autofill state but not draw WebKit's own, and cannot show iOS's QuickType / AutoFill bar or whether iOS honours autocomplete off for
 contact AutoFill on this field; that the native switches stay unseen (opacity 0, as every build since 328); the keyboard itself.
