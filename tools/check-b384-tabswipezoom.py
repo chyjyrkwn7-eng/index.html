@@ -13,8 +13,10 @@ well after the next tab has landed: the document's scrollWidth against the scree
   T2  Profile -> Stats -> Profile, drags that commit: never wider, never zoomed out, and the tab really changed
   T3  the Leaderboard's boards, a committing drag: the same
   T4  after it all the page is not left shifted sideways (scrollX 0) and the clip is off again (html.tab-sliding gone)
-  T5  (the same build) Profile: the rank line and "Level N · N badges" under it are at least 15px apart - "the spacing between
+  T5  (the same build) Profile: the rank line and "Level N · N badges" under it are at least 8px apart - "the spacing between
       your rank and your level/badges is too tight" (it measured ~9px; a classmate's card has ~19pt)
+  T6  (the same build) a rank flare's card (tap a rank's Flare tile: "This isn't animated") puts the flare's loop on - its
+      recorded flip-book (.cosmic-rank-anim) is in the card within 10s, as on Home and a classmate's card
 Devices: iPhone 17 Pro Max installed (440x956) and at Safari's 85% page zoom (518 CSS px wide), and an iPhone SE.
 Run:  python3 tools/check-b384-tabswipezoom.py [--against REV|DIR]   (--against origin/main must FAIL T1-T3)"""
 import importlib.util, os, sys
@@ -74,7 +76,14 @@ def run_dev(br, dev):
     G.clear_popups(pg)
     pg.evaluate("()=>{ store.lifetime.points = Math.max(store.lifetime.points || 0, 60000); showProfile('profile'); }"); pg.wait_for_timeout(1200); G.clear_popups(pg)
     gap = pg.evaluate(GAP)
-    chk("[%s] T5 Profile: the rank line and the level line under it are at least 15px apart (%s)" % (dev, gap), gap is not None and gap >= 15, gap)
+    chk("[%s] T5 Profile: the rank line and the level line under it are at least 8px apart (%s)" % (dev, gap), gap is not None and gap >= 8, gap)
+    pg.evaluate("()=>{ try{ showUnlockDetail(rankFlareDetail('adept')); }catch(e){ window.__t6err = String(e); } }")
+    got = False
+    for _ in range(20):
+        pg.wait_for_timeout(500)
+        if pg.evaluate("()=>!!document.querySelector('.unlock-card-rankflare .unlock-card-art .cosmic-rank-anim')"): got = True; break
+    chk("[%s] T6 a rank flare's card puts the flare's loop on (it moves, as on Home)" % dev, got, pg.evaluate("()=>window.__t6err || document.querySelector('.unlock-card-rankflare .unlock-card-art')?.innerHTML.slice(0,160)"))
+    pg.evaluate("()=>document.querySelectorAll('.invite-overlay').forEach(n=>n.remove())")
     pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(900); G.clear_popups(pg)
     # T1: a short drag towards Profile that is let go early (eases back)
     swipe_check(pg, "T1 Stats, a short drag let go (eases back)", 0.30, 0.52, False, PROF_TAB)

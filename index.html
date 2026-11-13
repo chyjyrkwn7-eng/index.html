@@ -13964,7 +13964,7 @@
   /* (384.117) and a top tab being swiped across (attachTabSwipe: Profile / Stats, the Leaderboard's boards): its content is carried
      up to a screen's width off the side, and on an iPhone a page wider than the screen ZOOMS OUT to fit it - the whole app shrank to
      a third, with a tiny tab bar in a corner and blank frames, then snapped back (the owner's recording, 384.94/95). */
-  html.tab-sliding, html.tab-sliding body{ overflow-x:clip; }
+  html.tab-sliding, html.tab-sliding body, .tab-slide-clip{ overflow-x:clip; }
   /* build 382: "when swiping or auto swipe is on ensure the button doesn't leak over on the next page". Next question lives in the
      .foot, outside the question panel: a swipe moved the question away under it while it stayed put, over the one coming in, and
      an auto-advance dropped it in one frame. While a question is being dragged or slid (html.q-sliding) it fades out at once, and
@@ -150782,6 +150782,11 @@ function showUnlockDetail(o){
   } else if(o.kind === "rankflare"){
     /* the rank's flare, lit, as its tile shows it (327z13) */
     try{ art.appendChild(buildFlareBubble(o.id, { lit: true })); }catch(e){}
+    /* AND MOVING, AS ON HOME (384.117): "This isn't animated" - the Gold flare's card. The bubble is Home's, but a flare only moves
+       once its loop is put on (startOrbitEmblemAnims: the emblem's recorded flip-book), which Home, the Profile's tiles and a
+       classmate's card each do after they mount, and this card never did. Put on once the card has landed (its pop-in is a scale,
+       and a loop recorded mid-scale would be cut at the wrong size), the same beat the person card uses. Reduce motion: still. */
+    setTimeout(() => { try{ if(art.isConnected) startOrbitEmblemAnims(art); }catch(e){} }, 420);
   } else if(o.kind === "challenge"){
     /* a rank challenge, big (327z13): the count in the challenge's own
        colour inside a ring of how far it is */
@@ -156578,13 +156583,22 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
      the drag takes the content until the next tab's content has landed (no drag and not busy). Without it an iPhone zoomed the whole
      app out to fit the content carried off the side. Polled off, not taken off at one call site: a commit clears the drag BEFORE the
      next tab comes in, and the clip has to outlast that too. */
+  /* The clip is on the BOX THE CONTENT MOVES IN (its parent, .tab-slide-clip), not only on the page: a page clipped at <html> still
+     counts the moved content in its scroll width (an overflow:clip on the root is the viewport's hidden), which is what an iPhone
+     zooms to; clipped at its own parent the content never reaches the page's width at all. */
   let clipT = 0, clipTries = 0;
-  const clipOn = () => { clearTimeout(clipT); clipTries = 0; document.documentElement.classList.add("tab-sliding"); };
+  const clipBoxes = new Set();
+  const clipOn = (els) => {
+    clearTimeout(clipT); clipTries = 0;
+    document.documentElement.classList.add("tab-sliding");
+    (els || []).forEach(el => { const p = el && el.parentElement; if(p && !clipBoxes.has(p)){ clipBoxes.add(p); p.classList.add("tab-slide-clip"); } });
+  };
   const clipOff = () => {
     clearTimeout(clipT);
     clipT = setTimeout(() => {
       if((drag || busy) && ++clipTries < 40){ clipOff(); return; }
       document.documentElement.classList.remove("tab-sliding");
+      clipBoxes.forEach(p => p.classList.remove("tab-slide-clip")); clipBoxes.clear();
     }, 120);
   };
   const beginDrag = () => {
@@ -156592,7 +156606,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const els = (opts.content() || []).filter(Boolean);
     const i = order.indexOf(getCurrent());
     if(!els.length || i === -1) return;
-    clipOn();
+    clipOn(els);
     drag = { els, i, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth) };
     els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform"; el.setAttribute("data-tabdrag", "1"); });
   };
@@ -156654,6 +156668,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const enter = (hold) => {
       const els = (opts.content() || []).filter(Boolean);
       if(!els.length){ busy = false; return; }
+      clipOn(els);   /* the next tab's content comes in from the side too: its box clips it as well */
       /* the next tab's content comes in from the side the finger was taking this one to */
       settle(els, { transform: "translate3d(" + (dir * 56) + "px,0,0)", opacity: "0" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 200, () => {
         if(hold) els.forEach(el => { el.style.opacity = ""; });
