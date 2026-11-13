@@ -26,7 +26,8 @@ listeners) every touch-made click that rule would never have produced (window.__
      its scene marked played and nothing owed; with "Skip celebrations and pop-ups" on, one tap lands the box, its note and the
      buttons with no scene.
  S4  Each button under the results (Continue to review, Re-run, Main menu - read off the page) takes a tap that lands within
-     100ms of the frame it is first drawn, after a skip and after a reveal left alone; and with Reduce motion.
+     100ms of the frame it is first drawn at its place (half opacity, within 8px of where it rests - a button still rising is a
+     moving target), after a skip and after a reveal left alone; and with Reduce motion.
  S5  The builds 305 / 380 / 382 protections (pass on both builds by design: they are kept, not new): a tap where Main menu will
      be, before it is there, leaves the results alone; taps that keep coming at that spot as it arrives do not press it, and the
      first after a pause does.
@@ -175,15 +176,18 @@ def unit_of(pg, cls):
 def go(pg, cls="academy", miss=0, mode="drill", practice=False, setup=""):
     pg.evaluate("""([u, m, mode, prac, setup]) => { try{ endResultsReveal(); }catch(e){} showHome(); window.__scenePending = false;
       if(setup) (new Function(setup))();
+      /* what Re-run re-runs: the test as beginRun would have kept it (__run skips beginRun) */
+      try{ originalTestPool = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === u); originalTestLabel = null; }catch(e){}
       __run(u, m, mode, false);
       if(prac){ /* a practice test is an exam with its minutes (summarize reads practiceTestMinutes): rebuild it so */ }
       window.__mountAt = performance.now(); }""", [unit_of(pg, cls), miss, mode, practice, setup])
 
-def tap(cdp, x, y, hold=0.06):
+def tap(cdp, x, y, hold=0.06, at=None):
     """a finger down and up `hold` seconds apart, BY THE EVENTS' OWN TIMES (as a phone stamps them): dispatchTouchEvent waits for
-    the page to take each event, so on a busy page the lift would otherwise arrive - and be stamped - a second late"""
+    the page to take each event, so on a busy page the lift would otherwise arrive - and be stamped - a second late. `at`: the
+    moment the finger lands, when a run of taps keeps its own rhythm whatever the page is doing (a real finger does)"""
     p = [{"x": float(x), "y": float(y), "radiusX": 4, "radiusY": 4, "force": 1, "id": 1}]
-    t0 = time.time()
+    t0 = time.time() if at is None else at
     cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": p, "timestamp": t0})
     time.sleep(max(0.0, hold - (time.time() - t0)))
     cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": [], "timestamp": t0 + hold})
@@ -318,8 +322,12 @@ VIS_THEN_TAP = r"""(i) => new Promise(res => {
     const bs = [...document.querySelectorAll('#stage .rs-rewards .rs-actions button')].filter(b => !b.hidden);
     const b = bs[i];
     if(b){
+      /* DRAWN = drawn where it is, at its place, to be tapped: a button still rising is a moving target (it comes up from ~90px
+         below), and no finger lands on that - so "visible" is its first frame within 8px of where it rests, at half opacity */
       const r = b.getBoundingClientRect();
-      const on = __vis(b) >= .1 && r.bottom > 0 && r.top < innerHeight && r.width > 0;
+      let ry = 0; for(let e = b; e; e = e.offsetParent) ry += e.offsetTop;
+      const atRest = Math.abs(r.top - (ry - scrollY)) <= 8;
+      const on = __vis(b) >= .5 && atRest && r.bottom > 0 && r.top < innerHeight && r.width > 0;
       if(!on && __vis(b) >= .1 && (r.top >= innerHeight || r.bottom <= 0)){ window.scrollBy({ top: r.top - innerHeight / 2, behavior: 'instant' }); }
       else if(on){ window.__visAt = performance.now(); res({ n: bs.length, x: r.left + r.width / 2, y: r.top + r.height / 2 }); return; }
     }
@@ -328,7 +336,7 @@ VIS_THEN_TAP = r"""(i) => new Promise(res => {
   };
   f();
 })"""
-TOUCH_AT = "() => { window.__tapAt = 0; window.addEventListener('touchstart', e => { if(!window.__tapAt) window.__tapAt = performance.now(); }, { capture: true, passive: true, once: true }); }"
+TOUCH_AT = "() => { window.__tapAt = 0; window.__tapGot = 0; window.addEventListener('touchstart', e => { if(!window.__tapAt){ window.__tapAt = e.timeStamp; window.__tapGot = performance.now(); } }, { capture: true, passive: true, once: true }); }"
 
 def press_when_drawn(pg, cdp, i):
     for _ in range(6):
@@ -338,13 +346,16 @@ def press_when_drawn(pg, cdp, i):
         tap(cdp, p["x"], p["y"]); pg.wait_for_timeout(700)
     if not p or p.get("spot"): return None, "never drawn"
     tap(cdp, p["x"], p["y"], 0.05)
-    lag = pg.evaluate("() => Math.round(__tapAt - __visAt)")
+    # when the finger landed (the event's own time, stamped as it was sent) against the frame the button was first drawn in;
+    # and how much later the page got to it (a busy page takes it late - that is the page's load, not the button)
+    lag, late = pg.evaluate("() => [Math.round(__tapAt - __visAt), Math.round(__tapGot - __tapAt)]")
     pg.wait_for_timeout(900)
     left = pg.evaluate("() => !document.querySelector('#stage .rs-rewards')")
     # where it went has to have arrived before the next run is set up (Re-run's test mounts after its loading screen, and would
     # land on top of the next results)
-    if left: wait_js(pg, "() => !!document.querySelector('#stage .qpanel .choice, #stage [data-screen=\"home\"], #stage .rs-review')", 15, 100)
-    return left, {"tap after drawn ms": lag, "buttons": p["n"], "dropped": pg.evaluate("() => __iosDropped")}
+    if left: wait_js(pg, "() => !!document.querySelector('#stage .qpanel .choice, #stage [data-screen=\"home\"], #stage .rs-review')", 30, 100)
+    return left, {"tap after drawn ms": lag, "page took it ms later": late, "buttons": p["n"], "dropped": pg.evaluate("() => __iosDropped"),
+                  "test": bool(left) and not pg.evaluate("() => !!document.querySelector('#stage [data-screen=\"home\"], #stage .rs-review')")}
 
 def s4(br):
     print("\nS4. every button under the results takes a tap within 100ms of being drawn")
@@ -362,6 +373,10 @@ def s4(br):
                 break
             ck("%s: after a skip, button %d of %d takes a tap %sms after it is drawn" % (dev[0], i + 1, n, d.get("tap after drawn ms") if isinstance(d, dict) else "?"),
                left is True and isinstance(d, dict) and d["tap after drawn ms"] <= 100, d)
+            if isinstance(d, dict) and d.get("test"):
+                # it started a test: a fresh page for what follows (a run set up while a test is still loading is not a real one)
+                ck("%s: no page errors (to here)" % dev[0], not errs, errs[:3])
+                ctx.close(); ctx, pg, cdp, errs = open_ctx(br, dev)
         for attempt in range(5):
             go(pg, miss=2)
             left, d = press_when_drawn(pg, cdp, n - 1)
@@ -400,16 +415,21 @@ def s5(br):
         go(pg)
         wait_js(pg, "() => !!document.querySelector('#stage .rs-rewards .rs-actions button')", 10, 20)
         spot = pg.evaluate("() => { const bs = [...document.querySelectorAll('#stage .rs-rewards .rs-actions button')]; const b = bs[bs.length - 1]; const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
-        up_at = None; t0 = time.time(); stayed = True
-        while time.time() - t0 < 25:
-            tap(cdp, spot[0], spot[1], 0.04); pg.wait_for_timeout(250)
-            if not pg.evaluate("() => !!document.querySelector('#stage .rs-rewards')"): stayed = False; break
-            if up_at is None and pg.evaluate("() => { const p = document.querySelector('#stage .rs-rewards'); return !!(p && p.classList.contains('rs-done')); }"): up_at = time.time()
+        # a tight loop: nothing asked of the page between taps but every third, so the harness itself keeps them ~250ms apart
+        up_at = None; t0 = time.time(); stayed = True; k = 0; sent = []
+        while time.time() - t0 < 30:
+            at = t0 + 0.25 * k   # the finger's rhythm, stamped on each touch, however late the busy page lets it be sent
+            sent.append(at)
+            tap(cdp, spot[0], spot[1], 0.04, at=at); k += 1
+            time.sleep(max(0.0, t0 + 0.25 * k - time.time()))
+            if k % 3: continue
+            st = pg.evaluate("() => { const p = document.querySelector('#stage .rs-rewards'); return { on: !!p, done: !!(p && p.classList.contains('rs-done')) }; }")
+            if not st["on"]: stayed = False; break
+            if up_at is None and st["done"]: up_at = time.time()
             if up_at and time.time() - up_at > 1.6: break
-            # the last button may have been carried: follow it (its spot is what is being tapped at)
-            sp = pg.evaluate("() => { const bs = [...document.querySelectorAll('#stage .rs-rewards .rs-actions button')]; const b = bs[bs.length - 1]; if(!b) return null; const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
-            if sp: spot = sp
-        ck("%s: taps every 250ms at that spot, through the buttons' arrival and 1.6s past it: none pressed" % dev[0], stayed and up_at is not None, {"stayed": stayed, "done": up_at is not None})
+        gaps = [round(b - a, 2) for a, b in zip(sent, sent[1:])]
+        ck("%s: taps every 250ms at that spot, through the buttons' arrival and 1.6s past it: none pressed" % dev[0], stayed and up_at is not None,
+           {"stayed": stayed, "done": up_at is not None, "taps": len(sent), "widest gap s": max(gaps) if gaps else None})
         pg.wait_for_timeout(900)
         tap(cdp, spot[0], spot[1]); pg.wait_for_timeout(900)
         ck("%s: and the first tap there after a pause presses it" % dev[0], pg.evaluate("() => !document.querySelector('#stage .rs-rewards')"))
@@ -433,7 +453,9 @@ LAGI = r"""() => {
     }
     const ph = phase(); if(!ph) return;
     if(m.type === 'attributes' && m.attributeName === 'style' && c && (c.contains('unit-breakdown-fill') || c.contains('xpbar-fill'))) __bw[ph]++;
-    if(m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length)) __cl[ph]++;
+    /* the results' own nodes (the chat dock's counters and the like change on <body> of their own accord) */
+    const st = document.getElementById('stage');
+    if(m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length) && st && st.contains(m.target)) __cl[ph]++;
   })).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'], childList: true });
   /* (pass B only: reading a bar's place each frame forces a style pass and a layout, so it is never on in the traced pass)
      each frame of the count and the fill: a bar that moved since the last frame - was it moved by a running transform-only
@@ -512,9 +534,16 @@ def lag_run(br, label, setup):
 
 def s6(br):
     print("\nS6. the bars do not lag (4x CPU, %s %dx%d @%dx)" % MAX)
-    climb = ("const p = (() => { for(let q = 0; q < 200000; q += 25){ const a = levelStateOf(q, 0, 0, 0), b = levelStateOf(q + 420, 0, 0, 0); if(b.level === a.level + 1 && !levelBarOf(b).over && !levelBarOf(a).over) return q; } return 0; })();"
-             " store.lifetime.points = p; store.levelFloor = 0; store.rankFloor = 0; saveStore();")
-    for label, setup in (("a 100% run", ""), ("a 100% run that climbs a level", climb)):
+    # the account holds every badge but this unit's (so no badge wall stops the bar), and stands where the run's XP (any amount
+    # from 60 to 1,500) moves the bar inside one level - or carries it over exactly one
+    walls = ("unitsInTeachingOrder().forEach(u => { store.unitPerfects[u] = u === '%s' ? 0 : badgeThresholdFor(u); }); const B = badgeCountOf(store);" % UNIT)
+    inside = walls + (" const p = (() => { for(let q = 0; q < 600000; q += 50){ const a = levelStateOf(q, B, 0, 0), b = levelStateOf(q + 1500, B, 0, 0);"
+                      " if(a.level === b.level && a.level > 20 && levelBarOf(a).fraction < .15 && !levelBarOf(b).over) return q; } return 0; })();"
+                      " store.lifetime.points = p; store.levelFloor = 0; store.rankFloor = 0; saveStore();")
+    climb = walls + (" const p = (() => { for(let q = 0; q < 600000; q += 25){ const a = levelStateOf(q, B, 0, 0), b = levelStateOf(q + 60, B, 0, 0), c = levelStateOf(q + 1500, B, 0, 0);"
+                     " if(a.level > 20 && b.level === a.level + 1 && c.level === a.level + 1 && !levelBarOf(c).over) return q; } return 0; })();"
+                     " store.lifetime.points = p; store.levelFloor = 0; store.rankFloor = 0; saveStore();")
+    for label, setup in (("a 100% run", inside), ("a 100% run that climbs a level", climb)):
         res, st, errs = lag_run(br, label, setup)
         for ph in ("count", "fill"):
             r = res.get(ph)
@@ -523,7 +552,9 @@ def s6(br):
             ck("%s, while the %s: every bar moved by a running transform animation (share of bar-frames)" % (label, "grade counts" if ph == "count" else "XP bar fills"),
                r["animated"] is not None and r["animated"] >= .95, r["animated"])
             ck("%s, %s: style writes on the bars - a few, not one a frame" % (label, ph), r["barWrites"] <= 8, r["barWrites"])
-            ck("%s, %s: no layout or style pass forced by script" % (label, ph), r["forced"] <= 3, r["forced"])
+            # (traced with stacks, the few left are the page's own housekeeping - the pinned chrome's still-page check, the grade's
+            # hand-off as it lands, the back-to-top room at a level's wrap - never one a frame: main 384.94 forces one a frame)
+            ck("%s, %s: no layout or style pass forced by script, frame by frame (at most 3 a second)" % (label, ph), r["forced"] <= 3 * max(1, r["ms"] / 1000), r["forced"])
             ck("%s, %s: the counting numbers make no elements" % (label, ph), r["nodes"] <= 4, r["nodes"])
             ck("%s, %s: the warm-ups wait it out" % (label, ph), (r["warmupWait"] or 0) > 0, r["warmupWait"])
         bar = st["bar"]
@@ -533,7 +564,8 @@ def s6(br):
             for t, f, lvl, line in bar:
                 try:
                     have, span = [int(x.replace(",", "")) for x in line.replace("XP", "").split("/")]
-                    if span > 0 and have <= span: off.append(abs(have / span - f))
+                    # not at the bar's very ends: at a wrap the bar empties a frame before the next level's number is written
+                    if span > 0 and have <= span and .03 < f < .97: off.append(abs(have / span - f))
                 except Exception: pass
             worst = max(off) if off else None
             ck("%s: the XP number counts with its bar (worst gap, as a share of the bar)" % label, worst is not None and worst <= .1, round(worst, 3) if worst is not None else bar[:3])

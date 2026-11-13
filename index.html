@@ -98738,8 +98738,10 @@ function recordingShouldWait(){
      through a test (above) went on 1.6s after its results were mounted - right inside the grade's count and the XP bar's fill:
      traced at 4x CPU, warmBadgeStrikes' slices (45 of them, 20-280ms each, 2.8s of main thread) ran from 2.5s to 11.5s into a
      100%'s results, and on an iPhone (no requestIdleCallback) each is a 60ms timer that runs whether the page is busy or not.
-     They wait for the reveal to end - the buttons in - and then go on as before. */
+     They wait for the reveal to end - the buttons in - and 2s more, so a first press on a button is not queued behind one;
+     then they go on as before. */
   try{ if(resultsSeq && resultsSeq.isRunning()) return 600; }catch(e){}
+  try{ if(document.querySelector("#stage .rs-rewards") && Date.now() - resultsShownAt < 2000) return 2000 - (Date.now() - resultsShownAt); }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
 }
