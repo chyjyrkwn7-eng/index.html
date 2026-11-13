@@ -244,7 +244,8 @@ def run_switcher(pg, ptr, dev, tag, sw, props_seen):
         unfreeze(pg); wait_lit(pg, sw, j); wait_rest(pg, sw); pg.wait_for_timeout(200)
         s1 = geo(pg, sw)
         d = 1 if c1 > c0 else -1
-        cs = [cx(drawn(f)) for f in frames]
+        # the drawn middle in the control's own coordinates (the swell moves every segment's middle on the screen)
+        cs = [(cx(drawn(f)) - cx(f["seg"])) / (f["seg"][2] / rest_seg[2]) + cx(rest_seg) for f in frames]
         grow = max(drawn(f)[2] for f in frames) / rest_th[2]
         tall = max(drawn(f)[3] for f in frames) / rest_seg[3]
         over = max([0] + [(c - cx(s1["segs"][j]["box"])) * d for c in cs])
@@ -285,6 +286,7 @@ def run_switcher(pg, ptr, dev, tag, sw, props_seen):
         if held["lensOp"] >= .5 and held["lens"] and held["lens"][3] > s0["seg"][3]: break
     xf = x0 + (x1 - x0) * .6
     lit_held = lit_index(state(pg, sw))
+    held = pg.evaluate(SEEK.replace("(window.__fz||[]).forEach", "([]).forEach"), [sw[2], 0])
     ptr.up(); wait_lit(pg, sw, 1); wait_rest(pg, sw); pg.wait_for_timeout(250)
     s2 = geo(pg, sw)
     lens_ok = held and held["lensOp"] >= .5 and held["lens"] and held["lens"][3] > s0["seg"][3]

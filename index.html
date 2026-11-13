@@ -39794,7 +39794,7 @@ html.is-browser{ --fade-paper: transparent; }
     height:var(--sg-th) !important; min-height:0 !important; margin:0 !important;
     padding-left:var(--sg-px) !important; padding-right:var(--sg-px) !important;
     border:0 !important; border-radius:999px; background:transparent !important; background-image:none !important; box-shadow:none !important;
-    color:#fff !important; font-size:var(--sg-fs) !important; font-weight:500 !important; letter-spacing:-.01em; opacity:1;
+    color:#fff !important; font-size:var(--sg-fs) !important; font-weight:400 !important; letter-spacing:-.005em; opacity:1;
     white-space:nowrap; text-align:center; justify-content:center; overflow:visible; transform:none !important; transition:none;
     --tab-py:calc((var(--sg-th) - 1lh) / 2);
   }
@@ -39814,14 +39814,14 @@ html.is-browser{ --fade-paper: transparent; }
      glass - the track and the words through it a shade lighter, a dark edge with a bright line inside it, catch-lights along its top
      and bottom, the cool and warm fringes at its ends; standing proud of the track, the page shows through it) */
   .has-seg-thumb > .seg-sheen.seg-sheen{ position:absolute; left:0; top:0; right:0; bottom:0; z-index:0; border-radius:inherit; pointer-events:none;
-    opacity:0; background:rgba(255,255,255,.06); will-change:opacity; }
+    opacity:0; background:rgba(255,255,255,.075); will-change:opacity; }
   .has-seg-thumb > .tab-lens.seg-lens{ position:absolute; left:0; top:0; z-index:0; }
   .seg-lens .tab-lens-glass{
-    background-color:rgba(255,255,255,.075);
-    background-image:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 30%), linear-gradient(0deg, rgba(255,255,255,.07), rgba(255,255,255,0) 30%);
-    box-shadow:inset 0 0 0 1.25px rgba(0,0,0,.5), inset 0 0 0 2.25px rgba(255,255,255,.14),
-      inset 0 2px 1.5px -.5px rgba(255,255,255,.6), inset 0 -2px 1.5px -.5px rgba(255,255,255,.4),
-      inset 5px 0 6px -5px rgba(110,190,255,.4), inset -5px 0 6px -5px rgba(255,170,110,.36),
+    background-color:rgba(255,255,255,.09);
+    background-image:linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,0) 16%, rgba(255,255,255,.05) 40%, rgba(255,255,255,.08) 70%, rgba(0,0,0,0) 84%, rgba(0,0,0,.28));
+    box-shadow:inset 0 0 0 1.25px rgba(0,0,0,.6), inset 0 0 0 2.25px rgba(255,255,255,.16),
+      inset 0 2.5px 1.5px -.5px rgba(255,255,255,.7), inset 0 -2.5px 1.5px -.5px rgba(255,255,255,.5),
+      inset 6px 0 6px -5px rgba(110,190,255,.45), inset -6px 0 6px -5px rgba(255,170,110,.42),
       0 3px 10px rgba(0,0,0,.25);
   }
   /* a key's focus on a segment: a ring inside its pill */
@@ -156294,12 +156294,13 @@ function segThumb(seg, segSel, sl, o){
   /* the glass: the light over the track (its press), and the lens - built the first time a finger is on the control */
   function ensureGlass(){
     if(parts) return;
-    sheen = document.createElement("span");
-    sheen.className = "seg-sheen"; sheen.setAttribute("aria-hidden", "true");
-    seg.insertBefore(sheen, sl);
     parts = glassLensBuild();
     parts.lens.classList.add("seg-lens");
     sl.after(parts.lens);
+    /* the light a finger puts on the glass lies over the thumb and the lens as well (his recording: the track +11 levels, the thumb +16) */
+    sheen = document.createElement("span");
+    sheen.className = "seg-sheen"; sheen.setAttribute("aria-hidden", "true");
+    parts.lens.after(sheen);
     G = null;
     /* the thumb's own fade-in (.ready) is long over: from here its opacity is the cross-fade's, written each frame */
     sl.style.transition = "none";
@@ -156488,7 +156489,7 @@ function segThumb(seg, segSel, sl, o){
     ensureGlass();
     G = geo();
     /* a finger on the thumb holds it where it took hold (from where it went DOWN); a finger elsewhere brings the thumb to it */
-    follow = { g, off: S.c - local(press.onThumb ? press.x0 : press.cX), hold: press.onThumb, last: performance.now(), raf: 0 };
+    follow = { g, off: S.c - (press.onThumb ? press.l0 : local(press.cX)), hold: press.onThumb, last: performance.now(), raf: 0 };
     intent = { T: S.c, trip: true, held: true, holdUntil: 0, t0: performance.now(), slide: false };
     const s = S, v = V;
     const tick = () => {
@@ -156526,7 +156527,8 @@ function segThumb(seg, segSel, sl, o){
     const a = activeEl();
     ensureGlass();
     G = geo();
-    press = { id: e.pointerId, x0: e.clientX, cX: e.clientX, el: b, g, onThumb: b === a, drag: false, vc: 0, native: !!(e.target.classList && e.target.classList.contains("nova-hsw")) };
+    /* l0: where the finger went down, in the control's own pixels (read now, before the swell moves the screen under it) */
+    press = { id: e.pointerId, x0: e.clientX, l0: local(e.clientX), cX: e.clientX, el: b, g, onThumb: b === a, drag: false, vc: 0, native: !!(e.target.classList && e.target.classList.contains("nova-hsw")) };
     listen(true);
     /* the control swells under a finger (the thumb, if it is moving, keeps moving) */
     intent = Object.assign({}, intent, { held: true, holdUntil: 0 });
@@ -156643,8 +156645,13 @@ function attachSegSlider(seg, activeSel){
     const scaled = Math.abs(sx - 1) > .004 || Math.abs(sy - 1) > .004;
     if(!scaled){ sx = 1; sy = 1; place.again = 0; }
     else if((place.again = (place.again || 0) + 1) <= 12) setTimeout(() => schedule(false), 180);
-    const nx = (ar.left - sr.left) / sx - seg.clientLeft, ny = (ar.top - sr.top) / sy - seg.clientTop;
-    const nh = ar.height / sy, nw = ar.width / sx;
+    const nx = (ar.left - sr.left) / sx - seg.clientLeft;
+    let ny = (ar.top - sr.top) / sy - seg.clientTop, nh = ar.height / sy, nw = ar.width / sx;
+    /* (384.116) the same box read through the swell (the scale is the rounded offsetWidth's, a hair off) is the box it was: a thumb box
+       that is rewritten by a few hundredths of a pixel is a layout change while it moves */
+    if(w != null && Math.abs(nw - w) < .5) nw = w;
+    if(h != null && Math.abs(nh - h) < .5) nh = h;
+    if(y != null && Math.abs(ny - y) < .5) ny = y;
     /* (384.116) a box read while the control is swollen under a finger comes back a hair off: the same box, not a new one - nothing is
        rewritten (the thumb's layout properties never change while it moves) */
     const near = (a, b) => a != null && Math.abs(a - b) < .25;
