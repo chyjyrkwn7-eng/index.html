@@ -31091,6 +31091,9 @@
   .rs-testreview .rs-q.is-right .rs-q-num{ background:rgba(92,214,146,.16); border-color:rgba(92,214,146,.45); }
   .rs-testreview .rs-q.is-retaken .rs-q-num{ background:rgba(240,168,90,.16); border-color:rgba(240,168,90,.45); }
   .rs-q-tag.is-retaken{ color:#F0A85A; }
+  /* the question's number centred by its ink in its circle (check-centering measured the digits ~.55px high in Fire Code's type,
+     on every review that draws .rs-q-num) - the box is the figures' cap height, as the app's other centred labels are */
+  .rs-q-num{ text-box:trim-both cap alphabetic; }
   /* three segments with their counts on a small phone: the label and its count closer, the pill's own sides a little in */
   @media (max-width:27.99rem){
     .rs-testreview .rs-tr-filter > .rs-tab{ gap:.3rem; padding-left:.35rem; padding-right:.35rem; }

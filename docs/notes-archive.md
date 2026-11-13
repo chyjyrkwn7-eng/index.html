@@ -39692,3 +39692,16 @@ check-b384-reviewtest ALL PASS (53 checks, A-F); `--against origin/main` (384.94
 B, C, D's list, E and every F size fail; the checks that still pass there are the harness's own (the misses were played as meant, the
 Fire Code class is up, no page errors). Screenshots: scratchpad reviewtest/ (iPhone 17 Pro Max @3x and iPad Pro 11" @2x, installed,
 academy and Fire Code) and reviewtest/contact-sheet.png.
+
+FINAL GATES (main 384.97 then 384.99 merged in; every browser job through the shared slot script, page loads given 180s):
+- check-b384-reviewtest ALL PASS on the 384.97 merge and again on the 384.99 merge (52 checks); D with pdf.js served locally ALL PASS
+  (the retaken question's code draws its picture inside its card). `--against` main 384.97: FAILS 43 (passes only its harness
+  checks and A1's "no button while misses are left", which main also does).
+- check-results ALL PASS (128); check-vroom ALL PASS (220, section 7 included); check-tours: 24 runs, every declared step renders;
+  sweep-layout --quick 20/20 clean (the new `__sweepResults('testreview')` entry included); check-js clean.
+- check-behaviour 87 / 317o / 320a / 318f / review_reach PASS. 321a fails the same five landing-colour checks and the "last stretch"
+  check on main 384.99 as on this tree - not this build's. 78 failed once here (a tap at 440px landed two cards, [0, 2], load 19) and
+  passes on main at lower load; it is the reveal's tap-through, which this build does not touch (resultskip's area).
+- check-centering --quick ALL PASS (0 off centre) across the app; its new "results/review test" scenario found the question number
+  (.rs-q-num, shared by every review list) ~.55px high in Fire Code's type - centred by its ink now (text-box trim, as the app's
+  other centred labels).
