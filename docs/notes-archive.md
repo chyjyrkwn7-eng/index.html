@@ -39400,3 +39400,60 @@ Madison, shown the three looks behind `?classbtn=a|b|c` (claude/b384-classbtn 5f
   had the switch). Harness note: the picked build (5f85d51, from 384.88) opens its intro pop-up over Home for this fixture, at a
   moment that varies; the gate hides #intro-pop by rule on both pages, so only the button is compared. check-centering --quick ALL
   PASS (1270, 0 off centre); sweep-layout --quick 20/20 clean; check-js clean.
+
+### 384.101 (shine)
+
+Madison, on his installed iPhone: "When the badge comes up, the part where it shines comes up laggy, it's not a smooth
+transition. It's smooth, needs to be smoother, it like glistens but needs to do it smoother." Branch `claude/b384-shine`, cut
+from main 384.94 (a82cdea); NOT on main.
+
+**What was wrong** (traced in Chromium: 440x956 at 3x, CPU x4, the whole badge-earned scene, one new badge into a case of four):
+- THE SLOT'S GLINT (as the badge goes into its slot) was a rect inside the badge's SVG behind an SVG mask, moved by a CSS
+  transform (`.bc-slot.is-new .badge-shine-band`, `@keyframes bc-glint`). An SVG child's transform is not run by the compositor
+  (WebKit's or Chromium's), so the whole masked drawing was painted again every frame of the glint: 25 Paint events of the
+  badge's svg in its 1.3s, its 276x276 layer repainted 26 times. On a phone that is a drawing with five masks (the seat's shades
+  and the glint's own) at 3x, repainted per frame while the case knocks and the seat ring goes out.
+- THE COIN'S TURNING LIGHT (the shimmer as the badge spins up) was 96 even samples in time: up to 37 degrees apart in the first
+  turns, and the light on a face is ~40 degrees wide, so a pass was drawn from one or two samples - its passes peaked at .94,
+  .70, .65, .88, .97, ... and the band jumped across the face rather than sweeping it.
+- THE HAND-OVER: the spin left that light on the face at .74 when the coin came to rest; 100ms later the glint at rest, on the
+  same element, snapped it to 0 and started again from the left - a pop (63,000 of the face's 226,000 device pixels changed by
+  more than 16 levels in the 80ms across it).
+- THE CURVE: cubic-bezier(.3,0,.2,1) over the whole effect crossed the badge in its first half and spent the rest off it (at 65%
+  of its run it was already gone) - a swipe, not a glisten. And the slot's started .3s in, inside the seat's .55s bounce.
+- Looked at and dead, so nothing there to smooth: the Badges tab case's lid glint (`.ncase-glint`, in openBadgeCaseLid: the
+  tray has had no lid since round 10 and shutBadgeCase has no caller) and the Badges tab medal's sheen (`badges-medal-sheen`:
+  `.badges-medal::after{content:none}` since build 270). The badge in your hand (`.binspect-spec`) is turned by the finger.
+
+**What changed.**
+- ONE GLINT FOR EVERY BADGE: `buildBadgeGlint(unit)`, `badgeGlintBand()`, `playBadgeGlint(band, {delay, ms})`, `BADGE_GLINT`
+  (by badgeSilhouetteURL). A band (`.badge-glint-band`: one box wide, off the left edge, the band itself in a 108deg gradient -
+  a soft leading edge, a short tail behind, peak .66) inside a box with a STATIC CSS mask of the badge's silhouette
+  (`.badge-glint`: mask-size contain, set once, never animated). Two Web Animations - transform (translateX 0 -> 200%,
+  cubic-bezier(.37,0,.63,1): a gentle ease in and out) and opacity (0 -> 1 by 20%, 1 to 80%, -> 0, where it is off the badge
+  anyway) - 1.6s. The band and the box are promoted from the moment they are made (will-change), so no glint's first frame is a
+  new layer and the box stays a layer when the seat's bounce under it ends.
+- THE SLOT: each new badge's glint is in its slot from the start of the scene, over the empty hole, dark - its mask image loaded
+  and its layers made while the case comes up (made at the seat, the mask's load repainted it ~0.7s into its glint). The seat
+  swaps only the drawing under it and runs it after the seat's .55s bounce (`BADGE_GLINT.seatDelay`, 620ms).
+  `.bc-slot.is-new > .badge-glint` takes the drawing's own bc-seat and its --sdx/--sdy shift.
+- THE COIN: its glint at rest (`bcGlintCoin`, at BC_T.glint) is the same band, a second child of the front face's `.bc-spec`
+  (already the silhouette's mask), made with the coin. The spin's light (`bcSpinCoin`) is sampled no more than 4 degrees (or
+  1/120 of the time) apart - ~390 keyframes - so every pass sweeps the face at full light; and it leaves the face over the last
+  20% of the spin (a cosine to 0, after its last pass), so the glint comes in over a dark face. `.bc-spec i` and
+  `.binspect-spec i` keep their own layer (will-change). The glint's twinkles in `cs.badge` moved .3s later, with the light.
+- `buildUnitBadgeSVG` draws no glint any more: the `<mask>`, the gradient and the band are gone from every badge drawn anywhere
+  (each paid for a mask on every repaint). `.badge-shine{display:none}` stays as a guard: a builder that still draws one is
+  never painted.
+- `badgeSilhouetteURL`: a raised pin (`shape.obj`) has no keyline rim, so its silhouette is its outline alone, as its own
+  drawing's glint mask was.
+- The Badges tab's lid glint (dead, above) is the same glint too (`tile.dataset.unit` names the silhouette), so if the lid ever
+  comes back it is not a fourth look.
+
+**For claude/b384-objbadges when it merges this.** No code conflicts (git merge-tree: only APP_BUILD, version.json's build and
+the end of this file). Nothing is needed for its pins to glint: the slot's glint and the coin's light are HTML over the
+drawing, cut by `badgeSilhouetteURL`, which reads a pin's `shape.obj` and drops the rim. Clean-up it should take: delete the
+glisten block at the end of `buildObjPinSVG` (the `-sil` mask, the `-shn` gradient, the `badge-shine` group and its
+`badge-shine-band` rect, after `if(grey) return svg;`) - it is display:none here and never animated, but every pin still
+carries the mask. On that branch alone its pins also showed the coin's light past their edge: the mask had the 6.5-unit rim a
+pin does not have.
