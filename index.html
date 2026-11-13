@@ -160154,13 +160154,15 @@ function rankUpCovered(on){
    Madison, on the installed app (384.92-384.94): "my app would show a white screen, do the splash, and then go to main menu in the
    middle of a cutscene for the rank (the very beginning) and then I'd have to do it again." A white screen and a cold start is iOS
    ending the page's web process - its memory - and the cutscene's first frame was the heaviest moment of the whole journey: the
-   road map stayed laid out, styled and drawn under the dark (~5,300 elements, ~60 layers of it drawing, the "You are here"
+   road map stayed laid out, styled and drawn under the dark (5,324 elements, 53 layers of it drawing, the "You are here"
    character's 400x978 one among them), and in the same task two planet systems were built over it (~1,800 elements) with the
-   cutscene's depth layers - the layers drawing went from 67 to 142 and their area doubled in that one frame, and the task itself
-   ran ~1.3-2.4s here. So once the hand-off's veil is fully dark the map is put away (content-visibility:hidden, with its content
-   height kept so the page and the camera do not move; visibility:hidden for an engine without it), and it comes back at the
-   cutscene's ending, under the dark that is still full (opts.onOutro), with the camera where it was. Nothing of it can be seen in
-   that time, so nothing looks different; the planet is built against ~1,900 elements instead of ~7,200. */
+   cutscene's depth layers - measured at 440x956 on 384.94, the layers drawing went from 67 to 142 in that one task and their
+   area from 4.2 to 8.2 million CSS px (10.6 by the whirl), and the task itself ran 1.3-2.4s here (the page's first style and
+   layout with the planets in it covered the map's elements too). So once the hand-off's veil is fully dark the map is put away
+   (content-visibility:hidden, with its content height kept so the page and the camera do not move; visibility:hidden for an
+   engine without it), and it comes back at the cutscene's ending, under the dark that is still full (opts.onOutro), with the
+   camera where it was. Nothing of it can be seen in that time, so nothing looks different. With the depth layers' boxes cut to
+   their glow (.rank-nebula, .rank-rays) the same moments measure 21 -> 81 layers and 2.2 -> 5.0 million px (5.6 by the whirl). */
 var rankUpAsleep = null;
 function rankUpMapSleep(on){
   try{
