@@ -270,7 +270,8 @@ def run_switcher(pg, ptr, dev, tag, sw):
     # ---- G. keys ----
     tap_seg(pg, ptr, sw, 0); wait_rest(pg, sw[2]); pg.wait_for_timeout(250)
     pg.evaluate("""([sel, segSel])=>{ const s=%s; s.querySelector(':scope > '+segSel).focus(); }""" % SEG_ELEM, [sw[2], sw[3]])
-    pg.keyboard.press("Shift"); pg.keyboard.press("ArrowRight"); wait_rest(pg, sw[2]); pg.wait_for_timeout(200)
+    # (384.116) the slide starts in the next frame after the pick: wait for the pick, then for the slide to end
+    pg.keyboard.press("Shift"); pg.keyboard.press("ArrowRight"); wait_lit(pg, sw, 1); pg.wait_for_timeout(150); wait_rest(pg, sw[2]); pg.wait_for_timeout(200)
     s6 = state(pg, sw)
     ring = pg.evaluate("""()=>{ const e=document.activeElement; if(!e) return null; const c=getComputedStyle(e); return { st:c.outlineStyle, w:parseFloat(c.outlineWidth), m:e.matches(':focus-visible') }; }""")
     chk("%s: G Arrow right picks the next segment (lit %d), the thumb lands on it, and the focused segment shows a ring (%s)" % (tag, lit_index(s6), ring),

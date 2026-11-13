@@ -156669,8 +156669,12 @@ function segThumb(seg, segSel, sl, o){
     if(sized){ W0 = nw; H0 = nh; TY = ny; G = null; }
     sl.style.transformOrigin = "50% 50%";
     if(S == null || !animate || calm()){
-      /* a re-measure while a move is on its way to this very place is not a move: let it finish */
-      if(S != null && !calm() && (run || follow) && intent.T != null && Math.abs(intent.T - T) < 1.5 && !sized) return;
+      /* a re-measure while a move is on its way to this very place is not a move: let it finish - on the place as it is now (a chat
+         count read moves the control's middle by a pixel: the move is re-aimed, carrying its speed, never left landing short) */
+      if(S != null && !calm() && (run || follow) && intent.T != null && Math.abs(intent.T - T) < 1.5 && !sized){
+        if(run && !follow && Math.abs(intent.T - T) > .05){ intent = Object.assign({}, intent, { T }); plan(); }
+        return;
+      }
       if(follow){ return; }
       stop();
       intent = { T, trip: false, held: false, holdUntil: 0, t0: 0, slide: false };
