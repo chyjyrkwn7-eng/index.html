@@ -236,8 +236,8 @@ with sync_playwright() as pw:
         ROWS = """()=>{ const scr=document.querySelector('.screen-rankings'); if(!scr) return null; const vh=innerHeight;
           const vis=e=>{ if(!e) return false; for(let n=e; n && n.nodeType===1 && !n.classList.contains('rank-row'); n=n.parentElement){ const cs=getComputedStyle(n); if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity<.05) return false; } return true; };
           const rs=[...scr.querySelectorAll('.rank-rows > .rank-row[data-pub]')].filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>0 && b.top<vh-110; });
-          return rs.map(r=>{ const av=r.querySelector('.rank-avatar'); const play=av&&av.querySelector(':scope > .char-flip-play'); const img=play&&play.querySelector('img'); const svg=av&&av.querySelector(':scope > svg');
-            const ch = (img && img.complete && img.naturalWidth>0 && vis(play)) || (svg && vis(svg) && !svg.classList.contains('char-under-flip'));
+          return rs.map(r=>{ const av=r.querySelector('.rank-avatar'); const play=av&&av.querySelector(':scope > .char-flip-play'); const img=play&&play.querySelector('img, canvas'); const svg=av&&av.querySelector(':scope > svg');
+            const ch = (img && (img.tagName==='CANVAS' ? img.__f>=0 : (img.complete && img.naturalWidth>0)) && vis(play)) || (svg && vis(svg) && !svg.classList.contains('char-under-flip'));
             const fl=r.querySelector('.rank-col-flare'); const fi=fl&&fl.querySelector('.rk-frame img'); const fs=fl&&fl.querySelector('svg.cosmic-rank-emblem');
             const fo = !fl || (!fl.classList.contains('is-lazy') && ((fi && fi.complete && fi.naturalWidth>0 && vis(fi)) || (fs && vis(fs) && !fs.classList.contains('rk-under-anim'))));
             return [r.dataset.pub, ch?1:0, fo?1:0]; }); }"""
