@@ -39557,7 +39557,8 @@ check_b245_daily_announce (39, Home's recharge-then-banner TIMING, not this scre
 hour - load (it times a 6s animation to the 100ms). check-fixes `--only "iPhone 16 Pro Max"` (440x956, 4 combinations) and
 `--only "iPad Pro 11"` (4): all fixes verified, the done banner on Home included. NOT RUN TO THE END: check-centering --quick (the
 renderer crashed - "Target crashed" - in three attempts at 1.6GB free; the daily screen is not among its screens, and this build
-changes no other screen's boxes) and sweep-layout --quick (stopped twice when the coordinator paused all browser work) - to run on RESUME.
+changes no other screen's boxes); on the tree merged with 384.97 it waited 90 minutes in the shared slot queue and never got a
+slot (timed out unrun) - still to run. sweep-layout --quick on the tree merged with 384.97: 20/20 combinations clean.
 SCREENSHOTS (scratchpad dailyq/, not in the repo): before (main 384.97) and after (this, merged with 384.97) - asked, right and wrong;
 Police Academy and Fire Code; iPhone 17 Pro Max 440x956 and iPad Pro 11" 834x1194 (installed); and Sapphire on the Pro Max, right
 and wrong - 28 shots and one contact sheet (before beside after, per class and device). Every one looked at: the title reads at the
