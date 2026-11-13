@@ -68,6 +68,7 @@ def open_page(br, dev, cls, url, cpu=1):
     d = json.loads(g["SEED"].replace("__WEEK__", g["week_key_now"]())); d["publicId"] = OWNER; d["firstName"] = "Casey"; d["novaMet"] = 99
     pg.add_init_script(INIT % (json.dumps(json.dumps(d)), IFC if cls == "ifc" else ""))
     errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
+    pg.set_default_timeout(180000)   # (384.116) a loaded machine takes its time over a 10MB page
     pg.goto(url); pg.wait_for_timeout(3500)
     pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlocksOwed=()=>false; }catch(e){} store.novaMet=99;"
                 "try{ scheduleWeekRecap=()=>{}; maybeShowWeekRecap=()=>{}; }catch(e){}"

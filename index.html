@@ -39745,42 +39745,85 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-theme][data-layout] body #stage .screen-setup > .setup-sub{ margin-bottom:.75rem; }
   html[data-theme][data-layout] body #stage .screen-vroom-setup .setup-tools{ margin-bottom:1rem !important; }
-  /* ---- THE TOP SWITCHERS, AS DELTA'S iOS 26 CONTROL DRAWS ONE (384 r18) - see segThumb ----
-     "It should be designed like the Delta one, look like it. Function like it." Read off his screenshot of Delta's Light / Dark
-     control (1186x2576, the page behind it #1C1B1C): the TRACK is a lighter grey capsule, #3A3A3C, a faint light rim (+8 levels,
-     a point wide) and a hairline round its outside; the THUMB is a darker capsule, #202123, inset 4pt in the picked segment with a
-     soft inner edge; the labels are white at one weight (the thumb says which is picked), the segments equal, the track 46pt tall.
-     The round-8 control had it the other way about (a dark track, a lighter thumb) and lifted the bottom bar's glass lens on a touch.
+  /* ---- THE TOP SWITCHERS: DELTA'S iOS 26 SEGMENTED CONTROL, LIQUID GLASS (384.116, segglass) - see segThumb ----
+     Madison, with a screen recording of Delta's Light | Dark control: "Ours is stretched, no liquid glass, ours is indented... make it
+     exactly like what I sent." Read off his recording (3px a point): the control is COMPACT - its segments equal, each the widest
+     label plus 16pt a side and never under 82pt (Delta's: 82pt for 33pt of words), 8pt apart, 4pt in from the track, so the track is
+     48pt tall and as wide as its labels need, centred - never stretched across the page; a page too narrow for it takes it to its
+     width and the words keep their place in the middle of each segment (nothing is cut: a word wider than its segment's inside runs
+     into its padding). The TRACK is liquid glass and RAISED: a lighter translucent capsule over a blur of what is behind it (the
+     page's own colour +30 levels, as his), a bright rim along its top and bottom edges, its ends a shade darker, a hairline and a soft
+     shadow under it. The THUMB is a DARKER capsule (#1E1F21), flat - no inner shadow, which is what read as "indented". Both labels
+     white. Sizes are points on the glass: x --zc, so a page-zoomed phone (his, ~85%) draws them at Delta's size.
+     iOS: the blur is on the track (will-change:backdrop-filter, the rule the update banner learned), the thumb is a solid child on its
+     own layer (will-change, backface-visibility). The rim and bevel are gradients and box-shadows, never a filter.
      Last in the sheet and on (1,8,1): it has to outrank the clean look's switch rules (1,7,2) and the Leaderboard's (0,6,2). */
   .has-seg-thumb{ touch-action:pan-y; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
-  /* the chat sheet's switcher is the same control: a track round its three tabs, the close button beside it */
-  .chatdock-seg{ display:flex; flex:1 1 auto; min-width:0; max-width:24rem; box-sizing:border-box; padding:3px; gap:0; border:1px solid transparent; }
-  .chatdock-seg > .chatdock-tab{ flex:1 1 0; min-width:0; justify-content:center; }
-  /* the track: a lighter grey pill, its rim and its hairline (still shadows, drawn once - nothing here moves) */
-  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.navsegment, .rs-tabs, .chatdock-seg){
-    border-radius:999px !important; border-color:rgba(255,255,255,.07) !important;
-    background-color:#3A3A3C !important; background-image:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,0) 55%) !important;
-    box-shadow:0 0 0 .5px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.22), inset 0 .75px 0 rgba(255,255,255,.07) !important;
-    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  /* the chat sheet's switcher is the same control, beside the close button in its row */
+  .chatdock-seg{ flex:0 1 auto; min-width:0; }
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.navsegment, .rs-tabs, .chatdock-seg):not([hidden]){
+    --sg-z:var(--zc, 1);
+    --sg-in:calc(4px * var(--sg-z)); --sg-th:calc(40px * var(--sg-z)); --sg-gap:calc(8px * var(--sg-z));
+    --sg-px:calc(16px * var(--sg-z)); --sg-min:calc(82px * var(--sg-z)); --sg-fs:calc(15px * var(--sg-z));
+    display:grid !important; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); grid-template-columns:none; grid-template-rows:var(--sg-th);
+    align-items:center; justify-items:stretch; column-gap:var(--sg-gap) !important; row-gap:0 !important; flex-wrap:nowrap !important;
+    box-sizing:border-box; width:max-content !important; max-width:100% !important; height:auto !important;
+    min-width:min(100%, calc(var(--sg-n, 3) * var(--sg-min) + (var(--sg-n, 3) - 1) * var(--sg-gap) + 2 * var(--sg-in))) !important;
+    margin-left:auto !important; margin-right:auto !important; padding:var(--sg-in) !important; overflow:visible !important;
+    border:0 !important; border-radius:999px !important;
+    background-color:rgba(255,255,255,.12) !important;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02) 22%, rgba(255,255,255,0) 42%, rgba(255,255,255,0) 60%, rgba(255,255,255,.02) 80%, rgba(255,255,255,.06)) !important;
+    -webkit-backdrop-filter:blur(10px) !important; backdrop-filter:blur(10px) !important; will-change:backdrop-filter !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(255,255,255,.16),
+      inset 1px 0 0 rgba(0,0,0,.26), inset -1px 0 0 rgba(0,0,0,.26),
+      0 0 0 .5px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.22), 0 6px 16px rgba(0,0,0,.2) !important;
+    transform-origin:50% 50%;
   }
-  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab){ border-radius:999px; }
-  /* the thumb: a darker pill, flat, its inner edge soft; moved by transform alone (segThumb), about its own middle */
+  /* (the chat sheet's row has the close button beside it: the control gives way to it, its words keeping their middles; on a phone
+     under 360px wide - an SE 1st gen - "Friends" and its count need the room, so its segments sit closer and its words a size down) */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]){ min-width:0 !important; }
+  @media (max-width:359px){
+    html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]){
+      --sg-gap:calc(4px * var(--sg-z)); --sg-px:calc(6px * var(--sg-z)); --sg-fs:calc(14px * var(--sg-z));
+    }
+  }
+  /* the segments: the words in the middle, white, 15pt; 40pt tall, 44pt+ to a finger (::before reaches the track's edge and halfway
+     into the gap either side) */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.navsegment, .rs-tabs, .chatdock-seg) > :is(.iconbtn, .rs-tab, .chatdock-tab){
+    position:relative; box-sizing:border-box; flex:none !important; min-width:0 !important; width:auto !important; max-width:none !important;
+    height:var(--sg-th) !important; min-height:0 !important; margin:0 !important;
+    padding-left:var(--sg-px) !important; padding-right:var(--sg-px) !important;
+    border:0 !important; border-radius:999px; background:transparent !important; background-image:none !important; box-shadow:none !important;
+    color:#fff !important; font-size:var(--sg-fs) !important; font-weight:500 !important; letter-spacing:-.01em; opacity:1;
+    white-space:nowrap; text-align:center; justify-content:center; overflow:visible; transform:none !important; transition:none;
+    --tab-py:calc((var(--sg-th) - 1lh) / 2);
+  }
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.rs-tabs, .chatdock-seg) > :is(.rs-tab, .chatdock-tab){
+    display:flex !important; align-items:center; padding-top:0 !important; padding-bottom:0 !important;
+  }
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.navsegment, .rs-tabs, .chatdock-seg) > :is(.iconbtn, .rs-tab, .chatdock-tab)::before{
+    content:""; position:absolute; left:calc(var(--sg-gap) / -2); right:calc(var(--sg-gap) / -2); top:calc(-1 * var(--sg-in)); bottom:calc(-1 * var(--sg-in));
+  }
+  /* the thumb: a darker capsule, flat, moved by transform alone (segThumb), about its own middle */
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb > .seg-slider.seg-slider{
-    background-color:#202123 !important; background-image:none !important; border:0 !important; border-radius:999px !important;
-    box-shadow:inset 0 1px 3px rgba(0,0,0,.5), inset 0 0 0 .5px rgba(0,0,0,.25), 0 .5px 0 rgba(255,255,255,.05) !important;
-    transform-origin:50% 50% !important; will-change:transform;
+    background-color:#1E1F21 !important; background-image:none !important; border:0 !important; border-radius:999px !important;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.22), 0 1px 1.5px rgba(0,0,0,.2) !important;
+    transform-origin:50% 50% !important; will-change:transform, opacity; -webkit-backface-visibility:hidden; backface-visibility:hidden;
   }
-  /* the labels: white, one weight, the picked one a step brighter (the cross-fade is opacity) */
-  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab){ color:#fff !important; font-weight:500 !important; opacity:.86; transition:opacity .2s ease; transform:none !important; }   /* (no .96 dip under a finger: the thumb is the press) */
-  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab):is(.active, .is-on){
-    background:transparent !important; background-image:none !important; box-shadow:none !important; border-color:transparent !important; opacity:1;
+  /* the glass lit by a finger (its opacity follows the swell) and the lens (the bottom bar's true capsule, its own coat here: clear
+     glass - the track and the words through it a shade lighter, a dark edge with a bright line inside it, catch-lights along its top
+     and bottom, the cool and warm fringes at its ends; standing proud of the track, the page shows through it) */
+  .has-seg-thumb > .seg-sheen.seg-sheen{ position:absolute; left:0; top:0; right:0; bottom:0; z-index:0; border-radius:inherit; pointer-events:none;
+    opacity:0; background:rgba(255,255,255,.06); will-change:opacity; }
+  .has-seg-thumb > .tab-lens.seg-lens{ position:absolute; left:0; top:0; z-index:0; }
+  .seg-lens .tab-lens-glass{
+    background-color:rgba(255,255,255,.075);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 30%), linear-gradient(0deg, rgba(255,255,255,.07), rgba(255,255,255,0) 30%);
+    box-shadow:inset 0 0 0 1.25px rgba(0,0,0,.5), inset 0 0 0 2.25px rgba(255,255,255,.14),
+      inset 0 2px 1.5px -.5px rgba(255,255,255,.6), inset 0 -2px 1.5px -.5px rgba(255,255,255,.4),
+      inset 5px 0 6px -5px rgba(110,190,255,.4), inset -5px 0 6px -5px rgba(255,170,110,.36),
+      0 3px 10px rgba(0,0,0,.25);
   }
-  @media (hover:hover){ html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab):not(.active):not(.is-on):hover{ opacity:1; } }
-  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab):not(.active):not(.is-on):active{ opacity:.6; transition-duration:.08s; }
-  [data-reduce-motion="true"] html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab){ transition:none; }
-  /* the chat sheet's tabs are 36px pills: their touch reaches 4px past each (44px; 5px from the padding box, inside its 1px
-     border), the pill and the row stay as they were */
-  .chatdock-seg.has-seg-thumb > .chatdock-tab::before{ content:""; position:absolute; left:0; right:0; top:-5px; bottom:-5px; }
   /* a key's focus on a segment: a ring inside its pill */
   .has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab):focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-2px; }
 
@@ -156195,38 +156238,50 @@ function glassLensSpring(s0, v0, tg, P, until, maxMs, M, DT){
   frames.push({ cx: T.cx, W: T.W, H: T.H, st: 0 });
   return frames;
 }
-/* ---- THE TOP SWITCHERS, AS iOS 26 DRAWS ONE (384 r18) ----
-   Madison, with Delta's Light / Dark control beside ours: "It should be designed like the Delta one, look like it. Function like it.
-   Make it smooth." The control it replaces drew a dark track with a lighter thumb and, on a touch, lifted the bottom bar's glass lens
-   (1.26x the track's height, the whole control swelling 9%): busy, and not what iOS does. What Delta draws (read off his screenshot,
-   pixel by pixel): a LIGHTER translucent grey capsule (#3A3A3C) with a faint light rim and a hairline round its outside, a DARKER
-   capsule thumb inset in the picked segment (#202123, a soft inner edge), white labels at one weight, equal segments.
-   Every pill switcher attachSegSlider places a thumb in (Profile / Stats / Settings, the Leaderboard's boards, the units screen's
-   levels, the chat sheet's Friends / Groups / Inbox, the Virtual Room review's Missed / Entire test) has it, and moves like this:
-   - A TAP on a segment slides the thumb there on a critically damped spring (w = 21: 90% in ~0.19s, 98% in ~0.28s, and it
-     cannot overshoot - a critically damped spring never crosses its target). The thumb is the segment's size throughout.
-   - PRESS the thumb and it lifts a few percent (scale, up to 5%, never past the track's own edge); let go and it settles back.
-   - DRAG it and it follows the finger 1:1, clamped to the first and last segment; let go and it springs to the nearest segment
-     (its release speed carried in, never enough to overshoot), and that segment is picked then - the page switches on release,
-     as a tap would switch it. Press elsewhere on the track and drag, and the thumb runs to the finger and follows it.
-   - A change made any other way (a key, a swipe across the content) slides the thumb the same way; a tap on the picked segment
-     does nothing; a change that arrives while a spring is running carries the thumb's speed into the next one.
-   - The labels cross-fade by opacity (.86 -> 1) as the thumb arrives.
-   Transform and opacity only: the thumb is a box sized once to its segment, moved by translateX (and the press scale) as a Web
-   Animations track precomputed from the spring, so it runs on the compositor through a busy main thread; a requestAnimationFrame
-   runs only while a finger drags. No filter, no backdrop-filter, no blur radius or size changing per frame - the thumb's shadow is
-   a still one that travels with it. Reduce motion: the thumb is placed, not moved, and never lifts. */
+/* ---- THE TOP SWITCHERS: DELTA'S iOS 26 SEGMENTED CONTROL, LIQUID GLASS AND ALL (384.116, segglass) ----
+   Madison, with a screen recording of Delta's "Change App Icon" screen (its Light | Dark control at the top): "The top tab we have. It
+   does not look like the one I've mentioned I want... Ours is stretched, no liquid glass, ours is indented... it has none of it. We need
+   to change that/overhaul ours and make it exactly like what I sent." Read off his recording frame by frame (1320x2868 = 440x956pt at 3x,
+   60fps, every frame decoded from the HEVC; the numbers are in the notes archive, 384.116):
+   - AT REST the control is compact - sized to its labels and centred (180 x 48pt for "Light" and "Dark", 33 and 30pt of words): a
+     lighter glass capsule with a bright rim along its top and bottom edges and a dark one round its ends (raised, not set in), and a
+     DARKER capsule thumb, 82 x 40pt, inset 4pt all round, the two segments' thumbs 8pt apart. Both labels white.
+   - A PRESS swells the whole control, 1.094 x 1.083 at the top of a springy rise (~170ms), held at 1.088 x 1.07, and lights its glass
+     (+11 levels); let go and it springs back with a ~1% undershoot (~110ms down, ~200ms to settle). Labels scale with it (+10%).
+   - A MOVE (a tap on the other segment, a drag) turns the thumb into a clear glass LENS: the dark thumb stretches towards where it is
+     going and fades as the lens grows out of it (up in ~80ms), the lens glides across (w 20, zeta .8: ~1.5% over, ~170ms for a segment),
+     taller than the track (held: 1.22x the track's height, 1.30x the thumb's width, inside the track's ends) and a little shorter at
+     speed; it lands, shrinks back into the dark thumb (~80ms) and the control springs back. Tap to rest ~620ms.
+   - DRAG: the lens follows the finger 1:1 (clamped to the first and last segment), held up the whole time; let go and it springs to the
+     nearest segment carrying its speed, and that segment is picked then, as a tap would pick it.
+   Programmatic changes (a swipe across the content, a key) slide the dark thumb on a critically damped spring with no lens and no swell.
+   Transform and opacity only, on the compositor: every move is a spring simulated here up front (120 frames a second) and handed to Web
+   Animations - the control's swell (transform), its glass light (opacity), the thumb (transform, opacity) and the lens (the bottom bar's
+   own true-capsule glass, glassLensBuild / glassLensTf: transforms, and the lens's opacity) - so it plays through a busy main thread (the
+   tab's screen is built under it); a requestAnimationFrame runs only while a finger drags. No filter; the track's blur is a still
+   backdrop-filter. Reduce motion: the thumb is placed, nothing swells, no lens. */
 function segThumb(seg, segSel, sl, o){
   o = o || {};
-  const DT = 1000 / 120, WC = 21, WK = 28;
+  const DT = 1000 / 120, SUB = 4;
+  /* his recording's numbers (above) */
+  const SW_X = .088, SW_Y = .07;                 /* the swell, held (its spring's overshoot reaches 1.094 x 1.083 on the way) */
+  const P_SW = [400, .62], P_GLIDE = [400, .8], P_SLIDE = [441, 1], P_SIZE = [900, .75], P_LAND = [1100, .8];   /* [k = w^2, zeta] */
+  const LENS_W = 1.30, LENS_H = 1.22;            /* the held lens: x the thumb's width, x the track's height (both unswollen) */
+  const SQUASH = .00004, SQUASH_MAX = .09;       /* a little shorter at speed (1.19x the track at a tap's pace against 1.31x held) */
+  const LO_UP = 60, LO_DOWN = 100, MIN_UP = 150, HOLD = 110;
   const calm = () => document.documentElement.dataset.reduceMotion === "true"
     || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
   const canAnim = typeof sl.animate === "function";
-  /* the thumb as a box: left edge, width of its element (set once per segment), its position and lift now */
-  let W0 = 0, c = null, W = 0, k = 0, run = null, press = null, follow = null, LX = 0, LY = 0, swallowUntil = 0;
+  let W0 = 0, H0 = 0, TY = 0;                    /* the thumb's box (its segment's), and its top */
+  let S = null, V = { sw: 0, c: 0, lw: 0, lh: 0, lo: 0 };
+  let run = null, press = null, follow = null, lastTap = null, swallowUntil = 0, G = null, parts = null, sheen = null;
+  /* where we are going: T the centre, trip (the lens is up until it lands), held (a finger is down), holdUntil (a released tap keeps
+     its swell this long: its click may still be on its way), t0 (when the trip began) */
+  let intent = { T: null, trip: false, held: false, holdUntil: 0, t0: 0, slide: false };
   const segsOf = () => [...seg.querySelectorAll(":scope > " + segSel)].filter(b => !b.hidden && b.offsetWidth > 0);
   const activeEl = () => { const a = sl._active && sl._active(); return a && a.parentElement === seg ? a : null; };
-  /* where each segment is, in the control's own (unscaled) pixels, from its left edge inside its border */
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  /* where each segment is, in the control's own (unscaled) pixels from its padding box's left edge */
   function measure(){
     const els = segsOf();
     if(els.length < 2) return null;
@@ -156235,105 +156290,225 @@ function segThumb(seg, segSel, sl, o){
       return { el, c: (b.left - sr.left) / kx - seg.clientLeft + b.width / kx / 2, w: b.width / kx }; });
     return { segs, lo: segs[0].c, hi: segs[segs.length - 1].c };
   }
-  const widthAt = (g, x) => {
-    const s = g.segs;
-    if(x <= s[0].c) return s[0].w;
-    for(let i = 0; i < s.length - 1; i++) if(x <= s[i + 1].c){ const f = (x - s[i].c) / Math.max(1, s[i + 1].c - s[i].c); return s[i].w + (s[i + 1].w - s[i].w) * f; }
-    return s[s.length - 1].w;
-  };
   const nearest = (g, x) => g.segs.reduce((b, t) => Math.abs(x - t.c) < Math.abs(x - b.c) ? t : b, g.segs[0]);
-  const tf = (cc, ww, kk) => {
-    const sx = (W0 ? ww / W0 : 1) * (1 + kk * LX), sy = 1 + kk * LY;
-    return "translateX(" + (cc - W0 / 2).toFixed(3) + "px)" + (Math.abs(sx - 1) > 1e-4 || Math.abs(sy - 1) > 1e-4 ? " scale(" + sx.toFixed(4) + ", " + sy.toFixed(4) + ")" : "");
-  };
-  /* closed forms of a critically damped spring: s(t) = T + (a + (v + w a) t) e^(-w t) */
-  const at = (q, t) => { const e = Math.exp(-q.w * t), m = q.v + q.w * q.a; return { s: q.T + (q.a + m * t) * e, v: e * (q.v - q.w * m * t) }; };
+  /* the glass: the light over the track (its press), and the lens - built the first time a finger is on the control */
+  function ensureGlass(){
+    if(parts) return;
+    sheen = document.createElement("span");
+    sheen.className = "seg-sheen"; sheen.setAttribute("aria-hidden", "true");
+    seg.insertBefore(sheen, sl);
+    parts = glassLensBuild();
+    parts.lens.classList.add("seg-lens");
+    sl.after(parts.lens);
+    G = null;
+    /* the thumb's own fade-in (.ready) is long over: from here its opacity is the cross-fade's, written each frame */
+    sl.style.transition = "none";
+  }
+  /* the geometry of this touch: the track, the lens's size and the box its five layers are drawn in */
+  function geo(){
+    const trackW = seg.clientWidth, trackH = seg.clientHeight;
+    if(!trackW || !trackH || !W0) return null;
+    const LW = Math.min(W0 * LENS_W, trackW), LH = trackH * LENS_H;
+    const H0g = Math.ceil(LH * 1.08), kMin = H0 * .9 / H0g, maxW = LW * 1.12 + 6;
+    const g = { cy: TY + H0 / 2, H0: H0g, W0: Math.ceil(maxW / (2 * kMin) + H0g / 2 + 12), B: 100,
+                CW: Math.ceil(maxW / 2 + 44), CH: Math.ceil(H0g * 1.3 + 64), trackW, trackH, LW, LH, kx: 1 };
+    /* the swell is held sideways to what keeps the control 4px inside the screen */
+    try{
+      const r = seg.getBoundingClientRect(), k = r.width / (seg.offsetWidth || r.width || 1), w = r.width / k;
+      const cxS = r.left + r.width / 2, room = Math.min(cxS - w / 2 - 4, innerWidth - 4 - (cxS + w / 2));
+      g.kx = clamp(room > 0 ? 2 * room / w / SW_X : 0, 0, 1);
+    }catch(e){}
+    if(parts) glassLensSize(parts, g);
+    return g;
+  }
+  /* what a state looks like: the control's transform, the light's opacity, the thumb's transform and opacity, the lens's five
+     transforms and its opacity */
+  function look(f){
+    const g = G, sw = f.sw, sx = 1 + SW_X * sw * (g ? g.kx : 1), sy = 1 + SW_Y * sw;
+    const lw = f.lw || W0, lh = f.lh || H0;
+    const ksx = W0 ? lw / W0 : 1, ksy = H0 ? lh / H0 : 1;
+    const out = {
+      seg: Math.abs(sx - 1) < 1e-4 && Math.abs(sy - 1) < 1e-4 ? "none" : "scale(" + sx.toFixed(4) + ", " + sy.toFixed(4) + ")",
+      sheen: clamp(sw, 0, 1),
+      th: "translateX(" + (f.c - W0 / 2).toFixed(3) + "px)" + (Math.abs(ksx - 1) > 1e-3 || Math.abs(ksy - 1) > 1e-3 ? " scale(" + ksx.toFixed(4) + ", " + ksy.toFixed(4) + ")" : ""),
+      thOp: clamp(1 - f.lo, 0, 1), lensOp: clamp(f.lo, 0, 1), lens: null
+    };
+    if(parts && g && f.lo > 0){
+      /* the lens stays inside the track's ends (it grows inwards at an end segment, as the reference's does) */
+      const cx = clamp(f.c, lw / 2, g.trackW - lw / 2);
+      out.lens = glassLensTf(g, { cx, W: lw, H: lh });
+    }
+    return out;
+  }
+  function write(f){
+    const L = look(f);
+    seg.style.transform = L.seg === "none" ? "" : L.seg;
+    sl.style.transform = L.th;
+    sl.style.opacity = L.thOp >= .999 ? "" : L.thOp.toFixed(3);
+    if(sheen) sheen.style.opacity = L.sheen.toFixed(3);
+    if(parts){
+      parts.lens.style.opacity = L.lensOp.toFixed(3);
+      if(L.lens) parts.els.forEach((el, j) => { el.style.transform = L.lens[j]; });
+    }
+  }
+  /* the state now, mid-track included, and how fast it is changing */
+  const KEYS = ["sw", "c", "lw", "lh", "lo"];
   function now(){
-    if(!run) return { c, W, k, vc: 0, vW: 0, vk: 0 };
-    const an = run.anim, ms = an && typeof an.currentTime === "number" ? an.currentTime : performance.now() - run.t0;
-    const t = Math.max(0, ms) / 1000, a = at(run.c, t), b = at(run.W, t), d = at(run.k, t);
-    return { c: a.s, W: b.s, k: d.s, vc: a.v, vW: b.v, vk: d.v };
+    if(!run) return { s: S && Object.assign({}, S), v: Object.assign({}, V) };
+    const a = run.anims[0], f = run.frames, n = f.length;
+    const t = a && typeof a.currentTime === "number" ? a.currentTime : performance.now() - run.t0;
+    const i = Math.max(0, t / DT);
+    if(i >= n - 1) return { s: Object.assign({}, f[n - 1]), v: { sw: 0, c: 0, lw: 0, lh: 0, lo: 0 } };
+    const i0 = Math.floor(i), u = i - i0, A = f[i0], B = f[i0 + 1], s = {}, v = {};
+    KEYS.forEach(k => { s[k] = A[k] + (B[k] - A[k]) * u; v[k] = (B[k] - A[k]) / (DT / 1000); });
+    return { s, v };
   }
   function stop(){
     if(!run) return;
     const n = now();
-    try{ run.anim.cancel(); }catch(e){}
-    run = null; c = n.c; W = n.W; k = n.k;
-    sl.style.transform = tf(c, W, k);
+    run.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+    /* a trip whose lens had already begun to land is over (that trip's: a new one the caller has just set is not) */
+    if(run.trip && run.landAt != null && performance.now() >= run.landAt && intent.t0 === run.tripT0) intent.trip = false;
+    run = null; S = n.s; V = n.v;
+    write(S);
   }
-  function write(){ sl.style.transform = tf(c, W, k); }
-  /* spring (c, W, k) from where they are, carrying their speed, to the target (T.c, T.W, T.k) */
-  function go(T, v){
-    const n = now();
+  /* one step of a spring channel */
+  const step = (s, v, k, T, P, h) => { const w = Math.sqrt(P[0]); v[k] += (-P[0] * (s[k] - T) - 2 * P[1] * w * v[k]) * h; s[k] += v[k] * h; };
+  /* SIMULATED AHEAD: from the state now, towards the intent, one frame per DT, until everything is at rest */
+  function plan(vIn){
+    const n0 = now();
     stop();
-    v = v || {};
-    if(!canAnim || calm()){ c = T.c; W = T.W; k = calm() ? 0 : T.k; write(); return; }
-    const q = {
-      c: { T: T.c, a: n.c - T.c, v: v.c != null ? v.c : n.vc, w: WC },
-      W: { T: T.W, a: n.W - T.W, v: v.W != null ? v.W : n.vW, w: WC },
-      k: { T: T.k, a: n.k - T.k, v: v.k != null ? v.k : n.vk, w: WK }
-    };
-    /* no overshoot: a critically damped spring crosses its target only if it is thrown at it faster than w x its distance */
-    ["c", "W", "k"].forEach(key => { const p = q[key], lim = p.w * Math.abs(p.a); if(p.a < 0 && p.v > -p.w * p.a) p.v = lim; else if(p.a > 0 && p.v < -lim) p.v = -lim; });
-    const fr = [];
-    let end = 0;
-    for(let i = 0; i < 160; i++){
-      const t = i * DT / 1000, a = at(q.c, t), b = at(q.W, t), d = at(q.k, t);
-      fr.push({ c: a.s, W: b.s, k: d.s });
-      end = i;
-      if(i > 3 && Math.abs(a.s - T.c) < .04 && Math.abs(b.s - T.W) < .04 && Math.abs(d.s - T.k) < .002 && Math.abs(a.v) < 2 && Math.abs(b.v) < 2) break;
+    if(!S || intent.T == null) return;
+    const s = Object.assign({}, n0.s || S), v = Object.assign({ sw: 0, c: 0, lw: 0, lh: 0, lo: 0 }, n0.v, vIn || {});
+    if(!canAnim || calm()){ S = { sw: 0, c: intent.T, lw: W0, lh: H0, lo: 0 }; V = { sw: 0, c: 0, lw: 0, lh: 0, lo: 0 }; write(S); return; }
+    G = G || geo();
+    const t0 = performance.now(), h = DT / 1000 / SUB, frames = [Object.assign({}, s)], run_t0 = intent.t0;
+    let landAt = intent.trip ? null : 0;
+    const P_C = intent.slide && !intent.trip ? P_SLIDE : P_GLIDE;
+    const D0 = Math.max(1, Math.abs(s.c - intent.T));
+    for(let n = 1; n * DT <= 1800; n++){
+      for(let j = 0; j < SUB; j++){
+        const t = ((n - 1) * SUB + j + 1) * h * 1000, abs = t0 + t;
+        const up = intent.trip && landAt == null;
+        if(up && !intent.held && abs - intent.t0 >= MIN_UP && Math.abs(s.c - intent.T) < Math.max(2, .06 * D0)) landAt = t;
+        const lensUp = intent.trip && landAt == null;
+        const tSw = (intent.held || abs < intent.holdUntil || lensUp) ? 1 : 0;
+        step(s, v, "sw", tSw, P_SW, h);
+        step(s, v, "c", intent.T, P_C, h);
+        const sq = 1 - Math.min(SQUASH_MAX, Math.abs(v.c) * SQUASH);
+        step(s, v, "lw", lensUp ? G.LW : W0, lensUp ? P_SIZE : P_LAND, h);
+        step(s, v, "lh", lensUp ? G.LH * sq : H0, lensUp ? P_SIZE : P_LAND, h);
+        s.lo = lensUp ? Math.min(1, s.lo + h * 1000 / LO_UP) : Math.max(0, s.lo - h * 1000 / LO_DOWN);
+        /* the lens never gets smaller than the thumb it came out of */
+        if(s.lw < W0 && lensUp) s.lw = Math.max(s.lw, W0 * .98);
+      }
+      frames.push(Object.assign({}, s));
+      const t = n * DT, done = !intent.trip || landAt != null;
+      const tSwEnd = (intent.held || t0 + t < intent.holdUntil) ? 1 : 0;
+      if(done && t0 + t >= intent.holdUntil && Math.abs(s.c - intent.T) < .04 && Math.abs(v.c) < 2 && Math.abs(s.sw - tSwEnd) < .002 && Math.abs(v.sw) < .02
+         && s.lo <= 0 && Math.abs(s.lw - W0) < .05 && Math.abs(s.lh - H0) < .05) break;
     }
-    fr.push({ c: T.c, W: T.W, k: T.k });
-    c = T.c; W = T.W; k = T.k;
-    sl.style.transform = tf(c, W, k);
-    if(fr.length < 3) return;
+    const last = frames[frames.length - 1];
+    const fin = { sw: (intent.held ? 1 : 0), c: intent.T, lw: W0, lh: H0, lo: 0 };
+    /* (a finger still down holds the swell where its spring rests) */
+    if(intent.held){ fin.sw = Math.abs(last.sw - 1) < .01 ? 1 : last.sw; }
+    frames.push(fin);
+    S = fin; V = { sw: 0, c: 0, lw: 0, lh: 0, lo: 0 };
+    write(S);
+    if(frames.length < 3) return;
+    const looks = frames.map(look), o2 = { duration: (frames.length - 1) * DT, easing: "linear" };
+    const anims = [];
     try{
-      const anim = sl.animate(fr.map(f => ({ transform: tf(f.c, f.W, f.k) })), { duration: (fr.length - 1) * DT, easing: "linear" });
-      run = { anim, t0: performance.now(), c: q.c, W: q.W, k: q.k };
-      anim.finished.then(() => { if(run && run.anim === anim){ run = null; try{ anim.cancel(); }catch(e){} } }, () => {});
-    }catch(e){ run = null; }
-  }
-  /* the press scale is as much as the track's own edge leaves room for (and no more than 5%): the room is the gap the thumb keeps
-     from the track's edge, which is the same at either end and above and below */
-  function lifts(ny, nh, nw){
-    const room = Math.max(0, ny + seg.clientTop - .5);
-    LX = nw > 0 ? Math.min(.05, 2 * room / nw) : 0;
-    LY = nh > 0 ? Math.min(.05, 2 * room / nh) : 0;
+      anims.push(sl.animate(looks.map(L => ({ transform: L.th, opacity: L.thOp })), o2));
+      anims.push(seg.animate(looks.map(L => ({ transform: L.seg })), o2));
+      if(sheen) anims.push(sheen.animate(looks.map(L => ({ opacity: L.sheen })), o2));
+      if(parts && looks.some(L => L.lensOp > 0)){
+        anims.push(parts.lens.animate(looks.map(L => ({ opacity: L.lensOp })), o2));
+        const hold = looks.map((L, i) => L.lens || null);
+        /* a frame with the lens away keeps the last drawn shape (it is invisible) */
+        let lastL = hold.find(x => x) || null;
+        for(let i = 0; i < hold.length; i++){ if(hold[i]) lastL = hold[i]; else hold[i] = lastL; }
+        if(lastL) parts.els.forEach((el, j) => anims.push(el.animate(hold.map(x => ({ transform: x[j] })), o2)));
+      }
+    }catch(e){ anims.forEach(a => { try{ a.cancel(); }catch(err){} }); return; }
+    run = { anims, frames, t0, landAt: landAt != null ? t0 + landAt : null, trip: intent.trip, tripT0: intent.t0 };
+    anims[0].finished.then(() => { if(run && run.anims === anims){ run = null; if(intent.t0 === run_t0) intent.trip = false; } }, () => {});
   }
   /* ---- what attachSegSlider's place() calls: the lit segment is at left edge nx, nw wide, nh high ---- */
   function to(nx, ny, nw, nh, animate){
-    W0 = nw; lifts(ny, nh, nw);
-    const T = { c: nx + nw / 2, W: nw, k: press && press.lifted ? 1 : 0 };
-    /* a re-measure (a resize, a sub-pixel width) while a spring is on its way to this very place is not a move: let it finish */
-    if(!animate && run && c != null && Math.abs(run.c.T - T.c) < 1.5 && Math.abs(run.W.T - T.W) < 1.5 && Math.abs(run.k.T - T.k) < .001) return;
-    if(c == null || !animate){ stop(); c = T.c; W = T.W; k = T.k; write(); return; }
-    /* already on its way to there: leave the spring alone */
-    if(run && Math.abs(run.c.T - T.c) < .5 && Math.abs(run.W.T - T.W) < .5 && Math.abs(run.k.T - T.k) < .001) return;
+    const T = nx + nw / 2;
+    /* (a box read while the control is swollen comes back a hair off: that is not a new size) */
+    const sized = Math.abs(W0 - nw) > .5 || Math.abs(H0 - nh) > .5 || Math.abs(TY - ny) > .5;
+    if(sized){ W0 = nw; H0 = nh; TY = ny; G = null; }
+    sl.style.transformOrigin = "50% 50%";
+    if(S == null || !animate || calm()){
+      /* a re-measure while a move is on its way to this very place is not a move: let it finish */
+      if(S != null && !calm() && (run || follow) && intent.T != null && Math.abs(intent.T - T) < 1.5 && !sized) return;
+      if(follow){ return; }
+      stop();
+      intent = { T, trip: false, held: false, holdUntil: 0, t0: 0, slide: false };
+      S = { sw: S ? S.sw : 0, c: T, lw: W0, lh: H0, lo: 0 };
+      if(!press || calm()) S.sw = 0;
+      write(S);
+      return;
+    }
+    /* already on its way there (a tap's lens leaves at its click), or a finger is dragging it (the drag's release picks) */
+    if(intent.T != null && Math.abs(intent.T - T) < .5) return;
     if(follow) return;
-    if(Math.abs(c - T.c) < .01 && Math.abs(W - T.W) < .01 && !run && k === T.k){ write(); return; }
-    go(T);
+    /* anything else (a swipe across the content, a key): the dark thumb slides there */
+    intent = { T, trip: false, held: !!press, holdUntil: press ? 0 : intent.holdUntil, t0: performance.now(), slide: true };
+    plan();
   }
+  /* A FINGER'S TAP ON ANOTHER SEGMENT: THE LENS LEAVES AT ITS CLICK, before the page's own handler builds the tab it picks (100-600ms of
+     a phone's main thread) - its track is on the compositor, so it crosses while that is built, and place() then finds it already on
+     its way. A click that is not a finger's (a key's, a script's) is left to place(): the thumb slides. */
+  seg.addEventListener("click", e => {
+    if(calm() || S == null || follow) return;
+    const b = e.target && e.target.closest ? e.target.closest(segSel) : null;
+    if(!b || b.parentElement !== seg || b.hidden || b === activeEl()) return;
+    const t = performance.now();
+    if(!(lastTap && lastTap.el === b && t - lastTap.t < 1000)) return;
+    const g = measure(), s = g && g.segs.find(x => x.el === b);
+    if(!s) return;
+    lastTap = null;
+    ensureGlass();
+    intent = { T: s.c, trip: true, held: !!press, holdUntil: intent.holdUntil, t0: t, slide: false };
+    plan();
+    /* a pick the page refuses (a level with nothing in it yet opens its own note): back onto the lit segment */
+    setTimeout(() => {
+      const a = activeEl(), g2 = measure(), s2 = a && g2 ? g2.segs.find(x => x.el === a) : null;
+      if(s2 && !press && !follow && intent.T != null && Math.abs(intent.T - s2.c) > 1){ intent = Object.assign({}, intent, { T: s2.c }); plan(); }
+    }, 400);
+  }, true);
   /* ---- the finger ---- */
   function local(clientX){ const r = seg.getBoundingClientRect(); return (clientX - r.left) / (r.width / (seg.offsetWidth || r.width || 1)) - seg.clientLeft; }
   function stopFollow(){ if(follow){ cancelAnimationFrame(follow.raf); follow = null; } }
   function startFollow(g){
     stop();
-    /* a finger on the thumb holds it where it took hold (from where it went DOWN, not from where it had moved to when the drag was
-       known to be one); a finger elsewhere on the track brings the thumb to it */
-    follow = { g, off: c - local(press.onThumb ? press.x0 : press.cX), hold: press.onThumb, last: performance.now(), raf: 0 };
-    press.lifted = true;
+    ensureGlass();
+    G = geo();
+    /* a finger on the thumb holds it where it took hold (from where it went DOWN); a finger elsewhere brings the thumb to it */
+    follow = { g, off: S.c - local(press.onThumb ? press.x0 : press.cX), hold: press.onThumb, last: performance.now(), raf: 0 };
+    intent = { T: S.c, trip: true, held: true, holdUntil: 0, t0: performance.now(), slide: false };
+    const s = S, v = V;
     const tick = () => {
       const f = follow;
       if(!f || !press) return;
       const t = performance.now(), dt = Math.min(.034, Math.max(.001, (t - f.last) / 1000));
       f.last = t;
       if(!f.hold) f.off *= Math.exp(-dt / .08);
-      const tx = Math.max(f.g.lo, Math.min(f.g.hi, local(press.cX) + f.off));
-      /* the thumb velocity, for the release */
-      press.vc += ((tx - c) / dt - press.vc) * Math.min(1, dt / .05);
-      c = tx; W = widthAt(f.g, c);
-      k += (1 - k) * (1 - Math.exp(-dt / .045));
-      write();
+      const tx = clamp(local(press.cX) + f.off, f.g.lo, f.g.hi);
+      press.vc += ((tx - s.c) / dt - press.vc) * Math.min(1, dt / .05);
+      s.c = tx; v.c = press.vc;
+      const n = Math.max(1, Math.round(dt * 1000 / (DT / SUB))), h = dt / n;
+      const sq = 1 - Math.min(SQUASH_MAX, Math.abs(press.vc) * SQUASH);
+      for(let j = 0; j < n; j++){
+        step(s, v, "sw", 1, P_SW, h);
+        step(s, v, "lw", G.LW, P_SIZE, h);
+        step(s, v, "lh", G.LH * sq, P_SIZE, h);
+        s.lo = Math.min(1, s.lo + h * 1000 / LO_UP);
+      }
+      write(s);
       f.raf = requestAnimationFrame(tick);
     };
     follow.raf = requestAnimationFrame(tick);
@@ -156347,49 +156522,73 @@ function segThumb(seg, segSel, sl, o){
     const b = e.target && e.target.closest ? e.target.closest(segSel) : null;
     if(!b || b.parentElement !== seg || b.hidden) return;
     const g = measure();
-    if(!g || c == null) return;
+    if(!g || S == null) return;
     const a = activeEl();
-    press = { id: e.pointerId, x0: e.clientX, cX: e.clientX, el: b, g, onThumb: b === a, drag: false, lifted: false, vc: 0 };
+    ensureGlass();
+    G = geo();
+    press = { id: e.pointerId, x0: e.clientX, cX: e.clientX, el: b, g, onThumb: b === a, drag: false, vc: 0, native: !!(e.target.classList && e.target.classList.contains("nova-hsw")) };
     listen(true);
-    /* the thumb lifts under a finger that is on it */
-    if(press.onThumb){ press.lifted = true; go({ c, W, k: 1 }, { k: 0 }); }
+    /* the control swells under a finger (the thumb, if it is moving, keeps moving) */
+    intent = Object.assign({}, intent, { held: true, holdUntil: 0 });
+    if(intent.T == null) intent.T = S.c;
+    plan();
   });
   function onMove(e){
     if(!press || e.pointerId !== press.id) return;
     press.cX = e.clientX;
     if(!press.drag && Math.abs(e.clientX - press.x0) > 5){ press.drag = true; startFollow(press.g); }
   }
+  /* where a drag let go lands: the nearest segment */
+  const dragPick = p => nearest(p.g, S ? S.c : 0);
   function onUp(e){
     if(!press || e.pointerId !== press.id) return;
     const p = press; press = null;
     listen(false);
     stopFollow();
     if(p.drag){
-      /* let go after a drag: the nearest segment, picked as a tap would pick it; the click the browser may still send is not a
-         second pick */
-      const t = nearest(p.g, c);
+      /* let go after a drag: the nearest segment, picked as a tap would pick it; the click the browser may still send is not a second pick */
+      const t = dragPick(p);
       swallowUntil = performance.now() + 450;
-      go({ c: t.c, W: t.w, k: 0 }, { c: p.vc, W: 0, k: 0 });
+      intent = { T: t.c, trip: true, held: false, holdUntil: 0, t0: intent.t0 || performance.now(), slide: false };
+      plan({ c: p.vc });
       if(t.el !== activeEl()) t.el.click();
       checkLanded();
-    } else if(p.lifted) go({ c, W, k: 0 }, { k: 0 });
+    } else {
+      lastTap = { el: p.el, t: performance.now() };
+      intent = Object.assign({}, intent, { held: false, holdUntil: performance.now() + HOLD });
+      plan();
+    }
   }
   /* a pick that did not happen (refused) lands the thumb on the lit segment */
   function checkLanded(){
     setTimeout(() => {
       if(press) return;
       const a = activeEl(), g = measure(), t = a && g ? g.segs.find(s => s.el === a) : null;
-      if(t && c != null && Math.abs(((run && run.c.T) != null ? run.c.T : c) - t.c) > 1) go({ c: t.c, W: t.w, k: 0 });
+      if(t && intent.T != null && Math.abs(intent.T - t.c) > 1){ intent = Object.assign({}, intent, { T: t.c }); plan(); }
     }, 200);
   }
   function onCancel(e){
     if(!press || e.pointerId !== press.id) return;
     const p = press; press = null;
-    listen(false); stopFollow();
-    /* the page took the touch (a scroll): the thumb back down onto the lit segment */
-    const a = activeEl(), t = a ? p.g.segs.find(s => s.el === a) : nearest(p.g, c);
-    if(t) go({ c: t.c, W: t.w, k: 0 }, { c: p.vc, W: 0, k: 0 });
+    listen(false);
+    const wasFollow = !!follow;
+    stopFollow();
+    /* the page took the touch (a scroll): the thumb back onto the lit segment */
+    const a = activeEl(), t = a ? p.g.segs.find(s => s.el === a) : (S ? nearest(p.g, S.c) : null);
+    if(t){ intent = { T: t.c, trip: wasFollow, held: false, holdUntil: 0, t0: intent.t0, slide: false }; plan({ c: p.vc }); }
   }
+  /* HAPTICS ON AN iPHONE (the tab bar's rule, 384.102): a touch that starts on a segment's native switch is the switch's - 200ms in,
+     it would start following the finger and tick wherever its own box's middle is crossed. Once the touch is a drag, its moves are
+     kept from the switch (default prevented: it is not a scroll either - the drag is sideways); its touch-end click then plays the
+     one tick, at the lift, when the drag picked another segment (the click itself is swallowed: the drag has already picked), and is
+     stopped - no click, no tick - when it did not. A tap is untouched: its switch's click is the tick, as before. */
+  seg.addEventListener("touchmove", e => { if(press && press.drag && press.native && e.cancelable) e.preventDefault(); }, { passive: false });
+  seg.addEventListener("touchend", e => {
+    if(!press || !press.drag || !press.native) return;
+    swallowUntil = performance.now() + 450;
+    const t = dragPick(press);
+    if(t && t.el === activeEl() && e.cancelable) e.preventDefault();
+  }, { passive: false });
   seg.addEventListener("click", e => { if(e.isTrusted && performance.now() < swallowUntil){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
   /* arrow keys move along the switcher, as a tab list's do */
   seg.addEventListener("keydown", e => {
@@ -156411,6 +156610,9 @@ function attachSegSlider(seg, activeSel){
   let x = null, w = null, h = null, y = null, lastA = null, th = null;
   /* the segments: the active selector without its state (".iconbtn.active" -> ".iconbtn") */
   const segSel = activeSel.replace(/\.(active|is-on)$/, "");
+  /* (384.116) how many segments show: the compact control's floor is that many of Delta's 82pt segments (the CSS's --sg-n) */
+  const countSegs = () => { const n = [...seg.querySelectorAll(":scope > " + segSel)].filter(b => !b.hidden).length; if(String(n) !== seg.style.getPropertyValue("--sg-n")) seg.style.setProperty("--sg-n", String(n)); };
+  countSegs();
   /* ONE MEASURE A FRAME, NO FORCED FLUSH (build 327z3). Every class change, every observed size and the first frame each ran
      place() on its own, and each read two rects right after the last one had written styles and flushed them: on a Profile
      switch, at 4x CPU, ~95ms of forced layout - more than building the screen. The calls in a frame are folded into one. */
@@ -156431,6 +156633,7 @@ function attachSegSlider(seg, activeSel){
        observer below takes for the switcher changing - so every place() asked for the next one a frame later, for as long as the
        page was open (a style pass and a layout per switcher per frame; tabbutter check 2). */
     if(!seg.classList.contains("has-seg-slider")) seg.classList.add("has-seg-slider");
+    countSegs();
     /* a tab list's semantics, kept in step with the thumb */
     if(th) seg.querySelectorAll(":scope > " + segSel).forEach(b => { if(b.getAttribute("role") === "tab") b.setAttribute("aria-selected", b === a ? "true" : "false"); });
     /* IN LAYOUT PIXELS, NOT SCREEN PIXELS (build 320). A switcher placed while something above it was still scaling in read every
@@ -156442,7 +156645,10 @@ function attachSegSlider(seg, activeSel){
     else if((place.again = (place.again || 0) + 1) <= 12) setTimeout(() => schedule(false), 180);
     const nx = (ar.left - sr.left) / sx - seg.clientLeft, ny = (ar.top - sr.top) / sy - seg.clientTop;
     const nh = ar.height / sy, nw = ar.width / sx;
-    if(x === nx && w === nw && h === nh && y === ny && sl.classList.contains("ready")) return;
+    /* (384.116) a box read while the control is swollen under a finger comes back a hair off: the same box, not a new one - nothing is
+       rewritten (the thumb's layout properties never change while it moves) */
+    const near = (a, b) => a != null && Math.abs(a - b) < .25;
+    if(near(x, nx) && near(w, nw) && near(h, nh) && near(y, ny) && sl.classList.contains("ready") && lastA === a) return;
     const first = x == null || !sl.classList.contains("ready");
     const changed = !!lastA && lastA !== a; lastA = a;
     x = nx; w = nw; h = nh; y = ny;
