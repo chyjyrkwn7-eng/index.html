@@ -13,11 +13,12 @@ Chromium has no Taptic Engine and does not hand a touch to a switch, so a drag t
 both builds and is kept only to show nothing ELSE holds the finger). What it can read is what a finger lands on:
   S1  the badge case, both classes, every slot scrolled into view: the slot's own label, never a native switch;
   S2  Customize > Character and > Theme color: every character and swatch the same;
-  S3  every screen in SCREENS that scrolls, scrolled top to bottom, both classes: no 150px band of the page clear of the
-      fixed chrome (tab bar, top row, chat button) is more than 30% native switch (the units screen's tick circles, the
-      sparsest legitimate case, are ~15%; the case was ~90%);
+  S3  every screen in SCREENS, scrolled top to bottom, both classes: no 200px band of the page (at least half of it clear
+      of the fixed chrome - tab bar, top row, chat button - which is left out) is more than 45% native switch. 200px is
+      taller than any one-row strip (a segmented control, a full-width button: 22-30% of a band, and a strip is not
+      something a page is scrolled by - 327z10), so only a block stacked down the page can fill it;
   S4  a tap still works and still ticks: a touch tap on a found badge opens its card and toggles its label's switch once;
-      a tap on a character you hold selects it; a tap on a theme swatch you hold applies it;
+      a tap on a character you hold selects it; a tap on a theme swatch still to earn opens its card;
   S5  a touch drag that starts on the case scrolls the page (both builds; see above).
 Phone = iPhone 17 Pro Max installed (440x956) and iPhone SE (375x667), an iPhone user agent with touch (the haptic layer mounts).
 Run:  python3 tools/check-b384-casescroll.py [--against REV|DIR]   (--against origin/main must FAIL S1-S3)"""
@@ -56,9 +57,12 @@ BANDS = """()=>{
   for(let y = 6; y < innerHeight - 6; y += 10){ let n = 0, on = 0;
     for(let x = 6; x < innerWidth - 6; x += 10){ const h = document.elementFromPoint(x, y); if(!h || fixedUp(h)) continue; n++; if(nat(h)) on++; }
     rows.push({ y, n, on }); }
+  /* a 200px band: taller than any one-row strip (a segmented control, a full-width button, ~44-56px), so only a block of
+     controls stacked down the page can fill it; read only where at least half of it is page (not the tab bar or a fixed bar) */
+  const per = Math.floor((innerWidth - 12) / 10) + 1, BAND = 20;
   let worst = { share: 0, y: 0 };
-  for(let i = 0; i + 15 <= rows.length; i++){ let n = 0, on = 0; for(let j = i; j < i + 15; j++){ n += rows[j].n; on += rows[j].on; }
-    if(n > 200 && on / n > worst.share) worst = { share: Math.round(on / n * 100) / 100, y: rows[i].y }; }
+  for(let i = 0; i + BAND <= rows.length; i++){ let n = 0, on = 0; for(let j = i; j < i + BAND; j++){ n += rows[j].n; on += rows[j].on; }
+    if(n >= per * BAND / 2 && on / n > worst.share) worst = { share: Math.round(on / n * 100) / 100, y: rows[i].y }; }
   return worst;
 }"""
 SCROLLER = """()=>{ const se = document.scrollingElement; if(se.scrollHeight > innerHeight + 4) return null;
@@ -136,8 +140,8 @@ with sync_playwright() as pw:
                 for y in scroll_steps(pg):
                     w = pg.evaluate(BANDS)
                     if w["share"] > worst["share"]: worst = dict(w, scroll=y)
-                if worst["share"] > .30: walls.append((name, worst))
-            chk("[%s] S3 no screen of %d has a 150px band more than 30%% native switch (a wall a finger cannot scroll by)" % (tag, len(SCREENS)),
+                if worst["share"] > .45: walls.append((name, worst))
+            chk("[%s] S3 no screen of %d has a 200px band more than 45%% native switch (a wall a finger cannot scroll by)" % (tag, len(SCREENS)),
                 not walls, walls)
             if dev == "promax":
                 cdp = pg.ctx.new_cdp_session(pg)
@@ -160,13 +164,14 @@ with sync_playwright() as pw:
                 if pt:
                     pg.wait_for_timeout(300); tap(cdp, pt["x"], pt["y"]); pg.wait_for_timeout(900)
                 chk("[%s] S4 a tap on a character you hold selects it" % tag, bool(pt) and pg.evaluate("()=>store.avatarChar !== window.__was"), pt)
+                # the fixture holds only the default colour (already on), so the swatch tapped is one still to earn: its card opens
                 settle(pg, "()=>showCustomize('theme')")
-                pt = pg.evaluate("""()=>{ const o = [...document.querySelectorAll('.swatch-cell:not(.is-locked) .swatch')].find(b => !b.classList.contains('is-active') && !b.classList.contains('is-selected') && b.getBoundingClientRect().top > 140);
-                  if(!o) return null; o.scrollIntoView({ block: 'center', behavior: 'instant' }); const r = o.getBoundingClientRect(); window.__was = theme.accent;
+                pt = pg.evaluate("""()=>{ const o = [...document.querySelectorAll('.swatch-cell.is-locked .swatch')].find(b => b.getBoundingClientRect().top > 140);
+                  if(!o) return null; o.scrollIntoView({ block: 'center', behavior: 'instant' }); const r = o.getBoundingClientRect();
                   return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }""")
                 if pt:
-                    pg.wait_for_timeout(300); tap(cdp, pt["x"], pt["y"]); pg.wait_for_timeout(900)
-                chk("[%s] S4 a tap on a theme swatch you hold applies it" % tag, bool(pt) and pg.evaluate("()=>theme.accent !== window.__was"), pt)
+                    pg.wait_for_timeout(300); tap(cdp, pt["x"], pt["y"]); pg.wait_for_timeout(1100)
+                chk("[%s] S4 a tap on a theme swatch still to earn opens its card" % tag, bool(pt) and pg.evaluate("()=>!!document.querySelector('.unlock-card.unlock-card-theme')"), pt)
                 # S5 a drag from the case scrolls the page
                 settle(pg, "()=>showProfile('badges')", 3200)
                 kind = pg.evaluate(SCROLLER)

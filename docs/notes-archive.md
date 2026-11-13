@@ -39364,7 +39364,7 @@ answer, a tab) and the mode cards are judged before it and keep their switches. 
 `data-hsw-soft` whatever its size, so a group of four characters does not keep switches beside a group of seven that lost them.
 
 **Gate.** NEW `tools/check-b384-casescroll.py` (Pro Max installed + SE, both classes): S1 every slot of the case lands on its own label;
-S2 every character and swatch the same; S3 no 150px band of 18 scrolling screens is more than 30% native switch (scrolled top to bottom,
-fixed chrome left out); S4 a tap on a badge opens its card, clicks once and toggles its label's switch, a character and a swatch still
-select; S5 a drag from the case scrolls (passes on both builds - Chromium does not hand a touch to a switch, which is why only S1-S3 can see
+S2 every character and swatch the same; S3 no 200px band of 18 screens is more than 45% native switch (scrolled top to bottom, fixed chrome left out;
+200px is taller than any one-row strip - a segmented control or a full-width button reads 22-30% - so only a block fills it); S4 a tap on a badge opens its card, clicks once and toggles its label's switch, a character still selects and a
+swatch still to earn opens its card; S5 a drag from the case scrolls (passes on both builds - Chromium does not hand a touch to a switch, which is why only S1-S3 can see
 the bug). Only a phone can confirm the scroll itself.
