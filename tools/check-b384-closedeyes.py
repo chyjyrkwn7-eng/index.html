@@ -13,7 +13,7 @@
 For EVERY character on BOTH class pages (the academy and Fire Code; every id the page keeps, not retired), drawn live:
   A. A FULL IDLE CYCLE: every animation paused on one shared clock and stepped over the longest eye loop (120 steps, plus the exact
      bottom of every blink). The frames where the eyes are closed - the eye group's height (its own transform and its eyes') under
-     half, or the eyes put out altogether (a lit eye that dims or flickers is a light, not an eye closing) - are shot, the deepest of
+     a third, or the eyes put out altogether (a lit eye that dims or flickers is a light, not an eye closing) - are shot, the deepest of
      each closing. An eye that is still open in that frame (a wink shuts one) is left for its own closing.
   B. ASLEEP is shot (char-sleep and char-live, as setCharState makes a sleeper: the pose the person card shows with its "z").
   Each eye's region is found by what it is: the same pose and moment with the open eyes shown, against the same with the open AND
@@ -359,7 +359,7 @@ def one(pg, cls, cid, info, results, shots_out, px, spx):
         # again some other way (a flicker, a squint) - not the same blink a cycle later
         closed, run = [], []
         for t, v in sorted(cyc["steps"]):
-            if v < .5: run.append((v, t))
+            if v < .35: run.append((v, t))   # shut: under about a third of its height (the Marksman squints to .55, and a blink on top of the squint is still a squint until the lid is down)
             elif run: closed.append(min(run)); run = []
         if run: closed.append(min(run))
         keep, P = [], cyc["P"]
