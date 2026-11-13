@@ -273,7 +273,7 @@ def lid_test(C, B, reg, lid, kind, unit, T):
     for a blink and for sleep: at the bottom of a blink the eye is shut, and a shut eye is its lid line."""
     x0, y0, x1, y1, _ = reg
     w = x1 - x0 + 1; h = y1 - y0 + 1
-    pad = max(2, int(h * .25))
+    pad = max(2, int(max(h * .5, unit * .8)))   # a lash line sits low in the eye, and below a small eye
     ya, yb = max(0, y0 - pad), min(C.shape[0], y1 + pad + 1)
     c = C[ya:yb, x0:x1 + 1]; b = B[ya:yb, x0:x1 + 1]
     best = (0.0, 0.0)
@@ -283,7 +283,9 @@ def lid_test(C, B, reg, lid, kind, unit, T):
         # in the lid colour, or (a thin line's antialiased edge, which at a 42px row is most of it) changed from the bare face and
         # moved at least 40% of the way towards the lid colour
         ink_c = (dc <= 75) | ((np.abs(c - b).max(axis=2) > 20) & (dc < .6 * db))
-        nc, kc = line_cols(ink_c, c, h, unit, T, ~(db <= 75))
+        # new: not lid-coloured on the bare face, or where the closed eyes change what is round it (a lid over a dark socket)
+        new = ~(db <= 75) | dilate(np.abs(c - b).max(axis=2) > 30, max(2, int(unit * .35)))
+        nc, kc = line_cols(ink_c, c, h, unit, T, new)
         best = (nc / float(w), kc)
     return float(best[0]), best[1]
 
