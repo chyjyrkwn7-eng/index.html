@@ -55820,7 +55820,13 @@ const IFC_POINTER_PATCH = {
   "ch67-713": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18 },
   "chExhB-701": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nConcentrated (chairs only\u2014not fixed) | 7 net" },
   "chExhB-702": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nStanding space | 5 net" },
-  "chExhB-801": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nAssembly without fixed seats\nUnconcentrated (tables and chairs) | 15 net", pdfPage: 90, pdfPageEnd: 91 }
+  "chExhB-801": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nAssembly without fixed seats\nUnconcentrated (tables and chairs) | 15 net", pdfPage: 90, pdfPageEnd: 91 },
+  /* (384 cropfix) THE LAST THREE COUNTY TABLE ROWS WITHOUT THEIR TABLE. Table 105.5.22's toxic materials (PDF page 18, like the 384.72 ten) and Exhibit B's
+     gaming floors row (an excerpt that began on the table's second title line, like chExhB-701/702) were still cut as a group of rows with no title or
+     headings. The same patch as theirs; and the gold is the ROW, as on every other row of these tables ("Liquids | 10 gallons"), not the value alone. */
+  "ch60-701": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18, highlight: "Liquids | 10 gallons" },
+  "ch60-702": { head: "TABLE 105.5.22\nPERMIT AMOUNTS FOR HAZARDOUS MATERIALS\nTYPE OF MATERIAL | AMOUNT", pdfPage: 17, pdfPageEnd: 18, highlight: "Solids | 100 pounds" },
+  "chExhB-703": { excerpt: "TABLE 1004.5\nMAXIMUM FLOOR AREA ALLOWANCES PER OCCUPANT\nFUNCTION OF SPACE | OCCUPANT LOAD FACTOR\nAssembly\nGaming floors (keno, slots, etc.) | 11 gross", highlight: "Gaming floors (keno, slots, etc.) | 11 gross" }
 };
 function ifcWithPatch(q){
   const p = IFC_POINTER_PATCH[q && q.id];
@@ -119489,25 +119495,37 @@ function ifcInkBox(cv){
   }
   return { x0, x1, y0, y1, paper: [pr, pg, pb], W, H, inked };
 }
-/* A change bar: a solid upright bar alone at one side of the ink (1.5 to 6.5pt wide, at least 6pt tall, 3.5pt or more clear of
-   the text - beside one table row it is no taller than the row, and one can stand well out in the margin). Returns the text's
-   own left/right edge with it set aside, or the ink's edge when there is none. */
-function ifcBarSide(k, s, side){
-  const { W, inked, y0, y1 } = k, edge = side < 0 ? k.x0 : k.x1, step = side < 0 ? 1 : -1;
+/* (384 cropfix) THE BOOK'S MARGIN MARKS ARE SET ASIDE TOGETHER. Beside a deleted provision the book prints a heavy arrow in the margin (about 9pt by
+   5pt), often hard against a change bar - Table 1017.2's notes (ch10-061) have both - and the arrow is not a bar, so it counted as print: the
+   table was centred on the table plus the arrow, 12 CSS px off on a phone and 35 on an iPad. From the ink's edge inwards, a change bar (a solid
+   upright bar 1.5 to 6.5pt wide and 6pt or more tall: the 384 rule, which this replaces) or such an arrow (6 to 11pt wide, no taller than 8pt, half or more of its box inked), or a fleck of a pixel or two
+   beside them (ch22-014 has one 3pt out from its bar), each up to 3.5pt from the next, is set aside when 3.5pt
+   or more of paper stands between the last of them and the print; the marks still sit inside the box (ifcFrameClips centres the print and
+   makes room for the farther ink). A list number is not one: it is a stroke, not a filled shape, and is set close to its line. */
+function ifcMarkSide(k, s, side){
+  const { W, inked, y0, y1 } = k, step = side < 0 ? 1 : -1;
   const colInked = x => { for(let y = y0; y <= y1; y++) if(inked(y * W + x)) return true; return false; };
-  let x = edge, w = 0;
-  while(x >= 0 && x < W && colInked(x)){ w++; x += step; if(w > 6.5 * s) return edge; }
-  if(w < 1.5 * s) return edge;
-  let gap = 0;
-  while(x >= 0 && x < W && !colInked(x)){ gap++; x += step; }
-  if(gap < 3.5 * s || x < 0 || x >= W) return edge;
-  const a = Math.min(edge, edge + step * (w - 1)), b = Math.max(edge, edge + step * (w - 1));
-  let rows = 0, solid = 0;
-  for(let y = y0; y <= y1; y++){
-    let c = 0; for(let xx = a; xx <= b; xx++) if(inked(y * W + xx)) c++;
-    if(c){ rows++; if(c >= w * .8) solid++; }
+  let edge = side < 0 ? k.x0 : k.x1, out = edge;
+  for(let n = 0; n < 3; n++){
+    let x = edge, w = 0;
+    while(x >= 0 && x < W && colInked(x)){ w++; x += step; if(w > 11 * s) return out; }
+    let gap = 0;
+    while(x >= 0 && x < W && !colInked(x)){ gap++; x += step; }
+    if(x < 0 || x >= W || !w) return out;
+    const a = Math.min(edge, edge + step * (w - 1)), b = Math.max(edge, edge + step * (w - 1));
+    let rows = 0, solid = 0, fill = 0, r0 = -1, r1 = -1;
+    for(let y = y0; y <= y1; y++){
+      let c = 0; for(let xx = a; xx <= b; xx++) if(inked(y * W + xx)) c++;
+      if(c){ rows++; fill += c; if(r0 < 0) r0 = y; r1 = y; if(c >= w * .8) solid++; }
+    }
+    const bar = w >= 1.5 * s && w <= 6.5 * s && rows >= 6 * s && solid >= rows * .9;
+    const tall = r1 - r0 + 1, arrow = w >= 6 * s && tall <= 8 * s && rows === tall && fill >= .5 * w * tall;
+    const speck = w <= .6 * s && tall <= .6 * s;                     /* a fleck of a pixel or two (the end of a bar's own edge): not print */
+    if(!bar && !arrow && !speck) return out;
+    if(gap >= 3.5 * s){ out = x; edge = x; continue; }
+    edge = x;
   }
-  return rows >= 6 * s && solid >= rows * .9 ? x : edge;
+  return out;
 }
 /* clip: the kit's clipping the canvases were painted from (one canvas per segment, in order). Pieces cut from the same window of
    the same page - a table's caption, rows and notes; a referenced standard's lines - share one window here too, so they line up
@@ -119521,7 +119539,7 @@ function ifcFrameClips(holder, scale, fill, clip){
     if(cv.classList.contains("ifc-page") || (cv.parentNode && cv.parentNode.classList && cv.parentNode.classList.contains("ifc-frame"))) return;
     const k = ifcInkBox(cv);
     if(!k) return;
-    k.cv = cv; k.tx0 = ifcBarSide(k, s, -1); k.tx1 = ifcBarSide(k, s, 1);
+    k.cv = cv; k.tx0 = ifcMarkSide(k, s, -1); k.tx1 = ifcMarkSide(k, s, 1);
     /* (384 crops) the pieces of one county reference set to a column (ifcCountyColumn) share one window too: their lines start
        at one left edge, as a column's do */
     const sg = segs && segs[i], key = cv.dataset.ifcGroup ? "g:" + cv.dataset.ifcGroup : sg && !sg.whole ? sg.page + ":" + sg.x0 + ":" + sg.x1 + ":" + cv.width : "c" + i;

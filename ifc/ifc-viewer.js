@@ -620,6 +620,7 @@ function sheetOf(segs, pageOf) {
     const pb = { i: k, dx: dxOf(B), top: B.sg.y1, bot: B.sg.y0, gap: 0 };
     const a = A.lines[A.lines.length - 1], b = B.lines[0];
     if (B.sg.omit) { pb.dx = 0; pb.gap = OMIT_GAP; pb.omit = true; }       // (384.72) rows of a table left out between two pieces: a gap that says so, the cuts as made
+    else if (B.sg.cont) { pb.dx = 0; pb.gap = 0; pb.cont = true; }          // (384 cropfix) the same table on the next page, nothing left out: the painter joins them on one rule
     else if (a && b) {
       const fs = Math.max(a.fs, b.fs);
       const d = [];
@@ -1430,6 +1431,7 @@ function findRow(model, want, rect) {
   return { L, F, x0, x1, y0: Math.min(a.y0, b.y0) - 0.5, y1: Math.max(a.y1, b.y1) + 0.5, i0, i1, fs: Math.max(L.h, G.h), lt, lb };
 }
 
+const TABLE_JOIN = 4;                                             // (384 cropfix) lines of a table between two county cuts of it that are taken in rather than left out (countyClip)
 const OMIT_GAP = 12;                                              // (384.72) points of paper, with the dots of an omission in it, between two pieces of a table
 const TABLE_ROWS = 30;                                            // (384.72) ... and only a table of this many printed lines (a short table with long notes - 1017.2 - is shown whole)
 const TABLE_SAVE = 0.6;                                           // (384.72) ... and only when the pieces are under this share of the whole cut
@@ -1774,10 +1776,30 @@ export async function countyClip(doc, ptr, opts = {}) {
     }
     return best;
   };
+  // (384 cropfix) A TABLE'S TITLE IS ITS OWN TITLE LINE. "TABLE 105.5.22" is also the last words of the sentence that introduces the table ("... in
+  // excess of the amounts listed in Table 105.5.22."), and that sentence comes first in the text: the cut began a line above the table, on a sentence
+  // fragment, and the fragment (wider than the table) set the picture off centre. A piece that is a table's title is matched where a title line of
+  // the booklet is that title, whole (else where a table heading line starts with it; else anywhere, as before).
+  const lineHead = (k) => k === 0 || all[k - 1].pt !== all[k].pt || all[k - 1].li !== all[k].li;
+  const lineLen = (k) => { let n = 0; while (k + n < all.length && all[k + n].pt === all[k].pt && all[k + n].li === all[k].li) n++; return n; };
+  const titleAt = (E, from) => {
+    let start = -1;
+    for (let j = N.indexOf(E, from); j >= 0; j = N.indexOf(E, j + 1)) {
+      if (!lineHead(j) || all[j].pt.lines[all[j].li].head !== 'table') continue;
+      if (lineLen(j) === E.length) return j;
+      if (start < 0) start = j;
+    }
+    return start;
+  };
   const findPiece = (text, from) => {
     const E = cnorm(text);
     if (E.length < 6) return null;
+    const t = /^\s*(?:TABLE|Table)\s+[A-Z]?\d/.test(String(text)) ? titleAt(E, from) : -1;
+    if (t >= 0) return [t, t + E.length];
     const i = N.indexOf(E, from);
+    // (384 cropfix) a piece that is a line of its own ("Toxic materials", a table's group) found first inside another line ("Highly toxic
+    // materials", the group before it) is the line that IS it, where the booklet prints one after it
+    if (i >= 0 && !lineHead(i)) { for (let j = N.indexOf(E, i + 1); j >= 0; j = N.indexOf(E, j + 1)) if (lineHead(j) && lineLen(j) === E.length) return [j, j + E.length]; }
     if (i >= 0) return [i, i + E.length];
     const cells = String(text).split(/ \| | › /).map(cnorm).filter(Boolean);
     if (cells.length > 1) {
@@ -1881,7 +1903,8 @@ export async function countyClip(doc, ptr, opts = {}) {
   // line of the last, every line between included - the section's lead, the exceptions or list items before the one the question is
   // about, the table rows between its heading and the row - as the booklet prints them. A gap of more than three lines used to start
   // a second cut, shown as a second picture.
-  const segments = [], marks = [], texts = [], pages = [];
+  const segments = [], marks = [], texts = [], pages = [], spans = [];
+  const rowCiteCut = / \| | › /.test(String(ptr.highlight || ''));
   for (const pt of parts) {
     const used = new Set(lead.get(pt) || []);
     for (const [x, y] of ranges) for (let k = x; k < y; k++) if (all[k].pt === pt) used.add(all[k].li);
@@ -1906,6 +1929,27 @@ export async function countyClip(doc, ptr, opts = {}) {
       if (!(cur.body && cur.x1 >= pt.right - 6 && nx.body && !nx.head && !/^(?:Exceptions?\b|\d{1,2}\.\s|\(?[a-z0-9]{1,3}\)\s)/.test(nx.text) && nx.x0 >= cur.x0 - 2)) break;
       hi++; used.add(hi);
     }
+    spans.push({ pt, lo, hi });
+  }
+  // (384 cropfix) A TABLE THAT RUNS ONTO THE NEXT PAGE IS ONE TABLE IN THE PICTURE. A row cited from a table whose title and headings are on the page
+  // before (Table 105.5.22: title on PDF page 17, rows on 18; Exhibit B's Table 1004.5: 90 and 91) was two cuts set one under the other with nothing
+  // between them, the rows the booklet prints between them left out unsaid - and the second cut narrower than the first (its own words' width): the
+  // table's right-hand border and the end of every rule were cut off. Where only a few lines of the table stand between the two cuts (TABLE_JOIN)
+  // they are taken in, so the table runs on unbroken from one page to the next (the seam is one rule: `cont`); where more do, the second cut says
+  // rows are left out (`omit`: the same gap with dots as a windowed book table, see tableRowClip / paintSheet). The width is the table's own: the
+  // painter takes each cut out to the table's border (paintSheet, tableFrame).
+  if (rowCiteCut && spans.length > 1) {
+    for (let k = 1; k < spans.length; k++) {
+      const A = spans[k - 1], B = spans[k];
+      if (B.pt.p !== A.pt.p + 1) continue;
+      let end = A.hi;
+      while (end + 1 < A.pt.lines.length && A.pt.lines[end + 1].tbl) end++;
+      const between = (end - A.hi) + B.lo;
+      if (between <= TABLE_JOIN) { A.hi = end; B.lo = 0; B.cont = true; }
+      else B.omit = true;
+    }
+  }
+  for (const { pt, lo, hi, cont, omit } of spans) {
     const runs = [[]];
     for (let g = lo; g <= hi; g++) runs[0].push(g);
     for (const run of runs) {
@@ -1916,7 +1960,7 @@ export async function countyClip(doc, ptr, opts = {}) {
       const prev = pt.lines[run[0] - 1], next = pt.lines[run[run.length - 1] + 1];
       const y1 = prev ? Math.max(top, Math.min(top + 2, prev.y - 3)) : top + 2;
       const y0 = next ? Math.min(bottom, Math.max(bottom - 2, next.y + 10)) : bottom - 2;
-      segments.push({ page: pt.p, x0, x1, y0, y1, col: -1 });
+      segments.push(Object.assign({ page: pt.p, x0, x1, y0, y1, col: -1 }, cont ? { cont: true } : {}, omit ? { omit: true } : {}));
       texts.push(ls.map(l => l.items.map(i => i.s).join(' ')).join(' '));
     }
     pages.push(pt.p);
@@ -2286,6 +2330,16 @@ function sideRules(ctx, b) {
   // (an edge on a rule takes no marker's room past it: cl / cr)
   for (let x = Math.ceil(b.x1); x < R; x++) if (upright(x)) { b.x1 = x; b.cr = true; break; }
   for (let x = Math.floor(b.x0) - 1; x >= L; x--) if (upright(x)) { b.x0 = x + 1; b.cl = true; break; }
+  // (384 cropfix) a value centred in a wide last column (a county table's right-hand cell, 100pt and more of paper past its words) is further from
+  // the border than 8 em: the row runs on over paper to the first upright, however far - and stops if any print stands in the way
+  if (!b.cr || !b.cl) {
+    let F; try { F = ctx.getImageData(0, y0, W, h).data; } catch (e) { F = null; }
+    if (F) {
+      const col = (x) => { let n = 0; for (let y = 0; y < h; y++) { const i = (y * W + x) * 4; if (F[i] + F[i + 1] + F[i + 2] < 600) n++; } return n; };
+      if (!b.cr) for (let x = Math.ceil(b.x1); x < W; x++) { const n = col(x); if (n >= 0.95 * h) { b.x1 = x; b.cr = true; break; } if (n) break; }
+      if (!b.cl) for (let x = Math.floor(b.x0) - 1; x >= 0; x--) { const n = col(x); if (n >= 0.95 * h) { b.x0 = x + 1; b.cl = true; break; } if (n) break; }
+    }
+  }
   // (384 county tables) the county booklet's tables have no outer upright rules: the table ends where its horizontal rules end. A county
   // row (snap) with no upright rule on a side runs out to the end of the rule above or below it, just inside it.
   if (b.snap && (!b.cr || !b.cl) && (b.ruleAbove != null || b.ruleBelow != null)) {
@@ -2355,27 +2409,202 @@ export async function paint(doc, clip, container, opts = {}) {
   const sheet = segs.length === 1 ? one(0) : (clip.sheet || { pieces: segs.map((sg, i) => ({ i, dx: 0, top: sg.y1, bot: sg.y0, gap: i ? 4 : 0 })) });
   container.appendChild(await paintSheet(doc, clip, sheet, s, dpr, opts));
 }
+// (384 cropfix) A TABLE IS SHOWN TO ITS OWN BORDERS. A cut is made from the words it holds (a county cut: its lines' ends; a book table: its
+// column, to the gutter), and a table's border and the ends of its rules can stand outside that: Table 1004.5 of the book runs 5pt over the
+// gutter, so its right-hand border and the right end of every rule were cut off, and the row's gold, which runs out to the border it finds
+// (sideRules), stopped at the value's last letter; a county table's border stands 20-45pt beyond its cells' words. Each piece is rendered
+// FRAME_ROOM points wider on both sides and taken out to the end of the long horizontal rules that cross its cut (with the border at their
+// end and a hair of paper), where nothing but those rules and the table's uprights stands in what is added - so the other column's words
+// never come in. A piece with no rule crossing its edge is cut exactly as before.
+const FRAME_ROOM = 64;
+const inkPx = (D, W, x, y) => { const i = (y * W + x) * 4; return D[i] + D[i + 1] + D[i + 2] < 600; };
+// the long horizontal rules: runs of ink along one pixel row, minLen or longer -> [{ y, x0, x1 }] (x1 one past the run)
+function hRuleRuns(D, W, H, minLen, ya = 0, yb = H) {
+  const out = [];
+  for (let y = Math.max(0, ya); y < Math.min(H, yb); y++) {
+    let run = 0;
+    for (let x = 0; x <= W; x++) {
+      if (x < W && inkPx(D, W, x, y)) { run++; continue; }
+      if (run >= minLen) out.push({ y, x0: x - run, x1: x });
+      run = 0;
+    }
+  }
+  return out;
+}
+// a long horizontal rule that runs into the left or right side of a cut (W x H): the cut stops inside a table
+function ruleAtSide(ctx, W, H, s, ra, rb) {
+  let D; try { D = ctx.getImageData(0, 0, W, H).data; } catch (e) { return false; }
+  const L = Math.min(W, Math.round(20 * s));
+  for (let y = Math.max(0, Math.floor(ra - 1.5 * s)); y < Math.min(H, Math.ceil(rb + 1.5 * s)); y++) {
+    if (inkPx(D, W, 0, y)) { let x = 0; while (x < L && inkPx(D, W, x, y)) x++; if (x >= L) return true; }
+    if (inkPx(D, W, W - 1, y)) { let x = W - 1; while (W - 1 - x < L && inkPx(D, W, x, y)) x--; if (W - 1 - x >= L) return true; }
+  }
+  return false;
+}
+// cut [a, b) of a wide render (D, W x H), rows [ra, rb) shown -> the columns to show [na, nb)
+function tableFrame(D, W, H, a, b, s, ra, rb) {
+  const need = Math.min(20 * s, (b - a) / 2);
+  let FL = Infinity, FR = -Infinity;
+  // (the rules of the cut's own rows, and a hair either side: a rule of what is printed above or below the cut - another table's - is not this one's)
+  for (const r of hRuleRuns(D, W, H, 30 * s, Math.floor(ra - 1.5 * s), Math.ceil(rb + 1.5 * s))) {
+    if (Math.min(r.x1, b) - Math.max(r.x0, a) < need) continue;
+    FL = Math.min(FL, r.x0); FR = Math.max(FR, r.x1);
+  }
+  if (!isFinite(FL)) return [a, b];
+  const hair = Math.round(2 * s), hmin = 14 * s, vmin = 11 * s;
+  const hrun = (x, y) => { let l = x, r = x; while (l > 0 && inkPx(D, W, l - 1, y) && x - l < hmin) l--; while (r < W - 1 && inkPx(D, W, r + 1, y) && r - x < hmin) r++; return r - l + 1; };
+  // nothing in columns [c0, c1) but rules: a pixel of ink is on a long horizontal run, on a long upright run, or in the border's own columns
+  const ya = Math.max(0, Math.floor(ra - s)), yb = Math.min(H, Math.ceil(rb + s));
+  const onlyRules = (c0, c1, border) => {
+    for (let x = c0; x < c1; x++) {
+      if (Math.abs(x - border) <= 1) continue;
+      let y = ya;
+      while (y < yb) {
+        if (!inkPx(D, W, x, y)) { y++; continue; }
+        let e = y; while (e < yb && inkPx(D, W, x, e)) e++;
+        if (e - y < vmin) for (let yy = y; yy < e; yy++) if (hrun(x, yy) < hmin) return false;
+        y = e;
+      }
+    }
+    return true;
+  };
+  // or: the frame's end is the table's border - an upright down most of the piece at the rules' end - and nothing but rules stands past it: what is
+  // between the cut and the border is the table's own (a cell's words the cut sliced: "See Section 402.8.2" in Table 1004.5 reaches its border)
+  const border = (x) => { let n = 0; for (let y = ya; y < yb; y++) if (inkPx(D, W, x, y) || (x > 0 && inkPx(D, W, x - 1, y)) || (x + 1 < W && inkPx(D, W, x + 1, y))) n++; return n >= 0.5 * (yb - ya); };
+  let na = a, nb = b;
+  if (FR > b) { const e = Math.min(W, FR + hair); if (onlyRules(b, e, FR - 1) || (FR < W && border(FR - 1) && onlyRules(FR + 1, e, FR - 1))) nb = e; }
+  if (FL < a) { const e = Math.max(0, FL - hair); if (onlyRules(e, a, FL) || (FL > 0 && border(FL) && onlyRules(e, FL - 1, FL))) na = e; }
+  return [na, nb];
+}
+// a horizontal rule of a piece within R rows of row r: [first row, last row] of the run of rule rows whose middle is nearest r, or null
+function ruleNear(cv, r, R, s) {
+  const W = cv.width, H = cv.height, ya = Math.max(0, Math.floor(r - R)), yb = Math.min(H, Math.ceil(r + R) + 1);
+  if (yb <= ya) return null;
+  let D; try { D = cv.getContext('2d').getImageData(0, ya, W, yb - ya).data; } catch (e) { return null; }
+  const need = Math.max(30 * s, 0.5 * W), rows = [];
+  for (let y = 0; y < yb - ya; y++) { let run = 0, best = 0; for (let x = 0; x < W; x++) { if (inkPx(D, W, x, y)) { run++; if (run > best) best = run; } else run = 0; } rows.push(best >= need); }
+  let best = null;
+  for (let y = 0; y < rows.length; y++) {
+    if (!rows[y]) continue;
+    let e = y; while (e + 1 < rows.length && rows[e + 1]) e++;
+    const g = [ya + y, ya + e], d = Math.abs((g[0] + g[1]) / 2 - r);
+    if (!best || d < best.d) best = { g, d };
+    y = e;
+  }
+  return best && best.g;
+}
+// a rule at a seam is the rule alone: a letter of the row beyond it that touches its faint edge (a descender of the line above, cut away) left a
+// fleck on it. Each row of the rule is set to its own middle tone along the rule's run (an upright crossing it is left as printed).
+function evenRule(cv, g) {
+  const W = cv.width, H = cv.height, ctx = cv.getContext('2d');
+  const ya = Math.max(0, g[0] - 2), yb = Math.min(H - 1, g[1] + 2);
+  let img; try { img = ctx.getImageData(0, ya, W, yb - ya + 1); } catch (e) { return; }
+  const D = img.data, v = (x, y) => { const i = ((y - ya) * W + x) * 4; return D[i] + D[i + 1] + D[i + 2]; };
+  const upright = (x) => ya < g[0] && yb > g[1] && v(x, ya) < 600 && v(x, yb) < 600;
+  for (let y = g[0]; y <= g[1]; y++) {
+    let a = -1, best = [0, -1];
+    for (let x = 0; x <= W; x++) { const on = x < W && v(x, y) < 600; if (on && a < 0) a = x; if (!on && a >= 0) { if (x - a > best[1] - best[0] + 1) best = [a, x - 1]; a = -1; } }
+    if (best[1] - best[0] < 30) continue;
+    const run = []; for (let x = best[0]; x <= best[1]; x++) if (!upright(x)) run.push([v(x, y), x]);
+    if (!run.length) continue;
+    run.sort((p, q) => p[0] - q[0]);
+    const [m, mx] = run[run.length >> 1], im = ((y - ya) * W + mx) * 4;
+    for (const [val, x] of run) {
+      if (Math.abs(val - m) < 40) continue;
+      const i = ((y - ya) * W + x) * 4; D[i] = D[im]; D[i + 1] = D[im + 1]; D[i + 2] = D[im + 2];
+    }
+  }
+  ctx.putImageData(img, 0, ya);
+}
+// (384 cropfix) a table's outer edge ends on its rule: a cut made a hair above a group's closing rule (a county table's cells end 2-3pt over it)
+// showed the table open at the foot. dir -1: the picture's top row r (the rule above it is taken in); 1: one past its last row. Only paper and
+// the table's uprights may stand between the cut and the rule.
+function closeOnRule(cv, r, dir, s) {
+  const W = cv.width, H = cv.height, R = Math.round(3.5 * s);
+  const ya = dir > 0 ? r : Math.max(0, r - R), yb = dir > 0 ? Math.min(H, r + R) : r;
+  if (yb - ya < 1) return r;
+  let D; try { D = cv.getContext('2d').getImageData(0, ya, W, yb - ya).data; } catch (e) { return r; }
+  const h = yb - ya, ink = (x, y) => { const i = (y * W + x) * 4; return D[i] + D[i + 1] + D[i + 2] < 600; };
+  const need = Math.max(30 * s, 0.5 * W);
+  const ruled = (y) => { let run = 0; for (let x = 0; x < W; x++) { if (ink(x, y)) { if (++run >= need) return true; } else run = 0; } return false; };
+  const order = []; for (let k = 0; k < h; k++) order.push(dir > 0 ? k : h - 1 - k);
+  const at = order.findIndex(ruled);
+  if (at < 0) return r;
+  const between = order.slice(0, at);
+  if (between.length) {
+    const col = new Uint8Array(W); for (let x = 0; x < W; x++) { let all = true; for (const y of between) if (!ink(x, y)) { all = false; break; } col[x] = all ? 1 : 0; }
+    for (const y of between) for (let x = 0; x < W; x++) if (ink(x, y) && !col[x] && !(col[x - 1] || col[x + 1])) return r;
+  }
+  let e = at; while (e + 1 < h && ruled(order[e + 1])) e++;
+  return dir > 0 ? ya + order[e] + 1 : ya + order[e];
+}
+// the table's uprights in the cell beside a rule (dir -1: the cell above the rule's first row `edge`; 1: below its last row): the columns inked
+// down the whole cell (to the next rule, or `lim`) -> { cols: [[x0, x1] ...], row } (row: a row of that cell to copy them from), or null
+function uprightsBeside(cv, edge, dir, lim, s) {
+  const W = cv.width, H = cv.height;
+  let D; try { D = cv.getContext('2d').getImageData(0, 0, W, H).data; } catch (e) { return null; }
+  const need = Math.max(30 * s, 0.5 * W);
+  const ruled = (y) => { let run = 0; for (let x = 0; x < W; x++) { if (inkPx(D, W, x, y)) { if (++run >= need) return true; } else run = 0; } return false; };
+  const a = edge + dir;
+  let b = a;
+  const inside = (v) => v >= 0 && v < H && (dir < 0 ? v >= lim : v < lim);
+  if (!inside(a)) return null;
+  while (inside(b + dir) && !ruled(b + dir) && Math.abs(b - a) < 60 * s) b += dir;
+  const y0 = Math.min(a, b), y1 = Math.max(a, b), h = y1 - y0 + 1;
+  if (h < 3) return null;
+  const cols = [];
+  for (let x = 0; x < W; x++) {
+    let n = 0; for (let y = y0; y <= y1; y++) if (inkPx(D, W, x, y)) n++;
+    if (n >= 0.95 * h) { if (cols.length && cols[cols.length - 1][1] === x - 1) cols[cols.length - 1][1] = x; else cols.push([x, x]); }
+  }
+  return cols.length ? { cols, row: Math.round((y0 + y1) / 2) } : null;
+}
 // one picture: each piece rendered as it lies on its page, then set in place on one canvas (rows and columns copied whole, so the
 // print is not resampled); then the wash over all of it and the marker over the deciding words, in the picture's own pixels.
 // opts.keepPlain: the picture before the marker is kept on the canvas (canvas._ifcPlain), for a caller that sets the words again.
 async function paintSheet(doc, clip, sheet, s, dpr, opts) {
   const segs = clip.segments, parts = [];
-  let X0 = Infinity, X1 = -Infinity, y = 0;
-  for (const pc of sheet.pieces) { const sg = segs[pc.i]; X0 = Math.min(X0, sg.x0 + pc.dx); X1 = Math.max(X1, sg.x1 + pc.dx); }
+  let y = 0;
   const last = sheet.pieces.length - 1;
+  // (384 cropfix) the pieces of one table joined on a seam (rows left out between them, or the table running on over a page) are rendered on one
+  // pixel grid, so the table's uprights fall in the same columns in every piece
+  const joined = sheet.pieces.some(pc => pc.omit || pc.cont);
   for (const [k, pc] of sheet.pieces.entries()) {
-    const seg = segs[pc.i];
+    let seg = segs[pc.i];
+    if (joined) seg = { ...seg, x0: Math.floor(seg.x0 * s) / s };
     const page = await doc.getPage(seg.page);
     const vp = page.getViewport({ scale: s });
     const H = page.view[3];
     // rendered with a little of the page above and below the cut, so an outer edge can be settled (see settleEdge)
     const rTop = Math.min(H, seg.y1 + EDGE_ROOM), rBot = Math.max(0, seg.y0 - EDGE_ROOM);
     const px0 = seg.x0 * s, py0 = (H - rTop) * s;
-    const cv = document.createElement('canvas');
-    cv.width = Math.max(1, Math.ceil((seg.x1 - seg.x0) * s)); cv.height = Math.max(1, Math.ceil((rTop - rBot) * s));
-    const ctx = cv.getContext('2d');
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-    await page.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, -px0, -py0] }).promise;
+    // (384 cropfix) and FRAME_ROOM wider each side, where the table's border is looked for (a blurred picture is cut as the kit cut it)
+    // (a rule that runs on past that room - a county table 50pt or more wider than its words - has the piece rendered again the page's width out)
+    const cw = Math.max(1, Math.ceil((seg.x1 - seg.x0) * s)), ch = Math.max(1, Math.ceil((rTop - rBot) * s));
+    // first as cut; only where a long rule runs into a side of the cut is it rendered again, wider (pass 1: FRAME_ROOM; pass 2: the page's width)
+    let RX = 0, cv = null, ctx = null, na = 0, nb = cw;
+    for (let pass = 0; pass < 3; pass++) {
+      if (cv) { cv.width = 0; cv.height = 0; }
+      cv = document.createElement('canvas');
+      cv.width = cw + 2 * RX; cv.height = ch;
+      ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+      await page.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, -(px0 - RX), -py0] }).promise;
+      if (opts.blur) break;
+      const ra = Math.round((rTop - pc.top) * s), rb = Math.round((rTop - pc.bot) * s);
+      if (!pass) { if (!ruleAtSide(ctx, cw, ch, s, ra, rb)) break; RX = Math.round(FRAME_ROOM * s); continue; }
+      na = RX; nb = RX + cw;
+      try { [na, nb] = tableFrame(ctx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, RX, RX + cw, s, ra, rb); } catch (e) { na = RX; nb = RX + cw; }
+      const wide = Math.ceil(Math.max(seg.x0, page.view[2] - seg.x1) * s) + Math.round(2 * s);
+      if (pass === 2 || (na > 0 && nb < cv.width) || wide <= RX) break;
+      RX = wide;
+    }
+    if (RX) {
+      const c2 = document.createElement('canvas'); c2.width = nb - na; c2.height = cv.height;
+      const g2 = c2.getContext('2d'); g2.drawImage(cv, na, 0, nb - na, cv.height, 0, 0, nb - na, cv.height);
+      cv.width = 0; cv.height = 0; cv = c2; ctx = g2;
+      if (na !== RX || nb !== RX + cw) seg = { ...seg, x0: seg.x0 + (na - RX) / s, x1: seg.x0 + (nb - RX) / s, framed: true };
+    }
     if (opts.blur && clip.hide) for (const h of clip.hide) if (h.page === seg.page) {
       let r = null;
       if (h.snap) { try { r = snapRect(ctx, h, s, px0, py0, H); } catch (e) { r = null; } }
@@ -2394,10 +2623,32 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
         if (k === last) clearEdge(ctx, cv.width, cv.height, r1, -1, s);
       }
     }
+    if (seg.framed && !opts.blur) {
+      if (k === last) r1 = Math.max(r0 + 1, closeOnRule(cv, r1, 1, s));
+      if (k === 0) r0 = Math.min(r1 - 1, closeOnRule(cv, r0, -1, s));
+    }
+    parts.push({ seg, pc, cv, r0, r1, ry: rTop });
+  }
+  // (384 cropfix) THE SEAMS OF A TABLE. Where rows are left out (omit) the piece above ends on its own rule (the heading row's bottom rule, or a
+  // row's) and the piece below starts on its rule, and the gap between them is a band of the table: its uprights - the border and the column
+  // rules both pieces share - run on through it, with the dots of the omission in a cell of it (a piece below that is not the table - its notes
+  // - closes the band with the table's rule). Where the table runs on over a page with nothing left out (cont), the two meet on ONE rule: the
+  // piece above keeps its bottom rule and the piece below starts under its own top rule. A cut is moved to the rule found within 3.5pt of it.
+  for (let k = 1; k < parts.length; k++) {
+    const p = parts[k], q = parts[k - 1];
+    if (!p.pc.omit && !p.pc.cont) continue;
+    const rq = ruleNear(q.cv, q.r1, 3.5 * s, s), rp = ruleNear(p.cv, p.r0, 3.5 * s, s);
+    if (rq) { q.r1 = Math.max(q.r0 + 1, rq[1] + 1); evenRule(q.cv, rq); }
+    if (rp) { p.r0 = Math.min(p.r1 - 1, p.pc.cont && rq ? rp[1] + 1 : rp[0]); if (!(p.pc.cont && rq)) evenRule(p.cv, rp); }
+    if (p.pc.omit) p.band = { up: uprightsBeside(q.cv, rq ? rq[0] : q.r1, -1, q.r0, s), down: rp ? uprightsBeside(p.cv, rp[1], 1, p.r1, s) : null, rule: rq };
+  }
+  let X0 = Infinity, X1 = -Infinity;
+  for (const p of parts) { X0 = Math.min(X0, p.seg.x0 + p.pc.dx); X1 = Math.max(X1, p.seg.x1 + p.pc.dx); }
+  for (const p of parts) {
     const gapAt = y;
-    y += Math.round((pc.gap || 0) * s);
-    parts.push({ seg, pc, cv, r0, r1, ry: rTop, x: Math.round((seg.x0 + pc.dx - X0) * s), y, omit: pc.omit ? [gapAt, y] : null });
-    y += r1 - r0;
+    y += Math.round((p.pc.gap || 0) * s);
+    p.x = Math.round((p.seg.x0 + p.pc.dx - X0) * s); p.y = y; p.omit = p.pc.omit ? [gapAt, y] : null;
+    y += p.r1 - p.r0;
   }
   let canvas;
   if (parts.length === 1 && parts[0].r0 === 0 && parts[0].r1 === parts[0].cv.height && parts[0].x === 0 && parts[0].y === 0) canvas = parts[0].cv;
@@ -2407,9 +2658,31 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
     const g = canvas.getContext('2d');
     g.fillStyle = '#fff'; g.fillRect(0, 0, canvas.width, canvas.height);
     for (const p of parts) if (p.r1 > p.r0) g.drawImage(p.cv, 0, p.r0, p.cv.width, p.r1 - p.r0, p.x, p.y, p.cv.width, p.r1 - p.r0);
-    // (384.72) rows of a table left out: three dots in the middle of the gap, the way an omission is set
-    for (const p of parts) if (p.omit) {
-      const cy = (p.omit[0] + p.omit[1]) / 2, cx = p.x + p.cv.width / 2, r = Math.max(1.2, 0.9 * s);
+    // (384.72) rows of a table left out: three dots in the middle of the gap, the way an omission is set; (384 cropfix) in a band of the table
+    g.imageSmoothingEnabled = false;
+    for (const [k, p] of parts.entries()) if (p.omit) {
+      const q = parts[k - 1], B = p.band || {}, gy0 = p.omit[0], gy1 = p.omit[1];
+      // the uprights both pieces share (in the picture's columns; a piece below with none - the notes - takes the ones above, and the band is closed)
+      let cols = B.up ? B.up.cols.map(([a, b]) => [a + q.x, b + q.x]) : [];
+      const below = B.down ? B.down.cols.map(([a, b]) => [a + p.x, b + p.x]) : null;
+      if (below) cols = cols.filter(([a, b]) => below.some(([c, d]) => Math.abs(c - a) <= 1 && Math.abs(d - b) <= 1));
+      const close = !below && B.rule && cols.length ? B.rule : null;
+      const ruleH = close ? close[1] - close[0] + 1 : 0, room = Math.round(3 * s);
+      const vy1 = close ? Math.max(gy0 + 1, gy1 - room - ruleH) : gy1;
+      if (B.up) for (const [a, b] of cols) for (let x = a - 1; x <= b + 1; x++) {
+        if (x < q.x || x >= q.x + q.cv.width) continue;
+        g.drawImage(q.cv, x - q.x, B.up.row, 1, 1, x, gy0, 1, vy1 - gy0);
+      }
+      if (close) g.drawImage(q.cv, 0, close[0], q.cv.width, ruleH, q.x, vy1, q.cv.width, ruleH);
+      // the dots: in the middle of the table's band, or of its widest cell where an upright stands there
+      const L = cols.length ? cols[0][0] : p.x, R = cols.length ? cols[cols.length - 1][1] : p.x + p.cv.width;
+      let cx = (L + R) / 2;
+      const half = 5 * s + Math.max(1.2, 0.9 * s) + 3 * s;
+      if (cols.some(([a, b]) => b >= cx - half && a <= cx + half)) {
+        let w = -1;
+        for (let j = 1; j < cols.length; j++) { const a = cols[j - 1][1], b = cols[j][0]; if (b - a > w) { w = b - a; cx = (a + b) / 2; } }
+      }
+      const cy = (gy0 + vy1) / 2, r = Math.max(1.2, 0.9 * s);
       g.fillStyle = '#6b6330';
       for (const dx of [-1, 0, 1]) { g.beginPath(); g.arc(cx + dx * 5 * s, cy, r, 0, 2 * Math.PI); g.fill(); }
     }
