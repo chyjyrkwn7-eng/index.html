@@ -160,7 +160,7 @@ def boot(br, url, w=440, h=956, dpr=3, kind="iphone", insets=(62, 0, 34, 0), ins
     pg.add_init_script("""(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
      localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0402');
      ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card','class26e.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
-     localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); localStorage.setItem('class26e.a2hs','1790500000000'); })()""" % json.dumps(json.dumps(d)))
+     localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); localStorage.setItem('class26e.a2hs','1790500000000'); localStorage.setItem('class26e.intro.seen','9'); })()""" % json.dumps(json.dumps(d)))
     errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     pg.goto(url); pg.wait_for_timeout(3000); pg.evaluate("document.getElementById('splashscreen')?.remove()")
     pg.evaluate("()=>{ try{ homeUnlocksOwed=()=>false; }catch(e){} document.querySelectorAll('.rs-spot,.intro-pop,#intro-pop,.unlock-card').forEach(n=>n.remove()); }")
