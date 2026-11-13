@@ -37,8 +37,8 @@ theme you have set too?"), for the default theme and every rank colour, on Setti
   C2  ON and OFF can never be taken for each other: read off the pixels, the ON track against the OFF track is at least
       ON_OFF_MIN (2.5) in luminance contrast in every theme, and ON stands further off the card behind it than OFF does
       (the lowest theme measured 2.73 - Supernova's red; Silver, the one grey, is lit and measured 7.3);
-  C3  no green anywhere in a switch (its on layer, the glass's track and rim, the start sheet's switched-on words) unless
-      the theme's own colour is green - none is;
+  C3  no green anywhere in a switch (its on layer and glow, the glass's track and rim) unless the theme's own colour is
+      green - none is (the start sheet's line of switched-on words is not a switch and stays green, build 250/251);
   C4  the ON/OFF animation is the one it was in every theme (an opacity cross-fade on the on layer, the knob's slide), and
       Reduce motion still shortens the slide.
 Run:  python3 tools/check-b384-toghaptic.py [T] [C] [--against REV|DIR]   (--against origin/main must FAIL T1, T3, T4, T5, C1, C3)"""
@@ -221,9 +221,6 @@ COLOURS = r"""async(k)=>{ const wait = ms => new Promise(r => setTimeout(r, ms))
   const parts = { 'on layer': cols(bf.backgroundColor + ' ' + bf.backgroundImage), 'on layer glow': cols(bf.boxShadow),
     'glass track': cols(fill.backgroundColor + ' ' + fill.backgroundImage), 'glass rim': cols(edge.boxShadow) };
   lens.remove();
-  const sh = document.createElement('div'); sh.className = 'unitoptions-modal-sheet is-setup'; sh.style.cssText = 'position:fixed;left:-999px;top:0';
-  sh.innerHTML = '<div class="start-summary"><span class="sheet-summary-opt is-set">x</span></div>'; document.body.appendChild(sh);
-  parts['switched-on words'] = cols(getComputedStyle(sh.querySelector('.is-set')).color); sh.remove();
   const anim = { layer: bf.transitionProperty + ' ' + bf.transitionDuration, knob: af.transitionProperty + ' ' + af.transitionDuration };
   const R = e => { const q = e.getBoundingClientRect(); return [q.left, q.top, q.width, q.height]; };
   return { token, parts, anim, boxes: rows.map(r => ({ on: r.querySelector(':scope > input').checked, r: R(r.querySelector(':scope > .box')) })) }; }"""
@@ -373,6 +370,11 @@ def touch_section(br):
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G.CHROME)
+    # a busy machine can take more than playwright's 30s to load a 10MB page: give each context's navigation two minutes
+    _nc = br.new_context
+    def _new_context(**kw):
+        c = _nc(**kw); c.set_default_navigation_timeout(120000); return c
+    br.new_context = _new_context
     print("build %s" % G.BUILD, flush=True)
     if "T" in WANT: touch_section(br)
     if "C" in WANT: colour_section(br)

@@ -23375,8 +23375,8 @@
   .unitoptions-modal-sheet .optionsmodal-body > .sect .timer-sect{ margin-top:0; }
   /* a timer that is on: its pill in the top box goes green, like the
      switch that turned it on (the card itself stays as it is - build 251) */
-  .unitoptions-modal-sheet .sheet-tag.is-set{ color:#fff; background:color-mix(in srgb, var(--switch-on) 22%, transparent); border-color:color-mix(in srgb, var(--switch-on) 55%, transparent); }
-  .unitoptions-modal-sheet .sheet-tag.is-set svg{ color:var(--switch-on); }
+  .unitoptions-modal-sheet .sheet-tag.is-set{ color:#fff; background:rgba(52,199,89,.22); border-color:rgba(52,199,89,.55); }
+  .unitoptions-modal-sheet .sheet-tag.is-set svg{ color:#4ADE80; }
   .unitoptions-modal-sheet .opt-tiles-sect .opt-rows .opt{ padding:.3rem 0; }
   /* On a tablet the sheet spans the whole 834px and a single column of
      full-width controls stretched across it reads thin and unconsidered.
@@ -23532,7 +23532,7 @@
   .sheet-summary-foldbg{ position:absolute; z-index:-1; pointer-events:none; box-sizing:border-box; transform-origin:50% 100%; will-change:transform; }
   .sheet-summary-foldghost{ position:absolute; margin:0 !important; pointer-events:none; will-change:opacity; }
   [data-layout="modern"] .unitoptions-modal-sheet.is-folding-opaque{ backdrop-filter:none; -webkit-backdrop-filter:none; }
-  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:var(--switch-on); }   /* (384.107) the switched-on words in the switches' own on colour */
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:#4ADE80; }
   [data-reduce-motion="true"] .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{ transition:none; }
   /* A SHORT SCREEN KEEPS THE SHEET'S ROWS IN VIEW (327 audit). On an SE the
      pinned summary and Begin took half the screen. Under 46rem tall the
@@ -92590,7 +92590,7 @@ function nswLensFor(track, on){
    (untrusted - WebKit ticks only for event.isTrusted, EventDispatcher's clickHandlingState.trusted), put any flip the native
    switch had made back with a .checked write (which also stops the switch following the finger: willUpdateCheckedness ->
    stopSwitchPointerTracking), and swallowed the switch's own click after it (nswHold). Nothing a swipe did could tick.
-   WebKit's switch, read off its source (CheckboxInputType.cpp, the same on every Safari 26 branch): a touch that starts on it
+   WebKit's switch, read off its source (CheckboxInputType.cpp, the same on the Safari 18 and 26 branches): a touch that starts on it
    is its own - it handles the touchstart, so the page does not pan; 200ms after the finger lands (switchHeldDelay) it starts
    following the finger, and each time the finger takes the thumb past its turning point it flips the thumb and ticks
    (SwitchTrigger::PointerTracking - no gesture needed); on the touchend (or touchcancel) it clicks itself, a trusted click,
@@ -92600,7 +92600,7 @@ function nswLensFor(track, on){
    on what the switch's own click is about to do (nswNativeFlips mirrors WebKit's rule, nswNativeMove its thumb), and the flip,
    the change and the tick are the switch's. Nothing here writes .checked or calls click() for it. The one thing the page
    still decides is a swipe that should NOT flip it - dragged the way it already is, or an upright drag (a scroll that started
-   on the track, which the switch never gives up): its click is cancelled at the window (nswGate), so it stays as it was; iOS
+   on the track, which the switch never gives up): its click is cancelled at the document (nswGate), so it stays as it was; iOS
    has already played its tick by then (willDispatchClick, before the listeners) - the price of not flipping it.
    An engine without switches (an iPhone before iOS 17.4: no HTMLInputElement.switch) keeps the scripted drag below. */
 const NSW_NATIVE = (() => { try{ return typeof HTMLInputElement !== "undefined" && "switch" in HTMLInputElement.prototype; }catch(e){ return false; } })();
@@ -92637,8 +92637,7 @@ function nswNativeRelease(a, e){
   const x = typeof e.clientX === "number" ? e.clientX : a.x0;
   const flips = nswNativeFlips(a), dxAll = x - a.x0;
   let block = false;
-  if(e.type === "pointercancel") block = true;            /* the system took the touch: its click (a touchcancel clicks too) is no flip */
-  else if(a.drag){
+  if(a.drag){
     const flick = a.lastT && performance.now() - a.lastT < 90 && Math.abs(a.vx || 0) > .25;
     const past = run ? run.c > (run.g.offC + run.g.onC) / 2 : x - a.sw.left > a.sw.w / 2;
     const want = flick ? a.vx > 0 : Math.abs(dxAll) >= 14 && (dxAll > 0) !== a.on0 ? dxAll > 0 : past;
@@ -92669,7 +92668,7 @@ document.addEventListener("click", e => {
   const a = nswActive;
   if(!a || !a.sw || e.target !== a.sw.el) return;
   const t = e.changedTouches && e.changedTouches[0];
-  nswRelease({ pointerId: a.id, type: ev === "touchend" ? "pointerup" : "pointercancel", clientX: t ? t.clientX : a.x0, clientY: t ? t.clientY : a.y0 });
+  nswRelease({ pointerId: a.id, type: ev === "touchend" ? "pointerup" : "pointercancel", clientX: t ? t.clientX : a.x0, clientY: t ? t.clientY : a.y0, ends: true });
 }, { capture: true, passive: true }));
 document.addEventListener("pointerdown", e => {
   if(e.button > 0 || e.isPrimary === false) return;
@@ -92688,7 +92687,7 @@ document.addEventListener("pointerdown", e => {
   if(calm && !nat) return;
   const host = nswHost(track);
   if(!host || host.off()) return;
-  if(nswActive) nswRelease({ pointerId: nswActive.id, type: "pointercancel" });
+  if(nswActive) nswRelease({ pointerId: nswActive.id, type: "pointercancel", ends: true });
   /* the switch's own box, read before the lens writes anything: the native model works in it */
   const sw = nat ? nswNativeStart(t0, e.clientX) : null;
   /* reduce motion: no lens, but a native switch's swipe is still followed (what its own click will do, and whether to let it) */
@@ -92732,6 +92731,9 @@ document.addEventListener("pointermove", e => {
 function nswRelease(e){
   const a = nswActive;
   if(!a || e.pointerId !== a.id) return;
+  /* (384.107) a native switch's touch is over at its touchend, which always comes, and before the switch's own click: a
+     pointercancel on the way (Safari may stop the pointers of a touch a control has taken) neither decides it nor ends it */
+  if(a.sw && e.type === "pointercancel" && !e.ends) return;
   nswActive = null;
   a.track.classList.remove("nsw-drag");
   /* (384.107) a native switch's swipe is the switch's own: see nswNativeRelease */
