@@ -107,14 +107,24 @@ def run(br):
     for dev in DEVICES:
         ref = walk(br, REF, dev, False); got = walk(br, RAW, dev, True)
         name, top = dev[0], dev[3]
+        # (384.95, CHANGED ON PURPOSE) the installed iPhone held upright with a notch: the chat button's top and the test header's row
+        # come down to the line under the system's top blur (E = the inset + 18pt; docs/notes-archive.md "384.95") - so there 383's
+        # rects are compared moved to that line: the chat button's top at max(383's, E), the header row's foot lower by the lift
+        E = top + 18 if (dev[1] < 640 and top > 30) else None
+        def to_line(k, v, scr):
+            if not isinstance(v, dict) or "r" not in v or not E or (k == "header" and scr != "question"): return v
+            x0, y0, x1, y1 = v["r"]; v = dict(v)
+            if k == "chat" and y0 < E: v["r"] = [x0, E, x1, y1 + (E - y0)]
+            if k == "header": v["r"] = [x0, y0, x1, y1 + max(0, E - (max(20, top) + 5.6))]
+            return v
         for key in [k for k in ref if isinstance(k, tuple)]:
-            r, g = ref[key], got.get(key)
+            r, g = {k2: to_line(k2, v2, key[0]) for k2, v2 in ref[key].items()} if isinstance(ref[key], dict) else ref[key], got.get(key)
             if not g: chk("%s %s y%d: read" % (name, *key), False, g); continue
             # Pause on a question is 384 r5's (16px, 5.4rem; on an iPad the 384 text trim makes it 40px tall), and the chat button stands beside it:
             # kept on purpose, so on a question those two are compared for staying put (below), not against 383
             kept = ("pause", "chat") if key[0] == "question" else ()
             diff = {k: [r[k] and r[k]["r"], g[k] and g[k]["r"]] for k in ("header", "pause", "chat", "back") if k not in kept and not same(r[k], g[k])}
-            chk("%s %s scrolled %d: header%s and back button on 383's rects (%s)" % (name, key[0], key[1], "" if kept else ", Pause, chat", "same" if not diff else diff), not diff, diff)
+            chk("%s %s scrolled %d: header%s and back button on 383's rects%s (%s)" % (name, key[0], key[1], "" if kept else ", Pause, chat", " (the chat button and the header row brought to the line under the blur, 384.95)" if E else "", "same" if not diff else diff), not diff, diff)
             if kept and (key[0], 0) in got and key[1]:
                 g0 = got[(key[0], 0)]
                 moved = {k: [g0[k] and g0[k]["r"], g[k] and g[k]["r"]] for k in kept if not same(g0[k], g[k], .5)}

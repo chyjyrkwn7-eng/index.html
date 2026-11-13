@@ -1496,6 +1496,22 @@
   :root{ --tabs-drop: calc(.6rem + env(safe-area-inset-bottom, 0px) - var(--tabs-bottom)); }
   /* (384.77) --sat is exactly env(safe-area-inset-top), what build 383 wrote in every one of these places (384.54's 42pt clearance is gone) */
   :root{ --sat: env(safe-area-inset-top, 0px); }
+  /* (384.95) THE LINE UNDER THE SYSTEM'S TOP BLUR: E. In the installed iPhone app held upright with a notch or island, iOS 26 softens
+     whatever sits in the top band under the status bar; his 15:35 recording (Profile, Leaderboard, Settings pulled down a little at a
+     time, 120fps) reads the title's edge sharpness against where its ink starts: blurred to 74pt, softening at 76, fully sharp from
+     78pt - the 62pt inset plus 16. --edge-e is that depth plus 2pt, in points on the glass (x --zc: at his 85% page zoom a CSS pixel
+     is .85pt), and only where the band exists (html.top-edge-on: the head script's installed iOS; portrait, phone width, an inset
+     over 30px - an SE, an iPad, a phone on its side and a Safari tab keep 0, so nothing moves there). --top-e is the line itself:
+     the top of every control and the top of every title's ink sit on it, not above it (the chat button, the back buttons through
+     alignNavChat, the tab screens' titles, the test header's row and Pause). Unlike 384.54's 42pt this does not move the page:
+     each top-row element is brought down to the line and no further, and Home's flow is untouched (only its chat button moves). */
+  :root{ --edge-e: 0px; }
+  @media (orientation:portrait) and (max-width:39.99rem){
+    html.top-edge-on{ --edge-e: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 18px) * var(--zc, 1)); }
+  }
+  :root{ --top-e: calc(env(safe-area-inset-top, 0px) + var(--edge-e));
+    /* how far the test header's row comes down to put Pause's top on the line (0 wherever the line is not below Pause already) */
+    --test-lift: max(0px, calc(var(--top-e) - max(1.25rem, var(--sat)) - .35rem)); }
   :root{
     --pad-inset-top: max(0px, var(--sat) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
@@ -7693,7 +7709,8 @@
        screen - which is why the chat button disappeared off the top of
        Home the moment you tapped into the chat. It is 0 whenever there
        is no keyboard, so this costs nothing anywhere else. */
-    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
+    /* (384.95) on the line under the system's top blur where there is one (--top-e), its old .75rem below the inset everywhere else */
+    top:calc(max(var(--sat) + .75rem, var(--top-e)) + var(--vv-shift, 0px));
     right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     width:44px; height:44px; padding:0; margin:0;
     display:flex; align-items:center; justify-content:center;
@@ -9071,7 +9088,7 @@
      the page (mountRoomChatFab), and it is the dock button's size. */
   .roomchat-fab{
     position:fixed; z-index:445;
-    top:calc(var(--sat) + .75rem + var(--vv-shift, 0px));
+    top:calc(max(var(--sat) + .75rem, var(--top-e)) + var(--vv-shift, 0px));   /* (384.95) the dock button's line */
     right:calc(max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) + 44px + .5rem);
     height:44px; padding:0 .85rem 0 .7rem; margin:0; border-radius:999px; box-sizing:border-box;
     display:flex; align-items:center; gap:.4rem;
@@ -10029,7 +10046,15 @@
   }
   /* 64 - 2 - 2 - 39: the knob's gap is 2px at either end */
   .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(21px); }
-  .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
+  /* (384.97) the focus ring is a KEYBOARD's, never a finger's: "The time limit when selected puts a blue box around the thing, don't do
+     that part." On an iPhone a tap on a toggle puts focus on its native switch (the haptic layer, .hsw-opt) and WebKit counts that as
+     :focus-visible, so the ring in the accent colour (blue on most themes) was drawn round the switch the moment it was tapped - most
+     visible on Time limit, whose minutes row opening under it keeps the focus on screen. A finger never sees it now; a keyboard on a
+     laptop still does. */
+  @media (hover:hover) and (pointer:fine){
+    .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
+  }
+  .opt > input.hsw-opt:focus, .opt > input.hsw-opt:focus-visible{ outline:none; }
   .opt > input:disabled ~ .box{ cursor:default; }
   /* (385 r17) a switch row that cannot be changed now (the leaderboard's class switches while the master is off): visible, in the off position, greyed */
   .opt.is-locked{ opacity:.45; cursor:default; }
@@ -13565,9 +13590,12 @@
     top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
     /* (384.80) OPAQUE: the strip over the status bar's area is solid paper on a question, and the header under it is the same solid paper
        (it was 97% / 95%) down to where it fades, so the two read as one colour */
+    /* (384.95) solid to Pause's foot (.35rem under the row's; this box ends .9rem under the row's), then a short fade that ends above
+       the dots: from 70% the paper thinned behind the lower half of Pause and the mode, so a question scrolled under the row showed
+       through between them */
     background:linear-gradient(to bottom,
       var(--paper) 0%,
-      var(--paper) 70%,
+      var(--paper) calc(100% - .55rem),
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   .wrap:has(.fc-screen) .top .test-qcounter,
@@ -13941,6 +13969,10 @@
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
+  /* (384.97) and a top tab being swiped across (attachTabSwipe: Profile / Stats, the Leaderboard's boards): its content is carried
+     up to a screen's width off the side, and on an iPhone a page wider than the screen ZOOMS OUT to fit it - the whole app shrank to
+     a third, with a tiny tab bar in a corner and blank frames, then snapped back (the owner's recording, 384.94/95). */
+  html.tab-sliding, html.tab-sliding body, .tab-slide-clip{ overflow-x:clip; }
   /* build 382: "when swiping or auto swipe is on ensure the button doesn't leak over on the next page". Next question lives in the
      .foot, outside the question panel: a swipe moved the question away under it while it stayed put, over the one coming in, and
      an auto-advance dropped it in one frame. While a question is being dragged or slid (html.q-sliding) it fades out at once, and
@@ -18721,7 +18753,8 @@
      specificity, and Gold's swing was still running in every orbit. */
   /* (not the road map's flare carried into a bubble by the rank-up's
      hand-off, build 321: it keeps moving on its own clock - ruClockSnap) */
-  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *) .rk-a{ animation:none !important; }
+  /* (384.97) ...nor a single big flare shown on its own (.rk-live: the rank flare's unlock card, "This isn't animated") */
+  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *):not(.rk-live *) .rk-a{ animation:none !important; }
   /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
   .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
   .bnr.rk-idle, .bnr.rk-idle *{ animation:none !important; }
@@ -20781,7 +20814,7 @@
   @media (max-width:39.99rem){
     [data-layout="modern"] .top #pausebtn:not([hidden]){
       position:fixed;
-      top:calc(max(1.25rem, var(--sat)) + .35rem);
+      top:calc(max(1.25rem, var(--sat)) + .35rem + var(--test-lift));   /* (384.95) its top on the line under the system's blur */
       right:max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1.1rem));
       z-index:150; transform:none;
       min-height:44px; min-width:5.4rem; padding:.55rem 1.3rem; font-size:1rem;   /* (384 r5) "why is the pause button so small": the label was 15px in a 74px pill */
@@ -20795,6 +20828,16 @@
        Paused, Pause hides and the row lost its 44px - everything under
        it rose 23px into the chat button. */
     [data-layout="modern"] .wrap:has(.pausepanel) > .top{ min-height:44px; }
+    /* (384.95) THE ROW COMES DOWN WITH PAUSE: the mode and the count stay centred on Pause's line, and the dots and the question
+       under them come down by the same few px. Padding inside the row, so syncTestPin's measure (the row's offsetHeight) carries it:
+       the pinned row is that much taller and its opaque paper (::before, from y 0 to the row's foot) grows with it - no gap. */
+    [data-layout="modern"] .wrap > .top:has(#pausebtn:not([hidden])),
+    [data-layout="modern"] .wrap:has(.pausepanel) > .top{ padding-top:var(--test-lift); min-height:calc(44px + var(--test-lift)); }
+    /* a header row with no Pause in it - the daily question's, a results screen's title - comes down onto the line the same way */
+    [data-layout="modern"] .wrap:has(.qnumrow, .fc-screen, .screen-answerreview, #stage > .rs-screen):not(:has(.pausepanel)) > .top:not(:has(#pausebtn:not([hidden]))){
+      padding-top:max(0px, calc(var(--edge-e) - 3px)); }
+    /* the count is centred on the row's padding box (absolute): half the lift puts it back on the content's middle, beside the mode */
+    [data-layout="modern"] .wrap:has(.qnumrow, .pausepanel) > .top .test-qcounter{ top:calc(50% + var(--test-lift) / 2); }
   }
   /* Ghost buttons (Sign in with a code, back buttons) previously just
      stripped the glass treatment entirely rather than getting their
@@ -27570,7 +27613,9 @@
      image callout, no selection */
   .person-card-rank, .person-card-rank *{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   .person-card-rankword{ filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent)); }
-  .pf-standing > .profile-rankline{ margin:-.55rem 0 .15rem; }   /* (384 r5) the card's own spacing: the rank line close under the name, the level line close under it */
+  .pf-standing > .profile-rankline{ margin:-.55rem 0 .55rem; }   /* (384 r5) the card's own spacing: the rank line close under the name. (384.97) The level line
+     .4rem further under it: "the spacing between your rank and your level/badges is too tight" - .15rem left ~13pt between the rank's
+     word and "Level N · N badges"; .55rem is the ~19pt a classmate's card (.person-card-rank + .person-card-level) already has. */
   .person-card-rank > .person-card-mark{ width:2.1rem; height:2.1rem; }
   @media (min-width:40rem){ .person-card-rank > .person-card-mark{ width:2.4rem; height:2.4rem; } }
   .person-card-level{
@@ -36058,6 +36103,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz-dim{ position:absolute; inset:0; background:rgba(6,7,12,.6); opacity:0; transition:opacity .26s ease; touch-action:none; }
   .ifc-vz-card{ position:relative; display:flex; flex-direction:column; flex:0 1 64rem; min-width:0; overflow:hidden; border-radius:1.3rem;
     margin:max(10px, var(--sat)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    margin-top:max(10px, var(--sat), calc(var(--top-e) - 9.5px));   /* (384.95) its title and buttons (9.8px in) on the line under the system's blur */
     background:rgb(22,24,34); border:1px solid var(--surface-border); box-shadow:0 18px 50px rgba(0,0,0,.55);
     opacity:0; transform:translateY(18px) scale(.96); transition:transform .34s cubic-bezier(.2,.9,.3,1), opacity .26s ease; }
   .ifc-vz.is-in .ifc-vz-dim{ opacity:1; }
@@ -36342,7 +36388,8 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-title{ margin:0 0 .7rem; font-size:clamp(1.7rem, 6.4vw, 2.5rem); line-height:1.12; font-weight:750; }
   .gs-body{ margin:0; font-size:1.02rem; line-height:1.5; color:rgba(230,236,255,.74); }
   .gs-end{ position:relative; z-index:1; text-align:center; padding:4rem 1.4rem 2rem; opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
-  .gs-signin{ position:absolute; z-index:4; top:calc(var(--sat) + 10px); right:calc(env(safe-area-inset-right, 0px) + 14px);
+  .gs-signin{ position:absolute; z-index:4; top:max(calc(var(--sat) + 10px), var(--top-e));   /* (384.95) on the line under the system's blur */
+    right:calc(env(safe-area-inset-right, 0px) + 14px);
     min-height:44px; padding:0 1.05rem; border-radius:999px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06);
     color:#FFFFFF; font:inherit; font-size:.95rem; font-weight:650; letter-spacing:.01em; cursor:pointer; -webkit-tap-highlight-color:transparent;
     transition:background-color .2s ease, transform .15s ease; }
@@ -36558,6 +36605,8 @@ html.is-browser{ --fade-paper: transparent; }
   @supports (text-box:trim-both cap alphabetic){
     html[data-layout] body .classselect-panel > .next.playbtn{ text-box:trim-both cap alphabetic; height:auto; padding-top:calc((45.6px - 1cap)/2); padding-bottom:calc((45.6px - 1cap)/2); }
   }
+  /* (384.95) the intro's back button sits 20px into its panel (the others 24px): at his 85% zoom the line is 21.2px under the inset */
+  html[data-layout] body #stage .welcomeintro-panel > .back-link{ top:max(0px, calc(var(--edge-e) - 20px)); }
   html[data-layout] body #stage .back-link{ font-size:.85rem !important; min-height:calc(1em + 1rem) !important; padding-top:.5rem !important; padding-bottom:.5rem !important; }
   .pf-xp-to:empty{ display:none; }
   /* ---- THE UNIT CARD WITHOUT ITS CIRCLE (build 328) ----
@@ -37782,6 +37831,16 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab)) > #count:not(:empty){
     font-size:2rem; font-weight:800; letter-spacing:-.02em; line-height:1.15; color:var(--ink); margin-bottom:1.25rem;
   }
+  /* (384.95) THE BIG TITLE'S INK STARTS ON THE LINE UNDER THE SYSTEM'S TOP BLUR (--top-e), level with the chat button's top. Its line
+     box starts at the inset and its tallest letters (the l, f, d of Profile, Leaderboard) .18em below that (a bold sans at 1.15 line
+     height, SF and Inter alike), so it comes down
+     by the rest of the band's depth. Relative: nothing under it moves, the gap to the switcher gives the few px back. Leaderboard,
+     Calendar, and Profile's three segments (rule below); 0 wherever there is no band. */
+  @media (orientation:portrait) and (max-width:39.99rem){
+    html.top-edge-on[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab, .screen-profile)) > #count:not(:empty){
+      position:relative; top:max(0px, calc(var(--edge-e) - .18em));
+    }
+  }
   @media (min-width:40rem){
     html[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab)) > #count:not(:empty){ font-size:2.25rem; }
   }
@@ -38250,10 +38309,9 @@ html.is-browser{ --fade-paper: transparent; }
      with each other? They should be perfectly symmetrical with each of their own corners?" The .6rem meet-in-the-middle (below)
      was arithmetic on one layout; the nav has moved since and they were 20px apart (and 20 vs 24px in from their edges).
      alignNavChat() measures the back button on every screen change and resize and puts the chat button level with it, as far
-     in from the right as the back button is from the left. */
-  html[data-layout] body.navchat-aligned .chatdock:not(.in-test) .chatdock-btn{
-    top:calc(var(--navchat-top, 0px) + var(--vv-shift, 0px)) !important; right:var(--navchat-right, 1.5rem) !important;
-  }
+     in from the right as the back button is from the left.
+     (384.95) REVERSED: the chat button keeps Home's corner on every screen ("when I hit Start Studying the chat button moves") and
+     alignNavChat() moves the nav row to it instead - see the function. No rule here moves the chat button any more. */
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:scale(.92); }
   [data-reduce-motion="true"] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:none; }
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron{ width:20px; height:20px; margin:0; }
@@ -39028,11 +39086,8 @@ html.is-browser{ --fade-paper: transparent; }
      two share one line. Only where there is a back button: on Home and the tab screens the chat button keeps its place beside the
      big page title. */
   html[data-layout] body #stage .settings-nav.settings-nav{ margin-top:calc(.2rem - .6rem); }
-  html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem + var(--vv-shift, 0px)); }
-  /* a tablet's chat button is 52px against the back button's 44: its top 4px higher puts the two middles on one line */
-  @media (min-width:40rem){
-    html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(var(--sat) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
-  }
+  /* (384.95) the chat button's half of this is gone: it keeps Home's corner on every screen, and alignNavChat() brings the nav row
+     (from this margin) the rest of the way to it */
   /* (384) "The back button flashed white or something when you hit it." The press shimmer (setupBubbleButtons: .glass-pressed,
      a pool of white in ::after) reached the back links - and a back link's ::after is its invisible 44px tap target, centred by
      translate(-50%,-50%). Pressed, the shimmer's inset:0 pinned that box to the button's corner and the translate threw it up
@@ -40356,6 +40411,8 @@ html.is-browser{ --fade-paper: transparent; }
         /* (384) Welcome rises in under the fading splash (welcomeArrive) - only when it is Welcome that is there */
         try{ if(document.querySelector("#stage .cosmic-welcome") && typeof welcomeArrive === "function") welcomeArrive(); }catch(e){}
         splash.classList.add("splash-hide");
+        /* (384.95) the chat button comes up with the screen, in this same task (syncChatDock: a fading splash is not a loading screen) */
+        try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
         /* Handed back as the fade STARTS, not when the element is
            removed, so Safari's bars cross-fade along with the splash
            instead of snapping to the app colour half a second late.
@@ -56754,20 +56811,52 @@ function syncTestPin(force){
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
-/* (384 r8) see body.navchat-aligned: the chat button mirrors the back button's corner on any pushed screen */
+/* (384.95) THE CHAT BUTTON NEVER MOVES; THE BACK BUTTON COMES TO IT. Madison: "Ensure the chat button's position is consistent
+   between screens, for example, when I hit Start Studying the chat button moves." 384 r8 put the chat button level with the back
+   button on every pushed screen (alignNavChat measured the back button two frames after the mount and moved the chat button there,
+   and Settings' pages lowered it .6rem by CSS), so it jumped 10px down and 4px right going Home -> Start Studying (30px in a Safari
+   tab) and jumped back two frames into the next screen. Now the chat button keeps its one corner (Home's: the safe area + .75rem,
+   1.5rem in) on every screen but a question (where Pause owns the corner), and the r8 symmetry is kept the other way round: the
+   pushed screen's nav row (the round back button and the title centred with it) is moved up or down so the back button's middle is
+   on the chat button's middle, and on a phone - where both are corner buttons - the back button is as far in from the left as the
+   chat button is from the right. Done in the stage's own mutation callback (a microtask after the mount, before its first frame),
+   from layout positions (offsets, which no entrance animation moves), so nothing is seen to move. */
 function alignNavChat(){
-  const b = document.body; if(!b) return;
-  const back = document.querySelector("#stage .ios-nav > .ios-nav-back");
-  const chat = document.getElementById("chatdock-btn");
-  const br = back ? back.getBoundingClientRect() : null;
-  if(!back || !chat || !br || br.width === 0 || window.scrollY > 4){ if(!back || !br || br.width === 0) b.classList.remove("navchat-aligned"); return; }
-  const ch = chat.getBoundingClientRect().height || br.height;
-  b.style.setProperty("--navchat-top", (br.top + (br.height - ch) / 2).toFixed(2) + "px");
-  b.style.setProperty("--navchat-right", br.left.toFixed(2) + "px");
-  b.classList.add("navchat-aligned");
+  try{
+    const chat = document.getElementById("chatdock-btn");
+    const back = document.querySelector("#stage .settings-nav > :is(.ios-nav-back, .settings-nav-back)");
+    const nav = back ? back.parentElement : null;
+    if(!chat || !back || !nav || !nav.offsetParent) return;
+    if(chat.closest(".chatdock.in-test")) return;
+    const cs = getComputedStyle(chat);
+    const cTop = parseFloat(cs.top) + (parseFloat(cs.marginTop) || 0), cH = chat.offsetHeight, cRight = parseFloat(cs.right) + (parseFloat(cs.marginRight) || 0);
+    if(!(cH > 0) || !isFinite(cTop) || !isFinite(cRight)) return;
+    /* the nav's place on the screen at rest at the page's top: its box less any transform an ancestor carries this frame (a slide,
+       a lift) and less the scroll (offsetTop would do it but rounds to whole px), the back button's place inside the nav */
+    const nr = nav.getBoundingClientRect(), br = back.getBoundingClientRect();
+    if(!br.height) return;
+    let tx = 0, ty = 0;
+    for(let n = nav; n && n !== document.documentElement; n = n.parentElement){
+      const s = getComputedStyle(n);
+      if(s.transform && s.transform !== "none"){ try{ const m = new DOMMatrixReadOnly(s.transform); tx += m.m41; ty += m.m42; }catch(e){} }
+      if(s.translate && s.translate !== "none"){ const p = s.translate.split(/\s+/); tx += parseFloat(p[0]) || 0; ty += parseFloat(p[1]) || 0; }
+    }
+    const x = nr.left - tx, y = nr.top - ty + window.scrollY;
+    const backMid = y + (br.top - nr.top) + br.height / 2;
+    const d = backMid - (cTop + cH / 2);
+    if(Math.abs(d) > .05){
+      const mt = parseFloat(getComputedStyle(nav).marginTop) || 0;
+      nav.style.marginTop = (mt - d).toFixed(2) + "px";
+    }
+    /* left: only where the back button is a corner button too (a phone: the nav spans the page, so it is near the left edge) */
+    const backLeft = x + (br.left - nr.left) - (parseFloat(back.style.translate) || 0);
+    const dx = cRight - backLeft;
+    const want = Math.abs(dx) <= 8 ? dx.toFixed(2) + "px 0" : "";
+    if(back.style.translate !== want) back.style.translate = want;
+  }catch(e){}
 }
 try{
-  new MutationObserver(() => requestAnimationFrame(() => requestAnimationFrame(alignNavChat))).observe(document.getElementById("stage"), { childList: true });
+  new MutationObserver(alignNavChat).observe(document.getElementById("stage"), { childList: true });
 }catch(e){}
 addEventListener("resize", () => requestAnimationFrame(alignNavChat));
 /* THE STARFIELD'S TILES (build 323) - see the body::after rule for the
@@ -74492,7 +74581,7 @@ const cfg = {
   mode: "drill",     // drill | exam | game
   source: "all",     // all | weak
   size: 0,           // 0 = everything selected
-  shuffle: true,
+  shuffle: false,    // (384.97) off by default: "The 'shuffle answer choices' is always on by default. Turn off that."
   recall: false,
   countdown: false,  // 3-2-1 countdown before the run begins
   revealCorrect: false, // unlocked once every unit has its black star
@@ -75055,12 +75144,10 @@ function applySaved(){
      `false` is almost always just the default nobody changed. The switch
      is still in the start sheet for anybody who wants it off, and that
      choice is kept from here on. */
-  try{
-    if(!localStorage.getItem("class26e.shuffleon")){
-      cfg.shuffle = true;
-      localStorage.setItem("class26e.shuffleon", "1");
-    }
-  }catch(e){ cfg.shuffle = true; }
+  /* OFF BY DEFAULT AGAIN (384.97), reversing build 229 above: "The 'shuffle answer choices' is always on by default. Turn off
+     that. Make whatever you have set always on off till you change, except the time limit of course." Every switch on the start
+     sheet now starts off (SHEET_DEFAULTS, put back each time the sheet opens - build 309); the one-time migration that switched
+     shuffling on for everybody is gone, and its class26e.shuffleon marker is simply never read again. */
   /* UNITS ARE NOT RESTORED, per explicit request - "if I select units
      and then leave that screen they shouldn't still be checked". They
      used to persist, so switching from Drill to Exam arrived with the
@@ -75111,7 +75198,7 @@ function settingsTitleOf(mode){
    countdown left on from last week's exam was quietly timing today's
    drill. The mode is not in the sheet (it is the screen you chose), so
    it is not reset. */
-const SHEET_DEFAULTS = { source: "all", size: 0, shuffle: true, recall: false,
+const SHEET_DEFAULTS = { source: "all", size: 0, shuffle: false, recall: false,
   timer: "off", timerMinutes: 15, examFeedback: false, flashcards: false };
 function resetSheetOptions(){
   Object.keys(SHEET_DEFAULTS).forEach(k => { cfg[k] = SHEET_DEFAULTS[k]; });
@@ -113165,7 +113252,11 @@ function syncChatDock(){
      button, which is fixed in the same corner. That is a placement
      problem, not a reason to take the chat away: .in-test moves the
      dock clear of it instead - see the CSS. */
-  const loading = !!(document.getElementById("splashscreen")
+  /* (384.95) A SPLASH THAT IS FADING IS NOT A LOADING SCREEN. From .splash-hide on, the screen under it is what shows (the .wrap is
+     revealed in that frame and the splash only fades over it), so the button comes up with Home in the frame the fade starts - it used
+     to wait for the element's removal 0.8s later and pop in over a Home that had been up for most of a second. */
+  const splashUp = document.getElementById("splashscreen");
+  const loading = !!((splashUp && !splashUp.classList.contains("splash-hide"))
                   || document.getElementById("teststart-overlay")
                   || document.getElementById("genprofile-overlay"));
   if(loading){
@@ -150800,6 +150891,12 @@ function showUnlockDetail(o){
   } else if(o.kind === "rankflare"){
     /* the rank's flare, lit, as its tile shows it (327z13) */
     try{ art.appendChild(buildFlareBubble(o.id, { lit: true })); }catch(e){}
+    /* AND MOVING (384.97): "This isn't animated" - the Gold flare's card. An emblem's own motion (.rk-a) is switched off
+       everywhere but the places big enough to read it (the Rank tab's road and hero, the To-reach box, a recording's host: the
+       :is() list on .rk-a's animation:none), and in lists it moves as a recorded flip-book instead - which is recorded only at
+       list sizes. This card shows ONE flare, big: it takes the live drawing's motion, as the Rank tab does (.rk-live), which one
+       svg on screen affords. Reduce motion: the global rule stills it. */
+    art.classList.add("rk-live");
   } else if(o.kind === "challenge"){
     /* a rank challenge, big (327z13): the count in the challenge's own
        colour inside a ring of how far it is */
@@ -156590,12 +156687,36 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     drag.els.forEach(el => { el.style.transform = ""; el.style.opacity = ""; el.style.transition = ""; el.style.willChange = ""; el.removeAttribute("data-tabdrag"); });
     if(drag.raf) cancelAnimationFrame(drag.raf);
     drag = null;
+    clipOff();
+  };
+  /* (384.97) THE PAGE IS CLIPPED SIDEWAYS FOR AS LONG AS A TAB IS MOVING (html.tab-sliding, beside html.q-sliding): from the moment
+     the drag takes the content until the next tab's content has landed (no drag and not busy). Without it an iPhone zoomed the whole
+     app out to fit the content carried off the side. Polled off, not taken off at one call site: a commit clears the drag BEFORE the
+     next tab comes in, and the clip has to outlast that too. */
+  /* The clip is on the BOX THE CONTENT MOVES IN (its parent, .tab-slide-clip), not only on the page: a page clipped at <html> still
+     counts the moved content in its scroll width (an overflow:clip on the root is the viewport's hidden), which is what an iPhone
+     zooms to; clipped at its own parent the content never reaches the page's width at all. */
+  let clipT = 0, clipTries = 0;
+  const clipBoxes = new Set();
+  const clipOn = (els) => {
+    clipTries = 0;   /* never cancels a pending clipOff poll: the next tab's clipOn lands after the drag's clipOff, and that poll is what ends it */
+    document.documentElement.classList.add("tab-sliding");
+    (els || []).forEach(el => { const p = el && el.parentElement; if(p && !clipBoxes.has(p)){ clipBoxes.add(p); p.classList.add("tab-slide-clip"); } });
+  };
+  const clipOff = () => {
+    clearTimeout(clipT);
+    clipT = setTimeout(() => {
+      if((drag || busy) && ++clipTries < 40){ clipOff(); return; }
+      document.documentElement.classList.remove("tab-sliding");
+      clipBoxes.forEach(p => p.classList.remove("tab-slide-clip")); clipBoxes.clear();
+    }, 120);
   };
   const beginDrag = () => {
     if(!opts.content || reduced()) return;
     const els = (opts.content() || []).filter(Boolean);
     const i = order.indexOf(getCurrent());
     if(!els.length || i === -1) return;
+    clipOn(els);
     drag = { els, i, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth) };
     els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform"; el.setAttribute("data-tabdrag", "1"); });
   };
@@ -156657,6 +156778,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const enter = (hold) => {
       const els = (opts.content() || []).filter(Boolean);
       if(!els.length){ busy = false; return; }
+      clipOn(els);   /* the next tab's content comes in from the side too: its box clips it as well */
       /* the next tab's content comes in from the side the finger was taking this one to */
       settle(els, { transform: "translate3d(" + (dir * 56) + "px,0,0)", opacity: "0" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 200, () => {
         if(hold) els.forEach(el => { el.style.opacity = ""; });
@@ -159533,7 +159655,9 @@ function buildRanksTab(){
   /* THE BANDS, SAID ONCE (build 314): the boxes below are exactly build
      313's - "I don't like how the road map boxes changed, that's a no go"
      - so the one new idea is a sentence here, not a change to the cards. */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your level goes as high as the next rank\u2019s level, and that rank\u2019s badges take it further. Tap a rank to see what it gives.";
+  /* ONE LINE (384.97): "Way too wordy, no one is reading that." Four sentences went; each stop below already shows its level, its
+     badges and what it unlocks, so the note only has to say the stops can be tapped. */
+  mapNote.textContent = "Tap a rank to see what it unlocks.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
