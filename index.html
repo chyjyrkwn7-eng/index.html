@@ -39802,6 +39802,11 @@ html.is-browser{ --fade-paper: transparent; }
   /* (the chat sheet's row has the close button beside it: the control gives way to it, its words keeping their middles; on a phone
      under 360px wide - an SE 1st gen - "Friends" and its count need the room, so its segments sit closer and its words a size down) */
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]){ min-width:0 !important; }
+  /* a tab's count comes and goes as it is read (switching to a tab reads it): a tab without one keeps its room, half each side of its
+     word, so the widest tab - and the whole control - is the same width either way and never jumps under a moving lens */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]) > .chatdock-tab:has(> .chatdock-tabcount[hidden]){
+    padding-left:calc(var(--sg-px) + (1.05rem + .35rem) / 2) !important; padding-right:calc(var(--sg-px) + (1.05rem + .35rem) / 2) !important;
+  }
   @media (max-width:359px){
     html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]){
       --sg-gap:calc(4px * var(--sg-z)); --sg-px:calc(6px * var(--sg-z)); --sg-fs:calc(14px * var(--sg-z));
@@ -39818,8 +39823,16 @@ html.is-browser{ --fade-paper: transparent; }
     white-space:nowrap; text-align:center; justify-content:center; overflow:visible; transform:none !important; transition:none;
     --tab-py:calc((var(--sg-th) - 1lh) / 2);
   }
-  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.rs-tabs, .chatdock-seg) > :is(.rs-tab, .chatdock-tab){
+  /* every segment is a flex box round its words (.tab-label, the span attachSegSlider puts them in, as the chat sheet's and the
+     review's already were): they sit on its middle by their capitals (text-box, below), and where a narrow column leaves them wider
+     than the padding box (an SE's three boards) they still sit on its middle - a block's text-align:center starts an overflowing line
+     at its left edge, and "This Week" ran 4px out of its segment on a 320px phone */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.navsegment, .rs-tabs, .chatdock-seg) > :is(.iconbtn, .rs-tab, .chatdock-tab){
     display:flex !important; align-items:center; padding-top:0 !important; padding-bottom:0 !important;
+  }
+  .has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab) > .tab-label{ display:inline-block; flex:none; white-space:nowrap; }
+  @supports (text-box: trim-both cap alphabetic){
+    .has-seg-thumb > :is(.iconbtn, .rs-tab, .chatdock-tab) > .tab-label{ text-box:trim-both cap alphabetic; }
   }
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.navsegment, .rs-tabs, .chatdock-seg) > :is(.iconbtn, .rs-tab, .chatdock-tab)::before{
     content:""; position:absolute; left:calc(var(--sg-gap) / -2); right:calc(var(--sg-gap) / -2); top:calc(-1 * var(--sg-in)); bottom:calc(-1 * var(--sg-in));
@@ -156704,6 +156717,14 @@ function attachSegSlider(seg, activeSel){
   try{ const ro = new ResizeObserver(() => schedule(false)); ro.observe(seg); [...seg.children].forEach(c => { if(c !== sl) ro.observe(c); }); }catch(e){}
   /* every pill switcher has the thumb's motion - not the underline one (.sub-seg), which is words, not a pill */
   if(!seg.classList.contains("sub-seg")){
+    /* (384.116) each segment's words in a span of their own (.tab-label), as the chat sheet's and the review's already are: the segment
+       centres them as a flex box (see the CSS) */
+    try{
+      seg.querySelectorAll(":scope > " + segSel).forEach(b => {
+        if(b.querySelector(":scope > .tab-label")) return;
+        [...b.childNodes].forEach(n => { if(n.nodeType === 3 && n.nodeValue.trim()){ const sp = document.createElement("span"); sp.className = "tab-label"; n.replaceWith(sp); sp.appendChild(n); } });
+      });
+    }catch(e){}
     try{
       th = segThumb(seg, segSel, sl);
       seg.classList.add("has-seg-thumb");

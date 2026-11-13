@@ -284,7 +284,7 @@ def run_switcher(pg, ptr, dev, tag, sw, props_seen):
         if out > 6: why.append("%.1fpx past the track's end" % out)
         if swell < 1.03: why.append("no swell (x%.3f)" % swell)
         if abs(s1["seg"][2] - rest_seg[2]) > 1: why.append("the control not back to its size")
-        if len(lay) > 1: why.append("layout changed %d times" % (len(lay) - 1))
+        if len(lay) > 1: why.append("layout changed %d times %s" % (len(lay) - 1, sorted(lay)[:3]))
         if not props <= {"transform", "opacity"}: why.append("animated %s" % sorted(props))
         if D > 1200: why.append("%.0fms" % D)
         if not land: why.append("landed %s vs %s, lit %d" % ([round(v, 1) for v in s1["thumb"]], [round(v, 1) for v in s1["segs"][j]["box"]], lit_index({"segs": s1["segs"]})))
