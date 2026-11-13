@@ -20,9 +20,10 @@ For EVERY character on BOTH class pages (the academy and Fire Code; every id the
   the closed eyes hidden (the bare face); one region per connected eye (a glint under a sixth of the biggest is not an eye). Inside
   each shut eye's region, at the bottom of a blink and asleep alike, the LID LINE: pixels in the drawing's own lid colour (what its
   closed eyes' lines are stroked in) that run as a LINE - no thicker than .45 of the eye or one drawing unit, with something that is
-  not lid colour right above and below, its colour standing off both by >= 40 (RGB distance) - across at least 40% of the eye's
-  width, more of it than the bare face already has there. A socket left empty is one thick dark run, not a line, so it fails; a
-  hairline of a squashed lit eye is not in the lid colour, so it fails. An empty eye group (Void, the Koi's painted eyes, the Drone
+  not lid colour right above and below, its colour standing off both by >= 40 (RGB distance), and most of it NEW (not lid-coloured
+  on the bare face: a gloss streak across goggles is not a lid) - across at least 40% of the eye's width. A socket left empty is
+  one thick dark run, not a line, and a curve drawn on a socket of its own colour is not new, so both fail; a hairline of a squashed
+  lit eye is not in the lid colour, so it fails. An empty eye group (Void, the Koi's painted eyes, the Drone
   Pilot's goggles) has nothing to close. A sleeping pose that covers the eyes (the Sheriff tips his hat brim over them: under 45% of
   the eyes left in view) is covered, not missing, and is reported, not asked for a lid.
   C. LEGIBLE SMALL: asleep at a 42px rankings row (126 device pixels, a 3x phone): the lid line across at least 35% of each eye,
@@ -243,10 +244,11 @@ def hexrgb(h):
     h = h.lstrip("#"); return np.array([int(h[i:i + 2], 16) for i in (0, 2, 4)], dtype=np.int32)
 
 
-def line_cols(ink, A, h, unit, T):
+def line_cols(ink, A, h, unit, T, new):
     """Columns crossed by a LINE: a run of ink no thicker than max(.45 of the eye's height, one drawing unit), with something that is
     not ink right above and right below it, its colour standing off both by >= T (RGB distance: a gold line on a pale face is a line
-    though their luminance is close). Returns (columns, mean standing-off)."""
+    though their luminance is close), and most of it NEW - not lid-coloured on the bare face (a gloss streak across goggles, a dark
+    socket the curve sits on). Returns (columns, mean standing-off)."""
     thick = max(.45 * h, unit)
     A = A.astype(np.float64)
     n, cons = 0, []
@@ -256,7 +258,7 @@ def line_cols(ink, A, h, unit, T):
             if not col[y]: y += 1; continue
             y2 = y
             while y2 < len(col) and col[y2]: y2 += 1
-            if y > 0 and y2 < len(col) and (y2 - y) <= thick:
+            if y > 0 and y2 < len(col) and (y2 - y) <= thick and new[y:y2, x].mean() >= .5:
                 run = A[y:y2, x].mean(axis=0); up = A[max(0, y - 3):y, x].mean(axis=0); dn = A[y2:y2 + 3, x].mean(axis=0)
                 best = max(best, min(float(np.sqrt(((run - up) ** 2).sum())), float(np.sqrt(((run - dn) ** 2).sum()))))
             y = y2
@@ -267,7 +269,7 @@ def line_cols(ink, A, h, unit, T):
 def lid_test(C, B, reg, lid, kind, unit, T):
     """In the eye's region (and a quarter of its height above and below). Returns (share of the eye's width crossed, standing-off).
     The LID LINE: the closed frame's pixels in the lid colour make a line across the eye that the bare face does not already have
-    there (a socket left empty is one thick dark run, not a line; a ring round an empty socket is on the bare face too). The same
+    there (a socket left empty is one thick dark run, not a line; a curve drawn on a socket of its own colour is not new). The same
     for a blink and for sleep: at the bottom of a blink the eye is shut, and a shut eye is its lid line."""
     x0, y0, x1, y1, _ = reg
     w = x1 - x0 + 1; h = y1 - y0 + 1
@@ -281,16 +283,15 @@ def lid_test(C, B, reg, lid, kind, unit, T):
         # in the lid colour, or (a thin line's antialiased edge, which at a 42px row is most of it) changed from the bare face and
         # moved at least 40% of the way towards the lid colour
         ink_c = (dc <= 75) | ((np.abs(c - b).max(axis=2) > 20) & (dc < .6 * db))
-        nc, kc = line_cols(ink_c, c, h, unit, T)
-        nb, _ = line_cols(db <= 75, b, h, unit, T)
-        if nc - nb > 0: best = ((nc - nb) / float(w), kc)
+        nc, kc = line_cols(ink_c, c, h, unit, T, ~(db <= 75))
+        best = (nc / float(w), kc)
     return float(best[0]), best[1]
 
 
 def boot(br, cls, port, errs):
     ctx = br.new_context(viewport={"width": 1200, "height": 700}, device_scale_factor=2)
     pg = ctx.new_page()
-    pg.set_default_timeout(120000)   # a loaded machine: a screenshot can take a while
+    pg.set_default_timeout(180000)   # a loaded machine: a page load or a screenshot can take a while
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     if BODY is not None:
         pg.route("**/index.html", lambda r, q: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
@@ -298,7 +299,7 @@ def boot(br, cls, port, errs):
     build = re.search(r'const APP_BUILD = "([^"]+)"', BODY if BODY is not None else open(os.path.join(os.path.dirname(HERE), "index.html"), encoding="utf-8").read()).group(1)
     pg.route("**/version.json*", lambda r, q: r.fulfill(status=200, headers={"content-type": "application/json"}, body=json.dumps({"build": build, "force": False, "frameId": ""})))
     pg.add_init_script(INIT[cls])
-    pg.goto("http://127.0.0.1:%d/index.html" % port); pg.wait_for_timeout(4000)
+    pg.goto("http://127.0.0.1:%d/index.html" % port, timeout=180000); pg.wait_for_timeout(4000)
     for _ in range(30):
         if pg.evaluate("()=>typeof buildAvatarCharSVG === 'function' && typeof AVATAR_CHARACTERS === 'object'"): break
         pg.wait_for_timeout(500)
