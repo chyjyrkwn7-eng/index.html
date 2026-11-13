@@ -156388,6 +156388,8 @@ function segThumb(seg, segSel, sl, o){
     const s = Object.assign({}, n0.s || S), v = Object.assign({ sw: 0, c: 0, lw: 0, lh: 0, lo: 0 }, n0.v, vIn || {});
     if(!canAnim || calm()){ S = { sw: 0, c: intent.T, lw: W0, lh: H0, lo: 0 }; V = { sw: 0, c: 0, lw: 0, lh: 0, lo: 0 }; write(S); return; }
     G = G || geo();
+    /* (a control with no box - hidden as it was touched - is placed, not moved) */
+    if(!G){ S = { sw: 0, c: intent.T, lw: W0, lh: H0, lo: 0 }; V = { sw: 0, c: 0, lw: 0, lh: 0, lo: 0 }; intent.trip = false; write(S); return; }
     const t0 = performance.now(), h = DT / 1000 / SUB, frames = [Object.assign({}, s)], run_t0 = intent.t0;
     let landAt = intent.trip ? null : 0;
     const P_C = intent.slide && !intent.trip ? P_SLIDE : P_GLIDE;
@@ -156493,6 +156495,7 @@ function segThumb(seg, segSel, sl, o){
     stop();
     ensureGlass();
     G = geo();
+    if(!G || !S) return;
     /* a finger on the thumb holds it where it took hold (from where it went DOWN); a finger elsewhere brings the thumb to it */
     follow = { g, off: S.c - (press.onThumb ? press.l0 : local(press.cX)), hold: press.onThumb, last: performance.now(), raf: 0 };
     intent = { T: S.c, trip: true, held: true, holdUntil: 0, t0: performance.now(), slide: false };
