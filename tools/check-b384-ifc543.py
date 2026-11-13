@@ -31,6 +31,8 @@ def _gen(name):
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 MOVED47 = sorted(i for i, to in _gen("UNIT_MOVES").items() if to == "1"); REMOVED47 = sorted(_gen("UNIT_REMOVALS")); GONE47 = set(MOVED47) | set(REMOVED47)   # (384.73) REMOVED47 is every removal (17 of 384.47, ch12-012 / ch55-702 / ch2-047 of 384.73)
 EDIT73 = set(_gen("QUESTION_EDITS"))   # (384.73) the eight questions whose wording the audit fixes changed (tools/check-b384-qfix.py holds them)
+import re as _re   # (384.104) the 26 occupant load questions added to Chapter 10 (QUESTION_ADDS, built with helpers: read by their ids; check-b384-occload holds them)
+ADDED104 = set(_re.findall(r'_(?:row|sec)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
 # id -> the unit id it moves to, in the order the generator appends them
 
 
@@ -95,13 +97,13 @@ diffs = [(i, sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].
 moved_fields = [i for i in MOVED47 if sorted(k for k in set(oq[i]) | set(nq[i]) if oq[i].get(k) != nq[i].get(k)) != ["unit"]]   # a 384.47 move changes `unit` and nothing else
 chk("(2) the bank file: only %s differs from main's, in `options` alone (every other question, the units and the meta identical)" % ID,
     diffs == [(ID, ["options"])] and not moved_fields and [{k: v for k, v in u.items() if k != "questionCount"} for u in ob["units"]] == [{k: v for k, v in u.items() if k != "questionCount"} for u in nb["units"]]
-    and {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and set(nq) == set(oq) - set(REMOVED47) and len(nq) == 1812 - len(REMOVED47)
+    and {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and set(nq) == (set(oq) - set(REMOVED47)) | ADDED104 and len(nq) == 1812 - len(REMOVED47) + len(ADDED104)
     and [k for k in nq[ID]["options"] if nq[ID]["options"][k] != oq[ID]["options"][k]] == ["B"], diffs[:4])
 # (3)
 moved = sorted(i for i in O if i not in REMOVED47 and O[i]["key"] != N.get(i, {}).get("key"))
 allk = [r["key"] for r in new["rows"]]
 chk("(3) all %d questions' keys identical on main and here but the %d the owner moved into Chapter 1 in 384.47 (%d differ), chAppH-805 included; all unique" % (len(N), len(MOVED47), len(moved)),
-    len(N) == len(O) - len(REMOVED47) and moved == MOVED47 and len(set(allk)) == len(allk), moved[:6])
+    len(N) == len(O) - len(REMOVED47) + len(ADDED104) and moved == MOVED47 and len(set(allk)) == len(allk), moved[:6])
 # (4)
 chk("(4) the stars on %s and on ch1-008 are kept" % ID, flags.get(O[ID]["key"]) == STAMP and flags.get(O["ch1-008"]["key"]) == STAMP + 1, flags)
 chk("(5) no page errors", not errs and not e0, (errs + e0)[:3])

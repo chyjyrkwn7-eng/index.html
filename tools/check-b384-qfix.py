@@ -63,6 +63,9 @@ EXPL = ["ch28-701", "chAppC-002"]                                               
 EDITED = STEMS + list(OPT) + EXPL
 LEAKS = {"ch3-099": "ch3-624", "ch35-009": "ch35-016", "ch1-112": "ch1-142"}               # the stem that printed the figure another question asks -> that question
 UNIT_OF_REMOVED = {"ch12-012": "4", "ch55-702": "2", "ch2-047": "2"}
+# (384.104) the 26 occupant load questions a later build added to Chapter 10 (tools/gen-ifc-bank.py QUESTION_ADDS, read by their ids): counted as what they
+# are - new questions after Chapter 10's last, nothing of this build's fixes; check-b384-occload holds them. (BASE for this gate is main 384.70, 4e5328c.)
+ADDED = set(re.findall(r'_(?:row|sec)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
 ob, nb = bank_of(OLD_BANK), bank_of(NEW_BANK)
 oq = {q["id"]: q for q in ob["questions"]}; nq = {q["id"]: q for q in nb["questions"]}
 KEEP_SAME = [i for i in oq if i not in REMOVED and i not in EDITED]
@@ -101,7 +104,7 @@ REMAP = """(args)=>{ const qk = {}; const order = []; args.keys.forEach((k, n) =
 # =========================================================== the bank file
 bad_other = [i for i in KEEP_SAME if oq[i] != nq.get(i)]
 twins_same = all(oq[t] == nq.get(t) for t in REMOVED.values())
-gone_ok = all(i not in nq for i in REMOVED) and set(nq) == set(oq) - set(REMOVED)
+gone_ok = all(i not in nq for i in REMOVED) and set(nq) == (set(oq) - set(REMOVED)) | (ADDED & set(nq))
 diff_fields = {i: sorted(k for k in oq[i] if oq[i][k] != nq[i][k]) for i in EDITED if i in nq}
 want_fields = {**{i: ["question"] for i in STEMS}, **{i: ["options"] for i in OPT}, **{i: ["explanation"] for i in EXPL}}
 opt_diff = {i: sorted(k for k in oq[i]["options"] if nq[i]["options"][k] != oq[i]["options"][k]) for i in OPT if i in nq}
@@ -109,10 +112,10 @@ ans_same = all(nq[i]["answer"] == oq[i]["answer"] and nq[i]["options"][nq[i]["an
 units_ok = all(u["questionCount"] == sum(1 for q in nb["questions"] if q["unit"] == u["id"]) for u in nb["units"]) and nb["meta"]["questionCount"] == len(nb["questions"]) \
     and all(u["questionCount"] >= 1 for u in nb["units"]) and sum(u["questionCount"] for u in nb["units"]) == len(nb["questions"])
 meta_same = {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"}
-order_ok = [q["id"] for q in ob["questions"] if q["id"] in nq] == [q["id"] for q in nb["questions"]]
+order_ok = [q["id"] for q in ob["questions"] if q["id"] in nq] == [q["id"] for q in nb["questions"] if q["id"] not in ADDED]
 chk("(1) bank file: the three removed (%s) are gone and their twins (%s) are byte-identical; the %d edited questions differ only in the field the build says (%s) and keep their keyed answer; the other %d are byte-identical to main's; "
     "order, meta and every unit's questionCount are the bank's own (%d questions); no chapter is empty" % (", ".join(REMOVED), ", ".join(REMOVED.values()), len(EDITED), "stem 5, one option, explanation 2", len(KEEP_SAME), len(nb["questions"])),
-    gone_ok and twins_same and not bad_other and diff_fields == want_fields and opt_diff == {i: [o] for i, o in OPT.items()} and ans_same and units_ok and meta_same and order_ok and len(nb["questions"]) == len(oq) - len(REMOVED),
+    gone_ok and twins_same and not bad_other and diff_fields == want_fields and opt_diff == {i: [o] for i, o in OPT.items()} and ans_same and units_ok and meta_same and order_ok and len(nb["questions"]) == len(oq) - len(REMOVED) + len(ADDED & set(nq)),
     {"gone_ok": gone_ok, "twins": twins_same, "other": bad_other[:4], "fields": {i: f for i, f in diff_fields.items() if f != want_fields[i]}, "opt": opt_diff, "ans": ans_same, "units": units_ok, "order": order_ok})
 
 # =========================================================== each fix, as shapes
@@ -180,7 +183,7 @@ with sync_playwright() as pw:
         chk("(3) identity: %d questions here; all %d that stay keep main's exact key (%d moved: %s); all keys unique; the %d reworded stems and %d replaced option are pinned to main's wording (so the key is main's) while the page shows the new text; "
             "each removed question's position stays taken (IFC_SRC_GAPS), its key and the key it was stored under before 384.42 are retired (%d keys); the tables only grew" % (
             len(N), len(N), len(moved), moved[:3], len(STEMS), len(OPT), len(ret_need)),
-            len(N) == len(O) - len(REMOVED) and not moved and len(set(allk)) == len(allk) and pins_ok and shown_new and gaps_ok and ret_ok and tables_grew and set(N) == set(O) - set(REMOVED),
+            len(N) == len(O) - len(REMOVED) + len(ADDED & set(N)) and not moved and len(set(allk)) == len(allk) and pins_ok and shown_new and gaps_ok and ret_ok and tables_grew and set(N) == (set(O) - set(REMOVED)) | (ADDED & set(N)),
             {"moved": moved[:5], "pins": pins_ok, "shown": shown_new, "gaps": gaps_ok, "retired": ret_ok, "grew": tables_grew, "n": len(N), "uniq": len(set(allk))})
         # ---- (4) counts
         S = {s["id"]: s for s in new["sizes"]}; T = {s["id"]: s for s in old["sizes"]}
@@ -192,13 +195,13 @@ with sync_playwright() as pw:
         run4 = pg.evaluate(FULLRUN, {"t": t4, "n": S["4"]["n"] - 1})
         errs_all += errs; ctx.close()
         card_for = lambda t: next((v for k, v in cards.items() if k and (k == t or k == t.split(": ", 1)[-1])), None)
-        EXPECT = {u["id"]: sum(1 for q in ob["questions"] if q["unit"] == u["id"] and q["id"] not in REMOVED) for u in ob["units"]}
+        EXPECT = {u["id"]: sum(1 for q in ob["questions"] if q["unit"] == u["id"] and q["id"] not in REMOVED) + sum(1 for q in nb["questions"] if q["unit"] == u["id"] and q["id"] in ADDED) for u in ob["units"]}
         bad4 = {u: (S[u]["n"], S[u]["cache"], S[u]["run"], card_for(S[u]["topic"])) for u, n in EXPECT.items()
                 if not (S[u]["n"] == S[u]["cache"] == S[u]["run"] == n and card_for(S[u]["topic"]) in (None, "%d questions" % n))}
         chk("(4) counts: Chapter 2 %s -> %s, Chapter 4 %s -> %s, Chapter 1 %s unchanged, every other chapter main's size; each is its bank count, unitQuestionCount, a full run and its card; %s questions in all (main %s; the class card reads %s); "
             "a run one short of Chapter 2 / Chapter 4 is a partial run (%s / %s); every question of each (%s / %s) is the whole chapter, so the next full run is the new size" % (
             T["2"]["n"], S["2"]["n"], T["4"]["n"], S["4"]["n"], S["1"]["n"], new["meta"], old["meta"], new["tables"]["countText"], run2["part"], run4["part"], run2["n"], run4["n"]),
-            not bad4 and S["2"]["n"] == T["2"]["n"] - 2 and S["4"]["n"] == T["4"]["n"] - 1 and S["1"]["n"] == T["1"]["n"] and new["meta"] == old["meta"] - 3 and new["tables"]["countText"] == "{:,}".format(new["meta"])
+            not bad4 and S["2"]["n"] == T["2"]["n"] - 2 and S["4"]["n"] == T["4"]["n"] - 1 and S["1"]["n"] == T["1"]["n"] and new["meta"] == old["meta"] - 3 + len(ADDED & set(nq)) and new["tables"]["countText"] == "{:,}".format(new["meta"])
             and run2["part"] is False and run2["full"] is True and run4["part"] is False and run4["full"] is True and run2["n"] == S["2"]["n"] and run4["n"] == S["4"]["n"] and min(s["n"] for s in new["sizes"]) >= 1, {"bad": bad4, "run2": run2, "run4": run4})
         # ---- (5) nothing lost
         topics = [S[u]["topic"] for u in ("1", "2", "4")]
