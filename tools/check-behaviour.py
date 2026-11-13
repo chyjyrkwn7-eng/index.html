@@ -9361,32 +9361,22 @@ def check_b305_resultstap(br):
         pg.touchscreen.tap(where[0], where[1]); pg.wait_for_timeout(900)
         r1 = pg.evaluate("()=>({ home: !!document.querySelector('[data-screen=\"home\"]'), results: !!document.querySelector('.rs-rewards') })")
         check(dev + ": a tap where Main menu will be, before it is there, stays on the results", r1["results"] and not r1["home"], r1)
-        # one tap, one card
-        landed = "()=>document.querySelectorAll('.rs-rewards .rs-land.rs-in, .rs-rewards .rs-land.rs-in-now').length"
-        total = pg.evaluate("()=>document.querySelectorAll('.rs-rewards .rs-land').length")
-        graded = "()=>!!document.querySelector('.rs-rewards .rs-grade.rs-graded')"
-        # which box each landed piece belongs to: the outermost .rs-land round it (a card's lines are inside the card)
-        boxes = """()=>{ const all = [...document.querySelectorAll('.rs-rewards .rs-land')];
-          return all.map((e, i) => { let top = e; for(let p = e.parentElement; p; p = p.parentElement) if(p.classList && p.classList.contains('rs-land')) top = p;
-            return [i, all.indexOf(top), e.classList.contains('rs-in') || e.classList.contains('rs-in-now')]; }); }"""
-        before = pg.evaluate(landed); g0 = pg.evaluate(graded); b0 = pg.evaluate(boxes)
-        pg.touchscreen.tap(w / 2, h * 0.45); pg.wait_for_timeout(60)
-        after = pg.evaluate(landed); g1 = pg.evaluate(graded); b1 = pg.evaluate(boxes)
-        new_boxes = sorted({x[1] for x, y in zip(b0, b1) if y[2] and not x[2]}) if len(b0) == len(b1) else ["changed"]
-        # BUILD 320: the grade is counted in, and a tap while it counts is
-        # "the box on screen" - it finishes the count and lands the grade,
-        # one step, and the XP card waits for the next tap.
-        # MOVED IN 380 (fef8ce3, "TAP-THROUGH, BOX BY BOX"): "if you tap it
-        # while it loads it would finish instantly and then go to the xp box
-        # and do it normally, if you tap it again that would finish and so
-        # on" - 305's tap ran one step of the timeline and often seemed to do
-        # nothing, so a tap now finishes the box coming in (the XP card's
-        # lines, its total and its level block land together) and the next
-        # box follows after a beat. One tap is still never the rest of the
-        # reveal: what lands is inside ONE box, and the way-on row is not it.
-        check(dev + ": a tap finishes the box coming in (or lands the grade being counted) - one box, never the rest of them (380)",
-              ((after > before and len(new_boxes) == 1) or (after == before and g1 and not g0)) and after < total,
-              (before, after, total, g0, g1, new_boxes))
+        # MOVED IN 384.99 (resultskip): "it should just speed up/skip" - ONE tap lands the whole reveal (every card, the grade,
+        # the XP, the way-on row), or, with a scene or pop-up still to play, everything up to it, which then plays. The tap
+        # above (where Main menu would be) was that tap, and it pressed nothing. 380's "one box a tap" is superseded below.
+        r2 = pg.evaluate("""()=>{ const p=document.querySelector('.rs-rewards'); if(!p) return null;
+          const all=p.querySelectorAll('.rs-land').length, on=p.querySelectorAll('.rs-land.rs-in-now, .rs-land.rs-in').length;
+          return { all, on, done: p.classList.contains('rs-done'), pending: !!(typeof resultsSeq !== 'undefined' && resultsSeq && resultsSeq.isRunning()),
+            graded: !!p.querySelector('.rs-grade.rs-graded, .rs-grade:not(.is-counting)') }; }""")
+        came = bool(r2) and r2["done"]
+        if r2 and not came and r2["pending"]:
+            try: pg.wait_for_function("()=>!!document.querySelector('.rs-spot, .bc-scene, .sf-scene')", timeout=5000); came = True
+            except Exception: came = False
+        check(dev + ": that one tap landed the whole reveal - the way-on row too - or all of it up to a pop-up still to come (384.99)",
+              came and r2["graded"] and (r2["done"] and r2["on"] == r2["all"] or r2["pending"]), r2)
+        superseded(dev + ": a tap finishes the box coming in (or lands the grade being counted) - one box, never the rest of them (380)",
+                   "384.99: Madison asked for one tap to skip ('I'm sitting there having to spam it for it to register')")
+        # (the 380 leg's own second tap and its count of boxes, gone with it)
         for _ in range(150):
             pg.wait_for_timeout(200)
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break

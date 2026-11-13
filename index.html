@@ -28103,6 +28103,9 @@
      "I tapped the screen ... while the test results came up ... it send
      me back to the main menu". Now the tap falls through to the panel. */
   .rs-land:not(.rs-in):not(.rs-in-now){ pointer-events:none; }
+  /* (384.99) and the XP card's character holds still until its card is down: its idle loops ran at opacity 0 under the grade's
+     count, a repaint of the drawing every frame that nobody could see (traced at 4x CPU: 198 paints in a 4s count) */
+  .rs-screen .rs-land:not(.rs-in):not(.rs-in-now) .results-level-avatar *{ animation-play-state:paused !important; }
   .rs-land.rs-in-now{ opacity:1; transform:none; }
   .rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both; }
   /* THE IMPACT IS A LAYER THAT FADES (build 282). It used to animate the
@@ -98731,6 +98734,12 @@ function recordingShouldWait(){
      Safari has no requestIdleCallback, so quietIdle's slices are a 60ms timer, never a wait for idle; and an iPad's badges are bigger to
      draw. None of these warm-ups is for a screen a test shows: during a question or the Pause menu they wait, and go on after. */
   try{ if(testInProgress && order.length) return 1500; }catch(e){}
+  /* (384.99) NOR WHILE THE RESULTS COME IN. Madison: "When scoring a hundred. The bar lags as it goes up." The warm-ups held back
+     through a test (above) went on 1.6s after its results were mounted - right inside the grade's count and the XP bar's fill:
+     traced at 4x CPU, warmBadgeStrikes' slices (45 of them, 20-280ms each, 2.8s of main thread) ran from 2.5s to 11.5s into a
+     100%'s results, and on an iPhone (no requestIdleCallback) each is a 60ms timer that runs whether the page is busy or not.
+     They wait for the reveal to end - the buttons in - and then go on as before. */
+  try{ if(resultsSeq && resultsSeq.isRunning()) return 600; }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
 }
@@ -122862,7 +122871,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.94";
+const APP_BUILD = "2026-11-13-384.99";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -124232,12 +124241,19 @@ function hfxContext(opts){
    the window crosses it - two transforms, nothing re-laid out. */
 /* The grade as a number and a small raised % (see .rs-pct-sign). The
    label still reads "100%" to a screen reader. */
-function gradePctMarkup(el, pct){
-  el.textContent = String(pct);
-  const sign = document.createElement("span");
-  sign.className = "rs-pct-sign"; sign.textContent = "%";
-  el.appendChild(sign);
-  el.setAttribute("aria-label", pct + "%");
+function gradePctMarkup(el, pct, counting){
+  /* (384.99) a number already drawn this way keeps its nodes and changes its text (rsText) - the grade counts up through it
+     once a frame - and while it counts (`counting`) its label waits for the real grade */
+  const t = el.firstChild, s0 = el.lastChild;
+  if(t && t.nodeType === 3 && s0 && s0 !== t && el.childNodes.length === 2 && s0.classList && s0.classList.contains("rs-pct-sign")){
+    if(t.data !== String(pct)) t.data = String(pct);
+  } else {
+    el.textContent = String(pct);
+    const sign = document.createElement("span");
+    sign.className = "rs-pct-sign"; sign.textContent = "%";
+    el.appendChild(sign);
+  }
+  if(!counting) el.setAttribute("aria-label", pct + "%");
 }
 
 function hfxLitText(bx, c, o){
@@ -129786,7 +129802,16 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const setLine = (p, into, overNow) => {
     const v = levelBarOf(p);
     const n = into == null ? v.into : into;
-    line.replaceChildren(buildXpNumbers(n, v.span, overNow == null ? n > v.span : overNow));
+    const over = overNow == null ? n > v.span : overNow;
+    /* (384.99) counting, the same nodes with new text (rsText) - it was a new .xpnums every frame the figure moved */
+    const xn = line.firstChild;
+    if(xn && xn === line.lastChild && xn.nodeType === 1 && xn.classList.contains("xpnums") && xn.children.length === 2){
+      rsText(xn.children[0], Math.max(0, Math.round(Number(n) || 0)).toLocaleString());
+      rsText(xn.children[1], " / " + Math.max(0, Math.round(Number(v.span) || 0)).toLocaleString() + " XP");
+      xn.classList.toggle("is-over", !!over);
+      return;
+    }
+    line.replaceChildren(buildXpNumbers(n, v.span, over));
   };
   /* Where the "have" number started this run, on the level the run ended
      in - for the count-up at a wall or at 80. */
@@ -129853,6 +129878,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      Madison: "a smidge slower too to draw it out make it more suspenseful"): slow away, slow in, longer the
      further it goes. */
   const XP_EASE = "cubic-bezier(.4,.05,.15,1)";  /* = XP_FILL_EASE, which the fill sound rides */
+  const XP_EASE_AT = rsCubicBezier(.4, .05, .15, 1);   /* (384.99) the same curve, for the number counting with it */
   /* (a bar with nowhere to go - full already, or no XP - lands at once) */
   const fillMsFor = d => d <= .002 ? 260 : Math.round(1400 + 1820 * Math.min(1, d / .6));
   const target = Math.round(barAfter.fraction * 1000) / 10;
@@ -129875,9 +129901,13 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      reduced-motion paths of the results reveal. */
   let finished = false, follow = 0;
   const stopFollow = () => { if(follow) cancelAnimationFrame(follow); follow = 0; };
+  /* (384.99) the fill in flight (rsBarAnim), and where the bar's own --fill stands */
+  let barAnim = null, barNow = Math.round(barBefore.fraction * 1000) / 10;
+  const dropBarAnim = () => { if(barAnim){ try{ barAnim.cancel(); }catch(e){} barAnim = null; } };
   wrap.setFinal = function(){
     finished = true;
     stopFollow();
+    dropBarAnim();
     fill.style.transition = "none";
     setBarFill(fill, Math.round(barAfter.fraction * 1000) / 10);
     lvl.textContent = "Level " + after.level;
@@ -129897,15 +129927,18 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   };
   /* The numbers of level state `p` counted from n0 to n1 as the bar moves
      from f0 to f1 - every frame, from the bar itself. */
-  const followBar = (p, f0, f1, n0, n1) => {
+  /* (384.99) ...from the bar's own ANIMATION: how far its clock has run, through the same curve (XP_EASE_AT) - nothing laid out
+     or read back from the screen. A bar with no animation (no Web Animations) is still read off its box. */
+  const followBar = (p, f0, f1, n0, n1, anim, ms) => {
     stopFollow();
     setLineN(p, Math.round(n0));
     if(n1 === n0) return;
     const tick = () => {
       follow = 0;
       if(finished) return;
-      const f = barAt();
-      const k = f == null ? 0 : f1 > f0 ? Math.max(0, Math.min(1, (f - f0) / (f1 - f0))) : 1;
+      let k;
+      if(anim){ const ct = Number(anim.currentTime); k = isFinite(ct) ? XP_EASE_AT(Math.max(0, Math.min(1, ct / Math.max(1, ms)))) : 0; }
+      else { const f = barAt(); k = f == null ? 0 : f1 > f0 ? Math.max(0, Math.min(1, (f - f0) / (f1 - f0))) : 1; }
       setLineN(p, Math.round(n0 + (n1 - n0) * k));
       if(k < 1) follow = requestAnimationFrame(tick);
     };
@@ -129913,9 +129946,16 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   };
   const fillTo = (pct, ms, then, nums) => {
     if(ms > 200) playSound("res.xp.fill", { dur: ms / 1000 });
-    fill.style.transition = "transform " + ms + "ms " + XP_EASE;
+    /* (384.99) on the compositor: one animation of the bar's transform with the fill's own easing, its --fill at the end from
+       the start (what the light along it reads) */
+    dropBarAnim();
+    fill.style.transition = "none";
+    const a = barAnim = rsBarAnim(fill, barNow, pct, ms, XP_EASE);
+    if(!a) fill.style.transition = "transform " + ms + "ms " + XP_EASE;
+    else if(a.finished) a.finished.then(() => { if(barAnim === a) dropBarAnim(); }, () => {});
     setBarFill(fill, pct);
-    if(nums) followBar(nums.p, nums.f0, pct / 100, nums.n0, nums.n1);
+    barNow = pct;
+    if(nums) followBar(nums.p, nums.f0, pct / 100, nums.n0, nums.n1, barAnim, ms);
     /* home: the number exactly where the fill says, whatever a frame did */
     later(ms, () => { stopFollow(); if(nums) setLineN(nums.p, Math.round(nums.n1)); then(); });
   };
@@ -129993,8 +130033,12 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
         setNext(lv < after.level ? null : lv);
         wrap.classList.add("is-levelup");
         fill.style.transition = "none";
+        /* (384.99) a fill that is an animation starts from its own first frame, so the empty bar needs no layout forced to
+           commit it - it is still shown, empty, for a frame before the next fill (the rAF below) */
+        dropBarAnim();
         setBarFill(fill, 0);
-        void fill.offsetWidth;
+        barNow = 0;
+        if(typeof fill.animate !== "function") void fill.offsetWidth;
         requestAnimationFrame(() => {
           if(finished) return;
           /* mid-climb, the line says where it is going rather than
@@ -132388,6 +132432,20 @@ function makeRevealSequence(alive){
       fire();
       return true;
     },
+    /* (384.99) ONE TAP, THE WHOLE REVEAL. Madison: "Ensure tap to skip works properly with the result screen, the timing is
+       weird, I'm sitting there having to spam it for it to register, it should just speed up/skip." nextBox() above (380) took
+       one tap per box, and between two boxes one tap ran a single step - a 100% read as five or six taps, each bringing the next
+       card in at its usual pace. Now a tap runs every step up to the next banner, scene or pop-up at once, each told it is
+       instant (a count lands on its number, a bar on its fill, a card in its place). A held step is never run early or cut short:
+       it plays as it would, with its own tap, and what follows it goes on at its own pace - a tap then skips that too. */
+    skipAll(){
+      if(finished || paused || holder || !timer) return false;
+      clearTimeout(timer); timer = null;
+      /* in the beat before a scene, the scene starts now and what follows it keeps its pace */
+      fast = !(steps[i] && steps[i].wait);
+      fire();
+      return true;
+    },
     isHeld(){ return !!holder; },
     stop(){
       finished = true;
@@ -132506,7 +132564,7 @@ const RS_RISE_MS = 620, RS_RISE_ROW_MS = 90;
    the buttons then rise into place - under the finger that was still tapping, so the next tap
    (or the click that follows a tap) landed on "Main menu". For 700ms after any tap on the
    results, and for 600ms after the buttons arrive, a button there does not answer. */
-let rsTapGuardUntil = 0;
+let rsTapGuardUntil = 0;   /* (384.99) nothing moves it any more - a tap on the screen or a rise held EVERY button; see rsSpamAt */
 /* build 380: WHEN THE TAP HAPPENED, not when the page got to it. A tap the phone holds while the page is busy (the save at a test's end,
    a scene being built) reaches the page late, so one tap of a run of taps could arrive past the guard and press "Main menu". The event's
    own time (when the finger did it, where the browser gives that) and a frame beat while the results are up (no frame for 120ms: the page
@@ -132535,34 +132593,87 @@ function rsTapAt(e){
    has gone by; and even then a click only counts when the touch it came from STARTED after that moment (a finger already down when
    the buttons arrived lifts onto nothing). A refused click starts the wait again. Keyboard and programmatic clicks with no touch
    behind them only wait for the row to be ready. */
-var RS_SETTLE_MS = 500;   /* var: safe to read before this part of the script has run */
-var rsDownAt = -1e9, rsUpAt = -1e9;
+/* (384.99) A BUTTON YOU CAN SEE IS A BUTTON YOU CAN PRESS. Madison: "When the results are up, the buttons under it take like 3-4
+   seconds to let you tap them." Measured on main 384.94 (a 100% drill, 440x956, real touch): Main menu was on the screen 15.75s
+   in (opacity .35) and took its first press at 16.85s - its 620ms rise plus RS_SETTLE_MS - and a tap inside that wait started
+   the wait again (rsArmIn(c, 0)); on top of it every tap on the screen held all the buttons 700ms more (rsTapGuardUntil, 380)
+   and every refused press another 700ms, so a hand still tapping never got through. What those waits were for stays, said
+   exactly, and nothing else:
+   - (305/382) a button not yet drawn takes nothing: the row is inert, with no switches, until its buttons start to rise, and
+     each button is live from the frame it is first drawn (its row's rise delay, then the frame);
+   - (382) a press whose touch STARTED before that button was drawn is refused - a finger already down as it arrived, or the very
+     tap that skipped the reveal, lifts onto nothing - and starts no wait;
+   - (380) only where a finger was already tapping: a button that comes up under a spot tapped in the second before it arrived
+     ignores taps there that keep coming (under RS_SPAM_GAP_MS apart); the first after a pause presses. A button nobody was
+     tapping at takes its first tap.
+   Keyboard and programmatic clicks with no touch behind them only wait for the button to be drawn. */
+var RS_SETTLE_MS = 0;   /* var: safe to read before this part of the script has run (the settle after the rise is gone) */
+var RS_SPAM_GAP_MS = 700, RS_SPAM_LOOK_MS = 1000, RS_SPAM_PAD = 16;
+var rsDownAt = -1e9, rsUpAt = -1e9, rsTapLog = [];
 function rsDisarm(el){
   if(!el) return;
   el.classList.add("rs-armable", "rs-unarmed");
   el.setAttribute("data-no-hsw", "");
   el.querySelectorAll(".nova-hsw").forEach(sw => { const h = sw.parentNode; if(h){ h.removeAttribute("data-hsw"); h.__hsw = null; } sw.remove(); });
+  el.querySelectorAll("button, [role='button']").forEach(b => { b.__liveAt = Infinity; b.__hot = undefined; });
   el.__armAt = Infinity;
+  el.__armN = (el.__armN || 0) + 1;
   clearTimeout(el.__armT);
 }
+/* Live from `ms` after the row is first drawn - from the frame that draws it (a busy page draws it late, and a finger that
+   landed before that frame landed on nothing), each button from its own rise delay (b.__riseDl) where it has one. */
 function rsArmIn(el, ms){
   if(!el) return;
   rsDisarm(el);
-  el.__armAt = performance.now() + Math.max(0, ms || 0) + RS_SETTLE_MS;
-  const tick = () => {
-    const left = el.__armAt - performance.now();
-    if(left > 1){ el.__armT = setTimeout(tick, left); return; }
-    el.classList.remove("rs-unarmed"); el.removeAttribute("data-no-hsw");
-    try{ if(window.hswRescan) window.hswRescan(el); }catch(e){}
-  };
-  el.__armT = setTimeout(tick, el.__armAt - performance.now());
+  const n = el.__armN, first = Math.max(0, ms || 0);
+  requestAnimationFrame(() => {
+    if(el.__armN !== n) return;
+    const at = performance.now();
+    el.__armAt = at + first;
+    el.querySelectorAll("button, [role='button']").forEach(b => { b.__liveAt = at + (typeof b.__riseDl === "number" ? b.__riseDl : first); });
+    const go = () => {
+      if(el.__armN !== n) return;
+      el.classList.remove("rs-unarmed"); el.removeAttribute("data-no-hsw");
+      try{ if(window.hswRescan) window.hswRescan(el); }catch(e){}
+    };
+    if(first > 1) el.__armT = setTimeout(go, first); else go();
+  });
+}
+/* Where a button RESTS, in page coordinates (its rise's transform left out). */
+function rsRestRect(b){
+  let x = 0, y = 0, e = b;
+  while(e){ x += e.offsetLeft; y += e.offsetTop; e = e.offsetParent; }
+  return { l: x, t: y, r: x + b.offsetWidth, b: y + b.offsetHeight };
+}
+/* (380, at the button's own spot) is this press one of a run of taps that was already landing where `b` came up? */
+function rsSpamAt(b, live){
+  if(b.__hot === false) return false;
+  const r = rsRestRect(b), P = RS_SPAM_PAD;
+  const at = p => p.x >= r.l - P && p.x <= r.r + P && p.y >= r.t - P && p.y <= r.b + P;
+  if(b.__hot === undefined){
+    b.__hot = rsTapLog.some(p => p.t < live && p.t >= live - RS_SPAM_LOOK_MS && at(p));
+    if(!b.__hot) return false;
+  }
+  let prev = null;
+  rsTapLog.forEach(p => { if(p.t < rsDownAt - 1 && at(p)) prev = p; });
+  if(prev && rsDownAt - prev.t < RS_SPAM_GAP_MS) return true;
+  b.__hot = false;
+  return false;
 }
 (function rsArmWatch(){
   const evAt = e => { const n = performance.now(); return (e && e.timeStamp > 0 && e.timeStamp <= n) ? e.timeStamp : n; };
   ["pointerdown", "touchstart"].forEach(t => window.addEventListener(t, e => {
     /* a touch's pointerdown comes with its touchstart: the earlier of the two is when the finger landed */
     const at = evAt(e);
-    rsDownAt = (rsUpAt < rsDownAt && at - rsDownAt < 60) ? Math.min(rsDownAt, at) : at;
+    const same = rsUpAt < rsDownAt && at - rsDownAt < 60;
+    rsDownAt = same ? Math.min(rsDownAt, at) : at;
+    if(!same){
+      const p = e.touches && e.touches[0] ? e.touches[0] : e;
+      if(typeof p.clientX === "number"){
+        rsTapLog.push({ x: p.clientX + (window.scrollX || 0), y: p.clientY + (window.scrollY || 0), t: rsDownAt });
+        if(rsTapLog.length > 24) rsTapLog.shift();
+      }
+    }
   }, { capture: true, passive: true }));
   ["pointerup", "pointercancel", "touchend", "touchcancel"].forEach(t => window.addEventListener(t, () => { rsUpAt = performance.now(); }, { capture: true, passive: true }));
   window.addEventListener("click", e => {
@@ -132573,23 +132684,24 @@ function rsArmIn(el, ms){
     const now = performance.now();
     /* the click belongs to a touch when one is down or was lifted a moment ago */
     const fromTouch = rsDownAt > -1e8 && (rsUpAt < rsDownAt || now - rsUpAt < 1000);
-    if(!c.classList.contains("rs-unarmed") && now >= c.__armAt && !(fromTouch && rsDownAt < c.__armAt)) return;
+    const live = typeof b.__liveAt === "number" ? b.__liveAt : c.__armAt;
+    if(!c.classList.contains("rs-unarmed") && now >= live && !(fromTouch && rsDownAt < live) && !(fromTouch && rsSpamAt(b, live))) return;
     e.preventDefault(); e.stopImmediatePropagation();
-    rsArmIn(c, 0);
   }, true);
 })();
 function rsRise(el, o){
   o = o || {};
   if(!el) return 0;
-  rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 600);
-  try{ rsBeatStart(); }catch(e){}
   rsDisarm(el);
   const total = rsRiseRun(el, o);
-  rsArmIn(el, total);
+  const btns = [...el.querySelectorAll("button, [role='button']")];
+  const first = btns.reduce((m, b) => Math.min(m, typeof b.__riseDl === "number" ? b.__riseDl : 0), btns.length ? Infinity : 0);
+  rsArmIn(el, isFinite(first) ? first : 0);
   return total;
 }
 function rsRiseRun(el, o){
   el.classList.remove("rs-in"); el.classList.add("rs-in-now");
+  el.querySelectorAll("button, [role='button']").forEach(b => { b.__riseDl = 0; });
   if(o.instant || resultsMotionOff()) return 0;
   const btns = [...el.children].filter(b => b.matches("button, .next") && !b.hidden);
   if(!btns.length) return 0;
@@ -132602,6 +132714,7 @@ function rsRiseRun(el, o){
   btns.forEach(b => {
     const r = rows.findIndex(y => Math.abs(y - b.offsetTop) < 6), dl = d0 + Math.max(0, r) * RS_RISE_ROW_MS;
     b.style.setProperty("--rise-dl", (dl / 1000).toFixed(3) + "s");
+    b.__riseDl = dl;
     last = Math.max(last, dl);
   });
   clearTimeout(el.__riseT);
@@ -133908,6 +134021,13 @@ function playUnlockSpotlight(item, n, of, release){
    (.rs-frac-of) - the level bar's "216 / 2,156 XP" set the pattern. */
 function rsNum(n){ return (Number(n) || 0).toLocaleString(); }
 function rsPair(el, have, of){
+  /* (384.99) counted in, the same nodes with new text (see rsText) */
+  const t = el.firstChild, o0 = el.lastChild;
+  if(t && t.nodeType === 3 && o0 && o0 !== t && el.childNodes.length === 2 && o0.classList && o0.classList.contains("rs-frac-of")){
+    if(t.data !== rsNum(have)) t.data = rsNum(have);
+    rsText(o0, " / " + rsNum(of));
+    return el;
+  }
   const o = document.createElement("span");
   o.className = "rs-frac-of"; o.textContent = " / " + rsNum(of);
   el.replaceChildren(document.createTextNode(rsNum(have)), o);
@@ -134593,9 +134713,12 @@ function showRunRewards(run, hooks, opts){
     if(hooks.onDone) hooks.onDone(slot);
   };
   const fillBars = sel => panel.querySelectorAll(sel).forEach(f => { setBarFill(f, f.dataset.to); });
+  let countRun = 0;
   const countUp = instant => {
     const target = run.xpTotal;
-    if(instant || target <= 0){ totalNum.textContent = "+" + target.toLocaleString(); return; }
+    /* (384.99) landed at once (a tap while it counted): the count still running stops, so the number never steps back */
+    const me = ++countRun;
+    if(instant || target <= 0){ rsText(totalNum, "+" + target.toLocaleString()); return; }
     /* ON THE FRAME, NOT A 30ms TIMER (build 302): "the xp stuff at the
        test result screen seems a bit laggy and not extremely smooth". A
        setInterval ticks out of step with the display, so the number
@@ -134605,10 +134728,10 @@ function showRunRewards(run, hooks, opts){
     const t0 = performance.now(), dur = 900;
     let shown = -1;
     const tick = now => {
-      if(!totalNum.isConnected) return;
+      if(!totalNum.isConnected || me !== countRun) return;
       const t = Math.min(1, (now - t0) / dur);
       const v = t >= 1 ? target : Math.round(target * (1 - Math.pow(1 - t, 3)));
-      if(v !== shown){ shown = v; totalNum.textContent = "+" + v.toLocaleString(); if(t < 1) sndXpCount(t); }
+      if(v !== shown){ shown = v; rsText(totalNum, "+" + v.toLocaleString()); if(t < 1) sndXpCount(t); }
       if(t < 1) requestAnimationFrame(tick); else sndXpCount(1);
     };
     requestAnimationFrame(tick);
@@ -134678,7 +134801,8 @@ function showRunRewards(run, hooks, opts){
     });
   };
   const paintUnit = (u, p) => {
-    setBarFill(u.fill, Math.round(u.up * p * 10) / 10);
+    /* (384.99) a bar with its own animation is moved by it, on the compositor - see gc.start */
+    if(!u.anim) setBarFill(u.fill, Math.round(u.up * p * 10) / 10);
     const r = Math.min(u.right, Math.floor(u.right * p + 1e-6));
     if(u.shown !== r){ u.shown = r; if(u.score) rsPair(u.score, r, u.total); }
     /* the bar's own turn, by its own unit's verdict */
@@ -134687,13 +134811,9 @@ function showRunRewards(run, hooks, opts){
     if(u.bgNow !== bg){
       const was = u.bgNow;
       u.bgNow = bg;
-      if(green && was){
-        u.turn = rsTurn((g, a, last) => {
-          if(last){ u.fill.style.scale = ""; u.fill.style.background = u.home ? "" : "var(--right)"; return; }
-          u.fill.style.background = g ? "var(--right)" : "var(--wrong)";
-          u.fill.style.scale = "1 " + (.5 + .5 * a).toFixed(3);   /* a 6px bar edge-on is a grey hairline: it only dips to half */
-        });
-      } else u.fill.style.background = bg;
+      /* a 6px bar edge-on is a grey hairline: it only dips to half (rsBarTurn) */
+      if(green && was) u.turn = rsBarTurn(u.fill, () => u.home ? "" : "var(--right)");
+      else u.fill.style.background = bg;
     }
   };
   /* a bar home takes its own verdict's colour - which its turn has
@@ -134701,6 +134821,7 @@ function showRunRewards(run, hooks, opts){
   const unitHome = u => {
     if(u.home) return;
     u.home = true;
+    if(u.anim){ setBarFill(u.fill, Math.round(u.up * 10) / 10); try{ u.anim.cancel(); }catch(e){} u.anim = null; }
     paintUnit(u, 1);
     if(!u.turn || u.turn.done) u.fill.style.background = "";
     u.fill.className = u.tone + " sbar is-home";
@@ -134718,7 +134839,7 @@ function showRunRewards(run, hooks, opts){
       sofar += u.right * p;
     });
     const pc = Math.min(run.pct, Math.floor(sofar / run.total * 100 + 1e-6));
-    if(pc !== shownPct){ sndGradeTick(shownPct, pc); shownPct = pc; gradePctMarkup(gradeParts.pctEl, pc); }
+    if(pc !== shownPct){ sndGradeTick(shownPct, pc); shownPct = pc; gradePctMarkup(gradeParts.pctEl, pc, true); }
     if(passes && sofar / run.total * 100 >= passAt) goGreen();
 
   };
@@ -134726,11 +134847,20 @@ function showRunRewards(run, hooks, opts){
     if(gc.done) return;
     unitBars.forEach(u => { u.fill.style.transition = "none"; });
     grade.classList.add("is-running");
+    /* (384.99) EACH BAR IS ONE ANIMATION, started now with its own delay and curve (the same ease-out as paintCount's), and the
+       number counts off the LAST bar's own clock (it runs the whole count), so the two cannot part whatever the main thread
+       is doing; with no Web Animations the bars are painted frame by frame as before */
+    unitBars.forEach((u, i) => {
+      const pw = i === unitBars.length - 1 ? RS_GRADE_LAST_EASE : 2.4;
+      u.anim = rsBarAnim(u.fill, 0, u.up, Math.max(1, plan.ms[i]), t => 1 - Math.pow(1 - t, pw), plan.starts[i]);
+    });
+    const clock = unitBars.length && unitBars[unitBars.length - 1].anim;
     const t0 = performance.now();
     const tick = now => {
       if(gc.done) return;
       if(!panel.isConnected){ gc.done = true; return; }
-      const el = now - t0;
+      const ct = clock ? Number(clock.currentTime) : NaN;
+      const el = isFinite(ct) ? ct : now - t0;
       /* the bars home, the number held where it is: the real grade is
          the landing's to show, never a frame before it */
       if(el >= plan.totalMs){ gc.finish(); return; }
@@ -134949,10 +135079,12 @@ function showRunRewards(run, hooks, opts){
   const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
   const lift = rsGradeLift(grade);
   const hint = rsSkipHint(panel);
-  let fxHandle = null;
+  let fxHandle = null, fxTailHandle = null;
   const riseGrade = instant => {
     /* a tap: the effect off at once. Its own time (the tail): it is left to fade out by itself as the grade goes up */
     if(instant && fxHandle && !fxHandle.done){ try{ fxHandle.stop(true); }catch(e){} }
+    /* (384.99) ...unless a tap comes while it is still fading: then it stops fast with the rest */
+    fxTailHandle = instant ? null : fxHandle;
     fxHandle = null;
     lift.rise(instant);
     rsLand(head, instant);
@@ -135023,6 +135155,9 @@ function showRunRewards(run, hooks, opts){
       if(it.kind === "badge"){
         if(caseDone || typeof playBadgeCaseScene !== "function") return;
         caseDone = true;
+        /* (384.99) celebrations off: no scene comes, so it holds nothing up - its row says it (the box's note) and marks it
+           played as it lands, which is all playBadgeCaseScene does muted; a tap then lands the whole screen at once */
+        if(theme.muteBanners){ onRow[n] = () => { try{ markBadgeScenesPlayed(run.badges.slice()); }catch(e){} }; return; }
         warmBadgeCoinFaces(run.badges);
         seq.add(nextGap(), (instant, release) => playBadgeCaseScene(run.badges.slice(), release, run.retroBadges), true);
         afterScene = true;
@@ -135067,26 +135202,59 @@ function showRunRewards(run, hooks, opts){
      and brings the next card in straight away. It used to run every step
      up to the next banner at once. Cutscenes and unlock pop-ups hold the
      timeline and keep their own tap. */
+  /* (384.99) ONE TAP SKIPS THE REVEAL (seq.skipAll): everything still moving finishes, every card lands as it ends, the
+     hundo effect (or its tail) stops fast, and the buttons come up - or, with a scene or pop-up still to play, everything up
+     to it, which then plays as it always does. No tap moves the rsTapGuardUntil wait any more (see rsSpamAt). */
   const tapOn = () => {
-    rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 700);
     if(resultsSeq !== seq || seq.isHeld()) return;
     if(moving){ const f = moving; moving = null; try{ f(); }catch(err){} }
+    if(fxTailHandle && !fxTailHandle.done){ try{ fxTailHandle.stop(true); }catch(err){} }
+    fxTailHandle = null;
     rsFinishMoving(panel);
-    seq.nextBox();
+    seq.skipAll();
   };
-  panel.addEventListener("click", e => {
-    if(e.target.closest("button")) return;
+  /* (384.99) A TAP IS READ OFF THE FINGER, NOT OFF A CLICK. On an iPhone a click is only made when the touched element, or an
+     ancestor below <body>, answers clicks itself (WebKit's potential tap: ancestorRespondingToClickEvents); a listener on the
+     document does not count. So the r6 "tap anywhere" (a document listener) did nothing on an iPhone beside the panel - the
+     gutters, the foot of the screen, and on an iPad the margins and the "Tap to skip" words themselves (measured: 9% of a 17 Pro
+     Max's screen, 23% of an iPad Pro 11"'s, the hint over <html>). And a click is the last thing iOS sends: no click for a tap it
+     drops (a node changing under the finger, commitPotentialTap) or reads as a hover. A touch that lands and lifts within
+     RS_TAP_SLOP px and RS_TAP_HOLD_MS is the tap, wherever it is (touch events reach the page whatever is under the finger), and
+     a mouse or pen press the same; a click with neither behind it (a script's, an assistive tool's) still counts. Never a tap on
+     a control, a pop-up or a scene (they keep their own), never a drag; nothing is prevented, so scrolling is untouched. How long
+     the finger was down is read off the events' own times (when it happened), not off when the page got to them: the page is at
+     its busiest as the results come up, and a tap it reached a second late is still a tap. */
+  const RS_TAP_SLOP = 12, RS_TAP_HOLD_MS = 700;
+  const RS_TAP_NOT = "button, a, input, textarea, select, label, [role='button'], [role='dialog'], [role='switch'], .rs-spot, .top";
+  let tapDown = null, tapSeenAt = -1e9;
+  const tapLive = () => panel.isConnected && resultsSeq === seq;
+  const evT = e => { const n = performance.now(); return (e && e.timeStamp > 0 && e.timeStamp <= n) ? e.timeStamp : n; };
+  const tapAt = (x, y, tgt, t) => { tapDown = { x, y, t, tgt }; };
+  const tapUp = (x, y, t) => {
+    const d = tapDown; tapDown = null;
+    if(!d) return;
+    tapSeenAt = performance.now();
+    if(Math.hypot(x - d.x, y - d.y) > RS_TAP_SLOP || t - d.t > RS_TAP_HOLD_MS) return;
+    if(d.tgt && d.tgt.closest && d.tgt.closest(RS_TAP_NOT)) return;
     tapOn();
-  });
-  /* (384 r6) A TAP ANYWHERE: the effect's layers take no pointer, so a tap beside the panel (an iPad's margins, the foot
-     of the screen under the hint) lands on the page itself - and Enter or Space does the same. Only while the reveal
-     runs and the results are up; never a tap on a control, a pop-up or a scene (they keep their own tap). */
-  const offTap = () => { document.removeEventListener("click", docTap, true); document.removeEventListener("keydown", keyTap, true); };
+  };
+  const tStart = e => { if(!tapLive()){ offTap(); return; } if(!e.touches || e.touches.length !== 1){ tapDown = null; return; } tapAt(e.touches[0].clientX, e.touches[0].clientY, e.target, evT(e)); };
+  const tEnd = e => { if(!tapLive()){ offTap(); return; } const p = e.changedTouches && e.changedTouches[0]; if(!p || (e.touches && e.touches.length)){ tapDown = null; return; } tapUp(p.clientX, p.clientY, evT(e)); };
+  const tCancel = () => { tapDown = null; };
+  const pDown = e => { if(e.pointerType === "touch") return; if(!tapLive()){ offTap(); return; } if(e.button){ tapDown = null; return; } tapAt(e.clientX, e.clientY, e.target, evT(e)); };
+  const pUp = e => { if(e.pointerType === "touch") return; if(!tapLive()){ offTap(); return; } tapUp(e.clientX, e.clientY, evT(e)); };
   const docTap = e => {
-    if(!panel.isConnected || resultsSeq !== seq){ offTap(); return; }
+    if(!tapLive()){ offTap(); return; }
+    if(tapDown || performance.now() - tapSeenAt < 1000) return;   /* that press was read above (or was a drag) */
     const t = e.target;
-    if(!t || panel.contains(t) || (t.closest && t.closest("button, a, input, textarea, select, label, [role='button'], [role='dialog'], .rs-spot, .top"))) return;
+    if(!t || (t.closest && t.closest(RS_TAP_NOT))) return;
     tapOn();
+  };
+  const TAP_OPT = { capture: true, passive: true };
+  const offTap = () => {
+    window.removeEventListener("touchstart", tStart, TAP_OPT); window.removeEventListener("touchend", tEnd, TAP_OPT); window.removeEventListener("touchcancel", tCancel, TAP_OPT);
+    window.removeEventListener("pointerdown", pDown, TAP_OPT); window.removeEventListener("pointerup", pUp, TAP_OPT);
+    document.removeEventListener("click", docTap, true); document.removeEventListener("keydown", keyTap, true);
   };
   const keyTap = e => {
     if(!panel.isConnected || resultsSeq !== seq){ offTap(); return; }
@@ -135097,6 +135265,8 @@ function showRunRewards(run, hooks, opts){
     e.preventDefault();
     tapOn();
   };
+  window.addEventListener("touchstart", tStart, TAP_OPT); window.addEventListener("touchend", tEnd, TAP_OPT); window.addEventListener("touchcancel", tCancel, TAP_OPT);
+  window.addEventListener("pointerdown", pDown, TAP_OPT); window.addEventListener("pointerup", pUp, TAP_OPT);
   document.addEventListener("click", docTap, true);
   document.addEventListener("keydown", keyTap, true);
   seq.start();
@@ -150612,6 +150782,84 @@ function setBarFill(el, v){
   if(!el) return;
   el.classList.add("sbar");
   el.style.setProperty("--fill", typeof v === "number" ? v + "%" : String(v));
+}
+/* (384.99) A BAR THAT FILLS WHILE YOU WATCH RUNS ON THE COMPOSITOR. Madison: "When scoring a hundred. The bar lags as it goes
+   up. Get this right." Traced at 4x CPU, 440x956 @3x, on main 384.94: the grade's unit bars were moved by writing --fill every
+   frame from script (a style pass a frame against a 2.9MB sheet), and the XP number followed its bar by reading the bar's
+   computed transform and width every frame after writing its own text (a forced style pass and layout a frame) - so anything
+   else the main thread did in that frame held the bar back with it. rsBarAnim is the same translate setBarFill gives a bar, as
+   ONE Web Animation of transform alone: `ease` is a CSS easing string (two keyframes) or a function of 0-1 (sampled into n
+   linear keyframes). It holds its ends (fill both); the caller puts --fill where the bar is going and cancels it once it is
+   there - both say the same, so nothing jumps. Null where there are no Web Animations (the caller paints frame by frame). */
+function rsBarAnim(el, from, to, ms, ease, delay, n){
+  if(!el || typeof el.animate !== "function") return null;
+  const tr = v => "translate3d(" + (v - 100).toFixed(3) + "%, 0, 0)";
+  let kf, easing = "linear";
+  if(typeof ease === "function"){
+    const N = n || 48;
+    kf = [];
+    for(let k = 0; k <= N; k++){ const u = k / N; kf.push({ offset: u, transform: tr(from + (to - from) * ease(u)) }); }
+  } else { kf = [{ transform: tr(from) }, { transform: tr(to) }]; easing = ease || "linear"; }
+  try{ return el.animate(kf, { duration: Math.max(1, ms), delay: Math.max(0, delay || 0), easing, fill: "both" }); }catch(e){ return null; }
+}
+/* A CSS cubic-bezier(x1, y1, x2, y2) as a function of 0-1: what a bar run with that easing has reached at a point of its time
+   (so a number can count with it off the animation's own clock, never off the bar's laid-out box). */
+function rsCubicBezier(x1, y1, x2, y2){
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const X = t => ((ax * t + bx) * t + cx) * t, Y = t => ((ay * t + by) * t + cy) * t, dX = t => (3 * ax * t + 2 * bx) * t + cx;
+  return x => {
+    if(x <= 0) return 0;
+    if(x >= 1) return 1;
+    let t = x;
+    for(let i = 0; i < 8; i++){ const e = X(t) - x; if(Math.abs(e) < 1e-6) return Y(t); const d = dX(t); if(Math.abs(d) < 1e-6) break; t -= e / d; }
+    let lo = 0, hi = 1; t = x;
+    for(let i = 0; i < 40; i++){ const v = X(t); if(Math.abs(v - x) < 1e-6) break; if(v < x) lo = t; else hi = t; t = (lo + hi) / 2; }
+    return Y(t);
+  };
+}
+/* A counting number's text, written into the text node it already has: no element made or replaced, so no style pass, and
+   nothing a stage MutationObserver (the back-to-top room, the switches, the sky) hears every frame. */
+function rsText(el, s){
+  if(!el) return;
+  const t = el.firstChild;
+  if(t && t.nodeType === 3 && t === el.lastChild){ if(t.data !== s) t.data = s; }
+  else el.textContent = s;
+}
+/* (384.99) A unit bar turning red into green (384 r7's flip, rsTurn) with the bar's dip on the compositor too: its `scale` as a
+   Web Animation, the colour changed on the frame it is edge-on. Same interface as rsTurn (done, finish, onEnd); `end()` is
+   what the bar wears once it has turned. */
+function rsBarTurn(fill, end){
+  let a = null;
+  if(fill && typeof fill.animate === "function"){
+    const N = 24, kf = [];
+    for(let k = 0; k <= N; k++){ const u = k / N, h = RS_TURN_FLOOR + (1 - RS_TURN_FLOOR) * rsTurnAt(u).s; kf.push({ offset: u, scale: "1 " + (.5 + .5 * h).toFixed(3) }); }
+    try{ a = fill.animate(kf, { duration: RS_TURN_MS, easing: "linear" }); }catch(e){ a = null; }
+  }
+  if(!a) return rsTurn((g, k, last) => {
+    if(last){ fill.style.scale = ""; fill.style.background = end(); return; }
+    fill.style.background = g ? "var(--right)" : "var(--wrong)";
+    fill.style.scale = "1 " + (.5 + .5 * k).toFixed(3);
+  });
+  const T = { done: false, onEnd: null };
+  let green = false;
+  fill.style.background = "var(--wrong)";
+  const step = () => {
+    if(T.done) return;
+    const ct = Number(a.currentTime) || 0;
+    if(!green && ct >= RS_TURN_MS / 2){ green = true; fill.style.background = "var(--right)"; }
+    if(ct >= RS_TURN_MS || a.playState === "finished"){ T.finish(); return; }
+    requestAnimationFrame(step);
+  };
+  T.finish = () => {
+    if(T.done) return;
+    T.done = true;
+    try{ a.cancel(); }catch(e){}
+    fill.style.scale = ""; fill.style.background = end();
+    if(T.onEnd){ const f = T.onEnd; T.onEnd = null; try{ f(); }catch(e){} }
+  };
+  requestAnimationFrame(step);
+  return T;
 }
 /* ---- ONLY THE LINES THAT ARE NEEDED (build 308) ----
    "The descriptions that come up when hitting an unlock underneath the
