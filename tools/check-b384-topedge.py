@@ -7,9 +7,11 @@ syncStatusBarColor / applyTheme writing both tags on every theme, Home and class
  (2) is that same node for the whole life of the page: after a theme accent change, a move between Home, Profile, the rankings and Settings and back, and in the page a
      class switch reloads into; its colour follows the sky's top colour by changing in place, and the cache for the next launch follows too;
  (3) writes neither <meta theme-color> nor <meta color-scheme> after the page's first paint (the head script's one replay is before it): zero writes, in all of those;
- (4) is unchanged in a Safari tab, on a laptop, and with class26e.topguard = "0" (no strip shown there; the tags still follow the theme in a tab);
- (5) has the old behaviour (a new strip for each colour, the tags rewritten) behind class26e.topedgeold = "1" - the display test's A/B - and an ignore-touch variant behind
-     class26e.topedgepe = "none"; the display test's readout says which is active; no page errors.
+ (4) is unchanged in a Safari tab and on a laptop (no strip shown there; the tags still follow the theme in a tab);
+ (5) (384.105, CHANGED ON PURPOSE: the display test is gone, docs/notes-archive.md "384.105") the display test's switches for it - class26e.topguard = "0" (no strip),
+     topedgeold = "1" (the old behaviour: a new strip for each colour, the tags rewritten), topedgepe = "none" - are deleted at launch and change nothing: the strip is
+     the default's, the same node through a theme change, no old strip, color-scheme not written, and the flags are gone; the display test's flag opens no panel;
+     no page errors. (Until 384.95 (5) held the old behaviour behind those flags and the panel's switches and readout for it.)
 Run:  python3 tools/check-b384-topedge.py   (--against OLD/index.html must FAIL)"""
 import os, sys, re, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -132,36 +134,20 @@ with sync_playwright() as pw:
     r = pg.evaluate(EDGE)
     chk("(4) a laptop: no strip shown (%s)" % (r and r["disp"]), r is None or r["disp"] == "none", r)
     ctx.close()
-    ctx, pg = boot(br, True, True, extra="localStorage.setItem('class26e.topguard','0');"); clear_splash(pg)
-    r = pg.evaluate(EDGE); g = pg.evaluate("()=>!!document.getElementById('top-guard')")
-    chk("(4) with class26e.topguard = 0 no strip is shown (%s)" % (r and r["disp"]), (r is None or r["disp"] == "none") and not g, [r, g])
-    ctx.close()
-    # ---------------- (5) the old behaviour, and the ignore-touch variant ----------------
-    ctx, pg = boot(br, True, True, extra="localStorage.setItem('class26e.topedgeold','1');"); clear_splash(pg)
-    r = pg.evaluate(EDGE); g0 = pg.evaluate("()=>{ const g = document.getElementById('top-guard'); window.__g0 = g; return g ? [g.offsetHeight, getComputedStyle(g).pointerEvents] : null; }")
-    pg.evaluate("()=>{ theme.accent = 'veteran'; applyTheme(); }"); pg.wait_for_timeout(700)
-    g1 = pg.evaluate("()=>({ replaced: document.getElementById('top-guard') !== window.__g0, n: document.querySelectorAll('#top-guard').length })"); w = pg.evaluate(WRITES)
-    chk("(5) class26e.topedgeold = 1: the old behaviour - the 8px strip that ignores touch, replaced when the colour changes, the tags rewritten (%s, %s, %d writes)" % (g0, g1, len(w["after"])),
-        (r is None or r["disp"] == "none") and g0 == [8, "none"] and g1["replaced"] and g1["n"] == 1 and len(w["after"]) > 0, [r, g0, g1, w])
-    ctx.close()
-    ctx, pg = boot(br, True, True, extra="localStorage.setItem('class26e.topedgepe','none');"); clear_splash(pg)
-    r = pg.evaluate(EDGE)
-    chk("(5) class26e.topedgepe = none: the same strip, ignoring touch (%s)" % (r and r["pe"]), r and r["pe"] == "none" and r["hit"] != "top-edge", r)
-    ctx.close()
-    for old in (False, True):
-        ctx, pg = boot(br, True, True, extra="localStorage.setItem('class26e.displaytest','1');" + ("localStorage.setItem('class26e.topedgeold','1');" if old else "")); clear_splash(pg)
-        rd = pg.evaluate("()=>window.__diagTrials && window.__diagTrials.readout()") or ""
-        line = [l for l in rd.splitlines() if l.startswith("top edge behaviour")]
-        chk("(5) the display test's readout says which behaviour is active (%s)" % line, line and (("OLD" in line[0]) if old else ("STILL" in line[0])), rd[:300])
+    # ---------------- (5) (384.105, changed on purpose) the display test's switches for the strip are deleted at launch and change nothing ----------------
+    for key, val in (("topguard", "0"), ("topedgeold", "1"), ("topedgepe", "none")):
+        ctx, pg = boot(br, True, True, extra="localStorage.setItem('class26e.%s','%s');" % (key, val)); clear_splash(pg)
+        r = pg.evaluate(EDGE); pg.evaluate("()=>{ theme.accent = 'veteran'; applyTheme(); }"); pg.wait_for_timeout(700)
+        r2 = pg.evaluate(EDGE); w = pg.evaluate(WRITES_CS)
+        x = pg.evaluate("(k)=>({ left: localStorage.getItem('class26e.' + k), guard: !!document.getElementById('top-guard'), cls: document.documentElement.className })", key)
+        chk("(5) class26e.%s = %s is deleted at launch and changes nothing: the default strip, the same node through a theme change, no old strip, color-scheme not written (%s, %s, %d)"
+            % (key, val, r and [r["disp"], r["h"], r["pe"]], x["left"], len(w["after"])),
+            x["left"] is None and not x["guard"] and bool(r) and r["disp"] == "block" and r["h"] == 6 and r["pe"] == "none" and r["same"] and bool(r2) and r2["same"]
+            and hexof(r2["data"]) == r2["sky"].lower() and len(w["after"]) == 0 and not re.search(r"top-edge-(old|none)", x["cls"]), [r, r2, x, w])
         ctx.close()
     ctx, pg = boot(br, True, True, extra="localStorage.setItem('class26e.displaytest','1');"); clear_splash(pg)
-    ids = pg.evaluate("()=>[...document.querySelectorAll('#diagpanel [data-trial]')].map(b => b.dataset.trial)")
-    chk("(5) the display test has the switches for it (old behaviour, ignore touch) (%s)" % [i for i in ids if i in ("old", "pe0")], "old" in ids and "pe0" in ids, ids)
-    pg.evaluate("()=>window.__diagTrials.toggle('old', true)"); pg.wait_for_timeout(500)
-    live = pg.evaluate("()=>({ edge: getComputedStyle(document.getElementById('top-edge')).display, guard: !!document.getElementById('top-guard') })")
-    pg.evaluate("()=>window.__diagTrials.toggle('old', false)"); pg.wait_for_timeout(500)
-    back = pg.evaluate("()=>({ edge: getComputedStyle(document.getElementById('top-edge')).display, guard: !!document.getElementById('top-guard') })")
-    chk("(5) ticking it puts the old behaviour on live and unticking puts the still edge back (%s, %s)" % (live, back), live == {"edge": "none", "guard": True} and back == {"edge": "block", "guard": False}, [live, back])
+    x = pg.evaluate("()=>({ panel: !!document.getElementById('diagpanel'), hook: typeof window.__diagTrials, left: localStorage.getItem('class26e.displaytest') })")
+    chk("(5) the display test's flag opens no panel and is deleted at launch (%s)" % x, not x["panel"] and x["hook"] == "undefined" and x["left"] is None, x)
     ctx.close()
     chk("no page errors", not errs, errs)
     br.close()

@@ -10,6 +10,7 @@ app; GitHub Pages serves it, but nothing links to it.
 | Practice Test | build 283 | `ca1e133` | [practice-test.md](practice-test.md) |
 | The cracked planet (crack stages, Supernova scar, fracture and wreck scenes, the story lines) | build 337 | the commit "Remove the cracked planet completely" | [cracked-planet.md](cracked-planet.md) |
 | The Virtual Room's points results screen ("Ranked by total score", pts) | build 384 r8 | `ca4c46d` | [vr-points-results.md](vr-points-results.md) |
+| The display test (`?diag`, Settings > Advanced > Troubleshooting) and its switches; a diagnostic, not a feature | build 384.105 | `b6c0b68` | [display-test.md](display-test.md) |
 
 Both were taken out on 2026-10-02 because almost nobody used them.
 Counted from the live data on the day: Drill had 282 runs from 35

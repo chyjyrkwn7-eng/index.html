@@ -18,9 +18,11 @@ git), on the same screens, in Chromium (docs/notes-archive.md "384.77"):
  (5) STRIP       (384.80) ONE strip, #top-edge, over the whole safe area (6px where there is none), in the markup ahead of every script in
                  <body>, one solid opaque colour, no image, taps going through; no #top-safe; a Profile scrolled 300 shows the same status-bar
                  area as at rest; theme-color and color-scheme are not written after launch;
- (6) VARIANTS    the display test lists A (class26e.topmatch), B (topdeep), C (top383); C takes both strips away and rewrites the tags as 383;
+ (6) VARIANTS    (384.105, CHANGED ON PURPOSE: the display test is gone, docs/notes-archive.md "384.105") A (class26e.topmatch), B (topdeep) and
+                 C (top383) are deleted at launch and change nothing: none of their classes, no backdrop, the default strip, and the flag gone
+                 (until 384.95: the display test listed them, and C took both strips away and rewrote the tags as 383);
  (7) no page errors.
-Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2), (6); main 384.77 must FAIL (4))"""
+Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2); main 384.77 must FAIL (4); main 384.95 must FAIL (6))"""
 import os, sys, io, re, subprocess, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
@@ -161,24 +163,19 @@ def run(br):
     # markup ahead of every script
     serve = RAW; bi = serve.find("\n<body>\n"); ie, ib = serve.find('id="top-edge"', bi), serve.find("<script", bi)
     chk("the strip is in the markup ahead of every script in <body>, with an inline colour (%d < %d)" % (ie, ib), 0 < ie < ib and 'id="top-edge" aria-hidden="true" style="background-color:' in serve, [ie, ib])
-    # (6) the variants
+    # (6) (384.105, changed on purpose) the variants are gone: their flags are deleted at launch and change nothing
     dev = DEVICES[0]
-    ctx, pg = boot(br, RAW, dev, "localStorage.setItem('class26e.displaytest','1');")
-    pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
-    r = pg.evaluate("""()=>{ const T = window.__diagTrials; if(!T) return null; return ['tvmatch', 'tvdeep', 'tv383'].map(i => !!T.byId[i]); }""")
-    chk("the display test lists A, B and C (%s)" % r, r and all(r), r)
-    ctx.close()
     for flag, cls in (("topmatch", "top-match"), ("topdeep", "top-deep"), ("top383", "top-383")):
         ctx, pg = boot(br, RAW, dev, "localStorage.setItem('class26e.%s','1');" % flag)
         pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
         pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(1200); pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1200)
         f = pg.evaluate(READ)
-        d = pg.evaluate("()=>{ const e = document.getElementById('top-deep'); if(!e) return null; const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return [cs.display, Math.round(r.bottom), cs.zIndex]; }")
-        chk("variant %s: the head script put .%s on (%s)" % (flag, cls, cls in f["cls"].split()), cls in f["cls"].split(), f["cls"])
-        if flag == "topdeep": chk("variant B: the flat backdrop lies under the wash's depth, behind the content (%s)" % d, d and d[0] == "block" and d[1] == dev[3] + 62 and d[2] == "-1", d)
-        if flag == "top383":
-            chk("variant C: no strip of any kind (edge %s, safe %s, guard)" % (f["edge"], f["safe"]), f["edge"] is None and f["safe"] is None and not pg.evaluate("()=>!!document.getElementById('top-guard')"), f)
-            chk("variant C: the tags are the app's again (theme-color written after launch: %s)" % (f["tw"] or {}).get("tags"), (f["tw"] or {}).get("tags", 0) >= 1, f["tw"])
+        x = pg.evaluate("""(k)=>{ const d = document.getElementById('top-deep'); return { left: localStorage.getItem('class26e.' + k), guard: !!document.getElementById('top-guard'),
+          deep: !!d && getComputedStyle(d).display !== 'none', panel: !!document.getElementById('diagpanel') }; }""", flag)
+        e = f["edge"]
+        chk("variant %s is gone: no .%s, no backdrop, no old strip, the default strip over the inset, and the flag deleted at launch (%s, %s)" % (flag, cls, e and e["r"], x),
+            cls not in f["cls"].split() and not x["deep"] and not x["guard"] and not x["panel"] and x["left"] is None and bool(e) and e["r"][1] == 0
+            and abs(e["r"][3] - max(dev[3], 6)) < .6 and f["pe"] == "none", [f["cls"], e, x])
         ctx.close()
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=cb.CHROME)
