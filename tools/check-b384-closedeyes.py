@@ -322,9 +322,13 @@ def run_class(br, cls, port, shots_out):
             # a busy machine can take the renderer down (out of memory): a fresh page, and that character once more
             tries[cid] = tries.get(cid, 0) + 1
             print("  !! %s %s: %s - a fresh page%s" % (cls, cid, str(e).split("\n")[0][:120], "" if tries[cid] < 3 else ", giving up"), flush=True)
-            try: ctx.close()
-            except Exception: pass
-            ctx, pg, info = boot(br, cls, port, errs)
+            for _ in range(3):
+                try: ctx.close()
+                except Exception: pass
+                try:
+                    ctx, pg, info = boot(br, cls, port, errs); break
+                except Exception as e2:
+                    print("  !! a fresh page failed too: %s" % str(e2).split("\n")[0][:120], flush=True)
             if tries[cid] < 3: queue.insert(0, cid)
             else: chk("%s %s: drawn and measured" % (cls, cid), False, str(e)[:200])
     flip(pg, cls, info, shots_out, spx)
