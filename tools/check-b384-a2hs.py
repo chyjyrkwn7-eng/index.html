@@ -563,7 +563,8 @@ with sync_playwright() as pw:
         pg.wait_for_timeout(2500)
         chk("settings an existing account, signed in with its code, is on Home with no sheet of its own", screen(pg) == "home" and pg.evaluate("()=>!document.getElementById('a2hs-sheet')"), screen(pg))
         pg.evaluate("()=>showAppearance({ page: 'share' })"); pg.wait_for_timeout(700)
-        pg.evaluate("()=>{ const b=[...document.querySelectorAll('#stage button')].find(x=>/Add to Home Screen/.test(x.textContent)); b && b.click(); }"); pg.wait_for_timeout(900)
+        # (384.105) the row by its key (data-row), not its words ("Add to Home Screen guide" since 384.105)
+        pg.evaluate("()=>{ const b=document.querySelector('#stage .settings-page-share button[data-row=\"install\"]'); b && b.click(); }"); pg.wait_for_timeout(900)
         r = pg.evaluate(LAYOUT)
         chk("settings the row opens the same sheet, for an existing account (from Settings, iPhone picked)", bool(r) and r["from"] == "settings" and r["checked"] == ["apple"], r)
         if r:

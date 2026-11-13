@@ -1610,10 +1610,11 @@ def check_b218(br):
     # Share & install are each ONE list card of full-width rows, stacked, 44px+.
     # build 382 (Settings is a menu): Check for update and Share & Install are rows of one menu card;
     # Share this app and Add to Home Screen are the Share & Install page's card.
-    rows = pg.evaluate("""async ()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
+    # (384.105) "row:KEY" finds a row by its key (data-row): the install row's words are "Add to Home Screen guide" now
+    rows = pg.evaluate("""async ()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>t.startsWith('row:') ? x.dataset.row===t.slice(4) : x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
       const o = { upd: row('Check for update'), bug: row('Share & Install') };
       showAppearance({ page: 'share' }); await new Promise(r=>setTimeout(r,500));
-      o.share = row('Share this app'); o.install = row('Add to Home Screen');
+      o.share = row('Share this app'); o.install = row('row:install');
       const same = (a,b)=>!!(o[a]&&o[b]) && o[a].card===o[b].card;
       const out = { helpOneCard: same('upd','bug'), shareOneCard: same('share','install') };
       for(const k in o){ out[k] = o[k] && { top:o[k].top, h:o[k].h, full:o[k].full }; } return out; }""")

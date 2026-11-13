@@ -137890,8 +137890,10 @@ function showAppearance(opts){
      Add to Home Screen is the single action on this screen that makes
      the app better for the person pressing it - it is how Nova stops
      being a browser tab - so since build 382 its icon is the one filled
-     with the app's accent (it was the one accent-tinted pill before). */
-  const installBtn = settingsPageRow("install", "Add to Home Screen");
+     with the app's accent (it was the one accent-tinted pill before).
+     (384.105) "Add to Home Screen guide": Madison, "the 'add to Home Screen' thing should be 'add to Home Screen guide' or something" -
+     the row opens the steps (showHomeScreenSheet), it does not add anything itself. The steps keep Safari's own words ("Add to Home Screen"). */
+  const installBtn = settingsPageRow("install", "Add to Home Screen guide");
   installBtn.addEventListener("click", handleInstallTap);
 
   /* ---- ADVANCED IS A PAGE OF ITS OWN (build 382) ----
