@@ -627,9 +627,6 @@
   /* (384.26) A TEST INSTALL. iOS reads the status bar style once, when an icon is added to the Home Screen, so a different style can only be
      tried by adding a second icon from an address that carries it: ?sbs=default or ?sbs=black. Nothing happens without that in the address. */
   (function(){ try{ var m = /[?&]sbs=(default|black|black-translucent)(&|$)/.exec(location.search), e = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]'); if(m && e) e.setAttribute("content", m[1]); }catch(x){} })();
-  /* (384, TEMPORARY) THE CLASS BUTTON, THREE LOOKS TO PICK FROM: ?classbtn=a|b|c puts html[data-classbtn] on this page load only (see
-     "THE CLASS BUTTON, THREE OPTIONS" at the end of the stylesheet and classBtnIcon). Nothing changes without it in the address. */
-  (function(){ try{ var m = /[?&]classbtn=([abc])(&|$)/.exec(location.search); if(m) document.documentElement.setAttribute("data-classbtn", m[1]); }catch(x){} })();
 </script>
 <meta name="apple-mobile-web-app-title" content="Nova">
 <link rel="apple-touch-icon" sizes="180x180" href="https://chyjyrkwn7-eng.github.io/index.html/share/apple-touch-icon.png?v=381">
@@ -39982,53 +39979,21 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
 
-  /* ==== (384, TEMPORARY) THE CLASS BUTTON, THREE OPTIONS ================================================================
+  /* ==== THE CLASS BUTTON IS A MEDALLION (384.94) ====================================================================
      Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's
-     circle needs a better border? Could just be better.." Only under html[data-classbtn] (?classbtn=a|b|c, the head script); without
-     it nothing here matches and the button is as it was. Same size and place in every option (--cb and place() are untouched), the
-     tap target is the button's own box (54px on a phone, the chat button's 52px on a tablet). The class's colour is --cbc. Every
-     ring and glow is a background layer or a box-shadow (the shape) so the mark alone is the button's content; no SVG filter;
-     the one thing that moves (B) is opacity and transform on a pseudo-element, and stands still under Reduce motion.
-       A  LIT RING - the "?" button's ready recipe in the class's colour, still: a ring inside the rim, a soft glow off it.
-       B  LIQUID GLASS - a rim lit white at the top-left running into the class's colour at the foot, a specular arc along the
-          top, and a light behind the mark that breathes on the "?" button's own 4.2s.
-       C  MEDALLION - the mark struck on an enamel coin in the class's colour with a fine bright bezel, inside the glass. */
-  html[data-classbtn] .class-bubble.is-ifc, html[data-classbtn] .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; --coin-a:#EC6436; --coin-b:#BE341E; --coin-c:#741810; --bezel:#FFD7A0; }
-  html[data-classbtn] .class-bubble.is-academy, html[data-classbtn] .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; --coin-a:#4C68E4; --coin-b:#2A3BAA; --coin-c:#131850; --bezel:#D3DBFF; }
-  html[data-classbtn] .class-bubble > svg{ position:relative; z-index:1; }
-  /* A: LIT RING */
-  html[data-classbtn="a"][data-theme][data-layout] body:not(.x384cb) .class-bubble{
-    --cb-ring:color-mix(in srgb, var(--cbc) 78%, #FFFFFF);
-    background:
-      radial-gradient(circle closest-side, transparent calc(100% - 4.3px), var(--cb-ring) calc(100% - 3.8px), var(--cb-ring) calc(100% - 2px), transparent calc(100% - 1.5px)) padding-box,
-      radial-gradient(circle closest-side at 50% 54%, color-mix(in srgb, var(--cbc) 42%, transparent), color-mix(in srgb, var(--cbc) 12%, transparent) 62%, transparent 86%) padding-box,
-      linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%) padding-box,
-      rgba(12,13,19,.26) !important;
-    border:1px solid color-mix(in srgb, var(--cbc) 44%, rgba(255,255,255,.16)) !important;
-    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 10px 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 9px color-mix(in srgb, var(--cbc) 22%, transparent) !important;
-  }
-  /* B: LIQUID GLASS (the rim is the border-box layer showing through a transparent border; the body over it is nearly opaque so the
-     rim's colours stay in the rim, with a breath of them through it) */
-  html[data-classbtn="b"][data-theme][data-layout] body:not(.x384cb) .class-bubble{
-    border:1.5px solid transparent !important;
-    background:
-      radial-gradient(ellipse 62% 34% at 50% 3%, rgba(255,255,255,.26), rgba(255,255,255,0) 100%) padding-box,
-      radial-gradient(ellipse 88% 58% at 50% 112%, color-mix(in srgb, var(--cbc) 34%, transparent), transparent 72%) padding-box,
-      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015) 55%) padding-box,
-      linear-gradient(rgba(16,17,24,.86), rgba(16,17,24,.86)) padding-box,
-      linear-gradient(150deg, rgba(255,255,255,.85), rgba(255,255,255,.26) 28%, rgba(255,255,255,.1) 50%, color-mix(in srgb, var(--cbc) 55%, transparent) 76%, color-mix(in srgb, var(--cbc) 85%, #FFFFFF)) border-box !important;
-    box-shadow:0 8px 28px rgba(0,0,0,.5), 0 2px 10px -2px color-mix(in srgb, var(--cbc) 30%, transparent) !important;
-  }
-  html[data-classbtn="b"] .class-bubble-wrap:not(.has-new) .class-bubble::before{
-    content:""; position:absolute; inset:7%; border-radius:50%; pointer-events:none; z-index:0;
-    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--cbc) 58%, transparent), color-mix(in srgb, var(--cbc) 30%, transparent) 42%, color-mix(in srgb, var(--cbc) 8%, transparent) 74%, transparent);
-    animation:cb-breathe 4.2s ease-in-out infinite;
-  }
-  @keyframes cb-breathe{ 0%, 100%{ opacity:.5; transform:scale(.9); } 50%{ opacity:1; transform:scale(1.04); } }
-  [data-reduce-motion="true"][data-classbtn="b"] .class-bubble::before{ animation:none !important; opacity:.8 !important; transform:none !important; }
-  @media (prefers-reduced-motion:reduce){ html[data-classbtn="b"] .class-bubble::before{ animation:none !important; opacity:.8 !important; transform:none !important; } }
-  /* C: MEDALLION (the coin is a closest-side circle on the padding box, so it is round and centred at any --cb) */
-  html[data-classbtn="c"][data-theme][data-layout] body:not(.x384cb) .class-bubble{
+     circle needs a better border? Could just be better.." Shown three looks (A lit ring, B liquid glass, C medallion) behind
+     ?classbtn=a|b|c, he picked C: "Option c for the class thing." The mark is struck on an enamel coin in the class's colour with a
+     fine bright bezel, inside the button's glass, and a soft light in that colour comes off it. Same size and place as before
+     (--cb and place() are untouched), the tap target is the button's own box (54px on a phone, the chat button's 52px on a
+     tablet). The coin is a closest-side circle on the padding box, so it is round and centred at any --cb; every ring and glow is
+     a background layer or a box-shadow, no SVG filter, nothing moves. The marks are classBtnIcon's (a flame with two side
+     tongues; a police shield with a white star), in light colours on the coin and in full colour in the class list.
+     The doubled class keeps the specificity the picked option had under html[data-classbtn="c"], which is what beats the
+     button's own glass rules. */
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; --coin-a:#EC6436; --coin-b:#BE341E; --coin-c:#741810; --bezel:#FFD7A0; }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; --coin-a:#4C68E4; --coin-b:#2A3BAA; --coin-c:#131850; --bezel:#D3DBFF; }
+  html .class-bubble.class-bubble > svg{ position:relative; z-index:1; }
+  html[data-theme][data-layout] body:not(.x384cb) .class-bubble.class-bubble{
     background:
       radial-gradient(ellipse 46% 26% at 50% 24%, rgba(255,255,255,.2), rgba(255,255,255,0) 100%) padding-box,
       radial-gradient(circle closest-side, var(--coin-a) 0%, var(--coin-b) calc(100% - 9.5px), var(--coin-c) calc(100% - 4.4px), var(--bezel) calc(100% - 3.9px), var(--bezel) calc(100% - 3px), transparent calc(100% - 2.5px)) padding-box,
@@ -40037,8 +40002,8 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid rgba(255,255,255,.2) !important;
     box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 14px -2px color-mix(in srgb, var(--cbc) 46%, transparent) !important;
   }
-  html[data-classbtn="c"] .class-bubble > svg{ width:26px; height:26px; }
-  @media (min-width:40rem){ html[data-classbtn="c"][data-layout] .class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
+  html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
+  @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
 </style>
 <script>
   (function(){
@@ -57482,19 +57447,16 @@ const NOVA_CLASSES = [
   { key: "ifc", name: "Fire Code", sub: "IFC",
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
-/* (384, TEMPORARY) THE CLASS BUTTON, THREE OPTIONS - Madison: "The class button, I feel like it's missing something. Maybe the icons
-   should be better and glow? Maybe the button's circle needs a better border? Could just be better.." Only with ?classbtn=a|b|c in
-   the address (html[data-classbtn], set by the head script); "" otherwise, and the button keeps NOVA_CLASSES' own marks. The marks
-   are redrawn with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police
-   shield with a silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24).
-   "coin" is the same two marks in light colours, for option C's enamel disc. Ids are unique per copy (classBtnSeq): the button and
-   its list can both be on the page, and a gradient id shared with a hidden copy paints nothing in Safari. */
+/* THE CLASS BUTTON'S MARKS (384.94, option C - see "THE CLASS BUTTON IS A MEDALLION" in the stylesheet). The marks are redrawn
+   with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield with a
+   silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). On the
+   button ("button") they are drawn in light colours for the enamel coin; in the class list ("list") in full colour. Ids are
+   unique per copy (classBtnSeq): the button and its list can both be on the page, and a gradient id shared with a hidden copy
+   paints nothing in Safari. A class with no drawing here returns "" and the caller keeps NOVA_CLASSES' own mark. */
 let classBtnSeq = 0;
-function classBtnOpt(){ try{ const v = document.documentElement.getAttribute("data-classbtn"); return /^[abc]$/.test(v || "") ? v : ""; }catch(e){ return ""; } }
 function classBtnIcon(key, where){
-  const opt = classBtnOpt();
-  if(!opt) return "";
-  const coin = opt === "c" && where === "button";
+  if(key !== "ifc" && key !== "academy") return "";
+  const coin = where === "button";
   const u = "cbx" + (++classBtnSeq) + "-";
   if(key === "ifc"){
     const o = coin ? ["#FFF1C4", "#FFD27A", "#FFB04A"] : ["#FFB25A", "#FF6B35", "#E5332E"];
@@ -57679,7 +57641,7 @@ function mountClassBubble(){
   btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
-  btn.innerHTML = classBtnIcon(cur.key, "button") || cur.icon;   /* (384, temporary) ?classbtn=a|b|c: the redrawn marks */
+  btn.innerHTML = classBtnIcon(cur.key, "button") || cur.icon;   /* (384.94) the coin's marks */
   const stack = document.createElement("div");
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
@@ -122882,7 +122844,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-12-384.92";
+const APP_BUILD = "2026-11-13-384.94";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";

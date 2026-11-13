@@ -39353,3 +39353,17 @@ Madison: "The class button, I feel like it's missing something. Maybe the icons 
 - C MEDALLION: the mark struck on an enamel coin in the class's colour (closest-side radial on the padding box: centre, deep edge, a fine bright bezel, ~3px of glass round it), a soft class-coloured glow; the marks drawn light for it (cream flame with the middle cut out in the coin's red; silver shield with a blue star). Icon 26px (phone) / --cb x .46 (tablet).
 - Same size and place in all three (`--cb`, `place()`, the 54px / 52px boxes untouched). No SVG filter; only B moves, transform/opacity on a pseudo-element.
 - Sheet: scratchpad classbtn/classbtn-options-sheet.png (iPhone 17 Pro Max + iPad Pro 11, both classes, close-ups beside the "?"). When he picks: drop the switch, keep only that option's rules (unprefixed), decide whether the catalog / sign-up / Settings marks take the redrawn icons too, bump the build.
+
+### 384.94 (classbtnc): the class button is option C, the medallion
+
+Madison, shown the three looks behind `?classbtn=a|b|c` (claude/b384-classbtn 5f85d51): "Option c for the class thing."
+
+- C is now the button's own look and A, B and the address switch are gone: the head script that read `?classbtn`, `classBtnOpt()`,
+  and the A / B rules. "THE CLASS BUTTON IS A MEDALLION" (end of the stylesheet) is C's rules with `html[data-classbtn="c"]` taken
+  off and the class doubled (`.class-bubble.class-bubble`), so every selector keeps the specificity it had - which is what beats
+  the button's own glass rules - and the shipped button is the picked one pixel for pixel.
+- `classBtnIcon(key, where)` always draws: the light-coloured marks on the coin ("button"), the full-colour ones in the class list
+  ("list"); a class it has no drawing for returns "" and keeps NOVA_CLASSES' mark.
+- Gate: NEW `tools/check-b384-classbtn.py` - K1 the button on Home (both classes; Pro Max installed, iPad Pro 11", laptop) equals
+  5f85d51 loaded with `?classbtn=c`, pixel for pixel, Reduce motion on both; K2 the coin and the coin's marks; K3 the class list's
+  full-colour mark; K4 `?classbtn=a` changes nothing. Fails against main 384.92 (K1-K3: the old button).
