@@ -62,6 +62,10 @@ INVENTORY = [
     ("invite-chat", "chatRoomCode='TESTROOM'; openChatInviteSheet()", ".invite-overlay > .invite-sheet", "sheet", "leaderboard"),
     ("invite-friends", "openInviteFriendsSheet('TESTROOM')", ".invite-overlay > .invite-sheet", "sheet", "leaderboard"),
     ("chat-members", "openChatMembers()", ".invite-overlay.chat-members > .invite-sheet", "sheet", "leaderboard"),
+    # 384.118: Test history's Units / Chapters sheet (and its Mode sheet, the same builder)
+    ("history-units", "store.testHistory=[{units:[topicsIn(QUESTIONS)[0], topicsIn(QUESTIONS)[1]],pct:80,mode:'drill',playedAt:Date.now()-6e4,n:10,ok:8},"
+     "{units:[topicsIn(QUESTIONS)[1]],pct:90,mode:'game',playedAt:Date.now()-9e4,n:10,ok:9}]; showTestReviewList(); document.querySelector('#stage .thx-units-btn').click()",
+     ".invite-overlay > .invite-sheet.thx-pick-sheet", "sheet", "profile"),
 ]
 
 

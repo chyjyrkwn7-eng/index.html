@@ -39478,3 +39478,86 @@ Also: check-js OK (14 blocks); check-behaviour check_swipe, check_b229, check_b3
 (the run was cut at its time limit after those); check-b384-tabhotfix ALL PASS (45) on a quieter machine (a first run under
 load ~80 failed one scroll-nudge count and a timed-out class switch; main under the same load failed a different section);
 sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre (1255s).
+
+### 384.118 (testhistory)
+STATS' RECENT TESTS ARE ONE CALM CARD; TEST HISTORY CAN BE SEARCHED AND FILTERED; EVERY ROW IS ONE HEIGHT; A HUNDO IS A CHIP
+(branch claude/b384-testhistory, cut from origin/main 384.97 93d18a9; NOT merged, waiting for the owner's go; the lead re-numbers
+the build at merge).
+
+THE REPORT (Madison, Profile > Stats, screen recording rec-0010, Fire Code): "Looking at stats, the recent test stuff looks good, but
+all them stacked on top of each other is overwhelming. And when you click test history, there should be filters, like today, this
+week, this month, or maybe by chapter too, or you can select which chapters to filter by, maybe a search bar. And ensure all the boxes
+are the same size. And why does Hundo have a stat thing next to it? So much room for improvement."
+His screen: At a glance (the Question bank ring, 923 / 54 / 12 / 51), then three Recent tests cards - each its own glass card with a
+glowing ring, "Chapter 35: Welding and Other Hot Work" on two lines, a Drill chip, "✦ Hundo" on the 100% - then "Test history / All 44
+tests, newest first".
+
+WHAT "THE STAT THING" WAS: the sparkle before "Hundo" on a recent-test row (buildHundoMark: an SVG four-point star with its own gold
+drop-shadow, in front of the word in bold gold, no pill) - the only glyph on any row, beside a mode chip ("Drill") that is a plain
+word in a pill. Nothing sits beside "Hundos" in At a glance (a stat card: a number and its label, as the other three). The sparkle was
+drawn only there (grep: buildHundoMark is called from buildTestRow alone; the path "M6 .6 7.5 4.5..." is in no other builder) - it was
+never the app's hundo symbol. Every other hundo marker in a list was checked: the unit picker's "No hundo" (.hundo-chip, a plain pill),
+the Leaderboard's Hundos board (a number), a test's own page (the verdict "Hundo" and a "1 hundo" tile), the results screen's
+"Hundo" line - none has a glyph. Fixed: the hundo marker is now the same .thx-chip as the mode's, in the hundo gold
+(--mode-c #FFD36A = TEST_RESULT_TONE.hundo): same height, radius, size, padding; "Hundo", or "3 hundos".
+
+WHAT CHANGED (index.html):
+1. ONE ROW, ONE HEIGHT (buildTestRow; the CSS block "TEST HISTORY: ONE ROW, ONE HEIGHT; FINDING A TEST (384.118)", last in the
+   sheet): every test row - Stats' and Test history's - is 4.3rem tall (68.8px at 16px; rem so it follows the text size), padding
+   0 .8rem 0 .75rem: the ring 2.55rem (was 2.9) without its glow (a list of rings is calmer, and a long list has no CSS filter to
+   paint per row), the name on ONE line with an ellipsis (the full unit names are the row's title/tooltip and are written out on the
+   test's own page), and one line of chips and numbers that never wraps into a second visible line: the meta line is a wrapping
+   flex row exactly one line tall with overflow hidden, so on a narrow row the time taken goes first, then the score, whole - never
+   "12/12 rig..." - and the chips stay. Each row carries data-at = its playedAt (identity for the gate).
+2. A LIST OF ROWS IS ONE CARD (.thx-list): the rows divided by a hairline that starts at the name (Settings' way), on --surface-1
+   with a 9% ink rim, radius 16px - not a stack of cards each with its own edge, wash and glow. Each row keeps its faint wash in its
+   result's colour (build 327). Pressing a row lightens it (no scale inside a card).
+3. STATS: at most three (as before), as that one card, with the Test history row under it (384's pfActFill row, unchanged). A test
+   opened from here starts the history's filters clean (testHistoryFresh).
+4. TEST HISTORY (showTestReviewList), top to bottom: the summary strip (count / average ring / hundos, following the filters, as
+   327 asked); the search (.searchwrap + searchMagnifier + input.searchbox + addSearchClear - the units screen's markup - and also
+   .sbcap / .sbcap-field, the classes claude/b384-searchbar's one Apple capsule keys on, inert until that lands); the time as the
+   Leaderboard's / Profile's switch (.navsegment.profiletabs > .iconbtn, attachSegSlider; the three shared rules under THE
+   LEADERBOARD now list .screen-testhistory beside .screen-rankings and .screen-profile, so claude/b384-segglass's overhaul reaches
+   it where it edits those rules): All / Today / This week / This month (Monday is the week's start, as studyTotals and the dot chart;
+   historyBounds); then two 44px capsule buttons that open a sheet: the units ("Chapters" in Fire Code, "Units" in the academy -
+   classNoun; "Chapters · 3" once three are picked) and the mode ("All modes" / Drill / Mock / Game / Virtual Room, only the modes
+   this history holds, only when it holds two or more - testHistoryFilter, the old filter's variable, kept by name). A set button
+   is lit like the switch's picked segment. Under them, a count line ("120 tests"; filtered, "18 of 120 tests") with Clear filters
+   beside it while anything is set; then the list.
+   Filters combine (filterTestHistory: time AND mode AND any picked unit AND every search word). The search reads every unit's full
+   name, the stored label, the mode and "hundo" (testSearchTextOf, worked out once per visit). Typing repaints after 120ms.
+   With nothing set the list is under Today / Yesterday / This week / Earlier (historyGroupOf); with anything set it is one list.
+   A row's right side says when: the time today (and under Yesterday), "Yesterday" in a flat list, the weekday within this week,
+   "Oct 3" before that (with the year when not this year's) - historyWhenOf.
+   Nothing matches: the strip reads 0 / - / 0, the count "0 of 120 tests", and an empty state (a quiet magnifier, "No tests match",
+   "Try another time, chapter or search.", a Clear filters capsule).
+   PERFORMANCE: rows go on the page 40 at a time (TEST_HISTORY_CHUNK); an IntersectionObserver on a 1px sentinel 900px below the
+   screen adds the next 40, and re-observes so a tall screen keeps filling. A row is a button of spans and one two-circle SVG, no
+   measuring, no filter. (The history itself still keeps 50 - TEST_HISTORY_MAX is unchanged; the list is built for more.)
+   BACK FROM A TEST lands on the same list: showTestHistoryDetail's back is showTestReviewList({ keep: true }) - the filters, the
+   search and the scroll position (testHistoryView), with at least as many rows rendered as were. From Stats, a fresh visit.
+5. THE PICKER SHEET (openTestHistorySheet): the app's .invite-overlay / .invite-sheet (mountSheetOverlay: it goes with the screen;
+   its glass), a fixed head, the list scrolling inside it, Done at the foot. Units: checkboxes (real inputs, a 1.4rem ring that fills
+   white with a dark tick - the app's controls stay white on every theme), each unit's name and how many tests hold it, Select all
+   and Clear above; ticks apply as they are made. Only the units this history holds are listed, in teaching order (a list of all 58
+   Fire Code chapters, most with nothing behind them, is a list of ways to get an empty screen). Mode: one choice, applied and
+   closed on the tap. Rows 48px, buttons 44px. Added to b384_pop_lib.INVENTORY ("history-units").
+6. A TEST'S OWN PAGE names the test in full under the verdict (.thx-hero-name; testRowName).
+
+GATE tools/check-b384-testhistory.py: 120 tests over 60 days written into store.testHistory after boot (the newest three: the two
+longest unit names together, the shortest, a three-unit hundo; one yesterday noon), academy on an iPhone 17 Pro Max and Fire Code on
+an iPad Pro 11". Expected lists worked out in the gate from the fixture (today / Monday / the 1st, unit names), never by the app's
+helpers; labels never read. (1) Stats: 1-3 rows, one height, names on one line; (2) a hundo's marker matches the mode chip (height,
+radius, size, padding, border, centre line) and has no glyph; (3) nothing set: all 120 listed (scrolled in), one height, one-line
+names, the count = 120, at most four headings each holding one day bucket; (4) four time segments, each of the last three listing
+exactly its tests with the count agreeing; (5) three units ticked in the sheet list exactly their tests and the button shows 3; the
+sheet's Clear restores all; (6) the search; (7) this month + three units + the search = the intersection; (8) a search for nothing:
+no rows, count 0, an empty state with a button that brings all 120 back; every row in every list one height; (9) a tap opens the test,
+which names its units in full, and Back returns to the list; (10) no page errors.
+
+GATES (one at a time; the machine was loaded and restarted once mid-run):
+- check-js: 14 blocks OK. check-b384-testhistory: ALL PASS (both devices, both classes); --against origin/main (93d18a9): FAILS (1) row heights 88.7 / 70.8 and two-line names, (2) the hundo marker a glyph and not a chip (radius 0, no pill, an svg), (3) no count line and a date heading per day, (4)-(7) no switch, no units sheet, no search, (9) rows carry no identity.
+- check-b384-popglass ONLY=history-units: ALL PASS (phone both classes, iPad).
+- check-behaviour check_b324t_stats, check_b321f_profile, check_b324m_modes: 83 PASS and the same 16 FAIL on this branch and on main (stale labels: "Quiz" where the app says Mock since 384, the rank word colour) - nothing new.
+- check-centering --quick: academy 0 off centre after one fix (the filter capsule had .95/1.1rem side padding, its ink 0.93px right; now 1rem both sides; Clear filters symmetric too).

@@ -13834,10 +13834,7 @@
   /* No separator dots: on a narrow row the bits wrap, and a dot then
      starts the second line. The gap does the separating. */
   .thx-row-bit{ white-space:nowrap; font-variant-numeric:tabular-nums; }
-  /* a hundo, in a word and the app's gold mark (build 326) - the row
-     itself stays its mode's colour */
-  .thx-hundo{ display:inline-flex; align-items:center; gap:.22rem; white-space:nowrap; font-weight:800; color:#FFD36A; letter-spacing:.01em; }
-  .thx-hundo-ico{ width:.72rem; height:.72rem; flex:0 0 auto; filter:drop-shadow(0 0 3px rgba(255,211,106,.55)); }
+  /* (a hundo was a word with a gold sparkle before it, .thx-hundo, from build 326; 384.118 made it a chip - .thx-chip-hundo below) */
   .thx-row-side{ display:flex; align-items:center; gap:.35rem; flex:0 0 auto; }
   .thx-row-when{ font-size:.74rem; color:var(--soft); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .thx-row-chev{ font-size:1.25rem; color:var(--soft); opacity:.6; line-height:1; }
@@ -13862,6 +13859,8 @@
   .thx-chip-review{ --mode-c:#4ADE80; }
   .thx-chip-game{ --mode-c:#E0559A; }
   .thx-chip-vr{ --mode-c:#4A9FE8; }
+  /* (384.118) A HUNDO IS THE SAME CHIP, IN THE HUNDO'S GOLD (TEST_RESULT_TONE.hundo): no glyph before the word - see buildHundoMark */
+  .thx-chip-hundo{ --mode-c:#FFD36A; }
   .thx-day{ margin:1.15rem 0 .5rem; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
   .thx-groups > .thx-day:first-child{ margin-top:.75rem; }
   /* ---- ONE CARD: COUNT, RING, HUNDOS (build 327) ----
@@ -37815,22 +37814,23 @@ html.is-browser{ --fade-paper: transparent; }
      line, mixed from it, went with it - every hairline in the list (and last week's top 3) was there and drawn in nothing */
   html[data-theme="dark"][data-layout="modern"] body .screen-rankings{ --lb-hair:rgba(255,255,255,.1); }
   /* the switch: an iOS segmented control across the page - a quiet track, the picked segment a raised lighter pill
-     (383: Profile's Profile / Stats / Settings switch is this one too - "ensure all pieces line up with their look") */
-  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile) > .navsegment.profiletabs{
+     (383: Profile's Profile / Stats / Settings switch is this one too - "ensure all pieces line up with their look"; 384.118: and
+     Test history's All / Today / This week / This month) */
+  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile, .screen-testhistory) > .navsegment.profiletabs{
     display:flex !important; width:100%; max-width:100%; margin:0 0 .7rem; padding:3px; gap:0; flex-wrap:nowrap;
     border-radius:12px; border:1px solid var(--surface-border) !important;
     /* (383) "ensure you can actually see them": iOS's fill over the card colour, a step lighter than the sky behind it */
     background:linear-gradient(color-mix(in srgb, var(--ink) 14%, transparent), color-mix(in srgb, var(--ink) 14%, transparent)), var(--surface-1) !important;
     box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
   }
-  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile) > .navsegment.profiletabs > .iconbtn{
+  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile, .screen-testhistory) > .navsegment.profiletabs > .iconbtn{
     flex:1 1 0; min-width:0; min-height:44px; border-radius:9px; --tab-py:calc((44px - 1lh) / 2);
     padding:var(--tab-py) .4rem; font-size:.92rem; font-weight:600; letter-spacing:-.005em; color:var(--soft);
   }
-  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile) > .navsegment.profiletabs > .iconbtn.active{
+  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile, .screen-testhistory) > .navsegment.profiletabs > .iconbtn.active{
     color:var(--ink); background:color-mix(in srgb, var(--ink) 22%, transparent); box-shadow:0 1px 3px var(--surface-inset);
   }
-  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile) > .navsegment.profiletabs > .seg-slider{
+  html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile, .screen-testhistory) > .navsegment.profiletabs > .seg-slider{
     background:color-mix(in srgb, var(--ink) 22%, transparent) !important; background-image:none !important;
     border:0 !important; border-radius:9px !important; box-shadow:0 1px 3px var(--surface-inset), 0 0 0 .5px var(--surface-lift) !important;
   }
@@ -40059,6 +40059,98 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
   @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
+  /* ==== TEST HISTORY: ONE ROW, ONE HEIGHT; FINDING A TEST (384.118) ===============================================================
+     Madison, Profile > Stats: "the recent test stuff looks good, but all them stacked on top of each other is overwhelming. And when
+     you click test history, there should be filters, like today, this week, this month, or maybe by chapter too ... maybe a search
+     bar. And ensure all the boxes are the same size." (buildTestRow, showTestReviewList, openTestHistorySheet.)
+     A TEST ROW is one fixed height everywhere (Stats' three, the history, rem so it follows the text size): the ring a size down
+     and without its glow (a list of them is calm, and a long list has no filter to paint per row), the name on ONE line with an
+     ellipsis, one line of chips and numbers that clips rather than wraps. A LIST OF ROWS IS ONE CARD - the rows divided by a
+     hairline that starts at the name, Settings' way - not a stack of cards each with its own edge. Each row keeps its faint wash
+     in its result's colour. */
+  html[data-layout] body .thx-row{ height:4.3rem; min-height:0; box-sizing:border-box; padding:0 .8rem 0 .75rem; gap:.75rem; position:relative; }
+  html[data-layout] body .thx-row > .thx-ring{ width:2.55rem; height:2.55rem; }
+  html[data-layout] body .thx-row > .thx-ring .thx-ring-num{ font-size:.64rem; }
+  html[data-layout] body .thx-row > .thx-ring .thx-ring-arc{ filter:none; }
+  html[data-layout] body .thx-row > .thx-row-body{ gap:.34rem; justify-content:center; min-width:0; }
+  html[data-layout] body .thx-row .thx-row-name{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.95rem; line-height:1.25; }
+  /* one line, and a piece that does not fit goes whole rather than cut ("12/12 rig..."): the line wraps, and its own height
+     hides the second line - so on a narrow row the time taken goes first, then the score, and the chips stay */
+  html[data-layout] body .thx-row .thx-row-meta{ flex-wrap:wrap; align-content:flex-start; height:1.2rem; overflow:hidden; min-width:0; gap:2rem .45rem; line-height:1.2; }
+  html[data-layout] body .thx-row .thx-row-meta > :is(.thx-chip, .thx-row-bit){ flex:0 0 auto; }
+  html[data-layout] body .thx-row > .thx-row-side{ flex:0 0 auto; }
+  html[data-layout] body .thx-list{
+    gap:0; border-radius:16px; overflow:hidden; isolation:isolate;
+    background:var(--surface-1); border:1px solid color-mix(in srgb, var(--ink) 9%, transparent); box-shadow:inset 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent);
+  }
+  html[data-layout] body .thx-list > .thx-row{
+    border:0; border-radius:0; box-shadow:none;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--tone) 9%, transparent), transparent 55%);
+    transition:background-color .15s ease;
+  }
+  html[data-layout] body .thx-list > .thx-row:active{ transform:none; background-color:color-mix(in srgb, var(--ink) 5%, transparent); }
+  html[data-layout] body .thx-list > .thx-row + .thx-row::before{
+    content:""; position:absolute; top:0; right:0; left:calc(.75rem + 2.55rem + .75rem); height:1px; pointer-events:none;
+    background:color-mix(in srgb, var(--ink) 9%, transparent);
+  }
+  /* a test's own page says its name in full, under the verdict */
+  .thx-hero-name{ margin:0; font-size:.92rem; font-weight:600; line-height:1.3; color:var(--ink); overflow-wrap:break-word; }
+  /* -- Test history's filters: the search, the time switch (the Leaderboard's - see THE LEADERBOARD), the units and the mode -- */
+  html[data-layout] body .screen-testhistory > .thx-search{ margin:1rem 0 .75rem; }
+  html[data-layout] body .screen-testhistory > .navsegment.thx-when{ margin:0 0 .75rem; }
+  html[data-theme][data-layout] body .screen-testhistory > .navsegment.thx-when > .iconbtn{ white-space:nowrap; }
+  @media (max-width:23.5rem){
+    /* a narrow phone: each segment as wide as its words plus an even share of what is left ("This month" is twice "All") */
+    html[data-theme][data-layout] body .screen-testhistory > .navsegment.thx-when > .iconbtn{ flex:1 1 auto; font-size:.8rem; padding-left:.3rem; padding-right:.3rem; }
+  }
+  html[data-layout] body .screen-testhistory > .thx-tools{ display:flex; flex-wrap:wrap; gap:.6rem; margin:0; }
+  /* a filter button: a 44px capsule on the card colour, its words and a small down chevron; lit like the switch's picked segment
+     while it holds a choice. Not the old .thx-filter-btn pill (white when on). */
+  html[data-theme][data-layout] body .thx-tool.thx-tool{
+    display:inline-flex; align-items:center; justify-content:center; gap:.45rem; min-height:44px; box-sizing:border-box;
+    margin:0; padding:0 1rem; border-radius:999px; font:inherit; font-size:.92rem; font-weight:600; letter-spacing:-.005em;
+    color:var(--ink); background:var(--surface-1); background-image:none; border:1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+    box-shadow:none; cursor:pointer; -webkit-tap-highlight-color:transparent; white-space:nowrap;
+  }
+  html[data-theme][data-layout] body .thx-tool.thx-tool.is-set{
+    background:linear-gradient(color-mix(in srgb, var(--ink) 20%, transparent), color-mix(in srgb, var(--ink) 20%, transparent)), var(--surface-1);
+    border-color:color-mix(in srgb, var(--ink) 26%, transparent);
+  }
+  html[data-theme][data-layout] body .thx-tool.thx-tool:active{ background:color-mix(in srgb, var(--ink) 14%, var(--surface-1)); }
+  .thx-tool-label{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .thx-tool-chev{ width:.72rem; height:.72rem; flex:0 0 auto; opacity:.7; }
+  /* how many are listed; Clear filters beside it while anything is set */
+  html[data-layout] body .screen-testhistory > .thx-countrow{ display:flex; align-items:center; justify-content:space-between; gap:.6rem; min-height:44px; margin:.45rem 0 0; }
+  .thx-count{ margin:0; font-size:.86rem; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .thx-clear{ min-height:44px; margin:0 -.5rem 0 0; padding:0 .5rem; background:none; border:0; font:inherit; font-size:.86rem; font-weight:600; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .thx-clear[hidden]{ display:none !important; }
+  html[data-layout] body .thx-listhost .thx-groups > .thx-day:first-child{ margin-top:.3rem; }
+  html[data-layout] body .thx-listhost .thx-groups.is-flat > .thx-list:first-child{ margin-top:.3rem; }
+  .thx-more{ height:1px; }
+  /* nothing matches */
+  .thx-empty{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:2.2rem 1rem 1rem; }
+  .thx-empty-ico{ width:2.4rem; height:2.4rem; color:var(--soft); opacity:.55; margin:0 0 .8rem; }
+  .thx-empty-title{ margin:0; font-size:1.1rem; font-weight:700; color:var(--ink); }
+  .thx-empty-sub{ margin:.35rem 0 1.1rem; font-size:.88rem; line-height:1.4; color:var(--soft); }
+  /* -- the picker sheet (the app's .invite-sheet and its glass): a fixed head, the list scrolling inside, Done at the foot -- */
+  html[data-theme][data-layout] body .invite-sheet.thx-pick-sheet{ display:flex; flex-direction:column; max-height:min(82vh, 44rem); overflow:hidden; }
+  .thx-pick-sheet .thx-pick-title{ margin:0 0 .7rem; font-size:1.15rem; }
+  .thx-pick-acts{ display:flex; gap:.6rem; margin:0 0 .5rem; flex:0 0 auto; }
+  .thx-pick-list{ flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; margin:0 -.2rem; padding:0 .2rem; }
+  .thx-pick-row{ display:flex; align-items:center; gap:.8rem; min-height:48px; box-sizing:border-box; padding:.3rem .15rem; cursor:pointer; position:relative; -webkit-tap-highlight-color:transparent; }
+  .thx-pick-row + .thx-pick-row{ border-top:1px solid color-mix(in srgb, var(--ink) 9%, transparent); }
+  .thx-pick-cb{ position:absolute; left:0; top:50%; width:1px; height:1px; margin:0; opacity:0; pointer-events:none; }
+  .thx-pick-box{ flex:0 0 auto; display:grid; place-items:center; width:1.4rem; height:1.4rem; box-sizing:border-box; border-radius:50%;
+    border:1.5px solid color-mix(in srgb, var(--ink) 38%, transparent); transition:background-color .15s ease, border-color .15s ease; }
+  .thx-pick-tick{ width:.95rem; height:.95rem; opacity:0; transition:opacity .12s ease; }
+  .thx-pick-tick path{ fill:none; stroke:#0E1218; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; }
+  .thx-pick-cb:checked + .thx-pick-box{ background:var(--ink); border-color:var(--ink); }
+  .thx-pick-cb:checked + .thx-pick-box > .thx-pick-tick{ opacity:1; }
+  .thx-pick-cb:focus-visible + .thx-pick-box{ box-shadow:0 0 0 2px color-mix(in srgb, var(--ink) 55%, transparent); }
+  .thx-pick-name{ flex:1 1 auto; min-width:0; font-size:.95rem; line-height:1.3; color:var(--ink); }
+  .thx-pick-n{ flex:0 0 auto; font-size:.84rem; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .thx-pick-done{ flex:0 0 auto; width:100%; min-height:48px; margin-top:.8rem; }
+  [data-reduce-motion="true"] :is(.thx-pick-box, .thx-pick-tick, .thx-list > .thx-row){ transition:none; }
 </style>
 <script>
   (function(){
@@ -122953,7 +123045,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.97";
+const APP_BUILD = "2026-11-13-384.118";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -138995,39 +139087,81 @@ function testModeName(entry){
    (summarize() writes entry.hundos). A 100% on part of a unit is not one,
    so a ring at 100% with no word beside it is exactly that. */
 function testHundosOf(entry){ return entry && Number(entry.hundos) > 0 ? Math.floor(Number(entry.hundos)) : 0; }
+/* ---- A HUNDO IS A CHIP, THE SAME AS THE MODE'S (384.118) ----
+   Madison, Stats: "why does Hundo have a stat thing next to it?" The mark was a gold four-point sparkle drawn before the word
+   (an SVG "✦" with its own glow), in bold, with no pill - so the one row that earned a hundo carried a glyph nothing else on the
+   row has, beside a mode chip ("Drill") that is a plain word in a pill. It is that same pill now (.thx-chip), in the hundo's gold
+   (TEST_RESULT_TONE.hundo, the ring's own colour on that row): the word, nothing in front of it. The sparkle was drawn only
+   here; it was never the app's hundo symbol anywhere else. */
 function buildHundoMark(n){
   const m = document.createElement("span");
-  m.className = "thx-hundo";
-  const NS = "http://www.w3.org/2000/svg", sv = document.createElementNS(NS, "svg");
-  sv.setAttribute("viewBox", "0 0 12 12"); sv.setAttribute("aria-hidden", "true"); sv.setAttribute("class", "thx-hundo-ico");
-  const pth = document.createElementNS(NS, "path");
-  pth.setAttribute("d", "M6 .6 7.5 4.5 11.4 6 7.5 7.5 6 11.4 4.5 7.5.6 6 4.5 4.5Z"); pth.setAttribute("fill", "currentColor");
-  sv.appendChild(pth);
-  m.append(sv, document.createTextNode(n > 1 ? n + " hundos" : "Hundo"));
+  m.className = "thx-chip thx-chip-hundo";
+  m.textContent = n > 1 ? n + " hundos" : "Hundo";
   return m;
-}
-function historyDayLabel(ts){
-  const d = new Date(ts), now = new Date();
-  const day0 = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((day0(now) - day0(d)) / 86400000);
-  if(diff <= 0) return "Today";
-  if(diff === 1) return "Yesterday";
-  if(diff < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
-  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 function historyClockOf(ts){
   return new Date(ts).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
+/* ---- THE DAYS A LIST IS READ AGAINST (384.118) ----
+   Worked out once per paint: the start of today, of yesterday, of this week (Monday - the app's week, as studyTotals() and the
+   study chart count it) and of this month. The time filters (Today / This week / This month) and the date headings (Today /
+   Yesterday / This week / Earlier) both read these, so a test can never be "this week" in one and not the other. */
+function historyBounds(now){
+  const d = now ? new Date(now) : new Date();
+  const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+  return {
+    today: new Date(y, m, day).getTime(),
+    yest: new Date(y, m, day - 1).getTime(),
+    week: new Date(y, m, day - ((d.getDay() + 6) % 7)).getTime(),
+    month: new Date(y, m, 1).getTime(),
+    year: y
+  };
+}
+function historyGroupOf(ts, b){
+  if(!ts) return "Earlier";
+  if(ts >= b.today) return "Today";
+  if(ts >= b.yest) return "Yesterday";
+  if(ts >= b.week) return "This week";
+  return "Earlier";
+}
+/* What a row says on its right: the time today (and yesterday, under its own heading), "Yesterday" in a list with no headings,
+   the weekday within this week, and the date before it (with the year when it is not this year's). */
+function historyWhenOf(ts, b, grouped){
+  if(!ts) return "";
+  if(ts >= b.today) return historyClockOf(ts);
+  if(ts >= b.yest) return grouped ? historyClockOf(ts) : "Yesterday";
+  const d = new Date(ts);
+  if(ts >= b.week) return d.toLocaleDateString(undefined, { weekday: "short" });
+  return d.toLocaleDateString(undefined, d.getFullYear() === b.year ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
+}
+/* A row's name: the units (as many as fit a budget, then "+N more"), without the mode, which is its chip. */
+function testRowName(entry){
+  return testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Qualifier|Quiz|Mock|Game|Virtual Room)$/, "");
+}
+/* Every unit's full name, for the search and for a row's tooltip. */
+function testFullName(entry){
+  const units = Array.isArray(entry && entry.units) ? entry.units.filter(Boolean) : [];
+  return units.length ? units.map(unitTitle).join(", ") : testRowName(entry);
+}
+/* ---- ONE ROW, ONE HEIGHT (384.118) ----
+   Madison: "all them stacked on top of each other is overwhelming ... ensure all the boxes are the same size". A row's height
+   followed its name - "Chapter 35: Welding and Other Hot Work" took two lines and "Penal Code" one, and a row with a hundo took
+   a second line of chips on a narrow phone. Every row is one fixed height now (.thx-row, in rem so it follows the text size):
+   the score ring, the name on ONE line (an ellipsis where it runs out; the full name is on the test's own page and in the
+   row's tooltip), and one line of chips and numbers under it. Light work per row: no measuring, nothing read back. */
 function buildTestRow(entry, opts){
   const row = document.createElement("button");
   row.type = "button";
   row.className = "thx-row is-" + testResultKey(entry.pct, testHundosOf(entry));
   row.style.setProperty("--tone", testResultTone(entry));
+  if(entry.playedAt) row.dataset.at = String(entry.playedAt);
   const body = document.createElement("span");
   body.className = "thx-row-body";
   const name = document.createElement("span");
   name.className = "thx-row-name";
-  name.textContent = testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Qualifier|Quiz|Mock|Game|Virtual Room)$/, "");
+  name.textContent = testRowName(entry);
+  const full = testFullName(entry);
+  if(full) row.title = full;
   const meta = document.createElement("span");
   meta.className = "thx-row-meta";
   const chip = document.createElement("span");
@@ -139045,45 +139179,29 @@ function buildTestRow(entry, opts){
     meta.appendChild(s);
   });
   body.append(name, meta);
-  const side = document.createElement("span");
-  side.className = "thx-row-side";
-  const when = document.createElement("span");
-  when.className = "thx-row-when";
-  when.textContent = entry.playedAt ? historyClockOf(entry.playedAt) : "";
-  const chev = document.createElement("span");
-  chev.className = "thx-row-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
-  side.append(when, chev);
   /* NOTHING ON THE RIGHT IN STATS (build 325): "The recent tests also has
      the badge on the right, remove that." Stats' three rows carry no day
      heading, so the clock time stamped on the right said "10:54 PM" with
      no day to belong to; the row is the ring, the test and its numbers,
      and it still opens the test. Test history keeps the time - its rows
-     sit under a heading per day, where the time means something. */
+     sit under a heading per day, where the time means something - and
+     (384.118) says the day itself where a heading does not. */
   const ring = buildScoreRing(entry.pct, null, testResultTone(entry));
   if(opts && opts.side === false) row.append(ring, body);
-  else row.append(ring, body, side);
-  row.addEventListener("click", () => showTestHistoryDetail(entry));
+  else {
+    const side = document.createElement("span");
+    side.className = "thx-row-side";
+    const when = document.createElement("span");
+    when.className = "thx-row-when";
+    when.textContent = opts && typeof opts.when === "string" ? opts.when
+      : entry.playedAt ? historyWhenOf(entry.playedAt, historyBounds(), true) : "";
+    const chev = document.createElement("span");
+    chev.className = "thx-row-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
+    side.append(when, chev);
+    row.append(ring, body, side);
+  }
+  row.addEventListener("click", () => { if(opts && typeof opts.onOpen === "function") opts.onOpen(entry); else showTestHistoryDetail(entry); });
   return row;
-}
-/* Rows under one heading per day. `entries` are newest first already. */
-function buildHistoryGroups(entries){
-  const box = document.createElement("div");
-  box.className = "thx-groups";
-  let curLabel = null, list = null;
-  entries.forEach(e => {
-    const label = e.playedAt ? historyDayLabel(e.playedAt) : "Earlier";
-    if(label !== curLabel){
-      curLabel = label;
-      const h = document.createElement("p");
-      h.className = "thx-day";
-      h.textContent = label;
-      list = document.createElement("div");
-      list.className = "thx-list";
-      box.append(h, list);
-    }
-    list.appendChild(buildTestRow(e));
-  });
-  return box;
 }
 
 /* What Test history's three numbers say about a list of entries: how many
@@ -139098,8 +139216,150 @@ function testHistorySummary(list){
   };
 }
 __bm("L109021");
+/* The mode filter (all / drill / exam / game / vr) - the name older gates set. */
 let testHistoryFilter = "all";
-function showTestReviewList(){
+/* (384.118) The rest of Test history's filters - the time, the units picked, the search - and where the list was scrolled to.
+   Kept while a test's own page is open, so its Back lands on the same list, at the same row; a fresh visit starts clean. */
+let testHistoryView = { when: "all", units: [], q: "", y: 0, shown: 0 };
+function testHistoryFresh(){ testHistoryView = { when: "all", units: [], q: "", y: 0, shown: 0 }; testHistoryFilter = "all"; }
+/* Rows are put on the page this many at a time, the next lot as the list nears the bottom of the screen: a long history
+   (hundreds of tests) costs the first screenful to open, not all of it. */
+const TEST_HISTORY_CHUNK = 40;
+/* The time filter's choices, in the switcher's order. */
+const TEST_HISTORY_WHEN = [["all", "All"], ["today", "Today"], ["week", "This week"], ["month", "This month"]];
+/* What a search reads of a test: every unit's full name, its stored label, its mode, and "hundo" where it earned one. */
+function testSearchTextOf(entry){
+  const bits = [testFullName(entry), entry && entry.label ? String(entry.label) : "", testModeName(entry)];
+  if(testHundosOf(entry)) bits.push("hundo hundos");
+  return bits.join(" · ").toLowerCase();
+}
+/* The tests one set of filters lets through, newest first as stored. Shared by the list and its count, so the two cannot
+   disagree. `view` is testHistoryView's shape; `mode` is testHistoryFilter's. */
+function filterTestHistory(all, view, mode, textOf){
+  const b = historyBounds();
+  const from = view.when === "today" ? b.today : view.when === "week" ? b.week : view.when === "month" ? b.month : null;
+  const units = view.units && view.units.length ? new Set(view.units) : null;
+  const words = String(view.q || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return all.filter(e => {
+    if(from != null && !((Number(e.playedAt) || 0) >= from)) return false;
+    if(mode && mode !== "all" && testModeKey(e) !== mode) return false;
+    if(units && !(Array.isArray(e.units) && e.units.some(u => units.has(u)))) return false;
+    if(words.length){
+      const t = textOf ? textOf(e) : testSearchTextOf(e);
+      if(!words.every(w => t.includes(w))) return false;
+    }
+    return true;
+  });
+}
+/* A small down chevron, for the two filter buttons that open a sheet. */
+function thxChevronDown(){
+  const NS = "http://www.w3.org/2000/svg", sv = document.createElementNS(NS, "svg");
+  sv.setAttribute("viewBox", "0 0 12 12"); sv.setAttribute("aria-hidden", "true"); sv.setAttribute("class", "thx-tool-chev");
+  const p = document.createElementNS(NS, "path");
+  p.setAttribute("d", "M2.5 4.5 6 8l3.5-3.5"); p.setAttribute("fill", "none"); p.setAttribute("stroke", "currentColor");
+  p.setAttribute("stroke-width", "1.6"); p.setAttribute("stroke-linecap", "round"); p.setAttribute("stroke-linejoin", "round");
+  sv.appendChild(p);
+  return sv;
+}
+/* ---- TEST HISTORY'S PICKER SHEET (384.118) ----
+   One sheet for both filter buttons: the units (several at once, with Select all and Clear, applied as each box is ticked) and
+   the mode (one, applied and closed on the tap). The app's own sheet (.invite-overlay / .invite-sheet, mountSheetOverlay - it
+   goes with the screen it was opened over) and its glass. Rows are 48px, the buttons 44px. */
+function openTestHistorySheet(o){
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay thx-pick-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet thx-pick-sheet" + (o.multi ? " is-multi" : " is-single");
+  sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-label", o.title);
+  const head = document.createElement("div");
+  head.className = "thx-pick-head";
+  const h = document.createElement("p");
+  h.className = "invite-sheet-title thx-pick-title"; h.textContent = o.title;
+  head.appendChild(h);
+  sheet.appendChild(head);
+  const close = () => { if(overlay.isConnected) overlay.remove(); };
+  const picked = new Set(o.picked || []);
+  const list = document.createElement("div");
+  list.className = "thx-pick-list";
+  const boxes = [];
+  const tick = () => {
+    const NS = "http://www.w3.org/2000/svg", sv = document.createElementNS(NS, "svg");
+    sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true"); sv.setAttribute("class", "thx-pick-tick");
+    const p = document.createElementNS(NS, "path"); p.setAttribute("d", "M6.6 12.4l3.7 3.7 7.2-7.6");
+    sv.appendChild(p);
+    return sv;
+  };
+  o.items.forEach(it => {
+    const row = document.createElement("label");
+    row.className = "thx-pick-row";
+    const cb = document.createElement("input");
+    cb.type = o.multi ? "checkbox" : "radio";
+    cb.className = "thx-pick-cb"; cb.name = "thx-pick"; cb.value = it.key;
+    cb.checked = o.multi ? picked.has(it.key) : it.key === o.current;
+    const box = document.createElement("span");
+    box.className = "thx-pick-box"; box.setAttribute("aria-hidden", "true");
+    box.appendChild(tick());
+    const nm = document.createElement("span");
+    nm.className = "thx-pick-name"; nm.textContent = it.label;
+    row.append(cb, box, nm);
+    if(it.count != null){
+      const n = document.createElement("span");
+      n.className = "thx-pick-n"; n.textContent = String(it.count);
+      row.appendChild(n);
+    }
+    cb.addEventListener("change", () => {
+      if(o.multi){
+        if(cb.checked) picked.add(it.key); else picked.delete(it.key);
+        o.onChange([...picked]);
+      } else {
+        o.onChange(it.key);
+        setTimeout(close, 140);
+      }
+    });
+    boxes.push(cb);
+    list.appendChild(row);
+  });
+  if(o.multi){
+    const acts = document.createElement("div");
+    acts.className = "thx-pick-acts";
+    const mk = (cls, label, on) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "thx-tool thx-pick-act " + cls; b.textContent = label;
+      b.addEventListener("click", () => {
+        boxes.forEach(cb => { cb.checked = on; if(on) picked.add(cb.value); else picked.delete(cb.value); });
+        o.onChange([...picked]);
+      });
+      return b;
+    };
+    acts.append(mk("thx-pick-all", "Select all", true), mk("thx-pick-none", "Clear", false));
+    sheet.appendChild(acts);
+  }
+  sheet.appendChild(list);
+  const done = document.createElement("button");
+  done.type = "button"; done.className = "next thx-pick-done"; done.textContent = "Done";
+  done.addEventListener("click", close);
+  sheet.appendChild(done);
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) close(); });
+  overlay.addEventListener("keydown", e => { if(e.key === "Escape") close(); });
+  mountSheetOverlay(overlay);
+  return overlay;
+}
+
+/* ---- TEST HISTORY: FIND A TEST (384.118) ----
+   Madison: "when you click test history, there should be filters, like today, this week, this month, or maybe by chapter too,
+   or you can select which chapters to filter by, maybe a search bar. And ensure all the boxes are the same size." Over the
+   list, in this order: the search field (the app's .searchwrap / .searchbox, so it takes whatever the search field looks like
+   app-wide), the time as the app's switcher (.navsegment / .iconbtn, All / Today / This week / This month), then the units
+   ("Chapters" in Fire Code - classNoun) and the mode as two buttons that open a sheet, each saying what it holds ("Units · 3",
+   "Drill"). Every filter narrows the one list and they combine. A line over the list counts what is listed, with Clear
+   filters beside it while anything is set; nothing listed says so and offers the same Clear. With no filter set the list is
+   under Today / Yesterday / This week / Earlier; with one, it is one list, and each row says its own day. The summary strip
+   still describes exactly what is listed. */
+function showTestReviewList(opts){
+  const keep = !!(opts && opts.keep === true);
+  if(!keep) testHistoryFresh();
+  const view = testHistoryView;
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
@@ -139154,42 +139414,214 @@ function showTestReviewList(){
   };
   panel.appendChild(sum);
 
-  /* Drill / Exam / Virtual Room - only the filters this history can use. */
-  const kinds = [["all", "All"], ["drill", "Drill"], ["exam", modeTitleOf("exam")], ["vr", "Virtual Room"]]
-    .filter(([k]) => k === "all" || all.some(e => k === "vr" ? e.vr : (!e.vr && (e.mode || "drill") === k)));
-  if(!kinds.some(([k]) => k === testHistoryFilter)) testHistoryFilter = "all";
-  const listHost = document.createElement("div");
-  const paint = () => {
-    const shown = testHistoryFilter === "all" ? all
-      : all.filter(e => testHistoryFilter === "vr" ? e.vr : (!e.vr && (e.mode || "drill") === testHistoryFilter));
-    listHost.replaceChildren(buildHistoryGroups(shown));
-    paintSummary(shown);
-  };
-  if(kinds.length > 2){
-    const seg = document.createElement("div");
-    seg.className = "thx-filter";
-    kinds.forEach(([k, label]) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "thx-filter-btn" + (k === testHistoryFilter ? " on" : "");
-      b.textContent = label;
-      b.addEventListener("click", () => {
-        testHistoryFilter = k;
-        seg.querySelectorAll(".thx-filter-btn").forEach(x => x.classList.toggle("on", x === b));
-        paint();
-      });
-      seg.appendChild(b);
+  /* What each test's search reads, worked out once for this visit rather than on every keystroke. */
+  const textCache = new Map();
+  const textOf = e => { let t = textCache.get(e); if(t == null){ t = testSearchTextOf(e); textCache.set(e, t); } return t; };
+
+  /* -- the search -- (.sbcap / .sbcap-field: the one search capsule, where that look is in) */
+  const searchWrap = document.createElement("div");
+  searchWrap.className = "searchwrap sbcap thx-search";
+  searchWrap.appendChild(searchMagnifier());
+  const search = document.createElement("input");
+  search.type = "search"; search.className = "searchbox sbcap-field";
+  search.placeholder = "Search";
+  search.setAttribute("aria-label", "Search your tests");
+  search.setAttribute("autocomplete", "off"); search.setAttribute("autocapitalize", "off"); search.spellcheck = false;
+  search.enterKeyHint = "search";
+  search.value = view.q || "";
+  searchWrap.appendChild(search);
+  const clearX = addSearchClear(searchWrap, search);
+  if(search.value){ clearX.hidden = false; searchWrap.classList.add("has-clear"); }
+  /* Enter shuts the keyboard - the list is already filtered as you type */
+  search.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); try{ search.blur(); }catch(x){} } });
+  panel.appendChild(searchWrap);
+
+  /* -- the time: the app's switcher -- */
+  const seg = document.createElement("div");
+  seg.className = "navsegment profiletabs thx-when";
+  seg.setAttribute("role", "tablist"); seg.setAttribute("aria-label", "When");
+  if(!TEST_HISTORY_WHEN.some(([k]) => k === view.when)) view.when = "all";
+  TEST_HISTORY_WHEN.forEach(([k, label]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "iconbtn" + (k === view.when ? " active" : ""); b.setAttribute("role", "tab");
+    b.dataset.when = k; b.textContent = label;
+    b.addEventListener("click", () => {
+      if(view.when === k) return;
+      view.when = k;
+      seg.querySelectorAll(":scope > .iconbtn").forEach(x => x.classList.toggle("active", x === b));
+      paint();
     });
-    panel.appendChild(seg);
+    seg.appendChild(b);
+  });
+  panel.appendChild(seg);
+  attachSegSlider(seg, ".iconbtn.active");
+
+  /* -- the units and the mode: two buttons that open a sheet -- */
+  const unitNoun = classNoun(true, true);
+  const teach = (() => { try{ return unitsInTeachingOrder(); }catch(e){ return topicsIn(QUESTIONS); } })();
+  const unitCount = new Map();
+  all.forEach(e => (Array.isArray(e.units) ? e.units : []).forEach(u => { if(u) unitCount.set(u, (unitCount.get(u) || 0) + 1); }));
+  const unitKeys = [...unitCount.keys()].sort((a, b) => {
+    const ia = teach.indexOf(a), ib = teach.indexOf(b);
+    return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib) || String(unitTitle(a)).localeCompare(String(unitTitle(b)));
+  });
+  view.units = (view.units || []).filter(u => unitCount.has(u));
+  const tools = document.createElement("div");
+  tools.className = "thx-tools";
+  const toolBtn = cls => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "thx-filter-btn thx-tool " + cls;
+    const t = document.createElement("span"); t.className = "thx-tool-label";
+    b.append(t, thxChevronDown());
+    b._label = t;
+    return b;
+  };
+  const unitsBtn = toolBtn("thx-units-btn");
+  unitsBtn.setAttribute("aria-haspopup", "dialog");
+  unitsBtn.addEventListener("click", () => {
+    openTestHistorySheet({
+      title: unitNoun, multi: true, picked: view.units,
+      items: unitKeys.map(u => ({ key: u, label: unitTitle(u), count: unitCount.get(u) })),
+      onChange: list => { view.units = list; paint(); }
+    });
+  });
+  tools.appendChild(unitsBtn);
+  /* Drill / Mock / Game / Virtual Room - only the ones this history holds, and the button only when there are two or more */
+  const MODE_ORDER = ["drill", "exam", "game", "vr"];
+  const modesHeld = MODE_ORDER.filter(k => all.some(e => testModeKey(e) === k));
+  if(!modesHeld.includes(testHistoryFilter)) testHistoryFilter = "all";
+  const modeLabel = k => k === "vr" ? "Virtual Room" : modeTitleOf(k);
+  let modeBtn = null;
+  if(modesHeld.length > 1){
+    modeBtn = toolBtn("thx-mode-btn");
+    modeBtn.setAttribute("aria-haspopup", "dialog");
+    modeBtn.addEventListener("click", () => {
+      openTestHistorySheet({
+        title: "Mode", multi: false, current: testHistoryFilter,
+        items: [{ key: "all", label: "All modes" }].concat(modesHeld.map(k => ({ key: k, label: modeLabel(k), count: all.filter(e => testModeKey(e) === k).length }))),
+        onChange: k => { testHistoryFilter = k; paint(); }
+      });
+    });
+    tools.appendChild(modeBtn);
   }
+  panel.appendChild(tools);
+
+  /* -- how many are listed, and Clear filters while anything is set -- */
+  const countRow = document.createElement("div");
+  countRow.className = "thx-countrow";
+  const countLine = document.createElement("p");
+  countLine.className = "thx-count";
+  countLine.setAttribute("aria-live", "polite");
+  const clearAll = () => {
+    view.when = "all"; view.units = []; view.q = ""; testHistoryFilter = "all";
+    search.value = ""; clearX.hidden = true; searchWrap.classList.remove("has-clear");
+    seg.querySelectorAll(":scope > .iconbtn").forEach(x => x.classList.toggle("active", x.dataset.when === "all"));
+    paint();
+  };
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button"; clearBtn.className = "thx-clear"; clearBtn.textContent = "Clear filters";
+  clearBtn.addEventListener("click", clearAll);
+  countRow.append(countLine, clearBtn);
+  panel.appendChild(countRow);
+
+  const listHost = document.createElement("div");
+  listHost.className = "thx-listhost";
   panel.appendChild(listHost);
-  paint();
+
+  /* nothing listed */
+  const empty = document.createElement("div");
+  empty.className = "thx-empty";
+  {
+    const ic = searchMagnifier(); ic.setAttribute("class", "thx-empty-ico");
+    const t = document.createElement("p"); t.className = "thx-empty-title"; t.textContent = "No tests match";
+    const s = document.createElement("p"); s.className = "thx-empty-sub"; s.textContent = "Try another time, " + classNoun(false) + " or search.";
+    const c = document.createElement("button"); c.type = "button"; c.className = "thx-tool thx-empty-clear"; c.textContent = "Clear filters";
+    c.addEventListener("click", clearAll);
+    empty.append(ic, t, s, c);
+  }
+
+  let io = null;
+  const openEntry = e => { view.y = window.scrollY || 0; showTestHistoryDetail(e); };
+  const filtered = () => filterTestHistory(all, view, testHistoryFilter, textOf);
+  const isFiltered = () => view.when !== "all" || view.units.length > 0 || testHistoryFilter !== "all" || String(view.q || "").trim() !== "";
+  function paint(minRows){
+    const shown = filtered();
+    const grouped = !isFiltered();
+    paintSummary(shown);
+    countLine.textContent = grouped ? shown.length + (shown.length === 1 ? " test" : " tests")
+      : shown.length + " of " + all.length + (all.length === 1 ? " test" : " tests");
+    clearBtn.hidden = grouped;
+    unitsBtn._label.textContent = view.units.length ? unitNoun + " · " + view.units.length : unitNoun;
+    unitsBtn.classList.toggle("is-set", view.units.length > 0);
+    unitsBtn.setAttribute("aria-label", view.units.length ? unitNoun + ", " + view.units.length + " picked" : unitNoun + ", all");
+    if(modeBtn){
+      modeBtn._label.textContent = testHistoryFilter === "all" ? "All modes" : modeLabel(testHistoryFilter);
+      modeBtn.classList.toggle("is-set", testHistoryFilter !== "all");
+    }
+    if(io){ io.disconnect(); io = null; }
+    if(!shown.length){ view.shown = 0; listHost.replaceChildren(empty); return; }
+    const b = historyBounds();
+    const box = document.createElement("div");
+    box.className = "thx-groups" + (grouped ? " is-grouped" : " is-flat");
+    const more = document.createElement("div");
+    more.className = "thx-more"; more.setAttribute("aria-hidden", "true");
+    let i = 0, curLabel = null, curList = null;
+    const add = n => {
+      const end = Math.min(shown.length, i + n);
+      for(; i < end; i++){
+        const e = shown[i];
+        const label = grouped ? historyGroupOf(e.playedAt, b) : "";
+        if(!curList || label !== curLabel){
+          curLabel = label;
+          if(grouped){
+            const h = document.createElement("p");
+            h.className = "thx-day"; h.textContent = label;
+            box.appendChild(h);
+          }
+          curList = document.createElement("div");
+          curList.className = "thx-list";
+          box.appendChild(curList);
+        }
+        curList.appendChild(buildTestRow(e, { when: historyWhenOf(e.playedAt, b, grouped), onOpen: openEntry }));
+      }
+      view.shown = i;
+      if(i >= shown.length){ more.remove(); if(io){ io.disconnect(); io = null; } }
+    };
+    add(Math.max(TEST_HISTORY_CHUNK, minRows || 0));
+    listHost.replaceChildren(box);
+    if(i < shown.length){
+      listHost.appendChild(more);
+      if(typeof IntersectionObserver === "function"){
+        io = new IntersectionObserver(ents => {
+          if(!panel.isConnected){ if(io){ io.disconnect(); io = null; } return; }
+          if(!ents.some(x => x.isIntersecting)) return;
+          add(TEST_HISTORY_CHUNK);
+          /* still in reach after this lot (a tall screen): observe again, which reports again */
+          if(io && more.isConnected){ io.unobserve(more); io.observe(more); }
+        }, { rootMargin: "0px 0px 900px 0px" });
+        io.observe(more);
+      } else add(shown.length);
+    }
+  }
+  let typing = 0;
+  search.addEventListener("input", () => {
+    view.q = search.value;
+    clearTimeout(typing);
+    typing = setTimeout(() => paint(), 120);
+  });
+  paint(keep ? view.shown : 0);
+
   const foot = document.createElement("p");
   foot.className = "thx-foot";
   foot.textContent = "Your last 50 tests are kept. The daily question isn’t listed here.";
   panel.appendChild(foot);
 
   stage.replaceChildren(panel);
-  toTop();
+  /* Back from a test's own page: the list where it was left */
+  if(keep && view.y > 0){
+    const y = view.y;
+    requestAnimationFrame(() => { try{ window.scrollTo({ top: y, left: 0, behavior: "instant" }); }catch(e){ window.scrollTo(0, y); } });
+  } else toTop();
 }
 
 function showTestHistoryDetail(entry){
@@ -139203,7 +139635,8 @@ function showTestHistoryDetail(entry){
   panel.className = "panel screen-testreview screen-testdetail";
   panel.style.setProperty("--tone", testResultTone(entry));
 
-  const back = buildBackLink("Test history", showTestReviewList);
+  /* (384.118) Back lands on the list as it was left - its filters, its search and where it was scrolled to */
+  const back = buildBackLink("Test history", () => showTestReviewList({ keep: true }));
   panel.appendChild(iosNavBar("Test", back));   /* (383) the nav bar every pushed screen has */
 
   /* The hero: the score, big, in its own colour, with what and when. */
@@ -139228,7 +139661,12 @@ function showTestHistoryDetail(entry){
   when.textContent = entry.playedAt
     ? new Date(entry.playedAt).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) + " · " + historyClockOf(entry.playedAt)
     : "";
-  heroText.append(verdict, chip, when);
+  /* (384.118) WHAT THE TEST WAS, IN FULL. A row in the list is one line and ends in an ellipsis where the name runs out
+     ("Chapter 35: Welding and Ot..."); the name is written out here, as many lines as it takes. */
+  const nameLine = document.createElement("p");
+  nameLine.className = "thx-hero-name";
+  nameLine.textContent = testRowName(entry);
+  heroText.append(verdict, nameLine, chip, when);
   hero.appendChild(heroText);
   panel.appendChild(hero);
 
@@ -155864,9 +156302,12 @@ function showProfile(defaultTab, opts){
   recentSect.appendChild(recentTop);
   const hist = testHistoryEntries();
   if(hist.length){
+    /* (384.118) "all them stacked on top of each other is overwhelming": the three most recent, at most, as ONE card of rows
+       divided by hairlines (the history's own rows, one fixed height, the name on one line) rather than three cards each
+       with its own edge and glow. A test opened from here starts its history's filters clean. */
     const list = document.createElement("div");
-    list.className = "thx-list";
-    hist.slice(0, 3).forEach(e => list.appendChild(buildTestRow(e, { side: false })));
+    list.className = "thx-list stx-recent-list";
+    hist.slice(0, 3).forEach(e => list.appendChild(buildTestRow(e, { side: false, onOpen: x => { testHistoryFresh(); showTestHistoryDetail(x); } })));
     recentSect.appendChild(list);
   } else {
     const p = document.createElement("p");
