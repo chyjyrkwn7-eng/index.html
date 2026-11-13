@@ -27560,7 +27560,9 @@
      image callout, no selection */
   .person-card-rank, .person-card-rank *{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   .person-card-rankword{ filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent)); }
-  .pf-standing > .profile-rankline{ margin:-.55rem 0 .15rem; }   /* (384 r5) the card's own spacing: the rank line close under the name, the level line close under it */
+  .pf-standing > .profile-rankline{ margin:-.55rem 0 .55rem; }   /* (384 r5) the card's own spacing: the rank line close under the name. (384.117) The level line
+     .4rem further under it: "the spacing between your rank and your level/badges is too tight" - .15rem left ~13pt between the rank's
+     word and "Level N · N badges"; .55rem is the ~19pt a classmate's card (.person-card-rank + .person-card-level) already has. */
   .person-card-rank > .person-card-mark{ width:2.1rem; height:2.1rem; }
   @media (min-width:40rem){ .person-card-rank > .person-card-mark{ width:2.4rem; height:2.4rem; } }
   .person-card-level{

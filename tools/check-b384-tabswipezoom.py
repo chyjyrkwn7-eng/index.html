@@ -13,6 +13,8 @@ well after the next tab has landed: the document's scrollWidth against the scree
   T2  Profile -> Stats -> Profile, drags that commit: never wider, never zoomed out, and the tab really changed
   T3  the Leaderboard's boards, a committing drag: the same
   T4  after it all the page is not left shifted sideways (scrollX 0) and the clip is off again (html.tab-sliding gone)
+  T5  (the same build) Profile: the rank line and "Level N · N badges" under it are at least 15px apart - "the spacing between
+      your rank and your level/badges is too tight" (it measured ~9px; a classmate's card has ~19pt)
 Devices: iPhone 17 Pro Max installed (440x956) and at Safari's 85% page zoom (518 CSS px wide), and an iPhone SE.
 Run:  python3 tools/check-b384-tabswipezoom.py [--against REV|DIR]   (--against origin/main must FAIL T1-T3)"""
 import importlib.util, os, sys
@@ -53,12 +55,26 @@ def swipe_check(pg, name, x0, x1, want_change, cur_js):
     if want_change is not None:
         chk("[%s] %s: the tab %s" % (pg.dev, name, "changed" if want_change else "stayed"), (after != before) == want_change, (before, after))
 
-PROF_TAB = "()=>{ const b = document.querySelector('.navsegment [aria-selected=\"true\"], .navsegment .active, .navsegment .is-active'); return b ? b.textContent.trim() : (document.querySelector('[data-profile-tab]:not([hidden])')||{}).dataset?.profileTab || ''; }"
-BOARD = "()=>{ const b = document.querySelector('.navsegment [aria-selected=\"true\"], .navsegment .active, .navsegment .is-active'); return b ? b.textContent.trim() : ''; }"
+PROF_TAB = "()=>{ const b = document.querySelector('.profiletabs .iconbtn.active'); return b ? b.textContent.trim() : ''; }"
+BOARD = "()=>{ const b = document.querySelector('.navsegment.has-seg-thumb .active'); return b ? b.textContent.trim() : ''; }"
+
+def open_retry(br, dev):
+    for k in range(3):   # a loaded machine can take longer than a page load's 30s
+        try: return G.open_dev(br, dev, inits=[G.seed_init()], wait=4000)
+        except Exception as e:
+            print("  (retrying the page load: %s)" % str(e)[:80], flush=True)
+    return G.open_dev(br, dev, inits=[G.seed_init()], wait=4000)
+
+GAP = """()=>{ const rl = document.querySelector('.pf-standing > .profile-rankline'), id = document.querySelector('.pf-standing .pf-idline');
+  if(!rl || !id) return null; const w = rl.querySelector('.pf-rankname') || rl;
+  return Math.round((id.getBoundingClientRect().top - w.getBoundingClientRect().bottom) * 10) / 10; }"""
 
 def run_dev(br, dev):
-    pg = G.open_dev(br, dev, inits=[G.seed_init()])
+    pg = open_retry(br, dev)
     G.clear_popups(pg)
+    pg.evaluate("()=>{ store.lifetime.points = Math.max(store.lifetime.points || 0, 60000); showProfile('profile'); }"); pg.wait_for_timeout(1200); G.clear_popups(pg)
+    gap = pg.evaluate(GAP)
+    chk("[%s] T5 Profile: the rank line and the level line under it are at least 15px apart (%s)" % (dev, gap), gap is not None and gap >= 15, gap)
     pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(900); G.clear_popups(pg)
     # T1: a short drag towards Profile that is let go early (eases back)
     swipe_check(pg, "T1 Stats, a short drag let go (eases back)", 0.30, 0.52, False, PROF_TAB)
