@@ -11058,9 +11058,13 @@ def check_b312_results(br):
     """Build 312: "Review test" on a perfect run was asked for ("when getting
     a 100, still provide a review option") and taken back before it shipped
     ("Nvm, if you get a 100, let's not do the review test thing"). A 100%
-    run ends on Re-run and Main menu, as build 311 did; the review is only
-    for the misses."""
-    print("\n87. build 312: a perfect run ends on Re-run and Main menu - no Review test")
+    run ended on Re-run and Main menu, as build 311 did.
+    384.103 REVERSED IT, on the newer word: "After you finish a test (you get
+    the 100 or finish all the retakes, did them all finally), add a button for
+    review test or something". A 100% run now ends on the review button (the
+    lead, first), then Re-run and Main menu - read by its class, not its words;
+    tools/check-b384-reviewtest.py holds the rest of it."""
+    print("\n87. build 312 / 384.103: a perfect run ends on the whole test's review, then Re-run and Main menu")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.source = 'all'; cfg.size = 0; cfg.versions = {};
@@ -11075,8 +11079,10 @@ def check_b312_results(br):
       }
       for(let i = 0; i < 100 && !document.querySelector('.rs-final button'); i++){ document.querySelector('.rs-screen')?.click(); await wait(200); }
       await wait(600);
-      return { btns: [...document.querySelectorAll('.rs-final button')].map(b => b.textContent.trim()) }; }""")
-    check("a 100% run's final buttons are Re-run and Main menu, with no Review test", r.get("btns") == ["Re-run", "Main menu"], r.get("btns"))
+      return { btns: [...document.querySelectorAll('.rs-final button')].map(b => b.textContent.trim()),
+               review: [...document.querySelectorAll('.rs-final button')].map(b => b.classList.contains('rs-testreview-go')) }; }""")
+    check("a 100% run's final buttons are the review (first), then Re-run and Main menu (384.103)",
+          r.get("btns", [])[1:] == ["Re-run", "Main menu"] and r.get("review") == [True, False, False], r)
     ctx.close()
     # "if I get a hundo on a unit that I already have a badge on, you don't
     # need to show the badge stuff there, no point"

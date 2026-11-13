@@ -31007,6 +31007,48 @@
     .rs-q-text{ font-size:1.15rem; }
   }
 
+  /* ---- REVIEW TEST (384.103): the whole test, every question and how it went (showReviewTest) ----
+     The misses' review, made whole: the same .rs-q cards, the results' own card for the summary, the app's pill switcher
+     (.rs-tabs) to narrow the list. Green is right first time, red is a miss, and a miss answered right on a retake is amber - the
+     only new colour, and it is on the tag and the number only. */
+  .rs-testreview .rs-tr-sum{ margin:0 0 .9rem; }
+  .rs-tr-stats{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1rem .9rem; }
+  @media (min-width:40rem){ .rs-tr-stats{ grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+  .rs-tr-stat{ min-width:0; }
+  .rs-tr-val{
+    margin:0; font-family:var(--sans); font-size:1.4rem; font-weight:800; line-height:1.1; letter-spacing:-.02em;
+    color:var(--ink); white-space:nowrap; font-variant-numeric:lining-nums tabular-nums;
+  }
+  .rs-tr-val .rs-frac-of{ opacity:.62; }
+  .rs-tr-pct{ font-size:.62em; font-weight:700; margin-left:.06em; }
+  .rs-tr-stat.is-pass .rs-tr-val{ color:var(--right, #4FBE8C); }
+  .rs-tr-stat.is-fail .rs-tr-val, .rs-tr-stat.is-missed .rs-tr-val{ color:var(--wrong, #E3707C); }
+  .rs-tr-stat.is-perfect .rs-tr-val{ color:#E6C34A; }
+  .rs-tr-stat.is-retaken .rs-tr-val{ color:#F0A85A; }
+  .rs-tr-label{
+    margin:.35rem 0 0; font-size:var(--rs-kick, .68rem); font-weight:800; letter-spacing:.14em; line-height:1.2;
+    text-transform:uppercase; color:rgba(255,255,255,.52);
+  }
+  .rs-tr-line{
+    margin:1rem 0 0; padding-top:.85rem; border-top:1px solid rgba(255,255,255,.08);
+    font-size:var(--rs-cap, .78rem); line-height:1.4; color:var(--soft); text-wrap:pretty;
+  }
+  .rs-testreview .rs-tr-filter{ margin:0 0 .9rem; }
+  .rs-testreview .rs-tr-list > .rs-q[hidden]{ display:none; }
+  /* the tag beside the star, on the right of the number row; the star a round 44px target that does not make the row taller */
+  .rs-testreview .rs-q-top > .rs-q-tag{ margin-left:auto; text-align:right; }
+  .rs-testreview .rs-q-top > .flagbtn.qflag{ margin:-.55rem -.55rem -.55rem 0; }
+  .rs-testreview .rs-q.is-right .rs-q-num{ background:rgba(92,214,146,.16); border-color:rgba(92,214,146,.45); }
+  .rs-testreview .rs-q.is-retaken .rs-q-num{ background:rgba(240,168,90,.16); border-color:rgba(240,168,90,.45); }
+  .rs-q-tag.is-retaken{ color:#F0A85A; }
+  /* three segments with their counts on a small phone: the label and its count closer, the pill's own sides a little in */
+  @media (max-width:27.99rem){
+    .rs-testreview .rs-tr-filter > .rs-tab{ gap:.3rem; padding-left:.35rem; padding-right:.35rem; }
+  }
+  /* ...and on the narrowest (a 320px phone) the counts step out: "First try 11" is wider than its third of the switch there, and the
+     same three numbers are in the summary card right above it */
+  @media (max-width:22.49rem){ .rs-testreview .rs-tr-filter .rs-tab-count{ display:none; } }
+
   /* ---- BUILD 213: THE RESULTS SCREEN, SECOND PASS ---- */
   /* The chip IS the mode's colour from the mode picker - Drill gold,
      Exam orange, Game magenta, Virtual Room blue - filled, so it reads
@@ -118745,6 +118787,11 @@ let lastRunLabel = null;
    it at the end. */
 let originalTestPool = [];
 let originalTestLabel = null;
+/* (384.103) THE TEST JUST TAKEN, KEPT FOR "REVIEW TEST". originalTestPool says which questions the test was; this says how each of
+   them went, from the test through every retake of its misses - your first answer, and the round it was answered right on (0 the
+   test, 1 the first retake ...). Written by noteReviewTestChain() at the end of every run (summarize); in memory only, for the
+   session, like the results screen it belongs to. */
+let reviewTestChain = null;
 
 /* What was locked / held as a run began - see summarize(). `var` for the
    reason retroHideBadges gives. */
@@ -122862,7 +122909,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.94";
+const APP_BUILD = "2026-11-13-384.103";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -135270,6 +135317,220 @@ function showRunReview(run, hooks){
   if(first) focusQuietly(first);
 }
 
+/* ---- REVIEW TEST: THE TEST YOU JUST TOOK, EVERY QUESTION (384.103) ----
+   Madison: "After you finish a test (you get the 100 or finish all the retakes, did them all finally), add a button for review test
+   or something and then you can review the test you just took ya know. Make this good."
+   A retake of the misses is a run of its own (beginRun(..., true)), so "the test you just took" after a chain of retakes is the
+   ORIGINAL test: all of its questions, in the order they were asked, each with how it went - right on the first try, or missed and
+   then right on retake N - your first answer and the correct one. noteReviewTestChain() keeps that chain (reviewTestChain, in
+   memory): a test starts it, and each retake of what it left missed folds into it; anything else ends it. Your first answer is kept
+   as the bank's own choice index, read through THAT run's choice order - a retake reshuffles the choices, so a slot number would
+   point at the wrong one by the end. */
+function noteReviewTestChain(run){
+  if(!run || run.vroom || run.visiting || !run.order){ reviewTestChain = null; return; }
+  const missedSet = new Set(run.missed || []);
+  if(!run.retake){
+    if(!run.order.length){ reviewTestChain = null; return; }
+    const exam = run.mode === "exam";
+    const first = {}, cleared = {}, tries = {};
+    run.order.forEach(qi => {
+      const slot = exam ? run.picked[qi] : run.firstPick[qi];
+      let orig = null;
+      if(slot !== undefined && slot !== null){ const o = optionOrder(qi)[slot]; if(typeof o === "number") orig = o; }
+      /* right on the first try with no pick on record (a run put back together from a save): the first answer was the right one */
+      if(orig === null && !exam && !missedSet.has(qi) && !run.timedOutSet[qi]) orig = QUESTIONS[qi].answer;
+      first[qi] = orig;
+      if(!missedSet.has(qi)) cleared[qi] = 0;
+      if(!exam) tries[qi] = run.attempts[qi] || 0;
+    });
+    reviewTestChain = {
+      run, order: run.order.slice(), mode: run.mode, practice: !!run.practice, source: run.source,
+      units: (run.units || []).slice(), unitsSat: (run.unitsSat || []).slice(),
+      elapsedMs: run.elapsedMs || 0, timedOut: !!run.timedOut, total: run.total, good: run.good, pct: run.pct, isPerfect: !!run.isPerfect,
+      first, cleared, tries, rounds: 0, retakeMs: 0, left: (run.missed || []).slice(), filter: "all"
+    };
+    return;
+  }
+  /* a retake: only of what this chain left missed, and of THIS test (the pool a retake carries is the test's, as it was asked - a
+     retake saved for later and finished after another test does not fold into that one), or it is not this test's */
+  const c = reviewTestChain;
+  const left = c ? new Set(c.left) : null;
+  const og = Array.isArray(originalTestPool) ? originalTestPool : [];
+  if(!c || !run.order.length || !run.order.every(qi => left.has(qi)) || !c.order.every((qi, i) => og[i] === qi)){ reviewTestChain = null; return; }
+  c.rounds += 1;
+  c.retakeMs += run.elapsedMs || 0;
+  const inRun = new Set(run.order);
+  run.order.forEach(qi => { if(!missedSet.has(qi)) c.cleared[qi] = c.rounds; });
+  c.left = c.left.filter(qi => !inRun.has(qi) || missedSet.has(qi));
+  c.run = run;
+}
+/* The chain these results can open, or null. A Drill's test is over once nothing of it is left missed - a 100% first time, or the
+   retake that clears the last miss; a Mock or a Practice test has no retake, so it is over on its own results. Never a Virtual Room
+   (its results carry their own review), and only on the results of the chain's latest run. */
+function reviewTestOf(run){
+  const c = reviewTestChain;
+  if(!c || !run || c.run !== run || run.vroom || run.visiting || !c.order.length) return null;
+  if(c.mode !== "exam" && c.left.length) return null;
+  return c;
+}
+/* what is shown at the top: the grade, the time, and how the questions split */
+function buildReviewTestSummary(c){
+  const exam = c.mode === "exam";
+  const firstN = c.order.filter(qi => c.cleared[qi] === 0).length;
+  const otherN = c.order.length - firstN;
+  const card = document.createElement("div");
+  card.className = "rs-card rs-tr-sum";
+  const k = document.createElement("p");
+  k.className = "rs-kicker"; k.textContent = "Summary";
+  const grid = document.createElement("div");
+  grid.className = "rs-tr-stats";
+  const stat = (key, label, fill, cls) => {
+    const s = document.createElement("div");
+    s.className = "rs-tr-stat" + (cls ? " " + cls : ""); s.dataset.stat = key;
+    const v = document.createElement("p"); v.className = "rs-tr-val"; fill(v);
+    const l = document.createElement("p"); l.className = "rs-tr-label"; l.textContent = label;
+    s.append(v, l);
+    grid.appendChild(s);
+  };
+  stat("grade", "Grade", v => {
+    v.textContent = rsNum(c.pct);
+    const sign = document.createElement("span"); sign.className = "rs-tr-pct"; sign.textContent = "%";
+    v.appendChild(sign);
+  }, "is-grade " + (c.isPerfect ? "is-perfect" : c.pct >= PASS_MARK ? "is-pass" : "is-fail"));
+  stat("time", "Time", v => { v.textContent = formatClock(c.elapsedMs); });
+  stat("first", exam ? "Correct" : "First try", v => rsPair(v, firstN, c.order.length));
+  stat("other", exam ? "Missed" : "Retaken", v => { v.textContent = rsNum(otherN); }, otherN ? (exam ? "is-missed" : "is-retaken") : "");
+  card.append(k, grid);
+  const line = document.createElement("p");
+  line.className = "rs-tr-line";
+  const n = c.order.length;
+  if(!otherN) line.textContent = exam ? (n === 1 ? "Answered correctly." : "All " + rsNum(n) + " answered correctly.")
+    : (n === 1 ? "Right on the first try." : "All " + rsNum(n) + " right on the first try.");
+  else if(exam) line.textContent = (c.practice ? (c.pct >= PASS_MARK ? "Passed. " : "Below the " + PASS_MARK + "% pass mark. ") : "") +
+    "Each question missed is shown with your answer and the correct answer.";
+  else line.textContent = (otherN === 1 ? "The question missed was" : "Every question missed was") + " answered correctly " +
+    (c.rounds === 1 ? "on the retake." : "by retake " + rsNum(c.rounds) + ".");
+  if(c.timedOut) line.textContent += " Time ran out; only the questions answered are listed.";
+  card.appendChild(line);
+  return card;
+}
+/* One question: the review's own card (buildReviewQuestion, the same look as the misses and the Virtual Room's Entire test), told
+   with your FIRST answer from the test, how it went, and the question's star. */
+function buildReviewTestQuestion(c, qi, n){
+  const exam = c.mode === "exam";
+  const round = c.cleared[qi];             /* 0 the test, N retake N; none for a Mock's miss */
+  const firstTry = round === 0;
+  const orig = c.first[qi];
+  /* buildReviewQuestion reads a pick as a slot of the choice order now in play. A question with no order in play (one the last
+     retake did not ask) is given the bank's own order here rather than a shuffle: a shuffle remembers where the answer sat
+     (LAST_SLOT_KEY) and would move it next time for an order nobody saw. */
+  if(!layout[qi]) layout[qi] = QUESTIONS[qi].choices.map((ch, k) => k);
+  const shim = { mode: "exam", vroom: false, picked: {}, firstPick: {}, attempts: {}, timedOutSet: {} };
+  if(typeof orig === "number"){ const slot = optionOrder(qi).indexOf(orig); if(slot >= 0) shim.picked[qi] = slot; }
+  const li = buildReviewQuestion(shim, qi, n, firstTry);
+  li.dataset.qi = String(qi);
+  li.dataset.how = firstTry ? "first" : "other";
+  if(typeof round === "number") li.dataset.round = String(round);
+  const tag = li.querySelector(".rs-q-tag");
+  if(tag){
+    tag.textContent = firstTry ? (exam ? "Right" : "Right first try")
+      : exam ? (typeof orig === "number" ? "Missed" : "No answer")
+      : "Right on retake " + rsNum(round);
+    if(!firstTry && !exam) tag.classList.add("is-retaken");
+  }
+  if(!firstTry && !exam){
+    li.classList.add("is-retaken");
+    const y = li.querySelector(".rs-q-yours > span");
+    if(y) y.textContent = "Your first answer";
+  }
+  const top = li.querySelector(".rs-q-top");
+  if(top){ try{ top.appendChild(buildQuestionFlag(qi, { cls: "rs-q-star" })); }catch(e){} }
+  /* a Fire Code question's code box starts shut on this list, whatever it was left as during the run: its pill opens it, and the
+     picture is drawn ahead as it comes into view (ifcDrawAhead) */
+  li.querySelectorAll("details.ifc-code[open]").forEach(d => { d.open = false; });
+  return li;
+}
+/* All / Retaken / First try (a Mock: All / Missed / Right) - the app's pill switcher (.rs-tabs, as the Virtual Room's review has) */
+function buildReviewTestFilter(c, list){
+  const exam = c.mode === "exam";
+  const items = [...list.children];
+  const count = how => items.filter(li => li.dataset.how === how).length;
+  const tabs = document.createElement("div");
+  tabs.className = "rs-tabs rs-tr-filter";
+  tabs.setAttribute("role", "tablist"); tabs.setAttribute("aria-label", "Questions shown");
+  const defs = [
+    { key: "all", label: "All", n: items.length },
+    { key: "other", label: exam ? "Missed" : "Retaken", n: count("other") },
+    { key: "first", label: exam ? "Right" : "First try", n: count("first") }
+  ];
+  const btns = {};
+  defs.forEach(d => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "rs-tab"; b.setAttribute("role", "tab"); b.dataset.tab = d.key;
+    const l = document.createElement("span"); l.className = "tab-label"; l.textContent = d.label;
+    const cnt = document.createElement("span"); cnt.className = "rs-tab-count"; cnt.textContent = rsNum(d.n);
+    b.append(l, cnt);
+    btns[d.key] = b;
+    tabs.appendChild(b);
+  });
+  const select = (key, user) => {
+    if(!btns[key]) key = "all";
+    c.filter = key;
+    Object.keys(btns).forEach(k2 => {
+      const on = k2 === key;
+      btns[k2].classList.toggle("is-on", on);
+      btns[k2].setAttribute("aria-selected", on ? "true" : "false");
+    });
+    items.forEach(li => { li.hidden = key !== "all" && li.dataset.how !== key; });
+    /* the switcher stays in reach: from far down the list, the page comes back up to it rather than landing past a shorter list */
+    if(user){
+      const r = tabs.getBoundingClientRect();
+      if(r.top < 0){
+        const y = Math.max(0, window.scrollY + r.top - 12);
+        try{ window.scrollTo({ top: y, left: 0, behavior: "instant" }); }catch(e){ window.scrollTo(0, y); }
+      }
+    }
+  };
+  Object.keys(btns).forEach(k2 => btns[k2].addEventListener("click", () => select(k2, true)));
+  attachSegSlider(tabs, ".rs-tab.is-on");
+  select(c.filter || "all", false);
+  return tabs;
+}
+/* The screen. Back to results is the finished results drawn at once (nothing lands again, as from the misses' review); Main menu
+   goes home. The chain is not changed by being looked at, so it opens the same way as often as it is asked for. */
+function showReviewTest(c, run, hooks){
+  endResultsReveal();
+  meterEl.hidden = true;
+  countEl.textContent = "";
+  testScopeLabelEl.textContent = "Test review";
+  pauseBtn.hidden = true;
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+  if(typeof syncChatDock === "function") syncChatDock();
+
+  const panel = document.createElement("section");
+  panel.className = "panel rs-screen rs-review rs-testreview screen-runreview";
+  panel.dataset.screen = "runreview";
+  /* the head of the TEST, not of the retake whose results this was opened from */
+  panel.appendChild(buildRunHead({ mode: c.mode, practice: c.practice, source: c.source, unitsSat: c.unitsSat, vroom: false }));
+  panel.appendChild(buildReviewTestSummary(c));
+
+  const list = document.createElement("ol");
+  list.className = "rs-qlist rs-tr-list";
+  c.order.forEach((qi, n) => list.appendChild(buildReviewTestQuestion(c, qi, n)));
+  /* a switcher only where there is something to switch between */
+  const split = [...list.children].some(li => li.dataset.how === "first") && [...list.children].some(li => li.dataset.how === "other");
+  if(split) panel.appendChild(buildReviewTestFilter(c, list));
+  panel.appendChild(list);
+
+  const actions = hooks.finalActions({ where: "testreview", toResults: () => showRunRewards(run, hooks, { instant: true }) });
+  panel.appendChild(actions);
+  stage.replaceChildren(panel);
+  toTop(true);
+  rsRise(actions, { delay: 160, follow: false });
+  const first = actions.querySelector("button");
+  if(first) focusQuietly(first);
+}
+
 /* Kept for anything still holding a reference to it: the results
    screens no longer show Pause (build 213), so nothing reaches this. */
 function pauseResults(){}
@@ -136110,26 +136371,43 @@ function summarize(){
         where.toResults, canRetake ? null : "nextbtn"));
       return actions;
     }
+    /* THE WHOLE TEST'S REVIEW (384.103, showReviewTest): back to these results, or home */
+    if(where.where === "testreview"){
+      actions.appendChild(mk("Back to results", "next rs-back", where.toResults, "nextbtn"));
+      actions.appendChild(mk("Main menu", "next ghost", showHome));
+      return actions;
+    }
     /* THE RESULTS: Continue to review first when anything was missed. */
     const stillMissed = missed.length > 0;
     if(stillMissed){
       actions.appendChild(mk("Continue to review (" + rsNum(missed.length) + " missed)", "next rs-wide rs-continue", where.toReview, "nextbtn"));
     }
-    const rerun = mk(isMissedRetake ? "Re-run the full test" : "Re-run", stillMissed ? "next ghost" : "next", () => {
+    /* REVIEW TEST (384.103), across the top where Continue to review sits on a run with misses - so whatever the score, the way into
+       a review is the wide button at the top and "again" / "leave" are the pair under it. It is the lead button when it is the only
+       review (nothing left missed); beside Continue to review (a Mock or Practice test with misses, which has no retake) it is the
+       quieter second, "the whole test" against "the ones you missed". See reviewTestOf() for when it is offered. */
+    const testChain = reviewTestOf(runResult);
+    if(testChain){
+      actions.appendChild(mk(stillMissed ? "Review the whole test" : "Review test", "next rs-wide rs-testreview-go" + (stillMissed ? " ghost" : ""),
+        () => showReviewTest(testChain, runResult, { finalActions: buildFinalActions, tour: resultsTour }), stillMissed ? null : "nextbtn"));
+    }
+    const ledBy = stillMissed || !!testChain;
+    const rerun = mk(isMissedRetake ? "Re-run the full test" : "Re-run", ledBy ? "next ghost" : "next", () => {
       if(rerunMinutes != null){
         cfg.mode = "exam";
         beginRun(freshOrder(QUESTIONS.map((q, i) => i)).slice(0, PRACTICE_TEST_SIZE), null, PRACTICE_TEST_MINUTES);
       } else {
         beginRun(freshOrder(originalTestPool), originalTestLabel, null);
       }
-    }, stillMissed ? null : "nextbtn");
+    }, ledBy ? null : "nextbtn");
     const home = mk("Main menu", "next ghost", showHome);
-    /* NO "REVIEW TEST" ON A PERFECT RUN (build 312). It was added this
-       build - "when getting a 100, still provide a review option" - and
-       taken back before it shipped: "Nvm, if you get a 100, let's not do
-       the review test thing." With nothing missed the results end on
-       Re-run and Main menu, as they did in build 311; the review is only
-       ever reached through Continue to review, for the misses. */
+    /* "REVIEW TEST" IS BACK, FOR THE WHOLE TEST (384.103). Build 312 built a review on a 100% ("when getting a 100, still provide a
+       review option") and took it back before it shipped ("Nvm, if you get a 100, let's not do the review test thing"), so from 312 a
+       run with nothing missed ended on Re-run and Main menu. Madison, 13 Nov 2026, the newer word, which wins: "After you finish a
+       test (you get the 100 or finish all the retakes, did them all finally), add a button for review test or something and then you
+       can review the test you just took ya know. Make this good." So the button above is on a 100% first time, on the results of
+       the retake that clears the last miss, and on every Mock and Practice test; it opens the ORIGINAL test, every question, with how
+       each went across its retakes (showReviewTest). Not in a Virtual Room, which has its own review on its results. */
     actions.append(rerun, home);
     return actions;
   };
@@ -136164,6 +136442,8 @@ function summarize(){
     supernova: supernovaJustUnlocked
   };
   lastRunResult = runResult;
+  /* (384.103) the test this run belongs to, for Review test - read off this run's own choice order, before anything reshuffles it */
+  try{ noteReviewTestChain(runResult); }catch(e){ reviewTestChain = null; }
   showRunRewards(runResult, { finalActions: buildFinalActions, tour: resultsTour });
   /* Virtual Room completion \u2014 fires after every normal side effect
      above (points, tier detection, the usual summary panel) has

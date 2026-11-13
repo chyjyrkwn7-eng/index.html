@@ -478,6 +478,8 @@ SCREENS = [
     {"name": "test/answered", "js": "const c=[...document.querySelectorAll('#stage .choice, #stage .choices button, #stage label.choice')].find(e=>e.getBoundingClientRect().height>20); c && c.click();", "wait": 1600, "clear": False},
     {"name": "test/paused", "js": "__czs.tap('#pausebtn');", "wait": 1200, "ready": "document.querySelector('.pause-card, .paused, #paused, .screen-paused, [class*=pause]')", "clear": False},
     {"name": "results", "js": "try{ order.forEach(qi=>{ attempts[qi]=1; }); pos=order.length; summarize(); }catch(e){ throw e; }", "wait": 5200, "ready": "document.querySelector('#stage .rs-grade, #stage [class*=result]')"},
+    # (384.103) a 100%'s Review test: the whole test's review, opened by its own button once that is armed (the results above stay up for it)
+    {"name": "results/review test", "js": "const go=()=>{ const b=document.querySelector('#stage .rs-final .rs-testreview-go'); if(b && !b.closest('.rs-final').classList.contains('rs-unarmed') && Date.now()>rsTapGuardUntil){ b.click(); return; } setTimeout(go, 120); }; go();", "wait": 2600, "ready": "document.querySelector('#stage .rs-testreview')"},
     {"name": "review", "js": "showAnswerReview([__czs.unit()], 'all');", "ready": "document.querySelector('#stage .ar-head, #stage [class*=review]')"},
     {"name": "test history", "js": "showTestReviewList();"},
     {"name": "flash cards", "js": "showFlashcards([__czs.unit()], 'all');", "ready": "document.querySelector('#stage .fc-face, #stage [class*=flash]')"},

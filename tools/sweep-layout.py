@@ -238,6 +238,8 @@ SCREENS = [
     # (384) and a drill's question itself, with its top bar and Next, before them
     "__sweepQuestion()",
     "__sweepResults('drill')", "__sweepResults('retake')",
+    # (384.103) the whole test's review (Review test), opened from a 100%'s results by its own button
+    "__sweepResults('testreview')",
 ]
 
 # Reached only from Welcome, and only before the account exists.
@@ -302,17 +304,20 @@ Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
 RESULTS_STAGE = """
 window.__sweepResults = function(kind){
   theme.reduceMotion = true; theme.muteBanners = true;
-  const units = ['Identity Crimes', 'Racial Profiling', 'Victims of Crime'], retake = kind === 'retake';
+  const units = ['Identity Crimes', 'Racial Profiling', 'Victims of Crime'], retake = kind === 'retake', review = kind === 'testreview';
   cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = units.slice(); cfg.size = 0;
   order = QUESTIONS.map((q, i) => i).filter(i => units.indexOf((QUESTIONS[i].topic || '').trim()) >= 0 && inWholeUnit(QUESTIONS[i]));
   if(retake) order = order.slice(0, 3);
   runTrackable = !retake; timedOut = false; runMode = 'drill'; runLabel = retake ? 'Missed questions' : null; isMissedRetake = retake;
   practiceTestMinutes = null; inVirtualRoom = false; attempts = {}; picked = {}; timedOutSet = {};
   try{ firstPick = {}; }catch(e){}
-  order.forEach((qi, k) => { const oo = optionOrder(qi), r = oo.indexOf(QUESTIONS[qi].answer), miss = k === 1 || k === 4;
+  order.forEach((qi, k) => { const oo = optionOrder(qi), r = oo.indexOf(QUESTIONS[qi].answer), miss = !review && (k === 1 || k === 4);
     attempts[qi] = miss ? 2 : 1; picked[qi] = miss ? (r + 1) % oo.length : r; try{ if(miss) firstPick[qi] = (r + 1) % oo.length; }catch(e){} });
   runStartTime = Date.now() - order.length * 7000; testInProgress = true; pos = order.length - 1;
   summarize();
+  /* (384.103) a 100%: its review button, pressed once its row is armed (a press before then is refused, as a finger's is) */
+  if(review){ const go = () => { const b = document.querySelector('#stage .rs-final .rs-testreview-go'), row = b && b.closest('.rs-final');
+    if(b && !row.classList.contains('rs-unarmed') && Date.now() > rsTapGuardUntil){ b.click(); return; } setTimeout(go, 100); }; go(); }
 };
 window.__sweepQuestion = function(){
   theme.reduceMotion = true; theme.muteBanners = true;
@@ -568,6 +573,11 @@ def main():
                         if fn == "__sweepQuestion()":
                             # a run puts up its loading screen first; the question is what is audited
                             page.wait_for_function("!!document.querySelector('.qpanel .choice')", timeout=8000)
+                            page.evaluate("scrollTo(0,0)")
+                            page.wait_for_timeout(400)
+                        if fn == "__sweepResults('testreview')":
+                            # (384.103) the results come first; the review their button opens is what is audited
+                            page.wait_for_function("!!document.querySelector('#stage .rs-testreview')", timeout=8000)
                             page.evaluate("scrollTo(0,0)")
                             page.wait_for_timeout(400)
                         hits = page.evaluate(AUDIT, ins)
