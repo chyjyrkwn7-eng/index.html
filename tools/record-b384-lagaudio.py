@@ -89,6 +89,14 @@ def dropdowns(br):
         t, r, b, l = ins; v = {"top": "%dpx" % t, "right": "%dpx" % r, "bottom": "%dpx" % b, "left": "%dpx" % l}
         return IR.sub(lambda m: v[m.group(1)], RAW)
     G["g"]["patched"] = _pat
+    # version.json at the build recorded (an --against build would otherwise be told of an update and reload mid-clip)
+    import re
+    _rp = G["route_pdf"]; _bld = (re.search(r'const APP_BUILD = "([^"]+)"', RAW) or [None, ""])[1]
+    def _route(c):
+        _rp(c)
+        c.route("**/version.json*", lambda r, q: r.fulfill(status=200, headers={"content-type": "application/json"},
+                body=json.dumps({"build": _bld, "note": "", "frameId": "", "force": True, "safariSound": True})))
+    G["route_pdf"] = _route
     label, w, h, ins, ua = G["SIZES"][0]
     ctx, pg, cdp = G["page"](br, w, h, ins, ua)
     pg.evaluate("()=>{ " + RING_NOW + "; }")

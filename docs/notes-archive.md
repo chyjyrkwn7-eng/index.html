@@ -39478,3 +39478,101 @@ Also: check-js OK (14 blocks); check-behaviour check_swipe, check_b229, check_b3
 (the run was cut at its time limit after those); check-b384-tabhotfix ALL PASS (45) on a quieter machine (a first run under
 load ~80 failed one scroll-nudge count and a timed-out class switch; main under the same load failed a different section);
 sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre (1255s).
+
+### 384.119 (lagaudio): the units start moving on the tap; the drop-downs on the compositor; leaving is silent; the top row ticks at once
+
+(branch claude/b384-lagaudio, cut from origin/main 384.95 562b1ed; NOT merged - waiting for the owner's go; the lead renumbers at merge)
+
+Madison, installed iPhone 17 Pro Max (Fire Code), two recordings and two reports:
+"I feel like going into the unit selection screen is a smidge delayed idk." (00:16:43, 30s) / "Couple laggy issues involving the
+drop downs and the next question button." (00:19:45, 20s) / "If I have my volume on, and I leave the app, the sound screeches badly
+like it lags. Fix that too." / "After hitting the back button while on the mode selection screen, the Haptic Touch is missing."
+
+**1. INTO THE UNITS.** His recording, frame by frame (60fps, frames diffed): three taps on Drill, each identical - the card's press
+on (10.927s), the finger lifts and the press goes off (10.977), eight frames of nothing, then the whole units screen in ONE frame
+(11.110) that is also the frame it settles on: 133ms, 133ms and 134ms from the lift to the first change. No transition: it was the
+tap's own task. Measured here (installed iPhone UA, 440x956 at 3x, Fire Code's 58 chapters, a CDP trace + profile of the click's
+task, the sound woken first as on his phone): the click's task built the whole screen and its hidden Start sheet, then style and
+layout were forced in the stage's mutation callbacks (alignNavChat placing the nav) before any frame could go out. Profile of that
+task: showSetup 62% - the cards' badges 27.5% (a first visit draws each, serialises it, makes a Blob and a URL), the question
+pool counted for the empty pick and the sheet's sliders ~17% - alignNavChat's forced style + layout 11%; JS ~93ms CPU unthrottled
+on this machine. And on a first visit 8 of the 8 badges in view were not decoded in the units' first frame (they came a frame or
+more later). The haptic layer (hswAttach / hswFits) is NOT in it: it waits for the settle and idle time, after the first frame.
+- FIX (screenHandoff, the mode card's tap): the tap only dims the mode screen (WAAPI opacity 1 -> .35, linear over 110ms, on the
+  compositor) and asks for the units once that first frame is out (rAF -> setTimeout); the build runs while the dim plays on the
+  compositor, and the units rise to 1 (150ms, opacity) from exactly where the dim is at that moment - worked out from the dim's
+  start and performance.now(), because document.timeline stands still inside a long task (reading the dim's opacity there gave
+  ~1 and the units popped in over a screen already dimmed to .35: a flash, measured, fixed). A tab, the back button or any other
+  screen arriving first cancels the build. Reduce motion: built in the tap as before. Nothing in either screen moves, resizes or
+  comes in late.
+- warmCardBadges: Home and Choose your mode make and decode every unit's card badge in quiet idle time (quietIdle: never within 2s
+  of a touch or 1.6s of a mount, a few per slice) and keep the decoded pictures, so the build takes them from the cache (cheaper by
+  that 27%) and every badge in view is in the units' first frame. A found badge waits for its struck token (cardBadgeSVG keys its
+  picture by it: one made from a draft was made again by the build, undecoded - 3-4 of 6 in the academy's first frame), up to 8
+  passes 2.5s apart.
+
+**2. THE DROP-DOWNS AND NEXT QUESTION.** His second recording is one Fire Code drill question (Question 1/158, the Harris County
+wood-chips permit): the Hint's "Show the code" opened and shut four times (0-6.4s), then the answer's AMENDMENTS "Show the code"
+four times (9-17s). He never taps Next question; its lag is around the box. What the frames show:
+- the Hint eased open/shut by a height written every frame (ifcSlideHeight) and ended EVERY move with a jump (full-resolution
+  frames, the answers' rows tracked): opening, the answers crept the last frames at 0.3pt a frame and then dropped 21.3pt in one
+  frame (1.700 -> 1.717s: the eased height had stopped short of the picture's and snapped to it); shutting, an 8.7pt jump in the
+  last frame (2.633 -> 2.650s: the .6rem margin of .ifc-hintpic:not(:empty) came off only when the holder was emptied at the end);
+- the code box the same way - a layout of the page on every frame of the move (read on main in Chromium: an inline height 44 ->
+  110 -> 273 -> 439 -> 509 -> 539px, frame by frame);
+- Next question, after each shut at the end of the page: still at 857pt through the move, then 31-33pt LOWER in one frame (10.008
+  -> 10.025s: 856.7 -> 887.7pt; 17.258 -> 17.275s: 857.0 -> 890.0pt) and floating back up over ~16 frames (~270ms) to 858.7pt: the
+  shortened page clamped under the scroll at the end (iOS animates that clamp - the page's own rubber band, with the pinned pill's
+  --vv-lift following it) while qnextPlace, re-run a frame late by its ResizeObserver on every frame of the tween, switched the pill
+  between "in the page" and "pinned".
+- FIX (ifcDropOpen / ifcDropShut, used by the code box and the Hint): the layout changes ONCE. Opening: the box goes to its full
+  height in the tap; in the first frame it is shown growing by a clip-path sweep on its card (inset with the card's own `round`
+  radius, so the corners are the card's) and everything after it slides down from where it was with the `translate` property
+  (composited, and it leaves each element's own transform alone - Next's translateX(-50%)). Shutting: swept shut and everything
+  after it slides up with the layout untouched; at the end the box really shuts under transforms that make that frame identical.
+  At the end of a scrolled page, what the scroll will give back is worked out first, everything above slides down by it, and the
+  page is scrolled by it in the same frame the box shuts (no clamp left for iOS to animate). Next question is placed once (first
+  frame opening, last frame shutting) and moves with what is under the box; its ResizeObserver waits while a move runs. Anything the
+  end frame got wrong by >.5px glides the rest of the way (a residual FLIP). A picture arriving after the tap grows the box again
+  from wherever the move has it (a ResizeObserver for that move). A tap half way carries on from where everything is. The Hint's
+  picture is kept when it is put away (display:none) and shown again at once. ifcSlideHeight is gone. advanceWithSlide settles a
+  move still running before it copies the question.
+
+**3. THE SCREECH ON LEAVING.** Read on main 384.95 with every Web Audio call logged (gate section 3): (a) NovaSound's
+visibilitychange listener was on the document, added at the bottom of the script, so every leave handler above it ran first - a
+test pausing itself and saving the run (autoPauseOnLeave + saveRunSession write localStorage), presence and chat marks - while the
+sound kept playing into a page iOS was already putting to sleep; (b) the cut was a step (master .value = 0 and every voice
+disconnected in one quantum) and suspend() came in the same call, so the last buffers rendered still held sound - a starved audio
+thread repeats its buffer, which is the screech; (c) coming back, the echo (feedback delay) and the room (convolver) still held the
+cut sound and came up with the master; (d) no freeze handler.
+- FIX: one listener on the WINDOW in the capture phase for visibilitychange, pagehide, freeze and resume (it runs before every
+  document listener); the master ramps to 0 over LEAVE_RAMP 15ms; every voice and the ambience are stopped at the ramp's end (a
+  source not started yet never starts); suspend() once the ramp has played - at the first moment the page is free after the cut
+  (a 0ms timer that re-arms until the audio clock is past it), on the audio clock as well (a silent ConstantSource's ended event; a
+  hidden page's timers can be held back), with a 45ms timer behind both; while away nothing starts (play(), the ambience and
+  a buffer that finishes decoding refuse). Back: a leave that cut anything leaves its graph behind (old master and limiter
+  disconnected) and the page comes back to a fresh one at silence, rising (unhush) - the room is filled in a quiet moment, as on the
+  first tap. Window blur ramps too (no step). safariSound untouched (tabOff()).
+
+**4. THE MODE SCREEN'S BACK BUTTON.** Measured with real taps (iPhone UA, installed): the round back button on Choose your mode got
+its native switch 2684, 1323 and 798ms after the screen was drawn when reached from Home (Start Studying: the tab bar's glide holds
+the settle window, then an idle wait), 153ms coming back from the units, the units' own 253ms. Not size, not hswTooBig, not
+position (absolute in its nav), not the 384.95 row: the timing. A quick "back" in that window had no switch under the finger, and
+the scripted tick is silent since iOS 26.5. FIX: the top row - `.settings-nav > :is(.ios-nav-back, .settings-nav-back,
+.back-link)`, #chatdock-btn, #pausebtn, .roomchat-fab, .chatdock-back, .unitdetail-back - takes its switch in the mutation callback
+that sees its screen arrive (before the first frame), like the planet system's (hswHostNow): no size read (each is a 44px corner
+button), never under a finger (only once the finger that brought the screen up has lifted and its click was delivered, else ~90ms
+later), and its fit read in the next ordinary pass. The 384.95 row is not touched (the switch is inside the button, which moves).
+
+**Gate: NEW tools/check-b384-lagaudio.py + tools/b384_lagaudio_lib.py** (see the docstring): 1 units (4x CPU, both classes, the
+first frame after the tap moves and the build is not in the tap's task, the units settle with no flash, every badge in view
+decoded in their first frame, Reduce motion as before); 2 drop-downs (PDFJS_DIR: layout once, the shown height one way over >=4
+frames, no last-frame jump, what is under it one way, Next one way, the page laid out in at most 3 of the ten 33ms slices from 60
+to 400ms after the tap - frames read in a task after each frame is drawn, so the app's own rAF work is in them); 3 sound (iOS's
+order: the window's blur, then the hide, a test under way and a 12s sound: cut before any other leave work, a ramp not a step
+from a sounding level, suspend() only after the ramp and asked for within 25ms of the first moment the page could run anything
+after it (a chain of 0ms timers started at the hide measures that: this machine's load and the page's own leave work hold
+everything back alike) and suspended within 60ms when the page was free, every source stopped within 30ms, nothing started while
+hidden, a fresh graph back, freeze and pagehide alone the same, safariSound off = no context); 4 top row (every round back button, chat and Pause
+switched and landed on in each screen's first frame, by taps and on 22 mounted screens and a question). Changed on purpose:
+check-b384-codeslide's trace reads the height SHOWN (the clip), not laid out - the shape it asks for is unchanged.
