@@ -39574,7 +39574,12 @@ GATES RUN on the tree merged with main 384.95 (562b1ed), one at a time (another 
 (APP_BUILD = version.json = 2026-11-13-384.98); the console - only the two blocked Firebase CDN loads, no page errors (A's ring and
 the full-colour marks read off the page); check-b384-classbtn ALL PASS (fails 384.95 as above); check-b384-newdot ALL PASS (46; every
 dot's centre and size where 384.95 has them, phone and iPad, 29 each); check-b384-board2 --only 5 ALL PASS; check-behaviour's dot
-sections, check-centering --quick and sweep-layout --quick: RESULTS PENDING (the machine was too loaded to load the page in 30s).
+sections (check_b299/b314h_tabs/b317_pfcard/b319_badges/b320g_inspect): the dot checks pass ("the dot is one lit flare, painted the same
+on the tab and on the card", phone and iPad); "something new puts a dot on the Profile tab" and "every flare on Home moves" fail the
+same way on main 384.95 (run --against it); three timing checks failed on two runs at a load of 60-85 (the tab-switch median, "Close
+turns it all back", "Reduce motion: the view fades in") and could not be run on 384.95 then (its page timed out loading).
+On the tree merged with main 384.97 (93d18a9, build 384.98), through the shared slot script after the container restart:
+check-centering --quick ALL PASS (0 off centre, 1270 elements on 152 screens, both classes); sweep-layout --quick 20/20 clean.
 Before the merges (on 384.92's tree): check-b329 (the class button's pulse/banner/seen checks pass; three Nova-copy checks fail
 identically on 384.92), check-b384-classes-open (8 fail here, 17 on 384.92, all from (7b) "Nova's good-luck message in Fire Code's
 chat", none the dot), check-b383-profile ALL PASS, check-b384-board2 --only 2 ALL PASS.
