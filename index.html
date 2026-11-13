@@ -156551,16 +156551,17 @@ function segThumb(seg, segSel, sl, o){
     const g = G, sw = f.sw, sx = 1 + SW_X * sw * (g ? g.kx : 1), sy = 1 + SW_Y * sw;
     const lw = f.lw || W0, lh = f.lh || H0;
     const ksx = W0 ? lw / W0 : 1, ksy = H0 ? lh / H0 : 1;
+    /* the lens - and the thumb while it is grown to the lens's size - stays inside the track's ends (it grows inwards at an end
+       segment, as the reference's does); at its own size the thumb is on its segment, which is inside them already */
+    const cl = g && lw > W0 ? clamp(f.c, lw / 2, g.trackW - lw / 2) : f.c;
     const out = {
       seg: Math.abs(sx - 1) < 1e-4 && Math.abs(sy - 1) < 1e-4 ? "none" : "scale(" + sx.toFixed(4) + ", " + sy.toFixed(4) + ")",
       sheen: clamp(sw, 0, 1),
-      th: "translateX(" + (f.c - W0 / 2).toFixed(3) + "px)" + (Math.abs(ksx - 1) > 1e-3 || Math.abs(ksy - 1) > 1e-3 ? " scale(" + ksx.toFixed(4) + ", " + ksy.toFixed(4) + ")" : ""),
+      th: "translateX(" + (cl - W0 / 2).toFixed(3) + "px)" + (Math.abs(ksx - 1) > 1e-3 || Math.abs(ksy - 1) > 1e-3 ? " scale(" + ksx.toFixed(4) + ", " + ksy.toFixed(4) + ")" : ""),
       thOp: clamp(1 - f.lo, 0, 1), lensOp: clamp(f.lo, 0, 1), lens: null
     };
     if(parts && g && f.lo > 0){
-      /* the lens stays inside the track's ends (it grows inwards at an end segment, as the reference's does) */
-      const cx = clamp(f.c, lw / 2, g.trackW - lw / 2);
-      out.lens = glassLensTf(g, { cx, W: lw, H: lh });
+      out.lens = glassLensTf(g, { cx: cl, W: lw, H: lh });
     }
     return out;
   }
