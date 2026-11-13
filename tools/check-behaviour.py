@@ -8146,7 +8146,7 @@ def check_b299(br):
             out.tabDot = tab.classList.contains('has-new');
             const dcs = getComputedStyle(tab.querySelector('.bottomtab-icon'), '::after');
             out.tabDotShown = dcs.content !== 'none' && parseFloat(dcs.width) > 6;
-            /* the dot is a lit ball now (build 317) - its yellow is in the gradient, not the flat colour. REVISED IN 384.95: it is a
+            /* the dot is a lit ball now (build 317) - its yellow is in the gradient, not the flat colour. REVISED IN 384.96: it is a
                small lit flare in the theme's colour ("doesn't match the theme, it should almost look a little like the secret
                flare"), so what is held here is that the tab and the card paint the SAME dot (one gradient); its colour per theme is
                tools/check-b384-newdot.py's. A .new-dot's body is its ::after where it has one. */
@@ -8184,7 +8184,7 @@ def check_b299(br):
         check(f"{dev}: something new puts a dot on the Profile tab in the bottom bar, and seeing it clears it",
               r3.get("tabDotNone") is False and r3.get("tabDot") and r3.get("tabDotShown") and not r3.get("tabDotAfter"),
               (r3.get("tabDotNone"), r3.get("tabDot"), r3.get("tabDotShown"), r3.get("tabDotAfter")))
-        # REVISED IN 384.95 (was "the dot is yellow, ..."): one lit dot, painted the same on the tab and on the card
+        # REVISED IN 384.96 (was "the dot is yellow, ..."): one lit dot, painted the same on the tab and on the card
         check(f"{dev}: the dot is one lit flare, painted the same on the tab and on the card",
               bool(r3.get("dotColor")) and r3.get("dotColor") == r3.get("tabDotColor") and str(r3.get("dotColor")).startswith("radial-gradient"),
               (str(r3.get("dotColor"))[:120], str(r3.get("tabDotColor"))[:120]))

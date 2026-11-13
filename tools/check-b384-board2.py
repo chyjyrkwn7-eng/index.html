@@ -24,7 +24,7 @@ Installed, an iPhone's user agent, 440x956 at 3x, real touches (CDP), the CPU sl
     is a podium: 2nd, 1st, 3rd left to right on steps that rise from the card's floor, 1st's the tallest, the outer steps clear
     of the card's rounded corners. (tools/check-b384-podium-hint.py checks the podium at four sizes.)
 (5) THE NEW DOT (seen-unlocks cleared, a rank not yet shown): on the Profile tab, Profile (Customize, the badge case, the rank) and
-    Customize's character / banner / theme / hundo pages, every dot is one style - since 384.95 a small lit flare (a radial-gradient
+    Customize's character / banner / theme / hundo pages, every dot is one style - since 384.96 a small lit flare (a radial-gradient
     body with its ring, a halo on a layer of its own, no filter; it was a solid fill with a glow), round, 8-10px, the same paint and
     size everywhere - and sits on its icon's corner on the 45-degree line (as far in from the right edge as down from the top,
     within 1.5px, and not past a third of the icon in). The colour per theme is tools/check-b384-newdot.py's.
@@ -331,7 +331,7 @@ with sync_playwright() as pw:
         ctx, pg, errs = page(br, pid=OWNER)
         boot(pg)
         DOTS = """()=>{ const out=[]; const px=v=>parseFloat(v)||0;
-          /* (384.95) the dot's paint can be on a layer of its own: a .new-dot's ::after is its body, its ::before its halo; the
+          /* (384.96) the dot's paint can be on a layer of its own: a .new-dot's ::after is its body, its ::before its halo; the
              Profile tab icon's ::after is the body and its ::before the halo */
           const has=(el, pe)=>{ const c=getComputedStyle(el, pe); return c.content!=='none' && c.content!=='normal' && c.display!=='none'; };
           const take=(host, dot, pe, halo)=>{ const cs=getComputedStyle(dot, pe||null); if(pe && (cs.content==='none'||cs.content==='normal')) return; if(cs.display==='none' || cs.visibility==='hidden') return;
@@ -365,7 +365,7 @@ with sync_playwright() as pw:
         alld = [dict(d, screen=k) for k, v in D.items() for d in v]
         where = sorted(set(d["screen"] + ":" + d["where"].split(" ")[0] for d in alld))
         chk("(5) dots found on the tab, Profile and Customize's pages (%d: %s)" % (len(alld), where), len(alld) >= 8 and D["home"] and len(D["profile"]) >= 3 and D["character"] and D["theme"], where)
-        # REVISED IN 384 r8 ("a small glow"), and AGAIN IN 384.95: "The yellow dot for the notification, doesn't match the theme, it
+        # REVISED IN 384 r8 ("a small glow"), and AGAIN IN 384.96: "The yellow dot for the notification, doesn't match the theme, it
         # should almost look a little like the secret flare.." The solid yellow fill this asserted is the old decision; the dot is
         # now a small lit flare - its body a radial gradient (a white-hot core, the theme's colour, a deeper rim), its ring kept,
         # and a halo on a layer of its own round it (no filter anywhere). Its colour per theme is tools/check-b384-newdot.py's.
