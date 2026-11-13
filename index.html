@@ -10046,7 +10046,7 @@
   }
   /* 64 - 2 - 2 - 39: the knob's gap is 2px at either end */
   .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(21px); }
-  /* (384.117) the focus ring is a KEYBOARD's, never a finger's: "The time limit when selected puts a blue box around the thing, don't do
+  /* (384.97) the focus ring is a KEYBOARD's, never a finger's: "The time limit when selected puts a blue box around the thing, don't do
      that part." On an iPhone a tap on a toggle puts focus on its native switch (the haptic layer, .hsw-opt) and WebKit counts that as
      :focus-visible, so the ring in the accent colour (blue on most themes) was drawn round the switch the moment it was tapped - most
      visible on Time limit, whose minutes row opening under it keeps the focus on screen. A finger never sees it now; a keyboard on a
@@ -13969,7 +13969,7 @@
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
-  /* (384.117) and a top tab being swiped across (attachTabSwipe: Profile / Stats, the Leaderboard's boards): its content is carried
+  /* (384.97) and a top tab being swiped across (attachTabSwipe: Profile / Stats, the Leaderboard's boards): its content is carried
      up to a screen's width off the side, and on an iPhone a page wider than the screen ZOOMS OUT to fit it - the whole app shrank to
      a third, with a tiny tab bar in a corner and blank frames, then snapped back (the owner's recording, 384.94/95). */
   html.tab-sliding, html.tab-sliding body, .tab-slide-clip{ overflow-x:clip; }
@@ -18746,7 +18746,7 @@
      specificity, and Gold's swing was still running in every orbit. */
   /* (not the road map's flare carried into a bubble by the rank-up's
      hand-off, build 321: it keeps moving on its own clock - ruClockSnap) */
-  /* (384.117) ...nor a single big flare shown on its own (.rk-live: the rank flare's unlock card, "This isn't animated") */
+  /* (384.97) ...nor a single big flare shown on its own (.rk-live: the rank flare's unlock card, "This isn't animated") */
   .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *):not(.rk-live *) .rk-a{ animation:none !important; }
   /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
   .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
@@ -27569,7 +27569,7 @@
      image callout, no selection */
   .person-card-rank, .person-card-rank *{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   .person-card-rankword{ filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent)); }
-  .pf-standing > .profile-rankline{ margin:-.55rem 0 .55rem; }   /* (384 r5) the card's own spacing: the rank line close under the name. (384.117) The level line
+  .pf-standing > .profile-rankline{ margin:-.55rem 0 .55rem; }   /* (384 r5) the card's own spacing: the rank line close under the name. (384.97) The level line
      .4rem further under it: "the spacing between your rank and your level/badges is too tight" - .15rem left ~13pt between the rank's
      word and "Level N · N badges"; .55rem is the ~19pt a classmate's card (.person-card-rank + .person-card-level) already has. */
   .person-card-rank > .person-card-mark{ width:2.1rem; height:2.1rem; }
@@ -74537,7 +74537,7 @@ const cfg = {
   mode: "drill",     // drill | exam | game
   source: "all",     // all | weak
   size: 0,           // 0 = everything selected
-  shuffle: false,    // (384.117) off by default: "The 'shuffle answer choices' is always on by default. Turn off that."
+  shuffle: false,    // (384.97) off by default: "The 'shuffle answer choices' is always on by default. Turn off that."
   recall: false,
   countdown: false,  // 3-2-1 countdown before the run begins
   revealCorrect: false, // unlocked once every unit has its black star
@@ -75100,7 +75100,7 @@ function applySaved(){
      `false` is almost always just the default nobody changed. The switch
      is still in the start sheet for anybody who wants it off, and that
      choice is kept from here on. */
-  /* OFF BY DEFAULT AGAIN (384.117), reversing build 229 above: "The 'shuffle answer choices' is always on by default. Turn off
+  /* OFF BY DEFAULT AGAIN (384.97), reversing build 229 above: "The 'shuffle answer choices' is always on by default. Turn off
      that. Make whatever you have set always on off till you change, except the time limit of course." Every switch on the start
      sheet now starts off (SHEET_DEFAULTS, put back each time the sheet opens - build 309); the one-time migration that switched
      shuffling on for everybody is gone, and its class26e.shuffleon marker is simply never read again. */
@@ -122953,7 +122953,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.97";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -150789,7 +150789,7 @@ function showUnlockDetail(o){
   } else if(o.kind === "rankflare"){
     /* the rank's flare, lit, as its tile shows it (327z13) */
     try{ art.appendChild(buildFlareBubble(o.id, { lit: true })); }catch(e){}
-    /* AND MOVING (384.117): "This isn't animated" - the Gold flare's card. An emblem's own motion (.rk-a) is switched off
+    /* AND MOVING (384.97): "This isn't animated" - the Gold flare's card. An emblem's own motion (.rk-a) is switched off
        everywhere but the places big enough to read it (the Rank tab's road and hero, the To-reach box, a recording's host: the
        :is() list on .rk-a's animation:none), and in lists it moves as a recorded flip-book instead - which is recorded only at
        list sizes. This card shows ONE flare, big: it takes the live drawing's motion, as the Rank tab does (.rk-live), which one
@@ -156587,7 +156587,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     drag = null;
     clipOff();
   };
-  /* (384.117) THE PAGE IS CLIPPED SIDEWAYS FOR AS LONG AS A TAB IS MOVING (html.tab-sliding, beside html.q-sliding): from the moment
+  /* (384.97) THE PAGE IS CLIPPED SIDEWAYS FOR AS LONG AS A TAB IS MOVING (html.tab-sliding, beside html.q-sliding): from the moment
      the drag takes the content until the next tab's content has landed (no drag and not busy). Without it an iPhone zoomed the whole
      app out to fit the content carried off the side. Polled off, not taken off at one call site: a commit clears the drag BEFORE the
      next tab comes in, and the clip has to outlast that too. */
@@ -159553,7 +159553,7 @@ function buildRanksTab(){
   /* THE BANDS, SAID ONCE (build 314): the boxes below are exactly build
      313's - "I don't like how the road map boxes changed, that's a no go"
      - so the one new idea is a sentence here, not a change to the cards. */
-  /* ONE LINE (384.117): "Way too wordy, no one is reading that." Four sentences went; each stop below already shows its level, its
+  /* ONE LINE (384.97): "Way too wordy, no one is reading that." Four sentences went; each stop below already shows its level, its
      badges and what it unlocks, so the note only has to say the stops can be tapped. */
   mapNote.textContent = "Tap a rank to see what it unlocks.";
   tab.appendChild(mapNote);

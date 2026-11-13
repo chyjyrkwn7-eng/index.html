@@ -1,4 +1,4 @@
-"""Build 384.117: swiping between top tabs never makes the page wider than the screen (so an iPhone never zooms it out).
+"""Build 384.97: swiping between top tabs never makes the page wider than the screen (so an iPhone never zooms it out).
 
 Madison's recording (384.94/95, installed iPhone): a swipe from Stats to Profile shrank the whole app to about a third of the
 screen - a tiny tab bar in the middle of the bottom, the top tabs tiny in a corner, blank frames - then it snapped back, and
