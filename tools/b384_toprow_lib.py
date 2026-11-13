@@ -1,4 +1,4 @@
-"""Shared harness for build 384.89's top-row gate (tools/check-b384-toprow.py) and its screenshots.
+"""Shared harness for build 384.93's top-row gate (tools/check-b384-toprow.py) and its screenshots.
 
 A used account (shoot-flow's seed: badges, hundos, the board's classmates through a fake Firestore), every one-time card and
 tour marked seen, in either class, on a device with its safe-area insets substituted into the served copy (Chromium reports 0).

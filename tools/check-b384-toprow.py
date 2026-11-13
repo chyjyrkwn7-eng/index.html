@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.89: THE TOP ROW SITS ON ONE LINE UNDER THE SYSTEM'S TOP BLUR, THE CHAT BUTTON IN ONE PLACE, AND NOTHING JUMPS.
+"""Build 384.93: THE TOP ROW SITS ON ONE LINE UNDER THE SYSTEM'S TOP BLUR, THE CHAT BUTTON IN ONE PLACE, AND NOTHING JUMPS.
 
 Madison (installed iPhone 17 Pro Max, iOS 26): "By scrolling down just a smidge, it removes the stuff from the blurry area ... the
 chat button would need to be moved and synced ... we just need to ever so slightly bring it down outside of the blurred area. Like
@@ -29,7 +29,7 @@ screen with a top row (onboarding from a fresh install; the rest on a used accou
      where it comes to rest in every frame;
  (7) no page errors.
   python3 tools/check-b384-toprow.py [--against FILE] [--base FILE] [--devices promax,zoom85,se,ipadP,ipadL,safari] [--classes academy,ifc]
-                                     [--only REGEX] [--no-transitions] [--no-base] [--shots DIR]      (384.86 must FAIL (1)-(3), (6))
+                                     [--only REGEX] [--no-transitions] [--no-base] [--shots DIR]      (384.92 must FAIL (1)-(3), (6))
 """
 import json, os, re, sys, subprocess, time
 HERE = os.path.dirname(os.path.abspath(__file__))
