@@ -261,7 +261,9 @@ with sync_playwright() as pw:
         chk("(10) it moves (%d animations) and only by transform and opacity" % r2["n"], r2["n"] > 5 and set(r2["props"]) <= {"transform", "opacity"}, r2)
         def shot(i, path):
             pg.evaluate("() => document.getElementById('launch-trouble')?.remove()")
-            pg.query_selector("#cb%d" % i).screenshot(path=path)
+            # a clip of the page, not an element shot: an element shot waits for two still frames, which a busy machine may not give
+            bb = pg.evaluate("(i) => { const r = document.getElementById('cb' + i).getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }", i)
+            pg.screenshot(path=path, clip={"x": bb[0], "y": bb[1], "width": bb[2], "height": bb[3]})
             from PIL import Image, ImageStat
             im = Image.open(path).convert("RGB"); st = ImageStat.Stat(im)
             w, h = im.size; c = im.crop((int(w * .35), int(h * .2), int(w * .65), int(h * .8)))
