@@ -96,6 +96,19 @@ def release(pg, mode="same"):
         try: vj_route(r)
         except Exception: pass
 
+# WAITS ARE CONDITIONS, NOT CLOCKS: a shared machine (load 70 at 384.106) can take seconds over a fulfilled request, and a fixed
+# wait then reads "still checking" as a failure. Each wait polls for what it is waiting for, up to a ceiling.
+ANSWERED = "()=>{ const st=document.querySelector('#stage .screen-settings-sub [role=status]'); return !st || st.getAttribute('aria-busy') === 'false'; }"   # (no status at all: nothing to wait for)
+SETTLED = "()=>{ try{ return swuCheckOut === null; }catch(e){ return true; } }"
+HASPILL = "()=>{ const r=document.querySelector('#stage [data-row=update]'); return !!(r && r.querySelector('.settings-pill')); }"
+def until(pg, js, ms=10000, step=200, least=0):
+    if least: pg.wait_for_timeout(least)
+    t = 0
+    while t < ms:
+        if pg.evaluate(js): return True
+        pg.wait_for_timeout(step); t += step
+    return bool(pg.evaluate(js))
+
 def open_page(br, cls="academy", w=440, h=956, errs=None):
     ctx = br.new_context(viewport={"width": w, "height": h}, device_scale_factor=2)
     ctx.add_init_script("try{" + init_for(cls) + "}catch(e){}")
@@ -105,7 +118,7 @@ def open_page(br, cls="academy", w=440, h=956, errs=None):
     pg.route("**/index.html", lambda r: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
     pg.route("**/version.json*", vj_route)
     SERVE["mode"] = "same"; SERVE["note"] = ""
-    pg.goto(URL); pg.wait_for_timeout(2800)
+    pg.goto(URL, timeout=180000); pg.wait_for_timeout(2800)
     pg.evaluate("""()=>{ document.getElementById('splashscreen')?.remove();
       try{ const u=pendingHomeUnlocks(); markUnlocksShown(u.chars,u.banners,u.fx); }catch(e){} try{ homeUnlocksOwed=()=>false; }catch(e){}
       document.querySelectorAll('.rs-spot, .daily-alert, #intro-pop, #nova-intro').forEach(n=>n.remove()); document.body.classList.remove('cutscene-focus');
@@ -138,6 +151,8 @@ ROWPILL = """()=>{ const r=document.querySelector('#stage [data-row=update]'); i
   const p=r.querySelector('.settings-pill'); const vis=p && p.getBoundingClientRect().width>0;
   return { row: true, pill: !!vis, cls: p ? p.className : '', bg: p ? getComputedStyle(p).backgroundColor : '', fg: p ? getComputedStyle(p).color : '', words: p ? p.textContent : '' }; }"""
 NOCHECK = "()=>{ checkForUpdate = async function(){}; }"
+ROWDBG = """()=>{ const r=document.querySelector('#stage [data-row=update]'); const o={ row: !!r, swu: r && r.dataset.swu, vj: (window.__vj||[]).map(x=>x.cache) };
+  try{ Object.assign(o, { known: swuKnown, asked: swuRowAskedAt, out: !!swuCheckOut, lu: lastUpdateCheck, inf: updateCheckInFlight, now: Date.now() }); }catch(e){} return o; }"""
 REALCHECK = "()=>{ checkForUpdate = window.__realCheck; }"
 RESET_ROW = "()=>{ try{ swuKnown = null; }catch(e){} try{ swuRowAskedAt = 0; }catch(e){} try{ lastUpdateCheck = 0; updateCheckInFlight = 0; }catch(e){} window.__vj.length = 0; }"
 SHOW_ROW = "()=>{ showAppearance(); const r=document.querySelector('#stage [data-row=update]'); if(r){ const de=document.documentElement, w=de.style.scrollBehavior; de.style.scrollBehavior='auto'; window.scrollTo(0, Math.max(0, r.getBoundingClientRect().top + scrollY - 300)); de.style.scrollBehavior=w; } }"
@@ -173,7 +188,7 @@ with sync_playwright() as pw:
     lit0 = pg.evaluate(LIT)
     pg.evaluate("()=>{ window.__vj.length = 0; }")
     tapped = pg.evaluate("()=>{ const r=document.querySelector('#stage [data-row=update]'); if(!r) return false; r.click(); return true; }")
-    pg.wait_for_timeout(1500)
+    until(pg, ANSWERED, least=900)
     s = pg.evaluate(STATE); lit1 = pg.evaluate(LIT); n = pg.evaluate(REQ)
     ck("(1) the Settings row opens a pushed page with its back button (tapped %s, page %s)" % (tapped, bool(s)), tapped and s and s["back"] and s["status"], s)
     ck("(1) the tab bar stays up with the same tab lit (%s -> %s)" % (lit0, lit1), lit0 and lit0 == lit1, [lit0, lit1])
@@ -189,14 +204,14 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(1200)
     s2 = pg.evaluate(STATE)
     ck("(3) ...and it stays that way while the request is out (1.5s)", s2 and s2["spin"] and not s2["buttons"], s2 and s2["state"])
-    release(pg, "same"); pg.wait_for_timeout(1200)
+    release(pg, "same"); until(pg, ANSWERED, least=300)
     s = pg.evaluate(STATE)
     ck("(4) same build: no button, the build running, the time it checked (%r)" % (s and s["text"][-60:]), s and not s["buttons"] and not s["spin"] and BUILD in s["text"] and re.search(r"\b\d{1,2}[:.]\d{2}\b", s["text"]), s)
 
     sig = pg.evaluate(SIG)
     for note in ("A line of what this build fixes.", ""):
         SERVE["mode"] = "new"; SERVE["note"] = note
-        pg.evaluate(OPEN); pg.wait_for_timeout(1500)
+        pg.evaluate(OPEN); until(pg, ANSWERED, least=300)
         s = pg.evaluate(STATE)
         b = s["buttons"][0] if s and len(s["buttons"]) == 1 else None
         ck("(5) a newer build (note %r): the new build and ONE button in the theme's colour, 44px+ (%s)" % (note[:12], b), s and NEWER in s["text"] and b and b["h"] >= 44 and same_colour(b["bg"], sig), [s and s["text"], b, sig])
@@ -211,7 +226,7 @@ with sync_playwright() as pw:
 
     for mode in ("404", "abort"):
         SERVE["mode"] = mode
-        pg.evaluate(OPEN); pg.wait_for_timeout(1500)
+        pg.evaluate(OPEN); until(pg, ANSWERED, least=300)
         s = pg.evaluate(STATE)
         ck("(6) %s: says it could not check, with one button" % ("a 404" if mode == "404" else "a blocked request"), s and len(s["buttons"]) == 1 and not s["spin"] and NEWER not in s["text"], s and {k: s[k] for k in ("buttons", "text", "state")})
     SERVE["mode"] = "hold"
@@ -220,20 +235,20 @@ with sync_playwright() as pw:
       await new Promise(r=>setTimeout(r, 250)); const sp=document.querySelector('#stage [role=status] button'); return { again: !!sp }; }""")
     s = pg.evaluate(STATE); n = pg.evaluate(REQ)
     ck("(6) Try again tapped three times: checking again, ONE request (%s)" % n, r is not None and s and s["spin"] and n == 1, [r, n, s and s["state"]])
-    release(pg, "404"); pg.wait_for_timeout(1200)
+    release(pg, "404"); until(pg, ANSWERED, least=300)
 
     # (7) the row tapped twice
     SERVE["mode"] = "same"
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(700)
     pg.evaluate("()=>{ window.__vj.length = 0; const r=document.querySelector('#stage [data-row=update]'); if(r){ r.click(); r.click(); } }")
-    pg.wait_for_timeout(1500)
+    until(pg, ANSWERED, least=900)
     n1 = pg.evaluate(REQ)
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(700)
     box = pg.evaluate("()=>{ const r=document.querySelector('#stage [data-row=update]'); if(!r) return null; r.scrollIntoView({block:'center', behavior:'instant'}); const b=r.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }")
     pg.wait_for_timeout(300)
     pg.evaluate("()=>{ window.__vj.length = 0; }")
     if box: pg.mouse.dblclick(box["x"], box["y"])
-    pg.wait_for_timeout(1500)
+    until(pg, ANSWERED, least=900)
     n2 = pg.evaluate(REQ)
     ck("(7) the row tapped twice asks once (by script %s, a real double tap %s)" % (n1, n2), n1 == 1 and n2 == 1, [n1, n2])
 
@@ -250,7 +265,7 @@ with sync_playwright() as pw:
     pg.evaluate(SHOW_ROW); pg.wait_for_timeout(600)
     p = pg.evaluate(ROWPILL); n = pg.evaluate(REQ)
     ck("(9) no answer yet this session: the row comes into view and asks once, and shows nothing while it is out (%s, %s request)" % (p.get("pill"), n), p["row"] and not p["pill"] and n == 1, [p, n])
-    release(pg, "same"); pg.wait_for_timeout(600)
+    release(pg, "same"); until(pg, HASPILL, least=200)
     p = pg.evaluate(ROWPILL)
     ck("(9) its answer: a green pill on the row (%s, hue %s)" % (p.get("words"), hue(p.get("bg"))), p["pill"] and "is-good" in p["cls"] and 90 <= (hue(p["bg"]) or 0) <= 150, p)
     pg.evaluate("()=>{ window.__vj.length = 0; }")
@@ -262,23 +277,23 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{ showHome(); const d=document.createElement('div'); d.id='__hid'; d.hidden=true; document.getElementById('stage').appendChild(d); showAppearance({ into: d }); }")
     pg.wait_for_timeout(900); nh = pg.evaluate(REQ)
     pg.evaluate("()=>{ const d=document.getElementById('__hid'); if(d) d.hidden=false; const r=d && d.querySelector('[data-row=update]'); if(r) r.scrollIntoView({block:'center', behavior:'instant'}); }")
-    pg.wait_for_timeout(900); ns = pg.evaluate(REQ)
+    until(pg, "()=>!!document.querySelector('#__hid [data-row=update] .settings-pill')", least=300); ns = pg.evaluate(REQ)
     ph = pg.evaluate("()=>{ const r=document.querySelector('#__hid [data-row=update]'); const p=r && r.querySelector('.settings-pill'); return !!p; }")
     ck("(9) a row out of sight asks nothing (%s); shown, it asks once and fills in (%s, pill %s)" % (nh, ns, ph), nh == 0 and ns == 1 and ph, [nh, ns, ph])
     pg.evaluate("()=>document.getElementById('__hid')?.remove()")
     # the app's own check
     pg.evaluate(REALCHECK); pg.evaluate(RESET_ROW)
-    pg.evaluate(SHOW_ROW); pg.wait_for_timeout(1400)
+    pg.evaluate(SHOW_ROW); until(pg, HASPILL, least=400)
     p = pg.evaluate(ROWPILL); vj = pg.evaluate("()=>window.__vj.map(x=>x.cache)")
     ck("(9) with the app's own check running as Settings opens, the row reuses its answer and asks nothing itself (%s, requests %s)" % (p.get("pill"), vj), p["pill"] and pg.evaluate(REQ) == 0 and len(vj) >= 1, [p, vj])
     pg.evaluate(NOCHECK)
     # newer -> accent; failed / stale -> nothing
     pg.evaluate(RESET_ROW); SERVE["mode"] = "new"
-    pg.evaluate(SHOW_ROW); pg.wait_for_timeout(1000)
+    pg.evaluate(SHOW_ROW); until(pg, HASPILL, least=400)
     p = pg.evaluate(ROWPILL)
     ck("(9) a newer build: the pill in the theme's colour (%s)" % p.get("words"), p["pill"] and "is-accent" in p["cls"] and same_colour(p["bg"], sig), [p, sig])
     pg.evaluate(RESET_ROW); SERVE["mode"] = "404"
-    pg.evaluate(SHOW_ROW); pg.wait_for_timeout(1000)
+    pg.evaluate(SHOW_ROW); until(pg, "()=>(window.__vj||[]).some(x=>x.cache==='reload')", least=400); until(pg, SETTLED); pg.wait_for_timeout(300)
     p = pg.evaluate(ROWPILL); n = pg.evaluate(REQ)
     ck("(9) a failed check shows nothing (asked %s)" % n, p["row"] and not p["pill"] and n == 1, [p, n])
     pg.evaluate(RESET_ROW); SERVE["mode"] = "hold"
@@ -304,8 +319,9 @@ with sync_playwright() as pw:
         ctx, pg = open_page(br, w=w, h=h, errs=errs)
         for mode in ("same", "new"):
             SERVE["mode"] = mode
-            pg.evaluate(NOCHECK); pg.evaluate(RESET_ROW); pg.evaluate(SHOW_ROW); pg.wait_for_timeout(900)
+            pg.evaluate(NOCHECK); pg.evaluate(RESET_ROW); pg.evaluate(SHOW_ROW); until(pg, HASPILL, ms=20000, least=400); pg.wait_for_timeout(200)
             g = pg.evaluate(PILLGEO)
+            if not g: g = None; print("     (no pill: %s)" % pg.evaluate(ROWDBG))
             okg = g and 0.95 <= g["h"] / g["lf"] <= 1.3 and 0.6 <= g["pf"] / g["lf"] <= 0.82 and g["wt"] >= 600 and g["lines"] == 1 and g["over"] <= 0 \
                 and abs(g["mid"]) <= 1 and g["afterLabel"] >= 4 and g["beforeChev"] >= 0 and g["inRow"] and 6 <= g["pl"] <= 12 and abs(g["pl"] - g["pr"]) < .5
             ck("(10) %s, %s: %s" % (label, "up to date" if mode == "same" else "update available",
@@ -327,11 +343,13 @@ with sync_playwright() as pw:
         pg.evaluate(NOCHECK)
         for mode in ("hold", "same", "new", "404"):
             SERVE["mode"] = mode
-            pg.evaluate(OPEN); pg.wait_for_timeout(400 if mode == "hold" else 1400)
+            pg.evaluate(OPEN)
+            if mode == "hold": pg.wait_for_timeout(400)
+            else: until(pg, ANSWERED, least=300)
             L = pg.evaluate(LAYOUT)
             seen["%dx%d %s" % (w, h, mode)] = L.get("state")
             ck("(11) %dx%d, %s: %s" % (w, h, {"hold": "checking", "same": "up to date", "new": "update available", "404": "can't reach"}[mode], L.get("bad") or "clean"), L["page"] and not L["bad"], L)
-            if mode == "hold": release(pg, "same"); pg.wait_for_timeout(1000)
+            if mode == "hold": release(pg, "same"); until(pg, ANSWERED, least=300)
         ctx.close()
     ctx, pg = open_page(br, errs=errs)
     pg.evaluate(NOCHECK)
@@ -341,12 +359,12 @@ with sync_playwright() as pw:
         pg.evaluate("(a)=>{ theme.accent=a; applyTheme(); }", acc)
         sig = pg.evaluate(SIG)
         SERVE["mode"] = "new"
-        pg.evaluate(OPEN); pg.wait_for_timeout(1300)
+        pg.evaluate(OPEN); until(pg, ANSWERED, least=300)
         s = pg.evaluate(STATE)
         b = s["buttons"][0] if s and s["buttons"] else None
         if not (b and same_colour(b["bg"], sig) and contrast(rgb(b["fg"]), rgb(b["bg"])) >= 3):
             badt.append((acc, "button", b and b["bg"], b and b["fg"], sig, b and round(contrast(rgb(b["fg"]), rgb(b["bg"])), 2)))
-        pg.evaluate(RESET_ROW); pg.evaluate(SHOW_ROW); pg.wait_for_timeout(900)
+        pg.evaluate(RESET_ROW); pg.evaluate(SHOW_ROW); until(pg, HASPILL, least=400)
         p = pg.evaluate(ROWPILL)
         if not (p["pill"] and same_colour(p["bg"], sig) and contrast(rgb(p["fg"]), rgb(p["bg"])) >= 3):
             badt.append((acc, "pill", p.get("bg"), p.get("fg"), sig))
@@ -359,7 +377,7 @@ with sync_playwright() as pw:
     cls = pg.evaluate("()=>window.NOVA_CLASS")
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(900)
     lit0 = pg.evaluate(LIT)
-    pg.evaluate("()=>{ window.__vj.length = 0; const r=document.querySelector('#stage [data-row=update]'); if(r) r.click(); }"); pg.wait_for_timeout(1500)
+    pg.evaluate("()=>{ window.__vj.length = 0; const r=document.querySelector('#stage [data-row=update]'); if(r) r.click(); }"); until(pg, ANSWERED, least=900)
     s = pg.evaluate(STATE); lit1 = pg.evaluate(LIT); n = pg.evaluate(REQ)
     pg.evaluate("()=>{ const b=document.querySelector('#stage .screen-settings-sub .settings-nav-back'); if(b) b.click(); }"); pg.wait_for_timeout(900)
     back = pg.evaluate("()=>({ row: !!document.querySelector('#stage [data-row=update]'), sub: !!document.querySelector('#stage .screen-settings-sub') })")
