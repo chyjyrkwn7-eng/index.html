@@ -10038,7 +10038,15 @@
   }
   /* 64 - 2 - 2 - 39: the knob's gap is 2px at either end */
   .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(21px); }
-  .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
+  /* (384.97) the focus ring is a KEYBOARD's, never a finger's: "The time limit when selected puts a blue box around the thing, don't do
+     that part." On an iPhone a tap on a toggle puts focus on its native switch (the haptic layer, .hsw-opt) and WebKit counts that as
+     :focus-visible, so the ring in the accent colour (blue on most themes) was drawn round the switch the moment it was tapped - most
+     visible on Time limit, whose minutes row opening under it keeps the focus on screen. A finger never sees it now; a keyboard on a
+     laptop still does. */
+  @media (hover:hover) and (pointer:fine){
+    .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
+  }
+  .opt > input.hsw-opt:focus, .opt > input.hsw-opt:focus-visible{ outline:none; }
   .opt > input:disabled ~ .box{ cursor:default; }
   /* (385 r17) a switch row that cannot be changed now (the leaderboard's class switches while the master is off): visible, in the off position, greyed */
   .opt.is-locked{ opacity:.45; cursor:default; }
@@ -13953,6 +13961,10 @@
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
+  /* (384.97) and a top tab being swiped across (attachTabSwipe: Profile / Stats, the Leaderboard's boards): its content is carried
+     up to a screen's width off the side, and on an iPhone a page wider than the screen ZOOMS OUT to fit it - the whole app shrank to
+     a third, with a tiny tab bar in a corner and blank frames, then snapped back (the owner's recording, 384.94/95). */
+  html.tab-sliding, html.tab-sliding body, .tab-slide-clip{ overflow-x:clip; }
   /* build 382: "when swiping or auto swipe is on ensure the button doesn't leak over on the next page". Next question lives in the
      .foot, outside the question panel: a swipe moved the question away under it while it stayed put, over the one coming in, and
      an auto-advance dropped it in one frame. While a question is being dragged or slid (html.q-sliding) it fades out at once, and
@@ -18726,7 +18738,8 @@
      specificity, and Gold's swing was still running in every orbit. */
   /* (not the road map's flare carried into a bubble by the rank-up's
      hand-off, build 321: it keeps moving on its own clock - ruClockSnap) */
-  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *) .rk-a{ animation:none !important; }
+  /* (384.97) ...nor a single big flare shown on its own (.rk-live: the rank flare's unlock card, "This isn't animated") */
+  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *):not(.rk-live *) .rk-a{ animation:none !important; }
   /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
   .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
   .bnr.rk-idle, .bnr.rk-idle *{ animation:none !important; }
@@ -27548,7 +27561,9 @@
      image callout, no selection */
   .person-card-rank, .person-card-rank *{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   .person-card-rankword{ filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent)); }
-  .pf-standing > .profile-rankline{ margin:-.55rem 0 .15rem; }   /* (384 r5) the card's own spacing: the rank line close under the name, the level line close under it */
+  .pf-standing > .profile-rankline{ margin:-.55rem 0 .55rem; }   /* (384 r5) the card's own spacing: the rank line close under the name. (384.97) The level line
+     .4rem further under it: "the spacing between your rank and your level/badges is too tight" - .15rem left ~13pt between the rank's
+     word and "Level N · N badges"; .55rem is the ~19pt a classmate's card (.person-card-rank + .person-card-level) already has. */
   .person-card-rank > .person-card-mark{ width:2.1rem; height:2.1rem; }
   @media (min-width:40rem){ .person-card-rank > .person-card-mark{ width:2.4rem; height:2.4rem; } }
   .person-card-level{
@@ -74207,7 +74222,7 @@ const cfg = {
   mode: "drill",     // drill | exam | game
   source: "all",     // all | weak
   size: 0,           // 0 = everything selected
-  shuffle: true,
+  shuffle: false,    // (384.97) off by default: "The 'shuffle answer choices' is always on by default. Turn off that."
   recall: false,
   countdown: false,  // 3-2-1 countdown before the run begins
   revealCorrect: false, // unlocked once every unit has its black star
@@ -74770,12 +74785,10 @@ function applySaved(){
      `false` is almost always just the default nobody changed. The switch
      is still in the start sheet for anybody who wants it off, and that
      choice is kept from here on. */
-  try{
-    if(!localStorage.getItem("class26e.shuffleon")){
-      cfg.shuffle = true;
-      localStorage.setItem("class26e.shuffleon", "1");
-    }
-  }catch(e){ cfg.shuffle = true; }
+  /* OFF BY DEFAULT AGAIN (384.97), reversing build 229 above: "The 'shuffle answer choices' is always on by default. Turn off
+     that. Make whatever you have set always on off till you change, except the time limit of course." Every switch on the start
+     sheet now starts off (SHEET_DEFAULTS, put back each time the sheet opens - build 309); the one-time migration that switched
+     shuffling on for everybody is gone, and its class26e.shuffleon marker is simply never read again. */
   /* UNITS ARE NOT RESTORED, per explicit request - "if I select units
      and then leave that screen they shouldn't still be checked". They
      used to persist, so switching from Drill to Exam arrived with the
@@ -74826,7 +74839,7 @@ function settingsTitleOf(mode){
    countdown left on from last week's exam was quietly timing today's
    drill. The mode is not in the sheet (it is the screen you chose), so
    it is not reset. */
-const SHEET_DEFAULTS = { source: "all", size: 0, shuffle: true, recall: false,
+const SHEET_DEFAULTS = { source: "all", size: 0, shuffle: false, recall: false,
   timer: "off", timerMinutes: 15, examFeedback: false, flashcards: false };
 function resetSheetOptions(){
   Object.keys(SHEET_DEFAULTS).forEach(k => { cfg[k] = SHEET_DEFAULTS[k]; });
@@ -150419,6 +150432,12 @@ function showUnlockDetail(o){
   } else if(o.kind === "rankflare"){
     /* the rank's flare, lit, as its tile shows it (327z13) */
     try{ art.appendChild(buildFlareBubble(o.id, { lit: true })); }catch(e){}
+    /* AND MOVING (384.97): "This isn't animated" - the Gold flare's card. An emblem's own motion (.rk-a) is switched off
+       everywhere but the places big enough to read it (the Rank tab's road and hero, the To-reach box, a recording's host: the
+       :is() list on .rk-a's animation:none), and in lists it moves as a recorded flip-book instead - which is recorded only at
+       list sizes. This card shows ONE flare, big: it takes the live drawing's motion, as the Rank tab does (.rk-live), which one
+       svg on screen affords. Reduce motion: the global rule stills it. */
+    art.classList.add("rk-live");
   } else if(o.kind === "challenge"){
     /* a rank challenge, big (327z13): the count in the challenge's own
        colour inside a ring of how far it is */
@@ -156209,12 +156228,36 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     drag.els.forEach(el => { el.style.transform = ""; el.style.opacity = ""; el.style.transition = ""; el.style.willChange = ""; el.removeAttribute("data-tabdrag"); });
     if(drag.raf) cancelAnimationFrame(drag.raf);
     drag = null;
+    clipOff();
+  };
+  /* (384.97) THE PAGE IS CLIPPED SIDEWAYS FOR AS LONG AS A TAB IS MOVING (html.tab-sliding, beside html.q-sliding): from the moment
+     the drag takes the content until the next tab's content has landed (no drag and not busy). Without it an iPhone zoomed the whole
+     app out to fit the content carried off the side. Polled off, not taken off at one call site: a commit clears the drag BEFORE the
+     next tab comes in, and the clip has to outlast that too. */
+  /* The clip is on the BOX THE CONTENT MOVES IN (its parent, .tab-slide-clip), not only on the page: a page clipped at <html> still
+     counts the moved content in its scroll width (an overflow:clip on the root is the viewport's hidden), which is what an iPhone
+     zooms to; clipped at its own parent the content never reaches the page's width at all. */
+  let clipT = 0, clipTries = 0;
+  const clipBoxes = new Set();
+  const clipOn = (els) => {
+    clipTries = 0;   /* never cancels a pending clipOff poll: the next tab's clipOn lands after the drag's clipOff, and that poll is what ends it */
+    document.documentElement.classList.add("tab-sliding");
+    (els || []).forEach(el => { const p = el && el.parentElement; if(p && !clipBoxes.has(p)){ clipBoxes.add(p); p.classList.add("tab-slide-clip"); } });
+  };
+  const clipOff = () => {
+    clearTimeout(clipT);
+    clipT = setTimeout(() => {
+      if((drag || busy) && ++clipTries < 40){ clipOff(); return; }
+      document.documentElement.classList.remove("tab-sliding");
+      clipBoxes.forEach(p => p.classList.remove("tab-slide-clip")); clipBoxes.clear();
+    }, 120);
   };
   const beginDrag = () => {
     if(!opts.content || reduced()) return;
     const els = (opts.content() || []).filter(Boolean);
     const i = order.indexOf(getCurrent());
     if(!els.length || i === -1) return;
+    clipOn(els);
     drag = { els, i, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth) };
     els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform"; el.setAttribute("data-tabdrag", "1"); });
   };
@@ -156276,6 +156319,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     const enter = (hold) => {
       const els = (opts.content() || []).filter(Boolean);
       if(!els.length){ busy = false; return; }
+      clipOn(els);   /* the next tab's content comes in from the side too: its box clips it as well */
       /* the next tab's content comes in from the side the finger was taking this one to */
       settle(els, { transform: "translate3d(" + (dir * 56) + "px,0,0)", opacity: "0" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 200, () => {
         if(hold) els.forEach(el => { el.style.opacity = ""; });
@@ -159152,7 +159196,9 @@ function buildRanksTab(){
   /* THE BANDS, SAID ONCE (build 314): the boxes below are exactly build
      313's - "I don't like how the road map boxes changed, that's a no go"
      - so the one new idea is a sentence here, not a change to the cards. */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your level goes as high as the next rank\u2019s level, and that rank\u2019s badges take it further. Tap a rank to see what it gives.";
+  /* ONE LINE (384.97): "Way too wordy, no one is reading that." Four sentences went; each stop below already shows its level, its
+     badges and what it unlocks, so the note only has to say the stops can be tapped. */
+  mapNote.textContent = "Tap a rank to see what it unlocks.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
