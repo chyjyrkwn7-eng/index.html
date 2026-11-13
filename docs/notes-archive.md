@@ -39477,4 +39477,4 @@ card's emblem animations running; T7 the start sheet's switches all off after it
 Also: check-js OK (14 blocks); check-behaviour check_swipe, check_b229, check_b311_rank, check_b314_swipe, check_b314h_tabs pass
 (the run was cut at its time limit after those); check-b384-tabhotfix ALL PASS (45) on a quieter machine (a first run under
 load ~80 failed one scroll-nudge count and a timed-out class switch; main under the same load failed a different section);
-sweep-layout --quick 20/20 clean.
+sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre (1255s).
