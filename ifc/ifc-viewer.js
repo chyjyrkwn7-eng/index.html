@@ -1388,7 +1388,11 @@ async function cellRows(doc, r, fontBold, cache) {
     row.y0 = h.i0 - 0.12 * h.fs; row.y1 = h.i1 + 0.12 * h.fs;
     out.push(row);
   }
-  r.marks = out;
+  // a mark of something inside a row that is now gold whole (ch22-014's stacked 1/32: its figures are smaller than a cell's, so not a cell) is part of
+  // that row: it is not kept as a band of its own beside it
+  const rows = out.filter(m => m.fromCell);
+  r.marks = out.filter(m => m.fromCell || m.kind !== 'cite' || !rows.some(w => w.page === m.page && (m.x0 + m.x1) / 2 >= w.x0 && (m.x0 + m.x1) / 2 <= w.x1
+    && (m.i0 + m.i1) / 2 >= Math.min(w.i0, w.lb != null ? w.lb : w.i0) && (m.i0 + m.i1) / 2 <= Math.max(w.i1, w.lt != null ? w.lt : w.i1)));
 }
 
 // the row label (and its factor, on the same line) inside a table rectangle
