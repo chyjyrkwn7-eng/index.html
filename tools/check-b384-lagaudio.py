@@ -19,7 +19,7 @@
          nothing, what is under it never moving down, and no last-frame jump (the end is the same picture as the frame before);
     (2c) Next question, through the code box opening and shutting (at the top of the page and at its very end): its place on the
          screen moves one way only (never drops and floats back) and ends where it is placed;
-    (2d) the layout passes during each move: a handful, not one a frame.
+    (2d) the page is laid out in at most 3 of the ten 33ms slices from 60 to 400ms after the tap (a height eased frame by frame: nearly all).
  3. SOUND: "If I have my volume on, and I leave the app, the sound screeches badly like it lags." Every Web Audio call logged from
     before the app's script runs; a test under way (its leave handlers save the run) and a 12s sound playing, then the page is hidden:
     (3a) the sound is told to go before any other leave work (its master ramp before the first localStorage write after the event);
@@ -138,13 +138,22 @@ def section2():
         t, r, b, l = ins; v = {"top": "%dpx" % t, "right": "%dpx" % r, "bottom": "%dpx" % b, "left": "%dpx" % l}
         return IR.sub(lambda m: v[m.group(1)], RAW)
     G["g"]["patched"] = _pat
+    # version.json at the build under test (an --against build would otherwise be told of an update and reload under the gate)
+    _rp = G["route_pdf"]; _bld = (re.search(r'const APP_BUILD = "([^"]+)"', RAW) or [None, ""])[1]
+    def _route(ctx):
+        _rp(ctx)
+        ctx.route("**/version.json*", lambda r, q: r.fulfill(status=200, headers={"content-type": "application/json"},
+                  body=json.dumps({"build": _bld, "note": "", "frameId": "", "force": True, "safariSound": True})))
+    G["route_pdf"] = _route
     PROBE = """([sel, ms])=>{ window.__f = []; const t0 = performance.now();
       const clipB = el => { const m = /inset\\(([^)]*?)(?:\\sround\\b|\\))/.exec(getComputedStyle(el).clipPath || ''); if(!m) return 0; const v = m[1].trim().split(/\\s+/).map(parseFloat); return (v.length >= 3 ? v[2] : v[0]) || 0; };
-      const f = () => { const box = document.querySelector(sel), nx = document.getElementById('nextbtn'), ch = [...document.querySelectorAll('.qpanel .choice')].pop();
+      /* read once each frame has been drawn (a task after the frame): what every rAF callback of that frame, the app's included, put
+         on the screen - a read inside the frame's first rAF callback would come before the app's own */
+      const s = () => { const box = document.querySelector(sel), nx = document.getElementById('nextbtn'), ch = [...document.querySelectorAll('.qpanel .choice')].pop();
         const r = box ? box.getBoundingClientRect() : null, disp = box ? getComputedStyle(box).display : 'none';
         window.__f.push({ t: performance.now() - t0, lay: r && disp !== 'none' ? r.height : 0, shown: r && disp !== 'none' ? Math.max(0, r.height - clipB(box)) : 0,
-          next: nx && !nx.hidden && nx.getClientRects().length ? nx.getBoundingClientRect().top : null, under: ch ? ch.getBoundingClientRect().top : null, sy: scrollY });
-        if(performance.now() - t0 < ms) requestAnimationFrame(f); };
+          next: nx && !nx.hidden && nx.getClientRects().length ? nx.getBoundingClientRect().top : null, under: ch ? ch.getBoundingClientRect().top : null, sy: scrollY }); };
+      const f = () => { setTimeout(s, 0); if(performance.now() - t0 < ms) requestAnimationFrame(f); };
       requestAnimationFrame(f); }"""
     def layouts(cdp, act, pg=None):
         ev = []; done = {"v": False}
@@ -157,7 +166,12 @@ def section2():
             if done["v"]: break
             (pg.wait_for_timeout(100) if pg else time.sleep(.1))
         cdp.remove_listener("Tracing.dataCollected", h1); cdp.remove_listener("Tracing.tracingComplete", h2)
-        return len([e for e in ev if e.get("ph") == "X" and e.get("name") == "Layout"])
+        # the frames IN the move that laid the page out: 33ms bins from 60 to 400ms after the finger lands (the tap's own work and the
+        # end's are outside it; a height eased frame by frame lays it out in nearly every bin, the clock's tick in at most one)
+        d0 = [e["ts"] for e in ev if e.get("ph") == "X" and e.get("name") == "EventDispatch"]
+        if not d0: return 99
+        t0 = min(d0)
+        return len({int((e["ts"] - t0) / 1000 / 33) for e in ev if e.get("ph") == "X" and e.get("name") == "Layout" and 60 <= (e["ts"] - t0) / 1000 <= 400})
     def tapsel(pg, cdp, sel):
         c = pg.evaluate("(s)=>{ const b=document.querySelector(s); if(!b) return null; const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }", sel)
         if c: G["tap"](cdp, *c)
@@ -177,9 +191,12 @@ def section2():
         end_ok = abs(steps[-1]) < .4 * total if len(steps) > 1 else False
         u = [f[under_key] for f in fr[i0 - 1:] if f[under_key] is not None]
         us = [b - a for a, b in zip(u, u[1:])]
-        u_mono = all(x >= -.6 for x in us) if opening else all(x <= .6 for x in us)
+        # one way (down when what is under it is pushed, up when it is let back - or, at the end of the page, down with the scroll it
+        # gives back), and the last step it takes is no jump
+        u_mono = not (any(x > .6 for x in us) and any(x < -.6 for x in us))
         utot = abs(u[-1] - u[0]) if u else 0
-        u_end = (not us) or utot < 2 or max(abs(x) for x in us[-3:]) < .45 * utot
+        nz = [x for x in us if abs(x) > .3]
+        u_end = (not nz) or utot < 2 or abs(nz[-1]) < .45 * utot
         print("   %s: shown %s ... %s over %d frames, layout %s..%s, under moves %.0fpx" % (name, [round(x) for x in seg[:6]], [round(x) for x in seg[-3:]], len(seg) - 1,
               round(min(lseg)), round(max(lseg)), utot))
         chk("(2%s) %s: the layout changes once (%s while it moves); what is shown %s over %d frames (>= 4), one way only, with no last-frame jump" % ("a" if opening else "b", name,
@@ -224,12 +241,12 @@ def section2():
                 pg.evaluate(PROBE, [HP, 1100])
                 n = layouts(cdp, lambda: (tapsel(pg, cdp, ".qpanel .ifc-hint-btn"), pg.wait_for_timeout(1300)), pg)
                 fr = pg.evaluate("()=>window.__f"); moves("the Hint shutting (%d)" % (k + 1), fr, False)
-                chk("(2d) the Hint shutting (%d): %d layout passes while it moves (<= 8, not one a frame)" % (k + 1, n), n <= 8, n)
+                chk("(2d) the Hint shutting (%d): the page laid out in %d of the move's ten 33ms slices (<= 3, not every frame)" % (k + 1, n), n <= 3, n)
                 pg.wait_for_timeout(600)
                 pg.evaluate(PROBE, [HP, 1100])
                 n = layouts(cdp, lambda: (tapsel(pg, cdp, ".qpanel .ifc-hint-btn"), pg.wait_for_timeout(1300)), pg)
                 fr = pg.evaluate("()=>window.__f"); moves("the Hint opening again, drawn before (%d)" % (k + 1), fr, True)
-                chk("(2d) the Hint opening (%d): %d layout passes while it moves (<= 8)" % (k + 1, n), n <= 8, n)
+                chk("(2d) the Hint opening (%d): the page laid out in %d of the move's ten 33ms slices (<= 3)" % (k + 1, n), n <= 3, n)
         G["answer_right"](pg, cdp); pg.wait_for_timeout(1200)
         CB = ".qpanel .ifc-ref"
         for where in ("top", "end"):
@@ -242,7 +259,7 @@ def section2():
                 pg.wait_for_timeout(150)
             moves("the code box opening (page at its %s)" % where, fr, True)
             next_ok("the code box opening (page at its %s)" % where, fr)
-            chk("(2d) the code box opening (page at its %s): %d layout passes while it moves (<= 8)" % (where, n), n <= 8, n)
+            chk("(2d) the code box opening (page at its %s): the page laid out in %d of the move's ten 33ms slices (<= 3)" % (where, n), n <= 3, n)
             pg.wait_for_timeout(700)
             pg.evaluate("()=>scrollTo({ top: 99999, behavior: 'instant' })"); pg.wait_for_timeout(500)
             pg.evaluate(PROBE, [CB, 1500])
@@ -250,7 +267,7 @@ def section2():
             fr = pg.evaluate("()=>window.__f")
             moves("the code box shutting (page at its end)", fr, False)
             next_ok("the code box shutting (page at its end)", fr)
-            chk("(2d) the code box shutting: %d layout passes while it moves (<= 8)" % n, n <= 8, n)
+            chk("(2d) the code box shutting: the page laid out in %d of the move's ten 33ms slices (<= 3)" % n, n <= 3, n)
             shut = pg.evaluate("()=>{ const d = document.querySelector('.qpanel details.ifc-code'); return d ? d.open : null; }")
             chk("(2b) the code box ends shut (%s)" % shut, shut is False)
         errs_all.extend(errs)
