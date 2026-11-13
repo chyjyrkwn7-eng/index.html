@@ -39478,7 +39478,115 @@ Also: check-js OK (14 blocks); check-behaviour check_swipe, check_b229, check_b3
 (the run was cut at its time limit after those); check-b384-tabhotfix ALL PASS (45) on a quieter machine (a first run under
 load ~80 failed one scroll-nudge count and a timed-out class switch; main under the same load failed a different section);
 sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre (1255s).
-### 384.112 (boardshake)
+
+### 384.98 (newdot) - the new dot is a small lit flare in your theme's colour; the class button goes back to A, the lit ring (claude/b384-newdot, cut from main 384.92 bba82e5, main 384.94, 384.95 and 384.97 merged in; NOT on main)
+Madison: "The yellow dot for the notification, doesn't match the theme, it should almost look a little like the secret flare.."
+
+WHAT IT WAS (384 "THE NEW DOT, ONE LOOK" + r8's glow): a solid 9px #FFD43B circle, a 2px ring in the surface's colour and two yellow
+box-shadow glows, the same on every theme. Yellow was chosen in 299 because red is the chat's unread count and an accent can be grey.
+
+WHAT IT IS NOW (the ONE LOOK block at the end of the main style; its place, its 9px and its ring are unchanged):
+- Drawn the way a FOUND secret flare is (.cosmic-flare-dot.is-found), small. The BODY is a radial gradient lit from the top left
+  (circle 5.2px at 44% 42%: a white core to 17%, --nd-hot at 36%, the theme colour --nd-c at 64%, a deeper rim --nd-rim at 100%).
+  The RING is still an opaque 2px box-shadow (it keeps the dot apart from the icon under it) but tinted 42% with the dot's own light,
+  so the glow runs on from the body instead of sitting outside a dark bezel (24% still read as a bezel). The HALO is a --nd-h (25px)
+  radial gradient behind the body, the colour fading to nothing, and it BREATHES: nd-breathe 3.6s, scale .8 -> 1.04 and opacity
+  .62 -> 1, transform and opacity only. Under Reduce motion (data-reduce-motion) and prefers-reduced-motion nothing runs and the
+  halo rests at scale .92 / opacity .86. No filter or backdrop-filter anywhere in it.
+- LAYERS. A .new-dot is now a frame for two pseudo layers: ::before the halo, ::after the body; the element paints nothing (a child's
+  halo would paint OVER its parent's own background, so the body cannot be the element). The Profile tab keeps its pseudo dot: the
+  icon's ::after is the body and its ::before (unused until now) the halo, placed on the same corner by the same --nd-r formula with
+  --nd-h. The class button's dot WAS its ::after, and its ::before is the button's own pulsing ring (329), so there was no layer for a
+  halo: its dot is now a .new-dot child of the button (.is-cb, appended in mountClassBubble right after the button's icon), shown by
+  CSS only while the wrap has-new. The old 12px #FF9648 ::after rule (36204) is gone. Every dot in the app is now one of these two
+  structures with one paint rule each for the body and the halo.
+- COLOUR, read off <html> once: the --nd-* properties are declared on html and inherited, so a dot inside something that wears
+  another theme's colours (a banner, a classmate's row) is still in yours.
+  --nd-c = color-mix(--rank-accent 35%, --theme-c2), the rank's own colour with a third of its lifted dark-screen version in it (with
+  the lifted one alone Bronze came out as the default's amber, 23 apart on the measure below); --nd-hot = nd-c 42% into white;
+  --nd-rim = --theme-c2 66% into black; --nd-halo = --rank-accent (the lifted one reads as light on the glass).
+  Drawn by hand, three:
+  - THE DEFAULT (no data-accent, and "ink"): its orange #F5804D on its own reads coral beside the chat's #FF5F56. Taken 30% towards its
+    own gold #FFD37A with the core running hot through the gold: Nova's sun, the wordmark's first two stops (hue ~24-29).
+  - SUPERNOVA: its colour is red (#FF3B30, hue 3; the chat's count is hue 3). Its yellow-hot side instead: #FFE27A hot, #FF8C3C body,
+    #C2541C rim, #FF9440 light (hue ~33). Never red.
+  - SILVER: a grey, and a grey bead is what a NOT-found secret flare looks like (r15's pearl). Moonlight instead: a white core, a
+    #DFE2E7 body over a #666B74 slate rim, a #F2F6FF light. The first rim (#878C95) was too flat: core to rim under 1.5:1.
+  Gold's dot is still yellow because Gold is a yellow theme. --new-dot keeps #FFD43B for the chat's friend-request button, which reads
+  it and is not the dot.
+- MEASURED on the tab bar's glass beside the Profile tab (iPhone 17 Pro Max, 3x): the dot's colour band against the glass - default
+  7.8:1, Bronze 6.8, Silver 10.3, Sapphire 5.7, Supernova 7.6; the light its halo adds to the ring of glass round it (luminance) -
+  Silver 0.083, the coloured themes 0.036-0.043. Hues: default 29 (theme 18), Bronze 29 (28), Sapphire 222 (221), Supernova 33.
+- Coming back to the app does not restart the breathe (no animationstart on a dot after pagehide/pageshow; it was running before).
+- Where a dot can be (every buildNewDot / attachNewDot / wrapWithNewDot call): the Profile tab, the class button, Profile's
+  Customize and badge case rows (their .settings-row-icon tiles) and the rank word, Customize's character / banner / theme / hundo
+  tiles, the badge case's tiles. Settings itself puts no dot anywhere in this build.
+- The class button's pulsing ring (329) is still its fixed orange; it is the button's, not the dot's, and was left as it was.
+
+GATE tools/check-b384-newdot.py [--against REV] [--ref REV] - iPhone 17 Pro Max (440x956, 3x) and, for place, iPad Pro 11" (2x),
+everything new (seen-unlocks cleared, a rank not yet shown, a class not yet looked at). Places: the Profile tab, the class button,
+Profile's rows (Customize, the badge case, the rank word), Customize's character / banner / theme / hundo tiles, the badge case's
+tiles (29 dots a device). (1) every place has a dot, drawn, with its centre and size where the reference build (default: the
+merge-base with origin/main) has them within 0.75px, on its host's corner on the 45-degree line; (2) on the default, Bronze, Silver,
+Sapphire and Supernova, off the pixels: a white-hot core brighter than its rim (1.5:1), the colour the theme's (the same hue within
+15 degrees; a red theme on its warm side between the chat's red and its c1; a grey theme grey), never within 14 degrees of the chat's
+count (read off the chat's own count), one colour everywhere on a theme, no two themes the same colour (further apart than one
+theme's own dots vary), 3:1 on the tab bar's glass and a halo of its own in the theme's hue (hidden, the glass round it goes darker),
+Silver's light no weaker than the coloured themes'; (3) with motion every dot's halo breathes and every dot animation is
+transform/opacity only; with Reduce motion and with prefers-reduced-motion nothing runs; (4) no page errors. Dots under the tab bar's
+shade (a banner tile at the bottom of the screen) or not wholly on the screen count for place, not for colour.
+ALL PASS here (46). FAILS on 384.92 (--against bba82e5), 19 checks: (2a) on all five themes (core 0.69 against rim 0.60-0.69: a flat
+fill), (2b) default / Bronze / Silver / Sapphire (hue 47, sat .77 on every theme), (2e) (all five the same colour), (2f) all five +
+Silver's (no halo layer: lift 0), and
+(3) "every dot breathes" on Home, Profile and Character (no animation); place (1), never-red (2c), one-look (2d) and the reduced-motion
+checks hold on both.
+
+OTHER GATES, revised because they asserted the old decision:
+- check-b384-board2 (5): "each a solid fill, no gradient, with the same small glow" -> "each a small lit flare: a radial-gradient body
+  with its ring, a halo layer round it, no filter"; "one fill" -> "one paint" (the body's gradient). Reads a .new-dot's body from its
+  ::after and its halo from its ::before (the tab: the icon's two pseudos). Passes here; FAILS on 384.92 (19 dots, no gradient, no halo).
+- check-behaviour check_b299 "the dot is yellow, the same on the tab and on the card" -> "the dot is one lit flare, painted the same on
+  the tab and on the card" (one gradient on both; its colour per theme is this gate's). Passes here; FAILS on 384.92 (a flat fill).
+
+THE CLASS BUTTON GOES BACK TO OPTION A, THE LIT RING (same build, approved with the dot; both ship together).
+Madison, with the medallion (C, 384.94) live: "I don't like the class button after all. Try option a, the lit ring." He had picked C
+from the three looks behind ?classbtn=a|b|c (5f85d51: "Option c for the class thing."); seen in place on Home, C's enamel coin was
+dropped for A.
+- A is permanent with no query parameter, exactly as it was under ?classbtn=a in 5f85d51: a ring in the class's colour lifted towards
+  white (--cb-ring = --cbc 78% into white) just inside the rim, a soft pool of the colour behind the mark (at 50% 54%), the button's
+  glass gradient under both, a rim tinted with the colour (--cbc 44% into rgba(255,255,255,.16)), and a soft light off the outside
+  plus a faint inner one. --cbc is #FF7A3A (Fire Code) and #7C93FF (the academy), as before.
+- The medallion's CSS is gone (the coin and bezel layers, --coin-a/b/c and --bezel, the 26px / 46% mark sizes: the mark is the
+  button's own 30px again, as under A). The doubled class (.class-bubble.class-bubble) keeps the specificity the option had under
+  html[data-classbtn="a"], which is what beats the button's own glass rules; the mark keeps position:relative; z-index:1.
+- classBtnIcon(key) draws one mark per class in its full colours, on the button and in the class list alike (A's marks); the light
+  "coin" colours were the medallion's and nothing else used them, so they are gone and the "where" argument with them.
+- The new dot stays a .new-dot child of the button (.is-cb) and sits on A's corner (8.6px in and down on a phone, 8.3 on an iPad).
+GATE tools/check-b384-classbtn.py, rewritten for A: K1 the button on Home, both classes, iPhone 17 Pro Max / iPad Pro 11" / laptop, is
+pixel for pixel 5f85d51 loaded with ?classbtn=a, the dot hidden by rule on both sides (a rule specific enough to beat both builds'
+own !important "has-new" dot rules - the first draft's lost to them and compared the dots); K1b the same with the button's has-new
+state on both sides (the 329 ring, still under Reduce motion); K1c the new dot is drawn on A's button on its corner; K2 the mark is
+classBtnIcon's full-colour drawing on the lit ring (--cb-ring set); K3 the class list's mark; K4 ?classbtn=c changes nothing. #intro-pop
+is still hidden by rule. ALL PASS here (K1 mean 0.00 / max 0 on phone and iPad, 0.05 / 2 on the laptop). FAILS on main 384.95 (the
+medallion): 12 - K1 on all six, K1b on all four, K2 both classes.
+
+GATES RUN on the tree merged with main 384.95 (562b1ed), one at a time (another helper's gates on the machine too): check-js ALL PASS
+(APP_BUILD = version.json = 2026-11-13-384.98); the console - only the two blocked Firebase CDN loads, no page errors (A's ring and
+the full-colour marks read off the page); check-b384-classbtn ALL PASS (fails 384.95 as above); check-b384-newdot ALL PASS (46; every
+dot's centre and size where 384.95 has them, phone and iPad, 29 each); check-b384-board2 --only 5 ALL PASS; check-behaviour's dot
+sections (check_b299/b314h_tabs/b317_pfcard/b319_badges/b320g_inspect): the dot checks pass ("the dot is one lit flare, painted the same
+on the tab and on the card", phone and iPad); "something new puts a dot on the Profile tab" and "every flare on Home moves" fail the
+same way on main 384.95 (run --against it); three timing checks failed on two runs at a load of 60-85 (the tab-switch median, "Close
+turns it all back", "Reduce motion: the view fades in") and could not be run on 384.95 then (its page timed out loading).
+On the tree merged with main 384.97 (93d18a9, build 384.98), through the shared slot script after the container restart:
+check-centering --quick ALL PASS (0 off centre, 1270 elements on 152 screens, both classes); sweep-layout --quick 20/20 clean.
+Before the merges (on 384.92's tree): check-b329 (the class button's pulse/banner/seen checks pass; three Nova-copy checks fail
+identically on 384.92), check-b384-classes-open (8 fail here, 17 on 384.92, all from (7b) "Nova's good-luck message in Fire Code's
+chat", none the dot), check-b383-profile ALL PASS, check-b384-board2 --only 2 ALL PASS.
+
+NOT confirmable in Chromium: the breathe on a real iPhone's compositor (transform/opacity on a pseudo-element, which WebKit composites)
+and the colours on an OLED.
+### 384.99 (boardshake; built as 384.112, the code comments say 384.112)
 
 Branch `claude/b384-boardshake`, cut from origin/main 384.95 (562b1ed). NOT on main. Madison, a screen recording of the Leaderboard on his installed iPhone 17 Pro Max: "Other leaderboard fix, do you see how the characters are slightly shaking randomly? I've mentioned this problem before. Fix this." The third report of the same thing: build 313/314 ("The shaking characters": the flip-book carried the board's .94), 384.20 ("FLIP-BOOK LOOPS WERE SCALED TWICE ON THE BOARD"). Each was fixed and verified in Chromium at 100% and came back on his phone.
 

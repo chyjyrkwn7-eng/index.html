@@ -36252,7 +36252,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* a class you have not looked at yet: a soft ring breathes out from the bubble (transform and
      opacity only - nothing blurred moves) and a small dot sits on its corner */
   .class-bubble-wrap.has-new .class-bubble::before{ content:""; position:absolute; inset:-2px; border-radius:50%; border:2px solid rgba(255,150,72,.7); opacity:0; pointer-events:none; animation:cb-new 2.6s ease-out infinite; }
-  .class-bubble-wrap.has-new .class-bubble::after{ content:""; position:absolute; top:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:#FF9648; border:2px solid rgba(14,16,24,.9); box-sizing:border-box; }
+  /* (384.98) the small dot on its corner is a .new-dot child of the button (.is-cb) - see THE NEW DOT, ONE LOOK */
   @keyframes cb-new{ 0%{ transform:scale(1); opacity:.85; } 100%{ transform:scale(1.55); opacity:0; } }
   [data-reduce-motion="true"] .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; }
   @media (prefers-reduced-motion:reduce){ .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; } }
@@ -39136,16 +39136,82 @@ html.is-browser{ --fade-paper: transparent; }
      Maybe a small glow?" The dot stays the solid 9px circle with its ring (above); a light comes off it, outside the ring:
      a tight bright halo and a wider soft one (--new-dot-light), so it reads as lit on the tab bar's glass. */
   :root{ --new-dot-light:0 0 6px 1px rgba(255,212,59,.85), 0 0 14px 3px rgba(255,186,40,.42); }
+  /* (384.98) A SMALL LIT FLARE IN YOUR THEME'S COLOUR. Madison: "The yellow dot for the notification, doesn't match the theme, it
+     should almost look a little like the secret flare.." The dot is drawn the way a FOUND secret flare is (.cosmic-flare-dot
+     .is-found): a white-hot core, the theme's colour round it, a deeper rim, and its light pooled round it (a round gradient,
+     never a filter) that breathes. Where it sits, its 9px and its ring are unchanged: the dot's box (a .new-dot, or the Profile
+     tab icon's ::after) is placed exactly as before; what changed is what is painted in and round it.
+       THE PARTS: the BODY (the .new-dot's ::after; the tab icon's ::after) - the core, the colour, the rim, in the 9px circle -
+     with the RING round it (box-shadow, still opaque so it keeps the dot apart from the icon under it, now tinted a little with
+     the dot's own light so the glow runs on from the body with no dark gap); the HALO (the .new-dot's ::before; the tab icon's
+     ::before) - a --nd-h disc behind the body, the colour fading out, breathing (transform + opacity only; still under Reduce
+     motion and prefers-reduced-motion). The class button's dot is a .new-dot child of the button now (.is-cb), because its
+     ::before is the button's own pulsing ring (329) and the halo needs a layer of its own.
+       THE COLOUR is the theme's: the rank's own colour (--theme-c2, RANK_COLOR) with a third of its lifted dark-screen
+     version (--rank-accent) in it, so Bronze is bronze and not the default's amber, and the halo in the lifted one, which
+     reads as light on the glass. Read off <html> once, so a dot inside something that wears another theme's colours (a
+     banner, a classmate's row) is still in yours. Three themes are drawn by hand:
+       - THE DEFAULT (no data-accent): its orange taken a step towards its own gold, below.
+       - SUPERNOVA's colour is red, and red is the chat's unread count. Its dot is its yellow-hot side instead: a gold core, a
+         molten orange body and rim, never red.
+       - SILVER is a grey, and a grey bead is what a secret flare NOT found looks like (the pearl). Its dot is moonlight: a white
+         core and a bright silver body over a slate rim, in a white light - lit, not a pearl. A new grey theme needs the same
+         (tools/check-b384-newdot.py holds Silver's light to the coloured themes').
+     Gold's dot is still yellow: Gold is a yellow theme. --new-dot keeps #FFD43B for the other yellow thing that reads it (the
+     chat's friend-request button), which is not the dot. */
+  html{
+    --nd-c:color-mix(in srgb, var(--rank-accent, var(--theme-c2, #F5804D)) 35%, var(--theme-c2, #F5804D));
+    --nd-hot:color-mix(in srgb, var(--nd-c) 42%, #FFFFFF);
+    --nd-rim:color-mix(in srgb, var(--theme-c2, #F5804D) 66%, #000000);
+    --nd-halo:var(--rank-accent, var(--nd-c));
+    --nd-core:#FFFFFF;
+    --nd-h:25px;
+  }
+  /* the default: its orange taken a step towards its own gold (the wordmark's first two stops), so it is Nova's sun and not the
+     chat's coral-red; the core runs hot through the gold */
+  html:not([data-accent]), html[data-accent="ink"]{ --nd-c:color-mix(in srgb, var(--theme-c1, #FFD37A) 30%, var(--theme-c2, #F5804D));
+    --nd-hot:color-mix(in srgb, var(--theme-c1, #FFD37A) 70%, #FFFFFF); --nd-rim:color-mix(in srgb, var(--nd-c) 62%, #000000); }
+  html[data-accent="titan"]{ --nd-c:#FF8C3C; --nd-hot:#FFE27A; --nd-rim:#C2541C; --nd-halo:#FF9440; }
+  html[data-accent="ranger"]{ --nd-c:#DFE2E7; --nd-hot:#FFFFFF; --nd-rim:#666B74; --nd-halo:#F2F6FF; }
   html body .new-dot,
-  html body #bottomtab-profile.has-new .bottomtab-icon::after,
-  html body .class-bubble-wrap.has-new .class-bubble::after{
+  html body #bottomtab-profile.has-new .bottomtab-icon::after{
     content:""; position:absolute !important; display:block !important; box-sizing:border-box !important;
     width:var(--nd-d) !important; height:var(--nd-d) !important; aspect-ratio:1 / 1; flex:none; padding:0 !important; border:0 !important; border-radius:50% !important;
-    background:var(--new-dot) !important; background-image:none !important; box-shadow:0 0 0 var(--nd-ring) var(--nd-ring-c), var(--new-dot-light) !important;
     filter:none !important; opacity:1 !important; animation:none !important; transform:none !important;
     top:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important; right:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important;
     left:auto !important; bottom:auto !important; margin:0 !important; pointer-events:none; z-index:6;
   }
+  /* the .new-dot itself is the frame its two layers hang in; the tab's ::after is the body directly */
+  html body .new-dot{ background:none !important; box-shadow:none !important; overflow:visible !important; }
+  html body .new-dot::after{ content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+  html body .new-dot::before{ content:""; position:absolute; left:calc((var(--nd-d) - var(--nd-h)) / 2); top:calc((var(--nd-d) - var(--nd-h)) / 2);
+    width:var(--nd-h); height:var(--nd-h); border-radius:50%; pointer-events:none; }
+  html body #bottomtab-profile.has-new .bottomtab-icon::before{
+    content:""; position:absolute; display:block; box-sizing:border-box; width:var(--nd-h); height:var(--nd-h); padding:0; border:0; margin:0;
+    border-radius:50%; top:calc(var(--nd-r, 0px) * .29289 - var(--nd-h) / 2); right:calc(var(--nd-r, 0px) * .29289 - var(--nd-h) / 2);
+    left:auto; bottom:auto; pointer-events:none; z-index:5;
+  }
+  /* THE BODY: lit from the top left, as the found flare is */
+  html body .new-dot::after,
+  html body #bottomtab-profile.has-new .bottomtab-icon::after{
+    background:radial-gradient(circle 5.2px at 44% 42%, var(--nd-core) 0 17%, var(--nd-hot) 36%, var(--nd-c) 64%, var(--nd-rim) 100%) !important;
+    box-shadow:0 0 0 var(--nd-ring) color-mix(in srgb, var(--nd-halo) 42%, var(--nd-ring-c)) !important;
+  }
+  /* THE HALO: the colour pooled round it, fading to nothing */
+  html body .new-dot::before,
+  html body #bottomtab-profile.has-new .bottomtab-icon::before{
+    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--nd-halo) 72%, transparent) 0 48%, color-mix(in srgb, var(--nd-halo) 34%, transparent) 64%,
+      color-mix(in srgb, var(--nd-halo) 10%, transparent) 84%, transparent 100%);
+    transform:scale(.92); opacity:.86;
+  }
+  @media (prefers-reduced-motion:no-preference){
+    html:not([data-reduce-motion="true"]) body .new-dot::before,
+    html:not([data-reduce-motion="true"]) body #bottomtab-profile.has-new .bottomtab-icon::before{ animation:nd-breathe 3.6s ease-in-out infinite; }
+  }
+  @keyframes nd-breathe{ 0%, 100%{ transform:scale(.8); opacity:.62; } 50%{ transform:scale(1.04); opacity:1; } }
+  /* the class button's dot: there while the button has something new (329's has-new), the button's own ring left as it was */
+  html body .class-bubble > .new-dot.is-cb{ display:none !important; }
+  html body .class-bubble-wrap.has-new .class-bubble > .new-dot.is-cb{ display:block !important; }
   /* the hosts: what the dot marks, and that thing's corner */
   #bottomtab-profile .bottomtab-icon, .class-bubble, .avatarchar-option, .swatch, .badge-tile-art{ --nd-r:50%; }
   .banner-opt, .hfx-opt{ --nd-r:12px; }
@@ -40039,31 +40105,32 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
 
-  /* ==== THE CLASS BUTTON IS A MEDALLION (384.94) ====================================================================
+  /* ==== THE CLASS BUTTON IS A LIT RING (384.98; it was the medallion in 384.94) ========================================
      Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's
      circle needs a better border? Could just be better.." Shown three looks (A lit ring, B liquid glass, C medallion) behind
-     ?classbtn=a|b|c, he picked C: "Option c for the class thing." The mark is struck on an enamel coin in the class's colour with a
-     fine bright bezel, inside the button's glass, and a soft light in that colour comes off it. Same size and place as before
-     (--cb and place() are untouched), the tap target is the button's own box (54px on a phone, the chat button's 52px on a
-     tablet). The coin is a closest-side circle on the padding box, so it is round and centred at any --cb; every ring and glow is
-     a background layer or a box-shadow, no SVG filter, nothing moves. The marks are classBtnIcon's (a flame with two side
-     tongues; a police shield with a white star), in light colours on the coin and in full colour in the class list.
-     The doubled class keeps the specificity the picked option had under html[data-classbtn="c"], which is what beats the
-     button's own glass rules. */
-  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; --coin-a:#EC6436; --coin-b:#BE341E; --coin-c:#741810; --bezel:#FFD7A0; }
-  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; --coin-a:#4C68E4; --coin-b:#2A3BAA; --coin-c:#131850; --bezel:#D3DBFF; }
+     ?classbtn=a|b|c (5f85d51), he picked C ("Option c for the class thing.", 384.94), and with C live he changed his mind: "I don't
+     like the class button after all. Try option a, the lit ring." So this is A exactly as he saw it under ?classbtn=a: the "?"
+     button's ready recipe in the class's colour, still - a ring in the class's colour (lifted a little towards white) just inside
+     the rim, a soft pool of the colour behind the mark, the button's glass under both, a rim tinted with the colour, and a soft
+     light off the outside. The marks are classBtnIcon's in their full colours, the same drawing as in the class list. Same size
+     and place as before (--cb and place() are untouched); the tap target is the button's own box (54px on a phone, the chat
+     button's 52px on a tablet). Every ring and glow is a background layer or a box-shadow; no SVG filter; nothing moves (the
+     pulsing ring for a class not yet seen, 329, and the new dot are the button's other two things and are left as they were).
+     The doubled class keeps the specificity the option had under html[data-classbtn="a"], which is what beats the button's own
+     glass rules. */
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; }
   html .class-bubble.class-bubble > svg{ position:relative; z-index:1; }
   html[data-theme][data-layout] body:not(.x384cb) .class-bubble.class-bubble{
+    --cb-ring:color-mix(in srgb, var(--cbc) 78%, #FFFFFF);
     background:
-      radial-gradient(ellipse 46% 26% at 50% 24%, rgba(255,255,255,.2), rgba(255,255,255,0) 100%) padding-box,
-      radial-gradient(circle closest-side, var(--coin-a) 0%, var(--coin-b) calc(100% - 9.5px), var(--coin-c) calc(100% - 4.4px), var(--bezel) calc(100% - 3.9px), var(--bezel) calc(100% - 3px), transparent calc(100% - 2.5px)) padding-box,
+      radial-gradient(circle closest-side, transparent calc(100% - 4.3px), var(--cb-ring) calc(100% - 3.8px), var(--cb-ring) calc(100% - 2px), transparent calc(100% - 1.5px)) padding-box,
+      radial-gradient(circle closest-side at 50% 54%, color-mix(in srgb, var(--cbc) 42%, transparent), color-mix(in srgb, var(--cbc) 12%, transparent) 62%, transparent 86%) padding-box,
       linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%) padding-box,
       rgba(12,13,19,.26) !important;
-    border:1px solid rgba(255,255,255,.2) !important;
-    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 14px -2px color-mix(in srgb, var(--cbc) 46%, transparent) !important;
+    border:1px solid color-mix(in srgb, var(--cbc) 44%, rgba(255,255,255,.16)) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 10px 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 9px color-mix(in srgb, var(--cbc) 22%, transparent) !important;
   }
-  html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
-  @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
 </style>
 <script>
   (function(){
@@ -57541,39 +57608,37 @@ const NOVA_CLASSES = [
   { key: "ifc", name: "Fire Code", sub: "IFC",
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
-/* THE CLASS BUTTON'S MARKS (384.94, option C - see "THE CLASS BUTTON IS A MEDALLION" in the stylesheet). The marks are redrawn
-   with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield with a
-   silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). On the
-   button ("button") they are drawn in light colours for the enamel coin; in the class list ("list") in full colour. Ids are
-   unique per copy (classBtnSeq): the button and its list can both be on the page, and a gradient id shared with a hidden copy
-   paints nothing in Safari. A class with no drawing here returns "" and the caller keeps NOVA_CLASSES' own mark. */
+/* THE CLASS BUTTON'S MARKS (384.94; since 384.98 option A - see "THE CLASS BUTTON IS A LIT RING" in the stylesheet). The marks are
+   redrawn with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield
+   with a silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). One
+   drawing, in full colour, on the button and in the class list alike (the light "coin" colours were the medallion's, 384.94, and
+   went with it). Ids are unique per copy (classBtnSeq): the button and its list can both be on the page, and a gradient id shared
+   with a hidden copy paints nothing in Safari. A class with no drawing here returns "" and the caller keeps NOVA_CLASSES' own mark. */
 let classBtnSeq = 0;
-function classBtnIcon(key, where){
+function classBtnIcon(key){
   if(key !== "ifc" && key !== "academy") return "";
-  const coin = where === "button";
   const u = "cbx" + (++classBtnSeq) + "-";
   if(key === "ifc"){
-    const o = coin ? ["#FFF1C4", "#FFD27A", "#FFB04A"] : ["#FFB25A", "#FF6B35", "#E5332E"];
+    const o = ["#FFB25A", "#FF6B35", "#E5332E"];
     const m = ["#FFD36A", "#FF9A3A"];
-    const c = coin ? ["#FFF6D8", "#FFD27A"] : ["#FFFBEA", "#FFE49A"];
+    const c = ["#FFFBEA", "#FFE49A"];
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
       '<linearGradient id="' + u + 'o" x1="12" y1="2.6" x2="12" y2="21.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + o[0] + '"/><stop offset=".45" stop-color="' + o[1] + '"/><stop offset="1" stop-color="' + o[2] + '"/></linearGradient>' +
       '<linearGradient id="' + u + 'm" x1="12" y1="8" x2="12" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient>' +
       '<linearGradient id="' + u + 'c" x1="12" y1="12.4" x2="12" y2="19.2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/></linearGradient></defs>' +
       '<path d="M12 2.6C13.3 5.6 15.9 7.3 16.9 10.4C17.4 9.2 17.9 8 18.1 6.7C19.5 8.7 19.2 12.3 19.2 14.2A7.2 7.2 0 0 1 4.8 14.2C4.8 12.3 4.5 8.7 5.9 6.7C6.1 8 6.6 9.2 7.1 10.4C8.1 7.3 10.7 5.6 12 2.6Z" fill="url(#' + u + 'o)"/>' +
-      /* on the coin the middle is cut out in the coin's own red, a pale core left in it: an emblem, not a picture */
-      '<path d="M12 7.9C13 10.3 16 11.9 16 15.1A4 4 0 0 1 8 15.1C8 11.9 11 10.3 12 7.9Z" fill="' + (coin ? '#C93A22' : 'url(#' + u + 'm)') + '"/>' +
+      '<path d="M12 7.9C13 10.3 16 11.9 16 15.1A4 4 0 0 1 8 15.1C8 11.9 11 10.3 12 7.9Z" fill="url(#' + u + 'm)"/>' +
       '<path d="M12 12.4C12.6 13.9 14.3 14.9 14.3 16.9A2.3 2.3 0 0 1 9.7 16.9C9.7 14.9 11.4 13.9 12 12.4Z" fill="url(#' + u + 'c)"/></svg>';
   }
-  const r = coin ? ["#FFFFFF", "#E4EAFF", "#B9C6F2"] : ["#F2F5FF", "#B9C6F2", "#8496D8"];
-  const f = coin ? ["#DDE4FF", "#B4C2F4", "#8EA0E6"] : ["#8E86FF", "#5470F2", "#3442B8"];
-  const s = coin ? "#2F45C8" : "#FFFFFF";
+  const r = ["#F2F5FF", "#B9C6F2", "#8496D8"];
+  const f = ["#8E86FF", "#5470F2", "#3442B8"];
+  const s = "#FFFFFF";
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
     '<linearGradient id="' + u + 'r" x1="6" y1="3" x2="18" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + r[0] + '"/><stop offset=".55" stop-color="' + r[1] + '"/><stop offset="1" stop-color="' + r[2] + '"/></linearGradient>' +
     '<linearGradient id="' + u + 'f" x1="7" y1="4.6" x2="17" y2="19.6" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + f[0] + '"/><stop offset=".5" stop-color="' + f[1] + '"/><stop offset="1" stop-color="' + f[2] + '"/></linearGradient></defs>' +
     '<path d="M12 2.5 19.4 5.3V11.4C19.4 16 16.4 19.5 12 21.5 7.6 19.5 4.6 16 4.6 11.4V5.3Z" fill="url(#' + u + 'r)"/>' +
     '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7 8.6 18.1 6.2 15.2 6.2 11.5V6.5Z" fill="url(#' + u + 'f)"/>' +
-    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7Z" fill="#FFFFFF" fill-opacity="' + (coin ? '.18' : '.09') + '"/>' +
+    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7Z" fill="#FFFFFF" fill-opacity=".09"/>' +
     '<path d="M12 7.6 13.06 10.34 16 10.5 13.72 12.36 14.47 15.2 12 13.6 9.53 15.2 10.28 12.36 8 10.5 10.94 10.34Z" fill="' + s + '" stroke="' + s + '" stroke-width=".5" stroke-linejoin="round"/></svg>';
 }
 function classSwitchAllowed(){
@@ -57735,11 +57800,14 @@ function mountClassBubble(){
   btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
-  btn.innerHTML = classBtnIcon(cur.key, "button") || cur.icon;   /* (384.94) the coin's marks */
+  btn.innerHTML = classBtnIcon(cur.key) || cur.icon;   /* (384.94, A since 384.98) the redrawn marks, full colour */
+  /* (384.98) the new dot, shown by CSS while the wrap has-new (a child, not ::after: the dot's halo needs its own layer, and
+     the button's ::before is its pulsing ring) */
+  const cbDot = buildNewDot(); cbDot.classList.add("is-cb"); btn.appendChild(cbDot);
   const stack = document.createElement("div");
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
-  const items = others.map(c => ({ cls: "is-" + c.key, icon: classBtnIcon(c.key, "list") || c.icon, label: c.name, run: () => switchClass(c.key) }));
+  const items = others.map(c => ({ cls: "is-" + c.key, icon: classBtnIcon(c.key) || c.icon, label: c.name, run: () => switchClass(c.key) }));
   items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog("home"); } });
   wrap.style.setProperty("--n", items.length);
   items.forEach((it, k) => {
@@ -123076,7 +123144,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.112";
+const APP_BUILD = "2026-11-13-384.99";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
