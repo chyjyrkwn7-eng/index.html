@@ -20,7 +20,7 @@ def raw_of(path=None, ref=None):
         return subprocess.run(["git", "-C", ROOT, "show", ref + ":index.html"], capture_output=True, text=True).stdout
     return open(path or os.path.join(ROOT, "index.html"), encoding="utf-8").read()
 
-def open_page(br, raw, devkey="promax", cls="ifc", dpr=3, settle=True, extra_init=None):
+def open_page(br, raw, devkey="promax", cls="ifc", dpr=3, settle=True, extra_init=None, safari_sound=True):
     name, w, h, ins, installed, ua, notched = T.DEVICES[devkey]
     ctx = br.new_context(viewport={"width": w, "height": h}, screen={"width": w, "height": h}, device_scale_factor=dpr,
                          has_touch=True, is_mobile=True, user_agent=ua)
@@ -32,7 +32,7 @@ def open_page(br, raw, devkey="promax", cls="ifc", dpr=3, settle=True, extra_ini
     pg.route("**/index.html", lambda route, request, b=body: route.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
     m = re.search(r'const APP_BUILD = "([^"]+)"', body); bld = m.group(1) if m else ""
     pg.route("**/version.json*", lambda route, request, b=bld: route.fulfill(status=200, headers={"content-type": "application/json"},
-             body=json.dumps({"build": b, "note": "", "frameId": "", "force": True, "safariSound": True})))
+             body=json.dumps({"build": b, "note": "", "frameId": "", "force": True, "safariSound": bool(safari_sound)})))
     errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     pg.set_default_timeout(180000)
     pg.goto(T.url(), timeout=240000)
@@ -81,14 +81,14 @@ AUDIO = r"""(() => {
     if(live(this)){ const ctx = this.context; W.srcs.push({ id: tag(this), kind: this.constructor.name, start: Math.max(when || 0, ctx.currentTime), at: now(), ct: ctx.currentTime, hidden: document.hidden, stop: null }); }
     return S0.call(this, when, ...a); };
   AudioScheduledSourceNode.prototype.stop = function(when){
-    if(live(this)){ const s = W.srcs.find(x => x.id === this.__id); if(s){ const t = (when == null || when === 0) ? this.context.currentTime : Math.max(when, this.context.currentTime); s.stop = s.stop == null ? t : Math.min(s.stop, t); s.stopAt = now(); } }
+    if(live(this)){ const s = W.srcs.find(x => x.id === this.__id); if(s){ const t = (when == null || when === 0) ? this.context.currentTime : Math.max(when, this.context.currentTime); s.stop = s.stop == null ? t : Math.min(s.stop, t); s.stopAt = now(); (s.st = s.st || []).push([t, now()]); } }
     return S1.call(this, when); };
   ['setValueAtTime', 'linearRampToValueAtTime', 'exponentialRampToValueAtTime', 'setTargetAtTime', 'cancelScheduledValues', 'cancelAndHoldAtTime'].forEach(m => {
     const o = AudioParam.prototype[m]; if(!o) return;
-    AudioParam.prototype[m] = function(...a){ if(this.__watch) W.params.push({ m, a, at: now(), ct: this.__ctx.currentTime, w: this.__watch }); return o.apply(this, a); }; });
+    AudioParam.prototype[m] = function(...a){ if(this.__watch) W.params.push({ m, a, at: now(), ct: this.__ctx.currentTime, w: this.__watch, v: vd.get.call(this) }); return o.apply(this, a); }; });
   const vd = Object.getOwnPropertyDescriptor(AudioParam.prototype, 'value');
   Object.defineProperty(AudioParam.prototype, 'value', { configurable: true, get(){ return vd.get.call(this); },
-    set(v){ if(this.__watch) W.params.push({ m: 'value=', a: [v], at: now(), ct: this.__ctx.currentTime, w: this.__watch }); vd.set.call(this, v); } });
+    set(v){ if(this.__watch) W.params.push({ m: 'value=', a: [v], at: now(), ct: this.__ctx.currentTime, w: this.__watch, v: vd.get.call(this) }); vd.set.call(this, v); } });
   const SU = AudioContext.prototype.suspend;
   AudioContext.prototype.suspend = function(){ const t = this.currentTime; W.log.push(['suspend', now(), t]); const p = SU.call(this); try{ p.then(() => W.log.push(['suspended', now()])); }catch(e){} return p; };
   ['visibilitychange', 'pagehide', 'freeze'].forEach(t => addEventListener(t, () => W.log.push(['event', t, now(), document.hidden]), true));
@@ -103,6 +103,13 @@ AUDIO = r"""(() => {
 MASTER = """() => { const W = window.__au; const toDest = new Set(W.edges.filter(e => e.dest).map(e => e.from));
   const m = W.edges.filter(e => e.fk === 'GainNode' && e.tk === 'DynamicsCompressorNode' && toDest.has(e.to)).map(e => e.from);
   return m.length ? m[m.length - 1] : null; }"""
+# when the page could run anything at all after a moment: a chain of 0ms timers started then (a busy main thread - the page's
+# own other work, or this machine's load - holds them all back alike); FREE(after_ms) is the first that ran at or after it
+PROBE = """() => { const W = window.__au; W.probe = []; const t0 = performance.now();
+  const p = () => { W.probe.push(performance.now() - t0); if(performance.now() - t0 < 600) setTimeout(p, 1); }; setTimeout(p, 0); W.probeAt = t0; }"""
+def free_after(probe, at_ms):
+    later = [t for t in (probe or []) if t >= at_ms]
+    return later[0] if later else None
 HIDE = """(on) => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => on });
   Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => on ? 'hidden' : 'visible' });
   document.dispatchEvent(new Event('visibilitychange', { bubbles: true })); }"""

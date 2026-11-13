@@ -91866,6 +91866,13 @@ const NovaSound = (function(){
       s.onended = () => { try{ z.disconnect(); }catch(e){} go(); };
       s.start(now); s.stop(cut + .004);
     }catch(e){}
+    /* ...and the first moment the page is free once the audio clock is past the cut (the other leave handlers run first) */
+    const tick = () => {
+      if(!st.away || st.ctx !== ctx || ctx.state !== "running") return;
+      const left = cut - ctx.currentTime;
+      if(left <= 0) go(); else setTimeout(tick, Math.max(1, Math.ceil(left * 1000) + 1));
+    };
+    setTimeout(tick, 0);
     setTimeout(go, 45);
   }
   /* the graph that comes back when the one left behind may still ring (its echo, its room) */
@@ -115550,16 +115557,22 @@ function screenHandoff(from, build){
   from._handoff = true;
   from.style.pointerEvents = "none";
   let dim = null;
-  try{ dim = from.animate([{ opacity: 1 }, { opacity: HANDOFF_FLOOR }], { duration: HANDOFF_DIM_MS, easing: "cubic-bezier(.2,.8,.3,1)", fill: "forwards" }); }catch(e){}
+  /* linear, so where it has got to can be worked out at any moment (below) */
+  try{ dim = from.animate([{ opacity: 1 }, { opacity: HANDOFF_FLOOR }], { duration: HANDOFF_DIM_MS, easing: "linear", fill: "forwards" }); }catch(e){}
   try{ beginSettle(HANDOFF_DIM_MS + HANDOFF_IN_MS + 120); }catch(e){}
-  requestAnimationFrame(() => setTimeout(() => {
+  requestAnimationFrame(frameAt => setTimeout(() => {
     if(!from.isConnected || from.parentNode !== stage) return;
-    let o = HANDOFF_FLOOR;
-    try{ o = parseFloat(getComputedStyle(from).opacity); if(!isFinite(o)) o = HANDOFF_FLOOR; }catch(e){}
     try{ build(); }
     finally{ if(from.isConnected){ from._handoff = false; from.style.pointerEvents = ""; try{ dim && dim.cancel(); }catch(e){} } }
     const to = stage.querySelector(":scope > .panel");
-    if(to && to !== from && o < .995){ try{ to.animate([{ opacity: o }, { opacity: 1 }], { duration: HANDOFF_IN_MS, easing: "cubic-bezier(.2,.8,.3,1)" }); }catch(e){} }
+    if(!to || to === from) return;
+    /* the dim has gone on on the compositor all through the build; the page's own clock (document.timeline) stands still inside a
+       long task, so where it is NOW is worked out from its start and the real time - and the units rise from exactly there */
+    /* (its start: as the compositor reported it, or - not reported yet when the build began - the frame it went out in) */
+    let o = HANDOFF_FLOOR;
+    try{ const st = dim ? (dim.startTime != null ? dim.startTime : frameAt) : null;
+      if(st != null) o = 1 - (1 - HANDOFF_FLOOR) * Math.max(0, Math.min(1, (performance.now() - st) / HANDOFF_DIM_MS)); }catch(e){}
+    if(o < .995){ try{ to.animate([{ opacity: o }, { opacity: 1 }], { duration: HANDOFF_IN_MS, easing: "cubic-bezier(.2,.8,.3,1)" }); }catch(e){} }
   }, 0));
 }
 function showModeSelect(){
@@ -115828,28 +115841,38 @@ function cardBadgeSVG(name, earned){
    Choose your mode asks for them in quiet idle time (quietIdle: never within 2s of a touch or 1.6s of a screen going in), a few
    per slice, each decoded, and keeps the decoded pictures: the units' cards then take them from the cache and are drawn with them.
    A badge whose token is still a draft is not kept (cardBadgeSVG) and is simply made in the build, as before. */
-var cardBadgeWarm = null, cardBadgeWarmBusy = false;
-function warmCardBadges(){
+var cardBadgeWarm = null, cardBadgeWarmBusy = false, cardBadgeWarmLater = false;
+/* a found badge's picture carries its finished token (cardBadgeSVG keys it by that): until the token is struck (warmBadgeStrikes,
+   after launch) a picture made now would be made again by the build - so it waits for the token, a pass at a time */
+function cardBadgeWarmReady(name, earned){
+  if(earned !== true) return true;
+  try{ const dirt = badgeDirtStage(name) | 0, W = badgeStrikeSize(badgeDefaultPx() * badgeDpr()), e = badgeStrikeEntry(name, false, W, true, dirt); return !!(e && !e.draft); }
+  catch(e){ return false; }
+}
+function warmCardBadges(pass){
   if(cardBadgeWarmBusy || typeof Blob !== "function" || typeof quietIdle !== "function") return;
   let names = null;
   try{ names = ifcFinderFirst(unitsInTeachingOrder()); }catch(e){ return; }
   if(!names || !names.length) return;
   if(!cardBadgeWarm) cardBadgeWarm = new Map();
   cardBadgeWarmBusy = true;
-  let i = 0;
+  let i = 0, later = false;
   const step = dl => {
     const t0 = performance.now(), budget = dl && dl.timeRemaining ? Math.max(3, Math.min(10, dl.timeRemaining())) : 4;
     while(i < names.length){
       const name = names[i++];
       try{
         const earned = unitDrillStarEarned(name), k = name + "|" + String(earned);
+        if(!cardBadgeWarmReady(name, earned)){ later = true; continue; }
         const old = cardBadgeWarm.get(k);
         const el = cardBadgeSVG(name, earned);
         if(el && el.tagName === "IMG" && (!old || old.src !== el.src)){ cardBadgeWarm.set(k, el); if(el.decode) el.decode().catch(() => {}); }
       }catch(e){}
       if(performance.now() - t0 > budget) break;
     }
-    if(i < names.length) quietIdle(step, 1500); else cardBadgeWarmBusy = false;
+    if(i < names.length){ quietIdle(step, 1500); return; }
+    cardBadgeWarmBusy = false;
+    if(later && (pass || 0) < 8 && !cardBadgeWarmLater){ cardBadgeWarmLater = true; setTimeout(() => { cardBadgeWarmLater = false; warmCardBadges((pass || 0) + 1); }, 2500); }
   };
   quietIdle(step, 1500);
 }

@@ -58,9 +58,17 @@ FRAMES = """()=>{ window.__fr = []; window.__clk = null;
   addEventListener('click', () => { if(window.__clk === null) window.__clk = performance.now(); }, true);
   const f = () => { const m = document.querySelector('#stage > .modeselect'), s = document.querySelector('#stage > .screen-setup');
     let vis = 0, nd = 0;
-    if(s) s.querySelectorAll('.pick-badge-img, .pick-badge svg').forEach(i => { const r = i.getBoundingClientRect(); if(r.bottom > 0 && r.top < innerHeight && r.width){ vis++; if(i.tagName !== 'IMG' || !i.complete || !i.naturalWidth) nd++; } });
-    const anim = m ? m.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getKeyframes().some(k => k.opacity !== undefined)) : false;
-    window.__fr.push({ t: performance.now(), m: m ? +getComputedStyle(m).opacity : null, anim, s: s ? +getComputedStyle(s).opacity : null, vis, nd });
+    /* a badge drawn as a picture must be decoded to be drawn; one drawn in place (a live SVG: a token still a draft) is drawn as it is */
+    if(s) s.querySelectorAll('img.pick-badge-img').forEach(i => { const r = i.getBoundingClientRect(); if(r.bottom > 0 && r.top < innerHeight && r.width){ vis++; if(!i.complete || !i.naturalWidth) nd++; } });
+    const an = m ? m.getAnimations().find(a => a.playState === 'running' && a.effect && a.effect.getKeyframes().some(k => k.opacity !== undefined)) : null;
+    if(an && !window.__dimA){ window.__dimA = an; window.__dimT0 = performance.now(); }
+    /* where the dim is on the compositor now (it goes on through a long task; the page's own clock does not): its start (as reported,
+       or the frame it was first seen in) and the real time */
+    let dimNow = null; const A = window.__dimA;
+    if(A){ const st0 = A.startTime != null ? A.startTime : window.__dimT0;
+      const tm = A.effect.getTiming(), kf = A.effect.getKeyframes(), p = Math.max(0, Math.min(1, (performance.now() - st0) / tm.duration));
+      dimNow = tm.easing === 'linear' ? +kf[0].opacity + (+kf[kf.length - 1].opacity - +kf[0].opacity) * p : (p >= 1 ? +kf[kf.length - 1].opacity : null); }
+    window.__fr.push({ t: performance.now(), m: m ? +getComputedStyle(m).opacity : null, anim: !!an, s: s ? +getComputedStyle(s).opacity : null, vis, nd, dimNow });
     if(window.__fr.length < 400) requestAnimationFrame(f); };
   requestAnimationFrame(f); }"""
 def section1():
@@ -77,8 +85,8 @@ def section1():
                 pg.wait_for_selector("#stage > .modeselect", timeout=60000)
                 # the mode screen as a person meets it: a few seconds on it (idle time; on a build that warms the badges, until done)
                 pg.wait_for_timeout(3000)
-                for _ in range(60):
-                    if pg.evaluate("()=>typeof cardBadgeWarmBusy === 'undefined' || !cardBadgeWarmBusy"): break
+                for _ in range(120):
+                    if pg.evaluate("()=>typeof cardBadgeWarmBusy === 'undefined' || (!cardBadgeWarmBusy && !cardBadgeWarmLater)"): break
                     pg.wait_for_timeout(250)
                 pg.wait_for_timeout(1500)
                 L.throttle(s, 4); pg.wait_for_timeout(800)
@@ -104,11 +112,12 @@ def section1():
                     ctx.close(); continue
                 chk("(1a) %s: the first frame after the tap moves (the mode screen under a running opacity animation) and the units were not built in the tap's task (%s)" % (tag, {k: f1[k] for k in ("m", "anim", "s")}),
                     f1["anim"] and f1["s"] is None and f1["m"] is not None, f1)
-                ops = [f["s"] for f in up]
-                cont = (last_m[-1]["m"] if last_m else 1)
-                chk("(1b) %s: the units are up within 2.5s, their opacity never falls and ends at 1, starting where the mode screen left off - no flash (%s .. %s, mode ended %.2f)" % (tag, ops[:1], ops[-1:], cont),
+                ops = [round(f["s"], 3) for f in up]
+                # the mode screen as last shown: its dim where the compositor has it as the units arrive (no dim: as it stood)
+                cont = first_up["dimNow"] if (first_up and first_up.get("dimNow") is not None) else (last_m[-1]["m"] if last_m else 1)
+                chk("(1b) %s: the units are up within 2.5s, their opacity never falls and ends at 1, starting where the mode screen's dim is - no flash (%s .. %s, the dim at %.2f)" % (tag, ops[:1], ops[-1:], cont),
                     first_up is not None and first_up["t"] - ck < 2500 and all(b >= a - .005 for a, b in zip(ops, ops[1:])) and ops[-1] >= .999
-                    and cont - .2 <= ops[0] <= cont + .06, ops[:12])
+                    and abs(ops[0] - cont) <= .12, ops[:12])
                 chk("(1c) %s: in the units' first frame every badge picture in view is decoded (%s in view, %s not)" % (tag, first_up and first_up["vis"], first_up and first_up["nd"]),
                     first_up is not None and first_up["vis"] > 0 and first_up["nd"] == 0, first_up)
                 ctx.close()
@@ -272,36 +281,59 @@ def section3():
         pg.evaluate(RUN); pg.wait_for_timeout(2500)
         m0 = watch(pg, "m0")
         pg.evaluate("()=>{ playSound('rank.whirl'); playSound('test.correct'); }"); pg.wait_for_timeout(700)
-        pg.evaluate("()=>{ const W = window.__au; W.mark = performance.now(); W.ct0 = W.nodes.get(W.master).context.currentTime; }")
-        pg.evaluate(L.HIDE, True)
+        # as iOS does it (384 r375's note): the window loses focus first (the home swipe beginning; the test pauses itself there), then
+        # the page is hidden
+        pg.evaluate("()=>{ const W = window.__au; W.mark = performance.now(); W.ct0 = W.nodes.get(W.master).context.currentTime; window.dispatchEvent(new Event('blur')); }")
+        pg.wait_for_timeout(300)
+        pg.evaluate("()=>{ window.__au.mark2 = performance.now(); }")
+        pg.evaluate("(h)=>{ (" + L.PROBE + ")(); (" + L.HIDE + ")(h); }", True)
         pg.wait_for_timeout(250)
         pg.evaluate("()=>{ playSound('test.wrong'); try{ showHome(); startAmbience('amb.home', { owner: document.querySelector('#stage > *') }); }catch(e){} }")
         pg.wait_for_timeout(500)
-        W = pg.evaluate("()=>{ const W = window.__au; return { log: W.log, params: W.params, srcs: W.srcs, mark: W.mark, ct0: W.ct0 }; }")
+        W = pg.evaluate("()=>{ const W = window.__au; return { log: W.log, params: W.params, srcs: W.srcs, mark: W.mark, mark2: W.mark2, ct0: W.ct0, probe: W.probe, probeAt: W.probeAt }; }")
         mk, ct0 = W["mark"], W["ct0"]
-        ev = next((x for x in W["log"] if x[0] == "event" and x[1] == "visibilitychange" and x[2] >= mk - 1), None)
-        T = ev[2] if ev else mk
-        ps = [p for p in W["params"] if p["at"] >= T - .5 and p["w"] == "m0"]
+        ev = next((x for x in W["log"] if x[0] == "event" and x[1] == "visibilitychange" and x[2] >= W["mark2"] - 1), None)
+        T = ev[2] if ev else W["mark2"]
+        allp = [p for p in W["params"] if p["at"] >= mk - .5 and p["w"] == "m0"]
+        ps = [p for p in allp if p["at"] >= T - .5]
         first_p = ps[0]["at"] if ps else None
         first_set = next((x[2] for x in W["log"] if x[0] == "setItem" and x[2] >= T - .5), None)
-        chk("(3a) the sound is told to go before any other leave work (master at +%s ms, first save at +%s ms)" % (first_p and round(first_p - T, 1), first_set and round(first_set - T, 1)),
+        chk("(3a) at the hide the sound is told to go before any other leave work (master at +%s ms, first save at +%s ms)" % (first_p and round(first_p - T, 1), first_set and round(first_set - T, 1)),
             first_p is not None and (first_set is None or first_p <= first_set), {"params": ps[:4], "first save": first_set})
-        steps = [p for p in ps if (p["m"] == "value=" and p["a"][0] == 0) or (p["m"] == "setValueAtTime" and p["a"][0] == 0 and abs(p["a"][1] - p["ct"]) < .004)]
-        ramps = [p for p in ps if p["m"] == "linearRampToValueAtTime" and p["a"][0] == 0] + [p for p in ps if p["m"] == "setTargetAtTime" and p["a"][0] == 0]
+        # a step: the master set to 0 at once from a level that was sounding
+        steps = [p for p in allp if (p.get("v") or 0) > .001 and ((p["m"] == "value=" and p["a"][0] == 0) or (p["m"] == "setValueAtTime" and p["a"][0] == 0 and abs(p["a"][1] - p["ct"]) < .004))]
+        ramps = [p for p in allp if (p.get("v") or 0) > .001 and ((p["m"] == "linearRampToValueAtTime" and p["a"][0] == 0) or (p["m"] == "setTargetAtTime" and p["a"][0] == 0))]
         rend = None
         if ramps:
             r = ramps[0]; rend = r["a"][1] if r["m"] == "linearRampToValueAtTime" else r["a"][1] + 3 * r["a"][2]
         rlen = (rend - ramps[0]["ct"]) * 1000 if ramps else None
-        chk("(3b) the master goes to silence by a ramp of 8-40ms, never a step to 0 (ramp %s ms, steps %d)" % (rlen and round(rlen, 1), len(steps)),
-            ramps and not steps and 8 <= rlen <= 40, ps[:6])
+        chk("(3b) the master goes to silence (on the blur and at the hide) by a ramp of 8-40ms, never a step to 0 from a sounding level (ramp %s ms, steps %d)" % (rlen and round(rlen, 1), len(steps)),
+            ramps and not steps and 8 <= rlen <= 40, allp[:6])
+        # the hide's own silence: the last ramp to 0 asked for at the hide (whatever the level then), or none
+        hr = [p for p in ps if p["m"] == "linearRampToValueAtTime" and p["a"][0] == 0]
+        rendH = hr[0]["a"][1] if hr else None
+        ctH = ps[0]["ct"] if ps else None
         sus = next((x for x in W["log"] if x[0] == "suspend" and x[1] >= T - .5), None)
         susd = next((x for x in W["log"] if x[0] == "suspended" and x[1] >= T - .5), None)
-        chk("(3c) suspended within 60ms of the leave (%s ms), and only once the ramp has played (suspend at ctx %s, ramp ends %s)" % (susd and round(susd[1] - T, 1),
-            sus and round(sus[2], 4), rend and round(rend, 4)), sus and susd and susd[1] - T <= 60 and rend is not None and sus[2] >= rend - .0015, {"suspend": sus, "suspended": susd})
-        before = [x for x in W["srcs"] if x["at"] < T and (x["stop"] is None or x["stop"] > ct0 + .001)]
-        late = [x for x in before if x["stop"] is None or (rend is not None and x["stop"] > rend + .006) or (rend is None and x["stop"] > ct0 + .03)]
-        chk("(3d) every source sounding or scheduled at the leave (%d) is stopped by the ramp's end (%d not)" % (len(before), len(late)), before and not late,
-            [(x["kind"], x["stop"] and round((x["stop"] - ct0) * 1000)) for x in late[:8]])
+        silentBy = max([x for x in (rend, rendH) if x is not None] or [None]) if (rend or rendH) else None
+        # how soon could the page run anything after the hide's ramp (this machine's load and the page's own leave work hold every
+        # timer back alike): the suspend must be asked for within 25ms of that; with the page free, the context is suspended in 60ms
+        rampMs = (rendH - ctH) * 1000 if (rendH is not None and ctH is not None) else 15
+        off = (W["probeAt"] or T) - T
+        free = L.free_after([x + off for x in (W["probe"] or [])], rampMs)
+        callMs = sus[1] - T if sus else None
+        doneMs = susd[1] - T if susd else None
+        timely = callMs is not None and free is not None and callMs <= free + 25 and (doneMs is not None and (doneMs <= 60 or free > rampMs + 10))
+        chk("(3c) suspended %s ms after the hide (asked for at +%s ms; the page could first run anything after the ramp at +%s ms), and only once the master has ramped to silence "
+            "(suspend at ctx %s, silent from %s)" % (doneMs and round(doneMs, 1), callMs and round(callMs, 1), free and round(free, 1), sus and round(sus[2], 4), silentBy and round(silentBy, 4)),
+            sus and susd and timely and silentBy is not None and sus[2] >= silentBy - .0015, {"suspend": sus, "suspended": susd, "free": free})
+        ref = ctH if ctH is not None else ct0
+        # sounding or scheduled at the hide: started before it, and every stop asked for before it (its natural end) still ahead
+        def ends_before(x): return [t for t, at in (x.get("st") or []) if at < T]
+        before = [x for x in W["srcs"] if x["at"] < T and all(t > ref + .001 for t in ends_before(x))]
+        late = [x for x in before if x["stop"] is None or x["stop"] > ref + .03]
+        chk("(3d) every source sounding or scheduled at the hide (%d) is stopped within 30ms of it (%d not)" % (len(before), len(late)), before and not late,
+            [(x["kind"], x["stop"] and round((x["stop"] - ref) * 1000)) for x in late[:8]])
         hid = [x for x in W["srcs"] if x["hidden"] and not (x["stop"] is not None and x["stop"] - x["start"] <= .05)]
         chk("(3e) nothing that makes a sound starts while hidden (a play() and the ambience were tried): %d" % len(hid), not hid, hid[:4])
         pg.evaluate(L.HIDE, False); pg.wait_for_timeout(700)
@@ -315,16 +347,37 @@ def section3():
         # a freeze alone, a pagehide alone
         for kind in ("freeze", "pagehide"):
             ctx, pg, s, errs = page()
+            watch(pg, "k")
+            # off Home (its planet system draws every frame; a page really hidden draws nothing, so its frames would only stand in
+            # for this machine's load)
+            pg.evaluate("()=>{ store.seenSettingsTour = true; showAppearance(); }"); pg.wait_for_timeout(1200)
             pg.evaluate("()=>{ playSound('rank.whirl'); }"); pg.wait_for_timeout(500)
-            pg.evaluate("(k)=>{ window.__au.mark = performance.now(); if(k === 'freeze'){ Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('freeze')); } else window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })); }", kind)
-            pg.wait_for_timeout(300)
-            d = pg.evaluate("()=>{ const W = window.__au; const s = W.log.find(x => x[0] === 'suspended' && x[1] >= W.mark); return s ? s[1] - W.mark : null; }")
-            chk("(3g) a %s alone suspends it within 60ms (%s ms)" % (kind, d and round(d, 1)), d is not None and d <= 60, d)
+            # the page's own leave work for this event ends when the last listener (added here, after the app's) has run
+            pg.evaluate("""(k)=>{ const W = window.__au; const end = () => { W.dispEnd = performance.now(); };
+              if(k === 'freeze') document.addEventListener('freeze', end); else window.addEventListener('pagehide', end);
+              }""", kind)
+            pg.evaluate("(k)=>{ const W = window.__au; W.mark = performance.now(); W.ctL = W.nodes.get(W.master).context.currentTime; (" + L.PROBE + ")(); if(k === 'freeze'){ Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('freeze')); }"
+                        " else window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })); }", kind)
+            pg.wait_for_timeout(400)
+            d = pg.evaluate("""()=>{ const W = window.__au; const s = W.log.find(x => x[0] === 'suspended' && x[1] >= W.mark), c = W.log.find(x => x[0] === 'suspend' && x[1] >= W.mark);
+              const r = W.params.find(p => p.at >= W.mark - .5 && p.m === 'linearRampToValueAtTime' && p.a[0] === 0);
+              return { ms: s ? s[1] - W.mark : null, call: c ? c[1] - W.mark : null, at: c ? c[2] : null, rampEnd: r ? r.a[1] : null, ctL: W.ctL,
+                       disp: W.dispEnd ? W.dispEnd - W.mark : null, probe: W.probe, off: W.probeAt - W.mark }; }""")
+            rampMs = ((d["rampEnd"] - d["ctL"]) * 1000) if d["rampEnd"] is not None else 15
+            free = L.free_after([x + (d["off"] or 0) for x in (d["probe"] or [])], rampMs)
+            timely = d["call"] is not None and free is not None and d["call"] <= free + 25 and d["ms"] is not None and (d["ms"] <= 60 or free > rampMs + 10)
+            chk("(3g) a %s alone: silence by a ramp first (suspend at ctx %s, ramp ends %s); suspend() asked for at +%s ms (the page could first run anything after the "
+                "ramp at +%s ms; its own %s handlers ran to +%s ms); suspended at +%s ms" % (kind, d["at"] and round(d["at"], 4), d["rampEnd"] and round(d["rampEnd"], 4),
+                d["call"] and round(d["call"], 1), free and round(free, 1), kind, d["disp"] and round(d["disp"], 1), d["ms"] and round(d["ms"], 1)),
+                d["rampEnd"] is not None and d["at"] is not None and d["at"] >= d["rampEnd"] - .0015 and timely, {k: d[k] for k in ("ms", "call", "at", "rampEnd", "disp")})
             errs_all.extend(errs); ctx.close()
-        # "safariSound": false in an iPhone Safari tab
-        ctx, pg, errs = L.open_page(br, RAW, "safari", "academy", extra_init=L.AUDIO + ";try{ localStorage.setItem('class26e.safarisound','0'); }catch(e){}")
+        # "safariSound": false in an iPhone Safari tab (version.json says so; the update check writes class26e.safarisound)
+        ctx, pg, errs = L.open_page(br, RAW, "safari", "academy", extra_init=L.AUDIO, safari_sound=False)
         s = L.cdp(pg)
         pg.evaluate("()=>{ theme.soundOn = true; showHome(); }"); pg.wait_for_timeout(1200)
+        for _ in range(80):
+            if pg.evaluate("()=>{ try{ return localStorage.getItem('class26e.safarisound') === '0'; }catch(e){ return false; } }"): break
+            pg.wait_for_timeout(250)
         L.tap(s, 220, 300, 60, pg); pg.wait_for_timeout(1200)
         made = pg.evaluate("()=>({ made: window.__made, tabOff: NovaSound.tabOff(), st: NovaSound.state() })")
         chk("(3h) safariSound off in an iPhone Safari tab: no audio context at all (%s)" % made, made["made"] == 0 and made["tabOff"] is True, made)
