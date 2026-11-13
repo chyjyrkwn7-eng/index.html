@@ -39434,3 +39434,57 @@ GATES ON 384.93 (one at a time, on a loaded shared machine; the tree merged with
 WHAT ONLY HIS PHONE CAN CONFIRM: that 16pt + 2pt under the inset is enough on the glass (from one recording at his 85% zoom; the band could differ by a point or two on another screen or iOS version - --edge-e is one number to change); that the titles read as sharp at rest; the chat button with Home in the first frame (WebKit's paint of a splash fading over Home); the rubber band still carries a page up into the band for the length of a bounce (unchanged, his call in 384.82).
 SWEEP: sweep-layout, the full matrix: 138/144 combinations clean. The six that are not (iPhone Air, 16 Pro Max and 17 Pro Max @85% on their side, installed and bars-over: Choose your mode's cards 12px under the side insets) fail identically on main 384.92 (re-run there: the same two lines, the same numbers) - not this build's; left for its own fix.
 384.95 GATES (the tree merged with main 384.94, a82cdea; one at a time, TMPDIR=/dev/shm): check-js 14 blocks ALL PASS; the page console (check-b384-toprow's (7), every screen, both classes, four devices) no page error; check-b384-toprow on the Pro Max, the Pro Max at 85%, the SE and the iPad Pro 11" portrait, both classes (74 screens and 26 transitions each): 248 checks pass, one failed once - SE academy (4) "flashcards scrolls 14 (was 0)" - and passed on two re-runs of that screen against main; measured alone the SE's flashcards are identical on main 384.94 and this build (scroll 58, every box the same), so it was the sequence, not the layout; check-b384-chatspot 35/35; check-b384-chatfirst ALL PASS (0ms, phone and iPad); check-b384-top383 63/63; check-b384-tabhotfix 44/44; check-b384-homescroll 25/25; check-b384-classbtn ALL PASS - the class button is option C pixel for pixel (mean 0.00 max 0 on the Pro Max and the iPad, 0.04 / 2 on the laptop, both classes): the top-row move does not touch it (it sits at the bottom of Home on a phone, and from 40rem at sat + .75rem, which no band changes); check-b384-casescroll ALL PASS (28); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (1270 elements, 0 off centre; listed as moving while measured: the Fire Code code summaries (as on main) and once the chat button on a Virtual Room screen - a per-frame probe on that screen holds it at 372,80 from the first frame (main moves it 74 -> 83.6, 372 -> 376 three frames in)).
+
+### 384.113 (closedeyes)
+
+Madison, on a classmate's card opened from the Leaderboard (Fire Code; the purple slime climbing out of a drum, asleep, with its
+"z"): "His eyes close just look missing. Fix that."
+
+THE CHARACTER: the Toxic Spill - Fire Code's drawing of the `astronaut` id (kind `fcspill`, IFC_CHAR_LOOK; the academy's Orion is the
+same id). A violet ooze with three acid-green eyes in dark sockets, a toothed grin, drips over a yellow drum.
+
+WHAT MADE THE EYES VANISH:
+- ASLEEP (char-sleep, the card's "z" pose): `.cx-eyes` goes to opacity 0 and `.cx-eyes-closed` to 1. Its closed eyes were
+  closedEyes() curves in #1E0434 drawn on sockets of #24063F - the same colour - so what was left was three empty dark holes.
+- ITS BLINK: cx-blink squashes the whole `.cx-eyes` group (scaleY .1, transform-box fill-box) about the group's middle. Its three eyes
+  sit at three heights, so the top eye's line was carried down out of its socket onto the skin and the two big ones' to their
+  sockets' top edges: holes again, every 6s, in the flip-books too.
+- THE SAME FAULT ELSEWHERE (the audit, below): the Comet (Fire Code `genesis`, `fccomet`) - eyes of light in dark slots, closed eyes a
+  #0E2A52 curve on #0A1E3E sockets: asleep, two empty slots. And EVERY character's blink is the same scaleY(.1) squash: a dark eye on
+  a light face is still a line there (the Ghost, the Bear), but a lit or pale eye is a hairline or nothing at the bottom of the blink
+  (seen: Frost, Oracle, Inferno, the Ronin's neon slits, the Hacker's dots behind his code glasses; the full list is the gate's
+  --against run, below).
+
+WHAT CHANGED (index.html):
+1. THE TOXIC SPILL'S LIDS: its closed eyes are drawn as lids - per socket a disc of the ooze's own gradient (the skin come down over
+   the eye), a darker rim for the lid's swell (#5A189E, .24), a small gloss, and the lash line: a relaxed downward arc in #1E0434
+   (.62 on the two big eyes, .5 on the small one), one `M x y Q cx cy x1 y1` path per eye like closedEyes() draws, so hfxFaceOf and the
+   underwater hold still read the eyes off it. Shown asleep (as before) and at the bottom of each blink (3.).
+2. ITS BLINK, EYE BY EYE: each eye in its own `cx-eyeball` group inside `.cx-eyes` (still ONE eye group - hfxRxEyeCopies reads its
+   children); CSS moves the idle blink from the group to the eyeballs for `.cx-k-fcspill`, so each squashes about its own middle.
+3. EVERY BLINK SHUTS, IT DOES NOT EMPTY: `.char-live:not([class*="char-react-"]) .avatarchar-svg .cx-eyes-closed` runs cx-blink-lid on
+   the blink's own clock (--cx-blink / --cx-blink-at): the character's own closed eyes are on while cx-blink has the eye under about
+   .6 of its height (93.9% to 96.35%, a .6% fade either side). Idle only - a reaction moves the eyes its own way (and the generic
+   perfect/great ones show their own closed eyes); the retired `poseidon` / `spartan` kinds, whose eyes never blink, keep none; asleep,
+   the sleep rule's id-weight `:is(#cx-none, ...)` still wins (lids on and still). Only opacity animates; no filter.
+4. THE COMET: its sockets shut under plates of its own ice (the `ice` gradient, edged #E8F8FF .12 like its other planes), with a
+   #0E2A52 lash line (.5) following each socket's slant, again one M..Q path per eye.
+5. CHAR_ANIM_VER c5 -> c6. A sheet is keyed by a hash of its DRAWING; (3.) changes no drawing but every character's motion, so only the
+   version makes every flip-book re-record (and clears the old sheets: charAnimCachePut drops every /__ch/ path not under the current
+   version). charFlipAttach and the recorder are untouched.
+LEFT AS THEY ARE, ON PURPOSE: the Sheriff (academy `poseidon`, kind `sheriff`) tips his hat brim over his eyes asleep (cx-fx-shades) -
+covered, not missing; the Ronin's neon flick (cx-ronin2-flick, opacity to .05 for a moment) is a light flickering, not an eye
+closing; the Clown's wink squashes its right eye to a line on the black diamond. Void, the Koi and the Drone Pilot draw no eyes that
+close (an empty eye group).
+
+GATE (new): tools/check-b384-closedeyes.py - every character the page keeps, on BOTH class pages, drawn live:
+  A the whole idle cycle on one shared clock (120 steps over the longest eye loop + the exact bottom of each blink); the frames where
+    the eyes' HEIGHT is under half (a dimming or flickering light does not count) are shot; B asleep (char-sleep + char-live);
+  each eye's region found by what it is (open eyes shown vs open and closed eyes hidden, same pose and moment); in each shut eye the
+  LID LINE: pixels in the drawing's own lid colour (its closed eyes' line stroke) running as a LINE (no thicker than .45 of the eye or
+  one drawing unit, something else right above and below, standing off both by >= 40 RGB) across >= 40% of the eye's width, more than
+  the bare face already has there - an empty socket is one thick dark run, so it fails; an eye still open in a winking frame is skipped;
+  a sleep pose covering the eyes (< 45% in view: the Sheriff) is reported, not asked;
+  C asleep at a 42px row (126 device px): the lid line across >= 35%, standing off >= 28;
+  D CHAR_ANIM_VER is not c5; F the app's own recorder (recordCharFrames) makes the Toxic Spill's (Fire Code) and Frost's (academy)
+  42px sheets, and the sheet frame whose eyes differ most from its usual frame shows the lid line in every eye; E no page error.

@@ -21360,6 +21360,20 @@
        eyes"; they blink now like everyone else. Only the retired kinds
        stay as they were. */
     .char-live .avatarchar-svg :is(.cx-k-poseidon, .cx-k-spartan) .cx-eyes{ animation:none; }
+    /* A BLINK SHUTS THE EYES, IT DOES NOT EMPTY THEM (384.113 closedeyes): "His eyes close just look missing. Fix that." cx-blink
+       squashes the open eyes to a tenth of their height - a dark eye on a light face is still a line there, but a lit eye (Frost,
+       Oracle, Inferno, the Ronin's slits, the Hacker's dots behind his glasses), a pale one, or one in a dark socket (the Toxic
+       Spill) is a hairline or nothing, and the face looks eyeless for the blink. So every character's own closed eyes (closedEyes():
+       its lid line, in its own colour and weight, where its eyes are) come down for the bottom of each blink, on the blink's own clock
+       (cx-blink-lid: on while the eye is under about .6 of its height). Only in the idle loop: a reaction moves the eyes its own way
+       (and draws its own closed eyes where it has them), and the two kinds whose eyes never blink keep no lid. Asleep, the sleeping
+       pose's rule (an id-weight :is) holds the closed eyes on and still. */
+    .char-live:not([class*="char-react-"]) .avatarchar-svg .cx-eyes-closed{ animation:cx-blink-lid var(--cx-blink, 6s) var(--cx-blink-at, 0s) linear infinite; }
+    .char-live:not([class*="char-react-"]) .avatarchar-svg :is(.cx-k-poseidon, .cx-k-spartan) .cx-eyes-closed{ animation:none; }
+    /* (384.113) the Toxic Spill's three eyes sit at three heights, so squashing the whole eye group about its middle carried the top
+       eye down out of its socket: each eye blinks about its own middle (cx-eyeball), on the same clock */
+    .char-live .avatarchar-svg .cx-k-fcspill .cx-eyes{ animation:none; }
+    .char-live .avatarchar-svg .cx-k-fcspill .cx-eyeball{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-tail1{ animation:cx-flutter 1.7s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-tail2{ animation:cx-flutter-b 1.7s ease-in-out -.55s infinite; }
     .char-live .avatarchar-svg .cx-fx-jewel .cx-glint{ animation:cx-glint 4.6s ease-in-out infinite; }
@@ -22323,6 +22337,9 @@
   [data-reduce-motion="true"] .avatarchar-svg *{ animation:none !important; }
 
   @keyframes cx-blink{ 0%, 93%, 97.5%, 100%{ transform:none; } 95%{ transform:scaleY(.1); } }
+  /* (384.113) the lid over a blink: on while cx-blink has the eye under about .6 of its height (93.9% to 96.4%), so a socket is
+     never seen empty; a quick fade either side */
+  @keyframes cx-blink-lid{ 0%, 93.3%, 96.9%, 100%{ opacity:0; } 93.9%, 96.35%{ opacity:1; } }
   /* Build 241's pendulums: each runs `alternate`, so from and to are the
      two ends of one swing and nothing ever jumps back to the start. */
   @keyframes cx-live-breathe{ from{ transform:none; } to{ transform:translateY(-.3px) scale(1.016, 1.03); } }
@@ -62550,15 +62567,35 @@ var IFC_CHAR_DRAW = {
     EYES.forEach(([x, y, r]) => k.add("circle", { cx: x, cy: y, r: fcF(r * 1.9), fill: "url(#" + glowId + ")" }));
     k.close();
     EYES.forEach(([x, y, r]) => k.add("circle", { cx: x, cy: y, r: fcF(r + .3), fill: "#24063F" }));
+    /* (384.113 closedeyes) each eye in a group of its own (cx-eyeball), so a blink squashes it about its OWN middle: the three sit at
+       three heights, and squashing the whole eye group about its middle carried the top eye down out of its socket */
     k.open("cx-eyes");
     EYES.forEach(([x, y, r]) => {
+      k.open("cx-eyeball");
       k.add("circle", { cx: x, cy: y, r, fill: "#E2FF6A" });
       k.add("path", { d: "M" + fcF(x - r) + " " + y + " A" + r + " " + r + " 0 0 0 " + fcF(x + r) + " " + y + " A" + r + " " + fcF(r * .62) + " 0 0 1 " + fcF(x - r) + " " + y + " Z", fill: "#7AB80E", opacity: ".45" });
       k.add("ellipse", { cx: fcF(x + r * .12), cy: fcF(y + r * .04), rx: fcF(r * .22), ry: fcF(r * .78), fill: "#120420" });
       k.add("circle", { cx: fcF(x - r * .4), cy: fcF(y - r * .42), r: fcF(r * .2), fill: "#FFFFFF" });
+      k.close();
     });
     k.close();
-    k.closedEyes(EYES.map(([x, y, r]) => [x, fcF(y + .2), fcF(r * .85)]), "#1E0434", .55);
+    /* CLOSED, THE OOZE'S OWN LIDS (384.113 closedeyes): "His eyes close just look missing. Fix that." The closed eyes were a #1E0434
+       curve on a #24063F socket - asleep (and through a blink) the open eyes went and left three empty holes. Each socket is shut by a
+       lid of the ooze itself (its own gradient, so it is the skin come down over the eye), its swell a darker rim, and the lash line
+       a relaxed downward arc in the drawing's own dark across it. The lash line stays one M..Q path per eye, the shape closedEyes()
+       draws, so the hundo effects still find the eyes by it (hfxFaceOf). Shown asleep, and at the bottom of each blink (CSS). */
+    k.openHidden("cx-eyes-closed");
+    EYES.forEach(([x, y, r]) => {
+      const R = fcF(r + .36);
+      k.add("circle", { cx: x, cy: y, r: R, fill: ooze });
+      k.add("circle", { cx: x, cy: y, r: fcF(R - .12), fill: "none", stroke: "#5A189E", "stroke-width": ".24", opacity: ".7" });
+      k.add("circle", { cx: fcF(x - r * .28), cy: fcF(y - r * .5), r: fcF(r * .16), fill: "#FFFFFF", opacity: ".55" });
+    });
+    EYES.forEach(([x, y, r]) => {
+      const w = fcF(r * .92), yy = fcF(y + r * .12);
+      k.add("path", { d: "M" + fcF(x - w) + " " + yy + " Q" + x + " " + fcF(yy + w * .62) + " " + fcF(x + w) + " " + yy, fill: "none", stroke: "#1E0434", "stroke-width": r > 2 ? ".62" : ".5", "stroke-linecap": "round" });
+    });
+    k.close();
     /* the grin: teeth along the top, two fangs up from below, drool off the corner */
     const q = (t, a, c, b) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * c + t * t * b;
     k.open("cx-mouth");
@@ -63155,7 +63192,20 @@ var IFC_CHAR_DRAW = {
     });
     k.close();
     k.close();
-    k.closedEyes([[16.8, 22.5, 1.6], [23.2, 22.5, 1.6]], "#0E2A52", .5);
+    /* CLOSED, PLATES OF ICE OVER THE SOCKETS (384.113 closedeyes): the closed eyes were a #0E2A52 curve drawn on #0A1E3E sockets, so
+       asleep the light went out and left two empty dark slots - the Toxic Spill's fault. Each socket is shut by a plate of the head's
+       own ice (its gradient, edged like the other planes), and the lash line - the same M..Q curve closedEyes() draws, which the hundo
+       effects read the eyes by - runs along it, following the socket's slant. */
+    k.openHidden("cx-eyes-closed");
+    [1, -1].forEach(s => {
+      const X = v => F(20 + (v - 20) * s);
+      k.add("path", { d: "M" + X(14.05) + " 20.85 L" + X(19.15) + " 22.3 L" + X(18.7) + " 23.55 L" + X(14.5) + " 22.75 Z", fill: ice, stroke: "#E8F8FF", "stroke-width": ".12", "stroke-linejoin": "round" });
+    });
+    [1, -1].forEach(s => {
+      const X = v => F(20 + (v - 20) * s);
+      k.add("path", { d: "M" + X(14.6) + " 22.05 Q" + X(16.8) + " 23.55 " + X(18.85) + " 22.95", fill: "none", stroke: "#0E2A52", "stroke-width": ".5", "stroke-linecap": "round" });
+    });
+    k.close();
     /* a hard flat mouth, one corner pulled */
     k.open("cx-mouth");
     k.add("path", { d: "M17.6 27.2 L21.6 27.1 Q22.4 26.9 22.8 26.4", fill: "none", stroke: "#0E2A52", "stroke-width": ".55", "stroke-linecap": "round", "stroke-linejoin": "round" });
@@ -99742,7 +99792,10 @@ const CHAR_ANIM_COLS = 12;
    whenever character CSS motion changes without the drawing changing. */
 /* c4 (build 314): the ultimates' motion was toned down and the edges
    of every drawing changed (the .avatarchar-svg mask). */
-const CHAR_ANIM_VER = "c5";
+/* c6 (384.113 closedeyes): closed eyes are drawn, never just gone. Every character's closed eyes now come down for the bottom of each
+   blink (new CSS, cx-blink-lid - the drawings did not change, so only this version re-records their sheets), the Toxic Spill's eyes
+   blink one by one under lids of its own ooze, and the Comet's sockets shut under plates of ice. */
+const CHAR_ANIM_VER = "c6";
 const CHAR_FLIP_MAX_CSS = 80;
 /* how many board rows may play their live drawing while their sheets are made (327z13) */
 const CHAR_FLIP_WAIT_MAX = 6;
@@ -122940,7 +122993,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.113";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
