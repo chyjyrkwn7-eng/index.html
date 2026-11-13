@@ -173,9 +173,15 @@ def dist(a, b):
 def near_px(a, b, t=1.01):
     return abs(float(str(a).replace("px", "")) - float(str(b).replace("px", ""))) <= t
 
+class Patient:
+    """the browser, with a page load allowed two minutes (the machine these run on is shared and often loaded)"""
+    def __init__(self, b): self.b = b
+    def new_context(self, **kw):
+        c = self.b.new_context(**kw); c.set_default_navigation_timeout(120000); c.set_default_timeout(120000); return c
+
 def run(br, dev, cls, accent="", reduce=False, states=("right", "wrong")):
     tag = "%s %s%s%s" % (cls, dev, " " + accent if accent else "", " reduce-motion" if reduce else "")
-    pg = G.open_dev(br, dev, [G.seed_init(cls)], dsf=1)
+    pg = G.open_dev(Patient(br), dev, [G.seed_init(cls)], dsf=1)
     pg.wait_for_timeout(500); G.clear_popups(pg)
     ref = pg.evaluate(RESULTS)
     chk("[%s] a real results screen to read the run title and card off" % tag, bool(ref), ref)

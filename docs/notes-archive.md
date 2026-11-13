@@ -39434,3 +39434,85 @@ GATES ON 384.93 (one at a time, on a loaded shared machine; the tree merged with
 WHAT ONLY HIS PHONE CAN CONFIRM: that 16pt + 2pt under the inset is enough on the glass (from one recording at his 85% zoom; the band could differ by a point or two on another screen or iOS version - --edge-e is one number to change); that the titles read as sharp at rest; the chat button with Home in the first frame (WebKit's paint of a splash fading over Home); the rubber band still carries a page up into the band for the length of a bounce (unchanged, his call in 384.82).
 SWEEP: sweep-layout, the full matrix: 138/144 combinations clean. The six that are not (iPhone Air, 16 Pro Max and 17 Pro Max @85% on their side, installed and bars-over: Choose your mode's cards 12px under the side insets) fail identically on main 384.92 (re-run there: the same two lines, the same numbers) - not this build's; left for its own fix.
 384.95 GATES (the tree merged with main 384.94, a82cdea; one at a time, TMPDIR=/dev/shm): check-js 14 blocks ALL PASS; the page console (check-b384-toprow's (7), every screen, both classes, four devices) no page error; check-b384-toprow on the Pro Max, the Pro Max at 85%, the SE and the iPad Pro 11" portrait, both classes (74 screens and 26 transitions each): 248 checks pass, one failed once - SE academy (4) "flashcards scrolls 14 (was 0)" - and passed on two re-runs of that screen against main; measured alone the SE's flashcards are identical on main 384.94 and this build (scroll 58, every box the same), so it was the sequence, not the layout; check-b384-chatspot 35/35; check-b384-chatfirst ALL PASS (0ms, phone and iPad); check-b384-top383 63/63; check-b384-tabhotfix 44/44; check-b384-homescroll 25/25; check-b384-classbtn ALL PASS - the class button is option C pixel for pixel (mean 0.00 max 0 on the Pro Max and the iPad, 0.04 / 2 on the laptop, both classes): the top-row move does not touch it (it sits at the bottom of Home on a phone, and from 40rem at sat + .75rem, which no band changes); check-b384-casescroll ALL PASS (28); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (1270 elements, 0 off centre; listed as moving while measured: the Fire Code code summaries (as on main) and once the chat button on a Virtual Room screen - a per-frame probe on that screen holds it at 372,80 from the first frame (main moves it 74 -> 83.6, 372 -> 376 three frames in)).
+
+### 384.100 (dailyq)
+
+Branch claude/b384-dailyq, from main 384.94 (a82cdea), main 384.95 (562b1ed, polish86's top row) merged in. NOT merged: waiting for
+the owner's go. Madison, on the daily question (the one-question run started by `startDailyQuestion()`): "The daily question is good
+but at the very top it needs like a 'daily question' word or something. I also don't like the box at the bottom after you answer, I
+don't think it's been updated to the look either. But I also don't like it looks anyways. Needs to be better. Ensure this is good to go."
+
+WHAT WAS THERE:
+- The top: the test row's mode label ("Daily question" from `runModeTitle()`, build 327 r8) - `.test-modelabel`, .85rem, --soft grey,
+  the size and colour of a test's "Drill". It read as nothing. Under it, centred, "One question, one attempt." (`.qnum-daily-sub`).
+- The box (`.dailyq-outro`, 327 round 8's "grade box + XP box in one card"): one glass card with a green or red gradient wash, a
+  coloured rim, three glows (outer, inset ring, inset pool), a glowing filled disc with a ✓ / ✕ glyph, "Correct" / "Not this time" in a
+  white-to-colour gradient text, "1 / 1 right on your one try" / "0 / 1 one try a day", an XP EARNED block ("Daily question +200",
+  "Total +200 XP" with a blue glow; "No XP today" on a miss) and "Come back tomorrow for the next daily question." / "Come back
+  tomorrow and try again." - hard-coded hexes and rgba() throughout. The clean look (383) had taken this treatment off every other
+  results card; this one was missed. It did not say what you picked, what the right answer was, the streak, or when the next one
+  comes (and "come back tomorrow" was wrong before 5pm, when the next one is today).
+- And a bug seen on the way: the pinned header's paper (`.wrap.test-pinned > .top::before`) is solid to 70% of its box. A test's
+  row is Pause's 44px tall so that covers it; the daily's row is the label alone (20px), so once the answer scrolled the page up to
+  the box, the question ran through the bottom of the title and under the chat button (which keeps Home's corner, lower than the row).
+
+WHAT IT IS NOW:
+1. THE TITLE is the run screens' title - the one "Test results" wears on a results screen (1.12rem, 800, --ink, .005em): the
+   results rule's selector list now carries `.wrap:has(.qpanel.is-dailyq) > .top > .test-modelabel:not(:empty)`. Same element, same
+   row, same place (left, on the safe area's line; with 384.95 the row comes down onto the line under the blur by 384.93's own rule
+   for a header row with no Pause - the daily's and a results screen's together, measured equal: 77px on an installed Pro Max, 24 on
+   an iPad). Clear of the chat button (its words end 224px short of it on a Pro Max).
+2. THE HEADER BAND: the daily's pinned row paints its paper solid down to the chat button's foot and fades over .9rem after it
+   (`[data-layout="modern"] .wrap.test-pinned:has(.qpanel.is-dailyq) > .top::before`, bottom `-.9rem - var(--dq-cap)`).
+   `syncDailyCap()` measures the live button against the row (its place moves with the device, the safe area and 384.93's line) on
+   every stage change, resize and dock sync; unmeasured it falls back to the row's own foot.
+3. THE RESULT (`buildDailyOutro(qi, gotIt, streakWas)`, called from summarize()'s daily branch) is TWO OF THE RESULTS SCREEN'S
+   CARDS: `background:var(--surface-1)` (the clean card off Home), no border, shadow, blur or image; the results cards' radius (18 /
+   20px) and padding; the results' type roles and XP blue (`.rs-screen, .dailyq-outro` now share the --xp and --rs-* tokens).
+   - Card 1, the verdict: kicker "Result" (.rs-kicker), a filled mark (an SVG tick / cross in --paper on the colour) and "Correct" /
+     "Incorrect" (2.3rem, 2.6 on a tablet) in the question screen's own colours - `var(--right)` / `var(--wrong)`, the same tokens
+     the choices' bar, rim and tick use. Then the review's own answer rows (`.rs-q-answers`: "Your answer" and, on a miss, "Correct
+     answer", as a test's review shows a missed question; tinted from the tokens, no rim) and the question's reference (`.rs-q-ref`).
+     A Fire Code question's code card (buildIfcRef: the explanation, Show the code and its pictures) stays where the app shows it,
+     between the choices and the result.
+   - Card 2, what it did, the results' lines (`.rs-xpline`, a label and its value, a caption under): XP earned (+200 XP in the XP
+     blue; 0 XP in --soft on a miss), Daily streak (store.dailyCorrectStreak: "4 in a row" / "Reset to 0", with "It was 3 in a row."
+     on a miss and "Total answered right: N." - dailyCorrectCount(), the Detective's / Inspector's count, not named: 317's progress
+     banner stays gone), Next question ("Today at 5pm" / "Tomorrow at 5pm" from nextDailyResetMs(), "In 3h 4m" under it - the done
+     banner's own arithmetic; kept current every 30s while the card is up, "Ready now" if 5pm passes). Hairlines between the rows.
+   - Copy: plain - no "Not this time", no "1 / 1 right on your one try".
+   - Class names the gates read are kept: `.dailyq-outro` (the whole), `-head` (the verdict word), `-xp` (the XP figure, "+200 XP"),
+     `-next` (when the next one comes).
+   - Motion (transform/opacity only): the verdict card lands (.5s), the second card fades in at .75s, its rows at .9 / 1.15 / 1.45s
+     (the XP figure with its row: check-behaviour b320a reads it); Exit still rises at 1.9s, after the last row. Reduce motion: none.
+4. THE AUTO-SCROLL (summarize: bring the box's foot above the Exit pill) now stops at the verdict: where the result is taller than
+   the room between the header band and the pill (an iPhone on its side: 293px of room, a 416-482px result) its top stops 12px under
+   the band and the rest is a scroll away, instead of "Correct" / "Incorrect" going off the top to show the card's foot.
+- Unchanged on purpose: the Exit pill ("Exit to main menu", Submit answer's spot, rises at 1.9s) is the one way back; the done banner
+  on Home ("Done for today - The next one is in 11h 3m, at 5pm", already the app's banner look); "One question, one attempt."; no way
+  out of an unanswered daily question but answering (Escape only quits when Pause is up; there is no timer - startTimer returns
+  early for it) - as before, not asked.
+GATE: NEW `tools/check-b384-dailyq.py` (see its docstring) - T1 the title (the results title's face, size, weight, colour and place,
+read off a real one-question run's results on the same device; below the safe area, above the page, its words clear of the chat
+button); T2 the header band solid paper from under the title to the chat button's foot with the question scrolled under it (pixels);
+B1 every card of the result is var(--surface-1) as the page resolves it (a probe), no image / border / shadow / blur, a results card's
+radius and padding; B2 inside the width, whole between the header and the pill where it fits (else its verdict from under the
+header), the pill 44px+ and uncovered at five points, a click lands on Home; R1 the mark and the word in the question screen's own
+right / wrong colours (a right choice's rim, a wrong pick's rim) and far apart; R2 the answer given (and on a miss the right one, the
+choices' own text), the XP figure = the XP booked, the streak / the streak it ended / the count / the hours to the next as numbers;
+M1 reduce motion: all of it up at 150ms; L1 opening it again starts nothing and puts up the done banner; E no page errors. Pro Max,
+Pro Max on its side, SE, iPad Pro 11" both ways; both classes; right and wrong; Sapphire; reduce motion. `--quick`, `--only DEV`,
+`--against`. Page loads are allowed two minutes (the shared machine).
+384.100 GATES (TMPDIR=/dev/shm, one at a time, machine at load 60-80): check-js 14 blocks ALL PASS (the tree merged with main
+384.95); check-b384-dailyq (full) 374 checks ALL PASS on the merged tree (and on 384.94 before the merge, after the landscape fix);
+`--against origin/main` (384.95) --quick FAILS 56 - T1, T2, B1, R1 and R2 on every device, class and state (the label 13.6px grey;
+the question through the title's fade; one glass card with a gradient and a rim; the mark #5CD692 / #FF6B6B and the word painted
+transparent (gradient text); no answer, streak, count or time in it, "No XP today") - B2, L1 and E pass there too (guards); the
+same 56 against 384.94. check-behaviour: check_b317_daily 18/18, check_b245_daily_header 4/4, check_b245_daily_schedule 7/7;
+check_b245_daily_announce (39, Home's recharge-then-banner TIMING, not this screen) fails 15 here and 17 on main 384.95 in the same
+hour - load (it times a 6s animation to the 100ms). check-fixes `--only "iPhone 16 Pro Max"` (440x956, 4 combinations) and
+`--only "iPad Pro 11"` (4): all fixes verified, the done banner on Home included. NOT RUN TO THE END: check-centering --quick (the
+renderer crashed - "Target crashed" - in three attempts at 1.6GB free; the daily screen is not among its screens, and this build
+changes no other screen's boxes) and sweep-layout --quick (stopped when the coordinator paused all browser work) - to run on RESUME.
+CHROMIUM CANNOT SHOW: iOS's blur under the status bar over the new header band (384.93's line is honoured: the title and the band
+come down with the row), and the real safe areas (the gate's insets are substituted, as every gate's are).
