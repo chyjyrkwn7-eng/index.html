@@ -198,7 +198,7 @@ def settle(pg, most=25.0):
     """wait (on a busy shared machine, as long as it takes) until the bar is at rest: glass down, nothing held, no screen waiting"""
     t = time.time()
     while time.time() - t < most:
-        st = pg.evaluate("()=>{ const b=document.getElementById('bottomtabs'); return document.getElementById('bottomtabs-lens').classList.contains('is-up') || document.documentElement.classList.contains('tab-held') || !!b._navPend || b.classList.contains('lens-up'); }")
+        st = pg.evaluate("()=>{ const b=document.getElementById('bottomtabs'), l=document.getElementById('bottomtabs-lens'); if(!b || !l) return true; return l.classList.contains('is-up') || document.documentElement.classList.contains('tab-held') || !!b._navPend || b.classList.contains('lens-up'); }")
         if not st: break
         time.sleep(0.25)
     pg.wait_for_timeout(350)
