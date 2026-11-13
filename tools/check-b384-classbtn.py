@@ -44,7 +44,10 @@ def load(br, dev, cls, pick=False, query=""):
         pg.route("**/index.html*", lambda r, q, b=b: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
         pg.goto(G.URL + ("?classbtn=c" if pick else query)); pg.wait_for_timeout(3200)
         pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); }")
-    pg.evaluate(QUIET); pg.wait_for_timeout(1800); G.clear_popups(pg); pg.wait_for_timeout(400)
+    pg.evaluate(QUIET); pg.wait_for_timeout(1800); G.clear_popups(pg)
+    # the picked build (5f85d51, from 384.88) still opens its intro pop-up (#intro-pop, a full-screen dim) over Home for this fixture;
+    # it is not the button and comes off on both sides, so only the button is compared
+    pg.evaluate("()=>document.querySelectorAll('#intro-pop, .intro-pop').forEach(n => n.remove())"); pg.wait_for_timeout(400)
     return pg
 
 with sync_playwright() as pw:
