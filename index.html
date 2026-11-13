@@ -156878,10 +156878,11 @@ function attachSegSlider(seg, activeSel){
     const nx = (ar.left - sr.left) / sx - seg.clientLeft;
     let ny = (ar.top - sr.top) / sy - seg.clientTop, nh = ar.height / sy, nw = ar.width / sx;
     /* (384.116) the same box read through the swell (the scale is the rounded offsetWidth's, a hair off) is the box it was: a thumb box
-       that is rewritten by a few hundredths of a pixel is a layout change while it moves */
-    if(w != null && Math.abs(nw - w) < .5) nw = w;
-    if(h != null && Math.abs(nh - h) < .5) nh = h;
-    if(y != null && Math.abs(ny - y) < .5) ny = y;
+       that is rewritten by a fraction of a pixel (a reading through the swell; a chat count read and its room kept to the half pixel)
+       is a layout change while it moves - under a pixel it is the box it was */
+    if(w != null && Math.abs(nw - w) < 1) nw = w;
+    if(h != null && Math.abs(nh - h) < 1) nh = h;
+    if(y != null && Math.abs(ny - y) < 1) ny = y;
     /* (384.116) a box read while the control is swollen under a finger comes back a hair off: the same box, not a new one - nothing is
        rewritten (the thumb's layout properties never change while it moves) */
     const near = (a, b) => a != null && Math.abs(a - b) < .25;
