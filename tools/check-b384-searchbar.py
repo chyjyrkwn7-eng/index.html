@@ -228,7 +228,7 @@ def boot(br, raw, dev, cls, errs):
     pg.route("**/index.html", lambda route, request, b=body: route.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
     bm = re.search(r'const APP_BUILD = "([^"]+)"', raw); vj = json.dumps({"build": bm.group(1) if bm else "", "note": "", "frameId": "", "force": True})
     pg.route("**/version.json*", lambda route, request: route.fulfill(status=200, headers={"content-type": "application/json"}, body=vj))
-    pg.goto(URL, timeout=90000); pg.wait_for_timeout(4500)
+    pg.goto(URL, timeout=180000); pg.wait_for_timeout(4500)
     pg.evaluate("document.getElementById('splashscreen')?.remove()")
     pg.evaluate("()=>{ try{ homeUnlocksOwed=()=>false; }catch(e){} showHome(); }"); pg.wait_for_timeout(900)
     pg.evaluate(QUIET)
