@@ -39400,3 +39400,66 @@ Madison, shown the three looks behind `?classbtn=a|b|c` (claude/b384-classbtn 5f
   had the switch). Harness note: the picked build (5f85d51, from 384.88) opens its intro pop-up over Home for this fixture, at a
   moment that varies; the gate hides #intro-pop by rule on both pages, so only the button is compared. check-centering --quick ALL
   PASS (1270, 0 off centre); sweep-layout --quick 20/20 clean; check-js clean.
+
+### 384.103 (reviewtest): Review test - the test you just took, every question
+
+Madison, 13 Nov 2026: "After you finish a test (you get the 100 or finish all the retakes, did them all finally), add a button for
+review test or something and then you can review the test you just took ya know. Make this good."
+THIS REVERSES BUILD 312. 312 built a review on a 100% ("when getting a 100, still provide a review option") and took it back before
+it shipped ("Nvm, if you get a 100, let's not do the review test thing"). The newer word wins; the comment in buildFinalActions
+("REVIEW TEST" IS BACK, FOR THE WHOLE TEST) records both. check-behaviour 87 asserted the 312 decision (Re-run, Main menu and nothing
+else on a 100%) and is re-read to the new one: the review button first, then Re-run and Main menu.
+
+- WHEN THE BUTTON IS THERE (reviewTestOf): a Drill whose test is over - nothing of it left missed: a 100% first time, or the results
+  of the retake that clears the last miss (a results screen with misses left still leads with Continue to review, and has no review
+  button: the retake cycle is the way on there); every Mock and Practice test, which has no retake and so is over on its own results;
+  never a Virtual Room (its results carry their own Missed / Entire test review), a room from another class, or the daily question.
+- WHERE IT SITS (buildFinalActions, the only edit there, plus its own "testreview" branch for the review's two buttons): across the
+  top, in the wide slot Continue to review has on a run with misses, so the screen keeps one shape whatever the score - the way into a
+  review is the wide button at the top, "again" (Re-run) and "leave" (Main menu) are the pair under it. With nothing missed it is the
+  lead (#nextbtn, the light pill; Re-run steps down to ghost beside Main menu). On a Mock or Practice test with misses it comes
+  second, under Continue to review, as a ghost: "Review the whole test" against "the ones you missed" (Continue still leads there).
+  Labels: "Review test", or "Review the whole test" beside Continue to review.
+- THE CHAIN (reviewTestChain, in memory, declared beside originalTestPool): noteReviewTestChain(run) runs at the end of summarize()
+  (one line after lastRunResult). A test (not a retake) starts it: the order as asked, your FIRST answer per question kept as the
+  bank's choice index read through that run's own choice order (a retake reshuffles the choices, so a slot number would point at the
+  wrong one by the end), `cleared[qi] = 0` for right first time, what is `left`. A retake folds in only if its questions are all in
+  `left` AND the test's order is originalTestPool's (so a retake saved for later and finished after another test does not fold into
+  that one): `cleared[qi] = N` for retake N, `left` shrinks, `run` becomes the retake's. Anything else ends the chain. Not persisted:
+  the results screen it belongs to is in memory too; a retake resumed after the app was closed simply ends without the button (as
+  before). The Test history entry (311's n / ok / miss keys) holds no answers, so it could not serve.
+- THE SCREEN (showReviewTest, its own function): the misses' review made whole - the same .rs-screen / .rs-review panel, the head of
+  the TEST (buildRunHead with the chain's mode / units, never the retake's), then:
+  - a Summary card (.rs-card, the results' own card): Grade (the test's, in the grade's tone - gold 100, green pass, red short), Time
+    (the test's own clock), First try "N / total" (Mock: Correct), Retaken count in amber (Mock: Missed, red), and one line under a
+    rule ("Every question missed was answered correctly by retake 2." / "All 12 right on the first try." / a Practice test's
+    pass or the pass mark).
+  - the filter, the app's pill switcher (.rs-tabs + attachSegSlider, as the Virtual Room's review): All / Retaken / First try (Mock:
+    All / Missed / Right), with counts; only where there is something to split (a 100% has none). The pick is kept on the chain, so
+    Back to results and Review test again lands on the same filter; from far down the list a pick brings the page back up to the
+    switcher. Under 22.5rem (a 320px phone) the counts step out of the segments (they are in the Summary right above).
+  - every question in the order it was asked, numbered as asked (a filtered list keeps the test's numbers), each a .rs-q card built
+    by buildReviewQuestion itself (one review design): the tag "Right first try" (green, green number) or "Right on retake N"
+    (amber #F0A85A tag and number - the one new colour), "Your answer" (right) alone, or "Your first answer" (red) beside "Correct
+    answer" (green); the bank note / Fire Code's code box (explanation, the "Show the code" pill, drawn ahead as it comes into view)
+    / the academy's reference line; and the question's star (buildQuestionFlag, the Answer Review's; a 44px round button in the
+    number row that does not make it taller). A Fire Code code box starts shut on this list whatever it was left as in the run.
+  - Back to results (lead: the finished results drawn at once, nothing lands or plays again) and Main menu.
+  A question the last retake did not ask has no choice order in play; it is given the bank's own order for the card rather than a
+  shuffle (a shuffle writes LAST_SLOT_KEY and would move the answer next time for an order nobody saw).
+- TOOLS: sweep-layout's SCREENS has `__sweepResults('testreview')` (a 100%, its button pressed once armed); check-centering has
+  "results/review test" after "results".
+
+GATE. NEW tools/check-b384-reviewtest.py - every run PLAYED (beginRun, a tap on each choice, the results' own buttons pressed once
+armed), shape not words: A a Drill, 3 missed, 1 again on retake 1, cleared on retake 2 (Pro Max, the reveal played): A1 no button
+while misses are left, one on the clearing retake's results, first and lead, Re-run / Main menu after; A2-A4 the whole original test
+once in order, each marked first try or the retake it cleared on (its tag carries that number), the correct answer the bank's, the
+first answer the one tapped; A5 the summary's numbers; A6 the filter's three segments, counts and contents, aria-selected; A7 the
+stars (44px, toggle and back); A8 back and forth twice (results drawn at once, the same buttons, the review the same, the filter
+kept); A9 Re-run still starts the whole test. B a 100% (iPad): the button leads, every question first try, no filter, Main menu goes
+Home. C a Mock with misses (375): Continue leads, the review second and ghost, misses marked with the answer tapped, Continue to review
+still opens just the misses. D Fire Code, Exhibit B (the county booklet ships with the app; pdf.js from PDFJS_DIR): every card has its
+code box, a retaken one's code opens and draws its picture inside the card. E a 50-question Practice test (iPad): all 50 in order, the
+misses marked, the end reached by scrolling, Back from there. F 320x568, 375x667, 440x956, 956x440, 834x1194, 1194x834: no sideways
+scroll, segment words inside their segments, cards inside the page, 44px targets (F found the 320px segments: "First try 11" ran 4px
+into the pill's own padding - the counts step out there now).

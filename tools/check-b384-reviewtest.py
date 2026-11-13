@@ -57,6 +57,11 @@ sys.argv = [sys.argv[0]] + AG
 _spec = importlib.util.spec_from_file_location("cb", HERE + "/check-behaviour.py")
 cb = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(cb)
 from playwright.sync_api import sync_playwright
+# a 10MB page on a busy machine: the load gets two minutes, not Playwright's thirty seconds
+_open_page = cb.open_page
+def _open_page_patient(ctx):
+    pg = _open_page(ctx); pg.set_default_navigation_timeout(120000); return pg
+cb.open_page = _open_page_patient
 
 PDFJS = (os.environ.get("PDFJS_DIR") or "/tmp/claude-0/-home-user-index-html/920022cb-51dc-5785-b32b-503aff219f98/scratchpad/ifccheck/node_modules/pdfjs-dist").rstrip("/") + "/"
 HAVE_PDFJS = os.path.exists(PDFJS + "build/pdf.min.mjs")
