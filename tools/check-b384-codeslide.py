@@ -35,10 +35,11 @@ def chk(name, cond, info=""):
 # nothing is clipped and this is the box's height, as it always measured. The shape asked for is unchanged.
 TRACE = """(ms)=>{ window.__h=[]; const t0=performance.now();
   const clipB = el => { const m = /inset\\(([^)]*?)(?:\\sround\\b|\\))/.exec(getComputedStyle(el).clipPath || ''); if(!m) return 0; const v = m[1].trim().split(/\\s+/).map(parseFloat); return (v.length >= 3 ? v[2] : v[0]) || 0; };
-  const f=()=>{ const d=document.querySelector('.qpanel details.ifc-code');
+  /* read in a task after each frame is drawn: a read inside the frame's first rAF callback comes before the app's own rAF work */
+  const s=()=>{ const d=document.querySelector('.qpanel details.ifc-code');
   if(d){ const c = d.closest('.ifc-ref') || d, r = d.getBoundingClientRect(), cr = c.getBoundingClientRect(); const shown = Math.max(0, Math.min(r.bottom, cr.bottom - clipB(c)) - r.top);
-    window.__h.push([Math.round(performance.now()-t0), Math.round(shown*10)/10, d.open, d.style.height]); }
-  if(performance.now()-t0<ms) requestAnimationFrame(f); }; requestAnimationFrame(f); }"""
+    window.__h.push([Math.round(performance.now()-t0), Math.round(shown*10)/10, d.open, d.style.height]); } };
+  const f=()=>{ setTimeout(s, 0); if(performance.now()-t0<ms) requestAnimationFrame(f); }; requestAnimationFrame(f); }"""
 def answer(pg, cdp):
     G["answer_right"](pg, cdp)
 def next_q(pg):
