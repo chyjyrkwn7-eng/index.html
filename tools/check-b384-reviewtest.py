@@ -63,7 +63,7 @@ def _open_page_patient(ctx):
     pg = _open_page(ctx); pg.set_default_navigation_timeout(180000); return pg
 cb.open_page = _open_page_patient
 
-PDFJS = (os.environ.get("PDFJS_DIR") or "/tmp/claude-0/-home-user-index-html/920022cb-51dc-5785-b32b-503aff219f98/scratchpad/ifccheck/node_modules/pdfjs-dist").rstrip("/") + "/"
+PDFJS = (os.environ.get("PDFJS_DIR") or "/tmp/claude-0/-home-user/920022cb-51dc-5785-b32b-503aff219f98/scratchpad/pdfjs549/package").rstrip("/") + "/"
 HAVE_PDFJS = os.path.exists(PDFJS + "build/pdf.min.mjs")
 
 ok = True
