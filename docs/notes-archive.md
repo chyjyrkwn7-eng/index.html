@@ -39373,3 +39373,30 @@ origin/main` (384.92) fails 16 - S1, S2 (characters and swatches) and S3 on ever
 64-74% switch there; the characters' 47-51%), S4/S5 pass on both as designed; check-b384-haptics ALL PASS (38: every surface still
 has its own switch or label under a finger, a label tap clicks once and ticks); sweep-layout --quick 20/20 clean; check-js clean.
 check-centering not run: nothing drawn changed (a label and a switch are both invisible).
+## 384 (branch claude/b384-classbtn, NOT merged, waiting on the owner's pick): the class button, three options behind ?classbtn=a|b|c
+Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's circle needs a better border? Could just be better.." Three looks built side by side, behind a temporary address switch; nothing changes for anyone without it (`html[data-classbtn]` is set only by the head script's `/[?&]classbtn=([abc])/`; `classBtnIcon()` returns "" without it and the button keeps `NOVA_CLASSES`' own marks; every new CSS rule starts `html[data-classbtn...]`).
+- REDRAWN MARKS (all three options; the button and the class list's class bubbles - not the catalog / sign-up cards / Settings rows): Fire Code a flame with two side tongues, an orange middle and a pale core; the academy a police shield, silver rim, blue-violet field, white star. Both symmetric, ink 4.6-19.4 x 2.5-21.5 of the 24 box (centred). Gradient ids unique per copy (`classBtnSeq`).
+- A LIT RING: the "?" button's ready recipe in the class's colour (`--cbc`: Fire Code #FF7A3A, academy #7C93FF), still - a 1.8px ring inside the class-tinted rim (a closest-side radial layer on the padding box, so the gap and ring are exact at any --cb), a soft 10px glow off it, the colour pooled behind the mark.
+- B LIQUID GLASS: the rim is a border-box gradient through a transparent 1.5px border (white at the top-left into the class colour at the foot; the body over it is .86 so the rim's colours stay in the rim), a specular arc along the top, the colour rising at the foot, and a light behind the mark (`::before`, opacity + scale, 4.2s like the "?"'s dq-glow) that stands still under Reduce motion. With has-new the ::before is the 329 pulse ring as before (the glow is `:not(.has-new)`).
+- C MEDALLION: the mark struck on an enamel coin in the class's colour (closest-side radial on the padding box: centre, deep edge, a fine bright bezel, ~3px of glass round it), a soft class-coloured glow; the marks drawn light for it (cream flame with the middle cut out in the coin's red; silver shield with a blue star). Icon 26px (phone) / --cb x .46 (tablet).
+- Same size and place in all three (`--cb`, `place()`, the 54px / 52px boxes untouched). No SVG filter; only B moves, transform/opacity on a pseudo-element.
+- Sheet: scratchpad classbtn/classbtn-options-sheet.png (iPhone 17 Pro Max + iPad Pro 11, both classes, close-ups beside the "?"). When he picks: drop the switch, keep only that option's rules (unprefixed), decide whether the catalog / sign-up / Settings marks take the redrawn icons too, bump the build.
+
+### 384.94 (classbtnc): the class button is option C, the medallion
+
+Madison, shown the three looks behind `?classbtn=a|b|c` (claude/b384-classbtn 5f85d51): "Option c for the class thing."
+
+- C is now the button's own look and A, B and the address switch are gone: the head script that read `?classbtn`, `classBtnOpt()`,
+  and the A / B rules. "THE CLASS BUTTON IS A MEDALLION" (end of the stylesheet) is C's rules with `html[data-classbtn="c"]` taken
+  off and the class doubled (`.class-bubble.class-bubble`), so every selector keeps the specificity it had - which is what beats
+  the button's own glass rules - and the shipped button is the picked one pixel for pixel.
+- `classBtnIcon(key, where)` always draws: the light-coloured marks on the coin ("button"), the full-colour ones in the class list
+  ("list"); a class it has no drawing for returns "" and keeps NOVA_CLASSES' mark.
+- Gate: NEW `tools/check-b384-classbtn.py` - K1 the button on Home (both classes; Pro Max installed, iPad Pro 11", laptop) equals
+  5f85d51 loaded with `?classbtn=c`, pixel for pixel, Reduce motion on both; K2 the coin and the coin's marks; K3 the class list's
+  full-colour mark; K4 `?classbtn=a` changes nothing. Fails against main 384.92 (K1-K3: the old button).
+- Results (384.94, on the tree with main 384.93 merged): check-b384-classbtn ALL PASS (both classes; Pro Max, iPad Pro 11",
+  laptop - pixel for pixel, mean 0.00-0.04); `--against origin/main` fails 10 (K1-K3 everywhere; K4 passes there too, main never
+  had the switch). Harness note: the picked build (5f85d51, from 384.88) opens its intro pop-up over Home for this fixture, at a
+  moment that varies; the gate hides #intro-pop by rule on both pages, so only the button is compared. check-centering --quick ALL
+  PASS (1270, 0 off centre); sweep-layout --quick 20/20 clean; check-js clean.
