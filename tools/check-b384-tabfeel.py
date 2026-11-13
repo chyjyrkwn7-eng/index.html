@@ -188,6 +188,14 @@ def slide(cdp, x0, x1, y, dur=0.45, rest=0.25, back=False):
         touch(cdp, "touchMove", x0 + (x1 - x0) * s, y); time.sleep(dur / n)
     time.sleep(0.03); touch(cdp, "touchEnd")
 def now(pg): return pg.evaluate("()=>performance.now()")
+def settle(pg, most=25.0):
+    """wait (on a busy shared machine, as long as it takes) until the bar is at rest: glass down, nothing held, no screen waiting"""
+    t = time.time()
+    while time.time() - t < most:
+        st = pg.evaluate("()=>{ const b=document.getElementById('bottomtabs'); return document.getElementById('bottomtabs-lens').classList.contains('is-up') || document.documentElement.classList.contains('tab-held') || !!b._navPend || b.classList.contains('lens-up'); }")
+        if not st: break
+        time.sleep(0.25)
+    pg.wait_for_timeout(350)
 def rec(pg): return pg.evaluate("()=>{ const R=window.__rec; return {anims:R.anims, frames:R.frames.slice(-3000), builds:R.builds, ev:R.ev.slice(-400), bar:R.bar, sounds:R.sounds, reads:R.reads, readsUp:R.readsUp, ticks:window.__WK.ticks}; }")
 
 def one_action(r, t0):
@@ -222,9 +230,9 @@ def part_T(br, url):
     for rep in range(1 if QUICK else 2):
         for a, b in pairs:
             if cur != a:
-                tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700); cur = a
+                tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700); settle(pg); cur = a
             pg.evaluate("()=>{ window.__rec.reads={}; window.__rec.readsUp={}; }")
-            t0 = now(pg); tap(cdp, *T[b][:2]); pg.wait_for_timeout(1800); cur = b
+            t0 = now(pg); tap(cdp, *T[b][:2]); pg.wait_for_timeout(1800); settle(pg); cur = b
             r = rec(pg); x = one_action(r, t0); st = pg.evaluate(STATE)
             x["reads"] = r["reads"]; x["readsUp"] = r["readsUp"]; x["st"] = st; x["pair"] = (a, b); x["landed"] = expect_state(st, b)
             res.append(x)
@@ -278,7 +286,7 @@ def part_R(br, url):
                 to = rnd.choice(ids)
                 tap(cdp, T[to][0], T[to][1], hold=rnd.uniform(.03, .12)); last = to; n_taps += 1
             time.sleep(rnd.uniform(.03, .45))
-        pg.wait_for_timeout(2600)
+        pg.wait_for_timeout(2600); settle(pg)
         st = pg.evaluate(STATE)
         if not expect_state(st, last): bad.append((bi, last.replace("bottomtab-", ""), st))
         pg.evaluate("()=>{ document.querySelectorAll('.__tall').forEach(n=>n.remove()); }")
@@ -319,15 +327,15 @@ def part_S(br, url):
     out = []
     for a, b in pairs:
         st = pg.evaluate(STATE)
-        if st["active"] != [a]: tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700)
+        if st["active"] != [a]: tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700); settle(pg)
         # the slide: rests past the switch's 200ms "held" timer, then slides to b and lets go there
-        t0 = now(pg); slide(cdp, T[a][0], T[b][0], T[a][1], dur=0.45, rest=0.25); pg.wait_for_timeout(1700)
+        t0 = now(pg); slide(cdp, T[a][0], T[b][0], T[a][1], dur=0.45, rest=0.25); pg.wait_for_timeout(1700); settle(pg)
         r = rec(pg); x = one_action(r, t0); st = pg.evaluate(STATE)
         ticks = [k for k in r["ticks"] if k["t"] >= t0]; snd = [s for s in r["sounds"] if s >= t0]
         out.append(dict(kind="slide", pair=(a, b), ticks=ticks, up=x["up"], snd=snd, land=x["land"], landed=expect_state(st, b), st=st))
         # the tap back to a, and a tap to b again to compare its landing
-        tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700)
-        t1 = now(pg); tap(cdp, *T[b][:2]); pg.wait_for_timeout(1700)
+        tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700); settle(pg)
+        t1 = now(pg); tap(cdp, *T[b][:2]); pg.wait_for_timeout(1700); settle(pg)
         r = rec(pg); x = one_action(r, t1); st = pg.evaluate(STATE)
         ticks = [k for k in r["ticks"] if k["t"] >= t1]; snd = [s for s in r["sounds"] if s >= t1]
         out.append(dict(kind="tap", pair=(a, b), ticks=ticks, up=x["up"], snd=snd, land=x["land"], landed=expect_state(st, b), st=st))
@@ -335,9 +343,9 @@ def part_S(br, url):
     back = []
     for a in ids[:2 if QUICK else 4]:
         st = pg.evaluate(STATE)
-        if st["active"] != [a]: tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700)
+        if st["active"] != [a]: tap(cdp, *T[a][:2]); pg.wait_for_timeout(1700); settle(pg)
         other = ids[(ids.index(a) + 1) % len(ids)]
-        t0 = now(pg); slide(cdp, T[a][0], T[other][0], T[a][1], dur=0.6, rest=0.25, back=True); pg.wait_for_timeout(1500)
+        t0 = now(pg); slide(cdp, T[a][0], T[other][0], T[a][1], dur=0.6, rest=0.25, back=True); pg.wait_for_timeout(1500); settle(pg)
         r = rec(pg); st = pg.evaluate(STATE)
         back.append(dict(a=a, ticks=[k for k in r["ticks"] if k["t"] >= t0], snd=[s for s in r["sounds"] if s >= t0], st=st, ok=expect_state(st, a)))
     nm = lambda p: "%s>%s" % (p[0].replace("bottomtab-", ""), p[1].replace("bottomtab-", ""))
@@ -381,7 +389,7 @@ def part_D(br, url):
         bad_o, bad_l = [], []
         for to in seq:
             if to not in T: continue
-            t0 = now(pg); click_tab(pg, cdp, kind, T[to]); pg.wait_for_timeout(1800)
+            t0 = now(pg); click_tab(pg, cdp, kind, T[to]); pg.wait_for_timeout(1800); settle(pg)
             r = rec(pg); x = one_action(r, t0); st = pg.evaluate(STATE)
             if x["build"] and x["fu"] and x["fu"] > x["build"][1]: bad_o.append((to.replace("bottomtab-", ""), round(x["fu"] - x["up"]), round(x["build"][1] - x["up"])))
             if x["build"] and kind != "desk" and (not x["land"] or not x["fu"] or x["land"]["t"] > x["fu"]): bad_o.append((to.replace("bottomtab-", ""), "no landing made in the release"))

@@ -163861,6 +163861,8 @@ function tabPerfText(){
      the bar's shape changes: the lens is re-measured, carried to the same
      tab in the new shape, and lands there as it would have. */
   bar._lensRelayout = () => {
+    /* (384.102) the bar changed shape: the boxes kept at rest are not the bar's any more (its ResizeObserver says so only later) */
+    barGeo = null; barGeoSoon();
     if(!lensG || !lens.classList.contains("is-up")) return;
     const at = lensAt, old = lensInfo(at);
     lensStopFollow();
