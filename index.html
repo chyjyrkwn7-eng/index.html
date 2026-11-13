@@ -21230,6 +21230,11 @@
      and a reaction class shows it again. */
   .char-flip-play{ position:absolute; overflow:hidden; pointer-events:none; contain:strict; }
   .char-flip-play img{ position:absolute; left:0; top:0; max-width:none; max-height:none; display:block; will-change:transform; }
+  /* (384.112) a character's loop is a canvas one cell of its sheet in size, each frame copied into it (charFlipCanvas): it fills its
+     window and never moves, so no zoom or rounding can put one frame on other pixels than the last. The window is a small layer of
+     its own, so a frame repaints that window and not the row under it (as html.loops-paint gave the old sheet's window, build 380). */
+  .char-flip-play > canvas.char-flip-cv{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; pointer-events:none; }
+  .char-flip-play.is-cv{ will-change:transform; }
   .char-under-flip{ visibility:hidden; }
   [class*="char-react-"] .char-flip-play, .char-sleep .char-flip-play{ visibility:hidden; }
   [class*="char-react-"] .char-under-flip, .char-sleep .char-under-flip{ visibility:visible; }
@@ -100152,15 +100157,137 @@ function charIdOfSvg(el, svg){
 /* Puts a playing flip-book over a small character. Returns null when
    the tile is not laid out yet (the caller retries), false when this
    one should stay a live drawing, true once it is attached. */
-function charFlipDelay(el){
-  return -((Date.now() + (Number(el.dataset.flipPhase) || 0)) % CHAR_ANIM_LOOP_MS);
+/* ---- (384.112) A CHARACTER'S LOOP IS COPIED INTO A BOX THAT NEVER MOVES ----
+   Madison, a screen recording of the Leaderboard on his installed iPhone: "do you see how the characters are slightly shaking
+   randomly? I've mentioned this problem before. Fix this." The third report (313/314 and 384.20 each fixed it at 100%).
+   READ OFF THE RECORDING, frame by frame (8 characters, 4.9s, 59 frames a second): the rows, the names and the circles never moved
+   (0.00px), and nothing moved all together - no snapshot, scroll or re-render. INSIDE every circle the drawing jumped a whole device
+   pixel sideways (and up to 0.9px down) twice a sheet row - once at the row's wrap and once part way along it, in two steps of ~0.6
+   and ~0.4 - every 0.500s exactly (12 steps of the 24-a-second sheet), each character on its own phase.
+   WHY ONLY ON HIS PHONE: it runs Safari's page zoom at 85% (518 CSS px across 440pt, devicePixelRatio still reads 3) and the board's
+   rows are CSS-zoomed by --zc (1.177) to undo it, so a CSS px in a row is 1.177 x 0.85 x 3 = 3.0014 device px. A loop was its whole
+   sheet SLID under a window, a cell (34 CSS px) a step: 102.05 device px, not 102 - so every column of the sheet landed on another
+   fraction of a pixel and the phone's painting rounded it, a whole pixel one way and then back. 313 and 384.20 made a step a whole
+   number of device px at 100%, with devicePixelRatio as the scale, and every gate measured at 100%, where it is.
+   NOW NOTHING IS SLID: the window holds a canvas one cell of the sheet in size, and each step COPIES that cell's pixels into it (a
+   whole-pixel source rect, 1:1) - the crop is made in the sheet's own pixels, where it is exact at any zoom, and the box on the
+   screen does not move, so every frame is drawn on the same pixels as the one before whatever the page zoom, CSS zoom, dpr or the
+   engine's rounding. The frame is the one the step-end animation showed at this moment (the same clock: the tile's flipPhase on
+   Date.now()), so a tile carried to a rebuilt row, a live drawing handing back (charSyncLiveToSheet) and a special all still meet it.
+   One loop for every canvas, woken only when some tile's next frame is due; a row held still (lb-still) or skipped (is-offscreen),
+   and Reduce motion, hold the frame on show. */
+const CHAR_FLIP_HELD = ".rank-rows.lb-still > .rank-row:not(.lb-go), .rank-row.is-offscreen";
+/* ...and while a finger slides on the tab bar or the glass is up (barUnderPause / slideHeldResume / barUnderResume): the rows', the
+   card's and what is under the bar's animations are paused for those frames (383, 384 r15), and the canvases hold with them - all of
+   them, so no rect is read in a slide's frame to sort them */
+var charFlipHold = { slide: false, band: false, at: 0 };
+const charFlipCvs = new Set();   /* WeakRefs to every canvas playing a character's loop */
+let charFlipPending = false;
+function charFlipFrameAt(el, now){
+  const L = CHAR_ANIM_LOOP_MS, N = CHAR_ANIM_FRAMES;
+  const tau = (((now + (Number(el && el.dataset.flipPhase) || 0)) % L) + L) % L;
+  return Math.min(N - 1, Math.floor(tau * N / L));
 }
-/* A removed element's CSS animation starts over when it is put back, so
-   a tile that is moved to a rebuilt row has its delay re-read off the
-   clock first: it restarts at exactly the frame it would have been on. */
+/* the sheet's decoded picture: the one kept with it (charPreKeep), or a fresh one that the canvas holds while it plays */
+function charFlipSrcOf(sp){
+  if(sp.pre){ charPreKeep(sp); return sp.pre; }   /* decoded, or decoding for another tile of the same character */
+  const im = new Image();
+  im.decoding = "async"; im.src = sp.url;
+  if(!testTrimmed){ sp.pre = im; charPreKeep(sp); }
+  return im;
+}
+function charFlipDraw(cv, now){
+  const src = cv.__src, sp = cv.__sp;
+  if(!src || !sp || !src.complete || !src.naturalWidth) return false;
+  const f = charFlipFrameAt(cv.__tile, now);
+  if(f === cv.__f) return true;
+  const g = cv.__g || (cv.__g = cv.getContext("2d"));
+  if(!g) return false;
+  const px = sp.px;
+  try{
+    g.clearRect(0, 0, px, px);
+    g.drawImage(src, (f % sp.cols) * px, Math.floor(f / sp.cols) * px, px, px, 0, 0, px, px);
+  }catch(e){ return false; }
+  cv.__f = f;
+  if(cv.__onDraw){ const fn = cv.__onDraw; cv.__onDraw = null; try{ fn(); }catch(e){} }
+  return true;
+}
+function charFlipWakeAt(ms){
+  if(charFlipPending || document.hidden) return;
+  charFlipPending = true;
+  const go = () => requestAnimationFrame(charFlipTick);
+  if(ms > 24) setTimeout(go, ms - 14); else go();
+}
+function charFlipTick(){
+  charFlipPending = false;
+  if(!charFlipCvs.size || document.hidden) return;
+  const now = Date.now(), L = CHAR_ANIM_LOOP_MS, step = L / CHAR_ANIM_FRAMES;
+  const still = document.documentElement.dataset.reduceMotion === "true";
+  /* a hold the landing never let go of (a missed lensFinish) does not keep the characters still for good */
+  if((charFlipHold.slide || charFlipHold.band) && now - charFlipHold.at > 4000) charFlipHold.slide = charFlipHold.band = false;
+  let next = Infinity, shown = 0;
+  charFlipCvs.forEach(ref => {
+    const cv = ref.deref();
+    if(!cv){ charFlipCvs.delete(ref); return; }
+    if(!cv.isConnected) return;   /* lifted out (a board's rebuild carries it to the new row) or parked: it goes on when it is back */
+    shown++;
+    if(cv.__f >= 0 && (still || charFlipHold.slide || charFlipHold.band || cv.closest(CHAR_FLIP_HELD))) return;
+    if(!charFlipDraw(cv, now)){ next = Math.min(next, 120); return; }   /* its picture is still decoding */
+    const tau = (((now + (Number(cv.__tile.dataset.flipPhase) || 0)) % L) + L) % L;
+    next = Math.min(next, step - (tau % step));
+  });
+  if(!shown){ if(charFlipCvs.size) setTimeout(() => charFlipWakeAt(0), 600); return; }
+  charFlipWakeAt(next === Infinity ? 250 : next);
+}
+try{ document.addEventListener("visibilitychange", () => { if(!document.hidden) charFlipWakeAt(0); }); }catch(e){}
+/* The canvas for a tile's window (play): one cell of the sheet, drawn at once when its picture is decoded (always, for a sheet
+   in memory), and onFirst once it has a frame on it - so the drawing under it is only hidden when there is something over it. */
+function charFlipCanvas(play, sp, el, onFirst){
+  const cv = document.createElement("canvas");
+  cv.className = "char-flip-cv";
+  cv.width = cv.height = sp.px;
+  cv.setAttribute("aria-hidden", "true");
+  cv.__sp = sp; cv.__tile = el; cv.__f = -1; cv.__src = charFlipSrcOf(sp); cv.__onDraw = onFirst || null;
+  play.classList.add("is-cv");
+  play.appendChild(cv);
+  charFlipCvs.add(typeof WeakRef === "function" ? new WeakRef(cv) : { deref: () => cv });
+  if(!charFlipDraw(cv, Date.now())){
+    const src = cv.__src;
+    const again = () => { charFlipDraw(cv, Date.now()); charFlipWakeAt(0); };
+    try{ src.decode().then(again, again); }catch(e){ src.addEventListener("load", again, { once: true }); }
+  }
+  charFlipWakeAt(0);
+  return cv;
+}
+/* is this tile's canvas being stepped now (the gates' "playing", as a running animation was for the old <img>) */
+function charFlipIsPlaying(cv){
+  if(!cv || !cv.isConnected || !(cv.__f >= 0) || document.documentElement.dataset.reduceMotion === "true" || cv.closest(CHAR_FLIP_HELD)) return false;
+  let found = false;
+  charFlipCvs.forEach(ref => { if(ref.deref() === cv) found = true; });
+  return found;
+}
+/* A tile carried into a rebuilt row (renderRankingRows) shows the frame the clock is on at once, not the one it was lifted on. */
 function charFlipResync(el){
-  const img = el && el.querySelector(".char-flip-play img");
-  if(img && el.dataset.flipPhase != null) img.style.animationDelay = charFlipDelay(el) + "ms";
+  const cv = el && el.querySelector(".char-flip-play canvas.char-flip-cv");
+  if(cv){ charFlipDraw(cv, Date.now()); charFlipWakeAt(0); }
+}
+/* (384.112) Whole device pixels for a window only where the canvas's own pixels ARE device pixels, one for one: a 1x or 2x screen
+   at 100% with nothing zoomed, where it keeps the picture crisp. Anywhere else the sheet is resampled wherever it sits (a 2x sheet
+   on a 3x phone, any page or CSS zoom), and rounding to a grid the page cannot see exactly - Safari's page zoom leaves
+   devicePixelRatio at 3 while a CSS px is 2.55 device px - only put the picture up to half a pixel off its drawing. There the window
+   goes exactly on the drawing, centre on centre. */
+function charFlipSnapFor(par, S, density){
+  const dpr = window.devicePixelRatio || 1;
+  const exact = v => v;
+  if(Math.abs(dpr - density) > .01 || Math.abs(S - 1) > .002) return exact;
+  try{
+    if(window.matchMedia && matchMedia("(pointer:coarse)").matches){
+      const a = Math.min(innerWidth, innerHeight), b = Math.min(screen.width, screen.height);
+      if(a && b && Math.abs(a / b - 1) > .01) return exact;
+    }
+    for(let n = par; n && n.nodeType === 1; n = n.parentElement){ const z = parseFloat(getComputedStyle(n).zoom); if(z > 0 && Math.abs(z - 1) > .001) return exact; }
+  }catch(e){ return exact; }
+  return v => Math.round(v * dpr) / dpr;
 }
 /* A TILE WHOSE SHEET CANNOT BE MADE IS LIVE, NOT STILL (build 314).
    It used to keep char-flip with nothing playing - a still drawing for
@@ -100292,6 +100419,7 @@ function charFlipAttach(el){
 }
 /* (384.20) a board row that comes back into view takes its tile's loop (the attach skipped it while the row was not drawn) */
 function charFlipWake(t){
+  if(t && t.querySelector && t.querySelector(".char-flip-play > canvas.char-flip-cv")){ charFlipResync(t); return; }   /* (384.112) its canvas held its frame while the row was skipped */
   if(!t || !t.isConnected || !t.dataset.flipArmed || !t.classList.contains("char-flip") || t.classList.contains("char-sleep") || t.querySelector(".char-flip-play")) return;
   if(charFlipAttach(t) === false && t.classList.contains("char-flip")){ t.classList.remove("char-flip"); t.classList.add("char-live"); }
 }
@@ -100344,9 +100472,10 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
            half-way through the bar coming back */
         play.classList.add(svg.classList.contains("cx-plate") ? "cx-plate" : "cx-wide");
       } else if(ownScale){
-        /* centred on the drawing as it is SHOWN, on whole device pixels */
-        const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-        const snap = v => Math.round(v * dpr) / dpr;
+        /* centred on the drawing as it is SHOWN - on whole device pixels only where the canvas's pixels are device pixels (384.112,
+           charFlipSnapFor; it rounded by devicePixelRatio, which under Safari's page zoom is not the screen's scale) */
+        const shown = svg.getBoundingClientRect();
+        const snap = charFlipSnapFor(par, S, scale);
         const cx = (shown.left + shown.width / 2 - pr.left) / S - par.clientLeft;
         const cy = (shown.top + shown.height / 2 - pr.top) / S - par.clientTop;
         play.style.left = snap(cx - cellCss / 2) + "px";
@@ -100376,21 +100505,15 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
         play.style.transform = svgT;
         if(o.length >= 2 && o.every(v => isFinite(v))) play.style.transformOrigin = (o[0] - inset) + "px " + (o[1] - inset) + "px";
       }
-      const img = document.createElement("img");
-      img.alt = ""; img.decoding = "sync"; img.src = sp.url;
-      img.style.width = (sp.cols * cellCss) + "px";
-      img.style.height = (sp.rows * cellCss) + "px";
       /* each tile starts somewhere different in its loop, so a board of
          one character does not blink in unison - but that place is kept
          on the tile and read off one clock (build 310), so a tile put back
          into the page carries on rather than jumping (charFlipResync) */
       if(el.dataset.flipPhase == null) el.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
-      img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(el) + "ms infinite";
-      lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
-      play.appendChild(img);
+      /* (384.112) the frame is copied into a canvas the window's size, not slid under it (see charFlipCanvas) */
+      charFlipCanvas(play, sp, el, () => svg.classList.add("char-under-flip"));
       if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
       svg.after(play);
-      svg.classList.add("char-under-flip");
       /* build 375: a board row's place for its loop, kept so the next board can put loops on before its first frame */
       if(!wide && ownScale && !el.dataset.flipSolo && el.closest(".screen-rankings .rank-rows")){
         const fl = { px: sp.px, cell: cellCss, left: play.style.left, top: play.style.top, rel: par.style.position === "relative" };
@@ -122940,7 +123063,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.112";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -149982,7 +150105,7 @@ var lbGeomAll = null;
    list made the character's frame 36px (it was 35.19), and the loops kept from before were laid at the old cell and offsets for
    good - nothing re-measures a row that comes up with its loop. Bump LB_GEOM_REV whenever the rows' character or flare frame
    changes size; the first board after it measures afresh (and comes up whole on its stills meanwhile). */
-var LB_GEOM_REV = 2;
+var LB_GEOM_REV = 3;   /* 384.112: a character's window goes exactly on its drawing (no longer rounded by devicePixelRatio) */
 function lbGeomVP(){ return orbitVPNow() + "|" + (window.devicePixelRatio || 1) + "|r" + LB_GEOM_REV; }
 function lbGeomGet(){
   if(!lbGeomAll){ try{ lbGeomAll = JSON.parse(localStorage.getItem(LB_GEOM_KEY) || "null"); }catch(e){ lbGeomAll = null; } if(!lbGeomAll || typeof lbGeomAll !== "object") lbGeomAll = {}; }
@@ -150029,17 +150152,11 @@ function lbFlipKnown(aw, charId){
     play.setAttribute("aria-hidden", "true");
     play.style.left = f.left; play.style.top = f.top;
     play.style.width = play.style.height = f.cell + "px";
-    const img = document.createElement("img");
-    img.alt = ""; img.decoding = "sync"; img.src = sp.url;
-    img.style.width = (sp.cols * f.cell) + "px";
-    img.style.height = (sp.rows * f.cell) + "px";
     if(aw.dataset.flipPhase == null) aw.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
-    img.style.animation = orbitAnimKeyframes(f.cell, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(aw) + "ms infinite";
-    lbPaintKF(img);   /* build 380 */
-    play.appendChild(img);
+    /* (384.112) a canvas the window's size, the frame copied into it (charFlipCanvas); the still under it hides once it has one */
+    charFlipCanvas(play, sp, aw, () => av.querySelectorAll(":scope > svg.cx-still").forEach(n => n.classList.add("char-under-flip")));
     if(f.rel) av.style.position = "relative";
     av.appendChild(play);
-    av.querySelectorAll(":scope > svg.cx-still").forEach(n => n.classList.add("char-under-flip"));
     aw.dataset.flipPre = "1";
     /* build 377: and that is the row's character, done - the drawing under a loop is never seen and nothing on a board takes the loop
        off (rows are not parked, the background no longer strips them), so it is not queued: putting ~250-part drawings in under loops
@@ -150118,6 +150235,7 @@ function lbStillGo(rows, token){
        now take the clock in the same frame, so the board starts moving as one. */
     rows.querySelectorAll(":scope > .rank-row:not(.lb-go)").forEach(r => r.classList.add("lb-go"));
     rows.classList.remove("lb-still");
+    try{ charFlipWakeAt(0); }catch(e){}   /* (384.112) the characters' canvases were holding their frame for this */
   };
   const wait = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
@@ -162906,14 +163024,18 @@ function tabPerfText(){
       });
       hold.forEach(a => { try{ a.pause(); slideHeldPaused.push(a); }catch(e){} });
       under.forEach(a => { try{ a.pause(); barUnderPaused.push(a); }catch(e){} });
+      /* (384.112) the characters' loops are canvases now, not animations: they hold their frame by the same look (charFlipTick) */
+      charFlipHold.slide = true; charFlipHold.band = true; charFlipHold.at = Date.now();
     }catch(e){}
   }
   /* (384 r15) the same way back: which are paused is read first, then they play (a play() between two reads was a style pass each) */
   function barUnderResume(){
+    if(charFlipHold.band){ charFlipHold.band = false; charFlipWakeAt(0); }
     const list = barUnderPaused; barUnderPaused = [];
     list.filter(a => { try{ return a.playState === "paused"; }catch(e){ return false; } }).forEach(a => { try{ a.play(); }catch(e){} });
   }
   function slideHeldResume(){
+    if(charFlipHold.slide){ charFlipHold.slide = false; charFlipWakeAt(0); }
     const list = slideHeldPaused; slideHeldPaused = [];
     list.filter(a => { try{ return a.playState === "paused"; }catch(e){ return false; } }).forEach(a => { try{ a.play(); }catch(e){} });
   }

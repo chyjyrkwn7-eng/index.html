@@ -10159,18 +10159,23 @@ def check_b314h_board(br):
     pg.evaluate(_LB_FAKE)
     pg.evaluate("() => showRankings('week')")
     t0 = time.time()
-    while time.time() - t0 < 150 and pg.evaluate("() => document.querySelectorAll('.screen-rankings .rank-row .char-flip-play img').length") < 3:
+    # (384.112) a character's loop is a canvas one cell in size with each frame copied into it (the frame is cropped in the sheet's own
+    # pixels, so nothing is slid and no zoom can round a step); 384.95 and earlier slid an <img> sheet under the window. Either is read:
+    # the frame's place in its window, in device px, must be on one sub-pixel phase at every step - and it must actually be stepping.
+    FLIP = ".screen-rankings .rank-row .char-flip-play > img, .screen-rankings .rank-row .char-flip-play > canvas"
+    while time.time() - t0 < 150 and pg.evaluate("(s) => document.querySelectorAll(s).length", FLIP) < 3:
         time.sleep(1)
-    r = pg.evaluate("""async () => { const dpr = devicePixelRatio; const imgs = [...document.querySelectorAll('.screen-rankings .rank-row .char-flip-play img')].slice(0, 3);
-      const phases = imgs.map(() => new Set()); const al = [];
+    r = pg.evaluate("""async (sel) => { const dpr = devicePixelRatio; const imgs = [...document.querySelectorAll(sel)].slice(0, 3);
+      const phases = imgs.map(() => new Set()), steps = imgs.map(() => new Set()); const al = [];
       for(let f = 0; f < 45; f++){ await new Promise(r => requestAnimationFrame(r));
         imgs.forEach((img, i) => { const r = img.getBoundingClientRect(), p = img.parentElement.getBoundingClientRect();
-          const fx = (r.left - p.left) * dpr, fy = (r.top - p.top) * dpr; phases[i].add((fx - Math.round(fx)).toFixed(2) + ',' + (fy - Math.round(fy)).toFixed(2)); }); }
+          const fx = (r.left - p.left) * dpr, fy = (r.top - p.top) * dpr; phases[i].add((fx - Math.round(fx)).toFixed(2) + ',' + (fy - Math.round(fy)).toFixed(2));
+          steps[i].add(img.tagName === 'CANVAS' ? img.__f : Math.round((r.left - p.left) / p.width) + ':' + Math.round((r.top - p.top) / p.width)); }); }
       imgs.forEach(img => { const play = img.parentElement, s = play.parentNode.querySelector('svg.avatarchar-svg').getBoundingClientRect(), r = play.getBoundingClientRect();
         al.push({ dx: Math.abs(r.left + r.width / 2 - s.left - s.width / 2), dy: Math.abs(r.top + r.height / 2 - s.top - s.height / 2), dw: Math.abs(r.width - s.width) }); });
-      return { n: imgs.length, phases: phases.map(s => s.size), al }; }""")
-    check("every leaderboard character's flip-book steps on whole device pixels (one sub-pixel phase over 45 frames, 313: 30+)",
-          r["n"] >= 3 and all(p == 1 for p in r["phases"]), r)
+      return { n: imgs.length, phases: phases.map(s => s.size), steps: steps.map(s => s.size), kind: imgs.map(i => i.tagName), al }; }""", FLIP)
+    check("every leaderboard character's flip-book steps on whole device pixels (one sub-pixel phase over 45 frames, 313: 30+), and steps",
+          r["n"] >= 3 and all(p == 1 for p in r["phases"]) and all(s >= 5 for s in r["steps"]), r)
     check("...and still sits exactly over its drawing (centre within .5px, size within 1.5px)",
           all(a["dx"] <= 0.5 and a["dy"] <= 0.5 and a["dw"] <= 1.5 for a in r["al"]), r["al"])
     ctx.close()
@@ -11490,8 +11495,9 @@ def check_b313_chars_centred(br):
           out.rows = read(); await wait(2100); out.later = read(); await wait(2100); out.last = read();
           /* and each plays its OWN loop: Astral, Celestial and Zenith share
              a kind, and a flip-book picked by kind gave all three Zenith's */
-          for(let t = 0; t < 480; t++){ const n = ['astral', 'celestial', 'zenith'].filter(c => [...document.querySelectorAll('.rank-row')].some(r => r.dataset.av === c && r.querySelector('.char-flip-play img'))).length; if(n === 3) break; await wait(250); }
-          out.sheets = ['astral', 'celestial', 'zenith'].map(c => { const r = [...document.querySelectorAll('.rank-row')].find(r => r.dataset.av === c); const img = r && r.querySelector('.char-flip-play img'); return img ? img.src : null; });
+          for(let t = 0; t < 480; t++){ const n = ['astral', 'celestial', 'zenith'].filter(c => [...document.querySelectorAll('.rank-row')].some(r => r.dataset.av === c && r.querySelector('.char-flip-play > img, .char-flip-play > canvas'))).length; if(n === 3) break; await wait(250); }
+          out.sheets = ['astral', 'celestial', 'zenith'].map(c => { const r = [...document.querySelectorAll('.rank-row')].find(r => r.dataset.av === c); /* (384.112) a canvas carries its sheet (__sp); the old <img> its src */
+            const img = r && r.querySelector('.char-flip-play > img, .char-flip-play > canvas'); return img ? (img.tagName === 'CANVAS' ? (img.__sp && img.__sp.url) : img.src) : null; });
           return out; }""", chars)
         rows = r.get("rows") or []
         worst = max([max(abs(x["dx"]), abs(x["dy"])) for x in rows] or [99])
@@ -11777,10 +11783,11 @@ def check_b314_chars(br):
              drawing is wider than 80 CSS px is deliberately NOT given a recorded flip-book - charFlipAttach answers false and the tile plays
              its LIVE drawing (char-live). An iPad's picker tile is 83px, so every held character there is live. "Playing" is a running
              flip-book OR a live drawing with a running animation; a held tile that is neither is still, which is what this guards. */
-          const flipOf = o => o.querySelector('.char-flip-play img');
+          /* (384.112) the loop is a canvas the frames are copied into (charFlipIsPlaying: on the clock, not held); 384.95 and before an <img> sheet */
+          const flipOf = o => o.querySelector('.char-flip-play > img, .char-flip-play > canvas');
           for(let t = 0; t < 600; t++){ if(held.filter(near).every(o => flipOf(o) || o.classList.contains('char-live'))) break; await wait(250); }
           await wait(500);
-          const playing = o => { const img = flipOf(o); if(img) return img.getAnimations().some(a => a.playState === 'running');
+          const playing = o => { const img = flipOf(o); if(img) return img.tagName === 'CANVAS' ? charFlipIsPlaying(img) : img.getAnimations().some(a => a.playState === 'running');
             const sv = o.querySelector('svg.avatarchar-svg'); return o.classList.contains('char-live') && !!sv && sv.getAnimations({ subtree: true }).some(a => a.playState === 'running'); };
           out.nearHeld = held.filter(near).length; out.nearPlaying = held.filter(near).filter(playing).length;
           out.nearFlip = held.filter(near).filter(o => !!flipOf(o)).length; out.nearLive = held.filter(near).filter(o => !flipOf(o) && o.classList.contains('char-live')).length;
@@ -11861,8 +11868,8 @@ def check_b314_chars(br):
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
           const tab = () => document.querySelector('#bottomtab-profile .bottomtab-icon');
           const moving = () => { const t = tab(); if(!t) return false;
-            const img = t.querySelector('.char-flip-play img');
-            if(img && img.getAnimations().some(a => a.playState === 'running')) return 'flip';
+            const img = t.querySelector('.char-flip-play > img, .char-flip-play > canvas');   /* (384.112) a canvas, or 384.95's <img> */
+            if(img && (img.tagName === 'CANVAS' ? charFlipIsPlaying(img) : img.getAnimations().some(a => a.playState === 'running'))) return 'flip';
             const sv = t.querySelector('svg.avatarchar-svg');
             if(t.classList.contains('char-live') && sv && sv.getAnimations({ subtree: true }).some(a => a.playState === 'running')) return 'live';
             return false; };
@@ -16597,7 +16604,7 @@ def check_b317_tabplate(br):
       for(const id of ['ronin', 'clown', 'ninja']){
         store.avatarChar = id; const t = document.querySelector('#bottomtab-profile .bottomtab-icon');
         delete t.dataset.char; syncBottomTabAvatar(); showHome();
-        for(let k = 0; k < 60 && !t.querySelector('.char-flip-play img'); k++) await wait(500);
+        for(let k = 0; k < 60 && !t.querySelector('.char-flip-play > img, .char-flip-play > canvas'); k++) await wait(500);
         const sv = t.querySelector('svg.avatarchar-svg');
         out.tab[id] = { vb: sv && sv.getAttribute('viewBox'), icon: R(t), svg: R(sv), play: R(t.querySelector('.char-flip-play')) };
       }
