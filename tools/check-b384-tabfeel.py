@@ -406,12 +406,19 @@ def d_device(br, url, label, w, h, dpr, kind, ins):
         T = tabs(pg); ids = [t for t in ("bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar") if t in T]
         seq = ["bottomtab-profile", "bottomtab-rewards", "bottomtab-home", "bottomtab-calendar", "bottomtab-profile", "bottomtab-home"] if QUICK else \
               ["bottomtab-profile", "bottomtab-rewards", "bottomtab-home", "bottomtab-calendar", "bottomtab-profile", "bottomtab-home", "bottomtab-rewards", "bottomtab-calendar", "bottomtab-home"]
+        # (Home's own first seconds after the warm-up - its after-build work and late arrivals - are not what is measured)
+        pg.wait_for_timeout(3000); settle(pg)
         cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4}); pg.wait_for_timeout(600)
         bad_o, bad_l = [], []
         for to in seq:
             if to not in T: continue
             T = tabs(pg)
             t0 = now(pg); click_tab(pg, cdp, kind, T[to]); pg.wait_for_timeout(1800); settle(pg)
+            # a press the page never received (no pointerdown reached it: the harness's input lost on a loaded machine) is sent again;
+            # a press that reached the page and did not land is the page's failure
+            if not pg.evaluate("(t0)=>window.__rec.ev.some(e=>e[0]==='pointerdown' && e[1]==='c' && e[2]>=t0)", t0):
+                info("D %s: the press on %s never reached the page; sent again" % (label, to))
+                t0 = now(pg); click_tab(pg, cdp, kind, T[to]); pg.wait_for_timeout(1800); settle(pg)
             r = rec(pg); x = one_action(r, t0); st = pg.evaluate(STATE)
             if x["build"] and x["fu"] and x["fu"] > x["build"][1] and x["fu"] - x["up"] <= HELD: bad_o.append((to.replace("bottomtab-", ""), round(x["fu"] - x["up"]), round(x["build"][1] - x["up"])))
             if x["build"] and kind != "desk" and (not x["land"] or not x["fu"] or x["land"]["t"] > x["fu"]): bad_o.append((to.replace("bottomtab-", ""), "no landing made in the release"))
