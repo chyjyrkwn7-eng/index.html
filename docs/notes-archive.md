@@ -39676,8 +39676,9 @@ the end of this file). Nothing is needed for its pins to glint: the slot's glint
 drawing, cut by `badgeSilhouetteURL`, which reads a pin's `shape.obj` and drops the rim. Clean-up it should take: delete the
 glisten block at the end of `buildObjPinSVG` (the `-sil` mask, the `-shn` gradient, the `badge-shine` group and its
 `badge-shine-band` rect, after `if(grey) return svg;`) - it is display:none here and never animated, but every pin still
-carries the mask. On that branch alone its pins also showed the coin's light past their edge: the mask had the 6.5-unit rim a
-pin does not have.
+carries the mask. On that branch alone its pins show the coin's light past their edge: the mask has the 6.5-unit rim a pin does
+not have - measured, 10% of the light's mask lies off the pin (23,959 of 234,746 device px); merged with this, 0.5%
+(the pin's own soft edge).
 
 **Trace, before -> after** (main 384.97 against this build, each run alone on the machine (load ~3), Chromium 153, 440x956 at
 3x, CPU x4, the same fixture: the academy, a case of four, the fifth unit new; windows read off the page's own markers).
@@ -39693,3 +39694,20 @@ pin does not have.
   builds (the document's style for `body.bc-covering`, a 60-90ms recalc at 4x just after the coin appears; the case's 3D
   layerization; a rAF render of a badge picture, 120-130ms at 4x, as the coin's glint ends). None of it moves the glint or the
   spin, which are the compositor's on both engines; left as it is.
+
+**Gates (384.101 on main 384.99, one at a time in the session's slots).** NEW `tools/check-b384-shine.py` (1)-(10): on this build
+all pass but the coin-mask check of (4), whose first threshold (0.5%, art read at >24 levels) was tighter than a struck token's
+own dark keyline on the dark backdrop reads (0.7%): re-set to 2%, art at >10 (a pin's missing rim is 10%), and the outside-the-
+silhouette check allows a fringe of 0.05% of it (21 pixels of a 148,000-pixel rimless pin turned in 3D, its mask's soft edge);
+section (4) re-run: ALL PASS on this build (coin mask off the drawing 33 / 13 px of ~230,000-250,000), and ALL PASS merged
+with objbadges (Fire Code pins 1,055 of 148,201 = 0.7%). `--against origin/main` (384.99) FAILS (1) 66 badge-svg paints in the glint, (2) the slot's
+glint is an SVG rect, (3) not promoted (will-change auto), (6) 62,977 / 45,930 face pixels jump at the hand-over, (7) passes .65-1,
+steps of 44.5 degrees, (8) every found badge carries its in-SVG glint (25 masks); (4)(5)(9)(10) hold on both, as they guard what
+must not change. Against claude/b384-objbadges alone, (4)'s coin mask FAILS for Fire Code's pins (10%); merged with this it holds.
+check-behaviour (check_badges, check_cutscene, check_b317_badgecase, check_b317_badge2, check_b318_badges, check_b319_badges,
+check_b320c_case, check_b321c_case, check_b321d_badges, check_b320g_inspect) ALL PASS; check-b384-cutscenes ONLY=3 ALL PASS;
+check-unlocks ALL PASS; check-centering --quick ALL PASS (0 off centre); sweep-layout --quick 20/20 clean; check-js clean.
+Video (scratchpad shine/badge-shine-before-after.mp4): before | after at 440x956, real speed, each recorded alone on the
+machine; frames sampled - the coin's glint crosses in ~4 frames at 8fps after against ~2 before, no light left on the face at
+rest; the slot's glint starts after the bounce and crosses over ~5 frames at 10fps, inside the badge.
+Only the phone can say whether it now feels smooth: Chromium is not WebKit's compositor.
