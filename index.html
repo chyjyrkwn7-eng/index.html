@@ -84709,7 +84709,7 @@ const IFC_BANNER_ART = {
      FAME at night. Under the cornice, all seven ranks' emblems lit in a row on a gold rail, Bronze to Supernova, each glass medallion
      in its rank's colour in a gold bezel; either side, a glass case of the 58 chapter badges as pins on red felt (29 a case, every
      enamel its own colour); fire-engine red velvet drapes on gold tiebacks at both edges and a flaming sconce on each pilaster;
-     in the arched niche, on a black marble plinth with its HALL OF FAME plate, the golden fire helmet - the leather front piece
+     in the arched niche, high on a fluted black marble column with its HALL OF FAME plate (clear of the character's circle on a cover), the golden fire helmet - the leather front piece
      in red enamel with the gold Maltese cross and its eagle - with a gold glory turning behind it; and on the red runner, the one
      inspector (fbOfficerBack) seen from behind, saluting it, rim-lit by it. Two searchlights sweep up the hall from the floor.
      Moves (19 layers): the glory turning and the gold breathing, the searchlights swinging, a light running along the emblems, a
@@ -84720,7 +84720,9 @@ const IFC_BANNER_ART = {
      opacity on boxes only, no filters; every moving part's still is the drawing, the events hidden at rest (fcmT / opacity:0). */
   completionist(u){
     const rnd = bnRand(38411);
-    const CX = 240, HY = 118, FY = 152;
+    /* the helmet sits HIGH, on a tall column (its brim at y 100): on the Profile cover and a person's card the character's circle
+       covers the bottom middle of the banner (from about 63% down), and the helmet clears it */
+    const CX = 240, HY = 100, FY = 152, GY = HY - 24;
     /* the ranks, Bronze to Supernova (RANK_COLOR's hues, lifted for glass) */
     const RK = [["#E08A44", "#FFD0A0"], ["#C9CCD2", "#FFFFFF"], ["#F5C21B", "#FFF0A0"], ["#2EC4B6", "#B8FFF6"], ["#3D74E8", "#B8D0FF"], ["#A855F7", "#E6CCFF"], ["#E23B3B", "#FFC0B8"]];
     const RY = 22, RX = i => CX + (i - 3) * 28;
@@ -84758,7 +84760,7 @@ const IFC_BANNER_ART = {
       /* the keystone */
       '<path d="M234 38 L246 38 L244.4 46 L235.6 46 Z" fill="url(#' + u + 'gold)"/>';
     /* the glory's light, at rest, inside the niche (the breathing layer brightens it) */
-    base += '<ellipse cx="' + CX + '" cy="96" rx="64" ry="58" fill="url(#' + u + 'halo)" opacity=".55"/>';
+    base += '<ellipse cx="' + CX + '" cy="' + GY + '" rx="64" ry="58" fill="url(#' + u + 'halo)" opacity=".55"/>';
     /* pilasters, gold capitals and bases, and the sconce's light on each (its flame moves, in front) */
     [160, 320].forEach(x => {
       base += '<rect x="' + (x - 6) + '" y="10" width="12" height="' + (FY - 10) + '" fill="#170809"/><rect x="' + (x - 6) + '" y="10" width="2" height="' + (FY - 10) + '" fill="#2E1012"/>' +
@@ -84817,11 +84819,12 @@ const IFC_BANNER_ART = {
     [[96, 166], [384, 166]].forEach(([x, y]) => { base += '<ellipse cx="' + x + '" cy="' + (y + 4) + '" rx="12" ry="2.6" fill="#000" opacity=".5"/><path d="M' + (x - 6) + ' ' + (y + 3) + ' L' + (x + 6) + ' ' + (y + 3) + ' L' + (x + 4) + ' ' + (y - 4) + ' L' + (x - 4) + ' ' + (y - 4) + ' Z" fill="#2A2C32"/><ellipse cx="' + x + '" cy="' + (y - 4.4) + '" rx="4.6" ry="1.6" fill="#FFF1C8"/>'; });
     const L = [{ svg: base }];
     /* ---- behind the helmet: the gold breathing, the glory turning ---- */
-    L.push({ svg: '<ellipse cx="' + CX + '" cy="96" rx="96" ry="78" fill="url(#' + u + 'halo)" opacity=".75"/>', box: [CX - 96, 18, 192, 156], o: [CX, 96], cls: "bl-breathe", style: "animation-duration:4.6s" });
+    L.push({ svg: '<ellipse cx="' + CX + '" cy="' + GY + '" rx="96" ry="78" fill="url(#' + u + 'halo)" opacity=".75"/>', box: [CX - 96, GY - 78, 192, 156], o: [CX, GY], cls: "bl-breathe", style: "animation-duration:4.6s" });
     let rays = "";
-    for(let i = 0; i < 24; i++){ const a = i / 24 * Math.PI * 2, w = i % 2 ? .045 : .07, r2 = i % 2 ? 50 : 66;
-      rays += '<path d="M' + bnF(CX + Math.cos(a - w) * 18) + ' ' + bnF(96 + Math.sin(a - w) * 18) + ' L' + bnF(CX + Math.cos(a) * r2) + ' ' + bnF(96 + Math.sin(a) * r2) + ' L' + bnF(CX + Math.cos(a + w) * 18) + ' ' + bnF(96 + Math.sin(a + w) * 18) + ' Z"/>'; }
-    L.push({ svg: '<g fill="#FFD45A" opacity=".42">' + rays + '</g>', box: [CX - 68, 28, 136, 136], o: [CX, 96], cls: "bl-spin", style: "animation-duration:48s" });
+    /* (no longer than the gap to the ranks' rail above it, which they must not paint over) */
+    for(let i = 0; i < 24; i++){ const a = i / 24 * Math.PI * 2, w = i % 2 ? .06 : .09, r2 = i % 2 ? 34 : 46;
+      rays += '<path d="M' + bnF(CX + Math.cos(a - w) * 14) + ' ' + bnF(GY + Math.sin(a - w) * 14) + ' L' + bnF(CX + Math.cos(a) * r2) + ' ' + bnF(GY + Math.sin(a) * r2) + ' L' + bnF(CX + Math.cos(a + w) * 14) + ' ' + bnF(GY + Math.sin(a + w) * 14) + ' Z"/>'; }
+    L.push({ svg: '<g fill="#FFD45A" opacity=".45">' + rays + '</g>', box: [CX - 48, GY - 48, 96, 96], o: [CX, GY], cls: "bl-spin", style: "animation-duration:48s" });
     /* the searchlights: two cones up the hall from the floor, crossing behind the niche, each swinging on its own clock */
     [[96, 162, 1, 11, 0], [384, 162, -1, 13, 4.2]].forEach(([x, y, dir, dur, at]) => {
       const tx = x + dir * 70, top = -20;
@@ -84832,13 +84835,17 @@ const IFC_BANNER_ART = {
     L.push(fcmGlint(u, "rk", [RX(0) - 14, RY - 12, RX(6) - RX(0) + 28, 24], "#FFFFFF", .5, 4.2, 1.4, 40));
     /* ---- in front: the plinth, the helmet, the drapes, the inspector ---- */
     const HS = 3.05, HT = 'translate(' + CX + ' ' + HY + ') scale(' + HS + ') translate(-20 -17.6)';
+    /* the column: a gold cap, a fluted black marble shaft with its plate, a stepped gold-trimmed base */
+    const SH = FY - 10 - (HY + 7);
     let front = '<rect x="206" y="' + (HY + 2) + '" width="68" height="5" rx="1" fill="url(#' + u + 'gold)"/>' +
-      '<rect x="212" y="' + (HY + 7) + '" width="56" height="' + (FY - HY - 12) + '" fill="url(#' + u + 'marble)"/>' +
-      '<rect x="212" y="' + (HY + 7) + '" width="56" height="' + (FY - HY - 12) + '" fill="none" stroke="#7A4A10" stroke-width=".8"/>' +
+      '<rect x="214" y="' + (HY + 7) + '" width="52" height="' + SH + '" fill="url(#' + u + 'marble)"/>' +
+      [221, 228, 252, 259].map(x => '<rect x="' + x + '" y="' + (HY + 9) + '" width="1.4" height="' + (SH - 4) + '" fill="#000" opacity=".35"/><rect x="' + (x + 1.4) + '" y="' + (HY + 9) + '" width=".6" height="' + (SH - 4) + '" fill="#FFE7A0" opacity=".12"/>').join("") +
+      '<rect x="214" y="' + (HY + 7) + '" width="52" height="' + SH + '" fill="none" stroke="#7A4A10" stroke-width=".8"/>' +
+      '<rect x="208" y="' + (FY - 10) + '" width="64" height="5" rx="1" fill="url(#' + u + 'marble)" stroke="#7A4A10" stroke-width=".6"/>' +
       '<rect x="203" y="' + (FY - 5) + '" width="74" height="5" rx="1" fill="url(#' + u + 'gold)"/>' +
       /* the plate */
-      '<rect x="220" y="' + (HY + 13) + '" width="40" height="11" rx="1.2" fill="url(#' + u + 'gold)"/><rect x="221.4" y="' + (HY + 14.4) + '" width="37.2" height="8.2" rx=".8" fill="none" stroke="#7A4A10" stroke-width=".5"/>' +
-      fbText("HALL OF FAME", CX, HY + 18.5, 3.4, "#3A1A06", .62);
+      '<rect x="222" y="' + (HY + 16) + '" width="36" height="11" rx="1.2" fill="url(#' + u + 'gold)"/><rect x="223.4" y="' + (HY + 17.4) + '" width="33.2" height="8.2" rx=".8" fill="none" stroke="#7A4A10" stroke-width=".5"/>' +
+      fbText("HALL OF FAME", CX, HY + 21.5, 3.2, "#3A1A06", .6);
     /* the helmet (fcHelmet's lines, front on, in gold): the dome and its ribs, the brim, the front piece in red enamel with the
        gold Maltese cross, the eagle on top */
     front += '<ellipse cx="' + CX + '" cy="' + (HY + 2.6) + '" rx="44" ry="3.4" fill="#000" opacity=".45"/>' +
