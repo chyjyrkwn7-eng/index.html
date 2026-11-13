@@ -6856,7 +6856,9 @@
     40%  { transform:scale(1); box-shadow:0 0 0 14px rgba(0,0,0,0), inset 0 0 22px 0 color-mix(in srgb, var(--accent) 22%, transparent); }
     100% { transform:scale(1); box-shadow:0 0 0 0 rgba(0,0,0,0), inset 0 0 0 0 rgba(255,255,255,0); }
   }
-  .rank-row.rank-flash{ animation:rank-flash-anim 1.1s ease-out 3; position:relative; z-index:2; }
+  /* (384.111) the row no longer scales, rings and glows: Find me lays one veil over it (.rank-flash-veil, lbFlashRow). The row is
+     isolated while it flashes so the veil (z-index -1) sits over its background and under its words. */
+  .rank-row.rank-flash{ isolation:isolate; }
   /* The Sync section, lit for a moment when Settings is opened from
      the save-your-code banner. A ring rather than a fill: the section
      is a heading plus a card, and washing colour across both reads as
@@ -37882,8 +37884,10 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row.lb-row-me:not(.rank-podium-1, .rank-podium-2, .rank-podium-3){
     background:linear-gradient(color-mix(in srgb, var(--accent) 17%, transparent), color-mix(in srgb, var(--accent) 17%, transparent)), var(--lb-cell) !important;
   }
-  html[data-layout] body .screen-rankings .rank-rows > .rank-row.lb-row-me .rank-place:not(.lb-rank-medal){ color:var(--accent); }
-  html[data-layout] body .screen-rankings .rank-rows > .rank-row.lb-row-me .rank-name{ font-weight:700; }
+  /* (384.111) your row is no longer washed (.lb-row-me is not put on the board's rows); these two quiet marks stay - your place number
+     in the accent (off the podium) and your name a weight heavier - keyed on data-me, which is how Find me finds the row */
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row[data-me="1"] .rank-place:not(.lb-rank-medal){ color:var(--accent); }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row[data-me="1"] .rank-name{ font-weight:700; }
   /* THE TOP THREE: a card each, the list's own surface, the metal kept to a fine ring, a faint light at the medal and the medal */
   html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium){
     margin:0 0 .5rem !important; border-radius:var(--lb-group-r) !important;
@@ -37945,7 +37949,7 @@ html.is-browser{ --fade-paper: transparent; }
      list's cell colour, the lift over the card exactly as --lb-cell stacks it - under the row below, which covers it: nothing
      moves, and a boundary has the card behind it rather than the page. (Not on a row mid Find-me flash: its ring keeps the
      box-shadow it had.) */
-  html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head):not(:last-child, .rank-flash){
+  html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head):not(:last-child){   /* (384.111) a flashing row too: the flash is a veil now, not a box-shadow */
     box-shadow:var(--lb-cell-under) !important;
   }
   html[data-layout] body #stage .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3)::before{ display:none !important; }
@@ -40044,6 +40048,98 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
   @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
+
+  /* ==== THE SEARCH FIELD IS ONE CAPSULE (384.111) ===================================================================
+     Madison, his Leaderboard beside Apple Music's Search tab: "The find me button stands out just a little bit, maybe cause it's not
+     color matched to the search bar? I feel like the search bar and the find me button don't have that Apple vibe, it's missing the
+     round edges and stuff." Measured off Apple's screenshot (1186px = 440pt): the field is a CAPSULE (a circle fitted to its ends at
+     four rows lands within 1px), 41.9pt tall, 20pt in from each side like the grid under it; its fill is (29,29,31) on black - iOS's
+     search fill rgba(118,118,128,.24); the magnifier is white, 16pt across with its handle, centred 21pt in; the placeholder starts
+     39pt in, iOS's secondary label (157,156,161) on that fill, 17pt regular (x-height 8.9pt). Every search field in the app is that
+     capsule now (.sbcap / .sbcap-field, put on by each screen's builder): the Leaderboard, Choose your units, the Virtual Room's
+     unit picker, Review's question list and the Starred / Most missed list in a unit's card. 44px tall (Apple's 42pt, at the app's
+     44px tap floor), so its radius is 22px. The button on its line (Find me; Select all, and Starred in Review) is the same fill,
+     the same height and a capsule too, so the row reads as one family. The field over the tab bar (#tabsearch, Review on a phone)
+     keeps its glass: it floats over the page like Apple Music's own, and a flat fill would show the questions through it.
+     Last in the sheet, with an id in every selector and !important where the clean look's #stage field rules (1-4-3) have it. */
+  html[data-theme][data-layout] body{
+    --sb-h:44px;
+    --sb-fill:rgba(118,118,128,.24);
+    --sb-ph:rgba(235,235,245,.6);
+    --sb-glyph:#FFFFFF;
+    --sb-fs:max(17px, 1.0625rem);
+    --sb-icon:20px;
+    --sb-icon-x:11px;
+    --sb-text-x:38px;
+    --sb-end:14px;
+  }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap{ position:relative; min-width:0; }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field.sbcap-field{
+    -webkit-appearance:none; appearance:none; display:block; width:100%; min-width:0; box-sizing:border-box !important;
+    height:var(--sb-h) !important; min-height:var(--sb-h) !important; max-height:none !important;
+    margin:0 !important; border:0 !important; border-radius:999px !important; outline:none;
+    padding:0 var(--sb-end) 0 var(--sb-text-x) !important;
+    background:var(--sb-fill) !important; background-image:none !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto;
+    font-family:inherit; font-size:var(--sb-fs) !important; font-weight:400 !important; line-height:normal !important; letter-spacing:normal !important;
+    color:var(--ink) !important; text-align:left !important; text-indent:0 !important; caret-color:var(--accent, #fff);
+  }
+  /* the x's room only while there is something to clear */
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field.sbcap-field:not(:placeholder-shown){ padding-right:44px !important; }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field.sbcap-field:focus{ box-shadow:none !important; border:0 !important; }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field::placeholder{ color:var(--sb-ph); opacity:1; }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field::-webkit-search-cancel-button{ -webkit-appearance:none; appearance:none; display:none; }
+  /* iOS's own font sits low in a field: the words go up half a pixel there, as 382's measured rule did (Chromium does not match this) */
+  @supports (-webkit-touch-callout: none){
+    html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field.sbcap-field{ padding-bottom:1px !important; }
+  }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > svg.searchicon{
+    position:absolute; z-index:2; left:var(--sb-icon-x) !important; top:50% !important; right:auto !important;
+    width:var(--sb-icon) !important; height:var(--sb-icon) !important; margin:0 !important; transform:translateY(-50%) !important;
+    color:var(--sb-glyph) !important; opacity:1 !important; pointer-events:none;
+  }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > svg.searchicon :is(circle, line){ stroke-width:2.2px; }
+  /* the x: iOS's filled grey disc with the cross cut through it, inside the field's round end, a 44px target */
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > button.sbcap-clear.sbcap-clear{
+    position:absolute; z-index:3; top:50% !important; right:0 !important; left:auto !important; transform:translateY(-50%) !important;
+    width:44px !important; height:44px !important; min-width:44px; min-height:44px !important; margin:0 !important; padding:0 !important;
+    display:flex; align-items:center; justify-content:center; border:0 !important; border-radius:999px !important;
+    background:none !important; box-shadow:none !important; color:var(--sb-ph) !important; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > button.sbcap-clear.sbcap-clear[hidden]{ display:none !important; }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > button.sbcap-clear svg{ width:22px; height:22px; display:block; }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > button.sbcap-clear svg path:first-child{ fill:currentColor; opacity:1; }
+  html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > button.sbcap-clear svg path:last-child{ stroke:#26272C; stroke-width:2.2px; }
+  /* the button on the field's line: the field's fill and height, a capsule */
+  html[data-theme][data-layout] body #stage :is(.rank-tools, .setup-tools, .picks-tools) > :is(.rank-me-btn, .selall-btn, .starred-pill).sbcap-btn,
+  html[data-theme][data-layout] body #stage .setup-tools > .picks-tools > :is(.selall-btn, .starred-pill){
+    box-sizing:border-box; align-self:center; height:var(--sb-h) !important; min-height:var(--sb-h) !important; max-height:none !important;
+    border:0 !important; border-color:transparent !important; border-radius:999px !important;
+    background:var(--sb-fill) !important; background-image:none !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto;
+  }
+  html[data-theme][data-layout] body #stage .rank-tools > .rank-me-btn.sbcap-btn.sbcap-btn{
+    padding:0 16px !important; font-size:var(--sb-fs) !important; font-weight:500 !important; letter-spacing:normal !important;
+    color:var(--sb-glyph) !important;
+  }
+  html[data-theme][data-layout] body #stage :is(.rank-tools, .setup-tools, .picks-tools) > :is(.rank-me-btn, .selall-btn, .starred-pill).sbcap-btn:active,
+  html[data-theme][data-layout] body #stage .setup-tools > .picks-tools > :is(.selall-btn, .starred-pill):active{ opacity:.7; }
+  /* a unit's card: the field under Back and the list's name, the card's own side padding */
+  html[data-theme][data-layout] .unitdetail .unitdetail-search.sbcap{ margin-top:.55rem; }
+  /* the field over the tab bar keeps its glass and its size; its words are the capsule's (17px, the same grey placeholder) */
+  html[data-theme][data-layout] body .tabsearch .tabsearch-input::placeholder{ color:var(--sb-ph); opacity:1; }
+
+  /* ---- FIND ME FLASHES YOUR ROW (384.111): one veil, the accent at a low strength, its opacity alone moving ---- */
+  .rank-row > .rank-flash-veil{
+    position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none;
+    background:color-mix(in srgb, var(--rank-accent, var(--accent, #fff)) 20%, transparent);   /* the theme's colour (--rank-accent); white on the default */
+    opacity:0; will-change:opacity;
+    animation:rank-veil 1.4s cubic-bezier(.33, 0, .25, 1) both;
+  }
+  @keyframes rank-veil{ 0%{ opacity:0; } 16%{ opacity:1; } 100%{ opacity:0; } }
+  /* Reduce motion: no rise - the tint is simply there, holds a moment and fades (opacity only; out-ranks the global animation:none) */
+  html[data-reduce-motion="true"] .rank-row > .rank-flash-veil{ animation:rank-veil-calm 1.2s linear both !important; }
+  @keyframes rank-veil-calm{ 0%{ opacity:1; } 25%{ opacity:1; } 100%{ opacity:0; } }
 </style>
 <script>
   (function(){
@@ -116314,14 +116410,21 @@ function openUnitDetail(row, name, mode){
     barRow.append(back, tt);
     /* A search, with a clear - "a little search bar to search the
        flagged and most missed and a clear search". */
+    /* (384.111) the one search capsule (.sbcap): the magnifier at its start and the same round x as every other field, in place
+       of a "Clear" pill */
     const sw = document.createElement("div");
-    sw.className = "unitdetail-search";
+    sw.className = "unitdetail-search sbcap";
     const si = document.createElement("input");
-    si.type = "search"; si.placeholder = "Search"; si.setAttribute("aria-label", kind === "flagged" ? "Search starred" : "Search most missed");
+    si.type = "search"; si.className = "sbcap-field"; si.placeholder = "Search"; si.setAttribute("aria-label", kind === "flagged" ? "Search starred" : "Search most missed");
     si.setAttribute("aria-label", si.placeholder);
     const sx = document.createElement("button");
-    sx.type = "button"; sx.className = "unitdetail-searchclear"; sx.textContent = "Clear"; sx.hidden = true;
-    sw.append(si, sx);
+    sx.type = "button"; sx.className = "unitdetail-searchclear sbcap-clear"; sx.hidden = true;
+    sx.setAttribute("aria-label", "Clear the search");
+    sx.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">"
+      + "<path d=\"M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z\" fill=\"currentColor\" opacity=\".22\"/>"
+      + "<path d=\"M9 9l6 6M15 9l-6 6\" stroke=\"currentColor\" stroke-width=\"2\""
+      + " stroke-linecap=\"round\" fill=\"none\"/></svg>";
+    sw.append(searchMagnifier(), si, sx);
     bar.append(barRow, sw);
     pane.appendChild(bar);
     /* THE HEADER DOES NOT SCROLL (build 270). It was a sticky bar inside
@@ -117381,11 +117484,11 @@ function showSetup(){
   unitSect.appendChild(levelSeg);
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "searchwrap";
+  searchWrap.className = "searchwrap sbcap";   /* (384.111) the one search capsule */
   searchWrap.appendChild(searchMagnifier());
   const searchInput = document.createElement("input");
   searchInput.type = "search";
-  searchInput.className = "searchbox";
+  searchInput.className = "searchbox sbcap-field";
   searchInput.placeholder = "Search";   /* build 382: "have it only say search instead" - the label keeps the words */
   searchInput.setAttribute("aria-label", "Search units");
   searchInput.addEventListener("input", () => {
@@ -117403,7 +117506,7 @@ function showSetup(){
   addSearchClear(searchWrap, searchInput);
 
   const selAll = document.createElement("button");
-  selAll.type = "button"; selAll.className = "selall-btn";
+  selAll.type = "button"; selAll.className = "selall-btn sbcap-btn";
   /* THE LEADERBOARD'S ROW (build 383): Madison, "the app needs a cohesive look and this screen looks so much different
      than every other screen" and "The search button stands out" - after "I like the look of the new top tab and search
      bar" on the Leaderboard. So the search is the board's filled field, with Select all beside it where Find me sits,
@@ -122940,7 +123043,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.111";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -139951,19 +140054,19 @@ function showVirtualRoomSetup(editRoom){
      anywhere in the file, so the wrapper computed to margin:0 and the
      field sat straight on top of the Select all pill. This is the class
      the main unit picker uses, and it brings position:relative with it. */
-  searchWrap.className = "searchwrap";
+  searchWrap.className = "searchwrap sbcap";   /* (384.111) the one search capsule */
   /* the same magnifier as the main picker's field - its gutter was empty
      here (build 327 audit) */
   searchWrap.appendChild(searchMagnifier());
   const searchInput = document.createElement("input");
-  searchInput.type = "text"; searchInput.className = "searchbox";
+  searchInput.type = "text"; searchInput.className = "searchbox sbcap-field";
   searchInput.placeholder = "Search";   /* build 382: "have it only say search instead" - the label keeps the words */
   searchInput.setAttribute("aria-label", "Search units");
   searchWrap.appendChild(searchInput);
   addSearchClear(searchWrap, searchInput);
 
   const selAll = document.createElement("button");
-  selAll.type = "button"; selAll.className = "selall-btn"; selAll.textContent = "Select all";
+  selAll.type = "button"; selAll.className = "selall-btn sbcap-btn"; selAll.textContent = "Select all";
   /* (383) the units screen's row: the board's filled field, Select all beside it */
   const tools = document.createElement("div");
   tools.className = "setup-tools";
@@ -149407,6 +149510,32 @@ function playWeekRecap(r){
   return el;
 }
 let lbFindMeAt = 0;
+/* (384.111) FIND ME FLASHES YOUR ROW ONCE; NOTHING MARKS IT THE REST OF THE TIME. Madison, his own board: "Notice in my leaderboard
+   screenshot, I'm permanently highlighted, don't do that. When I hit find me it'll flash or whatever." Your row is drawn like
+   everyone's (no .lb-row-me wash, the podium's tint kept); Find me scrolls to it and lays ONE veil over its background - the accent
+   at a low strength, its opacity alone animated (it composites), up and back to nothing in LB_FLASH_MS. The veil is a child of the
+   row, the row's own box and corners, under the row's words (the row is isolated while it flashes). A rebuild inside the window
+   (a snapshot) hands the new row the veil part-way through (a negative delay), as before; a second tap starts a fresh veil. */
+const LB_FLASH_MS = 1400;
+function lbFlashRow(row, sinceMs){
+  if(!row) return;
+  row.querySelectorAll(":scope > .rank-flash-veil").forEach(v => v.remove());
+  clearTimeout(row._lbFlashT);
+  const v = document.createElement("span");
+  v.className = "rank-flash-veil";
+  v.setAttribute("aria-hidden", "true");
+  /* the row's background reaches its outer edge (background-origin border-box, 384.92); an absolute box starts inside the border, so the
+     veil is pulled out by the border's width, side by side (a podium card has 1px, a list row none) */
+  const fit = () => { try{ const cs = getComputedStyle(row); v.style.inset = ["Top", "Right", "Bottom", "Left"].map(k => (-(parseFloat(cs["border" + k + "Width"]) || 0)) + "px").join(" "); }catch(e){} };
+  if(row.isConnected) fit(); else requestAnimationFrame(fit);   /* a row being built is not in the page yet */
+  if(sinceMs > 0) v.style.animationDelay = (-sinceMs) + "ms";
+  const done = () => { clearTimeout(row._lbFlashT); if(v.isConnected) v.remove(); if(!row.querySelector(":scope > .rank-flash-veil")) row.classList.remove("rank-flash"); };
+  /* only the veil's own end (animationend bubbles up from the row's pictures - see 384's note at Find me) */
+  v.addEventListener("animationend", e => { if(e.target === v) done(); });
+  row._lbFlashT = setTimeout(done, Math.max(0, LB_FLASH_MS - (sinceMs || 0)) + 400);
+  row.classList.add("rank-flash");
+  row.prepend(v);
+}
 /* ---- BANNERS ON THE BOARD (build 310, NOT SWITCHED ON) ----
    "Banners being displayed in the leaderboard, is there a way to do this
    while still being able to see gold silver and bronze placements? ...
@@ -149585,12 +149714,10 @@ function renderRankingRows(rows, entries, board, opts){
        that is then read and re-published anywhere else. */
     const isMe = !!(store.publicId && entry.pub === store.publicId);
     if(isMe){
-      row.classList.add("lb-row-me"); row.dataset.me = "1";
+      /* (384.111) found, not lit: data-me is how Find me finds it; no .lb-row-me (its accent wash was on all the time) */
+      row.dataset.me = "1";
       const since = Date.now() - lbFindMeAt;
-      if(since < 3300){ row.classList.add("rank-flash"); row.style.animationDelay = (-since) + "ms";
-        /* (384) the row's own end, not a picture inside it finishing its fade (animationend bubbles) - see Find me */
-        const end = e => { if(e.target !== row || e.animationName !== "rank-flash-anim") return; row.removeEventListener("animationend", end); row.classList.remove("rank-flash"); row.style.animationDelay = ""; };
-        row.addEventListener("animationend", end); }
+      if(since < LB_FLASH_MS) lbFlashRow(row, since);
     }
 
     const rank = document.createElement("span");
@@ -153797,14 +153924,14 @@ function showAnswerReview(units, source, versions, opts){
   panel.appendChild(head);
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "searchwrap";
-  const searchIcon = buildMagnifyIcon();
-  searchIcon.setAttribute("class", "searchicon");
+  /* (384.111) the one search capsule: the same magnifier as every other field (it was the What's New glyph), and the same x */
+  searchWrap.className = "searchwrap sbcap";
   const searchInput = document.createElement("input");
-  searchInput.type = "search"; searchInput.className = "searchbox";
+  searchInput.type = "search"; searchInput.className = "searchbox sbcap-field";
   searchInput.placeholder = "Search";
   searchInput.setAttribute("aria-label", "Search questions");
-  searchWrap.append(searchIcon, searchInput);
+  searchWrap.append(searchMagnifier(), searchInput);
+  addSearchClear(searchWrap, searchInput);
   panel.appendChild(searchWrap);
   /* Apple Music's search, beside the tab bar (build 327z10): the field up
      here goes while that one is there, and that one drives the same filter */
@@ -156079,7 +156206,7 @@ function showProfile(defaultTab, opts){
    something is typed; clearing runs the field's own filter (an input event) and keeps focus. */
 function addSearchClear(wrap, input){
   const b = document.createElement("button");
-  b.type = "button"; b.className = "rank-search-clear searchwrap-clear";
+  b.type = "button"; b.className = "rank-search-clear searchwrap-clear sbcap-clear";
   b.setAttribute("aria-label", "Clear the search"); b.hidden = true;
   b.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">"
     + "<path d=\"M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z\" fill=\"currentColor\" opacity=\".22\"/>"
@@ -156878,13 +157005,14 @@ function showRankings(defaultBoard){
      Safari and NOTHING on iOS, which is where this app lives, so it is
      drawn. */
   const searchWrap = document.createElement("div");
-  searchWrap.className = "rank-search-wrap";
+  /* (384.111) sbcap: the one search capsule every search field in the app is (see THE SEARCH FIELD IS ONE CAPSULE in the sheet) */
+  searchWrap.className = "rank-search-wrap sbcap";
   const search = document.createElement("input");
-  search.type = "search"; search.className = "searchbox rank-search";
+  search.type = "search"; search.className = "searchbox rank-search sbcap-field";
   search.placeholder = "Search";
   search.setAttribute("aria-label", "Search the rankings by username");
   const clearBtn = document.createElement("button");
-  clearBtn.type = "button"; clearBtn.className = "rank-search-clear";
+  clearBtn.type = "button"; clearBtn.className = "rank-search-clear sbcap-clear";
   clearBtn.setAttribute("aria-label", "Clear the search");
   clearBtn.hidden = true;
   clearBtn.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">"
@@ -156903,7 +157031,7 @@ function showRankings(defaultBoard){
   /* the same magnifier as the unit search (round 31) */
   searchWrap.append(searchMagnifier(), search, clearBtn);
   const meBtn = document.createElement("button");
-  meBtn.type = "button"; meBtn.className = "iconbtn rank-me-btn";
+  meBtn.type = "button"; meBtn.className = "iconbtn rank-me-btn sbcap-btn";
   /* (327z12 gave it a blue "where am I" arrow; it came off in 327z13 -
      "not sure why the find me button has a blue arrow thing? Remove that".
      It stays the bar's glass, as the search pill beside it is.) */
@@ -157038,13 +157166,8 @@ function showRankings(defaultBoard){
     /* a snapshot can rebuild the board mid-flash; the new row picks the
        flash up where it was (see the row builder) */
     lbFindMeAt = Date.now();
-    mine.classList.remove("rank-flash");
-    void mine.offsetWidth;
-    mine.classList.add("rank-flash");
-    /* (384) ONLY THE FLASH'S OWN END TAKES IT OFF. animationend bubbles: a character or flare in the row finishing its .24s fade-in
-       (lb-art-in, as the board's pictures arrive) took the flash off the row a moment after Find me - check-sync caught it */
-    const end = e => { if(e.target !== mine || e.animationName !== "rank-flash-anim") return; mine.removeEventListener("animationend", end); mine.classList.remove("rank-flash"); };
-    mine.addEventListener("animationend", end);
+    /* (384.111) one soft pulse of the row's own background (lbFlashRow); a second tap starts it again from the top */
+    lbFlashRow(mine, 0);
   });
 
   /* Only over NOTHING. The listener retries by itself, and a dropped

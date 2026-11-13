@@ -9068,7 +9068,7 @@ def check_b304(br):
              recorded loop rather than the live svg - that is the lag fix. */
           out.liveRows = all.filter(x => x.querySelector('.rank-avatar-wrap.char-live, .rank-avatar-wrap.char-flip')).length;
           out.offRows = all.filter(x => x.classList.contains('is-offscreen')).length;
-          const me = document.querySelector('.rank-row.lb-row-me');
+          const me = document.querySelector('.rank-row[data-me="1"]');   /* (384.111) your row is found, not lit: no .lb-row-me on the board's rows */
           out.meTappable = !!(me && me.classList.contains('is-tappable'));
           if(me){ me.click(); await wait(700); }
           const card = document.querySelector('.person-card');
