@@ -60,8 +60,8 @@
   /* (384.27) THE STILL TOP EDGE. One strip, in the markup from the first byte of <body>, in an installed iPhone/iPad app only (the head script
      puts .top-edge-on on <html> for exactly that, and nothing else): the splash's #0A0A0A until the splash starts to fade, then the sky's
      own top colour, changed IN PLACE (syncTopGuard) - never removed, never replaced. iOS 26/27 reports (folio #1026) say the system's top blur
-     latches on the first time the top-edge element or the theme-color / color-scheme tags change after launch. .top-edge-old is the old
-     behaviour (a new strip each colour, the tags rewritten) for the display test's A/B; .top-edge-none makes the strip ignore touch. */
+     latches on the first time the top-edge element or the theme-color / color-scheme tags change after launch.
+     (384.105) The display test's variants of it (the old behaviour, the touch, clip, A/B/C) are gone with the test: see the head script. */
   /* (384.80) ONE SOLID STRIP OVER THE STATUS BAR'S AREA, AND NOTHING ELSE THERE. What WebKit tints the status bar from (and, reported in
      production on iOS 26/27 by r/PWA developers, what removes the system's top blur) is a REAL fixed element at the very top - within 4px
      of it, at least 80% of the width, over 4px tall (6px and up) - with a SOLID background-colour: not a gradient, not an image, not a
@@ -71,19 +71,9 @@
      colour of the screen's top: the sky's at the top edge, the paper under a question's header), recoloured in place by syncTopGuard,
      never removed, never replaced, never transparent. The sky no longer shows behind the clock: that area is one solid colour. */
   #top-edge{ display:none; }
-  html.top-edge-on:not(.top-edge-old) #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:max(env(safe-area-inset-top, 0px), 6px); z-index:2147483647;
+  html.top-edge-on #top-edge{ display:block; position:fixed; top:0; left:0; right:0; height:max(env(safe-area-inset-top, 0px), 6px); z-index:2147483647;
     background-image:none; pointer-events:none; }
-  /* (384.80) the display test's "clip" (class26e.topclip; r/PWA "A quick workaround for the iOS 27 status bar/header blur glitch", a commenter's
-     element others confirmed): the same strip 11px tall with background-clip:text - its background-colour is still set, so WebKit samples it,
-     but it paints nothing, so the page shows under the clock as before */
-  html.top-edge-on.top-clip:not(.top-edge-old) #top-edge{ height:11px; -webkit-background-clip:text; background-clip:text; }
   #top-safe{ display:none !important; }   /* (384.80) folded into #top-edge; the id is gone from the markup */
-  html.top-383 #top-edge{ display:none !important; }
-  /* variant B: a flat backdrop under the wash's measured depth (~46pt below the inset on his recording, +16px soft foot), BEHIND the content */
-  #top-deep{ display:none; }
-  html.top-edge-on.top-deep:not(.top-edge-old):not(.top-383) #top-deep{ display:block; position:fixed; top:0; left:0; right:0; height:calc(env(safe-area-inset-top, 0px) + 62px); z-index:-1;
-    pointer-events:none; background-color:var(--splash-bg,#0A0A0A);
-    -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image:linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
 </style>
 <script>
   /* INTERNET EXPLORER (build 384). Nova cannot run in it (custom properties, color-mix(), modern script throughout), and
@@ -316,6 +306,24 @@
     }
   }catch(e){}
   })();
+  /* (384.105) THE DISPLAY TEST IS GONE, AND NO DEVICE KEEPS ANY OF ITS SWITCHES. Madison: "Remove the 'show the display test panel'
+     stuff from settings" - the top-of-screen blur it was built to find is the system's and is not being chased any more. The panel
+     (Settings > Advanced > Troubleshooting, or ?diag) wrote these, and the head script read them before the first paint, so a phone
+     that had one on kept running that test setting at every launch. Deleted here, every launch, before anything reads storage and
+     BEFORE the class redirect below (it rewrites class26e.* to class26e.ifc.* in Fire Code), so the academy's copy and Fire Code's
+     both go in the first launch on either side. Nothing reads any of them any more; this only leaves no trace of them.
+       displaytest  the panel itself (Settings' "Show the display test panel")      dxboot     its "keep for the next launch"
+       topguard     "0": no top strip (384 r20)                                     topedgeold "1": the old top edge (384.27 A/B)
+       topedgepe    "none": the strip ignores touch (384.27)                        topmatch, topdeep, top383  "1": 384.77's A, B, C
+       topclip      "1": the strip 11px, background-clip:text (384.80)              ojappoff   "1": 384.85's (reverted) ojapp switch
+       topclear     "0": 384.54's clearance off                                     sbdefault  384.85's (reverted) status-bar-style finding */
+  (function(){
+    try{
+      var gone = /^class26e\.(ifc\.)?(displaytest|dxboot|topguard|topedgeold|topedgepe|topmatch|topdeep|top383|topclip|ojappoff|topclear|sbdefault)$/, del = [];
+      for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && gone.test(k)) del.push(k); }
+      for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
+    }catch(e){}
+  })();
   (function(){
     /* SIGNED OUT (build 383). Settings > Account > Sign out leaves "class26e.signout" and reloads; here, before any other script
        reads storage, this device forgets the account in BOTH classes - their saved copies, codes and backups (class26e.* and the
@@ -329,7 +337,7 @@
        so a different account signing in on this device sees none of it; class26e.enrolled is only a mirror of it now. */
     try{
       if(localStorage.getItem("class26e.signout")){
-        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|displaytest|enrolled|classseen|greet\.[a-z]+|newclass\.[a-z]+)$/;
+        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|enrolled|classseen|greet\.[a-z]+|newclass\.[a-z]+)$/;
         var del = [];
         for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf("class26e.") === 0 && !keepRe.test(k)) del.push(k); }
         for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
@@ -381,7 +389,7 @@
        (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
        with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
     /* (384) the status bar's colour is the class's own (its theme's), as the theme is: not shared */
-    var SHARED = /^class26e\.(signout|activeclass|enrolled|leaveclass|leftnote|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|displaytest|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|leaveclass|leftnote|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -501,21 +509,11 @@
     /* build 327z: a browser tab, for the rules that are only right there
        (no pull-to-refresh, edge strips for Safari's bars) */
     if(!inApp) document.documentElement.classList.add("is-browser");
-    /* (384.27) the still top edge: an installed iPhone/iPad app only (the same test as isIOSDevice() && standalone); class26e.topguard = "0"
-       switches it off, class26e.topedgeold = "1" is the old behaviour, class26e.topedgepe = "none" a strip that ignores touch (display test) */
+    /* (384.27) the still top edge: an installed iPhone/iPad app only (the same test as isIOSDevice() && standalone).
+       (384.105) Always, there: the display test's switches that were read here (class26e.topguard, topedgeold, topedgepe, topmatch,
+       topdeep, top383, topclip) are gone, and deleted from storage by the first head script, before the class redirect. */
     if(inApp && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream){
-      var te = document.documentElement.classList, tg = localStorage.getItem("class26e.topguard");
-      if(tg !== "0"){
-        te.add("top-edge-on");
-        if(localStorage.getItem("class26e.topedgeold") === "1") te.add("top-edge-old");
-        if(localStorage.getItem("class26e.topedgepe") === "none") te.add("top-edge-none");
-        /* (384.77) the in-place variants for the system's top wash, tried on the EXISTING icon from the display test (no re-add): flags read
-           here, before the first paint, kept until the panel's All off. docs/notes-archive.md "384.77". */
-        if(localStorage.getItem("class26e.topmatch") === "1") te.add("top-match");     /* A: the strips in the colour the wash makes of the page */
-        if(localStorage.getItem("class26e.topdeep") === "1") te.add("top-deep");       /* B: a flat backdrop under the wash's whole depth, behind the content */
-        if(localStorage.getItem("class26e.top383") === "1") te.add("top-383");         /* C: build 383 exactly - no strips, the tags rewritten as 383 did */
-        if(localStorage.getItem("class26e.topclip") === "1") te.add("top-clip");       /* (384.80) clip: the strip sampled but painting nothing */
-      }
+      document.documentElement.classList.add("top-edge-on");
     }
     if(!inApp){
       var tc = document.getElementById("themecolor");
@@ -623,11 +621,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>
-  /* (384.26) A TEST INSTALL. iOS reads the status bar style once, when an icon is added to the Home Screen, so a different style can only be
-     tried by adding a second icon from an address that carries it: ?sbs=default or ?sbs=black. Nothing happens without that in the address. */
-  (function(){ try{ var m = /[?&]sbs=(default|black|black-translucent)(&|$)/.exec(location.search), e = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]'); if(m && e) e.setAttribute("content", m[1]); }catch(x){} })();
-</script>
 <meta name="apple-mobile-web-app-title" content="Nova">
 <link rel="apple-touch-icon" sizes="180x180" href="https://chyjyrkwn7-eng.github.io/index.html/share/apple-touch-icon.png?v=381">
 <link rel="icon" href="data:image/png;base64,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">
@@ -712,7 +705,6 @@
 </head>
 <body>
 <div id="top-edge" aria-hidden="true" style="background-color:#0A0A0A"></div>
-<div id="top-deep" aria-hidden="true"></div>
 
 <div id="splashscreen">
   <div id="splash-group">
@@ -40372,7 +40364,7 @@ html.is-browser{ --fade-paper: transparent; }
             var tc = document.getElementById("themecolor");
             var saved = localStorage.getItem("class26e.statusbar.v1");
             /* (384.27) not in the still top edge: the tag is never written after first paint there */
-            var stillEdge = document.documentElement.classList.contains("top-edge-on") && !document.documentElement.classList.contains("top-edge-old") && !document.documentElement.classList.contains("top-383");
+            var stillEdge = document.documentElement.classList.contains("top-edge-on");
             if(!stillEdge && tc && saved && /^#[0-9a-fA-F]{6}$/.test(saved)) tc.content = saved;
           }
         }catch(e){}
@@ -56035,315 +56027,8 @@ new MutationObserver(() => {
    press blurred it (a style pass in the press), and every screen mount blurred it again and ran the keyboard unwind's four passes.
    Traced with the iPhone layer on, at 4x CPU: ~35ms of every tab tap. */
 const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|reset|range|color|file|image|hidden)$/i.test(el.type || "")));
-/* (384 r17) DISPLAY TEST, only with ?diag in the address, or with "Show the display test panel" in Settings > Advanced > Troubleshooting (which sets
-   `class26e.displaytest`). Nobody else sees it. The owner's phone shows the top of every screen (the screen title, the test's count) soft and dim;
-   Chromium cannot reproduce it, so this gives switches that change the suspects live on the phone.
-   (384.26) Two kinds of control, kept apart on purpose:
-     - the SUSPECT switches (T below, checkboxes, `diag-*` styles) turn a layer of ours OFF, and the auto test steps through them;
-     - the TRIALS (X below, `dx-*` styles, role=switch buttons, all OFF at load) try the candidates the web reports for the iOS 26/27 top-edge
-       blur: a strip at the top edge in several sizes, keeping the top edge still, the colour tags, how the page scrolls, content lower.
-   Nothing here is persisted (a reload puts every trial back off), nothing runs for anyone who has not opened the test, and "All off" restores
-   the page. The panel is movable and stays below the top 120px, because the thing being measured is the top of the screen. */
-(function(){
-  try{ if(!/[?&]diag(=|&|$)/.test(location.search) && localStorage.getItem("class26e.displaytest") !== "1") return; }catch(e){ return; }
-  const T = [
-    ["blur", "No backdrop blur anywhere", "*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}"],
-    ["glow", "No background glow or stars", "body::before,body::after,html::before,html::after{display:none!important}"],
-    ["mask", "No masks", "*,*::before,*::after{-webkit-mask-image:none!important;mask-image:none!important}"],
-    ["filt", "No filters or shadows", "*,*::before,*::after{filter:none!important}"],
-    ["wc", "No will-change / compositing hints", "*,*::before,*::after{will-change:auto!important;isolation:auto!important;mix-blend-mode:normal!important}"],
-    ["topbtn", "No blur on the chat / back / Pause buttons only", "#chatdock-btn, .back-link, .settings-nav-back, .ios-nav-back, #pausebtn, .top #restart{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}"],
-    ["pin", "Header not pinned", ".wrap > .top, .wrap.test-pinned > .top{position:static!important}"],
-    ["dock", "Chat dock off", "#chatdock{display:none!important}"],
-    ["anim", "No animations or transitions", "*,*::before,*::after{animation:none!important;transition:none!important}"],
-    ["tabs", "Bottom tab bar off", ".bottomtabs{display:none!important}"],
-    ["lay", "Everything in front of the page off (fixed layers)", "body > *:not(#stage):not(.wrap):not(#diagpanel){display:none!important}"],
-    ["guard", "Top strip OFF (the iOS top-blur workaround)", "#top-guard,#top-edge{display:none!important}"]
-  ];
-  const HEAD = "Display test (tick one at a time)";
-  const box = document.createElement("div"); box.id = "diagpanel";
-  box.style.cssText = "position:fixed;right:6px;top:140px;z-index:2147483647;background:rgba(0,0,0,.92);color:#fff;font:12px/1.3 -apple-system,system-ui,sans-serif;padding:6px 8px;border-radius:10px;width:min(19rem,76vw);box-sizing:border-box;display:flex;flex-direction:column;-webkit-user-select:none;user-select:none";
-  const h = document.createElement("div"); h.textContent = HEAD; h.style.cssText = "font-weight:700;margin-bottom:4px;padding:6px 52px 6px 0;touch-action:none;cursor:grab"; box.appendChild(h);
-  const body = document.createElement("div"); body.style.cssText = "flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain";
-  const foot = document.createElement("div"); foot.style.cssText = "flex:none;border-top:1px solid rgba(255,255,255,.25);margin-top:6px;padding-top:6px";
-  const fitBox = () => { const top = parseFloat(box.style.top) || 140; box.style.maxHeight = Math.max(160, Math.min(innerHeight * 0.6, innerHeight - top - 10)) + "px"; };
-  /* move: drag the title; never above 120px, where the effect being measured is */
-  let drag = null;
-  h.addEventListener("pointerdown", e => { const r = box.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top }; try{ h.setPointerCapture(e.pointerId); }catch(x){} });
-  h.addEventListener("pointermove", e => {
-    if(!drag) return;
-    const left = Math.max(0, Math.min(innerWidth - box.offsetWidth, e.clientX - drag.dx));
-    const top = Math.max(120, Math.min(innerHeight - 56, e.clientY - drag.dy));
-    box.style.left = left + "px"; box.style.top = top + "px"; box.style.right = "auto"; fitBox();
-  });
-  const endDrag = () => { drag = null; };
-  h.addEventListener("pointerup", endDrag); h.addEventListener("pointercancel", endDrag);
-  const mini = document.createElement("span"); mini.setAttribute("role", "button"); mini.setAttribute("aria-label", "Hide or show the panel"); mini.textContent = "Hide";
-  mini.style.cssText = "position:absolute;top:0;right:0;min-width:48px;min-height:44px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#9cf";
-  let hidden = false;
-  mini.addEventListener("click", () => { hidden = !hidden; body.style.display = foot.style.display = hidden ? "none" : ""; mini.textContent = hidden ? "Show" : "Hide"; });
-  box.appendChild(mini);
-
-  /* a collapsible group: a heading that opens a list, with a count of what is on in it */
-  const counts = [];
-  const section = (title, count) => {
-    const hd = document.createElement("div"); hd.setAttribute("role", "button"); hd.setAttribute("aria-expanded", "false");
-    hd.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;border-top:1px solid rgba(255,255,255,.18);font-weight:700;color:#9cf";
-    const ttl = document.createElement("span"); ttl.textContent = title; const car = document.createElement("span"); car.textContent = "+"; car.style.cssText = "flex:none;min-width:24px;text-align:center"; hd.append(ttl, car);
-    const list = document.createElement("div"); list.style.display = "none";
-    hd.addEventListener("click", () => { const open = list.style.display === "none"; list.style.display = open ? "" : "none"; car.textContent = open ? "-" : "+"; hd.setAttribute("aria-expanded", open ? "true" : "false"); });
-    counts.push([ttl, title, count]); body.append(hd, list); return list;
-  };
-  /* ---- the suspects (unchanged): each one OFF-switch is a style element `diag-<k>` ---- */
-  const suspects = section("Switch layers off, and the auto test", () => T.filter(([k]) => document.getElementById("diag-" + k)).length);
-  T.forEach(([k, label, css]) => {
-    const row = document.createElement("label"); row.style.cssText = "display:flex;align-items:center;gap:8px;min-height:36px";
-    const cb = document.createElement("input"); cb.type = "checkbox"; cb.style.cssText = "width:20px;height:20px;flex:none";
-    cb.addEventListener("change", () => {
-      let st = document.getElementById("diag-" + k);
-      if(cb.checked){ if(!st){ st = document.createElement("style"); st.id = "diag-" + k; st.textContent = css; (document.body || document.head).appendChild(st); } }
-      else if(st) st.remove();
-      paintOn();
-    });
-    const sp = document.createElement("span"); sp.textContent = label; row.append(cb, sp); suspects.appendChild(row);
-  });
-  /* (384 r12) AUTO TEST: one tap, then screen-record the phone. Each suspect is switched on by itself for 5 seconds with its name in
-     the panel (the first step is nothing off, the second is everything off at once); the recording shows which one makes the soft
-     band across the top go - nobody has to tick anything. */
-  const auto = document.createElement("button"); auto.type = "button"; auto.textContent = "Run auto test (then screen-record)";
-  auto.style.cssText = "margin-top:6px;min-height:44px;width:100%;font:600 13px -apple-system,system-ui,sans-serif;border-radius:10px;border:0;background:#fff;color:#000;padding:8px 10px";
-  let running = false, autoGen = 0;
-  const clearSuspects = () => { T.forEach(([k]) => { const e = document.getElementById("diag-" + k); if(e) e.remove(); }); box.querySelectorAll("input").forEach(c => { c.checked = false; }); };
-  auto.addEventListener("click", () => {
-    if(running) return; running = true; const gen = ++autoGen;
-    const put = (list) => list.forEach(([k, , css]) => { const st = document.createElement("style"); st.id = "diag-" + k; st.textContent = css; (document.body || document.head).appendChild(st); });
-    const steps = [["Step 1: nothing off", []], ["Step 2: EVERYTHING off at once", T]].concat(T.map((t, i) => ["Step " + (i + 3) + ": " + t[1], [t]]));
-    let i = 0;
-    const next = () => {
-      if(gen !== autoGen) return;
-      clearSuspects();
-      if(i >= steps.length){ h.textContent = "Done - stop the recording and send it"; auto.textContent = "Run auto test (then screen-record)"; running = false; return; }
-      const [label, list] = steps[i++]; h.textContent = label; auto.textContent = label; put(list);
-      setTimeout(next, 5000);
-    };
-    h.textContent = "Starting in 3 seconds - start the screen recording now"; setTimeout(next, 3000);
-  });
-  suspects.appendChild(auto);
-
-  /* ================= the trials (384.26) ================= */
-  const sky = () => { try{ const c = appTopEdgeColor(); if(c) return c; }catch(e){} const m = document.getElementById("themecolor"); return (m && m.getAttribute("content")) || "#271E23"; };
-  const sheet = (id, css) => { let st = document.getElementById("dx-" + id); if(!st){ st = document.createElement("style"); st.id = "dx-" + id; (document.body || document.head).appendChild(st); } st.textContent = css; };
-  const unsheet = (id) => { const st = document.getElementById("dx-" + id); if(st) st.remove(); };
-  /* a meta's `content` pinned: the app's own writes (syncStatusBarColor) go nowhere while it is held */
-  const holdContent = (el, value) => {
-    el.setAttribute("content", value);
-    try{ Object.defineProperty(el, "content", { configurable: true, get(){ return value; }, set(){} }); }catch(e){}
-    return () => { try{ delete el.content; }catch(e){} };
-  };
-  const saved = {};   /* originals, by trial id */
-  /* the strip: ONE element, made when the trial goes on, recoloured in place, taken away when it goes off */
-  const stripOn = (o) => {
-    stripOff();
-    sheet("noguard", "#top-guard,#top-edge{display:none!important}");
-    const d = document.createElement("div"); d.id = "dx-strip"; d.setAttribute("aria-hidden", "true");
-    const colour = () => o.bg === "sky" ? sky() : o.bg;
-    d.style.cssText = "position:" + (o.pos || "fixed") + ";top:0;left:0;right:0;height:" + o.h + "px;z-index:2147483000;pointer-events:auto;background-color:" + colour() + ";" + (o.extra || "");
-    d.dataset.color = colour();
-    if(o.pos === "sticky"){ d.style.marginBottom = (-o.h) + "px"; document.body.insertBefore(d, document.body.firstChild); }
-    else document.body.appendChild(d);
-    if(o.bg === "sky") saved.stripTimer = setInterval(() => { const c = colour(); if(d.dataset.color !== c){ d.dataset.color = c; d.style.backgroundColor = c; } }, 1500);
-  };
-  const stripOff = () => { clearInterval(saved.stripTimer); const d = document.getElementById("dx-strip"); if(d) d.remove(); unsheet("noguard"); };
-  const meta = (name) => document.querySelector('meta[name="' + name + '"]');
-  /* a switch that is a flag the HEAD script reads at launch (class26e.<key> and a class on <html>): it has to survive a force-quit, which is
-     the unit of this test (the system's latch is per launch), so it is stored and put back by All off, not by a reload */
-  const flagTrial = (id, label, key, val, cls, tags) => ({ id, label, flag: () => document.documentElement.classList.contains(cls),
-    on(){
-      if(tags){ saved[id] = ["themecolor", "colorscheme"].map(i => { const m = document.getElementById(i); return m ? m.getAttribute("content") : null; }); saved[id + "cs"] = document.documentElement.style.colorScheme; }
-      try{ localStorage.setItem(key, val); }catch(e){} document.documentElement.classList.add(cls); try{ syncStatusBarColor(); }catch(e){} },
-    off(){
-      try{ localStorage.removeItem(key); }catch(e){} document.documentElement.classList.remove(cls); try{ syncStatusBarColor(); }catch(e){}
-      /* the old behaviour rewrote the two tags; going back puts them as the still top edge had them */
-      if(tags && saved[id]) ["themecolor", "colorscheme"].forEach((i, n) => { const m = document.getElementById(i); if(m && saved[id][n] != null && m.getAttribute("content") !== saved[id][n]) m.setAttribute("content", saved[id][n]); });
-      /* the old behaviour also wrote the root's own color-scheme; the still edge leaves it to the first style block */
-      if(tags && saved[id + "cs"] === "") document.documentElement.style.removeProperty("color-scheme");
-      saved[id] = null;
-    } });
-  const X = [
-    /* ---- 0. the top edge's behaviour (kept across launches until All off) ---- */
-    flagTrial("old", "OLD top edge behaviour (replace strip, rewrite tags)", "class26e.topedgeold", "1", "top-edge-old", true),
-    flagTrial("pe0", "The top edge strip ignores touch (pointer-events:none)", "class26e.topedgepe", "none", "top-edge-none"),
-    /* (384.77) the in-place alternatives for the wash, from the first paint of the next launch (force-quit and reopen) */
-    flagTrial("tvmatch", "A: top strips in the colour the wash makes", "class26e.topmatch", "1", "top-match"),
-    flagTrial("tvdeep", "B: a flat backdrop under the whole wash, behind the content", "class26e.topdeep", "1", "top-deep"),
-    flagTrial("tv383", "C: build 383 exactly (no strips, the tags rewritten as 383 did)", "class26e.top383", "1", "top-383", true),
-    /* (384.80) the r/PWA commenter's element: sampled (its colour is set) but invisible (background-clip:text), 11px */
-    flagTrial("clip", "clip: the top strip sampled but invisible (11px, background-clip:text)", "class26e.topclip", "1", "top-clip"),
-    /* ---- 1. a strip at the very top edge (radio) ---- */
-    { id: "s1",   rg: "strip", label: "1px solid strip at the top edge, page colour", on(){ stripOn({ h: 1, bg: "sky" }); }, off: stripOff },
-    { id: "s8",   rg: "strip", label: "8px solid strip that takes touch (today's is 8px and ignores touch)", on(){ stripOn({ h: 8, bg: "sky" }); }, off: stripOff },
-    { id: "s12",  rg: "strip", label: "12px solid strip, page colour, takes touch", on(){ stripOn({ h: 12, bg: "sky" }); }, off: stripOff },
-    { id: "s24",  rg: "strip", label: "24px solid strip, page colour, takes touch", on(){ stripOn({ h: 24, bg: "sky" }); }, off: stripOff },
-    { id: "s12st", rg: "strip", label: "12px sticky strip, first thing on the page", on(){ stripOn({ h: 12, bg: "sky", pos: "sticky" }); }, off: stripOff },
-    { id: "s12k", rg: "strip", label: "12px black strip, takes touch", on(){ stripOn({ h: 12, bg: "#000000" }); }, off: stripOff },
-    { id: "s12t", rg: "strip", label: "12px transparent strip, takes touch", on(){ stripOn({ h: 12, bg: "transparent" }); }, off: stripOff },
-    { id: "s12b", rg: "strip", label: "12px top element with a backdrop blur", on(){ stripOn({ h: 12, bg: "transparent", extra: "-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);" }); }, off: stripOff },
-    /* ---- 2. keep the top edge still ---- */
-    { id: "gin", label: "Today's strip is recoloured in place, never replaced", on(){
-        saved.gin = window.syncTopGuard; if(typeof saved.gin !== "function") return;
-        window.syncTopGuard = (color) => { const g = document.getElementById("top-guard"); if(topEdgeStill()) return saved.gin(color); if(g && color){ if(g.dataset.color !== color){ g.style.backgroundColor = color; g.dataset.color = color; } return; } return saved.gin(color); };
-      }, off(){ if(typeof saved.gin === "function") window.syncTopGuard = saved.gin; } },
-    { id: "ftc", label: "The app stops rewriting the theme-color tag", on(){ const m = document.getElementById("themecolor"); if(m) saved.ftc = holdContent(m, m.getAttribute("content")); },
-      off(){ if(saved.ftc) saved.ftc(); saved.ftc = null; try{ syncStatusBarColor(); }catch(e){} } },
-    { id: "fcs", label: "The app stops rewriting the page's color-scheme", on(){
-        const st = document.documentElement.style, v = st.colorScheme; try{ Object.defineProperty(st, "colorScheme", { configurable: true, get(){ return v; }, set(){} }); saved.fcs = true; }catch(e){}
-      }, off(){ try{ delete document.documentElement.style.colorScheme; }catch(e){} saved.fcs = false; } },
-    /* ---- 3. the colour tags, live (radio per tag) ---- */
-    { id: "vfit", label: "viewport-fit=auto instead of cover", on(){ const m = document.getElementById("viewportmeta"); saved.vfit = m.getAttribute("content"); m.setAttribute("content", saved.vfit.replace(/,?\s*viewport-fit\s*=\s*[^,]*/i, "")); },
-      off(){ const m = document.getElementById("viewportmeta"); if(m && saved.vfit != null) m.setAttribute("content", saved.vfit); } },
-    ...[["tcb", "theme-color #000000", "#000000"], ["tcw", "theme-color #FFFFFF", "#FFFFFF"], ["tcc", "theme-color transparent", "transparent"]].map(([id, label, val]) => (
-      { id, rg: "tc", label, on(){ const m = document.getElementById("themecolor"); if(m){ saved[id] = m.getAttribute("content"); saved[id + "r"] = holdContent(m, val); } },
-        off(){ const m = document.getElementById("themecolor"); if(saved[id + "r"]) saved[id + "r"](); saved[id + "r"] = null; if(m && saved[id] != null) m.setAttribute("content", saved[id]); try{ syncStatusBarColor(); }catch(e){} } })),
-    { id: "tcm", rg: "tc", label: "theme-color per scheme (light and dark tags, page colour)", on(){
-        saved.tcm = ["light", "dark"].map(s => { const m = document.createElement("meta"); m.name = "theme-color"; m.setAttribute("media", "(prefers-color-scheme: " + s + ")"); m.content = sky(); m.dataset.dx = "1"; document.head.insertBefore(m, document.head.firstChild); return m; });
-      }, off(){ (saved.tcm || []).forEach(m => m.remove()); saved.tcm = null; } },
-    ...[["csl", "color-scheme: light", "light"], ["csb", "color-scheme: light dark", "light dark"]].map(([id, label, val]) => (
-      { id, rg: "cs", label, on(){ const m = document.getElementById("colorscheme"); if(m){ saved[id] = m.getAttribute("content"); m.setAttribute("content", val); } sheet(id, "html{color-scheme:" + val + "!important}"); },
-        off(){ const m = document.getElementById("colorscheme"); if(m && saved[id] != null) m.setAttribute("content", saved[id]); unsheet(id); } })),
-    { id: "csn", rg: "cs", label: "color-scheme tag removed", on(){ const m = document.getElementById("colorscheme"); if(m){ saved.csn = { m, parent: m.parentNode, next: m.nextSibling }; m.remove(); } },
-      off(){ const s = saved.csn; if(s && s.parent) s.parent.insertBefore(s.m, s.next && s.next.parentNode === s.parent ? s.next : null); saved.csn = null; } },
-    /* ---- 4. how the page scrolls ---- */
-    { id: "inner", rg: "scr", label: "The page does not scroll; the screen scrolls inside it (breaks: scroll-to-top, back-to-top button, pinned header)",
-      on(){ sheet("inner", "html,body{height:100%!important;overflow:hidden!important}body > .wrap{position:fixed!important;top:0;left:0;right:0;bottom:0;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch}"); }, off(){ unsheet("inner"); } },
-    { id: "fixb", rg: "scr", label: "Body fixed to the screen and scrolling itself (same breakages)",
-      on(){ sheet("fixb", "html{height:100%!important;overflow:hidden!important}body{position:fixed!important;top:0;left:0;right:0;bottom:0;overflow-y:auto!important;-webkit-overflow-scrolling:touch}"); }, off(){ unsheet("fixb"); } },
-    { id: "ovs", label: "No overscroll bounce, no smooth scrolling", on(){ sheet("ovs", "html,body{overscroll-behavior:none!important;scroll-behavior:auto!important}"); }, off(){ unsheet("ovs"); } },
-    /* ---- 5. content lower than the effect ---- */
-    { id: "lo24", rg: "low", label: "Everything starts 24px lower", on(){ sheet("low", "body{padding-top:24px!important}"); }, off(){ unsheet("low"); } },
-    { id: "lo40", rg: "low", label: "Everything starts 40px lower", on(){ sheet("low", "body{padding-top:40px!important}"); }, off(){ unsheet("low"); } },
-    { id: "loin", rg: "low", label: "Everything starts below the safe area (adds the notch height again)", on(){ sheet("low", "body{padding-top:env(safe-area-inset-top,0px)!important}"); }, off(){ unsheet("low"); } }
-  ];
-  const byId = {}; X.forEach(x => { byId[x.id] = x; x.isOn = false; });
-  const flagged = () => X.filter(x => x.flag);
-  const SECTIONS = [
-    ["Top edge behaviour (kept across launches)", ["old", "pe0"]],
-    ["Top strip (one at a time; the app's own is hidden while one is on)", ["s1", "s8", "s12", "s24", "s12st", "s12k", "s12t", "s12b"]],
-    ["Keep the top edge still", ["gin", "ftc", "fcs"]],
-    ["Tags, changed live", ["vfit", "tcb", "tcw", "tcc", "tcm", "csl", "csb", "csn"]],
-    ["How the page scrolls", ["inner", "fixb", "ovs"]],
-    ["Content lower", ["lo24", "lo40", "loin"]]
-  ];
-  const rows = {};
-  const setRow = (x) => { const r = rows[x.id]; if(!r) return; r.setAttribute("aria-checked", x.isOn ? "true" : "false"); r.firstChild.style.background = x.isOn ? "#4ade80" : "transparent"; };
-  const toggle = (id, want) => {
-    const x = byId[id]; if(!x) return;
-    const to = typeof want === "boolean" ? want : !x.isOn;
-    if(to === x.isOn) return;
-    if(to && x.rg) X.forEach(o => { if(o !== x && o.rg === x.rg && o.isOn){ try{ o.off(); }catch(e){} o.isOn = false; setRow(o); } });
-    try{ if(to) x.on(); else x.off(); }catch(e){}
-    x.isOn = to; setRow(x); paintOn();
-  };
-  const onNames = () => [...X.filter(x => x.isOn).map(x => x.id), ...T.filter(([k]) => document.getElementById("diag-" + k)).map(([k]) => k)];
-  const onLine = document.createElement("div"); onLine.style.cssText = "margin:4px 0 6px;font:11px/1.35 ui-monospace,Menlo,monospace;color:#bbb";
-  const paintOn = () => {
-    const n = onNames(); onLine.textContent = "On now: " + (n.length ? n.join(", ") : "nothing");
-    counts.forEach(([ttl, title, count]) => { const c = count(); ttl.textContent = title + (c ? "  (" + c + " on)" : ""); });
-  };
-  SECTIONS.forEach(([title, ids]) => {
-    const list = section(title, () => ids.filter(i => byId[i].isOn).length);
-    ids.forEach(id => {
-      const x = byId[id]; const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "switch"); b.setAttribute("aria-checked", "false"); b.dataset.trial = id;
-      b.style.cssText = "display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:4px 0;border:0;background:transparent;color:#fff;text-align:left;font:12px/1.3 -apple-system,system-ui,sans-serif";
-      const dot = document.createElement("span"); dot.style.cssText = "flex:none;width:20px;height:20px;border:2px solid #fff;border-radius:" + (x.rg ? "50%" : "4px") + ";box-sizing:border-box";
-      const sp = document.createElement("span"); sp.textContent = x.label; b.append(dot, sp);
-      b.addEventListener("click", () => toggle(id)); rows[id] = b; list.appendChild(b);
-    });
-  });
-
-  /* ---- measurements: what the page itself can read, to send back with the recording ---- */
-  const px = (css, prop) => { const d = document.createElement("div"); d.style.cssText = "position:fixed;left:0;top:0;width:0;visibility:hidden;pointer-events:none;box-sizing:border-box;" + css; (document.body || document.documentElement).appendChild(d); const v = getComputedStyle(d)[prop]; d.remove(); return v; };
-  const desc = (e) => e ? e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + (typeof e.className === "string" && e.className.trim() ? "." + e.className.trim().split(/\s+/)[0] : "") : "nothing";
-  const rect = (e) => { if(!e) return "none"; const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return Math.round(r.width) + "x" + Math.round(r.height) + " at y" + Math.round(r.top) + ", " + cs.position + ", touch " + cs.pointerEvents; };
-  /* how many times the colour tags were written, and whether the strip is still the element it was, since this panel opened */
-  const tagWrites = { "theme-color": 0, "color-scheme": 0 }, edge0 = document.getElementById("top-edge");
-  try{
-    const isTag = (n) => n && n.nodeType === 1 && n.tagName === "META" && tagWrites[n.getAttribute("name")] !== undefined;
-    new MutationObserver((recs) => recs.forEach(r => {
-      if(r.type === "attributes" && isTag(r.target)) tagWrites[r.target.getAttribute("name")]++;
-      if(r.type === "childList") [...r.addedNodes, ...r.removedNodes].forEach(n => { if(isTag(n)) tagWrites[n.getAttribute("name")]++; });
-    })).observe(document.head, { subtree: true, attributes: true, childList: true });
-  }catch(e){}
-  const readout = () => {
-    const vv = window.visualViewport, standalone = navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
-    const mc = (sel) => { const m = document.querySelector(sel); return m ? m.getAttribute("content") : "(none)"; };
-    const hit = document.elementFromPoint(Math.round(innerWidth / 2), 4);
-    return [
-      "installed: " + standalone + "  build: " + (typeof APP_BUILD !== "undefined" ? APP_BUILD : "?"),
-      "window " + innerWidth + "x" + innerHeight + "  screen " + screen.width + "x" + screen.height + (vv ? "  visual " + Math.round(vv.width) + "x" + Math.round(vv.height) + " top " + Math.round(vv.offsetTop) : ""),
-      "gap screen minus window: " + (screen.height - innerHeight) + " (the bar the system keeps outside the page)",
-      "safe area top " + px("padding-top:env(safe-area-inset-top,0px)", "paddingTop") + "  bottom " + px("padding-bottom:env(safe-area-inset-bottom,0px)", "paddingBottom"),
-      "100vh " + px("height:100vh", "height") + "  lvh " + px("height:100lvh", "height") + "  svh " + px("height:100svh", "height") + "  dvh " + px("height:100dvh", "height"),
-      "status bar style tag: " + mc('meta[name="apple-mobile-web-app-status-bar-style"]') + " (read at install only)",
-      "viewport: " + mc("#viewportmeta"),
-      "theme-color: " + mc("#themecolor") + "  color-scheme: " + mc("#colorscheme"),
-      "what is 4px down, middle: " + desc(hit),
-      "top edge behaviour: " + (document.documentElement.classList.contains("top-edge-on") ? (document.documentElement.classList.contains("top-edge-old") ? "OLD (a new strip each colour, tags rewritten)" : "STILL (one strip, tags not rewritten)") : "not an installed iPhone/iPad: the browser behaviour"),
-      "strip " + rect(document.getElementById("top-edge")) + (edge0 ? (document.getElementById("top-edge") === edge0 ? "  same element since the panel opened" : "  REPLACED since the panel opened") : ""),
-      "tag writes since the panel opened: theme-color " + tagWrites["theme-color"] + ", color-scheme " + tagWrites["color-scheme"] + " (trials count)",
-      "old behaviour's strip: " + rect(document.getElementById("top-guard")),
-      "trial strip: " + rect(document.getElementById("dx-strip")),
-      "scrolls: " + desc(document.scrollingElement) + " " + (document.scrollingElement ? document.scrollingElement.scrollTop + "/" + document.scrollingElement.scrollHeight : "")
-    ].join("\n");
-  };
-  const mlist = section("Measurements (to send back)", () => 0);
-  const mout = document.createElement("div"); mout.style.cssText = "white-space:pre-wrap;font:11px/1.35 ui-monospace,Menlo,monospace;-webkit-user-select:text;user-select:text;word-break:break-word";
-  const mcopy = document.createElement("button"); mcopy.type = "button"; mcopy.textContent = "Copy the readout"; mcopy.style.cssText = "min-height:44px;width:100%;margin-top:4px;border:0;border-radius:10px;background:#333;color:#fff;font:600 13px -apple-system,system-ui,sans-serif";
-  const paintRead = () => { mout.textContent = readout(); };
-  mlist.previousSibling.addEventListener("click", paintRead);
-  mcopy.addEventListener("click", () => { paintRead(); try{ navigator.clipboard.writeText(mout.textContent + "\n" + onLine.textContent); mcopy.textContent = "Copied"; }catch(e){ mcopy.textContent = "Select the text above"; } setTimeout(() => { mcopy.textContent = "Copy the readout"; }, 1800); });
-  mlist.append(mout, mcopy);
-
-  /* ---- a second icon with a different status-bar style (install time) ---- */
-  const ilist = section("A second icon with another status bar style", () => 0);
-  const iout = document.createElement("div"); iout.style.cssText = "font-size:11px;line-height:1.4;-webkit-user-select:text;user-select:text;word-break:break-all";
-  const base = location.origin + location.pathname;
-  iout.textContent = "iOS reads the status bar style once, when an icon is added, so it cannot be tried live. Open this address in Safari (not in this app), tap Share, Add to Home Screen, and name it 'Nova test'. Sign in there with the sync code. Then open its Settings > Advanced > Troubleshooting and read the measurements.\n\ndefault: " + base + "?sbs=default&diag\nblack: " + base + "?sbs=black&diag";
-  iout.style.whiteSpace = "pre-wrap";
-  ilist.appendChild(iout);
-
-  /* ---- the next launch: the system may only take notice of something that is already there when the app opens, so a trial can be
-     kept for the next launch (it is put on as soon as the page's script runs, before the screen mounts) ---- */
-  const KEPT = "class26e.dxboot";
-  let kept = []; try{ kept = (JSON.parse(localStorage.getItem(KEPT) || "[]") || []).filter(i => byId[i]); }catch(e){}
-  const klist = section("Next launch", () => kept.length);
-  const kinfo = document.createElement("div"); kinfo.style.cssText = "font-size:11px;line-height:1.4;margin-bottom:4px;color:#bbb";
-  const paintKept = () => { kinfo.textContent = "Next launch starts with: " + (kept.length ? kept.join(", ") : "nothing") + ". Force-quit Nova and open it again to see it."; };
-  const kbtn = (text, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = text; b.style.cssText = "min-height:44px;width:100%;margin-bottom:4px;border:0;border-radius:10px;background:#333;color:#fff;font:600 13px -apple-system,system-ui,sans-serif"; b.addEventListener("click", fn); return b; };
-  const setKept = (list) => { kept = list; try{ if(list.length) localStorage.setItem(KEPT, JSON.stringify(list)); else localStorage.removeItem(KEPT); }catch(e){} paintKept(); paintOn(); };
-  klist.append(kinfo, kbtn("Keep what is on for the next launch", () => setKept(X.filter(x => x.isOn && !x.flag).map(x => x.id))), kbtn("Forget it", () => setKept([])));
-  paintKept();
-
-  flagged().forEach(x => { if(x.flag()){ x.isOn = true; setRow(x); } });
-
-  /* ---- footer: All off, and what is on ---- */
-  const allOff = document.createElement("button"); allOff.type = "button"; allOff.textContent = "All off";
-  allOff.style.cssText = "min-height:52px;width:100%;border:0;border-radius:12px;background:#ef4444;color:#fff;font:700 16px -apple-system,system-ui,sans-serif";
-  allOff.addEventListener("click", () => {
-    autoGen++; running = false; h.textContent = HEAD; auto.textContent = "Run auto test (then screen-record)";
-    setKept([]); clearSuspects();
-    /* the behaviour flags first (they put the two tags back as they found them), then the rest, last switched on first off */
-    [...flagged(), ...X.filter(x => !x.flag).reverse()].forEach(x => { if(x.isOn){ try{ x.off(); }catch(e){} x.isOn = false; setRow(x); } });
-    paintOn(); if(mlist.style.display !== "none") paintRead();
-  });
-  foot.append(allOff, onLine); box.append(body, foot); paintOn(); fitBox();
-  window.__diagTrials = { toggle, X, byId, readout, onNames };
-  const applyKept = () => { kept.forEach(id => { try{ toggle(id, true); }catch(e){} }); };
-  if(document.body) applyKept(); else document.addEventListener("DOMContentLoaded", applyKept);
-  const add = () => { if(document.body && !document.getElementById("diagpanel")) document.body.appendChild(box); };
-  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", add); else add();
-  setInterval(add, 1500);
-  addEventListener("resize", fitBox);
-})();
+/* (384.105) The display test (?diag, and Settings > Advanced > Troubleshooting) stood here; it is gone, with its switches - see the first head
+   script and docs/notes-archive.md "384.105". retired/display-test.md says how to put it back. */
 /* (384 r17) a second or third click in a row on the planet system or a flare starts a text selection in a desktop browser: it never does */
 document.addEventListener("mousedown", (e) => {
   if(e.detail > 1 && e.target && e.target.closest && e.target.closest(".cosmic-hero-wrap, .cosmic-icon-badge, .cosmic-flare-dot")) e.preventDefault();
@@ -87637,12 +87322,13 @@ function syncStatusBarColor(){
    pixels of the viewport to make it, and that a small OPAQUE fixed element at the very top, iOS only, blocks it (Stacker News PR #3248; the
    Glide and OJapp write-ups). So: an 8px solid strip in the sky's own top colour (what theme-color already is), fixed at the top edge, in the installed
    iPhone/iPad app only, replaced by a NEW element whenever the colour changes (a colour is read when an element appears, see refreshEdgeTints).
-   It takes no touch. `class26e.topguard` = "0" (the display test's switch) takes it away. EXPERIMENTAL: only a phone can say if it works. */
+   It takes no touch. EXPERIMENTAL: only a phone can say if it works.
+   (384.27) That strip is the persistent #top-edge now (below); (384.105) the 8px #top-guard and its switch went with the display test. */
 var topGuardWatch = null;
-/* (384.27) true in an installed iPhone/iPad app unless the display test has put the old behaviour back (class names set by the head script) */
+/* (384.27) true in an installed iPhone/iPad app (html.top-edge-on, set by the head script). (384.105) The display test's old behaviour and
+   variant C, which turned it off, are gone. */
 function topEdgeStill(){
-  const c = document.documentElement.classList;
-  return c.contains("top-edge-on") && !c.contains("top-edge-old") && !c.contains("top-383");
+  return document.documentElement.classList.contains("top-edge-on");
 }
 /* (384.54) UNDER A PINNED TEST HEADER THE PAGE'S TOP IS PAPER, NOT THE SKY. .wrap.test-pinned > .top::before paints --paper at 97% from the very
    top of the screen to under the header, so on a question the glow the model in appTopEdgeColor() describes is not what is there; the strip
@@ -87660,19 +87346,18 @@ function topEdgeStripColor(color){
    glows over paper: on Home it stood up to 12 levels off the sky beside it and read as a band under the clock in Chromium. So #top-edge and
    #top-safe carry the sky layer's own gradients (body::before's computed background, laid over the same full-viewport box, which is where the
    fixed sky starts in an installed app) on top of their opaque colour: the same pixels as the sky where there is no wash, still opaque. Not under
-   a pinned question header (the page's top there is the header's paper, and the strips are paper) and not with variant A (a lifted flat colour).
-   Recoloured in place, never replaced; run again after the sky's .6s dimming. */
+   a pinned question header (the page's top there is the header's paper, and the strips are paper).
+   Recoloured in place, never replaced; run again after the sky's .6s dimming. (384.105) Variant A and B's backdrop are gone. */
 let topStripsSkyTimer = 0;
 function topStripsSky(){
   try{
-    const root = document.documentElement;
-    const flat = root.classList.contains("top-match") || !!document.querySelector(".wrap.test-pinned");
+    const flat = !!document.querySelector(".wrap.test-pinned");
     const cs = flat ? null : getComputedStyle(document.body, "::before");
     const img = cs && cs.backgroundImage && cs.backgroundImage !== "none" ? cs.backgroundImage : "none";
     const base = cs ? cs.backgroundColor : "";
     /* (384.80) not #top-edge: it is the element WebKit samples, and WebKit reads its background-COLOUR only - so it is one solid colour
        (syncTopGuard), with no image over it, and #top-safe below it carries the sky's pixels */
-    for(const id of ["top-safe", "top-deep"]){
+    for(const id of ["top-safe"]){
       const e = document.getElementById(id); if(!e) continue;
       if(e.dataset.sky === img + base) continue;
       e.dataset.sky = img + base;
@@ -87681,12 +87366,6 @@ function topStripsSky(){
       if(base && !/rgba\([^)]*,\s*0\)|transparent/.test(base)) e.style.backgroundColor = base;
     }
   }catch(e){}
-}
-const TOP_WASH_LIFT = [4, 3, 1];   /* (384.77) the band over the page at rest on his recording, in levels (R, G, B) */
-function topWashLift(hex){
-  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
-  if(!m) return hex;
-  return "#" + [m[1], m[2], m[3]].map((h, i) => Math.min(255, parseInt(h, 16) + TOP_WASH_LIFT[i]).toString(16).padStart(2, "0")).join("");
 }
 /* (384.80) THE SAMPLED STRIP AND THE "fe" DANCE. Madison found a write-up of how Safari 26 / iOS 26 tints the top (Ian Febi Sastrataruna,
    "Safari 26 Status Bar Tinting - How It Actually Works", Jun 2026): WebKit samples the BACKGROUND-COLOR - not a background-image, a gradient,
@@ -87750,7 +87429,6 @@ function syncTopGuard(color){
       /* the one strip (#top-edge, in the markup): its colour is changed in place and it is never removed or replaced. Under the splash it
          keeps the splash's colour (it is above the splash, so it must not show as a band of sky over it); finishSplash calls this again
          as the fade starts, and it takes the sky's colour then (the CSS fades it with the splash). */
-      const stale = document.getElementById("top-guard"); if(stale) stale.remove();
       const el = document.getElementById("top-edge");
       if(!el || !color) return;
       const sp0 = document.getElementById("splashscreen");
@@ -87761,9 +87439,6 @@ function syncTopGuard(color){
         }
         return;
       }
-      /* (384.77) variant A (html.top-match): the strips take the colour the system's wash makes of the page - his 384.70 recording reads the band
-         under the status bar 4, 3 and 1 levels above the page below it, neutral - so a wash still drawn over them meets the page with no step */
-      if(document.documentElement.classList.contains("top-match")) color = topWashLift(color);
       if(el.dataset.color !== color){
         /* (384.80) NO JUMP IN THE STATUS BAR. "transition color changes will look janky" (the r/PWA thread): the strip changes in the frame the
            screen does - onto a question's paper at once (the pinned header is paper in that same frame, syncTestPin), and from one sky to
@@ -87775,7 +87450,7 @@ function syncTopGuard(color){
         el.dataset.color = color; el.style.backgroundColor = color; topTintDance(color); topResampleOnce(el);
       }
       if(el.style.backgroundImage){ el.style.backgroundImage = ""; delete el.dataset.sky; }   /* (384.80) solid, never an image (384.77 laid the sky on it) */
-      for(const id of ["top-safe", "top-deep"]){   /* (384.77) the safe-area strip and variant B's backdrop: the same colour, in place, never replaced */
+      for(const id of ["top-safe"]){   /* (384.77) the safe-area strip: the same colour, in place, never replaced */
         const s2 = document.getElementById(id);
         if(s2 && s2.dataset.color !== color){ s2.dataset.color = color; s2.style.backgroundColor = color; }
       }
@@ -87783,31 +87458,9 @@ function syncTopGuard(color){
       clearTimeout(topStripsSkyTimer); topStripsSkyTimer = setTimeout(topStripsSky, 750);   /* again once the sky's .6s dimming has run */
       return;
     }
-    const old = document.getElementById("top-guard");
-    if(document.documentElement.classList.contains("top-383")){ if(old) old.remove(); return; }   /* (384.77) C: 383 had no strip of any kind */
-    const standalone = navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-    let off = false; try{ off = localStorage.getItem("class26e.topguard") === "0"; }catch(e){}
-    if(!(isIOSDevice() && standalone) || off || !color || !document.body){ if(old) old.remove(); return; }
-    /* (384 r17) NOT UNDER THE SPLASH. The strip is above everything (z-index 2147483000), so one made while the splash is up is a band
-       of the sky's colour across the top of a flat #0A0A0A launch, appearing in the middle of it (applyTheme runs here while the
-       main script boots) - and a new element at the top edge is exactly what iOS's top blur reads. finishSplash calls this again as
-       the fade starts (after .splash-hide is on), and it is made then, over the app's own sky. */
-    const sp = document.getElementById("splashscreen");
-    if(sp && !sp.classList.contains("splash-hide")){
-      if(old) old.remove();
-      /* ...and if the splash goes without the fade (it is taken out of the page), it is made then */
-      if(!topGuardWatch && window.MutationObserver){
-        topGuardWatch = new MutationObserver(() => { if(!document.getElementById("splashscreen")){ topGuardWatch.disconnect(); try{ syncStatusBarColor(); }catch(e){} } });
-        topGuardWatch.observe(document.body, { childList: true });
-      }
-      return;
-    }
-    if(old && old.dataset.color === color) return;
-    if(old) old.remove();
-    const d = document.createElement("div");
-    d.id = "top-guard"; d.dataset.color = color; d.setAttribute("aria-hidden", "true");
-    d.style.cssText = "position:fixed;top:0;left:0;right:0;height:8px;z-index:2147483000;pointer-events:none;background-color:" + color + ";";
-    document.body.appendChild(d);
+    /* Anywhere else (a browser tab, Android, a computer) there is no strip. (384.105) The 8px #top-guard that was made here for an installed
+       iPhone without the still edge - the display test's "old behaviour" (class26e.topedgeold) and its switches - is gone: html.top-edge-on
+       is now on in exactly every installed iPhone/iPad app, which is the only place it was ever made. */
   }catch(e){}
 }
 
@@ -95887,7 +95540,7 @@ function centerPauseStack(panel, stack){
    own (body.chatdock-open, build 327); the tour's dim is not a card and does not lock. */
 var pageLockOn = false;
 var pageLockQueued = false;
-var PAGE_LOCK_SKIP = { "top-edge": 1, "top-safe": 1, "top-deep": 1, "top-guard": 1, "splashscreen": 1, "tour-overlay": 1, "stage": 1 };
+var PAGE_LOCK_SKIP = { "top-edge": 1, "top-safe": 1, "splashscreen": 1, "tour-overlay": 1, "stage": 1 };   /* (384.105) top-deep, top-guard: gone */
 function pageLockCardFits(){
   const st = document.getElementById("stage");
   const ps = st && st.querySelector(".pausepanel.is-pause > .pause-stack");
@@ -138541,19 +138194,7 @@ function showAdvancedSettings(){
   dangerBtn.addEventListener("click", () => showResetWarning());
   dcard.appendChild(dangerBtn);
   panel.append(dcard, settingsFootnote("Resets your account: clears your progress, XP, badges and settings on every device signed in to it, and your sync code stops working. You'll be asked to confirm twice. This can't be undone."));
-
-  /* (384 r17) the display test's panel (see the ?diag block): switchable from here so an installed app can use it too */
-  panel.appendChild(settingsHeader("Troubleshooting"));
-  const tcard = document.createElement("div");
-  tcard.className = "settings-card settings-list settings-adv-diag";
-  let diagOn = false; try{ diagOn = localStorage.getItem("class26e.displaytest") === "1"; }catch(e){}
-  const diagBtn = settingsTextRow(diagOn ? "Hide the display test panel" : "Show the display test panel");
-  diagBtn.addEventListener("click", () => {
-    try{ if(diagOn){ localStorage.removeItem("class26e.displaytest"); localStorage.removeItem("class26e.dxboot"); localStorage.removeItem("class26e.topedgeold"); localStorage.removeItem("class26e.topedgepe"); ["topmatch", "topdeep", "top383"].forEach(k => localStorage.removeItem("class26e." + k)); } else localStorage.setItem("class26e.displaytest", "1"); }catch(e){}
-    location.reload();
-  });
-  tcard.appendChild(diagBtn);
-  panel.append(tcard, settingsFootnote("A small panel of switches that turn parts of the screen off one at a time, for finding what makes the top of a screen look soft. Ask an admin before using it."));
+  /* (384.105) Troubleshooting, which held only "Show the display test panel", is gone with the test: Reset is the page's last section */
 
   stage.replaceChildren(panel);
   toTop(true);
