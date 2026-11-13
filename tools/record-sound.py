@@ -65,6 +65,8 @@ DEV = arg("--device", "phone")
 # (327z15 round 38) --mode installed: the Home Screen app (navigator.standalone);
 # --mode safari: an iPhone Safari tab (its user agent, touch, not standalone)
 MODE = arg("--mode", "")
+# (384.114) --class ifc: the same account in Fire Code (a scenario named ifc-* is Fire Code by itself)
+CLASS = arg("--class", "ifc" if len(sys.argv) > 1 and sys.argv[1].startswith("ifc-") else "academy")
 IPHONE_SAFARI_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
                     "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
 STANDALONE_JS = """
@@ -291,6 +293,13 @@ LOG_PLAYS = r"""() => {
   NovaSound.play = (id, o) => { const r = P(id, o); window.__rec.plays.push({ id, t: +(performance.now() / 1000).toFixed(3), played: !!r, opts: o && typeof o === 'object' ? JSON.parse(JSON.stringify(o)) : null }); return r; };
 }"""
 
+# (384.114) Fire Code: the account is in both classes and opens in Fire Code, its Fire Code copy the same account (only on the first
+# load: the init script runs again on any navigation and must not put a fresh copy over what the clip changed)
+SEED_IFC = ("try{var a=JSON.parse(localStorage.getItem('class26e.drill.v1')||'null');if(a){a.publicId=a.publicId||'pub-madison';a.classes=['academy','ifc'];"
+            "localStorage.setItem('class26e.drill.v1',JSON.stringify(a));if(!localStorage.getItem('class26e.ifc.drill.v1'))localStorage.setItem('class26e.ifc.drill.v1',JSON.stringify(a));}"
+            "localStorage.setItem('class26e.activeclass','ifc');localStorage.setItem('class26e.enrolled',JSON.stringify(['ifc']));localStorage.setItem('class26e.greet.ifc','done');"
+            "['class26e.ifc.freshstart','class26e.ifc.intro.seen','class26e.ifc.daily.seen','class26e.ifc.savecode.asked','class26e.ifc.savecode.card','class26e.ifc.getstarted',"
+            "'class26e.a2hs','class26e.ifc.weekrecap.v1','class26e.ifc.unithold.tip'].forEach(function(k){localStorage.setItem(k,'1');});}catch(e){}")
 SETUP = r"""() => {
   document.getElementById('splashscreen')?.remove(); try{ __stub(); }catch(e){}
   store.onboardingComplete = true; store.firstName = 'Madison'; store.tourRev = 99; store.rankMapFx244 = true;
@@ -334,6 +343,8 @@ class Rec:
             self.ctx.add_init_script(STANDALONE_JS)
         self.ctx.add_init_script(FAKE_FS)
         self.ctx.add_init_script(SEED_FRESH if mode == "fresh" else SEED_LS)
+        if CLASS == "ifc" and mode != "fresh":
+            self.ctx.add_init_script(SEED_IFC)
         self.ctx.add_init_script(REC_AUDIO.replace("%BUDGET%", str(budget)))
         pg = self.pg = self.ctx.new_page()
         self.errs = []
@@ -640,6 +651,54 @@ def unlock_banner(r, out):
         r.tap("document.querySelector('.rs-spot')", 2)
         r.until("window.__spDone || !document.querySelector('.rs-spot')", 6, then=.8)
     r.wait(1)
+
+
+# (384.114) everything in Fire Code held, from real counters, and all of it already told but Completionist
+FC_EVERYTHING = r"""() => {
+  try{ showAppearance(); }catch(e){}
+  document.querySelectorAll('.rs-spot').forEach(sp => { try{ sp.__nova.skip(); }catch(e){ sp.remove(); } });
+  const s = store;
+  s.lifetime = Object.assign({}, s.lifetime, { points: 400000, correct: 12000, answered: 14000, perfectTests: 300, fullTests: 260, longestStreak: 120 });
+  s.unitPerfects = {}; classTopics().forEach(u => { s.unitPerfects[u] = 99; });
+  s.dailyCorrectTotal = 12; s.novaBeaten = true; s.vrWins = 4; s.vrMatches = 30; s.vrHosted = 4; s.hundoDayBest = 4;
+  s.bigTest450Passed = true; s.friendsBest = 6; s.lateHundos = 4; s.lateHundosSeed312 = true; s.practiceExamPerfect = true; s.unitHundoStreakBest = 12;
+  s.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => { s.mysteryColorsFound[k] = true; });
+  s.rankUpShown = TIER_ORDER_FULL.length; s.avatarChar = 'zenith';
+  const log = {}, d0 = Date.parse('2026-09-01T12:00:00Z');
+  for(let i = 0; i < 40; i++) log[new Date(d0 + i * 864e5).toISOString().slice(0, 10)] = 2 * 3600000;
+  s.studyLog = log; s.stats = s.stats || {};
+  Array.from(retakeKeySet()).slice(0, 120).forEach(k => { s.stats[k] = Object.assign({}, s.stats[k] || {}, { m: 2, c: 3 }); });
+  ensureUnlocksShown();
+  s.unlocksShown.chars = announceableHeldCharacters().concat(HOME_UNLOCK_SKIP);
+  s.unlocksShown.banners = BANNERS.filter(b => bannerEarned(b.id) && b.id !== 'completionist').map(b => b.id);
+  s.unlocksShown.fx = earnedHundoFx(); s.flareHintsShown = ['umbra', 'singularity', 'genesis'];
+  try{ localStorage.removeItem(FLARE_OWED_KEY); }catch(e){}
+  saveStore();
+  return bannerEarned('completionist');
+}"""
+
+
+def ifc_completionist(r, out):
+    """Fire Code: everything else in the class held and already told, Home tells Completionist - the ultimate's card, played
+    out and then tapped on, the banner flying into the Profile tab."""
+    r.js(FC_EVERYTHING)
+    r.wake()
+    r.pg.wait_for_timeout(1500)
+    r.start(out)
+    r.js("() => { showHome(); }")
+    r.until("!!document.querySelector('.rs-spot')", 14, then=8)
+    r.tap("document.querySelector('.rs-spot.is-up')", 2)
+    r.until("!document.querySelector('.rs-spot')", 5, then=1.6)
+
+
+def ifc_completionist_profile(r, out):
+    """Fire Code: Completionist worn, on the Profile card: a whole flare cycle and a little more."""
+    r.js(FC_EVERYTHING)
+    r.js("() => { store.banner = 'completionist'; markUnlocksShown([], ['completionist']); markUnlockSeen('banners', 'completionist'); saveStore(); showProfile(); }")
+    r.pg.mouse.click(r.w // 2, 8)
+    r.pg.wait_for_timeout(2500)
+    r.start(out)
+    r.wait(9)
 
 
 def flare_scene(fn_js, secs):
@@ -974,6 +1033,8 @@ SCENARIOS = {
     "supernova": (supernova, 120, "Supernova on Home (the comet streaks, now silent) and its cutscene"),
     "streak": (streak, 150, "a Penal Code drill, eight right answers each a streak tier (10, 25, 50, 75, 100, 150, 250, 350): the pop and its sound"),
     "unlock-banner": (unlock_banner, 90, "the unlock banner on Home: a character, a banner, a character after a scene"),
+    "ifc-completionist": (ifc_completionist, 90, "Fire Code: everything else held, Home tells Completionist - the ultimate's card, flash and rank-up sounds"),
+    "ifc-completionist-profile": (ifc_completionist_profile, 40, "Fire Code: Completionist worn on the Profile card, a whole flare cycle"),
     "flare-void": (flare_scene("playVoidFlareScene", 40), 120, "the secret flare scene that brings Void"),
     "flare-umbra": (flare_scene("playUmbraFlareScene", 40), 120, "the secret flare scene that brings Umbra"),
     "flare-horizon": (flare_scene("playHorizonFlareScene", 40), 120, "the secret flare scene that brings Horizon"),
