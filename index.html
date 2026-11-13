@@ -28049,7 +28049,8 @@
      "Everything on the result screen needs to be a little cohesive."
      Late in the file on purpose: several older results rules win on
      source order otherwise. See showRunRewards(). */
-  .rs-screen{
+  /* (384.100) the daily question's result shares these tokens: the same XP blue and the same five type roles */
+  .rs-screen, .dailyq-outro{
     --xp:#8FC1FF; --xp-deep:#3D8BFF; --xp-glow:rgba(61,139,255,.55);
     --rs-card:rgba(24,29,37,.62); --rs-line:rgba(255,255,255,.09);
     /* ONE TYPE SYSTEM, SET BY THE GRADE (build 315): "The result screen
@@ -28065,11 +28066,28 @@
     --rs-label:.92rem; --rs-cap:.78rem; --rs-kick:.68rem;
     font-variant-numeric:lining-nums tabular-nums;
   }
-  @media (min-width:40rem){ .rs-screen{ --rs-label:1rem; --rs-cap:.84rem; --rs-kick:.72rem; } }
-  .wrap:has(#stage > .rs-screen) .test-scopelabel{
+  @media (min-width:40rem){ .rs-screen, .dailyq-outro{ --rs-label:1rem; --rs-cap:.84rem; --rs-kick:.72rem; } }
+  /* (384.100) THE DAILY QUESTION'S TITLE IS THIS ONE. Madison: "at the very top it needs like a 'daily question' word or something".
+     It was the test row's small grey mode label (.85rem, --soft) - a test's "Drill" - and read as nothing. It is the run screens' own
+     title now, the one "Test results" wears, in the same row and the same place: left, on the safe area's line, the chat button
+     in its corner beside it. (384.93's rule for a header row with no Pause - the daily question's and a results screen's - brings
+     the two down together onto the line under the system's blur.) */
+  .wrap:has(#stage > .rs-screen) .test-scopelabel,
+  .wrap:has(.qpanel.is-dailyq) > .top > .test-modelabel:not(:empty){
     display:block; flex:1 1 0%; min-width:0; margin:0;
     font-size:1.12rem; font-weight:800; color:var(--ink); letter-spacing:.005em;
     text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  /* (384.100) ...and the daily question's pinned row: its paper solid under the whole title and down to the chat button's foot
+     (--dq-cap, measured by syncDailyCap), then the test row's .9rem fade - so a question scrolled up to the result does not show
+     through the title or beside the button. (The test row's own paper is solid to 70% of its box: a short row's title sat half on
+     the fade.) */
+  [data-layout="modern"] .wrap.test-pinned:has(.qpanel.is-dailyq) > .top::before{
+    bottom:calc(-.9rem - var(--dq-cap, 0px));
+    background:linear-gradient(to bottom,
+      var(--paper) 0%,
+      var(--paper) calc(100% - .9rem),
+      color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   /* The top bar is sticky so Pause stays in reach over a long question.
      On the results screens it would float its title over the cards. */
@@ -31519,68 +31537,76 @@
 
   /* The daily question's Submit answer / Exit pill is the test's own
      .qnext pill (build 317), so it needs no rule of its own here. */
+  /* ---- THE DAILY QUESTION'S RESULT (384.100) ----
+     Madison: "I also don't like the box at the bottom after you answer, I don't think it's been updated to the look either. But I
+     also don't like it looks anyways. Needs to be better." It was one glass card (327 round 8): a green or red wash, a coloured rim
+     and three glows round a glowing disc, "1 / 1 right on your one try", "Not this time" - the old look the clean cards (383) had
+     taken off every other results card. Now it is TWO OF THE RESULTS SCREEN'S OWN CARDS: the solid card (--surface-1, the clean
+     card off Home), the results cards' radius, padding and gap, the results' type roles and XP blue (the tokens shared above),
+     no rim, no shadow, no blur, no fresh colour:
+       1. the verdict: a filled mark and "Correct" / "Incorrect" in the question screen's own right / wrong colours (--right /
+          --wrong, the choices' bar and tick), then the review's answer rows (.rs-q-answers - your answer, and the correct one
+          when it was not yours) and the question's reference;
+       2. what it did: the XP (+DAILY_XP, the XP blue), the daily streak and the count of daily questions answered right (the
+          Detective's / Inspector's count), and when the next question comes (5pm, today or tomorrow, and how long until then) -
+          a label and its value per row, a hairline between them, as Settings' lists.
+     A test's results order: the verdict, the XP a beat after it, then the rest; Exit rises once the last row is in. */
   .dailyq-outro{
-    --dq:#5CD692;
-    margin:1.3rem 0 1rem; padding:1.2rem 1.1rem 1.1rem; border-radius:20px; text-align:center;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--dq) 18%, transparent), rgba(20,25,32,.55) 70%);
-    border:1px solid color-mix(in srgb, var(--dq) 40%, transparent);
-    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08);
-    animation:dq-outro-in .6s cubic-bezier(.2,1.2,.4,1) both;
+    --dq:var(--right);
+    display:flex; flex-direction:column; gap:.85rem; margin:1.3rem 0 1rem;
+    text-align:left; font-family:var(--sans); font-variant-numeric:lining-nums tabular-nums;
   }
-  .dailyq-outro.is-wrong{ --dq:#FF6B6B; }
-  @keyframes dq-outro-in{ 0%{ opacity:0; transform:translateY(14px) scale(.97); } 100%{ opacity:1; transform:none; } }
+  .dailyq-outro.is-wrong{ --dq:var(--wrong); }
+  .dailyq-outro-card{
+    position:relative; margin:0; padding:1rem 1.1rem 1.05rem; border-radius:18px;
+    background:var(--surface-1); border:0; box-shadow:none;
+  }
+  .dailyq-outro .rs-kicker{ margin:0 0 .55rem; }
+  .dailyq-outro-verdict{ display:flex; align-items:center; gap:.75rem; }
   .dailyq-outro-mark{
-    display:inline-grid; place-items:center; width:2.6rem; height:2.6rem; border-radius:50%;
-    font-size:1.3rem; font-weight:900; color:#0B0D10; background:var(--dq);
-    box-shadow:0 0 22px color-mix(in srgb, var(--dq) 55%, transparent);
+    flex:none; display:grid; place-items:center; width:2.3rem; height:2.3rem; border-radius:50%;
+    background:var(--dq); color:var(--paper);
   }
-  /* The results' type (build 315): the verdict in the grade's heavy sans,
-     not Georgia, and the XP in the screen's figures. */
-  .dailyq-outro{ font-variant-numeric:lining-nums tabular-nums; }
-  /* THE GRADE BOX + THE XP BOX (build 327 round 8): the results cards' own
-     surface, edge and kickers, in the verdict's colour - left-aligned like
-     them, the verdict where the grade's number sits. */
-  .dailyq-outro{
-    --dqe:92,214,146; text-align:left; padding:1rem 1.1rem 1.1rem; border-radius:18px;
-    background:linear-gradient(180deg, rgba(var(--dqe), .12), rgba(24,29,37,.72) 62%);
-    border-color:rgba(var(--dqe), .46);
-    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), 0 0 22px -8px rgba(var(--dqe), .42), inset 0 0 0 1px rgba(var(--dqe), .18), inset 0 0 24px rgba(var(--dqe), .26), inset 0 1px 0 rgba(255,255,255,.15);
-  }
-  .dailyq-outro.is-wrong{ --dqe:232,104,124; }
-  .dailyq-outro-kick{ margin:0 0 .6rem; font-size:.68rem; font-weight:800; letter-spacing:.14em; line-height:1.2; text-transform:uppercase; color:rgba(255,255,255,.52); }
-  .dailyq-outro-verdict{ display:flex; align-items:center; gap:.85rem; }
-  .dailyq-outro-mark{ flex:none; }
-  .dailyq-outro-vtext{ min-width:0; }
+  .dailyq-outro-mark svg{ display:block; width:1.3rem; height:1.3rem; }
   .dailyq-outro-head{
-    margin:0; font-family:var(--sans); font-size:2.3rem; font-weight:800; line-height:1.05; letter-spacing:-.035em;
-    background:linear-gradient(180deg, #fff, color-mix(in srgb, var(--dq) 70%, #fff)); -webkit-background-clip:text; background-clip:text; color:transparent;
+    margin:0; min-width:0; font-size:2.3rem; font-weight:800; line-height:1.05; letter-spacing:-.035em; color:var(--dq);
   }
-  .dailyq-outro-of{ margin:.3rem 0 0; display:flex; flex-wrap:wrap; align-items:baseline; gap:.15rem .55rem; }
-  .dailyq-outro-ofn{ font-size:1.05rem; font-weight:800; color:#fff; }
-  .dailyq-outro-ofw{ font-size:.9rem; font-weight:500; color:rgba(255,255,255,.62); }
-  .dailyq-outro-xpbox{
-    margin:1rem 0 0; padding:1rem 0 0; border-top:1px solid rgba(255,255,255,.08);
-    animation:dq-line-in .45s ease .9s both;
+  /* the review's answer rows (.rs-q-answers), in the clean look: the colour as a tint of the card, no rim */
+  .dailyq-outro .rs-q-answers{ margin:1rem 0 0; }
+  .dailyq-outro :is(.rs-q-yours, .rs-q-right){ border:0; }
+  .dailyq-outro .rs-q-yours{ background:color-mix(in srgb, var(--wrong) 13%, transparent); }
+  .dailyq-outro .rs-q-yours span{ color:var(--wrong); }
+  .dailyq-outro :is(.rs-q-right, .rs-q-yours.is-right){ background:color-mix(in srgb, var(--right) 13%, transparent); }
+  .dailyq-outro :is(.rs-q-right, .rs-q-yours.is-right) span{ color:var(--right); }
+  .dailyq-outro .rs-q-ref{ margin:.7rem 0 0; }
+  /* 2: what it did - the results' lines (.rs-xpline: a label and its value on one line, the caption under both) */
+  .dailyq-outro-row.rs-xpline{ margin:0; padding:.72rem 0; }
+  .dailyq-outro-row.rs-xpline:first-child{ padding-top:0; }
+  .dailyq-outro-row.rs-xpline:last-child{ padding-bottom:0; }
+  .dailyq-outro-row + .dailyq-outro-row{ border-top:1px solid var(--clean-line, var(--rule)); }
+  .dailyq-outro-row .rs-xpline-val{ color:var(--ink); }
+  .dailyq-outro-row.is-xp .rs-xpline-val{ color:var(--xp); }
+  .dailyq-outro.is-wrong .dailyq-outro-row.is-xp .rs-xpline-val{ color:var(--soft); }
+  @media (min-width:40rem){
+    .dailyq-outro-card{ padding:1.2rem 1.35rem 1.25rem; border-radius:20px; }
+    .dailyq-outro-head{ font-size:2.6rem; }
+    .dailyq-outro-mark{ width:2.6rem; height:2.6rem; }
+    .dailyq-outro-mark svg{ width:1.45rem; height:1.45rem; }
   }
-  .dailyq-outro-line{ display:flex; justify-content:space-between; gap:1rem; font-size:.95rem; color:rgba(255,255,255,.74); }
-  .dailyq-outro-lineval{ font-weight:800; color:#8FC1FF; }
-  .dailyq-outro-total{ display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin:.85rem 0 0; padding-top:.85rem; border-top:1px solid rgba(255,255,255,.08); }
-  .dailyq-outro-totallabel{ font-size:.95rem; font-weight:800; color:var(--ink); }
-  .dailyq-outro-xp{ margin:0; font-family:var(--sans); font-size:2.1rem; font-weight:800; line-height:1; letter-spacing:-.035em; color:#8FC1FF; text-shadow:0 0 18px rgba(61,139,255,.55); }
-  .dailyq-outro-xpunit{ margin-left:.05rem; font-size:.85rem; letter-spacing:.02em; opacity:.8; }
-  .dailyq-outro.is-wrong .dailyq-outro-xp{ font-size:.95rem; font-weight:600; letter-spacing:0; color:var(--soft); text-shadow:none; }
-  .dailyq-outro-next{ margin:1rem 0 0; padding-top:.9rem; border-top:1px solid rgba(255,255,255,.08); font-size:1.02rem; font-weight:600; color:rgba(255,255,255,.88); text-wrap:balance; }
-  .dailyq-outro-streak{ margin:.55rem 0 0; font-size:.8rem; color:#D9A441; font-weight:700; }
-  [data-reduce-motion="true"] .dailyq-outro{ animation:none; }
-  /* THE SAME ORDER AS A TEST'S RESULTS (build 320): the verdict, then what
-     it was worth, then what comes next - a beat apart, so the XP is read
-     as the answer's reward rather than all at once. The unlocks wait for
-     Home, after the XP has flown in (RS_UNLOCK_GAP_MS). */
-  .dailyq-outro-xp{ animation:dq-line-in .45s ease .9s both; }
-  .dailyq-outro-next{ animation:dq-line-in .45s ease 1.45s both; }
+  /* in: the verdict lands; the second card a beat after it, its rows one by one (the XP's figure with its row - the gates read
+     the figure); transform and opacity only */
+  .dailyq-outro-result{ animation:dq-outro-in .5s cubic-bezier(.2,1.2,.4,1) both; }
+  .dailyq-outro-sum{ animation:dq-fade-in .3s ease .75s both; }
+  .dailyq-outro-row{ animation:dq-line-in .45s ease both; }
+  .dailyq-outro-row.is-xp, .dailyq-outro-xp{ animation-delay:.9s; }
+  .dailyq-outro-row.is-streak{ animation-delay:1.15s; }
+  .dailyq-outro-row.is-next{ animation-delay:1.45s; }
+  .dailyq-outro-xp{ animation-name:dq-fade-in; animation-duration:.45s; animation-fill-mode:both; }
+  @keyframes dq-outro-in{ 0%{ opacity:0; transform:translateY(14px) scale(.97); } 100%{ opacity:1; transform:none; } }
   @keyframes dq-line-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
-  @media (prefers-reduced-motion:reduce){ .dailyq-outro-xp, .dailyq-outro-next{ animation:none; } }
-  @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.7rem; } .dailyq-outro-next{ font-size:1.12rem; } }
+  @keyframes dq-fade-in{ from{ opacity:0; } to{ opacity:1; } }
+  [data-reduce-motion="true"] :is(.dailyq-outro, .dailyq-outro *){ animation:none; }
+  @media (prefers-reduced-motion:reduce){ :is(.dailyq-outro, .dailyq-outro *){ animation:none; } }
 
   /* ---- XP IS BLUE WHEREVER IT FLIES ----
      Build 329 put the pop-up on the account banner's colours with no blur, because the whole banner flew and a blur that moves
@@ -56710,6 +56736,27 @@ function syncTestPin(force){
 }
 __bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
+/* (384.100) THE DAILY QUESTION'S HEADER BAND REACHES THE CHAT BUTTON'S FOOT. A test's header row is as tall as Pause, and the chat button
+   sits in it beside Pause, so the row's paper covers both. The daily question has no Pause: its row is the title alone and the chat
+   button keeps Home's corner, lower than the row's foot - so once the answer scrolled the page up to its result, the question ran
+   under the title's fade and under the chat button. --dq-cap is how far the button's foot is below the row's; the row's paper
+   (.top::before, the daily's own rule) is solid to there and fades after it. Measured off the live button (its place moves with the
+   safe area, the device and 384.93's line), on every stage change and resize; while the button is not up (a loading screen) the
+   last value stands, and an unmeasured page falls back to the row's own foot. */
+function syncDailyCap(){
+  try{
+    const wrap = document.querySelector(".wrap");
+    if(!wrap) return;
+    if(!stage.querySelector(".qpanel.is-dailyq")){ if(wrap.style.getPropertyValue("--dq-cap")) wrap.style.removeProperty("--dq-cap"); return; }
+    const top = wrap.querySelector(":scope > .top"), chat = document.getElementById("chatdock-btn");
+    if(!top || !chat || !wrap.classList.contains("test-pinned")) return;
+    const cr = chat.getBoundingClientRect(), tr = top.getBoundingClientRect();
+    if(!(cr.height > 0) || cr.top > tr.bottom + 96) return;
+    const v = Math.max(0, Math.round(cr.bottom - tr.bottom)) + "px";
+    if(wrap.style.getPropertyValue("--dq-cap") !== v) wrap.style.setProperty("--dq-cap", v);
+  }catch(e){}
+}
+addEventListener("resize", () => requestAnimationFrame(syncDailyCap));
 /* (384 r8) see body.navchat-aligned: the chat button mirrors the back button's corner on any pushed screen */
 function alignNavChat(){
   const b = document.body; if(!b) return;
@@ -56880,6 +56927,7 @@ new MutationObserver(ms => {
   if(isQuestion !== wasQuestion) syncStatusBarColor();
   syncSky(isQuestion);
   syncTestPin();
+  syncDailyCap();   /* (384.100) */
   /* Cheap enough for every stage mutation: one getElementById and a
      dataset read, no fetch. Piggybacking the observer that already runs
      here is what lets a held notice appear the instant someone returns to
@@ -113120,6 +113168,8 @@ function syncChatDock(){
   chatDock.classList.toggle("in-test", inTest && (pauseUp || (pausedRun && !!dockBesidePause)));
   placeDockBesidePause(inTest && pauseUp, inTest && pausedRun);
   try{ if(typeof placeRoomChatFab === "function") placeRoomChatFab(); }catch(e){}
+  /* (384.100) the daily question's header band follows the button (it can come up after the question, once a loading screen goes) */
+  if(inTest && !pauseUp) try{ requestAnimationFrame(syncDailyCap); }catch(e){}
   /* ---- A VIRTUAL ROOM NO LONGER COSTS YOU YOUR DMs ----
      This used to force-leave the chat lobby the moment you entered a
      Virtual Room, and flip the dock onto notifications, because the
@@ -122862,7 +122912,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.94";
+const APP_BUILD = "2026-11-13-384.100";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -135366,6 +135416,92 @@ function summarizeVisitingRun(){
   finishVirtualRoomTest(pct, elapsedMs);
 }
 
+/* ---- THE DAILY QUESTION'S RESULT (384.100) ----
+   Madison: "I also don't like the box at the bottom after you answer, I don't think it's been updated to the look either. But I also
+   don't like it looks anyways. Needs to be better." Two of the results screen's own cards (the look is the .dailyq-outro rules):
+   1. THE VERDICT - "Correct" or "Incorrect" beside its mark, in the question screen's right / wrong colours; the answer given and,
+      when it was not right, the correct one (the review's own rows, .rs-q-answers, as a test's review shows a missed question);
+      and the question's reference. A Fire Code question's code card (buildIfcRef: the explanation, Show the code and its pictures)
+      stays where the app shows it, between the choices and this.
+   2. WHAT IT DID - the XP (+DAILY_XP, the XP blue; none for a miss), the daily streak (store.dailyCorrectStreak, right daily
+      questions in a row - a miss ends it, a skipped day does not) with the count answered right (dailyCorrectCount(), the
+      Detective's / Inspector's count, never named here: 317's "we don't need that" banner stays gone), and when the next one
+      comes - 5pm (dailyPeriodKey's reset), today or tomorrow, and how long until then, kept current while the card is up.
+   Plain words, no "Not this time", no "1 / 1". Exit to main menu, the pill in Submit answer's spot, is the one way back. */
+function dailyNextText(){
+  const ms = nextDailyResetMs();
+  const at = new Date(Date.now() + ms);
+  const today = at.toDateString() === new Date().toDateString();
+  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+  return { when: (today ? "Today" : "Tomorrow") + " at 5pm", left: "In " + (h > 0 ? h + "h " + m + "m" : Math.max(1, m) + "m") };
+}
+function buildDailyOutro(qi, gotIt, streakWas){
+  const item = QUESTIONS[qi] || {};
+  const slots = optionOrder(qi);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+  const outro = el("div", "dailyq-outro " + (gotIt ? "is-right" : "is-wrong"));
+  /* 1. the verdict */
+  const res = el("section", "dailyq-outro-card dailyq-outro-result");
+  const verdict = el("div", "dailyq-outro-verdict");
+  const mark = el("span", "dailyq-outro-mark");
+  mark.setAttribute("aria-hidden", "true");
+  mark.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" focusable="false">' +
+    (gotIt ? '<path d="M5.6 12.6l4.1 4.1 8.7-8.7"/>' : '<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>') + '</svg>';
+  verdict.append(mark, el("p", "dailyq-outro-head", gotIt ? "Correct" : "Incorrect"));
+  res.append(el("p", "rs-kicker dailyq-outro-kick", "Result"), verdict);
+  const answers = el("div", "rs-q-answers dailyq-outro-answers");
+  const pick = (typeof firstPick !== "undefined" && firstPick) ? firstPick[qi] : undefined;
+  if(pick !== undefined && pick !== null && slots[pick] !== undefined){
+    const yours = el("p", "rs-q-yours" + (gotIt ? " is-right" : ""));
+    yours.append(el("span", null, "Your answer"), document.createTextNode(choiceShown(qi, slots[pick], slots)));
+    answers.appendChild(yours);
+  }
+  if(!gotIt){
+    const right = el("p", "rs-q-right");
+    right.append(el("span", null, "Correct answer"), document.createTextNode(choiceShown(qi, item.answer, slots)));
+    answers.appendChild(right);
+  }
+  res.appendChild(answers);
+  let ref = item.ref || "";
+  if(!ref && item.ifc && item.ifc.citation){ try{ ref = "Ref. " + ifcRefLabel(item.ifc.citation.label); }catch(e){} }
+  if(ref) res.appendChild(el("p", "rs-q-ref dailyq-outro-ref", ref));
+  /* 2. what it did */
+  const sum = el("section", "dailyq-outro-card dailyq-outro-sum");
+  const row = (kind, name, value, sub, valueCls) => {
+    const r = el("div", "rs-xpline dailyq-outro-row is-" + kind);
+    const a = el("span", "rs-xpline-label");
+    a.appendChild(el("span", "rs-xpline-name", name));
+    const s = sub ? el("span", "rs-xpline-sub", sub) : null;
+    if(s) a.appendChild(s);
+    const v = el("span", "rs-xpline-val" + (valueCls ? " " + valueCls : ""), value);
+    r.append(a, v);
+    sum.appendChild(r);
+    return { r, v, s };
+  };
+  /* the XP's figure keeps its old class: the gates read it as the XP booked ("+200 XP") */
+  row("xp", "XP earned", gotIt ? "+" + DAILY_XP.toLocaleString() + " XP" : "0 XP", null, "dailyq-outro-xp");
+  const streak = Number(store.dailyCorrectStreak) || 0;
+  const count = (() => { try{ return dailyCorrectCount(); }catch(e){ return Number(store.dailyCorrectTotal) || 0; } })();
+  const countLine = "Total answered right: " + count.toLocaleString() + ".";
+  row("streak", "Daily streak", gotIt ? streak.toLocaleString() + " in a row" : "Reset to 0",
+    (!gotIt && streakWas > 0 ? "It was " + streakWas.toLocaleString() + " in a row. " : "") + countLine);
+  const nx = dailyNextText();
+  const next = row("next", "Next question", nx.when, nx.left, "dailyq-outro-next");
+  /* kept current while it is up (a minute at a time), and gone with the screen */
+  const answeredFor = store.dailyQuestionDate;
+  const tick = setInterval(() => {
+    if(!outro.isConnected){ clearInterval(tick); return; }
+    let rolled = false;
+    try{ rolled = answeredFor !== dailyPeriodKey(); }catch(e){}
+    if(rolled){ next.v.textContent = "Ready now"; if(next.s) next.s.textContent = "Open it from Home."; clearInterval(tick); return; }
+    const t = dailyNextText();
+    if(next.v.textContent !== t.when) next.v.textContent = t.when;
+    if(next.s && next.s.textContent !== t.left) next.s.textContent = t.left;
+  }, 30000);
+  outro.append(res, sum);
+  return outro;
+}
+
 function summarize(){
   /* (384) a run in another class's room ends above: the match, and nothing of this class's */
   if(inVirtualRoom && vroomForeign()) return summarizeVisitingRun();
@@ -135511,6 +135647,8 @@ function summarize(){
      already disqualifies a question from "missed" above, so isPerfect
      alone is the exact right check: got it right, first try, no
      retries needed). */
+  /* (384.100) the run of right daily questions as it stood, so the result can say what a miss ended */
+  const dailyStreakBefore = Number(store.dailyCorrectStreak) || 0;
   if(runLabel === "Daily question"){
     store.dailyQuestionDate = todayDateStr();
     store.dailyQuestionCorrect = isPerfect;
@@ -135943,60 +136081,10 @@ function summarize(){
          choices is gone for the daily question; this says it instead. */
       existingPanel.querySelectorAll(".status").forEach(el => { el.hidden = true; });
       const gotIt = !!store.dailyQuestionCorrect;
-      const outro = document.createElement("div");
-      outro.className = "dailyq-outro " + (gotIt ? "is-right" : "is-wrong");
-      /* THE GRADE BOX AND THE XP BOX, AS ONE CARD (build 327 round 8):
-         "I do kinda wish the box looked a little more like the test result
-         grade box combined with the xp box". The top is the grade box -
-         its kicker, the verdict big in the grade's heavy face and its
-         colour, what it was out of beside it - and under a rule, the XP
-         box: its kicker, the line the XP came from and the blue total.
-         Still no level bar (build 213); the XP flies to Profile on Home. */
-      const kick = document.createElement("p");
-      kick.className = "dailyq-outro-kick"; kick.textContent = "Daily question";
-      const verdict = document.createElement("div");
-      verdict.className = "dailyq-outro-verdict";
-      const mark = document.createElement("span");
-      mark.className = "dailyq-outro-mark"; mark.textContent = gotIt ? "\u2713" : "\u2715";
-      mark.setAttribute("aria-hidden", "true");
-      const head = document.createElement("p");
-      head.className = "dailyq-outro-head"; head.textContent = gotIt ? "Correct" : "Not this time";
-      const of = document.createElement("p");
-      of.className = "dailyq-outro-of";
-      const ofN = document.createElement("span"); ofN.className = "dailyq-outro-ofn"; ofN.textContent = (gotIt ? "1" : "0") + " / 1";
-      const ofW = document.createElement("span"); ofW.className = "dailyq-outro-ofw"; ofW.textContent = gotIt ? "right on your one try" : "one try a day";
-      of.append(ofN, ofW);
-      const vText = document.createElement("div"); vText.className = "dailyq-outro-vtext";
-      vText.append(head, of);
-      verdict.append(mark, vText);
-      const xpBox = document.createElement("div");
-      xpBox.className = "dailyq-outro-xpbox";
-      const xpKick = document.createElement("p");
-      xpKick.className = "dailyq-outro-kick"; xpKick.textContent = "XP earned";
-      xpBox.appendChild(xpKick);
-      const xpLine = document.createElement("p");
-      xpLine.className = "dailyq-outro-xp";
-      if(gotIt){
-        const line = document.createElement("div"); line.className = "dailyq-outro-line";
-        const ln = document.createElement("span"); ln.textContent = "Daily question";
-        const lv = document.createElement("span"); lv.className = "dailyq-outro-lineval"; lv.textContent = "+" + DAILY_XP.toLocaleString();
-        line.append(ln, lv);
-        const total = document.createElement("div"); total.className = "dailyq-outro-total";
-        const tl = document.createElement("span"); tl.className = "dailyq-outro-totallabel"; tl.textContent = "Total";
-        xpLine.textContent = "+" + DAILY_XP.toLocaleString() + " ";   /* "+200 XP" when read */
-        const unit = document.createElement("span"); unit.className = "dailyq-outro-xpunit"; unit.textContent = "XP";
-        xpLine.appendChild(unit);
-        total.append(tl, xpLine);
-        xpBox.append(line, total);
-      } else {
-        xpLine.textContent = "No XP today";
-        xpBox.appendChild(xpLine);
-      }
-      const next = document.createElement("p");
-      next.className = "dailyq-outro-next";
-      next.textContent = gotIt ? "Come back tomorrow for the next daily question."
-                               : "Come back tomorrow and try again.";
-      outro.append(kick, verdict, xpBox, next);
+      /* (384.100) THE RESULT IS TWO OF THE RESULTS SCREEN'S CARDS - see buildDailyOutro() and the .dailyq-outro rules. The class
+         names the gates read are kept: .dailyq-outro (the whole), -head (the verdict), -xp (the XP's figure), -next (when the
+         next one comes). */
+      const outro = buildDailyOutro(order[0], gotIt, dailyStreakBefore);
       /* NO PROGRESS BANNER FOR THE DETECTIVE (build 317) - "when you are
          working towards that, you get a banner notification at the top for
          the progression towards the character, we don't need that, we'd
@@ -136027,7 +136115,18 @@ function summarize(){
         /* where the pill RESTS - it may be rising (build 325) */
         let lift = 0;
         try{ lift = new DOMMatrixReadOnly(getComputedStyle(exitBtn).transform).m42 || 0; }catch(e){}
-        const over = outro.getBoundingClientRect().bottom - (exitBtn.getBoundingClientRect().top - lift - 16);
+        const box = outro.getBoundingClientRect();
+        let over = box.bottom - (exitBtn.getBoundingClientRect().top - lift - 16);
+        if(over <= 0) return;
+        /* (384.100) ...but never past the verdict: where the result is taller than the room between the header and the pill (a
+           phone on its side), its top - "Correct" / "Incorrect" - stops under the header band (the title row, the chat button)
+           and the rest is a scroll away, rather than the verdict going up off the screen to show its foot */
+        try{
+          const hdr = document.querySelector(".wrap > .top"), chat = document.getElementById("chatdock-btn");
+          let foot = hdr ? hdr.getBoundingClientRect().bottom : 0;
+          if(chat){ const cr = chat.getBoundingClientRect(); if(cr.height > 0 && cr.top < foot + 96) foot = Math.max(foot, cr.bottom); }
+          over = Math.min(over, Math.max(0, box.top - (foot + 12)));
+        }catch(e){}
         if(over <= 0) return;
         const smooth = theme.smoothScroll && !theme.reduceMotion;
         try{ window.scrollTo({ top: window.scrollY + over, left: 0, behavior: smooth ? "smooth" : "instant" }); }
