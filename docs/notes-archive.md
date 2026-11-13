@@ -39435,6 +39435,49 @@ WHAT ONLY HIS PHONE CAN CONFIRM: that 16pt + 2pt under the inset is enough on th
 SWEEP: sweep-layout, the full matrix: 138/144 combinations clean. The six that are not (iPhone Air, 16 Pro Max and 17 Pro Max @85% on their side, installed and bars-over: Choose your mode's cards 12px under the side insets) fail identically on main 384.92 (re-run there: the same two lines, the same numbers) - not this build's; left for its own fix.
 384.95 GATES (the tree merged with main 384.94, a82cdea; one at a time, TMPDIR=/dev/shm): check-js 14 blocks ALL PASS; the page console (check-b384-toprow's (7), every screen, both classes, four devices) no page error; check-b384-toprow on the Pro Max, the Pro Max at 85%, the SE and the iPad Pro 11" portrait, both classes (74 screens and 26 transitions each): 248 checks pass, one failed once - SE academy (4) "flashcards scrolls 14 (was 0)" - and passed on two re-runs of that screen against main; measured alone the SE's flashcards are identical on main 384.94 and this build (scroll 58, every box the same), so it was the sequence, not the layout; check-b384-chatspot 35/35; check-b384-chatfirst ALL PASS (0ms, phone and iPad); check-b384-top383 63/63; check-b384-tabhotfix 44/44; check-b384-homescroll 25/25; check-b384-classbtn ALL PASS - the class button is option C pixel for pixel (mean 0.00 max 0 on the Pro Max and the iPad, 0.04 / 2 on the laptop, both classes): the top-row move does not touch it (it sits at the bottom of Home on a phone, and from 40rem at sat + .75rem, which no band changes); check-b384-casescroll ALL PASS (28); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (1270 elements, 0 off centre; listed as moving while measured: the Fire Code code summaries (as on main) and once the chat button on a Virtual Room screen - a per-frame probe on that screen holds it at 372,80 from the first frame (main moves it 74 -> 83.6, 372 -> 376 three frames in)).
 
+### 384.97 (tabswipezoom: small fixes from the owner's phone)
+
+Branch claude/b384-tabswipezoom, cut from main 384.95 (562b1ed). Six things he reported on 13 Nov:
+
+1. SWIPING PROFILE <-> STATS SHRANK THE WHOLE APP (his recording 00:10): a tiny tab bar in a corner, blank frames, the page left
+   shifted. attachTabSwipe carries the tab's content up to a screen's width off the side with a transform, which adds to the page's
+   scrollable overflow, and an iPhone zooms a page wider than the screen out to fit it. Measured in Chromium's mobile view: the
+   document grew 288px (407 at his 85% zoom) wider than the screen during a committing swipe; 36-114px on a short drag and on the
+   Leaderboard's boards. FIX: while a tab moves, the box the content moves in is clipped sideways (.tab-slide-clip{overflow-x:clip}
+   on each content element's parent) and html.tab-sliding as well; taken off by a poll once there is no drag and nothing busy (a
+   commit clears the drag before the next tab comes in, so the poll must outlive it and the next tab's clipOn never cancels it).
+   A clip at <html> alone was tried first and is NOT enough: the root's clip is the viewport's hidden, and the scroll width (what
+   the phone zooms to) still counted the moved content.
+2. "The spacing between your rank and your level/badges is too tight": .pf-standing > .profile-rankline bottom margin .15rem ->
+   .55rem (the box gap 2.4px -> 8.8px; a classmate's card has 9.6, .person-card-rank + .person-card-level).
+3. The Rank page's climb note, "Way too wordy, no one is reading that": one line, "Tap a rank to see what it unlocks."
+   (check-behaviour's note check - mentions unlocks, names no rank - still holds.)
+4. A rank flare's card (tap Gold unlocks > Flare), "This isn't animated": an emblem's own motion (.rk-a) is off everywhere but
+   the big places (the :is() list) and inside a flare bubble outright (.cosmic-badge-rank ... .rk-a{animation:none!important}); in
+   lists it moves as a recorded flip-book, recorded only at list sizes (a 105px bubble's never came, measured over 80s). The card's
+   art takes .rk-live, and the bubble rule spares a flare inside .rk-live: the live drawing moves, as on the Rank tab.
+5. "The 'shuffle answer choices' is always on by default. Turn off that. Make whatever you have set always on off till you
+   change, except the time limit of course." cfg.shuffle and SHEET_DEFAULTS.shuffle false; build 229's one-time migration that
+   switched it on for everybody (class26e.shuffleon) removed - the marker is never read again. Every start-sheet switch now starts
+   off (the sheet still resets to SHEET_DEFAULTS on each open, build 309). check-behaviour b229 now asserts OFF by default and
+   still measures the shuffle itself with it switched on.
+6. "The time limit when selected puts a blue box around the thing, don't do that part": a tap on a toggle focuses its native
+   switch (the haptic layer, .hsw-opt), WebKit counts that as :focus-visible, and the accent ring (.opt > input:focus-visible ~
+   .box) was drawn - blue on most themes. The ring is now under @media (hover:hover) and (pointer:fine) (a keyboard on a laptop
+   keeps it), and .hsw-opt never outlines.
+
+GATE tools/check-b384-tabswipezoom.py (real CDP touch drags; iPhone 17 Pro Max installed, the same at 85% page zoom, iPhone SE):
+T1-T3 the page never wider than the screen and never zoomed out across a short drag, two committing drags and a Leaderboard
+board drag, the tab really changing; T4 nothing left shifted and the clip off afterwards; T5 the rank gap >= 8px; T6 the flare
+card's emblem animations running; T7 the start sheet's switches all off after its reset and at boot; T8 a tap's :focus-visible
+(forced with CDP CSS.forcePseudoState, as iOS has it) draws no ring.
+  this branch: ALL PASS (50)
+  --against main 384.95: FAILS T1-T3 (wider by 36-407px) on every device, T5 (2.4/2.8px), T6, T7 (shuffle on), T8 (solid ring).
+Also: check-js OK (14 blocks); check-behaviour check_swipe, check_b229, check_b311_rank, check_b314_swipe, check_b314h_tabs pass
+(the run was cut at its time limit after those); check-b384-tabhotfix ALL PASS (45) on a quieter machine (a first run under
+load ~80 failed one scroll-nudge count and a timed-out class switch; main under the same load failed a different section);
+sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre (1255s).
+
 ## 384.61 - Fire Code chapter badges, PHASE 1: a picture of the chapter on its badge (framework + six samples)
 Madison: "Big change. Badges are gonna be designed based on what the chapter is about / the title (mostly the title). For example Means of Egress could be a door in the open position? Make them cool." Fire Code only. This reverses, for the 58 chapters, the academy's rule that a badge never draws its subject and round 2's "please don't make badges that look like real things" (newer wins). The academy's units are untouched (the gate renders every one on main and here and compares: identical). Phase 1 = the framework, six icons, the contact-sheet tool, the brief for phase 2; the other 52 chapters draw exactly what they drew on 384.48 (gate: identical to origin/main, vector and struck). Nothing is on main; branch claude/b384-chapterbadges, build 384.61.
 - WHAT WAS FOUND: the 21 BADGE_FAMILY colours are not what Fire Code uses - since round 2 every chapter has its own enamel (IFC_BADGE_THEME, 58 distinct), so "a distinct colour family per chapter" was already true and nothing is grouped; the icon's colours are derived from the chapter's own enamel. Outlines are 58 distinct (IFC_BADGE_SHAPE) and each chapter's BACK is laid out on its outline, which is why short titles hold the narrow outlines. The outline is the limit on icon size: the biggest square that fits the open plate ranges 54 (quarter dome) to 4 (C-ring) of a 100 frame; 17 outlines give under 30 (bolt 20, dart 19, tau 17, ...). tools/chapter-badges-brief.md has the table.
@@ -39623,7 +39666,7 @@ Madison, looking at the 58 again: "check the badges once more, I still see a few
   Appendix I: Fire Protection Systems—Noncompliant Conditions | found: - | fixed: 2 parts snapped
   Exhibit B: Amendments to the International Building Code | found: 10 slivers (largest 0.20 sq units, 1:lite|edge); a base-coloured seam on 97 join pixels | fixed: 7 parts snapped; seam gone (halo)
 
-## 384.93 round 9 - Fire Code pins: the thirteen Madison named, looked at again (branch claude/b384-objbadges, with main 384.94 and 384.95 merged in; build kept 2026-11-12-384.93 for the coordinator to set at merge; NOT on main, waiting for Madison)
+## 384.93 round 9 - Fire Code pins: the thirteen Madison named, looked at again (branch claude/b384-objbadges, with main 384.94, 384.95 and 384.97 merged in; build kept 2026-11-12-384.93 for the coordinator to set at merge; NOT on main, waiting for Madison)
 
 Madison: "We have some really really cool ones on here, and then we got some where I don't even know what they are or they kinda messed up or just tiny fixes are needed. Look into these badges, make them look a little better, maybe change a few." His list: General requirements (Chapter 3), Emergency planning (Chapter 4), Chapter 5, Chapter 9, 35, 34, 33, 32, 54 ("fix the blue part"), Appendix H ("pencil"), 63, 59, 62. The bar is the ones he loves: one object named at a glance, crisp, the same edge, the pin's own reflective finish, colours that make sense.
 
