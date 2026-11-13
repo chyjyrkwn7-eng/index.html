@@ -39759,8 +39759,13 @@ html.is-browser{ --fade-paper: transparent; }
      own layer (will-change, backface-visibility). The rim and bevel are gradients and box-shadows, never a filter.
      Last in the sheet and on (1,8,1): it has to outrank the clean look's switch rules (1,7,2) and the Leaderboard's (0,6,2). */
   .has-seg-thumb{ touch-action:pan-y; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
-  /* the chat sheet's switcher is the same control, beside the close button in its row */
-  .chatdock-seg{ flex:0 1 auto; min-width:0; }
+  /* the chat sheet's switcher is the same control, in the middle of the sheet as Delta's is in its bar, the close button at the row's
+     end: a grid of [room | the control | room], the end room at least the close button - so the control sits on the sheet's middle
+     where both fit, and gives up the middle (never the close button) where they do not (a 320px phone) */
+  .chatdock-seg{ min-width:0; }
+  .chatdock-tabs:has(> .chatdock-seg.has-seg-thumb){ display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(32px, 1fr); align-items:center; column-gap:.35rem; }
+  .chatdock-tabs:has(> .chatdock-seg.has-seg-thumb) > .chatdock-seg{ grid-column:2; }
+  .chatdock-tabs:has(> .chatdock-seg.has-seg-thumb) > .chatdock-close{ grid-column:3; justify-self:end; margin-left:0; }
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb:is(.navsegment, .rs-tabs, .chatdock-seg):not([hidden]){
     --sg-z:var(--zc, 1);
     --sg-in:calc(4px * var(--sg-z)); --sg-th:calc(40px * var(--sg-z)); --sg-gap:calc(8px * var(--sg-z));
@@ -122983,7 +122988,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.116";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -156274,7 +156279,7 @@ function segThumb(seg, segSel, sl, o){
   const canAnim = typeof sl.animate === "function";
   let W0 = 0, H0 = 0, TY = 0;                    /* the thumb's box (its segment's), and its top */
   let S = null, V = { sw: 0, c: 0, lw: 0, lh: 0, lo: 0 };
-  let run = null, press = null, follow = null, lastTap = null, swallowUntil = 0, G = null, parts = null, sheen = null;
+  let run = null, press = null, follow = null, lastTap = null, dragEnd = null, swallowUntil = 0, G = null, parts = null, sheen = null;
   /* where we are going: T the centre, trip (the lens is up until it lands), held (a finger is down), holdUntil (a released tap keeps
      its swell this long: its click may still be on its way), t0 (when the trip began) */
   let intent = { T: null, trip: false, held: false, holdUntil: 0, t0: 0, slide: false };
@@ -156551,6 +156556,7 @@ function segThumb(seg, segSel, sl, o){
       /* let go after a drag: the nearest segment, picked as a tap would pick it; the click the browser may still send is not a second pick */
       const t = dragPick(p);
       swallowUntil = performance.now() + 450;
+      dragEnd = { t: performance.now(), native: p.native, same: t.el === activeEl() };
       intent = { T: t.c, trip: true, held: false, holdUntil: 0, t0: intent.t0 || performance.now(), slide: false };
       plan({ c: p.vc });
       if(t.el !== activeEl()) t.el.click();
@@ -156586,10 +156592,13 @@ function segThumb(seg, segSel, sl, o){
      stopped - no click, no tick - when it did not. A tap is untouched: its switch's click is the tick, as before. */
   seg.addEventListener("touchmove", e => { if(press && press.drag && press.native && e.cancelable) e.preventDefault(); }, { passive: false });
   seg.addEventListener("touchend", e => {
-    if(!press || !press.drag || !press.native) return;
+    /* (the pointerup may come before this or after it: the drag's outcome is read from whichever has it) */
+    let same = null;
+    if(press && press.drag && press.native){ const t = dragPick(press); same = !!t && t.el === activeEl(); }
+    else if(dragEnd && dragEnd.native && performance.now() - dragEnd.t < 300) same = dragEnd.same;
+    if(same == null) return;
     swallowUntil = performance.now() + 450;
-    const t = dragPick(press);
-    if(t && t.el === activeEl() && e.cancelable) e.preventDefault();
+    if(same && e.cancelable) e.preventDefault();
   }, { passive: false });
   seg.addEventListener("click", e => { if(e.isTrusted && performance.now() < swallowUntil){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
   /* arrow keys move along the switcher, as a tab list's do */

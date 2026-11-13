@@ -89,9 +89,9 @@ def go_to(pg, ptr, sw, i):
 GEO = """([sel, segSel])=>{ const s=%s; if(!s) return null; const r=s.getBoundingClientRect(), cs=getComputedStyle(s);
   const par=s.parentElement, pr=par.getBoundingClientRect(), pc=getComputedStyle(par);
   const col=[pr.left+parseFloat(pc.paddingLeft)+parseFloat(pc.borderLeftWidth), pr.right-parseFloat(pc.paddingRight)-parseFloat(pc.borderRightWidth)];
-  /* the chat sheet's row: the room beside its close button */
+  /* the chat sheet's row: its close button at the end */
   const sib=[...par.children].filter(c=>c!==s && c.getBoundingClientRect().width>0 && getComputedStyle(c).position!=='absolute');
-  for(const c of sib){ const q=c.getBoundingClientRect(); if(q.left>=r.right-1) col[1]=Math.min(col[1], q.left-(parseFloat(pc.columnGap)||0)); }
+  let endSib=null; for(const c of sib){ const q=c.getBoundingClientRect(); if(q.left>=r.right-1) endSib=[q.left, q.width, parseFloat(pc.columnGap)||0]; }
   const ink=b=>{ const rg=document.createRange(); const tw=document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let L=1e9,R=-1e9,T=1e9,B=-1e9,n;
     while((n=tw.nextNode())){ if(!n.textContent.trim()) continue; const pe=n.parentElement; if(pe.closest('[hidden]') || !pe.getClientRects().length || getComputedStyle(pe).display==='none') continue;
       rg.selectNodeContents(n); for(const x of rg.getClientRects()){ if(!x.width) continue; L=Math.min(L,x.left); R=Math.max(R,x.right); T=Math.min(T,x.top); B=Math.max(B,x.bottom); } }
@@ -99,7 +99,7 @@ GEO = """([sel, segSel])=>{ const s=%s; if(!s) return null; const r=s.getBoundin
   const segs=[...s.querySelectorAll(':scope > '+segSel)].filter(b=>!b.hidden && b.offsetWidth>0).map(b=>{ const q=b.getBoundingClientRect(); const c=getComputedStyle(b);
     return { box:[q.left,q.top,q.width,q.height], ink:ink(b), fs:parseFloat(c.fontSize), tr:c.transitionProperty, td:c.transitionDuration, lit:b.classList.contains('active')||b.classList.contains('is-on') }; });
   const sl=s.querySelector(':scope > .seg-slider'), sr=sl.getBoundingClientRect(), slc=getComputedStyle(sl);
-  return { seg:[r.left,r.top,r.width,r.height], col, segs, thumb:[sr.left,sr.top,sr.width,sr.height], vw:innerWidth,
+  return { seg:[r.left,r.top,r.width,r.height], col, endSib, segs, thumb:[sr.left,sr.top,sr.width,sr.height], vw:innerWidth,
     backdrop: cs.backdropFilter||cs.webkitBackdropFilter||'none', shadow: cs.boxShadow, thumbShadow: slc.boxShadow, bg: cs.backgroundColor,
     segTr: cs.transitionProperty, segTd: cs.transitionDuration, thTr: slc.transitionProperty, thTd: slc.transitionDuration,
     layout:[s.offsetWidth, s.offsetHeight, sl.offsetWidth, sl.offsetHeight, sl.style.left, sl.style.top, sl.style.width, sl.style.height] }; }""" % SEG
@@ -164,9 +164,15 @@ def run_switcher(pg, ptr, dev, tag, sw, props_seen):
     ws = [s["box"][2] for s in segs]; widest = max(s["ink"][2] for s in segs)
     bound = max(widest + 2 * 1.7 * fs, 5.6 * fs) + 1
     mid = (g["col"][0] + g["col"][1]) / 2
+    # centred in its column; beside an end button (the chat sheet's close) it may give up the middle only where the room either side of
+    # a centred control would be narrower than that button, and then it ends before the button
+    es = g["endSib"]; centred = abs(cx(seg) - mid) <= 1
+    if es and not centred:
+        room = ((g["col"][1] - g["col"][0]) - seg[2]) / 2
+        centred = room < es[1] + es[2] and seg[0] + seg[2] <= es[0] - es[2] + 1
     chk("%s: 1 compact - equal segments %s, each no wider than its widest label (%.1f) + 1.7em a side or 5.6em (%.1f); the control %.1f wide in a %.1f column, centred (%.2f off)"
         % (tag, [round(w, 1) for w in ws], widest, bound, seg[2], g["col"][1] - g["col"][0], abs(cx(seg) - mid)),
-        max(ws) - min(ws) <= .5 and max(ws) <= bound and abs(cx(seg) - mid) <= 1, {"ws": ws, "bound": bound, "seg": seg, "col": g["col"]})
+        max(ws) - min(ws) <= .5 and max(ws) <= bound and centred, {"ws": ws, "bound": bound, "seg": seg, "col": g["col"], "end": es})
 
     # ---- 2. raised glass ----
     sh = shadows(g["shadow"]); tsh = shadows(g["thumbShadow"])
@@ -203,7 +209,8 @@ def run_switcher(pg, ptr, dev, tag, sw, props_seen):
 
     # ---- 3. press ----
     rec(pg, sw)
-    b0 = segs[0]["box"]; ink0 = segs[0]["ink"]; rest_seg = seg; rest_th = g["thumb"]
+    g = geo(pg, sw)   # (again: the chat's counts may have widened its labels since)
+    b0 = g["segs"][0]["box"]; ink0 = g["segs"][0]["ink"]; rest_seg = g["seg"]; rest_th = g["thumb"]
     ptr.down(cx(b0), cy(b0))
     pr = None; t0 = time.time()
     while time.time() - t0 < 3:
@@ -228,12 +235,25 @@ def run_switcher(pg, ptr, dev, tag, sw, props_seen):
         s0 = geo(pg, sw)
         if lit_index({"segs": s0["segs"]}) != i: bad.append((i, j, "could not start")); continue
         rest_th, rest_seg = s0["thumb"], s0["seg"]; c0, c1 = cx(s0["segs"][i]["box"]), cx(s0["segs"][j]["box"])
+        # freeze AT THE TAP'S CLICK, in its own task (after the page's handler, before the timeline moves on): a loaded machine's long
+        # build of the next tab cannot let the move run out unseen. A build whose move starts later (in a frame of its own, the build
+        # before) is caught by the poll below.
+        pg.evaluate("""([sel])=>{ window.__fzReady=false; window.__fz=[]; const s=%s;
+          window.addEventListener('click', function f(){ window.removeEventListener('click', f);
+            const le=s.querySelector(':scope > .seg-lens'); if(!le || !le.getAnimations().length) return;
+            const an=document.getAnimations().filter(a=>a.effect && a.effect.target && (a.effect.target===s || s.contains(a.effect.target)));
+            an.forEach(a=>a.pause()); window.__fz=an; window.__fzReady=true; }); }""" % SEG, [sw[2]])
         tap(pg, ptr, sw, j)
         # freeze as soon as the move has started (the lens has its track, or - in a build without one - the thumb is moving)
         t0 = time.time(); fz = []
         while time.time() - t0 < 6:
-            started = pg.evaluate("""([sel])=>{ const s=%s; const le=s.querySelector(':scope > .seg-lens'); const sl=s.querySelector(':scope > .seg-slider');
-              if(le && le.getAnimations().length) return true; return sl.getAnimations().some(a=>a.playState==='running') && (s.querySelector(':scope > .active, :scope > .is-on')!==null); }""" % SEG, [sw[2]])
+            if pg.evaluate("()=>window.__fzReady"):
+                fz = pg.evaluate("""()=>(window.__fz||[]).map(a=>({ d:a.effect.getTiming().duration, props:[...new Set(a.effect.getKeyframes().flatMap(k=>Object.keys(k)).filter(k=>!['offset','easing','composite','computedOffset'].includes(k)))] }))""")
+                break
+            # (not before the tapped segment is the picked one: a press's own swell moves the thumb too, and is not the move)
+            started = pg.evaluate("""([sel, segSel, j])=>{ const s=%s; const sl=s.querySelector(':scope > .seg-slider');
+              const segs=[...s.querySelectorAll(':scope > '+segSel)].filter(b=>!b.hidden && b.offsetWidth>0); const b=segs[j];
+              return !!b && (b.classList.contains('active') || b.classList.contains('is-on')) && sl.getAnimations().some(a=>a.playState==='running'); }""" % SEG, [sw[2], sw[3], j])
             if started: fz = pg.evaluate(FREEZE, [sw[2]]); break
             pg.wait_for_timeout(8)
         if not fz: bad.append((i, j, "no animation")); wait_lit(pg, sw, j); continue
