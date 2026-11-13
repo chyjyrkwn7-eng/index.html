@@ -83,7 +83,7 @@ def page(br, cls="academy", reduce=False, clock=False):
     pg.add_init_script(init_js(cls))
     pg.route("**/index.html", lambda route, request: route.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
     pg.route("**/version.json*", lambda route, request: route.fulfill(status=200, headers={"content-type": "application/json"}, body='{"build":"%s","frameId":"","note":""}' % SERVED))
-    pg.goto("http://127.0.0.1:%d/index.html" % port, timeout=240000); pg.wait_for_timeout(3500)   # (a 10MB page on a busy machine)
+    pg.goto("http://127.0.0.1:%d/index.html" % port, timeout=180000); pg.wait_for_timeout(3500)   # (a 10MB page on a busy machine)
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
     # four badges in the case and the fifth the new one; the case's renders warmed as a results screen warms them
     unit = pg.evaluate("""(reduce)=>{ const us = unitsInTeachingOrder(); store.unitPerfects = store.unitPerfects || {};
