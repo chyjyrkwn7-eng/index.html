@@ -30,8 +30,14 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:300], flush=True)
 # the box's height on every frame for a while after a tap (started just before it)
-TRACE = """(ms)=>{ window.__h=[]; const t0=performance.now(); const f=()=>{ const d=document.querySelector('.qpanel details.ifc-code');
-  if(d) window.__h.push([Math.round(performance.now()-t0), Math.round(d.getBoundingClientRect().height*10)/10, d.open, d.style.height]);
+# (384.119) the height SHOWN, not the height laid out: the box is laid out once and swept open or shut by a clip-path on its card
+# (ifcDropOpen / ifcDropShut), so what is seen is the part of the box above the card's clipped bottom. On builds before 384.119
+# nothing is clipped and this is the box's height, as it always measured. The shape asked for is unchanged.
+TRACE = """(ms)=>{ window.__h=[]; const t0=performance.now();
+  const clipB = el => { const m = /inset\\(([^)]*?)(?:\\sround\\b|\\))/.exec(getComputedStyle(el).clipPath || ''); if(!m) return 0; const v = m[1].trim().split(/\\s+/).map(parseFloat); return (v.length >= 3 ? v[2] : v[0]) || 0; };
+  const f=()=>{ const d=document.querySelector('.qpanel details.ifc-code');
+  if(d){ const c = d.closest('.ifc-ref') || d, r = d.getBoundingClientRect(), cr = c.getBoundingClientRect(); const shown = Math.max(0, Math.min(r.bottom, cr.bottom - clipB(c)) - r.top);
+    window.__h.push([Math.round(performance.now()-t0), Math.round(shown*10)/10, d.open, d.style.height]); }
   if(performance.now()-t0<ms) requestAnimationFrame(f); }; requestAnimationFrame(f); }"""
 def answer(pg, cdp):
     G["answer_right"](pg, cdp)

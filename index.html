@@ -88066,7 +88066,7 @@ function sndGraph(ctx, o){
   const dly = ctx.createDelay(1.5), fb = ctx.createGain(), dlp = ctx.createBiquadFilter(), dOut = ctx.createGain();
   dly.delayTime.value = .27; fb.gain.value = .38; dlp.type = "lowpass"; dlp.frequency.value = 3200; dOut.gain.value = .6;
   dly.connect(dlp); dlp.connect(fb); fb.connect(dly); dlp.connect(dOut); dOut.connect(master);
-  return { ctx, master, bus, busGain: BUS_GAIN, rev, dly };
+  return { ctx, master, bus, busGain: BUS_GAIN, rev, dly, comp: tail !== master ? tail : null };
 }
 
 /* The kit a design draws with: every primitive schedules from the voice's
@@ -91504,6 +91504,9 @@ const NovaSound = (function(){
     const out = [];
     todo.forEach(([h]) => [h.__hsw, h.__hlb].forEach(x => { if(x && x.parentNode === h && !h.matches(HSW_ALWAYS)) out.push([h, x]); }));
     faces.forEach(f => { if(f.__hlb && f.__hlb.parentNode === f) out.push([f, f.__hlb]); });
+    /* (384.119) and the top row's, put in with their screen without a size read */
+    hswTopFit.forEach(h => { if(h.__hsw && h.__hsw.parentNode === h && h.isConnected) out.push([h, h.__hsw]); });
+    hswTopFit.clear();
     /* (384.19) NOT A ROW THE PAGE HAS SKIPPED. A rankings row off the screen is content-visibility:hidden (.screen-rankings
        .rank-row.is-offscreen), and a size read inside one opens its lock for the read and shuts it again: a style pass and a layout
        for EACH row (29 of them, ~0.7ms apiece, on the Leaderboard's first hop; tabbutter check 2). A row is a plain block the page
@@ -91564,6 +91567,38 @@ const NovaSound = (function(){
     hswQueue.add(n);
     hswSchedule();
   }
+  /* (384.119) THE TOP ROW'S SWITCHES GO IN WITH ITS SCREEN. Madison: "After hitting the back button while on the mode selection
+     screen, the Haptic Touch is missing." Every switch waits for its screen to settle (hswSchedule: 90ms, the glass's landing, an
+     idle moment) - and the screen a Start Studying tap brings up waits on the tab bar's glide: measured (real taps, iPhone,
+     tools/check-b384-lagaudio.py section 4) the round back button on Choose your mode got its switch 0.8-2.7s after the screen
+     was drawn, and 150ms coming back from the units (no glide). A quick "back" in that window had nothing under the finger to
+     tick (the scripted tick is silent since iOS 26.5). The top row - the round back buttons, the chat button, Pause - is put in
+     with its screen, in the mutation callback that sees it arrive (before its first frame), as the planet system's are
+     (hswHostNow): no size is read for it (each is a 44px corner button), so the screen's first frame lays nothing out again; and
+     still never under a finger - only once the finger that brought the screen up has lifted and its tap has been delivered (the
+     click), or ~90ms later. Each still has its fit read in the next pass (hswFlush), like any other. */
+  const HSW_TOP = ".settings-nav > :is(.ios-nav-back, .settings-nav-back, .back-link), #chatdock-btn, #pausebtn, .roomchat-fab, .chatdock-back, .unitdetail-back";
+  let hswClickAt = -1e9, hswTopT = 0;
+  const hswTopFit = new Set();
+  window.addEventListener("click", e => { if(e.isTrusted) hswClickAt = hswNow(); }, { capture: true, passive: true });
+  const hswFingerFree = () => !hswTouching() || (hswTouchN === 0 && hswClickAt >= hswTouchUp);
+  function hswTopOk(h){
+    if(!h || h.nodeType !== 1 || h.namespaceURI !== "http://www.w3.org/1999/xhtml" || h.disabled) return false;
+    if(h.matches("[data-no-hsw]") || h.closest(".nsw, .opt, label, .ru-blocker, [data-no-hsw]")) return false;
+    return !h.querySelector(HSW_INNER);
+  }
+  function hswTopNow(n){
+    if(!n || n.nodeType !== 1 || hswIs(n) || hlbIs(n) || !hswObs) return;
+    const hosts = n.matches(HSW_TOP) ? [n] : [];
+    n.querySelectorAll(HSW_TOP).forEach(x => hosts.push(x));
+    const todo = hosts.filter(h => !hswHas(h) && !hlbHas(h) && !h.__hswNo);
+    if(!todo.length) return;
+    if(!hswFingerFree()){
+      if(!hswTopT) hswTopT = setTimeout(() => { hswTopT = 0; try{ hswTopNow(document.body); }catch(e){} }, 90);
+      return;
+    }
+    todo.forEach(h => { if(hswTopOk(h)){ hswAttach(h, true); hswTopFit.add(h); } });
+  }
   /* build 382: a container that refused its switches while it was not ready (the results' way-on buttons, see rsArm) asks for them */
   window.hswRescan = n => { try{ if(hswObs) hswQueueAdd(n); }catch(e){} };
   function hswStart(){
@@ -91571,14 +91606,16 @@ const NovaSound = (function(){
     hswObs = new MutationObserver(recs => {
       for(const m of recs){
         m.addedNodes.forEach(hswQueueAdd);
+        m.addedNodes.forEach(hswTopNow);
         /* a control whose contents were replaced lost its switch with them */
         if(m.removedNodes.length && m.target && m.target.nodeType === 1 && !hswIs(m.target) && !hlbIs(m.target)){
-          for(const r of m.removedNodes){ if(hswIs(r) || hlbIs(r)){ hswQueueAdd(m.target); break; } }
+          for(const r of m.removedNodes){ if(hswIs(r) || hlbIs(r)){ hswQueueAdd(m.target); hswTopNow(m.target); break; } }
         }
       }
     });
     hswObs.observe(document.documentElement, { childList: true, subtree: true });
     hswQueueAdd(document.body || document.documentElement);
+    hswTopNow(document.body || document.documentElement);
   }
   function hswStop(){
     if(hswObs){ hswObs.disconnect(); hswObs = null; }
@@ -91737,6 +91774,7 @@ const NovaSound = (function(){
   function resume(){
     const ctx = st.ctx;
     if(!ctx || !on() || document.hidden) return;
+    if(st.away){ back(); return; }   /* (384.119) a touch on a page that never heard it come back */
     if(st.hushed) unhush();
     if(ctx.state !== "running"){ try{ const p = ctx.resume(); if(p && p.then) p.then(afterResume, () => {}); }catch(e){} }
     else afterResume();
@@ -91779,10 +91817,30 @@ const NovaSound = (function(){
      suspended in the same call. Window blur (the home swipe beginning, a
      beat before the page is hidden) mutes the same way, and coming back
      brings the master up from silence. */
+  /* (384.119) LEAVING, A THIRD TIME: "If I have my volume on, and I leave the app, the sound screeches badly like it lags." What
+     327z15 left (read on main 384.95, with every audio call logged, tools/check-b384-lagaudio.py section 3):
+     - IT WAS THE LAST THING TO HEAR THE APP GO. Its visibilitychange listener was added at the bottom of the script, so every
+       leave handler above it ran first - a test pausing itself and saving the run (autoPauseOnLeave, saveRunSession), the
+       presence and chat marks - while the sound went on playing into a page iOS was already putting to sleep; a starved audio
+       thread repeats what is in its buffer, and that is the screech. Now one listener on the window, in the capture phase, hears
+       visibilitychange, pagehide and freeze before any of them (the window's capture listeners run before the document's);
+     - THE CUT WAS A STEP: the master set to 0 and every voice disconnected in one render quantum (a click), and the context
+       suspended in the same call, so the last buffers rendered were still full of sound. Now the master ramps to silence over
+       LEAVE_RAMP (15ms), every voice and the ambience are stopped at the ramp's end (one not started yet never starts), and the
+       context is suspended once the ramp has played - on the audio clock (a silent source's ended event, which a hidden page's
+       timer throttling does not hold back), with a timer behind it - so what is left in any buffer is silence;
+     - COMING BACK REPLAYED WHAT WAS CUT OFF: the echo and the room (a feedback delay and a convolver) still held the last sound,
+       and came up with the master. A leave that cut anything leaves that graph behind; the page comes back to a fresh one at
+       silence, rising (unhush), with nothing ringing - the room is filled in again in a quiet moment, as on the first tap;
+     - nothing starts while away: play(), the ambience, and a buffer that finishes decoding after the leave all refuse. */
+  const LEAVE_RAMP = .015;
+  function rampMaster(to, T){
+    try{ const g = st.G.master.gain, now = st.ctx.currentTime, cur = g.value; g.cancelScheduledValues(now); g.setValueAtTime(cur, now); g.linearRampToValueAtTime(to, now + (T || LEAVE_RAMP)); }catch(e){}
+  }
   function hush(){
     if(!st.ctx || !st.G) return;
     st.hushed = true;
-    try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.value = 0; g.setValueAtTime(0, now); }catch(e){}
+    rampMaster(0);
   }
   function unhush(){
     if(!st.ctx || !st.G || !st.hushed) return;
@@ -91790,25 +91848,52 @@ const NovaSound = (function(){
     try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(0, now); g.setTargetAtTime(level(volume()), now, .08); }catch(e){}
   }
   function away(){
-    if(!st.ctx) return;
-    hush();
+    if(!st.ctx || !st.G || st.away) return;
+    st.away = true;
+    const ctx = st.ctx, now = ctx.currentTime, cut = now + LEAVE_RAMP + .003;
+    st.hushed = true;
+    rampMaster(0);
+    st.stale = st.voices.length > 0 || !!st.amb || now < (st.lastEnd || 0) + 3;
     const a = st.amb;
     st.amb = null;
-    if(a){ try{ a.src.stop(); }catch(e){} try{ a.g.disconnect(); }catch(e){} }
-    st.voices.slice().forEach(v => { v.dead = true; v.srcs.forEach(x => { try{ x.stop(); }catch(e){} }); try{ v.g.disconnect(); }catch(e){} });
+    if(a){ try{ a.src.stop(cut); }catch(e){} }
+    st.voices.slice().forEach(v => { v.dead = true; v.srcs.forEach(x => { try{ x.stop(cut); }catch(e){} }); });
     st.voices = [];
-    try{ st.ctx.suspend(); }catch(e){}
+    const go = () => { if(st.away && st.ctx === ctx && ctx.state === "running"){ try{ ctx.suspend(); }catch(e){} } };
+    try{
+      const s = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createBufferSource(), z = ctx.createGain();
+      z.gain.value = 0; s.connect(z); z.connect(ctx.destination);
+      s.onended = () => { try{ z.disconnect(); }catch(e){} go(); };
+      s.start(now); s.stop(cut + .004);
+    }catch(e){}
+    setTimeout(go, 45);
+  }
+  /* the graph that comes back when the one left behind may still ring (its echo, its room) */
+  function freshGraph(){
+    const old = st.G;
+    try{ old.master.disconnect(); }catch(e){}
+    try{ if(old.comp) old.comp.disconnect(); }catch(e){}
+    st.G = sndGraph(st.ctx, { level: 0, lazyRev: true });
+    st.hushed = true; st.duck = 0;
   }
   function back(){
     if(!st.ctx || document.hidden) return;
+    const was = st.away;
+    st.away = false;
     if(!on()){ st.hushed = false; return; }
     /* back: the ambience only if its screen is still the one up */
     if(st.ambWant && st.ambWant.owner && !st.ambWant.owner.isConnected) stopAmbience();
+    if(was && st.stale && st.G) freshGraph();
+    st.stale = false;
     unhush();
     resume();
   }
-  document.addEventListener("visibilitychange", () => { if(document.hidden) away(); else back(); });
-  window.addEventListener("pagehide", away);
+  const leave = e => {
+    if(e.type === "visibilitychange"){ if(document.hidden) away(); else back(); }
+    else if(e.type === "resume"){ if(!document.hidden) back(); }
+    else away();
+  };
+  ["visibilitychange", "pagehide", "freeze", "resume"].forEach(t => window.addEventListener(t, leave, true));
   window.addEventListener("blur", () => { if(st.ctx && on()) hush(); });
   window.addEventListener("focus", back);
 
@@ -91863,7 +91948,7 @@ const NovaSound = (function(){
     if(!wantSound) return null;
     const ctx = st.ctx;
     /* a context still starting inside the gesture that woke it plays as soon as it runs */
-    if(!ctx || document.hidden || ctx.state === "closed" || (ctx.state !== "running" && Date.now() - st.wokeAt > 1500)) return null;
+    if(!ctx || document.hidden || st.away || ctx.state === "closed" || (ctx.state !== "running" && Date.now() - st.wokeAt > 1500)) return null;
     reap();
     const same = st.voices.filter(v => v.id === id);
     if(same.length >= (e.poly || 3)) kill(same[0]);
@@ -91876,6 +91961,7 @@ const NovaSound = (function(){
     const len = K.end + .1;
     const v = { id, g: vg, bus: e.bus, srcs: K.srcs, end: ctx.currentTime + len + K.wet };
     st.voices.push(v);
+    st.lastEnd = Math.max(st.lastEnd || 0, v.end);
     if(e.bus === "cut") duck(len);
     setTimeout(reap, (len + K.wet + .2) * 1000);
     return { id, length: len, stop: (fade) => kill(v, fade) };
@@ -91951,7 +92037,7 @@ const NovaSound = (function(){
     }, 1500);
     if(!on()) return;
     const ctx = st.ctx;
-    if(!ctx || ctx.state !== "running") return;   /* starts on the next gesture */
+    if(!ctx || ctx.state !== "running" || document.hidden || st.away) return;   /* starts on the next gesture (or the page's return) */
     if(st.amb && st.amb.id === id) return;
     if(st.amb) stopAmbience(true);
     const want = st.ambWant;
@@ -91967,7 +92053,7 @@ const NovaSound = (function(){
       return;
     }
     ambBuffer(id).then(buf => {
-      if(st.ambWant !== want || !on() || st.amb || !st.ctx) return;
+      if(st.ambWant !== want || !on() || st.amb || !st.ctx || document.hidden || st.away) return;
       const src = ctx.createBufferSource(), g = ctx.createGain();
       src.buffer = buf; src.loop = true;
       g.gain.setValueAtTime(0, ctx.currentTime);
@@ -114882,6 +114968,7 @@ function showHome(){
     stage.appendChild(dailyBtn);
   }
   dailyRingTick();
+  try{ warmCardBadges(); }catch(e){}   /* (384.119) the units' badges, in idle time, before Start Studying and a mode are tapped */
   /* the orbit's emblems, recorded once Home has settled (build 298); any
      already recorded this session play from the first frame (build 300) */
   /* Sheets already recorded are only an <img> each, so they go on in the
@@ -115444,6 +115531,37 @@ function fillModeGroup(panel){
     }
   }catch(e){}
 }
+/* (384.119) A PUSHED SCREEN STARTS MOVING ON THE TAP. Madison: "I feel like going into the unit selection screen is a smidge delayed
+   idk." His recording (iPhone 17 Pro Max, Fire Code, 60fps): three taps on Drill, each the same - the finger lifts and the card's
+   press goes off, then eight frames of nothing, then the units in one frame: 133, 133 and 134ms from the lift to the first frame
+   that changes, and that frame is also the one it settles on. All of it was the tap's own task: the whole units screen (58 cards in
+   Fire Code - their badges drawn, serialised and turned into pictures on a first visit, the Start sheet and its sliders, the
+   question pool counted for the empty pick), then its style and layout (forced early, in the mutation callbacks that place the
+   nav), before a frame could go out. Measured here at 4x CPU, 440x956 at 3x (tools/check-b384-lagaudio.py section 1).
+   Now the tap only dims the screen it leaves (opacity, on the compositor) and asks for the next screen once that first frame is
+   out: the build runs while the dim plays, and the units come up from the dim's level to full (opacity again) - so the first
+   frame after the tap moves, and nothing in either screen is moved, resized or drawn late. A tab, a back tap or another screen
+   arriving before the build cancels it. Reduce motion: built in the tap, as before. The units' badges are made and decoded in idle
+   time before the tap (warmCardBadges), so the build is cheaper and every badge is in the units' first frame. */
+var HANDOFF_DIM_MS = 110, HANDOFF_IN_MS = 150, HANDOFF_FLOOR = .35;   /* (var: read only on a tap, but never in a TDZ) */
+function screenHandoff(from, build){
+  if(!from || !from.isConnected || from.parentNode !== stage || typeof from.animate !== "function" || ringMotionOff()){ build(); return; }
+  if(from._handoff) return;
+  from._handoff = true;
+  from.style.pointerEvents = "none";
+  let dim = null;
+  try{ dim = from.animate([{ opacity: 1 }, { opacity: HANDOFF_FLOOR }], { duration: HANDOFF_DIM_MS, easing: "cubic-bezier(.2,.8,.3,1)", fill: "forwards" }); }catch(e){}
+  try{ beginSettle(HANDOFF_DIM_MS + HANDOFF_IN_MS + 120); }catch(e){}
+  requestAnimationFrame(() => setTimeout(() => {
+    if(!from.isConnected || from.parentNode !== stage) return;
+    let o = HANDOFF_FLOOR;
+    try{ o = parseFloat(getComputedStyle(from).opacity); if(!isFinite(o)) o = HANDOFF_FLOOR; }catch(e){}
+    try{ build(); }
+    finally{ if(from.isConnected){ from._handoff = false; from.style.pointerEvents = ""; try{ dim && dim.cancel(); }catch(e){} } }
+    const to = stage.querySelector(":scope > .panel");
+    if(to && to !== from && o < .995){ try{ to.animate([{ opacity: o }, { opacity: 1 }], { duration: HANDOFF_IN_MS, easing: "cubic-bezier(.2,.8,.3,1)" }); }catch(e){} }
+  }, 0));
+}
 function showModeSelect(){
   /* LEAVING UNIT SELECTION DROPS THE PICKS. "If I select units and then
      hit back, if I go back into another mode or the same mode, the
@@ -115578,7 +115696,8 @@ function showModeSelect(){
          Practice Test picker is retired - see retired/practice-test.md. */
       if(m.value === "vroom"){ cfg.mode = "vroom"; showVirtualRoomChoice(); return; }
       cfg.mode = m.value;
-      showSetup();
+      /* (384.119) the screen starts moving on the tap; the units are built once that frame is out (screenHandoff) */
+      screenHandoff(panel, showSetup);
     });
     cards.appendChild(card);
   });
@@ -115587,6 +115706,7 @@ function showModeSelect(){
   stage.replaceChildren(panel);
   toTop();
   fillModeGroup(panel);
+  warmCardBadges();   /* (384.119) the units' badges, ready before a mode is tapped */
   if(!store.seenModeSelectTour){
     store.seenModeSelectTour = true;
     saveStore();
@@ -115701,6 +115821,37 @@ function cardBadgeSVG(name, earned){
     img.src = u;
     return img;
   }catch(e){ return svg; }
+}
+/* (384.119) THE UNIT CARDS' BADGES, MADE BEFORE THE TAP. A card's badge is a picture made once per unit and look (above), and a
+   first visit to the units made all of them inside the tap - 27% of that tap's task here (58 in Fire Code: drawn, serialised, a
+   Blob, a URL) - and showed them a frame or more after the cards (8 of 8 in view not decoded in the units' first frame, measured).
+   Choose your mode asks for them in quiet idle time (quietIdle: never within 2s of a touch or 1.6s of a screen going in), a few
+   per slice, each decoded, and keeps the decoded pictures: the units' cards then take them from the cache and are drawn with them.
+   A badge whose token is still a draft is not kept (cardBadgeSVG) and is simply made in the build, as before. */
+var cardBadgeWarm = null, cardBadgeWarmBusy = false;
+function warmCardBadges(){
+  if(cardBadgeWarmBusy || typeof Blob !== "function" || typeof quietIdle !== "function") return;
+  let names = null;
+  try{ names = ifcFinderFirst(unitsInTeachingOrder()); }catch(e){ return; }
+  if(!names || !names.length) return;
+  if(!cardBadgeWarm) cardBadgeWarm = new Map();
+  cardBadgeWarmBusy = true;
+  let i = 0;
+  const step = dl => {
+    const t0 = performance.now(), budget = dl && dl.timeRemaining ? Math.max(3, Math.min(10, dl.timeRemaining())) : 4;
+    while(i < names.length){
+      const name = names[i++];
+      try{
+        const earned = unitDrillStarEarned(name), k = name + "|" + String(earned);
+        const old = cardBadgeWarm.get(k);
+        const el = cardBadgeSVG(name, earned);
+        if(el && el.tagName === "IMG" && (!old || old.src !== el.src)){ cardBadgeWarm.set(k, el); if(el.decode) el.decode().catch(() => {}); }
+      }catch(e){}
+      if(performance.now() - t0 > budget) break;
+    }
+    if(i < names.length) quietIdle(step, 1500); else cardBadgeWarmBusy = false;
+  };
+  quietIdle(step, 1500);
 }
 function appendUnitProgress(row, name){
   const starsWrap = document.createElement("span");
@@ -120385,7 +120536,7 @@ function ifcSlideStill(){ try{ return ringMotionOff(); }catch(e){ return false; 
 function ifcApplyCodePref(box){
   requestAnimationFrame(() => {
     const d = box.querySelector("details.ifc-code");
-    if(!d || !box.isConnected || d._slideRaf || d.classList.contains("is-closing")) return;
+    if(!d || !box.isConnected || (ifcDropRun && ifcDropRun.chrome === box) || d.classList.contains("is-closing")) return;
     const want = ifcCodeOpenPref();
     if(d.open === want || (d.open && box.dataset.autoOpened)) return;
     const scope = box.closest("#stage > *") || document;
@@ -120393,42 +120544,224 @@ function ifcApplyCodePref(box){
     d.open = want;
   });
 }
-/* el's height eases from fromH toward target() (read every frame), and is let go once pending() is false and it has arrived */
-function ifcSlideHeight(el, fromH, target, pending, done){
-  if(el._slideRaf){ cancelAnimationFrame(el._slideRaf); el._slideRaf = 0; }
-  const finish = () => { el._slideRaf = 0; el.style.height = ""; el.style.overflow = ""; if(done) done(); };
-  if(ifcSlideStill() || !el.isConnected){ finish(); return; }
-  el.style.overflow = "hidden"; el.style.height = fromH + "px";
-  let h = fromH, last = performance.now();
-  const t0 = last;
-  const step = now => {
-    const dt = Math.min(64, Math.max(1, now - last)); last = now;
-    const tgt = Math.max(0, target());
-    h += (tgt - h) * (1 - Math.pow(.8, dt / 16.7));
-    el.style.height = h.toFixed(2) + "px";
-    const waiting = pending && pending() && now - t0 < 3000;
-    if(!waiting && Math.abs(tgt - h) < .6){ finish(); return; }
-    el._slideRaf = requestAnimationFrame(step);
-  };
-  el._slideRaf = requestAnimationFrame(step);
+/* (ifcSlideHeight - the box's height eased toward its content's frame by frame - is gone: 384.119, below) */
+/* (384.119) THE DROP-DOWNS MOVE ON THE COMPOSITOR. Madison (installed iPhone, a Fire Code drill): "Couple laggy issues involving the
+   drop downs and the next question button." His recording (60fps): the Hint's "Show the code" and the answer's AMENDMENTS "Show the
+   code" both grew and shrank by a height written on every frame (ifcSlideHeight, now gone): the page was laid out again on every frame
+   of it, everything under the box with it; the Hint ended every move with a jump (frames 101->102 and 157->158: the eased height
+   stopped short of the real one, and its .6rem margin came off only at the very end); and Next question - placed again a frame
+   late by its ResizeObserver on each of those frames, and switched between "in the page" and "pinned" when the box shut - dropped
+   16px and floated back up after every close (frames 600-604, 1035-1050). Now:
+   - THE LAYOUT CHANGES ONCE. Opening, the box is put at its full height at once, in the tap, and in the first frame it is shown
+     growing by a clip-path sweep (the card's own rounded corners, `round`) while everything after it in the page slides down from
+     where it was (the `translate` property: a transform, composited, and it leaves each element's own transform alone - Next
+     question's translateX(-50%)). Shutting, the box is swept shut and everything after it slides up with the layout untouched,
+     and only at the end does the box really shut - under transforms that make that frame look exactly like the one before it.
+   - THE BOTTOM OF THE PAGE: shutting a box at the end of a scrolled page shortens the page under the scroll. What the scroll will
+     give back is worked out first, everything above slides down by it as the box shuts, and at the end the page is scrolled by
+     it in the same frame the box shuts, so nothing is clamped (an iPhone animates its own clamp - the content drifting after the
+     box had finished).
+   - NEXT QUESTION is placed once, in the move's first frame (opening) or last (shutting), and glides with what is under the box;
+     its ResizeObserver waits while a move runs (qnextPlace).
+   - Whatever the end frame got wrong by more than half a pixel (a picture arriving, a pill that was pinned and is now in the page)
+     glides the rest of the way from where it is (a residual FLIP), never jumps.
+   - A tap on the other half of the move half way through carries on from where everything is.
+   - No main-thread work in the tap beyond reading the layout as it stands and one attribute: the new layout is read once, in the
+     first frame, where the frame lays it out anyway. Reduce motion: no move, as before. */
+var IFC_DROP_MS = 300, IFC_DROP_EASE = "cubic-bezier(.2,.8,.2,1)", ifcDropRun = null;
+function ifcDropTake(s, out){
+  if(!s || s.nodeType !== 1 || s.matches(".floatbtn")) return;
+  if(s.matches(".foot") || s.querySelector(":scope > .floatbtn")){ [...s.children].forEach(k => ifcDropTake(k, out)); return; }
+  const cs = getComputedStyle(s);
+  if(cs.display === "none" || cs.position === "fixed" || cs.position === "sticky") return;
+  out.push(s);
 }
-/* the code box's own open and close, from a tap: grows from the pill, or shrinks back to it */
+/* the boxes laid out before (after = false) or after el: its siblings and every ancestor's, up to the stage */
+function ifcDropSide(el, after){
+  const out = [];
+  if(!el || !stage.contains(el)) return out;
+  for(let n = el; n && n !== stage; n = n.parentElement){
+    for(let s = after ? n.nextElementSibling : n.previousElementSibling; s; s = after ? s.nextElementSibling : s.previousElementSibling) ifcDropTake(s, out);
+    if(n.parentElement === stage) break;
+  }
+  return out;
+}
+function ifcDropNext(){ const q = qnextNow; return q && q.btn && q.btn.isConnected && !q.btn.hidden ? q.btn : null; }
+/* Next question put in its place now (it is still this question's) */
+function ifcDropPlace(next){ const q = qnextNow; if(!next || !q || q.btn !== next || !next.isConnected || next.hidden || !q.panel.isConnected) return false; qnextPlace(next, q.panel); return true; }
+function ifcDropY(el){ try{ const t = getComputedStyle(el).translate; if(!t || t === "none") return 0; const p = t.split(/\s+/); return parseFloat(p[1] || 0) || 0; }catch(e){ return 0; } }
+function ifcDropClip(el){
+  try{ const m = /inset\(([^)]*?)(?:\sround\b|\))/.exec(getComputedStyle(el).clipPath || ""); if(!m) return 0;
+    const v = m[1].trim().split(/\s+/).map(parseFloat); return (v.length >= 3 ? v[2] : v[0]) || 0; }catch(e){ return 0; }
+}
+function ifcDropRound(el){ try{ return getComputedStyle(el).borderBottomLeftRadius || "0px"; }catch(e){ return "0px"; } }
+function ifcDropAnim(el, kf, ms){ try{ return el.animate(kf, { duration: ms || IFC_DROP_MS, easing: IFC_DROP_EASE, fill: "forwards" }); }catch(e){ return null; } }
+function ifcDropMove(el, from, to, ms){ return (Math.abs(from) < .25 && Math.abs(to) < .25) ? null : ifcDropAnim(el, [{ translate: "0 " + from.toFixed(2) + "px" }, { translate: "0 " + to.toFixed(2) + "px" }], ms); }
+/* a move's end dropped (its timer, its observer); its animations go on until they are read (ifcDropCollect) */
+function ifcDropHalt(r){
+  if(!r) return;
+  clearTimeout(r.timer); r.timer = 0;
+  if(r.ro){ try{ r.ro.disconnect(); }catch(e){} r.ro = null; }
+  if(ifcDropRun === r) ifcDropRun = null;
+}
+/* what a move (and the one it took over from) shows this frame, then its animations cancelled */
+function ifcDropCollect(r, at){
+  at = at || { y: new Map(), clip: new Map() };
+  if(!r) return at;
+  if(r.prev){ ifcDropCollect(r.prev, at); r.prev = null; }
+  r.anims.forEach(([el, a, kind]) => {
+    if(kind === "clip"){ if(!at.clip.has(el)) at.clip.set(el, ifcDropClip(el)); }
+    else if(!at.y.has(el)) at.y.set(el, ifcDropY(el));
+  });
+  r.anims.forEach(([, a]) => { try{ a.cancel(); }catch(e){} });
+  r.anims = [];
+  return at;
+}
+function ifcDropStop(){ const r = ifcDropRun; ifcDropHalt(r); return ifcDropCollect(r); }
+/* a move cut short by a slide, another box or a screen change: its end, at once */
+function ifcDropSettleNow(){
+  const r = ifcDropRun;
+  if(!r) return;
+  ifcDropStop();
+  try{ if(r.done) r.done(); }catch(e){}
+}
+function ifcDropBegin(chrome, done, prev){
+  const run = { chrome, anims: [], timer: 0, done: done || null, ro: null, prev: prev || null };
+  ifcDropRun = run;
+  return run;
+}
+/* the move on the same box that this one takes over from (its end dropped, its look read in the first frame) */
+function ifcDropTakeOver(chrome){
+  const prev = ifcDropRun;
+  if(!prev) return null;
+  if(prev.chrome !== chrome){ ifcDropSettleNow(); return null; }
+  ifcDropHalt(prev);
+  return prev;
+}
+function ifcDropAdd(run, el, a, kind){ if(a) run.anims.push([el, a, kind || "y"]); }
+/* opening: change() puts the box in its new, taller layout. Called in the tap; the move is made in the next frame. */
+function ifcDropOpen(chrome, change, pending){
+  const after = ifcDropSide(chrome, true), before = ifcDropSide(chrome, false), next = ifcDropNext();
+  /* what is on the screen now (the layout as it stands, a move's transforms included) */
+  const a0 = after.length ? after[0].getBoundingClientRect().top : 0;
+  const n0 = next ? next.getBoundingClientRect().top : 0;
+  const c0 = chrome.getBoundingClientRect().height - ifcDropClip(chrome);
+  const prev = ifcDropTakeOver(chrome);
+  change();
+  if(ifcSlideStill() || !chrome.isConnected){ ifcDropCollect(prev); ifcDropPlace(next); return; }
+  const run = ifcDropBegin(chrome, null, prev);
+  requestAnimationFrame(() => {
+    if(ifcDropRun !== run) return;
+    const live = ifcDropCollect(run);
+    if(!chrome.isConnected){ ifcDropHalt(run); return; }
+    ifcDropPlace(next);
+    const h1 = chrome.getBoundingClientRect().height;
+    const a1 = after.length ? after[0].getBoundingClientRect().top : 0;
+    const n1 = next ? next.getBoundingClientRect().top : 0;
+    const R = ifcDropRound(chrome);
+    const clip0 = Math.max(0, h1 - Math.max(0, c0));
+    ifcDropAdd(run, chrome, ifcDropAnim(chrome, [{ clipPath: "inset(0px 0px " + clip0.toFixed(2) + "px 0px round " + R + ")" }, { clipPath: "inset(0px 0px 0px 0px round " + R + ")" }]), "clip");
+    ifcDropAdd(run, chrome, ifcDropMove(chrome, live.y.get(chrome) || 0, 0));
+    before.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, 0)));
+    after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, a0 - a1, 0)));
+    if(next) ifcDropAdd(run, next, ifcDropMove(next, n0 - n1, 0));
+    /* a picture that arrives after the tap: the box grows again, from wherever the move has it */
+    let h = h1;
+    if(pending && typeof ResizeObserver === "function"){
+      try{
+        run.ro = new ResizeObserver(() => {
+          if(ifcDropRun !== run) return;   /* (the picture's own arrival ends what is pending: it is still this move's) */
+          const hn = chrome.getBoundingClientRect().height, g = hn - h;
+          if(Math.abs(g) < .5) return;
+          h = hn;
+          const ys = new Map(); run.anims.forEach(([el, , k]) => { if(k !== "clip" && !ys.has(el)) ys.set(el, ifcDropY(el)); });
+          const cl = ifcDropClip(chrome), nTop = next ? next.getBoundingClientRect().top : 0;
+          run.anims.forEach(([, a]) => { try{ a.cancel(); }catch(e){} }); run.anims = [];
+          let nLay = 0;
+          if(ifcDropPlace(next)) nLay = next.getBoundingClientRect().top;
+          ifcDropAdd(run, chrome, ifcDropAnim(chrome, [{ clipPath: "inset(0px 0px " + Math.max(0, cl + g).toFixed(2) + "px 0px round " + R + ")" }, { clipPath: "inset(0px 0px 0px 0px round " + R + ")" }]), "clip");
+          after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, (ys.get(el) || 0) - g, 0)));
+          before.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, ys.get(el) || 0, 0)));
+          if(next) ifcDropAdd(run, next, ifcDropMove(next, nTop - nLay, 0));
+          clearTimeout(run.timer); run.timer = setTimeout(end, IFC_DROP_MS + 40);
+        });
+        run.ro.observe(chrome);
+      }catch(e){ run.ro = null; }
+    }
+    const end = () => {
+      if(ifcDropRun !== run) return;
+      if(pending && pending()){ run.timer = setTimeout(end, 120); return; }
+      ifcDropStop();
+      ifcDropPlace(next);
+    };
+    run.timer = setTimeout(end, IFC_DROP_MS + 40);
+  });
+}
+/* shutting: d() is what the box's layout loses when done() runs (margins included). Called in the tap; nothing is laid out
+   anew until the end. */
+function ifcDropShut(chrome, d, done){
+  const after = ifcDropSide(chrome, true), before = ifcDropSide(chrome, false), next = ifcDropNext();
+  const prev = ifcDropTakeOver(chrome);
+  if(ifcSlideStill() || !chrome.isConnected){ ifcDropCollect(prev); done(); ifcDropPlace(next); return; }
+  const run = ifcDropBegin(chrome, done, prev);
+  requestAnimationFrame(() => {
+    if(ifcDropRun !== run) return;
+    const live = ifcDropCollect(run);
+    if(!chrome.isConnected){ ifcDropHalt(run); try{ done(); }catch(e){} return; }
+    const loss = Math.max(0, d());
+    const se = document.scrollingElement || document.documentElement, S = window.scrollY || 0;
+    const c = Math.max(0, S - Math.max(0, se.scrollHeight - loss - innerHeight));
+    const hc = chrome.getBoundingClientRect().height, R = ifcDropRound(chrome);
+    const clipTo = Math.min(loss, hc);
+    ifcDropAdd(run, chrome, ifcDropAnim(chrome, [{ clipPath: "inset(0px 0px " + (live.clip.get(chrome) || 0).toFixed(2) + "px 0px round " + R + ")" }, { clipPath: "inset(0px 0px " + clipTo.toFixed(2) + "px 0px round " + R + ")" }]), "clip");
+    ifcDropAdd(run, chrome, ifcDropMove(chrome, live.y.get(chrome) || 0, c));
+    before.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, c)));
+    after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, c - loss)));
+    if(next) ifcDropAdd(run, next, ifcDropMove(next, live.y.get(next) || 0, c - loss));
+    run.timer = setTimeout(() => {
+      if(ifcDropRun !== run) return;
+      /* where everything is on the screen in the last frame (its transforms included) */
+      const watch = [before[0], chrome, after[0], next].filter(Boolean);
+      const vis = watch.map(el => el.getBoundingClientRect().top);
+      ifcDropStop();
+      if(c > 0) try{ window.scrollTo({ top: Math.max(0, (window.scrollY || 0) - c), behavior: "instant" }); }catch(e){ window.scrollTo(0, Math.max(0, (window.scrollY || 0) - c)); }
+      try{ done(); }catch(e){}
+      ifcDropPlace(next);
+      /* whatever is not where the last frame showed it (a scroll the page clamped after all, Next changing how it sits) glides there */
+      const lay = watch.map(el => el.isConnected ? el.getBoundingClientRect().top : null);
+      const fix = ifcDropBegin(chrome, null);
+      watch.forEach((el, i) => {
+        if(lay[i] === null || Math.abs(vis[i] - lay[i]) <= .5) return;
+        const group = el === before[0] ? before.concat([chrome]) : el === after[0] ? after : el === chrome ? (before.length ? [] : [chrome]) : [el];
+        group.forEach(g => ifcDropAdd(fix, g, ifcDropMove(g, vis[i] - lay[i], 0, 180)));
+      });
+      if(!fix.anims.length) ifcDropRun = null;
+      else fix.timer = setTimeout(() => { if(ifcDropRun === fix) ifcDropStop(); }, 220);
+    }, IFC_DROP_MS + 20);
+  });
+}
+/* the code box's own open and close, from a tap: grows from the pill, or shrinks back to it (on the compositor, above) */
 function ifcCodeSlide(det, open, fill){
   const sum = det.querySelector(":scope > summary");
   const kids = () => [...det.children].filter(k => k !== sum);
   (det._fades || []).forEach(a => { try{ a.cancel(); }catch(e){} }); det._fades = [];
-  const fromH = det.getBoundingClientRect().height;
+  const card = det.closest(".ifc-ref") || det;
+  const w = sum.querySelector(".ifc-sum-text");
   if(open){
-    det.classList.remove("is-closing");
-    det.open = true;   /* (its toggle: the pill's words, and the code drawn) */
     let busy = true;
-    try{ Promise.resolve(fill && fill()).finally(() => { busy = false; }); }catch(e){ busy = false; }
-    ifcSlideHeight(det, fromH, () => det.scrollHeight, () => busy);
+    ifcDropOpen(card, () => {
+      det.classList.remove("is-closing");
+      if(det.open && w) w.textContent = "Hide the code";   /* (open still, from a shut cut short: no toggle comes) */
+      det.open = true;   /* (its toggle: the pill's words, and the code drawn) */
+      try{ Promise.resolve(fill && fill()).finally(() => { busy = false; }); }catch(e){ busy = false; }
+    }, () => busy);
   } else {
     det.classList.add("is-closing");
-    const w = sum.querySelector(".ifc-sum-text"); if(w) w.textContent = "Show the code";
+    if(w) w.textContent = "Show the code";
     if(!ifcSlideStill()) det._fades = kids().map(k => k.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-6px)" }], { duration: 200, easing: "ease", fill: "forwards" }));
-    ifcSlideHeight(det, fromH, () => sum.getBoundingClientRect().height, null, () => {
+    /* what the box loses: everything in it under the pill */
+    const shutLoss = () => { const dr = det.getBoundingClientRect(), sr = sum.getBoundingClientRect(); return Math.max(0, dr.bottom - sr.bottom); };
+    ifcDropShut(card, shutLoss, () => {
       det.open = false; det.classList.remove("is-closing");
       (det._fades || []).forEach(a => { try{ a.cancel(); }catch(e){} }); det._fades = [];
     });
@@ -120557,26 +120890,28 @@ function ifcPreAnswer(item, qtext, panel){
       const put = on => { shown = on; b.classList.toggle("is-on", on); word.textContent = on ? "Hide the code" : "Show the code";
         b.setAttribute("aria-expanded", on ? "true" : "false"); b.setAttribute("aria-label", on ? "Hint: hide the code" : "Hint: show the code, answer hidden"); };
       b.addEventListener("click", async () => {
-        /* (384 review) its picture drops in and folds away as the code's does (ifcSlideHeight), not in one frame */
+        /* (384 review) its picture drops in and folds away as the code's does, not in one frame.
+           (384.119) On the compositor (ifcDropOpen / ifcDropShut): put away, the picture is kept (display:none, its margin with
+           it) and shown again at once the next time - it was cleared and painted again on every open, and the open waited for
+           that paint. */
         if(shown){
           put(false);
-          const fromH = holder.getBoundingClientRect().height;
-          ifcSlideHeight(holder, fromH, () => 0, null, () => { if(!shown) holder.textContent = ""; });
+          const mt = parseFloat(getComputedStyle(holder).marginTop) || 0;
+          ifcDropShut(holder, () => holder.getBoundingClientRect().height + mt, () => { if(!shown) holder.style.display = "none"; });
           return;
         }
         put(true);
-        let busy = true;
-        ifcSlideHeight(holder, holder.getBoundingClientRect().height, () => holder.scrollHeight, () => busy);
+        if(holder.childNodes.length){ ifcDropOpen(holder, () => { holder.style.display = ""; }); return; }
         if(typeof hinted !== "undefined") { /* the Hint does not count as a miss: the answer stays hidden */ }
         try{
           /* (384) painted off the page and framed before it is shown, like every code picture */
           const tmp = ifcEl("div");
           await V.paint(doc, { ...clip, hide: h.hide, hiddenText: h.hiddenText }, tmp, { scale: 1.5, ...opts, blur: true });
           ifcFrameClips(tmp, 1.5, false, clip);
-          if(shown) holder.replaceChildren(...tmp.childNodes);
+          if(shown && holder.isConnected) ifcDropOpen(holder, () => { holder.style.display = ""; holder.replaceChildren(...tmp.childNodes); });
+          else if(shown) holder.replaceChildren(...tmp.childNodes);
         }
         catch(e){ holder.textContent = ""; put(false); }
-        busy = false;
       });
       pre.append(b, holder);
     })().catch(() => {});
@@ -121070,7 +121405,8 @@ function qnextPlace(btn, panel){
       if(typeof ResizeObserver === "function"){
         let raf = 0;
         qnextRO = new ResizeObserver(() => {
-          if(raf) return;
+          /* (384.119) a drop-down moving: it places Next itself, once, and moves it with what is under the box */
+          if(raf || (typeof ifcDropRun !== "undefined" && ifcDropRun)) return;
           raf = requestAnimationFrame(() => {
             raf = 0;
             const q = qnextNow;
@@ -121824,6 +122160,8 @@ function advanceWithSlide(fromDx, opts){
      guard makes a re-entrant call a clean no-op, cleared the moment the
      slide in flight actually finishes. */
   if(slideTransitionInFlight) return;
+  /* (384.119) a code box or the Hint still sliding: at its end now, so the copy that slides off is the question as it is */
+  try{ if(typeof ifcDropSettleNow === "function") ifcDropSettleNow(); }catch(e){}
   /* A drag under way when auto-advance or a key fires is carried on from
      where it is rather than snapped back first; a spring-back likewise. */
   let s = opts.drag || qDrag || null;
@@ -122940,7 +123278,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.95";
+const APP_BUILD = "2026-11-13-384.119";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
