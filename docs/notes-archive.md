@@ -39481,7 +39481,7 @@ sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre
 
 ### 384.100 (dailyq)
 
-Branch claude/b384-dailyq, from main 384.94 (a82cdea), main 384.95 (562b1ed, polish86's top row) merged in. NOT merged: waiting for
+Branch claude/b384-dailyq, from main 384.94 (a82cdea), main 384.95 (562b1ed, polish86's top row) and 384.97 (93d18a9) merged in. NOT merged: waiting for
 the owner's go. Madison, on the daily question (the one-question run started by `startDailyQuestion()`): "The daily question is good
 but at the very top it needs like a 'daily question' word or something. I also don't like the box at the bottom after you answer, I
 don't think it's been updated to the look either. But I also don't like it looks anyways. Needs to be better. Ensure this is good to go."
@@ -39557,6 +39557,10 @@ check_b245_daily_announce (39, Home's recharge-then-banner TIMING, not this scre
 hour - load (it times a 6s animation to the 100ms). check-fixes `--only "iPhone 16 Pro Max"` (440x956, 4 combinations) and
 `--only "iPad Pro 11"` (4): all fixes verified, the done banner on Home included. NOT RUN TO THE END: check-centering --quick (the
 renderer crashed - "Target crashed" - in three attempts at 1.6GB free; the daily screen is not among its screens, and this build
-changes no other screen's boxes) and sweep-layout --quick (stopped when the coordinator paused all browser work) - to run on RESUME.
+changes no other screen's boxes) and sweep-layout --quick (stopped twice when the coordinator paused all browser work) - to run on RESUME.
+SCREENSHOTS (scratchpad dailyq/, not in the repo): before (main 384.97) and after (this, merged with 384.97) - asked, right and wrong;
+Police Academy and Fire Code; iPhone 17 Pro Max 440x956 and iPad Pro 11" 834x1194 (installed); and Sapphire on the Pro Max, right
+and wrong - 28 shots and one contact sheet (before beside after, per class and device). Every one looked at: the title reads at the
+top, the result is the two solid cards in every case, nothing under the title or the chat button, Exit clear.
 CHROMIUM CANNOT SHOW: iOS's blur under the status bar over the new header band (384.93's line is honoured: the title and the band
 come down with the row), and the real safe areas (the gate's insets are substituted, as every gate's are).
