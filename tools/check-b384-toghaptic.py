@@ -30,7 +30,18 @@ switches (iOS 17.4+) has. Real CDP touches on an iPhone 17 Pro Max (440x956, ins
 ONLY A PHONE can confirm the tick itself. What this proves is the wiring the tick needs: the finger's swipe is delivered to
 the native switch untouched, and the flip a person sees is the switch's own trusted click, never the page's.
 
-Run:  python3 tools/check-b384-toghaptic.py [--against REV|DIR]   (--against origin/main must FAIL T1, T3, T4, T5)"""
+And the same toggles' ON colour (Madison: "The toggle switches are green by default, should they change color based on the
+theme you have set too?"), for the default theme and every rank colour, on Settings > Study set ON / OFF / ON:
+  C1  ON paints with the theme's own colour (the rank's --rank-accent, the default's --theme-c2): the track's on layer, and
+      the track seen through the glass knob;
+  C2  ON and OFF can never be taken for each other: read off the pixels, the ON track against the OFF track is at least
+      ON_OFF_MIN (2.5) in luminance contrast in every theme, and ON stands further off the card behind it than OFF does
+      (the lowest theme measured 2.73 - Supernova's red; Silver, the one grey, is lit and measured 7.3);
+  C3  no green anywhere in a switch (its on layer, the glass's track and rim, the start sheet's switched-on words) unless
+      the theme's own colour is green - none is;
+  C4  the ON/OFF animation is the one it was in every theme (an opacity cross-fade on the on layer, the knob's slide), and
+      Reduce motion still shortens the slide.
+Run:  python3 tools/check-b384-toghaptic.py [T] [C] [--against REV|DIR]   (--against origin/main must FAIL T1, T3, T4, T5, C1, C3)"""
 import importlib.util, json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("glitches", os.path.join(HERE, "check-b384-glitches.py"))
@@ -186,7 +197,97 @@ def pick(pg, rows):
         if g and not g["haptics"]: return r["i"]
     return None
 
-WANT = {"T"}
+WANT = set(a for a in G.args if a in ("T", "C")) or {"T", "C"}
+THEMES = ["ink", "rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]
+ON_OFF_MIN = 2.5
+# one theme on Settings > Study, its switches ON / OFF / ON; every colour a switch paints with; and the theme's own colour
+COLOURS = r"""async(k)=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+  theme.accent = k; applyTheme(); showAppearance({ page: 'study' }); await wait(900);
+  const rows = [...document.querySelectorAll('#stage .opt')].filter(r => r.querySelector(':scope > input[type=checkbox]') && r.querySelector(':scope > .box'));
+  rows.forEach((r, i) => { r.querySelector(':scope > input').checked = i % 2 === 0; });
+  await wait(700);
+  rows[0].scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(300);
+  const cols = s => { const out = []; (String(s).match(/rgba?\([^)]*\)|color\(srgb[^)]*\)/g) || []).forEach(t => { const n = (t.replace('srgb', '').match(/[-\d.]+/g) || []).map(Number);
+    if(t.startsWith('color')) out.push([n[0] * 255, n[1] * 255, n[2] * 255, n[3] == null ? 1 : n[3]]); else out.push([n[0], n[1], n[2], n[3] == null ? 1 : n[3]]); }); return out; };
+  /* the theme's own colour, from the theme's tokens: a rank's --rank-accent, the default's --theme-c2 */
+  const probe = document.createElement('i'); probe.style.cssText = 'position:fixed;left:-99px;top:0;width:4px;height:4px;color:var(--rank-accent, var(--theme-c2))';
+  document.body.appendChild(probe); const token = cols(getComputedStyle(probe).color)[0]; probe.remove();
+  const box = rows[0].querySelector(':scope > .box'), bf = getComputedStyle(box, '::before'), af = getComputedStyle(box, '::after');
+  /* the glass knob's insides, as the lens builds them */
+  const lens = document.createElement('span'); lens.className = 'nsw-lens';
+  lens.innerHTML = '<span class="nsw-lens-body"><span class="nsw-lens-glass"><span class="nsw-lens-view"><span class="nsw-lens-fill"></span></span><span class="nsw-lens-edge is-on"></span></span></span>';
+  box.appendChild(lens);
+  const fill = getComputedStyle(lens.querySelector('.nsw-lens-fill')), edge = getComputedStyle(lens.querySelector('.nsw-lens-edge.is-on'));
+  const parts = { 'on layer': cols(bf.backgroundColor + ' ' + bf.backgroundImage), 'on layer glow': cols(bf.boxShadow),
+    'glass track': cols(fill.backgroundColor + ' ' + fill.backgroundImage), 'glass rim': cols(edge.boxShadow) };
+  lens.remove();
+  const sh = document.createElement('div'); sh.className = 'unitoptions-modal-sheet is-setup'; sh.style.cssText = 'position:fixed;left:-999px;top:0';
+  sh.innerHTML = '<div class="start-summary"><span class="sheet-summary-opt is-set">x</span></div>'; document.body.appendChild(sh);
+  parts['switched-on words'] = cols(getComputedStyle(sh.querySelector('.is-set')).color); sh.remove();
+  const anim = { layer: bf.transitionProperty + ' ' + bf.transitionDuration, knob: af.transitionProperty + ' ' + af.transitionDuration };
+  const R = e => { const q = e.getBoundingClientRect(); return [q.left, q.top, q.width, q.height]; };
+  return { token, parts, anim, boxes: rows.map(r => ({ on: r.querySelector(':scope > input').checked, r: R(r.querySelector(':scope > .box')) })) }; }"""
+
+def lum(rgb):
+    def ch(c):
+        c = c / 255.0
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * ch(rgb[0]) + 0.7152 * ch(rgb[1]) + 0.0722 * ch(rgb[2])
+def cr(a, b):
+    la, lb = lum(a), lum(b)
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+def green(c):
+    import colorsys
+    h, l, s = colorsys.rgb_to_hls(*[min(255, max(0, v)) / 255.0 for v in c[:3]])
+    return (c[3] if len(c) > 3 else 1) > .05 and 85 <= h * 360 <= 155 and s >= .25 and .12 <= l <= .9
+def same(a, b, tol=3):
+    return all(abs(x - y) <= tol for x, y in zip(a[:3], b[:3]))
+def mean_px(img, box):
+    x0, y0, x1, y1 = [int(round(v)) for v in box]
+    px = [img.getpixel((x, y)) for x in range(x0, x1) for y in range(y0, y1)]
+    return tuple(sum(p[i] for p in px) / len(px) for i in range(3))
+
+def colour_section(br):
+    import io
+    from PIL import Image
+    pg = G.open_dev(br, "promax", inits=[G.seed_init("academy")], dsf=2)
+    tag = "Pro Max installed"
+    pg.evaluate("()=>{ theme.reduceMotion = false; try{ applyTheme(); }catch(e){} }")
+    anims = {}
+    for k in THEMES:
+        r = pg.evaluate(COLOURS, k)
+        tok = r["token"]
+        tg = green(tok)
+        show = {n: [[round(v) for v in c[:3]] for c in cs] for n, cs in r["parts"].items()}
+        chk("[%s] C1 %s: ON paints with the theme's own colour %s (the on layer, and the track seen through the glass)" % (tag, k, [round(v) for v in tok[:3]]),
+            any(same(c, tok) for c in r["parts"]["on layer"]) and any(same(c, tok) for c in r["parts"]["glass track"]), show)
+        greens = {n: [[round(v) for v in c[:3]] for c in cs if green(c)] for n, cs in r["parts"].items()}
+        greens = {n: v for n, v in greens.items() if v}
+        chk("[%s] C3 %s: no green in any part of a switch (the theme's own colour is %sgreen)" % (tag, k, "" if tg else "not "), tg or not greens, greens)
+        img = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        on, off, card = [], [], []
+        for b in r["boxes"]:
+            x, y, w, h = [v * 2 for v in b["r"]]
+            seg = (x + .12 * w, y + .32 * h, x + .26 * w, y + .68 * h) if b["on"] else (x + .74 * w, y + .32 * h, x + .88 * w, y + .68 * h)
+            (on if b["on"] else off).append(mean_px(img, seg))
+            card.append(mean_px(img, (x - 28, y + .3 * h, x - 12, y + .7 * h)))
+        avg = lambda L: tuple(sum(c[i] for c in L) / len(L) for i in range(3))
+        on, off, card = avg(on), avg(off), avg(card)
+        c_oo, c_on, c_off = cr(on, off), cr(on, card), cr(off, card)
+        chk("[%s] C2 %s: ON and OFF apart - ON:OFF %.2f (at least %.1f), ON:card %.2f against OFF:card %.2f" % (tag, k, c_oo, ON_OFF_MIN, c_on, c_off),
+            c_oo >= ON_OFF_MIN and c_on > c_off * 1.5, {"on": [round(v) for v in on], "off": [round(v) for v in off], "card": [round(v) for v in card]})
+        anims[k] = r["anim"]
+    base = anims["ink"]
+    chk("[%s] C4 the ON/OFF animation is the same in every theme (%s; %s), and the on layer fades by its opacity" % (tag, base["layer"], base["knob"]),
+        all(a == base for a in anims.values()) and base["layer"].startswith("opacity") and "transform" in base["knob"], anims)
+    pg.evaluate("()=>{ theme.accent = 'ink'; theme.reduceMotion = true; applyTheme(); }"); pg.wait_for_timeout(300)
+    rm = pg.evaluate(COLOURS, "ink")["anim"]
+    dur = lambda s: float(s.split()[-1].rstrip("s").split(",")[0])
+    chk("[%s] C4 Reduce motion: the knob's slide is shorter (%s against %s)" % (tag, rm["knob"], base["knob"]), dur(rm["knob"]) < dur(base["knob"]), rm)
+    pg.evaluate("()=>{ theme.accent = 'ink'; theme.reduceMotion = false; applyTheme(); }")
+    chk("[%s] C no page errors" % tag, not pg.errs, pg.errs[:3])
+    pg.ctx.close()
+
 def touch_section(br):
     pg = G.open_dev(br, "promax", inits=[EMULATE, G.seed_init("academy")])
     tag = "Pro Max installed"
@@ -274,6 +375,7 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G.CHROME)
     print("build %s" % G.BUILD, flush=True)
     if "T" in WANT: touch_section(br)
+    if "C" in WANT: colour_section(br)
     br.close()
 print("\n%s - %d failed" % ("ALL PASS" if not G.fails else "FAIL", len(G.fails)))
 sys.exit(1 if G.fails else 0)

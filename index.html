@@ -10031,13 +10031,27 @@
   [data-layout="modern"] .nsw{
     will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
   }
+  /* ---- ON IS YOUR THEME'S COLOUR (384.107) ----
+     Madison: "The toggle switches are green by default, should they change color based on the theme you have set too? That
+     could be pretty cool.." On was always iOS's green (#34C759) "whatever the accent - an accent-coloured switch could read as
+     off". It is the theme's own colour now, from the same tokens as the rest of the theme: a rank's --rank-accent (its colour
+     lifted for a dark screen, as the daily question and the banners use it) and the default's --theme-c2 (its orange). Off is
+     the neutral track it was, the knob stays white, the cross-fade and the glass lens are unchanged (the lens's track and rim
+     take the same colour). The one theme whose colour is a grey, Silver, is LIT rather than flat - a silvered track brightest
+     at the top with a soft white glow off it - so it can never pass for an off track. check-b384-toghaptic (C) holds every
+     theme's on and off apart by their measured luminance against the card. */
+  :root{ --switch-on:var(--rank-accent, var(--theme-c2)); --switch-on-paint:var(--switch-on); --switch-on-glow:none; }
+  html[data-accent="ranger"]{
+    --switch-on-paint:linear-gradient(180deg, color-mix(in srgb, var(--switch-on) 22%, #FFFFFF) 0%, var(--switch-on) 55%, color-mix(in srgb, var(--switch-on) 80%, #000000) 100%);
+    --switch-on-glow:0 0 0 1px color-mix(in srgb, var(--switch-on) 45%, #FFFFFF), 0 0 10px 1px color-mix(in srgb, var(--switch-on) 60%, transparent);
+  }
   .opt > .box::before, .nsw::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
-    background:#34C759; opacity:0; transition:opacity .25s ease;
+    background:var(--switch-on-paint); box-shadow:var(--switch-on-glow); opacity:0; transition:opacity .25s ease;
   }
-  /* On is always green (the universal "on" for a switch like this),
-     whatever the accent - an accent-coloured switch could read as off. */
   .opt > input:checked ~ .box::before, [aria-checked="true"] > .nsw::before{ opacity:1; }
+  /* the native switch under the track never shows (opacity 0); should iOS ever tint it, it is the same colour */
+  .opt > input[type=checkbox]{ accent-color:var(--switch-on); }
   .opt > .box::after, .nsw::after{
     content:""; position:absolute; top:2px; left:2px; width:39px; height:26px;
     border-radius:999px; background:#fff;
@@ -10072,7 +10086,7 @@
   }
   .nsw-lens-glass{ position:absolute; inset:0; border-radius:inherit; will-change:opacity; }
   .nsw-lens-view{ position:absolute; left:0; top:0; border-radius:999px; background:rgba(128,128,136,.46); will-change:transform; }
-  .nsw-lens-fill{ position:absolute; inset:0; border-radius:inherit; background:#3BD162; }
+  .nsw-lens-fill{ position:absolute; inset:0; border-radius:inherit; background:var(--switch-on-paint); }   /* (384.107) the track's own on colour, seen through the glass */
   /* Her recording, frame by frame: the glass's edge is not a white line,
      it is the TRACK'S COLOUR bent round the rim - a green band when the
      switch is on, grey when off - with the track itself seen smaller
@@ -10084,7 +10098,7 @@
     box-shadow:inset 0 0 0 2px rgba(150,150,160,.5), inset 0 0 7px 2.5px rgba(150,150,160,.32);
   }
   .nsw-lens-edge.is-on{
-    box-shadow:inset 0 0 0 2px rgba(78,204,112,.9), inset 0 0 7px 2.5px rgba(70,200,105,.58);
+    box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--switch-on) 90%, transparent), inset 0 0 7px 2.5px color-mix(in srgb, var(--switch-on) 58%, transparent);
   }
   .nsw-lens-rim{
     position:absolute; inset:0; border-radius:inherit;
@@ -23185,7 +23199,7 @@
   .opt.opt-tile .box{ grid-area:box; }
   .opt.opt-tile .otext{ grid-area:text; font-size:.86rem; font-weight:700; line-height:1.25; }
   .opt.opt-tile .ohint{ font-size:.72rem; font-weight:500; line-height:1.35; margin-top:.2rem; }
-  .opt.opt-tile:has(input:checked){ border-color:rgba(52,199,89,.4); background:rgba(52,199,89,.06); }
+  .opt.opt-tile:has(input:checked){ border-color:color-mix(in srgb, var(--switch-on) 40%, transparent); background:color-mix(in srgb, var(--switch-on) 6%, transparent); }
   /* The timer card inside its disclosure. */
   .unitoptions-modal-sheet .timer-sect{ margin:.7rem 0 0; }
   .unitoptions-modal-sheet .timer-sect .opt{ padding:.35rem 0; }
@@ -23361,8 +23375,8 @@
   .unitoptions-modal-sheet .optionsmodal-body > .sect .timer-sect{ margin-top:0; }
   /* a timer that is on: its pill in the top box goes green, like the
      switch that turned it on (the card itself stays as it is - build 251) */
-  .unitoptions-modal-sheet .sheet-tag.is-set{ color:#fff; background:rgba(52,199,89,.22); border-color:rgba(52,199,89,.55); }
-  .unitoptions-modal-sheet .sheet-tag.is-set svg{ color:#4ADE80; }
+  .unitoptions-modal-sheet .sheet-tag.is-set{ color:#fff; background:color-mix(in srgb, var(--switch-on) 22%, transparent); border-color:color-mix(in srgb, var(--switch-on) 55%, transparent); }
+  .unitoptions-modal-sheet .sheet-tag.is-set svg{ color:var(--switch-on); }
   .unitoptions-modal-sheet .opt-tiles-sect .opt-rows .opt{ padding:.3rem 0; }
   /* On a tablet the sheet spans the whole 834px and a single column of
      full-width controls stretched across it reads thin and unconsidered.
@@ -23518,7 +23532,7 @@
   .sheet-summary-foldbg{ position:absolute; z-index:-1; pointer-events:none; box-sizing:border-box; transform-origin:50% 100%; will-change:transform; }
   .sheet-summary-foldghost{ position:absolute; margin:0 !important; pointer-events:none; will-change:opacity; }
   [data-layout="modern"] .unitoptions-modal-sheet.is-folding-opaque{ backdrop-filter:none; -webkit-backdrop-filter:none; }
-  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:#4ADE80; }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:var(--switch-on); }   /* (384.107) the switched-on words in the switches' own on colour */
   [data-reduce-motion="true"] .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{ transition:none; }
   /* A SHORT SCREEN KEEPS THE SHEET'S ROWS IN VIEW (327 audit). On an SE the
      pinned summary and Begin took half the screen. Under 46rem tall the
