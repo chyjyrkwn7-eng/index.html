@@ -13,7 +13,8 @@ Virtual Room review's Missed / Entire test) on an iPhone 17 Pro Max installed (4
 fit, a 320x568 phone. Everything is READ off the page - shapes are asserted, never label strings; the sizes are in the label's own
 font size (em), so a font or a zoom change does not move the bar.
 
-  1 COMPACT    the segments are equal and each is no wider than its widest label plus 1.7em a side, or 5.6em (Delta: 82pt for 33pt of
+  1 COMPACT    the segments are equal and each is no wider than its widest label (with any count it shows only some of the time: a
+               segment keeps that room, so the control never changes width as a count comes and goes) plus 1.7em a side, or 5.6em (Delta: 82pt for 33pt of
                words at 15pt - 1.63em a side, 5.47em), so the control is never stretched past its labels; and it is centred in its
                column within 1px (the chat sheet's on the sheet's middle too, unless the room either side of it would be narrower
                than the close button beside it - a 320px phone - and then it ends before that button).
@@ -162,7 +163,20 @@ def run_switcher(pg, ptr, dev, tag, sw, props_seen):
         return
 
     # ---- 1. compact, centred ----
-    ws = [s["box"][2] for s in segs]; widest = max(s["ink"][2] for s in segs)
+    # the widest label AS IT CAN BE: a segment's words with whatever it shows only some of the time (the chat sheet's counts, hidden
+    # while there is nothing unread) shown - a segment keeps that room so the control never changes width as a count comes and goes
+    widest = pg.evaluate("""([sel, segSel])=>{ const s=%s; let W=0;
+      for(const b of [...s.querySelectorAll(':scope > '+segSel)].filter(b=>!b.hidden && b.offsetWidth>0)){
+        const hid=[...b.querySelectorAll('[hidden]')]; hid.forEach(h=>{ h.hidden=false; if(!h.textContent.trim()) h.textContent='0', h.__z=1; });
+        const rg=document.createRange(); const tw=document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let L=1e9,R=-1e9,n;
+        while((n=tw.nextNode())){ if(!n.textContent.trim()) continue; const pe=n.parentElement; if(!pe.getClientRects().length || getComputedStyle(pe).display==='none') continue;
+          rg.selectNodeContents(n); for(const x of rg.getClientRects()){ if(!x.width) continue; L=Math.min(L,x.left); R=Math.max(R,x.right); } }
+        /* a count is a pill round its digits: its box, not its ink */
+        for(const h of hid){ const q=h.getBoundingClientRect(); if(q.width){ L=Math.min(L,q.left); R=Math.max(R,q.right); } }
+        hid.forEach(h=>{ if(h.__z){ h.textContent=''; delete h.__z; } h.hidden=true; });
+        W=Math.max(W, R-L); }
+      return W; }""" % SEG, [sw[2], sw[3]])
+    ws = [s["box"][2] for s in segs]; widest = max([widest] + [s["ink"][2] for s in segs])
     bound = max(widest + 2 * 1.7 * fs, 5.6 * fs) + 1
     mid = (g["col"][0] + g["col"][1]) / 2
     # centred in its column; beside an end button (the chat sheet's close) it may give up the middle only where the room either side of
