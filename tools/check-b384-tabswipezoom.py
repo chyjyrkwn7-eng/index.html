@@ -65,11 +65,22 @@ PROF_TAB = "()=>{ const b = document.querySelector('.profiletabs .iconbtn.active
 BOARD = "()=>{ const b = document.querySelector('.navsegment.has-seg-thumb .active'); return b ? b.textContent.trim() : ''; }"
 
 def open_retry(br, dev):
-    for k in range(6):   # a loaded machine can take longer than a page load's 30s
-        try: return G.open_dev(br, dev, inits=[G.seed_init()], wait=4000)
-        except Exception as e:
-            print("  (retrying the page load: %s)" % str(e)[:80], flush=True)
-    return G.open_dev(br, dev, inits=[G.seed_init()], wait=4000)
+    """G.open_dev with a page load allowed 3 minutes: a loaded machine (a dozen gates at once) can take longer than Playwright's
+    default 30s to serve and parse a 3MB page. The same set-up otherwise, line for line."""
+    from playwright.sync_api import Page
+    real_goto = Page.goto
+    def slow_goto(self, url, **kw):
+        kw.setdefault("timeout", 180000)
+        return real_goto(self, url, **kw)
+    Page.goto = slow_goto
+    try:
+        for k in range(3):
+            try: return G.open_dev(br, dev, inits=[G.seed_init()], wait=4000)
+            except Exception as e:
+                print("  (retrying the page load: %s)" % str(e)[:80], flush=True)
+        return G.open_dev(br, dev, inits=[G.seed_init()], wait=4000)
+    finally:
+        Page.goto = real_goto
 
 GAP = """()=>{ const rl = document.querySelector('.pf-standing > .profile-rankline'), id = document.querySelector('.pf-standing .pf-idline');
   if(!rl || !id) return null; const w = rl.querySelector('.pf-rankname') || rl;
