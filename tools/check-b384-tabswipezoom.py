@@ -15,8 +15,8 @@ well after the next tab has landed: the document's scrollWidth against the scree
   T4  after it all the page is not left shifted sideways (scrollX 0) and the clip is off again (html.tab-sliding gone)
   T5  (the same build) Profile: the rank line and "Level N · N badges" under it are at least 8px apart - "the spacing between
       your rank and your level/badges is too tight" (it measured ~9px; a classmate's card has ~19pt)
-  T6  (the same build) a rank flare's card (tap a rank's Flare tile: "This isn't animated") puts the flare's loop on - its
-      recorded flip-book (.cosmic-rank-anim) is in the card within 10s, as on Home and a classmate's card
+  T6  (the same build) a rank flare's card (tap a rank's Flare tile: "This isn't animated") moves: its emblem's own parts (.rk-a)
+      are running their animations (or a recorded flip-book is on), within 10s
 Devices: iPhone 17 Pro Max installed (440x956) and at Safari's 85% page zoom (518 CSS px wide), and an iPhone SE.
 Run:  python3 tools/check-b384-tabswipezoom.py [--against REV|DIR]   (--against origin/main must FAIL T1-T3)"""
 import importlib.util, os, sys
@@ -81,7 +81,7 @@ def run_dev(br, dev):
     got = False
     for _ in range(20):
         pg.wait_for_timeout(500)
-        if pg.evaluate("()=>!!document.querySelector('.unlock-card-rankflare .unlock-card-art .cosmic-rank-anim')"): got = True; break
+        if pg.evaluate("()=>{ const a = document.querySelector('.unlock-card-rankflare .unlock-card-art'); if(!a) return false; if(a.querySelector('.cosmic-rank-anim')) return true; return [...a.querySelectorAll('.rk-a')].some(e => e.getAnimations().some(x => x.playState === 'running')); }"): got = True; break
     chk("[%s] T6 a rank flare's card puts the flare's loop on (it moves, as on Home)" % dev, got, pg.evaluate("()=>window.__t6err || document.querySelector('.unlock-card-rankflare .unlock-card-art')?.innerHTML.slice(0,160)"))
     pg.evaluate("()=>document.querySelectorAll('.invite-overlay').forEach(n=>n.remove())")
     pg.evaluate("()=>showProfile('stats')"); pg.wait_for_timeout(900); G.clear_popups(pg)

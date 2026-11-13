@@ -150782,11 +150782,12 @@ function showUnlockDetail(o){
   } else if(o.kind === "rankflare"){
     /* the rank's flare, lit, as its tile shows it (327z13) */
     try{ art.appendChild(buildFlareBubble(o.id, { lit: true })); }catch(e){}
-    /* AND MOVING, AS ON HOME (384.117): "This isn't animated" - the Gold flare's card. The bubble is Home's, but a flare only moves
-       once its loop is put on (startOrbitEmblemAnims: the emblem's recorded flip-book), which Home, the Profile's tiles and a
-       classmate's card each do after they mount, and this card never did. Put on once the card has landed (its pop-in is a scale,
-       and a loop recorded mid-scale would be cut at the wrong size), the same beat the person card uses. Reduce motion: still. */
-    setTimeout(() => { try{ if(art.isConnected) startOrbitEmblemAnims(art); }catch(e){} }, 420);
+    /* AND MOVING (384.117): "This isn't animated" - the Gold flare's card. An emblem's own motion (.rk-a) is switched off
+       everywhere but the places big enough to read it (the Rank tab's road and hero, the To-reach box, a recording's host: the
+       :is() list on .rk-a's animation:none), and in lists it moves as a recorded flip-book instead - which is recorded only at
+       list sizes. This card shows ONE flare, big: it takes the live drawing's motion, as the Rank tab does (.rk-live), which one
+       svg on screen affords. Reduce motion: the global rule stills it. */
+    art.classList.add("rk-live");
   } else if(o.kind === "challenge"){
     /* a rank challenge, big (327z13): the count in the challenge's own
        colour inside a ring of how far it is */
@@ -156589,7 +156590,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
   let clipT = 0, clipTries = 0;
   const clipBoxes = new Set();
   const clipOn = (els) => {
-    clearTimeout(clipT); clipTries = 0;
+    clipTries = 0;   /* never cancels a pending clipOff poll: the next tab's clipOn lands after the drag's clipOff, and that poll is what ends it */
     document.documentElement.classList.add("tab-sliding");
     (els || []).forEach(el => { const p = el && el.parentElement; if(p && !clipBoxes.has(p)){ clipBoxes.add(p); p.classList.add("tab-slide-clip"); } });
   };
