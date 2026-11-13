@@ -15036,20 +15036,27 @@
     transform:translate3d(0, 0, 0);
     transition:opacity 3.6s cubic-bezier(.4,0,.3,1) .5s, transform 60s linear; will-change:transform; }
   #supernova-cutscene.supernova-visible .rank-sky{ opacity:.6; transform:translate3d(-4%, -2.5%, 0); }
-  .tier-cutscene .rank-nebula{ position:absolute; left:50%; top:45%; width:150vmax; height:150vmax; z-index:0; pointer-events:none; opacity:0;
-    margin:-75vmax 0 0 -75vmax; border-radius:50%;
+  /* (384.98) THE NEBULA'S BOX IS THE SIZE OF ITS GLOW. It was a 150vmax square (1,434px on a 17 Pro Max - nearly five screens of
+     layer, a rotating one, made in the cutscene's first frame) whose glow is transparent past 51vmax from its centre. The box is
+     104vmax now and every gradient is the same size in the same place as before, in vmax rather than in % of the old box (30% of
+     150 = 45vmax, the centre 46% = 6vmax left of the middle, and so on; the circle's 34% of its farthest corner, 75vmax x 1.4142,
+     is said as that corner): the same pixels, half the layer. */
+  .tier-cutscene .rank-nebula{ position:absolute; left:50%; top:45%; width:104vmax; height:104vmax; z-index:0; pointer-events:none; opacity:0;
+    margin:-52vmax 0 0 -52vmax; border-radius:50%;
     background:
-      radial-gradient(ellipse 30% 22% at 46% 50%, color-mix(in srgb, var(--mood, #8FB0FF) 10%, transparent) 0, color-mix(in srgb, var(--mood, #8FB0FF) 3.5%, transparent) 55%, transparent 100%),
-      radial-gradient(ellipse 18% 26% at 57% 46%, color-mix(in srgb, var(--mood, #8FB0FF) 7%, transparent) 0, transparent 100%),
-      radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--mood, #8FB0FF) 4%, transparent) 0, transparent 34%);
+      radial-gradient(ellipse 45vmax 33vmax at calc(50% - 6vmax) 50%, color-mix(in srgb, var(--mood, #8FB0FF) 10%, transparent) 0, color-mix(in srgb, var(--mood, #8FB0FF) 3.5%, transparent) 55%, transparent 100%),
+      radial-gradient(ellipse 27vmax 39vmax at calc(50% + 10.5vmax) calc(50% - 6vmax), color-mix(in srgb, var(--mood, #8FB0FF) 7%, transparent) 0, transparent 100%),
+      radial-gradient(circle 106.066vmax at 50% 50%, color-mix(in srgb, var(--mood, #8FB0FF) 4%, transparent) 0, transparent 34%);
     transform:rotate(0deg) scale(1); transition:opacity 4s cubic-bezier(.4,0,.3,1), transform 40s linear; }
   #supernova-cutscene.supernova-visible .rank-nebula{ opacity:.75; transform:rotate(14deg) scale(1.04); }
   #supernova-cutscene.is-cutspin:not(.is-cutrest) .rank-nebula{ opacity:1; }
-  .tier-cutscene .rank-rays{ position:absolute; left:50%; top:45%; width:130vmax; height:130vmax; z-index:0; pointer-events:none; opacity:0;
-    margin:-65vmax 0 0 -65vmax; border-radius:50%;
+  /* (384.98) the rays' box likewise: 130vmax, masked to nothing past 33% of its farthest corner (65vmax x 1.4142 = 91.92vmax, so
+     30.3vmax out); 62vmax now, the mask's circle said at the same 91.92vmax, the conic rays the same about the same centre */
+  .tier-cutscene .rank-rays{ position:absolute; left:50%; top:45%; width:62vmax; height:62vmax; z-index:0; pointer-events:none; opacity:0;
+    margin:-31vmax 0 0 -31vmax; border-radius:50%;
     background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--mood, #8FB0FF) 17%, transparent) 0deg, transparent 4deg, transparent 13deg, color-mix(in srgb, var(--mood, #8FB0FF) 9%, transparent) 17deg, transparent 21deg, transparent 31deg);
-    -webkit-mask-image:radial-gradient(circle, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
-            mask-image:radial-gradient(circle, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
+    -webkit-mask-image:radial-gradient(circle 91.924vmax at 50% 50%, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
+            mask-image:radial-gradient(circle 91.924vmax at 50% 50%, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
     transform:rotate(0deg); transition:opacity 2.4s ease, transform 2s linear; }
   #supernova-cutscene.is-cutspin .rank-rays{ transform:rotate(80deg); transition:opacity 5s cubic-bezier(.5,0,.6,1), transform 16s cubic-bezier(.4,0,.6,1); }
   #supernova-cutscene.is-cutspin:not(.is-cutrest) .rank-rays{ opacity:.5; }
@@ -19290,6 +19297,11 @@
   /* While it plays nothing can be pressed: this layer takes every touch,
      and the scene swallows keys, wheels and clicks on the window. */
   .ru-blocker{ position:fixed; inset:0; z-index:2147483000; background:transparent; touch-action:none; -webkit-tap-highlight-color:rgba(0,0,0,0); }
+  /* (384.98) THE ROAD MAP PUT AWAY UNDER THE CUTSCENE (rankUpMapSleep): from the moment the hand-off's dark is full until the
+     cutscene's ending, nothing of the map is drawn, laid out or styled - it keeps its height (the box's own content height,
+     measured as it goes to sleep), so the page and the camera stand where they were - and it is back, unchanged, under the
+     cutscene's still-opaque dark before that lifts. visibility first: an engine without content-visibility still draws none of it. */
+  html.ru-scene #stage > .screen-ranks.ru-asleep{ visibility:hidden; content-visibility:hidden; contain-intrinsic-block-size:var(--ru-asleep-h); }
   /* (Build 320: no LOADING RANK UP ADJUSTMENTS screen any more - Profile
      goes into the road map through .ru-dive and the curtain, below.) */
   /* ---- THE RANK-UP ON PROFILE'S ROAD MAP (build 319) ----
@@ -99269,7 +99281,11 @@ const SESSION_KEY = "class26e.session", CRASH_KEY = "class26e.crashlog";
 var sessionLastFp = "";
 function sessionMark(state, light){
   try{
-    const scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : document.querySelector(".qpanel, .pausepanel") ? "test" : "other";
+    let scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : document.querySelector(".qpanel, .pausepanel") ? "test" : "other";
+    /* (384.98) and where in a rank-up journey it was, and whether a cutscene was up: "ENDED-visible other+ru-cutscene" is a page
+       that ended inside the rank-up cutscene */
+    try{ if(typeof rankUpScene !== "undefined" && rankUpScene) scr += "+ru-" + rankUpScene.phase; }catch(e){}
+    try{ if(document.getElementById("supernova-cutscene")) scr += "+cut"; else if(document.querySelector(".bc-scene, #badge-cutscene")) scr += "+badge"; }catch(e){}
     /* build 377: WHAT THE PAGE HELD AS IT WENT. His report: ended in the background 0-3s after leaving on 365, 368, 371, 373 and 375 - iOS
        ending the page as it was put away, then the black screen of a cold start on the way back. Noted with the hide, read back on the next
        launch into the ended log: elements, images and their decoded megapixels, canvases' megapixels, sheets in memory. */
@@ -106763,8 +106779,13 @@ function playRankUpScene(tierKey, opts, spec){
   /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark.
      Never Supernova's (cut3): a replayed Supernova scene starts from the
      planet before it. */
+  /* (384.98) what a plain (not yet Supernova) build has at its top level, read off the planet you had - it IS a plain build, and
+     the accent changes colours, not parts - rather than off a third planet system built only to be counted and thrown away */
+  const keyOf = el => el.tagName + ":" + String(el.getAttribute("class") || "").split(/\s+/).filter(c => /^cosmic-/.test(c)).sort().join(" ");
+  let plainKeys = null;
   try{
     heroBefore = spec.times.swell ? quietBuild(false) : buildCosmicHero(true);
+    if(spec.times.swell) plainKeys = new Set([...heroBefore.children].map(keyOf));
     syncSceneFlares(heroBefore, tierKey, false);
     before.appendChild(heroBefore);
   }catch(e){}
@@ -106788,8 +106809,7 @@ function playRankUpScene(tierKey, opts, spec){
   try{
     if(spec.times.swell){
       heroAfter = quietBuild(true, tierKey);
-      const keyOf = el => el.tagName + ":" + String(el.getAttribute("class") || "").split(/\s+/).filter(c => /^cosmic-/.test(c)).sort().join(" ");
-      const plain = new Set([...quietBuild(false, tierKey).children].map(keyOf));
+      const plain = plainKeys || new Set([...quietBuild(false, tierKey).children].map(keyOf));
       /* (a ring layer of its own - the top ring tier - is not hidden: the
          rings are there throughout, held plain in CSS until sn-rings) */
       [...heroAfter.children].forEach(el => {
@@ -106861,7 +106881,8 @@ function playRankUpScene(tierKey, opts, spec){
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
   /* Reduce motion (the app's switch or the system's), or no Web
      Animations: the still scene - see below. */
-  const still = ringMotionOff() || !overlay.animate;
+  /* (384.98) opts.still: the rank-up journey asks for the still scene after its cutscene was ended twice in a row (rankUpCutscene) */
+  const still = !!opts.still || ringMotionOff() || !overlay.animate;
   let finished = false, outro = false, titleUp = false;
   /* THE END, ONCE: the words, the planet and the tint fade out together,
      then the scene hands over. From the schedule, or from a tap once the
@@ -106870,6 +106891,8 @@ function playRankUpScene(tierKey, opts, spec){
     if(outro || finished) return;
     outro = true;
     overlay.classList.add("rank-outro", "rank-fadeout");
+    /* (384.98) the overlay's own dark is still full for the length of the ending: what is under it comes back now (rankUpMapSleep) */
+    if(typeof opts.onOutro === "function"){ try{ opts.onOutro(); }catch(e){} }
     timers.push(setTimeout(finish, still ? RANK_STILL_END_MS : RANK_END_MS));
   }
   function finish(){
@@ -113059,6 +113082,8 @@ onCutsceneFocusRelease(() => {
   setTimeout(() => {
     try{ syncChatDockDot(); }catch(e){}
     try{ syncNoticeVisibility(); }catch(e){}
+    /* (384.98) and the update is asked about again: one held by the scene goes now (forcedUpdateBlocked) */
+    try{ checkForUpdate(); }catch(e){}
   }, CUTSCENE_RETURN_MS + 60);
 });
 
@@ -123710,6 +123735,9 @@ __bm("L97380");
 const FORCED_UPDATE_TRIES = 3;
 let forcedUpdateInfo = null;
 let forcedUpdateStarted = false;
+/* (384.98) the full-screen layers a forced update waits for besides the scenes cutscene focus covers (forcedUpdateBlocked) */
+const FORCED_HOLD_COVERS = ".bc-scene, .sf-scene, .fl-scene, .ff-scene, .scene-bridge, #void-cutscene, #vroom-race-cut:not(.is-done), " +
+  ".hfx-layer.is-page, .nova-talk, .installguide-overlay, #class-switch-loader";
 
 /* A forced reload is counted per build AND across builds: three reloads in
    twenty minutes, whatever builds they were for, stop the pushing and leave
@@ -123842,6 +123870,16 @@ function forcedUpdateBlocked(){
   /* Half-way through signing up: a reload there starts it over. */
   if(document.querySelector(".welcomeintro-panel, .charselect-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel")) return true;
 
+  /* (384.98) EVERY SCENE, BY THE ONE SWITCH THEY ALL TURN ON. The list below named the scenes of its day (#badge-cutscene,
+     #supernova-cutscene) and missed the ones added since: the badge case (.bc-scene - the badge scene on Home after a test that
+     was left, and on a results screen), a secret flare's scene (.sf-scene), a flare find (.fl-scene, .ff-scene), a page-wide hundo
+     effect, the bridge between two scenes - a forced update there reloaded the app mid-scene. Cutscene focus is on for as long as
+     any scene is on <body> (syncSceneFocus) and for the whole rank-up journey, so this one test holds them all, including scenes
+     added later; the list is kept for what focus does not cover. The update goes the moment the last one ends (startForcedUpdate
+     retries every 800ms, and focus's release asks again). */
+  try{ if(typeof cutsceneFocusActive === "function" && cutsceneFocusActive()) return true; }catch(e){}
+  if(document.querySelector(FORCED_HOLD_COVERS)) return true;
+
   /* And nothing may land on top of a loading screen, a tour or a
      cutscene, wherever they are. */
   return !!(document.getElementById("splashscreen") ||
@@ -123865,11 +123903,24 @@ function startForcedUpdate(){
      testInProgress the next tick fires. */
   if(forcedUpdateBlocked()){ setTimeout(startForcedUpdate, 800); return; }
   forcedUpdateStarted = true;
-  noteForcedTry(forcedUpdateInfo.build);
   showPushingUpdate();
   /* Long enough that the message is read rather than flashed, short
      enough that it is not a wait. */
-  setTimeout(applyUpdate, 1100);
+  /* (384.98) AND ASKED AGAIN AT THE MOMENT IT GOES. The reload used to follow 1.1s after the one check, whatever had begun in that
+     second (a scene's timer can start one under the cover). Still clear: it goes, and only now is the try counted against the
+     loop guard. Not clear: the cover comes off, nothing is counted, and it waits for the scene like any other. */
+  setTimeout(() => {
+    let held = false;
+    try{ held = forcedUpdateBlocked(); }catch(e){}
+    if(held){
+      try{ const pu = document.getElementById("pushing-update"); if(pu) pu.remove(); }catch(e){}
+      forcedUpdateStarted = false;
+      setTimeout(startForcedUpdate, 800);
+      return;
+    }
+    noteForcedTry(forcedUpdateInfo.build);
+    applyUpdate();
+  }, 1100);
 }
 
 /* The progress bar asked for by name - "have the progress bar say
@@ -160095,6 +160146,41 @@ function rankUpCovered(on){
     } else {
       const list = rankUpCoveredList; rankUpCoveredList = [];
       list.forEach(an => { try{ if(an.playState === "paused") an.play(); }catch(e){} });
+      rankUpMapSleep(false);
+    }
+  }catch(e){}
+}
+/* ---- (384.98) THE ROAD MAP IS PUT AWAY UNDER THE CUTSCENE ----
+   Madison, on the installed app (384.92-384.94): "my app would show a white screen, do the splash, and then go to main menu in the
+   middle of a cutscene for the rank (the very beginning) and then I'd have to do it again." A white screen and a cold start is iOS
+   ending the page's web process - its memory - and the cutscene's first frame was the heaviest moment of the whole journey: the
+   road map stayed laid out, styled and drawn under the dark (~5,300 elements, ~60 layers of it drawing, the "You are here"
+   character's 400x978 one among them), and in the same task two planet systems were built over it (~1,800 elements) with the
+   cutscene's depth layers - the layers drawing went from 67 to 142 and their area doubled in that one frame, and the task itself
+   ran ~1.3-2.4s here. So once the hand-off's veil is fully dark the map is put away (content-visibility:hidden, with its content
+   height kept so the page and the camera do not move; visibility:hidden for an engine without it), and it comes back at the
+   cutscene's ending, under the dark that is still full (opts.onOutro), with the camera where it was. Nothing of it can be seen in
+   that time, so nothing looks different; the planet is built against ~1,900 elements instead of ~7,200. */
+var rankUpAsleep = null;
+function rankUpMapSleep(on){
+  try{
+    if(on){
+      if(rankUpAsleep) return;
+      const root = stage.querySelector(".screen-ranks");
+      if(!root || !root.isConnected) return;
+      const cs = getComputedStyle(root);
+      const h = root.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+      if(!(h > 0)) return;
+      rankUpAsleep = { root, y: window.scrollY };
+      root.style.setProperty("--ru-asleep-h", h.toFixed(2) + "px");
+      root.classList.add("ru-asleep");
+    } else {
+      const a = rankUpAsleep;
+      rankUpAsleep = null;
+      if(!a) return;
+      a.root.classList.remove("ru-asleep");
+      a.root.style.removeProperty("--ru-asleep-h");
+      if(a.root.isConnected && Math.abs(window.scrollY - a.y) > .5){ try{ window.scrollTo({ top: a.y, behavior: "instant" }); }catch(e){ window.scrollTo(0, a.y); } }
     }
   }catch(e){}
 }
@@ -160220,7 +160306,7 @@ function rankUpMarkShown(toIdx){
       : null;
     saveStore();
   }catch(e){}
-  try{ localStorage.removeItem(RANKUP_PROG_KEY); }catch(e){}
+  try{ localStorage.removeItem(RANKUP_PROG_KEY); localStorage.removeItem(RANKUP_CUTTRY_KEY); }catch(e){}
   try{ syncProfileTabDot(); }catch(e){}
 }
 /* What of a journey has already played on this device. Viewing history,
@@ -161025,8 +161111,10 @@ async function rankUpHandOut(scene, stop){
   if(dark){ try{ dark.cancel(); }catch(e){} }
   /* the flare alone in the dark, a beat, before the planet system comes */
   veil.classList.add("is-dark");
-  /* the road map is not seen again until the cutscene is over: its animations rest through the held beat (384.55) */
+  /* the road map is not seen again until the cutscene is over: its animations rest through the held beat (384.55), and it is put
+     away until the cutscene's ending (384.98, rankUpMapSleep) - in the held beat, before the planet is built */
   rankUpCovered(true);
+  rankUpMapSleep(true);
   await rankUpWait(RU_HAND_HOLD_MS);
   return hand;
 }
@@ -161037,17 +161125,32 @@ async function rankUpCutscene(scene, api){
   /* the scene ends itself (and has its own fallbacks); this only catches a
      page that never gets there */
   rankUpSceneWatch(scene, 80000);
+  /* (384.98) A CUTSCENE THE PAGE ENDED IN IS PLAYED AGAIN, ONCE, THEN QUIETLY. The rank is derived when read and the cutscene is
+     counted played only once it has finished (prog.cut), so a page that iOS ends inside it (Madison's white screen and splash)
+     plays the journey again from the top on the next launch - which is right. But a phone that could not get through the
+     cutscene's opening once may not the second time either, and the third launch would be the same journey into the same end.
+     The start is noted (RANKUP_CUTTRY_KEY, device-only, removed when the cutscene finishes): one start that never finished, it
+     plays in full again; two in a row, it plays as the short, still scene Reduce motion plays (no hand-off, no whirl - far less
+     to hold), so it can never be met a third time. The note goes in the page's end log too (sessionMark). */
+  const tried = rankUpCutTryRead(scene.to);
+  const quiet = !!(tried && tried.n >= 2);
+  try{ localStorage.setItem(RANKUP_CUTTRY_KEY, JSON.stringify({ to: scene.to, n: (tried ? tried.n : 0) + 1, at: Date.now() })); }catch(e){}
+  scene.cutQuiet = quiet;
+  try{ sessionMark("visible", true); }catch(e){}
   const last = api && api.stops && api.stops[api.stops.length - 1];
-  const hand = !ruStill() && last ? await rankUpHandOut(scene, last.stop) : null;
+  const hand = !ruStill() && !quiet && last ? await rankUpHandOut(scene, last.stop) : null;
   if(rankUpScene !== scene){ if(hand) hand.drop(); return; }
   scene.phase = "cutscene";
   rankUpAllowTaps(scene, true);
   /* the map is under the dark (the veil is full) or about to be under the cutscene's own */
   rankUpCovered(true);
+  try{ sessionMark("visible", true); }catch(e){}
   await new Promise(res => {
     let done = false;
     const fin = () => { if(done) return; done = true; res(); };
-    const opts = { from: scene.from, onDone: fin };
+    /* the map put away under the hand-off's dark comes back as the cutscene's ending starts, under its dark (384.98) */
+    const opts = { from: scene.from, onDone: fin, onOutro: () => rankUpMapSleep(false) };
+    if(quiet) opts.still = true;
     if(hand) opts.handoff = hand.ghost;
     try{
       if(scene.to === "titan") playSupernovaCutscene(opts);
@@ -161060,6 +161163,16 @@ async function rankUpCutscene(scene, api){
   rankUpCovered(false);
   scene.prog.cut = true;
   rankUpProgWrite(scene.prog);
+  try{ localStorage.removeItem(RANKUP_CUTTRY_KEY); }catch(e){}
+}
+/* (384.98) the cutscene started and not finished, for this rank (see rankUpCutscene) */
+var RANKUP_CUTTRY_KEY = "class26e.rankup.cuttry";
+function rankUpCutTryRead(to){
+  try{
+    const o = JSON.parse(localStorage.getItem(RANKUP_CUTTRY_KEY) || "null");
+    if(o && o.to === to && typeof o.n === "number" && o.n > 0) return o;
+  }catch(e){}
+  return null;
 }
 /* Each new rank's reward card, one at a time - the cards the results
    screen used to play. Muted, they are recorded as shown and skipped. */
