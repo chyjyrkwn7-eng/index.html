@@ -379,13 +379,13 @@ def section_n(br):
       el.style.cssText = 'position:fixed;left:20px;top:20px;width:56px;height:56px';
       el.appendChild(buildAvatarCharSVGSafe('voidwalker')); document.body.appendChild(el);
       setCharState(el, 'live', { solo: true });
-      for(let i = 0; i < 160 && !el.querySelector('.char-flip-play img'); i++) await new Promise(r => setTimeout(r, 250));
-      const img = el.querySelector('.char-flip-play img');
+      for(let i = 0; i < 160 && !el.querySelector('.char-flip-play > img, .char-flip-play > canvas'); i++) await new Promise(r => setTimeout(r, 250));
+      const img = el.querySelector('.char-flip-play > img, .char-flip-play > canvas');   /* (384.112) a canvas, or 384.95's <img> */
       if(!img) return { sheet: false };
       await new Promise(r => setTimeout(r, 600));
       charSpecialBusyUntil = 0; playCharSpecial(el);
       await new Promise(r => setTimeout(r, 400));
-      const running = img.getAnimations().filter(a => a.playState === 'running').length;
+      const running = img.tagName === 'CANVAS' ? (charFlipIsPlaying(img) ? 1 : 0) : img.getAnimations().filter(a => a.playState === 'running').length;
       // each looping part of the live drawing at the loop's own place
       const L = CHAR_ANIM_LOOP_MS, tau = ((Date.now() + Number(el.dataset.flipPhase || 0)) % L + L) % L;
       let off = 0, n = 0;
