@@ -198,7 +198,7 @@ def open_book(br, html, viewer, bank):
     ctx.route("**/ifc/bank.js*", lambda route, request, b=bank: route.fulfill(status=200, body=b, content_type="text/javascript; charset=utf-8"))
     ctx.add_init_script("window.__cloudSeed = {};"); ctx.add_init_script(G["FAKE"]); ctx.add_init_script(G["g"]["STANDALONE"]); ctx.add_init_script(G["init"](G["ifc"]))
     pg = ctx.new_page(); errs = []
-    pg.set_default_timeout(240000)                             # (a loaded machine: choosing the 7.5 MB book took over 30 s)
+    pg.set_default_timeout(180000)                             # (a loaded machine: choosing the 7.5 MB book took over 30 s)
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     v = re.search(r'const APP_BUILD = "([^"]+)"', html).group(1)
     pg.route("**/version.json*", lambda route, request: route.fulfill(status=200, headers={"content-type": "application/json"}, body=json.dumps({"build": v, "force": False, "frameId": ""})))
@@ -372,7 +372,7 @@ with sync_playwright() as pw:
     rig = L.Rig(G, pw)
     _nc = rig.br.new_context
     def _patient(**kw):                                        # (a loaded machine: a page load over 30 s is slow, not wrong)
-        c = _nc(**kw); c.set_default_timeout(240000); c.set_default_navigation_timeout(240000); return c
+        c = _nc(**kw); c.set_default_timeout(180000); c.set_default_navigation_timeout(180000); return c
     rig.br.new_context = _patient
     try:
         old, e0 = rig.read(OLD_PAGE, OLD_BANK); new, e1 = rig.read(NEW_PAGE, NEW_BANK)
