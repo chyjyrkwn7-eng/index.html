@@ -98740,7 +98740,9 @@ function recordingShouldWait(){
      100%'s results, and on an iPhone (no requestIdleCallback) each is a 60ms timer that runs whether the page is busy or not.
      They wait for the reveal to end - the buttons in - and 2s more, so a first press on a button is not queued behind one;
      then they go on as before. */
-  try{ if(resultsSeq && resultsSeq.isRunning()) return 600; }catch(e){}
+  /* (the results on the stage, and 40s at most: a reveal whose screen was replaced without endResultsReveal, or a scene left
+     holding it, never holds them for good - the grade and the XP bar are long done by then) */
+  try{ if(resultsSeq && resultsSeq.isRunning() && document.querySelector("#stage .rs-rewards") && Date.now() - resultsShownAt < 40000) return 600; }catch(e){}
   try{ if(document.querySelector("#stage .rs-rewards") && Date.now() - resultsShownAt < 2000) return 2000 - (Date.now() - resultsShownAt); }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
