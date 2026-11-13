@@ -18,8 +18,9 @@ screen with a top row (onboarding from a fresh install; the rest on a used accou
  (3) BACK: a round back button's middle is the chat button's middle (1px), and on a phone it is as far in from the left as the
      chat button is from the right (1px);
  (4) FIT: no screen scrolls that did not scroll on the previous build (--base, default origin/main);
- (5) CAP: on a question scrolled 200px, the strip from y 0 to the foot of the header row is solid paper down the left edge
-     (no question text shows through above or between the row's controls);
+ (5) CAP: on a question scrolled 200px, the strip from y 0 to the foot of the header row (on a phone, Pause's foot: it is in the
+     row; on a tablet Pause is a corner button like the chat button) is solid paper down the left edge (no question text shows
+     through above or between the row's controls);
  (6) TRANSITIONS (frame by frame, every rAF for the whole change): the bottom tabs Home -> Profile -> Leaderboard -> Settings ->
      Home, push and back (Start Studying and back, Settings -> Advanced -> back, Profile's badge case and back, Choose your mode ->
      Drill's units -> back), Profile's segments, a question (start, answer, the slide to the next, pause and resume, the last
@@ -101,7 +102,7 @@ GEOM = """()=>{ const R = s => { const e = document.querySelector(s); if(!e || !
   return { chat: (() => { const b = document.getElementById('chatdock-btn'); return b && !b.closest('[hidden]') ? R('#chatdock-btn') : null; })(), back, pause: R('#pausebtn:not([hidden])'),
     inTest: !!document.querySelector('.chatdock.in-test'), W: innerWidth, scr: ((document.querySelector('#stage > *') || {}).className || '') + '' }; }"""
 CAP = """()=>{ const t = document.querySelector('.wrap.test-pinned > .top'); const p = document.querySelector('#pausebtn:not([hidden])');
-  if(!t) return null; const r = t.getBoundingClientRect(); return { foot: Math.max(r.bottom, p ? p.getBoundingClientRect().bottom : 0), paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(), sy: scrollY }; }"""
+  if(!t) return null; const r = t.getBoundingClientRect(); return { foot: Math.max(r.bottom, p && innerWidth < 640 ? p.getBoundingClientRect().bottom : 0), paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(), sy: scrollY }; }"""
 REC = """(ms)=>{ let n = 0; const tag = e => { if(!e) return null; if(!e.dataset.trk) e.dataset.trk = 'k' + (++window.__trkN || (window.__trkN = 1)); return e.dataset.trk; };
   const R = e => { if(!e || !e.getClientRects().length) return null; const s = getComputedStyle(e); if(s.visibility === 'hidden' || s.display === 'none' || parseFloat(s.opacity) < .05) return null; const r = e.getBoundingClientRect(); return r.width ? [r.left, r.top] : null; };
   window.__frames = []; const t0 = performance.now();
@@ -258,8 +259,13 @@ def transitions(br, dev, cls, qtop=None):
                     if not test_move:
                         lefts = sorted(set(round(c[0], 1) for c in cs))
                         if any(abs(x - hc[0]) > .5 for x in lefts): bad.append("chat left %s" % lefts[:5])
-                bars = sorted(set(round(f["bar"][1], 1) for f in fr if f["bar"]))
-                if len(bars) > 1 and max(bars) - min(bars) > .5: bad.append("tab bar top %s" % bars[:6])
+                # the bar is still on each screen (a screen may stand it elsewhere from its first frame: a unit picker stacks it
+                # above its Start button, on main too) - so per screen, never moving within one
+                bys = {}
+                for f in fr:
+                    if f["bar"]: bys.setdefault(f["scr"], set()).add(round(f["bar"][1], 1))
+                for k, v in bys.items():
+                    if max(v) - min(v) > .5: bad.append("tab bar top %s on %s" % (sorted(v)[:6], k[:30]))
                 byk = {}
                 for f in fr:
                     if f["title"]: byk.setdefault(f["title"][0] + '|' + f["scr"], []).append(f["title"][1])
