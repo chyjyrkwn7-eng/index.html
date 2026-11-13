@@ -24,9 +24,10 @@ Installed, an iPhone's user agent, 440x956 at 3x, real touches (CDP), the CPU sl
     is a podium: 2nd, 1st, 3rd left to right on steps that rise from the card's floor, 1st's the tallest, the outer steps clear
     of the card's rounded corners. (tools/check-b384-podium-hint.py checks the podium at four sizes.)
 (5) THE NEW DOT (seen-unlocks cleared, a rank not yet shown): on the Profile tab, Profile (Customize, the badge case, the rank) and
-    Customize's character / banner / theme / hundo pages, every dot is one style - a solid fill (no gradient; since 384 r8 one small glow, a 10-20px
-    blur, round every one), round, 8-10px, the same fill and size everywhere - and sits on its icon's corner on the 45-degree line (as far in
-    from the right edge as down from the top, within 1.5px, and not past a third of the icon in).
+    Customize's character / banner / theme / hundo pages, every dot is one style - since 384.98 a small lit flare (a radial-gradient
+    body with its ring, a halo on a layer of its own, no filter; it was a solid fill with a glow), round, 8-10px, the same paint and
+    size everywhere - and sits on its icon's corner on the 45-degree line (as far in from the right edge as down from the top,
+    within 1.5px, and not past a third of the icon in). The colour per theme is tools/check-b384-newdot.py's.
 (6) no page errors.
 Run:  python3 tools/check-b384-board2.py [--against REV] [--only 1,2,...]"""
 import base64, io, json, os, re, subprocess, sys, time
@@ -235,8 +236,8 @@ with sync_playwright() as pw:
         ROWS = """()=>{ const scr=document.querySelector('.screen-rankings'); if(!scr) return null; const vh=innerHeight;
           const vis=e=>{ if(!e) return false; for(let n=e; n && n.nodeType===1 && !n.classList.contains('rank-row'); n=n.parentElement){ const cs=getComputedStyle(n); if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity<.05) return false; } return true; };
           const rs=[...scr.querySelectorAll('.rank-rows > .rank-row[data-pub]')].filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>0 && b.top<vh-110; });
-          return rs.map(r=>{ const av=r.querySelector('.rank-avatar'); const play=av&&av.querySelector(':scope > .char-flip-play'); const img=play&&play.querySelector('img'); const svg=av&&av.querySelector(':scope > svg');
-            const ch = (img && img.complete && img.naturalWidth>0 && vis(play)) || (svg && vis(svg) && !svg.classList.contains('char-under-flip'));
+          return rs.map(r=>{ const av=r.querySelector('.rank-avatar'); const play=av&&av.querySelector(':scope > .char-flip-play'); const img=play&&play.querySelector('img, canvas'); const svg=av&&av.querySelector(':scope > svg');
+            const ch = (img && (img.tagName==='CANVAS' ? img.__f>=0 : (img.complete && img.naturalWidth>0)) && vis(play)) || (svg && vis(svg) && !svg.classList.contains('char-under-flip'));
             const fl=r.querySelector('.rank-col-flare'); const fi=fl&&fl.querySelector('.rk-frame img'); const fs=fl&&fl.querySelector('svg.cosmic-rank-emblem');
             const fo = !fl || (!fl.classList.contains('is-lazy') && ((fi && fi.complete && fi.naturalWidth>0 && vis(fi)) || (fs && vis(fs) && !fs.classList.contains('rk-under-anim'))));
             return [r.dataset.pub, ch?1:0, fo?1:0]; }); }"""
@@ -330,18 +331,25 @@ with sync_playwright() as pw:
         ctx, pg, errs = page(br, pid=OWNER)
         boot(pg)
         DOTS = """()=>{ const out=[]; const px=v=>parseFloat(v)||0;
-          const take=(host, dot, pe)=>{ const cs=getComputedStyle(dot, pe||null); if(pe && (cs.content==='none'||cs.content==='normal')) return; if(cs.display==='none' || cs.visibility==='hidden') return;
+          /* (384.98) the dot's paint can be on a layer of its own: a .new-dot's ::after is its body, its ::before its halo; the
+             Profile tab icon's ::after is the body and its ::before the halo */
+          const has=(el, pe)=>{ const c=getComputedStyle(el, pe); return c.content!=='none' && c.content!=='normal' && c.display!=='none'; };
+          const take=(host, dot, pe, halo)=>{ const cs=getComputedStyle(dot, pe||null); if(pe && (cs.content==='none'||cs.content==='normal')) return; if(cs.display==='none' || cs.visibility==='hidden') return;
             const hb=host.getBoundingClientRect(); if(!hb.width || hb.bottom<0 || hb.top>innerHeight) return;
             let w, h, cx, cy;
             if(pe){ w=px(cs.width); h=px(cs.height); const l=cs.left!=='auto'?px(cs.left):hb.width-px(cs.right)-w; const t=cs.top!=='auto'?px(cs.top):hb.height-px(cs.bottom)-h; cx=hb.left+l+w/2; cy=hb.top+t+h/2; }
             else { const b=dot.getBoundingClientRect(); w=b.width; h=b.height; cx=b.left+w/2; cy=b.top+h/2; }
-            const shadows=(cs.boxShadow==='none'?[]:cs.boxShadow.split(/,(?![^(]*\\))/)).map(s=>{ const n=s.replace(/rgba?\\([^)]*\\)/,'').trim().split(/\\s+/).map(px); return n[2]||0; });
+            const look=(!pe && has(dot, '::after')) ? getComputedStyle(dot, '::after') : cs;
+            const parts=(look.boxShadow==='none'?[]:look.boxShadow.split(/,(?![^(]*\\))/)).map(s=>s.replace(/(rgba?|color|color-mix)\\([^)]*\\)+/g,'').trim().split(/\\s+/).map(px));
+            const hl=halo ? getComputedStyle(halo[0], halo[1]) : null;
             out.push({ where:(host.className&&host.className.baseVal!==undefined?host.className.baseVal:host.className).toString().slice(0,40)+(pe||''),
-              w:Math.round(w*10)/10, h:Math.round(h*10)/10, fill:cs.backgroundColor, img:cs.backgroundImage, rad:cs.borderRadius, blur:Math.max(0,...shadows), filter:cs.filter,
+              w:Math.round(w*10)/10, h:Math.round(h*10)/10, fill:look.backgroundColor, img:look.backgroundImage, rad:cs.borderRadius, filter:look.filter,
+              blur:Math.max(0,...parts.map(n=>n[2]||0)), ring:Math.max(0,...parts.map(n=>(n[2]||0)===0?(n[3]||0):0)),
+              halo: hl && hl.content!=='none' && hl.content!=='normal' ? { w:px(hl.width), img:hl.backgroundImage.slice(0,16), filter:hl.filter } : null,
               dx:Math.round((hb.right-cx)*10)/10, dy:Math.round((cy-hb.top)*10)/10, hw:Math.round(hb.width), hh:Math.round(hb.height) }); };
-          document.querySelectorAll('.new-dot').forEach(d=>{ let host=d.parentElement; if(host.classList.contains('new-dot-anchor') && host.firstElementChild!==d) host=host.firstElementChild; take(host, d); });
-          document.querySelectorAll('#bottomtab-profile.has-new .bottomtab-icon').forEach(i=>take(i, i, '::after'));
-          document.querySelectorAll('.class-bubble-wrap.has-new .class-bubble').forEach(i=>take(i, i, '::after'));
+          document.querySelectorAll('.new-dot').forEach(d=>{ let host=d.parentElement; if(host.classList.contains('new-dot-anchor') && host.firstElementChild!==d) host=host.firstElementChild; take(host, d, null, [d, '::before']); });
+          document.querySelectorAll('#bottomtab-profile.has-new .bottomtab-icon').forEach(i=>take(i, i, '::after', [i, '::before']));
+          document.querySelectorAll('.class-bubble-wrap.has-new .class-bubble').forEach(i=>take(i, i, '::after', null));
           return out; }"""
         pg.evaluate("()=>{ store.seenUnlocks={chars:[],banners:[],themes:[],badges:[],fx:[],v:2}; store.rankMapSeen=-1; store.rankMapFx244=true; localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); localStorage.removeItem('class26e.classseen'); showHome(); }")
         pg.wait_for_timeout(2500); pg.evaluate("()=>syncProfileTabDot()"); pg.wait_for_timeout(600)
@@ -357,14 +365,17 @@ with sync_playwright() as pw:
         alld = [dict(d, screen=k) for k, v in D.items() for d in v]
         where = sorted(set(d["screen"] + ":" + d["where"].split(" ")[0] for d in alld))
         chk("(5) dots found on the tab, Profile and Customize's pages (%d: %s)" % (len(alld), where), len(alld) >= 8 and D["home"] and len(D["profile"]) >= 3 and D["character"] and D["theme"], where)
-        # REVISED IN 384 r8: "The yellow notification looks a little weak ... Maybe a small glow?" - the dot is still a solid
-        # circle (no gradient, no filter), and now every one carries the same small glow outside its ring (a blur of 10-20px).
-        bad = [d for d in alld if d["img"] != "none" or not (10 <= d["blur"] <= 20) or d["filter"] != "none" or not re.match(r"rgb\(\d+, \d+, \d+\)$", d["fill"])]
-        chk("(5) ...each a solid fill, no gradient, with the same small glow round it (%d not: %s)" % (len(bad), [(d["screen"], d["where"], d["img"][:30], d["blur"]) for d in bad[:3]]), not bad, bad[:4])
+        # REVISED IN 384 r8 ("a small glow"), and AGAIN IN 384.98: "The yellow dot for the notification, doesn't match the theme, it
+        # should almost look a little like the secret flare.." The solid yellow fill this asserted is the old decision; the dot is
+        # now a small lit flare - its body a radial gradient (a white-hot core, the theme's colour, a deeper rim), its ring kept,
+        # and a halo on a layer of its own round it (no filter anywhere). Its colour per theme is tools/check-b384-newdot.py's.
+        bad = [d for d in alld if not d["img"].startswith("radial-gradient") or d["filter"] != "none" or d["ring"] < 1.5
+               or not d["halo"] or d["halo"]["w"] < 2 * d["w"] or not d["halo"]["img"].startswith("radial-gradient") or d["halo"]["filter"] != "none"]
+        chk("(5) ...each a small lit flare: a radial-gradient body with its ring, a halo layer round it, no filter (%d not: %s)" % (len(bad), [(d["screen"], d["where"], d["img"][:30], d["ring"], d["halo"]) for d in bad[:3]]), not bad, bad[:4])
         bad = [d for d in alld if d["rad"] != "50%" or abs(d["w"] - d["h"]) > .5 or not (8 <= d["w"] <= 10.5)]
         chk("(5) ...round, 8-10px (%d not: %s)" % (len(bad), [(d["screen"], d["where"], d["w"], d["h"], d["rad"]) for d in bad[:4]]), not bad, bad[:4])
-        fills = sorted(set(d["fill"] for d in alld)); sizes = sorted(set(round(d["w"]) for d in alld if d["screen"] != "character"))
-        chk("(5) ...one look everywhere: one fill %s, one size %s" % (fills, sizes), len(fills) == 1 and len(sizes) == 1, [fills, sizes])
+        fills = sorted(set(d["img"] for d in alld)); sizes = sorted(set(round(d["w"]) for d in alld if d["screen"] != "character"))
+        chk("(5) ...one look everywhere: one paint (%d), one size %s" % (len(fills), sizes), len(fills) == 1 and len(sizes) == 1, [[f[:80] for f in fills], sizes])
         bad = [d for d in alld if abs(d["dx"] - d["dy"]) > 1.5 or d["dx"] < -1 or d["dx"] > min(d["hw"], d["hh"]) / 3]
         chk("(5) ...each on its icon's corner, on the 45-degree line (%d not: %s)" % (len(bad), [(d["screen"], d["where"], d["dx"], d["dy"], d["hw"], d["hh"]) for d in bad[:5]]), not bad, bad[:6])
         ALLERRS += errs; ctx.close()
