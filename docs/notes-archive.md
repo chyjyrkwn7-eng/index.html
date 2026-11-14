@@ -39751,3 +39751,8 @@ and wrong - 28 shots and one contact sheet (before beside after, per class and d
 top, the result is the two solid cards in every case, nothing under the title or the chat button, Exit clear.
 CHROMIUM CANNOT SHOW: iOS's blur under the status bar over the new header band (384.93's line is honoured: the title and the band
 come down with the row), and the real safe areas (the gate's insets are substituted, as every gate's are).
+384.100 FINAL GATES on the tree merged with main 384.107 (TMPDIR=/dev/shm, one browser job at a time): check-js 14 blocks ALL PASS and
+the page loads with no console errors beyond the sandbox's blocked CDN and the file: scheme's version.json fetch; sweep-layout --quick
+20/20 combinations clean; check-centering --quick ALL PASS (0 off centre; 4 elements "moving while measured", the IFC Show-the-code
+summary and the chat dock on Profile, not measured); check-b384-dailyq (full) 374 checks ALL PASS; `--quick --against origin/main`
+(384.107) FAILS 56 (T1, T2, B1, R1, R2 on every device/class/state, as before). The earlier "centering not run" gap is closed.
