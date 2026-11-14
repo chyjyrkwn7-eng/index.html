@@ -39699,3 +39699,17 @@ GATE RESULTS (384.106, one at a time, TMPDIR=/dev/shm, on a machine at load 70-8
 - check-behaviour: 9 (the forced update and the banner decisions, checkForUpdate driven for real), 10 (build 218: the Settings rows, found now by data-row), 101 (build 314) pass; 324s fails 14, the same 14 as origin/main (the sync code and the switches are no longer on Settings' menu since 382: stale, not this build's).
 - check-centering --quick --only "^settings($|/software)" (both classes): 76 elements on 8 screens, 0 off centre - the pill +0.16 / +0.15px, Update Now +0.35 / -0.18, the status circle -0.00 / -0.12.
 - STILL TO RUN when the machine is free (browser work paused at load 80): sweep-layout --quick, check-centering --quick over every screen (two full runs died with "Target crashed" / a 30s page load under that load), check-b382-settings, check-b382-credits and check-b325-e (each changed on purpose above), and the screenshots.
+384.106 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm, machine at load ~3):
+- check-js 14 blocks ALL PASS; page console: only the sandbox's blocked CDN and the file: fetch.
+- sweep-layout --quick 20/20 clean.
+- check-centering --quick: 1308 elements, 0 off centre, but the run exits FAILED on "MODE ARROWS NOT MEASURED: virtual room 0 of 2" (a
+  harness timing miss, not an off-centre element); `--only virtual` re-run: ALL PASS 0 off centre. Treated as a flake (this build
+  does not touch the Virtual Room).
+- check-b384-swupdate ALL PASS; `--against origin/main` (384.107) FAILS 50.
+- check-b382-settings ALL PASS; check-b382-credits ALL PASS (both changed on purpose above).
+- check-b325-e: 7 failures (Save and exit's look, the two-across unit cards, the unit-picker / lobby pill) - the SAME 7 on main 384.107
+  (`--against`): pre-existing, nothing to do with Settings.
+SHOTS (scratchpad swupdate/, iPhone 17 Pro Max 440x956 and iPad Pro 11" 834x1194, 2x, both classes; sheets sheet-<dev>-<class>.png
+= before row | after row | checking | up to date | update available (+ What's new) | error | row with "Update available"): every one
+looked at. The page and the pill read as intended; the Settings row carries "Up to date" (green) / "Update available" (accent).
+Chromium cannot show the real iOS safe areas or the spinner's smoothness.
