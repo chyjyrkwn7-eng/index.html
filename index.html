@@ -59679,9 +59679,11 @@ function collectionProgress(which){
    "every other character" and "every other banner", so they do not
    count effects; only Zenith is everything. */
 function ultimateProgress(){
-  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && c.id !== ULTIMATE_TOP && (c.feat || c.unlock));
-  const banners = BANNERS.filter(b => b.id !== ULTIMATE_TOP);
-  const themes = ACCENTS.filter(a => !!TIER_UNLOCKS[a]);
+  /* (384.120, decision 5) Supernova's rewards are left out while the rank is out of reach (supernovaOutOfReach) */
+  let noTop = false; try{ noTop = supernovaOutOfReach(); }catch(e){}
+  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && c.id !== ULTIMATE_TOP && (c.feat || c.unlock) && !(noTop && c.unlock === "titan"));
+  const banners = BANNERS.filter(b => b.id !== ULTIMATE_TOP && !(noTop && b.rank === "titan"));
+  const themes = ACCENTS.filter(a => !!TIER_UNLOCKS[a] && !(noTop && a === "titan"));
   const effects = HUNDO_FX.filter(d => d.need > 0);
   let ch = 0, bn = 0, th = 0, fx = 0;
   chars.forEach(c => { if(!isLockedCharacter(c.id)) ch++; });
@@ -59694,7 +59696,8 @@ function ultimateProgress(){
   if(th < themes.length) left.push((themes.length - th) + " theme" + (themes.length - th === 1 ? "" : "s"));
   if(fx < effects.length) left.push((effects.length - fx) + " hundo effect" + (effects.length - fx === 1 ? "" : "s"));
   return { have: ch + bn + th + fx, need: chars.length + banners.length + themes.length + effects.length,
-    note: left.length ? "Still to unlock: " + left.join(", ") + "." : "Everything else is yours." };
+    note: (left.length ? "Still to unlock: " + left.join(", ") + "." : "Everything else is yours.") +
+      (noTop ? " Supernova's rewards are not counted until the class has enough units for the rank." : "") };
 }
 /* The longest run of consecutive days with any study on the log. Keys
    are the device's own YYYY-MM-DD, so a day is a calendar day where it
@@ -69022,6 +69025,9 @@ const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
 /* Build 324: the weekly blocks Nova's recap reads change with every test,
    and nobody is watching them live - they ride with the next push. */
 ROW_LAZY_FIELDS.push("wk", "pwk", "wins");
+/* (384.120) the unlock tracks' code and the worn rim (unlockRowFields): they change when a run ends or a rim is picked, never per
+   answer, and ride with the next push like the weekly blocks. */
+ROW_LAZY_FIELDS.push("ut", "rim");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long.
    FIVE MINUTES, NOT 90s (build 327z15): "maybe to save space the
@@ -69185,7 +69191,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], weekWinLost: [], weekWinPts: {}, weekWinBase: null, retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, badgeSceneOwed: null, badgeScenePlayed: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
-              fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
+              fullTestsSeeded: false, practiceExamPerfect: false, banner: "", rim: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
               lobbyInvitesOut: {},
@@ -69510,6 +69516,8 @@ function applyLoadedData(got){
   store.starfallKept = got.starfallKept === true;
   store.creditsApplied = Array.isArray(got.creditsApplied) ? got.creditsApplied.filter(x => typeof x === "string").slice(-50) : [];
   store.banner = typeof got.banner === "string" ? got.banner : "";
+  /* (384.120) the rim you wear (wornRim): a pick like the banner, worn only while it is held; "" wears none */
+  store.rim = typeof got.rim === "string" ? got.rim.slice(0, 24) : "";
   /* build 313: the hundo effect picked in Customize. Confetti for
      anybody who has never picked one; an id this build does not know is
      kept (it may be a later build's) and falls back at play time. */
@@ -72002,7 +72010,7 @@ function wipeLocalProgressAndSettings(){
   store.vrMatches = 0; store.vrWins = 0; store.vrHosted = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
-  store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.hundoFx = "confetti"; store.starfallKept = false;
+  store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.rim = ""; store.hundoFx = "confetti"; store.starfallKept = false;
   store.weekRankSeen = null;
   store.pendingVoidCutscene = false;
   /* A reset is a new person as far as the board is concerned, so the
@@ -72314,6 +72322,11 @@ function buildLeaderboardRow(){
            own Profile does (build 231). An id another build does not know
            draws nothing there. */
         banner: wornBanner(),
+        /* (384.120) the unlock tracks: `ut`, which tiers this account holds (a 14-character code, display only - see
+           unlockTrackCode) and `rim`, the rim worn (an id, "" for none). Counted by every phone for rarity, drawn on the row and
+           the card. Written in this same write: nothing extra, nothing per answer. NOTHING HERE IS THE SYNC CODE. */
+        ut: unlockRowFieldsSafe().ut,
+        rim: unlockRowFieldsSafe().rim,
         /* Last week's, so the board can show last week's top three. */
         prevWeek: store.prevWeekKey || "",
         prevWeekPoints: store.prevWeekPoints || 0,
@@ -72611,6 +72624,9 @@ function buildClassBoardRow(){
     xp: n.xp,
     tests: n.tests,
     banner: wornBanner() || "",
+    /* (384.120) the unlock tracks' code and the worn rim, as the academy's row (unlockRowFields) */
+    ut: unlockRowFieldsSafe().ut,
+    rim: unlockRowFieldsSafe().rim,
     lastModified: Date.now()
   };
 }
@@ -79220,6 +79236,305 @@ function bannerEarned(id){
   return !!(b && b.have() >= b.need);
 }
 function earnedBannerSet(){ return new Set(BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }
+/* ---- THE UNLOCK TRACKS (384.120) ----
+   Madison's approved proposal, "Unlocks people notice": the challenge rewards were about forty unrelated rules, so they are shown
+   as FIVE TRACKS per class - Accuracy, Hundos, Study Time, Answers, Virtual Room - each a row of tiers in order, ending in a
+   prestige tier. GROUPING IS DISPLAY ONLY. Every existing tier is an item that already exists (a character, a banner, a hundo
+   effect), read through the check the rest of the app already uses (isLockedCharacter, bannerEarned, hundoFxEarned), so its rule
+   is word for word what it was and nobody loses anything they hold: nothing here is stored, and nothing here can lock an item.
+   Tiers are shown in order and never locked (decision 3): an existing item is held the moment its own rule is met, whatever
+   tier is before it. Only the NEW rewards need earlier tiers: a track's own rim (the tier it sits at, plus every tier before
+   it), its gold rim (every tier of the track) and the Mastery rim (all five gold rims).
+   The new tiers use counters the app already keeps and the label says exactly what is counted:
+     the Accuracy rim   ifcRunBest() - the same best right-answer run the Marksman / Hazmat read (across tests or in one):
+                        100 in the academy, 50 in Fire Code
+     the Answers rim    store.lifetime.correct - the count Star Trails and Myriad read: 1,000
+     the Hundos rim     hundosOf() (Fire Code only) - the count every hundo effect reads: 150
+     Win 10 rooms       store.vrWins - the counter the Clown / Strobe reads (vrwins5): 10. Zeus stays a one-off Feat (decision 4).
+   Everything is worked out when it is read (unlockTrackView), so there is nothing to default, migrate or merge except the rim
+   you WEAR (store.rim, a pick like store.banner: applyLoadedData defaults it and wornRim() checks it is held). */
+var UNLOCK_RIM_COLOR = { acc: "#FF6B5E", ans: "#4FB8FF", hun: "#3DDC97", gold: "#F5C84A" };
+var UNLOCK_TRACK_TITLE = { acc: "Accuracy", hun: "Hundos", study: "Study Time", ans: "Answers", vr: "Virtual Room" };
+var UNLOCK_TRACK_ORDER = ["acc", "hun", "study", "ans", "vr"];
+var VR_WINS_TOP = 10;
+/* The rims. `goal` is a new tier's own count; a gold rim's is "every tier of its track" and Mastery's "every gold rim". */
+function unlockRimDefs(){
+  const ifc = window.NOVA_CLASS === "ifc";
+  const run = ifc ? 50 : 100;
+  const L = () => (store && store.lifetime) || {};
+  const out = {
+    acc: { name: "Accuracy rim", color: UNLOCK_RIM_COLOR.acc, track: "acc",
+           label: "Answer " + run + " questions in a row without a miss",
+           have: () => Math.min(ifcRunBest(), run), need: run,
+           note: "Right on the first try. A miss starts the count over; it carries from one test to the next." },
+    ans: { name: "Answers rim", color: UNLOCK_RIM_COLOR.ans, track: "ans",
+           label: "Answer 1,000 questions correctly", have: () => Math.min(Number(L().correct) || 0, 1000), need: 1000 }
+  };
+  if(ifc) out.hun = { name: "Hundos rim", color: UNLOCK_RIM_COLOR.hun, track: "hun",
+                      label: "Earn 150 hundos", have: () => Math.min(hundosOf(store), 150), need: 150, note: "A hundo is 100% on a whole unit." };
+  UNLOCK_TRACK_ORDER.forEach(k => {
+    out[k + "_gold"] = { name: UNLOCK_TRACK_TITLE[k] + " gold rim", color: UNLOCK_RIM_COLOR.gold, track: k, gold: true,
+                         label: "Hold every tier of the " + UNLOCK_TRACK_TITLE[k] + " track" };
+  });
+  out.mastery = { name: "Mastery rim", color: UNLOCK_RIM_COLOR.gold, mastery: true,
+                  label: "Hold all five gold rims", note: "Every tier of every track. The rim moves, and your name shows in gold." };
+  return out;
+}
+/* The tracks of the class this page is. Each tier is a list of rewards; the first is the one whose rule the tier is. The
+   academy's and Fire Code's are the same tracks with the class's own items and numbers (names come from the class's own
+   tables when read: AVATAR_DISPLAY_NAME, bannerDef().name, hundoFxDef().name). */
+function unlockTrackSpec(){
+  const ifc = window.NOVA_CLASS === "ifc";
+  const c = id => ({ k: "char", id }), b = id => ({ k: "banner", id }), f = id => ({ k: "fx", id }), r = id => ({ k: "rim", id });
+  const hun = ifc
+    ? [[f("fireworks")], [f("underwater")], [f("bubbles")], [f("ufo"), b("hundos100")], [r("hun")], [b("hundos250"), r("hun_gold")]]
+    : [[f("fireworks")], [f("underwater")], [b("hundos100")], [f("bubbles")], [f("ufo")], [b("hundos250"), r("hun_gold")]];
+  const study = ifc
+    ? [[c("valkyrie")], [c("detective")], [c("timekeeper")], [c("hacker")], [b("study50")], [b("study60"), r("study_gold")]]
+    : [[c("valkyrie")], [c("detective")], [c("hacker")], [c("timekeeper")], [b("study50")], [b("study60"), r("study_gold")]];
+  return [
+    { key: "acc", tiers: [[c("masked")], [c("astronaut")], [r("acc")], [c("marksman")], [b("exam100"), r("acc_gold")]] },
+    { key: "hun", tiers: hun },
+    { key: "study", tiers: study },
+    { key: "ans", tiers: [[r("ans")], [b("correct5000")], [b("tests100")], [c("ronin")], [b("correct10000")], [b("tests250"), r("ans_gold")]] },
+    { key: "vr", tiers: [[b("tests500")], [c("hive")], [c("poseidon")], [c("clown")], [b("vr50")], [{ k: "goal", id: "vrwins10" }, r("vr_gold")]] }
+  ];
+}
+/* One-offs kept as they are, with their rarity shown (Zeus is the academy's only; Fire Code has no weekly board). */
+function unlockFeatSpec(){
+  const out = [];
+  if(AVATAR_CHARACTERS.some(c => c.id === "zeus" && !c.retired)) out.push({ k: "char", id: "zeus" });
+  if(bannerDef("early10")) out.push({ k: "banner", id: "early10" });
+  return out;
+}
+/* One reward, read through its own check. { k, id, name, label, have, need, held, kind } - `have` clamped to `need`. */
+function unlockItemState(it, rims){
+  const o = { k: it.k, id: it.id, name: it.id, label: "", have: 0, need: 1, held: false };
+  try{
+    if(it.k === "char"){
+      const def = AVATAR_CHARACTERS.find(x => x.id === it.id);
+      const feat = def && def.feat ? CHARACTER_FEATS[def.feat] : null;
+      o.name = AVATAR_DISPLAY_NAME[it.id] || it.id;
+      o.held = !!def && !isLockedCharacter(it.id);
+      if(feat){ o.label = feat.label; o.need = Number(feat.need) || 1; o.have = Math.min(Number(feat.have()) || 0, o.need); }
+    } else if(it.k === "banner"){
+      const d = bannerDef(it.id);
+      if(d){ o.name = d.name; o.label = d.label; o.need = Number(d.need) || 1; o.have = Math.min(Number(d.have()) || 0, o.need); }
+      o.held = !!d && bannerEarned(it.id);
+    } else if(it.k === "fx"){
+      const d = hundoFxDef(it.id);
+      if(d){ o.name = d.name; o.label = "Earn " + d.need + " hundos"; o.need = d.need; o.have = Math.min(hundosOf(store), d.need); }
+      o.held = !!d && hundoFxEarned(it.id);
+    } else if(it.k === "goal"){
+      o.name = "Win " + VR_WINS_TOP + " rooms";
+      o.label = "Place first in a Virtual Room " + VR_WINS_TOP + " times";
+      o.need = VR_WINS_TOP; o.have = Math.min(Number(store.vrWins) || 0, VR_WINS_TOP);
+      o.held = o.have >= o.need;
+    } else if(it.k === "rim"){
+      const d = (rims || unlockRimDefs())[it.id];
+      if(d){ o.name = d.name; o.label = d.label; o.color = d.color; o.gold = !!d.gold;
+             if(d.have){ o.need = d.need; o.have = Math.min(Number(d.have()) || 0, d.need); o.goalMet = o.have >= o.need; } }
+    }
+  }catch(e){}
+  return o;
+}
+/* THE VIEW, worked out when read. tracks[i].tiers[j] = { n (1-based), prestige, rewards: [item states], lead, held } and per
+   track: held (tiers held), total, next (the first tier not held, in order), gold (the gold rim held). A new rim is held when
+   its own count is met AND every tier before it is held; a gold rim when every tier of its track is; Mastery when every gold
+   rim is. Nothing is stored. */
+function unlockTrackView(){
+  const rims = unlockRimDefs();
+  const tracks = unlockTrackSpec().map(t => {
+    const tiers = [];
+    let allBefore = true;
+    t.tiers.forEach((list, j) => {
+      const rewards = list.map(it => unlockItemState(it, rims));
+      const lead = rewards[0];
+      if(lead.k === "rim") lead.held = !!lead.goalMet && allBefore;
+      const held = !!lead.held;
+      tiers.push({ n: j + 1, prestige: j === t.tiers.length - 1, rewards, lead, held });
+      allBefore = allBefore && held;
+    });
+    const gold = tiers.every(x => x.held);
+    tiers.forEach(x => x.rewards.forEach(rw => {
+      if(rw.k === "rim" && rw.gold){ rw.held = gold; rw.need = tiers.length; rw.have = tiers.filter(y => y.held).length; }
+    }));
+    const next = tiers.find(x => !x.held) || null;
+    return { key: t.key, title: UNLOCK_TRACK_TITLE[t.key], tiers, held: tiers.filter(x => x.held).length, total: tiers.length, next, gold };
+  });
+  const golds = tracks.filter(t => t.gold).length;
+  const mastery = { k: "rim", id: "mastery", name: rims.mastery.name, label: rims.mastery.label, color: rims.mastery.color,
+                    have: golds, need: tracks.length, held: golds === tracks.length, mastery: true };
+  const feats = unlockFeatSpec().map(it => unlockItemState(it, rims));
+  return { cls: window.NOVA_CLASS === "ifc" ? "ifc" : "academy", tracks, feats, mastery };
+}
+/* Every rim this class has, held or not, in the order they are shown. */
+function unlockRimList(view){
+  const v = view || unlockTrackView(), out = [];
+  v.tracks.forEach(t => t.tiers.forEach(x => x.rewards.forEach(rw => { if(rw.k === "rim" && !rw.gold) out.push(rw); })));
+  v.tracks.forEach(t => t.tiers.forEach(x => x.rewards.forEach(rw => { if(rw.k === "rim" && rw.gold) out.push(rw); })));
+  out.push(v.mastery);
+  return out;
+}
+function rimHeld(id, view){
+  if(!id) return false;
+  const r = unlockRimList(view).find(x => x.id === id);
+  return !!(r && r.held);
+}
+/* The rim you wear: the pick, while it is held here (an id from another build or a rim no longer held wears nothing). */
+function wornRim(view){
+  const id = typeof (store && store.rim) === "string" ? store.rim : "";
+  return id && rimHeld(id, view) ? id : "";
+}
+/* THE CLOSEST THREE (Next up): every tier not held, in any track, and the Feats, by how far along they are; the first tier
+   not held in each track goes before later ones of the same track at the same share. */
+function unlockNextUp(view, n){
+  const v = view || unlockTrackView(), list = [];
+  v.tracks.forEach(t => t.tiers.forEach(x => {
+    if(x.held) return;
+    const it = x.lead;
+    let have = it.have, need = it.need;
+    /* a rim whose own count is met waits on the tiers before it: that is what is left */
+    if(it.k === "rim" && it.goalMet){ have = t.tiers.slice(0, x.n - 1).filter(y => y.held).length; need = x.n - 1; }
+    list.push({ track: t.key, trackTitle: t.title, tier: x.n, prestige: x.prestige, item: it, have, need,
+                frac: need ? Math.max(0, Math.min(1, have / need)) : 0, first: t.next === x });
+  }));
+  v.feats.forEach(it => { if(!it.held) list.push({ track: "feat", trackTitle: "Feat", tier: 0, item: it, have: it.have, need: it.need,
+                                                  frac: it.need ? it.have / it.need : 0, first: true }); });
+  list.sort((a, b) => (b.frac - a.frac) || ((b.first ? 1 : 0) - (a.first ? 1 : 0)) || (a.tier - b.tier));
+  return list.slice(0, n || 3);
+}
+/* ---- WHAT A ROW PUBLISHES (384.120): `ut`, one short string ----
+   "1-" then two hex digits per track (bit j: tier j+1 held), in UNLOCK_TRACK_ORDER, then two for the Feats (bit 0 Zeus, bit 1
+   Lights Out / After Hours, in unlockFeatSpec's order). 14 characters. A reader only COUNTS it (rarity) and shows the rim
+   and the gold name it supports; it is display only and never a grant - nothing anybody holds is read from a row. */
+function unlockTrackCode(view){
+  const v = view || unlockTrackView();
+  const hex = n => ("0" + (n & 255).toString(16)).slice(-2);
+  let s = "1-";
+  v.tracks.forEach(t => { let m = 0; t.tiers.forEach((x, j) => { if(x.held) m |= 1 << j; }); s += hex(m); });
+  let fm = 0; v.feats.forEach((it, j) => { if(it.held) fm |= 1 << j; });
+  return s + hex(fm);
+}
+/* a published code, read: { tracks: [mask x5], feats: mask } or null when it is not one */
+function parseUnlockTrackCode(s){
+  if(typeof s !== "string" || !/^1-[0-9a-f]{12}$/.test(s)) return null;
+  const n = i => parseInt(s.substr(2 + i * 2, 2), 16);
+  return { tracks: [n(0), n(1), n(2), n(3), n(4)], feats: n(5) };
+}
+var unlockTrackMemo = null;
+/* the code and the worn rim for a row, worked out at most once a minute for the same numbers (a row is built on every push) */
+/* never throws (a row is built from boot paths): an empty code and no rim when the tables are not there yet */
+function unlockRowFieldsSafe(){ try{ return unlockRowFields(); }catch(e){ return { ut: "", rim: "" }; } }
+function unlockRowFields(){
+  const L = (store && store.lifetime) || {};
+  const key = [window.NOVA_CLASS, L.points || 0, L.correct || 0, L.perfectTests || 0, store.vrWins || 0, store.rim || "",
+               Object.keys(store.studyLog || {}).length, store.rankFloor || 0].join("|");
+  const m = unlockTrackMemo, now = Date.now();
+  if(m && m.key === key && now - m.at < 60000) return { ut: m.ut, rim: m.rim };
+  const v = unlockTrackView();
+  const out = { key, at: now, ut: unlockTrackCode(v), rim: wornRim(v) };
+  unlockTrackMemo = out;
+  return { ut: out.ut, rim: out.rim };
+}
+/* What a published code says about the rim on a row: the rim is shown only when the code holds it (the tier it sits at and
+   every one before it; a gold rim every tier of its track; Mastery every tier of every track). */
+function rowRimShown(entry){
+  const p = entry && parseUnlockTrackCode(entry.ut);
+  const id = entry && typeof entry.rim === "string" ? entry.rim : "";
+  if(!p || !id) return "";
+  let spec; try{ spec = unlockTrackSpec(); }catch(e){ return ""; }
+  const full = spec.map((t, i) => p.tracks[i] === (1 << t.tiers.length) - 1);
+  if(id === "mastery") return full.every(Boolean) ? id : "";
+  const gi = UNLOCK_TRACK_ORDER.indexOf(id.replace(/_gold$/, ""));
+  if(/_gold$/.test(id)) return gi >= 0 && full[gi] ? id : "";
+  for(let i = 0; i < spec.length; i++){
+    const j = spec[i].tiers.findIndex(list => list[0].k === "rim" && list[0].id === id);
+    if(j >= 0){ const need = (1 << (j + 1)) - 1; return (p.tracks[i] & need) === need ? id : ""; }
+  }
+  return "";
+}
+function rowHasMastery(entry){
+  const p = entry && parseUnlockTrackCode(entry.ut);
+  if(!p) return false;
+  try{ return unlockTrackSpec().every((t, i) => p.tracks[i] === (1 << t.tiers.length) - 1); }catch(e){ return false; }
+}
+/* ---- RARITY (384.120) ----
+   "Held by 4 of 41 classmates (10%) · Rare". Counted on this phone from the rows it already downloads for the Leaderboard (no
+   read of its own): the class's board rows ACTIVE IN THE LAST 30 DAYS (their last write or heartbeat) that publish `ut`, this
+   account's own row read from this device's own view. Anybody hidden from the Leaderboard writes no row, so is neither
+   published nor counted. Labels (decision 2): Common (half or more), Uncommon, Rare (under 20%), Legendary (under 5%, or
+   nobody yet). Fire Code shows the counts alone until 20 people are on its Leaderboard. */
+var RARITY_ACTIVE_MS = 30 * 864e5, RARITY_MIN_BOARD = 20;
+function rarityRows(){
+  const ifc = window.NOVA_CLASS === "ifc";
+  let rows = [];
+  try{ rows = ifc ? (typeof classBoardRows !== "undefined" ? classBoardRows : []) : (typeof leaderboardRows !== "undefined" ? leaderboardRows : []); }catch(e){ rows = []; }
+  return Array.isArray(rows) ? rows.filter(e => e && typeof e === "object") : [];
+}
+/* where = { track: index, tier: index } | { feat: index } | { mastery: true }. Returns null when nothing can be said. */
+function unlockRarity(where, view){
+  const rows = rarityRows();
+  if(!rows.length) return null;
+  const now = Date.now();
+  let me = ""; try{ me = publicIdOf(); }catch(e){}
+  let mine = null; try{ mine = parseUnlockTrackCode(unlockTrackCode(view)); }catch(e){}
+  let spec = null; try{ spec = unlockTrackSpec(); }catch(e){ return null; }
+  const seen = new Set();
+  let n = 0, k = 0;
+  const holds = p => {
+    if(where.mastery) return spec.every((t, i) => p.tracks[i] === (1 << t.tiers.length) - 1);
+    if(typeof where.feat === "number") return !!(p.feats & (1 << where.feat));
+    if(where.gold) return p.tracks[where.track] === (1 << spec[where.track].tiers.length) - 1;
+    return !!(p.tracks[where.track] & (1 << where.tier));
+  };
+  rows.forEach(e => {
+    if(!e.pub || seen.has(e.pub)) return;
+    seen.add(e.pub);
+    const at = Math.max(Number(e.seenAt) || 0, Number(e.lastModified) || 0);
+    if(e.pub !== me && now - at > RARITY_ACTIVE_MS) return;
+    const p = e.pub === me && mine ? mine : parseUnlockTrackCode(e.ut);
+    if(!p) return;
+    n++;
+    if(holds(p)) k++;
+  });
+  if(me && !seen.has(me) && mine && store.leaderboardOptIn){ n++; if(holds(mine)) k++; }
+  if(!n) return null;
+  const pct = Math.round(k / n * 100);
+  const share = k / n;
+  const label = k === 0 ? "Nobody yet" : share < .05 ? "Legendary" : share < .2 ? "Rare" : share < .5 ? "Uncommon" : "Common";
+  const countsOnly = window.NOVA_CLASS === "ifc" && rows.length < RARITY_MIN_BOARD;
+  const text = countsOnly ? "Held by " + k + " of " + n + " classmates"
+    : k === 0 ? "Held by 0 of " + n + " classmates · Nobody yet"
+    : "Held by " + k + " of " + n + " classmates (" + pct + "%) · " + label;
+  return { k, n, pct, label: countsOnly ? "" : label, countsOnly, text };
+}
+/* where an item sits, for its rarity: the first track tier or Feat it is the reward of */
+function unlockWhere(kind, id, view){
+  const v = view || unlockTrackView();
+  const k = kind === "character" ? "char" : kind === "fx" ? "fx" : kind === "banner" ? "banner" : kind === "rim" ? "rim" : kind;
+  if(k === "rim" && id === "mastery") return { mastery: true };
+  for(let i = 0; i < v.tracks.length; i++){
+    const t = v.tracks[i];
+    for(let j = 0; j < t.tiers.length; j++){
+      const rw = t.tiers[j].rewards.find(x => x.k === k && x.id === id);
+      if(rw) return rw.gold ? { track: i, gold: true } : { track: i, tier: j };
+    }
+  }
+  const fi = v.feats.findIndex(x => x.k === k && x.id === id);
+  return fi >= 0 ? { feat: fi } : null;
+}
+/* (384.120, decision 5) THE ACADEMY'S TOP IS OUT OF REACH while Supernova asks for more badges than the class has units: its
+   rewards (the Inferno, the Supernova banner and theme) are left out of Astral's count until a unit is added that makes the
+   rank reachable. The rank itself keeps its 25. Leaving items out of a count only lowers it: it never takes Astral from anybody. */
+function supernovaOutOfReach(){
+  if(window.NOVA_CLASS === "ifc") return false;
+  try{
+    const need = Number(TIER_UNLOCKS.titan && TIER_UNLOCKS.titan.badges) || 0;
+    const units = badgeCaseUnits(BADGE_CASES[0]).length;
+    return units > 0 && need > units;
+  }catch(e){ return false; }
+}
 /* ---- THE BANNERS ARE SCENES, NOT WALLPAPERS (build 225) ----
    "The banners are kinda eh ... those look like random wallpapers you
    found online ... think cooler, like a pink tree." The first set was
@@ -123292,7 +123607,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.120";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
