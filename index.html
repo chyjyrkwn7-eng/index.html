@@ -627,6 +627,9 @@
   /* (384.26) A TEST INSTALL. iOS reads the status bar style once, when an icon is added to the Home Screen, so a different style can only be
      tried by adding a second icon from an address that carries it: ?sbs=default or ?sbs=black. Nothing happens without that in the address. */
   (function(){ try{ var m = /[?&]sbs=(default|black|black-translucent)(&|$)/.exec(location.search), e = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]'); if(m && e) e.setAttribute("content", m[1]); }catch(x){} })();
+  /* (384, TEMPORARY) PROFILE'S THREE ENTRY POINTS, THREE LOOKS TO PICK FROM: ?pfrows=a|b|c puts html[data-pfrows] on this page load only (see
+     "PROFILE ROWS, THREE OPTIONS" at the end of the stylesheet and pfrowsOpt()). Nothing changes without it in the address. */
+  (function(){ try{ var m = /[?&]pfrows=([abc])(&|$)/.exec(location.search); if(m) document.documentElement.setAttribute("data-pfrows", m[1]); }catch(x){} })();
 </script>
 <meta name="apple-mobile-web-app-title" content="Nova">
 <link rel="apple-touch-icon" sizes="180x180" href="https://chyjyrkwn7-eng.github.io/index.html/share/apple-touch-icon.png?v=381">
@@ -40149,6 +40152,161 @@ html.is-browser{ --fade-paper: transparent; }
       rgba(12,13,19,.26) !important;
     border:1px solid color-mix(in srgb, var(--cbc) 44%, rgba(255,255,255,.16)) !important;
     box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 10px 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 9px color-mix(in srgb, var(--cbc) 22%, transparent) !important;
+  }
+
+  /* ==== (384, TEMPORARY) PROFILE ROWS, THREE OPTIONS ==================================================================
+     Madison, of Customize, the Badge case and the Rank ladder: "I really like the concept here, but again I think it could be even
+     better." Only under html[data-pfrows] (?pfrows=a|b|c, the head script; pfx* in the script build the DOM); without it nothing
+     here matches and Profile is as it was. All three entry points are one family in every option: the same surface (the --surface
+     tokens), an 18px corner, 14px padding, a 12px recessed well holding the preview, the name at 17px / grey line at 14px, the chevron.
+     No SVG filter, nothing animated: every preview is still, built once.
+       a  A PREVIEW STRIP IN EACH CARD - the name and chevron on a line, the preview across the card, the grey line under it; the
+          badge case keeps its hardware (handle, lid seam, latches) and it frames the pins. The ladder is the foot of the Next rank card.
+       b  COMPACT ROWS - the preview at the left (96 x 60), the words beside it; the ladder is folded into the Next rank card's header
+          as a track of emblems.
+       c  THREE TILES in one row under the person card (Customize leaves the card, the ladder leaves the Next rank card). */
+  html[data-pfrows] body #stage .pfx{
+    all:unset; box-sizing:border-box; display:grid; position:relative; width:100%; min-width:0; cursor:pointer; color:var(--ink);
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:transform .12s ease;
+    padding:14px; border-radius:18px; background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
+  }
+  html[data-pfrows] body #stage .pfx:active{ transform:scale(.985); }
+  [data-reduce-motion="true"] html[data-pfrows] body #stage .pfx:active, html[data-pfrows][data-reduce-motion="true"] body #stage .pfx:active{ transform:none; }
+  @media (hover:hover) and (pointer:fine){ html[data-pfrows] body #stage .pfx:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; } }
+  html[data-pfrows] body #stage .pfx .pfx-label{ display:block; font-size:17px; font-weight:600; line-height:1.2; color:var(--ink); text-box:normal; }
+  html[data-pfrows] body #stage .pfx .pfx-sub{ display:block; margin:0; font-size:14px; font-weight:500; line-height:1.3; color:var(--soft); text-box:normal; }
+  html[data-pfrows] body #stage .pfx .pfx-end{ display:inline-flex; align-items:center; gap:8px; justify-self:end; }
+  html[data-pfrows] body #stage .pfx .pfx-chev{ display:inline-flex; flex:none; width:17px; height:17px; color:var(--soft); opacity:.85; }
+  html[data-pfrows] body #stage .pfx .pfx-chev svg{ width:17px; height:17px; display:block; }
+  html[data-pfrows] body #stage .pfx .pfx-newword{ font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--new-dot); }
+  html[data-pfrows] body #stage .pfx .pfx-prev{ display:block; min-width:0; }
+  html[data-pfrows] body #stage .pfx .pfx-pv{ display:block; position:relative; }
+  html[data-pfrows] body #stage .pfx .pfx-bar{ display:block; height:4px; border-radius:2px; background:rgba(255,255,255,.12); overflow:hidden; }
+  html[data-pfrows] body #stage .pfx .pfx-bar > i{ display:block; height:100%; width:var(--w, 0%); border-radius:inherit; background:linear-gradient(90deg, #D9B964, #F2DB93); }
+
+  /* the preview well: Customize's scene, the case's pins, the ladder's emblems - one recessed 12px box */
+  html[data-pfrows] body #stage .pfx .pfx-scene{ position:relative; display:block; width:100%; height:76px; border-radius:12px; overflow:hidden; background:#10131A;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+  html[data-pfrows] body #stage .pfx .pfx-banner{ position:absolute; inset:0; display:block; border-radius:inherit; overflow:hidden; }
+  html[data-pfrows] body #stage .pfx .pfx-scene::after{ content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+    background:linear-gradient(180deg, transparent 45%, rgba(0,0,0,.32)); }
+  html[data-pfrows] body #stage .pfx .pfx-scene > .new-dot{ top:8px; right:8px; z-index:3; }
+  html[data-pfrows] body #stage .pfx .pfx-char{ position:absolute; z-index:1; display:block; box-sizing:border-box; border-radius:50%; overflow:hidden;
+    border:2px solid rgba(255,255,255,.85); box-shadow:0 4px 12px rgba(0,0,0,.4);
+    background:radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--char-glow, #8892A6) 55%, #1A1D25), #11141B); }
+  html[data-pfrows] body #stage .pfx .pfx-char > .rank-avatar{ display:block; width:100%; height:100%; }
+  html[data-pfrows] body #stage .pfx .pfx-char > .rank-avatar > svg{ display:block; width:100%; height:100%; }
+  html[data-pfrows] body #stage .pfx .pfx-theme{ position:absolute; z-index:1; display:block; box-sizing:border-box; border-radius:999px; border:2px solid rgba(255,255,255,.85);
+    background:linear-gradient(100deg, var(--theme-c1), var(--theme-c2) 55%, var(--theme-c3)); box-shadow:0 2px 8px rgba(0,0,0,.35); }
+  html[data-pfrows] body #stage .pfx .pfx-pins, html[data-pfrows] body #stage .pfx .pfx-nodes{
+    position:relative; display:flex; align-items:center; justify-content:space-between; box-sizing:border-box; padding:10px 12px; border-radius:12px;
+    background:var(--surface-inset); box-shadow:inset 0 1px 3px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.08); }
+  html[data-pfrows] body #stage .pfx .pfx-pin{ position:relative; flex:none; display:block; width:44px; height:44px; border-radius:50%; }
+  html[data-pfrows] body #stage .pfx .pfx-pin > svg{ display:block; width:100%; height:100%; overflow:visible; }
+  html[data-pfrows] body #stage .pfx .pfx-pin.is-empty{ background:rgba(255,255,255,.04); box-shadow:inset 0 2px 4px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.1); }
+  /* a rank's emblem in its ring, the Rank screen's node (lit when reached, a ring on yours, dashed for the next, dim beyond) */
+  html[data-pfrows] body #stage .pfx .pfx-node{ position:relative; flex:none; display:grid; place-items:center; box-sizing:border-box; width:var(--pn, 38px); height:var(--pn, 38px); border-radius:50%;
+    background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rank-color) 26%, #10141A), #0A0C10 75%);
+    border:2px solid color-mix(in srgb, var(--rank-color) 62%, #fff);
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--rank-color) 16%, transparent), 0 0 12px color-mix(in srgb, var(--rank-color) 50%, transparent), inset 0 0 8px color-mix(in srgb, var(--rank-color) 30%, transparent); }
+  html[data-pfrows] body #stage .pfx .pfx-node > svg{ display:block; width:104%; height:104%; overflow:hidden; clip-path:circle(46.5% at 50% 50%); }
+  html[data-pfrows] body #stage .pfx .pfx-node.is-here{ border-color:#fff;
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--rank-color) 55%, transparent), 0 0 16px color-mix(in srgb, var(--rank-color) 65%, transparent), inset 0 0 8px color-mix(in srgb, var(--rank-color) 30%, transparent); }
+  html[data-pfrows] body #stage .pfx .pfx-node.is-next{ border-style:dashed; border-color:color-mix(in srgb, var(--rank-color) 80%, #fff);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--rank-color) 28%, transparent); }
+  html[data-pfrows] body #stage .pfx .pfx-node.is-next > svg{ opacity:.8; }
+  html[data-pfrows] body #stage .pfx .pfx-node.is-locked{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
+  html[data-pfrows] body #stage .pfx .pfx-node.is-locked > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
+
+  /* ---- A: a preview strip in each card ---- */
+  html[data-pfrows] body #stage .pfx.pfx-oa{ grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"label end" "prev prev" "bar bar" "sub sub"; align-items:center; }
+  html[data-pfrows] body #stage .pfx-oa > .pfx-text{ display:contents; }
+  html[data-pfrows] body #stage .pfx-oa .pfx-label{ grid-area:label; }
+  html[data-pfrows] body #stage .pfx-oa .pfx-sub{ grid-area:sub; margin-top:10px; }
+  html[data-pfrows] body #stage .pfx-oa .pfx-bar{ grid-area:bar; margin-top:12px; }
+  html[data-pfrows] body #stage .pfx-oa > .pfx-prev{ grid-area:prev; margin-top:12px; }
+  html[data-pfrows] body #stage .pfx-oa > .pfx-end{ grid-area:end; }
+  html[data-pfrows] body #stage .pfx-oa .pfx-char{ left:14px; top:8px; width:60px; height:60px; }
+  html[data-pfrows] body #stage .pfx-oa .pfx-theme{ right:14px; top:50%; width:58px; height:28px; margin-top:-14px; }
+  /* the case keeps its hardware, and it frames the pins: a handle on the lid, the seam under the name, two latches on the seam */
+  html[data-pfrows] body #stage .pfx-bc.pfx-oa{ margin-top:18px; }
+  html[data-pfrows] body #stage .pfx-bc.pfx-oa::before{ content:""; position:absolute; top:-8px; left:50%; width:56px; height:9px; transform:translateX(-50%);
+    border-radius:8px 8px 0 0; background:var(--surface-1); border:1px solid var(--surface-border); border-bottom:0; box-sizing:border-box; }
+  html[data-pfrows] body #stage .pfx-bc.pfx-oa .pfx-pv::before{ content:""; position:absolute; left:-14px; right:-14px; top:-6px; height:1px; background:rgba(255,255,255,.14); }
+  html[data-pfrows] body #stage .pfx-oa .pfx-latch{ position:absolute; top:-11px; width:22px; height:9px; border-radius:3px; z-index:1;
+    background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.08)); box-shadow:inset 0 0 0 1px rgba(255,255,255,.2); }
+  html[data-pfrows] body #stage .pfx-oa .pfx-latch.is-l{ left:18%; }
+  html[data-pfrows] body #stage .pfx-oa .pfx-latch.is-r{ right:18%; }
+  html[data-pfrows] body #stage .pfx-bc.pfx-oa .pfx-pv > .new-dot{ top:-6px; right:-6px; z-index:3; }
+  /* the ladder, the foot of the Next rank card: not a card inside a card, a section under a hairline */
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-oa{ margin-top:16px; padding:14px 0 0; border:0; border-top:1px solid rgba(255,255,255,.12); border-radius:0; background:none; box-shadow:none; }
+
+  /* ---- B: compact rows, the preview at the left ---- */
+  html[data-pfrows] body #stage .pfx.pfx-ob{ grid-template-columns:96px minmax(0, 1fr) auto; column-gap:14px; align-items:center; min-height:80px; padding:9px 14px 9px 9px; }
+  html[data-pfrows] body #stage .pfx-ob > .pfx-prev{ grid-column:1; width:96px; }
+  html[data-pfrows] body #stage .pfx-ob > .pfx-text{ grid-column:2; display:flex; flex-direction:column; gap:2px; min-width:0; }
+  html[data-pfrows] body #stage .pfx-ob > .pfx-end{ grid-column:3; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-bar{ margin-top:6px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-scene, html[data-pfrows] body #stage .pfx-ob .pfx-pins{ height:60px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-char{ left:9px; top:10px; width:38px; height:38px; border-width:1.5px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-theme{ right:8px; top:9px; width:18px; height:18px; border-width:1.5px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-scene > .new-dot{ top:5px; right:5px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-pins{ padding:0 2px; justify-content:center; gap:3px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-pin{ width:28px; height:28px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-pv > .new-dot{ top:4px; right:4px; z-index:3; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-newword{ display:none; }
+  /* the ladder folded into the Next rank card's header: a track of emblems, the line lit as far as yours */
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob{ grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"prev prev" "text end"; row-gap:10px; column-gap:8px;
+    margin-top:14px; min-height:44px; padding:0; border:0; border-radius:0; background:none; box-shadow:none; }
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob > .pfx-prev{ grid-area:prev; width:auto; }
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob > .pfx-text{ grid-area:text; }
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob > .pfx-end{ grid-area:end; }
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob .pfx-label{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob .pfx-nodes{ --pn:34px; padding:0; background:none; box-shadow:none; border-radius:0; }
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob .pfx-nodes::before{ content:""; position:absolute; left:17px; right:17px; top:50%; height:3px; margin-top:-1.5px; border-radius:2px;
+    background:linear-gradient(90deg, var(--ld-color, transparent) var(--ld-prog, 0%), rgba(255,255,255,.14) var(--ld-prog, 0%)); }
+  html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob .pfx-node{ z-index:1; }
+
+  /* ---- C: three tiles in one row ---- */
+  html[data-pfrows] body #stage .pfx-trio{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-top:12px; align-items:stretch; }
+  html[data-pfrows] body #stage .pfx.pfx-oc{ grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"prev prev" "label end" "sub sub" "bar bar"; align-content:start; align-items:center; padding:10px; }
+  html[data-pfrows] body #stage .pfx-oc > .pfx-text{ display:contents; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-label{ grid-area:label; font-size:16px; margin-top:10px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-sub{ grid-area:sub; font-size:13px; margin-top:2px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-bar{ grid-area:bar; margin-top:8px; align-self:end; }
+  html[data-pfrows] body #stage .pfx-oc > .pfx-prev{ grid-area:prev; }
+  html[data-pfrows] body #stage .pfx-oc > .pfx-end{ grid-area:end; margin-top:10px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-chev, html[data-pfrows] body #stage .pfx-oc .pfx-chev svg{ width:14px; height:14px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-newword{ display:none; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-scene, html[data-pfrows] body #stage .pfx-oc .pfx-pins, html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ height:84px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-char{ left:50%; top:13px; width:48px; height:48px; margin-left:-24px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-theme{ right:8px; top:8px; width:20px; height:20px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-scene > .new-dot{ top:auto; bottom:8px; right:8px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-pins{ display:grid; grid-template-columns:repeat(3, 28px); justify-content:space-around; align-content:center; gap:8px 4px; padding:0 4px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-pin{ width:28px; height:28px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-pv > .new-dot{ top:6px; right:6px; z-index:3; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ --pn:30px; justify-content:center; gap:5px; padding:0 4px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-node:not(.is-win){ display:none; }
+  @media (min-width:40rem){
+    html[data-pfrows] body #stage .pfx-trio{ gap:14px; }
+    html[data-pfrows] body #stage .pfx.pfx-oc{ padding:14px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-scene, html[data-pfrows] body #stage .pfx-oc .pfx-pins, html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ height:112px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-char{ top:18px; width:64px; height:64px; margin-left:-32px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-theme{ width:26px; height:26px; right:10px; top:10px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-pins{ grid-template-columns:repeat(6, 30px); gap:12px 4px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-pin{ width:30px; height:30px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ --pn:32px; justify-content:space-between; padding:0 10px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-node:not(.is-win){ display:grid; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-label{ font-size:17px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-sub{ font-size:14px; }
+  }
+  /* a wider place: the same shapes with more in them */
+  @media (min-width:40rem){
+    html[data-pfrows] body #stage .pfx-oa .pfx-scene{ height:96px; }
+    html[data-pfrows] body #stage .pfx-oa .pfx-char{ top:12px; width:72px; height:72px; left:20px; }
+    html[data-pfrows] body #stage .pfx-oa .pfx-pin{ width:48px; height:48px; }
+    html[data-pfrows] body #stage .pfx-oa .pfx-node{ --pn:46px; }
   }
 </style>
 <script>
@@ -155391,6 +155549,7 @@ function buildProfileTask(c, color){
    opens that challenge, big, on the unlock card; each unlock tile opens
    its own card, as Customize does when one is held. */
 function pfGoalFoot(){
+  { const o = pfrowsOpt(); if(o === "a") return pfxLadder("a"); if(o) return null; }   /* (384, temporary) ?pfrows */
   const foot = document.createElement("button");
   foot.type = "button";
   foot.className = "pf-goal-foot";
@@ -155442,6 +155601,7 @@ function buildProfileGoal(prog){
     const nm = document.createElement("span"); nm.className = "pf-goal-name"; nm.textContent = RANK_DISPLAY_NAME.titan;
     const sub = document.createElement("span"); sub.className = "pf-goal-sub"; sub.textContent = "Every rank reached";
     tx.append(k, nm, sub); h.append(emb, tx); box.appendChild(h);
+    if(pfrowsOpt() === "b") box.appendChild(pfxLadder("b"));   /* (384, temporary) ?pfrows: the ladder, folded into the header */
     /* THE TOP SAYS SO UNDER THE SAME HEADING (build 317): "Supernova
        would need to say no rank challenges available, max rank reached,
        come back for more or something" */
@@ -155453,7 +155613,7 @@ function buildProfileGoal(prog){
     const n2 = document.createElement("span"); n2.textContent = "You have reached the max rank. Check back for more.";
     none.append(n1, " ", n2);
     box.append(ck, none);
-    box.appendChild(pfGoalFoot());
+    { const f = pfGoalFoot(); if(f) box.appendChild(f); }
     box.setAttribute("role", "group");
     box.setAttribute("aria-label", "Max rank, " + RANK_DISPLAY_NAME.titan + ". No rank challenges left.");
     return box;
@@ -155482,6 +155642,7 @@ function buildProfileGoal(prog){
   tx.append(k, nm, sub);
   head.append(emb, tx);
   box.appendChild(head);
+  if(pfrowsOpt() === "b") box.appendChild(pfxLadder("b"));   /* (384, temporary) ?pfrows: the ladder, folded into the header */
   /* "nothing there mentions rank challenges but it should for clarity"
      (build 317): the rows are headed the way the tiles are ("Gold
      unlocks"), so the card reads the rank, its challenges, its rewards */
@@ -155513,9 +155674,131 @@ function buildProfileGoal(prog){
   rk.className = "pf-kick pf-rewards-kick"; rk.textContent = rc.name + " unlocks";
   box.appendChild(rk);
   box.appendChild(buildRankRewardTiles(rc.key, true));
-  box.appendChild(pfGoalFoot());
+  { const f = pfGoalFoot(); if(f) box.appendChild(f); }
   box.setAttribute("role", "group");
   box.setAttribute("aria-label", "To reach " + rc.name);
+  return box;
+}
+/* ---- (384, TEMPORARY) PROFILE ROWS, THREE OPTIONS (?pfrows=a|b|c) ----
+   Madison, of Customize, the Badge case and the Rank ladder on Profile: "I really like the concept here, but again I think it could be
+   even better." Three Settings-style rows (a grey tile, a title, a grey line, a chevron) in three kinds of container, on a page that
+   should show progress. Each entry point here SHOWS what is behind it: Customize your character on your banner with your theme's
+   colours, the Badge case its pins (the newest first, then the case's order, empty slots showing) with a slim bar, the Rank ladder
+   its emblems with yours lit, the next ringed and the rest dim. Only with html[data-pfrows] (the head script); pfrowsOpt() is "" without
+   it and every caller falls through to the build as it was. The art is the app's own (the banner and character drawings, the badge
+   pins, the rank emblems); every preview is built once and still. a = a preview strip in each card (the case keeps its hardware, framing
+   the pins), b = compact rows with the preview at the left (the ladder is folded into the Next rank card's header), c = three tiles
+   in one row under the person card. */
+function pfrowsOpt(){ try{ const v = document.documentElement.getAttribute("data-pfrows"); return /^[abc]$/.test(v || "") ? v : ""; }catch(e){ return ""; } }
+function pfxEl(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+function pfxChev(){ const c = pfxEl("span", "pfx-chev"); c.setAttribute("aria-hidden", "true"); c.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>'; return c; }
+/* the shell every entry point shares: a button, the preview, the words (label, grey line, an optional bar), the end (chevron) */
+function pfxButton(kind, opt, label, sub, aria, preview, extra){
+  const b = pfxEl("button", "pfx pfx-" + kind + " pfx-o" + opt); b.type = "button"; b.dataset.pfx = kind;
+  const text = pfxEl("span", "pfx-text");
+  text.append(pfxEl("span", "pfx-label", label), pfxEl("span", "pfx-sub", sub));
+  if(extra && extra.bar) text.appendChild(extra.bar);
+  const end = pfxEl("span", "pfx-end");
+  if(extra && extra.word) end.appendChild(extra.word);
+  end.appendChild(pfxChev());
+  const pv = pfxEl("span", "pfx-prev"); pv.setAttribute("aria-hidden", "true"); pv.appendChild(preview);
+  b.append(pv, text, end);
+  b.setAttribute("aria-label", aria);
+  return b;
+}
+/* CUSTOMIZE: the character on the banner you wear (or your theme's), and the theme's three colours */
+function pfxScene(){
+  const sc = pfxEl("span", "pfx-scene");
+  const bn = pfxEl("span", "pfx-banner");
+  try{
+    const worn = wornBanner();
+    const art = worn ? applyBannerFocus(buildBannerArt(worn), worn) : buildThemeBannerArt(theme.accent);
+    art.classList.add("is-still");
+    bn.appendChild(art);
+  }catch(e){}
+  const ch = pfxEl("span", "pfx-char");
+  try{ ch.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar)); ch.appendChild(avatarSpanFor({ avatarChar: store.avatarChar })); }catch(e){}
+  sc.append(bn, ch, pfxEl("span", "pfx-theme"));
+  return sc;
+}
+function pfxCustomize(opt){
+  const aria = "Customize: character, banner and theme";
+  let fresh = 0;
+  try{ fresh = customizeNewCount(); }catch(e){}
+  const sc = pfxScene();
+  if(fresh) sc.appendChild(buildNewDot());
+  const b = pfxButton("cz", opt, "Customize", "Character · Banner · Theme", aria + (fresh ? " - something new" : ""), sc);
+  if(fresh) b.classList.add("has-new");
+  b.addEventListener("click", showCustomize);
+  return b;
+}
+/* BADGE CASE: the newest pins first (a badge not yet looked at), then the case's own order, then its empty slots */
+function pfxPinRow(n){
+  const row = pfxEl("span", "pfx-pins");
+  let units = [];
+  try{ units = badgeCaseUnits(BADGE_CASES[0]); }catch(e){}
+  const earned = units.filter(u => { try{ return unitBadgeEarned(u); }catch(e){ return false; } });
+  const isNew = u => { try{ return unlockIsNew("badges", u); }catch(e){ return false; } };
+  const order = earned.filter(isNew).concat(earned.filter(u => !isNew(u)));
+  for(let i = 0; i < n; i++){
+    const u = order[i];
+    const cell = pfxEl("span", "pfx-pin" + (u ? " is-earned" : " is-empty"));
+    if(u){
+      try{
+        const bt = badgeThemeFor(u);
+        if(bt && bt.p) cell.style.setProperty("--badge-glow", bt.g || bt.p);
+        cell.appendChild(buildUnitBadgeSVG(u, true));
+      }catch(e){}
+    }
+    row.appendChild(cell);
+  }
+  return row;
+}
+function pfxCase(have, total, opt){
+  const wide = (window.innerWidth || 0) >= 640;
+  const n = opt === "b" ? 3 : opt === "c" ? (wide ? 12 : 6) : (wide ? 12 : 7);
+  const pins = pfxPinRow(n);
+  if(opt === "a"){ ["l", "r"].forEach(side => pins.appendChild(pfxEl("i", "pfx-latch is-" + side))); }
+  let fresh = 0;
+  try{ fresh = badgeNewCount(); }catch(e){}
+  const bar = pfxEl("span", "pfx-bar"); const fill = pfxEl("i"); fill.style.setProperty("--w", Math.round(Math.min(1, have / Math.max(1, total)) * 1000) / 10 + "%");
+  bar.appendChild(fill);
+  const word = fresh ? pfxEl("span", "pfx-newword", "New") : null;
+  const pv = pfxEl("span", "pfx-pv"); pv.appendChild(pins);
+  if(fresh) pv.appendChild(buildNewDot());
+  const b = pfxButton("bc", opt, "Badge case", have + " of " + total + " badges",
+    badgeCaseName(BADGE_CASES[0]) + ", " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.", pv, { bar, word });
+  if(fresh) b.classList.add("has-new");
+  b.addEventListener("click", () => showRanksScreen("badges"));
+  return b;
+}
+/* RANK LADDER: every rank's emblem, yours lit, the next ringed, the rest dim. `is-win` marks the three a narrow place shows. */
+function pfxLadderRow(){
+  const order = TIER_ORDER_FULL;
+  let cur = null; try{ cur = rankOf(store); }catch(e){}
+  const ci = cur ? order.indexOf(cur) : -1;
+  const start = Math.max(0, Math.min(order.length - 3, ci));
+  const row = pfxEl("span", "pfx-nodes");
+  row.style.setProperty("--ld-prog", (ci < 0 ? 0 : Math.round(ci / (order.length - 1) * 1000) / 10) + "%");
+  if(ci >= 0) row.style.setProperty("--ld-color", RANK_COLOR[order[ci]]);
+  order.forEach((key, i) => {
+    const nd = pfxEl("span", "pfx-node " + (i === ci ? "is-reached is-here" : i < ci ? "is-reached" : i === ci + 1 ? "is-next" : "is-locked") + (i >= start && i < start + 3 ? " is-win" : ""));
+    nd.style.setProperty("--rank-color", RANK_COLOR[key]);
+    nd.title = RANK_DISPLAY_NAME[key];
+    try{ nd.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key)); }catch(e){}
+    row.appendChild(nd);
+  });
+  return row;
+}
+function pfxLadder(opt){
+  const b = pfxButton("ld", opt, "Rank ladder", "Every rank and what it unlocks", "Rank ladder: every rank and what it unlocks", pfxLadderRow());
+  b.addEventListener("click", () => showRanksScreen("ranks"));
+  return b;
+}
+/* (c) the three, in one row */
+function pfxTrio(have, total){
+  const box = pfxEl("div", "pfx-trio"); box.setAttribute("role", "group");
+  box.append(pfxCustomize("c"), pfxCase(have, total, "c"), pfxLadder("c"));
   return box;
 }
 /* ---- THE CASE, SHUT (build 319) ----
@@ -155536,6 +155819,7 @@ function buildProfileGoal(prog){
    count pill on its front ("7 of 16 badges ›") is, and the rest of the case
    is the picture of it. */
 function buildProfileCase(have, total){
+  { const o = pfrowsOpt(); if(o === "c") return pfxTrio(have, total); if(o) return pfxCase(have, total, o); }   /* (384, temporary) ?pfrows */
   const box = document.createElement("div");
   box.className = "pf-case pf-case-closed";
   const mk = (cls, tag) => { const e = document.createElement(tag || "span"); e.className = cls; return e; };
@@ -155820,6 +156104,7 @@ function showProfile(defaultTab, opts){
   const customizeRow = document.createElement("div");
   customizeRow.className = "profile-customize-row";
   customizeRow.appendChild(nameEditSlot);
+  { const o = pfrowsOpt(); if(o === "c") customizeRow.style.display = "none"; else if(o) customizeRow.replaceChildren(pfxCustomize(o)); }   /* (384, temporary) ?pfrows */
 
   const nameInput = document.createElement("input");
   nameInput.type = "text"; nameInput.className = "searchbox searchbox-plain";
