@@ -175,3 +175,264 @@ def quiet(pg):
     pg.evaluate(QUIET); pg.wait_for_timeout(400); pg.evaluate(QUIET)
 
 # ---- the gate ----
+# REAL-SHAPED ACCOUNTS: the counters the live accounts carry (read 2026-11-14, counts only: the top, the middle and the bottom of
+# each, in both classes), with everything that identifies anybody made up. Each is a whole store as the app keeps one.
+def shaped(i, correct, hundos, hours, days, run, vrW, vrM, u7, hday, daily, friends, extra=None, ifc=False):
+    a = account(ifc=ifc)
+    a.update({"lifetime": {"points": correct * 9, "answered": int(correct * 1.2), "correct": correct, "perfectTests": hundos,
+                           "longestStreak": run, "currentStreak": run // 3, "fullTests": hundos // 2, "drillPlays": hundos, "examPlays": hundos // 3},
+              "studyLog": study_log(days, hours * 3600000 / max(days, 1)), "vrWins": vrW, "vrMatches": vrM, "unitHundoStreakBest": u7,
+              "hundoDayBest": hday, "dailyCorrectTotal": daily, "friendsBest": friends, "bestTestStreak": run // 2, "firstName": "Shape%d" % i})
+    if extra: a.update(extra)
+    return a
+
+def shaped_set(ifc=False):
+    if ifc:
+        rows = [(1072, 98, 6.6, 9, 149, 1, 2, 10, 3, 4, 2), (602, 13, 4.7, 6, 51, 0, 0, 2, 1, 1, 0), (386, 12, 2.7, 4, 33, 0, 0, 1, 1, 0, 1),
+                (40, 0, 0.3, 1, 23, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
+        extra = [{"bigTest500Passed": True}, {}, {"novaBeaten": True}, {}, {}]
+    else:
+        rows = [(41758, 169, 134.9, 80, 817, 3, 6, 6, 4, 40, 6), (17721, 147, 116.2, 70, 755, 1, 5, 6, 3, 25, 5), (13125, 130, 86.6, 60, 428, 1, 3, 6, 3, 12, 3),
+                (6793, 102, 63.9, 45, 300, 1, 2, 5, 3, 10, 2), (3607, 10, 18.7, 20, 112, 0, 0, 2, 1, 3, 1), (1000, 4, 4.0, 7, 40, 0, 1, 1, 1, 0, 0),
+                (40, 0, 0.2, 1, 3, 0, 0, 0, 0, 0, 0)]
+        extra = [{"legacyChars": ["clown", "astronaut"], "practiceExamPerfect": True, "rankFloor": 3, "mysteryColorsFound": {"amber": True, "rose": True, "teal": True}},
+                 {"bigTest450Passed": True, "weeklyWins": 1, "novaBeaten": True, "lateHundos": 3}, {"rankFloor": 2, "vrHosted": 3},
+                 {"retakenQuestions": 140}, {}, {}, {}]
+    return [shaped(i, *r, extra=extra[i], ifc=ifc) for i, r in enumerate(rows)]
+
+def real_set(path, ifc):
+    try: d = json.load(open(path))
+    except Exception: return []
+    out = []
+    for p in d.get("progress", []):
+        if p.get("__floor") or bool(p.get("__ifc")) != ifc: continue
+        q = {k: v for k, v in p.items() if not k.startswith("__")}
+        if not (q.get("lifetime") or {}).get("points"): continue
+        out.append(q)
+    return out
+
+HELD = """(fixtures)=>{ const out = [];
+  for(const f of fixtures){
+    try{ applyLoadedData(JSON.parse(JSON.stringify(f))); }catch(e){ out.push({ err: String(e) }); continue; }
+    try{ const u = unlockedIdsNow(); const up = ultimateProgress();
+      out.push({ chars: u.chars.slice().sort(), banners: u.banners.slice().sort(), themes: u.themes.slice().sort(), fx: (u.fx || []).slice().sort(),
+                 aNeed: up.need, aHave: up.have, ut: typeof unlockTrackCode === 'function' ? unlockTrackCode() : null }); }
+    catch(e){ out.push({ err: String(e) }); }
+  }
+  return out; }"""
+
+MODEL = """()=>{ try{
+  const v = unlockTrackView();
+  const u = unlockedIdsNow();
+  const held = { char: new Set(u.chars), banner: new Set(u.banners), fx: new Set(u.fx || []) };
+  let agree = 0, disagree = [];
+  v.tracks.forEach(t => t.tiers.forEach(x => x.rewards.forEach(r => {
+    if(held[r.k]){ if(held[r.k].has(r.id) === !!r.held) agree++; else disagree.push(r.k + ':' + r.id); }
+  })));
+  const p = parseUnlockTrackCode(unlockTrackCode(v));
+  const bitsOk = v.tracks.every((t, i) => t.tiers.every((x, j) => !!(p.tracks[i] & (1 << j)) === x.held));
+  const ids = v.tracks.map(t => t.tiers.map(x => x.rewards.map(r => r.k + ':' + r.id).join('+')));
+  const before = JSON.stringify(store); unlockTrackView(); unlockNextUp(); const after = JSON.stringify(store);
+  return { tiers: v.tracks.map(t => t.tiers.length), keys: v.tracks.map(t => t.key), agree, disagree, bitsOk, ids, stored: before !== after,
+           next: v.tracks.map(t => t.next ? t.next.n : 0), firstUnheld: v.tracks.map(t => { const x = t.tiers.find(y => !y.held); return x ? x.n : 0; }),
+           exists: v.tracks.every(t => t.tiers.every(x => x.rewards.every(r => r.k === 'rim' || r.k === 'goal' ? true :
+              r.k === 'char' ? AVATAR_CHARACTERS.some(c => c.id === r.id) : r.k === 'banner' ? !!bannerDef(r.id) : !!hundoFxDef(r.id)))) };
+  }catch(e){ return { err: String(e) }; } }"""
+
+def main():
+    from playwright.sync_api import sync_playwright
+    text = open(AGAINST or os.path.join(ROOT, "index.html"), encoding="utf-8").read()
+    base_path = arg("--baseline")
+    btext = open(base_path, encoding="utf-8").read() if base_path else \
+        subprocess.run(["git", "show", "origin/main:index.html"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+    ok = True
+    def chk(name, cond, detail=None):
+        nonlocal ok
+        print(("PASS " if cond else "FAIL ") + name + ("" if cond or detail is None else "  -> " + str(detail)[:600]), flush=True)
+        ok = ok and bool(cond)
+    fx = fixtures()
+    with sync_playwright() as p:
+        br = p.chromium.launch(executable_path=g["CHROME"], args=["--no-sandbox"])
+        for cls in ("academy", "ifc"):
+            seed, init = fx["rich_" + cls]
+            ctx, pg, errs = page(br, text, seed, init)
+            pg.wait_for_timeout(1200); quiet(pg)
+            got_cls = pg.evaluate("()=>window.NOVA_CLASS === 'ifc' ? 'ifc' : 'academy'")
+            chk("[%s] the page is that class" % cls, got_cls == cls, got_cls)
+            # ---- (A) the model
+            if wanted("A"):
+                m = pg.evaluate(MODEL)
+                want_tiers = [5, 6, 6, 6, 6]
+                chk("[%s] (A) five tracks, tier counts %s" % (cls, m.get("tiers")), m.get("tiers") == want_tiers and len(set(m.get("keys") or [])) == 5, m)
+                chk("[%s] (A) every existing tier is an item that exists" % cls, m.get("exists") is True, m)
+                chk("[%s] (A) each item held exactly when the app's own check holds it (%s agree)" % (cls, m.get("agree")),
+                    (m.get("agree") or 0) >= 20 and not m.get("disagree"), m.get("disagree"))
+                chk("[%s] (A) the published code says the same tiers" % cls, m.get("bitsOk") is True, m)
+                chk("[%s] (A) reading changes nothing stored" % cls, m.get("stored") is False, m)
+                chk("[%s] (A) a track's next step is its first tier not held, in order %s" % (cls, m.get("next")),
+                    m.get("next") is not None and m.get("next") == m.get("firstUnheld"), m)
+                # the rim rule: its own count AND every tier before it (academy: legacy Masked One + Orion's day)
+                r = pg.evaluate("""()=>{ try{ const s = JSON.stringify(store);
+                    const acc = () => unlockTrackView().tracks[0].tiers[2].held;
+                    store.bestTestStreak = 999; store.hundoDayBest = 0; store.legacyChars = []; store.retakenKeys = []; store.retakenQuestions = 0; store.stats = {};
+                    const a = acc();
+                    store.hundoDayBest = 3; const b = acc();
+                    store.legacyChars = ['masked']; store.retakenQuestions = 100;
+                    const lockedMasked = isLockedCharacter('masked'); const c = acc();
+                    store.bestTestStreak = 1; store.lifetime.longestStreak = 1; store.lifetime.currentStreak = 1; const d = acc();
+                    applyLoadedData(JSON.parse(s)); return [a, b, lockedMasked, c, d]; }catch(e){ return String(e); } }""")
+                chk("[%s] (A) the Accuracy rim: count alone no, + tier 2 no, + tier 1 yes, the count gone no (%s)" % (cls, r),
+                    isinstance(r, list) and r[0] is False and r[1] is False and (r[2] or r[3] is True) and r[4] is False, r)
+                full = pg.evaluate("()=>{ try{ return unlockTrackSpec().map(t => (1 << t.tiers.length) - 1); }catch(e){ return null; } }")
+                if full:
+                    code = "1-" + "".join("%02x" % m_ for m_ in full) + "00"
+                    gm = pg.evaluate("""(c)=>[rowHasMastery({ ut: c }), rowRimShown({ ut: c, rim: 'mastery' }), rowRimShown({ ut: c.slice(0, 4) + '00' + c.slice(6), rim: 'mastery' }),
+                        rowRimShown({ ut: '1-000000000000', rim: 'ans' }), rowRimShown({ ut: '1-000000010000', rim: 'ans' }), rowRimShown({ ut: 'x', rim: 'ans' })]""", code)
+                    chk("[%s] (A) a row's code: Mastery only with every tier, a rim only when held (%s)" % (cls, gm), gm == [True, "mastery", "", "", "ans", ""], gm)
+                else:
+                    chk("[%s] (A) the track spec exists" % cls, False)
+            # ---- (C) the Tracks screen and Next up
+            if wanted("C"):
+                load_board(pg); quiet(pg)
+                s = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
+                    showCustomize(); await W(900);
+                    const nu = document.querySelector('.trk-nextup'); const rows = nu ? [...nu.querySelectorAll('.trk-tier')] : [];
+                    const near = unlockNextUp(unlockTrackView(), 3);
+                    const fills = rows.map(r => { const b = r.querySelector('.trk-bar'), f = b && b.querySelector('i'); return b && f ? f.getBoundingClientRect().width / b.getBoundingClientRect().width : -1; });
+                    const want = near.map(e => e.need ? Math.min(1, e.have / e.need) : 0);
+                    const all = nu && nu.querySelector('.trk-all'); const allH = all ? all.getBoundingClientRect().height : 0;
+                    showUnlockTracks(); await W(900);
+                    const v = unlockTrackView();
+                    const cards = [...document.querySelectorAll('.trk-card[data-track]')];
+                    const perCard = cards.map(c => { const rs = [...c.querySelectorAll('.trk-tier')];
+                      return { n: rs.map(r => +r.dataset.tier), held: rs.filter(r => r.classList.contains('is-held')).length,
+                               next: rs.findIndex(r => r.classList.contains('is-next')) + 1, minH: Math.min(...rs.map(r => r.getBoundingClientRect().height)) }; });
+                    const rims = [...document.querySelectorAll('.trk-rim')].map(r => r.getBoundingClientRect());
+                    return { nRows: rows.length, near: near.length, fills, want, allH, cards: cards.length, perCard,
+                             model: v.tracks.map(t => ({ n: t.tiers.length, held: t.held, next: t.next ? t.next.n : 0 })),
+                             rimMin: rims.length ? Math.min(...rims.map(r => Math.min(r.width, r.height))) : 0, rimN: rims.length,
+                             rimWant: unlockRimList(v).length + 1 }; }catch(e){ return { err: String(e) }; } }""")
+                chk("[%s] (C) Customize: Next up holds at most three, the closest by the model (%s of %s)" % (cls, s.get("nRows"), s.get("near")),
+                    0 < (s.get("nRows") or 0) <= 3 and s.get("nRows") == s.get("near"), s)
+                chk("[%s] (C) Next up's bars fill to have / need %s ~ %s" % (cls, [round(x, 2) for x in s.get("fills") or []], [round(x, 2) for x in s.get("want") or []]),
+                    bool(s.get("fills")) and all(abs(a - b) < .03 for a, b in zip(s.get("fills"), s.get("want"))), s)
+                chk("[%s] (C) the way into Tracks is a 44px target (%.1f)" % (cls, s.get("allH") or 0), (s.get("allH") or 0) >= 44, s)
+                pc, md = s.get("perCard") or [], s.get("model") or []
+                chk("[%s] (C) five track cards" % cls, s.get("cards") == 5 and len(pc) == 5, s)
+                chk("[%s] (C) each card's tiers in order, held count and next step as the model says" % cls,
+                    len(pc) == 5 and all(c["n"] == list(range(1, m_["n"] + 1)) and c["held"] == m_["held"] and c["next"] == m_["next"] for c, m_ in zip(pc, md)), [pc, md])
+                chk("[%s] (C) every tier row >= 44px (%s)" % (cls, [round(c["minH"]) for c in pc]), pc and all(c["minH"] >= 44 for c in pc), pc)
+                chk("[%s] (C) the rims: every rim and 'none', each >= 44px (%s, %.0f)" % (cls, s.get("rimN"), s.get("rimMin") or 0),
+                    s.get("rimN") == s.get("rimWant") and (s.get("rimMin") or 0) >= 44, s)
+            # ---- (D) rarity
+            if wanted("D"):
+                load_board(pg)
+                spec = pg.evaluate("()=>{ try{ return unlockTrackSpec().map(t => t.tiers.length); }catch(e){ return null; } }") or [99, 99, 99, 99, 99]
+                mine = pg.evaluate("()=>{ try{ return unlockTrackCode(); }catch(e){ return null; } }")
+                rows = list(mate_rows("unifcm").values())[:8] if cls == "ifc" else list(mate_rows().values())
+                def count(track, tier):
+                    n = k = 0
+                    for r in rows + [{"ut": mine, "seenAt": now_ms}]:
+                        ut = r.get("ut")
+                        if not isinstance(ut, str) or not re.fullmatch(r"1-[0-9a-f]{12}", ut): continue
+                        if now_ms - r.get("seenAt", 0) > 30 * DAY: continue
+                        n += 1
+                        if int(ut[2 + track * 2: 4 + track * 2], 16) & (1 << tier): k += 1
+                    return k, n
+                k, n = count(0, 2)
+                card = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    showUnlockDetail(rimDetail('acc')); await W(500);
+                    const el = document.querySelector('.unlock-card .unlock-card-rarity'); return el ? el.textContent : ''; }catch(e){ return 'ERR ' + e; } }""")
+                nums = [int(x) for x in re.findall(r"\d+", card or "")]
+                if cls == "ifc":
+                    chk("[%s] (D) the Accuracy rim's rarity: %s of %s, counts only under 20 on the board (%r)" % (cls, k, n, card), nums == [k, n], nums)
+                else:
+                    chk("[%s] (D) the Accuracy rim's rarity: %s of %s (%s%%) counted here; the card %r" % (cls, k, n, round(k / n * 100) if n else 0, card),
+                        nums == [k, n, round(k / n * 100)], nums)
+                    share = k / n if n else 0
+                    band = pg.evaluate("()=>{ try{ return unlockRarity({ track: 0, tier: 2 }); }catch(e){ return null; } }") or {}
+                    want_band = "Legendary" if share < .05 else "Rare" if share < .2 else "Uncommon" if share < .5 else "Common"
+                    chk("[%s] (D) its band is the share's (%s)" % (cls, band.get("label")), band.get("label") == want_band and band.get("pct") == round(share * 100), band)
+                    km, nm = sum(1 for r in rows + [{"ut": mine, "seenAt": now_ms}] if isinstance(r.get("ut"), str) and re.fullmatch(r"1-[0-9a-f]{12}", r["ut"])
+                                 and now_ms - r.get("seenAt", 0) <= 30 * DAY and all(int(r["ut"][2 + i * 2:4 + i * 2], 16) == (1 << spec[i]) - 1 for i in range(5))), n
+                    mr = pg.evaluate("()=>{ try{ return unlockRarity({ mastery: true }); }catch(e){ return null; } }") or {}
+                    chk("[%s] (D) Mastery: %s of %s (the 45-day-old holder not counted)" % (cls, km, nm), mr.get("k") == km and mr.get("n") == nm, mr)
+            # ---- (E) the row and the Leaderboard
+            if wanted("E"):
+                row = pg.evaluate("""()=>{ try{ const r = window.NOVA_CLASS === 'ifc' ? buildClassBoardRow() : buildLeaderboardRow();
+                    return { ut: r.ut, rim: r.rim, code: unlockTrackCode(), worn: wornRim(), lazy: ROW_LAZY_FIELDS.indexOf('ut') >= 0 && ROW_LAZY_FIELDS.indexOf('rim') >= 0,
+                             json: JSON.stringify(r) }; }catch(e){ return { err: String(e) }; } }""")
+                chk("[%s] (E) the row carries ut (this device's code) and rim (the worn one: %r)" % (cls, row.get("rim")),
+                    row.get("ut") and row.get("ut") == row.get("code") and row.get("rim") == row.get("worn") == "ans", row)
+                chk("[%s] (E) both are lazy fields: they ride with a push, never cause one" % cls, row.get("lazy") is True, row)
+                chk("[%s] (E) no sync code in the row" % cls, CODE not in (row.get("json") or CODE) and CODE.split("-")[0] + "-" not in (row.get("json") or ""), row)
+                lb = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    showRankings(); await W(2500);
+                    const rows = [...document.querySelectorAll('.screen-rankings .rank-row')];
+                    return rows.map(r => { const b = r.querySelector('.lb-row-bnr'); const av = r.querySelector('.rank-avatar-wrap');
+                      return { name: (r.querySelector('.rank-name') || {}).textContent, bnr: !!b, still: !!(b && b.classList.contains('is-still-img') && /url\\(/.test(b.style.backgroundImage)),
+                               live: b ? b.querySelectorAll('svg').length : 0, rim: av ? (av.dataset.rim || '') : '', ring: av ? av.querySelectorAll(':scope > .lb-rim').length : 0,
+                               gold: !!(r.querySelector('.rank-name.is-mastery')) }; }); }catch(e){ return { err: String(e) }; } }""")
+                if not isinstance(lb, list): lb = []
+                by = {x["name"]: x for x in lb}
+                src_rows = list(mate_rows("unifcm").values())[:8] if cls == "ifc" else list(mate_rows().values())
+                exp_bnr = {r["firstName"] for r in src_rows if r.get("banner")}
+                chk("[%s] (E) every row with a banner shows it along the edge as one still picture, no live scene (%d rows)" % (cls, len(exp_bnr)),
+                    bool(lb) and all(by.get(nm_, {}).get("still") and by[nm_]["live"] == 0 for nm_ in exp_bnr) and
+                    all(not x["bnr"] for x in lb if x["name"] not in exp_bnr and x["name"] != "Maddox"), [x for x in lb if x["bnr"] or x["name"] in exp_bnr])
+                exp_rim = {"Alexis": "mastery", "Kimber": "acc", "Leeland": "ans", "Dmitri": "ans", "Tomas": "", "Rosa": "", "Wren": ""}
+                if cls == "academy": exp_rim["Zara"] = "mastery"
+                got_rim = {nm_: (by.get(nm_) or {}).get("rim") for nm_ in exp_rim}
+                chk("[%s] (E) a rim on the plate only where the row's code holds it %s" % (cls, got_rim),
+                    got_rim == exp_rim and all((by.get(nm_) or {}).get("ring") == (1 if exp_rim[nm_] else 0) for nm_ in exp_rim), [got_rim, exp_rim])
+                chk("[%s] (E) the gold name for Mastery only" % cls, bool(lb) and {x["name"] for x in lb if x["gold"]} == {nm_ for nm_, v in exp_rim.items() if v == "mastery"}, lb)
+            # ---- (F) wearing a rim
+            if wanted("F"):
+                w = pg.evaluate("""()=>{ try{ const a = []; wearRim('acc_gold'); a.push(store.rim); wearRim('ans'); a.push(store.rim, wornRim());
+                    store.rim = 'mastery'; a.push(wornRim()); store.rim = 'ans'; saveStore(); return a; }catch(e){ return String(e); } }""")
+                chk("[%s] (F) a rim not held cannot be worn, a held one can, a stored one not held is not worn (%s)" % (cls, w), w == ["", "ans", "ans", ""], w)
+                pg.reload(); pg.wait_for_timeout(3800); pg.evaluate("document.getElementById('splashscreen')?.remove()")
+                r2 = pg.evaluate("()=>{ try{ const a = [store.rim, wornRim()]; applyLoadedData({ lifetime: {} }); a.push(store.rim); return a; }catch(e){ return String(e); } }")
+                chk("[%s] (F) the rim survives a reload; an old copy without one defaults to none (%s)" % (cls, r2), r2 == ["ans", "ans", ""], r2)
+            chk("[%s] no page errors" % cls, not errs, errs[:3])
+            ctx.close()
+        # ---- (B) progress safety: everything held on the baseline is held here, for real-shaped (and, with --real, real) accounts
+        if wanted("B"):
+            real = arg("--real")
+            for cls in ("academy", "ifc"):
+                sets = shaped_set(ifc=(cls == "ifc"))
+                if real: sets = sets + real_set(real, cls == "ifc")
+                res = {}
+                for tag, t_ in (("base", btext), ("this", text)):
+                    a = account()
+                    if cls == "ifc":
+                        a2 = dict(a, classes=["academy", "ifc"]); fcs = account(ifc=True)
+                        seed = {"progress": {CODE: a2, CODE + "__ifc": fcs}}; init = init_js(a2, fcs)
+                    else:
+                        seed = {"progress": {CODE: a}}; init = init_js(a)
+                    ctx, pg, errs = page(br, t_, seed, init)
+                    pg.wait_for_timeout(800)
+                    res[tag] = pg.evaluate(HELD, sets)
+                    ctx.close()
+                lost, worse, n = [], [], 0
+                for i, (b_, t2) in enumerate(zip(res["base"], res["this"])):
+                    if "err" in b_ or "err" in t2: lost.append((i, b_.get("err"), t2.get("err"))); continue
+                    n += 1
+                    for k_ in ("chars", "banners", "themes", "fx"):
+                        miss = set(b_[k_]) - set(t2[k_])
+                        if miss: lost.append((i, k_, sorted(miss)))
+                    if t2["aNeed"] > b_["aNeed"] or (t2["aNeed"] - t2["aHave"]) > (b_["aNeed"] - b_["aHave"]): worse.append((i, b_["aHave"], b_["aNeed"], t2["aHave"], t2["aNeed"]))
+                held_any = sum(len(x.get("chars", [])) + len(x.get("banners", [])) for x in res["this"] if "err" not in x)
+                chk("[%s] (B) %d accounts (%s): nothing held on the baseline is lost here (%d characters and banners held)" % (cls, n, "real-shaped" + (" + real" if real else ""), held_any),
+                    n == len(sets) and not lost and held_any > 0, lost[:5])
+                chk("[%s] (B) Astral / the ultimate never asks for more than before" % cls, not worse, worse[:5])
+                codes = [x.get("ut") for x in res["this"]]
+                chk("[%s] (B) every account publishes a well-formed code" % cls, all(isinstance(c, str) and re.fullmatch(r"1-[0-9a-f]{12}", c) for c in codes), codes[:4])
+        br.close()
+    print("ALL PASS" if ok else "FAILED", flush=True)
+    return 0 if ok else 1
+
+if __name__ == "__main__":
+    sys.exit(main())
