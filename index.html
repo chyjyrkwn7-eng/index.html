@@ -27646,7 +27646,8 @@
   .person-card .person-sheet-acts .person-sheet-act{ flex:1 1 0; width:auto; min-width:0; margin-top:0; min-height:48px; padding-left:.6rem; padding-right:.6rem; }
   .screen-friendprofile .fp-body{ display:flex; flex-direction:column; gap:.9rem; padding-bottom:1rem; }
   .screen-friendprofile .profile-hero{ margin-bottom:0; }
-  .fp-hero .fp-grid{ margin-top:1.1rem; text-align:left; }
+  .fp-hero{ text-align:center; }
+  .fp-hero .fp-grid{ margin-top:1.1rem; }
   .fp-card{ margin:0; padding:1rem 1.05rem 1.05rem; border-radius:18px; background:var(--surface-1); border:1px solid var(--surface-border);
     box-shadow:var(--surface-shadow); -webkit-backdrop-filter:var(--surface-blur); backdrop-filter:var(--surface-blur); }
   .fp-kick{ display:block; margin:0; font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
@@ -27658,6 +27659,9 @@
   .fp-act-when{ margin:.3rem 0 0; font-size:.88rem; font-weight:600; color:var(--soft); }
   .fp-note{ margin:.75rem 0 0; font-size:.85rem; line-height:1.4; color:var(--soft); }
   .fp-empty .fp-note{ margin:0; }
+  /* the case is drawn at the width the Badges screen draws it (its nameplate is cut to that width), so its card has no frame of its own */
+  .fp-card.fp-case{ background:none; border:0; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; padding:0; }
+  .fp-case .fp-kick-row{ padding:0 .25rem; }
   .fp-case .badge-case{ margin-top:0; }
   .fp-case .badge-tile.fp-slot{ cursor:default; pointer-events:none; }
   .fp-bar{ display:block; height:.4rem; border-radius:99px; background:var(--surface-inset); overflow:hidden; }
@@ -115142,7 +115146,8 @@ function showFriendProfile(entry, back){
       const held = new Set(published ? view.bd.filter(u => typeof u === "string") : []);
       const total = classTopics().length;
       const have = published ? units.filter(u => held.has(u)).length : Math.max(0, Math.min(total, Math.floor(Number(view.badges) || 0)));
-      const cs = mk("section", "fp-card fp-case");
+      /* .badges-tab: the Badges screen's own rules for its case (width, nameplate, latches) are scoped to it */
+      const cs = mk("section", "fp-card fp-case badges-tab");
       const head = mk("div", "fp-kick-row");
       head.append(mk("span", "fp-kick", badgeCaseName(BADGE_CASES[0])), mk("span", "fp-count", have + " of " + total));
       cs.appendChild(head);
