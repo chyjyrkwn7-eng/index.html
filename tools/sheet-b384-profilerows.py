@@ -33,7 +33,7 @@ def fit_w(im, w):
 def label(dr, xy, text, sz=26, bold=True, fill=(235, 238, 245)):
     dr.text(xy, text, font=font(sz, bold), fill=fill)
 
-devs = sorted({t.rsplit("-", 2)[0] for t in shots}); out_entries = []
+devs = sorted({t.rsplit("-", 2)[0] for t in shots}, key=lambda d: (not d.startswith("phone"), d)); out_entries = []
 for dev in devs:
     for cls in ("academy", "ifc"):
         tags = {o: "%s-%s-%s" % (dev, cls, o) for o in OPTS if "%s-%s-%s" % (dev, cls, o) in shots}

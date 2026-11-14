@@ -3,7 +3,8 @@
 
 Per device (iPhone 17 Pro Max installed, iPad Pro 11" installed) and class (academy, Fire Code), for no switch and for a, b, c:
   P1 no parameter: no .pfx anywhere, the three entry points are the build's own (.profile-customize-btn, .pf-case-count, .pf-goal-foot).
-  P2 with a parameter: exactly Customize, Badge case and Rank ladder as .pfx buttons (data-pfx cz / bc / ld), the old three gone.
+  P2 with a parameter: exactly Customize, Badge case and Rank ladder as .pfx buttons (data-pfx cz / bc / ld), the old three gone
+     (option c leaves the person card's Customize row in the page, display:none).
   P3 each is at least 44px each way, inside the screen (no sideways overflow of the page), and its preview well sits inside it.
   P4 the previews are drawn: Customize holds a banner and a character, the case holds the pins (an earned pin has art, the rest are
      empty slots), the ladder holds all seven rank emblems with exactly one lit as yours and one dashed as the next.
@@ -40,7 +41,8 @@ PROBE = """()=>{
     o.dot = !!b.querySelector('.new-dot'); return o; });
   return { pfx: info, old: { cz: q('.profile-customize-btn').length, bc: q('.pf-case-count').length, ld: q('.pf-goal-foot').length },
     sw: document.documentElement.scrollWidth, vw: innerWidth, fresh: { cz: customizeNewCount(), bc: badgeNewCount() }, stageKids: document.getElementById('stage').children.length,
-    onProfile: !!document.querySelector('#stage .screen-profile') }; }"""
+    onProfile: !!document.querySelector('#stage .screen-profile'),
+    czHidden: q('.profile-customize-btn').every(b => !b.getClientRects().length) }; }"""
 
 def main():
     srv, url = L.g["serve"]()
@@ -53,7 +55,8 @@ def main():
                     tag = "%s|%s|%s" % (dev["name"], cls, opt)
                     ctx, pg, errs = G["open_pf"](br, dev, cls, opt)
                     cons = []
-                    pg.on("console", lambda m: cons.append(m.type + ": " + m.text[:160]) if m.type in ("error", "warning") else None)
+                    # the sandbox blocks the network (Firebase, fonts): "Failed to load resource: net::ERR_..." is the same with and without an option
+                    pg.on("console", lambda m: cons.append(m.type + ": " + m.text[:160]) if m.type in ("error", "warning") and "net::ERR_" not in m.text else None)
                     pg.goto(url + ("?pfrows=" + opt if opt != "none" else ""), wait_until="load", timeout=180000); pg.wait_for_timeout(3500)
                     want = {"badges": 12 if cls == "ifc" else 7, "freshBadges": 2 if cls == "academy" else 0, "freshChar": cls == "academy", "level": 36 if cls == "academy" else 27, "banner": ""}
                     pg.evaluate(G["SETUP"], want); pg.wait_for_timeout(700)
@@ -62,7 +65,7 @@ def main():
                         chk(tag + " P1 no .pfx, the build's own three", not s["pfx"] and s["old"]["cz"] == 1 and s["old"]["bc"] == 1 and s["old"]["ld"] == 1, s["old"])
                     else:
                         kinds = sorted(p["kind"] for p in s["pfx"])
-                        chk(tag + " P2 three .pfx (cz bc ld), the old three gone", kinds == ["bc", "cz", "ld"] and not any(s["old"].values()), {"kinds": kinds, "old": s["old"]})
+                        chk(tag + " P2 three .pfx (cz bc ld), the old three gone", kinds == ["bc", "cz", "ld"] and s["old"]["bc"] == 0 and s["old"]["ld"] == 0 and (s["old"]["cz"] == 0 or (opt == "c" and s["czHidden"])), {"kinds": kinds, "old": s["old"]})
                         P = {p["kind"]: p for p in s["pfx"]}
                         if kinds == ["bc", "cz", "ld"]:
                             chk(tag + " P3 each >= 44px, inside the screen, no sideways overflow",
