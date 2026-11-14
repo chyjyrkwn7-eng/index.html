@@ -40021,3 +40021,24 @@ grey), no SVG filter; (2) units, order, thresholds, a fixture's earned set and U
 silhouettes 0.85+ alike at 48px (the Fire Code rule); (4) at 44 CSS px every pin covers 20%+ of its square and its grey token's relief
 spreads 12+ levels; (5) the badge case at 440x956 and 834x1194 shows 24 pins; (6) objbadges --class academy ALL PASS; (7) no page
 errors. `--against` main FAILS (1) all 24 struck, (3) 0.896 (main's two cross outlines, US and Texas Constitution / Victims of Crime), (5) 0 pins.
+- Fixes found by the gates: the passport carries a tucked-in ticket (a plain booklet scored 0.99-1.00 against the envelope turned, in
+  check-b384-badgetwins (2b)-(2d)); the radio and the field watch a shade lighter (they sank into the dark case).
+- check-b384-chapterbadges (4) now holds byte for byte only academy units with no object (none); check-behaviour's check_b317_badge2
+  waits 180s for the finish (24 pins at 900 device px).
+
+**Gates run (one at a time, TMPDIR=/dev/shm, waiting while load > 4).** check-js 14 blocks ALL PASS; the page loaded in both classes with
+Profile > Badges: no page errors (only the blocked network); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off
+centre; check-b384-acadpins ALL PASS (incl. objbadges --class academy ALL PASS) and FAILS --against main; check-b384-chapterbadges ALL
+PASS; check-unlocks ALL PASS; check-b384-shine ALL PASS.
+- check-b384-objbadges (Fire Code) FAILS 5 checks, all round 9's own and identical on the objbadges head 3b2d255 (run with --index on
+  it): Chapter 35's torch area 1996 (< 2000) and its back 0.0173 of the frame / 5.5 px in your hand, Chapter 63 A's back 0.0186 / 5.9
+  px, Chapter 9's back without its class line (8.2 px), Chapter 59's matches 5.5% thin, Chapters 9 and 3 side wall direction.
+  check-b384-badgetwins FAILS (1b)-(1d) on Chapter 34 (the tyre stack) / Chapter 50 turned (0.89-0.96), also identical on 3b2d255.
+  Left for Madison's round-9 review: the art is his to approve first.
+- check-behaviour badge sections: 123 pass, 13 fail - every one an assertion about the STRUCK token the academy no longer draws
+  (hairline enamel cells and the silver seam/bevel 317c/319c/321d, sampled-not-stepped 318b, seated-in-the-hole shade 319c, the five
+  dirt stages and the back's dirt 321d/320g, in-your-hand centre within 1px 321d (pins 2-6 px: the side wall and shadow), the lid's
+  light and the landing glow in the badges' colours 320c). The Fire Code pins never ran through them (these sections boot the
+  academy). DECISION FOR MADISON: a pin shows no dirt (its front and back wear stage 0, as the Fire Code pins do), so the academy's
+  dirty-badge-and-clean-it mechanic no longer shows on the badges.
+- Chromium cannot show how the art reads on the phone's OLED at 3x, nor the glint on WebKit's compositor.
