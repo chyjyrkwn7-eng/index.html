@@ -32,6 +32,7 @@ DEVICES = [
 OWNER = "xph5b57jbp5a"
 SEEN = ("['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card','class26e.getstarted',"
         "'class26e.ifc.intro.seen','class26e.ifc.unithold.tip','class26e.ifc.daily.seen','class26e.ifc.savecode.asked','class26e.ifc.savecode.card','class26e.ifc.getstarted','class26e.ifc.freshstart'].forEach(k=>localStorage.setItem(k,'1'));"
+        "localStorage.setItem('class26e.intro.seen','9'); localStorage.setItem('class26e.ifc.intro.seen','9');"   # (a bare '1' is under INTRO_REV, so the What's New card landed over the chat sheet)
         "localStorage.setItem('class26e.frame.ok','go-live-1'); ['55124','124256','256578'].forEach(k=>localStorage.setItem('class26e.penal'+k+'.seen','1'));")
 INIT = "(()=>{ if(localStorage.getItem('class26e.drill.v1')) return; localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-3843'); " + SEEN + " %s })()"
 IFC = ("localStorage.setItem('class26e.ifc.drill.v1', localStorage.getItem('class26e.drill.v1')); localStorage.setItem('class26e.ifc.synccode','TEST-3843');"

@@ -39696,3 +39696,28 @@ WHAT CHANGED (index.html: one CSS block, segThumb, a few lines of attachSegSlide
 NOT CHANGED: the This week / Last week pill inside Stats' study-dots card (.stx-dots-switch, r18's call) and the install sheet's device picker (.a2hs-seg: three long labels, "Android or Samsung" on two lines, a radio group on a sheet - a compact capsule cannot hold them on a phone). Say if either should wear this control.
 
 GATES CHANGED ON PURPOSE (they held r18's "no lens, no swell, a 1-6% lift, a dimmer unpicked label, no backdrop-filter", which his recording of Delta itself overturns): check-b384-segdelta A7 (a blur on the track), B (the lens may outgrow the thumb and stand proud of the track; the swell up to 10%; overshoot up to 4% of the way + 1px; transform and opacity), C (the swell carries the thumb up to 10%; its drift is read in the control's own coordinates), D1 (a press swells 4-10%), D3 (overshoot 3px), H (both words white); check-b384-toptabs 1 (the glass track takes a few levels of the page's tint: within 6 across themes, chroma <= 8), 2 and 3a (the lens is up while the thumb moves). b384_seg_lib.open_page gives page loads 180s.
+384.116 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm, load ~2):
+- check-js 14 blocks ALL PASS; page console: only the sandbox's blocked CDN / file: fetch. sweep-layout --quick 20/20 clean.
+  check-centering --quick ALL PASS (0 off centre).
+- GATE FIXTURE FIX (tools/b384_seg_lib.py): its seeded account set class26e.intro.seen to '1', under INTRO_REV (7), so main's
+  What's New card ("NEW IN VERSION 10") landed over the chat sheet and covered its segments - every Chat check (hit target, press, taps,
+  drag, reduce motion) failed on phones and iPad, and the run died with "Execution context was destroyed". The seeded intro keys are
+  now '9' (as every other gate's). Not an app change. After it: check-b384-segdelta --only chat 0 failed (222 checks over every device,
+  both classes; its one remaining failure was B's mouse overshoot, which flickered 5.7-6.1px on two desktop runs and 0 on the re-run,
+  and failed once on the unmerged head too).
+- check-b384-segglass (full, after the fixture fix): 108 checks, 106 pass. The 2 that fail are check 2 "raised glass" on the iPad
+  Pro 11" (Leaderboard boards and Chat): the screen-pixel rim is 68 / 66 where the check wants >= 12 levels over the middle (58 / 56) -
+  10 levels; the CSS (blur, rim shadows, thumb 27-25 levels darker) is as designed. The SAME check 2 fails on the iPad chat of the
+  UNMERGED branch head (623d91c, run as `--against`), so it is not the merge; a pixel threshold against a busy sky, left as is.
+  `--against origin/main` (384.107) FAILS (chat: 12 of 24 checks).
+- check-b384-toptabs (changed on purpose, see above): 101 checks, 19 failed - check 1 (the track's tint across two themes: the track
+  reads (60,55,59) under one theme and (48,60,64) under another, 12 levels apart where the gate allows 6; 13 of 15 switchers) and check 2
+  (backstep 1.6px against 1.5px, 5 switchers; one chat run could not screenshot). IDENTICAL 19 failures on the unmerged head 623d91c:
+  pre-existing on this branch in this Chromium, not caused by the merge. NOT fixed: they are thresholds of a measurement of a
+  translucent track over a themed sky; a person should decide whether the glass is allowed to take 12 levels of the theme's tint
+  (it is what liquid glass does) or the gate's 6 stands.
+MEDIA (scratchpad segglass/, record-toptabs.py, real touches, an eighth of real speed then resampled, at 440x956@2x and iPad Pro 11"):
+phone-before.mp4 / phone-after.mp4 / ipad-before.mp4 / ipad-after.mp4 (before = main 384.107), the stills in *-stills/, and
+contact sheets sheet-phone-before.png / sheet-phone-after.png / sheet-ipad-*.png. Looked at: before the control spans the page and
+is a dark indented track with a plain thumb; after it is a compact, centred raised glass capsule that swells under a finger and
+carries a glass lens between segments. Chromium cannot show the real smoothness, iOS's backdrop blur, or the haptics.
