@@ -166,22 +166,24 @@ PROFILE_STATE = """()=>{
 DRILL = """async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
   setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);
   document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); theme.reduceMotion = true; applyTheme();
-  cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false;
-  const ix = QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes').slice(0, 20);
+  const U = topicsIn(QUESTIONS).find(t => QUESTIONS.filter(q => q.topic === t).length >= 20);
+  cfg.mode='drill'; cfg.units=[U]; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false;
+  const ix = QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic===U).slice(0, 20);
   window.__drillStart = (window.__writes||[]).length;
   beginRun(freshOrder(ix), null);
   for(let i = 0; i < 80 && !document.querySelector('.qpanel .choice'); i++) await wait(150);
+  let clicks = 0; const n0 = order.length, a0 = (store.lifetime||{}).answered || 0;
   for(let i = 0; i < 60; i++){
     if(document.querySelector('.rs-rewards')) break;
     const p = pos; const r = correctSlot(order[pos]);
-    const b = document.querySelector('.qpanel .choice[data-index="' + r + '"]'); if(b) b.click();
+    const b = document.querySelector('.qpanel .choice[data-index="' + r + '"]'); if(b){ b.click(); clicks++; }
     await wait(200);
     const n = document.getElementById('nextbtn'); if(n && !n.hidden) n.click();
     for(let k = 0; k < 40; k++){ await wait(60); if(pos !== p || document.querySelector('.rs-rewards')) break; }
   }
   for(let i = 0; i < 80 && !document.querySelector('.rs-rewards'); i++) await wait(150);
   await wait(1500);
-  return { results: !!document.querySelector('.rs-rewards'), answered: (lifetimeAnswered = (store.lifetime||{}).answered) }; }"""
+  return { results: !!document.querySelector('.rs-rewards'), questions: n0, clicks: clicks, answered: ((store.lifetime||{}).answered || 0) - a0 }; }"""
 
 def drill_writes(br, text):
     """the documents a 20-question drill writes, by path, and when each came (before or after the results)"""
@@ -310,7 +312,9 @@ def run():
             over = {k: (cn.get(k, 0), cb.get(k, 0)) for k in cn if cn.get(k, 0) > cb.get(k, 0)}
             chk("(6) it writes no more documents than the build it replaces: this build %s, the baseline %s" % (cn, cb), not over and sum(cn.values()) <= sum(cb.values()), over)
             rowpay = [p for p in npay if p.startswith("leaderboard/")]
-            chk("(6) the board row is written at most twice in the whole drill, never per answer (%d writes for 20 answers)" % len(rowpay), len(rowpay) <= 2, len(rowpay))
+            rowb = [p for p in bpay if p.startswith("leaderboard/")]
+            chk("(6) the board row is written as often as before and never per answer (%d writes for %s answers; the baseline %d)" % (len(rowpay), nres.get("answered"), len(rowb)),
+                len(rowpay) <= len(rowb) and len(rowpay) <= 3 and (nres.get("answered") or 0) >= 15, [len(rowpay), len(rowb), nres])
         if wanted(7):
             acad = academy_account()
             acad["classes"] = ["academy", "ifc"]
