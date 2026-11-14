@@ -10031,13 +10031,27 @@
   [data-layout="modern"] .nsw{
     will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
   }
+  /* ---- ON IS YOUR THEME'S COLOUR (384.107) ----
+     Madison: "The toggle switches are green by default, should they change color based on the theme you have set too? That
+     could be pretty cool.." On was always iOS's green (#34C759) "whatever the accent - an accent-coloured switch could read as
+     off". It is the theme's own colour now, from the same tokens as the rest of the theme: a rank's --rank-accent (its colour
+     lifted for a dark screen, as the daily question and the banners use it) and the default's --theme-c2 (its orange). Off is
+     the neutral track it was, the knob stays white, the cross-fade and the glass lens are unchanged (the lens's track and rim
+     take the same colour). The one theme whose colour is a grey, Silver, is LIT rather than flat - a silvered track brightest
+     at the top with a soft white glow off it - so it can never pass for an off track. check-b384-toghaptic (C) holds every
+     theme's on and off apart by their measured luminance against the card. */
+  :root{ --switch-on:var(--rank-accent, var(--theme-c2)); --switch-on-paint:var(--switch-on); --switch-on-glow:none; }
+  html[data-accent="ranger"]{
+    --switch-on-paint:linear-gradient(180deg, color-mix(in srgb, var(--switch-on) 22%, #FFFFFF) 0%, var(--switch-on) 55%, color-mix(in srgb, var(--switch-on) 80%, #000000) 100%);
+    --switch-on-glow:0 0 0 1px color-mix(in srgb, var(--switch-on) 45%, #FFFFFF), 0 0 10px 1px color-mix(in srgb, var(--switch-on) 60%, transparent);
+  }
   .opt > .box::before, .nsw::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
-    background:#34C759; opacity:0; transition:opacity .25s ease;
+    background:var(--switch-on-paint); box-shadow:var(--switch-on-glow); opacity:0; transition:opacity .25s ease;
   }
-  /* On is always green (the universal "on" for a switch like this),
-     whatever the accent - an accent-coloured switch could read as off. */
   .opt > input:checked ~ .box::before, [aria-checked="true"] > .nsw::before{ opacity:1; }
+  /* the native switch under the track never shows (opacity 0); should iOS ever tint it, it is the same colour */
+  .opt > input[type=checkbox]{ accent-color:var(--switch-on); }
   .opt > .box::after, .nsw::after{
     content:""; position:absolute; top:2px; left:2px; width:39px; height:26px;
     border-radius:999px; background:#fff;
@@ -10080,7 +10094,7 @@
   }
   .nsw-lens-glass{ position:absolute; inset:0; border-radius:inherit; will-change:opacity; }
   .nsw-lens-view{ position:absolute; left:0; top:0; border-radius:999px; background:rgba(128,128,136,.46); will-change:transform; }
-  .nsw-lens-fill{ position:absolute; inset:0; border-radius:inherit; background:#3BD162; }
+  .nsw-lens-fill{ position:absolute; inset:0; border-radius:inherit; background:var(--switch-on-paint); }   /* (384.107) the track's own on colour, seen through the glass */
   /* Her recording, frame by frame: the glass's edge is not a white line,
      it is the TRACK'S COLOUR bent round the rim - a green band when the
      switch is on, grey when off - with the track itself seen smaller
@@ -10092,7 +10106,7 @@
     box-shadow:inset 0 0 0 2px rgba(150,150,160,.5), inset 0 0 7px 2.5px rgba(150,150,160,.32);
   }
   .nsw-lens-edge.is-on{
-    box-shadow:inset 0 0 0 2px rgba(78,204,112,.9), inset 0 0 7px 2.5px rgba(70,200,105,.58);
+    box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--switch-on) 90%, transparent), inset 0 0 7px 2.5px color-mix(in srgb, var(--switch-on) 58%, transparent);
   }
   .nsw-lens-rim{
     position:absolute; inset:0; border-radius:inherit;
@@ -23203,7 +23217,7 @@
   .opt.opt-tile .box{ grid-area:box; }
   .opt.opt-tile .otext{ grid-area:text; font-size:.86rem; font-weight:700; line-height:1.25; }
   .opt.opt-tile .ohint{ font-size:.72rem; font-weight:500; line-height:1.35; margin-top:.2rem; }
-  .opt.opt-tile:has(input:checked){ border-color:rgba(52,199,89,.4); background:rgba(52,199,89,.06); }
+  .opt.opt-tile:has(input:checked){ border-color:color-mix(in srgb, var(--switch-on) 40%, transparent); background:color-mix(in srgb, var(--switch-on) 6%, transparent); }
   /* The timer card inside its disclosure. */
   .unitoptions-modal-sheet .timer-sect{ margin:.7rem 0 0; }
   .unitoptions-modal-sheet .timer-sect .opt{ padding:.35rem 0; }
@@ -35291,11 +35305,16 @@ html.is-browser{ --fade-paper: transparent; }
 
   /* an iPhone's switch rows (build 327z10, see HSW_OPT): the row's own input,
      a native switch, laid invisibly over its track. Never appearance:none,
-     display:none or visibility:hidden - a stripped switch plays nothing. */
+     display:none or visibility:hidden - a stripped switch plays nothing.
+     (384.107) EXACTLY over the track, the track's own size (hswOptMeasure: --hsw-w/-h, --hsw-r, --hsw-dy), not 80x46 round it:
+     iOS works out a drag of the switch's thumb from the switch's OWN box (where its middle is, how long its thumb is), so the
+     box the finger drags must be the one it sees. The row is a label, so a tap beside the track still clicks the switch.
+     touch-action:none: a touch that starts on a native switch is the switch's (WebKit handles its touchstart), and nothing
+     may pan it away from the switch half-way through a swipe. */
   .opt > input.hsw-opt{
-    position:absolute; z-index:2; margin:0; opacity:0;
-    width:80px; height:46px; top:50%; right:var(--hsw-r, 0px); transform:translateY(-50%);
-    touch-action:pan-y; -webkit-tap-highlight-color:transparent; cursor:pointer;
+    position:absolute; z-index:2; margin:0; opacity:0; box-sizing:border-box;
+    width:var(--hsw-w, 64px); height:var(--hsw-h, 30px); top:calc(50% + var(--hsw-dy, 0px)); right:var(--hsw-r, 0px); transform:translateY(-50%);
+    touch-action:none; -webkit-tap-highlight-color:transparent; cursor:pointer;
   }
   /* a mode card's: its head, the icon and the name (327z13) */
   .modecard > .nova-hsw{ width:62%; height:64px; }
@@ -91479,7 +91498,23 @@ const NovaSound = (function(){
     const m = { row };
     try{
       if(row.classList.contains("pick")){ m.x = box.offsetLeft + box.offsetWidth / 2; m.y = box.offsetTop + box.offsetHeight / 2; }
-      else m.r = Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8);
+      else {
+        /* (384.107) THE SWITCH IS THE TRACK, EXACTLY. Madison: "The toggle switches, when tapping them, the Haptic Touch is there,
+           when swiping them it's not though, fix that." The switch was 80x46 round the 64x30 track; iOS reads a drag of the
+           switch's thumb off the switch's own box, so it now has the track's size and place: its width and height (the track's
+           own, read even while the row is hidden), its right edge (the track sits on the row's content edge), and how far the
+           track's middle is from the row's (0 while hidden - the rows' padding is even). */
+        const cs = getComputedStyle(row), bs = getComputedStyle(box);
+        m.w = parseFloat(bs.width) || box.offsetWidth || 64; m.h = parseFloat(bs.height) || box.offsetHeight || 30;
+        m.r = Math.max(0, parseFloat(cs.paddingRight) || 0); m.dy = 0;
+        if(box.offsetWidth && row.offsetWidth){
+          /* off the drawn boxes, put back into the row's own units if something above is scaled (a sheet on its way in) */
+          const rr = row.getBoundingClientRect(), br = box.getBoundingClientRect(), k = br.width / m.w || 1;
+          const bl = parseFloat(cs.borderRightWidth) || 0, bt = parseFloat(cs.borderTopWidth) || 0;
+          m.r = Math.max(0, Math.round((rr.right - br.right) / k * 100 - bl * 100) / 100);
+          m.dy = Math.round(((br.top + br.height / 2) - rr.top) / k * 100 - (bt + row.clientHeight / 2) * 100) / 100;
+        }
+      }
     }catch(e){}
     return m;
   }
@@ -91490,12 +91525,18 @@ const NovaSound = (function(){
     inp.classList.add("hsw-opt");
     try{
       if(typeof m.x === "number"){ inp.style.setProperty("--hsw-x", m.x + "px"); inp.style.setProperty("--hsw-y", m.y + "px"); }
-      else if(typeof m.r === "number") inp.style.setProperty("--hsw-r", m.r + "px");
+      else if(typeof m.r === "number"){
+        inp.style.setProperty("--hsw-r", m.r + "px");
+        /* (384.107) the track's own size and middle (see hswOptMeasure) */
+        if(m.w) inp.style.setProperty("--hsw-w", m.w + "px");
+        if(m.h) inp.style.setProperty("--hsw-h", m.h + "px");
+        if(m.dy) inp.style.setProperty("--hsw-dy", m.dy + "px");
+      }
     }catch(e){}
     m.row.setAttribute("data-hsw", "");
   }
   function hswOptDetach(inp){
-    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); ["--hsw-r", "--hsw-x", "--hsw-y"].forEach(v => inp.style.removeProperty(v));
+    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); ["--hsw-r", "--hsw-x", "--hsw-y", "--hsw-w", "--hsw-h", "--hsw-dy"].forEach(v => inp.style.removeProperty(v));
     const row = inp.parentElement; if(row && !row.querySelector(":scope > .nova-hsw")) row.removeAttribute("data-hsw");
   }
   /* What a control gets: 0 nothing, 1 a native switch over it, 2 a label over it (build 384), 3 both - a mode card,
@@ -92663,6 +92704,93 @@ function nswLensFor(track, on){
   nswPlace(run, on ? g.onC : g.offC, 0);
   return run;
 }
+/* ---- A SWIPE IS THE NATIVE SWITCH'S OWN GESTURE (384.107) ----
+   Madison, on his installed iPhone: "The toggle switches, when tapping them, the Haptic Touch is there, when swiping them it's
+   not though, fix that." A tap's flip was the native switch's (hsw-opt): iOS clicks it, and a TRUSTED click on a switch plays
+   the tick. A swipe's flip was this script's: the lens followed the finger, the release committed with the row's click()
+   (untrusted - WebKit ticks only for event.isTrusted, EventDispatcher's clickHandlingState.trusted), put any flip the native
+   switch had made back with a .checked write (which also stops the switch following the finger: willUpdateCheckedness ->
+   stopSwitchPointerTracking), and swallowed the switch's own click after it (nswHold). Nothing a swipe did could tick.
+   WebKit's switch, read off its source (CheckboxInputType.cpp, the same on the Safari 18 and 26 branches): a touch that starts on it
+   is its own - it handles the touchstart, so the page does not pan; 200ms after the finger lands (switchHeldDelay) it starts
+   following the finger, and each time the finger takes the thumb past its turning point it flips the thumb and ticks
+   (SwitchTrigger::PointerTracking - no gesture needed); on the touchend (or touchcancel) it clicks itself, a trusted click,
+   which flips it and ticks (once - not again after a drag that already ticked), unless the drag went over and came back
+   (then nothing). Its default handling only runs for an event no listener preventDefault()ed.
+   So on a native switch a swipe is left to the switch: the lens still follows the finger, the release only settles the lens
+   on what the switch's own click is about to do (nswNativeFlips mirrors WebKit's rule, nswNativeMove its thumb), and the flip,
+   the change and the tick are the switch's. Nothing here writes .checked or calls click() for it. The one thing the page
+   still decides is a swipe that should NOT flip it - dragged the way it already is, or an upright drag (a scroll that started
+   on the track, which the switch never gives up): its click is cancelled at the document (nswGate), so it stays as it was; iOS
+   has already played its tick by then (willDispatchClick, before the listeners) - the price of not flipping it.
+   An engine without switches (an iPhone before iOS 17.4: no HTMLInputElement.switch) keeps the scripted drag below. */
+const NSW_NATIVE = (() => { try{ return typeof HTMLInputElement !== "undefined" && "switch" in HTMLInputElement.prototype; }catch(e){ return false; } })();
+const NSW_HOLD_MS = 200;        /* WebKit's switchHeldDelay: the switch follows the finger only from then on */
+let nswGate = null;
+function nswNativeAt(t){
+  return !!(NSW_NATIVE && t && t.tagName === "INPUT" && t.type === "checkbox" && t.classList.contains("hsw-opt")
+    && t.hasAttribute("switch") && !t.disabled && t.parentElement && t.parentElement.classList.contains("opt"));
+}
+function nswNativeStart(el, x){
+  const r = el.getBoundingClientRect();
+  return { el, left: r.left, w: r.width || 1, h: r.height || 1, start: x - r.left, on: el.checked, changed: false, tracking: false };
+}
+/* WebKit's updateIsSwitchVisuallyOnFromAbsoluteLocation, in the switch's own box (left to right) */
+function nswNativeMove(a, x){
+  const s = a.sw;
+  if(!s.tracking){
+    if(performance.now() - a.t0 < NSW_HOLD_MS) return;
+    s.tracking = true; s.on = s.el.checked;
+  }
+  const lx = x - s.left, left = !s.on;
+  let turn = s.w / 2;
+  if(!s.changed){
+    const free = s.w - s.h, off = s.w * .4;     /* the track less its thumb; switchPointerTrackingMagnitudeProportion */
+    if(left && s.start > free) turn = s.start + off;
+    else if(!left && s.start < free) turn = s.start - off;
+  }
+  if((lx < turn) !== left){ s.changed = true; s.on = !s.on; }
+}
+/* what the switch's own click at the touchend will do: flip it, unless a drag took its thumb over and back */
+const nswNativeFlips = a => !(a.sw.tracking && a.sw.changed && a.sw.on === a.on0);
+function nswNativeRelease(a, e){
+  const run = a.run && a.run.lens.isConnected ? a.run : null;
+  const x = typeof e.clientX === "number" ? e.clientX : a.x0;
+  const flips = nswNativeFlips(a), dxAll = x - a.x0;
+  let block = false;
+  if(a.drag){
+    const flick = a.lastT && performance.now() - a.lastT < 90 && Math.abs(a.vx || 0) > .25;
+    const past = run ? run.c > (run.g.offC + run.g.onC) / 2 : x - a.sw.left > a.sw.w / 2;
+    const want = flick ? a.vx > 0 : Math.abs(dxAll) >= 14 && (dxAll > 0) !== a.on0 ? dxAll > 0 : past;
+    if(want === a.on0) block = flips;                      /* dragged the way it already is, or back: it stays */
+  } else if(a.my >= 10 && a.my > a.mx) block = flips;      /* an upright drag is a scroll, not a tap */
+  const final = !block && flips ? !a.on0 : a.on0;
+  nswGate = { el: a.sw.el, block, until: performance.now() + 700 };
+  if(!run) return;
+  /* the lens sets off now for where the switch's own click will leave it; the change that click sends finds it on its way
+     (nswFlipped), and should nothing come, it goes back to what the row says */
+  nswPending = a;
+  a.predicted = final;
+  nswSettle(run, final);
+  clearTimeout(run.t);
+  run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; if(a.host.on() !== a.predicted) nswSettle(run, a.host.on()); } }, 350);
+}
+/* the switch's own click for a swipe that must not flip it; one click, the gesture's own (a new press clears it) */
+document.addEventListener("pointerdown", () => { nswGate = null; }, { capture: true, passive: true });
+document.addEventListener("click", e => {
+  const g = nswGate;
+  if(!g || e.target !== g.el) return;
+  nswGate = null;
+  if(performance.now() > g.until || !g.block) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+}, true);
+/* should iOS send the touchend before the pointerup, the release is decided on it - before the switch's own click */
+["touchend", "touchcancel"].forEach(ev => window.addEventListener(ev, e => {
+  const a = nswActive;
+  if(!a || !a.sw || e.target !== a.sw.el) return;
+  const t = e.changedTouches && e.changedTouches[0];
+  nswRelease({ pointerId: a.id, type: ev === "touchend" ? "pointerup" : "pointercancel", clientX: t ? t.clientX : a.x0, clientY: t ? t.clientY : a.y0, ends: true });
+}, { capture: true, passive: true }));
 document.addEventListener("pointerdown", e => {
   if(e.button > 0 || e.isPrimary === false) return;
   /* on an iPhone the row's own input lies over its box as a native switch
@@ -92673,14 +92801,22 @@ document.addEventListener("pointerdown", e => {
     : t0 && t0.classList && t0.classList.contains("nova-hsw") && t0.parentElement && t0.parentElement.matches('[role="switch"]') ? t0.parentElement.querySelector(".nsw") || t0
     : t0;
   const track = tg && tg.closest ? tg.closest(NSW_SEL) : null;
-  if(!track || nswCalm()) return;
+  if(!track) return;
+  /* (384.107) a real native switch under the finger: its own gesture flips it (see NSW_NATIVE) */
+  const nat = nswNativeAt(t0);
+  const calm = nswCalm();
+  if(calm && !nat) return;
   const host = nswHost(track);
   if(!host || host.off()) return;
-  if(nswActive) nswRelease({ pointerId: nswActive.id, type: "pointercancel" });
-  const run = nswLensFor(track, host.on());
-  if(!run) return;
-  nswMorph(run, true, 0);
-  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false, native: tg !== e.target, on0: host.on() };
+  if(nswActive) nswRelease({ pointerId: nswActive.id, type: "pointercancel", ends: true });
+  /* the switch's own box, read before the lens writes anything: the native model works in it */
+  const sw = nat ? nswNativeStart(t0, e.clientX) : null;
+  /* reduce motion: no lens, but a native switch's swipe is still followed (what its own click will do, and whether to let it) */
+  const run = calm ? null : nswLensFor(track, host.on());
+  if(!run && !nat) return;
+  if(run) nswMorph(run, true, 0);
+  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run ? run.c : 0, drag: false, native: tg !== e.target, on0: host.on(),
+    sw, t0: performance.now(), mx: 0, my: 0 };
   if(e.pointerType === "mouse"){ try{ track.setPointerCapture(e.pointerId); }catch(err){} }
 }, { passive: true });
 document.addEventListener("pointermove", e => {
@@ -92694,6 +92830,9 @@ document.addEventListener("pointermove", e => {
      it moved nothing you could see and committed nothing. The glass knob
      follows the finger from any start now, and the release decides. */
   const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
+  a.mx = Math.max(a.mx || 0, Math.abs(dx)); a.my = Math.max(a.my || 0, Math.abs(dy));
+  /* (384.107) the native switch under the finger is following it too (iOS, after its hold): keep its count */
+  if(a.sw) nswNativeMove(a, e.clientX);
   if(!a.drag){
     if(Math.abs(dx) < 5 || Math.abs(dx) < Math.abs(dy)) return;
     a.drag = true; a.track.classList.add("nsw-drag");
@@ -92702,6 +92841,7 @@ document.addEventListener("pointermove", e => {
   const now = performance.now();
   if(a.lastT){ const v = (e.clientX - a.lastX) / Math.max(1, now - a.lastT); a.vx = a.vx == null ? v : a.vx * .5 + v * .5; }
   a.lastT = now; a.lastX = e.clientX;
+  if(!a.run) return;
   const g = a.run.g;
   let c = a.c0 + dx;
   /* a little give past either end, never more than 4px */
@@ -92712,8 +92852,13 @@ document.addEventListener("pointermove", e => {
 function nswRelease(e){
   const a = nswActive;
   if(!a || e.pointerId !== a.id) return;
+  /* (384.107) a native switch's touch is over at its touchend, which always comes, and before the switch's own click: a
+     pointercancel on the way (Safari may stop the pointers of a touch a control has taken) neither decides it nor ends it */
+  if(a.sw && e.type === "pointercancel" && !e.ends) return;
   nswActive = null;
   a.track.classList.remove("nsw-drag");
+  /* (384.107) a native switch's swipe is the switch's own: see nswNativeRelease */
+  if(a.sw){ nswNativeRelease(a, e); return; }
   const run = a.run;
   if(!run.lens.isConnected) return;
   /* a scroll took the finger, or the press was abandoned: back as it was */
@@ -92727,7 +92872,10 @@ function nswRelease(e){
     /* a native switch under the finger may have flipped itself on the way
        (its own tick): it is put back to where the press began, and the one
        commit below is the row's own click - its handler, lock, save and
-       sound - as a tap would run them */
+       sound - as a tap would run them. (384.107) Only where the switch cannot
+       do it itself: a row switch on an engine with switches never comes here
+       (nswNativeRelease); this is for a mouse, a tablet, an iPhone before
+       17.4, and a role=switch button's own switch. */
     if(a.native && a.host.el && a.host.el.type === "checkbox" && a.host.el.checked !== a.on0){ try{ a.host.el.checked = a.on0; }catch(err){} }
     if(want !== a.host.on()){
       nswCommitting = true;
