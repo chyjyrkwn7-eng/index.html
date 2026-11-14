@@ -4941,20 +4941,17 @@ def check_b245_daily_announce(br):
             # included - "it like shoots over to the pop up animation ... super cool" - so it settles
             # in the top third, centred on the screen
             ch = r["chat"]
-            # CHANGED ON PURPOSE IN 384.93 (the pop-ups' row, docs/notes-archive.md "384.93"): it settles IN the chat
-            # button's row, its top on the button's top; where it shares the button's rows it runs from the margin to 8px
-            # short of the button's 44px hit box, and where it already clears the button (a tablet) it stays centred
+            # CHANGED ON PURPOSE IN 384.93 (the pop-ups' row, docs/notes-archive.md "384.93") AND AGAIN IN 384.100 ("384.100 (popups-wide)"):
+            # it settles IN the chat button's row, its top on the button's top, at the page's full width (the same gutter on both
+            # sides, centred) and OVER the chat button - it no longer stops short of it
             if ch:
-                hx = ch[0] - max(0, (44 - (ch[2] - ch[0])) / 2)
-                beside = a[3] > ch[1] and a[1] < ch[3]
-                placed = abs(a[1] - ch[1]) <= 1 and ((abs(a[0] - 16) <= 1 and abs(a[2] - (hx - 8)) <= 1) if beside and (a[0] + a[2]) / 2 < w / 2 - 3
-                                                     else abs((a[0] + a[2]) / 2 - w / 2) <= 3)
-                check("%s: the announcement settles as the top glass banner in the chat button's row, beside it" % label, placed, [a, ch, w])
+                placed = abs(a[1] - ch[1]) <= 1 and abs(a[0] - (w - a[2])) <= 1.5 and a[2] - a[0] >= min(w, 896) - 2 * 24 - 1.5 and a[0] <= 24.5
+                check("%s: the announcement settles as the top glass banner in the chat button's row, the page's full width" % label, placed, [a, ch, w])
             else:
                 check("%s: the announcement settles as the top glass banner, centred" % label,
                       a[1] < 0.3 * r["vh"] and abs((a[0] + a[2]) / 2 - w / 2) <= 3, [a, w])
-            clear = ch is None or a[2] <= ch[0] - 4 or a[3] <= ch[1] or a[1] >= ch[3]
-            check("%s: clear of the chat button" % label, clear, [a, ch])
+            covers = ch is None or (a[0] <= ch[0] and a[2] >= ch[2] and a[1] <= ch[1] + 1 and a[3] >= ch[3] - 1)
+            check("%s: over the chat button, covering it" % label, covers, [a, ch])
         else:
             check("%s: the bubble settles" % label, False)
         stays = [f for f in fr if f["op"] > 0.9 and shown is not None and f["t"] >= shown + 6000]
