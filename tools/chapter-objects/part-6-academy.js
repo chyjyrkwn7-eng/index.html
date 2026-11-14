@@ -315,15 +315,19 @@
   }
 
   /* ---- Consular Notification - the foreign national's passport: a navy booklet, its gold globe emblem raised on the cover, the gold
-     band where its name would be, the spine's fold. ---- */
+     band where its name would be, the spine's fold, and the travel ticket tucked in it standing out past its edge (a plain booklet
+     was the envelope's twin turned: check-b384-badgetwins). ---- */
   {
-    const A = -22, bk = rbox(50, 50, 58, 80, A, 5), R = (x, y) => rot([[x, y]], A, 50, 50)[0];
+    const A = -22, bk = rbox(48, 52, 56, 78, A, 5), R = (x, y) => rot([[x, y]], A, 50, 50)[0];
+    const tk = R(80, 30), ticket = rbox(tk[0], tk[1], 26, 20, A, 2.5), cover = bk;
     const c = R(50, 42), band = rbox(R(50, 72)[0], R(50, 72)[1], 32, 6, A, 2.5);
     const glob = rx => lineP(arcPts(0, 0, rx, 13, -90, 270, 40).map(([x, y]) => R(50 + x, 42 + y)));
     CHAPTER_OBJ["Consular Notification"] = {
-      d: sh(bk), col: "#1F2F5C", base: "field",
+      d: sh(S.union([bk, ticket], 1)), col: "#1F2F5C", base: "field",
       plates: [
-        ["field", sh(g(bk)), { dome: 1 }],                                                          /* the cover */
+        ["cream", sh(S.minus(g(ticket), bk)), { dome: .4, col: "#EFE3C4" }],                        /* the ticket */
+        ["cream", lineP([R(84, 21), R(84, 39)]), { ln: 1.2, cut: .6, paint: 0 }],                    /* its tear line */
+        ["field", sh(g(cover)), { dome: 1 }],                                                       /* the cover */
         ["field", lineP([R(26, 10), R(26, 90)]), { ln: 1.4, cut: .7, paint: 0 }],                   /* the spine's fold */
         ["brass", OBJ_circle(c[0], c[1], 13), { ln: 3, z: .9, bev: .5 }],                          /* the globe */
         ["brass", glob(6) + lineP([R(37, 42), R(63, 42)]) + lineP([R(39.5, 35), R(60.5, 35)]) + lineP([R(39.5, 49), R(60.5, 49)]), { ln: 2, z: .9, bev: .4 }],   /* its meridians and parallels */

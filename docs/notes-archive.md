@@ -39972,3 +39972,52 @@ Only the phone can say whether it now feels smooth: Chromium is not WebKit's com
 The 384.101 shine work merged with main 384.107 (toggle haptics) and shipped as 384.108. The only conflicts were the build number and these notes. Gates re-run on the merged tree are listed in the PR.
 
 384.108 (shine) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm, load 2-4; the build stays 384.108): check-js ALL PASS; the page loads with no page error (only the blocked network and the file:// version.json fetch in the console); check-b384-shine ALL PASS; `--against` origin/main (384.107) FAILS (1), (2), (3), (6) academy and Fire Code, (7) and (8), as intended; sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre; check-behaviour (check_badges, check_cutscene, check_b317_badgecase, check_b317_badge2, check_b318_badges, check_b319_badges, check_b320c_case, check_b321c_case, check_b321d_badges, check_b320g_inspect) ALL PASS; check-unlocks ALL PASS; check-b384-cutscenes ONLY=3 ALL PASS. Chromium is not WebKit's compositor: only the phone can say whether the glint now feels smooth.
+
+### 384.121 (badges)
+
+Madison: "Send me all the badges again, we are gonna review them. Speaking of badges, yes, we are going to update the police academy
+badges as well. Same concept, match what they are talking about." Branch `claude/b384-badges`: origin/claude/b384-objbadges (3b2d255,
+round 9) with origin/main 384.107 and origin/claude/b384-shine (384.108) merged in. Build placeholder `2026-11-13-384.121` in both places
+(renumber at merge). NOT on main; waiting for Madison to review the sheets and say go.
+
+**Merges.** objbadges + main: conflicts only the build line, version.json and the end of this file (main's notes kept above the badge
+rounds). + shine: the same three, plus the clean-up its notes asked for - the glisten block at the end of `buildObjPinSVG` (the `-sil`
+mask, the `-shn` gradient, the `badge-shine` group and its band) is deleted, so a pin carries no mask; the compositor glint
+(`buildBadgeGlint`, cut by `badgeSilhouetteURL`, which already drops the rim for a pin) is the one shine.
+
+**Review sheets (Fire Code).** All 58 chapter pins at 160 CSS px (2x) with the case size (44) earned / empty / grey and 26, labelled;
+the 13 of round 9 LIVE (main's old struck badge) / BEFORE round 9 / AFTER; Chapter 63 with both options. Nothing about Fire Code's art
+changed in this build: Madison is reviewing round 9 and picks Chapter 63.
+- **Chapter 63 option B** (the oxygen mask) was never in the repo; it is redrawn in `tools/chapter-objects/option-63b.js` (a clear green
+  cup shaped to nose and chin with a steel nose clip, the white elastic strap leaving both sides, the corrugated tube from its foot to a
+  green connector). The merge reads `part-*.js` only, so it is NOT merged; option A (flame over circle, in part-4.js) stays. To ship B:
+  replace the Chapter 63 block in part-4.js with the file's block, run snap.py, merge. First tries looked like a hexagon gem with a hat
+  brim (a straight strap bar) and then a horned mask (straps going up); the straps now go out and down, as a strap round the head.
+
+**The academy's 24 unit badges are raised pins of what each unit is about** (`tools/chapter-objects/part-6-academy.js`, keys in
+`tools/chapter-objects/academy-units.json`; the merge now accepts them as object keys, never as icons). The same recipe, rules and
+renderer as the Fire Code pins: the silhouette is the object, relief not stickers, natural colours, every piece joins, snapped
+(snaps.json), backs laid out on the pin with "CLASS 26E". Badge ids (the unit titles), `UNIT_BADGE_SHAPE`'s keys and every unlock rule
+are untouched (the gate compares them with main). What each unit is (from its title and its question topics):
+Fitness, Wellness, and Stress Management - a kettlebell (a dumbbell's bars left the back no room for its 39-letter name: 0.0155 of the
+frame); Professionalism and Ethics - brass scales on a wooden pedestal; Professional Policing - the patrol cap with its gold cap badge;
+TCOLE Rules - the Texas peace officer's star in its ring (the licence); Multiculturalism and Human Relations - a desk globe; Racial
+Profiling - the traffic stop, a black-and-white patrol car; US and Texas Constitution and Rights - the parchment scroll and quill; Penal
+Code - the gavel striking its sound block (three layouts: the diagonal gavel left the back no room for the class line); Code of Criminal
+Procedure and Bill of Rights - the bound law book with its page block and ribbon; Consular Notification - the foreign national's
+passport (a flag was tried and dropped: any simple flag is some country's); Arrest, Search, and Seizure - rigid handcuffs (chain cuffs
+left the back no room); Health and Safety Code - a red and white capsule (a tablet beside it read as a match head); Victims of Crime - a
+heart with a plaster; Sexual Assault and Family Violence - the home, its roof in awareness purple, a heart on its front; Missing and
+Exploited Children - a teddy bear; Verbal Communication - two speech bubbles; Civil Process and Liability - the manila envelope with its
+wax seal (papers served); Identity Crimes - a leaning thumbprint; Radio Communications, Alerts, and TCIC-TLETS - the handheld radio;
+Phonetic Alphabet and Military Time - the olive field watch (no numerals); Crisis Intervention Training - the life ring; Traumatic Brain
+Injury - the brain; De-Escalation - a dove with an olive sprig; Interacting with Deaf or Hard-of-Hearing - the ear with a hearing aid.
+No letters, numbers, people or trademarks on any front.
+
+**Gates.** `tools/check-b384-objbadges.py` now runs per class (`--class academy`): it reads only that class's units (CHAPTER_OBJ holds
+both classes), its perf reference is a struck token by a name with no object (Penal Code is a pin now), and (8) holds Fire Code's
+unauthored chapters only (the academy is changed on purpose). NEW `tools/check-b384-acadpins.py`: (1) all 24 are pins (earned, slot,
+grey), no SVG filter; (2) units, order, thresholds, a fixture's earned set and UNIT_BADGE_SHAPE's keys equal main's; (3) no two
+silhouettes 0.85+ alike at 48px (the Fire Code rule); (4) at 44 CSS px every pin covers 20%+ of its square and its grey token's relief
+spreads 12+ levels; (5) the badge case at 440x956 and 834x1194 shows 24 pins; (6) objbadges --class academy ALL PASS; (7) no page
+errors. `--against` main FAILS (1) all 24 struck, (3) 0.896 (main's two cross outlines, US and Texas Constitution / Victims of Crime), (5) 0 pins.

@@ -20210,7 +20210,7 @@ def check_b317_badge2(br):
     rows = (len(geo) + 3) // 4
     pg.set_viewport_size({"width": 1240, "height": max(1240, rows * BIG)})
     pg.wait_for_timeout(1500)
-    pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
+    pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=180000)  # 318: the finish, not the draft (384.121: 180s - the academy is 24 pins at 900 device px now)
     shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": rows * BIG}))).convert("RGB")   # four across, a row per four units
     ctx.close()
     D = 3

@@ -179,7 +179,10 @@ with sync_playwright() as pw:
     here_ifc = pg.evaluate(SNAP, icon_units)
     errs_all += errs; ctx.close()
     ctx, pg, errs = load(br, cls="academy")
-    here_ac = pg.evaluate(SNAP, [])
+    # (384.121) the academy's units are pins of their object on purpose (check-b384-acadpins holds their ids and unlock rules): only an
+    # academy unit with no object is held byte for byte here
+    ac_objs = pg.evaluate("() => unitsInTeachingOrder().filter(u => typeof chapterObjShape === 'function' && chapterObjShape(u))")
+    here_ac = pg.evaluate(SNAP, ac_objs)
     errs_all += errs; ctx.close()
     # (4) the reference build
     base = base_body()
@@ -187,11 +190,11 @@ with sync_playwright() as pw:
     there_ifc = pg.evaluate(SNAP, icon_units)
     errs_all += errs; ctx.close()
     ctx, pg, errs = load(br, base, "academy")
-    there_ac = pg.evaluate(SNAP, [])
+    there_ac = pg.evaluate(SNAP, ac_objs)
     errs_all += errs; ctx.close()
     br.close()
 dif = [u for u in there_ac if here_ac.get(u) != there_ac[u]]
-chk("(4) the academy's %d units draw exactly what origin/main draws (vector earned, empty, grey; struck earned, grey; ids normalised): %s" % (len(there_ac), dif[:3] or "all identical"), len(there_ac) >= 16 and not dif, dif[:5])
+chk("(4) the academy's %d units with no object draw exactly what origin/main draws (vector earned, empty, grey; struck earned, grey; ids normalised; %d are pins since 384.121): %s" % (len(there_ac), len(ac_objs), dif[:3] or "all identical"), len(there_ac) + len(ac_objs) >= 16 and not dif, dif[:5])
 dif = [u for u in there_ifc if here_ifc.get(u) != there_ifc[u]]
 chk("(4) Fire Code's %d chapters with no icon draw exactly what origin/main draws (none left once all 58 are drawn): %s" % (len(there_ifc), dif[:3] or "all identical"), len(there_ifc) == len(fb) and not dif, dif[:5])
 mg = subprocess.run([sys.executable, os.path.join(HERE, "merge-chapter-icons.py"), "--check"], capture_output=True, text=True)
