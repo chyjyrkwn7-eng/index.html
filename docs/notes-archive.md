@@ -39722,10 +39722,26 @@ NOT CHANGED, ON PURPOSE (each offered to Madison):
 - Profile's and Stats' own cards keep the app's card colour; only Settings and its pages are Delta's grey. Profile's rows (Customize, Badge case, Rank ladder) and Test history take the new tile and glyphs; their words stay 18/600 (their own decision).
 - Rows, labels and the row list: untouched (claude/b384-nodiag and claude/b384-toghaptic edit rows; this is paint and geometry only).
 
-GATES CHANGED ON PURPOSE: GATE_CHANGES_HERE
+GATES CHANGED ON PURPOSE: none (check-b382-settings, check-b382-credits and check-b384-toghaptic pass unchanged on this tree).
 
-GATE RESULTS: GATE_RESULTS_HERE
+GATE RESULTS: see "384.110 FINAL GATES" at the end of this file.
 
 WHAT ONLY HIS PHONE CAN CONFIRM: SF's own tracking at 16 and 33pt in WebKit (letter-spacing is normal everywhere now, so the system's tracking applies if WebKit applies it); the backdrop blur's look under the strip; the sticky nav under a real finger (the rubber band is off since 384.80); the lit edge and keyline at 3x (they are 1-2 device pixels); the colours on an OLED panel.
 
 IMAGES (session scratchpad, settingslook/): a_side_by_side_{top,scrolled}_{85,100}.png (Delta | before | after, his scale); b_tiles_closeup.png (every tile before / after at 4x of his scale, beside Delta's Controllers and Delta Sync); c_*.png (iPhone 17 Pro Max and iPad Pro 11": Settings, scrolled, Sound & Haptics, Advanced, Contributors).
+384.110 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm, load ~2):
+- check-js 14 blocks ALL PASS; page console: only the sandbox's blocked CDN and the file: fetch.
+- sweep-layout --quick 20/20 clean.
+- check-b384-settingslook ALL PASS; `--against` a copy of main 384.107 with APP_BUILD set to 384.110 FAILS (glyph stroke, hairlines,
+  the bar, the page title / footnote sizes, the status pill).
+- check-b382-settings ALL PASS; check-b382-credits ALL PASS; check-b384-toghaptic ALL PASS.
+- check-centering --quick FOUND 6 off centre: #settings-bar's title ("Profile" / "Stats" / "Settings" / a page's) 3.98-4.19px low in its
+  440x71 box, both classes. By design: the bar is a frosted band from the status strip to 9pt under the round buttons and its
+  title sits on the buttons' middle line (--sb-mid), not on the band's own middle. FIX: the bar carries `data-czskip` (the gate's
+  own skip attribute, as for a layout surface). Re-run `--only "profile|settings|stats"`: ALL PASS, 0 off centre (308 elements);
+  check-b384-settingslook re-run ALL PASS (the bar still shows and its title is still on the buttons' line - the gate's (6) reads it).
+  The full `--quick` was not repeated after this one-attribute change.
+SIDE-BY-SIDE (scratchpad settingslook/, before = main 384.107 | after = this build, 2x; Pro Max academy + Fire Code, iPad Pro 11"):
+sheet-<dev>-<class>.png = top | scrolled | Sound & Haptics | Advanced, each a before|after pair, and side-<dev>-<class>-<n>.png
+singly. Looked at. Delta's own reference shots were not available to this run, so the comparison is before / after only.
+Chromium cannot show iOS's backdrop blur under the bar, the system font (SF), or safe areas.

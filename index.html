@@ -57089,7 +57089,7 @@ function syncSettingsBar(){
     if(!host){ if(bar && bar.classList.contains("is-on")) bar.classList.remove("is-on"); return; }
     if(!bar || !bar.isConnected){
       bar = settingsBarEl = document.createElement("div");
-      bar.id = "settings-bar"; bar.setAttribute("aria-hidden", "true");
+      bar.id = "settings-bar"; bar.setAttribute("aria-hidden", "true"); bar.setAttribute("data-czskip", "");   /* a layout surface: its title sits on the round buttons' line (--sb-mid), not on the bar's own middle; check-centering skips it */
       bar.innerHTML = '<span class="settings-bar-title"></span>';
       document.body.appendChild(bar);
     }
