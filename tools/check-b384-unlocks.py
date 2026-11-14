@@ -16,6 +16,15 @@ Asserted by SHAPE and by numbers read off the page (never label strings), in bot
      the baseline, none per answer), no sync code in any row; the Leaderboard row shows the worn banner along the edge as one
      still picture (no live banner scene in a row), and a rim on the character's plate only when the row's code holds it;
  (F) wearing a rim: only a held rim can be worn; store.rim survives a reload (applyLoadedData default "" for an old copy).
+ FOLLOW-UP (Madison's answers to the 384.120 report):
+ (G) Fire Code's top hundo effect (id ufo) is no longer called Hazmat anywhere a person reads it - its name, its Tracks row, its
+     Customize tile, its unlock card, What's New, the sound descriptions, and every non-comment string in the source - while the
+     Marksman character is still the Hazmat (its row says so, and that is the only Hazmat on the Tracks screen);
+ (H) the Virtual Room's top tier is a banner (vrtop10): held at 10 first places and not at 9, the tier with it, its row opens its
+     banner card; the ultimate (Astral / Zenith) counts it - that banner alone moves the ultimate's count by one - and the
+     ultimate's card shows the numbers; the banner is layered, moves only by transform / opacity and has no svg filter; it has
+     its tile in Customize. (B) also asserts the ultimate's count grew by exactly that one banner and nobody who held the
+     ultimate on the baseline loses it.
 
   python3 tools/check-b384-unlocks.py [--against OLD/index.html] [--baseline OLD/index.html] [--only A,B] [--real DUMP.json]
 --against must FAIL (none of this exists there). --real points at a local, uncommitted read of the live accounts (never in the
@@ -117,7 +126,7 @@ MATES = [
     ("Alexis", "grizzly", 52, 9, "1-1f3f3f3f3f03", "mastery", "exam100", 0),
     ("Kimber", "alien", 47, 8, "1-0f0f1f0f0300", "acc", "hundos100", 1),
     ("Leeland", "ghost", 41, 6, "1-070f0f030100", "ans", "study50", 2),
-    ("Rosa", "grizzly", 38, 5, "1-030707030100", "", "tests100", 3),
+    ("Rosa", "grizzly", 38, 5, "1-030707030100", "", "vrtop10", 3),   # (follow-up) the Virtual Room's top banner, on a row
     ("Dmitri", "alien", 35, 4, "1-01030f010100", "ans", "", 1),
     ("Priya", "ghost", 30, 3, "1-0103030101", "", "", 4),          # a malformed code: counted as not publishing
     ("Tomas", "grizzly", 27, 2, "1-000101010000", "acc", "", 6),   # a rim the code does not hold: not drawn
@@ -216,7 +225,9 @@ HELD = """(fixtures)=>{ const out = [];
     try{ applyLoadedData(JSON.parse(JSON.stringify(f))); }catch(e){ out.push({ err: String(e) }); continue; }
     try{ const u = unlockedIdsNow(); const up = ultimateProgress();
       out.push({ chars: u.chars.slice().sort(), banners: u.banners.slice().sort(), themes: u.themes.slice().sort(), fx: (u.fx || []).slice().sort(),
-                 aNeed: up.need, aHave: up.have, ut: typeof unlockTrackCode === 'function' ? unlockTrackCode() : null }); }
+                 aNeed: up.need, aHave: up.have, ut: typeof unlockTrackCode === 'function' ? unlockTrackCode() : null,
+                 vrWins: Number(store.vrWins) || 0, ult: typeof ULTIMATE_TOP === 'string' ? !isLockedCharacter(ULTIMATE_TOP) : null,
+                 nBanners: BANNERS.filter(b => b.id !== (typeof ULTIMATE_TOP === 'string' ? ULTIMATE_TOP : '')).length }); }
     catch(e){ out.push({ err: String(e) }); }
   }
   return out; }"""
@@ -396,6 +407,95 @@ def main():
                 pg.reload(); pg.wait_for_timeout(3800); pg.evaluate("document.getElementById('splashscreen')?.remove()")
                 r2 = pg.evaluate("()=>{ try{ const a = [store.rim, wornRim()]; applyLoadedData({ lifetime: {} }); a.push(store.rim); return a; }catch(e){ return String(e); } }")
                 chk("[%s] (F) the rim survives a reload; an old copy without one defaults to none (%s)" % (cls, r2), r2 == ["ans", "ans", ""], r2)
+            # ---- (G) follow-up: Fire Code's top hundo effect is not "Hazmat" anywhere a person reads it; the character still is
+            if wanted("G") and cls == "ifc":
+                gq = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    const out = { fx: (hundoFxDef('ufo') || {}).name || '', ch: AVATAR_DISPLAY_NAME.marksman || '',
+                                  notes: JSON.stringify(RELEASE_NOTES), sound: '' };
+                    try{ out.sound = Object.values(typeof SND_IFX !== 'undefined' ? SND_IFX : {}).map(x => x && x.desc || '').join(' '); }catch(e){}
+                    showUnlockTracks(); await W(900);
+                    const rows = [...document.querySelectorAll('.trk-tier')];
+                    const v = unlockTrackView();
+                    const where = (k, id) => { for(let i = 0; i < v.tracks.length; i++){ const j = v.tracks[i].tiers.findIndex(x => x.rewards.some(r => r.k === k && r.id === id));
+                      if(j >= 0) return [v.tracks[i].key, j + 1]; } return null; };
+                    const fxAt = where('fx', 'ufo'), chAt = where('char', 'marksman');
+                    const rowText = at => { const r = at && document.querySelector('.trk-card[data-track="' + at[0] + '"] .trk-tier[data-tier="' + at[1] + '"]'); return r ? r.textContent : null; };
+                    out.fxRow = rowText(fxAt); out.chRow = rowText(chAt);
+                    out.tracksText = document.querySelector('#stage') ? document.querySelector('#stage').textContent : '';
+                    showCustomize('fx'); await W(900);
+                    const tiles = [...document.querySelectorAll('.hfx-opt')];
+                    out.fxTiles = tiles.map(t => t.textContent.replace(/\\s+/g, ' ').trim());
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    showUnlockDetail(hundoFxDetail('ufo')); await W(500);
+                    const card = document.querySelector('.unlock-card'); out.card = card ? card.textContent : null;
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    return out; }catch(e){ return { err: String(e) }; } }""")
+                hz = lambda s: "hazmat" in (s or "").lower()
+                chk("[ifc] (G) the top hundo effect has a name, and it is not Hazmat (%r); the character is still the Hazmat (%r)" % (gq.get("fx"), gq.get("ch")),
+                    bool(gq.get("fx")) and not hz(gq.get("fx")) and gq.get("ch") == "Hazmat", gq)
+                chk("[ifc] (G) its Tracks row names it, not Hazmat; the character's row says Hazmat",
+                    gq.get("fxRow") is not None and gq.get("fx", "?") in gq["fxRow"] and not hz(gq["fxRow"]) and hz(gq.get("chRow")), [gq.get("fxRow"), gq.get("chRow")])
+                chk("[ifc] (G) Hazmat appears on the Tracks screen exactly where the character is (%d times)" % (gq.get("tracksText") or "").count("Hazmat"),
+                    (gq.get("tracksText") or "").count("Hazmat") == (gq.get("chRow") or "").count("Hazmat") >= 1, gq.get("tracksText", "")[:300])
+                fxt = [t for t in gq.get("fxTiles") or [] if gq.get("fx", "?") in t]
+                chk("[ifc] (G) Customize's hundo effect page shows it by its name, no Hazmat on the page (%s)" % gq.get("fxTiles"),
+                    len(fxt) == 1 and not any(hz(t) for t in gq.get("fxTiles") or []), gq.get("fxTiles"))
+                chk("[ifc] (G) its unlock card, What's New and the sound descriptions never call it Hazmat",
+                    gq.get("card") and gq.get("fx", "?") in gq["card"] and not hz(gq["card"]) and not hz(gq.get("notes")) and gq.get("fx", "?") in (gq.get("notes") or "")
+                    and not re.search(r"hazmat \(fire code\)", (gq.get("sound") or "").lower()), [gq.get("card"), [m.start() for m in re.finditer("Hazmat", gq.get("notes") or "")]])
+                # the source: no string the app shows names the effect Hazmat (the only quoted "Hazmat" left is the character's name)
+                vis = re.findall(r'"[^"\n]{0,200}?\bHazmat\b[^"\n]{0,200}?"', re.sub(r"/\*.*?\*/", "", text, flags=re.S))
+                chk("[ifc] (G) in the source (comments aside), the only string saying Hazmat is the character's name (%s)" % vis,
+                    vis == ['"Hazmat"'], vis)
+            # ---- (H) follow-up: the Virtual Room's top tier is a banner that counts towards the ultimate
+            if wanted("H"):
+                hq = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
+                    const d = bannerDef('vrtop10'); if(!d) return { none: true };
+                    const s = JSON.stringify(store), out = {};
+                    const v = unlockTrackView(); const t = v.tracks.find(x => x.key === 'vr'); const top = t.tiers[t.tiers.length - 1];
+                    out.lead = top.lead.k + ':' + top.lead.id; out.goldWith = top.rewards.map(r => r.k + ':' + r.id);
+                    store.vrWins = 9; out.at9 = bannerEarned('vrtop10'); out.tier9 = unlockTrackView().tracks.find(x => x.key === 'vr').tiers.slice(-1)[0].held;
+                    store.vrWins = 10; out.at10 = bannerEarned('vrtop10'); out.tier10 = unlockTrackView().tracks.find(x => x.key === 'vr').tiers.slice(-1)[0].held;
+                    applyLoadedData(JSON.parse(s));
+                    /* the ultimate counts it: the same account with only this banner held or not, one apart */
+                    const have0 = d.have; d.have = () => 0; const u0 = ultimateProgress(); d.have = () => d.need; const u1 = ultimateProgress(); d.have = have0;
+                    out.ultDelta = [u1.have - u0.have, u1.need - u0.need];
+                    const up = ultimateProgress(); out.up = [up.have, up.need];
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    showUnlockDetail(bannerDetail(ULTIMATE_TOP)); await W(500);
+                    const c = document.querySelector('.unlock-card .unlock-card-count'), n = document.querySelector('.unlock-card .unlock-card-note');
+                    out.count = c ? c.textContent : ''; out.note = n ? n.textContent : '';
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    showUnlockDetail(unlockItemDetail(top.lead)); await W(500);
+                    const k = document.querySelector('.unlock-card'); out.cardKind = k ? [...k.classList].join(' ') : '';
+                    out.cardArt = !!(k && k.querySelector('.bnr-vrtop10'));
+                    document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    /* the art: layered, moving only by transform / opacity, no svg filter */
+                    const el = buildBannerArt('vrtop10'); el.style.cssText = 'position:fixed;left:0;top:0;width:480px;height:180px'; document.body.appendChild(el); await W(300);
+                    out.layered = el.classList.contains('bnr-layered'); out.still = el.classList.contains('is-still');
+                    out.filter = /<filter|filter=|feGaussian/i.test(el.innerHTML);
+                    const props = new Set(); let nAnim = 0;
+                    el.getAnimations({ subtree: true }).forEach(a => { nAnim++; try{ a.effect.getKeyframes().forEach(f => Object.keys(f).forEach(p => props.add(p))); }catch(e){} });
+                    out.props = [...props].filter(p => ['offset', 'easing', 'composite', 'computedOffset'].indexOf(p) < 0); out.nAnim = nAnim;
+                    el.remove();
+                    out.inCustomize = 0; showCustomize('banner'); await W(1200);
+                    out.inCustomize = document.querySelectorAll('.banner-opt .bnr-vrtop10').length;
+                    return out; }catch(e){ return { err: String(e) }; } }""")
+                chk("[%s] (H) the Virtual Room's top tier is the new banner, with the gold rim beside it (%s %s)" % (cls, hq.get("lead"), hq.get("goldWith")),
+                    hq.get("lead") == "banner:vrtop10" and hq.get("goldWith") == ["banner:vrtop10", "rim:vr_gold"], hq)
+                chk("[%s] (H) held at 10 first places, not at 9, and the tier with it (%s)" % (cls, [hq.get(k) for k in ("at9", "tier9", "at10", "tier10")]),
+                    [hq.get(k) for k in ("at9", "tier9", "at10", "tier10")] == [False, False, True, True], hq)
+                chk("[%s] (H) the ultimate counts it: that banner alone moves its count by one (%s)" % (cls, hq.get("ultDelta")), hq.get("ultDelta") == [1, 0], hq)
+                nums = [int(x) for x in re.findall(r"\d+", (hq.get("count") or "").replace(",", ""))]
+                left = (hq.get("up") or [0, 0])[1] - (hq.get("up") or [0, 0])[0]
+                chk("[%s] (H) the ultimate's card says its numbers %s (%r; %r)" % (cls, hq.get("up"), hq.get("count"), hq.get("note")),
+                    bool(hq.get("up")) and nums[-2:] == hq["up"] and
+                    (left == 0 or sum(int(x) for x in re.findall(r"(\d+) (?:character|banner|theme|hundo effect)", hq.get("note") or "")) == left), hq)
+                chk("[%s] (H) its tier row opens its banner card, the banner drawn on it" % cls, "unlock-card-banner" in (hq.get("cardKind") or "") and hq.get("cardArt"), hq)
+                chk("[%s] (H) the banner is layered and moves (%d animations), only transform / opacity %s, no svg filter" % (cls, hq.get("nAnim") or 0, hq.get("props")),
+                    hq.get("layered") and not hq.get("still") and (hq.get("nAnim") or 0) >= 4 and set(hq.get("props") or ["x"]) <= {"transform", "opacity"} and hq.get("filter") is False, hq)
+                chk("[%s] (H) Customize's banner page has its tile (%s)" % (cls, hq.get("inCustomize")), hq.get("inCustomize") == 1, hq)
             chk("[%s] no page errors" % cls, not errs, errs[:3])
             ctx.close()
         # ---- (B) progress safety: everything held on the baseline is held here, for real-shaped (and, with --real, real) accounts
@@ -417,17 +517,33 @@ def main():
                     res[tag] = pg.evaluate(HELD, sets)
                     ctx.close()
                 lost, worse, n = [], [], 0
+                ult_base = ult_here = 0
+                # (follow-up) the one banner this build adds (Winner's Circle, vrtop10) joins the ultimate's "every banner": its count may
+                # ask for exactly that many more items (the banners added since the baseline), and only an account short of 10 wins is
+                # one further away. Nothing else may grow.
+                added = None
                 for i, (b_, t2) in enumerate(zip(res["base"], res["this"])):
                     if "err" in b_ or "err" in t2: lost.append((i, b_.get("err"), t2.get("err"))); continue
                     n += 1
                     for k_ in ("chars", "banners", "themes", "fx"):
                         miss = set(b_[k_]) - set(t2[k_])
                         if miss: lost.append((i, k_, sorted(miss)))
-                    if t2["aNeed"] > b_["aNeed"] or (t2["aNeed"] - t2["aHave"]) > (b_["aNeed"] - b_["aHave"]): worse.append((i, b_["aHave"], b_["aNeed"], t2["aHave"], t2["aNeed"]))
+                    if b_.get("ult"): ult_base += 1
+                    if t2.get("ult"): ult_here += 1
+                    if b_.get("ult") and not t2.get("ult"): lost.append((i, "ULTIMATE", "held on the baseline, not here"))
+                    added = t2.get("nBanners", 0) - b_.get("nBanners", 0)
+                    newb = [x for x in t2["banners"] if x == "vrtop10"]
+                    if t2["aNeed"] - b_["aNeed"] > added or (t2["aNeed"] - t2["aHave"]) - (b_["aNeed"] - b_["aHave"]) > added - len(newb):
+                        worse.append((i, b_["aHave"], b_["aNeed"], t2["aHave"], t2["aNeed"], "wins %s" % t2.get("vrWins")))
                 held_any = sum(len(x.get("chars", [])) + len(x.get("banners", [])) for x in res["this"] if "err" not in x)
                 chk("[%s] (B) %d accounts (%s): nothing held on the baseline is lost here (%d characters and banners held)" % (cls, n, "real-shaped" + (" + real" if real else ""), held_any),
                     n == len(sets) and not lost and held_any > 0, lost[:5])
-                chk("[%s] (B) Astral / the ultimate never asks for more than before" % cls, not worse, worse[:5])
+                chk("[%s] (B) Astral / the ultimate asks for nothing more than the banner added (%s more banner(s))" % (cls, added), not worse, worse[:5])
+                grew = sorted({t2["aNeed"] - b_["aNeed"] for b_, t2 in zip(res["base"], res["this"]) if "err" not in b_ and "err" not in t2})
+                chk("[%s] (B) the ultimate counts the Virtual Room's new banner: its count is one more than the baseline's for every account (%s)" % (cls, grew),
+                    grew == [1] and added == 1, grew)
+                chk("[%s] (B) nobody who holds the ultimate on the baseline loses it (%d hold it there, %d here)" % (cls, ult_base, ult_here),
+                    ult_here >= ult_base and not any(x[1] == "ULTIMATE" for x in lost), [x for x in lost if x[1] == "ULTIMATE"])
                 codes = [x.get("ut") for x in res["this"]]
                 chk("[%s] (B) every account publishes a well-formed code" % cls, all(isinstance(c, str) and re.fullmatch(r"1-[0-9a-f]{12}", c) for c in codes), codes[:4])
         br.close()
