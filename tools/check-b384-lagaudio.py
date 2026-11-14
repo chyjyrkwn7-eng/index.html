@@ -115,9 +115,11 @@ def section1():
                 ops = [round(f["s"], 3) for f in up]
                 # the mode screen as last shown: its dim where the compositor has it as the units arrive (no dim: as it stood)
                 cont = first_up["dimNow"] if (first_up and first_up.get("dimNow") is not None) else (last_m[-1]["m"] if last_m else 1)
+                # the units' own fade has run a frame or more (steep at its start, and slow frames at 4x) before the frame that reads it: a rise
+                # of up to .30 over the dim is that; the flash this guards against is the units popping in at ~1 (+.65) or under the dim
                 chk("(1b) %s: the units are up within 2.5s, their opacity never falls and ends at 1, starting where the mode screen's dim is - no flash (%s .. %s, the dim at %.2f)" % (tag, ops[:1], ops[-1:], cont),
                     first_up is not None and first_up["t"] - ck < 2500 and all(b >= a - .005 for a, b in zip(ops, ops[1:])) and ops[-1] >= .999
-                    and abs(ops[0] - cont) <= .12, ops[:12])
+                    and -.12 <= ops[0] - cont <= .30, ops[:12])
                 chk("(1c) %s: in the units' first frame every badge picture in view is decoded (%s in view, %s not)" % (tag, first_up and first_up["vis"], first_up and first_up["nd"]),
                     first_up is not None and first_up["vis"] > 0 and first_up["nd"] == 0, first_up)
                 ctx.close()
