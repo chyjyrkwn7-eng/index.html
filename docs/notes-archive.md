@@ -39765,3 +39765,18 @@ GATES (TMPDIR=/dev/shm, one at a time, on a shared machine at load 70-110):
   sections (ONLY_FN=check_audit_a,check_b218,check_b304,check_b318_one_chat,check_b318h_legacy_rows,check_b324l_board - stopped before
   its first result), check-fixes (--only "16 Pro Max", "SE (1st gen)", "iPad Pro 11"), check-centering --quick, sweep-layout --quick,
   check-b384-searchink, check-b384-lbclean, check-sync's Find me, and the Find me clip.
+384.111 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm; the machine at load 3):
+- check-js 14 blocks ALL PASS; page console: only the sandbox's blocked CDN and the file: fetch.
+- sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (0 off centre).
+- check-b384-searchbar (the whole matrix) ALL PASS; `--against` main 384.107 FAILS (as on 384.95: (1), (2), (5), (7), (8)...).
+- check-b384-searchink ALL PASS; `--against` a copy of main 384.107 with APP_BUILD set to this branch's (the gate reads the repo's
+  version.json, so a build that differs from it reloads the page mid-run: the first --against run died on "Execution context was
+  destroyed") FAILS on (2), "level with Select all's words" (-1.33px on main). check-b384-lbclean ALL PASS.
+- check-sync ALL PASS (Find me included). check-fixes --only "iPhone 16 Pro Max" / "SE (1st gen)" / "iPad Pro 11": all fixes verified.
+- check-behaviour ONLY_FN=check_audit_a,check_b218,check_b304,check_b318_one_chat,check_b318h_legacy_rows,check_b324l_board: 11 failures
+  (no chat button found on the 13 screens / the race board / the Room button on both devices - the chat dock needs Firebase, blocked
+  here; "tapping Z opens the level-41 card" on the three boards and Friends - the card reads "Level 41 · 9 badges"; the board / person
+  / Profile flare check). The SAME 11 fail with `--against` main 384.107: pre-existing, not this build's.
+MEDIA: the Find me clip, before (main 384.107: your row stays lit after Find me) and after (this build: a one-time flash that fades),
+Hundos board with you #15 of 20, a real touch tap on Find me at 440x956, Playwright real-time video (scratchpad searchbar/findme-before-trim.mp4,
+findme-after-trim.mp4, sheets sheet-before.png / sheet-after.png). Chromium cannot show the real smoothness of the flash on a phone.
