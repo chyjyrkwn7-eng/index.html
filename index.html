@@ -1095,6 +1095,25 @@
     animation:none !important;
     transition:none !important;
   }
+  /* (384.117) WHAT THE RULE ABOVE LEAVES INVISIBLE. `animation:none` also removes the
+     fill that carried an element from its resting `opacity:0` (or its offset) to
+     where it belongs, so anything shown ONLY by such an animation stayed hidden for
+     good with Reduce motion on: both class pickers' cards, the splash's word, the
+     tick on a copied code, the tour's XP bar. Each one gets the state its animation
+     ended on, here, with a selector that outranks the resting rule (nothing is
+     !important, so a pressed or hovered card still answers). The OS setting never
+     had it: its motion sits inside `prefers-reduced-motion:no-preference`, so the
+     resting rule and the animation go together. tools/check-b384-reducemotion.py
+     builds an element for EVERY animation rule in the sheet and fails on a new one
+     that ends visible with motion on and hidden with it off. */
+  [data-reduce-motion="true"] :is(.class-card, .levelup-star){ opacity:1; transform:none; }
+  [data-reduce-motion="true"] #splash-group{ opacity:1; }
+  [data-reduce-motion="true"] .friend-copy-btn.is-copied .friend-copy-tick{ opacity:1; transform:none; }
+  [data-reduce-motion="true"] .friend-copy-btn.is-copied .friend-copy-ic{ opacity:0; }   /* its animation took the code's icon out as the tick came in */
+  [data-reduce-motion="true"] .nt-prop .nt-xp-bar i{ transform:none; }
+  [data-reduce-motion="true"] .rs-spot.is-rankup :is(.rs-spot-kicker, .rs-spot-name, .rs-spot-was, .rs-spot-sub){ opacity:1; }
+  [data-reduce-motion="true"] .rs-morph-to{ opacity:1; }
+  [data-reduce-motion="true"] .rs-morph-from{ opacity:0; }   /* the old rank's emblem burns off as the new one forms: show the new one only */
 
   /* Legend — the reward for 100% Mastery on every unit. Every primary
      button gets a slow gold shimmer instead of a flat fill, a persistent
@@ -123292,7 +123311,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.117";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
