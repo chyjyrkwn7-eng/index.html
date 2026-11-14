@@ -26970,6 +26970,11 @@
   .friend-add-field > .friend-add-input::placeholder{ color:var(--soft); opacity:1; }
   /* (384 r9) the empty list's one line is centred in its card - Madison, the "Nobody yet" card circled: "This isn't centered" */
   .friend-sect .friend-hint.friend-empty{ text-align:center; text-wrap:balance; }
+  /* (384.112) ...and by its INK, top to bottom: check-centering measured "Nobody yet" 4.14px low in its card (both classes). The card's
+     "Your friends" heading is out of flow (absolutely placed above the card, the Settings look), so the one-line hint is the card's only
+     thing, but .friend-hint carries margin-top:.5rem for the lines it follows - the card's padding is even, the 8px was not, and the line
+     sat 4px (half of it) low. With nothing before it (no instructor's row) it has no margin; after one it keeps its gap. */
+  .friend-sect > .sect-label + .friend-hint.friend-empty{ margin-top:0; }
   /* (384 r9) CENTRED, like the sync code field. Madison, the field circled: "This isn't centered" - the hint and a typed code sat
      against the field's left edge while everything else about a code (yours, above it, and the sync code entry) is centred.
      The hint, the typed code and the blinking cursor all centre now; the cursor stands just before the centred hint, at
@@ -123292,7 +123297,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.112";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
