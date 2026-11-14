@@ -26,7 +26,7 @@ produced by JavaScript, so only running the files can know them), so the page ne
   python3 tools/merge-chapter-icons.py --out FILE write the merged page to FILE and leave index.html alone (a helper's scratch copy:
                                                   then  python3 tools/render-chapter-badges.py sheet.png --index FILE --only 3,4)
 It refuses (exit 2) a part file that assigns a key twice or that assigns something that is not CHAPTER_ICON["<exact unit name>"] /
-CHAPTER_OBJ["<exact unit name>"], a key that is not one of Fire Code's 58 units (read from tools/chapter-icons/units.json), an object
+CHAPTER_OBJ["<exact unit name>"], a key that is not one of Fire Code's 58 units (read from tools/chapter-icons/units.json) or, for an object, one of the academy's 24 (tools/chapter-objects/academy-units.json, 384.121), an object
 with a path the measurer cannot walk, and an object part file that has top-level code the page cannot run."""
 import glob, json, os, re, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,7 +42,7 @@ def collect(names, kind, var):
     for fn, text in parts(kind):
         for m in re.finditer(r'^[ \t]*%s\[("(?:[^"\\]|\\.)*")\]\s*=' % var, text, re.M):
             k = json.loads(m.group(1))
-            if k not in names: print("%s: %r is not a Fire Code unit" % (fn, k)); sys.exit(2)
+            if k not in names: print("%s: %r is not a Fire Code or academy unit" % (fn, k)); sys.exit(2)
             if k in seen: print("%s: %r is already drawn in %s" % (fn, k, seen[k])); sys.exit(2)
             seen[k] = fn
         stray = [l for l in text.split("\n") if l.lstrip().startswith(var) and not re.match(r'^[ \t]*%s\["' % var, l)]
@@ -73,8 +73,10 @@ def apply_snaps(baked):
 def main():
     units = json.load(open(os.path.join(ROOT, "tools", "chapter-icons", "units.json"), encoding="utf-8"))
     names = [u[0] for u in units]
+    # (384.121) the police academy's 24 units are pins too (tools/chapter-objects/part-6-academy.js); objects only, never icons
+    acad = json.load(open(os.path.join(ROOT, "tools", "chapter-objects", "academy-units.json"), encoding="utf-8"))
     seen = collect(names, "chapter-icons", "CHAPTER_ICON")
-    objs = collect(names, "chapter-objects", "CHAPTER_OBJ")
+    objs = collect(names + acad, "chapter-objects", "CHAPTER_OBJ")
     body = "".join("/* ---- %s ---- */\n%s" % (fn, t) for fn, t in parts())
     p = os.path.join(ROOT, "index.html"); s = open(p, encoding="utf-8").read()
     i, j = s.index(B) + len(B), s.index(E)

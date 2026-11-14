@@ -59,6 +59,9 @@ never draws its subject. Played in Chromium (the Fire Code class and the academy
      --base FILE, default claude/b384-chapterbadges-all) draws, and so do the academy's units;
  (9) the part files and index.html are in step (tools/merge-chapter-icons.py --check) and tools/chapter-objects/README.md is there;
  (10) no page errors.
+(384.121) --class academy runs the same checks on the police academy's 24 units, which are raised pins too (tools/chapter-objects/
+part-6-academy.js): every one authored, the same spec, thinness, wall, bevel, relief, finish, perf, joins, back, no twins and ids; (8) is
+then the Fire Code side's job. In either class only that class's own units are read (CHAPTER_OBJ holds both classes' entries).
 Run:  python3 tools/check-b384-objbadges.py   (--against OLD/index.html must FAIL for the prototype chapters; --index SCRATCH/index.html gates a
 merged scratch page; --base FILE is the build compared in (8))"""
 import json, os, re, sys, subprocess, importlib.util
@@ -85,8 +88,10 @@ def chk(name, cond, info=""):
 def base_body():
     if "--base" in sys.argv: return open(sys.argv[sys.argv.index("--base") + 1], encoding="utf-8").read()
     return subprocess.run(["git", "-C", ROOT, "show", "claude/b384-chapterbadges-all:index.html"], capture_output=True, check=True).stdout.decode("utf-8")
-UNITS = [u[0] for u in json.load(open(os.path.join(HERE, "chapter-icons", "units.json"), encoding="utf-8"))]
-PROTOTYPES = ["Chapter 10: Means of Egress", "Chapter 9: Fire Protection and Life Safety Systems", "Chapter 57: Flammable and Combustible Liquids",
+CLS = sys.argv[sys.argv.index("--class") + 1] if "--class" in sys.argv else "ifc"
+UNITS = [u[0] for u in json.load(open(os.path.join(HERE, "chapter-icons", "units.json"), encoding="utf-8"))] if CLS == "ifc" else \
+        json.load(open(os.path.join(HERE, "chapter-objects", "academy-units.json"), encoding="utf-8"))
+PROTOTYPES = UNITS if CLS != "ifc" else ["Chapter 10: Means of Egress", "Chapter 9: Fire Protection and Life Safety Systems", "Chapter 57: Flammable and Combustible Liquids",
               "Appendix D: Fire Apparatus Access Roads", "Chapter 53: Compressed Gases", "Chapter 1: Scope and Administration",
               "Chapter and Section Finder", "Chapter 5: Fire Service Features"]
 HASH = "const H = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };"
@@ -140,7 +145,7 @@ SPEC = r"""() => {
       else if(c === 'L'){ cx = n[n.length - 2]; cy = n[n.length - 1]; } else if(c === 'H'){ cx = n[n.length - 1]; } else if(c === 'V'){ cy = n[n.length - 1]; }
       else if(c === 'C' || c === 'Q'){ cx = n[n.length - 2]; cy = n[n.length - 1]; } }
     return bad; };
-  for(const u of Object.keys(CHAPTER_OBJ)){
+  for(const u of Object.keys(CHAPTER_OBJ).filter(u => unitsInTeachingOrder().indexOf(u) >= 0)){
     const e = CHAPTER_OBJ[u], pr = [];
     if(typeof e.d !== 'string') pr.push('d is not a string');
     else {
@@ -178,7 +183,7 @@ GEOM = r"""async () => {
   const units = unitsInTeachingOrder();
   const masks = {}; units.forEach(u => { masks[u] = mask(u); });
   const rows = [];
-  for(const u of Object.keys(CHAPTER_OBJ)){
+  for(const u of Object.keys(CHAPTER_OBJ).filter(u => unitsInTeachingOrder().indexOf(u) >= 0)){
     const sh = badgeShapeFor(u), b = badgeBBoxFor(sh.d), g = badgeStrikeGeometry(sh);
     let inside = 0, enamel = 0; for(let i = 0; i < g.O.length; i++){ if(g.O[i] < 0){ inside++; if(g.E[i] < -1.3) enamel++; } }
     let plan = null; try{ plan = badgeBackPlan(u); }catch(e){ plan = null; }
@@ -189,7 +194,7 @@ GEOM = r"""async () => {
 }"""
 GEOM2 = r"""async () => {
   /* the reference for the render time: an academy struck token (Penal Code), drawn by renderBadgeStrike in any class */
-  const REF_UNIT = 'Penal Code';
+  const REF_UNIT = '__perf reference: a struck token__';   /* (384.121) no unit is struck any more in either class: a name with no object is */
   /* ROUND 3 (384.66): a pin. Read off the page per authored chapter: the parts' thinness (the silhouette opened by a disc of the bevel's
      width), holes, a side wall down-right, a lit bevel (top-left brighter than bottom-right), relief that reads in plain grey, edge B a
      hairline only, accent stickers (a flat painted plate floating in a part), and the render time. */
@@ -204,7 +209,7 @@ GEOM2 = r"""async () => {
   const alpha = (x) => { const d = x.getImageData(0, 0, N, N).data, m = new Uint8Array(N * N); for(let i = 0; i < N * N; i++) m[i] = d[i * 4 + 3] > 127 ? 1 : 0; return m; };
   const lum = (d, i) => .2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2];
   const out = [];
-  for(const u of Object.keys(CHAPTER_OBJ)){
+  for(const u of Object.keys(CHAPTER_OBJ).filter(u => unitsInTeachingOrder().indexOf(u) >= 0)){
     const sh = badgeShapeFor(u), e = CHAPTER_OBJ[u], face = badgeFaceShapeFor(u);
     const [c, x] = cvs(); x.fillStyle = '#000'; x.fill(new Path2D(sh.d)); const M = alpha(x);
     let area = 0; for(let i = 0; i < N * N; i++) area += M[i];
@@ -265,7 +270,7 @@ GEOM2 = r"""async () => {
 }"""
 SCALE = r"""async () => {
   /* a pin drawn at a given CSS size (px), and one measured in a box (no px: the strike watch re-renders it at its real size) */
-  const u = Object.keys(CHAPTER_OBJ)[0], dpr = devicePixelRatio, rows = [];
+  const u = Object.keys(CHAPTER_OBJ).filter(u => unitsInTeachingOrder().indexOf(u) >= 0)[0], dpr = devicePixelRatio, rows = [];
   [43, 26, 61, 97].forEach(px => { const s = buildUnitBadgeSVG(u, true, { px, dirt: 0 }), im = s.querySelector('image.badge-raster'); rows.push(['px', px, im ? im.__strike.W : -1, Math.round(px * dpr)]); });
   const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:37px;height:37px'; document.body.appendChild(box);
   const s2 = buildUnitBadgeSVG(u, true, { dirt: 0 }); s2.style.cssText = 'width:100%;height:100%;display:block'; box.appendChild(s2);
@@ -292,7 +297,7 @@ BACKS = r"""async () => {
     for(let y = 0; y < W; y++) for(let x = 0; x < W; x++) if(d[(y * W + x) * 4 + 3] > 200){ n++; if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
     return { w: x1 - x0 + 1, h: y1 - y0 + 1, n, d }; };
   const out = [];
-  for(const u of Object.keys(CHAPTER_OBJ)){
+  for(const u of Object.keys(CHAPTER_OBJ).filter(u => unitsInTeachingOrder().indexOf(u) >= 0)){
     const face = badgeFaceShapeFor(u), r = { u };
     if(typeof objPinGeometry === 'function'){
       const f = objPinGeometry(face, u, 256), b = objPinGeometry(face, u, 256, true), W = f.W;
@@ -317,7 +322,7 @@ BACKWORDS = r"""() => {
   /* (384.79) every pin's back: the words are the chapter's exact title (uppercased, rows joined), the class line is there, and the
      name is at least 9.2 CSS px tall in the badge in your hand (the size every back is held to, check-b325-b) */
   const hand = (typeof binspectPinW === 'function' ? binspectPinW() : 950) / devicePixelRatio, cls = BADGE_CASE_CLASS.toUpperCase();
-  return Object.keys(CHAPTER_OBJ).map(u => { const p = badgeBackPlan(u), rows = p.items.filter(i => !i.rule).map(i => i.s);
+  return Object.keys(CHAPTER_OBJ).filter(u => unitsInTeachingOrder().indexOf(u) >= 0).map(u => { const p = badgeBackPlan(u), rows = p.items.filter(i => !i.rule).map(i => i.s);
     const words = (p.mode === 'arc' ? rows.join('') : rows.filter(r => r !== cls).join(' ')).replace(/\s+/g, ' ').replace(/\u2014 /g, '\u2014');
     return { u, exact: words === String(u).toUpperCase().replace(/\s+/g, ' '), cls: !!p.cls && rows.indexOf(cls) >= 0, px: p.fs / p.W * hand, rows: rows.length }; });
 }"""
@@ -333,7 +338,8 @@ MAINCOL = r"""async () => {
     out[u] = best ? [best[1] / best[0], best[2] / best[0], best[3] / best[0]] : badgeHexRgb(chapterObjMain(u));
   });
   return out; }"""
-def load(br, body=None, cls="ifc"):
+def load(br, body=None, cls=None):
+    cls = cls or CLS
     return R.open_page(br, port, R.SEED, 440, 956, 2, cls, body)
 def iou(a, b):
     i = sum(1 for x, y in zip(a, b) if x == "1" and y == "1"); u = sum(1 for x, y in zip(a, b) if x == "1" or y == "1")
@@ -344,11 +350,11 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=R.CHROME, args=["--disable-dev-shm-usage"])
     ctx, pg, errs = load(br)
     pr = pg.evaluate(PROBE)
-    chk("(1) the page is the Fire Code class and has the chapter-object registry and helpers (CHAPTER_OBJ, chapterObjShape, chapterObjPalette, OBJ_circle)", pr["cls"] == "ifc" and pr["hasApi"], [pr["cls"], pr["hasApi"]])
-    chk("(1) the app's chapter list is the 58 units of tools/chapter-icons/units.json", pr["units"] == UNITS, [len(pr["units"]), [u for u in pr["units"] if u not in UNITS][:3]])
+    chk("(1) the page is the %s class and has the chapter-object registry and helpers (CHAPTER_OBJ, chapterObjShape, chapterObjPalette, OBJ_circle)" % CLS, (pr["cls"] == "ifc") == (CLS == "ifc") and pr["hasApi"], [pr["cls"], pr["hasApi"]])
+    chk("(1) the app's unit list is the %d units of %s" % (len(UNITS), "tools/chapter-icons/units.json" if CLS == "ifc" else "tools/chapter-objects/academy-units.json"), (pr["units"] == UNITS) if CLS == "ifc" else sorted(pr["units"]) == sorted(UNITS), [len(pr["units"]), [u for u in pr["units"] if u not in UNITS][:3]])
     objs = pr["obj"]
     chk("(1) the eight prototype chapters are authored as objects (%d authored)" % len(objs), all(p in objs for p in PROTOTYPES), [p for p in PROTOTYPES if p not in objs])
-    chk("(1) every authored key is one of the 58 units", all(o in UNITS for o in objs) and len(objs) >= 8, objs[:3])
+    chk("(1) every authored key is one of the %d units" % len(UNITS), all(o in UNITS for o in objs) and len(objs) >= 8, objs[:3])
     chk("(2) every authored chapter (%d) draws earned, empty, grey, vector and struck without throwing; an earned badge has its token and the empty slot has none (%s)" % (len(objs), pr["bad"][:3]), objs and not pr["bad"], pr["bad"][:5])
     if pr["hasApi"]:
         for u in objs:
@@ -392,7 +398,7 @@ with sync_playwright() as pw:
         chk("(4) PERF: a case-sized pin at 3x (132px) costs at most %.1fx an academy struck token rendered in the same moment with its geometry cached, and %.1fx cold (medians, interleaved: the ratio measures the code, not the machine's load): the slowest are %s (warm, cold)" % (PERF_WARM_X, PERF_COLD_X, (max([(round(r["warmX"], 2), r["u"][:22]) for r in g2] or [(0, "")]), max([(round(r["coldX"], 2), r["u"][:22]) for r in g2] or [(0, "")]))), g2 and not slow, slow[:5])
         # (384.90) JOINS AND EDGES (Madison: "I still see a few spots on some where the connections of pieces aren't right. Ensure all
         # the edges are perfect"), measured by tools/chapter-objects/joins.js on every pin's own parts at ~7.5 px a unit
-        jn = pg.evaluate(open(os.path.join(HERE, "chapter-objects", "joins.js"), encoding="utf-8").read(), None)
+        jn = pg.evaluate(open(os.path.join(HERE, "chapter-objects", "joins.js"), encoding="utf-8").read(), UNITS)
         sl = [(r["u"][:24], g["area"], g["at"], g["pair"]) for r in jn for g in r["gaps"]]
         print("     joins (chapter, slivers, fringe [worst pull, pixels], spikes): %s" % [(r["u"][:16], r["gapN"], r["fringe"][:2], len(r["spikes"])) for r in jn if r["gapN"] or r["fringe"][1] or r["spikes"]], flush=True)
         chk("(4e) NO SLIVERS: no piece of the base showing between two parts, or between a part and the outline, that is thin everywhere (0.8 units or less) or a speck (1.5 square units, 2 across), of another colour than every part it borders, and a quarter of a square unit or more: %s" % (sl[:3] or "none"), jn and not sl, sl[:8])
@@ -448,25 +454,21 @@ with sync_playwright() as pw:
                 if e < near_c[0]: near_c = (round(e, 1), round(v, 3), o[:22], u[:22])
         chk("(6) NO TWINS: no two chapters share both a near-identical silhouette (IoU >= %.2f) and a near-identical main colour (CIELAB < %d): most alike outline %s (IoU, dE, pair), nearest colour %s (dE, IoU, pair)" % (TWIN_IOU, TWIN_DE, near_s, near_c), not twins, twins[:5])
         ai = pg.evaluate(ALLIDS)
-        chk("(7) all 58 chapters x 4 drawings on one page (%d svgs, %d ids): no id twice, every url(#) resolves, no object group has an id" % (ai["svgs"], ai["ids"]),
-            ai["svgs"] == 58 * 4 and not ai["dup"] and not ai["dangling"] and ai["objIds"] == 0, ai)
-    here_ifc = pg.evaluate(SNAP, objs)
+        chk("(7) all %d units x 4 drawings on one page (%d svgs, %d ids): no id twice, every url(#) resolves, no object group has an id" % (len(UNITS), ai["svgs"], ai["ids"]),
+            ai["svgs"] == len(UNITS) * 4 and not ai["dup"] and not ai["dangling"] and ai["objIds"] == 0, ai)
+    if CLS == "ifc":
+        here_ifc = pg.evaluate(SNAP, objs)
     errs_all += errs; ctx.close()
-    ctx, pg, errs = load(br, cls="academy")
-    here_ac = pg.evaluate(SNAP, [])
-    errs_all += errs; ctx.close()
-    base = base_body()
-    ctx, pg, errs = load(br, base)
-    there_ifc = pg.evaluate(SNAP, objs)
-    errs_all += errs; ctx.close()
-    ctx, pg, errs = load(br, base, "academy")
-    there_ac = pg.evaluate(SNAP, [])
-    errs_all += errs; ctx.close()
+    if CLS == "ifc":
+        base = base_body()
+        ctx, pg, errs = load(br, base)
+        there_ifc = pg.evaluate(SNAP, objs)
+        errs_all += errs; ctx.close()
     br.close()
-dif = [u for u in there_ac if here_ac.get(u) != there_ac[u]]
-chk("(8) the academy's %d units draw exactly what the previous build draws (vector earned, empty, grey; struck earned, grey; ids normalised): %s" % (len(there_ac), dif[:3] or "all identical"), len(there_ac) >= 16 and not dif, dif[:5])
-dif = [u for u in there_ifc if here_ifc.get(u) != there_ifc[u]]
-chk("(8) Fire Code's %d chapters with no object draw exactly what the previous build draws (the picture in the outline): %s" % (len(there_ifc), dif[:3] or "all identical"), len(there_ifc) + len(objs) == 58 and not dif, dif[:5])
+# (384.121) the academy's units are pins now, on purpose: check-b384-acadpins holds what must not move there (every id and unlock rule)
+if CLS == "ifc":
+    dif = [u for u in there_ifc if here_ifc.get(u) != there_ifc[u]]
+    chk("(8) Fire Code's %d chapters with no object draw exactly what the previous build draws (the picture in the outline): %s" % (len(there_ifc), dif[:3] or "all identical"), len(there_ifc) + len(objs) == 58 and not dif, dif[:5])
 mg = subprocess.run([sys.executable, os.path.join(HERE, "merge-chapter-icons.py"), "--check"], capture_output=True, text=True)
 # (384.90) the snaps were traced for the part files as they are now (tools/chapter-objects/snap.py --check: a browser, ~1 minute)
 sn = subprocess.run([sys.executable, os.path.join(HERE, "chapter-objects", "snap.py"), "--check"], capture_output=True, text=True) if not against else None
