@@ -10031,13 +10031,27 @@
   [data-layout="modern"] .nsw{
     will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
   }
+  /* ---- ON IS YOUR THEME'S COLOUR (384.107) ----
+     Madison: "The toggle switches are green by default, should they change color based on the theme you have set too? That
+     could be pretty cool.." On was always iOS's green (#34C759) "whatever the accent - an accent-coloured switch could read as
+     off". It is the theme's own colour now, from the same tokens as the rest of the theme: a rank's --rank-accent (its colour
+     lifted for a dark screen, as the daily question and the banners use it) and the default's --theme-c2 (its orange). Off is
+     the neutral track it was, the knob stays white, the cross-fade and the glass lens are unchanged (the lens's track and rim
+     take the same colour). The one theme whose colour is a grey, Silver, is LIT rather than flat - a silvered track brightest
+     at the top with a soft white glow off it - so it can never pass for an off track. check-b384-toghaptic (C) holds every
+     theme's on and off apart by their measured luminance against the card. */
+  :root{ --switch-on:var(--rank-accent, var(--theme-c2)); --switch-on-paint:var(--switch-on); --switch-on-glow:none; }
+  html[data-accent="ranger"]{
+    --switch-on-paint:linear-gradient(180deg, color-mix(in srgb, var(--switch-on) 22%, #FFFFFF) 0%, var(--switch-on) 55%, color-mix(in srgb, var(--switch-on) 80%, #000000) 100%);
+    --switch-on-glow:0 0 0 1px color-mix(in srgb, var(--switch-on) 45%, #FFFFFF), 0 0 10px 1px color-mix(in srgb, var(--switch-on) 60%, transparent);
+  }
   .opt > .box::before, .nsw::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
-    background:#34C759; opacity:0; transition:opacity .25s ease;
+    background:var(--switch-on-paint); box-shadow:var(--switch-on-glow); opacity:0; transition:opacity .25s ease;
   }
-  /* On is always green (the universal "on" for a switch like this),
-     whatever the accent - an accent-coloured switch could read as off. */
   .opt > input:checked ~ .box::before, [aria-checked="true"] > .nsw::before{ opacity:1; }
+  /* the native switch under the track never shows (opacity 0); should iOS ever tint it, it is the same colour */
+  .opt > input[type=checkbox]{ accent-color:var(--switch-on); }
   .opt > .box::after, .nsw::after{
     content:""; position:absolute; top:2px; left:2px; width:39px; height:26px;
     border-radius:999px; background:#fff;
@@ -10080,7 +10094,7 @@
   }
   .nsw-lens-glass{ position:absolute; inset:0; border-radius:inherit; will-change:opacity; }
   .nsw-lens-view{ position:absolute; left:0; top:0; border-radius:999px; background:rgba(128,128,136,.46); will-change:transform; }
-  .nsw-lens-fill{ position:absolute; inset:0; border-radius:inherit; background:#3BD162; }
+  .nsw-lens-fill{ position:absolute; inset:0; border-radius:inherit; background:var(--switch-on-paint); }   /* (384.107) the track's own on colour, seen through the glass */
   /* Her recording, frame by frame: the glass's edge is not a white line,
      it is the TRACK'S COLOUR bent round the rim - a green band when the
      switch is on, grey when off - with the track itself seen smaller
@@ -10092,7 +10106,7 @@
     box-shadow:inset 0 0 0 2px rgba(150,150,160,.5), inset 0 0 7px 2.5px rgba(150,150,160,.32);
   }
   .nsw-lens-edge.is-on{
-    box-shadow:inset 0 0 0 2px rgba(78,204,112,.9), inset 0 0 7px 2.5px rgba(70,200,105,.58);
+    box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--switch-on) 90%, transparent), inset 0 0 7px 2.5px color-mix(in srgb, var(--switch-on) 58%, transparent);
   }
   .nsw-lens-rim{
     position:absolute; inset:0; border-radius:inherit;
@@ -21243,6 +21257,11 @@
      and a reaction class shows it again. */
   .char-flip-play{ position:absolute; overflow:hidden; pointer-events:none; contain:strict; }
   .char-flip-play img{ position:absolute; left:0; top:0; max-width:none; max-height:none; display:block; will-change:transform; }
+  /* (384.112) a character's loop is a canvas one cell of its sheet in size, each frame copied into it (charFlipCanvas): it fills its
+     window and never moves, so no zoom or rounding can put one frame on other pixels than the last. The window is a small layer of
+     its own, so a frame repaints that window and not the row under it (as html.loops-paint gave the old sheet's window, build 380). */
+  .char-flip-play > canvas.char-flip-cv{ position:absolute; left:0; top:0; width:100%; height:100%; display:block; pointer-events:none; }
+  .char-flip-play.is-cv{ will-change:transform; }
   .char-under-flip{ visibility:hidden; }
   [class*="char-react-"] .char-flip-play, .char-sleep .char-flip-play{ visibility:hidden; }
   [class*="char-react-"] .char-under-flip, .char-sleep .char-under-flip{ visibility:visible; }
@@ -23198,7 +23217,7 @@
   .opt.opt-tile .box{ grid-area:box; }
   .opt.opt-tile .otext{ grid-area:text; font-size:.86rem; font-weight:700; line-height:1.25; }
   .opt.opt-tile .ohint{ font-size:.72rem; font-weight:500; line-height:1.35; margin-top:.2rem; }
-  .opt.opt-tile:has(input:checked){ border-color:rgba(52,199,89,.4); background:rgba(52,199,89,.06); }
+  .opt.opt-tile:has(input:checked){ border-color:color-mix(in srgb, var(--switch-on) 40%, transparent); background:color-mix(in srgb, var(--switch-on) 6%, transparent); }
   /* The timer card inside its disclosure. */
   .unitoptions-modal-sheet .timer-sect{ margin:.7rem 0 0; }
   .unitoptions-modal-sheet .timer-sect .opt{ padding:.35rem 0; }
@@ -35312,11 +35331,16 @@ html.is-browser{ --fade-paper: transparent; }
 
   /* an iPhone's switch rows (build 327z10, see HSW_OPT): the row's own input,
      a native switch, laid invisibly over its track. Never appearance:none,
-     display:none or visibility:hidden - a stripped switch plays nothing. */
+     display:none or visibility:hidden - a stripped switch plays nothing.
+     (384.107) EXACTLY over the track, the track's own size (hswOptMeasure: --hsw-w/-h, --hsw-r, --hsw-dy), not 80x46 round it:
+     iOS works out a drag of the switch's thumb from the switch's OWN box (where its middle is, how long its thumb is), so the
+     box the finger drags must be the one it sees. The row is a label, so a tap beside the track still clicks the switch.
+     touch-action:none: a touch that starts on a native switch is the switch's (WebKit handles its touchstart), and nothing
+     may pan it away from the switch half-way through a swipe. */
   .opt > input.hsw-opt{
-    position:absolute; z-index:2; margin:0; opacity:0;
-    width:80px; height:46px; top:50%; right:var(--hsw-r, 0px); transform:translateY(-50%);
-    touch-action:pan-y; -webkit-tap-highlight-color:transparent; cursor:pointer;
+    position:absolute; z-index:2; margin:0; opacity:0; box-sizing:border-box;
+    width:var(--hsw-w, 64px); height:var(--hsw-h, 30px); top:calc(50% + var(--hsw-dy, 0px)); right:var(--hsw-r, 0px); transform:translateY(-50%);
+    touch-action:none; -webkit-tap-highlight-color:transparent; cursor:pointer;
   }
   /* a mode card's: its head, the icon and the name (327z13) */
   .modecard > .nova-hsw{ width:62%; height:64px; }
@@ -36273,7 +36297,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* a class you have not looked at yet: a soft ring breathes out from the bubble (transform and
      opacity only - nothing blurred moves) and a small dot sits on its corner */
   .class-bubble-wrap.has-new .class-bubble::before{ content:""; position:absolute; inset:-2px; border-radius:50%; border:2px solid rgba(255,150,72,.7); opacity:0; pointer-events:none; animation:cb-new 2.6s ease-out infinite; }
-  .class-bubble-wrap.has-new .class-bubble::after{ content:""; position:absolute; top:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:#FF9648; border:2px solid rgba(14,16,24,.9); box-sizing:border-box; }
+  /* (384.98) the small dot on its corner is a .new-dot child of the button (.is-cb) - see THE NEW DOT, ONE LOOK */
   @keyframes cb-new{ 0%{ transform:scale(1); opacity:.85; } 100%{ transform:scale(1.55); opacity:0; } }
   [data-reduce-motion="true"] .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; }
   @media (prefers-reduced-motion:reduce){ .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; } }
@@ -39157,16 +39181,82 @@ html.is-browser{ --fade-paper: transparent; }
      Maybe a small glow?" The dot stays the solid 9px circle with its ring (above); a light comes off it, outside the ring:
      a tight bright halo and a wider soft one (--new-dot-light), so it reads as lit on the tab bar's glass. */
   :root{ --new-dot-light:0 0 6px 1px rgba(255,212,59,.85), 0 0 14px 3px rgba(255,186,40,.42); }
+  /* (384.98) A SMALL LIT FLARE IN YOUR THEME'S COLOUR. Madison: "The yellow dot for the notification, doesn't match the theme, it
+     should almost look a little like the secret flare.." The dot is drawn the way a FOUND secret flare is (.cosmic-flare-dot
+     .is-found): a white-hot core, the theme's colour round it, a deeper rim, and its light pooled round it (a round gradient,
+     never a filter) that breathes. Where it sits, its 9px and its ring are unchanged: the dot's box (a .new-dot, or the Profile
+     tab icon's ::after) is placed exactly as before; what changed is what is painted in and round it.
+       THE PARTS: the BODY (the .new-dot's ::after; the tab icon's ::after) - the core, the colour, the rim, in the 9px circle -
+     with the RING round it (box-shadow, still opaque so it keeps the dot apart from the icon under it, now tinted a little with
+     the dot's own light so the glow runs on from the body with no dark gap); the HALO (the .new-dot's ::before; the tab icon's
+     ::before) - a --nd-h disc behind the body, the colour fading out, breathing (transform + opacity only; still under Reduce
+     motion and prefers-reduced-motion). The class button's dot is a .new-dot child of the button now (.is-cb), because its
+     ::before is the button's own pulsing ring (329) and the halo needs a layer of its own.
+       THE COLOUR is the theme's: the rank's own colour (--theme-c2, RANK_COLOR) with a third of its lifted dark-screen
+     version (--rank-accent) in it, so Bronze is bronze and not the default's amber, and the halo in the lifted one, which
+     reads as light on the glass. Read off <html> once, so a dot inside something that wears another theme's colours (a
+     banner, a classmate's row) is still in yours. Three themes are drawn by hand:
+       - THE DEFAULT (no data-accent): its orange taken a step towards its own gold, below.
+       - SUPERNOVA's colour is red, and red is the chat's unread count. Its dot is its yellow-hot side instead: a gold core, a
+         molten orange body and rim, never red.
+       - SILVER is a grey, and a grey bead is what a secret flare NOT found looks like (the pearl). Its dot is moonlight: a white
+         core and a bright silver body over a slate rim, in a white light - lit, not a pearl. A new grey theme needs the same
+         (tools/check-b384-newdot.py holds Silver's light to the coloured themes').
+     Gold's dot is still yellow: Gold is a yellow theme. --new-dot keeps #FFD43B for the other yellow thing that reads it (the
+     chat's friend-request button), which is not the dot. */
+  html{
+    --nd-c:color-mix(in srgb, var(--rank-accent, var(--theme-c2, #F5804D)) 35%, var(--theme-c2, #F5804D));
+    --nd-hot:color-mix(in srgb, var(--nd-c) 42%, #FFFFFF);
+    --nd-rim:color-mix(in srgb, var(--theme-c2, #F5804D) 66%, #000000);
+    --nd-halo:var(--rank-accent, var(--nd-c));
+    --nd-core:#FFFFFF;
+    --nd-h:25px;
+  }
+  /* the default: its orange taken a step towards its own gold (the wordmark's first two stops), so it is Nova's sun and not the
+     chat's coral-red; the core runs hot through the gold */
+  html:not([data-accent]), html[data-accent="ink"]{ --nd-c:color-mix(in srgb, var(--theme-c1, #FFD37A) 30%, var(--theme-c2, #F5804D));
+    --nd-hot:color-mix(in srgb, var(--theme-c1, #FFD37A) 70%, #FFFFFF); --nd-rim:color-mix(in srgb, var(--nd-c) 62%, #000000); }
+  html[data-accent="titan"]{ --nd-c:#FF8C3C; --nd-hot:#FFE27A; --nd-rim:#C2541C; --nd-halo:#FF9440; }
+  html[data-accent="ranger"]{ --nd-c:#DFE2E7; --nd-hot:#FFFFFF; --nd-rim:#666B74; --nd-halo:#F2F6FF; }
   html body .new-dot,
-  html body #bottomtab-profile.has-new .bottomtab-icon::after,
-  html body .class-bubble-wrap.has-new .class-bubble::after{
+  html body #bottomtab-profile.has-new .bottomtab-icon::after{
     content:""; position:absolute !important; display:block !important; box-sizing:border-box !important;
     width:var(--nd-d) !important; height:var(--nd-d) !important; aspect-ratio:1 / 1; flex:none; padding:0 !important; border:0 !important; border-radius:50% !important;
-    background:var(--new-dot) !important; background-image:none !important; box-shadow:0 0 0 var(--nd-ring) var(--nd-ring-c), var(--new-dot-light) !important;
     filter:none !important; opacity:1 !important; animation:none !important; transform:none !important;
     top:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important; right:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important;
     left:auto !important; bottom:auto !important; margin:0 !important; pointer-events:none; z-index:6;
   }
+  /* the .new-dot itself is the frame its two layers hang in; the tab's ::after is the body directly */
+  html body .new-dot{ background:none !important; box-shadow:none !important; overflow:visible !important; }
+  html body .new-dot::after{ content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+  html body .new-dot::before{ content:""; position:absolute; left:calc((var(--nd-d) - var(--nd-h)) / 2); top:calc((var(--nd-d) - var(--nd-h)) / 2);
+    width:var(--nd-h); height:var(--nd-h); border-radius:50%; pointer-events:none; }
+  html body #bottomtab-profile.has-new .bottomtab-icon::before{
+    content:""; position:absolute; display:block; box-sizing:border-box; width:var(--nd-h); height:var(--nd-h); padding:0; border:0; margin:0;
+    border-radius:50%; top:calc(var(--nd-r, 0px) * .29289 - var(--nd-h) / 2); right:calc(var(--nd-r, 0px) * .29289 - var(--nd-h) / 2);
+    left:auto; bottom:auto; pointer-events:none; z-index:5;
+  }
+  /* THE BODY: lit from the top left, as the found flare is */
+  html body .new-dot::after,
+  html body #bottomtab-profile.has-new .bottomtab-icon::after{
+    background:radial-gradient(circle 5.2px at 44% 42%, var(--nd-core) 0 17%, var(--nd-hot) 36%, var(--nd-c) 64%, var(--nd-rim) 100%) !important;
+    box-shadow:0 0 0 var(--nd-ring) color-mix(in srgb, var(--nd-halo) 42%, var(--nd-ring-c)) !important;
+  }
+  /* THE HALO: the colour pooled round it, fading to nothing */
+  html body .new-dot::before,
+  html body #bottomtab-profile.has-new .bottomtab-icon::before{
+    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--nd-halo) 72%, transparent) 0 48%, color-mix(in srgb, var(--nd-halo) 34%, transparent) 64%,
+      color-mix(in srgb, var(--nd-halo) 10%, transparent) 84%, transparent 100%);
+    transform:scale(.92); opacity:.86;
+  }
+  @media (prefers-reduced-motion:no-preference){
+    html:not([data-reduce-motion="true"]) body .new-dot::before,
+    html:not([data-reduce-motion="true"]) body #bottomtab-profile.has-new .bottomtab-icon::before{ animation:nd-breathe 3.6s ease-in-out infinite; }
+  }
+  @keyframes nd-breathe{ 0%, 100%{ transform:scale(.8); opacity:.62; } 50%{ transform:scale(1.04); opacity:1; } }
+  /* the class button's dot: there while the button has something new (329's has-new), the button's own ring left as it was */
+  html body .class-bubble > .new-dot.is-cb{ display:none !important; }
+  html body .class-bubble-wrap.has-new .class-bubble > .new-dot.is-cb{ display:block !important; }
   /* the hosts: what the dot marks, and that thing's corner */
   #bottomtab-profile .bottomtab-icon, .class-bubble, .avatarchar-option, .swatch, .badge-tile-art{ --nd-r:50%; }
   .banner-opt, .hfx-opt{ --nd-r:12px; }
@@ -40060,31 +40150,32 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
 
-  /* ==== THE CLASS BUTTON IS A MEDALLION (384.94) ====================================================================
+  /* ==== THE CLASS BUTTON IS A LIT RING (384.98; it was the medallion in 384.94) ========================================
      Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's
      circle needs a better border? Could just be better.." Shown three looks (A lit ring, B liquid glass, C medallion) behind
-     ?classbtn=a|b|c, he picked C: "Option c for the class thing." The mark is struck on an enamel coin in the class's colour with a
-     fine bright bezel, inside the button's glass, and a soft light in that colour comes off it. Same size and place as before
-     (--cb and place() are untouched), the tap target is the button's own box (54px on a phone, the chat button's 52px on a
-     tablet). The coin is a closest-side circle on the padding box, so it is round and centred at any --cb; every ring and glow is
-     a background layer or a box-shadow, no SVG filter, nothing moves. The marks are classBtnIcon's (a flame with two side
-     tongues; a police shield with a white star), in light colours on the coin and in full colour in the class list.
-     The doubled class keeps the specificity the picked option had under html[data-classbtn="c"], which is what beats the
-     button's own glass rules. */
-  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; --coin-a:#EC6436; --coin-b:#BE341E; --coin-c:#741810; --bezel:#FFD7A0; }
-  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; --coin-a:#4C68E4; --coin-b:#2A3BAA; --coin-c:#131850; --bezel:#D3DBFF; }
+     ?classbtn=a|b|c (5f85d51), he picked C ("Option c for the class thing.", 384.94), and with C live he changed his mind: "I don't
+     like the class button after all. Try option a, the lit ring." So this is A exactly as he saw it under ?classbtn=a: the "?"
+     button's ready recipe in the class's colour, still - a ring in the class's colour (lifted a little towards white) just inside
+     the rim, a soft pool of the colour behind the mark, the button's glass under both, a rim tinted with the colour, and a soft
+     light off the outside. The marks are classBtnIcon's in their full colours, the same drawing as in the class list. Same size
+     and place as before (--cb and place() are untouched); the tap target is the button's own box (54px on a phone, the chat
+     button's 52px on a tablet). Every ring and glow is a background layer or a box-shadow; no SVG filter; nothing moves (the
+     pulsing ring for a class not yet seen, 329, and the new dot are the button's other two things and are left as they were).
+     The doubled class keeps the specificity the option had under html[data-classbtn="a"], which is what beats the button's own
+     glass rules. */
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cbc:#FF7A3A; }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cbc:#7C93FF; }
   html .class-bubble.class-bubble > svg{ position:relative; z-index:1; }
   html[data-theme][data-layout] body:not(.x384cb) .class-bubble.class-bubble{
+    --cb-ring:color-mix(in srgb, var(--cbc) 78%, #FFFFFF);
     background:
-      radial-gradient(ellipse 46% 26% at 50% 24%, rgba(255,255,255,.2), rgba(255,255,255,0) 100%) padding-box,
-      radial-gradient(circle closest-side, var(--coin-a) 0%, var(--coin-b) calc(100% - 9.5px), var(--coin-c) calc(100% - 4.4px), var(--bezel) calc(100% - 3.9px), var(--bezel) calc(100% - 3px), transparent calc(100% - 2.5px)) padding-box,
+      radial-gradient(circle closest-side, transparent calc(100% - 4.3px), var(--cb-ring) calc(100% - 3.8px), var(--cb-ring) calc(100% - 2px), transparent calc(100% - 1.5px)) padding-box,
+      radial-gradient(circle closest-side at 50% 54%, color-mix(in srgb, var(--cbc) 42%, transparent), color-mix(in srgb, var(--cbc) 12%, transparent) 62%, transparent 86%) padding-box,
       linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%) padding-box,
       rgba(12,13,19,.26) !important;
-    border:1px solid rgba(255,255,255,.2) !important;
-    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 14px -2px color-mix(in srgb, var(--cbc) 46%, transparent) !important;
+    border:1px solid color-mix(in srgb, var(--cbc) 44%, rgba(255,255,255,.16)) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 10px 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 9px color-mix(in srgb, var(--cbc) 22%, transparent) !important;
   }
-  html .class-bubble.class-bubble > svg{ width:26px; height:26px; }
-  @media (min-width:40rem){ html[data-layout] .class-bubble.class-bubble > svg{ width:calc(var(--cb) * .46); height:calc(var(--cb) * .46); } }
 </style>
 <script>
   (function(){
@@ -57584,39 +57675,37 @@ const NOVA_CLASSES = [
   { key: "ifc", name: "Fire Code", sub: "IFC",
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
-/* THE CLASS BUTTON'S MARKS (384.94, option C - see "THE CLASS BUTTON IS A MEDALLION" in the stylesheet). The marks are redrawn
-   with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield with a
-   silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). On the
-   button ("button") they are drawn in light colours for the enamel coin; in the class list ("list") in full colour. Ids are
-   unique per copy (classBtnSeq): the button and its list can both be on the page, and a gradient id shared with a hidden copy
-   paints nothing in Safari. A class with no drawing here returns "" and the caller keeps NOVA_CLASSES' own mark. */
+/* THE CLASS BUTTON'S MARKS (384.94; since 384.98 option A - see "THE CLASS BUTTON IS A LIT RING" in the stylesheet). The marks are
+   redrawn with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield
+   with a silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). One
+   drawing, in full colour, on the button and in the class list alike (the light "coin" colours were the medallion's, 384.94, and
+   went with it). Ids are unique per copy (classBtnSeq): the button and its list can both be on the page, and a gradient id shared
+   with a hidden copy paints nothing in Safari. A class with no drawing here returns "" and the caller keeps NOVA_CLASSES' own mark. */
 let classBtnSeq = 0;
-function classBtnIcon(key, where){
+function classBtnIcon(key){
   if(key !== "ifc" && key !== "academy") return "";
-  const coin = where === "button";
   const u = "cbx" + (++classBtnSeq) + "-";
   if(key === "ifc"){
-    const o = coin ? ["#FFF1C4", "#FFD27A", "#FFB04A"] : ["#FFB25A", "#FF6B35", "#E5332E"];
+    const o = ["#FFB25A", "#FF6B35", "#E5332E"];
     const m = ["#FFD36A", "#FF9A3A"];
-    const c = coin ? ["#FFF6D8", "#FFD27A"] : ["#FFFBEA", "#FFE49A"];
+    const c = ["#FFFBEA", "#FFE49A"];
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
       '<linearGradient id="' + u + 'o" x1="12" y1="2.6" x2="12" y2="21.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + o[0] + '"/><stop offset=".45" stop-color="' + o[1] + '"/><stop offset="1" stop-color="' + o[2] + '"/></linearGradient>' +
       '<linearGradient id="' + u + 'm" x1="12" y1="8" x2="12" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient>' +
       '<linearGradient id="' + u + 'c" x1="12" y1="12.4" x2="12" y2="19.2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/></linearGradient></defs>' +
       '<path d="M12 2.6C13.3 5.6 15.9 7.3 16.9 10.4C17.4 9.2 17.9 8 18.1 6.7C19.5 8.7 19.2 12.3 19.2 14.2A7.2 7.2 0 0 1 4.8 14.2C4.8 12.3 4.5 8.7 5.9 6.7C6.1 8 6.6 9.2 7.1 10.4C8.1 7.3 10.7 5.6 12 2.6Z" fill="url(#' + u + 'o)"/>' +
-      /* on the coin the middle is cut out in the coin's own red, a pale core left in it: an emblem, not a picture */
-      '<path d="M12 7.9C13 10.3 16 11.9 16 15.1A4 4 0 0 1 8 15.1C8 11.9 11 10.3 12 7.9Z" fill="' + (coin ? '#C93A22' : 'url(#' + u + 'm)') + '"/>' +
+      '<path d="M12 7.9C13 10.3 16 11.9 16 15.1A4 4 0 0 1 8 15.1C8 11.9 11 10.3 12 7.9Z" fill="url(#' + u + 'm)"/>' +
       '<path d="M12 12.4C12.6 13.9 14.3 14.9 14.3 16.9A2.3 2.3 0 0 1 9.7 16.9C9.7 14.9 11.4 13.9 12 12.4Z" fill="url(#' + u + 'c)"/></svg>';
   }
-  const r = coin ? ["#FFFFFF", "#E4EAFF", "#B9C6F2"] : ["#F2F5FF", "#B9C6F2", "#8496D8"];
-  const f = coin ? ["#DDE4FF", "#B4C2F4", "#8EA0E6"] : ["#8E86FF", "#5470F2", "#3442B8"];
-  const s = coin ? "#2F45C8" : "#FFFFFF";
+  const r = ["#F2F5FF", "#B9C6F2", "#8496D8"];
+  const f = ["#8E86FF", "#5470F2", "#3442B8"];
+  const s = "#FFFFFF";
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><defs>' +
     '<linearGradient id="' + u + 'r" x1="6" y1="3" x2="18" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + r[0] + '"/><stop offset=".55" stop-color="' + r[1] + '"/><stop offset="1" stop-color="' + r[2] + '"/></linearGradient>' +
     '<linearGradient id="' + u + 'f" x1="7" y1="4.6" x2="17" y2="19.6" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + f[0] + '"/><stop offset=".5" stop-color="' + f[1] + '"/><stop offset="1" stop-color="' + f[2] + '"/></linearGradient></defs>' +
     '<path d="M12 2.5 19.4 5.3V11.4C19.4 16 16.4 19.5 12 21.5 7.6 19.5 4.6 16 4.6 11.4V5.3Z" fill="url(#' + u + 'r)"/>' +
     '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7 8.6 18.1 6.2 15.2 6.2 11.5V6.5Z" fill="url(#' + u + 'f)"/>' +
-    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7Z" fill="#FFFFFF" fill-opacity="' + (coin ? '.18' : '.09') + '"/>' +
+    '<path d="M12 4.3 17.8 6.5V11.5C17.8 15.2 15.4 18.1 12 19.7Z" fill="#FFFFFF" fill-opacity=".09"/>' +
     '<path d="M12 7.6 13.06 10.34 16 10.5 13.72 12.36 14.47 15.2 12 13.6 9.53 15.2 10.28 12.36 8 10.5 10.94 10.34Z" fill="' + s + '" stroke="' + s + '" stroke-width=".5" stroke-linejoin="round"/></svg>';
 }
 function classSwitchAllowed(){
@@ -57778,11 +57867,14 @@ function mountClassBubble(){
   btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
-  btn.innerHTML = classBtnIcon(cur.key, "button") || cur.icon;   /* (384.94) the coin's marks */
+  btn.innerHTML = classBtnIcon(cur.key) || cur.icon;   /* (384.94, A since 384.98) the redrawn marks, full colour */
+  /* (384.98) the new dot, shown by CSS while the wrap has-new (a child, not ::after: the dot's halo needs its own layer, and
+     the button's ::before is its pulsing ring) */
+  const cbDot = buildNewDot(); cbDot.classList.add("is-cb"); btn.appendChild(cbDot);
   const stack = document.createElement("div");
   stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
-  const items = others.map(c => ({ cls: "is-" + c.key, icon: classBtnIcon(c.key, "list") || c.icon, label: c.name, run: () => switchClass(c.key) }));
+  const items = others.map(c => ({ cls: "is-" + c.key, icon: classBtnIcon(c.key) || c.icon, label: c.name, run: () => switchClass(c.key) }));
   items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog("home"); } });
   wrap.style.setProperty("--n", items.length);
   items.forEach((it, k) => {
@@ -91419,7 +91511,23 @@ const NovaSound = (function(){
     const m = { row };
     try{
       if(row.classList.contains("pick")){ m.x = box.offsetLeft + box.offsetWidth / 2; m.y = box.offsetTop + box.offsetHeight / 2; }
-      else m.r = Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8);
+      else {
+        /* (384.107) THE SWITCH IS THE TRACK, EXACTLY. Madison: "The toggle switches, when tapping them, the Haptic Touch is there,
+           when swiping them it's not though, fix that." The switch was 80x46 round the 64x30 track; iOS reads a drag of the
+           switch's thumb off the switch's own box, so it now has the track's size and place: its width and height (the track's
+           own, read even while the row is hidden), its right edge (the track sits on the row's content edge), and how far the
+           track's middle is from the row's (0 while hidden - the rows' padding is even). */
+        const cs = getComputedStyle(row), bs = getComputedStyle(box);
+        m.w = parseFloat(bs.width) || box.offsetWidth || 64; m.h = parseFloat(bs.height) || box.offsetHeight || 30;
+        m.r = Math.max(0, parseFloat(cs.paddingRight) || 0); m.dy = 0;
+        if(box.offsetWidth && row.offsetWidth){
+          /* off the drawn boxes, put back into the row's own units if something above is scaled (a sheet on its way in) */
+          const rr = row.getBoundingClientRect(), br = box.getBoundingClientRect(), k = br.width / m.w || 1;
+          const bl = parseFloat(cs.borderRightWidth) || 0, bt = parseFloat(cs.borderTopWidth) || 0;
+          m.r = Math.max(0, Math.round((rr.right - br.right) / k * 100 - bl * 100) / 100);
+          m.dy = Math.round(((br.top + br.height / 2) - rr.top) / k * 100 - (bt + row.clientHeight / 2) * 100) / 100;
+        }
+      }
     }catch(e){}
     return m;
   }
@@ -91430,12 +91538,18 @@ const NovaSound = (function(){
     inp.classList.add("hsw-opt");
     try{
       if(typeof m.x === "number"){ inp.style.setProperty("--hsw-x", m.x + "px"); inp.style.setProperty("--hsw-y", m.y + "px"); }
-      else if(typeof m.r === "number") inp.style.setProperty("--hsw-r", m.r + "px");
+      else if(typeof m.r === "number"){
+        inp.style.setProperty("--hsw-r", m.r + "px");
+        /* (384.107) the track's own size and middle (see hswOptMeasure) */
+        if(m.w) inp.style.setProperty("--hsw-w", m.w + "px");
+        if(m.h) inp.style.setProperty("--hsw-h", m.h + "px");
+        if(m.dy) inp.style.setProperty("--hsw-dy", m.dy + "px");
+      }
     }catch(e){}
     m.row.setAttribute("data-hsw", "");
   }
   function hswOptDetach(inp){
-    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); ["--hsw-r", "--hsw-x", "--hsw-y"].forEach(v => inp.style.removeProperty(v));
+    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); ["--hsw-r", "--hsw-x", "--hsw-y", "--hsw-w", "--hsw-h", "--hsw-dy"].forEach(v => inp.style.removeProperty(v));
     const row = inp.parentElement; if(row && !row.querySelector(":scope > .nova-hsw")) row.removeAttribute("data-hsw");
   }
   /* What a control gets: 0 nothing, 1 a native switch over it, 2 a label over it (build 384), 3 both - a mode card,
@@ -92603,6 +92717,93 @@ function nswLensFor(track, on){
   nswPlace(run, on ? g.onC : g.offC, 0);
   return run;
 }
+/* ---- A SWIPE IS THE NATIVE SWITCH'S OWN GESTURE (384.107) ----
+   Madison, on his installed iPhone: "The toggle switches, when tapping them, the Haptic Touch is there, when swiping them it's
+   not though, fix that." A tap's flip was the native switch's (hsw-opt): iOS clicks it, and a TRUSTED click on a switch plays
+   the tick. A swipe's flip was this script's: the lens followed the finger, the release committed with the row's click()
+   (untrusted - WebKit ticks only for event.isTrusted, EventDispatcher's clickHandlingState.trusted), put any flip the native
+   switch had made back with a .checked write (which also stops the switch following the finger: willUpdateCheckedness ->
+   stopSwitchPointerTracking), and swallowed the switch's own click after it (nswHold). Nothing a swipe did could tick.
+   WebKit's switch, read off its source (CheckboxInputType.cpp, the same on the Safari 18 and 26 branches): a touch that starts on it
+   is its own - it handles the touchstart, so the page does not pan; 200ms after the finger lands (switchHeldDelay) it starts
+   following the finger, and each time the finger takes the thumb past its turning point it flips the thumb and ticks
+   (SwitchTrigger::PointerTracking - no gesture needed); on the touchend (or touchcancel) it clicks itself, a trusted click,
+   which flips it and ticks (once - not again after a drag that already ticked), unless the drag went over and came back
+   (then nothing). Its default handling only runs for an event no listener preventDefault()ed.
+   So on a native switch a swipe is left to the switch: the lens still follows the finger, the release only settles the lens
+   on what the switch's own click is about to do (nswNativeFlips mirrors WebKit's rule, nswNativeMove its thumb), and the flip,
+   the change and the tick are the switch's. Nothing here writes .checked or calls click() for it. The one thing the page
+   still decides is a swipe that should NOT flip it - dragged the way it already is, or an upright drag (a scroll that started
+   on the track, which the switch never gives up): its click is cancelled at the document (nswGate), so it stays as it was; iOS
+   has already played its tick by then (willDispatchClick, before the listeners) - the price of not flipping it.
+   An engine without switches (an iPhone before iOS 17.4: no HTMLInputElement.switch) keeps the scripted drag below. */
+const NSW_NATIVE = (() => { try{ return typeof HTMLInputElement !== "undefined" && "switch" in HTMLInputElement.prototype; }catch(e){ return false; } })();
+const NSW_HOLD_MS = 200;        /* WebKit's switchHeldDelay: the switch follows the finger only from then on */
+let nswGate = null;
+function nswNativeAt(t){
+  return !!(NSW_NATIVE && t && t.tagName === "INPUT" && t.type === "checkbox" && t.classList.contains("hsw-opt")
+    && t.hasAttribute("switch") && !t.disabled && t.parentElement && t.parentElement.classList.contains("opt"));
+}
+function nswNativeStart(el, x){
+  const r = el.getBoundingClientRect();
+  return { el, left: r.left, w: r.width || 1, h: r.height || 1, start: x - r.left, on: el.checked, changed: false, tracking: false };
+}
+/* WebKit's updateIsSwitchVisuallyOnFromAbsoluteLocation, in the switch's own box (left to right) */
+function nswNativeMove(a, x){
+  const s = a.sw;
+  if(!s.tracking){
+    if(performance.now() - a.t0 < NSW_HOLD_MS) return;
+    s.tracking = true; s.on = s.el.checked;
+  }
+  const lx = x - s.left, left = !s.on;
+  let turn = s.w / 2;
+  if(!s.changed){
+    const free = s.w - s.h, off = s.w * .4;     /* the track less its thumb; switchPointerTrackingMagnitudeProportion */
+    if(left && s.start > free) turn = s.start + off;
+    else if(!left && s.start < free) turn = s.start - off;
+  }
+  if((lx < turn) !== left){ s.changed = true; s.on = !s.on; }
+}
+/* what the switch's own click at the touchend will do: flip it, unless a drag took its thumb over and back */
+const nswNativeFlips = a => !(a.sw.tracking && a.sw.changed && a.sw.on === a.on0);
+function nswNativeRelease(a, e){
+  const run = a.run && a.run.lens.isConnected ? a.run : null;
+  const x = typeof e.clientX === "number" ? e.clientX : a.x0;
+  const flips = nswNativeFlips(a), dxAll = x - a.x0;
+  let block = false;
+  if(a.drag){
+    const flick = a.lastT && performance.now() - a.lastT < 90 && Math.abs(a.vx || 0) > .25;
+    const past = run ? run.c > (run.g.offC + run.g.onC) / 2 : x - a.sw.left > a.sw.w / 2;
+    const want = flick ? a.vx > 0 : Math.abs(dxAll) >= 14 && (dxAll > 0) !== a.on0 ? dxAll > 0 : past;
+    if(want === a.on0) block = flips;                      /* dragged the way it already is, or back: it stays */
+  } else if(a.my >= 10 && a.my > a.mx) block = flips;      /* an upright drag is a scroll, not a tap */
+  const final = !block && flips ? !a.on0 : a.on0;
+  nswGate = { el: a.sw.el, block, until: performance.now() + 700 };
+  if(!run) return;
+  /* the lens sets off now for where the switch's own click will leave it; the change that click sends finds it on its way
+     (nswFlipped), and should nothing come, it goes back to what the row says */
+  nswPending = a;
+  a.predicted = final;
+  nswSettle(run, final);
+  clearTimeout(run.t);
+  run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; if(a.host.on() !== a.predicted) nswSettle(run, a.host.on()); } }, 350);
+}
+/* the switch's own click for a swipe that must not flip it; one click, the gesture's own (a new press clears it) */
+document.addEventListener("pointerdown", () => { nswGate = null; }, { capture: true, passive: true });
+document.addEventListener("click", e => {
+  const g = nswGate;
+  if(!g || e.target !== g.el) return;
+  nswGate = null;
+  if(performance.now() > g.until || !g.block) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+}, true);
+/* should iOS send the touchend before the pointerup, the release is decided on it - before the switch's own click */
+["touchend", "touchcancel"].forEach(ev => window.addEventListener(ev, e => {
+  const a = nswActive;
+  if(!a || !a.sw || e.target !== a.sw.el) return;
+  const t = e.changedTouches && e.changedTouches[0];
+  nswRelease({ pointerId: a.id, type: ev === "touchend" ? "pointerup" : "pointercancel", clientX: t ? t.clientX : a.x0, clientY: t ? t.clientY : a.y0, ends: true });
+}, { capture: true, passive: true }));
 document.addEventListener("pointerdown", e => {
   if(e.button > 0 || e.isPrimary === false) return;
   /* on an iPhone the row's own input lies over its box as a native switch
@@ -92613,14 +92814,22 @@ document.addEventListener("pointerdown", e => {
     : t0 && t0.classList && t0.classList.contains("nova-hsw") && t0.parentElement && t0.parentElement.matches('[role="switch"]') ? t0.parentElement.querySelector(".nsw") || t0
     : t0;
   const track = tg && tg.closest ? tg.closest(NSW_SEL) : null;
-  if(!track || nswCalm()) return;
+  if(!track) return;
+  /* (384.107) a real native switch under the finger: its own gesture flips it (see NSW_NATIVE) */
+  const nat = nswNativeAt(t0);
+  const calm = nswCalm();
+  if(calm && !nat) return;
   const host = nswHost(track);
   if(!host || host.off()) return;
-  if(nswActive) nswRelease({ pointerId: nswActive.id, type: "pointercancel" });
-  const run = nswLensFor(track, host.on());
-  if(!run) return;
-  nswMorph(run, true, 0);
-  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false, native: tg !== e.target, on0: host.on() };
+  if(nswActive) nswRelease({ pointerId: nswActive.id, type: "pointercancel", ends: true });
+  /* the switch's own box, read before the lens writes anything: the native model works in it */
+  const sw = nat ? nswNativeStart(t0, e.clientX) : null;
+  /* reduce motion: no lens, but a native switch's swipe is still followed (what its own click will do, and whether to let it) */
+  const run = calm ? null : nswLensFor(track, host.on());
+  if(!run && !nat) return;
+  if(run) nswMorph(run, true, 0);
+  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run ? run.c : 0, drag: false, native: tg !== e.target, on0: host.on(),
+    sw, t0: performance.now(), mx: 0, my: 0 };
   if(e.pointerType === "mouse"){ try{ track.setPointerCapture(e.pointerId); }catch(err){} }
 }, { passive: true });
 document.addEventListener("pointermove", e => {
@@ -92634,6 +92843,9 @@ document.addEventListener("pointermove", e => {
      it moved nothing you could see and committed nothing. The glass knob
      follows the finger from any start now, and the release decides. */
   const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
+  a.mx = Math.max(a.mx || 0, Math.abs(dx)); a.my = Math.max(a.my || 0, Math.abs(dy));
+  /* (384.107) the native switch under the finger is following it too (iOS, after its hold): keep its count */
+  if(a.sw) nswNativeMove(a, e.clientX);
   if(!a.drag){
     if(Math.abs(dx) < 5 || Math.abs(dx) < Math.abs(dy)) return;
     a.drag = true; a.track.classList.add("nsw-drag");
@@ -92642,6 +92854,7 @@ document.addEventListener("pointermove", e => {
   const now = performance.now();
   if(a.lastT){ const v = (e.clientX - a.lastX) / Math.max(1, now - a.lastT); a.vx = a.vx == null ? v : a.vx * .5 + v * .5; }
   a.lastT = now; a.lastX = e.clientX;
+  if(!a.run) return;
   const g = a.run.g;
   let c = a.c0 + dx;
   /* a little give past either end, never more than 4px */
@@ -92652,8 +92865,13 @@ document.addEventListener("pointermove", e => {
 function nswRelease(e){
   const a = nswActive;
   if(!a || e.pointerId !== a.id) return;
+  /* (384.107) a native switch's touch is over at its touchend, which always comes, and before the switch's own click: a
+     pointercancel on the way (Safari may stop the pointers of a touch a control has taken) neither decides it nor ends it */
+  if(a.sw && e.type === "pointercancel" && !e.ends) return;
   nswActive = null;
   a.track.classList.remove("nsw-drag");
+  /* (384.107) a native switch's swipe is the switch's own: see nswNativeRelease */
+  if(a.sw){ nswNativeRelease(a, e); return; }
   const run = a.run;
   if(!run.lens.isConnected) return;
   /* a scroll took the finger, or the press was abandoned: back as it was */
@@ -92667,7 +92885,10 @@ function nswRelease(e){
     /* a native switch under the finger may have flipped itself on the way
        (its own tick): it is put back to where the press began, and the one
        commit below is the row's own click - its handler, lock, save and
-       sound - as a tap would run them */
+       sound - as a tap would run them. (384.107) Only where the switch cannot
+       do it itself: a row switch on an engine with switches never comes here
+       (nswNativeRelease); this is for a mouse, a tablet, an iPhone before
+       17.4, and a role=switch button's own switch. */
     if(a.native && a.host.el && a.host.el.type === "checkbox" && a.host.el.checked !== a.on0){ try{ a.host.el.checked = a.on0; }catch(err){} }
     if(want !== a.host.on()){
       nswCommitting = true;
@@ -100213,15 +100434,137 @@ function charIdOfSvg(el, svg){
 /* Puts a playing flip-book over a small character. Returns null when
    the tile is not laid out yet (the caller retries), false when this
    one should stay a live drawing, true once it is attached. */
-function charFlipDelay(el){
-  return -((Date.now() + (Number(el.dataset.flipPhase) || 0)) % CHAR_ANIM_LOOP_MS);
+/* ---- (384.112) A CHARACTER'S LOOP IS COPIED INTO A BOX THAT NEVER MOVES ----
+   Madison, a screen recording of the Leaderboard on his installed iPhone: "do you see how the characters are slightly shaking
+   randomly? I've mentioned this problem before. Fix this." The third report (313/314 and 384.20 each fixed it at 100%).
+   READ OFF THE RECORDING, frame by frame (8 characters, 4.9s, 59 frames a second): the rows, the names and the circles never moved
+   (0.00px), and nothing moved all together - no snapshot, scroll or re-render. INSIDE every circle the drawing jumped a whole device
+   pixel sideways (and up to 0.9px down) twice a sheet row - once at the row's wrap and once part way along it, in two steps of ~0.6
+   and ~0.4 - every 0.500s exactly (12 steps of the 24-a-second sheet), each character on its own phase.
+   WHY ONLY ON HIS PHONE: it runs Safari's page zoom at 85% (518 CSS px across 440pt, devicePixelRatio still reads 3) and the board's
+   rows are CSS-zoomed by --zc (1.177) to undo it, so a CSS px in a row is 1.177 x 0.85 x 3 = 3.0014 device px. A loop was its whole
+   sheet SLID under a window, a cell (34 CSS px) a step: 102.05 device px, not 102 - so every column of the sheet landed on another
+   fraction of a pixel and the phone's painting rounded it, a whole pixel one way and then back. 313 and 384.20 made a step a whole
+   number of device px at 100%, with devicePixelRatio as the scale, and every gate measured at 100%, where it is.
+   NOW NOTHING IS SLID: the window holds a canvas one cell of the sheet in size, and each step COPIES that cell's pixels into it (a
+   whole-pixel source rect, 1:1) - the crop is made in the sheet's own pixels, where it is exact at any zoom, and the box on the
+   screen does not move, so every frame is drawn on the same pixels as the one before whatever the page zoom, CSS zoom, dpr or the
+   engine's rounding. The frame is the one the step-end animation showed at this moment (the same clock: the tile's flipPhase on
+   Date.now()), so a tile carried to a rebuilt row, a live drawing handing back (charSyncLiveToSheet) and a special all still meet it.
+   One loop for every canvas, woken only when some tile's next frame is due; a row held still (lb-still) or skipped (is-offscreen),
+   and Reduce motion, hold the frame on show. */
+const CHAR_FLIP_HELD = ".rank-rows.lb-still > .rank-row:not(.lb-go), .rank-row.is-offscreen";
+/* ...and while a finger slides on the tab bar or the glass is up (barUnderPause / slideHeldResume / barUnderResume): the rows', the
+   card's and what is under the bar's animations are paused for those frames (383, 384 r15), and the canvases hold with them - all of
+   them, so no rect is read in a slide's frame to sort them */
+var charFlipHold = { slide: false, band: false, at: 0 };
+const charFlipCvs = new Set();   /* WeakRefs to every canvas playing a character's loop */
+let charFlipPending = false;
+function charFlipFrameAt(el, now){
+  const L = CHAR_ANIM_LOOP_MS, N = CHAR_ANIM_FRAMES;
+  const tau = (((now + (Number(el && el.dataset.flipPhase) || 0)) % L) + L) % L;
+  return Math.min(N - 1, Math.floor(tau * N / L));
 }
-/* A removed element's CSS animation starts over when it is put back, so
-   a tile that is moved to a rebuilt row has its delay re-read off the
-   clock first: it restarts at exactly the frame it would have been on. */
+/* the sheet's decoded picture: the one kept with it (charPreKeep), or a fresh one that the canvas holds while it plays */
+function charFlipSrcOf(sp){
+  if(sp.pre){ charPreKeep(sp); return sp.pre; }   /* decoded, or decoding for another tile of the same character */
+  const im = new Image();
+  im.decoding = "async"; im.src = sp.url;
+  if(!testTrimmed){ sp.pre = im; charPreKeep(sp); }
+  return im;
+}
+function charFlipDraw(cv, now){
+  const src = cv.__src, sp = cv.__sp;
+  if(!src || !sp || !src.complete || !src.naturalWidth) return false;
+  const f = charFlipFrameAt(cv.__tile, now);
+  if(f === cv.__f) return true;
+  const g = cv.__g || (cv.__g = cv.getContext("2d"));
+  if(!g) return false;
+  const px = sp.px;
+  try{
+    g.clearRect(0, 0, px, px);
+    g.drawImage(src, (f % sp.cols) * px, Math.floor(f / sp.cols) * px, px, px, 0, 0, px, px);
+  }catch(e){ return false; }
+  cv.__f = f;
+  if(cv.__onDraw){ const fn = cv.__onDraw; cv.__onDraw = null; try{ fn(); }catch(e){} }
+  return true;
+}
+function charFlipWakeAt(ms){
+  if(charFlipPending || document.hidden) return;
+  charFlipPending = true;
+  const go = () => requestAnimationFrame(charFlipTick);
+  if(ms > 24) setTimeout(go, ms - 14); else go();
+}
+function charFlipTick(){
+  charFlipPending = false;
+  if(!charFlipCvs.size || document.hidden) return;
+  const now = Date.now(), L = CHAR_ANIM_LOOP_MS, step = L / CHAR_ANIM_FRAMES;
+  const still = document.documentElement.dataset.reduceMotion === "true";
+  /* a hold the landing never let go of (a missed lensFinish) does not keep the characters still for good */
+  if((charFlipHold.slide || charFlipHold.band) && now - charFlipHold.at > 4000) charFlipHold.slide = charFlipHold.band = false;
+  let next = Infinity, shown = 0;
+  charFlipCvs.forEach(ref => {
+    const cv = ref.deref();
+    if(!cv){ charFlipCvs.delete(ref); return; }
+    if(!cv.isConnected) return;   /* lifted out (a board's rebuild carries it to the new row) or parked: it goes on when it is back */
+    shown++;
+    if(cv.__f >= 0 && (still || charFlipHold.slide || charFlipHold.band || cv.closest(CHAR_FLIP_HELD))) return;
+    if(!charFlipDraw(cv, now)){ next = Math.min(next, 120); return; }   /* its picture is still decoding */
+    const tau = (((now + (Number(cv.__tile.dataset.flipPhase) || 0)) % L) + L) % L;
+    next = Math.min(next, step - (tau % step));
+  });
+  if(!shown){ if(charFlipCvs.size) setTimeout(() => charFlipWakeAt(0), 600); return; }
+  charFlipWakeAt(next === Infinity ? 250 : next);
+}
+try{ document.addEventListener("visibilitychange", () => { if(!document.hidden) charFlipWakeAt(0); }); }catch(e){}
+/* The canvas for a tile's window (play): one cell of the sheet, drawn at once when its picture is decoded (always, for a sheet
+   in memory), and onFirst once it has a frame on it - so the drawing under it is only hidden when there is something over it. */
+function charFlipCanvas(play, sp, el, onFirst){
+  const cv = document.createElement("canvas");
+  cv.className = "char-flip-cv";
+  cv.width = cv.height = sp.px;
+  cv.setAttribute("aria-hidden", "true");
+  cv.__sp = sp; cv.__tile = el; cv.__f = -1; cv.__src = charFlipSrcOf(sp); cv.__onDraw = onFirst || null;
+  play.classList.add("is-cv");
+  play.appendChild(cv);
+  charFlipCvs.add(typeof WeakRef === "function" ? new WeakRef(cv) : { deref: () => cv });
+  if(!charFlipDraw(cv, Date.now())){
+    const src = cv.__src;
+    const again = () => { charFlipDraw(cv, Date.now()); charFlipWakeAt(0); };
+    try{ src.decode().then(again, again); }catch(e){ src.addEventListener("load", again, { once: true }); }
+  }
+  charFlipWakeAt(0);
+  return cv;
+}
+/* is this tile's canvas being stepped now (the gates' "playing", as a running animation was for the old <img>) */
+function charFlipIsPlaying(cv){
+  if(!cv || !cv.isConnected || !(cv.__f >= 0) || document.documentElement.dataset.reduceMotion === "true" || cv.closest(CHAR_FLIP_HELD)) return false;
+  let found = false;
+  charFlipCvs.forEach(ref => { if(ref.deref() === cv) found = true; });
+  return found;
+}
+/* A tile carried into a rebuilt row (renderRankingRows) shows the frame the clock is on at once, not the one it was lifted on. */
 function charFlipResync(el){
-  const img = el && el.querySelector(".char-flip-play img");
-  if(img && el.dataset.flipPhase != null) img.style.animationDelay = charFlipDelay(el) + "ms";
+  const cv = el && el.querySelector(".char-flip-play canvas.char-flip-cv");
+  if(cv){ charFlipDraw(cv, Date.now()); charFlipWakeAt(0); }
+}
+/* (384.112) Whole device pixels for a window only where the canvas's own pixels ARE device pixels, one for one: a 1x or 2x screen
+   at 100% with nothing zoomed, where it keeps the picture crisp. Anywhere else the sheet is resampled wherever it sits (a 2x sheet
+   on a 3x phone, any page or CSS zoom), and rounding to a grid the page cannot see exactly - Safari's page zoom leaves
+   devicePixelRatio at 3 while a CSS px is 2.55 device px - only put the picture up to half a pixel off its drawing. There the window
+   goes exactly on the drawing, centre on centre. */
+function charFlipSnapFor(par, S, density){
+  const dpr = window.devicePixelRatio || 1;
+  const exact = v => v;
+  if(Math.abs(dpr - density) > .01 || Math.abs(S - 1) > .002) return exact;
+  try{
+    if(window.matchMedia && matchMedia("(pointer:coarse)").matches){
+      const a = Math.min(innerWidth, innerHeight), b = Math.min(screen.width, screen.height);
+      if(a && b && Math.abs(a / b - 1) > .01) return exact;
+    }
+    for(let n = par; n && n.nodeType === 1; n = n.parentElement){ const z = parseFloat(getComputedStyle(n).zoom); if(z > 0 && Math.abs(z - 1) > .001) return exact; }
+  }catch(e){ return exact; }
+  return v => Math.round(v * dpr) / dpr;
 }
 /* A TILE WHOSE SHEET CANNOT BE MADE IS LIVE, NOT STILL (build 314).
    It used to keep char-flip with nothing playing - a still drawing for
@@ -100353,6 +100696,7 @@ function charFlipAttach(el){
 }
 /* (384.20) a board row that comes back into view takes its tile's loop (the attach skipped it while the row was not drawn) */
 function charFlipWake(t){
+  if(t && t.querySelector && t.querySelector(".char-flip-play > canvas.char-flip-cv")){ charFlipResync(t); return; }   /* (384.112) its canvas held its frame while the row was skipped */
   if(!t || !t.isConnected || !t.dataset.flipArmed || !t.classList.contains("char-flip") || t.classList.contains("char-sleep") || t.querySelector(".char-flip-play")) return;
   if(charFlipAttach(t) === false && t.classList.contains("char-flip")){ t.classList.remove("char-flip"); t.classList.add("char-live"); }
 }
@@ -100405,9 +100749,10 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
            half-way through the bar coming back */
         play.classList.add(svg.classList.contains("cx-plate") ? "cx-plate" : "cx-wide");
       } else if(ownScale){
-        /* centred on the drawing as it is SHOWN, on whole device pixels */
-        const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-        const snap = v => Math.round(v * dpr) / dpr;
+        /* centred on the drawing as it is SHOWN - on whole device pixels only where the canvas's pixels are device pixels (384.112,
+           charFlipSnapFor; it rounded by devicePixelRatio, which under Safari's page zoom is not the screen's scale) */
+        const shown = svg.getBoundingClientRect();
+        const snap = charFlipSnapFor(par, S, scale);
         const cx = (shown.left + shown.width / 2 - pr.left) / S - par.clientLeft;
         const cy = (shown.top + shown.height / 2 - pr.top) / S - par.clientTop;
         play.style.left = snap(cx - cellCss / 2) + "px";
@@ -100437,21 +100782,15 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
         play.style.transform = svgT;
         if(o.length >= 2 && o.every(v => isFinite(v))) play.style.transformOrigin = (o[0] - inset) + "px " + (o[1] - inset) + "px";
       }
-      const img = document.createElement("img");
-      img.alt = ""; img.decoding = "sync"; img.src = sp.url;
-      img.style.width = (sp.cols * cellCss) + "px";
-      img.style.height = (sp.rows * cellCss) + "px";
       /* each tile starts somewhere different in its loop, so a board of
          one character does not blink in unison - but that place is kept
          on the tile and read off one clock (build 310), so a tile put back
          into the page carries on rather than jumping (charFlipResync) */
       if(el.dataset.flipPhase == null) el.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
-      img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(el) + "ms infinite";
-      lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
-      play.appendChild(img);
+      /* (384.112) the frame is copied into a canvas the window's size, not slid under it (see charFlipCanvas) */
+      charFlipCanvas(play, sp, el, () => svg.classList.add("char-under-flip"));
       if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
       svg.after(play);
-      svg.classList.add("char-under-flip");
       /* build 375: a board row's place for its loop, kept so the next board can put loops on before its first frame */
       if(!wide && ownScale && !el.dataset.flipSolo && el.closest(".screen-rankings .rank-rows")){
         const fl = { px: sp.px, cell: cellCss, left: play.style.left, top: play.style.top, rel: par.style.position === "relative" };
@@ -150094,7 +150433,7 @@ var lbGeomAll = null;
    list made the character's frame 36px (it was 35.19), and the loops kept from before were laid at the old cell and offsets for
    good - nothing re-measures a row that comes up with its loop. Bump LB_GEOM_REV whenever the rows' character or flare frame
    changes size; the first board after it measures afresh (and comes up whole on its stills meanwhile). */
-var LB_GEOM_REV = 2;
+var LB_GEOM_REV = 3;   /* 384.112: a character's window goes exactly on its drawing (no longer rounded by devicePixelRatio) */
 function lbGeomVP(){ return orbitVPNow() + "|" + (window.devicePixelRatio || 1) + "|r" + LB_GEOM_REV; }
 function lbGeomGet(){
   if(!lbGeomAll){ try{ lbGeomAll = JSON.parse(localStorage.getItem(LB_GEOM_KEY) || "null"); }catch(e){ lbGeomAll = null; } if(!lbGeomAll || typeof lbGeomAll !== "object") lbGeomAll = {}; }
@@ -150141,17 +150480,11 @@ function lbFlipKnown(aw, charId){
     play.setAttribute("aria-hidden", "true");
     play.style.left = f.left; play.style.top = f.top;
     play.style.width = play.style.height = f.cell + "px";
-    const img = document.createElement("img");
-    img.alt = ""; img.decoding = "sync"; img.src = sp.url;
-    img.style.width = (sp.cols * f.cell) + "px";
-    img.style.height = (sp.rows * f.cell) + "px";
     if(aw.dataset.flipPhase == null) aw.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
-    img.style.animation = orbitAnimKeyframes(f.cell, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(aw) + "ms infinite";
-    lbPaintKF(img);   /* build 380 */
-    play.appendChild(img);
+    /* (384.112) a canvas the window's size, the frame copied into it (charFlipCanvas); the still under it hides once it has one */
+    charFlipCanvas(play, sp, aw, () => av.querySelectorAll(":scope > svg.cx-still").forEach(n => n.classList.add("char-under-flip")));
     if(f.rel) av.style.position = "relative";
     av.appendChild(play);
-    av.querySelectorAll(":scope > svg.cx-still").forEach(n => n.classList.add("char-under-flip"));
     aw.dataset.flipPre = "1";
     /* build 377: and that is the row's character, done - the drawing under a loop is never seen and nothing on a board takes the loop
        off (rows are not parked, the background no longer strips them), so it is not queued: putting ~250-part drawings in under loops
@@ -150230,6 +150563,7 @@ function lbStillGo(rows, token){
        now take the clock in the same frame, so the board starts moving as one. */
     rows.querySelectorAll(":scope > .rank-row:not(.lb-go)").forEach(r => r.classList.add("lb-go"));
     rows.classList.remove("lb-still");
+    try{ charFlipWakeAt(0); }catch(e){}   /* (384.112) the characters' canvases were holding their frame for this */
   };
   const wait = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
@@ -163051,14 +163385,18 @@ function tabPerfText(){
       });
       hold.forEach(a => { try{ a.pause(); slideHeldPaused.push(a); }catch(e){} });
       under.forEach(a => { try{ a.pause(); barUnderPaused.push(a); }catch(e){} });
+      /* (384.112) the characters' loops are canvases now, not animations: they hold their frame by the same look (charFlipTick) */
+      charFlipHold.slide = true; charFlipHold.band = true; charFlipHold.at = Date.now();
     }catch(e){}
   }
   /* (384 r15) the same way back: which are paused is read first, then they play (a play() between two reads was a style pass each) */
   function barUnderResume(){
+    if(charFlipHold.band){ charFlipHold.band = false; charFlipWakeAt(0); }
     const list = barUnderPaused; barUnderPaused = [];
     list.filter(a => { try{ return a.playState === "paused"; }catch(e){ return false; } }).forEach(a => { try{ a.play(); }catch(e){} });
   }
   function slideHeldResume(){
+    if(charFlipHold.slide){ charFlipHold.slide = false; charFlipWakeAt(0); }
     const list = slideHeldPaused; slideHeldPaused = [];
     list.filter(a => { try{ return a.playState === "paused"; }catch(e){ return false; } }).forEach(a => { try{ a.play(); }catch(e){} });
   }
