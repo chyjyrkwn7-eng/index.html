@@ -192,8 +192,8 @@ retired("the hundo ladder keeps its ids in Fire Code, with its own lower counts 
 chk("Confetti, the default, is the same in both classes", afx["confetti"] == ffx["confetti"] and F["fxBuild"]["confetti"] == "celebrate")
 newfx = [i for i in ffx if i != "confetti" and (ffx[i][1] == afx[i][1] or F["fxBuild"][i] == A["fxBuild"][i])]
 chk("every other Fire Code hundo effect is new - its own name and its own build (same as academy: %s; %s)" % (newfx, F["fxBuild"]), not newfx, newfx)
-chk("...and they are an extinguisher, sprinklers, a thermal camera and hazmat (384: the Fire Alarm is gone)", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Extinguisher", "Hazmat", "Sprinklers", "Thermal Camera"], [ffx[i][1] for i in ffx])
-chk("...in that order up the ladder, Hazmat on top (%s)" % [ffx[r[0]][1] for r in F["fx"]], [r[1] for r in F["fx"] if r[0] != "confetti"] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Hazmat"], F["fx"])
+chk("...and they are an extinguisher, sprinklers, a thermal camera and containment (384: the Fire Alarm is gone; 384.120: the effect once called Hazmat is Containment)", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Containment", "Extinguisher", "Sprinklers", "Thermal Camera"], [ffx[i][1] for i in ffx])
+chk("...in that order up the ladder, Containment on top (%s)" % [ffx[r[0]][1] for r in F["fx"]], [r[1] for r in F["fx"] if r[0] != "confetti"] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Containment"], F["fx"])
 acfx = [i for i in afx if A["fxBuild"][i] != {"confetti": "celebrate", "fireworks": "hfxFireworks", "underwater": "hfxUnderwater", "bubbles": "hfxBubbles", "ufo": "hfxUfo"}.get(i)]
 chk("the academy plays its own effects (%s)" % A["fxBuild"], not acfx, acfx)
 bad = [p for p in F["fxPlay"] if not F["fxBuild"].get(p["id"], "").startswith("ifx") or p.get("err") or p["screen"] < 8 or p["box"] < 2 or p["boxOnly"] < 6 or p["tile"] < 200 or p["still"] < 100]
@@ -258,6 +258,6 @@ chk("...and each moves only transform and opacity, no sprite has an svg filter, 
 R4 = {"ifc": {"fxSrc": {"confetti": "", "fireworks": "ff0bb357", "underwater": "8e314e0", "bubbles": "6ecbf181", "ufo": "66edfbbf"}}}
 same5 = [i for i in ("fireworks", "underwater", "bubbles", "ufo") if F["fxSrc"].get(i) == R4["ifc"]["fxSrc"].get(i)]
 chk("round 5 rebuilds all four Fire Code effects (unchanged since 383: %s)" % same5, not same5, same5)
-chk("...the 75 is the Thermal Camera and the 150 Hazmat, each its own build (%s, %s)" % (F["fxBuild"].get("bubbles"), F["fxBuild"].get("ufo")),
+chk("...the 75 is the Thermal Camera and the top one Containment (ifxHazmat), each its own build (%s, %s)" % (F["fxBuild"].get("bubbles"), F["fxBuild"].get("ufo")),
     F["fxBuild"].get("bubbles") == "ifxThermal" and F["fxBuild"].get("ufo") == "ifxHazmat")
 sys.exit(0 if ok else 1)

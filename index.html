@@ -39712,7 +39712,7 @@ html.is-browser{ --fade-paper: transparent; }
   .trk-thumb-banner{ border-radius:.55rem; width:2.6rem; height:2.6rem; background:#10131A center / cover no-repeat; }
   .trk-thumb-fx{ border-radius:.7rem; background:color-mix(in srgb, var(--fx-c) 22%, #10131A); color:var(--fx-c);
     font-size:.72rem; font-weight:900; letter-spacing:-.01em; line-height:1; padding-top:1px; box-sizing:border-box; }
-  .trk-thumb-rim, .trk-thumb-goal{ background:none; box-shadow:inset 0 0 0 3px var(--rim-c); }
+  .trk-thumb-rim{ background:none; box-shadow:inset 0 0 0 3px var(--rim-c); }
   .trk-tx{ display:flex; flex-direction:column; gap:.18rem; min-width:0; }
   .trk-name{ font-size:.92rem; font-weight:700; line-height:1.2; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .trk-goal{ font-size:.76rem; font-weight:500; line-height:1.3; color:var(--soft); }
@@ -59710,7 +59710,7 @@ const HUNDO_FX = [
 ];
 /* FIRE CODE'S COUNTS (384): "For the ifc one, I think the amount of hundos needed to get the stuff could be lowered. Like
    increments of 25, 50, 75, 150?" A Fire Code hundo is one whole chapter at 100% (58 chapters, a badge each), so the rungs
-   come sooner there: 25, 50, 75 and the top one (Hazmat, IFX_DEF) at 150. Set on the rows themselves, here, before anything
+   come sooner there: 25, 50, 75 and the top one (Containment, IFX_DEF; Hazmat until 384.120) at 150. Set on the rows themselves, here, before anything
    reads them; held off the count like every rung, so lowering one only hands it over (its pop-up shows once). */
 if(window.NOVA_CLASS === "ifc"){
   const IFC_HUNDO_NEED = { fireworks: 25, underwater: 50, bubbles: 75, ufo: 100 };   /* (384) the top one 100, not 150: "150 hundos is kinda a lot for the highest one. Make that 100." */
@@ -79128,12 +79128,16 @@ const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "eli
                          "study50", "correct5000", "level80", "exam100",
                          /* build 304: the three new ones move too - see BANNERS */
                          "study60", "correct10000", "early10", "astral", "celestial", "zenith",
-                         "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"];
+                         "flare_void", "flare_umbra", "flare_horizon", "flare_genesis",
+                         /* (384.120 follow-up) the top of the Virtual Room track, the last rung of its ladder */
+                         "vrtop10"];
 /* BUILD 384 r24: "why barely any of them animate?" Fire Code's three first rungs (Certified, Squared Away, Mutual Aid) were held
    still by the academy's rule above and nothing else was wrong with them, so in Fire Code every banner moves. The academy keeps
    its still first rungs: this list is read only when the page is Fire Code (IFC_ART_ON). */
 const IFC_BANNER_ANIMATED = ["tests100", "hundos100", "vr50"];
 __bm("L61469");
+/* (384.120 follow-up) the Virtual Room's top tier: first places, for its banner (vrtop10) and VR_WINS_TOP below. Declared above BANNERS, which reads it. */
+const VR_WINS_TOP_N = 10;
 const BANNERS = [
   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
      they are on matches up so the progression type ones are next to each
@@ -79182,6 +79186,13 @@ const BANNERS = [
      stays `vr50`. Lowering it takes nothing from anybody. */
   { id: "vr50", name: "Neon City",
     label: "Play 25 Virtual Room matches", have: () => (store.vrMatches || 0), need: 25 },
+  /* (384.120 follow-up) THE VIRTUAL ROOM'S TOP TIER HAS ITS BANNER: "Win 10 rooms" needs a banner, and it counts towards the
+     ultimate's "every banner" (Madison: yes, every banner, this one included). Read off store.vrWins, the counter the Clown /
+     Strobe already reads, so wins on record count. Its tier in the tracks is this banner (plus the Virtual Room gold rim). The
+     look is one of four drawn for Madison (tools/b384-vrwins-options.js); swapping is the art, the name and the tint. */
+  { id: "vrtop10", name: "Winner's Circle",
+    label: "Place first in a Virtual Room " + VR_WINS_TOP_N + " times", have: () => Math.min(Number(store.vrWins) || 0, VR_WINS_TOP_N), need: VR_WINS_TOP_N,
+    note: "A room you finish first in counts, any mode." },
   /* Build 244: "add another 2 banner unlocks". Two things no banner
      counted yet, both already kept: time studied, read off the same
      study log the calendar and the K-9 read (so every minute since the
@@ -79344,12 +79355,14 @@ function earnedBannerSet(){ return new Set(BANNERS.filter(b => bannerEarned(b.id
      the Answers rim    store.lifetime.correct - the count Star Trails and Myriad read: 1,000
      the Hundos rim     hundosOf() (Fire Code only) - the count every hundo effect reads: 150
      Win 10 rooms       store.vrWins - the counter the Clown / Strobe reads (vrwins5): 10. Zeus stays a one-off Feat (decision 4).
+                        (384.120 follow-up) the tier IS a banner now, Winner's Circle (vrtop10 in BANNERS), so it is held
+                        exactly when bannerEarned says, like every other existing tier, and it counts towards the ultimate.
    Everything is worked out when it is read (unlockTrackView), so there is nothing to default, migrate or merge except the rim
    you WEAR (store.rim, a pick like store.banner: applyLoadedData defaults it and wornRim() checks it is held). */
 var UNLOCK_RIM_COLOR = { acc: "#FF6B5E", ans: "#4FB8FF", hun: "#3DDC97", gold: "#F5C84A" };
 var UNLOCK_TRACK_TITLE = { acc: "Accuracy", hun: "Hundos", study: "Study Time", ans: "Answers", vr: "Virtual Room" };
 var UNLOCK_TRACK_ORDER = ["acc", "hun", "study", "ans", "vr"];
-var VR_WINS_TOP = 10;
+var VR_WINS_TOP = VR_WINS_TOP_N;
 /* The rims. `goal` is a new tier's own count; a gold rim's is "every tier of its track" and Mastery's "every gold rim". */
 function unlockRimDefs(){
   const ifc = window.NOVA_CLASS === "ifc";
@@ -79390,7 +79403,7 @@ function unlockTrackSpec(){
     { key: "hun", tiers: hun },
     { key: "study", tiers: study },
     { key: "ans", tiers: [[r("ans")], [b("correct5000")], [b("tests100")], [c("ronin")], [b("correct10000")], [b("tests250"), r("ans_gold")]] },
-    { key: "vr", tiers: [[b("tests500")], [c("hive")], [c("poseidon")], [c("clown")], [b("vr50")], [{ k: "goal", id: "vrwins10" }, r("vr_gold")]] }
+    { key: "vr", tiers: [[b("tests500")], [c("hive")], [c("poseidon")], [c("clown")], [b("vr50")], [b("vrtop10"), r("vr_gold")]] }
   ];
 }
 /* One-offs kept as they are, with their rarity shown (Zeus is the academy's only; Fire Code has no weekly board). */
@@ -79418,11 +79431,6 @@ function unlockItemState(it, rims){
       const d = hundoFxDef(it.id);
       if(d){ o.name = d.name; o.label = "Earn " + d.need + " hundos"; o.need = d.need; o.have = Math.min(hundosOf(store), d.need); }
       o.held = !!d && hundoFxEarned(it.id);
-    } else if(it.k === "goal"){
-      o.name = "Win " + VR_WINS_TOP + " rooms";
-      o.label = "Place first in a Virtual Room " + VR_WINS_TOP + " times";
-      o.need = VR_WINS_TOP; o.have = Math.min(Number(store.vrWins) || 0, VR_WINS_TOP);
-      o.held = o.have >= o.need;
     } else if(it.k === "rim"){
       const d = (rims || unlockRimDefs())[it.id];
       if(d){ o.name = d.name; o.label = d.label; o.color = d.color; o.gold = !!d.gold;
@@ -80815,6 +80823,79 @@ const BANNER_ART = {
       '<g class="bn-rain" stroke="#9FD8FF" stroke-width=".8" opacity=".45">' + rain + '</g>';
   },
 
+  /* VRTOP10 (384.120 follow-up) - the Virtual Room's top tier, ten first places: WINNER'S CIRCLE. Option A of the four drawn (tools/b384-vrwins-options.js, where the art is kept the same as here).
+     The last rung of the Virtual Room ladder, so it moves; every motion is a transform or an opacity on a layer's box. */
+  vrtop10(u){
+    const rnd = bnRand(1010);
+    const st = bnStarsSplit(rnd, 34, 70);
+    let crowd = "", flA = "", flB = "";
+    [[-4, 176], [304, 484]].forEach(([x0, x1]) => {
+      for(let row = 0; row < 3; row++){
+        const y = 130 + row * 13;
+        for(let x = x0 + (row % 2) * 5; x < x1; x += 10){
+          const h = .85 + rnd() * .3;
+          crowd += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(4.2 * h) + '"/><rect x="' + bnF(x - 5.5) + '" y="' + bnF(y + 3) + '" width="11" height="13" rx="4"/>';
+          if(rnd() < .14){ const f = '<circle cx="' + bnF(x + 2) + '" cy="' + bnF(y - 1) + '" r="1.6"/>'; if(rnd() < .5) flA += f; else flB += f; }
+        }
+      }
+    });
+    const block = (x, y, w, h, g, top, num) =>
+      '<path d="M' + x + ' ' + y + ' L' + (x + 5) + ' ' + (y - 5) + ' L' + (x + w - 5) + ' ' + (y - 5) + ' L' + (x + w) + ' ' + y + ' Z" fill="' + top + '"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="url(#' + u + g + ')"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="2" fill="#FFFFFF" opacity=".35"/>' +
+      '<text x="' + (x + w / 2) + '" y="' + (y + Math.min(h / 2 + 7, 24)) + '" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="18" fill="#FFFFFF" fill-opacity=".9">' + num + '</text>';
+    let conf = "";
+    const CC = ["#FFD34D", "#FFFFFF", "#5CE1FF", "#FF5CA8", "#9B7BFF", "#FFD34D"];
+    for(let i = 0; i < 24; i++){
+      const X = 96 + rnd() * 330, Y = -178 + rnd() * 176, r = Math.round(rnd() * 180), c = CC[i % CC.length];
+      const p = (x, y) => '<rect x="' + bnF(x - 1.5) + '" y="' + bnF(y - 2.8) + '" width="3" height="5.6" rx=".6" fill="' + c + '" transform="rotate(' + r + ' ' + bnF(x) + ' ' + bnF(y) + ')"/>';
+      conf += p(X, Y) + p(X - 40, Y + 180);
+    }
+    const defs = '<defs>' +
+      bnLin(u + "sky", [[0, "#070A22"], [.6, "#1A1248"], [1, "#3A1E5E"]]) +
+      bnRad(u + "halo", [[0, "#FFE7A0", .95], [.35, "#FFC94A", .42], [1, "#FFB020", 0]]) +
+      bnLin(u + "beam", [[0, "#FFF4D0", .5], [1, "#FFF4D0", .04]]) +
+      bnLin(u + "sl", [[0, "#BFD4FF", 0], [1, "#BFD4FF", .32]]) +
+      bnLin(u + "g1", [[0, "#FFE58A"], [.5, "#F2B636"], [1, "#B07A12"]], 0, 0, 1, 1) +
+      bnLin(u + "s2", [[0, "#F4F6FA"], [.5, "#B9BFC9"], [1, "#7C828C"]], 0, 0, 1, 1) +
+      bnLin(u + "b3", [[0, "#F3B27A"], [.5, "#C27A3E"], [1, "#7E4519"]], 0, 0, 1, 1) +
+      bnLin(u + "cup", [[0, "#FFF2B8"], [.45, "#F5C542"], [1, "#B9851A"]], 0, 0, 1, 0) +
+      bnLin(u + "floor", [[0, "#2A1C5A"], [1, "#0B0820"]]) +
+      bnRad(u + "pool", [[0, "#FFD37A", .55], [1, "#FFD37A", 0]]) +
+      '</defs>';
+    const cup = '<rect x="228" y="95" width="24" height="7" rx="1.5" fill="#6B4A10"/><rect x="231" y="91.5" width="18" height="4" rx="1" fill="url(#' + u + 'cup)"/>' +
+      '<path d="M237 92 L238 82 L242 82 L243 92Z" fill="url(#' + u + 'cup)"/>' +
+      '<path d="M226 60 Q214 60 216 70 Q218 77 229 76" fill="none" stroke="#E2AE2E" stroke-width="3" stroke-linecap="round"/>' +
+      '<path d="M254 60 Q266 60 264 70 Q262 77 251 76" fill="none" stroke="#E2AE2E" stroke-width="3" stroke-linecap="round"/>' +
+      '<path d="M223 55 L257 55 Q257 80 240 83 Q223 80 223 55Z" fill="url(#' + u + 'cup)"/>' +
+      '<ellipse cx="240" cy="55" rx="17" ry="2.6" fill="#FFF6CF"/>' +
+      '<path d="M240 61 L242.1 65.6 L247 66.1 L243.3 69.4 L244.4 74.2 L240 71.7 L235.6 74.2 L236.7 69.4 L233 66.1 L237.9 65.6Z" fill="#FFF8DC" opacity=".92"/>' +
+      '<path d="M228 59 Q228 73 235 79" stroke="#FFFBEA" stroke-width="2" fill="none" opacity=".55" stroke-linecap="round"/>';
+    const spark = (x, y, s) => '<path d="M' + x + ' ' + (y - s) + ' L' + (x + s * .22) + ' ' + (y - s * .22) + ' L' + (x + s) + ' ' + y + ' L' + (x + s * .22) + ' ' + (y + s * .22) + ' L' + x + ' ' + (y + s) + ' L' + (x - s * .22) + ' ' + (y + s * .22) + ' L' + (x - s) + ' ' + y + ' L' + (x - s * .22) + ' ' + (y - s * .22) + 'Z" fill="#FFFFFF"/>';
+    return [
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/><g>' + st.still + '</g>' },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.9s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.8s;animation-delay:-1.5s" },
+      /* two searchlights from behind the stands, sweeping out of step */
+      { svg: '<path d="M116 152 L58 -30 L86 -30 L124 152Z" fill="url(#' + u + 'sl)"/>', box: [40, -40, 100, 200], o: [120, 152], cls: "bl-sweep", style: "animation-duration:10s" },
+      { svg: '<path d="M356 152 L394 -30 L422 -30 L364 152Z" fill="url(#' + u + 'sl)"/>', box: [340, -40, 100, 200], o: [360, 152], cls: "bl-sweep", style: "animation-duration:10s;animation-delay:-5s" },
+      { svg: '<g fill="#0A0718">' + crowd + '</g>' +
+          '<rect x="-10" y="158" width="500" height="32" fill="url(#' + u + 'floor)"/>' +
+          '<ellipse cx="240" cy="159" rx="120" ry="12" fill="url(#' + u + 'pool)"/>' +
+          block(168, 122, 46, 36, "s2", "#E9ECF2", "2") + block(214, 106, 52, 52, "g1", "#FFE9A6", "1") + block(266, 130, 46, 28, "b3", "#F1BF94", "3") },
+      { svg: '<g fill="#FFFFFF">' + flA + '</g>', cls: "bl-tw", style: "animation-duration:1.3s" },
+      { svg: '<g fill="#FFFFFF">' + flB + '</g>', cls: "bl-tw", style: "animation-duration:1.7s;animation-delay:-.8s" },
+      /* the spotlight on the top step */
+      { svg: '<path d="M222 -10 L258 -10 L304 160 L176 160Z" fill="url(#' + u + 'beam)"/>', box: [170, -10, 140, 172], o: [240, -10], cls: "bl-breathe", style: "animation-duration:4.2s" },
+      { svg: '<circle cx="240" cy="70" r="56" fill="url(#' + u + 'halo)"/>', box: [184, 14, 112, 112], o: [240, 70], cls: "bl-pulse", style: "animation-duration:2.8s" },
+      { svg: cup },
+      { svg: spark(252, 57, 7), box: [244, 49, 16, 16], o: [252, 57], cls: "bl-spark", style: "animation-duration:2.6s" },
+      { svg: spark(229, 78, 5), box: [223, 72, 12, 12], o: [229, 78], cls: "bl-spark", style: "animation-duration:2.6s;animation-delay:-1.3s" },
+      /* confetti: one sheet, two tiles tall, falling exactly one tile (bl-fall: 40 left, 180 down of a 380 x 360 sheet) */
+      { svg: '<g opacity=".9">' + conf + '</g>', box: [50, -180, 380, 360], cls: "bl-fall", style: "animation-duration:9s" }
+    ];
+  },
+
   /* SUMMIT - a hundred hundos: a peak above a sea of cloud at sunrise,
      a flag on the top of it. */
   hundos100(u){
@@ -82113,6 +82194,7 @@ const BANNER_TINT = {
   hundos100: ["#EA3E60", "#7A61C7"],
   hundos250: ["#5B7FCD", "#D27E56"],
   vr50: ["#7635F2", "#D652A9"],
+  vrtop10: ["#F2B636", "#6A4FD0"],   /* (384.120 follow-up) the option's own two colours */
   study50: ["#CF8459", "#4D68DB"],
   study60: ["#566CD2", "#675DCB"],
   correct5000: ["#496EDF", "#766EBA"],
@@ -91460,7 +91542,7 @@ const SND_IFX = {
      rising 2.55-3.0, the wand raised 3.1, the jet from 3.28 (left 3.32, right 3.86, centre 4.3, off 4.45) with the box washed clean
      under its first pass; ALL CLEAR 4.75 and him going down at 4.9. (The scan, the brackets and the field, the tape and the bands,
      the sparks, the second ring and the glints are out of the picture and out of the score.) */
-  "hundo.ufo": { desc: "Hazmat (Fire Code), the top rung, in three beats: a drop into the dark and a two-tone hazard warning, twice, and nothing else; then the vapour hissing in over a low D and the dark Bb while the spill bubbles up over the box, a detector's clicks speeding up with a riser to the surge - one heavy hit out of the box, the riser cut dead; then the responder rising into the corner with a rustle and one heavy settle, the wand raised, the decon jet hissing across your ears left to right and back with water pattering, the box washed clean under it with a rising squeak; the bass climbs Bb, C, and the ALL CLEAR goes off - a great rush of clean air blowing the vapour away - and resolves into a bright D major with a shimmer.",
+  "hundo.ufo": { desc: "Containment (Fire Code), the top rung, in three beats: a drop into the dark and a two-tone hazard warning, twice, and nothing else; then the vapour hissing in over a low D and the dark Bb while the spill bubbles up over the box, a detector's clicks speeding up with a riser to the surge - one heavy hit out of the box, the riser cut dead; then the responder rising into the corner with a rustle and one heavy settle, the wand raised, the decon jet hissing across your ears left to right and back with water pattering, the box washed clean under it with a rising squeak; the bass climbs Bb, C, and the ALL CLEAR goes off - a great rush of clean air blowing the vapour away - and resolves into a bright D major with a shimmer.",
     fn: K => {
       /* 1. the alert: a drop into the dark, the two-tone warning twice */
       K.boom({ t: 0, f: 74, f2: 30, d: 1.3, g: .12 });
@@ -98710,7 +98792,7 @@ const RELEASE_NOTES = [
       { label: "New In Version 10", items: [
         { icon: buildFireIcon, color: "#FF9648", title: "Fire Code", body: "A second class for the 2021 International Fire Code and the county's amendments. Every question shows the section it comes from, and Show the code opens that page in your own copy of the book, which stays on your device." },
         { icon: buildRetryIcon, color: "#93B5FF", title: "The Class Button", body: "The button under the planet on Home moves you between your classes and lets you join a new one. Each class keeps its own rank, level, badges, hundos and progress." },
-        { icon: buildSparkleIcon, color: "#FF9648", title: "Fire Code's Own Effects", body: "Fire Code has four hundo effects of its own: the Extinguisher, Sprinklers, the Thermal Camera and Hazmat, at 25, 50, 75 and 100 hundos." },
+        { icon: buildSparkleIcon, color: "#FF9648", title: "Fire Code's Own Effects", body: "Fire Code has four hundo effects of its own: the Extinguisher, Sprinklers, the Thermal Camera and Containment, at 25, 50, 75 and 100 hundos." },
         { icon: buildPlanetIcon, color: "#A694FF", title: "A Virtual Room In Every Class", body: "A room plays the questions of the class it was made in." },
         { icon: buildPhoneAddIcon, color: "#7CC8FF", title: "Add To Home Screen", body: "A short walkthrough shows how to add Nova to your Home Screen, with a video for iPhone." }
       ]},
@@ -128286,8 +128368,12 @@ const IFX_DEF = {
   /* (384) HAZMAT IS THE TOP RUNG: "The hazmat one should probably be the 200 hundos one, it's my favorite/coolest/has the best
      potential." Its build, sound, tile and still moved from bubbles to ufo, the last rung in both classes.
      (384, the showpiece) a film (IFX_HZ): (r2, calmed to three beats) 6.4s, its all clear lands at 4.75, the dim lifts with it and is gone at
-     5.3, and the last of it has faded by 6.4; the small box's is 4.6s. */
-  ufo:        { name: "Hazmat",     total: 6400, box: 4600, tail: 5300, tint: { b: "#B4F03A", g1: "#F6FFE0", g2: "#B4F03A", g3: "#F5C518" } }
+     5.3, and the last of it has faded by 6.4; the small box's is 4.6s.
+     (384.120 follow-up) NAMED CONTAINMENT, not Hazmat: Fire Code's Marksman character is the Hazmat, and the two sat side by side
+     on the Tracks screen. "Change the hundo effect's name; the character keeps Hazmat." Containment is the IFC's own word for
+     what the effect shows (spill control and secondary containment, the containment brackets on its tile). Display text only:
+     the id stays `ufo` (store.hundoFx and everything else keyed on it). */
+  ufo:        { name: "Containment", total: 6400, box: 4600, tail: 5300, tint: { b: "#B4F03A", g1: "#F6FFE0", g2: "#B4F03A", g3: "#F5C518" } }
 };
 /* (384 r6) where a screen-wide effect's ceiling is: the bottom of the app's own top bar when it is up at the top of the screen
    (the results: "Test results" and the chat button, under the status bar on a phone), else the top. 0 in a frame. */
@@ -152271,20 +152357,12 @@ function wearRim(id){
   unlockTrackMemo = null;
   saveStore();
 }
-/* the Virtual Room's top tier, "Win 10 rooms": a count in a ring, as a rank challenge's card shows one */
-function vrTopDetail(){
-  const it = unlockItemState({ k: "goal", id: "vrwins10" });
-  return { kind: "challenge", id: "vrwins10", kicker: "Virtual Room prestige", name: it.name, desc: it.label + ".",
-    have: it.have, need: it.need, now: it.have, total: it.need, color: UNLOCK_RIM_COLOR.gold, unlocked: it.held,
-    note: "A room you finish first in counts, any mode. Its reward is the Virtual Room gold rim, once every tier before it is held.",
-    rarityWhere: (() => { const v = unlockTrackView(); const i = v.tracks.findIndex(t => t.key === "vr"); return { track: i, tier: v.tracks[i].tiers.length - 1 }; })() };
-}
+/* (384.120 follow-up) the Virtual Room's top tier is a banner now (vrtop10), opening its own banner card like every other tier */
 function unlockItemDetail(it){
   if(it.k === "char") return characterDetail(it.id);
   if(it.k === "banner") return bannerDetail(it.id);
   if(it.k === "fx") return hundoFxDetail(it.id);
   if(it.k === "rim") return rimDetail(it.id);
-  if(it.k === "goal") return vrTopDetail();
   return null;
 }
 /* the small picture at the start of a tier row: the character, the banner, the effect's colour, or the rim */
@@ -152303,8 +152381,8 @@ function unlockItemThumb(it){
       const d = hundoFxDef(it.id);
       box.style.setProperty("--fx-c", (d && d.color) || "#FFD37A");
       box.textContent = "100";
-    } else if(it.k === "rim" || it.k === "goal"){
-      box.style.setProperty("--rim-c", it.k === "goal" ? UNLOCK_RIM_COLOR.gold : (it.color || rimColorOf(it.id)));
+    } else if(it.k === "rim"){
+      box.style.setProperty("--rim-c", it.color || rimColorOf(it.id));
     }
   }catch(e){}
   return box;

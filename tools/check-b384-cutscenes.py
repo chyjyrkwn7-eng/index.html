@@ -183,11 +183,11 @@ with sync_playwright() as pw:
         fx = CF["fx"]
         chk("(1) Fire Code's hundo effect cards ask for its own counts, %s" % [(d["name"], d["said"]) for d in fx],
             [d["need"] for d in fx] == [25, 50, 75, 100] and all(d["said"] == "Earn %d hundos" % d["need"] for d in fx)
-            and [d["name"] for d in fx] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Hazmat"], fx)
+            and [d["name"] for d in fx] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Containment"], fx)
         chk("(1) the academy's ask for its own, %s" % [(d["name"], d["said"]) for d in CA["fx"]],
             [d["need"] for d in CA["fx"]] == [25, 75, 125, 200] and all(d["said"] == "Earn %d hundos" % d["need"] for d in CA["fx"]), CA["fx"])   # (384 r9) the academy's rungs are 25/75/125/200 (AC_HUNDO_NEED)
         alarm = [t for _, t in CF["cards"] + CA["cards"] if re.search(r"fire alarm", t, re.I)]
-        chk("(1) no card in either class is the Fire Alarm (Hazmat is the 150, the Thermal Camera the 75)", not alarm, alarm)
+        chk("(1) no card in either class is the Fire Alarm (Containment, once Hazmat, is the top rung, the Thermal Camera the 75)", not alarm, alarm)
         # (384 r17) Fire Code's ladder was re-lined in 384 to FIRE_BADGE_SHARE of its chapters (read off the page, not typed here)
         share = F.evaluate("() => TIER_ORDER_FULL.map(k => FIRE_BADGE_SHARE[k])")
         want_b = [max(1, round(sh * CF["chapters"])) for sh in share]
