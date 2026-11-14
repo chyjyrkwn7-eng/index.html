@@ -16100,6 +16100,7 @@
      sheet slides under it on a single stepped animation (build 300). */
   .cosmic-rank-anim .rk-frame{ position:absolute; left:50%; top:50%; overflow:hidden; }
   .cosmic-rank-anim .rk-frame img{ display:block; max-width:none; will-change:transform; backface-visibility:hidden; }
+  .cosmic-rank-anim .rk-frame.is-cv{ will-change:transform; }   /* (384.122) a board flare's canvas: a small layer of its own, as a character's window is */
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem.rk-under-anim{ visibility:hidden; }
   /* build 378: A BOARD LOOP CAN BE PAINTED INSTEAD OF COMPOSITED (html.lb-paint, see lbPaintKF). The stepped transform made each
      loop's whole sheet (every frame, ~800px square) a layer of its own, so a phone may draw all of each sheet when the board opens.
@@ -99844,16 +99845,28 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   frame.style.width = frame.style.height = cell + "px";
   frame.style.marginLeft = frame.style.marginTop = (-cell / 2) + "px";
   if(cell !== g.cellCss) frame.style.transform = "scale(" + kInv.toFixed(6) + ")";
-  const img = document.createElement("img");
-  /* build 357: DECODED OFF THE SCREEN CHANGE. A sheet is ~1000x1260px; four of them were decoded synchronously in the
-     frame a Home arrived in (and on the main thread, in WebKit). The still emblem is already there to look at, so the
-     sheet is decoded first and only then put on, crossfaded in as a late sheet always has been. */
-  img.alt = ""; img.decoding = immediate ? "sync" : "async"; img.src = sp.url;
-  img.style.width = (sp.cols * cell) + "px";
-  img.style.height = (sp.rows * cell) + "px";
-  img.style.animation = orbitAnimKeyframes(cell, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
-  lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
-  frame.appendChild(img);
+  /* (384.122) A BOARD ROW'S FLARE IS COPIED INTO A BOX THAT NEVER MOVES, as a character's loop is (384.112, charFlipCanvas): the sheet
+     slid under the window by a cell a step, and under Safari's page zoom a step is not a whole number of device pixels (his 85%:
+     a cell of 29 CSS px is 73.93 device px, so every column of the sheet landed 0.07 further off the grid and the phone's painting
+     rounded it - the shiver of +-0.2-0.57px his 384.99 recording showed on the rank flares of the same rows). The canvas is one cell
+     of the sheet; each step copies that cell's pixels into it, and the frame it sits in is placed once. */
+  const asCanvas = !!g.board && !g.standin && typeof orbitFlipCanvas === "function";
+  const img = asCanvas ? null : document.createElement("img");
+  const cvs = asCanvas ? orbitFlipCanvas(sp, cell) : null;
+  if(asCanvas){
+    frame.classList.add("is-cv");
+    frame.appendChild(cvs);
+  } else {
+    /* build 357: DECODED OFF THE SCREEN CHANGE. A sheet is ~1000x1260px; four of them were decoded synchronously in the
+       frame a Home arrived in (and on the main thread, in WebKit). The still emblem is already there to look at, so the
+       sheet is decoded first and only then put on, crossfaded in as a late sheet always has been. */
+    img.alt = ""; img.decoding = immediate ? "sync" : "async"; img.src = sp.url;
+    img.style.width = (sp.cols * cell) + "px";
+    img.style.height = (sp.rows * cell) + "px";
+    img.style.animation = orbitAnimKeyframes(cell, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
+    lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
+    frame.appendChild(img);
+  }
   wrap.appendChild(frame);
   if(immediate){ attachOrbitSheetNow(badge, svg, wrap, g, fade); return; }
   badge.dataset.sheetPending = "1";
@@ -99865,7 +99878,7 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   };
   let decoded = false;
   const once = () => { if(!decoded){ decoded = true; put(); } };
-  try{ img.decode().then(once, once); setTimeout(once, 1500); }catch(e){ once(); }
+  try{ (asCanvas ? cvs.__src : img).decode().then(once, once); setTimeout(once, 1500); }catch(e){ once(); }
 }
 function attachOrbitSheetNow(badge, svg, wrap, g, fade){
   const standin = badge.querySelector(":scope > .cosmic-rank-anim.is-standin");
@@ -99944,7 +99957,7 @@ function startOrbitEmblemAnims(root, readyOnly){
       orbitSheetGeom.set(orbitGeomKey(badge, tier), g);
       /* build 375: a board flare's geometry is kept for the next board (lbMarkKnown) */
       if(badge.closest(".screen-rankings .rank-rows")) lbGeomPut(c => { c.marks[tier] = { px, cellCss: g.cellCss, filter: g.filter, opacity: g.opacity }; });
-      attachOrbitSheet(badge, svg, sp, g, true);
+      attachOrbitSheet(badge, svg, sp, badge.closest(".screen-rankings .rank-rows") ? Object.assign({ board: true }, g) : g, true);
     }
   })();
 }
@@ -100425,10 +100438,16 @@ function charFlipSrcOf(sp){
   if(!testTrimmed){ sp.pre = im; charPreKeep(sp); }
   return im;
 }
+/* (384.122) the frame a board flare's loop is on: the one its step-end animation showed on the loops' clock */
+function orbitFlipFrameAt(){
+  const L = ORBIT_ANIM_LOOP_MS, N = ORBIT_ANIM_FRAMES;
+  const tau = ((loopWallMs(0) % L) + L) % L;
+  return Math.min(N - 1, Math.floor(tau * N / L));
+}
 function charFlipDraw(cv, now){
   const src = cv.__src, sp = cv.__sp;
   if(!src || !sp || !src.complete || !src.naturalWidth) return false;
-  const f = charFlipFrameAt(cv.__tile, now);
+  const f = cv.__orb ? orbitFlipFrameAt() : charFlipFrameAt(cv.__tile, now);
   if(f === cv.__f) return true;
   const g = cv.__g || (cv.__g = cv.getContext("2d"));
   if(!g) return false;
@@ -100462,8 +100481,11 @@ function charFlipTick(){
     shown++;
     if(cv.__f >= 0 && (still || charFlipHold.slide || charFlipHold.band || cv.closest(CHAR_FLIP_HELD))) return;
     if(!charFlipDraw(cv, now)){ next = Math.min(next, 120); return; }   /* its picture is still decoding */
-    const tau = (((now + (Number(cv.__tile.dataset.flipPhase) || 0)) % L) + L) % L;
-    next = Math.min(next, step - (tau % step));
+    /* (384.122) a board flare's canvas runs on the loops' wall clock (loopWallMs, the one its stepped animation was set to) */
+    const orb = !!cv.__orb, stepc = orb ? ORBIT_ANIM_LOOP_MS / ORBIT_ANIM_FRAMES : step;
+    const tau = orb ? ((loopWallMs(0) % ORBIT_ANIM_LOOP_MS) + ORBIT_ANIM_LOOP_MS) % ORBIT_ANIM_LOOP_MS
+      : (((now + (Number(cv.__tile.dataset.flipPhase) || 0)) % L) + L) % L;
+    next = Math.min(next, stepc - (tau % stepc));
   });
   if(!shown){ if(charFlipCvs.size) setTimeout(() => charFlipWakeAt(0), 600); return; }
   charFlipWakeAt(next === Infinity ? 250 : next);
@@ -100479,6 +100501,25 @@ function charFlipCanvas(play, sp, el, onFirst){
   cv.__sp = sp; cv.__tile = el; cv.__f = -1; cv.__src = charFlipSrcOf(sp); cv.__onDraw = onFirst || null;
   play.classList.add("is-cv");
   play.appendChild(cv);
+  charFlipCvs.add(typeof WeakRef === "function" ? new WeakRef(cv) : { deref: () => cv });
+  if(!charFlipDraw(cv, Date.now())){
+    const src = cv.__src;
+    const again = () => { charFlipDraw(cv, Date.now()); charFlipWakeAt(0); };
+    try{ src.decode().then(again, again); }catch(e){ src.addEventListener("load", again, { once: true }); }
+  }
+  charFlipWakeAt(0);
+  return cv;
+}
+/* (384.122) the canvas for a board row's rank flare: one cell of its sheet (sp.px square), shown at `cell` CSS px, a frame copied in
+   a step - the same player as a character's loop, on the loops' clock. The decoded sheet is kept with the sheet (a few, one a rank). */
+function orbitFlipCanvas(sp, cell){
+  const cv = document.createElement("canvas");
+  cv.className = "rk-flip-cv";
+  cv.width = cv.height = sp.px;
+  cv.style.cssText = "display:block;width:" + cell + "px;height:" + cell + "px";
+  cv.setAttribute("aria-hidden", "true");
+  if(!sp.pre){ const im = new Image(); im.decoding = "async"; im.src = sp.url; sp.pre = im; }
+  cv.__sp = sp; cv.__orb = true; cv.__tile = null; cv.__f = -1; cv.__src = sp.pre;
   charFlipCvs.add(typeof WeakRef === "function" ? new WeakRef(cv) : { deref: () => cv });
   if(!charFlipDraw(cv, Date.now())){
     const src = cv.__src;
@@ -123292,7 +123333,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.122";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -150407,7 +150448,7 @@ function lbMarkKnown(rk){
     const real = buildRankMark(rk, "rank-col-flare");
     const svg = real.querySelector("svg.cosmic-rank-emblem");
     if(!svg) return null;
-    attachOrbitSheet(real, svg, sp, g, false, true);
+    attachOrbitSheet(real, svg, sp, Object.assign({ board: true }, g), false, true);
     /* build 377: the emblem drawing under a playing loop is never seen (rk-under-anim) - it is ~95 parts to style and lay out on every
        board built or switched, so a board flare that comes up with its loop leaves it out */
     svg.remove();

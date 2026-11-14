@@ -158,8 +158,8 @@ SAMPLE = r"""()=>{ window.__S=[]; window.__stopS=0; const T0=performance.now(); 
       let noch=0, nofl=0;
       rs.forEach(r=>{ const av=r.querySelector('.rank-avatar'); const play=av&&av.querySelector(':scope > .char-flip-play'); const img=play&&play.querySelector('img, canvas'); const svg=av&&av.querySelector(':scope > svg');
         const ch=(img && (img.tagName==='CANVAS' ? img.__f>=0 : (img.complete && img.naturalWidth>0)) && vis(play)) || (svg && vis(svg) && !svg.classList.contains('char-under-flip'));
-        const fl=r.querySelector('.rank-col-flare'); const fi=fl&&fl.querySelector('.rk-frame img'); const fs=fl&&fl.querySelector('svg');
-        const fo=!fl || (!fl.classList.contains('is-lazy') && ((fi && fi.complete && fi.naturalWidth>0 && vis(fi)) || (fs && vis(fs) && !fs.classList.contains('rk-under-anim'))));
+        const fl=r.querySelector('.rank-col-flare'); const fi=fl&&fl.querySelector('.rk-frame img, .rk-frame canvas'); const fs=fl&&fl.querySelector('svg');
+        const fo=!fl || (!fl.classList.contains('is-lazy') && ((fi && (fi.tagName==='CANVAS' ? fi.__f>=0 : (fi.complete && fi.naturalWidth>0)) && vis(fi)) || (fs && vis(fs) && !fs.classList.contains('rk-under-anim'))));
         if(!ch) noch++; if(!fo) nofl++; });
       __S.push([t, rs.length, skel, noch, nofl, (rs.length===1 && rs[0].dataset.pub===me)?1:0, scr.querySelector('.lb-board-empty, .rank-rows > .info-note')?1:0, scr.querySelectorAll('.rank-rows > .rank-row[data-pub]').length]); }
     if(!window.__stopS && performance.now()-T0<120000) requestAnimationFrame(f); }; requestAnimationFrame(f); }"""
