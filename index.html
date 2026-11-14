@@ -40179,6 +40179,11 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-pfrows] body #stage .pfx .pfx-end{ display:inline-flex; align-items:center; gap:8px; justify-self:end; }
   html[data-pfrows] body #stage .pfx .pfx-chev{ display:inline-flex; flex:none; width:17px; height:17px; color:var(--soft); opacity:.85; }
   html[data-pfrows] body #stage .pfx .pfx-chev svg{ width:17px; height:17px; display:block; }
+  html[data-pfrows] body #stage .pfx .pfx-tag{ display:inline-flex; align-items:center; gap:.4rem; }
+  html[data-pfrows] body #stage .pfx .pfx-tag > .new-dot{ position:relative !important; top:auto !important; right:auto !important; }
+  html[data-pfrows] body #stage .pfx-oa .pfx-pv > .new-dot{ display:none !important; }
+  html[data-pfrows] body #stage .pfx :is(.pfx-scene, .pfx-pv){ --nd-r:12px; }
+  html[data-pfrows] body #stage .pfx-ob .pfx-tag, html[data-pfrows] body #stage .pfx-oc .pfx-tag{ display:none; }
   html[data-pfrows] body #stage .pfx .pfx-newword{ font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--new-dot); }
   html[data-pfrows] body #stage .pfx .pfx-prev{ display:block; min-width:0; }
   html[data-pfrows] body #stage .pfx .pfx-pv{ display:block; position:relative; }
@@ -40186,12 +40191,11 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-pfrows] body #stage .pfx .pfx-bar > i{ display:block; height:100%; width:var(--w, 0%); border-radius:inherit; background:linear-gradient(90deg, #D9B964, #F2DB93); }
 
   /* the preview well: Customize's scene, the case's pins, the ladder's emblems - one recessed 12px box */
-  html[data-pfrows] body #stage .pfx .pfx-scene{ position:relative; display:block; width:100%; height:76px; border-radius:12px; overflow:hidden; background:#10131A;
+  html[data-pfrows] body #stage .pfx .pfx-scene{ position:relative; display:block; width:100%; height:76px; border-radius:12px; background:#10131A;
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
   html[data-pfrows] body #stage .pfx .pfx-banner{ position:absolute; inset:0; display:block; border-radius:inherit; overflow:hidden; }
-  html[data-pfrows] body #stage .pfx .pfx-scene::after{ content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  html[data-pfrows] body #stage .pfx .pfx-scene::after{ content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:0;
     background:linear-gradient(180deg, transparent 45%, rgba(0,0,0,.32)); }
-  html[data-pfrows] body #stage .pfx .pfx-scene > .new-dot{ top:8px; right:8px; z-index:3; }
   html[data-pfrows] body #stage .pfx .pfx-char{ position:absolute; z-index:1; display:block; box-sizing:border-box; border-radius:50%; overflow:hidden;
     border:2px solid rgba(255,255,255,.85); box-shadow:0 4px 12px rgba(0,0,0,.4);
     background:radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--char-glow, #8892A6) 55%, #1A1D25), #11141B); }
@@ -40233,13 +40237,12 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-pfrows] body #stage .pfx-bc.pfx-oa{ margin-top:18px; }
   html[data-pfrows] body #stage .pfx-bc.pfx-oa::before{ content:""; position:absolute; top:-8px; left:50%; width:56px; height:9px; transform:translateX(-50%);
     border-radius:8px 8px 0 0; background:var(--surface-1); border:1px solid var(--surface-border); border-bottom:0; box-sizing:border-box; }
-  html[data-pfrows] body #stage .pfx-bc.pfx-oa .pfx-pv::before{ content:""; position:absolute; left:-14px; right:-14px; top:-6px; height:1px; background:rgba(255,255,255,.14); }
+  html[data-pfrows] body #stage .pfx-bc.pfx-oa .pfx-pv::before{ content:""; position:absolute; left:-13px; right:-13px; top:-6px; height:1px; background:rgba(255,255,255,.14); }
   html[data-pfrows] body #stage .pfx-oa .pfx-latch{ position:absolute; top:-11px; width:22px; height:9px; border-radius:3px; z-index:1;
     background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.08)); box-shadow:inset 0 0 0 1px rgba(255,255,255,.2); }
   html[data-pfrows] body #stage .pfx-oa .pfx-latch.is-l{ left:18%; }
   html[data-pfrows] body #stage .pfx-oa .pfx-latch.is-r{ right:18%; }
-  html[data-pfrows] body #stage .pfx-bc.pfx-oa .pfx-pv > .new-dot{ top:-6px; right:-6px; z-index:3; }
-  /* the ladder, the foot of the Next rank card: not a card inside a card, a section under a hairline */
+    /* the ladder, the foot of the Next rank card: not a card inside a card, a section under a hairline */
   html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-oa{ margin-top:16px; padding:14px 0 0; border:0; border-top:1px solid rgba(255,255,255,.12); border-radius:0; background:none; box-shadow:none; }
 
   /* ---- B: compact rows, the preview at the left ---- */
@@ -40251,10 +40254,8 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-pfrows] body #stage .pfx-ob .pfx-scene, html[data-pfrows] body #stage .pfx-ob .pfx-pins{ height:60px; }
   html[data-pfrows] body #stage .pfx-ob .pfx-char{ left:9px; top:10px; width:38px; height:38px; border-width:1.5px; }
   html[data-pfrows] body #stage .pfx-ob .pfx-theme{ right:8px; top:9px; width:18px; height:18px; border-width:1.5px; }
-  html[data-pfrows] body #stage .pfx-ob .pfx-scene > .new-dot{ top:5px; right:5px; }
   html[data-pfrows] body #stage .pfx-ob .pfx-pins{ padding:0 2px; justify-content:center; gap:3px; }
   html[data-pfrows] body #stage .pfx-ob .pfx-pin{ width:28px; height:28px; }
-  html[data-pfrows] body #stage .pfx-ob .pfx-pv > .new-dot{ top:4px; right:4px; z-index:3; }
   html[data-pfrows] body #stage .pfx-ob .pfx-newword{ display:none; }
   /* the ladder folded into the Next rank card's header: a track of emblems, the line lit as far as yours */
   html[data-pfrows] body #stage .pf-goal > .pfx-ld.pfx-ob{ grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"prev prev" "text end"; row-gap:10px; column-gap:8px;
@@ -40277,26 +40278,26 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-pfrows] body #stage .pfx-oc .pfx-bar{ grid-area:bar; margin-top:8px; align-self:end; }
   html[data-pfrows] body #stage .pfx-oc > .pfx-prev{ grid-area:prev; }
   html[data-pfrows] body #stage .pfx-oc > .pfx-end{ grid-area:end; margin-top:10px; }
-  html[data-pfrows] body #stage .pfx-oc .pfx-chev, html[data-pfrows] body #stage .pfx-oc .pfx-chev svg{ width:14px; height:14px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-end{ display:none; }
   html[data-pfrows] body #stage .pfx-oc .pfx-newword{ display:none; }
   html[data-pfrows] body #stage .pfx-oc .pfx-scene, html[data-pfrows] body #stage .pfx-oc .pfx-pins, html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ height:84px; }
   html[data-pfrows] body #stage .pfx-oc .pfx-char{ left:50%; top:13px; width:48px; height:48px; margin-left:-24px; }
   html[data-pfrows] body #stage .pfx-oc .pfx-theme{ right:8px; top:8px; width:20px; height:20px; }
-  html[data-pfrows] body #stage .pfx-oc .pfx-scene > .new-dot{ top:auto; bottom:8px; right:8px; }
   html[data-pfrows] body #stage .pfx-oc .pfx-pins{ display:grid; grid-template-columns:repeat(3, 28px); justify-content:space-around; align-content:center; gap:8px 4px; padding:0 4px; }
   html[data-pfrows] body #stage .pfx-oc .pfx-pin{ width:28px; height:28px; }
-  html[data-pfrows] body #stage .pfx-oc .pfx-pv > .new-dot{ top:6px; right:6px; z-index:3; }
-  html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ --pn:30px; justify-content:center; gap:5px; padding:0 4px; }
+  html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ --pn:26px; justify-content:center; gap:9px; padding:0 4px; }
   html[data-pfrows] body #stage .pfx-oc .pfx-node:not(.is-win){ display:none; }
   @media (min-width:40rem){
     html[data-pfrows] body #stage .pfx-trio{ gap:14px; }
     html[data-pfrows] body #stage .pfx.pfx-oc{ padding:14px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-end{ display:inline-flex; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-chev, html[data-pfrows] body #stage .pfx-oc .pfx-chev svg{ width:15px; height:15px; }
     html[data-pfrows] body #stage .pfx-oc .pfx-scene, html[data-pfrows] body #stage .pfx-oc .pfx-pins, html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ height:112px; }
     html[data-pfrows] body #stage .pfx-oc .pfx-char{ top:18px; width:64px; height:64px; margin-left:-32px; }
     html[data-pfrows] body #stage .pfx-oc .pfx-theme{ width:26px; height:26px; right:10px; top:10px; }
     html[data-pfrows] body #stage .pfx-oc .pfx-pins{ grid-template-columns:repeat(6, 30px); gap:12px 4px; }
     html[data-pfrows] body #stage .pfx-oc .pfx-pin{ width:30px; height:30px; }
-    html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ --pn:32px; justify-content:space-between; padding:0 10px; }
+    html[data-pfrows] body #stage .pfx-oc .pfx-nodes{ --pn:25px; justify-content:space-between; padding:0 8px; }
     html[data-pfrows] body #stage .pfx-oc .pfx-node:not(.is-win){ display:grid; }
     html[data-pfrows] body #stage .pfx-oc .pfx-label{ font-size:17px; }
     html[data-pfrows] body #stage .pfx-oc .pfx-sub{ font-size:14px; }
@@ -155763,7 +155764,8 @@ function pfxCase(have, total, opt){
   try{ fresh = badgeNewCount(); }catch(e){}
   const bar = pfxEl("span", "pfx-bar"); const fill = pfxEl("i"); fill.style.setProperty("--w", Math.round(Math.min(1, have / Math.max(1, total)) * 1000) / 10 + "%");
   bar.appendChild(fill);
-  const word = fresh ? pfxEl("span", "pfx-newword", "New") : null;
+  let word = null;
+  if(fresh){ word = pfxEl("span", "pfx-tag"); word.append(pfxEl("span", "pfx-newword", "New"), buildNewDot()); }
   const pv = pfxEl("span", "pfx-pv"); pv.appendChild(pins);
   if(fresh) pv.appendChild(buildNewDot());
   const b = pfxButton("bc", opt, "Badge case", have + " of " + total + " badges",
