@@ -452,7 +452,7 @@ def main():
             if wanted("H"):
                 hq = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
                     const d = bannerDef('vrtop10'); if(!d) return { none: true };
-                    const s = JSON.stringify(store), out = {};
+                    const s = JSON.stringify(store), out = {}; { const u = ultimateProgress(); out.up0 = [u.have, u.need]; }
                     const v = unlockTrackView(); const t = v.tracks.find(x => x.key === 'vr'); const top = t.tiers[t.tiers.length - 1];
                     out.lead = top.lead.k + ':' + top.lead.id; out.goldWith = top.rewards.map(r => r.k + ':' + r.id);
                     store.vrWins = 9; out.at9 = bannerEarned('vrtop10'); out.tier9 = unlockTrackView().tracks.find(x => x.key === 'vr').tiers.slice(-1)[0].held;
@@ -540,8 +540,11 @@ def main():
                     n == len(sets) and not lost and held_any > 0, lost[:5])
                 chk("[%s] (B) Astral / the ultimate asks for nothing more than the banner added (%s more banner(s))" % (cls, added), not worse, worse[:5])
                 grew = sorted({t2["aNeed"] - b_["aNeed"] for b_, t2 in zip(res["base"], res["this"]) if "err" not in b_ and "err" not in t2})
-                chk("[%s] (B) the ultimate counts the Virtual Room's new banner: its count is one more than the baseline's for every account (%s)" % (cls, grew),
-                    grew == [1] and added == 1, grew)
+                # the same change for every account (nothing account-specific), at most the one banner added; in Fire Code exactly it. The
+                # academy's count is also lowered by decision 5 (Supernova's three rewards left out while the rank is out of reach), so
+                # there it is 1 - 3 = -2 against origin/main; (H) shows the banner itself moves the count by one.
+                chk("[%s] (B) the ultimate's count changes the same for every account, by the new banner at most (%s; %s banner added)" % (cls, grew, added),
+                    len(grew) == 1 and added == 1 and grew[0] <= 1 and (cls == "academy" or grew == [1]), grew)
                 chk("[%s] (B) nobody who holds the ultimate on the baseline loses it (%d hold it there, %d here)" % (cls, ult_base, ult_here),
                     ult_here >= ult_base and not any(x[1] == "ULTIMATE" for x in lost), [x for x in lost if x[1] == "ULTIMATE"])
                 codes = [x.get("ut") for x in res["this"]]
