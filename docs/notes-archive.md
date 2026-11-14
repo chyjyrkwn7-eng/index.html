@@ -39672,3 +39672,5 @@ check-centering flagged the Friends empty card ("Nobody yet. Send someone your c
 - FIX (index.html, CSS only): `.friend-sect > .sect-label + .friend-hint.friend-empty{ margin-top:0; }`, after the 384 r9 centring rule. When an instructor's row (`novaManageRow()`) comes first the hint is not next to the label, so the rule does not apply and it keeps its gap.
 - GATES (one at a time, TMPDIR=/dev/shm, each once): check-js ALL PASS (14 blocks); check-centering --quick ALL PASS (1261 elements on 151 screens, 0 off centre; 3 moving, not measured); the same gate `--only friends --against 7bdca1e` FAILS with the two 4.14px findings; sweep-layout --quick 20/20 combinations clean (4 devices x orientation x launch mode).
 - Chromium here draws Inter where an iPhone draws SF; a residue under a pixel can differ on a phone.
+
+Gate result added later: sweep-layout.py --quick on this branch: 20/20 combinations clean (4 devices x orientation x launch mode). Page-load console read not run separately.
