@@ -31904,7 +31904,8 @@
   .bc-edge{ transform:translateZ(calc((var(--k) - .5) * var(--thick) * .96)) scale(.988); }
   .bc-spec{ position:absolute; inset:0; overflow:hidden; pointer-events:none;
     -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
-  .bc-spec i{ position:absolute; top:-25%; bottom:-25%; left:32%; width:36%; opacity:0;
+  /* (384.101) the turning light keeps its own layer between its moves (will-change), so it is never let go and made again */
+  .bc-spec i{ position:absolute; top:-25%; bottom:-25%; left:32%; width:36%; opacity:0; will-change:transform, opacity;
     background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 28%, rgba(255,255,255,.58) 50%, rgba(255,255,255,.16) 72%, rgba(255,255,255,0) 100%); }
   /* the pop out of the dark, and the sway at rest that shows its edge */
   .bc-flyer.bc-show .bc-coin{ animation:bc-pop 1.7s cubic-bezier(.16,.9,.3,1) both; }
@@ -31960,14 +31961,29 @@
     border:2px solid color-mix(in srgb, var(--badge-col) 50%, #fff); opacity:0;
     animation:bc-seatring .8s cubic-bezier(.2,.7,.3,1) both; }
   @keyframes bc-seatring{ 0%{ opacity:.95; transform:scale(.55); } 100%{ opacity:0; transform:scale(1.35); } }
-  /* The glisten is drawn inside each badge's own SVG and masked to its
-     silhouette (see buildUnitBadgeSVG), so the light runs across the
-     badge and never across the square slot around it. One badge glints -
-     the one that just went in (build 308): sixteen at once repainted
-     sixteen SVGs every frame. */
-  .badge-shine-band{ opacity:0; }
-  .bc-slot.is-new .badge-shine-band{ animation:bc-glint 1.3s cubic-bezier(.3,0,.2,1) .3s both; }
-  @keyframes bc-glint{ 0%{ opacity:1; transform:translateX(0); } 100%{ opacity:1; transform:translateX(165px); } }
+  /* THE GLINT (384.101): HTML over the badge, behind a static CSS mask of
+     its silhouette (buildBadgeGlint), the band moved by transform and faded
+     by opacity on its own layer (playBadgeGlint) - never inside the SVG,
+     which repainted the whole drawing every frame. The light runs across
+     the badge and never across the square slot around it (build 308). One
+     badge glints - the one that just went in. The same band crosses the
+     coin's face at rest (.bc-spec) and the Badges tab's case. */
+  /* the masked box is a layer of its own for as long as it is there (will-change): the seat's
+     bounce ending under it must not hand it back to its parent - a repaint of its mask, mid-glint */
+  .badge-glint{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:2; will-change:transform;
+    -webkit-mask-size:contain; mask-size:contain; -webkit-mask-position:center; mask-position:center;
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
+  /* one box wide, off the left edge, the band itself in the gradient: tilted,
+     a soft leading edge (right), a short tail behind it (left). Promoted from
+     the moment it is made, so its first frame is not a new layer. */
+  .badge-glint-band{ position:absolute; top:0; bottom:0; left:-100%; width:100%; opacity:0; pointer-events:none;
+    transform:translateX(0); will-change:transform, opacity; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    background:linear-gradient(108deg, rgba(255,255,255,0) 22%, rgba(255,255,255,.05) 32%, rgba(255,255,255,.14) 40%, rgba(255,255,255,.34) 46%,
+      rgba(255,255,255,.62) 51%, rgba(255,255,255,.66) 54%, rgba(255,255,255,.4) 58%, rgba(255,255,255,.14) 63%, rgba(255,255,255,0) 69%); }
+  /* the in-SVG band is retired: any drawing that still carries one (an older builder) is never painted */
+  .badge-shine{ display:none; }
+  /* over the slot's drawing, moved and seated with it */
+  .bc-slot.is-new > .badge-glint{ animation:bc-seat .55s cubic-bezier(.2,1.4,.4,1) both; }
   /* THE LIGHT OUT OF THE SEAM (build 320): flat, over the case where the
      lid meets the base, one soft pool per badge in the case in its colour,
      under its own column - it blooms as the lid cracks and fades as the
@@ -33107,12 +33123,8 @@
   .badges-tab .nova-case.ncase.is-shut > .ncase-lid{ transform:perspective(340cqw) rotateX(-180deg); z-index:4; }
   .badges-tab .nova-case.ncase.is-shut .ncase-lid-out{ opacity:1; }
   /* a glint across each found badge as the lid clears it: one soft band,
-     once, inside the badge's own face (a circle well inside its outline) */
-  .badges-tab .ncase-glint{ position:absolute; left:27%; top:27%; width:46%; height:46%; border-radius:50%; overflow:hidden;
-    z-index:2; pointer-events:none; }
-  .badges-tab .ncase-glint i{ position:absolute; top:-25%; bottom:-25%; left:0; width:55%; opacity:0;
-    transform:translateX(-130%) rotate(18deg);
-    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.42) 50%, rgba(255,255,255,0)); }
+     once, cut to the badge's own silhouette - the slot's glint
+     (.badge-glint, 384.101; it was a circle inside the face) */
   .badges-tab .nova-case.ncase .ncase-cell{ cursor:pointer; transition:transform .18s cubic-bezier(.2,.8,.3,1); }
   .badges-tab .nova-case.ncase .ncase-cell:active{ transform:scale(1.05); }
   .badges-tab .nova-case.ncase .ncase-cell:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:1px; border-radius:.4rem; }
@@ -33193,7 +33205,8 @@
   .binspect-spec{ position:absolute; inset:0; overflow:hidden; pointer-events:none;
     -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   .binspect-face.is-back .binspect-spec{ transform:scaleX(-1); }
-  .binspect-spec i{ position:absolute; top:-25%; bottom:-25%; left:32%; width:36%; opacity:0;
+  /* (384.101) its own layer: a turn by the finger moves it without repainting the masked face */
+  .binspect-spec i{ position:absolute; top:-25%; bottom:-25%; left:32%; width:36%; opacity:0; will-change:transform, opacity;
     background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 28%, rgba(255,255,255,.58) 50%, rgba(255,255,255,.16) 72%, rgba(255,255,255,0) 100%); }
   .binspect-hit{ position:absolute; inset:-4%; z-index:3; border-radius:50%; touch-action:none; cursor:grab; }
   .binspect-hit.is-grabbed{ cursor:grabbing; }
@@ -33613,6 +33626,8 @@
      drawing's size: 100cqmin of the slot), in both cases. */
   .bc-slot, .nova-case.ncase .ncase-cell .badge-tile-art{ container-type:size; }
   .bc-slot > svg, .nova-case.ncase .ncase-cell .badge-tile-art > svg{ translate:calc(var(--sdx, 0) * 100cqmin) calc(var(--sdy, 0) * 100cqmin); }
+  /* a glint lies exactly over its drawing (384.101) */
+  .bc-slot > .badge-glint, .nova-case.ncase .ncase-cell .badge-tile-art > .badge-glint{ translate:calc(var(--sdx, 0) * 100cqmin) calc(var(--sdy, 0) * 100cqmin); }
   /* THE WHITE BUTTONS' EDGE (build 327 round 9): "why is the edge of the white
      buttons like that? ... the weird looking edge with the gap". Two things
      made a pale line round the bottom and sides, then a dark band, then the
@@ -79184,22 +79199,6 @@ function buildObjPinSVG(unitName, earned, opts, shape){
     if(!grey){ try{ chapterObjVector(face, shape, unitName); }catch(e){} }
     add(outline, { fill: "none", stroke: "rgba(0,0,0,.35)", "stroke-width": "1.1", "stroke-linejoin": "round" }, tok);
   }
-  if(grey) return svg;
-  /* the glisten, masked to the pin's own silhouette (invisible until something animates it) */
-  const mask = document.createElementNS(NS, "mask");
-  mask.setAttribute("id", uid + "-sil"); mask.setAttribute("maskUnits", "userSpaceOnUse");
-  mask.setAttribute("x", "-80"); mask.setAttribute("y", "-80"); mask.setAttribute("width", "260"); mask.setAttribute("height", "260");
-  const mp = document.createElementNS(NS, "path"); mp.setAttribute("d", outline); mp.setAttribute("fill", "#FFFFFF");
-  mask.appendChild(mp); defs.appendChild(mask);
-  const sg = document.createElementNS(NS, "linearGradient"); sg.setAttribute("id", uid + "-shn"); sg.setAttribute("x1", "0"); sg.setAttribute("y1", "0"); sg.setAttribute("x2", "1"); sg.setAttribute("y2", "0");
-  [[0, 0], [.5, .8], [1, 0]].forEach(([o, a]) => { const st = document.createElementNS(NS, "stop"); st.setAttribute("offset", String(o)); st.setAttribute("stop-color", "#FFFFFF"); st.setAttribute("stop-opacity", String(a)); sg.appendChild(st); });
-  defs.appendChild(sg);
-  const shine = group({ mask: "url(#" + uid + "-sil)", class: "badge-shine" }, tok);
-  const tilt = group({ transform: "rotate(24 50 50)" }, shine);
-  const band = document.createElementNS(NS, "rect");
-  band.setAttribute("x", "-46"); band.setAttribute("y", "-30"); band.setAttribute("width", "30"); band.setAttribute("height", "160");
-  band.setAttribute("fill", "url(#" + uid + "-shn)"); band.setAttribute("class", "badge-shine-band");
-  tilt.appendChild(band);
   return svg;
 }
 
@@ -80616,34 +80615,13 @@ function buildUnitBadgeSVG(unitName, earned, opts){
       root.appendChild(r);
     });
   }
-  /* THE GLISTEN LIVES INSIDE THE BADGE, masked to its silhouette - "the
-     reflection that hits your brief case across all the badges, I can
-     tell it's not only happening to the badges but in the square hit box
-     it's on, ensure that effect is only to the badges". Invisible until
-     something animates it (.badge-shine-band). A mask rather than a clip
-     because the silhouette includes the rim outside the outline, which
-     only a stroke can draw; userSpaceOnUse so the region does not follow
-     the band as it moves. */
-  if(grey) return svg;
-  const mask = document.createElementNS(NS, "mask");
-  mask.setAttribute("id", uid + "-sil");
-  mask.setAttribute("maskUnits", "userSpaceOnUse");
-  mask.setAttribute("x", "-80"); mask.setAttribute("y", "-80");
-  mask.setAttribute("width", "260"); mask.setAttribute("height", "260");
-  const mp = document.createElementNS(NS, "path");
-  mp.setAttribute("d", outline);
-  mp.setAttribute("fill", "#FFFFFF"); mp.setAttribute("stroke", "#FFFFFF");
-  mp.setAttribute("stroke-width", String(2 * G.key)); mp.setAttribute("stroke-linejoin", "round");
-  mask.appendChild(mp); defs.appendChild(mask);
-  const shineGrad = ramp(uid + "-shn", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.8], [1, "#FFFFFF", 0]], "0", "0", "1", "0", "objectBoundingBox");
-  const shine = group({ mask: "url(#" + uid + "-sil)", class: "badge-shine" }, tok);
-  const shineTilt = group({ transform: "rotate(24 50 50)" }, shine);
-  const band = document.createElementNS(NS, "rect");
-  band.setAttribute("x", "-46"); band.setAttribute("y", "-30");
-  band.setAttribute("width", "30"); band.setAttribute("height", "160");
-  band.setAttribute("fill", shineGrad);
-  band.setAttribute("class", "badge-shine-band");
-  shineTilt.appendChild(band);
+  /* THE GLISTEN IS NOT IN THE DRAWING ANY MORE (384.101). It was a band
+     behind an SVG mask here (build 308: "ensure that effect is only to the
+     badges"), and moving anything inside an SVG repaints the whole drawing
+     every frame, on the phone too. It is HTML over the badge now, behind a
+     CSS mask of this same silhouette (buildBadgeGlint), so the drawing is
+     painted once and the light moves on the compositor. Every badge drawn
+     anywhere also stops carrying a mask it only used for a second. */
   return svg;
 }
 
@@ -91517,8 +91495,10 @@ const SOUND_CATALOGUE = {
       K.lead({ f: "D6", t: I + .36, hold: .3, d: .8, g: .06 });
       ["D4", "A4", "D5", "F5"].forEach((n, i) => K.chime({ t: I + .36 + i * .015, f: n, d: 1.4, g: .032 }));
       K.bass({ f: "D3", t: I + .36, d: .7, g: .1 });
-      [0, .12, .24].forEach((t, i) => K.twinkle({ t: G + t, f: ["A6", "D7", "F7"][i], d: .7, g: .018 }));
-      K.noise({ t: G, bp: 4000, ff2: 9000, q: 2, a: .2, d: .5, g: .016, pan: -.5, pan2: .5 });
+      /* (384.101) as the glint is ON the face: it eases in, so its light reaches the face ~.4s after it starts and leaves it ~1.2s */
+      const GF = G + .3;
+      [0, .12, .24].forEach((t, i) => K.twinkle({ t: GF + t, f: ["A6", "D7", "F7"][i], d: .7, g: .018 }));
+      K.noise({ t: GF, bp: 4000, ff2: 9000, q: 2, a: .25, d: .6, g: .016, pan: -.5, pan2: .5 });
     } },
   "bc.rise": { vol: 1.11, group: "Badges", bus: "cut", cd: 2000, hap: null,
     desc: "BADGE FOUND, the camera pulling back as the case rises out of the dark (BC_T.liftMs): a low triangle climbing D to A under the ambience's air, settling with a soft thud.",
@@ -132646,16 +132626,80 @@ const BC_T = {
 const BC_OPEN = { lid: 112, tilt: 21 };
 
 /* The silhouette (token and keyline) as a mask image, for the light that
-   crosses the coin's face. Cached by outline. */
+   crosses the coin's face - and every glint (384.101). Cached by outline.
+   A raised pin (a shape drawn as its object, `obj`) has no keyline rim:
+   its silhouette is its outline alone, as its own drawing is. */
 const BADGE_SIL_CACHE = {};
 function badgeSilhouetteURL(unitName){
   const shape = badgeShapeFor(unitName), d = shape.d;
   if(BADGE_SIL_CACHE[d]) return BADGE_SIL_CACHE[d];
   const G = BADGE_GEOM, c = shape.c;
+  const rim = shape.obj ? '"' : '" stroke="#fff" stroke-width="' + (2 * G.key) + '" stroke-linejoin="round"';
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + badgeViewBoxFor(d) + '"><path d="' + d +
     '" transform="translate(' + c[0] + ' ' + c[1] + ') scale(' + G.scale + ') translate(' + (-c[0]) + ' ' + (-c[1]) +
-    ')" fill="#fff" stroke="#fff" stroke-width="' + (2 * G.key) + '" stroke-linejoin="round"/></svg>';
+    ')" fill="#fff' + rim + '/></svg>';
   return (BADGE_SIL_CACHE[d] = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")');
+}
+/* ---- THE GLINT, ONE FOR EVERY BADGE (384.101) ----
+   Madison, on his iPhone: "When the badge comes up, the part where it
+   shines comes up laggy, it's not a smooth transition ... it like
+   glistens but needs to do it smoother." The glisten that crossed a badge
+   as it went into its slot was a rect INSIDE the badge's SVG, behind an
+   SVG mask, moved by a CSS transform: an SVG child's transform is not run
+   by the compositor (WebKit's or Chromium's), so the whole masked drawing
+   was painted again on every frame of it (Chromium: 25 paints of the
+   badge's svg in the glint's 1.3s). On a 3x phone that is a drawing with
+   five masks repainted per frame while the case knocks and the seat ring
+   goes out - the stutter.
+   So the glint is HTML now, the coin's own way: a band (.badge-glint-band)
+   behind a STATIC CSS mask of the badge's silhouette (.badge-glint, the
+   mask set once and never animated), moved by transform and faded by
+   opacity on its own layer, promoted from the moment it is made
+   (will-change), well before it runs. Still only on the badge: the mask
+   is the badge's own outline and keyline, never the square slot (build
+   308: "ensure that effect is only to the badges").
+   The look is the old one, slower and softer: one band, tilted, crossing
+   left to right, with a soft leading edge and a short tail behind it,
+   eased in and out (BADGE_GLINT). One builder for the slot, the coin and
+   the Badges tab's case (its lid glint - unreachable while that tray has
+   no lid, round 10), so they are the same light. */
+/* seatDelay: after the seat's .55s bounce (bc-seat) has finished, never during it */
+const BADGE_GLINT = { ms: 1600, seatDelay: 620, ease: "cubic-bezier(.37,0,.63,1)" };
+function badgeGlintBand(){
+  const b = document.createElement("span");
+  b.className = "badge-glint-band";
+  b.setAttribute("aria-hidden", "true");
+  return b;
+}
+function buildBadgeGlint(unitName, cls){
+  const g = document.createElement("span");
+  g.className = "badge-glint" + (cls ? " " + cls : "");
+  g.setAttribute("aria-hidden", "true");
+  try{
+    const sil = badgeSilhouetteURL(unitName);
+    g.style.setProperty("-webkit-mask-image", sil);
+    g.style.setProperty("mask-image", sil);
+  }catch(e){}
+  g.appendChild(badgeGlintBand());
+  return g;
+}
+/* Runs a glint's band once: across the badge on one gentle curve, faded
+   in and out at the ends (where it is off the badge anyway). Two effects,
+   transform and opacity, so each keeps its own curve; both compositor
+   properties. */
+function playBadgeGlint(band, o){
+  o = o || {};
+  if(band && !band.classList.contains("badge-glint-band")) band = band.querySelector(".badge-glint-band");
+  if(!band || typeof band.animate !== "function") return [];
+  const ms = o.ms || BADGE_GLINT.ms, delay = o.delay || 0;
+  try{
+    return [
+      band.animate([{ transform: "translateX(0)" }, { transform: "translateX(200%)" }],
+        { duration: ms, delay, easing: BADGE_GLINT.ease, fill: "both" }),
+      band.animate([{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 1, offset: .8 }, { opacity: 0 }],
+        { duration: ms, delay, easing: "linear", fill: "both" })
+    ];
+  }catch(e){ return []; }
 }
 /* A drawing as an image, so every layer that shows it shares one decode. */
 function badgeImageURL(svg){
@@ -132903,6 +132947,9 @@ function buildBadgeCoin(unitName){
     sp.style.setProperty("-webkit-mask-image", sil);
     sp.style.setProperty("mask-image", sil);
     sp.appendChild(mk("", "i"));
+    /* the glint at rest (384.101): the slot's own band, in this face's
+       mask, on its own layer from now - three and a half seconds before it runs */
+    if(side === "is-front") sp.appendChild(badgeGlintBand());
     f.appendChild(sp);
     return f;
   };
@@ -132928,18 +132975,31 @@ function bcSpinCoin(flyer, ms, turns, from){
   const fr = flyer.querySelector(".bc-face.is-front .bc-spec i");
   const bk = flyer.querySelector(".bc-face.is-back .bc-spec i");
   const a0 = from || 0, total = turns * 360;
-  const N = 96, K = [], S = [], F = [], B = [];
+  const K = [], S = [], F = [], B = [];
   const wrap = a => { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
   const light = r => { const x = r * Math.PI / 180; return { o: Math.pow(Math.max(0, Math.cos(x)), 10), x: Math.sin(x) * 190 }; };
-  for(let k = 0; k <= N; k++){
-    const u = k / N;
-    const th = a0 + total * (1 - Math.pow(1 - u, 3));
+  /* (384.101) SAMPLED BY THE ANGLE WHERE IT TURNS FAST. 96 even steps in
+     time put up to 37 degrees between two samples in the first turns, and
+     the light on a face is only ~40 degrees wide: each pass was drawn from
+     one or two samples, so it flashed at .65 on one turn and 1 on the next
+     and jumped across the face rather than sweeping it - the shimmer read
+     as stepping. Now no step is more than 4 degrees (or 1/120 of the time,
+     where it turns slowly), so every pass sweeps the face at full light.
+     And the light leaves the face as the coin comes to rest (the last 20%
+     of the spin, after its last pass): it rested at .74 and the glint then
+     snapped it off and started again from the left - a pop. Now the glint
+     comes in over a dark face. */
+  const us = [0];
+  for(let u = 0; u < 1; ){ u = Math.min(1, u + Math.min(1 / 120, 4 / Math.max(1e-6, 3 * total * (1 - u) * (1 - u)))); us.push(u); }
+  const rest = u => u <= .8 ? 1 : .5 + .5 * Math.cos(Math.PI * (u - .8) / .2);
+  us.forEach(u => {
+    const th = a0 + total * (1 - Math.pow(1 - u, 3)), e = rest(u);
     K.push({ offset: u, transform: "rotateY(" + th.toFixed(2) + "deg)" });
     S.push({ offset: u, transform: "scaleX(" + (.2 + .8 * Math.abs(Math.cos(th * Math.PI / 180))).toFixed(3) + ")" });
     const f = light(wrap(th + 14)), b = light(wrap(th + 14 - 180));
-    F.push({ offset: u, opacity: f.o.toFixed(3), transform: "translateX(" + (-f.x).toFixed(1) + "%) rotate(16deg)" });
-    B.push({ offset: u, opacity: b.o.toFixed(3), transform: "translateX(" + b.x.toFixed(1) + "%) rotate(16deg)" });
-  }
+    F.push({ offset: u, opacity: (f.o * e).toFixed(3), transform: "translateX(" + (-f.x).toFixed(1) + "%) rotate(16deg)" });
+    B.push({ offset: u, opacity: (b.o * e).toFixed(3), transform: "translateX(" + b.x.toFixed(1) + "%) rotate(16deg)" });
+  });
   const o = { duration: ms, easing: "linear", fill: "forwards" };
   const out = [];
   if(spin) out.push(spin.animate(K, o));
@@ -132948,15 +133008,13 @@ function bcSpinCoin(flyer, ms, turns, from){
   if(bk) out.push(bk.animate(B, o));
   return out;
 }
-/* The light running once across the face, at rest. */
+/* The light running once across the face, at rest: the glint every badge
+   gets (384.101, playBadgeGlint), on its own band in the face's mask -
+   no longer the turning light's element, which the spin had left lit. */
 function bcGlintCoin(flyer, ms){
-  const f = flyer.querySelector(".bc-face.is-front .bc-spec i");
-  if(!f) return null;
-  return f.animate([
-    { opacity: 0, transform: "translateX(-190%) rotate(16deg)" },
-    { opacity: 1, offset: .3 }, { opacity: 1, offset: .7 },
-    { opacity: 0, transform: "translateX(190%) rotate(16deg)" }
-  ], { duration: ms || 1400, easing: "cubic-bezier(.3,0,.2,1)", fill: "forwards" });
+  const band = flyer.querySelector(".bc-face.is-front .bc-spec .badge-glint-band");
+  if(!band) return [];
+  return playBadgeGlint(band, { ms: ms || BADGE_GLINT.ms });
 }
 /* THE CASE ITSELF, in 3D. The parts share their materials (.nova-case-*)
    with the Badges tab's case and the Profile card's, so the case you
@@ -133539,8 +133597,20 @@ function playBadgeCaseScene(units, done, retro, opts){
     if(sp) anims.push(sp.animate([{ transform: "rotateY(" + (BC_SPIN_TURNS * 360) + "deg)" }, { transform: "rotateY(" + ((BC_SPIN_TURNS + 1) * 360) + "deg)" }],
       { duration: BC_T.flyMs, easing: "cubic-bezier(.45,0,.4,1)", fill: "forwards" }));
   };
+  /* EACH NEW BADGE'S GLINT IS IN ITS SLOT FROM THE START (384.101): over
+     the empty hole, dark, its mask image loaded and its layers made while
+     the case is still coming up - not at the seat, where a mask still
+     loading was a repaint of it in the middle of its glint (Chromium,
+     ~0.7s in). The seat swaps the drawing under it and leaves it be. */
+  const glintOf = {};
+  units.forEach(u => { if(slots[u] && !glintOf[u]){ glintOf[u] = buildBadgeGlint(u); slots[u].appendChild(glintOf[u]); } });
   const seat = (u, i) => {
-    slots[u].replaceChildren(buildUnitBadgeSVG(u, true, { px: badgeCaseSlotPx() }));
+    const drawn = buildUnitBadgeSVG(u, true, { px: badgeCaseSlotPx() });
+    const was = slots[u].querySelector(":scope > svg");
+    if(glintOf[u] && was) was.replaceWith(drawn); else slots[u].replaceChildren(drawn);
+    /* its glint: run once the seat's bounce has settled */
+    const glint = glintOf[u] && glintOf[u].isConnected ? glintOf[u] : slots[u].appendChild(buildBadgeGlint(u));
+    playBadgeGlint(glint, { delay: BADGE_GLINT.seatDelay }).forEach(a => anims.push(a));
     const ring = mk("bc-seatring");
     slots[u].appendChild(ring);
     slots[u].classList.add("is-held", "is-new");
@@ -133582,7 +133652,7 @@ function playBadgeCaseScene(units, done, retro, opts){
       if(intro.getBoundingClientRect().bottom > ob) intro.classList.add("is-long"); }catch(e){}
   });
   at(BC_T.intro, () => intro.classList.add("is-in"));
-  at(BC_T.glint, () => { const g = bcGlintCoin(flyer, 1400); if(g) anims.push(g); });
+  at(BC_T.glint, () => { bcGlintCoin(flyer).forEach(a => anims.push(a)); });
   at(BC_T.sway, swayOn);
   /* 2. The camera pulls back: it rises out of the way, still lit, the
      light follows down to the case, and the case comes up under it, shut -
@@ -160014,6 +160084,7 @@ function buildBadgesTab(opts){
     const tile = document.createElement("button");
     tile.type = "button";
     tile.className = "badge-tile ncase-cell" + (has ? " is-earned" : " is-locked");
+    tile.dataset.unit = unit;   /* (384.101) whose silhouette its glint is cut to */
     tile.setAttribute("aria-label", unit + " Badge, " + (has ? "found" : "not found yet"));
     const art = document.createElement("span");
     art.className = "badge-tile-art";
@@ -160221,21 +160292,13 @@ function openBadgeCaseLid(kase, wait){
   const step = Math.min(70, 360 / maxK);
   lit.forEach(x => {
     const art = x.c.querySelector(".badge-tile-art") || x.c;
-    const g = document.createElement("span");
-    g.className = "ncase-glint";
-    g.setAttribute("aria-hidden", "true");
-    const bar = document.createElement("i");
-    g.appendChild(bar);
+    /* (384.101) the slot's glint, cut to this badge's own silhouette */
+    const g = buildBadgeGlint(x.c.dataset.unit || "", "ncase-glint");
     art.appendChild(g);
     glints.push(g);
-    try{
-      const a = bar.animate([
-        { opacity: 0, transform: "translateX(-130%) rotate(18deg)" },
-        { opacity: 1, offset: .35 }, { opacity: 1, offset: .6 },
-        { opacity: 0, transform: "translateX(230%) rotate(18deg)" }
-      ], { duration: C.glint, delay: Math.round(W + edge * D + x.k * step), easing: "cubic-bezier(.3,0,.2,1)", fill: "both" });
-      a.finished.then(() => g.remove()).catch(() => {});
-    }catch(e){ g.remove(); }
+    const a = playBadgeGlint(g, { delay: Math.round(W + edge * D + x.k * step) });
+    if(a.length) a[0].finished.then(() => g.remove()).catch(() => {});
+    else g.remove();
   });
 }
 function finishBadgeCaseOpen(kase){
