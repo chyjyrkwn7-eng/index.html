@@ -27639,6 +27639,38 @@
   .person-card .person-sheet-act{ margin-top:1.05rem; width:100%; }
   .person-card .person-sheet-hint{ color:#7F8794; }
   .person-card .person-sheet-close{ width:100%; }
+  /* ---- A FRIEND'S PROFILE (384.115) ----
+     The Profile's own hero (.profile-hero.has-cover, its cover, plate and name), then cards in the surface tokens' one look:
+     last activity, the badge case (the Badges screen's tray, read-only), what they hold. View profile sits beside Message on the card. */
+  .person-sheet-acts{ display:flex; gap:.6rem; margin-top:1.05rem; }
+  .person-card .person-sheet-acts .person-sheet-act{ flex:1 1 0; width:auto; min-width:0; margin-top:0; min-height:48px; padding-left:.6rem; padding-right:.6rem; }
+  .screen-friendprofile .fp-body{ display:flex; flex-direction:column; gap:.9rem; padding-bottom:1rem; }
+  .screen-friendprofile .profile-hero{ margin-bottom:0; }
+  .fp-hero .fp-grid{ margin-top:1.1rem; text-align:left; }
+  .fp-card{ margin:0; padding:1rem 1.05rem 1.05rem; border-radius:18px; background:var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow); -webkit-backdrop-filter:var(--surface-blur); backdrop-filter:var(--surface-blur); }
+  .fp-kick{ display:block; margin:0; font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
+  .fp-kick-row{ display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; margin:0 0 .6rem; }
+  .fp-kick-row .fp-hold-label{ font-size:.95rem; font-weight:800; color:var(--ink); }
+  .fp-count{ font-size:.85rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .fp-activity .fp-kick{ margin-bottom:.55rem; }
+  .fp-act-main{ margin:0; font-size:1.05rem; font-weight:800; color:var(--ink); line-height:1.3; overflow-wrap:anywhere; }
+  .fp-act-when{ margin:.3rem 0 0; font-size:.88rem; font-weight:600; color:var(--soft); }
+  .fp-note{ margin:.75rem 0 0; font-size:.85rem; line-height:1.4; color:var(--soft); }
+  .fp-empty .fp-note{ margin:0; }
+  .fp-case .badge-case{ margin-top:0; }
+  .fp-case .badge-tile.fp-slot{ cursor:default; pointer-events:none; }
+  .fp-bar{ display:block; height:.4rem; border-radius:99px; background:var(--surface-inset); overflow:hidden; }
+  .fp-bar > i{ display:block; height:100%; border-radius:inherit; background:var(--accent); }
+  .fp-hold-row + .fp-hold-row{ margin-top:1.05rem; }
+  .fp-hold .fp-kick{ margin-bottom:.8rem; }
+  .fp-hold .fp-kick-row{ margin-bottom:.5rem; }
+  .fp-chars{ display:flex; gap:.45rem; margin-top:.75rem; overflow:hidden; }
+  .fp-char{ flex:none; width:2.7rem; height:2.7rem; border-radius:50%; overflow:hidden; display:block;
+    background:radial-gradient(circle at 50% 38%, rgba(255,255,255,.12), rgba(255,255,255,.04) 72%); }
+  .fp-char > svg{ width:100%; height:100%; display:block; }
+  .fp-actions{ display:flex; gap:.6rem; margin-top:.2rem; }
+  .fp-actions .next{ flex:1 1 0; min-width:0; min-height:48px; margin:0; }
   .invite-close{ width:100%; min-height:44px; margin-top:.9rem; }
   @media (min-width:40rem){
     .invite-overlay{ align-items:center; }
@@ -69022,6 +69054,9 @@ const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
 /* Build 324: the weekly blocks Nova's recap reads change with every test,
    and nobody is watching them live - they ride with the next push. */
 ROW_LAZY_FIELDS.push("wk", "pwk", "wins");
+/* (384.115) what a friend's profile reads (friendProfileFields): they change when a run ends or something is earned, never per answer, and
+   nobody is watching them live - they ride with the next push, as the weekly blocks do. */
+ROW_LAZY_FIELDS.push("bd", "la", "uc", "ub");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long.
    FIVE MINUTES, NOT 90s (build 327z15): "maybe to save space the
@@ -72252,7 +72287,7 @@ function boardNumbersOf(st){
 function buildLeaderboardRow(){
   rollWeek();
   const n = boardNumbersOf(store);
-  return {
+  const row = {
         firstName: store.firstName || "Anonymous",
         avatarChar: store.avatarChar || "ghost",
         accent: theme.accent || "ink",
@@ -72353,6 +72388,65 @@ function buildLeaderboardRow(){
            terms: pushing IS activity. */
         seenAt: Date.now()
       };
+  /* (384.115) what a friend's profile shows: the badges, the last run, the characters and banners held (friendProfileFields) */
+  Object.assign(row, friendProfileFields());
+  return row;
+}
+
+/* ---- WHAT A FRIEND'S PROFILE READS (384.115) ----
+   Madison: "When clicking on someone in the leaderboard, if you're friends with them, let's make it so you can visit their
+   profile. You can see their last activity and when, you can look at their badge case and whatever else?"
+   A person's progress document is keyed by their SYNC CODE and is never read by anybody else, so everything their profile shows
+   comes from the one public document that is keyed by their PUBLIC ID: their row on the board (`leaderboard/<public id>`; Fire
+   Code's is a field of vrooms/lb-ifc-v1). Four fields are added to that row, built from state this device already holds,
+   and written in the SAME write the row already makes - nothing is written because of them, and nothing is written per answer
+   (they are lazy fields, ROW_LAZY_FIELDS, and none of them moves while a run is on):
+     bd  the badges held - the unit names of the class this page is, in no order that matters (an array of strings)
+     la  the last finished run - { kind: drill | exam | game | vr | review, unit: its unit when it was one, units: how many,
+         pct: its score, at: when it finished (ms) }; absent until a run has been finished
+     uc  the characters held - ids
+     ub  the banners held - ids
+   The ids and unit names are the class's own tables' and are only ever DRAWN through those tables by a reader (a name nothing
+   in the table matches is dropped), so a row can never put markup or an unknown word on anybody's screen.
+   NOTHING HERE IS A SYNC CODE, and the fields exist only where the row does: an account that is hidden from the rankings
+   (leaderboardOptIn off) writes no row, so it publishes none of this. The row's collection is READABLE BY ANYBODY WITH THE
+   APP'S CODE (the rules allow reading and listing `leaderboard`), not only by friends - "friends only" is a gate in the app's
+   screens, so what is published is what a classmate would reasonably see (see the notes). A row written before this build has
+   none of the four and a reader treats each as "not published yet". The streak is NOT among them: Profile no longer shows one.
+   uc and ub are the dearest to work out (a feat per character, a rule per banner), so they are kept for the run's numbers: the
+   same ones again are not worked out twice. */
+var friendShowcaseMemo = null;
+function friendShowcaseOf(){
+  const L = (store && store.lifetime) || {};
+  const key = [window.NOVA_CLASS, L.points || 0, L.correct || 0, Array.isArray(store.testHistory) ? store.testHistory.length : 0,
+               Object.keys(store.unitPerfects || {}).length, store.rankFloor || 0].join("|");
+  const m = friendShowcaseMemo, now = Date.now();
+  if(m && m.key === key && now - m.at < 600000) return m;
+  const out = { key: key, at: now, uc: [], ub: [] };
+  try{ out.uc = AVATAR_CHARACTERS.filter(c => !c.retired && !isLockedCharacter(c.id)).map(c => c.id).slice(0, 120); }catch(e){}
+  try{ out.ub = BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id).slice(0, 120); }catch(e){}
+  friendShowcaseMemo = out;
+  return out;
+}
+/* the last finished run, the way a test's own history entry says it (newest by its time, not by its place in the list) */
+function lastActivityOf(st){
+  const list = st && Array.isArray(st.testHistory) ? st.testHistory : [];
+  let h = null;
+  for(let i = 0; i < list.length; i++){ const e = list[i]; if(e && Number(e.playedAt) > 0 && (!h || Number(e.playedAt) > Number(h.playedAt))) h = e; }
+  if(!h) return null;
+  const units = Array.isArray(h.units) ? h.units.filter(u => typeof u === "string" && u) : [];
+  const la = { kind: testModeKey(h), at: Math.floor(Number(h.playedAt)) };
+  if(units.length === 1) la.unit = units[0].slice(0, 90);
+  if(units.length) la.units = units.length;
+  if(typeof h.pct === "number" && isFinite(h.pct)) la.pct = Math.max(0, Math.min(100, Math.round(h.pct)));
+  return la;
+}
+function friendProfileFields(){
+  const out = {};
+  try{ out.bd = badgesEarnedList().map(u => String(u).slice(0, 90)).slice(0, 120); }catch(e){ out.bd = []; }
+  try{ const la = lastActivityOf(store); if(la) out.la = la; }catch(e){}
+  try{ const sc = friendShowcaseOf(); out.uc = sc.uc.slice(); out.ub = sc.ub.slice(); }catch(e){ out.uc = []; out.ub = []; }
+  return out;
 }
 
 /* The two stamps are excluded because they change on every write; with
@@ -72599,7 +72693,7 @@ function classBoardEntriesFrom(snap){
    and what a row and its card show - name, character, colour, banner, XP, tests, correct answers. */
 function buildClassBoardRow(){
   const n = boardNumbersOf(store);
-  return {
+  const row = {
     firstName: store.firstName || "Anonymous",
     avatarChar: store.avatarChar || "ghost",
     accent: theme.accent || "ink",
@@ -72613,6 +72707,9 @@ function buildClassBoardRow(){
     banner: wornBanner() || "",
     lastModified: Date.now()
   };
+  /* (384.115) what a friend's profile shows, from Fire Code's own store (friendProfileFields) */
+  Object.assign(row, friendProfileFields());
+  return row;
 }
 /* The same cadence as the academy's row, on the same machinery: pushed after each account write (afterAccountWrite), the score
    fields waiting ROW_SCORE_PUSH_MS between writes, the end of a run and putting the app away going at once, and a row that
@@ -114758,6 +114855,7 @@ function openPersonSheet(entry){
 
   const act = document.createElement("button");
   act.type = "button"; act.className = "next person-sheet-act";
+  let viewBtn = null;   /* (384.115) View profile, for a friend (below) */
   /* ---- YOUR OWN CARD (build 304) ----
      "It won't say message or friend of course it would say go to
      profile or something." Same card, same numbers as a classmate sees
@@ -114790,6 +114888,16 @@ function openPersonSheet(entry){
       overlay.remove();
       openDirectChatWith(entry);
     });
+    /* (384.115) A FRIEND'S PROFILE: "View profile" beside Message - only for a friend, and only from the Leaderboard or the
+       Friends screen (friendProfileBackFor: a Virtual Room's card would leave the room). Not a friend: the card is as it was. */
+    const pback = friendProfileBackFor();
+    if(pback){
+      viewBtn = document.createElement("button");
+      viewBtn.type = "button"; viewBtn.className = "next person-sheet-act person-sheet-view";
+      viewBtn.textContent = "View profile";
+      viewBtn.addEventListener("click", () => { overlay.remove(); showFriendProfile(entry, pback); });
+      act.classList.add("ghost");
+    }
   } else if(state === "sent"){
     act.textContent = "Request sent"; act.disabled = true;
     act.classList.add("ghost");
@@ -114807,7 +114915,12 @@ function openPersonSheet(entry){
       overlay.remove();
     });
   }
-  sheet.appendChild(act);
+  if(viewBtn){
+    const pair = document.createElement("div");
+    pair.className = "person-sheet-acts";
+    pair.append(viewBtn, act);
+    sheet.appendChild(pair);
+  } else sheet.appendChild(act);
 
   const hint = document.createElement("p");
   hint.className = "friend-hint person-sheet-hint";
@@ -114833,6 +114946,268 @@ function openPersonSheet(entry){
   mountSheetOverlay(overlay);
   /* the flare's recorded loop starts once the card has landed: starting it in the opening frames is main-thread work in the middle of the fade */
   setTimeout(() => { try{ if(overlay.isConnected) startRankMarks(sheet); }catch(e){} }, 380);
+}
+
+/* ================= A FRIEND'S PROFILE (384.115) =================
+   Madison: "When clicking on someone in the leaderboard, if you're friends with them, let's make it so you can visit their
+   profile. You can see their last activity and when, you can look at their badge case and whatever else?"
+   The card that opens on a classmate (openPersonSheet) offers View profile when they are a FRIEND and the card was opened from
+   the Leaderboard or the Friends screen (not from inside a Virtual Room, which it would leave). The screen is read-only and
+   built from the one public document there is for a person - their row on the class's board (see friendProfileFields, which
+   says what is published and what is not). THEIR PROGRESS DOCUMENT IS KEYED BY THEIR SYNC CODE AND IS NEVER READ.
+   READS: none when their row is already held (the board's own listener, which the Leaderboard and Friends screens already have
+   open - the card was drawn from that row); otherwise ONE one-shot get (their document in the academy; Fire Code's
+   board document, which holds every row, so the next friend opened is free), kept for five minutes. No listener of its own,
+   nothing periodic, nothing written. */
+var friendProfileCache = {};
+var FRIEND_PROFILE_CACHE_MS = 300000;
+function friendRowHeld(pub){
+  try{
+    if(window.NOVA_CLASS === "ifc") return classBoardRowOf(pub);
+    return rowsByPublicId()[pub] || null;
+  }catch(e){ return null; }
+}
+/* done(row | null, ok): ok false when the read itself failed (offline), true when it answered (row null: nothing there) */
+function loadFriendProfileRow(pub, done){
+  const held = friendRowHeld(pub);
+  if(held) return done(held, true);
+  const c = friendProfileCache[pub];
+  if(c && Date.now() - c.at < FRIEND_PROFILE_CACHE_MS) return done(c.row, true);
+  const db = boardDbNow();
+  if(!db || !pub || (window.NOVA_CLASS === "ifc" ? !classBoardPubOK(pub) : isLegacyBoardId(pub))) return done(null, false);
+  let ref = null;
+  try{ ref = window.NOVA_CLASS === "ifc" ? classBoardRef(db, "ifc") : db.collection("leaderboard").doc(pub); }catch(e){ return done(null, false); }
+  let over = false;
+  const finish = (row, ok) => { if(over) return; over = true; done(row, ok); };
+  /* a read that never answers is not waited on for ever */
+  const slow = setTimeout(() => finish(null, false), 12000);
+  Promise.resolve(ref.get()).then(snap => {
+    clearTimeout(slow);
+    const at = Date.now();
+    let d = null; try{ d = snap && snap.exists ? snap.data() : null; }catch(e){ d = null; }
+    if(window.NOVA_CLASS === "ifc"){
+      const rows = d && d.rows && typeof d.rows === "object" ? d.rows : {};
+      Object.keys(rows).forEach(k => { if(classBoardPubOK(k) && rows[k] && typeof rows[k] === "object") friendProfileCache[k] = { at: at, row: Object.assign({ pub: k }, rows[k]) }; });
+      const r = friendProfileCache[pub] ? friendProfileCache[pub].row : null;
+      if(!r) friendProfileCache[pub] = { at: at, row: null };
+      return finish(r, true);
+    }
+    const r = d ? Object.assign({ pub: pub }, d) : null;
+    friendProfileCache[pub] = { at: at, row: r };
+    finish(r, true);
+  }, () => { clearTimeout(slow); finish(null, false); });
+}
+/* where the screen that opened the card goes back to - null for any other screen (a Virtual Room's card does not offer the profile) */
+function friendProfileBackFor(){
+  const s = stage && stage.firstElementChild;
+  if(!s || !s.classList) return null;
+  if(s.classList.contains("screen-rankings")){
+    const key = rankingsBoardKey;
+    return { label: "Leaderboard", go: () => showRankings(key) };
+  }
+  if(s.classList.contains("screen-friends")) return { label: "Friends", go: () => { friendsBackFresh = true; showFriends(); } };
+  return null;
+}
+/* "2 hours ago": minutes to an hour, hours to a day, then days; a date past a week */
+function friendWhenText(ts){
+  ts = Number(ts) || 0;
+  if(!ts) return "";
+  const secs = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if(secs < 90) return "Just now";
+  const mins = Math.round(secs / 60);
+  if(mins < 60) return mins + (mins === 1 ? " minute ago" : " minutes ago");
+  const hrs = Math.round(mins / 60);
+  if(hrs < 24) return hrs + (hrs === 1 ? " hour ago" : " hours ago");
+  const days = Math.round(hrs / 24);
+  if(days === 1) return "Yesterday";
+  if(days < 7) return days + " days ago";
+  try{ return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }catch(e){ return days + " days ago"; }
+}
+/* what the last run was, in a line: "Finished a Drill, Penal Code, 92%" - only what the row says, and a unit only if this class has it */
+function friendActivityLine(la){
+  if(!la || typeof la !== "object" || !(Number(la.at) > 0)) return "";
+  const verb = { drill: "Finished a Drill", exam: "Finished a Mock", game: "Played a Game", vr: "Played a Virtual Room", review: "Finished a Review" }[la.kind] || "Finished a test";
+  const bits = [verb];
+  let known = null; try{ known = classTopics(); }catch(e){ known = null; }
+  if(typeof la.unit === "string" && la.unit && known && known.indexOf(la.unit) >= 0) bits.push(unitTitle(la.unit));
+  else if(Number(la.units) > 1) bits.push(Math.floor(Number(la.units)) + " units");
+  if(typeof la.pct === "number" && isFinite(la.pct)) bits.push(Math.max(0, Math.min(100, Math.round(la.pct))) + "%");
+  return bits.join(", ");
+}
+function showFriendProfile(entry, back){
+  if(!entry || !entry.pub) return;
+  const pub = entry.pub;
+  stopTimer(); stopQuestionTimer();
+  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+  timerlineEl.hidden = true;
+  pauseBtn.hidden = true;
+  countEl.textContent = "Profile";
+  const go = (back && typeof back.go === "function") ? back.go : () => showRankings();
+  const panel = document.createElement("section");
+  panel.className = "panel screen-friendprofile";
+  panel.dataset.pub = pub;
+  const backBtn = buildBackLink(back && back.label || "Leaderboard", go);
+  panel.appendChild(iosNavBar("Profile", backBtn));
+  const body = document.createElement("div");
+  body.className = "fp-body";
+  panel.appendChild(body);
+  stage.replaceChildren(panel);
+  toTop();
+  const gone = () => !panel.isConnected;
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+
+  /* paint(row, state): state is "loading" (a read is out), "ok", or "offline" (the read failed) */
+  const paint = (row, state) => {
+    if(gone()) return;
+    const view = Object.assign({}, entry, row || {});
+    if(row){ view.boardCls = ART_PAGE; try{ fixBoardLevel(view); }catch(e){} }
+    const face = faceFor(view, pub);
+    const kids = [];
+
+    /* ---- THE CARD: banner, character, name, rank, level, three numbers (the Profile's own hero) ---- */
+    const hero = mk("div", "profile-hero has-cover has-tint fp-hero");
+    const cover = mk("div", "profile-cover");
+    cover.setAttribute("aria-hidden", "true");
+    const bid = view.banner && bannerDef(view.banner) ? view.banner : "";
+    if(bid){
+      cover.classList.add("has-banner"); cover.dataset.banner = bid;
+      cover.appendChild(applyBannerFocus(buildBannerArt(bid, face.art), bid));
+      try{ const tint = bannerTintOf(bid, face.art); if(tint){ hero.style.setProperty("--hero-t1", tint[0]); hero.style.setProperty("--hero-t2", tint[1]); } }catch(e){}
+    }
+    hero.appendChild(cover);
+    const top = mk("div", "profile-hero-top");
+    const av = mk("div", "profile-hero-avatar has-glow");
+    av.style.setProperty("--char-glow", avatarGlowIn(face.id || AVATAR_CHARACTERS[0].id, face.art));
+    av.appendChild(platePortrait(avatarSpanFor({ avatarChar: face.id, art: face.art })));
+    setCharState(av, isOnline(view) ? "live" : "sleep");
+    const idBox = mk("div", "profile-hero-id");
+    const nameRow = mk("div", "namedisplay-row");
+    nameRow.appendChild(mk("span", "profile-name-display", view.firstName || "Student"));
+    idBox.appendChild(nameRow);
+    top.append(av, idBox);
+    hero.appendChild(top);
+    const rk = view.levelUnknown || !row ? null : rankOfEntry(view);
+    if(rk){
+      const rankEl = mk("p", "person-card-rank");
+      rankEl.style.color = RANK_COLOR[rk]; rankEl.style.setProperty("--rank-color", RANK_COLOR[rk]);
+      try{ rankEl.appendChild(buildRankMark(rk, "person-card-mark")); }catch(e){}
+      rankEl.appendChild(mk("span", "person-card-rankword", RANK_DISPLAY_NAME[rk]));
+      hero.appendChild(rankEl);
+    }
+    const lvl = mk("p", "person-card-level fp-level");
+    if(row && !view.levelUnknown){
+      lvl.textContent = "Level " + (view.level || 0) + " · " + (view.badges || 0) + ((view.badges || 0) === 1 ? " badge" : " badges");
+      try{ const cm = classMarkFor(pub, face.cls); if(cm) lvl.appendChild(cm); }catch(e){}
+    } else lvl.textContent = classNameOf(ART_PAGE);
+    hero.appendChild(lvl);
+    if(row){
+      const known = k => view[k] !== undefined && view[k] !== null && view[k] !== "";
+      const grid = mk("div", "person-card-grid has-three fp-grid");
+      [["XP", known("xp") ? Number(view.xp).toLocaleString() : "—"],
+       ["Hundos", known("hundos") ? String(view.hundos || 0) : "—"],
+       ["Correct answers", known("correct") ? Number(view.correct).toLocaleString() : "—"]].forEach(([l, v]) => {
+        const cell = mk("div", "person-card-cell");
+        cell.append(mk("span", "person-card-cell-value", v), mk("span", "person-card-cell-label", l));
+        grid.appendChild(cell);
+      });
+      hero.appendChild(grid);
+    }
+    kids.push(hero);
+    if(rk) setTimeout(() => { try{ if(hero.isConnected) startRankMarks(hero); }catch(e){} }, 400);
+
+    if(!row){
+      const c = mk("section", "fp-card fp-empty");
+      c.appendChild(mk("p", "fp-note", state === "loading" ? "Loading their profile…"
+        : state === "offline" ? "Their profile needs a connection. It will load once you are back online."
+        : "They are not on the " + classNameOf(ART_PAGE) + " leaderboard yet, so there is nothing to show here."));
+      kids.push(c);
+    } else {
+      /* ---- LAST ACTIVITY: what they finished and when, in plain words ---- */
+      const act = mk("section", "fp-card fp-activity");
+      act.appendChild(mk("span", "fp-kick", "Last activity"));
+      const line = friendActivityLine(view.la);
+      let online = false; try{ online = isOnline(view); }catch(e){}
+      if(line){
+        act.appendChild(mk("p", "fp-act-main", line));
+        act.appendChild(mk("p", "fp-act-when", (online ? "Online now · " : "") + friendWhenText(view.la.at)));
+      } else {
+        act.appendChild(mk("p", "fp-act-main", "No recent activity yet"));
+        if(online) act.appendChild(mk("p", "fp-act-when", "Online now"));
+      }
+      kids.push(act);
+
+      /* ---- THEIR BADGE CASE: the case component the Badges screen draws, read-only, in the class being viewed ---- */
+      const units = badgeCaseUnits(BADGE_CASES[0]);
+      const published = Array.isArray(view.bd);
+      const held = new Set(published ? view.bd.filter(u => typeof u === "string") : []);
+      const total = classTopics().length;
+      const have = published ? units.filter(u => held.has(u)).length : Math.max(0, Math.min(total, Math.floor(Number(view.badges) || 0)));
+      const cs = mk("section", "fp-card fp-case");
+      const head = mk("div", "fp-kick-row");
+      head.append(mk("span", "fp-kick", badgeCaseName(BADGE_CASES[0])), mk("span", "fp-count", have + " of " + total));
+      cs.appendChild(head);
+      const kase = buildSleekBadgeCase(unit => {
+        const has = published && held.has(unit);
+        const tile = mk("span", "badge-tile ncase-cell fp-slot" + (has ? " is-earned" : " is-locked"));
+        tile.setAttribute("role", "img");
+        tile.setAttribute("aria-label", unit + " Badge, " + (has ? "found" : "not found yet"));
+        const art = mk("span", "badge-tile-art");
+        try{
+          const bt = badgeThemeFor(unit);
+          if(bt && bt.p) art.style.setProperty("--badge-glow", has ? (bt.g || bt.p) : "#8E9196");
+        }catch(e){}
+        art.appendChild(buildUnitBadgeSVG(unit, has));
+        tile.appendChild(art);
+        return tile;
+      });
+      cs.appendChild(kase);
+      if(!published) cs.appendChild(mk("p", "fp-note", "Their case fills in after they next open the app."));
+      else if(!have) cs.appendChild(mk("p", "fp-note", "No badges found yet."));
+      kids.push(cs);
+
+      /* ---- WHAT THEY HOLD: characters and banners, counts and a few faces ---- */
+      const chars = AVATAR_CHARACTERS.filter(c => !c.retired);
+      const ucList = Array.isArray(view.uc) ? view.uc.filter(id => chars.some(c => c.id === id)) : null;
+      const ubList = Array.isArray(view.ub) ? view.ub.filter(id => !!bannerDef(id)) : null;
+      if(ucList || ubList){
+        const hc = mk("section", "fp-card fp-hold");
+        hc.appendChild(mk("span", "fp-kick", "Collection"));
+        const part = (label, n, tot, cls) => {
+          const r = mk("div", "fp-hold-row " + cls);
+          const h = mk("div", "fp-kick-row");
+          h.append(mk("span", "fp-hold-label", label), mk("span", "fp-count", n + " of " + tot));
+          const bar = mk("span", "fp-bar"); const fill = mk("i"); fill.style.width = (tot ? Math.round(100 * Math.min(n, tot) / tot) : 0) + "%"; bar.appendChild(fill);
+          r.append(h, bar);
+          return r;
+        };
+        if(ucList){
+          const r = part("Characters", Math.min(ucList.length, chars.length), chars.length, "fp-hold-chars");
+          const strip = mk("div", "fp-chars");
+          strip.setAttribute("aria-hidden", "true");
+          ucList.slice(-8).forEach(id => { const f = mk("span", "fp-char"); try{ f.appendChild(charStillSVG(id)); strip.appendChild(f); }catch(e){} });
+          if(strip.children.length) r.appendChild(strip);
+          hc.appendChild(r);
+        }
+        if(ubList) hc.appendChild(part("Banners", Math.min(ubList.length, BANNERS.length), BANNERS.length, "fp-hold-banners"));
+        kids.push(hc);
+      }
+    }
+
+    /* ---- Message and Back ---- */
+    const acts = mk("div", "fp-actions");
+    const msg = mk("button", "next fp-msg", "Message"); msg.type = "button";
+    msg.addEventListener("click", () => { try{ openDirectChatWith(view); }catch(e){} });
+    const bk = mk("button", "next ghost fp-back", "Back"); bk.type = "button";
+    bk.addEventListener("click", () => { try{ bk.blur(); }catch(e){} go(); });
+    acts.append(msg, bk);
+    kids.push(acts);
+    body.replaceChildren.apply(body, kids);
+  };
+
+  const held = friendRowHeld(pub);
+  if(held){ paint(held, "ok"); return; }
+  paint(null, "loading");
+  loadFriendProfileRow(pub, (row, ok) => { paint(row, ok ? "ok" : "offline"); });
 }
 
 /* (384) AN ACCOUNT IN FIRE CODE ALONE HAS NO HOME IN THE ACADEMY. The head script opens Fire Code for it at launch; within a
@@ -123292,7 +123667,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.115";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
