@@ -39857,7 +39857,7 @@ html.is-browser{ --fade-paper: transparent; }
      48pt tall and as wide as its labels need, centred - never stretched across the page; a page too narrow for it takes it to its
      width and the words keep their place in the middle of each segment (nothing is cut: a word wider than its segment's inside runs
      into its padding). The TRACK is liquid glass and RAISED: a lighter translucent capsule over a blur of what is behind it (the
-     page's own colour +30 levels, as his), a bright rim along its top and bottom edges, its ends a shade darker, a hairline and a soft
+     page +30 levels, as his; a neutral grey at 72%, so a theme's sky tints it by 3 levels, not the 12 a plain white film let through), a bright rim along its top and bottom edges, its ends a shade darker, a hairline and a soft
      shadow under it. The THUMB is a DARKER capsule (#1E1F21), flat - no inner shadow, which is what read as "indented". Both labels
      white. Sizes are points on the glass: x --zc, so a page-zoomed phone (his, ~85%) draws them at Delta's size.
      iOS: the blur is on the track (will-change:backdrop-filter, the rule the update banner learned), the thumb is a solid child on its
@@ -39881,8 +39881,8 @@ html.is-browser{ --fade-paper: transparent; }
     min-width:min(100%, calc(var(--sg-n, 3) * var(--sg-min) + (var(--sg-n, 3) - 1) * var(--sg-gap) + 2 * var(--sg-in))) !important;
     margin-left:auto !important; margin-right:auto !important; padding:var(--sg-in) !important; overflow:visible !important;
     border:0 !important; border-radius:999px !important;
-    background-color:rgba(255,255,255,.12) !important;
-    background-image:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02) 22%, rgba(255,255,255,0) 42%, rgba(255,255,255,0) 60%, rgba(255,255,255,.02) 80%, rgba(255,255,255,.06)) !important;
+    background-color:rgba(74,74,76,.72) !important;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.03) 22%, rgba(255,255,255,0) 42%, rgba(255,255,255,0) 60%, rgba(255,255,255,.03) 80%, rgba(255,255,255,.12)) !important;
     -webkit-backdrop-filter:blur(10px) !important; backdrop-filter:blur(10px) !important; will-change:backdrop-filter !important;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(255,255,255,.16),
       inset 1px 0 0 rgba(0,0,0,.26), inset -1px 0 0 rgba(0,0,0,.26),
@@ -156635,6 +156635,7 @@ function segThumb(seg, segSel, sl, o){
   o = o || {};
   const DT = 1000 / 120, SUB = 4;
   /* his recording's numbers (above) */
+  const SW_PX = 22;                              /* the most a wide control grows across (px): a press swells a 180pt Delta control by 16pt */
   const SW_X = .088, SW_Y = .07;                 /* the swell, held (its spring's overshoot reaches 1.094 x 1.083 on the way) */
   const P_SW = [400, .62], P_GLIDE = [400, .8], P_SLIDE = [441, 1], P_SIZE = [900, .75], P_LAND = [1100, .8];   /* [k = w^2, zeta] */
   const LENS_W = 1.30, LENS_H = 1.22;            /* the held lens: x the thumb's width, x the track's height (both unswollen) */
@@ -156689,6 +156690,10 @@ function segThumb(seg, segSel, sl, o){
       const r = seg.getBoundingClientRect(), k = r.width / (seg.offsetWidth || r.width || 1), w = r.width / k;
       const cxS = r.left + r.width / 2, room = Math.min(cxS - w / 2 - 4, innerWidth - 4 - (cxS + w / 2));
       g.kx = clamp(room > 0 ? 2 * room / w / SW_X : 0, 0, 1);
+      /* and a wide control swells by no more than SW_PX across: the swell is about its middle, so it carries a segment at an end
+         sideways (away from where a tap is about to take the thumb) by its offset x the swell's speed - 1.6px a frame on a 343px
+         control at the swell's full 8.8%, against 0.7pt a frame on Delta's 180pt one; at 22px across (6.4% of 343) it is 1.1 */
+      g.kx = Math.min(g.kx, SW_PX / (w * SW_X));
     }catch(e){}
     if(parts) glassLensSize(parts, g);
     return g;
