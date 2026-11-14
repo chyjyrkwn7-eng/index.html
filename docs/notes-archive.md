@@ -39748,3 +39748,19 @@ GATES (one at a time; the machine was loaded and restarted once mid-run):
 - check-b384-popglass ONLY=history-units: ALL PASS (phone both classes, iPad).
 - check-behaviour check_b324t_stats, check_b321f_profile, check_b324m_modes: 83 PASS and the same 16 FAIL on this branch and on main (stale labels: "Quiz" where the app says Mock since 384, the rank word colour) - nothing new.
 - check-centering --quick: academy 0 off centre after one fix (the filter capsule had .95/1.1rem side padding, its ink 0.93px right; now 1rem both sides; Clear filters symmetric too).
+384.118 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm, load 4-6):
+- check-js 14 blocks ALL PASS; page console: only the sandbox's blocked CDN / file: fetch. sweep-layout --quick 20/20 clean.
+  check-centering --quick ALL PASS (0 off centre).
+- check-b384-testhistory ALL PASS (both devices, both classes). `--against` main: the gate reads the repo's version.json, so a main
+  file whose APP_BUILD differs is reloaded by the forced-update check mid-run (the first `--against origin/main` died on a
+  navigation after (1)/(2)); against a copy of main 384.107 with APP_BUILD set to 384.118 it FAILS 25 checks: (1) rows of 70.8-107.7px
+  with two-line names, (2) the hundo marker a glyph, (3) no count line and no date headings, (4) no time switch, (5) no units sheet,
+  (6) no search, (7) no combining, (9) rows carry no identity.
+- check-b384-popglass ONLY=history-units ALL PASS. check-tours: every declared step renders (ALL PASS).
+- check-behaviour ONLY_FN=check_b324t_stats,check_b321f_profile,check_b324m_modes: the SAME 16 failures on this tree and on main
+  384.107 (`--against`): stale labels ("Quiz" where the app says Mock, the rank word's colour) - pre-existing.
+SHOTS (scratchpad testhistory/; iPhone 17 Pro Max 440x956 academy + Fire Code and iPad Pro 11" academy, 2x; before = main 384.107,
+after = this build): <before|after>-<dev>-<class>-N-<screen>.png - 1 Stats (Recent tests), 2 Test history unfiltered, after only: 3 This
+week, 4 the units sheet with three ticked, 5 filtered by those, 6 the empty state; contact sheets sheet-<dev>-<class>.png (before
+Stats, before history, then the six after shots). Every one looked at. The button reads "Units" in the academy and "Chapters" in
+Fire Code (the class's own noun). Chromium cannot show iOS's glass or real scrolling smoothness of a long list.
