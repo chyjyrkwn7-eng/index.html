@@ -39748,3 +39748,13 @@ FINAL GATES (main 384.97 then 384.99 merged in; every browser job through the sh
 - check-centering --quick ALL PASS (0 off centre) across the app; its new "results/review test" scenario found the question number
   (.rs-q-num, shared by every review list) ~.55px high in Fire Code's type - centred by its ink now (text-box trim, as the app's
   other centred labels).
+384.103 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm): check-js 14 blocks ALL PASS, page
+loads with only the sandbox's blocked-CDN / file: fetch errors; sweep-layout --quick 20/20 clean; check-results ALL PASS; check-b384-reviewtest
+ALL PASS (A-F); `--against origin/main` (384.107) FAILS (no review button anywhere).
+FIX FOUND BY THIS RUN: check-centering --quick failed 6 (the question number .rs-q-num, 0.54-0.59px high, the review test's list, both
+classes). 384.103's `text-box: trim-both cap alphabetic` on it did nothing: the circle is `display:inline-flex`, and text-box-trim does
+not reach the text of a flex container (the other uses in the sheet are on blocks and inline-blocks). It is now an inline-block with
+the text centred by `padding-block: calc((1.75rem - 2px - 1cap)/2)` (same 1.75rem circle, border-box). Re-run: check-centering --quick
+ALL PASS (0 off centre, no screen "not opened"), check-b384-reviewtest ALL PASS again. (check-centering's "results/review test" screen,
+class academy, did not open when run alone with `--only` twice - it needs the earlier screens' state - but opens and passes in the full
+--quick run.)
