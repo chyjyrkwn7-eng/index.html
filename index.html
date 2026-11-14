@@ -24205,6 +24205,8 @@
     background:linear-gradient(90deg, rgba(10,12,18,.78) 0%, rgba(10,12,18,.5) 50%, rgba(10,12,18,.2) 100%);
   }
   .lb-bnr-edge > .lb-row-bnr{ opacity:.55; }
+  /* (384.120) the still picture of the banner (bannerRowStillURL), filling the strip as the scene did */
+  .lb-row-bnr.is-still-img{ background-position:center; background-size:cover; background-repeat:no-repeat; }
   .lb-bnr-edge .rank-cols{ text-shadow:0 1px 3px rgba(0,0,0,.85); }
   .lb-bnr-tile .rank-avatar-wrap > .lb-row-bnr{
     inset:-.3rem; border-radius:50%; opacity:.9; box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);
@@ -39684,6 +39686,97 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] body #stage .screen-customize .cz-group .swatch-name{ font-size:.82rem; }
   }
 
+  /* ---- THE TRACKS (384.120): Customize's Next up card, the Tracks screen, the rims ----
+     A tier is one row: its number in a small disc (P for prestige), a picture of what it gives, its name and its rule, a thin
+     bar, and how far (or a tick). At least 48px tall: the whole row is the tap target. The next step in a track is the row with
+     the accent edge. Rims are a colour round the character's plate: a ring drawn with a border (Mastery: a conic ring that
+     turns - transform only, no filter). */
+  html[data-layout] body #stage .screen-customize .trk-sect{ display:flex; flex-direction:column; gap:var(--cz-box-gap, .85rem); }
+  html[data-layout] body #stage .screen-customize .trk-card{ margin:0 0 .85rem; }
+  html[data-layout] body #stage .screen-customize .trk-sect > .trk-card{ margin:0; }
+  .trk-tiers{ display:flex; flex-direction:column; gap:.35rem; }
+  .trk-tier{ all:unset; box-sizing:border-box; display:grid; grid-template-columns:1.6rem 2.6rem minmax(0, 1fr) auto; align-items:center;
+    column-gap:.7rem; width:100%; min-height:3.4rem; padding:.45rem .6rem .45rem .45rem; border-radius:.9rem; cursor:pointer;
+    background:var(--surface-inset); font-family:var(--sans); -webkit-tap-highlight-color:transparent; position:relative; }
+  .trk-tier:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  .trk-tier.is-next{ box-shadow:inset 3px 0 0 var(--accent); }
+  .trk-num{ display:grid; place-items:center; width:1.6rem; height:1.6rem; border-radius:50%; font-size:.74rem; font-weight:800; line-height:1;
+    color:var(--soft); background:color-mix(in srgb, var(--ink) 8%, transparent); font-variant-numeric:tabular-nums; padding-top:1px; box-sizing:border-box; }
+  .trk-num.is-blank{ background:none; }
+  .trk-tier.is-held .trk-num{ color:#10131A; background:var(--accent); }
+  .trk-tier.is-prestige .trk-num{ color:#2A1C02; background:linear-gradient(135deg, #FFE7A0, #F5C84A 55%, #B8861E); }
+  .trk-thumb{ position:relative; display:grid; place-items:center; width:2.6rem; height:2.6rem; border-radius:50%; overflow:hidden;
+    background:radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--char-glow, #9FACBA) 30%, transparent), transparent 70%); }
+  .trk-thumb > svg{ display:block; width:100%; height:100%; }
+  .trk-thumb.is-locked{ opacity:.45; }
+  .trk-thumb-banner{ border-radius:.55rem; width:2.6rem; height:2.6rem; background:#10131A center / cover no-repeat; }
+  .trk-thumb-fx{ border-radius:.7rem; background:color-mix(in srgb, var(--fx-c) 22%, #10131A); color:var(--fx-c);
+    font-size:.72rem; font-weight:900; letter-spacing:-.01em; line-height:1; padding-top:1px; box-sizing:border-box; }
+  .trk-thumb-rim, .trk-thumb-goal{ background:none; box-shadow:inset 0 0 0 3px var(--rim-c); }
+  .trk-tx{ display:flex; flex-direction:column; gap:.18rem; min-width:0; }
+  .trk-name{ font-size:.92rem; font-weight:700; line-height:1.2; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .trk-goal{ font-size:.76rem; font-weight:500; line-height:1.3; color:var(--soft); }
+  .trk-bar{ display:block; height:.28rem; border-radius:99px; background:color-mix(in srgb, var(--ink) 10%, transparent); overflow:hidden; margin-top:.15rem; }
+  .trk-bar > i{ display:block; height:100%; border-radius:inherit; background:var(--accent); }
+  .trk-tier.is-held .trk-bar{ display:none; }
+  .trk-end{ font-size:.76rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; white-space:nowrap; justify-self:end; }
+  .trk-end.is-done{ display:grid; place-items:center; width:1.5rem; height:1.5rem; border-radius:50%; color:#10131A; background:var(--accent); }
+  .trk-end.is-done svg{ width:.95rem; height:.95rem; }
+  .trk-all{ all:unset; box-sizing:border-box; display:flex; align-items:center; gap:.6rem; width:100%; min-height:3rem; margin-top:.6rem;
+    padding:.5rem .8rem; border-radius:.9rem; cursor:pointer; background:color-mix(in srgb, var(--ink) 8%, transparent); font-family:var(--sans);
+    -webkit-tap-highlight-color:transparent; }
+  .trk-all:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  .trk-all-label{ flex:1 1 auto; font-size:.95rem; font-weight:700; color:var(--ink); }
+  .trk-all-count{ font-size:.8rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .trk-all .cz-chev{ font-size:1.3rem; }
+  /* the rims you can wear: a grid of plates */
+  .trk-rims{ display:grid; grid-template-columns:repeat(auto-fill, minmax(5.2rem, 1fr)); gap:.8rem .5rem; }
+  .trk-rim{ all:unset; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; gap:.4rem; min-height:44px; min-width:44px;
+    padding:.35rem .2rem; border-radius:.9rem; cursor:pointer; -webkit-tap-highlight-color:transparent; font-family:var(--sans); }
+  .trk-rim:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  .trk-rim.is-worn{ background:color-mix(in srgb, var(--accent) 16%, transparent); }
+  .trk-rim.is-locked .rim-plate{ opacity:.4; }
+  .trk-rim-name{ font-size:.72rem; font-weight:700; line-height:1.2; text-align:center; color:var(--ink); }
+  .trk-rim.is-locked .trk-rim-name{ color:var(--soft); }
+  /* the plate and its ring */
+  .rim-plate{ position:relative; display:block; width:3.4rem; height:3.4rem; border-radius:50%; }
+  .rim-plate-char{ position:absolute; inset:0; border-radius:50%; overflow:hidden;
+    background:radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--char-glow, #9FACBA) 30%, transparent), transparent 70%); }
+  .rim-plate-char > svg{ display:block; width:100%; height:100%; }
+  .rim-ring{ position:absolute; inset:-3px; border-radius:50%; border:3px solid var(--rim-c, #F5C84A); pointer-events:none; box-sizing:border-box; }
+  .rim-plate.is-mastery .rim-ring, .lb-rim-mastery > .lb-rim{ border:0;
+    background:conic-gradient(from 0deg, #FFF3C4, #F5C84A 20%, #9C6A10 40%, #FFE7A0 60%, #C98E1E 80%, #FFF3C4);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+            mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); }
+  @media (prefers-reduced-motion:no-preference){
+    .rim-plate.is-mastery .rim-ring, .lb-rim-mastery > .lb-rim{ animation:rim-turn 6s linear infinite; }
+  }
+  @keyframes rim-turn{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  /* the unlock card's art for a rim, and its rarity line */
+  .unlock-card-art.is-rim{ display:grid; place-items:center; }
+  .unlock-card-art.is-rim .rim-plate{ width:6.4rem; height:6.4rem; }
+  .unlock-card-art.is-rim .rim-ring{ inset:-5px; border-width:5px; }
+  .unlock-card-rarity{ margin:.55rem 0 0; font-size:.8rem; font-weight:700; color:rgba(255,255,255,.78); font-variant-numeric:tabular-nums; }
+  .unlock-card-wear{ width:100%; min-height:48px; margin-top:.9rem; }
+  /* the Leaderboard row: the worn rim round the character's plate */
+  .rank-avatar-wrap > .lb-rim{ position:absolute; inset:-2px; z-index:2; border-radius:50%; border:2px solid var(--rim-c, #F5C84A);
+    pointer-events:none; box-sizing:border-box; }
+  .rank-name.lb-name.is-mastery{ color:#F5C84A; }
+  /* the board's names are var(--ink) !important (the 384 board round); Mastery's gold is the one exception */
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-name.is-mastery{ color:#F5C84A !important; }
+  /* Next up says what is left in its line; the count at the end would only squeeze it */
+  .trk-next-row .trk-end{ display:none; }
+  .trk-tier.trk-next-row{ grid-template-columns:1.6rem 2.6rem minmax(0, 1fr); }
+  @media (min-width:40rem){ .trk-tier.trk-next-row{ grid-template-columns:1.8rem 3rem minmax(0, 1fr); } }
+  @media (min-width:40rem){
+    .trk-tier{ grid-template-columns:1.8rem 3rem minmax(0, 1fr) auto; min-height:3.8rem; column-gap:.85rem; padding:.55rem .8rem .55rem .55rem; }
+    .trk-num{ width:1.8rem; height:1.8rem; }
+    .trk-thumb, .trk-thumb-banner{ width:3rem; height:3rem; }
+    .trk-name{ font-size:1rem; }
+    .trk-goal{ font-size:.82rem; }
+    .trk-rims{ grid-template-columns:repeat(auto-fill, minmax(6rem, 1fr)); }
+    .rim-plate{ width:3.9rem; height:3.9rem; }
+  }
   /* ---- less on each tile ---- */
   /* a locked character's halo turned down - the aura circle behind the drawing, not the drawing */
   html[data-layout] body #stage .screen-customize .avatarchar-option.locked .avatarchar-svg circle[fill*="aura"]{ opacity:.3; }
@@ -150082,7 +150175,11 @@ let lbFindMeAt = 0;
    on the right of the row, fading out before the name), "wash" (the
    whole row, dimmed under a scrim) and "tile" (a small disc of it
    behind the character). Off until one is picked. */
-let LB_ROW_BANNER = "";
+/* (384.120) SWITCHED ON, ALONG THE EDGE: Madison's pick from the proposal's defaults ("along the edge; rims yes, no icons"). The
+   banner is drawn as ONE STILL PICTURE (bannerRowStillURL - its layers at rest, made once per banner and shared), not the live
+   scene: forty rows of layered, animated banners was the compositor and memory budget this board has been tuned against
+   (builds 352-377). */
+let LB_ROW_BANNER = "edge";
 function renderRankingRows(rows, entries, board, opts){
   const o = opts || {};
   const query = (o.query || "").trim().toLowerCase();
@@ -150388,9 +150485,14 @@ function renderRankingRows(rows, entries, board, opts){
       else {
         bWrap = document.createElement("span");
         bWrap.className = "lb-row-bnr";
-        const art = buildBannerArt(entry.banner);
-        art.classList.add("is-still");
-        bWrap.appendChild(art);
+        /* (384.120) the still picture, as a background; the live scene only if the picture cannot be made */
+        const still = bannerRowStillURL(entry.banner);
+        if(still){ bWrap.classList.add("is-still-img"); bWrap.style.backgroundImage = 'url("' + still + '")'; }
+        else {
+          const art = buildBannerArt(entry.banner);
+          art.classList.add("is-still");
+          bWrap.appendChild(art);
+        }
       }
       bWrap.dataset.key = bKey;
       row.classList.add("has-row-bnr", "lb-bnr-" + LB_ROW_BANNER);
@@ -150401,6 +150503,21 @@ function renderRankingRows(rows, entries, board, opts){
         avatarWrap.insertBefore(bWrap, avatarWrap.firstChild);
       } else row.insertBefore(bWrap, row.firstChild);
     }
+    /* (384.120) THE RIM THEY WEAR, round the character's plate, when the row's own code holds it (rowRimShown - display only),
+       and the gold name for Mastery. A ring, no icon. Carried with the character's wrap, so it is replaced, never doubled. */
+    try{
+      const rid = rowRimShown(entry);
+      avatarWrap.querySelectorAll(":scope > .lb-rim").forEach(n => n.remove());
+      avatarWrap.classList.toggle("lb-rim-mastery", rid === "mastery");
+      if(rid){
+        const ring = document.createElement("i");
+        ring.className = "lb-rim"; ring.setAttribute("aria-hidden", "true");
+        ring.style.setProperty("--rim-c", rimColorOf(rid));
+        avatarWrap.appendChild(ring);
+        avatarWrap.dataset.rim = rid;
+      } else delete avatarWrap.dataset.rim;
+      name.classList.toggle("is-mastery", rowHasMastery(entry));
+    }catch(e){}
     /* a bare frame carried over from the last drawing of this board is still bare */
     if(row.querySelector("[data-lazy-av], [data-lazy-mark]")) row.dataset.lazyArt = "1"; else delete row.dataset.lazyArt;
     rows.appendChild(row);
@@ -151435,6 +151552,10 @@ function showUnlockDetail(o){
     dot.className = "dot unlock-card-swatch" + (TIER_UNLOCKS[o.id] ? " tier-" + o.id : "") +
       (o.id === "titan" ? " legend-dot" : "") + (o.id === "ink" ? " theme-default" : "");
     art.appendChild(dot);
+  } else if(o.kind === "rim"){
+    /* (384.120) your character on its plate, the rim round it */
+    art.classList.add("is-rim");
+    try{ art.appendChild(buildRimPlate(o.id, null, rimColorOf(o.id))); }catch(e){}
   } else if(o.kind === "rankflare"){
     /* the rank's flare, lit, as its tile shows it (327z13) */
     try{ art.appendChild(buildFlareBubble(o.id, { lit: true })); }catch(e){}
@@ -151537,6 +151658,22 @@ function showUnlockDetail(o){
     const n = document.createElement("p");
     n.className = "unlock-card-note"; n.textContent = o.note;
     sheet.appendChild(n);
+  }
+  /* (384.120) how rare it is, counted from the board rows this phone already holds (unlockRarity) */
+  const rare = rarityTextFor(o);
+  if(rare){
+    const rr = document.createElement("p");
+    rr.className = "unlock-card-rarity"; rr.textContent = rare;
+    sheet.appendChild(rr);
+  }
+  /* (384.120) a rim you hold: wear it, or take it off */
+  if(o.kind === "rim" && o.unlocked){
+    const wb = document.createElement("button");
+    wb.type = "button"; wb.className = "next unlock-card-wear";
+    const label = () => { wb.textContent = wornRim() === o.id ? "Take off" : "Wear"; };
+    label();
+    wb.addEventListener("click", () => { wearRim(wornRim() === o.id ? "" : o.id); label(); });
+    sheet.appendChild(wb);
   }
   /* NO PREVIEW BUTTON (build 314): "The preview button also can be
      removed.. we don't need that." The card already plays the whole
@@ -152068,6 +152205,267 @@ function buildCustomizeSummary(){
 }
 /* `section` is one of CUSTOMIZE_ORDER for that page; anything else - no
    argument, or the click event from Profile's button - is the summary. */
+/* ---- THE TRACKS SCREEN, NEXT UP AND THE RIMS (384.120) ----
+   Customize opens with a Next up card (the three closest unlocks, from unlockNextUp) and a row into Tracks: the five tracks of
+   the class, each a card of its tiers in order (tier number, what it gives, its rule as the item's own label says it, how far),
+   the first one not held marked as the next step; then the Feats, the capstones (Mastery and the class's ultimate) and the rims
+   you can wear. Every row opens the item's own unlock card (characterDetail / bannerDetail / hundoFxDetail, or a rim's card),
+   which now says how rare it is (unlockRarity). Nothing here is stored but the rim you pick (store.rim). */
+/* a rim on a plate: your character (or `charId`) in its round plate, the rim's colour round it; Mastery's rim turns
+   (transform only, no filter) */
+function buildRimPlate(rimId, charId, color){
+  const plate = document.createElement("span");
+  plate.className = "rim-plate rim-" + String(rimId || "none").replace(/[^a-z_]/g, "") + (rimId === "mastery" ? " is-mastery" : "");
+  if(color) plate.style.setProperty("--rim-c", color);
+  const av = document.createElement("span");
+  av.className = "rim-plate-char";
+  const id = charId || (store && store.avatarChar) || "ghost";
+  try{ av.style.setProperty("--char-glow", avatarGlowColor(id)); }catch(e){}
+  try{ av.appendChild(buildAvatarCharSVGSafe(id)); }catch(e){}
+  plate.appendChild(av);
+  if(rimId){
+    const ring = document.createElement("i");
+    ring.className = "rim-ring"; ring.setAttribute("aria-hidden", "true");
+    plate.appendChild(ring);
+  }
+  return plate;
+}
+function rimColorOf(id){
+  if(!id) return "";
+  if(id === "mastery" || /_gold$/.test(id)) return UNLOCK_RIM_COLOR.gold;
+  return UNLOCK_RIM_COLOR[id] || "";
+}
+/* the line every unlock card gets under its rule: its rarity (or nothing, before the board has loaded) */
+function rarityTextFor(o){
+  try{
+    const where = o.rarityWhere || unlockWhere(o.kind, o.id);
+    if(!where) return "";
+    const r = unlockRarity(where);
+    return r ? r.text : "";
+  }catch(e){ return ""; }
+}
+/* A rim's card. Held: Wear / Take off. */
+function rimDetail(id){
+  const view = unlockTrackView();
+  const r = unlockRimList(view).find(x => x.id === id);
+  const defs = unlockRimDefs();
+  const d = defs[id];
+  const o = { kind: "rim", id, kicker: d && d.mastery ? "Capstone" : d && d.gold ? "Gold rim" : "Rim", name: d ? d.name : id };
+  if(!r || !d) return o;
+  o.desc = d.label + ".";
+  o.have = r.have; o.need = r.need;
+  /* a new rim's own count met, but a tier before it not yet: the card says what is left */
+  if(!d.gold && !d.mastery){
+    const t = view.tracks.find(x => x.key === d.track);
+    const x = t && t.tiers.find(y => y.lead.k === "rim" && y.lead.id === id);
+    if(x){
+      const before = t.tiers.slice(0, x.n - 1), left = before.filter(y => !y.held).length;
+      o.note = (d.note ? d.note + " " : "") + "Needs tier" + (before.length === 1 ? " 1" : "s 1 to " + before.length) + " of the " + t.title + " track first" +
+        (left ? " (" + left + " still to go)." : ".");
+    }
+  } else if(d.note) o.note = d.note;
+  return unlockDetailLive(o, () => rimDetail(id), () => rimHeld(id));
+}
+function wearRim(id){
+  store.rim = id && rimHeld(id) ? id : "";
+  unlockTrackMemo = null;
+  saveStore();
+}
+/* the Virtual Room's top tier, "Win 10 rooms": a count in a ring, as a rank challenge's card shows one */
+function vrTopDetail(){
+  const it = unlockItemState({ k: "goal", id: "vrwins10" });
+  return { kind: "challenge", id: "vrwins10", kicker: "Virtual Room prestige", name: it.name, desc: it.label + ".",
+    have: it.have, need: it.need, now: it.have, total: it.need, color: UNLOCK_RIM_COLOR.gold, unlocked: it.held,
+    note: "A room you finish first in counts, any mode. Its reward is the Virtual Room gold rim, once every tier before it is held.",
+    rarityWhere: (() => { const v = unlockTrackView(); const i = v.tracks.findIndex(t => t.key === "vr"); return { track: i, tier: v.tracks[i].tiers.length - 1 }; })() };
+}
+function unlockItemDetail(it){
+  if(it.k === "char") return characterDetail(it.id);
+  if(it.k === "banner") return bannerDetail(it.id);
+  if(it.k === "fx") return hundoFxDetail(it.id);
+  if(it.k === "rim") return rimDetail(it.id);
+  if(it.k === "goal") return vrTopDetail();
+  return null;
+}
+/* the small picture at the start of a tier row: the character, the banner, the effect's colour, or the rim */
+function unlockItemThumb(it){
+  const box = document.createElement("span");
+  box.className = "trk-thumb trk-thumb-" + it.k + (it.held ? "" : " is-locked");
+  try{
+    if(it.k === "char"){
+      box.style.setProperty("--char-glow", avatarGlowColor(it.id));
+      const svg = charStillReady(it.id) ? charStillSVG(it.id) : buildAvatarCharSVGSafe(it.id);
+      box.appendChild(svg);
+    } else if(it.k === "banner"){
+      const still = bannerRowStillURL(it.id);
+      if(still) box.style.backgroundImage = 'url("' + still + '")';
+    } else if(it.k === "fx"){
+      const d = hundoFxDef(it.id);
+      box.style.setProperty("--fx-c", (d && d.color) || "#FFD37A");
+      box.textContent = "100";
+    } else if(it.k === "rim" || it.k === "goal"){
+      box.style.setProperty("--rim-c", it.k === "goal" ? UNLOCK_RIM_COLOR.gold : (it.color || rimColorOf(it.id)));
+    }
+  }catch(e){}
+  return box;
+}
+function buildTierRow(t, x, isNext){
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = "trk-tier" + (x.held ? " is-held" : "") + (isNext ? " is-next" : "") + (x.prestige ? " is-prestige" : "");
+  row.dataset.track = t.key; row.dataset.tier = String(x.n);
+  const num = document.createElement("span");
+  num.className = "trk-num"; num.textContent = x.prestige ? "P" : String(x.n);
+  num.setAttribute("aria-hidden", "true");
+  const tx = document.createElement("span");
+  tx.className = "trk-tx";
+  const nm = document.createElement("span");
+  nm.className = "trk-name";
+  nm.textContent = x.rewards.map(r => r.name).join(" + ");
+  const goal = document.createElement("span");
+  goal.className = "trk-goal"; goal.textContent = x.lead.label;
+  tx.append(nm, goal);
+  const bar = document.createElement("span");
+  bar.className = "trk-bar"; bar.setAttribute("aria-hidden", "true");
+  const fill = document.createElement("i");
+  const frac = x.held ? 1 : (x.lead.need ? Math.max(0, Math.min(1, x.lead.have / x.lead.need)) : 0);
+  fill.style.width = Math.round(frac * 1000) / 10 + "%";
+  bar.appendChild(fill);
+  tx.appendChild(bar);
+  const end = document.createElement("span");
+  end.className = "trk-end";
+  if(x.held){
+    end.classList.add("is-done");
+    end.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 8.4 L6.6 11.4 L12.6 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  } else if(x.lead.k === "rim" && x.lead.goalMet && t.tiers){
+    /* its own count is met: what holds it back is the first tier before it not held yet */
+    const miss = t.tiers.slice(0, x.n - 1).find(y => !y.held);
+    end.textContent = miss ? "Needs tier " + miss.n : "Not yet";
+  } else end.textContent = x.lead.need > 1 ? x.lead.have.toLocaleString() + " / " + x.lead.need.toLocaleString() : "Not yet";
+  row.append(num, unlockItemThumb(x.lead), tx, end);
+  row.setAttribute("aria-label", t.title + ", " + (x.prestige ? "prestige" : "tier " + x.n) + ": " + nm.textContent + ". " + x.lead.label + ". " +
+    (x.held ? "Held." : x.lead.have.toLocaleString() + " of " + x.lead.need.toLocaleString() + "."));
+  row.addEventListener("click", () => { const o = unlockItemDetail(x.lead); if(o) showUnlockDetail(o); });
+  return row;
+}
+function buildTrackCard(t){
+  const note = t.next ? (t.next.prestige ? "Next: the prestige tier" : "Next: tier " + t.next.n + " of " + t.total) : "Every tier is yours";
+  const box = buildCustomizeGroup("trk-" + t.key, t.title, note, t.held, t.total, "trk-tiers");
+  box.card.classList.add("trk-card");
+  box.card.dataset.track = t.key;
+  t.tiers.forEach(x => box.grid.appendChild(buildTierRow(t, x, t.next === x)));
+  return box.card;
+}
+function buildItemListCard(key, title, note, items){
+  const have = items.filter(i => i.held).length;
+  const box = buildCustomizeGroup(key, title, note, have, items.length, "trk-tiers");
+  box.card.classList.add("trk-card");
+  items.forEach(it => {
+    const x = { n: 0, prestige: false, rewards: [it], lead: it, held: !!it.held };
+    const row = buildTierRow({ key, title }, x, false);
+    row.querySelector(".trk-num").textContent = "";
+    row.querySelector(".trk-num").classList.add("is-blank");
+    box.grid.appendChild(row);
+  });
+  return box.card;
+}
+function buildRimsCard(view){
+  const rims = unlockRimList(view);
+  const worn = wornRim(view);
+  const box = buildCustomizeGroup("trk-rims", "Rims", "Worn on your character's plate, on the Leaderboard and your card",
+    rims.filter(r => r.held).length, rims.length, "trk-rims");
+  box.card.classList.add("trk-card");
+  const make = (id, name, held, color) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "trk-rim" + (held ? "" : " is-locked") + (worn === id ? " is-worn" : "");
+    b.dataset.rim = id;
+    b.setAttribute("aria-pressed", worn === id ? "true" : "false");
+    const plate = buildRimPlate(id, null, color);
+    const nm = document.createElement("span");
+    nm.className = "trk-rim-name"; nm.textContent = name;
+    b.append(plate, nm);
+    b.setAttribute("aria-label", name + (held ? (worn === id ? ", worn" : ", held") : ", locked"));
+    b.addEventListener("click", () => {
+      if(!held){ showUnlockDetail(rimDetail(id)); return; }
+      wearRim(id);
+      box.grid.querySelectorAll(".trk-rim").forEach(n => { const on = n.dataset.rim === (store.rim || ""); n.classList.toggle("is-worn", on); n.setAttribute("aria-pressed", on ? "true" : "false"); });
+    });
+    return b;
+  };
+  box.grid.appendChild(make("", "No rim", true, ""));
+  rims.forEach(r => box.grid.appendChild(make(r.id, r.name, r.held, r.color)));
+  return box.card;
+}
+function showUnlockTracks(){
+  setActiveNav(null);
+  countEl.textContent = "Tracks";
+  const view = unlockTrackView();
+  const panel = document.createElement("section");
+  panel.className = "panel screen-customize cz-page cz-page-tracks screen-tracks";
+  panel.appendChild(iosNavBar("Tracks", buildBackLink("Back to Customize", () => showCustomize())));
+  const held = view.tracks.reduce((s, t) => s + t.held, 0), total = view.tracks.reduce((s, t) => s + t.total, 0);
+  panel.appendChild(buildCustomizeBar("Tracks", held + " of " + total, total ? held / total : 0));
+  const note = document.createElement("p");
+  note.className = "cal-sub cz-page-note";
+  note.textContent = "Five tracks, each in order, each ending in a prestige tier. Tap any tier to see how it's earned.";
+  panel.appendChild(note);
+  const sect = document.createElement("div");
+  sect.className = "sect trk-sect";
+  view.tracks.forEach(t => sect.appendChild(buildTrackCard(t)));
+  if(view.feats.length) sect.appendChild(buildItemListCard("trk-feats", "Feats", "One-offs, outside the tracks", view.feats));
+  const caps = [view.mastery];
+  try{
+    const top = AVATAR_CHARACTERS.find(c => c.id === ULTIMATE_TOP && !c.retired);
+    if(top) caps.push(unlockItemState({ k: "char", id: top.id }));
+  }catch(e){}
+  sect.appendChild(buildItemListCard("trk-caps", "Capstones", "Above the tracks", caps));
+  sect.appendChild(buildRimsCard(view));
+  panel.appendChild(sect);
+  stage.replaceChildren(panel);
+  toTop();
+}
+/* Customize's top card: the three closest, and the way into Tracks */
+function buildNextUpCard(){
+  const view = unlockTrackView();
+  const list = unlockNextUp(view, 3);
+  const box = buildCustomizeGroup("nextup", "Next up", "Your three closest unlocks", null, null, "trk-tiers");
+  box.card.classList.add("trk-card", "trk-nextup");
+  const cnt = box.head.querySelector(".cz-group-count"); if(cnt) cnt.remove();
+  list.forEach(e => {
+    const x = { n: e.tier, prestige: !!e.prestige, rewards: [e.item], lead: Object.assign({}, e.item, { have: e.have, need: e.need }), held: false };
+    const row = buildTierRow({ key: e.track, title: e.trackTitle }, x, false);
+    row.classList.add("trk-next-row");
+    const goal = row.querySelector(".trk-goal");
+    if(goal) goal.textContent = e.trackTitle + (e.track === "feat" ? "" : e.prestige ? " · Prestige" : " · Tier " + e.tier) +
+      " · " + (e.need - e.have).toLocaleString() + " to go";
+    if(e.track === "feat"){ const n = row.querySelector(".trk-num"); n.textContent = ""; n.classList.add("is-blank"); }
+    box.grid.appendChild(row);
+  });
+  const all = document.createElement("button");
+  all.type = "button";
+  all.className = "trk-all";
+  const held = view.tracks.reduce((s, t) => s + t.held, 0), total = view.tracks.reduce((s, t) => s + t.total, 0);
+  all.innerHTML = '<span class="trk-all-label">All tracks</span><span class="trk-all-count"></span><span class="cz-chev" aria-hidden="true">›</span>';
+  all.querySelector(".trk-all-count").textContent = held + " of " + total;
+  all.setAttribute("aria-label", "All tracks: " + held + " of " + total + " tiers held");
+  all.addEventListener("click", () => showUnlockTracks());
+  box.card.appendChild(all);
+  return box.card;
+}
+/* ---- A BANNER AS ONE STILL PICTURE (384.120) ----
+   For the Leaderboard's rows and the Tracks' small tiles: the banner's layers at rest (bannerStaticSVG, the picture the veil was
+   made from) as an image, made once per banner and shared by every row that shows it - no live scene, no layers, no animation,
+   so forty rows cost forty backgrounds, not forty scenes. "" when it cannot be drawn. */
+var bannerRowStillCache = {};
+function bannerRowStillURL(id){
+  if(!id) return "";
+  if(Object.prototype.hasOwnProperty.call(bannerRowStillCache, id)) return bannerRowStillCache[id];
+  let url = "";
+  try{ const svg = bannerStaticSVG(id); if(svg) url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); }catch(e){ url = ""; }
+  bannerRowStillCache[id] = url;
+  return url;
+}
 function showCustomize(section){
   const only = (typeof section === "string" && CUSTOMIZE_PAGES[section]) ? section : null;
   setActiveNav(null);
@@ -152089,6 +152487,8 @@ function showCustomize(section){
     sub.className = "cal-sub cz-intro";
     sub.textContent = "What you wear across the app. Press and hold anything to see how it's earned.";
     panel.appendChild(sub);
+    /* (384.120) the three closest unlocks first, and the way into the tracks */
+    try{ panel.appendChild(buildNextUpCard()); }catch(e){}
     /* (build 383) your name lives in Settings > Account > Name now */
     panel.appendChild(buildCustomizeSummary());
   } else {

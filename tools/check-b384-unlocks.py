@@ -111,3 +111,67 @@ def until(pg, js, arg=None, tries=40, step=300):
         if v: return v
         pg.wait_for_timeout(step)
     return v
+
+# made-up classmates on the board: name, character, level, badges, ut (which tiers), rim, banner, days since they were last active
+MATES = [
+    ("Alexis", "grizzly", 52, 9, "1-1f3f3f3f3f03", "mastery", "exam100", 0),
+    ("Kimber", "alien", 47, 8, "1-0f0f1f0f0300", "acc", "hundos100", 1),
+    ("Leeland", "ghost", 41, 6, "1-070f0f030100", "ans", "study50", 2),
+    ("Rosa", "grizzly", 38, 5, "1-030707030100", "", "tests100", 3),
+    ("Dmitri", "alien", 35, 4, "1-01030f010100", "ans", "", 1),
+    ("Priya", "ghost", 30, 3, "1-0103030101", "", "", 4),          # a malformed code: counted as not publishing
+    ("Tomas", "grizzly", 27, 2, "1-000101010000", "acc", "", 6),   # a rim the code does not hold: not drawn
+    ("Wren", "alien", 24, 2, "1-000103000000", "", "correct5000", 9),
+    ("Yusuf", "ghost", 22, 1, "1-000001000000", "", "", 12),
+    ("Zara", "grizzly", 21, 1, "1-1f3f3f3f3f03", "mastery", "", 45), # inactive for 45 days: not counted
+    ("Omar", "alien", 33, 4, None, "", "tests100", 2),               # a row from before this build: no `ut`
+]
+
+def mate_rows(prefix="unmate"):
+    rows = {}
+    for i, (nm, ch, lv, bd, ut, rim, bn, ago) in enumerate(MATES):
+        pub = "%s%05d" % (prefix, i)
+        r = {"firstName": nm, "avatarChar": ch, "level": lv, "badges": bd, "mystery": 0, "hundos": 10 + lv, "correct": 120 * lv,
+             "xp": 2400 * lv, "tests": lv, "week": WEEK, "weekPoints": 40 * lv, "fcode": "M%02d-384" % i, "freq": [], "facc": [],
+             "lastModified": now_ms - ago * DAY - 60000, "seenAt": now_ms - ago * DAY - 60000, "banner": bn}
+        if ut is not None: r["ut"] = ut
+        if rim: r["rim"] = rim
+        rows[pub] = r
+    return rows
+
+def rich_store(ifc=False):
+    a = account(ifc=ifc)
+    a.update({"lifetime": {"points": 60000 if not ifc else 30000, "answered": 7400, "correct": 6200 if not ifc else 1400, "drillPlays": 64,
+                           "examPlays": 22, "perfectTests": 141 if not ifc else 104, "currentStreak": 23, "longestStreak": 130 if not ifc else 64,
+                           "fullTests": 120 if not ifc else 30},
+              "studyLog": study_log(32, 1.25 * 3600000), "dailyCorrectTotal": 12, "hundoDayBest": 3, "vrWins": 3, "vrMatches": 6,
+              "friendsBest": 5, "rim": "ans", "banner": "correct5000" if not ifc else "", "leaderboardOptIn": True})
+    return a
+
+def fixtures():
+    out = {}
+    acad = rich_store()
+    out["rich_academy"] = ({"progress": {CODE: acad}, "leaderboard": mate_rows()}, init_js(acad))
+    a2 = dict(account(), classes=["academy", "ifc"])
+    fc = rich_store(ifc=True)
+    seed = {"progress": {CODE: a2, CODE + "__ifc": fc}, "leaderboard": {},
+            "vrooms": {"lb-ifc-v1": {"kind": "board", "cls": "ifc", "rows": {k: v for k, v in list(mate_rows("unifcm").items())[:8]}}}}
+    out["rich_ifc"] = (seed, init_js(a2, fc))
+    return out
+
+LOAD_BOARD = """async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms));
+  try{ showRankings(); }catch(e){}
+  for(let i = 0; i < 60; i++){ const n = window.NOVA_CLASS === 'ifc' ? (classBoardRows || []).length : (leaderboardRows || []).length; if(n >= 3) break; await W(250); }
+  await W(600);
+  return window.NOVA_CLASS === 'ifc' ? (classBoardRows || []).length : (leaderboardRows || []).length; }"""
+def load_board(pg):
+    return pg.evaluate(LOAD_BOARD)
+
+# nothing owed on Home: a fixture holds things it was never told about, and their cards would sit over what is measured
+QUIET = """()=>{ try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+  try{ homeUnlockPlaying = false; }catch(e){} try{ store.pendingBadgeUnlocks = []; saveStore(); }catch(e){}
+  document.querySelectorAll('.rs-spot, .daily-alert, .scene-bridge, #intro-pop, .invite-overlay').forEach(n => n.remove()); }"""
+def quiet(pg):
+    pg.evaluate(QUIET); pg.wait_for_timeout(400); pg.evaluate(QUIET)
+
+# ---- the gate ----
