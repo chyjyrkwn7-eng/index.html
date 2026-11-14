@@ -249,11 +249,11 @@
 
   /* ---- Identity Crimes - a fingerprint: the oval pad of a print, its whorl of ridges. ---- */
   {
-    const pad = S.ellipse(50, 51, 34, 45);
+    const T = 25, E0 = S.ellipse(50, 51, 32, 46), pad = (x, y) => { const p = rot([[x, y]], -T, 50, 51)[0]; return E0(p[0], p[1]); };   /* a thumbprint, leaning */
     let ridges = "";
     for(let k = 0; k < 6; k++){ const rx = 7 + k * 5, ry = 10 + k * 6.2, cy = 50 + k * .6;
-      ridges += lineP(arcPts(50, cy, rx, ry, 200 + (k % 2) * 14, 520 - (k % 3) * 18, 36)); }
-    ridges += lineP(arcPts(50, 50, 2.5, 4.5, 0, 340, 14));
+      ridges += lineP(rot(arcPts(50, cy, rx, ry, 200 + (k % 2) * 14, 520 - (k % 3) * 18, 36), T, 50, 51)); }
+    ridges += lineP(rot(arcPts(50, 50, 2.5, 4.5, 0, 340, 14), T, 50, 51));
     CHAPTER_OBJ["Identity Crimes"] = {
       d: sh(pad), col: "#6F8FD0", base: "field",
       plates: [
@@ -317,7 +317,7 @@
   /* ---- Consular Notification - the foreign national's passport: a navy booklet, its gold globe emblem raised on the cover, the gold
      band where its name would be, the spine's fold. ---- */
   {
-    const A = -10, bk = rbox(50, 50, 60, 84, A, 5), R = (x, y) => rot([[x, y]], A, 50, 50)[0];
+    const A = -22, bk = rbox(50, 50, 58, 80, A, 5), R = (x, y) => rot([[x, y]], A, 50, 50)[0];
     const c = R(50, 42), band = rbox(R(50, 72)[0], R(50, 72)[1], 32, 6, A, 2.5);
     const glob = rx => lineP(arcPts(0, 0, rx, 13, -90, 270, 40).map(([x, y]) => R(50 + x, 42 + y)));
     CHAPTER_OBJ["Consular Notification"] = {
