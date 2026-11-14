@@ -23,6 +23,11 @@ So a chapter drawn as its object is now a **raised pin**: no silver rim, a sculp
 is the same pin from behind** (384.67): the same silhouette mirrored, the same bevel, wall, shadow and edge, in the old badges' polished
 silver, with the title cut into it. A chapter with no entry here still draws its 384.63 picture-in-an-outline.
 
+**(384.121) The police academy's 24 units are pins too** (Madison: "we are going to update the police academy badges as well. Same
+concept, match what they are talking about"): `part-6-academy.js`, keys from `academy-units.json`, the same rules and the same gate
+(`check-b384-objbadges.py --class academy`, run by `check-b384-acadpins.py`, which also holds every badge id and unlock rule to main's).
+`option-63b.js` is Chapter 63's option B (the oxygen mask), kept beside the part files and NOT merged.
+
 ## 0. The rules
 
 1. **The badge is the object, as a raised 3D pin, with no rim.** Its only edge is a fine darker line of the object's own colour where the

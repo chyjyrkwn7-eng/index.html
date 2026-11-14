@@ -409,7 +409,7 @@
     const sil = S.union([body, ant, knob, ptt], 1.2);
     let grille = ""; for(let y = 66; y <= 88; y += 5) grille += "M37 " + y + "H63";
     CHAPTER_OBJ["Radio Communications, Alerts, and TCIC-TLETS"] = {
-      d: sh(sil), col: "#24272D", base: "field",
+      d: sh(sil), col: "#3B4049", base: "field",
       plates: [
         ["rubber", sh(S.minus(g(ant), body)), { dome: .8 }],                                         /* the antenna */
         ["steel", sh(S.minus(g(knob), body)), { z: .2, bev: .6, dome: .6 }],                         /* the channel knob */
@@ -446,7 +446,7 @@
     const c = S.circle(50, 50, 29), s1 = S.box(35, 2, 30, 30, 4), s2 = S.box(35, 68, 30, 30, 4), crown = S.box(76, 45, 9, 10, 2.5);
     const sil = S.union([c, s1, s2, crown], 1.5);
     CHAPTER_OBJ["Phonetic Alphabet and Military Time"] = {
-      d: sh(sil), col: "#4E5A2E", base: "field",
+      d: sh(sil), col: "#62723A", base: "field",
       plates: [
         ["field", all(S.minus(g(S.union([s1, s2])), c)), { dome: .6 }],                             /* the straps */
         ["field", "M41 8H59M41 14H59M41 86H59M41 92H59", { ln: 1.4, cut: .7, paint: 0 }],
