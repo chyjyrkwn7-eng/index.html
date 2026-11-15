@@ -39763,10 +39763,11 @@ html.is-browser{ --fade-paper: transparent; }
     pointer-events:none; box-sizing:border-box; }
   .rank-name.lb-name.is-mastery{ color:#F5C84A; }
   /* (384.132) the worn rim on a large plate (drawWornRim with opts.plate: Profile's hero, the person card): a ring just outside the
-     plate's edge, over the plate's own coloured edge (box-shadow), UNDER the drawing so what pops out of the plate is on top */
-  :is(.profile-hero-avatar, .person-card-art).has-worn-rim > .lb-rim.is-plate-rim{ position:absolute; inset:-6px; z-index:0;
+     plate's edge, over the plate's own coloured edge (box-shadow), UNDER the drawing so what pops out of the plate is on top.
+     Any host that is the plate's own box can take it (a friend's profile too): drawWornRim(host, plateRimFor(row).rim, { plate: true }) */
+  .has-worn-rim > .lb-rim.is-plate-rim{ position:absolute; inset:-6px; z-index:0;
     border-radius:50%; border:3px solid var(--rim-c, #F5C84A); pointer-events:none; box-sizing:border-box; }
-  :is(.profile-hero-avatar, .person-card-art).has-worn-rim.lb-rim-mastery > .lb-rim.is-plate-rim{ border:0;
+  .has-worn-rim.lb-rim-mastery > .lb-rim.is-plate-rim{ border:0;
     -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
             mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)); }
   /* the gold name for Mastery, on the person card and Profile as on the board */

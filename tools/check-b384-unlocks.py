@@ -266,16 +266,15 @@ I_PLATES = r"""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms));
     /* THE PUBLISH: wearing schedules the account push; that one push writes the row with the new rim (not held for minutes) */
     try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; }catch(e){}
     await W(300);
-    const p1 = payN();
+    /* every row that goes to the store passes the class's one row door (writeLeaderboardRow / writeClassBoardRow): count them */
+    const rowW = [], doors = window.NOVA_CLASS === 'ifc' ? ['writeClassBoardRow'] : ['writeLeaderboardRow'];
+    const kept = doors.map(n => window[n]);
+    doors.forEach((n, i) => { window[n] = function(row){ rowW.push(row && typeof row.rim === 'string' ? row.rim : null); return kept[i].apply(this, arguments); }; });
     wearRim('');
     let scheduled = false; try{ scheduled = !!cloudPushTimer; clearTimeout(cloudPushTimer); cloudPushTimer = null; }catch(e){}
     pushToCloud(); await W(2500);
-    const rowW = (window.__payloads || []).slice(p1).filter(s => s.indexOf('leaderboard/' + pub + ' ') === 0 || (s.indexOf('vrooms/lb-ifc-v1 ') === 0 && s.indexOf(pub) >= 0));
-    let rimNow = null;
-    try{ const last = rowW[rowW.length - 1]; const j = JSON.parse(last.slice(last.indexOf(' ') + 1));
-      rimNow = j.rows ? ((j.rows[pub] || {}).rim ?? null) : (j.rim ?? null);
-      if(j.rows && rimNow === null && j.rows[pub]) rimNow = ''; }catch(e){}
-    out.publish = { scheduled, rowWrites: rowW.length, rim: rimNow, all: (window.__payloads || []).slice(p1).map(s => s.slice(0, 60)) };
+    doors.forEach((n, i) => { window[n] = kept[i]; });
+    out.publish = { scheduled, rowWrites: rowW.length, rim: rowW.length ? rowW[rowW.length - 1] : null };
     wearRim('ans'); try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; }catch(e){}
     out.lazy = [ROW_LAZY_FIELDS.indexOf('ut') >= 0, ROW_LAZY_FIELDS.indexOf('rim') >= 0];
     /* EVERY RIM CARD, in several states */
