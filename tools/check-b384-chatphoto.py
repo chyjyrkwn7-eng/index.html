@@ -105,10 +105,11 @@ DEVS = [("Pro Max", 440, 956, 59, 34, "phone"), ("iPad 11", 834, 1194, 24, 20, "
 UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Mobile/15E148 Safari/604.1"
 UA_PAD = UA.replace("iPhone; CPU iPhone OS", "iPad; CPU OS")
 
-def boot(br, url, cls, dev, errs):
+def boot(br, url, cls, dev, errs, video=None):
     name, W, H, it, ib, kind = dev
     ctx = br.new_context(viewport={"width": W, "height": H}, screen={"width": W, "height": H}, device_scale_factor=2, has_touch=True, is_mobile=True,
-                         user_agent=UA if kind == "phone" else UA_PAD)
+                         user_agent=UA if kind == "phone" else UA_PAD,
+                         **({"record_video_dir": video, "record_video_size": {"width": W, "height": H}} if video else {}))
     ctx.add_init_script("Object.defineProperty(navigator,'standalone',{get:()=>true});")
     ctx.add_init_script(FAKE); ctx.add_init_script(init_js(cls))
     pg = ctx.new_page(); pg.on("pageerror", lambda e: errs.append("%s %s: %s" % (name, cls, str(e)[:160])))
@@ -417,8 +418,11 @@ def run_zoom(pg, tag, surf):
     if not v: c("(8) opened for the zoom checks", False); return res
     scale = lambda: float(re.search(r"scale\(([\d.]+)\)", pg.evaluate("()=>{ const b = document.querySelector('.chat-photo-view-box'); return b ? b.style.transform : 'scale(1)'; }") or "scale(1)").group(1))
     cx, cy = v["vw"] / 2, v["vh"] / 2
-    double_tap(pg, cx + 30, cy + 10)
-    s1 = scale(); open1 = bool(pg.evaluate(VIEW2))
+    for attempt in range(3):   # a double tap is two CDP calls apart; on a machine loaded past the 300ms window a try is a single tap and closes: try again
+        double_tap(pg, cx + 30, cy + 10)
+        s1 = scale(); open1 = bool(pg.evaluate(VIEW2))
+        if open1 and s1 > 1.5: break
+        close_all(pg); f = nth_fig(pg, root, 0); tap(pg, f["x"], f["y"]); pg.wait_for_timeout(250)
     c("(8a) a double tap zooms in (and does not close)", open1 and s1 > 1.5, {"scale": s1, "open": open1})
     double_tap(pg, cx, cy)
     c("(8b) a second double tap zooms back out", bool(pg.evaluate(VIEW2)) and scale() == 1.0, scale())
