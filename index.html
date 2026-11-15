@@ -57225,11 +57225,24 @@ const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru
   "Chapter 4: Emergency Planning and Preparedness|41|yahkhw", "Chapter 12: Energy Systems|1|yahkhw",
   "Chapter 2: Definitions|108|1qsi68l", "Chapter 55: Cryogenic Fluids|12|1qsi68l",
   "Chapter 2: Definitions|38|1bryhty"];
-/* The bank's own count ("1,792"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
+/* ---- (384.104) 26 NEW OCCUPANT LOAD QUESTIONS IN CHAPTER 10: NOTHING HERE MOVES ----
+   The owner: "More occupant load questions ... There should be a question over almost all of them. Ensure there is a question regarding the
+   bench/pew stuff too." ch10-339 .. ch10-364 (tools/gen-ifc-bank.py QUESTION_ADDS: the rows of Table 1004.5 that had none, Section 1004.8,
+   and four of Section 1004.6's fixed seating rules) sit after Chapter 10's last question in the bank, so they take its positions 133-158 and
+   every existing key (chapter | position | wording) is what it was: no gap, pin, moved or retired key is needed. A hundo, a badge, a chapter
+   star, a rank, points and level are per chapter NAME and stored counts, so nothing is lowered; the next full Chapter 10 run is the chapter
+   as it stands (157). tools/check-b384-occload.py holds it. */
+/* ---- (384.130) SIX NEW CHAPTER 6 QUESTIONS ON TABLE 606.3.3.1: NOTHING HERE MOVES EITHER ----
+   The owner: "we need a question over each frequency type of cooking." ch6-622 .. ch6-627 (tools/gen-ifc-bank.py QUESTION_ADDS, `_cook`): the
+   low-volume (12 months) and all other (6 months) rows as fill-ins, and every row the other way round (the interval given, the operation asked),
+   so each of the table's four rows is asked twice. They sit after Chapter 6's last question (positions after its 41), so every existing key is
+   what it was: no gap, pin, moved or retired key. Their pointers are ch6-029's (section 606.3.3.1) with the row lit by `find` + `rows: true`, as
+   ch6-029 / ch6-030's are (IFC_POINTER_PATCH). tools/check-b384-ch6cook.py holds it. */
+/* The bank's own count ("1,824"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1792).toLocaleString("en-US");
+  return (n || 1824).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
