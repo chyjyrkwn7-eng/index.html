@@ -121040,6 +121040,19 @@ function ifcDropTakeOver(chrome){
   return prev;
 }
 function ifcDropAdd(run, el, a, kind){ if(a) run.anims.push([el, a, kind || "y"]); }
+/* (384.129) THE MOVE STARTS ON THE FRAME AFTER THE ONE THAT SHOWS THE CHANGE. The frame that lays the change out and paints it can be
+   long (Answer Review's unit: a screenful of questions, ~100ms at 4x CPU), and a move timed from the frame it was made in had run a
+   third of its course - most of it, on this curve - before anything was on the screen: the unit appeared open in one frame. The move
+   is held at its first keyframe through that frame and set going from the next, and its end is timed from there. */
+function ifcDropStart(run, arm){
+  const held = run.anims.map(([, a]) => a);
+  held.forEach(a => { try{ a.pause(); }catch(e){} });
+  requestAnimationFrame(() => {
+    if(ifcDropRun !== run) return;
+    held.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+    arm();
+  });
+}
 /* opening: change() puts the box in its new, taller layout. Called in the tap; the move is made in the next frame. */
 /* (384.129) cap: a box far taller than the screen (Answer Review's unit, every question in it): the move shows only what can be
    seen - the sweep and what is under it go as far as the screen's bottom (and a little past), and the rest, below the screen,
@@ -121100,7 +121113,7 @@ function ifcDropOpen(chrome, change, pending, now, cap){
       ifcDropStop();
       ifcDropPlace(next);
     };
-    run.timer = setTimeout(end, IFC_DROP_MS + 40);
+    ifcDropStart(run, () => { clearTimeout(run.timer); run.timer = setTimeout(end, IFC_DROP_MS + 40); });
   };
   if(now) go(); else requestAnimationFrame(go);
 }
@@ -121127,7 +121140,7 @@ function ifcDropShut(chrome, d, done, cap){
     before.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, c)));
     after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, (live.y.get(el) || 0) - skip, c - loss)));
     if(next) ifcDropAdd(run, next, ifcDropMove(next, live.y.get(next) || 0, c - loss));
-    run.timer = setTimeout(() => {
+    ifcDropStart(run, () => { run.timer = setTimeout(() => {
       if(ifcDropRun !== run) return;
       /* where everything is on the screen in the last frame (its transforms included) */
       const watch = [before[0], chrome, after[0], next].filter(Boolean);
@@ -121146,7 +121159,7 @@ function ifcDropShut(chrome, d, done, cap){
       });
       if(!fix.anims.length){ ifcDropRun = null; ifcAnchorBack(); }
       else fix.timer = setTimeout(() => { if(ifcDropRun === fix) ifcDropStop(); }, 220);
-    }, IFC_DROP_MS + 20);
+    }, IFC_DROP_MS + 20); });
   });
 }
 /* the code box's own open and close, from a tap: grows from the pill, or shrinks back to it (on the compositor, above) */
@@ -154690,7 +154703,11 @@ function showAnswerReview(units, source, versions, opts){
     let i = start;
     for(; i < sec.items.length; i++){
       if(quick && i >= start + 8) break;   /* (more than a screen: the rest are below it until after the move) */
-      frag.appendChild(qNode(sec.items[i]));
+      const n = qNode(sec.items[i]);
+      /* laid out now at their own height, not content-visibility's 340px stand-in: the move reads the unit's height in its first
+         frame, and a stand-in that grew a frame later made the sweep start most of the way open */
+      if(quick && sec.body.classList.contains("cal-month-body")) n.classList.add("rq-on");
+      frag.appendChild(n);
     }
     sec.body.appendChild(frag);
     if(i < sec.items.length){ sec.more = i; setTimeout(() => fillMore(sec), IFC_DROP_MS + 80); }
