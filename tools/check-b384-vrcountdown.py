@@ -14,9 +14,10 @@ Read off the page (shape, not label strings), on an installed iPhone 17 Pro Max 
     attribute, style, text or child change); (3) the ring moves on every frame: its drawn position (the moving end's rotation, or
     on 384.107 the --left it was drawn from) differs from the frame before on >= 90% of frames, read per frame for 2s;
     (4) the page paints nothing for the count: CDP trace Paint events on the page's main thread over 3s of steady count <= 2.
- B. CADENCE (4x CPU throttle, the whole 10s count, from 2s in so the question built under the count is out of the way): no
-    frame gap over 2x the median on more than 4% of frames (384.107 under the same throttle: see the notes), and none over 250ms
-    attributable to the count (reported).
+ B. COST AND CADENCE at 4x CPU: (1) over 3s of steady count the page's main thread runs <= 330ms of CPU (thread time from a CDP
+    trace: what the page ran, not what a loaded machine made it wait; 384.107: 468-490ms, this build 192-240ms, on a fresh page); (2) over the whole count from 2s in
+    (after the question built under it), rAF gaps over 2x the median on <= 4% of frames - judged only at a load under 4 (or with
+    --strict-cadence): on a loaded machine both builds land either side of it run to run, so it is reported, not judged.
  C. THE NUMBER: lining and tabular figures (computed font-variant-numeric), solid (not background-clip:text, colour alpha 1),
     not the serif stack; the number's ink centred in the ring (canvas-free: the glyph box from a Range, 1.5px).
  D. THE TOP ROW: (1) the mode and the count sit where they sit on the question that follows (top within .5px) and level with
@@ -103,6 +104,58 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=L.CHROME)
     ctx, pg = open_page(br, "promax", 3)
     cdp = ctx.new_cdp_session(pg)
+    TR = {"ev": [], "done": False}
+    cdp.on("Tracing.dataCollected", lambda e: TR["ev"].extend(e["value"]))
+    cdp.on("Tracing.tracingComplete", lambda e: TR.__setitem__("done", True))
+    def trace(ms):
+        """a devtools.timeline trace of the next `ms`; returns (events, the page's main thread)"""
+        TR["ev"] = []; TR["done"] = False
+        cdp.send("Tracing.start", {"traceConfig": {"includedCategories": ["toplevel", "devtools.timeline", "disabled-by-default-devtools.timeline"]}, "transferMode": "ReportEvents"})
+        pg.wait_for_timeout(ms)
+        cdp.send("Tracing.end")
+        for _ in range(300):
+            if TR["done"]: break
+            pg.wait_for_timeout(100)
+        # the page's main thread: the renderer main thread with the most work in the window
+        mains = {(e["pid"], e["tid"]) for e in TR["ev"] if e.get("ph") == "M" and e.get("name") == "thread_name" and (e.get("args") or {}).get("name") == "CrRendererMain"}
+        fc = {}
+        for e in TR["ev"]:
+            k = (e.get("pid"), e.get("tid"))
+            if e.get("ph") == "X" and (k in mains or not mains): fc[k] = fc.get(k, 0) + e.get("dur", 0)
+        return TR["ev"], (max(fc, key=fc.get) if fc else None)
+
+    if "B" in ONLY:
+        # B1: what the count costs the page's main thread, in CPU time (thread time: what this page ran, not how long a loaded
+        # machine made it wait), over 3s of steady count at 4x CPU - the page's own tasks, all of them
+        # Run first, on the freshly launched page (later sections leave a finished race's clocks running under the next count).
+        def cpu_of(events, main):
+            return sum(e.get("tdur", e.get("dur", 0)) for e in events if (e["pid"], e["tid"]) == main and e.get("ph") == "X" and e.get("name") == "RunTask") / 1000
+        pg.evaluate(CLEAR); pg.wait_for_timeout(800)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+        pg.evaluate(START, [12000, 28]); pg.wait_for_timeout(2500)
+        cpu = cpu_of(*trace(3000))
+        chk("B1: 4x CPU, 3s of steady count: the page's main thread ran %.0fms of CPU - at most 330ms (384.107: 468-490ms; this build 192-240ms)" % cpu, cpu <= 330, cpu)
+        pg.evaluate(CLEAR)
+        # B2: the frame cadence over the whole count at 4x, read with rAF: gaps over 2x the median on at most 4% of frames
+        pg.wait_for_timeout(1500)
+        pg.evaluate("""()=>{ window.__fr = []; let last = performance.now(); window.__frStop = false;
+          const f = t => { window.__fr.push([t, t - last]); last = t; if(!window.__frStop) requestAnimationFrame(f); }; requestAnimationFrame(f); }""")
+        t0 = pg.evaluate("()=>performance.now()")
+        pg.evaluate(START, [10000, 28])
+        pg.wait_for_function("()=>Date.now() > window.__startAt + 200", timeout=60000, polling=200)
+        pg.evaluate("()=>{ window.__frStop = true; }")
+        fr = pg.evaluate("()=>window.__fr")
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+        w = [d for t, d in fr if t0 + 2000 < t < t0 + 9800]
+        med = statistics.median(w) if w else 0
+        over = [round(d) for d in w if d > 2 * med]
+        load = float(open("/proc/loadavg").read().split()[0])
+        name = "B2: 4x CPU, the count from 2s to 9.8s: %d frames, median %.1fms, %d over 2x the median (%s), max %.0fms [load %.1f]" % (len(w), med, len(over), over[:8], max(w) if w else 0, load)
+        if load > 4 and "--strict-cadence" not in sys.argv:
+            print("NOTE " + name + " - REPORTED, not judged: on a machine at load over 4 the frame gaps are the machine's (both builds land either side of the bound run to run); B1 measures the count's own cost", flush=True)
+        else:
+            chk(name, w and len(over) <= .04 * len(w), over)
+        pg.evaluate(CLEAR)
 
     if "A" in ONLY or "C" in ONLY:
         pg.evaluate(CLEAR); pg.evaluate(START, [10000, 28]); pg.wait_for_timeout(1800)
@@ -126,20 +179,8 @@ with sync_playwright() as pw:
         chk("A3: the ring moves on every frame (%d frames over 2s, %d where it stood still)" % (len(frames), still),
             frames and still <= .1 * len(frames), [round(d, 3) for dt, d in frames[:24]])
         # A4: paints over 3s of steady count, from a CDP trace
-        events = []; done = {"v": False}
-        cdp.on("Tracing.dataCollected", lambda e: events.extend(e["value"]))
-        cdp.on("Tracing.tracingComplete", lambda e: done.__setitem__("v", True))
         pg.evaluate(CLEAR); pg.evaluate(START, [10000, 28]); pg.wait_for_timeout(2500)
-        cdp.send("Tracing.start", {"traceConfig": {"includedCategories": ["devtools.timeline"]}, "transferMode": "ReportEvents"})
-        pg.wait_for_timeout(3000)
-        cdp.send("Tracing.end")
-        for _ in range(300):
-            if done["v"]: break
-            pg.wait_for_timeout(100)
-        fc = {}
-        for e in events:
-            if e.get("name") == "FunctionCall": fc[(e["pid"], e["tid"])] = fc.get((e["pid"], e["tid"]), 0) + 1
-        main = max(fc, key=fc.get) if fc else None
+        events, main = trace(3000)
         paints = [e for e in events if e.get("name") == "Paint" and (e["pid"], e["tid"]) == main and e.get("ph") in ("X", "B")]
         chk("A4: the page paints next to nothing for the count (3s of steady count: %d paints on the main thread; one a second is the spoken number)" % len(paints), len(paints) <= 4, len(paints))
     if "C" in ONLY:
@@ -156,24 +197,6 @@ with sync_playwright() as pw:
         chk("C2: the number is solid, not cut from a gradient, in the sans (%s, %s, %s)" % (c["clip"], c["color"], c["fam"][:30]),
             c["clip"] != "text" and alpha_ok and not re.match(r"\s*(Georgia|\"?Iowan|serif)", c["fam"]), c)
         chk("C3: the number's ink is centred in the ring (%.2f, %.2f px)" % (c["cx"], c["cy"]), abs(c["cx"]) <= 1.5 and abs(c["cy"]) <= 1.5, c)
-
-    if "B" in ONLY:
-        pg.evaluate(CLEAR); pg.wait_for_timeout(1500)
-        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
-        pg.evaluate("""()=>{ window.__fr = []; let last = performance.now(); window.__frStop = false;
-          const f = t => { window.__fr.push([t, t - last]); last = t; if(!window.__frStop) requestAnimationFrame(f); }; requestAnimationFrame(f); }""")
-        t0 = pg.evaluate("()=>performance.now()")
-        pg.evaluate(START, [10000, 28])
-        pg.wait_for_function("()=>Date.now() > window.__startAt + 200", timeout=60000, polling=200)
-        pg.evaluate("()=>{ window.__frStop = true; }")
-        fr = pg.evaluate("()=>window.__fr")
-        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
-        w = [d for t, d in fr if t0 + 2000 < t < t0 + 9800]
-        med = statistics.median(w) if w else 0
-        over = [round(d) for d in w if d > 2 * med]
-        chk("B1: 4x CPU, the count from 2s to 9.8s: %d frames, median %.1fms, %d over 2x the median (%s), max %.0fms" % (len(w), med, len(over), over[:8], max(w) if w else 0),
-            w and len(over) <= .04 * len(w), over)
-        pg.evaluate(CLEAR)
 
     def row_section(dev, page, dpr):
         page.evaluate(CLEAR); page.evaluate("()=>{ showHome(); }"); page.wait_for_timeout(900); page.evaluate(L.QUIET)
@@ -236,17 +259,20 @@ with sync_playwright() as pw:
         for ahead in (6400, 3300):
             pg.evaluate(CLEAR); pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(600)
             pg.evaluate(START, [ahead, 28])
-            for k in range(8):
-                pg.wait_for_timeout(330)
-                s = pg.evaluate("""([SH, RP])=>{ const rem = window.__startAt - Date.now(); const shown = new Function('return (' + SH + ')()')(); const pos = new Function('return (' + RP + ')()')();
+            for k in range(20):
+                pg.wait_for_timeout(290)
+                if pg.evaluate("()=>window.__startAt - Date.now()") < 100: break
+                # the remaining time AT THE FRAME being drawn (document.timeline.currentTime: an animation is sampled at its frame's
+                # time, which on a busy page can be tens of ms behind Date.now() in the same task)
+                s = pg.evaluate("""([SH, RP])=>{ const rem = window.__startAt - (Date.now() - (performance.now() - document.timeline.currentTime)); const shown = new Function('return (' + SH + ')()')(); const pos = new Function('return (' + RP + ')()')();
                   const ov = document.getElementById('vroom-reveal-overlay'); const from = ov && ov.dataset.startAt ? null : null;
                   return { rem, shown, pos, cf: window.__countFrom }; }""", [SHOWN, RINGPOS])
                 if s["rem"] <= 60 or s["shown"] is None: continue
-                # outside the swap itself (the 200ms after a second's edge, where two numbers cross) and a frame before an edge
-                if s["rem"] % 1000 < 20 or s["rem"] % 1000 > 800: continue
+                # outside the change itself (the 400ms after a second's edge, where one number rolls out and the next in) and a frame before an edge
+                if s["rem"] % 1000 < 20 or s["rem"] % 1000 > 600: continue
                 n += 1
                 want = math.ceil(s["rem"] / 1000)
-                if s["shown"]["n"] != want or s["shown"]["op"] < .99: bad.append(("number", round(s["rem"]), s["shown"], want))
+                if s["shown"]["n"] != want or s["shown"]["op"] < .97: bad.append(("number", round(s["rem"]), s["shown"], want))
                 # the ring: 384.128's moving end at -(360 x (1 - rem/count)) in the rotation's own frame; 384.107's --left x 360
                 frac = max(0, min(1, s["rem"] / s["cf"]))
                 if pg.evaluate("()=>!!document.querySelector('#vroom-reveal-ring .vcd-head')"):
