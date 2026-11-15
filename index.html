@@ -31443,7 +31443,7 @@
   }
   /* ...and on the narrowest (a 320px phone) the counts step out: "First try 11" is wider than its third of the switch there, and the
      same three numbers are in the summary card right above it */
-  @media (max-width:22.49rem){ .rs-testreview .rs-tr-filter .rs-tab-count{ display:none; } }
+  @media (max-width:25.99rem){ .rs-testreview .rs-tr-filter .rs-tab-count{ display:none; } }   /* (384.133 combined) 416px: with the glass control's wider segments (segglass) a count no longer fits beside its words below that */
 
   /* ---- BUILD 213: THE RESULTS SCREEN, SECOND PASS ---- */
   /* The chip IS the mode's colour from the mode picker - Drill gold,
@@ -40619,6 +40619,9 @@ html.is-browser{ --fade-paper: transparent; }
   /* (the chat sheet's row has the close button beside it: the control gives way to it, its words keeping their middles; on a phone
      under 360px wide - an SE 1st gen - "Friends" and its count need the room, so its segments sit closer and its words a size down) */
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]){ min-width:0 !important; }
+  /* (384.133 combined) the test review's filter (All / Retaken / First try, each with its count) is this control too: its words are a label AND a count,
+     so its segments take a smaller side padding (the chat sheet does the same under 360px) and the words stay inside them on a phone */
+  html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.rs-tr-filter:not([hidden]){ --sg-px:calc(8px * var(--sg-z)); }
   /* a tab's count comes and goes as it is read (switching to a tab reads it): a tab without one keeps its room, half each side of its
      word, so the widest tab - and the whole control - is the same width either way and never jumps under a moving lens */
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]) > .chatdock-tab:has(> .chatdock-tabcount[hidden]){

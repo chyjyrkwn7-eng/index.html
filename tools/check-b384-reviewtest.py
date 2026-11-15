@@ -440,7 +440,9 @@ def main():
               p.querySelectorAll('.rs-tr-filter > .rs-tab').forEach(t => { const cs = getComputedStyle(t), inner = t.getBoundingClientRect();
                 const l = inner.left + parseFloat(cs.paddingLeft) - 1, r = inner.right - parseFloat(cs.paddingRight) + 1;
                 [...t.querySelectorAll('.tab-label, .rs-tab-count')].forEach(e => { const q = e.getBoundingClientRect(); if(q.width && (q.left < l || q.right > r)) bad.push(['segment words outside it', e.textContent, Math.round(q.left), Math.round(q.right), Math.round(l), Math.round(r)]); });
-                if(inner.height < 44) bad.push(['segment under 44px', inner.height]); });
+                /* (384.133 combined) segglass draws the segment 40px tall and reaches its hit area to the 48px track with ::before (top / bottom -4px) */
+                const pb = getComputedStyle(t, '::before'), reach = pb.position === 'absolute' ? Math.abs(parseFloat(pb.top) || 0) + Math.abs(parseFloat(pb.bottom) || 0) : 0;
+                if(inner.height + reach < 44) bad.push(['segment under 44px', inner.height, reach]); });
               p.querySelectorAll('.rs-card, .rs-q').forEach(c => { const r = c.getBoundingClientRect(); if(r.left < -.5 || r.right > vw + .5) bad.push(['card outside the page', c.className, r.left, r.right]); });
               p.querySelectorAll('.rs-final button, .flagbtn').forEach(b => { const r = b.getBoundingClientRect(); if(r.height < 44 || r.width < 44) bad.push(['under 44px', b.className, r.width, r.height]); });
               p.querySelectorAll('.rs-tr-stat').forEach(s => { const v = s.querySelector('.rs-tr-val'); if(v.scrollWidth > v.clientWidth + 1) bad.push(['a stat clipped', v.textContent]); });
