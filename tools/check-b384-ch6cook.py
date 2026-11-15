@@ -260,6 +260,10 @@ REF = """async ()=>{ const box = document.querySelector('.qpanel .ifc-ref'); if(
   return { label: lab && lab.textContent.trim(), open: !!(det && det.open), sum: sum && sum.textContent.trim(), ptr: (box.querySelector('.ifc-ptr') || {}).textContent || '',
     pages: (box.querySelector('.ifc-pages') || {}).textContent || '', body: ((box.querySelector('.ifc-code-body') || {}).textContent || '').trim().slice(0, 120), h: b ? b.height : 0,
     expl: ((box.querySelector('.ifc-expl') || {}).textContent || '').trim() }; }"""
+# (384.133 combined) the published row also carries fields other builds add (unlock tracks, worn rim, friend-profile and prestige fields): not what this gate holds
+_NEWROW = ("ut", "rim", "bd", "la", "uc", "ub", "pg")
+def _row(r): return {k: v for k, v in r.items() if k not in _NEWROW} if isinstance(r, dict) else r
+
 with sync_playwright() as pw:
     rig = L.Rig(G, pw)
     _nc = rig.br.new_context
@@ -309,7 +313,7 @@ with sync_playwright() as pw:
         nh_b, nh_a = before["rest"].get("novaHeard") or {}, after["rest"].get("novaHeard") or {}
         if any((nh_a.get(k) or 0) < v for k, v in nh_b.items()): rest_diff.append("novaHeard lowered")
         held = all(before[k] == after[k] for k in ("perf", "earned", "star", "level", "badges", "badgeCount", "hundos", "rank", "lvl", "pend")) and \
-            json.dumps(before["row"], sort_keys=True) == json.dumps(after["row"], sort_keys=True)
+            json.dumps(_row(before["row"]), sort_keys=True) == json.dumps(_row(after["row"]), sort_keys=True)
         chk("(4a) an account that has MASTERED Chapter 6 (badge, star, '%s', %d hundos there) keeps all of it on this build: badge, star, level, hundos %s -> %s, badges %s -> %s, rank, level and the published row the same; every stored field identical (%d differ: %s); nothing owed or re-fired" % (
             before["level"], before["perf"], before["hundos"], after["hundos"], before["badgeCount"], after["badgeCount"], len(rest_diff), rest_diff[:4]),
             held and before["earned"] and before["star"] and before["level"] == "mastery" and not rest_diff and after["pending"] == [] and not after["overlay"],

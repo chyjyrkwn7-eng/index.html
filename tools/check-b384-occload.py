@@ -376,6 +376,10 @@ MERGE = """(args)=>{ const a = args.a, b = args.b; const C = o => JSON.parse(JSO
     Object.keys(o.stats || {}).forEach(k => { out['n:' + k] = (o.stats[k] || {}).n || 0; out['m:' + k] = (o.stats[k] || {}).m || 0; }); return out; };
   const lower = (m, x, y) => { const ex = nums(x), ey = nums(y), em = nums(m); const bad = []; Object.keys(ex).concat(Object.keys(ey)).forEach(k => { if((em[k] || 0) < Math.max(ex[k] || 0, ey[k] || 0)) bad.push(k); }); return bad; };
   const d1 = C(a); mergeSameAccount(d1, C(b)); const d2 = C(b); mergeSameAccount(d2, C(a)); return { ab: lower(d1, a, b), ba: lower(d2, a, b) }; }"""
+# (384.133 combined) the published row also carries fields other builds add (unlock tracks, worn rim, friend-profile and prestige fields): not what this gate holds
+_NEWROW = ("ut", "rim", "bd", "la", "uc", "ub", "pg")
+def _row(r): return {k: v for k, v in r.items() if k not in _NEWROW} if isinstance(r, dict) else r
+
 with sync_playwright() as pw:
     rig = L.Rig(G, pw)
     _nc = rig.br.new_context
@@ -425,7 +429,7 @@ with sync_playwright() as pw:
         nh_b, nh_a = before["rest"].get("novaHeard") or {}, after["rest"].get("novaHeard") or {}
         if any((nh_a.get(k) or 0) < v for k, v in nh_b.items()): rest_diff.append("novaHeard lowered")
         held = all(before[k] == after[k] for k in ("perf", "earned", "star", "level", "badges", "badgeCount", "hundos", "rank", "lvl", "pend")) and \
-            json.dumps(before["row"], sort_keys=True) == json.dumps(after["row"], sort_keys=True)
+            json.dumps(_row(before["row"]), sort_keys=True) == json.dumps(_row(after["row"]), sort_keys=True)
         chk("(4a) an account that has MASTERED Chapter 10 (badge, star, '%s', %d hundos there) keeps all of it on this build: the badge, the star, the level, hundos %s -> %s, badges %s -> %s, rank, level and the published row the same; every stored field identical (%d differ: %s); nothing owed or re-fired" % (
             before["level"], before["perf"], before["hundos"], after["hundos"], before["badgeCount"], after["badgeCount"], len(rest_diff), rest_diff[:4]),
             held and before["earned"] and before["star"] and before["level"] == "mastery" and not rest_diff and after["pending"] == [] and not after["overlay"],
