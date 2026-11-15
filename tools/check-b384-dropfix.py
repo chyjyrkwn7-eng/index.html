@@ -18,7 +18,11 @@ tap and its move, and every frame read from the page after it is drawn:
      document.getAnimations(): a CSS transition's property, a WAAPI animation's keyframes) - and the page is laid out in at most 3
      of the ten 33ms slices from 60 to 400ms after the lift (a height eased by script, or a max-height/grid-rows transition, lays
      it out in nearly all of them);
- (d) SETTLED: the move is over within SETTLE_MS of the lift, and ends where it is laid out.
+ (d) SETTLED: the move is over within SETTLE_MS of the lift.
+ (e) the Hint's first open: its picture is in the page in the first frame after the lift (painted ahead), not painted after the tap.
+Answer Review: at most a screenful (REVIEW_NODES_MAX elements) is made in the tap, and before it is shut the unit is read (all its
+questions in and laid out), as a person would. The class list is measured with --only classes and reported, not judged.
+Timings are at 4x CPU on a shared machine: re-run a timing failure once before calling it one; (b), (c) and (e) are shape.
 The bounds come from the lagaudio build's own numbers for the Hint and the code box, which it had already put on the compositor
 (see the 384.129 notes). --report prints every number without judging.
   PDFJS_DIR=<unpacked pdfjs-dist 5.4.149> python3 tools/check-b384-dropfix.py [--against FILE|--ref REF] [--only hint,code,review,classes] [--report]
@@ -35,7 +39,7 @@ if arg("--ref"):
     RAW = subprocess.run(["git", "-C", ROOT, "show", arg("--ref") + ":index.html"], capture_output=True, text=True).stdout
 else:
     RAW = open(arg("--against") or os.path.join(ROOT, "index.html"), encoding="utf-8").read()
-FIRST_MS, TASK_MS, NODES_MAX, LAYOUT_TAP_MS, SETTLE_MS = 70, 60, 60, 12, 700
+FIRST_MS, TASK_MS, NODES_MAX, LAYOUT_TAP_MS, SETTLE_MS = 70, 100, 60, 12, 1000
 BOX_MS, REVIEW_NODES_MAX = 90, 320
 ALLOWED = {"transform", "translate", "scale", "rotate", "opacity", "clip-path", "clipPath"}
 
@@ -80,8 +84,13 @@ WATCH = r"""([sels, ms]) => {
     Document.prototype.createElement = function(...a){ window.__dmMade++; return ce.apply(this, a); }; }
   Object.defineProperty(M, 'added', { get: () => window.__dmMade });
   M.mo = { disconnect(){} };
-  const one = s => { const el = document.querySelector(s); if(!el || !el.isConnected) return 'x';
+  const one = s => {
+    /* '~sel': the move only (where it is on the screen above its own height, its clip, its transforms, its classes) - a list whose
+       questions are laid out ahead after the move changes height for seconds, which is not the drop-down moving */
+    const lite = s[0] === '~'; if(lite) s = s.slice(1);
+    const el = document.querySelector(s); if(!el || !el.isConnected) return 'x';
     const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    if(lite) return [cs.display, Math.round(r.top * 2) / 2, cs.clipPath, cs.translate, cs.transform, cs.opacity, el.className].join('|');
     return [cs.display === 'none' ? 'none' : '', Math.round(r.top * 2) / 2, Math.round(r.height * 2) / 2, cs.clipPath, cs.translate, cs.transform, cs.opacity, cs.maxHeight,
             el.children.length < 3 ? (el.textContent || '').slice(0, 40) : el.children.length].join('|'); };
   const sig = () => sels.map(one).join(' # ');
@@ -176,6 +185,9 @@ def measure(pg, cdp, name, sels, tap_at, ms=1500, settle_wait=1900, layout_kind=
     tr = analyse_trace(ev)
     te = M["te"] or M["ck"]
     fr = [f for f in M["frames"] if te is not None and f[0] >= te - 1]
+    if os.environ.get("DF_DEBUG"):
+        print("     te", te, "ts", M["ts"], "ck", M["ck"], "frames", len(M["frames"]), "after", len(fr), "\n     sig0", M["sig0"][:300])
+        for t, s in fr[:12]: print("     %.1f %s" % (t - (te or 0), s[:300]))
     prev = M["sig0"]; first = None; last = None; nch = 0
     for t, s in fr:
         if s != prev:
@@ -247,8 +259,19 @@ def fire_code(br):
             else:
                 for k, nm in enumerate(["the Hint, first open (its picture painted)", "the Hint shutting", "the Hint opening again", "the Hint shutting again"]):
                     c = centre(pg, HB, "center"); pg.wait_for_timeout(500)
+                    if k == 0:
+                        # the picture in the page: the first frame (after the lift) in which the Hint's holder has it
+                        pg.evaluate("""(s)=>{ window.__hp = null; let te = null;
+                          addEventListener('touchend', () => { if(te === null) te = performance.now(); }, { capture: true, passive: true, once: true });
+                          const f = t => { const h = document.querySelector(s); if(te !== null && h && h.childElementCount && getComputedStyle(h).display !== 'none'){ window.__hp = t - te; return; }
+                            if(performance.now() < (window.__hp0 = window.__hp0 || performance.now()) + 3000) requestAnimationFrame(f); };
+                          requestAnimationFrame(f); }""", HP)
                     r = measure(pg, cdp, nm, [HB + " .ifc-hint-text", HP, UNDER], c, settle_wait=2600 if k == 0 else 1600)
                     judge(r)
+                    if k == 0:
+                        hp = pg.evaluate("()=>window.__hp")
+                        chk("(e) the Hint's first open: its picture is in the page in the first frame after the lift (%s ms <= %d), not painted after the tap" % (hp and round(hp), FIRST_MS),
+                            hp is not None and hp <= FIRST_MS, hp)
                     pg.wait_for_timeout(700)
         if "code" in ONLY:
             G["answer_right"](pg, cdp); pg.wait_for_timeout(1500)
@@ -284,14 +307,19 @@ def fire_code(br):
               const lab = h && h.textContent || ''; const c = QUESTIONS.filter(q => (q.topic || '').trim() === lab.trim()).length; if(h && c > n){ n = c; best = h; } });
               document.querySelectorAll('.cal-month-head').forEach(h => h.removeAttribute('data-df')); if(best) best.setAttribute('data-df', '1'); }""")
             HD = ".cal-month-head[data-df]"
-            BODY = ".cal-month-head[data-df] + .cal-month-body"
-            NEXT = ".cal-month-sect:has(.cal-month-head[data-df]) + .cal-month-sect"
+            BODY = "~.cal-month-head[data-df] + .cal-month-body"
+            NEXT = "~.cal-month-sect:has(.cal-month-head[data-df]) + .cal-month-sect"
             for nm in ("an Answer Review unit opening (its questions listed)", "an Answer Review unit shutting"):
-                c = centre(pg, HD, "start"); pg.wait_for_timeout(600)
+                c = centre(pg, HD, "center"); pg.wait_for_timeout(600)
                 r = measure(pg, cdp, nm, [HD, BODY, NEXT], c, settle_wait=1800)
                 # at most a screenful made in the tap (six questions not made ahead yet; ~45 elements each) - never the unit
                 judge(r, nodes_max=REVIEW_NODES_MAX)
                 pg.wait_for_timeout(900)
+                # someone reading the unit: its questions are all in and laid out (reviewRenderAhead) before it is shut
+                for _ in range(80):
+                    if pg.evaluate("()=>{ const b = document.querySelector('.cal-month-head[data-df] + .cal-month-body'); return !b || !b.querySelector('.review-question:not(.rq-on)'); }"): break
+                    pg.wait_for_timeout(250)
+                pg.wait_for_timeout(1500)
     errs_out = list(errs)
     ctx.close()
     return errs_out

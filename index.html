@@ -154440,7 +154440,10 @@ function reviewRenderAhead(list){
     st.io = new IntersectionObserver(es => {
       if(!list.isConnected){ stop(); return; }
       /* only those at or below the top of the screen: one above it is the pass's (it keeps the page still) */
-      es.forEach(e => { if(e.isIntersecting && e.boundingClientRect.top >= 0 && ready(e.target)) turnOn(e.target); });
+      const go = e => { if(e.isIntersecting && e.boundingClientRect.top >= 0 && ready(e.target)) turnOn(e.target); };
+      /* (384.129) not while a unit opens or shuts (ifcDropRun): those come in once the move is over */
+      if(typeof ifcDropRun !== "undefined" && ifcDropRun){ const held = es.slice(); setTimeout(() => { if(list.isConnected) held.forEach(e => { if(!e.target.classList.contains("rq-on")) go(e); }); }, IFC_DROP_MS + 120); return; }
+      es.forEach(go);
     }, { rootMargin: "300% 0px 300% 0px" });
     list.querySelectorAll(".review-question:not(.rq-on)").forEach(r => st.io.observe(r));
   };
@@ -154448,6 +154451,8 @@ function reviewRenderAhead(list){
   const slice = () => {
     st.timer = 0;
     if(!list.isConnected){ stop(); return; }
+    /* (384.129) never while a unit opens or shuts (ifcDropRun): the move is drawn from one layout */
+    if(typeof ifcDropRun !== "undefined" && ifcDropRun){ st.timer = setTimeout(slice, 120); return; }
     const rows = pending();
     if(!rows.length){ st.done = true; return; }
     /* nearest first: from the screen down, then upwards from the screen - those above only once the page has stopped scrolling
@@ -154664,8 +154669,8 @@ function showAnswerReview(units, source, versions, opts){
   }
   const qNode = item => { let n = nodeOf.get(item); if(!n){ n = buildQ(item); nodeOf.set(item, n); } return n; };
   const secs = {};
-  /* (384.129) quick (a heading's tap): the questions made ahead go in, and of those not made yet only the first few - a screenful;
-     the rest are made and put in after the opening move, a few milliseconds at a time, below the screen. Any other fill (a search,
+  /* (384.129) quick (a heading's tap): only the first eight go in (more than a screenful; made ahead, or made here if the tap came
+     first) - the rest are put in (and made, if need be) after the opening move, a few milliseconds at a time, below the screen. Any other fill (a search,
      the list's first draw) puts every one in at once, as before. */
   function fill(sec, quick){
     if(sec.filled && !sec.more) return;
@@ -154674,7 +154679,7 @@ function showAnswerReview(units, source, versions, opts){
     const frag = document.createDocumentFragment();
     let i = start;
     for(; i < sec.items.length; i++){
-      if(quick && i >= start + 6 && !nodeOf.has(sec.items[i])) break;
+      if(quick && i >= start + 8) break;   /* (more than a screen: the rest are below it until after the move) */
       frag.appendChild(qNode(sec.items[i]));
     }
     sec.body.appendChild(frag);
@@ -154721,9 +154726,11 @@ function showAnswerReview(units, source, versions, opts){
         if(searching) return;
         const nowOpen = !expandState[unitKey];
         expandState[unitKey] = nowOpen;
+        /* (384.129) the move reads the page as it stands first; the heading's own change after (its style is worked out once, in
+           the frame, not forced inside the tap) */
+        openCollapsible(body, nowOpen, nowOpen ? () => fill(sec, true) : null);
         head.classList.toggle("cal-month-head-open", nowOpen);
         head.setAttribute("aria-expanded", nowOpen ? "true" : "false");
-        openCollapsible(body, nowOpen, nowOpen ? () => fill(sec, true) : null);
         if(nowOpen && list._rqKick) list._rqKick(450);
       });
       section.appendChild(head);
