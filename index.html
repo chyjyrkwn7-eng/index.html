@@ -2289,75 +2289,124 @@
   #vroom-flourish-sub{ font-family:var(--mono); font-size:.75rem; color:var(--theme-c1); opacity:.85; margin:0; letter-spacing:.03em; }
   @media (prefers-reduced-motion:reduce){ #vroom-flourish-check{ animation:none; } }
 
-  /* The big synced reveal itself — question and answer choices are
+  /* The big synced reveal itself - question and answer choices are
      already rendered underneath this (see beginVroomSyncedReveal()),
-     so removing this overlay at zero is instant, no further loading. */
+     so nothing loads at zero. */
   /* OPAQUE. At .97 the first question showed through as a ghost for the
      whole count - part of what read as the screen "flashing". */
-  #vroom-reveal-overlay{
-    position:fixed; inset:0; z-index:120; background:#0A0A0A;
+  /* (384.128) Styled by its class too: at zero the overlay gives up its id (everything that asks "is the count up" sees it go at
+     the shared instant, as before) and fades out over 240ms on the class, over the question already live under it. */
+  #vroom-reveal-overlay, .vcd-overlay{
+    position:fixed; inset:0; z-index:120; background:var(--paper);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:.4rem;
   }
+  .vcd-overlay.vcd-leaving{ pointer-events:none; }
   /* ---- THE COUNT AND "EVERYONE'S READY!" WEAR THE THEME (build 246) ----
      "Ensure the count down numbers and start are updated for other
-     themes." The number and the title already took the theme's
-     gradient; everything around them did not - a flat black screen (the
-     only start screen left without the theme's glow since LOADING TEST
-     got it in 244), a grey "STARTING IN", a ring in one colour and a
-     fixed green tick - so a Sapphire room counted down on the same
-     screen as everybody else's. The glow is the same three layers as
-     #teststart-overlay; still opaque, so the question built underneath
-     never ghosts through. */
-  #vroom-reveal-overlay, #vroom-flourish-overlay{
+     themes." The glow is the same three layers as #teststart-overlay;
+     still opaque, so the question built underneath never ghosts through. */
+  #vroom-reveal-overlay, .vcd-overlay, #vroom-flourish-overlay{
     background:
+      linear-gradient(var(--paper) var(--sat, 0px), color-mix(in srgb, var(--paper) 0%, transparent) calc(var(--sat, 0px) + 5.5rem)),
       radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, var(--theme-c2) 17%, transparent), transparent 72%),
       radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, var(--theme-c3) 13%, transparent), transparent 70%),
       radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, var(--theme-c1) 10%, transparent), transparent 70%),
-      #0A0A0A;
+      var(--paper);
   }
+  /* (384.128) ON THE PAGE'S OWN COLOUR (was #0A0A0A): the strip under the status bar is painted the page's colour, and the
+     question the count hands over to is on it - on #0A0A0A the screen had a lighter band across its top and went a shade
+     lighter at zero. Still opaque. The first layer is that colour solid to the safe area's foot, fading over 5.5rem, so the
+     glow starts under the top row and never meets the strip at an edge. */
   #vroom-reveal-label{
     font-family:var(--mono); font-size:.78rem; color:var(--theme-c1); opacity:.85;
-    text-transform:uppercase; letter-spacing:.08em; margin:0 0 .3rem;
+    text-transform:uppercase; letter-spacing:.14em; margin:0 0 .9rem; padding-left:.14em;   /* (the tracking's trailing space, given back on the left so the word is centred) */
   }
-  /* Large, per explicit request ("maybe the countdown number big") —
-     and re-animated from scratch every single second (see the JS
-     re-trigger via classList remove/add), which is the "cool effect
-     as each number passes" this was asked for, without needing a
-     unique animation per digit. */
-  #vroom-reveal-num{
-    font-family:var(--serif); font-weight:800; font-size:5.5rem; line-height:1;
-    margin:0; min-width:3.5rem; text-align:center;
-    background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  /* A TICK, NOT A FLASH. Each number used to arrive from opacity 0 at
-     1.5x - once a second for up to fifteen seconds, which is a strobe:
-     reported as "the Virtual Room countdown is flashing". The number
-     now changes in place with a small settle and never goes dark, and
-     the passing of time is carried by a ring draining round it. */
-  @media (prefers-reduced-motion:no-preference){
-    #vroom-reveal-num.vroom-reveal-pulse{ animation:vroom-reveal-pulse .45s cubic-bezier(.2,.9,.3,1); }
-  }
-  @keyframes vroom-reveal-pulse{
-    0%{ transform:scale(1.12); }
-    100%{ transform:scale(1); }
-  }
+  /* ---- THE COUNTDOWN, DRAWN BY THE COMPOSITOR (384.128) ----
+     "The count down is laggy. The numbers look horrible too." Measured on 384.107 (440x956 @3x, 4x CPU): the ring was a conic
+     gradient read through a radial mask and redrawn from a custom property the page wrote every 100ms (an unregistered property,
+     so its .1s transition never ran) - the sweep moved in 3.6-degree jumps, ten a second, each one a style pass and a raster of
+     the whole ring (809 raster tasks, 3.1s, in a 10s count); the number was Georgia (the serif's old-style figures: 3 4 5 7 9
+     drop below the line, 6 8 rise above it, 0 1 2 are x-height) cut out of a gradient with background-clip:text.
+     Now nothing on this screen is redrawn while it counts:
+     - THE RING: a dim track (::before, the theme's three colours at a fifth, painted once) and the bright arc in the theme's
+       middle colour, built from two halves of a painted ring, each turned inside a half-width window (.vcd-win > .vcd-rot >
+       .vcd-semi > .vcd-band); with the arc's round end (.vcd-head) turning with it. Three transform animations started once
+       per count, on the document timeline at the shared start (startTime), so the sweep is the compositor's at the screen's
+       own rate and lands on zero with everybody else's. Clockwise, the way a clock's hand goes.
+     - THE NUMBERS: one per second, made up front (.vcd-n), each rolled up into the ring's opening at its second and on up and
+       out at the next (one animation each), also on the timeline - so a busy main thread (a chat snapshot, the question being built under the overlay) cannot hold a
+       number late. The app's sans (SF on an iPhone) with lining, tabular figures, solid, never cut from a gradient; 3, 2, 1
+       larger and in the theme's colour, with a soft glow behind the ring (.vcd-glow, a painted layer whose opacity pulses).
+     - Reduce motion: .vcd-still - no animation at all; the ring stands full and the number changes in place each second. */
   #vroom-reveal-ring{
-    position:relative; width:11rem; height:11rem; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
+    --vcd-s:200px; --vcd-w:9px; --vcd-arc:var(--theme-c2);
+    position:relative; width:var(--vcd-s); height:var(--vcd-s); border-radius:50%; flex:none;
   }
+  @media (min-width:40rem){ #vroom-reveal-ring{ --vcd-s:240px; --vcd-w:10px; } }
   #vroom-reveal-ring::before{
     content:""; position:absolute; inset:0; border-radius:50%;
-    /* All three of the theme's colours round the ring, the way the
-       number carries them across (build 246) - it was the middle one
-       alone, which on most themes read as the default's orange. */
-    background:conic-gradient(var(--theme-c1) 0deg, var(--theme-c2) calc(var(--left, 1) * 180deg),
-      var(--theme-c3) calc(var(--left, 1) * 360deg), rgba(255,255,255,.08) 0);
-    -webkit-mask:radial-gradient(circle, transparent 64%, #000 65.5%);
-            mask:radial-gradient(circle, transparent 64%, #000 65.5%);
-    transition:--left .1s linear;
+    /* the track: all three of the theme's colours round the ring (build 246), dim */
+    background:conic-gradient(var(--theme-c1), var(--theme-c2) 180deg, var(--theme-c3), var(--theme-c1));
+    opacity:.2;
+    -webkit-mask:radial-gradient(closest-side, transparent calc(100% - var(--vcd-w) - 1px), #000 calc(100% - var(--vcd-w)), #000 calc(100% - 1px), transparent);
+            mask:radial-gradient(closest-side, transparent calc(100% - var(--vcd-w) - 1px), #000 calc(100% - var(--vcd-w)), #000 calc(100% - 1px), transparent);
   }
+  /* The glow: a soft disc of the theme's colour behind the ring, painted once; only its opacity moves (3, 2, 1). */
+  .vcd-glow{
+    position:absolute; inset:-28%; border-radius:50%; pointer-events:none; opacity:0;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--theme-c2) 38%, transparent), color-mix(in srgb, var(--theme-c2) 12%, transparent) 55%, transparent);
+  }
+  /* mirrored, so the arc's moving end goes clockwise from 12 o'clock and the arc left is from there round to 12 */
+  .vcd-arc{ position:absolute; inset:0; transform:scaleX(-1); }
+  .vcd-win{ position:absolute; top:0; height:100%; width:50%; overflow:hidden; }
+  .vcd-win-r{ left:50%; }
+  .vcd-win-l{ left:0; }
+  .vcd-rot{ position:absolute; top:0; width:200%; height:100%; transform-origin:50% 50%; transform:rotate(180deg); will-change:transform; }
+  .vcd-win-r > .vcd-rot{ left:-100%; }
+  .vcd-win-l > .vcd-rot{ left:0; }
+  .vcd-semi{ position:absolute; top:0; height:100%; width:50%; overflow:hidden; }
+  .vcd-win-r .vcd-semi{ left:0; }
+  .vcd-win-l .vcd-semi{ left:50%; }
+  .vcd-band{
+    position:absolute; top:0; width:200%; height:100%; border-radius:50%; background:var(--vcd-arc);
+    -webkit-mask:radial-gradient(closest-side, transparent calc(100% - var(--vcd-w) - 1px), #000 calc(100% - var(--vcd-w)), #000 calc(100% - 1px), transparent);
+            mask:radial-gradient(closest-side, transparent calc(100% - var(--vcd-w) - 1px), #000 calc(100% - var(--vcd-w)), #000 calc(100% - 1px), transparent);
+  }
+  .vcd-win-r .vcd-band{ left:0; }
+  .vcd-win-l .vcd-band{ left:-100%; }
+  /* the arc's two round ends: the fixed one at 12 o'clock, and the moving one, which turns with the arc (and carries its light) */
+  .vcd-head, .vcd-tail{ position:absolute; inset:0; pointer-events:none; }
+  .vcd-head{ will-change:transform; }
+  .vcd-head::before, .vcd-tail::before{
+    content:""; position:absolute; top:0; left:calc(50% - var(--vcd-w) / 2); width:var(--vcd-w); height:var(--vcd-w);
+    border-radius:50%; background:var(--vcd-arc);
+  }
+  .vcd-head::after{
+    content:""; position:absolute; top:calc(var(--vcd-w) / 2 - 14px); left:calc(50% - 14px); width:28px; height:28px; border-radius:50%;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--vcd-arc) 55%, transparent), transparent);
+  }
+  /* Reduce motion: the ring stands full. */
+  .vcd-still .vcd-head::after{ display:none; }
+  /* the numbers roll inside the ring's opening (clipped to it), the old one up and out as the new one comes up into place */
+  #vroom-reveal-num{ position:absolute; inset:calc(var(--vcd-w) + 3px); margin:0; border-radius:50%; overflow:hidden; }
+  .vcd-n{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--sans); font-weight:700; font-size:88px; line-height:1; letter-spacing:-.02em;
+    font-variant-numeric:lining-nums tabular-nums; font-feature-settings:"lnum" 1, "tnum" 1;
+    color:var(--ink); will-change:transform, opacity;
+  }
+  .vcd-n.vcd-final{ font-size:104px; font-weight:800; color:var(--vcd-arc); }
+  @media (min-width:40rem){ .vcd-n{ font-size:104px; } .vcd-n.vcd-final{ font-size:124px; } }
+  .vcd-still .vcd-n{ will-change:auto; }
+  .vcd-live{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  /* THE TOP ROW OVER THE COUNT (384.128): "look at the top". The test header (z 140) sits over this overlay (z 120) with its
+     opaque paper cap (::before, the page's colour from y 0 to under the row): a #12161B band over the overlay's #0A0A0A and
+     glow - the muddy band. And with Pause hidden for the count the row took the no-Pause padding (edge-e - 3px) with no 44px
+     line: the mode 9px and the count 10.5px higher than on the question that follows (and 1.3px apart), so on an installed
+     iPhone they sat inside the band iOS softens under the status bar - the ghosted words. Over the count the cap is not drawn
+     (nothing scrolls under the row) and the row keeps the question's line, so the words are crisp and nothing moves at zero. */
+  body:has(> .vcd-overlay) .wrap > .top::before{ visibility:hidden; }
 
   #tour-overlay{
     /* z-index raised above .bottomtabs' own 200 \u2014 this is the actual,
@@ -20866,6 +20915,9 @@
       padding-top:max(0px, calc(var(--edge-e) - 3px)); }
     /* the count is centred on the row's padding box (absolute): half the lift puts it back on the content's middle, beside the mode */
     [data-layout="modern"] .wrap:has(.qnumrow, .pausepanel) > .top .test-qcounter{ top:calc(50% + var(--test-lift) / 2); }
+    /* (384.128) over the Virtual Room's count (Pause hidden) the row keeps the line it has on the question after it */
+    [data-layout="modern"] body:has(> .vcd-overlay) > .wrap:has(.qnumrow, .fc-screen, .screen-answerreview, #stage > .rs-screen):not(:has(.pausepanel)) > .top:not(:has(#pausebtn:not([hidden]))){
+      padding-top:var(--test-lift); min-height:calc(44px + var(--test-lift)); }
   }
   /* Ghost buttons (Sign in with a code, back buttons) previously just
      stripped the glass treatment entirely rather than getting their
@@ -120551,31 +120603,116 @@ function startRunNow(){
    zero-instant as everyone else instead of drifting, by simply
    starting mid-count or even skipping straight to zero. */
 let vroomRevealHandle = null;
+/* ---- THE SHARED COUNT'S DRAWING (384.128), one builder for the race and Tug/Battle ----
+   See #vroom-reveal-ring in the stylesheet. Everything that moves is a transform or opacity animation made here, once, and
+   pinned to the document timeline at the shared instant (startTime = the Date.now() instant + the timeline's offset), so it
+   runs on the compositor and lands where the clock says whatever the main thread is doing. The page's own tick (a timer
+   reading the clock, as before) only plays the sounds, updates the spoken number and ends the count at zero. */
+function vroomCountMoves(){
+  if(theme.reduceMotion) return false;
+  try{ if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return false; }catch(e){}
+  return typeof Element !== "undefined" && typeof Element.prototype.animate === "function";
+}
+function buildVroomCountdown(startAt){
+  document.getElementById("vroom-reveal-overlay")?.remove();
+  const mk = (tag, cls, id) => { const e = document.createElement(tag); if(cls) e.className = cls; if(id) e.id = id; return e; };
+  const overlay = mk("div", "vcd-overlay", "vroom-reveal-overlay");
+  overlay.dataset.startAt = String(startAt);   /* the shared instant this count is drawn to (read by the gates) */
+  const label = mk("p", "", "vroom-reveal-label"); label.textContent = "Starting in";
+  const ring = mk("div", "", "vroom-reveal-ring");
+  const glow = mk("div", "vcd-glow"); glow.setAttribute("aria-hidden", "true");
+  const arc = mk("div", "vcd-arc"); arc.setAttribute("aria-hidden", "true");
+  const rots = ["r", "l"].map(side => {
+    const win = mk("div", "vcd-win vcd-win-" + side), rot = mk("div", "vcd-rot"), semi = mk("div", "vcd-semi");
+    semi.appendChild(mk("div", "vcd-band")); rot.appendChild(semi); win.appendChild(rot); arc.appendChild(win); return rot;
+  });
+  const head = mk("div", "vcd-head");
+  arc.append(mk("div", "vcd-tail"), head);
+  const num = mk("div", "", "vroom-reveal-num"); num.setAttribute("aria-hidden", "true");
+  const live = mk("p", "vcd-live"); live.setAttribute("aria-live", "polite");
+  ring.append(glow, arc, num);
+  overlay.append(label, ring, live);
+  const now = Date.now();
+  const countFrom = Math.max(1000, startAt - now);
+  const moves = vroomCountMoves();
+  let still = null, shown = null;
+  if(moves){
+    const tl = performance.now() - Date.now();
+    const at = (anim, instant) => { try{ anim.startTime = instant + tl; }catch(e){} return anim; };
+    const t0 = startAt - countFrom;
+    const lin = { duration: countFrom, easing: "linear", fill: "both" };
+    /* the right half's arc holds until half time and then goes; the left half's goes first */
+    at(rots[0].animate([{ transform: "rotate(180deg)" }, { transform: "rotate(180deg)", offset: .5 }, { transform: "rotate(0deg)" }], lin), t0);
+    at(rots[1].animate([{ transform: "rotate(180deg)" }, { transform: "rotate(0deg)", offset: .5 }, { transform: "rotate(0deg)" }], lin), t0);
+    at(head.animate([{ transform: "rotate(360deg)" }, { transform: "rotate(0deg)" }], lin), t0);
+    const top = Math.max(1, Math.ceil((startAt - now) / 1000));
+    for(let n = top; n >= 1; n--){
+      const s = mk("span", "vcd-n" + (n <= 3 ? " vcd-final" : "")); s.textContent = String(n); s.dataset.n = String(n); num.appendChild(s);
+      const from = Math.max(now, startAt - n * 1000), to = startAt - (n - 1) * 1000;
+      /* ONE animation for the number's whole second, so each number is a single compositor animation: it rolls up into
+         place, holds, and rolls on up and out as the next one comes up under it - the two moving together on the same curve
+         (360ms), a number's height apart, so never one on top of the other and never a dark beat */
+      const ROLL = 360, EASE = "cubic-bezier(.22,.8,.3,1)";
+      const life = (n > 1 ? to + ROLL : to + 240) - from, k = ms => Math.min(1, ms / life);
+      const settled = Math.min(ROLL, Math.max(0, to - from));   /* (a count joined late: its first second is short) */
+      const out = n > 1 ? [{ offset: k(to - from), opacity: 1, transform: "translateY(0)", easing: EASE }, { offset: 1, opacity: 0, transform: "translateY(-72%)" }]
+                        : [{ offset: 1, opacity: 1, transform: "translateY(0)" }];
+      at(s.animate([
+        { offset: 0, opacity: 0, transform: "translateY(72%)", easing: EASE },
+        { offset: k(settled), opacity: 1, transform: "translateY(0)" }
+      ].concat(out), { duration: life, fill: "both" }), from);
+      if(n <= 3) at(glow.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 750, easing: "cubic-bezier(.2,.7,.3,1)" }), from);
+    }
+  } else {
+    overlay.classList.add("vcd-still");
+    still = mk("span", "vcd-n"); num.appendChild(still);
+  }
+  document.body.appendChild(overlay);
+  return {
+    overlay,
+    show(secs){
+      if(secs === shown) return; shown = secs;
+      live.textContent = String(secs);
+      if(still){ still.textContent = String(secs); still.classList.toggle("vcd-final", secs <= 3); }
+    },
+    /* at zero: the id goes at once (as the overlay itself used to), and the screen fades off the question already live under it */
+    end(){
+      overlay.removeAttribute("id");
+      overlay.classList.add("vcd-leaving");
+      if(!moves || !overlay.isConnected){ overlay.remove(); return; }
+      let gone = false; const drop = () => { if(!gone){ gone = true; overlay.remove(); } };
+      try{ overlay.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: "ease-out", fill: "forwards" }).finished.then(drop, drop); }catch(e){ drop(); }
+      setTimeout(drop, 600);
+    }
+  };
+}
+/* The page's tick for a count: read the clock, and come back at the next second's edge (at most 100ms later), so a sound and
+   the spoken number change with the number drawn rather than up to 100ms after it. A tick that returns false stops it. */
+function vroomCountTimer(startAt, tick, keep){
+  const run = () => { if(tick() === false) return; const r = startAt - Date.now(); keep(setTimeout(run, Math.max(4, Math.min(100, (r % 1000) + 4)))); };
+  run();
+}
+
+/* The synced 10-second reveal, per explicit request - "hide the
+   question and answer choices and put up a 10 second timer... so if
+   you are slower, you may join at 8 seconds till it begins." The real
+   question is built and sitting in the DOM the whole time (openQuestion()
+   below runs immediately, for real - not a placeholder), just covered by
+   this overlay. Every device reads "how much time is left" from
+   vroomStartAt and Date.now() rather than counting a local 10, 9, 8 of
+   its own, so a device that learns of the start late (or was asleep a
+   moment) lands on the same zero-instant as everyone else. */
 function beginVroomSyncedReveal(){
   meterEl.hidden = false;
   pauseBtn.hidden = true; // no pausing while the shared countdown is running
   raceBarEl.hidden = true;
   openQuestion();
 
-  document.getElementById("vroom-reveal-overlay")?.remove();
-  const overlay = document.createElement("div");
-  overlay.id = "vroom-reveal-overlay";
-  const label = document.createElement("p");
-  label.id = "vroom-reveal-label";
-  label.textContent = "Starting in";
-  const num = document.createElement("p");
-  num.id = "vroom-reveal-num";
-  num.setAttribute("aria-live", "polite");
-  const ring = document.createElement("div");
-  ring.id = "vroom-reveal-ring";
-  ring.appendChild(num);
-  overlay.append(label, ring);
-  const countFrom = Math.max(1000, vroomStartAt - Date.now());
-  document.body.appendChild(overlay);
+  const cd = buildVroomCountdown(vroomStartAt);
 
   const finish = () => {
     if(vroomRevealHandle){ clearInterval(vroomRevealHandle); vroomRevealHandle = null; }
-    overlay.remove();
+    cd.end();
     pauseBtn.hidden = false;
     raceBarEl.hidden = !inVirtualRoom;
     if(inVirtualRoom) startVroomRaceListener();
@@ -120586,34 +120723,19 @@ function beginVroomSyncedReveal(){
     else if(runMode !== "game") startTimer();
   };
 
-  let lastShown = null;
   function tick(){
     const remaining = vroomStartAt - Date.now();
-    if(remaining <= 0){ finish(); return; }
-    const secs = Math.max(1, Math.ceil(remaining / 1000));
-    ring.style.setProperty("--left", Math.max(0, Math.min(1, remaining / countFrom)).toFixed(3));
-    if(secs !== lastShown){
-      lastShown = secs;
-      num.textContent = String(secs);
-      /* Re-triggers the CSS keyframe fresh every single second — the
-         "cool effect as each number passes" this was asked for — by
-         forcing a reflow between removing and re-adding the class,
-         rather than needing a distinct animation per digit. */
-      if(!theme.reduceMotion){
-        num.classList.remove("vroom-reveal-pulse");
-        void num.offsetWidth;
-        num.classList.add("vroom-reveal-pulse");
-      }
-    }
+    if(remaining <= 0){ finish(); return false; }
+    cd.show(Math.max(1, Math.ceil(remaining / 1000)));
   }
-  /* An interval, not requestAnimationFrame: iOS stops handing out
+  /* A timer, not requestAnimationFrame: iOS stops handing out
      animation frames while the page is being scrolled or dragged - which
      is exactly what typing in the chat does - so "Starting in 3" sat
      frozen under a finger. Timers keep running, and the number is read
-     off the shared start time either way. */
+     off the shared start time either way (and drawn by the compositor). */
   if(vroomRevealHandle) clearInterval(vroomRevealHandle);
-  tick();
-  if(document.getElementById("vroom-reveal-overlay")) vroomRevealHandle = setInterval(tick, 100);
+  vroomRevealHandle = null;
+  vroomCountTimer(vroomStartAt, tick, h => { vroomRevealHandle = h; });
 }
 
 function openQuestion(instant){
@@ -143905,36 +144027,25 @@ const TUG_XP_PER_RIGHT = 10;
    overlay inside beginVroomSyncedReveal (which also opens the first
    question under it); Tug needs only the count. */
 function showVroomCountdown(startAt, onDone){
-  document.getElementById("vroom-reveal-overlay")?.remove();
-  const overlay = document.createElement("div");
-  overlay.id = "vroom-reveal-overlay";
-  const label = document.createElement("p");
-  label.id = "vroom-reveal-label"; label.textContent = "Starting in";
-  const num = document.createElement("p");
-  num.id = "vroom-reveal-num"; num.setAttribute("aria-live", "polite");
-  const ring = document.createElement("div");
-  ring.id = "vroom-reveal-ring"; ring.appendChild(num);
-  overlay.append(label, ring);
-  document.body.appendChild(overlay);
-  const countFrom = Math.max(1000, startAt - Date.now());
+  const cd = buildVroomCountdown(startAt);
+  const overlay = cd.overlay;
   let last = null, h = null;
   const tick = () => {
     const remaining = startAt - Date.now();
     if(remaining <= 0 || !overlay.isConnected){
-      clearInterval(h); overlay.remove();
+      clearTimeout(h);
+      cd.end();
       if(remaining <= 0){ playSound("vr.go"); onDone(); }
-      return;
+      return false;
     }
-    ring.style.setProperty("--left", Math.max(0, Math.min(1, remaining / countFrom)).toFixed(3));
     const secs = Math.max(1, Math.ceil(remaining / 1000));
+    cd.show(secs);
     if(secs !== last){
-      last = secs; num.textContent = String(secs);
+      last = secs;
       if(secs <= 3) playSound("vr.count", { n: secs });
-      if(!theme.reduceMotion){ num.classList.remove("vroom-reveal-pulse"); void num.offsetWidth; num.classList.add("vroom-reveal-pulse"); }
     }
   };
-  tick();
-  h = setInterval(tick, 100);
+  vroomCountTimer(startAt, tick, x => { h = x; });
 }
 
 function detachTug(){

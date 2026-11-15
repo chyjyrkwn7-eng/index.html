@@ -1789,10 +1789,26 @@ def check_b221(br):
       showVroomCountdown(Date.now() + 4000, () => {});
       const ov = document.getElementById('vroom-reveal-overlay');
       out.bg = getComputedStyle(ov).backgroundColor;
+      /* (384.128) opaque, on the page's own colour */
+      { const pr = document.createElement('i'); pr.style.color = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(); document.body.appendChild(pr); out.paper = getComputedStyle(pr).color; pr.remove(); }
       out.ring = !!document.getElementById('vroom-reveal-ring');
       const kf = [...document.styleSheets].flatMap(sh => { try{ return [...sh.cssRules]; }catch(e){ return []; } })
         .filter(r => r.type === CSSRule.KEYFRAMES_RULE && r.name === 'vroom-reveal-pulse')[0];
       out.fades = kf ? /opacity/.test(kf.cssText) : null;
+      /* REVISED IN 384.128: the numbers are one element a second, faded in and out on the timeline (vroom-reveal-pulse is
+         gone). "Never fades" is now: at every instant through a change some number is drawn at .5 or more (no dark beat). */
+      const ns = [...ov.querySelectorAll('.vcd-n[data-n]')];
+      if(!kf && ns.length > 1){
+        const tl = performance.now() - Date.now(), sa = Number(ov.dataset.startAt);
+        const anims = document.getAnimations().filter(a => a.effect && a.effect.target && ov.contains(a.effect.target));
+        let worst = 1;
+        const starts = anims.map(a => a.startTime);
+        for(let ms = -40; ms <= 400; ms += 10){   /* through the 4 -> 3 change */
+          anims.forEach((a, i) => { a.pause(); a.currentTime = (sa - 3000 + ms + tl) - starts[i]; });
+          worst = Math.min(worst, Math.max(...ns.map(n => parseFloat(getComputedStyle(n).opacity))));
+        }
+        out.fades = worst < .5; out.worst = worst;
+      }
       ov.remove();
       // Any ordinary screen takes the race line down.
       raceBarEl.hidden = false; showHome();
@@ -1801,7 +1817,7 @@ def check_b221(br):
       out.stepsTail = VROOM_XP_STEPS.slice(-2).map(x => x.key);
       return out; }""")
     check("the room's countdown is opaque, with a ring, and its number never fades",
-          r["bg"] in ("rgb(10, 10, 10)",) and r["ring"] and r["fades"] is False, r)
+          (r["bg"] in ("rgb(10, 10, 10)",) or (r["bg"].startswith("rgb(") and r["bg"] == r.get("paper"))) and r["ring"] and r["fades"] is False, r)
     check("the race line is gone from Home", r["raceAfterHome"] is True, r)
     check("speed and correct answers are counted last", r["stepsTail"] == ["speed", "correct"], r)
 
