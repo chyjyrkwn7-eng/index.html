@@ -70,6 +70,13 @@ def init_js(cls):
     return s + " }catch(e){} })()"
 srv, port = serve()
 def page(br, cls, w=440, h=956, dsf=1):
+    """retried: under load (other sessions' browsers) a renderer of this 10MB page is sometimes killed at start"""
+    for attempt in range(4):
+        try: return _page(br, cls, w, h, dsf)
+        except Exception as e:
+            if attempt == 3: raise
+            print("page start failed, retrying", flush=True)
+def _page(br, cls, w=440, h=956, dsf=1):
     ctx = br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dsf, has_touch=True)
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))

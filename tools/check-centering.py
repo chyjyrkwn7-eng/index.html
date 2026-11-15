@@ -554,6 +554,8 @@ SCREENS = [
     {"name": "tips", "js": "showHome(); startSimpleTour(mainMenuTourSteps(false), ()=>{});", "wait": 1500},
     # signed out: Get Started, Welcome, sign-in and the sign-up steps
     {"name": "signup/get started", "js": "store.onboardingComplete=false; showGetStarted();", "wait": 2600, "after": "store.onboardingComplete=true;"},
+    # (384.124) the rank ladder at the foot of Get Started, scrolled to and lit
+    {"name": "signup/get started ranks", "js": "store.onboardingComplete=false; showGetStarted(); setTimeout(()=>{ const s=document.querySelector('.gs-scroll'), e=document.querySelector('.gs-ladder'); if(s && e) s.scrollTop += e.getBoundingClientRect().top - 60; }, 900);", "wait": 4200, "after": "store.onboardingComplete=true;"},
     {"name": "signup/welcome", "js": "store.onboardingComplete=false; showWelcome();", "wait": 1600, "after": "store.onboardingComplete=true;"},
     {"name": "signup/sign in", "js": "store.onboardingComplete=false; showWelcomeCodeEntry();", "wait": 1400, "after": "store.onboardingComplete=true;"},
     # (384.36) the install page and what its button opens

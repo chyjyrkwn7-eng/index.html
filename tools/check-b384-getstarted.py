@@ -14,9 +14,10 @@ Read off the page:
            it comes on screen, its time rising steadily for 2s with no jump, back at its start when it comes on screen
            again; its natural size at least twice its CSS width on a phone and a laptop; its poster is its first frame
            and its last frame is its first (the loop has no seam).
- show    - the showcase: at least 4 real badges (drawn), and every rank's flare lit, one row, inside the screen (375, 440,
-           iPad, laptop), rising in as the row arrives (transform/opacity transitions only; there at once with Reduce motion);
-           a tap names it.
+ show    - (384.124) the showcase is the rank ladder: no badge row, every rank's flare lit once it has arrived (unlit
+           before), inside the screen (375, 440, iPad, laptop), transform/opacity transitions only, 44px+ to touch, a tap
+           names it, there and lit at once with Reduce motion. (Build 384's version read a row of 4+ badges and a row of
+           flares; the badges are a clip now - see check-b384-startup.py.)
  buttons - Let's get started is Home's Start Studying (height, width, font within 2px) on a phone and an iPad, 44px+ and on
            screen on a 375x667 phone, 52px+ in 18px+ words on a laptop; Welcome's two buttons are 52px+ full-width pills on
            every one of them, and Welcome still fits a 375x667 phone without scrolling.
@@ -228,56 +229,55 @@ def sec_clips(br, url):
         ctx.close()
 
 
+# (384.124) the showcase is the rank ladder now (the badges are a clip, GS_SCENES "badges"): read as the same things - every
+# rank's flare lit, inside the screen, lit as it arrives, transform/opacity only, 44px+, a tap names it, Reduce motion there
+# at once. The ladder's own shape (order, y, the line, both Reduce motion paths) is check-b384-startup.py.
 SHOW = """()=>{ const s = document.querySelector('.gs-show'); if(!s) return null;
-  const b = [...s.querySelectorAll('.gs-badges > *')], f = [...s.querySelectorAll('.gs-flares > *')];
+  const f = [...s.querySelectorAll('.gs-ladder .gs-rung-btn')];
   const lit = f.filter(x => x.querySelector('.cosmic-badge-lit svg, .cosmic-badge-lit img'));
   const R = e => e.getBoundingClientRect();
-  const tops = f.map(x => Math.round(R(x).top)), all = b.concat(f);
   const tr = e => getComputedStyle(e).transitionProperty.split(',').map(x => x.trim());
-  return { badges: b.length, drawn: b.filter(x => x.querySelector('svg.badge-art')).length, flares: f.length, lit: lit.length,
+  const moving = [...s.querySelectorAll('.gs-rung-flare, .gs-rung-words, .gs-seg > i')];
+  return { flares: f.length, lit: lit.length, badges: s.querySelectorAll('.gs-badges, svg.badge-art').length,
            tiers: (typeof TIER_ORDER_FULL !== 'undefined') ? TIER_ORDER_FULL.length : 7,
-           oneRow: tops.length ? Math.max(...tops) - Math.min(...tops) <= 2 : false,
-           inside: all.every(x => R(x).left >= 0 && R(x).right <= innerWidth), sideScroll: document.querySelector('.gs-scroll').scrollWidth - innerWidth,
-           op: f.map(x => +getComputedStyle(x).opacity), bop: b.map(x => +getComputedStyle(x).opacity),
-           trans: [...new Set(all.flatMap(tr))], tap: Math.min(...f.map(x => Math.min(R(x).width, R(x).height))) }; }"""
+           inside: f.every(x => R(x).left >= 0 && R(x).right <= innerWidth), sideScroll: document.querySelector('.gs-scroll').scrollWidth - innerWidth,
+           op: f.map(x => +getComputedStyle(x.querySelector('.gs-rung-flare')).opacity),
+           trans: [...new Set(moving.flatMap(tr))], tap: f.length ? Math.min(...f.map(x => Math.min(R(x).width, R(x).height))) : 0 }; }"""
 
 
 def sec_show(br, url):
-    print("\nshow: real badges and every rank's flare lit in a row, rising in as it arrives")
+    print("\nshow: every rank's flare, lit as the ladder arrives (no badge row: the badges are a clip)")
     for dev in ("se", "phone", "ipad", "laptop"):
         ctx, pg = page(br, url, dev, "fresh")
         pg.wait_for_timeout(4200)
         before = pg.evaluate(SHOW)
         if not before:
             chk("%s: the showcase is on the page" % dev, False, "no .gs-show"); ctx.close(); continue
-        pg.evaluate("()=>{ const s=document.querySelector('.gs-scroll'), e=document.querySelector('.gs-flares'); const r=e.getBoundingClientRect(); s.scrollTop += r.top - innerHeight * .45; }")
-        # the rows rise in over ~1.7s; a busy page is given up to 8s to finish them
+        pg.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTop = s.scrollHeight; }")
         r = None
         for _ in range(16):
             pg.wait_for_timeout(500)
             r = pg.evaluate(SHOW)
-            if min(r["op"]) > .99 and min(r["bop"]) > .99 and r["oneRow"]: break
-        chk("%s: %d badges, all drawn by the app's badge art (%d)" % (dev, r["badges"], r["drawn"]), r["badges"] >= 4 and r["drawn"] == r["badges"], r)
-        chk("%s: every rank's flare (%d of %d), lit, in one row" % (dev, r["lit"], r["tiers"]), r["flares"] == r["tiers"] and r["lit"] == r["tiers"] and r["oneRow"], r)
+            if r["op"] and min(r["op"]) > .99: break
+        chk("%s: no badge row in it (%d)" % (dev, r["badges"]), r["badges"] == 0, r)
+        chk("%s: every rank's flare (%d of %d), lit" % (dev, r["lit"], r["tiers"]), r["flares"] == r["tiers"] and r["lit"] == r["tiers"], r)
         chk("%s: all of it inside the screen, nothing scrolls sideways" % dev, r["inside"] and r["sideScroll"] <= 0, r)
-        chk("%s: hidden until its row arrives, then risen in (opacity %s -> %s)" % (dev, min(before["op"]), min(r["op"])),
-            max(before["op"]) < .05 and min(r["op"]) > .95 and min(r["bop"]) > .95, [before["op"], r["op"], r["bop"]])
+        chk("%s: unlit until it arrives, then lit (opacity %s -> %s)" % (dev, max(before["op"] or [0]), min(r["op"] or [0])),
+            bool(before["op"]) and max(before["op"]) < .5 and min(r["op"]) > .95, [before["op"], r["op"]])
         chk("%s: it moves by transform and opacity only (%s)" % (dev, r["trans"]), set(r["trans"]) <= {"opacity", "transform"}, r["trans"])
-        chk("%s: a flare is 36px+ (44px with its touch margin)" % dev, r["tap"] >= 35.5, r["tap"])
+        chk("%s: a rank is 44px+ to touch" % dev, r["tap"] >= 44, r["tap"])
         if dev == "phone":
             cap0 = pg.evaluate("()=>document.querySelector('.gs-show-cap').textContent")
-            pg.evaluate("()=>document.querySelectorAll('.gs-flares > *')[2].click()"); pg.wait_for_timeout(300)
+            pg.evaluate("()=>{ const b = document.querySelectorAll('.gs-ladder .gs-rung-btn')[2]; b && b.click(); }"); pg.wait_for_timeout(300)
             cap1 = pg.evaluate("()=>document.querySelector('.gs-show-cap').textContent")
-            pg.evaluate("()=>document.querySelectorAll('.gs-badges > *')[1].click()"); pg.wait_for_timeout(300)
-            cap2 = pg.evaluate("()=>document.querySelector('.gs-show-cap').textContent")
-            chk("phone: a tap on a flare or a badge names it (%r, %r)" % (cap1, cap2), cap1 != cap0 and cap2 != cap1 and len(cap1) > 3 and len(cap2) > 3, [cap0, cap1, cap2])
+            chk("phone: a tap on a rank names it (%r)" % cap1, cap1 != cap0 and len(cap1) > 3, [cap0, cap1])
         ctx.close()
     ctx, pg = page(br, url, "phone", "fresh", reduce=True)
     pg.wait_for_timeout(4200)
-    pg.evaluate("()=>{ const s=document.querySelector('.gs-scroll'), e=document.querySelector('.gs-flares'); if(!e) return; const r=e.getBoundingClientRect(); s.scrollTop += r.top - innerHeight * .45; }")
+    pg.evaluate("()=>{ const s=document.querySelector('.gs-scroll'), e=document.querySelector('.gs-ladder'); if(!e) return; const r=e.getBoundingClientRect(); s.scrollTop += r.top - innerHeight * .45; }")
     pg.wait_for_timeout(150)
     r = pg.evaluate(SHOW)
-    chk("phone, Reduce motion: the badges and flares are simply there", r and min(r["op"]) > .95 and min(r["bop"]) > .95, r)
+    chk("phone, Reduce motion: every rank is simply there, lit", bool(r and r["op"]) and min(r["op"]) > .95, r)
     ctx.close()
 
 
