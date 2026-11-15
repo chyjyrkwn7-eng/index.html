@@ -701,7 +701,7 @@ def main():
                     ctx.close()
                 lost, worse, n = [], [], 0
                 ult_base = ult_here = 0
-                # (follow-up) the one banner this build adds (Winner's Circle, vrtop10) joins the ultimate's "every banner": its count may
+                # (follow-up) the one banner this build adds (Pennants, vrtop10; was Winner's Circle) joins the ultimate's "every banner": its count may
                 # ask for exactly that many more items (the banners added since the baseline), and only an account short of 10 wins is
                 # one further away. Nothing else may grow.
                 added = None
