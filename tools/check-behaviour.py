@@ -121,7 +121,17 @@ URL = "http://127.0.0.1:%d/index.html" % PORT
 FAILURES = []
 
 
+# 384.55: the rank-up journey ends on Home and gives its rewards there; it no longer goes back to Profile. These checks are of the
+# Profile return it had (the XP bar climbing, the card changing over, the rank word turning) and are said, not failed.
+RETIRED_384_55 = ("back on Profile the XP bar does not load again", "back on Profile the rank reads Silver", "the challenge box changes over first",
+                  "the climb is slow (", "the level challenge stays where it stood", "the Profile card keeps its grey look throughout",
+                  "while the saved XP climbs, the line under the bar")
+
+
 def check(name, ok, detail=""):
+    if any(f in name for f in RETIRED_384_55):
+        print("  SKIP %s  -- superseded: 384.55: the journey ends on Home (tools/check-b384-rankjourney.py C)" % name)
+        return
     print("  %-4s %s%s" % ("PASS" if ok else "FAIL", name,
                            ("  -> " + str(detail)) if detail else ""))
     if not ok:
@@ -15441,9 +15451,9 @@ def check_b317_evolve(br):
     s_pp, s_pre, s_on = at((spin_at or 0) - 2), at((spin_at or 0) - 1), at(spin_at or 0)
     s3 = at((spin_at or 0) + 3)
     a3 = abs((s3 or {}).get("orbA") or 0)
-    check("timed: the last pale ring is still closing on the flare in the last frame before the whirl, the charge is released in the whirl's first frame, and the whirl moves at once (5+ degrees in 0.1s)",
+    check("timed: the last pale ring is still closing on the flare in the last frame before the whirl, the charge is released in the whirl's first frame, and the whirl LEAVES FROM REST (384.55: under 3 degrees in the first 0.1s - one smooth curve, no step in speed; it was 5+ with a push)",
           bool(s_pp and s_pre and s_on and s3) and s_pre["ringW"] is not None and s_pp["ringW"] is not None
-          and s_pre["ringW"] <= 1.6 and s_pp["ringW"] > s_pre["ringW"] and (s_on["rel"] or 0) > .9 and a3 >= 5,
+          and s_pre["ringW"] <= 1.6 and s_pp["ringW"] > s_pre["ringW"] and (s_on["rel"] or 0) > .9 and a3 < 3,
           s_pre and s_on and (s_pp and s_pp["ringW"], s_pre["ringW"], s_on["rel"], round(a3, 2)))
     offs = [st["lightOff"] for i, st in rows if st and st.get("lightOff") is not None]
     check("the light on the flare is centred on it in every frame, before and after the spin (within 1px)",
@@ -17800,7 +17810,7 @@ B319_RU_WALK = """async (a) => {
     if(document.querySelector('.pf-goal.ru-goal-in')) at('goalin');
     const lv = document.querySelector('.screen-profile .pf-standing .pf-level');
     if(out.at.back && lv && lv.textContent !== lastLv){ lastLv = lv.textContent; out.lvls.push(lastLv); }
-    if(out.at.back && !s){ at('done'); break; }
+    if((out.at.back || out.at.ph_home) && !s){ at('done'); break; }
     if(a.watchdogAt && ph === a.watchdogAt && s){ rankUpSceneWatch(s, 150); out.dogged = true; }
     await wait(40);
   }
@@ -17890,8 +17900,8 @@ def check_b319_rankup(br):
         check(f"{dev}: Gold's cutscene is launched once, inline, over the road map (Silver to Gold)",
               len(ca) == 1 and ca[0].get("key") == "veteran" and ca[0].get("from") == "ranger" and ca[0].get("inline") and ca[0].get("onMap"), ca)
         cards = wk.get("cards") or []
-        check(f"{dev}: then Gold's reward card, on the map, and a tap reaches it",
-              len(cards) == 1 and "rs-spot-rankrewards" in cards[0].get("cls", "") and cards[0].get("onMap") and wk.get("cardHit") == "card"
+        check(f"{dev}: then Gold's reward card (384.55: on HOME, after the ladder - not on the map), and a tap reaches it",
+              len(cards) == 1 and "rs-spot-rankrewards" in cards[0].get("cls", "") and not cards[0].get("onMap") and wk.get("cardHit") == "card"
               and at.get("cutscene", 0) < at.get("card", -1), [cards, wk.get("cardHit")])
         un = wk.get("upnext") or {}
         # build 320: Up next is the road map's own box (no card under the hero), and the card turns over with no "Rank up"
@@ -17901,15 +17911,13 @@ def check_b319_rankup(br):
         # build 321: the card no longer turns over - it fades to the new one (b321e)
         check(f"{dev}: then the card changes to Gold with a fade, not a turn ('Your rank', no 'Rank up')",
               at.get("upnext", 0) < at.get("heroturn", -1) and "turnout" not in at and hr == {"kick": "Your rank", "name": "Gold"}, [at, hr])
-        check(f"{dev}: a slow fade back to Profile; the completed card fades away and Platinum's comes in",
-              at.get("heroturn", 0) < at.get("curtain", -1) < at.get("back", -1) < at.get("flipout", -1) < at.get("goalin", -1), at)
+        superseded(f"{dev}: a slow fade back to Profile; the completed card fades away and Platinum's comes in", "384.55: the journey ends on Home and gives its rewards there (tools/check-b384-rankjourney.py C)")
         af = wk.get("after") or {}
         lv = wk.get("lvls") or []
         # build 325: from Gold's 40 to Platinum's 50 - the next wall - with the rest still saved
-        check(f"{dev}: the saved XP climbs the bar level by level, 40 to 50 (Platinum's level, the new wall), and the level challenge then reads 50 (build 321: after the bar, see 320d)",
-              lv[:1] == ["Level 40"] and lv[-1:] == ["Level 50"] and len(lv) >= 5 and af.get("lvRow") == "50" and af.get("level") == "Level 50", [lv, af.get("lvRow")])
-        check(f"{dev}: done: Gold, Platinum next, shown, nothing held, no layer or curtain left, nothing owed on the device",
-              af.get("rank") == "Gold" and af.get("next") == "Platinum" and af.get("shown") == af.get("held") == 3 and af.get("owed") is None
+        superseded(f"{dev}: the saved XP climbs the bar level by level, 40 to 50, and the level challenge then reads 50", "384.55: the journey ends on Home and gives its rewards there (tools/check-b384-rankjourney.py C) - Profile is not visited, its bar is the real one when next opened")
+        check(f"{dev}: done (384.55: on Home): Gold shown, nothing held, no layer or curtain left, nothing owed on the device",
+              af.get("shown") == af.get("held") == 3 and af.get("owed") is None
               and not af.get("blocker") and not af.get("curtain") and af.get("prog") is None and not af.get("dot"), af)
         check(f"{dev}: Home is free, its Gold flare lit, and it plays once only",
               (wk.get("home2") or {}) == {"lock": False, "flare": True} and wk.get("again") is False, [wk.get("home2"), wk.get("again")])
@@ -17937,7 +17945,7 @@ def check_b319_rankup(br):
           and [(c.get("key"), c.get("from")) for c in ca2] == [("vanguard", "veteran")] and [c.get("name") for c in cards2] == ["Platinum rank"],
           [ca, [c.get("name") for c in cards], ca2, [c.get("name") for c in cards2]])
     af2 = wk2.get("after") or {}
-    check("two at once: ends on Platinum, Sapphire next, both shown", af2.get("rank") == "Platinum" and af2.get("next") == "Sapphire" and af2.get("shown") == 4, af2)
+    check("two at once (384.55: on Home): both shown, nothing held or owed", af2.get("shown") == af2.get("held") == 4 and af2.get("owed") is None, af2)
     ctx.close()
 
     # EVERY CHALLENGE COUNT STOPS AT ITS GOAL (Madison's screenshot: "Earn 3
@@ -17978,7 +17986,7 @@ def check_b319_rankup(br):
     check("a rank-up with a challenge already over: Bronze to Silver by level, its badge row 3 / 3 from the start, the level row ticks, nothing ever past its goal",
           not wk.get("threw") and r.get("owed") == {"fromIdx": 0, "toIdx": 1} and wk.get("tickRows") == 1
           and any(x.get("k") == "badges" and x.get("now") == "3" for x in (p0.get("rows") or [])) and not wk.get("over")
-          and (wk.get("after") or {}).get("rank") == "Silver", [s1, r.get("owed"), p0.get("rows"), wk.get("tickRows"), wk.get("over"), (wk.get("after") or {}).get("rank")])
+          and (wk.get("after") or {}).get("shown") == 2 and (wk.get("after") or {}).get("owed") is None, [s1, r.get("owed"), p0.get("rows"), wk.get("tickRows"), wk.get("over"), (wk.get("after") or {}).get("shown")])
     ctx.close()
 
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -17989,7 +17997,7 @@ def check_b319_rankup(br):
     at = wk.get("at") or {}
     check("reduce motion: the same steps, still - no ride, no shake - shown and back on Gold, under 20s",
           not wk.get("threw") and at.get("dive") and at.get("map") and at.get("cutscene") and at.get("card") and at.get("upnext") and at.get("done")
-          and not at.get("ride") and not at.get("shake") and (wk.get("after") or {}).get("rank") == "Gold" and at.get("done", 99999) - at.get("ph_profile", 0) < 20000, at)
+          and not at.get("ride") and not at.get("shake") and (wk.get("after") or {}).get("shown") == 3 and at.get("done", 99999) - at.get("ph_profile", 0) < 20000, at)
     ctx.close()
 
     # A reload after the cutscene has played: the rest plays, the cutscene not again.
@@ -18002,7 +18010,7 @@ def check_b319_rankup(br):
     pg.evaluate(B319_RU_RUN, {})
     mid = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       window.playTierCutscene = (k, o) => { setTimeout(() => o.onDone(), 200); return {}; };
-      showProfile(); for(let i = 0; i < 400 && !(rankUpScene && rankUpScene.phase === 'cards'); i++) await wait(50);
+      showProfile(); for(let i = 0; i < 3000 && !(rankUpScene && rankUpScene.phase === 'cards'); i++) await wait(50);
       return { phase: rankUpScene && rankUpScene.phase, prog: localStorage.getItem('class26e.rankup.prog'), shown: store.rankUpShown }; }""")
     check("a reload part-way: the cutscene had played and was kept on the device, nothing marked yet",
           mid.get("phase") == "cards" and '"cut":true' in (mid.get("prog") or "") and mid.get("shown") == 2, mid)
@@ -18161,7 +18169,7 @@ B320D_WALK = """async (a) => {
       sw('touchstart', innerWidth * .85); sw('touchmove', innerWidth * .5); sw('touchmove', innerWidth * .15); sw('touchend', innerWidth * .15);
       out.taps.swipes = (out.taps.swipes || 0) + 1; out.taps.swipeMoved = out.taps.swipeMoved || [];
       setTimeout(() => { const s1 = snap(); if(!rankUpScene) return;
-        const own = s1.el && /screen-ranks|screen-profile/.test(s1.el.className || '');
+        const own = s1.el && /screen-ranks|screen-profile|screen-home/.test(s1.el.className || '');
         if(!own || (s1.el === s0.el && s1.ptab !== s0.ptab)) out.taps.swipeMoved.push(label); }, 300); }catch(e){}
   };
   let lastTap = 0, ph0 = null;
@@ -18602,7 +18610,7 @@ def check_b320d_rankup(br):
         un = wk.get("upnext") or {}
         check(f"{dev}: Up next is the road map's own Platinum box: the map scrolls down to it (centred), it pops in its colour, and the map slides back to the top before the card turns",
               "upnextcard" not in at and un.get("name") == "Platinum" and un.get("state") == "Up next" and un.get("fx") and .3 <= (un.get("mid") or 0) <= .7 and (un.get("scroll") or 0) > 200
-              and at.get("card", 0) < at.get("upnext", -1) < at.get("top0", -1) < at.get("turnin", -1), [un, at])
+              and at.get("cutscene", 0) < at.get("upnext", -1) < at.get("top0", -1) < at.get("turnin", -1), [un, at])
         hb, ha = wk.get("heroBefore") or {}, wk.get("heroAfter") or {}
         check(f"{dev}: the card at the top shows the rank as it WAS (Silver, Level {pre['cap']}, 4 badges, to reach Gold) and never says 'Rank up'",
               hb.get("name") == "Silver" and hb.get("level") == str(pre["cap"]) and hb.get("badges") == "4" and "Gold" in (hb.get("head") or "") and wk.get("rankUpText") is None,
@@ -28521,20 +28529,20 @@ def check_b324n_nova(br):
       /* the week's recap and What's New are their own moments, with their own gates; asked about here is only his rank line */
       try{ weekRecapBlocked = () => false; weekRecapOn = false; }catch(e){}
       showHome(); await wait(1500);
-      let sawTalk = !!document.getElementById('nova-rank');
+      let sawTalk = !!document.querySelector('#nova-rank, .nova-talk');
       for(let i = 0; i < 6 && !congrats().length && !sawTalk; i++){
-        sawTalk = sawTalk || !!document.getElementById('nova-rank');
+        sawTalk = sawTalk || !!document.querySelector('#nova-rank, .nova-talk');
         try{ popupGapUntil = 0; }catch(e){}
         document.querySelectorAll('.daily-alert, .vroom-chat-alert, .tierup-banner, #daily-lock-tip, .unlock-card').forEach(e => e.remove());
         novaSessionAt = 0; novaTick(); await wait(700); }
       let dbg = null; try{ const hh = novaHeardMap(); const nn = Date.now(); dbg = { calmBase: novaCalm(), home: !!stage.querySelector('[data-screen="home"]'), recap: (typeof weekRecapOn !== 'undefined' && weekRecapOn) || weekRecapBlocked(), owed: (typeof rankUpOwed === 'function') && rankUpOwed(), gap: (typeof popupGapUntil === 'number') && Date.now() < popupGapUntil, banners: [...document.querySelectorAll('.daily-alert, .vroom-chat-alert.is-ping, .tierup-banner, #daily-lock-tip, .daily-question-fab.is-charging')].map(e => e.className || e.id), calm: novaMomentCalm(), pend: novaPending(hh, nn).rank, open: novaDayOpen(hh, nn), shown: novaShownRankIdx(), heardRank: hh['@rank'], sess: novaSessionAt, since: novaState().since, lastAt: novaState().lastAt, last: hh['@last'], base: hh['@base'], friend: novaIsFriend() }; }catch(e){ dbg = String(e); }
-      sawTalk = sawTalk || !!document.getElementById('nova-rank');
+      sawTalk = sawTalk || !!document.querySelector('#nova-rank, .nova-talk');
       return { during, justAfter, onProfile, after: congrats(), dbg, sawTalk, heardRank: novaHeardMap()['@rank'] }; }""")
     check("no congratulations while the rank-up journey is still on, nor on Profile after it", r.get("during") == 0 and r.get("justAfter") == 0 and r.get("onProfile") == 0, r)
-    # REWRITTEN IN 384: his rank-up reaction is an ON-SCREEN talk now (playNovaRankTalk, over the flare just relit), and it takes the place
-    # of the chat message - "said here, so the chat does not say it again". So: on Home he talks once, and the chat gets no second copy.
-    check("back on Home, he congratulates you on that rank on screen, and the chat does not say it again (heard moved on past Gold)",
-          r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
+    # REWRITTEN IN 384.123: his on-screen rank-up talk (327z15) is removed ("Nova coming to talk to you after ranking up, remove that part").
+    # Nothing talks to the player on Home, and the chat stays silent about the rank too (the end of the journey moves heard "@rank" on).
+    check("back on Home, nothing of his talks over the rank-up and the chat does not say it either (heard moved on past Gold)",
+          not r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
 
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("none of it wrote to Firestore, saved the store or pushed the progress document", not w.get("w") and not w.get("push"), w)

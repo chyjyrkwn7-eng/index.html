@@ -3443,8 +3443,6 @@
   @keyframes nw2-beacon{ 0%, 100%{ opacity:.25; } 50%{ opacity:.9; } }
   [data-reduce-motion="true"] .nw2 *, .nw2.is-still *{ animation:none !important; }
   @media (prefers-reduced-motion:reduce){ .nw2 *{ animation:none !important; } }
-  /* his rank-up talk's flare (327z15), big enough to be the subject */
-  .nt-flare.nt-rankflare{ transform:scale(2.4); margin:2.6rem 0 2.2rem; }
   /* NOVA'S VOYAGE (327z15) - see buildNovaVoyage */
   .nw3-bob{ animation:nw3-bob 3.2s ease-in-out infinite alternate; }
   @keyframes nw3-bob{ from{ transform:translateY(-2%) rotate(-.6deg); } to{ transform:translateY(2%) rotate(.6deg); } }
@@ -15204,20 +15202,27 @@
     transform:translate3d(0, 0, 0);
     transition:opacity 3.6s cubic-bezier(.4,0,.3,1) .5s, transform 60s linear; will-change:transform; }
   #supernova-cutscene.supernova-visible .rank-sky{ opacity:.6; transform:translate3d(-4%, -2.5%, 0); }
-  .tier-cutscene .rank-nebula{ position:absolute; left:50%; top:45%; width:150vmax; height:150vmax; z-index:0; pointer-events:none; opacity:0;
-    margin:-75vmax 0 0 -75vmax; border-radius:50%;
+  /* (384.98) THE NEBULA'S BOX IS THE SIZE OF ITS GLOW. It was a 150vmax square (1,434px on a 17 Pro Max - nearly five screens of
+     layer, a rotating one, made in the cutscene's first frame) whose glow is transparent past 51vmax from its centre. The box is
+     104vmax now and every gradient is the same size in the same place as before, in vmax rather than in % of the old box (30% of
+     150 = 45vmax, the centre 46% = 6vmax left of the middle, and so on; the circle's 34% of its farthest corner, 75vmax x 1.4142,
+     is said as that corner): the same pixels, half the layer. */
+  .tier-cutscene .rank-nebula{ position:absolute; left:50%; top:45%; width:104vmax; height:104vmax; z-index:0; pointer-events:none; opacity:0;
+    margin:-52vmax 0 0 -52vmax; border-radius:50%;
     background:
-      radial-gradient(ellipse 30% 22% at 46% 50%, color-mix(in srgb, var(--mood, #8FB0FF) 10%, transparent) 0, color-mix(in srgb, var(--mood, #8FB0FF) 3.5%, transparent) 55%, transparent 100%),
-      radial-gradient(ellipse 18% 26% at 57% 46%, color-mix(in srgb, var(--mood, #8FB0FF) 7%, transparent) 0, transparent 100%),
-      radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--mood, #8FB0FF) 4%, transparent) 0, transparent 34%);
+      radial-gradient(ellipse 45vmax 33vmax at calc(50% - 6vmax) 50%, color-mix(in srgb, var(--mood, #8FB0FF) 10%, transparent) 0, color-mix(in srgb, var(--mood, #8FB0FF) 3.5%, transparent) 55%, transparent 100%),
+      radial-gradient(ellipse 27vmax 39vmax at calc(50% + 10.5vmax) calc(50% - 6vmax), color-mix(in srgb, var(--mood, #8FB0FF) 7%, transparent) 0, transparent 100%),
+      radial-gradient(circle 106.066vmax at 50% 50%, color-mix(in srgb, var(--mood, #8FB0FF) 4%, transparent) 0, transparent 34%);
     transform:rotate(0deg) scale(1); transition:opacity 4s cubic-bezier(.4,0,.3,1), transform 40s linear; }
   #supernova-cutscene.supernova-visible .rank-nebula{ opacity:.75; transform:rotate(14deg) scale(1.04); }
   #supernova-cutscene.is-cutspin:not(.is-cutrest) .rank-nebula{ opacity:1; }
-  .tier-cutscene .rank-rays{ position:absolute; left:50%; top:45%; width:130vmax; height:130vmax; z-index:0; pointer-events:none; opacity:0;
-    margin:-65vmax 0 0 -65vmax; border-radius:50%;
+  /* (384.98) the rays' box likewise: 130vmax, masked to nothing past 33% of its farthest corner (65vmax x 1.4142 = 91.92vmax, so
+     30.3vmax out); 62vmax now, the mask's circle said at the same 91.92vmax, the conic rays the same about the same centre */
+  .tier-cutscene .rank-rays{ position:absolute; left:50%; top:45%; width:62vmax; height:62vmax; z-index:0; pointer-events:none; opacity:0;
+    margin:-31vmax 0 0 -31vmax; border-radius:50%;
     background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--mood, #8FB0FF) 17%, transparent) 0deg, transparent 4deg, transparent 13deg, color-mix(in srgb, var(--mood, #8FB0FF) 9%, transparent) 17deg, transparent 21deg, transparent 31deg);
-    -webkit-mask-image:radial-gradient(circle, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
-            mask-image:radial-gradient(circle, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
+    -webkit-mask-image:radial-gradient(circle 91.924vmax at 50% 50%, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
+            mask-image:radial-gradient(circle 91.924vmax at 50% 50%, transparent 8%, #000 13%, rgba(0,0,0,.4) 21%, transparent 33%);
     transform:rotate(0deg); transition:opacity 2.4s ease, transform 2s linear; }
   #supernova-cutscene.is-cutspin .rank-rays{ transform:rotate(80deg); transition:opacity 5s cubic-bezier(.5,0,.6,1), transform 16s cubic-bezier(.4,0,.6,1); }
   #supernova-cutscene.is-cutspin:not(.is-cutrest) .rank-rays{ opacity:.5; }
@@ -19043,13 +19048,15 @@
     box-shadow:0 2px 8px rgba(0,0,0,.5);
   }
   .rankmap-you svg{ width:1.55rem; height:1.55rem; }
+  /* (384.74) EVERY STATE'S CARD IS THE ONE SOLID CARD, here at the base as well as in the Rank tab's flat rule further down: this
+     used to be a gradient of the rank's colour with a rank-coloured rim (and a lighter wash, a catch-light and a halo on the
+     reached ones, a dark glass on the locked ones, a glow on "You are here" and on a celebration), all of it covered on the
+     Rank tab by that flat rule and none of it deleted - which is how the Up next pop could leave a glass card behind. A rank's
+     colour is in its circle, its chip, its name and its unlock dots, never in the card. */
   .rankmap-card{
     padding:.75rem .9rem .8rem; border-radius:16px;
-    background:linear-gradient(135deg, color-mix(in srgb, var(--rank-color) 14%, rgba(22,27,34,.7)), rgba(18,22,28,.7));
-    border:1px solid color-mix(in srgb, var(--rank-color) 30%, rgba(255,255,255,.08));
+    background:var(--clean-card, #232830); border:1px solid transparent;
   }
-  .rankmap-stop.is-locked .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); }
-  .rankmap-stop.is-here .rankmap-card{ border-color:color-mix(in srgb, var(--rank-color) 70%, #fff); box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent); }
   /* EVERY RANK YOU HOLD GLOWS LIKE THE ONE YOU ARE ON (build 315). "You
      see how the silver one is super nice, great glow? And then you see
      bronze.. no glow, not shiny.. all the boxes need that super nice
@@ -19059,13 +19066,6 @@
      richer wash and a catch-light along the top; "You are here" is still
      told by its chip and the node's ping. A rank reached since you last
      looked stays dark until its celebration lights it. */
-  .rankmap-card{ transition:border-color .7s ease, box-shadow .7s ease, background .7s ease; }
-  .rankmap-stop.is-reached .rankmap-card{
-    border-color:color-mix(in srgb, var(--rank-color) 70%, #fff);
-    background:linear-gradient(135deg, color-mix(in srgb, var(--rank-color) 22%, rgba(22,27,34,.72)), rgba(18,22,28,.72) 70%);
-    box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.12);
-  }
-  .rankmap-stop.is-celebrate-pending .rankmap-card{ border-color:rgba(255,255,255,.07); background:rgba(20,24,30,.55); box-shadow:none; }
   /* wraps only when the chip cannot fit beside the name - a 320px phone
      clipped "You are here" off the card's edge (build 312 audit) */
   .rankmap-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.25rem .5rem; }
@@ -19276,7 +19276,6 @@
   /* Waiting to be celebrated: drawn exactly like a locked stop. */
   .rankmap-stop.is-celebrate-pending .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; border-style:solid; }
   .rankmap-stop.is-celebrate-pending .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
-  .rankmap-stop.is-celebrate-pending .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); box-shadow:none; }
   .rankmap-stop.is-celebrate-pending .rankmap-name{ color:rgba(255,255,255,.62); }
   .rankmap-stop.is-celebrate-pending .rankmap-state{ color:rgba(255,255,255,.7); background:rgba(255,255,255,.07); }
   .rankmap-stop.is-celebrate-pending .rankmap-you{ opacity:0; transform:scale(.4); }
@@ -19327,7 +19326,6 @@
   @keyframes rankmap-tip-swell{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.6); } }
   .rankmap-stop.is-climbing .rankmap-meter .rankcard-meterfill{ transition-duration:3.2s; }
   [data-reduce-motion="true"] .rankmap-sparks, [data-reduce-motion="true"] .rankmap-flash{ display:none; }
-  .rankmap-stop.is-celebrating .rankmap-card{ box-shadow:0 0 34px -4px color-mix(in srgb, var(--rank-color) 85%, transparent); }
   .rankmap-card{ position:relative; }
   .rankmap-ribbon{
     position:absolute; top:-.7rem; left:50%; transform:translateX(-50%) scale(.6); opacity:0;
@@ -19339,7 +19337,10 @@
   .rankmap-stop.is-celebrating .rankmap-ribbon{ animation:rankmap-ribbon 1.7s ease both; }
   @keyframes rankmap-ribbon{ 0%{ opacity:0; transform:translateX(-50%) scale(.6); } 18%{ opacity:1; transform:translateX(-50%) scale(1.06); } 28%,80%{ opacity:1; transform:translateX(-50%) scale(1); } 100%{ opacity:0; transform:translateX(-50%) scale(1); } }
   /* Every stretch of road the same length - see buildRanksTab. */
-  .rankmap-stops{ display:grid; grid-auto-rows:1fr; }
+  .rankmap-stops{ display:grid; grid-auto-rows:1fr; grid-template-columns:minmax(0, 1fr); }
+  .rankmap-stop{ min-width:0; }
+  /* (the stops column is minmax(0,1fr), not an auto track sized from what is in it: nothing in a stop can widen the column
+     and carry every circle away from the road, which is placed from the stop's own 50%) */
   /* THE ROAD UP THE MIDDLE, ON A PHONE TOO (build 235): "that look on
      the iPad ... you get to see the ranks on either side ... let's make
      that the same look the iPhone gets". Cards alternate either side of
@@ -19349,7 +19350,10 @@
      want it to feel like scrolling down it really gets that progression
      feel". */
   @media (min-width:24rem){
-    .rankmap-stop{ --node:3.9rem; --gap:2.4rem; grid-template-columns:minmax(0,1fr) var(--node) minmax(0,1fr); gap:.55rem; }
+    /* (384.55) THE CIRCLE'S COLUMN IS THE MIDDLE OF THE STOP BY ARITHMETIC, not by two flexible columns agreeing: both cards
+       are exactly (100% - circle - 2 gaps) / 2, so the circle's centre is 50% - the same 50% the road and the light are
+       placed from - whatever the cards hold. */
+    .rankmap-stop{ --node:3.9rem; --gap:2.4rem; --cgap:.55rem; grid-template-columns:calc((100% - var(--node) - 2 * var(--cgap)) / 2) var(--node) calc((100% - var(--node) - 2 * var(--cgap)) / 2); gap:var(--cgap); }
     .rankmap-road{ left:calc(50% - 2px); }
     .rankmap-roadtip{ left:50%; }
     .rankmap-node{ grid-column:2; grid-row:1; }
@@ -19367,7 +19371,7 @@
     .rankmap-gift{ font-size:.64rem; }
   }
   @media (min-width:46rem){
-    .rankmap-stop{ --node:5.4rem; --gap:3.6rem; gap:1.1rem; }
+    .rankmap-stop{ --node:5.4rem; --gap:3.6rem; --cgap:1.1rem; }
     .rankmap-card{ padding:.75rem .9rem .8rem; }
     .rankmap-head{ flex-wrap:nowrap; gap:.5rem; }
     .rankmap-name{ font-size:1.45rem; }
@@ -19422,20 +19426,51 @@
      (rankUpNudge). 320's complaint was a ring breathing and the character
      bobbing for as long as Home was locked; this rests between calls. The
      global Reduce motion rule stops it (it is the element's own animation). */
+  /* (384.55) SMOOTH, ON ONE SMALL LAYER. It was the whole tab button (its label too) scaling and rotating on `ease-out` - which an
+     animation applies to EACH keyframe interval, so every swing eased to a stop and lurched on (the shake read as stuttering) -
+     with a box-shadow ring animated beside it (a repaint of the button every frame, on the glass bar). Now the one thing that
+     moves is the tab's picture (.bottomtab-icon, its own layer), by transform alone, along a damped swing laid out as a key
+     every 2.5% and run `linear` so the curve is the curve: it pops to 1.16, swings a little over +-5deg and 3px, and settles
+     at exactly 1 (period ~0.29s, 1.1s in all, as RU_NUDGE_MS). The ring is a pseudo-element's transform and opacity. The
+     label, the pill and the bar do not move, so nothing is re-sampled behind the glass. */
   @keyframes ru-nudge{
-    0%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--ru-color, var(--accent)) 85%, transparent); }
-    20%{ transform:scale(1.15); }
-    32%{ transform:scale(1.14) translateX(-3px) rotate(-5deg); }
-    44%{ transform:scale(1.12) translateX(3px) rotate(5deg); }
-    56%{ transform:scale(1.09) translateX(-2px) rotate(-3deg); box-shadow:0 0 0 7px rgba(0,0,0,0); }
-    68%{ transform:scale(1.05) translateX(1px) rotate(1.5deg); }
-    82%{ transform:scale(1.02); }
-    100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(0,0,0,0); }
+    0%{transform:translate3d(0px,0,0) scale(1.000) rotate(0deg)} 2.5%{transform:translate3d(0px,0,0) scale(1.039) rotate(0deg)}
+    5%{transform:translate3d(0px,0,0) scale(1.075) rotate(0deg)} 7.5%{transform:translate3d(0px,0,0) scale(1.107) rotate(0deg)}
+    10%{transform:translate3d(0px,0,0) scale(1.133) rotate(0deg)} 12.5%{transform:translate3d(0px,0,0) scale(1.151) rotate(0deg)}
+    15%{transform:translate3d(0px,0,0) scale(1.159) rotate(0deg)} 17.5%{transform:translate3d(-1.26px,0,0) scale(1.154) rotate(-2.76deg)}
+    20%{transform:translate3d(-2.56px,0,0) scale(1.145) rotate(-5.61deg)} 22.5%{transform:translate3d(-2.51px,0,0) scale(1.136) rotate(-5.49deg)}
+    25%{transform:translate3d(-1.33px,0,0) scale(1.128) rotate(-2.9deg)} 27.5%{transform:translate3d(0.28px,0,0) scale(1.119) rotate(0.62deg)}
+    30%{transform:translate3d(1.52px,0,0) scale(1.111) rotate(3.32deg)} 32.5%{transform:translate3d(1.88px,0,0) scale(1.103) rotate(4.11deg)}
+    35%{transform:translate3d(1.33px,0,0) scale(1.096) rotate(2.91deg)} 37.5%{transform:translate3d(0.27px,0,0) scale(1.089) rotate(0.59deg)}
+    40%{transform:translate3d(-0.74px,0,0) scale(1.082) rotate(-1.62deg)} 42.5%{transform:translate3d(-1.25px,0,0) scale(1.075) rotate(-2.74deg)}
+    45%{transform:translate3d(-1.12px,0,0) scale(1.069) rotate(-2.44deg)} 47.5%{transform:translate3d(-0.5px,0,0) scale(1.062) rotate(-1.09deg)}
+    50%{transform:translate3d(0.24px,0,0) scale(1.057) rotate(0.52deg)} 52.5%{transform:translate3d(0.73px,0,0) scale(1.051) rotate(1.61deg)}
+    55%{transform:translate3d(0.81px,0,0) scale(1.046) rotate(1.78deg)} 57.5%{transform:translate3d(0.51px,0,0) scale(1.041) rotate(1.12deg)}
+    60%{transform:translate3d(0.04px,0,0) scale(1.036) rotate(0.09deg)} 62.5%{transform:translate3d(-0.36px,0,0) scale(1.032) rotate(-0.78deg)}
+    65%{transform:translate3d(-0.51px,0,0) scale(1.028) rotate(-1.12deg)} 67.5%{transform:translate3d(-0.41px,0,0) scale(1.024) rotate(-0.89deg)}
+    70%{transform:translate3d(-0.14px,0,0) scale(1.020) rotate(-0.31deg)} 72.5%{transform:translate3d(0.12px,0,0) scale(1.017) rotate(0.27deg)}
+    75%{transform:translate3d(0.27px,0,0) scale(1.014) rotate(0.59deg)} 77.5%{transform:translate3d(0.26px,0,0) scale(1.011) rotate(0.57deg)}
+    80%{transform:translate3d(0.14px,0,0) scale(1.009) rotate(0.3deg)} 82.5%{transform:translate3d(-0.01px,0,0) scale(1.007) rotate(-0.02deg)}
+    85%{transform:translate3d(-0.11px,0,0) scale(1.005) rotate(-0.23deg)} 87.5%{transform:translate3d(-0.12px,0,0) scale(1.004) rotate(-0.27deg)}
+    90%{transform:translate3d(-0.08px,0,0) scale(1.002) rotate(-0.17deg)} 92.5%{transform:translate3d(-0.02px,0,0) scale(1.001) rotate(-0.04deg)}
+    95%{transform:translate3d(0.02px,0,0) scale(1.001) rotate(0.04deg)} 97.5%{transform:translate3d(0.02px,0,0) scale(1.000) rotate(0.04deg)}
+    100%{transform:translate3d(0px,0,0) scale(1.000) rotate(0deg)}
   }
-  #bottomtab-profile.ru-nudge{ animation:ru-nudge 1.1s ease-out; transform-origin:50% 60%; }
+  @keyframes ru-nudge-ring{ 0%{ opacity:.9; transform:scale(.8); } 100%{ opacity:0; transform:scale(1.7); } }
+  #bottomtab-profile.ru-nudge .bottomtab-icon{ animation:ru-nudge 1.1s linear both; transform-origin:50% 60%; will-change:transform; }
+  /* the ring: a child the nudge puts round the picture (rankUpNudge), moved by transform and opacity only. It is not a
+     pseudo-element of the picture because the picture clips what is outside its own box. */
+  #bottomtab-profile > .ru-nudge-ring{ position:absolute; z-index:0; border-radius:50%; pointer-events:none; box-sizing:border-box;
+    border:2px solid var(--ru-color, var(--accent)); opacity:0; }
+  #bottomtab-profile.ru-nudge > .ru-nudge-ring{ animation:ru-nudge-ring 1.1s ease-out both; will-change:transform, opacity; }
   /* While it plays nothing can be pressed: this layer takes every touch,
      and the scene swallows keys, wheels and clicks on the window. */
   .ru-blocker{ position:fixed; inset:0; z-index:2147483000; background:transparent; touch-action:none; -webkit-tap-highlight-color:rgba(0,0,0,0); }
+  /* (384.98) THE ROAD MAP PUT AWAY UNDER THE CUTSCENE (rankUpMapSleep): from the moment the hand-off's dark is full until the
+     cutscene's ending, nothing of the map is drawn, laid out or styled - it keeps its height (the box's own content height,
+     measured as it goes to sleep), so the page and the camera stand where they were - and it is back, unchanged, under the
+     cutscene's still-opaque dark before that lifts. visibility first: an engine without content-visibility still draws none of it. */
+  html.ru-scene #stage > .screen-ranks.ru-asleep{ visibility:hidden; content-visibility:hidden; contain-intrinsic-block-size:var(--ru-asleep-h); }
   /* (Build 320: no LOADING RANK UP ADJUSTMENTS screen any more - Profile
      goes into the road map through .ru-dive and the curtain, below.) */
   /* ---- THE RANK-UP ON PROFILE'S ROAD MAP (build 319) ----
@@ -19461,7 +19496,7 @@
   .pf-goal{ transition:box-shadow .6s ease, border-color .6s ease; }
   .pf-goal.ru-focus{ border-color:color-mix(in srgb, var(--nx) 28%, rgba(255,255,255,.2));
     box-shadow:0 14px 30px -18px rgba(0,0,0,.85); }
-  .pf-bar > i.sbar{ transition-duration:1.15s; transition-timing-function:cubic-bezier(.25,.8,.25,1); }
+  .pf-bar > i.sbar{ transition-duration:.95s; transition-timing-function:cubic-bezier(.25,.8,.25,1); }
   .pf-task.ru-ticked .pf-check{ position:relative; animation:ru-check-pop .6s cubic-bezier(.2,1.6,.4,1) both; }
   .pf-task.ru-ticked .pf-check::after{ content:""; position:absolute; inset:-2px; border-radius:50%; border:2px solid #5CD692; opacity:0;
     animation:ru-check-ring .8s cubic-bezier(.15,.7,.3,1) .05s both; pointer-events:none; }
@@ -19480,9 +19515,17 @@
      sinks into the dark; the road map comes up out of it already where
      the light was, settling from a touch close. */
   .screen-profile.ru-dive{ transform-origin:var(--ru-ox, 50%) var(--ru-oy, 50%);
-    transform:scale(1.07); opacity:.25; transition:transform .9s cubic-bezier(.55,0,.8,.3), opacity .8s ease .05s; }
-  .screen-ranks.ru-mapin{ transform-origin:50% var(--ru-oy, 40%); animation:ru-mapin 1.25s cubic-bezier(.2,.75,.25,1) backwards; }
-  @keyframes ru-mapin{ from{ transform:scale(1.045); } to{ transform:none; } }
+    transform:scale(1.07); opacity:.25; transition:transform .7s cubic-bezier(.55,0,.8,.3), opacity .62s ease .04s; }
+  /* (384.55) NO SCALE ON THE ROAD MAP: it was scale(1.045) -> none on the whole 2,000px screen, with the dashed road, the
+     circles (each its own layer: the emblems are alive), the light and the cards under it. His frame of that moment has the
+     whole screen at ~1.015 (the map 406pt wide, not 400), the road at 50% and both circles' centres 4-6pt to the right of it:
+     the keyframes' own start, a third of the way through. Chromium never shows it - `#stage > *{animation:none}` (no entrance
+     movement, build 302; specificity 1,3,0) beats this rule there, so the settled map and every frame of the journey measure
+     exact - but his frame fits a phone where that rule does not take (it has a :has() inside a :not()), which then plays this,
+     and a scale of that size on a tree of layers is where one layer lands off another (unconfirmed: no iOS here). It comes up out of the dark by opacity alone - the curtain over it is
+     lifting at the same time - and nothing on the screen is scaled, wherever the rule does or does not take. */
+  .screen-ranks.ru-mapin{ animation:ru-mapin 1.25s cubic-bezier(.2,.75,.25,1) backwards; }
+  @keyframes ru-mapin{ from{ opacity:.45; } to{ opacity:1; } }
   /* the road map's fills are where they stood from the first frame: no
      stretch fills in from nothing while the scene holds the map ("it's
      just going through them all until it catches up to where you are") */
@@ -19570,27 +19613,26 @@
      or something (not the same effect as the unlock one but still just as
      good) and then it slides back to the top". The unlock is a burst at
      the CIRCLE (rings, sparks, a flash, a ribbon); this is the BOX: it
-     lifts, its colour washes up through it from below, its edge lights
-     in the rank's colour and a band of light crosses it once, and the
-     "Up next" chip answers. Transform and opacity only. */
+     lifts, a thin ring in the rank's colour draws round it once and goes,
+     and the "Up next" chip answers. Transform and opacity only.
+     (384.74) THE BOX STAYS THE SOLID CARD. Through 384.55 the pop also
+     washed a gradient of the rank's colour up through it (left at 32%),
+     lit an inset glow and a 45% rim, and ran a white sheen across it, and
+     the wash and the rim never went: the Up next box sat on the ladder as
+     a tinted gold glass card beside Silver's and Platinum's flat ones
+     ("This needs to be updated to match the newer look"). Now the card's
+     own background is never touched (it is the same --clean-card as every
+     other state, see the Rank tab's solid-card rule), the pop is the lift
+     and one thin ring (65% at most) that ends at opacity 0, and the layer is removed once it
+     has played. */
   .rankmap-stop.ru-nextpop .rankmap-card{ isolation:isolate; animation:ru-nx-lift 1.5s cubic-bezier(.2,.9,.25,1) both; }
   @keyframes ru-nx-lift{ 0%{ transform:none; } 32%{ transform:translateY(-3px) scale(1.045); } 100%{ transform:none; } }
-  .ru-nextfx{ position:absolute; inset:0; z-index:-1; border-radius:inherit; overflow:hidden; pointer-events:none; }
-  .ru-nextfx > i{ position:absolute; pointer-events:none; opacity:0; }
-  .ru-nx-wash{ inset:0; background:linear-gradient(to top, color-mix(in srgb, var(--rank-color) 42%, transparent), color-mix(in srgb, var(--rank-color) 14%, transparent) 70%, transparent);
-    transform-origin:50% 100%; animation:ru-nx-wash 2.1s cubic-bezier(.25,.8,.3,1) both; }
-  @keyframes ru-nx-wash{ 0%{ opacity:0; transform:scaleY(.2); } 28%{ opacity:1; transform:scaleY(1); } 70%{ opacity:.75; } 100%{ opacity:.32; transform:scaleY(1); } }
-  .ru-nx-edge{ inset:0; border-radius:inherit; border:2px solid color-mix(in srgb, var(--rank-color) 78%, #fff);
-    box-shadow:inset 0 0 18px color-mix(in srgb, var(--rank-color) 45%, transparent); animation:ru-nx-edge 2.1s ease both; }
-  @keyframes ru-nx-edge{ 0%{ opacity:0; } 22%{ opacity:1; } 60%{ opacity:.85; } 100%{ opacity:.45; } }
-  .ru-nx-sheen{ top:-20%; bottom:-20%; left:0; width:38%;
-    background:linear-gradient(100deg, transparent, rgba(255,255,255,.28) 45%, rgba(255,255,255,.5) 50%, rgba(255,255,255,.28) 55%, transparent);
-    transform:translateX(-120%) skewX(-12deg); animation:ru-nx-sheen 1.1s cubic-bezier(.45,.1,.35,1) .3s both; }
-  @keyframes ru-nx-sheen{ 0%{ opacity:1; transform:translateX(-120%) skewX(-12deg); } 100%{ opacity:1; transform:translateX(320%) skewX(-12deg); } }
+  .ru-nextfx{ position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none; }
+  .ru-nextfx > i{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; }
+  .ru-nx-edge{ border:1.5px solid color-mix(in srgb, var(--rank-color) 78%, #fff); animation:ru-nx-edge 1.3s ease both; }
+  @keyframes ru-nx-edge{ 0%{ opacity:0; } 25%{ opacity:.65; } 100%{ opacity:0; } }
   .rankmap-stop.ru-nextpop .rankmap-state{ animation:ru-nx-chip .7s cubic-bezier(.2,1.6,.4,1) .2s both; }
   @keyframes ru-nx-chip{ 0%{ transform:scale(1); } 45%{ transform:scale(1.18); } 100%{ transform:scale(1); } }
-  [data-reduce-motion="true"] .ru-nx-wash{ opacity:.32; }
-  [data-reduce-motion="true"] .ru-nx-edge{ opacity:.6; }
   /* 10. THE CARD AT THE TOP (build 321): no turn any more - it fades to
      the new card (rankUpHeroTurn), so build 320's turn and sheen are gone. */
   /* 11. back on Profile: the rank you had, then (build 321) the new rank's
@@ -58580,7 +58622,7 @@ function maybeNewClassBanner(){
          recap, another banner */
       let busy = !onNovaHome() || !document.querySelector(".class-bubble-wrap");
       try{ busy = busy || a2hsBusy() || a2hsHolds(); }catch(e){}
-      busy = busy || !!document.querySelector("#nova-intro, #nova-class-greet, #nova-rank, .nova-talk, .daily-alert, #genprofile-overlay, #class-switch-loader");
+      busy = busy || !!document.querySelector("#nova-intro, #nova-class-greet, .nova-talk, .daily-alert, #genprofile-overlay, #class-switch-loader");
       try{ busy = busy || novaIntroOn || pendingMainMenuTour || signupInNova; }catch(e){}
       if(busy){
         calm = 0;
@@ -91575,7 +91617,7 @@ SND_AMB["rank.whirl"] = { desc: "The whirl: a spinning roar of air whose pitch a
     const N = ["D5", "F5", "A5", "D6"], tE = A + Dd;
     let tt = 0, k = 0;
     while(tt < tE - .1){
-      const sp = tt < A ? tt / A : 1 - (tt - A) / Dd, step = .26 - sp * .17;
+      const sp = tt < A ? Math.pow(tt / A, 2) * (3 - 2 * tt / A) : Math.pow(1 - (tt - A) / Dd, 2) * (3 - 2 * (1 - (tt - A) / Dd)), step = .26 - sp * .17;
       K.fm({ t: tt, f: N[k % 4], ratio: 3.5, idx: .5, idx2: 0, a: .002, d: .25, g: .004 + sp * .012, pan: Math.sin(k * 1.3) * .6, rev: .35 });
       tt += step; k++;
     }
@@ -99405,7 +99447,7 @@ const RELEASE_NOTES = [
       ]},
       { label: "Better In Version 9.2", items: [
         { icon: buildPersonIcon, color: "#5CA8FF", title: "Matching Profile Cards", body: "Profile is three matching cards: you, your next rank and your badge case. Your level and badge count sit under your rank, and a rank challenge opens to show how it is done." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "A Quieter Nova", body: "Nova messages less often, checks in at every rank-up, and sends his weekly challenge at random." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "A Quieter Nova", body: "Nova messages less often and sends his weekly challenge at random." },
         { icon: buildStarIcon, color: "#C9D3DE", title: "Unit Cards", body: "An earned badge sits in its unit card's corner, with the question count at the card's foot." },
         { icon: buildChecklistIcon, color: "#B79BFF", title: "Search, Refined", body: "Review's search button sits above the tab bar, which keeps its usual shape. Unit search has a clear button, and every search bar matches." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Leaderboard Columns", body: "This Week and Hundos each show only their own column." },
@@ -99435,7 +99477,7 @@ const RELEASE_NOTES = [
       { label: "Meet Nova", items: [
         { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and instructor. A storm opened his ship’s hold on its way through this system and scattered his badges, flares and crew into your class material. Each unit you master recovers a badge, each rank relights a flare, and each character you find returns a member of his crew." },
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "Nova's Introduction", body: "Every account meets Nova once. He explains the story, reviews your progress and shows what has changed." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you rank up or find something of his, sends a weekly challenge, and can be messaged directly." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you find something of his, sends a weekly challenge, and can be messaged directly." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents the previous week's top three, with comebacks, close finishes and honourable mentions." },
         { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Challenge Nova from his chat any time, or accept a challenge when he sends one. Finish ahead of him to unlock the Sheriff." }
       ]},
@@ -100122,6 +100164,11 @@ function recordingShouldWait(){
      holding it, never holds them for good - the grade and the XP bar are long done by then) */
   try{ if(resultsSeq && resultsSeq.isRunning() && document.querySelector("#stage .rs-rewards") && Date.now() - resultsShownAt < 40000) return 600; }catch(e){}
   try{ if(document.querySelector("#stage .rs-rewards") && Date.now() - resultsShownAt < 2000) return 2000 - (Date.now() - resultsShownAt); }catch(e){}
+  /* NOTHING WHILE THE RANK-UP JOURNEY PLAYS (384.55). "A good amount of chopped parts" on the road map: the flip-book recorders
+     ran in the journey's gaps (a slice of up to 12ms a frame on a phone - 79 idle callbacks, 1.2s of the main thread, in the
+     5.7s of the road map's ride when they had nothing cached), each one a frame the light and the camera were late. They wait,
+     a second at a time, until the journey has ended (rankUpSceneEnd clears rankUpScene) and go on after. */
+  try{ if(typeof rankUpScene !== "undefined" && rankUpScene) return 1000; }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
 }
@@ -100623,7 +100670,11 @@ const SESSION_KEY = "class26e.session", CRASH_KEY = "class26e.crashlog";
 var sessionLastFp = "";
 function sessionMark(state, light){
   try{
-    const scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : document.querySelector(".qpanel, .pausepanel") ? "test" : "other";
+    let scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : document.querySelector(".qpanel, .pausepanel") ? "test" : "other";
+    /* (384.98) and where in a rank-up journey it was, and whether a cutscene was up: "ENDED-visible other+ru-cutscene" is a page
+       that ended inside the rank-up cutscene */
+    try{ if(typeof rankUpScene !== "undefined" && rankUpScene) scr += "+ru-" + rankUpScene.phase; }catch(e){}
+    try{ if(document.getElementById("supernova-cutscene")) scr += "+cut"; else if(document.querySelector(".bc-scene, #badge-cutscene")) scr += "+badge"; }catch(e){}
     /* build 377: WHAT THE PAGE HELD AS IT WENT. His report: ended in the background 0-3s after leaving on 365, 368, 371, 373 and 375 - iOS
        ending the page as it was put away, then the black screen of a cold start on the way back. Noted with the hide, read back on the next
        launch into the ended log: elements, images and their decoded megapixels, canvases' megapixels, sheets in memory. */
@@ -106794,44 +106845,18 @@ function novaFriendProp(){
   return row;
 }
 __bm("L82222");
-/* ---- NOVA AT EVERY RANK (327z15) ----
-   "Novas rank up system will need to be more storyline ... each rank nova
-   can come on screen and talk about like hey it appears you find this flare
-   good job. Keep studying and we will find the rest." When a rank-up
-   journey has played to its end, he comes on in the same short boxes as his
-   introduction, over the flare just relit, with that rank's beat of the
-   story. It takes the place of his rank-up message in the chat (heard
-   "@rank" is moved on here), so the chat says it once, on screen. */
-const NOVA_RANK_BEATS = {
-  rookie:   ["That’s the first of my flares home.", "Just look at it glow again."],
-  ranger:   ["Two flares lit.", "The dark out there is getting smaller."],
-  veteran:  ["Your planet is taking in more light now.", "Every badge you find brings more of it home."],
-  vanguard: ["We’re over halfway there.", "My scanners are picking up the rest."],
-  adept:    ["That one was lost deep in the storm.", "I never thought I’d see it again."],
-  elite:    ["Only one flare is still out in the dark.", "We’re so close now."],
-  titan:    ["Every one of my flares is lit.", "Your planet has become a star!"]
-};
-let novaRankTalkOn = false;
-function playNovaRankTalk(idx){
-  const k = TIER_ORDER_FULL[idx];
-  if(!k || novaRankTalkOn || document.getElementById("nova-intro") || document.getElementById("nova-rank")) return false;
-  try{ if(typeof novaIsFriend === "function" && !novaIsFriend()) return false; }catch(e){}
-  novaRankTalkOn = true;
-  /* said here, so the chat does not say it again */
-  try{ const heard = novaHeardMap(); heard["@rank"] = Math.max(Number(heard["@rank"]) || 0, idx + 1); saveStore(); }catch(e){}
-  const name = novaName(), rank = RANK_DISPLAY_NAME[k] || k;
-  const flare = ctx => { const b = document.createElement("span"); b.className = "nt-flare is-lit nt-rankflare";
-    try{ b.appendChild(buildFlareBubble(k, { lit: true })); }catch(e){}
-    novaProp(ctx, novaStack(b, novaCap(rank + " flare"))); };
-  const last = idx === TIER_ORDER_FULL.length - 1;
-  const lines = [{ gesture: "wave", text: name + "! You found my " + rank + " flare!", enter: flare }];
-  (NOVA_RANK_BEATS[k] || []).forEach((t, i) => lines.push({ gesture: i ? "nod" : "raise", text: t }));
-  lines.push(last
-    ? { gesture: "wave", final: true, text: "Thank you, " + name + ". There’s always more to learn!" }
-    : { gesture: "nod", final: true, text: "Keep learning, and we’ll find the rest." });
-  novaTalk({ id: "nova-rank", label: "Nova, on your " + rank + " rank", lines, finalLabel: "Let’s go",
-    onClose: () => { novaRankTalkOn = false; } });
-  return true;
+/* ---- NO ON-SCREEN TALK AT A RANK-UP (384.123) ----
+   "Nova coming to talk to you after ranking up, remove that part." The journey ends and nothing speaks to the
+   player: no overlay, no dialog. What 327z15's talk did besides speak is kept - it moved heard "@rank" on, so his
+   chat does not send a rank-up message either (a rank-up is silent from him, on screen and in the chat). Said
+   once the whole journey has played (rankUpSceneEnd), for a friend of his, as the talk was. */
+function novaRankHeard(idx){
+  try{
+    if(typeof novaIsFriend === "function" && !novaIsFriend()) return;
+    const heard = novaHeardMap();
+    heard["@rank"] = Math.max(Number(heard["@rank"]) || 0, idx + 1);
+    saveStore();
+  }catch(e){}
 }
 let novaIntroOn = false;
 function playNovaIntro(then, o){
@@ -108280,8 +108305,13 @@ function playRankUpScene(tierKey, opts, spec){
   /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark.
      Never Supernova's (cut3): a replayed Supernova scene starts from the
      planet before it. */
+  /* (384.98) what a plain (not yet Supernova) build has at its top level, read off the planet you had - it IS a plain build, and
+     the accent changes colours, not parts - rather than off a third planet system built only to be counted and thrown away */
+  const keyOf = el => el.tagName + ":" + String(el.getAttribute("class") || "").split(/\s+/).filter(c => /^cosmic-/.test(c)).sort().join(" ");
+  let plainKeys = null;
   try{
     heroBefore = spec.times.swell ? quietBuild(false) : buildCosmicHero(true);
+    if(spec.times.swell) plainKeys = new Set([...heroBefore.children].map(keyOf));
     syncSceneFlares(heroBefore, tierKey, false);
     before.appendChild(heroBefore);
   }catch(e){}
@@ -108305,8 +108335,7 @@ function playRankUpScene(tierKey, opts, spec){
   try{
     if(spec.times.swell){
       heroAfter = quietBuild(true, tierKey);
-      const keyOf = el => el.tagName + ":" + String(el.getAttribute("class") || "").split(/\s+/).filter(c => /^cosmic-/.test(c)).sort().join(" ");
-      const plain = new Set([...quietBuild(false, tierKey).children].map(keyOf));
+      const plain = plainKeys || new Set([...quietBuild(false, tierKey).children].map(keyOf));
       /* (a ring layer of its own - the top ring tier - is not hidden: the
          rings are there throughout, held plain in CSS until sn-rings) */
       [...heroAfter.children].forEach(el => {
@@ -108378,7 +108407,8 @@ function playRankUpScene(tierKey, opts, spec){
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
   /* Reduce motion (the app's switch or the system's), or no Web
      Animations: the still scene - see below. */
-  const still = ringMotionOff() || !overlay.animate;
+  /* (384.98) opts.still: the rank-up journey asks for the still scene after its cutscene was ended twice in a row (rankUpCutscene) */
+  const still = !!opts.still || ringMotionOff() || !overlay.animate;
   let finished = false, outro = false, titleUp = false;
   /* THE END, ONCE: the words, the planet and the tint fade out together,
      then the scene hands over. From the schedule, or from a tap once the
@@ -108387,6 +108417,8 @@ function playRankUpScene(tierKey, opts, spec){
     if(outro || finished) return;
     outro = true;
     overlay.classList.add("rank-outro", "rank-fadeout");
+    /* (384.98) the overlay's own dark is still full for the length of the ending: what is under it comes back now (rankUpMapSleep) */
+    if(typeof opts.onOutro === "function"){ try{ opts.onOutro(); }catch(e){} }
     timers.push(setTimeout(finish, still ? RANK_STILL_END_MS : RANK_END_MS));
   }
   function finish(){
@@ -108522,16 +108554,32 @@ function playRankUpScene(tierKey, opts, spec){
      Animations of transform and opacity, the whirl's all on one timeline
      instant so nothing drifts; the slow orbit (`rotate`) runs on
      underneath, untouched, so the start and the end cannot jump. */
+  /* ONE SMOOTH WIND-UP (build 384.55). "The transition from slow to fast spin was not it": the whirl was a straight ramp of speed
+     that LEFT with RANK_CUTSPIN_KICK of its top speed already in it (166 deg/s on the first frame - a step in angular velocity on
+     top of the slow orbit that runs underneath), then a corner where the ramp met the peak. Now ONE angular-velocity curve runs
+     the whole wind-up and the slowing: the speed is smoothstep(0 -> 1) over ACC and smoothstep(1 -> 0) over DEC, so it leaves at
+     exactly nothing (the slow orbit under it carries on untouched: no step, no restart), eases in, climbs, eases into the top
+     speed with no acceleration at the peak (where the bang is), and eases out to a stop. It is ONE transform animation per layer
+     for the whole spin (the angle is that curve integrated, laid out as a key every ~1/100 of each half - the browser draws
+     straight lines between them, under 2 degrees at the fastest), not two animations swapped. The top speed stays where it was
+     (the old ramp's: ~1,160 deg/s on a rank, ~1,300 on Supernova); the turns are whole ones that give it (20 and 26), so the
+     orbit stops where it started, under the new planet. */
   const ACC = spec.times.accel || RANK_CUTSPIN_ACCEL_MS, DEC = spec.times.decel || RANK_CUTSPIN_DECEL_MS;
-  const TURNS = (spec.times.turns || RANK_CUTSPIN_TURNS) * 360;
-  /* equal speed at the peak, the speeding-up starting from KICK of it
-     (build 319: the charge's release pushes it off): A = (1 + KICK) v ACC / 2,
-     B = v DEC / 2, A + B == TURNS. The speeding-up is the quadratic
-     a u + (1 - a) u^2 (a = 2 KICK / (1 + KICK)) as a cubic Bezier; with no
-     kick it is t-squared, as it was. */
-  const KICK = RANK_CUTSPIN_KICK, KA = 2 * KICK / (1 + KICK);
-  const PEAK_DEG = TURNS * (1 + KICK) * ACC / ((1 + KICK) * ACC + DEC), PEAK_AT = ACC / (ACC + DEC);
-  const ACC_EASE = "cubic-bezier(.333," + (KA / 3).toFixed(4) + ",.667," + ((KA + 1) / 3).toFixed(4) + ")";
+  const OLD_V = (spec.times.turns || RANK_CUTSPIN_TURNS) * 360 / ((1 + .14) * ACC / 2 + DEC / 2);
+  const TURNS = Math.max(1, Math.round(OLD_V * (ACC + DEC) / 2 / 360)) * 360;
+  const V_TOP = TURNS / ((ACC + DEC) / 2);
+  const PEAK_DEG = V_TOP * ACC / 2, PEAK_AT = ACC / (ACC + DEC);
+  const SS = x => x * x * (3 - 2 * x), SS_INT = x => x * x * x - x * x * x * x / 2;
+  /* the angle (degrees) at progress u of the whole spin */
+  const spinDeg = u => u < PEAK_AT ? V_TOP * ACC * SS_INT(u / PEAK_AT) : PEAK_DEG + V_TOP * DEC * (.5 - SS_INT(1 - (u - PEAK_AT) / (1 - PEAK_AT)));
+  const spinKeys = (prop, sign) => {
+    const N = 100, us = new Set([0, 1, +PEAK_AT.toFixed(5)]);
+    for(let i = 1; i < N; i++){ us.add(+(PEAK_AT * i / N).toFixed(5)); us.add(+(PEAK_AT + (1 - PEAK_AT) * i / N).toFixed(5)); }
+    return [...us].sort((x, y) => x - y).map(u => {
+      const d = sign * (u >= 1 ? TURNS : spinDeg(u));
+      return { offset: u, [prop]: prop === "transform" ? "rotate(" + d.toFixed(2) + "deg)" : d.toFixed(2) + "deg" };
+    });
+  };
   const newColor = flareColorOf(tierKey);
   let spins = [], burstArmed = false;
   const newBadge = () => rankTierBadge(heroBefore, tierKey);
@@ -109010,12 +109058,11 @@ function playRankUpScene(tierKey, opts, spec){
        should fade out". No pool of colour behind it and no one-time
        celebration pop (that pop fired just as the title came up and read
        as light shooting off the flare). */
-    const kf = sign => [
-      { transform: "rotate(0deg)", easing: ACC_EASE },
-      { transform: "rotate(" + (sign * PEAK_DEG).toFixed(2) + "deg)", offset: PEAK_AT, easing: "cubic-bezier(.333,.667,.667,1)" },
-      { transform: "rotate(" + (sign * TURNS) + "deg)" }];
+    const kf = sign => spinKeys("transform", sign);
     const opts2 = { duration: ACC + DEC, fill: "none" };
-    [orbitBefore, orbitAfter].forEach(o => {
+    /* the new planet is not seen until the flash (.rank-after is opacity 0), and the whirl is whole turns, so its orbit ends where it
+       starts: it does not turn at all (384.55 - half the animated layers of the whirl) */
+    [orbitBefore].forEach(o => {
       if(!o) return;
       spins.push(o.animate(kf(1), opts2));
       o.querySelectorAll(":scope > .rank-orbit-slot").forEach(sl => spins.push(sl.animate(kf(-1), opts2)));
@@ -109024,11 +109071,8 @@ function playRankUpScene(tierKey, opts, spec){
        rings ride the same curve on the individual `rotate` property, so
        their own slow `transform` spin carries on underneath untouched and
        they stop, on whole turns, where they would have been. */
-    const rkf = [
-      { rotate: "0deg", easing: ACC_EASE },
-      { rotate: PEAK_DEG.toFixed(2) + "deg", offset: PEAK_AT, easing: "cubic-bezier(.333,.667,.667,1)" },
-      { rotate: TURNS + "deg" }];
-    [heroBefore, heroAfter].forEach(h => {
+    const rkf = spinKeys("rotate", 1);
+    [heroBefore].forEach(h => {
       if(h) h.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => spins.push(l.animate(rkf, opts2)));
     });
     /* 2. THE LIGHT: the trails, the bubbles and the secret flares fading
@@ -109039,7 +109083,7 @@ function playRankUpScene(tierKey, opts, spec){
        SPEED. */
     try{
       const P = PEAK_AT, ss = (a, b2, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b2 - a))); return t * t * (3 - 2 * t); };
-      const vh = u => u < P ? KICK + (1 - KICK) * u / P : (1 - u) / (1 - P);
+      const vh = u => u < P ? SS(u / P) : SS((1 - u) / (1 - P));
       const curve = (f, n) => {
         const k = [], pts = new Set();
         for(let i = 0; i <= n; i++) pts.add(+(i / n).toFixed(5));
@@ -114584,6 +114628,8 @@ onCutsceneFocusRelease(() => {
   setTimeout(() => {
     try{ syncChatDockDot(); }catch(e){}
     try{ syncNoticeVisibility(); }catch(e){}
+    /* (384.98) and the update is asked about again: one held by the scene goes now (forcedUpdateBlocked) */
+    try{ checkForUpdate(); }catch(e){}
   }, CUTSCENE_RETURN_MS + 60);
 });
 
@@ -125503,6 +125549,9 @@ __bm("L97380");
 const FORCED_UPDATE_TRIES = 3;
 let forcedUpdateInfo = null;
 let forcedUpdateStarted = false;
+/* (384.98) the full-screen layers a forced update waits for besides the scenes cutscene focus covers (forcedUpdateBlocked) */
+const FORCED_HOLD_COVERS = ".bc-scene, .sf-scene, .fl-scene, .ff-scene, .scene-bridge, #void-cutscene, #vroom-race-cut:not(.is-done), " +
+  ".hfx-layer.is-page, .nova-talk, .installguide-overlay, #class-switch-loader";
 
 /* A forced reload is counted per build AND across builds: three reloads in
    twenty minutes, whatever builds they were for, stop the pushing and leave
@@ -125635,6 +125684,16 @@ function forcedUpdateBlocked(){
   /* Half-way through signing up: a reload there starts it over. */
   if(document.querySelector(".welcomeintro-panel, .charselect-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel")) return true;
 
+  /* (384.98) EVERY SCENE, BY THE ONE SWITCH THEY ALL TURN ON. The list below named the scenes of its day (#badge-cutscene,
+     #supernova-cutscene) and missed the ones added since: the badge case (.bc-scene - the badge scene on Home after a test that
+     was left, and on a results screen), a secret flare's scene (.sf-scene), a flare find (.fl-scene, .ff-scene), a page-wide hundo
+     effect, the bridge between two scenes - a forced update there reloaded the app mid-scene. Cutscene focus is on for as long as
+     any scene is on <body> (syncSceneFocus) and for the whole rank-up journey, so this one test holds them all, including scenes
+     added later; the list is kept for what focus does not cover. The update goes the moment the last one ends (startForcedUpdate
+     retries every 800ms, and focus's release asks again). */
+  try{ if(typeof cutsceneFocusActive === "function" && cutsceneFocusActive()) return true; }catch(e){}
+  if(document.querySelector(FORCED_HOLD_COVERS)) return true;
+
   /* And nothing may land on top of a loading screen, a tour or a
      cutscene, wherever they are. */
   return !!(document.getElementById("splashscreen") ||
@@ -125658,11 +125717,24 @@ function startForcedUpdate(){
      testInProgress the next tick fires. */
   if(forcedUpdateBlocked()){ setTimeout(startForcedUpdate, 800); return; }
   forcedUpdateStarted = true;
-  noteForcedTry(forcedUpdateInfo.build);
   showPushingUpdate();
   /* Long enough that the message is read rather than flashed, short
      enough that it is not a wait. */
-  setTimeout(applyUpdate, 1100);
+  /* (384.98) AND ASKED AGAIN AT THE MOMENT IT GOES. The reload used to follow 1.1s after the one check, whatever had begun in that
+     second (a scene's timer can start one under the cover). Still clear: it goes, and only now is the try counted against the
+     loop guard. Not clear: the cover comes off, nothing is counted, and it waits for the scene like any other. */
+  setTimeout(() => {
+    let held = false;
+    try{ held = forcedUpdateBlocked(); }catch(e){}
+    if(held){
+      try{ const pu = document.getElementById("pushing-update"); if(pu) pu.remove(); }catch(e){}
+      forcedUpdateStarted = false;
+      setTimeout(startForcedUpdate, 800);
+      return;
+    }
+    noteForcedTry(forcedUpdateInfo.build);
+    applyUpdate();
+  }, 1100);
 }
 
 /* The progress bar asked for by name - "have the progress bar say
@@ -135305,6 +135377,8 @@ function homeUnlocksOwed(p){ return !!(p && (p.chars.length || p.banners.length 
 /* Anything that already owns the screen. The Home unlocks wait for all
    of it - a badge cutscene queued from the same run goes first. */
 function homeUnlockBlocked(){
+  /* the rank-up journey's own Home leg gives its rank's cards first (384.55): Home's queue waits for it, then plays */
+  try{ if(typeof rankUpScene !== "undefined" && rankUpScene && rankUpScene.homing) return true; }catch(e){}
   return !!(document.getElementById("genprofile-overlay") || document.getElementById("splashscreen") ||
     document.getElementById("tour-overlay") || document.getElementById("badge-cutscene") ||
     document.getElementById("supernova-cutscene") || document.getElementById("void-cutscene") ||
@@ -143638,7 +143712,7 @@ function checkSaveCodeReminder(){
   if(holdForCutscene("savecode", () => checkSaveCodeReminder())) return;
   /* Nova's talks (introduction, What's New, the weekly recap) get the
      screen first. */
-  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro") || document.getElementById("nova-rank"))) return;
+  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   if(document.getElementById("lobby-invite")) return;
   if(document.getElementById("friend-request")) return;
   /* Nothing to save, or a device that opted out of syncing on purpose. */
@@ -162219,7 +162293,7 @@ function glideScrollTo(y, ms, stop){
     const step = now => {
       if(stop && stop()){ done(); return; }
       const t = Math.min(1, (now - t0) / ms);
-      window.scrollTo(0, t < 1 ? Math.round(y0 + d * ease(t)) : target);
+      window.scrollTo(0, t < 1 ? rankUpSnapY(y0 + d * ease(t)) : target);
       if(t < 1) requestAnimationFrame(step); else done();
     };
     requestAnimationFrame(step);
@@ -163071,6 +163145,64 @@ function buildRanksTab(){
    input layer can never be left up. Reduce motion: the same steps, still
    and shorter. */
 var rankUpScene = null;
+var rankUpLitIdx = -1;
+/* (384.55) THE ROAD MAP IS ASLEEP UNDER THE CUTSCENE. While the planet scene covers it (the dark held, then the cutscene itself)
+   ~75 of the ~225 running animations on the page were the road map's - every emblem's twinkles, breathing and turning (SVG
+   parts, which Chromium and Safari animate on the main thread: a style pass and a repaint a frame for pictures nobody could
+   see), the swirls and sheens - behind a screen of its own dark. Exactly those animations are paused for exactly that time
+   (the animations themselves, ~75 calls; a class and a rule over the screen's ~1,000 elements cost ~400ms in the one task
+   that builds the planet) and played again after. It is done in the dark's held beat, before the planet is built. */
+var rankUpCoveredList = [];
+function rankUpCovered(on){
+  try{
+    if(on){
+      if(rankUpCoveredList.length) return;
+      const root = stage.querySelector(".screen-ranks");
+      if(!root || !root.getAnimations) return;
+      root.getAnimations({ subtree: true }).forEach(an => { if(an.playState === "running"){ try{ an.pause(); rankUpCoveredList.push(an); }catch(e){} } });
+    } else {
+      const list = rankUpCoveredList; rankUpCoveredList = [];
+      list.forEach(an => { try{ if(an.playState === "paused") an.play(); }catch(e){} });
+      rankUpMapSleep(false);
+    }
+  }catch(e){}
+}
+/* ---- (384.98) THE ROAD MAP IS PUT AWAY UNDER THE CUTSCENE ----
+   Madison, on the installed app (384.92-384.94): "my app would show a white screen, do the splash, and then go to main menu in the
+   middle of a cutscene for the rank (the very beginning) and then I'd have to do it again." A white screen and a cold start is iOS
+   ending the page's web process - its memory - and the cutscene's first frame was the heaviest moment of the whole journey: the
+   road map stayed laid out, styled and drawn under the dark (5,324 elements, 53 layers of it drawing, the "You are here"
+   character's 400x978 one among them), and in the same task two planet systems were built over it (~1,800 elements) with the
+   cutscene's depth layers - measured at 440x956 on 384.94, the layers drawing went from 67 to 142 in that one task and their
+   area from 4.2 to 8.2 million CSS px (10.6 by the whirl), and the task itself ran 1.3-2.4s here (the page's first style and
+   layout with the planets in it covered the map's elements too). So once the hand-off's veil is fully dark the map is put away
+   (content-visibility:hidden, with its content height kept so the page and the camera do not move; visibility:hidden for an
+   engine without it), and it comes back at the cutscene's ending, under the dark that is still full (opts.onOutro), with the
+   camera where it was. Nothing of it can be seen in that time, so nothing looks different. With the depth layers' boxes cut to
+   their glow (.rank-nebula, .rank-rays) the same moments measure 21 -> 81 layers and 2.2 -> 5.0 million px (5.6 by the whirl). */
+var rankUpAsleep = null;
+function rankUpMapSleep(on){
+  try{
+    if(on){
+      if(rankUpAsleep) return;
+      const root = stage.querySelector(".screen-ranks");
+      if(!root || !root.isConnected) return;
+      const cs = getComputedStyle(root);
+      const h = root.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+      if(!(h > 0)) return;
+      rankUpAsleep = { root, y: window.scrollY };
+      root.style.setProperty("--ru-asleep-h", h.toFixed(2) + "px");
+      root.classList.add("ru-asleep");
+    } else {
+      const a = rankUpAsleep;
+      rankUpAsleep = null;
+      if(!a) return;
+      a.root.classList.remove("ru-asleep");
+      a.root.style.removeProperty("--ru-asleep-h");
+      if(a.root.isConnected && Math.abs(window.scrollY - a.y) > .5){ try{ window.scrollTo({ top: a.y, behavior: "instant" }); }catch(e){ window.scrollTo(0, a.y); } }
+    }
+  }catch(e){}
+}
 __bm("L126933");
 var rankUpLockTimer = null, rankUpLockWired = false, rankUpRefusedAt = 0;
 var rankUpBlockEl = null, rankUpCurtainEl = null;
@@ -163155,6 +163287,8 @@ function rankUpHolds(rankKey){
   const o = rankUpOwed();
   if(!o) return false;
   const i = TIER_ORDER_FULL.indexOf(rankKey);
+  /* (384.55) on the journey's way to Home the rank it has just shown is lit there, before it is counted shown (rankUpLitIdx) */
+  if(i <= rankUpLitIdx) return false;
   return i > o.fromIdx && i <= o.toIdx;
 }
 function rankUpSceneOwed(){
@@ -163191,7 +163325,7 @@ function rankUpMarkShown(toIdx){
       : null;
     saveStore();
   }catch(e){}
-  try{ localStorage.removeItem(RANKUP_PROG_KEY); }catch(e){}
+  try{ localStorage.removeItem(RANKUP_PROG_KEY); localStorage.removeItem(RANKUP_CUTTRY_KEY); }catch(e){}
   try{ syncProfileTabDot(); }catch(e){}
 }
 /* What of a journey has already played on this device. Viewing history,
@@ -163250,11 +163384,32 @@ function rankUpLockCheck(){
    gesture, once - see .ru-nudge. RU_NUDGE_MS matches the keyframes. */
 const RU_NUDGE_MS = 1100, RU_NUDGE_EVERY_MS = 5000, RU_NUDGE_FIRST_MS = 450;
 var rankUpNudgeTimer = null;
+function rankUpNudgeRing(tab, make){
+  let ring = tab.querySelector(":scope > .ru-nudge-ring");
+  if(!ring){
+    if(!make) return null;
+    ring = document.createElement("i");
+    ring.className = "ru-nudge-ring"; ring.setAttribute("aria-hidden", "true");
+    tab.appendChild(ring);
+  }
+  const ic = tab.querySelector(".bottomtab-icon");
+  if(ic && ic.offsetWidth){
+    const l = (ic.offsetLeft - 3) + "px", t = (ic.offsetTop - 3) + "px", w = (ic.offsetWidth + 6) + "px", h = (ic.offsetHeight + 6) + "px";
+    if(ring.style.left !== l) ring.style.left = l;
+    if(ring.style.top !== t) ring.style.top = t;
+    if(ring.style.width !== w) ring.style.width = w;
+    if(ring.style.height !== h) ring.style.height = h;
+  }
+  return ring;
+}
 function rankUpNudge(){
   const tab = document.getElementById("bottomtab-profile");
   if(!tab || !document.body.classList.contains("rankup-lock")) return false;
   tab.classList.remove("ru-nudge"); void tab.offsetWidth; tab.classList.add("ru-nudge");
   tab.dataset.ruNudges = String((Number(tab.dataset.ruNudges) || 0) + 1);
+  /* the ring is already there (setRankUpLock put it round the picture once: a node added to the page re-checks every :has() rule on
+     it, ~30-40ms at 1x, not a thing to do in a gesture); only its place is set again, from the picture's own box */
+  try{ rankUpNudgeRing(tab, false); }catch(e){}
   clearTimeout(tab.ruNudgeOff);
   tab.ruNudgeOff = setTimeout(() => tab.classList.remove("ru-nudge"), RU_NUDGE_MS + 40);
   return true;
@@ -163288,11 +163443,13 @@ function setRankUpLock(on){
       if(held) tab.style.setProperty("--ru-color", rankRoadColor(held));
       tab.classList.add("ru-call");
       tab.setAttribute("aria-label", "Profile - your new rank");
+      try{ rankUpNudgeRing(tab, true); }catch(e){}
     }
   } else {
     document.body.classList.remove("rankup-lock");
     clearTimeout(rankUpNudgeTimer); rankUpNudgeTimer = null;
     if(tab && tab.classList.contains("ru-call")){ tab.classList.remove("ru-call"); tab.removeAttribute("aria-label"); }
+    if(tab){ const ring = tab.querySelector(":scope > .ru-nudge-ring"); if(ring) ring.remove(); }
   }
 }
 function wireRankUpLock(){
@@ -163387,7 +163544,7 @@ function rankUpSceneWatch(scene, ms){
     const played = ["armed", "profile", "tick"].indexOf(scene.phase) < 0;
     /* on its way back to Home (build 326: another rank still owed) the
        place to end is Home, never Profile - which would start the next */
-    const toHome = scene.phase === "home";
+    const toHome = scene.phase === "home" || !!scene.homing;
     if(toHome) scene.homing = true;
     rankUpSceneEnd(scene, played);
     if(toHome){ if(!stage.querySelector('[data-screen="home"]')){ try{ showHome(); }catch(e){} } return; }
@@ -163395,6 +163552,13 @@ function rankUpSceneWatch(scene, ms){
   }, ms);
 }
 
+/* THE START OF THE JOURNEY, ~27% SHORTER (384.55). "Speed up the beginning of it slightly, the part after you hit the profile
+   tab." From the tap to the road map's first frame it was 7.4s of waiting and ticking: Profile's own settle 1100ms, the
+   box coming into focus 450, two rows of 1150 (the count) + 800 (the beat after), the completed box held 1500, the dive 900.
+   Each beat is cut by a quarter to a third, none to nothing - a row still counts for just under a second and every tick is seen:
+   settle 850, focus 300, a row 950 + 480, the hold 900, the dive 700 (the CSS is on the same numbers: .pf-bar > i.sbar,
+   .screen-profile.ru-dive). Reduce motion's own shorter timings are unchanged. */
+var RU_TICK_AT_MS = 850, RU_FOCUS_MS = 300, RU_TICK_ROW_MS = 950, RU_TICK_AFTER_MS = 480, RU_DONE_HOLD_MS = 900, RU_DIVE_MS = 700;
 /* ---- 2. Profile, as it was ---- */
 /* The numbers the journey needs, read once, before any stand-in is up:
    the first new rank's two challenges, where each stood before it was
@@ -163534,7 +163698,7 @@ function playRankUpProfileScene(scene, panel){
   scene.oldGoal = panel.querySelector(".pf-goal");
   scene.ticks = rankUpPatchGoal(scene, scene.oldGoal);
   rankUpSceneWatch(scene, 20000);
-  setTimeout(() => rankUpSceneTick(scene), ruStill() ? 500 : 1100);
+  setTimeout(() => rankUpSceneTick(scene), ruStill() ? 500 : RU_TICK_AT_MS);
   return true;
 }
 /* The first new rank's card, with every challenge that the rank-up met
@@ -163576,7 +163740,7 @@ async function rankUpSceneTick(scene){
       await glideScrollTo(want, still ? 1 : 800, () => rankUpScene !== scene);
     }
     goal.classList.add("ru-focus");
-    await rankUpWait(still ? 0 : 450);
+    await rankUpWait(still ? 0 : RU_FOCUS_MS);
     for(const t of scene.ticks){
       if(rankUpScene !== scene || !goal.isConnected) return;
       await rankUpTickRow(t, still);
@@ -163587,7 +163751,7 @@ async function rankUpSceneTick(scene){
     const kick = goal.querySelector(".pf-tasks-kick");
     if(kick) kick.textContent = "Rank challenges complete";
     goal.classList.add("ru-complete");
-    await rankUpWait(still ? 700 : 1500);
+    await rankUpWait(still ? 700 : RU_DONE_HOLD_MS);
   }
   if(rankUpScene !== scene) return;
   rankUpSceneToMap(scene);
@@ -163607,7 +163771,7 @@ async function rankUpTickRow(t, still){
     await rankUpFrame();
     if(i){ i.style.transition = ""; setBarFill(i, 100); }
     const shown = v => { if(now) now.textContent = String(v); };
-    const t0 = performance.now(), dur = 1150;
+    const t0 = performance.now(), dur = RU_TICK_ROW_MS;
     await new Promise(res => {
       const step = () => {
         const k = Math.min(1, (performance.now() - t0) / dur), e = 1 - Math.pow(1 - k, 3);
@@ -163631,7 +163795,7 @@ async function rankUpTickRow(t, still){
     svg.appendChild(p); ck.appendChild(svg);
   }
   row.setAttribute("aria-label", row.getAttribute("aria-label").replace(/, \d+ of (\d+)$/, ", $1 of $1, done"));
-  await rankUpWait(still ? 0 : 800);
+  await rankUpWait(still ? 0 : RU_TICK_AFTER_MS);
 }
 
 /* ---- 4. INTO THE ROAD MAP (build 320) ----
@@ -163662,7 +163826,7 @@ function rankUpSceneToMap(scene){
      cutscenes I feel like they are random noises and come out of nowhere" -
      every moment of the road now sits inside one dark bed */
   rankUpBed(scene, true);
-  setTimeout(() => { if(rankUpScene === scene) rankUpSceneMap(scene); }, still ? 300 : 900);
+  setTimeout(() => { if(rankUpScene === scene) rankUpSceneMap(scene); }, still ? 300 : RU_DIVE_MS);
 }
 
 /* ---- 5-8. the road map ---- */
@@ -163683,11 +163847,14 @@ function rankUpSceneTakesMap(map){
 }
 function rankUpAlive(scene){ return rankUpScene === scene && !!scene.map && scene.map.isConnected; }
 /* The camera's one rule: the light sits a little above the middle. */
-function rankUpFollowY(pageY){
+function rankUpFollowY(pageY, maxY){
   const de = document.documentElement;
-  const max = Math.max(0, de.scrollHeight - window.innerHeight);
-  return Math.max(0, Math.min(max, Math.round(pageY - window.innerHeight * .42)));
+  const max = typeof maxY === "number" ? maxY : Math.max(0, de.scrollHeight - window.innerHeight);
+  return Math.max(0, Math.min(max, rankUpSnapY(pageY - window.innerHeight * .42)));
 }
+/* a scroll position on a DEVICE pixel (384.55): whole CSS pixels moved the camera in 3-device-pixel steps, and the slow ends of
+   an ease (under a pixel a frame) came out as a stair - still, still, a step - which reads as chop on a 3x phone */
+function rankUpSnapY(v){ const r = Math.max(1, Math.min(4, window.devicePixelRatio || 1)); return Math.round(v * r) / r; }
 /* A light along one stretch of road, the line growing behind it, the
    camera following it. `stop` is the stop the stretch runs INTO; its road
    lives on the stop above. from/to are 0..1 of the way from the upper
@@ -163753,6 +163920,10 @@ async function rankUpRide(scene, P, R, s0, s1, ms, under, go){
   try{ de.style.scrollBehavior = "auto"; }catch(e){}
   const core = under ? P.node.querySelector(".ru-core") : null;
   const edge = P.H - P.n / 2;
+  /* WHAT DOES NOT MOVE IS READ ONCE (384.55): the road's place on the page and how far the page scrolls were read again every
+     frame (a layout flush each, on a page of ~3,400 elements, with the light's own transform just written) - the loop is now
+     two transforms and a scroll */
+  const top0 = roadTop(), maxY = Math.max(0, de.scrollHeight - window.innerHeight);
   /* the light along the road, for exactly as long as it runs */
   playSound("rank.road.fill", { dur: ms / 1000 });
   await new Promise(res => {
@@ -163763,7 +163934,7 @@ async function rankUpRide(scene, P, R, s0, s1, ms, under, go){
       /* in gently, along steadily, and slowing into the centre */
       const e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
       y = R.set(s0 + (s1 - s0) * e);
-      window.scrollTo(0, rankUpFollowY(roadTop() + y));
+      window.scrollTo(0, rankUpFollowY(top0 + y, maxY));
       if(core){
         /* under the circle, its middle lights as the light reaches it */
         if(y > edge && !P.node.classList.contains("ru-under")) P.node.classList.add("ru-under");
@@ -163959,6 +164130,10 @@ async function rankUpHandOut(scene, stop){
   if(dark){ try{ dark.cancel(); }catch(e){} }
   /* the flare alone in the dark, a beat, before the planet system comes */
   veil.classList.add("is-dark");
+  /* the road map is not seen again until the cutscene is over: its animations rest through the held beat (384.55), and it is put
+     away until the cutscene's ending (384.98, rankUpMapSleep) - in the held beat, before the planet is built */
+  rankUpCovered(true);
+  rankUpMapSleep(true);
   await rankUpWait(RU_HAND_HOLD_MS);
   return hand;
 }
@@ -163969,15 +164144,32 @@ async function rankUpCutscene(scene, api){
   /* the scene ends itself (and has its own fallbacks); this only catches a
      page that never gets there */
   rankUpSceneWatch(scene, 80000);
+  /* (384.98) A CUTSCENE THE PAGE ENDED IN IS PLAYED AGAIN, ONCE, THEN QUIETLY. The rank is derived when read and the cutscene is
+     counted played only once it has finished (prog.cut), so a page that iOS ends inside it (Madison's white screen and splash)
+     plays the journey again from the top on the next launch - which is right. But a phone that could not get through the
+     cutscene's opening once may not the second time either, and the third launch would be the same journey into the same end.
+     The start is noted (RANKUP_CUTTRY_KEY, device-only, removed when the cutscene finishes): one start that never finished, it
+     plays in full again; two in a row, it plays as the short, still scene Reduce motion plays (no hand-off, no whirl - far less
+     to hold), so it can never be met a third time. The note goes in the page's end log too (sessionMark). */
+  const tried = rankUpCutTryRead(scene.to);
+  const quiet = !!(tried && tried.n >= 2);
+  try{ localStorage.setItem(RANKUP_CUTTRY_KEY, JSON.stringify({ to: scene.to, n: (tried ? tried.n : 0) + 1, at: Date.now() })); }catch(e){}
+  scene.cutQuiet = quiet;
+  try{ sessionMark("visible", true); }catch(e){}
   const last = api && api.stops && api.stops[api.stops.length - 1];
-  const hand = !ruStill() && last ? await rankUpHandOut(scene, last.stop) : null;
+  const hand = !ruStill() && !quiet && last ? await rankUpHandOut(scene, last.stop) : null;
   if(rankUpScene !== scene){ if(hand) hand.drop(); return; }
   scene.phase = "cutscene";
   rankUpAllowTaps(scene, true);
+  /* the map is under the dark (the veil is full) or about to be under the cutscene's own */
+  rankUpCovered(true);
+  try{ sessionMark("visible", true); }catch(e){}
   await new Promise(res => {
     let done = false;
     const fin = () => { if(done) return; done = true; res(); };
-    const opts = { from: scene.from, onDone: fin };
+    /* the map put away under the hand-off's dark comes back as the cutscene's ending starts, under its dark (384.98) */
+    const opts = { from: scene.from, onDone: fin, onOutro: () => rankUpMapSleep(false) };
+    if(quiet) opts.still = true;
     if(hand) opts.handoff = hand.ghost;
     try{
       if(scene.to === "titan") playSupernovaCutscene(opts);
@@ -163987,8 +164179,19 @@ async function rankUpCutscene(scene, api){
        and the hidden circle go with no frame between */
     if(hand) hand.drop();
   });
+  rankUpCovered(false);
   scene.prog.cut = true;
   rankUpProgWrite(scene.prog);
+  try{ localStorage.removeItem(RANKUP_CUTTRY_KEY); }catch(e){}
+}
+/* (384.98) the cutscene started and not finished, for this rank (see rankUpCutscene) */
+var RANKUP_CUTTRY_KEY = "class26e.rankup.cuttry";
+function rankUpCutTryRead(to){
+  try{
+    const o = JSON.parse(localStorage.getItem(RANKUP_CUTTRY_KEY) || "null");
+    if(o && o.to === to && typeof o.n === "number" && o.n > 0) return o;
+  }catch(e){}
+  return null;
 }
 /* Each new rank's reward card, one at a time - the cards the results
    screen used to play. Muted, they are recorded as shown and skipped. */
@@ -164109,7 +164312,8 @@ async function rankUpMapShow(scene, api){
   await rankUpCutscene(scene, api);
   if(rankUpScene !== scene) return;
   rankUpBed(scene, true);
-  await rankUpCards(scene);
+  /* (384.55) THE REWARD CARDS ARE NOT GIVEN HERE ANY MORE: the ladder finishes (the next rank's box, the card at the top), the
+     journey goes to Home, and Home is where the rank's rewards are given (rankUpSceneToHome). */
   if(!rankUpAlive(scene)) return;
   scene.phase = "after";
   rankUpSceneWatch(scene, 30000);
@@ -164125,7 +164329,7 @@ async function rankUpMapShow(scene, api){
   await rankUpWait(still ? 0 : 450);
   await rankUpHeroTurn(scene);
   if(rankUpScene !== scene) return;
-  rankUpSceneBack(scene);
+  rankUpSceneToHome(scene);
 }
 /* The current-rank card is built as it WAS while the scene holds the map
    (buildRanksTab -> buildRankHero with the old rank, the old level and
@@ -164161,8 +164365,10 @@ async function rankUpUpNext(scene, map){
   rankUpNextLift(stop);
   const fx = document.createElement("span");
   fx.className = "ru-nextfx"; fx.setAttribute("aria-hidden", "true");
-  fx.innerHTML = '<i class="ru-nx-wash"></i><i class="ru-nx-edge"></i><i class="ru-nx-sheen"></i>';
+  fx.innerHTML = '<i class="ru-nx-edge"></i>';
   card.appendChild(fx);
+  /* the ring has played by 1.3s and ends at opacity 0; the layer goes with it, so nothing of the pop stays on the card */
+  setTimeout(() => { try{ fx.remove(); }catch(e){} }, 1500);
   stop.classList.add("ru-nextpop");
   scene.upnext = nx;
   await rankUpWait(still ? 1200 : 2500);
@@ -164259,7 +164465,54 @@ async function rankUpHeroTurn(scene){
   await rankUpWait(2200);
 }
 
-/* ---- 11. back to Profile ---- */
+/* ---- 11. HOME, WHERE THE REWARDS ARE GIVEN (build 384.55) ----
+   "After it finishes the rank ladder part, make it go to Home Screen automatically instead of back to Profile, and on Home
+   Screen that's where it will show the rank up reward pops." The ladder finishes (Up next lifted, the card at the top
+   changed), the dark comes down, Home is built under it with the new rank's flare lit, the dark lifts, and the rank's
+   reward card (its theme, flare, character and banner) is given there - the same card, by the same rules as ever
+   (rankUpCards: not tappable away before 1.6s, "Skip celebrations and pop-ups" records it as shown and skips it, every card
+   written into scene.prog as it plays so a journey closed half way gives each card once). The rank is counted shown only
+   after the last card (rankUpSceneEnd), so a journey cut off anywhere is still owed and nothing is lost or given twice.
+   Profile is not visited: its card, level and XP bar are the real ones whenever it is next opened. */
+var RU_HOME_DARK_MS = 800, RU_HOME_SETTLE_MS = 900, RU_HOME_WAIT_MAX_MS = 9000;
+async function rankUpSceneToHome(scene){
+  if(rankUpScene !== scene) return;
+  const still = ruStill();
+  scene.phase = "home";
+  scene.homing = true;
+  rankUpSceneWatch(scene, 15000);
+  rankUpCurtain(true);
+  await rankUpWait(still ? 0 : RU_HOME_DARK_MS);
+  if(rankUpScene !== scene) return;
+  scene.wantsMap = false;
+  /* Profile's own opening would knock its XP bar for the XP earned since it was last looked at; the journey was the telling
+     of that XP, so it is counted as seen (as the old way back did) */
+  try{ const t = Number(levelStateFor(store).total); if(isFinite(t)) localStorage.setItem(PF_XP_SEEN_KEY, String(Math.round(t))); }catch(e){}
+  rankUpLitIdx = scene.toIdx;
+  try{ showHome(); }catch(e){}
+  await rankUpFrame();
+  if(rankUpScene !== scene) return;
+  rankUpCurtain(false);
+  await rankUpWait(still ? 300 : RU_HOME_SETTLE_MS);
+  if(rankUpScene !== scene) return;
+  /* anything of Home's own that is up (What's New, a tour, a recap) is waited for - a few seconds at most - so the card is
+     not stacked on it */
+  const t0 = Date.now();
+  while(rankUpScene === scene && Date.now() - t0 < RU_HOME_WAIT_MAX_MS){
+    let held = false;
+    try{ held = !!document.querySelector("#genprofile-overlay, #splashscreen, #tour-overlay, #nova-intro, #intro-pop, .sf-scene, #badge-cutscene") || whatsNewHolds(); }catch(e){}
+    if(!held) break;
+    rankUpSceneWatch(scene, 15000);
+    await rankUpWait(400);
+  }
+  if(rankUpScene !== scene) return;
+  if(!stage.querySelector('[data-screen="home"]')){ try{ showHome(); }catch(e){} await rankUpFrame(); }
+  await rankUpCards(scene);
+  if(rankUpScene !== scene) return;
+  rankUpSceneEnd(scene, true);
+}
+
+/* ---- (retired in 384.55: the journey no longer ends on Profile; kept for restoring it) back to Profile ---- */
 async function rankUpSceneBack(scene){
   if(rankUpScene !== scene) return;
   const still = ruStill();
@@ -164694,6 +164947,8 @@ function rankUpSceneEnd(scene, played){
   }
   if(played) rankUpMarkShown(scene.toIdx);
   rankUpScene = null;
+  rankUpLitIdx = -1;
+  rankUpCovered(false);
   clearTimeout(scene.watch);
   rankOfStandIn = undefined; levelStateStandIn = undefined;
   scene.wantsMap = false;
@@ -164715,8 +164970,9 @@ function rankUpSceneEnd(scene, played){
   /* the whole journey is over: Nova's congratulations follow it (build 324)
      - once, after the last of them (build 326) */
   const more = played && rankUpOwed();
-  /* (327z15) Nova comes on to say it, and his chat then has nothing to add */
-  if(played && !more){ setTimeout(() => { try{ playNovaRankTalk(scene.toIdx); }catch(e){} try{ novaTickSoon(2600); }catch(e){} }, ruStill() ? 300 : 900); }
+  /* (384.123) nothing talks to the player now. His chat is told the rank is heard (it has nothing to add), and takes its
+     usual pass a little later for anything else found on the way */
+  if(played && !more){ novaRankHeard(scene.toIdx); setTimeout(() => { try{ novaTickSoon(2600); }catch(e){} }, ruStill() ? 300 : 900); }
   /* the next rank owed: Home locks and the tab calls again */
   if(more && stage.querySelector('[data-screen="home"]')) scheduleRankUpLock(ruStill() ? 300 : 700);
 }
