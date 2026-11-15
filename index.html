@@ -36443,41 +36443,67 @@ html.is-browser{ --fade-paper: transparent; }
   @media (min-width:40rem) and (orientation:portrait){
     html[data-layout][data-theme] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60vh, 84vw, calc(100dvh - 32.6rem)) !important; }
   }
-  /* THE SHOWCASE: real badges, then every rank's flare lit in a row, each rising in turn as its row arrives. Transform and
-     opacity only; the flares are Home's lit glass without its backdrop blur (the stars drift behind them here). */
-  .gs-show{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:2.1rem; padding:3.4rem 1.4rem 2rem;
+  /* THE RANK LADDER (384.124; was build 384's showcase of badges and a row of flares): every rank top to bottom, Bronze to
+     Supernova, joined by a line that fills with light down to each rank as it lights in its own colour (gsBuildShowcase).
+     Transform and opacity only, on transitions keyed to classes (.is-lit / .is-pass) - under the app's Reduce motion switch
+     (which strips every transition and animation) a class still lands in its end state, and .is-still / the reduce rules
+     below put every rung lit from the start. The flares are Home's lit glass without its backdrop blur (the stars drift
+     behind them here). */
+  .gs-show{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:1.8rem; padding:3.4rem 1.4rem 2rem;
     max-width:62rem; margin:0 auto; box-sizing:border-box; text-align:center;
     opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
   .gs-show.is-in{ opacity:1; transform:none; }
   .gs-show > .gs-copy{ text-align:center; max-width:min(100%, 38rem); }
-  .gs-badges, .gs-flares{ display:flex; justify-content:center; align-items:center; flex-wrap:nowrap; }
-  .gs-badges{ gap:clamp(.3rem, 2vw, 1.2rem); }
-  .gs-badge-btn{ --gs-bw:clamp(44px, calc((100vw - 4rem) / 5.6), 6.2rem); position:relative; flex:none; width:var(--gs-bw); height:var(--gs-bw);
-    appearance:none; -webkit-appearance:none; background:none; border:0; padding:0; margin:0; cursor:pointer; color:inherit;
-    opacity:0; transform:translateY(34px) scale(.7) rotate(-10deg);
-    transition:opacity .6s ease calc(var(--i) * 110ms + 120ms), transform .95s cubic-bezier(.2,1.3,.4,1) calc(var(--i) * 110ms + 120ms); }
-  .gs-badges.is-in .gs-badge-btn{ opacity:1; transform:none; }
-  .gs-badge{ display:block; width:100%; height:100%; }
-  .gs-badge > svg{ display:block; width:100%; height:100%; overflow:visible; }
-  .gs-badge-btn.is-turn .gs-badge{ animation:gs-turn .85s cubic-bezier(.3,.7,.3,1); }
-  @keyframes gs-turn{ from{ transform:perspective(420px) rotateY(0deg) scale(1); } 50%{ transform:perspective(420px) rotateY(180deg) scale(1.12); } to{ transform:perspective(420px) rotateY(360deg) scale(1); } }
-  .gs-flares{ gap:clamp(4px, 1.6vw, 1.1rem); padding:.5rem 0; }
-  .gs-flare-btn{ --gs-fw:clamp(36px, calc((100vw - 5rem) / 7.6), 4.2rem); position:relative; flex:none; width:var(--gs-fw); height:var(--gs-fw);
-    appearance:none; -webkit-appearance:none; background:none; border:0; padding:0; margin:0; cursor:pointer;
-    opacity:0; transform:translateY(24px) scale(.35);
-    transition:opacity .45s ease calc(var(--i) * 120ms + 160ms), transform .75s cubic-bezier(.2,1.45,.4,1) calc(var(--i) * 120ms + 160ms); }
-  .gs-flare-btn::after{ content:""; position:absolute; inset:-4px; border-radius:50%; }   /* 44px to touch at the smallest */
-  .gs-flares.is-in .gs-flare-btn{ opacity:1; transform:none; }
-  .gs-flare-btn > .cosmic-icon-badge.cosmic-badge-rank{ position:relative; left:auto; top:auto; width:100%; height:100%; box-sizing:border-box;
+  .gs-ladder{ --gs-fw:clamp(50px, 13.6vw, 60px); --gs-top:calc(var(--gs-fw) * 1.42); --gs-gap:clamp(14px, 3.6vw, 22px);
+    list-style:none; margin:0; padding:0; width:min(100%, 19rem); display:flex; flex-direction:column; text-align:left; }
+  .gs-rung{ position:relative; margin:0; padding:0; }
+  .gs-rung-btn{ position:relative; display:flex; align-items:center; gap:1.05rem; width:100%; min-height:44px; margin:0;
+    padding:calc(var(--gs-gap) / 2) .6rem; box-sizing:border-box; appearance:none; -webkit-appearance:none; background:none; border:0;
+    border-radius:18px; color:#FFFFFF; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .gs-rung-flare{ position:relative; z-index:1; flex:none; display:block; width:var(--gs-fw); height:var(--gs-fw);
+    opacity:.26; transform:scale(.8); transition:opacity .5s ease var(--gs-f, 0ms), transform .7s cubic-bezier(.2,1.45,.4,1) var(--gs-f, 0ms); }
+  .gs-rung.is-top .gs-rung-flare{ width:var(--gs-top); height:var(--gs-top); }
+  .gs-rung-flare > .cosmic-icon-badge.cosmic-badge-rank{ position:relative; left:auto; top:auto; width:100%; height:100%; box-sizing:border-box;
     -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .gs-flare-btn > :is(.gs-flare-ring, .gs-flare-tap){ position:absolute; inset:0; border-radius:50%; pointer-events:none; opacity:0;
+  .gs-rung-flare > :is(.gs-flare-ring, .gs-flare-tap){ position:absolute; inset:0; border-radius:50%; pointer-events:none; opacity:0;
     border:2px solid color-mix(in srgb, var(--rank-color) 70%, #fff); }
-  .gs-flares.is-in .gs-flare-ring{ animation:gs-ring 1.15s cubic-bezier(.2,.7,.3,1) calc(var(--i) * 120ms + 420ms) 1 both; }
-  .gs-flare-btn.is-tapped .gs-flare-tap{ animation:gs-ring .75s cubic-bezier(.2,.7,.3,1) both; }
-  .gs-flare-btn.is-tapped > .cosmic-icon-badge{ animation:gs-press .4s cubic-bezier(.3,1.5,.5,1); }
+  /* Supernova's halo: a soft disc of its colour behind it, there once it lights */
+  .gs-rung-halo{ position:absolute; left:50%; top:50%; width:240%; height:240%; margin:-120% 0 0 -120%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--rank-color) 46%, transparent), color-mix(in srgb, var(--rank-color) 14%, transparent) 55%, transparent);
+    opacity:0; transform:scale(.5); transition:opacity .9s ease calc(var(--gs-f, 0ms) + 150ms), transform 1.1s cubic-bezier(.2,.9,.3,1) calc(var(--gs-f, 0ms) + 150ms); }
+  .gs-rung-words{ position:relative; z-index:1; display:flex; flex-direction:column; gap:.18rem; min-width:0;
+    opacity:.34; transform:translateX(-6px); transition:opacity .5s ease var(--gs-f, 0ms), transform .6s cubic-bezier(.2,.9,.3,1) var(--gs-f, 0ms); }
+  .gs-rung-name{ font-size:1.18rem; font-weight:750; line-height:1.15; letter-spacing:.01em; color:color-mix(in srgb, var(--rank-color) 38%, #fff); }
+  .gs-rung-level{ font-size:.86rem; line-height:1.3; letter-spacing:.06em; text-transform:uppercase; color:rgba(220,228,255,.62); }
+  .gs-rung.is-top .gs-rung-name{ font-size:1.62rem; letter-spacing:.04em;
+    background:linear-gradient(180deg, #fff 15%, color-mix(in srgb, var(--rank-color) 55%, #FFD7A8) 100%); -webkit-background-clip:text; background-clip:text;
+    color:transparent; -webkit-text-fill-color:transparent; }
+  /* the line, through the flares' centres: the half above a flare and the half below it, each a dim track with its light */
+  .gs-seg{ position:absolute; z-index:0; left:calc(.6rem + var(--gs-fw) / 2 - 1.5px); width:3px; border-radius:2px; overflow:hidden;
+    background:rgba(214,222,255,.14); pointer-events:none; }
+  .gs-rung.is-top .gs-seg{ left:calc(.6rem + var(--gs-top) / 2 - 1.5px); }
+  .gs-seg.is-up{ top:0; bottom:50%; }
+  .gs-seg.is-down{ top:50%; bottom:0; }
+  .gs-seg > i{ position:absolute; inset:0; display:block; transform:scaleY(0); transform-origin:50% 0; }
+  .gs-seg.is-up > i{ background:linear-gradient(180deg, color-mix(in srgb, var(--prev-color) 55%, var(--rank-color)), var(--rank-color));
+    box-shadow:0 0 6px var(--rank-color); transition:transform .26s linear var(--gs-d, 0ms); }
+  .gs-seg.is-down > i{ background:linear-gradient(180deg, var(--rank-color), color-mix(in srgb, var(--rank-color) 55%, #fff));
+    transition:transform .26s linear var(--gs-dn, 0ms); }
+  /* LIT: the line's half above runs first (from --gs-d), then the flare and its words (--gs-f, 240ms after) */
+  .gs-rung{ --gs-f:calc(var(--gs-d, 0ms) + 240ms); }
+  .gs-rung:first-child{ --gs-f:var(--gs-d, 0ms); }
+  .gs-rung.is-lit .gs-seg.is-up > i, .gs-rung.is-pass .gs-seg.is-down > i{ transform:scaleY(1); }
+  .gs-rung.is-lit .gs-rung-flare, .gs-rung.is-lit .gs-rung-words{ opacity:1; transform:none; }
+  .gs-rung.is-lit .gs-rung-halo{ opacity:1; transform:none; }
+  .gs-rung.is-lit .gs-flare-ring{ animation:gs-ring 1.15s cubic-bezier(.2,.7,.3,1) var(--gs-f, 0ms) 1 both; }
+  .gs-rung.is-top.is-lit .gs-flare-ring{ animation-duration:1.6s; }
+  .gs-rung-btn.is-tapped .gs-flare-tap{ animation:gs-ring .75s cubic-bezier(.2,.7,.3,1) both; }
+  .gs-rung-btn.is-tapped .gs-rung-flare > .cosmic-icon-badge{ animation:gs-press .4s cubic-bezier(.3,1.5,.5,1); }
+  .gs-rung-btn:focus-visible{ outline:2px solid rgba(214,226,255,.7); outline-offset:2px; }
   @keyframes gs-ring{ 0%{ opacity:0; transform:scale(.75); } 22%{ opacity:.95; } 100%{ opacity:0; transform:scale(2.1); } }
   @keyframes gs-press{ 0%{ transform:scale(1); } 35%{ transform:scale(.86); } 100%{ transform:scale(1); } }
-  .gs-show-cap{ margin:-.6rem 0 0; min-height:1.5em; font-size:.92rem; line-height:1.5; color:rgba(220,228,255,.7); }
+  .gs-show-cap{ margin:-.4rem 0 0; min-height:1.5em; font-size:.92rem; line-height:1.5; color:rgba(220,228,255,.7); }
+  @media (min-width:40rem){ .gs-ladder{ --gs-fw:62px; --gs-gap:22px; width:21rem; } .gs-rung-name{ font-size:1.25rem; } .gs-rung.is-top .gs-rung-name{ font-size:1.8rem; } }
   @media (max-width:22rem){ .gs-show{ padding-left:1rem; padding-right:1rem; } }
   /* (384) Welcome rising in after Get Started or the splash (welcomeArrive) */
   @keyframes welcome-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
@@ -36513,12 +36539,14 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-zoom-word{ display:block; font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif; font-size:clamp(4rem, 17vw, 8rem); font-weight:700;
     letter-spacing:.12em; line-height:1; text-indent:.12em; white-space:nowrap; opacity:0; will-change:transform, opacity;
     background:linear-gradient(180deg, #fff 20%, #aab8ff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+  /* (384.124) Reduce motion, the system's or the app's switch: the ladder is simply there, every rung lit, nothing moving */
   @media (prefers-reduced-motion:reduce){
-    .gs-show, .gs-badge-btn, .gs-flare-btn{ transition:none; opacity:1; transform:none; }
-    .gs-flare-ring, .gs-flare-tap, .gs-flare-btn > .cosmic-icon-badge, .gs-badge{ animation:none !important; }
+    .gs-show, .gs-ladder :is(.gs-rung-flare, .gs-rung-words, .gs-rung-halo, .gs-seg > i){ transition:none; opacity:1; transform:none; }
+    .gs-ladder :is(.gs-flare-ring, .gs-flare-tap, .gs-rung-flare > .cosmic-icon-badge){ animation:none !important; }
   }
-  [data-reduce-motion="true"] :is(.gs-show, .gs-badge-btn, .gs-flare-btn){ transition:none; opacity:1; transform:none; }
-  [data-reduce-motion="true"] :is(.gs-flare-ring, .gs-flare-tap, .gs-flare-btn > .cosmic-icon-badge, .gs-badge){ animation:none !important; }
+  [data-reduce-motion="true"] :is(.gs-show, .gs-ladder .gs-rung-flare, .gs-ladder .gs-rung-words, .gs-ladder .gs-rung-halo, .gs-ladder .gs-seg > i){ transition:none; opacity:1; transform:none; }
+  [data-reduce-motion="true"] .gs-ladder :is(.gs-flare-ring, .gs-flare-tap, .gs-rung-flare > .cosmic-icon-badge){ animation:none !important; }
+  .gs-show.is-still .gs-ladder :is(.gs-rung-flare, .gs-rung-words, .gs-rung-halo, .gs-seg > i){ transition:none; opacity:1; transform:none; }
   /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
      The Leaderboard's segmented control, a level's picked count beside its name. */
   html[data-layout] .screen-setup .setup-levels{ margin:1rem 0 .85rem; width:100%; }
@@ -104432,14 +104460,13 @@ const GS_SCENES = [
   { key: "test", kicker: "Fire Code", title: "The code behind every answer", body: "Load your own copy of the 2021 IFC once, and every answer shows the exact section it comes from." },
   { key: "ifc", kicker: "Your PDF", title: "Load it once", body: "Choose your PDF of the 2021 IFC. Nova checks it is the edition the questions were written from and keeps it on this device." },
   { key: "hundo", kicker: "Score", title: "Go for the hundo", body: "Get every question right and the whole screen celebrates, with a new effect to unlock each time." },
+  /* (384.124) "Badges should be a little video in the start up screen ... make badges a badge but only show a few of the ifc
+     ones. Like 10 max." A Fire Code chapter badge found and put in the case (tools/record-landing-badges.py: ten chapters at
+     most), after the hundo that earns it and before the rank it counts toward. */
+  { key: "badges", kicker: "Badges", title: "A badge for every chapter", body: "Score 100% on a Fire Code chapter and its badge goes into your case. A Police Academy unit's badge takes repeated 100% scores." },
   { key: "rank", kicker: "Rank up", title: "Every win lights a flare", body: "Levels climb a ladder of ranks. Reach a new one and a flare lights up around your planet." },
   { key: "customize", kicker: "Customize", title: "Make Nova yours", body: "Collect characters, banners and effects as you go, then pick the ones that are you." }
 ];
-/* (384) THE SHOWCASE: "maybe include an interactive thing with some example badges and then rank flares but have all the
-   flares lit up in a row ... and you see them nicely as you scroll". Real badges (buildUnitBadgeSVG, clean) and the seven
-   rank flares as Home draws a lit one (homeRankEmblem in Home's glass), each rising in turn as its row arrives. A tap
-   names it. */
-const GS_BADGES = ["TCOLE Rules", "Identity Crimes", "Professionalism and Ethics", "Victims of Crime", "De-Escalation"];
 function gsSeen(){ try{ return localStorage.getItem("class26e.getstarted") === "1"; }catch(e){ return false; } }
 function gsMarkSeen(){ try{ localStorage.setItem("class26e.getstarted", "1"); }catch(e){} }
 /* THE SMALL PRINT (build 330), in one place: Settings carries all of it and the credit; the sign-up
@@ -104552,7 +104579,7 @@ function showGetStarted(){
   const reveal = new IntersectionObserver(es => es.forEach(e => {
     if(e.isIntersecting) e.target.classList.add("is-in");
   }), { root: scroll, threshold: .2 });
-  scroll.querySelectorAll(".gs-scene, .gs-end, .gs-hero-copy, .gs-show, .gs-badges, .gs-flares").forEach(n => reveal.observe(n));
+  scroll.querySelectorAll(".gs-scene, .gs-end, .gs-hero-copy, .gs-show").forEach(n => reveal.observe(n));
   /* THE BUTTON WAITS FOR THE END (build 330): "shouldn't the get started button not appear till you
      scroll through it and get to the bottom?" It rises in once the last section is on screen.
      (384) That is the first time. Now that the page opens on every launch with no account - signed out, or come back
@@ -104596,65 +104623,101 @@ function showGetStarted(){
   const stop = new MutationObserver(() => { if(!page.isConnected) teardown(); });
   stop.observe(stage, { childList: true });
   setTimeout(() => hc.classList.add("is-in"), 1500);
-  show.warm();
+  show.start(scroll);
 }
-/* ---- THE SHOWCASE (build 384): example badges and every rank's flare, lit ---- */
+/* ---- THE RANK LADDER (384.124, was the showcase of build 384) ----
+   Madison: "remove the badges from the thing on the bottom ... And then the rank will be shown vertically from bronze to
+   supernova in a cool way." The badges are a clip now (GS_SCENES "badges"); this is every rank, top to bottom in climbing
+   order (TIER_ORDER_FULL), each its own lit flare as Home draws it (homeRankEmblem in Home's glass, RANK_COLOR / flareColorOf)
+   with its name (RANK_DISPLAY_NAME) and the level it asks (TIER_UNLOCKS - read here, never typed), joined by a line. As the
+   ladder scrolls up the screen the line fills with light down to each rank and the rank lights in its own colour, one after
+   another, ending on Supernova - drawn larger, with a halo of its own. Nothing per frame: an IntersectionObserver lights a rung
+   when it passes the bottom quarter of the screen (and every rung above it), and the light is CSS transitions of transform and
+   opacity (the line's halves are scaleY, the flare and words fade and grow). Once lit, a rung stays lit. A tap on a rung
+   presses its flare, plays its Home sound and names it in the caption. Reduce motion (the app's switch or the system's): all
+   of it is there and lit from the start, no transitions. Seven flares, built once with the page - no idle drawing. */
 function gsBuildShowcase(){
   const el = document.createElement("section"); el.className = "gs-show";
   const copy = document.createElement("div"); copy.className = "gs-copy";
-  copy.innerHTML = '<p class="gs-kicker">Collect</p><h2 class="gs-title">Badges and flares</h2><p class="gs-body"></p>';
-  copy.querySelector(".gs-body").textContent = "Ace a unit enough times and its badge goes in your case. Every rank you reach lights its flare, Bronze to Supernova.";
-  const badges = document.createElement("div"); badges.className = "gs-badges";
-  const flares = document.createElement("div"); flares.className = "gs-flares";
+  copy.innerHTML = '<p class="gs-kicker">Ranks</p><h2 class="gs-title">Bronze to Supernova</h2><p class="gs-body"></p>';
+  copy.querySelector(".gs-body").textContent = "Levels and badges move you up seven ranks. Each rank you reach lights its flare.";
+  const ladder = document.createElement("ol"); ladder.className = "gs-ladder";
   const cap = document.createElement("p"); cap.className = "gs-show-cap"; cap.setAttribute("aria-live", "polite");
-  const capIdle = "Tap one to see its name.";
+  const capIdle = "Tap a rank to hear its flare.";
   cap.textContent = capIdle;
   let capTimer = 0;
   const say = t => { cap.textContent = t; clearTimeout(capTimer); capTimer = setTimeout(() => { cap.textContent = capIdle; }, 3200); };
-  /* a tap: the piece answers (transform only - a badge turns once, a flare presses and lets a ring of its colour go) */
   const tapAnim = (btn, cls, ms) => { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); clearTimeout(btn.__gsT); btn.__gsT = setTimeout(() => btn.classList.remove(cls), ms); };
-  const slots = GS_BADGES.map((u, i) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "gs-badge-btn"; b.style.setProperty("--i", i);
-    b.setAttribute("aria-label", u + " badge");
-    const art = document.createElement("span"); art.className = "gs-badge"; art.setAttribute("aria-hidden", "true");
-    b.appendChild(art);
-    b.addEventListener("click", () => { tapAnim(b, "is-turn", 900); say(u + " badge"); });
-    badges.appendChild(b);
-    return { u, art };
-  });
-  TIER_ORDER_FULL.forEach((t, i) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "gs-flare-btn"; b.style.setProperty("--i", i);
-    const name = (typeof RANK_DISPLAY_NAME !== "undefined" && RANK_DISPLAY_NAME[t]) || t;
-    b.setAttribute("aria-label", name + " flare");
-    /* Home's own lit flare: the rank's emblem in its glass, in the rank's colour */
+  const n = TIER_ORDER_FULL.length;
+  const nameOf = t => (typeof RANK_DISPLAY_NAME !== "undefined" && RANK_DISPLAY_NAME[t]) || t;
+  const rungs = TIER_ORDER_FULL.map((t, i) => {
+    const li = document.createElement("li"); li.className = "gs-rung" + (i === n - 1 ? " is-top" : "");
+    li.dataset.rankTier = t;
+    li.style.setProperty("--rank-color", RANK_COLOR[t]);
+    li.style.setProperty("--prev-color", RANK_COLOR[TIER_ORDER_FULL[Math.max(0, i - 1)]]);
+    const lvl = TIER_UNLOCKS[t] && TIER_UNLOCKS[t].level;
+    const b = document.createElement("button"); b.type = "button"; b.className = "gs-rung-btn";
+    b.setAttribute("aria-label", nameOf(t) + ", rank " + (i + 1) + " of " + n + (lvl ? ", level " + lvl : ""));
+    /* the line: the half above this flare (from the rung before) and the half below it (to the next), each a dim track with
+       its light in it, the light grown down from the top (scaleY) as the rung lights */
+    const seg = cls => { const s = document.createElement("span"); s.className = "gs-seg " + cls; s.setAttribute("aria-hidden", "true");
+      s.appendChild(document.createElement("i")); return s; };
+    const fl = document.createElement("span"); fl.className = "gs-rung-flare"; fl.setAttribute("aria-hidden", "true");
+    if(i === n - 1){ const halo = document.createElement("span"); halo.className = "gs-rung-halo"; fl.appendChild(halo); }
     const bub = document.createElement("span");
     bub.className = "cosmic-icon-badge cosmic-badge-rank cosmic-badge-lit gs-flare";
     bub.dataset.rankTier = t;
     bub.style.setProperty("--rank-color", RANK_COLOR[t]);
     bub.style.setProperty("--tier-glow", flareColorOf(t));
     bub.appendChild(homeRankEmblem(t));
-    /* two rings of its colour: one as it lights, one for a tap */
-    const ring = document.createElement("span"); ring.className = "gs-flare-ring"; ring.setAttribute("aria-hidden", "true");
-    const tap = document.createElement("span"); tap.className = "gs-flare-tap"; tap.setAttribute("aria-hidden", "true");
-    b.style.setProperty("--rank-color", RANK_COLOR[t]);
-    b.append(ring, tap, bub);
-    b.addEventListener("click", () => { tapAnim(b, "is-tapped", 760); say(name + " flare · rank " + (i + 1) + " of " + TIER_ORDER_FULL.length); try{ playSound(SOUND_CATALOGUE["home.flare." + t] ? "home.flare." + t : "home.flare.veteran"); }catch(e){} });
-    flares.appendChild(b);
+    const ring = document.createElement("span"); ring.className = "gs-flare-ring";
+    const tap = document.createElement("span"); tap.className = "gs-flare-tap";
+    fl.append(ring, tap, bub);
+    const words = document.createElement("span"); words.className = "gs-rung-words"; words.setAttribute("aria-hidden", "true");
+    const nm = document.createElement("span"); nm.className = "gs-rung-name"; nm.textContent = nameOf(t);
+    const lv = document.createElement("span"); lv.className = "gs-rung-level"; lv.textContent = lvl ? "Level " + lvl : "";
+    words.append(nm, lv);
+    if(i > 0) b.appendChild(seg("is-up"));
+    if(i < n - 1) b.appendChild(seg("is-down"));
+    b.append(fl, words);
+    b.addEventListener("click", () => {
+      tapAnim(b, "is-tapped", 760);
+      say(nameOf(t) + " · rank " + (i + 1) + " of " + n + (lvl ? " · level " + lvl : ""));
+      try{ playSound(SOUND_CATALOGUE["home.flare." + t] ? "home.flare." + t : "home.flare.veteran"); }catch(e){}
+    });
+    li.appendChild(b);
+    ladder.appendChild(li);
+    return li;
   });
-  el.append(copy, badges, flares, cap);
-  /* The badges are drawn one per idle moment (each is a real strike, ~0.1s to draw), starting once the warp-in is over,
-     so they are ready long before the row is reached and never cost a frame of the opening. */
-  let timer = 0, stopped = false, k = 0;
-  const next = () => {
-    if(stopped || k >= slots.length) return;
-    const s = slots[k++];
-    try{ s.art.appendChild(buildUnitBadgeSVG(s.u, true, { px: 88, dirt: 0, slot: false })); }catch(e){}
-    timer = setTimeout(next, 90);
+  el.append(copy, ladder, cap);
+  let lit = -1, io = null;
+  /* light every rung down to k: the line's half below each lit rung goes with the next rung's lighting, so the light runs
+     down the line and into each flare in turn; rungs reached together are staggered (--gs-d) */
+  const lightTo = k => {
+    if(k <= lit) return;
+    for(let i = lit + 1, j = 0; i <= k; i++, j++){
+      rungs[i].style.setProperty("--gs-d", (j * 260) + "ms");
+      if(i > 0){ rungs[i - 1].style.setProperty("--gs-dn", (j * 260) + "ms"); rungs[i - 1].classList.add("is-pass"); }
+      rungs[i].classList.add("is-lit");
+    }
+    lit = k;
+    if(lit >= n - 1){ el.classList.add("is-done"); if(io){ io.disconnect(); io = null; } }
   };
+  const calm = () => document.documentElement.dataset.reduceMotion === "true" ||
+    !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
   return {
     el,
-    warm(){ timer = setTimeout(next, 2200); },
-    stop(){ stopped = true; clearTimeout(timer); clearTimeout(capTimer); }
+    start(root){
+      if(calm() || typeof IntersectionObserver !== "function"){ el.classList.add("is-still"); lightTo(n - 1); return; }
+      /* a rung lights when it comes above the bottom quarter of the screen */
+      io = new IntersectionObserver(es => {
+        let k = lit;
+        es.forEach(e => { if(e.isIntersecting || e.boundingClientRect.bottom < (e.rootBounds ? e.rootBounds.top : 0)) k = Math.max(k, rungs.indexOf(e.target)); });
+        if(k > lit) lightTo(k);
+      }, { root: root || null, rootMargin: "0px 0px -24% 0px", threshold: 0 });
+      rungs.forEach(r => io.observe(r));
+    },
+    stop(){ if(io){ io.disconnect(); io = null; } clearTimeout(capTimer); }
   };
 }
 /* ---- LET'S GET STARTED -> WELCOME (build 384) ----
@@ -125424,7 +125487,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.121";
+const APP_BUILD = "2026-11-13-384.124";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
