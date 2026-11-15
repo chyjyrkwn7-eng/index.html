@@ -120972,14 +120972,33 @@ function ifcDropSide(el, after){
 }
 function ifcDropNext(){ const q = qnextNow; return q && q.btn && q.btn.isConnected && !q.btn.hidden ? q.btn : null; }
 /* Next question put in its place now (it is still this question's) */
-function ifcDropPlace(next){ const q = qnextNow; if(!next || !q || q.btn !== next || !next.isConnected || next.hidden || !q.panel.isConnected) return false; qnextPlace(next, q.panel); return true; }
+/* (384.129 r2) qnextPlace takes Next out of the page's flow, reads, and puts it back: with the page scrolled to its end that read lays
+   out a page a Next-button shorter, and the browser clamps the scroll to it - and does not give it back when the page grows again
+   (10px in the recording's question). A shut that had given back exactly the scroll it worked out finished 10px short of it and
+   glided the difference (the residual FLIP, 180ms). The scroll is put back to where it was; a page that really is shorter clamps it
+   as it should. */
+function ifcDropPlace(next){
+  const q = qnextNow; if(!next || !q || q.btn !== next || !next.isConnected || next.hidden || !q.panel.isConnected) return false;
+  const y = window.scrollY || 0;
+  qnextPlace(next, q.panel);
+  if((window.scrollY || 0) !== y){ try{ window.scrollTo({ top: y, behavior: "instant" }); }catch(e){ window.scrollTo(0, y); } }
+  return true;
+}
 function ifcDropY(el){ try{ const t = getComputedStyle(el).translate; if(!t || t === "none") return 0; const p = t.split(/\s+/); return parseFloat(p[1] || 0) || 0; }catch(e){ return 0; } }
 function ifcDropClip(el){
   try{ const m = /inset\(([^)]*?)(?:\sround\b|\))/.exec(getComputedStyle(el).clipPath || ""); if(!m) return 0;
     const v = m[1].trim().split(/\s+/).map(parseFloat); return (v.length >= 3 ? v[2] : v[0]) || 0; }catch(e){ return 0; }
 }
 function ifcDropRound(el){ try{ return getComputedStyle(el).borderBottomLeftRadius || "0px"; }catch(e){ return "0px"; } }
-function ifcDropAnim(el, kf, ms){ try{ return el.animate(kf, { duration: ms || IFC_DROP_MS, easing: IFC_DROP_EASE, fill: "forwards" }); }catch(e){ return null; } }
+/* (384.129 r2) ANSWER REVIEW'S UNIT (cap): a gentler start - the curve above is front-loaded (a quarter of the course in the first frame),
+   and where the browser draws a clip-path animation a frame behind the `translate`s (Chromium: the clip's mask comes from a paint
+   worklet; the translates are composited at once) the first frame had the units under the unit already well down and nothing yet
+   drawn above them - a blank gap, ~150px, for a frame. From a soft start the first frames have moved little, so a frame's lag is
+   a few pixels. And where that lag is known (Chromium; WebKit draws the clip itself, in step) the clip runs IFC_CLIP_LEAD ahead of
+   the translates, which is the lag. */
+var IFC_REVIEW_EASE = "cubic-bezier(.3,.3,.2,1)";
+var IFC_CLIP_LEAD = (() => { try{ return typeof navigator.userAgentData !== "undefined" ? 17 : 0; }catch(e){ return 0; } })();
+function ifcDropAnim(el, kf, ms){ try{ return el.animate(kf, { duration: ms || IFC_DROP_MS, easing: (ifcDropRun && ifcDropRun.ease) || IFC_DROP_EASE, fill: "forwards" }); }catch(e){ return null; } }
 function ifcDropMove(el, from, to, ms){
   if(Math.abs(from) < .25 && Math.abs(to) < .25) return null;
   /* a box off the screen for the whole move (a long Review list's far questions) is left where the layout puts it: nobody sees it,
@@ -121049,6 +121068,7 @@ function ifcDropStart(run, arm){
   held.forEach(a => { try{ a.pause(); }catch(e){} });
   requestAnimationFrame(() => {
     if(ifcDropRun !== run) return;
+    if(run.lead) run.anims.forEach(([, a, k]) => { try{ if(k === "clip") a.currentTime = run.lead; }catch(e){} });
     held.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
     arm();
   });
@@ -121071,6 +121091,7 @@ function ifcDropOpen(chrome, change, pending, now, cap){
   const go = () => {
     if(ifcDropRun !== run) return;
     const live = ifcDropCollect(run);
+    if(cap){ run.ease = IFC_REVIEW_EASE; run.lead = IFC_CLIP_LEAD; }
     if(!chrome.isConnected){ ifcDropHalt(run); return; }
     ifcDropPlace(next);
     const h1 = chrome.getBoundingClientRect().height;
@@ -121127,6 +121148,7 @@ function ifcDropShut(chrome, d, done, cap){
   requestAnimationFrame(() => {
     if(ifcDropRun !== run) return;
     const live = ifcDropCollect(run);
+    if(cap){ run.ease = IFC_REVIEW_EASE; run.lead = IFC_CLIP_LEAD; }
     if(!chrome.isConnected){ ifcDropHalt(run); try{ done(); }catch(e){} return; }
     const loss = Math.max(0, d());
     const se = document.scrollingElement || document.documentElement, S = window.scrollY || 0;

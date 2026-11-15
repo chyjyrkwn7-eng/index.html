@@ -20,6 +20,14 @@ tap and its move, and every frame read from the page after it is drawn:
      it out in nearly all of them);
  (d) SETTLED: the move is over within SETTLE_MS of the lift.
  (e) the Hint's first open: its picture is in the page in the first frame after the lift (painted ahead), not painted after the tap.
+ (g) (384.129 r2) THE END OF THE PAGE: shutting the code box with the page at its end, the frame in which the box has reached its shut
+     size is where everything stays - the pill, the box and Next move less than GLIDE_MAX px after it, and the page's scroll does not
+     change after it (a late 10px glide was the page's scroll clamped by the Next button's own re-placement); (h) and on the way there
+     nothing goes back (no snap-back: the earlier bug was a one-frame 157pt jump): no watched thing steps against its direction by
+     more than BACK_MAX px.
+ (i) (384.129 r2) ANSWER REVIEW'S FIRST FRAMES ARE NOT BLANK: a unit (one not opened before) opened under a screencast of the compositor's
+     own frames; no frame from the tap on has a run of flat (inkless) rows longer than the list's own at rest plus BLANK_MAX css px
+     (a frame whose clip had not yet drawn what the units under it had already moved off left a ~150px dark gap).
 Answer Review: at most a screenful (REVIEW_NODES_MAX elements) is made in the tap, and before it is shut the unit is read (all its
 questions in and laid out), as a person would. The class list is measured with --only classes and reported, not judged.
 Timings are at 4x CPU on a shared machine: re-run a timing failure once before calling it one; (b), (c) and (e) are shape.
@@ -41,6 +49,7 @@ else:
     RAW = open(arg("--against") or os.path.join(ROOT, "index.html"), encoding="utf-8").read()
 FIRST_MS, TASK_MS, NODES_MAX, LAYOUT_TAP_MS, SETTLE_MS = 70, 60, 60, 12, 1000
 BOX_MS, REVIEW_NODES_MAX = 90, 320
+GLIDE_MAX, BACK_MAX, BLANK_MAX = 1.5, 2.0, 40
 ALLOWED = {"transform", "translate", "scale", "rotate", "opacity", "clip-path", "clipPath"}
 
 pdf = os.environ.get("PDFJS_DIR", "")
@@ -210,12 +219,37 @@ def measure(pg, cdp, name, sels, tap_at, ms=1500, settle_wait=1900, layout_kind=
            "props": sorted(M["props"].keys()), "who": M["who"], "added": M["addedTap"],
            "jump": max([abs(f[2] - M["sy0"]) for f in M["frames"]] or [0]), "layouts": m1.get("LayoutCount", 0) - m0.get("LayoutCount", 0), "styles": m1.get("RecalcStyleCount", 0) - m0.get("RecalcStyleCount", 0)}
     row.update(tr)
+    row["fr"] = fr; row["sy"] = [f[2] for f in fr]; row["te"] = te
     rows.append(row)
     f = lambda v, d=1: "-" if v is None else ("%.*f" % (d, v))
     print("   %-44s first %6s ms  box %6s ms  settled %6s ms  (%2d frames)  tap handlers %6s ms  (layout %5s, style %5s)  added %s  slices %s  layouts %d  longest %s  props %s"
           % (name, f(row["first"]), f(row["box"]), f(row["settled"]), nch, f(row["task"]), f(row["layout_tap"]), f(row["style_tap"]), row["added"], row["slices"], row["layouts"], f(row["longest"]),
              ",".join(row["props"]) or "-"), flush=True)
     return row
+
+def end_shape(row):
+    """from the frames (a watched thing's top and height are in each frame's signature): where each ended, the first frame the box
+    has its final size, how far anything moved after that frame, whether the page's scroll changed after it, and the worst step backwards"""
+    fr = row.get("fr") or []
+    if len(fr) < 4: return None
+    S = []
+    for t, sig, sy in fr:
+        try: S.append([(float(q.split("|")[1]), float(q.split("|")[2])) for q in sig.split(" # ")])
+        except Exception: return None
+    n = len(S[0]); last = S[-1]
+    e = None
+    for k in range(len(S)):
+        if all(abs(S[j][1][1] - last[1][1]) < .5 for j in range(k, len(S))): e = k; break
+    if e is None: return None
+    glide = max(abs(S[e][i][0] - last[i][0]) for i in range(n))
+    scroll = max(abs(sy - row["sy"][-1]) for sy in row["sy"][e:])
+    back = 0.0
+    for i in range(n):
+        net = last[i][0] - S[0][i][0]
+        if abs(net) < 1: continue
+        d = 1 if net > 0 else -1
+        for k in range(len(S) - 1): back = max(back, -d * (S[k + 1][i][0] - S[k][i][0]))
+    return {"glide": glide, "scroll": scroll, "back": back, "end_at": fr[e][0] - (row.get("te") or 0)}
 
 def judge(row, kind="move", settle=SETTLE_MS, nodes_max=None):
     n = row["name"]
@@ -230,6 +264,12 @@ def judge(row, kind="move", settle=SETTLE_MS, nodes_max=None):
     if "opening" in n:
         # an opening never scrolls the page (a browser's scroll anchoring under a box opened in one layout did: tens of thousands of px)
         chk("(f) %s: the page does not scroll (%.0fpx at most)" % (n, row["jump"]), row["jump"] < 2, row["jump"])
+    if "shutting (page at its end" in n:
+        es = end_shape(row)
+        chk("(g) %s: the frame the box reaches its shut size is where everything stays (moves %s px after it <= %.1f; the page's scroll changes %s px after it <= %.1f)" % (n, es and round(es["glide"], 2), GLIDE_MAX, es and round(es["scroll"], 2), GLIDE_MAX),
+            es is not None and es["glide"] <= GLIDE_MAX and es["scroll"] <= GLIDE_MAX, es)
+        chk("(h) %s: nothing goes back on the way (worst step against its direction %s px <= %.1f)" % (n, es and round(es["back"], 2), BACK_MAX),
+            es is not None and es["back"] <= BACK_MAX, es)
     if kind == "move":
         chk("(d) %s: settled %s ms after the lift (<= %d)" % (n, row["settled"] and round(row["settled"]), settle), row["settled"] is not None and row["settled"] <= settle, row)
 
@@ -240,6 +280,48 @@ def wake(pg, cdp):
     """a first touch, as his phone had long had: the sound's context is made in the first gesture of a visit (~400ms at 4x here),
     which is not a drop-down's cost"""
     pg.keyboard.press("Shift"); pg.wait_for_timeout(1200)
+
+def flat_run(png_bytes):
+    """the longest run of consecutive rows (css px: the screencast is 1x) in the list's area that have no ink - a row whose
+    pixels are all (nearly) one colour across the screen's width"""
+    import io
+    import numpy as np
+    from PIL import Image
+    a = np.asarray(Image.open(io.BytesIO(png_bytes)).convert("L"), dtype=np.float32)
+    h, w = a.shape
+    flat = a[:int(h * .86), int(w * .06):int(w * .94)].std(axis=1) < 2.0
+    best = cur = 0
+    for v in flat:
+        cur = cur + 1 if v else 0
+        best = max(best, cur)
+    return best
+
+def blank_check(pg, cdp, head_sel):
+    import base64
+    c = pg.evaluate("""(s)=>{ const e = document.querySelector(s); const r0 = e.getBoundingClientRect();
+      scrollTo({ top: scrollY + r0.top - 130, behavior: 'instant' }); const r = e.getBoundingClientRect(); return [r.left + Math.min(r.width / 2, 120), r.top + r.height / 2]; }""", head_sel)
+    pg.wait_for_timeout(800)
+    frames = []
+    def got(p):
+        frames.append((p["metadata"]["timestamp"], p["data"]))
+        try: cdp.send("Page.screencastFrameAck", {"sessionId": p["sessionId"]})
+        except Exception: pass
+    cdp.on("Page.screencastFrame", got)
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    cdp.send("Page.startScreencast", {"format": "jpeg", "quality": 85, "maxWidth": 440, "maxHeight": 956, "everyNthFrame": 1})
+    pg.wait_for_timeout(300)
+    t0 = time.time()
+    G["tap"](cdp, c[0], c[1])
+    pg.wait_for_timeout(2000)
+    cdp.send("Page.stopScreencast"); cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+    cdp.remove_listener("Page.screencastFrame", got)
+    rest = [flat_run(base64.b64decode(d)) for ts, d in frames if ts < t0]
+    move = [(round((ts - t0) * 1000), flat_run(base64.b64decode(d))) for ts, d in frames if t0 <= ts <= t0 + 1.2]
+    base = max(rest) if rest else min([f for _, f in move] or [0])
+    worst = max([f for _, f in move] or [0])
+    print("   blank check: list at rest %s px flat, worst frame after the tap %s px flat (%d frames; per frame %s)" % (base, worst, len(move), [f for _, f in move][:16]), flush=True)
+    chk("(i) Answer Review's first frames are not blank: no frame from the tap on has a flat run (%s px) longer than the list's at rest (%s) + %d" % (worst, base, BLANK_MAX),
+        len(move) >= 8 and worst <= base + BLANK_MAX, {"rest": base, "worst": worst, "frames": len(move)})
 
 def fire_code(br):
     label, w, h, ins, ua = G["SIZES"][0]
@@ -332,6 +414,11 @@ def fire_code(br):
                     if pg.evaluate("()=>{ const b = document.querySelector('.cal-month-head[data-df] + .cal-month-body'); return !b || !b.querySelector('.review-question:not(.rq-on)'); }"): break
                     pg.wait_for_timeout(250)
                 pg.wait_for_timeout(1500)
+            # (i) a unit not opened before (the biggest of the others), under a screencast of the compositor's own frames
+            pg.evaluate("""()=>{ let best = null, n = -1; document.querySelectorAll('.cal-month-sect').forEach(s => { const h = s.querySelector('.cal-month-head');
+              if(!h || h.hasAttribute('data-df')) return; const c = QUESTIONS.filter(q => (q.topic || '').trim() === h.textContent.trim()).length;
+              if(c > n){ n = c; best = h; } }); if(best) best.setAttribute('data-dfb', '1'); }""")
+            blank_check(pg, cdp, ".cal-month-head[data-dfb]")
     errs_out = list(errs)
     ctx.close()
     return errs_out
