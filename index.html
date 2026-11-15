@@ -40862,7 +40862,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .settings-row > .settings-pill{
     flex:0 0 auto; align-self:center; box-sizing:border-box; height:19px; margin-left:.4rem; padding:0 9px; border-radius:999px;
     font-size:12px; font-weight:600; line-height:19px; letter-spacing:.01em; white-space:nowrap; color:#FFFFFF;
-    background:color-mix(in srgb, var(--ink) 22%, transparent);
+    background:var(--pill, color-mix(in srgb, var(--ink) 22%, transparent));   /* (384.133 combined) the tone's --pill (settingslook) when it has one */
   }
   html[data-layout] body .settings-row > .settings-pill.is-good{ background:var(--settings-good); }
   html[data-layout] body .settings-row > .settings-pill.is-accent{ background:var(--theme-sig); color:var(--rank-accent-ink, #FFFFFF); }
@@ -143877,12 +143877,6 @@ function pfActFill(btn, kind, label, sub, tile){
    row's words' size tall, its words' capitals about two thirds of the row's, ~9px of air either side). Any row can take one:
    settingsSetPill(row, pill) puts it where a grey value would go and replaces the last one; settingsSetPill(row, null) clears it.
    tone: "good" (Delta's green), "accent" (the theme's colour and its ink), or none (a quiet grey). */
-function settingsPill(text, tone){
-  const p = document.createElement("span");
-  p.className = "settings-pill" + (tone ? " is-" + tone : "");
-  p.textContent = text;
-  return p;
-}
 function settingsSetPill(row, pill){
   if(!row) return;
   row.querySelectorAll(":scope > .settings-pill").forEach(n => n.remove());
@@ -143937,7 +143931,10 @@ function settingsPill(text, tone){
   const TONES = { green: "green", ok: "green", done: "green", good: "green", success: "green", purple: "purple", new: "purple", accent: "purple",
     blue: "blue", info: "blue", orange: "orange", warn: "orange", warning: "orange", red: "red", danger: "red", off: "red", error: "red", grey: "grey", gray: "grey", muted: "grey" };
   const p = document.createElement("span");
-  p.className = "settings-pill is-" + (TONES[String(tone || "").toLowerCase()] || "grey");
+  const raw = String(tone || "").toLowerCase();
+  /* (384.133 combined) the Software Update row's two tones keep their own classes beside the colour one: "good" is also .is-good (the
+     page's up-to-date green) and "accent" also .is-accent (the theme's colour), which the row's rules below paint over the colour class */
+  p.className = "settings-pill is-" + (TONES[raw] || "grey") + (raw === "good" || raw === "accent" ? " is-" + raw : "");
   p.textContent = text;
   return p;
 }
