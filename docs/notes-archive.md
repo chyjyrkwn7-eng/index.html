@@ -39732,3 +39732,104 @@ Madison, on his iPhone (installed app): "Ensure tap to skip works properly with 
 **Not confirmable in Chromium (a phone is needed):** WebKit's own tap decisions (the model is read off its source, not run on it); whether iOS hands the page a touchend for a tap made during the camera's smooth scroll or a fling; the haptic switch going onto a live button ~90ms+ later (hswRescan) under a finger; the bars' Web Animations on Core Animation and frame pacing on the device (this machine's load average was 50-78 throughout, so frame times here are printed, not judged); how the skip feels.
 
 384.99 (resultskip) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm, load 2-5; the build stays the placeholder 384.99, which collides with live 384.99: the lead renumbers): check-js 14 blocks ALL PASS and builds agree; page console only the blocked network and the file:// version.json fetch, no page error; sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre; check-b384-resultskip ALL PASS (77 passes, S1 to S6); `--against` main 384.107 FAILS (49 fail, 25 pass: every S1 stage, S3, S4 and the S6 compositor legs; S5's protections pass on both by design); check-results ALL PASS (129); check-unlocks ALL PASS (58); check-b384-results-flow ALL PASS (57). Not re-run here: check-behaviour's results sections (the earlier note records 43 old-encoding failures identical on main) and check-vroom. Chromium cannot show WebKit's click rule for a tap (modelled in the gate) or the real smoothness of the bars on a phone.
+### 384.109 (namebox): the name editor's "weird white box"; every text field hardened against what the browser paints
+
+Madison, on his installed iPhone: "When clicking change on my name, a weird white box shows up, fix that."
+
+The editor is Settings > Account > Name (`buildCustomizeNameSect`; Customize handed it to Settings in 383). Change hides the name row,
+shows `.customize-nameedit` (the "Your name" label, `#customize-name-input`, Save / Cancel) and focuses the field. The only other copy is
+the inline field in `showProfile` (`enterEditMode`, never called: Profile's button opens Customize) - given the same attributes.
+Chromium cannot draw what iOS draws natively, so each suspect was ruled in or out from the code and from readings:
+
+- **(c) AutoFill - REAL, on the evidence of the code.** The name field was the ONE text field in the app that tells Safari it holds a
+  person's name ("Your name", "First and last name", autocapitalised words) with no `autocomplete`; every other live field is a code, a
+  search or a message, and the codes and the username say autocomplete off (sync code, friend code, Nova's username ask since 384 r4,
+  the tab bar's search; the old sign-up username screen, `showWelcomeNamePrompt`, is no longer called). So it is the one
+  field contact AutoFill is offered on, and a field AutoFill fills is painted by WebKit's own sheet - a pale #FAFFBD fill and black
+  letters, both `!important` (a UA !important beats every page declaration, so no rule can change that background). The app had no
+  autofill rule at all. Measured in Chromium with the field forced into `:autofill` (CDP) and the browser's light fill (Chromium's
+  #E8F0FE, black letters - the same thing WebKit paints whatever the page's scheme): the field becomes a pale box with black letters
+  (17,927 solid near-white pixels in the editor on the Pro Max, 36,611 on the iPad Pro 11").
+- **(a) The haptic switch layer - ruled out.** On the phone Change carries a `.nova-hsw` (96x38), Save and Cancel get theirs at mount
+  while hidden (0x0, then 178x50 once shown). All sit at opacity 0 from the one top-level rule; nothing in the sheet overrides it and
+  nothing animates it (CSSOM read). The tap toggles Change's switch on; it stays in the hidden row (display:none by its row), never
+  re-parented. The scripted tick (`taptic`) is a display:none label in `<head>`, removed in the same task. Sampled every frame from
+  before the finger lands to ~1.1s after: no switch above opacity 0, no label painting. Nothing in the layer changed.
+- **(b) The field's own look - not white, but it had no edge.** appearance none, the clean look's `--clean-card` fill (rgb 35,38,43),
+  17px, as the friend and sync code fields. But the card it sits in is the same `--clean-card`, so the field had no edge at all: the
+  name and a caret floating in the card. Manage friends' field sits in a card the same way and carries a hairline rim for exactly
+  that; this one now does too. Elsewhere two fields had the browser's own look (`appearance:auto`): the starred / most-missed list's
+  search (`.unitdetail-search input`, type=search - iOS's own search field) and the chat's field (`.vroom-chat-input`). The base
+  `.searchbox{ background:#fff }` is the retired light theme's; unreachable (`<html data-theme="dark">` in the markup), left alone.
+- **(d) A focus ring - ruled out.** `.searchbox:focus{ outline:none }`; the clean look's field rule sets the border transparent and the
+  shadow none, !important; computed outline none while focused. (The accent on the default theme is white, which is why the new rim
+  stays the same while typing - no accent ring.)
+- **(e) Caret, selection, a toast - ruled out.** The caret is the ink (white), as everywhere; Change shows no toast (only Save does);
+  the field-focus sound handler draws nothing.
+
+**Fix.**
+- THE NET, after the 16px floor (CLAUDE.md's low-specificity net): `:where(input[type=text|search|email|number|tel|password|url],
+  input:not([type]), textarea){ appearance:none; background-color:var(--clean-card); color:var(--ink) }` - ZERO specificity, so any
+  field's own class wins and only a field nobody styled falls back to it.
+- `@layer field-autofill` (the app's first cascade layer): a field AutoFill fills (`:where(input, textarea):where(:-webkit-autofill,
+  :autofill, :-webkit-autofill-strong-password, -viewable, :-webkit-autofill-and-obscured)`) is covered by its colour - an inset 1px
+  rim and an inset `100vmax` shadow in `--clean-card` (a shadow is the one thing drawn over a background the page still controls), the
+  app's white letters (`-webkit-text-fill-color`), `background-clip:padding-box` and no transition. In a LAYER because an !important
+  inside a layer outranks every unlayered !important, so a field's own rim rule (Manage friends', the name's, both !important) cannot
+  undo it. Only !important declarations go in it: a layered NORMAL declaration loses to every unlayered one. The placeholder keeps its
+  grey (the white is the value's). The caret is the ink (zero specificity, outside the layer).
+  The clip was found on the first "after" screenshot: an inset shadow is drawn inside the border and a background runs under it, so
+  the field's transparent 1px border showed the pale fill as a white RING round the cover. The gate counts every near-white pixel
+  AutoFill adds (not only solid blocks) since, and fails a copy of this build without the clip (109 -> 748 on the phone).
+- Safari's AutoFill buttons hidden in every input (contacts card, key, strong password, credit card; each its own rule, so a browser
+  that does not know one name keeps the others), as Nova's username field has had since 384 r4.
+- The name field (and the two copies nothing calls now: showProfile's inline field and `showWelcomeNamePrompt`'s): `autocomplete="off"`,
+  `name="nova-callsign"`, `data-form-type="other"` - named as nothing Safari fills (384 r4's answer). Whether iOS honours autocomplete
+  off for contact AutoFill is not knowable here; the paint override covers a fill that happens anyway. Its id, label and placeholder are
+  unchanged (check-b327-i reads the id).
+- The name field's rim: `inset 0 0 0 1px rgba(255,255,255,.11)` (Manage friends'), at rest and while typing.
+Nothing about how the editor works changed: the same Change / Save / Cancel, the same focus, the same one-name-per-board rule.
+
+**Gate.** NEW `tools/check-b384-namebox.py` (`--against`, `--shots DIR [--shots-only]`). "Solid near-white" = a pixel whose 5x5
+neighbourhood is all at luminance 224+ (~#E0E0E0); letters and a caret never fill a 5x5 block, a box does.
+E - the editor on the Pro Max installed (the haptic layer on) and the iPad Pro 11", the academy, and Fire Code on the phone: E1 [fix]
+autocomplete off and a `name` without "name"; E2 [fix] the field's top edge 6+ levels off the card beside it; E3 [guard] a finger
+(CDP touch) on Change opens the editor with the field focused, Cancel puts the row back, a typed name saved is kept and shown; E4 [guard]
+every frame from before the tap until 20+ frames with the editor open: every `.nova-hsw` / `.nova-hlb-sw` / `input.hsw-opt` at opacity 0,
+every `.nova-hlb` painting nothing, and (phone) Change wired before, Save and Cancel after; E5 [guard] the label and field (the Save pill
+left out: it is the app's white primary button by design, "white and black") at four moments after the tap, no solid near-white area;
+E6 [fix] the same with AutoFill's paint forced on the field: no solid near-white area, not one near-white pixel added (box or ring), the
+field its own colour, its letters light.
+F - every text field the app shows (the glitches gate's screens, the name field open, the starred list's search, the chat's field, the
+tab bar's search), the phone, both classes: F1 [fix] appearance none; F2 [guard] dark, nothing solid near-white; F3 [guard] 16px+ on the
+glass; F4 [fix] forced `:autofill` with the light fill (the field holding a value, as AutoFill leaves one): no solid near-white area and
+no near-white pixel added; F5 [fix] the sheet hides the contacts and credentials buttons in ANY field (unscoped rules, display none).
+GATE HARNESS NOTES: CDP's `DOM.getDocument` is called ONCE per session - a second one hands out new node ids and a pseudo state forced
+under the old id stays on the element for good (it did: a field read later as "at rest" was still autofilled). The frame sampler runs
+on until it has 20 frames with the editor open (a loaded machine once gave it one frame in 1.3s).
+**Gate results so far (one at a time, TMPDIR=/dev/shm, a shared machine at load 60-80).** check-js 14 blocks ALL PASS, APP_BUILD =
+version.json = 2026-11-13-384.109; the page console (Pro Max academy and Fire Code, iPad academy: Home, Account with the editor open,
+Profile, Friends, Customize, the units) no page error, only the two blocked-CDN loads; check-b384-namebox ALL PASS on this build;
+`--against origin/main` (384.95, the gate before its ring and value refinements) FAILS every [fix] line - E1, E2 and E6 on all three
+device/class runs (E6: 17,927 / 36,611 solid near-white pixels, the field 239 against 38 at rest, black letters), F1 (the starred list's
+search and the chat's field `appearance:auto`), F4 (every field, 9,000-53,000 solid pixels), F5 - and its guards pass (one Fire Code
+tab-bar-search screen not opened under load, since polled for); `--against` a copy of this build without the padding-box clip FAILS
+E6 (109 -> 748 near-white pixels on the phone, 1,440 on the iPad) and F4 (every field, 470-810 added), which is the ring.
+PAUSED twice by the coordinator (machine overload). Between the pauses, on the tree merged with main 384.97 (768f315; the merge also
+gives `.nova-hsw` no focus ring - 384.97 found a tap on an iPhone focuses the switch under the finger, :focus-visible and all; nothing
+styles a switch's host on focus-within, and opacity 0 already hid one, so this is a guard, not a cause): check-js 14 blocks ALL PASS;
+check-b384-namebox ALL PASS; the finished gate `--against origin/main` (384.97) FAILS exactly its 14 [fix] lines - E1, E2, E6 on all
+three runs (E6: 17,927 / 36,611 solid, 109 -> 20,104 / 40,172 near-white pixels), F1 and F4 in both classes, F5 - and passes every
+guard. The gate now gives every context it opens a 180s page load. check-sound (through a wrapper that only raises Playwright's
+timeouts): sections 1-5 pass (31 checks) on the first run; section 6 (all 139 sounds rendered offline in one evaluate) crashed the
+renderer ("Target crashed", 0-3GB of memory free) on both runs, and the second run also failed 4's cooldown ("the same sound twice at
+once plays once") that the first passed - a timing check under load. No audio is touched by this build. check-b384-casescroll: 16/16
+pass before the second pause stopped it (academy Pro Max S1-S5, academy SE S1-S3, Fire Code Pro Max S1-S2); Fire Code's S3-S5 and SE
+not yet run. Still to run: check-fixes, check-centering --quick, sweep-layout --quick, the rest of casescroll, check-sound against main
+(is section 6's crash the machine's?). Results to follow below.
+FINAL GATES (the tree merged with main 384.99, b1413cb; each run once through the shared slot script, GATE_PRIO=1, 180s page loads): check-js 14 blocks ALL PASS; check-b384-namebox ALL PASS (and FAILS main 384.97 on exactly its 14 [fix] lines, above); check-b384-casescroll ALL PASS (28, both classes, Pro Max + SE); check-centering --quick ALL PASS (1,273 elements on 152 screens, 0 off centre; the three Fire Code code summaries moving while measured, as on main); sweep-layout --quick 20/20 clean; check-sound ALL PASS (60, section 6 included - its earlier renderer crashes were the loaded machine); check-fixes 104 combinations, no text field under 16px anywhere, 2 failures both on the iPad Pro 11" installed and both the daily question's 'already done' banner (no banner / neither the bubble nor the fallback banner) - not touched by this build (fields and the name editor only), every other device passing it; run once (usage), not re-run or compared against main.
+WHAT ONLY HIS PHONE CAN CONFIRM: that the white box he saw was AutoFill's paint (or its offer) and is gone - Chromium can force the
+:autofill state but not draw WebKit's own, and cannot show iOS's QuickType / AutoFill bar or whether iOS honours autocomplete off for
+contact AutoFill on this field; that the native switches stay unseen (opacity 0, as every build since 328); the keyboard itself.
+
+384.109 (namebox) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm, load 2-4; the build stays 384.109): check-js ALL PASS; the page loads with no page error (only the blocked network and the file:// version.json fetch in the console); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre; check-b384-namebox ALL PASS; `--against` origin/main (384.107) FAILS on its [fix] lines (E1, E2, E6, F1, F4, F5: 14 failures), as intended; check-fixes ALL 104 combinations verified, run once on this tree, no failures - the two iPad Pro 11" "already done" banner failures in the earlier run (before the merge, a loaded machine) did not recur, so they were load timing and not this build. Chromium cannot show WebKit's own AutoFill paint or the iOS keyboard; the phone confirms that.
