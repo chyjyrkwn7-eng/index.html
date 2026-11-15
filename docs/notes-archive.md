@@ -39889,3 +39889,17 @@ Madison (he/him): "Up the xp curve for ifc ... Or we add a prestige option but w
 **TOOLS.** tools/check-b384-prestige.py (the gate), tools/b384_prestige_lib.py (its page, its real-shaped accounts at six stages), tools/shoot-b384-prestige.py OUTDIR [--dev pm|ipad] [--theme dark|light] (every screen for Madison and the art sheet), tools/record-b384-prestige.py OUTDIR --n 1|3 [--dev] (the ceremony in real time, Playwright's recorder to H.264). check-b384-batch's starter count and check-b384-completionist's banner registry now leave out `prestige` (a prestige character is not a starter; Completionist leaves the prestige banners out by rule).
 
 **Only a phone can confirm:** the ceremony's real smoothness, its sound through the speaker and the haptics, the safe areas round it, and the frosted glass under the Prestige cards; Chromium cannot.
+
+#### 384.126 gate results (one browser job at a time, TMPDIR=/dev/shm; the machine sat at load 22-35 from other helpers for the first hours, so every gate that failed under it was run again once the load was under 6)
+- check-js: 14 inline blocks ALL PASS; both classes' pages loaded by every gate below with no page errors.
+- NEW check-b384-prestige: ALL PASS, 65 checks (load 4). `--against origin/main`: FAILURES - 25 fail, 7 pass (the class check, the harness's drill / hidden-row comparisons and a vacuous "alive": unknown ids draw as a starter there).
+- check-b384-batch ALL PASS (16; its starter count now leaves `prestige` out). check-b384-completionist ALL PASS (76) after two fixture updates the merge needed: its "everything" account had 4 Virtual Room wins and Winner's Circle (unlocks2) asks 10; its own banner registry leaves the prestige banners out by rule.
+- check-b384-unlocks: (B) fixed to count only the banners the ultimate counts (not Completionist, not the prestige banners), then `--only B,H` - B passes; H's "Customize tile" (a deferred banner tile, read after 1.2s) failed at load 25 and passed at load 5 (18/18), as it does on the unlocks2 base.
+- check-unlocks ALL PASS (load 5; at load 29 the Detective's challenge card was beaten to the screen by a hundo card - timing).
+- check-sync ALL PASS, 120 (load 5; at load 25 six sign-up screen checks timed out).
+- check-friends ALL PASS. check-b384-friendprofile: 26/28 at first - its (5) did not know the 384.120 row fields `ut` / `rim` (it was written against main); taught them, `--only 5` 20/20.
+- check-b384-cutscenes: 29/31 at load 28 (two academy secret-flare scenes left a layer); `ONLY=2` re-run ALL PASS.
+- check-b384-closedeyes (from claude/b384-closedeyes, run here for the three new characters, Fire Code): asleep and asleep at a 42px row PASS for all three; "the bottom of a blink" fails for two and D (CHAR_ANIM_VER) fails - both are that branch's own fix, not in this tree. The prestige characters use the shared fcEyes / closedEyes, so they take the fix with the rest when it merges.
+- sweep-layout --quick: 20/20 combinations clean. check-centering --quick: ALL PASS, 0 off centre.
+- check-vroom: not run - nothing drawn in a Virtual Room changed (the lobby gets no emblem; see "left out").
+- MEDIA (scratchpad prestige-media/): every screen on iPhone 17 Pro Max 440x956 and iPad Pro 11" 834x1194 (dark only: light mode is retired, so there is one theme), the art sheet, prestige-I-pm.mp4 (17s) and prestige-III-pm.mp4 (27.6s, recorded at load 28: the confirm sheet waits longer than a person would) - all looked at.

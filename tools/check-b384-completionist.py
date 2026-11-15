@@ -201,7 +201,7 @@ with sync_playwright() as pw:
           const a2 = ultimateProgress(), b2 = collectionProgress('banners'), zc2 = !isLockedCharacter(ULTIMATE_TOP);
           window.bannerEarned = window.__f;
           return { a: [a.have, a.need], a2: [a2.have, a2.need], b: [b.have, b.need], b2: [b2.have, b2.need], zc, zb, zc2,
-            uBanners: BANNERS.filter(x => x.id !== ULTIMATE_TOP && !x.completionist).length, cBanners: BANNERS.filter(x => !x.ultimate && !x.completionist).length }; }""")
+            uBanners: BANNERS.filter(x => x.id !== ULTIMATE_TOP && !x.completionist && !x.prestige).length, cBanners: BANNERS.filter(x => !x.ultimate && !x.completionist && !x.prestige).length /* (384.126) nor the prestige banners */ }; }""")
         chk("(6) Star Ranger's count leaves Completionist out and does not move when it is forced locked", r["a"] == r["a2"] and r["a"][0] == r["a"][1] and r["zc"] and r["zb"] and r["zc2"], r)
         chk("(6) 'every other banner' leaves it out too", r["b"] == r["b2"] and r["b"][1] == r["cBanners"], r)
         # ---- (7) derived, never stored
