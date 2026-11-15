@@ -224,6 +224,8 @@ SCREENS = [
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showReleaseHistory",   # (showWhatsNew left sign-up and the app in build 327)
+    # (384.106) Settings > Software Update (the check starts as it opens; audited in its first state, the gate has the rest)
+    "showSoftwareUpdate",
     # build 384: the end of sign-up's Add to Home Screen sheet, each of its three choices (over the screen before;
     # each call replaces the last, and the next screen takes it away)
     "showHomeScreenSheet({from:'settings',device:'apple'})", "showHomeScreenSheet({from:'settings',device:'android'})",
