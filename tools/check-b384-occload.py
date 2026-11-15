@@ -420,7 +420,8 @@ with sync_playwright() as pw:
         errs_all += e; ctx.close()
         # (384.130) novaHeard is the record of Nova's broadcasts the account has had (time stamps, max-merged), written by novaTick while a page is open:
         # it moves with the clock between the two boots, not with the bank, so it is held to "nothing lowered" instead of "identical"
-        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if k != "novaHeard" and json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+        # (384.133 combined) prestige and rim are persisted fields added by other builds (a default each, applyLoadedData): the baseline has neither
+        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if k not in ("novaHeard", "prestige", "rim") and json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
         nh_b, nh_a = before["rest"].get("novaHeard") or {}, after["rest"].get("novaHeard") or {}
         if any((nh_a.get(k) or 0) < v for k, v in nh_b.items()): rest_diff.append("novaHeard lowered")
         held = all(before[k] == after[k] for k in ("perf", "earned", "star", "level", "badges", "badgeCount", "hundos", "rank", "lvl", "pend")) and \
