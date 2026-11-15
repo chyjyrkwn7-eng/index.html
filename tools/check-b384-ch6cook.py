@@ -32,7 +32,7 @@ WHAT IT HOLDS (this build's index.html + ifc/bank.js against BASE's, the commit 
  (6) THE APP: each new question opened in a Drill at 440x956 shows its stem and four options as the bank has them (no option wider than the
      screen, each 44 px or taller), takes the right answer, and shows the reference line and the code drop-down (Show the code opens, naming
      606.3.3.1 and page 6-8); no page errors.
-Run:  [PDFJS_DIR=<pdfjs-dist 5.4.149> IFC_BOOK=<the owner's 2021 IFC PDF>] python3 tools/check-b384-ch6cook.py [--against REV] [--shots DIR]
+Run:  [PDFJS_DIR=<pdfjs-dist 5.4.149> IFC_BOOK=<the owner's 2021 IFC PDF>] python3 tools/check-b384-ch6cook.py [--against REV] [--shots DIR] [--pics DIR]
       --against REV: REV's index.html and ifc/bank.js are "this build". Against origin/claude/b384-occload (1), (2), (5) and (6) FAIL (the low-volume
       and all other rows have no question); (3) and (4) hold on both by design. --shots DIR saves each drill (answered, code open) as a PNG.
 The book never goes into the repo (it is public): its path is given when the gate is run."""
@@ -43,6 +43,7 @@ import b384_qfix_lib as L
 
 AGAINST = sys.argv[sys.argv.index("--against") + 1] if "--against" in sys.argv else None
 SHOTS = sys.argv[sys.argv.index("--shots") + 1] if "--shots" in sys.argv else None
+PICS = sys.argv[sys.argv.index("--pics") + 1] if "--pics" in sys.argv else None     # with the book: each picture as a PNG (keep it OUT of the repo)
 def git(*a): return subprocess.run(["git", "-C", ROOT] + list(a), capture_output=True, text=True).stdout
 def git_show(rev, path): return git("show", rev + ":" + path)
 BASE = os.environ.get("BASE") or git("merge-base", "HEAD", "origin/claude/b384-occload").strip() or "origin/claude/b384-occload"
@@ -208,6 +209,13 @@ else:
                 t = rm[0]["text"] if len(rm) == 1 else ""
                 seen_rows[i] = t[:50]
                 if len(rm) != 1 or not nz(t).startswith(nz(lab)[:20]) or not nz(t).endswith(nz(iv)): bad.append((i, len(rm), t[:80]))
+                if r.get("pdfPage") != 127 or 127 not in (r.get("pages") or []): bad.append((i, "page", r.get("pdfPage"), r.get("pages")))
+                if PICS:
+                    import base64
+                    os.makedirs(PICS, exist_ok=True)
+                    sh = pg.evaluate("([id, v, s]) => __im.shot(id, v, s)", [i, "clip", 2]) or {}
+                    for n_, u in enumerate(sh.get("imgs") or []):
+                        open(os.path.join(PICS, "%s-%d.png" % (i, n_)), "wb").write(base64.b64decode(u.split(",", 1)[1]))
         ver = pg.evaluate(VERIFY, present) if present else {"level": None, "n": 0, "differences": []}
         errs_all += errs; br.close()
     chk("(2b) each question on the table lights ONE row in its picture, the row it asks (%d bad: %s)" % (len(bad), bad[:3]), not bad and all(asked.values()), {"bad": bad, "rows": seen_rows})
