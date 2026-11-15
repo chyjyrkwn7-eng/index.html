@@ -25,6 +25,14 @@ Asserted by SHAPE and by numbers read off the page (never label strings), in bot
      ultimate's card shows the numbers; the banner is layered, moves only by transform / opacity and has no svg filter; it has
      its tile in Customize. (B) also asserts the ultimate's count grew by exactly that one banner and nobody who held the
      ultimate on the baseline loses it.
+ 384.132 (unlocks3):
+ (I) the worn rim is drawn on every plate through one helper: Profile's hero (yours, only while held), the person card (yours from
+     this device; a classmate's only when their row's own `ut` holds it, the same as their Leaderboard row), centred round the
+     plate, Mastery's ring turning by transform only and still (and shown) under Reduce motion, Mastery's gold name on the card;
+     YOUR OWN Leaderboard row follows a wear / take-off at once with no write in between (the published copy still says the old
+     rim); the wear schedules the account push and that one push writes the row with the new rim (`rim` is not lazy; `ut` is);
+     every rim card's sentences in four states: no empty or backwards tier range, the tiers named are the ones before the rim,
+     the ones still to go are named, and a locked rim never shows a full bar or a count that reads done.
 
   python3 tools/check-b384-unlocks.py [--against OLD/index.html] [--baseline OLD/index.html] [--only A,B] [--real DUMP.json]
 --against must FAIL (none of this exists there). --real points at a local, uncommitted read of the live accounts (never in the
@@ -182,6 +190,124 @@ QUIET = """()=>{ try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, 
   document.querySelectorAll('.rs-spot, .daily-alert, .scene-bridge, #intro-pop, .invite-overlay').forEach(n => n.remove()); }"""
 def quiet(pg):
     pg.evaluate(QUIET); pg.wait_for_timeout(400); pg.evaluate(QUIET)
+
+# (I) 384.132: the worn rim on Profile and the person card, your own Leaderboard row from this device, the publish, the rim cards
+I_PLATES = r"""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms));
+  const CLOSE = () => document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+  const out = {};
+  try{
+    const board = () => window.NOVA_CLASS === 'ifc' ? (classBoardRows || []) : (leaderboardRows || []);
+    const ringInfo = host => { if(!host) return { rim: null };
+      const rings = host.querySelectorAll(':scope > .lb-rim'), ring = rings[0];
+      const av = host.querySelector('.rank-avatar') || host;
+      const o = { rim: host.dataset.rim || '', rings: rings.length };
+      if(ring){ const a = ring.getBoundingClientRect(), b = av.getBoundingClientRect(), cs = getComputedStyle(ring);
+        o.color = cs.borderTopColor; o.centre = [Math.round((a.left + a.width / 2) - (b.left + b.width / 2)), Math.round((a.top + a.height / 2) - (b.top + b.height / 2))];
+        o.round = Math.abs(o.centre[0]) <= 1 && Math.abs(o.centre[1]) <= 1 && a.width > b.width && a.height > b.height && cs.borderRadius.indexOf('50%') >= 0 && cs.opacity === '1'; }
+      return o; };
+    const rgb = hex => { const n = parseInt(hex.slice(1), 16); return 'rgb(' + (n >> 16) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')'; };
+    /* Profile */
+    CLOSE(); showProfile('profile'); await W(1200);
+    out.profile = ringInfo(document.querySelector('.profile-hero-avatar')); out.profile.want = rgb(UNLOCK_RIM_COLOR.ans);
+    const keep = store.rim;
+    wearRim(''); showProfile('profile'); await W(700);
+    const off1 = document.querySelectorAll('.profile-hero-avatar > .lb-rim').length;
+    store.rim = 'mastery'; unlockTrackMemo = null; showProfile('profile'); await W(700);
+    const off2 = document.querySelectorAll('.profile-hero-avatar > .lb-rim').length;
+    store.rim = keep; unlockTrackMemo = null; saveStore();
+    out.profileOff = [off1, off2];
+    /* the person card, opened from each row of the board (and your own) */
+    CLOSE(); showRankings(); await W(2500);
+    const rowsEl = [...document.querySelectorAll('.screen-rankings .rank-row')];
+    out.cards = {}; out.rowAgree = true;
+    for(const r of rowsEl){
+      const nm = (r.querySelector('.rank-name') || {}).textContent || '';
+      const me = r.classList.contains('lb-row-me');
+      const key = me ? 'me' : nm;
+      if(!me && ['Kimber', 'Alexis', 'Tomas', 'Priya', 'Rosa', 'Zara', 'Leeland'].indexOf(nm) < 0) continue;
+      const rowRim = (r.querySelector('.rank-avatar-wrap') || { dataset: {} }).dataset.rim || '';
+      r.classList.remove('is-offscreen'); r.click(); await W(700);
+      const card = document.querySelector('.person-card');
+      const o = ringInfo(card && card.querySelector('.person-card-art'));
+      const nmEl = card && card.querySelector('.person-sheet-name');
+      o.gold = !!(nmEl && nmEl.classList.contains('is-mastery') && getComputedStyle(nmEl).color === rgb('#F5C84A'));
+      out.cards[key] = o;
+      if(o.rim !== rowRim) out.rowAgree = false;
+      CLOSE(); await W(150);
+    }
+    /* Mastery's ring: transform only; with the app's Reduce motion it is still and shown */
+    { const r = rowsEl.find(x => (x.querySelector('.rank-name') || {}).textContent === 'Alexis');
+      if(r){ r.click(); await W(700);
+        const ring = document.querySelector('.person-card .person-card-art > .lb-rim');
+        const R = {};
+        if(ring){ const an = ring.getAnimations(); R.anim = an.length ? an[0].animationName : getComputedStyle(ring).animationName;
+          const props = new Set(); an.forEach(a => { try{ a.effect.getKeyframes().forEach(f => Object.keys(f).forEach(p => props.add(p))); }catch(e){} });
+          R.props = [...props].filter(p => ['offset', 'easing', 'composite', 'computedOffset'].indexOf(p) < 0);
+          document.documentElement.setAttribute('data-reduce-motion', 'true'); await W(100);
+          R.rmAnim = getComputedStyle(ring).animationName; R.rmOpacity = getComputedStyle(ring).opacity;
+          document.documentElement.removeAttribute('data-reduce-motion'); }
+        out.reduce = R; CLOSE(); } }
+    /* YOUR OWN ROW AT ONCE: the account push held (so nothing is written), the rim taken off and the board drawn again */
+    const pub = store.publicId;
+    const ownRim = () => { const r = document.querySelector('.screen-rankings .rank-row.lb-row-me .rank-avatar-wrap'); return r ? (r.dataset.rim || '') : null; };
+    const pubRim = () => { const e = board().find(x => x.pub === pub); return e ? (e.rim || '') : null; };
+    const payN = () => (window.__payloads || []).length;
+    const keepSched = window.scheduleCloudPush;
+    window.scheduleCloudPush = () => {};
+    const p0 = payN();
+    showRankings(); await W(1500);
+    const before = ownRim();
+    wearRim(''); showRankings(); await W(1500);
+    const offR = ownRim(), published = pubRim();
+    wearRim('ans'); showRankings(); await W(1500);
+    const back = ownRim();
+    out.own = { before, off: offR, back, published, writes: payN() - p0 };
+    window.scheduleCloudPush = keepSched;
+    /* THE PUBLISH: wearing schedules the account push; that one push writes the row with the new rim (not held for minutes) */
+    try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; }catch(e){}
+    await W(300);
+    const p1 = payN();
+    wearRim('');
+    let scheduled = false; try{ scheduled = !!cloudPushTimer; clearTimeout(cloudPushTimer); cloudPushTimer = null; }catch(e){}
+    pushToCloud(); await W(2500);
+    const rowW = (window.__payloads || []).slice(p1).filter(s => s.indexOf('leaderboard/' + pub + ' ') === 0 || (s.indexOf('vrooms/lb-ifc-v1 ') === 0 && s.indexOf(pub) >= 0));
+    let rimNow = null;
+    try{ const last = rowW[rowW.length - 1]; const j = JSON.parse(last.slice(last.indexOf(' ') + 1));
+      rimNow = j.rows ? ((j.rows[pub] || {}).rim ?? null) : (j.rim ?? null);
+      if(j.rows && rimNow === null && j.rows[pub]) rimNow = ''; }catch(e){}
+    out.publish = { scheduled, rowWrites: rowW.length, rim: rimNow, all: (window.__payloads || []).slice(p1).map(s => s.slice(0, 60)) };
+    wearRim('ans'); try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; }catch(e){}
+    out.lazy = [ROW_LAZY_FIELDS.indexOf('ut') >= 0, ROW_LAZY_FIELDS.indexOf('rim') >= 0];
+    /* EVERY RIM CARD, in several states */
+    const snap = JSON.stringify(store);
+    out.strings = [];
+    const read = async state => { const v = unlockTrackView();
+      for(const r of unlockRimList(v)){
+        const defs = unlockRimDefs(), d = defs[r.id] || {};
+        const t = v.tracks.find(x => x.key === d.track);
+        const x = t && !d.gold && !d.mastery ? t.tiers.find(y => y.lead.k === 'rim' && y.lead.id === r.id) : null;
+        const before = x ? t.tiers.slice(0, x.n - 1).map(y => y.n) : [];
+        const missing = x ? t.tiers.slice(0, x.n - 1).filter(y => !y.held).map(y => y.n) : [];
+        CLOSE(); showUnlockDetail(rimDetail(r.id)); await W(260);
+        const c = document.querySelector('.unlock-card');
+        const q = s => { const e = c && c.querySelector(s); return e ? e.textContent : ''; };
+        const f = c && c.querySelector('.unlock-card-fill');
+        out.strings.push({ id: r.id, state, kind: d.gold ? 'gold' : d.mastery ? 'mastery' : 'new', held: !!r.held, goalMet: !!(x && x.lead.goalMet),
+          before, missing, name: q('.unlock-card-name'), desc: q('.unlock-card-desc'), count: q('.unlock-card-count'), note: q('.unlock-card-note'),
+          bar: f ? f.__target : null });
+        CLOSE(); } };
+    await read('as loaded');
+    store.legacyChars = []; store.retakenKeys = []; store.retakenQuestions = 0; store.bestTestStreak = 999; store.stats = {}; unlockTrackMemo = null;
+    await read('own count met, tier 1 not held');
+    store.hundoDayBest = 3; store.legacyChars = ['masked']; store.retakenQuestions = 100; unlockTrackMemo = null;
+    await read('the tiers before held');
+    store.lifetime = { points: 0, answered: 0, correct: 0, perfectTests: 0, longestStreak: 0, currentStreak: 0 }; store.bestTestStreak = 0; store.studyLog = {};
+    store.legacyChars = []; store.retakenKeys = []; store.retakenQuestions = 0; store.vrWins = 0; store.hundoDayBest = 0; store.unitPerfects = {}; store.testHistory = [];
+    unlockTrackMemo = null;
+    await read('a new account');
+    applyLoadedData(JSON.parse(snap)); unlockTrackMemo = null;
+  }catch(e){ out.err = String(e && e.stack || e); }
+  return out; }"""
 
 # ---- the gate ----
 # REAL-SHAPED ACCOUNTS: the counters the live accounts carry (read 2026-11-14, counts only: the top, the middle and the bottom of
@@ -372,11 +498,12 @@ def main():
             # ---- (E) the row and the Leaderboard
             if wanted("E"):
                 row = pg.evaluate("""()=>{ try{ const r = window.NOVA_CLASS === 'ifc' ? buildClassBoardRow() : buildLeaderboardRow();
-                    return { ut: r.ut, rim: r.rim, code: unlockTrackCode(), worn: wornRim(), lazy: ROW_LAZY_FIELDS.indexOf('ut') >= 0 && ROW_LAZY_FIELDS.indexOf('rim') >= 0,
+                    return { ut: r.ut, rim: r.rim, code: unlockTrackCode(), worn: wornRim(), lazy: ROW_LAZY_FIELDS.indexOf('ut') >= 0,
                              json: JSON.stringify(r) }; }catch(e){ return { err: String(e) }; } }""")
                 chk("[%s] (E) the row carries ut (this device's code) and rim (the worn one: %r)" % (cls, row.get("rim")),
                     row.get("ut") and row.get("ut") == row.get("code") and row.get("rim") == row.get("worn") == "ans", row)
-                chk("[%s] (E) both are lazy fields: they ride with a push, never cause one" % cls, row.get("lazy") is True, row)
+                # (384.132) `ut` is lazy (rides with a push, never causes one); `rim` is not any more - (I) checks it is written by the wear's own push
+                chk("[%s] (E) `ut` is a lazy field: it rides with a push, never causes one" % cls, row.get("lazy") is True, row)
                 chk("[%s] (E) no sync code in the row" % cls, CODE not in (row.get("json") or CODE) and CODE.split("-")[0] + "-" not in (row.get("json") or ""), row)
                 lb = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
                     document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
@@ -496,6 +623,58 @@ def main():
                 chk("[%s] (H) the banner is layered and moves (%d animations), only transform / opacity %s, no svg filter" % (cls, hq.get("nAnim") or 0, hq.get("props")),
                     hq.get("layered") and not hq.get("still") and (hq.get("nAnim") or 0) >= 4 and set(hq.get("props") or ["x"]) <= {"transform", "opacity"} and hq.get("filter") is False, hq)
                 chk("[%s] (H) Customize's banner page has its tile (%s)" % (cls, hq.get("inCustomize")), hq.get("inCustomize") == 1, hq)
+            # ---- (I) 384.132: the worn rim on every plate, your own row at once, the rim cards' sentences
+            if wanted("I"):
+                iq = pg.evaluate(I_PLATES)
+                if not isinstance(iq, dict): iq = {"err": str(iq)}
+                P = iq.get("profile") or {}
+                chk("[%s] (I) Profile draws the rim you wear on your plate (%r, %d ring), in its colour, round the plate (centred %s)" % (cls, P.get("rim"), P.get("rings") or 0, P.get("centre")),
+                    P.get("rim") == "ans" and P.get("rings") == 1 and P.get("color") == P.get("want") and P.get("round") is True, iq)
+                chk("[%s] (I) Profile: taken off, no rim; a stored rim you do not hold, no rim (%s)" % (cls, iq.get("profileOff")),
+                    iq.get("profileOff") == [0, 0], iq)
+                C = iq.get("cards") or {}
+                want_cards = {"me": ["ans", False], "Kimber": ["acc", False], "Alexis": ["mastery", True], "Tomas": ["", False], "Priya": ["", False], "Rosa": ["", False]}
+                if cls == "academy": want_cards["Zara"] = ["mastery", True]
+                got_cards = {k: [(C.get(k) or {}).get("rim"), (C.get(k) or {}).get("gold")] for k in want_cards}
+                chk("[%s] (I) the person card: your own rim from this device, a classmate's only when their row's code holds it, gold name for Mastery %s" % (cls, got_cards),
+                    got_cards == want_cards and all((C.get(k) or {}).get("rings") == (1 if v[0] else 0) for k, v in want_cards.items())
+                    and all((C.get(k) or {}).get("round") for k, v in want_cards.items() if v[0]), [got_cards, C])
+                chk("[%s] (I) the person card agrees with that person's Leaderboard row (%s)" % (cls, iq.get("rowAgree")), iq.get("rowAgree") is True, iq)
+                R = iq.get("reduce") or {}
+                chk("[%s] (I) Mastery's ring turns by transform only; with Reduce motion it is still and fully shown (%s)" % (cls, R),
+                    R.get("anim") == "rim-turn" and R.get("props") == ["transform"] and R.get("rmAnim") == "none" and R.get("rmOpacity") == "1", R)
+                O = iq.get("own") or {}
+                chk("[%s] (I) your own Leaderboard row: worn %r -> taken off %r -> worn %r at once, the published copy still %r (no write in between)" % (cls, O.get("before"), O.get("off"), O.get("back"), O.get("published")),
+                    O.get("before") == "ans" and O.get("off") == "" and O.get("back") == "ans" and O.get("published") == "ans" and O.get("writes") == 0, O)
+                W = iq.get("publish") or {}
+                chk("[%s] (I) wearing schedules the account push (%s), and that one push writes the row with the new rim (%s row write(s), rim %r)" % (cls, W.get("scheduled"), W.get("rowWrites"), W.get("rim")),
+                    W.get("scheduled") is True and W.get("rowWrites") == 1 and W.get("rim") == "", W)
+                chk("[%s] (I) `rim` is not a lazy field, `ut` still is" % cls, iq.get("lazy") == [True, False], iq.get("lazy"))
+                S = iq.get("strings") or []
+                bad = []
+                for s_ in S:
+                    note = s_.get("note") or ""
+                    for a_, b_ in re.findall(r"tiers (\d+) to (\d+)", note):
+                        if int(b_) <= int(a_): bad.append((s_["id"], s_["state"], "range", note))
+                    phrase = " ".join(re.findall(r"[Nn]eeds tiers? [^(.]*", note))
+                    named = set()
+                    for a_, b_ in re.findall(r"(\d+) to (\d+)", phrase): named |= set(range(int(a_), int(b_) + 1))
+                    named |= {int(x) for x in re.findall(r"\b(\d+)\b", re.sub(r"\d+ to \d+", "", phrase))}
+                    named = sorted(named)
+                    before = s_.get("before") or []
+                    if s_.get("kind") == "new" and named != before: bad.append((s_["id"], s_["state"], "named", named, before, note))
+                    if s_.get("kind") == "new" and not before and re.search(r"\btiers?\b", note, re.I): bad.append((s_["id"], s_["state"], "tier at 1", note))
+                    if s_.get("kind") == "new" and before and s_.get("missing") and not s_.get("held"):
+                        miss_said = sorted({int(x) for x in re.findall(r"\b(\d+)\b", (re.search(r"\(([^)]*) still to go\)", note) or [None, ""])[1])})
+                        if miss_said != s_["missing"]: bad.append((s_["id"], s_["state"], "missing", miss_said, s_["missing"], note))
+                    nums = [int(x.replace(",", "")) for x in re.findall(r"[\d,]+\d|\d", s_.get("count") or "")]
+                    if not s_.get("held") and s_.get("bar", 0) >= 99.9: bad.append((s_["id"], s_["state"], "full bar on a locked rim", s_.get("count")))
+                    if not s_.get("held") and len(nums) == 2 and nums[0] >= nums[1]: bad.append((s_["id"], s_["state"], "count reads done", s_.get("count")))
+                    if s_.get("goalMet") and s_.get("missing") and not s_.get("held"):
+                        if sorted(int(x) for x in re.findall(r"\d+", s_.get("count") or "")) != s_["missing"]: bad.append((s_["id"], s_["state"], "count names the tiers", s_.get("count")))
+                n_new = len([s_ for s_ in S if s_.get("kind") == "new"])
+                chk("[%s] (I) every rim card's sentences are right: %d cards in %d states read (%d new-rim), no empty or backwards range, the tiers named are the ones before it, a locked rim never shows a full bar" % (cls, len(S), len({s_["state"] for s_ in S}), n_new),
+                    len(S) >= 3 * (8 if cls == "academy" else 9) and n_new >= 6 and not bad, bad[:6])
             chk("[%s] no page errors" % cls, not errs, errs[:3])
             ctx.close()
         # ---- (B) progress safety: everything held on the baseline is held here, for real-shaped (and, with --real, real) accounts

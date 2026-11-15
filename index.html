@@ -152392,7 +152392,7 @@ function rimDetail(id){
     const missing = before.filter(y => !y.held).map(y => y.n);
     let need = "";
     if(before.length) need = "Needs " + tierRangeText(before.map(y => y.n)) + " of the " + t.title + " track first" +
-      (missing.length && !r.held ? " (" + tierListText(missing) + " still to go)." : ".");
+      (r.held ? "." : missing.length ? " (" + tierListText(missing) + " still to go)." : before.length === 1 ? " (held)." : " (all held).");
     o.note = [d.note || "", need].filter(Boolean).join(" ") || undefined;
     /* ITS OWN COUNT MET, A TIER BEFORE IT NOT: the bar says what is left, not a full bar that reads as done (the 384.120
        walkthrough: "100 of 100" on a locked rim). The bar counts the tiers before it held; the line names the ones to go.
