@@ -40245,6 +40245,18 @@ html.is-browser{ --fade-paper: transparent; }
   .rank-avatar-wrap > .lb-rim{ position:absolute; inset:-2px; z-index:2; border-radius:50%; border:2px solid var(--rim-c, #F5C84A);
     pointer-events:none; box-sizing:border-box; }
   .rank-name.lb-name.is-mastery{ color:#F5C84A; }
+  /* (384.132) the worn rim on a large plate (drawWornRim with opts.plate: Profile's hero, the person card): a ring just outside the
+     plate's edge, over the plate's own coloured edge (box-shadow), UNDER the drawing so what pops out of the plate is on top.
+     Any host that is the plate's own box can take it (a friend's profile too): drawWornRim(host, plateRimFor(row).rim, { plate: true }) */
+  .has-worn-rim > .lb-rim.is-plate-rim{ position:absolute; inset:-6px; z-index:0;
+    border-radius:50%; border:3px solid var(--rim-c, #F5C84A); pointer-events:none; box-sizing:border-box; }
+  .has-worn-rim.lb-rim-mastery > .lb-rim.is-plate-rim{ border:0;
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+            mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)); }
+  /* the gold name for Mastery, on the person card and Profile as on the board */
+  html[data-layout] body .person-card .person-sheet-name.is-mastery,
+  html[data-layout] body #stage .profile-hero .profile-name-display.is-mastery,
+  .person-card .person-sheet-name.is-mastery, .profile-hero .profile-name-display.is-mastery{ color:#F5C84A; }
   /* the board's names are var(--ink) !important (the 384 board round); Mastery's gold is the one exception */
   html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-name.is-mastery{ color:#F5C84A !important; }
   /* Next up says what is left in its line; the count at the end would only squeeze it */
@@ -70657,7 +70669,10 @@ const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
 ROW_LAZY_FIELDS.push("wk", "pwk", "wins");
 /* (384.120) the unlock tracks' code and the worn rim (unlockRowFields): they change when a run ends or a rim is picked, never per
    answer, and ride with the next push like the weekly blocks. */
-ROW_LAZY_FIELDS.push("ut", "rim");
+ROW_LAZY_FIELDS.push("ut");
+/* (384.132) `rim` is NOT lazy: it changes only when a rim is worn or taken off (or first becomes held while worn), never per answer,
+   and classmates should see it soon. The wear already saves the account (saveStore -> the debounced pushToCloud), and that same
+   push writes the row at once instead of holding it for ROW_SCORE_PUSH_MS: one row write per wear, no new write path. */
 /* (384.115) what a friend's profile reads (friendProfileFields): they change when a run ends or something is earned, never per answer, and
    nobody is watching them live - they ride with the next push, as the weekly blocks do. */
 ROW_LAZY_FIELDS.push("bd", "la", "uc", "ub");
@@ -83560,6 +83575,38 @@ function rowHasMastery(entry){
   const p = entry && parseUnlockTrackCode(entry.ut);
   if(!p) return false;
   try{ return unlockTrackSpec().every((t, i) => p.tracks[i] === (1 << t.tiers.length) - 1); }catch(e){ return false; }
+}
+/* (384.132) THE WORN RIM ON EVERY PLATE: one answer to "which rim, and is it Mastery" for any character plate, and one way to draw
+   it, used by the Leaderboard row, the person card and Profile (and any card that draws a classmate's plate from a row, such as
+   a friend's profile). YOUR OWN plate is read from this device (store.rim while held, and your own tier code: unlockRowFields,
+   the same numbers the row publishes), so wearing or taking off shows at once, before the row is written. ANYBODY ELSE's is read
+   from the row they publish, and only when its own `ut` holds the rim (rowRimShown / rowHasMastery - display only).
+   `entry` is a row (a classmate) or { me: true }; a row whose pub is this account's own counts as yours. */
+function plateRimFor(entry){
+  try{
+    if(!entry) return { rim: "", mastery: false };
+    const mine = entry.me === true || !!(store && store.publicId && entry.pub && entry.pub === store.publicId);
+    const src = mine ? unlockRowFieldsSafe() : entry;
+    return { rim: rowRimShown(src), mastery: rowHasMastery(src) };
+  }catch(e){ return { rim: "", mastery: false }; }
+}
+/* Draw (or clear) the rim on `host`, the box round the character: a ring in the rim's colour, Mastery's a gold ring turning
+   (transform only, stilled by Reduce motion; no filter, no script per frame). Replaced, never doubled, so a carried-over host
+   can be painted again. opts.plate: the ring goes UNDER the drawing (first child), so a head or a hat that pops out of a plate
+   (platePortrait) is drawn over the rim, as it is over the plate's own edge. Returns the rim drawn ("" for none). */
+function drawWornRim(host, rid, opts){
+  if(!host) return "";
+  host.querySelectorAll(":scope > .lb-rim").forEach(n => n.remove());
+  host.classList.toggle("lb-rim-mastery", rid === "mastery");
+  host.classList.toggle("has-worn-rim", !!rid);
+  if(!rid){ delete host.dataset.rim; return ""; }
+  const ring = document.createElement("i");
+  ring.className = "lb-rim" + (opts && opts.plate ? " is-plate-rim" : "");
+  ring.setAttribute("aria-hidden", "true");
+  ring.style.setProperty("--rim-c", rimColorOf(rid));
+  if(opts && opts.plate) host.insertBefore(ring, host.firstChild); else host.appendChild(ring);
+  host.dataset.rim = rid;
+  return rid;
 }
 /* ---- RARITY (384.120) ----
    "Held by 4 of 41 classmates (10%) · Rare". Counted on this phone from the rows it already downloads for the Leaderboard (no
@@ -119779,6 +119826,9 @@ function openPersonSheet(entry){
   /* (384.126) the prestige emblem beside the name (Fire Code's page; their row's count, your own live one) */
   if(!isNova){ const pm = prestigeMark(entryPrestige(entry), "pg-mark-card"); if(pm){ name.classList.add("has-pg"); name.appendChild(pm); sheet.classList.toggle("is-pg-max", pm.dataset.pg === "3"); } }
   sheet.append(art, name);
+  /* (384.132) the rim they wear round the plate and Mastery's gold name, as their Leaderboard row shows them (plateRimFor: your
+     own card from this device, anybody else's only when their row's own code holds it) */
+  if(!isNova){ try{ const pr = plateRimFor(entry); drawWornRim(art, pr.rim, { plate: true }); name.classList.toggle("is-mastery", pr.mastery); }catch(e){} }
 
   /* THE RANK IS THE HEADLINE, IN ITS OWN COLOUR, with the level under
      it - asked for in that order. Somebody below Bronze gets the level
@@ -157014,18 +157064,12 @@ function renderRankingRows(rows, entries, board, opts){
     }
     /* (384.120) THE RIM THEY WEAR, round the character's plate, when the row's own code holds it (rowRimShown - display only),
        and the gold name for Mastery. A ring, no icon. Carried with the character's wrap, so it is replaced, never doubled. */
+    /* (384.132) through plateRimFor / drawWornRim, shared with the person card and Profile: YOUR OWN row reads this device
+       (isMe), so a rim worn or taken off shows on the board at once, not after the row's next write */
     try{
-      const rid = rowRimShown(entry);
-      avatarWrap.querySelectorAll(":scope > .lb-rim").forEach(n => n.remove());
-      avatarWrap.classList.toggle("lb-rim-mastery", rid === "mastery");
-      if(rid){
-        const ring = document.createElement("i");
-        ring.className = "lb-rim"; ring.setAttribute("aria-hidden", "true");
-        ring.style.setProperty("--rim-c", rimColorOf(rid));
-        avatarWrap.appendChild(ring);
-        avatarWrap.dataset.rim = rid;
-      } else delete avatarWrap.dataset.rim;
-      name.classList.toggle("is-mastery", rowHasMastery(entry));
+      const pr = plateRimFor(isMe ? { me: true } : entry);
+      drawWornRim(avatarWrap, pr.rim);
+      name.classList.toggle("is-mastery", pr.mastery);
     }catch(e){}
     row.classList.toggle("is-pg-max", pgN === PRESTIGE_MAX);
     row.querySelectorAll(":scope > .lb-pgmax").forEach(n => n.remove());
@@ -158853,17 +158897,37 @@ function rimDetail(id){
   if(!r || !d) return o;
   o.desc = d.label + ".";
   o.have = r.have; o.need = r.need;
-  /* a new rim's own count met, but a tier before it not yet: the card says what is left */
+  /* a new rim's tiers before it, said only when there are any (the Answers rim is tier 1: its rule is all it needs), and which
+     of them are still to go. (384.132: it read "Needs tiers 1 to 0" for a rim at tier 1.) */
   if(!d.gold && !d.mastery){
     const t = view.tracks.find(x => x.key === d.track);
     const x = t && t.tiers.find(y => y.lead.k === "rim" && y.lead.id === id);
-    if(x){
-      const before = t.tiers.slice(0, x.n - 1), left = before.filter(y => !y.held).length;
-      o.note = (d.note ? d.note + " " : "") + "Needs tier" + (before.length === 1 ? " 1" : "s 1 to " + before.length) + " of the " + t.title + " track first" +
-        (left ? " (" + left + " still to go)." : ".");
+    const before = x ? t.tiers.slice(0, x.n - 1) : [];
+    const missing = before.filter(y => !y.held).map(y => y.n);
+    let need = "";
+    if(before.length) need = "Needs " + tierRangeText(before.map(y => y.n)) + " of the " + t.title + " track first" +
+      (r.held ? "." : missing.length ? " (" + tierListText(missing) + " still to go)." : before.length === 1 ? " (held)." : " (all held).");
+    o.note = [d.note || "", need].filter(Boolean).join(" ") || undefined;
+    /* ITS OWN COUNT MET, A TIER BEFORE IT NOT: the bar says what is left, not a full bar that reads as done (the 384.120
+       walkthrough: "100 of 100" on a locked rim). The bar counts the tiers before it held; the line names the ones to go.
+       The rule is unchanged: its own count AND every tier before it. */
+    if(x && !r.held && x.lead.goalMet && missing.length){
+      o.have = before.length - missing.length; o.need = before.length;
+      o.countText = tierListText(missing, true) + " first";
     }
   } else if(d.note) o.note = d.note;
   return unlockDetailLive(o, () => rimDetail(id), () => rimHeld(id));
+}
+/* tier numbers in words: [2] "tier 2", [1, 2] "tiers 1 and 2", [1, 3, 4] "tiers 1, 3 and 4"; a run of three or more in a row
+   "tiers 1 to 4" (tierRangeText). cap: "Tier 2". */
+function tierListText(ns, cap){
+  const w = ns.length === 1 ? "tier " + ns[0]
+    : "tiers " + ns.slice(0, -1).join(", ") + " and " + ns[ns.length - 1];
+  return cap ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+}
+function tierRangeText(ns){
+  const run = ns.length >= 3 && ns.every((n, i) => i === 0 || n === ns[i - 1] + 1);
+  return run ? "tiers " + ns[0] + " to " + ns[ns.length - 1] : tierListText(ns);
 }
 function wearRim(id){
   store.rim = id && rimHeld(id) ? id : "";
@@ -163475,6 +163539,9 @@ function showProfile(defaultTab, opts){
      previewed when it was chosen. */
   heroAvatar.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
   heroAvatar.appendChild(platePortrait(avatarSpanFor({ avatarChar: store.avatarChar })));
+  /* (384.132) the rim you wear (only while you hold it), under the drawing so what pops out of the plate is over it */
+  const heroRim = plateRimFor({ me: true });
+  drawWornRim(heroAvatar, heroRim.rim, { plate: true });
   setCharState(heroAvatar, "live");
   /* TAP YOUR CHARACTER (build 327z13): "In profile, if I tap my character,
      it should do a thing." It gives under the finger and springs back,
@@ -163505,6 +163572,8 @@ function showProfile(defaultTab, opts){
      the same Nova gradient treatment as the app's own wordmark. */
   nameDisplayText.className = "profile-name-display";
   nameDisplayText.textContent = store.firstName || "No name set";
+  /* (384.132) Mastery's gold name, as on your Leaderboard row */
+  if(heroRim.mastery) nameDisplayText.classList.add("is-mastery");
   const nameEditBtn = document.createElement("button");
   nameEditBtn.type = "button"; nameEditBtn.className = "next ghost profile-edit-btn profile-customize-btn";
   /* Not "Edit" any more: it no longer edits the field beside it, it
