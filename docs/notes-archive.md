@@ -39764,3 +39764,116 @@ switched and landed on in each screen's first frame, by taps and on 22 mounted s
 check-b384-codeslide's trace reads the height SHOWN (the clip), not laid out - the shape it asks for is unchanged.
 
 384.119 (lagaudio) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm, PDFJS_DIR an unpacked pdfjs-dist 5.4.149 so section 2 ran, load 2-4; the build stays the placeholder 384.119): check-js ALL PASS; the page loads with no page error (only the blocked network and the file:// version.json fetch in the console); check-b384-lagaudio: sections 2 (every drop-down and Next question leg), 3 (sound, 3a-3h) and 5 pass in the full run; section 1 and section 4 were re-run once after the full run (see below) and pass; `--against` main 384.107's index.html FAILS 1a, 1c (both classes), every leg of 2 and 3a, 3b, 3c, 3f, 3g, as intended. In the full run (1b) failed in both classes: the gate asked the units' first-read opacity to sit within .12 of the mode screen's dim (.35), and the units' own fade (cubic-bezier .2 .8 .3 1: steep at the start) has run one or more frames, slow at 4x CPU, before the frame that reads it - .546 and .556 here. The gate now asks for no more than .12 under and no more than .30 over the dim (the flash it guards against, the units popping in at ~1, is +.65); the app is unchanged. (4) on ifc's question screen failed once (Pause and chat did not land) and passed on two later runs (58 controls, 0 not, both classes): a one-off, not reproduced. Re-run of sections 1 and 4 after the change: ALL PASS. sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre; check-sound ALL PASS; check-b384-toprow ALL PASS; check-b384-chatspot ALL PASS; check-behaviour check_slide, check_b240_units, check_b323u_units, check_b324m_modes: 19 old-encoding failures (Mock/Quiz naming, unit box widths), the same 19 on main 384.107, none new; the slide's push-in sections pass. Videos at 440x956, 4x CPU, a ring where a finger lands, tools/record-b384-lagaudio.py, before = main 384.107, after = this build: units (Home, Start Studying, Drill, back, Drill) and drop-downs (the Hint and the code box, Next). Only the phone can say whether the units, the drop-downs and Next now feel immediate, whether the sound leaves silently, and whether the back button's haptic is there; Chromium shows none of those.
+
+
+### 384.129 (dropfix): the recording he re-sent is main's; Answer Review's units on the compositor; the Hint's first open painted ahead
+
+(branch claude/b384-dropfix, cut from claude/b384-lagaudio 1cfe8ff (384.119, itself not merged); placeholder build 2026-11-13-384.129;
+NOT merged - waiting for the owner's go; the lead renumbers at merge)
+
+Madison re-sent the 00:19:45 recording: "The drop downs are still laggy. Fix this as well."
+
+**HIS RECORDING IS OF MAIN, NOT OF 384.119.** It is the same file as the first one (ScreenRecording_11-13-2026_00-19-45, made
+00:19 CST = 06:19 UTC on 11-13); 384.119's first commit is 07:53 UTC that day, and 384.119 has never been on main. So "still laggy"
+is main (384.95-384.107), which has none of 384.119's drop-down work. Frame by frame (it is 60fps, not the 120 its header says:
+1190 frames over 19.88s, 16.7ms apart; frames diffed at quarter size with full-resolution crops of the pill), one Fire Code drill
+question, Question 1/158 (the Harris County wood-chips permit):
+| # | what | press (pill sinks) | first response | settled | press->response | response->settled |
+| 1 | Hint, Hide the code | 0.083s f5 | 0.142 f8 | 0.483 f28 (8.7pt last-frame jump) | 58ms | 341ms |
+| 2 | Hint, Show the code | 1.317 f78 | 1.433 f85 | 1.717 f102 (21pt jump) | 117 | 283 |
+| 3 | Hint, Hide | 2.267 f135 | 2.317 f138 | 2.650 f158 (jump) | 50 | 333 |
+| 4 | Hint, Show | 3.117 f186 | 3.225 f192 | 3.475 f207 (jump) | 108 | 250 |
+| 5 | Hint, Hide | 3.908 f233 | 3.992 f238 | 4.325 f258 (jump) | 83 | 333 |
+| 6 | Hint, Show | 5.092 f304 | 5.158 f308 | 5.425 f324 (jump) | 67 | 267 |
+| 7 | Hint, Hide | 5.975 f357 | 6.058 f362 | 6.392 f382 (jump) | 83 | 333 |
+| - | the answer (A) | 8.042 f481 | 8.192 f490 | 8.342 f499 | 150 | 150 | (the code box comes up open: he had opened it before)
+| - | his scroll to the end | 9.143 | | 9.343 | | |
+| 8 | AMENDMENTS, Hide the code, page at its end | not shown* | 9.893 f592 | 10.343 f619 | - | 450 (the page slides 156pt down over 8 frames, snaps 157pt back in ONE frame f599->f600, then glides 27pt over ~20 frames; Next drops 31pt in that frame and floats back over ~18) |
+| 9 | AMENDMENTS, Show the code | not shown* | 10.843 f649 | 10.943 f655 (Next 11.127) | - | 100 (284 for Next) |
+| - | scroll | | 11.493 | 11.760 | | |
+| 10 | Hide, page end | not shown* | 12.310 f737 | 12.760 f764 | - | 450 |
+| 11 | Show | not shown* | 13.110 f785 | 13.210 f791 (Next 13.393) | - | 100 |
+| - | scrolls | | 14.577 / 16.143 | 15.477 / 16.677 | | |
+| 12 | Hide, page end | not shown* | 17.143 f1027 | 17.593 f1054 | - | 450 |
+(*the code pill has no :active look, so its press is not in the picture.) On the Hint pill the press stays on until the very frame the
+box starts to move, which is the frame the finger lifts (the click comes on the lift): the 50-117ms press->response is how long his
+finger was down, not the app. What lags is the move itself: 15-20 frames of a height eased frame by frame that ends in a one-frame
+jump (21pt opening, 8.7pt shutting), and at the end of the page a ~190pt clamp of the whole page that iOS animates back over ~20
+frames with Next question dropping and floating up - exactly 384.119's diagnosis. No select menus, settings drop-downs, mode
+pickers or unit lists are tapped in it.
+
+**MEASURED (tools/check-b384-dropfix.py, 440x956 at 3x, iPhone UA, installed, 4x CPU, a CDP trace of each tap, every frame read
+after it is drawn; the machine at load 22-38 on 4 CPUs throughout, so single timings wobble by tens of ms):**
+- main 384.107: the Hint and the code box lay the page out in 5-10 of the ten 33ms slices from 60 to 400ms after the lift (a height
+  eased by script: getAnimations() shows nothing but the pill's own transform); the Hint's first open has no picture until 149ms
+  after the lift (painted after the tap). Answer Review's unit: 6,164 elements built in the tap (a 247-344ms click task, 89-117ms
+  of it style), then a max-height + padding-top transition (layout every frame) and the sky's --sky-k/--sky-kb ease.
+- lagaudio 384.119: the Hint and the code box are fixed - first frame 2-15ms after the lift, layout in 0-3 slices, only clip-path,
+  translate, transform and opacity animate. What it left: the Hint's FIRST open still waits for its picture to be painted after
+  the tap (in the page 163ms after the lift; the move ~500ms vs ~400ms for every later one); and Answer Review's units exactly as
+  main (6,164 elements in a 292-387ms click task, max-height/padding-top every frame).
+- The class button's list on Home (--only classes, reported): opacity/transform plus the capsule's height on a position:fixed
+  layer (lays out the bubble, not the page); its click task is the "ui.popup.open" sound being synthesised and the native-switch
+  tick (label.click()) plus Home's idle badge work at 4x - shared by every button with a sound, not a drop-down's; left as is.
+- Others walked: the Results "Review your answers" toggle and Profile's stat cards are instant (hidden), nothing animates and
+  nothing is built in the tap; the setup sheet's .more-body is static (is-instant) and moreBodyMoving() has no caller; Settings'
+  Advanced is a page now. No <select> menus exist.
+
+**FIXES**
+- Answer Review's units (openCollapsible): opened and shut through ifcDropOpen / ifcDropShut - one layout, a clip-path sweep and
+  `translate` on what is under it - with a new `cap`: a unit is tens of thousands of px tall, so the sweep and what is under it go
+  only as far as the screen's bottom (+40px); the rest is simply there at the end, below the screen (as the 2000px max-height
+  slide did). The .cal-month-body max-height/padding transition is gone. The heading's class changes after the move has read the
+  page (its style is worked out once, in the frame). Reduce motion: at once.
+- Questions made ahead: a heading's tap puts in only a unit's first eight questions (fill(sec, true); more than a screen), the
+  rest after the move (fillMore, 4ms slices, below the screen). showAnswerReview makes those first eight of every unit (qNode) in
+  quiet moments once the list is up (requestIdleCallback, <=6ms a slice, not within 500ms of a touch or a scroll, not while a move
+  runs) - eight a unit, not every question (a first version made them all: Fire Code's ~1,000 questions held off the page for
+  units that may never open). A search or the list's first draw still fills a unit whole.
+- Answer Review counts as a question from the moment it is up (body.has-active-question: stage.querySelector(".choice,
+  .screen-answerreview")): its answer rows are .choice, so the FIRST unit opened switched it on inside the tap - the strip colour
+  read (a whole-page style pass) in the tap and the glow's .6s --sky-k ease restyling a layer through the move. Look: the review
+  screen is now calm (as it was after its first unit opened) from the start instead of for the first moments only.
+- reviewRenderAhead's slices and its IntersectionObserver wait while a move runs (ifcDropRun); so does the haptic layer's
+  hswFlush (hswSchedule) - on an iPhone the clip sweep is drawn by the page, so nothing else should take its frames.
+- The Hint's picture is painted ahead (900ms after the question is up, in idle time, never within 400ms of a touch or scroll; kept
+  off the page); the first tap drops it in like every later one. A tap before it is ready waits for the same paint as before.
+- THE MOVE STARTS ON THE FRAME AFTER THE ONE THAT SHOWS THE CHANGE (ifcDropStart, every drop-down): the WAAPI move is made paused at
+  its first keyframe in the frame that lays the change out, played from the next rAF, and its end timed from there. Seen in the
+  recordings: a unit's first frame took ~100ms at 4x and a move timed from the frame it was made in had done most of its course
+  (this curve is front-loaded) before anything was painted - the unit appeared open in one frame. Also the code box shutting at the
+  end of the page: 384.119 had a ~93ms gap and then the page already well down; now it slides from the first frame.
+- A unit's first eight questions go in as .rq-on (laid out at their own height, not content-visibility's 340px stand-in): the move
+  reads the unit's height in its first frame, and stand-ins that grew a frame later pushed what is under it off the screen and left
+  the sweep starting most of the way open.
+- NO SCROLL ANCHORING WHILE A BOX MOVES (ifcAnchorOff / ifcAnchorBack: html's overflow-anchor none from the tap until two frames
+  after the move's last layout). Chromium anchors (Safari does not), so a box opened in one layout under its anchor could scroll the
+  page by the whole box while the move's `translate` held what was under it. The gate checks every opening leaves scrollY alone.
+- Not changed: the code box's and the Hint's geometry and timing (384.119's), Next question, advanceWithSlide / q-sliding / SLIDE_MS.
+- Seen in Chromium only: a unit's newly revealed questions can be blank for one frame while they are rasterised at 4x CPU
+  (dropfix-review-strip01, +363ms); an iPhone rasterises differently and only the phone can say.
+- Not fixed, measured: the code box shutting costs one forced layout of the page in the move's first frame (d(), its loss read
+  after the pill's words change: ~25ms of a ~90ms frame at 4x here) - the frame would lay it out anyway.
+- clip-path: Chromium runs a clip-path animation on the compositor; WebKit (iOS) does not - the sweep is drawn by the page each
+  frame there, which is why everything else (the haptic layer, render-ahead, its observer) now waits out a move. Only the phone can
+  say whether the sweep is smooth; the translate/opacity parts are composited on both.
+
+**Gate: NEW tools/check-b384-dropfix.py** (docstring): per tap (a) first frame after the lift shows it (<=70ms), the box itself
+moving (<=90ms), the click's task <=100ms; (b) nothing built in the tap (<=60 elements made; Answer Review <=320, a screenful) and
+no forced layout over 12ms in it; (c) only transform/translate/scale/rotate/opacity/clip-path animate (getAnimations()) and the
+page laid out in <=3 of the ten 33ms slices 60-400ms after the lift (CDP trace); (d) settled within 1s; (e) the Hint's first open
+has its picture in the first frame. --report prints, --only classes measures the class list. tools/record-b384-dropfix.py records.
+(f) every opening leaves the page's scroll where it was.
+
+384.129 (dropfix) verification (2026-11-15, this container, TMPDIR=/dev/shm, PDFJS_DIR an unpacked pdfjs-dist 5.4.149; load 22-38
+on 4 CPUs for most of the session, 3-13 for the last runs): check-js ALL PASS (14 blocks); no page error in any gate (the console has
+only the blocked network). check-b384-dropfix (final, load ~1; the tap is now the touchend and click dispatches - Chromium runs a touch inside the frame's own task, so the task's layout is the first frame's): this build ALL PASS (46); --against lagaudio 384.119 FAILS 5 - (e) the Hint's first open (picture 156ms after the lift) and Answer Review opening (a) 217ms of handlers, (b) 6,164 elements built in the tap, (c) max-height/padding-top/--sky-k animating, and shutting (c) laid out in 9 slices; --against main 384.107 FAILS 14 - (c) on all eight Hint/code moves (layout in 7-10 of 10 slices), (e), (f) the code box opening at the page's end scrolled 34px, and Answer Review as lagaudio. (Earlier runs at load 22-38 wobbled single timings past their bounds on every build; re-run once.) check-b384-lagaudio --sections 2 ALL PASS (33) after the
+move-start change, and the whole gate ALL PASS (52) before it. check-behaviour check_slide, check_b240_units, check_b323u_units,
+check_b324m_modes: 19 failures, the same 19 old-encoding ones lagaudio has (diffed line for line), the slide's push-in sections pass
+on phone and iPad. sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre (a first run lost its Fire Code
+page to the machine's out-of-memory killer and was re-run); check-sound ALL PASS (60); check-b384-chatspot ALL PASS (35);
+check-b384-toprow ALL PASS (373; a first run at load ~30 hit the 50-minute limit with 4 one-frame samples). Videos and filmstrips (tools/record-b384-dropfix.py, 440x956 at 3x, 4x CPU, CDP screencast at
+the compositor's own timing): main, lagaudio and this build, his drop-down sequence and an Answer Review unit, plus his frames
+next to ours. Only an iPhone can say whether the sweep is smooth (clip-path is drawn by the page there), what a tap feels like, and
+whether the review's first frame keeps up.
+Left as found (measured): the code box shutting at the very end of the page ends with a 9.75px glide (the residual FLIP, 180ms) - under 384.119 in Chromium the browser's scroll anchoring hid it; with anchoring off during a move (as an iPhone always has it) the end frame and the final layout differ by that much. A glide, not a jump; the next pass on the scroll give-back (c) should find it.

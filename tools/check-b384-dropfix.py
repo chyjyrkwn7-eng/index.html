@@ -11,8 +11,8 @@ animates one):
 For each tap: a real CDP touch (touchStart, 80ms held, touchEnd) under Emulation.setCPUThrottlingRate 4, with a CDP trace of the
 tap and its move, and every frame read from the page after it is drawn:
  (a) FIRST RESPONSE: the first frame after the finger lifts shows the change (the label, the box, the list) - the frame's start
-     within FIRST_MS of the lift; and the click's task (all its JS, style and layout) under TASK_MS;
- (b) NOTHING HEAVY IN THE TAP: in the click's task no list of questions is built (no more than NODES_MAX elements added) and no
+     within FIRST_MS of the lift; and the tap's own dispatches (touchend and click handlers, and what they force) under TASK_MS;
+ (b) NOTHING HEAVY IN THE TAP: in those dispatches no list of questions is built (no more than NODES_MAX elements added) and no
      forced layout of more than LAYOUT_TAP_MS;
  (c) ON THE COMPOSITOR: every animation the tap starts animates only transform/translate/scale/rotate/opacity/clip-path (read from
      document.getAnimations(): a CSS transition's property, a WAAPI animation's keyframes) - and the page is laid out in at most 3
@@ -39,7 +39,7 @@ if arg("--ref"):
     RAW = subprocess.run(["git", "-C", ROOT, "show", arg("--ref") + ":index.html"], capture_output=True, text=True).stdout
 else:
     RAW = open(arg("--against") or os.path.join(ROOT, "index.html"), encoding="utf-8").read()
-FIRST_MS, TASK_MS, NODES_MAX, LAYOUT_TAP_MS, SETTLE_MS = 70, 100, 60, 12, 1000
+FIRST_MS, TASK_MS, NODES_MAX, LAYOUT_TAP_MS, SETTLE_MS = 70, 60, 60, 12, 1000
 BOX_MS, REVIEW_NODES_MAX = 90, 320
 ALLOWED = {"transform", "translate", "scale", "rotate", "opacity", "clip-path", "clipPath"}
 
@@ -131,9 +131,14 @@ def analyse_trace(ev):
     tid = c.get("tid")
     tasks = [e for e in X if e.get("name") in ("RunTask", "ThreadControllerImpl::RunTask") and e.get("tid") == tid and e["ts"] <= c["ts"] <= e["ts"] + e["dur"]]
     task = max(tasks, key=lambda e: e["dur"]) if tasks else c
-    a, b = task["ts"], task["ts"] + task["dur"]
-    inside = [e for e in X if e.get("tid") == tid and a <= e["ts"] <= b]
-    out["task"] = task["dur"] / 1000
+    # Chromium dispatches a touch (and the click made from it) aligned to a frame, inside the task that also runs that frame's rAF
+    # callbacks, style and layout - so the TAP is the touchend and click dispatches themselves (their handlers, and whatever they
+    # force), not the whole task; the frame's own layout is the first frame's, counted under (c)
+    spans = [(e["ts"], e["ts"] + e["dur"]) for e in (tend[:1] + [c])]
+    a, b = min(s[0] for s in spans), max(s[1] for s in spans)
+    inside = [e for e in X if e.get("tid") == tid and any(s0 <= e["ts"] <= s1 for s0, s1 in spans)]
+    out["task"] = sum(s1 - s0 for s0, s1 in spans) / 1000
+    out["frame_task"] = task["dur"] / 1000
     out["layout_tap"] = sum(e["dur"] for e in inside if e["name"] == "Layout") / 1000
     out["style_tap"] = sum(e["dur"] for e in inside if e["name"] in ("UpdateLayoutTree", "RecalculateStyles")) / 1000
     rel = lambda e: (e["ts"] - t0) / 1000
@@ -187,7 +192,7 @@ def measure(pg, cdp, name, sels, tap_at, ms=1500, settle_wait=1900, layout_kind=
     fr = [f for f in M["frames"] if te is not None and f[0] >= te - 1]
     if os.environ.get("DF_DEBUG"):
         print("     te", te, "ts", M["ts"], "ck", M["ck"], "frames", len(M["frames"]), "after", len(fr), "\n     sig0", M["sig0"][:300])
-        for t, s, *_ in fr[:12]: print("     %.1f %s" % (t - (te or 0), s[:300]))
+        for t, s, *_ in fr[:40]: print("     %.1f %s" % (t - (te or 0), s[:300]))
     prev = M["sig0"]; first = None; last = None; nch = 0
     for t, s, *_ in fr:
         if s != prev:
@@ -207,7 +212,7 @@ def measure(pg, cdp, name, sels, tap_at, ms=1500, settle_wait=1900, layout_kind=
     row.update(tr)
     rows.append(row)
     f = lambda v, d=1: "-" if v is None else ("%.*f" % (d, v))
-    print("   %-44s first %6s ms  box %6s ms  settled %6s ms  (%2d frames)  click task %6s ms  (layout %5s, style %5s)  added %s  slices %s  layouts %d  longest %s  props %s"
+    print("   %-44s first %6s ms  box %6s ms  settled %6s ms  (%2d frames)  tap handlers %6s ms  (layout %5s, style %5s)  added %s  slices %s  layouts %d  longest %s  props %s"
           % (name, f(row["first"]), f(row["box"]), f(row["settled"]), nch, f(row["task"]), f(row["layout_tap"]), f(row["style_tap"]), row["added"], row["slices"], row["layouts"], f(row["longest"]),
              ",".join(row["props"]) or "-"), flush=True)
     return row
@@ -215,7 +220,7 @@ def measure(pg, cdp, name, sels, tap_at, ms=1500, settle_wait=1900, layout_kind=
 def judge(row, kind="move", settle=SETTLE_MS, nodes_max=None):
     n = row["name"]
     NODES_MAX = nodes_max or globals()["NODES_MAX"]
-    chk("(a) %s: the first frame after the lift shows it (%s ms <= %d), the box itself is moving by %s ms (<= %d), and the click's task is short (%s ms <= %d)" % (n, row["first"] and round(row["first"]), FIRST_MS, row["box"] and round(row["box"]), BOX_MS, row["task"] and round(row["task"]), TASK_MS),
+    chk("(a) %s: the first frame after the lift shows it (%s ms <= %d), the box itself is moving by %s ms (<= %d), and the tap's handlers (touchend + click) are short (%s ms <= %d)" % (n, row["first"] and round(row["first"]), FIRST_MS, row["box"] and round(row["box"]), BOX_MS, row["task"] and round(row["task"]), TASK_MS),
         row["first"] is not None and row["first"] <= FIRST_MS and row["box"] is not None and row["box"] <= BOX_MS and row["task"] is not None and row["task"] <= TASK_MS, row)
     chk("(b) %s: nothing built in the tap (%s elements added <= %d) and no forced layout in it (%s ms <= %d)" % (n, row["added"], NODES_MAX, row["layout_tap"] and round(row["layout_tap"], 1), LAYOUT_TAP_MS),
         (row["added"] or 0) <= NODES_MAX and (row["layout_tap"] or 0) <= LAYOUT_TAP_MS, row)
