@@ -14,8 +14,8 @@ overrides): its person card over the Leaderboard, opened by the app's own openPe
       cannot pass anything);
   (1) this build's person card has the reference's recipe: fill colour, the sheen gradient's stops, blur / saturate / brightness,
       the rim, the shadow, and the dim behind it (its colour times its opacity) - within a small tolerance;
-  (2) every pop-up in tools/b384_pop_lib.INVENTORY (Test history's Units sheet included) has the PERSON CARD'S recipe, the same seven
-      things, on an iPhone 17 Pro Max in both classes and an iPad Pro 11" in the academy;
+  (2) every pop-up in tools/b384_pop_lib.INVENTORY (Test history's Units and Mode sheets included) has the PERSON CARD'S recipe and the
+      reference's, the same six things, on an iPhone 17 Pro Max in both classes and an iPad Pro 11" in the academy;
   (3) the stripe test (check-b384-leavefrost's) on the Units sheet and the person card: a black/white stripe page under each, blur on
       vs off; the page is smeared (ratio < .35) and the unblurred strip has real contrast (>= 20), so a test that sees nothing fails;
   (4) the Units sheet: nothing above it is a backdrop root (opacity / filter / backdrop-filter / mask / clip-path / will-change naming
@@ -85,7 +85,7 @@ def close(a, b, tol):
     return all(abs(x - y) <= tol for x, y in zip(a, b))
 
 def compare(r, ref):
-    """the seven parts of the recipe; returns a list of what differs"""
+    """the six parts of the recipe; returns a list of what differs"""
     bad = []
     if not close(rgba(r["fill"]), rgba(ref["fill"]), 2.01) or abs(rgba(r["fill"])[3] - rgba(ref["fill"])[3]) > .02: bad.append("fill %s vs %s" % (r["fill"], ref["fill"]))
     if not close(nums(r["img"]), nums(ref["img"]), 2.01): bad.append("sheen %s vs %s" % (r["img"][:110], ref["img"][:110]))
@@ -197,8 +197,9 @@ def run(br, cls, w, h, tag, ref, first):
         r = pg.evaluate(RECIPE, [sel, hosts])
         if not r: chk("%s %-18s is on screen (%s)" % (tag, key, sel), False); continue
         if shots: pg.screenshot(path=os.path.join(shots, "%s-%s-%s.png" % (key, cls, "tablet" if w > 600 else "phone")))
-        bad = compare(r, pc)
-        chk("%s %-18s (2) the person card's glass (fill %s, %s, dim %.2f)" % (tag, key, r["fill"], r["bf"], scrim_alpha(r)[3]), not bad, bad)
+        # the person card's glass, and so the old frost (a sheet that matched a person card that had drifted would hide it)
+        bad = compare(r, pc) + ["not the old frost: " + x for x in compare(r, ref)]
+        chk("%s %-18s (2) the person card's glass, the old frost (fill %s, %s, dim %.2f)" % (tag, key, r["fill"], r["bf"], scrim_alpha(r)[3]), not bad, bad)
         if key == "history-units":
             u = pg.evaluate(UNITS_READ)
             chk("%s units (4) nothing above the sheet is a backdrop root, nor the sheet a will-change group (%s %s)" % (tag, u["roots"], u["own"]), not u["roots"] and not u["own"], u["roots"])
