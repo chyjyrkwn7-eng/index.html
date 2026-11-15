@@ -147,15 +147,26 @@ window.__inkRead = function(cv, s){
     if(d > 40){ colN[x]++; if(y0 < 0) y0 = y; y1 = y; n++; sum += D[i] + D[i+1] + D[i+2]; if(D[i] > 200 && D[i+2] < 120) marks++; } } }
   if(y0 < 0) return { W, H, paper, n: 0, dk };
   let x0 = 0; while(!colN[x0]) x0++; let x1 = W - 1; while(!colN[x1]) x1--;
-  const bar = (side) => {                              /* the text's edge on this side, a margin bar set aside */
-    const step = side < 0 ? 1 : -1, e = side < 0 ? x0 : x1; let x = e, w = 0;
-    while(x >= 0 && x < W && colN[x]){ w++; x += step; }
-    let gap = 0; while(x >= 0 && x < W && !colN[x]){ gap++; x += step; }
-    if(w < 1.5 * s || w > 6.5 * s || gap < 3.5 * s || x < 0 || x >= W) return [e, false];
-    const a = Math.min(e, e + step * (w - 1)), b = Math.max(e, e + step * (w - 1)); let rows = 0, solid = 0;
-    for(let y = y0; y <= y1; y++){ let c = 0; for(let xx = a; xx <= b; xx++){ const i = at(xx, y); if(Math.abs(D[i]-paper[0]) + Math.abs(D[i+1]-paper[1]) + Math.abs(D[i+2]-paper[2]) > 40) c++; }
-      if(c){ rows++; if(c >= .8 * w) solid++; } }
-    return rows >= 6 * s && solid >= .9 * rows ? [x, true] : [e, false];
+  const bar = (side) => {                              /* the text's edge on this side, the margin marks set aside: (384) a bar; (384 cropfix) the
+                                                          book's deletion arrow beside it (see ifcMarkSide in index.html) */
+    const step = side < 0 ? 1 : -1, on = (x, y) => { const i = at(x, y); return Math.abs(D[i]-paper[0]) + Math.abs(D[i+1]-paper[1]) + Math.abs(D[i+2]-paper[2]) > 40; };
+    let e = side < 0 ? x0 : x1, out = e, any = false;
+    for(let n = 0; n < 3; n++){
+      let x = e, w = 0;
+      while(x >= 0 && x < W && colN[x]){ w++; x += step; if(w > 11 * s) return [out, any]; }
+      let gap = 0; while(x >= 0 && x < W && !colN[x]){ gap++; x += step; }
+      if(x < 0 || x >= W || !w) return [out, any];
+      const a = Math.min(e, e + step * (w - 1)), b = Math.max(e, e + step * (w - 1)); let rows = 0, solid = 0, fill = 0, r0 = -1, r1 = -1;
+      for(let y = y0; y <= y1; y++){ let c = 0; for(let xx = a; xx <= b; xx++) if(on(xx, y)) c++;
+        if(c){ rows++; fill += c; if(r0 < 0) r0 = y; r1 = y; if(c >= .8 * w) solid++; } }
+      const isBar = w >= 1.5 * s && w <= 6.5 * s && rows >= 6 * s && solid >= .9 * rows;
+      const tall = r1 - r0 + 1, isArrow = w >= 6 * s && tall <= 8 * s && rows === tall && fill >= .5 * w * tall;
+      const speck = w <= .6 * s && tall <= .6 * s;
+      if(!isBar && !isArrow && !speck) return [out, any];
+      if(gap >= 3.5 * s){ out = x; any = true; }
+      e = x;
+    }
+    return [out, any];
   };
   const [tx0, bl] = bar(-1), [tx1, br] = bar(1);
   return { W, H, paper, n, sum, marks, dk, x0, x1, y0, y1, tx0, tx1, bars: (bl ? 1 : 0) + (br ? 1 : 0) };

@@ -17,6 +17,8 @@ pixels, looked at for all 44); this gate holds the part of it that is decided fr
 (3) every row citation: the gold carries its reach (the next row's start above and below it, or the table's edge), so the painter
     can fill a row of several lines to its rules without passing into another row;
 (4) every row citation: the gold's label is print the size of the table's cells, never a raised note letter.
+(5) (384.97) the answers once marked as a cell (IFC_POINTER_PATCH `rows: true`: read from index.html, the bank's pointer with the patch over it) are each one
+    row mark, and the keyed answer's words are printed in that row; (0)-(4) hold for them too. Against origin/main (0) and (5) FAIL on the four.
   PDFJS_DIR=<pdfjs-dist 5.4.149> IFC_BOOK=<the owner's 2021 IFC PDF> python3 tools/check-b384-tablerows.py [--against FILE|REV]
   --against takes an ifc-viewer.js file or a commit (its ifc/ifc-viewer.js). Against 4dfd194 (before this): (1), (2), (3) and (4) FAIL.
 The book never goes into the repo; it is read where it lies."""
@@ -37,7 +39,10 @@ if "--against" in sys.argv:
 kitm = os.path.join(tmp, "kit.mjs"); open(kitm, "w", encoding="utf-8").write(open(kit, encoding="utf-8").read())
 RUN = r"""
 import fs from "fs";
-const [PDFJS, BOOK, KIT, BANK] = process.argv.slice(2);
+const [PDFJS, BOOK, KIT, BANK, APP] = process.argv.slice(2);
+// (384.97) the app's pointer patches (IFC_POINTER_PATCH in index.html): a pointer with `rows: true` has its table cells marked as their rows - a row citation too
+const app = fs.readFileSync(APP, "utf8"), pb = app.slice(app.indexOf("const IFC_POINTER_PATCH = {") + "const IFC_POINTER_PATCH = ".length);
+const PATCH = Function("return " + pb.slice(0, pb.indexOf("\n};") + 2))();
 const pdfjs = await import(PDFJS + "/legacy/build/pdf.mjs");
 const V = await import(KIT);
 const bs = fs.readFileSync(BANK, "utf8"), bank = JSON.parse(bs.slice(bs.indexOf("{"), bs.lastIndexOf("}") + 1));
@@ -46,15 +51,16 @@ const fb = new Map(), cache = new Map();
 const index = await V.buildIndex(doc, { fontBold: fb, cache });
 const out = [];
 for (const q of bank.questions) {
-  const c = q.citation;
+  const c = Object.assign({}, q.citation, PATCH[q.id] || {}); delete c.head;
   if (!(c.row || c.rows) || c.source === "amendment") continue;
   const loc = V.locate(index, c);
   const clip = loc.ok ? await V.computeClip(doc, index, loc, c, { cache, fontBold: fb }) : { ok: false };
-  const r = { id: q.id, label: c.label, row: c.row || c.rows, ok: !!clip.ok, marks: [] };
+  const r = { id: q.id, label: c.label, row: c.row || c.rows, cells: !!c.rows, answer: q.options[q.answer], ok: !!clip.ok, marks: [] };
   if (clip.ok) {
     for (const m of clip.marks.filter(m => m.kind === "row")) {
       const model = await V.pageModel(doc, m.page, fb, cache);
-      const seg = clip.segments.find(s => s.page === m.page) || {};
+      const mx = (m.x0 + m.x1) / 2, my = (m.i0 + m.i1) / 2;           // (the piece the row is in: a section's text and its table can be two pieces of one page)
+      const seg = clip.segments.find(s => s.page === m.page && mx >= s.x0 && mx <= s.x1 && my >= s.y0 && my <= s.y1) || clip.segments.find(s => s.page === m.page) || {};
       const items = model.items.filter(it => it.t && it.y >= (seg.y0 ?? -1e9) && it.y <= (seg.y1 ?? 1e9) && it.x + it.w / 2 >= (seg.x0 ?? -1e9) && it.x + it.w / 2 <= (seg.x1 ?? 1e9))
         .map(it => ({ t: it.t, x: it.x, y: it.y, w: it.w, h: it.h }));
       r.marks.push({ x0: m.x0, x1: m.x1, i0: m.i0, i1: m.i1, fs: m.fs, lt: m.lt ?? null, lb: m.lb ?? null, items });
@@ -65,7 +71,7 @@ for (const q of bank.questions) {
 console.log(JSON.stringify(out));
 """
 runner = os.path.join(tmp, "run.mjs"); open(runner, "w").write(RUN)
-res = subprocess.run(["node", runner, PDFJS, BOOK, kitm, os.path.join(ROOT, "ifc", "bank.js")], capture_output=True, text=True, timeout=1800)
+res = subprocess.run(["node", runner, PDFJS, BOOK, kitm, os.path.join(ROOT, "ifc", "bank.js"), os.path.join(ROOT, "index.html")], capture_output=True, text=True, timeout=1800)
 if res.returncode != 0:
     print(res.stderr[-1500:]); print("FAIL the kit ran"); sys.exit(1)
 rows = json.loads(res.stdout.strip().splitlines()[-1])
@@ -104,5 +110,17 @@ for r in rows:
         cells = sorted(it["h"] for it in m["items"] if it["t"].strip()); med = cells[len(cells) // 2] if cells else 0
         if m["fs"] < 0.8 * med: raised.append((r["id"], round(m["fs"], 1), med))
 chk("(4) every row's gold is labelled by print the size of the table's cells, never a raised note letter", not raised, raised[:8])
+# (5) (384.97) the answers that were marked as one cell are marked as their row (IFC_POINTER_PATCH rows: true): one row mark, and the keyed answer's words
+# are printed inside it - the row is the one that holds the answer (the rest of the row, border to border and no other row, is (2) here and check-b384-cropfix (g))
+import re as _re
+conv = [r for r in rows if r.get("cells")]
+wrong = []
+for r in conv:
+    if len(r["marks"]) != 1: wrong.append((r["id"], "%d row marks" % len(r["marks"]))); continue
+    m = r["marks"][0]
+    txt = " ".join(it["t"] for it in m["items"] if inside(m, it) and it["x"] + it["w"] / 2 >= m["x0"] - 1 and it["x"] + it["w"] / 2 <= m["x1"] + 1).lower()
+    miss = [t for t in _re.findall(r"[a-z0-9]+", r["answer"].lower()) if t not in txt]
+    if miss: wrong.append((r["id"], r["answer"], "not in the row", miss, txt[:120]))
+chk("(5) the %d answers once marked as a cell (%s) are each one row mark, and the keyed answer is printed in that row" % (len(conv), ", ".join(r["id"] for r in conv)), len(conv) >= 4 and not wrong, wrong)
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
