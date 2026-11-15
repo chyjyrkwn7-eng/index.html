@@ -31,8 +31,8 @@ def _gen(name):
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 MOVED47 = sorted(i for i, to in _gen("UNIT_MOVES").items() if to == "1"); REMOVED47 = sorted(_gen("UNIT_REMOVALS")); GONE47 = set(MOVED47) | set(REMOVED47)   # (384.73) REMOVED47 is every removal (17 of 384.47, ch12-012 / ch55-702 / ch2-047 of 384.73)
 EDIT73 = set(_gen("QUESTION_EDITS"))   # (384.73) the eight questions whose wording the audit fixes changed (tools/check-b384-qfix.py holds them)
-import re as _re   # (384.104) the 26 occupant load questions added to Chapter 10 (QUESTION_ADDS, built with helpers: read by their ids; check-b384-occload holds them)
-ADDED104 = set(_re.findall(r'_(?:row|sec)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
+import re as _re   # (384.104) the 26 occupant load questions added to Chapter 10 (QUESTION_ADDS, built with helpers: read by their ids; check-b384-occload holds them), and 384.130's six on Table 606.3.3.1 in Chapter 6 (`_cook`; check-b384-ch6cook)
+ADDED104 = set(_re.findall(r'_(?:row|sec|cook)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
 # id -> the unit id it moves to, in the order the generator appends them
 
 

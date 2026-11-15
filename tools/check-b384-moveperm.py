@@ -18,7 +18,7 @@ Everything is read off the page, in Fire Code, for the app and bank on origin/ma
     IFC_SRC_GAPS each old position;
 (3) ORDER: the 70 are at the END of Chapter 1 in the table's order (89-158), Chapter 1's own 88 keep their positions, each old chapter keeps
     every other question's position (the moved/removed one's number stays taken), every other question has main's chapter and position;
-(4) THE COUNTS: every unit's size is what the table says (main's size, less what left it, plus what came in); Chapter 1 158, the bank 1,795 (1,792 with the three 384.73 took out; LATER; 1,818 with the 26 384.104 added to Chapter 10; ADDED) -
+(4) THE COUNTS: every unit's size is what the table says (main's size, less what left it, plus what came in); Chapter 1 158, the bank 1,795 (1,792 with the three 384.73 took out; LATER; 1,818 with the 26 384.104 added to Chapter 10, 1,824 with 384.130's six in Chapter 6; ADDED) -
     the bank's own unit sizes, unitQuestionCount (what a full-chapter run must cover, isFullUnitRun), a full-chapter question count and the "N
     questions" on the chapter cards all agree; a run of Chapter 1's old 88 is no longer the chapter;
 (5) STARS: a star on a moved question goes with it (new key, same stamp, the old key gets the tombstone), a star on a removed question comes off
@@ -48,7 +48,7 @@ LATER = _ALL_REMOVED[17:]                                                       
 EDIT73 = set(_gen("QUESTION_EDITS"))                                                # (384.73) the eight questions whose wording changed
 # (384.104) the 26 occupant load questions added to Chapter 10 (QUESTION_ADDS, built with helpers, so read by their ids): counted as what they are -
 # new questions after Chapter 10's last, nothing of 384.47's moves - check-b384-occload holds them
-ADDED = re.findall(r'_(?:row|sec)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read())
+ADDED = re.findall(r'_(?:row|sec|cook)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read())
 assert len(MOVES) == 70 and len(REMOVED) == 17 and len(LATER) == 3 and not (set(LATER) & set(MOVES)) and {"ch20-508", "ch30-505"} <= set(REMOVED) and not ({"ch20-508", "ch30-505"} & set(MOVES))
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384moveperm"}
@@ -162,7 +162,7 @@ EXPECT = {}
 for u in ob["units"]:
     EXPECT[u["id"]] = sum(1 for q in ob["questions"] if q["unit"] == u["id"] and q["id"] not in GONE and q["id"] not in LATER)
 EXPECT["1"] += len(MOVES)
-EXPECT["10"] += len(ADDED)                                                          # (384.104)
+for _i in ADDED: EXPECT[re.match(r"ch(\w+?)-", _i).group(1)] += 1                  # (384.104: 26 in Chapter 10; 384.130: 6 in Chapter 6) an added id is ch<its unit>-
 bad4 = {u: (S[u]["n"], S[u]["cache"], S[u]["run"], len(rows(new["rows"], S[u]["topic"])), card_for(S[u]["topic"])) for u, n in EXPECT.items()
         if not (S[u]["n"] == S[u]["cache"] == S[u]["run"] == len(rows(new["rows"], S[u]["topic"])) == n and (card_for(S[u]["topic"]) in (None, "%d questions" % n)))}
 bank_same = {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and \

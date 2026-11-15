@@ -55829,11 +55829,17 @@ const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru
    every existing key (chapter | position | wording) is what it was: no gap, pin, moved or retired key is needed. A hundo, a badge, a chapter
    star, a rank, points and level are per chapter NAME and stored counts, so nothing is lowered; the next full Chapter 10 run is the chapter
    as it stands (157). tools/check-b384-occload.py holds it. */
-/* The bank's own count ("1,818"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
+/* ---- (384.130) SIX NEW CHAPTER 6 QUESTIONS ON TABLE 606.3.3.1: NOTHING HERE MOVES EITHER ----
+   The owner: "we need a question over each frequency type of cooking." ch6-622 .. ch6-627 (tools/gen-ifc-bank.py QUESTION_ADDS, `_cook`): the
+   low-volume (12 months) and all other (6 months) rows as fill-ins, and every row the other way round (the interval given, the operation asked),
+   so each of the table's four rows is asked twice. They sit after Chapter 6's last question (positions after its 41), so every existing key is
+   what it was: no gap, pin, moved or retired key. Their pointers are ch6-029's (section 606.3.3.1) with the row lit by `find` + `rows: true`, as
+   ch6-029 / ch6-030's are (IFC_POINTER_PATCH). tools/check-b384-ch6cook.py holds it. */
+/* The bank's own count ("1,824"), read from it where it is loaded; the shipped count where it is not (the academy's class list) */
 function ifcQuestionCountText(){
   let n = 0;
   try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
-  return (n || 1818).toLocaleString("en-US");
+  return (n || 1824).toLocaleString("en-US");
 }
 /* ---- THE 5.4.3 BANK (build 384.48): ONE WRONG OPTION CHANGED, THE IDENTITY STAYS ----
    Madison sent class26e-ifc-update-5.4.3: question chAppH-805 (Appendix H, "Where OSHA or state rules require a facility to
@@ -123060,7 +123066,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.104";
+const APP_BUILD = "2026-11-13-384.130";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";

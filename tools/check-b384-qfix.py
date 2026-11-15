@@ -63,9 +63,9 @@ EXPL = ["ch28-701", "chAppC-002"]                                               
 EDITED = STEMS + list(OPT) + EXPL
 LEAKS = {"ch3-099": "ch3-624", "ch35-009": "ch35-016", "ch1-112": "ch1-142"}               # the stem that printed the figure another question asks -> that question
 UNIT_OF_REMOVED = {"ch12-012": "4", "ch55-702": "2", "ch2-047": "2"}
-# (384.104) the 26 occupant load questions a later build added to Chapter 10 (tools/gen-ifc-bank.py QUESTION_ADDS, read by their ids): counted as what they
+# (384.104) the 26 occupant load questions a later build added to Chapter 10 (and 384.130's six in Chapter 6, `_cook`) (tools/gen-ifc-bank.py QUESTION_ADDS, read by their ids): counted as what they
 # are - new questions after Chapter 10's last, nothing of this build's fixes; check-b384-occload holds them. (BASE for this gate is main 384.70, 4e5328c.)
-ADDED = set(re.findall(r'_(?:row|sec)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
+ADDED = set(re.findall(r'_(?:row|sec|cook)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
 ob, nb = bank_of(OLD_BANK), bank_of(NEW_BANK)
 oq = {q["id"]: q for q in ob["questions"]}; nq = {q["id"]: q for q in nb["questions"]}
 KEEP_SAME = [i for i in oq if i not in REMOVED and i not in EDITED]

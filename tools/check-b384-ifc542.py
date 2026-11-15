@@ -3,8 +3,8 @@ questions as the update says. Madison: "Fix these questions (attached file for u
 PERFECTLY. We can't mess up questions." The update (class26e-ifc-update-5.4.2): 43 rewordings (42 questions, 3 explanations),
 36 Finder questions added, 3 removed (ch12-008, ch12-071, ch4-040), nothing else changed.
 Read off the page, in Fire Code, against the 5.4.1 bank and app (git: BASE below):
-(1) the class holds the 5.4.2 bank as the owner has cut it: 1,818 questions (384.47 took 17 out: 15 repeats, ch20-508 and ch30-505; 384.73 took out three more, the weaker twin of three same-question pairs;
-    384.104 added 26 occupant load questions to Chapter 10, ch10-339 .. ch10-364: tools/gen-ifc-bank.py QUESTION_ADDS, check-b384-occload), and each unit's size is the bank's own questionCount (Chapter 1 158,
+(1) the class holds the 5.4.2 bank as the owner has cut it: 1,824 questions (384.47 took 17 out: 15 repeats, ch20-508 and ch30-505; 384.73 took out three more, the weaker twin of three same-question pairs;
+    384.104 added 26 occupant load questions to Chapter 10, ch10-339 .. ch10-364: tools/gen-ifc-bank.py QUESTION_ADDS, check-b384-occload; 384.130 six on Table 606.3.3.1 to Chapter 6, ch6-622 .. ch6-627: QUESTION_ADDS `_cook`, check-b384-ch6cook), and each unit's size is the bank's own questionCount (Chapter 1 158,
     Chapter 2 109, Chapter 4 39, Chapter 12 41, the Finder 138; 384.42 moved five questions between chapters and 384.47 70 into Chapter 1);
 (2) every question kept from 5.4.1 (1,776) has exactly the key (topic|position|wording hash) it had - so no one's answers,
     stars, badges or saved tests on them move - EXCEPT the five questions the owner moved in 384.42 (ch12-012 to Chapter 4, ch55-702, ch62-702,
@@ -12,7 +12,7 @@ Read off the page, in Fire Code, against the 5.4.1 bank and app (git: BASE below
 (3) the 42 reworded questions (47 with 384.73's five stems) show the new wording and the 3 explanations (5 with 384.73's two) the new explanation; every question, explanation
     and keyed answer shown is the bank's word for word; no answer changed;
 (4) the 3 removed questions are gone, and a star left on one comes off once (a tombstone in `unflagged`), other stars kept;
-(5) the class list says "Harris County Fire Code Amendments" and the bank's count (1,818), the analysis step the same count;
+(5) the class list says "Harris County Fire Code Amendments" and the bank's count (1,824), the analysis step the same count;
 (6) WITH THE BOOK (PDFJS_DIR and IFC_BOOK as for check-b383-ifcbook - the book never goes in the repo): the owner's IFC is
     accepted, and every new Finder question's "Show the code" draws its picture from the book (an IFC chapter/appendix) or
     the county booklet (Chapter 1 / Exhibit B), with a highlight in it; no page errors.
@@ -26,9 +26,9 @@ def _gen(name):   # the owner's moves and removals, read from the generator's ow
         if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == name: return ast.literal_eval(n.value)
 MOVED_BY_OWNER = sorted(_gen("UNIT_MOVES"))      # 384.42 (5) + 384.47 (70 into Chapter 1): see tools/check-b384-moveq.py, check-b384-moveperm.py
 REMOVED_BY_OWNER = sorted(_gen("UNIT_REMOVALS"))   # 384.47: 17 taken out of the bank (15 repeats, ch20-508, ch30-505); 384.73: ch12-012, ch55-702, ch2-047
-import re as _re   # (384.104) the questions the owner had added, read from the generator's QUESTION_ADDS (built with helpers, so by their ids)
-ADDED_BY_OWNER = sorted(_re.findall(r'_(?:row|sec)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
-EXPECT_TOTAL = 1812 - len(REMOVED_BY_OWNER) + len(ADDED_BY_OWNER)       # 1,818 (384.47 removed 17, 384.73 three more, 384.104 added 26)
+import re as _re   # (384.104) the questions the owner had added, read from the generator's QUESTION_ADDS (built with helpers, so by their ids; 384.130's `_cook` too)
+ADDED_BY_OWNER = sorted(_re.findall(r'_(?:row|sec|cook)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
+EXPECT_TOTAL = 1812 - len(REMOVED_BY_OWNER) + len(ADDED_BY_OWNER)       # 1,824 (384.47 removed 17, 384.73 three more, 384.104 added 26, 384.130 six)
 BASE = os.environ.get("BASE", "1982cbf")   # the last commit with the 5.4.1 bank
 PDFJS = os.environ.get("PDFJS_DIR", "").rstrip("/") + "/"
 BOOK = os.environ.get("IFC_BOOK", "")

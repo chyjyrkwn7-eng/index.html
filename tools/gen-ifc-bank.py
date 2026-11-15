@@ -249,6 +249,58 @@ QUESTION_ADDS = [
          "booth seating occupant load"),
 ]
 
+# ---- (384.130) QUESTION_ADDS, Chapter 6: every row of Table 606.3.3.1 asked twice ----
+# The owner, on ch6-029's picture: "Chapter 6, idk how many questions are from this table already, but we need a question over each frequency type of
+# cooking." IFC 2021 Table 606.3.3.1, COMMERCIAL COOKING SYSTEM INSPECTION FREQUENCY (book page 6-8, PDF page 127), under 606.3.3.1 Inspection ("Hoods,
+# grease-removal devices, fans, ducts and other appurtenances shall be inspected at intervals specified in Table 606.3.3.1 or as approved by the fire code
+# official."), has four rows. Before this build ch6-029 asked the high-volume row (3 months) and ch6-030 the solid fuel row (1 month), each as a fill-in;
+# the low-volume row (12 months) and "All other cooking operations" (6 months) had none. Added: a fill-in for each of those two in ch6-029 / -030's voice
+# (the intervals 1, 3, 6, 12 months as the options, ascending), and for every row a question the other way round (the interval given, the cooking
+# operation asked, the four row labels as printed as the options, in the table's order), so each row is asked twice, in two forms. Every word of a row
+# label and every interval is the table's as printed. The citation is ch6-029's own (section 606.3.3.1, the section's picture: the lead-in and the
+# table) and the row is lit as ch6-029 / ch6-030's are (384 cropfix: `find` = a phrase of the row's label and its interval, `rows: true` turns them into
+# the whole row, border to border; a `row` key is read by a "Table ..." pointer only). The ids continue Chapter 6's numbering (the highest ever named was
+# ch6-621); they sit after Chapter 6's last question, so they take its positions after the 41 and no existing key moves. tools/check-b384-ch6cook.py.
+_C606 = {"source": "ifc", "section": "606.3.3.1", "heading": "Inspection", "label": "IFC 2021 606.3.3.1", "pdfPage": 127, "printedPage": "6-8"}
+_COOK_ROWS = {   # the table's rows as printed: label | interval; the `find` phrases that light each row (ch6-029's and ch6-030's for theirs)
+    "high": ("High-volume cooking operations such as 24-hour cooking, charbroiling or wok cooking", "3 months", ["charbroiling or wok cooking", "3 months"]),
+    "low": ("Low-volume cooking operations such as places of religious worship, seasonal businesses and senior centers", "12 months", ["seasonal businesses and senior centers", "12 months"]),
+    "solid": ("Cooking operations utilizing solid fuel-burning cooking appliances", "1 month", ["operations utilizing solid fuel-burning cooking appliances", "1 month"]),
+    "other": ("All other cooking operations", "6 months", ["All other cooking operations", "6 months"]),
+}
+_COOK_INTERVALS = ["1 month", "3 months", "6 months", "12 months"]
+_COOK_LABELS = [_COOK_ROWS[k][0] for k in ("high", "low", "solid", "other")]          # the table's order
+def _cook(qid, row, question, explanation, reverse=False):
+    label, interval, find = _COOK_ROWS[row]
+    opts = _COOK_LABELS if reverse else _COOK_INTERVALS
+    return {"id": qid, "unit": "6", "type": "content", "question": question, "options": dict(zip("ABCD", opts)),
+            "answer": "ABCD"[opts.index(label if reverse else interval)], "explanation": explanation, "topic": "kitchen exhaust inspection",
+            "kind": "other" if reverse else "measure", "citation": dict(_C606, find=list(find), rows=True)}
+QUESTION_ADDS += [
+    _cook("ch6-622", "low",
+          "Unless the fire code official approves otherwise, the hoods, fans and ducts serving low-volume cooking operations, such as places of religious worship, seasonal businesses and senior centers, shall be inspected every _____.",
+          "Table 606.3.3.1 sets low-volume cooking operations, such as places of religious worship, seasonal businesses and senior centers, at 12 months, the longest interval in the table."),
+    _cook("ch6-623", "other",
+          "Hoods, grease-removal devices, fans, ducts and other appurtenances serving all other cooking operations, those that are not high-volume, low-volume or solid fuel-burning, shall be inspected every _____.",
+          "All other cooking operations are inspected every 6 months. High-volume cooking is 3 months, solid fuel-burning cooking appliances 1 month and low-volume cooking 12 months."),
+    _cook("ch6-624", "high",
+          "Under Table 606.3.3.1, which cooking operations must have their hoods, grease-removal devices, fans and ducts inspected every 3 months?",
+          "High-volume cooking operations, such as 24-hour cooking, charbroiling or wok cooking, are inspected every 3 months unless the fire code official approves another interval.",
+          reverse=True),
+    _cook("ch6-625", "low",
+          "Unless the fire code official approves otherwise, which cooking operations have their hoods, grease-removal devices, fans and ducts inspected every 12 months?",
+          "Low-volume cooking operations, such as places of religious worship, seasonal businesses and senior centers, have the longest interval in Table 606.3.3.1: 12 months.",
+          reverse=True),
+    _cook("ch6-626", "solid",
+          "Which cooking operations have the shortest inspection interval in Table 606.3.3.1, 1 month?",
+          "Cooking operations utilizing solid fuel-burning cooking appliances have the shortest interval, 1 month. High-volume cooking is 3 months, all other cooking 6 months and low-volume cooking 12 months.",
+          reverse=True),
+    _cook("ch6-627", "other",
+          "Under Table 606.3.3.1, which cooking operations must have their hoods, grease-removal devices, fans and ducts inspected every 6 months?",
+          "Table 606.3.3.1 sets all other cooking operations, those not listed as high-volume, low-volume or solid fuel-burning, at 6 months.",
+          reverse=True),
+]
+
 def apply_moves(bank):
     qs, units = bank["questions"], bank["units"]
     ids = {u["id"] for u in units}

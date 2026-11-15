@@ -65,6 +65,11 @@ def chk(name, cond, info=""):
 def nz(s): return re.sub(r"[^a-z0-9]", "", str(s).lower())
 
 NEW = ["ch10-%03d" % n for n in range(339, 365)]
+# (384.130) questions LATER builds added to other chapters (tools/gen-ifc-bank.py QUESTION_ADDS, built with helpers: read by their ids; an added id is
+# ch<its unit>-): ch6-622 .. ch6-627 on Table 606.3.3.1 (check-b384-ch6cook holds them). Counted as what they are, nothing of this build.
+LATER = [i for i in re.findall(r'_(?:row|sec|cook)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()) if i not in NEW]
+LATER_BY_UNIT = {}
+for _i in LATER: _u = re.match(r"ch(\w+?)-", _i).group(1); LATER_BY_UNIT[_u] = LATER_BY_UNIT.get(_u, 0) + 1
 CH10 = "10"
 # ---- IFC 2021 Table 1004.5, every row that prints a factor (40), in the book's order: what this build does with it.
 #      "old": a question existed before; "new": this build adds one; "sec": the row sends the reader to a section, and that section is asked;
@@ -125,7 +130,10 @@ others_bad = [i for i in oq if nq.get(i) != oq[i]]
 order_kept = [q["id"] for q in nb["questions"] if q["id"] in oq] == [q["id"] for q in ob["questions"]]
 units_ok = all(u["questionCount"] == sum(1 for q in nb["questions"] if q["unit"] == u["id"]) for u in nb["units"]) and nb["meta"]["questionCount"] == len(nb["questions"])
 sizes = {u["id"]: u["questionCount"] for u in nb["units"]}; osizes = {u["id"]: u["questionCount"] for u in ob["units"]}
-size_ok = sizes.get(CH10) == osizes[CH10] + len(NEW) and all(sizes[u] == osizes[u] for u in osizes if u != CH10) and len(nb["questions"]) == len(ob["questions"]) + len(NEW)
+later_in = [i for i in LATER if i in nq]                   # (384.130) on a build that has them; --against a build without them, none
+later_units = {}
+for _i in later_in: _u = nq[_i]["unit"]; later_units[_u] = later_units.get(_u, 0) + 1
+size_ok = sizes.get(CH10) == osizes[CH10] + len(NEW) and all(sizes[u] == osizes[u] + later_units.get(u, 0) for u in osizes if u != CH10) and len(nb["questions"]) == len(ob["questions"]) + len(NEW) + len(later_in)
 meas = [nq[i] for i in present if nq[i]["kind"] == "measure"]
 fills = sum(1 for q in meas if "_____" in q["question"]); calcs = len(meas) - fills
 mix_ok = fills and calcs and min(fills, calcs) / max(fills, calcs) >= 0.6
@@ -430,7 +438,7 @@ with sync_playwright() as pw:
         chk("(5) Chapter 10 is %d in the bank, unitQuestionCount, a full run and its card (%s) (%s: %d); the class card reads %s; a run of the old %d is a partial run now (%s), a hundo already held is kept (4a)" % (
             S[CH10]["n"], card and card["count"], BASE[:7], Sb[CH10]["n"], cls_text, len(ch10_keys), not run_old["part"]),
             S[CH10]["n"] == S[CH10]["cache"] == S[CH10]["run"] == run_old["n"] == want10 and card and card["count"] == "%d questions" % want10
-            and cls_text == "{:,}".format(len(nb["questions"])) and new["meta"] == len(nb["questions"]) == len(ob["questions"]) + len(NEW) and run_old["part"] is False and run_old["full"] is True,
+            and cls_text == "{:,}".format(len(nb["questions"])) and new["meta"] == len(nb["questions"]) == len(ob["questions"]) + len(NEW) + len(later_in) and run_old["part"] is False and run_old["full"] is True,
             {"sizes": S[CH10], "card": card, "cls": cls_text, "run": run_old})
     finally:
         rig.close()
