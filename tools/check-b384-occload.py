@@ -418,7 +418,11 @@ with sync_playwright() as pw:
         run_old = pg.evaluate(FULLRUN, {"t": T10, "n": len(ch10_keys)})
         cls_text = pg.evaluate("()=>ifcQuestionCountText()")
         errs_all += e; ctx.close()
-        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+        # (384.130) novaHeard is the record of Nova's broadcasts the account has had (time stamps, max-merged), written by novaTick while a page is open:
+        # it moves with the clock between the two boots, not with the bank, so it is held to "nothing lowered" instead of "identical"
+        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if k != "novaHeard" and json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+        nh_b, nh_a = before["rest"].get("novaHeard") or {}, after["rest"].get("novaHeard") or {}
+        if any((nh_a.get(k) or 0) < v for k, v in nh_b.items()): rest_diff.append("novaHeard lowered")
         held = all(before[k] == after[k] for k in ("perf", "earned", "star", "level", "badges", "badgeCount", "hundos", "rank", "lvl", "pend")) and \
             json.dumps(before["row"], sort_keys=True) == json.dumps(after["row"], sort_keys=True)
         chk("(4a) an account that has MASTERED Chapter 10 (badge, star, '%s', %d hundos there) keeps all of it on this build: the badge, the star, the level, hundos %s -> %s, badges %s -> %s, rank, level and the published row the same; every stored field identical (%d differ: %s); nothing owed or re-fired" % (
