@@ -42,11 +42,18 @@ def base_body():
     return subprocess.run(["git", "-C", ROOT, "show", "origin/main:index.html"], capture_output=True, check=True).stdout.decode("utf-8")
 UNITS = [u[0] for u in json.load(open(os.path.join(HERE, "chapter-icons", "units.json"), encoding="utf-8"))]
 HASH = "const H = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };"
-SNAP = """async (skip) => { %s const out = {}; const norm = s => s.replace(/bdg\\d+/g, 'bdgN');
+# (384.121 follow-up) the 384.108 shine took the in-SVG glisten out of a found badge's drawing (the -sil mask, the -shn gradient, the
+# badge-shine group and its band: the compositor glint replaced it, on purpose). Both builds' markup is read without it, so (4) still
+# holds everything else byte for byte; the pixels are held by check-b384-badges2.py.
+SNAP = """async (skip) => { %s const out = {}; const strip = svg => { const c = svg.cloneNode(true);
+    c.querySelectorAll('mask[id$="-sil"], [id$="-shn"]').forEach(n => n.remove());
+    c.querySelectorAll('g.badge-shine').forEach(g => { const p = g.parentNode; (p && p.tagName === 'g' && p.childNodes.length === 1 ? p : g).remove(); });
+    return c.outerHTML; };
+  const norm = s => (typeof s === 'string' ? s : strip(s)).replace(/bdg\\d+/g, 'bdgN');
   for(const u of unitsInTeachingOrder()){ if(skip.indexOf(u) >= 0) continue;
     const e = badgeStrikeEntry(u, false, 96, false, 0), g = badgeStrikeEntry(u, true, 96, false, 0);
-    out[u] = [H(norm(buildUnitBadgeSVG(u, true, { vector: true, dirt: 0 }).outerHTML)), H(norm(buildUnitBadgeSVG(u, false).outerHTML)),
-              H(norm(buildUnitBadgeSVG(u, 'grey', { vector: true }).outerHTML)), e ? H(e.url) : null, g ? H(g.url) : null]; }
+    out[u] = [H(norm(buildUnitBadgeSVG(u, true, { vector: true, dirt: 0 }))), H(norm(buildUnitBadgeSVG(u, false))),
+              H(norm(buildUnitBadgeSVG(u, 'grey', { vector: true }))), e ? H(e.url) : null, g ? H(g.url) : null]; }
   return out; }""" % HASH
 PROBE = r"""async () => {
   const us = unitsInTeachingOrder(), r = { cls: window.NOVA_CLASS, units: us, hasApi: typeof CHAPTER_ICON === 'object' && typeof chapterIconFor === 'function', icon: [], bad: [] };
@@ -179,10 +186,7 @@ with sync_playwright() as pw:
     here_ifc = pg.evaluate(SNAP, icon_units)
     errs_all += errs; ctx.close()
     ctx, pg, errs = load(br, cls="academy")
-    # (384.121) the academy's units are pins of their object on purpose (check-b384-acadpins holds their ids and unlock rules): only an
-    # academy unit with no object is held byte for byte here
-    ac_objs = pg.evaluate("() => unitsInTeachingOrder().filter(u => typeof chapterObjShape === 'function' && chapterObjShape(u))")
-    here_ac = pg.evaluate(SNAP, ac_objs)
+    here_ac = pg.evaluate(SNAP, [])
     errs_all += errs; ctx.close()
     # (4) the reference build
     base = base_body()
@@ -190,11 +194,11 @@ with sync_playwright() as pw:
     there_ifc = pg.evaluate(SNAP, icon_units)
     errs_all += errs; ctx.close()
     ctx, pg, errs = load(br, base, "academy")
-    there_ac = pg.evaluate(SNAP, ac_objs)
+    there_ac = pg.evaluate(SNAP, [])
     errs_all += errs; ctx.close()
     br.close()
 dif = [u for u in there_ac if here_ac.get(u) != there_ac[u]]
-chk("(4) the academy's %d units with no object draw exactly what origin/main draws (vector earned, empty, grey; struck earned, grey; ids normalised; %d are pins since 384.121): %s" % (len(there_ac), len(ac_objs), dif[:3] or "all identical"), len(there_ac) + len(ac_objs) >= 16 and not dif, dif[:5])
+chk("(4) the academy's %d units draw exactly what origin/main draws (vector earned, empty, grey; struck earned, grey; ids normalised): %s" % (len(there_ac), dif[:3] or "all identical"), len(there_ac) >= 16 and not dif, dif[:5])
 dif = [u for u in there_ifc if here_ifc.get(u) != there_ifc[u]]
 chk("(4) Fire Code's %d chapters with no icon draw exactly what origin/main draws (none left once all 58 are drawn): %s" % (len(there_ifc), dif[:3] or "all identical"), len(there_ifc) == len(fb) and not dif, dif[:5])
 mg = subprocess.run([sys.executable, os.path.join(HERE, "merge-chapter-icons.py"), "--check"], capture_output=True, text=True)
