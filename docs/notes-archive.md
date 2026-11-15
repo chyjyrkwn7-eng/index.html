@@ -40330,3 +40330,117 @@ the text centred by `padding-block: calc((1.75rem - 2px - 1cap)/2)` (same 1.75re
 ALL PASS (0 off centre, no screen "not opened"), check-b384-reviewtest ALL PASS again. (check-centering's "results/review test" screen,
 class academy, did not open when run alone with `--only` twice - it needs the earlier screens' state - but opens and passes in the full
 --quick run.)
+### 384.111 (searchbar)
+EVERY SEARCH FIELD IS ONE APPLE CAPSULE, FIND ME IS ITS COMPANION; YOUR ROW IS FOUND, NOT LIT (branch claude/b384-searchbar, cut from origin/main 384.95 562b1ed; NOT merged, waiting for the owner's go; the lead re-numbers the build at merge).
+
+THE REPORTS (Madison, two iPhone screenshots, 1186x2576 = 440x956pt): his Leaderboard with Find me circled, beside Apple Music's Search tab:
+"The find me button stands out just a little bit, maybe cause it's not color matched to the search bar? I feel like the search bar and
+the find me button don't have that Apple vibe, it's missing the round edges and stuff." And, of his own row (#2, washed lighter): "Notice
+in my leaderboard screenshot, I'm permanently highlighted, don't do that. When I hit find me it'll flash or whatever."
+
+MEASURED (scratchpad searchbar/measure*.py; px / 2.695 = pt, the flat areas of the JPEGs):
+- APPLE MUSIC'S FIELD: x 19.5-419.4pt (400pt wide; 20pt in from each side, the same inset as the tile grid under it), y 116.1-158.0pt,
+  so 41.9pt tall; a CAPSULE - a circle of radius h/2 fitted to its left end lands within ~1px at four rows (3, 7, 15 and 29px in);
+  fill (29,29,31) #1D1D1F on a black page = rgba(118,118,128,.24), iOS's search fill (tertiarySystemFill), to the level.
+  The MAGNIFIER: white (255), 16.0 x 15.6pt with its handle, x 33.0-49.0pt (13.4pt in from the field's edge, its middle 21.4pt in), on
+  the field's middle (136.5 vs 136.9pt), stroke ~2pt. The PLACEHOLDER: starts at 58.6pt (39pt in; 9.6pt after the glyph), x-height
+  8.9pt and caps 11.5pt = 17pt SF Pro Regular; colour (157,156,161) at the stroke cores = rgba(235,235,245,.6) on that fill (iOS's
+  secondary label). The MIC: white, 12 x 17.8pt, 18.4pt in from the right end.
+- OURS, 384.95 ON HIS PHONE: the field x 17.4-324.3pt, 43.4pt tall, corners ~12pt; Find me x 333.6-422.6pt (89pt), the SAME fill
+  as the field (35,38,43) on a page of (27-29,30-32,35-37) - +8 levels; the label white (255), ~17pt semibold; the placeholder
+  (168,169,173) at ~20pt (his 85% page zoom: the field floor, see syncFieldFloor), the magnifier grey (147,156,165), 13.7pt.
+  So the two WERE colour matched; what stood out was two squarish boxes side by side and a heavy white label beside a grey field.
+
+WHAT CHANGED (index.html):
+1. THE SEARCH CAPSULE (.sbcap / .sbcap-field, put on by each screen's builder; one block last in the sheet, "THE SEARCH FIELD IS ONE
+   CAPSULE (384.111)"): 44px tall (Apple's 42pt, at the 44px tap floor), radius 999px (drawn: 22px = h/2), no rim, no shadow, no blur;
+   fill --sb-fill rgba(118,118,128,.24) (over the sky beyond Home it reads (50,47,54), +24 levels; Apple +29 on black); words 17px
+   (max(17px, 1.0625rem)) regular, --ink; placeholder --sb-ph rgba(235,235,245,.6); the magnifier (searchMagnifier, 20px, stroke 2.2)
+   white, 11px in (its ink 13px in, 15.7px across, centred - Apple 13.4 / 16.0); the words 38px in (ink 39px - Apple 39pt). Padding
+   top/bottom 0 (the 44px box centres the line; 382's measured half pixel up on iOS is kept: padding-bottom 1px under
+   @supports (-webkit-touch-callout: none)). The x (.sbcap-clear): iOS's filled grey disc (the placeholder grey) with the cross cut
+   dark, 22px drawn in a 44x44 target at the field's right end, there only while something is typed (the text's right padding 44px
+   then). No mic: no voice search.
+   EVERY SEARCH FIELD: the Leaderboard (showRankings); Choose your units and its Review variant (showSetup); the Virtual Room's unit
+   picker (showVirtualRoomSetup); Review's question list (showAnswerReview - its in-page field, which stands down while the tab bar's
+   search circle is up; it gains the same magnifier, searchMagnifier in place of the What's New glyph, and an x it never had); the
+   Starred / Most missed list in a unit's card (openUnitDetail - it gains the magnifier, and its "Clear" pill (36px, under the tap
+   floor) becomes the same round x, "Clear the search"). Behaviour unchanged everywhere: the same filters, the same input events.
+   NOT CHANGED: the search over the tab bar (#tabsearch, Review on a phone and iPad) keeps its glass and its 52px - it floats over the
+   questions like Apple Music's own and the bar it matches ("that needs to look like the bottom tab ... cohesive", 384); a flat fill
+   would show the text through it. Only its placeholder takes --sb-ph. The text fields that are not searches (.searchbox-plain: the
+   name, sync and friend codes, chat) are untouched (another helper owns Customize's name field).
+2. FIND ME, THE COMPANION: the field's fill, its height (44px), a capsule, 16px side padding, the label 17px weight 500 in white (the
+   magnifier's colour). Select all (and Starred in Review, under the field) the same fill, height and capsule, their own labels. Gap .6rem
+   as before. Rendered three ways (searchbar/findme-variants.png): A the capsule with a white label, B the capsule with the theme's
+   colour (--rank-accent; Sapphire shown - on the default theme it is white, the same as A), C a round 44px icon button (a crosshair).
+   CHOSE A: it reads as the field's companion (the field's own words and glyph are white and grey; nothing else on the row is
+   coloured); B turns red on Supernova, which iOS reads as destructive, and the app keeps controls white on every theme ("A SET THEME
+   RECOLOURS THE APP AND DOES NOTHING ELSE"; Select all and the switches are white); C loses the words, and Find me's icon was taken off
+   once already ("not sure why the find me button has a blue arrow thing? Remove that", 327z13). Find me's behaviour, its three
+   failure messages and its daily-alert answer are untouched.
+3. YOUR ROW IS NOT LIT (renderRankingRows): it no longer gets .lb-row-me - the class every wash keyed on (382 "your row = accent ring +
+   wash", 383 "your row on the podium takes the list's accent wash", 324's "keeps its accent ring even on the podium - being first should
+   not cost you the ability to find yourself"). THIS REPLACES THEM, on his word: "I'm permanently highlighted, don't do that. When I hit
+   find me it'll flash or whatever." With the class gone every :not(.lb-row-me) podium rule reaches your row, so third place is bronze
+   for you as for anyone. data-me="1" stays (Find me finds the row by it). renderLeaderboardRows' own .lb-row-me (a ring) is dead code
+   (renderLeaderboardList has no caller) and is left. KEPT, and reported: off the podium your place number is drawn in --accent (the
+   app's --accent is white on every rank theme, so "#15" is white where the others' are grey) and your name a weight heavier (700 for the
+   list's 600; on the podium every name is 700) - both re-keyed on [data-me="1"]. Neither is a background; no ring, no tag.
+4. THE FLASH (lbFlashRow, LB_FLASH_MS 1400): Find me scrolls to the row as before (smooth, centred) and lays ONE veil over it: a
+   span.rank-flash-veil, the row's border box (inset by the row's own border widths: a podium card has 1px sides) and its corners
+   (inherit), z-index -1 in a row isolated while it flashes - over its background and its tint, under its words; the theme's colour
+   (--rank-accent, white on the default) at 20%; only its opacity animates: 0 -> 1 by 16% -> 0, 1.4s, cubic-bezier(.33,0,.25,1). A second
+   tap removes the veil and starts a new one. A snapshot that rebuilds the board mid-flash hands the new row the veil part-way through
+   (negative delay), as 3.3s of scale-and-ring used to. It ends on its own animationend (only the veil's: animationend bubbles from the
+   row's pictures, 384's note) with a timer behind it. REDUCE MOTION: rank-veil-calm - the tint is there at once, holds .3s and fades by
+   1.2s; opacity only, and it out-ranks the global [data-reduce-motion] animation:none. The row no longer scales, rings or glows
+   (.rank-row.rank-flash is isolation only); the --lb-cell-under seam fill now stays on a flashing row too (it was off for the ring).
+
+ON HIS PHONE (85% page zoom; Chromium cannot show this): the Leaderboard's tools are zoomed by --zc (384), so the capsule lands 44pt
+tall there; the words are drawn by the zoom floor (--field-floor, 20px -> ~20pt) rather than at Apple's 17pt, as before - lowering
+that floor inside a zoomed block would risk iOS zooming in on the tap, so it is left. The units, room and Review fields are not in a
+--zc block (as before), so on his phone they are 85% of the Leaderboard's.
+
+GATE (new): tools/check-b384-searchbar.py - see its docstring. Fields found by shape (an input of type search, or one sharing its
+wrapper with an svg glyph), the button beside one by place (a button sibling of the wrapper on the field's line), the flash's overlay by
+shape (a painted absolute box covering the row); no label strings. A FLASH IS TIMED ON ITS OWN CLOCK AS WELL AS IN FRAMES: on this
+sandbox under load (load average 70-110) the page drew frames 1-6s apart after a tap, so a wall-clock "within 300ms" measured the
+machine - the first version of (8)/(9) failed that way on the branch with the overlay plainly there. The tap and every reading of the
+overlay's own animation now happen in one task (CLOCKRUN), and the frames are still read for what was drawn (the tint shows, the row's
+background never changes, it ends at 0, the row is on screen); a wall-clock 300ms is still required wherever the frames came regularly.
+GATES CHANGED ON PURPOSE: check-behaviour check_b304 found your row by .rank-row.lb-row-me; it reads [data-me="1"] (on both builds).
+SUPERSEDED: check-b382-board (it asked for your row's accent ring and wash); check-b383-feedback 4/5's "with a rim" (the clean look took
+the rim off before this).
+
+GATES (TMPDIR=/dev/shm, one at a time, on a shared machine at load 70-110):
+- check-js: 14 blocks ALL PASS. The page's console in every gate run: the two blocked Firebase CDN loads only, no page error.
+- check-b384-searchbar, the whole matrix (Pro Max both classes, iPad Pro 11" academy, 320x568 both classes, Pro Max on its side;
+  six screens each): every field check passed - (1) capsules, (2) ONE fill everywhere [rgba(118,118,128,.24)], (3) Find me / Select
+  all the field's height on its line, (4) 17px words and placeholders, (5) 44px targets and the x, (6) nothing over the edge at 320px
+  ("Search" 56px in a 104-122px text box), (7) your row as its neighbours (computed equal, pixels 0 off) on the phone and the iPad,
+  (11) no page errors. Its first-version flash checks failed on frame timing as above (and the iPad page crashed once, "Target
+  crashed", the machine out of memory); after the rewrite the board part, Pro Max and iPad: ALL PASS (37) - on its clock the tint is
+  .22 at 50ms, .92 at 150ms, 0 at 1400ms; a second tap at 700ms (.38) leaves one overlay, its clock at 0, back to 1.00.
+- --against origin/main 384.95 (Pro Max, academy, all six screens): FAILS (1) on five screens (corners 12px on 44px), (2) (two fills:
+  the clean card and the unit card's .07 white), (5) (Review's field has no x; the unit card's is a 55x36 "Clear" pill; its field no
+  magnifier), (7) both (your row 37 levels off its neighbours), (8) all three, (9), (10).
+- NOT RUN YET - the lead paused all browser work (the machine at load 80, ~220 Chrome processes): check-behaviour's board and Find me
+  sections (ONLY_FN=check_audit_a,check_b218,check_b304,check_b318_one_chat,check_b318h_legacy_rows,check_b324l_board - stopped before
+  its first result), check-fixes (--only "16 Pro Max", "SE (1st gen)", "iPad Pro 11"), check-centering --quick, sweep-layout --quick,
+  check-b384-searchink, check-b384-lbclean, check-sync's Find me, and the Find me clip.
+384.111 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm; the machine at load 3):
+- check-js 14 blocks ALL PASS; page console: only the sandbox's blocked CDN and the file: fetch.
+- sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (0 off centre).
+- check-b384-searchbar (the whole matrix) ALL PASS; `--against` main 384.107 FAILS (as on 384.95: (1), (2), (5), (7), (8)...).
+- check-b384-searchink ALL PASS; `--against` a copy of main 384.107 with APP_BUILD set to this branch's (the gate reads the repo's
+  version.json, so a build that differs from it reloads the page mid-run: the first --against run died on "Execution context was
+  destroyed") FAILS on (2), "level with Select all's words" (-1.33px on main). check-b384-lbclean ALL PASS.
+- check-sync ALL PASS (Find me included). check-fixes --only "iPhone 16 Pro Max" / "SE (1st gen)" / "iPad Pro 11": all fixes verified.
+- check-behaviour ONLY_FN=check_audit_a,check_b218,check_b304,check_b318_one_chat,check_b318h_legacy_rows,check_b324l_board: 11 failures
+  (no chat button found on the 13 screens / the race board / the Room button on both devices - the chat dock needs Firebase, blocked
+  here; "tapping Z opens the level-41 card" on the three boards and Friends - the card reads "Level 41 · 9 badges"; the board / person
+  / Profile flare check). The SAME 11 fail with `--against` main 384.107: pre-existing, not this build's.
+MEDIA: the Find me clip, before (main 384.107: your row stays lit after Find me) and after (this build: a one-time flash that fades),
+Hundos board with you #15 of 20, a real touch tap on Find me at 440x956, Playwright real-time video (scratchpad searchbar/findme-before-trim.mp4,
+findme-after-trim.mp4, sheets sheet-before.png / sheet-after.png). Chromium cannot show the real smoothness of the flash on a phone.
