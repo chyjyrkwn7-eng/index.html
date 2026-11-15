@@ -40235,7 +40235,12 @@ html.is-browser{ --fade-paper: transparent; }
     cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation;
   }
   .qcalc-glyph{ display:block; pointer-events:none; }
+  @supports (text-box: trim-both cap alphabetic){ .qcalc-glyph{ text-box:trim-both cap alphabetic; } }   /* the digits centred by their capitals' ink */
+  .qcalc-ic .qcalc-dot{ fill:currentColor; stroke:none; }
   .qcalc-key .qcalc-ic{ width:1.45rem; height:1.45rem; stroke-width:1.7; pointer-events:none; }
+  .qcalc-key:is(.is-op, .is-eq) .qcalc-ic{ width:1.35rem; height:1.35rem; stroke-width:2.3; }
+  .qcalc-key.is-eq .qcalc-ic{ width:1.55rem; height:1.55rem; stroke-width:2.4; }
+  .qcalc-key[data-k="neg"] .qcalc-ic{ width:1.2rem; height:1.2rem; stroke-width:2; }
   /* press: the key gives a little and lights from inside */
   .qcalc-key::after{ content:""; position:absolute; inset:0; border-radius:inherit; background:#FFFFFF; opacity:0; pointer-events:none; transition:opacity .28s ease; }
   .qcalc-key:active::after{ opacity:.16; transition:none; }
@@ -74653,11 +74658,17 @@ function qcalcPaint(evalNow){
 }
 function qcalcBuild(){
   const ns = "http://www.w3.org/2000/svg";
-  const icon = (d, cls) => {
+  const icon = (d, cls, dots) => {
     const sv = document.createElementNS(ns, "svg"); sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", cls); sv.setAttribute("aria-hidden", "true");
     d.forEach(p => { const e = document.createElementNS(ns, "path"); e.setAttribute("d", p); sv.appendChild(e); });
+    (dots || []).forEach(([cx, cy, r]) => { const e = document.createElementNS(ns, "circle"); e.setAttribute("cx", cx); e.setAttribute("cy", cy); e.setAttribute("r", r); e.setAttribute("class", "qcalc-dot"); sv.appendChild(e); });
     return sv;
   };
+  /* the signs are drawn, each centred on its own viewBox (a font sets them on the maths axis or the baseline, off the key's middle) */
+  const SIGNS = { "back": [["M8.5 6H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8.5L3 12z", "M11.5 9.5l5 5M16.5 9.5l-5 5"]],
+    "+": [["M12 5.5v13M5.5 12h13"]], "-": [["M5.5 12h13"]], "*": [["M7.4 7.4l9.2 9.2M16.6 7.4l-9.2 9.2"]],
+    "/": [["M5.5 12h13"], [[12, 6.4, 1.55], [12, 17.6, 1.55]]], "=": [["M6 9.2h12M6 14.8h12"]], "neg": [["M12 5v9M7.5 9.5h9M7.5 19h9"]],
+    ".": [[], [[12, 12, 2]]] };
   const el = document.createElement("div");
   el.className = "qcalc";
   el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Calculator"); el.setAttribute("aria-modal", "false");
@@ -74676,7 +74687,7 @@ function qcalcBuild(){
    ["neg", "±", "Change sign", "is-fn"], ["0"], [".", ".", "Decimal point"], ["+", "+", "Add", "is-op"]].forEach(([k, label, aria, cls]) => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "qcalc-key" + (cls ? " " + cls : ""); b.dataset.k = k;
-    if(k === "back") b.appendChild(icon(["M8.5 6H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8.5L3 12z", "M11.5 9.5l5 5M16.5 9.5l-5 5"], "qcalc-ic"));
+    if(SIGNS[k]) b.appendChild(icon(SIGNS[k][0], "qcalc-ic", SIGNS[k][1]));
     else { const s = document.createElement("span"); s.className = "qcalc-glyph"; s.textContent = label || k; b.appendChild(s); }
     if(aria) b.setAttribute("aria-label", aria);
     b.addEventListener("click", () => { qcalcPress(k); qcalcPaint(k === "=" || (k in QCALC_OPS)); });
