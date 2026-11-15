@@ -120993,7 +120993,16 @@ function ifcDropHalt(r){
   if(!r) return;
   clearTimeout(r.timer); r.timer = 0;
   if(r.ro){ try{ r.ro.disconnect(); }catch(e){} r.ro = null; }
-  if(ifcDropRun === r) ifcDropRun = null;
+  if(ifcDropRun === r){ ifcDropRun = null; ifcAnchorBack(); }
+}
+/* (384.129) NO SCROLL ANCHORING WHILE A BOX MOVES. A browser that anchors (Chromium; Safari does not) keeps whatever it picked on
+   the screen still when the layout above it changes - so a box opened in one layout under an anchor (Answer Review's unit with
+   its heading at the top of the screen) scrolled the page by the whole unit while the move's own `translate` held what is under it,
+   and the screen landed tens of thousands of pixels down. Off from the tap to two frames after the move's last layout, as an
+   iPhone has it always. */
+function ifcAnchorOff(){ try{ document.documentElement.style.overflowAnchor = "none"; }catch(e){} }
+function ifcAnchorBack(){
+  try{ requestAnimationFrame(() => requestAnimationFrame(() => { if(!ifcDropRun) document.documentElement.style.overflowAnchor = ""; })); }catch(e){}
 }
 /* what a move (and the one it took over from) shows this frame, then its animations cancelled */
 function ifcDropCollect(r, at){
@@ -121019,6 +121028,7 @@ function ifcDropSettleNow(){
 function ifcDropBegin(chrome, done, prev){
   const run = { chrome, anims: [], timer: 0, done: done || null, ro: null, prev: prev || null };
   ifcDropRun = run;
+  ifcAnchorOff();
   return run;
 }
 /* the move on the same box that this one takes over from (its end dropped, its look read in the first frame) */
@@ -121134,7 +121144,7 @@ function ifcDropShut(chrome, d, done, cap){
         const group = el === before[0] ? before.concat([chrome]) : el === after[0] ? after : el === chrome ? (before.length ? [] : [chrome]) : [el];
         group.forEach(g => ifcDropAdd(fix, g, ifcDropMove(g, vis[i] - lay[i], 0, 180)));
       });
-      if(!fix.anims.length) ifcDropRun = null;
+      if(!fix.anims.length){ ifcDropRun = null; ifcAnchorBack(); }
       else fix.timer = setTimeout(() => { if(ifcDropRun === fix) ifcDropStop(); }, 220);
     }, IFC_DROP_MS + 20);
   });

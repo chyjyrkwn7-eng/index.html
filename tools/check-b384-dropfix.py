@@ -94,7 +94,7 @@ WATCH = r"""([sels, ms]) => {
     return [cs.display === 'none' ? 'none' : '', Math.round(r.top * 2) / 2, Math.round(r.height * 2) / 2, cs.clipPath, cs.translate, cs.transform, cs.opacity, cs.maxHeight,
             el.children.length < 3 ? (el.textContent || '').slice(0, 40) : el.children.length].join('|'); };
   const sig = () => sels.map(one).join(' # ');
-  M.sig0 = sig();
+  M.sig0 = sig(); M.sy0 = scrollY;
   const t0 = performance.now();
   const f = t => { setTimeout(() => {
       document.getAnimations().forEach(a => { if(old.has(a)) return; const ps = [];
@@ -102,7 +102,7 @@ WATCH = r"""([sels, ms]) => {
         else try{ a.effect.getKeyframes().forEach(k => Object.keys(k).forEach(p => { if(!['offset', 'easing', 'composite', 'computedOffset'].includes(p) && !ps.includes(p)) ps.push(p); })); }catch(e){}
         const tg = a.effect && a.effect.target; const nm = tg ? (tg.id ? '#' + tg.id : '.' + String(tg.className && tg.className.baseVal != null ? tg.className.baseVal : tg.className).split(' ')[0]) : '?';
         ps.forEach(p => { M.props[p] = (M.props[p] || 0) + 1; (M.who[p] = M.who[p] || {})[nm] = 1; }); });
-      M.frames.push([t, sig()]); }, 0);
+      M.frames.push([t, sig(), scrollY]); }, 0);
     if(performance.now() - t0 < ms) requestAnimationFrame(f); };
   requestAnimationFrame(f);
 }"""
@@ -181,15 +181,15 @@ def measure(pg, cdp, name, sels, tap_at, ms=1500, settle_wait=1900, layout_kind=
         print("     incl:", sorted(inc.items(), key=lambda kv: -kv[1])[:24])
     else: ev = trace_end(cdp, st, pg)
     m1 = {d["name"]: d["value"] for d in cdp.send("Performance.getMetrics")["metrics"]}
-    M = pg.evaluate("()=>{ const M = window.__dm; M.mo.disconnect(); return { ts: M.ts, te: M.te, ck: M.ck, frames: M.frames, props: M.props, who: M.who, addedTap: M.addedTap, sig0: M.sig0 }; }")
+    M = pg.evaluate("()=>{ const M = window.__dm; M.mo.disconnect(); return { ts: M.ts, te: M.te, ck: M.ck, frames: M.frames, props: M.props, who: M.who, addedTap: M.addedTap, sig0: M.sig0, sy0: M.sy0 }; }")
     tr = analyse_trace(ev)
     te = M["te"] or M["ck"]
     fr = [f for f in M["frames"] if te is not None and f[0] >= te - 1]
     if os.environ.get("DF_DEBUG"):
         print("     te", te, "ts", M["ts"], "ck", M["ck"], "frames", len(M["frames"]), "after", len(fr), "\n     sig0", M["sig0"][:300])
-        for t, s in fr[:12]: print("     %.1f %s" % (t - (te or 0), s[:300]))
+        for t, s, *_ in fr[:12]: print("     %.1f %s" % (t - (te or 0), s[:300]))
     prev = M["sig0"]; first = None; last = None; nch = 0
-    for t, s in fr:
+    for t, s, *_ in fr:
         if s != prev:
             nch += 1
             if first is None: first = t
@@ -197,13 +197,13 @@ def measure(pg, cdp, name, sels, tap_at, ms=1500, settle_wait=1900, layout_kind=
         prev = s
     # the box itself (the second thing watched): the first frame it changes - the move under way, not only the pill's words
     bfirst = None; b0 = M["sig0"].split(" # ")[1:2]
-    for t, s in fr:
+    for t, s, *_ in fr:
         if s.split(" # ")[1:2] != b0: bfirst = t; break
     row = {"name": name, "first": (first - te) if first is not None and te is not None else None,
            "box": (bfirst - te) if bfirst is not None and te is not None else None,
            "settled": (last - te) if last is not None and te is not None else None, "frames": nch,
            "props": sorted(M["props"].keys()), "who": M["who"], "added": M["addedTap"],
-           "layouts": m1.get("LayoutCount", 0) - m0.get("LayoutCount", 0), "styles": m1.get("RecalcStyleCount", 0) - m0.get("RecalcStyleCount", 0)}
+           "jump": max([abs(f[2] - M["sy0"]) for f in M["frames"]] or [0]), "layouts": m1.get("LayoutCount", 0) - m0.get("LayoutCount", 0), "styles": m1.get("RecalcStyleCount", 0) - m0.get("RecalcStyleCount", 0)}
     row.update(tr)
     rows.append(row)
     f = lambda v, d=1: "-" if v is None else ("%.*f" % (d, v))
@@ -222,6 +222,9 @@ def judge(row, kind="move", settle=SETTLE_MS, nodes_max=None):
     bad = [p for p in row["props"] if p not in ALLOWED]
     chk("(c) %s: only compositor properties animate (%s) and the page is laid out in %s of the ten 33ms slices (<= 3)" % (n, ",".join(row["props"]) or "none", row["slices"]),
         not bad and row["slices"] is not None and row["slices"] <= 3, {"bad": bad, "who": row["who"], "slices": row["slices"]})
+    if "opening" in n:
+        # an opening never scrolls the page (a browser's scroll anchoring under a box opened in one layout did: tens of thousands of px)
+        chk("(f) %s: the page does not scroll (%.0fpx at most)" % (n, row["jump"]), row["jump"] < 2, row["jump"])
     if kind == "move":
         chk("(d) %s: settled %s ms after the lift (<= %d)" % (n, row["settled"] and round(row["settled"]), settle), row["settled"] is not None and row["settled"] <= settle, row)
 
@@ -305,12 +308,16 @@ def fire_code(br):
             # the unit with the most questions (the heaviest list a tap opens)
             pg.evaluate("""()=>{ let best = null, n = -1; document.querySelectorAll('.cal-month-sect').forEach(s => { const h = s.querySelector('.cal-month-head');
               const lab = h && h.textContent || ''; const c = QUESTIONS.filter(q => (q.topic || '').trim() === lab.trim()).length; if(h && c > n){ n = c; best = h; } });
-              document.querySelectorAll('.cal-month-head').forEach(h => h.removeAttribute('data-df')); if(best) best.setAttribute('data-df', '1'); }""")
+              document.querySelectorAll('.cal-month-head').forEach(h => h.removeAttribute('data-df')); if(best){ best.setAttribute('data-df', '1'); const nx = best.closest('.cal-month-sect').nextElementSibling; if(nx) nx.setAttribute('data-dfn', '1'); } }""")
             HD = ".cal-month-head[data-df]"
             BODY = "~.cal-month-head[data-df] + .cal-month-body"
-            NEXT = "~.cal-month-sect:has(.cal-month-head[data-df]) + .cal-month-sect"
+            NEXT = "~.cal-month-sect[data-dfn]"
             for nm in ("an Answer Review unit opening (its questions listed)", "an Answer Review unit shutting"):
-                c = centre(pg, HD, "center"); pg.wait_for_timeout(600)
+                # the heading near the top of the screen, under the top row (where a browser that anchors scrolling picks what is
+                # under it as its anchor), as a person scrolls a long list to a unit
+                c = pg.evaluate("""(s)=>{ const e = document.querySelector(s); const r0 = e.getBoundingClientRect();
+                  scrollTo({ top: scrollY + r0.top - 130, behavior: 'instant' }); const r = e.getBoundingClientRect();
+                  return [r.left + Math.min(r.width / 2, 120), r.top + r.height / 2]; }""", HD); pg.wait_for_timeout(600)
                 r = measure(pg, cdp, nm, [HD, BODY, NEXT], c, settle_wait=1800)
                 # at most a screenful made in the tap (six questions not made ahead yet; ~45 elements each) - never the unit
                 judge(r, nodes_max=REVIEW_NODES_MAX)

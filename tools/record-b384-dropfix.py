@@ -142,7 +142,7 @@ def review(br):
     pg.wait_for_timeout(3000)
     pg.evaluate("""()=>{ let best = null, n = -1; document.querySelectorAll('.cal-month-sect').forEach(s => { const h = s.querySelector('.cal-month-head');
       const lab = h && h.textContent || ''; const c = QUESTIONS.filter(q => (q.topic || '').trim() === lab.trim()).length; if(h && c > n){ n = c; best = h; } });
-      if(best){ best.setAttribute('data-df', '1'); best.scrollIntoView({ block: 'start', behavior: 'instant' }); } }""")
+      if(best){ best.setAttribute('data-df', '1'); const r0 = best.getBoundingClientRect(); scrollTo({ top: scrollY + r0.top - 130, behavior: 'instant' }); } }""")
     pg.wait_for_timeout(800)
     rec = Rec(cdp)
     cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
