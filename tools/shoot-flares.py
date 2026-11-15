@@ -191,44 +191,7 @@ def main():
                     spark.click()
                     pg.wait_for_timeout(700)
                     pg.screenshot(path="%s/%s-3-flare-found.png" % (OUT, label))
-                    # The third one is the one that matters.
-                    pg.evaluate("""()=>{ store.mysteryColorsFound =
-                        { red:true, orange:true, yellow:false };
-                        mysteryFoundThisSession = false; mysteryColorThisRun = 'yellow';
-                        showFlareFoundBanner('yellow', true); }""")
-                    pg.wait_for_timeout(700)
-                    pg.screenshot(path="%s/%s-4-void-unlocked.png" % (OUT, label))
-                    # This is the only banner in the app that lands on a
-                    # QUESTION, so the one thing worth measuring is
-                    # whether it is sitting on the counter, the Pause
-                    # button, the meter or the flag - the controls.
-                    # .qnumrow itself is deliberately NOT in this list:
-                    # topNoticeOffset() parks the banner directly under
-                    # the meter, which is as high as it can go, and what
-                    # it then overlaps is the words "Question 1". Lower
-                    # would cover the question itself. A label is the
-                    # right thing to cover for five seconds; a control
-                    # is not. Fixed-position elements
-                    # render oddly in fullPage captures, so it is
-                    # measured rather than eyeballed.
-                    hit = pg.evaluate("""()=>{
-                      const b = document.querySelector('.flare-banner');
-                      if(!b) return ['no banner'];
-                      const r = b.getBoundingClientRect();
-                      /* A banner that cannot take a tap cannot steal
-                         one, so an overlap is only a defect while it
-                         is interactive. */
-                      if(getComputedStyle(b).pointerEvents === 'none') return [];
-                      return [...document.querySelectorAll(
-                        '.wrap > .top, .wrap > .count, .wrap > .meter, #timerline, .flagbtn')]
-                        .filter(e => { const q = e.getBoundingClientRect();
-                          return q.width && q.height &&
-                            !(r.right <= q.left || r.left >= q.right ||
-                              r.bottom <= q.top || r.top >= q.bottom); })
-                        .map(e => e.className || e.id);}""")
-                    if hit:
-                        print("  !! %s: the flare banner is sitting on %s"
-                              % (label, hit))
+                    # (384.108) the mid-test flare banner (showFlareFoundBanner) is gone: it had no caller, so there is no void-unlocked banner to shoot.
 
                 # Home, with all three orbit dots lit.
                 pg.evaluate("""()=>{ store.mysteryColorsFound =

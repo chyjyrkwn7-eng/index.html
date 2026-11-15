@@ -31,7 +31,7 @@ For each device and screen, each pop-up is opened by the app's own function and 
               28px or more) dismisses it; a tap on the chat button's place while one shows does nothing to the chat;
  (9) no page errors.
 Pop-ups: the daily alert ("Done for today"), Find me's answer, the rank-up banner, a toast said at the top, a battle alert, a
-Virtual Room chat alert, the tier banner (showTierUpBanner), the answer-streak pop (a question), the update notice and the re-add
+Virtual Room chat alert, the answer-streak pop (a question), the update notice and the re-add
 notice (Home: they are gated to Welcome and Home).
 Devices: installed iPhone 17 Pro Max (440x956, 62/34 simulated, the inset 384.95 measured), installed SE-size (375x667, 20/0), an installed 320px phone
 (320x568, 20/0), installed iPad Pro 11" (834x1194, 24/20), and the Safari-tab model (440x797, no insets, not installed).
@@ -73,7 +73,6 @@ POPS = {
     "daily":   ("()=>showDailyAlert('Done for today \\u2014 the next one is in 1h 42m, at 5pm', {kind:'daily', stay: 60000})", "#dailyalert"),
     "findme":  ("()=>showDailyAlert('You are 4th on the Level board \\u2014 keep going', {kind:'rankings', stay: 60000})", "#dailyalert"),
     "rankup":  ("()=>showDailyAlert('Your profile needs you \\u2014 open Profile to see your rank up', {kind:'rankup', stay: 60000})", "#dailyalert"),
-    "tierup":  ("()=>{ theme.muteBanners = false; showTierUpBanner('adept'); }", ".tierup-banner"),
     "toast":   ("()=>{ document.body.classList.add('chatdock-open'); showToast('Chat muted'); }", "#toast"),
     "battle":  ("()=>battleAlert('Lev used Freeze', 'is-freeze')", ".battle-alert"),
     "vchat":   ("()=>{ const b = document.createElement('div'); b.className = 'vroom-chat-alert is-ping'; dressMessageAlert(b, { kind: 'chat', tag: 'MESSAGE', title: 'Lev', sub: 'ready?' }); document.body.appendChild(b); b.style.transition='none'; placeTopBanner(b); void b.offsetHeight; b.style.transition=''; requestAnimationFrame(()=>b.classList.add('show')); }", ".vroom-chat-alert"),
@@ -242,7 +241,7 @@ def dismiss_checks(pg, name):
     chk("%s: a tap on the x closes the pop-up (x at %s)" % (lab, xc), bool(xc) and gone(pg, "#dailyalert"), xc)
     pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     # a swipe up on each kind of pop-up
-    for key in ("findme", "daily", "update", "tierup", "toast", "battle", "vchat"):
+    for key in ("findme", "daily", "update", "toast", "battle", "vchat"):
         pg.evaluate(CLEAR); pg.wait_for_timeout(250)
         pg.evaluate(POPS[key][0]); pg.wait_for_timeout(1100); settle(pg, POPS[key][1])
         c = centre(pg, POPS[key][1])
@@ -298,7 +297,7 @@ def run(br):
                 p, c = d["pop"], d["chat"]
                 if not p:
                     chk(lab + ": shown", False, d); pg.evaluate(CLEAR); continue
-                if SHOTS and scr == "home" and key in ("daily", "update", "rankup", "tierup") and name in ("promax", "ipad11", "p320"):
+                if SHOTS and scr == "home" and key in ("daily", "update", "rankup") and name in ("promax", "ipad11", "p320"):
                     pg.screenshot(path=os.path.join(SHOTS, "%s_%s_%s.png" % (TAG, name, key)))
                 if SHOTS and key in ("daily", "streak") and name in ("promax", "ipad11", "p320") and scr != "home":
                     pg.screenshot(path=os.path.join(SHOTS, "%s_%s_%s_%s.png" % (TAG, name, scr, key)))

@@ -110,6 +110,12 @@ him, every time, without asking why:
    the environment that has it will work. Never guess a code.
 Codes only ever go in the chat reply. Never ask for or print the key.
 
+## Fire Code source books
+
+The IFC 2021 book and the Harris County amendments PDFs are NOT in the repo (copyright). The owner re-sends them each session; when
+present they are extracted at `/home/user/ifc-book/`. Before changing any IFC question or citation, check it against the book.
+Never commit them.
+
 ## Verifying (empirically, every time)
 
 Run gates one at a time (they are timing-sensitive under load):

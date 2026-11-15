@@ -41462,7 +41462,7 @@ html.is-browser{ --fade-paper: transparent; }
     width:auto; max-width:24rem; margin:0 auto; box-sizing:border-box; padding:.55rem;
     border-radius:1.6rem; color:var(--ink);
     background:var(--sheet-bg); border:var(--sheet-border);
-    box-shadow:var(--sheet-shadow), 0 16px 44px -18px color-mix(in srgb, var(--qcalc-hue) 55%, transparent);
+    box-shadow:var(--sheet-shadow);   /* (384.131 frostfix) the shared pop-up glass exactly: no hue glow of its own */
     -webkit-backdrop-filter:var(--sheet-blur); backdrop-filter:var(--sheet-blur);
     opacity:0; transform:translateY(18px) scale(.96); transform-origin:85% 100%; pointer-events:none;
     font-variant-numeric:tabular-nums; -webkit-user-select:none; user-select:none;
@@ -102729,57 +102729,6 @@ function foundMysteryFlare(btn){
   }
 }
 
-function showFlareFoundBanner(color, all){
-  if(theme.muteBanners){ celebrationsOffBanner([{ kind: "flare" }]); return; }
-  const banner = document.createElement("div");
-  banner.className = "tierup-banner flare-banner";
-  banner.style.setProperty("--tier-color", MYSTERY_COLOR[color]);
-  const icon = document.createElement("div");
-  icon.className = "tierup-banner-icon";
-  /* The same orb that was tapped, not a second drawing of one - the
-     thing you found and the thing the banner shows cannot drift. */
-  icon.appendChild(buildFlareOrb(MYSTERY_COLOR[color], "bn"));
-  const text = document.createElement("div");
-  const kicker = document.createElement("p");
-  kicker.className = "tierup-banner-kicker";
-  kicker.textContent = all ? "THREE FOUND" : "SECRET FLARE";
-  const name = document.createElement("p");
-  name.className = "tierup-banner-name";
-  name.textContent = all
-    ? "Void unlocked"
-    /* no "of 6" (build 326): more come into view as you find them */
-    : MYSTERY_NAME[color] + " \u2014 the " + (recapOrdinal(mysteryColorsFoundCount()) || "next") + " you\u2019ve found";
-  text.append(kicker, name);
-  banner.append(icon, text);
-  document.body.appendChild(banner);
-  /* THIS IS THE ONLY BANNER IN THE APP THAT APPEARS MID-TEST, which is
-     why it measures its way down and the rank-up banner it shares CSS
-     with does not. A rank-up lands on the results screen, whose top is
-     empty; this one lands on a question, whose top carries the counter,
-     the Pause button and the progress meter - and at the shared CSS
-     offset it sat squarely on all three. Same `topNoticeOffset()` the
-     update notice and the daily alert already share, so there is one
-     answer to "what is along the top of this screen" rather than three.
-     Applied with transitions suppressed for a frame so it is already in
-     place when it fades in, rather than sliding down into position. */
-  const top = topNoticeOffset(banner);
-  if(top != null){
-    banner.style.transition = "none";
-    banner.style.top = Math.round(top) + "px";
-    void banner.offsetHeight;
-    banner.style.transition = "";
-  }
-  requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
-  const dismiss = () => {
-    banner.classList.remove("tierup-banner-show");
-    setTimeout(() => banner.remove(), 400);
-  };
-  /* No click-to-dismiss: .flare-banner is pointer-events:none so it
-     cannot receive one, and a listener that can never fire is worse
-     than no listener - it reads as a feature. */
-  setTimeout(dismiss, 5000);
-}
-
 /* The Practice Test is a fixed, one-tap simulation of the real exam: 250
    random questions across every unit, 90 minutes on the clock. It reuses
    the normal exam flow (no feedback, no retry) but needs its own forced
@@ -113236,97 +113185,9 @@ function playTierCutscene(tierKey, opts){
    an owed find by showHome(), which Home's queue plays like any other -
    see oweFlareFind. (The #void-cutscene CSS has been unused since 317.) */
 
-/* The banner announcing the level-up itself, shown right after
-   landing back on Home following the cutscene \\u2014 the icon, the
-   tier's own color, and its name, rather than a plain toast. Reuses
-   the existing contextual-popup Liquid Glass styling so it matches
-   everything else rather than introducing a new visual language. */
-/* THE CHARACTER IS IN THE BANNER. Asked for directly: "The unlock
-   banner when unlocking the characters should show the character in the
-   unlock banner by the way." This is the same mistake the rank-up
-   banner made once and was corrected for - it announced a rank and drew
-   the flare that rank hands over - so it is drawn here from
-   buildAvatarCharSVGSafe, the same builder every other screen uses, and
-   never from a second copy of the artwork.
-   No coin behind it, for the reason the badge banner already has none:
-   a character brings its own halo now, and a disc of somebody else's
-   colour behind it fights with that. */
-/* A THEME UNLOCK SHOWS ITS COLOUR. Every other unlock banner now shows
-   the thing it hands over - the rank its emblem, the badge its badge,
-   the character its artwork - and a colour was the one announcing
-   itself in words. It reuses ACCENT_SWATCH, the same value the dot in
-   Settings uses, so the banner and the dot you go and tap cannot be
-   two different colours. */
-function showThemeUnlockBanner(tierKey){
-  if(theme.muteBanners){ celebrationsOffBanner([{ kind: "theme", name: ACCENT_DISPLAY_NAME[tierKey] || tierKey }]); return; }
-  const swatch = ACCENT_SWATCH[tierKey];
-  if(!swatch) return;
-  const banner = document.createElement("div");
-  banner.className = "tierup-banner themeup-banner";
-  banner.style.setProperty("--tier-color", swatch);
-  const icon = document.createElement("div");
-  icon.className = "tierup-banner-icon themeup-banner-icon";
-  const dot = document.createElement("span");
-  dot.className = "themeup-banner-dot";
-  icon.appendChild(dot);
-  const text = document.createElement("div");
-  const kicker = document.createElement("p");
-  kicker.className = "tierup-banner-kicker"; kicker.textContent = "THEME UNLOCKED";
-  const name = document.createElement("p");
-  name.className = "tierup-banner-name";
-  name.textContent = ACCENT_DISPLAY_NAME[tierKey] || tierKey;
-  text.append(kicker, name);
-  banner.append(icon, text);
-  document.body.appendChild(banner);
-  const top = topNoticeOffset(banner);
-  if(top != null){
-    banner.style.transition = "none";
-    banner.style.top = Math.round(top) + "px";
-    void banner.offsetHeight;
-    banner.style.transition = "";
-  }
-  requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
-  const dismiss = () => {
-    banner.classList.remove("tierup-banner-show");
-    setTimeout(() => banner.remove(), 400);
-  };
-  banner.addEventListener("click", dismiss);
-  setTimeout(dismiss, 5000);
-}
-
-function showCharacterUnlockBanner(id){
-  markUnlocksShown([id], []);
-  if(theme.muteBanners){ celebrationsOffBanner([characterUnlockItem(id)]); return; }
-  const banner = document.createElement("div");
-  banner.className = "tierup-banner charup-banner";
-  banner.style.setProperty("--tier-color", avatarGlowColor(id));
-  const icon = document.createElement("div");
-  icon.className = "tierup-banner-icon charup-banner-icon";
-  icon.appendChild(buildAvatarCharSVGSafe(id));
-  const text = document.createElement("div");
-  const kicker = document.createElement("p");
-  kicker.className = "tierup-banner-kicker"; kicker.textContent = "CHARACTER UNLOCKED";
-  const name = document.createElement("p");
-  name.className = "tierup-banner-name";
-  name.textContent = AVATAR_DISPLAY_NAME[id] || id;
-  text.append(kicker, name);
-  banner.append(icon, text);
-  document.body.appendChild(banner);
-  const top = topNoticeOffset(banner);
-  if(top != null){
-    banner.style.transition = "none";
-    banner.style.top = Math.round(top) + "px";
-    void banner.offsetHeight;
-    banner.style.transition = "";
-  }
-  requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
-  const dismiss = () => {
-    banner.classList.remove("tierup-banner-show");
-    setTimeout(() => banner.remove(), 400);
-  };
-  banner.addEventListener("click", dismiss);
-  setTimeout(dismiss, 5200);
-}
+/* (384.108) THE DEAD BANNERS ARE GONE: showTierUpBanner (rank up), showThemeUnlockBanner, showCharacterUnlockBanner and showFlareFoundBanner, with the two
+   functions only they called (announceCharacterUnlocks, showChallengeUnlock). None had a caller; every unlock is announced by the results' spotlight
+   (playUnlockSpotlight) or, with banners muted, celebrationsOffBanner. The .tierup-banner rules stay: they are inert and other selectors name them. */
 
 /* Which characters are locked right now, as a Set, so a caller can diff
    either side of whatever it is about to do. Same shape and the same
@@ -113335,81 +113196,6 @@ function showCharacterUnlockBanner(id){
    others. */
 function lockedCharacterSet(){
   return new Set(AVATAR_CHARACTERS.filter(c => isLockedCharacter(c.id)).map(c => c.id));
-}
-
-/* Void is deliberately NOT announced by a banner: it gets the cutscene
-   on the main menu instead, which is a bigger moment and was asked for
-   as one. Everything else queues a banner. */
-function announceCharacterUnlocks(before){
-  AVATAR_CHARACTERS.forEach(c => {
-    if(!before.has(c.id)) return;
-    if(isLockedCharacter(c.id)) return;
-    if(c.id === "voidwalker") return;
-    if(c.feat) showChallengeUnlock(c.id);
-    else showCharacterUnlockBanner(c.id);
-  });
-}
-/* A CHALLENGE CHARACTER EARNED OUTSIDE A RESULTS SCREEN - the daily
-   question's Detective - gets the same centre-screen challenge card the
-   results use, not a pill at the top: "when you unlock the daily question
-   character, make the banner cooler, and ensure that the banner says what
-   the challenge was. Call of duty style." */
-function showChallengeUnlock(id){
-  markUnlocksShown([id], []);
-  if(theme.muteBanners){ celebrationsOffBanner([characterUnlockItem(id)]); return; }
-  setTimeout(() => {
-    try{
-      playUnlockSpotlight({ kind: "character", character: id, feat: true, kicker: "Character unlocked",
-        name: AVATAR_DISPLAY_NAME[id] || id, sub: "Yours to pick in Customize",
-        need: characterChallenge(id), color: avatarGlowColor(id),
-        art: () => buildAvatarCharSVGSafe(id) }, 1, 1, () => {});
-    }catch(e){ showCharacterUnlockBanner(id); }
-  }, 1200);
-}
-
-function showTierUpBanner(tierKey){
-  /* Respects the mute setting \u2014 per explicit clarification, muting
-     achievement banners should only suppress banners like this one,
-     never the cutscene itself, which already plays regardless (it's
-     never gated on this setting anywhere in its own trigger logic).
-     This banner specifically was the one actual gap: it never
-     checked the setting at all before now. */
-  if(theme.muteBanners) return;
-  const banner = document.createElement("div");
-  banner.className = "tierup-banner";
-  banner.style.setProperty("--tier-color", ACCENT_SWATCH[tierKey]);
-  const icon = document.createElement("div");
-  icon.className = "tierup-banner-icon";
-  /* The RANK's emblem, not the flare's icon. This banner announces a
-     rank and was drawing the thing that rank hands over, which are two
-     different objects with two different names - see the Ranks section
-     of CLAUDE.md. Reported directly off a screenshot of the Silver one:
-     "if that's a rank up then the actual rank needs to be shown not the
-     flare". */
-  icon.appendChild(buildRankEmblemSVG(tierKey));
-  const text = document.createElement("div");
-  const kicker = document.createElement("p");
-  kicker.className = "tierup-banner-kicker"; kicker.textContent = "RANK UP";
-  const name = document.createElement("p");
-  name.className = "tierup-banner-name"; name.textContent = RANK_DISPLAY_NAME[tierKey];
-  text.append(kicker, name);
-  banner.append(icon, text);
-  document.body.appendChild(banner);
-  /* (384.91) on the pop-up line like every other banner (it had no placement and sat in the system's wash, over the chat button) */
-  const top = topNoticeOffset(banner);
-  if(top != null){
-    banner.style.transition = "none";
-    banner.style.top = Math.round(top) + "px";
-    void banner.offsetHeight;
-    banner.style.transition = "";
-  }
-  requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
-  const dismiss = () => {
-    banner.classList.remove("tierup-banner-show");
-    setTimeout(() => banner.remove(), 400);
-  };
-  banner.addEventListener("click", dismiss);
-  setTimeout(dismiss, 5000);
 }
 
 function playSupernovaCutscene(opts){
@@ -129272,7 +129058,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.102";
+const APP_BUILD = "2026-11-13-384.133";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
