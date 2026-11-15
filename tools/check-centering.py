@@ -475,6 +475,8 @@ SCREENS = [
     {"name": "units/picked", "js": "cfg.mode='drill'; cfg.units=[]; showSetup(); setTimeout(()=>{ const c=document.querySelector('.picks > label.pick input'); c && c.click(); }, 500);", "wait": 1500, "ready": "document.querySelector('#stage .picks')"},
     # a test: the question, an answer, the pause card, the results
     {"name": "test/question", "js": "__czs.run();", "wait": 4200, "ready": "document.body.classList.contains('has-active-question')", "clear": False},
+    # (384.125) Fire Code's calculator open mid-sum (the academy has none: nothing opens there)
+    {"name": "test/calculator", "js": "const b=document.querySelector('#stage .qcalc-btn'); if(b){ b.click(); ['4','2','0','0','/','7'].forEach(k=>document.querySelector('.qcalc-key[data-k=\"'+k+'\"]').click()); }", "wait": 900, "clear": False},
     {"name": "test/answered", "js": "const c=[...document.querySelectorAll('#stage .choice, #stage .choices button, #stage label.choice')].find(e=>e.getBoundingClientRect().height>20); c && c.click();", "wait": 1600, "clear": False},
     {"name": "test/paused", "js": "__czs.tap('#pausebtn');", "wait": 1200, "ready": "document.querySelector('.pause-card, .paused, #paused, .screen-paused, [class*=pause]')", "clear": False},
     {"name": "results", "js": "try{ order.forEach(qi=>{ attempts[qi]=1; }); pos=order.length; summarize(); }catch(e){ throw e; }", "wait": 5200, "ready": "document.querySelector('#stage .rs-grade, #stage [class*=result]')"},
