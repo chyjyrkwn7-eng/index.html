@@ -162,6 +162,13 @@ with sync_playwright() as pw:
     pg.evaluate(OPEN); pg.wait_for_timeout(400); p0 = pg.evaluate("()=>pos"); was = is_open()
     pg.evaluate("()=>{ advance(); }"); pg.wait_for_timeout(500)
     chk("(D) the next question closes it (pos %s -> %s)" % (p0, pg.evaluate("()=>pos")), was and not is_open() and pg.evaluate("()=>pos") == p0 + 1)
+    # the slide to the next question with it open (motion on): it goes, the slide finishes clean, the new question has its button
+    pg.evaluate("()=>{ theme.reduceMotion=false; applyTheme(); const r=correctSlot(order[pos]); const c=document.querySelector('#stage .choice[data-index=\\\"'+r+'\\\"]'); if(c && !c.disabled) c.click(); }"); pg.wait_for_timeout(500)
+    pg.evaluate(OPEN); pg.wait_for_timeout(400); p0 = pg.evaluate("()=>pos")
+    pg.evaluate("()=>advanceWithSlide()"); pg.wait_for_timeout(1200)
+    sl = pg.evaluate("()=>({ pos, sliding: document.documentElement.classList.contains('q-sliding'), clones: document.querySelectorAll('.q-slide-clone').length, open: !!document.querySelector('.qcalc.is-open'), btn: document.querySelectorAll('#stage .qcalc-btn').length, room: document.documentElement.classList.contains('qcalc-room') })")
+    chk("(D) the slide to the next question with it open: closed, slide done clean, the new question has its button (%s)" % sl,
+        sl["pos"] == p0 + 1 and not sl["sliding"] and not sl["clones"] and not sl["open"] and sl["btn"] == 1 and not sl["room"], sl)
     pg.evaluate(OPEN); pg.wait_for_timeout(400); pg.evaluate("()=>showHome()"); pg.wait_for_timeout(600)
     chk("(D) navigation (Home) clears it from <body>", gone() and not pg.evaluate("()=>document.querySelectorAll('.qcalc-btn').length"))
     # (E) theme
