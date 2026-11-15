@@ -40150,6 +40150,114 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid color-mix(in srgb, var(--cbc) 44%, rgba(255,255,255,.16)) !important;
     box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 10px 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 9px color-mix(in srgb, var(--cbc) 22%, transparent) !important;
   }
+
+  /* ==== THE FIRE CODE CALCULATOR (384.125; see buildQuestionCalc) ====================================================
+     The button is the star's twin: the same 2.8rem round glass, the same soft white line drawing, lifted into the same corner
+     just left of it; lit in the theme's colour while its panel is open. The panel is the sheet glass every pop-up wears, with
+     the theme's triad as a lit edge along its top, and the operators and equals in the theme's own colour (the colour the
+     toggles use, 384.107: a rank's --rank-accent, the default's orange). Opening is transform and opacity only, from a
+     resting state that is the closed one, so the in-app Reduce motion switch (transitions off) simply shows it open. */
+  .qcalc-btn, .qcalc{ --qcalc-hue:var(--rank-accent, var(--theme-c2)); --qcalc-ink:var(--rank-accent-ink, #1C1208); }
+  html[data-layout] .qcalc-btn{
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+    width:2.8rem; height:2.8rem; padding:0; margin-left:auto; border:none; border-radius:50%;
+    background:rgba(255,255,255,.05); box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
+    color:rgba(236,239,245,.5); cursor:pointer; -webkit-tap-highlight-color:transparent;
+    transition:transform .1s ease, background-color .25s ease, box-shadow .25s ease, color .25s ease;
+  }
+  html[data-layout] .qnumrow > .qcalc-btn{ margin-top:-1.15rem; margin-bottom:-.4rem; }
+  html[data-layout] .qnumrow:has(> .qnum) > .qcalc-btn{ position:relative; top:-1.75rem; left:.69rem; }
+  html[data-layout] .qnumrow > .qcalc-btn + .flagbtn.qflag{ margin-left:0; }   /* the row's own gap between the two */
+  html[data-layout] .qnumrow .race-qclock + .qcalc-btn{ margin-left:0; }
+  .qcalc-btnic{ width:1.55rem; height:1.55rem; overflow:visible; }
+  .qcalc-btn-body{ fill:none; stroke:currentColor; stroke-width:1.6; }
+  .qcalc-btn-scr, .qcalc-btn-dot{ fill:currentColor; stroke:none; }
+  html[data-layout] .qcalc-btn.is-open{
+    color:color-mix(in srgb, var(--qcalc-hue) 80%, #FFFFFF);
+    background:color-mix(in srgb, var(--qcalc-hue) 14%, transparent);
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--qcalc-hue) 45%, transparent) inset, 0 0 12px color-mix(in srgb, var(--qcalc-hue) 14%, transparent);
+  }
+  @media (hover:hover){ html[data-layout] .qcalc-btn:hover{ background:rgba(255,255,255,.09); } }
+  @media (prefers-reduced-motion:no-preference){ html[data-layout] .qcalc-btn:active{ transform:scale(.96); } }
+
+  .qcalc{
+    position:fixed; z-index:260; left:16px; right:16px; bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
+    width:auto; max-width:24rem; margin:0 auto; box-sizing:border-box; padding:.55rem;
+    border-radius:1.6rem; color:var(--ink);
+    background:var(--sheet-bg); border:var(--sheet-border);
+    box-shadow:var(--sheet-shadow), 0 16px 44px -18px color-mix(in srgb, var(--qcalc-hue) 55%, transparent);
+    -webkit-backdrop-filter:var(--sheet-blur); backdrop-filter:var(--sheet-blur);
+    opacity:0; transform:translateY(18px) scale(.96); transform-origin:85% 100%; pointer-events:none;
+    font-variant-numeric:tabular-nums; -webkit-user-select:none; user-select:none;
+  }
+  .qcalc.is-open{ opacity:1; transform:none; pointer-events:auto; }
+  @media (prefers-reduced-motion:no-preference){
+    .qcalc{ transition:opacity .16s ease, transform .2s cubic-bezier(.4,0,1,1); }
+    .qcalc.is-open{ transition:opacity .2s ease, transform .34s cubic-bezier(.2,.95,.25,1.08); }
+  }
+  /* the theme's own three colours, a lit edge along the top */
+  .qcalc::before{
+    content:""; position:absolute; top:-1px; left:16%; right:16%; height:2px; border-radius:2px; pointer-events:none;
+    background:linear-gradient(90deg, transparent, var(--theme-c1) 18%, var(--theme-c2) 50%, var(--theme-c3) 82%, transparent);
+    opacity:.9;
+  }
+  @media (min-width:640px){ .qcalc{ left:auto; right:24px; width:21rem; margin:0; transform-origin:90% 100%; } }
+  .qcalc-screen{
+    display:flex; align-items:center; gap:.25rem; min-height:4.1rem; margin-bottom:.5rem; padding:.25rem .85rem .25rem .25rem;
+    border-radius:1.15rem; background:var(--surface-inset);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.05);
+  }
+  .qcalc-close{
+    display:flex; align-items:center; justify-content:center; flex:none; align-self:flex-start;
+    width:44px; height:44px; padding:0; border:none; border-radius:50%; background:transparent;
+    color:var(--soft); cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  @media (hover:hover){ .qcalc-close:hover{ background:rgba(255,255,255,.07); color:var(--ink); } }
+  .qcalc-ic{ width:1.25rem; height:1.25rem; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .qcalc-read{ flex:1; min-width:0; text-align:right; }
+  .qcalc-line{ min-height:1.15rem; font-size:.8rem; line-height:1.15rem; color:var(--soft); white-space:nowrap; overflow:hidden; }
+  .qcalc-val{ display:block; font-size:2.05rem; line-height:1.18; font-weight:600; letter-spacing:-.015em; color:var(--ink); white-space:nowrap; overflow:hidden; }
+  .qcalc-val.is-long{ font-size:1.6rem; }
+  .qcalc-val.is-longer{ font-size:1.25rem; }
+  .qcalc-val.is-error{ color:var(--wrong); }
+  /* a result lands: a small rise from the line above (resting state is the shown one) */
+  @media (prefers-reduced-motion:no-preference){
+    .qcalc-val.just-eval{ animation:qcalc-land .22s cubic-bezier(.2,.8,.3,1); }
+    @keyframes qcalc-land{ from{ opacity:.35; transform:translateY(5px); } to{ opacity:1; transform:none; } }
+  }
+  .qcalc-keys{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); grid-auto-rows:2.9rem; gap:.42rem; }
+  .qcalc-key{
+    position:relative; display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px;
+    padding:0; border:none; border-radius:.95rem; overflow:hidden;
+    font-family:inherit; font-size:1.32rem; font-weight:600; line-height:1; color:var(--ink);
+    background:var(--surface-sheen), var(--surface-lift);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.28);
+    cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  }
+  .qcalc-glyph{ display:block; pointer-events:none; }
+  .qcalc-key .qcalc-ic{ width:1.45rem; height:1.45rem; stroke-width:1.7; pointer-events:none; }
+  /* press: the key gives a little and lights from inside */
+  .qcalc-key::after{ content:""; position:absolute; inset:0; border-radius:inherit; background:#FFFFFF; opacity:0; pointer-events:none; transition:opacity .28s ease; }
+  .qcalc-key:active::after{ opacity:.16; transition:none; }
+  @media (prefers-reduced-motion:no-preference){
+    .qcalc-key{ transition:transform .12s ease, background-color .2s ease, color .2s ease; }
+    .qcalc-key:active{ transform:scale(.93); transition:transform .04s ease; }
+  }
+  .qcalc-key.is-fn{ color:var(--soft); background:rgba(255,255,255,.035); font-size:1.15rem; }
+  .qcalc-key.is-op{
+    color:color-mix(in srgb, var(--qcalc-hue) 82%, #FFFFFF); font-size:1.5rem;
+    background:color-mix(in srgb, var(--qcalc-hue) 15%, transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--qcalc-hue) 34%, transparent), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  /* the operator waiting for its number is lit, as on a phone */
+  .qcalc-key.is-op.is-armed{ color:var(--qcalc-ink); background:color-mix(in srgb, var(--qcalc-hue) 88%, #FFFFFF); box-shadow:0 0 14px color-mix(in srgb, var(--qcalc-hue) 40%, transparent); }
+  .qcalc-key.is-eq{
+    grid-column:5; grid-row:3 / span 2; font-size:1.7rem; color:var(--qcalc-ink);
+    background:linear-gradient(165deg, color-mix(in srgb, var(--qcalc-hue) 62%, #FFFFFF) 0%, var(--qcalc-hue) 48%, color-mix(in srgb, var(--qcalc-hue) 72%, var(--theme-c3)) 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 8px 20px -8px color-mix(in srgb, var(--qcalc-hue) 75%, transparent);
+  }
+  /* room below the answers while the panel is up on a phone, so they can be scrolled clear of it */
+  html.qcalc-room #stage::after{ content:""; display:block; height:var(--qcalc-room, 0px); }
 </style>
 <script>
   (function(){
@@ -74421,6 +74529,274 @@ function buildQuestionFlag(qi, opts){
   return b;
 }
 
+/* ---- THE FIRE CODE CALCULATOR (384.125) ----
+   Madison: "Let's add a calculator for the ifc version. It would be a little button similar to the star, it pulls up a tiny
+   simple calculator. Make it look cool and make it match the test theme. This is due to a lot of the occupant load stuff
+   requires math." Fire Code only, and only where the star is: render() puts this button just left of it (drill, mock,
+   review, the daily question, a race in the class's own room). The panel is one element on <body>, fixed at the bottom
+   (a card at the bottom right on a tablet), in the sheet glass with the theme's colour on the operators and equals. It is
+   not modal: a tap anywhere outside it closes it and still does what it was aimed at (an answer is picked as usual), and
+   on a phone the page gets the panel's height of room below so the answers can be scrolled clear of it.
+   It closes on its x, Escape, the button again, a tap outside, the question changing, and the screen going (pause, results,
+   any navigation: the stage's observer). The number on it is kept while the run's question screen stays, never stored.
+   Arithmetic: phone-calculator rules (x and / before + and -, as the iPhone's does), repeated = repeats the last step,
+   every result rounded to 12 significant digits so 0.1 + 0.2 is 0.3, and a division by zero is a plain error.
+   (var, not let: render() can draw a question resumed at launch before this part of the script has run.) */
+var qcalc = null, qcalcEl = null, qcalcWatch = null;
+var QCALC_OPS = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+function qcalcReset(){ qcalc = { cur: "0", expr: [], pending: false, done: false, err: false, last: null, line: "", qi: null, open: false, room: 0 }; }
+function qcalcTidy(x){
+  if(!isFinite(x)) throw new Error("range");
+  const r = Number(x.toPrecision(12));
+  return r === 0 ? 0 : r;
+}
+function qcalcStr(x){
+  const a = Math.abs(x);
+  if(a !== 0 && (a >= 1e12 || a < 1e-9)) return x.toExponential(6).replace(/\.?0+e/, "e");
+  return String(x);
+}
+function qcalcApply(a, op, b){
+  if(op === "/" && b === 0) throw new Error("div0");
+  return qcalcTidy(op === "+" ? a + b : op === "-" ? a - b : op === "*" ? a * b : a / b);
+}
+/* [n, op, n, op, n] -> a number, x and / first */
+function qcalcEval(t){
+  const s = [Number(t[0])];
+  const ops = [];
+  for(let i = 1; i < t.length; i += 2){
+    const op = t[i], n = Number(t[i + 1]);
+    if(op === "*" || op === "/") s[s.length - 1] = qcalcApply(s[s.length - 1], op, n);
+    else { ops.push(op); s.push(n); }
+  }
+  let v = s[0];
+  ops.forEach((op, i) => { v = qcalcApply(v, op, s[i + 1]); });
+  return v;
+}
+function qcalcFmt(s){
+  s = String(s);
+  if(/e/.test(s)) return s.replace("-", "−");
+  const neg = s.charAt(0) === "-", body = neg ? s.slice(1) : s;
+  const dot = body.indexOf(".");
+  const int = dot < 0 ? body : body.slice(0, dot), frac = dot < 0 ? "" : body.slice(dot);
+  return (neg ? "−" : "") + int.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + frac;
+}
+function qcalcLine(t){ return t.map((x, i) => i % 2 ? QCALC_OPS[x] : qcalcFmt(x)).join(" "); }
+function qcalcFail(){ qcalc.err = true; qcalc.line = "Cannot divide by zero"; qcalc.expr = []; qcalc.pending = false; qcalc.done = true; qcalc.last = null; }
+function qcalcPress(k){
+  const c = qcalc;
+  if(k === "C"){ const keep = { qi: c.qi, open: c.open, room: c.room }; qcalcReset(); Object.assign(qcalc, keep); return; }
+  if(c.err){ if(/^[0-9.]$/.test(k)){ qcalcPress("C"); qcalcPress(k); } return; }
+  const digits = s => s.replace(/[^0-9]/g, "").length;
+  if(/^[0-9]$/.test(k) || k === "."){
+    if(c.pending || c.done){ c.cur = "0"; c.pending = false; if(c.done){ c.done = false; c.line = ""; c.last = null; } }
+    if(k === "."){ if(c.cur.indexOf(".") < 0) c.cur += "."; return; }
+    if(c.cur === "0") c.cur = k;
+    else if(c.cur === "-0") c.cur = "-" + k;
+    else if(digits(c.cur) < 12) c.cur += k;
+    return;
+  }
+  if(k === "back"){
+    if(c.pending || c.done) return;
+    c.cur = c.cur.slice(0, -1);
+    if(c.cur === "" || c.cur === "-") c.cur = "0";
+    return;
+  }
+  if(k === "neg"){
+    if(c.pending){ c.cur = "-0"; c.pending = false; return; }
+    c.cur = c.cur.charAt(0) === "-" ? c.cur.slice(1) : "-" + c.cur;
+    return;
+  }
+  const cur = String(Number(c.cur) === 0 ? 0 : Number(c.cur));
+  if(k in QCALC_OPS){
+    if(c.pending){ c.expr[c.expr.length - 1] = k; }
+    else { c.expr.push(cur, k); }
+    c.pending = true; c.done = false; c.last = null;
+    /* what a phone shows as an operator is pressed: the sum so far, or the product so far when x / binds tighter */
+    try{
+      const t = c.expr.slice(0, -1);
+      let from = 0;
+      if(k === "*" || k === "/"){ for(let i = t.length - 2; i > 0; i -= 2){ if(t[i] === "+" || t[i] === "-"){ from = i + 1; break; } } }
+      c.cur = qcalcStr(qcalcEval(t.slice(from)));
+    }catch(e){ qcalcFail(); return; }
+    c.line = qcalcLine(c.expr);
+    return;
+  }
+  if(k === "="){
+    try{
+      if(c.done && c.last){
+        c.line = qcalcLine([cur, c.last.op, c.last.b]) + " =";
+        c.cur = qcalcStr(qcalcApply(Number(cur), c.last.op, Number(c.last.b)));
+        return;
+      }
+      if(!c.expr.length){ c.line = qcalcFmt(cur) + " ="; c.done = true; c.cur = cur; return; }
+      const t = c.expr.concat(cur);
+      c.last = { op: c.expr[c.expr.length - 1], b: cur };
+      c.line = qcalcLine(t) + " =";
+      c.cur = qcalcStr(qcalcEval(t));
+      c.expr = []; c.pending = false; c.done = true;
+    }catch(e){ qcalcFail(); }
+  }
+}
+function qcalcPaint(evalNow){
+  if(!qcalcEl || !qcalc) return;
+  const val = qcalcEl.querySelector(".qcalc-val"), line = qcalcEl.querySelector(".qcalc-line");
+  const shown = qcalc.err ? "Error" : qcalcFmt(qcalc.cur);
+  val.textContent = shown;
+  val.classList.toggle("is-error", qcalc.err);
+  val.classList.toggle("is-long", shown.length > 9 && shown.length <= 13);
+  val.classList.toggle("is-longer", shown.length > 13);
+  let l = qcalc.line;
+  if(l.length > 34) l = "…" + l.slice(-33);
+  line.textContent = l;
+  qcalcEl.querySelectorAll(".qcalc-key.is-op").forEach(b => b.classList.toggle("is-armed", qcalc.pending && qcalc.expr[qcalc.expr.length - 1] === b.dataset.k));
+  if(evalNow){ val.classList.remove("just-eval"); void val.offsetWidth; val.classList.add("just-eval"); }
+}
+function qcalcBuild(){
+  const ns = "http://www.w3.org/2000/svg";
+  const icon = (d, cls) => {
+    const sv = document.createElementNS(ns, "svg"); sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", cls); sv.setAttribute("aria-hidden", "true");
+    d.forEach(p => { const e = document.createElementNS(ns, "path"); e.setAttribute("d", p); sv.appendChild(e); });
+    return sv;
+  };
+  const el = document.createElement("div");
+  el.className = "qcalc";
+  el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Calculator"); el.setAttribute("aria-modal", "false");
+  const screen = document.createElement("div"); screen.className = "qcalc-screen";
+  const x = document.createElement("button"); x.type = "button"; x.className = "qcalc-close"; x.setAttribute("aria-label", "Close calculator");
+  x.appendChild(icon(["M7 7l10 10M17 7L7 17"], "qcalc-ic"));
+  x.addEventListener("click", () => qcalcClose(true));
+  const read = document.createElement("div"); read.className = "qcalc-read";
+  const line = document.createElement("div"); line.className = "qcalc-line"; line.setAttribute("aria-hidden", "true");
+  const val = document.createElement("output"); val.className = "qcalc-val"; val.setAttribute("aria-live", "polite");
+  read.append(line, val); screen.append(x, read);
+  const keys = document.createElement("div"); keys.className = "qcalc-keys";
+  [["7"], ["8"], ["9"], ["/", "÷", "Divide", "is-op"], ["C", "C", "Clear", "is-fn"],
+   ["4"], ["5"], ["6"], ["*", "×", "Multiply", "is-op"], ["back", null, "Delete last digit", "is-fn"],
+   ["1"], ["2"], ["3"], ["-", "−", "Subtract", "is-op"], ["=", "=", "Equals", "is-eq"],
+   ["neg", "±", "Change sign", "is-fn"], ["0"], [".", ".", "Decimal point"], ["+", "+", "Add", "is-op"]].forEach(([k, label, aria, cls]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "qcalc-key" + (cls ? " " + cls : ""); b.dataset.k = k;
+    if(k === "back") b.appendChild(icon(["M8.5 6H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8.5L3 12z", "M11.5 9.5l5 5M16.5 9.5l-5 5"], "qcalc-ic"));
+    else { const s = document.createElement("span"); s.className = "qcalc-glyph"; s.textContent = label || k; b.appendChild(s); }
+    if(aria) b.setAttribute("aria-label", aria);
+    b.addEventListener("click", () => { qcalcPress(k); qcalcPaint(k === "=" || (k in QCALC_OPS)); });
+    keys.appendChild(b);
+  });
+  el.append(screen, keys);
+  return el;
+}
+/* outside the panel and its button: close, and let the tap go on to whatever it was on */
+function qcalcOutside(e){
+  if(!qcalc || !qcalc.open) return;
+  const t = e.target;
+  if(t && t.closest && t.closest(".qcalc, .qcalc-btn")) return;
+  qcalcClose(false);
+}
+function qcalcKey(e){
+  if(!qcalc || !qcalc.open || e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target;
+  if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) && !(t.classList && (t.classList.contains("nova-hsw") || t.classList.contains("nova-hlb-sw")))) return;
+  const map = { "*": "*", "x": "*", "X": "*", "/": "/", "+": "+", "-": "-", "=": "=", "Enter": "=", ".": ".", ",": ".", "Backspace": "back", "Delete": "C", "c": "C", "C": "C" };
+  const k = /^[0-9]$/.test(e.key) ? e.key : map[e.key];
+  if(e.key === "Escape"){ e.preventDefault(); e.stopImmediatePropagation(); qcalcClose(true); return; }
+  /* Enter on one of its own keys is that key (a keyboard's way to press it); the run never hears it */
+  if(e.key === "Enter" && t && t.closest && t.closest(".qcalc")){ e.stopImmediatePropagation(); return; }
+  if(!k) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  qcalcPress(k); qcalcPaint(k === "=" || (k in QCALC_OPS));
+}
+function qcalcPlace(){
+  if(!qcalcEl || !qcalc || !qcalc.open) return;
+  /* a tablet: a card under the question's right edge */
+  const panel = stage.querySelector(".qpanel");
+  if(window.innerWidth >= 640 && panel){
+    const r = panel.getBoundingClientRect();
+    qcalcEl.style.right = Math.max(16, Math.round(window.innerWidth - r.right)) + "px";
+  } else qcalcEl.style.right = "";
+}
+function qcalcRoom(on){
+  const html = document.documentElement;
+  if(!on || window.innerWidth >= 640){ html.classList.remove("qcalc-room"); html.style.removeProperty("--qcalc-room"); return; }
+  html.style.setProperty("--qcalc-room", (qcalcEl.offsetHeight + 24) + "px");
+  html.classList.add("qcalc-room");
+}
+/* a phone: the answers scrolled clear of the panel, never the question up under the top row */
+function qcalcClear(){
+  if(!qcalcEl || !qcalc || !qcalc.open || window.innerWidth >= 640) return 0;
+  const choices = stage.querySelectorAll(".qpanel .choice"), q = stage.querySelector(".qpanel .qtext");
+  if(!choices.length || !q) return 0;
+  const top = window.innerHeight - (parseFloat(getComputedStyle(qcalcEl).bottom) || 0) - qcalcEl.offsetHeight;
+  const need = choices[choices.length - 1].getBoundingClientRect().bottom - (top - 10);
+  if(need <= 0) return 0;
+  const p = document.getElementById("pausebtn"), c = document.getElementById("chatdock-btn");
+  let ceil = 0;
+  [p, c].forEach(b => { if(b && !b.hidden && b.getClientRects().length) ceil = Math.max(ceil, b.getBoundingClientRect().bottom); });
+  const dy = Math.round(Math.min(need, Math.max(0, q.getBoundingClientRect().top - ceil - 12)));
+  if(dy > 0) window.scrollBy({ top: dy, behavior: theme.reduceMotion ? "instant" : "smooth" });
+  return dy;
+}
+function qcalcOpen(btn){
+  if(!qcalc) qcalcReset();
+  if(!qcalcEl) qcalcEl = qcalcBuild();
+  qcalc.open = true; qcalc.qi = Number(btn.dataset.qi);
+  btn.classList.add("is-open"); btn.setAttribute("aria-expanded", "true");
+  qcalcEl.classList.remove("is-open");
+  document.body.appendChild(qcalcEl);
+  qcalcPaint(false); qcalcPlace(); qcalcRoom(true);
+  void qcalcEl.offsetWidth;
+  qcalcEl.classList.add("is-open");
+  document.addEventListener("click", qcalcOutside, true);
+  document.addEventListener("keydown", qcalcKey, true);
+  window.addEventListener("resize", qcalcPlace);
+  if(!qcalcWatch){
+    /* the screen going (pause, results, Home, any navigation) or the question changing takes the panel with it */
+    qcalcWatch = new MutationObserver(() => {
+      const b = stage.querySelector(".qcalc-btn");
+      if(!b){ qcalcClose(false); qcalcReset(); return; }
+      if(qcalc && qcalc.open && Number(b.dataset.qi) !== qcalc.qi) qcalcClose(false);
+    });
+    qcalcWatch.observe(stage, { childList: true });
+  }
+  qcalc.room = qcalcClear();
+}
+function qcalcClose(byHand){
+  if(!qcalc || !qcalc.open) return;
+  qcalc.open = false;
+  document.removeEventListener("click", qcalcOutside, true);
+  document.removeEventListener("keydown", qcalcKey, true);
+  window.removeEventListener("resize", qcalcPlace);
+  stage.querySelectorAll(".qcalc-btn").forEach(b => { b.classList.remove("is-open"); b.setAttribute("aria-expanded", "false"); });
+  const el = qcalcEl, back = qcalc.room;
+  qcalc.room = 0;
+  if(el && el.contains(document.activeElement)){ const b = stage.querySelector(".qcalc-btn"); if(b) focusQuietly(b); }
+  if(byHand && back) window.scrollBy({ top: -back, behavior: theme.reduceMotion ? "instant" : "smooth" });
+  if(!el) return;
+  el.classList.remove("is-open");
+  const gone = () => { if(qcalc && qcalc.open) return; el.remove(); qcalcRoom(false); };
+  if(theme.reduceMotion || !window.matchMedia || window.matchMedia("(prefers-reduced-motion: reduce)").matches) gone();
+  else setTimeout(gone, 220);
+}
+function buildQuestionCalc(qi){
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "qcalc-btn"; b.dataset.qi = String(qi);
+  b.setAttribute("aria-label", "Calculator"); b.setAttribute("aria-haspopup", "dialog");
+  const on = !!(qcalc && qcalc.open && qcalc.qi === qi);
+  b.classList.toggle("is-open", on); b.setAttribute("aria-expanded", on ? "true" : "false");
+  const ns = "http://www.w3.org/2000/svg";
+  const sv = document.createElementNS(ns, "svg"); sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", "qcalc-btnic"); sv.setAttribute("aria-hidden", "true");
+  const body = document.createElementNS(ns, "rect"); body.setAttribute("x", "5"); body.setAttribute("y", "2.75"); body.setAttribute("width", "14"); body.setAttribute("height", "18.5"); body.setAttribute("rx", "3.2"); body.setAttribute("class", "qcalc-btn-body");
+  const scr = document.createElementNS(ns, "rect"); scr.setAttribute("x", "8"); scr.setAttribute("y", "5.9"); scr.setAttribute("width", "8"); scr.setAttribute("height", "3.4"); scr.setAttribute("rx", "1"); scr.setAttribute("class", "qcalc-btn-scr");
+  sv.append(body, scr);
+  [[9, 13], [12, 13], [15, 13], [9, 16.8], [12, 16.8], [15, 16.8]].forEach(([cx, cy]) => {
+    const d = document.createElementNS(ns, "circle"); d.setAttribute("cx", cx); d.setAttribute("cy", cy); d.setAttribute("r", "1.05"); d.setAttribute("class", "qcalc-btn-dot"); sv.appendChild(d);
+  });
+  b.appendChild(sv);
+  b.addEventListener("click", () => {
+    if(qcalc && qcalc.open && qcalc.qi === qi) qcalcClose(true); else { if(qcalc && qcalc.open) qcalcClose(false); qcalcOpen(b); }
+  });
+  return b;
+}
+
 /* NO WORDS BESIDE THE STAR (build 314): "Star removed/and starred wording
    when hitting the button, we don't need that anymore." showFlagNote() -
    the "Starred" / "Star removed" label build 302 put beside the star - is
@@ -97433,7 +97809,7 @@ function placeMysterySpark(btn, frac){
     const tagEl = btn.querySelector(".mystery-tap");
     const extra = tagEl ? Math.max(0, tagEl.getBoundingClientRect().right - btn.getBoundingClientRect().right) + 4 : 0;
     const num = row.querySelector(".qnum");
-    const flag = row.querySelector(".flagbtn");
+    const flag = row.querySelector(".qcalc-btn, .flagbtn");   /* (384.125) the calculator, where there is one, is left of the star */
     /* The gap between the question number and the flag, in the row's own
        coordinates. A Daily question has no .qnum in this row at all (its
        title is a separate block outside the panel), so the fallback is
@@ -121111,6 +121487,8 @@ function render(){
     raceBar.style.setProperty("--left", (left / RACE_QUESTION_MS).toFixed(4));
     raceBar.classList.toggle("is-low", left <= RACE_LOW_MS);
   }
+  /* (384.125) the Fire Code calculator, just left of the star and only where there is one */
+  if(flagBtn && ownClass() === "ifc") numRow.insertBefore(buildQuestionCalc(qi), flagBtn);
   panel.appendChild(numRow);
   if(raceBar) panel.appendChild(raceBar);
 
@@ -121787,7 +122165,7 @@ function buildQuestionPreviewPanel(cur, nextPos){
   pv.removeAttribute("style"); pv.className = "panel qpanel";
   [...pv.children].forEach(c => { if(!c.matches(".qnumrow, .qtext, .ref, .status, .choices")) c.remove(); });
   const num = pv.querySelector(".qnum"); if(num) num.textContent = "Question " + (nextPos + 1);
-  pv.querySelectorAll(".flagbtn").forEach(b => b.classList.remove("on", "just-on"));
+  pv.querySelectorAll(".flagbtn, .qcalc-btn").forEach(b => b.classList.remove("on", "just-on", "is-open"));
   const qt = pv.querySelector(".qtext"); if(qt){ qt.replaceChildren(); writeText(qt, item.q); }
   const ref = pv.querySelector(".ref"); if(ref){ ref.hidden = !item.ref; ref.textContent = item.ref || ""; }
   const st = pv.querySelector(".status");
@@ -123292,7 +123670,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.125";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
