@@ -3378,8 +3378,6 @@
   @keyframes nw2-beacon{ 0%, 100%{ opacity:.25; } 50%{ opacity:.9; } }
   [data-reduce-motion="true"] .nw2 *, .nw2.is-still *{ animation:none !important; }
   @media (prefers-reduced-motion:reduce){ .nw2 *{ animation:none !important; } }
-  /* his rank-up talk's flare (327z15), big enough to be the subject */
-  .nt-flare.nt-rankflare{ transform:scale(2.4); margin:2.6rem 0 2.2rem; }
   /* NOVA'S VOYAGE (327z15) - see buildNovaVoyage */
   .nw3-bob{ animation:nw3-bob 3.2s ease-in-out infinite alternate; }
   @keyframes nw3-bob{ from{ transform:translateY(-2%) rotate(-.6deg); } to{ transform:translateY(2%) rotate(.6deg); } }
@@ -57831,7 +57829,7 @@ function maybeNewClassBanner(){
          recap, another banner */
       let busy = !onNovaHome() || !document.querySelector(".class-bubble-wrap");
       try{ busy = busy || a2hsBusy() || a2hsHolds(); }catch(e){}
-      busy = busy || !!document.querySelector("#nova-intro, #nova-class-greet, #nova-rank, .nova-talk, .daily-alert, #genprofile-overlay, #class-switch-loader");
+      busy = busy || !!document.querySelector("#nova-intro, #nova-class-greet, .nova-talk, .daily-alert, #genprofile-overlay, #class-switch-loader");
       try{ busy = busy || novaIntroOn || pendingMainMenuTour || signupInNova; }catch(e){}
       if(busy){
         calm = 0;
@@ -98376,7 +98374,7 @@ const RELEASE_NOTES = [
       ]},
       { label: "Better In Version 9.2", items: [
         { icon: buildPersonIcon, color: "#5CA8FF", title: "Matching Profile Cards", body: "Profile is three matching cards: you, your next rank and your badge case. Your level and badge count sit under your rank, and a rank challenge opens to show how it is done." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "A Quieter Nova", body: "Nova messages less often, checks in at every rank-up, and sends his weekly challenge at random." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "A Quieter Nova", body: "Nova messages less often and sends his weekly challenge at random." },
         { icon: buildStarIcon, color: "#C9D3DE", title: "Unit Cards", body: "An earned badge sits in its unit card's corner, with the question count at the card's foot." },
         { icon: buildChecklistIcon, color: "#B79BFF", title: "Search, Refined", body: "Review's search button sits above the tab bar, which keeps its usual shape. Unit search has a clear button, and every search bar matches." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Leaderboard Columns", body: "This Week and Hundos each show only their own column." },
@@ -98406,7 +98404,7 @@ const RELEASE_NOTES = [
       { label: "Meet Nova", items: [
         { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and instructor. A storm opened his ship’s hold on its way through this system and scattered his badges, flares and crew into your class material. Each unit you master recovers a badge, each rank relights a flare, and each character you find returns a member of his crew." },
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "Nova's Introduction", body: "Every account meets Nova once. He explains the story, reviews your progress and shows what has changed." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you rank up or find something of his, sends a weekly challenge, and can be messaged directly." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you find something of his, sends a weekly challenge, and can be messaged directly." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents the previous week's top three, with comebacks, close finishes and honourable mentions." },
         { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Challenge Nova from his chat any time, or accept a challenge when he sends one. Finish ahead of him to unlock the Sheriff." }
       ]},
@@ -105719,44 +105717,18 @@ function novaFriendProp(){
   return row;
 }
 __bm("L82222");
-/* ---- NOVA AT EVERY RANK (327z15) ----
-   "Novas rank up system will need to be more storyline ... each rank nova
-   can come on screen and talk about like hey it appears you find this flare
-   good job. Keep studying and we will find the rest." When a rank-up
-   journey has played to its end, he comes on in the same short boxes as his
-   introduction, over the flare just relit, with that rank's beat of the
-   story. It takes the place of his rank-up message in the chat (heard
-   "@rank" is moved on here), so the chat says it once, on screen. */
-const NOVA_RANK_BEATS = {
-  rookie:   ["That’s the first of my flares home.", "Just look at it glow again."],
-  ranger:   ["Two flares lit.", "The dark out there is getting smaller."],
-  veteran:  ["Your planet is taking in more light now.", "Every badge you find brings more of it home."],
-  vanguard: ["We’re over halfway there.", "My scanners are picking up the rest."],
-  adept:    ["That one was lost deep in the storm.", "I never thought I’d see it again."],
-  elite:    ["Only one flare is still out in the dark.", "We’re so close now."],
-  titan:    ["Every one of my flares is lit.", "Your planet has become a star!"]
-};
-let novaRankTalkOn = false;
-function playNovaRankTalk(idx){
-  const k = TIER_ORDER_FULL[idx];
-  if(!k || novaRankTalkOn || document.getElementById("nova-intro") || document.getElementById("nova-rank")) return false;
-  try{ if(typeof novaIsFriend === "function" && !novaIsFriend()) return false; }catch(e){}
-  novaRankTalkOn = true;
-  /* said here, so the chat does not say it again */
-  try{ const heard = novaHeardMap(); heard["@rank"] = Math.max(Number(heard["@rank"]) || 0, idx + 1); saveStore(); }catch(e){}
-  const name = novaName(), rank = RANK_DISPLAY_NAME[k] || k;
-  const flare = ctx => { const b = document.createElement("span"); b.className = "nt-flare is-lit nt-rankflare";
-    try{ b.appendChild(buildFlareBubble(k, { lit: true })); }catch(e){}
-    novaProp(ctx, novaStack(b, novaCap(rank + " flare"))); };
-  const last = idx === TIER_ORDER_FULL.length - 1;
-  const lines = [{ gesture: "wave", text: name + "! You found my " + rank + " flare!", enter: flare }];
-  (NOVA_RANK_BEATS[k] || []).forEach((t, i) => lines.push({ gesture: i ? "nod" : "raise", text: t }));
-  lines.push(last
-    ? { gesture: "wave", final: true, text: "Thank you, " + name + ". There’s always more to learn!" }
-    : { gesture: "nod", final: true, text: "Keep learning, and we’ll find the rest." });
-  novaTalk({ id: "nova-rank", label: "Nova, on your " + rank + " rank", lines, finalLabel: "Let’s go",
-    onClose: () => { novaRankTalkOn = false; } });
-  return true;
+/* ---- NO ON-SCREEN TALK AT A RANK-UP (384.123) ----
+   "Nova coming to talk to you after ranking up, remove that part." The journey ends and nothing speaks to the
+   player: no overlay, no dialog. What 327z15's talk did besides speak is kept - it moved heard "@rank" on, so his
+   chat does not send a rank-up message either (a rank-up is silent from him, on screen and in the chat). Said
+   once the whole journey has played (rankUpSceneEnd), for a friend of his, as the talk was. */
+function novaRankHeard(idx){
+  try{
+    if(typeof novaIsFriend === "function" && !novaIsFriend()) return;
+    const heard = novaHeardMap();
+    heard["@rank"] = Math.max(Number(heard["@rank"]) || 0, idx + 1);
+    saveStore();
+  }catch(e){}
 }
 let novaIntroOn = false;
 function playNovaIntro(then, o){
@@ -123366,7 +123338,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.98";
+const APP_BUILD = "2026-11-13-384.123";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -141695,7 +141667,7 @@ function checkSaveCodeReminder(){
   if(holdForCutscene("savecode", () => checkSaveCodeReminder())) return;
   /* Nova's talks (introduction, What's New, the weekly recap) get the
      screen first. */
-  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro") || document.getElementById("nova-rank"))) return;
+  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   if(document.getElementById("lobby-invite")) return;
   if(document.getElementById("friend-request")) return;
   /* Nothing to save, or a device that opted out of syncing on purpose. */
@@ -162411,8 +162383,9 @@ function rankUpSceneEnd(scene, played){
   /* the whole journey is over: Nova's congratulations follow it (build 324)
      - once, after the last of them (build 326) */
   const more = played && rankUpOwed();
-  /* (327z15) Nova comes on to say it, and his chat then has nothing to add */
-  if(played && !more){ setTimeout(() => { try{ playNovaRankTalk(scene.toIdx); }catch(e){} try{ novaTickSoon(2600); }catch(e){} }, ruStill() ? 300 : 900); }
+  /* (384.123) nothing talks to the player now. His chat is told the rank is heard (it has nothing to add), and takes its
+     usual pass a little later for anything else found on the way */
+  if(played && !more){ novaRankHeard(scene.toIdx); setTimeout(() => { try{ novaTickSoon(2600); }catch(e){} }, ruStill() ? 300 : 900); }
   /* the next rank owed: Home locks and the tab calls again */
   if(more && stage.querySelector('[data-screen="home"]')) scheduleRankUpLock(ruStill() ? 300 : 700);
 }

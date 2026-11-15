@@ -28507,20 +28507,20 @@ def check_b324n_nova(br):
       /* the week's recap and What's New are their own moments, with their own gates; asked about here is only his rank line */
       try{ weekRecapBlocked = () => false; weekRecapOn = false; }catch(e){}
       showHome(); await wait(1500);
-      let sawTalk = !!document.getElementById('nova-rank');
+      let sawTalk = !!document.querySelector('#nova-rank, .nova-talk');
       for(let i = 0; i < 6 && !congrats().length && !sawTalk; i++){
-        sawTalk = sawTalk || !!document.getElementById('nova-rank');
+        sawTalk = sawTalk || !!document.querySelector('#nova-rank, .nova-talk');
         try{ popupGapUntil = 0; }catch(e){}
         document.querySelectorAll('.daily-alert, .vroom-chat-alert, .tierup-banner, #daily-lock-tip, .unlock-card').forEach(e => e.remove());
         novaSessionAt = 0; novaTick(); await wait(700); }
       let dbg = null; try{ const hh = novaHeardMap(); const nn = Date.now(); dbg = { calmBase: novaCalm(), home: !!stage.querySelector('[data-screen="home"]'), recap: (typeof weekRecapOn !== 'undefined' && weekRecapOn) || weekRecapBlocked(), owed: (typeof rankUpOwed === 'function') && rankUpOwed(), gap: (typeof popupGapUntil === 'number') && Date.now() < popupGapUntil, banners: [...document.querySelectorAll('.daily-alert, .vroom-chat-alert.is-ping, .tierup-banner, #daily-lock-tip, .daily-question-fab.is-charging')].map(e => e.className || e.id), calm: novaMomentCalm(), pend: novaPending(hh, nn).rank, open: novaDayOpen(hh, nn), shown: novaShownRankIdx(), heardRank: hh['@rank'], sess: novaSessionAt, since: novaState().since, lastAt: novaState().lastAt, last: hh['@last'], base: hh['@base'], friend: novaIsFriend() }; }catch(e){ dbg = String(e); }
-      sawTalk = sawTalk || !!document.getElementById('nova-rank');
+      sawTalk = sawTalk || !!document.querySelector('#nova-rank, .nova-talk');
       return { during, justAfter, onProfile, after: congrats(), dbg, sawTalk, heardRank: novaHeardMap()['@rank'] }; }""")
     check("no congratulations while the rank-up journey is still on, nor on Profile after it", r.get("during") == 0 and r.get("justAfter") == 0 and r.get("onProfile") == 0, r)
-    # REWRITTEN IN 384: his rank-up reaction is an ON-SCREEN talk now (playNovaRankTalk, over the flare just relit), and it takes the place
-    # of the chat message - "said here, so the chat does not say it again". So: on Home he talks once, and the chat gets no second copy.
-    check("back on Home, he congratulates you on that rank on screen, and the chat does not say it again (heard moved on past Gold)",
-          r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
+    # REWRITTEN IN 384.123: his on-screen rank-up talk (327z15) is removed ("Nova coming to talk to you after ranking up, remove that part").
+    # Nothing talks to the player on Home, and the chat stays silent about the rank too (the end of the journey moves heard "@rank" on).
+    check("back on Home, nothing of his talks over the rank-up and the chat does not say it either (heard moved on past Gold)",
+          not r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
 
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("none of it wrote to Firestore, saved the store or pushed the progress document", not w.get("w") and not w.get("push"), w)
