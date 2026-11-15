@@ -431,6 +431,9 @@ def s5(br):
         ck("%s: taps every 250ms at that spot, through the buttons' arrival and 1.6s past it: none pressed" % dev[0], stayed and up_at is not None,
            {"stayed": stayed, "done": up_at is not None, "taps": len(sent), "widest gap s": max(gaps) if gaps else None})
         pg.wait_for_timeout(900)
+        # (384.133) with the Test review button (reviewtest) above it the last row can sit below a phone's fold, where the finger would scroll to it: do that, then tap it
+        spot = pg.evaluate("() => { const bs = [...document.querySelectorAll('#stage .rs-rewards .rs-actions button')]; const b = bs[bs.length - 1]; if(b.getBoundingClientRect().bottom > innerHeight - 4) b.scrollIntoView({ block: 'center' }); const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+        pg.wait_for_timeout(500)
         tap(cdp, spot[0], spot[1]); pg.wait_for_timeout(900)
         ck("%s: and the first tap there after a pause presses it" % dev[0], pg.evaluate("() => !document.querySelector('#stage .rs-rewards')"))
         ck("%s: no page errors" % dev[0], not errs, errs[:3])
