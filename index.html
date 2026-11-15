@@ -40289,6 +40289,15 @@ html.is-browser{ --fade-paper: transparent; }
   .namedisplay-row > .pg-mark-profile{ width:1.9rem; height:1.9rem; margin-left:0; vertical-align:middle; }
   .person-sheet-name > .pg-mark-card{ width:1.2em; height:1.2em; }
   .person-sheet-name > .pg-mark-card.pg-mark-3{ width:1.36em; height:1.36em; }
+  /* (384.134) the emblem in a Virtual Room (Fire Code's rooms): beside a member's name in the lobby, the podium, the results and the
+     winners' cutscene, and inline after a sender's name in the room's chat. The name keeps its ellipsis, the emblem never shrinks, and a
+     name with no emblem is the plain text it was (nothing here applies to it). Not interactive: the row it sits in is the tap target. */
+  .vr-has-pg{ display:flex; align-items:center; min-width:0; }
+  .vr-has-pg > .pg-nm{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pg-mark.pg-mark-vr{ width:1.2em; height:1.2em; margin-left:.35em; vertical-align:middle; }
+  .pg-mark.pg-mark-vr.pg-mark-3{ width:1.36em; height:1.36em; }
+  .lw-podium-name.vr-has-pg, .vroom-cut-pname.vr-has-pg{ justify-content:center; }
+  .vroom-chat-msg-name > .pg-mark-vr{ margin:0 0 0 .3em; vertical-align:-.2em; }
   /* the highest prestige frames its row: a gold line round it, a crimson edge at the start, a sheen crossing now and then (transform) */
   html body .rank-row.is-pg-max{ position:relative; overflow:hidden; }
   html body .rank-row.is-pg-max > i.lb-pgmax{ position:absolute; inset:0; z-index:2; border-radius:inherit; pointer-events:none; overflow:hidden;
@@ -60992,11 +61001,50 @@ function prestigeTaken(){ try{ return prestigeOn() && store ? prestigeCountOf(st
 function rowPrestige(e){ const v = e && e.pg; return v === 1 || v === 2 || v === 3 ? v : 0; }
 /* the prestige to draw beside somebody's name: none outside Fire Code's page; your own from this device (your row may lag a push behind),
    anybody else's from their row */
+var ROOM_PG_ENTRIES = new WeakSet();   /* entries a room card built (never a field a document could carry) */
 function entryPrestige(e){
+  /* (384.134) a Virtual Room's entry (vroomPersonEntry) arrives with its prestige already worked out for THAT room: Fire Code's rooms
+     only, from whichever page this is */
+  if(e && ROOM_PG_ENTRIES.has(e)) return rowPrestige(e);
   if(!prestigeOn() || !e) return 0;
   let me = ""; try{ me = publicIdOf(); }catch(err){}
   if(me && e.pub === me) return prestigeTaken();
   return rowPrestige(e);
+}
+/* ---- (384.134) PRESTIGE IN VIRTUAL ROOMS ----
+   Madison: Fire Code prestige emblems show in Virtual Rooms. A member says how many they have taken (`pg`, 0-3) in the entry the room
+   already holds for them: the join write and the presence beat that was already running - nothing extra, nothing per answer. Readers
+   draw it with prestigeMark (the one drawing, so art and names change in one place) and only for a FIRE CODE room; an academy room
+   draws none, whoever is in it. Derived on every draw from the entry and the viewer's own count - nothing about it is stored. */
+/* This account's count wherever the page is: Fire Code's own store, or - on the academy's page, joined to a Fire Code room - read off
+   Fire Code's saved copy of the same account (as ifcCharOfMe reads the character). Never a code, never anything but the count. */
+function prestigeOfMe(){
+  if(window.NOVA_CLASS === "ifc") return prestigeTaken();
+  try{
+    if(accountClassesOf(store).indexOf("ifc") < 0) return 0;
+    const raw = localStorage.getItem("class26e.ifc.drill.v1");
+    const o = raw ? JSON.parse(raw) : null;
+    return o ? prestigeCountOf(o.prestige) : 0;
+  }catch(e){ return 0; }
+}
+/* The prestige to draw beside a room member: 0 unless the room is Fire Code's (`cls`, else the class whose bank is in); yours from
+   this device when this is Fire Code's page (live, as the Leaderboard row follows a wear); anybody else's - and yours from the academy's
+   page - from their entry (rowPrestige: 1, 2 or 3 and nothing else, so an older client's entry with no `pg` draws nothing) */
+function vroomPrestigeFor(p, key, cls){
+  if((cls || BANK_CLASS) !== "ifc") return 0;
+  if(key && key === vroomMyKey && window.NOVA_CLASS === "ifc") return prestigeTaken();
+  return rowPrestige(p);
+}
+/* A member's name in an element of its own, with the emblem after it when they have one: the name keeps its ellipsis, the emblem
+   never shrinks, and with none the element is exactly what it was (plain text) */
+function setNameWithPrestige(el, text, n, markCls){
+  if(!n){ el.textContent = text; return el; }
+  el.textContent = "";
+  el.classList.add("vr-has-pg");
+  const t = document.createElement("span");
+  t.className = "pg-nm"; t.textContent = text;
+  el.append(t, prestigeMark(n, markCls || "pg-mark-vr"));
+  return el;
 }
 /* The requirements of prestige n, each { key, label, have, need, done, sub }, read off the account now. */
 function prestigeReqs(n, view){
@@ -111493,7 +111541,7 @@ function playVroomWinnerCutscene(opts, done){
       fig.className = "vroom-cut-figure";
       fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ghost"));
       const nm = document.createElement("p");
-      nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
+      nm.className = "vroom-cut-pname"; setNameWithPrestige(nm, p.name || "?", p.pg || 0, "pg-mark-vr");
       mate.append(fig, nm);
       reveal.appendChild(mate);
     });
@@ -111526,7 +111574,7 @@ function playVroomWinnerCutscene(opts, done){
       fig.className = "vroom-cut-figure";
       fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ghost"));
       const nm = document.createElement("p");
-      nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
+      nm.className = "vroom-cut-pname"; setNameWithPrestige(nm, p.name || "?", p.pg || 0, "pg-mark-vr");
       const sb = document.createElement("p");
       sb.className = "vroom-cut-psub"; sb.textContent = p.sub || "";
       const blk = document.createElement("div");
@@ -114161,6 +114209,8 @@ const VROOM_CHAT_CTX = {
   code: () => vroomCode,
   myKey: () => vroomMyKey,
   colorFor: (key, parts) => vroomColorFor(key, parts),
+  /* (384.134) the prestige to draw beside a sender (Fire Code's rooms only; vroomPrestigeFor) */
+  prestigeFor: (key, parts) => vroomPrestigeFor(parts && parts[key], key),
   shouldTrim: () => vroomIsHost,
   cap: 160, keep: 100,
   /* The same day-long history every other chat keeps (build 313). A room
@@ -116593,6 +116643,9 @@ function startVroomPresence(){
       patch["participants." + vroomMyKey + ".name"] = sm.firstName || "Anonymous";
       patch["participants." + vroomMyKey + ".avatarChar"] = sm.avatarChar || "ghost";
       if(sm.avatarCharIfc) patch["participants." + vroomMyKey + ".avatarCharIfc"] = sm.avatarCharIfc;
+      /* (384.134) the prestiges taken, in a Fire Code room: the same write, one more field, so everybody's emblem for you follows the
+         count within a beat (and a count of 0 clears one) */
+      if(BANK_CLASS === "ifc") patch["participants." + vroomMyKey + ".pg"] = prestigeOfMe();
       /* and Nova's, if this device brought him (build 324) */
       try{ novaVrPresencePatch(patch); }catch(e){}
       vroomDb().collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
@@ -147146,7 +147199,11 @@ function vroomBarLight(btn, lit){
 function vroomPersonEntry(key, p){
   /* Nova's own card, the one his chat opens (build 324) */
   if(key === "nova" || (p && p.nova)) return { pub: "nova", nova: true, firstName: "Nova", banner: "titan_rank", avatarChar: "nova" };
-  return Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Student", pref: ART_PAGE });   /* (384 r22) in this room's class */
+  const out = Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Student", pref: ART_PAGE });   /* (384 r22) in this room's class */
+  /* (384.134) the card's emblem is this room's: Fire Code's rooms only, set here so the card reads it whichever page this is */
+  out.pg = vroomPrestigeFor(p, key);
+  ROOM_PG_ENTRIES.add(out);
+  return out;
 }
 function buildVroomModeArt(key){
   const NS = "http://www.w3.org/2000/svg";
@@ -147747,10 +147804,13 @@ function roomClassLabel(data){
    same as the store in the academy); the numbers are the class you are in, as a room entry has always carried. */
 /* (384 review) `dev` is this device's own random id (tallyDeviceId - never a code), so the same person coming back after their app
    died is told apart from a second device of the same account (joinVirtualRoomLobby). */
-function vroomMeEntry(){
+function vroomMeEntry(cls){
   const me = socialMe();
   let dev = ""; try{ dev = tallyDeviceId(); }catch(e){}
-  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null, level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
+  const entry = { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null, level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
+  /* (384.134) the prestiges taken, 0-3, in a Fire Code room's entry only (this write already happens; the academy's rooms are as they were) */
+  if((cls || BANK_CLASS) === "ifc") entry.pg = prestigeOfMe();
+  return entry;
 }
 function createVirtualRoomLobby(units, timeLimit, game, versions){
   /* The actual bug behind "wouldn't let me start a Virtual Room
@@ -150058,7 +150118,8 @@ function beginBattleMatch(data){
       /* THE WHOLE WINNING SIDE, like Tug - they won it together. */
       const shown = (side ? battleMembers(d, side) : Object.keys(d.participants || {}))
         .map(k => ({ name: (d.participants[k] || {}).name || "?",
-                     avatar: faceCharFor(d.participants[k] || {}, k) }));
+                     avatar: faceCharFor(d.participants[k] || {}, k),
+                     pg: vroomPrestigeFor(d.participants[k] || {}, k, roomClassOf(d)) }));
       detachBattleEffects();
       playVroomWinnerCutscene({
         kind: "team",
@@ -151269,7 +151330,7 @@ function joinVirtualRoomLobby(code){
        rankings rows do. Written once at join - it cannot change
        while somebody is sitting in a lobby - and read with a
        fallback, so a room created by an older build still renders. */
-    const meEntry = vroomMeEntry();
+    const meEntry = vroomMeEntry(roomClassOf(data));
     /* (384 review) IN DURING A MATCH, NOT IN IT: somebody who comes back mid-match was one of its racers or on one of its
        teams, and their fresh entry (nothing answered, not finished) would hold the finale or the team's "everyone is done" for
        good. `late` names the match they arrived during; vroomLateFor() / vroomMatchHere() leave them out of that one only. */
@@ -152240,7 +152301,9 @@ function showVirtualRoomLobby(){
        every snapshot, because those are cheap and some of them are
        what make the room start at all. */
     const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : p.prep ? "p" : 0,
-      p.level || 0, p.badges || 0, faceCharFor(p, key, ROOM_FACE) + "@" + faceFor(p, key, ROOM_FACE).art, p.banner || ""].join("~")).join("|")
+      p.level || 0, p.badges || 0, faceCharFor(p, key, ROOM_FACE) + "@" + faceFor(p, key, ROOM_FACE).art, p.banner || "",
+      /* (384.134) the prestige beside the name: a change of it redraws the row */
+      vroomPrestigeFor(p, key, roomClassOf(data))].join("~")).join("|")
       + "||" + (data.units || []).join(",") + "|" + JSON.stringify(roomVersionsOf(data)) + "|" + (data.timeLimit || 0)
       /* `count`, the field Match settings writes. This read
          `questionCount`, which nothing has ever written, so changing
@@ -152303,7 +152366,10 @@ function showVirtualRoomLobby(){
       const nameWrap = document.createElement("span");
       nameWrap.className = "lb-name-wrap";
       const name = document.createElement("span");
-      name.className = "lb-name"; name.textContent = p.name;
+      name.className = "lb-name";
+      /* (384.134) Fire Code's prestige emblem beside the name (a Fire Code room only): the name keeps its ellipsis, the "(You)" tag
+         follows it, and with no prestige the name is the plain text it always was */
+      setNameWithPrestige(name, p.name, vroomPrestigeFor(p, key, roomClassOf(data)), "pg-mark-vr");
       if(key === vroomMyKey){
         const youTag = document.createElement("span");
         youTag.className = "vroom-you-tag"; youTag.textContent = "(You)";
@@ -153442,7 +153508,12 @@ function buildVroomChatPanel(container, ctx){
            307): a message keeps the name it was sent under, so a group
            chat went on saying "Davis" for somebody the list and the
            roster both call Maddog. */
-        name.textContent = ((CTX.nameFor && m.key) ? (CTX.nameFor(m.key, m.name) || m.name) : m.name) + ": ";
+        const sender = ((CTX.nameFor && m.key) ? (CTX.nameFor(m.key, m.name) || m.name) : m.name);
+        /* (384.134) the sender's prestige emblem between the name and its colon, in the Virtual Room's chat only (a Fire Code room) */
+        let pgChat = 0;
+        try{ pgChat = (CTX.prestigeFor && m.key) ? CTX.prestigeFor(m.key, roomParticipants) : 0; }catch(e){ pgChat = 0; }
+        if(pgChat){ name.append(sender, prestigeMark(pgChat, "pg-mark-vr"), ": "); }
+        else name.textContent = sender + ": ";
         /* Your own name stays on the accent - that is the one colour you
            already read as "me" everywhere else in the app - and everyone
            else takes the colour their marker has on the race line. */
@@ -154950,7 +155021,8 @@ function buildVroomRacePodium(data){
     spot.className = "lw-podium-spot lw-place-" + (i + 1) + (r.key === vroomMyKey ? " is-me" : "");
     spot.dataset.key = r.key;
     const nm = document.createElement("span");
-    nm.className = "lw-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
+    nm.className = "lw-podium-name";
+    setNameWithPrestige(nm, r.key === vroomMyKey ? "You" : (r.p.name || "?"), vroomPrestigeFor(r.p, r.key, roomClassOf(data)), "pg-mark-vr");
     const pts = document.createElement("span");
     pts.className = "lw-podium-pts"; pts.textContent = xpWith(r, i).toLocaleString() + " XP";
     spot.append(vroomPodiumDisc(faceFor(r.p, r.key, ROOM_FACE)), nm, pts, vroomPodiumStep(i + 1));
@@ -154970,7 +155042,8 @@ function buildVroomRacePodium(data){
       const av = document.createElement("span");
       av.className = "vr-podium-av"; av.appendChild(faceSvgFor(r.p, r.key, ROOM_FACE));
       const nm = document.createElement("span");
-      nm.className = "vr-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
+      nm.className = "vr-podium-name";
+      setNameWithPrestige(nm, r.key === vroomMyKey ? "You" : (r.p.name || "?"), vroomPrestigeFor(r.p, r.key, roomClassOf(data)), "pg-mark-vr");
       const x = document.createElement("span");
       x.className = "vr-podium-xp"; x.textContent = xpWith(r, i).toLocaleString() + " XP";
       row.append(pl, av, nm, x);
@@ -155025,7 +155098,7 @@ function buildVroomTeamPodium(d, o){
       av.className = "vr-podium-av"; av.appendChild(faceSvgFor(pp, k, ROOM_FACE));
       const nm = document.createElement("span");
       nm.className = "vr-podium-name";
-      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : "");
+      setNameWithPrestige(nm, (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : ""), vroomPrestigeFor(pp, k, roomClassOf(d)), "pg-mark-vr");
       const x = document.createElement("span");
       x.className = "vr-podium-xp"; x.textContent = o.numOf(k).toLocaleString() + (o.short ? " " + o.short : "");
       row.append(av, nm, x);
@@ -155214,9 +155287,9 @@ function startVroomRaceCutscene(){
   detachVroomListener();
   const data = lastFinaleData || {};
   const ranked = vroomRankedEntries(data);
-  playVroomRaceCutscene(ranked);
+  playVroomRaceCutscene(ranked, roomClassOf(data));
 }
-function playVroomRaceCutscene(ranked){
+function playVroomRaceCutscene(ranked, roomCls){   /* (384.134) roomCls: the room's class, for the emblems beside the names */
   document.getElementById("vroom-race-cut")?.remove();
   const overlay = document.createElement("div");
   overlay.id = "vroom-race-cut";
@@ -155277,7 +155350,8 @@ function playVroomRaceCutscene(ranked){
     /* "(you)" never gives way to a long name on a narrow phone - the name
        does (build 315: "Madison (y..." at 320px) */
     const nmText = document.createElement("span");
-    nmText.className = "vrc-name-text"; nmText.textContent = r.p.name || "?";
+    nmText.className = "vrc-name-text";
+    setNameWithPrestige(nmText, r.p.name || "?", vroomPrestigeFor(r.p, r.key, roomCls), "pg-mark-vr");
     nm.appendChild(nmText);
     if(r.key === me){
       const you = document.createElement("span");
