@@ -235,6 +235,7 @@ with sync_playwright() as pw:
             gains:[...o.querySelectorAll('.a2hs-gain')].map(g=>g.textContent.trim()), gainsShown:!!o.querySelector('.a2hs-gains') && vis(o.querySelector('.a2hs-gains')),
             bold:steps.map(s=>[...s.querySelectorAll('.a2hs-step-main strong')].map(b=>b.textContent)), n:steps.length,
             ios26:/toolbar/i.test(o.querySelector('.a2hs-apple').textContent) && /View More/.test(o.querySelector('.a2hs-apple').textContent) && /Open as Web App/.test(o.querySelector('.a2hs-apple').textContent),
+            menu: steps[0] ? /menu button/i.test(steps[0].querySelector('.a2hs-step-main').textContent) && /left of the address bar/i.test(steps[0].querySelector('.a2hs-step-main').textContent) && !/\u2022/.test(steps[0].querySelector('.a2hs-step-main').textContent) : false,
             owner:/madison/i.test(o.innerText) }; }""")
         chk("(5) tapping the bar opens the walkthrough (from the bar), iPhone picked, headed Home Screen (%s)" % (S and [S["from"], S["tag"], S["dev"]]),
             bool(S) and S["from"] == "bar" and S["dev"] == "apple" and re.fullmatch(r"\s*home screen\s*", S["tag"] or "", re.I), S)
@@ -242,8 +243,8 @@ with sync_playwright() as pw:
             chk("(5) the foot has two answers side by side, 44px+: I've added it, and Not now (%s)" % S["foot"],
                 len(S["foot"]) == 2 and re.search(r"added", S["foot"][0]["t"], re.I) and re.fullmatch(r"Not now", S["foot"][1]["t"]) and "a2hs-close" in S["foot"][1]["cls"]
                 and all(f["w"] >= 43.5 and f["h"] >= 43.5 for f in S["foot"]) and S["foot"][0]["top"] == S["foot"][1]["top"], S["foot"])
-            chk("(5) what the person gains: three short lines; every step names its button in bold (%s); the iOS 26 variants are there (toolbar Share, View More, Open as Web App)" % S["bold"],
-                len(S["gains"]) == 3 and all(len(g) < 60 for g in S["gains"]) and S["n"] == 6 and all(len(b) >= 1 for b in S["bold"][:5]) and S["ios26"] and not S["owner"], S)
+            chk("(5) what the person gains: three short lines; every step names its button in bold (%s); the iOS 26 variants are there (step 1 the menu button at the left of the address bar, then Share, with the toolbar Share as the older versions' note; View More; Open as Web App)" % S["bold"],
+                len(S["gains"]) == 3 and all(len(g) < 60 for g in S["gains"]) and S["n"] == 6 and all(len(b) >= 1 for b in S["bold"][:5]) and S["ios26"] and S["menu"] and not S["owner"], S)
             lay = pg.evaluate(G["LAYOUT"])
             chk("(5) the sheet is inside the screen, nothing sideways, every button 44px+, one choice of three", bool(lay) and lay["inside"] and lay["sideways"] <= 0 and not lay["small"] and lay["radios"] == 3, lay)
             shot(pg, "sheet")

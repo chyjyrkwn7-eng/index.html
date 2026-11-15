@@ -9,6 +9,7 @@ Read off the page, an existing account (signed up, has answered questions, the t
 (4) Samsung, a Chrome tab: the same Quick tip, Android picked;
 (5) never: in the installed app, on a computer, for an account that has answered nothing (a sign-up still under way), or
     where it has shown before (the sign-up's own showing counts);
+(1b) its walkthrough's step 1 is the new Safari's route (the menu button at the left of the address bar, then Share);
 (6) the sign-up's own showing keeps its heading ("Home Screen") - only an existing account's says Quick tip;
 (7) no page errors.
 Run:  python3 tools/check-b384-a2hstip.py   (--against OLD/index.html must FAIL)"""
@@ -65,6 +66,12 @@ with sync_playwright() as pw:
         bool(r) and r["from"] == "tip" and re.fullmatch(r"\s*quick tip\s*", r["tag"], re.I) and r["checked"] == ["apple"] and r["screen"] == "home"
         and re.search(r"later|not now", r["close"], re.I) and not re.search(r"computer", r["intro"], re.I), r)
     if r:
+        # (384.133) the walkthrough in the tip teaches the new Safari's route: step 1 is the menu button at the left of the address bar, then Share
+        st1 = pg.evaluate("""()=>{ const li=document.querySelector('#a2hs-sheet .a2hs-apple .a2hs-step'); const m=li&&li.querySelector('.a2hs-step-main');
+            return m ? { text:m.textContent.replace(/\\s+/g,' ').trim(), circles:[...m.querySelectorAll('svg')].map(v=>v.querySelectorAll('circle').length) } : null; }""")
+        chk("(1b) iPhone: the tip's step 1 is the menu button at the left of the address bar, then Share, with no dots drawn in it (%s)" % (st1 and st1["text"]),
+            bool(st1) and bool(re.search(r"menu button", st1["text"], re.I)) and bool(re.search(r"left of the address bar", st1["text"], re.I)) and bool(re.search(r"Share", st1["text"]))
+            and len(st1["circles"]) >= 1 and 3 not in st1["circles"], st1)
         G["sheet_layout"](pg, "Quick tip sheet")
         gone = G["close_sheet"](pg)
         key = pg.evaluate("()=>localStorage.getItem('class26e.a2hs')")

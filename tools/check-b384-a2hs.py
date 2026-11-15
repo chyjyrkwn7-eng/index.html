@@ -18,11 +18,14 @@ Get Started -> Welcome -> I'm new here -> the class -> GENERATING PROFILE -> Nov
                (never over Nova, the save-code card or a tip), once the +100 XP has gone, with the iPhone choice
                already picked; one choice of three; 44px+ buttons, nothing wider than the screen, the sheet inside it.
                The clip: a poster that loads, a source that plays (its clock moves); the pointers, in the recording's
-               order on its clock: •••, Share, View More, Add to Home Screen (a row in the list), Open as Web App,
+               order on its clock: the menu button at the left of the address bar, Share, View More, Add to Home Screen (a row in the list), Open as Web App,
                Add, the Nova icon on the Home Screen; each comes on inside its own window and is the only one on, its
                ring inside the clip's box at the place it declares, its label inside the box, the step it belongs to
-               lit and said under the clip (its words clear of the pinned Not now); none before the first. Read off the clip's own pixels under the ring at
-               its time: Open as Web App on the switch's green, Add on the button's blue, Add to Home Screen on the
+               lit and said under the clip (its words clear of the pinned Not now); none before the first. Step 1 is the NEW
+               Safari's: the menu button at the left of the address bar, then Share, with a drawn icon of that button
+               (never the dots first; ••• and the toolbar's Share are only the older versions' note). Read off the clip's own pixels
+               under the ring at its time: the menu button's white lines on the address bar's grey pill (the bar is gone while the menu is up),
+               Share's white glyph on the menu's grey, View More's white chevron on its grey disc, Open as Web App on the switch's green, Add on the button's blue, Add to Home Screen on the
                row's white glyph on the list's grey, the Nova icon sharp on its dark tile with the warm wallpaper round
                it (none of which is there at the clip's start). While the walkthrough is up the address carries the account's code
                (the icon opens signed in), and Not now takes it off again. Not now closes it; the enrolled banner
@@ -355,7 +358,7 @@ with sync_playwright() as pw:
             chk("iphone there are pointers over the clip (%d), in order on its clock" % len(pts), len(pts) >= 5 and all(pts[i]["from"] < pts[i]["to"] <= pts[i + 1]["from"] + 1e-6 for i in range(len(pts) - 1)), pts)
             # the second recording, in its own order: Add to Home Screen is a row in the list (not with View More), and
             # it goes on past Add to the Home Screen and opens Nova from the new icon
-            ORDER = ["dots", "share", "viewmore", "a2hs", "switch", "add", "icon"]
+            ORDER = ["menu", "share", "viewmore", "a2hs", "switch", "add", "icon"]
             kinds = [p["kind"] for p in pts]
             steps_n = pg.evaluate("()=>document.querySelectorAll('#a2hs-sheet .a2hs-apple .a2hs-step').length")
             chk("iphone the pointers are the recording's, in its order: %s" % " > ".join(k or "?" for k in kinds),
@@ -363,6 +366,19 @@ with sync_playwright() as pw:
             chk("iphone ...the steps follow them: one step a pointer's step, in order, the last one the Nova icon's (%d steps)" % steps_n,
                 kinds == ORDER and [p["step"] for p in pts] == sorted(p["step"] for p in pts) and pts[-1]["step"] == steps_n - 1
                 and len(set(p["step"] for p in pts)) == steps_n, ([(p["kind"], p["step"]) for p in pts], steps_n))
+            # (384.133) step 1 is the new Safari's: the menu button at the left of the address bar, then Share; the dots are
+            # only the older versions' note (a drawn button of three circles first is the old route)
+            s1 = pg.evaluate("""()=>{ const li=document.querySelector('#a2hs-sheet .a2hs-apple .a2hs-step'); if(!li) return null;
+                const m=li.querySelector('.a2hs-step-main'), n=li.querySelector('.a2hs-step-note');
+                const first=m && m.querySelector('svg'); const circ=svg=>svg?svg.querySelectorAll('circle').length:-1;
+                return { main:m?m.textContent.replace(/\\s+/g,' ').trim():'', note:n?n.textContent.replace(/\\s+/g,' ').trim():'',
+                  mainIcons:m?m.querySelectorAll('svg').length:0, mainFirstCircles:circ(first), mainDots:m?[...m.querySelectorAll('svg')].some(v=>circ(v)===3):false,
+                  noteDots:n?[...n.querySelectorAll('svg')].some(v=>circ(v)===3):false, noteShareIcon:n?n.querySelectorAll('svg').length>=2:false }; }""")
+            chk("iphone step 1 names the menu button at the left of the address bar, then Share, with a drawn icon of that button that is not the dots (%s)" % (s1 and s1["main"]),
+                bool(s1) and bool(re.search(r"menu button", s1["main"], re.I)) and bool(re.search(r"left of the address bar", s1["main"], re.I))
+                and bool(re.search(r"\bShare\b", s1["main"])) and s1["mainIcons"] >= 1 and s1["mainFirstCircles"] == 0 and not s1["mainDots"] and "•" not in s1["main"], s1)
+            chk("iphone ...and the older versions' route (the dots, the toolbar's Share) is only its short note (%s)" % (s1 and s1["note"]),
+                bool(s1) and bool(re.search(r"older versions", s1["note"], re.I)) and s1["noteDots"] and s1["noteShareIcon"], s1)
             pg.evaluate("()=>document.querySelector('#a2hs-sheet video').pause()")
             SEEK = """async t=>{ const v=document.querySelector('#a2hs-sheet video'); v.pause();
                 await new Promise(r=>{ const f=()=>{ v.removeEventListener('seeked', f); r(); }; v.addEventListener('seeked', f); v.currentTime=t; setTimeout(r, 1500); });
@@ -459,6 +475,39 @@ with sync_playwright() as pw:
                 p = pts[ic[0]]; u = under_at((p["from"] + p["to"]) / 2, p); u0 = under_at(0.05, p)
             chk("iphone the last pointer sits on the Nova icon on the Home Screen: its V sharp at the ring's centre, its dark tile across the ring, the warm wallpaper round it (%s), not so at the clip's start (%s)" % (u, u0),
                 bool(ic) and on_icon(u) and not on_icon(u0), (u, u0))
+            # (384.133) the three pointers of the new route sit on the thing they name, in the clip's own pixels: a white glyph
+            # under the ring's centre on the surface it is on (the address bar's pill, the menu's grey, View More's disc), and not
+            # so where that thing is not on screen (the bar is gone while the menu is up; the sheet is not up at the clip's start)
+            NEAR = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+                const g=c.getContext('2d'); g.drawImage(v,0,0); const R=12, cx=Math.round(x*c.width), cy=Math.round(y*c.height);
+                const d=g.getImageData(cx-R, cy-R, R*2+1, R*2+1).data; const ls=[]; let mx=0;
+                for(let i=0;i<d.length;i+=4){ const l=.299*d[i]+.587*d[i+1]+.114*d[i+2]; ls.push(l); if(l>mx) mx=l; }
+                ls.sort((a,b)=>a-b); return { max:mx, med:ls[ls.length>>1] }; }"""
+            def near_at(t, p):
+                u = None
+                for _ in range(4):
+                    pg.evaluate(SEEK, t); u = pg.evaluate(NEAR, [p["x"], p["y"]])
+                    if not (u["max"] == u["med"]): break
+                    pg.wait_for_timeout(800)
+                return u
+            def glyph_on(u, lo, hi):
+                return u["max"] >= 200 and lo <= u["med"] <= hi
+            mn, sh_, vm = of_kind("menu", -1), of_kind("share", -1), of_kind("viewmore", -1)
+            u = u0 = None
+            if mn and sh_:
+                p = pts[mn[0]]; u = near_at((p["from"] + p["to"]) / 2, p); u0 = near_at((pts[sh_[0]]["from"] + pts[sh_[0]]["to"]) / 2, p)
+            chk("iphone the menu-button pointer sits on the button at the left of the address bar: its white lines on the bar's grey pill (%s), and the bar is gone while the menu is up (%s)" % (u, u0),
+                bool(mn and sh_) and glyph_on(u, 55, 100) and not glyph_on(u0, 0, 255), (u, u0))
+            u = u0 = None
+            if sh_:
+                p = pts[sh_[0]]; u = near_at((p["from"] + p["to"]) / 2, p); u0 = near_at(0.05, p)
+            chk("iphone the Share pointer sits on the first row of the menu: Share's white glyph on the menu's grey (%s), not so at the clip's start (%s)" % (u, u0),
+                bool(sh_) and glyph_on(u, 60, 140) and not glyph_on(u0, 60, 140), (u, u0))
+            u = u0 = None
+            if vm:
+                p = pts[vm[0]]; u = near_at((p["from"] + p["to"]) / 2, p); u0 = near_at(0.05, p)
+            chk("iphone the View More pointer sits on the share sheet's View More: its white chevron on the grey disc (%s), not so at the clip's start (%s)" % (u, u0),
+                bool(vm) and glyph_on(u, 70, 130) and not glyph_on(u0, 0, 255), (u, u0))
             pg.evaluate("()=>document.querySelector('#a2hs-sheet video').play()")
             pg.wait_for_timeout(300)
             enrolled_before = pg.evaluate("()=>!!document.getElementById('enrolled-banner')")
@@ -600,15 +649,22 @@ if want("clip"):
         from PIL import Image
         pw_, ph_ = Image.open(POSTER).size
         chk("the poster is the clip's size (%dx%d)" % (pw_, ph_), (pw_, ph_) == (v.get("width"), v.get("height")), (pw_, ph_))
-        # The second recording, as cut (545 frames at 30fps). Per frame, the band the row of people is in while the
-        # sheet sits, opens and starts to scroll (frame ranges -> its top and bottom); the frames where the list has
-        # scrolled it under the header's glass, and the frame just before the scroll they are measured against; the
-        # frames of the settled Home Screen.
-        ROWS = ("127-127:706:876;128-129:666:847;130-130:652:833;131-133:650:831;134-134:652:833;135-174:654:835;175-175:598:779;"
-                "176-176:532:713;177-177:444:625;178-178:372:553;179-180:296:477;181-181:266:447;182-182:248:429;183-184:240:421;"
-                "185-185:238:419;186-186:236:417;187-188:234:415;193-196:234:415")
-        HEADER, HEADER_REF = range(201, 254), 196
-        HOME = list(range(384, 409)) + list(range(413, 442))
+        # (384.133) THE BUDGET: the clip is 540x1174 (the phone's own shape), 30fps, 15-22s, under 700KB (the previous one was
+        # 580KB: the page loads it on a phone), every frame decodable: the frame count is the duration at 30fps.
+        dur = float((p.get("format") or {}).get("duration", 0) or 0); nbf = int(v.get("nb_frames", 0) or 0)
+        chk("the clip is within the budget: 540x1174, 15-22s, 450-660 frames, under 700000 bytes (%dx%d, %.2fs, %d frames, %d bytes)" % (v.get("width", 0), v.get("height", 0), dur, nbf, size),
+            (v.get("width"), v.get("height")) == (540, 1174) and 15 <= dur <= 22 and abs(nbf - round(dur * 30)) <= 1 and 450 <= nbf <= 660 and size < 700000, (v, size))
+        # The clip as cut (555 frames at 30fps; the first 280 are the third recording, the new route, the rest the earlier recording's
+        # Add page onward; they meet in a dissolve, frames 272-279). Per frame, the band the row of people is in while the sheet
+        # rises, sits, opens and scrolls (frame ranges -> its top and bottom, hairline to hairline, read off the source by
+        # tracking the row); the frames where the list has scrolled the row under the header's glass (the header there is
+        # the header of frame 218, before the scroll); the frames of the settled Home Screen.
+        ROWS = ("118-118:697:837;119-119:688:835;120-120:682:835;121-124:678:837;127-157:682:835;161-176:682:835;177-177:624:777;"
+                "178-178:552:711;179-179:496:655;180-180:402:561;181-181:354:513;182-182:314:473;183-184:282:441;185-185:266:425;"
+                "186-187:258:417;188-189:252:411;190-219:250:409;221-221:252:345;222-222:252:343;223-223:252:341;224-225:252:337;"
+                "226-227:252:335;228-233:252:331;234-234:252:327;235-235:252:325;236-236:252:319;237-237:252:315")
+        HEADER, HEADER_REF = range(221, 262), 218
+        HOME = list(range(394, 419)) + list(range(423, 452))
         want_n = {}
         for part in ROWS.split(";"):
             rng, y0, y1 = part.split(":"); a, b = rng.split("-")
@@ -643,13 +699,14 @@ if want("clip"):
             if ratio > worst_row: worst_row, worst_at = ratio, i
         chk("the share sheet's row of people is blurred in all %d frames it is in: at most %.2f of the detail of the apps row under it (frame %s)"
             % (rows_seen, worst_row, worst_at), rows_seen == len(want_n) and worst_row < .25, (rows_seen, len(want_n), worst_row, worst_at))
-        # behind the header's glass: the right-hand part, clear of the header's own title, address and X (a ghost of the
-        # row through the glass differs from the header before the scroll by ~7 grey levels on an unblurred cut)
+        # behind the header's glass: the right-hand part below the title and address, clear of the header's own X (a ghost
+        # of the row's avatars and names through the glass differs from the header before the scroll by several grey levels
+        # on an unblurred cut)
         worst_h, worst_h_at = 0.0, None
         if HEADER_REF < n and HEADER[-1] < n:
-            ref = frames[HEADER_REF][84:200, 346:454].astype(np.float32)
+            ref = frames[HEADER_REF][150:250, 346:454].astype(np.float32)
             for i in HEADER:
-                d = float(np.abs(frames[i][84:200, 346:454].astype(np.float32) - ref).mean())
+                d = float(np.abs(frames[i][150:250, 346:454].astype(np.float32) - ref).mean())
                 if d > worst_h: worst_h, worst_h_at = d, i
         chk("once the list scrolls the row under the header, nothing of it shows through the header's glass in all %d frames: the header differs from itself before the scroll by at most %.2f of 255 (frame %s)"
             % (len(HEADER), worst_h, worst_h_at), HEADER[-1] < n and worst_h_at is not None and worst_h < 1.0, (worst_h, worst_h_at, n))
@@ -657,7 +714,7 @@ if want("clip"):
         sh = [sharpness(f[4:62, 4:W - 4]) for f in frames]
         worst_s = max(sh) if sh else 9
         chk("the status bar is blurred in all %d frames: its steepest edges at most %.2f of its own range of light (a sharp status bar measures 0.4-0.7) (frame %s)"
-            % (n, worst_s, sh.index(worst_s) if sh else None), n >= 500 and worst_s < .2, worst_s)
+            % (n, worst_s, sh.index(worst_s) if sh else None), n >= 540 and worst_s < .2, worst_s)
         # the Home Screen: every app but Nova (the two rows of icons and their names, the dock) against the Nova icon
         worst_o, worst_o_at = 0.0, None
         for i in HOME:

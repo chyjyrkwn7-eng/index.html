@@ -12185,7 +12185,9 @@
   /* the video screen: the heading and the clip stay in the top ~40% of the screen, above the share menu that rises over the rest.
      The clip's box is these three properties (a new recording is cropped here, not in code): --iv-ar is the box's width / height,
      --iv-pos which part of the frame is kept (x y), --iv-scale a zoom into it. --iv-h is the height the top 40% leaves. */
-  .installvideo-panel{ --iv-ar:1.4; --iv-pos:50% 92%; --iv-scale:1;
+  /* (384.133) the new recording keeps the address bar at the very bottom of its frame (the menu button at its left), so the band kept
+     is the frame's bottom edge (100%, not 92%): the bar, then the menu, the share sheet's rows and the list rise through it. */
+  .installvideo-panel{ --iv-ar:1.4; --iv-pos:50% 100%; --iv-scale:1;
     --iv-h:max(7rem, calc(40vh - env(safe-area-inset-top, 0px) - 6.5rem)); --iv-h:max(7rem, calc(40dvh - env(safe-area-inset-top, 0px) - 6.5rem)); }
   .if-vhead{ margin:0 0 .75rem; font-size:clamp(1.15rem, 5vw, 1.55rem); font-weight:700; line-height:1.2; color:var(--ink); text-align:center; text-wrap:balance; font-family:inherit; text-transform:none; }
   .iv-frame{ position:relative; flex:none; box-sizing:border-box; width:min(100%, 30rem, calc(var(--iv-h) * var(--iv-ar))); aspect-ratio:var(--iv-ar);
@@ -56413,7 +56415,7 @@ const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === 
   const ilist = section("A second icon with another status bar style", () => 0);
   const iout = document.createElement("div"); iout.style.cssText = "font-size:11px;line-height:1.4;-webkit-user-select:text;user-select:text;word-break:break-all";
   const base = location.origin + location.pathname;
-  iout.textContent = "iOS reads the status bar style once, when an icon is added, so it cannot be tried live. Open this address in Safari (not in this app), tap Share, Add to Home Screen, and name it 'Nova test'. Sign in there with the sync code. Then open its Settings > Advanced > Troubleshooting and read the measurements.\n\ndefault: " + base + "?sbs=default&diag\nblack: " + base + "?sbs=black&diag";
+  iout.textContent = "iOS reads the status bar style once, when an icon is added, so it cannot be tried live. Open this address in Safari (not in this app), tap the menu button at the left of the address bar, then Share, then Add to Home Screen (View More first, if it is not in the list), and name it 'Nova test'. Sign in there with the sync code. Then open its Settings > Advanced > Troubleshooting and read the measurements.\n\ndefault: " + base + "?sbs=default&diag\nblack: " + base + "?sbs=black&diag";
   iout.style.whiteSpace = "pre-wrap";
   ilist.appendChild(iout);
 
@@ -93856,6 +93858,23 @@ function buildDotsIcon(){
   return svg;
 }
 
+/* (384.133) The page-menu button of the newer Safari: at the LEFT of the address bar, two short lines (the top one
+   longer). It replaced the ••• button (buildDotsIcon, kept for the older versions' note). While a tab is playing sound
+   Safari draws a small speaker above the lines; this is the plain one. */
+function buildPageMenuIcon(){
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "installguide-glyph");
+  svg.setAttribute("aria-hidden", "true");
+  const lines = document.createElementNS(svgNS, "path");
+  lines.setAttribute("d", "M5.5 9.5h13M5.5 14.5h8");
+  lines.setAttribute("fill", "none"); lines.setAttribute("stroke", "currentColor"); lines.setAttribute("stroke-width", "2");
+  lines.setAttribute("stroke-linecap", "round");
+  svg.appendChild(lines);
+  return svg;
+}
+
 /* Matches Chrome for Android's vertical three-dot "kebab" menu button —
    kept as its own icon rather than reusing buildDotsIcon above, since
    that one is specifically the HORIZONTAL dots of iOS Safari's own
@@ -93958,16 +93977,16 @@ function handleInstallTap(){
    side of the whole sentence. */
 const INSTALL_STEPS = [
   { parts: [
-      { text: "Tap " }, { icon: buildDotsIcon, style: "grey-circle" }, { text: " then tap Share." }
+      { text: "Tap the menu button " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of the address bar, then tap Share." }
     ],
     note: [
-      { text: "Don't see that? Tap the " }, { icon: buildShareIcon, style: "plain" }, { text: " Share icon directly instead." }
+      { text: "On older versions, tap " }, { icon: buildDotsIcon, style: "plain" }, { text: " instead, or the " }, { icon: buildShareIcon, style: "plain" }, { text: " Share icon in the toolbar." }
     ] },
   { parts: [
       { text: "Scroll down and tap " }, { icon: buildAddSquareIcon, style: "circle" }, { text: " \u201cAdd to Home Screen.\u201d" }
     ],
     note: [
-      { text: "Don't see it? Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " \u201cView More,\u201d then scroll down. Still nothing? Tap \u201cEdit Actions\u201d at the bottom and add it from there." }
+      { text: "Don't see it? Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " \u201cView More,\u201d in the share menu, then scroll down. Still nothing? Tap \u201cEdit Actions\u201d at the bottom and add it from there." }
     ] },
   { parts: [
       { text: "Make sure " }, { icon: buildToggleIcon, style: "plain" }, { text: " \u201cOpen as Web App\u201d is on \u2014 it's on by default." }
@@ -94123,15 +94142,17 @@ function showInstallGuide(platform){
    back on its own. The enrolled banner and Nova's good-luck message wait for it (a2hsHolds).
    Settings > Share & Install > Add to Home Screen opens the same sheet (handleInstallTap).
    THE DEVICE is asked, guessed from the browser (a2hsDeviceGuess): iPhone or iPad / Android or Samsung / Computer.
-   APPLE: landing/a2hs-iphone.mp4, his second screen recording (iOS 26 Safari, build 384): Welcome in a Safari
-   tab, •••, Share, View More, Add to Home Screen in the list, the Add page, Add, his Home Screen with the new
-   icon, and Nova opening from it. Tone-mapped from its HDR, cut from 29s to 18.2s; in every frame they are in,
-   the share sheet's row of people (his friends' photos and names; tracked frame by frame, and kept out from
+   APPLE: landing/a2hs-iphone.mp4 (384.133), made of two of his screen recordings (iOS 26 Safari). The first part is the NEW
+   route, from his third recording: Welcome in a Safari tab, the menu button at the LEFT of the address bar (Safari's
+   bottom bar is now back, address, tabs; there is no ••• any more), the menu with Share first in it, the share sheet,
+   View More, the expanded list with Add to Home Screen in it. From the Add page on it is the second recording, the
+   one before (the Add page, Open as Web App, Add, his Home Screen with the new icon, Nova opening): his third
+   recording stops at the list and does not show the Add page. The two meet in a dissolve from the settled list to
+   the Add page; the sheet behind the Add page is the old one. Both were tone-mapped from HDR. In every frame they
+   are in, the share sheet's row of people (his friends' photos and names; tracked frame by frame, and kept out from
    behind the header's glass once the list scrolls), the status bar (the time, the recording light, the Dynamic
-   Island, signal, battery) and every app on his Home Screen but Nova are blurred. Madison: "blur our stuff, like
-   the people you see in the share thing ... The Home Screen, blur all my apps out. Blur out some of the stuff at
-   the top of the phone as like the red recording light". The pointers are drawn over it here (A2HS_POINTERS),
-   on the clip's own clock, as fractions of its frame;
+   Island, signal, battery) and every app on his Home Screen but Nova are blurred. The pointers are drawn over it here
+   (A2HS_POINTERS), on the clip's own clock, as fractions of its frame;
    the step the clip is on is lit in the list. While the walkthrough is up the address carries the code
    (installCodeInUrl), because on iPhone the icon keeps its own data, apart from Safari's: an icon added now
    opens signed in to this account and its progress comes from the cloud. Played only while it is the choice.
@@ -94147,24 +94168,26 @@ var A2HS_CLIP = { src: "landing/a2hs-iphone.mp4", poster: "landing/a2hs-iphone.j
      rate went in first, and made every iOS animation in it sluggish.) The pointers run off the clip's own clock. */
   rate: 1 };
 var A2HS_ADDRESS = "chyjyrkwn7-eng.github.io/index.html";
-/* Read off the clip frame by frame: in it ••• is pressed at 1.73s, Share at 3.6s, View More at 5.83s; the list
-   scrolls at 6.6s and Add to Home Screen (a row in the list, under the icons) is pressed at 8.3s; the Add page is
-   up from 9.5s, Add is pressed at 12.1s; the Home Screen is up from 12.8s, the Nova icon is pressed at 14.57s and
-   Nova is open from 15.67s to the end (18.17s). from/to in seconds; x/y the button's centre as a fraction of the
-   frame; step = the line of A2HS_STEPS_APPLE it belongs to; kind = what it points at (the gate reads the clip's
-   own pixels under some of them). */
+/* Read off the clip frame by frame: in it the page-menu button (left of the address bar) is pressed at 1.27s and
+   the menu is up from 1.8s with Share the first row; Share is tapped at 3.1s and the sheet is up from 4.3s; View More
+   is pressed at 5.5s and let go at 5.9s, the list is open from 6.6s; it scrolls from 7.3s and Add to Home Screen (a row in the list,
+   under the icons) is there from 8.2s; the clip dissolves into the Add page at 9.07s (the Add page is up from 9.33s,
+   from the earlier recording: its times are 0.333s later than they were); the switch is on screen from 9.9s, Add is
+   pressed at 12.4s, the Home Screen is up from 13.1s, the Nova icon is pressed at 14.9s and Nova is open from 16.0s
+   to the end (18.5s). from/to in seconds; x/y the button's centre as a fraction of the frame; step = the line of
+   A2HS_STEPS_APPLE it belongs to; kind = what it points at (the gate reads the clip's own pixels under some of them). */
 var A2HS_POINTERS = [
-  { kind: "dots", from: .3, to: 1.8, x: .867, y: .939, side: "above", step: 0, label: "Tap •••" },
-  { kind: "share", from: 2.35, to: 3.7, x: .451, y: .666, side: "above", step: 0, label: "Tap Share" },
-  { kind: "viewmore", from: 4.5, to: 5.87, x: .831, y: .9, side: "above", step: 1, label: "Tap View More" },
-  { kind: "a2hs", from: 6.8, to: 8.4, x: .125, y: .73, side: "above", step: 2, label: "Tap Add to Home Screen" },
-  { kind: "switch", from: 9.55, to: 10.8, x: .883, y: .335, side: "below", step: 3, label: "Make sure this is on" },
-  { kind: "add", from: 10.8, to: 12.25, x: .883, y: .119, side: "below", step: 4, label: "Tap Add" },
-  { kind: "icon", from: 12.85, to: 14.65, x: .841, y: .248, side: "above", step: 5, label: "Tap Nova to open it" }
+  { kind: "menu", from: .2, to: 1.4, x: .261, y: .939, side: "above", step: 0, label: "Tap the menu button" },
+  { kind: "share", from: 2.0, to: 3.2, x: .285, y: .452, side: "above", step: 0, label: "Tap Share" },
+  { kind: "viewmore", from: 4.7, to: 5.9, x: .826, y: .905, side: "above", step: 1, label: "Tap View More" },
+  { kind: "a2hs", from: 8.2, to: 9.3, x: .125, y: .77, side: "above", step: 2, label: "Tap Add to Home Screen" },
+  { kind: "switch", from: 9.9, to: 11.13, x: .883, y: .335, side: "below", step: 3, label: "Make sure this is on" },
+  { kind: "add", from: 11.13, to: 12.58, x: .883, y: .119, side: "below", step: 4, label: "Tap Add" },
+  { kind: "icon", from: 13.18, to: 14.98, x: .841, y: .248, side: "above", step: 5, label: "Tap Nova to open it" }
 ];
 var A2HS_STEPS_APPLE = [
-  { parts: [{ text: "Tap " }, { icon: buildDotsIcon, style: "grey-circle" }, { text: ", then " }, { text: "Share", b: true }, { text: "." }],
-    note: [{ text: "In Safari. If the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button is in the toolbar, tap that instead." }] },
+  { parts: [{ text: "Tap the menu button " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of the address bar, then " }, { text: "Share", b: true }, { text: "." }],
+    note: [{ text: "In Safari. On older versions, tap " }, { icon: buildDotsIcon, style: "plain" }, { text: " instead, or the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button in the toolbar." }] },
   { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " " }, { text: "View More", b: true }, { text: "." }],
     note: [{ text: "It is called " }, { text: "More", b: true }, { text: " on some versions. If " }, { text: "Add to Home Screen", b: true }, { text: " is already in the list, skip this step." }] },
   { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " " }, { text: "Add to Home Screen", b: true }, { text: "." }],
@@ -94608,7 +94631,7 @@ function showHomeScreenSheet(opts){
      Screen is a row in that menu. Apple has no call that adds it in one tap, so the button says what it opens. Cancelled, failed or
      missing, the steps above are the way, and "I've added it" is a quiet answer, not the main button. */
   const shareBtn = mk("button", "next a2hs-share", "Open Share menu"); shareBtn.type = "button";
-  const shareSt = mk("p", "a2hs-status a2hs-share-status"); shareSt.setAttribute("role", "status"); shareSt.textContent = "In the menu, tap Add to Home Screen."; shareSt.hidden = true;
+  const shareSt = mk("p", "a2hs-status a2hs-share-status"); shareSt.setAttribute("role", "status"); shareSt.textContent = "In the menu, tap View More if you see it, then Add to Home Screen."; shareSt.hidden = true;
   const done = mk("button", "next ghost a2hs-close", "Not now"); done.type = "button";
   foot.append(shareBtn, shareSt, added, done);
   sheet.append(body, foot);
@@ -102808,9 +102831,10 @@ function showInstallFirst(o){
     panel.setAttribute("data-screen", "installhelp"); panel.dataset.dev = dev;
     const steps = dev === "apple" ? [
       [{ text: "Open this page in " }, { text: "Safari", b: true }, { text: "." }],
-      [{ text: "Tap the " }, { text: "Share", b: true }, { text: " button " }, { icon: buildShareIcon, style: "plain" }, { text: " in Safari’s toolbar." }],
-      { parts: [{ text: "Scroll the menu down and tap " }, { text: "Add to Home Screen", b: true }, { text: "." }],
-        note: [{ text: "Not in the list? Scroll to the bottom of the menu, tap " }, { text: "Edit Actions", b: true }, { text: " (or " }, { text: "More", b: true }, { text: ") and add it." }] },
+      { parts: [{ text: "Tap the menu button " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of Safari’s address bar, then " }, { text: "Share", b: true }, { text: "." }],
+        note: [{ text: "On older versions, tap the " }, { icon: buildShareIcon, style: "plain" }, { text: " Share button in the toolbar." }] },
+      { parts: [{ text: "In the share menu, tap " }, { text: "View More", b: true }, { text: ", then " }, { text: "Add to Home Screen", b: true }, { text: "." }],
+        note: [{ text: "Not in the list? Scroll to the bottom of the menu, tap " }, { text: "Edit Actions", b: true }, { text: " and add it." }] },
       [{ text: "Tap " }, { text: "Add", b: true }, { text: "." }]
     ] : [
       [{ text: "Open this page in " }, { text: "Chrome", b: true }, { text: " or your browser." }],
@@ -123292,7 +123316,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.133";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -123435,7 +123459,7 @@ function showAddToHomeNotice(){
 
   const text = document.createElement("span");
   text.className = "update-banner-text";
-  text.textContent = "You're signed in here. Now tap Share, then Add to Home Screen \u2014 " +
+  text.textContent = "You're signed in here. Now tap the menu button at the left of the address bar, then Share, then Add to Home Screen \u2014 " +
     "do it from this page and the new icon remembers your account for good.";
 
   const row = document.createElement("div");
@@ -123893,7 +123917,7 @@ function showFrameNotice(info){
   /* ---- step two: the original notice, reached only after the code ---- */
   function showRemoveStep(){
     text.textContent = info.frameNote ||
-      "Tap Open in Safari, then Share \u2192 Add to Home Screen from that page. " +
+      "Tap Open in Safari, then, from that page, the menu button at the left of the address bar \u2192 Share \u2192 Add to Home Screen. " +
       "The new icon carries your account with it. Then delete the old one.";
     row.replaceChildren();
 
