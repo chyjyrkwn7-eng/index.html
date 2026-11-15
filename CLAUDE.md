@@ -112,9 +112,9 @@ Codes only ever go in the chat reply. Never ask for or print the key.
 
 ## Fire Code source books
 
-The IFC 2021 book and the Harris County amendments PDFs are NOT in the repo (copyright). The owner re-sends them each session; when
-present they are extracted at `/home/user/ifc-book/`. Before changing any IFC question or citation, check it against the book.
-Never commit them.
+The full IFC 2021 book and the full Harris County amendments PDF are NOT in the repo (copyright; the repo only ships the reader's
+cut, `ifc/harris-county-amendments.pdf`). The owner re-sends them each session; when present they are extracted at
+`/home/user/ifc-book/`. Before changing any IFC question or citation, check it against the book. Never commit them.
 
 ## Verifying (empirically, every time)
 
