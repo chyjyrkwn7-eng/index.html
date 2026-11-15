@@ -43,7 +43,7 @@ with sync_playwright() as pw:
     # (1) Fire Code's bar tabs
     ctx, pg, errs = G["page"](br, G["init"](G["ifc"]))
     r = pg.evaluate("""async()=>{ const w=ms=>new Promise(r=>setTimeout(r,ms)); const out={};
-      showProfile('profile'); await w(900); out.profileSeg = !!document.querySelector('#stage .screen-profile > .navsegment.profiletabs');
+      showProfile('profile'); await w(900); out.profileSeg = [...document.querySelectorAll('#stage .screen-profile > .navsegment.profiletabs > *')].some(b => /settings/i.test(b.textContent));   /* (384.133) Profile's own Profile / Stats switch is there since 384 (Stats); what 383 meant is that Settings is not in it */
       out.profileOnly = !!document.querySelector('#stage .profile-identity-tab:not([hidden])') && !document.querySelector('#stage .profile-settings-tab');
       document.getElementById('bottomtab-settings')?.click(); await w(1100);
       out.settingsSeg = !!document.querySelector('#stage .screen-profile > .navsegment.profiletabs');
