@@ -22,8 +22,10 @@ Installed iPhone 17 Pro Max (440x956, 59/34 simulated) and iPad Pro 11" (834x119
      >= 80% wide): #top-edge - fixed, full width, at least max(inset, 6px) tall, pointer-events none, an inline OPAQUE background-colour and
      no background-image, the colour of the screen's top (the sky's top colour; the paper under a question's header) and theme-color's;
      where that colour changes (onto a question, back to Home) theme-color was danced c, c + "fe", c; z 2147483647 (the r/PWA element);
- (10) CLIP    the display test lists "clip" (class26e.topclip): the strip 11px with background-clip:text, its colour still set and opaque.
-Run:  python3 tools/check-b384-bouncefix.py [--against FILE]   (main 384.77 must FAIL (1), (4), (5), (6), (9))"""
+ (10) CLIP    (384.105, CHANGED ON PURPOSE: the display test is gone, docs/notes-archive.md "384.105") class26e.topclip = "1" is deleted at
+              launch and changes nothing: no .top-clip, the strip the default's (over the inset, no background-clip:text, its colour opaque).
+              Until 384.95 the display test listed "clip": the strip 11px with background-clip:text.
+Run:  python3 tools/check-b384-bouncefix.py [--against FILE]   (main 384.77 must FAIL (1), (4), (5), (6), (9); main 384.95 must FAIL (10))"""
 import os, sys, re, time, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
@@ -175,16 +177,14 @@ def run(br):
     s = pg.evaluate(STATE)
     chk("Safari tab: the root's overscroll-behavior-y is none as before (%s)" % s["ob"], s["ob"] == "none" and "is-browser" in pg.evaluate("()=>document.documentElement.className"), s)
     ctx.close()
-    # (10) the display test's "clip": the strip 11px, background-clip:text (paints nothing), its background-colour still set and opaque
+    # (10) (384.105, changed on purpose) the display test's "clip" is gone: its flag is deleted at launch and the strip is the default's
     ctx, pg, cdp = boot(br, RAW, DEVICES[0], extra="localStorage.setItem('class26e.topclip','1');")
     pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(1500)
     k = pg.evaluate("""()=>{ const e = document.getElementById('top-edge'); const cs = getComputedStyle(e), r = e.getBoundingClientRect();
-      return { cls: document.documentElement.classList.contains('top-clip'), h: r.height, clip: cs.webkitBackgroundClip || cs.backgroundClip, bg: cs.backgroundColor }; }""")
-    chk("clip: the strip is 11px, background-clip:text, its colour still set and opaque (%s)" % k, k["cls"] and abs(k["h"] - 11) < .5 and k["clip"] == "text" and opaque(k["bg"]), k)
-    ctx.close()
-    ctx, pg, cdp = boot(br, RAW, DEVICES[0], extra="localStorage.setItem('class26e.displaytest','1');")
-    listed = pg.evaluate("()=>{ const T = window.__diagTrials; return !!(T && T.byId && T.byId.clip); }")
-    chk("clip: the display test lists it (%s)" % listed, listed, listed)
+      return { cls: document.documentElement.classList.contains('top-clip'), h: r.height, clip: cs.webkitBackgroundClip || cs.backgroundClip, bg: cs.backgroundColor,
+               left: localStorage.getItem('class26e.topclip') }; }""")
+    chk("clip is gone: class26e.topclip deleted at launch, no .top-clip, the strip the default's - over the inset, painted, opaque (%s)" % k,
+        not k["cls"] and k["left"] is None and abs(k["h"] - max(DEVICES[0][3], 6)) < .6 and k["clip"] != "text" and opaque(k["bg"]), k)
     ctx.close()
     # (7) on its side
     dev = ("promax-land", 956, 440, 0, 21, UA)

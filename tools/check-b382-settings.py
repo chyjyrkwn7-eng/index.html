@@ -3,14 +3,16 @@ Madison: "Ensure to remove the stuff from report a bug so it's not there anymore
 of settings, please get all these buttons and things looking better".
 (1) Report a bug carries no diagnostics controls (tab speed / tab timings / Leaderboard speed / drag test): the
     form's only button is the send.
-(2) Share this app, Add to Home Screen, Check for update, Report a bug, Version history and Advanced settings are
+(2) Share this app, Add to Home Screen guide, Check for update, Report a bug, Version history and Advanced settings are
     each a full-width row of its card, 44px+, with a label; on the menu, all but Support's two word rows (Report a bug,
-    Version history) with an icon tile; on a page the menu opens (Share & Install) NO tile (384 r8: pages are plain lists). Since Settings became a menu (382), Share this app and Add to Home Screen are on the Share &
+    Version history) with an icon tile; on a page the menu opens (Share & Install) NO tile (384 r8: pages are plain lists). Since Settings became a menu (382), Share this app and Add to Home Screen guide are on the Share &
     Install page; the rest are on the menu.
 (3) Every one still does what it did (spied): share, the install walkthrough, the version check, the report screen,
     the release history, Advanced opening (its own page since the colour redesign).
 (4) No horizontal overflow, and no row past the screen edge, on iPhone 440x956, Pro Max at 85% 518x1125, SE 375x667,
-    iPad 834x1194 and a laptop, in the academy and in Fire Code.
+    iPad 834x1194 and a laptop, in the academy and in Fire Code; (384.105) and on a 320x568 phone, and every Share & Install row's words on
+    one line ("Add to Home Screen guide" is the longest; a guard: it passes on 384.95 too, whose words were shorter).
+(384.105) The install guide row is found by its key (data-row="install"), not its words.
 Run:  python3 tools/check-b382-settings.py   (--against: copy the old index.html over first)"""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -53,8 +55,10 @@ def page(br, w, h, ins, installed, cls="academy"):
     pg.evaluate("()=>{ try{ homeUnlocksOwed=()=>false; }catch(e){} }")
     return ctx, pg
 
-LABELS = ["Share this app", "Add to Home Screen", "Check for update", "Report a bug", "Version history", "Advanced settings"]
-WHERE = {"Share this app": "share", "Add to Home Screen": "share", "Check for update": "", "Report a bug": "",
+LABELS = ["Share this app", "Add to Home Screen guide", "Check for update", "Report a bug", "Version history", "Advanced settings"]
+# (384.105) rows found by their key (data-row) rather than their words; the rest by the words they start with
+KEYS = {"Add to Home Screen guide": "install"}
+WHERE = {"Share this app": "share", "Add to Home Screen guide": "share", "Check for update": "", "Report a bug": "",
          "Version history": "", "Advanced settings": ""}
 WORDS = ("Report a bug", "Version history")   # Support's word rows: no icon by design
 def open_for(pg, label):
@@ -68,10 +72,10 @@ def rows_ok(sh, t):
     if not v: return False
     icon_ok = (not v["icon"]) if WHERE[t] else (v["icon"] or t in WORDS)
     return v["h"] >= 44 and v["full"] and v["label"] and bool(icon_ok) and v["onPage"] == bool(WHERE[t])
-SHAPE = """(labels)=>{ const out={};
+SHAPE = """(labels)=>{ const out={}, KEYS=%s;
   const all=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].filter(b=>b.offsetParent);
   for(const t of labels){
-    const b=all.find(x=>(x.textContent||'').trim().startsWith(t));
+    const b=all.find(x=>KEYS[t] ? x.dataset.row===KEYS[t] : (x.textContent||'').trim().startsWith(t));
     if(!b){ out[t]=null; continue; }
     const r=b.getBoundingClientRect(), p=b.parentElement.getBoundingClientRect();
     const icon=b.querySelector('svg'); const ir=icon?icon.getBoundingClientRect():null;
@@ -80,10 +84,14 @@ SHAPE = """(labels)=>{ const out={};
       icon: !!ir && ir.width>=12 && ir.right <= r.left + r.width*0.25, label: (b.textContent||'').trim().length>0,
       onPage: !!b.closest('.screen-settings-page') };
   }
-  return out; }"""
+  return out; }""" % json.dumps(KEYS)
 GEOM = """()=>{ const de=document.documentElement;
   const rows=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].filter(b=>b.offsetParent).map(b=>b.getBoundingClientRect());
   return { hscroll: de.scrollWidth - innerWidth, past: rows.filter(r=>r.right > innerWidth + 1 || r.left < -1).length }; }"""
+# (384.105) how many lines each Share & Install row's words take (the line boxes of its label's text)
+LINES = """()=>[...document.querySelectorAll('#stage .settings-page-share .settings-row')].filter(b=>b.offsetParent).map(b=>{
+  const l=b.querySelector('.settings-row-label, .settings-row-words') || b; const r=document.createRange(); r.selectNodeContents(l);
+  return [b.dataset.row || (l.textContent||'').trim().slice(0, 30), new Set([...r.getClientRects()].filter(x=>x.width>0).map(x=>Math.round(x.top))).size]; })"""
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
@@ -107,14 +115,14 @@ with sync_playwright() as pw:
     def fresh(spies, label=""):
         pg.evaluate("(a)=>{ window.__hit=[]; (new Function(a[0]))(); a[1] ? showAppearance({ page: a[1] }) : showAppearance(); }", [spies, WHERE.get(label, "")]); pg.wait_for_timeout(900)
     def tap(label):
-        pg.evaluate("(t)=>{ const b=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].find(x=>x.offsetParent&&(x.textContent||'').trim().startsWith(t)); b && b.click(); }", label)
+        pg.evaluate("(a)=>{ const [t, k]=a; const b=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].find(x=>x.offsetParent&&(k ? x.dataset.row===k : (x.textContent||'').trim().startsWith(t))); b && b.click(); }", [label, KEYS.get(label)])
     fresh("""window.__realShare = window.__realShare || navigator.share;
       Object.defineProperty(navigator, 'share', { configurable:true, value: d => { __hit.push('share:' + (d && d.url ? 'url' : '')); return Promise.resolve(); } });""", "Share this app")
     tap("Share this app"); pg.wait_for_timeout(1200)
     chk("Share this app opens the share sheet with the link", "share:url" in pg.evaluate("__hit"), pg.evaluate("__hit"))
-    fresh("window.__realInstall = window.__realInstall || handleInstallTap; window.handleInstallTap = () => __hit.push('install');", "Add to Home Screen")
-    tap("Add to Home Screen"); pg.wait_for_timeout(400)
-    chk("Add to Home Screen runs the install walkthrough", "install" in pg.evaluate("__hit"), pg.evaluate("__hit"))
+    fresh("window.__realInstall = window.__realInstall || handleInstallTap; window.handleInstallTap = () => __hit.push('install');", "Add to Home Screen guide")
+    tap("Add to Home Screen guide"); pg.wait_for_timeout(400)
+    chk("Add to Home Screen guide runs the install walkthrough", "install" in pg.evaluate("__hit"), pg.evaluate("__hit"))
     pg.evaluate("()=>{ window.handleInstallTap = window.__realInstall; }")
     fresh("""window.__realFetch = window.__realFetch || window.fetch; window.fetch = function(u){ __hit.push('fetch:' + String(u)); return window.__realFetch.apply(this, arguments); };""")
     tap("Check for update"); pg.wait_for_timeout(1500)
@@ -144,18 +152,23 @@ with sync_playwright() as pw:
                                           ("Pro Max at 85%", (518, 1125, (73, 0, 40, 0), True), "academy"),
                                           ("SE 375", (375, 667, (20, 0, 0, 0), False), "academy"),
                                           ("SE 375, Fire Code", (375, 667, (20, 0, 0, 0), False), "ifc"),
+                                          ("SE 1st gen 320", (320, 568, (20, 0, 0, 0), False), "academy"),   # (384.105)
                                           ("iPad 834", (834, 1194, (24, 0, 20, 0), True), "academy"),
                                           ("laptop", (1512, 852, (0, 0, 0, 0), False), "academy")):
         ctx, pg = page(br, w, h, ins, inst, cls)
-        geos, shs = {}, {}
+        geos, shs, lines = {}, {}, None
         for key in ("", "share"):
             pg.evaluate("(k)=>{ k ? showAppearance({ page: k }) : showAppearance(); }", key); pg.wait_for_timeout(1100)
             geos[key or "menu"] = pg.evaluate(GEOM)
             shs.update({k: v for k, v in pg.evaluate(SHAPE, LABELS).items() if v})
+            if key == "share": lines = pg.evaluate(LINES)
         cl = pg.evaluate("window.NOVA_CLASS")
         all_rows = all(rows_ok(shs, t) for t in LABELS)
         chk("%s (%s): no sideways scroll, nothing past the edge, every action a row, tiles on the menu only (%s)" % (label, cl, geos),
             all(g_["hscroll"] <= 0 and g_["past"] == 0 for g_ in geos.values()) and all_rows and cl == cls, {"geo": geos, "rows": shs})
+        # (384.105) a guard for the longer words of the install guide row: every Share & Install row on one line
+        chk("%s (%s): every Share & Install row's words on one line (%s)" % (label, cl, lines),
+            bool(lines) and len(lines) >= 2 and all(n == 1 for _, n in lines), lines)
         ctx.close()
     br.close()
 print("ALL PASS" if ok else "FAILURES")

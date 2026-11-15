@@ -39893,3 +39893,65 @@ GATE (new): tools/check-b384-closedeyes.py - every character the page keeps, on 
   42px sheets, and the sheet frame whose eyes differ most from its usual frame shows the lid line in every eye; E no page error.
 
 384.113 (closedeyes) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm, load 2-4; the build stays the placeholder 384.113): check-js ALL PASS; the page loads with no page error (only the blocked network and the file:// version.json fetch in the console); check-b384-closedeyes ALL PASS (both classes, every character, blink / asleep / 42px row / the app's own flip-book recorder, the animation version not c5); run `--against` main 384.107's index.html it FAILS (22 failures: every character whose closed eye was gone, the Toxic Spill's three eyes awake and asleep, Frost's flip-book, and CHAR_ANIM_VER still c5); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre; check-unlocks ALL PASS; check-results ALL PASS. Sheets for Madison: one PNG per character and class, open / blink / sleep / 42px, from `tools/check-b384-closedeyes.py --shots DIR`. Chromium draws the SVG the way the page asks; only the phone shows how the blink reads at speed.
+### 384.105 (nodiag)
+
+Branch `claude/b384-nodiag` from main 384.95 (562b1ed), main 384.97 (93d18a9) and 384.99 (ac2f923) merged in before the final gates; built as 384.105 (the lead renumbers at merge). NOT merged: waiting for the owner's go.
+
+Madison: "Remove the 'show the display test panel' stuff from settings by the way." The display test (384 r17 to 384.85, see "384 r17",
+"384.26", "384.27", "384.77", "384.80") was the panel of switches for chasing the iOS 26 top-of-screen blur; he has decided the blur is the
+system's, not fixable, and not to be chased further.
+
+**Removed (commit b6c0b68, index.html only, so `git revert b6c0b68` puts it back; `retired/display-test.md` + `.patch`):**
+- Settings > Advanced > Troubleshooting: its header, its one row ("Show / Hide the display test panel") and its note. Troubleshooting held
+  nothing else, so the section is gone and Reset is Advanced's last section. Nothing above it moved (gate N1: every Settings screen on
+  384.99's rects; Advanced is 384.99's page less its last header, card, row and note).
+- The panel itself and its `?diag` entry (the 309-line IIFE: suspect switches, Run auto test, trials, readout, "keep for the next launch",
+  `window.__diagTrials`), and the `?sbs=default|black` test-install head script (only the panel's text pointed at it).
+- What only honoured its flags: the head script's reads of `class26e.topguard/topedgeold/topedgepe/topmatch/topdeep/top383/topclip` (it now
+  puts `top-edge-on` on in every installed iPhone/iPad app, exactly where it did by default); the CSS for `.top-clip`, `.top-383`,
+  `#top-deep` and the `:not(.top-edge-old)` on the strip's rule (its computed style is unchanged: N3/N4 compare it and the pixels);
+  `<div id="top-deep">`; `topWashLift`/`TOP_WASH_LIFT` (variant A); `topEdgeStill()` is now just `html.top-edge-on`, and the splash
+  script's copy of it; `syncTopGuard`'s branch for anywhere without the still edge (the 8px `#top-guard` made per colour, its splash
+  watch, and the top383/topguard checks) - it now returns there, which is what it did on every device by default: html.top-edge-on and
+  `isIOSDevice() && standalone` are the same test, so that branch only ever made a strip when a flag had switched the still edge off;
+  `top-deep`/`top-guard` in `PAGE_LOCK_SKIP`; `displaytest` in the sign-out keep list and the class redirect's shared list.
+- One difference in an edge case, on purpose: main read `class26e.topguard` in the head script, so an installed iPhone whose storage throws
+  (never seen; the app could not keep progress there) got no still edge and then the old 8px strip; it now gets the still edge like
+  every other installed iPhone.
+
+**Flags cleared.** A new block at the top of the first head script (before the SIGNED OUT block and the class redirect, so storage is
+read raw and both classes' copies go in one launch on either side) deletes, every launch, `class26e.X` and `class26e.ifc.X` for:
+`displaytest`, `dxboot`, `topguard` ("0"), `topedgeold` ("1"), `topedgepe` ("none"), `topmatch`, `topdeep`, `top383`, `topclip` ("1") -
+everything the panel could set - and three older ones nothing reads any more: `ojappoff` (384.85's panel switch, reverted with it),
+`sbdefault` (384.85's status-bar-style finding, written on every 384.85 launch) and `topclear` (384.54's "0" switch). Found by diffing the
+`class26e.*` keys of 384.20, 384.27, 384.64, 384.70, 384.77 and 384.85 against main. `class26e.diag` is the 327z boot trace's, cleared
+since 327z; left alone.
+
+**Left in, unreachable:** nothing from the flags. Kept because they are not the test's: `#top-safe{display:none !important}` and the
+`top-safe` loops in `topStripsSky()` / `syncTopGuard()` (384.80's; that element has not been in the markup since then), and the still
+top edge itself (`#top-edge`, `syncTopGuard`, the theme-color dance) - the shipped default.
+
+**Settings > Share & Install: "Add to Home Screen guide"** (Madison: "the 'add to Home Screen' thing should be 'add to Home Screen guide' or
+something?"). The row (`settingsPageRow("install", ...)`) opens the steps; it adds nothing itself. The sheet it opens is titled "Add Nova to
+your Home Screen", which does not repeat the row's name, so it is unchanged; the steps keep Safari's own words ("Add to Home Screen").
+One line on a 320x568 phone, the SE, the Pro Max at 85%, the iPad and a laptop (check-b382-settings (4), new guard; rects on the Share &
+Install page identical to 384.99's, gate N1).
+
+**Gates.**
+- NEW `tools/check-b384-nodiag.py`: N1 no "display test" words or panel on any of 10 Settings screens (both classes, the panel's flag
+  set beforehand), Advanced's sections whole, every Settings screen on 384.99's rects (Advanced: 384.99's less its last section);
+  N2 `?diag`, `?diag=1`, `?x=1&diag` show nothing; N3 every flag above set in both copies before load: none left after boot, and
+  the top is the default's - <html> classes, #top-edge's computed box/colour/touch/layer, theme-color, and the top band (strip + 100px)
+  pixel for pixel on Home, a question and Profile (Pro Max both classes, SE, Safari tab); N4 with no flags that band is 384.99's pixel
+  for pixel (ac2f923, read from git; it was 384.95, 562b1ed, before the merges); N5 no page errors.
+- RETIRED to `retired/display-test/`: `check-b384-displaytest.py`, `check-b384-autotest.py`, `check-b384-topguard.py` (the panel, its
+  auto test, the old 8px strip behind topedgeold).
+- CHANGED ON PURPOSE (each held a switch): `check-b384-topedge` (4) topguard and (5) - now each of topguard/topedgeold/topedgepe is
+  deleted at launch and changes nothing, and the panel flag opens nothing; `check-b384-top383` (6) - A/B/C deleted at launch, no class,
+  no backdrop, the default strip; `check-b384-bouncefix` (10) - clip deleted at launch, the default strip. Every other check in them is
+  as it was.
+- The rename: `check-b382-settings`, `check-b382-credits`, `check-behaviour` check_b218 and `check-b384-a2hs` find the row by its key
+  (`data-row="install"`) instead of its words; check-b382-settings (4) gains a 320x568 phone and "every Share & Install row's words on
+  one line" (a guard: it passes on 384.95 too). `check-b384-installfirst` and `check-b384-r4` do not read this row (unchanged).
+
+384.105 (nodiag) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm, load 2-5; the build stays the placeholder 384.105): check-js 13 inline blocks ALL PASS and builds agree; the page loads with no page error (only the blocked network and the file:// version.json fetch in the console); check-b384-nodiag ALL PASS; `--against` origin/main (384.107) FAILS (15: N1 both classes, N2 three addresses, N3 on four device/launch combinations), as intended; sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre; check-b384-topedge ALL PASS; check-b384-top383 ALL PASS (its reference commit 42bbffa needed the clone to be unshallowed first); check-b382-settings ALL PASS; check-b382-credits ALL PASS; check-b384-a2hs ALL PASS; check-behaviour check_b218 ALL PASS; check-b384-bouncefix: only (the root does not bounce, overscroll-behavior-y auto) fails on the Pro Max and the iPad Pro 11" installed, and those two fail the same way on main 384.107 (pre-existing, not this build's; (10) clip passes here and FAILS on main, as intended).

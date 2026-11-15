@@ -75,7 +75,7 @@ ROWS = """()=>{
     const title=((lab||r).firstChild||{}).textContent||'';
     const cs=getComputedStyle(r);
     const out={ title: title.trim().slice(0,40), h: Math.round(r.getBoundingClientRect().height), card: cards.indexOf(card),
-      cat: r.classList.contains('settings-cat'), page: r.dataset.page||'', chev: !!r.querySelector('.settings-row-chev'),
+      cat: r.classList.contains('settings-cat'), page: r.dataset.page||'', row: r.dataset.row||'', chev: !!r.querySelector('.settings-row-chev'),
       color: cs.color, cardCls: card ? card.className : '' };
     if(t){ const own=getComputedStyle(t); const ts=/rgba\([^)]*,\s*0\)$|transparent/.test(own.backgroundColor) ? getComputedStyle(t,'::after') : own;   /* (384 r8) the fill can be the tile's ::after (Delta's material: a rim, then the fill) */
       const c=rgb(ts.backgroundColor), svg=t.querySelector('svg');
@@ -111,7 +111,8 @@ GEOM = """()=>{ const de=document.documentElement;
   return { hscroll: de.scrollWidth - innerWidth, past: els.filter(r=>r.right > innerWidth + 1 || r.left < -1).length, n: els.length }; }"""
 LIT = "()=>[...document.querySelectorAll('#bottomtabs .bottomtab.active')].filter(b=>b.offsetParent).map(b=>b.id)"
 def tap(pg, label):
-    return pg.evaluate("(t)=>{ const b=[...document.querySelectorAll('#stage button')].find(x=>x.offsetParent&&(x.textContent||'').trim().startsWith(t)); if(!b) return false; b.scrollIntoView({block:'center'}); b.click(); return true; }", label)
+    # (384.105) "row:KEY" taps the row by its key (data-row), whatever its words say
+    return pg.evaluate("(t)=>{ const b=[...document.querySelectorAll('#stage button')].find(x=>x.offsetParent&&(t.startsWith('row:') ? x.dataset.row===t.slice(4) : (x.textContent||'').trim().startsWith(t))); if(!b) return false; b.scrollIntoView({block:'center'}); b.click(); return true; }", label)
 def settings(pg):
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(1300)
 def chans(c):
@@ -127,7 +128,8 @@ def red(c):
 PAGES = {"sound": ["Sound effects", "Tap sounds"],
          "study": ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"],   # (383: the longer pause is gone)
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
-         "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"],
+         "sync": ["Your sync code"], "rankings": ["Show me in the rankings"],
+         "share": ["Share this app", "row:install"],   # (384.105) the install guide row by its key (data-row), not its words: "Add to Home Screen guide" since 384.105
          "account": [],   # (383) Settings > Account: the name editor and Sign out (no switches)
          "classes": ["Join another class"]}   # (384 r4) the classes you are in, and joining another
 # (384) "Cameron Wharton started the idea of this entire app. He made the beta ... He should be second on the list under me"
@@ -183,7 +185,7 @@ with sync_playwright() as pw:
                 const host=c.parentElement; const lab=e || (host && host.querySelector(':scope > .slab'));
                 return !lab; }).length; }""")
             chk("%s %s page: every group has a label (%s without)" % (tag, k, unl), unl == 0, unl)
-            titles = [r["title"] for r in prow]
+            titles = [r["title"] for r in prow] + ["row:" + r["row"] for r in prow if r.get("row")]   # (384.105) a "row:KEY" need is met by data-row
             if k == "sync" and cls == "ifc":
                 # Fire Code has no cloud (initFirebase stands down there): its Sync page is the unreachable status
                 titles += [t for t in pg.evaluate("()=>[...document.querySelectorAll('#stage .sync-status-row')].length ? ['Your sync code'] : []")]
@@ -205,7 +207,7 @@ with sync_playwright() as pw:
         tap(pg, "Share this app"); pg.wait_for_timeout(1200)
         chk("%s Share this app opens the share sheet" % tag, "share:url" in pg.evaluate("__hit"), pg.evaluate("__hit"))
         fresh("window.__realInstall = window.__realInstall || handleInstallTap; window.handleInstallTap = () => __hit.push('install');", "share")
-        tap(pg, "Add to Home Screen"); pg.wait_for_timeout(400)
+        tap(pg, "row:install"); pg.wait_for_timeout(400)   # (384.105) by its key: the row reads "Add to Home Screen guide"
         chk("%s Add to Home Screen runs the walkthrough" % tag, "install" in pg.evaluate("__hit"), pg.evaluate("__hit"))
         pg.evaluate("()=>{ window.handleInstallTap = window.__realInstall; }")
         fresh("window.__realFetch = window.__realFetch || window.fetch; window.fetch = function(u){ __hit.push('fetch:' + String(u)); return window.__realFetch.apply(this, arguments); };")
