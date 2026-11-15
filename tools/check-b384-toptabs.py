@@ -25,6 +25,12 @@ Code - in Fire Code only the chat's and the review's exist: it has one Profile t
 
 Labels are read off the page; shapes are asserted, never strings.
 
+(384.116, segglass) Madison then sent a recording of Delta's control itself ("Ours is stretched, no liquid glass, ours is
+indented... make it exactly like what I sent"), and it shows what r18 read as absent: a press swells the control, a move carries the
+thumb in a clear glass LENS taller than the track. 1 allows the translucent glass track to take a few levels of the page's own tint
+under it (it is glass now: within 6 levels across themes, chroma <= 8); 2 and 3a now ask for the lens (it is up while the thumb
+moves and stands proud of the track) and the swell, not their absence. check-b384-segglass holds their shape frame by frame.
+
   python3 tools/check-b384-toptabs.py                    # both devices, both classes
   python3 tools/check-b384-toptabs.py --against /tmp/prev-index.html   # the build before: must FAIL
   python3 tools/check-b384-toptabs.py --only profile     # switchers whose name matches
@@ -90,8 +96,8 @@ def run_switcher(pg, ptr, dev, tag, sw):
     pg.evaluate("()=>{ theme.accent='ink'; applyTheme(); }"); pg.wait_for_timeout(300)
     st = L.open_switcher(pg, sw, 1300)
     far = acc is None or min(sum((p[k] - acc[k]) ** 2 for k in range(3)) ** .5 for p in (thumb_b, track_b)) > 40
-    rest_ok = luma(track_a) - luma(thumb_a) >= 10 and chroma(track_a) <= 6 and chroma(thumb_a) <= 6 \
-        and max(abs(thumb_a[k] - thumb_b[k]) for k in range(3)) <= 2 and max(abs(track_a[k] - track_b[k]) for k in range(3)) <= 2 and far \
+    rest_ok = luma(track_a) - luma(thumb_a) >= 10 and chroma(track_a) <= 8 and chroma(thumb_a) <= 6 \
+        and max(abs(thumb_a[k] - thumb_b[k]) for k in range(3)) <= 2 and max(abs(track_a[k] - track_b[k]) for k in range(3)) <= 6 and far \
         and st["thumbRadius"] >= st["thumbLayout"][1] / 2 - .5 and st["trackRadius"] >= st["seg"][3] / 2 - .5
     chk("%s: 1. at rest the track (%s) is a neutral grey LIGHTER than the thumb (%s), the same under two themes, not the accent, both capsules" % (tag, track_a, thumb_a), rest_ok,
         {"track": (track_a, track_b), "thumb": (thumb_a, thumb_b), "accent": acc})
@@ -106,9 +112,11 @@ def run_switcher(pg, ptr, dev, tag, sw):
     fr = L.frames(pg); st2 = state(pg, sw); a = L.analyse(fr, c1, rest_th, rest_seg)
     dx, dy = centred(st2, i1)
     lens_seen = [f for f in fr if f.get("lens")]
-    chk("%s: 2. a tap glides the thumb to the tapped segment with no glass lens (%d frames), no resize (+%.1f%%), no swell (+%.1f%%), no overshoot (%.2fpx), centred (dx %.2f, dy %.2f)"
-        % (tag, len(lens_seen), 100 * (a or {}).get("size", 0), 100 * (a or {}).get("swell", 0), (a or {}).get("overshoot", 0), dx, dy),
-        a and a.get("moved") and not lens_seen and not st2["lens"] and a["size"] <= .005 and a["swell"] <= .002 and a["overshoot"] <= 2 and a["backstep"] <= 1.5
+    # (384.116) the thumb crosses in the glass lens (taller than the track) while the control swells, and lands centred, the lens put away
+    tall = max([f["lens"][3] / rest_seg[3] for f in lens_seen] + [0])
+    chk("%s: 2. a tap carries the thumb to the tapped segment in the glass lens (%d frames, x%.2f the track's height), the control swelling (+%.1f%%), no overshoot past 4%% of the way (%.2fpx), centred (dx %.2f, dy %.2f)"
+        % (tag, len(lens_seen), tall, 100 * (a or {}).get("swell", 0), (a or {}).get("overshoot", 0), dx, dy),
+        a and a.get("moved") and lens_seen and tall > 1 and st2["lensOp"] <= .01 and a["swell"] <= .10 and a["overshoot"] <= max(2, .04 * abs(c1 - cx(rest_th)) + 1) and a["backstep"] <= 1.5
         and lit_index(st2) == i1 and dx <= 1 and dy <= 1, {"a": a, "lit": lit_index(st2), "lens": len(lens_seen)})
 
     # 3. a drag two-thirds of the way to the neighbour, then one a quarter of the way
@@ -122,8 +130,9 @@ def run_switcher(pg, ptr, dev, tag, sw):
     near = abs(cx(held["thumb"]) - xf); lit_held = lit_index(held)
     ptr.up(); wait_lit(pg, sw, i1); settle(pg, sw)
     st3 = state(pg, sw); dx, dy = centred(st3, i1)
-    chk("%s: 3a. a drag carries the thumb with the finger (within %.1fpx), lifted %.1f%% (1-6%%), nothing picked until let go (lit %d)" % (tag, near, 100 * lift, lit_held),
-        near <= 2 and .01 <= lift <= .06 and lit_held == i0 and not held["lens"], {"near": near, "lift": lift, "lit": lit_held})
+    lens_up = held["lens"] and held["lensOp"] >= .5
+    chk("%s: 3a. a drag carries the thumb with the finger (within %.1fpx) in the glass lens (%s), nothing picked until let go (lit %d)" % (tag, near, lens_up, lit_held),
+        near <= 2 and lens_up and lit_index(held) == i0 and lit_held == i0, {"near": near, "lift": lift, "lit": lit_held})
     chk("%s: 3b. let go two-thirds over, it snaps to the nearest segment, picked, thumb centred under its label (dx %.2f, dy %.2f)" % (tag, dx, dy),
         lit_index(st3) == i1 and dx <= 1 and dy <= 1 and abs(st3["thumb"][2] - rest_th[2]) <= .5, {"lit": lit_index(st3), "want": i1})
     st = st3; i0 = lit_index(st); i1 = i0 + 1 if i0 + 1 < n else i0 - 1
