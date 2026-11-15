@@ -244,12 +244,14 @@ def drag(pg, x0, y0, x1, y1, steps=10, hold=16):
     try: c.detach()
     except Exception: pass
 
-def double_tap(pg, x, y, gap=20):
+def double_tap(pg, x, y, gap=0.03):
+    """two taps with no browser round trip between them (time.sleep, not pg.wait_for_timeout): ~60ms apart, inside the 300ms window on any machine"""
+    import time
     c = pg.context.new_cdp_session(pg)
     for i in range(2):
-        c.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y, "id": 1}]}); pg.wait_for_timeout(10)
+        c.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y, "id": 1}]}); time.sleep(0.01)
         c.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-        if i == 0: pg.wait_for_timeout(gap)
+        if i == 0: time.sleep(gap)
     pg.wait_for_timeout(450)
     try: c.detach()
     except Exception: pass
