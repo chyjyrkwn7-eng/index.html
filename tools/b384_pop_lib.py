@@ -66,6 +66,11 @@ INVENTORY = [
     ("history-units", "store.testHistory=[{units:[topicsIn(QUESTIONS)[0], topicsIn(QUESTIONS)[1]],pct:80,mode:'drill',playedAt:Date.now()-6e4,n:10,ok:8},"
      "{units:[topicsIn(QUESTIONS)[1]],pct:90,mode:'game',playedAt:Date.now()-9e4,n:10,ok:9}]; showTestReviewList(); document.querySelector('#stage .thx-units-btn').click()",
      ".invite-overlay > .invite-sheet.thx-pick-sheet", "sheet", "profile"),
+    # 384.131 (frostfix): the Mode sheet (one choice; the same builder, its own entry so it is gated too)
+    ("history-modes", "store.testHistory=[{units:[topicsIn(QUESTIONS)[0]],pct:80,mode:'drill',playedAt:Date.now()-6e4,n:10,ok:8},"
+     "{units:[topicsIn(QUESTIONS)[1]],pct:90,mode:'game',playedAt:Date.now()-9e4,n:10,ok:9},{units:[topicsIn(QUESTIONS)[2]],pct:70,mode:'exam',playedAt:Date.now()-12e4,n:10,ok:7}];"
+     " showTestReviewList(); document.querySelector('#stage .thx-mode-btn').click()",
+     ".invite-overlay > .invite-sheet.thx-pick-sheet", "sheet", "profile"),
 ]
 
 

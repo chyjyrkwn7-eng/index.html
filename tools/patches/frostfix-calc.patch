@@ -1,0 +1,12 @@
+diff --git a/index.html b/index.html
+--- a/index.html
++++ b/index.html
+@@ -40185,7 +40185,7 @@
+     width:auto; max-width:24rem; margin:0 auto; box-sizing:border-box; padding:.55rem;
+     border-radius:1.6rem; color:var(--ink);
+     background:var(--sheet-bg); border:var(--sheet-border);
+-    box-shadow:var(--sheet-shadow), 0 16px 44px -18px color-mix(in srgb, var(--qcalc-hue) 55%, transparent);
++    box-shadow:var(--sheet-shadow);   /* (384.131 frostfix) the shared pop-up glass exactly: no hue glow of its own */
+     -webkit-backdrop-filter:var(--sheet-blur); backdrop-filter:var(--sheet-blur);
+     opacity:0; transform:translateY(18px) scale(.96); transform-origin:85% 100%; pointer-events:none;
+     font-variant-numeric:tabular-nums; -webkit-user-select:none; user-select:none;

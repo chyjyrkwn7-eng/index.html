@@ -873,11 +873,22 @@
        was there through as mud. So: a LIGHTER tint with a top sheen, a longer blur at higher saturation, a fine rim, and a thinner
        dim (--pop-scrim) so the page is still there to be blurred. One rule at the end of the stylesheet (".POP-UP GLASS") applies
        these; a new pop-up takes the class .pop-glass on its card and .pop-glass-host on its overlay and inherits all of it. */
-    --pop-scrim:rgba(4,6,10,.4);
-    --sheet-bg:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.045) 40%, rgba(255,255,255,.02)), rgba(40,48,62,.42);
-    --sheet-border:1px solid rgba(255,255,255,.17);
-    --sheet-blur:blur(22px) saturate(1.8) brightness(1.05);
-    --sheet-shadow:0 18px 48px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.24), inset 0 -1px 0 rgba(0,0,0,.2);
+    /* (384.131 frostfix) THE OLD FROST IS BACK, FOR EVERY CARD AND SHEET AT ONCE. Madison, Test history's Units sheet on his phone:
+       "why does this frost look like that. The old type of frost we had looked better ... when you clicked someone on the
+       leaderboard, the box that came up had a really nice frost. You changed it too but the old one was so awesome. Revert that and
+       ensure it's app cohesive." The person card was this exact glass through build 382 (a dark neutral .5 pane with a faint top
+       sheen and a dark lip, blur 9px at saturate 1.9 and brightness 1.06, a .11 rim, the card shadow, over a .5 black dim) and the
+       r16 tokens above replaced it with a lighter, bluer pane at 22px over a .4 dim - the "light, washed grey slab" he saw on the
+       Units sheet, which already took these tokens. The r16 FLATNESS it was fixing came from backdrop roots (an overlay faded by
+       opacity, a scrolling overlay, will-change on the person card), not from this recipe; those fixes stay. Measured (Chromium,
+       440x956@3, the Leaderboard): the 382 card's mean colour 49/50/53 against 59/61/68 for r16's; the stripe test smears the page
+       to .07 of its contrast (r16's .03) - deeper and darker, with the page's shapes still there under the frost.
+       docs/notes-archive.md "384.131 (frostfix)"; tools/check-b384-frostfix.py holds every sheet to the person card's recipe. */
+    --pop-scrim:rgba(0,0,0,.5);
+    --sheet-bg:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.5);
+    --sheet-border:1px solid rgba(255,255,255,.11);
+    --sheet-blur:blur(9px) saturate(1.9) brightness(1.06);
+    --sheet-shadow:0 14px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
 
   /* ---------- dark mode ---------- */
@@ -123384,7 +123395,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.118";
+const APP_BUILD = "2026-11-13-384.131";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
