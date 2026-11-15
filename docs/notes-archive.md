@@ -39764,3 +39764,112 @@ after = this build): <before|after>-<dev>-<class>-N-<screen>.png - 1 Stats (Rece
 week, 4 the units sheet with three ticked, 5 filtered by those, 6 the empty state; contact sheets sheet-<dev>-<class>.png (before
 Stats, before history, then the six after shots). Every one looked at. The button reads "Units" in the academy and "Chapters" in
 Fire Code (the class's own noun). Chromium cannot show iOS's glass or real scrolling smoothness of a long list.
+### 384.131 (frostfix)
+THE OLD FROST IS BACK ON EVERY CARD AND SHEET: THE PERSON CARD'S BUILD-382 GLASS, ONE TOKEN CHANGE
+(branch claude/b384-frostfix, cut from origin/claude/b384-testhistory 4e03db5 (384.118, which has main 384.107 merged); NOT on main,
+waiting for the owner's go; the lead re-numbers the build at merge.)
+
+THE REPORT (Madison, a screenshot of three Test history screens on claude/b384-testhistory; the middle one the new Units sheet over the
+list on his iPhone): "The middle, why does this frost look like that. The old type of frost we had looked better. The old frost we had
+on like when you clicked someone on the leaderboard, the box that came up had a really nice frost. You changed it too but the old one
+was so awesome. Revert that and ensure it's app cohesive where needed." His picture: a light, washed grey slab with a lighter wash and
+little depth, the page behind barely showing through.
+
+FORENSICS (tools: scratchpad forensic.py; the person card opened by openPersonSheet over a ten-row Leaderboard, iPhone 17 Pro Max
+440x956 @3x, Chromium; "stripes" = check-b384-leavefrost's stripe ratio, blur on / off, lower = more smeared; "mean" = the card's mean
+RGB as drawn over the real board):
+
+| build (git) | card fill | backdrop-filter | rim | dim behind | will-change | mean RGB | stripes | on his iPhone |
+|---|---|---|---|---|---|---|---|---|
+| 378 (a62b05f) / 382 (a330ee8) | sheen .07/.015/-.14 over rgba(26,31,38,.5) | blur 9 saturate 1.9 brightness 1.06 | .11 | overlay rgba(0,0,0,.5) | none | 49-50/50/53 | .066 | FROSTED: the old frost |
+| 383 (42bbffa) | --clean-card, opaque (beyond Home) | blur 9 (behind an opaque fill) | .11 | .5 | none | 54/55/59 | 0.0 | flat (nothing shows through) |
+| 384.1 (af5725d) .. 384.18.1 (ec36c13) | the 382 glass again (37a21f6 "pop-ups frosted on every screen") | blur 9 sat 1.9 br 1.06 | .11 | .5 layer | opacity, transform | 48/50/54 | .066 | flat: the will-change group (384.24 note) |
+| 384.19 (b2d8db8, r16 c598426) .. 384.22 (d22c03d) | sheen .13/.045/.02 over rgba(40,48,62,.42) | blur 22 sat 1.8 br 1.05 | .17 | rgba(4,6,10,.4) layer | opacity, transform | 59/61/68 | .028 | flat (will-change) |
+| 384.25 (1f6b0f5) .. main 384.107 (7bdca1e) | the r16 glass | blur 22 sat 1.8 br 1.05 | .17 | .4 layer | none | 59/61/68 | .028 | frosted, lighter and bluer |
+| testhistory 384.118: person card AND Units sheet | the r16 glass (the same tokens, one rule) | blur 22 sat 1.8 br 1.05 | .17 | .4 | none | card 59/61/68, sheet 61/65/74 | .028 / .025 | "light washed grey slab" |
+| THIS BUILD 384.131: person card, Units sheet, every pop-up | the 382 glass | blur 9 sat 1.9 br 1.06 | .11 | rgba(0,0,0,.5) layer | none | card 48/50/54, sheet 47/50/55 | .066 / .099 | (phone to confirm) |
+
+`git log -S` on main: `--sheet-bg:`, `--sheet-blur:`, `--sheet-border:`, `--sheet-shadow:` and `--pop-scrim:` were each added once
+(c598426, 384 r16) and never changed since; `--pop-bg-glass:` once (37a21f6). So:
+- "THE OLD FROST" is the build-382 person card, the last one that frosted on his iPhone before r16: 383 made it opaque off Home, and
+  384.1-384.22 carried `will-change: opacity, transform` (the 384.24 "Where's the frosted glass?" report). He has seen the r16 glass
+  frost only since 384.25.
+- MAIN CHANGED IT, not a branch: r16 (384.19) replaced the 382 recipe with a lighter, bluer pane at 22px over a thinner dim, for every
+  card and sheet at once - the person card included ("You changed it too"). The Units sheet on testhistory is NOT an outlier in code:
+  it is `.invite-overlay > .invite-sheet` mounted on <body> by mountSheetOverlay, takes exactly the shared rule (computed fill, blur,
+  rim, shadow and dim identical to the person card's), with no backdrop root above it (no will-change, opacity, filter or mask on an
+  ancestor; its own overflow:hidden is a clip, not a root) and no transformed ancestor. It looked worse than the person card on his
+  phone because the r16 pane is light and blue-grey (white sheen .13 at the top) and the Units sheet is a tall, full-width slab over a
+  dark, nearly empty list - nothing coloured to frost, so what shows is the pane itself - while the person card is a small card with
+  a character, a rank emblem and (for most classmates) a banner tinted into its top, over the busy, coloured board.
+- The same verdict was already given once on a phone: 384.26 put the Test settings sheet back to solid because the r16 glass "read as
+  a washed-out grey slab" on his iPhone ("Change this back what the hell??"). That is this recipe on a big bottom sheet.
+
+WHAT CHANGED (index.html, the :root tokens, one change for every card and sheet): `--sheet-bg` = the 382 pane
+(linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.5)), `--sheet-blur` =
+blur(9px) saturate(1.9) brightness(1.06), `--sheet-border` = 1px solid rgba(255,255,255,.11), `--sheet-shadow` = the 382 card shadow
+(0 14px 40px rgba(0,0,0,.4) + the .15 / .22 inset lines), `--pop-scrim` = rgba(0,0,0,.5) (382's dim). These are the same values
+as the banners' `--pop-*` tokens, so the top banners and the sheets are one glass family again. Everything r16 and 384.24 / 384.52
+fixed about WHERE the glass is drawn is kept: the dim is the overlay's ::before faded by opacity, overlays are plain fixed boxes, no
+will-change on a card, every sheet on <body>. No new blur layer, nothing animates but opacity/transform. The light theme is retired
+(loadTheme ignores it), so "dark and light" is dark in every accent; the sheet's words read at contrast 16.0 (names) and 6.9 (counts)
+as drawn, rows and buttons 44px+.
+- tools/b384_pop_lib.INVENTORY gains "history-modes" (Test history's Mode sheet; "history-units" was added by 384.118).
+- tools/check-b384-popglass.py (1): "blur >= 16px" was r16's number; it now asks for a blur with a saturate, and the recipe itself is
+  held by the new gate. (The decision it encoded was reversed on request, as r16 did to check-b384-savefrost.)
+
+APP COHESION AUDIT (the INVENTORY opened for real, 25 pop-ups x phone academy / phone Fire Code / iPad, plus a scan of every CSS rule
+with a backdrop-filter on a pop-up-like selector). ON THE SHARED RECIPE NOW: the class confirms (leave / only / enroll), new account,
+sign out, save code, Virtual Room leave, the chat's leave sheet, resume offer, saved test dropped, friend moment, Add to Home Screen,
+What's new, the person / unlock / rank-lore / level-coming cards, install picker and guide, Invite to chat, Invite friends, Members,
+Test history's Units and Mode sheets. The older per-class glass rules (.intro-card, .installguide-card, .resume-offer, .chatdock-confirm,
+.savecode-sheet, .a2hs-sheet...) are inert under the shared rule (the gate reads the computed result). LEFT AS THEY ARE, on purpose:
+the Test settings / Start sheet (solid by the owner's 384.26 call - "Change this back"); the unit card .unitdetail (it grows out of its
+row; a blur re-sampled every frame); the arrowed popovers .under-note / .hundo-why and the Home stats popover (an arrow sharing the
+body's fill must be opaque); the chat panel (.95 opaque by design, 384); the top banners, toasts, streak / tier-up / battle / room-chat
+alerts (their own --pop-* family, which already IS this glass; popups-wide's .66 is theirs - see below); the tour tooltip and the daily
+lock tip (clear-glass tips); Profile's own card (solid in the page by design); in-page cards on --surface-* (stat cards, Settings rows,
+the calendar); the tab bar, top buttons, segmented controls and search capsules (the floating controls' own glass); cutscenes and
+full-screen takeovers.
+
+OTHER BRANCHES (git diff from each branch's merge base with main, glass-related lines only; none of these was edited):
+- popups-wide: `background-color:rgba(26,31,38,.66) !important` on the TOP BANNERS (.daily-alert.app-banner, .update-banner.is-glass,
+  .vroom-chat-alert.is-glass, .toast), asked for by the owner ("fix ... the light smear on the glass"). Not the sheets' glass; no patch.
+- segglass: the top tabs' track gets blur(10px) + will-change:backdrop-filter (the segmented control's own glass). Not a pop-up; no patch.
+- settingslook: #settings-bar, a frosted top bar (the screen's colour at .86 over blur 20 saturate 1.6). A bar, not a pop-up; no patch.
+- searchbar: the search capsule and the buttons on its line lose their blur (flat fill). Controls; no patch.
+- dailyq: removes two in-page daily-question card backgrounds. Not a pop-up; no patch.
+- prestige: a new confirm `invite-sheet person-card pg-confirm` (inherits the shared glass) and Profile cards on --surface-*; no patch.
+- calc: a floating calculator `.qcalc` on the shared tokens (so it takes this change by itself) plus a hue glow of its own in the
+  shadow. tools/patches/frostfix-calc.patch drops the glow so it is exactly the shared shadow (OPTIONAL: a cosmetic call for the owner;
+  applies cleanly to origin/claude/b384-calc with `git apply tools/patches/frostfix-calc.patch`).
+- swupdate, unlocks2, reviewtest, popups: nothing glass-related.
+No branch changed --sheet-*, --pop-scrim, --pop-bg-glass or the person card's glass, so no revert patch is needed for the sheets.
+
+GATE tools/check-b384-frostfix.py: the reference is READ OFF build 382's page (git show a330ee8, its person card over the Leaderboard;
+FROSTFIX_REF=FILE overrides) - no typed numbers. (0) the reference is translucent glass; (1) this build's person card has its fill,
+sheen stops, blur / saturate / brightness, rim, shadow and dim (colour x opacity) within a small tolerance; (2) every INVENTORY pop-up
+has the person card's recipe and the reference's; (3) the stripe test on the person card and the Units sheet (ratio < .35 with an
+unblurred spread >= 20); (4) the Units sheet: no backdrop root above it, contrast >= 4.5 for names and counts against the sheet as drawn,
+rows and buttons >= 44px; (5) no page errors. Phone academy + Fire Code and iPad academy; `--quick` (phone academy, six pop-ups),
+`--shots DIR`, `--against FILE`.
+
+GATES (one browser job at a time, TMPDIR=/dev/shm; the machine sat at load 22-35 from other helpers the whole run):
+| gate | this build | --against |
+|---|---|---|
+| check-js | 14 blocks ALL PASS | - |
+| page console | no page errors (every gate below reads pageerror; only the sandbox's blocked Firebase CDN) | - |
+| check-b384-frostfix (full: phone academy, phone Fire Code, iPad) | ALL PASS (96) | testhistory 384.118 (--quick): FAILS 7 - the person card is not the old frost, and class-leave, chat-leave, What's new, unlock, Invite to chat and the Units sheet are not the old frost |
+| check-b384-popglass (25 pop-ups x 3) | ALL PASS (209) | - |
+| check-b384-popfrost | ALL PASS (9) | - |
+| check-b384-personglass | ALL PASS (6) | - |
+| check-b384-savefrost | ALL PASS (11) | - |
+| check-b384-leavefrost | ALL PASS (89) | - |
+| check-b384-testhistory | ALL PASS (39) | - |
+| sweep-layout --quick | 20/20 clean | - |
+| check-centering --quick | 0 off centre of 640 measured on 75 screens; "FAILED" only because 5 elements were moving while measured (IFC "Show the code" summaries, the chat button, the Add to Home Screen "Tap" label) and the mode-arrow pass lost its renderer ("Target crashed") at load 30 - nothing here moves anything (a token change) | - |
+
+ONLY A PHONE CAN CONFIRM: that WebKit draws the 9px blur as the 382 card did (Chromium renders backdrop-filter but not WebKit's own
+backdrop-root rules or its few-frame delay building a blur); how the Units sheet reads over an almost empty, dark list (it frosts what
+is behind it - the 382 recipe lets the rows' shapes through more clearly than r16's 22px did, by design); that the .5 dim does not read
+too heavy on the confirms (r16 thinned .66 to .4; this is .5, the dim the person card always had before r16).
