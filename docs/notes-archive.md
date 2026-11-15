@@ -40042,3 +40042,58 @@ PASS; check-unlocks ALL PASS; check-b384-shine ALL PASS.
   academy). DECISION FOR MADISON: a pin shows no dirt (its front and back wear stage 0, as the Fire Code pins do), so the academy's
   dirty-badge-and-clean-it mechanic no longer shows on the badges.
 - Chromium cannot show how the art reads on the phone's OLED at 3x, nor the glint on WebKit's compositor.
+
+### 384.121 (badges) follow-up: academy reverted
+
+Madison, on the academy pins of 384.121: "Revert the badges for the police academy. I'm not a fan of these new ones." Branch
+`claude/b384-badges2`, cut from `claude/b384-badges` (a68976a); build stays the placeholder `2026-11-13-384.121`. NOT on main, waiting
+for Madison. Fire Code's chapter pins (round 9, which he loves) and the 384.108 shine work are untouched.
+
+**What was removed.** `index.html` is the file of f13649f (a68976a's merge of the shine, before the academy pins) byte for byte: the 24
+academy `CHAPTER_OBJ` entries (part-6-academy) and their `CHAPTER_OBJ_BBOX` boxes are gone, nothing else. The shine merge's removal of
+the in-pin glisten only ever touched pins; the academy's flat path is main's own code as the shine left it. The tools go back to
+f13649f too: the merge tool no longer takes academy keys; `check-b384-objbadges.py` loses `--class academy` and keeps Penal Code as its
+struck-token speed reference; `check-b384-chapterbadges.py` (4) holds all 24 academy units to main again; check_b317_badge2 waits 30s
+again; `snaps.json` loses the academy's 24 entries. Kept, unmerged and unreferenced, in `retired/academy-pins/` (part file, keys,
+snaps, the acadpins gate and a patch of the four tool edits), with `academy-pins.md` on putting them back; `retired/README.md` lists
+it; `tools/chapter-objects/README.md` says where they went.
+- One gate change beyond the revert: `check-b384-chapterbadges.py` (4) reads the academy's vector markup with the in-SVG glisten (the
+  `-sil` mask, the `-shn` gradient, the `badge-shine` group) stripped on both builds. 384.108 took that group out of every found
+  badge's drawing on purpose (the compositor glint replaced it), so (4) failed on it with the academy reverted (only the vector earned
+  markup differed; the struck tokens were identical). Everything else is still held byte for byte, and the pixels are held by the new
+  gate. `--against` a68976a still FAILS (4) (the 24 pins).
+
+**NEW `tools/check-b384-badges2.py`**: every badge surface drawn on this build and on a reference in the same Chromium and compared
+pixel for pixel. (1) A sheet per unit at 440x956@3 and 834x1194@2: found at 26, 40, the case slot, 88 and the card's own size; the
+empty slot; grey; dirt stages 1-4; the unit card's badge found / empty / grey; the back at dirt 0-4; the cutscene's coin face. (2) Every
+token's own pixels (renderBadgeStrike found / grey, dirt 0-4, 132 and 84 px, getImageData hashed). (3) On a stopped clock: the Badges
+case, a badge in your hand, the unit cards, four cutscene frames. The academy is compared with origin/main, Fire Code with a68976a.
+`ONLY=sheet,screens,cutscene` runs parts.
+- Traps found writing it: an RGBA difference has alpha 0 everywhere and `getbbox()` reads alpha, so every compare read identical (it
+  compares RGB now); a page with its body emptied shows `#launch-trouble` over the sheet, so every row was one blank (it is hidden, and
+  the sheet checks its own probe points are on it); the document timeline is real time, so an animation is seeked from the step it is
+  first seen, not from its own `currentTime` (two runs of one build then match exactly).
+- What differs from main on purpose (the shine): the glint layers (`.bc-spec`, `.badge-glint-band`, `.binspect-spec` and the rest, and
+  what is inside them: a visible rule on a child beats an inherited hidden) are hidden on both builds in the in-hand view and the
+  cutscene; main's coin is left lit at rest (the 384.101 finding). With the glint hidden, the coin at rest still differs by 1-2 levels on
+  216 / 507 device pixels (the band's own promoted layer, 384.101); the cutscene allows 2 levels on 0.05% of a frame and prints what it
+  allowed.
+
+**Gates (one Chromium job at a time, TMPDIR=/dev/shm, 180s page loads; load 25-35 from other work for the first hours).**
+- check-b384-badges2: academy vs origin/main ALL PASS (tokens 24/24, sheet 48, case 2, in hand 2, cards 18, cutscene 8, no page
+  errors); Fire Code vs a68976a ALL PASS (tokens 58/58, sheet 116, case 2, in hand 2, cards 18, cutscene 8, and identical even with the
+  glint shown); `--against origin/main` (academy) ALL PASS; `--against a68976a` (academy) FAILS every section: tokens 24/24, sheet
+  48/48, case 2/2, in hand 2/2, cards 18/18, cutscene 8/8.
+- check-js 14 blocks ALL PASS; the page loads in both classes with no page error (the badges2 gate's (4), on every page it opened).
+- sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre; check-unlocks ALL PASS; check-b384-shine ALL PASS.
+- check-b384-chapterbadges ALL PASS (75), the academy's (4) "all identical" with origin/main; `--against` a68976a FAILS (4).
+- check-behaviour badge sections (check_badges, check_cutscene, check_b317_badgecase, check_b317_badge2, check_b318_badges,
+  check_b319_badges, check_b320c_case, check_b321c_case, check_b321d_badges, check_b320g_inspect): ALL PASS, 136 checks, 0 failures,
+  as 384.108 had them; a68976a had 13 failures there (the struck-token and dirt assertions), all gone with the flat badges back.
+- check-b384-objbadges (Fire Code) FAILS the same 5 as on a68976a and 3b2d255 (round 9's own art, not touched): Chapter 35's area 1996,
+  Chapter 59's matches 5.5% thin, Chapters 9 and 3 side wall, Chapter 35 / 63 back plans 0.0173 / 0.0186, Chapter 9's back without
+  its class line (8.2 px) and Chapter 35's at 5.5 px; 84 pass. check-b384-badgetwins FAILS (1b)-(1d) on Chapter 34 / Chapter 50
+  (0.89 / 0.96 / 0.94), as before. Left for Madison's round-9 review.
+- Shots (branch beside reference, 440x956 and 834x1194, looked at): the academy case tray, the unit cards, a badge in your hand and
+  three cutscene frames (glint hidden) beside main, all identical; the Fire Code case tray beside a68976a, identical.
+- Chromium cannot show the glint on WebKit's compositor or the badges on the phone's screen.

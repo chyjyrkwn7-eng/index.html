@@ -98,9 +98,9 @@ SHEET = r"""async () => {
   const us = unitsInTeachingOrder(), slot = (typeof badgeCaseSlotPx === 'function') ? badgeCaseSlotPx() : 44;
   const cardPx = (typeof badgeDefaultPx === 'function') ? badgeDefaultPx() : 44;
   document.body.innerHTML = ''; document.documentElement.style.cssText = 'background:#0B0D10'; document.body.style.cssText = 'margin:0;background:#0B0D10';
-  const root = document.createElement('div'); root.id = 'sheet'; root.style.cssText = 'position:absolute;left:0;top:0;width:' + (innerWidth - 4) + 'px;background:#0B0D10;';
+  const root = document.createElement('div'); root.id = 'sheet'; root.style.cssText = 'position:absolute;left:0;top:0;z-index:2147483647;width:' + (innerWidth - 4) + 'px;background:#0B0D10;';
   document.body.appendChild(root);
-  const st = document.createElement('style'); st.textContent = 'body > *:not(#sheet):not(style){display:none !important}'; document.body.appendChild(st);   /* a toast or banner the app adds later */
+  const st = document.createElement('style'); st.textContent = 'body > *:not(#sheet):not(style), #launch-trouble { display: none !important }'; document.body.appendChild(st);   /* a toast, a banner or the launch-trouble screen the app adds later (a page with its body emptied looks like a failed start) */
   const box = (px, el) => { const w = document.createElement('div'); w.style.cssText = 'width:' + px + 'px;height:' + px + 'px;flex:none;display:flex;align-items:center;justify-content:center;';
     el.style.cssText = 'width:100%;height:100%;display:block;overflow:visible'; w.appendChild(el); return w; };
   const img = (px, url) => { const i = document.createElement('img'); i.src = url; return box(px, i); };
@@ -121,7 +121,8 @@ SHEET = r"""async () => {
   for(let i = 0; i < 150; i++){ if(typeof BADGE_STRIKE_DRAFTS === 'undefined' || !BADGE_STRIKE_DRAFTS.size) break; await new Promise(r => setTimeout(r, 400)); }
   await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
   await new Promise(r => setTimeout(r, 800));
-  return { n: us.length, slot, cardPx, units: us, drafts: (typeof BADGE_STRIKE_DRAFTS === 'undefined') ? 0 : BADGE_STRIKE_DRAFTS.size };
+  const fe = (x, y) => { const e = document.elementFromPoint(x, y); return e ? e.tagName + '.' + String(e.className && e.className.baseVal !== undefined ? e.className.baseVal : e.className).slice(0, 40) + '#' + e.id + ' in ' + (e.closest('#sheet') ? 'sheet' : 'NOT sheet') : null; };
+  return { probe: [fe(30, 30), fe(200, 200)], n: us.length, slot, cardPx, units: us, drafts: (typeof BADGE_STRIKE_DRAFTS === 'undefined') ? 0 : BADGE_STRIKE_DRAFTS.size };
 }"""
 TOKENS = r"""() => { const H = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s[i]; h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };
   const out = {};
@@ -168,10 +169,12 @@ def capture(br, body, cls, tag):
           ctx, pg, errs = open_page(br, body, cls, w, h, dsf)
           if tokens is None: tokens = pg.evaluate(TOKENS)
           sh = pg.evaluate(SHEET)
+          if not all(p and p.endswith(" in sheet") for p in sh["probe"]): errs.append("the sheet is covered: %s" % sh["probe"])   # (a cover once made every row one blank)
           n = pg.evaluate("() => document.querySelectorAll('#sheet .__row').length")
           for i in range(n):
               r = pg.evaluate("(i) => { const e = document.querySelectorAll('#sheet .__row')[i]; e.scrollIntoView({ block: 'start', behavior: 'instant' }); const b = e.getBoundingClientRect(); return { x: 0, y: b.top, width: b.width, height: Math.min(innerHeight - b.top, b.height) }; }", i)
               imgs[(vname, "sheet %02d %s" % (i, sh["units"][i][:40]))] = png(pg, r)
+              if SHOTS and i in (0, 7): imgs[(vname, "sheet %02d %s" % (i, sh["units"][i][:40]))].save(os.path.join(SHOTS, "%s-%s-%s-sheet%02d.png" % (tag, cls, vname, i)))
           errs_all += errs; ctx.close()
         # (3) the screens on a stopped clock
         if not ONLY or "screens" in ONLY:
