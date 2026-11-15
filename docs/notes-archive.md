@@ -39983,3 +39983,40 @@ PICTURES CHANGED: 9, the 9 converted and no other - marks and cuts compared with
 GATES. check-b384-cropfix (g), new: on all 9 the gold band in the table is the answer's row (its label and value read off the page's text inside the band, no word of the rows above or below), ending on the border both sides - PASS; `--against origin/main` FAILS on all 9 (cell gold; ch60-514's on Highly toxic). check-b384-tablerows: the `rows: true` pointers (read from IFC_POINTER_PATCH in index.html) are row citations too, (5) new: one row mark each and the keyed answer printed in it - ALL PASS (55 rows); `--against origin/main` FAILS (0) and (5) on the four. check-b384-ifcmarks: ch22-014's old check (the fraction centred across its own gold) is read as a row now (the fraction inside its row's gold, room above and below, centred down). The machine: the shared IFC book and pdf.js were deleted by a disk cleanup mid-round (restored from the handoff zip in uploads and npm into the scratchpad, see queue/SHARED-PATHS.txt); every browser job of the final run held a shared slot (queue/gate-slot.sh, GATE_PRIO=1).
 
 384.97 (cropfix) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm; the build stays the placeholder 384.97, which collides with live 384.97: the lead renumbers): check-js 14 blocks ALL PASS and builds agree; the page loads with no page error (only the blocked network and the file:// version.json fetch in the console); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre. NOT RUN in this container: tools/check-b384-cropfix.py (and check-b384-qpics), which need the owner's 2021 IFC PDF (IFC_BOOK, never in the repo) and pdf.js; the book was not in this container after its restart, so section (g) and the picture checks (a)-(f) have no result at this head. Their last results are the ones above, on the tree merged with main 384.99, and main's 384.100-384.107 do not touch code-box or picture code. To close the gap: run `PDFJS_DIR=<pdfjs-dist 5.4.149> IFC_BOOK=<the book> python3 tools/check-b384-cropfix.py` and `--against origin/main` (must FAIL) wherever the book is.
+### 384.108 (classmarks) - every place a class is shown or picked has Home's class button's mark and lit ring (claude/b384-classmarks, cut from claude/b384-newdot e817059 = 384.98, main 384.99 merged in; NOT on main)
+Madison: "When selecting classes, ensure the two classes are updated (the logos and circles) to match what the Home Screen has now."
+
+WHERE A CLASS WAS STILL ITS OLD SELF (on 384.98): the sign-up's Select your classes cards and Classes (Add a class) drew NOVA_CLASSES'
+own icons (the academy's lilac-and-coral mark, Fire Code's old flame) on their own grey coins (.cc-emblem) with a corner wash that
+had a pink tail (.cc-glow); Fire Code's enroll page drew the old flame in an orange disc (.ce-emblem); the three class banners (the
+"Fire Code is open to join" banner, You're enrolled, Welcome back to) drew the old icons bare in the banner's face; and the class
+button's own list already had the new marks (classBtnIcon) but on its old glass bubble, not the lit ring.
+
+WHAT CHANGED:
+- ONE BUILDER. classMarkHtml(key, cls) / classMarkEl(key, cls) put classBtnIcon(key) (the class button's full-colour mark) in a
+  .class-ring.is-<key> circle; NOVA_CLASSES' icons are only the fallback for a class with no drawing. Every place above now uses it:
+  the cards' .cc-emblem, the enroll page's .ce-emblem, the list's .csi-bubble, and each banner's face (showDailyAlert marks a face
+  holding a class ring .is-class so its glow is not clipped).
+- ONE CIRCLE. The class button's lit-ring rule now draws :is(.class-bubble.class-bubble, .class-ring.class-ring) - the same ring
+  (--cb-ring = --cbc 78% into white), pool, glass, tinted rim and the two glows, the same --cbc (#FF7A3A Fire Code, #7C93FF the
+  academy). The button's numbers are the defaults, so the button is unchanged (check-b384-classbtn still pixel for pixel). A circle
+  of another size takes the ring's four stops as the same share of its radius (--cr-a..d = the button's 4.3 / 3.8 / 2 / 1.5px of its
+  26px radius) and its glows scaled by --crs, set beside each place's own size (.cc-emblem 52px .963, 42px .778, 38px .704; .ce-emblem
+  1.593; the banner face .56). The list's bubbles are the button's size and keep its px, with their own
+  opaque body and shadow (--cr-base, --cr-drop); circles on a card or a banner have no drop shadow of their own.
+- THE CARDS' OWN LIGHT. Each card's corner wash (.cc-glow) and its picked glow (--cc) are the class's --cbc now (the academy's pink
+  tail belonged to its old mark). Layout, text, chips and taps are unchanged; picked (is-picked) and "you are here" (is-here) keep
+  their edges and light.
+
+GATE tools/check-b384-classmarks.py [--against REV|DIR] - both classes, iPhone 17 Pro Max and iPad Pro 11", every place above
+(signup, catalog, enroll, list, the three banners), each circle against a probe of Home's button for the same class read off the same
+page: M the mark is classBtnIcon's drawing (parsed and written out by the page, ids normalised); R the lit ring (the same --cb-ring,
+the four stops at the same share of the radius within 2 points, the same layer and rim colours, the two glows in the same colours,
+their blur the same share of the size within 25%); O no NOVA_CLASSES gradient id anywhere on the page; S picked and "you are here"
+still drawn apart. ALL PASS here (92). FAILS on the 384.98 head (e817059): 76 - M 34 (every card, the enroll page and the banners
+drew the old icons; only the list already had the new marks), R 38 (no ring anywhere but the button), O 4; S holds on both.
+A first draft compared the svg as source text (the page writes <stop></stop>) and read "you are here" from the border alone (the
+clean look's cards have no border colour); both fixed in the gate, not the app.
+(.ce-emblem's --crs is its 86px with the rim over the button's 54: 1.593.)
+
+384.108 (classmarks) verification at the head, tree merged with main 384.107 (2026-11-14, a fresh container, TMPDIR=/dev/shm, load 2-4; the build stays the placeholder 384.108, which is also shine's: the lead renumbers): check-js ALL PASS and builds agree; the page loads with no page error (only the blocked network and the file:// version.json fetch in the console); check-b384-classmarks ALL PASS (0 failed); `--against` origin/main (384.107) FAILS (76: 34 on M, 38 on R, 4 on O, every place in both classes on both devices), as intended; check-b384-classbtn ALL PASS (Home's button unchanged); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre. Before/after shots (before = main 384.107, after = this build; iPhone 17 Pro Max 440x956 and iPad Pro 11" 834x1194, installed, both classes; the sign-up's Select your classes, Classes, Fire Code's enroll page, the class button's list, the You're enrolled banner): one PNG each and a contact sheet per class and device with before on the left of each pair. Found while shooting, NOT this build's and left as it is: with the in-app Reduce motion switch on, `[data-reduce-motion="true"] *{animation:none !important}` takes away the `cc-in` animation that brings `.class-card` from its base `opacity:0` to 1, so the class cards on Select your classes and Classes stay invisible (the same on main 384.107; the gates read styles, not visibility, so they pass). To report to Madison. Chromium cannot show how the rings read on the OLED.
