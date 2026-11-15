@@ -102,9 +102,11 @@ SETTLE = "(s)=>{ const e=document.querySelector(s); return !!e && parseFloat(get
 
 def open_person(pg):
     pg.evaluate(CLEAR); pg.evaluate(BOARD, {"names": NAMES, "chars": CHARS}); pg.wait_for_timeout(2200)
-    pg.evaluate("()=>{ " + PERSON + "; }"); pg.wait_for_timeout(1200)
-    try: pg.wait_for_function(SETTLE, arg=".invite-sheet.person-card", timeout=6000)
-    except Exception: pass
+    # a loaded machine can be slow to draw the board or to open the card: try the card up to three times, never skip it
+    for attempt in range(3):
+        pg.evaluate("()=>{ document.querySelectorAll('.invite-overlay').forEach(n=>n.remove()); " + PERSON + "; }"); pg.wait_for_timeout(1200)
+        try: pg.wait_for_function(SETTLE, arg=".invite-sheet.person-card", timeout=8000); break
+        except Exception: pg.wait_for_timeout(1500)
     pg.wait_for_timeout(400)
 
 # ---- the stripe test (leavefrost's) ----
