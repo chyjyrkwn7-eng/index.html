@@ -35725,6 +35725,16 @@ html.is-browser{ --fade-paper: transparent; }
   .fc-face > .nova-hlb{ z-index:1; }
   .fc-face:has(> .nova-hlb) > .fc-face-top, .fc-face:has(> .nova-hlb) .ifc-ref, .fc-face:has(> .nova-hlb) .ifc-pre{ position:relative; z-index:2; }
   .fc-face:has(> .nova-hlb)::after{ z-index:3; }
+  /* (flashcode) THE FACE TURNED AWAY IS NOT THERE. Madison: tapping "Show the code" on a flipped Fire Code card flipped it again. The
+     front face's label (.nova-hlb, z-index 1, a positioned child of the face) took the tap - it sat under the finger on the answer
+     side, because a face's backface-visibility culls only its own box, not a positioned child's layer - and the card's own handler
+     reads a tap on a label as a tap on the card. The same leak drew the front's header and star MIRRORED through the answer
+     (his screenshot). Now the face turned away is visibility:hidden at rest (no drawing, no hit, no focus), hidden at the turn's
+     half way (0s, .36s late - already edge-on and past it, so nothing changes on the screen) and shown at once on the face coming
+     round; and the layers a face raises or lays over its words are backface-hidden themselves. */
+  .fc-mover .fc-face{ transition:border-color .18s ease, visibility 0s linear 0s; }
+  .fc-mover .fc-card:not(.is-flipped) > .fc-back, .fc-mover .fc-card.is-flipped > .fc-front{ visibility:hidden; transition:border-color .18s ease, visibility 0s linear .36s; }
+  .fc-face > .fc-face-top, .fc-face > .nova-hlb, .fc-face .ifc-ref, .fc-face .ifc-pre, .fc-face::after{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   /* a unit card's: 44px over its tick circle (327z13) */
   .picks > label.pick > input.hsw-opt{
     position:absolute; z-index:2; margin:0; opacity:0;
@@ -126065,6 +126075,9 @@ function ifcSlideStill(){ try{ return ringMotionOff(); }catch(e){ return false; 
    is put on the screen, before it is painted, so it never shows shut and then opens. */
 function ifcApplyCodePref(box){
   requestAnimationFrame(() => {
+    /* (flashcode) a flash card is dealt with the code shut: the card is as tall as its tallest face, so a remembered open box would
+       make the question side tall too, and the card would be born with the drop-down already down */
+    if(box.closest && box.closest(".fc-card")) return;
     const d = box.querySelector("details.ifc-code");
     if(!d || !box.isConnected || (ifcDropRun && ifcDropRun.chrome === box) || d.classList.contains("is-closing")) return;
     const want = ifcCodeOpenPref();
@@ -126101,6 +126114,8 @@ function ifcApplyCodePref(box){
 var IFC_DROP_MS = 300, IFC_DROP_EASE = "cubic-bezier(.2,.8,.2,1)", ifcDropRun = null;
 function ifcDropTake(s, out){
   if(!s || s.nodeType !== 1 || s.matches(".floatbtn")) return;
+  /* (flashcode) the haptic layers a flash card's face carries (its label lies over the whole face) are not what the layout moves */
+  if(s.matches(".nova-hlb, .nova-hsw")) return;
   if(s.matches(".foot") || s.querySelector(":scope > .floatbtn")){ [...s.children].forEach(k => ifcDropTake(k, out)); return; }
   const cs = getComputedStyle(s);
   if(cs.display === "none" || cs.position === "fixed" || cs.position === "sticky") return;
@@ -126204,6 +126219,7 @@ function ifcDropTakeOver(chrome){
   ifcDropHalt(prev);
   return prev;
 }
+function ifcDropRunning(run){ return run.anims.some(([, a]) => { try{ return a.playState === "running" || a.pending; }catch(e){ return false; } }); }
 function ifcDropAdd(run, el, a, kind){ if(a) run.anims.push([el, a, kind || "y"]); }
 /* (384.129) THE MOVE STARTS ON THE FRAME AFTER THE ONE THAT SHOWS THE CHANGE. The frame that lays the change out and paints it can be
    long (Answer Review's unit: a screenful of questions, ~100ms at 4x CPU), and a move timed from the frame it was made in had run a
@@ -126223,14 +126239,23 @@ function ifcDropStart(run, arm){
 /* (384.129) cap: a box far taller than the screen (Answer Review's unit, every question in it): the move shows only what can be
    seen - the sweep and what is under it go as far as the screen's bottom (and a little past), and the rest, below the screen,
    is simply there at the end - as the 2000px max-height slide it replaces did; a 50,000px sweep would cross the screen in a frame */
-function ifcDropOpen(chrome, change, pending, now, cap){
+function ifcDropOpen(chrome, change, pending, now, cap, wipe){
   const after = ifcDropSide(chrome, true), before = ifcDropSide(chrome, false), next = ifcDropNext();
   /* what is on the screen now (the layout as it stands, a move's transforms included) */
   const a0 = after.length ? after[0].getBoundingClientRect().top : 0;
   const n0 = next ? next.getBoundingClientRect().top : 0;
   const c0 = chrome.getBoundingClientRect().height - ifcDropClip(chrome);
+  /* (flashcode) wipe = { face, fit, shrink }: a box inside a flash card's face. The card grows with it (fit, in the tap, with the box's
+     own layout), and the face is swept open by a clip-path from the card's old bottom edge, in step with the box's own sweep, so the
+     card extends as the box drops instead of jumping to its full size */
+  const f0 = wipe ? wipe.face.getBoundingClientRect().height - ifcDropClip(wipe.face) : 0;
+  /* what is in the face is laid out in the middle of what room the card has (auto margins): when the card's height changes it moves,
+     all together - each is slid from where it was (the layout moves it at once) */
+  const kids = wipe ? fcFaceKids(wipe.face) : [], kt0 = kids.map(k => k.getBoundingClientRect().top);
   const prev = ifcDropTakeOver(chrome);
   change();
+  if(wipe) wipe.fit();
+  const kt1 = wipe ? kids.map(k => k.getBoundingClientRect().top) : [];
   if(ifcSlideStill() || !chrome.isConnected){ ifcDropCollect(prev); ifcDropPlace(next); return; }
   const run = ifcDropBegin(chrome, null, prev);
   /* (in a tap: in its first frame; a picture arriving later, in a task of its own: at once, before that task's frame) */
@@ -126247,8 +126272,16 @@ function ifcDropOpen(chrome, change, pending, now, cap){
     const clip0 = Math.max(0, h1 - Math.max(0, c0));
     const D = cap ? Math.min(clip0, Math.max(0, innerHeight - chrome.getBoundingClientRect().top) + 40) : clip0, rest = clip0 - D;
     ifcDropAdd(run, chrome, ifcDropAnim(chrome, [{ clipPath: "inset(0px 0px " + clip0.toFixed(2) + "px 0px round " + R + ")" }, { clipPath: "inset(0px 0px " + rest.toFixed(2) + "px 0px round " + R + ")" }]), "clip");
-    ifcDropAdd(run, chrome, ifcDropMove(chrome, live.y.get(chrome) || 0, 0));
-    before.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, 0)));
+    if(wipe){
+      const Rf = ifcDropRound(wipe.face), fc0 = Math.max(0, wipe.face.getBoundingClientRect().height - Math.max(0, f0));
+      ifcDropAdd(run, wipe.face, ifcDropAnim(wipe.face, [{ clipPath: "inset(0px 0px " + fc0.toFixed(2) + "px 0px round " + Rf + ")" }, { clipPath: "inset(0px 0px 0px 0px round " + Rf + ")" }]), "clip");
+    }
+    if(wipe){
+      ifcDropAdd(run, wipe.face, ifcDropMove(wipe.face, live.y.get(wipe.face) || 0, 0));
+      kids.forEach((k, i) => ifcDropAdd(run, k, ifcDropMove(k, (live.y.get(k) || 0) + (kt0[i] - kt1[i]), 0)));
+    }
+    if(!(wipe && kids.includes(chrome))) ifcDropAdd(run, chrome, ifcDropMove(chrome, live.y.get(chrome) || 0, 0));
+    before.forEach(el => { if(!(wipe && kids.includes(el))) ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, 0)); });
     after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, a0 - a1, a0 - a1 + D > -.25 ? 0 : a0 - a1 + D)));
     if(next) ifcDropAdd(run, next, ifcDropMove(next, n0 - n1, 0));
     /* a picture that arrives after the tap: the box grows again, from wherever the move has it */
@@ -126257,16 +126290,22 @@ function ifcDropOpen(chrome, change, pending, now, cap){
       try{
         run.ro = new ResizeObserver(() => {
           if(ifcDropRun !== run) return;   /* (the picture's own arrival ends what is pending: it is still this move's) */
-          const hn = chrome.getBoundingClientRect().height, g = hn - h;
+          const hn = chrome.getBoundingClientRect().height;
+          let g = hn - h;
           if(Math.abs(g) < .5) return;
           h = hn;
+          /* (flashcode) the card grows with the picture (what the face grew by is what everything under the card moves by) */
+          let fcl = 0, fg = g, kb = [], ka = [];
+          if(wipe){ const fb = wipe.face.getBoundingClientRect().height; fcl = ifcDropClip(wipe.face); kb = kids.map(k => k.getBoundingClientRect().top); wipe.fit(); fg = wipe.face.getBoundingClientRect().height - fb; ka = kids.map(k => k.getBoundingClientRect().top); }
           const ys = new Map(); run.anims.forEach(([el, , k]) => { if(k !== "clip" && !ys.has(el)) ys.set(el, ifcDropY(el)); });
           const cl = ifcDropClip(chrome), nTop = next ? next.getBoundingClientRect().top : 0;
           run.anims.forEach(([, a]) => { try{ a.cancel(); }catch(e){} }); run.anims = [];
           let nLay = 0;
           if(ifcDropPlace(next)) nLay = next.getBoundingClientRect().top;
           ifcDropAdd(run, chrome, ifcDropAnim(chrome, [{ clipPath: "inset(0px 0px " + Math.max(0, cl + g).toFixed(2) + "px 0px round " + R + ")" }, { clipPath: "inset(0px 0px 0px 0px round " + R + ")" }]), "clip");
-          after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, (ys.get(el) || 0) - g, 0)));
+          if(wipe && fg > .5){ const Rf = ifcDropRound(wipe.face); ifcDropAdd(run, wipe.face, ifcDropAnim(wipe.face, [{ clipPath: "inset(0px 0px " + Math.max(0, fcl + fg).toFixed(2) + "px 0px round " + Rf + ")" }, { clipPath: "inset(0px 0px 0px 0px round " + Rf + ")" }]), "clip"); }
+          kids.forEach((k, i) => ifcDropAdd(run, k, ifcDropMove(k, (ys.get(k) || 0) + (kb[i] - ka[i]), 0)));
+          after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, (ys.get(el) || 0) - fg, 0)));
           before.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, ys.get(el) || 0, 0)));
           if(next) ifcDropAdd(run, next, ifcDropMove(next, nTop - nLay, 0));
           clearTimeout(run.timer); run.timer = setTimeout(end, IFC_DROP_MS + 40);
@@ -126277,6 +126316,7 @@ function ifcDropOpen(chrome, change, pending, now, cap){
     const end = () => {
       if(ifcDropRun !== run) return;
       if(pending && pending()){ run.timer = setTimeout(end, 120); return; }
+      if(wipe && ifcDropRunning(run) && (run.waits = (run.waits || 0) + 1) < 40){ run.timer = setTimeout(end, 16); return; }
       ifcDropStop();
       ifcDropPlace(next);
     };
@@ -126286,7 +126326,7 @@ function ifcDropOpen(chrome, change, pending, now, cap){
 }
 /* shutting: d() is what the box's layout loses when done() runs (margins included). Called in the tap; nothing is laid out
    anew until the end. */
-function ifcDropShut(chrome, d, done, cap){
+function ifcDropShut(chrome, d, done, cap, wipe){
   const after = ifcDropSide(chrome, true), before = ifcDropSide(chrome, false), next = ifcDropNext();
   const prev = ifcDropTakeOver(chrome);
   if(ifcSlideStill() || !chrome.isConnected){ ifcDropCollect(prev); done(); ifcDropPlace(next); return; }
@@ -126296,22 +126336,38 @@ function ifcDropShut(chrome, d, done, cap){
     const live = ifcDropCollect(run);
     if(cap){ run.ease = IFC_REVIEW_EASE; run.lead = IFC_CLIP_LEAD; }
     if(!chrome.isConnected){ ifcDropHalt(run); try{ done(); }catch(e){} return; }
-    const loss = Math.max(0, d());
+    const loss0 = Math.max(0, d());
+    /* (flashcode) in a flash card what the layout loses is what the CARD loses (it keeps its own least height) */
+    const plan = wipe ? wipe.plan(loss0) : null;
+    const loss = plan ? Math.max(0, Math.min(loss0, plan.loss)) : loss0;
     const se = document.scrollingElement || document.documentElement, S = window.scrollY || 0;
     const c = Math.max(0, S - Math.max(0, se.scrollHeight - loss - innerHeight));
     const hc = chrome.getBoundingClientRect().height, R = ifcDropRound(chrome);
-    const clipTo = Math.min(loss, hc);
+    const clipTo = Math.min(loss0, hc);
+    if(wipe) ifcDropAdd(run, wipe.face, ifcDropAnim(wipe.face, [{ clipPath: "inset(0px 0px " + (live.clip.get(wipe.face) || 0).toFixed(2) + "px 0px round " + ifcDropRound(wipe.face) + ")" }, { clipPath: "inset(0px 0px " + loss.toFixed(2) + "px 0px round " + ifcDropRound(wipe.face) + ")" }]), "clip");
     /* (cap, see ifcDropOpen) what lies below the screen goes at once, unseen; the move shuts what can be seen */
     const skip = cap && !live.clip.has(chrome) ? Math.max(0, Math.min(loss, hc - Math.max(0, innerHeight - chrome.getBoundingClientRect().top) - 40)) : 0;
     ifcDropAdd(run, chrome, ifcDropAnim(chrome, [{ clipPath: "inset(0px 0px " + Math.max(skip, live.clip.get(chrome) || 0).toFixed(2) + "px 0px round " + R + ")" }, { clipPath: "inset(0px 0px " + clipTo.toFixed(2) + "px 0px round " + R + ")" }]), "clip");
-    ifcDropAdd(run, chrome, ifcDropMove(chrome, live.y.get(chrome) || 0, c));
-    before.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, c)));
+    /* (flashcode) in a flash card the face carries what is in it (the box, the words above it): it is the face that goes down by the
+       scroll the page gives back, so that its own edges go with it, and nothing inside moves on its own (a parent's move and a
+       child's would add) */
+    const inFace = el => !!wipe && wipe.face.contains(el);
+    if(wipe){
+      ifcDropAdd(run, wipe.face, ifcDropMove(wipe.face, live.y.get(wipe.face) || 0, c));
+      /* what is in it goes to where the card's new, lower height will put it (all together, as for the open) */
+      plan.kids.forEach(k => ifcDropAdd(run, k, ifcDropMove(k, live.y.get(k) || 0, plan.shift)));
+    }
+    else ifcDropAdd(run, chrome, ifcDropMove(chrome, live.y.get(chrome) || 0, c));
+    before.forEach(el => { if(!inFace(el)) ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, c)); });
     after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, (live.y.get(el) || 0) - skip, c - loss)));
     if(next) ifcDropAdd(run, next, ifcDropMove(next, live.y.get(next) || 0, c - loss));
-    ifcDropStart(run, () => { run.timer = setTimeout(() => {
+    ifcDropStart(run, () => { const fin = () => {
       if(ifcDropRun !== run) return;
+      /* (flashcode) a flash card's move is let run to its end (the card's own edge is a clip, which cannot glide by a translate) */
+      if(wipe && ifcDropRunning(run) && (run.waits = (run.waits || 0) + 1) < 40){ run.timer = setTimeout(fin, 16); return; }
       /* where everything is on the screen in the last frame (its transforms included) */
-      const watch = [before[0], chrome, after[0], next].filter(Boolean);
+      const wtop = wipe ? wipe.face.querySelector(":scope > .fc-face-top") : null, wk0 = wipe ? plan.kids[0] : null;
+      const watch = (wipe ? [wtop, wk0, after[0], next] : [before[0], chrome, after[0], next]).filter(Boolean);
       const vis = watch.map(el => el.getBoundingClientRect().top);
       ifcDropStop();
       if(c > 0) try{ window.scrollTo({ top: Math.max(0, (window.scrollY || 0) - c), behavior: "instant" }); }catch(e){ window.scrollTo(0, Math.max(0, (window.scrollY || 0) - c)); }
@@ -126320,14 +126376,22 @@ function ifcDropShut(chrome, d, done, cap){
       /* whatever is not where the last frame showed it (a scroll the page clamped after all, Next changing how it sits) glides there */
       const lay = watch.map(el => el.isConnected ? el.getBoundingClientRect().top : null);
       const fix = ifcDropBegin(chrome, null);
+      let fcGlide = 0;
       watch.forEach((el, i) => {
         if(lay[i] === null || Math.abs(vis[i] - lay[i]) <= .5) return;
+        if(wipe && el === wtop){
+          /* (flashcode) the face (and what is outside it above) glides by what its own top is off by; what is in it by what that leaves */
+          fcGlide = vis[i] - lay[i];
+          [wipe.face].concat(before.filter(g => !wipe.face.contains(g))).forEach(g => ifcDropAdd(fix, g, ifcDropMove(g, fcGlide, 0, 180)));
+          return;
+        }
+        if(wipe && el === wk0){ plan.kids.forEach(g => ifcDropAdd(fix, g, ifcDropMove(g, (vis[i] - lay[i]) - fcGlide, 0, 180))); return; }
         const group = el === before[0] ? before.concat([chrome]) : el === after[0] ? after : el === chrome ? (before.length ? [] : [chrome]) : [el];
         group.forEach(g => ifcDropAdd(fix, g, ifcDropMove(g, vis[i] - lay[i], 0, 180)));
       });
       if(!fix.anims.length){ ifcDropRun = null; ifcAnchorBack(); }
       else fix.timer = setTimeout(() => { if(ifcDropRun === fix) ifcDropStop(); }, 220);
-    }, IFC_DROP_MS + 20); });
+    }; run.timer = setTimeout(fin, IFC_DROP_MS + 20); });
   });
 }
 /* the code box's own open and close, from a tap: grows from the pill, or shrinks back to it (on the compositor, above) */
@@ -126337,6 +126401,9 @@ function ifcCodeSlide(det, open, fill){
   (det._fades || []).forEach(a => { try{ a.cancel(); }catch(e){} }); det._fades = [];
   const card = det.closest(".ifc-ref") || det;
   const w = sum.querySelector(".ifc-sum-text");
+  /* (flashcode) in a flash card the card grows and shrinks with the box (fcFitCard), the face's own edge swept with it */
+  const flashCard = det.closest(".fc-card"), flashFace = det.closest(".fc-face");
+  const wipe = flashCard && flashFace ? { face: flashFace, fit: () => fcFitCard(flashCard), plan: l => fcShutPlan(flashCard, flashFace, l) } : null;
   if(open){
     let busy = true;
     ifcDropOpen(card, () => {
@@ -126344,7 +126411,7 @@ function ifcCodeSlide(det, open, fill){
       if(det.open && w) w.textContent = "Hide the code";   /* (open still, from a shut cut short: no toggle comes) */
       det.open = true;   /* (its toggle: the pill's words, and the code drawn) */
       try{ Promise.resolve(fill && fill()).finally(() => { busy = false; }); }catch(e){ busy = false; }
-    }, () => busy);
+    }, () => busy, false, false, wipe);
   } else {
     det.classList.add("is-closing");
     if(w) w.textContent = "Show the code";
@@ -126354,7 +126421,8 @@ function ifcCodeSlide(det, open, fill){
     ifcDropShut(card, shutLoss, () => {
       det.open = false; det.classList.remove("is-closing");
       (det._fades || []).forEach(a => { try{ a.cancel(); }catch(e){} }); det._fades = [];
-    });
+      if(wipe) wipe.fit();
+    }, false, wipe);
   }
 }
 /* explanation, reference line and the code (open by itself after a wrong first try) */
@@ -126400,8 +126468,12 @@ function buildIfcRef(item){
   /* (384 review) the tap slides it open or shut, and is remembered for the next answers (see ifcCodeSlide) */
   sum.addEventListener("click", e => {
     e.preventDefault();
+    /* (flashcode) on a flash card only the face that is up answers (the other is turned away), and what is done there is not the
+       drill's "remembered open" (a card is always dealt with the code shut) */
+    const fcFace = det.closest(".fc-card") && det.closest(".fc-face");
+    if(fcFace && fcFace.classList.contains("fc-back") !== !!(typeof fc !== "undefined" && fc && fc.flipped)) return;
     const open = !det.open || det.classList.contains("is-closing");
-    ifcCodeOpenSet(open);
+    if(!fcFace) ifcCodeOpenSet(open);
     ifcCodeSlide(det, open, fill);
   });
   /* (384) drawn ahead: a finger on the summary, or the box sitting in view (ifcDrawAhead) */
@@ -162254,6 +162326,7 @@ function fcSizeClass(text){
 }
 function renderFlashcard(dir){
   if(!fc) return;
+  try{ ifcDropSettleNow(); }catch(e){}
   const qi = fc.deck[fc.pos];
   const item = QUESTIONS[qi];
   fc.flipped = false;
@@ -162337,9 +162410,19 @@ function renderFlashcard(dir){
   const hint = document.createElement("p"); hint.className = "fc-fliphint"; hint.textContent = "Tap to flip";
   front.appendChild(hint);
   card.append(front, back);
+  /* (flashcode) dealt with the code shut (a cached box can come back open from this question's last visit, or a wrong first try) */
+  card.querySelectorAll("details.ifc-code").forEach(od => {
+    if(!od.open && !od.classList.contains("is-closing")) return;
+    od.classList.remove("is-closing"); od.open = false;
+    const ow = od.querySelector(".ifc-sum-text"); if(ow) ow.textContent = "Show the code";
+    (od._fades || []).forEach(a => { try{ a.cancel(); }catch(e){} }); od._fades = [];
+  });
   const flip = () => {
     fc.flipped = !fc.flipped;
     card.classList.toggle("is-flipped", fc.flipped);
+    /* (flashcode) turned back to the question, the card gives the code's room back (shut as the Hide tap shuts it, the card
+       shrinking with it): the question side is never a tall card, and the answer side is found shut, as it is dealt */
+    if(!fc.flipped){ const od = card.querySelector("details.ifc-code[open]:not(.is-closing)"); if(od) ifcCodeSlide(od, false); }
   };
   /* A CONTROL ON THE CARD IS NOT A TAP ON THE CARD (383): "Tapping certain stuff in the flash cards makes them flip when
      I'm just trying to view them and use the drop down or whatever on some of it." (Fire Code.) Every tap on the card
@@ -162398,7 +162481,9 @@ function renderFlashcard(dir){
       let fitRaf = 0;
       const ro = new ResizeObserver(() => {
         cancelAnimationFrame(fitRaf);
-        fitRaf = requestAnimationFrame(() => { if(!card.isConnected){ ro.disconnect(); return; } fcFitCard(card); });
+        /* (flashcode) while the code box drops or shuts it fits the card itself, in step with its move (ifcDropOpen / ifcDropShut) */
+        if(ifcDropRun) return;
+        fitRaf = requestAnimationFrame(() => { if(!card.isConnected){ ro.disconnect(); return; } if(ifcDropRun) return; fcFitCard(card); });
       });
       card.querySelectorAll(".fc-face > *").forEach(el => ro.observe(el));
     }
@@ -162413,16 +162498,46 @@ function renderFlashcard(dir){
    untouched. */
 function fcFitCard(card){
   if(!card || !card.isConnected) return;
+  const keepY = window.scrollY || 0;
   card.style.height = "";
   const base = card.offsetHeight;
   card.style.height = "auto";
-  let need = 0;
+  let need = 0; const needs = [];
   card.querySelectorAll(".fc-face").forEach(f => {
     f.style.position = "relative"; f.style.inset = "auto";
-    need = Math.max(need, f.offsetHeight);
+    const n = f.offsetHeight; needs.push(n);
+    need = Math.max(need, n);
     f.style.position = ""; f.style.inset = "";
   });
   card.style.height = need > base + 1 ? Math.ceil(need) + "px" : "";
+  card.__fc = { base, needs };
+  /* measuring puts the card at its least height for a moment, and a page scrolled near its end is clamped by that: the scroll is
+     put back (a page that really is shorter clamps it as it should) */
+  if((window.scrollY || 0) !== keepY){ try{ window.scrollTo({ top: keepY, behavior: "instant" }); }catch(e){ window.scrollTo(0, keepY); } }
+}
+/* (flashcode) what a face holds, in the middle of the room the card has: everything after its top row (the words, the answers, the
+   box) sits between auto margins, so all of it moves together when the card's height changes */
+function fcFaceKids(face){
+  /* (the answers' wrapper itself is not moved but what is in it: a `translate` makes a stacking context, and the wrapper in one lies
+     under the face's label, which then takes the taps meant for the code box) */
+  const out = [], flow = e => getComputedStyle(e).position !== "absolute";
+  [...face.children].forEach(k => {
+    if(k.matches(".fc-face-top, .nova-hlb, .nova-hsw") || !flow(k)) return;
+    if(k.querySelector(":scope > .ifc-ref")) [...k.children].forEach(c => { if(flow(c)) out.push(c); });
+    else out.push(k);
+  });
+  return out;
+}
+/* what shutting the code (which takes `loss` of the face's content) does to the card, worked out without laying it out: the card
+   never goes under its own CSS height; the kids move by half of the change in free room (auto margins above and below) */
+function fcShutPlan(card, face, loss){
+  const m = card && card.__fc, kids = fcFaceKids(face);
+  if(!m) return { loss, shift: 0, kids };
+  const faces = [...card.querySelectorAll(".fc-face")], i0 = faces.indexOf(face), H0 = card.offsetHeight;
+  const need1 = m.needs[i0] - loss;
+  const need = Math.max(...faces.map((f, i) => (i === i0 ? need1 : m.needs[i])));
+  const H1 = Math.max(m.base, Math.ceil(need));
+  return { loss: Math.max(0, H0 - H1), shift: ((H1 - need1) - (H0 - m.needs[i0])) / 2, kids };
 }
 __bm("L121699");
 window.addEventListener("resize", () => { const c = document.querySelector(".fc-card"); if(c) fcFitCard(c); });

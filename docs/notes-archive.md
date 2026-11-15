@@ -42126,3 +42126,56 @@ GATES (this machine, one at a time, TMPDIR=/dev/shm; the machine at load 2-9 fro
 - Regression, same tree: check-b384-installfirst 1 FAIL "(7) the splash is still the first thing in <body>" - the identical single failure on main 384.107 (not this build's); check-b384-installpage ALL PASS (the video screen; its crop now --iv-pos 50% 100%); check-b339 no failure; check-b384-getstarted no failure (29 PASS); check-b384-settings ALL PASS; check-behaviour ONLY_FN=check_b218 ALL PASS (Share & Install, Settings); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (1273 elements, 152 screens, 0 off centre; the first run FAILED on "mode arrows not measured" and three "moving while measured" at load 8, ALL PASS on the re-run at load 2-5); check-b383-classes 14 PASS, 1 FAIL "(1) Fire Code: Profile alone, no switch over it" - identical on main.
 - CHROMIUM CANNOT REPRODUCE iOS SAFARI. Nothing here proves the real menu: only his phone can say that the page-menu button is where the clip and the words put it, that Share is first in its menu there and View More in the share sheet, on every iPhone and iOS version the class has. The older-versions note (the dots and the toolbar's Share) is from the old route and was not re-checked against any phone.
 - UNRESOLVED / FOR MADISON: (1) the tail of the clip (the Add page, Open as Web App, Add, the Home Screen, Nova opening) is the EARLIER recording, joined by a dissolve; re-record it in one take if he wants it all new (Welcome, the menu button, Share, View More, Add to Home Screen, the Add page with Open as Web App visible, Add, the Home Screen, Nova's icon). (2) The Add to Home Screen row is pointed at but its press is not shown (the new recording stops before it). (3) The pill press is inferred (above). (4) Welcome's own three lines were left as they are (they name no route). (5) The status line after the Share button's real share sheet opens now says to tap View More if it is shown; if the real iOS 26 sheet lists Add to Home Screen without it, the wording is harmless but may be shortened.
+
+### (flashcode): Show the code on a Fire Code flash card's answer side opens the drop-down; it no longer turns the card
+Madison (owner), twice: on a flipped Fire Code flash card the tap on "Show the code" "just flips the card again", the drop-down never
+registers; "I thought we had fixed it already" (383 did stop a control's tap from flipping - for a tap that reaches the control).
+His screenshot of the bad state: the answer side with the QUESTION side's header ("CHAPTER 5: FIRE SERVICE FEATURES") and star drawn
+MIRRORED through it, the Answer label under the star, and "Show the code" shut.
+MEASURED CAUSE (base = origin/claude/b384-combined, iPhone UA, 440x956 at 3x, a real CDP touch; tools/check-b384-flashcode.py):
+`document.elementFromPoint` at the middle of "Show the code" on the answer side is the QUESTION face's `.nova-hlb` (label), not the
+summary - and at the answer side's star it is the question face's `.fc-tag`. A face's `backface-visibility:hidden` culls the face's
+own box, not the layers its children raise: the 384 haptic rule (`.fc-face:has(> .nova-hlb)`: label z-index 1, `.fc-face-top` /
+`.ifc-ref` / `.ifc-pre` raised to z-index 2) gave each face positioned, stacked children, and those of the turned-away face still
+took hits (Chromium) and are drawn mirrored (his screenshot; WebKit). The tap landed on that label, `fcOwnTap` reads a label as the
+card (383/384: "the face's haptic label is the card itself"), so the card flipped. The same hit on the star flipped it in the
+ACADEMY too (base: a tap on the answer side's star turns the card; fixed here as a side effect, the star flags only).
+Chromium does not DRAW the mirrored header at rest (the screenshot shows WebKit's drawing); the gate holds the structure that
+causes both: no layer of the turned-away face is hit-testable or drawn.
+WHAT CHANGED (index.html; build number left as the base has it):
+- CSS: the face turned away is `visibility:hidden` at rest (`.fc-mover .fc-card:not(.is-flipped) > .fc-back`, `.is-flipped > .fc-front`):
+  no drawing, no hit, no focus. It hides 0s after .36s (the turn's half way, already past edge-on) and the face coming round shows at
+  once. `.fc-face-top`, the label, `.ifc-ref`, `.ifc-pre`, `.fc-face::after` also carry backface-visibility:hidden.
+- A flash card is dealt with the code SHUT and takes no part in the drill's "remembered open" (class26e.codeopen): not applied
+  (`ifcApplyCodePref` returns in a card) and not set by a flash-card tap; a cached box that comes back open is shut when the card is
+  built. The card is as tall as its tallest face, so a remembered-open box would have made the question side tall too.
+- Only the face that is up answers the summary's tap (a tap on it while the card turns is ignored).
+- The card grows and shrinks WITH the box through the existing machinery: `ifcDropOpen(..., wipe)` / `ifcDropShut(..., wipe)` with
+  `wipe = {face, fit, shrink}` from `ifcCodeSlide`. `fcFitCard` runs in the tap, with the box's own layout (the app's
+  ResizeObserver stands aside while a move runs; it still fits a size change outside one); the face is swept open/shut by a clip-path
+  from the card's old bottom edge in step with the box's sweep, everything under the card (the arrows) slides by `translate`, as
+  for the drill's box. Shutting at a page's end the FACE carries the scroll the page gives back (`translate`), nothing in it moves on
+  its own (a parent's and a child's translate add). `fcShrinkBy` predicts how much the card loses (it keeps its CSS height).
+  What a face holds (everything after its top row) is laid out between auto margins in the middle of the card's room, so when the
+  card's height changes all of it moves (on the iPad 68px): `fcFaceKids` (the answers' wrapper's CHILDREN, not the wrapper: a
+  `translate` makes a stacking context, and the wrapper in one lies under the face's label, which took the second tap of a quick
+  double tap) are slid from where they were (open: measured; shut: `fcShutPlan`, worked out without a layout). A flash card's move
+  is let run to its end before it is stopped (the card's edge is a clip, which cannot glide by a translate like the arrows can).
+  `fcFitCard` puts a scroll back that its own measuring clamped. `ifcDropTake` skips the haptic labels/switches (a label lying
+  over a face was `after[0]`, so nothing under the card moved: the arrows jumped).
+- Turning the card back to the question while the box is open shuts it (the same animated Hide, the card gives its room back). The
+  answer side found again is shut and its words say "Show the code". Next / Previous / a swipe: the new card is dealt unflipped and
+  shut. Calculator: none on flash cards (no star row there: only the star). The Hint (`ifcPreAnswer`) is built for a drill's
+  question panel only; a flash card's question side has none.
+PER-CASE: tap on the control: opens/closes, never flips | flip while open: box shuts with the turn, card back to its height, answer
+side found shut | quick double tap on the control: ends on a consistent state (open or shut by parity), nothing left "closing" |
+tap on the control during the turn: ignored if the face is not the one up; at rest one orientation, one face drawn | next/previous/
+swipe while open: new card shut and unflipped | Reduce motion: no animation, card and arrows at their end in the first frame |
+academy: no code box; flips, star flags only.
+GATE tools/check-b384-flashcode.py (real touch; phone at 3x with 4x CPU passes, iPad; read off the page): 184 checks FAIL against
+origin/claude/b384-combined (e.g. the tap lands on the label, one face is not the only one drawn, the tap flips, the box never
+opens, the academy's star turns the card) and ALL PASS here (475 checks). The time to the move's first frame (~80-100ms at 1x, 125-175ms
+at 4x: the machinery's hold frame plus the grown face's first raster) is printed, not judged. Re-run a timing failure at load < 3. tools/record-b384-flashcode.py: before/after mp4 and a filmstrip per tap (session scratchpad flashcode/).
+Only a phone can say: that a real iOS touch lands where Chromium's elementFromPoint says (WebKit's own hit-testing of a hidden
+face), that WebKit no longer draws the mirrored header (its drawing of backface-visibility under a clip-path animation), haptics
+(the label/switch routes are unchanged), and how the face's clip-path sweep with its rounded corners looks in WebKit.
