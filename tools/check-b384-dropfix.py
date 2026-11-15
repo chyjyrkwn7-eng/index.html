@@ -90,7 +90,7 @@ WATCH = r"""([sels, ms]) => {
     const lite = s[0] === '~'; if(lite) s = s.slice(1);
     const el = document.querySelector(s); if(!el || !el.isConnected) return 'x';
     const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
-    if(lite) return [cs.display, Math.round(r.top * 2) / 2, cs.clipPath, cs.translate, cs.transform, cs.opacity, el.className].join('|');
+    if(lite) return [cs.display, r.top > innerHeight ? 'below' : Math.round(r.top * 2) / 2, cs.clipPath, cs.translate, cs.transform, cs.opacity, el.className].join('|');
     return [cs.display === 'none' ? 'none' : '', Math.round(r.top * 2) / 2, Math.round(r.height * 2) / 2, cs.clipPath, cs.translate, cs.transform, cs.opacity, cs.maxHeight,
             el.children.length < 3 ? (el.textContent || '').slice(0, 40) : el.children.length].join('|'); };
   const sig = () => sels.map(one).join(' # ');
