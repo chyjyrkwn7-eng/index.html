@@ -27,7 +27,7 @@ WHAT IT HOLDS (this build's index.html + ifc/bank.js against BASE's, the commit 
  (3) IDENTITY: every BASE key unchanged; all keys unique; the new ones take Chapter 6's positions after its last; the identity tables BASE's.
  (4) NOTHING LOST: an account that has MASTERED Chapter 6 (35 hundos: badge, star, "Advanced"), booted on BASE and then on this build, keeps
      every stored field, the badge, star, level, hundos, badge count, rank, level and published row; nothing lowered or owed; merges either way
-     lower nothing; the chapter card still shows the badge.
+     lower nothing; the chapter card still shows the badge (novaHeard, the clock-stamped record of Nova's broadcasts, is held to "not lowered").
  (5) COUNTS: Chapter 6 is 47 everywhere (bank, unitQuestionCount, a full run, its card); the class card reads the bank's total.
  (6) THE APP: each new question opened in a Drill at 440x956 shows its stem and four options as the bank has them (no option wider than the
      screen, each 44 px or taller), takes the right answer, and shows the reference line and the code drop-down (Show the code opens, naming
@@ -246,7 +246,7 @@ SHOWN = """()=>{ const t = document.querySelector('.qpanel .qtext'); const ch = 
   return { stem: t && t.textContent.trim(), choices: ch.map(c => { const b = c.getBoundingClientRect(); return { text: (c.querySelector('.text') || c).textContent.trim(), l: b.left, r: b.right, h: b.height }; }),
     vw: document.documentElement.clientWidth, sw: document.documentElement.scrollWidth }; }"""
 TAP_RIGHT = """()=>{ const r=correctSlot(order[pos]); const el=document.querySelector('.qpanel .choice[data-index="'+r+'"]'); if(!el) return null; el.scrollIntoView({block:'center',behavior:'instant'}); const b=el.getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2]; }"""
-REF = """async ()=>{ const box = document.querySelector('.qpanel .ifc-ref'); if(!box) return null; const lab = box.querySelector('.ifc-label'); const det = box.querySelector('details.ifc-code');
+REF = """async ()=>{ const box = document.querySelector('.qpanel .ifc-ref'); if(!box) return null; const lab = box.querySelector('.ifc-label') || document.querySelector('.qpanel .ref:not([hidden])');   /* the bank's ref line sits under the stem (item.ref); else Ref. in the box */ const det = box.querySelector('details.ifc-code');
   const sum = det && det.querySelector('summary'); if(sum && !det.open){ sum.scrollIntoView({block:'center',behavior:'instant'}); sum.click(); }
   await new Promise(r => setTimeout(r, 1200)); const b = det ? det.getBoundingClientRect() : null;
   return { label: lab && lab.textContent.trim(), open: !!(det && det.open), sum: sum && sum.textContent.trim(), ptr: (box.querySelector('.ifc-ptr') || {}).textContent || '',
@@ -294,7 +294,11 @@ with sync_playwright() as pw:
         run_old = pg.evaluate(FULLRUN, {"t": T6, "n": len(ch6_keys)})
         cls_text = pg.evaluate("()=>ifcQuestionCountText()")
         errs_all += e; ctx.close()
-        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+        # novaHeard is the record of Nova's broadcasts the account has had (time stamps, max-merged), written by novaTick while a page is open: it moves
+        # with the clock between the two boots, not with the bank. It is held to "nothing lowered" instead of "identical".
+        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if k != "novaHeard" and json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+        nh_b, nh_a = before["rest"].get("novaHeard") or {}, after["rest"].get("novaHeard") or {}
+        if any((nh_a.get(k) or 0) < v for k, v in nh_b.items()): rest_diff.append("novaHeard lowered")
         held = all(before[k] == after[k] for k in ("perf", "earned", "star", "level", "badges", "badgeCount", "hundos", "rank", "lvl", "pend")) and \
             json.dumps(before["row"], sort_keys=True) == json.dumps(after["row"], sort_keys=True)
         chk("(4a) an account that has MASTERED Chapter 6 (badge, star, '%s', %d hundos there) keeps all of it on this build: badge, star, level, hundos %s -> %s, badges %s -> %s, rank, level and the published row the same; every stored field identical (%d differ: %s); nothing owed or re-fired" % (
