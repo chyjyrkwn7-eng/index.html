@@ -36455,13 +36455,15 @@ html.is-browser{ --fade-paper: transparent; }
   .gs-show.is-in{ opacity:1; transform:none; }
   .gs-show > .gs-copy{ text-align:center; max-width:min(100%, 38rem); }
   .gs-ladder{ --gs-fw:clamp(50px, 13.6vw, 60px); --gs-top:calc(var(--gs-fw) * 1.42); --gs-gap:clamp(14px, 3.6vw, 22px);
-    list-style:none; margin:0; padding:0; width:min(100%, 19rem); display:flex; flex-direction:column; text-align:left; }
+    list-style:none; margin:0; padding:0 1.6rem 0 0; width:max-content; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; text-align:left; }
   .gs-rung{ position:relative; margin:0; padding:0; }
   .gs-rung-btn{ position:relative; display:flex; align-items:center; gap:1.05rem; width:100%; min-height:44px; margin:0;
     padding:calc(var(--gs-gap) / 2) .6rem; box-sizing:border-box; appearance:none; -webkit-appearance:none; background:none; border:0;
     border-radius:18px; color:#FFFFFF; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .gs-rung-flare{ position:relative; z-index:1; flex:none; display:block; width:var(--gs-fw); height:var(--gs-fw);
     opacity:.26; transform:scale(.8); transition:opacity .5s ease var(--gs-f, 0ms), transform .7s cubic-bezier(.2,1.45,.4,1) var(--gs-f, 0ms); }
+  /* every flare's centre on one line: a smaller flare sits in the middle of the top one's column */
+  .gs-rung:not(.is-top) .gs-rung-flare{ margin:0 calc((var(--gs-top) - var(--gs-fw)) / 2); }
   .gs-rung.is-top .gs-rung-flare{ width:var(--gs-top); height:var(--gs-top); }
   .gs-rung-flare > .cosmic-icon-badge.cosmic-badge-rank{ position:relative; left:auto; top:auto; width:100%; height:100%; box-sizing:border-box;
     -webkit-backdrop-filter:none; backdrop-filter:none; }
@@ -36479,9 +36481,8 @@ html.is-browser{ --fade-paper: transparent; }
     background:linear-gradient(180deg, #fff 15%, color-mix(in srgb, var(--rank-color) 55%, #FFD7A8) 100%); -webkit-background-clip:text; background-clip:text;
     color:transparent; -webkit-text-fill-color:transparent; }
   /* the line, through the flares' centres: the half above a flare and the half below it, each a dim track with its light */
-  .gs-seg{ position:absolute; z-index:0; left:calc(.6rem + var(--gs-fw) / 2 - 1.5px); width:3px; border-radius:2px; overflow:hidden;
+  .gs-seg{ position:absolute; z-index:0; left:calc(.6rem + var(--gs-top) / 2 - 1.5px); width:3px; border-radius:2px; overflow:hidden;
     background:rgba(214,222,255,.14); pointer-events:none; }
-  .gs-rung.is-top .gs-seg{ left:calc(.6rem + var(--gs-top) / 2 - 1.5px); }
   .gs-seg.is-up{ top:0; bottom:50%; }
   .gs-seg.is-down{ top:50%; bottom:0; }
   .gs-seg > i{ position:absolute; inset:0; display:block; transform:scaleY(0); transform-origin:50% 0; }
@@ -36503,7 +36504,7 @@ html.is-browser{ --fade-paper: transparent; }
   @keyframes gs-ring{ 0%{ opacity:0; transform:scale(.75); } 22%{ opacity:.95; } 100%{ opacity:0; transform:scale(2.1); } }
   @keyframes gs-press{ 0%{ transform:scale(1); } 35%{ transform:scale(.86); } 100%{ transform:scale(1); } }
   .gs-show-cap{ margin:-.4rem 0 0; min-height:1.5em; font-size:.92rem; line-height:1.5; color:rgba(220,228,255,.7); }
-  @media (min-width:40rem){ .gs-ladder{ --gs-fw:62px; --gs-gap:22px; width:21rem; } .gs-rung-name{ font-size:1.25rem; } .gs-rung.is-top .gs-rung-name{ font-size:1.8rem; } }
+  @media (min-width:40rem){ .gs-ladder{ --gs-fw:66px; --gs-gap:24px; } .gs-rung-name{ font-size:1.25rem; } .gs-rung.is-top .gs-rung-name{ font-size:1.8rem; } }
   @media (max-width:22rem){ .gs-show{ padding-left:1rem; padding-right:1rem; } }
   /* (384) Welcome rising in after Get Started or the splash (welcomeArrive) */
   @keyframes welcome-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
