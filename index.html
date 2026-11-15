@@ -8276,6 +8276,8 @@
     background:none; border:none; padding:0; margin:0; font:inherit; color:inherit;
     -webkit-tap-highlight-color:transparent; cursor:pointer;
     border-radius:10px;
+    /* a stacking context of its own (384.127): the photo inside lifts above the haptic layer's label, and that lift stays in here */
+    isolation:isolate;
   }
   .vroom-chat-msgwrap.is-picking{ background:rgba(255,255,255,.06); }
   /* THE BUMP IS THE POINT, so it has to be visible. A message that
@@ -8403,19 +8405,34 @@
     --ar:1.333; display:block; margin:.3rem 0 .15rem; border-radius:18px; overflow:hidden;
     aspect-ratio:var(--ar); width:min(68%, 15rem, calc(15rem * var(--ar))); max-width:100%;
     background:rgba(255,255,255,.06); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-    cursor:zoom-in; position:relative; }
+    cursor:zoom-in; position:relative;
+    /* ABOVE THE HAPTIC LAYER (384.127). The message is a button too big for a switch, so the haptic layer lays a label over all of it
+       (.nova-hlb, z-index 2, appended after the photo) and a finger landed on the label, never on the photo: the tap was the message's
+       (the reaction picker), and a photo opened only in the first second after a render, before the label was put back. */
+    z-index:3; }
   .vroom-chat-photo img{ display:block; width:100%; height:100%; object-fit:cover; }
   .vroom-chat-photo.is-loading::before{ content:""; position:absolute; inset:0;
     background:linear-gradient(100deg, transparent 20%, rgba(255,255,255,.08) 50%, transparent 80%);
     background-size:200% 100%; animation:chatphoto-shimmer 1.2s ease-in-out infinite alternate; }
   @keyframes chatphoto-shimmer{ from{ background-position:100% 0 } to{ background-position:-100% 0 } }
   .vroom-chat-photo.is-missing{ aspect-ratio:auto; width:auto; }
-  .chat-photo-close{ position:absolute; top:calc(var(--sat) + .75rem); right:calc(env(safe-area-inset-right,0px) + .75rem);
+  .chat-photo-close{ position:absolute; top:calc(var(--sat) + .5rem); right:calc(env(safe-area-inset-right,0px) + .5rem);
     width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.2); background:rgba(0,0,0,.5);
-    color:#fff; font-size:1.5rem; line-height:1; cursor:pointer; }
+    color:#fff; font-size:1.5rem; line-height:1; cursor:pointer; z-index:2; display:flex; align-items:center; justify-content:center; padding:0; }
   .vroom-chat-photo.is-missing::after{ content:"Photo no longer available"; display:block; padding:1rem; font-size:.75rem; color:var(--soft); }
-  .chat-photo-view{ position:fixed; inset:0; z-index:460; background:rgba(0,0,0,.94); display:flex; align-items:center; justify-content:center; padding:1rem; cursor:zoom-out; animation:pushfade .18s ease-out; }
-  .chat-photo-view img{ max-width:100%; max-height:100%; border-radius:10px; }
+  /* THE ENLARGED PICTURE (384.127): the whole screen less the safe areas, the picture as large as that box allows (contain), a
+     tap, the button, Escape or a swipe down closes it, pinch and double tap zoom. touch-action:none and the handlers in
+     openChatPhotoViewer keep the page behind it still. */
+  .chat-photo-view{ position:fixed; inset:0; z-index:460; background:rgba(0,0,0,.94); box-sizing:border-box; overflow:hidden;
+    padding-top:var(--sat); padding-right:env(safe-area-inset-right,0px); padding-bottom:env(safe-area-inset-bottom,0px); padding-left:env(safe-area-inset-left,0px);
+    touch-action:none; overscroll-behavior:contain; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+    cursor:zoom-out; animation:pushfade .18s ease-out; -webkit-tap-highlight-color:transparent; }
+  .chat-photo-view-box{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    transform-origin:50% 50%; will-change:transform; }
+  .chat-photo-view-box img{ display:block; width:100%; height:100%; object-fit:contain; -webkit-user-drag:none; user-select:none; pointer-events:none; }
+  .chat-photo-view.is-wait .chat-photo-view-box::after{ content:""; width:28px; height:28px; border-radius:50%; border:3px solid rgba(255,255,255,.25);
+    border-top-color:#fff; animation:chatphoto-spin .8s linear infinite; position:absolute; }
+  @keyframes chatphoto-spin{ to{ transform:rotate(360deg) } }
   .vroom-chat-poll{ margin:.35rem 0 .1rem; padding:.6rem; border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); text-align:left; }
   .vroom-chat-poll-q{ margin:0 0 .45rem; font-weight:800; font-size:.9rem; color:#fff; }
   .vroom-chat-poll-opt{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:.5rem;
@@ -123292,7 +123309,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-13-384.107";
+const APP_BUILD = "2026-11-13-384.127";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -145940,6 +145957,124 @@ function loadChatImage(id){
     return d.data || null;
   }).catch(() => null);
 }
+/* ---- THE ENLARGED PICTURE (build 384.127) - ONE VIEWER FOR EVERY CHAT ----
+   Madison: "Pictures in the chat, when clicking them, ensure they enlarge." Every chat draws its pictures with buildPhoto, which
+   opens this. The picture fills the screen less the safe areas (object-fit:contain on a box the size of that space, so it is scaled UP
+   as well as down - a small picture was shown smaller than its own thumbnail) and appears at once: it is the data the thumbnail
+   already holds, no second fetch (a picture still on its way opens a spinner and is filled when it lands).
+   Away: a tap anywhere (held 250ms, so a second tap can be a double tap), the visible button, Escape, a swipe down, a screen change.
+   Pinch and double tap zoom (transform only; one finger pans a zoomed picture). The page and the chat behind never move: the
+   overlay is touch-action:none and swallows wheel and touch moves. The dismissing tap is the overlay's own click, so it never
+   reaches the chat underneath. On <body>, so it clears itself with the screen (stage) it was opened over. */
+function openChatPhotoViewer(src, alt, pending){
+  document.querySelectorAll(".chat-photo-view").forEach(n => { try{ n.__close && n.__close(); }catch(e){} n.remove(); });
+  const v = document.createElement("div");
+  v.className = "chat-photo-view" + (src ? "" : " is-wait");
+  v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); v.setAttribute("aria-label", alt || "Photo");
+  const box = document.createElement("div"); box.className = "chat-photo-view-box";
+  const big = document.createElement("img"); big.alt = alt || "Photo"; big.draggable = false;
+  if(src) big.src = src;
+  box.appendChild(big);
+  const x = document.createElement("button");
+  x.type = "button"; x.className = "chat-photo-close"; x.setAttribute("aria-label", "Close photo");
+  x.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>';
+  v.append(box, x);
+  let s = 1, tx = 0, ty = 0, dead = false, closeT = 0, tapT = 0, tapX = 0, tapY = 0, suppress = false, dragDy = 0, obs = null;
+  const pts = new Map();
+  let pinch = null, pan = null, swipe = null;
+  const paint = (anim) => {
+    box.style.transition = anim ? "transform .2s ease-out" : "none";
+    box.style.transform = "translate3d(" + tx + "px," + ty + "px,0) scale(" + s + ")";
+  };
+  /* the picture's own edges may not leave the screen's while zoomed: its fitted size at this scale against the box */
+  const clampPan = () => {
+    const bw = box.clientWidth, bh = box.clientHeight, nw = big.naturalWidth || bw, nh = big.naturalHeight || bh;
+    const fit = Math.min(bw / nw, bh / nh), mx = Math.max(0, (nw * fit * s - bw) / 2), my = Math.max(0, (nh * fit * s - bh) / 2);
+    tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty));
+  };
+  /* zoom to scale ns keeping the picture point that is under (px, py) under it */
+  const zoomTo = (ns, px, py) => {
+    const r = box.getBoundingClientRect(), cx = r.left + r.width / 2 - tx, cy = r.top + r.height / 2 - ty;   /* the box's untransformed middle */
+    const ox = (px - cx - tx) / s, oy = (py - cy - ty) / s;
+    s = Math.max(1, Math.min(5, ns)); tx = px - cx - s * ox; ty = py - cy - s * oy;
+    if(s <= 1.001){ s = 1; tx = 0; ty = 0; } else clampPan();
+  };
+  const onKey = (e) => { if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); close(); } };
+  const onResize = () => { s = 1; tx = 0; ty = 0; paint(false); };
+  function close(){
+    if(dead) return; dead = true;
+    clearTimeout(closeT); document.removeEventListener("keydown", onKey, true); window.removeEventListener("resize", onResize);
+    try{ if(obs) obs.disconnect(); }catch(e){}
+    v.remove();
+  }
+  v.__close = close;
+  document.addEventListener("keydown", onKey, true);
+  window.addEventListener("resize", onResize);
+  /* nothing behind it moves */
+  v.addEventListener("wheel", e => e.preventDefault(), { passive: false });
+  v.addEventListener("touchmove", e => { if(e.cancelable) e.preventDefault(); }, { passive: false });
+  v.addEventListener("pointerdown", e => {
+    if(x.contains(e.target)) return;
+    try{ v.setPointerCapture(e.pointerId); }catch(err){}
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
+    if(pts.size === 1){ suppress = false; dragDy = 0; swipe = { t0: performance.now() }; pan = { tx0: tx, ty0: ty }; }
+    if(pts.size === 2){
+      const [a, b] = [...pts.values()]; suppress = true; swipe = null; pan = null;
+      pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, s0: s };
+    }
+  });
+  v.addEventListener("pointermove", e => {
+    const p = pts.get(e.pointerId); if(!p) return;
+    p.x = e.clientX; p.y = e.clientY;
+    if(pts.size >= 2 && pinch){
+      const [a, b] = [...pts.values()];
+      zoomTo(pinch.s0 * (Math.hypot(a.x - b.x, a.y - b.y) / pinch.d0), (a.x + b.x) / 2, (a.y + b.y) / 2); paint(false); return;
+    }
+    const dx = p.x - p.x0, dy = p.y - p.y0;
+    if(Math.hypot(dx, dy) > 8) suppress = true;
+    if(s > 1.001 && pan){ tx = pan.tx0 + dx; ty = pan.ty0 + dy; clampPan(); paint(false); }
+    else if(swipe && dy > 8){ dragDy = dy; ty = dy; v.style.background = "rgba(0,0,0," + (.94 * (1 - Math.min(1, dy / 420))).toFixed(3) + ")"; paint(false); }
+  });
+  const lift = e => {
+    const p = pts.get(e.pointerId); if(!p) return;
+    pts.delete(e.pointerId);
+    if(pinch && pts.size < 2){ pinch = null; if(s <= 1.001){ s = 1; tx = 0; ty = 0; } paint(true); }
+    if(pts.size === 1){ const q = [...pts.values()][0]; q.x0 = q.x; q.y0 = q.y; pan = { tx0: tx, ty0: ty }; }
+    if(pts.size === 0 && swipe){
+      const fast = dragDy > 40 && dragDy / Math.max(1, performance.now() - swipe.t0) > .5;
+      swipe = null; pan = null;
+      if(s <= 1.001 && (dragDy > 110 || fast)){ close(); return; }
+      if(dragDy){ ty = 0; dragDy = 0; v.style.background = ""; paint(true); }
+    }
+  };
+  v.addEventListener("pointerup", lift); v.addEventListener("pointercancel", lift);
+  /* the tap is the CLICK (a real one on every device), so what closes it is the same event that cannot reach the chat below */
+  v.addEventListener("click", ev => {
+    ev.stopPropagation();
+    if(x.contains(ev.target)){ close(); return; }
+    if(suppress){ suppress = false; return; }
+    const now = performance.now();
+    if(tapT && now - tapT < 300 && Math.hypot(ev.clientX - tapX, ev.clientY - tapY) < 40){
+      clearTimeout(closeT); tapT = 0;
+      if(big.naturalWidth){ zoomTo(s > 1.001 ? 1 : 2.5, ev.clientX, ev.clientY); paint(true); }
+      return;
+    }
+    tapT = now; tapX = ev.clientX; tapY = ev.clientY;
+    clearTimeout(closeT); closeT = setTimeout(close, 250);
+  });
+  document.body.appendChild(v);
+  if(!src && pending && pending.then) pending.then(d => {
+    if(dead) return;
+    if(d){ big.src = d; v.classList.remove("is-wait"); } else close();
+  });
+  /* a screen change takes it with it */
+  try{
+    const over = stage.firstElementChild;
+    obs = new MutationObserver(() => { if(stage.firstElementChild !== over) close(); });
+    obs.observe(stage, { childList: true });
+  }catch(e){}
+  return v;
+}
 function shrinkChatPhoto(file){
   return new Promise(resolve => {
     const r = new FileReader();
@@ -146159,6 +146294,10 @@ function buildVroomChatPanel(container, ctx){
      a reaction still costs one write and no read. */
   let lastMessages = [];
   let lastBumpSeen = 0;
+  /* (384.127) A PICTURE'S BUBBLE IS BUILT ONCE PER MESSAGE and carried to each new render. The list is rebuilt on every snapshot of the
+     room document (a heartbeat, a typing flag, a reaction), and a picture rebuilt with it was a new node with no image yet: it blinked
+     back to its loading shimmer, and a finger that had landed on the old one lifted off a node that was gone - no tap at all. */
+  const photoFigs = new Map();
   let bumpedByMe = 0;
   let pickerEl = null;
 
@@ -146299,6 +146438,7 @@ function buildVroomChatPanel(container, ctx){
         ? "No messages in the last 24 hours. Messages clear after a day."
         : (CTX.historyNote ? "No messages in the last day \u2014 say hi. Messages clear after 24 hours." : "No messages yet \u2014 say hi.");
       list.appendChild(empty);
+      photoFigs.clear();
     } else {
       /* ---- A REACTION BUMPS ITS MESSAGE TO THE BOTTOM ----
          Asked for by name - Snapchat's behaviour. Done by SORTING on a
@@ -146308,6 +146448,7 @@ function buildVroomChatPanel(container, ctx){
          has just reacted to; and trimIfHost decides who trims from the
          array's own last element, which a reorder would hand to
          whoever reacted rather than to whoever wrote. */
+      const usedPhotos = new Set();
       const ordered = messages.slice().sort(
         (a, b) => ((a.bump || a.ts || 0) - (b.bump || b.ts || 0)));
       ordered.forEach(m => {
@@ -146362,7 +146503,14 @@ function buildVroomChatPanel(container, ctx){
         if(m.type === "img" || m.type === "poll"){
           msg.append(name, time);
           wrap.appendChild(msg);
-          wrap.appendChild(m.type === "img" ? buildPhoto(m) : buildPoll(m));
+          let blk = null;
+          if(m.type === "img"){
+            const pk = m.id || m.img;
+            blk = photoFigs.get(pk);
+            if(!blk || blk.classList.contains("is-missing")){ blk = buildPhoto(m); photoFigs.set(pk, blk); }   /* a missing one asks again */
+            usedPhotos.add(pk);
+          } else blk = buildPoll(m);
+          wrap.appendChild(blk);
         } else {
           msg.append(name, document.createTextNode(m.text), time);
           wrap.appendChild(msg);
@@ -146397,6 +146545,7 @@ function buildVroomChatPanel(container, ctx){
            never inside its button */
         if(CTX.msgAction){ let act = null; try{ act = CTX.msgAction(m); }catch(e){} if(act) list.appendChild(act); }
       });
+      photoFigs.forEach((f, k) => { if(!usedPhotos.has(k)) photoFigs.delete(k); });
     }
     /* A re-render replaces every node, so a picker left open is a
        picker pointing at an element that no longer exists. */
@@ -146909,20 +147058,14 @@ function buildVroomChatPanel(container, ctx){
       fig.classList.remove("is-loading");
     });
     fig.appendChild(img);
-    loadChatImage(m.img).then(src => { if(src) img.src = src; else { fig.classList.remove("is-loading"); fig.classList.add("is-missing"); } });
+    const ready = loadChatImage(m.img);
+    ready.then(src => { if(src) img.src = src; else { fig.classList.remove("is-loading"); fig.classList.add("is-missing"); } });
+    /* (384.127) ONE SHARED VIEWER, opened at once: the thumbnail's own data when it has arrived, else a spinner filled when it does.
+       A picture that is gone opens nothing (the bubble says so). */
     fig.addEventListener("click", (ev) => {
       ev.stopPropagation();
-      if(!img.src) return;
-      const v = document.createElement("div");
-      v.className = "chat-photo-view";
-      v.setAttribute("role", "dialog"); v.setAttribute("aria-label", img.alt);
-      const big = document.createElement("img"); big.src = img.src; big.alt = img.alt;
-      const x = document.createElement("button");
-      x.type = "button"; x.className = "chat-photo-close"; x.setAttribute("aria-label", "Close photo");
-      x.textContent = "\u00d7";
-      v.append(big, x);
-      v.addEventListener("click", () => v.remove());
-      document.body.appendChild(v);
+      if(fig.classList.contains("is-missing")) return;
+      openChatPhotoViewer(img.getAttribute("src") ? img.src : null, img.alt, ready);
     });
     return fig;
   }
