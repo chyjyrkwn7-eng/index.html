@@ -289,7 +289,7 @@ PICKER = "()=>({ picker: document.querySelectorAll('.vroom-chat-picker').length,
 def fit_problems(v, thumb):
     """what is wrong with the enlarged picture, against the page's own numbers; [] when it is right"""
     bad = []
-    if not v or not v["f"]: return ["no image drawn: %s" % (v and (v["nat"], v["loaded"]))]
+    if not v or not v["f"]: return ["no image drawn: %s" % str(v and (v["nat"], v["loaded"]))]
     f, p = v["f"], v["pad"]
     availw, availh = v["vw"] - p["l"] - p["r"], v["vh"] - p["t"] - p["b"]
     if f["l"] < p["l"] - 1 or f["t"] < p["t"] - 1 or f["l"] + f["w"] > v["vw"] - p["r"] + 1 or f["t"] + f["h"] > v["vh"] - p["b"] + 1:
@@ -322,6 +322,8 @@ def run_surface(pg, tag, surf, errs):
         f = nth_fig(pg, root, ORDER.index(kind))
         under = pg.evaluate(UNDER, [f["x"], f["y"]]); unders.append((kind, under))
         close_all(pg); tap(pg, f["x"], f["y"]); v = pg.evaluate(VIEW2)
+        if not v:   # one more try, measured again: a page still settling under a loaded machine moves the picture between the read and the touch
+            f = nth_fig(pg, root, ORDER.index(kind)); under = pg.evaluate(UNDER, [f["x"], f["y"]]); tap(pg, f["x"], f["y"]); v = pg.evaluate(VIEW2)
         if not v: opens.append((kind, "no viewer; the tap landed on " + str(under))); continue
         pg.wait_for_timeout(300); v = pg.evaluate(VIEW2)
         pr = fit_problems(v, f)
@@ -336,7 +338,9 @@ def run_surface(pg, tag, surf, errs):
     # (4) the ways out, and nothing reaches the chat under
     way = {}
     def fresh():
-        close_all(pg); f = nth_fig(pg, root, 0); tap(pg, f["x"], f["y"]); pg.wait_for_timeout(250); return f
+        close_all(pg); f = nth_fig(pg, root, 0); tap(pg, f["x"], f["y"]); pg.wait_for_timeout(250)
+        if not pg.evaluate(VIEW2): f = nth_fig(pg, root, 0); tap(pg, f["x"], f["y"]); pg.wait_for_timeout(250)
+        return f
     f = fresh(); v = pg.evaluate(VIEW2)
     if v:
         tap(pg, 12, v["vh"] - 12); pg.wait_for_timeout(250); way["tap anywhere (a corner)"] = pg.evaluate(PICKER)
