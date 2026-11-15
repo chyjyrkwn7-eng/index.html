@@ -2318,8 +2318,8 @@
        .vcd-semi > .vcd-band); with the arc's round end (.vcd-head) turning with it. Three transform animations started once
        per count, on the document timeline at the shared start (startTime), so the sweep is the compositor's at the screen's
        own rate and lands on zero with everybody else's. Clockwise, the way a clock's hand goes.
-     - THE NUMBERS: one per second, made up front (.vcd-n), each faded and settled in at its second and faded out at the next,
-       also on the timeline - so a busy main thread (a chat snapshot, the question being built under the overlay) cannot hold a
+     - THE NUMBERS: one per second, made up front (.vcd-n), each rolled up into the ring's opening at its second and on up and
+       out at the next (one animation each), also on the timeline - so a busy main thread (a chat snapshot, the question being built under the overlay) cannot hold a
        number late. The app's sans (SF on an iPhone) with lining, tabular figures, solid, never cut from a gradient; 3, 2, 1
        larger and in the theme's colour, with a soft glow behind the ring (.vcd-glow, a painted layer whose opacity pulses).
      - Reduce motion: .vcd-still - no animation at all; the ring stands full and the number changes in place each second. */
