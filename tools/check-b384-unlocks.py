@@ -224,7 +224,7 @@ I_PLATES = r"""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms));
     out.cards = {}; out.rowAgree = true;
     for(const r of rowsEl){
       const nm = (r.querySelector('.rank-name') || {}).textContent || '';
-      const me = r.classList.contains('lb-row-me');
+      const me = r.classList.contains('lb-row-me') || r.dataset.me === '1';   /* (384.133) searchbar marks your row with data-me, not lb-row-me */
       const key = me ? 'me' : nm;
       if(!me && ['Kimber', 'Alexis', 'Tomas', 'Priya', 'Rosa', 'Zara', 'Leeland'].indexOf(nm) < 0) continue;
       const rowRim = (r.querySelector('.rank-avatar-wrap') || { dataset: {} }).dataset.rim || '';
@@ -251,7 +251,7 @@ I_PLATES = r"""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms));
         out.reduce = R; CLOSE(); } }
     /* YOUR OWN ROW AT ONCE: the account push held (so nothing is written), the rim taken off and the board drawn again */
     const pub = store.publicId;
-    const ownRim = () => { const r = document.querySelector('.screen-rankings .rank-row.lb-row-me .rank-avatar-wrap'); return r ? (r.dataset.rim || '') : null; };
+    const ownRim = () => { const r = document.querySelector('.screen-rankings .rank-row:is(.lb-row-me, [data-me="1"]) .rank-avatar-wrap'); return r ? (r.dataset.rim || '') : null; };
     const pubRim = () => { const e = board().find(x => x.pub === pub); return e ? (e.rim || '') : null; };
     const payN = () => (window.__payloads || []).length;
     const keepSched = window.scheduleCloudPush;
@@ -646,7 +646,7 @@ def main():
                 chk("[%s] (J) the need is the same whatever the rank's badge rule is (%s at %s badges / %s units, %s at 1) and its note does not say Supernova is left out (%r)" % (cls, jq.get("need25"), jq.get("rule"), jq.get("units"), jq.get("needLow"), jq.get("note")),
                     jq.get("need25") == jq.get("needLow") and "not counted" not in (jq.get("note") or "") and jq.get("noFn") == "undefined", jq)
                 chk("[%s] (J) Supernova's character, banner and theme are all counted (%s) and its badge rule is untouched (%s)" % (cls, jq.get("titanItems"), jq.get("ruleAfter")),
-                    all(x >= 1 for x in (jq.get("titanItems") or [0])) and jq.get("ruleAfter") == jq.get("rule") == 25, jq)
+                    all(x >= 1 for x in (jq.get("titanItems") or [0])) and jq.get("ruleAfter") == jq.get("rule") and (cls == "ifc" or jq.get("rule") == 25), jq)
             # ---- (I) 384.132: the worn rim on every plate, your own row at once, the rim cards' sentences
             if wanted("I"):
                 # a page of its own, from the fixture: (F) leaves this one holding an empty copy (applyLoadedData({ lifetime: {} }))

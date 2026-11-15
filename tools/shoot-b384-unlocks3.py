@@ -33,7 +33,7 @@ def open_row(pg, name):
         if(!r) return false; r.click(); return true; }""", name)
 
 def own_row_into_view(pg):
-    return pg.evaluate("""()=>{ const r = document.querySelector('.screen-rankings .rank-row.lb-row-me'); if(!r) return null;
+    return pg.evaluate("""()=>{ const r = document.querySelector('.screen-rankings .rank-row:is(.lb-row-me, [data-me="1"])'); if(!r) return null;
         r.classList.remove('is-offscreen'); window.scrollTo(0, r.getBoundingClientRect().top + scrollY - innerHeight / 2); return true; }""")
 
 with sync_playwright() as p:
@@ -52,7 +52,7 @@ with sync_playwright() as p:
             pg.screenshot(path=pre + "1-profile-ans.png")
             # 2. the person card: your own, then classmates (Kimber: Accuracy rim held; Alexis: Mastery; Tomas: a rim his code does not hold)
             pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(3000)
-            pg.evaluate("()=>{ const r = document.querySelector('.screen-rankings .rank-row.lb-row-me'); if(r) r.click(); }"); pg.wait_for_timeout(1500)
+            pg.evaluate("()=>{ const r = document.querySelector('.screen-rankings .rank-row:is(.lb-row-me, [data-me=\"1\"])'); if(r) r.click(); }"); pg.wait_for_timeout(1500)
             pg.screenshot(path=pre + "2-card-own.png"); pg.evaluate(CLOSE)
             for i, nm in enumerate(("Kimber", "Alexis", "Tomas")):
                 if open_row(pg, nm):
