@@ -41844,3 +41844,210 @@ GATES (one at a time, TMPDIR=/dev/shm, machine load 9-32 from other sessions): c
 ON THE BASE TOO (not this build's): check-b384-moveperm (1) ch60-511/514/701/702 shown citations (the cropfix pointer patches) and (3) Chapter 10 (occload's additions); check-b384-qfix (BASE=4e5328c, main 384.70) (5a) weekWin / academyLadderRule fields and (6b) every index.html change since 384.70 - its bank sections pass; check-b328-classes "academy's saved copy byte-for-byte unchanged" fails the same on origin/claude/b384-occload's files (run there too).
 The occload gate's (4a) failed once on `novaHeard` (the clock-stamped record of Nova's broadcasts, written while a page is open): both gates now hold it to "nothing lowered" instead of "identical".
 Review sheet (scratchpad only: it holds pictures of the book): ch6cook/CH6-COOKING-QUESTIONS.pdf.
+### 384.118 (testhistory)
+STATS' RECENT TESTS ARE ONE CALM CARD; TEST HISTORY CAN BE SEARCHED AND FILTERED; EVERY ROW IS ONE HEIGHT; A HUNDO IS A CHIP
+(branch claude/b384-testhistory, cut from origin/main 384.97 93d18a9; NOT merged, waiting for the owner's go; the lead re-numbers
+the build at merge).
+
+THE REPORT (Madison, Profile > Stats, screen recording rec-0010, Fire Code): "Looking at stats, the recent test stuff looks good, but
+all them stacked on top of each other is overwhelming. And when you click test history, there should be filters, like today, this
+week, this month, or maybe by chapter too, or you can select which chapters to filter by, maybe a search bar. And ensure all the boxes
+are the same size. And why does Hundo have a stat thing next to it? So much room for improvement."
+His screen: At a glance (the Question bank ring, 923 / 54 / 12 / 51), then three Recent tests cards - each its own glass card with a
+glowing ring, "Chapter 35: Welding and Other Hot Work" on two lines, a Drill chip, "✦ Hundo" on the 100% - then "Test history / All 44
+tests, newest first".
+
+WHAT "THE STAT THING" WAS: the sparkle before "Hundo" on a recent-test row (buildHundoMark: an SVG four-point star with its own gold
+drop-shadow, in front of the word in bold gold, no pill) - the only glyph on any row, beside a mode chip ("Drill") that is a plain
+word in a pill. Nothing sits beside "Hundos" in At a glance (a stat card: a number and its label, as the other three). The sparkle was
+drawn only there (grep: buildHundoMark is called from buildTestRow alone; the path "M6 .6 7.5 4.5..." is in no other builder) - it was
+never the app's hundo symbol. Every other hundo marker in a list was checked: the unit picker's "No hundo" (.hundo-chip, a plain pill),
+the Leaderboard's Hundos board (a number), a test's own page (the verdict "Hundo" and a "1 hundo" tile), the results screen's
+"Hundo" line - none has a glyph. Fixed: the hundo marker is now the same .thx-chip as the mode's, in the hundo gold
+(--mode-c #FFD36A = TEST_RESULT_TONE.hundo): same height, radius, size, padding; "Hundo", or "3 hundos".
+
+WHAT CHANGED (index.html):
+1. ONE ROW, ONE HEIGHT (buildTestRow; the CSS block "TEST HISTORY: ONE ROW, ONE HEIGHT; FINDING A TEST (384.118)", last in the
+   sheet): every test row - Stats' and Test history's - is 4.3rem tall (68.8px at 16px; rem so it follows the text size), padding
+   0 .8rem 0 .75rem: the ring 2.55rem (was 2.9) without its glow (a list of rings is calmer, and a long list has no CSS filter to
+   paint per row), the name on ONE line with an ellipsis (the full unit names are the row's title/tooltip and are written out on the
+   test's own page), and one line of chips and numbers that never wraps into a second visible line: the meta line is a wrapping
+   flex row exactly one line tall with overflow hidden, so on a narrow row the time taken goes first, then the score, whole - never
+   "12/12 rig..." - and the chips stay. Each row carries data-at = its playedAt (identity for the gate).
+2. A LIST OF ROWS IS ONE CARD (.thx-list): the rows divided by a hairline that starts at the name (Settings' way), on --surface-1
+   with a 9% ink rim, radius 16px - not a stack of cards each with its own edge, wash and glow. Each row keeps its faint wash in its
+   result's colour (build 327). Pressing a row lightens it (no scale inside a card).
+3. STATS: at most three (as before), as that one card, with the Test history row under it (384's pfActFill row, unchanged). A test
+   opened from here starts the history's filters clean (testHistoryFresh).
+4. TEST HISTORY (showTestReviewList), top to bottom: the summary strip (count / average ring / hundos, following the filters, as
+   327 asked); the search (.searchwrap + searchMagnifier + input.searchbox + addSearchClear - the units screen's markup - and also
+   .sbcap / .sbcap-field, the classes claude/b384-searchbar's one Apple capsule keys on, inert until that lands); the time as the
+   Leaderboard's / Profile's switch (.navsegment.profiletabs > .iconbtn, attachSegSlider; the three shared rules under THE
+   LEADERBOARD now list .screen-testhistory beside .screen-rankings and .screen-profile, so claude/b384-segglass's overhaul reaches
+   it where it edits those rules): All / Today / This week / This month (Monday is the week's start, as studyTotals and the dot chart;
+   historyBounds); then two 44px capsule buttons that open a sheet: the units ("Chapters" in Fire Code, "Units" in the academy -
+   classNoun; "Chapters · 3" once three are picked) and the mode ("All modes" / Drill / Mock / Game / Virtual Room, only the modes
+   this history holds, only when it holds two or more - testHistoryFilter, the old filter's variable, kept by name). A set button
+   is lit like the switch's picked segment. Under them, a count line ("120 tests"; filtered, "18 of 120 tests") with Clear filters
+   beside it while anything is set; then the list.
+   Filters combine (filterTestHistory: time AND mode AND any picked unit AND every search word). The search reads every unit's full
+   name, the stored label, the mode and "hundo" (testSearchTextOf, worked out once per visit). Typing repaints after 120ms.
+   With nothing set the list is under Today / Yesterday / This week / Earlier (historyGroupOf); with anything set it is one list.
+   A row's right side says when: the time today (and under Yesterday), "Yesterday" in a flat list, the weekday within this week,
+   "Oct 3" before that (with the year when not this year's) - historyWhenOf.
+   Nothing matches: the strip reads 0 / - / 0, the count "0 of 120 tests", and an empty state (a quiet magnifier, "No tests match",
+   "Try another time, chapter or search.", a Clear filters capsule).
+   PERFORMANCE: rows go on the page 40 at a time (TEST_HISTORY_CHUNK); an IntersectionObserver on a 1px sentinel 900px below the
+   screen adds the next 40, and re-observes so a tall screen keeps filling. A row is a button of spans and one two-circle SVG, no
+   measuring, no filter. (The history itself still keeps 50 - TEST_HISTORY_MAX is unchanged; the list is built for more.)
+   BACK FROM A TEST lands on the same list: showTestHistoryDetail's back is showTestReviewList({ keep: true }) - the filters, the
+   search and the scroll position (testHistoryView), with at least as many rows rendered as were. From Stats, a fresh visit.
+5. THE PICKER SHEET (openTestHistorySheet): the app's .invite-overlay / .invite-sheet (mountSheetOverlay: it goes with the screen;
+   its glass), a fixed head, the list scrolling inside it, Done at the foot. Units: checkboxes (real inputs, a 1.4rem ring that fills
+   white with a dark tick - the app's controls stay white on every theme), each unit's name and how many tests hold it, Select all
+   and Clear above; ticks apply as they are made. Only the units this history holds are listed, in teaching order (a list of all 58
+   Fire Code chapters, most with nothing behind them, is a list of ways to get an empty screen). Mode: one choice, applied and
+   closed on the tap. Rows 48px, buttons 44px. Added to b384_pop_lib.INVENTORY ("history-units").
+6. A TEST'S OWN PAGE names the test in full under the verdict (.thx-hero-name; testRowName).
+
+GATE tools/check-b384-testhistory.py: 120 tests over 60 days written into store.testHistory after boot (the newest three: the two
+longest unit names together, the shortest, a three-unit hundo; one yesterday noon), academy on an iPhone 17 Pro Max and Fire Code on
+an iPad Pro 11". Expected lists worked out in the gate from the fixture (today / Monday / the 1st, unit names), never by the app's
+helpers; labels never read. (1) Stats: 1-3 rows, one height, names on one line; (2) a hundo's marker matches the mode chip (height,
+radius, size, padding, border, centre line) and has no glyph; (3) nothing set: all 120 listed (scrolled in), one height, one-line
+names, the count = 120, at most four headings each holding one day bucket; (4) four time segments, each of the last three listing
+exactly its tests with the count agreeing; (5) three units ticked in the sheet list exactly their tests and the button shows 3; the
+sheet's Clear restores all; (6) the search; (7) this month + three units + the search = the intersection; (8) a search for nothing:
+no rows, count 0, an empty state with a button that brings all 120 back; every row in every list one height; (9) a tap opens the test,
+which names its units in full, and Back returns to the list; (10) no page errors.
+
+GATES (one at a time; the machine was loaded and restarted once mid-run):
+- check-js: 14 blocks OK. check-b384-testhistory: ALL PASS (both devices, both classes); --against origin/main (93d18a9): FAILS (1) row heights 88.7 / 70.8 and two-line names, (2) the hundo marker a glyph and not a chip (radius 0, no pill, an svg), (3) no count line and a date heading per day, (4)-(7) no switch, no units sheet, no search, (9) rows carry no identity.
+- check-b384-popglass ONLY=history-units: ALL PASS (phone both classes, iPad).
+- check-behaviour check_b324t_stats, check_b321f_profile, check_b324m_modes: 83 PASS and the same 16 FAIL on this branch and on main (stale labels: "Quiz" where the app says Mock since 384, the rank word colour) - nothing new.
+- check-centering --quick: academy 0 off centre after one fix (the filter capsule had .95/1.1rem side padding, its ink 0.93px right; now 1rem both sides; Clear filters symmetric too).
+384.118 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm, load 4-6):
+- check-js 14 blocks ALL PASS; page console: only the sandbox's blocked CDN / file: fetch. sweep-layout --quick 20/20 clean.
+  check-centering --quick ALL PASS (0 off centre).
+- check-b384-testhistory ALL PASS (both devices, both classes). `--against` main: the gate reads the repo's version.json, so a main
+  file whose APP_BUILD differs is reloaded by the forced-update check mid-run (the first `--against origin/main` died on a
+  navigation after (1)/(2)); against a copy of main 384.107 with APP_BUILD set to 384.118 it FAILS 25 checks: (1) rows of 70.8-107.7px
+  with two-line names, (2) the hundo marker a glyph, (3) no count line and no date headings, (4) no time switch, (5) no units sheet,
+  (6) no search, (7) no combining, (9) rows carry no identity.
+- check-b384-popglass ONLY=history-units ALL PASS. check-tours: every declared step renders (ALL PASS).
+- check-behaviour ONLY_FN=check_b324t_stats,check_b321f_profile,check_b324m_modes: the SAME 16 failures on this tree and on main
+  384.107 (`--against`): stale labels ("Quiz" where the app says Mock, the rank word's colour) - pre-existing.
+SHOTS (scratchpad testhistory/; iPhone 17 Pro Max 440x956 academy + Fire Code and iPad Pro 11" academy, 2x; before = main 384.107,
+after = this build): <before|after>-<dev>-<class>-N-<screen>.png - 1 Stats (Recent tests), 2 Test history unfiltered, after only: 3 This
+week, 4 the units sheet with three ticked, 5 filtered by those, 6 the empty state; contact sheets sheet-<dev>-<class>.png (before
+Stats, before history, then the six after shots). Every one looked at. The button reads "Units" in the academy and "Chapters" in
+Fire Code (the class's own noun). Chromium cannot show iOS's glass or real scrolling smoothness of a long list.
+### 384.131 (frostfix)
+THE OLD FROST IS BACK ON EVERY CARD AND SHEET: THE PERSON CARD'S BUILD-382 GLASS, ONE TOKEN CHANGE
+(branch claude/b384-frostfix, cut from origin/claude/b384-testhistory 4e03db5 (384.118, which has main 384.107 merged); NOT on main,
+waiting for the owner's go; the lead re-numbers the build at merge.)
+
+THE REPORT (Madison, a screenshot of three Test history screens on claude/b384-testhistory; the middle one the new Units sheet over the
+list on his iPhone): "The middle, why does this frost look like that. The old type of frost we had looked better. The old frost we had
+on like when you clicked someone on the leaderboard, the box that came up had a really nice frost. You changed it too but the old one
+was so awesome. Revert that and ensure it's app cohesive where needed." His picture: a light, washed grey slab with a lighter wash and
+little depth, the page behind barely showing through.
+
+FORENSICS (tools: scratchpad forensic.py; the person card opened by openPersonSheet over a ten-row Leaderboard, iPhone 17 Pro Max
+440x956 @3x, Chromium; "stripes" = check-b384-leavefrost's stripe ratio, blur on / off, lower = more smeared; "mean" = the card's mean
+RGB as drawn over the real board):
+
+| build (git) | card fill | backdrop-filter | rim | dim behind | will-change | mean RGB | stripes | on his iPhone |
+|---|---|---|---|---|---|---|---|---|
+| 378 (a62b05f) / 382 (a330ee8) | sheen .07/.015/-.14 over rgba(26,31,38,.5) | blur 9 saturate 1.9 brightness 1.06 | .11 | overlay rgba(0,0,0,.5) | none | 49-50/50/53 | .066 | FROSTED: the old frost |
+| 383 (42bbffa) | --clean-card, opaque (beyond Home) | blur 9 (behind an opaque fill) | .11 | .5 | none | 54/55/59 | 0.0 | flat (nothing shows through) |
+| 384.1 (af5725d) .. 384.18.1 (ec36c13) | the 382 glass again (37a21f6 "pop-ups frosted on every screen") | blur 9 sat 1.9 br 1.06 | .11 | .5 layer | opacity, transform | 48/50/54 | .066 | flat: the will-change group (384.24 note) |
+| 384.19 (b2d8db8, r16 c598426) .. 384.22 (d22c03d) | sheen .13/.045/.02 over rgba(40,48,62,.42) | blur 22 sat 1.8 br 1.05 | .17 | rgba(4,6,10,.4) layer | opacity, transform | 59/61/68 | .028 | flat (will-change) |
+| 384.25 (1f6b0f5) .. main 384.107 (7bdca1e) | the r16 glass | blur 22 sat 1.8 br 1.05 | .17 | .4 layer | none | 59/61/68 | .028 | frosted, lighter and bluer |
+| testhistory 384.118: person card AND Units sheet | the r16 glass (the same tokens, one rule) | blur 22 sat 1.8 br 1.05 | .17 | .4 | none | card 59/61/68, sheet 61/65/74 | .028 / .025 | "light washed grey slab" |
+| THIS BUILD 384.131: person card, Units sheet, every pop-up | the 382 glass | blur 9 sat 1.9 br 1.06 | .11 | rgba(0,0,0,.5) layer | none | card 48/50/54, sheet 47/50/55 | .066 / .099 | (phone to confirm) |
+
+`git log -S` on main: `--sheet-bg:`, `--sheet-blur:`, `--sheet-border:`, `--sheet-shadow:` and `--pop-scrim:` were each added once
+(c598426, 384 r16) and never changed since; `--pop-bg-glass:` once (37a21f6). So:
+- "THE OLD FROST" is the build-382 person card, the last one that frosted on his iPhone before r16: 383 made it opaque off Home, and
+  384.1-384.22 carried `will-change: opacity, transform` (the 384.24 "Where's the frosted glass?" report). He has seen the r16 glass
+  frost only since 384.25.
+- MAIN CHANGED IT, not a branch: r16 (384.19) replaced the 382 recipe with a lighter, bluer pane at 22px over a thinner dim, for every
+  card and sheet at once - the person card included ("You changed it too"). The Units sheet on testhistory is NOT an outlier in code:
+  it is `.invite-overlay > .invite-sheet` mounted on <body> by mountSheetOverlay, takes exactly the shared rule (computed fill, blur,
+  rim, shadow and dim identical to the person card's), with no backdrop root above it (no will-change, opacity, filter or mask on an
+  ancestor; its own overflow:hidden is a clip, not a root) and no transformed ancestor. It looked worse than the person card on his
+  phone because the r16 pane is light and blue-grey (white sheen .13 at the top) and the Units sheet is a tall, full-width slab over a
+  dark, nearly empty list - nothing coloured to frost, so what shows is the pane itself - while the person card is a small card with
+  a character, a rank emblem and (for most classmates) a banner tinted into its top, over the busy, coloured board.
+- The same verdict was already given once on a phone: 384.26 put the Test settings sheet back to solid because the r16 glass "read as
+  a washed-out grey slab" on his iPhone ("Change this back what the hell??"). That is this recipe on a big bottom sheet.
+
+WHAT CHANGED (index.html, the :root tokens, one change for every card and sheet): `--sheet-bg` = the 382 pane
+(linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.5)), `--sheet-blur` =
+blur(9px) saturate(1.9) brightness(1.06), `--sheet-border` = 1px solid rgba(255,255,255,.11), `--sheet-shadow` = the 382 card shadow
+(0 14px 40px rgba(0,0,0,.4) + the .15 / .22 inset lines), `--pop-scrim` = rgba(0,0,0,.5) (382's dim). These are the same values
+as the banners' `--pop-*` tokens, so the top banners and the sheets are one glass family again. Everything r16 and 384.24 / 384.52
+fixed about WHERE the glass is drawn is kept: the dim is the overlay's ::before faded by opacity, overlays are plain fixed boxes, no
+will-change on a card, every sheet on <body>. No new blur layer, nothing animates but opacity/transform. The light theme is retired
+(loadTheme ignores it), so "dark and light" is dark in every accent; the sheet's words read at contrast 16.0 (names) and 6.9 (counts)
+as drawn, rows and buttons 44px+.
+- tools/b384_pop_lib.INVENTORY gains "history-modes" (Test history's Mode sheet; "history-units" was added by 384.118).
+- tools/check-b384-popglass.py (1): "blur >= 16px" was r16's number; it now asks for a blur with a saturate, and the recipe itself is
+  held by the new gate. (The decision it encoded was reversed on request, as r16 did to check-b384-savefrost.)
+
+APP COHESION AUDIT (the INVENTORY opened for real, 25 pop-ups x phone academy / phone Fire Code / iPad, plus a scan of every CSS rule
+with a backdrop-filter on a pop-up-like selector). ON THE SHARED RECIPE NOW: the class confirms (leave / only / enroll), new account,
+sign out, save code, Virtual Room leave, the chat's leave sheet, resume offer, saved test dropped, friend moment, Add to Home Screen,
+What's new, the person / unlock / rank-lore / level-coming cards, install picker and guide, Invite to chat, Invite friends, Members,
+Test history's Units and Mode sheets. The older per-class glass rules (.intro-card, .installguide-card, .resume-offer, .chatdock-confirm,
+.savecode-sheet, .a2hs-sheet...) are inert under the shared rule (the gate reads the computed result). LEFT AS THEY ARE, on purpose:
+the Test settings / Start sheet (solid by the owner's 384.26 call - "Change this back"); the unit card .unitdetail (it grows out of its
+row; a blur re-sampled every frame); the arrowed popovers .under-note / .hundo-why and the Home stats popover (an arrow sharing the
+body's fill must be opaque); the chat panel (.95 opaque by design, 384); the top banners, toasts, streak / tier-up / battle / room-chat
+alerts (their own --pop-* family, which already IS this glass; popups-wide's .66 is theirs - see below); the tour tooltip and the daily
+lock tip (clear-glass tips); Profile's own card (solid in the page by design); in-page cards on --surface-* (stat cards, Settings rows,
+the calendar); the tab bar, top buttons, segmented controls and search capsules (the floating controls' own glass); cutscenes and
+full-screen takeovers.
+
+OTHER BRANCHES (git diff from each branch's merge base with main, glass-related lines only; none of these was edited):
+- popups-wide: `background-color:rgba(26,31,38,.66) !important` on the TOP BANNERS (.daily-alert.app-banner, .update-banner.is-glass,
+  .vroom-chat-alert.is-glass, .toast), asked for by the owner ("fix ... the light smear on the glass"). Not the sheets' glass; no patch.
+- segglass: the top tabs' track gets blur(10px) + will-change:backdrop-filter (the segmented control's own glass). Not a pop-up; no patch.
+- settingslook: #settings-bar, a frosted top bar (the screen's colour at .86 over blur 20 saturate 1.6). A bar, not a pop-up; no patch.
+- searchbar: the search capsule and the buttons on its line lose their blur (flat fill). Controls; no patch.
+- dailyq: removes two in-page daily-question card backgrounds. Not a pop-up; no patch.
+- prestige: a new confirm `invite-sheet person-card pg-confirm` (inherits the shared glass) and Profile cards on --surface-*; no patch.
+- calc: a floating calculator `.qcalc` on the shared tokens (so it takes this change by itself) plus a hue glow of its own in the
+  shadow. tools/patches/frostfix-calc.patch drops the glow so it is exactly the shared shadow (OPTIONAL: a cosmetic call for the owner;
+  applies cleanly to origin/claude/b384-calc with `git apply tools/patches/frostfix-calc.patch`).
+- swupdate, unlocks2, reviewtest, popups: nothing glass-related.
+No branch changed --sheet-*, --pop-scrim, --pop-bg-glass or the person card's glass, so no revert patch is needed for the sheets.
+
+GATE tools/check-b384-frostfix.py: the reference is READ OFF build 382's page (git show a330ee8, its person card over the Leaderboard;
+FROSTFIX_REF=FILE overrides) - no typed numbers. (0) the reference is translucent glass; (1) this build's person card has its fill,
+sheen stops, blur / saturate / brightness, rim, shadow and dim (colour x opacity) within a small tolerance; (2) every INVENTORY pop-up
+has the person card's recipe and the reference's; (3) the stripe test on the person card and the Units sheet (ratio < .35 with an
+unblurred spread >= 20); (4) the Units sheet: no backdrop root above it, contrast >= 4.5 for names and counts against the sheet as drawn,
+rows and buttons >= 44px; (5) no page errors. Phone academy + Fire Code and iPad academy; `--quick` (phone academy, six pop-ups),
+`--shots DIR`, `--against FILE`.
+
+GATES (one browser job at a time, TMPDIR=/dev/shm; the machine sat at load 22-35 from other helpers the whole run):
+| gate | this build | --against |
+|---|---|---|
+| check-js | 14 blocks ALL PASS | - |
+| page console | no page errors (every gate below reads pageerror; only the sandbox's blocked Firebase CDN) | - |
+| check-b384-frostfix (full: phone academy, phone Fire Code, iPad) | ALL PASS (96) | testhistory 384.118 (--quick): FAILS 7 - the person card is not the old frost, and class-leave, chat-leave, What's new, unlock, Invite to chat and the Units sheet are not the old frost |
+| check-b384-popglass (25 pop-ups x 3) | ALL PASS (209) | - |
+| check-b384-popfrost | ALL PASS (9) | - |
+| check-b384-personglass | ALL PASS (6) | - |
+| check-b384-savefrost | ALL PASS (11) | - |
+| check-b384-leavefrost | ALL PASS (89) | - |
+| check-b384-testhistory | ALL PASS (39) | - |
+| sweep-layout --quick | 20/20 clean | - |
+| check-centering --quick | 0 off centre of 640 measured on 75 screens; "FAILED" only because 5 elements were moving while measured (IFC "Show the code" summaries, the chat button, the Add to Home Screen "Tap" label) and the mode-arrow pass lost its renderer ("Target crashed") at load 30 - nothing here moves anything (a token change) | - |
+
+ONLY A PHONE CAN CONFIRM: that WebKit draws the 9px blur as the 382 card did (Chromium renders backdrop-filter but not WebKit's own
+backdrop-root rules or its few-frame delay building a blur); how the Units sheet reads over an almost empty, dark list (it frosts what
+is behind it - the 382 recipe lets the rows' shapes through more clearly than r16's 22px did, by design); that the .5 dim does not read
+too heavy on the confirms (r16 thinned .66 to .4; this is .5, the dim the person card always had before r16).
