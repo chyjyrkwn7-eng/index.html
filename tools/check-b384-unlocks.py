@@ -26,6 +26,8 @@ Asserted by SHAPE and by numbers read off the page (never label strings), in bot
      its tile in Customize. (B) also asserts the ultimate's count grew by exactly that one banner and nobody who held the
      ultimate on the baseline loses it.
  384.132 (unlocks3):
+ 384.133 (J): Supernova's rewards (its character, banner and theme) count towards the ultimate in both classes (the academy's Astral
+     waits for units); the need does not depend on the rank's badge rule; 25 badges stays.
  (I) the worn rim is drawn on every plate through one helper: Profile's hero (yours, only while held), the person card (yours from
      this device; a classmate's only when their row's own `ut` holds it, the same as their Leaderboard row), centred round the
      plate, Mastery's ring turning by transform only and still (and shown) under Reduce motion, Mastery's gold name on the card;
@@ -622,6 +624,29 @@ def main():
                 chk("[%s] (H) the banner is layered and moves (%d animations), only transform / opacity %s, no svg filter" % (cls, hq.get("nAnim") or 0, hq.get("props")),
                     hq.get("layered") and not hq.get("still") and (hq.get("nAnim") or 0) >= 4 and set(hq.get("props") or ["x"]) <= {"transform", "opacity"} and hq.get("filter") is False, hq)
                 chk("[%s] (H) Customize's banner page has its tile (%s)" % (cls, hq.get("inCustomize")), hq.get("inCustomize") == 1, hq)
+            # ---- (J) 384.133: Supernova's rewards COUNT towards the ultimate in both classes (the owner reversed the "left out while the
+            # rank is out of reach" default: the academy's Supernova stays at 25 badges with 24 units, so its Astral waits for new units)
+            if wanted("J"):
+                jq = pg.evaluate("""()=>{ try{
+                    const d = bannerDef('titan_rank'); if(!d) return { none: true };
+                    const out = { rule: TIER_UNLOCKS.titan.badges, units: badgeCaseUnits(BADGE_CASES[0]).length };
+                    const s = JSON.stringify(store);
+                    const have0 = d.have; d.have = () => 0; const u0 = ultimateProgress(); d.have = () => d.need; const u1 = ultimateProgress(); d.have = have0;
+                    out.bannerDelta = [u1.have - u0.have, u1.need - u0.need];
+                    out.note = ultimateProgress().note;
+                    out.need25 = ultimateProgress().need;
+                    const keep = TIER_UNLOCKS.titan.badges; TIER_UNLOCKS.titan.badges = 1; out.needLow = ultimateProgress().need; TIER_UNLOCKS.titan.badges = keep;
+                    out.titanItems = [AVATAR_CHARACTERS.filter(c => c.unlock === 'titan' && !c.retired).length, BANNERS.filter(b => b.rank === 'titan').length, ACCENTS.filter(a => a === 'titan' && !!TIER_UNLOCKS[a]).length];
+                    out.ruleAfter = TIER_UNLOCKS.titan.badges;
+                    out.noFn = typeof supernovaOutOfReach;
+                    applyLoadedData(JSON.parse(s));
+                    return out; }catch(e){ return { err: String(e) }; } }""")
+                chk("[%s] (J) Supernova's banner is in the ultimate's count: holding it moves the count by one, the need is unchanged (%s)" % (cls, jq.get("bannerDelta")),
+                    jq.get("bannerDelta") == [1, 0], jq)
+                chk("[%s] (J) the need is the same whatever the rank's badge rule is (%s at %s badges / %s units, %s at 1) and its note does not say Supernova is left out (%r)" % (cls, jq.get("need25"), jq.get("rule"), jq.get("units"), jq.get("needLow"), jq.get("note")),
+                    jq.get("need25") == jq.get("needLow") and "not counted" not in (jq.get("note") or "") and jq.get("noFn") == "undefined", jq)
+                chk("[%s] (J) Supernova's character, banner and theme are all counted (%s) and its badge rule is untouched (%s)" % (cls, jq.get("titanItems"), jq.get("ruleAfter")),
+                    all(x >= 1 for x in (jq.get("titanItems") or [0])) and jq.get("ruleAfter") == jq.get("rule") == 25, jq)
             # ---- (I) 384.132: the worn rim on every plate, your own row at once, the rim cards' sentences
             if wanted("I"):
                 # a page of its own, from the fixture: (F) leaves this one holding an empty copy (applyLoadedData({ lifetime: {} }))
@@ -723,11 +748,11 @@ def main():
                     n == len(sets) and not lost and held_any > 0, lost[:5])
                 chk("[%s] (B) Astral / the ultimate asks for nothing more than the banner added (%s more banner(s))" % (cls, added), not worse, worse[:5])
                 grew = sorted({t2["aNeed"] - b_["aNeed"] for b_, t2 in zip(res["base"], res["this"]) if "err" not in b_ and "err" not in t2})
-                # the same change for every account (nothing account-specific), at most the one banner added; in Fire Code exactly it. The
-                # academy's count is also lowered by decision 5 (Supernova's three rewards left out while the rank is out of reach), so
-                # there it is 1 - 3 = -2 against origin/main; (H) shows the banner itself moves the count by one.
+                # the same change for every account (nothing account-specific), exactly the one banner added, in BOTH classes
+                # (384.133: the owner reversed decision 5 - Supernova's rewards count in the academy too, though its 25 badges are
+                # out of reach with 24 units; the academy's Astral waits for the next units). (H) shows the banner moves the count by one.
                 chk("[%s] (B) the ultimate's count changes the same for every account, by the new banner at most (%s; %s banner added)" % (cls, grew, added),
-                    len(grew) == 1 and added == 1 and grew[0] <= 1 and (cls == "academy" or grew == [1]), grew)
+                    len(grew) == 1 and added == 1 and grew == [1], grew)
                 chk("[%s] (B) nobody who holds the ultimate on the baseline loses it (%d hold it there, %d here)" % (cls, ult_base, ult_here),
                     ult_here >= ult_base and not any(x[1] == "ULTIMATE" for x in lost), [x for x in lost if x[1] == "ULTIMATE"])
                 codes = [x.get("ut") for x in res["this"]]

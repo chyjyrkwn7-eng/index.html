@@ -60859,13 +60859,13 @@ function collectionProgress(which){
    "every other character" and "every other banner", so they do not
    count effects; only Zenith is everything. */
 function ultimateProgress(){
-  /* (384.120, decision 5) Supernova's rewards are left out while the rank is out of reach (supernovaOutOfReach) */
-  let noTop = false; try{ noTop = supernovaOutOfReach(); }catch(e){}
+  /* (384.133) Supernova's rewards COUNT in every class (the owner's decision: the academy's Supernova stays at 25 badges with 24 units today, so its
+     Astral cannot be earned until the class gets its next units - that wait is intended). Nothing is stored; the count is read when asked. */
   /* (384.126) the prestige characters and banners are not in it: they are a status taken, outside every collection count */
-  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.prestige && c.id !== ULTIMATE_TOP && (c.feat || c.unlock) && !(noTop && c.unlock === "titan"));
+  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.prestige && c.id !== ULTIMATE_TOP && (c.feat || c.unlock));
   /* (384.114) Completionist is left out: it counts Star Ranger, so Star Ranger may not count it */
-  const banners = BANNERS.filter(b => b.id !== ULTIMATE_TOP && !b.completionist && !b.prestige && !(noTop && b.rank === "titan"));
-  const themes = ACCENTS.filter(a => !!TIER_UNLOCKS[a] && !(noTop && a === "titan"));
+  const banners = BANNERS.filter(b => b.id !== ULTIMATE_TOP && !b.completionist && !b.prestige);
+  const themes = ACCENTS.filter(a => !!TIER_UNLOCKS[a]);
   const effects = HUNDO_FX.filter(d => d.need > 0);
   let ch = 0, bn = 0, th = 0, fx = 0;
   chars.forEach(c => { if(!isLockedCharacter(c.id)) ch++; });
@@ -60878,8 +60878,7 @@ function ultimateProgress(){
   if(th < themes.length) left.push((themes.length - th) + " theme" + (themes.length - th === 1 ? "" : "s"));
   if(fx < effects.length) left.push((effects.length - fx) + " hundo effect" + (effects.length - fx === 1 ? "" : "s"));
   return { have: ch + bn + th + fx, need: chars.length + banners.length + themes.length + effects.length,
-    note: (left.length ? "Still to unlock: " + left.join(", ") + "." : "Everything else is yours.") +
-      (noTop ? " Supernova's rewards are not counted until the class has enough units for the rank." : "") };
+    note: (left.length ? "Still to unlock: " + left.join(", ") + "." : "Everything else is yours.") };
 }
 /* ---- (384.114) COMPLETIONIST: FIRE CODE'S BANNER FOR EVERYTHING ----
    Madison: "Add a banner in the IFC for completionist ... Unlocking everything in the game ... All characters banners hundo
@@ -83627,17 +83626,6 @@ function unlockWhere(kind, id, view){
   }
   const fi = v.feats.findIndex(x => x.k === k && x.id === id);
   return fi >= 0 ? { feat: fi } : null;
-}
-/* (384.120, decision 5) THE ACADEMY'S TOP IS OUT OF REACH while Supernova asks for more badges than the class has units: its
-   rewards (the Inferno, the Supernova banner and theme) are left out of Astral's count until a unit is added that makes the
-   rank reachable. The rank itself keeps its 25. Leaving items out of a count only lowers it: it never takes Astral from anybody. */
-function supernovaOutOfReach(){
-  if(window.NOVA_CLASS === "ifc") return false;
-  try{
-    const need = Number(TIER_UNLOCKS.titan && TIER_UNLOCKS.titan.badges) || 0;
-    const units = badgeCaseUnits(BADGE_CASES[0]).length;
-    return units > 0 && need > units;
-  }catch(e){ return false; }
 }
 /* ---- THE BANNERS ARE SCENES, NOT WALLPAPERS (build 225) ----
    "The banners are kinda eh ... those look like random wallpapers you
