@@ -40238,3 +40238,95 @@ the page loads with no console errors beyond the sandbox's blocked CDN and the f
 20/20 combinations clean; check-centering --quick ALL PASS (0 off centre; 4 elements "moving while measured", the IFC Show-the-code
 summary and the chat dock on Profile, not measured); check-b384-dailyq (full) 374 checks ALL PASS; `--quick --against origin/main`
 (384.107) FAILS 56 (T1, T2, B1, R1, R2 on every device/class/state, as before). The earlier "centering not run" gap is closed.
+### 384.103 (reviewtest): Review test - the test you just took, every question
+
+Madison, 13 Nov 2026: "After you finish a test (you get the 100 or finish all the retakes, did them all finally), add a button for
+review test or something and then you can review the test you just took ya know. Make this good."
+THIS REVERSES BUILD 312. 312 built a review on a 100% ("when getting a 100, still provide a review option") and took it back before
+it shipped ("Nvm, if you get a 100, let's not do the review test thing"). The newer word wins; the comment in buildFinalActions
+("REVIEW TEST" IS BACK, FOR THE WHOLE TEST) records both. check-behaviour 87 asserted the 312 decision (Re-run, Main menu and nothing
+else on a 100%) and is re-read to the new one: the review button first, then Re-run and Main menu.
+
+- WHEN THE BUTTON IS THERE (reviewTestOf): a Drill whose test is over - nothing of it left missed: a 100% first time, or the results
+  of the retake that clears the last miss (a results screen with misses left still leads with Continue to review, and has no review
+  button: the retake cycle is the way on there); every Mock and Practice test, which has no retake and so is over on its own results;
+  never a Virtual Room (its results carry their own Missed / Entire test review), a room from another class, or the daily question.
+- WHERE IT SITS (buildFinalActions, the only edit there, plus its own "testreview" branch for the review's two buttons): across the
+  top, in the wide slot Continue to review has on a run with misses, so the screen keeps one shape whatever the score - the way into a
+  review is the wide button at the top, "again" (Re-run) and "leave" (Main menu) are the pair under it. With nothing missed it is the
+  lead (#nextbtn, the light pill; Re-run steps down to ghost beside Main menu). On a Mock or Practice test with misses it comes
+  second, under Continue to review, as a ghost: "Review the whole test" against "the ones you missed" (Continue still leads there).
+  Labels: "Review test", or "Review the whole test" beside Continue to review.
+- THE CHAIN (reviewTestChain, in memory, declared beside originalTestPool): noteReviewTestChain(run) runs at the end of summarize()
+  (one line after lastRunResult). A test (not a retake) starts it: the order as asked, your FIRST answer per question kept as the
+  bank's choice index read through that run's own choice order (a retake reshuffles the choices, so a slot number would point at the
+  wrong one by the end), `cleared[qi] = 0` for right first time, what is `left`. A retake folds in only if its questions are all in
+  `left` AND the test's order is originalTestPool's (so a retake saved for later and finished after another test does not fold into
+  that one): `cleared[qi] = N` for retake N, `left` shrinks, `run` becomes the retake's. Anything else ends the chain. Not persisted:
+  the results screen it belongs to is in memory too; a retake resumed after the app was closed simply ends without the button (as
+  before). The Test history entry (311's n / ok / miss keys) holds no answers, so it could not serve.
+- THE SCREEN (showReviewTest, its own function): the misses' review made whole - the same .rs-screen / .rs-review panel, the head of
+  the TEST (buildRunHead with the chain's mode / units, never the retake's), then:
+  - a Summary card (.rs-card, the results' own card): Grade (the test's, in the grade's tone - gold 100, green pass, red short), Time
+    (the test's own clock), First try "N / total" (Mock: Correct), Retaken count in amber (Mock: Missed, red), and one line under a
+    rule ("Every question missed was answered correctly by retake 2." / "All 12 right on the first try." / a Practice test's
+    pass or the pass mark).
+  - the filter, the app's pill switcher (.rs-tabs + attachSegSlider, as the Virtual Room's review): All / Retaken / First try (Mock:
+    All / Missed / Right), with counts; only where there is something to split (a 100% has none). The pick is kept on the chain, so
+    Back to results and Review test again lands on the same filter; from far down the list a pick brings the page back up to the
+    switcher. Under 22.5rem (a 320px phone) the counts step out of the segments (they are in the Summary right above).
+  - every question in the order it was asked, numbered as asked (a filtered list keeps the test's numbers), each a .rs-q card built
+    by buildReviewQuestion itself (one review design): the tag "Right first try" (green, green number) or "Right on retake N"
+    (amber #F0A85A tag and number - the one new colour), "Your answer" (right) alone, or "Your first answer" (red) beside "Correct
+    answer" (green); the bank note / Fire Code's code box (explanation, the "Show the code" pill, drawn ahead as it comes into view)
+    / the academy's reference line; and the question's star (buildQuestionFlag, the Answer Review's; a 44px round button in the
+    number row that does not make it taller). A Fire Code code box starts shut on this list whatever it was left as in the run.
+  - Back to results (lead: the finished results drawn at once, nothing lands or plays again) and Main menu.
+  A question the last retake did not ask has no choice order in play; it is given the bank's own order for the card rather than a
+  shuffle (a shuffle writes LAST_SLOT_KEY and would move the answer next time for an order nobody saw).
+- TOOLS: sweep-layout's SCREENS has `__sweepResults('testreview')` (a 100%, its button pressed once armed); check-centering has
+  "results/review test" after "results".
+
+GATE. NEW tools/check-b384-reviewtest.py - every run PLAYED (beginRun, a tap on each choice, the results' own buttons pressed once
+armed), shape not words: A a Drill, 3 missed, 1 again on retake 1, cleared on retake 2 (Pro Max, the reveal played): A1 no button
+while misses are left, one on the clearing retake's results, first and lead, Re-run / Main menu after; A2-A4 the whole original test
+once in order, each marked first try or the retake it cleared on (its tag carries that number), the correct answer the bank's, the
+first answer the one tapped; A5 the summary's numbers; A6 the filter's three segments, counts and contents, aria-selected; A7 the
+stars (44px, toggle and back); A8 back and forth twice (results drawn at once, the same buttons, the review the same, the filter
+kept); A9 Re-run still starts the whole test. B a 100% (iPad): the button leads, every question first try, no filter, Main menu goes
+Home. C a Mock with misses (375): Continue leads, the review second and ghost, misses marked with the answer tapped, Continue to review
+still opens just the misses. D Fire Code, Exhibit B (the county booklet ships with the app; pdf.js from PDFJS_DIR): every card has its
+code box, a retaken one's code opens and draws its picture inside the card. E a 50-question Practice test (iPad): all 50 in order, the
+misses marked, the end reached by scrolling, Back from there. F 320x568, 375x667, 440x956, 956x440, 834x1194, 1194x834: no sideways
+scroll, segment words inside their segments, cards inside the page, 44px targets (F found the 320px segments: "First try 11" ran 4px
+into the pill's own padding - the counts step out there now).
+
+GATE RESULTS (384.103, one at a time, TMPDIR=/dev/shm, on a shared machine at load 60-120 with ~200 browsers from other sessions):
+check-js 14 blocks ALL PASS; the page boots with only the two expected Firebase CDN errors and every new function defined;
+check-b384-reviewtest ALL PASS (53 checks, A-F); `--against origin/main` (384.94) FAILS 38 - no review button anywhere, so A1-A9,
+B, C, D's list, E and every F size fail; the checks that still pass there are the harness's own (the misses were played as meant, the
+Fire Code class is up, no page errors). Screenshots: scratchpad reviewtest/ (iPhone 17 Pro Max @3x and iPad Pro 11" @2x, installed,
+academy and Fire Code) and reviewtest/contact-sheet.png.
+
+FINAL GATES (main 384.97 then 384.99 merged in; every browser job through the shared slot script, page loads given 180s):
+- check-b384-reviewtest ALL PASS on the 384.97 merge and again on the 384.99 merge (52 checks); D with pdf.js served locally ALL PASS
+  (the retaken question's code draws its picture inside its card). `--against` main 384.97: FAILS 43 (passes only its harness
+  checks and A1's "no button while misses are left", which main also does).
+- check-results ALL PASS (128); check-vroom ALL PASS (220, section 7 included); check-tours: 24 runs, every declared step renders;
+  sweep-layout --quick 20/20 clean (the new `__sweepResults('testreview')` entry included); check-js clean.
+- check-behaviour 87 / 317o / 320a / 318f / review_reach PASS. 321a fails the same five landing-colour checks and the "last stretch"
+  check on main 384.99 as on this tree - not this build's. 78 failed once here (a tap at 440px landed two cards, [0, 2], load 19) and
+  passes on main at lower load; it is the reveal's tap-through, which this build does not touch (resultskip's area).
+- check-centering --quick ALL PASS (0 off centre) across the app; its new "results/review test" scenario found the question number
+  (.rs-q-num, shared by every review list) ~.55px high in Fire Code's type - centred by its ink now (text-box trim, as the app's
+  other centred labels).
+384.103 FINAL GATES on the tree merged with main 384.107 (one browser job at a time, TMPDIR=/dev/shm): check-js 14 blocks ALL PASS, page
+loads with only the sandbox's blocked-CDN / file: fetch errors; sweep-layout --quick 20/20 clean; check-results ALL PASS; check-b384-reviewtest
+ALL PASS (A-F); `--against origin/main` (384.107) FAILS (no review button anywhere).
+FIX FOUND BY THIS RUN: check-centering --quick failed 6 (the question number .rs-q-num, 0.54-0.59px high, the review test's list, both
+classes). 384.103's `text-box: trim-both cap alphabetic` on it did nothing: the circle is `display:inline-flex`, and text-box-trim does
+not reach the text of a flex container (the other uses in the sheet are on blocks and inline-blocks). It is now an inline-block with
+the text centred by `padding-block: calc((1.75rem - 2px - 1cap)/2)` (same 1.75rem circle, border-box). Re-run: check-centering --quick
+ALL PASS (0 off centre, no screen "not opened"), check-b384-reviewtest ALL PASS again. (check-centering's "results/review test" screen,
+class academy, did not open when run alone with `--only` twice - it needs the earlier screens' state - but opens and passes in the full
+--quick run.)
