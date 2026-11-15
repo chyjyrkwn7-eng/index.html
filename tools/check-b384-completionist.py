@@ -61,7 +61,7 @@ EVERY = r"""() => {
   const s = store;
   s.lifetime = Object.assign({}, s.lifetime, { points: 400000, correct: 12000, answered: 14000, perfectTests: 300, fullTests: 260, longestStreak: 120 });
   s.unitPerfects = {}; classTopics().forEach(u => { s.unitPerfects[u] = 99; });
-  s.dailyCorrectTotal = 12; s.novaBeaten = true; s.vrWins = 4; s.vrMatches = 30; s.vrHosted = 4; s.hundoDayBest = 4;
+  s.dailyCorrectTotal = 12; s.novaBeaten = true; /* (384.126 merge) 10+ first places: Winner's Circle (vrtop10, 384.120 follow-up) is a banner everything counts */ s.vrWins = 12; s.vrMatches = 30; s.vrHosted = 4; s.hundoDayBest = 4;
   s.bigTest450Passed = true; s.friendsBest = 6; s.lateHundos = 4; s.lateHundosSeed312 = true; s.practiceExamPerfect = true; s.unitHundoStreakBest = 12;
   s.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => { s.mysteryColorsFound[k] = true; });
   s.rankFloor = 0; s.rankUpShown = TIER_ORDER_FULL.length;

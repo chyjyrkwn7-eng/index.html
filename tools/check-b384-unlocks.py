@@ -227,7 +227,7 @@ HELD = """(fixtures)=>{ const out = [];
       out.push({ chars: u.chars.slice().sort(), banners: u.banners.slice().sort(), themes: u.themes.slice().sort(), fx: (u.fx || []).slice().sort(),
                  aNeed: up.need, aHave: up.have, ut: typeof unlockTrackCode === 'function' ? unlockTrackCode() : null,
                  vrWins: Number(store.vrWins) || 0, ult: typeof ULTIMATE_TOP === 'string' ? !isLockedCharacter(ULTIMATE_TOP) : null,
-                 nBanners: BANNERS.filter(b => b.id !== (typeof ULTIMATE_TOP === 'string' ? ULTIMATE_TOP : '')).length }); }
+                 nBanners: BANNERS.filter(b => b.id !== (typeof ULTIMATE_TOP === 'string' ? ULTIMATE_TOP : '') && !b.completionist && !b.prestige).length /* (384.126) the banners the ultimate counts: not Completionist, not the prestige banners */ }); }
     catch(e){ out.push({ err: String(e) }); }
   }
   return out; }"""

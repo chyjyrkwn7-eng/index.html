@@ -29,14 +29,18 @@ with sync_playwright() as p:
     L.quiet(pg)
     L.build(pg, "one" if N == 1 else "all")
     if N == 3: pg.evaluate("()=>{ takePrestige(1); takePrestige(2); }")
+    L.quiet(pg)   # what the fixture holds is marked as told, so no unlock card plays over the recording
     pg.evaluate("()=>{ store.avatarChar = 'ghost'; saveStore(); }")
     pg.wait_for_timeout(800)
     st = pg.evaluate("()=>localStorage.getItem('class26e.ifc.drill.v1')")
     ctx.close()
     init2 = init.replace("localStorage.setItem('class26e.ifc.drill.v1',", "localStorage.setItem('class26e.ifc.drill.v1', %s); void(" % __import__("json").dumps(st), 1)
     seed2 = dict(seed); seed2["progress"] = dict(seed["progress"]); seed2["progress"][L.CODE + "__ifc"] = __import__("json").loads(st)
+    import time as _t
+    t0 = _t.time()
     ctx, pg, errs = L.page(br, text, seed2, init2, w=W, h=H, video_dir=tmp)
     L.quiet(pg)
+    t_show = _t.time() - t0   # the boot is cut off the video: it starts half a second before the Prestige screen
     pg.evaluate("()=>showPrestige()")
     pg.wait_for_timeout(900)
     pg.evaluate("()=>{ const b = document.querySelector('.pg-card.is-ready .pg-take'); if(b){ b.scrollIntoView({ block: 'center' }); } }")
@@ -53,7 +57,7 @@ with sync_playwright() as p:
 out = os.path.join(OUT, "prestige-%s-%s.mp4" % (["", "I", "II", "III"][N], DEV))
 ff = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
 if os.path.exists(ff):
-    subprocess.run([ff, "-y", "-loglevel", "error", "-i", vid, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", "30", out], check=True)
+    subprocess.run([ff, "-y", "-loglevel", "error", "-ss", "%.2f" % max(0, t_show - .5), "-i", vid, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", "30", out], check=True)
     print("video", out)
 else:
     print("video (webm)", vid)
