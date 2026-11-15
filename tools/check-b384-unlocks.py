@@ -624,7 +624,12 @@ def main():
                 chk("[%s] (H) Customize's banner page has its tile (%s)" % (cls, hq.get("inCustomize")), hq.get("inCustomize") == 1, hq)
             # ---- (I) 384.132: the worn rim on every plate, your own row at once, the rim cards' sentences
             if wanted("I"):
-                iq = pg.evaluate(I_PLATES)
+                # a page of its own, from the fixture: (F) leaves this one holding an empty copy (applyLoadedData({ lifetime: {} }))
+                ctxI, pgI, errsI = page(br, text, seed, init)
+                pgI.wait_for_timeout(1200); quiet(pgI); load_board(pgI); quiet(pgI)
+                iq = pgI.evaluate(I_PLATES)
+                errs.extend(errsI)
+                ctxI.close()
                 if not isinstance(iq, dict): iq = {"err": str(iq)}
                 P = iq.get("profile") or {}
                 chk("[%s] (I) Profile draws the rim you wear on your plate (%r, %d ring), in its colour, round the plate (centred %s)" % (cls, P.get("rim"), P.get("rings") or 0, P.get("centre")),
