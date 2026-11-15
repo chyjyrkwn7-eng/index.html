@@ -39,7 +39,8 @@ def chk(name, cond, info=""):
 J = """()=>{
   const live = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy);
   const out = { cls: window.NOVA_CLASS, top: typeof ULTIMATE_TOP === 'undefined' ? null : ULTIMATE_TOP,
-    starters: live.filter(c => !c.unlock && !c.feat).map(c => c.id),
+    /* (384.126) a Fire Code prestige character is not a starter: it is held from a prestige taken (c.prestige) */
+    starters: live.filter(c => !c.unlock && !c.feat && !c.prestige).map(c => c.id),
     ultimates: live.filter(c => c.ultimate).map(c => c.id + ':' + c.feat),
     ultBanners: BANNERS.filter(b => b.ultimate).map(b => b.id),
     fx: HUNDO_FX.map(d => d.need) };

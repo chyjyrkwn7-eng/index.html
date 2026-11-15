@@ -77,7 +77,8 @@ MINE = r"""() => {
   const held = rankOf(store), hi = TIER_ORDER_FULL.indexOf(held);
   return {
     chars: AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && (c.feat || c.unlock)).map(c => [c.id, H(() => !isLockedCharacter(c.id))]),
-    banners: BANNERS.filter(b => b.id !== 'completionist').map(b => [b.id, H(() => bannerEarned(b.id))]),
+    /* (384.126) nor the prestige banners: Prestige III asks for Completionist, so Completionist leaves them out */
+    banners: BANNERS.filter(b => b.id !== 'completionist' && !b.prestige).map(b => [b.id, H(() => bannerEarned(b.id))]),
     themes: ACCENTS.filter(a => !!TIER_UNLOCKS[a]).map(a => [a, H(() => !isLockedAccent(a))]),
     fx: HUNDO_FX.filter(d => d.need > 0).map(d => [d.id, H(() => hundoFxEarned(d.id))]),
     ranks: TIER_ORDER_FULL.filter(k => !!TIER_UNLOCKS[k]).map(k => [k, !!held && TIER_ORDER_FULL.indexOf(k) <= hi]),

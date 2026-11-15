@@ -81,7 +81,7 @@ with sync_playwright() as p:
         pg.evaluate("()=>showCustomize('character')"); settle(pg, 1500)
         pg.evaluate("()=>{ const t = [...document.querySelectorAll('.cz-group-title, .avatarchar-group-title')].find(n => /Prestige/.test(n.textContent)); if(t) t.scrollIntoView({ block: 'center' }); }"); settle(pg, 900); shot(pg, "customize-characters")
         pg.evaluate("()=>showCustomize('banner')"); settle(pg, 1800)
-        pg.evaluate("()=>{ const t = [...document.querySelectorAll('.cz-group-title, h3, h2')].find(n => /^Prestige/.test(n.textContent)); if(t) t.scrollIntoView({ block: 'center' }); }"); settle(pg, 1500); shot(pg, "customize-banners")
+        pg.evaluate("()=>{ const t = document.querySelector('.banner-opt[data-banner=\"pgoath\"]'); const g = t && t.closest('.cz-group'); if(g) g.scrollIntoView({ block: 'center' }); }"); settle(pg, 1500); shot(pg, "customize-banners")
     # ---- max: everything, then II and III taken
     L.build(pg, "all"); L.quiet(pg)
     pg.evaluate("()=>{ takePrestige(2); }")
@@ -105,7 +105,7 @@ with sync_playwright() as p:
         pg.evaluate("()=>{ showRankings(); }"); settle(pg, 2600); shot(pg, "leaderboard-max")
     if want("art"):
         pg.evaluate("""()=>{ const box = document.createElement('div'); box.id='pgsheet';
-          box.style.cssText='position:fixed;inset:0;z-index:99999;background:var(--bg,#111);overflow:auto;padding:12px;display:grid;gap:10px;align-content:start;font-family:system-ui;color:var(--ink,#fff)';
+          box.style.cssText='position:absolute;left:0;top:0;right:0;min-height:100vh;z-index:99999;background:'+(document.documentElement.dataset.theme==='light'?'#F4F5F7':'#111')+';padding:12px;display:grid;gap:10px;align-content:start;font-family:system-ui;color:var(--ink,#fff)';
           const lab = t => { const p = document.createElement('div'); p.textContent = t; p.style.cssText='font:700 12px system-ui;opacity:.8'; return p; };
           const row = () => { const r = document.createElement('div'); r.style.cssText='display:flex;flex-wrap:wrap;gap:10px;align-items:center'; box.appendChild(r); return r; };
           box.appendChild(lab('Characters: live (as Customize and the person card draw them), then not yet taken (greyed, as Customize shows a locked one)'));
@@ -121,8 +121,9 @@ with sync_playwright() as p:
             const tile = document.createElement('div'); tile.style.cssText='width:170px;height:64px;position:relative;overflow:hidden;border-radius:12px'; const a = buildBannerArt(id); a.style.cssText='position:absolute;inset:0'; tile.appendChild(a); rr.appendChild(tile);
             const cov = document.createElement('div'); cov.style.cssText='width:300px;height:112px;position:relative;overflow:hidden;border-radius:14px'; const b = buildBannerArt(id); b.style.cssText='position:absolute;inset:0'; cov.appendChild(b);
             const c = document.createElement('span'); c.style.cssText='position:absolute;left:50%;bottom:-34px;width:84px;height:84px;margin-left:-42px;border-radius:50%;overflow:hidden;background:#0B0E14;box-shadow:0 0 0 3px #0B0E14'; const sv = buildAvatarCharSVGSafe(['pgdeputy','pgmarshal','pgstate'][i]); sv.style.cssText='width:100%;height:100%'; c.appendChild(sv); cov.appendChild(c); rr.appendChild(cov);
-            const edge = document.createElement('div'); edge.style.cssText='width:400px;height:56px;border-radius:14px;background-size:cover;background-position:center;background-image:url("'+bannerRowStillURL(id)+'")'; rr.appendChild(edge); });
+            const edge = document.createElement('div'); edge.style.cssText='width:300px;height:56px;border-radius:14px;background-size:cover;background-position:center;background-image:url("'+bannerRowStillURL(id)+'")'; rr.appendChild(edge); });
           document.body.appendChild(box); }""")
-        settle(pg, 2200); shot(pg, "artsheet")
+        pg.evaluate("()=>{ document.querySelectorAll('#stage, .tabbar, #tabbar, .chatbtn').forEach(n => n.style.visibility = 'hidden'); window.scrollTo(0, 0); }")
+        settle(pg, 2200); shot(pg, "artsheet", full=True)
     print("errors", errs, flush=True)
     br.close()

@@ -132,7 +132,7 @@ BUILD = r"""(stage) => {
   document.querySelectorAll('.rs-spot').forEach(sp => { try{ sp.__nova.skip(); }catch(e){ sp.remove(); } });
   const s = store;
   const top = stage !== 'none';
-  const lvlPts = p => { let lo = 0, hi = 2e6; while(lo < hi){ const m = (lo + hi) >> 1; s.lifetime.points = m; if(levelOf(s) >= p) hi = m; else lo = m + 1; } return lo; };
+  const lvlPts = p => { let lo = 0, hi = 2e6; while(lo < hi){ const m = (lo + hi) >> 1; s.lifetime.points = m; if(levelOf(s) >= p) hi = m; else lo = m + 1; } s.lifetime.points = lo + 240; return lo; };
   s.lifetime = Object.assign({}, s.lifetime, { answered: 800, correct: 600, perfectTests: 20, fullTests: 10, longestStreak: 12, currentStreak: 3 });
   s.unitPerfects = {};
   const units = classTopics();
@@ -152,8 +152,7 @@ BUILD = r"""(stage) => {
   if(tracks.indexOf('vr') >= 0){ L.fullTests = Math.max(L.fullTests, 520); s.vrWins = 12; s.vrMatches = 60; s.vrHosted = 4; s.novaBeaten = true; s.friendsBest = 6; s.lateHundos = 4;
     try{ ['drillPlays', 'examPlays', 'gamePlays'].forEach(k => { L[k] = Math.max(Number(L[k]) || 0, 40); }); }catch(e){} }
   if(stage === 'all' || stage === 'five'){ MYSTERY_ORDER.forEach((k, i) => { s.mysteryColorsFound[k] = stage === 'all' || i < MYSTERY_ORDER.length - 1; }); }
-  if(top) lvlPts(80); else lvlPts(42);
-  s.lifetime.points = Math.max(s.lifetime.points, top ? s.lifetime.points : 0);
+  if(top) lvlPts(80); else lvlPts(36);
   try{ unlockTrackMemo = null; friendShowcaseMemo = null; }catch(e){}
   saveStore();
   let v = null; try{ v = unlockTrackView(); }catch(e){}
