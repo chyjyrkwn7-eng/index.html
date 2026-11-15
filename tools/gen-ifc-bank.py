@@ -264,7 +264,7 @@ QUESTION_ADDS = [
 _C606 = {"source": "ifc", "section": "606.3.3.1", "heading": "Inspection", "label": "IFC 2021 606.3.3.1", "pdfPage": 127, "printedPage": "6-8"}
 _COOK_ROWS = {   # the table's rows as printed: label | interval; the `find` phrases that light each row (ch6-029's and ch6-030's for theirs)
     "high": ("High-volume cooking operations such as 24-hour cooking, charbroiling or wok cooking", "3 months", ["charbroiling or wok cooking", "3 months"]),
-    "low": ("Low-volume cooking operations such as places of religious worship, seasonal businesses and senior centers", "12 months", ["seasonal businesses and senior centers", "12 months"]),
+    "low": ("Low-volume cooking operations such as places of religious worship, seasonal businesses and senior centers", "12 months", ["Low-volume cooking operations", "12 months"]),
     "solid": ("Cooking operations utilizing solid fuel-burning cooking appliances", "1 month", ["operations utilizing solid fuel-burning cooking appliances", "1 month"]),
     "other": ("All other cooking operations", "6 months", ["All other cooking operations", "6 months"]),
 }
