@@ -42036,3 +42036,63 @@ ONLY A PHONE CAN CONFIRM: that WebKit draws the 9px blur as the 382 card did (Ch
 backdrop-root rules or its few-frame delay building a blur); how the Units sheet reads over an almost empty, dark list (it frosts what
 is behind it - the 382 recipe lets the rows' shapes through more clearly than r16's 22px did, by design); that the .5 dim does not read
 too heavy on the confirms (r16 thinned .66 to .4; this is .5, the dim the person card always had before r16).
+
+### 384.129 (dropfix2): the two things dropfix left - the page-end glide and the review's blank frame
+
+(branch claude/b384-dropfix2, cut from claude/b384-dropfix 1ef39a3; placeholder build stays 2026-11-13-384.129 in index.html and
+version.json - the integrator renumbers; NOT merged, waiting for the owner's go)
+
+1. THE 9.75px GLIDE SHUTTING THE CODE BOX AT THE PAGE'S END. Not the scroll give-back's arithmetic - that was right (the last animated
+   frame and the layout after `scrollTo` agree to a quarter pixel: probed S 390, loss 256.25, scrollTo 134, box top 588.4 in both).
+   The cause is `ifcDropPlace(next)` -> qnextPlace, called right after: it takes Next out of the page's flow (`qnext-flow` removed),
+   READS the layout (lowOf), and puts it back. With the page scrolled to its end that read lays out a page one Next-button shorter
+   and Chromium clamps the scroll to it (134 -> 124) - and does not restore it when the page grows back. So everything stood 10px
+   lower than the frame before, and the residual FLIP glided the difference over 180ms. (Under 384.119 the browser's scroll anchoring
+   hid it; dropfix turned anchoring off during a move, as an iPhone has it.) FIX: ifcDropPlace puts the scroll back to what it was
+   before the call (a page that really is shorter still clamps it). No change to c, to the sweep, to the end timing, or to the
+   scroll give-back, so the earlier 157pt one-frame snap-back is not reintroduced.
+2. THE REVIEW UNIT'S BLANK FRAME. Not raster and not layout. Measured on the compositor's own frames (CDP screencast, 4x CPU, 3 of 3
+   runs on main dropfix): the first frame after the sweep starts has the units under the unit already ~190px down (their `translate`s
+   are composited and start at once) and the unit's questions not yet drawn above them: a ~224px dark gap, then 198/160/128 while
+   the clip catches up - the clip-path animation is drawn a frame behind the translates (Chromium draws it through a paint worklet).
+   Proofs: with no clip animation (translates only) no frame is blank; an extra frame held before the move, a 1px sliver in the first
+   keyframe, will-change on the body, and warming the clip animation with a long hidden keyframe all still had the blank frame
+   (the questions ARE laid out and painted by then: the first eight are .rq-on). FIX (cap runs only - Answer Review's units; the code
+   box and the Hint are untouched): (a) a softer start for the unit's sweep and slide (IFC_REVIEW_EASE cubic-bezier(.3,.3,.2,1);
+   the 300ms curve in use is front-loaded, a quarter of the course in the first frame, so a frame's lag was ~200px; from a soft
+   start it is a few px); (b) where the lag is known (Chromium, navigator.userAgentData present) the clip animation runs
+   IFC_CLIP_LEAD = 17ms ahead of the translates (currentTime at play), which is that lag. WebKit draws the clip itself in step and gets
+   no lead. Tried and rejected: lead alone at 17/34/50ms (cleared the blank in 5/6, 13/14, 8/8 runs but the unit's text overlapped the
+   rows under it for one frame at 34-50ms), the soft ease alone (no first-frame blank but a 96-134px band through the sweep),
+   cubic-bezier(.4,0,.2,1) alone (up to 362px). Ease + 17ms: 5 of 6 runs fully clean, one 16px over rest.
+   Seen in Chromium only; whether an iPhone has the same lag (it should not - WebKit draws the clip-path on the main thread, in the
+   same frame as the layout) only the phone can say. The soft ease does change the unit's sweep on the phone too (slower first frames).
+
+**Gate (tools/check-b384-dropfix.py, extended)**:
+ (g)/(h) the two code-box shuts at the page's end: from the frames (the pill's, the box's and Next's top and the box's height in each),
+ the first frame the box has its final size is where everything stays (moves <= 1.5px after it; scroll changes <= 1.5px after it) and
+ nothing steps against its direction by more than 2px. Against 384.129 dropfix (1ef39a3): (g) FAILS twice (moves 10.0px after the
+ end frame). (h) passes there (the glide is not a reversal): it is the guard for the earlier 157pt snap-back - shown to fail on a
+ copy of this build with the final scrollTo removed (see the verification note).
+ (i) a unit not yet opened (the biggest of the others) under a screencast of the compositor's frames at 4x CPU, flat-row run per
+ frame (rows whose pixels across the screen are one colour, at 1x): no frame from the tap on over the list's own at-rest run + 40px.
+ Against dropfix 1ef39a3 (i) FAILS (worst 556px on one run, 224px on the biggest unit in the probe); this build 80px (= rest) in
+ every frame (24 frames).
+
+384.129 (dropfix2) verification (2026-11-15, this container, TMPDIR=/dev/shm, PDFJS_DIR an unpacked pdfjs-dist 5.4.149, 440x956 at 3x, 4x CPU;
+the machine at load 3-6 from other helpers' browsers; no timing failure, so no re-runs): check-js ALL PASS (14 blocks); console read in
+Fire Code on Home and Answer Review (open/shut a unit): no page error, only the blocked network and pdf.js/canvas warnings (the
+harness's default class is Fire Code, so the academy class was covered by check-centering's page-error watch only);
+check-b384-dropfix full ALL PASS (51: the 46 of dropfix, (g)/(h) x2 and (i)); check-b384-lagaudio ALL PASS (52); check-sound ALL PASS
+(61 lines); check-b384-chatspot ALL PASS (36 lines); sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS, 0 off centre.
+New checks against origin/claude/b384-dropfix (1ef39a3): (g) FAILS on both end-of-page shuts (everything moves 10.0px after the box has
+its shut size), (i) FAILS (worst flat run 556px against 80 at rest; the first probe runs had 224px on the biggest unit). (h) passes
+there and fails on a copy of this build with the final `scrollTo` of the shut removed (the page then jumps back by 11.5px a frame
+and moves 31px after the end frame), so it is the guard against the earlier snap-back, not a measure of this bug.
+Filmstrips (tools/record-b384-dropfix.py and a probe of the compositor's own frames), in the session scratchpad dropfix2/:
+before-/after-dropdowns-strip06.jpg and -strip08.jpg (the code box shutting at the page's end), before-/after-review-sweep-filmstrip.jpg
+(a unit opening: before, the second frame of the sweep has a ~200px dark gap under the heading; after, no frame has one), plus the
+mp4s. A 10px residual is hard to see in a filmstrip; the gate's numbers are the proof for the glide.
+Only a phone can say: whether an iPhone has the review's one-frame lag at all (WebKit draws the clip itself, in step - the 17ms lead
+is not applied there), what the softer start of the unit's sweep feels like, and that the page-end shut lands without a glide
+(Chromium and WebKit clamp a scroll differently; the restore is in `ifcDropPlace`, which both run).
