@@ -295,9 +295,11 @@ def main():
                 pg.evaluate("()=>{ try{ lastRowSig = null; flushClassBoardRow(); }catch(e){} }"); pg.wait_for_timeout(2500)
                 # the board as the (fake) server holds it, and every document anybody else can read: no sync code in any of it
                 cl = pg.evaluate("()=>{ const C = window.__cloud || {}; const me = publicIdOf(); const b = ((C.vrooms || {})['lb-ifc-v1'] || {}).rows || {};"
-                                 " return { mine: b[me] || null, pub: JSON.stringify({ vrooms: C.vrooms, leaderboard: C.leaderboard }), pays: (window.__payloads || []).join('\\n'), writes: (window.__writes || []).slice() }; }")
+                                 " return { mine: b[me] || null, pub: JSON.stringify({ vrooms: C.vrooms, leaderboard: C.leaderboard }),"
+                                 " pays: (window.__payloads || []).filter(x => x.indexOf('progress/') !== 0).join('\\n'), writes: (window.__writes || []).slice() }; }")
                 code = L.CODE
-                leak = [w for w in (code, code.replace("-", "")) if w in cl["pub"] or w in cl["pays"]]
+                # (the account's own documents are keyed by the code - progress/<code> - and nobody else reads them: they are left out)
+                leak = [(w, "public docs" if w in cl["pub"] else "payload") for w in (code, code.replace("-", "")) if w in cl["pub"] or w in cl["pays"]]
                 mine = cl.get("mine") or {}
                 chk("(4) the row reached the board with pg = 2, and no public document or payload carries the sync code (row keys %s)" % sorted(mine)[:40],
                     mine.get("pg") == 2 and not leak, [leak, cl["writes"][-6:]])
