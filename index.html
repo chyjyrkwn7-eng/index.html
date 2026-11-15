@@ -154803,10 +154803,11 @@ function showAnswerReview(units, source, versions, opts){
   toTop();
   /* (384) the questions laid out ahead of the scroll, starting after the frame that shows the list */
   reviewRenderAhead(list)();
-  /* (384.129) EVERY UNIT'S QUESTIONS MADE AHEAD. A heading's tap built its unit's questions in the tap (a Fire Code unit: ~6,800
-     elements, a 330ms task at 4x CPU before the first frame could go out). Now they are made in quiet moments once the list is
-     up - a few milliseconds at a time, never while a finger is down or the page is scrolling, units in the order they are listed -
-     and kept (qNode's map), so the tap only puts them in (fill). Nothing is shown before it is tapped: they wait off the page. */
+  /* (384.129) EACH UNIT'S FIRST QUESTIONS MADE AHEAD. A heading's tap built its unit's questions in the tap (a Fire Code unit: ~6,800
+     elements, a 330ms task at 4x CPU before the first frame could go out). Now the eight a tap puts in (fill(sec, true)) are made in
+     quiet moments once the list is up - a few milliseconds at a time, never while a finger is down or the page is scrolling, units
+     in the order they are listed - and kept (qNode's map); the rest of a unit is made after its opening move (fillMore). Only eight a
+     unit, so a big class keeps no thousands of questions in memory it may never open. Nothing is shown before it is tapped. */
   (() => {
     let at = { i: 0, j: 0 }, quiet = 0;
     const busy = () => { quiet = performance.now(); };
@@ -154821,7 +154822,7 @@ function showAnswerReview(units, source, versions, opts){
       const t0 = performance.now(), budget = dl && dl.timeRemaining ? Math.min(6, Math.max(2, dl.timeRemaining())) : 4;
       while(at.i < unitKeys.length){
         const sec = secs[unitKeys[at.i]];
-        if(!sec || sec.filled || at.j >= sec.items.length){ at.i++; at.j = 0; continue; }
+        if(!sec || sec.filled || at.j >= Math.min(8, sec.items.length)){ at.i++; at.j = 0; continue; }
         qNode(sec.items[at.j++]);
         if(performance.now() - t0 > budget) break;
       }
