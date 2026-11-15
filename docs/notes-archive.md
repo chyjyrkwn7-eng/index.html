@@ -40042,3 +40042,81 @@ PASS; check-unlocks ALL PASS; check-b384-shine ALL PASS.
   academy). DECISION FOR MADISON: a pin shows no dirt (its front and back wear stage 0, as the Fire Code pins do), so the academy's
   dirty-badge-and-clean-it mechanic no longer shows on the badges.
 - Chromium cannot show how the art reads on the phone's OLED at 3x, nor the glint on WebKit's compositor.
+
+### 384.124 (startup)
+
+Madison: "Badges should be a little video in the start up screen. So update the start up, remove the badges from the thing on the
+bottom, make badges a badge but only show a few of the ifc ones. Like 10 max. And then the rank will be shown vertically from bronze
+to supernova in a cool way." Branch `claude/b384-startup` from `origin/claude/b384-badges` (a68976a: it carries the new Fire Code
+chapter pins the clip shows). Build placeholder `2026-11-13-384.124` in both places (renumber at merge). NOT on main; waiting for
+Madison to see it and say go. The academy-pin work on the badges branch is another helper's (being reverted there); nothing here
+depends on it - the clip is Fire Code only.
+
+**Reading.** "The start up screen" = the Get Started page. "The thing on the bottom" = build 384's showcase ("Collect / Badges and
+flares": a row of academy badges and a row of rank flares). "Make badges a badge" = the badges become a scene of their own, like the
+other scenes, with a clip; "only show a few of the ifc ones. Like 10 max" = the clip shows Fire Code chapter pins, ten at most.
+
+**The badges scene** (`GS_SCENES` key `badges`, between hundo and rank: the hundo earns the badge, the badge counts toward the rank).
+Kicker "Badges", title "A badge for every chapter", body "Score 100% on a Fire Code chapter and its badge goes into your case. A Police
+Academy unit's badge takes repeated 100% scores." Its clip is `landing/badges.mp4` + `landing/badges.jpg`, played by the page's own
+clip rules (preload none until a screen away, plays on screen, back to 0 off screen, 1x). No other clip was re-recorded.
+- `tools/record-landing-badges.py` (imports record-landing-ifc.py, which imports record-landing.py: the same capture and encoder -
+  780x1690 from a 390px page at 2x, the page in slow motion (rate .12 for this heavy scene), a true 30 fps clock, the last 0.5s
+  dissolved into the first frame, H.264 High 4.1 yuv420p, faststart, no audio, crf stepped up to stay under 3 MB; poster = frame one).
+  Fixture "Alex" in Fire Code (record-landing-ifc.py's SEED/IN_IFC; the Firebase CDN is blocked here, the app runs on its local copy),
+  sound off. It is the app's own badge scene (`playBadgeCaseScene`) over Fire Code's Home: BADGE FOUND, the pin turning, its name,
+  "Chapter mastered"; the case rises, unlatches, opens with eight pins lit; Chapter 9's sprinkler flies in and seats with its glint.
+  Ends back on Home, so the loop joins Home to Home. The wait while the case opens (6.6-12.9s) plays 1.5x (uniform, never skips).
+- TEN BADGES AT MOST: the real Fire Code case holds all 58 chapters, and its empty slots are recesses in each object's outline (58
+  shapes). For the clip only, the recording page sets `BADGE_CASES[0].units` to `CLIP_UNITS` (ten): Chapter 3 extinguisher, 5
+  hydrant, 9 sprinkler (the one found), 10 exit door, 20 airplane, 33 hard hat, 35 torch, 54 jug, 59 matches (left empty), 62 cooler -
+  red, brass, green, yellow, cream, blue, teal, white. Nothing in the app changes. The count line under the open case ("Found N of M
+  missing badges") would have read 9 of 10, not true of the real case, so the recording hides it (the badge's name stays).
+- File: 16.9s, 780x1690, 30 fps, crf 24 (20 and 22 were over 3 MB), 2.35 MB; poster 72 KB.
+
+**The rank ladder** (`gsBuildShowcase`, same `.gs-show` section at the foot; the badge row, `GS_BADGES` and every `.gs-badge*` /
+`.gs-flares` / `.gs-flare-btn` rule are removed - nothing else used them). Kicker "Ranks", title "Bronze to Supernova", body "Levels
+and badges move you up seven ranks. Each rank you reach lights its flare." An `<ol>` of `TIER_ORDER_FULL`, top to bottom: each rank
+a button (the whole row, 44px+) with Home's lit flare (`homeRankEmblem` in `.cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit`,
+`RANK_COLOR`, `flareColorOf`; no backdrop blur), its `RANK_DISPLAY_NAME` in a tint of its colour and "Level N" from
+`TIER_UNLOCKS[t].level` (read, not typed). A line runs through every flare's centre (each rung has the half above and the half below
+its flare: a dim track with its light, a gradient from the rank before into this one). Supernova is the last rung, drawn 1.42x, its
+name larger in a white-to-red gradient, a soft halo of its colour behind it.
+- LIGHTING WITH THE SCROLL: an IntersectionObserver (root the page's scroller, rootMargin -24% at the bottom) lights a rung when it
+  passes the bottom quarter of the screen, and every rung above it. Lit = classes: the line's half below the rung before fills
+  (scaleY 0 -> 1, 260ms), then this rung's half above, then its flare (opacity .26 -> 1, scale .8 -> 1 with a small overshoot) and its
+  words come up, and a ring of its colour goes out (the old `gs-ring`). Rungs reached together are staggered 260ms. Once lit a rung
+  stays lit; when Supernova lights the observer disconnects. No per-frame JS, no layout reads, transform/opacity only, no SVG filter
+  (the emblem's existing CSS saturate/brightness is static, as on Home). Seven flares built once with the page (the old badge row's
+  idle drawing is gone).
+- Tap a rung: its flare presses, a ring goes out, its Home flare sound plays, the caption says "Gold · rank 3 of 7 · level 40"
+  (back to "Tap a rank to hear its flare." after 3.2s).
+- REDUCE MOTION: the app's switch strips every transition and animation (`[data-reduce-motion="true"] *`), so the ladder's resting
+  state must already be the one shown: the JS sees the switch or the system setting and puts every rung lit at once (`.is-still`), and
+  the CSS for both (`[data-reduce-motion="true"]` and `@media (prefers-reduced-motion:reduce)`) forces flare, words, halo and line
+  fills to opacity 1 / transform none. Nothing rests at opacity 0 (the 384.117 trap): an unlit rung is .26, not 0, and is never
+  the resting state under either path.
+- Sizes: flare clamp(50px, 13.6vw, 60px) on a phone (60 on a Pro Max, 53 at 390), 66px from 40rem; the ladder is `max-content`
+  wide and centred.
+
+**Gates.** NEW `tools/check-b384-startup.py [clip ladder scroll calm tap] [--against DIR]` (see its docstring). check-b384-getstarted's
+`show` section now reads the ladder (no badge row, all seven lit after arriving and unlit before, inside the screen, transform/opacity
+only, 44px+, a tap names it, Reduce motion lit). check-centering gets a "signup/get started ranks" screen (the ladder scrolled to).
+
+**Gate results** (run one at a time with TMPDIR=/dev/shm; other helpers kept the machine at a load of 27-31 during the later runs):
+- check-js: 14 blocks, ALL PASS. Page console on Get Started for a fresh device (440x956, 390x844, iPad 834x1194) and for the
+  signed-out path with Reduce motion on (check-b384-startup's calm section, using a saved copy with no account): no page errors.
+  The only console errors are the blocked Firebase CDN (ERR_TUNNEL_CONNECTION_FAILED).
+- check-b384-startup: ALL PASS (51). `--against origin/main` (git archive of main's index.html, landing, version.json and tools):
+  35 FAIL, 2 pass. The 2 that pass are the Reduce motion "switch is on in the page" checks, which only read the fixture.
+- check-b384-getstarted (all five sections, with show rewritten for the ladder): ALL PASS (164).
+- sweep-layout --quick: 20/20 clean. check-centering --quick: ALL PASS, 0 off centre (1072 elements on 154 screens, ladder screen
+  included). The first centering run was stopped at the 30-minute background limit; it was re-run with a longer limit.
+- check-b329: every Get Started check passes (a clip per scene plus two beside the title, routes, the button at the end). 3 checks
+  FAIL, all in Nova's intro/tips copy: "the storm, and the word adventure", "the modes get more than one box" and "the last tip
+  points at ranking up and badges". This build does not touch that copy (the assertions predate later rewrites of the intro).
+  check-b330: Get Started's checks pass. "every Back button sits at the same left edge" FAILS, as it already did on 91a1d96 (noted
+  at build 384 round 2).
+- Chromium cannot confirm smoothness on a real phone (the ladder's transitions, or decoding the 780x1690 clip during a scroll). It
+  also cannot confirm that iOS autoplays the new clip. In Low Power Mode the poster shows instead; the poster is the clip's first
+  frame, Fire Code's Home.
