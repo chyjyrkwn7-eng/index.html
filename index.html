@@ -7468,7 +7468,7 @@
      button and the progress meter, so a full-width tappable surface
      over them is a tap those controls never get. Same call the flare
      banner makes for the same reason. */
-  body.has-active-question .vroom-chat-alert{ pointer-events:none !important; }
+  /* (384.100) it is over Pause and the count now and takes the tap itself (see "EVERY TOP POP-UP IS THE PAGE'S WIDTH") */
   /* The tag leads, because it is the thing that decides whether this is
      worth looking at mid-race. Its own colour, not the accent: it has to
      read as "Virtual Room" on all seven themes. */
@@ -11808,6 +11808,9 @@
     pointer-events:none;
   }
   .toast.show{ opacity:1; transform:translateY(0); }
+  /* (384.91) one said at the top drops in from above, as every top pop-up does */
+  .toast.is-top{ transform:translateY(-8px); z-index:305; }   /* (384.100) over the chat button's dock (300) and Pause */
+  .toast.is-top.show{ transform:translateY(0); }
   /* THE BANNERS' LOOK FOR A TOAST (build 327z5): "Is there anywhere else
      that same Liquid Glass look could be applied?" The same glass, a 3px
      bar in its colour down the left and a bare icon - blue for a plain
@@ -11928,7 +11931,7 @@
        because no status bar is drawn - the gap was real, just smaller
        than it looked. tools/shoot-flow.py draws the inset now so the
        next judgement call is made against what the device shows. */
-    top:calc(var(--sat) + .35rem); z-index:80;
+    top:calc(var(--sat) + .35rem); z-index:305;   /* (384.100) over the chat button's dock (300) */
     max-width:26rem; margin:0 auto; padding:.8rem .9rem .8rem 1.1rem;
     display:flex; align-items:center; gap:.75rem;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#FFFFFF; border-radius:16px;
@@ -12289,7 +12292,7 @@
     position:fixed;
     left:max(1rem, env(safe-area-inset-left, 0px));
     right:max(1rem, env(safe-area-inset-right, 0px));
-    top:calc(var(--sat) + .35rem); z-index:75;
+    top:calc(var(--sat) + .35rem); z-index:305;   /* (384.100) over the chat button's dock (300) and Pause */
     max-width:26rem; margin:0 auto; padding:.9rem 1.1rem;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#FFFFFF; border-radius:16px;
     border:1px solid rgba(255,255,255,.11);
@@ -15607,7 +15610,7 @@
        document and behind the status bar. */
     position:fixed; top:calc(var(--sat) + .35rem);
     left:50%; transform:translateX(-50%) translateY(-8rem);
-    z-index:300; display:flex; align-items:center; gap:.85rem;
+    z-index:305; display:flex; align-items:center; gap:.85rem;   /* (384.100) over the chat button's dock (300) */
     padding:.85rem 1.2rem .85rem .85rem; border-radius:999px; cursor:pointer;
     background:rgba(28,33,40,.7); border:1px solid rgba(255,255,255,.12);
     will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
@@ -15626,6 +15629,7 @@
      So it is transparent to the finger and relies on its own five
      seconds - a celebration nobody can dismiss early is a far smaller
      cost than a flag that does not flag. */
+  /* (384.100) every top pop-up takes the tap now, this one too (see "EVERY TOP POP-UP IS THE PAGE'S WIDTH"): it covers Pause and the flag for its five seconds */
   .flare-banner{ pointer-events:none; cursor:default; }
   /* A character brings its own halo, so it fills the disc rather than
      sitting on a coin of somebody else's colour - the same call the
@@ -31427,7 +31431,7 @@
      the streak climbs: the colour warms from blue through gold to red,
      and from 50 up it carries a ring. */
   .streak-pop{
-    position:fixed; left:50%; top:calc(var(--sat) + 4.6rem); z-index:250;
+    position:fixed; left:50%; top:calc(var(--sat) + 4.6rem); z-index:305;
     transform:translateX(-50%); pointer-events:none;
     display:flex; align-items:baseline; gap:.45rem;
     padding:.5rem 1rem; border-radius:999px;
@@ -36900,6 +36904,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] .vroom-chat-alert.is-glass .app-banner-text{ display:block; min-width:0; }
   html[data-layout] .vroom-chat-alert.is-glass .vroom-chat-alert-who{ flex:none; }
   html[data-layout] .vroom-chat-alert.is-glass .app-banner-sub{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* (384.100) every top pop-up is z-index 305, over the pinned test header (140), Pause and the chat button's dock (300): see the block after the notices' rules */
   /* (round 48) one rhythm in every banner, whatever element carries it (a button sets its own
      font and line-height): the tag, the title (.94rem/1.25) and its line (.8rem/1.3, .1rem under) */
   html[data-layout] :is(.vroom-chat-alert.is-glass, .update-banner.is-glass) :is(.app-banner-title, .app-banner-sub, .app-banner-tag){ font-family:inherit; text-align:left; }
@@ -36915,6 +36920,59 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] .update-banner.is-glass .app-banner-body{ flex:1 1 auto; }
   html[data-layout] .update-banner.is-glass .update-banner-close{ display:grid; place-items:center; opacity:1; color:var(--soft); }
   html[data-layout] .update-banner.is-glass .update-banner-close svg{ width:15px; height:15px; display:block; }
+  /* ---- EVERY TOP POP-UP IS THE PAGE'S WIDTH, OVER THE TOP ROW (384.100) ----
+     Madison, on pop-ups stopping short of the chat button: make them FULL WIDTH across the top and over the chat button, with
+     the clipped gold edge and the light smear on the glass fixed. Every pop-up that drops in from the top - the daily alert and
+     every banner on its glass, the update and re-add notices, the rank / theme / character banners, battle alerts, chat
+     previews, the streak pop and a toast said at the top - spans the page's own content width: .wrap's side padding (1.25rem on
+     a phone, 1.5rem from 40rem up, or the safe-area inset where that is wider) and its 44rem / 56rem width, centred. It starts
+     on the row line (popLineY) and is drawn over the chat button, Pause and the pinned test header (z-index 305 over the dock's
+     300). It takes the tap itself, so the chat button and Pause get none while one shows (they are switched off below and come
+     back when it clears). The pop-up's own x, and a swipe up (popSwipeUp), dismiss it. The Home Screen reminder (a permanent bar
+     in a Safari tab, .is-a2hs) and Nova's note in his introduction are not part of this. */
+  :root{ --pop-gut:1.25rem; --pop-z:305;
+    --pop-x:max(var(--pop-gut), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    --pop-w:calc(100vw - 2 * var(--pop-x)); }
+  @media (min-width:40rem){
+    :root{ --pop-gut:1.5rem; --pop-w:min(calc(100vw - 2 * var(--pop-x)), calc(56rem - 2 * var(--pop-gut))); }
+  }
+  /* inset ones: left and right on the gutters, the page's width at most, centred */
+  html body :is(.daily-alert, .update-banner:not(.is-a2hs), .toast.is-top, .vroom-chat-alert){
+    left:var(--pop-x) !important; right:var(--pop-x) !important; width:auto !important; max-width:var(--pop-w) !important;
+    margin-left:auto !important; margin-right:auto !important; box-sizing:border-box;
+  }
+  /* centred ones (their own transforms centre them on left:50%): the same width */
+  html body :is(.tierup-banner, .battle-alert, .streak-pop){
+    left:50% !important; right:auto !important; width:var(--pop-w) !important; max-width:none !important; box-sizing:border-box;
+  }
+  html body .streak-pop{ justify-content:center; align-items:center; padding:.5rem 1rem; }
+  html body .battle-alert{ padding:.75rem 1rem; }
+  /* they take the tap, so what is under one (the chat button, Pause, a title) is not tapped through it */
+  html body :is(.daily-alert:not(.nova-friend-note), .update-banner:not(.is-a2hs), .toast.is-top, .vroom-chat-alert, .battle-alert).show,
+  html body :is(.tierup-banner.tierup-banner-show, .streak-pop){ pointer-events:auto; }
+  /* ...and while one shows, the chat button and Pause get no taps and fade out under it (so the button's unread dot and Pause's edge do
+     not show through the glass as a smear); they fade back when it clears. A chat preview hidden under the open chat panel
+     (body.chatdock-open) does not count: that panel closes with the button */
+  body:has(> :is(.daily-alert:not(.nova-friend-note), .update-banner:not(.is-a2hs), .toast.is-top, .battle-alert).show, > .tierup-banner.tierup-banner-show, > .streak-pop) :is(.chatdock-btn, #roomchat-fab, #pausebtn),
+  body:not(.chatdock-open):has(> .vroom-chat-alert.show) :is(.chatdock-btn, #roomchat-fab, #pausebtn){
+    pointer-events:none !important; opacity:0 !important; transition:opacity .18s ease;
+  }
+  /* THE GLASS: the coloured edge is part of the shape, not a wider left border. A 3px left border on a 1px-bordered, 16px-rounded
+     box is cut off at the corners on a diagonal (the clipped gold edge); here the border is 1px all round, the edge colour is that
+     1px plus a 2px inset line that follows the curve, so it runs the whole height and tapers into the corners. The tint is denser
+     (.4 -> .66) so the planets and rings behind show as a faint shade, not a lighter smear across the words. */
+  html body :is(.daily-alert.app-banner, .update-banner.is-glass:not(.is-a2hs), .vroom-chat-alert.is-glass){ --pop-bar:var(--banner-color, var(--accent)); }
+  html body .toast{ --pop-bar:var(--toast-color, #8FC1FF); }
+  html body :is(.daily-alert.app-banner, .update-banner.is-glass:not(.is-a2hs), .vroom-chat-alert.is-glass, .toast){
+    border-left:1px solid var(--pop-bar) !important;
+    box-shadow:inset 2px 0 0 var(--pop-bar), 0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22) !important;
+  }
+  html:not([data-theme="light"]) body :is(.daily-alert.app-banner, .update-banner.is-glass:not(.is-a2hs), .vroom-chat-alert.is-glass, .toast){
+    background-color:rgba(26,31,38,.66) !important;
+  }
+  html[data-theme="light"] body :is(.daily-alert.app-banner, .update-banner.is-glass:not(.is-a2hs), .vroom-chat-alert.is-glass, .toast){
+    box-shadow:inset 2px 0 0 var(--pop-bar), 0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5) !important;
+  }
   html[data-layout] .update-banner.is-glass .update-banner-btn{ min-height:44px; padding-inline:1rem; }
   /* (327z15 round 45) "You see how great the view button looks? It has the 3d look ... The
      other buttons in the pops don't have that ... ensure all the others do." Every notice
@@ -94218,8 +94276,8 @@ function positionA2hsBar(bar){
   if(!bar || !bar.isConnected) return;
   const top = topNoticeOffset(bar);
   bar.style.top = top === null ? "" : Math.round(top) + "px";
-  /* what topNoticeOffset measured already includes a browser's bar margin; keep it only where nothing was measured */
-  bar.style.marginTop = top === null ? "" : "0px";
+  /* (384.91) topNoticeOffset takes the bar's own margin (a browser's bars) off the value it hands back, so the margin stays */
+  bar.style.marginTop = "";
   settleTopBanner(bar);
   pushHomeHeroForNotice(bar);
 }
@@ -108003,6 +108061,14 @@ function showTierUpBanner(tierKey){
   text.append(kicker, name);
   banner.append(icon, text);
   document.body.appendChild(banner);
+  /* (384.91) on the pop-up line like every other banner (it had no placement and sat in the system's wash, over the chat button) */
+  const top = topNoticeOffset(banner);
+  if(top != null){
+    banner.style.transition = "none";
+    banner.style.top = Math.round(top) + "px";
+    void banner.offsetHeight;
+    banner.style.transition = "";
+  }
   requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
   const dismiss = () => {
     banner.classList.remove("tierup-banner-show");
@@ -108274,20 +108340,24 @@ function positionDailyAlert(elArg){
     const rr = n.getBoundingClientRect();
     if(rr.height > 0 && (!r || rr.bottom > r.bottom)) r = rr;
   });
-  if(r){ el.style.top = Math.round(r.bottom + 10) + "px"; settleTopBanner(el); return; }
   /* With no notice up, the only thing left that can be in the way is
      whatever the current screen puts along its own top. This used to
      assume there was nothing - true while the alert only ever appeared on
      Home, and wrong the moment "Find me" started answering with one on
      Rankings, where it landed squarely on the screen title. It asks
      topNoticeOffset() rather than guessing a second time at a question
-     the update banner already measures. */
-  const top = topNoticeOffset(el);
-  el.style.top = top === null ? "" : Math.round(top) + "px";
+     the update banner already measures. (384.91) It is the pop-up line
+     (popRectTop), and below a notice that is up, never above the line. */
+  let y = popRectTop(el);
+  if(r) y = Math.max(y === null ? -Infinity : y, r.bottom + 10);
+  if(y === null || y === -Infinity) el.style.top = "";
+  else setPopTop(el, y);
   settleTopBanner(el);
 }
 
-/* EVERY TOP BANNER IS CENTRED, AND IT CLEARS THE CHAT BUTTON BY GOING
+/* (384.100: a top banner no longer clears the chat button at all - it covers it, see popAnchorRect. What is left of this is
+   the stacking: a banner goes under another that is up.)
+   EVERY TOP BANNER IS CENTRED, AND IT CLEARED THE CHAT BUTTON BY GOING
    UNDER IT (build 327z5): "That banner popup thing also does not look
    centered." It was not - on a phone the banners cleared the chat button
    by pulling only their RIGHT edge in, so on a 440px screen one ran
@@ -108300,14 +108370,20 @@ function positionDailyAlert(elArg){
 function settleTopBanner(el){
   if(!el || !el.isConnected) return;
   const cs = getComputedStyle(el);
-  let top = parseFloat(cs.top);
+  /* (384.91) in the viewport's px, where the box is laid out: its top plus whatever margin it carries (a Safari tab with
+     its bars over the page) - the obstacles are boxes too */
+  const mt = parseFloat(cs.marginTop) || 0;
+  const top0 = parseFloat(cs.top) + mt;
+  let top = top0;
   if(!isFinite(top)) return;
   const box = el.getBoundingClientRect();
   const h = el.offsetHeight || box.height;
   const L = box.left, R = box.right;
   const gap = 8;
   const obstacles = [];
-  document.querySelectorAll(".chatdock-btn, #roomchat-fab").forEach(b => {
+  /* (384.100) a top pop-up is drawn OVER the chat button and Pause (the page's full width, taking their taps), so they are no
+     obstacle to it; only the Home Screen reminder (a slim permanent bar, not a pop-up) keeps clear of the button */
+  if(el.id === "a2hsbar") document.querySelectorAll(".chatdock-btn, #roomchat-fab").forEach(b => {
     const r = b.getBoundingClientRect();
     if(r.width <= 0 || r.height <= 0) return;
     const bs = getComputedStyle(b);
@@ -108332,7 +108408,9 @@ function settleTopBanner(el){
     });
     if(!moved) break;
   }
-  if(Math.abs(top - parseFloat(cs.top)) > .5) el.style.top = top + "px";
+  if(Math.abs(top - top0) > .5){
+    el.style.top = Math.round(top - mt) + "px";
+  }
 }
 
 /* A BANNER THAT LEAVES GIVES ITS ROOM BACK (384 final check). settleTopBanner() only ever moves a banner DOWN, past
@@ -123105,6 +123183,28 @@ function showToast(msg, tone){
   tt.className = "toast-text"; tt.textContent = msg;
   toast.appendChild(tt);
   document.body.appendChild(toast);
+  /* (384.91) a toast said at the top (over the chat, a sheet or a card) starts on the pop-up line like every banner, and drops
+     in from above; one at the bottom is untouched */
+  try{
+    /* measured with its transition held, so the drop starts from above rather than sliding up from where it was measured */
+    toast.style.transition = "none";
+    const r = toast.getBoundingClientRect();
+    if(r.height > 0 && r.top < window.innerHeight / 2){
+      toast.classList.add("is-top");
+      const t = topNoticeOffset(toast);
+      /* ...except over an open chat panel hung under the chat button (a tablet's): the line is the panel's own top, so the toast
+         keeps its CSS place in the button's row beside it (there is no wash on a tablet; a phone's panel is a sheet from the bottom) */
+      let underPanel = false;
+      const cp = document.querySelector(".chatdock.is-open .chatdock-panel");
+      if(cp && t != null){
+        const pr = cp.getBoundingClientRect();
+        underPanel = pr.width > 0 && pr.top < t + r.height && pr.bottom > t && pr.left < r.right && pr.right > r.left;
+      }
+      if(t != null && !underPanel) toast.style.top = Math.round(t) + "px";
+    }
+    void toast.offsetHeight;
+    toast.style.transition = "";
+  }catch(e){ toast.style.transition = ""; }
   requestAnimationFrame(() => toast.classList.add("show"));
   setTimeout(() => {
     toast.classList.remove("show");
@@ -123325,8 +123425,9 @@ function showAddToHomeNotice(){
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
                              ".panel > .navsegment", ".welcome-build",
                              ".vroom-chat-alert", ".homeversion-btn",
-                             /* build 349: Home's version tag is gone, which was what kept a notice below the corner buttons */
-                             "body:has(.screen-home-actual) .chatdock-btn",
+                             /* build 349: Home's version tag is gone, which was what kept a notice below the corner buttons.
+                                (384.91) Home's chat button is no longer listed: every pop-up starts below the chat button on
+                                every screen now (popLineY) */
                              ];
 
 /* Shared by both notices. The measured offset is applied with transitions
@@ -123461,41 +123562,172 @@ function pushHomeHeroForNotice(bar){
    ends up not making it. Returns null for "nothing is in the way", which
    hands the position back to the CSS rule (the safe-area inset plus a
    small gap) rather than freezing whatever the last screen needed. */
+/* ---- 384.100: EVERY TOP POP-UP IS THE PAGE'S FULL WIDTH AND COVERS THE CHAT BUTTON AND PAUSE ----
+   Madison, on the beside-the-button pop-ups: make them full width across the top and over the chat button. Every top pop-up
+   (the daily alert and every banner on its glass, the update and re-add notices, the rank / theme / character banners, battle
+   alerts, chat previews, the streak pop, a toast said at the top) now has the page's own side gutters (--pop-x / --pop-w in the
+   CSS: .wrap's padding and max-width), starts on the row line (popLineY: the chat button's top, never above iOS's blur line E =
+   --top-e, 80 on a Pro Max), is drawn above the chat button and Pause (z-index 305 over the dock's 300), and takes the taps
+   itself: while one shows, the chat button and Pause get none (body:has(...) in the CSS) and they come back when it clears. The
+   x and a swipe up (popSwipeUp) dismiss it. popFitRow, which stopped a pop-up 8px short of the button (384.93), is gone.
+   What follows is what 384.93-384.97 wrote about where the row line is; the beside-the-button parts no longer apply.
+   ---- EVERY TOP POP-UP IN THE CHAT BUTTON'S ROW (384.93, on 384.95's line in 384.97; 384.91 put them under it) ----
+   Madison, on Home with "Done for today" up: "I feel like these pops need to be a little closer to the top. Not in the blurred
+   area but yeah. They are in an awkward spot." Every pop-up that drops in from the top (the daily alert and every banner on its
+   glass, the update and re-add notices, the rank / theme / character banners, battle alerts, the streak pop, Find me's answers,
+   a toast said at the top) now starts IN the chat button's row: its top is the button's top (read off its live box, so a screen
+   or a build that moves the button - claude/b384-polish86 moves the whole top row below the blur - moves them with it), and
+   where it would reach the button it stopped 8px short of the button's 44px hit box (popFitRow, gone in 384.100), its left edge staying on the
+   usual safe-area margin. 384.91 put them 6px UNDER the button, which gained 4px on Home and would have sent them ~150px down
+   once the row moves. Never higher than the bottom of iOS 26's top blur (popWashBottom: 384.95's line E, --top-e, the line the
+   whole top row sits on since 384.95 - 80 on a Pro Max, so a pop-up's top is level with the chat button's and Pause's). A
+   screen title in that row is covered for the pop-up's few seconds. With no chat button
+   (Welcome, onboarding) the row is where the button would be (the safe-area line + .75rem) and the pop-up keeps its full
+   width. iPad and a Safari tab: the same rule on their own geometry; a pop-up that already clears the button (an iPad's
+   centred 26rem) keeps its width and place. Stacking is unchanged: the first is in the row, later ones go under it. */
+function popAnchorRect(){
+  for(const sel of [".chatdock-btn", "#roomchat-fab"]){
+    for(const b of document.querySelectorAll(sel)){
+      const r = b.getBoundingClientRect();
+      if(r.width <= 0 || r.height <= 0) continue;
+      const cs = getComputedStyle(b);
+      if(cs.display === "none") continue;
+      /* where it is laid out, not where a press (translateY 1px) or a cutscene's lift has it this frame */
+      let ty = 0;
+      try{ if(cs.transform && cs.transform !== "none") ty += new DOMMatrixReadOnly(cs.transform).m42 || 0; }catch(e){}
+      const tm = /\S+\s+(-?[\d.]+)px/.exec(cs.translate || ""); if(tm) ty += parseFloat(tm[1]) || 0;
+      return { left: r.left, right: r.right, top: r.top - ty, bottom: r.bottom - ty };
+    }
+  }
+  return null;
+}
+/* (384.97) The bottom of iOS 26's top blur: 384.95's line E, --top-e (the inset + 16pt measured + 2pt, x --zc, read off his 15:35
+   recording; only on an installed iPhone held upright with a notch or island - html.top-edge-on, phone width, inset over 30px). It
+   is the same line the whole top row (the chat button, the titles, Pause) now sits on, read off the CSS so one number moves both.
+   0 wherever there is no band (--top-e is then the bare inset): an iPad, a Safari tab, an SE-sized phone, a phone on its side.
+   (384.91-384.93 used the safe-area line + 42pt, 384.64's older reading off his screenshots: 22pt deeper than the measured band.) */
+function popWashBottom(){
+  try{
+    let q = document.getElementById("pop-tope-probe");
+    if(!q){
+      q = document.createElement("i"); q.id = "pop-tope-probe"; q.setAttribute("aria-hidden", "true");
+      q.style.cssText = "position:fixed;top:0;left:0;width:0;height:var(--top-e, 0px);visibility:hidden;pointer-events:none;overflow:hidden";
+      document.documentElement.appendChild(q);
+    }
+    const e = q.getBoundingClientRect().height || 0;
+    return e > popSafeTop() + .5 ? e : 0;
+  }catch(e){ return 0; }
+}
+/* the safe-area line in px: one zero-width probe, made once and kept, on <html> rather than <body> so the observers watching
+   <body>'s children (the page lock, the top strip's guard, the cutscene focus) never see it come or go */
+function popSafeTop(){
+  try{
+    let q = document.getElementById("pop-sat-probe");
+    if(!q){
+      q = document.createElement("i"); q.id = "pop-sat-probe"; q.setAttribute("aria-hidden", "true");
+      q.style.cssText = "position:fixed;top:0;left:0;width:0;height:var(--sat, env(safe-area-inset-top, 0px));visibility:hidden;pointer-events:none;overflow:hidden";
+      document.documentElement.appendChild(q);
+    }
+    return q.getBoundingClientRect().height || 0;
+  }catch(e){ return 0; }
+}
+/* the row's top, in the viewport's px (where a lone pop-up's top border edge belongs) */
+function popLineY(){
+  const a = popAnchorRect();
+  let y;
+  if(a) y = a.top;
+  else{
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    y = popSafeTop() + rem * .75;
+  }
+  return Math.max(y, popWashBottom());
+}
+/* Where a banner pinned to the top of the screen has to start, as a value for its own `top` (its margin taken off: a Safari
+   tab with its bars over the page gives the chat button and the banners the same margin, and the row is read off the button's
+   box, which already has it). Every top pop-up asks this, so there is one answer to "where does a pop-up go" rather than one
+   per banner. */
 function topNoticeOffset(bar){
+  const y = popRectTop(bar);
+  if(y === null) return null;
+  let mt = 0;
+  try{ mt = parseFloat(getComputedStyle(bar).marginTop) || 0; }catch(e){}
+  return y - mt;
+}
+function popRectTop(bar){
+  const POP_GAP = 6;
   const vh = window.innerHeight;
-  let bottomOf = -Infinity;
-  /* (384 r19) the Home Screen reminder is up for good, so it keeps out of the way of what it would actually meet: on a tablet
-     or a phone on its side it sits clear of the chat button's corner and takes the top, where on a phone it goes under it */
-  const own = bar && bar.id === "a2hsbar" ? bar.getBoundingClientRect() : null;
-  NOTICE_OBSTRUCTIONS.forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => {
-      if(el === bar || bar.contains(el)) return;
-      const r = el.getBoundingClientRect();
-      if(own && own.width > 0 && (r.right <= own.left || r.left >= own.right)) return;
-      /* Zero-sized means hidden (display:none, or not laid out yet), and
-         anything already off the bottom of the screen is not in the way. */
-      if(r.width <= 0 || r.height <= 0 || r.top >= vh) return;
-      /* only what sits along the TOP is in the way: the version label is
-         top-left on a phone (a banner covered it, build 327 audit) and at
-         the foot beside the tab bar on a tablet, where it is not */
-      if(r.top > vh * .4) return;
-      if(r.bottom > bottomOf) bottomOf = r.bottom;
-    });
+  const anchor = popAnchorRect();
+  /* (384 r19, kept) the Home Screen reminder in a Safari tab is a slim, centred, permanent bar, not a pop-up: on a phone it
+     goes UNDER the chat button (its own gate holds it to one centred line); on a tablet or a phone on its side, where the
+     button is not in its span, it takes the row like everything else */
+  if(bar && bar.id === "a2hsbar"){
+    const own = bar.getBoundingClientRect();
+    if(anchor && own.width > 0 && anchor.right > own.left && anchor.left < own.right) return Math.max(anchor.bottom + POP_GAP, popWashBottom());
+    return popLineY();
+  }
+  let top = popLineY();
+  /* another pop-up (two Virtual Room chat alerts at once) is stacked under, wherever it is; nothing else along the top moves a
+     pop-up any more (a screen title in the row is covered for its few seconds) */
+  document.querySelectorAll(".vroom-chat-alert").forEach(el => {
+    if(!bar || el === bar || bar.contains(el) || el.contains(bar)) return;
+    const r = el.getBoundingClientRect();
+    if(r.width <= 0 || r.height <= 0 || r.top >= vh * .4) return;
+    top = Math.max(top, r.bottom + POP_GAP);
   });
-  /* Nothing measurable - mid-transition, or a screen with nothing along
-     its top at all, which is the normal case on both Welcome and Home. */
-  if(bottomOf === -Infinity) return null;
-
-  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  /* Enough to read as a separate surface below the header rather than as
-     something stuck to it. */
-  let top = bottomOf + rem * 0.6;
+  /* the two that hold the top for as long as they are up - the update / re-add notice and a Safari tab's Home Screen
+     reminder - are first, and every other pop-up stacks under them (+10, positionDailyAlert's gap) */
+  if(bar && bar.id !== "updatebanner"){
+    const me = bar.getBoundingClientRect();
+    [document.getElementById("updatebanner"), document.getElementById("a2hsbar")].forEach(n => {
+      if(!n || n === bar || n.classList.contains("is-leaving")) return;
+      /* the open chat panel hides the reminder (body.chatdock-open .update-banner.is-a2hs) */
+      if(n.id === "a2hsbar" && document.body.classList.contains("chatdock-open")) return;
+      const nr = n.getBoundingClientRect();
+      if(nr.height <= 0 || nr.top > vh * .4) return;
+      if(me.width > 0 && (nr.right <= me.left || nr.left >= me.right)) return;
+      top = Math.max(top, nr.bottom + 10);
+    });
+  }
   /* A ceiling, so this can never drift into the middle of the screen if
-     something tall is measured up there. Past that point it stops
-     tracking and just stays put. */
+     something tall is measured up there. */
   const ceiling = vh * 0.35;
   return top > ceiling ? ceiling : top;
 }
+/* sets a pop-up's top so its box starts at y (viewport px), whatever margin it carries */
+function setPopTop(el, y){
+  let mt = 0;
+  try{ mt = parseFloat(getComputedStyle(el).marginTop) || 0; }catch(e){}
+  el.style.top = Math.round(y - mt) + "px";
+}
+
+/* (384.100) A SWIPE UP DISMISSES A TOP POP-UP, as its x does. The finger has to start on the pop-up and travel 28px up, more up than
+   across; the pop-up's own close button is pressed where it has one (the update notice's x remembers it was closed), otherwise it
+   fades and goes. Passive listeners on the document: nothing here can hold up a scroll. */
+const POP_SWIPE_SEL = ".daily-alert, .update-banner:not(.is-a2hs), .toast.is-top, .vroom-chat-alert, .battle-alert, .tierup-banner, .streak-pop";
+function popSwipeUp(el){
+  if(!el || !el.isConnected) return;
+  const x = el.querySelector(".app-banner-x, .update-banner-close");
+  if(x){ x.click(); return; }
+  el.classList.remove("show", "tierup-banner-show");
+  el.style.pointerEvents = "none";
+  if(el.classList.contains("streak-pop")){ el.remove(); return; }
+  setTimeout(() => el.remove(), 260);
+}
+(function(){
+  let t = null;
+  document.addEventListener("touchstart", e => {
+    const el = e.target && e.target.closest ? e.target.closest(POP_SWIPE_SEL) : null;
+    if(!el || !e.touches || e.touches.length !== 1){ t = null; return; }
+    t = { el, x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  document.addEventListener("touchmove", e => {
+    if(!t || !e.touches || !e.touches.length) return;
+    const dy = e.touches[0].clientY - t.y, dx = e.touches[0].clientX - t.x;
+    if(dy < -28 && Math.abs(dx) < Math.abs(dy)){ const el = t.el; t = null; popSwipeUp(el); }
+  }, { passive: true });
+  document.addEventListener("touchend", () => { t = null; }, { passive: true });
+  document.addEventListener("touchcancel", () => { t = null; }, { passive: true });
+})();
 
 /* Rotating an iPad changes every one of those measurements at once, and
    the notice persists across screen changes, so it has to re-measure
@@ -132548,46 +132780,12 @@ function showRunStreakBanner(n){
   if(life !== 3200) el.style.animationDuration = (life / 1000) + "s";
   setTimeout(() => el.remove(), life);
 }
-/* ---- IN THE TOP BAR, NOT UNDER IT (build 244) ----
-   "The answer streak pop is in the way of the question and stuff." It
-   hung just below the top bar, which is exactly where the question
-   starts on a phone, so a streak landed on the first line of the next
-   question. The top bar itself has a gap in the middle - the question
-   count on the left, Chat and Pause on the right - and nothing ever sits
-   there during a test. The pop goes into that gap now, centred on the
-   row's own middle, so it covers nothing. Where the gap is too narrow
-   for the full pill (a 320px phone) it drops the words and shows the
-   number with a small "in a row" underneath; if even that will not fit,
-   it stays where it was. */
+/* ---- THE STREAK POP IS A TOP POP-UP (384.100; it went into the top bar's gap from build 244 to 384.97) ----
+   It starts on the pop-up line (popLineY) at the page's width, over the test header, like every other top pop-up. */
 function placeStreakPop(el){
-  try{
-    const left = [document.getElementById("testqcounter"), document.getElementById("count")]
-      .filter(e => e && e.getClientRects().length && e.textContent.trim())
-      .map(e => { const r = e.getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(e);
-                  const t = rg.getBoundingClientRect(); return { right: t.width ? t.right : r.right, top: r.top, bottom: r.bottom }; })[0];
-    const rightEls = [document.getElementById("pausebtn"), document.querySelector(".chatdock-btn")]
-      .filter(e => e && !e.hidden && e.getClientRects().length).map(e => e.getBoundingClientRect())
-      .filter(r => r.top < 200 && r.width > 0);
-    if(!left || !rightEls.length) return;
-    const rightEdge = Math.min.apply(null, rightEls.map(r => r.left));
-    const row = rightEls.reduce((a, r) => a.top < r.top ? a : r);
-    /* CENTRED ON THE SCREEN, NOT ON THE GAP (build 268). "The streak pop
-       during a test is not centered, it's in a weird spot." It sat in the
-       middle of the space between the question count and the buttons,
-       and because those two are different widths that middle is off to
-       one side. It is centred on the screen now, on the bar's own line,
-       as long as it clears both sides there; compact if it needs to be;
-       and if even that will not fit it stays centred under the bar. */
-    const cx = window.innerWidth / 2;
-    const fits = () => { const hw = el.getBoundingClientRect().width / 2; return cx - hw >= left.right + 8 && cx + hw <= rightEdge - 8; };
-    if(!fits()){
-      el.classList.add("is-compact");
-      if(!fits()){ el.classList.remove("is-compact"); return; }
-    }
-    el.classList.add("is-inbar");
-    el.style.left = Math.round(cx) + "px";
-    el.style.top = Math.round(row.top + row.height / 2) + "px";
-  }catch(e){}
+  /* (384.100) the streak pop is a top pop-up like the rest: the page's width, from the row line, over the test header (it used
+     to go into the header's gap beside the count, which the full-width pop-ups cover) */
+  try{ setPopTop(el, popLineY()); }catch(e){}
 }
 
 
@@ -141638,10 +141836,9 @@ function clearBannerOnScreenChange(el){
 
 function placeTopBanner(el){
   const measured = (typeof topNoticeOffset === "function") ? topNoticeOffset(el) : null;
-  if(measured !== null && measured !== undefined){
-    const baseline = el.getBoundingClientRect().top;
-    if(measured > baseline) el.style.top = measured + "px";
-  }
+  /* (384.91) on the pop-up line, up as well as down (it used to only ever move a banner down from its CSS top, which on an
+     installed iPhone is inside the system's wash) */
+  if(measured !== null && measured !== undefined) el.style.top = Math.round(measured) + "px";
   settleTopBanner(el);
   /* again once it is in (fonts, the chat button arriving) */
   requestAnimationFrame(() => settleTopBanner(el));
