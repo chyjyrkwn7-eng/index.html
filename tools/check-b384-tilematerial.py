@@ -58,6 +58,13 @@ def measure(pg, tag):
     for t in tiles:
         x, y, w = t["b"]
         X0, Y0, W = int(round(x * S)), int(round(y * S)), int(round(w * S))
+        # (384.133) the tile AS DRAWN, sideways. settingslook's rows pad 16.5px in (Delta's), so a tile's layout box starts on a half CSS pixel
+        # (37.5) and the renderer draws the whole tile - fill, keyline, lit edge and glyph - on the next whole one (38.0): 1.5 device px right of
+        # round(112.5)=112, which read as every glyph "+.67 right of centre" (check-b384-r4 (C) had the same +.50). The region is anchored on the
+        # tile's drawn left edge (the first column in the row through its middle that is not the page behind it, by more than 60 levels).
+        if X0 >= 8 and Y0 + W // 2 < im.shape[0]:
+            mrow = im[Y0 + W // 2, X0 - 8:X0 + W + 8]; dd = np.nonzero(np.abs(mrow - mrow[0]).max(axis=1) > 60)[0]
+            if len(dd): X0 = X0 - 8 + int(dd.min())
         reg = im[Y0:Y0 + W, X0:X0 + W]
         if reg.shape[0] < W or reg.shape[1] < W: continue
         top, bot = reg[int(W * .16), int(W * .16)], reg[int(W * .84), int(W * .16)]
