@@ -655,11 +655,13 @@ def main():
             if wanted("J"):
                 j4 = pg.evaluate("""()=>{ try{
                     const s = JSON.stringify(store), out = {};
+                    const saveStand = [rankOfStandIn, rankUpView]; rankOfStandIn = undefined; rankUpView = null;   /* the real rank rule, not a scene's view */
                     const was = JSON.stringify(TIER_UNLOCKS.titan), comp = () => { try{ return completionistProgress(true).have; }catch(e){ return null; } };
                     /* the account is asked as under the rank's rule (the same rule the app reads: level and badges), once out of reach and once met */
                     TIER_UNLOCKS.titan.level = 9999; TIER_UNLOCKS.titan.badges = 9999; delete TIER_UNLOCKS.titan.mysteryStars; const u0 = ultimateProgress(); const c0 = comp();
                     TIER_UNLOCKS.titan.level = 0; TIER_UNLOCKS.titan.badges = 0; const u1 = ultimateProgress(); const c1 = comp();
                     Object.keys(TIER_UNLOCKS.titan).forEach(k => delete TIER_UNLOCKS.titan[k]); Object.assign(TIER_UNLOCKS.titan, JSON.parse(was));
+                    rankOfStandIn = saveStand[0]; rankUpView = saveStand[1];
                     out.have = [u0.have, u1.have]; out.need = [u0.need, u1.need];
                     out.titanItems = AVATAR_CHARACTERS.filter(c => c.unlock === 'titan' && !c.retired).length + BANNERS.filter(b => b.rank === 'titan').length + ACCENTS.filter(a => a === 'titan' && !!TIER_UNLOCKS[a]).length;
                     out.comp = [c0, c1];
