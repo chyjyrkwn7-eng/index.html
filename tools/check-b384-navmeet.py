@@ -40,9 +40,16 @@ with sync_playwright() as pw:
         pg.goto(url); pg.wait_for_timeout(3500)
         pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner').forEach(e=>e.remove()); }")
         # a seeded account can open on an unlock cutscene, which parks the chat button off the top (body.cutscene-focus): let it end
-        for _ in range(40):
-            if not pg.evaluate("()=>document.body.classList.contains('cutscene-focus') || document.body.classList.contains('cutscene-return')"): break
-            pg.evaluate("()=>{ document.querySelectorAll('.unlock-card .next, .rs-spot .next, .cutscene-skip, .ru-skip').forEach(b=>{ try{ b.click(); }catch(e){} }); }")
+        # (384.133) the seeded account now opens on a "Challenge complete" spotlight card (three of them, "Tap to continue", no button) - the loop
+        # found nothing to press, ran its 20s out and measured 'Choose your mode' with the chat button still parked off the top (cy -38 / -34):
+        # the card itself is tapped. (Fails on main 384.107 for the same reason.)
+        # (the three cards leave a gap between them with neither class set: the wait is over after THREE free polls in a row, not the first)
+        free = 0
+        for _ in range(60):
+            busy = pg.evaluate("()=>document.body.classList.contains('cutscene-focus') || document.body.classList.contains('cutscene-return') || !!document.querySelector('.rs-spot,.unlock-card')")
+            free = 0 if busy else free + 1
+            if free >= 3: break
+            pg.evaluate("()=>{ document.querySelectorAll('.unlock-card .next, .rs-spot .next, .cutscene-skip, .ru-skip, .rs-spot').forEach(b=>{ try{ b.click(); }catch(e){} }); }")
             pg.wait_for_timeout(500)
         off, moved = [], []
         for name, js in PUSHED:
