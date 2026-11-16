@@ -198,8 +198,13 @@ def capture(br, body, cls, tag):
                 clk.to(clk.t + 0.5); pg.wait_for_timeout(200)
             clk.to(clk.t + 0.3)
             imgs[(vname, "inspect (as is, glint shown)")] = png(pg)
-            pg.evaluate(HIDEG); pg.wait_for_timeout(80)
+            pg.evaluate(HIDEG)
+            # (384.133 combined) what is compared is the badge in your hand: the screen behind the overlay is not it. Its title row ("Badges", dimmed
+            # under the overlay) is where other builds' intended changes to the title row show (tabfeel, namebox, nodiag: a few px, 13 levels), so the
+            # screen is hidden for this picture on both builds; the overlay's own glow, badge, name and Close are all still compared, pixel for pixel.
+            pg.evaluate("() => { const s = document.getElementById('stage'); if(s) s.style.visibility = 'hidden'; }"); pg.wait_for_timeout(80)
             imgs[(vname, "inspect")] = png(pg)
+            pg.evaluate("() => { const s = document.getElementById('stage'); if(s) s.style.visibility = ''; }")
             pg.evaluate(SHOWG)
             if SHOTS: imgs[(vname, "inspect")].save(os.path.join(SHOTS, "%s-%s-%s-inspect.png" % (tag, cls, vname)))
             pg.evaluate("() => { try{ badgeInspectNow && badgeInspectNow.close(); }catch(e){} }"); clk.to(clk.t + 2)
