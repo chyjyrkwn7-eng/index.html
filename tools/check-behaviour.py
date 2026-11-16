@@ -18391,7 +18391,15 @@ def _b321e_checks(dev, pre, frames):
     gl = max((i for i, (_, x) in enumerate(fl) if x["g"]), default=None)
     seg = fl[max(0, (gi or 0) - 30):(gl or 0) + 30] if gi is not None else []
     seg = [x for x in seg if x[1]["k"] == (seg[0][1]["k"] if seg else None)]
-    steps = [(b[1]["ct"] - a[1]["ct"], b[0] - a[0]) for a, b in zip(seg, seg[1:])]
+    # CHANGED ON PURPOSE IN 384.123 (norankchat, which Madison asked for): Nova no longer talks over the lit flare at the end of the journey, so the
+    # flare that followed the planet system straight on (the talk's own copy of it, the same clock) is gone, and the next flare frame in the sample is
+    # Home's own, seconds later, on its own new clock. That is a new appearance, not the hand-off this section holds: after the bubble's last frame the
+    # segment ends at the first gap of a second or more. Everything up to there, gaps inside the hand-off included, is held exactly as before.
+    _g_last = max((i for i, x in enumerate(seg) if x[1]["g"]), default=None)
+    if _g_last is not None:
+        for _i in range(_g_last + 1, len(seg)):
+            if seg[_i][0] - seg[_i - 1][0] > 1000: seg = seg[:_i]; break
+    steps =[(b[1]["ct"] - a[1]["ct"], b[0] - a[0]) for a, b in zip(seg, seg[1:])]
     # a frame the emblem stopped on (its animations taken off in the bubble) drops out of `seg`: no gaps either
     # (two frames of slack: a copy made inside a step is seeked from the step after)
     bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 70 or dt > 70]
