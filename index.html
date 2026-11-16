@@ -4802,6 +4802,10 @@
   /* off screen, a question is not laid out (round 35): the list, its search and the drop-down's
      slide only pay for what can be seen */
   .screen-answerreview .review-question{ content-visibility:auto; contain-intrinsic-size:auto 340px; }
+  /* (codeopen) no scroll anchoring in the list, from the start: a drop-down turns it off for its move (ifcAnchorOff), and changing it
+     on the root in the tap restyles and prepaints the whole list (10ms at 4x CPU) before the move's first frame. Here it is never on,
+     so the tap has nothing to change; the root is left alone (ifcAnchorOff) */
+  .screen-answerreview{ overflow-anchor:none; }
   /* (384) ...and once the list has opened, every question is laid out ahead of the scroll (reviewRenderAhead): a question that
      comes into view is already there, never filled in as it arrives */
   .screen-answerreview .review-question.rq-on{ content-visibility:visible; contain:layout style paint; }   /* the containment a laid-out auto question keeps: the same layout to the pixel */
@@ -126227,10 +126231,17 @@ function ifcApplyCodePref(box){
      first frame, where the frame lays it out anyway. Reduce motion: no move, as before. */
 var IFC_DROP_MS = 300, IFC_DROP_EASE = "cubic-bezier(.2,.8,.2,1)", ifcDropRun = null;
 function ifcDropTake(s, out){
-  if(!s || s.nodeType !== 1 || s.matches(".floatbtn")) return;
+  if(!s || s.nodeType !== 1) return;
+  /* (codeopen) asked of every box in the list, so by class (the same boxes as the selectors it replaces: .floatbtn, .nova-hlb, .nova-hsw,
+     .foot) and a floating button among its own children is looked for in them alone (querySelector(":scope > .floatbtn") walks all of
+     the box's descendants: 4ms of a Review list's tap at 4x CPU) */
+  const cl = s.classList;
+  if(cl.contains("floatbtn")) return;
   /* (flashcode) the haptic layers a flash card's face carries (its label lies over the whole face) are not what the layout moves */
-  if(s.matches(".nova-hlb, .nova-hsw")) return;
-  if(s.matches(".foot") || s.querySelector(":scope > .floatbtn")){ [...s.children].forEach(k => ifcDropTake(k, out)); return; }
+  if(cl.contains("nova-hlb") || cl.contains("nova-hsw")) return;
+  let fb = cl.contains("foot");
+  for(let k = s.firstElementChild; !fb && k; k = k.nextElementSibling) if(k.classList.contains("floatbtn")) fb = true;
+  if(fb){ [...s.children].forEach(k => ifcDropTake(k, out)); return; }
   const cs = getComputedStyle(s);
   if(cs.display === "none" || cs.position === "fixed" || cs.position === "sticky") return;
   out.push(s);
@@ -126274,11 +126285,23 @@ function ifcDropRound(el){ try{ return getComputedStyle(el).borderBottomLeftRadi
 var IFC_REVIEW_EASE = "cubic-bezier(.3,.3,.2,1)";
 var IFC_CLIP_LEAD = (() => { try{ return typeof navigator.userAgentData !== "undefined" ? 17 : 0; }catch(e){ return 0; } })();
 function ifcDropAnim(el, kf, ms){ try{ return el.animate(kf, { duration: ms || IFC_DROP_MS, easing: (ifcDropRun && ifcDropRun.ease) || IFC_DROP_EASE, fill: "forwards" }); }catch(e){ return null; } }
+/* (codeopen) WHERE EACH BOX IS, READ BEFORE ANY MOVE IS MADE. A move is an animation, and making one marks that box's style as changed:
+   the next box's place, read in the same loop, laid the page out again first - once for every box that got a move (a third of the
+   first frame's script in a Review list, 4x CPU). ifcDropPre reads the lot at once, while the layout is still clean, and
+   ifcDropMove takes the place from there. Only where no move of the same go is on a box that holds another (a flash card's kids lie
+   in the face that has its own move first, so a flash card reads as it did). */
+var ifcDropRects = null;
+function ifcDropPre(els){
+  const m = new Map();
+  try{ els.forEach(el => { if(el && !m.has(el)) m.set(el, el.getBoundingClientRect()); }); }catch(e){ ifcDropRects = null; return; }
+  ifcDropRects = m;
+  Promise.resolve().then(() => { if(ifcDropRects === m) ifcDropRects = null; });   /* (one task's reading, never kept) */
+}
 function ifcDropMove(el, from, to, ms){
   if(Math.abs(from) < .25 && Math.abs(to) < .25) return null;
   /* a box off the screen for the whole move (a long Review list's far questions) is left where the layout puts it: nobody sees it,
      and a hundred animated layers is what a phone would pay for nothing */
-  try{ const r = el.getBoundingClientRect(), top = r.top + Math.min(from, to), bot = r.bottom + Math.max(from, to);
+  try{ const r = (ifcDropRects && ifcDropRects.get(el)) || el.getBoundingClientRect(), top = r.top + Math.min(from, to), bot = r.bottom + Math.max(from, to);
     if(bot < -40 || top > innerHeight + 40) return null; }catch(e){}
   return ifcDropAnim(el, [{ translate: "0 " + from.toFixed(2) + "px" }, { translate: "0 " + to.toFixed(2) + "px" }], ms);
 }
@@ -126294,7 +126317,7 @@ function ifcDropHalt(r){
    its heading at the top of the screen) scrolled the page by the whole unit while the move's own `translate` held what is under it,
    and the screen landed tens of thousands of pixels down. Off from the tap to two frames after the move's last layout, as an
    iPhone has it always. */
-function ifcAnchorOff(){ try{ document.documentElement.style.overflowAnchor = "none"; }catch(e){} }
+function ifcAnchorOff(el){ try{ if(el && el.closest && el.closest(".screen-answerreview")) return; document.documentElement.style.overflowAnchor = "none"; }catch(e){} }
 function ifcAnchorBack(){
   try{ requestAnimationFrame(() => requestAnimationFrame(() => { if(!ifcDropRun) document.documentElement.style.overflowAnchor = ""; })); }catch(e){}
 }
@@ -126322,7 +126345,7 @@ function ifcDropSettleNow(){
 function ifcDropBegin(chrome, done, prev){
   const run = { chrome, anims: [], timer: 0, done: done || null, ro: null, prev: prev || null };
   ifcDropRun = run;
-  ifcAnchorOff();
+  ifcAnchorOff(chrome);
   return run;
 }
 /* the move on the same box that this one takes over from (its end dropped, its look read in the first frame) */
@@ -126354,7 +126377,7 @@ function ifcDropStart(run, arm){
    seen - the sweep and what is under it go as far as the screen's bottom (and a little past), and the rest, below the screen,
    is simply there at the end - as the 2000px max-height slide it replaces did; a 50,000px sweep would cross the screen in a frame */
 function ifcDropOpen(chrome, change, pending, now, cap, wipe){
-  const after = ifcDropSide(chrome, true), before = ifcDropSide(chrome, false), next = ifcDropNext();
+  const after = ifcDropSide(chrome, true), next = ifcDropNext();
   /* what is on the screen now (the layout as it stands, a move's transforms included) */
   const a0 = after.length ? after[0].getBoundingClientRect().top : 0;
   const n0 = next ? next.getBoundingClientRect().top : 0;
@@ -126367,6 +126390,9 @@ function ifcDropOpen(chrome, change, pending, now, cap, wipe){
      all together - each is slid from where it was (the layout moves it at once) */
   const kids = wipe ? fcFaceKids(wipe.face) : [], kt0 = kids.map(k => k.getBoundingClientRect().top);
   const prev = ifcDropTakeOver(chrome);
+  /* (codeopen) what lies before the box has a move only where a move of this box's own is taken over (its live translates): a new
+     opening has nothing to put back there, and the list's every earlier box is not walked for it */
+  const before = prev ? ifcDropSide(chrome, false) : [];
   change();
   if(wipe) wipe.fit();
   const kt1 = wipe ? kids.map(k => k.getBoundingClientRect().top) : [];
@@ -126385,6 +126411,7 @@ function ifcDropOpen(chrome, change, pending, now, cap, wipe){
     const R = ifcDropRound(chrome);
     const clip0 = Math.max(0, h1 - Math.max(0, c0));
     const D = cap ? Math.min(clip0, Math.max(0, innerHeight - chrome.getBoundingClientRect().top) + 40) : clip0, rest = clip0 - D;
+    if(!wipe) ifcDropPre([chrome, next].concat(before, after));
     ifcDropAdd(run, chrome, ifcDropAnim(chrome, [{ clipPath: "inset(0px 0px " + clip0.toFixed(2) + "px 0px round " + R + ")" }, { clipPath: "inset(0px 0px " + rest.toFixed(2) + "px 0px round " + R + ")" }]), "clip");
     if(wipe){
       const Rf = ifcDropRound(wipe.face), fc0 = Math.max(0, wipe.face.getBoundingClientRect().height - Math.max(0, f0));
@@ -126398,6 +126425,7 @@ function ifcDropOpen(chrome, change, pending, now, cap, wipe){
     before.forEach(el => { if(!(wipe && kids.includes(el))) ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, 0)); });
     after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, a0 - a1, a0 - a1 + D > -.25 ? 0 : a0 - a1 + D)));
     if(next) ifcDropAdd(run, next, ifcDropMove(next, n0 - n1, 0));
+    ifcDropRects = null;
     /* a picture that arrives after the tap: the box grows again, from wherever the move has it */
     let h = h1;
     if(pending && typeof ResizeObserver === "function"){
@@ -126458,6 +126486,7 @@ function ifcDropShut(chrome, d, done, cap, wipe){
     const c = Math.max(0, S - Math.max(0, se.scrollHeight - loss - innerHeight));
     const hc = chrome.getBoundingClientRect().height, R = ifcDropRound(chrome);
     const clipTo = Math.min(loss0, hc);
+    if(!wipe) ifcDropPre([chrome, next].concat(before, after));
     if(wipe) ifcDropAdd(run, wipe.face, ifcDropAnim(wipe.face, [{ clipPath: "inset(0px 0px " + (live.clip.get(wipe.face) || 0).toFixed(2) + "px 0px round " + ifcDropRound(wipe.face) + ")" }, { clipPath: "inset(0px 0px " + loss.toFixed(2) + "px 0px round " + ifcDropRound(wipe.face) + ")" }]), "clip");
     /* (cap, see ifcDropOpen) what lies below the screen goes at once, unseen; the move shuts what can be seen */
     const skip = cap && !live.clip.has(chrome) ? Math.max(0, Math.min(loss, hc - Math.max(0, innerHeight - chrome.getBoundingClientRect().top) - 40)) : 0;
@@ -126475,6 +126504,7 @@ function ifcDropShut(chrome, d, done, cap, wipe){
     before.forEach(el => { if(!inFace(el)) ifcDropAdd(run, el, ifcDropMove(el, live.y.get(el) || 0, c)); });
     after.forEach(el => ifcDropAdd(run, el, ifcDropMove(el, (live.y.get(el) || 0) - skip, c - loss)));
     if(next) ifcDropAdd(run, next, ifcDropMove(next, live.y.get(next) || 0, c - loss));
+    ifcDropRects = null;
     ifcDropStart(run, () => { const fin = () => {
       if(ifcDropRun !== run) return;
       /* (flashcode) a flash card's move is let run to its end (the card's own edge is a clip, which cannot glide by a translate) */
