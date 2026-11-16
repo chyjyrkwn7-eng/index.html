@@ -41157,6 +41157,11 @@ html.is-browser{ --fade-paper: transparent; }
   /* Reduce motion: no rise - the tint is simply there, holds a moment and fades (opacity only; out-ranks the global animation:none) */
   html[data-reduce-motion="true"] .rank-row > .rank-flash-veil{ animation:rank-veil-calm 1.2s linear both !important; }
   @keyframes rank-veil-calm{ 0%{ opacity:1; } 25%{ opacity:1; } 100%{ opacity:0; } }
+  /* ---- THE DELTA TOKENS (384.133 follow): the four numbers that make a card and a section name Delta's, defined ONCE. Settings (below) and the six
+     screens that follow it (Customize, Friends, Rank, Badges, Stats, Profile: the 384.133 block at the end of this sheet) both read these, so a
+     change here moves all seven together. A card is iOS's own #2C2C2E on a 26pt corner; a section name is 16/600 on a 20pt line, 10pt over
+     its card, in a neutral rgba(235,235,245,.62). Nothing else is shared: rows, tiles and footnotes are Settings' own. ---- */
+  :root{ --delta-card-r:26px; --delta-card-fill:#2C2C2E; --delta-head-ink:rgba(235,235,245,.62); --delta-head-lh:20px; --delta-head-gap:10px; }
   /* ---- 384.110 SETTINGS, DELTA'S LOOK ON THE GLASS (the fourth round; measured, not eyeballed) ----
      Madison, with two new screenshots of Delta's Settings: "I can't really put my finger on it but Delta still looks so much better
      than ours ... evaluate this extremely closely, the exact look and feel of theirs and make ours better." Read off them at
@@ -41180,7 +41185,7 @@ html.is-browser{ --fade-paper: transparent; }
      glass; the title, the inline titles and the bar sit outside that zoom and multiply by --zc themselves. */
   html[data-theme][data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card.settings-card,
   html[data-theme][data-layout] body #stage .settings-page-account :is(.customize-namerow, .customize-nameedit).customize-namerow{
-    background-color:#2C2C2E !important; background-image:none !important; border-radius:26px !important;
+    background-color:var(--delta-card-fill) !important; background-image:none !important; border-radius:var(--delta-card-r) !important;
   }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.settings-row, .settings-card, .slab, .settings-footnote, .sync-note-plain){
     font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans);
@@ -41225,8 +41230,8 @@ html.is-browser{ --fade-paper: transparent; }
   /* section names: 16pt semibold in a neutral grey; 27pt under the card above (13pt under a footnote), their baseline 14.3pt over
      the card they name */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page):is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.slab.motion-summary, .sect-label, .slab).slab{
-    font-size:16px !important; font-weight:600 !important; line-height:20px !important; letter-spacing:normal !important;
-    color:rgba(235,235,245,.62) !important; margin-bottom:10px !important;
+    font-size:16px !important; font-weight:600 !important; line-height:var(--delta-head-lh) !important; letter-spacing:normal !important;
+    color:var(--delta-head-ink) !important; margin-bottom:var(--delta-head-gap) !important;
   }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) .settings-card + .slab.motion-summary.slab{ margin-top:27px !important; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub) :is(.settings-footnote, .settings-footnotes, .confirm-ask) + .slab.motion-summary.slab{ margin-top:13px !important; }
@@ -41509,6 +41514,48 @@ html.is-browser{ --fade-paper: transparent; }
   .thx-pick-n{ flex:0 0 auto; font-size:.84rem; color:var(--soft); font-variant-numeric:tabular-nums; }
   .thx-pick-done{ flex:0 0 auto; width:100%; min-height:48px; margin-top:.8rem; }
   [data-reduce-motion="true"] :is(.thx-pick-box, .thx-pick-tick, .thx-list > .thx-row){ transition:none; }
+  /* ==== THE SIX SCREENS FOLLOW SETTINGS (384.133 follow; Madison: "the other six screens must follow Settings' new look") ====
+     Settings was restyled Delta's in 384.110 (settingslook); Customize, Friends, Rank, Badges, Stats and Profile still had the older
+     22px cards on the app's blue-black (35,38,43) and white-at-56% section names. They take the Delta tokens (defined once, at the head
+     of the 384.110 block, and read by Settings' own rules too): the card's 26px corner and #2C2C2E fill, the section names' 16/600 on a
+     20pt line, 10pt over their card, in rgba(235,235,245,.62), in the system face, indented 20pt like Settings'.
+     WHAT IS NOT TOUCHED: the art (avatars, banners, the rank emblems and plates, the badge case's shell, the badges' drawings), the
+     leaderboard rows' glass, the tab bar, the segmented switch, the nested tiles and rows inside a card (their own fills), the Rank
+     climb's orbs and spine. Only the card's own fill, corner and the section names. Placed last, with the attribute pair Settings' and
+     the older rules use, so it wins on order and with !important where the older rules are !important. */
+  html[data-theme][data-layout] body #stage :is(
+      .screen-customize :is(.cz-row, .cz-group), .screen-friends > .friend-sect, .screen-ranks :is(.rankhero, .badges-head, .rankmap-card),
+      .profile-stats-tab > .points-progress-sect, .screen-profile .profile-identity-tab > :is(.profile-hero, .pf-goal)){
+    background-color:var(--delta-card-fill) !important; background-image:none !important; border-radius:var(--delta-card-r) !important;
+    /* what sits flush on the card in the card's own colour (Stats' tiles, the friend-code field, the effect preview, a tick's cut-out
+       ring) reads the surface token: inside these cards that token IS the card, so none of them turns into a darker well */
+    --surface-1:var(--delta-card-fill); --surface-2:var(--delta-card-fill); --clean-card:var(--delta-card-fill);
+  }
+  html[data-theme][data-layout] body #stage .screen-customize .cz-row:active{ background-image:linear-gradient(var(--surface-lift), var(--surface-lift)) !important; }
+  /* the shut badge case on Profile is the badge case on the Badges screen (its shell is already 26): its corner and its leather
+     take the same card; the handle, lid, latches and grain are its own art */
+  html[data-theme][data-layout] body #stage .screen-profile .profile-identity-tab > .pf-case.pf-case-closed{ --pfc-r:var(--delta-card-r); }
+  html[data-theme][data-layout] body #stage .screen-profile .pf-ccase.nova-case{ background-color:var(--delta-card-fill) !important; background-image:none !important; }
+  /* section names above a card: Settings' (the older rule above set them .9rem white-at-56% with a 1rem inset) */
+  html[data-theme][data-layout] body #stage :is(.screen-customize .slab.motion-summary:not(.cz-bar), .screen-ranks .ranks-tab > .slab.motion-summary,
+    .screen-friends .friend-sect > .sect-label, .profile-stats-tab > .points-progress-sect .slab):is(.slab, .sect-label){
+    font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans);
+    font-size:16px !important; font-weight:600 !important; line-height:var(--delta-head-lh) !important; letter-spacing:normal !important;
+    color:var(--delta-head-ink) !important; margin-bottom:var(--delta-head-gap) !important; padding-left:20px !important;
+  }
+  /* Customize's "Your look" is a centred bar with its own spacing (and the count and track on its pages): the grey and the face only */
+  html[data-theme][data-layout] body #stage .screen-customize .slab.motion-summary.cz-bar{
+    font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans); color:var(--delta-head-ink) !important;
+  }
+  /* Friends' and Stats' names stand over their card's padding box, which starts at its 1px (clear) border: 1px less keeps the words at 20pt */
+  html[data-theme][data-layout] body #stage :is(.screen-friends .friend-sect > .sect-label, .profile-stats-tab > .points-progress-sect .slab):is(.slab, .sect-label){ padding-left:19px !important; }
+  /* "Recent tests" stands in a row that is itself over its card (the row carries the gap): the name takes none of its own, the row takes Settings' 10pt */
+  html[data-theme][data-layout] body #stage .profile-stats-tab > .stx-recent > .stx-recent-top.stx-recent-top > .slab.slab{ margin-bottom:0 !important; }
+  html[data-theme][data-layout] body #stage .profile-stats-tab > .points-progress-sect.stx-recent > .stx-recent-top.stx-recent-top{ margin-bottom:var(--delta-head-gap); }
+  /* Profile's two labels inside its challenge card (Rank challenges, Silver unlocks): the same grey and face */
+  html[data-theme][data-layout] body #stage .screen-profile .pf-goal .pf-kick:is(.pf-tasks-kick, .pf-rewards-kick){
+    font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans); color:var(--delta-head-ink) !important;
+  }
 </style>
 <script>
   (function(){

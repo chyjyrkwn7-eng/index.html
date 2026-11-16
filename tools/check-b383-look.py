@@ -122,7 +122,9 @@ with sync_playwright() as pw:
             c["screen"] = name; allcards.append(c)
             # (384.133) Settings' own cards are iOS's #2C2C2E (settingslook, 384.110: "Delta's cards are iOS's own #2C2C2E on #1C1C1E"), the one place that
             # is not the --surface-1 token: read apart, and still one colour among themselves
-            (settings_colors if name == "Settings" else colors).add(re.sub(r"\s+", "", c["color"]))
+            # (384.133 follow) ...and so are the six screens that follow it (Customize, Friends, Rank, Badges, Stats, Profile: "the other six screens must follow
+            # Settings' new look"): ONE colour for Settings and those six together (the Delta group), and one of its own for every other card (units, modes, Calendar, Review)
+            (settings_colors if name in ("Settings", "Profile", "Stats", "Customize", "the Rank tab", "Badges") else colors).add(re.sub(r"\s+", "", c["color"]))
         sf = pg.evaluate(SERIF) if name in ("Profile", "Stats", "the Rank tab", "Badges") else []
         if sf: serifs[name] = sf
         if name == "Profile":
@@ -157,7 +159,7 @@ with sync_playwright() as pw:
             ck("(3) the round back button wears the chat button's glass - gradient, shadow, unblurred like it (%s)" % b, "gradient" in b["img"] and b["shadow"] != "none" and "blur" not in (b["blur"] or ""), b)
     bad = [c for c in allcards if c["alpha"] < .99 or c["grads"] or c["rim"] or c["shadow"] or c["blur"]]
     ck("(2) every card beyond Home is solid - opaque, no gradient, rim, shadow or blur (%d of %d)" % (len(allcards) - len(bad), len(allcards)), allcards and not bad, bad[:4])
-    ck("(2) and one colour (%s; Settings' own cards, %s, are one colour of their own)" % (sorted(colors), sorted(settings_colors)), len(colors) == 1 and len(settings_colors) == 1 and settings_colors != colors, [sorted(colors), sorted(settings_colors)])
+    ck("(2) and one colour (%s; Settings' and the six screens' cards, %s, are one colour of their own)" % (sorted(colors), sorted(settings_colors)), len(colors) == 1 and len(settings_colors) == 1 and settings_colors != colors, [sorted(colors), sorted(settings_colors)])
     ck("(4) no serif display face on Profile, Stats, Ranks or Badges", not serifs, serifs)
     # results
     pg.evaluate("""()=>{ const t=topicsIn(QUESTIONS)[6]; cfg.mode='drill'; cfg.units=[t]; cfg.source='all';
