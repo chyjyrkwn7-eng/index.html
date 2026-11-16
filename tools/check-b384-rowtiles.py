@@ -83,7 +83,9 @@ with sync_playwright() as pw:
     for cls in ("academy", "ifc"):
         ref, e0 = sweep(br, cls, 440, 956, ["showAppearance()"], body=REF_BODY)
         if ref is None: bad1.append((cls, "reference", e0)); continue
-        refsig = {t["name"]: t["sig"] for t in ref["showAppearance()"] if t["menu"]}
+        # rows the reference names by their old words: (384.105 swupdate) "Check for update" is "Software Update" now (same row, same tile: data-row=update)
+        RENAMED = {"Check for update": "Software Update"}
+        refsig = {RENAMED.get(t["name"], t["name"]): t["sig"] for t in ref["showAppearance()"] if t["menu"]}
         # (384.110) cd34de2's Fire Code copy no longer draws its Settings menu under this harness (0 tiles, no page error; the
         # same on main 384.95): its rows cannot be compared there, so Fire Code's menu is held to the count below (8+) alone
         if not refsig: print("note: the reference build drew no %s menu tiles; its rows are held to the count only" % cls)
