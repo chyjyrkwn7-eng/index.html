@@ -54,6 +54,8 @@ import json, os, sys, subprocess, colorsys
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "record-cutscenes.py")).read().split("\nSCENES = [")[0]
 rc = {"__file__": os.path.join(HERE, "record-cutscenes.py"), "__name__": "rc"}; exec(src, rc)
+sys.path.insert(0, HERE)
+from b384_spill_lib import SPILL_NORM   # (384.133) the Toxic Spill with 384.113's closed-eye work taken out
 from playwright.sync_api import sync_playwright
 BODY = open(sys.argv[sys.argv.index("--against") + 1], encoding="utf-8").read() if "--against" in sys.argv else None
 PREV_PATH = os.path.join(HERE, "check-b384-r9-chars.prev.json")
@@ -188,6 +190,7 @@ def snap(init, body, detail):
         r["opts"] = pg.evaluate(OPTS_SNAP)
         r["kinds"] = pg.evaluate("() => typeof IFC_CHAR_DRAW === 'object' ? Object.keys(IFC_CHAR_DRAW) : []")
         r["exit"] = pg.evaluate(EXIT_SNAP)
+        r["spill"] = pg.evaluate(SPILL_NORM)
         ctx.close(); br.close()
     srv.shutdown()
     r["errs"] = errs
@@ -222,8 +225,12 @@ H, D, N = IFC["hash"], IFC["d"], IFC["names"]
 moved = sorted(i for i, h in PREV["F"]["academy"].items() if ACA["hash"].get(i) != h)
 chk("A. the academy's %d characters are byte for byte cd82880's (moved: %s)" % (len(PREV["F"]["academy"]), moved or "none"), not moved and len(PREV["F"]["academy"]) >= 25, moved)
 # B
-moved = [i for i in KEPT + RANKS if H.get(i) != PREV["F"]["ifc"].get(i)]
-chk("B. Fire Code's starters, eight kept challenge characters and seven rank characters are byte for byte cd82880's (moved: %s)" % (moved or "none"), not moved, moved)
+# (384.133) STALE EXPECTATION, not an art leak: 384.113 (closedeyes; Madison: "His eyes close just look missing. Fix that.") gave the Toxic Spill (`astronaut`, one of
+# the eight kept) a group per eye and redrew its closed eyes as lids - the only difference from cd82880's drawing. It is held byte for byte outside those
+# (b384_spill_lib.SPILL_NORM, pinned from cd82880 by tools/pin-b384-spillnorm.py); the other fourteen are exactly as before.
+moved = [i for i in KEPT + RANKS if i != "astronaut" and H.get(i) != PREV["F"]["ifc"].get(i)]
+spill_moved = IFC["spill"] != PREV["spillNorm"]
+chk("B. Fire Code's starters, eight kept challenge characters and seven rank characters are byte for byte cd82880's, the Toxic Spill but for its closed eyes (moved: %s%s)" % (moved or "none", ", Toxic Spill outside its closed eyes" if spill_moved else ""), not moved and not spill_moved, moved + (["astronaut"] if spill_moved else []))
 same = [i for i in PICKED if i not in KEPT and H.get(i) == PREV["F"]["ifc"].get(i)]   # (14b) the Dispatcher is in both: kept (byte for byte) and still read (M)
 chk("B. ...and each of the eleven he picked a version for differs from cd82880's (unchanged: %s)" % (same or "none"), not same, same)
 # C

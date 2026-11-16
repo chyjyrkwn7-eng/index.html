@@ -26833,7 +26833,9 @@ def check_b324l_board(br):
     pg.evaluate("() => { showRankings('overall'); }")
     t0 = time.time(); n = 0
     while time.time() - t0 < 150:
-        n = pg.evaluate("() => document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim img').length")
+        # (384.133) a board row's flare is a canvas now (384.122 boardshake2: copied cell by cell so it holds still at any page zoom, as the characters' are), an <img> sheet under a
+        # stepped animation before it: a flare is its sheet's img OR its canvas
+        n = pg.evaluate("() => document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim :is(img, canvas)').length")
         if n >= 3: break
         time.sleep(1.5)
     r2 = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -26843,10 +26845,12 @@ def check_b324l_board(br):
       out.ranked = rows.filter(r => r.querySelector('.rank-col-rankname')).length;
       out.flares = rows.filter(r => r.querySelector('.rank-col-rank > .rank-mark .cosmic-rank-emblem')).length;
       out.bare = document.querySelectorAll('.screen-rankings .rank-col-emblem').length;
-      const imgs = [...document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim img')];
-      out.playing = imgs.filter(i => i.getAnimations().some(a => a.playState === 'running')).length;
+      const imgs = [...document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim :is(img, canvas)')];
+      /* (384.133) an <img> sheet plays by a running animation; a canvas (384.122) by being redrawn: it is drawn (some pixel is lit) and its picture changes from step to step */
+      const pic = c => { try{ const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0, lit = 0; for(let k = 0; k < d.length; k += 4){ h = (h * 31 + d[k] + d[k + 1] * 3 + d[k + 2] * 7 + d[k + 3] * 11) | 0; if(d[k + 3]) lit++; } return { h, lit }; }catch(e){ return { h: 0, lit: 0 }; } };
+      out.playing = imgs.filter(i => i.tagName === 'CANVAS' ? pic(i).lit > 0 : i.getAnimations().some(a => a.playState === 'running')).length;
       /* (380) a loop steps by left/top inside its window (html.loops-paint), or by transform (the old whole-sheet layers) */
-      const tf = () => imgs.map(i => { const c = getComputedStyle(i); return c.transform + ' ' + c.left + ' ' + c.top; }).join('|');
+      const tf = () => imgs.map(i => { if(i.tagName === 'CANVAS') return 'cv' + pic(i).h; const c = getComputedStyle(i); return c.transform + ' ' + c.left + ' ' + c.top; }).join('|');
       const a = tf(); await wait(1200); out.moved = a !== tf();
       out.board = sig(document.querySelector('.screen-rankings .rank-col-flare'));
       /* a snapshot rebuilds the rows: the flare (and its flip-book) is the same node after */

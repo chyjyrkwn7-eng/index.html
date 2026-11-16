@@ -38,6 +38,8 @@
 """
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from b384_spill_lib import SPILL_NORM   # (384.133) the Toxic Spill with 384.113's closed-eye work taken out
 src = open(os.path.join(HERE, "record-cutscenes.py")).read().split("\nSCENES = [")[0]
 rc = {"__file__": os.path.join(HERE, "record-cutscenes.py"), "__name__": "rc"}; exec(src, rc)
 from playwright.sync_api import sync_playwright
@@ -147,7 +149,7 @@ def run(init, label):
             pg.route("**/index.html", lambda r, q: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
         pg.add_init_script(init)
         pg.goto("http://127.0.0.1:%d/index.html" % port); pg.wait_for_timeout(3500)
-        r = pg.evaluate(SNAP)
+        r = pg.evaluate(SNAP); r["spill"] = pg.evaluate(SPILL_NORM)
         ctx.close(); br.close()
     srv.shutdown()
     chk("%s: the page is the %s class with no page error (%s)" % (label, r["cls"], errs[:2]), not errs, errs)
@@ -276,6 +278,13 @@ expect = {"clown", "valkyrie", "timekeeper", "hive", "voidwalker", "umbra", "sin
 # (384 round 13, r10-chars) the Chief is round 3's again too ("I preferred the chief with the brown coat"), c1d224b's drawing, so out of the set
 # (384 round 12, r9-chars) the Drone Pilot and the Star Ranger are round 3's drawings again, byte for byte what c1d224b drew, so they are
 # NOT in the changed set any more
-chk("7. in Fire Code only the characters named here changed their art since c1d224b; Toxic Spill is exactly c1d224b's (changed: %s)" % mov, set(mov) == expect and "astronaut" not in mov, {"changed": mov, "expected": sorted(expect)})
+# (384.133) STALE EXPECTATION, not an art leak: 384.113 (closedeyes, Madison: "His eyes close just look missing. Fix that.") gave the Toxic Spill's three eyes a
+# group each and redrew its CLOSED eyes as lids; that is the only difference from c1d224b's drawing (read off the SVG). So the Spill is held exact by its
+# drawing WITHOUT the closed eyes and the eyeball groups (b384_spill_lib.SPILL_NORM, pinned from c1d224b by tools/pin-b384-spillnorm.py), and it is allowed
+# in `mov` for that one reason; check-b384-closedeyes.py holds the lids.
+spill_same = IFC["spill"] == PREV["spillNorm"]
+mov_x = [i for i in mov if i != "astronaut"]
+chk("7. in Fire Code only the characters named here changed their art since c1d224b; Toxic Spill is exactly c1d224b's but for its closed eyes, which 384.113 redrew (changed: %s; Spill outside its closed eyes %s)" % (mov, "unchanged" if spill_same else "CHANGED"),
+    set(mov_x) == expect and spill_same, {"changed": mov, "expected": sorted(expect), "spill": IFC["spill"], "pinned": PREV["spillNorm"]})
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

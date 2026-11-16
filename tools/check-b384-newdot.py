@@ -209,9 +209,17 @@ with sync_playwright() as p:
             {"missing": sorted(need - found), "only on ref": sorted(set(ref) - set(test)), "only here": sorted(set(test) - set(ref))})
         bad = [(k, d["w"], d["h"], d["vis"]) for k, d in test.items() if not (d["w"] >= 6 and d["h"] >= 6 and d["vis"])]
         chk("(1) %s: every dot drawn (a box, visible)" % dev, not bad, bad[:5])
-        moved = [(k, round(test[k]["cx"] - ref[k]["cx"], 2), round(test[k]["cy"] - ref[k]["cy"], 2), (ref[k]["w"], test[k]["w"])) for k in test if k in ref
-                 and (abs(test[k]["cx"] - ref[k]["cx"]) > .75 or abs(test[k]["cy"] - ref[k]["cy"]) > .75 or abs(test[k]["w"] - ref[k]["w"]) > .5 or abs(test[k]["h"] - ref[k]["h"]) > .5)]
-        chk("(1) %s: every dot's centre and size where %s has them (within 0.75px; %d compared)" % (dev, build_of(REFSRC), len([k for k in test if k in ref])), not moved, moved[:6])
+        # (384.133) THE PLACE IS ITS HOST'S CORNER. A dot whose HOST was moved on purpose by a later build (settingslook, 384.110: Profile's title, large-title
+        # and rows are Delta's now, so the page's rows - Customize, the rank, Settings - sit a few px higher than on 384.107) is held to the same offset from its
+        # host's corner (within the same 0.75px) rather than to the screen's pixel; every dot whose host did not move is still held to the screen's pixel.
+        hmoved = {k for k in test if k in ref and (abs(test[k]["hx"] - ref[k]["hx"]) > .75 or abs(test[k]["hy"] - ref[k]["hy"]) > .75 or abs(test[k]["hw"] - ref[k]["hw"]) > .75 or abs(test[k]["hh"] - ref[k]["hh"]) > .75)}
+        def _off(k):   # how far the dot is from where the reference puts it: by the screen's pixel, or by its host's corner when the host moved
+            if k in hmoved: return abs(test[k]["dx"] - ref[k]["dx"]), abs(test[k]["dy"] - ref[k]["dy"])
+            return abs(test[k]["cx"] - ref[k]["cx"]), abs(test[k]["cy"] - ref[k]["cy"])
+        moved = [(k, round(_off(k)[0], 2), round(_off(k)[1], 2), (ref[k]["w"], test[k]["w"])) for k in test if k in ref
+                 and (_off(k)[0] > .75 or _off(k)[1] > .75 or abs(test[k]["w"] - ref[k]["w"]) > .5 or abs(test[k]["h"] - ref[k]["h"]) > .5)]
+        chk("(1) %s: every dot's centre and size where %s has them (within 0.75px; %d compared, %d on a host a later build moved: held to the host's corner: %s)" % (
+            dev, build_of(REFSRC), len([k for k in test if k in ref]), len(hmoved), sorted(hmoved)), not moved, moved[:6])
         bad = [(k, round(d["dx"], 1), round(d["dy"], 1)) for k, d in test.items() if abs(d["dx"] - d["dy"]) > 1.5 or d["dx"] < -1 or d["dx"] > min(d["hw"], d["hh"]) / 3]
         chk("(1) %s: each on its host's corner, on the 45-degree line" % dev, not bad, bad[:6])
 

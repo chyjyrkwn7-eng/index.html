@@ -149,11 +149,15 @@ chk("(a) all six chapters still hold the badge (%s); the badge count %s -> %s; t
     len(held) == 6 and set(topics) <= set(after["badges"]) and after["badgeCount"] == before["badgeCount"] >= 7 and
     all(any(l.startswith(t + " Badge") for l in earned_tiles) for t in topics) and len(earned_tiles) == after["badgeCount"],
     {"held": held, "tiles": earned_tiles[:8], "after": after["badges"]})
-diff = [k for k in set(before["rest"]) | set(after["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+# (384.133) STALE EXPECTATION, as in check-b384-moveperm-keep (970e6a1): the stored fields and the published row's fields THE BASE'S PAGE HAD must come through unchanged; fields
+# only a later build has are not this build's and are not a difference - the academy ladder's flag and the week's win fields (384.88 and later), `prestige` and `rim` (384.126), the
+# unlock-track row fields. A field the base had and this build lacks, or one whose value changed, still fails.
+diff = [k for k in set(before["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+row_same = isinstance(before["row"], dict) and isinstance(after["row"], dict) and all(before["row"].get(k) == after["row"].get(k) for k in before["row"])
 same_per = all(B[t]["perf"] == Af[t]["perf"] and B[t]["star"] == Af[t]["star"] and B[t]["level"] == Af[t]["level"] and B[t]["earned"] == Af[t]["earned"] for t in topics)
 chk("(b) every stored field but the per-question answers and stars is identical (%d differ: %s); hundos %s -> %s, level %s, rank %s, the published row, unit stars and levels the same" % (
     len(diff), diff[:4], before["hundos"], after["hundos"], "same" if before["lvl"] == after["lvl"] else "CHANGED", "same" if before["rank"] == after["rank"] else "CHANGED"),
-    not diff and same_per and before["hundos"] == after["hundos"] == 9 and before["lvl"] == after["lvl"] and before["rank"] == after["rank"] and before["row"] == after["row"] and before["classTopicsN"] == after["classTopicsN"],
+    not diff and same_per and before["hundos"] == after["hundos"] == 9 and before["lvl"] == after["lvl"] and before["rank"] == after["rank"] and row_same and before["classTopicsN"] == after["classTopicsN"],
     {"diff": diff[:5], "vals": {k: [json.dumps(before["rest"].get(k))[:200], json.dumps(after["rest"].get(k))[:200]] for k in diff[:3]}, "rowdiff": [k for k in set(before["row"]) | set(after["row"]) if before["row"].get(k) != after["row"].get(k)], "lvl": [before["lvl"], after["lvl"]], "rank": [before["rank"], after["rank"]], "ct": [before["classTopicsN"], after["classTopicsN"]], "h": [before["hundos"], after["hundos"]]})
 chk("(c) nothing is owed: pendingBadgeUnlocks %s -> %s, Home's pending unlocks %s -> %s, no cutscene or unlock card on the page (%s)" % (
     before["pending"], after["pending"], before["pend"], after["pend"], after["overlay"]),

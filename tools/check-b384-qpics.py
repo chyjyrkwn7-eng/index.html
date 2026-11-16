@@ -246,6 +246,8 @@ if want("4") and AGAINST is None:
     extra = [k for k in diff if k not in EXPECTED and k != "ch22-014"]
     never = [k for k in EXPECTED if k not in diff and k not in ALREADY]
     moved = [k for k in ALREADY if k in diff]
+    print("    (384.133) ids on the gate's list that did not differ: %s" % never)
+    print("    (384.133) every id that differs from %s and is not on this gate's own list (%d): %s" % (BASE, len(extra), extra))
     chk("(4) of %d content questions only the ones this build set out to change differ from %s (%d differ)" % (len(new), BASE, len(diff)), not extra, extra[:10])
     chk("(4) ... each of the %d it set out to change does differ (the fix is in the pictures, not only in the table)" % len(EXPECTED - ALREADY), not never, never[:10])
     chk("(4) ... and the %d that origin/main already fixes (the 384.56 patches, ch9b-120) and ch2-616 (its patch keeps the three items main marked) are NOT moved" % len(ALREADY), not moved, moved[:10])

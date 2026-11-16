@@ -6,7 +6,8 @@ Installed on an iPhone 17 Pro Max (440x956, its 62px top inset) and an iPad Pro 
 come to rest:
 (1) on pushed screens - the modes, Settings' pages, Customize, Friends, Badges, Contributors - the round back button's middle and
     the chat button's middle are on one line (within 1px);
-(2) they met in the middle: the back button is higher than it was and the chat button lower (each moved, neither the whole way);
+(2) (as of 384.133; 384.87 took the chat button's move away: it is where it rests on every screen) the chat button is at its resting middle and the back button is on it;
+    (it first read: they met in the middle - the back button higher than it was and the chat button lower, each moved, neither the whole way);
 (3) on Home and a tab screen (the Leaderboard) the chat button is where it always was: its top is the inset plus .75rem;
 (4) no page errors.
 Run:  python3 tools/check-b384-navmeet.py   (--against OLD/index.html must FAIL)"""
@@ -63,8 +64,12 @@ with sync_playwright() as pw:
         # a resting chat button's middle is plus the old gap - i.e. each moved part of the way
         r0 = moved[0][1]
         chatRest = restTop + (tabs[0][1]["chat"]["cy"] - tabs[0][1]["chat"]["top"])
-        chk("(2) %s: they met in the middle - the chat button came down (%.1f -> %.1f) and the back button is up, level with it" % (dev, chatRest, r0["chat"]["cy"]),
-            r0["chat"]["cy"] > chatRest + 2 and abs(r0["back"]["cy"] - r0["chat"]["cy"]) <= 1, [chatRest, r0])
+        # (384.133) SUPERSEDED, by Madison's next report (384.87, chatspot: "Ensure the chat button's position is consistent between screens, for example, when I hit Start
+        # Studying the chat button moves."): the chat button no longer comes down on a pushed screen - it is where it rests on EVERY screen, and the back button's middle is
+        # moved onto it (alignNavChat is reversed: it moves the nav row, never the chat button). This already fails on main 384.107. So (2) asks what is true now:
+        # the chat button's middle on the pushed screen is its resting middle (within 1px: it did not move) and the back button is level with it (it did the moving).
+        chk("(2) %s: the chat button stays where it rests (%.1f -> %.1f) and the back button is level with it (moved onto it)" % (dev, chatRest, r0["chat"]["cy"]),
+            abs(r0["chat"]["cy"] - chatRest) <= 1 and abs(r0["back"]["cy"] - r0["chat"]["cy"]) <= 1, [chatRest, r0])
         ctx.close()
     chk("(4) no page errors", not errs, errs[:3])
     br.close()
