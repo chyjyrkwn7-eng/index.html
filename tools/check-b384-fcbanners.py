@@ -341,7 +341,7 @@ chk("(13) the nine banners round 6 redrew differ from ea31d43 (unchanged: %s; %d
 moved4 = [i for i in NAMES if i not in R6 and i not in R9 and PREV4.get(i) and F["hashes"].get(i) != PREV4[i]]
 chk("(13) the others (but round 9's) are exactly as ea31d43 drew them (changed: %s)" % moved4, PREV4 and not moved4, moved4)
 G6 = G6 or {}; A6 = G6.get("A") or {}; per = A6.get("per") or {}
-want = {"tests500": 3, "hundos250": 7, "level80": 1, "early10": 1}   # round 9: the Inspection Team is three, in a warehouse
+want = {"tests500": 3, "hundos250": 7, "level80": 1, "early10": 1, "completionist": 1}   # round 9: the Inspection Team is three, in a warehouse; (384.114) Completionist, Fire Code's banner for everything, has its one inspector from the same shared kit (the navy / blue-carrier checks below hold it too)
 chk("(13) THE ONE INSPECTOR: the shared kit draws every inspector (%s; want %s, and none elsewhere)" % ({k: v for k, v in per.items() if v}, want),
     all(per.get(k) == v for k, v in want.items()) and sum(per.values()) == sum(want.values()), per)
 chk("(13) ...each in a navy shirt, navy pants and (round 9) a BLUE plate carrier (wrong: %s)" % A6.get("bad"), sum(per.values()) == sum(want.values()) and not A6.get("bad"), A6.get("bad"))
@@ -370,7 +370,7 @@ chk("(13) CLEAN SWEEP (was Ten in a Row): ten inspection tags (%s: %s left, %s r
 I6 = G6.get("I") or {}
 chk("(13) AFTER HOURS: the kneeling inspector in the kit (%s, kneeling %s), his beam starting at his lens (%s units), and (round 9) his cowboy hat (%s)" % (I6.get("officers"), I6.get("kneel"), I6.get("lensToBeam"), I6.get("cowboy")),
     I6.get("officers") == 1 and I6.get("kneel") == 1 and I6.get("lensToBeam") is not None and I6["lensToBeam"] <= 4 and I6.get("cowboy"), I6)
-chk("(13) the round 6 measurements ran without a page error, over the twelve inspectors (%s)" % G6.get("err"), G6 and not G6.get("err") and sum(per.values()) == 12, G6.get("err"))
+chk("(13) the round 6 measurements ran without a page error, over the thirteen inspectors, the twelve of round 6 and Completionist's (%s)" % G6.get("err"), G6 and not G6.get("err") and sum(per.values()) == sum(want.values()) == 13, G6.get("err"))
 
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
