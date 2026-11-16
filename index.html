@@ -36179,7 +36179,7 @@ html.is-browser{ --fade-paper: transparent; }
   .stx-allbtn.stx-allpill > span{ min-height:40px; box-sizing:border-box; padding-top:0; padding-bottom:0; padding-left:1.95rem; padding-right:1.95rem; }
   .stx-allbtn.stx-allpill > span > svg{ right:.6rem; width:1rem; height:1rem; }
   .stx-dots-switch{ padding:3px; }
-  .stx-dots-switch > button{ height:44px; font-size:.92rem; padding-left:.95rem; padding-right:.95rem; }
+  .stx-dots-switch > button{ height:44px; font-size:max(.92rem, calc(15px * var(--zc, 1))); padding-left:.95rem; padding-right:.95rem; }   /* (384.133) no smaller than Profile's tabs, which segglass made 15px (check-b382-ifc 2) */
   .stx-dots-switch button::before{ inset:-3px -1px; }
   .thx-filter-btn{ min-height:44px; font-size:.92rem; padding-left:1rem; padding-right:1rem; }
   @supports (text-box: trim-both cap alphabetic){

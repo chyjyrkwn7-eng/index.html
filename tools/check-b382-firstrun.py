@@ -243,7 +243,10 @@ with sync_playwright() as pw:
                 chk("%s ready: the daily question is the tab bar's glass, the rank colour only in its rim (%s / bar %s)" % (label, q, b), okq, (q, b))
             else:
                 chk("%s answered: the daily question is the tab bar's glass (%s / bar %s)" % (label, q, b), same(q), (q, b))
-            chk("%s %s: the class button is the tab bar's glass, no colour wash (%s)" % (label, state, c), same(c), (c, b))
+            # (384.133) REVISED BY 384.98 (newdot: "the class button goes back to A, the lit ring", on main since): the button is still the bar's glass - its body, lift,
+            # frost and shadow are the bar's, no colour wash in the body - but wears the lit ring: the two glows (radials) and a rim in the class's own colour
+            lit = lambda x: x and b and x["body"] == b["body"] and x["lift"] == b["lift"] and x["radials"] > 0 and x["rim"] != b["rim"] and x["frost"] == b["frost"] and x["shadow"] == b["shadow"]
+            chk("%s %s: the class button is the tab bar's glass in the lit ring, no colour wash in its body (%s)" % (label, state, c), lit(c), (c, b))
             if label == "iphone":
                 chk("%s %s: the class button is the daily question's size (%s / %s)" % (label, state, c and c["w"], q and q["w"]), c and q and abs(c["w"] - q["w"]) <= 1, (c, q))
             else:
@@ -253,7 +256,9 @@ with sync_playwright() as pw:
                 pg.click(".class-bubble"); pg.wait_for_timeout(900)
                 it = pg.evaluate(GLASS)["item"]
                 if SHOTS: pg.screenshot(path=os.path.join(SHOTS, "fr-corners-%s-classlist.png" % label))
-                chk("%s: the class list's buttons wear the bar's lift and rim (%s)" % (label, it), it and it["lift"] == b["lift"] and it["rim"] == b["rim"] and it["radials"] == 0, it)
+                # (384.133) REVISED BY 384.108 (classmarks: "every place a class is shown or picked has Home's class button's mark and lit ring"): the list's bubbles wear the
+                # button's lit ring too (its glows and the class's rim) over the bar's lift, on their own opaque body
+                chk("%s: the class list's buttons wear the bar's lift and the class button's lit ring (%s)" % (label, it), it and it["lift"] == b["lift"] and it["rim"] != b["rim"] and it["radials"] == c["radials"] > 0, (it, c))
                 pg.click(".class-bubble"); pg.wait_for_timeout(700)
             chk("%s %s: no page or console errors (%s)" % (label, state, pg.errs[:3]), not pg.errs, pg.errs)
             ctx.close()

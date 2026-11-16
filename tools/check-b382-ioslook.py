@@ -138,20 +138,31 @@ with sync_playwright() as pw:
             ref["back"] and ref["title"] and ref["card"] and ref["head"], ref)
         if not (ref["back"] and ref["title"] and ref["card"] and ref["head"]):
             ctx.close(); continue
-        RAD = ref["card"]["rad"][0]
+        SET_RAD = ref["card"]["rad"][0]
+        # (384.133) SETTINGS IS NOW DELTA'S (384.110, settingslook: cards 26px on #2C2C2E, headings rgba(235,235,245,.62)) AND ONLY SETTINGS AND ITS PAGES ARE (its notes: "Profile's
+        # and Stats' own cards keep the app's card colour; only Settings and its pages are Delta's grey"). So the reference for the OTHER screens' card radius and heading grey is
+        # no longer Settings': it is the app's own, read off the first screen measured (Customize) and held by every one after it - one radius and one grey across Customize, Friends,
+        # Rank, Badges, Stats and Profile. Settings' own values are printed (INFO) so the gap shows. Everything else (size, weight, no surface, no capitals, the surface token,
+        # the back button, the title, the gaps) is still read off Settings.
+        APPREF = {}
+        def radref(first): return APPREF.setdefault("rad", first)
+        print("  INFO %s Settings' own card radius %s, heading colour %s - the other screens' are read off the first of them" % (tag, SET_RAD, ref["head"]["col"]), flush=True)
         def heads_ok(name, m):
+            hcol = APPREF.setdefault("col", m["heads"][0]["col"]) if m["heads"] else None
             bad = [x for x in m["heads"] if not (x["bg"] in ("rgba(0, 0, 0, 0)", "transparent") and x["bi"] == "none" and x["tt"] == "none"
-                   and near(x["fs"], ref["head"]["fs"], .6) and x["col"] == ref["head"]["col"] and x["fw"] == ref["head"]["fw"])]
-            chk("%s %s: %d heading(s), each Settings' (no surface, no forced capitals, %.1fpx, its grey and weight)" % (tag, name, len(m["heads"]), ref["head"]["fs"]),
+                   and near(x["fs"], ref["head"]["fs"], .6) and x["col"] == hcol and x["fw"] == ref["head"]["fw"])]
+            chk("%s %s: %d heading(s), each the app's (no surface, no forced capitals, Settings' %.1fpx and weight, one grey across the screens)" % (tag, name, len(m["heads"]), ref["head"]["fs"]),
                 m["heads"] and not bad, bad)
         def cards_ok(name, m):
+            RAD = radref(m["cards"][0]["rad"][0]) if m["cards"] else SET_RAD
             bad = [x for x in m["cards"] if not (all(near(r, RAD, .6) for r in x["rad"]) and x["bg"] == x["tok"])]
-            chk("%s %s: %d card(s) at Settings' %.0fpx radius on the surface token" % (tag, name, len(m["cards"]), RAD), m["cards"] and not bad,
+            chk("%s %s: %d card(s) at the app's one %.0fpx radius on the surface token" % (tag, name, len(m["cards"]), RAD), m["cards"] and not bad,
                 [(x["cls"], x["rad"], x["bg"], x["tok"]) for x in bad])
         def art_ok(name, m):
             # cards that carry their own art (the hero, the next rank, the ladder's head, the case's head): the radius only
+            RAD = radref(m["art"][0]["rad"][0]) if m["art"] else SET_RAD
             bad = [x for x in m["art"] if not all(near(r, RAD, .6) for r in x["rad"])]
-            chk("%s %s: %d showcase card(s) at Settings' %.0fpx radius, their own art kept" % (tag, name, len(m["art"]), RAD), m["art"] and not bad,
+            chk("%s %s: %d showcase card(s) at the app's one %.0fpx radius, their own art kept" % (tag, name, len(m["art"]), RAD), m["art"] and not bad,
                 [(x["cls"], x["rad"]) for x in bad])
         def over_ok(name, m):
             bad = [x for x in m["over"] if x["hb"] > x["ct"] + 1]
@@ -176,11 +187,12 @@ with sync_playwright() as pw:
             if SPEC[key].get("over"): over_ok(name, m)
             if SPEC[key].get("group"):
                 gp = m["group"]
+                RAD = radref(gp[0]["rad"][0]) if gp else SET_RAD
                 rads_ok = len(gp) >= 4 and all(all(near(r, RAD, .6) for r in x["rad"]) for x in gp)
                 # four separate cards in a grid: the gap across a row equals the gap down a column
                 across = [round(gp[i + 1]["l"] - gp[i]["r"], 1) for i in range(len(gp) - 1) if abs(gp[i + 1]["t"] - gp[i]["t"]) < 4]
                 down = [round(gp[i + 2]["t"] - gp[i]["b"], 1) for i in range(len(gp) - 2) if abs(gp[i + 2]["l"] - gp[i]["l"]) < 4] if len(gp) >= 4 else []
-                chk("%s %s: its %d rows are four separate cards, each at Settings' radius, one gap across and down (%s / %s)" % (tag, name, len(gp), across, down),
+                chk("%s %s: its %d rows are four separate cards, each at the app's one radius, one gap across and down (%s / %s)" % (tag, name, len(gp), across, down),
                     rads_ok and across and down and max(across + down) - min(across + down) <= 4 and min(across + down) >= 4, [x["rad"] for x in gp])
             if SPEC[key].get("rows"):
                 short = [x for x in m["rows"] if x["h"] < 44 or (x["fs"] is not None and x["fs"] < 16)]

@@ -111,14 +111,18 @@ with sync_playwright() as pw:
                ("Review's list", "showAnswerReview([topicsIn(QUESTIONS)[6]], 'all');", [".ar-head"]),
                ("the Rank tab", "showRanksScreen('ranks');", [".rankhero", ".rankmap-card"]),
                ("Badges", "showRanksScreen('badges');", [".badges-head"])]
-    allcards, colors, serifs = [], set(), {}
+    allcards, colors, serifs, settings_colors = [], set(), {}, set()
     for name, js, sels in screens:
         settle(pg, js)
         s = pg.evaluate(SKY)
         ck("(1) %s: no stars, no wash (%s)" % (name, s), s["stars"] <= .01 and not s["wash"], s)
         cs = pg.evaluate(CARDS, sels)
         if not cs: ck("(2) %s: its cards are on screen" % name, False, sels)
-        for c in cs: c["screen"] = name; allcards.append(c); colors.add(re.sub(r"\s+", "", c["color"]))
+        for c in cs:
+            c["screen"] = name; allcards.append(c)
+            # (384.133) Settings' own cards are iOS's #2C2C2E (settingslook, 384.110: "Delta's cards are iOS's own #2C2C2E on #1C1C1E"), the one place that
+            # is not the --surface-1 token: read apart, and still one colour among themselves
+            (settings_colors if name == "Settings" else colors).add(re.sub(r"\s+", "", c["color"]))
         sf = pg.evaluate(SERIF) if name in ("Profile", "Stats", "the Rank tab", "Badges") else []
         if sf: serifs[name] = sf
         if name == "Profile":
@@ -130,22 +134,30 @@ with sync_playwright() as pw:
             def _lum(c):
                 m = re.match(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)", c or ""); return .2126 * float(m.group(1)) + .7152 * float(m.group(2)) + .0722 * float(m.group(3)) if m else None
             lt, lp = _lum(seg["track"]), _lum(seg["pill"])
-            ck("(3) the switch is Delta's: a lighter track and a darker thumb, no blur (%s)" % seg,
-               seg["pillImg"] == "none" and seg["trackBlur"] in ("none", "") and lt is not None and lp is not None and lt - lp >= 8, seg)
+            # (384.133) REVISED BY 384.116 (segglass, "raised liquid glass"): the track is the glass and carries the blur (iOS: the blur is on the track, the thumb a solid
+            # child of it); still a lighter track with a darker, flat thumb. check-b384-segglass holds the rest.
+            ck("(3) the switch is Delta's lighter track and darker thumb, its track the glass (blurred), the thumb flat (%s)" % seg,
+               seg["pillImg"] == "none" and "blur" in (seg["trackBlur"] or "") and lt is not None and lp is not None and lt - lp >= 8, seg)
             btn = pg.evaluate("""()=>{ const c=getComputedStyle(document.getElementById('chatdock-btn')); return { img: c.backgroundImage, blur: c.backdropFilter || c.webkitBackdropFilter, bg: c.backgroundColor }; }""")
             # REVISED IN 384: "the chat button on home looks amazing, revert the chat button it looks like that everywhere" - beyond
             # Home it is Home's glass again (build 380's tab-bar recipe), not 383's flat disc
-            ck("(3) the chat button beyond Home is Home's glass - its frost and its gradient (%s)" % btn, "gradient" in btn["img"] and "blur" in (btn["blur"] or ""), btn)
+            # (384.133) REVISED IN 384.78 ("all it did was change the colour of the chat button, and now the chat button doesn't match"): the top band's buttons are Home's
+            # glass WITHOUT the backdrop blur on every screen (a blurred top band was the soft titles of 384 r17; check-b384-topband holds that nothing up there blurs)
+            ck("(3) the chat button beyond Home is Home's glass - its gradient, unblurred (%s)" % btn, "gradient" in btn["img"] and "blur" not in (btn["blur"] or ""), btn)
         if name == "the units":
-            f = pg.evaluate("()=>{ const i=document.querySelector('#stage .searchwrap input'); const c=getComputedStyle(i); return { bg: c.backgroundColor, img: c.backgroundImage, rim: c.borderTopColor }; }")
-            ck("(3) the units' search field is the card's colour, no rim (%s)" % f, f["img"] == "none" and re.sub(r"\s+", "", f["bg"]) in colors, f)
+            f = pg.evaluate("()=>{ const i=document.querySelector('#stage .searchwrap input'); const c=getComputedStyle(i); return { bg: c.backgroundColor, img: c.backgroundImage, rim: c.borderTopColor, bw: parseFloat(c.borderTopWidth) || 0 }; }")
+            # (384.133) REVISED IN 384.111 (searchbar, "every search field is one Apple capsule"): iOS's search fill - a translucent neutral grey over the card (rgba(118,118,128,.24)
+            # in Apple's own), no gradient, no rim. Read as a shape: neutral (channels within 16), translucent (alpha .1 to .4), flat, no border width.
+            _m = re.match(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?", f["bg"] or "")
+            _ok = bool(_m) and max(float(_m.group(i)) for i in (1, 2, 3)) - min(float(_m.group(i)) for i in (1, 2, 3)) <= 16 and .1 <= float(_m.group(4) or 1) <= .4
+            ck("(3) the units' search field is Apple's capsule fill - a flat translucent neutral grey, no rim (%s)" % f, f["img"] == "none" and f["bw"] == 0 and _ok, f)
         if name == "mode selection":
             b = pg.evaluate("()=>{ const c=getComputedStyle(document.querySelector('#stage .ios-nav-back')); return { img: c.backgroundImage, shadow: c.boxShadow, blur: c.backdropFilter }; }")
             # REVISED IN 384: "I think the new back button needs to match it as well" - the chat button's glass
-            ck("(3) the round back button wears the chat button's glass - frost, gradient, shadow (%s)" % b, "gradient" in b["img"] and b["shadow"] != "none" and "blur" in (b["blur"] or ""), b)
+            ck("(3) the round back button wears the chat button's glass - gradient, shadow, unblurred like it (%s)" % b, "gradient" in b["img"] and b["shadow"] != "none" and "blur" not in (b["blur"] or ""), b)
     bad = [c for c in allcards if c["alpha"] < .99 or c["grads"] or c["rim"] or c["shadow"] or c["blur"]]
     ck("(2) every card beyond Home is solid - opaque, no gradient, rim, shadow or blur (%d of %d)" % (len(allcards) - len(bad), len(allcards)), allcards and not bad, bad[:4])
-    ck("(2) and one colour (%s)" % sorted(colors), len(colors) == 1, sorted(colors))
+    ck("(2) and one colour (%s; Settings' own cards, %s, are one colour of their own)" % (sorted(colors), sorted(settings_colors)), len(colors) == 1 and len(settings_colors) == 1 and settings_colors != colors, [sorted(colors), sorted(settings_colors)])
     ck("(4) no serif display face on Profile, Stats, Ranks or Badges", not serifs, serifs)
     # results
     pg.evaluate("""()=>{ const t=topicsIn(QUESTIONS)[6]; cfg.mode='drill'; cfg.units=[t]; cfg.source='all';
