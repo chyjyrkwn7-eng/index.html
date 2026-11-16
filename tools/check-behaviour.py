@@ -1323,8 +1323,11 @@ def check_b313_notice(br):
           const bar = document.getElementById('updatebanner').getBoundingClientRect();
           const chat = document.querySelector('.chatdock-btn').getBoundingClientRect();
           const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          const cb = document.querySelector('.chatdock-btn'), ccs = getComputedStyle(cb);
           const res = { chatHit: hit(bar, chat), bubbleGap: Math.round(top() - bar.bottom),
-            closeVisible: (() => { const c = document.querySelector('#updatebanner .update-banner-close, #updatebanner button[aria-label*="lose"]'); if(!c) return null; const r = c.getBoundingClientRect(); return !hit(r, chat); })() };
+            chatOpacity: parseFloat(ccs.opacity), chatPE: ccs.pointerEvents,
+            closeVisible: (() => { const c = document.querySelector('#updatebanner .update-banner-close, #updatebanner button[aria-label*="lose"]'); if(!c) return null; const r = c.getBoundingClientRect();
+              const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!top && !!top.closest('#updatebanner'); })() };
           hideBanner(); await wait(900);
           res.back = Math.round(top() - before);
           const greet = document.querySelector('.hometitle-wrap, .homegreet');
@@ -1332,7 +1335,12 @@ def check_b313_notice(br):
           return res; }""")
         ctx.close()
     for tag, r in out.items():
-        check("%s: the notice does not run under the chat button" % tag, r.get("chatHit") is False and r.get("closeVisible") is not False, r)
+        # CHANGED ON PURPOSE IN 384.93 / 384.100 (popups-wide, docs/notes-archive.md "384.100 (popups-wide)"): every top pop-up is the page's full
+        # width on the chat button's row, OVER the chat button, which fades out and takes no taps while it shows. What this build protected
+        # (the close button hidden beneath the chat button) now reads: the close button is the top element where it is drawn, and the chat
+        # button is gone (opacity 0, no taps) under the notice, so nothing runs under a button that can be seen or tapped.
+        check("%s: the notice's own close button is on top, and the chat button under it is faded out and takes no taps" % tag,
+              r.get("closeVisible") is not False and (r.get("chatHit") is False or (r.get("chatOpacity") == 0 and r.get("chatPE") == "none")), r)
         check("%s: and it clears the top flare bubble" % tag, isinstance(r.get("bubbleGap"), int) and r["bubbleGap"] >= 4, r)
         check("%s: the planet goes back when the notice goes" % tag, r.get("back") == 0, r)
 
@@ -10795,7 +10803,7 @@ def check_b310(br):
       await wait(200);
       const after = rowOf('N2') && rowOf('N2').querySelector('.rank-avatar-wrap');
       out.sameAvatar = !!before && before === after; out.boardFound = !!board;
-      out.noRowBanner = !document.querySelector('.lb-row-bnr') && typeof LB_ROW_BANNER !== 'undefined' && LB_ROW_BANNER === '';
+      out.noRowBanner = !document.querySelector('.lb-row-bnr') && !document.querySelector('.has-row-bnr') && typeof LB_ROW_BANNER !== 'undefined' && LB_ROW_BANNER === 'edge';
       /* online: a heartbeat is green, leaving is green for the grace, then grey */
       const now = Date.now();
       presenceMap = { a: now - 60000, b: -(now - 60000), c: -(now - 3 * 60000), d: 0 };
@@ -10834,7 +10842,9 @@ def check_b310(br):
     check("the leaderboard's top tabs have a sliding indicator", r["slider"], r)
     check("the indicator glides between tabs rather than jumping", bool(sl) and sl["x0"] != sl["end"] and sl["mid"] != sl["end"] and "transform" in sl["tr"], sl)
     check("a leaderboard snapshot keeps each character (no restart, no shake)", r["sameAvatar"] and r["boardFound"], r)
-    check("no banners on leaderboard rows until one is picked", r["noRowBanner"], r)
+    # CHANGED ON PURPOSE IN 384.120 (unlocks): the owner picked "along the edge", so LB_ROW_BANNER is "edge" now (it was "" until one was
+    # picked). What this protects stays: a row whose entry has no real banner draws none (these fixture rows carry none).
+    check("no banner on a leaderboard row whose entry has none (the treatment is switched on, along the edge)", r["noRowBanner"], r)
     check("online: heartbeat green, just left green, left 3 min ago grey, 0 grey", r["online"] == [True, True, False, False] and r["grace"] == 120000, r)
     # MOVED IN 326 (b326d): Home shows all six secret flares, unlit until
     # found (was the three build 313 showed before Void)
