@@ -37,9 +37,9 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import b384_qfix_lib as L
 
-def _base():   # the commit this branch was cut from (origin/main moves as other branches merge; the keys to hold are the ones THIS bank started from)
-    r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
-    return r or "origin/main"
+def _base():   # the commit this build was cut from: main 384.70, 4e5328c. Pinned (it was the merge-base with origin/main): qfix is on main since the
+    # 384.78 release (2254386), so the merge-base is now a build that already has the fixes and the removed ids are not in it.
+    return "4e5328c"
 BASE = os.environ.get("BASE") or _base()
 OLD_HTML = L.git_show(BASE, "index.html"); OLD_BANK = L.git_show(BASE, "ifc/bank.js"); OLD_VER = L.git_show(BASE, "version.json")
 assert OLD_HTML and OLD_BANK, "git show %s failed" % BASE
@@ -237,11 +237,13 @@ with sync_playwright() as pw:
         errs_all += e; ctx.close()
         Bp, Ap = {p["t"]: p for p in before["per"]}, {p["t"]: p for p in after["per"]}
         held = all(Ap[t]["perf"] == Bp[t]["perf"] and Ap[t]["earned"] == Bp[t]["earned"] and Ap[t]["star"] == Bp[t]["star"] and Ap[t]["level"] == Bp[t]["level"] for t in topics)
-        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+        # the stored fields THE BASE HAD must come through unchanged; a field only a later build has (its default, added by applyLoadedData: 384.88's
+        # academyLadderRule, the week-win fields, prestige, rim, ...) is not this build's and is not a difference
+        rest_diff = [k for k in set(before["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
         chk("(5a) the badge, hundos, star and level of Chapters 1, 2 and 4 are held (hundos %s -> %s, badges %s -> %s, rank and the published row the same); every stored field but the per-question answers and stars is identical (%d differ: %s); nothing is owed or re-fired" % (
             before["hundos"], after["hundos"], before["badgeCount"], after["badgeCount"], len(rest_diff), rest_diff[:4]),
             held and not rest_diff and before["hundos"] == after["hundos"] and before["badgeCount"] == after["badgeCount"] and before["rank"] == after["rank"] and before["lvl"] == after["lvl"]
-            and json.dumps(before["row"], sort_keys=True) == json.dumps(after["row"], sort_keys=True) and after["pending"] == [] and before["pend"] == after["pend"] and not after["overlay"],
+            and json.dumps(before["row"], sort_keys=True) == json.dumps({k: after["row"].get(k) for k in before["row"]}, sort_keys=True) and after["pending"] == [] and before["pend"] == after["pend"] and not after["overlay"],
             {"held": held, "rest": rest_diff[:5], "hundos": [before["hundos"], after["hundos"]], "pend": [before["pend"], after["pend"]]})
         lowered = [k for k, v in before["stats"].items() if after["stats"].get(k, {}).get("n", 0) < v.get("n", 0) or after["stats"].get(k, {}).get("m", 0) < v.get("m", 0)]
         gone_ans = {t: Bp[t]["answered"] - Ap[t]["answered"] for t in topics}
@@ -264,7 +266,12 @@ with sync_playwright() as pw:
     finally:
         rig.close()
 # the lines of index.html that differ from main's
-ol, nl = OLD_HTML.split("\n"), NEW_HTML.split("\n")
+# (6b) is a statement about the qfix CHANGE (main 384.70 -> the qfix commit eda90b3: only the identity tables and the APP_BUILD line moved). On the
+# combined tree index.html also holds every later build, so it cannot be asked of the live file; it is asked of that commit's own files (pinned),
+# or of --against FILE when one is given.
+SIX_HTML = NEW_HTML if "--against" in sys.argv else (L.git_show("eda90b3", "index.html") or NEW_HTML)
+SIX_VER = NEW_VER if "--against" in sys.argv else (L.git_show("eda90b3", "version.json") or NEW_VER)
+ol, nl = OLD_HTML.split("\n"), SIX_HTML.split("\n")
 sm = difflib.SequenceMatcher(None, ol, nl, autojunk=False)
 start = next(i for i, l in enumerate(nl) if l.startswith("/* ---- THE 5.4.2 BANK (build 384)"))
 end = next(i for i, l in enumerate(nl) if l.startswith("const IFC_QUESTIONS = ifcQuestionsFrom"))
@@ -277,10 +284,10 @@ for tag, i1, i2, j1, j2 in sm.get_opcodes():
     build_line = all("APP_BUILD" in l for l in ol[i1:i2] + nl[j1:j2]) and (i2 - i1) == 1 and (j2 - j1) == 1
     if not (inblock or build_line): outside.append((i1 + 1, ol[i1:i2][:1], nl[j1:j2][:1]))
 def build_of(t): return re.search(r'const APP_BUILD = "([^"]+)"', t).group(1)
-vb = json.loads(NEW_VER)["build"]
+vb = json.loads(SIX_VER)["build"]
 chk("(6b) index.html differs from main's only inside the Fire Code identity block (the tables, lines %d-%d) and the APP_BUILD line (%d stray hunks%s); APP_BUILD %s is version.json's build %s (main: %s)" % (
-    start + 1, end + 1, len(outside), (": " + str(outside[:2])[:160]) if outside else "", build_of(NEW_HTML), vb, build_of(OLD_HTML)),
-    not outside and build_of(NEW_HTML) == vb and build_of(OLD_HTML) != build_of(NEW_HTML), {"outside": outside[:3]})
+    start + 1, end + 1, len(outside), (": " + str(outside[:2])[:160]) if outside else "", build_of(SIX_HTML), vb, build_of(OLD_HTML)),
+    not outside and build_of(SIX_HTML) == vb and build_of(OLD_HTML) != build_of(SIX_HTML), {"outside": outside[:3]})
 chk("(6c) Fire Code and the academy both boot: no page errors (%s)" % errs_all[:2], not errs_all, errs_all[:4])
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
