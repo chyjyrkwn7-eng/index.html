@@ -647,6 +647,39 @@ def main():
                     jq.get("need25") == jq.get("needLow") and "not counted" not in (jq.get("note") or "") and jq.get("noFn") == "undefined", jq)
                 chk("[%s] (J) Supernova's character, banner and theme are all counted (%s) and its badge rule is untouched (%s)" % (cls, jq.get("titanItems"), jq.get("ruleAfter")),
                     all(x >= 1 for x in (jq.get("titanItems") or [0])) and jq.get("ruleAfter") == jq.get("rule") and (cls == "ifc" or jq.get("rule") == 25), jq)
+            # (J4) derived from what Supernova hands over, read through the app's own functions (nothing mocked but the rank the account
+            # is asked as): at Supernova the ultimate's count goes up by Supernova's character, banner and theme, the need does not move,
+            # and Fire Code's Completionist (it counts the rank) rises with it; Mastery's five gold rims are the five tracks and never held Supernova. A 25th academy unit joins by itself:
+            # the badge rule stays 25, the academy has 24 units today so Supernova is out of reach, and one more unit with its badge makes it
+            # reachable with no change to the rule or to the count.
+            if wanted("J"):
+                j4 = pg.evaluate("""()=>{ try{
+                    const s = JSON.stringify(store), out = {};
+                    const was = JSON.stringify(TIER_UNLOCKS.titan), comp = () => { try{ return completionistProgress(true).have; }catch(e){ return null; } };
+                    /* the account is asked as under the rank's rule (the same rule the app reads: level and badges), once out of reach and once met */
+                    TIER_UNLOCKS.titan.level = 9999; TIER_UNLOCKS.titan.badges = 9999; delete TIER_UNLOCKS.titan.mysteryStars; const u0 = ultimateProgress(); const c0 = comp();
+                    TIER_UNLOCKS.titan.level = 0; TIER_UNLOCKS.titan.badges = 0; const u1 = ultimateProgress(); const c1 = comp();
+                    Object.keys(TIER_UNLOCKS.titan).forEach(k => delete TIER_UNLOCKS.titan[k]); Object.assign(TIER_UNLOCKS.titan, JSON.parse(was));
+                    out.have = [u0.have, u1.have]; out.need = [u0.need, u1.need];
+                    out.titanItems = AVATAR_CHARACTERS.filter(c => c.unlock === 'titan' && !c.retired).length + BANNERS.filter(b => b.rank === 'titan').length + ACCENTS.filter(a => a === 'titan' && !!TIER_UNLOCKS[a]).length;
+                    out.comp = [c0, c1];
+                    const units = classTopics().slice(), rule = TIER_UNLOCKS.titan.badges;
+                    out.units = units.length; out.rule = rule;
+                    out.reachNow = rankOfStats(80, badgeCountOf({ unitPerfects: Object.fromEntries(units.map(u => [u, 1e6])) }), 99) === 'titan';
+                    const real = window.classTopics; window.classTopics = () => real().concat(['A 25th unit (test)']);
+                    out.reach25th = rankOfStats(80, badgeCountOf({ unitPerfects: Object.fromEntries(real().concat(['A 25th unit (test)']).map(u => [u, 1e6])) }), 99) === 'titan';
+                    out.units25 = classTopics().length; window.classTopics = real;
+                    out.ruleAfter = TIER_UNLOCKS.titan.badges;
+                    applyLoadedData(JSON.parse(s));
+                    return out; }catch(e){ return { err: String(e) }; } }""")
+                d = (j4.get("have") or [0, 0]); n = (j4.get("need") or [0, 1])
+                chk("[%s] (J) at Supernova the ultimate's count rises by exactly what Supernova hands over (%s -> %s, %s items), the need is unchanged (%s)" % (cls, d[0], d[1], j4.get("titanItems"), n),
+                    d[1] - d[0] == j4.get("titanItems") and j4.get("titanItems", 0) >= 3 and n[0] == n[1], j4)
+                cp = j4.get("comp") or [0, 0]
+                chk("[%s] (J) Completionist (Fire Code only) counts Supernova too: its count rises by Supernova's items and the rank itself at Supernova (%s)" % (cls, cp),
+                    (cls != "ifc") or (cp[0] is not None and cp[1] - cp[0] >= (j4.get("titanItems") or 99) + 1), j4)
+                chk("[%s] (J) the badge rule stays %s: reachable with today's %s units = %s; with a 25th unit and its badge = %s, rule and count untouched" % (cls, j4.get("rule"), j4.get("units"), j4.get("reachNow"), j4.get("reach25th")),
+                    j4.get("reach25th") is True and j4.get("reachNow") == (cls == "ifc") and j4.get("units25") == (j4.get("units") or 0) + 1 and j4.get("ruleAfter") == j4.get("rule"), j4)
             # ---- (I) 384.132: the worn rim on every plate, your own row at once, the rim cards' sentences
             if wanted("I"):
                 # a page of its own, from the fixture: (F) leaves this one holding an empty copy (applyLoadedData({ lifetime: {} }))
