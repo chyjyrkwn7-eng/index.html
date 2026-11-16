@@ -109,6 +109,7 @@ with sync_playwright() as pw:
     ctx, pg, errs = open_class(br, G["g"]["patched"], NEW_BANK, seed)
     new = pg.evaluate(READ)
     cards = pg.evaluate(CARDS)
+    PATCH = pg.evaluate("()=>JSON.parse(JSON.stringify(typeof IFC_POINTER_PATCH === 'undefined' ? {} : IFC_POINTER_PATCH))")   # the app's own pointer patches (384 cropfix, later builds)
     flags = pg.evaluate("()=>({ flagged: JSON.parse(JSON.stringify(store.flagged||{})), unflagged: JSON.parse(JSON.stringify(store.unflagged||{})) })")
     ch1_topic = next(s["topic"] for s in new["sizes"] if s["id"] == "1")
     oldrun = pg.evaluate(OLDRUN, {"t": ch1_topic, "n": len(oq) and sum(1 for q in ob["questions"] if q["unit"] == "1")})
@@ -119,7 +120,14 @@ topic_of_unit = {s["id"]: s["topic"] for s in new["sizes"]}
 bad1 = []
 for i in MOVES:
     same_fields = i in nq and set(oq[i]) == set(nq[i]) and all(oq[i][k] == nq[i][k] for k in oq[i] if k != "unit")
-    shown_same = i in N and all(O[i][k] == N[i][k] for k in ("q", "ch", "ans", "expl")) and json.loads(N[i]["ifc"]) == dict(json.loads(O[i]["ifc"]), unit="1")
+    # the citation as shown is the bank's with the unit moved AND, since 384 cropfix, the app's own pointer patch for the id (ch60-511/514/701/702
+    # got a `highlight` row there): a stale expectation, not a moved question - the patch is read off the page and applied the way ifcWithPatch does
+    exp = dict(json.loads(O[i]["ifc"]), unit="1")
+    if PATCH.get(i):   # ifcWithPatch: the question's citation gets the patch's keys; `head` is printed before the excerpt and is not kept
+        cit = dict(exp.get("citation") or {}); cit.update({k: v for k, v in PATCH[i].items() if k != "head"})
+        if PATCH[i].get("head"): cit["excerpt"] = PATCH[i]["head"] + "\n" + (exp.get("citation") or {}).get("excerpt", "")
+        exp["citation"] = cit
+    shown_same = i in N and all(O[i][k] == N[i][k] for k in ("q", "ch", "ans", "expl")) and json.loads(N[i]["ifc"]) == exp
     if not (i in N and N[i]["topic"] == topic_of_unit["1"] and O[i]["topic"] != N[i]["topic"] and nq[i]["unit"] == "1" and oq[i]["unit"] != "1" and same_fields and shown_same):
         bad1.append((i, N.get(i, {}).get("topic"), same_fields, shown_same))
 gone_bad = [i for i in REMOVED if i in nq or i in N]
@@ -150,7 +158,9 @@ GONE = set(MOVES) | set(REMOVED)
 bad3 = []
 for fr in sorted({O[i]["topic"] for i in GONE}):
     was = rows(old["rows"], fr); now = rows(new["rows"], fr)
-    if not ([r["id"] for r in now] == [r["id"] for r in was if r["id"] not in GONE] and all(N[r["id"]]["src"] == r["src"] for r in now)): bad3.append(fr)
+    # the questions later builds ADDED to a chapter (ADDED: 384.104's occupant loads in Chapter 10, 384.130's cooking questions in Chapter 6) are not
+    # this table's: the chapter's own questions keep their order and positions, and nothing is lost or reordered among them (an addition only joins)
+    if not ([r["id"] for r in now if r["id"] not in ADDED] == [r["id"] for r in was if r["id"] not in GONE] and all(N[r["id"]]["src"] == r["src"] for r in now)): bad3.append(fr)
 pos_same = all(O[i]["src"] == N[i]["src"] and O[i]["topic"] == N[i]["topic"] for i in O if i not in GONE and i not in LATER)
 chk("(3) the %d are last in Chapter 1 in the table's order (%d..%d), Chapter 1's own %d keep their positions; the %d chapters they left keep every other question's position (%s); every other question has main's chapter and position (%s)" % (
     len(MOVES), len(was1) + 1, len(was1) + len(MOVES), len(was1), len({O[i]['topic'] for i in GONE}) , bad3 or "yes", pos_same), ok3a and not bad3 and pos_same, {"ok3a": ok3a, "bad3": bad3})
