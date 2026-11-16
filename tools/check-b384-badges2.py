@@ -43,6 +43,7 @@ if SHOTS: os.makedirs(SHOTS, exist_ok=True)
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageChops
 ok = True
+CARD_UNREAD = []
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:900], flush=True)
 so = socket.socket(); so.bind(("127.0.0.1", 0)); port = so.getsockname()[1]; so.close()
@@ -215,11 +216,39 @@ def capture(br, body, cls, tag):
                 if pg.evaluate("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || !BADGE_STRIKE_DRAFTS.size"): break
                 clk.to(clk.t + 0.5); pg.wait_for_timeout(200)
             clk.to(clk.t + 0.5)
+            # the picker is built once more now that every strike is finished: a card built while a strike was still a draft can hold the draft's cached
+            # picture (a blob that is dropped when the finish replaces it), which is the app's own caching and not what is compared
+            pg.evaluate("() => { cfg.mode = 'drill'; cfg.units = []; cfg.size = 0; showSetup(); }")
+            clk.to(clk.t + 1.5); pg.wait_for_timeout(600)
             cards = pg.evaluate("() => [...document.querySelectorAll('.pick-badge')].slice(0, 9).map(e => { e.scrollIntoView({ block: 'nearest', behavior: 'instant' }); const r = e.getBoundingClientRect(); return { x: r.left - 6, y: r.top - 6, width: r.width + 12, height: r.height + 12 }; })")
             for i, c in enumerate(cards):
                 pg.evaluate("(i) => document.querySelectorAll('.pick-badge')[i].scrollIntoView({ block: 'center', behavior: 'instant' })", i)
                 c = pg.evaluate("(i) => { const r = document.querySelectorAll('.pick-badge')[i].getBoundingClientRect(); return { x: r.left - 6, y: r.top - 6, width: r.width + 12, height: r.height + 12 }; }", i)
-                imgs[(vname, "card %d" % i)] = png(pg, c)
+                # (384.133 combined) WHAT IS COMPARED IS THE BADGE ON THE CARD, NOT A SCREENSHOT OF THE CARD. The card's picture moves by a device pixel
+                # (or is a fraction of a pixel bigger) with other builds' intended changes to the list's layout, and an SVG's edges are not the same pixels
+                # at another sub-pixel offset, so a screenshot at the card's box cannot be pixel-identical across builds. The card holds the badge as
+                # the struck raster (an <image class="badge-raster"> with the PNG the renderer made, or the cached strike as an <img>): that picture is read
+                # back at its own size and compared pixel for pixel (the art itself, whatever the layout round it). A card with no raster (an empty or grey
+                # slot, drawn as vectors) is compared by its svg's markup with the ids renumbered and the shine group taken out (the 384.108 work, on purpose).
+                art = pg.evaluate("""async (i) => { const h = document.querySelectorAll('.pick-badge')[i];
+                    const pi = h.querySelector('img.pick-badge-img');
+                    for(let k = 0; pi && k < 20 && !(pi.complete && pi.naturalWidth > 0); k++){ try{ await pi.decode(); }catch(e){ await new Promise(r => setTimeout(r, 100)); } }
+                    if(pi && pi.complete && pi.naturalWidth > 0){ const cv = document.createElement('canvas'); cv.width = pi.naturalWidth; cv.height = pi.naturalHeight; cv.getContext('2d').drawImage(pi, 0, 0); return { kind: 'raster', href: cv.toDataURL('image/png') }; }
+                    const im = h.querySelector('image.badge-raster');
+                    if(im) return { kind: 'raster', href: im.getAttribute('href') || im.getAttribute('xlink:href') || '' };
+                    const sv = h.querySelector('svg'); if(!sv) return { kind: 'none', html: (pi ? 'IMG ' + pi.src.slice(0, 40) + ' w=' + pi.naturalWidth : h.outerHTML.slice(0, 100)) };
+                    const c = sv.cloneNode(true); c.querySelectorAll('.badge-shine, [class*=shine]').forEach(n => n.remove());
+                    return { kind: 'markup', html: c.outerHTML }; }""", i)
+                if art["kind"] == "raster" and art["href"].startswith("data:image/png;base64,"):
+                    import base64
+                    imgs[(vname, "card %d" % i)] = Image.open(io.BytesIO(base64.b64decode(art["href"].split(",", 1)[1]))).convert("RGBA")
+                elif art["kind"] == "markup":
+                    norm = re.sub(r"\b([a-zA-Z]+)\d+-", r"\1N-", art["html"]); norm = re.sub(r"(url\(#|href=\"#|id=\")[^)\"]*", r"\1X", norm)
+                    d = hashlib.sha1(norm.encode("utf-8")).digest(); im = Image.new("RGBA", (len(d), 1)); im.putdata([(b, b, b, 255) for b in d])
+                    imgs[(vname, "card %d" % i)] = im
+                else:
+                    imgs[(vname, "card %d" % i)] = Image.new("RGBA", (1, 1))
+                    CARD_UNREAD.append((vname, i, art["kind"], (art.get("html") or "")[:120]))   # a card whose art could not be read fails on its own, never as an equal pair of blanks
             if SHOTS:
                 pg.evaluate("() => window.scrollTo({ top: 0, behavior: 'instant' })"); clk.to(clk.t + .2)
                 png(pg).save(os.path.join(SHOTS, "%s-%s-%s-cards.png" % (tag, cls, vname)))
@@ -259,6 +288,20 @@ with sync_playwright() as pw:
         print("\n== %s: %s against %s ==" % ("police academy" if cls == "academy" else "Fire Code", HERE_NAME, ref), flush=True)
         A, tA, eA = capture(br, HERE, cls, "here")
         B, tB, eB = capture(br, body_of(ref), cls, "ref")
+        # (384.133 combined) THE CUTSCENE'S FRAMES ARE RE-TAKEN (at most twice) WHEN THEY DIFFER. The first seconds of the scene (the coin at rest, swaying)
+        # carry a backdrop that fades in on the page's own clock, so on a loaded machine a whole frame can read a few levels (up to 16, every pixel of it,
+        # a different frame on a different run, on either build) off the other build's. A real change to the badge, the coin or the scene is the same on
+        # every take; the LAST take is the one asserted. The sheet, case, in-hand and card pictures are not re-taken.
+        _cutkeys = lambda D: sorted(k for k in D if k[1].startswith("cutscene") and "(" not in k[1])
+        _cutok = lambda A_, B_: all((k not in A_) or (not diff(A_[k], B_[k])) or (diff(A_[k], B_[k])[0] == "pixels" and diff(A_[k], B_[k])[2] <= CUT_LEVELS and diff(A_[k], B_[k])[1] <= CUT_SHARE * A_[k].width * A_[k].height) for k in _cutkeys(B_))
+        for _take in range(2):
+            if _cutok(A, B): break
+            print("     (the cutscene's frames differ: taken again, %d of 2)" % (_take + 1), flush=True)
+            _keep = set(ONLY); ONLY.clear(); ONLY.add("cutscene")
+            A2, _, _ = capture(br, HERE, cls, "here"); B2, _, _ = capture(br, body_of(ref), cls, "ref")
+            ONLY.clear(); ONLY.update(_keep)
+            for k in _cutkeys(B2):
+                if k in A2: A[k] = A2[k]; B[k] = B2[k]
         units = list(tB.keys())
         chk("(1) %s: the unit list is the reference's (%d units)" % (cls, len(units)), list(tA.keys()) == units, [len(tA), len(units)])
         tdif = [u for u in units if tA.get(u) != tB[u]]
@@ -280,6 +323,7 @@ with sync_playwright() as pw:
                 keys and not bad and not miss, (miss[:3], bad[:6]))
         info = [(k, diff(A[k], B[k])) for k in sorted(B) if "(" in k[1] and k in A]
         print("     (info, not asserted) the in-hand view and the cutscene's frames as they are, glint shown (the 384.108 shine differs from main on purpose): %s" % [(k[0], k[1], d) for k, d in info], flush=True)
+        chk("(3) %s: the art of every one of the nine unit cards was read (a raster or markup, never a blank): unread %s" % (cls, CARD_UNREAD[:4]), not CARD_UNREAD, CARD_UNREAD[:6])
         chk("(4) %s: no page errors" % cls, not eA and not eB, (eA + eB)[:4])
         if SHOTS:
             for k in sorted(B):
