@@ -41097,6 +41097,13 @@ html.is-browser{ --fade-paper: transparent; }
   @supports (-webkit-touch-callout: none){
     html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field.sbcap-field{ padding-bottom:1px !important; }
   }
+  /* (384.133) and in Chrome / Edge / Firefox (not WebKit: iOS and Safari keep the rule above and nothing else) the word sits about a pixel HIGH in the
+     44px field, by an amount that moves with the field's fractional position on the screen (a text line snaps to a whole pixel there: -0.7 to -1.7px as the
+     screen above it changes by a fraction; check-b384-searchink read -1.33 on the units screen once the levels switcher above it was restyled, 384.116).
+     Two pixels of top padding (the line goes down one) put it on the middle at every position: within 0.7px. The field stays 44px. */
+  @supports not (font: -apple-system-body){
+    html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > input.sbcap-field.sbcap-field{ padding-top:2px !important; }
+  }
   html[data-theme][data-layout] :is(#stage, .unitdetail) .sbcap > svg.searchicon{
     position:absolute; z-index:2; left:var(--sb-icon-x) !important; top:50% !important; right:auto !important;
     width:var(--sb-icon) !important; height:var(--sb-icon) !important; margin:0 !important; transform:translateY(-50%) !important;
