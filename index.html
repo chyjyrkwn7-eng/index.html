@@ -40225,7 +40225,8 @@ html.is-browser{ --fade-paper: transparent; }
   .trk-end.is-done svg{ width:.95rem; height:.95rem; }
   .trk-all{ all:unset; box-sizing:border-box; display:flex; align-items:center; gap:.6rem; width:100%; min-height:3rem; margin-top:.6rem;
     padding:.5rem .8rem; border-radius:.9rem; cursor:pointer; background:color-mix(in srgb, var(--ink) 8%, transparent); font-family:var(--sans);
-    -webkit-tap-highlight-color:transparent; }
+    -webkit-tap-highlight-color:transparent;
+    position:relative; /* (384.133) all:unset took it back to static: its haptic switch then covered the whole card (hswFits took it off, so the button had none; check-b384-haptics) */ }
   .trk-all:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
   .trk-all-label{ flex:1 1 auto; font-size:.95rem; font-weight:700; color:var(--ink); }
   .trk-all-count{ font-size:.8rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
@@ -40638,6 +40639,11 @@ html.is-browser{ --fade-paper: transparent; }
   /* (the chat sheet's row has the close button beside it: the control gives way to it, its words keeping their middles; on a phone
      under 360px wide - an SE 1st gen - "Friends" and its count need the room, so its segments sit closer and its words a size down) */
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]){ min-width:0 !important; }
+  /* (384.133) a CLOSED chat sheet draws no glass (build 349: it is visibility:hidden), and neither does the control in it: the segment track's blur
+     (segglass) is held to the open sheet, so no hidden backdrop filter is left on a laptop's Home (check-b384-perf (3)) */
+  html[data-theme][data-layout] :is(body, #r8-seg) .chatdock:not(.is-open) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.chatdock-seg:not([hidden]){
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto !important;
+  }
   /* (384.133 combined) the test review's filter (All / Retaken / First try, each with its count) is this control too: its words are a label AND a count,
      so its segments take a smaller side padding (the chat sheet does the same under 360px) and the words stay inside them on a phone */
   html[data-theme][data-layout] :is(body, #r8-seg) .has-seg-thumb.has-seg-thumb.has-seg-thumb.has-seg-thumb.rs-tr-filter:not([hidden]){ --sg-px:calc(8px * var(--sg-z)); }
@@ -41269,10 +41275,13 @@ html.is-browser{ --fade-paper: transparent; }
     position:fixed; left:0; right:0; top:var(--sat, 0px); height:max(0px, calc(var(--sb-foot, 0px) - var(--sat, 0px)));
     z-index:60; pointer-events:none; opacity:0; visibility:hidden;   /* over the page, under a toast (70), a top banner (75), the tab bar and the chat button */
     background-color:transparent; background-image:linear-gradient(var(--sb-c, rgba(28,28,30,.86)), var(--sb-c, rgba(28,28,30,.86)));
-    -webkit-backdrop-filter:blur(20px) saturate(1.6); backdrop-filter:blur(20px) saturate(1.6);
-    transition:opacity .18s ease, visibility 0s linear .18s;
+    /* (384.133) THE BLUR EXISTS ONLY WHILE THE BAR IS SHOWN. WebKit makes every backdrop filter a layer that reads back what is under it, and this bar sits
+       hidden on every Profile / Rankings / Calendar / Settings screen at rest (check-b384-perf (3) and check-b384-topband): the filter is taken off with
+       the visibility, after the fade-out has finished (a 0s transition with the same .18s delay), and put on the moment the bar is shown. */
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+    transition:opacity .18s ease, visibility 0s linear .18s, backdrop-filter 0s linear .18s, -webkit-backdrop-filter 0s linear .18s;
   }
-  #settings-bar.is-on{ opacity:1; visibility:visible; transition:opacity .18s ease, visibility 0s; }
+  #settings-bar.is-on{ opacity:1; visibility:visible; -webkit-backdrop-filter:blur(20px) saturate(1.6); backdrop-filter:blur(20px) saturate(1.6); transition:opacity .18s ease, visibility 0s, backdrop-filter 0s, -webkit-backdrop-filter 0s; }
   #settings-bar.is-instant{ transition:none !important; }
   #settings-bar::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:.667px; background:rgba(255,255,255,.1); box-shadow:0 .667px 0 rgba(0,0,0,.22); }
   #settings-bar > .settings-bar-title{
