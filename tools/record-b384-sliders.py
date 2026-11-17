@@ -118,7 +118,7 @@ with sync_playwright() as pw:
         print("%s: %d frames, %.1fs, errors %s" % (acc, len(frames), frames[-1][0] - frames[0][0], errs), flush=True)
     # his, cut to his control and scaled to the same width
     if HIS:
-        his = os.path.join(OUT, "his-cut.mp4")
+        his = os.path.join(OUT, "his-toggles-cut.mp4" if TOGGLES else "his-slider-cut.mp4")
         vf = "crop=1320:420:0:1750,scale=880:-2" if not TOGGLES else "crop=1320:500:0:500,scale=880:-2"
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", HIS, "-vf", vf + ",fps=60,format=yuv420p", "-an", "-c:v", "libx264", "-crf", "16", his], check=True)
         clips = [his] + clips
