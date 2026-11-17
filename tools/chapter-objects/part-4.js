@@ -341,7 +341,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
    its cap is the closest object, and they do not share a shape). ---- */
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
-  const body = S.box(20, 32, 42, 65, 7), dome = S.ellipse(41, 33, 21, 14);
+  const body = S.box(18, 32, 46, 65, 7.5), dome = S.ellipse(41, 33, 23, 14.5);
   const neck = S.box(35.5, 11, 11, 12, 1.5), wheel = S.box(32, 4.5, 18, 6.5, 3);
   const yoke = S.box(44, 11, 18, 10, 1.6), gauge = S.circle(74, 16, 13.5), outlet = S.box(51.5, 19, 6, 9, 1.6);
   const all = S.union([body, dome, neck, wheel, yoke, gauge, outlet], 0);
@@ -354,8 +354,8 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     plates: [
       ["field", S.shape(cyl, BB), { dome: 2 }],                                                          /* the cylinder */
       ["cream", S.shape(S.inter(cyl, S.box(0, 0, 100, 40, 0)), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder */
-      ["field", "M21 40H61", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
-      ["field", "M21 88.5H61", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
+      ["field", "M19 40H63", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
+      ["field", "M19 88.5H63", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
       ["brass", OBJ_rrect(35.5, 11, 11, 12, 1.5), { gem: .9, gw: 2.2 }],                                 /* the valve */
       ["steel", OBJ_rrect(33, 20.5, 16, 4.5, 1.5), { z: .5, bev: .5, dome: .4 }],                           /* the neck ring it sits in */
       ["rubber", OBJ_rrect(32, 4.5, 18, 6.5, 3), { dome: 1, col: "#2B2E33" }],                            /* the handwheel */
