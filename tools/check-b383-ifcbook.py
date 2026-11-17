@@ -89,7 +89,13 @@ def wait_for(pg, js, ms):
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G["g"]["CHROME"])
-    ctx, pg, errs = page(br, G["init"](G["ifc"]))
+    # The fixture account holds 100+ hundos and has never been shown Fire Code's four hundo effects (25/50/75/100), so Home would play
+    # four "Challenge complete" cards back to back, ~9.6s apart from the splash going, over everything the gate does for the next
+    # ~42s. The book's Analyzing screen takes ~26-31s, so the card was dealt under the fourth card (up from ~33s): the tap on the
+    # card dismissed that card ("Tap to continue") and turned nothing. A real account has had its pop-ups (b313's USED_ACCOUNT
+    # carries unlocksShown.fx for every effect; so does b384_pop_lib.BOTH), so the fixture does too.
+    FX_SEEN = {"chars": [], "banners": ["hundos100"], "fx": ["fireworks", "blackhole", "underwater", "worldtree", "bubbles", "ufo"]}
+    ctx, pg, errs = page(br, G["init"](dict(G["ifc"], unlocksShown=FX_SEEN)))
     # (0) the book, through the reader's own path: Load my IFC PDF's file input, the Analyzing screen, kept on the device
     pg.evaluate("()=>{ ifcPickBook(); }"); pg.wait_for_timeout(300)
     pg.set_input_files("#ifc-book-input", BOOK)
