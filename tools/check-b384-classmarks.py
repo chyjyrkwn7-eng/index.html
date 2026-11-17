@@ -1,5 +1,8 @@
-"""Build 384.108: every place a class is shown or picked has Home's class button's mark and circle (option A, the lit ring).
-Madison: "When selecting classes, ensure the two classes are updated (the logos and circles) to match what the Home Screen has now."
+"""Build 384.108: every place a class is shown or picked has Home's class button's mark and circle - since classglass option B,
+the liquid glass (it was A, the lit ring, from 384.108 to 384.133).
+Madison (384.108): "When selecting classes, ensure the two classes are updated (the logos and circles) to match what the Home Screen
+has now." Madison (classglass), circling option B on the option sheet: "Ensure that's updated app wide, anywhere it's supposed to be."
+REVISED for classglass: R asked for the lit ring (--cb-ring and its four stops); it now asks for the liquid glass (below).
 
 The places, each rendered in both classes (the academy and Fire Code) on an iPhone 17 Pro Max (installed) and an iPad Pro 11":
   signup   - the sign-up's Select your classes cards (showClassSelection: .class-card .cc-emblem), both classes' cards;
@@ -12,63 +15,39 @@ The places, each rendered in both classes (the academy and Fire Code) on an iPho
 For each class circle found there, against Home's class button drawn for the same class (a probe .class-bubble.is-<key> of the
 button's 54px, read off the same page):
   M  the mark is classBtnIcon's drawing for that class (its svg, ids normalised), and NOT NOVA_CLASSES' old icon;
-  R  the circle is the button's lit ring: the same --cb-ring colour, the ring's four stops at the same share of the circle's radius
-     (within 2 points), the same pool and rim colours, and the button's two glows (the outer and the inset one) in the same colours,
-     their blur the same share of the circle's size (within 25%);
+  R  the circle is the button's liquid glass: a transparent border over a border-box gradient rim with the button's colours (white at
+     the top-left into the class's colour), its width the same share of the size (within 25%, never under 1px); the same arc, foot
+     and body layers (the body may be more opaque: the class list's is, 329); the light behind the mark (::before: the same radial in the same colours, inset the same share, under the
+     mark); the class-coloured shadow under it in the same colour, its blur the same share of the size (within 25%); and no lit
+     ring left (--cb-ring unset);
   O  nowhere on the page is NOVA_CLASSES' old icon markup (its gradient ids);
   S  the states still read: on the sign-up a picked card's edge and light differ from an unpicked one's; on Classes the class you
      are in ("you are here") is drawn apart from the other (its edge, light or fill).
-Run:  python3 tools/check-b384-classmarks.py [--against REV|DIR]   (--against the 384.98 head must FAIL M, R and O)"""
+Run:  python3 tools/check-b384-classmarks.py [--against REV|DIR]   (--against the 384.98 head must FAIL M, R and O; --against
+      384.133 final, the lit ring, must FAIL R everywhere)"""
 import importlib.util, json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("glitches", os.path.join(HERE, "check-b384-glitches.py"))
 G = importlib.util.module_from_spec(spec); spec.loader.exec_module(G)   # takes --against from sys.argv
 from playwright.sync_api import sync_playwright
 chk = G.chk
+sys.path.insert(0, HERE); import b384_classglass_lib as L
 
 QUIET = "()=>{ theme.reduceMotion = true; try{ applyTheme(); }catch(e){} try{ homeUnlocksOwed=()=>false; }catch(e){} }"
 # everything about one circle, and the same for a probe of Home's button for that class
-READ = r"""(args)=>{ const [sel, key] = args;
+READ = (r"""(args)=>{ const [sel, key] = args;
   const px = v => parseFloat(v) || 0;
   const norm = h => String(h || '').replace(/cbx\d+-/g, 'cbx-');
   /* the drawing as the page itself writes it out (parsed, so <stop/> reads <stop></stop> on both sides) */
   const expect = (() => { if(typeof classBtnIcon !== 'function') return ''; const t = document.createElement('span'); t.innerHTML = classBtnIcon(key);
     return t.firstElementChild ? norm(t.firstElementChild.outerHTML) : ''; })();
   const old = ((typeof NOVA_CLASSES !== 'undefined' ? NOVA_CLASSES : []).find(c => c.key === key) || {}).icon || '';
-  const one = el => { if(!el) return null; const cs = getComputedStyle(el); const r = el.getBoundingClientRect();
-    const svg = el.matches('svg') ? el : el.querySelector(':scope > svg');
-    const inner = el.clientWidth / 2;   /* the padding box's radius: what closest-side measures */
-    return { w: Math.round(r.width * 10) / 10, R: inner, ring: cs.getPropertyValue('--cb-ring').trim(), bg: cs.backgroundImage, border: cs.borderTopColor,
-      shadow: cs.boxShadow, svg: svg ? norm(svg.outerHTML) : '', vis: r.width > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' }; };
+  const one = ONE_JS;
   const el = typeof sel === 'string' ? document.querySelector(sel) : null;
-  const probe = document.createElement('span'); probe.className = 'class-bubble is-' + key;
-  probe.style.cssText = 'position:fixed;left:-300px;top:0;width:54px;height:54px;box-sizing:border-box';
-  document.body.appendChild(probe); const ref = one(probe); probe.remove();
-  return { el: one(el), ref, expect, oldSvg: old ? norm(old).slice(0, 60) : '' }; }"""
+  const ref = (PROBE_JS)(key);
+  return { el: one(el), ref, expect, oldSvg: old ? norm(old).slice(0, 60) : '' }; }""").replace("ONE_JS", L.ONE_JS).replace("PROBE_JS", L.PROBE_JS)
 OLDIDS = r"""()=>{ const ids = []; (typeof NOVA_CLASSES !== 'undefined' ? NOVA_CLASSES : []).forEach(c => { const m = String(c.icon || '').match(/id="([^"]+)"/g) || []; m.forEach(x => ids.push(x.slice(4, -1))); });
   return ids.filter(id => document.getElementById(id)); }"""
-
-def stops(bg, R):
-    """the first radial-gradient's four stop positions, as a share of the radius from the edge"""
-    m = re.search(r"radial-gradient\((.*?)\)\s*(?:padding-box)?\s*,\s*radial-gradient", bg)
-    first = bg.split("radial-gradient(", 1)[1] if "radial-gradient(" in bg else ""
-    pos = re.findall(r"(calc\(100% - [\d.]+px\)|[\d.]+%)", first)[:4]
-    out = []
-    for p in pos:
-        mm = re.match(r"calc\(100% - ([\d.]+)px\)", p)
-        out.append(round(float(mm.group(1)) / R, 3) if mm else round(1 - float(p[:-1]) / 100, 3))
-    return out
-def colours(s): return re.findall(r"(?:rgba?|color|oklab|color-mix)\([^()]*(?:\([^()]*\)[^()]*)*\)", s)
-def glows(shadow):
-    """(blur, colour) of the outer zero-offset glow and of the inset glow"""
-    parts = re.split(r",(?![^(]*\))", shadow); outer = inset = None
-    for p in parts:
-        cols = colours(p); rest = p
-        for c in cols: rest = rest.replace(c, "")
-        nums = [float(x[:-2]) for x in re.findall(r"-?[\d.]+px", rest)]
-        if "inset" in p and len(nums) >= 3: inset = (nums[2], cols[0] if cols else "")
-        elif len(nums) >= 3 and nums[0] == 0 and nums[1] == 0 and nums[2] > 0: outer = (nums[2], cols[0] if cols else "")
-    return outer, inset
 
 def judge(tag, place, key, d):
     e, ref = d["el"], d["ref"]
@@ -76,16 +55,8 @@ def judge(tag, place, key, d):
         chk("[%s] %s %s: the place is drawn" % (tag, place, key), False, d); return
     chk("[%s] M %s %s: the mark is classBtnIcon's drawing, not the old icon" % (tag, place, key),
         bool(d["expect"]) and e["svg"] == d["expect"], {"svg": e["svg"][:120], "expect": d["expect"][:120]})
-    sr, se = stops(ref["bg"], ref["R"]), stops(e["bg"], e["R"]) if e["R"] else []
-    go, gi = glows(ref["shadow"]); eo, ei = glows(e["shadow"])
-    ref_cols = colours(ref["bg"]); e_cols = colours(e["bg"])
-    ok_ring = bool(ref["ring"]) and e["ring"] == ref["ring"] and len(se) == 4 and all(abs(a - b) <= .02 for a, b in zip(se, sr))
-    ok_cols = e_cols[:4] == ref_cols[:4] and e["border"] == ref["border"]
-    ok_glow = bool(go and gi and eo and ei) and eo[1] == go[1] and ei[1] == gi[1] and \
-        abs(eo[0] / max(e["w"], 1) - go[0] / ref["w"]) <= .25 * go[0] / ref["w"] and abs(ei[0] / max(e["w"], 1) - gi[0] / ref["w"]) <= .25 * gi[0] / ref["w"]
-    chk("[%s] R %s %s: Home's lit ring at %spx (ring stops %s vs the button's %s; glows %s/%s vs %s/%s)" % (
-        tag, place, key, e["w"], se, sr, eo and eo[0], ei and ei[0], go and go[0], gi and gi[0]), ok_ring and ok_cols and ok_glow,
-        {"ring": [e["ring"], ref["ring"]], "cols": [e_cols[:4], ref_cols[:4]], "border": [e["border"], ref["border"]], "glow": [eo, ei, go, gi]})
+    ok, summary, info = L.glass(e, ref)
+    chk("[%s] R %s %s: Home's liquid glass at %spx (%s)" % (tag, place, key, e["w"], summary), ok, info)
 
 def place_read(pg, sel, key): return pg.evaluate(READ, [sel, key])
 

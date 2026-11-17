@@ -42452,3 +42452,38 @@ ONLY HIS PHONE CAN CONFIRM: real smoothness (Chromium at 4x on a shared machine 
 - Video for Madison (CDP screencast, Pro Max 2x; ~22fps captured on the loaded machine - the app's own frames are smoother than the capture): scratchpad media/sliders/ slider-strip.mp4 (his on top, ours purple, ours orange), toggles-strip.mp4, slider-sheet.png, toggles-sheet.png, ours-*.mp4 / toggles-*.mp4 (whole screen).
 - After the rebase onto origin/claude/b384-final 8013abf (the badge-case fix; only the notes conflicted - both kept): check-js ALL PASS; check-b384-sliders 83/84 at load 5-7 (the room's H: 50-313ms tasks from the page's own frame work - pageLockTouch, a scroll-rest check, a 110ms paint - at that load), then --only vroom at load 3.5: ALL PASS (first drag one 56ms task, second clean). H is a load-sensitive measure on this shared machine; run it alone.
 - After the second rebase onto origin/claude/b384-final 02189e0 (the Fire Code badge art; notes conflict only): check-js ALL PASS; check-b384-sliders 82/84 at load 4-10 - every look, motion, theme, Reduce motion, touch-band and upright-drag check passes on all four sliders; H failed on How many (one 52-55ms task in the best of three drags) and the room (50-300ms tasks of the page's own frame work), and E1 on the room once (no transition caught within 120ms of the press at load 9). Not re-measured on a quiet machine before the fast-forward: three other helpers held the load at 4-10 for the hour after. On this branch before these two rebases (neither touches the sliders' code) the same gate passed 84/84 at load 3.5-4. Re-run `check-b384-sliders.py --only howmany,vroom` alone when the machine is quiet.
+### 384.133 (classglass) - the class button is option B, the liquid glass, everywhere a class's circle is shown (claude/b384-classglass, cut from claude/b384-final 458b3c9; build NOT bumped, stays 384.133; NOT on main)
+Madison, with the a|b|c option sheet (5f85d51's scratchpad sheet), circling option B "Liquid glass" (the dark glass orb with a gradient rim and the blue
+shield / orange flame): "The class buttons, why do I kinda prefer the ones I circled? Ensure that's updated app wide, anywhere it's supposed to be, update it."
+History: B was built in the option sheet (5f85d51, `html[data-classbtn="b"]`), he picked C (384.94), then A (384.98), and classmarks (384.108) put A's lit
+ring on every class circle. Now B replaces A in the one shared rule.
+
+WHAT CHANGED (index.html, CSS only plus three comments):
+- "THE CLASS BUTTON IS LIQUID GLASS" (was "...IS A LIT RING", end of the main style) - the one rule `:is(.class-bubble.class-bubble, .class-ring.class-ring)`
+  now draws B exactly as under ?classbtn=b: a transparent 1.5px border over a border-box gradient rim (white at the top-left into the class's colour at the
+  foot), a specular arc along the top, the class's colour rising at the foot, a sheen, a .86 body (B's own rgba(16,17,24,.86), declared once as --cg-body,
+  not a --surface token, so the button is the one he circled in every theme, as A and C were), a soft drop and a little of the colour under it. The light
+  behind the mark is ::before (inset 7%, a radial in --cbc), breathing on cb-breathe 4.2s (opacity + transform only), still at .8 under the in-app Reduce
+  motion and the OS setting. The has-new state is unchanged: the light is `:not(.has-new)`, so 329's pulsing ring keeps the button's ::before (and its own
+  still .5 under Reduce motion: the preview's B reduce rule had caught the ring too and held it at .8; that was a slip of the preview, not kept).
+- Every .class-ring (classMarkHtml: the sign-up's Select your classes cards, Classes / Add a class (Settings' Join another class and the class button's Add a
+  class open the same screen), Fire Code's enroll page, the class button's own list, the three class banners - a new class, You're enrolled, Welcome back to)
+  gets the same orb at its size: the rim and the coloured shadow scale by its --crs (the rim never under 1px), the arc / foot / light are shares of the box;
+  no drop shadow on a card or a banner (--cr-drop), the list's bubbles keep a drop and a slightly more opaque body (--cr-body .92: the moon, 329). A ring is
+  `position:relative; isolation:isolate` so its light sits between its glass and its mark.
+- Removed (A only): --cb-ring and the ring/pool/tinted-rim layers, the two glows (outer + inset), --cr-a..d, --cr-base. Kept: --cbc (#FF7A3A Fire Code,
+  #7C93FF the academy), --crs per place, the cards' corner wash and picked glow in --cbc, the banner face rules, classBtnIcon's marks (unchanged).
+- RESTORABLE: A's whole rule is "THE CLASS BUTTON IS A LIT RING" in origin/claude/b384-final (458b3c9) index.html; all three looks side by side are 5f85d51.
+- NOT changed, on purpose: Profile / friend rows' quiet class mark (.class-mark from classMarkFor: a tiny solid inline icon, no circle, for a person in both
+  classes); Settings' Classes rows (no tile since 384 r8); the size and place of the button (--cb, 54px phone / 52px tablet tap box); the new dot (.new-dot child).
+
+GATES REVISED (the old expectation was the A decision):
+- check-b384-classbtn: K1/K1b compare with 5f85d51 ?classbtn=b (was =a); K1b gives the preview side 329's .5 ring back (see above); K2 asks for the glass (a
+  transparent border over a border-box gradient rim, the light ::before radial still at .8 under Reduce motion, no --cb-ring, no --bezel); NEW K2b: with
+  motion on the light breathes, opacity/transform only; K4 also ?classbtn=a changes nothing.
+- check-b384-classmarks R and check-b384-classcards B: "Home's lit ring" -> "Home's liquid glass", one shared check in NEW tools/b384_classglass_lib.py
+  (five layers, same shapes and colours bar the body, transparent border at the button's width as a share of the size, the light: same radial, same inset
+  share, under the mark; the class-coloured shadow's colour and blur share; no --cb-ring). The probe of Home's button sits in a .class-bubble-wrap (so its
+  light is on, as on Home). Chromium floors a computed border width to whole CSS px (1.5 reads 1), so the width is held within 1px.
+- check-b382-firstrun E: the class button is no longer the bar's body/lift/shadow; it keeps the bar's frost and is the orb (radials, a transparent gradient rim);
+  the list's bubbles are the button's glass.

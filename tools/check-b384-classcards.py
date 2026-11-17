@@ -21,6 +21,10 @@ rounded box ended (a hard-edged lit disc).
      coin's radius (within 2 points), the same pool and rim colours, and the button's two glows in the same colours with their blur the same
      share of the coin's size (within 25%) - read against a probe of Home's button (54px, .class-bubble.is-<class>) on the same page. The mark
      is still centred in the coin (within .6px).
+     REVISED for classglass (the owner circled option B, the liquid glass: "Ensure that's updated app wide"): the coin is now the
+     button's LIQUID GLASS, so the ring check (--cb-ring, four stops) is replaced by the same glass check classmarks makes
+     (tools/b384_classglass_lib.py: the five layers and their colours, a transparent rim over the border-box gradient at the
+     button's width as a share of the size, the light behind the mark, the class-coloured shadow), against the same probe.
   C  nothing is cut: the coin plus its halo (its own computed box-shadow blur) and the glow box both sit inside the card and
      inside every ancestor that clips.
 
@@ -33,6 +37,7 @@ g = {"__file__": CP, "__name__": "cp"}
 exec(io.open(CP, encoding="utf-8").read().rsplit("\nmain()", 1)[0], g)
 from playwright.sync_api import sync_playwright
 from PIL import Image
+sys.path.insert(0, HERE); import b384_classglass_lib as L
 
 AGAINST = sys.argv[sys.argv.index("--against") + 1] if "--against" in sys.argv else None
 SRC = io.open(AGAINST or os.path.join(g["ROOT"], "index.html"), encoding="utf-8").read()
@@ -85,33 +90,9 @@ def profile(im, cx, cy, R):
             out.append(sum(v for d, v in P if 9 <= d <= 15) / 7.0)
         pk = sum(peak) / 10; outc.append(pk - sum(out) / 10); inc.append(pk - sum(inn) / 10)
     return outc, inc
-def stops(bg, R):
-    """the first radial-gradient's four stop positions, as a share of the radius from the edge (classmarks' reading)"""
-    first = bg.split("radial-gradient(", 1)[1] if "radial-gradient(" in bg else ""
-    pos = re.findall(r"(calc\(100% - [\d.]+px\)|[\d.]+%)", first)[:4]
-    out = []
-    for p_ in pos:
-        mm = re.match(r"calc\(100% - ([\d.]+)px\)", p_)
-        out.append(round(float(mm.group(1)) / R, 3) if mm else round(1 - float(p_[:-1]) / 100, 3))
-    return out
-def colours(sv): return re.findall(r"(?:rgba?|color|oklab|color-mix)\([^()]*(?:\([^()]*\)[^()]*)*\)", sv)
-def glows(shadow):
-    """(blur, colour) of the outer zero-offset glow and of the inset glow"""
-    outer = inset = None
-    for part in re.split(r",(?![^(]*\))", shadow):
-        cols = colours(part); rest = part
-        for c in cols: rest = rest.replace(c, "")
-        nums = [float(x[:-2]) for x in re.findall(r"-?[\d.]+px", rest)]
-        if "inset" in part and len(nums) >= 3: inset = (nums[2], cols[0] if cols else "")
-        elif len(nums) >= 3 and nums[0] == 0 and nums[1] == 0 and nums[2] > 0: outer = (nums[2], cols[0] if cols else "")
-    return outer, inset
-RINGS = """()=>{ const one = el => { if(!el) return null; const cs = getComputedStyle(el), r = el.getBoundingClientRect();
-    return { w: Math.round(r.width * 10) / 10, R: el.clientWidth / 2, ring: cs.getPropertyValue('--cb-ring').trim(), bg: cs.backgroundImage, border: cs.borderTopColor,
-             shadow: cs.boxShadow, vis: r.width > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' }; };
+RINGS = ("""()=>{ const one = ONE_JS;
   return [...document.querySelectorAll('#stage .class-card:not(.is-soon)')].map(card => { const key = ['academy', 'ifc'].find(k => card.classList.contains('is-' + k)) || window.NOVA_CLASS;
-    const probe = document.createElement('span'); probe.className = 'class-bubble is-' + key; probe.style.cssText = 'position:fixed;left:-300px;top:0;width:54px;height:54px;box-sizing:border-box';
-    document.body.appendChild(probe); const ref = one(probe); probe.remove();
-    return { key, el: one(card.querySelector('.cc-emblem')), ref }; }); }"""
+    return { key, el: one(card.querySelector('.cc-emblem')), ref: (PROBE_JS)(key) }; }); }""").replace("ONE_JS", L.ONE_JS).replace("PROBE_JS", L.PROBE_JS)
 def sector_mean(a, lo, hi): v = [a[i % 36] for i in range(lo, hi)]; return sum(v) / len(v)
 
 GEOM = """()=>[...document.querySelectorAll('#stage .class-card:not(.is-soon)')].map(card => {
@@ -199,15 +180,8 @@ try:
                     e, ref = d["el"], d["ref"]
                     if not e or not e["vis"]:
                         chk(f"B {tag} card {i + 1}: the coin is drawn", False, d); continue
-                    sr, se = stops(ref["bg"], ref["R"]), stops(e["bg"], e["R"]) if e["R"] else []
-                    go, gi = glows(ref["shadow"]); eo, ei = glows(e["shadow"])
-                    ref_cols, e_cols = colours(ref["bg"]), colours(e["bg"])
-                    ok_ring = bool(ref["ring"]) and e["ring"] == ref["ring"] and len(se) == 4 and all(abs(a - b) <= .02 for a, b in zip(se, sr))
-                    ok_cols = e_cols[:4] == ref_cols[:4] and e["border"] == ref["border"]
-                    ok_glow = bool(go and gi and eo and ei) and eo[1] == go[1] and ei[1] == gi[1] and \
-                        abs(eo[0] / max(e["w"], 1) - go[0] / ref["w"]) <= .25 * go[0] / ref["w"] and abs(ei[0] / max(e["w"], 1) - gi[0] / ref["w"]) <= .25 * gi[0] / ref["w"]
-                    chk(f"B {tag} card {i + 1} ({d['key']}): the coin is Home's lit ring at {e['w']}px (ring stops {se} vs the button's {sr}; glows {eo and eo[0]}/{ei and ei[0]} vs {go and go[0]}/{gi and gi[0]})",
-                        ok_ring and ok_cols and ok_glow, {"ring": [e["ring"], ref["ring"]], "cols": [e_cols[:4], ref_cols[:4]], "border": [e["border"], ref["border"]], "glow": [eo, ei, go, gi]})
+                    ok_g, summary, info = L.glass(e, ref)
+                    chk(f"B {tag} card {i + 1} ({d['key']}): the coin is Home's liquid glass at {e['w']}px ({summary})", ok_g, info)
                 errs_all += errs; ctx.close()
         br.close()
 finally:

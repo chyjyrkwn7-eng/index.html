@@ -41156,44 +41156,59 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet::before{ border-radius:inherit; }
   html[data-theme][data-layout] body .chatdock-confirm.chat-leavesheet > .chat-leavesheet-inner{ position:relative; }
 
-  /* ==== THE CLASS BUTTON IS A LIT RING (384.98; it was the medallion in 384.94) ========================================
+  /* ==== THE CLASS BUTTON IS LIQUID GLASS (384.133 classglass; A, the lit ring, 384.98-384.133; C, the medallion, 384.94) ==========
      Madison: "The class button, I feel like it's missing something. Maybe the icons should be better and glow? Maybe the button's
      circle needs a better border? Could just be better.." Shown three looks (A lit ring, B liquid glass, C medallion) behind
-     ?classbtn=a|b|c (5f85d51), he picked C ("Option c for the class thing.", 384.94), and with C live he changed his mind: "I don't
-     like the class button after all. Try option a, the lit ring." So this is A exactly as he saw it under ?classbtn=a: the "?"
-     button's ready recipe in the class's colour, still - a ring in the class's colour (lifted a little towards white) just inside
-     the rim, a soft pool of the colour behind the mark, the button's glass under both, a rim tinted with the colour, and a soft
-     light off the outside. The marks are classBtnIcon's in their full colours, the same drawing as in the class list. Same size
-     and place as before (--cb and place() are untouched); the tap target is the button's own box (54px on a phone, the chat
-     button's 52px on a tablet). Every ring and glow is a background layer or a box-shadow; no SVG filter; nothing moves (the
-     pulsing ring for a class not yet seen, 329, and the new dot are the button's other two things and are left as they were).
-     The doubled class keeps the specificity the option had under html[data-classbtn="a"], which is what beats the button's own
-     glass rules. */
+     ?classbtn=a|b|c (5f85d51) he picked C (384.94), then A (384.98: "Try option a, the lit ring"), and then, looking at the option
+     sheet again, circled B: "The class buttons, why do I kinda prefer the ones I circled? Ensure that's updated app wide, anywhere
+     it's supposed to be, update it." So this is B exactly as he saw it under ?classbtn=b: a dark glass orb whose RIM is a gradient
+     (white at the top-left running into the class's colour at the foot: the border-box layer showing through a transparent 1.5px
+     border, the body over it .86 so the rim's colours stay in the rim), a specular arc along the top, the class's colour rising at
+     the foot, a soft drop and a little of the colour under it, and a LIGHT behind the mark (::before) that breathes on the "?"
+     button's own 4.2s (opacity + transform) and stands still under Reduce motion. The marks are classBtnIcon's full-colour ones.
+     Same size and place as before (--cb and place() untouched); the tap target is the button's own box (54px on a phone, 52px on
+     a tablet). No SVG filter; the only thing that moves is opacity/transform on a pseudo-element. The has-new state keeps 329's
+     pulsing ring on the button's ::before (the light is :not(.has-new)), and the new dot is the button's .new-dot child.
+     The doubled class keeps the specificity the option had under html[data-classbtn="b"], which beats the button's own glass rules.
+     The orb's body and rim are B's own colours, declared once here (--cg-*), not the theme's --surface-* tokens: a theme's surface
+     would make it a different button from the one he circled (the lit ring and the medallion were the same in every theme too).
+     RESTORABLE: A's rule is in git at origin/claude/b384-final (index.html "THE CLASS BUTTON IS A LIT RING") and in the archive
+     (384.98 / 384.108); B, A and C side by side are 5f85d51. */
   .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble, .class-ring.is-ifc, .class-card.is-ifc{ --cbc:#FF7A3A; }
   .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble, .class-ring.is-academy, .class-card.is-academy{ --cbc:#7C93FF; }
   html :is(.class-bubble.class-bubble, .class-ring.class-ring) > svg{ position:relative; z-index:1; }
-  /* (384.108) THE SAME CIRCLE WHEREVER A CLASS IS SHOWN OR PICKED: this one rule draws the class button and every .class-ring (the
-     class list's bubbles, the sign-up's and Classes' card emblems, Fire Code's enroll emblem, a class's banner face; classMarkHtml).
-     The button's numbers are the defaults, so the button is drawn exactly as before (check-b384-classbtn holds it to 5f85d51 ?classbtn=a,
-     pixel for pixel). A circle of another size takes the ring's four stops as the same share of its radius (--cr-a..d: the button's
-     4.3 / 3.8 / 2 / 1.5px of its 26px radius) and its two glows scaled by --crs (its width over the button's 54px), so the ring and
-     glow are the button's at that size. The list's bubbles are the button's size and keep the button's px, with their own opaque
-     body (a moon behind them showed through, 329) and their own shadow (--cr-base, --cr-drop); a circle on a card or a banner has
-     no drop shadow of its own (it sits on a surface, not over the scene). */
+  /* (384.108, glass since classglass) THE SAME ORB WHEREVER A CLASS IS SHOWN OR PICKED: this one rule draws the class button and every
+     .class-ring (the class list's bubbles, the sign-up's and Classes' card emblems, Fire Code's enroll emblem, a class's banner face;
+     classMarkHtml). The button's numbers are the defaults, so the button is B pixel for pixel (check-b384-classbtn holds it to
+     5f85d51 ?classbtn=b). A circle of another size scales the rim and the coloured shadow by --crs (its width over the button's 54px;
+     the rim never under 1px); the arc, the foot and the light are shares of the box already. A circle on a card or a banner has no
+     drop shadow of its own (--cr-drop: it sits on a surface, not over the scene); the class list's bubbles keep a drop and a more
+     opaque body (a moon behind them showed through, 329). */
   html[data-theme][data-layout] body:not(.x384cb) :is(.class-bubble.class-bubble, .class-ring.class-ring){
-    --cb-ring:color-mix(in srgb, var(--cbc) 78%, #FFFFFF);
+    --cg-body:var(--cr-body, rgba(16,17,24,.86));
+    border:max(1px, calc(1.5px * var(--crs, 1))) solid transparent !important;
     background:
-      radial-gradient(circle closest-side, transparent calc(100% - var(--cr-a, 4.3px)), var(--cb-ring) calc(100% - var(--cr-b, 3.8px)), var(--cb-ring) calc(100% - var(--cr-c, 2px)), transparent calc(100% - var(--cr-d, 1.5px))) padding-box,
-      radial-gradient(circle closest-side at 50% 54%, color-mix(in srgb, var(--cbc) 42%, transparent), color-mix(in srgb, var(--cbc) 12%, transparent) 62%, transparent 86%) padding-box,
-      linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%) padding-box,
-      var(--cr-base, rgba(12,13,19,.26)) !important;
-    border:1px solid color-mix(in srgb, var(--cbc) 44%, rgba(255,255,255,.16)) !important;
-    box-shadow:var(--cr-drop, 0 8px 32px rgba(0,0,0,.5)), 0 0 calc(10px * var(--crs, 1)) 0 color-mix(in srgb, var(--cbc) 40%, transparent), inset 0 0 calc(9px * var(--crs, 1)) color-mix(in srgb, var(--cbc) 22%, transparent) !important;
+      radial-gradient(ellipse 62% 34% at 50% 3%, rgba(255,255,255,.26), rgba(255,255,255,0) 100%) padding-box,
+      radial-gradient(ellipse 88% 58% at 50% 112%, color-mix(in srgb, var(--cbc) 34%, transparent), transparent 72%) padding-box,
+      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015) 55%) padding-box,
+      linear-gradient(var(--cg-body), var(--cg-body)) padding-box,
+      linear-gradient(150deg, rgba(255,255,255,.85), rgba(255,255,255,.26) 28%, rgba(255,255,255,.1) 50%, color-mix(in srgb, var(--cbc) 55%, transparent) 76%, color-mix(in srgb, var(--cbc) 85%, #FFFFFF)) border-box !important;
+    box-shadow:var(--cr-drop, 0 8px 28px rgba(0,0,0,.5)), 0 calc(2px * var(--crs, 1)) calc(10px * var(--crs, 1)) calc(-2px * var(--crs, 1)) color-mix(in srgb, var(--cbc) 30%, transparent) !important;
   }
-  /* a circle that is not the button's size: the ring as a share of its radius, no drop shadow */
-  .class-ring{ --cr-a:16.54%; --cr-b:14.62%; --cr-c:7.69%; --cr-d:5.77%; --cr-drop:0 0 0 transparent; }
-  /* the class list's bubbles: the button's size, the button's ring in px, their own body and shadow */
-  .csi-bubble.class-ring{ --cr-a:4.3px; --cr-b:3.8px; --cr-c:2px; --cr-d:1.5px; --crs:1; --cr-base:rgba(18,19,27,.9); --cr-drop:0 6px 20px rgba(0,0,0,.45); }
+  /* the light behind the mark (not while the button has something new: then its ::before is 329's pulsing ring) */
+  html .class-bubble-wrap:not(.has-new) .class-bubble.class-bubble::before, html .class-ring.class-ring::before{
+    content:""; position:absolute; inset:7%; border-radius:50%; pointer-events:none; z-index:0;
+    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--cbc) 58%, transparent), color-mix(in srgb, var(--cbc) 30%, transparent) 42%, color-mix(in srgb, var(--cbc) 8%, transparent) 74%, transparent);
+    animation:cb-breathe 4.2s ease-in-out infinite;
+  }
+  @keyframes cb-breathe{ 0%, 100%{ opacity:.5; transform:scale(.9); } 50%{ opacity:1; transform:scale(1.04); } }
+  html[data-reduce-motion="true"] :is(.class-bubble-wrap:not(.has-new) .class-bubble.class-bubble, .class-ring.class-ring)::before{ animation:none !important; opacity:.8 !important; transform:none !important; }
+  @media (prefers-reduced-motion:reduce){ html :is(.class-bubble-wrap:not(.has-new) .class-bubble.class-bubble, .class-ring.class-ring)::before{ animation:none !important; opacity:.8 !important; transform:none !important; } }
+  /* a circle that is not the button: its light is placed in its own box (its own stacking context, so the light sits between its
+     glass and its mark wherever it is), and no drop shadow */
+  .class-ring{ position:relative; isolation:isolate; --cr-drop:0 0 0 transparent; }
+  /* the class list's bubbles: the button's size and numbers, their own more opaque body and their own shadow */
+  .csi-bubble.class-ring{ --crs:1; --cr-body:rgba(16,17,24,.92); --cr-drop:0 6px 20px rgba(0,0,0,.45); }
   /* each card's own corner light and its picked glow in the same class colour as its circle (the academy's had a pink tail from
      its old lilac-and-coral mark; the mark is the blue shield now) */
   .class-card:is(.is-academy, .is-ifc){ --cc:color-mix(in srgb, var(--cbc) 34%, transparent); }
@@ -59019,7 +59034,7 @@ const NOVA_CLASSES = [
   { key: "ifc", name: "Fire Code", sub: "IFC",
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
-/* THE CLASS BUTTON'S MARKS (384.94; since 384.98 option A - see "THE CLASS BUTTON IS A LIT RING" in the stylesheet). The marks are
+/* THE CLASS BUTTON'S MARKS (384.94; option A 384.98, option B since classglass - see "THE CLASS BUTTON IS LIQUID GLASS" in the stylesheet). The marks are
    redrawn with more to them: Fire Code a flame with two side tongues, a warm middle and a pale core; the academy a police shield
    with a silver rim, a blue field and a white star. Both symmetric and centred on their box (ink 4.6-19.4 x 2.5-21.5 of 24). One
    drawing, in full colour, on the button and in the class list alike (the light "coin" colours were the medallion's, 384.94, and
@@ -59055,8 +59070,8 @@ function classBtnIcon(key){
 /* (384.108) ONE MARK AND ONE CIRCLE FOR A CLASS, WHEREVER A CLASS IS SHOWN OR PICKED. Madison: "When selecting classes, ensure the
    two classes are updated (the logos and circles) to match what the Home Screen has now." Every place a class is drawn - the sign-up's
    Select your classes cards, Classes (Add a class), Fire Code's enroll page, the class button's own list, and the three banners
-   (a new class, You're enrolled, Welcome back to) - takes its mark from classBtnIcon and its circle from the class button's lit
-   ring (.class-ring with is-<key>: "THE CLASS BUTTON IS A LIT RING" in the stylesheet, scaled to the place's size). NOVA_CLASSES'
+   (a new class, You're enrolled, Welcome back to) - takes its mark from classBtnIcon and its circle from the class button's
+   glass (.class-ring with is-<key>: "THE CLASS BUTTON IS LIQUID GLASS" in the stylesheet, scaled to the place's size). NOVA_CLASSES'
    own icons are only the fallback for a class with no drawing here. */
 function classMarkHtml(key, cls){
   const c = NOVA_CLASSES.find(x => x.key === key) || {};
@@ -59224,7 +59239,7 @@ function mountClassBubble(){
   btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
-  btn.innerHTML = classBtnIcon(cur.key) || cur.icon;   /* (384.94, A since 384.98) the redrawn marks, full colour */
+  btn.innerHTML = classBtnIcon(cur.key) || cur.icon;   /* (384.94; on B, the liquid glass, since classglass) the redrawn marks, full colour */
   /* (384.98) the new dot, shown by CSS while the wrap has-new (a child, not ::after: the dot's halo needs its own layer, and
      the button's ::before is its pulsing ring) */
   const cbDot = buildNewDot(); cbDot.classList.add("is-cb"); btn.appendChild(cbDot);
@@ -113769,7 +113784,7 @@ function showDailyAlert(msg, opts){
     el.setAttribute("role", "status");
     let icon;
     if(o.iconEl){
-      /* a drawn mark of its own - the badge itself (327z15); (384.108) a class's lit ring keeps its glow outside the face */
+      /* a drawn mark of its own - the badge itself (327z15); (384.108) a class's orb keeps its glow outside the face */
       icon = document.createElement("span");
       icon.className = "app-banner-icon app-banner-face" + (o.iconEl.classList && o.iconEl.classList.contains("class-ring") ? " is-class" : "");
       icon.appendChild(o.iconEl);
