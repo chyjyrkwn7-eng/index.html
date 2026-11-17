@@ -9678,6 +9678,100 @@
     min-width:5.5rem; text-align:right; font-variant-numeric:tabular-nums;
   }
 
+  /* ---- ONE SLIDER, THE iOS 26 ONE (384.134, sliders) ----
+     Madison sent a screen recording of an iPhone's own slider: "Our sliders need to be this way, they need to also match the
+     theme of what you have selected ... anywhere we have one, update it, ensure it's extremely smooth and nice." Measured off
+     his recording frame by frame (1320px wide = 3px a point, 60fps): a 6pt track, the filled part in the theme's colour up to
+     the thumb's middle, a solid light CAPSULE thumb 37x24pt with a soft shadow, its edges inside the track's ends. On touch the
+     thumb grows to ~55x34pt (x1.5 / x1.42) in ~6 frames and turns into clear glass in ~2 (the track seen through it, larger -
+     a lens), follows the finger 1:1, and past either end the track stretches after the finger (~8pt, rubber band) and thins;
+     on release it shrinks back to the solid capsule in ~8 frames. Every slider is built by novaSlider() (the input stays under
+     it, invisible, for the keyboard and VoiceOver); only transform and opacity move, the thumb is placed by a transform from
+     --f (0..1) and the container's width (cqw), so painting it reads no layout. No backdrop-filter on the thumb: the glass is
+     gradients and inset rims. Reduce motion: no grow and no stretch, the glass comes and goes at once.
+     tools/check-b384-sliders.py holds it. */
+  :root{
+    /* ONE SET OF GLASS TIMINGS for the slider and the switch (the JS twin is GLASS, beside NSW_T): measured off Madison's two
+       iOS 26 recordings at 60fps - the press swells in ~6 frames and turns to glass in ~3, a switch's knob crosses (and its
+       colour fades) in ~17, and the solid knob is back in ~5 as it lands, its size settling on a small spring. */
+    --glass-grow:110ms; --glass-in:50ms; --glass-out:80ms; --glass-glide:280ms;
+    --glass-shrink:150ms; --glass-switch-shrink:240ms; --glass-back:420ms;
+    --glass-ease:cubic-bezier(.25,.9,.35,1.06); --glass-glide-ease:cubic-bezier(.3,.8,.3,1);
+    --glass-settle-ease:cubic-bezier(.3,1.35,.5,1); --glass-back-ease:cubic-bezier(.22,1.18,.4,1);
+    --nsl-fill:var(--switch-on-paint, var(--accent));
+    --nsl-track:var(--surface-lift); --nsl-lens-track:rgba(255,255,255,.13);
+    --nsl-knob:linear-gradient(180deg, #FFFFFF, #ECECF0);
+    --nsl-knob-shadow:0 .5px 1px rgba(0,0,0,.18), 0 3px 9px rgba(0,0,0,.22);
+    --nsl-glass:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.03) 42%, rgba(255,255,255,.015) 62%, rgba(255,255,255,.08));
+    --nsl-glass-rim:inset 0 1px .5px rgba(255,255,255,.55), inset 0 -1px 1px rgba(255,255,255,.2), inset 0 0 0 .5px rgba(255,255,255,.3), 0 0 0 .5px rgba(0,0,0,.35), 0 4px 12px rgba(0,0,0,.28);
+  }
+  [data-theme="light"]{
+    --nsl-track:rgba(120,120,128,.2); --nsl-lens-track:rgba(120,120,128,.26);
+    --nsl-knob-shadow:0 .5px 1.5px rgba(0,0,0,.22), 0 3px 9px rgba(0,0,0,.16);
+    --nsl-glass:linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,.12) 42%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.3));
+    --nsl-glass-rim:inset 0 1px .5px rgba(255,255,255,.9), inset 0 -1px 1px rgba(255,255,255,.5), inset 0 0 0 .5px rgba(0,0,0,.08), 0 0 0 .5px rgba(0,0,0,.14), 0 4px 12px rgba(0,0,0,.16);
+  }
+  .unitoptions-modal-sheet{ --nsl-track:rgba(255,255,255,.12); --nsl-lens-track:rgba(255,255,255,.18); }
+  .nsl{
+    position:relative; flex:1 1 auto; min-width:0; height:44px; container-type:inline-size;
+    touch-action:pan-y; cursor:pointer; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none; --f:0; --os:0px; --ost:0px; --osx:1; --osy:1;
+  }
+  .nsl > input.nsl-input{
+    position:absolute; inset:0; width:100%; height:100%; min-width:0; margin:0; padding:0;
+    opacity:0; pointer-events:none; -webkit-appearance:none; appearance:none;
+  }
+  .nsl.is-disabled{ opacity:.55; cursor:default; }
+  @media (hover:hover) and (pointer:fine){
+    .nsl:has(> input:focus-visible) .nsl-knob{ outline:2px solid var(--accent); outline-offset:3px; }
+  }
+  .nsl-track{
+    position:absolute; left:0; right:0; top:50%; height:6px; margin-top:-3px; border-radius:3px; overflow:hidden;
+    background:var(--nsl-track); pointer-events:none;
+    transform:translateX(var(--ost)) scale(var(--osx), var(--osy));
+  }
+  .nsl-fill, .nsl-lens-fill{
+    position:absolute; top:0; bottom:0; left:0; width:100cqw; border-radius:3px; background:var(--nsl-fill);
+    transform:translateX(calc(var(--f) * (100cqw - 37px) + 18.5px - 100cqw));
+  }
+  .nsl-thumb{
+    position:absolute; left:0; top:50%; width:37px; height:24px; margin-top:-12px; pointer-events:none;
+    transform:translateX(calc(var(--f) * (100cqw - 37px) + var(--os)));
+  }
+  .nsl-knob{
+    position:absolute; inset:0; border-radius:999px; overflow:visible;
+    transition:transform var(--glass-shrink) var(--glass-settle-ease);
+  }
+  .nsl.is-pressed .nsl-knob{ transform:scale(1.5, 1.42); transition-duration:var(--glass-grow); transition-timing-function:var(--glass-ease); }
+  .nsl-solid, .nsl-glass{ position:absolute; inset:0; border-radius:inherit; }
+  .nsl-solid{ background:var(--nsl-knob); box-shadow:var(--nsl-knob-shadow); transition:opacity var(--glass-out) ease-out; }
+  .nsl.is-pressed .nsl-solid{ opacity:0; transition-duration:var(--glass-in); }
+  .nsl-glass{
+    overflow:hidden; opacity:0; background:var(--nsl-glass); box-shadow:var(--nsl-glass-rim);
+    transition:opacity var(--glass-out) ease-out;
+  }
+  .nsl.is-pressed .nsl-glass{ opacity:1; transition-duration:var(--glass-in); }
+  /* the lens: the same track again inside the glass, so the thumb's own scale magnifies it about its middle */
+  .nsl-lens{
+    position:absolute; left:0; top:50%; width:100cqw; height:6px; margin-top:-3px; border-radius:3px; overflow:hidden;
+    background:var(--nsl-lens-track);
+    transform:translateX(calc(var(--f) * (37px - 100cqw)));
+  }
+  .nsl-lens-fill{ background-image:linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)), var(--nsl-fill); }
+  /* let go, or a step from outside a drag: the thumb, the fill and the stretch spring back to the value */
+  .nsl.is-settling :is(.nsl-thumb, .nsl-fill, .nsl-lens, .nsl-lens-fill, .nsl-track){
+    transition:transform var(--glass-back) var(--glass-back-ease);
+  }
+  @media (prefers-reduced-motion:reduce){
+    .nsl .nsl-knob, .nsl .nsl-solid, .nsl .nsl-glass, .nsl.is-settling *{ transition:none; }
+    .nsl.is-pressed .nsl-knob{ transform:none; }
+  }
+  [data-reduce-motion="true"] .nsl.is-pressed .nsl-knob{ transform:none; }
+  /* their own layers from the start: a press that promoted them (the first transition on the thumb) re-laid the page's layers
+     and repainted the sheet under it - a 130ms paint at 4x CPU on the Virtual Room's sheet (check-b384-sliders H) */
+  .nsl-thumb, .nsl-knob, .nsl-fill, .nsl-lens{ will-change:transform; }
+  .nsl-solid, .nsl-glass{ will-change:opacity; }
+
   /* ---------- unit mastery levels ---------- */
   .lvlbadge{
     font-size:.85rem; font-weight:800; white-space:nowrap; letter-spacing:.04em;
@@ -10145,7 +10239,7 @@
   [data-layout="modern"] .opt > .box,
   [data-theme="dark"][data-layout="modern"] .opt > .box{
     display:block; flex:none; order:3; margin:0 0 0 auto; position:relative; box-sizing:border-box;
-    width:64px; height:30px; padding:0; border:none; border-radius:999px;
+    width:64px; height:28px; padding:0; border:none; border-radius:999px;
     background:rgba(120,120,128,.36); color:transparent; font-size:0; line-height:0;
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
     /* a sideways drag is the switch's; an upright one still scrolls */
@@ -10174,19 +10268,20 @@
   :root{ --switch-on:var(--rank-accent, var(--theme-c2)); --switch-on-paint:var(--switch-on); }
   .opt > .box::before, .nsw::before{
     content:""; position:absolute; inset:0; border-radius:inherit;
-    background:var(--switch-on-paint); opacity:0; transition:opacity .25s ease;
+    background:var(--switch-on-paint); opacity:0; transition:opacity var(--glass-glide) var(--glass-glide-ease);
   }
   .opt > input:checked ~ .box::before, [aria-checked="true"] > .nsw::before{ opacity:1; }
   /* the native switch under the track never shows (opacity 0); should iOS ever tint it, it is the same colour */
   .opt > input[type=checkbox]{ accent-color:var(--switch-on); }
   .opt > .box::after, .nsw::after{
-    content:""; position:absolute; top:2px; left:2px; width:39px; height:26px;
+    content:""; position:absolute; top:2px; left:2px; width:37px; height:24px;
     border-radius:999px; background:#fff;
     box-shadow:0 1px 2px rgba(0,0,0,.2), 0 3px 8px rgba(0,0,0,.18);
-    transition:transform .3s cubic-bezier(.3,1.08,.45,1);
+    transition:transform var(--glass-glide) var(--glass-glide-ease);
   }
-  /* 64 - 2 - 2 - 39: the knob's gap is 2px at either end */
-  .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(21px); }
+  /* (384.134, toggles) iOS 26's switch off Madison's recording, 3px a point: a 64x28 track and a 37x24 capsule knob (it was
+     64x30 and 39x26); 64 - 2 - 2 - 37: the knob's gap is 2px at either end */
+  .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(23px); }
   /* (384.97) the focus ring is a KEYBOARD's, never a finger's: "The time limit when selected puts a blue box around the thing, don't do
      that part." On an iPhone a tap on a toggle puts focus on its native switch (the haptic layer, .hsw-opt) and WebKit counts that as
      :focus-visible, so the ring in the accent colour (blue on most themes) was drawn round the switch the moment it was tapped - most
@@ -10203,8 +10298,11 @@
   /* While the lens is out it IS the knob, and the green follows it. */
   .nsw-lensed::after{ opacity:0; transition:none; }
   /* Reduce motion: no lens (see nswCalm), and a quicker plain slide */
-  [data-reduce-motion="true"] .opt > .box::after, [data-reduce-motion="true"] .nsw::after{ transition-duration:.14s; }
-  .nsw-live::before{ opacity:var(--nsw-p, 0) !important; transition:opacity var(--nsw-t, 0ms) linear !important; }
+  /* (384.134) Reduce motion: the knob and the colour change at once, together (it was a .14s knob beside a .25s colour - the
+     page-wide `* { transition:none }` does not reach ::before / ::after) */
+  [data-reduce-motion="true"] :is(.opt > .box, .nsw)::after, [data-reduce-motion="true"] :is(.opt > .box, .nsw)::before{ transition:none; }
+  @media (prefers-reduced-motion:reduce){ :is(.opt > .box, .nsw)::after, :is(.opt > .box, .nsw)::before{ transition:none; } }
+  .nsw-live::before{ opacity:var(--nsw-p, 0) !important; transition:opacity var(--nsw-t, 0ms) var(--glass-glide-ease) !important; }
   /* THE LENS. It lives inside the track (so it scrolls with it) and pokes
      out above and below it and past its ends. The outer box only moves
      (translateX); the body only scales (the swell and the settle); inside
@@ -97509,7 +97607,7 @@ function buildSoundSettings(){
   slider.addEventListener("input", () => {
     const v = Math.max(0, Math.min(100, Number(slider.value) || 0));
     theme.soundVolume = v / 100;
-    val.textContent = v + "%";
+    liveText(val, v + "%");
     paintSliderFill(slider);
     NovaSound.sync();
     const step = Math.round(v / 10);
@@ -97517,9 +97615,8 @@ function buildSoundSettings(){
   });
   /* saved when the finger lifts, not on every step of a drag */
   slider.addEventListener("change", () => { saveTheme(); playSound("ui.tap.secondary"); });
-  attachRangeTouch(slider);
   paintSliderFill(slider);
-  sw.append(slider, val);
+  sw.append(novaSlider(slider), val);
   vol.append(volLab, sw);
   vol.hidden = !theme.soundOn;
 
@@ -97630,8 +97727,17 @@ __bm("L70613");
    ours glided ~360ms, waited ~200ms, then shrank for 290ms with its white coming back only in the second half - so for ~200ms
    it sat at the end as a hollow dark ring. Now the glide is 150-270ms, the settle 230ms starting half-way through the glide,
    and the solid knob comes back over the FIRST ~45% of the settle (the glass goes as it shrinks, not after). Swell 190ms. */
-const NSW_T = { pop: 190, shrink: 230, LX: 1.44, LY: 1.4, MAG: .82,
-  POP: "cubic-bezier(.3,1.25,.5,1)", GLIDE: "cubic-bezier(.32,1.06,.42,1)", SETTLE: "cubic-bezier(.3,1.04,.4,1)" };
+/* 384.134 (toggles): Madison: "These toggle switches are great. I feel like our toggle switches aren't the same, ours change at
+   different speeds and stuff. Update that. Make it perfect." His iOS 26 recording, frame by frame at 60fps (a tap): the solid
+   knob is glass in ~3 frames (50ms) and swollen in ~6 (110ms); the glass crosses the track in ~17 frames (280ms) and the track's
+   colour fades over the SAME 17 frames on the same curve; the solid knob is back in ~5 frames (80ms) as the glass lands - not
+   half-way - and its size settles on a small spring (~240ms, ~3% past). Ours: a 190ms swell, a 150-270ms glide, the colour on a
+   linear ramp, the settle starting at half the glide, and 250ms / 300ms for a flip with no lens - every phase a different speed.
+   Now every phase is one constant here and in the CSS (--glass-*), shared with the slider. */
+const GLASS = { grow: 110, in: 50, out: 80, glide: 280, shrink: 240,
+  EASE: "cubic-bezier(.25,.9,.35,1.06)", GLIDE: "cubic-bezier(.3,.8,.3,1)", SETTLE: "cubic-bezier(.3,1.35,.5,1)" };
+const NSW_T = { pop: GLASS.grow, shrink: GLASS.shrink, glide: GLASS.glide, fin: GLASS.in, fout: GLASS.out, LX: 1.5, LY: 1.22, MAG: .82,
+  POP: GLASS.EASE, GLIDE: GLASS.GLIDE, SETTLE: GLASS.SETTLE };
 const nswRuns = new WeakMap();
 let nswActive = null, nswPending = null, nswCommitting = false, nswSuppressUntil = 0;
 function nswCalm(){
@@ -97696,7 +97802,7 @@ function nswPlace(run, c, ms, ease){
      middle of the glass lines up with the real track there */
   run.view.style.transform = "translate3d(" + (g.LW / 2 - c * NSW_T.MAG).toFixed(2) + "px," + ((g.LH - g.H * NSW_T.MAG) / 2).toFixed(2) + "px,0)";
   const p = nswProg(g, c).toFixed(3);
-  run.fill.style.transition = run.edgeOn.style.transition = ms ? "opacity " + ms + "ms ease" : "none";
+  run.fill.style.transition = run.edgeOn.style.transition = ms ? "opacity " + ms + "ms " + ease : "none";
   run.fill.style.opacity = p; run.edgeOn.style.opacity = p;
   run.track.style.setProperty("--nsw-t", (ms || 0) + "ms");
   run.track.style.setProperty("--nsw-p", p);
@@ -97736,8 +97842,8 @@ function nswMorph(run, up, delay){
   run.anims.push(run.body.animate([{ transform: cur[0] }, { transform: to[0] }], o));
   /* the white goes early on the swell and comes back late on the settle,
      so the glass is what you see while it is big */
-  const fo = up ? { duration: d * .55, delay: delay || 0, easing: "ease-out", fill }
-               : { duration: d * .45, delay: delay || 0, easing: "ease-out", fill };   /* 383: solid again as it shrinks, never a hollow ring */
+  const fo = up ? { duration: NSW_T.fin, delay: delay || 0, easing: "ease-out", fill }
+               : { duration: NSW_T.fout, delay: delay || 0, easing: "ease-out", fill };   /* 383: solid again as it shrinks, never a hollow ring */
   run.anims.push(run.solid.animate([{ opacity: cur[1] }, { opacity: to[1] }], fo));
   run.anims.push(run.glass.animate([{ opacity: cur[2] }, { opacity: to[2] }], fo));
   run.up = up;
@@ -97756,10 +97862,12 @@ function nswSettle(run, on){
   clearTimeout(run.t);
   const g = run.g, c = on ? g.onC : g.offC;
   const span = Math.max(1, g.onC - g.offC), dist = Math.abs(c - run.c);
-  const glide = dist < .5 ? 0 : Math.round(150 + 120 * Math.min(1, dist / span));   /* 383: was 200 + 160 */
+  /* (384.134) a whole crossing is iOS's 280ms; a part of one is that share of it, never under 40% */
+  const glide = dist < .5 ? 0 : Math.round(NSW_T.glide * Math.max(.4, Math.min(1, dist / span)));
   nswPlace(run, c, glide, NSW_T.GLIDE);
   const now = performance.now();
-  const delay = Math.round(Math.max(0, run.popEnds - now, glide * .5));
+  /* (384.134) solid again as it lands, as iOS does - not half-way along */
+  const delay = Math.round(Math.max(0, run.popEnds - now, glide - NSW_T.fout / 2));
   nswMorph(run, false, delay);
   /* gone when the settle has played out - on its own clock, not a timer */
   const mine = run.anims.slice();
@@ -104135,6 +104243,8 @@ function recordingShouldWait(){
      5.7s of the road map's ride when they had nothing cached), each one a frame the light and the camera were late. They wait,
      a second at a time, until the journey has ended (rankUpSceneEnd clears rankUpScene) and go on after. */
   try{ if(typeof rankUpScene !== "undefined" && rankUpScene) return 1000; }catch(e){}
+  /* (384.134) nor while a finger is on a slider: a warm-up slice landing in a drag is a frame the thumb is late (check-b384-sliders H) */
+  try{ if(nslBusy()) return 400; }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
 }
@@ -122482,6 +122592,176 @@ function guardVersionPick(row, cb, name, onChosen){
   });
 }
 
+/* ---- novaSlider (384.134, sliders): EVERY SLIDER IS THIS ONE ----
+   Madison's recording of an iPhone's own slider (the look and the numbers are in the CSS block for .nsl). The range input
+   stays, invisible, under the drawing: the keyboard's arrows, VoiceOver's swipe, `value`, `min`, `max`, `step`, `disabled`
+   and the input / change events every screen already answers are the input's own. A finger or a mouse is read here, by
+   pointer events on the drawing:
+   - press: the thumb grows into glass at once (CSS, .is-pressed); a press ON the thumb drags it from where it was grabbed,
+     a press on the track takes the value there (as attachRangeTouch did since build 291);
+   - a touch that moves upright first is the page's scroll (touch-action:pan-y; the browser cancels the pointer) - nothing
+     changes; a sideways one is the slider's, captured;
+   - every move is coalesced to one frame (rAF), and reads nothing: the box was read once, at the press;
+   - the thumb follows the finger 1:1 even where the value steps (the volume's fives, the magnet's whole numbers) and the
+     value it shows is the input's; let go, it springs onto the value (.is-settling);
+   - past either end the track stretches after the finger (iOS's rubber band, ~8pt at most) and springs back on release;
+   - Reduce motion: no grow, no stretch.
+   The screens still call paintSliderFill(), which now places the thumb too. */
+const NSL = { thumbW: 37, grab: 30, slop: 4, stretch: 14, settle: 460,
+  /* a drag is on (the page's own measures wait for it: the back-to-top room, the warm-ups) and what waits for its release */
+  active: null, after: new Set() };
+/* A NUMBER THAT CHANGES AS A SLIDER MOVES is written into its own text node, not with textContent: textContent swaps the node
+   (a childList change), and against this page's stylesheet each swap was a style recalc of ~2.4ms (12ms at 4x CPU, measured on the
+   start sheet, the same on 384.133) - two or three of them a frame in a drag. Changing the node's text is a characterData change:
+   ~0.5ms. Same words, same node. (384.134, check-b384-sliders H) */
+function liveText(el, txt){
+  if(!el) return;
+  txt = String(txt);
+  const n = el.firstChild;
+  if(txt && n && n.nodeType === 3 && !n.nextSibling){ if(n.data !== txt) n.data = txt; }
+  else if(el.textContent !== txt) el.textContent = txt;
+}
+/* WHAT A SCREEN REDRAWS AROUND A SLIDER (the start sheet's summary, its Begin button, the room's line) waits for the finger,
+   a little: while a drag is on it runs at most every NSL_REDRAW_MS and once more as it is let go; otherwise at once. The
+   number beside the slider is not this - it follows every step. Each redraw writes a dozen words into the sheet (~10-30ms at
+   4x CPU against this stylesheet), which on every frame of a drag was a long task each frame. (384.134, check-b384-sliders H) */
+const NSL_REDRAW_MS = 140;
+function nslSoon(slider, fn){
+  if(typeof fn !== "function") return;
+  if(!(slider && slider._nsl && nslBusy() && NSL.active === slider._nsl)){ fn(); return; }
+  const st = slider._nsl, now = performance.now();
+  if(!(now - (st.redrawAt || 0) < NSL_REDRAW_MS)){ st.redrawAt = now; fn(); return; }
+  if(st.redrawT) return;
+  st.redrawT = setTimeout(() => { st.redrawT = 0; st.redrawAt = performance.now(); fn(); }, NSL_REDRAW_MS - (now - st.redrawAt));
+  NSL.after.add(() => { if(st.redrawT){ clearTimeout(st.redrawT); st.redrawT = 0; fn(); } });
+}
+/* a drag is on - and its slider still on the page (a screen that went with a finger on it never holds the page's work) */
+function nslBusy(){
+  const a = NSL.active;
+  if(a && a.host.isConnected) return true;
+  if(a){ NSL.active = null; const fns = [...NSL.after]; NSL.after.clear(); fns.forEach(fn => { try{ fn(); }catch(e){} }); }
+  return false;
+}
+function nslCalm(){
+  return document.documentElement.dataset.reduceMotion === "true"
+    || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+function novaSlider(slider){
+  if(slider._nsl) return slider._nsl.host;
+  const host = document.createElement("div");
+  host.className = "nsl";
+  slider.classList.add("nsl-input");
+  const mk = (cls, parent) => { const d = document.createElement("div"); d.className = cls; if(parent) parent.appendChild(d); return d; };
+  const track = mk("nsl-track"); mk("nsl-fill", track);
+  const thumb = mk("nsl-thumb"), knob = mk("nsl-knob", thumb);
+  mk("nsl-solid", knob);
+  const glass = mk("nsl-glass", knob), lens = mk("nsl-lens", glass); mk("nsl-lens-fill", lens);
+  [track, thumb].forEach(el => el.setAttribute("aria-hidden", "true"));
+  host.append(slider, track, thumb);
+  const st = { host, dragF: null, raf: 0, x: 0, id: null, rect: null, grabDx: 0, decided: false, startX: 0, startY: 0, settleT: 0, lastF: -1, lastOs: 0 };
+  slider._nsl = st;
+  const range = () => { const mn = Number(slider.min) || 0, mx = Number(slider.max) || 0; return [mn, mx]; };
+  const valueF = () => { const [mn, mx] = range(); const v = Number(slider.value) || 0; return mx > mn ? Math.max(0, Math.min(1, (v - mn) / (mx - mn))) : 1; };
+  st.paint = () => {
+    host.classList.toggle("is-disabled", !!slider.disabled);
+    const f = st.dragF != null ? st.dragF : valueF();
+    if(f !== st.lastF){ st.lastF = f; host.style.setProperty("--f", f.toFixed(4)); }
+  };
+  const stretch = os => {
+    if(os === st.lastOs) return;
+    st.lastOs = os;
+    const W = st.rect ? st.rect.width : 300, a = Math.abs(os), sg = Math.sign(os);
+    host.style.setProperty("--os", os.toFixed(2) + "px");
+    host.style.setProperty("--ost", (sg * a * .65).toFixed(2) + "px");
+    host.style.setProperty("--osx", (1 + a * .7 / Math.max(1, W)).toFixed(4));
+    host.style.setProperty("--osy", (1 - .28 * a / NSL.stretch).toFixed(3));
+  };
+  /* iOS's rubber band: (1 - 1/(d * .55 / D + 1)) * D */
+  const rubber = d => (1 - 1 / (d * .55 / NSL.stretch + 1)) * NSL.stretch;
+  const settle = () => {
+    clearTimeout(st.settleT);
+    host.classList.add("is-settling");
+    st.settleT = setTimeout(() => host.classList.remove("is-settling"), NSL.settle);
+  };
+  const apply = () => {
+    st.raf = 0;
+    if(!st.rect || st.id == null) return;
+    const W = st.rect.width, span = Math.max(1, W - NSL.thumbW);
+    const raw = (st.x - st.rect.left - NSL.thumbW / 2 - st.grabDx) / span;
+    const f = Math.max(0, Math.min(1, raw));
+    const over = raw < 0 ? raw * span : raw > 1 ? (raw - 1) * span : 0;
+    stretch(nslCalm() ? 0 : Math.sign(over) * rubber(Math.abs(over)));
+    st.dragF = f;
+    const [mn, mx] = range();
+    let v = mn + f * (mx - mn);
+    const step = slider.step;
+    if(step && step !== "any"){ const k = Number(step) || 1; v = mn + Math.round((v - mn) / k) * k; }
+    v = Math.max(mn, Math.min(mx, v));
+    const before = slider.value;
+    slider.value = String(v);
+    if(slider.value !== before) slider.dispatchEvent(new Event("input", { bubbles: true }));
+    st.paint();
+  };
+  const queue = () => { if(!st.raf) st.raf = requestAnimationFrame(apply); };
+  const end = commit => {
+    if(st.id == null) return;
+    const id = st.id;
+    st.id = null;
+    if(NSL.active === st){ NSL.active = null; const fns = [...NSL.after]; NSL.after.clear(); fns.forEach(fn => { try{ fn(); }catch(e){} }); }
+    if(st.raf){ cancelAnimationFrame(st.raf); st.raf = 0; }
+    try{ if(host.hasPointerCapture && host.hasPointerCapture(id)) host.releasePointerCapture(id); }catch(e){}
+    host.classList.remove("is-pressed");
+    if(commit){
+      if(!st.decided){ st.decided = true; apply(); }
+      else apply();
+    }
+    st.dragF = null;
+    settle();
+    stretch(0);
+    if(commit) slider.dispatchEvent(new Event("change", { bubbles: true }));
+    slider.dispatchEvent(new Event("nslrelease"));
+    st.paint();
+  };
+  host.addEventListener("pointerdown", e => {
+    if(slider.disabled || st.id != null || !e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
+    st.rect = host.getBoundingClientRect();
+    st.id = e.pointerId; st.x = e.clientX; st.startX = e.clientX; st.startY = e.clientY;
+    const W = st.rect.width, thumbC = st.rect.left + NSL.thumbW / 2 + valueF() * Math.max(1, W - NSL.thumbW);
+    st.grabDx = Math.abs(e.clientX - thumbC) <= NSL.grab ? e.clientX - thumbC : 0;
+    st.dragF = valueF();
+    clearTimeout(st.settleT); host.classList.remove("is-settling");
+    host.classList.add("is-pressed");
+    NSL.active = st;
+    /* a touch waits to see which way it goes (an upright one is the page's scroll); a mouse or a pen is the slider's now */
+    st.decided = e.pointerType !== "touch";
+    if(st.decided){ try{ host.setPointerCapture(e.pointerId); }catch(err){} if(e.pointerType === "mouse") e.preventDefault(); }
+    slider.dispatchEvent(new Event("nslpress"));
+    if(e.pointerType !== "touch") queue();
+  });
+  host.addEventListener("pointermove", e => {
+    if(e.pointerId !== st.id) return;
+    st.x = e.clientX;
+    if(!st.decided){
+      const dx = Math.abs(e.clientX - st.startX), dy = Math.abs(e.clientY - st.startY);
+      if(dx < NSL.slop && dy < NSL.slop) return;
+      if(dy > dx * 1.2){ end(false); return; }
+      st.decided = true;
+      try{ host.setPointerCapture(e.pointerId); }catch(err){}
+    }
+    queue();
+  });
+  host.addEventListener("pointerup", e => { if(e.pointerId === st.id){ st.x = e.clientX; end(true); } });
+  host.addEventListener("pointercancel", e => { if(e.pointerId === st.id) end(false); });
+  host.addEventListener("lostpointercapture", e => { if(e.pointerId === st.id && st.decided) end(true); });
+  /* THE SLIDER ANSWERS TAPS, so a tap at its edge is its own: Chromium's touch adjustment and WebKit's tap fuzzing give a tap to
+     the nearest element that responds to clicks, and a plain div does not - a tap on the volume's top edge clicked the Sound
+     effects row 5px above it and turned sound off (the input under it, which did answer, takes no pointer now). */
+  host.addEventListener("click", () => {});
+  /* a step from the keyboard or VoiceOver glides like a release */
+  slider.addEventListener("keydown", () => settle());
+  st.paint();
+  return host;
+}
 /* ONE SLIDER BUILDER, NOT TWO. This lived inside showSetup(), which is
    why the Virtual Room's time limit was three chips instead: the builder
    was simply out of reach from there. It takes its onChange now rather
@@ -122548,60 +122828,9 @@ function paintSliderFill(slider){
   const mn = Number(slider.min) || 0, mx = Number(slider.max) || 0, v = Number(slider.value) || 0;
   const pct = mx > mn ? Math.max(0, Math.min(1, (v - mn) / (mx - mn))) * 100 : 100;
   slider.style.setProperty("--fill", pct.toFixed(2) + "%");
+  if(slider._nsl) slider._nsl.paint();
 }
-/* A SLIDER THAT TAKES THE FIRST TOUCH (build 291): "when first doing it
-   when it's on all, the first time you attempt to slide does not
-   register ... It might be same for any other slider." iOS only moves a
-   range input from its THUMB, and on "All" the thumb is pinned at the
-   far right against the All button - so a finger landing anywhere else
-   on the track did nothing the first time. This drives the input from
-   the touch itself: wherever the finger lands, the value goes there and
-   follows it, through the same input/change events the slider already
-   answers. Vertical page scrolls that merely pass over it are let go. */
-function attachRangeTouch(slider){
-  let active = false, startX = 0, startY = 0, decided = false;
-  const valueAt = x => {
-    const r = slider.getBoundingClientRect();
-    const thumb = 26;
-    const f = Math.max(0, Math.min(1, (x - r.left - thumb / 2) / Math.max(1, r.width - thumb)));
-    const mn = Number(slider.min) || 0, mx = Number(slider.max) || 0;
-    let v = mn + f * (mx - mn);
-    const st = slider.step;
-    if(st && st !== "any"){ const k = Number(st) || 1; v = mn + Math.round((v - mn) / k) * k; }
-    return Math.max(mn, Math.min(mx, v));
-  };
-  const drive = x => {
-    slider.value = String(valueAt(x));
-    slider.dispatchEvent(new Event("input", { bubbles: true }));
-  };
-  slider.addEventListener("touchstart", e => {
-    if(slider.disabled || e.touches.length !== 1) return;
-    active = true; decided = false;
-    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-  }, { passive: true });
-  slider.addEventListener("touchmove", e => {
-    if(!active) return;
-    const t = e.touches[0];
-    if(!decided){
-      const dx = Math.abs(t.clientX - startX), dy = Math.abs(t.clientY - startY);
-      if(dx < 4 && dy < 4) return;
-      decided = true;
-      /* mostly vertical: a scroll, not a slide */
-      if(dy > dx * 1.2){ active = false; return; }
-      drive(startX);
-    }
-    e.preventDefault();
-    drive(t.clientX);
-  }, { passive: false });
-  slider.addEventListener("touchend", e => {
-    if(!active) return;
-    /* a tap with no slide still sets the value where it landed */
-    if(!decided) drive(startX);
-    active = false;
-    slider.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-  slider.addEventListener("touchcancel", () => { active = false; });
-}
+/* (attachRangeTouch, build 291 - a touch anywhere on the track takes the value - is novaSlider's press now, 384.134.) */
 
 /* A count slider with an "All" stop and a pill that jumps to it - the
    start sheet's How many, and the Virtual Room's Questions (build 310). */
@@ -122671,22 +122900,19 @@ function buildEverythingSlider(labelText, everythingLabel, customLabel, min, get
     const snapped = sliderMagnet(slider.value, min, top);
     if(snapped >= top) setEverything();
     else { set(snapped); if(isEverything()) setCustom(); }
-    sect.paint(); refresh();
+    sect.paint(); nslSoon(slider, refresh);
   });
   const settle = () => { if(!dragging) return; dragging = false; sect.paint(); };
   slider.addEventListener("change", settle);
-  slider.addEventListener("pointerup", settle);
-  slider.addEventListener("touchend", settle);
-  attachRangeTouch(slider);
-  wrap.append(slider, allBtn);
+  slider.addEventListener("nslrelease", settle);
+  wrap.append(novaSlider(slider), allBtn);
   sect.appendChild(wrap);
 
   /* held from the touch to the release (see syncTopButton) */
   const holdOn = () => { allBtn._held = true; };
   const holdOff = () => { if(!allBtn._held) return; allBtn._held = false; sect.paint(); };
-  slider.addEventListener("pointerdown", holdOn);
-  slider.addEventListener("touchstart", holdOn, { passive: true });
-  ["pointerup", "pointercancel", "touchend", "touchcancel", "change"].forEach(t => slider.addEventListener(t, holdOff));
+  slider.addEventListener("nslpress", holdOn);
+  ["nslrelease", "change"].forEach(t => slider.addEventListener(t, holdOff));
   sect.paint = () => {
     const pool = getMax();
     const top = topStopFor(pool);
@@ -122706,7 +122932,7 @@ function buildEverythingSlider(labelText, everythingLabel, customLabel, min, get
     if(!dragging) slider.value = noChoice ? 1 : every ? top : Math.min(get(), top);
     paintSliderFill(slider);
     syncTopButton(allBtn, every);
-    valDisplay.textContent = every ? "All " + pool : get() + " of " + pool;
+    liveText(valDisplay, every ? "All " + pool : get() + " of " + pool);
   };
   return sect;
 }
@@ -122801,15 +123027,16 @@ function syncTopButton(btn, atTop){
   if(!btn.dataset.label) btn.dataset.label = (btn.textContent || "").trim();
   btn.classList.toggle("on", atTop);
   btn.setAttribute("aria-pressed", atTop ? "true" : "false");
+  /* (384.134) the animations restart on the next frame, not through a forced style pass (`void offsetWidth`): this runs under
+     a slider's finger, and against this stylesheet each forced pass was ~20ms at 4x CPU in the frame the thumb crossed the top */
   const punch = () => {
     btn._punchOnRelease = false;
-    btn.classList.remove("ready-pop"); void btn.offsetWidth;
-    btn.classList.add("ready-pop");
-    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 760);
+    btn.classList.remove("ready-pop");
+    requestAnimationFrame(() => { btn.classList.add("ready-pop"); clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 760); });
   };
   if(wasOn && !atTop && btn.isConnected && !btn.disabled){
-    btn.classList.remove("just-ready", "ready-pop", "ready-settle"); void btn.offsetWidth;
-    btn.classList.add("just-ready");
+    btn.classList.remove("just-ready", "ready-pop", "ready-settle");
+    requestAnimationFrame(() => { if(!btn.classList.contains("on")) btn.classList.add("just-ready"); });
     clearTimeout(btn._readyT); btn._readyT = setTimeout(() => {
       btn.classList.add("ready-settle"); btn.classList.remove("just-ready"); void btn.offsetWidth;
       requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.remove("ready-settle")));
@@ -122844,20 +123071,18 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
     const v = magnet ? sliderMagnet(slider.value, Number(slider.min), Number(slider.max)) : Number(slider.value);
     dragging = magnet;
     set(v);
-    valDisplay.textContent = formatVal(v);
+    liveText(valDisplay, formatVal(v));
     paintSliderFill(slider);
-    if(typeof onChange === "function") onChange();
+    nslSoon(slider, onChange);
   });
   if(magnet){
     /* let go: the thumb lands on the number it is showing */
     const settle = () => { if(!dragging) return; dragging = false; slider.value = get(); paintSliderFill(slider); };
     slider.addEventListener("change", settle);
-    slider.addEventListener("pointerup", settle);
-    slider.addEventListener("touchend", settle);
+    slider.addEventListener("nslrelease", settle);
   }
-  attachRangeTouch(slider);
   paintSliderFill(slider);
-  wrap.append(slider, valDisplay);
+  wrap.append(novaSlider(slider), valDisplay);
   /* A button to the top (build 313: "similar to the all button for the
      questions, give the [time limit] a button but it would be max"). It
      slides the thumb there the way All does. */
@@ -122887,9 +123112,8 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
     /* held from the touch to the release (see syncTopButton) */
     const holdOn = () => { topBtn._held = true; };
     const holdOff = () => { if(!topBtn._held) return; topBtn._held = false; syncTopButton(topBtn, get() >= max); };
-    slider.addEventListener("pointerdown", holdOn);
-    slider.addEventListener("touchstart", holdOn, { passive: true });
-    ["pointerup", "pointercancel", "touchend", "touchcancel", "change"].forEach(t => slider.addEventListener(t, holdOff));
+    slider.addEventListener("nslpress", holdOn);
+    ["nslrelease", "change"].forEach(t => slider.addEventListener(t, holdOff));
     wrap.appendChild(topBtn);
     syncTopButton(topBtn, get() >= max);
   }
@@ -122898,7 +123122,7 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
     /* mid-drag the thumb stays under the finger; it settles on release */
     if(!dragging) slider.value = get();
     paintSliderFill(slider);
-    valDisplay.textContent = formatVal(get());
+    liveText(valDisplay, formatVal(get()));
     if(topBtn) syncTopButton(topBtn, get() >= max);
   };
   return sect;
@@ -123556,9 +123780,9 @@ function showSetup(){
     starCb.disabled = empty;
     starRow.classList.toggle("is-disabled", empty);
     starRow.setAttribute("aria-disabled", empty ? "true" : "false");
-    starHint.textContent = !units ? "Only the questions you have starred."
+    liveText(starHint, !units ? "Only the questions you have starred."
       : n ? n + " starred in " + where
-      : "No starred questions in " + where + " yet";
+      : "No starred questions in " + where + " yet");
     srcSect.paint();
   };
   const optionsModalBody = document.createElement("div");
@@ -124234,21 +124458,21 @@ function showSetup(){
       const ic = modeIcon(mk); ic.classList.add("sheet-summary-modeicon");
       sheetSummaryMode.replaceChildren(ic, document.createTextNode(modeLabel));
     }
-    optionsModalTitle.textContent = settingsTitleOf(cfg.mode);
+    liveText(optionsModalTitle, settingsTitleOf(cfg.mode));
     optionsModalSheet.setAttribute("aria-label", optionsModalTitle.textContent);
-    sheetSummaryLine.textContent = cfg.units.length === 0
+    liveText(sheetSummaryLine, cfg.units.length === 0
       ? "No units selected yet"
       : (cfg.units.length === all.length ? "All units" : cfg.units.length + (cfg.units.length === 1 ? " unit" : " units")) +
-        " \u00b7 " + n + (n === 1 ? " question" : " questions");
+        " \u00b7 " + n + (n === 1 ? " question" : " questions"));
 
     /* Named in full rather than counted. "3 units" above already
        gives the count; what this adds is WHICH three, which is the
        whole point of showing it at the moment you are about to
        start. A shorter version is named the way its pop-up named it,
        so the choice can be checked here before Begin. */
-    aboutTake.textContent = cfg.units.length === 0 ? "" :
+    liveText(aboutTake, cfg.units.length === 0 ? "" :
       (cfg.units.length === all.length ? "All units"
-        : cfg.units.map(u => (cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : unitTitle(u)).join(" \u00b7 "));
+        : cfg.units.map(u => (cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : unitTitle(u)).join(" \u00b7 ")));
     if(aboutTake.parentNode !== sheetSummary) sheetSummary.appendChild(aboutTake);
 
     /* One answer per section, in one place. These used to be split
@@ -124314,13 +124538,13 @@ function showSetup(){
     optSect.hidden = recallRow.hidden && shuffleRow.hidden && flashRow.hidden;
     /* A Qualifier has no rows here since Instant feedback went (build
        324), so the section hides by the rule above. */
-    optLab.textContent = reviewAllMode ? "How to study" : "Answer choice options";
+    liveText(optLab, reviewAllMode ? "How to study" : "Answer choice options");
     /* AFTER the four it asks about, because it asks them rather than
        re-deriving their conditions - reading them before they are set
        is how this kind of check answers last render's question. */
     /* The fold holds the timer and nothing else (build 250). */
     moreWrap.hidden = timerSect.hidden;
-    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "Off";
+    liveText(moreToggleState, cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "Off");
     /* NOT the card (build 251): the whole Timer card turning green when a
        timer was on was "kinda weird" - only its pill in the top box goes
        green (see the tags below). */
@@ -124415,7 +124639,7 @@ function showSetup(){
        review one it says show all, it could say begin review and if
        flashcards are on, it would probably just say the same thing".
        Begin drill / Begin qualifier / Begin review, flashcards or not. */
-    beginBtn.textContent = beginLabelOf(cfg.mode);
+    liveText(beginBtn, beginLabelOf(cfg.mode));
 
     /* WHAT THE RUN IS SET TO, ON ONE LINE IN THE BOX (build 323). It was
        a row of tags with icons (build 250) in the top box; it is the
@@ -124437,7 +124661,12 @@ function showSetup(){
         if(!optSect.hidden && !flashRow.hidden && cfg.flashcards) on.push("Flashcards");
       }
       /* Emptied, it keeps its last words while it folds shut. */
-      if(on.length){
+      /* (384.134) the same words in the same spans are only re-worded (the time limit's minutes, under the slider's finger): a
+         rebuild per step was a style pass of the whole sheet each frame of the drag */
+      const optSpans = [...sheetSummaryOpts.querySelectorAll(":scope > .sheet-summary-opt")];
+      const sameShape = on.length && optSpans.length === on.length && on.every((o, i) => optSpans[i].classList.contains("is-set") === !!o.set);
+      if(sameShape) on.forEach((o, i) => liveText(optSpans[i], o.t || o));
+      else if(on.length){
         sheetSummaryOpts.replaceChildren();
         on.forEach((o, i) => {
           if(i) sheetSummaryOpts.appendChild(document.createTextNode(" \u00b7 "));
@@ -124469,12 +124698,12 @@ function showSetup(){
     /* Review has its own verb (build 245) - it used to fall through to
        "Start drill", which is not what the button does in Review. */
     const verb = "Start " + modeTitleOf(reviewAllMode ? "review" : cfg.mode === "exam" ? "exam" : "drill").toLowerCase() + ", ";
-    startBtn.textContent =
+    liveText(startBtn,
       cfg.units.length === 0 ? "Start" :
       pool.length === 0 ? "Nothing to draw" :
-      verb + n + (n === 1 ? " question" : " questions");
+      verb + n + (n === 1 ? " question" : " questions"));
 
-    selAll.textContent = cfg.units.length === all.length ? "Clear all" : "Select all";
+    liveText(selAll, cfg.units.length === all.length ? "Clear all" : "Select all");
 
     const bits = [];
     /* The drill/exam/game explanatory bits removed here — these just
@@ -124499,7 +124728,7 @@ function showSetup(){
     /* Removed entirely per explicit request \u2014 previously explained
        the "recent missed" filtering feature here whenever nothing had
        been missed yet. */
-    note.textContent = bits.join(" ");
+    liveText(note, bits.join(" "));
     /* With the mode-explanation bits removed above, there are long
        stretches (the common case: source isn't "recent", timer isn't
        counting down, storage is fine) where bits stays empty. A <p>
@@ -147685,6 +147914,9 @@ function showVirtualRoomSetup(editRoom){
      in the game's colour - the way a test's box is titled Drill or Exam -
      and "Virtual Room" only until one is picked (paintSummaryGame). */
   function paintSummaryGame(){
+    /* (384.134) once per game, not on every refresh: it rebuilt the game's icon (an SVG) on each step of the How many slider */
+    if(sheetSummaryMode._game === (vroomGame || "") && sheetSummaryMode.isConnected) return;
+    sheetSummaryMode._game = vroomGame || "";
     sheetSummaryMode.classList.toggle("vroom-summary-game", !!vroomGame);
     if(vroomGame) sheetSummaryMode.dataset.mode = vroomGame; else delete sheetSummaryMode.dataset.mode;
     if(!vroomGame){ sheetSummaryMode.textContent = "Virtual Room"; return; }
@@ -147855,10 +148087,10 @@ function showVirtualRoomSetup(editRoom){
     const n = [...picked].reduce((sum, name) =>
       sum + unitVersionCount(name, pickedVersions[name] === "test" ? "test" : "all"), 0);
 
-    sheetSummaryLine.textContent = picked.size === 0
+    liveText(sheetSummaryLine, picked.size === 0
       ? "No units selected yet"
       : (picked.size === allUnits.length ? "All units" : picked.size + (picked.size === 1 ? " unit" : " units")) +
-        " \u00b7 " + n + (n === 1 ? " question" : " questions");
+        " \u00b7 " + n + (n === 1 ? " question" : " questions"));
     paintSummaryGame();
     syncCountSlider(n);
     const asked = (qCount && qCount < n) ? qCount : n;
@@ -147868,24 +148100,24 @@ function showVirtualRoomSetup(editRoom){
       const partial = asked < n;
       vrHundoNote.hidden = !canCut;
       vrHundoNote.classList.toggle("is-ok", canCut && !partial);
-      vrHundoNote.textContent = !canCut ? ""
+      liveText(vrHundoNote, !canCut ? ""
         : !partial
           ? (shortVer ? "A 100% counts as a hundo for each whole unit here."
             : picked.size === 1 ? "The whole unit, so a 100% here counts as a hundo." : "Every question, so a 100% on a unit counts as a hundo.")
         : picked.size === 1
           ? "Not the whole unit, so this match won't count toward a hundo."
-          : "Not every question, so this match won't count toward any hundos.";
+          : "Not every question, so this match won't count toward any hundos.");
     }
     /* BATTLE CYCLES THE BANK TO AT LEAST FIFTY, so a one-unit room of
        twelve questions still has enough to fight with. */
-    sheetSummaryTime.textContent = !vroomGame
+    liveText(sheetSummaryTime, !vroomGame
       ? asked + (asked === 1 ? " question" : " questions") + " \u00b7 no game picked yet"
       : vroomGame === "battle"
       ? "Two teams \u00b7 " + Math.max(BATTLE_MIN_Q, asked) + " questions, 20s each"
       : (vroomGame === "tug"
       ? "About " + tugPaceMinutes(asked) + " min"
       : Math.round(RACE_QUESTION_MS / 1000) + "s a question") +
-      " \u00b7 " + asked + (asked === 1 ? " question" : " questions");
+      " \u00b7 " + asked + (asked === 1 ? " question" : " questions"));
 
     /* Same treatment as the ordinary unit picker: reads as unavailable,
        still takes the tap, and says why rather than doing nothing. */
@@ -147898,7 +148130,7 @@ function showVirtualRoomSetup(editRoom){
     startBtn.setAttribute("aria-label", inert ? "Match settings - select units first"
       : "Match settings, " + n + (n === 1 ? " question" : " questions"));
 
-    selAll.textContent = picked.size === allUnits.length ? "Clear all" : "Select all";
+    liveText(selAll, picked.size === allUnits.length ? "Clear all" : "Select all");
   }
 
   startBtn.addEventListener("click", () => {
@@ -170796,7 +171028,9 @@ if(backToTopBtn){
   /* (384) nor a board row's art going in or a loop going on over it (its frame is the same size either way): each queued that
      measure over the whole board - a forced layout - on every step of the art queue, and on the way back to the app */
   const BTT_QUIET = ".hfx-box, .results-level-avatar, svg, .rank-avatar, .rank-col-rank, .rank-col-flare, .cosmic-rank-anim, .char-flip-play, .lw-podium-avwrap";
-  try{ new MutationObserver(ms => { if(ms.some(m => !(m.target && m.target.closest && m.target.closest(BTT_QUIET)))) queueBackToTopRoom(); })
+  /* (384.134) nor, until it is let go, for a slider's drag: every step rewrites its number and the sheet's count, and each queued that
+     measure - a forced layout of the screen, 50-70ms at 4x CPU on the start sheet (check-b384-sliders H). Measured once, on release. */
+  try{ new MutationObserver(ms => { if(ms.some(m => !(m.target && m.target.closest && m.target.closest(BTT_QUIET)))){ try{ if(nslBusy()){ NSL.after.add(queueBackToTopRoom); return; } }catch(e){} queueBackToTopRoom(); } })
     .observe(stage, { childList: true, subtree: true }); }catch(e){}
   /* Wrapped, not passed directly. addEventListener hands the listener
      the click event, so "toTop" received a PointerEvent as its "instant"

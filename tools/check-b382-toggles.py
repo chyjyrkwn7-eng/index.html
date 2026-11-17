@@ -154,7 +154,10 @@ with sync_playwright() as pw:
         # REVISED IN 383 ("a smidge better and smoother", beside iOS's own switch): the settle is shorter again (290 -> 230ms,
         # .64 of 381's) and the solid knob comes back at its start - check-b383-toggles measures that; here, faster than 381
         # but not a snap (.55-.85 of before), same curves
-        pop and sh and .55 <= pop / OLD_POP <= .85 and .55 <= sh / OLD_SHRINK <= .85 and K["up"][-1]["ease"] == "cubic-bezier(0.3, 1.25, 0.5, 1)" and K["down"][-1]["ease"] == "cubic-bezier(0.3, 1.04, 0.4, 1)", K)
+        # REVISED IN 384.134 (toggles, "ours change at different speeds"): iOS 26's own numbers off Madison's recording at 60fps -
+        # the swell ~110ms (<= 130) and the settle a ~240ms spring (200-280) on the shared GLASS curves; check-b384-toggles holds
+        # the rest (one speed for the glide and the colour, the solid knob back as the glass lands)
+        pop and sh and 0 < pop <= 130 and 200 <= sh <= 280 and K["up"][-1]["ease"] == "cubic-bezier(0.25, 0.9, 0.35, 1.06)" and K["down"][-1]["ease"] == "cubic-bezier(0.3, 1.35, 0.5, 1)", K)
     ctx.close()
     br.close()
 print("ALL PASS" if ok else "FAILURES")

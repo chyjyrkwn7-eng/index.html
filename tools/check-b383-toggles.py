@@ -10,7 +10,7 @@ As an iPhone (its user agent, real touches through CDP), Review's start sheet on
     tap is at most 20% of the way, and it is home within 450ms;
 (2) the knob is never a hollow ring: no frame where the glass has shrunk more than half-way back to the knob while the
     solid knob is under half shown;
-(3) it is all over (the lens gone, the solid knob back) within 450ms of the finger lifting.
+(3) it is all over (the lens gone, the solid knob back) within 560ms of the finger lifting (384.134: was 450, see the check).
 Run:  python3 tools/check-b383-toggles.py   (--against OLD/index.html must FAIL)"""
 import json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -96,8 +96,11 @@ with sync_playwright() as pw:
                 chk("(2) %s: never a hollow ring - no frame shrunk past half-way with the solid knob under half shown (%d such frames)" % (turn, len(hollow)),
                     not hollow, hollow[:6])
                 gone = next((x["t"] for x in fr if up is not None and x["t"] > up and not x["lens"]), None)
-                chk("(3) %s: the lens is gone, the solid knob back, within 450ms of the finger lifting (%s)" % (turn, None if gone is None else "%dms" % (gone - up)),
-                    gone is not None and gone - up <= 450, {"gone": gone, "up": up})
+                # REVISED IN 384.134 (toggles): iOS 26's switch (Madison's recording, 60fps) is solid again as the glass lands (~300ms
+                # after a tap) and its size then settles on a spring for ~250ms more; ours: glide 280 + settle 240 from the landing, so
+                # the lens element goes ~500ms after the lift. The solid knob's return at the landing is check-b384-toggles T2d.
+                chk("(3) %s: the lens is gone, the solid knob back, within 560ms of the finger lifting (%s)" % (turn, None if gone is None else "%dms" % (gone - up)),
+                    gone is not None and gone - up <= 560, {"gone": gone, "up": up})
             else:
                 chk("(2) %s: the glass knob ran" % turn, False, "no lens frames")
             pg.wait_for_timeout(700)
