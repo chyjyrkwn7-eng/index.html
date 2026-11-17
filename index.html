@@ -26197,6 +26197,16 @@
     .pf-ccase .nova-case-sideplate{ font-size:.62rem; }
   }
   [data-reduce-motion="true"] .pf-ccase{ transition:none; }
+  /* THE SEAM FOLLOWS THE CORNERS (384.133 casefix): the lid is a .8rem strip with the card's 26px corners, which a strip that
+     short cannot hold (the browser scales both radii down to its height, 12.8px), and its seam - the strip's bottom border -
+     ran the full width, so at both top corners a tighter corner and a line poked out past the card's curve: "the top edges look
+     so sharp". The strip paints nothing now; its band and the seam are drawn on the card itself (::after, the card's own
+     corners), so they stop where the card's edge does. */
+  .pf-case.pf-case-closed{ --pfc-lid:.8rem; --pfc-seam:rgba(0,0,0,.34); --pfc-band:linear-gradient(180deg, rgba(255,255,255,.025), rgba(0,0,0,.06)); }
+  @media (min-width:40rem){ .pf-case.pf-case-closed{ --pfc-lid:.9rem; } }
+  .pf-case.pf-case-closed .pf-ccase-lid{ background:none !important; border-bottom-color:transparent !important; border-radius:0; }
+  .pf-ccase::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
+    background:linear-gradient(var(--pfc-seam), var(--pfc-seam)) 0 var(--pfc-lid) / 100% 1px no-repeat, var(--pfc-band) 0 0 / 100% var(--pfc-lid) no-repeat; }
   .pf-strip.badge-strip{ display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); gap:.35rem; }
   .pf-strip.badge-strip .badge-strip-cell{ width:auto; height:auto; aspect-ratio:1; display:block; margin:0; }
   .pf-strip.badge-strip .badge-strip-cell svg{ display:block; width:100%; height:100%; }
@@ -32225,6 +32235,9 @@
   .bc-open .bc-lidlight.is-near{ opacity:.08; transition:opacity 1.5s ease .1s; }
   .bc-open .bc-lidlight.is-far{ opacity:.6; transition:opacity 1.6s ease .5s; }
   .bc-scene.bc-still .bc-lidlight.is-far{ opacity:.6; }
+  /* a badge seated in this scene: its reflection comes up as it lands (384.133 casefix) */
+  .bc-open .bc-lidlight.is-seat.is-lit{ opacity:.6; transition:opacity 1.2s ease .15s; }
+  .bc-scene.bc-still .bc-lidlight.is-seat.is-lit{ opacity:.6; transition:none; }
   /* the lid, on its hinges at the tray's far edge: the near edge lifts
      TOWARDS you (positive rotateX about the top edge, build 308) and goes
      on round until it stands behind the tray, lining out */
@@ -34620,6 +34633,36 @@
   .bc-scene .nova-case-cap, .bc-scene .nova-case-screw, .bc-scene .bc-handle, .bc-scene .nova-case-handle{ display:none !important; }
   .bc-scene .nova-case-wall.is-hw::before, .bc-scene .nova-case-wall.is-hw::after{ display:none !important; }
 
+  /* ---- THE CUTSCENE CASE'S EDGES (384.133 casefix) ----
+     Madison: "Why do the top edges look so sharp? And the bottom edges? They can be but they just look off." The case was a box
+     of flat planes: the tray and the lid's top rounded at 3% of the width (3.6% at the lid's free corners), but the two walls
+     you see - the base's front under the tray, the lid's front along the top of the open lid - were full-width rectangles with
+     square ends, so at all four outer corners a square wall stuck out past a rounded top (a step at the seam, a sharp shoulder
+     at the top). Now it is one rounded box: every top (tray, lid inside and outside) takes the Badges tray's corner (6.5% of
+     the width, the 26px Delta case), the flat part of each wall runs between the corners (its ::before, so the latches and
+     keepers keep their places on the full-width wall), and each corner is the wall turning round it - five narrow facets of a
+     quarter cylinder of that radius (.bc-facet, from buildBadgeCase3D), shaded darker as they turn to the side. Static planes in
+     the case's own 3D: nothing new moves, nothing is filtered. */
+  .bc-scene{ --bc-r:calc(var(--cw) * .065); --case-outer-r:var(--bc-r); --hw-r:var(--bc-r); }
+  .bc-scene .bc-case :is(.bc-front, .bc-lid-front){ background:none !important; border-radius:0 !important; box-shadow:none; }
+  .bc-scene .bc-case :is(.bc-front, .bc-lid-front).nova-case-wall.is-hw::before{ display:block !important; content:""; position:absolute;
+    top:0; bottom:0; left:calc(var(--bc-r) - 1px); right:calc(var(--bc-r) - 1px); width:auto; min-width:0; transform:none; z-index:0; border-radius:0;
+    box-shadow:none; background-color:#1D2228; background-image:var(--case-shell-bg); background-size:100% 100%; }
+  .bc-case .bc-facet{ --fw:calc(var(--bc-r) * .376); top:calc(100% - var(--bc-r)); width:var(--fw); height:var(--fh); pointer-events:none;
+    transform-origin:50% 0; transform:translateZ(var(--fz)) rotateZ(var(--fa)) translateY(calc(var(--bc-r) * .9877)) rotateX(-90deg);
+    background-color:#1D2228; background-image:linear-gradient(rgba(0,0,0,var(--fs)), rgba(0,0,0,var(--fs))), var(--case-shell-bg); background-size:100% 100%; }
+  .bc-case .bc-facet.is-l{ left:calc(var(--bc-r) - var(--fw) / 2); }
+  .bc-case .bc-facet.is-r{ left:calc(100% - var(--bc-r) - var(--fw) / 2); }
+  .bc-case .bc-facet.is-base{ --fz:var(--d); --fh:var(--d); }
+  .bc-case .bc-facet.is-lidf{ --fz:var(--dl); --fh:var(--dl); }
+  /* what sits inside a top follows its corner */
+  .bc-scene .bc-lining{ border-radius:calc(var(--bc-r) * .7); }
+  .bc-scene .bc-lining::after{ border-radius:calc(var(--bc-r) * .45); }
+  .bc-scene .bc-lidlight{ border-radius:calc(var(--bc-r) * .8); }
+  .bc-scene .nova-case-cushion{ border-radius:calc(var(--bc-r) * .55); }
+  .bc-scene .nova-case-cushion::after, .bc-scene .nova-case-stitchrow{ border-radius:calc(var(--bc-r) * .42); }
+  .bc-scene .nova-case-cushion::before{ border-radius:calc(var(--bc-r) * .36); }
+
   /* ---- ONE GLASS FOR EVERY SYSTEM CONTROL (build 327 round 10) ----
      "I don't know how much more clear I could be about getting that bottom
      tab Liquid Glass look app wide. The pause button chat button and
@@ -36102,6 +36145,8 @@ html.is-browser{ --fade-paper: transparent; }
     -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
   }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-lid{ border-bottom-color:rgba(255,255,255,.06); background:none; }
+  /* (384.133 casefix) that seam and no band, drawn on the card so they end at its corners (see THE SEAM FOLLOWS THE CORNERS) */
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed{ --pfc-seam:rgba(255,255,255,.06); --pfc-band:linear-gradient(transparent, transparent); }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-front{ padding-top:.9rem; padding-bottom:1.1rem; }
   /* YOU: the rank is the headline under the name, in its colour and
      lit, as on the person card, with "Level N" under it in the card's
@@ -137189,6 +137234,18 @@ function buildBadgeCase3D(all, held){
   ["l", "r"].forEach(side => lidFront.appendChild(kit.keeper(side, "bc-keeper bc-keeper-" + side)));
   lid.append(lidIn, lidOut, lidFront);
   kase.append(floor, front, tray, spill, lid);
+  /* THE ROUNDED CORNERS' WALLS (384.133 casefix): at each front corner of the base and of the lid, the wall turning round a
+     corner of the tray's radius - five facets of a quarter cylinder, darker as they face the side (see .bc-facet) */
+  const BC_FACETS = 5;
+  [[kase, "is-base"], [lid, "is-lidf"]].forEach(([host, part]) => ["l", "r"].forEach(side => {
+    for(let i = 0; i < BC_FACETS; i++){
+      const a = (i + .5) * 90 / BC_FACETS;
+      const f = mk("bc-facet " + part + " is-" + side);
+      f.style.setProperty("--fa", (side === "l" ? a : -a).toFixed(1) + "deg");
+      f.style.setProperty("--fs", (.34 * Math.pow(a / 90, 1.5)).toFixed(3));
+      host.appendChild(f);
+    }
+  }));
   stage.appendChild(kase);
   return { stage, kase, slots, lid, lidIn, lidOut, lidFront, tray, handle, front, spill, lining, lidNear, lidFar, grid };
 }
@@ -137232,7 +137289,9 @@ function bcLeakLayers(all, held, o){
   const pools = [];
   /* never wider than a column, so two colours side by side stay two */
   const cols = (o.grid && o.grid.cols) || 4;
-  const ww = Math.min(o.w, 100 / cols * 1.15);
+  /* (384.133 casefix) the patch on the lid's inside right over each badge is no wider than its column: it is what the open lid's
+     reflection (bcLidReflection) grows out of, and at 1.15 columns a neighbour's colour lay over an empty column */
+  const ww = Math.min(o.w, 100 / cols * (mode === "over" ? .6 : 1.15));
   spots.forEach(p => {
     const k = bcRowWeight(p.depth, mode) * st;
     const x = map(p.fx), y = mode === "over" ? (o.y ? o.y(p.fy) : p.fy * 100) : o.at;
@@ -137242,6 +137301,33 @@ function bcLeakLayers(all, held, o){
   });
   if(!pools.length) pools.push("radial-gradient(60% " + o.h + "% at 50% " + (o.at || 50) + "%, rgba(214,222,232,.3) 0%, rgba(214,222,232,.1) 45%, transparent 100%)");
   return pools.join(", ");
+}
+/* THE OPEN LID'S REFLECTION (384.133 casefix): "the color reflecting to the back of these case, why does it not match with
+   what's actually there in the case?" The open lid showed two blobs (orange-yellow and teal) under a tray of green, yellow, red,
+   brown, blue and pink: its light was one band along the hinge, weighted to the back row (a front-row badge gave a sixth of the
+   light, so most of the case never showed), each pool nearly two columns wide (neighbours mixed: green + yellow read orange),
+   washed 30% toward white, and the badge that had just been seated was never in it. Now it is the tray seen in the lid: one
+   soft pool per FOUND badge, in its own colour (badgeThemeFor(u).g, the light every other part of the case uses), over its own
+   column, mirrored about the hinge (the back row lowest, nearest the hinge; the front row highest), the pools no wider than a
+   column so two colours side by side stay two, a little fainter the further the badge is from the lid. Nothing found, no
+   colour at all. Built once from the store when the scene is built (no per-frame work); a badge seated during the scene has its
+   own layer (.bc-lidlight.is-seat) that comes up by opacity when it lands. o.grid is the case's grid. */
+function bcLidReflection(all, held, grid){
+  const spots = bcBadgeSpots(all, held, grid);
+  if(!spots.length) return "none";
+  const cols = (grid && grid.cols) || 4, rows = (grid && grid.rows) || Math.ceil(all.length / cols);
+  /* the lid leans back past upright, so the tray's image in it is foreshortened: its rows fill the lower ~70% of the lid
+     (the case's name, at the top, stays clear) */
+  const ww = 100 / cols * .58, hh = Math.max(100 / rows * .46, 9);
+  return spots.map(p => {
+    /* a tall case (Fire Code's eight rows) stacks more pools in a column: each a little fainter, so a column reads as a soft glow */
+    const k = (.95 - .45 * p.depth) * Math.sqrt(Math.min(1, 5 / rows));
+    /* the light box is inset 2% of the case's width each side */
+    const x = (p.fx - .02) / .96 * 100, y = 100 - p.fy * 72;
+    return "radial-gradient(" + ww.toFixed(1) + "% " + hh.toFixed(1) + "% at " + x.toFixed(1) + "% " + y.toFixed(1) + "%, " +
+      "color-mix(in srgb, " + p.col + " " + Math.round(100 * k) + "%, transparent) 0%, " +
+      "color-mix(in srgb, " + p.col + " " + Math.round(52 * k) + "%, transparent) 45%, transparent 100%)";
+  }).join(", ");
 }
 
 function playBadgeCaseScene(units, done, retro, opts){
@@ -137279,7 +137365,16 @@ function playBadgeCaseScene(units, done, retro, opts){
      foot of the open lid, strongest from the back row (lidIn is the lid
      turned over, so its top is the lid's free edge) */
   C.lidNear.style.background = bcLeakLayers(all, heldBefore, { grid: C.grid, mode: "over", w: 22, h: 18, y: fy => (1 - fy) * 100 });
-  C.lidFar.style.background = bcLeakLayers(all, heldBefore, { grid: C.grid, mode: "back", at: 104, w: 30, h: 34 });
+  C.lidFar.style.background = bcLidReflection(all, heldBefore, C.grid);
+  /* each badge this scene seats: its own reflection, lit when it lands (384.133 casefix) */
+  const seatLights = {};
+  units.forEach(u => {
+    if(!slots[u]) return;
+    const l = mk("bc-lidlight is-seat");
+    l.style.background = bcLidReflection(all, x => x === u, C.grid);
+    C.lidFar.after(l);
+    seatLights[u] = l;
+  });
   overlay.appendChild(leak);
 
   /* The token on its own, first. .bc-flyer moves it about the screen and
@@ -137381,6 +137476,7 @@ function playBadgeCaseScene(units, done, retro, opts){
   const seatQuiet = u => {
     slots[u].replaceChildren(buildUnitBadgeSVG(u, true, { px: badgeCaseSlotPx() }));
     slots[u].classList.add("is-held", "is-new");
+    if(seatLights[u]) seatLights[u].classList.add("is-lit");
   };
 
   /* ---- REDUCE MOTION: THE STILL SCENE ---- */
@@ -137550,6 +137646,7 @@ function playBadgeCaseScene(units, done, retro, opts){
     const ring = mk("bc-seatring");
     slots[u].appendChild(ring);
     slots[u].classList.add("is-held", "is-new");
+    if(seatLights[u]) seatLights[u].classList.add("is-lit");
     flyer.classList.add("bc-landed");
     kase.classList.remove("bc-thud"); void kase.offsetWidth; kase.classList.add("bc-thud");
     name.textContent = badgeTitle(u);
