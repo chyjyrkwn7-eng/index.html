@@ -227,15 +227,30 @@ GEOM2 = r"""async () => {
     /* the pin, rendered in grey at the geometry's own resolution (one sample a pixel: the same frame as its fields) */
     const g = objPinGeometry(face, u, 256), GW = g.W;
     const ga = renderObjPin(u, true, GW, 1, face).getContext('2d').getImageData(0, 0, GW, GW).data;
-    let wallN = 0, wx = 0, wy = 0, faceN = 0, fx = 0, fy = 0, ul = 0, uln = 0, dr = 0, drn = 0, s1 = 0, s2 = 0, sn = 0;
+    let wallN = 0, wx = 0, wy = 0, faceN = 0, fx = 0, fy = 0, edN = 0, ex = 0, ey = 0, ul = 0, uln = 0, dr = 0, drn = 0, s1 = 0, s2 = 0, sn = 0;
     for(let yy = 1; yy < GW - 1; yy++) for(let xx = 1; xx < GW - 1; xx++){
       const i = yy * GW + xx, j = i * 4, sd = g.SD[i];
       if(sd > .35 && ga[j + 3] > 235){ wallN++; wx += xx; wy += yy; }
+      if(sd < 0 && sd > -1){ edN++; ex += xx; ey += yy; }
       if(sd < 0){ faceN++; fx += xx; fy += yy;
         if(sd > -BEV * .8 && sd < -.8){ const gx = g.SD[i + 1] - g.SD[i - 1], gy = g.SD[i + GW] - g.SD[i - GW], gl = Math.hypot(gx, gy) || 1, nx = gx / gl, ny = gy / gl;
           if(nx + ny < -.9){ ul += lum(ga, j); uln++; } else if(nx + ny > .9){ dr += lum(ga, j); drn++; } }
         if(sd < -(BEV + 1.5)){ const L = lum(ga, j); s1 += L; s2 += L * L; sn++; } } }
-    const wallShare = wallN / Math.max(1, faceN), wallDx = wallN ? (wx / wallN - fx / faceN) / g.k : 0, wallDy = wallN ? (wy / wallN - fy / faceN) / g.k : 0;
+    /* (384.133 badgeart) the wall's centre against the centre of the face's EDGE (the outer unit of the face), not of its area: the wall is
+       the edge swept down-right, so the two differ by the sweep alone. Against the area's centre a pin with its thin parts to one side (the
+       sprinkler's jets, the extinguisher's levers and hose) read as a wall up or left of its face while it was down-right of every edge. */
+    let wallShare = wallN / Math.max(1, faceN), wallDx = wallN && edN ? (wx / wallN - ex / edN) / g.k : 0, wallDy = wallN && edN ? (wy / wallN - ey / edN) / g.k : 0;
+    /* ...and where the centres cannot say (a fan of jets: only the edges facing down-right have a wall, and on a fan those are all on
+       one side), each wall pixel is traced back: it is down-right of the face if stepping up-left from it along OBJ_PIN.wallDir, by
+       no more than the wall's depth, lands on the face. 90% of the wall must, and more of it than the opposite way would claim. */
+    if(wallN && (wallDx <= 0 || wallDy <= 0)){
+      const WD = OBJ_PIN.wallDir, DEP = OBJ_PIN.wall + .6; let dr = 0, ul = 0;
+      const inFace = (x, y) => { x = Math.round(x); y = Math.round(y); return x >= 0 && y >= 0 && x < GW && y < GW && g.SD[y * GW + x] < 0; };
+      for(let yy = 1; yy < GW - 1; yy++) for(let xx = 1; xx < GW - 1; xx++){ const i = yy * GW + xx; if(!(g.SD[i] > .35 && ga[i * 4 + 3] > 235)) continue;
+        let a = false, b = false; for(let t = .25; t <= DEP; t += .25){ if(!a && inFace(xx - WD[0] * t * g.k, yy - WD[1] * t * g.k)) a = true; if(!b && inFace(xx + WD[0] * t * g.k, yy + WD[1] * t * g.k)) b = true; }
+        if(a) dr++; if(b) ul++; }
+      if(dr >= .9 * wallN && dr > ul){ wallDx = Math.max(wallDx, dr / wallN); wallDy = Math.max(wallDy, dr / wallN); }
+    }
     const bevel = (uln ? ul / uln : 0) - (drn ? dr / drn : 0), mean = sn ? s1 / sn : 0, relief = sn ? Math.sqrt(Math.max(0, s2 / sn - mean * mean)) : 0;
     /* THE REFLECTIVE FINISH (round 4): on the enamel, the clear coat's highlight (its 99th percentile of luminance over its median, inside
        the bevel); on the metal parts, a polished range (98th over 10th percentile) - the studio reflected, not a flat grey */
