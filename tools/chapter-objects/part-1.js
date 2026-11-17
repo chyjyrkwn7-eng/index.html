@@ -53,7 +53,7 @@
    looping from the valve down the side to its horn, clipped to the body (the loop is a real hole). Built as one filleted union (OBJ_SDF). ---- */
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
-  const body = S.union([S.box(31, 34, 36, 62, 5), S.ellipse(49, 37, 18, 12)], 0);
+  const body = S.union([S.box(29, 34, 40, 62, 5.5), S.ellipse(49, 37, 20, 12.5)], 0);   /* (384.133: 4 wider, so its back holds its title at the academy's size) */
   const neck = S.box(44, 19, 10, 10, 1.5), valve = S.box(38, 13, 22, 8, 2.5);
   const lever = S.capsule(53, 10.6, 77, 5.6, 2.5), handle = S.capsule(55, 17.6, 79, 19, 2.5);
   const gauge = S.circle(32.5, 15.5, 5.4), gstem = S.box(33, 14, 7, 3, 1);
@@ -63,9 +63,9 @@
     d: sil.d, holes: sil.holes, base: "red",
     plates: [
       ["red", S.shape(body, BB), { dome: 1.7 }],                                                          /* the cylinder */
-      ["cream", OBJ_rrect(33, 54, 32, 23, 2), { z: .5, bev: .6, col: "#F4F1EA" }],                         /* its label */
+      ["cream", OBJ_rrect(32, 54, 34, 23, 2), { z: .5, bev: .6, col: "#F4F1EA" }],                         /* its label */
       ["cream", "M37 61H61M37 66H61M37 71H54", { ln: 1.5, cut: .6, paint: 0 }],                           /* its lines of instructions */
-      ["deep", OBJ_rrect(31, 90, 36, 6, [0, 0, 5, 5]), { z: .3, bev: .5 }],                               /* the foot ring */
+      ["deep", OBJ_rrect(29, 90, 40, 6, [0, 0, 5.5, 5.5]), { z: .3, bev: .5 }],                               /* the foot ring */
       ["rubber", S.shape(S.union([hose, horn], .6), BB), { dome: .9 }],                                    /* the hose and its horn */
       ["steel", S.shape(clip, BB), { z: .5, bev: .5 }],                                                    /* the clip */
       ["brass", S.shape(neck, BB), { z: .4, bev: .5 }],                                                    /* the collar */

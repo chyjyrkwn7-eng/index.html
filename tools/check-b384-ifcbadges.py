@@ -290,7 +290,11 @@ with sync_playwright() as pw:
         # CHANGED ON PURPOSE (384 final check, badges round 2): the academy's own look-alikes went - TCOLE Rules, De-Escalation,
         # Crisis Intervention Training and Civil Process have new outlines, eight units new enamels (check-b384-badgetwins
         # holds the academy to Fire Code's rule now). Was 8996cbb2 (1dca98e). Taken with --dump on this round's build.
-        PIN = "2de41ef8"
+        # RE-PINNED (384.133 badgeart): 2de41ef8 was taken before the academy's badges were drawn as pins and reverted (384.121) and
+        # before the 384.108 shine took the in-SVG glint out of every badge drawing (its mask, gradient and band). Read on this build
+        # against main 384.107 (7bdca1e, 29fbbe96): every academy outline, channel, colour and back plan is identical, and the drawings
+        # differ only by that glint group. Taken on this build.
+        PIN = "dc7d6f55"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)

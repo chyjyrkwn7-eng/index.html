@@ -84,13 +84,18 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:900], flush=True)
 def base_body():
     if "--base" in sys.argv: return open(sys.argv[sys.argv.index("--base") + 1], encoding="utf-8").read()
-    return subprocess.run(["git", "-C", ROOT, "show", "claude/b384-chapterbadges-all:index.html"], capture_output=True, check=True).stdout.decode("utf-8")
+    # (384.133 badgeart) RE-PINNED: the base was claude/b384-chapterbadges-all (384.63). Since then the academy's badges were drawn as
+    # pins and taken back out (384.121: "Revert the badges for the police academy"), to exactly what main 384.107 (7bdca1e) draws, so
+    # 384.63 is no longer what the academy is meant to draw - (8) failed on every build since, the academy untouched. The base is now
+    # 7bdca1e, and the 384.108 shine's removal of the in-SVG glint (its mask, gradient and band: Madison's "needs to be smoother", the
+    # compositor glint replaced it) is normalised away in both. Any other change to an academy badge still fails (8).
+    return subprocess.run(["git", "-C", ROOT, "show", "7bdca1e:index.html"], capture_output=True, check=True).stdout.decode("utf-8")
 UNITS = [u[0] for u in json.load(open(os.path.join(HERE, "chapter-icons", "units.json"), encoding="utf-8"))]
 PROTOTYPES = ["Chapter 10: Means of Egress", "Chapter 9: Fire Protection and Life Safety Systems", "Chapter 57: Flammable and Combustible Liquids",
               "Appendix D: Fire Apparatus Access Roads", "Chapter 53: Compressed Gases", "Chapter 1: Scope and Administration",
               "Chapter and Section Finder", "Chapter 5: Fire Service Features"]
 HASH = "const H = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };"
-SNAP = """async (skip) => { %s const out = {}; const norm = s => s.replace(/bdg\\d+/g, 'bdgN');
+SNAP = """async (skip) => { %s const out = {}; const norm = s => s.replace(/bdg\\d+/g, 'bdgN').replace(/<mask id="bdgN-sil"[\\s\\S]*?<\\/mask>/g, '').replace(/<linearGradient id="bdgN-shn"[\\s\\S]*?<\\/linearGradient>/g, '').replace(/<g mask="url\\(#bdgN-sil\\)" class="badge-shine">[\\s\\S]*?<\\/g><\\/g>/g, '');
   for(const u of unitsInTeachingOrder()){ if(skip.indexOf(u) >= 0) continue;
     const e = badgeStrikeEntry(u, false, 96, false, 0), g = badgeStrikeEntry(u, true, 96, false, 0);
     out[u] = [H(norm(buildUnitBadgeSVG(u, true, { vector: true, dirt: 0 }).outerHTML)), H(norm(buildUnitBadgeSVG(u, false).outerHTML)),

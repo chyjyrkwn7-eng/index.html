@@ -120,7 +120,7 @@
    streams grooved into it. ---- */
 {
   const O = [38, 50], deg = Math.PI / 180, at = (a, r) => [O[0] + r * Math.cos(a * deg), O[1] + r * Math.sin(a * deg)];
-  const A = 46, RV = 50, RT = 57,   /* (384.79) A 33 -> 46: a wider spray, room for the back's title and its FIRE CODE line (9.2 CSS px in your hand) */ top = (x) => 39 + 4 * (x - 26) / 20, bot = (x) => 61 - 4 * (x - 26) / 20;
+  const A = 50, RV = 50, RT = 57,   /* (384.79) A 33 -> 46: a wider spray, room for the back's title and its FIRE CODE line (9.2 CSS px in your hand); (384.133) 46 -> 50, its title at the academy's smallest */ top = (x) => 39 + 4 * (x - 26) / 20, bot = (x) => 61 - 4 * (x - 26) / 20;
   const edge = [at(-A, RV)], er = [2];
   for(let k = 0; k < 5; k++){ const c = -A + (k + .5) * (2 * A / 5); edge.push(at(c - 3.6, RT), at(c + 3.6, RT)); er.push(4, 4); if(k < 4){ edge.push(at(c + 6.6, RV)); er.push(2.5); } }
   edge.push(at(A, RV)); er.push(2);
@@ -223,7 +223,7 @@
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
   const G = [46, 31], th = -14 * Math.PI / 180;
   const rot = ([x, y]) => [G[0] + (x - G[0]) * Math.cos(th) - (y - G[1]) * Math.sin(th), G[1] + (x - G[0]) * Math.sin(th) + (y - G[1]) * Math.cos(th)];
-  const TP = [[31.5, 21], [60.5, 21], [68, 28.5], [68, 95], [24, 95], [24, 28.5]];
+  const TP = [[30.5, 21], [61.5, 21], [70, 29.5], [70, 95], [22, 95], [22, 29.5]];
   const red = S.grow(S.poly(TP), 2), yel = S.grow(S.poly(TP.map(rot)), 2);
   const wire = S.minus(S.union([S.circle(G[0], 11, 9.5), S.cone(G[0], 11, G[0], 29, 9.5, 2.6)], 0), S.union([S.circle(G[0], 11, 4.6), S.cone(G[0], 11, G[0], 18.5, 4.6, .8)], 0));
   const hole = S.circle(G[0], G[1], 2.9);
@@ -231,7 +231,7 @@
   const sil = S.trace(all, BB);
   /* the printed form, pressed into the card */
   let grid = "";
-  [[27.5, 35.5], [56.5, 64.5]].forEach(([x0, x1]) => { grid += "M" + x0 + " 50V88M" + ((x0 + x1) / 2) + " 50V88M" + x1 + " 50V88";
+  [[26, 34], [58, 66]].forEach(([x0, x1]) => { grid += "M" + x0 + " 50V88M" + ((x0 + x1) / 2) + " 50V88M" + x1 + " 50V88";
     for(let y = 50; y <= 88; y += 4.75) grid += "M" + x0 + " " + y + "H" + x1; });
   CHAPTER_OBJ["Appendix I: Fire Protection Systems—Noncompliant Conditions"] = {
     d: sil.d, holes: sil.holes,
