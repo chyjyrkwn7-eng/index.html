@@ -94,7 +94,7 @@ SPEC = {
                     over=(".profile-stats-tab > .points-progress-sect", ".slab")),
   # (384.133 follow) Profile's blocks (the hero, the challenge card, the shut case) are Settings' card too; its labels are Settings' grey
   "profile":   dict(heads=".profile-identity-tab .pf-goal > .pf-tasks-kick, .profile-identity-tab .pf-goal > .pf-rewards-kick",
-                    cards=".profile-identity-tab > .profile-hero, .profile-identity-tab > .pf-goal, .profile-identity-tab .pf-ccase"),
+                    cards=".profile-identity-tab > .profile-hero, .profile-identity-tab > .pf-goal, .profile-identity-tab .pf-ccase, .profile-identity-tab > .pf-case.pfr-case"),   # (profilerows2) the case is a Delta card of its own
 }
 MEASURE = """(s)=>{ const q=sel=>sel?[...document.querySelectorAll(sel)].filter(__io.shown):[];
   const out={};

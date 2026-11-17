@@ -617,6 +617,10 @@
       }
     } catch(e){}
   })();
+  /* (384 profilerows2, until the options are picked) Profile's Badge case and Customize rows, three looks each: ?pfbadge=a|b|c and
+     ?pfcz=a|b|c put html[data-pfrow-badge] / [data-pfrow-cz] on this page load; without them the recommended one (pfrOpt). */
+  (function(){ try{ var b = /[?&]pfbadge=([abc])(&|$)/.exec(location.search), c = /[?&]pfcz=([abc])(&|$)/.exec(location.search), d = document.documentElement;
+    if(b) d.setAttribute("data-pfrow-badge", b[1]); if(c) d.setAttribute("data-pfrow-cz", c[1]); }catch(x){} })();
 </script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -41718,6 +41722,172 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .screen-profile .pf-goal .pf-kick:is(.pf-tasks-kick, .pf-rewards-kick){
     font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans); color:var(--delta-head-ink) !important;
   }
+  /* ==== (384 profilerows2) PROFILE'S THREE ENTRY ROWS, ROUND TWO (pfrLadderFill, pfrCaseFill, pfrCustomizeFill) ====
+     The Rank ladder is the foot of the Next rank card, under a hairline: the name and a grey line, then every rank's emblem on one
+     line. The Badge case is a Delta card of its own (the tokens Settings reads), the whole card one button. Customize stays the
+     person card's row. Options: .pfr-bc-a|b|c and .pfr-cz-a|b|c (classes the script puts on the buttons, from
+     html[data-pfrow-badge] / [data-pfrow-cz]). Motion: only under .pfr-anim (armed by pfrArm), from .is-in, once; transform and
+     opacity only; .is-still / Reduce motion draw the last frame. */
+  html[data-theme][data-layout] body #stage .profile-identity-tab button.pf-act.pfr-ld.pfr-ld{
+    display:grid !important; grid-template-columns:minmax(0, 1fr); gap:12px !important; align-items:stretch !important;
+    max-width:none; min-height:44px; margin:18px 0 0; padding:16px 0 2px !important; border:0 !important; border-top:1px solid rgba(255,255,255,.12) !important;
+    border-radius:0 !important; background:none !important; box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  }
+  html[data-theme][data-layout] body #stage .profile-identity-tab button.pf-act.pfr-ld.pfr-ld:active{ transform:scale(.985); }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pfr-ld > .pfr-ld-head{ display:flex; align-items:center; gap:14px; min-width:0; padding:0 4px; }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pfr-ld > .pfr-ld-head > .pf-act-words{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pfr-ld > .pfr-ld-head > .pf-act-chev{ flex:0 0 auto; display:inline-flex; width:17px; height:17px; color:var(--soft); opacity:.85; }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pfr-ld > .pfr-ld-head > .pf-act-chev svg{ width:17px; height:17px; display:block; }
+  /* the track: one column per rank; scrolls (centred on yours, pfrCentreLadder) only when the box is narrower than its least */
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll{ display:block; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin:0 -2px; padding:4px 2px 2px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll::-webkit-scrollbar{ display:none; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-track{
+    --ns:32px; --nb:44px; position:relative; display:grid; grid-template-columns:repeat(var(--n, 7), minmax(0, 1fr)); align-items:start;
+    min-width:calc(var(--n, 7) * 38px); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-rail{ position:absolute; left:calc(50% / var(--n, 7)); right:calc(50% / var(--n, 7)); top:calc(var(--nb) / 2 - 1.5px);
+    height:3px; border-radius:2px; background:rgba(255,255,255,.13); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-fill{ position:absolute; left:0; top:0; bottom:0; width:calc(var(--ld-p, 0) * 100%); border-radius:inherit; transform-origin:0 50%;
+    background:var(--ld-g, var(--ld-c)); box-shadow:0 0 8px color-mix(in srgb, var(--ld-c) 50%, transparent); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell{ position:relative; z-index:1; display:grid; grid-template-columns:minmax(0, 1fr); grid-template-rows:var(--nb) auto; justify-items:center; align-items:center; min-width:0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-node{ position:relative; display:block; box-sizing:border-box; width:var(--ns); height:var(--ns); border-radius:50%;
+    background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rank-color) 26%, #10141A), #0A0C10 75%);
+    border:2px solid color-mix(in srgb, var(--rank-color) 62%, #fff);
+    box-shadow:0 0 0 2px var(--delta-card-fill), 0 0 10px color-mix(in srgb, var(--rank-color) 45%, transparent); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-emb{ position:absolute; inset:0; display:block; border-radius:50%; overflow:hidden; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-emb > svg{ display:block; width:104%; height:104%; margin:-2%; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-here > .pfr-ld-node{ width:var(--nb); height:var(--nb); border-color:#fff;
+    box-shadow:0 0 0 3px var(--delta-card-fill), 0 0 0 5px color-mix(in srgb, var(--rank-color) 55%, transparent), 0 0 18px color-mix(in srgb, var(--rank-color) 65%, transparent); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-next > .pfr-ld-node{ border-style:dashed; border-color:color-mix(in srgb, var(--rank-color) 75%, #fff); box-shadow:0 0 0 2px var(--delta-card-fill); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-next .pfr-ld-emb{ opacity:.72; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-locked > .pfr-ld-node{ background:#17181B; border-color:rgba(255,255,255,.16); box-shadow:0 0 0 2px var(--delta-card-fill); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-locked .pfr-ld-emb{ opacity:.3; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-name{ margin-top:6px; font-size:12px; font-weight:600; line-height:14px; white-space:nowrap; color:color-mix(in srgb, var(--rank-color) 70%, #fff); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-pulse{ position:absolute; inset:-3px; border-radius:50%; border:2px solid color-mix(in srgb, var(--rank-color) 80%, #fff); opacity:0; pointer-events:none; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-glint{ position:absolute; top:-20%; bottom:-20%; left:-70%; width:45%; opacity:0; pointer-events:none;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.7) 50%, transparent); transform:translateX(0) rotate(12deg); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-node > .pfr-ld-pg{ position:absolute; right:-9px; top:-7px; width:20px; height:20px; margin:0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-node > .pfr-ld-pg > svg{ width:100%; height:100%; display:block; }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .profile-identity-tab .pfr-ld-track{ --ns:40px; --nb:54px; }
+    html[data-layout] body #stage .profile-identity-tab .pfr-ld-name{ font-size:13px; }
+    html[data-layout] body #stage .profile-identity-tab .pfr-ld-node > .pfr-ld-pg{ width:26px; height:26px; right:-11px; top:-9px; }
+  }
+  /* the ladder's motion: the line draws to your rank, each rank lights as it passes, yours pops, a ring goes out twice and a glint crosses it */
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-ld-fill{ transform:scaleX(0); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) :is(.pfr-ld-node, .pfr-ld-name){ opacity:0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ld-fill{ animation:pfr-ld-draw .95s cubic-bezier(.33,.7,.25,1) .12s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ld-node{ animation:pfr-ld-node .42s cubic-bezier(.3,1.5,.55,1) var(--d, 0s) both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .is-here > .pfr-ld-node{ animation:pfr-ld-here .6s cubic-bezier(.3,1.5,.55,1) var(--d, 0s) both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ld-name{ animation:pfr-fade .4s ease-out calc(var(--d, 0s) + .2s) both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ld-pulse{ animation:pfr-ld-pulse 1.5s ease-out calc(var(--d, 0s) + .3s) 2; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ld-glint{ animation:pfr-ld-glint .9s ease-in-out calc(var(--d, 0s) + .45s) 1; }
+  @keyframes pfr-ld-draw{ from{ transform:scaleX(0); } }
+  @keyframes pfr-ld-node{ from{ opacity:0; transform:scale(.6); } }
+  @keyframes pfr-ld-here{ 0%{ opacity:0; transform:scale(.6); } 60%{ opacity:1; transform:scale(1.12); } 100%{ opacity:1; transform:none; } }
+  @keyframes pfr-fade{ from{ opacity:0; } }
+  @keyframes pfr-ld-pulse{ 0%{ opacity:.85; transform:scale(1); } 100%{ opacity:0; transform:scale(1.65); } }
+  @keyframes pfr-ld-glint{ 0%{ opacity:0; transform:translateX(0) rotate(12deg); } 20%{ opacity:1; } 80%{ opacity:1; } 100%{ opacity:0; transform:translateX(420%) rotate(12deg); } }
+
+  /* ---- the Badge case: a Delta card, the whole card the button ---- */
+  html[data-theme][data-layout] body #stage .screen-profile .profile-identity-tab > .pf-case.pfr-case{
+    position:relative; display:block; margin:0 !important; padding:0 !important; border:0 !important; overflow:visible;
+    background:var(--delta-card-fill) !important; background-image:none !important; border-radius:var(--delta-card-r) !important; box-shadow:none !important;
+  }
+  html[data-theme][data-layout] body #stage .screen-profile .profile-identity-tab > .pf-case.pfr-case > button.pf-act.pfr-bc{
+    width:100%; max-width:none; min-height:84px; margin:0; padding:14px 20px 14px 16px !important; gap:14px !important;
+    border:0 !important; border-radius:var(--delta-card-r) !important; background:none !important; box-shadow:none !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  }
+  html[data-layout] body #stage .profile-identity-tab .pfr-bc > .pf-case-new{ display:inline-flex; align-items:center; font-size:14px; font-weight:500; color:var(--soft); }
+  html[data-layout] body #stage .profile-identity-tab :is(.pfr-bc, .pfr-cz) .pfr-line{ display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-size:13px; font-weight:500; line-height:1.3; color:var(--soft); opacity:.85; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-bc .pf-act-sub, html[data-layout] body #stage .profile-identity-tab .pfr-cz .pf-act-sub{ font-variant-numeric:tabular-nums; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-bc-art{ position:relative; flex:0 0 auto; display:grid; place-items:center; width:60px; height:56px; }
+  /* a: the shut case, its front filling */
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc{ position:relative; display:block; width:50px; height:36px; margin:12px 10px 0 0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-handle{ position:absolute; left:50%; top:-7px; width:18px; height:9px; margin-left:-9px; box-sizing:border-box;
+    border:2.5px solid #8C9099; border-bottom:0; border-radius:6px 6px 0 0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-lid{ position:absolute; left:0; right:0; top:0; height:11px; border-radius:7px 7px 2px 2px;
+    background:linear-gradient(180deg, #5A5E67, #464951); box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-front{ position:absolute; left:0; right:0; top:12px; bottom:0; overflow:hidden; border-radius:2px 2px 7px 7px;
+    background:#34363C; box-shadow:inset 0 0 0 1px rgba(255,255,255,.1); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-front::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(232,198,106,.45), inset 0 -1px 0 rgba(0,0,0,.35); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-fill{ position:absolute; inset:0; display:block; transform-origin:50% 100%; transform:scaleY(var(--f, 0));
+    background:linear-gradient(180deg, #F2DB93, #C9A44A); opacity:.92; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-latch{ position:absolute; top:8px; width:8px; height:7px; border-radius:2px; background:#C9CDD5; box-shadow:0 1px 0 rgba(0,0,0,.4); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-latch.is-l{ left:9px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-latch.is-r{ right:9px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-pin{ position:absolute; right:-3px; top:-2px; width:26px; height:26px; display:block; }
+  html[data-layout] body #stage .profile-identity-tab :is(.pfr-mc-pin, .pfr-ring-pin, .pfr-coin-top) > svg{ display:block; width:100%; height:100%; overflow:visible; }
+  /* b: one tick per badge round a ring, the newest in the middle */
+  html[data-layout] body #stage .profile-identity-tab .pfr-ring{ position:absolute; inset:-2px 0; display:block; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ring > svg{ display:block; width:100%; height:100%; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ring-t{ fill:rgba(255,255,255,.14); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ring-t.is-on{ fill:#E8C66A; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ring-pin{ position:relative; display:block; width:30px; height:30px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ring-pct{ position:relative; font-size:13px; font-weight:700; color:var(--soft); }
+  /* c: the newest as a coin on its stack, and a segment per badge */
+  html[data-layout] body #stage .profile-identity-tab .pfr-coin{ position:relative; display:block; width:46px; height:52px; }
+  html[data-layout] body #stage .profile-identity-tab :is(.pfr-coin-top, .pfr-coin-under, .pfr-coin-empty){ position:absolute; left:0; top:0; width:46px; height:46px; box-sizing:border-box; border-radius:50%; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-coin-top, html[data-layout] body #stage .profile-identity-tab .pfr-coin-empty{ display:grid; place-items:center; padding:6px;
+    background:radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--badge-glow, #E8C66A) 30%, #24262B), #141519 78%);
+    box-shadow:inset 0 0 0 1.5px rgba(232,198,106,.75), 0 2px 6px rgba(0,0,0,.45); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-coin-under{ background:linear-gradient(180deg, #3A3C42, #222328); box-shadow:inset 0 0 0 1.5px rgba(232,198,106,.38); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-coin-under.is-1{ transform:translateY(3px); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-coin-under.is-2{ transform:translateY(6px); opacity:.75; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-seg{ align-self:stretch; display:grid; grid-template-columns:repeat(var(--n, 24), minmax(0, 1fr)); gap:2px; height:6px; margin-top:7px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-seg > i{ display:block; border-radius:1.5px; background:rgba(255,255,255,.13); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-seg > i.is-on{ background:linear-gradient(180deg, #F2DB93, #D3AE55); }
+  /* the case's motion */
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) :is(.pfr-mc-pin, .pfr-ring-pin, .pfr-coin-top, .pfr-coin-under){ opacity:0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-mc-fill{ transform:scaleY(0); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) :is(.pfr-ring-t.is-on, .pfr-seg > i.is-on){ opacity:.12; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-mc-fill{ animation:pfr-rise .9s cubic-bezier(.3,.7,.25,1) .1s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-mc-pin{ animation:pfr-drop .6s cubic-bezier(.3,1.45,.55,1) .75s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ring-t.is-on{ animation:pfr-lite .3s ease-out calc(.1s + var(--k) * .8s) both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ring-pin{ animation:pfr-pop .5s cubic-bezier(.3,1.5,.55,1) .2s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-coin-under{ animation:pfr-fade .35s ease-out .1s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-coin-top{ animation:pfr-settle .7s cubic-bezier(.3,1.35,.5,1) .25s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-seg > i.is-on{ animation:pfr-lite .28s ease-out calc(.2s + var(--k) * .75s) both; }
+  @keyframes pfr-rise{ from{ transform:scaleY(0); } }
+  @keyframes pfr-drop{ 0%{ opacity:0; transform:translateY(-14px) rotate(-14deg); } 60%{ opacity:1; } 100%{ opacity:1; transform:none; } }
+  @keyframes pfr-lite{ from{ opacity:.12; } }
+  @keyframes pfr-pop{ from{ opacity:0; transform:scale(.55); } }
+  @keyframes pfr-settle{ 0%{ opacity:0; transform:translateY(-16px) rotate(-16deg) scale(.9); } 55%{ opacity:1; } 100%{ opacity:1; transform:none; } }
+
+  /* ---- Customize: the person card's row ---- */
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-a > .settings-row-icon.settings-row-icon{ flex:0 0 34px; width:34px; height:34px; --nd-r:7.6px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-a > .settings-row-icon.settings-row-icon > svg{ width:26px; height:26px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-next{ position:relative; flex:0 0 auto; display:grid; place-items:center; width:46px; height:46px; --nd-r:12px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-next > .trk-thumb{ width:46px; height:46px; opacity:1; box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-next > .trk-thumb-banner{ border-radius:12px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-next > .trk-thumb-rim{ box-shadow:inset 0 0 0 4px var(--rim-c); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-prog{ align-self:stretch; display:flex; align-items:center; gap:8px; margin-top:4px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-bar{ position:relative; flex:1 1 auto; height:4px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,.14); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-bar > i{ position:absolute; left:0; top:0; bottom:0; width:calc(var(--f, 0) * 100%); border-radius:inherit; transform-origin:0 50%;
+    background:var(--theme-sig, #F5804D); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-count{ flex:0 0 auto; font-size:12px; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-swatch{ position:relative; flex:0 0 auto; display:grid; place-items:center; width:36px; height:36px; --nd-r:18px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-swatch-ring{ position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(from 200deg, var(--theme-c1, #FFD37A), var(--theme-c2, #F5804D), var(--theme-c3, #E0457B), var(--theme-c1, #FFD37A));
+    -webkit-mask:radial-gradient(circle, transparent 11.5px, #000 12.5px); mask:radial-gradient(circle, transparent 11.5px, #000 12.5px); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-swatch-core{ position:relative; width:14px; height:14px; border-radius:50%; background:var(--theme-sig, #F5804D);
+    box-shadow:0 0 0 1px rgba(255,255,255,.25), 0 0 8px color-mix(in srgb, var(--theme-sig, #F5804D) 60%, transparent); }
+  /* Customize's motion */
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) :is(.pfr-cz-next > .trk-thumb, .pfr-swatch-ring, .pfr-swatch-core){ opacity:0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-bar > i{ transform:scaleX(0); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-cz-next > .trk-thumb{ animation:pfr-pop .5s cubic-bezier(.3,1.5,.55,1) .1s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-bar > i{ animation:pfr-bar .9s cubic-bezier(.3,.7,.25,1) .3s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-swatch-ring{ animation:pfr-spin 1.1s cubic-bezier(.25,.8,.3,1) .1s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-swatch-core{ animation:pfr-pop .45s cubic-bezier(.3,1.5,.55,1) .55s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-cz-tile{ animation:pfr-pop .5s cubic-bezier(.3,1.5,.55,1) .1s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-cz-tile{ opacity:0; }
+  @keyframes pfr-bar{ from{ transform:scaleX(0); } }
+  @keyframes pfr-spin{ from{ opacity:0; transform:rotate(-220deg) scale(.7); } }
+  /* Reduce motion (the app's or the system's): the last frame, nothing moves */
+  html[data-reduce-motion="true"] body #stage .profile-identity-tab .pfr-anim *{ animation:none !important; }
+  @media (prefers-reduced-motion:reduce){ html body #stage .profile-identity-tab .pfr-anim *{ animation:none !important; } }
 </style>
 <script>
   (function(){
@@ -163771,10 +163941,8 @@ function pfGoalFoot(){
   const foot = document.createElement("button");
   foot.type = "button";
   foot.className = "pf-goal-foot";
-  /* (384) a row: the ladder in the next rank's colour (darkened for its white mark), "Rank ladder", what it holds */
-  const r = pfActFill(foot, "ladder", "Rank ladder", "Every rank and what it unlocks", PF_ROW_TILE.ladder);
-  r.label.classList.add("pf-goal-foot-word");
-  foot.setAttribute("aria-label", "Rank ladder: every rank and what it unlocks");
+  /* (384 profilerows2) the ladder itself: every rank's emblem on a line lit to yours (pfrLadderFill) */
+  pfrLadderFill(foot);
   foot.addEventListener("click", () => showRanksScreen("ranks"));
   return foot;
 }
@@ -163912,7 +164080,32 @@ function buildProfileGoal(prog){
    anywhere it opens it, fix that." The whole case was the button; now the
    count pill on its front ("7 of 16 badges ›") is, and the rest of the case
    is the picture of it. */
+/* (384 profilerows2) NOT THE SHUT CASE ANY MORE: a Delta card of its own (Settings' 26px, #2C2C2E), the whole card the button
+   (.pf-case-count, its count still .pf-case-num), drawn in the chosen option by pfrCaseFill. The build-319 shut case is kept
+   below as buildProfileCaseShut, unused, until the option is picked. */
 function buildProfileCase(have, total){
+  const box = document.createElement("div");
+  box.className = "pf-case pfr-case";
+  const n = document.createElement("button");
+  n.type = "button";
+  n.className = "pf-case-count";
+  const cr = pfrCaseFill(n, have, total);
+  box.appendChild(n);
+  let fresh = 0;
+  try{ fresh = badgeNewCount(); }catch(e){}
+  if(fresh){
+    box.classList.add("has-new");
+    const tag = document.createElement("span"); tag.className = "pf-case-new";
+    const word = document.createElement("span"); word.className = "pf-case-new-word"; word.textContent = "New";
+    tag.append(word);
+    cr.tile.appendChild(buildNewDot());
+    n.insertBefore(tag, cr.chev);
+  }
+  n.setAttribute("aria-label", badgeCaseName(BADGE_CASES[0]) + ", " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
+  n.addEventListener("click", () => showRanksScreen("badges"));
+  return box;
+}
+function buildProfileCaseShut(have, total){
   const box = document.createElement("div");
   box.className = "pf-case pf-case-closed";
   const mk = (cls, tag) => { const e = document.createElement(tag || "span"); e.className = cls; return e; };
@@ -163961,7 +164154,323 @@ function buildProfileCase(have, total){
   return box;
 }
 
+/* ==== (384 profilerows2) PROFILE'S THREE ENTRY ROWS, ROUND TWO ====
+   Madison, of the first round's three looks: "The rank ladder one is cool, but I'm not a fan of the badge one or the customization
+   one. The badge one is kinda cool but it doesn't make sense because you only see a few and we can't show all so a different
+   approach. The customize one, it's just not it, I don't like how you see your avatar banner and color there. Make that better as
+   well. Ensure the rank ladder one is good to go, ensure they animate and stuff."
+   - THE RANK LADDER (finished, no options): the foot of the Next rank card. Every rank's emblem on one line in a seven-column grid,
+     the line lit from the first rank to yours; ranks you hold lit, yours larger with a ring and its name under it, the next one
+     dashed, the rest dim. The track is centred on your rank whenever it is wider than its box (a narrow phone). Fire Code's
+     prestige mark rides on the top rank once one is taken.
+   - THE BADGE CASE (a|b|c, html[data-pfrow-badge]): never a few pins standing in for the case. a = a small shut case whose front
+     fills to the share you hold, the newest badge set on its lid; b = a ring of one tick per badge, lit for each you hold, the
+     newest badge in the middle and the closest one to earn named; c = the newest badge as a coin on its stack, and one segment
+     per badge across the row.
+   - CUSTOMIZE (a|b|c, html[data-pfrow-cz]): no character, banner or colour strip. a = the palette tile in the theme's colour
+     with how many you hold and the next one; b = the next unlock itself (its picture, its name, a bar of how close); c = a ring of
+     the theme's colours with how many you hold.
+   Everything is read when built (badgeCountOf, unitBadgeEarned, customizeTally, unlockNextUp): nothing is stored. It plays once
+   when the row first comes on screen (an IntersectionObserver; nothing runs before or after), transform and opacity only, and
+   not at all under Reduce motion or when Profile is drawn again in place. The options are chosen by the address
+   (?pfbadge= / ?pfcz=, the head script); without one the recommended option is shown. */
+function pfrOpt(kind){
+  const d = { badge: "c", cz: "b" };
+  try{ const v = document.documentElement.getAttribute("data-pfrow-" + kind); return /^[abc]$/.test(v || "") ? v : d[kind]; }catch(e){ return d[kind]; }
+}
+function pfrEl(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+function pfrMotionOk(){
+  try{ return document.documentElement.dataset.reduceMotion !== "true" && !(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){ return false; }
+}
+/* Profile drawn again in place (a sync, a tab switch back) does not replay: set by showProfile before it builds */
+var pfrReplay = true;
+var pfrObservers = [];
+var pfrGen = 0;   /* one per showProfile: a row from an earlier Profile that is no longer on the page stops being watched */
+/* arm a row: it waits, still, in its first frame, until it is at least a third on screen, then plays once (onIn runs then) */
+function pfrArm(el, onIn){
+  pfrObservers = pfrObservers.filter(o => { if(o.gen === pfrGen || o.el.isConnected) return true; try{ o.io.disconnect(); }catch(e){} return false; });
+  if(!pfrMotionOk() || !pfrReplay || typeof IntersectionObserver !== "function"){ el.classList.add("is-still"); return; }
+  el.classList.add("pfr-anim");
+  let done = false;
+  const go = () => { if(done) return; done = true; el.classList.add("is-in"); try{ if(onIn) onIn(); }catch(e){} };
+  const io = new IntersectionObserver(es => {
+    if(!el.isConnected) return;   /* (not on the page yet: Profile is mounted after it is built) */
+    if(es.some(x => x.isIntersecting && x.intersectionRatio >= .34)){ io.disconnect(); requestAnimationFrame(go); }
+  }, { threshold: [0, .34, .7] });
+  io.observe(el);
+  pfrObservers.push({ el, io, gen: pfrGen });
+}
+/* a number that counts up to its value over `ms` (the words are right from the start for a screen reader: the label carries them) */
+function pfrCountUp(node, to, fmt, ms){
+  if(!node || !(to > 0)) return;
+  const t0 = performance.now(), dur = ms || 800;
+  const step = now => {
+    if(!node.isConnected) return;
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    node.textContent = fmt(Math.round(to * e));
+    if(k < 1) requestAnimationFrame(step);
+  };
+  node.textContent = fmt(0);
+  requestAnimationFrame(step);
+}
+function pfrChev(){
+  const c = pfrEl("span", "pf-act-chev"); c.setAttribute("aria-hidden", "true");
+  c.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.33" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 5.5 15.45 12 8.9 18.5"/></svg>';
+  return c;
+}
+
+/* ---- THE RANK LADDER ---- */
+function pfrLadderState(){
+  const order = TIER_ORDER_FULL;
+  let cur = null; try{ cur = rankOf(store); }catch(e){}
+  const ci = cur ? order.indexOf(cur) : -1;
+  return { order, ci, cur };
+}
+function pfrLadderTrack(st){
+  const { order, ci } = st;
+  const n = order.length;
+  const track = pfrEl("span", "pfr-ld-track");
+  track.style.setProperty("--n", String(n));
+  track.style.setProperty("--ld-p", String(ci <= 0 ? 0 : ci / (n - 1)));
+  track.style.setProperty("--ld-c", RANK_COLOR[order[Math.max(0, ci)]]);
+  /* the lit line runs through each rank's own colour, from the first to yours */
+  if(ci > 0) track.style.setProperty("--ld-g", "linear-gradient(90deg, " + order.slice(0, ci + 1).map(k => RANK_COLOR[k]).join(", ") + ")");
+  track.dataset.ci = String(ci);
+  const rail = pfrEl("span", "pfr-ld-rail"); rail.setAttribute("aria-hidden", "true");
+  rail.appendChild(pfrEl("i", "pfr-ld-fill"));
+  track.appendChild(rail);
+  let pg = 0; try{ pg = prestigeTaken(); }catch(e){}
+  order.forEach((key, i) => {
+    const state = i === ci ? "is-here" : i < ci ? "is-done" : i === ci + 1 ? "is-next" : "is-locked";
+    const cell = pfrEl("span", "pfr-ld-cell " + state);
+    cell.style.setProperty("--i", String(i));
+    cell.style.setProperty("--rank-color", RANK_COLOR[key]);
+    /* when it lights: as the line reaches it (the line's ease puts it there a little early), then the dim ones after yours */
+    const d = ci < 0 ? .1 + i * .07 : i <= ci ? .12 + (ci ? i / ci : 0) * .7 : .95 + (i - ci - 1) * .07;
+    cell.style.setProperty("--d", d.toFixed(2) + "s");
+    cell.dataset.rank = key;
+    const nd = pfrEl("span", "pfr-ld-node");
+    const em = pfrEl("span", "pfr-ld-emb");
+    try{ em.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key)); }catch(e){}
+    nd.appendChild(em);
+    if(i === ci){
+      nd.appendChild(pfrEl("i", "pfr-ld-pulse"));
+      em.appendChild(pfrEl("i", "pfr-ld-glint"));
+      if(i === n - 1 && pg){ const pm = prestigeMark(pg, "pfr-ld-pg"); if(pm) nd.appendChild(pm); }
+    }
+    cell.appendChild(nd);
+    if(i === ci) cell.appendChild(pfrEl("span", "pfr-ld-name", RANK_DISPLAY_NAME[key]));
+    track.appendChild(cell);
+  });
+  return track;
+}
+/* a narrow box: the track scrolls, centred on your rank */
+function pfrCentreLadder(sc){
+  try{
+    const here = sc.querySelector(".pfr-ld-cell.is-here") || sc.querySelector(".pfr-ld-cell.is-next");
+    if(!here || sc.scrollWidth <= sc.clientWidth + 1) return;
+    sc.scrollLeft = Math.max(0, here.offsetLeft + here.offsetWidth / 2 - sc.clientWidth / 2);
+  }catch(e){}
+}
+function pfrLadderFill(foot){
+  const st = pfrLadderState();
+  const n = st.order.length;
+  const curName = st.ci >= 0 ? RANK_DISPLAY_NAME[st.cur] : "";
+  const nextKey = st.ci + 1 < n ? st.order[st.ci + 1] : null;
+  let pg = 0; try{ pg = prestigeTaken(); }catch(e){}
+  const sub = st.ci < 0 ? "No rank yet · " + RANK_DISPLAY_NAME[st.order[0]] + " next"
+    : !nextKey ? curName + (pg ? " · Prestige " + PRESTIGE_ROMAN[pg] : " · every rank reached")
+    : "Rank " + (st.ci + 1) + " of " + n + " · " + RANK_DISPLAY_NAME[nextKey] + " next";
+  const head = pfrEl("span", "pfr-ld-head");
+  const words = pfrEl("span", "pf-act-words");
+  const lab = pfrEl("span", "pf-act-label pf-goal-foot-word", "Rank ladder");
+  const sb = pfrEl("span", "pf-act-sub pfr-ld-sub", sub);
+  words.append(lab, sb);
+  head.append(words, pfrChev());
+  const sc = pfrEl("span", "pfr-ld-scroll"); sc.setAttribute("aria-hidden", "true");
+  sc.appendChild(pfrLadderTrack(st));
+  foot.classList.add("pf-act", "pfr-ld");
+  foot.replaceChildren(head, sc);
+  foot.setAttribute("aria-label", "Rank ladder: " + (st.ci < 0 ? "no rank yet" : curName + ", rank " + (st.ci + 1) + " of " + n) + ". Every rank and what it unlocks.");
+  requestAnimationFrame(() => pfrCentreLadder(sc));
+  pfrArm(foot, () => pfrCentreLadder(sc));
+  return foot;
+}
+
+/* ---- THE BADGE CASE ---- */
+function pfrBadgeState(have, total){
+  let units = [];
+  try{ units = badgeCaseUnits(BADGE_CASES[0]); }catch(e){}
+  try{ const all = classTopics(); units = units.filter(u => all.indexOf(u) >= 0).concat(all.filter(u => units.indexOf(u) < 0)); }catch(e){}
+  const earned = units.filter(u => { try{ return unitBadgeEarned(u); }catch(e){ return false; } });
+  const fresh = earned.filter(u => { try{ return unlockIsNew("badges", u); }catch(e){ return false; } });
+  /* the newest: one not looked at yet, else the last held in the case's order (the time a badge was earned is not kept) */
+  const newest = fresh.length ? fresh[fresh.length - 1] : earned.length ? earned[earned.length - 1] : null;
+  /* the closest still to earn: the most hundos toward its badge (the academy's bands; Fire Code's badge is one 100%) */
+  let next = null;
+  units.forEach(u => {
+    if(earned.indexOf(u) >= 0) return;
+    let need = 1, now = 0;
+    try{ need = badgeThresholdFor(u); now = Math.min(need, Number((store.unitPerfects || {})[u]) || 0); }catch(e){}
+    if(now > 0 && (!next || now / need > next.now / next.need)) next = { unit: u, now, need };
+  });
+  return { units, earned, newest, next, have, total, frac: total ? Math.max(0, Math.min(1, have / total)) : 0 };
+}
+function pfrBadgeArt(u, cls){
+  const s = pfrEl("span", cls);
+  if(!u) return s;
+  try{
+    const bt = badgeThemeFor(u);
+    if(bt && bt.p) s.style.setProperty("--badge-glow", bt.g || bt.p);
+    s.appendChild(buildUnitBadgeSVG(u, true));
+  }catch(e){}
+  return s;
+}
+function pfrUnitName(u){ try{ return unitTitle(u); }catch(e){ return u; } }
+function pfrCaseArt(bs, opt){
+  const art = pfrEl("span", "pfr-bc-art pfr-dot-host"); art.setAttribute("aria-hidden", "true");
+  if(opt === "a"){
+    /* a small shut case: handle, lid, latches; its front fills to the share held; the newest badge set on the lid */
+    const c = pfrEl("span", "pfr-mc");
+    const front = pfrEl("span", "pfr-mc-front");
+    const fill = pfrEl("i", "pfr-mc-fill"); fill.style.setProperty("--f", String(bs.frac));
+    front.appendChild(fill);
+    c.append(pfrEl("i", "pfr-mc-handle"), pfrEl("i", "pfr-mc-lid"), front, pfrEl("i", "pfr-mc-latch is-l"), pfrEl("i", "pfr-mc-latch is-r"));
+    art.appendChild(c);
+    if(bs.newest) art.appendChild(pfrBadgeArt(bs.newest, "pfr-mc-pin"));
+  } else if(opt === "b"){
+    /* one tick per badge round a ring, lit for each held (in the case's order), the newest in the middle */
+    const n = Math.max(1, bs.units.length);
+    const R = 27, r0 = 22.5, gapDeg = n > 40 ? 1.6 : 3;
+    let ticks = "";
+    bs.units.forEach((u, i) => {
+      const a0 = (i / n) * 360 + gapDeg / 2, a1 = ((i + 1) / n) * 360 - gapDeg / 2;
+      const p = (a, rr) => { const t = (a - 90) * Math.PI / 180; return (30 + rr * Math.cos(t)).toFixed(2) + " " + (30 + rr * Math.sin(t)).toFixed(2); };
+      const on = bs.earned.indexOf(u) >= 0;
+      ticks += '<path class="pfr-ring-t' + (on ? " is-on" : "") + '" style="--k:' + (i / n).toFixed(3) + '" d="M' + p(a0, R) + " A" + R + " " + R + " 0 0 1 " + p(a1, R) +
+        " L" + p(a1, r0) + " A" + r0 + " " + r0 + " 0 0 0 " + p(a0, r0) + 'Z"/>';
+    });
+    const ring = pfrEl("span", "pfr-ring");
+    ring.innerHTML = '<svg viewBox="0 0 60 60" aria-hidden="true" focusable="false">' + ticks + "</svg>";
+    art.appendChild(ring);
+    if(bs.newest) art.appendChild(pfrBadgeArt(bs.newest, "pfr-ring-pin"));
+    else art.appendChild(pfrEl("span", "pfr-ring-pct", Math.round(bs.frac * 100) + "%"));
+  } else {
+    /* the newest badge as a coin on its stack (the stack only as deep as you hold) */
+    const st = pfrEl("span", "pfr-coin");
+    const depth = Math.min(2, Math.max(0, bs.earned.length - 1));
+    for(let i = depth; i >= 1; i--) st.appendChild(pfrEl("i", "pfr-coin-under is-" + i));
+    if(bs.newest) st.appendChild(pfrBadgeArt(bs.newest, "pfr-coin-top"));
+    else st.appendChild(pfrEl("i", "pfr-coin-empty"));
+    art.appendChild(st);
+  }
+  return art;
+}
+function pfrSegBar(bs){
+  const bar = pfrEl("span", "pfr-seg"); bar.setAttribute("aria-hidden", "true");
+  const n = Math.max(1, bs.units.length);
+  bar.style.setProperty("--n", String(n));
+  bs.units.forEach((u, i) => {
+    const s = pfrEl("i", bs.earned.indexOf(u) >= 0 ? "is-on" : "");
+    s.style.setProperty("--k", (i / n).toFixed(3));
+    bar.appendChild(s);
+  });
+  return bar;
+}
+/* fills the case's button (.pf-case-count, its count still .pf-case-num) in the chosen option; returns the parts */
+function pfrCaseFill(btn, have, total){
+  const opt = pfrOpt("badge");
+  const bs = pfrBadgeState(have, total);
+  const art = pfrCaseArt(bs, opt);
+  const words = pfrEl("span", "pf-act-words");
+  const lab = pfrEl("span", "pf-act-label", "Badge case");
+  const fmt = v => v + " of " + total + " badges";
+  const num = pfrEl("span", "pf-act-sub pf-case-num", fmt(have));
+  words.append(lab, num);
+  if(opt === "a"){
+    words.appendChild(pfrEl("span", "pfr-line", bs.newest ? "Newest: " + pfrUnitName(bs.newest) : have >= total ? "Every badge found" : "Score 100% on a unit to earn its badge"));
+  } else if(opt === "b"){
+    const nx = have >= total ? "Every badge found"
+      : bs.next && bs.next.need > 1 ? "Next: " + pfrUnitName(bs.next.unit) + " · " + bs.next.now + " of " + bs.next.need + " hundos"
+      : "Next: score 100% on any unit";
+    num.textContent = fmt(have) + " · " + Math.round(bs.frac * 100) + "%";
+    words.appendChild(pfrEl("span", "pfr-line", nx));
+  } else {
+    words.appendChild(pfrSegBar(bs));
+  }
+  btn.classList.add("pf-act", "pfr-bc", "pfr-bc-" + opt);
+  btn.dataset.have = String(have); btn.dataset.total = String(total);
+  const chev = pfrChev();
+  btn.replaceChildren(art, words, chev);
+  const finalText = num.textContent;
+  pfrArm(btn, () => { if(opt !== "b") pfrCountUp(num, have, fmt, 800); else pfrCountUp(num, have, v => fmt(v) + " · " + Math.round(v / Math.max(1, total) * 100) + "%", 800); });
+  return { tile: art, words, label: lab, sub: num, chev, finalText };
+}
+
+/* ---- CUSTOMIZE ---- */
+function pfrCustomizeState(){
+  let have = 0, total = 0, fresh = 0, next = null;
+  try{ CUSTOMIZE_ORDER.forEach(k => { const t = customizeTally(k); have += t.have; total += t.total; }); }catch(e){}
+  try{ fresh = customizeNewCount(); }catch(e){}
+  try{ next = unlockNextUp(null, 1)[0] || null; }catch(e){}
+  return { have, total, fresh, next };
+}
+function pfrNextText(nx){
+  if(!nx) return "Everything is unlocked";
+  const left = Math.max(0, nx.need - nx.have);
+  return "Next: " + nx.item.name + (left > 0 ? " · " + left.toLocaleString() + " to go" : "");
+}
+function pfrCustomizeFill(btn){
+  const opt = pfrOpt("cz");
+  const cs = pfrCustomizeState();
+  const words = pfrEl("span", "pf-act-words");
+  const lab = pfrEl("span", "pf-act-label", "Customize");
+  words.appendChild(lab);
+  let art, sub, onIn = null;
+  const fmtHeld = v => v + " of " + cs.total + " unlocked" + (cs.fresh ? " · " + cs.fresh + " new" : "");
+  if(opt === "a"){
+    art = settingsRowIcon("palette");
+    art.classList.add("pfr-cz-tile");
+    art.style.setProperty("--tile", "var(--theme-sig)");
+    try{ art.style.setProperty("--tile-rim", "color-mix(in srgb, var(--theme-sig) 62%, #fff)"); }catch(e){}
+    sub = pfrEl("span", "pf-act-sub pfr-cz-held", fmtHeld(cs.have));
+    words.append(sub, pfrEl("span", "pfr-line", pfrNextText(cs.next)));
+    onIn = () => pfrCountUp(sub, cs.have, fmtHeld, 800);
+  } else if(opt === "b"){
+    art = pfrEl("span", "pfr-cz-next pfr-dot-host"); art.setAttribute("aria-hidden", "true");
+    if(cs.next){ try{ art.appendChild(unlockItemThumb(cs.next.item)); }catch(e){} }
+    else { try{ const t = unlockItemThumb({ k: "char", id: store.avatarChar, held: true }); art.appendChild(t); }catch(e){} }
+    const nx = cs.next;
+    sub = pfrEl("span", "pf-act-sub pfr-cz-nextname", nx ? "Next: " + nx.item.name : "Everything is unlocked");
+    words.appendChild(sub);
+    if(nx){
+      const row = pfrEl("span", "pfr-cz-prog");
+      const bar = pfrEl("span", "pfr-bar"); bar.setAttribute("aria-hidden", "true");
+      const f = pfrEl("i"); f.style.setProperty("--f", String(nx.frac)); bar.appendChild(f);
+      row.append(bar, pfrEl("span", "pfr-cz-count", nx.have.toLocaleString() + " / " + nx.need.toLocaleString()));
+      words.appendChild(row);
+    } else words.appendChild(pfrEl("span", "pfr-line", fmtHeld(cs.have)));
+  } else {
+    art = pfrEl("span", "pfr-swatch pfr-dot-host"); art.setAttribute("aria-hidden", "true");
+    art.append(pfrEl("i", "pfr-swatch-ring"), pfrEl("i", "pfr-swatch-core"));
+    sub = pfrEl("span", "pf-act-sub pfr-cz-held", fmtHeld(cs.have));
+    words.appendChild(sub);
+    onIn = () => pfrCountUp(sub, cs.have, fmtHeld, 800);
+  }
+  btn.classList.add("pf-act", "pfr-cz", "pfr-cz-" + opt);
+  btn.dataset.have = String(cs.have); btn.dataset.total = String(cs.total); btn.dataset.fresh = String(cs.fresh);
+  if(cs.next){ btn.dataset.next = cs.next.item.k + ":" + cs.next.item.id; btn.dataset.nextHave = String(cs.next.have); btn.dataset.nextNeed = String(cs.next.need); }
+  btn.replaceChildren(art, words, pfrChev());
+  btn.setAttribute("aria-label", "Customize: character, banner and theme. " + cs.have + " of " + cs.total + " unlocked" + (cs.fresh ? ", " + cs.fresh + " new" : "") +
+    (cs.next ? ". " + pfrNextText(cs.next) + "." : "."));
+  pfrArm(btn, onIn);
+  return { tile: art, words, label: lab, sub };
+}
+
 function showProfile(defaultTab, opts){
+  /* (384 profilerows2) drawn again in place: the rows do not replay */
+  try{ pfrReplay = !document.querySelector("#stage .screen-profile"); }catch(e){ pfrReplay = true; }
+  pfrGen++;
   /* No presence here since build 327z12 round 2: the friends card that
      counted who was online moved to the chat. Nothing on Profile
      repaints on it. */
@@ -164180,9 +164689,9 @@ function showProfile(defaultTab, opts){
      same on every banner - with a palette and the three things it holds named under the word. */
   {
     /* (384) a row: the palette in the theme's own colour (--theme-sig, as Settings' foot), "Customize", what it holds */
-    const cz = pfActFill(nameEditBtn, "personcircle", "Customize", "Character \u00b7 Banner \u00b7 Theme", PF_ROW_TILE.customize);
-    cz.label.classList.add("pcz-label"); cz.sub.classList.add("pcz-sub"); cz.words.classList.add("pcz-words");
-    nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme");
+    /* (384 profilerows2) what it holds and what is next, in the chosen option (pfrCustomizeFill) */
+    const cz = pfrCustomizeFill(nameEditBtn);
+    cz.label.classList.add("pcz-label"); if(cz.sub) cz.sub.classList.add("pcz-sub"); cz.words.classList.add("pcz-words");
   }
   /* something new waiting in Customize (build 299) */
   /* The button clips its own contents (its glass sheen needs
@@ -164191,9 +164700,9 @@ function showProfile(defaultTab, opts){
   try{
     if(customizeNewCount() > 0){
       nameEditBtn.classList.add("has-new");
-      nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme - something new");
+      nameEditBtn.setAttribute("aria-label", (nameEditBtn.getAttribute("aria-label") || "Customize") + " Something new.");
       /* (384) the dot is on the row's icon, at its corner, as an app's badge is (see THE NEW DOT, ONE LOOK) */
-      const tile = nameEditBtn.querySelector(":scope > .settings-row-icon");
+      const tile = nameEditBtn.querySelector(":scope > .settings-row-icon, :scope > .pfr-dot-host");
       if(tile) tile.appendChild(buildNewDot());
       else { nameEditSlot = document.createElement("span"); nameEditSlot.className = "new-dot-anchor"; nameEditSlot.append(nameEditBtn, buildNewDot()); }
     }
