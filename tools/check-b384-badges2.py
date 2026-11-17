@@ -19,7 +19,7 @@ Every badge surface is drawn on the build under test and on a reference build, i
      device pixels: the cutscene allows 2 levels on 0.05% of the frame and prints what it allowed. The frames as they are, glint shown,
      are printed for information only;
  (4) no page errors.
---class academy compares with origin/main (384.107; --acad-ref REV|FILE); --class ifc compares with a68976a (claude/b384-badges,
+--class academy compares with 31588af (was origin/main 384.107; --acad-ref REV|FILE); --class ifc compares with 31588af (384.133 badgeart; was a68976a, claude/b384-badges,
 --ifc-ref REV|FILE). Default: both.
 Run:  python3 tools/check-b384-badges2.py [--class academy|ifc|both] [--against REV|FILE] [--shots DIR]
       --against origin/main must PASS the academy (main against itself); --against a68976a must FAIL it (the 24 redrawn pins)."""
@@ -35,7 +35,15 @@ def body_of(a):
     return subprocess.run(["git", "-C", ROOT, "show", a + ":index.html"], capture_output=True, text=True, check=True).stdout
 HERE_NAME = arg("--against", "working tree")
 HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.html", encoding="utf-8").read()
-REFS = {"academy": arg("--acad-ref", "origin/main"), "ifc": arg("--ifc-ref", "a68976a")}
+# (384.133 badgeart) Fire Code's reference RE-PINNED from a68976a to 31588af: Madison asked for 19 chapters redrawn ("make it great",
+# "fix every one", then "do a check on all of them") - 5, 9, 22, 28, 31, 32, 33, 34, 35, 37, 40, 54, 57, 59, 60, 61, 63, Appendix H and I,
+# and Chapter 3 a little wider and Appendix B's spray wider for their backs - and the badge case itself was rebuilt (384.133 casefix).
+# 31588af is that art and that case. Every badge, back, card and screen is still held pixel for pixel to it, so any change not asked
+# for fails as before; --against 458b3c9 fails on exactly the redrawn chapters and the case.
+# The academy's reference likewise moves from origin/main (384.107) to 31588af: its badges, tokens, sheets and case there are main's
+# pixel for pixel (this gate's (1) and (2), and the case in (3), passed against origin/main on 31588af), but casefix rebuilt the
+# cutscene's case (rounded box, the lid's reflection of the found badges), so main's cutscene frames are no longer the academy's.
+REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "31588af")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene
