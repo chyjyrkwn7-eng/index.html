@@ -149,10 +149,15 @@ with sync_playwright() as pw:
     # ------------------------------------------------------------------ (3) the backs' words
     if want(3):
         R3 = F.evaluate(r"""() => { const R = BADGE_BACK_RELIEF;
-          return unitsInTeachingOrder().map(u => { const p = badgeBackPlan(u), g = badgeStrikeGeometry(badgeShapeFor(u)), W = p.W, D = badgeBackField(g, W);
+          /* (384.133 badgeart) a pin's back (384.67) has no rim: its field is the pin's own silhouette from the foot of its bevel in, and
+             that is the field its words are planned on (badgeBackPlan's objPinBackField). Measured against the struck badge's field - a
+             rim 4.6 deep - every pin read as spilling a few pixels it does not spill. Pins are held to their own field's edge here. */
+          const field = (u, W) => { if(chapterObjShape(u)){ const g = objPinGeometry(badgeFaceShapeFor(u), u, 256, true); return { D: objPinBackField(g, W), lim: -OBJ_PIN.bevel }; }
+            return { D: badgeBackField(badgeStrikeGeometry(badgeShapeFor(u)), W), lim: -R.rimIn }; };
+          return unitsInTeachingOrder().map(u => { const p = badgeBackPlan(u), W = p.W, F = field(u, W), D = F.D;
             const cv = document.createElement('canvas'); cv.width = cv.height = W; const c2 = cv.getContext('2d'); badgeBackDrawPlan(c2, p, W);
             const px = c2.getImageData(0, 0, W, W).data; let out = 0;
-            for(let i = 0; i < W * W; i++) if(px[i * 4 + 3] > 25 && D[i] > -R.rimIn) out++;
+            for(let i = 0; i < W * W; i++) if(px[i * 4 + 3] > 25 && D[i] > F.lim) out++;
             const rows = p.items.filter(i => i.s);
             return { u, mode: p.mode, text: p.mode === 'arc' ? rows.map(i => i.s).join('') : rows.map(i => i.s).join(' '), out, fs: p.fs / W }; }); }""")
         norm = lambda s: re.sub(r"\s*—\s*", "—", re.sub(r"\s+", " ", s)).strip()
@@ -174,9 +179,9 @@ with sync_playwright() as pw:
           const coinCss = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
           const sizes = { hand: binspectW(), coin: Math.min(864, badgeStrikeSize(coinCss * dpr)) };
           const us = A ? A : unitsInTeachingOrder(), res = { sizes, dpr, spill: [], minName: [1e9, ''] };
-          us.forEach(u => { const g = badgeStrikeGeometry(badgeShapeFor(u)), p = badgeBackPlan(u);
-            Object.keys(sizes).forEach(k => { const W = sizes[k], M = badgeBackLayout(u, g, W), D = badgeBackField(g, W); let out = 0;
-              for(let i = 0; i < W * W; i++) if(M[i] > .1 && D[i] > -R.rimIn) out++;
+          us.forEach(u => { const pin = !!chapterObjShape(u), g = pin ? objPinGeometry(badgeFaceShapeFor(u), u, 256, true) : badgeStrikeGeometry(badgeShapeFor(u)), p = badgeBackPlan(u);
+            Object.keys(sizes).forEach(k => { const W = sizes[k], M = badgeBackLayout(u, g, W), D = pin ? objPinBackField(g, W) : badgeBackField(g, W), lim = pin ? -OBJ_PIN.bevel : -R.rimIn; let out = 0;
+              for(let i = 0; i < W * W; i++) if(M[i] > .1 && D[i] > lim) out++;
               if(out) res.spill.push([u.slice(0, 30), k, W, out]); });
             const css = p.fs / p.W * sizes.hand / dpr; if(css < res.minName[0]) res.minName = [+css.toFixed(2), u]; });
           return res; }"""

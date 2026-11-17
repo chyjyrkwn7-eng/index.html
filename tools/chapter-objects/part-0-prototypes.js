@@ -53,51 +53,68 @@
    nipple, the hex body, the two frame arms holding the red glass bulb, the boss and the toothed deflector seen edge on - hanging from
    the red sprinkler main across the top, with the water it throws: five jets fanning out of the deflector, widening as they go. ---- */
 {
+  /* (384.133 badgeart) the main is a big pipe now, 25 across, and the head under it is the same drawing drawn 0.86 as tall: on the main's
+     broad run the back has a band wide enough for the chapter's title and its class line (the old 10-unit main left the title 8.2px in
+     your hand, under the 9.2 every back is held to, and no room for FIRE CODE). */
   const S = OBJ_SDF, BB = [0, 0, 100, 100], ALL = f => S.loops(f, BB).map(S.pathOf).join("");
-  const pipe = S.box(3, 3, 94, 10, 4), tee = S.box(37, 1, 26, 14, 3);
-  const nipple = S.box(43, 14, 14, 5, 1), hex = S.poly([[34, 18], [66, 18], [70, 23], [66, 28], [34, 28], [30, 23]]);
-  const arms = S.union([S.capsule(35.5, 27, 43.5, 46, 3), S.capsule(64.5, 27, 56.5, 46, 3)], 0);
-  const boss = S.box(42, 43, 16, 6, 2), defl = S.box(24, 48, 52, 6, 2);
-  const J = [[32, 53, 7, 76], [41, 53, 25, 88], [50, 53, 50, 94], [59, 53, 75, 88], [68, 53, 93, 76]];
+  const K = .86, Y = y => 27 + (y - 14) * K, Hh = h => h * K;
+  const pipe = S.box(2, 1.5, 96, 25.5, 8), tee = S.box(34, 0, 32, 29, 3.5);
+  const nipple = S.box(42, Y(14), 16, Hh(5) + .6, 1), hex = S.poly([[34, Y(18)], [66, Y(18)], [70, Y(23)], [66, Y(28)], [34, Y(28)], [30, Y(23)]]);
+  const arms = S.union([S.capsule(35.5, Y(27), 43.5, Y(46), 3), S.capsule(64.5, Y(27), 56.5, Y(46), 3)], 0);
+  const boss = S.box(42, Y(43), 16, Hh(6), 2), defl = S.box(24, Y(48), 52, Hh(6) + .4, 2);
+  const J = [[32, 53, 7, 76], [41, 53, 25, 88], [50, 53, 50, 94], [59, 53, 75, 88], [68, 53, 93, 76]].map(([a, b, c, d]) => [a, Y(b), c, Math.min(97, Y(d))]);
   const jets = S.union(J.map(([a, b, c, d]) => S.cone(a, b, c, d, 1.9, 3.9)), 2);
-  const bulb = S.ellipse(50, 36.5, 3.4, 8), head = S.union([nipple, hex, arms, bulb, boss, defl], 1.2);
+  const bulb = S.ellipse(50, Y(36.5), 3.4, Hh(8)), head = S.union([nipple, hex, arms, bulb, boss, defl], 1.2);
   const sil = S.trace(S.union([pipe, tee, head, jets], 1.5), BB);
+  let teeth = ""; [30, 38, 46, 54, 62, 70].forEach(x => { teeth += "M" + x + " " + Y(49).toFixed(2) + "V" + Y(53).toFixed(2); });
   CHAPTER_OBJ["Chapter 9: Fire Protection and Life Safety Systems"] = {
     d: sil.d, holes: sil.holes,
     base: "brass", col: "#C9972F",
     plates: [
-      ["red", S.shape(pipe, BB), { dome: 1.2 }],                                                          /* the sprinkler main */
+      ["red", S.shape(pipe, BB), { dome: 1.6 }],                                                          /* the sprinkler main */
+      ["red", "M9 6H31M69 6H91M9 22.5H31M69 22.5H91", { ln: 1.2, cut: .5, paint: 0 }],                                      /* its seams */
       ["red", S.shape(tee, BB), { z: .6, bev: .6, dome: .6, col: "#B52A22" }],                             /* its tee */
       ["water", ALL(jets), { dome: 1.4 }],                                                        /* the jets */
       ["brass", S.shape(nipple, BB), { z: .4 }],                                                          /* the nipple */
       ["brass", S.shape(hex, BB), { gem: 1.4, gw: 3 }],                                                   /* the hex body */
       ["brass", ALL(arms), { dome: 1 }],                                                                  /* the frame */
-      ["red", OBJ_ellipse(50, 36.5, 3.4, 8), { dome: 2.2 }],                                              /* the glass bulb */
+      ["red", OBJ_ellipse(50, Y(36.5), 3.4, Hh(8)), { dome: 2.2 }],                                       /* the glass bulb */
       ["brass", S.shape(boss, BB), { dome: 1 }],                                                          /* the boss */
       ["brass", S.shape(defl, BB), { z: .6, bev: .6 }],                                                   /* the deflector */
-      ["brass", "M30 49V53M38 49V53M46 49V53M54 49V53M62 49V53M70 49V53", { ln: 1.3, cut: .7, paint: 0 }],   /* its teeth */
+      ["brass", teeth, { ln: 1.3, cut: .7, paint: 0 }],                                                   /* its teeth */
     ],
   };
 }
 
-/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can in classic jerry-can red: the carry handle with its open loop (a real hole),
-   the pressed panel with its embossed X, the black spout with its amber cap. ---- */
+/* ---- Chapter 57: Flammable and Combustible Liquids - a gas can in classic jerry-can red: the carry handle with a real hole, the panel
+   pressed into its side with the embossed X, and the spout. (384.133 badgeart, Madison: "The gas can, the black part needs to connect
+   well to the actual canister. Make that great." The black spout stood on the can's top edge with nothing under it, so it floated.) The
+   spout now screws onto a NECK: a raised red boss moulded into the can's shoulder, the black threaded collar seated on it, square to the
+   spout, with its grip ridges, and the spout running out of the collar to its amber cap. The silhouette is one filleted union, so the
+   neck grows out of the can's top. ---- */
 {
+  const S = OBJ_SDF, BB = [0, 0, 100, 100];
   const A = [72, 31], B = [89, 9], ux = B[0] - A[0], uy = B[1] - A[1], L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
   const at = (t, w) => [A[0] + dx * t + nx * w, A[1] + dy * t + ny * w];
-  const bl = at(0, -6), br = at(0, 6), tl = at(L - 4, -6), tr = at(L - 4, 6), cl = at(L - 4, -8), cr = at(L - 4, 8), ct = at(L + 4, -8), cu = at(L + 4, 8);
+  const quad = (t0, t1, w) => [at(t0, -w), at(t1, -w), at(t1, w), at(t0, w)];
+  const body = S.box(8, 31, 80, 63, 5.5), handle = S.box(13, 10, 39, 24, 4), boss = S.box(63.5, 24, 17, 9, 2.5);
+  const collar = S.poly(quad(2.5, 9.5, 7.6)), spout = S.poly(quad(9, L - 3.5, 5.6)), cap = S.poly(quad(L - 4, L + 4, 7.8));
+  const solid = S.union([body, handle, boss, collar, spout, cap], 1.6);
+  const sil = S.trace(S.minus(solid, S.box(20, 16, 25, 9, 3.5)), BB);
+  const ridges = [-4.6, -1.6, 1.6, 4.6].map(w => "M" + at(3.6, w).map(v => v.toFixed(2)).join(" ") + "L" + at(8.4, w).map(v => v.toFixed(2)).join(" ")).join("");
   CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {
-    d: OBJ_poly([[8, 94], [8, 34], [13, 30], [13, 14], [17, 10], [48, 10], [52, 14], [52, 30], [bl[0], 30], bl, tl, cl, ct, cu, cr, tr, br, [br[0], 30], [84, 31], [88, 36], [88, 94]],
-      [6, 3, 2, 4, 2, 2, 4, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 3, 4, 6]),
-    holes: [OBJ_rrect(20, 16, 25, 9, 3.5)],
+    d: sil.d, holes: sil.holes,
     base: "red",
     plates: [
-      ["red", OBJ_rrect(8, 30, 80, 64, [0, 0, 6, 6])],                                          /* the can */
+      ["red", OBJ_rrect(8, 31, 80, 63, 5.5)],                                                   /* the can */
       ["red", OBJ_rrect(15, 40, 66, 46, 4), { z: -.9, bev: 1 }],                                /* the panel pressed into its side */
       ["red", "M21 46L75 80M75 46L21 80", { ln: 6, z: 1.4, bev: 1.4 }],                         /* the embossed X */
-      ["red", OBJ_rrect(13, 10, 39, 22, 4), { z: .3, bev: .8 }],                                /* the handle */
-      ["rubber", OBJ_poly([bl, tl, tr, br], 1), { z: .4, dome: .8 }],                           /* the spout */
-      ["hot", OBJ_poly([cl, ct, cu, cr], 1.5), { dome: 1.4 }],                                  /* its cap */
+      ["red", OBJ_rrect(13, 10, 39, 24, 4), { z: .3, bev: .8 }],                                /* the handle */
+      ["red", OBJ_rrect(63.5, 24, 17, 9, 2.5), { z: .6, bev: .8, dome: .6 }],                    /* the neck, moulded into the shoulder */
+      ["rubber", OBJ_poly(quad(9, L - 3.5, 5.6), 1), { z: .4, dome: .8 }],                       /* the spout */
+      ["rubber", OBJ_poly(quad(2.5, 9.5, 7.6), 1.2), { z: .8, bev: .7, dome: .5 }],               /* the threaded collar seated on the neck */
+      ["rubber", ridges, { ln: 1.1, cut: .6, paint: 0 }],                                        /* its grip ridges */
+      ["hot", OBJ_poly(quad(L - 4, L + 4, 7.8), 1.5), { dome: 1.4 }],                             /* the cap */
     ],
   };
 }
@@ -193,22 +210,36 @@
 }
 
 /* ---- Chapter 5: Fire Service Features - a fire hydrant, refined (384.93 r9): the faceted operating nut, the domed bonnet and the flange
-   ring under it, the barrel with its big pumper cap facing you (the outlet a hydrant is known by), the two side outlets short and capped
-   with chrome hex caps (they were long grey blocks, like ears), the base flange in the hydrant's own red with its bolts. ---- */
+   ring under it, the barrel with its big pumper cap facing you (the outlet a hydrant is known by), the base flange in the hydrant's own
+   red with its bolts. (384.133 badgeart, Madison: "This needs to be fixed. Look at the sides." The side outlets were grey blocks stuck on
+   short red stubs with a notch between them, so they read as loose ears.) Each side outlet is now one piece with the barrel: a short
+   red nozzle that flares into the barrel with a fillet, a groove where its cap threads on, the cap itself in the hydrant's red - a
+   little wider than the nozzle, with its grip ribs - and the steel pentagon nut on the cap's end, as on a real hydrant. ---- */
 {
+  /* one side outlet, on the right; the left is its mirror */
+  const R = [[70, 44], [73, 46.5], [78, 46.5], [78, 44], [87, 44], [87, 48.5], [92, 48.5], [92, 55.5], [87, 55.5], [87, 60], [78, 60], [78, 57.5], [73, 57.5], [70, 60]];
+  const Rr = [1, 2, .6, .6, 2.5, .6, 1.2, 1.2, .6, 2.5, .6, .6, 2, 1];
+  const L = R.map(([x, y]) => [100 - x, y]).reverse(), Lr = Rr.slice().reverse();
+  const top = [[42, 4], [58, 4], [60, 14], [72, 18], [76, 32], [70, 34]], topR = [2, 2, 2, 6, 3, 1];
+  const foot = [[70, 80], [80, 82], [82, 94], [18, 94], [20, 82], [30, 80]], footR = [1, 2, 2, 2, 2, 1];
+  const ret = [[30, 34], [24, 32], [28, 18], [40, 14]], retR = [1, 3, 6, 2];
+  const nozzle = side => { const pts = [[70, 44], [73, 46.5], [78.4, 46.5], [78.4, 57.5], [73, 57.5], [70, 60]].map(([x, y]) => [side > 0 ? x : 100 - x, y]);
+    return OBJ_poly(side > 0 ? pts : pts.slice().reverse(), [0, 2, 0, 0, 2, 0]); };
+  const cap = side => OBJ_rrect(side > 0 ? 78 : 13, 44, 9, 16, 2.5);
+  const nut = side => OBJ_rrect(side > 0 ? 86.5 : 8, 48.5, 5.5, 7, 1.2);
   CHAPTER_OBJ["Chapter 5: Fire Service Features"] = {
     col: "#D23A2E",
-    d: OBJ_poly([[42, 4], [58, 4], [60, 14], [72, 18], [76, 32], [70, 34], [70, 45], [80, 45], [80, 42], [88, 42], [88, 62], [80, 62], [80, 59], [70, 59], [70, 80], [80, 82], [82, 94], [18, 94], [20, 82], [30, 80], [30, 59], [20, 59], [20, 62], [12, 62], [12, 42], [20, 42], [20, 45], [30, 45], [30, 34], [24, 32], [28, 18], [40, 14]],
-      [2, 2, 2, 6, 3, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 3, 6, 2]),
+    d: OBJ_poly(top.concat(R).concat(foot).concat(L).concat(ret), topR.concat(Rr).concat(footR).concat(Lr).concat(retR)),
     plates: [
+      ["field", nozzle(1) + nozzle(-1), { dome: .9 }],                                           /* the side nozzles, filleted into the barrel */
       ["field", OBJ_rrect(30, 32, 40, 50, 2), { dome: 1.6 }],                                    /* the barrel */
       ["field", "M24 32C24 20 36 14 50 14C64 14 76 20 76 32Z", { dome: 2.2 }],                   /* the bonnet */
       ["lite", OBJ_rrect(25, 30, 50, 5, 2), { z: .5, bev: .5 }],                                 /* the flange ring under it */
       ["steel", OBJ_poly([[42, 4], [58, 4], [60, 14], [40, 14]], 1), { gem: 1.4, gw: 2.6 }],     /* the operating nut */
-      ["field", OBJ_rrect(20, 45, 10, 14, 1.5), { dome: 1 }],                                    /* the side outlets */
-      ["field", OBJ_rrect(70, 45, 10, 14, 1.5), { dome: 1 }],
-      ["steel", OBJ_rrect(12, 42, 8, 20, 2), { gem: 1.2, gw: 2 }],                               /* their caps */
-      ["steel", OBJ_rrect(80, 42, 8, 20, 2), { gem: 1.2, gw: 2 }],
+      ["field", "M76.8 47.5V56.5M23.2 47.5V56.5", { ln: 1.4, cut: .7, paint: 0 }],               /* where each cap threads on */
+      ["shade", cap(1) + cap(-1), { z: .3, bev: .7, dome: 1 }],                                  /* the outlet caps, the hydrant's red */
+      ["shade", "M81.5 46V58M84.5 46V58M18.5 46V58M15.5 46V58", { ln: 1.1, cut: .5, paint: 0 }], /* their grip ribs */
+      ["steel", nut(1) + nut(-1), { gem: 1, gw: 1.8 }],                                          /* the nut on each cap */
       ["steel", OBJ_circle(50, 56, 10.5), { z: .7, bev: .7, dome: .6 }],                          /* the pumper cap */
       ["steel", OBJ_poly([[50, 50.5], [55.2, 54.3], [53.2, 60.5], [46.8, 60.5], [44.8, 54.3]], .8), { gem: 1.1, gw: 2 }],   /* its nut */
       ["shade", OBJ_rrect(18, 80, 64, 14, 2), { z: .5 }],                                        /* the base flange */

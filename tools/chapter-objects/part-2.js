@@ -26,7 +26,8 @@
     d: P2S.c22.d, base: "steel",
     plates: [
       ["steel", P2S.c22.bin, { dome: 1.6 }],                                                               /* the bin */
-      ["steel", "M13 57Q39 62 65 57M13 64Q39 69 65 64M13 71Q39 76 65 71M13 78Q39 83 65 78M13 85Q39 90 65 85", { ln: 1.4, cut: .8, paint: 0 }],   /* its corrugations */
+      ["steel", [57, 64, 71, 78, 85].map(y => { let s = "", on = false; for(let i = 0; i <= 40; i++){ const t = i / 40, x = 13 + 52 * t, yy = y + 10 * t * (1 - t);
+          if(x > 21.1 && x < 34.9 && yy > 74.1){ on = false; continue; } s += (on ? "L" : "M") + x.toFixed(2) + " " + yy.toFixed(2); on = true; } return s; }).join(""), { ln: 1.4, cut: .8, paint: 0 }],   /* its corrugations (384.133: stopping at the door) */
       ["rubber", OBJ_rrect(22, 75, 12, 17, [2, 2, 1, 1]), { z: -1, bev: .7 }],                             /* the access door */
       ["steel", OBJ_poly([[9, 45], [32, 22], [46, 22], [69, 45]], [1, 1, 1, 1]), { z: .6, bev: .8 }],      /* the cone roof */
       ["steel", "M36 25L20 43M39 25V44M42 25L58 43", { ln: 1.3, cut: .7, paint: 0 }],                      /* its ribs */
@@ -148,7 +149,7 @@
     L.forEach(c => { plates.push(["cream", OBJ_circle(c[0], c[1], R - 3.2), { z: .4, bev: .7 }]); });
     let rings = ""; L.forEach((c, i) => { const a = -Math.PI / 2 + (i % 2 ? -.5 : .5);
       rings += OBJ_circle(c[0], c[1], 6.8) + OBJ_circle(c[0], c[1], 2.6) + "M" + at(c, a, 3.6) + "L" + at(c, a, 10); });
-    plates.push(["cream", rings, { ln: 1.3, cut: .7, paint: 0 }]);
+    plates.push(["cream", rings, { ln: 1.5, cut: 1, paint: 0 }]);   /* (384.133 badgeart: cut deeper, so the rings read on the logs the light falls across) */
     CHAPTER_OBJ["Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities"] = { d: P2S.c28.d, base: "wood", plates };
   }
 
@@ -191,6 +192,9 @@
     const AX = 50, AY = 18, EY = 46, scal = [];
     for(let i = 0; i < 6; i++) scal.push(OBJ_rrect(8 + i * 14, 44, 14, 8, [0, 0, 7, 7]));
     const roofStripe = k => { const xa = 8 + k * 14, xb = xa + 14; return OBJ_poly([[AX, AY + 1], [xb, EY], [xa, EY]], [1, 1, 1]); };
+    /* (384.133 badgeart, Madison: "Why is the black tent opening look like it's underneath it?" The door ran to the outline's foot, so the
+       side wall under it was black too and the opening seemed to drop below the tent. It now ends on the wall's hem, a red band along
+       the ground, so it sits IN the front wall.) */
     CHAPTER_OBJ["Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures"] = {
       base: "red", d: OBJ_poly([[48.5, 3], [51.5, 3], [63, 7], [51.5, 11], [51.5, 17], [92, 44], [92, 51], [86, 52], [86, 94], [14, 94], [14, 52], [8, 51], [8, 44], [48.5, 17]],
         [1, 1, 1, 1, 1, 3, 2, 1, 1.5, 1.5, 1, 2, 3, 1]),
@@ -201,7 +205,8 @@
         ["red", OBJ_rrect(14, 50, 72, 44, 0), { dome: .8 }],                                             /* the wall */
         ["cream", OBJ_rrect(26, 52, 12, 42, 0) + OBJ_rrect(62, 52, 12, 42, 0), { z: .3, bev: .5 }],        /* its stripes */
         ["red", scal.join(""), { dome: 1.1 }],                                                           /* the valance */
-        ["rubber", OBJ_poly([[50, 56], [60, 94], [40, 94]], [2, 0, 0]), { z: -1.4, bev: .7 }],                /* the door */
+        ["rubber", OBJ_poly([[50, 57], [59.5, 89.6], [40.5, 89.6]], [2, .6, .6]), { z: -1.2, bev: .7, col: "#2A1012" }],   /* the door, in the front wall */
+        ["red", OBJ_rrect(14, 89.5, 72, 4.5, [0, 0, 1.5, 1.5]), { z: .35, bev: .5, col: "#B3262A" }],                     /* the wall's hem along the ground, under the door */
       ],
     };
   }

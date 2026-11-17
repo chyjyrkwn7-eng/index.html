@@ -174,15 +174,18 @@
 
 /* ---- Appendix H: HMMP and HMIS Instructions - a clipboard with its pencil: the board, the steel clip with its hole, the sheet, three
    checklist rows (a box pressed in, a raised tick, the line's grooves), and the pencil laid across its corner, standing out past the
-   board's edge (the shape a plain board does not have). (384.93 r9: Madison, "Appendix H update (pencil)" - it was brass, a polished rod:
-   now a yellow-painted pencil with its facets, a pink eraser in a steel ferrule, the sharpened wood and the graphite point, a little
-   thicker.) ---- */
+   board's edge (the shape a plain board does not have). (384.133 badgeart, Madison: "The other pencil looked better, the edges of it
+   just needed to be better cause it wasn't 100 percent good to go." The pencil is the one from before round 9 again - the polished brass
+   pencil with its red eraser - and its edges are made clean: every part of it meets the next on the same line with no corner rounded
+   where it butts on a neighbour (the body's rounded ends left specks of the board at the ferrule and the cone), the eraser's end follows
+   the outline's own corner, the ferrule is crimped twice, the body carries two facet lines like a hexagonal pencil, and the sharpened wood
+   runs in straight to the graphite.) ---- */
 {
   const X0 = 8, X1 = 80, Y0 = 12, Y1 = 96, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  const E = [92, 31], TP = [64, 94], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 5.6;
+  const E = [91, 33], TP = [64, 93], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
   const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
-  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13;
+  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 11, ER = 2.4;
   const rows = [36, 55, 74], plates = [
     ["wood", OBJ_rrect(X0, Y0, X1 - X0, Y1 - Y0, 4), { dome: .6 }],                                   /* the board */
     ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 68, 2), { z: .5, bev: .6 }],                    /* the sheet */
@@ -193,38 +196,57 @@
     plates.push(["water", "M22.5 " + (y - .5) + "L25.5 " + (y + 3) + "L32 " + (y - 7), { ln: 3, z: 1.1, bev: .6 }]);
     plates.push(["cream", "M36 " + (y - 2.5) + "H" + (y > 60 ? 54 : 62) + "M36 " + (y + 3) + "H" + (y > 60 ? 48 : 56), { ln: 2.2, cut: .7, paint: 0 }]);
   });
-  plates.push(["field", OBJ_poly([Q(9, -HW), Q(CONE, -HW), Q(CONE, HW), Q(9, HW)], 1), { z: 1.3, bev: .7, gem: .9, gw: 3.4, col: "#F2B90F" }]);   /* the pencil, painted yellow */
-  plates.push(["field", "M" + f(Q(10, -HW * .34)) + "L" + f(Q(CONE - 1, -HW * .34)) + "M" + f(Q(10, HW * .34)) + "L" + f(Q(CONE - 1, HW * .34)), { ln: .9, cut: .5, paint: 0 }]);   /* its facets */
-  plates.push(["red", OBJ_poly([Q(0, -HW), Q(8, -HW), Q(8, HW), Q(0, HW)], [2.4, 0, 0, 2.4]), { z: 1.3, bev: .7, dome: .9, col: "#F08BA0" }]);   /* its pink eraser */
-  plates.push(["steel", OBJ_poly([Q(6.5, -HW - .3), Q(12.5, -HW - .3), Q(12.5, HW + .3), Q(6.5, HW + .3)], .5), { z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
-  plates.push(["steel", "M" + f(Q(8.5, -HW)) + "L" + f(Q(8.5, HW)) + "M" + f(Q(10.5, -HW)) + "L" + f(Q(10.5, HW)), { ln: .8, cut: .5, paint: 0 }]);   /* its crimps */
-  plates.push(["wood", OBJ_poly([Q(CONE, -HW), Q(L - 2.2, -1.4), Q(L - 2.2, 1.4), Q(CONE, HW)], [0, 1, 1, 0]), { z: 1.3, bev: .7, col: "#E7C48F" }]);   /* the sharpened wood */
-  plates.push(["rubber", OBJ_poly([Q(L - 5.2, -2.1), Q(L - .4, -.5), Q(L - .4, .5), Q(L - 5.2, 2.1)], .7), { z: 1.4, bev: .4 }]);   /* the graphite */
+  plates.push(["brass", OBJ_poly([Q(10.5, -HW), Q(CONE, -HW), Q(CONE, HW), Q(10.5, HW)], 0), { z: 1.3, bev: .7, dome: .9 }]);   /* the pencil */
+  plates.push(["brass", "M" + f(Q(12, -HW * .34)) + "L" + f(Q(CONE - 1.2, -HW * .34)) + "M" + f(Q(12, HW * .34)) + "L" + f(Q(CONE - 1.2, HW * .34)), { ln: .9, cut: .5, paint: 0 }]);   /* its facets */
+  plates.push(["red", OBJ_poly([Q(0, -HW), Q(7, -HW), Q(7, HW), Q(0, HW)], [ER, 0, 0, ER]), { z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
+  plates.push(["steel", OBJ_poly([Q(6.5, -HW), Q(11, -HW), Q(11, HW), Q(6.5, HW)], 0), { z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
+  plates.push(["steel", "M" + f(Q(8.2, -HW + .6)) + "L" + f(Q(8.2, HW - .6)) + "M" + f(Q(9.6, -HW + .6)) + "L" + f(Q(9.6, HW - .6)), { ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
+  plates.push(["cream", OBJ_poly([Q(CONE, -HW), Q(L - 3.4, -1.3), Q(L - 3.4, 1.3), Q(CONE, HW)], 0), { z: 1.3, bev: .7, col: "#E9CF9F" }]);   /* the sharpened wood */
+  plates.push(["rubber", OBJ_poly([Q(L - 4.2, -1.55), Q(L - .4, -.45), Q(L - .4, .45), Q(L - 4.2, 1.55)], [0, .45, .45, 0]), { z: 1.4, bev: .4 }]);   /* the graphite */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
     d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [23, Y0], [29, 1], [59, 1], [65, Y0], [X1, Y0], [X1, Q(tl, HW)[1]], Q(0, HW), Q(0, -HW), [X1, Q(tr, -HW)[1]], [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
-      [0, 1, 3, 3, 1, 4, 1.5, 2.4, 2.4, 1.5, 4, 4, 4, 0]) + "Z",
+      [0, 1, 3, 3, 1, 4, 1.5, ER, ER, 1.5, 4, 4, 4, 0]) + "Z",
     holes: [OBJ_rrect(36, 6, 16, 6, 2.5)],
     base: "wood",
     plates,
   };
 }
 
-/* ---- Appendix I: Fire Protection Systems - Noncompliant Conditions - an out-of-service hang tag: the cord loop, the brass grommet, the
-   raised band, and the raised prohibition ring with its bar. ---- */
+/* ---- Appendix I: Fire Protection Systems - Noncompliant Conditions - the fire protection impairment tag. (384.133 badgeart, Madison:
+   "This isn't a fire protection red tag. I attached one though. They have yellow tags as well that look the same just yellow." His
+   photo: the state fire marshal's EQUIPMENT IMPAIRED tag - a tall red card with clipped top corners, a reinforced grommet at the top, the
+   printed form: a heading, a grid of day and month boxes down each side, ruled lines to fill in, and EQUIPMENT IMPAIRED in heavy black
+   type at the foot.) Now that tag: red, its wire loop through the grommet (a tan reinforcing patch and a steel eyelet with a real hole),
+   the heading and the heavy words as raised black print (two bars each: no letters at this size), the day and month grids and the
+   ruled lines pressed into the card, and a yellow tag of the same kind hung on the same wire behind it. ---- */
 {
-  const C = [50, 15], R = 13, y = 26, dx = Math.sqrt(R * R - (y - C[1]) * (y - C[1]));
+  const S = OBJ_SDF, BB = [0, 0, 100, 100];
+  const G = [46, 31], th = -14 * Math.PI / 180;
+  const rot = ([x, y]) => [G[0] + (x - G[0]) * Math.cos(th) - (y - G[1]) * Math.sin(th), G[1] + (x - G[0]) * Math.sin(th) + (y - G[1]) * Math.cos(th)];
+  const TP = [[31.5, 21], [60.5, 21], [68, 28.5], [68, 95], [24, 95], [24, 28.5]];
+  const red = S.grow(S.poly(TP), 2), yel = S.grow(S.poly(TP.map(rot)), 2);
+  const wire = S.minus(S.union([S.circle(G[0], 11, 9.5), S.cone(G[0], 11, G[0], 29, 9.5, 2.6)], 0), S.union([S.circle(G[0], 11, 4.6), S.cone(G[0], 11, G[0], 18.5, 4.6, .8)], 0));
+  const hole = S.circle(G[0], G[1], 2.9);
+  const all = S.minus(S.union([red, yel, wire], 1), hole);
+  const sil = S.trace(all, BB);
+  /* the printed form, pressed into the card */
+  let grid = "";
+  [[27.5, 35.5], [56.5, 64.5]].forEach(([x0, x1]) => { grid += "M" + x0 + " 50V88M" + ((x0 + x1) / 2) + " 50V88M" + x1 + " 50V88";
+    for(let y = 50; y <= 88; y += 4.75) grid += "M" + x0 + " " + y + "H" + x1; });
   CHAPTER_OBJ["Appendix I: Fire Protection Systems—Noncompliant Conditions"] = {
-    d: "M" + (C[0] - dx).toFixed(2) + " " + y + "A" + R + " " + R + " 0 0 1 " + C[0] + " " + (C[1] - R) + "A" + R + " " + R + " 0 0 1 " + (C[0] + dx).toFixed(2) + " " + y +
-       OBJ_chain([[C[0] + dx, y], [66, y], [82, 42], [82, 96], [18, 96], [18, 42], [34, y], [C[0] - dx, y]], [0, 2, 2, 4, 4, 2, 2, 0]) + "Z",
-    holes: [OBJ_circle(C[0], C[1], 6.5), OBJ_circle(50, 39, 3.6)],
-    base: "cream",
+    d: sil.d, holes: sil.holes,
+    col: "#E0352B", base: "red",
     plates: [
-      ["steel", OBJ_circle(C[0], C[1], R), { dome: 1.3 }],                                            /* the cord loop */
-      ["steel", "M50 27V33", { ln: 5, dome: .6 }],
-      ["brass", OBJ_circle(50, 39, 7), { z: .5, bev: .5, dome: .7 }],                                  /* the grommet */
-      ["red", OBJ_poly([[34, 26], [66, 26], [82, 42], [82, 54], [18, 54], [18, 42]], [2, 2, 2, 0, 0, 2]), { z: .4, bev: .6 }],                                       /* the red header */
-      ["red", OBJ_circle(50, 77, 12), { ln: 5, z: 1.1, bev: .7 }],                                   /* the prohibition ring */
-      ["red", "M41.5 68.5L58.5 85.5", { ln: 5, z: 1.1, bev: .7 }],
+      ["glow", S.shape(yel, BB), { dome: .6, col: "#F2C230" }],                                       /* the yellow tag behind */
+      ["glow", "M" + rot([63.5, 66]).map(v => v.toFixed(2)).join(" ") + "L" + rot([63.5, 90]).map(v => v.toFixed(2)).join(" ") + "M" + rot([66.5, 62]).map(v => v.toFixed(2)).join(" ") + "L" + rot([66.5, 90]).map(v => v.toFixed(2)).join(" "), { ln: .9, cut: .45, paint: 0 }],   /* its grid, where it shows */
+      ["red", S.shape(red, BB), { z: .6, bev: .8, dome: .6 }],                                       /* the red tag */
+      ["red", grid, { ln: .8, cut: .45, paint: 0 }],                                                  /* its day and month grids */
+      ["red", "M39 60H53M39 67H53M39 74H53", { ln: .9, cut: .45, paint: 0 }],                         /* the lines to fill in */
+      ["ink", "M33.5 41.5H58.5M37 46H55", { ln: 2, z: .3, bev: .3, col: "#231A1A" }],                 /* the heading */
+      ["ink", "M32.5 80.5H59.5M35.5 87H56.5", { ln: 3.6, z: .4, bev: .35, col: "#1D1616" }],          /* EQUIPMENT IMPAIRED */
+      ["cream", OBJ_circle(G[0], G[1], 7.2), { z: .3, bev: .5, dome: .4, col: "#D8C08E" }],            /* the reinforcing patch */
+      ["steel", OBJ_circle(G[0], G[1], 4.5), { z: .6, bev: .5, dome: .8 }],                           /* the eyelet */
+      ["steel", S.shape(S.grow(wire, -.01), BB), { z: .4, bev: .7, dome: 1.2 }],                      /* the wire loop */
     ],
   };
 }
