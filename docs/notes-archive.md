@@ -42497,7 +42497,7 @@ the class button / class list checks pass; its 5 reds are the ones listed as fai
 320, the signin start-up width); check-b384-custom ALL PASS; check-b384-reducemotion ALL PASS; check-b384-toprow --no-transitions: promax
 and se (both classes) no failure (the run hit its 30-min cap at load ~9 before ipadP), ipadP run alone ALL PASS; check-centering --quick ALL
 PASS (0 off centre); sweep-layout --quick 20/20 clean; check-tours 24 runs, every step renders. After the rebase onto 02189e0 (casefix +
-badgeart): check-js, classbtn, classmarks, classcards ALL PASS again.
+badgeart) and again onto 516f925 (sliders): check-js, classbtn, classmarks, classcards ALL PASS each time.
 Pictures (2x, before = 458b3c9 lit ring, after = this): scratchpad media/classglass/*-before-after.png (Home, button close-ups, class list,
 Select your classes + its two marks, Classes / Add a class, Fire Code's enroll page, You're enrolled banner + crop; Pro Max 440x956 and
 iPad Pro 11" 834x1194; both classes). The light is held at its brightest frame in the shots. Chromium cannot show the rim on an OLED, the
