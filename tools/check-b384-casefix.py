@@ -12,7 +12,7 @@ Read off the page, both classes (the academy's 6x4 case, Fire Code's 58), iPhone
     corner of radius r: nearly r). Asserted: (A1) every corner is rounded - at least half the corner the Badges screen's case draws, measured the
     same way off that page and scaled to this case's width; (A2) top and bottom agree (the smaller of the two at least .6 of the
     larger), so the lid's free edge and the base's foot are one case.
-(B) THE FLAT CASES (the Badges screen's tray, the Profile's shut case): every part that paints something inside the case lies
+(B) THE FLAT CASES (the Badges screen's tray, the Profile's shut case - or, since profilerows2, option a's small shut case on the Profile's card; options b and c draw no case there): every part that paints something inside the case lies
     inside the case's own rounded outline at every corner (its used corner radii, after the browser scales a radius down to fit a
     short box) - no square or tighter corner, no seam line, poking out past the case's curve; and the outline's top corners equal
     its bottom ones.
@@ -208,11 +208,27 @@ with sync_playwright() as pw:
             chk("(B) %s, the Badges screen's case: every painted part inside its rounded outline at the corners, and its top corners equal its bottom ones (%s)" % (label, o),
                 not r.get("missing") and not r["bad"] and o["tl"] == o["bl"] and o["tr"] == o["br"], r)
             if cls == "academy":
+                # (profilerows2) Profile's case is whatever Profile draws: the shut case (.pf-case-closed, the build-319 drawing), or since
+                # profilerows2 a Delta card whose picture depends on the option (?pfbadge=, html[data-pfrow-badge]): option a draws a small
+                # shut case (.pfr-mc: handle, lid, front, latches) and is measured the same way; options b (a ring) and c (a coin) draw no
+                # case at all, so there is no case outline to measure on Profile and (B) is the Badges tray alone - said, not skipped quietly.
                 pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(2500)
-                r = pg.evaluate(INSIDE, ".pf-case-closed .pf-ccase")
-                o = r.get("outer", {})
-                chk("(B) %s, the Profile's shut case: every painted part (lid, seam, front) inside the card's rounded outline at its corners, top corners equal to bottom (%s)" % (label, o),
-                    not r.get("missing") and not r["bad"] and o["tl"] == o["bl"] and o["tr"] == o["br"], r)
+                kind = pg.evaluate("""()=>document.querySelector('#stage .pf-case-closed .pf-ccase') ? 'shut'
+                    : document.querySelector('#stage .pf-case.pfr-case') ? (['a','b','c'].find(o => document.querySelector('#stage .pfr-bc-' + o)) || '?') : 'none'""")
+                if kind == "shut":
+                    r = pg.evaluate(INSIDE, ".pf-case-closed .pf-ccase")
+                    o = r.get("outer", {})
+                    chk("(B) %s, the Profile's shut case: every painted part (lid, seam, front) inside the card's rounded outline at its corners, top corners equal to bottom (%s)" % (label, o),
+                        not r.get("missing") and not r["bad"] and o["tl"] == o["bl"] and o["tr"] == o["br"], r)
+                else:
+                    chk("(B) %s, Profile shows option %s of the case row: %s" % (label, kind, "a small shut case (measured below, as option a)" if kind == "a" else
+                        "no shut case on Profile (a ring of ticks / a coin and a segment bar) - nothing case-shaped to measure there, so (B) on Profile is option a's drawing only"),
+                        kind in ("a", "b", "c"), kind)
+                    pg.evaluate("()=>{ document.documentElement.setAttribute('data-pfrow-badge','a'); showProfile(); }"); pg.wait_for_timeout(2500)
+                    r = pg.evaluate(INSIDE, "#stage .pfr-bc-a .pfr-mc")
+                    o = r.get("outer", {})
+                    chk("(B) %s, Profile's option a, the small shut case: every painted part (lid, front, fill, latches) inside its rounded outline at its corners, top corners equal to bottom (%s)" % (label, o),
+                        not r.get("missing") and not r["bad"] and o.get("tl") == o.get("bl") and o.get("tr") == o.get("br") and (o.get("tl") or [0])[0] > 0, r)
             errs_all += errs; ctx.close()
         # ---------------------------------------------------------------- (C) the reflection
         if want("C"):

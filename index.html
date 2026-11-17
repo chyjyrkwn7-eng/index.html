@@ -41804,7 +41804,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-identity-tab .pfr-bc .pf-act-sub, html[data-layout] body #stage .profile-identity-tab .pfr-cz .pf-act-sub{ font-variant-numeric:tabular-nums; }
   html[data-layout] body #stage .profile-identity-tab .pfr-bc-art{ position:relative; flex:0 0 auto; display:grid; place-items:center; width:60px; height:56px; }
   /* a: the shut case, its front filling */
-  html[data-layout] body #stage .profile-identity-tab .pfr-mc{ position:relative; display:block; width:50px; height:36px; margin:12px 10px 0 0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc{ position:relative; display:block; width:50px; height:36px; margin:12px 10px 0 0; border-radius:7px; }   /* (the case's outline: lid's top and front's foot; paints nothing itself) */
   html[data-layout] body #stage .profile-identity-tab .pfr-mc-handle{ position:absolute; left:50%; top:-7px; width:18px; height:9px; margin-left:-9px; box-sizing:border-box;
     border:2.5px solid #8C9099; border-bottom:0; border-radius:6px 6px 0 0; }
   html[data-layout] body #stage .profile-identity-tab .pfr-mc-lid{ position:absolute; left:0; right:0; top:0; height:11px; border-radius:7px 7px 2px 2px;
@@ -41813,8 +41813,9 @@ html.is-browser{ --fade-paper: transparent; }
     background:#34363C; box-shadow:inset 0 0 0 1px rgba(255,255,255,.1); }
   html[data-layout] body #stage .profile-identity-tab .pfr-mc-front::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
     box-shadow:inset 0 0 0 1px rgba(232,198,106,.45), inset 0 -1px 0 rgba(0,0,0,.35); }
-  html[data-layout] body #stage .profile-identity-tab .pfr-mc-fill{ position:absolute; inset:0; display:block; transform-origin:50% 100%; transform:scaleY(var(--f, 0));
-    background:linear-gradient(180deg, #F2DB93, #C9A44A); opacity:.92; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-mc-fill{ position:absolute; inset:0; display:block; border-radius:inherit;
+    /* the front's own box and corners; the gold is its lower --f, so nothing square sits in the case's rounded foot */
+    background:linear-gradient(0deg, #C9A44A, #F2DB93 calc(var(--f, 0) * 100%), transparent calc(var(--f, 0) * 100%)); opacity:.92; }
   html[data-layout] body #stage .profile-identity-tab .pfr-mc-latch{ position:absolute; top:8px; width:8px; height:7px; border-radius:2px; background:#C9CDD5; box-shadow:0 1px 0 rgba(0,0,0,.4); }
   html[data-layout] body #stage .profile-identity-tab .pfr-mc-latch.is-l{ left:9px; }
   html[data-layout] body #stage .profile-identity-tab .pfr-mc-latch.is-r{ right:9px; }
@@ -41841,16 +41842,16 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-identity-tab .pfr-seg > i.is-on{ background:linear-gradient(180deg, #F2DB93, #D3AE55); }
   /* the case's motion */
   html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) :is(.pfr-mc-pin, .pfr-ring-pin, .pfr-coin-top, .pfr-coin-under){ opacity:0; }
-  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-mc-fill{ transform:scaleY(0); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-mc-fill{ transform:translateY(100%); }
   html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) :is(.pfr-ring-t.is-on, .pfr-seg > i.is-on){ opacity:.12; }
-  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-mc-fill{ animation:pfr-rise .9s cubic-bezier(.3,.7,.25,1) .1s both; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-mc-fill{ animation:pfr-rise .9s cubic-bezier(.3,.7,.25,1) .1s both; }   /* rises in from under the front (it clips) */
   html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-mc-pin{ animation:pfr-drop .6s cubic-bezier(.3,1.45,.55,1) .75s both; }
   html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ring-t.is-on{ animation:pfr-lite .3s ease-out calc(.1s + var(--k) * .8s) both; }
   html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-ring-pin{ animation:pfr-pop .5s cubic-bezier(.3,1.5,.55,1) .2s both; }
   html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-coin-under{ animation:pfr-fade .35s ease-out .1s both; }
   html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-coin-top{ animation:pfr-settle .7s cubic-bezier(.3,1.35,.5,1) .25s both; }
   html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in .pfr-seg > i.is-on{ animation:pfr-lite .28s ease-out calc(.2s + var(--k) * .75s) both; }
-  @keyframes pfr-rise{ from{ transform:scaleY(0); } }
+  @keyframes pfr-rise{ from{ transform:translateY(100%); } }
   @keyframes pfr-drop{ 0%{ opacity:0; transform:translateY(-14px) rotate(-14deg); } 60%{ opacity:1; } 100%{ opacity:1; transform:none; } }
   @keyframes pfr-lite{ from{ opacity:.12; } }
   @keyframes pfr-pop{ from{ opacity:0; transform:scale(.55); } }

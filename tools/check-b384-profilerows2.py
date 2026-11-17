@@ -134,7 +134,8 @@ MEASURE = """()=>{
     const b = document.querySelector('#stage .pf-case .pf-case-count'); if(!b) return null;
     const ticks = [...b.querySelectorAll('.pfr-ring-t')], segs = [...b.querySelectorAll('.pfr-seg > i')];
     const fill = b.querySelector('.pfr-mc-fill');
-    let sy = null; if(fill){ const m = getComputedStyle(fill).transform; const mm = /matrix\\(([^)]+)\\)/.exec(m); sy = mm ? Number(mm[1].split(',')[3]) : (m === 'none' ? 1 : null); }
+    /* option a's front: the gold is the lower --f of it, at rest (no transform left once it has risen in) */
+    let sy = null; if(fill){ const cs = getComputedStyle(fill); sy = /^(none|matrix\\(1, 0, 0, 1, 0, 0\\))$/.test(cs.transform) ? Number(cs.getPropertyValue('--f')) : null; }   /* (a finished `both` animation holds identity) */
     const opt = ['a','b','c'].find(o => b.classList.contains('pfr-bc-' + o)) || '';
     return { opt, text: (b.querySelector('.pf-case-num') || {}).textContent || '', have: badgeCountOf(store), total: classTopics().length,
       ticks: ticks.length, ticksOn: ticks.filter(t => t.classList.contains('is-on')).length, segs: segs.length, segsOn: segs.filter(t => t.classList.contains('is-on')).length,
