@@ -238,7 +238,7 @@
     col: "#E0352B", base: "red",
     plates: [
       ["glow", S.shape(yel, BB), { dome: .6, col: "#F2C230" }],                                       /* the yellow tag behind */
-      ["glow", "M" + rot([63.5, 66]).map(v => v.toFixed(2)).join(" ") + "L" + rot([63.5, 90]).map(v => v.toFixed(2)).join(" ") + "M" + rot([66.5, 62]).map(v => v.toFixed(2)).join(" ") + "L" + rot([66.5, 90]).map(v => v.toFixed(2)).join(" "), { ln: .9, cut: .45, paint: 0 }],   /* its grid, where it shows */
+      ["glow", "M" + rot([67, 66]).map(v => v.toFixed(2)).join(" ") + "L" + rot([67, 90]).map(v => v.toFixed(2)).join(" ") + "M" + rot([70, 63]).map(v => v.toFixed(2)).join(" ") + "L" + rot([70, 90]).map(v => v.toFixed(2)).join(" "), { ln: .9, cut: .45, paint: 0 }],   /* its grid, where it shows */
       ["red", S.shape(red, BB), { z: .6, bev: .8, dome: .6 }],                                       /* the red tag */
       ["red", grid, { ln: .8, cut: .45, paint: 0 }],                                                  /* its day and month grids */
       ["red", "M39 60H53M39 67H53M39 74H53", { ln: .9, cut: .45, paint: 0 }],                         /* the lines to fill in */
