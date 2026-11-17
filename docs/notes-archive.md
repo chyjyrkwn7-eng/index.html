@@ -42487,3 +42487,18 @@ GATES REVISED (the old expectation was the A decision):
   light is on, as on Home). Chromium floors a computed border width to whole CSS px (1.5 reads 1), so the width is held within 1px.
 - check-b382-firstrun E: the class button is no longer the bar's body/lift/shadow; it keeps the bar's frost and is the orb (radials, a transparent gradient rim);
   the list's bubbles are the button's glass.
+
+classglass GATES (one at a time, TMPDIR=/dev/shm, each started at load < 3; other helpers kept the machine at 4-10 between):
+check-js ALL PASS (APP_BUILD = version.json = 2026-11-13-384.133); the page console in the shoot runs (Home, class list, sign-up, Classes,
+enroll, You're enrolled; both classes; Pro Max and iPad) no page errors; check-b384-classbtn ALL PASS (K1 B pixel for pixel on Pro Max, iPad,
+laptop) and FAILS on 458b3c9 (14: K1 x6, K1b x4, K2 x2, K2b x2); check-b384-classmarks ALL PASS and FAILS on 458b3c9 (38: R at every place,
+both classes, both devices; M and O pass there); check-b384-classcards ALL PASS and FAILS on 458b3c9 (10: B on every card); check-b382-firstrun:
+the class button / class list checks pass; its 5 reds are the ones listed as failing on main 384.107 too (an is-soon card 42px on the SE and
+320, the signin start-up width); check-b384-custom ALL PASS; check-b384-reducemotion ALL PASS; check-b384-toprow --no-transitions: promax
+and se (both classes) no failure (the run hit its 30-min cap at load ~9 before ipadP), ipadP run alone ALL PASS; check-centering --quick ALL
+PASS (0 off centre); sweep-layout --quick 20/20 clean; check-tours 24 runs, every step renders. After the rebase onto 02189e0 (casefix +
+badgeart): check-js, classbtn, classmarks, classcards ALL PASS again.
+Pictures (2x, before = 458b3c9 lit ring, after = this): scratchpad media/classglass/*-before-after.png (Home, button close-ups, class list,
+Select your classes + its two marks, Classes / Add a class, Fire Code's enroll page, You're enrolled banner + crop; Pro Max 440x956 and
+iPad Pro 11" 834x1194; both classes). The light is held at its brightest frame in the shots. Chromium cannot show the rim on an OLED, the
+1.5px rim (Chromium draws it 1px), or the breathe on a phone's compositor.
