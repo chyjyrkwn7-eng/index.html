@@ -4,7 +4,8 @@ and Customize (options a|b|c) - on an iPhone 17 Pro Max (440x956, installed, 3x)
 both classes.
 
   python3 tools/shoot-b384-profilerows2.py OUT_DIR [--devs phone-installed,ipad-pro-11] [--classes academy,ifc]
-         [--opts a,b,c]          # the badge / customize option shown (both rows take the same letter in one shot)
+         [--opts a,b,c]          # the badge / customize option shown (both rows take the same letter in one shot; customize also d|e)
+         [--badge row|a|b|c]     # (384 ui3) the Badge case whatever --opts says (row = the default, B's words beside the row icon)
          [--rank none|first|mid|last]   # where the account stands on the ladder (default: a middle rank)
          [--video] [--video-only]  # also (only) record each option animating in (Playwright's recorder, then H.264 with ffmpeg)
          [--against REV|FILE]    # the build to render (default: this tree's index.html)
@@ -22,7 +23,7 @@ def _pos():
     out, skip = [], False
     for i, a in enumerate(sys.argv[1:]):
         if skip: skip = False; continue
-        if a in ("--devs", "--classes", "--opts", "--rank", "--against"): skip = True; continue
+        if a in ("--devs", "--classes", "--opts", "--rank", "--against", "--badge"): skip = True; continue
         if a.startswith("--"): continue
         out.append(a)
     return out
@@ -34,6 +35,10 @@ CLASSES = (L.arg("--classes") or "academy,ifc").split(",")
 OPTS = (L.arg("--opts") or "a,b,c").split(",")
 RANKS = (L.arg("--rank") or "mid").split(",")
 VIDEO = "--video" in sys.argv
+BADGE = L.arg("--badge")   # (384 ui3) the Badge case shown whatever the Customize option: "row" = the default (no ?pfbadge=), or a|b|c
+def query(opt):
+    b = BADGE or opt
+    return "?pfcz=%s" % opt + ("" if b == "row" else "&pfbadge=%s" % b)
 
 def open_pf(br, dev, cls, video_dir=None):
     kw = dict(viewport={"width": dev["w"], "height": dev["h"]}, device_scale_factor=dev["dpr"], user_agent=dev["ua"])
@@ -110,7 +115,7 @@ def main():
                     for rank in ([] if "--video-only" in sys.argv else RANKS):
                         tag = "%s-%s-%s-%s" % (dev["name"], cls, opt, rank)
                         ctx, pg, errs, cons = open_pf(br, dev, cls)
-                        pg.goto(url + "?pfbadge=%s&pfcz=%s" % (opt, opt), wait_until="load", timeout=180000)
+                        pg.goto(url + query(opt), wait_until="load", timeout=180000)
                         pg.wait_for_timeout(3500)
                         info = pg.evaluate(SETUP, want_for(cls, rank, 2500))
                         pg.evaluate("()=>window.scrollTo({top:0, behavior:'instant'})"); pg.wait_for_timeout(400)
@@ -125,7 +130,7 @@ def main():
                         vd = os.path.join(OUT, "_vid"); os.makedirs(vd, exist_ok=True)
                         t_ctx = time.time()
                         ctx, pg, errs, cons = open_pf(br, dev, cls, vd)
-                        pg.goto(url + "?pfbadge=%s&pfcz=%s" % (opt, opt), wait_until="load", timeout=180000)
+                        pg.goto(url + query(opt), wait_until="load", timeout=180000)
                         pg.wait_for_timeout(3500)
                         # the account set up (Profile once, off camera), then the Leaderboard, then Profile again: the rows play as it opens.
                         # The clip is cut from just before that second open (the boot and any pop-up are left out).

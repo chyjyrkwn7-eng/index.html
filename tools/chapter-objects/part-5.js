@@ -185,7 +185,7 @@
   const E = [91, 33], TP = [64, 93], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
   const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
-  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 11, ER = 2.4;
+  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13.5, ER = 2.4;
   const rows = [36, 55, 74], plates = [
     ["wood", OBJ_rrect(X0, Y0, X1 - X0, Y1 - Y0, 4), { dome: .6 }],                                   /* the board */
     ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 68, 2), { z: .5, bev: .6 }],                    /* the sheet */
@@ -196,13 +196,22 @@
     plates.push(["water", "M22.5 " + (y - .5) + "L25.5 " + (y + 3) + "L32 " + (y - 7), { ln: 3, z: 1.1, bev: .6 }]);
     plates.push(["cream", "M36 " + (y - 2.5) + "H" + (y > 60 ? 54 : 62) + "M36 " + (y + 3) + "H" + (y > 60 ? 48 : 56), { ln: 2.2, cut: .7, paint: 0 }]);
   });
-  plates.push(["brass", OBJ_poly([Q(10.5, -HW), Q(CONE, -HW), Q(CONE, HW), Q(10.5, HW)], 0), { z: 1.3, bev: .7, dome: .9 }]);   /* the pencil */
-  plates.push(["brass", "M" + f(Q(12, -HW * .34)) + "L" + f(Q(CONE - 1.2, -HW * .34)) + "M" + f(Q(12, HW * .34)) + "L" + f(Q(CONE - 1.2, HW * .34)), { ln: .9, cut: .5, paint: 0 }]);   /* its facets */
-  plates.push(["red", OBJ_poly([Q(0, -HW), Q(7, -HW), Q(7, HW), Q(0, HW)], [ER, 0, 0, ER]), { z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
-  plates.push(["steel", OBJ_poly([Q(6.5, -HW), Q(11, -HW), Q(11, HW), Q(6.5, HW)], 0), { z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
-  plates.push(["steel", "M" + f(Q(8.2, -HW + .6)) + "L" + f(Q(8.2, HW - .6)) + "M" + f(Q(9.6, -HW + .6)) + "L" + f(Q(9.6, HW - .6)), { ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
-  plates.push(["cream", OBJ_poly([Q(CONE, -HW), Q(L - 3.4, -1.3), Q(L - 3.4, 1.3), Q(CONE, HW)], 0), { z: 1.3, bev: .7, col: "#E9CF9F" }]);   /* the sharpened wood */
-  plates.push(["rubber", OBJ_poly([Q(L - 4.2, -1.55), Q(L - .4, -.45), Q(L - .4, .45), Q(L - 4.2, 1.55)], [0, .45, .45, 0]), { z: 1.4, bev: .4 }]);   /* the graphite */
+  /* (384.133 art3, Madison circled the pencil's lower end, where the body meets the sharpened wood and the graphite: the body's facet
+     lines ran on past it and the cone and the tip did not line up.) One straight pencil now, every piece on the same axis and butting
+     on the next at one line across it: the eraser 0-6.8, the ferrule 6.8-11.2, the body 11.2 to the cone, the cone to the graphite and
+     the graphite to the point. The body is a hexagonal pencil's three faces - three flat strips side by side (each lit as one plane, so
+     the facets are its own edges, not lines cut along it), all three ending exactly where the cone starts. The cone and the graphite are
+     ONE taper: both sides run straight from the body's corners to a single point, the graphite is just the last stretch of it. */
+  const AP = L, PT = L - .5, GR = L - 4.2, wAt = t => HW * (AP - t) / (AP - CONE), F3 = HW / 3;
+  const strip = (w0, w1) => OBJ_poly([Q(11.2, w0), Q(CONE, w0), Q(CONE, w1), Q(11.2, w1)], 0);
+  plates.push(["glow", strip(-HW, -F3), { z: 1.2, bev: .45, col: "#D4960F" }]);   /* the pencil: its shaded face */
+  plates.push(["glow", strip(-F3, F3), { z: 1.35, bev: .45, col: "#F2B71C" }]);                  /* its middle face, facing out */
+  plates.push(["glow", strip(F3, HW), { z: 1.2, bev: .45, col: "#FAD050" }]);     /* its lit face */
+  plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, ER]), { z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
+  plates.push(["steel", OBJ_poly([Q(6.8, -HW), Q(11.2, -HW), Q(11.2, HW), Q(6.8, HW)], 0), { z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
+  plates.push(["steel", "M" + f(Q(8.4, -HW + .6)) + "L" + f(Q(8.4, HW - .6)) + "M" + f(Q(9.7, -HW + .6)) + "L" + f(Q(9.7, HW - .6)), { ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
+  plates.push(["cream", OBJ_poly([Q(CONE, -HW), Q(GR, -wAt(GR)), Q(GR, wAt(GR)), Q(CONE, HW)], 0), { z: 1.3, bev: .5, dome: .4, col: "#D8A96E" }]);   /* the sharpened wood */
+  plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { z: 1.3, bev: .35, col: "#3A3D42" }]);   /* the graphite */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
     d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [23, Y0], [29, 1], [59, 1], [65, Y0], [X1, Y0], [X1, Q(tl, HW)[1]], Q(0, HW), Q(0, -HW), [X1, Q(tr, -HW)[1]], [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
       [0, 1, 3, 3, 1, 4, 1.5, ER, ER, 1.5, 4, 4, 4, 0]) + "Z",

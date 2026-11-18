@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""384 profilerows2: Profile's three entry rows - the Rank ladder (finished), the Badge case and Customize (options a|b|c).
+"""384 profilerows2: Profile's three entry rows - the Rank ladder, the Badge case and Customize.
+
+(384 ui3, round three) REVISED ON PURPOSE: the Badge case is one row now - option B's words beside the plain row icon (no ring,
+coin, case or bar); a|b|c stay reachable by ?pfbadge= for comparison. Customize's default is the new d (C's theme ring, the count,
+"Next" and a slim bar); e is B's next unlock in a small frame with the count and the bar; a|b|c by ?pfcz=. B1 / C1 now check the
+default rows on every rank and e / the old options on one each. L7 is new: the ladder's halo and the prestige tag were cut off.
 
   python3 tools/check-b384-profilerows2.py [--quick] [--against REV|FILE]
 
@@ -11,12 +16,18 @@ Per device and class:
          prestige count a test build left on the account - 384.135 retired prestige): one cell per rank (TIER_ORDER_FULL); yours is the one rankOf(store) says, lit (opacity 1, its own ring
          white), the ranks under it lit, the next one dashed, the rest dim; the lit line ends on your rank's centre (2px) and at 0
          below the first; your rank and its neighbours inside the track's box and the screen.
-  L7     (384.135) PRESTIGE IS GONE: with an old `prestige: 1` on the account, the top rank's node holds only its emblem and the pulse
-         (no mark beside it) and the ladder's line under its title is the plain top-rank account's, word for word.
-  B1     THE BADGE CASE, each option: its count is badgeCountOf(store) of classTopics().length; a's front filled to that share, b's
+  L7     NOTHING OF THE LADDER IS CLIPPED: every node, its ring and glow (box-shadow), the pulse ring (and the prestige tag while it existed; 384.135 retired it), as
+         painted (their transformed boxes plus their shadows' reach), inside every ancestor that clips (overflow other than visible,
+         clip-path, contain:paint), at rest AND on every frame of the entrance (the swell and the pulse), in every state, both
+         classes, the phone and the iPad, and on the phone at 85% and 135% text size (Safari's page zoom: the viewport 440/0.85 and
+         440/1.35 wide). Must FAIL on fa11d79 (the halo and the tag were cut off at the top and right).
+  L8     (384.135) PRESTIGE IS GONE: with an old `prestige: 1` on the account (Fire Code's "oldpg" position), the top rank's node
+         holds only its emblem and the pulse (no mark beside it) and the ladder's line under its title is the plain top-rank
+         account's, word for word. Must FAIL on fa11d79 (the mark and "Supernova · Prestige I").
+  B1     THE BADGE CASE, the default row (B's words, the plain row icon, none of the art) and each old option: its count is badgeCountOf(store) of classTopics().length; a's front filled to that share, b's
          ring one tick per badge with that many lit, c's bar one segment per badge with that many lit; the newest badge drawn.
-  C1     CUSTOMIZE, each option: held / total the sum of customizeTally over Customize's pages, its words carry them; b's next is
-         unlockNextUp's first and its bar its share.
+  C1     CUSTOMIZE, each option: held / total the sum of customizeTally over Customize's pages, its words carry them; b's, d's and
+         e's next is unlockNextUp's first and its bar its share; d's icon is the theme ring and e's the next unlock in a frame.
   M1     MOTION: every animation the three rows run animates transform or opacity only, there are some, and the ladder under
          the fold has none until it is scrolled into view.
   M2     REDUCE MOTION: none at all, every row drawn at its last frame.
@@ -55,6 +66,33 @@ def open_pf(br, dev, cls, q=""):
     pg.on("console", lambda m: errs.append("console: " + m.text[:200]) if m.type == "error" and "net::ERR" not in m.text and "Failed to load resource" not in m.text else None)
     pg.set_default_timeout(180000)
     return ctx, pg, errs
+
+# (L7) the ladder's painted boxes against every ancestor that clips them; window.__pfClipWorst keeps the worst overshoot seen
+CLIPJS = r"""()=>{ window.__pfClipWorst = { over: 0, what: '', n: 0 };
+  const ext = el => { const cs = getComputedStyle(el); let e = 0; const re = /(-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px(?: (-?[\d.]+)px)?/g; let m;
+    if(cs.boxShadow && cs.boxShadow !== 'none'){ for(const seg of cs.boxShadow.split(/,(?![^(]*\))/)){ if(/inset/.test(seg)) continue; re.lastIndex = 0; m = re.exec(seg); if(m) e = Math.max(e, Math.max(Math.abs(+m[1]), Math.abs(+m[2])) + (+m[3]) + (+(m[4] || 0))); } }
+    return e; };
+  const shown = el => { let o = 1; for(let n = el; n && n.nodeType === 1; n = n.parentElement) o *= +getComputedStyle(n).opacity; return o > .02; };
+  const clips = el => { const out = []; for(let a = el.parentElement; a && a !== document.documentElement; a = a.parentElement){ const cs = getComputedStyle(a);
+      if(cs.overflowX !== 'visible' || cs.overflowY !== 'visible' || (cs.clipPath && cs.clipPath !== 'none') || /paint|strict|content/.test(cs.contain || '')){
+        const r = a.getBoundingClientRect(); const bl = parseFloat(cs.borderLeftWidth) || 0, br = parseFloat(cs.borderRightWidth) || 0, bt = parseFloat(cs.borderTopWidth) || 0, bb = parseFloat(cs.borderBottomWidth) || 0;
+        out.push({ el: a, l: r.left + bl, r: r.right - br, t: r.top + bt, b: r.bottom - bb }); } } return out; };
+  window.__pfClipSample = () => {
+    const foot = document.querySelector('#stage .pf-goal-foot'); if(!foot) return;
+    const parts = [...foot.querySelectorAll('.pfr-ld-node, .pfr-ld-pulse, .pfr-ld-pg')];
+    for(const el of parts){ if(!shown(el)) continue;
+      const r = el.getBoundingClientRect(); if(!r.width) continue;
+      const k = el.offsetWidth ? r.width / el.offsetWidth : 1; const e = ext(el) * k;
+      const p = { l: r.left - e, r: r.right + e, t: r.top - e, b: r.bottom + e };
+      for(const c of clips(el)){
+        /* a scrolled track: a node scrolled out of view is meant to be off - only one whose centre is inside the box counts */
+        const cx = (r.left + r.right) / 2; if(cx < c.l || cx > c.r) continue;
+        const over = Math.max(c.l - p.l, p.r - c.r, c.t - p.t, p.b - c.b, 0);
+        window.__pfClipWorst.n++;
+        if(over > window.__pfClipWorst.over){ const cl = s => String(s.className && s.className.baseVal !== undefined ? s.className.baseVal : s.className).split(' ')[0];
+          window.__pfClipWorst = { over: +over.toFixed(2), what: cl(el) + (el.closest('.is-here') ? '(here)' : '') + ' in ' + cl(c.el) + ' [' + ['l','r','t','b'].filter((s, i) => [c.l - p.l, p.r - c.r, c.t - p.t, p.b - c.b][i] > .5).join('') + ']', n: window.__pfClipWorst.n }; } } } };
+  let live = true; window.__pfClipStop = () => { live = false; };
+  const tick = () => { if(!live) return; try{ window.__pfClipSample(); }catch(e){} requestAnimationFrame(tick); }; requestAnimationFrame(tick); }"""
 
 # the account: rank `rank` (none / first / mid / last / oldpg), badges held, the newest not looked at; Profile opened from Home
 SETUP = """async(want)=>{
@@ -140,23 +178,31 @@ MEASURE = """()=>{
     const fill = b.querySelector('.pfr-mc-fill');
     /* option a's front: the gold is the lower --f of it, at rest (no transform left once it has risen in) */
     let sy = null; if(fill){ const cs = getComputedStyle(fill); sy = /^(none|matrix\\(1, 0, 0, 1, 0, 0\\))$/.test(cs.transform) ? Number(cs.getPropertyValue('--f')) : null; }   /* (a finished `both` animation holds identity) */
-    const opt = ['a','b','c'].find(o => b.classList.contains('pfr-bc-' + o)) || '';
+    const opt = ['a','b','c','row'].find(o => b.classList.contains('pfr-bc-' + o)) || '';
+    const tile = b.querySelector(':scope > .settings-row-icon'); const tr = tile ? tile.getBoundingClientRect() : null;
     return { opt, text: (b.querySelector('.pf-case-num') || {}).textContent || '', have: badgeCountOf(store), total: classTopics().length,
       ticks: ticks.length, ticksOn: ticks.filter(t => t.classList.contains('is-on')).length, segs: segs.length, segsOn: segs.filter(t => t.classList.contains('is-on')).length,
       fillY: sy, newest: !!b.querySelector('.pfr-mc-pin svg, .pfr-ring-pin svg, .pfr-coin-top svg'),
       newestOp: (() => { const p = b.querySelector('.pfr-mc-pin, .pfr-ring-pin, .pfr-coin-top'); return p ? Number(getComputedStyle(p).opacity) : null; })(),
       card: (() => { const c = b.closest('.pf-case'), cs = getComputedStyle(c); return { bg: cs.backgroundColor, r: cs.borderTopLeftRadius }; })(),
+      tile: tr ? { w: tr.width, h: tr.height, op: Number(getComputedStyle(tile).opacity) } : null,
+      art: !!b.querySelector('.pfr-ring, .pfr-coin, .pfr-mc, .pfr-seg, .pfr-bc-art'),
+      lines: [...b.querySelectorAll(':scope > .pf-act-words > *')].filter(e => e.getBoundingClientRect().height > 0).length,
+      pct: (() => { const t = (b.querySelector('.pf-case-num') || {}).textContent || ''; const m = /(\\d+)%/.exec(t); return m ? +m[1] : null; })(),
       box: R(b) };
   })();
   out.cz = (() => {
     const b = document.querySelector('#stage .profile-customize-btn'); if(!b) return null;
     let have = 0, total = 0; CUSTOMIZE_ORDER.forEach(k => { const t = customizeTally(k); have += t.have; total += t.total; });
     const nx = unlockNextUp(null, 1)[0] || null;
-    const opt = ['a','b','c'].find(o => b.classList.contains('pfr-cz-' + o)) || '';
+    const opt = ['a','b','c','d','e'].find(o => b.classList.contains('pfr-cz-' + o)) || '';
     const bar = b.querySelector('.pfr-bar > i');
+    const icon = b.firstElementChild; const ir = icon ? icon.getBoundingClientRect() : null;
     return { opt, have, total, dh: b.dataset.have, dt: b.dataset.total, text: b.textContent, aria: b.getAttribute('aria-label') || '',
       next: nx ? nx.item.k + ':' + nx.item.id : '', dnext: b.dataset.next || '', nextName: nx ? nx.item.name : '',
       barW: bar ? bar.getBoundingClientRect().width / bar.parentNode.getBoundingClientRect().width : null, frac: nx ? nx.frac : null,
+      barH: bar ? bar.parentNode.getBoundingClientRect().height : null,
+      icon: icon ? { ring: !!icon.querySelector('.pfr-swatch-ring'), thumb: !!icon.querySelector('.trk-thumb'), w: ir.width, h: ir.height, r: getComputedStyle(icon).borderTopLeftRadius } : null,
       host: (() => { const c = b.closest('.profile-hero'), cs = c ? getComputedStyle(c) : null; return cs ? { bg: cs.backgroundColor, r: cs.borderTopLeftRadius } : null; })(),
       box: R(b) };
   })();
@@ -170,15 +216,20 @@ MEASURE = """()=>{
   return out;
 }"""
 
-def run_case(br, url, dev, cls, rank, opt, reduce=False):
+def run_case(br, url, dev, cls, rank, q, reduce=False):
     ctx, pg, errs = open_pf(br, dev, cls)
-    pg.goto(url + "?pfbadge=%s&pfcz=%s" % (opt, opt), wait_until="load", timeout=180000)
+    pg.goto(url + q, wait_until="load", timeout=180000)
     pg.wait_for_timeout(3500)
     want = {"badges": 12 if cls == "ifc" else 7, "level": 45 if cls == "ifc" else 36, "rank": rank, "reduce": reduce}
+    pg.evaluate(CLIPJS)
     info = pg.evaluate(SETUP, want)
-    m = pg.evaluate(MEASURE)
+    pg.evaluate("()=>{ window.__pfClipStop(); window.__pfClipSample(); }")
+    m = pg.evaluate(MEASURE); m["clip"] = pg.evaluate("()=>window.__pfClipWorst")
     ctx.close()
     return info, m, errs
+def zoomed(dev, z):
+    d = dict(dev); d["name"] = "%s@%d%%" % (dev["name"], round(z * 100)); d["w"] = round(dev["w"] / z); d["h"] = round(dev["h"] / z)
+    d["ins"] = tuple(round(v / z) for v in dev["ins"]); return d
 
 ALLOWED = {"transform", "opacity", "clipPath", "clip-path", "translate", "rotate", "scale"}
 
@@ -191,47 +242,60 @@ def main():
                 tag = "%s %s" % (dev["name"], cls)
                 ranks = ["none", "first", "mid", "last"] + (["oldpg"] if cls == "ifc" else [])
                 lastSub = None
-                for rank in ranks:
-                    opt = "abc"[ranks.index(rank) % 3]
-                    info, m, errs = run_case(br, url, dev, cls, rank, opt)
-                    t = "%s rank=%s(%s) opt=%s" % (tag, rank, info["rank"], opt)
+                # the default rows on every rank; Customize e on the first and the top; the old badge / customize options once each
+                cases = [(rk, "") for rk in ranks] + [("first", "?pfcz=e"), ("last", "?pfcz=e"), ("mid", "?pfbadge=a&pfcz=a"), ("mid", "?pfbadge=b&pfcz=b"), ("mid", "?pfbadge=c&pfcz=c")]
+                for rank, q in cases:
+                    info, m, errs = run_case(br, url, dev, cls, rank, q)
+                    t = "%s rank=%s(%s)%s" % (tag, rank, info["rank"], (" " + q) if q else " default")
                     ld = m["ladder"]
                     if not ld or not ld["n"]:
                         ok(False, "L1 %s: the ladder is drawn (one cell per rank)" % t); continue
-                    ok(ld["n"] == 7, "L1 %s: one cell per rank (%d)" % (t, ld["n"]))
-                    ok(ld["hi"] == ld["want"], "L2 %s: yours is the one rankOf says (cell %d, want %d)" % (t, ld["hi"], ld["want"]))
-                    w = ld["want"]
-                    exp = ["is-here" if i == w else "is-done" if i < w else "is-next" if i == w + 1 else "is-locked" for i in range(ld["n"])]
-                    ok(ld["states"] == exp, "L3 %s: lit under yours, next, dim beyond (%s)" % (t, ",".join(s[3:] for s in ld["states"])))
-                    if w >= 0:
-                        ok(ld["hereOpacity"] == 1 and ld["hereBorder"] in ("rgb(255, 255, 255)",) and all(o == 1 for o in ld["doneOpacity"]) and ld["embOp"][w] == 1,
-                           "L4 %s: your rank and those under it lit (opacity %s, ring %s)" % (t, ld["hereOpacity"], ld["hereBorder"]))
-                        if w > 0: ok(abs(ld["fillEnd"] - ld["hereCx"]) <= 2, "L5 %s: the lit line ends on your rank (%.1f vs %.1f)" % (t, ld["fillEnd"], ld["hereCx"]))
-                        else: ok(ld["fillW"] is not None and ld["fillW"] <= 1, "L5 %s: the first rank, no line lit (%.1f)" % (t, ld["fillW"] or 0))
-                    else:
-                        ok(ld["fillW"] is not None and ld["fillW"] <= 1 and ld["nextDashed"] == ["dashed"], "L5 %s: no rank, no line, the first one next (dashed)" % t)
-                    ok(all(v for v in ld["visible"]), "L6 %s: your rank and its neighbours on screen (%s)" % (t, ld["visible"]))
-                    if rank == "last": lastSub = ld["sub"]
-                    if rank == "oldpg":
-                        ok(ld["extra"] == 0, "L7 %s: an old prestige count draws nothing on the top rank (%d extra)" % (t, ld["extra"]))
-                        ok(lastSub is not None and ld["sub"] == lastSub, "L7 %s: the ladder's line is the plain top rank's (%r vs %r)" % (t, ld["sub"], lastSub))
+                    if not q:
+                        ok(ld["n"] == 7, "L1 %s: one cell per rank (%d)" % (t, ld["n"]))
+                        ok(ld["hi"] == ld["want"], "L2 %s: yours is the one rankOf says (cell %d, want %d)" % (t, ld["hi"], ld["want"]))
+                        w = ld["want"]
+                        exp = ["is-here" if i == w else "is-done" if i < w else "is-next" if i == w + 1 else "is-locked" for i in range(ld["n"])]
+                        ok(ld["states"] == exp, "L3 %s: lit under yours, next, dim beyond (%s)" % (t, ",".join(s[3:] for s in ld["states"])))
+                        if w >= 0:
+                            ok(ld["hereOpacity"] == 1 and ld["hereBorder"] in ("rgb(255, 255, 255)",) and all(o == 1 for o in ld["doneOpacity"]) and ld["embOp"][w] == 1,
+                               "L4 %s: your rank and those under it lit (opacity %s, ring %s)" % (t, ld["hereOpacity"], ld["hereBorder"]))
+                            if w > 0: ok(abs(ld["fillEnd"] - ld["hereCx"]) <= 2, "L5 %s: the lit line ends on your rank (%.1f vs %.1f)" % (t, ld["fillEnd"], ld["hereCx"]))
+                            else: ok(ld["fillW"] is not None and ld["fillW"] <= 1, "L5 %s: the first rank, no line lit (%.1f)" % (t, ld["fillW"] or 0))
+                        else:
+                            ok(ld["fillW"] is not None and ld["fillW"] <= 1 and ld["nextDashed"] == ["dashed"], "L5 %s: no rank, no line, the first one next (dashed)" % t)
+                        ok(all(v for v in ld["visible"]), "L6 %s: your rank and its neighbours on screen (%s)" % (t, ld["visible"]))
+                        if rank == "last": lastSub = ld["sub"]
+                        if rank == "oldpg":
+                            ok(ld["extra"] == 0, "L8 %s: an old prestige count draws nothing on the top rank (%d extra)" % (t, ld["extra"]))
+                            ok(lastSub is not None and ld["sub"] == lastSub, "L8 %s: the ladder's line is the plain top rank's (%r vs %r)" % (t, ld["sub"], lastSub))
+                        cl = m["clip"]
+                        ok(cl["n"] > 0 and cl["over"] <= .5, "L7 %s: no node, ring, glow or tag clipped, at rest or mid-entrance (worst %spx %s; %d samples)" % (t, cl["over"], cl["what"], cl["n"]))
                     b = m["badge"]
                     if b:
                         good = b["text"].startswith("%d of %d" % (b["have"], b["total"]))
                         if b["opt"] == "a": good = good and b["fillY"] is not None and abs(b["fillY"] - b["have"] / b["total"]) < .01
                         if b["opt"] == "b": good = good and b["ticks"] == b["total"] and b["ticksOn"] == b["have"]
                         if b["opt"] == "c": good = good and b["segs"] == b["total"] and b["segsOn"] == b["have"]
-                        good = good and (b["newest"] if b["have"] else True) and (b["newestOp"] in (None, 1))
-                        ok(good, "B1 %s: badge case (%s) reads the store: '%s', ticks %d/%d, segs %d/%d, fill %s, newest %s" % (
-                            t, b["opt"], b["text"], b["ticksOn"], b["ticks"], b["segsOn"], b["segs"], b["fillY"], b["newest"]))
+                        if b["opt"] in ("a", "b", "c"): good = good and (b["newest"] if b["have"] else True) and (b["newestOp"] in (None, 1))
+                        if b["opt"] == "row":
+                            # B's words (the count, its share, a second line), the plain row icon (square, a Profile row tile's size), none of the art
+                            good = (good and b["tile"] is not None and abs(b["tile"]["w"] - b["tile"]["h"]) < .5 and 24 <= b["tile"]["w"] <= 40 and b["tile"]["op"] == 1
+                                    and not b["art"] and b["lines"] == 3 and b["pct"] == round(100 * b["have"] / max(1, b["total"])))
+                        ok(b["opt"] == ("row" if "pfbadge" not in q else q.split("pfbadge=")[1][0]) and good,
+                           "B1 %s: badge case (%s) reads the store: '%s', tile %s, art %s, lines %s, ticks %d/%d, segs %d/%d, fill %s" % (
+                            t, b["opt"], b["text"], b["tile"], b["art"], b["lines"], b["ticksOn"], b["ticks"], b["segsOn"], b["segs"], b["fillY"]))
                         ok(b["card"]["bg"] == m["delta"]["fill"] and b["card"]["r"] == m["delta"]["r"], "D1 %s: the case is a Delta card (%s %s)" % (t, b["card"]["bg"], b["card"]["r"]))
                     else: ok(False, "B1 %s: the badge case row" % t)
                     c = m["cz"]
+                    want_cz = q.split("pfcz=")[1][0] if "pfcz=" in q else "d"
                     if c and c["opt"]:
-                        good = c["dh"] == str(c["have"]) and c["dt"] == str(c["total"]) and ("%d of %d" % (c["have"], c["total"])) in (c["aria"])
-                        if c["opt"] in ("a", "c"): good = good and ("%d of %d unlocked" % (c["have"], c["total"])) in c["text"]
-                        if c["opt"] == "b": good = good and c["dnext"] == c["next"] and (not c["next"] or (c["nextName"] in c["text"] and abs(c["barW"] - c["frac"]) < .02))
-                        ok(good, "C1 %s: customize (%s) reads the store: %s of %s, next %s" % (t, c["opt"], c["have"], c["total"], c["next"]))
+                        good = c["opt"] == want_cz and c["dh"] == str(c["have"]) and c["dt"] == str(c["total"]) and ("%d of %d" % (c["have"], c["total"])) in (c["aria"])
+                        if c["opt"] in ("a", "c", "d", "e"): good = good and ("%d of %d unlocked" % (c["have"], c["total"])) in c["text"]
+                        if c["opt"] in ("b", "d", "e"): good = good and c["dnext"] == c["next"] and (not c["next"] or (c["barW"] is not None and abs(c["barW"] - c["frac"]) < .02))
+                        if c["opt"] in ("b", "d"): good = good and (not c["next"] or c["nextName"] in c["text"])
+                        if c["opt"] == "d": good = good and c["icon"]["ring"] and (not c["next"] or c["barH"] <= 4)
+                        if c["opt"] == "e": good = good and c["icon"]["thumb"] and c["icon"]["w"] <= 40 and float(c["icon"]["r"].replace("px", "") or 0) >= 6
+                        ok(good, "C1 %s: customize (%s) reads the store: %s of %s, next %s, bar %s/%s, icon %s" % (t, c["opt"], c["have"], c["total"], c["next"], c["barW"], c["frac"], c["icon"]))
                     else: ok(False, "C1 %s: the customize row carries an option" % t)
                     ok(m["cz"] and m["cz"]["host"] and m["cz"]["host"]["bg"] == m["delta"]["fill"] and m["goal"]["bg"] == m["delta"]["fill"] and m["goal"]["r"] == m["delta"]["r"],
                        "D1 %s: the person card and the Next rank card are Delta cards" % t)
@@ -245,12 +309,21 @@ def main():
                     ok(m["running"] == 0, "M1 %s: nothing still running once played (%d)" % (t, m["running"]))
                     ok(not errs, "E1 %s: no page/console error %s" % (t, errs[:2]))
                 # Reduce motion
-                info, m, errs = run_case(br, url, dev, cls, "mid", "a", reduce=True)
+                info, m, errs = run_case(br, url, dev, cls, "mid", "", reduce=True)
                 ok(len(info["anims"]) == 0 and all(m["still"]) and len(m["still"]) == 3, "M2 %s: Reduce motion - %d animations, rows still %s" % (tag, len(info["anims"]), m["still"]))
                 ok(m["badge"] and m["badge"]["newestOp"] in (None, 1) and m["ladder"] and m["ladder"]["hereOpacity"] == 1, "M2 %s: Reduce motion - drawn at the last frame" % tag)
-                for opt in ("b", "c"):
-                    info, m, errs = run_case(br, url, dev, cls, "mid", opt, reduce=True)
-                    ok(len(info["anims"]) == 0 and all(m["still"]), "M2 %s opt=%s: Reduce motion - no animation (%d)" % (tag, opt, len(info["anims"])))
+                for q in ("?pfcz=e", "?pfbadge=b&pfcz=b"):
+                    info, m, errs = run_case(br, url, dev, cls, "mid", q, reduce=True)
+                    ok(len(info["anims"]) == 0 and all(m["still"]), "M2 %s %s: Reduce motion - no animation (%d)" % (tag, q, len(info["anims"])))
+            # L7 at the phone's text sizes (Safari's page zoom): 85% and 135%, every rank, Fire Code (its top rank with an old prestige count: 384.135)
+            if dev["name"] == "phone-installed":
+                for z in (.85, 1.35):
+                    zd = zoomed(dev, z)
+                    for cls, rank in (("academy", "first"), ("academy", "mid"), ("academy", "last"), ("ifc", "none"), ("ifc", "oldpg")):
+                        info, m, errs = run_case(br, url, zd, cls, rank, "")
+                        cl = m["clip"]; ld = m["ladder"] or {}
+                        ok(cl["n"] > 0 and cl["over"] <= .5, "L7 %s %s rank=%s: nothing of the ladder clipped (worst %spx %s; %d samples)" % (zd["name"], cls, rank, cl["over"], cl["what"], cl["n"]))
+                        ok(all(v for v in ld.get("visible", [False])), "L6 %s %s rank=%s: your rank and its neighbours on screen (%s)" % (zd["name"], cls, rank, ld.get("visible")))
         br.close()
     print("\n%d checks, %d failed" % (N[0], len(FAILS)))
     for f in FAILS: print("  FAIL", f)
