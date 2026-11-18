@@ -722,16 +722,18 @@ with sync_playwright() as pw:
             S.ck("19b", "the status bar's colour is each class's own (academy %s, Fire Code %s)" % (keys.get("sa"), keys.get("si")), keys.get("sa") and keys.get("si") and keys.get("sa") != keys.get("si"), keys)
             S.ck("20", "each class keeps its own character: Void in the academy (%s), not in Fire Code, which has not unlocked it (%s)" % (fa.get("char"), fi.get("char")),
                  acad0.get("char") == "voidwalker" and fi.get("char") and fi.get("char") != "voidwalker" and fa.get("char") == "voidwalker", [acad0.get("char"), fi.get("char"), fa.get("char")])
-            # the loader starts in the class left's colours and turns to the class opened's
+            # (384 classswitch) the loader is in the class opened's colours from its first frame, and the arriving page's are the same and
+            # still: the change from the class left's colours is the whole screen's now (the cover - that class's own sky - fading in
+            # over the class left's screen, measured frame by frame by check-b384-classswitch), not the loader's word and glow turned
+            # colour by colour under the next page's boot (that was a whole-page restyle every frame)
             tint_ok = True; tint_info = {}
             for to, frm, dst in (("ifc", acad0.get("c1"), fi.get("c1")), ("academy", fi.get("c1"), fa.get("c1"))):
-                seq = [(e["dt"], e["w"], rgb(e["c1"])) for e in runs[to]["log"] if e.get("c1")] + [(s["dt"], "home", rgb(s["c1"])) for s in runs[to]["samples"] if s["cls"] == to][-1:]
+                seq = [(e["dt"], e["w"], rgb(e["c1"])) for e in runs[to]["log"] if e.get("c1")]
                 a, b = rgb(frm), rgb(dst)
-                first = seq[0][2] if seq else None
-                mids = [x for x in seq if x[2] and dist(x[2], a) > 6 and dist(x[2], b) > 6]
-                tint_info[to] = {"from": frm, "to": dst, "first": first, "between": [(t, w) for t, w, _ in mids][:4], "last": seq[-1][2] if seq else None}
-                tint_ok = tint_ok and bool(seq) and dist(first, a) < dist(first, b) and dist(seq[-1][2], b) < 6 and len(mids) >= 1 and dist(a, b) > 20
-            S.ck("21", "the loader starts in the colours of the class left and turns to the class opened's, through the colours between (%s)" % tint_info, tint_ok, tint_info)
+                off = [(t, w) for t, w, c in seq if dist(c, b) > 6]
+                tint_info[to] = {"from": frm, "to": dst, "samples": len(seq), "not the class opened's": off[:4]}
+                tint_ok = tint_ok and len(seq) >= 2 and not off and dist(a, b) > 20 and any(w == "old" for _, w, _ in seq) and any(w == "new" for _, w, _ in seq)
+            S.ck("21", "the loader and the arriving splash are in the colours of the class opened, from the first frame, and hold still (%s)" % tint_info, tint_ok, tint_info)
             S.ck("22", "nothing big is downloaded on the way (Fire Code's questions were already in the cache): %s" % ({k: v["big"] for k, v in runs.items()}),
                  bool(warmed) and not runs["ifc"]["big"] and not runs["academy"]["big"], [warmed, runs["ifc"]["big"], runs["academy"]["big"]])
             fills = [(e["dt"], e["fill"]) for e in runs["ifc"]["log"] + runs["academy"]["log"] if e.get("w") == "old" and e.get("fill") is not None]

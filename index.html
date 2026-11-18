@@ -41,6 +41,9 @@
   html.class-arrive-pre #splashscreen{ background:transparent; }
   /* (384) arriving from a class switch: the splash is up from the page's first frame - see #class-switch-loader */
   html.class-arrive #splash-group, html.class-arrive #splashscreen::before{ animation:none !important; opacity:1 !important; }
+  /* (384 classswitch) and the installed app's top strip is the arriving class's sky colour at the top, not the launch's #0A0A0A over
+     its sky (the class left's page turned it as its cover came in); syncTopGuard takes it over as the cover lifts (data-color) */
+  html.class-arrive #top-edge:not([data-color]){ background-color:var(--csw-top, #0A0A0A) !important; }
   /* The on-glass floor. Only ever set on a page-zoomed touch device -
      see syncFieldFloor(). !important because it must beat every
      per-field size in this file, each of which is right in CSS pixels
@@ -254,16 +257,21 @@
          will not keep the old page's last frame until the splash is parsed draws this page before it - that frame is the
          loader too (its words and bar where they were, the bar running on), not the bare background. The splash covers it the
          moment it is in the page, and its script takes it away (class-arrive-pre).
-         (384) Its colours CHANGE from the class left to the class arrived in (Madison: "The loading screen while switching
-         should transition the colors"): --csw-c1..3, registered colours, run from the old class's theme (P.f) to the new one's
-         (P.c) over P.tint ms from the tap, carried on here where the loader was (a negative delay) and on into the splash; and
-         its bar never stops while the page is still coming: the loader's creep (csw-creep, CSW_CREEP_MS), the same here. */
+         (384) its bar never stops while the page is still coming: the loader's creep (csw-creep, CSW_CREEP_MS), the same here.
+         (384 classswitch) NOTHING CHANGES COLOUR HERE ANY MORE. Madison: "switching between themes I've noticed is laggy during the
+         splash screen ... maybe make it fade into the other color". The colours used to run from the class left's to this one's
+         (csw-tint, 1.4s from the tap) on <html> - a registered colour every element inherits, so every frame of it restyled the
+         whole page, and it ran right through this page's boot and the cover's lift (traced: 21-42ms of style per frame, Home's
+         build and the lift under it, the colour standing still whenever the boot held the thread). The class left's page now
+         does the whole change before it goes, while nothing else is running: its cover is THIS class's own sky (P.sky over
+         P.paper, read off the cover on that page) fading in over its Home, one opacity fade. This page shows that same sky, still,
+         from its first frame to the lift - and Home's sky under the lift is the same sky, so the lift changes no colour either. */
       var P = csw.pic, q = function(v){ return String(v).replace(/[^#0-9a-zA-Z.,%()\s"'-]/g, ""); };
+      /* (a computed background: gradients, color(srgb ... / a), px and %) */
+      var qs = function(v){ return String(v || "").replace(/[^#0-9a-zA-Z.,%()\s\/+-]/g, ""); };
       if(P && P.w && P.s && P.t && P.c){
         var now = Date.now() - csw.at;
         var c = [q(P.c[0]), q(P.c[1]), q(P.c[2])];
-        var f = (P.f && P.f.length === 3) ? [q(P.f[0]), q(P.f[1]), q(P.f[2])] : c;
-        var tint = Math.max(1, Number(P.tint) || 1400), te = Math.min(now, tint);
         var CREEP = 60000, ce = Math.min(now, CREEP - 1);
         var v1 = "var(--csw-c1)", v2 = "var(--csw-c2)", v3 = "var(--csw-c3)";
         /* (never "top": a global var of that name is the window's own, read-only) */
@@ -273,20 +281,29 @@
         var glow = function(a, b, d){ return "radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, " + b + " 17%, transparent), transparent 72%)," +
           "radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, " + d + " 13%, transparent), transparent 70%)," +
           "radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, " + a + " 10%, transparent), transparent 70%)"; };
-        /* the colours (kept while the splash is up: its own style element) */
+        /* the class's sky (no stars, nothing on it) and its paper; the top strip's colour (an installed app's #top-edge) */
+        var sky = qs(P.sky), paper = qs(P.paper), topc = qs(P.top);
+        var skyOk = /gradient\(/.test(sky) && /^(#|rgb|color\()/.test(paper);
+        /* (the splash's own box is var(--splash-bg) once the stylesheet is in, and so are <html> and a browser tab's bars under it) */
+        if(skyOk){
+          document.documentElement.style.setProperty("--splash-bg", paper);
+          if(/^#[0-9a-fA-F]{6}$/.test(topc)) document.documentElement.style.setProperty("--csw-top", topc);
+        }
+        /* the colours (kept while the splash is up: its own style element) - still, not animated */
         var tcss = "";
         for(var i = 0; i < 3; i++) tcss += "@property --csw-c" + (i + 1) + "{syntax:'<color>';inherits:true;initial-value:" + c[i] + ";}";
-        tcss += "@keyframes csw-tint{from{--csw-c1:" + f[0] + ";--csw-c2:" + f[1] + ";--csw-c3:" + f[2] + ";}to{--csw-c1:" + c[0] + ";--csw-c2:" + c[1] + ";--csw-c3:" + c[2] + ";}}" +
-          "html.class-arrive{--csw-c1:" + c[0] + ";--csw-c2:" + c[1] + ";--csw-c3:" + c[2] + ";animation:csw-tint " + tint + "ms ease-in-out -" + te + "ms both;}" +
-          /* and the splash, once it is in, in the same colours as they change */
+        tcss += "html.class-arrive{--csw-c1:" + c[0] + ";--csw-c2:" + c[1] + ";--csw-c3:" + c[2] + ";}" +
+          /* and the splash, once it is in, in the same colours */
           "html.class-arrive #splash-wordmark{background-image:linear-gradient(90deg, " + v1 + ", " + v2 + ", " + v3 + ") !important;}" +
           "html.class-arrive #splash-status{color:" + v1 + " !important;}" +
           "html.class-arrive #splash-fill{background:linear-gradient(90deg, " + v1 + ", " + v2 + ", " + v3 + ") !important;}" +
-          "html.class-arrive #splashscreen::before{background:" + glow(v1, v2, v3) + " !important;}";
+          (skyOk ? "html.class-arrive #splashscreen::before{background:" + sky + " !important;}"
+                 : "html.class-arrive #splashscreen::before{background:" + glow(v1, v2, v3) + " !important;}");
         var ts = document.createElement("style"); ts.id = "class-arrive-tint"; ts.textContent = tcss;
         (document.head || document.documentElement).appendChild(ts);
         /* the picture itself (taken away by the splash's script once the splash is in) */
-        var css = "html.class-arrive-pre{background:" + glow(v1, v2, v3) + ", #0A0A0A !important;}" +
+        var css = (skyOk ? "html.class-arrive-pre{min-height:100vh;min-height:100lvh;background-image:" + sky + " !important;background-color:" + paper + " !important;background-attachment:fixed !important;}"
+                         : "html.class-arrive-pre{background:" + glow(v1, v2, v3) + ", #0A0A0A !important;}") +
           "html.class-arrive-pre::before{content:'NOVA';position:fixed;z-index:1;pointer-events:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;white-space:nowrap;" +
           "left:" + P.w[0] + "px;top:" + P.w[1] + "px;width:" + P.w[2] + "px;height:" + P.w[3] + "px;" +
           "font-weight:" + q(P.wf[0]) + ";font-size:" + q(P.wf[1]) + ";font-family:" + q(P.wf[2]) + ";letter-spacing:" + q(P.wf[3]) + ";line-height:" + q(P.wf[4]) + ";" +
@@ -1944,6 +1961,10 @@
      begins, so the fade is genuinely revealing the real screen the
      whole way through instead of fading to black first. */
   #splashscreen:not(.splash-hide) ~ .wrap{ visibility:hidden; }
+  /* (384 classswitch) ...but not under a class switch's cover: that cover is opaque (the arriving class's paper and sky) and holds
+     until Home is built and the page has gone quiet, so Home is styled, laid out and PAINTED under it - hidden, its first paint
+     (the planet, its glow, every tile) was the lift's own first frame, a long task inside the .3s the person watches */
+  html.class-arrive #splashscreen:not(.splash-hide) ~ .wrap{ visibility:visible; }
   /* Leaving for an update (build 262): nothing but the "Pushing update"
      bar stays on the page, so its layers are gone before the reload -
      see releasePageForReload(). */
@@ -2140,15 +2161,47 @@
      the last frame of the old page until the new one has drawn something, so that last frame is the loader. */
   #class-switch-loader{
     position:fixed; inset:0; width:100vw; height:100vh; height:100lvh; overflow:hidden; z-index:100000;
-    background:var(--splash-bg, #0A0A0A); opacity:0; transition:opacity .24s cubic-bezier(.4,0,.2,1); pointer-events:auto; touch-action:none;
+    background:var(--paper, var(--splash-bg, #0A0A0A)); opacity:0; transition:opacity .5s cubic-bezier(.4,0,.2,1); pointer-events:auto; touch-action:none;
     will-change:opacity;
   }
+  /* (384 classswitch) THE COVER IS THE NEXT CLASS'S OWN SKY, AND IT FADES IN OVER THIS ONE'S. Madison: "When switching between classes,
+     ensure that the screen is smooth, switching between themes I've noticed is laggy during the splash screen and not perfect, just
+     make it better, maybe make it fade into the other color so it's better and easier on the eyes." The cover was the launch's
+     near-black (#0A0A0A) with a faint glow whose colours were turned from one class's to the other's by an animated registered
+     colour - over the next page's boot, on <html>, a whole-page restyle every frame (the jank) - so the screen went from the class
+     left's sky DOWN to black and back UP to the next class's (measured on a Pro Max: the sky from ~28 levels to 11 and back, for
+     about 1.6s). Now the cover is the class it opens: its paper and its three glows exactly as its Home's sky draws them (the
+     same declaration with that class's --bg-c1..3 on .csl-sky, the stars and everything on the screen left out), faded in over
+     the screen that is up in one .5s opacity fade - every pixel goes straight from this class's screen to the next one's sky,
+     and the class left's page is idle while it does (the tap's own work is done before the fade starts). The page reloads under
+     it, the next page shows the same sky from its first frame (the head script) and lifts it off its own Home, whose sky is the
+     same: no colour moves after the tap's fade, and nothing animates a property that restyles the page. */
+  #class-switch-loader .csl-sky{
+    position:absolute; inset:0; pointer-events:none; background-color:var(--paper);
+    background-image:
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%);
+  }
+  /* a browser tab's sky (html.is-browser body::before, dark): fades into the paper at the top and the bottom for Safari's bars; the
+     same layers on a box that is the viewport (no bleed) */
+  html.is-browser #class-switch-loader .csl-sky{
+    --bleed:0px;
+    background-image:
+      linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+      linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
+      radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%);
+  }
+  #class-switch-loader.is-primed{ opacity:.004; }
+  #class-switch-loader.is-primed:not(.is-on){ transition:none; }
   #class-switch-loader.is-on{ opacity:1; }
   /* (384 r21) ONE CALM COVER. The cover is the near-black the splash is (and the status bar's cover colour), faded in over the screen
      that is up in opacity only; its mark (the word, the line, the bar) comes in AFTER the cover is over the screen, not with it -
      it used to appear at once over Home's own NOVA and read as the word twice. Where the mark rests is where the splash puts it
      (pic, in switchClass), so the reload under it changes nothing. */
-  #class-switch-loader #csl-group{ opacity:0; transition:opacity .16s ease .14s; }
+  #class-switch-loader #csl-group{ opacity:0; transition:opacity .22s ease .3s; }
   #class-switch-loader.is-on #csl-group{ opacity:1; }
   /* the new page's cover lifts in opacity alone: the splash's word and bar no longer drift back 4% as it fades (they are the cover's
      mark, which did not move on the way in) */
@@ -2167,12 +2220,13 @@
   body.class-rise .bottomtabs{ animation:class-rise .4s cubic-bezier(.2,.7,.2,1) .12s backwards; }
   /* (no reduced-motion rules here: finishSplash never adds body.class-rise for a person with reduced motion, and a `*` rule under a body
      class makes the whole page restyle the moment the class goes on - the same frame the cover is lifting in) */
-  /* (384) its colours turn from the class left to the class it opens (switchClass animates these from one to the other) */
+  /* (384) its colours: the class it opens (data-accent on the loader). (384 classswitch: no longer animated from the class left's - the
+     whole screen fades into the next class's instead, see .csl-sky) */
   @property --csw-c1{ syntax:"<color>"; inherits:true; initial-value:#FFD37A; }
   @property --csw-c2{ syntax:"<color>"; inherits:true; initial-value:#F5804D; }
   @property --csw-c3{ syntax:"<color>"; inherits:true; initial-value:#C23B7A; }
   #class-switch-loader{ --csw-c1:var(--theme-c1); --csw-c2:var(--theme-c2); --csw-c3:var(--theme-c3); }
-  #class-switch-loader::before{
+  #class-switch-loader:not(:has(.csl-sky))::before{
     content:""; position:absolute; inset:0; pointer-events:none;
     background:
       radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, var(--csw-c2) 17%, transparent), transparent 72%),
@@ -42154,6 +42208,28 @@ html.is-browser{ --fade-paper: transparent; }
       }
       return now - arriveAnyAt > 1500;
     }
+    /* (384 classswitch) ...AND ONLY ONCE THE PAGE HAS STOPPED WORKING. Home is in the page the moment it is built, but its first
+       style pass, layout and paint (and the boot's own tail) are still to come: lifted then, the lift's first frames were that work -
+       traced on a Pro Max, a 191ms style pass forced by the lift's own first read and long tasks of 70-336ms inside its .3s, the
+       new Home stuttering in. So once Home is built the cover holds until the page draws ARRIVE_CALM_FRAMES frames in a row, each
+       within ARRIVE_CALM_GAP_MS of the one before (the work is done, under the cover), at most ARRIVE_CALM_MAX_MS. */
+    var ARRIVE_CALM_FRAMES = 4, ARRIVE_CALM_GAP_MS = 40, ARRIVE_CALM_MAX_MS = 1500, arriveCalmState = 0;
+    function arriveSettled(){
+      if(arriveCalmState === 2) return true;
+      if(arriveCalmState === 1) return false;
+      arriveCalmState = 1;
+      var t0 = performance.now(), last = 0, run = 0;
+      var done = function(){ if(arriveCalmState !== 1) return; arriveCalmState = 2; finishSplash(); };
+      setTimeout(done, ARRIVE_CALM_MAX_MS);   /* (frames can be held back - Low Power Mode, a hidden page: never for good) */
+      (function calm(ts){
+        if(arriveCalmState !== 1) return;
+        if(last){ run = ts - last <= ARRIVE_CALM_GAP_MS ? run + 1 : 0; }
+        last = ts;
+        if(run >= ARRIVE_CALM_FRAMES || performance.now() - t0 >= ARRIVE_CALM_MAX_MS){ done(); return; }
+        requestAnimationFrame(calm);
+      })(0);
+      return false;
+    }
     function finishSplash(){
         if(splashDone) return;
         /* (384 r16) a stop on the way (the academy's page finishing a class left in Fire Code): the cover stays up until it reloads */
@@ -42176,12 +42252,16 @@ html.is-browser{ --fade-paper: transparent; }
             if(!splashPoll) splashPoll = setTimeout(function(){ splashPoll = 0; finishSplash(); }, 30);
             return;
           }
+          if(!arriveSettled()) return;   /* (it calls finishSplash again when the page is quiet) */
           arriveStarted = true;
           try{
             /* the bar runs from where it is to full as the cover starts to go; the cover fades in opacity only */
-            var cs = getComputedStyle(fill).transform;
+            /* (384 classswitch) where the creep is now, worked out from its own stops - not read off the page (a computed-style read
+               here was a style pass over the whole new Home inside the lift's first task) */
+            var el = Math.max(0, Date.now() - arrive.at), stops = [[0, 0], [1700, .68], [4000, .78], [10000, .86], [30000, .93], [60000, .96]], cs = .96;
+            for(var si = 1; si < stops.length; si++){ if(el <= stops[si][0]){ var a0 = stops[si - 1], a1 = stops[si]; cs = a0[1] + (a1[1] - a0[1]) * (el - a0[0]) / (a1[0] - a0[0]); break; } }
             fill.style.setProperty("animation", "none", "important");
-            if(fill.animate) fill.animate([{ transform: cs && cs !== "none" ? cs : "scaleX(.9)" }, { transform: "scaleX(1)" }], { duration: arriveCalm ? 100 : 120, easing: "ease-out", fill: "forwards" });
+            if(fill.animate) fill.animate([{ transform: "scaleX(" + cs.toFixed(4) + ")" }, { transform: "scaleX(1)" }], { duration: arriveCalm ? 100 : 120, easing: "ease-out", fill: "forwards" });
             splash.classList.add("class-lift");
             splash.style.setProperty("transition", "opacity " + (arriveCalm ? ".14s linear" : ".3s cubic-bezier(.4,0,.2,1)"), "important");
             if(!arriveCalm){
@@ -42229,7 +42309,8 @@ html.is-browser{ --fade-paper: transparent; }
              nothing ever ran it again once the splash was gone and Home
              came up with no chat button at all. */
           try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
-        }, arriving ? 450 : 800);   /* (384) after the .75s fade (r21: a class switch's cover lifts in .3s) */
+        }, arriving ? 700 : 800);   /* (384) after the .75s fade (r21: a class switch's cover lifts in .3s; (384 classswitch) and goes
+             once Home's parts have risen (.52s), not in the middle of it: taking the first element of <body> out restyles the page) */
     }
     requestAnimationFrame(tick);
   })();
@@ -59497,10 +59578,10 @@ function warmIfcBankSoon(){
   const go = () => { try{ warmIfcBank(); }catch(e){} };
   setTimeout(() => { try{ if(window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 }); else go(); }catch(e){ go(); } }, 6000);
 }
-/* (384) the class switch's loader: its colours turn from this class's to the next one's over CSW_TINT_MS from the tap, and its
-   bar creeps on (csw-creep: 68% at 1.7s, 78% at 4s, 86% at 10s, 93% at 30s, 96% at a minute) - the head script's arrival
-   picture and the splash carry both on from the same numbers */
-const CSW_TINT_MS = 1400, CSW_CREEP_MS = 60000;
+/* (384) the class switch's loader: its bar creeps on (csw-creep: 68% at 1.7s, 78% at 4s, 86% at 10s, 93% at 30s, 96% at a
+   minute) - the head script's arrival picture and the splash carry it on from the same numbers. (384 classswitch) Its colours
+   are no longer turned over CSW_TINT_MS: the screen fades into the next class's sky (.csl-sky) */
+const CSW_CREEP_MS = 60000;
 /* (384 r21) the new page's cover holds at least this long from the tap, and gives the old screen back after this long with no reload */
 const CSW_HOLD_MS = 900, CSW_GIVEUP_MS = 60000;
 function switchClass(key, row, opts){
@@ -59538,10 +59619,9 @@ function switchClass(key, row, opts){
        when I switch to say the ifc and that theme is default for example. The loading screen while switching should transition
        the colors." It comes up in the colours on the screen now (this class's theme) and turns to the class it is going to -
        ITS theme, the one it is shown in (class26e.accentshown, which applyTheme keeps: a colour that class has not unlocked is
-       its default), else its saved pick, else the default - over CSW_TINT_MS from the tap; the new page carries the same
-       change on in its first frames and its splash (the head script's class-arrive picture). Registered colours (--csw-c1..3)
-       animated: colour only. "ink" is set as such: an unset accent would take this page's. */
-    const from = ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+       its default), else its saved pick, else the default. "ink" is set as such: an unset accent would take this page's.
+       (384 classswitch) The change is the whole screen's now, not the loader's word and glow: the cover is the next class's sky
+       in its colours and fades in over this one's screen (.csl-sky, below); nothing is animated colour by colour. */
     let toAcc = "ink";
     try{
       const raw = k => { try{ return localStorage[k]; }catch(e){ return null; } };   /* (a property read: Fire Code's own key-mapping is for getItem) */
@@ -59556,7 +59636,23 @@ function switchClass(key, row, opts){
       }
     }catch(e){}
     L.dataset.accent = toAcc;
-    L.innerHTML = '<div id="csl-group"><p id="csl-wordmark">NOVA</p><p id="csl-status"></p><div id="csl-track"><div id="csl-fill"></div></div></div>';
+    L.innerHTML = '<div class="csl-sky"></div><div id="csl-group"><p id="csl-wordmark">NOVA</p><p id="csl-status"></p><div id="csl-track"><div id="csl-fill"></div></div></div>';
+    /* (384 classswitch) the next class's sky: its glow colours are its accent's --bg-c1..3 where that accent has its own (a rule on
+       [data-accent]), else its --theme-c1..3 (what :root's --bg-c* are for every other accent - read through a wrapper that says
+       "none", as the loader would otherwise inherit THIS page's resolved values), the strengths Home's (not the dimmer sky of the
+       screen it may be leaving from) */
+    try{
+      const pw = document.createElement("div"), pr = document.createElement("div");
+      pw.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;--bg-c1:none;--bg-c2:none;--bg-c3:none";
+      pr.dataset.accent = toAcc; pw.appendChild(pr); document.body.appendChild(pw);
+      const pc = getComputedStyle(pr), skyEl = L.querySelector(".csl-sky");
+      for(let i = 1; i <= 3; i++){
+        let v = pc.getPropertyValue("--bg-c" + i).trim();
+        if(!v || v === "none") v = pc.getPropertyValue("--theme-c" + i).trim();
+        if(v && v !== "none") skyEl.style.setProperty("--bg-c" + i, v);
+      }
+      pw.remove();
+    }catch(e){}
     L.querySelector("#csl-status").textContent = line;
     /* centred on the visible screen in pixels, as the splash's group is */
     const g = L.querySelector("#csl-group"), vv = window.visualViewport;
@@ -59571,13 +59667,26 @@ function switchClass(key, row, opts){
     const at = Date.now();
     const to = ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => getComputedStyle(L).getPropertyValue(v).trim());
     const okc = c => /^#[0-9a-f]{3,8}$|^rgba?\([0-9., ]+\)$/i.test(c);
-    const tintOk = from.every(okc) && to.every(okc);
-    if(tintOk){
-      const ks = document.createElement("style"); ks.id = "csw-tint-keys";
-      ks.textContent = "@keyframes csw-tint-l{from{--csw-c1:" + from[0] + ";--csw-c2:" + from[1] + ";--csw-c3:" + from[2] + ";}to{--csw-c1:" + to[0] + ";--csw-c2:" + to[1] + ";--csw-c3:" + to[2] + ";}}";
-      (document.body || document.head).appendChild(ks);
-      L.style.animation = "csw-tint-l " + CSW_TINT_MS + "ms ease-in-out 0ms both";
-    }
+    /* (384 classswitch) the sky the next page shows from its first frame: the cover's own, as this browser computes it (gradients with
+       their colours and sizes resolved), its paper, and the colour of its top edge as Home's status-bar strip models it
+       (appTopEdgeColor's mix, at Home's strengths) - so an installed app's strip turns with the cover instead of staying this class's */
+    let sky = null, paper = null, topc = null;
+    try{
+      const skyEl = L.querySelector(".csl-sky"), sc = getComputedStyle(skyEl);
+      sky = sc.backgroundImage; paper = sc.backgroundColor;
+      const rs = getComputedStyle(document.documentElement);
+      const pb = document.createElement("div");
+      pb.style.cssText = "position:absolute;width:1px;height:1px;";
+      pb.style.backgroundColor = "color-mix(in srgb, var(--bg-c3) " + (rs.getPropertyValue("--statusbar-mix3").trim() || "0%") + ", color-mix(in srgb, var(--bg-c2) " + (rs.getPropertyValue("--statusbar-mix2").trim() || "0%") + ", var(--paper)))";
+      skyEl.appendChild(pb);
+      const hex = v => {   /* rgb(...) or color(srgb ...) (a color-mix) as #RRGGBB, as cssColorHexNow reads them */
+        const fn = /^color\(/i.test(v), parts = String(v).replace(/^[a-z]+\(/i, "").replace(/\)\s*$/, "").replace(/^[a-z][a-z0-9-]*\s+/i, "").split(/[\s,\/]+/).filter(Boolean);
+        return parts.length >= 3 ? "#" + parts.slice(0, 3).map(n => Math.max(0, Math.min(255, Math.round(parseFloat(n) * (fn ? 255 : 1)))).toString(16).padStart(2, "0")).join("").toUpperCase() : null;
+      };
+      topc = hex(getComputedStyle(pb).backgroundColor); pb.remove();
+      paper = hex(paper);
+      if(!/gradient\(/.test(sky || "") || !paper) sky = null;
+    }catch(e){ sky = null; }
     /* where its words and bar are and how they look, so the new page can draw the same picture before its own splash is in it */
     let pic = null;
     try{
@@ -59585,27 +59694,48 @@ function switchClass(key, row, opts){
       const csw = getComputedStyle(L.querySelector("#csl-wordmark")), css = getComputedStyle(L.querySelector("#csl-status"));
       pic = { w: box("#csl-wordmark"), s: box("#csl-status"), t: box("#csl-track"),
         wf: [csw.fontWeight, csw.fontSize, csw.fontFamily, csw.letterSpacing, csw.lineHeight], sf: [css.fontWeight, css.fontSize, css.fontFamily, css.letterSpacing, css.lineHeight],
-        c: to, f: tintOk ? from : to, tint: CSW_TINT_MS, acc: toAcc };
+        c: to, f: to, acc: toAcc, sky, paper, top: topc };
       if(!pic.c.every(okc)) pic = null;
     }catch(e){ pic = null; }
     /* (384) join: joining the academy from Fire Code; note: what the class says as it opens (a sign-in, a sign-up going on) */
     try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, min: CSW_HOLD_MS, line, to: key, pic, join: opts.join ? 1 : 0, note: opts.note || "", calm: calm ? 1 : 0 })); }catch(e){}
+    /* (384 classswitch) DRAWN BEFORE IT FADES. The cover is a whole screen of gradients (the next class's sky): put up at opacity 0 and
+       faded at once, its first paint landed inside the fade - measured in a Safari tab at 3x, the fade's first frame on screen was
+       already ~80% of the way (one step, a cut). So it goes up all but invisible (.004, primed), is drawn in the next frame, and the
+       fade starts the frame after that, with nothing left to paint. */
     void L.offsetWidth;
-    L.classList.add("is-on");
+    L.classList.add("is-primed");
+    let onDone = false;
+    const turnOn = () => { if(onDone) return; onDone = true; L.classList.add("is-on"); };
+    try{ requestAnimationFrame(() => requestAnimationFrame(turnOn)); }catch(e){ turnOn(); }
+    setTimeout(turnOn, 120);   /* (a page that draws no frames - hidden - still goes) */
     /* (384 r21) THE STATUS BAR GOES WITH THE COVER, under it: in a browser tab (an installed app's bar is read once, at launch) Safari's
        bars take the splash's colour as the cover comes in - they kept the class left's tint until the reload - and the new page's
        splash holds them there until the cover lifts (finishSplash hands them back) */
+    /* (384 classswitch) ...and that colour is the next class's paper, the cover's own (the next page's splash is that paper too) */
     if(!inApp){
       try{
-        const bg = getComputedStyle(document.documentElement).getPropertyValue("--splash-bg").trim() || "#0A0A0A";
+        const bg = (pic && pic.sky && pic.paper) || getComputedStyle(document.documentElement).getPropertyValue("--splash-bg").trim() || "#0A0A0A";
         const tc = document.getElementById("themecolor"); if(tc) tc.content = bg;
         document.documentElement.style.background = bg;
       }catch(e){}
     }
-    /* covered once its fade is done (.24s, .14s calm) - the fade's own end (transitionend), not a timer for it: a busy main thread
+    /* (384 classswitch) an installed app's top strip (#top-edge, above the cover) turns with the cover, to the next class's sky at the
+       top - the next page's strip is that colour from its first frame (the first style block); left as it was it was a band of this
+       class's colour over the next class's sky. One solid colour on one small element, eased as the cover is. */
+    if(inApp && pic && pic.sky && pic.top){
+      try{
+        const te = document.getElementById("top-edge");
+        if(te && document.documentElement.classList.contains("top-edge-on")){
+          te.style.transition = calm ? "background-color .14s linear" : "background-color .5s cubic-bezier(.4,0,.2,1)";
+          te.dataset.color = pic.top; te.style.backgroundColor = pic.top;
+        }
+      }catch(e){}
+    }
+    /* covered once its fade is done (.5s, .14s calm) - the fade's own end (transitionend), not a timer for it: a busy main thread
        stretches the fade, and a reload that started under a half-thick cover showed the new page's first frame against it (the
        timer is only the fallback) */
-    reloadIn = calm ? 450 : 650;
+    reloadIn = calm ? 450 : 900;
     L.addEventListener("transitionend", e => { if(e.target === L && e.propertyName === "opacity") goReload(); });
     /* a reload that never happens (blocked) gives the screen back - (384) after a minute, not 8s: a reload over a slow connection
        is still under way at 8s (iOS has no event to say so), and giving the old screen back then left it there, stale, until
