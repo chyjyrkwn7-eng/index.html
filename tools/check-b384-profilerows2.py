@@ -13,14 +13,17 @@ default rows on every rank and e / the old options on one each. L7 is new: the l
 
 Per device and class:
   L1-L6  THE LADDER, for an account below the first rank, on the first, in the middle, on the top (and, in Fire Code, the top with a
-         prestige taken): one cell per rank (TIER_ORDER_FULL); yours is the one rankOf(store) says, lit (opacity 1, its own ring
+         prestige count a test build left on the account - 384.135 retired prestige): one cell per rank (TIER_ORDER_FULL); yours is the one rankOf(store) says, lit (opacity 1, its own ring
          white), the ranks under it lit, the next one dashed, the rest dim; the lit line ends on your rank's centre (2px) and at 0
-         below the first; your rank and its neighbours inside the track's box and the screen; the prestige mark on the top rank.
-  L7     NOTHING OF THE LADDER IS CLIPPED: every node, its ring and glow (box-shadow), the pulse ring and the prestige tag, as
+         below the first; your rank and its neighbours inside the track's box and the screen.
+  L7     NOTHING OF THE LADDER IS CLIPPED: every node, its ring and glow (box-shadow), the pulse ring (and the prestige tag while it existed; 384.135 retired it), as
          painted (their transformed boxes plus their shadows' reach), inside every ancestor that clips (overflow other than visible,
          clip-path, contain:paint), at rest AND on every frame of the entrance (the swell and the pulse), in every state, both
          classes, the phone and the iPad, and on the phone at 85% and 135% text size (Safari's page zoom: the viewport 440/0.85 and
          440/1.35 wide). Must FAIL on fa11d79 (the halo and the tag were cut off at the top and right).
+  L8     (384.135) PRESTIGE IS GONE: with an old `prestige: 1` on the account (Fire Code's "oldpg" position), the top rank's node
+         holds only its emblem and the pulse (no mark beside it) and the ladder's line under its title is the plain top-rank
+         account's, word for word. Must FAIL on fa11d79 (the mark and "Supernova · Prestige I").
   B1     THE BADGE CASE, the default row (B's words, the plain row icon, none of the art) and each old option: its count is badgeCountOf(store) of classTopics().length; a's front filled to that share, b's
          ring one tick per badge with that many lit, c's bar one segment per badge with that many lit; the newest badge drawn.
   C1     CUSTOMIZE, each option: held / total the sum of customizeTally over Customize's pages, its words carry them; b's, d's and
@@ -91,7 +94,7 @@ CLIPJS = r"""()=>{ window.__pfClipWorst = { over: 0, what: '', n: 0 };
   let live = true; window.__pfClipStop = () => { live = false; };
   const tick = () => { if(!live) return; try{ window.__pfClipSample(); }catch(e){} requestAnimationFrame(tick); }; requestAnimationFrame(tick); }"""
 
-# the account: rank `rank` (none / first / mid / last / prestige), badges held, the newest not looked at; Profile opened from Home
+# the account: rank `rank` (none / first / mid / last / oldpg), badges held, the newest not looked at; Profile opened from Home
 SETUP = """async(want)=>{
   const wait = ms => new Promise(r => setTimeout(r, ms));
   document.getElementById('splashscreen')?.remove();
@@ -100,7 +103,7 @@ SETUP = """async(want)=>{
   document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro, .rs-spot, .unlock-card').forEach(n=>n.remove());
   const topics = classTopics();
   topics.forEach(u => { store.unitPerfects[u] = 0; });
-  const top = want.rank === 'last' || want.rank === 'prestige';
+  const top = want.rank === 'last' || want.rank === 'oldpg';
   const nb = top ? topics.length : want.rank === 'none' ? 0 : want.badges;
   topics.slice(0, nb).forEach(u => { store.unitPerfects[u] = badgeThresholdFor(u); });
   /* one unit part-way to its badge (the academy: hundos toward its band) */
@@ -109,7 +112,8 @@ SETUP = """async(want)=>{
   store.lifetime.points = 0;
   for(let p = 0; p < 2000000; p += 1500){ store.lifetime.points = p; if(levelStateFor(store).level >= lvl) break; }
   store.rankFloor = top ? 7 : 0;
-  store.prestige = want.rank === 'prestige' ? 1 : 0;
+  /* (384.135) a retired prestige count, as a test build of 384.126 left it: it must draw nothing */
+  if(want.rank === 'oldpg') store.prestige = 1;
   const s = ensureSeenUnlocks();
   s.badges = badgesEarnedList().slice(0, Math.max(0, badgesEarnedList().length - 1));
   if(want.reduce){ theme.reduceMotion = true; try{ saveTheme(); }catch(e){} document.documentElement.dataset.reduceMotion = 'true'; }
@@ -164,7 +168,8 @@ MEASURE = """()=>{
       fillEnd: fill ? R(fill).r : null, fillW: fill ? R(fill).w : null, railL: rail ? R(rail).l : null,
       hereCx: hereNode ? R(hereNode).cx : null, firstCx: node(0) ? R(node(0)).cx : null,
       visible: hi >= 0 ? [vis(hi - 1), vis(hi), vis(hi + 1)] : [vis(0), vis(1)],
-      pg: !!foot.querySelector('.pfr-ld-cell.is-here .pfr-ld-pg'), pgWant: (typeof prestigeTaken === 'function' ? prestigeTaken() : 0) > 0 && cur === 'titan',
+      extra: hereNode ? [...hereNode.children].filter(n => !n.classList.contains('pfr-ld-emb') && !n.classList.contains('pfr-ld-pulse')).length : -1,
+      sub: (foot.querySelector('.pfr-ld-sub') || {}).textContent || '',
       box: R(foot) };
   })();
   out.badge = (() => {
@@ -235,7 +240,8 @@ def main():
         for dev in [d for d in L.DEVICES if d["name"] in DEVS]:
             for cls in ("academy", "ifc"):
                 tag = "%s %s" % (dev["name"], cls)
-                ranks = ["none", "first", "mid", "last"] + (["prestige"] if cls == "ifc" else [])
+                ranks = ["none", "first", "mid", "last"] + (["oldpg"] if cls == "ifc" else [])
+                lastSub = None
                 # the default rows on every rank; Customize e on the first and the top; the old badge / customize options once each
                 cases = [(rk, "") for rk in ranks] + [("first", "?pfcz=e"), ("last", "?pfcz=e"), ("mid", "?pfbadge=a&pfcz=a"), ("mid", "?pfbadge=b&pfcz=b"), ("mid", "?pfbadge=c&pfcz=c")]
                 for rank, q in cases:
@@ -258,7 +264,10 @@ def main():
                         else:
                             ok(ld["fillW"] is not None and ld["fillW"] <= 1 and ld["nextDashed"] == ["dashed"], "L5 %s: no rank, no line, the first one next (dashed)" % t)
                         ok(all(v for v in ld["visible"]), "L6 %s: your rank and its neighbours on screen (%s)" % (t, ld["visible"]))
-                        if rank == "prestige": ok(ld["pg"] == ld["pgWant"] == True, "L6 %s: the prestige mark on the top rank" % t)
+                        if rank == "last": lastSub = ld["sub"]
+                        if rank == "oldpg":
+                            ok(ld["extra"] == 0, "L8 %s: an old prestige count draws nothing on the top rank (%d extra)" % (t, ld["extra"]))
+                            ok(lastSub is not None and ld["sub"] == lastSub, "L8 %s: the ladder's line is the plain top rank's (%r vs %r)" % (t, ld["sub"], lastSub))
                         cl = m["clip"]
                         ok(cl["n"] > 0 and cl["over"] <= .5, "L7 %s: no node, ring, glow or tag clipped, at rest or mid-entrance (worst %spx %s; %d samples)" % (t, cl["over"], cl["what"], cl["n"]))
                     b = m["badge"]
@@ -306,11 +315,11 @@ def main():
                 for q in ("?pfcz=e", "?pfbadge=b&pfcz=b"):
                     info, m, errs = run_case(br, url, dev, cls, "mid", q, reduce=True)
                     ok(len(info["anims"]) == 0 and all(m["still"]), "M2 %s %s: Reduce motion - no animation (%d)" % (tag, q, len(info["anims"])))
-            # L7 at the phone's text sizes (Safari's page zoom): 85% and 135%, every rank, Fire Code (it has the prestige state too)
+            # L7 at the phone's text sizes (Safari's page zoom): 85% and 135%, every rank, Fire Code (its top rank with an old prestige count: 384.135)
             if dev["name"] == "phone-installed":
                 for z in (.85, 1.35):
                     zd = zoomed(dev, z)
-                    for cls, rank in (("academy", "first"), ("academy", "mid"), ("academy", "last"), ("ifc", "none"), ("ifc", "prestige")):
+                    for cls, rank in (("academy", "first"), ("academy", "mid"), ("academy", "last"), ("ifc", "none"), ("ifc", "oldpg")):
                         info, m, errs = run_case(br, url, zd, cls, rank, "")
                         cl = m["clip"]; ld = m["ladder"] or {}
                         ok(cl["n"] > 0 and cl["over"] <= .5, "L7 %s %s rank=%s: nothing of the ladder clipped (worst %spx %s; %d samples)" % (zd["name"], cls, rank, cl["over"], cl["what"], cl["n"]))

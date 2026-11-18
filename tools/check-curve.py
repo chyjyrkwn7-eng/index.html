@@ -311,7 +311,7 @@ def main():
           }
           const tot = [0, 0]; for(let L = 2; L <= 100; L++) tot.push(tot[L - 1] + per[L]);
           return { l26: at(26), l50: at(50), l60: at(60), l61: at(61), l80: at(80),
-                   toCap: xpForLevel(LEVEL_CAP), to21: xpForLevel(21), cap: LEVEL_CAP, per, tot };}""")
+                   to80: xpForLevel(80), toCap: xpForLevel(LEVEL_CAP), to21: xpForLevel(21), cap: LEVEL_CAP, per, tot };}""")
         per, tot = costs["per"], costs["tot"]
         print("      level  cost / total:", ", ".join("%d %s/%s" % (L, format(per[L], ","), format(tot[L], ","))
                                                   for L in (60, 61, 70, 80, 90, 100)))
@@ -330,7 +330,10 @@ def main():
         check("two levels at 60 is under a week at 6,000 XP a day",
               two60 / 6000.0 < 7, "%.1f days" % (two60 / 6000.0))
         check("level 21 still costs about 10,000 (early levels stay quick)", 8000 <= costs["to21"] <= 10500, costs["to21"])
-        check("the cap is still 80 until January", costs["cap"] == 80, costs["cap"])
+        # REVISED IN 384.135, NO LEVEL CAP: "don't cap the level at 80 after you hit supernova, you can just keep leveling up."
+        # LEVEL_CAP is only a guard against a corrupt total now: the XP to reach it is over a thousand times level 80's.
+        check("no level cap: LEVEL_CAP is a guard nobody reaches (its XP over 1,000x level 80's) (384.135)",
+              costs["cap"] > 1000 and costs["toCap"] > 1000 * costs["to80"], (costs["cap"], costs["toCap"]))
         # BUILD 318: "I want top 25 percent to reach level 100 by May. I'd
         # want most people at or very close to 100 by July 8th." Measured on
         # the class on Oct 10, that is ~410,000 XP at level 100 - which the
@@ -345,7 +348,7 @@ def main():
               [(L, per[L], old_per[L]) for L in dearer[:3]])
         WANT = {50: 75181, 60: 116042, 70: 161659, 80: 217910, 90: 294417, 100: 409117}
         check("the totals: level 50 75,181, 60 116,042, 70 161,659, 80 217,910, 90 294,417, 100 409,117",
-              all(tot[L] == v for L, v in WANT.items()) and costs["toCap"] == 217910,
+              all(tot[L] == v for L, v in WANT.items()) and costs["to80"] == 217910,
               {L: tot[L] for L in WANT})
         # SMOOTH, NO SUDDEN STEPS. The x2 into 26 is build 313's and stays:
         # taking it out means cheaper levels from 26, which lifts most of the
@@ -361,32 +364,36 @@ def main():
         check("and a level still costs more the higher you are",
               costs["l80"] > costs["l60"] > costs["l50"] > costs["l26"], costs["l80"])
 
-        print("\n4b. January: LEVEL_CAP = 100 is the whole change")
-        """Served as a copy with that one constant changed - the claim in the
-        code is that nothing else has to move, so that is what is tested."""
+        print("\n4b. no level cap (384.135): past 80 the levels run on the same curve, and nothing at or below 80 moves")
+        """Served as a copy with the cap put back at 80 - the claim is that lifting it moved nothing up to 80, so that is what is
+        tested: every total under level 80's XP reads the same level on both, and past 80 the level is the curve's (the per-level
+        costs worked out above, to 100), never held."""
         html = open(os.path.join(SERVE, "index.html"), encoding="utf-8").read()
-        jan_html = html.replace("const LEVEL_CAP = 80;", "const LEVEL_CAP = 100;", 1)
-        check("the copy has exactly one LEVEL_CAP to change", jan_html != html and html.count("const LEVEL_CAP = ") == 1)
+        cap80_html = html.replace("const LEVEL_CAP = 9999;", "const LEVEL_CAP = 80;", 1)
+        check("the copy has exactly one LEVEL_CAP, the guard, to put back", cap80_html != html and html.count("const LEVEL_CAP = ") == 1)
         samples = list(range(0, 217910 + 2000, 97))
-        lv80 = pg.evaluate("(ps)=> ps.map(p => levelFromPoints(p))", samples)
-        jpg = ctx.new_page()
-        jpg.route("**/jan.html", lambda route: route.fulfill(status=200, content_type="text/html", body=jan_html))
+        lv_now = pg.evaluate("(ps)=> ps.map(p => levelFromPoints(p))", samples)
+        past = pg.evaluate("""()=>{ const out = [];
+          for(let L = 81; L <= 120; L++){ const a = levelProgress(xpForLevel(L)), b = levelProgress(xpForLevel(L) - 1);
+            out.push({ L, at: a.level, below: b.level, atCap: a.atCap, span: a.span, cost: xpForLevel(L + 1) - xpForLevel(L) }); }
+          return out; }""")
+        cpg = ctx.new_page()
+        cpg.route("**/cap80.html", lambda route: route.fulfill(status=200, content_type="text/html", body=cap80_html))
         jerrs = []
-        jpg.on("pageerror", lambda e: jerrs.append(str(e)))
-        jpg.goto("http://127.0.0.1:%d/jan.html" % PORT)
-        jpg.wait_for_timeout(2600)
-        jan = jpg.evaluate("""(ps)=>{ document.getElementById('splashscreen')?.remove();
-          const top = levelProgress(xpForLevel(100) + 5000), below = levelProgress(xpForLevel(100) - 1);
-          return { cap: LEVEL_CAP, to100: xpForLevel(100), to80: xpForLevel(80),
-                   top: { level: top.level, atCap: top.atCap }, below: below.level,
-                   at80: levelProgress(xpForLevel(80) + 1).atCap, lv: ps.map(p => levelFromPoints(p)) }; }""", samples)
-        jpg.close()
-        check("with the cap at 100: level 100 is 409,117 in all and the cap is there",
-              jan["cap"] == 100 and jan["to100"] == 409117 and jan["top"] == {"level": 100, "atCap": True} and jan["below"] == 99,
-              {k: jan[k] for k in ("cap", "to100", "top", "below")})
-        check("...level 80 is an ordinary level then, and nothing at or below it moves",
-              jan["to80"] == 217910 and not jan["at80"]
-              and all(a == b for a, b in zip(lv80, jan["lv"]) if a < 80), (jan["to80"], jan["at80"]))
+        cpg.on("pageerror", lambda e: jerrs.append(str(e)))
+        cpg.goto("http://127.0.0.1:%d/cap80.html" % PORT)
+        cpg.wait_for_timeout(2600)
+        old = cpg.evaluate("""(ps)=>{ document.getElementById('splashscreen')?.remove();
+          return { cap: LEVEL_CAP, to80: xpForLevel(80), lv: ps.map(p => levelFromPoints(p)) }; }""", samples)
+        cpg.close()
+        check("past 80 every level is held at its own XP and not a point before it, none 'at the cap' (81-120)",
+              all(x["at"] == x["L"] and x["below"] == x["L"] - 1 and not x["atCap"] and x["span"] > 0 for x in past),
+              [x for x in past if not (x["at"] == x["L"] and x["below"] == x["L"] - 1 and not x["atCap"])][:3])
+        check("...on the same curve: each level past 80 costs what the curve's steps to 100 say",
+              all(x["cost"] == per[x["L"] + 1] for x in past if x["L"] + 1 <= 100), [(x["L"], x["cost"], per[x["L"] + 1]) for x in past if x["L"] + 1 <= 100 and x["cost"] != per[x["L"] + 1]][:3])
+        check("...and nothing at or below 80 moves: every total under level 80's XP reads the same level with the cap put back",
+              old["cap"] == 80 and old["to80"] == 217910 and all(a == b for a, b in zip(lv_now, old["lv"]) if b < 80),
+              (old["cap"], old["to80"], [(p, a, b) for p, a, b in zip(samples, lv_now, old["lv"]) if a != b and b < 80][:3]))
         check("...and the page still runs", not jerrs, jerrs[:2])
 
         print("\n5. no screen quotes a threshold that is no longer one number")
@@ -917,13 +924,14 @@ def main():
             page = pg.evaluate("""()=>({ q: Object.fromEntries(topicsIn(QUESTIONS).map(u => [u, unitQuestionCount(u)])),
               need: Object.fromEntries(topicsIn(QUESTIONS).map(u => [u, badgeThresholdFor(u)])),
               ranks: TIER_ORDER_FULL.map(k => [TIER_UNLOCKS[k].level, TIER_UNLOCKS[k].badges]),
-              lv: [0, 300, 9912, 14306, 14427, 30000, 61965, 99999, 138431, 197370, 250000].map(p => [p, levelFromPoints(p), legacyLevelOfPoints(p)]),
+              lv: [0, 300, 9912, 14306, 14427, 30000, 61965, 99999, 138431, 197370, 250000, 409117, 600000, 1000000].map(p => [p, levelFromPoints(p), legacyLevelOfPoints(p)]),
               caps: Array.from({length: 17}, (_, b) => badgeWallLevel(b)) })""")
             check("its unit sizes and badge bands are the page's",
                   fa.UNIT_QUESTIONS == page["q"] and all(fa.badge_threshold(u) == n for u, n in page["need"].items()),
                   [u for u, n in page["need"].items() if fa.badge_threshold(u) != n])
             check("its ranks are the page's", [list(x) for x in fa.RANKS] == page["ranks"], page["ranks"])
-            check("its two curves are the page's",
+            # (384.135) the totals past 80 too: with no level cap the tool's level runs on as the page's does
+            check("its two curves are the page's (past level 80 too)",
                   all(fa.level_of(p) == a and fa.legacy_level_of_points(p) == b for p, a, b in page["lv"]), page["lv"])
             check("its band caps are the page's", [fa.badge_wall(b) for b in range(17)] == page["caps"],
                   ([fa.badge_wall(b) for b in range(17)], page["caps"]))

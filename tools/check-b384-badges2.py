@@ -19,7 +19,7 @@ Every badge surface is drawn on the build under test and on a reference build, i
      device pixels: the cutscene allows 2 levels on 0.05% of the frame and prints what it allowed. The frames as they are, glint shown,
      are printed for information only;
  (4) no page errors.
---class academy compares with 31588af (was origin/main 384.107; --acad-ref REV|FILE); --class ifc compares with 31588af (384.133 badgeart; was a68976a, claude/b384-badges,
+--class academy compares with 31588af (was origin/main 384.107; --acad-ref REV|FILE); --class ifc compares with 1c2758a (384.133 art3; was 31588af, before that a68976a, claude/b384-badges,
 --ifc-ref REV|FILE). Default: both.
 Run:  python3 tools/check-b384-badges2.py [--class academy|ifc|both] [--against REV|FILE] [--shots DIR]
       --against origin/main must PASS the academy (main against itself); --against a68976a must FAIL it (the 24 redrawn pins)."""
@@ -43,7 +43,13 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # The academy's reference likewise moves from origin/main (384.107) to 31588af: its badges, tokens, sheets and case there are main's
 # pixel for pixel (this gate's (1) and (2), and the case in (3), passed against origin/main on 31588af), but casefix rebuilt the
 # cutscene's case (rounded box, the lid's reflection of the found badges), so main's cutscene frames are no longer the academy's.
-REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "31588af")}
+# (384.133 art3) Fire Code's reference RE-PINNED from 31588af to 1c2758a: Madison's next round asked for six of them redrawn (Chapter
+# 34's tyres "got to look better", Chapter 33's star "is not it", Appendix H's pencil at the cone, Chapter 32's rack "hard to tell what
+# that even is", Chapter 63's valve-to-tank connection, Chapter 61's collar). On fa11d79 against 31588af, exactly those six tokens
+# differed (2), their six sheet images (1), and the case and the cutscene frames that hold them (3); every other token, back, card and
+# screen was pixel-identical. 1c2758a is that art; everything is still held pixel for pixel to it, and --against fa11d79 fails on
+# exactly the six. The academy's reference is unchanged (it passed against 31588af on this branch).
+REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "1c2758a")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene

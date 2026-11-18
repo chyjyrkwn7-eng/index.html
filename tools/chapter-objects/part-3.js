@@ -15,69 +15,73 @@
      part laid over it (a stave under a hoop, a strand under the over-wrap) rather than being cut through it */
   const P3runs = (pts, skip) => { let s = "", on = false; pts.forEach(p => { if(skip(p)){ on = false; return; } s += (on ? "L" : "M") + P3f(p); on = true; }); return s; };
 
-  /* ---- Chapter 32: High-Piled Combustible Storage - a selective pallet rack, loaded. (384.133 badgeart, Madison: "This isn't high piled
-     storage, that's just a stack of boxes. Those orange and blue or orange and green metal racks are high piled storage more often than
-     not." His photo: a warehouse aisle of racks with blue-green uprights and orange beams, pallets of cartons on every level.) Two bays,
-     three levels: the blue end frames with their zig-zag bracing and the punched slots up their posts, the plain upright between the
-     bays, the orange step beams with their end connectors, and on the floor and on each pair of beams a wooden pallet of kraft cartons.
-     The space between each load and the beam over it is open (a real see-through), so it reads as a rack, not a pile; the loads fill
-     their bays side to side, so the back has a band wide enough for the title. ---- */
+  /* ---- Chapter 32: High-Piled Combustible Storage - a selective pallet rack, loaded, seen a little from the right. (384.133 badgeart:
+     Madison, "This isn't high piled storage, that's just a stack of boxes. Those orange and blue or orange and green metal racks are high
+     piled storage more often than not.") (384.133 art3, Madison: "This high piled storage is bad, it's hard to tell what that even is."
+     Drawn straight on, the rack was a flat blue square with tan blocks in it.) Now the rack in 3/4: the front frame - three blue
+     uprights with their punched slots, two bays, orange step beams on two levels with their connectors - and the rack going BACK, up
+     and to the right: the right end frame seen from the side, its back upright and the cross-bracing zig-zagging between the two posts;
+     the back uprights showing over the top. On the floor and on each pair of beams a wooden pallet with two kraft cartons on it, their
+     tops seen going back into the rack; the dark inside of the rack behind and between them. ---- */
   {
     const S = OBJ_SDF, BB = [0, 0, 100, 100];
-    const UP = [[3, 16], [46.5, 53.5], [84, 97]];                       /* the uprights: two end frames, the post between the bays */
-    const BAYS = [[16, 46.5], [53.5, 84]];
-    const TOP = 3, FLOOR = 97;
-    const BEAMS = [[62, 67], [28, 33]];                              /* beam levels: top, bottom (y) */
-    const LV = [[FLOOR, 77.5], [62, 43], [28, TOP]];                       /* each level: the pallet's foot, the cartons' top */
-    const PH = 5.5;                                                      /* a pallet's height */
-    const parts = [];
+    const D = [14, -9], DL = [7.8, -5];                                 /* the rack's depth, and a load's (as drawn: up and right) */
+    const UP = [[2, 8], [38, 44], [74, 80]], BAYS = [[8, 38], [44, 74]];
+    const TOP = 7, FLOOR = 96, BTOP = 1, BFLOOR = FLOOR + D[1];
+    const BEAMS = [[66, 71], [37, 42]];                                   /* the beams: y0, y1 (lower, upper) */
+    const LV = [[FLOOR, 75], [66, 46.5], [37, 19]];                      /* each level: the pallet's foot, the cartons' top */
+    const PH = 4.5;
+    const sideFrame = S.poly([[80, TOP + 4], [80 + D[0], TOP + 4 + D[1]], [80 + D[0], BFLOOR], [80, FLOOR]]);
+    const backPost = ([x0, x1]) => S.box(x0 + D[0], BTOP, x1 - x0, BFLOOR - BTOP, 0);
+    const inside = S.box(8, 17, 66, FLOOR - 17, 0);
+    const parts = [inside, sideFrame, backPost(UP[2]), backPost(UP[0]), backPost(UP[1])];
     UP.forEach(([x0, x1]) => parts.push(S.box(x0, TOP, x1 - x0, FLOOR - TOP, 0)));
-    BAYS.forEach(([x0, x1]) => BEAMS.forEach(([y0, y1]) => parts.push(S.box(x0 - 1, y0, x1 - x0 + 2, y1 - y0, 0))));
     const loads = [];
     BAYS.forEach(([x0, x1]) => LV.forEach(([foot, topY]) => {
-      const pal = [x0, foot - PH, x1 - x0, PH];
-      const cw = (x1 - x0) / 2, c1 = [x0, topY, cw, foot - PH - topY], c2 = [x0 + cw, topY, cw, foot - PH - topY];
-      loads.push({ pal, c1, c2 });
-      parts.push(S.box(pal[0], pal[1], pal[2], pal[3], 0));
-      parts.push(S.box(c1[0], c1[1], 2 * cw, c1[3], 0));
+      const bx0 = x0 + 2.2, bx1 = x1 - 2.2, by1 = foot - PH;
+      const topFace = [[bx0, topY], [bx0 + DL[0], topY + DL[1]], [bx1 + DL[0], topY + DL[1]], [bx1, topY]];
+      loads.push({ pal: [x0 + 1, by1, x1 - x0 - 2, PH], box: [bx0, topY, bx1 - bx0, by1 - topY], topFace });
+      parts.push(S.poly(topFace));
     }));
-    const sil = S.trace(S.grow(S.grow(S.union(parts, 0), -1.2), 1.2), BB);   /* every outer corner rounded, the inner ones left square */
+    const sil = S.trace(S.grow(S.grow(S.union(parts, 0), -1), 1), BB);
+    const f = (x, y) => (+x).toFixed(2) + " " + (+y).toFixed(2);
+    const polyD = p => "M" + p.map(q => f(q[0], q[1])).join("L") + "Z";
     const plates = [];
-    /* the uprights */
-    const frame = ([x0, x1]) => OBJ_rrect(x0, TOP, x1 - x0, FLOOR - TOP, 1.2);
-    plates.push(["field", UP.map(frame).join(""), { dome: .5 }]);
-    /* the end frames: two posts and the bracing zig-zagging between them, the post between the bays plain */
-    let brace = "", slots = "";
-    [UP[0], UP[2]].forEach(([x0, x1]) => {
-      const a = x0 + 2.6, b = x1 - 2.6; let y = TOP + 4, left = true; brace += "M" + a + " " + y;
-      while(y + 9 <= FLOOR - 3){ y += 9; brace += "L" + (left ? b : a) + " " + y; left = !left; }
-      slots += "M" + (x0 + 1.3) + " " + (TOP + 3) + "V" + (FLOOR - 3) + "M" + (x1 - 1.3) + " " + (TOP + 3) + "V" + (FLOOR - 3);
+    /* the dark inside of the rack */
+    plates.push(["ink", OBJ_rrect(8, 16, 66, FLOOR - 16, 0) + polyD([[44 + D[0] * .5, BTOP + 4], [80 + D[0], BTOP + 4], [80 + D[0], BFLOOR], [44, FLOOR]]), { z: -.9, bev: .6, col: "#151B24" }]);
+    /* the back uprights (seen over the top, and the right one beside the end frame) */
+    plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0 + D[0], BTOP, x1 - x0, BFLOOR - BTOP, .8)).join(""), { z: -.3, bev: .5, col: "#245A96" }]);
+    /* the right end frame, seen from the side: its two posts and the bracing between them */
+    let brace = "M" + f(80.5, TOP + 6); { let y = TOP + 6, front = true; while(y + 10 <= FLOOR - 4){ y += 10; brace += "L" + f(front ? 80 + D[0] - .5 : 80.5, front ? y + D[1] * 1 : y); front = !front; } }
+    plates.push(["field", polyD([[80, TOP + 3], [80 + D[0], TOP + 3 + D[1]], [80 + D[0], TOP + 7.5 + D[1]], [80, TOP + 7.5]]) + polyD([[80, FLOOR - 7], [80 + D[0], FLOOR - 7 + D[1]], [80 + D[0], FLOOR - 2.5 + D[1]], [80, FLOOR - 2.5]]), { z: .3, bev: .4, col: "#2B64A6" }]);
+    plates.push(["field", brace, { ln: 2.2, z: .4, bev: .5, col: "#3A7BC4" }]);
+    /* the loads: pallets and cartons, their tops going back into the rack */
+    let pals = "", pfork = "", cart = "", tops = "", seam = "", tape = "";
+    loads.forEach(({ pal, box, topFace }) => {
+      pals += OBJ_rrect(pal[0], pal[1], pal[2], pal[3], .5);
+      const fw = pal[2] * .24; pfork += OBJ_rrect(pal[0] + pal[2] * .13, pal[1] + 2, fw, pal[3] - 2, [.5, .5, 0, 0]) + OBJ_rrect(pal[0] + pal[2] * .87 - fw, pal[1] + 2, fw, pal[3] - 2, [.5, .5, 0, 0]);
+      cart += OBJ_rrect(box[0], box[1], box[2], box[3], 0);
+      tops += polyD(topFace);
+      const xm = box[0] + box[2] / 2;
+      seam += "M" + f(xm, box[1] + .8) + "V" + (box[1] + box[3] - .6).toFixed(2);
+      tape += "M" + f(box[0] + box[2] * .25, box[1]) + "V" + (box[1] + box[3] * .38).toFixed(2) + "M" + f(box[0] + box[2] * .75, box[1]) + "V" + (box[1] + box[3] * .38).toFixed(2);
     });
-    plates.push(["field", brace, { ln: 2, z: .7, bev: .6, col: "#4E8FD8" }]);
-    plates.push(["field", slots, { ln: 1, cut: .5, paint: 0 }]);
-    let punch = ""; for(let y = TOP + 4; y < FLOOR - 3; y += 4.5) punch += "M50 " + y.toFixed(1) + "V" + (y + 2).toFixed(1);
-    plates.push(["field", punch, { ln: 1.4, cut: .6, paint: 0 }]);
-    /* the beams, orange, and their connectors on the uprights */
+    plates.push(["cardboard", tops, { z: .5, bev: .5, col: "#D9AC72" }]);
+    plates.push(["cardboard", cart, { z: .7, bev: .6, col: "#B47E45" }]);
+    plates.push(["cardboard", seam, { ln: 1.2, cut: .7, paint: 0 }]);
+    plates.push(["cardboard", tape, { ln: 2, z: .2, bev: .3, col: "#8C5A2B" }]);
+    plates.push(["wood", pals, { z: .5, bev: .45 }]);
+    plates.push(["ink", pfork, { z: -.6, bev: .35, col: "#2A1D12" }]);
+    /* the front uprights, the punched slots up them, the orange beams and their connectors in front of everything */
+    plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0, TOP, x1 - x0, FLOOR - TOP, 1)).join(""), { z: 1, bev: .7, dome: .5 }]);
+    const onBeam = p => BEAMS.some(([y0, y1]) => p[1] > y0 - 2.4 && p[1] < y1 + 2.4);
+    let slots = ""; UP.forEach(([x0, x1]) => { const xm = (x0 + x1) / 2, ys = []; for(let y = TOP + 3; y <= FLOOR - 3; y += .5) ys.push([xm, y]); slots += P3runs(ys, onBeam); });
+    plates.push(["field", slots, { ln: 1.3, cut: .6, paint: 0 }]);
     let beams = "", conn = "";
-    BAYS.forEach(([x0, x1]) => BEAMS.forEach(([y0, y1]) => { beams += OBJ_rrect(x0 - 1, y0, x1 - x0 + 2, y1 - y0, .8);
-      conn += OBJ_rrect(x0 - 1.5, y0 - 1.5, 3.4, y1 - y0 + 3, .8) + OBJ_rrect(x1 - 1.9, y0 - 1.5, 3.4, y1 - y0 + 3, .8); }));
-    plates.push(["hot", beams, { z: .9, bev: .7, dome: .4, col: "#F07A1A" }]);
-    plates.push(["hot", conn, { z: 1.1, bev: .5, col: "#C95F12" }]);
-    /* the loads: pallets and cartons */
-    let pals = "", pfork = "", cart = "", seam = "", tape = "";
-    loads.forEach(({ pal, c1, c2 }) => {
-      pals += OBJ_rrect(pal[0], pal[1], pal[2], pal[3], .6);
-      const fw = pal[2] * .26; pfork += OBJ_rrect(pal[0] + pal[2] * .12, pal[1] + 2.6, fw, pal[3] - 2.6, [.6, .6, 0, 0]) + OBJ_rrect(pal[0] + pal[2] * .88 - fw, pal[1] + 2.6, fw, pal[3] - 2.6, [.6, .6, 0, 0]);
-      const x0 = c1[0], x1 = c2[0] + c2[2], xm = (c1[0] + c1[2] + c2[0]) / 2;
-      cart += OBJ_rrect(x0 + .9, c1[1], x1 - x0 - 1.8, c1[3], [1.2, 1.2, 0, 0]);
-      seam += "M" + xm.toFixed(2) + " " + (c1[1] + .6) + "V" + (c1[1] + c1[3] - .3).toFixed(2);
-      [c1, c2].forEach(c => { tape += "M" + (c[0] + c[2] / 2).toFixed(2) + " " + (c[1] + .2) + "V" + (c[1] + c[3] * .42).toFixed(2); });
-    });
-    plates.push(["wood", pals, { z: .5, bev: .5 }]);
-    plates.push(["ink", pfork, { z: -.6, bev: .4, col: "#2A1D12" }]);
-    plates.push(["cardboard", cart, { z: .8, bev: .8, col: "#B5814A" }]);
-    plates.push(["cardboard", seam, { ln: 1.3, cut: .8, paint: 0 }]);
-    plates.push(["cardboard", tape, { ln: 2, z: .25, bev: .3, col: "#8C5A2B" }]);
+    BAYS.forEach(([x0, x1]) => BEAMS.forEach(([y0, y1]) => { beams += OBJ_rrect(x0, y0, x1 - x0, y1 - y0, .6);
+      conn += OBJ_rrect(x0 - 1.6, y0 - 1.6, 3.6, y1 - y0 + 3.2, .8) + OBJ_rrect(x1 - 2, y0 - 1.6, 3.6, y1 - y0 + 3.2, .8); }));
+    plates.push(["hot", beams, { z: 1.3, bev: .6, dome: .4, col: "#F07A1A" }]);
+    plates.push(["hot", conn, { z: 1.5, bev: .45, col: "#C95F12" }]);
     CHAPTER_OBJ["Chapter 32: High-Piled Combustible Storage"] = {
       d: sil.d, holes: sil.holes,
       col: "#2F6FB8", base: "field",
@@ -88,9 +92,13 @@
   /* ---- Chapter 33: Fire Safety During Construction and Demolition - a hard hat, side on, facing left. (384.133 badgeart, Madison: "I
      don't like the hat at all. Make this better." The round-9 hat was a yellow bell, front on, with a short brim: a bowler.) Now a real
      cap-style hard hat: the high domed shell with its raised crown ridge and the two ribs running front to back, the bill at the front
-     reaching out and down, the full brim round the back, the suspension's headband showing under the brim, and a small gold star decal.
-     NAVY, by Madison's standing rule for this class: "If there is going to be any hard hats ... they will be navy blue" (r6; every hard
-     hat, helmet and cap the agency's people wear is navy). ---- */
+     reaching out and down, the full brim round the back, the suspension's headband showing under the brim. NAVY, by Madison's standing
+     rule for this class: "If there is going to be any hard hats ... they will be navy blue" (r6; every hard hat, helmet and cap the
+     agency's people wear is navy). (384.133 art3, Madison: "The navy hard hat is cool, however the randomly placed star is not it.
+     There's gotta be something better.") The star is gone; the shell carries a silver REFLECTIVE BAND all the way round it, low on the
+     crown above the brim, as fire-service and fire-marshal hard hats do. On a hat drawn side on, a front shield or cross would sit on the
+     very edge of the shell (seen edge on) and read off-centre again; the band is centred by its nature, runs front to back on the shell's
+     own curve (a little bowed, as a ring round the dome is from a hair below), and stays a bright line at the case's 44px and at 26px. ---- */
   {
     const S = OBJ_SDF, BB = [0, 0, 100, 100];
     const CX = 55, CY = 76, RX = 38, RY = 42;                                         /* the shell: the top of an ellipse */
@@ -101,66 +109,86 @@
     const all = S.union([shell, brim, band], 1.6);
     const ell = (kx, ky, a0, a1) => { const o = []; for(let i = 0; i <= 24; i++){ const t = (a0 + (a1 - a0) * i / 24) * Math.PI / 180; o.push([CX + RX * kx * Math.cos(t), CY + RY * ky * Math.sin(t)]); }
       return "M" + o.map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L"); };
-    const star = (cx, cy, R) => OBJ_poly([...Array(10)].map((_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? R * .45 : R; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }), .5);
+    /* the reflective band: between two lines round the shell, each bowed up a little in the middle, cut to the shell's face */
+    const bow = (y0, k) => { const o = []; for(let i = 0; i <= 24; i++){ const x = 10 + 90 * i / 24, t = (x - CX) / RX; o.push([x, y0 - k * Math.max(0, 1 - t * t)]); } return o; };
+    const bandPoly = bow(63.4, 2.2).concat(bow(69.6, 2.2).reverse());
+    const refl = S.inter(S.poly(bandPoly), S.inter(S.grow(shell, -1.3), S.box(0, 0, 100, 73, 0)));
     CHAPTER_OBJ["Chapter 33: Fire Safety During Construction and Demolition"] = {
       d: S.shape(all, BB),
       col: "#24407A", base: "field",
       plates: [
         ["rubber", S.shape(band, BB), { z: -.5, bev: .6, col: "#161B27" }],                              /* the headband */
         ["field", S.shape(S.inter(shell, S.box(0, 0, 100, 74, 0)), BB), { dome: 2.6 }],                 /* the shell */
-        ["field", ell(.86, .9, 212, 328), { ln: 6, z: .9, bev: 1.3 }],                                   /* the crown ridge */
-        ["field", ell(.92, .64, 197, 343), { ln: 2.6, z: .6, bev: .8 }],                                 /* the side rib, front to back */
+        ["field", ell(.86, .9, 214, 326), { ln: 6, z: .9, bev: 1.3 }],                                   /* the crown ridge */
+        ["field", ell(.92, .64, 216, 324), { ln: 2.6, z: .6, bev: .8 }],                                 /* the side rib, front to back */
         ["field", S.shape(brim, BB), { z: .5, bev: .8, dome: .5 }],                                      /* the brim and the bill */
         ["shade", "M7 86.4Q13 83.4 24 82H86", { ln: 2.2, z: .2, bev: .5 }],                             /* the brim's underside */
-        ["brass", star(43, 59, 5.6), { z: .5, bev: .4, col: "#E2B640" }],                              /* the gold star decal */
+        ["cream", S.shape(refl, BB), { z: .5, bev: .5, dome: .5, col: "#E4E9EE" }],                              /* the reflective band round the shell */
       ],
     };
   }
 
-  /* ---- Chapter 34: Tire Rebuilding and Tire Storage - a stack of three tyres seen from the side, the top one's sidewall and its hole seen
-     from above. (384.133 badgeart, Madison: "The lines on the tires are messed up and come off the tires." The round-9 tread grooves ran
-     the full width of a square block, over the tyres' rounded shoulders, across the seams between them and up into the top tyre's
-     sidewall.) Each tyre is now its own rounded band - a tyre's shoulder is round, so its ends are half-round - and its tread is cut only
-     inside its own band: two rows of slanted blocks either side of a centre groove, every groove clipped to the band's flat tread, clear
-     of its shoulders, its neighbours and the sidewall above. The three are staggered as tyres are when they are stacked by hand (the
-     straight-sided stack was 0.89-0.96 alike, by outline, to Chapter 50's diamond turned on its side). ---- */
+  /* ---- Chapter 34: Tire Rebuilding and Tire Storage - a stack of three tyres, seen from the side and a little above. (384.133 art3,
+     Madison, of badgeart's stack: "I want the tires of course, but it's got to look better, this just doesn't look legit." Its tyres were
+     pill-shaped bands with half-round ends, and the tread was slanted slash marks with one line through each tyre.) Each tyre is now a
+     real tyre on its side: a short cylinder whose front edges are arcs (it is seen from a little above), its sidewalls rounding over at
+     the shoulders top and bottom, and between them the flat tread band. The tread is a block pattern on that band - a groove round the
+     middle and the cross grooves between the blocks, staggered above and below it - laid round the tyre, so the blocks close up toward
+     the sides as the tyre turns away; every groove stays inside its own tread band. Each tyre sits on the one under it: the lower one
+     darkens where the upper one's shoulder meets it (the contact shadow), and the outline steps in between them. The top tyre shows its
+     upper sidewall as an ellipse with a raised rim line and the bead, and its hole in perspective: the far inside wall of the tyre seen
+     through it, dark below. Staggered a little as tyres stacked by hand are (check-b384-badgetwins: Chapter 50 turned on its side). ---- */
   {
     const S = OBJ_SDF, BB = [0, 0, 100, 100];
-    const T = [[9, 85, 74, 96], [15, 93, 52, 74], [6, 84, 30, 52]];            /* each tyre: x0, x1, y0, y1 (bottom, middle, top) */
-    const R = 10.5;
-    const bands = T.map(([x0, x1, y0, y1]) => S.box(x0, y0, x1 - x0, y1 - y0, R));
-    const tc = T[2], TX = (tc[0] + tc[1]) / 2, TY = tc[2], TRX = (tc[1] - tc[0]) / 2 - 1, TRY = 9;
-    const top = S.ellipse(TX, TY, TRX, TRY);
-    const all = S.union(bands.concat([top]), .6);
-    /* a segment clipped to the box [x0, x1] x [y0, y1] (Liang-Barsky) */
-    const clip = (a, b, x0, x1, y0, y1) => { let t0 = 0, t1 = 1; const dx = b[0] - a[0], dy = b[1] - a[1];
-      for(const [p, q] of [[-dx, a[0] - x0], [dx, x1 - a[0]], [-dy, a[1] - y0], [dy, y1 - a[1]]]){
-        if(p === 0){ if(q < 0) return null; continue; } const r = q / p; if(p < 0){ if(r > t1) return null; if(r > t0) t0 = r; } else { if(r < t0) return null; if(r < t1) t1 = r; } }
-      return t1 - t0 > .08 ? [[a[0] + dx * t0, a[1] + dy * t0], [a[0] + dx * t1, a[1] + dy * t1]] : null; };
-    const seg = q => q ? "M" + q[0][0].toFixed(2) + " " + q[0][1].toFixed(2) + "L" + q[1][0].toFixed(2) + " " + q[1][1].toFixed(2) : "";
-    let tread = "", grooves = "";
-    T.forEach(([x0, x1, y0, y1], k) => {
-      const fx0 = x0 + R + .5, fx1 = x1 - R - .5;                               /* the flat of the tread, clear of the round shoulders */
-      const yA = k === 2 ? TY + TRY + 2.2 : y0 + 3.2, yB = y1 - 3.2, ym = (yA + yB) / 2;
-      if(k !== 2) grooves += "M" + fx0.toFixed(2) + " " + ym.toFixed(2) + "H" + fx1.toFixed(2);
-      for(let x = fx0 - 6; x <= fx1 + 6; x += 6.4){
-        if(k === 2){ tread += seg(clip([x, yB], [x + 3.2, yA], fx0, fx1, yA, yB)); continue; }
-        tread += seg(clip([x, ym - 1.4], [x + 2.6, yA], fx0, fx1, yA, ym - 1.4));
-        tread += seg(clip([x + 2.6, yB], [x, ym + 1.4], fx0, fx1, ym + 1.4, yB));
+    const E = 7, H = 24, A = 37.5, SH = 4.2;                                  /* the arcs' depth, a tyre's height, half-width, shoulder */
+    const T = [[48, 62], [53, 38], [48.5, 14]];                            /* each tyre: centre x, its top's centre y (bottom, middle, top) */
+    const tyre = ([cx, y]) => S.union([S.ellipse(cx, y, A - 2.6, E), S.box(cx - A, y + 3.2, 2 * A, H - 6.4, 3.6), S.ellipse(cx, y + H, A - 2.6, E)], 3.2);
+    const tyres = T.map(tyre);
+    const all = S.union(tyres, .5);
+    const lp = f => S.loops(f, BB).map(S.pathOf).join("");
+    /* the tread band of a tyre: between the arcs SH below its top and SH above its bottom, a hair in from its sides */
+    const band = ([cx, y]) => S.inter(S.minus(S.union([S.ellipse(cx, y + H - SH, A - 1.4, E), S.box(cx - A + 1.4, y + SH, 2 * (A - 1.4), H - 2 * SH, 0)], 0),
+      S.ellipse(cx, y + SH, A - 1.4, E)), S.box(0, y + SH - .01, 100, 100, 0));
+    const f = (x, y) => x.toFixed(2) + " " + y.toFixed(2);
+    let tread = "", ring = "";
+    const shadows = [];
+    T.forEach(([cx, y], k) => {
+      const ra = A - 1.4, yA = y + SH, yB = y + H - SH, ym = (yA + yB) / 2;
+      const arcY = (y0, s) => y0 + E * Math.sqrt(Math.max(0, 1 - s * s));      /* the front arc at x = cx + ra * s */
+      /* the groove round the middle */
+      let p = ""; for(let i = 0; i <= 40; i++){ const s = -.9 + 1.8 * i / 40; p += (i ? "L" : "M") + f(cx + ra * s, arcY(ym, s)); } ring += p;
+      /* the cross grooves: blocks above the ring and below it, staggered by half a block, closing up toward the sides */
+      const step = 15 * Math.PI / 180;
+      for(let j = -6; j <= 6; j++){
+        [[-.5, yA + .9, ym - 1.5], [0, ym + 1.5, yB - .9]].forEach(([off, y0, y1]) => {
+          const th = (j + off) * step; if(Math.abs(th) > 1.1) return;
+          const s0 = Math.sin(th), s1 = Math.sin(th + .07);                      /* a slight slant, as a block tread has */
+          tread += "M" + f(cx + ra * s0, arcY(y0, s0)) + "L" + f(cx + ra * s1, arcY(y1, s1));
+        });
       }
+      /* the contact shadow on this tyre where the one above sits on it */
+      if(k < 2) shadows.push(S.inter(S.minus(S.grow(tyres[k + 1], 2.4), tyres[k + 1]), tyres[k]));
     });
+    const [tx, ty] = T[2], RX = A - 2.6, HX = RX * .5, HY = E * .5;
     CHAPTER_OBJ["Chapter 34: Tire Rebuilding and Tire Storage"] = {
       d: S.shape(all, BB),
       base: "rubber", col: "#34373C",
       plates: [
-        ["rubber", S.shape(bands[0], BB), { dome: 1.1 }],                                               /* the bottom tyre */
-        ["rubber", S.shape(bands[1], BB), { dome: 1.1 }],                                               /* the middle one, on it */
-        ["rubber", S.shape(bands[2], BB), { dome: 1.1 }],                                               /* the top one */
-        ["rubber", tread, { ln: 1.5, cut: .8, paint: 0 }],                                              /* the tread blocks, each in its own band */
-        ["rubber", grooves, { ln: 1.3, cut: .7, paint: 0 }],                                            /* the centre grooves */
-        ["field", OBJ_ellipse(TX, TY, TRX, TRY), { z: .4, bev: .8, dome: .7, col: "#4A4E55" }],          /* the top tyre's sidewall */
-        ["steel", OBJ_ellipse(TX, TY, TRX * .56, TRY * .52), { z: .2, bev: .5, dome: .3, col: "#5A5F68" }],   /* its bead */
-        ["ink", OBJ_ellipse(TX, TY, TRX * .47, TRY * .4), { z: -1.8, bev: .8, col: "#16181B" }],        /* the hole in the middle */
+        ["rubber", S.shape(tyres[0], BB), { dome: .9 }],                                                        /* the bottom tyre */
+        ["rubber", lp(band(T[0])), { z: .3, bev: .5, col: "#2C2F34" }],                                          /* its tread band */
+        ["ink", lp(shadows[0]), { z: -.25, bev: .6, col: "#111316" }],                                           /* where the middle one sits on it */
+        ["rubber", S.shape(tyres[1], BB), { dome: .9 }],                                                        /* the middle tyre */
+        ["rubber", lp(band(T[1])), { z: .3, bev: .5, col: "#2C2F34" }],
+        ["ink", lp(shadows[1]), { z: -.25, bev: .6, col: "#111316" }],                                           /* where the top one sits on it */
+        ["rubber", S.shape(tyres[2], BB), { dome: .9 }],                                                        /* the top tyre */
+        ["rubber", lp(band(T[2])), { z: .3, bev: .5, col: "#2C2F34" }],
+        ["ink", tread, { ln: 1.6, z: -.7, bev: .35, col: "#16181B" }],                                          /* the cross grooves, each in its own band */
+        ["ink", ring, { ln: 1.6, z: -.7, bev: .35, col: "#16181B" }],                                           /* the groove round each */
+        ["field", OBJ_ellipse(tx, ty, RX, E), { z: .45, bev: .9, dome: .8, col: "#454950" }],                   /* the top tyre's upper sidewall */
+        ["field", OBJ_ellipse(tx, ty, RX * .8, E * .85), { ln: 1, cut: .45, paint: 0 }],                         /* its rim line */
+        ["field", OBJ_ellipse(tx, ty, HX + 3.4, HY + 1.6), { z: .2, bev: .5, dome: .3, col: "#3A3E44" }],         /* the bead */
+        ["ink", OBJ_ellipse(tx, ty, HX, HY), { z: -1.6, bev: .6, col: "#121417" }],                              /* the hole */
+        ["rubber", lp(S.minus(S.ellipse(tx, ty, HX, HY), S.ellipse(tx, ty + 2.4, HX + .6, HY))), { z: -1.1, bev: .4, col: "#3B3F45" }],   /* the far inside wall, through it */
       ],
     };
   }

@@ -1881,7 +1881,9 @@ def _curve_level(points, step, late, steep_from=None, steep=None, ease_from=None
     return lvl
 
 
-LEVEL_CAP = 80
+# 384.135: NO LEVEL CAP - levels run on past 80 on the same curve (the app's LEVEL_CAP is a guard only, 9,999: nobody stands on it).
+# Holding every rank, the badge wall is LEVEL_CAP, i.e. no wall; fixlevels / audit work out levels past 80 as the app does.
+LEVEL_CAP = 9999
 
 
 def level_of(points):
