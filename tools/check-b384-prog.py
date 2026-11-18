@@ -15,6 +15,15 @@ Every number is read off the page (the class's own tables and functions), never 
      derived (nothing stored); in Customize's challenge rewards and the Tracks' Feats; Fire Code's page has no such banner of its
      own but can draw an academy friend's; its art is layered, has no svg filter, and every animation it runs is transform or
      opacity, with something moving.
+  C  FIRE CODE'S FITTED CURVE (384.135; the `--against` base is 8ced5d1 for this one): a real-shaped account like Sauce's (10 real
+     chapters at their badge, the Bronze theme and the Bronze character worn, rank floor 1 and one rank-up shown from 382's floor,
+     no ifcCurveRule) at an XP that was Bronze's level on the old curve and is short of it on the new one. Booted through the real
+     launch: it DROPS to no rank (rankOf off the numbers, the floor 0, the flag set); Bronze's theme and character LOCK; the worn
+     theme shows as the default and the published row says so; the worn character goes to the class's first starter once the cloud
+     copy is in (ifcLookCheck); NO SPAM (no rank-up owed, nothing new on Home's queue); the account write lowers BOTH the account and
+     its __floor although the server's copies still hold the old floor and count (a transaction through a stand-in); a server copy
+     without the flag cannot lift the floor back (mergeSameAccount); and earning Bronze's level again owes its rank-up (the moment
+     comes back). The academy's page runs none of it.
 """
 import json, os, sys, functools, http.server, socket, threading, tempfile, shutil
 from playwright.sync_api import sync_playwright
@@ -92,6 +101,7 @@ LEVELS = r"""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)
   out.past = []; for(let L = 81; L <= 120; L += 3){ const p = levelProgress(xpForLevel(L)); out.past.push([L, p.level, !!p.atCap]); }
   classTopics().forEach(u => { store.unitPerfects[u] = badgeThresholdFor(u); });
   store.lifetime.points = xpForLevel(80) + 60000; store.rankFloor = TIER_ORDER_FULL.length; store.levelFloor = 0;
+  store.rankUpShown = TIER_ORDER_FULL.length;   /* every rank-up seen (Fire Code's fitted curve lowers a seed's count to the rank held at load) */
   const s = levelStateFor(store); out.curve = levelProgress(store.lifetime.points).level; out.level = s.level; out.rank = rankOf(store);
   out.top = TIER_ORDER_FULL[TIER_ORDER_FULL.length - 1]; out.topLevel = TIER_UNLOCKS[out.top].level;
   out.asc = bannerDef('level80') ? { need: bannerDef('level80').need, label: bannerDef('level80').label } : null;
@@ -127,6 +137,38 @@ FULLCASE = r"""async () => { const wait = ms => new Promise(r => setTimeout(r, m
   host.remove();
   return out; }"""
 
+IFC_SETUP = r"""() => { const ch = classTopics().slice(0, 10); return { perf: Object.fromEntries(ch.map(u => [u, badgeThresholdFor(u)])),
+  scale: typeof LEVEL_COST_SCALE === 'number' ? LEVEL_COST_SCALE : null, x21: xpForLevel(21), x20: xpForLevel(20) }; }"""
+
+CURVE = r"""async (want) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+  out.rank = rankOf(store); out.floor = store.rankFloor; out.rule = store.ifcCurveRule; out.level = levelOf(store); out.shown = store.rankUpShown;
+  out.themeLocked = isLockedAccent('rookie'); out.charLocked = isLockedCharacter(want.char);
+  out.accentShown = theme.accent; out.rowAccent = (buildClassBoardRow() || {}).accent;
+  out.owed = rankUpOwed(); let home = null; try{ home = homeUnlocksOwed(pendingHomeUnlocks()); }catch(e){ home = 'ERR ' + e; } out.home = home;
+  /* the cloud copy in: a locked worn character goes to the first starter */
+  try{ ifcLookCheck(true); }catch(e){} out.char = store.avatarChar; out.starter = classDefaultCharacter(); out.rowChar = (buildClassBoardRow() || {}).avatarChar;
+  /* the account write, against server copies that still hold the old floor and count (no flag) */
+  const old = JSON.parse(JSON.stringify(store)); old.rankFloor = 1; old.rankUpShown = 1; delete old.ifcCurveRule; old.lastModified = Date.now() + 60000;
+  const docs = { main: JSON.parse(JSON.stringify(old)), floor: JSON.parse(JSON.stringify(old)) }, wrote = {};
+  const ref = k => ({ get: () => Promise.resolve({ exists: true, data: () => JSON.parse(JSON.stringify(docs[k])) }), set: d => { wrote[k] = d; return Promise.resolve(); } });
+  const R = { main: ref('main'), floor: ref('floor') };
+  const prev = { db: acctDb, code: syncCode, f: window.floorRefFor };
+  try{
+    acctDb = () => ({ collection: () => ({ doc: () => R.main }), runTransaction: f => f({ get: r => r.get(), set: (r, d) => { r.set(d); } }) });
+    floorRefFor = () => R.floor;
+    syncCode = 'GATECODE'; writeAccount('GATECODE', true, true, false); await wait(400);
+  }catch(e){ out.writeErr = String(e); }
+  acctDb = prev.db; syncCode = prev.code; if(prev.f) floorRefFor = prev.f;
+  const pick = d => d ? { rankFloor: d.rankFloor, rankUpShown: d.rankUpShown, rule: d.ifcCurveRule } : null;
+  out.wroteMain = pick(wrote.main); out.wroteFloor = pick(wrote.floor);
+  /* a server copy without the flag, merged in: lifts nothing back */
+  const probe = JSON.parse(JSON.stringify(store)); mergeSameAccount(probe, JSON.parse(JSON.stringify(old)));
+  out.merged = pick(probe);
+  /* earn Bronze's level again: its rank-up is owed */
+  store.lifetime.points = xpForLevel(TIER_UNLOCKS[TIER_ORDER_FULL[0]].level) + 50;
+  out.again = { rank: rankOf(store), owed: rankUpOwed(), themeLocked: isLockedAccent('rookie') };
+  return out; }"""
+
 def main():
     srv, port = serve()
     with sync_playwright() as pw:
@@ -155,7 +197,7 @@ def main():
             ctx, pg, errs2 = page()
             l = pg.evaluate(LEVELS)
             chk("L [%s] levels 81-120 are held at their own XP, never at a cap" % cls, all(a == b and not c for a, b, c in l["past"]), l["past"])
-            chk("L [%s] a Supernova account past 80 is its curve's level (%s) on Profile, an ordinary bar" % (cls, l["curve"]),
+            chk("L [%s] a Supernova account past 80 is its curve's level (%s) on Profile, an ordinary bar (shown %r, over %s)" % (cls, l["curve"], l["shown"], l["over"]),
                 l["curve"] > 80 and l["level"] == l["curve"] and l["shown"] == "Level %d" % l["curve"] and not l["over"], l)
             chk("L [%s] Supernova is still the top rank, and Ascension still asks for its level" % cls,
                 l["rank"] == l["top"] and l["asc"] and l["asc"]["need"] == l["topLevel"] and str(l["topLevel"]) in l["asc"]["label"], l)
@@ -172,6 +214,36 @@ def main():
                 chk("B [ifc] Fire Code has no Full Case of its own, and can draw an academy friend's", not f["has"] and f["drawAcademy"] is True, f)
             ctx.close()
             e = errs + errs2 + errs3
+            if cls == "ifc":
+                ctx, pg, errs4 = page()
+                su = pg.evaluate(IFC_SETUP); ctx.close()
+                # THE XP IS THE FIXTURE, the same on every build measured: 4,760 is Bronze's level on the old curve (level 21 at
+                # 0.46 x 9,912 = 4,560) and short of it on the fitted one (0.5 x 9,912 = 4,956). The page's own numbers are printed.
+                xp = 4760
+                print("     page: LEVEL_COST_SCALE %s, level 20 at %s XP, level 21 at %s XP" % (su["scale"], su["x20"], su["x21"]))
+                fc = dict(SEED); fc.pop("prestige", None)
+                fc.update({"lifetime": dict(SEED["lifetime"], points=xp), "unitPerfects": su["perf"], "rankFloor": 1, "rankUpShown": 1,
+                           "avatarChar": "forge", "theme": {"mode": "dark", "accent": "rookie", "accentAt": 1}, "seenClassTip": True})
+                ctx = br.new_context(viewport={"width": 440, "height": 956})
+                ctx.add_init_script(init(cls).replace("localStorage.setItem('class26e.ifc.drill.v1',", "localStorage.setItem('class26e.ifc.drill.v1-x',")
+                                    + "try{localStorage.setItem('class26e.ifc.drill.v1', %s);}catch(e){}" % json.dumps(json.dumps(fc)))
+                pg = ctx.new_page(); errs4 = []
+                pg.on("pageerror", lambda e: errs4.append(str(e)[:200]))
+                pg.goto("http://127.0.0.1:%d/index.html" % port, timeout=180000); pg.wait_for_timeout(4000); pg.evaluate(QUIET)
+                c = pg.evaluate(CURVE, {"char": "forge"}); ctx.close()
+                t = "C [ifc] a Sauce-like account at %s XP (Bronze's level on the old curve)" % xp
+                chk(t + ": drops to no rank - the floor 0, the flag set", c["rank"] is None and c["floor"] == 0 and (c["rule"] or 0) >= 38435, c)
+                chk(t + ": Bronze's theme and character lock", c["themeLocked"] is True and c["charLocked"] is True, c)
+                chk(t + ": the worn theme shows as the default, locally and in the published row", c["accentShown"] == "ink" and c["rowAccent"] == "ink", c)
+                chk(t + ": the worn character goes to the first starter once the cloud copy is in, and the row says so",
+                    c["char"] == c["starter"] and c["rowChar"] == c["starter"], c)
+                chk(t + ": no spam - no rank-up owed, nothing new for Home", c["owed"] is None and c["home"] is False and c["shown"] == 0, c)
+                chk(t + ": the account write lowers the account AND its __floor over server copies that hold the old floor",
+                    c["wroteMain"] and c["wroteFloor"] and all(d["rankFloor"] == 0 and d["rankUpShown"] == 0 and (d["rule"] or 0) >= 38435 for d in (c["wroteMain"], c["wroteFloor"])), c)
+                chk(t + ": a server copy without the flag lifts nothing back in a merge", c["merged"] and c["merged"]["rankFloor"] == 0 and c["merged"]["rankUpShown"] == 0, c)
+                chk(t + ": earning Bronze again owes its rank-up, and its theme unlocks",
+                    c["again"]["rank"] == "rookie" and c["again"]["owed"] and c["again"]["owed"].get("toIdx") == 0 and c["again"]["themeLocked"] is False, c["again"])
+                e = e + errs4
             chk("[%s] no page errors" % cls, not e, e[:3])
         br.close()
     srv.shutdown()

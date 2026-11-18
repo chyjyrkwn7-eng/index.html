@@ -71124,6 +71124,8 @@ const TEST_HISTORY_MAX = 50;
 /* (384.88) THE ACADEMY LADDER'S VERSION - see academyLadderMigrate38488(). Declared up here for the same reason: the store
    literal below and applyLoadedData() both read it during boot. */
 const ACADEMY_LADDER_RULE = 38488;
+/* (384.135) Fire Code's curve fitted to its badges: a copy at or past this has had its rank floor dropped (ifcCurveMigrate) */
+const IFC_CURVE_RULE = 38435;
 /* THE FRIENDS LIST, as one block (build 384 - see socialDb()): the same in every class, dated by `socialAt`. Declared up here
    for the same reason: applyLoadedData() reads it during boot. socialSigBase is what the block was when it was last loaded,
    copied or saved - a `var` with no value, so nothing resets it once boot has set it. */
@@ -71177,6 +71179,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               rankFloor: 0,    /* build 314: see rankOf() */
               levelWallRule: 325,  /* build 325: a new account starts under the new wall - see levelWallMigrate325() */
               academyLadderRule: ACADEMY_LADDER_RULE,  /* 384.88: a new account starts on the 16/25 ladder - see academyLadderMigrate38488() */
+              ifcCurveRule: IFC_CURVE_RULE,   /* 384.135: a new account starts on Fire Code's fitted curve - see ifcCurveMigrate() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -71753,6 +71756,8 @@ function applyLoadedData(got){
   tallyNormalize(store);
   /* (384) a friends block that arrives is not a change made here: only an edit after this is dated (saveStore) */
   socialSigBase = socialSig(store);
+  /* (384.135) Fire Code's fitted curve: the rank floor goes, once (everything the rank reads is in by now) */
+  try{ ifcCurveMigrate(got); }catch(e){}
   return true;
 }
 /* WHAT SOMEBODY HELD UNDER THE PRE-243 RULES and would otherwise lose.
@@ -73939,6 +73944,7 @@ function wipeLocalProgressAndSettings(){
   store.rankFloor = 0;
   store.levelWallRule = LEVEL_WALL_RULE;   /* build 325: and under the new wall, with nothing to grandfather */
   store.academyLadderRule = ACADEMY_LADDER_RULE;   /* 384.88: and on the 16/25 ladder, with no old rank to keep */
+  store.ifcCurveRule = IFC_CURVE_RULE;   /* 384.135: and on Fire Code's fitted curve, with no floor to drop */
   store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
@@ -75497,7 +75503,8 @@ function mergeLeavingAccount(src, note){
   /* the grandfather floor (build 314): whichever account held the higher
      level keeps it - neither side loses one by being merged */
   store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
-  store.rankFloor = Math.max(num(store.rankFloor), num(src.rankFloor));
+  /* (384.135) in Fire Code a copy from before its fitted curve brings no rank floor (ifcCurveMigrate) */
+  if(ifcCurveRuleOrder(store, src) !== "dst") store.rankFloor = Math.max(num(store.rankFloor), num(src.rankFloor));
   store.levelWallRule = Math.max(num(store.levelWallRule), num(src.levelWallRule));
   store.academyLadderRule = Math.max(num(store.academyLadderRule), num(src.academyLadderRule));   /* (384.88) */
   maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
@@ -75906,7 +75913,18 @@ function mergeSameAccount(dst, src){
   /* The grandfather floor (build 314): the higher of the two. A copy from
      an older build carries none and changes nothing here. */
   maxInto(dst, "levelFloor", src.levelFloor);
-  maxInto(dst, "rankFloor", src.rankFloor);
+  /* (384.135) FIRE CODE'S RANK FOLLOWS ITS FITTED CURVE (ifcCurveMigrate). A copy that has not had it (the account written by an older
+     build, its __floor) brings no rank floor and no rank-up count: they would only lift back what the curve took down. A copy that
+     has had it, merged into one that has not, puts its own in. Anywhere else, the higher as always. */
+  const ifcRule = ifcCurveRuleOrder(dst, src);
+  if(ifcRule === "dst"){ /* src is older: its floor and count are not taken */ }
+  else if(ifcRule === "src"){
+    dst.rankFloor = num(src.rankFloor);
+    if(typeof src.rankUpShown === "number") dst.rankUpShown = src.rankUpShown; else delete dst.rankUpShown;
+    dst.rankUpFrom = src.rankUpFrom || null;
+    dst.ifcCurveRule = src.ifcCurveRule;
+    res.gained = true;
+  } else maxInto(dst, "rankFloor", src.rankFloor);
   /* build 325: the new wall's grandfathering ran on either copy - see
      levelWallMigrate325; a copy from an older build carries none */
   if(typeof src.levelWallRule === "number") maxInto(dst, "levelWallRule", src.levelWallRule);
@@ -75914,7 +75932,7 @@ function mergeSameAccount(dst, src){
   if(typeof src.academyLadderRule === "number") maxInto(dst, "academyLadderRule", src.academyLadderRule);
   /* a rank-up shown on either copy is shown (build 319); a copy from an
      older build carries none and changes nothing */
-  if(typeof src.rankUpShown === "number") maxInto(dst, "rankUpShown", src.rankUpShown);
+  if(typeof src.rankUpShown === "number" && !ifcRule) maxInto(dst, "rankUpShown", src.rankUpShown);
   /* met Nova on either copy is met (build 321) */
   if(typeof src.novaMet === "number") maxInto(dst, "novaMet", src.novaMet);
   /* a broadcast either copy has had, the account has had (build 325) */
@@ -77859,6 +77877,38 @@ function ifcLadderFloor384bOnce(){
   }catch(e){}
   return false;
 }
+/* ---- FIRE CODE'S RANK FOLLOWS ITS FITTED CURVE (384.135, Fire Code only) ----
+   Madison, on the curve change (LEVEL_COST_SCALE): "people's rank may drop in the fire code because the new xp curve, but that's
+   okay" and "If someone deranks, they wouldn't keep those rank rewards, they'd need to earn them again." So once per account, on the
+   first load of a Fire Code copy without `ifcCurveRule`:
+   - the RANK FLOOR goes to 0 (the 382 and 384.60 floors were for ladders that are gone; the rank is the numbers' again), so the rank
+     and everything it hands over (theme, flare, character, rank banner - all derived from rankOf when read) follow the new level;
+   - the RANK-UP COUNT (rankUpShown, "scenes shown") comes down to the rank held now, and the journey's record (rankUpFrom) is
+     cleared, so re-earning a lost rank plays its rank-up again - and the drop itself owes nothing (the count is never below the
+     rank held, so no scene, no Home flare, no reward card fires on the update).
+   It lowers progress on purpose, so the __floor must come down with it: the flag is persisted and merged by max, and a copy without
+   it contributes neither number (ifcCurveRuleOrder in mergeSameAccount / mergeLeavingAccount). The next account write (a
+   transaction) writes the account and its __floor from this copy. A new account and a reset start with the flag. The academy never
+   runs it and never reads the flag. */
+var ifcCurveJustApplied = false;
+function ifcCurveRuleOrder(a, b){
+  if(window.NOVA_CLASS !== "ifc") return null;
+  const n = o => (o && typeof o.ifcCurveRule === "number" && isFinite(o.ifcCurveRule)) ? o.ifcCurveRule : 0;
+  const A = n(a) >= IFC_CURVE_RULE, B = n(b) >= IFC_CURVE_RULE;
+  return A === B ? null : A ? "dst" : "src";
+}
+function ifcCurveMigrate(got){
+  if(window.NOVA_CLASS !== "ifc") return false;
+  const had = got && typeof got.ifcCurveRule === "number" && isFinite(got.ifcCurveRule) && got.ifcCurveRule >= IFC_CURVE_RULE;
+  store.ifcCurveRule = had ? got.ifcCurveRule : IFC_CURVE_RULE;
+  if(had) return false;
+  store.rankFloor = 0;
+  let held = 0;
+  try{ held = TIER_ORDER_FULL.indexOf(rankOfStats(levelOf(store), badgeCountOf(store), mysteryColorsFoundCount())) + 1; }catch(e){ held = -1; }
+  if(held >= 0 && typeof store.rankUpShown === "number" && store.rankUpShown > held){ store.rankUpShown = held; store.rankUpFrom = null; }
+  ifcCurveJustApplied = true;
+  return true;
+}
 
 
 /* ---------- Rankings: the three ranked metrics ----------
@@ -78058,7 +78108,19 @@ const LEVEL_TOP = 80;
    studied by choice. About 100k is ~17 study days at the heaviest pace, ~25 at 4k a day, ~40 at 2.5k. Ranks' levels (21 ... 80) and
    badge counts (4 ... 56) are unchanged; finishing every chapter once is ~54k XP (about level 60), so the top ranks take
    repetition. No account lists Fire Code yet (0 of 45), so no level or rank moves. */
-const LEVEL_COST_SCALE = window.NOVA_CLASS === "ifc" ? 0.46 : 1;
+/* ---- FITTED TO THE CLASS'S OWN BADGES (384.135): 0.46 -> 0.5 ----
+   Madison: "In the fire code class, I've noticed already that someone is level 50 but only has 16 badges ... up the xp amount needed"
+   and then "Just needs to line up. Figure it out by the fire code people, look at their amount of badges to their current xp
+   earned and figure it out." Read only, from the live data (Nov 18): the four active Fire Code accounts, their XP and badges, against
+   the level their badge count qualifies for on Fire Code's own ladder (TIER_UNLOCKS: the level of the highest rank those badges
+   meet). For each, the scale at which their XP lands exactly on that level: Sauce 10 badges / 7,875 XP -> level 30 at 0.34; Logang
+   13 / 10,020 -> 30 at 0.44; Maddog 12 / 12,620 -> 30 at 0.55; masooooon 16 / 47,660 -> 40 at 1.06 (he farms repeat 100%s: ~2,980
+   XP a badge against 770-1,050 for the rest, so weighted a quarter). Weighted (geometric mean): 0.47, rounded to 0.5 - the clean
+   value on the dearer side, as asked. Level 80 = 108,980 XP (was 100,240). masooooon's level 50 is not the curve's doing: at 16
+   badges the wall is Platinum's level (50, the next rank's), and his XP passes it on any scale under 1.06. Same shape as the
+   academy's curve (levelCost); the academy is untouched (scale 1). The ranks Fire Code held on its own floors no longer hold:
+   ifcCurveMigrate below. */
+const LEVEL_COST_SCALE = window.NOVA_CLASS === "ifc" ? 0.5 : 1;
 function levelCost(need){ return LEVEL_COST_SCALE === 1 ? need : Math.max(1, Math.round(need * LEVEL_COST_SCALE)); }
 /* THE CURVE GETS STEEPER AFTER 20, AND IS UNTOUCHED BELOW IT.
    Asked for directly: "do not let leveling up be too easy ... after
@@ -174865,8 +174927,8 @@ if(store.onboardingComplete && !syncCode && !syncOff){
    preserveLegacyLevel(). Silent: it is not an award, it is the curve
    change declining to cost somebody something they earned. */
 /* Fire Code's new ladder keeps every rank held (build 382), before anything below asks for a rank */
-if(store.onboardingComplete) try{ ifcLadderFloorOnce(); }catch(e){}
-if(store.onboardingComplete) try{ ifcLadderFloor384bOnce(); }catch(e){}
+/* (384.135) RETIRED: Fire Code's two device-only one-time floors (382, 384.60). Its rank follows its fitted curve now
+   (ifcCurveMigrate), and a device that never ran them would only lift a floor back up. Kept as functions, not called. */
 if(store.onboardingComplete) preserveLegacyLevel();
 /* Existing accounts only. A fresh device has nothing to hand out, and
    writing a store before the account exists would get in the way of the
