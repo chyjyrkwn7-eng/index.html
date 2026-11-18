@@ -23051,7 +23051,7 @@ def check_b320a_results(br):
          40 with four), so "room" sits inside level 19 before and after and "gain" reaches
          Gold's 40 this run - 324's fixtures sat inside its 29 / 49 walls */
       return { room: await run(300, xpForLevel(19) + 400, 0), full: await run(300, xpForLevel(52) + 200, 4),
-               gain: await run(300, xpForLevel(41) + 150, 4) }; }""")   /* (384.135) no "top": past 80 is no longer a capped bar */
+               gain: await run(300, xpForLevel(41) + 150, 4) }; }""")   # (384.135) no "top": past 80 is no longer a capped bar
     xr = {k: v["s"] for k, v in xr.items()}
     # BUILD 321 REVERSED "the number after the bar" (b320): "the numbers
     # come through after the xp goes but wouldn't it be at the same time? It
