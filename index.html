@@ -4115,8 +4115,8 @@
      phone. A row the observer has marked off screen (120px out) keeps its size and its place and skips its contents: ~9ms. */
   .screen-rankings .rank-row.is-offscreen{ content-visibility:hidden; contain-intrinsic-height:64px; }
   /* Build 290: see the IntersectionObserver in showCustomize(). */
-  :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen *,
-  :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen *::before, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen *::after{ animation-play-state:paused !important; }
+  :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt, .ulk-item, .trk-tier).is-offscreen, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt, .ulk-item, .trk-tier).is-offscreen *,
+  :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt, .ulk-item, .trk-tier).is-offscreen *::before, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt, .ulk-item, .trk-tier).is-offscreen *::after{ animation-play-state:paused !important; }
   /* The drop-shadows fade through a REGISTERED number, not by
      transitioning `filter` itself: interpolating from a transparent
      shadow to a color-mix() one passes through near-black on the way
@@ -40530,6 +40530,152 @@ html.is-browser{ --fade-paper: transparent; }
     .trk-goal{ font-size:.82rem; }
     .trk-rims{ grid-template-columns:repeat(auto-fill, minmax(6rem, 1fr)); }
     .rim-plate{ width:3.9rem; height:3.9rem; }
+  }
+  /* ---- THE UNLOCKS BROWSER (384.136, unlocks2): Customize > All unlocks ----
+     An overview (the collection ring, the closest unlock), a row of filters, then either the tracks as ladders (All) or every
+     item of one kind as a card on one grid. Cards are one shape per kind: a preview box of the same size across a row (a square
+     for characters, themes and rims; the banner's own 8:3 for banners and effects), the name, then "Earned" or the rule with a
+     bar pinned to the card's foot so the bars of a row line up. A locked item is drawn at half strength with a padlock disc;
+     a held one has the accent disc with a tick and an accent edge. Every surface is a --surface-* token (or a mix of one with
+     the accent). Motion: the body fades up on a filter change and a card presses in - transform / opacity only, no filter. */
+  html[data-layout] body #stage .screen-unlocks .ulk-hero{ display:flex; flex-direction:column; gap:.8rem; margin:0 0 .85rem;
+    animation:ulk-in .4s cubic-bezier(.2,.8,.2,1) both; }
+  .ulk-hero-top{ display:flex; align-items:center; gap:1rem; min-width:0; }
+  .ulk-ring{ position:relative; flex:0 0 auto; display:grid; place-items:center; width:4.6rem; height:4.6rem; }
+  .ulk-ring > svg{ position:absolute; inset:0; width:100%; height:100%; animation:ulk-ring-in .7s cubic-bezier(.2,.8,.2,1) .05s both; }
+  .ulk-ring-track{ fill:none; stroke:color-mix(in srgb, var(--ink) 12%, transparent); stroke-width:7; }
+  .ulk-ring-fill{ fill:none; stroke:var(--accent); stroke-width:7; stroke-linecap:round; }
+  .ulk-ring-pct{ position:relative; font-size:1rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .ulk-hero-tx{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
+  .ulk-kicker{ font-size:.68rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
+  .ulk-hero-count{ font-size:1.45rem; font-weight:800; line-height:1.15; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .ulk-hero-sub{ font-size:.8rem; font-weight:600; line-height:1.3; color:var(--soft); }
+  /* the filters: one row you can slide sideways, every chip a 44px target */
+  .ulk-chips{ display:flex; gap:.45rem; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; -webkit-overflow-scrolling:touch;
+    margin:0 0 .85rem; padding:.1rem .1rem .2rem; scroll-snap-type:x proximity; }
+  .ulk-chips::-webkit-scrollbar{ display:none; }
+  .ulk-chip{ all:unset; box-sizing:border-box; flex:0 0 auto; display:inline-flex; align-items:center; gap:.4rem; min-height:44px; padding:0 .95rem;
+    border-radius:99px; background:var(--surface-lift); box-shadow:inset 0 0 0 1px var(--surface-border); color:var(--ink); cursor:pointer;
+    font-family:var(--sans); font-size:.86rem; font-weight:700; scroll-snap-align:start; -webkit-tap-highlight-color:transparent; position:relative;
+    transition:background-color .2s ease, color .2s ease, transform .15s ease; }
+  .ulk-chip:active{ transform:scale(.96); }
+  .ulk-chip:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  .ulk-chip-count{ font-size:.74rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .ulk-chip.is-on{ background:var(--accent); color:#10131A; box-shadow:none; }
+  .ulk-chip.is-on .ulk-chip-count{ color:rgba(16,19,26,.72); }
+  .ulk-body.is-in{ animation:ulk-in .3s cubic-bezier(.2,.8,.2,1) both; }
+  html[data-layout] body #stage .screen-unlocks .ulk-body > .ulk-group{ margin:0 0 .85rem; }
+  @keyframes ulk-in{ from{ opacity:0; transform:translate3d(0, 10px, 0); } to{ opacity:1; transform:none; } }
+  @keyframes ulk-ring-in{ from{ opacity:0; transform:scale(.82) rotate(-25deg); } to{ opacity:1; transform:none; } }
+  /* the grid: as many columns as fit, every column the same width, every card in a row the same height */
+  .ulk-grid{ display:grid; gap:.6rem; grid-template-columns:repeat(auto-fill, minmax(min(100%, 112px), 1fr)); align-items:stretch; }
+  .ulk-grid-banner, .ulk-grid-fx{ grid-template-columns:repeat(auto-fill, minmax(min(100%, 158px), 1fr)); }
+  .ulk-item{ all:unset; box-sizing:border-box; position:relative; display:flex; flex-direction:column; gap:.3rem; min-width:0; min-height:44px;
+    padding:.4rem .4rem .6rem; border-radius:.95rem; background:var(--surface-inset); cursor:pointer; font-family:var(--sans);
+    -webkit-tap-highlight-color:transparent; transition:transform .16s ease; }
+  .ulk-item:active{ transform:scale(.97); }
+  .ulk-item:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  .ulk-item.is-held{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent); }
+  html[data-layout] body #stage .screen-unlocks .ulk-item > .new-dot{ top:.55rem; left:.55rem; right:auto; z-index:4; }
+  .ulk-prev{ position:relative; display:grid; place-items:center; width:100%; aspect-ratio:1 / 1; border-radius:.7rem; overflow:hidden; isolation:isolate;
+    background:radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--char-glow, var(--ulk-tint, #9FACBA)) 30%, transparent), transparent 70%), var(--surface-inset); }
+  .ulk-prev-banner, .ulk-prev-fx{ aspect-ratio:8 / 3; background:var(--surface-inset); }
+  .ulk-char{ display:block; width:min(76px, 80%); aspect-ratio:1 / 1; }
+  .ulk-char > svg{ display:block; width:100%; height:100%; }
+  .ulk-banner-still{ position:absolute; inset:0; background:center / cover no-repeat; }
+  .ulk-prev-banner > .bnr{ border-radius:inherit; }
+  .ulk-banner-live{ opacity:0; transition:opacity .45s ease; }
+  .ulk-banner-live.is-in{ opacity:1; }
+  .ulk-prev-fx > .hfx-stage{ width:100%; height:100%; aspect-ratio:auto; border-radius:0; clip-path:none; }
+  html[data-layout] body #stage .screen-unlocks .ulk-prev-theme .swatch.pf-swatch{ width:62%; height:auto; aspect-ratio:1 / 1; pointer-events:none; }
+  html[data-layout] body #stage .screen-unlocks .ulk-prev-theme .swatch.pf-swatch .dot{ width:100%; height:100%; }
+  .ulk-prev-rim > .rim-plate{ width:58%; height:auto; aspect-ratio:1 / 1; }
+  .ulk-item.is-locked .ulk-prev > :not(.ulk-badge){ opacity:.42; }
+  .ulk-badge{ position:absolute; top:.3rem; right:.3rem; z-index:3; display:grid; place-items:center; width:1.35rem; height:1.35rem; border-radius:50%; }
+  .ulk-badge.is-earned{ background:var(--accent); color:#10131A; box-shadow:0 0 0 2px rgba(10,12,18,.45); }
+  .ulk-badge.is-locked{ background:rgba(10,12,18,.78); color:rgba(255,255,255,.88); box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); }
+  .ulk-badge svg{ display:block; width:.8rem; height:.8rem; }
+  .ulk-badge.is-locked svg{ width:.66rem; height:.66rem; }
+  .ulk-name{ padding:0 .15rem; font-size:.86rem; font-weight:700; line-height:1.2; color:var(--ink); overflow-wrap:anywhere; }
+  .ulk-req{ padding:0 .15rem; font-size:.74rem; font-weight:500; line-height:1.3; color:var(--soft); overflow-wrap:anywhere; }
+  .ulk-state.is-earned{ margin-top:auto; padding:0 .15rem; font-size:.74rem; font-weight:800; letter-spacing:.02em; color:var(--accent); }
+  .ulk-meter{ display:flex; flex-direction:column; gap:.25rem; margin-top:auto; padding:.2rem .15rem 0; }
+  .ulk-bar{ display:block; height:.3rem; border-radius:99px; background:color-mix(in srgb, var(--ink) 12%, transparent); overflow:hidden; }
+  .ulk-bar > i{ display:block; height:100%; border-radius:inherit; background:var(--accent); }
+  .ulk-count{ font-size:.72rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+  /* THE TRACKS AS LADDERS (the rows Customize's Next up shares): the tier number on a line that fills as tiers are held, a
+     bigger picture of the reward, its name and any reward with it on its own line, its rule, a bar with the count beside it in
+     a column of the same width on every row (so the bars line up), and a tick or a chevron at the end. */
+  .trk-tiers{ gap:.5rem; }
+  .trk-tier{ grid-template-columns:1.9rem 3.1rem minmax(0, 1fr) 1.4rem; min-height:4rem; column-gap:.75rem; padding:.6rem .6rem .6rem .5rem;
+    transition:transform .16s ease; }
+  .trk-tier:active{ transform:scale(.985); }
+  .trk-tier.is-held{ background:color-mix(in srgb, var(--accent) 8%, var(--surface-inset)); }
+  .trk-tier.is-next{ box-shadow:inset 0 0 0 1.5px var(--accent), 0 0 20px -8px var(--accent); }
+  /* the ladder's line: from each number down to the row's foot and across the gap (::after), and from a row's top down to its
+     number (::before), so the numbers sit on one unbroken line; a stretch between two held tiers is lit */
+  .trk-card.is-ladder .trk-tier + .trk-tier::before, .trk-card.is-ladder .trk-tier:not(:last-child)::after{ content:""; position:absolute;
+    left:calc(.5rem + .95rem - 1.5px); width:3px; background:color-mix(in srgb, var(--ink) 14%, transparent); pointer-events:none; }
+  .trk-card.is-ladder .trk-tier + .trk-tier::before{ top:0; height:calc(50% - .95rem); }
+  .trk-card.is-ladder .trk-tier:not(:last-child)::after{ top:calc(50% + .95rem); bottom:-.5rem; }
+  .trk-card.is-ladder .trk-tier.is-held + .trk-tier.is-held::before, .trk-card.is-ladder .trk-tier.is-held:has(+ .trk-tier.is-held)::after{ background:var(--accent); }
+  .trk-num{ position:relative; z-index:1; width:1.9rem; height:1.9rem; font-size:.8rem; }
+  .trk-num.is-star{ background:none; color:var(--soft); font-size:.95rem; }
+  .trk-tier.is-held .trk-num.is-star{ background:none; color:var(--accent); }
+  .trk-pips{ display:flex; gap:4px; margin:-.2rem 0 .8rem; }
+  .trk-pips > i{ flex:1 1 0; height:5px; border-radius:99px; background:color-mix(in srgb, var(--ink) 12%, transparent); }
+  .trk-pips > i.is-held{ background:var(--accent); }
+  .trk-pips > i.is-gold{ box-shadow:inset 0 0 0 1px rgba(245,200,74,.65); }
+  .trk-pips > i.is-gold.is-held{ background:linear-gradient(90deg, #FFE7A0, #F5C84A 55%, #B8861E); box-shadow:none; }
+  .trk-tier .ulk-thumb-wrap{ position:relative; display:block; width:3.1rem; height:3.1rem; }
+  .trk-tier .ulk-thumb, .trk-tier .ulk-thumb-wrap > .ulk-thumb{ width:3.1rem; height:3.1rem; }
+  .trk-tier .ulk-thumb-wrap > .ulk-thumb{ opacity:.5; }
+  .ulk-thumb-lock{ position:absolute; right:-3px; bottom:-3px; z-index:2; display:grid; place-items:center; width:1.15rem; height:1.15rem; border-radius:50%;
+    background:rgba(10,12,18,.86); color:rgba(255,255,255,.9); box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); }
+  .ulk-thumb-lock svg{ display:block; width:.6rem; height:.6rem; }
+  .trk-thumb-fx.ulk-thumb{ border-radius:.7rem; background:var(--surface-inset); }
+  .trk-thumb-fx.ulk-thumb > svg{ display:block; width:100%; height:100%; }
+  .trk-tier .ulk-thumb-rim{ width:2.6rem; height:2.6rem; margin:.25rem; }
+  .trk-tier .ulk-thumb-wrap > .ulk-thumb-rim{ width:2.6rem; height:2.6rem; }
+  .trk-kicker{ font-size:.64rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--accent); }
+  .trk-name{ white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; }
+  .trk-plus{ font-size:.74rem; font-weight:700; line-height:1.25; color:color-mix(in srgb, var(--ink) 78%, transparent); }
+  .trk-tier.is-gold .trk-plus{ color:#F5C84A; }
+  .trk-meter{ display:flex; align-items:center; gap:.55rem; margin-top:.2rem; }
+  .trk-meter > .trk-bar{ flex:1 1 auto; margin-top:0; }
+  .trk-count{ flex:0 0 auto; min-width:6.4em; text-align:right; font-size:.72rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .trk-tier.is-held .trk-meter{ display:none; }
+  .trk-end{ justify-self:center; font-size:1.35rem; font-weight:400; line-height:1; }
+  .trk-end.is-done{ width:1.4rem; height:1.4rem; }
+  .trk-next-row .trk-count{ display:none; }
+  .trk-tier.trk-next-row{ grid-template-columns:1.9rem 3.1rem minmax(0, 1fr); }
+  .ulk-closest{ margin:0; }
+  .trk-rim-state{ font-size:.68rem; font-weight:700; color:var(--soft); }
+  .trk-rim.is-worn .trk-rim-state{ color:var(--accent); }
+  html[data-layout] body #stage .screen-unlocks .trk-rims{ grid-template-columns:repeat(auto-fill, minmax(min(100%, 6.2rem), 1fr)); }
+  .trk-rim .rim-plate > .ulk-badge{ top:-4px; right:-4px; width:1.15rem; height:1.15rem; }
+  .trk-rim.is-locked .rim-plate{ opacity:1; }
+  .trk-rim.is-locked .rim-plate > :not(.ulk-badge){ opacity:.42; }
+  @media (min-width:40rem){
+    .trk-tier{ grid-template-columns:2rem 3.5rem minmax(0, 1fr) 1.6rem; min-height:4.4rem; column-gap:.95rem; padding:.65rem .8rem .65rem .55rem; }
+    .trk-tier.trk-next-row{ grid-template-columns:2rem 3.5rem minmax(0, 1fr); }
+    .trk-num{ width:2rem; height:2rem; }
+    .trk-card.is-ladder .trk-tier + .trk-tier::before, .trk-card.is-ladder .trk-tier:not(:last-child)::after{ left:calc(.55rem + 1rem - 1.5px); }
+    .trk-card.is-ladder .trk-tier + .trk-tier::before{ height:calc(50% - 1rem); }
+    .trk-card.is-ladder .trk-tier:not(:last-child)::after{ top:calc(50% + 1rem); }
+    .trk-tier .ulk-thumb-wrap, .trk-tier .ulk-thumb, .trk-tier .ulk-thumb-wrap > .ulk-thumb{ width:3.5rem; height:3.5rem; }
+    .trk-tier .ulk-thumb-rim, .trk-tier .ulk-thumb-wrap > .ulk-thumb-rim{ width:2.9rem; height:2.9rem; margin:.3rem; }
+    .ulk-grid{ gap:.75rem; grid-template-columns:repeat(auto-fill, minmax(min(100%, 128px), 1fr)); }
+    .ulk-grid-banner, .ulk-grid-fx{ grid-template-columns:repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+    .ulk-name{ font-size:.92rem; }
+    .ulk-req{ font-size:.78rem; }
+    .ulk-ring{ width:5.4rem; height:5.4rem; }
+    .ulk-hero-count{ font-size:1.7rem; }
+  }
+  /* a tablet in its own width: the five ladders two across (the Feats, capstones and rims full width under them) */
+  @media (min-width:48rem){
+    html[data-layout] body #stage .screen-unlocks .trk-sect{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:start; }
+    html[data-layout] body #stage .screen-unlocks .trk-sect > :not(.is-ladder){ grid-column:1 / -1; }
   }
   /* ---- less on each tile ---- */
   /* a locked character's halo turned down - the aura circle behind the drawing, not the drawing */
@@ -159361,6 +159507,297 @@ function unlockItemThumb(it){
   }catch(e){}
   return box;
 }
+/* ---- THE UNLOCKS BROWSER (384.136, unlocks2) ----
+   Madison: "The way of looking through challenges for all the characters, banners, themes, and hundo effects, can we make that
+   just look and feel way better, if it needs an overhaul then do it." / "The new way the unlock system is laid out you can kinda
+   keep that." So THE STRUCTURE IS THE SAME - the five tracks, the Feats, the capstones, the rims, every rule - and only how it is
+   browsed changed. Nothing here decides anything: every held / next / how-far is read through the functions that already
+   decide it (unlockTrackView, unlockNextUp, isLockedCharacter, bannerEarned, isLockedAccent, hundoFxEarned, and the cards'
+   own characterDetail / bannerDetail / themeDetail / hundoFxDetail / rimDetail, so a card in the grid and the card it opens
+   say the same numbers). Nothing is stored (not even the filter: the screen opens on the overview every time).
+   THE SCREEN: an overview (how much of the collection is yours, a ring, and the closest unlock with its bar), a row of filters
+   (All, Characters, Banners, Themes, Effects, Rims - each with its count), then
+     All      the tracks as ladders (tier number on a line that fills as tiers are held, a picture of the reward, its rule, a bar
+              and the count; the next step lit), the Feats, the capstones and the rims to wear;
+     a type   every item of that type as a card on one grid, grouped by how it is earned: a real preview (the character moving,
+              the banner, the theme's swatch, the effect playing in its 100% box, the rim on your plate), its name, and either
+              "Earned" or its rule with a bar and the count read from the real numbers.
+   COST: previews move only while near the screen (.is-offscreen holds every animation in a card; characters are the flip-books
+   charFlipWatch parks off screen; an effect's stage waits while its card is off screen; a banner's live scene is put in the
+   first time its card comes near and is paused when it leaves). No per-frame script; the filter swap is one fade (opacity /
+   transform). */
+var ULK_FILTERS = [["all", "All"], ["char", "Characters"], ["banner", "Banners"], ["theme", "Themes"], ["fx", "Effects"], ["rim", "Rims"]];
+var ULK_NEW_KIND = { char: "chars", banner: "banners", theme: "themes", fx: "fx" };
+var ULK_GROUPS = {
+  char: [["starter", "Starters", "Yours from day one"], ["rank", "Rank rewards", "Handed over as you climb the ranks"],
+         ["challenge", "Challenge rewards", "Each one is unlocked by a challenge"], ["secret", "Secrets", "Found, not earned — keep your eyes open"],
+         ["kept", "Kept", "From an earlier version — yours to keep"]],
+  banner: [["rank", "Default and rank rewards", "Yours from day one, then handed over as you climb the ranks"],
+           ["challenge", "Challenge rewards", "Each one is unlocked by a challenge"], ["secret", "Secrets", "Found, not earned — keep your eyes open"]],
+  theme: [["rank", "Default and rank rewards", "Yours from day one, then one from each rank"]],
+  fx: [["hundo", "Default and hundo rewards", "Yours from day one, then unlocked by earning hundos"]],
+  rim: [["track", "Track rims", "Earned on a track, with every tier before them"], ["gold", "Gold rims", "Every tier of one track"],
+        ["capstone", "Capstone", "Every tier of every track"]]
+};
+/* one item as the browser shows it: its card's own numbers. `build` makes a fresh card object (showUnlockDetail adds to it). */
+function ulkEntryOf(kind, id, build, held, group){
+  let d = {};
+  try{ d = build() || {}; }catch(e){ d = {}; }
+  const have = typeof d.have === "number" ? d.have : null, need = typeof d.need === "number" ? d.need : null;
+  const frac = held ? 1 : typeof d.frac === "number" ? Math.max(0, Math.min(1, d.frac))
+    : (have != null && need ? Math.max(0, Math.min(1, have / need)) : null);
+  return { kind, id, group, build, held: !!held, name: d.name || id, desc: d.desc || "", have, need, frac, countText: d.countText || "" };
+}
+/* every item of one kind, in the order Customize shows them */
+function ulkItems(kind, view){
+  const out = [];
+  if(kind === "char"){
+    AVATAR_CHARACTERS.forEach(c => {
+      if(c.retired && store.avatarChar !== c.id) return;
+      if(c.legacy && isLockedCharacter(c.id)) return;
+      const g = (c.legacy || c.retired) ? "kept" : c.secret ? "secret" : c.unlock ? "rank" : c.feat ? "challenge" : "starter";
+      out.push(ulkEntryOf("char", c.id, () => characterDetail(c.id), !isLockedCharacter(c.id), g));
+    });
+    const rk = c => TIER_ORDER_FULL.indexOf(c.unlock);
+    out.sort((a, b) => {
+      if(a.group !== "rank" || b.group !== "rank") return 0;
+      return rk(AVATAR_CHARACTERS.find(c => c.id === a.id)) - rk(AVATAR_CHARACTERS.find(c => c.id === b.id));
+    });
+  } else if(kind === "banner"){
+    out.push(ulkEntryOf("banner", "", () => ({ kind: "banner", id: "", kicker: "Banner", name: "Default", unlocked: true,
+      desc: "Yours from day one. It takes the colours of whichever theme you run." }), true, "rank"));
+    BANNERS.filter(b => b.rank).concat(BANNERS.filter(b => !b.rank)).forEach(b => out.push(ulkEntryOf("banner", b.id, () => bannerDetail(b.id),
+      bannerEarned(b.id), b.rank ? "rank" : b.flareChar ? "secret" : "challenge")));
+  } else if(kind === "theme"){
+    ACCENTS.filter(n => !TIER_UNLOCKS[n]).concat(ACCENTS.filter(n => TIER_UNLOCKS[n])).forEach(n => out.push(ulkEntryOf("theme", n,
+      () => n === "ink" ? { kind: "theme", id: "ink", kicker: "Theme", name: "Default theme", desc: "Yours from day one.", unlocked: true } : themeDetail(n),
+      !isLockedAccent(n), "rank")));
+  } else if(kind === "fx"){
+    HUNDO_FX.filter(d => !d.need).concat(HUNDO_FX.filter(d => d.need)).forEach(d => out.push(ulkEntryOf("fx", d.id, () => hundoFxDetail(d.id), hundoFxEarned(d.id), "hundo")));
+  } else if(kind === "rim"){
+    unlockRimList(view).forEach(r => out.push(ulkEntryOf("rim", r.id, () => rimDetail(r.id), r.held, r.mastery ? "capstone" : r.gold ? "gold" : "track")));
+  }
+  return out;
+}
+/* the count a locked item shows under its bar: the card's own words where it has them (a window: "2 of 3 today"), else have / need */
+function ulkCountText(e){
+  if(e.held) return "";
+  if(e.countText) return e.countText;
+  if(e.have != null && e.need > 1) return e.have.toLocaleString() + " / " + e.need.toLocaleString();
+  if(e.frac != null && e.need == null) return Math.round(e.frac * 100) + "%";
+  return e.frac != null ? "Not yet" : "";
+}
+var ULK_TICK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.6 8.4 L6.6 11.3 L12.4 4.9" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+/* a card's preview: what you get, drawn as the app draws it */
+function ulkPreview(e, lazy){
+  const pv = document.createElement("span");
+  pv.className = "ulk-prev ulk-prev-" + e.kind;
+  pv.setAttribute("aria-hidden", "true");
+  try{
+    if(e.kind === "char"){
+      pv.style.setProperty("--char-glow", avatarGlowColor(e.id));
+      const host = document.createElement("span");
+      host.className = "ulk-char";
+      if(e.held){ host.appendChild(pickerCharSVG(e.id)); setCharState(host, "live"); }
+      else host.appendChild(charStillReady(e.id) ? charStillSVG(e.id) : buildAvatarCharSVGSafe(e.id));
+      pv.appendChild(host);
+    } else if(e.kind === "banner"){
+      if(!e.id) pv.appendChild(buildThemeBannerArt(theme.accent));
+      else {
+        const still = bannerRowStillURL(e.id);
+        const im = document.createElement("span");
+        im.className = "ulk-banner-still";
+        if(still) im.style.backgroundImage = 'url("' + still + '")';
+        pv.appendChild(im);
+        /* a held banner moves: its live scene goes in the first time the card comes near the screen (ulkWatch) */
+        if(e.held) lazy.push({ pv, id: e.id });
+      }
+    } else if(e.kind === "theme"){
+      pv.style.setProperty("--ulk-tint", e.id === "ink" ? "rgba(255,255,255,.35)" : (ACCENT_SWATCH[e.id] || "#FFFFFF"));
+      pv.appendChild(buildThemeDot(e.id));
+    } else if(e.kind === "fx"){
+      pv.appendChild(e.held ? buildHundoFxStage(e.id, { live: true, delay: 700 }) : buildHundoFxTile(e.id));
+    } else if(e.kind === "rim"){
+      const d = unlockRimDefs()[e.id];
+      pv.appendChild(buildRimPlate(e.id, null, d && d.color));
+    }
+  }catch(err){}
+  const badge = document.createElement("span");
+  badge.className = "ulk-badge " + (e.held ? "is-earned" : "is-locked");
+  if(e.held) badge.innerHTML = ULK_TICK;
+  else { try{ badge.appendChild(buildLockIcon()); }catch(err){} }
+  pv.appendChild(badge);
+  return pv;
+}
+function ulkCard(e, lazy){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "ulk-item ulk-item-" + e.kind + (e.held ? " is-held" : " is-locked");
+  b.dataset.kind = e.kind; b.dataset.id = e.id;
+  const nm = document.createElement("span");
+  nm.className = "ulk-name"; nm.textContent = e.name;
+  b.append(ulkPreview(e, lazy), nm);
+  const cnt = ulkCountText(e);
+  if(e.held){
+    const st = document.createElement("span");
+    st.className = "ulk-state is-earned"; st.textContent = "Earned";
+    b.appendChild(st);
+  } else {
+    const req = document.createElement("span");
+    req.className = "ulk-req"; req.textContent = e.desc.replace(/\.$/, "");
+    b.appendChild(req);
+    if(e.frac != null){
+      const m = document.createElement("span");
+      m.className = "ulk-meter";
+      const bar = document.createElement("span");
+      bar.className = "ulk-bar";
+      const f = document.createElement("i");
+      f.style.width = Math.round(e.frac * 1000) / 10 + "%";
+      bar.appendChild(f);
+      m.appendChild(bar);
+      if(cnt){ const c = document.createElement("span"); c.className = "ulk-count"; c.textContent = cnt; m.appendChild(c); }
+      b.appendChild(m);
+    }
+  }
+  b.setAttribute("aria-label", e.name + ". " + (e.held ? "Earned." : (e.desc || "Locked.") + (cnt ? " " + cnt + "." : "")));
+  /* the ones you start with are never new (Customize's rule: the default banner and the default effect carry no dot) */
+  const starter = e.kind === "fx" && !(hundoFxDef(e.id) || {}).need;
+  const clearNew = e.held && !starter && ULK_NEW_KIND[e.kind] && e.id ? attachNewDot(b, ULK_NEW_KIND[e.kind], e.id) : () => {};
+  b.addEventListener("click", () => { clearNew(); const o = e.build(); if(o) showUnlockDetail(o); });
+  return b;
+}
+/* one kind, every item, in its groups: one card per group, one grid per card */
+function ulkTypeBody(kind, view){
+  const items = ulkItems(kind, view);
+  const frag = document.createDocumentFragment();
+  const lazy = [];
+  (ULK_GROUPS[kind] || []).forEach(g => {
+    const list = items.filter(e => e.group === g[0]);
+    if(!list.length) return;
+    const box = buildCustomizeGroup("ulk-" + kind + "-" + g[0], g[1], g[2], list.filter(e => e.held).length, list.length, "ulk-grid ulk-grid-" + kind);
+    box.card.classList.add("ulk-group");
+    list.forEach(e => box.grid.appendChild(ulkCard(e, lazy)));
+    frag.appendChild(box.card);
+  });
+  return { frag, lazy };
+}
+/* MOTION ONLY NEAR THE SCREEN: a card a third of a screen away or more holds every animation in it (.is-offscreen, the rule
+   Customize's tiles use), and a held banner's live scene is put in the first time its card comes near. One observer per screen,
+   gone with it. */
+function ulkWatch(root, lazy){
+  const cards = [...root.querySelectorAll(".ulk-item, .trk-tier")];
+  if(typeof IntersectionObserver !== "function"){
+    lazy.forEach(q => { try{ q.pv.insertBefore(buildBannerArt(q.id), q.pv.firstChild); }catch(e){} });
+    return;
+  }
+  const byPv = new Map(lazy.map(q => [q.pv, q]));
+  const io = new IntersectionObserver(entries => {
+    if(!root.isConnected){ io.disconnect(); return; }
+    entries.forEach(en => {
+      const t = en.target;
+      t.classList.toggle("is-offscreen", !en.isIntersecting);
+      if(!en.isIntersecting) return;
+      const pv = t.querySelector(".ulk-prev-banner");
+      const q = pv && byPv.get(pv);
+      if(q && !q.done){
+        q.done = true;
+        try{ const art = buildBannerArt(q.id); art.classList.add("ulk-banner-live"); pv.insertBefore(art, pv.querySelector(".ulk-badge"));
+             requestAnimationFrame(() => art.classList.add("is-in")); }catch(e){}
+      }
+    });
+  }, { rootMargin: "34% 0px" });
+  cards.forEach(c => { c.classList.add("is-offscreen"); io.observe(c); });
+  root.__ulkIO = io;
+}
+/* the ring: how much of the whole collection is yours. Drawn once, still (its entrance is the card's). */
+function ulkRing(frac){
+  const r = 30, c = 2 * Math.PI * r;
+  const s = document.createElement("span");
+  s.className = "ulk-ring";
+  s.setAttribute("aria-hidden", "true");
+  s.innerHTML = '<svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="' + r + '" class="ulk-ring-track"/><circle cx="36" cy="36" r="' + r +
+    '" class="ulk-ring-fill" stroke-dasharray="' + c.toFixed(2) + '" stroke-dashoffset="' + (c * (1 - Math.max(0, Math.min(1, frac)))).toFixed(2) +
+    '" transform="rotate(-90 36 36)"/></svg><span class="ulk-ring-pct"></span>';
+  s.querySelector(".ulk-ring-pct").textContent = Math.round(frac * 100) + "%";
+  return s;
+}
+function ulkTally(view){
+  const t = {};
+  ULK_FILTERS.forEach(f => { if(f[0] === "all") return; const it = ulkItems(f[0], view); t[f[0]] = { have: it.filter(e => e.held).length, total: it.length }; });
+  return t;
+}
+function ulkHero(view, tally, onPick){
+  const card = document.createElement("div");
+  card.className = "cz-group ulk-hero";
+  const have = Object.values(tally).reduce((s, x) => s + x.have, 0), total = Object.values(tally).reduce((s, x) => s + x.total, 0);
+  const top = document.createElement("div");
+  top.className = "ulk-hero-top";
+  const tx = document.createElement("span");
+  tx.className = "ulk-hero-tx";
+  tx.innerHTML = '<span class="ulk-kicker">Collection</span><span class="ulk-hero-count"></span><span class="ulk-hero-sub"></span>';
+  tx.querySelector(".ulk-hero-count").textContent = have + " of " + total;
+  const tiers = view.tracks.reduce((s, t) => s + t.held, 0), tierTotal = view.tracks.reduce((s, t) => s + t.total, 0);
+  tx.querySelector(".ulk-hero-sub").textContent = "unlocked · " + tiers + " of " + tierTotal + " track tiers";
+  top.append(ulkRing(total ? have / total : 0), tx);
+  card.appendChild(top);
+  card.setAttribute("aria-label", "Collection: " + have + " of " + total + " unlocked.");
+  /* the closest unlock, the same one Customize's Next up leads with */
+  const near = unlockNextUp(view, 1)[0];
+  if(near){
+    const x = { n: near.tier, goldTier: !!near.goldTier, rewards: [near.item], lead: Object.assign({}, near.item, { have: near.have, need: near.need }), held: false };
+    const row = buildTierRow({ key: near.track, title: near.trackTitle }, x, false);
+    row.classList.add("trk-next-row", "ulk-closest");
+    const goal = row.querySelector(".trk-goal");
+    if(goal) goal.textContent = "Closest · " + near.trackTitle + " · " + (near.need - near.have).toLocaleString() + " to go";
+    if(near.track === "feat"){ const n = row.querySelector(".trk-num"); n.textContent = ""; n.classList.add("is-blank"); }
+    card.appendChild(row);
+  }
+  return card;
+}
+function ulkChips(tally, current, onPick){
+  const row = document.createElement("div");
+  row.className = "ulk-chips";
+  row.setAttribute("role", "tablist");
+  ULK_FILTERS.forEach(f => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ulk-chip" + (f[0] === current ? " is-on" : "");
+    b.dataset.filter = f[0];
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", f[0] === current ? "true" : "false");
+    const l = document.createElement("span"); l.className = "ulk-chip-label"; l.textContent = f[1];
+    b.appendChild(l);
+    if(tally[f[0]]){ const c = document.createElement("span"); c.className = "ulk-chip-count"; c.textContent = tally[f[0]].have + "/" + tally[f[0]].total; b.appendChild(c); }
+    b.addEventListener("click", () => onPick(f[0], b));
+    row.appendChild(b);
+  });
+  return row;
+}
+/* the small picture at the start of a tier row, as the browser draws it: the effect's own still (not a coloured "100"), and a
+   padlock on what is not yours yet */
+function ulkTierThumb(it){
+  let box;
+  if(it.k === "rim"){
+    /* your character on the rim's plate, as the Rims card and the rim's own card show it (it was an empty ring) */
+    try{ box = buildRimPlate(it.id, null, it.color || rimColorOf(it.id)); box.classList.add("ulk-thumb", "ulk-thumb-rim"); }catch(e){ box = null; }
+  }
+  if(!box){
+    box = unlockItemThumb(it);
+    box.classList.add("ulk-thumb");
+    /* the effect's own still, the one drawn for an unlock row (it was a coloured "100") */
+    try{ if(it.k === "fx"){ box.textContent = ""; box.appendChild(buildHundoFxStill(it.id)); } }catch(e){}
+  }
+  if(!it.held){
+    const lk = document.createElement("span");
+    lk.className = "ulk-thumb-lock"; lk.setAttribute("aria-hidden", "true");
+    try{ lk.appendChild(buildLockIcon()); }catch(e){}
+    const w = document.createElement("span");
+    w.className = "ulk-thumb-wrap";
+    w.append(box, lk);
+    return w;
+  }
+  return box;
+}
 function buildTierRow(t, x, isNext){
   const row = document.createElement("button");
   row.type = "button";
@@ -159372,40 +159809,66 @@ function buildTierRow(t, x, isNext){
   num.setAttribute("aria-hidden", "true");
   const tx = document.createElement("span");
   tx.className = "trk-tx";
+  if(isNext){ const k = document.createElement("span"); k.className = "trk-kicker"; k.textContent = "Next"; tx.appendChild(k); }
   const nm = document.createElement("span");
   nm.className = "trk-name";
-  nm.textContent = x.rewards.map(r => r.name).join(" + ");
+  nm.textContent = x.lead.name;
+  tx.appendChild(nm);
+  /* (384.136) a tier's other rewards on a line of their own (it was "Midnight Skyline + Study Ti...", cut off) */
+  const more = x.rewards.slice(1);
+  if(more.length){
+    const p = document.createElement("span");
+    p.className = "trk-plus";
+    p.textContent = "+ " + more.map(r => r.name).join(" + ");
+    tx.appendChild(p);
+  }
   const goal = document.createElement("span");
   goal.className = "trk-goal"; goal.textContent = x.lead.label;
-  tx.append(nm, goal);
+  tx.appendChild(goal);
+  /* THE BAR SAYS WHAT IS LEFT. A new rim whose own count is met waits on the tiers before it (unlockNextUp's rule): its bar counts
+     those, so a locked rim never shows a full bar (384.120's walkthrough; rimDetail says the same on its card). */
+  let have = x.lead.have, need = x.lead.need, countText = "";
+  const miss = (!x.held && x.lead.k === "rim" && x.lead.goalMet && t.tiers) ? t.tiers.slice(0, x.n - 1).filter(y => !y.held) : null;
+  if(miss && miss.length){ need = x.n - 1; have = need - miss.length; countText = "Tier " + miss[0].n + " first"; }
+  else if(!x.held && need > 1) countText = have.toLocaleString() + " / " + need.toLocaleString();
+  const meter = document.createElement("span");
+  meter.className = "trk-meter";
   const bar = document.createElement("span");
   bar.className = "trk-bar"; bar.setAttribute("aria-hidden", "true");
   const fill = document.createElement("i");
-  const frac = x.held ? 1 : (x.lead.need ? Math.max(0, Math.min(1, x.lead.have / x.lead.need)) : 0);
+  const frac = x.held ? 1 : (need ? Math.max(0, Math.min(1, have / need)) : 0);
   fill.style.width = Math.round(frac * 1000) / 10 + "%";
   bar.appendChild(fill);
-  tx.appendChild(bar);
+  meter.appendChild(bar);
+  const cnt = document.createElement("span");
+  cnt.className = "trk-count"; cnt.textContent = countText || (x.held ? "" : "Not yet");
+  meter.appendChild(cnt);
+  tx.appendChild(meter);
   const end = document.createElement("span");
   end.className = "trk-end";
+  end.setAttribute("aria-hidden", "true");
   if(x.held){
     end.classList.add("is-done");
-    end.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 8.4 L6.6 11.4 L12.6 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  } else if(x.lead.k === "rim" && x.lead.goalMet && t.tiers){
-    /* its own count is met: what holds it back is the first tier before it not held yet */
-    const miss = t.tiers.slice(0, x.n - 1).find(y => !y.held);
-    end.textContent = miss ? "Needs tier " + miss.n : "Not yet";
-  } else end.textContent = x.lead.need > 1 ? x.lead.have.toLocaleString() + " / " + x.lead.need.toLocaleString() : "Not yet";
-  row.append(num, unlockItemThumb(x.lead), tx, end);
-  row.setAttribute("aria-label", t.title + ", " + (x.goldTier ? "gold tier" : "tier " + x.n) + ": " + nm.textContent + ". " + x.lead.label + ". " +
-    (x.held ? "Held." : x.lead.have.toLocaleString() + " of " + x.lead.need.toLocaleString() + "."));
-  row.addEventListener("click", () => { const o = unlockItemDetail(x.lead); if(o) showUnlockDetail(o); });
+    end.innerHTML = ULK_TICK;
+  } else end.textContent = "›";
+  row.append(num, ulkTierThumb(x.lead), tx, end);
+  row.setAttribute("aria-label", t.title + ", " + (x.goldTier ? "gold tier" : "tier " + x.n) + ": " + x.rewards.map(r => r.name).join(" + ") + ". " + x.lead.label + ". " +
+    (x.held ? "Held." : (countText || "Not yet") + "."));
+  /* a tier you hold that you have not looked at yet carries the new dot, as its Customize tile does */
+  const clearNew = x.held && ULK_NEW_KIND[x.lead.k] ? attachNewDot(row, ULK_NEW_KIND[x.lead.k], x.lead.id) : () => {};
+  row.addEventListener("click", () => { clearNew(); const o = unlockItemDetail(x.lead); if(o) showUnlockDetail(o); });
   return row;
 }
+/* a track as a ladder: its name and count, a strip of pips (one a tier; held lit, the gold tier gold), then its tiers in order */
 function buildTrackCard(t){
   const note = t.next ? (t.next.goldTier ? "Next: the gold tier" : "Next: tier " + t.next.n + " of " + t.total) : "Every tier is yours";
   const box = buildCustomizeGroup("trk-" + t.key, t.title, note, t.held, t.total, "trk-tiers");
-  box.card.classList.add("trk-card");
+  box.card.classList.add("trk-card", "is-ladder");
   box.card.dataset.track = t.key;
+  const pips = document.createElement("span");
+  pips.className = "trk-pips"; pips.setAttribute("aria-hidden", "true");
+  t.tiers.forEach(x => { const i = document.createElement("i"); i.className = (x.held ? "is-held" : "") + (x.goldTier ? " is-gold" : "") + (t.next === x ? " is-next" : ""); pips.appendChild(i); });
+  box.card.insertBefore(pips, box.grid);
   t.tiers.forEach(x => box.grid.appendChild(buildTierRow(t, x, t.next === x)));
   return box.card;
 }
@@ -159416,8 +159879,9 @@ function buildItemListCard(key, title, note, items){
   items.forEach(it => {
     const x = { n: 0, goldTier: false, rewards: [it], lead: it, held: !!it.held };
     const row = buildTierRow({ key, title }, x, false);
-    row.querySelector(".trk-num").textContent = "";
-    row.querySelector(".trk-num").classList.add("is-blank");
+    const n = row.querySelector(".trk-num");
+    /* a star where a track's tier number goes, so the column lines up with the tracks above */
+    n.textContent = "★"; n.classList.add("is-star");
     box.grid.appendChild(row);
   });
   return box.card;
@@ -159435,14 +159899,21 @@ function buildRimsCard(view){
     b.dataset.rim = id;
     b.setAttribute("aria-pressed", worn === id ? "true" : "false");
     const plate = buildRimPlate(id, null, color);
+    if(!held){ const lk = document.createElement("span"); lk.className = "ulk-badge is-locked"; try{ lk.appendChild(buildLockIcon()); }catch(e){} plate.appendChild(lk); }
     const nm = document.createElement("span");
     nm.className = "trk-rim-name"; nm.textContent = name;
-    b.append(plate, nm);
+    const st = document.createElement("span");
+    st.className = "trk-rim-state"; st.textContent = worn === id ? "Wearing" : held ? "Wear" : "Locked";
+    b.append(plate, nm, st);
     b.setAttribute("aria-label", name + (held ? (worn === id ? ", worn" : ", held") : ", locked"));
     b.addEventListener("click", () => {
       if(!held){ showUnlockDetail(rimDetail(id)); return; }
       wearRim(id);
-      box.grid.querySelectorAll(".trk-rim").forEach(n => { const on = n.dataset.rim === (store.rim || ""); n.classList.toggle("is-worn", on); n.setAttribute("aria-pressed", on ? "true" : "false"); });
+      box.grid.querySelectorAll(".trk-rim").forEach(n => {
+        const on = n.dataset.rim === (store.rim || "");
+        n.classList.toggle("is-worn", on); n.setAttribute("aria-pressed", on ? "true" : "false");
+        const s = n.querySelector(".trk-rim-state"); if(s && !n.classList.contains("is-locked")) s.textContent = on ? "Wearing" : "Wear";
+      });
     });
     return b;
   };
@@ -159450,19 +159921,8 @@ function buildRimsCard(view){
   rims.forEach(r => box.grid.appendChild(make(r.id, r.name, r.held, r.color)));
   return box.card;
 }
-function showUnlockTracks(){
-  setActiveNav(null);
-  countEl.textContent = "Tracks";
-  const view = unlockTrackView();
-  const panel = document.createElement("section");
-  panel.className = "panel screen-customize cz-page cz-page-tracks screen-tracks";
-  panel.appendChild(iosNavBar("Tracks", buildBackLink("Back to Customize", () => showCustomize())));
-  const held = view.tracks.reduce((s, t) => s + t.held, 0), total = view.tracks.reduce((s, t) => s + t.total, 0);
-  panel.appendChild(buildCustomizeBar("Tracks", held + " of " + total, total ? held / total : 0));
-  const note = document.createElement("p");
-  note.className = "cal-sub cz-page-note";
-  note.textContent = "Five tracks, each in order, each ending in a gold tier. Tap any tier to see how it's earned.";
-  panel.appendChild(note);
+function ulkAllBody(view){
+  const frag = document.createDocumentFragment();
   const sect = document.createElement("div");
   sect.className = "sect trk-sect";
   view.tracks.forEach(t => sect.appendChild(buildTrackCard(t)));
@@ -159474,11 +159934,49 @@ function showUnlockTracks(){
   }catch(e){}
   sect.appendChild(buildItemListCard("trk-caps", "Capstones", "Above the tracks", caps));
   sect.appendChild(buildRimsCard(view));
-  panel.appendChild(sect);
+  frag.appendChild(sect);
+  return { frag, lazy: [] };
+}
+/* The screen. `filter` is one of ULK_FILTERS' keys; anything else is All. Kept under its old name: Customize, the gates and the
+   reward cards open it as showUnlockTracks(). */
+function showUnlockTracks(filter){
+  setActiveNav(null);
+  countEl.textContent = "Unlocks";
+  const view = unlockTrackView();
+  const tally = ulkTally(view);
+  let current = ULK_FILTERS.some(f => f[0] === filter) ? filter : "all";
+  const panel = document.createElement("section");
+  panel.className = "panel screen-customize cz-page cz-page-tracks screen-tracks screen-unlocks";
+  panel.appendChild(iosNavBar("Unlocks", buildBackLink("Back to Customize", () => showCustomize())));
+  const body = document.createElement("div");
+  body.className = "ulk-body";
+  const fill = () => {
+    if(body.__ulkIO){ try{ body.__ulkIO.disconnect(); }catch(e){} }
+    const built = current === "all" ? ulkAllBody(view) : ulkTypeBody(current, view);
+    body.replaceChildren(built.frag);
+    body.dataset.filter = current;
+    ulkWatch(body, built.lazy);
+  };
+  const chips = ulkChips(tally, current, (k, btn) => {
+    if(k === current) return;
+    current = k;
+    chips.querySelectorAll(".ulk-chip").forEach(c => { const on = c.dataset.filter === k; c.classList.toggle("is-on", on); c.setAttribute("aria-selected", on ? "true" : "false"); });
+    try{ btn.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }); }catch(e){}
+    /* the chips stay where the finger is: a page scrolled past them comes back to them, never past the top */
+    const r = chips.getBoundingClientRect();
+    if(r.top < 0) window.scrollTo(0, Math.max(0, r.top + window.scrollY - 70));
+    body.classList.remove("is-in");
+    fill();
+    void body.offsetWidth;
+    body.classList.add("is-in");
+  });
+  panel.append(ulkHero(view, tally), chips, body);
+  fill();
+  body.classList.add("is-in");
   stage.replaceChildren(panel);
   toTop();
 }
-/* Customize's top card: the three closest, and the way into Tracks */
+/* Customize's top card: the three closest, and the way into Unlocks */
 function buildNextUpCard(){
   const view = unlockTrackView();
   const list = unlockNextUp(view, 3);
@@ -159492,16 +159990,17 @@ function buildNextUpCard(){
     const goal = row.querySelector(".trk-goal");
     if(goal) goal.textContent = e.trackTitle + (e.track === "feat" ? "" : e.goldTier ? " · Gold tier" : " · Tier " + e.tier) +
       " · " + (e.need - e.have).toLocaleString() + " to go";
-    if(e.track === "feat"){ const n = row.querySelector(".trk-num"); n.textContent = ""; n.classList.add("is-blank"); }
+    if(e.track === "feat"){ const n = row.querySelector(".trk-num"); n.textContent = "★"; n.classList.add("is-star"); }
     box.grid.appendChild(row);
   });
   const all = document.createElement("button");
   all.type = "button";
   all.className = "trk-all";
-  const held = view.tracks.reduce((s, t) => s + t.held, 0), total = view.tracks.reduce((s, t) => s + t.total, 0);
-  all.innerHTML = '<span class="trk-all-label">All tracks</span><span class="trk-all-count"></span><span class="cz-chev" aria-hidden="true">›</span>';
-  all.querySelector(".trk-all-count").textContent = held + " of " + total;
-  all.setAttribute("aria-label", "All tracks: " + held + " of " + total + " tiers held");
+  const tally = ulkTally(view);
+  const have = Object.values(tally).reduce((s, x) => s + x.have, 0), total = Object.values(tally).reduce((s, x) => s + x.total, 0);
+  all.innerHTML = '<span class="trk-all-label">All unlocks</span><span class="trk-all-count"></span><span class="cz-chev" aria-hidden="true">›</span>';
+  all.querySelector(".trk-all-count").textContent = have + " of " + total;
+  all.setAttribute("aria-label", "All unlocks: " + have + " of " + total + " unlocked");
   all.addEventListener("click", () => showUnlockTracks());
   box.card.appendChild(all);
   return box.card;
