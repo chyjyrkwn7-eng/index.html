@@ -619,7 +619,7 @@
   })();
   /* (384 profilerows2, until the options are picked) Profile's Badge case and Customize rows, three looks each: ?pfbadge=a|b|c and
      ?pfcz=a|b|c put html[data-pfrow-badge] / [data-pfrow-cz] on this page load; without them the recommended one (pfrOpt). */
-  (function(){ try{ var b = /[?&]pfbadge=([abc])(&|$)/.exec(location.search), c = /[?&]pfcz=([abc])(&|$)/.exec(location.search), d = document.documentElement;
+  (function(){ try{ var b = /[?&]pfbadge=([abc])(&|$)/.exec(location.search), c = /[?&]pfcz=([a-e])(&|$)/.exec(location.search), d = document.documentElement;
     if(b) d.setAttribute("data-pfrow-badge", b[1]); if(c) d.setAttribute("data-pfrow-cz", c[1]); }catch(x){} })();
 </script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -36803,6 +36803,16 @@ html.is-browser{ --fade-paper: transparent; }
      every change anywhere on a screen (a code box opening, a row drawn) made the browser restyle the whole screen: 138ms on a
      Fire Code Review list at 4x CPU, every time. The class only changes when the list opens or shuts. */
   #stage.class-list-open > :not(.class-bubble-wrap){ opacity:.22; pointer-events:none; transition:opacity .2s ease; }
+  /* (384 ui3) THE ART GOES, THE WORDS STEP BACK. Madison: "When changing classes, you shouldn't be able to see the background
+     stars and stuff like that through the other stuff, the stuff over that normally should still be there but it should still
+     be darker". At .22 the planet system and the stars still read clearly through the list and its glass buttons. Open, the
+     cosmic hero (planet, rings, orbiting planets, its glow) and the star field (body::after) go to 0, leaving the page's own
+     dark background; the greeting, NOVA, the tagline, Start Studying and the help button stay at .22 (above), and the tab bar
+     and the chat button step back with them. body.class-list-dim is set and cleared with #stage.class-list-open (openStack /
+     dimOff), so it changes only when the list opens or shuts. Opacity only, at the list's .2s; nothing is paused. */
+  #stage.class-list-open > .screen-home-actual > .cosmic-hero-wrap{ opacity:0; transition:opacity .2s ease; }
+  html.sky-ready[data-layout][data-layout] body.sky-home.class-list-dim::after{ opacity:0; transition:opacity .2s ease; }
+  body.class-list-dim #bottomtabs.bottomtabs, body.class-list-dim #chatdock-btn.chatdock-btn{ opacity:.22; transition:opacity .2s ease; }
   .class-bubble, .csi-bubble{
     border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink);
     background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04) 55%), rgba(14,16,24,.7); background-repeat:no-repeat; background-origin:border-box;
@@ -41739,11 +41749,22 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .profile-identity-tab .pfr-ld > .pfr-ld-head > .pf-act-chev{ flex:0 0 auto; display:inline-flex; width:17px; height:17px; color:var(--soft); opacity:.85; }
   html[data-theme][data-layout] body #stage .profile-identity-tab .pfr-ld > .pfr-ld-head > .pf-act-chev svg{ width:17px; height:17px; display:block; }
   /* the track: one column per rank; scrolls (centred on yours, pfrCentreLadder) only when the box is narrower than its least */
-  html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll{ display:block; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin:0 -2px; padding:4px 2px 2px; }
+  /* (384 ui3) ROOM FOR YOUR RANK. Madison, of the current rank's node and its halo (and the prestige tag on Supernova): "the top parts are
+     being cut off badly all over the place. Fix that." The track scrolls (overflow-x:auto), so this box clips on both axes, and it
+     had 4px over the nodes and 2px beside them: the current node's ring (5px), its glow, the swell (1.12) and the pulse ring (1.65x)
+     all went past it, as did the prestige tag (top -7/-9px, right -9/-11px). The box now has room on every side for all of it (28px
+     over, 22px beside, 8px under), and takes the same back in negative margin, so the track and the rows round it stay where they
+     were (the room beside reaches through the card's own 16px padding and 6px past it; neither the card nor the page clips there).
+     A large text size (Safari's page zoom: 135% makes a Pro Max 326px wide) or a small phone used to make the track scroll, and a
+     node at the scroll box's edge was cut through: a column may now be 36px (was 38), and under 380px wide the nodes are smaller
+     (28 / 38px, was 32 / 44), so the seven ranks fit without scrolling from a 375px phone to a Pro Max at 135%.
+     check-b384-profilerows2 L7 holds every node, ring, glow and tag inside every box that clips it, in every state, mid-entrance. */
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll{ display:block; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin:-24px -22px -6px; padding:28px 22px 8px; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll::-webkit-scrollbar{ display:none; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-track{
     --ns:32px; --nb:44px; position:relative; display:grid; grid-template-columns:repeat(var(--n, 7), minmax(0, 1fr)); align-items:start;
-    min-width:calc(var(--n, 7) * 38px); }
+    min-width:calc(var(--n, 7) * 36px); }
+  @media (max-width:379.98px){ html[data-layout] body #stage .profile-identity-tab .pfr-ld-track{ --ns:28px; --nb:38px; } }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-rail{ position:absolute; left:calc(50% / var(--n, 7)); right:calc(50% / var(--n, 7)); top:calc(var(--nb) / 2 - 1.5px);
     height:3px; border-radius:2px; background:rgba(255,255,255,.13); }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-fill{ position:absolute; left:0; top:0; bottom:0; width:calc(var(--ld-p, 0) * 100%); border-radius:inherit; transform-origin:0 50%;
@@ -41756,7 +41777,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-emb{ position:absolute; inset:0; display:block; border-radius:50%; overflow:hidden; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-emb > svg{ display:block; width:104%; height:104%; margin:-2%; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-here > .pfr-ld-node{ width:var(--nb); height:var(--nb); border-color:#fff;
-    box-shadow:0 0 0 3px var(--delta-card-fill), 0 0 0 5px color-mix(in srgb, var(--rank-color) 55%, transparent), 0 0 18px color-mix(in srgb, var(--rank-color) 65%, transparent); }
+    box-shadow:0 0 0 3px var(--delta-card-fill), 0 0 0 5px color-mix(in srgb, var(--rank-color) 55%, transparent), 0 0 15px color-mix(in srgb, var(--rank-color) 65%, transparent); }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-next > .pfr-ld-node{ border-style:dashed; border-color:color-mix(in srgb, var(--rank-color) 75%, #fff); box-shadow:0 0 0 2px var(--delta-card-fill); }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-next .pfr-ld-emb{ opacity:.72; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-cell.is-locked > .pfr-ld-node{ background:#17181B; border-color:rgba(255,255,255,.16); box-shadow:0 0 0 2px var(--delta-card-fill); }
@@ -41886,6 +41907,19 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-cz-tile{ opacity:0; }
   @keyframes pfr-bar{ from{ transform:scaleX(0); } }
   @keyframes pfr-spin{ from{ opacity:0; transform:rotate(-220deg) scale(.7); } }
+  /* (384 ui3, round three) the Badge case row: the plain row icon (a Profile row's 28px tile);
+     Customize d: the next unlock's name and a slim bar on one line; Customize e: the next unlock in a small rounded frame */
+  /* (the Badge case row's icon is the plain Profile / Settings row tile as it is everywhere: 28px, its glyph and rim drawn to that size) */
+  html[data-theme][data-layout] body #stage .screen-profile .profile-identity-tab > .pf-case.pfr-case > button.pf-act.pfr-bc.pfr-bc-row{ min-height:72px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-nextrow{ gap:10px; margin-top:3px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-nextrow > .pfr-line{ flex:0 1 auto; min-width:0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-bar.pfr-bar-slim{ flex:1 1 40px; min-width:40px; max-width:120px; height:3px; border-radius:1.5px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-frame{ position:relative; flex:0 0 auto; display:grid; place-items:center; width:36px; height:36px; border-radius:10px; --nd-r:10px;
+    background:#17181B; box-shadow:inset 0 0 0 1px rgba(255,255,255,.16), 0 0 0 2px color-mix(in srgb, var(--theme-sig, #F5804D) 38%, transparent); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-frame > .trk-thumb{ width:32px; height:32px; opacity:1; border-radius:8px; overflow:hidden; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-cz-frame > .trk-thumb-rim{ box-shadow:inset 0 0 0 3px var(--rim-c); }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) :is(.pfr-cz-frame > .trk-thumb, .pfr-bc-tile){ opacity:0; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-anim.is-in :is(.pfr-cz-frame > .trk-thumb, .pfr-bc-tile){ animation:pfr-pop .5s cubic-bezier(.3,1.5,.55,1) .1s both; }
   /* Reduce motion (the app's or the system's): the last frame, nothing moves */
   html[data-reduce-motion="true"] body #stage .profile-identity-tab .pfr-anim *{ animation:none !important; }
   @media (prefers-reduced-motion:reduce){ html body #stage .profile-identity-tab .pfr-anim *{ animation:none !important; } }
@@ -59437,11 +59471,11 @@ function mountClassBubble(){
   /* what is behind steps back while the list is open (#stage.class-list-open); the class goes with the list - shut, or the
      list taken off the screen by the next screen's mount, which would otherwise leave that screen dimmed and untappable */
   let dimWatch = null;
-  const dimOff = () => { stage.classList.remove("class-list-open"); if(dimWatch){ dimWatch.disconnect(); dimWatch = null; } };
+  const dimOff = () => { stage.classList.remove("class-list-open"); document.body.classList.remove("class-list-dim"); if(dimWatch){ dimWatch.disconnect(); dimWatch = null; } };
   function openStack(){
     try{ warmIfcBank(); }catch(e){}   /* (384) a head start on Fire Code's questions, before a switch is tapped */
     wrap.classList.add("is-open"); btn.setAttribute("aria-expanded", "true");
-    stage.classList.add("class-list-open");
+    stage.classList.add("class-list-open"); document.body.classList.add("class-list-dim");   /* (384 ui3) the art and the stars go, the tab bar steps back */
     if(!dimWatch){ dimWatch = new MutationObserver(() => { if(!wrap.isConnected || !wrap.classList.contains("is-open")) dimOff(); }); dimWatch.observe(stage, { childList: true }); }
     stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = 0; });
     try{ playSound("ui.popup.open"); }catch(e){}
@@ -59671,6 +59705,7 @@ function ifcGreetingLines(){
   return [
     { gesture: "wave", text: "Welcome to Fire Code, " + name + "!", enter: hello },
     { text: "This class has the 2021 IFC and the Harris County (HC) amendments." },
+    { text: "Where the county amended a section, the amendment applies, and so does the question." },   /* (384 ui3) the cross-reference, said */
     { text: "Same me, a brand new class." },
     { gesture: "raise", text: "Your rank and level start fresh here." },
     { text: "Nothing you earn here changes your other class." },
@@ -59724,7 +59759,9 @@ const NOVA_CLASS_INFO = {
   ifc: { title: "Fire Code", kicker: "2021 IFC + HC Amendments",   /* (384 r4) "it should say 2021 IFC + HC Amendments" */
     /* (384, 5.4.2) the county booklet by its name, and the count from the bank where it is loaded (1,812 in 5.4.2) */
     /* (384) "ensure that it says it's cross referenced to the Harris County fire code amendments" */
-    desc: "The 2021 IFC, cross-referenced with the Harris County Fire Code Amendments. " + ifcQuestionCountText() + " questions.",
+    /* (384 ui3) "It needs to be plainly and easily understood ... The amendments supersede any of the ifc where applicable / where it's
+       been amended." - the card says the cross-reference and what it means, as the Enroll screen does (showIfcEnroll) */
+    desc: "The 2021 IFC, cross-referenced with the Harris County Fire Code Amendments. Where the county amended a section, the amendment applies. " + ifcQuestionCountText() + " questions.",
     needs: "Needs your own IFC PDF" }
 };
 /* "Don't put them beneath each other ... unless it's a bigger screen device. Also ensure each box is
@@ -60138,13 +60175,21 @@ function showIfcEnroll(opts){
   const h = document.createElement("h1"); h.className = "ce-title"; h.textContent = "Enroll in Fire Code";
   const k = document.createElement("p"); k.className = "ce-kicker"; k.textContent = "2021 IFC + HC Amendments";
   const p1 = document.createElement("p"); p1.className = "ce-body";
-  p1.textContent = "Every question in this class comes with the code it is from. The county's amendments are built in; the IFC itself is a licensed book, so its pages come from your own copy.";
+  /* (384 ui3) THE CROSS-REFERENCE, SAID PLAINLY. Madison: "it needs to mention cross referencing the ifc to the HC amendments because
+     that's important ... The amendments supersede any of the ifc where applicable / where it's been amended." What the class does
+     (ifc/bank.js meta.basis: the 2021 IFC as modified by the Harris County amendments; the county amendments supersede the IFC and
+     the county's Chapter 1 replaces IFC Chapter 1): a question on a provision the county amended or added is a county question
+     (citation.source "amendment"), quoting the county's text and tagged AMENDMENTS (buildIfcRef); every other question points at
+     the IFC section as printed, tagged IFC. Two short paragraphs so a phone reads it at a glance. */
+  p1.textContent = "Every question names the code section it comes from. Each IFC section has been checked against the Harris County amendments. Where the county amended a section, the amendment supersedes the IFC: the question follows the amendment and is tagged Amendments. Where it did not, the IFC applies as written.";
+  const p2 = document.createElement("p"); p2.className = "ce-body";
+  p2.textContent = "The amendments are built in. The IFC is a licensed book, so its pages come from your own copy.";
   const steps = document.createElement("ol"); steps.className = "ce-steps";
   ["Choose your PDF of the 2021 International Fire Code.", "Nova reads it and checks it is the edition the questions were written from.", "You're enrolled. Your copy stays on this device and is never uploaded."]
     .forEach(t => { const li = document.createElement("li"); li.textContent = t; steps.appendChild(li); });
   const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn ce-go"; go.textContent = "Choose my IFC PDF";
   go.addEventListener("click", () => ifcPickBook({ enroll: true, signup: !!opts.signup }));
-  panel.append(h, k, p1, steps, go);
+  panel.append(h, k, p1, p2, steps, go);
   stage.replaceChildren(panel);
   try{ window.scrollTo(0, 0); }catch(e){}
 }
@@ -111005,6 +111050,7 @@ function novaIntroLines(o){
       novaProp(ctx, novaStack(t, novaCap("Fire Code · Instructor"))); };
     lines.push({ gesture: "wave", text: "Welcome to Fire Code, " + name + "!", enter: ifcHello });
     lines.push({ text: "This class has the 2021 IFC and the Harris County (HC) amendments." });
+    lines.push({ text: "Where the county amended a section, the amendment applies, and so does the question." });   /* (384 ui3) the cross-reference, said */
     lines.push({ text: "Every question comes with the code it’s from." });
     lines.push({ gesture: "nod", text: "Answer one, and I’ll show you the page." });
     lines.push({ gesture: "raise", text: "Now, a little about me." });
@@ -164175,9 +164221,16 @@ function buildProfileCaseShut(have, total){
    when the row first comes on screen (an IntersectionObserver; nothing runs before or after), transform and opacity only, and
    not at all under Reduce motion or when Profile is drawn again in place. The options are chosen by the address
    (?pfbadge= / ?pfcz=, the head script); without one the recommended option is shown. */
+/* (384 ui3, round three) Madison: "I don't think I love any of the options for the badge one to be honest. What I do like is option B's
+   words and stuff, just not the icon and stuff there." and "For the customize one, I like B and C the most, but I don't love either
+   of them." THE BADGE CASE is one row now ("row"): B's words (the count and its share, the next to earn), the plain row icon every
+   other Profile and Settings row has (settingsRowIcon, as pfActFill draws it), no tick ring, coin, case or bar. ?pfbadge=a|b|c still
+   shows the old three, for comparison only. CUSTOMIZE takes the best of B and C: d (the default) = C's theme ring as the icon, the
+   count, and "Next: <name>" with a slim bar in the theme's colour; e = B's next unlock, smaller, in a rounded frame, with the count and
+   the bar under it. ?pfcz=a|b|c|d|e shows any of them. */
 function pfrOpt(kind){
-  const d = { badge: "c", cz: "b" };
-  try{ const v = document.documentElement.getAttribute("data-pfrow-" + kind); return /^[abc]$/.test(v || "") ? v : d[kind]; }catch(e){ return d[kind]; }
+  const d = { badge: "row", cz: "d" };
+  try{ const v = document.documentElement.getAttribute("data-pfrow-" + kind); return (kind === "cz" ? /^[a-e]$/ : /^[abc]$/).test(v || "") ? v : d[kind]; }catch(e){ return d[kind]; }
 }
 function pfrEl(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
 function pfrMotionOk(){
@@ -164279,7 +164332,9 @@ function pfrCentreLadder(sc){
   try{
     const here = sc.querySelector(".pfr-ld-cell.is-here") || sc.querySelector(".pfr-ld-cell.is-next");
     if(!here || sc.scrollWidth <= sc.clientWidth + 1) return;
-    sc.scrollLeft = Math.max(0, here.offsetLeft + here.offsetWidth / 2 - sc.clientWidth / 2);
+    /* (384 ui3) from the boxes on screen: the scroll box has 18px of padding beside the track now, which offsetLeft (from the track) leaves out */
+    const r = here.getBoundingClientRect(), bx = sc.getBoundingClientRect();
+    sc.scrollLeft = Math.max(0, sc.scrollLeft + (r.left + r.width / 2) - (bx.left + bx.width / 2));
   }catch(e){}
 }
 function pfrLadderFill(foot){
@@ -164391,7 +164446,14 @@ function pfrSegBar(bs){
 function pfrCaseFill(btn, have, total){
   const opt = pfrOpt("badge");
   const bs = pfrBadgeState(have, total);
-  const art = pfrCaseArt(bs, opt);
+  let art;
+  if(opt === "row"){
+    /* (384 ui3) the plain row icon, Customize's and Settings' (the new dot goes on it, as on every row icon) */
+    art = settingsRowIcon("badgecase");
+    art.style.setProperty("--tile", PF_ROW_TILE.badgecase || PF_ROW_GREY);
+    art.style.setProperty("--tile-rim", settingsTileRim(PF_ROW_TILE.badgecase || PF_ROW_GREY));
+    art.classList.add("pfr-bc-tile");
+  } else art = pfrCaseArt(bs, opt);
   const words = pfrEl("span", "pf-act-words");
   const lab = pfrEl("span", "pf-act-label", "Badge case");
   const fmt = v => v + " of " + total + " badges";
@@ -164399,7 +164461,7 @@ function pfrCaseFill(btn, have, total){
   words.append(lab, num);
   if(opt === "a"){
     words.appendChild(pfrEl("span", "pfr-line", bs.newest ? "Newest: " + pfrUnitName(bs.newest) : have >= total ? "Every badge found" : "Score 100% on a unit to earn its badge"));
-  } else if(opt === "b"){
+  } else if(opt === "b" || opt === "row"){
     const nx = have >= total ? "Every badge found"
       : bs.next && bs.next.need > 1 ? "Next: " + pfrUnitName(bs.next.unit) + " · " + bs.next.now + " of " + bs.next.need + " hundos"
       : "Next: score 100% on any unit";
@@ -164413,7 +164475,7 @@ function pfrCaseFill(btn, have, total){
   const chev = pfrChev();
   btn.replaceChildren(art, words, chev);
   const finalText = num.textContent;
-  pfrArm(btn, () => { if(opt !== "b") pfrCountUp(num, have, fmt, 800); else pfrCountUp(num, have, v => fmt(v) + " · " + Math.round(v / Math.max(1, total) * 100) + "%", 800); });
+  pfrArm(btn, () => { if(opt !== "b" && opt !== "row") pfrCountUp(num, have, fmt, 800); else pfrCountUp(num, have, v => fmt(v) + " · " + Math.round(v / Math.max(1, total) * 100) + "%", 800); });
   return { tile: art, words, label: lab, sub: num, chev, finalText };
 }
 
@@ -164460,6 +164522,34 @@ function pfrCustomizeFill(btn){
       row.append(bar, pfrEl("span", "pfr-cz-count", nx.have.toLocaleString() + " / " + nx.need.toLocaleString()));
       words.appendChild(row);
     } else words.appendChild(pfrEl("span", "pfr-line", fmtHeld(cs.have)));
+  } else if(opt === "d"){
+    /* (384 ui3) C's ring of the theme's colours as the icon; the count; then the next unlock by name with a slim bar beside it */
+    art = pfrEl("span", "pfr-swatch pfr-dot-host"); art.setAttribute("aria-hidden", "true");
+    art.append(pfrEl("i", "pfr-swatch-ring"), pfrEl("i", "pfr-swatch-core"));
+    sub = pfrEl("span", "pf-act-sub pfr-cz-held", fmtHeld(cs.have));
+    words.appendChild(sub);
+    const nx = cs.next;
+    const row = pfrEl("span", "pfr-cz-prog pfr-cz-nextrow");
+    row.appendChild(pfrEl("span", "pfr-line pfr-cz-nextname", nx ? "Next: " + nx.item.name : "Everything is unlocked"));
+    if(nx){ const bar = pfrEl("span", "pfr-bar pfr-bar-slim"); bar.setAttribute("aria-hidden", "true");
+      const f = pfrEl("i"); f.style.setProperty("--f", String(nx.frac)); bar.appendChild(f); row.appendChild(bar); }
+    words.appendChild(row);
+    onIn = () => pfrCountUp(sub, cs.have, fmtHeld, 800);
+  } else if(opt === "e"){
+    /* (384 ui3) B's next unlock, smaller, in a rounded frame; the count; the bar and how close under it */
+    art = pfrEl("span", "pfr-cz-frame pfr-dot-host"); art.setAttribute("aria-hidden", "true");
+    try{ art.appendChild(unlockItemThumb(cs.next ? cs.next.item : { k: "char", id: store.avatarChar, held: true })); }catch(e){}
+    sub = pfrEl("span", "pf-act-sub pfr-cz-held", fmtHeld(cs.have));
+    words.appendChild(sub);
+    const nx = cs.next;
+    if(nx){
+      const row = pfrEl("span", "pfr-cz-prog");
+      const bar = pfrEl("span", "pfr-bar"); bar.setAttribute("aria-hidden", "true");
+      const f = pfrEl("i"); f.style.setProperty("--f", String(nx.frac)); bar.appendChild(f);
+      row.append(bar, pfrEl("span", "pfr-cz-count", nx.have.toLocaleString() + " / " + nx.need.toLocaleString()));
+      words.appendChild(row);
+    } else words.appendChild(pfrEl("span", "pfr-line", "Everything is unlocked"));
+    onIn = () => pfrCountUp(sub, cs.have, fmtHeld, 800);
   } else {
     art = pfrEl("span", "pfr-swatch pfr-dot-host"); art.setAttribute("aria-hidden", "true");
     art.append(pfrEl("i", "pfr-swatch-ring"), pfrEl("i", "pfr-swatch-core"));

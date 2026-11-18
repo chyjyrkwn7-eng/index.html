@@ -214,7 +214,7 @@ with sync_playwright() as pw:
                 # case at all, so there is no case outline to measure on Profile and (B) is the Badges tray alone - said, not skipped quietly.
                 pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(2500)
                 kind = pg.evaluate("""()=>document.querySelector('#stage .pf-case-closed .pf-ccase') ? 'shut'
-                    : document.querySelector('#stage .pf-case.pfr-case') ? (['a','b','c'].find(o => document.querySelector('#stage .pfr-bc-' + o)) || '?') : 'none'""")
+                    : document.querySelector('#stage .pf-case.pfr-case') ? (['a','b','c','row'].find(o => document.querySelector('#stage .pfr-bc-' + o)) || '?') : 'none'""")
                 if kind == "shut":
                     r = pg.evaluate(INSIDE, ".pf-case-closed .pf-ccase")
                     o = r.get("outer", {})
@@ -222,8 +222,10 @@ with sync_playwright() as pw:
                         not r.get("missing") and not r["bad"] and o["tl"] == o["bl"] and o["tr"] == o["br"], r)
                 else:
                     chk("(B) %s, Profile shows option %s of the case row: %s" % (label, kind, "a small shut case (measured below, as option a)" if kind == "a" else
-                        "no shut case on Profile (a ring of ticks / a coin and a segment bar) - nothing case-shaped to measure there, so (B) on Profile is option a's drawing only"),
-                        kind in ("a", "b", "c"), kind)
+                        "no shut case on Profile (a ring of ticks / a coin and a segment bar, or - 384 ui3's default - the plain row icon) - nothing case-shaped to measure there, so (B) on Profile is option a's drawing only"),
+                        kind in ("a", "b", "c", "row"), kind)
+                    # (384 ui3) REVISED ON PURPOSE: round three made the Badge case one row ("row": option B's words beside the plain row
+                    # icon, no case art) and kept a|b|c behind ?pfbadge= for comparison; "row" is a known kind, like b and c
                     pg.evaluate("()=>{ document.documentElement.setAttribute('data-pfrow-badge','a'); showProfile(); }"); pg.wait_for_timeout(2500)
                     r = pg.evaluate(INSIDE, "#stage .pfr-bc-a .pfr-mc")
                     o = r.get("outer", {})
