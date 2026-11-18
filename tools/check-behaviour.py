@@ -27012,13 +27012,15 @@ def check_b324g_toggles(br):
         d = pg.evaluate(B324G_LENS, idx)
         th = tr[3] - tr[1]
         check("%s: a press swells the knob into a lens: taller than the track, over its top and bottom, wider than the knob" % label,
-              d["lens"] and d["h"] > th + 6 and d["t"] < tr[1] - 3 and d["b"] > tr[3] + 3 and d["w"] > rest["kw"] + 8 and abs(d["cx"] - start) < 4, d)
+              # (384.133 r2) RE-BASED ON MADISON'S iOS 26 RECORDING: the sliders/toggles build matched his switch - a 64x28 track and a lens
+              # 34 tall, exactly 6 over the track and 3 over each edge (it was 42 on a 30 track). "At least", not "more than"; 0.05px is float noise.
+              d["lens"] and d["h"] >= th + 6 - .05 and d["t"] <= tr[1] - 3 + .05 and d["b"] >= tr[3] + 3 - .05 and d["w"] > rest["kw"] + 8 and abs(d["cx"] - start) < 4, d)
         for i in range(1, 11):
             T("touchMove", [(start + (end - start) * i / 10, cy)]); pg.wait_for_timeout(25)
         pg.wait_for_timeout(120)
         m = pg.evaluate(B324G_LENS, idx)
         check("%s: dragged, the lens follows the finger along the track (within 4px), still swollen" % label,
-              m["lens"] and abs(m["cx"] - end) < 4 and m["h"] > th + 6, {"cx": m.get("cx"), "end": end, "h": m.get("h")})
+              m["lens"] and abs(m["cx"] - end) < 4 and m["h"] >= th + 6 - .05, {"cx": m.get("cx"), "end": end, "h": m.get("h")})
         T("touchEnd", []); pg.wait_for_timeout(1100)
         a = pg.evaluate(B324G_LENS, idx)
         setting = pg.evaluate("() => !!theme.autoAdvance")
@@ -27060,7 +27062,7 @@ def check_b324g_toggles(br):
         check("%s: a tap flips the switch and its setting (Swipe to next question)" % label,
               r1["on"] == (not r0["on"]) and sw1 == (not sw0) and sw1 == r1["on"], {"on": [r0["on"], r1["on"]], "setting": [sw0, sw1]})
         check("%s: through the lens - it swelled past the track - and settled back to the resting knob" % label,
-              lh > (t3[3] - t3[1]) + 6 and not r1["lens"] and r1["knobOp"] > .99 and abs(r1["kw"] - r0["kw"]) < .5, {"maxLensH": lh, "after": r1})
+              lh >= (t3[3] - t3[1]) + 6 - .05 and not r1["lens"] and r1["knobOp"] > .99 and abs(r1["kw"] - r0["kw"]) < .5, {"maxLensH": lh, "after": r1})
         # ---- an upright drag scrolls and flips nothing ----
         # (382: the switches are on a short category page now - room below it so the page has somewhere to scroll)
         pg.evaluate("() => { const p = document.querySelector('#stage .screen-settings-page'); if(p) p.style.paddingBottom = '120vh'; }")

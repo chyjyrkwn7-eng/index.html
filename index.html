@@ -164193,7 +164193,12 @@ function pfrArm(el, onIn){
   if(!pfrMotionOk() || !pfrReplay || typeof IntersectionObserver !== "function"){ el.classList.add("is-still"); return; }
   el.classList.add("pfr-anim");
   let done = false;
-  const go = () => { if(done) return; done = true; el.classList.add("is-in"); try{ if(onIn) onIn(); }catch(e){} };
+  /* (384.133 r2) it waits for the tab glass to land: a row's entrance started under the glass broke the tab's hold (check-b384-tabbutter (1)) */
+  const go = () => {
+    if(done) return;
+    if(el.isConnected && document.querySelector(".bottomtabs.lens-up")){ requestAnimationFrame(go); return; }
+    done = true; el.classList.add("is-in"); try{ if(onIn) onIn(); }catch(e){}
+  };
   const io = new IntersectionObserver(es => {
     if(!el.isConnected) return;   /* (not on the page yet: Profile is mounted after it is built) */
     if(es.some(x => x.isIntersecting && x.intersectionRatio >= .34)){ io.disconnect(); requestAnimationFrame(go); }
@@ -164205,13 +164210,17 @@ function pfrArm(el, onIn){
 function pfrCountUp(node, to, fmt, ms){
   if(!node || !(to > 0)) return;
   const t0 = performance.now(), dur = ms || 800;
+  /* (384.133 r2) one text node, its value changed each frame: a characterData change, which the back-to-top watcher (childList) does not
+     see - textContent replaced the node every frame, and each was a forced layout of the back-to-top room (check-b384-tabbutter (2)) */
+  node.textContent = fmt(0);
+  const tn = node.firstChild;
   const step = now => {
-    if(!node.isConnected) return;
+    if(!node.isConnected || !tn) return;
     const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    node.textContent = fmt(Math.round(to * e));
+    const v = fmt(Math.round(to * e));
+    if(tn.nodeValue !== v) tn.nodeValue = v;
     if(k < 1) requestAnimationFrame(step);
   };
-  node.textContent = fmt(0);
   requestAnimationFrame(step);
 }
 function pfrChev(){

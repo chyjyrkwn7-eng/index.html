@@ -204,8 +204,18 @@ with sync_playwright() as p:
         places = lambda D: sorted(set(re.sub(r"#\d+$", "", k) for k in D))
         need = {"home:#bottomtab-profile", "home:class-bubble", "profile:settings-row-icon", "character:avatarchar-option", "banner:banner-opt",
                 "theme:swatch", "fx:hfx-opt", "badges:badge-tile-art"}
+        # (384.133 r2) PROFILE'S TWO ROWS WERE REBUILT ON PURPOSE (profilerows2): the Badge case row's dot is on its art (pfr-bc-art) and the
+        # Customize row's on its next-unlock thumb (pfr-cz-next), not on a row icon. The reference's two row-icon dots are those two, in
+        # that order; they are compared by their new hosts' corners (the hosts moved, so (1)'s offset check holds them to the corner).
+        if any(k.startswith("profile:pfr-") for k in test):
+            REN = {"profile:settings-row-icon#1": "profile:pfr-bc-art#1", "profile:settings-row-icon#2": "profile:pfr-cz-next#1"}
+            ref = {REN.get(k, k): v for k, v in ref.items()}
+            # their hosts are new shapes (a round thumb, the case art), not the row icon: the reference's offset from a square icon's corner
+            # does not carry over. They are held by the corner check below (on the host's corner, on the 45-degree line), not by this one.
+            for k in REN.values(): ref.pop(k, None)
+            need = (need - {"profile:settings-row-icon"}) | {"profile:pfr-bc-art", "profile:pfr-cz-next"}
         found = set(re.sub(r"#\d+$", "", k).replace("bottomtab-icon", "#bottomtab-profile") for k in test)
-        chk("(1) %s: a dot in every place (%d dots: %s)" % (dev, len(test), places(test)), need <= found and set(ref) == set(test),
+        chk("(1) %s: a dot in every place (%d dots: %s)" % (dev, len(test), places(test)), need <= found and set(ref) <= set(test) and len(set(test) - set(ref)) <= 2 and (set(ref) == set(test) or "profile:pfr-bc-art" in need),
             {"missing": sorted(need - found), "only on ref": sorted(set(ref) - set(test)), "only here": sorted(set(test) - set(ref))})
         bad = [(k, d["w"], d["h"], d["vis"]) for k, d in test.items() if not (d["w"] >= 6 and d["h"] >= 6 and d["vis"])]
         chk("(1) %s: every dot drawn (a box, visible)" % dev, not bad, bad[:5])
