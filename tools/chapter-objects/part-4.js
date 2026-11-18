@@ -364,7 +364,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
    filleted; nothing stands on the shoulder by itself. ---- */
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
-  const body = S.box(18, 35, 46, 62, 7.5), dome = S.ellipse(41, 35.5, 23, 13.5);
+  const body = S.box(16, 33, 50, 64, 7.5), dome = S.ellipse(41, 34, 25, 13);
   const neck = S.box(35.5, 14, 11, 12, 1);
   const cyl = S.union([body, dome, neck], 5);                                   /* the shoulder rises into the neck in one curve */
   const ring = S.box(33.5, 13, 15, 5.5, 1.4);                                     /* the neck ring */
@@ -379,8 +379,8 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     plates: [
       ["field", S.shape(cyl, BB), { dome: 2 }],                                                          /* the cylinder */
       ["cream", S.shape(S.inter(S.union([cyl, S.inter(all, S.box(30, 15, 25, 10, 0))], 0), S.box(0, 0, 100, 42, 0)), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder, up the neck */
-      ["field", "M19 42H63", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
-      ["field", "M19 88.5H63", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
+      ["field", "M17 42H65", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
+      ["field", "M17 88.5H65", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
       ["brass", S.shape(S.minus(S.inter(all, S.box(0, 0, 61, 15, 0)), cyl), BB), { z: .2, bev: .5 }],     /* the valve gear, every fillet in it brass */
       ["brass", S.shape(S.union([valve, stem], .8), BB), { z: .3, bev: .6, gem: .8, gw: 2.2 }],           /* the valve body and its stem */
       ["steel", OBJ_rrect(33.5, 13, 15, 5.5, 1.4), { z: .6, bev: .5, dome: .5 }],                          /* the neck ring it is seated in */
