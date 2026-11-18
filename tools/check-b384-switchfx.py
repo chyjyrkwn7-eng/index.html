@@ -45,7 +45,10 @@ def chk(name, cond, info=""):
 COVER_RGB = (10, 10, 10)
 # the budgets: tap to the cover gone, and Home built to the cover gone (what the switch itself controls; the rest is the page loading,
 # which a slower machine stretches). 4x CPU is what a phone is next to this machine.
-BUDGET = {1: {"total": 2.8, "hold": 1.0, "lift": .6}, 4: {"total": 6.5, "hold": 2.0, "lift": .9},
+# (384 classswitch) "total" +0.5s at 1x and 4x: the cover now fades in over .5s (was .24s: one slow fade from one class's sky into the
+# other's), the lift waits for the new page to go quiet (a few frames), and the splash is taken out 700ms after the lift (was 450,
+# inside the tab bar's rise) - "gone" is that removal, ~.4s after the lift's fade is over
+BUDGET = {1: {"total": 3.3, "hold": 1.0, "lift": .6}, 4: {"total": 7.0, "hold": 2.0, "lift": .9},
           "laptop": {"total": 8.0, "hold": 2.5, "lift": 2.5}}       # a 1440x900 screencast through software rendering is the slowest thing here
 
 def metrics(run, calm=False):
@@ -127,10 +130,14 @@ def judge(tag, run, cpu=1, calm=False, laptop=False, via="sheet", expect_tabs=Tr
     # (5) the bars: in a browser tab the status bar's colour is the cover's from the cover on until the lift
     if laptop:
         # (the bars are handed back as the lift starts, in the same frame that the cover begins to thin: that frame is the lift's)
+        # (384 classswitch) the cover is the next class's own sky now, and the bars wear its paper (the cover's colour), not #0A0A0A:
+        # one colour from the cover being over the screen until the lift, on both pages, and not the class left's
         under = [(round(t), e["tc"]) for t, e in m["old"] + m["new"] if (e["cover"] and (e["coverOp"] or 0) >= .98) or (e["splash"] is not None and e["splash"] >= .98 and t < m["lift"] - 40)]
-        wrong = [x for x in under if (x[1] or "").upper() != "#0A0A0A"]
-        chk(P("(5) the status bar is the cover's colour for as long as the cover is on (%d frames, %d other: %s)" % (len(under), len(wrong), wrong[:3])), under and not wrong, wrong[:4])
-        chk(P("(5b) and the app's own once it lifts (%s)" % (f.get("tc"))), (f.get("tc") or "").upper() != "#0A0A0A", f.get("tc"))
+        cols = sorted({(x[1] or "").upper() for x in under})
+        left = (m["old"][0][1].get("tc") or "").upper() if m["old"] else ""
+        chk(P("(5) the status bar is the cover's colour for as long as the cover is on (%d frames, colours %s; the class left's was %s)" % (len(under), cols, left)),
+            under and len(cols) == 1 and cols[0] not in ("", left), (cols, left))
+        chk(P("(5b) and the app's own once it lifts (%s)" % (f.get("tc"))), bool(f.get("tc")) and (f.get("tc") or "").upper() != "#0A0A0A", f.get("tc"))
 
     # (6b) nothing of the new page is on show before its cover lifts, and Home is whole in the first frame of the lift
     new_pre = [(round(t), e["tabs"], e["home"]) for t, e in m["new"] if m["lift"] is not None and t < m["lift"] and not (e["pre"] or (e["splash"] is not None and e["splash"] >= .98))]
