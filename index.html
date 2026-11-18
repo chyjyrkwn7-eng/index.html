@@ -42002,6 +42002,53 @@ html.is-browser{ --fade-paper: transparent; }
   /* Reduce motion (the app's or the system's): the last frame, nothing moves */
   html[data-reduce-motion="true"] body #stage .profile-identity-tab .pfr-anim *{ animation:none !important; }
   @media (prefers-reduced-motion:reduce){ html body #stage .profile-identity-tab .pfr-anim *{ animation:none !important; } }
+  /* ---- (384 pin) A PINNED BADGE: the badge you hold and chose, shown off as an emblem. The struck token itself (the case's art, slot
+     off), never redrawn: a medallion on the plate's corner (Profile, a friend's profile, the person card), beside the name on a
+     Leaderboard row and in a room's roster. Its own element everywhere (.pin-mark, in a .pin-host or a .pin-line), so the name keeps its
+     ellipsis and the badge never shrinks. Only its entrance moves (transform and opacity); Reduce motion draws it where it ends. */
+  .pin-host{ position:relative; display:inline-flex; flex:none; }
+  .pin-mark, .pin-spot{ -webkit-appearance:none; appearance:none; border:0; margin:0; padding:0; background:none; font:inherit; color:inherit;
+    position:relative; display:inline-grid; place-items:center; flex:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .pin-mark-art{ position:relative; z-index:1; display:block; width:100%; height:100%; pointer-events:none; }
+  .pin-mark-art > svg, .pin-mark-art > img{ display:block; width:100%; height:100%; overflow:visible; }
+  /* its own colour, faint, behind it: a radial wash, not a filter */
+  .pin-mark::before{ content:""; position:absolute; inset:-14%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--badge-glow, #9FB1FF) 42%, transparent), transparent); opacity:.7; }
+  /* a small one keeps a 44px target round it */
+  .pin-mark::after{ content:""; position:absolute; left:50%; top:50%; width:max(44px, 100%); height:max(44px, 100%); transform:translate(-50%, -50%); border-radius:50%; }
+  .pin-mark:focus-visible, .pin-spot:focus-visible{ outline:2px solid var(--accent, #9FB1FF); outline-offset:3px; border-radius:50%; }
+  .pin-mark:active .pin-mark-art, .pin-spot:active{ transform:scale(.92); }
+  /* THE MEDALLION, on the plate's lower right (45 degrees round its ring): the plate's own look - a dark disc lit by the badge's colour, a
+     ring of the card, a hairline of its colour - with the token on it */
+  .pin-host > .pin-mark-hero, .pin-host > .pin-spot, .person-card-art > .pin-mark-hero{
+    --pin-d:2.9rem; position:absolute; z-index:4; left:85.36%; top:85.36%; width:var(--pin-d); height:var(--pin-d);
+    margin:calc(var(--pin-d) / -2) 0 0 calc(var(--pin-d) / -2); border-radius:50%; }
+  .person-card-art > .pin-mark-hero{ --pin-d:2.25rem; }
+  @media (min-width:40rem){ .pin-host > .pin-mark-hero, .pin-host > .pin-spot{ --pin-d:3.4rem; } }
+  .pin-mark-hero{ background:radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--badge-glow, #9FB1FF) 26%, var(--surface-2)), var(--surface-1) 74%), var(--delta-card-fill, #1C1C1E);
+    box-shadow:0 0 0 3px var(--delta-card-fill, #1C1C1E), 0 0 0 4.5px color-mix(in srgb, var(--badge-glow, #9FB1FF) 62%, transparent), 0 8px 18px var(--surface-inset); }
+  .pin-mark-hero::before{ inset:6%; opacity:.55; }
+  .pin-mark-hero > .pin-mark-art{ width:84%; height:84%; }
+  /* nothing pinned yet: the same place, a dashed ring with a plus - the way in to pin one */
+  .pin-spot{ background:var(--surface-2); box-shadow:0 0 0 3px var(--delta-card-fill, #1C1C1E), 0 8px 18px var(--surface-inset); color:var(--ink); }
+  .pin-spot::before{ content:""; position:absolute; inset:2px; border-radius:50%; border:1.5px dashed var(--surface-border); pointer-events:none; }
+  .pin-spot > svg{ width:46%; height:46%; opacity:.82; }
+  .pin-host > .pin-mark-hero{ animation:pin-in .55s cubic-bezier(.3,1.45,.55,1) .3s both; }
+  .pin-host > .pin-mark-hero.is-fresh{ animation-delay:0s; }
+  @keyframes pin-in{ from{ opacity:0; transform:scale(.4) rotate(-14deg); } to{ opacity:1; transform:none; } }
+  /* BESIDE A NAME: the name ellipsizes, the badge stays whole */
+  .pin-line{ display:flex; align-items:center; min-width:0; max-width:100%; }
+  html[data-layout] body .pin-line > :is(.rank-name, .lb-name){ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pin-mark-row{ width:1.6rem; height:1.6rem; min-width:22px; min-height:22px; margin-left:.3rem; }
+  .pin-mark-vr{ width:1.45rem; height:1.45rem; min-width:20px; min-height:20px; margin-left:.4rem; }
+  .vroom-roster.is-crowded .pin-mark-vr{ width:1.3rem; height:1.3rem; }
+  /* the badge's own page: whose it is (somebody else's), Pin to profile / Unpin (yours) */
+  .binspect-whose{ margin:.25rem 0 0; font-size:.9rem; font-weight:700; color:rgba(255,255,255,.62); }
+  .binspect-pin{ margin-top:1.1rem; min-height:48px; }
+  .binspect-pin + .binspect-close{ margin-left:.5rem; }
+  .binspect-pin, .binspect-pin:focus{ outline:none; }
+  html[data-reduce-motion="true"] .pin-host > .pin-mark-hero{ animation:none; }
+  @media (prefers-reduced-motion:reduce){ .pin-host > .pin-mark-hero{ animation:none; } }
 </style>
 <script>
   (function(){
@@ -71289,6 +71336,9 @@ ROW_LAZY_FIELDS.push("ut");
 ROW_LAZY_FIELDS.push("bd", "la", "uc", "ub");
 /* (384.126) Fire Code's prestiges taken: it changes when somebody takes one (three times in an account's life at most), never per answer */
 ROW_LAZY_FIELDS.push("pg");
+/* (384 pin) the pinned badge: it changes only when somebody pins or unpins, and rides with the row write that pick's own account
+   write already schedules (never a write of its own, never per answer) */
+ROW_LAZY_FIELDS.push("pb");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long.
    FIVE MINUTES, NOT 90s (build 327z15): "maybe to save space the
@@ -71451,6 +71501,8 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], weekWinLost: [], weekWinPts: {}, weekWinBase: null, retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, badgeSceneOwed: null, badgeScenePlayed: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
+              /* (384 pin) the badge pinned to your profile in this class: { u: its unit name, "" for none, at: when picked } (pinnedBadgeOf) */
+              pinnedBadge: { u: "", at: 0 },
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", rim: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
               /* (384.126) Fire Code's prestiges taken, 0-3 (prestigeTaken): only rises, merged by the higher */
@@ -71779,6 +71831,8 @@ function applyLoadedData(got){
   store.starfallKept = got.starfallKept === true;
   store.creditsApplied = Array.isArray(got.creditsApplied) ? got.creditsApplied.filter(x => typeof x === "string").slice(-50) : [];
   store.banner = typeof got.banner === "string" ? got.banner : "";
+  /* (384 pin) the pinned badge: an old copy has none ({ u: "", at: 0 }); drawn only while held (myPinnedBadge) */
+  store.pinnedBadge = pinnedBadgeOf(got.pinnedBadge);
   /* (384.120) the rim you wear (wornRim): a pick like the banner, worn only while it is held; "" wears none */
   store.rim = typeof got.rim === "string" ? got.rim.slice(0, 24) : "";
   /* (384.126) the prestiges taken: a whole number 0-3 (an old copy has none: 0; anything else is read as a count, never above 3) */
@@ -74275,6 +74329,7 @@ function wipeLocalProgressAndSettings(){
   store.vrMatches = 0; store.vrWins = 0; store.vrHosted = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
+  store.pinnedBadge = { u: "", at: Date.now() };   /* (384 pin) nothing pinned, stamped now so an older copy's pin is not merged back */
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.rim = ""; store.hundoFx = "confetti"; store.starfallKept = false;
   store.prestige = 0;   /* (384.126) a reset is a new account */
   store.weekRankSeen = null;
@@ -74588,6 +74643,9 @@ function buildLeaderboardRow(){
            own Profile does (build 231). An id another build does not know
            draws nothing there. */
         banner: wornBanner(),
+        /* (384 pin) the badge pinned to this profile: its unit name, "" for none - only while held (myPinnedBadge). Lazy (ROW_LAZY_FIELDS):
+           in this same write, never one of its own. NOT THE SYNC CODE. */
+        pb: myPinnedBadge(),
         /* (384.120) the unlock tracks: `ut`, which tiers this account holds (a 14-character code, display only - see
            unlockTrackCode) and `rim`, the rim worn (an id, "" for none). Counted by every phone for rarity, drawn on the row and
            the card. Written in this same write: nothing extra, nothing per answer. NOTHING HERE IS THE SYNC CODE. */
@@ -74949,6 +75007,8 @@ function buildClassBoardRow(){
     xp: n.xp,
     tests: n.tests,
     banner: wornBanner() || "",
+    /* (384 pin) the pinned badge, Fire Code's own (a chapter name, "" for none), as the academy's row */
+    pb: myPinnedBadge(),
     /* (384.120) the unlock tracks' code and the worn rim, as the academy's row (unlockRowFields) */
     ut: unlockRowFieldsSafe().ut,
     rim: unlockRowFieldsSafe().rim,
@@ -75795,6 +75855,8 @@ function mergeLeavingAccount(src, note){
     const ca = cleanClassList(store.classes), cb = cleanClassList(src.classes);
     if(cb) store.classes = cleanClassList(classesWithLeaves((ca || ["academy"]).concat(cb), store)) || store.classes;
   }catch(e){}
+  /* (384 pin) the pin picked last, on either account (a pick, not a count: shown only while held) */
+  { const a = pinnedBadgeOf(store.pinnedBadge), b = pinnedBadgeOf(src.pinnedBadge); store.pinnedBadge = b.at > a.at ? b : a; }
   if(src.seenClassTip === true) store.seenClassTip = true;
   /* the grandfather floor (build 314): whichever account held the higher
      level keeps it - neither side loses one by being merged */
@@ -76355,6 +76417,11 @@ function mergeSameAccount(dst, src){
     const merged = mergeWeekStats(dst[k], src[k]);
     if(JSON.stringify(merged) !== was){ dst[k] = merged; res.gained = true; }
   });
+  /* (384 pin) THE PINNED BADGE IS THE LATER PICK'S, whichever copy saved last: pinned (or unpinned) on one device, it is not undone
+     by a copy that only saved something else more recently. A pick, not progress: nothing about the badge itself is touched. */
+  { const a = pinnedBadgeOf(dst.pinnedBadge), b = pinnedBadgeOf(src.pinnedBadge);
+    if(b.at > a.at){ dst.pinnedBadge = b; res.gained = true; }
+    else { if(a.at > b.at) res.otherHadLess = true; dst.pinnedBadge = a; } }
   /* THE FRIENDS LIST IS THE NEWER CHANGE'S (build 384), not the copy that saved last: friends, requests, the friend code and
      the group chats (SOCIAL_FIELDS) come from the side whose socialAt is later, so a friend added on one device - or in the
      other class - is not undone by a copy that only saved something else more recently. Neither side dated: as before. */
@@ -79180,6 +79247,142 @@ function badgeCountOf(st){
     return classTopics().filter(u => (perf[u] || 0) >= badgeThresholdFor(u)
       && !(hide && hide.has(u))).length;
   } catch(e){ return 0; }
+}
+
+/* ---- A PINNED BADGE (384 pin) ----
+   Madison: "adding a badge to your profile to flex ... You can equip a badge on your profile, and people can see this badge, you are
+   flexing that you have the badge. That's any class ... It'd be like an emblem in Call of Duty."
+   ONE PIN PER CLASS: `store.pinnedBadge` is { u: the badge's unit (chapter) NAME - the key unitPerfects uses, "" for none, at: when it
+   was pinned or unpinned (ms) }. Each class has its own store, so Fire Code and the academy each hold their own. Merged newest-wins on
+   `at` (mergeSameAccount, mergeLeavingAccount); defaulted in applyLoadedData; nothing about the unlock is stored.
+   DERIVED WHEN READ: a pin is drawn only while you still hold that badge (myPinnedBadge) - a pin to a badge you no longer hold (a band
+   raised, a retro hide) shows nothing and publishes "", but is kept, so it comes back if the badge does.
+   PUBLISHED as `pb` (the unit name, or ""): in the board row (both classes' builders; a lazy field, ROW_LAZY_FIELDS, so it rides with
+   the row write the pin's own account write already schedules and never causes one) and in a Virtual Room's entry (the join write and
+   the presence beat that already run; that class's rooms only). Readers draw it only when it names a real badge of THIS class
+   (pinUnitOK) and, where the row also says which badges are held (`bd`), one of those - so an older client's row (no pb), a pin of the
+   other class, junk or a badge the row does not hold draws nothing. NOT A SYNC CODE: a unit name. */
+var ROOM_PB_ENTRIES = new WeakSet();   /* entries a room card built (never a field a document could carry) */
+function pinnedBadgeOf(v){
+  if(!v || typeof v !== "object") return { u: "", at: 0 };
+  return { u: typeof v.u === "string" ? v.u.slice(0, 90) : "",
+           at: typeof v.at === "number" && isFinite(v.at) && v.at > 0 ? Math.floor(v.at) : 0 };
+}
+/* a unit name this class has (classTopics is always this class's, even with a visiting room's bank in) */
+function pinUnitOK(u){
+  if(typeof u !== "string" || !u) return false;
+  try{ return classTopics().indexOf(u) >= 0; }catch(e){ return false; }
+}
+/* your pin, as it is drawn and published: only while the badge is held */
+function myPinnedBadge(){
+  try{ const p = pinnedBadgeOf(store && store.pinnedBadge); return p.u && pinUnitOK(p.u) && unitBadgeEarned(p.u) ? p.u : ""; }catch(e){ return ""; }
+}
+function setPinnedBadge(u){
+  u = u && pinUnitOK(u) && unitBadgeEarned(u) ? u : "";
+  const was = pinnedBadgeOf(store.pinnedBadge);
+  /* a later stamp than any copy this device has seen, so this pick wins the merge */
+  store.pinnedBadge = { u: u, at: Math.max(Date.now(), was.at + 1) };
+  saveStore();
+  try{ document.querySelectorAll(".pin-host.is-mine").forEach(h => pinPaintMine(h, true)); }catch(e){}
+  return u;
+}
+/* somebody's pin from their board row (or a room card's entry): yours from this device, anybody else's only if it is real */
+function rowPinnedBadge(e){
+  if(!e || e.nova) return "";
+  if(ROOM_PB_ENTRIES.has(e)) return pinUnitOK(e.pb) ? e.pb : "";
+  let me = ""; try{ me = publicIdOf(); }catch(err){}
+  if(me && e.pub === me) return myPinnedBadge();
+  const u = e.pb;
+  if(!pinUnitOK(u)) return "";
+  if(Array.isArray(e.bd) && e.bd.indexOf(u) < 0) return "";
+  return u;
+}
+/* a room member's pin: that class's rooms only (a badge of the other class has no art on this page); yours live from this device */
+function vroomPinFor(p, key, cls){
+  if((cls || BANK_CLASS) !== ownClass()) return "";
+  if(key && key === vroomMyKey) return myPinnedBadge();
+  return p && pinUnitOK(p.pb) ? p.pb : "";
+}
+/* the pin in a room entry this device writes (the join / create write that already happens): that class's rooms only */
+function vroomPinIntoEntry(entry, cls){
+  if(entry && (cls || BANK_CLASS) === ownClass()) entry.pb = myPinnedBadge();
+  return entry;
+}
+/* a room member's person card: its pin is this room's, worked out here (ROOM_PB_ENTRIES), never read off a field a board row carries */
+function vroomPinCardEntry(out, p, key, cls){
+  if(!out || out.nova) return out;
+  out.pb = vroomPinFor(p, key, cls);
+  ROOM_PB_ENTRIES.add(out);
+  return out;
+}
+/* THE PIN, DRAWN: the badge's own struck token (buildUnitBadgeSVG, the case's art: slot off, clean, rendered at `px` so it is crisp
+   at its size) in a button that opens it - your own in your hand (with Unpin), anybody else's read-only, with its name. `where`:
+   hero (a medallion on the plate's corner: Profile, a friend's profile, the person card), row (beside a name: the Leaderboard),
+   vr (a room's roster). A small one keeps a 44px target round it (::after). Static: nothing on it animates but its entrance. */
+function pinMark(u, where, opts){
+  opts = opts || {};
+  if(!u) return null;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "pin-mark pin-mark-" + where;
+  b.dataset.unit = u;
+  let title = u; try{ title = unitTitle(u); }catch(e){}
+  b.setAttribute("aria-label", (opts.mine ? "Your pinned badge: " : (opts.who ? opts.who + "'s pinned badge: " : "Pinned badge: ")) + title);
+  try{ const bt = badgeThemeFor(u); if(bt && bt.p) b.style.setProperty("--badge-glow", bt.g || bt.p); }catch(e){}
+  const art = document.createElement("span");
+  art.className = "pin-mark-art";
+  art.setAttribute("aria-hidden", "true");
+  try{ art.appendChild(buildUnitBadgeSVG(u, true, { slot: false, px: opts.px || 32, dirt: 0 })); }catch(e){}
+  b.appendChild(art);
+  const open = ev => {
+    if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+    try{
+      if(opts.mine && unitBadgeEarned(u)) openBadgeInspect(u, null);
+      else openBadgeInspect(u, null, { view: { who: opts.who || "" } });
+    }catch(e){}
+  };
+  b.addEventListener("click", open);
+  /* the row under it opens on Enter / Space too: this one's own */
+  b.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") ev.stopPropagation(); });
+  b.addEventListener("pointerdown", ev => ev.stopPropagation());
+  return b;
+}
+/* A plate with its pin on the corner: the plate (unchanged) and the pin, in a box of their own. `who`: a name (somebody else's,
+   read-only) or null for yours (is-mine: drawn from this device, an empty spot to pin one when you hold a badge and pin none). */
+function pinHostFor(plate, entry, who){
+  const host = document.createElement("span");
+  host.className = "pin-host";
+  host.appendChild(plate);
+  if(who === null){ host.classList.add("is-mine"); pinPaintMine(host, false); }
+  else {
+    const u = rowPinnedBadge(entry);
+    const m = pinMark(u, "hero", { who: who || "", px: 56 });
+    if(m){ host.classList.add("has-pin"); host.appendChild(m); }
+  }
+  return host;
+}
+function pinPaintMine(host, fresh){
+  host.querySelectorAll(":scope > .pin-mark, :scope > .pin-spot").forEach(n => n.remove());
+  const u = myPinnedBadge();
+  host.classList.toggle("has-pin", !!u);
+  if(u){
+    const m = pinMark(u, "hero", { mine: true, px: 56 });
+    if(fresh) m.classList.add("is-fresh");
+    host.appendChild(m);
+    return;
+  }
+  let held = 0; try{ held = badgesEarnedList().length; }catch(e){}
+  if(!held) return;
+  /* NOTHING PINNED: the spot itself is the way in - the Badges screen, where a badge you hold is pinned from its own page */
+  const spot = document.createElement("button");
+  spot.type = "button";
+  spot.className = "pin-spot";
+  spot.setAttribute("aria-label", "Pin a badge to your profile");
+  spot.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6.5v11M6.5 12h11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  spot.addEventListener("click", ev => { ev.stopPropagation(); try{ playSound("ui.tap.primary"); }catch(e){} showRanksScreen("badges"); });
+  spot.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") ev.stopPropagation(); });
+  spot.addEventListener("pointerdown", ev => ev.stopPropagation());
+  host.appendChild(spot);
 }
 
 /* ---------- the badges themselves --------------------------------------
@@ -117245,6 +117448,8 @@ function startVroomPresence(){
          deleted entry recreates it nameless. */
       const patch = {};
       patch["participants." + vroomMyKey + ".seen"] = Date.now();
+      /* (384 pin) the pinned badge, in this class's own rooms: the same write, so a pin or an unpin reaches the room by the next beat */
+      if(BANK_CLASS === ownClass()) patch["participants." + vroomMyKey + ".pb"] = myPinnedBadge();
       /* (384) the account's, as the entry was written (vroomMeEntry) - the same as the store in the academy */
       const sm = socialMe();
       patch["participants." + vroomMyKey + ".name"] = sm.firstName || "Anonymous";
@@ -120227,6 +120432,9 @@ function openPersonSheet(entry){
   /* (384.126) the prestige emblem beside the name (Fire Code's page; their row's count, your own live one) */
   if(!isNova){ const pm = prestigeMark(entryPrestige(entry), "pg-mark-card"); if(pm){ name.classList.add("has-pg"); name.appendChild(pm); sheet.classList.toggle("is-pg-max", pm.dataset.pg === "3"); } }
   sheet.append(art, name);
+  /* (384 pin) their pinned badge on the plate's corner (a room's card: that room's, vroomPinCardEntry) */
+  if(!isNova){ try{ const pu = rowPinnedBadge(entry); let me = ""; try{ me = publicIdOf(); }catch(e){}
+    const pm = pinMark(pu, "hero", { mine: !!me && entry.pub === me, who: entry.firstName || "", px: 48 }); if(pm) art.appendChild(pm); }catch(e){} }
   /* (384.132) the rim they wear round the plate and Mastery's gold name, as their Leaderboard row shows them (plateRimFor: your
      own card from this device, anybody else's only when their row's own code holds it) */
   if(!isNova){ try{ const pr = plateRimFor(entry); drawWornRim(art, pr.rim, { plate: true }); name.classList.toggle("is-mastery", pr.mastery); }catch(e){} }
@@ -120531,7 +120739,8 @@ function showFriendProfile(entry, back){
     /* (384.126) their prestige emblem beside the name, from their row (display only) */
     { const pm = prestigeMark(entryPrestige(view), "pg-mark-profile"); if(pm){ nameRow.classList.add("has-pg"); nameRow.appendChild(pm); } }
     idBox.appendChild(nameRow);
-    top.append(av, idBox);
+    /* (384 pin) their pinned badge on the plate's corner, from their row (rowPinnedBadge: only a real badge of this class they hold) */
+    top.append(pinHostFor(av, view, view.firstName || "Student"), idBox);
     hero.appendChild(top);
     const rk = view.levelUnknown || !row ? null : rankOfEntry(view);
     if(rk){
@@ -148636,6 +148845,7 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
   restoreClassBank();
   const code = generateSyncCode();
   const me = vroomMeEntry();
+  vroomPinIntoEntry(me);
   const myName = me.name;
   const doc = {
     /* The HOST's public id, not their sync code. This is published in
@@ -152138,6 +152348,7 @@ function joinVirtualRoomLobby(code){
        while somebody is sitting in a lobby - and read with a
        fallback, so a room created by an older build still renders. */
     const meEntry = vroomMeEntry(roomClassOf(data));
+    vroomPinIntoEntry(meEntry, roomClassOf(data));
     /* (384 review) IN DURING A MATCH, NOT IN IT: somebody who comes back mid-match was one of its racers or on one of its
        teams, and their fresh entry (nothing answered, not finished) would hold the finale or the team's "everyone is done" for
        good. `late` names the match they arrived during; vroomLateFor() / vroomMatchHere() leave them out of that one only. */
@@ -153118,8 +153329,10 @@ function showVirtualRoomLobby(){
       + "|" + (data.count || 0) + "|" + (data.game || "")
       /* (384 review) and who is host: a promoted host's summary grows its Match settings button */
       + "|" + (vroomIsHost ? "h" : "");
-    if(shape !== shownShape){
-      shownShape = shape;
+    /* (384 pin) and each member's pinned badge: a pin or an unpin redraws the roster */
+    const shapePb = shape + "|pb:" + entries.map(([key, p]) => vroomPinFor(p, key, roomClassOf(data))).join(",");
+    if(shapePb !== shownShape){
+      shownShape = shapePb;
       if(arrive) setTimeout(arrive, 0);
       renderTestSummary(data);
       list.replaceChildren();
@@ -153183,7 +153396,11 @@ function showVirtualRoomLobby(){
         name.appendChild(youTag);
         row.classList.add("is-you");
       }
-      nameWrap.appendChild(name);
+      /* (384 pin) the badge they pinned, after the name, in an element of its own (this class's rooms only, vroomPinFor) */
+      { let pu = ""; try{ pu = vroomPinFor(p, key, roomClassOf(data)); }catch(e){}
+        const pm = pu ? pinMark(pu, "vr", { who: p.name || "", mine: key === vroomMyKey, px: 36 }) : null;
+        if(pm){ const line = document.createElement("span"); line.className = "pin-line"; line.append(name, pm); nameWrap.appendChild(line); row.classList.add("has-pin"); }
+        else nameWrap.appendChild(name); }
       /* ---- RANK AND LEVEL, UNDER THE NAME ----
          The level was a small chip stuck on the corner of the
          character, opposite the rank coin - two marks on one avatar,
@@ -153238,7 +153455,7 @@ function showVirtualRoomLobby(){
         row.classList.add("is-tappable");
         row.setAttribute("role", "button");
         row.tabIndex = 0;
-        const open = () => openPersonSheet(vroomPersonEntry(key, p));
+        const open = () => openPersonSheet(vroomPinCardEntry(vroomPersonEntry(key, p), p, key, roomClassOf(data)));
         row.addEventListener("click", open);
         row.addEventListener("keydown", e => {
           if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); }
@@ -158057,7 +158274,12 @@ function renderRankingRows(rows, entries, board, opts){
     } else {
       stats.textContent = board.unit(val(entry), entry);
     }
-    nameWrap.append(name, stats);
+    /* (384 pin) THE PINNED BADGE beside the name, in an element of its own: the name keeps its ellipsis, the badge never shrinks; a
+       tap on it opens that badge (the row's own tap is the person card) */
+    { let pu = ""; try{ pu = rowPinnedBadge(entry); }catch(e){}
+      const pm = pu ? pinMark(pu, "row", { who: entry.firstName || "", mine: isMe, px: 40 }) : null;
+      if(pm){ const line = document.createElement("span"); line.className = "pin-line"; line.append(name, pm); nameWrap.append(line, stats); row.classList.add("has-pin"); }
+      else nameWrap.append(name, stats); }
     /* Beside the stat line rather than beside the place number: the
        place is already the biggest thing on the row and a second mark
        against it reads as two numbers arguing. */
@@ -165102,7 +165324,8 @@ function showProfile(defaultTab, opts){
   heroSect.appendChild(cover);
   /* the rank plate rides in the path below (build 314), not under the name */
   heroId.append(nameDisplayRow, nameInput, nameSaveBtn);
-  heroTop.append(heroAvatar, heroId);
+  /* (384 pin) the badge you pinned, a medallion on the plate's corner (or the spot to pin one) - its own element beside the plate */
+  heroTop.append(pinHostFor(heroAvatar, null, null), heroId);
   heroSect.appendChild(heroTop);
   if(rankNow) setTimeout(() => { try{ if(heroSect.isConnected) startRankMarks(heroSect); }catch(e){} }, 400);
 
@@ -168200,14 +168423,16 @@ function binspectPredecode(unit){
   const b = BADGE_BACK_CACHE[unit + "|" + W + "|" + d]; if(b) bcPredecode(b.url);
   try{ bcPredecode(badgeSilhouetteURL(unit)); }catch(e){}
 }
-function openBadgeInspect(unit, tile){
+function openBadgeInspect(unit, tile, opts){
   if(badgeInspectNow) return badgeInspectNow;
   const B = BINSPECT;
-  const found = unitBadgeEarned(unit);
+  /* (384 pin) opts.view = { who }: somebody else's pinned badge, read-only - found (it is theirs), clean, no Pin */
+  const view = opts && opts.view ? opts.view : null;
+  const found = view ? true : unitBadgeEarned(unit);
   const still = resultsMotionOff();
   const det = badgeDetail(unit);
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); if(cls) e.className = cls; return e; };
-  const ov = mk("binspect" + (found ? " is-found" : " is-empty") + (still ? " is-still" : ""));
+  const ov = mk("binspect" + (found ? " is-found" : " is-empty") + (still ? " is-still" : "") + (view ? " is-view" : ""));
   ov.setAttribute("role", "dialog");
   ov.setAttribute("aria-modal", "true");
   ov.setAttribute("aria-label", det.name);
@@ -168221,7 +168446,7 @@ function openBadgeInspect(unit, tile){
   const persp = mk("binspect-persp");
   float.append(glow, shadow, persp);
   /* the one look (build 382): a badge is no longer cleaned in your hand */
-  const dirt = found ? badgeDirtStage(unit) : 0;
+  const dirt = found && !view ? badgeDirtStage(unit) : 0;
   /* the front face at each stage: its url, and whether it is the finish */
   const ready = {}, isFinal = {};
   const dpr = badgeDpr();
@@ -168320,10 +168545,38 @@ function openBadgeInspect(unit, tile){
     count.textContent = det.have.toLocaleString() + " of " + det.need.toLocaleString() + " hundo" + (det.need === 1 ? "" : "s");
     words.appendChild(count);
   }
+  /* (384 pin) whose it is, when it is somebody else's pinned badge */
+  if(view && view.who){
+    const whose = mk("binspect-whose", "p");
+    whose.textContent = "Pinned by " + view.who;
+    words.appendChild(whose);
+  }
   if(found){
     const tip = mk("binspect-tip", "p");
     tip.textContent = "Swipe to spin it.";
     words.appendChild(tip);
+  }
+  /* (384 pin) PIN TO PROFILE: a badge you hold goes on your profile, your Leaderboard row, a friend's view of you and your rooms -
+     one per class; the pinned one says Unpin */
+  if(found && !view){
+    const pinBtn = mk("next binspect-pin", "button");
+    pinBtn.type = "button";
+    const paintPin = () => {
+      const on = myPinnedBadge() === unit;
+      pinBtn.textContent = on ? "Unpin" : "Pin to profile";
+      pinBtn.classList.toggle("is-on", on);
+      pinBtn.classList.toggle("ghost", on);
+      pinBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    };
+    paintPin();
+    pinBtn.addEventListener("click", () => {
+      const on = myPinnedBadge() === unit;
+      setPinnedBadge(on ? "" : unit);
+      paintPin();
+      try{ playSound("ui.tap.primary"); }catch(e){}
+      try{ showToast(on ? "Unpinned from your profile." : "Pinned to your profile."); }catch(e){}
+    });
+    words.appendChild(pinBtn);
   }
   const closeBtn = mk("next ghost binspect-close", "button");
   closeBtn.type = "button"; closeBtn.textContent = "Close";
