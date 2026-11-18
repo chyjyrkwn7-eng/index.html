@@ -39507,6 +39507,31 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body.has-active-question::before,
   html[data-theme="dark"][data-layout="modern"]:has(> body.has-active-question){ --sky-k:.3; --sky-kb:0; }
   [data-reduce-motion="true"] body::before{ transition:none !important; }
+  /* (384.134) THE TOP EDGE SHOWS THE SKY, NOT A BAND. Madison, on the Enroll screen: "the top banner thing here, it doesn't match the rest
+     of the screen". Since 384.80 #top-edge covers the whole status-bar area (62px on a Pro Max) in ONE flat colour (appTopEdgeColor's model
+     of the sky), while the sky under it is three glows over the paper: a band the height of the inset with a hard foot at the inset line,
+     3-4 levels off the sky just under it on every screen (Enroll (34,28,33) over (31,27,29); Home (46,32,37) over (44,34,33); measured
+     at 440x956 3x installed). The strip itself stays exactly as 384.27/384.80 made it - the same element, in the markup, never removed or
+     replaced, its solid inline background-COLOUR (what WebKit samples) recoloured in place, theme-color untouched. What changes is what
+     the eye sees: body::before's own glows, laid over that colour on the same 100vw x 100lvh box the fixed sky fills (its last layer is
+     the opaque paper, so the pixels are the sky's own and the colour under them never shows). Kept the same text as the dark
+     body::before stack above; check-b384-topseam holds the pixels to the sky's. Not while the splash is in the page (the strip is the
+     splash's colour, above it) and not under a pinned question header (the page's top is the header's paper there: the strip is flat paper). */
+  html.top-edge-on[data-theme="dark"][data-layout="modern"] body:not(:has(> #splashscreen)):not(:has(> .wrap.test-pinned)) > #top-edge{
+    background-image:
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) calc(11% * var(--sky-kb)), transparent), transparent 70%),
+      linear-gradient(var(--paper), var(--paper));
+    background-size:100vw 100lvh; background-position:0 0; background-repeat:no-repeat;
+    /* over syncTopGuard's inline transition (set only when the colour changes, which can be a frame after the sky's class has): the glows
+       ease with body::before's --sky-k from the same frame; the colour under them never shows here, so its own ease is unchanged */
+    transition:background-color .6s ease, --sky-k .6s ease, --sky-kb .6s ease !important;
+  }
+  html[data-reduce-motion="true"] body > #top-edge#top-edge#top-edge{ transition:none !important; }   /* (ids: over the rule above, whose :has(> #splashscreen) counts one) */
+  /* the strip's own --sky-k (registered, not inherited), set where body::before's is */
+  html.top-edge-on[data-theme="dark"][data-layout="modern"] body:not(.sky-home) > #top-edge{ --sky-k:.55; --sky-kb:.55; }
+  html.top-edge-on[data-theme="dark"][data-layout="modern"] body.has-active-question > #top-edge{ --sky-k:.3; --sky-kb:0; }
   /* the status-bar strip models the top edge's share of the two top glows (7.4% / 7.25% at Home's strength): x .4 here, and
      syncSky re-reads it whenever Home's sky goes on or off; a question keeps its own (2.2% / 2.35%, above) */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home):not(.has-active-question){ --statusbar-mix2:4.07%; --statusbar-mix3:3.99%; }
