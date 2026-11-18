@@ -16863,17 +16863,21 @@ def check_b317_xpcap(br):
     # Generous: headless Chromium runs this page's rAF at a few frames a
     # second, and the knock is a fill, a timer and a count-up in a row.
     wait = "await new Promise(r => setTimeout(r, %d));"
-    # 1. level 80, well past what a level 81 would cost
+    # 1. level 80's XP and 60,000 more, every rank's badges (16 is Supernova's count on the build this was written for; the rank
+    #    floor makes it Supernova whatever the ladder asks). REVISED IN 384.135, NO LEVEL CAP: "don't cap the level at 80 after you
+    #    hit supernova, you can just keep leveling up." That XP is now the level the curve gives past 80 - read off the page
+    #    (levelFromPoints), never typed - with an ordinary bar under its requirement. Fails on fa11d79 (Level 80, the bar over).
     l80 = pg.evaluate("""async () => { try{ localStorage.removeItem('class26e.pfxp.seen'); }catch(e){}
-      __acct(xpForLevel(LEVEL_CAP) + 60000, 16); showProfile('identity'); %s return __pf(); }""" % (wait % 1500))
-    check("level 80 no longer says every level reached",
-          l80["level"] == "Level 80" and not re.search(r"every level reached", l80["text"] or "", re.I), l80)
+      const rf0 = store.rankFloor; __acct(xpForLevel(80) + 60000, 16); store.rankFloor = 7; showProfile('identity'); %s
+      const o = Object.assign(__pf(), { curve: levelProgress(xpForLevel(80) + 60000).level }); store.rankFloor = rf0; return o; }""" % (wait % 1500))
+    check("past level 80 the level carries on: the Profile says the curve's level, above 80 (384.135)",
+          l80["curve"] > 80 and l80["level"] == "Level %d" % l80["curve"] and not re.search(r"every level reached", l80["text"] or "", re.I), l80)
     m = re.match(r"^([0-9,]+) / ([0-9,]+) XP$", l80["nums"] or "")
-    check("...it shows the XP since level 80 against a level's cost, past it, both numbers blue",
-          bool(m) and int(m.group(1).replace(",", "")) > int(m.group(2).replace(",", "")) and l80["over"], l80["nums"])
+    check("...and its bar is an ordinary level's: the XP into it under what it asks, not over (384.135)",
+          bool(m) and int(m.group(1).replace(",", "")) < int(m.group(2).replace(",", "")) and not l80["over"], l80["nums"])
     # REVISED IN 321: "remove the description under the xp bar that talks
     # about using xp for the next level, we don't need that anymore".
-    check("...and there is no note under the bar at level 80 (321)",
+    check("...and there is no note under the bar past level 80 (321)",
           l80["note"] is None and "still counts" not in (l80["text"] or ""), l80["note"])
     # 2. the wall note, Silver held at 49 behind the four-badge wall
     wall = pg.evaluate("""async () => { __acct(xpForLevel(52) + 200, 4); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
@@ -16885,7 +16889,7 @@ def check_b317_xpcap(br):
     # REVISED IN THE 317 TOUCH-UP: one blue, not a deeper one for the total
     mid = pg.evaluate("""async () => { __acct(xpForLevel(33) + 400, 3); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
     blue = lambda c: len(c) == 3 and c[2] - c[0] >= 80
-    for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("level 80, over the wall", l80)):
+    for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("past level 80 (384.135: no cap)", l80)):
         hv, nd, tt = rgb(st["have"]), rgb(st["need"]), rgb(st["tot"])
         # REVISED IN 321: the total in the level's colour (compared whole)
         check(f"{tag}: this level's XP and what it asks are one blue; the total XP is the level's colour",
@@ -16905,7 +16909,8 @@ def check_b317_xpcap(br):
       out.fill = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
       __bumps = 0; b = block(300, xpForLevel(52) + 200, 4); %s
       out.full = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
-      __bumps = 0; b = block(300, xpForLevel(LEVEL_CAP) + 60000, 16); %s
+      const rf0 = store.rankFloor; store.rankFloor = 7; __bumps = 0; b = block(300, xpForLevel(80) + 60000, 16); %s
+      store.rankFloor = rf0;
       out.top = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
       __bumps = 0; b = block(0, xpForLevel(52) + 200, 4); %s
       out.none = { bumps: __bumps }; b.parentNode.remove();
@@ -16921,8 +16926,9 @@ def check_b317_xpcap(br):
           res["fill"]["bumps"] >= 1 and res["fill"]["over"], res["fill"])
     check("XP added to a bar already full at a wall knocks it, and the numbers run on",
           res["full"]["bumps"] >= 1 and res["full"]["over"], res["full"])
-    check("XP added at level 80 past a level's cost knocks the bar and shows the overflow, not 'the cap'",
-          res["top"]["bumps"] >= 1 and res["top"]["over"] and "cap" not in (res["top"]["line"] or ""), res["top"])
+    # REVISED IN 384.135 (no level cap): past 80 a level is an ordinary one, so XP into it is no knock and no overflow
+    check("XP added past level 80 is an ordinary level's: no knock, no overflow, never 'the cap' (384.135)",
+          res["top"]["bumps"] == 0 and not res["top"]["over"] and "cap" not in (res["top"]["line"] or ""), res["top"])
     check("a full bar with no XP this run does not knock", res["none"]["bumps"] == 0, res["none"])
     check("a bar with room left does not knock", res["room"]["bumps"] == 0, res["room"])
     check("Reduce motion: no knock, the numbers still settle on the overflow",
@@ -23045,7 +23051,7 @@ def check_b320a_results(br):
          40 with four), so "room" sits inside level 19 before and after and "gain" reaches
          Gold's 40 this run - 324's fixtures sat inside its 29 / 49 walls */
       return { room: await run(300, xpForLevel(19) + 400, 0), full: await run(300, xpForLevel(52) + 200, 4),
-               gain: await run(300, xpForLevel(41) + 150, 4), top: await run(300, xpForLevel(LEVEL_CAP) + 60000, 16) }; }""")
+               gain: await run(300, xpForLevel(41) + 150, 4) }; }""")   /* (384.135) no "top": past 80 is no longer a capped bar */
     xr = {k: v["s"] for k, v in xr.items()}
     # BUILD 321 REVERSED "the number after the bar" (b320): "the numbers
     # come through after the xp goes but wouldn't it be at the same time? It
@@ -23098,7 +23104,7 @@ def check_b320a_results(br):
     pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(500)
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("()=>Date.now()") + 50)
     for key, label, earned, pts_js, nb in (("full", "at a wall, already full (max level)", 300, "xpForLevel(52) + 200", 4),
-                                            ("top", "at level 80", 300, "xpForLevel(LEVEL_CAP) + 60000", 16),
+                                            # (384.135) "at level 80" is gone: with no level cap it is not a full bar (check_b317_xpcap)
                                             ("gain", "filled to a wall this run (XP, then max)", 300, "xpForLevel(41) + 150", 4)):  # build 325: Gold's 40 is the 4-badge wall
         pg.evaluate("""([earned, nb]) => { const pts = %s; const units = topicsIn(QUESTIONS);
           store.lifetime = Object.assign({}, store.lifetime, { points: pts });

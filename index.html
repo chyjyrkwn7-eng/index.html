@@ -77626,7 +77626,16 @@ const LEVEL_COST_TOP = 150000;   /* a guard; build 318's curve tops out at 14,00
    level to 100 or something."
    80 is also the anchor the whole curve is fitted to - see
    LEVEL_LATE_GROWTH: twenty badges is meant to land you at the cap. */
-const LEVEL_CAP = 80;
+/* ---- NO LEVEL CAP (384.135) ----
+   Madison: "don't cap the level at 80 after you hit supernova, you can just keep leveling up." Levels run on past 80 on the
+   same curve (levelGrowthAt / levelCostCeiling, unchanged), in both classes. Supernova stays the top rank and nothing unlocks
+   past LEVEL_TOP: the ranks, the Ascension banner and every other level rule stop there. LEVEL_CAP is kept only as a GUARD
+   against a corrupt XP total (it bounds the stepping loops): level 9,999 is over a billion XP, so nobody ever stands on it,
+   and every "at the cap" path (levelProgress().atCap, levelBarOf's `top`) is never reached in real use. Holding every rank,
+   the badge wall is LEVEL_CAP, i.e. no wall. */
+const LEVEL_CAP = 9999;
+/* the highest level anything unlocks at: Supernova's (TIER_UNLOCKS.titan.level) and the Ascension banner's "Reach level 80" */
+const LEVEL_TOP = 80;
 /* ---- FIRE CODE'S CURVE IS ABOUT HALF THE ACADEMY'S (build 384, third go) ----
    Asked for as easier ("it's gonna have to be easier to reach the max rank"); built as a fifth (level 80 = 43,583 XP); then "only 43k
    ... incredibly low ... I'd want it to at least take 2 months"; made the academy's (217,910); then "200+ thousand xp is probably too
@@ -83118,7 +83127,7 @@ const BANNERS = [
      hall of fame banner as well". store.starfallKept, which it read,
      stays defaulted and unread. */
   { id: "level80", name: "Ascension",
-    label: "Reach level " + LEVEL_CAP, have: () => levelOf(store), need: LEVEL_CAP },
+    label: "Reach level " + LEVEL_TOP, have: () => levelOf(store), need: LEVEL_TOP },
   /* PHOENIX (build 289): "change that to something that's hard as well.
      Something achievable of course." A perfect 100-question Exam was
      neither - nobody had come close, and it rewarded one sitting. It is
