@@ -114,10 +114,21 @@ def switch(s, to, **kw):
         return s.switch(to, **kw)
     except RuntimeError as e:
         if "no still element" not in str(e): raise
-        print("  (the class list did not come up still: closed, and tapped again)", flush=True)
+        print("  (the class button or its list did not come up still: closed, and tapped again - the button by a click if it is still moving)", flush=True)
         L.ev(s.pg, "()=>{ try{ if(typeof classListClose === 'function') classListClose(); }catch(e){} document.querySelectorAll('.daily-alert,.app-banner,#classback-banner').forEach(e=>e.remove()); }")
         s.stop_rec(); s.pg.wait_for_timeout(2000)
-        return s.switch(to, **kw)
+        tap0 = s.tap
+        def tap(sel):
+            try: return tap0(sel)
+            except RuntimeError:
+                if sel != ".class-bubble": raise
+                for _ in range(25):
+                    if L.ev(s.pg, "()=>{ const b = document.querySelector('.class-bubble'); if(b){ b.click(); return true; } return false; }"): break
+                    s.pg.wait_for_timeout(200)
+                return time.time()
+        s.tap = tap
+        try: return s.switch(to, **kw)
+        finally: s.tap = tap0
 
 def analyse(run):
     t0 = run["t_tap"] * 1000

@@ -45,7 +45,10 @@ def chk(name, cond, info=""):
 COVER_RGB = (10, 10, 10)
 # the budgets: tap to the cover gone, and Home built to the cover gone (what the switch itself controls; the rest is the page loading,
 # which a slower machine stretches). 4x CPU is what a phone is next to this machine.
-BUDGET = {1: {"total": 2.8, "hold": 1.0, "lift": .6}, 4: {"total": 6.5, "hold": 2.0, "lift": .9},
+# (384 classswitch) "total" +0.5s at 1x and 4x: the cover now fades in over .5s (was .24s: one slow fade from one class's sky into the
+# other's), the lift waits for the new page to go quiet (a few frames), and the splash is taken out 700ms after the lift (was 450,
+# inside the tab bar's rise) - "gone" is that removal, ~.4s after the lift's fade is over
+BUDGET = {1: {"total": 3.3, "hold": 1.0, "lift": .6}, 4: {"total": 7.0, "hold": 2.0, "lift": .9},
           "laptop": {"total": 8.0, "hold": 2.5, "lift": 2.5}}       # a 1440x900 screencast through software rendering is the slowest thing here
 
 def metrics(run, calm=False):
