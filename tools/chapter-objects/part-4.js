@@ -274,18 +274,33 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
 
 /* ---- Chapter 61: Liquefied Petroleum Gases - a squat propane (barbecue) tank: the guard collar on top with the valve in its window, the
    domed tank with its welded seam, and the foot ring with its slots. (384.133 badgeart, Madison: "those parts just don't look smooth where
-   I circled. It doesn't seem to go together." The collar was a square box set on the dome with a flat foot, so it met the curve at two
-   points and stood on it like a lid.) The collar now flares a little to its foot and its foot follows the dome: it is cut to the
-   tank's own curve, a hair inside it, and seated on a welded shoulder ring that runs round the dome under it - so the steel grows out of
-   the tank, as a real collar does. ---- */
+   I circled. It doesn't seem to go together.") (384.133 art3, Madison: "Blue tank has the same issue, fix it." The collar still sat on
+   the dome like a separate piece, and the curved shoulder strip under it stopped short in square ends, off the tank.) The collar is now
+   welded on as a real one is: it is a short steel cylinder standing on the dome, so its foot is a ring round the dome - seen from the
+   front that ring is an arc that dips down the dome's face between the two points where the collar meets the dome's outline. The foot
+   ring follows that arc and runs out into the dome's outline at both ends; the collar's sides flare down into it; the outline is one
+   filleted curve from the dome up the collar. Under the foot ring the dome takes its shadow, and the foot ring at the bottom takes the
+   tank's. ---- */
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
-  const topDome = S.inter(S.ellipse(50, 52, 40, 30), S.box(0, 0, 100, 52.5, 0));
+  const DC = [50, 52], DR = [40, 30];
+  const domeY = x => DC[1] - DR[1] * Math.sqrt(Math.max(0, 1 - ((x - DC[0]) / DR[0]) ** 2));
+  const topDome = S.inter(S.ellipse(DC[0], DC[1], DR[0], DR[1]), S.box(0, 0, 100, 52.5, 0));
   const tank = S.union([topDome, S.box(10, 52, 80, 18, 0), S.inter(S.ellipse(50, 70, 40, 16), S.box(0, 69.5, 100, 31, 0))], 0);
   const foot = S.box(26, 80, 48, 17, 2.5);
-  const collar = S.grow(S.poly([[35.5, 7], [64.5, 7], [68, 34], [32, 34]]), 3);
-  const all = S.union([tank, foot, collar], 1.5);
-  const shoulder = S.inter(S.minus(S.grow(tank, -1.4), S.grow(tank, -5)), S.box(25, 0, 50, 60, 0));
+  /* the collar's foot: where a ring round the dome at the collar's width is seen from a little above - an arc from the dome's outline
+     at x = 50 -/+ FW, dipping DIP below it in the middle */
+  const FW = 21, DIP = 4.6, y0 = domeY(50 - FW);
+  const arcY = x => y0 + DIP * Math.max(0, 1 - ((x - 50) / FW) ** 2);
+  const arc = (dy, x0, x1) => { const o = []; for(let i = 0; i <= 28; i++){ const x = x0 + (x1 - x0) * i / 28; o.push([x, arcY(x) + dy]); } return o; };
+  /* the collar: its top, its sides flaring to the foot, which ends on the dome's outline at both sides and follows the arc between */
+  const below = S.poly(arc(1.4, 0, 100).concat([[100, 100], [0, 100]]));
+  const collar = S.minus(S.grow(S.poly([[38.6, 8.6], [61.4, 8.6], [50 + FW - 2.8, y0 + 2], [50 - FW + 2.8, y0 + 2]]), 2.6), below);
+  const ringBand = S.inter(S.poly(arc(-2.8, 50 - FW - 4, 50 + FW + 4).concat(arc(1.4, 50 + FW + 4, 50 - FW - 4))), S.grow(tank, -.01));
+  const ring = S.inter(ringBand, S.grow(S.union([collar, tank], 0), 0));
+  const all = S.union([tank, foot, S.union([collar, ring], 1.5)], 2.6);
+  const lp = f => S.loops(f, BB).map(S.pathOf).join("");
+  const shadowUnder = S.inter(S.minus(S.poly(arc(4.4, 50 - FW - 6, 50 + FW + 6).concat(arc(-1, 50 + FW + 6, 50 - FW - 6))), ring), S.grow(tank, -.8));
   CHAPTER_OBJ["Chapter 61: Liquefied Petroleum Gases"] = {
     base: "water",
     d: S.shape(all, BB),
@@ -293,10 +308,13 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["steel", OBJ_rrect(26, 80, 48, 17, [0, 0, 2.5, 2.5]), { z: .3 }],                               /* the foot ring */
       ["rubber", OBJ_rrect(33, 88, 10, 5, 2), { z: -1, bev: .5 }],                                        /* its slots */
       ["rubber", OBJ_rrect(57, 88, 10, 5, 2), { z: -1, bev: .5 }],
+      ["ink", lp(S.inter(S.minus(S.grow(tank, 2.2), tank), S.box(26, 70, 48, 27, 2.5))), { z: .15, bev: .6, col: "#4B5158" }],   /* the tank's shadow on it */
       ["water", S.shape(tank, BB), { dome: 2 }],                                                        /* the tank */
       ["water", OBJ_rrect(10, 54, 80, 6, 0), { z: .7, bev: .7 }],                                      /* its welded seam */
-      ["steel", S.shape(S.minus(collar, S.grow(tank, -2.2)), BB), { z: .5, bev: .8, dome: .7 }],        /* the collar, cut to the dome */
-      ["steel", S.shape(shoulder, BB), { z: .7, bev: .6, dome: .4, col: "#9AA3AD" }],                    /* the welded shoulder it sits on */
+      ["water", lp(shadowUnder), { z: .05, bev: .9, col: "#2F6FAF" }],                                  /* the dome in the collar's shadow */
+      ["steel", S.shape(collar, BB), { z: .5, bev: .8, dome: .7 }],                                     /* the collar */
+      ["steel", lp(ring), { z: .75, bev: .7, dome: .5, col: "#9AA3AD" }],                                /* its foot ring, welded round the dome */
+      ["steel", "M" + arc(1, 50 - FW - 1.5, 50 + FW + 1.5).map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L"), { ln: .9, cut: .4, paint: 0 }],   /* the weld */
       ["rubber", OBJ_rrect(38, 9, 24, 14, 4), { z: -1.7, bev: .7 }],                                     /* its window */
       ["steel", OBJ_rrect(41.5, 10, 17, 5.5, 2.5), { dome: 1 }],                                      /* the valve's handwheel */
       ["brass", OBJ_rrect(45.5, 15, 9, 8.5, 1.5), { gem: 1, gw: 2.2 }],                               /* the valve */
@@ -337,37 +355,45 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
    had not been liked enough either.) Oxygen is the oxidizing gas an inspector meets everywhere - hospitals, welding shops, homes - so
    the chapter is its cylinder: a green steel cylinder with the white shoulder of an oxygen bottle, the brass valve at its neck under its
    handwheel, and the regulator screwed onto the valve with its big round gauge - a chrome bezel, a white dial with its marks and the
-   needle - and its brass outlet. The gauge stands out to the side, so the outline is nothing else's (Chapter 53's plain cylinder with
-   its cap is the closest object, and they do not share a shape). ---- */
+   needle. The gauge stands out to the side, so the outline is nothing else's (Chapter 53's plain cylinder with its cap is the closest
+   object, and they do not share a shape). (384.133 art3, Madison: "It's gotta be a nice connection from that top piece to the actual
+   tank. Make that way better." The valve, its cap and the gauge sat on top of the white shoulder as separate pieces.) Now the cylinder
+   has a NECK: the shoulder rises into it in one filleted curve (the white paint runs up it), a steel neck ring with its threads rings
+   it, and the brass valve body is seated in that ring - its foot goes down inside it. The handwheel sits on the valve's stem; the valve's
+   side outlet carries the regulator's hex nut, and the regulator's arm runs straight into the gauge's case. One outline, every join
+   filleted; nothing stands on the shoulder by itself. ---- */
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
-  const body = S.box(18, 32, 46, 65, 7.5), dome = S.ellipse(41, 33, 23, 14.5);
-  const neck = S.box(35.5, 11, 11, 12, 1.5), wheel = S.box(32, 4.5, 18, 6.5, 3);
-  const yoke = S.box(44, 11, 18, 10, 1.6), gauge = S.circle(74, 16, 13.5), outlet = S.box(51.5, 19, 6, 9, 1.6);
-  const all = S.union([body, dome, neck, wheel, yoke, gauge, outlet], 0);
-  const cyl = S.union([body, dome], 0);
+  const body = S.box(18, 35, 46, 62, 7.5), dome = S.ellipse(41, 35.5, 23, 13.5);
+  const neck = S.box(35.5, 14, 11, 12, 1);
+  const cyl = S.union([body, dome, neck], 5);                                   /* the shoulder rises into the neck in one curve */
+  const ring = S.box(33.5, 13, 15, 5.5, 1.4);                                     /* the neck ring */
+  const valve = S.box(36, 4.5, 10, 10, 1.2), stem = S.box(39, 3, 4, 3, .6), wheel = S.box(32.5, .8, 17, 4.6, 2.3);
+  const nut = S.box(46.5, 5, 6.5, 8.5, 1), arm = S.box(52, 6.8, 12, 5, 1.5), gauge = S.circle(73, 12.5, 12);
+  const all = S.union([cyl, ring, S.union([valve, stem, wheel], 1), S.union([nut, arm, gauge], 1.6)], 1.2);
   let ticks = ""; for(let k = 0; k <= 8; k++){ const t = (135 + k * 33.75) * Math.PI / 180;
-    ticks += "M" + (74 + 6.6 * Math.cos(t)).toFixed(2) + " " + (16 + 6.6 * Math.sin(t)).toFixed(2) + "L" + (74 + 8.4 * Math.cos(t)).toFixed(2) + " " + (16 + 8.4 * Math.sin(t)).toFixed(2); }
+    ticks += "M" + (73 + 5.7 * Math.cos(t)).toFixed(2) + " " + (12.5 + 5.7 * Math.sin(t)).toFixed(2) + "L" + (73 + 7.4 * Math.cos(t)).toFixed(2) + " " + (12.5 + 7.4 * Math.sin(t)).toFixed(2); }
   CHAPTER_OBJ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids"] = {
     d: S.shape(all, BB),
     col: "#2E8B57", base: "field",
     plates: [
       ["field", S.shape(cyl, BB), { dome: 2 }],                                                          /* the cylinder */
-      ["cream", S.shape(S.inter(cyl, S.box(0, 0, 100, 40, 0)), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder */
-      ["field", "M19 40H63", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
+      ["cream", S.shape(S.inter(S.union([cyl, S.inter(all, S.box(30, 15, 25, 10, 0))], 0), S.box(0, 0, 100, 42, 0)), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder, up the neck */
+      ["field", "M19 42H63", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
       ["field", "M19 88.5H63", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
-      ["brass", OBJ_rrect(35.5, 11, 11, 12, 1.5), { gem: .9, gw: 2.2 }],                                 /* the valve */
-      ["steel", OBJ_rrect(33, 20.5, 16, 4.5, 1.5), { z: .5, bev: .5, dome: .4 }],                           /* the neck ring it sits in */
-      ["rubber", OBJ_rrect(32, 4.5, 18, 6.5, 3), { dome: 1, col: "#2B2E33" }],                            /* the handwheel */
-      ["rubber", "M36 5.5V10M40 5.5V10M44 5.5V10M48 5.5V10", { ln: 1, cut: .5, paint: 0 }],
-      ["brass", OBJ_rrect(44, 11, 18, 10, 1.6), { dome: .8 }],                                           /* the regulator's yoke */
-      ["brass", OBJ_rrect(51.5, 19, 6, 9, 1.6), { dome: .8 }],                                         /* its outlet */
-      ["brass", "M52 25H57M52 22.3H57", { ln: .9, cut: .45, paint: 0 }],                               /* its barb */
-      ["steel", OBJ_circle(74, 16, 13.5), { dome: 1.2 }],                                               /* the gauge's chrome bezel */
-      ["cream", OBJ_circle(74, 16, 10), { z: -.4, bev: .5, dome: .3, col: "#F7F6F1" }],                  /* its dial */
+      ["brass", S.shape(S.minus(S.inter(all, S.box(0, 0, 61, 15, 0)), cyl), BB), { z: .2, bev: .5 }],     /* the valve gear, every fillet in it brass */
+      ["brass", S.shape(S.union([valve, stem], .8), BB), { z: .3, bev: .6, gem: .8, gw: 2.2 }],           /* the valve body and its stem */
+      ["steel", OBJ_rrect(33.5, 13, 15, 5.5, 1.4), { z: .6, bev: .5, dome: .5 }],                          /* the neck ring it is seated in */
+      ["steel", "M34.6 14.9H47.4M34.6 16.8H47.4", { ln: .7, cut: .4, paint: 0 }],                                 /* its threads */
+      ["rubber", OBJ_rrect(32.5, .8, 17, 4.6, 2.3), { z: .4, dome: 1, col: "#2B2E33" }],                 /* the handwheel */
+      ["rubber", "M36 1.9V4.4M39.5 1.9V4.4M43 1.9V4.4M46.5 1.9V4.4", { ln: 1, cut: .5, paint: 0 }],
+      ["brass", S.shape(S.union([arm, S.inter(gauge, S.box(0, 0, 66, 100, 0))], 1.6), BB), { z: .2, dome: .8 }],   /* the regulator's arm into the gauge's case */
+      ["brass", OBJ_rrect(46.5, 5, 6.5, 8.5, 1), { z: .5, bev: .5, gem: .9, gw: 1.8 }],                 /* its hex nut on the valve's outlet */
+      ["steel", OBJ_circle(73, 12.5, 12), { z: .3, dome: 1.2 }],                                         /* the gauge's chrome bezel */
+      ["cream", OBJ_circle(73, 12.5, 8.9), { z: -.2, bev: .5, dome: .3, col: "#F7F6F1" }],                  /* its dial */
       ["ink", ticks, { ln: 1.1, z: .1, bev: .2 }],                                                      /* its marks */
-      ["red", "M74 16L79.2 10.6", { ln: 1.8, z: .5, bev: .3, col: "#C8302A" }],                          /* its needle */
-      ["steel", OBJ_circle(74, 16, 2.2), { dome: .8 }],
+      ["red", "M73 12.5L77.6 7.7", { ln: 1.8, z: .5, bev: .3, col: "#C8302A" }],                             /* its needle */
+      ["steel", OBJ_circle(73, 12.5, 2.1), { dome: .8 }],
     ],
   };
 }
