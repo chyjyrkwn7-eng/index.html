@@ -83000,7 +83000,9 @@ function hundosOf(st){
 const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "level80", "exam100",
                      "adept_rank", "elite_rank", "titan_rank", "study60", "correct10000", "early10", "astral", "celestial", "zenith",
                      /* build 313: the secret flare characters' banners */
-                     "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"];
+                     "flare_void", "flare_umbra", "flare_horizon", "flare_genesis",
+                     /* (384.135) every badge in the academy */
+                     "fullcase"];
 /* ONLY THE TOP OF EACH LADDER MOVES (build 241): "ensure the animation is
    only for the coolest ones and the hardest ones in its kind". Thunderhead
    (the Game ladder), Koi Pond (tests), Sky Temple (hundos), Supernova (the
@@ -83033,7 +83035,9 @@ const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "eli
                          /* (384.120 follow-up) the top of the Virtual Room track, the last rung of its ladder */
                          "vrtop10",
                          /* (384.114) Fire Code's Completionist */
-                         "completionist"];
+                         "completionist",
+                         /* (384.135) the academy's Full Case: every badge */
+                         "fullcase"];
 /* BUILD 384 r24: "why barely any of them animate?" Fire Code's three first rungs (Certified, Squared Away, Mutual Aid) were held
    still by the academy's rule above and nothing else was wrong with them, so in Fire Code every banner moves. The academy keeps
    its still first rungs: this list is read only when the page is Fire Code (IFC_ART_ON). */
@@ -83205,6 +83209,17 @@ if(window.NOVA_CLASS === "ifc") BANNERS.push({ id: COMPLETIONIST_ID, name: "Comp
   get label(){ return completionistLabel(); },
   have: () => completionistProgress().have, get need(){ return completionistProgress(false).need; },
   note: () => completionistProgress().note });
+/* ---- FULL CASE (384.135), THE ACADEMY'S BANNER FOR EVERY BADGE ----
+   Madison: "In the police academy ensure there is a banner for earning every badge." The academy had one until build 284 (Hall of
+   Fame, removed on request); this is a new one, in its own art. HELD WHILE badgeCountOf(store) reaches every unit the bank has
+   (classTopics(): 24 today, so a unit added moves it) - derived when read, nothing stored. Fire Code's equivalent is part of
+   Completionist; this one is the academy's only (its BANNERS never lists it), and a Fire Code page draws an academy friend's
+   (bannerDrawableIn). It counts towards the academy's "every other banner" like any challenge banner (no circle: it asks for
+   badges only). */
+const FULLCASE_ID = "fullcase";
+if(window.NOVA_CLASS !== "ifc") BANNERS.push({ id: FULLCASE_ID, name: "Full Case", fullCase: true,
+  get label(){ const n = classTopics().length; return "Earn all " + n + " badges"; },
+  have: () => badgeCountOf(store), get need(){ return Math.max(1, classTopics().length); } });
 function fullTestsNote(){
   return "A full-length test has every question in each unit you picked. Shortened tests count on your Stats tab (" +
     testsCompletedOf(store).toLocaleString() + " so far) but not here.";
@@ -83321,6 +83336,7 @@ function unlockFeatSpec(){
   const out = [];
   if(AVATAR_CHARACTERS.some(c => c.id === "zeus" && !c.retired)) out.push({ k: "char", id: "zeus" });
   if(bannerDef("early10")) out.push({ k: "banner", id: "early10" });
+  if(bannerDef(FULLCASE_ID)) out.push({ k: "banner", id: FULLCASE_ID });   /* (384.135) the academy's Full Case */
   return out;
 }
 /* One reward, read through its own check. { k, id, name, label, have, need, held, kind } - `have` clamped to `need`. */
@@ -83790,6 +83806,103 @@ function skylineFuture(u, HZ, roofs){
 }
 __bm("L61876");
 const BANNER_ART = {
+  /* FULL CASE (384.135) - every badge in the academy. A museum gallery after hours: one long glass case on a dark plinth under a
+     ceiling spot, every unit's badge on blue velvet in two rows (the units' own enamel colours, BADGE_FAMILY via
+     UNIT_BADGE_THEME, so a unit added adds a badge), gold rails, brass stanchions and a red rope either side, the case mirrored in
+     a polished floor. Moving: the spot breathes, dust drifts up through its cone, a light runs along the badges one after another,
+     a sheen crosses the glass. Everything sits above the character circle's reach (it covers the bottom middle from ~63% down).
+     Transform and opacity only, no svg filter; event layers rest at opacity 0, so Reduce motion and the locked still are the
+     picture. */
+  fullcase(u){
+    const rnd = bnRand(2400);
+    const units = Object.keys(typeof UNIT_BADGE_THEME === "object" ? UNIT_BADGE_THEME : {});
+    const col = n => { const p = (UNIT_BADGE_THEME[n] || ["gold"])[0]; return String(p).charAt(0) === "#" ? p : (BADGE_FAMILY[p] || "#D8B026"); };
+    const N = Math.max(2, units.length), per = Math.ceil(N / 2);
+    const CX0 = 86, CX1 = 394, CY0 = 30, CY1 = 104;   /* the case's glass */
+    const gap = (CX1 - CX0 - 24) / Math.max(1, per - 1);
+    const pos = i => { const row = i < per ? 0 : 1, k = row ? i - per : i, m = row ? N - per : per;
+      const off = (per - m) * gap / 2; return [CX0 + 12 + off + k * gap, row ? 84 : 52]; };
+    const R = Math.min(9.6, gap * .42);
+    /* one badge: a silver bezel, the enamel, a star struck in it, a highlight */
+    const badge = (x, y, c, key) => {
+      const st = []; for(let j = 0; j < 10; j++){ const a = -Math.PI / 2 + j * Math.PI / 5, r = j % 2 ? R * .26 : R * .58; st.push(bnF(x + Math.cos(a) * r) + " " + bnF(y + Math.sin(a) * r)); }
+      return '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y + R + 2.6) + '" rx="' + bnF(R * .9) + '" ry="1.6" fill="#000" opacity=".35"/>' +
+        '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(R + 1.3) + '" fill="url(#' + u + 'rim)"/>' +
+        '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(R) + '" fill="' + c + '"/>' +
+        '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(R) + '" fill="url(#' + u + 'en)"/>' +
+        '<path d="M' + st.join(" L") + 'Z" fill="#FFF6DA" opacity=".9"/>' +
+        '<path d="M' + bnF(x - R * .62) + ' ' + bnF(y - R * .38) + ' A' + bnF(R * .8) + ' ' + bnF(R * .8) + ' 0 0 1 ' + bnF(x + R * .2) + ' ' + bnF(y - R * .78) + '" stroke="#FFFFFF" stroke-width=".9" fill="none" stroke-linecap="round" opacity=".55"/>';
+    };
+    let badges = "", glows = [];
+    units.forEach((n, i) => { const [x, y] = pos(i); badges += badge(x, y, col(n), i); });
+    /* the light that runs along them: four groups, every fourth badge, a beat apart */
+    for(let g = 0; g < 4; g++){
+      let o = "";
+      units.forEach((n, i) => { if(i % 4 !== g) return; const [x, y] = pos(i); o += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(R * 1.9) + '" fill="url(#' + u + 'bg)"/>'; });
+      glows.push(o);
+    }
+    /* the gallery wall: panels, a picture rail, two dim frames at the edges */
+    let panels = "";
+    for(let x = 0; x <= 480; x += 40) panels += '<rect x="' + x + '" y="0" width="1" height="132" fill="#FFFFFF" opacity=".035"/>';
+    /* dust in the spot's cone, drawn twice (0-180 and 180-360) so the rise loops */
+    let motes = "";
+    for(let i = 0; i < 26; i++){
+      const x = 170 + rnd() * 140, y = rnd() * 180, r = .4 + rnd() * .9, o = bnF(.25 + rnd() * .5);
+      motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" opacity="' + o + '"/><circle cx="' + bnF(x) + '" cy="' + bnF(y + 180) + '" r="' + bnF(r) + '" opacity="' + o + '"/>';
+    }
+    const stanchion = x => '<rect x="' + (x - 2) + '" y="86" width="4" height="52" fill="url(#' + u + 'brass)"/>' +
+      '<ellipse cx="' + x + '" cy="138" rx="9" ry="2.6" fill="url(#' + u + 'brass)"/><circle cx="' + x + '" cy="84" r="4" fill="url(#' + u + 'brass)"/>';
+    const rope = (x0, x1) => '<path d="M' + x0 + ' 92 Q' + ((x0 + x1) / 2) + ' 112 ' + x1 + ' 92" stroke="#8E1424" stroke-width="3.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M' + x0 + ' 91 Q' + ((x0 + x1) / 2) + ' 110 ' + x1 + ' 91" stroke="#E0505E" stroke-width="1" fill="none" opacity=".6"/>';
+    const caseBody =
+      /* the plinth */
+      '<rect x="' + (CX0 - 10) + '" y="' + (CY1 + 4) + '" width="' + (CX1 - CX0 + 20) + '" height="26" rx="2" fill="url(#' + u + 'plinth)"/>' +
+      '<rect x="' + (CX0 - 10) + '" y="' + (CY1 + 4) + '" width="' + (CX1 - CX0 + 20) + '" height="2" fill="#E8B84A" opacity=".8"/>' +
+      /* its brass plate, and a fluted edge along the plinth's foot */
+      '<rect x="216" y="' + (CY1 + 11) + '" width="48" height="10" rx="1.5" fill="url(#' + u + 'gold)"/><rect x="220" y="' + (CY1 + 15) + '" width="40" height="1.4" fill="#7A5414" opacity=".7"/>' +
+      '<rect x="' + (CX0 - 10) + '" y="' + (CY1 + 27) + '" width="' + (CX1 - CX0 + 20) + '" height="3" fill="#000" opacity=".35"/>' +
+      /* the frame, the velvet, the glass */
+      '<rect x="' + (CX0 - 6) + '" y="' + (CY0 - 6) + '" width="' + (CX1 - CX0 + 12) + '" height="' + (CY1 - CY0 + 12) + '" rx="4" fill="url(#' + u + 'gold)"/>' +
+      '<rect x="' + CX0 + '" y="' + CY0 + '" width="' + (CX1 - CX0) + '" height="' + (CY1 - CY0) + '" rx="2" fill="url(#' + u + 'velvet)"/>' +
+      '<rect x="' + CX0 + '" y="' + CY0 + '" width="' + (CX1 - CX0) + '" height="10" fill="url(#' + u + 'inlight)"/>' +
+      '<rect x="' + (CX0 + 6) + '" y="' + (CY0 + (CY1 - CY0) / 2 - .6) + '" width="' + (CX1 - CX0 - 12) + '" height="1.2" fill="#0A1840" opacity=".7"/>';
+    const glass = '<rect x="' + CX0 + '" y="' + CY0 + '" width="' + (CX1 - CX0) + '" height="' + (CY1 - CY0) + '" rx="2" fill="url(#' + u + 'glass)"/>' +
+      '<path d="M' + (CX0 + 16) + ' ' + CY0 + ' L' + (CX0 + 44) + ' ' + CY0 + ' L' + (CX0 + 18) + ' ' + CY1 + ' L' + (CX0 - 10 + 16) + ' ' + CY1 + 'Z" fill="#FFFFFF" opacity=".06"/>' +
+      '<rect x="' + CX0 + '" y="' + CY0 + '" width="' + (CX1 - CX0) + '" height="' + (CY1 - CY0) + '" rx="2" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".5"/>';
+    const defs = '<defs>' +
+      bnLin(u + "wall", [[0, "#0B1430"], [0.6, "#101B3E"], [1, "#070B1A"]]) +
+      bnLin(u + "floor", [[0, "#141C36"], [1, "#04060E"]]) +
+      bnRad(u + "spot", [[0, "#FFF2CC", 0.5], [0.45, "#FFD98A", 0.16], [1, "#FFD98A", 0]], "50%", "30%", "60%") +
+      bnLin(u + "cone", [[0, "#FFF4D6", 0.32], [1, "#FFF4D6", 0]]) +
+      bnLin(u + "gold", [[0, "#FFE7A0"], [0.45, "#E8B84A"], [1, "#9A6A1C"]]) +
+      bnLin(u + "brass", [[0, "#FFE7A0"], [0.5, "#C9952E"], [1, "#7A5414"]], 0, 0, 1, 0) +
+      bnLin(u + "plinth", [[0, "#1E2440"], [1, "#0A0D1C"]]) +
+      bnLin(u + "velvet", [[0, "#1B2F6E"], [1, "#0C1A44"]]) +
+      bnLin(u + "inlight", [[0, "#FFF6DA", 0.35], [1, "#FFF6DA", 0]]) +
+      bnLin(u + "glass", [[0, "#FFFFFF", 0.1], [0.4, "#FFFFFF", 0.02], [1, "#9FC4FF", 0.06]], 0, 0, 1, 1) +
+      bnLin(u + "rim", [[0, "#FFFFFF"], [0.5, "#C9D2E0"], [1, "#6E7A90"]], 0, 0, 1, 1) +
+      bnRad(u + "en", [[0, "#FFFFFF", 0.32], [0.55, "#FFFFFF", 0], [1, "#000000", 0.32]], "35%", "30%", "75%") +
+      bnRad(u + "bg", [[0, "#FFF6DA", 0.85], [0.35, "#FFE7A0", 0.35], [1, "#FFE7A0", 0]]) +
+      '</defs>';
+    const scene = '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>' + panels +
+      '<rect x="0" y="16" width="480" height="1.4" fill="#E8B84A" opacity=".25"/>' +
+      '<rect x="14" y="30" width="44" height="58" fill="none" stroke="#E8B84A" stroke-width="1.6" opacity=".22"/><rect x="422" y="30" width="44" height="58" fill="none" stroke="#E8B84A" stroke-width="1.6" opacity=".22"/>' +
+      '<rect y="132" width="480" height="48" fill="url(#' + u + 'floor)"/><rect y="132" width="480" height="1" fill="#E8B84A" opacity=".18"/>';
+    const reflect = '<g transform="translate(0 268) scale(1 -1)" opacity=".16">' + caseBody + badges + '</g>';
+    const sideL = stanchion(24) + stanchion(64) + rope(24, 64), sideR = stanchion(416) + stanchion(456) + rope(416, 456);
+    return [
+      { svg: defs + scene },
+      { svg: '<path d="M222 0 L258 0 L360 132 L120 132 Z" fill="url(#' + u + 'cone)"/>', cls: "bl-glow", style: "animation-duration:3.8s" },
+      { svg: '<ellipse cx="240" cy="62" rx="230" ry="96" fill="url(#' + u + 'spot)"/>', box: [0, -40, 480, 210], o: [240, 62], cls: "bl-breathe", style: "animation-duration:4.6s" },
+      { svg: reflect },
+      { svg: caseBody + badges },
+    ].concat(glows.map((g, k) => ({ svg: g, cls: "bl-lit", style: "animation-duration:3.2s;animation-delay:-" + bnF(3.2 - k * .4) + "s" })), [
+      { svg: glass },
+      fcmGlint(u, "gl", [CX0, CY0, CX1 - CX0, CY1 - CY0], "#FFFFFF", .32, 6.4, 2.2, 2),
+      { svg: '<g fill="#FFF4D6">' + motes + '</g>', box: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:16s" },
+      { svg: sideL + sideR }
+    ]);
+  },
   /* NORTHERN LIGHTS (redrawn, build 243) - the first of the test ladder,
      so it is still, but it has to hold up: "the 100 test one is kinda
      lame". Three curtains of aurora with rays falling out of them, the
@@ -86107,6 +86220,7 @@ const BANNER_TINT = {
   correct10000: ["#427CE5", "#50A0D8"],
   early10: ["#4A5AB8", "#D9A45A"],
   level80: ["#7655D3", "#C167A9"],
+  fullcase: ["#E8B84A", "#3B6FD4"],   /* (384.135) the case's gold frame and the badges' royal blue */
   exam100: ["#F95E2F", "#FF2931"],
   adept_rank: ["#4572E3", "#4D9FDA"],
   elite_rank: ["#8D4DDB", "#9D61C7"],
@@ -89524,7 +89638,8 @@ function applyBannerFocus(art, id){
 /* (384.114) an id this page can draw: one of its own banners, or Fire Code's Completionist on the academy's page for somebody shown
    in Fire Code's art (a friend whose last class was Fire Code, 384 r22) - the academy cannot earn it, but can show it */
 function bannerDrawableIn(id, cls){
-  return !!id && (!!bannerDef(id) || (cls === "ifc" && id === COMPLETIONIST_ID && !!BANNER_ART[id]));
+  return !!id && (!!bannerDef(id) || (cls === "ifc" && id === COMPLETIONIST_ID && !!BANNER_ART[id])
+    || (cls !== "ifc" && id === FULLCASE_ID && !!BANNER_ART[id]));
 }
 function buildWornBannerArt(bannerId, accent, cls){
   if(bannerDrawableIn(bannerId, cls)) return buildBannerArt(bannerId, cls);
