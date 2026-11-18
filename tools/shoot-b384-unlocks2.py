@@ -2,7 +2,7 @@
 redesign. iPhone 17 Pro Max 440x956 @3x and iPad Pro 11" 834x1194 @2x, both classes. Made-up classmates and the rich fixture of
 check-b384-unlocks.py (an in-memory Firestore).
 
-  python3 tools/shoot-b384-unlocks2.py OUTDIR [--src index.html] [--only academy|ifc] [--dev pm|ipad] [--zoom 85|135]
+  python3 tools/shoot-b384-unlocks2.py OUTDIR [--src index.html] [--only academy|ifc] [--dev pm|ipad] [--dev pm|ipad|z85|z135]
 
 The step list works on both builds: a step whose screen does not exist on the build being shot is skipped (it prints "skip")."""
 import json, os, sys
@@ -18,7 +18,7 @@ from playwright.sync_api import sync_playwright
 OUT = sys.argv[1]
 def arg(n): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else None
 SRC = arg("--src") or os.path.join(h["ROOT"], "index.html")
-ONLY = arg("--only"); DEV = arg("--dev"); ZOOM = arg("--zoom")
+ONLY = arg("--only"); DEV = arg("--dev")
 os.makedirs(OUT, exist_ok=True)
 text = open(SRC, encoding="utf-8").read()
 fx = h["fixtures"]()
@@ -63,14 +63,13 @@ with sync_playwright() as p:
     br = p.chromium.launch(executable_path=h["g"]["CHROME"], args=["--no-sandbox"])
     for cls in ("academy", "ifc"):
         if ONLY and ONLY != cls: continue
-        for dev, w, hh, sc in (("pm", 440, 956, 3), ("ipad", 834, 1194, 2)):
-            if DEV and DEV != dev: continue
+        # Safari's text size is page zoom: 85% lays the Pro Max out 518 wide, 135% 326 wide (--dev z85 / z135; not shot by default)
+        for dev, w, hh, sc in (("pm", 440, 956, 3), ("ipad", 834, 1194, 2), ("z85", 518, 1125, 2.55), ("z135", 326, 708, 4.05)):
+            if (DEV and DEV != dev) or (not DEV and dev.startswith("z")): continue
             seed, init = fx["rich_" + cls]
             ctx, pg, errs = h["page"](br, text, seed, init, w=w, h=hh, scale=sc)
             pg.wait_for_timeout(1500)
             h["quiet"](pg); h["load_board"](pg); h["quiet"](pg)
-            if ZOOM:
-                pg.evaluate("(z)=>{ document.documentElement.style.fontSize = z + '%'; }", ZOOM)
             pre = os.path.join(OUT, "%s-%s-" % (cls, dev))
             for name, js, ms in STEPS:
                 ok = pg.evaluate("()=>{ try{ %s }catch(e){ return false; } }" % js)
