@@ -5,7 +5,7 @@
 
 Writes, per device: sheet-<dev>.png - a row per class, a column per option (a, b, c), each the three entry rows cut from Profile
 (Customize in the person card, the Badge case, the Rank ladder at the foot of the Next rank card), at 1.2x CSS pixels; and
-ladder-<dev>.png - the Rank ladder for every rank position shot (none, first, mid, last, prestige), both classes."""
+ladder-<dev>.png - the Rank ladder for every rank position shot (none, first, mid, last), both classes."""
 import json, os, sys
 from PIL import Image, ImageDraw, ImageFont
 RAW, OUT = sys.argv[1], sys.argv[2]
@@ -62,7 +62,7 @@ for dev in ("phone-installed", "ipad-pro-11"):
     lad = [(t, piece(res[t], "ladder")) for t in sorted(tags) if not t.endswith("-mid") or True]
     lad = [(t, p) for t, p in lad if t.split("-")[-2] == "a" or t.endswith("-mid")]
     if lad:
-        order = ["none", "first", "mid", "last", "prestige"]
+        order = ["none", "first", "mid", "last"]
         lad.sort(key=lambda tp: (tp[0].split("-")[-3], order.index(tp[0].split("-")[-1])))
         seen = set(); lad = [tp for tp in lad if (tp[0].split("-")[-3], tp[0].split("-")[-1]) not in seen and not seen.add((tp[0].split("-")[-3], tp[0].split("-")[-1]))]
         cw = max(p.width for _, p in lad); ch = max(p.height for _, p in lad)

@@ -8,9 +8,11 @@
 
 Per device and class:
   L1-L6  THE LADDER, for an account below the first rank, on the first, in the middle, on the top (and, in Fire Code, the top with a
-         prestige taken): one cell per rank (TIER_ORDER_FULL); yours is the one rankOf(store) says, lit (opacity 1, its own ring
+         prestige count a test build left on the account - 384.135 retired prestige): one cell per rank (TIER_ORDER_FULL); yours is the one rankOf(store) says, lit (opacity 1, its own ring
          white), the ranks under it lit, the next one dashed, the rest dim; the lit line ends on your rank's centre (2px) and at 0
-         below the first; your rank and its neighbours inside the track's box and the screen; the prestige mark on the top rank.
+         below the first; your rank and its neighbours inside the track's box and the screen.
+  L7     (384.135) PRESTIGE IS GONE: with an old `prestige: 1` on the account, the top rank's node holds only its emblem and the pulse
+         (no mark beside it) and the ladder's line under its title is the plain top-rank account's, word for word.
   B1     THE BADGE CASE, each option: its count is badgeCountOf(store) of classTopics().length; a's front filled to that share, b's
          ring one tick per badge with that many lit, c's bar one segment per badge with that many lit; the newest badge drawn.
   C1     CUSTOMIZE, each option: held / total the sum of customizeTally over Customize's pages, its words carry them; b's next is
@@ -54,7 +56,7 @@ def open_pf(br, dev, cls, q=""):
     pg.set_default_timeout(180000)
     return ctx, pg, errs
 
-# the account: rank `rank` (none / first / mid / last / prestige), badges held, the newest not looked at; Profile opened from Home
+# the account: rank `rank` (none / first / mid / last / oldpg), badges held, the newest not looked at; Profile opened from Home
 SETUP = """async(want)=>{
   const wait = ms => new Promise(r => setTimeout(r, ms));
   document.getElementById('splashscreen')?.remove();
@@ -63,7 +65,7 @@ SETUP = """async(want)=>{
   document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro, .rs-spot, .unlock-card').forEach(n=>n.remove());
   const topics = classTopics();
   topics.forEach(u => { store.unitPerfects[u] = 0; });
-  const top = want.rank === 'last' || want.rank === 'prestige';
+  const top = want.rank === 'last' || want.rank === 'oldpg';
   const nb = top ? topics.length : want.rank === 'none' ? 0 : want.badges;
   topics.slice(0, nb).forEach(u => { store.unitPerfects[u] = badgeThresholdFor(u); });
   /* one unit part-way to its badge (the academy: hundos toward its band) */
@@ -72,7 +74,8 @@ SETUP = """async(want)=>{
   store.lifetime.points = 0;
   for(let p = 0; p < 2000000; p += 1500){ store.lifetime.points = p; if(levelStateFor(store).level >= lvl) break; }
   store.rankFloor = top ? 7 : 0;
-  store.prestige = want.rank === 'prestige' ? 1 : 0;
+  /* (384.135) a retired prestige count, as a test build of 384.126 left it: it must draw nothing */
+  if(want.rank === 'oldpg') store.prestige = 1;
   const s = ensureSeenUnlocks();
   s.badges = badgesEarnedList().slice(0, Math.max(0, badgesEarnedList().length - 1));
   if(want.reduce){ theme.reduceMotion = true; try{ saveTheme(); }catch(e){} document.documentElement.dataset.reduceMotion = 'true'; }
@@ -127,7 +130,8 @@ MEASURE = """()=>{
       fillEnd: fill ? R(fill).r : null, fillW: fill ? R(fill).w : null, railL: rail ? R(rail).l : null,
       hereCx: hereNode ? R(hereNode).cx : null, firstCx: node(0) ? R(node(0)).cx : null,
       visible: hi >= 0 ? [vis(hi - 1), vis(hi), vis(hi + 1)] : [vis(0), vis(1)],
-      pg: !!foot.querySelector('.pfr-ld-cell.is-here .pfr-ld-pg'), pgWant: (typeof prestigeTaken === 'function' ? prestigeTaken() : 0) > 0 && cur === 'titan',
+      extra: hereNode ? [...hereNode.children].filter(n => !n.classList.contains('pfr-ld-emb') && !n.classList.contains('pfr-ld-pulse')).length : -1,
+      sub: (foot.querySelector('.pfr-ld-sub') || {}).textContent || '',
       box: R(foot) };
   })();
   out.badge = (() => {
@@ -185,7 +189,8 @@ def main():
         for dev in [d for d in L.DEVICES if d["name"] in DEVS]:
             for cls in ("academy", "ifc"):
                 tag = "%s %s" % (dev["name"], cls)
-                ranks = ["none", "first", "mid", "last"] + (["prestige"] if cls == "ifc" else [])
+                ranks = ["none", "first", "mid", "last"] + (["oldpg"] if cls == "ifc" else [])
+                lastSub = None
                 for rank in ranks:
                     opt = "abc"[ranks.index(rank) % 3]
                     info, m, errs = run_case(br, url, dev, cls, rank, opt)
@@ -206,7 +211,10 @@ def main():
                     else:
                         ok(ld["fillW"] is not None and ld["fillW"] <= 1 and ld["nextDashed"] == ["dashed"], "L5 %s: no rank, no line, the first one next (dashed)" % t)
                     ok(all(v for v in ld["visible"]), "L6 %s: your rank and its neighbours on screen (%s)" % (t, ld["visible"]))
-                    if rank == "prestige": ok(ld["pg"] == ld["pgWant"] == True, "L6 %s: the prestige mark on the top rank" % t)
+                    if rank == "last": lastSub = ld["sub"]
+                    if rank == "oldpg":
+                        ok(ld["extra"] == 0, "L7 %s: an old prestige count draws nothing on the top rank (%d extra)" % (t, ld["extra"]))
+                        ok(lastSub is not None and ld["sub"] == lastSub, "L7 %s: the ladder's line is the plain top rank's (%r vs %r)" % (t, ld["sub"], lastSub))
                     b = m["badge"]
                     if b:
                         good = b["text"].startswith("%d of %d" % (b["have"], b["total"]))

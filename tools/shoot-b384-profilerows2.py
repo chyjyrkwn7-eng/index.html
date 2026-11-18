@@ -5,7 +5,7 @@ both classes.
 
   python3 tools/shoot-b384-profilerows2.py OUT_DIR [--devs phone-installed,ipad-pro-11] [--classes academy,ifc]
          [--opts a,b,c]          # the badge / customize option shown (both rows take the same letter in one shot)
-         [--rank none|first|mid|last|prestige]   # where the account stands on the ladder (default: a middle rank)
+         [--rank none|first|mid|last]   # where the account stands on the ladder (default: a middle rank)
          [--video] [--video-only]  # also (only) record each option animating in (Playwright's recorder, then H.264 with ffmpeg)
          [--against REV|FILE]    # the build to render (default: this tree's index.html)
 
@@ -55,8 +55,8 @@ def open_pf(br, dev, cls, video_dir=None):
     pg.set_default_timeout(180000)
     return ctx, pg, errs, cons
 
-# The fixed account. want.rank: none (below the first rank), first, mid (a rank in the middle), last (the top), prestige (Fire Code: the
-# top and one prestige taken). The rank is set the way the app reads it: level and badges, and rankFloor (the app's own floor) for the
+# The fixed account. want.rank: none (below the first rank), first, mid (a rank in the middle), last (the top; 384.135 retired
+# Fire Code's prestige position). The rank is set the way the app reads it: level and badges, and rankFloor (the app's own floor) for the
 # ends, so every position is a real account's.
 SETUP = """async(want)=>{
   const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -66,13 +66,12 @@ SETUP = """async(want)=>{
   document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro, .rs-spot, .unlock-card').forEach(n=>n.remove());
   const topics = classTopics();
   topics.forEach(u => { store.unitPerfects[u] = 0; });
-  const nb = want.rank === 'last' || want.rank === 'prestige' ? topics.length : want.rank === 'none' ? 0 : want.badges;
+  const nb = want.rank === 'last' ? topics.length : want.rank === 'none' ? 0 : want.badges;
   topics.slice(0, nb).forEach(u => { store.unitPerfects[u] = badgeThresholdFor(u); });
-  const lvl = want.rank === 'none' ? 2 : want.rank === 'first' ? 22 : want.rank === 'last' || want.rank === 'prestige' ? 80 : want.level;
+  const lvl = want.rank === 'none' ? 2 : want.rank === 'first' ? 22 : want.rank === 'last' ? 80 : want.level;
   store.lifetime.points = 0;
   for(let p = 0; p < 2000000; p += 1500){ store.lifetime.points = p; if(levelStateFor(store).level >= lvl) break; }
-  store.rankFloor = want.rank === 'last' || want.rank === 'prestige' ? 7 : 0;
-  if(want.rank === 'prestige') store.prestige = 1;
+  store.rankFloor = want.rank === 'last' ? 7 : 0;
   const s = ensureSeenUnlocks();
   s.badges = badgesEarnedList().slice(0, Math.max(0, badgesEarnedList().length - want.freshBadges));
   s.chars = unlockedIdsNow().chars.slice(); if(want.freshChar && s.chars.length > 1) s.chars.pop();
@@ -109,7 +108,6 @@ def main():
             for cls in CLASSES:
                 for opt in OPTS:
                     for rank in ([] if "--video-only" in sys.argv else RANKS):
-                        if rank == "prestige" and cls != "ifc": continue
                         tag = "%s-%s-%s-%s" % (dev["name"], cls, opt, rank)
                         ctx, pg, errs, cons = open_pf(br, dev, cls)
                         pg.goto(url + "?pfbadge=%s&pfcz=%s" % (opt, opt), wait_until="load", timeout=180000)
