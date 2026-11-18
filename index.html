@@ -40339,7 +40339,7 @@ html.is-browser{ --fade-paper: transparent; }
   }
 
   /* ---- THE TRACKS (384.120): Customize's Next up card, the Tracks screen, the rims ----
-     A tier is one row: its number in a small disc (P for prestige), a picture of what it gives, its name and its rule, a thin
+     A tier is one row: its number in a small disc (the last on gold), a picture of what it gives, its name and its rule, a thin
      bar, and how far (or a tick). At least 48px tall: the whole row is the tap target. The next step in a track is the row with
      the accent edge. Rims are a colour round the character's plate: a ring drawn with a border (Mastery: a conic ring that
      turns - transform only, no filter). */
@@ -40356,7 +40356,7 @@ html.is-browser{ --fade-paper: transparent; }
     color:var(--soft); background:color-mix(in srgb, var(--ink) 8%, transparent); font-variant-numeric:tabular-nums; padding-top:.5px; box-sizing:border-box; }
   .trk-num.is-blank{ background:none; }
   .trk-tier.is-held .trk-num{ color:#10131A; background:var(--accent); }
-  .trk-tier.is-prestige .trk-num{ color:#2A1C02; background:linear-gradient(135deg, #FFE7A0, #F5C84A 55%, #B8861E); }
+  .trk-tier.is-gold .trk-num{ color:#2A1C02; background:linear-gradient(135deg, #FFE7A0, #F5C84A 55%, #B8861E); }
   .trk-thumb{ position:relative; display:grid; place-items:center; width:2.6rem; height:2.6rem; border-radius:50%; overflow:hidden;
     background:radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--char-glow, #9FACBA) 30%, transparent), transparent 70%); }
   .trk-thumb > svg{ display:block; width:100%; height:100%; }
@@ -40431,146 +40431,6 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-name.is-mastery{ color:#F5C84A !important; }
   /* Next up says what is left in its line; the count at the end would only squeeze it */
   .trk-next-row .trk-end{ display:none; }
-  /* ---- (384.126) PRESTIGE: the emblem beside a name, the highest one's Leaderboard row, the Prestige screen, its entry rows, the confirm
-     sheet and the ceremony. Fire Code only (nothing here is drawn on the academy's page). ---- */
-  .pg-mark{ display:inline-block; flex:none; width:1.12em; height:1.12em; margin-left:.3em; vertical-align:-.2em; line-height:0; }
-  .pg-mark > svg{ display:block; width:100%; height:100%; overflow:visible; }
-  .pg-mark.pg-mark-3{ width:1.3em; height:1.3em; vertical-align:-.28em; }
-  .rank-name.has-pg{ display:flex; align-items:center; min-width:0; }
-  .rank-name.has-pg > .pg-nm{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .namedisplay-row > .pg-mark-profile{ width:1.9rem; height:1.9rem; margin-left:0; vertical-align:middle; }
-  .person-sheet-name > .pg-mark-card{ width:1.2em; height:1.2em; }
-  .person-sheet-name > .pg-mark-card.pg-mark-3{ width:1.36em; height:1.36em; }
-  /* (384.134) the emblem in a Virtual Room (Fire Code's rooms): beside a member's name in the lobby, the podium, the results and the
-     winners' cutscene, and inline after a sender's name in the room's chat. The name keeps its ellipsis, the emblem never shrinks, and a
-     name with no emblem is the plain text it was (nothing here applies to it). Not interactive: the row it sits in is the tap target. */
-  .vr-has-pg{ display:flex; align-items:center; min-width:0; }
-  .vr-has-pg > .pg-nm{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .pg-mark.pg-mark-vr{ width:1.2em; height:1.2em; margin-left:.35em; vertical-align:middle; }
-  .pg-mark.pg-mark-vr.pg-mark-3{ width:1.36em; height:1.36em; }
-  .lw-podium-name.vr-has-pg, .vroom-cut-pname.vr-has-pg{ justify-content:center; }
-  .vroom-chat-msg-name > .pg-mark-vr{ margin:0 0 0 .3em; vertical-align:-.2em; }
-  /* the highest prestige frames its row: a gold line round it, a crimson edge at the start, a sheen crossing now and then (transform) */
-  html body .rank-row.is-pg-max{ position:relative; overflow:hidden; }
-  html body .rank-row.is-pg-max > i.lb-pgmax{ position:absolute; inset:0; z-index:2; border-radius:inherit; pointer-events:none; overflow:hidden;
-    box-shadow:inset 0 0 0 1.5px #F5C84A, inset 4px 0 0 0 #B5121B; }
-  .lb-pgmax-sheen{ position:absolute; top:0; bottom:0; left:0; width:38%; transform:translateX(-130%) skewX(-18deg);
-    background:linear-gradient(90deg, transparent, color-mix(in srgb, #FFE7A0 24%, transparent), transparent); }
-  @media (prefers-reduced-motion:no-preference){ .lb-pgmax-sheen{ animation:pg-sheen 7s ease-in-out infinite; } }
-  @keyframes pg-sheen{ 0%, 64%{ transform:translateX(-130%) skewX(-18deg); } 100%{ transform:translateX(330%) skewX(-18deg); } }
-  /* the Prestige screen */
-  .pg-sect{ display:grid; gap:1rem; }
-  .pg-card-head{ display:flex; align-items:center; gap:.85rem; }
-  .pg-card-emblem{ flex:none; width:3.6rem; height:3.6rem; }
-  .pg-card-emblem > svg{ display:block; width:100%; height:100%; }
-  .pg-card:not(.is-taken):not(.is-current) .pg-card-emblem{ opacity:.55; }
-  .pg-card-tx{ min-width:0; }
-  .pg-card-title{ margin:0; font-size:1.12rem; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
-  .pg-card-state{ margin:.15rem 0 0; font-size:.86rem; font-weight:700; color:var(--soft); }
-  .pg-card.is-ready .pg-card-state{ color:var(--accent); }
-  .pg-card.is-taken .pg-card-state{ color:var(--ink); }
-  .pg-card-rarity{ margin:.15rem 0 0; font-size:.76rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
-  .pg-reqs{ display:grid; gap:.45rem; margin-top:.85rem; }
-  .pg-req{ display:grid; grid-template-columns:1.6rem minmax(0, 1fr); gap:.6rem; align-items:center; min-height:44px; box-sizing:border-box;
-    padding:.55rem .7rem; border-radius:.85rem; background:color-mix(in srgb, var(--ink) 6%, transparent); }
-  .pg-req.is-next{ box-shadow:inset 3px 0 0 var(--accent); }
-  .pg-req-mark{ display:grid; place-items:center; width:1.5rem; height:1.5rem; border-radius:50%; box-sizing:border-box; color:#10131A;
-    border:2px solid color-mix(in srgb, var(--ink) 28%, transparent); }
-  .pg-req.is-done .pg-req-mark{ background:var(--accent); border-color:transparent; }
-  .pg-req-mark svg{ width:.95rem; height:.95rem; }
-  .pg-req-tx{ display:flex; flex-direction:column; gap:.18rem; min-width:0; }
-  .pg-req-name{ font-size:.92rem; font-weight:700; color:var(--ink); line-height:1.25; }
-  .pg-req-sub{ font-size:.78rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
-  .pg-req.is-done .pg-req-bar{ display:none; }
-  .pg-gives{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.5rem; margin-top:.85rem; }
-  .pg-give{ display:flex; flex-direction:column; align-items:center; gap:.22rem; min-width:0; padding:.6rem .3rem; border-radius:.85rem;
-    background:color-mix(in srgb, var(--ink) 6%, transparent); }
-  .pg-give-art{ display:grid; place-items:center; width:100%; height:3.4rem; }
-  .pg-give-plate{ display:block; width:3.3rem; height:3.3rem; border-radius:50%; overflow:hidden;
-    background:radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--char-glow, #9FACBA) 36%, transparent), #0B0E14 74%); }
-  .pg-give-plate > svg{ display:block; width:100%; height:100%; }
-  .pg-give-strip{ display:block; width:100%; max-width:7.2rem; aspect-ratio:8 / 3; border-radius:.5rem; background-size:cover; background-position:center; }
-  .pg-give-art > .pg-emblem-svg{ display:block; width:3.1rem; height:3.1rem; }
-  .pg-give-name{ font-size:.76rem; font-weight:700; color:var(--ink); text-align:center; line-height:1.2; }
-  .pg-give-kind{ font-size:.68rem; font-weight:600; color:var(--soft); }
-  .pg-card:not(.is-taken):not(.is-current) .pg-give-art{ opacity:.6; }
-  .pg-take{ width:100%; min-height:48px; margin-top:.9rem; }
-  /* the way in: the Tracks screen's card, Customize's row under All tracks */
-  .pg-entry{ all:unset; box-sizing:border-box; display:flex; align-items:center; gap:.75rem; width:100%; min-height:3.8rem; padding:.7rem .95rem;
-    border-radius:1.1rem; cursor:pointer; font-family:var(--sans); -webkit-tap-highlight-color:transparent;
-    background:var(--surface-sheen, none), var(--surface-1, color-mix(in srgb, var(--ink) 8%, transparent)); border:1px solid var(--surface-border, transparent); }
-  .pg-entry:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
-  .pg-entry.is-ready, .pg-entry-row.is-ready{ box-shadow:inset 0 0 0 1.5px var(--accent); }
-  .pg-entry-ems{ display:flex; align-items:center; gap:.12rem; flex:none; }
-  .pg-entry-em{ display:block; width:1.75rem; height:1.75rem; opacity:.36; }
-  .pg-entry-em.is-taken{ opacity:1; }
-  .pg-entry-em > svg{ display:block; width:100%; height:100%; }
-  .pg-entry-row .pg-entry-em{ width:1.35rem; height:1.35rem; }
-  .pg-entry-tx{ flex:1 1 auto; display:flex; flex-direction:column; gap:.1rem; min-width:0; }
-  .pg-entry .pg-entry-label{ font-size:1rem; font-weight:800; color:var(--ink); }
-  .pg-entry-sub{ font-size:.78rem; font-weight:600; line-height:1.25; color:var(--soft); }
-  .pg-entry .trk-all-count, .pg-entry-row .trk-all-count{ flex:none; white-space:nowrap; font-size:.8rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
-  .pg-entry .cz-chev{ font-size:1.3rem; color:var(--soft); }
-  /* the confirm sheet (a person card: its own dark glass) */
-  .pg-confirm{ text-align:center; }
-  .pg-confirm-emblem{ width:5.2rem; height:5.2rem; margin:0 auto .5rem; }
-  .pg-confirm-emblem > svg{ display:block; width:100%; height:100%; }
-  .pg-confirm-body, .pg-confirm-keep{ margin:.55rem 0 0; font-size:.92rem; line-height:1.4; color:color-mix(in srgb, #FFFFFF 86%, transparent); }
-  .pg-confirm-keep{ font-weight:700; color:#FFFFFF; }
-  .pg-confirm .pg-give, .pg-scene .pg-give{ background:color-mix(in srgb, #FFFFFF 9%, transparent); }
-  .pg-confirm .pg-give-name, .pg-scene .pg-give-name{ color:#FFFFFF; }
-  .pg-confirm .pg-give-kind, .pg-scene .pg-give-kind{ color:color-mix(in srgb, #FFFFFF 70%, transparent); }
-  .pg-confirm-go, .pg-confirm-no{ display:block; width:100%; min-height:48px; margin-top:.9rem; }
-  .pg-confirm-no{ margin-top:.45rem; }
-  /* THE CEREMONY. At rest (and under Reduce motion: .is-still) every piece is where it ends, visible; the moves are on top of that. */
-  .pg-scene{ position:fixed; inset:0; z-index:9000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.1rem;
-    box-sizing:border-box; padding:calc(env(safe-area-inset-top, 0px) + 1rem) 16px calc(env(safe-area-inset-bottom, 0px) + 1rem);
-    color:#FFFFFF; font-family:var(--sans); overflow:hidden; --pg-c:#E5483C;
-    background:radial-gradient(circle at 50% 34%, #3A0C12, #060306 68%); }
-  .pg-scene-2{ --pg-c:#C9D3E2; background:radial-gradient(circle at 50% 34%, #1C2848, #04060C 68%); }
-  .pg-scene-3{ --pg-c:#F5C84A; background:radial-gradient(circle at 50% 34%, #4A2A08, #070403 68%); }
-  .pg-scene-stage{ position:relative; flex:none; width:14rem; height:14rem; }
-  .pg-scene-glow{ position:absolute; inset:-3rem; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--pg-c) 55%, transparent), transparent 62%); }
-  .pg-scene-rays{ position:absolute; inset:-7rem; border-radius:50%;
-    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--pg-c) 26%, transparent) 0deg 4deg, transparent 4deg 15deg);
-    -webkit-mask:radial-gradient(circle, #000 18%, transparent 66%); mask:radial-gradient(circle, #000 18%, transparent 66%); }
-  .pg-scene-ring{ position:absolute; inset:2rem; border-radius:50%; border:2px solid var(--pg-c); opacity:0; }
-  .pg-scene-flash{ position:absolute; inset:-2rem; border-radius:50%; opacity:0;
-    background:radial-gradient(circle, #FFFFFF, color-mix(in srgb, var(--pg-c) 60%, transparent) 40%, transparent 70%); }
-  .pg-scene-sparks{ position:absolute; left:50%; top:50%; width:0; height:0; }
-  .pg-scene-sparks > i{ position:absolute; left:-.2rem; top:-.2rem; width:.4rem; height:.4rem; border-radius:50%; background:var(--pg-c); opacity:0;
-    transform:rotate(var(--a)) translateY(0); }
-  .pg-scene-emblem{ position:absolute; inset:1.4rem; }
-  .pg-scene-emblem > svg{ display:block; width:100%; height:100%; }
-  .pg-scene-title{ text-align:center; }
-  .pg-scene-kicker{ margin:0; font-size:.8rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--pg-c); }
-  .pg-scene-name{ margin:.2rem 0 0; font-size:2.1rem; font-weight:800; letter-spacing:-.01em; color:#FFFFFF; }
-  .pg-scene-cards{ width:min(100%, 26rem); margin-top:0; }
-  .pg-scene-done{ width:min(100%, 20rem); min-height:48px; }
-  .pg-scene.is-still :is(.pg-scene-ring, .pg-scene-flash, .pg-scene-sparks){ display:none; }
-  @media (prefers-reduced-motion:no-preference){
-    .pg-scene:not(.is-still){ animation:pg-in .35s ease-out both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-glow{ animation:pg-charge 1.25s ease-in both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-rays{ animation:pg-in 1.2s ease-out both, pg-turn 48s linear infinite; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-flash{ animation:pg-flash 1.1s ease-out 1.15s both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-ring{ animation:pg-ring 1.5s ease-out 1.22s both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-ring.is-late{ animation-delay:1.5s; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-sparks > i{ animation:pg-spark 1.2s cubic-bezier(.15,.7,.3,1) 1.22s both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-emblem{ animation:pg-form .9s cubic-bezier(.2,1.35,.4,1) 1.2s both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-title{ animation:pg-up .6s ease-out 1.9s both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-cards > .pg-give{ animation:pg-up .5s ease-out 3.2s both; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-cards > .pg-give:nth-child(2){ animation-delay:3.38s; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-cards > .pg-give:nth-child(3){ animation-delay:3.56s; }
-    .pg-scene.is-on:not(.is-still) .pg-scene-done{ animation:pg-up .45s ease-out 4s both; }
-  }
-  @keyframes pg-in{ from{ opacity:0; } to{ opacity:1; } }
-  @keyframes pg-turn{ to{ transform:rotate(360deg); } }
-  @keyframes pg-charge{ 0%{ opacity:0; transform:scale(.3); } 80%{ opacity:1; transform:scale(1.05); } 100%{ opacity:1; transform:scale(1); } }
-  @keyframes pg-flash{ 0%{ opacity:0; transform:scale(.4); } 14%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.45); } }
-  @keyframes pg-ring{ 0%{ opacity:0; transform:scale(.5); } 8%{ opacity:.9; } 100%{ opacity:0; transform:scale(2.3); } }
-  @keyframes pg-spark{ 0%{ opacity:1; transform:rotate(var(--a)) translateY(0); } 100%{ opacity:0; transform:rotate(var(--a)) translateY(calc(-1 * var(--d))); } }
-  @keyframes pg-form{ 0%{ opacity:0; transform:scale(.3); } 100%{ opacity:1; transform:none; } }
-  @keyframes pg-up{ 0%{ opacity:0; transform:translateY(1.2rem); } 100%{ opacity:1; transform:none; } }
   .trk-tier.trk-next-row{ grid-template-columns:1.6rem 2.6rem minmax(0, 1fr); }
   @media (min-width:40rem){ .trk-tier.trk-next-row{ grid-template-columns:1.8rem 3rem minmax(0, 1fr); } }
   @media (min-width:40rem){
@@ -41765,12 +41625,9 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-pulse{ position:absolute; inset:-3px; border-radius:50%; border:2px solid color-mix(in srgb, var(--rank-color) 80%, #fff); opacity:0; pointer-events:none; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-glint{ position:absolute; top:-20%; bottom:-20%; left:-70%; width:45%; opacity:0; pointer-events:none;
     background:linear-gradient(100deg, transparent, rgba(255,255,255,.7) 50%, transparent); transform:translateX(0) rotate(12deg); }
-  html[data-layout] body #stage .profile-identity-tab .pfr-ld-node > .pfr-ld-pg{ position:absolute; right:-9px; top:-7px; width:20px; height:20px; margin:0; }
-  html[data-layout] body #stage .profile-identity-tab .pfr-ld-node > .pfr-ld-pg > svg{ width:100%; height:100%; display:block; }
   @media (min-width:40rem){
     html[data-layout] body #stage .profile-identity-tab .pfr-ld-track{ --ns:40px; --nb:54px; }
     html[data-layout] body #stage .profile-identity-tab .pfr-ld-name{ font-size:13px; }
-    html[data-layout] body #stage .profile-identity-tab .pfr-ld-node > .pfr-ld-pg{ width:26px; height:26px; right:-11px; top:-9px; }
   }
   /* the ladder's motion: the line draws to your rank, each rank lights as it passes, yours pops, a ring goes out twice and a glint crosses it */
   html[data-layout] body #stage .profile-identity-tab .pfr-anim:not(.is-in) .pfr-ld-fill{ transform:scaleX(0); }
@@ -60718,13 +60575,6 @@ const AVATAR_CHARACTERS = [
   { id: "scholar",  kind: "scholar",  retired: true },
   { id: "wolf",     kind: "wolf",     retired: true }
 ];
-/* (384.126) THE PRESTIGE CHARACTERS, Fire Code's only: one per prestige, held while store.prestige is at least theirs (isLockedCharacter
-   asks prestigeTaken). No `feat` and no `unlock`: they are not a challenge, a rank's or a starter (charCategory "prestige"), and every
-   list of starters, challenges and things to count leaves them out by `prestige`. Drawn by IFC_CHAR_DRAW (fcpg1-3). */
-if(window.NOVA_CLASS === "ifc"){
-  AVATAR_CHARACTERS.push({ id: "pgdeputy", kind: "fcpg1", prestige: 1 }, { id: "pgmarshal", kind: "fcpg2", prestige: 2 },
-                         { id: "pgstate", kind: "fcpg3", prestige: 3 });
-}
 /* The name under a character in a grid, where the full one would not fit
    on one line (build 243). Everywhere else says the full name. */
 const AVATAR_GRID_NAME = { masked: "Masked One" };
@@ -61266,8 +61116,8 @@ AVATAR_CHARACTERS.forEach(c => {
 function collectionProgress(which){
   const items = which === "banners"
     /* (384.114) never Completionist: it counts this, so counting it here would make each wait on the other */
-    ? BANNERS.filter(b => !b.ultimate && !b.completionist && !b.prestige).map(b => () => { try{ return bannerEarned(b.id); }catch(e){ return false; } })
-    : AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.ultimate && !c.prestige && (c.feat || c.unlock)).map(c => () => !isLockedCharacter(c.id));
+    ? BANNERS.filter(b => !b.ultimate && !b.completionist).map(b => () => { try{ return bannerEarned(b.id); }catch(e){ return false; } })
+    : AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.ultimate && (c.feat || c.unlock)).map(c => () => !isLockedCharacter(c.id));
   const have = items.filter(f => f()).length, need = items.length, left = need - have;
   const word = which === "banners" ? "banner" : "character";
   return { have, need, note: left > 0 ? "Still to unlock: " + left + " " + word + (left === 1 ? "" : "s") + "." : "Every " + word + " is yours." };
@@ -61279,10 +61129,9 @@ function collectionProgress(which){
 function ultimateProgress(){
   /* (384.133) Supernova's rewards COUNT in every class (the owner's decision: the academy's Supernova stays at 25 badges with 24 units today, so its
      Astral cannot be earned until the class gets its next units - that wait is intended). Nothing is stored; the count is read when asked. */
-  /* (384.126) the prestige characters and banners are not in it: they are a status taken, outside every collection count */
-  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.prestige && c.id !== ULTIMATE_TOP && (c.feat || c.unlock));
+  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && c.id !== ULTIMATE_TOP && (c.feat || c.unlock));
   /* (384.114) Completionist is left out: it counts Star Ranger, so Star Ranger may not count it */
-  const banners = BANNERS.filter(b => b.id !== ULTIMATE_TOP && !b.completionist && !b.prestige);
+  const banners = BANNERS.filter(b => b.id !== ULTIMATE_TOP && !b.completionist);
   const themes = ACCENTS.filter(a => !!TIER_UNLOCKS[a]);
   const effects = HUNDO_FX.filter(d => d.need > 0);
   let ch = 0, bn = 0, th = 0, fx = 0;
@@ -61324,10 +61173,9 @@ function completionistParts(){
   const list = f => { try{ return f(); }catch(e){ return [{ id: "?", held: () => false }]; } };
   return [
     { key: "chars", one: "character", many: "characters",
-      items: list(() => AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.prestige && (c.feat || c.unlock)).map(c => ({ id: c.id, held: () => ask(() => !isLockedCharacter(c.id)) }))) },
+      items: list(() => AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && (c.feat || c.unlock)).map(c => ({ id: c.id, held: () => ask(() => !isLockedCharacter(c.id)) }))) },
     { key: "banners", one: "banner", many: "banners",
-      /* (384.126) never a prestige banner: Prestige III asks for Completionist, so Completionist may not ask for it */
-      items: list(() => BANNERS.filter(b => !b.completionist && !b.prestige).map(b => ({ id: b.id, held: () => ask(() => bannerEarned(b.id)) }))) },
+      items: list(() => BANNERS.filter(b => !b.completionist).map(b => ({ id: b.id, held: () => ask(() => bannerEarned(b.id)) }))) },
     { key: "themes", one: "theme", many: "themes",
       items: list(() => ACCENTS.filter(a => !!TIER_UNLOCKS[a]).map(a => ({ id: a, held: () => ask(() => !isLockedAccent(a)) }))) },
     { key: "fx", one: "hundo effect", many: "hundo effects",
@@ -61360,174 +61208,6 @@ function completionistProgress(asked){
 function completionistLabel(){
   const p = completionistProgress();
   return "Unlock everything in Fire Code" + (p.left > 0 ? ". " + p.left + " of " + p.need + " left" : "");
-}
-/* ---- PRESTIGE (384.126), FIRE CODE ONLY ----
-   Madison: "we add a prestige option ... So we'd leave the xp and stuff how it is. But you can prestige. Maybe there's like 3
-   prestige's for the fire code class? Each one giving you a new character, banner, and then you get an emblem next to your profile?
-   Max prestige would be highest prestige. Somehow tie this into the challenge unlock stuff?" - then "Yes, let's prestige."
-   NOTHING RESETS. Prestige is a status you take: XP, level, rank, badges, unlocks and challenges are left exactly as they are.
-   ONE THING IS STORED: store.prestige, how many prestiges this account has taken (0-3). It is the record of an action (you pressed
-   Take), not an unlock: what it hands over (a character, a banner, an emblem per prestige) is derived from it when read
-   (prestigeTaken), and whether the NEXT one can be taken is derived from the account's own numbers when read (prestigeView):
-     Prestige I    Supernova in Fire Code (rankOf: level 80 and the rank's badge count, the floor included, as the Rank tab reads
-                   "Reached") and a gold rim in at least one track (unlockTrackView: every tier of that track held)
-     Prestige II   Prestige I taken, and gold rims in three of the five tracks
-     Prestige III  Prestige II taken, Mastery (all five gold rims) and the Completionist banner (Fire Code's ultimate banner)
-   In order only (no skipping), once each, never more than three. Once taken it stays: the count only rises (mergeSameAccount and
-   mergeLeavingAccount take the higher, nothing lowers it), and what it hands over is read from the count, so a later rule change to
-   a gold rim cannot take a prestige back; only the NEXT one's eligibility follows the rules of the day. The prestige characters and
-   banners are outside everything that counts characters or banners (Star Ranger's "every other ...", Completionist, the collection
-   counts): Prestige III asks for Completionist, so Completionist may not ask for Prestige III's banner. */
-var PRESTIGE_MAX = 3;
-var PRESTIGE_ROMAN = ["", "I", "II", "III"];
-var PRESTIGE_CHAR = ["", "pgdeputy", "pgmarshal", "pgstate"];
-var PRESTIGE_BANNER = ["", "pgoath", "pgcommand", "pglaurel"];
-/* the emblem's metal per prestige: crimson and steel, crimson and silver, gold */
-var PRESTIGE_COLOR = ["", "#E5483C", "#C9D3E2", "#F5C84A"];
-function prestigeOn(){ return window.NOVA_CLASS === "ifc"; }
-/* a count as the app reads one: a whole number 0-3, anything else 0 (a value over 3 is 3) */
-function prestigeCountOf(v){
-  if(typeof v !== "number" || !isFinite(v)) return 0;
-  return Math.max(0, Math.min(PRESTIGE_MAX, Math.floor(v)));
-}
-function prestigeTaken(){ try{ return prestigeOn() && store ? prestigeCountOf(store.prestige) : 0; }catch(e){ return 0; } }
-/* what a published row says (pg): 1, 2 or 3 exactly, else nothing - display only, never a grant */
-function rowPrestige(e){ const v = e && e.pg; return v === 1 || v === 2 || v === 3 ? v : 0; }
-/* the prestige to draw beside somebody's name: none outside Fire Code's page; your own from this device (your row may lag a push behind),
-   anybody else's from their row */
-var ROOM_PG_ENTRIES = new WeakSet();   /* entries a room card built (never a field a document could carry) */
-function entryPrestige(e){
-  /* (384.134) a Virtual Room's entry (vroomPersonEntry) arrives with its prestige already worked out for THAT room: Fire Code's rooms
-     only, from whichever page this is */
-  if(e && ROOM_PG_ENTRIES.has(e)) return rowPrestige(e);
-  if(!prestigeOn() || !e) return 0;
-  let me = ""; try{ me = publicIdOf(); }catch(err){}
-  if(me && e.pub === me) return prestigeTaken();
-  return rowPrestige(e);
-}
-/* ---- (384.134) PRESTIGE IN VIRTUAL ROOMS ----
-   Madison: Fire Code prestige emblems show in Virtual Rooms. A member says how many they have taken (`pg`, 0-3) in the entry the room
-   already holds for them: the join write and the presence beat that was already running - nothing extra, nothing per answer. Readers
-   draw it with prestigeMark (the one drawing, so art and names change in one place) and only for a FIRE CODE room; an academy room
-   draws none, whoever is in it. Derived on every draw from the entry and the viewer's own count - nothing about it is stored. */
-/* This account's count wherever the page is: Fire Code's own store, or - on the academy's page, joined to a Fire Code room - read off
-   Fire Code's saved copy of the same account (as ifcCharOfMe reads the character). Never a code, never anything but the count. */
-function prestigeOfMe(){
-  if(window.NOVA_CLASS === "ifc") return prestigeTaken();
-  try{
-    if(accountClassesOf(store).indexOf("ifc") < 0) return 0;
-    const raw = localStorage.getItem("class26e.ifc.drill.v1");
-    const o = raw ? JSON.parse(raw) : null;
-    return o ? prestigeCountOf(o.prestige) : 0;
-  }catch(e){ return 0; }
-}
-/* The prestige to draw beside a room member: 0 unless the room is Fire Code's (`cls`, else the class whose bank is in); yours from
-   this device when this is Fire Code's page (live, as the Leaderboard row follows a wear); anybody else's - and yours from the academy's
-   page - from their entry (rowPrestige: 1, 2 or 3 and nothing else, so an older client's entry with no `pg` draws nothing) */
-function vroomPrestigeFor(p, key, cls){
-  if((cls || BANK_CLASS) !== "ifc") return 0;
-  if(key && key === vroomMyKey && window.NOVA_CLASS === "ifc") return prestigeTaken();
-  return rowPrestige(p);
-}
-/* A member's name in an element of its own, with the emblem after it when they have one: the name keeps its ellipsis, the emblem
-   never shrinks, and with none the element is exactly what it was (plain text) */
-function setNameWithPrestige(el, text, n, markCls){
-  if(!n){ el.textContent = text; return el; }
-  el.textContent = "";
-  el.classList.add("vr-has-pg");
-  const t = document.createElement("span");
-  t.className = "pg-nm"; t.textContent = text;
-  el.append(t, prestigeMark(n, markCls || "pg-mark-vr"));
-  return el;
-}
-/* The requirements of prestige n, each { key, label, have, need, done, sub }, read off the account now. */
-function prestigeReqs(n, view){
-  const out = [];
-  const v = view || unlockTrackView();
-  const golds = v.tracks.filter(t => t.gold).length, nTracks = v.tracks.length;
-  const taken = prestigeTaken();
-  if(n === 1){
-    const rule = TIER_UNLOCKS.titan || { level: 80, badges: 0 };
-    let held = null; try{ held = rankOf(store); }catch(e){}
-    const lvl = Math.min(Number(levelOf(store)) || 0, rule.level), bdg = Math.min(badgeCountOf(store), rule.badges || 0);
-    const done = held === "titan";
-    out.push({ key: "rank", label: "Reach " + RANK_DISPLAY_NAME.titan, done,
-      have: done ? 1 : (lvl / rule.level + (rule.badges ? bdg / rule.badges : 1)) / 2, need: 1,
-      sub: done ? "Reached" : "Level " + lvl + " of " + rule.level + " · " + bdg + " of " + rule.badges + " badges" });
-    out.push({ key: "gold1", label: "A gold rim in any track", have: Math.min(golds, 1), need: 1, done: golds >= 1,
-      sub: golds >= 1 ? golds + " of " + nTracks + " tracks gold" : "Hold every tier of one track" });
-  } else if(n === 2){
-    out.push({ key: "p1", label: "Take Prestige I", have: Math.min(taken, 1), need: 1, done: taken >= 1, sub: taken >= 1 ? "Taken" : "Not taken yet" });
-    out.push({ key: "gold3", label: "Gold rims in 3 of the " + nTracks + " tracks", have: Math.min(golds, 3), need: 3, done: golds >= 3,
-      sub: Math.min(golds, 3) + " of 3" });
-  } else if(n === 3){
-    out.push({ key: "p2", label: "Take Prestige II", have: Math.min(taken, 2) >= 2 ? 1 : 0, need: 1, done: taken >= 2, sub: taken >= 2 ? "Taken" : "Not taken yet" });
-    out.push({ key: "mastery", label: "Mastery: all " + nTracks + " gold rims", have: golds, need: nTracks, done: golds === nTracks, sub: golds + " of " + nTracks });
-    let cp = null; try{ cp = completionistProgress(); }catch(e){}
-    const cHeld = (() => { try{ return bannerEarned(COMPLETIONIST_ID); }catch(e){ return false; } })();
-    out.push({ key: "completionist", label: "The Completionist banner", have: cHeld ? 1 : cp && cp.need ? cp.have / cp.need : 0, need: 1, done: cHeld,
-      sub: cHeld ? "Held" : cp ? cp.left + " of " + cp.need + " left" : "Not yet" });
-  }
-  return out;
-}
-/* THE VIEW, worked out when read: { taken, next, list: [{ n, roman, taken, current, eligible, reqs, step }] }. `current` is the one
-   that can be worked towards now (the first not taken); `eligible` is current with every requirement met; `step` says what is next. */
-function prestigeView(){
-  const taken = prestigeTaken();
-  let v = null; try{ v = unlockTrackView(); }catch(e){}
-  const list = [];
-  for(let n = 1; n <= PRESTIGE_MAX; n++){
-    const reqs = v ? prestigeReqs(n, v) : [];
-    const isTaken = taken >= n, current = n === taken + 1;
-    const open = reqs.filter(r => !r.done);
-    const eligible = current && !!v && open.length === 0;
-    const step = isTaken ? "Taken" : eligible ? "Ready to take" : open.length ? "Next: " + open[0].label : "Not yet";
-    list.push({ n, roman: PRESTIGE_ROMAN[n], taken: isTaken, current, eligible, reqs, step,
-                charId: PRESTIGE_CHAR[n], bannerId: PRESTIGE_BANNER[n] });
-  }
-  return { taken, next: taken < PRESTIGE_MAX ? taken + 1 : 0, list, max: taken >= PRESTIGE_MAX };
-}
-function prestigeEligible(n){
-  if(!prestigeOn()) return false;
-  const e = prestigeView().list[n - 1];
-  return !!(e && e.eligible);
-}
-/* TAKE PRESTIGE n: only the next one, only when eligible now, only up to three. Sets the one count and nothing else (the reward
-   items are derived from it), marks its character and banner as told (the ceremony is the telling), and saves. */
-function takePrestige(n){
-  if(!prestigeOn() || !store) return false;
-  const t = prestigeTaken();
-  if(n !== t + 1 || n > PRESTIGE_MAX || !prestigeEligible(n)) return false;
-  store.prestige = n;
-  try{ unlockTrackMemo = null; friendShowcaseMemo = null; }catch(e){}
-  try{ markUnlocksShown([PRESTIGE_CHAR[n]], [PRESTIGE_BANNER[n]], []); }catch(e){}
-  saveStore();
-  return true;
-}
-/* "Held by 1 of 8 classmates": the rows already downloaded for the Leaderboard that publish `pg` (a build with prestige), active in the
-   last 30 days, this account's own count read from this device. Fire Code under 20 rows: the counts only, as every unlock card. */
-function prestigeRarity(n){
-  let rows = [];
-  try{ rows = rarityRows(); }catch(e){ rows = []; }
-  if(!rows.length) return null;
-  let me = ""; try{ me = publicIdOf(); }catch(e){}
-  const now = Date.now(), seen = new Set();
-  let all = 0, k = 0;
-  rows.forEach(e => {
-    if(!e.pub || seen.has(e.pub)) return;
-    seen.add(e.pub);
-    if(e.pub === me){ all++; if(prestigeTaken() >= n) k++; return; }
-    const at = Math.max(Number(e.seenAt) || 0, Number(e.lastModified) || 0);
-    if(now - at > RARITY_ACTIVE_MS || typeof e.pg !== "number") return;
-    all++; if(rowPrestige(e) >= n) k++;
-  });
-  if(me && !seen.has(me) && store.leaderboardOptIn){ all++; if(prestigeTaken() >= n) k++; }
-  if(!all) return null;
-  const share = k / all, pct = Math.round(share * 100);
-  const label = k === 0 ? "Nobody yet" : share < .05 ? "Legendary" : share < .2 ? "Rare" : share < .5 ? "Uncommon" : "Common";
-  const countsOnly = rows.length < RARITY_MIN_BOARD;
-  return { k, n: all, text: countsOnly ? "Held by " + k + " of " + all + " classmates"
-    : k === 0 ? "Held by 0 of " + all + " classmates · Nobody yet" : "Held by " + k + " of " + all + " classmates (" + pct + "%) · " + label };
 }
 /* The longest run of consecutive days with any study on the log. Keys
    are the device's own YYYY-MM-DD, so a day is a calendar day where it
@@ -61779,8 +61459,6 @@ function legacyHeld(id){
 function isLockedCharacter(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
   if(!def || def.retired) return false;
-  /* (384.126) a prestige character is held while the account has taken that prestige (prestigeTaken, read from store.prestige) */
-  if(def.prestige) return prestigeTaken() < def.prestige;
   /* KEPT FROM BEFORE (build 243). A character somebody held under the old
      rules stays theirs: the Robot, which nothing replaces, and a Clown,
      SWAT or Astronaut that used to come with a rank and now comes with a
@@ -61808,7 +61486,7 @@ function isLockedCharacter(id){
    save carries the new character to the rankings. */
 /* (384) a class's default character: its first starter (free in every class) */
 function classDefaultCharacter(){
-  const free = AVATAR_CHARACTERS.find(c => !c.retired && !c.legacy && !c.feat && !c.unlock && !c.prestige);
+  const free = AVATAR_CHARACTERS.find(c => !c.retired && !c.legacy && !c.feat && !c.unlock);
   return free ? free.id : null;
 }
 /* (384) EACH CLASS WEARS ONLY WHAT IT HAS UNLOCKED. Madison: "in the police class I have void selected, when I switch to IFC,
@@ -62243,7 +61921,6 @@ function charCategory(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
   if(!def) return null;
   if(def.retired || def.legacy) return "kept";
-  if(def.prestige) return "prestige";
   if(def.ultimate) return "ultimate";
   if(def.secret) return "secret";
   if(def.feat) return "challenge";
@@ -62671,10 +62348,7 @@ function artOtherSnap(id){
       let sp = ifcSpecial(look[2], "#FFF3DE");
       if(["voidwalker", "umbra", "singularity", "genesis"].indexOf(id) >= 0) sp = ifcMarkSpecial(look[2], "#FFF3DE", "flare");
       else if(["astral", "celestial", "zenith"].indexOf(id) >= 0) sp = ifcMarkSpecial(look[2], "#FFF3DE", "star");
-      if(["pgdeputy", "pgmarshal", "pgstate"].indexOf(id) >= 0) sp = ifcMarkSpecial(look[2], "#FFF3DE", "star");
-      /* (384.126) a prestige character is in no academy table: its def is lent with the drawing (withCharArt pushes it for the draw) */
-      const pn = ["pgdeputy", "pgmarshal", "pgstate"].indexOf(id) + 1;
-      snap = { def: pn ? { id: id, kind: look[0], prestige: pn } : null, kind: look[0], glow: look[2], hs: undefined, as: look[0] === "fcdrone2" ? .86 : undefined, dy: seat != null ? seat : -.4, sp: sp };
+      snap = { def: null, kind: look[0], glow: look[2], hs: undefined, as: look[0] === "fcdrone2" ? .86 : undefined, dy: seat != null ? seat : -.4, sp: sp };
     }
   }catch(e){ snap = null; }
   ART_IFC_SNAP[id] = snap;
@@ -63804,12 +63478,7 @@ var IFC_CHAR_LOOK = {
   genesis:     ["fccomet",    "Comet",    "#5CE8FF"],   /* (384 round 16) round 15's option 3, picked and finished */
   astral:      ["fcmoonranger",  "Moon Ranger",    "#9CC0FF"],
   celestial:   ["fccometranger", "Comet Ranger",   "#3FE9FF"],
-  zenith:      ["fcranger",      "Star Ranger",    "#F5C84A"],
-  /* (384.126) the three prestige characters, Fire Code's only (AVATAR_CHARACTERS pushes them on this page): the Fire Marshal's office,
-     sworn deputy to the head of the office - crimson and steel, then silver, then gold, as the prestige emblems are */
-  pgdeputy:    ["fcpg1", "Deputy Marshal",     "#FF6A55"],
-  pgmarshal:   ["fcpg2", "Fire Marshal",       "#CFDCF0"],
-  pgstate:     ["fcpg3", "State Fire Marshal", "#FFC83D"]
+  zenith:      ["fcranger",      "Star Ranger",    "#F5C84A"]
 };
 /* the scene behind each (the BACKDROP plan types in drawAvatarCharSVG) */
 var IFC_BACKDROP = {
@@ -63833,10 +63502,6 @@ var IFC_BACKDROP = {
   /* (384 rounds 13-16) the picked options' scenes */
   fccomet:      [["nebula", "#1E5A9A", "#020A1A"], ["stars", "#E8FAFF"], ["rise", "ember", ["#9FFBFF", "#FF9ACF"]]],
   fcopt_plain:    [["nebula", "#6A5A3A", "#0E0A06"], ["city", "#14141C", "#F2C46A"], ["stars", "#F4E8D0"]],
-  /* (384.126) the prestige characters: a light behind each in its prestige's colour, the rays growing with it */
-  fcpg1:        [["rays", "#E5483C", 10], ["nebula", "#A8262A", "#12060A"], ["stars", "#FFE2DA"]],
-  fcpg2:        [["rays", "#C9D3E2", 14], ["nebula", "#3A4A72", "#060A18"], ["stars", "#EEF3FF"]],
-  fcpg3:        [["rays", "#FFC83D", 18], ["nebula", "#9A2A14", "#140604"], ["rise", "ember", ["#FFE7A0", "#FF8A3D"]], ["stars", "#FFF1C2"]],
 };
 /* (384 rounds 13-16) The option rounds for the timekeeper, genesis and valkyrie ids are closed: Madison picked the Plainclothes (valkyrie,
    named Undercover; round 14), the Exit (timekeeper) and the Comet (genesis; round 16: "Do exit and comet. Make them look good."), each
@@ -64164,18 +63829,6 @@ function fcWestern(k, o){
     k.add("path", { d: "M12.8 34.6 L17 34.6 L16.8 35.6 L14.9 36.4 L13 35.6 Z M23.2 34.6 L27.4 34.6 L27.2 35.6 L25.3 36.4 L23.4 35.6 Z", fill: o.flap || o.shirt[2], opacity: ".55" });
     if(o.extra) o.extra();
   } });
-}
-/* (384.126) the prestige shield on a collar: the emblem's shape small, its metal and its numeral as bars (n of them) */
-function fcPgPin(k, x, y, s, n){
-  const F = fcF, w = s * .82, h = s;
-  const d = "M" + F(x - w / 2) + " " + F(y - h * .42) + " L" + F(x + w / 2) + " " + F(y - h * .42) + " L" + F(x + w / 2) + " " + F(y + h * .02)
-    + " Q" + F(x + w / 2) + " " + F(y + h * .36) + " " + F(x) + " " + F(y + h * .52) + " Q" + F(x - w / 2) + " " + F(y + h * .36) + " " + F(x - w / 2) + " " + F(y + h * .02) + " Z";
-  const metal = n === 3 ? fcGold(k) : n === 2 ? fcLin(k, [["0", "#FFFFFF"], [".5", "#C9D3E2"], ["1", "#6A7488"]]) : fcLin(k, [["0", "#FFFFFF"], ["1", "#8A94A6"]]);
-  k.add("path", { d, fill: n === 3 ? "#8E1420" : "#B5121B", stroke: metal, "stroke-width": F(s * .16), "stroke-linejoin": "round" });
-  for(let i = 0; i < n; i++){
-    const bx = x + (i - (n - 1) / 2) * s * .2;
-    k.add("rect", { x: F(bx - s * .055), y: F(y - h * .26), width: F(s * .11), height: F(h * .46), fill: n === 3 ? "#FFE7A0" : "#F4F6FA" });
-  }
 }
 /* a spark ring that turns about (cx, cy) - the ultimates' orbit */
 function fcOrbit(k, cx, cy, r, cols, n, cls){
@@ -65083,160 +64736,6 @@ var IFC_CHAR_DRAW = {
         [13.6, 16.2, 18.8, 21.4, 24, 26.4].forEach((x, i) => k.add("circle", { cx: x, cy: fcF((i % 2 ? 14.5 : 14.85) + dy), r: .38, fill: "#FFFFFF" }));
       } });
   },
-  /* ---- THE PRESTIGE CHARACTERS (384.126): the Fire Marshal's office, one rank of it per prestige, in the agency's own look (the
-     cowboy hat, the star badge) and each a step more formal - the duty shirt, the dress coat, the full dress tunic - with the
-     prestige's metal on them: crimson and steel, silver, gold. Each carries a small prestige shield on the collar (fcPgPin). ---- */
-  /* DEPUTY MARSHAL (Prestige I): a young deputy in the navy class-B shirt with epaulettes and a black tie, the silver star of a sworn
-     deputy, a crimson shoulder patch, a brown felt hat with a silver star on the band */
-  fcpg1(k){
-    fcCoat(k, { coat: ["#3E5A94", "#26386A", "#111A36"], neck: "light", extra(){
-      /* the open collar, the tie and its knot */
-      k.add("path", { d: "M17.2 28.2 L20 31.2 L22.8 28.2 Z", fill: "#F4F2EC" });
-      k.add("path", { d: "M19.2 30.6 L20.8 30.6 L21.2 31.8 L20 32.6 L18.8 31.8 Z", fill: "#14161C" });
-      k.add("path", { d: "M19 32.2 L21 32.2 L21.8 39 L20 40 L18.2 39 Z", fill: k.headGrad("#2A2E38", "#14161C", "#05060A") });
-      k.add("path", { d: "M19.6 32.8 L20 39.4", stroke: "#FFFFFF", "stroke-width": ".18", opacity: ".18" });
-      /* the epaulettes over the shoulders, a button each */
-      k.add("path", { d: "M8.4 30.8 L14.6 28.9 L15.2 30.2 L9.2 32.4 Z M31.6 30.8 L25.4 28.9 L24.8 30.2 L30.8 32.4 Z", fill: "#1A2850", stroke: "#0A1028", "stroke-width": ".2" });
-      k.add("circle", { cx: 14.1, cy: 29.7, r: .38, fill: "#D8DEE8" }); k.add("circle", { cx: 25.9, cy: 29.7, r: .38, fill: "#D8DEE8" });
-      /* the collar points over the shirt's neck */
-      k.add("path", { d: "M14.6 28.4 L16.9 27.6 L19.4 31 L17.2 32.2 Z M25.4 28.4 L23.1 27.6 L20.6 31 L22.8 32.2 Z", fill: k.headGrad("#5274B8", "#3E5A94", "#26386A"), stroke: "#111A36", "stroke-width": ".2", "stroke-linejoin": "round" });
-      fcPgPin(k, 16.7, 29.9, .95, 1);
-      /* the pockets and their flaps, the placket */
-      k.add("path", { d: "M12.6 33.4 L17 33.4 L16.8 34.6 L14.8 35.3 L12.8 34.6 Z M23 33.4 L27.4 33.4 L27.2 34.6 L25.2 35.3 L23.2 34.6 Z", fill: "#1E2E58", opacity: ".8" });
-      /* the silver star (a sworn deputy's) over the left pocket, the gold name plate over the right */
-      fcStarBadge(k, 25.2, 32.4, 1.75, { fill: fcLin(k, [["0", "#FFFFFF"], [".5", "#C8D0DC"], ["1", "#6A7488"]]), rim: "#3A4252", core: "#E5483C" });
-      k.add("rect", { x: 12.9, y: 31.9, width: 3.9, height: .95, rx: .2, fill: fcGold(k), stroke: "#6E4A0C", "stroke-width": ".12" });
-      k.add("path", { d: "M13.4 32.38 h2.9", stroke: "#3A2A08", "stroke-width": ".3", "stroke-dasharray": ".42 .22", opacity: ".7" });
-      /* the shoulder patch, crimson with the agency's cross */
-      fcPatch(k, 8, 34, 3, 22, { fill: "#B5121B", rim: "#D8DEE8", mark: "#D8DEE8" });
-    } });
-    k.open("cx-head");
-    fcFace(k, "light");
-    /* short brown hair under the hat, the sideburns */
-    k.add("path", { d: "M11.8 18.8 Q11.4 11.2 20 11 Q28.6 11.2 28.2 18.8 Q27.4 14.4 24.8 14 Q20 12.8 15.2 14 Q12.6 14.4 11.8 18.8 Z", fill: k.headGrad("#8A5A34", "#5A3618", "#2A1608") });
-    k.add("path", { d: "M11.9 18.4 Q11.6 16.8 12.9 16.4 Q13.3 18.6 13.1 20.6 Q12.3 20.8 11.9 19.8 Z M28.1 18.4 Q28.4 16.8 27.1 16.4 Q26.7 18.6 26.9 20.6 Q27.7 20.8 28.1 19.8 Z", fill: "#5A3618" });
-    fcBrimShade(k);
-    fcEyes(k, { y: 21.6, brow: "#4A2A12", iris: "#3E6A8A" });
-    fcMouth(k, "smile", "#8A3E2A");
-    fcCowboy(k, { felt: ["#B08A62", "#7A5634", "#34200E"], band: "#1E140C", bandExtra(dy){
-      /* a silver star concho on the band */
-      fcStarBadge(k, 20, fcF(14.85 + dy), .72, { fill: fcLin(k, [["0", "#FFFFFF"], ["1", "#8A94A6"]]), rim: "#3A4252" });
-    } });
-    k.close();
-    k.open("cx-fx cx-fx-tip");
-    k.svg.appendChild(k.sparkle(26.3, 31.3, .75, "#FFFFFF"));
-    k.close();
-  },
-  /* FIRE MARSHAL (Prestige II): the head of the office in the navy dress coat - gold buttons, the shoulder boards' gold braid - over a
-     white shirt and a crimson tie, a ribbon bar, the gold star with its red enamel, grey at the temples and a moustache, a dove-grey
-     hat on a black band */
-  fcpg2(k){
-    fcCoat(k, { coat: ["#2C3E70", "#1A2650", "#080E26"], neck: "tan", extra(){
-      k.add("path", { d: "M15.8 28.2 L20 35 L24.2 28.2 Z", fill: "#F6F4EE" });
-      k.add("path", { d: "M17.6 28.6 L20 30.9 L22.4 28.6", fill: "none", stroke: "#C9C6BE", "stroke-width": ".3" });
-      /* the crimson tie */
-      k.add("path", { d: "M19.2 30.4 L20.8 30.4 L21.1 31.5 L20 32.2 L18.9 31.5 Z", fill: "#8E1420" });
-      k.add("path", { d: "M19.1 31.9 L20.9 31.9 L21.5 35.6 L20 36.6 L18.5 35.6 Z", fill: k.headGrad("#E0464A", "#B5121B", "#5A0810") });
-      /* the lapels, their gold piping, the coat closing below them on two gold buttons */
-      k.add("path", { d: "M13.8 28.6 L15.8 28 L20 35.4 L18.6 38.6 Z M26.2 28.6 L24.2 28 L20 35.4 L21.4 38.6 Z", fill: k.headGrad("#3A4E86", "#22305C", "#0E1634"), stroke: "#060A1E", "stroke-width": ".2" });
-      k.add("path", { d: "M14.3 28.8 L19.2 37.4 M25.7 28.8 L20.8 37.4", stroke: "#E8C060", "stroke-width": ".22", opacity: ".85" });
-      [37.2, 39.3].forEach(y => { k.add("circle", { cx: 21.9, cy: y, r: .48, fill: fcGold(k), stroke: "#6E4A0C", "stroke-width": ".12" }); });
-      /* the shoulder boards: navy with the gold braid along them */
-      k.add("path", { d: "M8 31 L14.6 28.8 L15.3 30.3 L8.8 32.6 Z M32 31 L25.4 28.8 L24.7 30.3 L31.2 32.6 Z", fill: "#121C40", stroke: "#060A1E", "stroke-width": ".2" });
-      k.add("path", { d: "M8.6 31.6 L14.8 29.5 M31.4 31.6 L25.2 29.5", stroke: "#E8C060", "stroke-width": ".5", "stroke-dasharray": ".6 .25" });
-      fcPgPin(k, 16.4, 30.2, 1.05, 2);
-      /* the ribbon bar over the right breast: crimson, gold, navy and white */
-      [["#B5121B", 0], ["#E8C060", 1], ["#2E4A8A", 2], ["#F4F2EC", 3]].forEach(([c, i]) => k.add("rect", { x: fcF(12.8 + i * .95), y: 32.2, width: .95, height: .9, fill: c }));
-      k.add("rect", { x: 12.8, y: 32.2, width: 3.8, height: .9, fill: "none", stroke: "#060A1E", "stroke-width": ".12" });
-      /* the gold star over the left breast, its centre in red enamel */
-      fcStarBadge(k, 25.5, 32.8, 1.95, { core: "#C8202A" });
-    } });
-    k.open("cx-head");
-    fcFace(k, "tan");
-    /* dark hair gone grey at the temples */
-    k.add("path", { d: "M11.8 18.8 Q11.4 11.2 20 11 Q28.6 11.2 28.2 18.8 Q27.4 14.4 24.8 14 Q20 12.8 15.2 14 Q12.6 14.4 11.8 18.8 Z", fill: k.headGrad("#4A3A30", "#2A1E18", "#100A06") });
-    k.add("path", { d: "M11.9 18.2 Q11.5 16.6 12.9 16.2 Q13.6 18.8 13.4 21.6 Q12.4 22 11.9 20.6 Z M28.1 18.2 Q28.5 16.6 27.1 16.2 Q26.4 18.8 26.6 21.6 Q27.6 22 28.1 20.6 Z", fill: "#B8BCC4" });
-    fcBrimShade(k);
-    fcEyes(k, { y: 21.7, brow: "#3A2E28", iris: "#5A4630" });
-    k.add("path", { d: "M14.4 23.3 Q15.6 23.8 16.6 23.4 M23.4 23.4 Q24.4 23.8 25.6 23.3", fill: "none", stroke: "#000", "stroke-width": ".22", opacity: ".2" });
-    /* the moustache, dark with grey through it */
-    k.add("path", { d: "M16 25.9 Q18 24.3 20 25.1 Q22 24.3 24 25.9 Q23.4 27 22.2 26.7 Q21 26.2 20 26.4 Q19 26.2 17.8 26.7 Q16.6 27 16 25.9 Z", fill: "#3A322E" });
-    k.add("path", { d: "M17 25.8 Q18.6 25 19.6 25.5 M23 25.8 Q21.4 25 20.4 25.5", fill: "none", stroke: "#A8ACB4", "stroke-width": ".2", opacity: ".7" });
-    fcMouth(k, "flat", "#6A3420");
-    /* a dove-grey felt (the Deputy's is brown, the State Fire Marshal's black; the Chief's is white), a black band with the gold star */
-    fcCowboy(k, { felt: ["#9EA3AE", "#666B76", "#26282E"], band: "#121218", bandExtra(dy){
-      k.add("path", { d: "M13.2 " + fcF(14.3 + dy) + " Q20 " + fcF(13.5 + dy) + " 26.8 " + fcF(14.3 + dy), fill: "none", stroke: "#C9D3E2", "stroke-width": ".24", opacity: ".7" });
-      fcStarBadge(k, 20, fcF(14.85 + dy), .74, { core: "#C8202A" });
-    } });
-    k.close();
-    k.open("cx-fx cx-fx-tip");
-    k.svg.appendChild(k.sparkle(26.7, 31.6, .8, "#FFF6D8"));
-    k.close();
-  },
-  /* STATE FIRE MARSHAL (Prestige III, the highest): full dress - the black tunic with the gold aiguillette looped from the shoulder,
-     gold oak leaves on the collar, two rows of ribbons, the great gold star inside a laurel; silver hair and a trimmed beard, a black
-     dress hat on a gold cord band; a ring of gold sparks turning about him, two stars catching the light */
-  fcpg3(k){
-    fcOrbit(k, 20, 21, 13.8, ["#FFE7A0", "#FFFFFF", "#F5C84A"], 12);
-    fcCoat(k, { coat: ["#34343F", "#17171F", "#05050A"], neck: "light", extra(){
-      k.add("path", { d: "M15.8 28.2 L20 35 L24.2 28.2 Z", fill: "#F8F6F0" });
-      k.add("path", { d: "M17.6 28.6 L20 30.9 L22.4 28.6", fill: "none", stroke: "#CFCBC2", "stroke-width": ".3" });
-      k.add("path", { d: "M19.2 30.4 L20.8 30.4 L21.1 31.5 L20 32.2 L18.9 31.5 Z", fill: "#0A0A10" });
-      k.add("path", { d: "M19.1 31.9 L20.9 31.9 L21.5 35.6 L20 36.6 L18.5 35.6 Z", fill: k.headGrad("#2E2E38", "#121218", "#020206") });
-      k.add("rect", { x: 18.7, y: 33.4, width: 2.6, height: .4, rx: .15, fill: fcGold(k) });
-      /* the lapels, edged in gold, the tunic's gold buttons */
-      k.add("path", { d: "M13.8 28.6 L15.8 28 L20 35.4 L18.6 38.6 Z M26.2 28.6 L24.2 28 L20 35.4 L21.4 38.6 Z", fill: k.headGrad("#3E3E4C", "#22222C", "#0A0A12"), stroke: "#020206", "stroke-width": ".2" });
-      k.add("path", { d: "M14.3 28.8 L19.2 37.4 M25.7 28.8 L20.8 37.4", stroke: "#F5C84A", "stroke-width": ".3" });
-      [37.2, 39.3].forEach(y => { k.add("circle", { cx: 21.9, cy: y, r: .5, fill: fcGold(k), stroke: "#6E4A0C", "stroke-width": ".12" }); });
-      /* the shoulder boards in gold */
-      k.add("path", { d: "M8 31 L14.6 28.8 L15.3 30.3 L8.8 32.6 Z M32 31 L25.4 28.8 L24.7 30.3 L31.2 32.6 Z", fill: fcGold(k), stroke: "#6E4A0C", "stroke-width": ".2" });
-      k.add("path", { d: "M9 31.7 L14.7 29.7 M31 31.7 L25.3 29.7", stroke: "#FFF3C4", "stroke-width": ".25", opacity: ".8" });
-      /* the oak leaves on the collar */
-      [[15.3, 29.6, -30], [24.7, 29.6, 30]].forEach(([x, y, r]) => {
-        k.add("path", { d: "M" + x + " " + (y - .9) + " Q" + fcF(x + .9) + " " + (y - .3) + " " + x + " " + fcF(y + .9) + " Q" + fcF(x - .9) + " " + (y - .3) + " " + x + " " + (y - .9) + " Z",
-          fill: fcGold(k), stroke: "#6E4A0C", "stroke-width": ".1", transform: "rotate(" + r + " " + x + " " + y + ")" });
-      });
-      /* the aiguillette: gold cord looped from the right shoulder (his) under the arm, its tag hanging */
-      k.add("path", { d: "M10.2 31.4 Q11.6 35.6 14.6 35.4 Q16.4 35.2 16.6 33.4 M10.6 31.2 Q12.8 37.8 16.2 37.4 Q17.8 37.2 17.6 35.4", fill: "none", stroke: "#F5C84A", "stroke-width": ".55", "stroke-linecap": "round" });
-      k.add("path", { d: "M10.2 31.4 Q11.6 35.6 14.6 35.4 M10.6 31.2 Q12.8 37.8 16.2 37.4", fill: "none", stroke: "#FFF3C4", "stroke-width": ".2", opacity: ".7", "stroke-dasharray": ".5 .35" });
-      k.add("path", { d: "M17.6 35.4 L17.9 37 L17.3 37 Z", fill: fcGold(k) });
-      /* two rows of ribbons */
-      [["#B5121B", "#F5C84A", "#2E4A8A"], ["#F4F2EC", "#B5121B", "#F5C84A"]].forEach((row, r) => row.forEach((c, i) => k.add("rect", { x: fcF(13 + i * 1.15), y: fcF(31.4 + r * .95), width: 1.15, height: .85, fill: c })));
-      k.add("rect", { x: 13, y: 31.4, width: 3.45, height: 1.8, fill: "none", stroke: "#020206", "stroke-width": ".12" });
-      /* the great star inside its laurel */
-      [-1, 1].forEach(sd => {
-        for(let i = 0; i < 4; i++){
-          const a = Math.PI / 2 + sd * (.55 + i * .42), x = 25.6 + Math.cos(a) * 2.75, y = 33 + Math.sin(a) * 2.75;
-          k.add("ellipse", { cx: fcF(x), cy: fcF(y), rx: .55, ry: .26, fill: "#E8B444", transform: "rotate(" + fcF(a * 180 / Math.PI + 90) + " " + fcF(x) + " " + fcF(y) + ")" });
-        }
-      });
-      fcStarBadge(k, 25.6, 33, 2.15, { core: "#C8202A" });
-      fcPgPin(k, 16.2, 29.4, 1.05, 3);
-    } });
-    k.open("cx-head");
-    fcFace(k, "light");
-    /* silver hair, the trimmed silver beard */
-    k.add("path", { d: "M11.8 18.8 Q11.4 11.2 20 11 Q28.6 11.2 28.2 18.8 Q27.4 14.4 24.8 14 Q20 12.8 15.2 14 Q12.6 14.4 11.8 18.8 Z", fill: k.headGrad("#F2F4F8", "#C4C8D0", "#7A808C") });
-    k.add("path", { d: "M11.9 18.2 Q11.5 16.6 12.9 16.2 Q13.8 18.8 13.5 22 Q12.4 22.6 11.9 20.8 Z M28.1 18.2 Q28.5 16.6 27.1 16.2 Q26.2 18.8 26.5 22 Q27.6 22.6 28.1 20.8 Z", fill: "#D6D9E0" });
-    k.add("path", { d: "M12.9 21.6 Q12.9 26.6 15 28.8 Q17.2 31.2 20 31.2 Q22.8 31.2 25 28.8 Q27.1 26.6 27.1 21.6 Q26.4 25.8 24.8 26.9 Q23.4 27.6 22.4 27.3 Q20 26.7 17.6 27.3 Q16.6 27.6 15.2 26.9 Q13.6 25.8 12.9 21.6 Z", fill: k.headGrad("#F4F6FA", "#C9CDD6", "#8A909C") });
-    k.add("path", { d: "M16.2 25.8 Q18.2 24.6 20 25.2 Q21.8 24.6 23.8 25.8 Q23.2 26.7 22 26.5 Q21 26.2 20 26.4 Q19 26.2 18 26.5 Q16.8 26.7 16.2 25.8 Z", fill: "#E4E7EE" });
-    fcBrimShade(k);
-    fcEyes(k, { y: 21.7, brow: "#C4C8D0", iris: "#4A6A8A" });
-    k.add("path", { d: "M14.4 23.3 Q15.6 23.8 16.6 23.4 M23.4 23.4 Q24.4 23.8 25.6 23.3", fill: "none", stroke: "#000", "stroke-width": ".22", opacity: ".2" });
-    fcMouth(k, "smile", "#7A3A2A");
-    /* the black dress felt on a gold cord band (the Chief's is white: this is the office above him) */
-    fcCowboy(k, { felt: ["#44444E", "#1C1C24", "#050508"], band: "#B88A2A", bandExtra(dy){
-      k.add("path", { d: "M13.1 " + fcF(14.5 + dy) + " Q20 " + fcF(13.7 + dy) + " 26.9 " + fcF(14.5 + dy) + " M13.1 " + fcF(15.2 + dy) + " Q20 " + fcF(14.4 + dy) + " 26.9 " + fcF(15.2 + dy), fill: "none", stroke: "#FFE7A0", "stroke-width": ".3", "stroke-dasharray": ".55 .3" });
-      fcStarBadge(k, 20, fcF(14.85 + dy), .8, { core: "#C8202A" });
-    } });
-    k.close();
-    k.open("cx-fx cx-fx-star");
-    k.svg.appendChild(k.sparkle(27, 31.4, .9, "#FFF6D8"));
-    k.close();
-    k.open("cx-fx cx-fx-star2");
-    k.svg.appendChild(k.sparkle(9.4, 11.2, .8, "#FFFFFF"));
-    k.close();
-  },
   /* ---- PICKED FROM THE OPTIONS (rounds 13-16): the shipped Comet (genesis) and Plainclothes (valkyrie, named Undercover) ---- */
   /* COMET (Genesis's place; 384 round 16, r13-chars). Madison picked option 3 of round 15 ("Do exit and comet. Make them look good."): a head
      of ice on fire, tearing across the sky. The face is cut from blue-white ice in hard planes - lit facets top-left, deep blue ones at the jaw
@@ -65430,8 +64929,7 @@ if(IFC_ART_ON){
      the academy (ART_ACADEMY_SNAP, withCharArt) - taken before any of it is written over */
   ["zeus"].concat(Object.keys(IFC_CHAR_LOOK)).forEach(id => {
     const d = AVATAR_CHARACTERS.find(c => c.id === id);
-    /* (384.126) a prestige character has no academy drawing: it is Fire Code's own */
-    if(d && !d.prestige) ART_ACADEMY_SNAP[id] = { def: d, kind: d.kind, glow: AVATAR_GLOW[id], hs: AVATAR_HEAD_SCALE[id], as: AVATAR_ART_SCALE[id], dy: AVATAR_CENTRE_DY[id], sp: CHAR_SPECIAL_DRAW[id] };
+    if(d) ART_ACADEMY_SNAP[id] = { def: d, kind: d.kind, glow: AVATAR_GLOW[id], hs: AVATAR_HEAD_SCALE[id], as: AVATAR_ART_SCALE[id], dy: AVATAR_CENTRE_DY[id], sp: CHAR_SPECIAL_DRAW[id] };
   });
   const zi = AVATAR_CHARACTERS.findIndex(c => c.id === "zeus");
   if(zi >= 0) AVATAR_CHARACTERS.splice(zi, 1);
@@ -65484,8 +64982,6 @@ function ifcMarkSpecial(col, hi, mark){
 if(IFC_ART_ON){
   ["voidwalker", "umbra", "singularity", "genesis"].forEach(id => { CHAR_SPECIAL_DRAW[id] = ifcMarkSpecial(IFC_CHAR_LOOK[id][2], "#FFF3DE", "flare"); });
   ["astral", "celestial", "zenith"].forEach(id => { CHAR_SPECIAL_DRAW[id] = ifcMarkSpecial(IFC_CHAR_LOOK[id][2], "#FFF3DE", "star"); });
-  /* (384.126) the prestige characters end on the agency's star too */
-  ["pgdeputy", "pgmarshal", "pgstate"].forEach(id => { CHAR_SPECIAL_DRAW[id] = ifcMarkSpecial(IFC_CHAR_LOOK[id][2], "#FFF3DE", "star"); });
 }
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
@@ -71087,8 +70583,6 @@ ROW_LAZY_FIELDS.push("ut");
 /* (384.115) what a friend's profile reads (friendProfileFields): they change when a run ends or something is earned, never per answer, and
    nobody is watching them live - they ride with the next push, as the weekly blocks do. */
 ROW_LAZY_FIELDS.push("bd", "la", "uc", "ub");
-/* (384.126) Fire Code's prestiges taken: it changes when somebody takes one (three times in an account's life at most), never per answer */
-ROW_LAZY_FIELDS.push("pg");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long.
    FIVE MINUTES, NOT 90s (build 327z15): "maybe to save space the
@@ -71253,8 +70747,6 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", rim: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
-              /* (384.126) Fire Code's prestiges taken, 0-3 (prestigeTaken): only rises, merged by the higher */
-              prestige: 0,
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
               lobbyInvitesOut: {},
@@ -71581,8 +71073,8 @@ function applyLoadedData(got){
   store.banner = typeof got.banner === "string" ? got.banner : "";
   /* (384.120) the rim you wear (wornRim): a pick like the banner, worn only while it is held; "" wears none */
   store.rim = typeof got.rim === "string" ? got.rim.slice(0, 24) : "";
-  /* (384.126) the prestiges taken: a whole number 0-3 (an old copy has none: 0; anything else is read as a count, never above 3) */
-  store.prestige = prestigeCountOf(got.prestige);
+  /* (384.135) Prestige is retired (it never reached main): a test build's count is dropped here and never written again */
+  delete store.prestige;
   /* build 313: the hundo effect picked in Customize. Confetti for
      anybody who has never picked one; an id this build does not know is
      kept (it may be a later build's) and falls back at play time. */
@@ -74076,7 +73568,6 @@ function wipeLocalProgressAndSettings(){
   store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.rim = ""; store.hundoFx = "confetti"; store.starfallKept = false;
-  store.prestige = 0;   /* (384.126) a reset is a new account */
   store.weekRankSeen = null;
   store.pendingVoidCutscene = false;
   /* A reset is a new person as far as the board is concerned, so the
@@ -74463,7 +73954,7 @@ var friendShowcaseMemo = null;
 function friendShowcaseOf(){
   const L = (store && store.lifetime) || {};
   const key = [window.NOVA_CLASS, L.points || 0, L.correct || 0, Array.isArray(store.testHistory) ? store.testHistory.length : 0,
-               Object.keys(store.unitPerfects || {}).length, store.rankFloor || 0, prestigeTaken()].join("|");
+               Object.keys(store.unitPerfects || {}).length, store.rankFloor || 0].join("|");
   const m = friendShowcaseMemo, now = Date.now();
   if(m && m.key === key && now - m.at < 600000) return m;
   const out = { key: key, at: now, uc: [], ub: [] };
@@ -74752,9 +74243,6 @@ function buildClassBoardRow(){
     /* (384.120) the unlock tracks' code and the worn rim, as the academy's row (unlockRowFields) */
     ut: unlockRowFieldsSafe().ut,
     rim: unlockRowFieldsSafe().rim,
-    /* (384.126) the prestiges taken, 0-3: the emblem beside the name on the board, the card and a friend's profile. A count, display
-       only (rowPrestige reads 1, 2 or 3 and nothing else), in this same write: nothing extra, nothing per answer. NOT THE SYNC CODE. */
-    pg: prestigeTaken(),
     lastModified: Date.now()
   };
   /* (384.115) what a friend's profile shows, from Fire Code's own store (friendProfileFields) */
@@ -75138,6 +74626,8 @@ function writeAccount(code, withMain, withFloor, leaving){
     try{ if(window.NOVA_CLASS !== "ifc") retakeTracesClamp(doc); }catch(e){}   /* (384.46) the academy's Masked One, on the account and its floor */
     /* (384.51) and a weekly win the record does not support is not written either: the floor comes down with the account */
     try{ weekWinsRepair(doc); }catch(e){}
+    /* (384.135) Prestige is retired: a count a test build left on the server copy or its floor is not written back */
+    delete doc.prestige;
     return { doc, ahead };
   };
   let run;
@@ -75627,8 +75117,6 @@ function mergeLeavingAccount(src, note){
     if(!store.weekWinPts || typeof store.weekWinPts !== "object") store.weekWinPts = {};
     Object.keys(src.weekWinPts || {}).forEach(k => { if(num(src.weekWinPts[k]) > num(store.weekWinPts[k])) store.weekWinPts[k] = num(src.weekWinPts[k]); }); }
   ["vrMatches", "vrWins", "vrHosted", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
-  /* (384.126) prestiges are a status, not a count of things done: the higher of the two, never the sum (and never above 3) */
-  store.prestige = Math.max(prestigeCountOf(store.prestige), prestigeCountOf(src.prestige));
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks", "weekWinLost", "retakenKeys"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
@@ -75863,11 +75351,6 @@ function mergeSameAccount(dst, src){
     const a = num(o[k]), b = num(v);
     if(b > a){ o[k] = b; res.gained = true; } else if(a > b) res.otherHadLess = true;
   };
-  /* (384.126) THE PRESTIGES TAKEN: the higher copy wins, read as a count 0-3 on both sides (a stray value can neither lower it nor
-     lift it past three), and nothing lowers it */
-  { const a = prestigeCountOf(dst.prestige), b = prestigeCountOf(src.prestige);
-    if(b > a){ dst.prestige = b; res.gained = true; }
-    else { if(a > b) res.otherHadLess = true; if(dst.prestige !== a && dst.prestige !== undefined) dst.prestige = a; } }
   /* THE THEME IS THE LAST ONE PICKED, NOT THE NEWER COPY'S (build 327z9).
      "These updates are changes peoples color theme ... It's restoring it
      to the default color." Preferences came from whichever copy saved
@@ -83541,9 +83024,7 @@ const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "eli
                          /* (384.120 follow-up) the top of the Virtual Room track, the last rung of its ladder */
                          "vrtop10",
                          /* (384.114) Fire Code's Completionist */
-                         "completionist",
-                         /* (384.126) the prestige banners */
-                         "pgoath", "pgcommand", "pglaurel"];
+                         "completionist"];
 /* BUILD 384 r24: "why barely any of them animate?" Fire Code's three first rungs (Certified, Squared Away, Mutual Aid) were held
    still by the academy's rule above and nothing else was wrong with them, so in Fire Code every banner moves. The academy keeps
    its still first rungs: this list is read only when the page is Fire Code (IFC_ART_ON). */
@@ -83715,13 +83196,6 @@ if(window.NOVA_CLASS === "ifc") BANNERS.push({ id: COMPLETIONIST_ID, name: "Comp
   get label(){ return completionistLabel(); },
   have: () => completionistProgress().have, get need(){ return completionistProgress(false).need; },
   note: () => completionistProgress().note });
-/* (384.126) THE PRESTIGE BANNERS, Fire Code's only: held while that prestige is taken (prestigeTaken). `prestige` keeps them out of
-   every count of banners (Star Ranger's, Completionist's, the collection's) and puts them in Customize's Prestige group. */
-if(window.NOVA_CLASS === "ifc") [["pgoath", "Oath of Office"], ["pgcommand", "Command Staff"], ["pglaurel", "Marshal's Laurel"]].forEach(([id, name], i) => {
-  const n = i + 1, roman = ["I", "II", "III"][i];
-  BANNERS.push({ id, name, prestige: n, label: "Take Prestige " + roman, have: () => prestigeTaken() >= n ? 1 : 0, need: 1,
-    note: "Prestige is on the Tracks screen. Nothing resets when you take it." });
-});
 function fullTestsNote(){
   return "A full-length test has every question in each unit you picked. Shortened tests count on your Stats tab (" +
     testsCompletedOf(store).toLocaleString() + " so far) but not here.";
@@ -83770,7 +83244,7 @@ function earnedBannerSet(){ return new Set(BANNERS.filter(b => bannerEarned(b.id
 /* ---- THE UNLOCK TRACKS (384.120) ----
    Madison's approved proposal, "Unlocks people notice": the challenge rewards were about forty unrelated rules, so they are shown
    as FIVE TRACKS per class - Accuracy, Hundos, Study Time, Answers, Virtual Room - each a row of tiers in order, ending in a
-   prestige tier. GROUPING IS DISPLAY ONLY. Every existing tier is an item that already exists (a character, a banner, a hundo
+   gold tier. GROUPING IS DISPLAY ONLY. Every existing tier is an item that already exists (a character, a banner, a hundo
    effect), read through the check the rest of the app already uses (isLockedCharacter, bannerEarned, hundoFxEarned), so its rule
    is word for word what it was and nobody loses anything they hold: nothing here is stored, and nothing here can lock an item.
    Tiers are shown in order and never locked (decision 3): an existing item is held the moment its own rule is met, whatever
@@ -83866,7 +83340,7 @@ function unlockItemState(it, rims){
   }catch(e){}
   return o;
 }
-/* THE VIEW, worked out when read. tracks[i].tiers[j] = { n (1-based), prestige, rewards: [item states], lead, held } and per
+/* THE VIEW, worked out when read. tracks[i].tiers[j] = { n (1-based), goldTier, rewards: [item states], lead, held } and per
    track: held (tiers held), total, next (the first tier not held, in order), gold (the gold rim held). A new rim is held when
    its own count is met AND every tier before it is held; a gold rim when every tier of its track is; Mastery when every gold
    rim is. Nothing is stored. */
@@ -83880,7 +83354,7 @@ function unlockTrackView(){
       const lead = rewards[0];
       if(lead.k === "rim") lead.held = !!lead.goalMet && allBefore;
       const held = !!lead.held;
-      tiers.push({ n: j + 1, prestige: j === t.tiers.length - 1, rewards, lead, held });
+      tiers.push({ n: j + 1, goldTier: j === t.tiers.length - 1, rewards, lead, held });
       allBefore = allBefore && held;
     });
     const gold = tiers.every(x => x.held);
@@ -83924,7 +83398,7 @@ function unlockNextUp(view, n){
     let have = it.have, need = it.need;
     /* a rim whose own count is met waits on the tiers before it: that is what is left */
     if(it.k === "rim" && it.goalMet){ have = t.tiers.slice(0, x.n - 1).filter(y => y.held).length; need = x.n - 1; }
-    list.push({ track: t.key, trackTitle: t.title, tier: x.n, prestige: x.prestige, item: it, have, need,
+    list.push({ track: t.key, trackTitle: t.title, tier: x.n, goldTier: x.goldTier, item: it, have, need,
                 frac: need ? Math.max(0, Math.min(1, have / need)) : 0, first: t.next === x });
   }));
   v.feats.forEach(it => { if(!it.held) list.push({ track: "feat", trackTitle: "Feat", tier: 0, item: it, have: it.have, need: it.need,
@@ -83957,7 +83431,7 @@ function unlockRowFieldsSafe(){ try{ return unlockRowFields(); }catch(e){ return
 function unlockRowFields(){
   const L = (store && store.lifetime) || {};
   const key = [window.NOVA_CLASS, L.points || 0, L.correct || 0, L.perfectTests || 0, store.vrWins || 0, store.rim || "",
-               Object.keys(store.studyLog || {}).length, store.rankFloor || 0, prestigeTaken()].join("|");
+               Object.keys(store.studyLog || {}).length, store.rankFloor || 0].join("|");
   const m = unlockTrackMemo, now = Date.now();
   if(m && m.key === key && now - m.at < 60000) return { ut: m.ut, rim: m.rim };
   const v = unlockTrackView();
@@ -87918,126 +87392,7 @@ function fcmGlint(u, key, box, col, a, dur, at, round){
   return { svg: '<defs>' + bnLin(u + key, [[0, col, 0], [0.5, col, a], [1, col, 0]], 0, 0, 1, 0) + '</defs><path d="M' + bnF(bx + bw * .36 + s) + ' ' + by + ' L' + bnF(bx + bw * .64 + s) + ' ' + by + ' L' + bnF(bx + bw * .64) + ' ' + (by + bh) + ' L' + bnF(bx + bw * .36) + ' ' + (by + bh) + ' Z" fill="url(#' + u + key + ')"/>',
     box: box, clip: "inset(0" + (round ? " round " + round + "%" : "") + ")", cls: "bl-glintx", style: fcmT(dur, at) };
 }
-/* ---- THE PRESTIGE BANNERS (384.126) ----
-   One family with the emblems: the prestige's own shield (prestigeEmblemMarkup, the same drawing) raised high over the city at night,
-   where the person card's character circle does not reach (it covers the bottom middle from about 63% down). Each a step grander:
-     I   OATH OF OFFICE     the crimson shield on two crossed ladders, the city's skyline under a red glow, embers going up
-     II  COMMAND STAFF      the silver-laurelled shield over a fan of steel light, crimson pennants either side on their poles
-     III MARSHAL'S LAUREL   the gold shield in its laurel and star over a gold glory turning, two torches on gold columns, gold
-                            leaves falling, and every 6.5s a ring of light out from the shield and the night washing gold
-   Motion only by transform and opacity on boxes (bl-* classes), no svg filter; every event layer rests at opacity 0 (fcmT), so under
-   Reduce motion and in the locked still it is the drawn picture. */
-function pgBannerArt(u, n){
-  const rnd = bnRand(126 + n * 7919);
-  const CX = 240, EY = n === 3 ? 58 : 60, ES = n === 3 ? 2.55 : n === 2 ? 2.4 : 2.25;   /* the shield's middle and its scale */
-  const SKY = n === 3 ? [[0, "#030204"], [0.45, "#140608"], [0.78, "#3A0E0A"], [1, "#6A2A0C"]]
-            : n === 2 ? [[0, "#02040C"], [0.5, "#0A1430"], [0.85, "#1C2C52"], [1, "#2E3E66"]]
-            : [[0, "#02030A"], [0.5, "#0C1030"], [0.82, "#3A1022"], [1, "#6A1A1E"]];
-  const GLOW = n === 3 ? "#FFC83D" : n === 2 ? "#C9D6EA" : "#FF4A3A";
-  const st = bnStarsSplit(rnd, n === 3 ? 70 : 90, 120);
-  let defs = '<defs>' + bnLin(u + "sky", SKY) + bnRad(u + "glow", [[0, GLOW, n === 2 ? .42 : .5], [0.45, GLOW, .16], [1, GLOW, 0]]) +
-    bnLin(u + "floor", [[0, n === 3 ? "#2A1206" : n === 2 ? "#141E38" : "#1E0C14"], [1, "#030204"]]) +
-    bnLin(u + "rail", [[0, "#F4F7FB"], [0.5, "#A8B2C2"], [1, "#4A5262"]], 0, 0, 1, 0) +
-    bnLin(u + "gold", [[0, "#FFF3C4"], [0.3, "#FFD45A"], [0.65, "#D8962A"], [1, "#7A4A10"]]) +
-    bnRad(u + "pool", [[0, GLOW, .35], [1, GLOW, 0]]) + bnRad(u + "flare", [[0, "#FFFFFF", .95], [0.3, "#FFE7A0", .55], [1, "#FFC83D", 0]]) + '</defs>';
-  let base = defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still;
-  /* the light behind the shield */
-  base += '<circle cx="' + CX + '" cy="' + EY + '" r="120" fill="url(#' + u + 'glow)"/>';
-  /* the city along the foot: the far blocks, then the near ones with their lit windows */
-  const far = fbBuildings(rnd, 150, n === 2 ? "#0C1428" : "#0E0810", n === 3 ? "#FFC878" : "#FFD9A0", -10, 490, 10, 34, .1);
-  const near = fbBuildings(rnd, 158, "#040306", n === 3 ? "#FFD58A" : "#FFE2B0", -10, 490, 14, 44, .16);
-  base += '<g opacity=".85">' + far.body + far.win + '</g>' + near.body + near.win;
-  base += '<path d="M-10 156 L490 156 L490 190 L-10 190 Z" fill="url(#' + u + 'floor)"/><ellipse cx="' + CX + '" cy="160" rx="180" ry="12" fill="url(#' + u + 'pool)"/>';
-  const shield = '<g transform="translate(' + CX + ' ' + EY + ') scale(' + ES + ') translate(-24 -22)">' + prestigeEmblemMarkup(n, u + "em") + '</g>';
-  const L = [];
-  if(n === 1){
-    /* two fire ladders crossed behind the shield, rails and rungs, the light on their near edges */
-    const ladder = (a) => {
-      const len = 150, w = 13, rad = a * Math.PI / 180, dx = Math.sin(rad), dy = -Math.cos(rad), nx = Math.cos(rad), ny = Math.sin(rad);
-      const x0 = CX - dx * len * .5, y0 = EY + 8 - dy * len * .5, x1 = CX + dx * len * .5, y1 = EY + 8 + dy * len * .5;
-      let d = "";
-      [-1, 1].forEach(sd => { d += "M" + bnF(x0 + nx * w / 2 * sd) + " " + bnF(y0 + ny * w / 2 * sd) + " L" + bnF(x1 + nx * w / 2 * sd) + " " + bnF(y1 + ny * w / 2 * sd) + " "; });
-      let r = "";
-      for(let t = .04; t < 1; t += .075){ const px = x0 + (x1 - x0) * t, py = y0 + (y1 - y0) * t; r += "M" + bnF(px - nx * w / 2) + " " + bnF(py - ny * w / 2) + " L" + bnF(px + nx * w / 2) + " " + bnF(py + ny * w / 2) + " "; }
-      return '<path d="' + r + '" stroke="#8A94A6" stroke-width="2.2"/><path d="' + d + '" stroke="url(#' + u + 'rail)" stroke-width="3.4" stroke-linecap="round"/>';
-    };
-    base += '<g fill="none" opacity=".95">' + ladder(-34) + ladder(34) + '</g>';
-    /* a crimson ribbon across the foot of the shield */
-    base += '<path d="M168 104 L312 104 L322 112 L312 120 L168 120 L158 112 Z" fill="#8E1420" stroke="#E8EEF4" stroke-width="1.2" stroke-linejoin="round"/>' +
-            '<path d="M172 107 L308 107" stroke="#FFFFFF" stroke-width="1" opacity=".25"/>';
-    base += shield;
-  } else if(n === 2){
-    /* the crimson pennants on their poles, either side */
-    [[92, 1], [388, -1]].forEach(([x, sd]) => {
-      base += '<rect x="' + (x - 1.4) + '" y="34" width="2.8" height="124" fill="url(#' + u + 'rail)"/><circle cx="' + x + '" cy="32" r="3.4" fill="#E8EEF4"/>';
-    });
-    base += shield;
-  } else {
-    /* two gold columns with their torches either side, a step under the shield */
-    [[118], [362]].forEach(([x]) => {
-      base += '<rect x="' + (x - 7) + '" y="70" width="14" height="88" fill="url(#' + u + 'gold)"/>' +
-              '<path d="M' + (x - 4) + ' 74 L' + (x - 4) + ' 154 M' + x + ' 74 L' + x + ' 154 M' + (x + 4) + ' 74 L' + (x + 4) + ' 154" stroke="#7A4A10" stroke-width="1" opacity=".55"/>' +
-              '<path d="M' + (x - 13) + ' 62 L' + (x + 13) + ' 62 L' + (x + 8) + ' 72 L' + (x - 8) + ' 72 Z" fill="url(#' + u + 'gold)" stroke="#7A4A10" stroke-width=".8"/>' +
-              '<circle cx="' + x + '" cy="54" r="22" fill="url(#' + u + 'pool)"/>';
-    });
-    base += '<path d="M150 112 L330 112 L344 124 L136 124 Z" fill="url(#' + u + 'gold)" opacity=".9"/><path d="M136 124 L344 124" stroke="#FFF3C4" stroke-width="1" opacity=".6"/>';
-  }
-  L.push({ svg: base });
-  L.push({ svg: st.a, cls: "bl-tw", style: "animation-duration:3.2s" }, { svg: st.b, cls: "bl-tw", style: "animation-duration:3.2s;animation-delay:-1.6s" });
-  /* the light behind the shield breathing */
-  L.push({ svg: '<circle cx="' + CX + '" cy="' + EY + '" r="70" fill="url(#' + u + 'glow)"/>', box: [CX - 70, EY - 70, 140, 140], o: [CX, EY], cls: "bl-breathe", style: "animation-duration:4.6s" });
-  if(n === 2){
-    /* the fan of steel light, turning slowly behind the shield */
-    let rays = "";
-    for(let i = 0; i < 16; i++){ const a = i / 16 * Math.PI * 2, b = a + .07; rays += "M0 0 L" + bnF(Math.cos(a) * 150) + " " + bnF(Math.sin(a) * 150) + " L" + bnF(Math.cos(b) * 150) + " " + bnF(Math.sin(b) * 150) + " Z "; }
-    L.splice(1, 0, { svg: '<path d="' + rays + '" fill="#DCE6F6" opacity=".12"/>', box: [CX - 150, EY - 150, 300, 300], vb: [-150, -150, 300, 300], cls: "bl-spin", style: "animation-duration:90s" });
-    /* the pennants, each on its own clock */
-    [[92, 1, 0], [388, -1, 1.7]].forEach(([x, sd, dl]) => {
-      const tip = x + sd * 62;
-      L.push({ svg: '<path d="M' + x + ' 38 L' + tip + ' 50 L' + x + ' 62 Z" fill="#B5121B"/><path d="M' + x + ' 38 L' + tip + ' 50 L' + x + ' 44 Z" fill="#E5483C"/>' +
-                    '<path d="M' + x + ' 61.4 L' + tip + ' 50" stroke="#E8EEF4" stroke-width="1.2" opacity=".7"/>',
-               box: [Math.min(x, tip) - 2, 34, 66, 32], o: [x, 50], cls: "bl-sway", style: "animation-duration:" + (4.4 + dl) + "s;animation-delay:-" + dl + "s" });
-    });
-    L.push({ svg: shield });
-  }
-  if(n === 3){
-    /* the gold glory turning behind the shield, a dashed ring of light round it the other way */
-    let rays = "";
-    for(let i = 0; i < 24; i++){ const a = i / 24 * Math.PI * 2, b = a + .05; rays += "M0 0 L" + bnF(Math.cos(a) * 160) + " " + bnF(Math.sin(a) * 160) + " L" + bnF(Math.cos(b) * 160) + " " + bnF(Math.sin(b) * 160) + " Z "; }
-    L.splice(1, 0, { svg: '<path d="' + rays + '" fill="#FFD45A" opacity=".16"/>', box: [CX - 160, EY - 160, 320, 320], vb: [-160, -160, 320, 320], cls: "bl-spin", style: "animation-duration:60s" });
-    L.push({ svg: '<circle r="72" fill="none" stroke="#FFE7A0" stroke-width="1.1" stroke-dasharray="2 7" opacity=".7"/>', box: [CX - 74, EY - 74, 148, 148], vb: [-74, -74, 148, 148], cls: "bl-spin", style: "animation-duration:40s;animation-direction:reverse" });
-    /* the torches' flames */
-    [118, 362].forEach((x, i) => {
-      L.push({ svg: '<path d="' + fcFlamePath(x, 62, 7, 22, i ? -1 : 1) + '" fill="#FF8A2E"/><path d="' + fcFlamePath(x, 62, 4, 13, i ? -.6 : .6) + '" fill="#FFE7A0"/>',
-               box: [x - 11, 38, 22, 25], o: [x, 62], cls: "bl-flame", style: "animation-duration:" + bnF(1.2 + i * .27) + "s" });
-    });
-    L.push({ svg: shield });
-    /* gold leaves falling (a sheet drawn twice, one period apart: bl-fall slides it 40 left and 180 down) */
-    const r2 = bnRand(1263); let one = "";
-    for(let i = 0; i < 26; i++){ const x = 140 + r2() * 360, y = r2() * 180, a = Math.round(r2() * 180);
-      one += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="2.6" ry="1.1" fill="' + (i % 3 ? "#FFD45A" : "#FFF3C4") + '" opacity="' + bnF(.55 + r2() * .4) + '" transform="rotate(' + a + ' ' + bnF(x) + ' ' + bnF(y) + ')"/>'; }
-    L.push({ svg: '<g>' + one + '</g><g transform="translate(40 -180)">' + one + '</g>', box: [100, -180, 380, 360], vb: [100, -180, 380, 360], cls: "bl-fall", style: "animation-duration:12s;opacity:.85" });
-    /* every 6.5s: a ring out from the shield, a flash on it, the night washing gold */
-    const EV = 6.5, EAT = 4.5;
-    L.push({ svg: '<circle cx="' + CX + '" cy="' + EY + '" r="56" fill="url(#' + u + 'flare)"/>', box: [CX - 56, EY - 56, 112, 112], o: [CX, EY], cls: "bl-burst", style: fcmT(EV, EAT) });
-    L.push(fcmPing(CX, EY, 86, "#FFE7A0", EV, EAT, 2.2));
-    L.push({ svg: '<rect x="-10" y="-10" width="500" height="200" fill="#FFC83D" fill-opacity=".12"/>', cls: "bl-spike", style: fcmT(EV, EAT) });
-  }
-  if(n === 1){
-    L.push({ svg: shield });
-    L.push(fcmPing(CX, EY, 70, "#FF8A7A", 6.5, 3, 1.6));
-  }
-  /* a glint across the shield, embers going up */
-  const sw = 26 * ES, sh = 40 * ES;
-  L.push(fcmGlint(u, "gls", [CX - sw / 2, EY - sh / 2, sw, sh], "#FFFFFF", .5, 5.2, 1.4, 20));
-  L.push({ svg: fbEmberSheet(rnd, 480, 90, n === 3 ? 26 : 18, n === 3 ? ["#FFD45A", "#FF8A2E", "#FFF1C8"] : n === 2 ? ["#DCE6F6", "#FFFFFF", "#9FB8E8"] : ["#FF8A5A", "#FFD0A0", "#E5483C"]),
-           box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:" + (n === 3 ? 14 : 17) + "s;opacity:.7" });
-  return L;
-}
 const IFC_BANNER_ART = {
-  pgoath(u){ return pgBannerArt(u, 1); },
-  pgcommand(u){ return pgBannerArt(u, 2); },
-  pglaurel(u){ return pgBannerArt(u, 3); },
   /* CERTIFIED (was Headquarters; this one is for finishing 100 full-length tests) - the marshal's office after hours. Round 2 (Madison:
      "why are their random flags? ... maybe also put some challenge coins like on the desk on a stand like 20 of them, legit sized, they
      are like a big quarter ... why are there flags in the desk?"): NO flags anywhere. The wall of framed certificates stays, each hung on
@@ -90061,10 +89416,7 @@ const IFC_BANNER_LOOK = {
   flare_genesis: ["Comet", "#5CE1FF", "#FF5CA8"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
   celestial: ["Comet Ranger", "#3FE9FF", "#1E8AB8"], zenith: ["Star Ranger", "#FFD36A", "#6A4AC8"],
   /* (384.114) the hall's gold and fire-engine red */
-  completionist: ["Completionist", "#FFC83D", "#E5332A"],
-  /* (384.126) the prestige banners: crimson and steel, silver and crimson, gold and crimson */
-  pgoath: ["Oath of Office", "#E5483C", "#9AA4B4"], pgcommand: ["Command Staff", "#C9D3E2", "#B5121B"],
-  pglaurel: ["Marshal's Laurel", "#F5C84A", "#B5121B"]
+  completionist: ["Completionist", "#FFC83D", "#E5332A"]
 };
 if(IFC_ART_ON){
   Object.keys(IFC_BANNER_ART).forEach(id => {
@@ -90082,8 +89434,6 @@ if(IFC_ART_ON){
      Fire Code friend wearing it is drawn in Fire Code's art on a card opened here (bannerDrawableIn) */
   BANNER_ART[COMPLETIONIST_ID] = IFC_BANNER_ART[COMPLETIONIST_ID];
   BANNER_TINT[COMPLETIONIST_ID] = [IFC_BANNER_LOOK[COMPLETIONIST_ID][1], IFC_BANNER_LOOK[COMPLETIONIST_ID][2]];
-  /* (384.126) and a Fire Code friend's prestige banner, the same way (drawn, never earned here) */
-  ["pgoath", "pgcommand", "pglaurel"].forEach(id => { BANNER_ART[id] = IFC_BANNER_ART[id]; BANNER_TINT[id] = [IFC_BANNER_LOOK[id][1], IFC_BANNER_LOOK[id][2]]; });
 }
 __bm("L64157");
 const bannerTintCache = {};
@@ -90165,7 +89515,7 @@ function applyBannerFocus(art, id){
 /* (384.114) an id this page can draw: one of its own banners, or Fire Code's Completionist on the academy's page for somebody shown
    in Fire Code's art (a friend whose last class was Fire Code, 384 r22) - the academy cannot earn it, but can show it */
 function bannerDrawableIn(id, cls){
-  return !!id && (!!bannerDef(id) || (cls === "ifc" && (id === COMPLETIONIST_ID || PRESTIGE_BANNER.indexOf(id) > 0) && !!BANNER_ART[id]));
+  return !!id && (!!bannerDef(id) || (cls === "ifc" && id === COMPLETIONIST_ID && !!BANNER_ART[id]));
 }
 function buildWornBannerArt(bannerId, accent, cls){
   if(bannerDrawableIn(bannerId, cls)) return buildBannerArt(bannerId, cls);
@@ -90935,81 +90285,6 @@ function fitRankEmblem(svg, key, keepScale){
    redrawn in grey. Seven grey emblems tell you nothing about where you
    are heading, and the reference keeps every tier's colour visible
    whether you have reached it or not. */
-/* ---- THE PRESTIGE EMBLEMS (384.126) ----
-   One family: a heraldic shield with its numeral, I, II, III. I: a crimson field in a steel rim. II: the same field in silver, with a
-   silver laurel either side. III, the highest: a deep crimson field in gold, a full gold laurel round it and the agency's star over it.
-   Not a rank's look (the ranks are the life of a star, round medallions in their own colours). The numerals are drawn (bars with a
-   serif across them), never text, so they are the same in every font. Gradients carry an id of their own per copy. */
-var prestigeEmblemSeq = 0;
-function prestigeEmblemMarkup(n, u){
-  const F = v => +(+v).toFixed(2);
-  const gold = n === 3, rimA = gold ? "#FFF3C4" : n === 2 ? "#FFFFFF" : "#F4F7FB", rimB = gold ? "#E8B444" : n === 2 ? "#B8C2D2" : "#9AA4B4", rimC = gold ? "#7A4A10" : n === 2 ? "#5A6478" : "#4A5262";
-  const fieldA = gold ? "#C8303A" : "#E5483C", fieldB = gold ? "#6E0C16" : "#8E1420";
-  const numA = gold ? "#FFF3C4" : "#FFFFFF", numB = gold ? "#E8B444" : "#DCE2EC";
-  const CX = 24;
-  const shield = "M11 7.4 Q24 2.6 37 7.4 L37 21 Q37 33.6 24 41 Q11 33.6 11 21 Z";
-  const inner = "M13.6 9.4 Q24 5.6 34.4 9.4 L34.4 21 Q34.4 31.8 24 38 Q13.6 31.8 13.6 21 Z";
-  let s = '<defs><linearGradient id="' + u + 'r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + rimA + '"/><stop offset=".45" stop-color="' + rimB + '"/><stop offset="1" stop-color="' + rimC + '"/></linearGradient>' +
-    '<linearGradient id="' + u + 'f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + fieldA + '"/><stop offset="1" stop-color="' + fieldB + '"/></linearGradient>' +
-    '<linearGradient id="' + u + 'n" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + numA + '"/><stop offset="1" stop-color="' + numB + '"/></linearGradient>' +
-    '<linearGradient id="' + u + 'l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + rimA + '"/><stop offset="1" stop-color="' + rimB + '"/></linearGradient></defs>';
-  /* the laurel: II a branch either side of four pairs of leaves, III a full wreath of six pairs rising to the crest. Each branch is a
-     stem on a circle round the shield; each leaf is pointed, laid along the stem towards its tip and turned out and in by turns. */
-  if(n >= 2){
-    const pairs = n === 3 ? 6 : 4, a0 = n === 3 ? 22 : 34, a1 = n === 3 ? 150 : 116, r = n === 3 ? 19.6 : 18.6, cy = 23.4;
-    const leaf = "M0 0 Q2.3 -1.45 4.8 0 Q2.3 1.45 0 0 Z";
-    [-1, 1].forEach(sd => {
-      const P = a => { const rad = a * Math.PI / 180; return [CX + sd * Math.sin(rad) * r, cy + Math.cos(rad) * r, Math.atan2(-Math.sin(rad), sd * Math.cos(rad)) * 180 / Math.PI]; };
-      const p0 = P(a0), p1 = P(a1 + 6);
-      s += '<path d="M' + F(p0[0]) + ' ' + F(p0[1]) + ' A' + r + ' ' + r + ' 0 0 ' + (sd > 0 ? 0 : 1) + ' ' + F(p1[0]) + ' ' + F(p1[1]) + '" fill="none" stroke="' + rimC + '" stroke-width=".9" stroke-linecap="round"/>';
-      for(let i = 0; i < pairs; i++){
-        const [x, y, t] = P(a0 + (a1 - a0) * (i + .4) / pairs);
-        [-1, 1].forEach(io => {
-          s += '<path d="' + leaf + '" fill="url(#' + u + 'l)" stroke="' + rimC + '" stroke-width=".32" stroke-linejoin="round" transform="translate(' + F(x) + ' ' + F(y) + ') rotate(' + F(t + io * sd * 34) + ')"/>';
-        });
-      }
-      /* the tip: one leaf straight on */
-      s += '<path d="' + leaf + '" fill="url(#' + u + 'l)" stroke="' + rimC + '" stroke-width=".32" transform="translate(' + F(p1[0]) + ' ' + F(p1[1]) + ') rotate(' + F(p1[2] - 4 * sd) + ') translate(-.6 0)"/>';
-    });
-  }
-  s += '<path d="' + shield + '" fill="url(#' + u + 'r)" stroke="' + rimC + '" stroke-width=".7" stroke-linejoin="round"/>' +
-       '<path d="' + inner + '" fill="url(#' + u + 'f)"/>' +
-       '<path d="M15.4 11 Q24 7.8 32.6 11 Q24 9.6 15.4 11 Z" fill="#FFFFFF" opacity=".28"/>';
-  /* the numeral: n bars, a serif across their tops and feet */
-  const bw = 2.6, gap = 2.2, total = n * bw + (n - 1) * gap, x0 = CX - total / 2, top = 14.4, bot = 29.2;
-  let num = "";
-  for(let i = 0; i < n; i++) num += '<rect x="' + F(x0 + i * (bw + gap)) + '" y="' + top + '" width="' + bw + '" height="' + F(bot - top) + '"/>';
-  num += '<rect x="' + F(x0 - 1.3) + '" y="' + F(top - 1.1) + '" width="' + F(total + 2.6) + '" height="1.6" rx=".3"/><rect x="' + F(x0 - 1.3) + '" y="' + F(bot - .5) + '" width="' + F(total + 2.6) + '" height="1.6" rx=".3"/>';
-  s += '<g fill="#000" opacity=".35" transform="translate(.5 .7)">' + num + '</g><g fill="url(#' + u + 'n)">' + num + '</g>';
-  /* III: the agency's star over the shield */
-  if(n === 3){
-    let d = "";
-    for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 1.9 : 4.4; d += (i ? "L" : "M") + F(CX + Math.cos(a) * r) + " " + F(4.6 + Math.sin(a) * r) + " "; }
-    s += '<path d="' + d + 'Z" fill="url(#' + u + 'l)" stroke="' + rimC + '" stroke-width=".45" stroke-linejoin="round"/>';
-  }
-  return s;
-}
-function buildPrestigeEmblemSVG(n){
-  n = prestigeCountOf(n);
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", n === 3 ? "0 -1.4 48 44.4" : "0 0 48 43");
-  svg.setAttribute("class", "pg-emblem-svg pg-emblem-" + n);
-  svg.setAttribute("aria-hidden", "true");
-  if(n) svg.innerHTML = prestigeEmblemMarkup(n, "pge" + (++prestigeEmblemSeq) + "-");
-  return svg;
-}
-/* the emblem beside a name: an <i> holding it, labelled for a screen reader, or null for no prestige */
-function prestigeMark(n, cls){
-  n = prestigeCountOf(n);
-  if(!n) return null;
-  const i = document.createElement("i");
-  i.className = "pg-mark pg-mark-" + n + (n === PRESTIGE_MAX ? " is-max" : "") + (cls ? " " + cls : "");
-  i.setAttribute("role", "img");
-  i.setAttribute("aria-label", "Prestige " + PRESTIGE_ROMAN[n]);
-  i.dataset.pg = String(n);
-  i.appendChild(buildPrestigeEmblemSVG(n));
-  return i;
-}
 function buildRankEmblemSVG(rankKey){
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
@@ -108928,7 +108203,7 @@ function showWelcomeCharacterPrompt(){
        have the 6 starter characters." An earned character is picked in
        Customize, never at sign-up - including by somebody re-running
        sign-up on an account that already holds one. */
-    if(charDef.retired || charDef.legacy || charDef.unlock || charDef.feat || charDef.prestige) return;
+    if(charDef.retired || charDef.legacy || charDef.unlock || charDef.feat) return;
     const opt = document.createElement("button");
     opt.type = "button";
     /* SIGN-UP SHOWS ONLY WHAT CAN BE CHOSEN. This used to draw the
@@ -108979,7 +108254,7 @@ function showWelcomeCharacterPrompt(){
   const laterGrid = document.createElement("div");
   laterGrid.className = "avatarchar-grid charselect-later";
   AVATAR_CHARACTERS.forEach(charDef => {
-    if(charDef.retired || charDef.legacy || charDef.prestige || !isLockedCharacter(charDef.id)) return;
+    if(charDef.retired || charDef.legacy || !isLockedCharacter(charDef.id)) return;
     const opt = document.createElement("button");
     opt.type = "button";
     opt.className = "avatarchar-option locked";
@@ -109248,7 +108523,7 @@ function novaAskCharacter(ctx, answered){
   let picked = null;
   const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn nt-ask-go"; go.textContent = "Choose"; go.hidden = true;
   AVATAR_CHARACTERS.forEach(c => {
-    if(c.retired || c.legacy || c.unlock || c.feat || c.prestige) return;
+    if(c.retired || c.legacy || c.unlock || c.feat) return;
     if(isLockedCharacter(c.id)) return;
     const opt = document.createElement("button"); opt.type = "button";
     opt.className = "avatarchar-option";
@@ -110542,7 +109817,7 @@ function novaCrewTally(){
    reads as one set; the ones you have stay in colour. Customize keeps
    each kind's own look, where telling them apart is the point. */
 function novaCrewShown(){
-  try{ return AVATAR_CHARACTERS.filter(c => !c.prestige && !(c.retired && store.avatarChar !== c.id) && !(c.legacy && isLockedCharacter(c.id))); }
+  try{ return AVATAR_CHARACTERS.filter(c => !(c.retired && store.avatarChar !== c.id) && !(c.legacy && isLockedCharacter(c.id))); }
   catch(e){ return []; }
 }
 const NOVA_CREW_KINDS = [
@@ -110634,7 +109909,7 @@ function novaCrewKinds(){
    each with its name, the way Customize shows them. */
 const NOVA_FLAIR_BANNERS = ["tests100", "hundos100", "vr50"];
 function novaFlairPicks(){
-  const open = BANNERS.filter(b => !b.secret && !b.ultimate && !b.completionist && !b.prestige);
+  const open = BANNERS.filter(b => !b.secret && !b.ultimate && !b.completionist);
   let bn = NOVA_FLAIR_BANNERS.map(id => open.find(b => b.id === id)).filter(Boolean);
   open.forEach(b => { if(bn.length < 3 && bn.indexOf(b) < 0) bn.push(b); });
   const ladder = HUNDO_FX.filter(d => d.need > 0);
@@ -111947,7 +111222,7 @@ function playVroomWinnerCutscene(opts, done){
       fig.className = "vroom-cut-figure";
       fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ghost"));
       const nm = document.createElement("p");
-      nm.className = "vroom-cut-pname"; setNameWithPrestige(nm, p.name || "?", p.pg || 0, "pg-mark-vr");
+      nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
       mate.append(fig, nm);
       reveal.appendChild(mate);
     });
@@ -111980,7 +111255,7 @@ function playVroomWinnerCutscene(opts, done){
       fig.className = "vroom-cut-figure";
       fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ghost"));
       const nm = document.createElement("p");
-      nm.className = "vroom-cut-pname"; setNameWithPrestige(nm, p.name || "?", p.pg || 0, "pg-mark-vr");
+      nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
       const sb = document.createElement("p");
       sb.className = "vroom-cut-psub"; sb.textContent = p.sub || "";
       const blk = document.createElement("div");
@@ -114615,8 +113890,6 @@ const VROOM_CHAT_CTX = {
   code: () => vroomCode,
   myKey: () => vroomMyKey,
   colorFor: (key, parts) => vroomColorFor(key, parts),
-  /* (384.134) the prestige to draw beside a sender (Fire Code's rooms only; vroomPrestigeFor) */
-  prestigeFor: (key, parts) => vroomPrestigeFor(parts && parts[key], key),
   shouldTrim: () => vroomIsHost,
   cap: 160, keep: 100,
   /* The same day-long history every other chat keeps (build 313). A room
@@ -117049,9 +116322,6 @@ function startVroomPresence(){
       patch["participants." + vroomMyKey + ".name"] = sm.firstName || "Anonymous";
       patch["participants." + vroomMyKey + ".avatarChar"] = sm.avatarChar || "ghost";
       if(sm.avatarCharIfc) patch["participants." + vroomMyKey + ".avatarCharIfc"] = sm.avatarCharIfc;
-      /* (384.134) the prestiges taken, in a Fire Code room: the same write, one more field, so everybody's emblem for you follows the
-         count within a beat (and a count of 0 clears one) */
-      if(BANK_CLASS === "ifc") patch["participants." + vroomMyKey + ".pg"] = prestigeOfMe();
       /* and Nova's, if this device brought him (build 324) */
       try{ novaVrPresencePatch(patch); }catch(e){}
       vroomDb().collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
@@ -120023,8 +119293,6 @@ function openPersonSheet(entry){
   const name = document.createElement("p");
   name.className = "person-sheet-name";
   name.textContent = entry.firstName || "Student";
-  /* (384.126) the prestige emblem beside the name (Fire Code's page; their row's count, your own live one) */
-  if(!isNova){ const pm = prestigeMark(entryPrestige(entry), "pg-mark-card"); if(pm){ name.classList.add("has-pg"); name.appendChild(pm); sheet.classList.toggle("is-pg-max", pm.dataset.pg === "3"); } }
   sheet.append(art, name);
   /* (384.132) the rim they wear round the plate and Mastery's gold name, as their Leaderboard row shows them (plateRimFor: your
      own card from this device, anybody else's only when their row's own code holds it) */
@@ -120327,8 +119595,6 @@ function showFriendProfile(entry, back){
     const idBox = mk("div", "profile-hero-id");
     const nameRow = mk("div", "namedisplay-row");
     nameRow.appendChild(mk("span", "profile-name-display", view.firstName || "Student"));
-    /* (384.126) their prestige emblem beside the name, from their row (display only) */
-    { const pm = prestigeMark(entryPrestige(view), "pg-mark-profile"); if(pm){ nameRow.classList.add("has-pg"); nameRow.appendChild(pm); } }
     idBox.appendChild(nameRow);
     top.append(av, idBox);
     hero.appendChild(top);
@@ -147802,11 +147068,7 @@ function vroomBarLight(btn, lit){
 function vroomPersonEntry(key, p){
   /* Nova's own card, the one his chat opens (build 324) */
   if(key === "nova" || (p && p.nova)) return { pub: "nova", nova: true, firstName: "Nova", banner: "titan_rank", avatarChar: "nova" };
-  const out = Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Student", pref: ART_PAGE });   /* (384 r22) in this room's class */
-  /* (384.134) the card's emblem is this room's: Fire Code's rooms only, set here so the card reads it whichever page this is */
-  out.pg = vroomPrestigeFor(p, key);
-  ROOM_PG_ENTRIES.add(out);
-  return out;
+  return Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Student", pref: ART_PAGE });   /* (384 r22) in this room's class */
 }
 function buildVroomModeArt(key){
   const NS = "http://www.w3.org/2000/svg";
@@ -148410,13 +147672,10 @@ function roomClassLabel(data){
    same as the store in the academy); the numbers are the class you are in, as a room entry has always carried. */
 /* (384 review) `dev` is this device's own random id (tallyDeviceId - never a code), so the same person coming back after their app
    died is told apart from a second device of the same account (joinVirtualRoomLobby). */
-function vroomMeEntry(cls){
+function vroomMeEntry(){
   const me = socialMe();
   let dev = ""; try{ dev = tallyDeviceId(); }catch(e){}
-  const entry = { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null, level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
-  /* (384.134) the prestiges taken, 0-3, in a Fire Code room's entry only (this write already happens; the academy's rooms are as they were) */
-  if((cls || BANK_CLASS) === "ifc") entry.pg = prestigeOfMe();
-  return entry;
+  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", avatarCharIfc: me.avatarCharIfc || null, level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
 }
 function createVirtualRoomLobby(units, timeLimit, game, versions){
   /* The actual bug behind "wouldn't let me start a Virtual Room
@@ -150724,8 +149983,7 @@ function beginBattleMatch(data){
       /* THE WHOLE WINNING SIDE, like Tug - they won it together. */
       const shown = (side ? battleMembers(d, side) : Object.keys(d.participants || {}))
         .map(k => ({ name: (d.participants[k] || {}).name || "?",
-                     avatar: faceCharFor(d.participants[k] || {}, k),
-                     pg: vroomPrestigeFor(d.participants[k] || {}, k, roomClassOf(d)) }));
+                     avatar: faceCharFor(d.participants[k] || {}, k) }));
       detachBattleEffects();
       playVroomWinnerCutscene({
         kind: "team",
@@ -151936,7 +151194,7 @@ function joinVirtualRoomLobby(code){
        rankings rows do. Written once at join - it cannot change
        while somebody is sitting in a lobby - and read with a
        fallback, so a room created by an older build still renders. */
-    const meEntry = vroomMeEntry(roomClassOf(data));
+    const meEntry = vroomMeEntry();
     /* (384 review) IN DURING A MATCH, NOT IN IT: somebody who comes back mid-match was one of its racers or on one of its
        teams, and their fresh entry (nothing answered, not finished) would hold the finale or the team's "everyone is done" for
        good. `late` names the match they arrived during; vroomLateFor() / vroomMatchHere() leave them out of that one only. */
@@ -152907,9 +152165,7 @@ function showVirtualRoomLobby(){
        every snapshot, because those are cheap and some of them are
        what make the room start at all. */
     const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : p.prep ? "p" : 0,
-      p.level || 0, p.badges || 0, faceCharFor(p, key, ROOM_FACE) + "@" + faceFor(p, key, ROOM_FACE).art, p.banner || "",
-      /* (384.134) the prestige beside the name: a change of it redraws the row */
-      vroomPrestigeFor(p, key, roomClassOf(data))].join("~")).join("|")
+      p.level || 0, p.badges || 0, faceCharFor(p, key, ROOM_FACE) + "@" + faceFor(p, key, ROOM_FACE).art, p.banner || ""].join("~")).join("|")
       + "||" + (data.units || []).join(",") + "|" + JSON.stringify(roomVersionsOf(data)) + "|" + (data.timeLimit || 0)
       /* `count`, the field Match settings writes. This read
          `questionCount`, which nothing has ever written, so changing
@@ -152972,10 +152228,7 @@ function showVirtualRoomLobby(){
       const nameWrap = document.createElement("span");
       nameWrap.className = "lb-name-wrap";
       const name = document.createElement("span");
-      name.className = "lb-name";
-      /* (384.134) Fire Code's prestige emblem beside the name (a Fire Code room only): the name keeps its ellipsis, the "(You)" tag
-         follows it, and with no prestige the name is the plain text it always was */
-      setNameWithPrestige(name, p.name, vroomPrestigeFor(p, key, roomClassOf(data)), "pg-mark-vr");
+      name.className = "lb-name"; name.textContent = p.name;
       if(key === vroomMyKey){
         const youTag = document.createElement("span");
         youTag.className = "vroom-you-tag"; youTag.textContent = "(You)";
@@ -154114,12 +153367,7 @@ function buildVroomChatPanel(container, ctx){
            307): a message keeps the name it was sent under, so a group
            chat went on saying "Davis" for somebody the list and the
            roster both call Maddog. */
-        const sender = ((CTX.nameFor && m.key) ? (CTX.nameFor(m.key, m.name) || m.name) : m.name);
-        /* (384.134) the sender's prestige emblem between the name and its colon, in the Virtual Room's chat only (a Fire Code room) */
-        let pgChat = 0;
-        try{ pgChat = (CTX.prestigeFor && m.key) ? CTX.prestigeFor(m.key, roomParticipants) : 0; }catch(e){ pgChat = 0; }
-        if(pgChat){ name.append(sender, prestigeMark(pgChat, "pg-mark-vr"), ": "); }
-        else name.textContent = sender + ": ";
+        name.textContent = ((CTX.nameFor && m.key) ? (CTX.nameFor(m.key, m.name) || m.name) : m.name) + ": ";
         /* Your own name stays on the accent - that is the one colour you
            already read as "me" everywhere else in the app - and everyone
            else takes the colour their marker has on the race line. */
@@ -155627,8 +154875,7 @@ function buildVroomRacePodium(data){
     spot.className = "lw-podium-spot lw-place-" + (i + 1) + (r.key === vroomMyKey ? " is-me" : "");
     spot.dataset.key = r.key;
     const nm = document.createElement("span");
-    nm.className = "lw-podium-name";
-    setNameWithPrestige(nm, r.key === vroomMyKey ? "You" : (r.p.name || "?"), vroomPrestigeFor(r.p, r.key, roomClassOf(data)), "pg-mark-vr");
+    nm.className = "lw-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
     const pts = document.createElement("span");
     pts.className = "lw-podium-pts"; pts.textContent = xpWith(r, i).toLocaleString() + " XP";
     spot.append(vroomPodiumDisc(faceFor(r.p, r.key, ROOM_FACE)), nm, pts, vroomPodiumStep(i + 1));
@@ -155648,8 +154895,7 @@ function buildVroomRacePodium(data){
       const av = document.createElement("span");
       av.className = "vr-podium-av"; av.appendChild(faceSvgFor(r.p, r.key, ROOM_FACE));
       const nm = document.createElement("span");
-      nm.className = "vr-podium-name";
-      setNameWithPrestige(nm, r.key === vroomMyKey ? "You" : (r.p.name || "?"), vroomPrestigeFor(r.p, r.key, roomClassOf(data)), "pg-mark-vr");
+      nm.className = "vr-podium-name"; nm.textContent = r.key === vroomMyKey ? "You" : (r.p.name || "?");
       const x = document.createElement("span");
       x.className = "vr-podium-xp"; x.textContent = xpWith(r, i).toLocaleString() + " XP";
       row.append(pl, av, nm, x);
@@ -155704,7 +154950,7 @@ function buildVroomTeamPodium(d, o){
       av.className = "vr-podium-av"; av.appendChild(faceSvgFor(pp, k, ROOM_FACE));
       const nm = document.createElement("span");
       nm.className = "vr-podium-name";
-      setNameWithPrestige(nm, (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : ""), vroomPrestigeFor(pp, k, roomClassOf(d)), "pg-mark-vr");
+      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && o.numOf(k) > 0 ? "  ★" : "");
       const x = document.createElement("span");
       x.className = "vr-podium-xp"; x.textContent = o.numOf(k).toLocaleString() + (o.short ? " " + o.short : "");
       row.append(av, nm, x);
@@ -155893,9 +155139,9 @@ function startVroomRaceCutscene(){
   detachVroomListener();
   const data = lastFinaleData || {};
   const ranked = vroomRankedEntries(data);
-  playVroomRaceCutscene(ranked, roomClassOf(data));
+  playVroomRaceCutscene(ranked);
 }
-function playVroomRaceCutscene(ranked, roomCls){   /* (384.134) roomCls: the room's class, for the emblems beside the names */
+function playVroomRaceCutscene(ranked){
   document.getElementById("vroom-race-cut")?.remove();
   const overlay = document.createElement("div");
   overlay.id = "vroom-race-cut";
@@ -155956,8 +155202,7 @@ function playVroomRaceCutscene(ranked, roomCls){   /* (384.134) roomCls: the roo
     /* "(you)" never gives way to a long name on a narrow phone - the name
        does (build 315: "Madison (y..." at 320px) */
     const nmText = document.createElement("span");
-    nmText.className = "vrc-name-text";
-    setNameWithPrestige(nmText, r.p.name || "?", vroomPrestigeFor(r.p, r.key, roomCls), "pg-mark-vr");
+    nmText.className = "vrc-name-text"; nmText.textContent = r.p.name || "?";
     nm.appendChild(nmText);
     if(r.key === me){
       const you = document.createElement("span");
@@ -157827,15 +157072,6 @@ function renderRankingRows(rows, entries, board, opts){
     const name = document.createElement("span");
     name.className = "rank-name lb-name";
     name.textContent = entry.firstName || "Anonymous";
-    /* (384.126) THE PRESTIGE EMBLEM beside the name (Fire Code's board): the name keeps its ellipsis in a span of its own, the emblem
-       never shrinks; the highest prestige also frames the row in gold and crimson (lb-pgmax, below) - Mastery's is the gold name and
-       the turning ring, this is the row itself */
-    let pgN = 0;
-    try{ pgN = entryPrestige(entry); }catch(e){}
-    if(pgN){
-      const t = document.createElement("span"); t.className = "pg-nm"; t.textContent = entry.firstName || "Anonymous";
-      name.textContent = ""; name.classList.add("has-pg"); name.append(t, prestigeMark(pgN, "pg-mark-lb"));
-    }
     const stats = document.createElement("span");
     stats.className = "rank-stat lb-stats";
     /* The entry as well as the number: Overall's line is made of three
@@ -157919,13 +157155,6 @@ function renderRankingRows(rows, entries, board, opts){
       drawWornRim(avatarWrap, pr.rim);
       name.classList.toggle("is-mastery", pr.mastery);
     }catch(e){}
-    row.classList.toggle("is-pg-max", pgN === PRESTIGE_MAX);
-    row.querySelectorAll(":scope > .lb-pgmax").forEach(n => n.remove());
-    if(pgN === PRESTIGE_MAX){
-      const fr = document.createElement("i"); fr.className = "lb-pgmax"; fr.setAttribute("aria-hidden", "true");
-      const sh = document.createElement("i"); sh.className = "lb-pgmax-sheen"; fr.appendChild(sh);
-      row.appendChild(fr);
-    }
     /* a bare frame carried over from the last drawing of this board is still bare */
     if(row.querySelector("[data-lazy-av], [data-lazy-mark]")) row.dataset.lazyArt = "1"; else delete row.dataset.lazyArt;
     rows.appendChild(row);
@@ -158683,11 +157912,9 @@ function rankDetail(rankKey){
 }
 function characterDetail(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
-  const kind = def && def.secret ? "Secret" : def && def.unlock ? "Rank reward" : def && def.feat ? "Challenge reward" : def && def.prestige ? "Prestige reward" : "Starter";
+  const kind = def && def.secret ? "Secret" : def && def.unlock ? "Rank reward" : def && def.feat ? "Challenge reward" : "Starter";
   const o = { kind: "character", id: id, kicker: kind, name: AVATAR_DISPLAY_NAME[id] || id };
   if(!def) return o;
-  /* (384.126) a prestige character: what takes it, and how many classmates have */
-  if(def.prestige) return unlockDetailLive(prestigeItemDetail(o, def.prestige), () => characterDetail(id), () => !isLockedCharacter(id));
   /* Held through a press-and-hold (build 259): a starter says so, and a
      character kept from an earlier build says that. */
   if(!def.unlock && !def.feat){
@@ -158737,7 +157964,6 @@ function bannerDetail(id){
   const o = { kind: "banner", id: id, kicker: "Banner", name: def ? def.name : id };
   if(!def) return o;
   if(def.rank) return Object.assign(o, { kicker: "Rank banner" }, rankDetail(def.rank));
-  if(def.prestige){ o.kicker = "Prestige banner"; return unlockDetailLive(prestigeItemDetail(o, def.prestige), () => bannerDetail(id), () => bannerEarned(id)); }
   if(def.secret){ o.kicker = "Secret banner"; o.desc = def.label + "."; return o; }
   if(def.flareChar){
     o.kicker = "Secret banner";
@@ -159726,8 +158952,6 @@ function rimColorOf(id){
 }
 /* the line every unlock card gets under its rule: its rarity (or nothing, before the board has loaded) */
 function rarityTextFor(o){
-  /* (384.126) a prestige item says its own (prestigeRarity: who has taken that prestige) */
-  if(typeof o.rarityText === "string") return o.rarityText;
   try{
     const where = o.rarityWhere || unlockWhere(o.kind, o.id);
     if(!where) return "";
@@ -159815,11 +159039,11 @@ function unlockItemThumb(it){
 function buildTierRow(t, x, isNext){
   const row = document.createElement("button");
   row.type = "button";
-  row.className = "trk-tier" + (x.held ? " is-held" : "") + (isNext ? " is-next" : "") + (x.prestige ? " is-prestige" : "");
+  row.className = "trk-tier" + (x.held ? " is-held" : "") + (isNext ? " is-next" : "") + (x.goldTier ? " is-gold" : "");
   row.dataset.track = t.key; row.dataset.tier = String(x.n);
   const num = document.createElement("span");
-  /* (384.126) Fire Code has Prestige now, so its tracks' last tier is the GOLD tier there (its number, on the gold chip) - one word, one thing */
-  num.className = "trk-num"; num.textContent = x.prestige && !prestigeOn() ? "P" : String(x.n);
+  /* (384.135) every track's last tier is the GOLD tier, in both classes: its number, on the gold chip */
+  num.className = "trk-num"; num.textContent = String(x.n);
   num.setAttribute("aria-hidden", "true");
   const tx = document.createElement("span");
   tx.className = "trk-tx";
@@ -159847,13 +159071,13 @@ function buildTierRow(t, x, isNext){
     end.textContent = miss ? "Needs tier " + miss.n : "Not yet";
   } else end.textContent = x.lead.need > 1 ? x.lead.have.toLocaleString() + " / " + x.lead.need.toLocaleString() : "Not yet";
   row.append(num, unlockItemThumb(x.lead), tx, end);
-  row.setAttribute("aria-label", t.title + ", " + (x.prestige ? (prestigeOn() ? "gold tier" : "prestige") : "tier " + x.n) + ": " + nm.textContent + ". " + x.lead.label + ". " +
+  row.setAttribute("aria-label", t.title + ", " + (x.goldTier ? "gold tier" : "tier " + x.n) + ": " + nm.textContent + ". " + x.lead.label + ". " +
     (x.held ? "Held." : x.lead.have.toLocaleString() + " of " + x.lead.need.toLocaleString() + "."));
   row.addEventListener("click", () => { const o = unlockItemDetail(x.lead); if(o) showUnlockDetail(o); });
   return row;
 }
 function buildTrackCard(t){
-  const note = t.next ? (t.next.prestige ? (prestigeOn() ? "Next: the gold tier" : "Next: the prestige tier") : "Next: tier " + t.next.n + " of " + t.total) : "Every tier is yours";
+  const note = t.next ? (t.next.goldTier ? "Next: the gold tier" : "Next: tier " + t.next.n + " of " + t.total) : "Every tier is yours";
   const box = buildCustomizeGroup("trk-" + t.key, t.title, note, t.held, t.total, "trk-tiers");
   box.card.classList.add("trk-card");
   box.card.dataset.track = t.key;
@@ -159865,7 +159089,7 @@ function buildItemListCard(key, title, note, items){
   const box = buildCustomizeGroup(key, title, note, have, items.length, "trk-tiers");
   box.card.classList.add("trk-card");
   items.forEach(it => {
-    const x = { n: 0, prestige: false, rewards: [it], lead: it, held: !!it.held };
+    const x = { n: 0, goldTier: false, rewards: [it], lead: it, held: !!it.held };
     const row = buildTierRow({ key, title }, x, false);
     row.querySelector(".trk-num").textContent = "";
     row.querySelector(".trk-num").classList.add("is-blank");
@@ -159901,208 +159125,6 @@ function buildRimsCard(view){
   rims.forEach(r => box.grid.appendChild(make(r.id, r.name, r.held, r.color)));
   return box.card;
 }
-/* ---- PRESTIGE ON SCREEN (384.126) ----
-   The Tracks screen opens with a Prestige card (the three emblems, how many taken, what is next) and Customize's Next up card has a row
-   into it, Fire Code only. The Prestige screen: a card per prestige - its emblem, its state, its rarity line, its requirements as a
-   checklist (each with its progress, the next one marked), what it gives (character, banner, emblem) - and, when the next one can be
-   taken, its Take button: a confirm sheet ("Take Prestige I?", what it gives, that nothing resets), then the ceremony and the reward
-   cards (playPrestigeScene). */
-function prestigeItemDetail(o, n){
-  o.desc = "Take Prestige " + PRESTIGE_ROMAN[n] + ".";
-  o.note = "Prestige is on the Tracks screen. Nothing resets when you take it.";
-  o.have = prestigeTaken() >= n ? 1 : 0; o.need = 1;
-  try{ const r = prestigeRarity(n); if(r) o.rarityText = r.text; }catch(e){}
-  return o;
-}
-/* the requirement row: a tick or a ring, the label, what is left, a bar */
-function buildPrestigeReq(r, isNext){
-  const row = document.createElement("div");
-  row.className = "pg-req" + (r.done ? " is-done" : "") + (isNext ? " is-next" : "");
-  row.dataset.req = r.key;
-  const mark = document.createElement("span");
-  mark.className = "pg-req-mark"; mark.setAttribute("aria-hidden", "true");
-  if(r.done) mark.innerHTML = '<svg viewBox="0 0 16 16"><path d="M3.4 8.4 L6.6 11.4 L12.6 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  const tx = document.createElement("span"); tx.className = "pg-req-tx";
-  const nm = document.createElement("span"); nm.className = "pg-req-name"; nm.textContent = r.label;
-  const sub = document.createElement("span"); sub.className = "pg-req-sub"; sub.textContent = r.sub;
-  const bar = document.createElement("span"); bar.className = "trk-bar pg-req-bar"; bar.setAttribute("aria-hidden", "true");
-  const fill = document.createElement("i");
-  const frac = r.done ? 1 : r.need ? Math.max(0, Math.min(1, r.have / r.need)) : 0;
-  fill.style.width = Math.round(frac * 1000) / 10 + "%";
-  bar.appendChild(fill);
-  tx.append(nm, sub, bar);
-  row.append(mark, tx);
-  row.setAttribute("role", "listitem");
-  row.setAttribute("aria-label", r.label + ": " + (r.done ? "done" : r.sub));
-  return row;
-}
-/* what a prestige gives: three small tiles - the character on its plate, the banner as its still picture, the emblem */
-function buildPrestigeGives(n, cls){
-  const box = document.createElement("div");
-  box.className = "pg-gives" + (cls ? " " + cls : "");
-  const tile = (k, name, art) => {
-    const t = document.createElement("div"); t.className = "pg-give pg-give-" + k;
-    const a = document.createElement("span"); a.className = "pg-give-art"; a.appendChild(art);
-    const nm = document.createElement("span"); nm.className = "pg-give-name"; nm.textContent = name;
-    const kd = document.createElement("span"); kd.className = "pg-give-kind"; kd.textContent = k === "char" ? "Character" : k === "banner" ? "Banner" : "Emblem";
-    t.append(a, nm, kd);
-    return t;
-  };
-  const cid = PRESTIGE_CHAR[n], bid = PRESTIGE_BANNER[n];
-  const plate = document.createElement("span"); plate.className = "pg-give-plate";
-  try{ plate.style.setProperty("--char-glow", avatarGlowColor(cid)); plate.appendChild(buildAvatarCharSVGSafe(cid)); }catch(e){}
-  const strip = document.createElement("span"); strip.className = "pg-give-strip";
-  try{ const u = bannerRowStillURL(bid); if(u) strip.style.backgroundImage = 'url("' + u + '")'; }catch(e){}
-  box.append(tile("char", AVATAR_DISPLAY_NAME[cid] || cid, plate), tile("banner", (bannerDef(bid) || {}).name || bid, strip),
-    tile("emblem", "Prestige " + PRESTIGE_ROMAN[n], buildPrestigeEmblemSVG(n)));
-  return box;
-}
-function buildPrestigeCard(e, view){
-  const card = document.createElement("section");
-  card.className = "cz-group trk-card pg-card pg-card-" + e.n + (e.taken ? " is-taken" : "") + (e.current ? " is-current" : "") + (e.eligible ? " is-ready" : "");
-  card.dataset.pg = String(e.n);
-  const head = document.createElement("div"); head.className = "pg-card-head";
-  const em = document.createElement("span"); em.className = "pg-card-emblem"; em.appendChild(buildPrestigeEmblemSVG(e.n));
-  const tx = document.createElement("div"); tx.className = "pg-card-tx";
-  const h = document.createElement("h3"); h.className = "pg-card-title"; h.textContent = "Prestige " + e.roman + (e.n === PRESTIGE_MAX ? " · Max" : "");
-  const st = document.createElement("p"); st.className = "pg-card-state"; st.textContent = e.step;
-  tx.append(h, st);
-  try{ const r = prestigeRarity(e.n); if(r){ const rr = document.createElement("p"); rr.className = "pg-card-rarity"; rr.textContent = r.text; tx.appendChild(rr); } }catch(err){}
-  head.append(em, tx);
-  card.appendChild(head);
-  const list = document.createElement("div"); list.className = "pg-reqs"; list.setAttribute("role", "list");
-  const firstOpen = e.reqs.find(r => !r.done);
-  e.reqs.forEach(r => list.appendChild(buildPrestigeReq(r, e.current && r === firstOpen)));
-  card.appendChild(list);
-  card.appendChild(buildPrestigeGives(e.n));
-  if(e.eligible){
-    const go = document.createElement("button");
-    go.type = "button"; go.className = "next playbtn pg-take";
-    go.textContent = "Take Prestige " + e.roman;
-    go.addEventListener("click", () => confirmPrestige(e.n));
-    card.appendChild(go);
-  }
-  return card;
-}
-function showPrestige(back){
-  if(!prestigeOn()) return showUnlockTracks();
-  setActiveNav(null);
-  countEl.textContent = "Prestige";
-  const goBack = typeof back === "function" ? back : () => showUnlockTracks();
-  const view = prestigeView();
-  const panel = document.createElement("section");
-  panel.className = "panel screen-customize cz-page cz-page-prestige screen-prestige";
-  panel.appendChild(iosNavBar("Prestige", buildBackLink("Back", goBack)));
-  panel.appendChild(buildCustomizeBar("Prestige", view.taken + " of " + PRESTIGE_MAX, view.taken / PRESTIGE_MAX));
-  const note = document.createElement("p");
-  note.className = "cal-sub cz-page-note";
-  note.textContent = "Three prestiges, taken in order. Each gives a character, a banner and an emblem beside your name. Nothing resets: your XP, level, rank, badges and unlocks stay as they are.";
-  panel.appendChild(note);
-  const sect = document.createElement("div");
-  sect.className = "sect trk-sect pg-sect";
-  view.list.forEach(e => sect.appendChild(buildPrestigeCard(e, view)));
-  panel.appendChild(sect);
-  stage.replaceChildren(panel);
-  toTop();
-}
-/* the Tracks screen's card and Customize's row: the three emblems (lit when taken), the count, what is next */
-function buildPrestigeEntry(kind){
-  const view = prestigeView();
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = (kind === "row" ? "trk-all pg-entry-row" : "pg-entry") + (view.list.some(e => e.eligible) ? " is-ready" : "") + (view.max ? " is-max" : "");
-  const ems = document.createElement("span"); ems.className = "pg-entry-ems"; ems.setAttribute("aria-hidden", "true");
-  view.list.forEach(e => { const s = document.createElement("span"); s.className = "pg-entry-em" + (e.taken ? " is-taken" : ""); s.appendChild(buildPrestigeEmblemSVG(e.n)); ems.appendChild(s); });
-  const tx = document.createElement("span"); tx.className = "pg-entry-tx";
-  const lab = document.createElement("span"); lab.className = "trk-all-label pg-entry-label"; lab.textContent = "Prestige";
-  const cur = view.list.find(e => e.current);
-  const sub = document.createElement("span"); sub.className = "pg-entry-sub";
-  sub.textContent = view.max ? "Max prestige" : cur && cur.eligible ? "Prestige " + cur.roman + " is ready to take" : cur ? "Prestige " + cur.roman + " · " + cur.step : "";
-  tx.append(lab, sub);
-  const cnt = document.createElement("span"); cnt.className = "trk-all-count"; cnt.textContent = view.taken + " of " + PRESTIGE_MAX;
-  const chev = document.createElement("span"); chev.className = "cz-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
-  b.append(ems, tx, cnt, chev);
-  b.setAttribute("aria-label", "Prestige: " + view.taken + " of " + PRESTIGE_MAX + " taken. " + sub.textContent + ".");
-  const from = kind === "row" ? () => showCustomize() : () => showUnlockTracks();
-  b.addEventListener("click", () => showPrestige(from));
-  return b;
-}
-/* THE CONFIRM STEP: what it gives and that nothing resets; Take goes on to the ceremony */
-function confirmPrestige(n){
-  if(!prestigeEligible(n)) return showPrestige();
-  const overlay = document.createElement("div");
-  overlay.className = "invite-overlay";
-  const sheet = document.createElement("div");
-  sheet.className = "invite-sheet person-card pg-confirm";
-  const em = document.createElement("div"); em.className = "pg-confirm-emblem"; em.appendChild(buildPrestigeEmblemSVG(n));
-  const kick = document.createElement("p"); kick.className = "unlock-card-kicker"; kick.textContent = "Prestige";
-  const nm = document.createElement("h2"); nm.className = "unlock-card-name"; nm.textContent = "Take Prestige " + PRESTIGE_ROMAN[n] + "?";
-  const p = document.createElement("p"); p.className = "pg-confirm-body";
-  p.textContent = "You get the " + (AVATAR_DISPLAY_NAME[PRESTIGE_CHAR[n]] || "") + " character, the " + ((bannerDef(PRESTIGE_BANNER[n]) || {}).name || "") +
-    " banner and the Prestige " + PRESTIGE_ROMAN[n] + " emblem beside your name.";
-  const keep = document.createElement("p"); keep.className = "pg-confirm-keep";
-  keep.textContent = "Nothing resets. Your XP, level, rank, badges and unlocks stay as they are.";
-  const go = document.createElement("button"); go.type = "button"; go.className = "next pg-confirm-go"; go.textContent = "Take Prestige " + PRESTIGE_ROMAN[n];
-  const no = document.createElement("button"); no.type = "button"; no.className = "next ghost pg-confirm-no"; no.textContent = "Not now";
-  go.addEventListener("click", () => {
-    overlay.remove();
-    if(!takePrestige(n)) return showPrestige();
-    playPrestigeScene(n);
-  });
-  no.addEventListener("click", () => overlay.remove());
-  sheet.append(em, kick, nm, p, buildPrestigeGives(n, "is-small"), keep, go, no);
-  overlay.appendChild(sheet);
-  overlay.addEventListener("click", ev => { if(ev.target === overlay) overlay.remove(); });
-  mountSheetOverlay(overlay);
-}
-/* THE CEREMONY (the rank-up's own grammar, no Nova talk): the screen goes dark, a glory of light turns up behind where the emblem will
-   be, rings go out, a flash at 1.2s and the emblem forms out of it; the title at 1.9s ("PRESTIGE I" and what it is); at 3.2s the three
-   reward cards rise in turn (character, banner, emblem); a Done button. Sounds are the catalogue's own: the flash (rank.flash), the title
-   (rank.title), the cards (res.unlock.banner). Reduce motion: everything is drawn at rest, at once - nothing waits at opacity 0.
-   It is appended to <body>, holds cutscene focus (no tab bar or chat while it plays), and clears itself on Done, which opens Profile. */
-function playPrestigeScene(n){
-  const scene = document.createElement("div");
-  scene.className = "pg-scene pg-scene-" + n;
-  scene.setAttribute("role", "dialog");
-  scene.setAttribute("aria-label", "Prestige " + PRESTIGE_ROMAN[n] + " taken");
-  const piece = (c, tag) => { const s = document.createElement(tag || "span"); s.className = c; s.setAttribute("aria-hidden", "true"); return s; };
-  const stageEl = piece("pg-scene-stage", "div");
-  const sparks = piece("pg-scene-sparks");
-  for(let i = 0; i < 16; i++){ const sp = document.createElement("i"); sp.style.setProperty("--a", (i * 22.5 + (i % 2 ? 8 : 0)) + "deg"); sp.style.setProperty("--d", (i % 3 === 0 ? 10 : i % 3 === 1 ? 8 : 9) + "rem"); sparks.appendChild(sp); }
-  const em = piece("pg-scene-emblem");
-  em.appendChild(buildPrestigeEmblemSVG(n));
-  stageEl.append(piece("pg-scene-glow"), piece("pg-scene-rays"), piece("pg-scene-ring"), piece("pg-scene-ring is-late"), sparks, em, piece("pg-scene-flash"));
-  const title = document.createElement("div"); title.className = "pg-scene-title";
-  const t1 = document.createElement("p"); t1.className = "pg-scene-kicker"; t1.textContent = n === PRESTIGE_MAX ? "Max prestige" : "Prestige taken";
-  const t2 = document.createElement("h2"); t2.className = "pg-scene-name"; t2.textContent = "Prestige " + PRESTIGE_ROMAN[n];
-  title.append(t1, t2);
-  const cards = buildPrestigeGives(n, "pg-scene-cards");
-  const done = document.createElement("button"); done.type = "button"; done.className = "next pg-scene-done"; done.textContent = "Done";
-  scene.append(stageEl, title, cards, done);
-  const timers = [];
-  let ended = false;
-  const end = () => {
-    if(ended) return; ended = true;
-    timers.forEach(t => clearTimeout(t));
-    scene.remove();
-    try{ setCutsceneFocus(false); }catch(e){}
-    try{ showProfile(); }catch(e){ try{ showPrestige(); }catch(e2){} }
-  };
-  scene.__nova = { skip: end };
-  done.addEventListener("click", end);
-  try{ setCutsceneFocus(true); }catch(e){}
-  document.body.appendChild(scene);
-  /* the system's Reduce motion or the app's own (Settings, theme.reduceMotion) */
-  const still = (() => { try{ if(theme && theme.reduceMotion) return true; return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } })();
-  if(still) scene.classList.add("is-still");
-  requestAnimationFrame(() => scene.classList.add("is-on"));
-  const at = (ms, f) => timers.push(setTimeout(() => { if(!ended) f(); }, still ? 0 : ms));
-  at(1220, () => { try{ playSound("rank.flash"); }catch(e){} });
-  at(1900, () => { try{ playSound("rank.title"); }catch(e){} });
-  at(3200, () => { try{ playSound("res.unlock.banner"); }catch(e){} });
-  try{ done.focus({ preventScroll: true }); }catch(e){}
-  return scene;
-}
 function showUnlockTracks(){
   setActiveNav(null);
   countEl.textContent = "Tracks";
@@ -160114,13 +159136,10 @@ function showUnlockTracks(){
   panel.appendChild(buildCustomizeBar("Tracks", held + " of " + total, total ? held / total : 0));
   const note = document.createElement("p");
   note.className = "cal-sub cz-page-note";
-  note.textContent = prestigeOn() ? "Five tracks, each in order, each ending in a gold tier. Tap any tier to see how it's earned."
-    : "Five tracks, each in order, each ending in a prestige tier. Tap any tier to see how it's earned.";
+  note.textContent = "Five tracks, each in order, each ending in a gold tier. Tap any tier to see how it's earned.";
   panel.appendChild(note);
   const sect = document.createElement("div");
   sect.className = "sect trk-sect";
-  /* (384.126) Fire Code: the way into Prestige, first */
-  if(prestigeOn()){ try{ sect.appendChild(buildPrestigeEntry("card")); }catch(e){} }
   view.tracks.forEach(t => sect.appendChild(buildTrackCard(t)));
   if(view.feats.length) sect.appendChild(buildItemListCard("trk-feats", "Feats", "One-offs, outside the tracks", view.feats));
   const caps = [view.mastery];
@@ -160142,11 +159161,11 @@ function buildNextUpCard(){
   box.card.classList.add("trk-card", "trk-nextup");
   const cnt = box.head.querySelector(".cz-group-count"); if(cnt) cnt.remove();
   list.forEach(e => {
-    const x = { n: e.tier, prestige: !!e.prestige, rewards: [e.item], lead: Object.assign({}, e.item, { have: e.have, need: e.need }), held: false };
+    const x = { n: e.tier, goldTier: !!e.goldTier, rewards: [e.item], lead: Object.assign({}, e.item, { have: e.have, need: e.need }), held: false };
     const row = buildTierRow({ key: e.track, title: e.trackTitle }, x, false);
     row.classList.add("trk-next-row");
     const goal = row.querySelector(".trk-goal");
-    if(goal) goal.textContent = e.trackTitle + (e.track === "feat" ? "" : e.prestige ? (prestigeOn() ? " · Gold tier" : " · Prestige") : " · Tier " + e.tier) +
+    if(goal) goal.textContent = e.trackTitle + (e.track === "feat" ? "" : e.goldTier ? " · Gold tier" : " · Tier " + e.tier) +
       " · " + (e.need - e.have).toLocaleString() + " to go";
     if(e.track === "feat"){ const n = row.querySelector(".trk-num"); n.textContent = ""; n.classList.add("is-blank"); }
     box.grid.appendChild(row);
@@ -160160,8 +159179,6 @@ function buildNextUpCard(){
   all.setAttribute("aria-label", "All tracks: " + held + " of " + total + " tiers held");
   all.addEventListener("click", () => showUnlockTracks());
   box.card.appendChild(all);
-  /* (384.126) Fire Code: the row into Prestige, under All tracks */
-  if(prestigeOn()){ try{ box.card.appendChild(buildPrestigeEntry("row")); }catch(e){} }
   return box.card;
 }
 /* ---- A BANNER AS ONE STILL PICTURE (384.120) ----
@@ -160336,7 +159353,7 @@ function buildCustomizeCharacterSect(){
      before anyone taps it. */
   const charGroups = [
     { title: "Starters", note: "Yours from day one",
-      ids: AVATAR_CHARACTERS.filter(c => !c.unlock && !c.feat && !c.retired && !c.legacy && !c.prestige).map(c => c.id) },
+      ids: AVATAR_CHARACTERS.filter(c => !c.unlock && !c.feat && !c.retired && !c.legacy).map(c => c.id) },
     { title: "Rank rewards", note: "Handed over as you climb the ranks",
       ids: AVATAR_CHARACTERS.filter(c => c.unlock).sort((a, b) => TIER_ORDER_FULL.indexOf(a.unlock) - TIER_ORDER_FULL.indexOf(b.unlock)).map(c => c.id) },
     { title: "Challenge rewards", note: "Each one is unlocked by a challenge",
@@ -160346,9 +159363,6 @@ function buildCustomizeCharacterSect(){
        are found rather than worked towards. */
     { title: "Secrets", note: "Found, not earned \u2014 keep your eyes open",
       ids: AVATAR_CHARACTERS.filter(c => c.secret).map(c => c.id) },
-    /* (384.126) Fire Code's prestige characters, one per prestige taken (Tracks > Prestige) */
-    { title: "Prestige", note: "One for each prestige you take",
-      ids: AVATAR_CHARACTERS.filter(c => c.prestige).sort((a, b) => a.prestige - b.prestige).map(c => c.id) },
     /* (384) no Ultimate section: the one ultimate left is a challenge reward, last in that list (ULTIMATE_TOP) */
     /* A character from an earlier version that nobody can earn now, shown
        only to whoever holds it (or is still wearing a retired one). */
@@ -160476,11 +159490,9 @@ function buildCustomizeBannerSect(){
     { key: "rank", title: "Default and rank rewards", note: "Yours from day one, then handed over as you climb the ranks", defs: [null].concat(BANNERS.filter(d => d.rank)) },
     { key: "challenge", title: "Challenge rewards", note: "Each one is unlocked by a challenge",
       /* (384.114) Fire Code's Completionist after even that: it asks for everything, Star Ranger included */
-      defs: BANNERS.filter(d => !d.rank && !d.flareChar && !d.ultimate && !d.completionist && !d.prestige).concat(BANNERS.filter(d => d.ultimate && !d.rank && !d.flareChar))
+      defs: BANNERS.filter(d => !d.rank && !d.flareChar && !d.ultimate && !d.completionist).concat(BANNERS.filter(d => d.ultimate && !d.rank && !d.flareChar))
         .concat(BANNERS.filter(d => d.completionist)) },
-    { key: "secret", title: "Secrets", note: "Found, not earned — keep your eyes open", defs: BANNERS.filter(d => d.flareChar && !d.rank) },
-    /* (384.126) Fire Code's prestige banners */
-    { key: "prestige", title: "Prestige", note: "One for each prestige you take", defs: BANNERS.filter(d => d.prestige) }
+    { key: "secret", title: "Secrets", note: "Found, not earned — keep your eyes open", defs: BANNERS.filter(d => d.flareChar && !d.rank) }
   ];
   let bannerGrid = null;
   /* Drawn just after the screen is up, not before (build 313) - see
@@ -160860,7 +159872,7 @@ function isVeiledBanner(id){
    veil was blurred from), not seven more live scenes on Customize */
 function isStillLockedBanner(id){
   const d = id && bannerDef(id);
-  return !!(d && (d.flareChar || d.ultimate || d.completionist || d.prestige) && !bannerEarned(id));
+  return !!(d && (d.flareChar || d.ultimate || d.completionist) && !bannerEarned(id));
 }
 function lockedBannerStill(id){
   const svg = bannerStaticSVG(id);
@@ -164162,8 +163174,7 @@ function buildProfileCaseShut(have, total){
    well. Ensure the rank ladder one is good to go, ensure they animate and stuff."
    - THE RANK LADDER (finished, no options): the foot of the Next rank card. Every rank's emblem on one line in a seven-column grid,
      the line lit from the first rank to yours; ranks you hold lit, yours larger with a ring and its name under it, the next one
-     dashed, the rest dim. The track is centred on your rank whenever it is wider than its box (a narrow phone). Fire Code's
-     prestige mark rides on the top rank once one is taken.
+     dashed, the rest dim. The track is centred on your rank whenever it is wider than its box (a narrow phone).
    - THE BADGE CASE (a|b|c, html[data-pfrow-badge]): never a few pins standing in for the case. a = a small shut case whose front
      fills to the share you hold, the newest badge set on its lid; b = a ring of one tick per badge, lit for each you hold, the
      newest badge in the middle and the closest one to earn named; c = the newest badge as a coin on its stack, and one segment
@@ -164249,7 +163260,6 @@ function pfrLadderTrack(st){
   const rail = pfrEl("span", "pfr-ld-rail"); rail.setAttribute("aria-hidden", "true");
   rail.appendChild(pfrEl("i", "pfr-ld-fill"));
   track.appendChild(rail);
-  let pg = 0; try{ pg = prestigeTaken(); }catch(e){}
   order.forEach((key, i) => {
     const state = i === ci ? "is-here" : i < ci ? "is-done" : i === ci + 1 ? "is-next" : "is-locked";
     const cell = pfrEl("span", "pfr-ld-cell " + state);
@@ -164266,7 +163276,6 @@ function pfrLadderTrack(st){
     if(i === ci){
       nd.appendChild(pfrEl("i", "pfr-ld-pulse"));
       em.appendChild(pfrEl("i", "pfr-ld-glint"));
-      if(i === n - 1 && pg){ const pm = prestigeMark(pg, "pfr-ld-pg"); if(pm) nd.appendChild(pm); }
     }
     cell.appendChild(nd);
     if(i === ci) cell.appendChild(pfrEl("span", "pfr-ld-name", RANK_DISPLAY_NAME[key]));
@@ -164287,9 +163296,8 @@ function pfrLadderFill(foot){
   const n = st.order.length;
   const curName = st.ci >= 0 ? RANK_DISPLAY_NAME[st.cur] : "";
   const nextKey = st.ci + 1 < n ? st.order[st.ci + 1] : null;
-  let pg = 0; try{ pg = prestigeTaken(); }catch(e){}
   const sub = st.ci < 0 ? "No rank yet · " + RANK_DISPLAY_NAME[st.order[0]] + " next"
-    : !nextKey ? curName + (pg ? " · Prestige " + PRESTIGE_ROMAN[pg] : " · every rank reached")
+    : !nextKey ? curName + " · every rank reached"
     : "Rank " + (st.ci + 1) + " of " + n + " · " + RANK_DISPLAY_NAME[nextKey] + " next";
   const head = pfrEl("span", "pfr-ld-head");
   const words = pfrEl("span", "pf-act-words");
@@ -164718,8 +163726,6 @@ function showProfile(defaultTab, opts){
     }
   }catch(e){}
   nameDisplayRow.append(nameDisplayText);
-  /* (384.126) the prestige emblem beside your name: the highest you have taken (Fire Code only) */
-  { const pm = prestigeMark(prestigeTaken(), "pg-mark-profile"); if(pm){ nameDisplayRow.classList.add("has-pg"); nameDisplayRow.appendChild(pm); } }
   const customizeRow = document.createElement("div");
   customizeRow.className = "profile-customize-row";
   customizeRow.appendChild(nameEditSlot);
