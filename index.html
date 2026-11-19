@@ -39151,6 +39151,12 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] body #stage > .classselect-panel > .classselect-cards{ grid-template-columns:minmax(0, 1fr) !important; gap:.4rem !important;
       grid-template-rows:repeat(var(--cc-n, 2), 1fr) !important; grid-auto-rows:auto !important;
       width:auto; align-self:stretch; margin-left:-1.25rem !important; margin-right:-1.25rem !important; }
+    /* (384.136) the foot under Continue, in this band only. Madison's Enroll copy for Fire Code (the IFC cross-referenced with the county's
+       amendments, which apply where they amend) is four lines here, and the cards are the same height (check-b384-classcards A), so the
+       step grew 58px and an installed SE scrolled 39px - all of it empty foot: the page's 3rem tab-bar room (no tab bar on this step) and
+       the panel's 24px. Continue keeps 28px under it (more where the phone has a bottom inset); every word and both card heights stay. */
+    html[data-layout] body .wrap:has(> #stage > .classselect-panel){ padding-bottom:max(1rem, env(safe-area-inset-bottom, 0px)); }
+    html[data-layout] body #stage > .classselect-panel{ padding-bottom:12px !important; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon{ padding-top:.3rem !important; padding-bottom:.3rem !important; }
     /* the padding as two variables, so the picked check can find the mark's corner from the card (under 600px tall: 8px, as
        the step's own rule there has it, and the 22.5rem tier's .6rem sides) */

@@ -151,8 +151,13 @@ def run(br):
         e, s = f["edge"], f["safe"]
         # (384.80, changed on purpose: the owner's Safari 26 / r/PWA reports) ONE strip: #top-edge over the whole safe area (6px where there is none),
         # a solid opaque colour with no image, taps going through; #top-safe is folded into it
+        # (384.136, changed on purpose: 384.134 "the top banner thing here, it doesn't match the rest of the screen") the strip may now wear
+        # the sky's own glows as an image, ending in the opaque paper, over the same solid colour WebKit samples; what WebKit reads (the
+        # background-COLOUR) is still one opaque colour, and check-b384-topseam holds the strip's pixels to the sky's
+        ebi = f["ebi"] or ""
+        img_ok = ebi == "none" or (re.search(r"linear-gradient\((rgb\([^)]*\)), \1\)(, none)?$", ebi) is not None and "rgba(0, 0, 0, 0) 70%" in ebi)
         chk("%s: #top-edge is the one opaque strip over the status bar's area, solid, taps through (%s, %s, %s, %s)" % (name, e and e["r"], e and e["bg"], f["ebi"], f["pe"]),
-            e and e["r"][1] == 0 and abs(e["r"][3] - max(top, 6)) < .6 and "rgba" not in e["bg"] and f["ebi"] == "none" and f["pe"] == "none", f)
+            e and e["r"][1] == 0 and abs(e["r"][3] - max(top, 6)) < .6 and "rgba" not in e["bg"] and img_ok and f["pe"] == "none", f)
         chk("%s: no second strip (#top-safe %s)" % (name, s), s is None, s)
         px = got.get("strip_px")
         chk("%s: a Profile scrolled 300 shows the same status-bar area as at rest - nothing of the page under the clock (%s pixels off)" % (name, px and px[0]), px and px[0] == 0, px)
