@@ -775,7 +775,7 @@ def main():
                     if t2.get("ult"): ult_here += 1
                     if b_.get("ult") and not t2.get("ult"): lost.append((i, "ULTIMATE", "held on the baseline, not here"))
                     added = t2.get("nBanners", 0) - b_.get("nBanners", 0)
-                    newb = [x for x in t2["banners"] if x == "vrtop10"]
+                    newb = [x for x in t2["banners"] if x in ("vrtop10", "fullcase")]   # (384.136) the academy's Full Case banner joins Pennants
                     if t2["aNeed"] - b_["aNeed"] > added or (t2["aNeed"] - t2["aHave"]) - (b_["aNeed"] - b_["aHave"]) > added - len(newb):
                         worse.append((i, b_["aHave"], b_["aNeed"], t2["aHave"], t2["aNeed"], "wins %s" % t2.get("vrWins")))
                 held_any = sum(len(x.get("chars", [])) + len(x.get("banners", [])) for x in res["this"] if "err" not in x)
@@ -786,8 +786,12 @@ def main():
                 # the same change for every account (nothing account-specific), exactly the one banner added, in BOTH classes
                 # (384.133: the owner reversed decision 5 - Supernova's rewards count in the academy too, though its 25 badges are
                 # out of reach with 24 units; the academy's Astral waits for the next units). (H) shows the banner moves the count by one.
-                chk("[%s] (B) the ultimate's count changes the same for every account, by the new banner at most (%s; %s banner added)" % (cls, grew, added),
-                    len(grew) == 1 and added == 1 and grew == [1], grew)
+                # (384.136, changed on purpose: Madison asked for the academy's "Full Case" banner) the academy adds two banners on this
+                # baseline (Pennants and Full Case), Fire Code one (its Full Case banner was already there); the ultimate's "every
+                # banner" asks for exactly those, the same for every account
+                want = 2 if cls == "academy" else 1
+                chk("[%s] (B) the ultimate's count changes the same for every account, by the new banners at most (%s; %s banner(s) added, %d expected)" % (cls, grew, added, want),
+                    len(grew) == 1 and added == want and grew == [want], grew)
                 chk("[%s] (B) nobody who holds the ultimate on the baseline loses it (%d hold it there, %d here)" % (cls, ult_base, ult_here),
                     ult_here >= ult_base and not any(x[1] == "ULTIMATE" for x in lost), [x for x in lost if x[1] == "ULTIMATE"])
                 codes = [x.get("ut") for x in res["this"]]
