@@ -164,7 +164,10 @@ class Clock:
             dt = min(1 / 30, t - self.t); t0 = self.t; self.t += dt
             self.pg.clock.run_for(max(1, int(round(self.t * 1000)) - int(round(t0 * 1000))))
             self.pg.evaluate(SEEK, self.t)
-GLINT = ".binspect-spec, .badge-glint-band, .badge-shine-band, .badge-shine, .badge-glint, .ncase-glint, .bc-spec"
+# (384.133 pin) the badge in your hand now carries the pinned badge's "Pin to profile" button (Madison asked for a badge on the
+# profile "to flex"); it is the pin's own work, measured by check-b384-pin.py, so it is hidden on both builds like the glint, and
+# the badge, its name and its card are still compared pixel for pixel.
+GLINT = ".binspect-pin, .binspect-spec, .badge-glint-band, .badge-shine-band, .badge-shine, .badge-glint, .ncase-glint, .bc-spec"
 GLINT = ", ".join(x + ", " + x + " *" for x in GLINT.split(", "))   # and what is inside each (a visible rule on a child beats an inherited hidden)
 HIDEG = "() => { let s = document.getElementById('__hideglint'); if(!s){ s = document.createElement('style'); s.id = '__hideglint'; s.textContent = '%s{visibility:hidden !important}'; document.body.appendChild(s); } }" % GLINT
 SHOWG = "() => { const s = document.getElementById('__hideglint'); if(s) s.remove(); }"
