@@ -51,20 +51,22 @@ with sync_playwright() as pw:
         m = pg.evaluate(MEASURE); errs_all += errs; ctx.close()
         tag = "%dx%d sign-up" % (w, h)
         s, g = m["soon"], m["grid"]
-        if w >= 1024:
-            # a laptop's width: three across, "More classes" a card in the classes' row (as the Classes screen from a tablet's)
-            chk("%s: three across, 'More classes' in line with the classes" % tag,
-                abs(s["t"] - m["cards"][0]["t"]) < 2 and abs(s["h"] - m["cards"][0]["h"]) < 2, (s, m["cards"]))
-        else:
-            chk("%s: 'More classes' is a slim row across the cards (%dpx tall, %d of %dpx wide)" % (tag, s["h"], s["w"], g["w"]),
-                s and s["h"] <= 80 and s["w"] >= g["w"] - 2, (s, g))
-            chk("%s: its name is one line and clear of its chip (%s lines, text ends %s, chip starts %s)" % (tag, m["titleLines"], m["textRight"] and round(m["textRight"]), m["chip"] and round(m["chip"]["l"])),
-                m["titleLines"] == 1 and m["textRight"] is not None and m["textRight"] <= m["chip"]["l"] - 4, m)
+        # (384.136, changed on purpose: Madison, "This 'more classes' thing should be bigger, should be the same size as the other class
+        # boxes for a cohesive look") More classes is a class card the same size as the others at every width: in line with them where
+        # they sit side by side (a tablet, a laptop), one of the stacked rows on a phone; its name never runs under its chip
+        same = s and all(abs(s[k] - m["cards"][0][k]) < 2 for k in ("w", "h"))
+        chk("%s: 'More classes' is the same size as the class cards (%dx%d; a class card %dx%d)" % (tag, s["w"], s["h"], m["cards"][0]["w"], m["cards"][0]["h"]), same, (s, m["cards"]))
+        if w >= 640:
+            chk("%s: side by side, 'More classes' in line with the classes" % tag, abs(s["t"] - m["cards"][0]["t"]) < 2, (s, m["cards"]))
+        chk("%s: its name is clear of its chip (%s lines, text ends %s, chip starts %s)" % (tag, m["titleLines"], m["textRight"] and round(m["textRight"]), m["chip"] and round(m["chip"]["l"])),
+            m["textRight"] is not None and m["textRight"] <= m["chip"]["l"] - 4, m)
         c, n = m["cont"], m["note"]
         chk("%s: after a pick Continue is on the screen (bottom %d of %d)" % (tag, c["b"], m["vh"]), c and c["h"] > 0 and c["b"] <= m["vh"] + .5, c)
         chk("%s: ... and clear of the small print above it (%dpx)" % (tag, c["t"] - n["b"]), n and c["t"] - n["b"] >= 8, (n, c))
     # it fits without the pick's scroll: measured before any tap
-    for w, h in ((375, 667), (375, 812), (393, 742), (1440, 820), (1536, 864)):
+    # (384.136) with More classes a full card, a phone's step is three rows tall: on an SE, a 13 mini and a phone in Safari Continue
+    # comes into view with the pick's scroll (held above, on every size); a laptop window still fits with nothing scrolled
+    for w, h in ((1440, 820), (1536, 864)):
         ctx, pg, errs = page(br, w, h, False)
         pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); document.querySelectorAll('.gs-page').forEach(n=>n.remove()); showClassSelection(); }")
         pg.wait_for_timeout(1500)
@@ -79,7 +81,7 @@ with sync_playwright() as pw:
         m = pg.evaluate(MEASURE); errs_all += errs; ctx.close()
         s, g, cards = m["soon"], m["grid"], m["cards"]
         if w < 640:
-            chk("%dx%d Classes: 'More classes' is a slim row across the cards (%dpx tall)" % (w, h, s["h"]), s["h"] <= 80 and s["w"] >= g["w"] - 2, (s, g))
+            chk("%dx%d Classes: 'More classes' is the same size as the class cards (384.136)" % (w, h), all(abs(s[k] - cards[0][k]) < 2 for k in ("w", "h")), (s, cards))
         else:
             chk("%dx%d Classes: three across on a tablet, 'More classes' in line with the classes" % (w, h), abs(s["t"] - cards[0]["t"]) < 2 and abs(s["h"] - cards[0]["h"]) < 2, (s, cards))
     chk("no page errors", not errs_all, errs_all[:3])

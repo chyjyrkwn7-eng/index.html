@@ -74,8 +74,10 @@ with sync_playwright() as pw:
         r = pg.evaluate(EDGE); r["splash"] = pg.evaluate("()=>{ const s = document.getElementById('splashscreen'); return !!s && !s.classList.contains('splash-hide'); }")
         # (384.80, changed on purpose: r/PWA's production fix) the whole safe area, 6px where there is none (this gate's insets are 0), above everything,
         # (z 2147483647, as the r/PWA element; it holds the status bar's area only), taps going through
+        # (384.136, changed on purpose: Madison, "When you scroll up, the content should work how it used to") the strip may sit with the sky,
+        # behind the page (z -1, from the first frame, never changed), so content scrolls under the clock as on 383
         chk("(1) installed on an iPhone, before the splash goes: the splash's colour, fixed at the top, full width, max(inset, 6px), above everything, taps through (%s)" % r,
-            r and r["disp"] == "block" and r["pos"] == "fixed" and r["top"] == 0 and r["left"] == 0 and abs(r["w"] - r["vw"]) < 1 and r["h"] == 6 and r["z"] > 1000000 and r["pe"] == "none"
+            r and r["disp"] == "block" and r["pos"] == "fixed" and r["top"] == 0 and r["left"] == 0 and abs(r["w"] - r["vw"]) < 1 and r["h"] == 6 and (r["z"] > 1000000 or r["z"] == -1) and r["pe"] == "none"
             and r["aria"] == "true" and hexof(r["first"]) == "#0a0a0a" and r["kids"][0] == "top-edge", r)
         chk("(1) while the splash is up the strip stays the splash's colour (it does not show as a band of sky over it) (%s)" % (r and [r["splash"], r["inline"]]), r and r["splash"] and hexof(r["inline"]) == "#0a0a0a" and r["data"] == "", r)   # (384.80) an inline colour from the first byte
         # ---------------- (2) the same node, following the sky ----------------
