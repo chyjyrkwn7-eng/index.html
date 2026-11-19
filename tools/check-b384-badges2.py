@@ -167,7 +167,9 @@ class Clock:
 # (384.133 pin) the badge in your hand now carries the pinned badge's "Pin to profile" button (Madison asked for a badge on the
 # profile "to flex"); it is the pin's own work, measured by check-b384-pin.py, so it is hidden on both builds like the glint, and
 # the badge, its name and its card are still compared pixel for pixel.
-GLINT = ".binspect-pin, .binspect-spec, .badge-glint-band, .badge-shine-band, .badge-shine, .badge-glint, .ncase-glint, .bc-spec"
+GLINT = ".binspect-spec, .badge-glint-band, .badge-shine-band, .badge-shine, .badge-glint, .ncase-glint, .bc-spec"
+# (384.136) the pin button (Pin to profile) is taken out of the page for the compared picture on both builds (no-op on the reference),
+# not hidden: it shares Close's row and Close takes a margin after it, so its space would move Close; the pin gate measures it
 GLINT = ", ".join(x + ", " + x + " *" for x in GLINT.split(", "))   # and what is inside each (a visible rule on a child beats an inherited hidden)
 HIDEG = "() => { let s = document.getElementById('__hideglint'); if(!s){ s = document.createElement('style'); s.id = '__hideglint'; s.textContent = '%s{visibility:hidden !important}'; document.body.appendChild(s); } }" % GLINT
 SHOWG = "() => { const s = document.getElementById('__hideglint'); if(s) s.remove(); }"
@@ -220,6 +222,7 @@ def capture(br, body, cls, tag):
             # (384.133 combined) what is compared is the badge in your hand: the screen behind the overlay is not it. Its title row ("Badges", dimmed
             # under the overlay) is where other builds' intended changes to the title row show (tabfeel, namebox, nodiag: a few px, 13 levels), so the
             # screen is hidden for this picture on both builds; the overlay's own glow, badge, name and Close are all still compared, pixel for pixel.
+            pg.evaluate("() => { document.querySelectorAll('.binspect-pin').forEach(n => n.remove()); }")
             pg.evaluate("() => { const s = document.getElementById('stage'); if(s) s.style.visibility = 'hidden'; }"); pg.wait_for_timeout(80)
             imgs[(vname, "inspect")] = png(pg)
             pg.evaluate("() => { const s = document.getElementById('stage'); if(s) s.style.visibility = ''; }")

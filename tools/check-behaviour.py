@@ -23956,6 +23956,11 @@ def check_b321d_badges(br):
             ctx.close()
         c0, c4, em = res[0] or {"texts": ["?"]}, res[6] or {"texts": ["?"]}, res["empty"] or {"texts": ["?"]}
         crowd = lambda t: [x for x in t if re.search(r"master|hundo|earn|\d+ of \d+|lose their shine|clean\.|shines|unit badge|badge case", x, re.I)]
+        # (384.136, changed on purpose: Madison's pinned badge) an earned badge in your hand also offers "Pin to profile" (or says it is
+        # pinned) beside Close; that button is the pin's own (check-b384-pin) and is set aside here, everything else is held as before
+        PIN = re.compile(r"^(Pin to profile|Unpin|Pinned( to profile)?)$")
+        for _r in (res.get(0), res.get(6)):
+            if _r and _r.get("texts"): _r["texts"] = [x for x in _r["texts"] if not PIN.match(x)]
         check(f"{dev}: a clean badge in your hand: its name, a quiet 'Swipe to spin it.' and Close - no Mastered, no requirement, no bar, no count, nothing about being clean",
               len(c0["texts"]) == 3 and c0["texts"][0].endswith(" Badge") and "spin" in c0["texts"][1].lower() and c0["texts"][2] == "Close"
               and not c0.get("bar") and not crowd(c0["texts"]) and not [x for x in c0["texts"] if "clean" in x.lower()], c0)
