@@ -185,7 +185,7 @@
   const E = [91, 33], TP = [64, 93], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
   const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
-  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13.5, ER = 2.4, trS = atX(-HW - 1.9, X1);   /* (trS: where the side's edge crosses the board's edge) */
+  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13.5, ER = 2.4;
   const rows = [36, 55, 74], plates = [
     ["wood", OBJ_rrect(X0, Y0, X1 - X0, Y1 - Y0, 4), { dome: .6 }],                                   /* the board */
     ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 68, 2), { z: .5, bev: .6 }],                    /* the sheet */
@@ -215,7 +215,11 @@
      pencil hangs past the board, so the side is ONE band from eraser to tip - over the board and past its edge alike - and the pin's
      own wall beyond it is the side's dark tone, not the body's yellow. Each part's side ends where that part ends. */
   const sideQ = (t0, t1, c) => plates.push(["cardboard", OBJ_poly([Q(t0, -HW - SW), Q(t1, -HW - SW), Q(t1, -HW + .2), Q(t0, -HW + .2)], 0), { z: .6, bev: .3, col: c }]);
-  sideQ(0, 6.8, "#8A231C"); sideQ(6.8, 11.2, "#6E747C"); sideQ(11.2, CONE, "#6B501A");
+  /* (384.136 art5) Madison circled the crossing again: past the board the pin's own wall (lit, in the part's colour) sat OUTSIDE
+     the side band, so the pencil looked a band wider there than over the board, with a notch of board at the step. The outline now
+     runs along the body's own lower edge, so past the board the wall IS the side, and the side band over the board takes the wall's
+     tone (eraser red, ferrule steel, brass) - one band of one width from the eraser to the cone. */
+  sideQ(0, 6.8, "#D63128"); sideQ(6.8, 11.2, "#B3BDC8"); sideQ(11.2, CONE, "#D6A139");
   plates.push(["cardboard", OBJ_poly([Q(CONE, -HW - SW), Q(PT, coneOut(PT)), Q(PT, -wAt(PT) + .1), Q(CONE, -HW + .2)], 0), { z: .6, bev: .3, col: "#93693F" }]);   /* the wood's side, to the point */
   plates.push(["brass", OBJ_poly([Q(11.2, -HW), Q(CONE, -HW), Q(CONE, HW), Q(11.2, HW)], 0), { z: 1.3, bev: .7, dome: .9 }]);   /* the pencil */
   plates.push(["brass", "M" + f(Q(12, -HW * .34)) + "L" + f(Q(CONE, -HW * .34)) + "M" + f(Q(12, HW * .34)) + "L" + f(Q(CONE, HW * .34)), { ln: .9, cut: .5, paint: 0 }]);   /* its facets, to the cone */
@@ -225,7 +229,7 @@
   plates.push(["cream", OBJ_poly([Q(CONE, -HW), Q(GR, -wAt(GR)), Q(GR, wAt(GR)), Q(CONE, HW)], 0), { z: 1.3, bev: .5, dome: .4, col: "#D8A96E" }]);   /* the sharpened wood */
   plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { z: 1.3, bev: .35, col: "#3A3D42" }]);   /* the graphite */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
-    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [23, Y0], [29, 1], [59, 1], [65, Y0], [X1, Y0], [X1, Q(tl, HW)[1]], Q(0, HW), Q(0, -HW - SW), [X1, Q(trS, -HW - SW)[1]], [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
+    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [23, Y0], [29, 1], [59, 1], [65, Y0], [X1, Y0], [X1, Q(tl, HW)[1]], Q(0, HW), Q(0, -HW), [X1, Q(tr, -HW)[1]], [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
       [0, 1, 3, 3, 1, 4, 1.5, ER, ER, 1.5, 4, 4, 4, 0]) + "Z",
     holes: [OBJ_rrect(36, 6, 16, 6, 2.5)],
     base: "wood",
