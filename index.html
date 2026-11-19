@@ -36878,17 +36878,17 @@ html.is-browser{ --fade-paper: transparent; }
   /* (384 final check) a class on #stage, set by the list itself - NOT #stage:has(> .class-bubble-wrap.is-open). Under that :has()
      every change anywhere on a screen (a code box opening, a row drawn) made the browser restyle the whole screen: 138ms on a
      Fire Code Review list at 4x CPU, every time. The class only changes when the list opens or shuts. */
-  #stage.class-list-open > :not(.class-bubble-wrap){ opacity:.22; pointer-events:none; transition:opacity .2s ease; }
-  /* (384 ui3) THE ART GOES, THE WORDS STEP BACK. Madison: "When changing classes, you shouldn't be able to see the background
-     stars and stuff like that through the other stuff, the stuff over that normally should still be there but it should still
-     be darker". At .22 the planet system and the stars still read clearly through the list and its glass buttons. Open, the
-     cosmic hero (planet, rings, orbiting planets, its glow) and the star field (body::after) go to 0, leaving the page's own
-     dark background; the greeting, NOVA, the tagline, Start Studying and the help button stay at .22 (above), and the tab bar
-     and the chat button step back with them. body.class-list-dim is set and cleared with #stage.class-list-open (openStack /
-     dimOff), so it changes only when the list opens or shuts. Opacity only, at the list's .2s; nothing is paused. */
-  #stage.class-list-open > .screen-home-actual > .cosmic-hero-wrap{ opacity:0; transition:opacity .2s ease; }
-  html.sky-ready[data-layout][data-layout] body.sky-home.class-list-dim::after{ opacity:0; transition:opacity .2s ease; }
-  body.class-list-dim #bottomtabs.bottomtabs, body.class-list-dim #chatdock-btn.chatdock-btn{ opacity:.22; transition:opacity .2s ease; }
+  #stage.class-list-open > :not(.class-bubble-wrap){ pointer-events:none; }
+  /* (384.136) THE SCREEN STEPS BACK BEHIND A SHADE, NOT BY TURNING SEE-THROUGH. Madison, of 384 ui3 (which took the planet system
+     and the stars away while the list is open): "the planet system and background shouldn't disappear.. it's just the stars in the
+     background were coming through the start studying button". At .22 opacity every part of Home - Start Studying included - was
+     see-through, so the stars showed through the button. Home now stays fully drawn (the planet system, the sky and its stars, the
+     words, the button) and a dark shade lies over it under the class list: everything behind is darker, and nothing shows through
+     anything. The shade is the class button's own (.class-bubble-wrap::before, inside its stacking context, under its buttons; the
+     tab bar stays over it, as before ui3). Opacity only, at the list's .2s. */
+  .class-bubble-wrap::before{ content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:rgba(5,6,10,.74); opacity:0; transition:opacity .2s ease; }
+  #stage.class-list-open > .class-bubble-wrap::before{ opacity:1; }
+  [data-reduce-motion="true"] .class-bubble-wrap::before{ transition:none; }
   .class-bubble, .csi-bubble{
     border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink);
     background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04) 55%), rgba(14,16,24,.7); background-repeat:no-repeat; background-origin:border-box;
@@ -59644,11 +59644,11 @@ function mountClassBubble(){
   /* what is behind steps back while the list is open (#stage.class-list-open); the class goes with the list - shut, or the
      list taken off the screen by the next screen's mount, which would otherwise leave that screen dimmed and untappable */
   let dimWatch = null;
-  const dimOff = () => { stage.classList.remove("class-list-open"); document.body.classList.remove("class-list-dim"); if(dimWatch){ dimWatch.disconnect(); dimWatch = null; } };
+  const dimOff = () => { stage.classList.remove("class-list-open"); if(dimWatch){ dimWatch.disconnect(); dimWatch = null; } };
   function openStack(){
     try{ warmIfcBank(); }catch(e){}   /* (384) a head start on Fire Code's questions, before a switch is tapped */
     wrap.classList.add("is-open"); btn.setAttribute("aria-expanded", "true");
-    stage.classList.add("class-list-open"); document.body.classList.add("class-list-dim");   /* (384 ui3) the art and the stars go, the tab bar steps back */
+    stage.classList.add("class-list-open");
     if(!dimWatch){ dimWatch = new MutationObserver(() => { if(!wrap.isConnected || !wrap.classList.contains("is-open")) dimOff(); }); dimWatch.observe(stage, { childList: true }); }
     stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = 0; });
     try{ playSound("ui.popup.open"); }catch(e){}
