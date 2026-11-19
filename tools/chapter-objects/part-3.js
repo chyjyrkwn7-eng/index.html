@@ -142,10 +142,12 @@
        out to the shell's edge front and back, and it is silver (the tape's grey, not white) with the shell's own doming, so it darkens
        as it turns away at the sides like the navy round it. */
     /* the band's width falls off toward front and back as it turns away round the shell (foreshortened), its middle line sags */
-    const edge = (side) => { const o = []; for(let i = 0; i <= 40; i++){ const x = 12 + 86 * i / 40, t = Math.min(1, Math.abs((x - CX) / RX)), c = Math.sqrt(Math.max(0, 1 - t * t));
-      const mid = 63.8 + 3.2 * c, w = 6 * (.45 + .55 * c); o.push([x, mid + side * w / 2]); } return o; };
+    /* (the coordinator's pass) it runs out past the shell on both sides and the pin's own outline cuts it there - no end caps, the band
+       goes on round the hat out of sight; it still narrows a little toward the sides */
+    const edge = (side) => { const o = []; for(let i = 0; i <= 48; i++){ const x = 4 + 98 * i / 48, t = Math.min(1, Math.abs((x - CX) / RX)), c = Math.sqrt(Math.max(0, 1 - t * t));
+      const mid = 63.8 + 3.2 * c, w = 6 * (.62 + .38 * c); o.push([x, mid + side * w / 2]); } return o; };
     const bandPoly = edge(-1).concat(edge(1).reverse());
-    const refl = S.inter(S.poly(bandPoly), S.inter(S.grow(shell, -.7), S.box(0, 0, 100, 72.6, 0)));
+    const refl = S.inter(S.poly(bandPoly), S.inter(S.grow(shell, 3), S.box(0, 0, 100, 72.6, 0)));
     CHAPTER_OBJ["Chapter 33: Fire Safety During Construction and Demolition"] = {
       d: S.shape(all, BB),
       col: "#24407A", base: "field",
@@ -156,7 +158,7 @@
         ["field", ell(.92, .64, 216, 324), { ln: 2.6, z: .6, bev: .8 }],                                 /* the side rib, front to back */
         ["field", S.shape(brim, BB), { z: .5, bev: .8, dome: .5 }],                                      /* the brim and the bill */
         ["shade", "M7 86.4Q13 83.4 24 82H86", { ln: 2.2, z: .2, bev: .5 }],                             /* the brim's underside */
-        ["cream", S.shape(refl, BB), { z: .3, bev: .35, dome: 2.6, col: "#A9B3BF" }],                         /* the reflective band round the shell */
+        ["cream", S.shape(refl, BB), { z: .3, bev: .35, dome: 2.6, col: "#98A2AE" }],                         /* the reflective band round the shell */
       ],
     };
   }
