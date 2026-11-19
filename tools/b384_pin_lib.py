@@ -48,7 +48,10 @@ def account(extra=None, ifc=False, name="Jordan"):
                                "leaderboardOptIn", "lastModified", "classes"] if k in a}
         a.update({k: v for k, v in json.loads(g["SEED"].replace("__WEEK__", WEEK)).items() if k.startswith("seen")})
         a.update({"lifetime": {"points": 64000, "answered": 3000, "correct": 2600, "perfectTests": 40}, "unitPerfects": {}, "testHistory": [],
-                  "leaderboardOptInChanged": False, "rankUpShown": 7})
+                  "leaderboardOptInChanged": False, "rankUpShown": 7,
+                  # (384.135) a copy written on Fire Code's fitted curve: without the flag the launch lowers the rank-up count to the
+                  # rank held (none, here), and the badges this gate hands over would then owe rank-ups over what it measures
+                  "ifcCurveRule": 38435})
     if extra: a.update(extra)
     return a
 
