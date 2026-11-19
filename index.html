@@ -83844,9 +83844,11 @@ if(window.NOVA_CLASS === "ifc") BANNERS.push({ id: COMPLETIONIST_ID, name: "Comp
    (bannerDrawableIn). It counts towards the academy's "every other banner" like any challenge banner (no circle: it asks for
    badges only). */
 const FULLCASE_ID = "fullcase";
-if(window.NOVA_CLASS !== "ifc") BANNERS.push({ id: FULLCASE_ID, name: "Full Case", fullCase: true,
+/* (384.136) in the list just before the class's ultimate, which stays last (the capstone; check_b312_unlocks) */
+if(window.NOVA_CLASS !== "ifc") (function(){ const ui = BANNERS.findIndex(b => b.id === ULTIMATE_TOP);
+  BANNERS.splice(ui < 0 ? BANNERS.length : ui, 0, { id: FULLCASE_ID, name: "Full Case", fullCase: true,
   get label(){ const n = classTopics().length; return "Earn all " + n + " badges"; },
-  have: () => badgeCountOf(store), get need(){ return Math.max(1, classTopics().length); } });
+  have: () => badgeCountOf(store), get need(){ return Math.max(1, classTopics().length); } }); })();
 function fullTestsNote(){
   return "A full-length test has every question in each unit you picked. Shortened tests count on your Stats tab (" +
     testsCompletedOf(store).toLocaleString() + " so far) but not here.";

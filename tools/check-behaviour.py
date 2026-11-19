@@ -21449,7 +21449,9 @@ def check_b319_badges(br):
         # the shut case's front carries its count and nothing else (build 319)
         # (327 r10 / 384) the tray carries its name on its plate ("Level 1 Badge Case"), and the 384 Profile's row is labelled
         # "Badge case" beside its count: those, and nothing else (no 'Mastered')
-        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a|Badge case)$", t)]
+        # (384.136, changed on purpose: Madison's words-only Badge case row) the row reads its count with the percent and the next
+        # badge to earn ("16 of 24 badges \u00b7 67%", "Next: <unit> \u00b7 2 of 6 hundos"); still no 'Mastered' and nothing else
+        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges( \u00b7 \d+%)?|\u203a|New|\d+ of \d+ badges(New)?\u203a|Badge case|Next: .+ \u00b7 .+)$", t)]
         tab_extra = [t for t in (tab["text"] if tab else []) if not re.match(r"^Level \d+ Badge Case$", t)]
         check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges) but its name; the shut one says only its count",
               bool(tab and pf) and not tab_extra and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
