@@ -49,7 +49,9 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # differed (2), their six sheet images (1), and the case and the cutscene frames that hold them (3); every other token, back, card and
 # screen was pixel-identical. 1c2758a is that art; everything is still held pixel for pixel to it, and --against fa11d79 fails on
 # exactly the six. The academy's reference is unchanged (it passed against 31588af on this branch).
-REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "1c2758a")}
+# (384.136) Fire Code's reference moves to round 4's art (ee8ef50: Madison's fixes to the hat, pencil, rack, cylinder and LPG tank);
+# the pins are the art gates' to hold (check-b384-objbadges, check-b384-badgeart); this one holds everything else in the case
+REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "ee8ef50")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene
