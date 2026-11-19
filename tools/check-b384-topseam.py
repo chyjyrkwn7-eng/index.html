@@ -88,7 +88,9 @@ def measure(pg, dev, cls, name, phase, node0):
         print("INFO %s %s %s %s: no strip (iPadOS's Mac user agent; html.top-edge-on is not set)" % (dev, cls, name, phase)); return
     same = pg.evaluate("(n)=>document.getElementById('top-edge') === window.__edge0", None)
     ok3 = e and e["disp"] == "block" and e["pos"] == "fixed" and e["top"] == 0 and e["left"] == 0 and abs(e["w"] - e["inW"]) < .5 \
-        and abs(e["h"] - G.DEV[dev][4][0]) < .5 and e["z"] == "2147483647" and e["inline"] and same
+        and abs(e["h"] - G.DEV[dev][4][0]) < .5 and e["z"] in ("2147483647", "-1") and e["inline"] and same
+    # (384.136, changed on purpose: Madison, "When you scroll up, the content should work how it used to") the strip may sit with the sky,
+    # behind the page (z -1), so content scrolled up passes under the clock as on 383; its pixels are still held to the sky's by (1)/(2)
     chk(bool(ok3), "%s %s %s %s: (3) the still strip - same node %s, fixed at %s,%s, %sx%s, z %s, inline colour %r" % (
         dev, cls, name, phase, same, e and e["top"], e and e["left"], e and e["w"], e and e["h"], e and e["z"], e and e["inline"]))
     foot = e["h"]

@@ -160,7 +160,10 @@ def run(br):
             e and e["r"][1] == 0 and abs(e["r"][3] - max(top, 6)) < .6 and "rgba" not in e["bg"] and img_ok and f["pe"] == "none", f)
         chk("%s: no second strip (#top-safe %s)" % (name, s), s is None, s)
         px = got.get("strip_px")
-        chk("%s: a Profile scrolled 300 shows the same status-bar area as at rest - nothing of the page under the clock (%s pixels off)" % (name, px and px[0]), px and px[0] == 0, px)
+        # (384.136, changed on purpose: Madison, "When you scroll up, the content should work how it used to ... all we needed to do was move
+        # the stuff down") the reverse of 384.80's leg: a Profile scrolled 300 shows the page under the clock, as build 383 did (the
+        # strip sits behind the page now); at rest the area is the sky's (check-b384-topseam)
+        chk("%s: a Profile scrolled 300 shows the page under the clock, as on 383 (%s pixels differ from rest)" % (name, px and px[0]), px and px[0] > 500, px)
         tw = f["tw"] or {}
         # (384.80, changed on purpose) theme-color follows the sampled strip with the "fe" dance; color-scheme is still never written
         tch = (f["tc"] or "").lstrip("#"); tcr = "rgb(%d, %d, %d)" % tuple(int(tch[i:i + 2], 16) for i in (0, 2, 4)) if len(tch) == 6 else None

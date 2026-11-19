@@ -204,9 +204,11 @@
      ONE taper: both sides run straight from the body's corners to a single point, the graphite is just the last stretch of it. */
   const AP = L, PT = L - .5, GR = L - 4.2, wAt = t => HW * (AP - t) / (AP - CONE), F3 = HW / 3;
   const strip = (w0, w1) => OBJ_poly([Q(11.2, w0), Q(CONE, w0), Q(CONE, w1), Q(11.2, w1)], 0);
-  plates.push(["glow", strip(-HW, -F3), { z: 1.2, bev: .45, col: "#D4960F" }]);   /* the pencil: its shaded face */
-  plates.push(["glow", strip(-F3, F3), { z: 1.35, bev: .45, col: "#F2B71C" }]);                  /* its middle face, facing out */
-  plates.push(["glow", strip(F3, HW), { z: 1.2, bev: .45, col: "#FAD050" }]);     /* its lit face */
+  /* (384.136) Madison chose the darker body over the yellow ("The pencil, the darker one not the yellow"): the three faces are brass again,
+     the metal the pencil wore before round 3, on round 3's shape (each face ends at the cone; one taper to the point) */
+  plates.push(["brass", strip(-HW, -F3), { z: 1.2, bev: .45 }]);   /* the pencil: its shaded face */
+  plates.push(["brass", strip(-F3, F3), { z: 1.35, bev: .45 }]);                  /* its middle face, facing out */
+  plates.push(["brass", strip(F3, HW), { z: 1.2, bev: .45 }]);     /* its lit face */
   plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, ER]), { z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
   plates.push(["steel", OBJ_poly([Q(6.8, -HW), Q(11.2, -HW), Q(11.2, HW), Q(6.8, HW)], 0), { z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
   plates.push(["steel", "M" + f(Q(8.4, -HW + .6)) + "L" + f(Q(8.4, HW - .6)) + "M" + f(Q(9.7, -HW + .6)) + "L" + f(Q(9.7, HW - .6)), { ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
