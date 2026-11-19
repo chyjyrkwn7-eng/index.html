@@ -36,6 +36,12 @@
     const inside = S.box(8, 17, 66, FLOOR - 17, 0);
     const parts = [inside, sideFrame, backPost(UP[2]), backPost(UP[0]), backPost(UP[1])];
     UP.forEach(([x0, x1]) => parts.push(S.box(x0, TOP, x1 - x0, FLOOR - TOP, 0)));
+    /* (384.136 art4) Madison: "you can see all the missing pieces like behind it, on top, behind the boxes ... If the boxes weren't there,
+       it should look complete." Every frame is a frame now, not only the right one: each front upright is tied to its back upright by a
+       strut across the top (the right end frame's own top strut, repeated on the left and middle frames), and each bay has its back
+       beams at both levels, behind the loads, so with the cartons taken off the rack still stands as a whole rack. */
+    const strut = ([x0, x1]) => [[x0, TOP + 3], [x0 + D[0], TOP + 3 + D[1]], [x1 + D[0], TOP + 3 + D[1]], [x1 + D[0], TOP + 7.5 + D[1]], [x1, TOP + 7.5], [x0, TOP + 7.5]];
+    UP.forEach(u => parts.push(S.poly(strut(u))));
     const loads = [];
     BAYS.forEach(([x0, x1]) => LV.forEach(([foot, topY]) => {
       const bx0 = x0 + 2.2, bx1 = x1 - 2.2, by1 = foot - PH;
@@ -49,7 +55,27 @@
     const plates = [];
     /* the dark inside of the rack */
     plates.push(["ink", OBJ_rrect(8, 16, 66, FLOOR - 16, 0) + polyD([[44 + D[0] * .5, BTOP + 4], [80 + D[0], BTOP + 4], [80 + D[0], BFLOOR], [44, FLOOR]]), { z: -.9, bev: .6, col: "#151B24" }]);
-    /* the back uprights (seen over the top, and the right one beside the end frame) */
+    /* the back beams of each bay at both levels, behind the loads (their connectors on the back uprights) */
+    /* what stands in front of the rack's insides: every load (pallet, cartons, their tops) and the front uprights - a part behind them is
+       cut where they cover it, so its relief never shows through them */
+    const front = S.union(loads.flatMap(l => [S.box(l.pal[0], l.pal[1], l.pal[2], l.pal[3], 0), S.box(l.box[0], l.box[1], l.box[2], l.box[3], 0), S.poly(l.topFace)])
+      .concat(UP.map(([x0, x1]) => S.box(x0, TOP, x1 - x0, FLOOR - TOP, 0)))
+      .concat(BAYS.flatMap(([x0, x1]) => BEAMS.map(([y0, y1]) => S.box(x0 - 1.6, y0 - 1.6, x1 - x0 + 3.2, y1 - y0 + 3.2, 0)))), 0);
+    const behind = g => S.loops(S.minus(g, S.grow(front, .3)), BB).map(S.pathOf).join("");   /* every piece that shows, each its own loop */
+    const bbF = []; BAYS.forEach(([x0, x1]) => BEAMS.forEach(([y0, y1]) => { const a = x0 + D[0], b = Math.min(x1 + D[0], 79.4);   /* (behind the right end frame it is not drawn) */
+      bbF.push(S.box(a, y0 + D[1], b - a, y1 - y0, .5)); }));
+    plates.push(["hot", behind(S.union(bbF, 0)), { z: -.45, bev: .4, col: "#B85E14" }]);
+    /* the top struts tying each front upright to its back upright (the left and middle frames; the right one is drawn with its frame below) */
+    plates.push(["field", UP.slice(0, 2).map(u => "M" + u.map(() => "").join("") + strut(u).map(q => f(q[0], q[1])).join("L") + "Z").join(""), { z: .3, bev: .4, col: "#2B64A6" }]);
+    /* the left and middle frames are frames too: their floor ties and the bracing between front and back uprights, behind the loads */
+    const sideF = [];
+    UP.slice(0, 2).forEach(([x0, x1]) => {
+      const pts = [[x1 + .5, TOP + 6]]; { let y = TOP + 6, fr = true; while(y + 10 <= FLOOR - 4){ y += 10; pts.push(fr ? [x1 + D[0] - .5, y + D[1]] : [x1 + .5, y]); fr = !fr; } }
+      for(let i = 1; i < pts.length; i++) sideF.push(S.capsule(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], 1));
+      sideF.push(S.poly([[x1, FLOOR - 7], [x1 + D[0], FLOOR - 7 + D[1]], [x1 + D[0], FLOOR - 2.5 + D[1]], [x1, FLOOR - 2.5]]));
+    });
+    plates.push(["field", behind(S.union(sideF, 0)), { z: -.35, bev: .4, col: "#245A96" }]);
+    /* the back uprights (seen over the top, and the right one beside the end frame), over the ends of the bracing and the back beams */
     plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0 + D[0], BTOP, x1 - x0, BFLOOR - BTOP, .8)).join(""), { z: -.3, bev: .5, col: "#245A96" }]);
     /* the right end frame, seen from the side: its two posts and the bracing between them */
     let brace = "M" + f(80.5, TOP + 6); { let y = TOP + 6, front = true; while(y + 10 <= FLOOR - 4){ y += 10; brace += "L" + f(front ? 80 + D[0] - .5 : 80.5, front ? y + D[1] * 1 : y); front = !front; } }
@@ -110,9 +136,16 @@
     const ell = (kx, ky, a0, a1) => { const o = []; for(let i = 0; i <= 24; i++){ const t = (a0 + (a1 - a0) * i / 24) * Math.PI / 180; o.push([CX + RX * kx * Math.cos(t), CY + RY * ky * Math.sin(t)]); }
       return "M" + o.map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L"); };
     /* the reflective band: between two lines round the shell, each bowed up a little in the middle, cut to the shell's face */
-    const bow = (y0, k) => { const o = []; for(let i = 0; i <= 24; i++){ const x = 10 + 90 * i / 24, t = (x - CX) / RX; o.push([x, y0 - k * Math.max(0, 1 - t * t)]); } return o; };
-    const bandPoly = bow(63.4, 2.2).concat(bow(69.6, 2.2).reverse());
-    const refl = S.inter(S.poly(bandPoly), S.inter(S.grow(shell, -1.3), S.box(0, 0, 100, 73, 0)));
+    /* (384.136 art4) Madison: "White stripe looks bad, looks weird, like you can tell it's not there." It was a flat white bar whose edges
+       bowed UP in the middle (a ring seen from below) on a hat drawn from a little above, unshaded on a domed shell. Now it is a ring
+       round the dome as this view shows one: both edges SAG a little in the middle (the near side of the ring, seen from above), it runs
+       out to the shell's edge front and back, and it is silver (the tape's grey, not white) with the shell's own doming, so it darkens
+       as it turns away at the sides like the navy round it. */
+    /* the band's width falls off toward front and back as it turns away round the shell (foreshortened), its middle line sags */
+    const edge = (side) => { const o = []; for(let i = 0; i <= 40; i++){ const x = 12 + 86 * i / 40, t = Math.min(1, Math.abs((x - CX) / RX)), c = Math.sqrt(Math.max(0, 1 - t * t));
+      const mid = 63.8 + 3.2 * c, w = 6 * (.45 + .55 * c); o.push([x, mid + side * w / 2]); } return o; };
+    const bandPoly = edge(-1).concat(edge(1).reverse());
+    const refl = S.inter(S.poly(bandPoly), S.inter(S.grow(shell, -.7), S.box(0, 0, 100, 72.6, 0)));
     CHAPTER_OBJ["Chapter 33: Fire Safety During Construction and Demolition"] = {
       d: S.shape(all, BB),
       col: "#24407A", base: "field",
@@ -123,7 +156,7 @@
         ["field", ell(.92, .64, 216, 324), { ln: 2.6, z: .6, bev: .8 }],                                 /* the side rib, front to back */
         ["field", S.shape(brim, BB), { z: .5, bev: .8, dome: .5 }],                                      /* the brim and the bill */
         ["shade", "M7 86.4Q13 83.4 24 82H86", { ln: 2.2, z: .2, bev: .5 }],                             /* the brim's underside */
-        ["cream", S.shape(refl, BB), { z: .5, bev: .5, dome: .5, col: "#E4E9EE" }],                              /* the reflective band round the shell */
+        ["cream", S.shape(refl, BB), { z: .3, bev: .35, dome: 2.6, col: "#A9B3BF" }],                         /* the reflective band round the shell */
       ],
     };
   }

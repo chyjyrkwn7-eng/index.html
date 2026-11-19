@@ -179,7 +179,9 @@ with sync_playwright() as pw:
     chk("(7) Appendix H: the graphite and the wood share their edge (%s apart) and run on one taper (%s degrees)" % (q["pencil"]["shared"], q["pencil"]["angle"]), q["pencil"]["shared"] <= .15 and q["pencil"]["angle"] <= 1, q["pencil"])
     chk("(8) Chapter 32: at least 4 parts carry a slanted edge going back into the rack (%d), and so does the outline (%s)" % (q["rack"]["parts"], q["rack"]["outline"]), q["rack"]["parts"] >= 4 and q["rack"]["outline"], q["rack"])
     chk("(9) Chapter 63: the white shoulder runs up into a neck at most 16 units wide 2 units below its top (%s)" % q["neck"], q["neck"] <= 16, q["neck"])
-    chk("(10) Chapter 61: the collar's foot band runs out to the tank's outline at both ends, within 0.8 units (%s)" % q["collar"], bool(q["collar"]) and all(max(c) <= .8 for c in q["collar"]), q["collar"])
+    # (384.136 art4, changed on purpose: Madison circled both ends of the foot band where it ran out into the outline - a notch and a stray
+    # line at each side) the band now ends rounded a little inside the dome's outline, clear of it at both ends
+    chk("(10) Chapter 61: the collar's foot band ends inside the tank's outline at both ends, clear of it by 1 to 4 units (%s)" % q["collar"], bool(q["collar"]) and all(1 <= min(c) and max(c) <= 4 for c in q["collar"]), q["collar"])
     real = [e for e in errs if "firebase" not in e.lower() and "gstatic" not in e.lower()]
     chk("(4) no page errors", not real, real[:3])
     br.close()

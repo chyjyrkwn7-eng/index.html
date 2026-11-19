@@ -202,13 +202,16 @@
      the graphite to the point. The body is a hexagonal pencil's three faces - three flat strips side by side (each lit as one plane, so
      the facets are its own edges, not lines cut along it), all three ending exactly where the cone starts. The cone and the graphite are
      ONE taper: both sides run straight from the body's corners to a single point, the graphite is just the last stretch of it. */
-  const AP = L, PT = L - .5, GR = L - 4.2, wAt = t => HW * (AP - t) / (AP - CONE), F3 = HW / 3;
-  const strip = (w0, w1) => OBJ_poly([Q(11.2, w0), Q(CONE, w0), Q(CONE, w1), Q(11.2, w1)], 0);
-  /* (384.136) Madison chose the darker body over the yellow ("The pencil, the darker one not the yellow"): the three faces are brass again,
-     the metal the pencil wore before round 3, on round 3's shape (each face ends at the cone; one taper to the point) */
-  plates.push(["brass", strip(-HW, -F3), { z: 1.2, bev: .45 }]);   /* the pencil: its shaded face */
-  plates.push(["brass", strip(-F3, F3), { z: 1.35, bev: .45 }]);                  /* its middle face, facing out */
-  plates.push(["brass", strip(F3, HW), { z: 1.2, bev: .45 }]);     /* its lit face */
+  const AP = L, PT = L - .5, GR = L - 4.2, wAt = t => HW * (AP - t) / (AP - CONE);
+  /* (384.136 art4) Madison: "change the color of the pencil back. I like the more wood type one I circled" (fa11d79's) and "look where
+     it's messed up when it goes across the clipboard". The body is fa11d79's again - ONE domed brass body with two facet grooves - on
+     round 3's shape: the grooves stop exactly at the cone (they ran past it before), and the cone and graphite stay one taper. THE
+     CROSSING: the part of the pencil past the board's edge shows the pin's wall along its lower right side, and over the board that side
+     was not there, so the pencil looked cut where it crossed the edge. Its side is now drawn the whole length (a darker brass band under
+     the body's lower right edge, ferrule to cone, down on the board), so the wall past the edge and the side over the board are one. */
+  plates.push(["glow", OBJ_poly([Q(6.8, -HW - 2.4), Q(CONE - 2.2, -HW - 2.4), Q(CONE, -HW + .2), Q(6.8, -HW + .2)], 0), { z: .6, bev: .3, col: "#A87E2E" }]);   /* its side, on the board (the wall's own colour) */
+  plates.push(["brass", OBJ_poly([Q(11.2, -HW), Q(CONE, -HW), Q(CONE, HW), Q(11.2, HW)], 0), { z: 1.3, bev: .7, dome: .9 }]);   /* the pencil */
+  plates.push(["brass", "M" + f(Q(12, -HW * .34)) + "L" + f(Q(CONE, -HW * .34)) + "M" + f(Q(12, HW * .34)) + "L" + f(Q(CONE, HW * .34)), { ln: .9, cut: .5, paint: 0 }]);   /* its facets, to the cone */
   plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, ER]), { z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
   plates.push(["steel", OBJ_poly([Q(6.8, -HW), Q(11.2, -HW), Q(11.2, HW), Q(6.8, HW)], 0), { z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
   plates.push(["steel", "M" + f(Q(8.4, -HW + .6)) + "L" + f(Q(8.4, HW - .6)) + "M" + f(Q(9.7, -HW + .6)) + "L" + f(Q(9.7, HW - .6)), { ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
