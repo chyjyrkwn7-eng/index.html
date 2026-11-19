@@ -189,8 +189,11 @@ with sync_playwright() as pw:
         # persisted fields of its own, both approved: `prestige` (384.126, the count of Fire Code prestiges taken: applyLoadedData default, mergeSameAccount and
         # mergeLeavingAccount take the larger) and `rim` (the worn banner rim, a pick like `banner`: applyLoadedData default). Neither has anything to do with
         # ranks; any OTHER field a rank holder's boot adds is still a failure.
-        ALLOWED = {"academyLadderRule", "prestige", "rim"}
-        chk("(6) booting a %s holder adds no store field the base build does not, beyond the ladder's flag and the prestige count and rim pick (%s)" % (k, extra), set(extra) <= ALLOWED, extra)
+        # (384.133) prestige is retired (Madison: "no prestige at all"), so its count left the app; two approved fields joined:
+        # `pinnedBadge` (the badge pinned to the profile: applyLoadedData default, newest-wins merge) and `ifcCurveRule` (Fire Code's
+        # fitted curve, set once: applyLoadedData default, merged by max). Both are Fire Code / profile fields, nothing to do with the ladder.
+        ALLOWED = {"academyLadderRule", "rim", "pinnedBadge", "ifcCurveRule"}
+        chk("(6) booting a %s holder adds no store field the base build does not, beyond the ladder's flag, the rim pick, the pinned badge and Fire Code's curve flag (%s)" % (k, extra), set(extra) <= ALLOWED, extra)
     st = account(ACAD0, L, 13, new["l"][i_am], shown=6)
     ctx, pg, e = launch(br, NEW, st); errs += e
     pg.wait_for_timeout(600)
