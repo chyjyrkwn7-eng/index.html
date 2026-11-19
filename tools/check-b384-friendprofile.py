@@ -282,7 +282,8 @@ def run():
                 pay = pg.evaluate("()=>(window.__payloads||[]).slice()")
                 wrow = cl["leaderboard"].get(OWNER) or {}
                 old_keys = set(row(OWNER, 1).keys()) | {"accent", "mystery", "rankFloor", "wk", "pwk", "wins", "prevWeek", "prevWeekPoints", "inv", "cinv", "seenAt",
-                                                    "ut", "rim"}   # (384.126 merge) 384.120's unlock tracks fields, on the row since that build
+                                                    "ut", "rim",   # (384.126 merge) 384.120's unlock tracks fields, on the row since that build
+                                                    "pb"}   # (384.133) the pinned badge, its own lazy display field (check-b384-pin measures it)
                 extra = sorted(set(wrow.keys()) - old_keys)
                 chk("(5) what the device WROTE: the row is in the cloud with those four fields and no other new one (%s)" % extra, set(extra) == new and wrow.get("bd") == mine["bd"], [extra, wrow.get("la")])
                 leak = [k for k, v in list(cl["vrooms"].items()) + list(cl["leaderboard"].items()) if CODE in json.dumps(v) or CODE in k]

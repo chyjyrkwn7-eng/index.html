@@ -31,6 +31,12 @@ exec(src, G)
 g = G["g"]
 from playwright.sync_api import sync_playwright
 ok = True
+# (384.135) THE FLOOR IS RETIRED IN FIRE CODE. Madison, on Fire Code's fitted curve: "If someone deranks, they wouldn't keep those
+# rank rewards, they'd need to earn them again." ifcCurveMigrate sets the floor to 0 once per account and the 384.60 floor no longer
+# runs, so on a build with IFC_CURVE_RULE the floor legs measure the NEW truth instead: the rank is the numbers' own (floor 0, raw
+# rank = rank), and the meter reads the rank after the one the numbers hold. Legs (3b), (6) and (7) below; the rest are unchanged.
+CURVE_JS = "()=>typeof IFC_CURVE_RULE !== 'undefined'"
+TIERS = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
 BASE_REF = sys.argv[sys.argv.index("--base") + 1] if "--base" in sys.argv else "origin/main"
@@ -111,7 +117,10 @@ with sync_playwright() as pw:
         held_by_floor[k] = r
         chk("(3) %s on the base ladder (%d badges, level %d) still holds %s (rank %s, floor %s, raw rank %s)" % (new["names"][i], ob[i], old["l"][i], new["names"][i], r["rank"], r["floor"], r["raw"]),
             r["rank"] == k, r)
-        if i in (2, 3, 4, 5):
+        if i in (2, 3, 4, 5) and pg.evaluate(CURVE_JS):
+            chk("(3) ...and %s is held by its own level and badges, not a floor (raw %s = rank %s; floor %s)" % (new["names"][i], r["raw"], r["rank"], r["floor"]),
+                r["raw"] == r["rank"] and not r["floor"], r)
+        elif i in (2, 3, 4, 5):
             chk("(3) ...and %s is held by the floor, not by its badges (raw rank index %s < %d; floor %s; key written %s)" % (new["names"][i], r["rawIdx"], i, r["floor"], r["key"]),
                 r["rawIdx"] < i and r["floor"] == i + 1 and r["key"] == "1", r)
         chk("(4) %s: the colour and every character up to it are unlocked, the published row says %s at its level (%s), nothing is owed or queued"
@@ -146,9 +155,15 @@ with sync_playwright() as pw:
         pg.wait_for_timeout(600)
         m = pg.evaluate(METER); ctx.close(); rows.append(m); pcts.append(m["pct"])
     m0 = rows[0]
-    chk("(6) floor Platinum with 20 badges: held %s, next is the rank after the floor (%s), its badges are the page's own (%s, challenge %s)" % (m0["held"], m0["next"], m0["rule"], m0["need"]),
+    if "IFC_CURVE_RULE" in NEW:
+      chk("(6) a stale floor of Platinum is not kept: with %d badges the rank is the numbers' (%s) and the next is the rank after it (%s), its badges the page's own (%s)" % (m0["badges"], m0["held"], m0["next"], m0["need"]),
+          m0["held"] != "vanguard" and TIERS.index(m0["next"]) == TIERS.index(m0["held"]) + 1 and [x for x in m0["need"] if x[0] == "badges"][0][1] == m0["rule"], m0)
+      chk("(6) its progress is a real fraction under 100%% on every row, rising with each badge while the next rank stays the same (%s)" % ([(r_["next"], round(r_["pct"], 3)) for r_ in rows]),
+          all(0 <= r_["pct"] < 1 for r_ in rows) and all(a["pct"] <= b["pct"] for a, b in zip(rows, rows[1:]) if a["next"] == b["next"]), rows)
+    else:
+     chk("(6) floor Platinum with 20 badges: held %s, next is the rank after the floor (%s), its badges are the page's own (%s, challenge %s)" % (m0["held"], m0["next"], m0["rule"], m0["need"]),
         m0["held"] == "vanguard" and m0["next"] == "adept" and m0["ch"] == "adept" and [x for x in m0["need"] if x[0] == "badges"][0][1] == m0["rule"], m0)
-    chk("(6) its progress is a real fraction that rises with every badge and stays under 100%% (%s)" % ([round(p, 3) for p in pcts]),
+     chk("(6) its progress is a real fraction that rises with every badge and stays under 100%% (%s)" % ([round(p, 3) for p in pcts]),
         all(0 <= p < 1 for p in pcts) and all(a <= b for a, b in zip(pcts, pcts[1:])) and pcts[-1] > pcts[0], rows)
     st = account(G["ifc"], topics, nb[4], new["l"][4], xp, floor=4, shown=4)
     ctx, pg, er = launch(br, NEW, st, preset=True); pg.wait_for_timeout(600)
@@ -161,7 +176,7 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(600)
     r = pg.evaluate("""()=>{
       if(typeof ifcLadderFloor384bOnce !== 'function') return { missing: true };
-      const out = {}; out.once = ifcLadderFloor384bOnce();                       // already ran at launch: nothing again
+      const out = { atLaunch: store.rankFloor, keyAtLaunch: localStorage.getItem('class26e.ifcladder384b') }; out.once = ifcLadderFloor384bOnce();                       // already ran at launch: nothing again
       const dst = { rankFloor: 0 }; const had = store.rankFloor;
       try{ mergeSameAccount(dst, { rankFloor: had }); }catch(e){ out.mergeErr = String(e); }
       out.merged = dst.rankFloor;
@@ -173,7 +188,11 @@ with sync_playwright() as pw:
       window.saveStore = was; out.thrown = thrown; out.keyAfterCrash = localStorage.getItem('class26e.ifcladder384b');
       out.again = ifcLadderFloor384bOnce();
       return out; }""")
-    chk("(7) the floor merges by max, keeps the larger, and its once-key is written before the work (a throwing save cannot loop it) (%s)" % r,
+    if "IFC_CURVE_RULE" in NEW:
+        chk("(7) the floor is not kept or re-raised: the launch left no 384.60 once-key (%s) and the launched copy (stored floor 4) holds floor %s" % (r.get("keyAtLaunch"), r.get("atLaunch")),
+            r.get("keyAtLaunch") is None and r.get("atLaunch") == 0, r)
+    else:
+     chk("(7) the floor merges by max, keeps the larger, and its once-key is written before the work (a throwing save cannot loop it) (%s)" % r,
         r.get("once") is False and r.get("merged") == 6 and r.get("kept") == 7 and r.get("keyAfterCrash") == "1" and r.get("again") is False, r)
     ctx.close()
 

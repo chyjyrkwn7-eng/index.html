@@ -18513,6 +18513,16 @@
      both descriptions starting at the same position. */
   .classselect-cards .modecardtitle{ display:block; width:100%; min-height:3.3rem; }
   .classselect-cards .modecarddesc{ display:block; text-align:center; }
+  /* (384.133) ON A LAPTOP THE SIGN-UP CLASS CARDS USE THE WIDTH. Madison asked for Fire Code's card to say the IFC is cross-referenced
+     with the county's amendments and that an amendment applies where the county amended a section; in the sign-up's 44rem column the
+     longer text wrapped to seven narrow lines and pushed Continue under the fold of a 1536x864 laptop (check-b384-classstep). At a
+     laptop's width the three cards take 56rem, centred on the column (Back, the title and Continue keep the column's places, as every
+     sign-up step has them), so the text runs in wider lines and nothing scrolls. */
+  @media (min-width:64rem){
+    html[data-layout] body #stage > .classselect-panel{ overflow:visible; }
+    html[data-layout] body #stage > .classselect-panel > .class-cards.classselect-cards{ width:56rem; max-width:none; flex:none; align-self:center;
+      margin-left:calc((100% - 56rem) / 2); margin-right:calc((100% - 56rem) / 2); }
+  }
   @media (min-width:40rem){
     .modecards{ flex-direction:row; }
     .modecard{ flex:1 1 0; }

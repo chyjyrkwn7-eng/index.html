@@ -236,7 +236,8 @@ with sync_playwright() as pw:
         # (384.120 unlocks, 384.126 prestige) the row also carries the display-only fields those builds publish: the unlock tracks' `ut`, the worn rim
         # `rim`, and the lazily-written `bd`, `la`, `uc`, `ub` and the prestige count `pg` (ROW_LAZY_FIELDS: they ride with the next push, never cause one).
         # The numbers the two boards rank on are all still required; only these named extras may be present besides.
-        expect = expect | (set(row or {}) & {"ut", "rim", "bd", "la", "uc", "ub", "pg"})
+        # (384.133) prestige is retired, so `pg` left the row; the pinned badge's `pb` (a lazy display field, Madison's badge "to flex") joined.
+        expect = expect | (set(row or {}) & {"ut", "rim", "bd", "la", "uc", "ub", "pb"})
         chk("(4) opted in: this device's row is in the Fire Code board under its public id, with the numbers the two boards rank on (%s)" % (row and sorted(row)),
             bool(row) and set(row) == expect and row["firstName"] == "Maddox" and row["hundos"] == 5 and row["correct"] == 777, row)
         others = {k: v for k, v in cl["vrooms"][BOARD]["rows"].items() if k != OWNER}
