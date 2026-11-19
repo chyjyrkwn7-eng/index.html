@@ -36579,6 +36579,9 @@ html.is-browser{ --fade-paper: transparent; }
     -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.4l3.5 3.5L15.5 6' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
             mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.4l3.5 3.5L15.5 6' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
   .cc-status.is-enroll{ background:linear-gradient(180deg, #FF9A4A, #F0661F); color:#1A0D05; box-shadow:0 4px 14px rgba(255,110,30,.3); }
+  /* (384.136) Madison circled both Select chips on the sign-up step ("Select button is messed up"): the glow, 4px under the pill, showed on
+     the phone as a second, lighter orange edge below it - a pill printed twice. The glow is round the pill now, not under it, and soft. */
+  html[data-layout] body .cc-status.is-enroll{ box-shadow:0 0 10px rgba(255,110,30,.22); }
   .cc-status.is-soon{ background:rgba(255,255,255,.07); color:var(--soft); border:1px solid rgba(255,255,255,.12); }
   /* Build 329: "the word enroll ... is not centered" - a flex box does not trim its text, so the chip is a
      block of text the height of its capitals, with equal padding either side (the check mark rides the word). */
@@ -39104,22 +39107,6 @@ html.is-browser{ --fade-paper: transparent; }
     background:var(--pick, #fff) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23101318' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/16px 16px no-repeat;
     box-shadow:0 2px 8px rgba(0,0,0,.35);
   }
-  /* (384 full check) "MORE CLASSES" IS A ROW UNDER THE CLASSES, NOT A THIRD CARD. With Fire Code beside the academy it wrapped
-     to a row of its own in a two-column grid whose rows are all as tall as the tallest (1fr) - a 300px box saying "Coming
-     soon" - and on the sign-up step that put Continue below the fold on every iPhone but a Pro Max (338px of scroll on an SE
-     2nd/3rd gen, 193 on a 13 mini; 383 fitted, its two cards side by side). It is a slim full-width row now: its mark, its
-     name and the chip, on the sign-up step at every width and on the Classes screen on a phone (three across on a tablet
-     there, so it already sits in line). */
-  @media (max-width:63.99rem){
-    html[data-theme][data-layout] body #stage .classselect-panel > .classselect-cards{ grid-auto-rows:auto; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon{
-      grid-column:1 / -1; min-height:0 !important; flex-direction:row; align-items:center; gap:.8rem; padding:.6rem .95rem !important; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem{ width:40px; height:40px; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem svg{ width:22px; height:22px; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon :is(.cc-kicker, .cc-desc){ display:none; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-title{ margin:0; font-size:1rem; white-space:nowrap; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-foot{ width:auto; margin:0 0 0 auto; }
-  }
   /* from a laptop's width there is room for the three side by side, as the Classes screen has them from a tablet's: "More
      classes" is the third card in the row, which takes its row off the step's height (a 1366x638 window: Continue 87px
      below the fold -> in view with the pick's scroll; 1440x820 and 1536x864: in view) */
@@ -39129,21 +39116,16 @@ html.is-browser{ --fade-paper: transparent; }
   /* a gap under the small print that Continue's auto margin takes back wherever there is room: where the step overflows
      (an SE, a phone in Safari) Continue sat against the note's last line */
   html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-bottom:.9rem !important; }
-  /* on a narrow phone the row is its name and its chip: the mark gives up its room so "More classes" stays on one line */
-  @media (max-width:26rem){
-    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card.is-soon .cc-emblem{ display:none; }
-    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card.is-soon .cc-status{ padding-left:.65rem; padding-right:.65rem; }
-  }
   /* and on a short phone (an SE, a phone in Safari) the two class cards draw a little tighter - their mark, padding, gaps and
      the line about each - so the step and Continue fit, or nearly (the pick then brings Continue into view) */
   @media (max-width:39.99rem) and (max-height:46rem){
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ gap:.4rem; min-height:0 !important; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card{ gap:.4rem; min-height:0 !important; }
     /* (under 600px tall the step's own rule already pads them 8px top and bottom) */
-    @media (min-height:37.5rem){ html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ padding:.75rem .8rem .8rem !important; } }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ width:38px; height:38px; --crs:.704; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem svg{ width:22px; height:22px; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ margin:.1rem 0 .25rem; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-desc{ font-size:.76rem; line-height:1.35; }
+    @media (min-height:37.5rem){ html[data-theme][data-layout] body #stage .classselect-panel .class-card{ padding:.75rem .8rem .8rem !important; } }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-emblem{ width:38px; height:38px; --crs:.704; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-emblem svg{ width:22px; height:22px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-title{ margin:.1rem 0 .25rem; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-desc{ font-size:.76rem; line-height:1.35; }
   }
   /* (384 r13) STACKED ON A SHORT PHONE. Madison, for the SE 2nd/3rd gen (375x667, where the step scrolled 91px and its Continue
      sat 109px under every other step's): "Stack on the SE". In the short-phone band (the tier above: under 40rem wide and no
@@ -39156,39 +39138,55 @@ html.is-browser{ --fade-paper: transparent; }
      This Actually Is" trims its side padding on short screens for the same reason - width is text that does not wrap). Every
      word stays and no type is smaller than this tier already draws it. The picked check sits on the mark's corner (the
      card's top-right corner is the chip's now). */
-  @media (max-width:39.99rem) and (max-height:46rem){
-    html[data-layout] body #stage > .classselect-panel > .classselect-cards{ grid-template-columns:minmax(0, 1fr) !important; gap:.4rem !important;
-      grid-template-rows:repeat(var(--cc-n, 2), 1fr) !important; grid-auto-rows:auto !important;
-      width:auto; align-self:stretch; margin-left:-1.25rem !important; margin-right:-1.25rem !important; }
-    /* (384.136) the foot under Continue, in this band only. Madison's Enroll copy for Fire Code (the IFC cross-referenced with the county's
-       amendments, which apply where they amend) is four lines here, and the cards are the same height (check-b384-classcards A), so the
-       step grew 58px and an installed SE scrolled 39px - all of it empty foot: the page's 3rem tab-bar room (no tab bar on this step) and
-       the panel's 24px. Continue keeps 28px under it (more where the phone has a bottom inset); every word and both card heights stay. */
-    html[data-layout] body .wrap:has(> #stage > .classselect-panel){ padding-bottom:max(1rem, env(safe-area-inset-bottom, 0px)); }
-    html[data-layout] body #stage > .classselect-panel{ padding-bottom:12px !important; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon{ padding-top:.3rem !important; padding-bottom:.3rem !important; }
-    /* the padding as two variables, so the picked check can find the mark's corner from the card (under 600px tall: 8px, as
-       the step's own rule there has it, and the 22.5rem tier's .6rem sides) */
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ --cc-pt:.5rem; --cc-pl:.8rem; padding:var(--cc-pt) var(--cc-pl) .5rem !important; }
-    @media (max-height:37.49rem){ html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ --cc-pt:8px; --cc-pl:.6rem; padding-bottom:8px !important; } }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){
-      display:grid; grid-template-columns:38px minmax(0, 1fr) 6.25rem; grid-template-areas:"mark kicker kicker" "mark title chip" "desc desc desc" "needs needs needs";
+  /* (384.136) "MORE CLASSES" IS A CLASS CARD, THE SAME SIZE AS THE OTHERS, AND EVERY PHONE STACKS THEM. Madison: "This 'more classes'
+     thing should be bigger, should be the same size as the other class boxes for a cohesive look.. especially when signing up and
+     adding and all that." The slim row it was on phones (384 full check) is gone. On a phone - the sign-up step and the Classes
+     screen - every card, More classes included, is one full-width row of the same height: the mark beside the kicker and the name,
+     the chip at the right, the line under them, Fire Code's "Needs your own IFC PDF" under that (384 r13's stacked SE layout, now
+     on every phone; two tall cards side by side on a Pro Max are three rows). On a tablet and a laptop the three sit side by side,
+     the same size. More classes keeps its dashed edge and quiet chip, so it never reads as something to pick. */
+  @media (max-width:39.99rem){
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards,
+    html[data-theme][data-layout] body #stage .class-catalog .class-cards{ grid-template-columns:minmax(0, 1fr) !important; gap:.5rem !important;
+      grid-template-rows:repeat(var(--cc-n, 3), 1fr) !important; grid-auto-rows:auto !important; }
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards{ width:100%; align-self:stretch; }
+    /* the padding as two variables, so the picked check can find the mark's corner from the card */
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card{ --cc-pt:.75rem; --cc-pl:.9rem; min-height:0 !important;
+      padding:var(--cc-pt) var(--cc-pl) .8rem !important; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card{
+      display:grid; grid-template-columns:38px minmax(0, 1fr) minmax(6.25rem, auto); grid-template-areas:"mark kicker kicker" "mark title chip" "desc desc desc" "needs needs needs";
       column-gap:.6rem; row-gap:0; align-items:center; align-content:start; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) :is(.cc-text, .cc-foot){ display:contents; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ grid-area:mark; align-self:center; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-kicker{ grid-area:kicker; align-self:end; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ grid-area:title; align-self:center; margin:0; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-desc{ grid-area:desc; margin-top:.15rem; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-needs{ grid-area:needs; margin-top:.1rem; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-kicker{ line-height:1.2; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-status{ grid-area:chip; justify-self:end; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card :is(.cc-text, .cc-foot){ display:contents; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card .cc-emblem{ grid-area:mark; align-self:center; width:38px; height:38px; --crs:.704; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card .cc-emblem svg{ width:22px; height:22px; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card .cc-kicker{ grid-area:kicker; align-self:end; line-height:1.2; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card .cc-title{ grid-area:title; align-self:center; margin:0; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card .cc-desc{ grid-area:desc; margin-top:.2rem; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card .cc-needs{ grid-area:needs; margin-top:.15rem; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card .cc-status{ grid-area:chip; justify-self:end; }
     /* the check on the mark's bottom-right corner, drawn by the card (a pseudo-element inside the mark would count as the
        mark's own ink and pull it off centre) */
     html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked:not(.is-soon)::after{
       top:calc(var(--cc-pt) + 28px); left:calc(var(--cc-pl) + 24px); right:auto; width:20px; height:20px; background-size:12px 12px; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+  }
+  /* (384 r13) ...and on a short phone (an SE, a phone in Safari) a little tighter, so the step fits or nearly does (the pick then brings
+     Continue into view) */
+  @media (max-width:39.99rem) and (max-height:46rem){
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards{ gap:.4rem !important; width:auto; margin-left:-1.25rem !important; margin-right:-1.25rem !important; }
+    /* (384.136) the foot under Continue, in this band only: the page's 3rem tab-bar room (no tab bar on this step) and the panel's
+       24px were empty space under Continue; it keeps 28px (more where the phone has a bottom inset) */
+    html[data-layout] body .wrap:has(> #stage > .classselect-panel){ padding-bottom:max(1rem, env(safe-area-inset-bottom, 0px)); }
+    html[data-layout] body #stage > .classselect-panel{ padding-bottom:12px !important; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card{ --cc-pt:.5rem; --cc-pl:.8rem; padding:var(--cc-pt) var(--cc-pl) .5rem !important; }
+    @media (max-height:37.49rem){ html[data-theme][data-layout] body #stage .classselect-panel .class-card{ --cc-pt:8px; --cc-pl:.6rem; padding-bottom:8px !important; } }
     html[data-layout] body #stage > .classselect-panel > .classselect-sub{ margin-bottom:.3rem !important; }
     html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-top:.4rem !important; margin-bottom:.55rem !important; }
   }
+  /* (384.136) a tablet's sign-up step: the three side by side, as the Classes screen has them there and a laptop's step does */
+  @media (min-width:40rem) and (max-width:63.99rem){
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards{ grid-template-columns:repeat(3, minmax(0, 1fr)) !important; grid-auto-rows:auto; }
+  }
+
   /* (384 r11) THE CLASS STEP ON ITS SHARED FLOOR. check-positions: on a 13 mini (375x812) the step ran 15px past the screen and
      its Continue sat 34px under the line every other sign-up step's Continue shares; in a laptop window (1366x638, 1280x670,
      1440x770, 1512x852) it scrolled 27-101px. Spacing and card height only, in tiers only those screens match - no type gets
@@ -39196,10 +39194,10 @@ html.is-browser{ --fade-paper: transparent; }
      (737-816px tall): the cards' mark, padding and gaps as the short tier draws them, and the gaps round the line under the
      title and the small print a little closer. */
   @media (max-width:39.99rem) and (min-height:737px) and (max-height:816px){
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ gap:.4rem; min-height:0 !important; padding:.75rem .8rem .8rem !important; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ width:38px; height:38px; --crs:.704; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem svg{ width:22px; height:22px; }
-    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ margin:.1rem 0 .25rem; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card{ gap:.4rem; min-height:0 !important; padding:.75rem .8rem .8rem !important; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-emblem{ width:38px; height:38px; --crs:.704; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-emblem svg{ width:22px; height:22px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-title{ margin:.1rem 0 .25rem; }
     html[data-layout] body #stage > .classselect-panel > .classselect-sub{ margin-bottom:.8rem !important; }
     html[data-layout] body #stage > .classselect-panel > .classselect-cards{ gap:.65rem !important; }
     html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-top:.75rem !important; margin-bottom:.6rem !important; }
@@ -39217,16 +39215,6 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-theme][data-layout] body #stage .classselect-panel .class-card .cc-title{ margin:.1rem 0 .25rem; }
     html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-top:.75rem !important; margin-bottom:.5rem !important; max-width:42rem; }
     html[data-layout] body #stage > .classselect-panel > .next.playbtn{ margin-top:.9rem !important; }
-  }
-  @media (max-width:39.99rem){
-    html[data-theme][data-layout] body #stage .class-catalog .class-cards{ grid-auto-rows:auto; }
-    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon{
-      grid-column:1 / -1; min-height:0 !important; flex-direction:row; align-items:center; gap:.8rem; padding:.6rem .95rem !important; }
-    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-emblem{ width:40px; height:40px; }
-    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-emblem svg{ width:22px; height:22px; }
-    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon :is(.cc-kicker, .cc-desc){ display:none; }
-    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-title{ margin:0; font-size:1rem; white-space:nowrap; }
-    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-foot{ width:auto; margin:0 0 0 auto; }
   }
   /* (383) PROFILE'S CUSTOMIZE: the person card's one action, its own row under the XP bar, the card's width; light on the
      dark themes and dark on the light one, so no banner hides it (see showProfile) */
@@ -60057,6 +60045,7 @@ function showClassCatalog(from){
     '<span class="cc-text"><span class="cc-kicker">Soon</span><span class="cc-title">More classes</span><span class="cc-desc">New classes will be added here.</span></span>' +
     '<span class="cc-foot"><span class="cc-status is-soon">Coming soon</span></span>';
   list.appendChild(soon);
+  list.style.setProperty("--cc-n", String(NOVA_CLASSES.length + 1));   /* (384.136) a phone stacks them, every row one height */
   panel.appendChild(list);
   stage.replaceChildren(panel);
   try{ window.scrollTo(0, 0); }catch(e){}
@@ -108618,7 +108607,7 @@ function showClassSelection(){
   const cards = document.createElement("div");
   cards.className = "class-cards classselect-cards";
   /* (384 r16) how many classes are offered: the stacked layout gives exactly that many rows one shared height (--cc-n) */
-  cards.style.setProperty("--cc-n", String(NOVA_CLASSES.length));
+  cards.style.setProperty("--cc-n", String(NOVA_CLASSES.length + 1));   /* (384.136) + More classes, the same height as the others */
   const picked = new Set(signupPicked());
   const cardFor = {};
   NOVA_CLASSES.forEach((c, k) => {
