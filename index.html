@@ -36628,6 +36628,13 @@ html.is-browser{ --fade-paper: transparent; }
   .ce-steps li{ counter-increment:ce; display:flex; gap:.75rem; align-items:flex-start; font-size:.94rem; line-height:1.4; color:var(--ink); }
   .ce-steps li::before{ content:counter(ce); flex:none; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-size:.8rem; font-weight:800; color:#FFB35C; background:rgba(255,122,26,.12); border:1px solid rgba(255,122,26,.3); }
+  /* (384.136) Madison, of Enroll in Fire Code: "Numbers aren't centered in the circle." A flex box centres the digit's whole line box,
+     whose space above the figures is larger than below, so each number sat high. The circle is the digit's own cap height now, with
+     equal room above and below (the trim the app's chips use), and the figures are tabular so a 1 sits in the middle like a 2. */
+  @supports (text-box:trim-both cap alphabetic){
+    .ce-steps li::before{ display:block; box-sizing:border-box; line-height:1; text-align:center; text-box:trim-both cap alphabetic;
+      padding:calc((24px - 1cap) / 2) 0; font-variant-numeric:tabular-nums; }
+  }
   .ce-go{ align-self:center; }
   .ifc-analyze{ position:fixed; inset:0; z-index:900; display:flex; align-items:center; justify-content:center; padding:1.25rem;
     background:radial-gradient(120% 70% at 50% 35%, rgba(30,200,110,.16), transparent 60%), rgba(4,7,10,.97);
