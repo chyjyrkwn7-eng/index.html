@@ -118,9 +118,18 @@ def judge(tag, run, cpu=1, calm=False, laptop=False, via="sheet", expect_tabs=Tr
         open_late = [round(t) for t, e in m["old"] if e["cover"] and (e["coverOp"] or 0) >= .99 and e["sheet"]]
         chk(P("(3) the class list is shut by the time the cover is over the screen"), not open_late, open_late[:3])
         # and Home stays stepped back behind the cover: it does not brighten as the list folds (no frame brighter than the open list's)
+        # (384.136, changed on purpose) the open list now lays a dark shade over Home (Madison: the planets and the sky stay, only
+        # darker) instead of turning Home see-through, so the shaded screen is darker than the cover's own sky and the cover coming in
+        # lifts the light TO THE COVER'S level. What this measures is unchanged in kind: Home itself does not brighten before the
+        # cover is on (the shade holds through the fold), and nothing while the cover rises is brighter than the cover settled
         pre = [x["lum"] for x in fr if -900 <= x["dt"] < 20]
+        home = [x["lum"] for x in fr if 20 <= x["dt"] < (m["cover_on"] or 0)]
         up = [x["lum"] for x in fr if 20 <= x["dt"] < (m["cover_full"] or 400)]
-        chk(P("(3b) Home does not brighten as the list folds into the button (open list %.1f, brightest after %.1f)" % (max(pre or [0]), max(up or [0]))), not up or not pre or max(up) <= max(pre) + 2, (max(pre or [0]), max(up or [0])))
+        cov = [x["lum"] for x in fr if (m["cover_full"] or 400) <= x["dt"] < (m["cover_full"] or 400) + 200]
+        cap = max(max(pre or [0]), max(cov or [0]))
+        chk(P("(3b) Home does not brighten as the list folds into the button (open list %.1f, Home before the cover %.1f, brightest under the rising cover %.1f, cover settled %.1f)" % (
+            max(pre or [0]), max(home or [0]), max(up or [0]), max(cov or [0]))),
+            not pre or ((not home or max(home) <= max(pre) + 2) and (not up or max(up) <= cap + 2)), (max(pre or [0]), max(home or [0]), max(up or [0]), max(cov or [0])))
     else:
         emptied = [round(t) for t, e in m["old"] if not e["stage"] and (e["coverOp"] or 0) < .99]
         chk(P("(6) the screen is never emptied before the cover is over it (a blank stage under the fade)"), not emptied, emptied[:3])

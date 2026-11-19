@@ -26,7 +26,7 @@ MEASURE = """()=>{ const R=e=>{ if(!e) return null; const b=e.getBoundingClientR
   const note=document.querySelector('#stage .classselect-panel > .affiliation-note'), cont=document.getElementById('nextbtn');
   const tw = title ? (() => { const g = document.createRange(); g.selectNodeContents(title); return g.getBoundingClientRect(); })() : null;
   return { vh: innerHeight, grid: R(grid), soon: R(soon), titleLines: title ? Math.round(title.getBoundingClientRect().height / lh) : 0,
-    textRight: tw ? tw.right : null, chip: R(chip), note: R(note), cont: R(cont), cards: [...document.querySelectorAll('#stage .class-card:not(.is-soon)')].map(R) }; }"""
+    textRight: tw ? tw.right : null, textBottom: tw ? tw.bottom : null, chip: R(chip), note: R(note), cont: R(cont), cards: [...document.querySelectorAll('#stage .class-card:not(.is-soon)')].map(R) }; }"""
 srv, port = rc["serve"]()
 def page(br, w, h, account):
     ctx = br.new_context(viewport={"width": w, "height": h}, has_touch=True); pg = ctx.new_page(); errs = []
@@ -59,7 +59,9 @@ with sync_playwright() as pw:
         if w >= 640:
             chk("%s: side by side, 'More classes' in line with the classes" % tag, abs(s["t"] - m["cards"][0]["t"]) < 2, (s, m["cards"]))
         chk("%s: its name is clear of its chip (%s lines, text ends %s, chip starts %s)" % (tag, m["titleLines"], m["textRight"] and round(m["textRight"]), m["chip"] and round(m["chip"]["l"])),
-            m["textRight"] is not None and m["textRight"] <= m["chip"]["l"] - 4, m)
+            # (384.136) a full-size card sets its chip in the card's foot, under the name (a tablet, a laptop), or beside it (a phone's
+            # row): either way the name's ink and the chip do not meet
+            m["textRight"] is not None and (m["textRight"] <= m["chip"]["l"] - 4 or m["textBottom"] <= m["chip"]["t"] - 4), m)
         c, n = m["cont"], m["note"]
         chk("%s: after a pick Continue is on the screen (bottom %d of %d)" % (tag, c["b"], m["vh"]), c and c["h"] > 0 and c["b"] <= m["vh"] + .5, c)
         chk("%s: ... and clear of the small print above it (%dpx)" % (tag, c["t"] - n["b"]), n and c["t"] - n["b"] >= 8, (n, c))
