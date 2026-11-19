@@ -161,7 +161,9 @@ chk("(1) the eleven round 9 banners differ from cd82880 (unchanged: %s)" % same,
 moved = [i for i in PREV["ifc"] if i not in R9 and H.get(i) != PREV["ifc"][i]]
 # (384.133) STALE EXPECTATION: later builds ADDED banners (384.126 prestige: pgoath, pgcommand, pglaurel; the Completionist banner; 384.120's Virtual Room top tier, vrtop10). They are not cd82880's to hold:
 # every banner cd82880 had is still here and as it drew it, and the only extra ones are these five (anything else new fails).
-NEWB = {"pgoath", "pgcommand", "pglaurel", "completionist", "vrtop10"}
+# (384.133) prestige is retired (Madison: "no prestige at all"), so its three banners left the app; the academy's Full Case banner
+# (`fullcase`, Madison: "ensure there is a banner for earning every badge") joined. Neither changes any banner that was already drawn.
+NEWB = {"completionist", "vrtop10", "fullcase"}
 extra = sorted(set(H) - set(PREV["ifc"])); lost = sorted(set(PREV["ifc"]) - set(H))
 chk("(1) every other Fire Code banner is exactly as cd82880 drew it (%d checked; moved: %s; added since: %s; lost: %s)" % (len([i for i in PREV["ifc"] if i not in R9]), moved, extra or "none", lost or "none"), not moved and not lost and set(extra) <= NEWB, moved)
 A0 = res["academy"]["h"]; amoved = [i for i in PREV["academy"] if A0.get(i) != PREV["academy"][i]]
