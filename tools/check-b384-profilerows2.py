@@ -179,13 +179,13 @@ MEASURE = """()=>{
     /* option a's front: the gold is the lower --f of it, at rest (no transform left once it has risen in) */
     let sy = null; if(fill){ const cs = getComputedStyle(fill); sy = /^(none|matrix\\(1, 0, 0, 1, 0, 0\\))$/.test(cs.transform) ? Number(cs.getPropertyValue('--f')) : null; }   /* (a finished `both` animation holds identity) */
     const opt = ['a','b','c','row'].find(o => b.classList.contains('pfr-bc-' + o)) || '';
-    const tile = b.querySelector(':scope > .settings-row-icon'); const tr = tile ? tile.getBoundingClientRect() : null;
+    const tile = b.querySelector(':scope > .settings-row-icon, :scope > .pfr-minicase'); const tr = tile ? tile.getBoundingClientRect() : null;
     return { opt, text: (b.querySelector('.pf-case-num') || {}).textContent || '', have: badgeCountOf(store), total: classTopics().length,
       ticks: ticks.length, ticksOn: ticks.filter(t => t.classList.contains('is-on')).length, segs: segs.length, segsOn: segs.filter(t => t.classList.contains('is-on')).length,
       fillY: sy, newest: !!b.querySelector('.pfr-mc-pin svg, .pfr-ring-pin svg, .pfr-coin-top svg'),
       newestOp: (() => { const p = b.querySelector('.pfr-mc-pin, .pfr-ring-pin, .pfr-coin-top'); return p ? Number(getComputedStyle(p).opacity) : null; })(),
       card: (() => { const c = b.closest('.pf-case'), cs = getComputedStyle(c); return { bg: cs.backgroundColor, r: cs.borderTopLeftRadius }; })(),
-      tile: tr ? { w: tr.width, h: tr.height, op: Number(getComputedStyle(tile).opacity) } : null,
+      tile: tr ? { w: tr.width, h: tr.height, op: Number(getComputedStyle(tile).opacity), mini: tile.classList.contains('pfr-minicase') && !!tile.querySelector('svg') && !tile.querySelector('img') } : null,
       art: !!b.querySelector('.pfr-ring, .pfr-coin, .pfr-mc, .pfr-seg, .pfr-bc-art'),
       lines: [...b.querySelectorAll(':scope > .pf-act-words > *')].filter(e => e.getBoundingClientRect().height > 0).length,
       pct: (() => { const t = (b.querySelector('.pf-case-num') || {}).textContent || ''; const m = /(\\d+)%/.exec(t); return m ? +m[1] : null; })(),
@@ -278,8 +278,10 @@ def main():
                         if b["opt"] == "c": good = good and b["segs"] == b["total"] and b["segsOn"] == b["have"]
                         if b["opt"] in ("a", "b", "c"): good = good and (b["newest"] if b["have"] else True) and (b["newestOp"] in (None, 1))
                         if b["opt"] == "row":
-                            # B's words (the count, its share, a second line), the plain row icon (square, a Profile row tile's size), none of the art
-                            good = (good and b["tile"] is not None and abs(b["tile"]["w"] - b["tile"]["h"]) < .5 and 24 <= b["tile"]["w"] <= 40 and b["tile"]["op"] == 1
+                            # B's words (the count, its share, a second line), none of the art. (384.136, changed on purpose - Madison: "I don't
+                            # like how the badge is like an icon like that within a grey app looking thing. Could it not just be a little case")
+                            # the icon is the little shut case now (.pfr-minicase, its own drawing, a row's height), not a square grey tile
+                            good = (good and b["tile"] is not None and b["tile"].get("mini") and 36 <= b["tile"]["w"] <= 60 and 30 <= b["tile"]["h"] <= 50 and b["tile"]["op"] == 1
                                     and not b["art"] and b["lines"] == 3 and b["pct"] == round(100 * b["have"] / max(1, b["total"])))
                         ok(b["opt"] == ("row" if "pfbadge" not in q else q.split("pfbadge=")[1][0]) and good,
                            "B1 %s: badge case (%s) reads the store: '%s', tile %s, art %s, lines %s, ticks %d/%d, segs %d/%d, fill %s" % (
@@ -287,7 +289,7 @@ def main():
                         ok(b["card"]["bg"] == m["delta"]["fill"] and b["card"]["r"] == m["delta"]["r"], "D1 %s: the case is a Delta card (%s %s)" % (t, b["card"]["bg"], b["card"]["r"]))
                     else: ok(False, "B1 %s: the badge case row" % t)
                     c = m["cz"]
-                    want_cz = q.split("pfcz=")[1][0] if "pfcz=" in q else "d"
+                    want_cz = q.split("pfcz=")[1][0] if "pfcz=" in q else "b"   # (384.136, changed on purpose: Madison, "The profile thing, I like B")
                     if c and c["opt"]:
                         good = c["opt"] == want_cz and c["dh"] == str(c["have"]) and c["dt"] == str(c["total"]) and ("%d of %d" % (c["have"], c["total"])) in (c["aria"])
                         if c["opt"] in ("a", "c", "d", "e"): good = good and ("%d of %d unlocked" % (c["have"], c["total"])) in c["text"]
