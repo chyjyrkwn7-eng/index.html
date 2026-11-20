@@ -40471,8 +40471,8 @@ html.is-browser{ --fade-paper: transparent; }
   .trk-thumb > svg{ display:block; width:100%; height:100%; }
   .trk-thumb.is-locked{ opacity:.45; }
   .trk-thumb-banner{ border-radius:.55rem; width:2.6rem; height:2.6rem; background:#10131A center / cover no-repeat; }
-  .trk-thumb-fx{ border-radius:.7rem; background:color-mix(in srgb, var(--fx-c) 22%, #10131A); color:var(--fx-c);
-    font-size:.72rem; font-weight:900; letter-spacing:-.01em; line-height:1; padding-top:1px; box-sizing:border-box; }
+  .trk-thumb-fx{ border-radius:.7rem; background:var(--surface-inset); }
+  .trk-thumb-fx > svg{ display:block; width:100%; height:100%; }
   .trk-thumb-rim{ background:none; box-shadow:inset 0 0 0 3px var(--rim-c); }
   .trk-tx{ display:flex; flex-direction:column; gap:.18rem; min-width:0; }
   .trk-name{ font-size:.92rem; font-weight:700; line-height:1.2; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -159824,7 +159824,9 @@ function unlockItemThumb(it){
     } else if(it.k === "fx"){
       const d = hundoFxDef(it.id);
       box.style.setProperty("--fx-c", (d && d.color) || "#FFD37A");
-      box.textContent = "100";
+      /* (384.136) Madison circled the Customize row's "100" square: "The example of the hundo effect here is bad". Every small
+         picture of an effect (Customize's Next up, a track's row, the browser) is the effect's own still now, not a coloured "100" */
+      box.appendChild(buildHundoFxStill(it.id));
     } else if(it.k === "rim"){
       box.style.setProperty("--rim-c", it.color || rimColorOf(it.id));
     }
