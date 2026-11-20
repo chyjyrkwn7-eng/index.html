@@ -65,6 +65,19 @@
     const bbF = []; BAYS.forEach(([x0, x1]) => BEAMS.forEach(([y0, y1]) => { const a = x0 + D[0], b = Math.min(x1 + D[0], 79.4);   /* (behind the right end frame it is not drawn) */
       bbF.push(S.box(a, y0 + D[1], b - a, y1 - y0, .5)); }));
     plates.push(["hot", behind(S.union(bbF, 0)), { z: -.45, bev: .4, col: "#B85E14" }]);
+    /* (384.136 art6) Madison, of the rack without its loads: "Where is the rest of the rack? Do the boxes float?" A level was only a front
+       beam and a back beam with nothing between them, so a pallet had nothing to stand on. Each bay's level now has its wire deck: a
+       galvanised grid lying from the top of the front beam back to the top of the back beam, resting on both - what the pallet sits on,
+       and with the loads off, two shelves joining the front of the rack to its back. */
+    const decks = [], mesh = [];
+    BAYS.forEach(([x0, x1]) => BEAMS.forEach(([y0]) => {
+      const q = [[x0 + .6, y0], [x0 + .6 + D[0], y0 + D[1]], [x1 - .6 + D[0], y0 + D[1]], [x1 - .6, y0]];
+      decks.push(S.poly(q));
+      for(let k = 1; k < 7; k++){ const t = k / 7, xa = x0 + .6 + (x1 - x0 - 1.2) * t; mesh.push(S.capsule(xa, y0, xa + D[0], y0 + D[1], .35)); }
+      for(let k = 1; k < 3; k++){ const t = k / 3; mesh.push(S.capsule(x0 + .6 + D[0] * t, y0 + D[1] * t, x1 - .6 + D[0] * t, y0 + D[1] * t, .35)); }
+    }));
+    plates.push(["steel", behind(S.union(decks, 0)), { z: -.2, bev: .35, col: "#7D8794" }]);
+    plates.push(["steel", behind(S.union(mesh, 0)), { z: .15, bev: .25, col: "#B7C0CB" }]);
     /* the top struts tying each front upright to its back upright (the left and middle frames; the right one is drawn with its frame below) */
     plates.push(["field", UP.slice(0, 2).map(u => "M" + u.map(() => "").join("") + strut(u).map(q => f(q[0], q[1])).join("L") + "Z").join(""), { z: .3, bev: .4, col: "#2B64A6" }]);
     /* the left and middle frames are frames too: their floor ties and the bracing between front and back uprights, behind the loads */

@@ -319,9 +319,9 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["water", S.shape(tank, BB), { dome: 2 }],                                                        /* the tank */
       ["water", OBJ_rrect(10, 54, 80, 6, 0), { z: .7, bev: .7 }],                                      /* its welded seam */
       /* (384.136 art4) the dome's shadow band under the collar is gone: stopped inside the dome, its square ends read as a slab */
-      ["steel", S.shape(collar, BB), { z: .5, bev: .8, dome: .7 }],                                     /* the collar */
-      ["steel", lp(ring), { z: .75, bev: .7, dome: .5, col: "#9AA3AD" }],                                /* its foot ring, welded round the dome */
-      ["steel", "M" + arc(1, 50 - FW + 2.4, 50 + FW - 2.4).map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L"), { ln: .9, cut: .4, paint: 0 }],   /* the weld */
+      ["steel", S.shape(S.union([collar, ring], 1.5), BB), { z: .5, bev: .9, dome: .7 }],               /* the collar and its foot: ONE part (art6) */
+      /* (384.136 art6) Madison circled the collar's foot: a darker ring with a cut weld line between it and the collar read as two
+         pieces stacked on the dome. The foot is the collar's own steel now, flaring out in one soft bevel - no seam between them */
       ["rubber", OBJ_rrect(38, 9, 24, 14, 4), { z: -1.7, bev: .7 }],                                     /* its window */
       ["steel", OBJ_rrect(41.5, 10, 17, 5.5, 2.5), { dome: 1 }],                                      /* the valve's handwheel */
       ["brass", OBJ_rrect(45.5, 15, 9, 8.5, 1.5), { gem: 1, gw: 2.2 }],                               /* the valve */
@@ -372,7 +372,9 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
   const body = S.box(16, 33, 50, 64, 7.5), dome = S.ellipse(41, 34, 25, 13);
-  const neck = S.box(35.5, 14, 11, 12, 1);
+  /* (384.136 art6) Madison circled both sides under the neck ring: the neck was 2 narrower than the ring, so a dark notch of background
+     showed each side between the ring and the shoulder. The neck is the ring's own width now - the ring is a band round it, flush. */
+  const neck = S.box(34.5, 14, 13, 12, 1);
   const cyl = S.union([body, dome, neck], 5);                                   /* the shoulder rises into the neck in one curve */
   /* (384.136 art4, Madison: the connection "looks better but it's not perfect", circling the ring where it meets the neck and the valve.)
      The ring is seated: a hair wider than the neck (a 1-unit lip each side, not 2), the neck's white running up into it with the
@@ -394,7 +396,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["field", "M17 88.5H65", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
       ["brass", S.shape(S.minus(S.inter(all, S.box(0, 0, 61, 13, 0)), cyl), BB), { z: .2, bev: .5 }],     /* the valve gear, every fillet in it brass (above the ring only) */
       ["brass", S.shape(S.union([valve, stem], .8), BB), { z: .3, bev: .6, gem: .8, gw: 2.2 }],           /* the valve body and its stem */
-      ["steel", OBJ_rrect(34.5, 13, 13, 5.5, 1.2), { z: .6, bev: .5, dome: .5 }],                          /* the neck ring it is seated in */
+      ["steel", OBJ_rrect(34.5, 13, 13, 5.5, [1.2, 1.2, 0, 0]), { z: .6, bev: .5, dome: .5 }],                          /* the neck ring it is seated in */
       ["steel", "M35.5 14.9H46.5M35.5 16.8H46.5", { ln: .7, cut: .4, paint: 0 }],                                 /* its threads */
       ["rubber", OBJ_rrect(32.5, .8, 17, 4.6, 2.3), { z: .4, dome: 1, col: "#2B2E33" }],                 /* the handwheel */
       ["rubber", "M36 1.9V4.4M39.5 1.9V4.4M43 1.9V4.4M46.5 1.9V4.4", { ln: 1, cut: .5, paint: 0 }],

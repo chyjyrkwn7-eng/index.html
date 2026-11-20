@@ -156,7 +156,7 @@ PROBE2 = r"""() => {
   /* (10) the LPG collar's foot */
   { const u = find('Chapter 61:'), e = CHAPTER_OBJ[u], pal = chapterObjPalette(u, false), face = faceOf(u);
     const steel = (e.plates || []).map(q => { const o = q[2] || {}; if(q[0] !== 'steel' || o.ln || o.paint === 0) return null; const m = mask(c => c.fill(new Path2D(q[1]))); return { m, b: bbox(m) }; })
-      .filter(f => f && f.b.y1 < N * .5 && (f.b.x1 - f.b.x0) > 2.5 * (f.b.y1 - f.b.y0) && (f.b.x1 - f.b.x0) > N * .3);
+      .filter(f => f && f.b.y1 < N * .5 && (f.b.x1 - f.b.x0) > N * .3);   /* (384.136 art6, changed on purpose: the foot is the collar's own plate now - Madison: the band read as a separate piece - so the steel part measured is the collar, whose widest columns are its foot's ends) */
     const dOut = (x, y) => { let best = 1e9; for(let yy = Math.max(0, y - 40); yy < Math.min(N, y + 40); yy++) for(let xx = Math.max(0, x - 40); xx < Math.min(N, x + 40); xx++) if(!face[yy * N + xx]){ const d = Math.hypot(xx - x, yy - y); if(d < best) best = d; } return best / SC; };
     out.collar = steel.map(f => { const ends = []; [f.b.x0, f.b.x1].forEach(x => { let ys = []; for(let y = 0; y < N; y++) if(f.m[y * N + x]) ys.push(y); ends.push(+dOut(x, ys[ys.length >> 1]).toFixed(2)); }); return ends; });
   }

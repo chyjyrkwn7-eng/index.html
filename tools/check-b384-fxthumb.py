@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 384.136: every small picture of a hundo effect is the effect itself.
+"""Build 384.136: every small picture of a hundo effect is the effect itself, and of a rim, your character on it.
 
 Madison circled Customize's Next up tile on Profile: "The example of the hundo effect here is bad, fix those." It was a coloured
 square with "100" in it (unlockItemThumb), on Customize's row, every track row and the unlocks browser. Now each is the effect's
@@ -43,6 +43,12 @@ with sync_playwright() as p:
             chk("%s %s: the thumbnail is the effect's picture (svg %s, %dpx, %d shapes, text '%s')" % ("Fire Code" if ifc else "academy", r["id"], r["svg"], r["w"], r["shapes"], r["text"]),
                 r["svg"] and r["w"] >= 40 and r["shapes"] >= 3 and not r["text"], r)
     pg.evaluate("()=>{ IFC_ART_ON = window.NOVA_CLASS === 'ifc'; }")
+    # (384.136) a rim's thumbnail is your character on that rim (the Rims card's plate), not an empty coloured ring
+    for r in pg.evaluate("""()=>unlockRimList().map(it => { const t = unlockItemThumb(it); document.body.appendChild(t); t.style.width = t.style.height = '52px';
+        const p = t.querySelector('.rim-plate'), s = p && p.querySelector('svg'), ring = p && p.querySelector('.rim-ring'), b = s ? s.getBoundingClientRect() : null;
+        const o = { id: it.id, plate: !!p, svg: !!s, ring: !!ring, w: b ? b.width : 0 }; t.remove(); return o; })"""):
+        chk("rim %s: the thumbnail is your character on the rim (plate %s, character %s %dpx, ring %s)" % (r["id"], r["plate"], r["svg"], r["w"], r["ring"]),
+            r["plate"] and r["svg"] and r["ring"] and r["w"] >= 30, r)
     ctx.close(); errs_all += errs
     # Profile's Customize row with an effect next
     ctx, pg, errs = page(br, 440, 956, True)
