@@ -136,7 +136,7 @@ USES = r"""async (u) => {
            vecObj: vec.querySelectorAll('.badge-chapter-obj').length, vecPaths: vec.querySelectorAll('.badge-chapter-obj path').length,
            raster: !!buildUnitBadgeSVG(u, true).querySelector('image.badge-raster'), greyHasObj: !!buildUnitBadgeSVG(u, 'grey', { vector: true }).querySelector('.badge-chapter-obj') }; }"""
 SPEC = r"""() => {
-  const out = [], ROLES = CHAPTER_OBJ_ROLES.slice(), OPTS = ['sh','e','ln','z','bev','dome','gem','gw','cut','paint','col'], HEX = /^#[0-9a-fA-F]{6}$/;
+  const out = [], ROLES = CHAPTER_OBJ_ROLES.slice(), OPTS = ['sh','e','ln','z','bev','dome','gem','gw','cut','paint','col','lvl'], HEX = /^#[0-9a-fA-F]{6}$/;
   const circleRe = (d) => { const bad = []; const re = /([MmLlHhVvCcQqAaZz])([^MmLlHhVvCcQqAaZz]*)/g; let m, cx = 0, cy = 0, sx = 0, sy = 0;
     while((m = re.exec(d))){ const c = m[1], n = (m[2].match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi) || []).map(Number);
       if(c === 'M'){ cx = n[0]; cy = n[1]; sx = cx; sy = cy; }

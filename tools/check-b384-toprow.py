@@ -41,7 +41,7 @@ def arg(n, d=None): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else
 # has none of it): Customize gained the unlock tracks' "Next up" and the Tracks entry (384.120 unlocks), Settings' sound page is taller on the smallest
 # phone (swupdate / settingslook rows), and Test history is the 384.118 screen. Any OTHER screen that starts to scroll still fails (4); these are printed
 # with their amounts on every run.
-GREW_ON_PURPOSE = {"Customize": "384.120 unlocks: Next up and Tracks", "Settings: sound": "swupdate / settingslook rows", "Test history": "384.118 testhistory"}
+GREW_ON_PURPOSE = {"class pick": "384.136 More classes is a full-size card (Madison); a short phone scrolls the pick", "Customize": "384.120 unlocks: Next up and Tracks", "Settings: sound": "swupdate / settingslook rows", "Test history": "384.118 testhistory"}
 RAW =open(arg("--against"), encoding="utf-8").read() if arg("--against") else open(os.path.join(L.ROOT, "index.html"), encoding="utf-8").read()
 NOBASE = "--no-base" in sys.argv
 BASE = None if NOBASE else (open(arg("--base"), encoding="utf-8").read() if arg("--base") else
