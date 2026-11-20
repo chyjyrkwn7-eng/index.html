@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every badge in your hand, turned: a contact sheet per class of each badge in the inspector at 0, 35, 70, 90 (edge on), 145 and 180
+"""Every badge in your hand, turned: a contact sheet per class of each badge in the inspector at 0, 35, 70, 82, 90 (edge on), 145 and 180
 degrees, the way a person sees it while turning it with a finger (the face, the rounded side, the back).
 
 (384.136) Madison: "Ensure all the badges are good to go and look right when you rotate them and stuff as well." The inspector turns the
@@ -18,7 +18,7 @@ sys.argv = argv
 from PIL import Image, ImageDraw
 CLS = ["academy", "ifc"] if g["arg"]("--class", "both") == "both" else [g["arg"]("--class")]
 ONLY = [s.strip() for s in (g["arg"]("--only") or "").split(",") if s.strip()]
-ANG = [0, 35, 70, 90, 145, 180]
+ANG = [0, 35, 70, 82, 90, 145, 180]
 with g["sync_playwright"]() as p:
     br = p.chromium.launch()
     for cls in CLS:
@@ -42,7 +42,7 @@ with g["sync_playwright"]() as p:
             pg.wait_for_timeout(900)
             shots = []
             for a in ANG:
-                r = pg.evaluate("(a) => { const s = document.querySelector('.binspect-spin'); if(!s) return null; s.style.transition = 'none'; s.style.transform = 'rotateY(' + a + 'deg)'; const wr = x => { x = ((x % 360) + 360) % 360; return x > 180 ? x - 360 : x; }; const L = r => { const x = r * Math.PI / 180; return { o: Math.pow(Math.max(0, Math.cos(x)), 10), x: Math.sin(x) * 190 }; }; const ov = document.querySelector('.binspect'); const fr = L(wr(a + 14)), bk = L(wr(a + 14 - 180)); const fi = ov.querySelector('.binspect-face.is-front .binspect-spec > i'), bi = ov.querySelector('.binspect-face.is-back .binspect-spec > i'); if(fi){ fi.style.transition = 'none'; fi.style.opacity = fr.o.toFixed(3); fi.style.transform = 'translateX(' + (-fr.x).toFixed(1) + '%) rotate(16deg)'; } if(bi){ bi.style.transition = 'none'; bi.style.opacity = (bk.o * .8).toFixed(3); bi.style.transform = 'translateX(' + bk.x.toFixed(1) + '%) rotate(16deg)'; } const sh = ov.querySelector('.binspect-shadow'); if(sh) sh.style.transform = 'scaleX(' + (.22 + .78 * Math.abs(Math.cos(a * Math.PI / 180))).toFixed(3) + ')';"
+                r = pg.evaluate("(a) => { const s = document.querySelector('.binspect-spin'); if(!s) return null; s.style.transition = 'none'; s.style.transform = 'rotateY(' + a + 'deg)'; const wr = x => { x = ((x % 360) + 360) % 360; return x > 180 ? x - 360 : x; }; const L = r => { const x = r * Math.PI / 180; return { o: Math.pow(Math.max(0, Math.cos(x)), 10), x: Math.sin(x) * 190 }; }; const ov = document.querySelector('.binspect'); const fr = L(wr(a + 14)), bk = L(wr(a + 14 - 180)); const fi = ov.querySelector('.binspect-face.is-front .binspect-spec > i'), bi = ov.querySelector('.binspect-face.is-back .binspect-spec > i'); if(fi){ fi.style.transition = 'none'; fi.style.opacity = fr.o.toFixed(3); fi.style.transform = 'translateX(' + (-fr.x).toFixed(1) + '%) rotate(16deg)'; } if(bi){ bi.style.transition = 'none'; bi.style.opacity = (bk.o * .8).toFixed(3); bi.style.transform = 'translateX(' + bk.x.toFixed(1) + '%) rotate(16deg)'; } const rm = ov.querySelector('.binspect-rim'); if(rm) rm.style.opacity = Math.max(0, Math.min(1, (.26 - Math.abs(Math.cos(a * Math.PI / 180))) / .16)).toFixed(3); const sh = ov.querySelector('.binspect-shadow'); if(sh) sh.style.transform = 'scaleX(' + (.22 + .78 * Math.abs(Math.cos(a * Math.PI / 180))).toFixed(3) + ')';"
                                 " const b = document.querySelector('.binspect-persp').getBoundingClientRect(); const m = 24; return { x: Math.max(0, b.left - m), y: Math.max(0, b.top - m), width: b.width + 2 * m, height: b.height + 2 * m }; }", a)
                 if not r: break
                 pg.wait_for_timeout(120)

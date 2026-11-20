@@ -181,21 +181,21 @@
    the outline's own corner, the ferrule is crimped twice, the body carries two facet lines like a hexagonal pencil, and the sharpened wood
    runs in straight to the graphite.) ---- */
 {
-  const X0 = 8, X1 = 80, Y0 = 12, Y1 = 96, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  const E = [91, 33], TP = [64, 93], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
+  const X0 = 10, X1 = 72, Y0 = 27, Y1 = 97, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
+  const E = [76.8, 1], TP = [76.8, 84], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
   const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
   const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13.5, ER = 2.4;
-  const rows = [36, 55, 74], plates = [
+  const rows = [48, 63, 78], plates = [
     ["wood", OBJ_rrect(X0, Y0, X1 - X0, Y1 - Y0, 4), { dome: .6 }],                                   /* the board */
-    ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 68, 2), { z: .5, bev: .6 }],                    /* the sheet */
-    ["steel", OBJ_poly([[23, 23], [23, 13], [29, 1], [59, 1], [65, 13], [65, 23]], [2, 2, 3, 3, 2, 2]), { z: 1.1, bev: .8, dome: .6 }],   /* the clip */
+    ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 54, 2), { z: .5, bev: .6 }],                    /* the sheet */
+    ["steel", OBJ_poly([[20, 38], [20, 28], [26, 16], [56, 16], [62, 28], [62, 38]], [2, 2, 3, 3, 2, 2]), { z: 1.1, bev: .8, dome: .6 }],   /* the clip */
   ];
   /* (384.136 art6) the three rows' boxes, ticks and lines are one plate each (the same parts, the same options): a badge holds at
      most CHAPTER_OBJ_MAX_PLATES (24) and the pencil's contour was the 25th, dropped without a word */
   plates.push(["steel", rows.map(y => OBJ_rrect(20, y - 5.5, 11, 11, 2)).join(""), { z: -.7, bev: .5 }]);
-  plates.push(["water", rows.map(y => "M22.5 " + (y - .5) + "L25.5 " + (y + 3) + "L32 " + (y - 7)).join(""), { ln: 3, z: 1.1, bev: .6 }]);
-  plates.push(["cream", rows.map(y => "M36 " + (y - 2.5) + "H" + (y > 60 ? 54 : 62) + "M36 " + (y + 3) + "H" + (y > 60 ? 48 : 56)).join(""), { ln: 2.2, cut: .7, paint: 0 }]);
+  plates.push(["water", rows.map(y => "M22.5 " + (y - .5) + "L25.5 " + (y + 3) + "L32 " + (y - 7)).join(""), { ln: 3, z: 1.1, bev: .6, lvl: "tick" }]);   /* (art6) flat on top: it crossed the pressed-in box's edge and took its step as a seam */
+  plates.push(["cream", rows.map(y => "M36 " + (y - 2.5) + "H" + (y > 70 ? 52 : 58) + "M36 " + (y + 3) + "H" + (y > 70 ? 46 : 52)).join(""), { ln: 2.2, cut: .7, paint: 0 }]);
   /* (384.133 art3, Madison circled the pencil's lower end, where the body meets the sharpened wood and the graphite: the body's facet
      lines ran on past it and the cone and the tip did not line up.) One straight pencil now, every piece on the same axis and butting
      on the next at one line across it: the eraser 0-6.8, the ferrule 6.8-11.2, the body 11.2 to the cone, the cone to the graphite and
@@ -217,9 +217,10 @@
   /* (384.136 art6) Madison, again: "It's morphing into the clipboard ... the pencil look like its built into the clipboard". Lying
      flat was not enough: nothing PARTED it from the board - its lit edges read as the board's own bevel. It now casts a soft shadow
      down and to the right onto the board and the sheet (the light is top left), and the whole pencil has a crisp dark contour. */
+  /* (art6, third pass) the pencil stands against the board's right side - no shadow (it would fall off the pin) and its contour is a
+     cut line, so the joint between the board and the pencil is one crisp line */
   const penOut = [Q(0, HW), Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, coneOut(PT)), Q(CONE, -HW - SW), Q(0, -HW - SW)];
-  plates.push(["rubber", OBJ_poly(penOut, [ER, 0, .3, .3, 0, ER]), { sh: 1, col: "#6B501A" }]);   /* its shadow (the fill is covered) */
-  plates.push(["rubber", OBJ_poly(penOut, [ER, 0, .3, .3, 0, ER]), { ln: 1.1, col: "#1B140B" }]);   /* its contour: under the pencil, so only its outer half shows */
+  plates.push(["rubber", OBJ_poly(penOut, [ER, 0, .3, .3, 0, ER]), { ln: 1.1, cut: .35, col: "#1B140B" }]);   /* its contour */
   const sideQ = (t0, t1, c) => plates.push(["cardboard", OBJ_poly([Q(t0, -HW - SW), Q(t1, -HW - SW), Q(t1, -HW + .2), Q(t0, -HW + .2)], 0), { lvl: "pencil", z: .6, bev: .3, col: c }]);
   /* (384.136 art5) Madison circled the crossing again: past the board the pin's own wall (lit, in the part's colour) sat OUTSIDE
      the side band, so the pencil looked a band wider there than over the board, with a notch of board at the step. The outline now
@@ -235,9 +236,13 @@
   plates.push(["cream", OBJ_poly([Q(CONE, -HW), Q(GR, -wAt(GR)), Q(GR, wAt(GR)), Q(CONE, HW)], 0), { lvl: "pencil", z: 1.3, bev: .5, dome: .4, col: "#D8A96E" }]);   /* the sharpened wood */
   plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { lvl: "pencil", z: 1.3, bev: .35, col: "#3A3D42" }]);   /* the graphite */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
-    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [23, Y0], [29, 1], [59, 1], [65, Y0], [X1, Y0], [X1, Q(tl, HW)[1]], Q(0, HW), Q(0, -HW), [X1, Q(tr, -HW)[1]], [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
-      [0, 1, 3, 3, 1, 4, 1.5, ER, ER, 1.5, 4, 4, 4, 0]) + "Z",
-    holes: [OBJ_rrect(36, 6, 16, 6, 2.5)],
+    /* (384.136 art6) THE PENCIL STANDS AGAINST THE BOARD. Madison, a sixth time: "The pencil is still messed up". Every round that patched
+       the place where it crossed the board's edge left something there; lying wholly on the board made the outline a plain board (a
+       twin of Chapter 10's door). It now stands upright against the board's right side - a straight joint, no crossing - rising past the
+       board's top beside the clip, and its sharpened end makes the outline's notch. */
+    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [20, Y0], [26, 16], [56, 16], [62, Y0], [X1, Y0], Q(0, HW), Q(0, -HW - SW), Q(CONE, -HW - SW), Q(PT, coneOut(PT)), Q(PT, wAt(PT)), Q(CONE, HW), [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
+      [0, 1, 3, 3, 1, 1, ER, ER, 0, .3, .3, 0, 4, 4, 4, 0]) + "Z",
+    holes: [OBJ_rrect(33, 21, 16, 6, 2.5)],
     base: "wood",
     plates,
   };

@@ -383,7 +383,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   const ring = S.box(34.5, 13, 13, 5.5, 1.2);                                     /* the neck ring */
   const valve = S.box(36, 4.5, 10, 10, 1.2), stem = S.box(39, 3, 4, 3, .6), wheel = S.box(32.5, .8, 17, 4.6, 2.3);
   const nut = S.box(46.5, 4.6, 6.5, 8.6, 1), arm = S.box(52, 6.8, 12, 5, 1.5), gauge = S.circle(73, 12.5, 12);
-  const all = S.union([S.union([cyl, ring, S.union([valve, stem, wheel], 1)], 1.2), S.union([nut, arm, gauge], 1.6)], .5);
+  const all = S.union([S.union([cyl, ring, S.union([valve, stem, wheel], 1)], 1.2), S.union([nut, arm, gauge], 1.6)], 0);   /* (art6) the regulator's nut overhangs the ring with clear space under it: no fillet there (it read as a stray wedge) */
   let ticks = ""; for(let k = 0; k <= 8; k++){ const t = (135 + k * 33.75) * Math.PI / 180;
     ticks += "M" + (73 + 5.7 * Math.cos(t)).toFixed(2) + " " + (12.5 + 5.7 * Math.sin(t)).toFixed(2) + "L" + (73 + 7.4 * Math.cos(t)).toFixed(2) + " " + (12.5 + 7.4 * Math.sin(t)).toFixed(2); }
   CHAPTER_OBJ["Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids"] = {
@@ -391,12 +391,12 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     col: "#2E8B57", base: "field",
     plates: [
       ["field", S.shape(cyl, BB), { dome: 2 }],                                                          /* the cylinder */
-      ["cream", S.shape(S.inter(S.union([cyl, S.inter(all, S.box(30, 15, 25, 10, 0))], 0), S.box(0, 0, 100, 42, 0)), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder, up the neck */
+      ["cream", S.shape(S.inter(S.union([cyl, S.inter(all, S.box(30, 15, 17.5, 10, 0))], 0), S.box(0, 0, 100, 42, 0)), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder, up the neck */
       ["field", "M17 42H65", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
       ["field", "M17 88.5H65", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
       ["brass", S.shape(S.minus(S.inter(all, S.box(0, 0, 61, 13, 0)), cyl), BB), { z: .2, bev: .5 }],     /* the valve gear, every fillet in it brass (above the ring only) */
       ["brass", S.shape(S.union([valve, stem], .8), BB), { z: .3, bev: .6, gem: .8, gw: 2.2 }],           /* the valve body and its stem */
-      ["steel", OBJ_rrect(34.5, 13, 13, 5.5, [1.2, 1.2, 0, 0]), { z: .6, bev: .5, dome: .5 }],                          /* the neck ring it is seated in */
+      ["steel", S.shape(S.inter(all, S.box(33, 12.4, 16, 6.1, 0)), BB), { z: .6, bev: .5, dome: .5 }],   /* (art6) the ring fills the outline's fillets at its corners (a green sliver showed there) */                          /* the neck ring it is seated in */
       ["steel", "M35.5 14.9H46.5M35.5 16.8H46.5", { ln: .7, cut: .4, paint: 0 }],                                 /* its threads */
       ["rubber", OBJ_rrect(32.5, .8, 17, 4.6, 2.3), { z: .4, dome: 1, col: "#2B2E33" }],                 /* the handwheel */
       ["rubber", "M36 1.9V4.4M39.5 1.9V4.4M43 1.9V4.4M46.5 1.9V4.4", { ln: 1, cut: .5, paint: 0 }],
