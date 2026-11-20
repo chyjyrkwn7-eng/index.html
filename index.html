@@ -137225,10 +137225,33 @@ function badgeEdgeLightHref(shape){
   }catch(e){ href = null; }
   return (EDGE_LIGHT_CACHE[d] = href);
 }
+/* (384.136 art6) a pin's side in the colours of its parts: the face's colour map in the edge's own frame, each pixel darkened as
+   badgeShade(.., -.3) darkens the one colour it replaces. Made once per badge. */
+const BADGE_EDGE_COL_CACHE = {};
+function badgeEdgeColourHref(unitName, shape, vb){
+  if(BADGE_EDGE_COL_CACHE[unitName] !== undefined) return BADGE_EDGE_COL_CACHE[unitName];
+  let href = null;
+  try{
+    const R = 256, data = chapterObjColourMap(shape, { vx: vb[0], vy: vb[1], vw: vb[2], cx: shape.c[0], cy: shape.c[1], S: BADGE_GEOM.scale }, R, unitName);
+    if(data){
+      const t = document.createElement("canvas"); t.width = t.height = R;
+      const tx = t.getContext("2d"), img = tx.createImageData(R, R); img.data.set(data); tx.putImageData(img, 0, 0);
+      const cv = document.createElement("canvas"); cv.width = cv.height = R;
+      const cx = cv.getContext("2d");
+      cx.drawImage(t, 0, 0);
+      /* grown a few pixels past the outline (the side's mask reaches a hair beyond it), each part's own colour carried out */
+      cx.globalCompositeOperation = "destination-over";
+      for(let r = 1; r <= 3; r++) for(let k = 0; k < 8; k++){ const a = k * Math.PI / 4; cx.drawImage(t, Math.round(Math.cos(a) * r), Math.round(Math.sin(a) * r)); }
+      cx.globalCompositeOperation = "source-atop"; cx.fillStyle = "rgba(0,0,0,.3)"; cx.fillRect(0, 0, R, R);
+      href = cv.toDataURL("image/png");
+    }
+  }catch(e){ href = null; }
+  return (BADGE_EDGE_COL_CACHE[unitName] = href);
+}
 function badgeEdgeURL(unitName, tone, stage){
   const shape = badgeShapeFor(unitName), d = shape.d;
   const tq = Math.round(Math.max(0, Math.min(1, tone == null ? 1 : tone)) * 4), st = Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0));
-  const key = d + "|n" + tq + "|" + st;
+  const key = d + "|n" + tq + "|" + st + (shape.obj ? "|" + unitName : "");
   if(BADGE_EDGE_CACHE[key]) return BADGE_EDGE_CACHE[key];
   const NS = "http://www.w3.org/2000/svg";
   const c = shape.c, G = BADGE_GEOM;
@@ -137258,8 +137281,16 @@ function badgeEdgeURL(unitName, tone, stage){
     if(lift < 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#000"); r.setAttribute("opacity", (1 - lift).toFixed(3)); grp.appendChild(r); }
     else if(lift > 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#fff"); r.setAttribute("opacity", ((lift - 1) * .6).toFixed(3)); grp.appendChild(r); }
     if(st > 0){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#8A6A3E"); r.setAttribute("opacity", (.045 * st).toFixed(3)); grp.appendChild(r); }
-    /* (384.66) a pin's side is its own enamel, darker, not silver */
-    if(shape.obj){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", badgeShade(badgeThemeFor(unitName).p, -.3)); r.setAttribute("opacity", ".72"); grp.appendChild(r); }
+    /* (384.66) a pin's side is its own enamel, darker, not silver.
+       (384.136 art6) ...and each stretch of it the enamel of the PART it is the side of. Madison: "Ensure all the badges are good to go
+       and look right when you rotate them." The side was one colour (the badge's theme, darker) all the way round, so turned, a blue
+       spray arm stood on a red wall, a white page on a grey one. It is now the face's own colour map (chapterObjColourMap, the same
+       parts the face is drawn from), darkened as the one colour was, over the same light. */
+    if(shape.obj){
+      const cm = badgeEdgeColourHref(unitName, shape, vb);
+      if(cm){ const im2 = box(document.createElementNS(NS, "image")); im2.setAttribute("preserveAspectRatio", "none"); im2.setAttribute("href", cm); im2.setAttribute("opacity", ".72"); grp.appendChild(im2); }
+      else { const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", badgeShade(badgeThemeFor(unitName).p, -.3)); r.setAttribute("opacity", ".72"); grp.appendChild(r); }
+    }
     svg.appendChild(grp);
   } else {
     p.setAttribute("fill", "#8E98A3"); p.setAttribute("stroke", "#8E98A3");
