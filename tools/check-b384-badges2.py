@@ -53,7 +53,7 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # the pins are the art gates' to hold (check-b384-objbadges, check-b384-badgeart); this one holds everything else in the case
 # (384.136 art6) Fire Code's reference moves again: a pin's side takes its parts' colours (badgeEdgeColourHref), so the badge in hand
 # and the earned cutscene's turned coin differ there and only there (the run before this re-pin: (3) inspect 2 and cutscene 6, nothing else)
-REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "7082af0")}
+REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "b5901eb")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene
