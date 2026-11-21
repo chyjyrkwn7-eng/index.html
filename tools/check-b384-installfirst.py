@@ -146,8 +146,8 @@ try:
                     s["go"] and s["go"]["h"] >= 43.5 and not re.search(r"\badded\b|\binstalled\b", s["go"]["text"], re.I), s)
                 pg.click(".if-go"); pg.wait_for_timeout(700)
                 sh = pg.evaluate("()=>window.__shares"); s = pg.evaluate(STATE)
-                # (384.136, changed on purpose) the button never opens a page's share menu: it has no Add to Home Screen
-                chk("(5) %s, share %s: the tap never calls navigator.share (its menu has no Add to Home Screen)" % (ua, mode), len(sh) == 0, sh)
+                chk("(5) %s, share %s: the tap calls navigator.share once with the canonical address and a title" % (ua, mode),
+                    len(sh) == 1 and sh[0]["url"] == canon and sh[0]["title"], sh)
                 chk("(5) %s, share %s: and the page is the video screen (no dead end), not the sheet" % (ua, mode), s["screen"] == "installvideo" and s["vid"] and not s["sheet"], s)
                 ctx.close()
         ctx, pg = open_dev(br, "iphone-safari", extra=(NO_SHARE,))
@@ -162,17 +162,23 @@ try:
           const sb=q('.a2hs-share'), ad=q('.a2hs-added');
           return { share: vis(sb), shareH: sb ? sb.getBoundingClientRect().height : 0, shareText: sb ? sb.textContent : '', addedGhost: !!ad && ad.classList.contains('ghost'), addedVis: vis(ad), doneVis: vis(q('.a2hs-close')),
             primaryIsShare: sb ? !sb.classList.contains('ghost') : false }; }""")
-        # (384.136, changed on purpose: Madison, of the menu a page opens, "it's the old share button or something") a page's share menu has
-        # no Add to Home Screen, so the sheet has no share button (I've added it is its white one) and the bar's pill is Add and opens the guide
-        chk("(5) the sheet has no share button; I've added it is its white (primary) button", not g["share"] and not g["addedGhost"] and g["addedVis"] and g["doneVis"], g)
-        pg.evaluate("()=>{ document.getElementById('a2hs-sheet') && document.getElementById('a2hs-sheet').remove(); }"); pg.wait_for_timeout(300)
+        chk("(5) the sheet's white (primary) button opens the share menu; I've added it and Not now are the quiet ones", g["share"] and g["shareH"] >= 47.5 and g["primaryIsShare"] and g["addedGhost"] and g["addedVis"] and g["doneVis"], g)
+        pg.evaluate("()=>{ window.__shareMode='resolve'; document.querySelector('#a2hs-sheet .a2hs-share').click(); }"); pg.wait_for_timeout(500)
+        sh = pg.evaluate("()=>window.__shares")
+        chk("(5) its tap calls navigator.share with the canonical address", len(sh) == 1 and sh[0]["url"] == canon, sh)
+        pg.evaluate("()=>{ window.__shareMode='fail'; document.querySelector('#a2hs-sheet .a2hs-share').click(); }"); pg.wait_for_timeout(500)
+        txt = pg.evaluate("()=>{ const e=document.querySelector('#a2hs-sheet .a2hs-share-status'); return e && !e.hidden ? e.textContent : ''; }")
+        chk("(5) a failed share leaves the steps on the sheet and says to use them", txt.strip() and pg.evaluate("()=>!!document.getElementById('a2hs-sheet')"), txt)
+        ctx.close()
+        # the reminder bar on Home: its pill (the white button) opens the share menu the same way; cancelled or failed, the guide
+        ctx, pg = open_dev(br, "iphone-safari", seeded=True, extra=(SHARE_STUB,))
+        pg.wait_for_timeout(2500)
         pg.evaluate("()=>{ document.getElementById('a2hsbar') && document.getElementById('a2hsbar').remove(); showA2hsBar(); }"); pg.wait_for_timeout(600)
         pill = pg.evaluate("()=>{ const p=document.querySelector('#a2hsbar .a2hs-bar-pill'); return p ? p.textContent : null; }")
-        chk("(5) the reminder bar's pill is Add (%r)" % pill, pill == "Add", pill)
+        chk("(5) the reminder bar's pill says it is Share, not that it adds itself (%r)" % pill, pill and re.search(r"share", pill, re.I), pill)
         pg.click("#a2hsbar .a2hs-bar-main"); pg.wait_for_timeout(600)
         sh = pg.evaluate("()=>window.__shares"); sheet = pg.evaluate("()=>!!document.getElementById('a2hs-sheet')")
-        chk("(5) the bar's tap never calls navigator.share and opens the guide", len(sh) == 0 and sheet, [sh, sheet])
-        pg.evaluate("()=>{ const o=document.getElementById('a2hs-sheet'); if(o) o.remove(); }")
+        chk("(5) the bar's tap calls navigator.share with the canonical address, and the guide stays shut when it resolved", len(sh) == 1 and sh[0]["url"] == canon and not sheet, [sh, sheet])
         for mode in ("abort", "fail"):
             pg.evaluate("(m)=>{ window.__shareMode = m; }", mode)
             pg.click("#a2hsbar .a2hs-bar-main"); pg.wait_for_timeout(700)
