@@ -100,11 +100,8 @@ try:
                 s = pg.evaluate(STATE)
                 if mode != "none":
                     sh = pg.evaluate("()=>window.__shares"); at = pg.evaluate("()=>window.__shareAt")
-                    # (384.136, changed on purpose: Madison, of the menu the page raised, "it's the old share button or something") a page's
-                    # share menu (navigator.share) has no Add to Home Screen; the button never opens it, and the video page names Safari's route
-                    route = pg.evaluate("()=>{ const r = document.querySelector('#stage .iv-route'); return r ? r.textContent.replace(/\\s+/g, ' ').trim() : null; }")
-                    chk("(2) %dx%d share %s: the tap never calls navigator.share, and the video page shows the way through Safari's own menu (%r)" % (w, h, mode, route),
-                        len(sh) == 0 and route and "Share" in route and "View More" in route and "Add to Home Screen" in route, [sh, route])
+                    chk("(2) %dx%d share %s: the tap calls navigator.share once, with the canonical address, while the install page is still the screen" % (w, h, mode),
+                        len(sh) == 1 and sh[0]["url"] == canon and sh[0]["title"] and at == [True], [sh, at])
                 chk("(2) %dx%d share %s: the page is the video screen" % (w, h, mode), s["screen"] == "installvideo" and s["video"] is not None and not s["sheet"], s)
                 if mode == "resolve":
                     v = s["video"]

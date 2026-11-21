@@ -108206,7 +108206,10 @@ function installFirstWanted(){
    A share menu a page opens (navigator.share) is the Web Share sheet - people, AirDrop, Copy, Reading List - and it never has Add to
    Home Screen; only Safari's own Share button does. So every Add to Home Screen button shows the guide (the video of Safari's own
    Share button) instead, and this always answers "unavailable". */
-const A2HS_PAGE_SHARE = false;
+/* (384.109) ...BACK ON. Madison: "The button is not pulling up the share menu ... before this update it worked okay on iPads". The menu
+   without Add to Home Screen was Messages' own web viewer (it offered Open in Safari): in Safari itself the menu this opens has View
+   More, and Add to Home Screen under it, on the iPhone as on the iPad. */
+const A2HS_PAGE_SHARE = true;
 function a2hsShare(){
   if(!A2HS_PAGE_SHARE || typeof navigator.share !== "function") return Promise.resolve("unavailable");
   try{
@@ -108298,15 +108301,11 @@ function showInstallFirst(o){
     /* (384.136) the way through Safari's own menu, in one line under the heading - the part of the page the menu never covers.
        Madison, with Safari's share menu open over the page: on iOS 26 Add to Home Screen is behind View More, not in the first row */
     const route = mk("p", "iv-route");
-    /* (384.136) Madison's recording (iOS 26 Safari): Share is in the menu behind the three-lines button at the LEFT of the address bar,
-       then View More, then Add to Home Screen */
+    /* (384.109) the line under the heading is for the menu the button has just opened over the page: View More, then Add to Home
+       Screen (with no menu up - it was closed, or never opened - Safari's own way in is the menu button left of its address bar) */
     if(dev === "apple"){
-      const ic = mk("span", "iv-route-ic"); ic.setAttribute("role", "img"); ic.setAttribute("aria-label", "the menu button at the left of the address bar");
-      ic.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/></svg>';
       const step = (...kids) => { const sp = mk("span", "iv-route-step"); sp.append(...kids); return sp; };
-      route.append(step(document.createTextNode("Tap "), ic, document.createTextNode(" \u2192")), document.createTextNode(" "));
-      ["Share", "View More", "Add to Home Screen"].forEach((t, i, all) => { const last = i === all.length - 1;
-        route.append(last ? step(mk("b", "", t)) : step(mk("b", "", t), document.createTextNode(" \u2192"))); if(!last) route.append(document.createTextNode(" ")); });
+      route.append(step(document.createTextNode("In the menu, tap "), mk("b", "", "View More"), document.createTextNode(" \u2192")), document.createTextNode(" "), step(mk("b", "", "Add to Home Screen")));
     }
     else route.textContent = "Browser menu \u2192 Add to Home screen";
     const frame = mk("div", "iv-frame");
