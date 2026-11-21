@@ -12486,6 +12486,13 @@
   .installvideo-panel{ --iv-ar:1.4; --iv-pos:50% 100%; --iv-scale:1;
     --iv-h:max(7rem, calc(40vh - env(safe-area-inset-top, 0px) - 6.5rem)); --iv-h:max(7rem, calc(40dvh - env(safe-area-inset-top, 0px) - 6.5rem)); }
   .if-vhead{ margin:0 0 .75rem; font-size:clamp(1.15rem, 5vw, 1.55rem); font-weight:700; line-height:1.2; color:var(--ink); text-align:center; text-wrap:balance; font-family:inherit; text-transform:none; }
+  .iv-route{ margin:-.35rem 0 .7rem; text-align:center; font-size:.95rem; line-height:1.35; color:var(--soft); text-wrap:balance; }
+  .iv-route b{ color:var(--ink); font-weight:700; }
+  .iv-route-ic{ display:inline-grid; place-items:center; width:1.6em; height:1.6em; margin:0 .1em; vertical-align:-.45em; border-radius:50%;
+    color:var(--ink); background:color-mix(in srgb, var(--ink) 14%, transparent); }
+  .iv-route-ic svg{ width:1em; height:1em; display:block; }
+  .iv-route-step{ white-space:nowrap; }
+  @media (min-width:40rem){ .iv-route{ margin:-.6rem 0 .25rem; } }   /* (384.136) the clip still ends in the top 45% on a tablet (Safari's menu rises under it) */
   .iv-frame{ position:relative; flex:none; box-sizing:border-box; width:min(100%, 30rem, calc(var(--iv-h) * var(--iv-ar))); aspect-ratio:var(--iv-ar);
     border-radius:18px; overflow:hidden; background:var(--surface-inset); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); cursor:pointer; }
   .iv-frame video{ position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; object-position:var(--iv-pos);
@@ -99857,7 +99864,7 @@ function showA2hsBar(){
   /* (384.27) THE WHITE BUTTON OPENS THE SHARE MENU (iPhone and iPad): the same as the install page's and the sheet's. It is called from
      this tap, with the canonical address; Add to Home Screen is a row in the menu (Apple has no call that adds it in one tap, so the
      pill says "Share"). Cancelled, failed or missing, the guide opens, as it always did. */
-  const shareHere = a2hsDeviceGuess() === "apple" && typeof navigator.share === "function";
+  const shareHere = A2HS_PAGE_SHARE && a2hsDeviceGuess() === "apple" && typeof navigator.share === "function";
   if(shareHere){
     pill.textContent = "Share";
     main.setAttribute("aria-label", "Open the share menu, then tap Add to Home Screen");
@@ -100046,7 +100053,7 @@ function showHomeScreenSheet(opts){
   row.append(frame, now, appleSteps.ol);
   const hasCode = !!(syncCode && !syncOff && store && store.onboardingComplete);
   /* (384.23) Open Share menu (below) opens the share menu with Add to Home Screen in it; the steps are the same thing by hand, as in the clip */
-  const shareOk = !standalone && typeof navigator.share === "function";
+  const shareOk = A2HS_PAGE_SHARE && !standalone && typeof navigator.share === "function";
   apple.append(row, mk("p", "a2hs-note",
     standalone ? "These steps are for adding Nova on another iPhone or iPad."
     /* (384 r4) "if you add to homescreen ... and then you open the app from your Home Screen, isn't it gonna get you back to the
@@ -108195,8 +108202,13 @@ function installFirstWanted(){
 }
 /* The system share menu, from a tap: "shared", "cancelled", "failed" or "unavailable". Always the canonical address, whatever
    address this page was opened at. */
+/* (384.136) NEVER OPENED FROM THE PAGE. Madison, with a screenshot of the menu it raised: "it's the old share button or something".
+   A share menu a page opens (navigator.share) is the Web Share sheet - people, AirDrop, Copy, Reading List - and it never has Add to
+   Home Screen; only Safari's own Share button does. So every Add to Home Screen button shows the guide (the video of Safari's own
+   Share button) instead, and this always answers "unavailable". */
+const A2HS_PAGE_SHARE = false;
 function a2hsShare(){
-  if(typeof navigator.share !== "function") return Promise.resolve("unavailable");
+  if(!A2HS_PAGE_SHARE || typeof navigator.share !== "function") return Promise.resolve("unavailable");
   try{
     return Promise.resolve(navigator.share({ url: A2HS_URL, title: "Nova" })).then(() => "shared",
       e => (e && e.name === "AbortError") ? "cancelled" : "failed");
@@ -108283,6 +108295,20 @@ function showInstallFirst(o){
     const panel = mk("section", "panel home installvideo-panel");
     panel.setAttribute("data-screen", "installvideo"); panel.dataset.dev = dev;
     const head = mk("h1", "if-vhead", "Add Nova to your Home Screen");
+    /* (384.136) the way through Safari's own menu, in one line under the heading - the part of the page the menu never covers.
+       Madison, with Safari's share menu open over the page: on iOS 26 Add to Home Screen is behind View More, not in the first row */
+    const route = mk("p", "iv-route");
+    /* (384.136) Madison's recording (iOS 26 Safari): Share is in the menu behind the three-lines button at the LEFT of the address bar,
+       then View More, then Add to Home Screen */
+    if(dev === "apple"){
+      const ic = mk("span", "iv-route-ic"); ic.setAttribute("role", "img"); ic.setAttribute("aria-label", "the menu button at the left of the address bar");
+      ic.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/></svg>';
+      const step = (...kids) => { const sp = mk("span", "iv-route-step"); sp.append(...kids); return sp; };
+      route.append(step(document.createTextNode("Tap "), ic, document.createTextNode(" \u2192")), document.createTextNode(" "));
+      ["Share", "View More", "Add to Home Screen"].forEach((t, i, all) => { const last = i === all.length - 1;
+        route.append(last ? step(mk("b", "", t)) : step(mk("b", "", t), document.createTextNode(" \u2192"))); if(!last) route.append(document.createTextNode(" ")); });
+    }
+    else route.textContent = "Browser menu \u2192 Add to Home screen";
     const frame = mk("div", "iv-frame");
     let video = null;
     if(dev === "apple"){
@@ -108320,7 +108346,7 @@ function showInstallFirst(o){
       try{ a2hsBarEnd("added"); }catch(e){}
       showInstallFirst({ view: "done", device: dev, inapp: inApp });
     });
-    panel.append(head, frame, added, installHelpLink(dev, inApp));
+    panel.append(head, route, frame, added, installHelpLink(dev, inApp));
     stage.replaceChildren(panel);
     toTop();
     return panel;
