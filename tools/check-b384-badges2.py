@@ -54,6 +54,7 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # (384.136 art6) Fire Code's reference moves again: a pin's side takes its parts' colours (badgeEdgeColourHref), so the badge in hand
 # and the earned cutscene's turned coin differ there and only there (the run before this re-pin: (3) inspect 2 and cutscene 6, nothing else)
 # (384.136 art6 round 3) and again: Appendix H redrawn, the rack, the cylinder, the bare faces in hand and the edge-on strip
+# (384.136 art6 round 4) and again: the pencil, ticks, rack and cylinder collar redrawn
 REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "cd3902c")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")

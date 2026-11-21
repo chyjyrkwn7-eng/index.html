@@ -128,7 +128,10 @@ PROBE2 = r"""() => {
       return +(Math.abs((b.x0 + b.x1) / 2 - (x0 + x1) / 2) / SC).toFixed(2); });
   }
   /* (7) the pencil */
-  { const u = find('Appendix H'), pl = CHAPTER_OBJ[u].plates, g = subs(pl[pl.length - 1][1])[0], w = subs(pl[pl.length - 2][1])[0];
+  { const u = find('Appendix H'), pl = CHAPTER_OBJ[u].plates, byCol = c => pl.filter(q => (q[2] || {}).col === c);
+    /* (384.136 art6 round 4, changed on purpose: the pencil is three faces now, its wood in three tones) the graphite is its own plate,
+       the wood the two outer tones, whose outer edges run to the point */
+    const g = subs(byCol('#3A3D42')[0][1])[0], wl = subs(byCol('#E6C08E')[0][1])[0], wr = subs(byCol('#B5844F')[0][1])[0], w = [wl[0], wl[1], wr[2], wr[3]];   /* the outer edges (the cone's own sides) */
     const near = (p, P) => Math.min(...P.map(q => Math.hypot(p[0] - q[0], p[1] - q[1])));
     /* the graphite's base: its two corners nearest the wood; the wood's sides: from each of its far corners to that base */
     const gs = g.slice().sort((a, b) => near(a, w) - near(b, w)).slice(0, 2), shared = Math.max(...gs.map(p => near(p, w)));
@@ -178,7 +181,9 @@ with sync_playwright() as pw:
     chk("(6) Chapter 33: every bright mark on the shell is centred on it, within 2.5 units (%s off)" % q["hat"], bool(q["hat"]) and max(q["hat"]) <= 2.5, q["hat"])
     chk("(7) Appendix H: the graphite and the wood share their edge (%s apart) and run on one taper (%s degrees)" % (q["pencil"]["shared"], q["pencil"]["angle"]), q["pencil"]["shared"] <= .15 and q["pencil"]["angle"] <= 1, q["pencil"])
     chk("(8) Chapter 32: at least 4 parts carry a slanted edge going back into the rack (%d), and so does the outline (%s)" % (q["rack"]["parts"], q["rack"]["outline"]), q["rack"]["parts"] >= 4 and q["rack"]["outline"], q["rack"])
-    chk("(9) Chapter 63: the white shoulder runs up into a neck at most 16 units wide 2 units below its top (%s)" % q["neck"], q["neck"] <= 16, q["neck"])
+    # (384.136 art6 round 4, changed on purpose: Madison, "the silver part, it doesn't wrap around, not sure why the sides are white") no
+    # neck stands beside the collar any more: the collar sits on the shoulder, so the white's first rows are the shoulder's, wider than it
+    chk("(9) Chapter 63: the white starts at the shoulder under the collar, no neck beside it (%s units wide 2 below its top)" % q["neck"], q["neck"] >= 17, q["neck"])
     # (384.136 art4, changed on purpose: Madison circled both ends of the foot band where it ran out into the outline - a notch and a stray
     # line at each side) the band now ends rounded a little inside the dome's outline, clear of it at both ends
     chk("(10) Chapter 61: the collar's foot band ends inside the tank's outline at both ends, clear of it by 1 to 4 units (%s)" % q["collar"], bool(q["collar"]) and all(1 <= min(c) and max(c) <= 4 for c in q["collar"]), q["collar"])

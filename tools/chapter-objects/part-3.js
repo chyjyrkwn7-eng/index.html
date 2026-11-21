@@ -54,7 +54,7 @@
     const polyD = p => "M" + p.map(q => f(q[0], q[1])).join("L") + "Z";
     const plates = [];
     /* the dark inside of the rack */
-    plates.push(["ink", OBJ_rrect(8, 16, 66, FLOOR - 16, 0) + polyD([[44 + D[0] * .5, BTOP + 4], [80 + D[0], BTOP + 4], [80 + D[0], BFLOOR], [44, FLOOR]]), { z: -.9, bev: .6, col: "#151B24" }]);
+    plates.push(["ink", OBJ_rrect(8, 16, 66, FLOOR - 16, 0) + polyD([[44 + D[0] * .5, BTOP + 4], [80 + D[0], BTOP + 4], [80 + D[0], BFLOOR], [44, FLOOR]]), { z: -.9, bev: .25, col: "#151B24" }]);
     /* the back beams of each bay at both levels, behind the loads (their connectors on the back uprights) */
     /* what stands in front of the rack's insides: every load (pallet, cartons, their tops) and the front uprights - a part behind them is
        cut where they cover it, so its relief never shows through them */
@@ -68,7 +68,11 @@
        beside the decks that lie on them, and the left and middle frames' bracing, seen through each bay, read as loose zig-zags across
        the shelves. Both are left out: what reads is the front frame, a shelf at each level running back to the back posts, the ties
        across the top and the floor, and the braced end frame. */
-    void bbF;
+    /* (art6 round 4) Madison: "The storage shelf looks bad and not consistent". Every bay and every frame is now drawn the same way:
+       each level a front beam and a back beam with a wire deck lying on both; every frame - the left, the middle and the right end -
+       its front post, back post, top strut, floor tie and the bracing between the posts. Back to front: back posts, back beams, bracing,
+       decks, then the loads and the front frame. */
+    void bbF;   /* no back beams: seen from above they only peeked out as orange wedges beside the decks */
     /* (384.136 art6) Madison, of the rack without its loads: "Where is the rest of the rack? Do the boxes float?" A level was only a front
        beam and a back beam with nothing between them, so a pallet had nothing to stand on. Each bay's level now has its wire deck: a
        galvanised grid lying from the top of the front beam back to the top of the back beam, resting on both - what the pallet sits on,
@@ -80,8 +84,6 @@
       for(let k = 1; k < 7; k++){ const t = k / 7, xa = x0 + .6 + (x1 - x0 - 1.2) * t; mesh.push(S.capsule(xa, y0, xa + D[0], y0 + D[1], .35)); }
       for(let k = 1; k < 3; k++){ const t = k / 3; mesh.push(S.capsule(x0 + .6 + D[0] * t, y0 + D[1] * t, x1 - .6 + D[0] * t, y0 + D[1] * t, .35)); }
     }));
-    plates.push(["steel", behind(S.union(decks, 0)), { z: -.2, bev: .35, col: "#7D8794" }]);
-    plates.push(["steel", behind(S.union(mesh, 0)), { z: .15, bev: .25, col: "#B7C0CB" }]);
     /* the top struts tying each front upright to its back upright (the left and middle frames; the right one is drawn with its frame below) */
     plates.push(["field", UP.slice(0, 2).map(u => "M" + u.map(() => "").join("") + strut(u).map(q => f(q[0], q[1])).join("L") + "Z").join(""), { z: .3, bev: .4, col: "#2B64A6" }]);
     /* the left and middle frames are frames too: their floor ties and the bracing between front and back uprights, behind the loads */
@@ -91,15 +93,20 @@
       for(let i = 1; i < pts.length; i++) sideF.push(S.capsule(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], 1));
       sideF.push(S.poly([[x1, FLOOR - 7], [x1 + D[0], FLOOR - 7 + D[1]], [x1 + D[0], FLOOR - 2.5 + D[1]], [x1, FLOOR - 2.5]]));
     });
-    /* (art6) the floor ties stay (front post to back post at the foot): only the bracing above them is left out */
-    plates.push(["field", behind(S.union(UP.slice(0, 2).map(([x0, x1]) => S.poly([[x1, FLOOR - 7], [x1 + D[0], FLOOR - 7 + D[1]], [x1 + D[0], FLOOR - 2.5 + D[1]], [x1, FLOOR - 2.5]])), 0)), { z: -.35, bev: .4, col: "#1F4F86" }]);
     void sideF;
+    /* every frame the same: its front post and back post tied at the top (the struts), the middle and the floor - straight ties, no
+       bracing (it read as loose zig-zags through the bays) */
+    const tie = (x, y, h) => S.poly([[x, y], [x + D[0], y + D[1]], [x + D[0], y + h + D[1]], [x, y + h]]);
+    plates.push(["field", behind(S.union(UP.slice(0, 2).flatMap(([x0, x1]) => [tie(x1, 52, 4), tie(x1, FLOOR - 7, 4.5)]), 0)), { z: -.35, bev: .4, col: "#2F6AB0" }]);
+    plates.push(["steel", behind(S.union(decks, 0)), { z: -.2, bev: .35, col: "#7D8794" }]);
+    plates.push(["steel", behind(S.union(mesh, 0)), { z: .15, bev: .25, col: "#B7C0CB" }]);
     /* the back uprights (seen over the top, and the right one beside the end frame), over the ends of the bracing and the back beams */
     plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0 + D[0], BTOP, x1 - x0, BFLOOR - BTOP, .8)).join(""), { z: -.3, bev: .45, col: "#1B4FA0" }]);   /* (art6) a step darker than the front posts, saturated so it reads as solid steel, not glass */
     /* the right end frame, seen from the side: its two posts and the bracing between them */
     let brace = "M" + f(80.5, TOP + 6); { let y = TOP + 6, front = true; while(y + 10 <= FLOOR - 4){ y += 10; brace += "L" + f(front ? 80 + D[0] - .5 : 80.5, front ? y + D[1] * 1 : y); front = !front; } }
     plates.push(["field", polyD([[80, TOP + 3], [80 + D[0], TOP + 3 + D[1]], [80 + D[0], TOP + 7.5 + D[1]], [80, TOP + 7.5]]) + polyD([[80, FLOOR - 7], [80 + D[0], FLOOR - 7 + D[1]], [80 + D[0], FLOOR - 2.5 + D[1]], [80, FLOOR - 2.5]]), { z: .3, bev: .4, col: "#2B64A6" }]);
-    plates.push(["field", brace, { ln: 2.2, z: .4, bev: .5, col: "#3A7BC4" }]);
+    void brace;
+    plates.push(["field", polyD([[80, 52], [80 + D[0], 52 + D[1]], [80 + D[0], 56 + D[1]], [80, 56]]), { z: .3, bev: .4, col: "#2B64A6" }]);   /* its middle tie */
     /* the loads: pallets and cartons, their tops going back into the rack */
     let pals = "", pfork = "", cart = "", tops = "", seam = "", tape = "";
     loads.forEach(({ pal, box, topFace }) => {

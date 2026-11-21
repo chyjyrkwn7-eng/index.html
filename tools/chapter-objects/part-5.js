@@ -182,7 +182,7 @@
    runs in straight to the graphite.) ---- */
 {
   const X0 = 10, X1 = 72, Y0 = 27, Y1 = 97, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  const E = [76.8, 1], TP = [76.8, 84], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
+  const E = [76.8, 1], TP = [76.8, 97], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
   const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
   const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13.5, ER = 2.4;
@@ -193,8 +193,10 @@
   ];
   /* (384.136 art6) the three rows' boxes, ticks and lines are one plate each (the same parts, the same options): a badge holds at
      most CHAPTER_OBJ_MAX_PLATES (24) and the pencil's contour was the 25th, dropped without a word */
-  plates.push(["steel", rows.map(y => OBJ_rrect(20, y - 5.5, 11, 11, 2)).join(""), { z: -.7, bev: .5 }]);
-  plates.push(["water", rows.map(y => "M22.5 " + (y - .5) + "L25.5 " + (y + 3) + "L32 " + (y - 7)).join(""), { ln: 3, z: 1.1, bev: .6, lvl: "tick" }]);   /* (art6) flat on top: it crossed the pressed-in box's edge and took its step as a seam */
+  /* (art6 round 4) Madison: "the check marks are messed up and don't look right all the way through". A tick that crossed its box's
+     edge showed the box's rim through it. Each tick now sits wholly inside its (larger) box: nothing crosses anything. */
+  plates.push(["steel", rows.map(y => OBJ_rrect(19, y - 6.5, 13, 13, 2.5)).join(""), { z: -.7, bev: .5 }]);
+  plates.push(["water", rows.map(y => "M22 " + (y + .2) + "L24.8 " + (y + 3.2) + "L29.4 " + (y - 3.4)).join(""), { ln: 2.6, z: 1.1, bev: .6 }]);   /* the ticks, inside the boxes */
   plates.push(["cream", rows.map(y => "M36 " + (y - 2.5) + "H" + (y > 70 ? 52 : 58) + "M36 " + (y + 3) + "H" + (y > 70 ? 46 : 52)).join(""), { ln: 2.2, cut: .7, paint: 0 }]);
   /* (384.133 art3, Madison circled the pencil's lower end, where the body meets the sharpened wood and the graphite: the body's facet
      lines ran on past it and the cone and the tip did not line up.) One straight pencil now, every piece on the same axis and butting
@@ -202,45 +204,26 @@
      the graphite to the point. The body is a hexagonal pencil's three faces - three flat strips side by side (each lit as one plane, so
      the facets are its own edges, not lines cut along it), all three ending exactly where the cone starts. The cone and the graphite are
      ONE taper: both sides run straight from the body's corners to a single point, the graphite is just the last stretch of it. */
-  const AP = L, PT = L - .5, GR = L - 4.2, wAt = t => HW * (AP - t) / (AP - CONE);
-  const SW = 1.9, coneOut = t => -wAt(t) - SW * (AP - t) / (AP - CONE);   /* the side's width, and its outer edge along the cone */
-  /* (384.136 art4) Madison: "change the color of the pencil back. I like the more wood type one I circled" (fa11d79's) and "look where
-     it's messed up when it goes across the clipboard". The body is fa11d79's again - ONE domed brass body with two facet grooves - on
-     round 3's shape: the grooves stop exactly at the cone (they ran past it before), and the cone and graphite stay one taper. THE
-     CROSSING: the part of the pencil past the board's edge shows the pin's wall along its lower right side, and over the board that side
-     was not there, so the pencil looked cut where it crossed the edge. Its side is now drawn the whole length (a darker brass band under
-     the body's lower right edge, ferrule to cone, down on the board), so the wall past the edge and the side over the board are one. */
-  /* its side, the whole length: the pencil's thickness seen on its lower right, drawn on every part in a darker shade of that part
-     (eraser, ferrule, brass body, then the sharpened wood tapering with the cone to the point). The outline takes the side in where the
-     pencil hangs past the board, so the side is ONE band from eraser to tip - over the board and past its edge alike - and the pin's
-     own wall beyond it is the side's dark tone, not the body's yellow. Each part's side ends where that part ends. */
-  /* (384.136 art6) Madison, again: "It's morphing into the clipboard ... the pencil look like its built into the clipboard". Lying
-     flat was not enough: nothing PARTED it from the board - its lit edges read as the board's own bevel. It now casts a soft shadow
-     down and to the right onto the board and the sheet (the light is top left), and the whole pencil has a crisp dark contour. */
-  /* (art6, third pass) the pencil stands against the board's right side - no shadow (it would fall off the pin) and its contour is a
-     cut line, so the joint between the board and the pencil is one crisp line */
-  const penOut = [Q(0, HW), Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, coneOut(PT)), Q(CONE, -HW - SW), Q(0, -HW - SW)];
-  plates.push(["rubber", OBJ_poly(penOut, [ER, 0, .3, .3, 0, ER]), { ln: 1.1, cut: .35, col: "#1B140B" }]);   /* its contour */
-  const sideQ = (t0, t1, c) => plates.push(["cardboard", OBJ_poly([Q(t0, -HW - SW), Q(t1, -HW - SW), Q(t1, -HW + .2), Q(t0, -HW + .2)], 0), { lvl: "pencil", z: .6, bev: .3, col: c }]);
-  /* (384.136 art5) Madison circled the crossing again: past the board the pin's own wall (lit, in the part's colour) sat OUTSIDE
-     the side band, so the pencil looked a band wider there than over the board, with a notch of board at the step. The outline now
-     runs along the body's own lower edge, so past the board the wall IS the side, and the side band over the board takes the wall's
-     tone (eraser red, ferrule steel, brass) - one band of one width from the eraser to the cone. */
-  sideQ(0, 6.8, "#D63128"); sideQ(6.8, 11.2, "#B3BDC8"); sideQ(11.2, CONE, "#D6A139");
-  plates.push(["cardboard", OBJ_poly([Q(CONE, -HW - SW), Q(PT, coneOut(PT)), Q(PT, -wAt(PT) + .1), Q(CONE, -HW + .2)], 0), { lvl: "pencil", z: .6, bev: .3, col: "#93693F" }]);   /* the wood's side, to the point */
-  plates.push(["brass", OBJ_poly([Q(11.2, -HW), Q(CONE, -HW), Q(CONE, HW), Q(11.2, HW)], 0), { lvl: "pencil", z: 1.3, bev: .7, dome: .9 }]);   /* the pencil */
-  plates.push(["brass", "M" + f(Q(12, -HW * .34)) + "L" + f(Q(CONE, -HW * .34)) + "M" + f(Q(12, HW * .34)) + "L" + f(Q(CONE, HW * .34)), { lvl: "pencil", ln: .9, cut: .5, paint: 0 }]);   /* its facets, to the cone */
-  plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, ER]), { lvl: "pencil", z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
+  /* (art6 round 4) Madison: "The pencil looks messed up". It is drawn now as a plain hexagonal pencil seen square on, nothing borrowed
+     from the versions that hung off the board: no side band, no grooves - three flat faces (lit, middle, shaded) from the ferrule to the
+     cone, the sharpened wood in the same three tones to the graphite, a crimped ferrule and the eraser. It runs the board's full height. */
+  const AP = L, PT = L - .5, GR = L - 4.2, wAt = t => HW * (AP - t) / (AP - CONE), H3 = HW / 3;
+  const penOut = [Q(0, HW), Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, -wAt(PT)), Q(CONE, -HW), Q(0, -HW)];
+  const face = (w0, w1, t0, t1, col, role, o) => plates.push([role, OBJ_poly([Q(t0, w0), Q(t1, w0), Q(t1, w1), Q(t0, w1)], 0), Object.assign({ lvl: "pencil", z: 1.3, bev: .3 }, o, { col })]);
+  face(HW, H3, 11.2, CONE, "#F0C75A", "cardboard"); face(H3, -H3, 11.2, CONE, "#DDAA36", "cardboard"); face(-H3, -HW, 11.2, CONE, "#B5832A", "cardboard");
+  const cone = (wa, wb, col) => plates.push(["cardboard", OBJ_poly([Q(CONE, wa), Q(GR, wa * wAt(GR) / HW), Q(GR, wb * wAt(GR) / HW), Q(CONE, wb)], 0), { lvl: "pencil", z: 1.3, bev: .3, col }]);
+  cone(HW, H3, "#E6C08E"); cone(H3, -H3, "#D4A56C"); cone(-H3, -HW, "#B5844F");
+  plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { lvl: "pencil", z: 1.3, bev: .35, col: "#3A3D42" }]);   /* the graphite */
   plates.push(["steel", OBJ_poly([Q(6.8, -HW), Q(11.2, -HW), Q(11.2, HW), Q(6.8, HW)], 0), { lvl: "pencil", z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
   plates.push(["steel", "M" + f(Q(8.4, -HW + .6)) + "L" + f(Q(8.4, HW - .6)) + "M" + f(Q(9.7, -HW + .6)) + "L" + f(Q(9.7, HW - .6)), { lvl: "pencil", ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
-  plates.push(["cream", OBJ_poly([Q(CONE, -HW), Q(GR, -wAt(GR)), Q(GR, wAt(GR)), Q(CONE, HW)], 0), { lvl: "pencil", z: 1.3, bev: .5, dome: .4, col: "#D8A96E" }]);   /* the sharpened wood */
-  plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { lvl: "pencil", z: 1.3, bev: .35, col: "#3A3D42" }]);   /* the graphite */
+  plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, ER]), { lvl: "pencil", z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
+  plates.push(["rubber", "M" + f([X1, Y0]) + "V" + Y1, { ln: .9, cut: .4, paint: 0 }]);   /* the line where it stands against the board */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
     /* (384.136 art6) THE PENCIL STANDS AGAINST THE BOARD. Madison, a sixth time: "The pencil is still messed up". Every round that patched
        the place where it crossed the board's edge left something there; lying wholly on the board made the outline a plain board (a
        twin of Chapter 10's door). It now stands upright against the board's right side - a straight joint, no crossing - rising past the
        board's top beside the clip, and its sharpened end makes the outline's notch. */
-    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [20, Y0], [26, 16], [56, 16], [62, Y0], [X1, Y0], Q(0, HW), Q(0, -HW - SW), Q(CONE, -HW - SW), Q(PT, coneOut(PT)), Q(PT, wAt(PT)), Q(CONE, HW), [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
+    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [20, Y0], [26, 16], [56, 16], [62, Y0], [X1, Y0], Q(0, HW), Q(0, -HW), Q(CONE, -HW), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(CONE, HW), [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
       [0, 1, 3, 3, 1, 1, ER, ER, 0, .3, .3, 0, 4, 4, 4, 0]) + "Z",
     holes: [OBJ_rrect(33, 21, 16, 6, 2.5)],
     base: "wood",
