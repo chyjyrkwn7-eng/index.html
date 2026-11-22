@@ -46,7 +46,7 @@ def chk(name, ok, info=None):
     if ok: PASSES[0] += 1; print("PASS", name, flush=True)
     else: FAILS.append(name); print("FAIL", name, ("" if info is None else str(info)[:600]), flush=True)
 
-KINDS = ["char", "banner", "theme", "fx", "rim"]
+KINDS = ["char", "banner", "theme", "fx"]   # (384.136, changed on purpose: Madison, "Remove the rims") no Rims filter
 OPEN = """async (k) => { const W = ms => new Promise(r => setTimeout(r, ms));
   document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
   try{ showUnlockTracks(); }catch(e){ return 'no screen: ' + e; } await W(700);

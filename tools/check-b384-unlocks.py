@@ -400,7 +400,7 @@ def main():
             # ---- (A) the model
             if wanted("A"):
                 m = pg.evaluate(MODEL)
-                want_tiers = [5, 6, 6, 6, 6]
+                want_tiers = [4, 6, 6, 5, 6] if cls == "academy" else [4, 5, 6, 5, 6]   # (384.136, changed on purpose: Madison, "Remove the rims") the rim tiers are gone
                 chk("[%s] (A) five tracks, tier counts %s" % (cls, m.get("tiers")), m.get("tiers") == want_tiers and len(set(m.get("keys") or [])) == 5, m)
                 chk("[%s] (A) every existing tier is an item that exists" % cls, m.get("exists") is True, m)
                 chk("[%s] (A) each item held exactly when the app's own check holds it (%s agree)" % (cls, m.get("agree")),
@@ -409,26 +409,11 @@ def main():
                 chk("[%s] (A) reading changes nothing stored" % cls, m.get("stored") is False, m)
                 chk("[%s] (A) a track's next step is its first tier not held, in order %s" % (cls, m.get("next")),
                     m.get("next") is not None and m.get("next") == m.get("firstUnheld"), m)
-                # the rim rule: its own count AND every tier before it (academy: legacy Masked One + Orion's day)
-                r = pg.evaluate("""()=>{ try{ const s = JSON.stringify(store);
-                    const acc = () => unlockTrackView().tracks[0].tiers[2].held;
-                    store.bestTestStreak = 999; store.hundoDayBest = 0; store.legacyChars = []; store.retakenKeys = []; store.retakenQuestions = 0; store.stats = {};
-                    const a = acc();
-                    store.hundoDayBest = 3; const b = acc();
-                    store.legacyChars = ['masked']; store.retakenQuestions = 100;
-                    const lockedMasked = isLockedCharacter('masked'); const c = acc();
-                    store.bestTestStreak = 1; store.lifetime.longestStreak = 1; store.lifetime.currentStreak = 1; const d = acc();
-                    applyLoadedData(JSON.parse(s)); return [a, b, lockedMasked, c, d]; }catch(e){ return String(e); } }""")
-                chk("[%s] (A) the Accuracy rim: count alone no, + tier 2 no, + tier 1 yes, the count gone no (%s)" % (cls, r),
-                    isinstance(r, list) and r[0] is False and r[1] is False and (r[2] or r[3] is True) and r[4] is False, r)
-                full = pg.evaluate("()=>{ try{ return unlockTrackSpec().map(t => (1 << t.tiers.length) - 1); }catch(e){ return null; } }")
-                if full:
-                    code = "1-" + "".join("%02x" % m_ for m_ in full) + "00"
-                    gm = pg.evaluate("""(c)=>[rowHasMastery({ ut: c }), rowRimShown({ ut: c, rim: 'mastery' }), rowRimShown({ ut: c.slice(0, 4) + '00' + c.slice(6), rim: 'mastery' }),
-                        rowRimShown({ ut: '1-000000000000', rim: 'ans' }), rowRimShown({ ut: '1-000000010000', rim: 'ans' }), rowRimShown({ ut: 'x', rim: 'ans' })]""", code)
-                    chk("[%s] (A) a row's code: Mastery only with every tier, a rim only when held (%s)" % (cls, gm), gm == [True, "mastery", "", "", "ans", ""], gm)
-                else:
-                    chk("[%s] (A) the track spec exists" % cls, False)
+                # (384.136, changed on purpose: Madison, "Remove the rims") no tier is a rim, there is no rim list and no plate gets one
+                nr = pg.evaluate("""()=>{ try{ return { rimTiers: unlockTrackSpec().reduce((n, t) => n + t.tiers.filter(l => l.some(it => it.k === 'rim')).length, 0),
+                    list: unlockRimList().length, me: plateRimFor({ me: true }), worn: wornRim() }; }catch(e){ return String(e); } }""")
+                chk("[%s] (A) no rims: no tier gives one, none listed, none worn or on a plate (%s)" % (cls, nr),
+                    isinstance(nr, dict) and nr["rimTiers"] == 0 and nr["list"] == 0 and nr["me"] == {"rim": "", "mastery": False} and nr["worn"] == "", nr)
             # ---- (C) the Tracks screen and Next up
             if wanted("C"):
                 load_board(pg); quiet(pg)
@@ -460,8 +445,7 @@ def main():
                 chk("[%s] (C) each card's tiers in order, held count and next step as the model says" % cls,
                     len(pc) == 5 and all(c["n"] == list(range(1, m_["n"] + 1)) and c["held"] == m_["held"] and c["next"] == m_["next"] for c, m_ in zip(pc, md)), [pc, md])
                 chk("[%s] (C) every tier row >= 44px (%s)" % (cls, [round(c["minH"]) for c in pc]), pc and all(c["minH"] >= 44 for c in pc), pc)
-                chk("[%s] (C) the rims: every rim and 'none', each >= 44px (%s, %.0f)" % (cls, s.get("rimN"), s.get("rimMin") or 0),
-                    s.get("rimN") == s.get("rimWant") and (s.get("rimMin") or 0) >= 44, s)
+                chk("[%s] (C) no Rims card on the Tracks screen (%s)" % (cls, s.get("rimN")), s.get("rimN") == 0, s)   # (384.136, changed on purpose: Madison, "Remove the rims") 
             # ---- (D) rarity
             if wanted("D"):
                 load_board(pg)
@@ -480,13 +464,13 @@ def main():
                 k, n = count(0, 2)
                 card = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
                     document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
-                    showUnlockDetail(rimDetail('acc')); await W(500);
+                    showUnlockDetail(characterDetail('marksman')); await W(500);   /* (384.136) Accuracy's third tier is Marksman now */
                     const el = document.querySelector('.unlock-card .unlock-card-rarity'); return el ? el.textContent : ''; }catch(e){ return 'ERR ' + e; } }""")
                 nums = [int(x) for x in re.findall(r"\d+", card or "")]
                 if cls == "ifc":
-                    chk("[%s] (D) the Accuracy rim's rarity: %s of %s, counts only under 20 on the board (%r)" % (cls, k, n, card), nums == [k, n], nums)
+                    chk("[%s] (D) Accuracy tier 3's rarity: %s of %s, counts only under 20 on the board (%r)" % (cls, k, n, card), nums == [k, n], nums)
                 else:
-                    chk("[%s] (D) the Accuracy rim's rarity: %s of %s (%s%%) counted here; the card %r" % (cls, k, n, round(k / n * 100) if n else 0, card),
+                    chk("[%s] (D) Accuracy tier 3's rarity: %s of %s (%s%%) counted here; the card %r" % (cls, k, n, round(k / n * 100) if n else 0, card),
                         nums == [k, n, round(k / n * 100)], nums)
                     share = k / n if n else 0
                     band = pg.evaluate("()=>{ try{ return unlockRarity({ track: 0, tier: 2 }); }catch(e){ return null; } }") or {}
@@ -494,15 +478,13 @@ def main():
                     chk("[%s] (D) its band is the share's (%s)" % (cls, band.get("label")), band.get("label") == want_band and band.get("pct") == round(share * 100), band)
                     km, nm = sum(1 for r in rows + [{"ut": mine, "seenAt": now_ms}] if isinstance(r.get("ut"), str) and re.fullmatch(r"1-[0-9a-f]{12}", r["ut"])
                                  and now_ms - r.get("seenAt", 0) <= 30 * DAY and all(int(r["ut"][2 + i * 2:4 + i * 2], 16) == (1 << spec[i]) - 1 for i in range(5))), n
-                    mr = pg.evaluate("()=>{ try{ return unlockRarity({ mastery: true }); }catch(e){ return null; } }") or {}
-                    chk("[%s] (D) Mastery: %s of %s (the 45-day-old holder not counted)" % (cls, km, nm), mr.get("k") == km and mr.get("n") == nm, mr)
             # ---- (E) the row and the Leaderboard
             if wanted("E"):
                 row = pg.evaluate("""()=>{ try{ const r = window.NOVA_CLASS === 'ifc' ? buildClassBoardRow() : buildLeaderboardRow();
                     return { ut: r.ut, rim: r.rim, code: unlockTrackCode(), worn: wornRim(), lazy: ROW_LAZY_FIELDS.indexOf('ut') >= 0,
                              json: JSON.stringify(r) }; }catch(e){ return { err: String(e) }; } }""")
                 chk("[%s] (E) the row carries ut (this device's code) and rim (the worn one: %r)" % (cls, row.get("rim")),
-                    row.get("ut") and row.get("ut") == row.get("code") and row.get("rim") == row.get("worn") == "ans", row)
+                    row.get("ut") and row.get("ut") == row.get("code") and not row.get("rim") and row.get("worn") == "", row)   # (384.136, changed on purpose: Madison, "Remove the rims") no rim in the row
                 # (384.132) `ut` is lazy (rides with a push, never causes one); `rim` is not any more - (I) checks it is written by the wear's own push
                 chk("[%s] (E) `ut` is a lazy field: it rides with a push, never causes one" % cls, row.get("lazy") is True, row)
                 chk("[%s] (E) no sync code in the row" % cls, CODE not in (row.get("json") or CODE) and CODE.split("-")[0] + "-" not in (row.get("json") or ""), row)
@@ -521,20 +503,12 @@ def main():
                 chk("[%s] (E) every row with a banner shows it along the edge as one still picture, no live scene (%d rows)" % (cls, len(exp_bnr)),
                     bool(lb) and all(by.get(nm_, {}).get("still") and by[nm_]["live"] == 0 for nm_ in exp_bnr) and
                     all(not x["bnr"] for x in lb if x["name"] not in exp_bnr and x["name"] != "Maddox"), [x for x in lb if x["bnr"] or x["name"] in exp_bnr])
-                exp_rim = {"Alexis": "mastery", "Kimber": "acc", "Leeland": "ans", "Dmitri": "ans", "Tomas": "", "Rosa": "", "Wren": ""}
-                if cls == "academy": exp_rim["Zara"] = "mastery"
-                got_rim = {nm_: (by.get(nm_) or {}).get("rim") for nm_ in exp_rim}
-                chk("[%s] (E) a rim on the plate only where the row's code holds it %s" % (cls, got_rim),
-                    got_rim == exp_rim and all((by.get(nm_) or {}).get("ring") == (1 if exp_rim[nm_] else 0) for nm_ in exp_rim), [got_rim, exp_rim])
-                chk("[%s] (E) the gold name for Mastery only" % cls, bool(lb) and {x["name"] for x in lb if x["gold"]} == {nm_ for nm_, v in exp_rim.items() if v == "mastery"}, lb)
-            # ---- (F) wearing a rim
+                # (384.136, changed on purpose: Madison, "Remove the rims") no plate on the Leaderboard has a rim, and no name is gold, whatever a classmate's row says
+                chk("[%s] (E) no rim and no gold name on the Leaderboard" % cls, bool(lb) and not any(x["ring"] or x["rim"] or x["gold"] for x in lb), lb)
+            # ---- (F) no rim is ever worn
             if wanted("F"):
-                w = pg.evaluate("""()=>{ try{ const a = []; wearRim('acc_gold'); a.push(store.rim); wearRim('ans'); a.push(store.rim, wornRim());
-                    store.rim = 'mastery'; a.push(wornRim()); store.rim = 'ans'; saveStore(); return a; }catch(e){ return String(e); } }""")
-                chk("[%s] (F) a rim not held cannot be worn, a held one can, a stored one not held is not worn (%s)" % (cls, w), w == ["", "ans", "ans", ""], w)
-                pg.reload(); pg.wait_for_timeout(3800); pg.evaluate("document.getElementById('splashscreen')?.remove()")
-                r2 = pg.evaluate("()=>{ try{ const a = [store.rim, wornRim()]; applyLoadedData({ lifetime: {} }); a.push(store.rim); return a; }catch(e){ return String(e); } }")
-                chk("[%s] (F) the rim survives a reload; an old copy without one defaults to none (%s)" % (cls, r2), r2 == ["ans", "ans", ""], r2)
+                w = pg.evaluate("""()=>{ try{ const a = []; try{ wearRim('acc_gold'); }catch(e){} a.push(wornRim()); store.rim = 'mastery'; a.push(wornRim()); store.rim = ''; return a; }catch(e){ return String(e); } }""")
+                chk("[%s] (F) no rim is worn, whatever is stored (%s)" % (cls, w), w == ["", ""], w)   # (384.136, changed on purpose: Madison, "Remove the rims") 
             # ---- (G) follow-up: Fire Code's top hundo effect is not "Hazmat" anywhere a person reads it; the character still is
             if wanted("G") and cls == "ifc":
                 gq = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
@@ -610,8 +584,8 @@ def main():
                     out.inCustomize = 0; showCustomize('banner'); await W(1200);
                     out.inCustomize = document.querySelectorAll('.banner-opt .bnr-vrtop10').length;
                     return out; }catch(e){ return { err: String(e) }; } }""")
-                chk("[%s] (H) the Virtual Room's top tier is the new banner, with the gold rim beside it (%s %s)" % (cls, hq.get("lead"), hq.get("goldWith")),
-                    hq.get("lead") == "banner:vrtop10" and hq.get("goldWith") == ["banner:vrtop10", "rim:vr_gold"], hq)
+                chk("[%s] (H) the Virtual Room's top tier is the new banner, alone (%s %s)" % (cls, hq.get("lead"), hq.get("goldWith")),
+                    hq.get("lead") == "banner:vrtop10" and hq.get("goldWith") == ["banner:vrtop10"], hq)   # (384.136, changed on purpose: Madison, "Remove the rims") no gold rim beside it
                 chk("[%s] (H) held at 10 first places, not at 9, and the tier with it (%s)" % (cls, [hq.get(k) for k in ("at9", "tier9", "at10", "tier10")]),
                     [hq.get(k) for k in ("at9", "tier9", "at10", "tier10")] == [False, False, True, True], hq)
                 chk("[%s] (H) the ultimate counts it: that banner alone moves its count by one (%s)" % (cls, hq.get("ultDelta")), hq.get("ultDelta") == [1, 0], hq)
@@ -684,64 +658,14 @@ def main():
                     j4.get("reach25th") is True and j4.get("reachNow") == (cls == "ifc") and j4.get("units25") == (j4.get("units") or 0) + 1 and j4.get("ruleAfter") == j4.get("rule"), j4)
             # ---- (I) 384.132: the worn rim on every plate, your own row at once, the rim cards' sentences
             if wanted("I"):
-                # a page of its own, from the fixture: (F) leaves this one holding an empty copy (applyLoadedData({ lifetime: {} }))
-                ctxI, pgI, errsI = page(br, text, seed, init)
-                pgI.wait_for_timeout(1200); quiet(pgI); load_board(pgI); quiet(pgI)
-                iq = pgI.evaluate(I_PLATES)
-                errs.extend(errsI)
-                ctxI.close()
-                if not isinstance(iq, dict): iq = {"err": str(iq)}
-                P = iq.get("profile") or {}
-                chk("[%s] (I) Profile draws the rim you wear on your plate (%r, %d ring), in its colour, round the plate (centred %s)" % (cls, P.get("rim"), P.get("rings") or 0, P.get("centre")),
-                    P.get("rim") == "ans" and P.get("rings") == 1 and P.get("color") == P.get("want") and P.get("round") is True, iq)
-                chk("[%s] (I) Profile: taken off, no rim; a stored rim you do not hold, no rim (%s)" % (cls, iq.get("profileOff")),
-                    iq.get("profileOff") == [0, 0], iq)
-                C = iq.get("cards") or {}
-                want_cards = {"me": ["ans", False], "Kimber": ["acc", False], "Alexis": ["mastery", True], "Tomas": ["", False], "Priya": ["", False], "Rosa": ["", False]}
-                if cls == "academy": want_cards["Zara"] = ["mastery", True]
-                got_cards = {k: [(C.get(k) or {}).get("rim"), (C.get(k) or {}).get("gold")] for k in want_cards}
-                chk("[%s] (I) the person card: your own rim from this device, a classmate's only when their row's code holds it, gold name for Mastery %s" % (cls, got_cards),
-                    got_cards == want_cards and all((C.get(k) or {}).get("rings") == (1 if v[0] else 0) for k, v in want_cards.items())
-                    and all((C.get(k) or {}).get("round") for k, v in want_cards.items() if v[0]), [got_cards, C])
-                chk("[%s] (I) the person card agrees with that person's Leaderboard row (%s)" % (cls, iq.get("rowAgree")), iq.get("rowAgree") is True, iq)
-                R = iq.get("reduce") or {}
-                chk("[%s] (I) Mastery's ring turns by transform only; with Reduce motion it is still and fully shown (%s)" % (cls, R),
-                    R.get("anim") == "rim-turn" and R.get("props") == ["transform"] and R.get("rmAnim") == "none" and R.get("rmOpacity") == "1", R)
-                O = iq.get("own") or {}
-                chk("[%s] (I) your own Leaderboard row: worn %r -> taken off %r -> worn %r at once, the published copy still %r (no write in between)" % (cls, O.get("before"), O.get("off"), O.get("back"), O.get("published")),
-                    O.get("before") == "ans" and O.get("off") == "" and O.get("back") == "ans" and O.get("published") == "ans" and O.get("writes") == 0, O)
-                W = iq.get("publish") or {}
-                chk("[%s] (I) wearing schedules the account push (%s), and that one push writes the row with the new rim (%s row write(s), rim %r)" % (cls, W.get("scheduled"), W.get("rowWrites"), W.get("rim")),
-                    W.get("scheduled") is True and W.get("rowWrites") == 1 and W.get("rim") == "", W)
-                chk("[%s] (I) `rim` is not a lazy field, `ut` still is" % cls, iq.get("lazy") == [True, False], iq.get("lazy"))
-                S = iq.get("strings") or []
-                bad = []
-                for s_ in S:
-                    note = s_.get("note") or ""
-                    for a_, b_ in re.findall(r"tiers (\d+) to (\d+)", note):
-                        if int(b_) <= int(a_): bad.append((s_["id"], s_["state"], "range", note))
-                    phrase = " ".join(re.findall(r"[Nn]eeds tiers? [^(.]*", note))
-                    named = set()
-                    for a_, b_ in re.findall(r"(\d+) to (\d+)", phrase): named |= set(range(int(a_), int(b_) + 1))
-                    named |= {int(x) for x in re.findall(r"\b(\d+)\b", re.sub(r"\d+ to \d+", "", phrase))}
-                    named = sorted(named)
-                    before = s_.get("before") or []
-                    if s_.get("kind") == "new" and named != before: bad.append((s_["id"], s_["state"], "named", named, before, note))
-                    if s_.get("kind") == "new" and not before and re.search(r"\btiers?\b", note, re.I): bad.append((s_["id"], s_["state"], "tier at 1", note))
-                    if s_.get("kind") == "new" and before and s_.get("missing") and not s_.get("held"):
-                        miss_said = sorted({int(x) for x in re.findall(r"\b(\d+)\b", (re.search(r"\(([^)]*) still to go\)", note) or [None, ""])[1])})
-                        if miss_said != s_["missing"]: bad.append((s_["id"], s_["state"], "missing", miss_said, s_["missing"], note))
-                    nums = [int(x.replace(",", "")) for x in re.findall(r"[\d,]+\d|\d", s_.get("count") or "")]
-                    if not s_.get("held") and s_.get("bar", 0) >= 99.9: bad.append((s_["id"], s_["state"], "full bar on a locked rim", s_.get("count")))
-                    if not s_.get("held") and len(nums) == 2 and nums[0] >= nums[1]: bad.append((s_["id"], s_["state"], "count reads done", s_.get("count")))
-                    if s_.get("goalMet") and s_.get("missing") and not s_.get("held"):
-                        if sorted(int(x) for x in re.findall(r"\d+", s_.get("count") or "")) != s_["missing"]: bad.append((s_["id"], s_["state"], "count names the tiers", s_.get("count")))
-                n_new = len([s_ for s_ in S if s_.get("kind") == "new"])
-                chk("[%s] (I) every rim card's sentences are right: %d cards in %d states read (%d new-rim), no empty or backwards range, the tiers named are the ones before it, a locked rim never shows a full bar" % (cls, len(S), len({s_["state"] for s_ in S}), n_new),
-                    len(S) >= 3 * (8 if cls == "academy" else 9) and n_new >= 6 and not bad, bad[:6])
-            chk("[%s] no page errors" % cls, not errs, errs[:3])
-            ctx.close()
-        # ---- (B) progress safety: everything held on the baseline is held here, for real-shaped (and, with --real, real) accounts
+                # (384.136, changed on purpose: Madison, "Remove the rims") Profile, the person card and the Leaderboard draw no rim (store.rim set to a rim the old build held)
+                iq = pg.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); try{
+                    store.rim = 'ans'; document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+                    showProfile(); await W(1500); const a = document.querySelectorAll('.lb-rim, .rim-ring').length;
+                    showUnlockTracks(); await W(900); const b = document.querySelectorAll('.trk-rim, .rim-plate, .ulk-chip[data-filter="rim"]').length;
+                    store.rim = ''; return [a, b]; }catch(e){ return String(e); } }""")
+                chk("[%s] (I) no rim drawn on Profile, and no rim on the unlocks screen (%s)" % (cls, iq), iq == [0, 0], iq)
+
         if wanted("B"):
             real = arg("--real")
             for cls in ("academy", "ifc"):

@@ -84007,18 +84007,22 @@ function unlockRimDefs(){
 function unlockTrackSpec(){
   const ifc = window.NOVA_CLASS === "ifc";
   const c = id => ({ k: "char", id }), b = id => ({ k: "banner", id }), f = id => ({ k: "fx", id }), r = id => ({ k: "rim", id });
+  /* (384.136) NO RIMS. Madison: "Remove the rims". The tiers that were a rim (Accuracy's run, Answers' 1,000, Fire Code's 150
+     hundos) are gone, the last tier of each track is its banner alone (no gold rim), and there is no Mastery capstone. The tracks
+     never went live, so no saved progress or published tier code is affected. */
+  void r;
   const hun = ifc
-    ? [[f("fireworks")], [f("underwater")], [f("bubbles")], [f("ufo"), b("hundos100")], [r("hun")], [b("hundos250"), r("hun_gold")]]
-    : [[f("fireworks")], [f("underwater")], [b("hundos100")], [f("bubbles")], [f("ufo")], [b("hundos250"), r("hun_gold")]];
+    ? [[f("fireworks")], [f("underwater")], [f("bubbles")], [f("ufo"), b("hundos100")], [b("hundos250")]]
+    : [[f("fireworks")], [f("underwater")], [b("hundos100")], [f("bubbles")], [f("ufo")], [b("hundos250")]];
   const study = ifc
-    ? [[c("valkyrie")], [c("detective")], [c("timekeeper")], [c("hacker")], [b("study50")], [b("study60"), r("study_gold")]]
-    : [[c("valkyrie")], [c("detective")], [c("hacker")], [c("timekeeper")], [b("study50")], [b("study60"), r("study_gold")]];
+    ? [[c("valkyrie")], [c("detective")], [c("timekeeper")], [c("hacker")], [b("study50")], [b("study60")]]
+    : [[c("valkyrie")], [c("detective")], [c("hacker")], [c("timekeeper")], [b("study50")], [b("study60")]];
   return [
-    { key: "acc", tiers: [[c("masked")], [c("astronaut")], [r("acc")], [c("marksman")], [b("exam100"), r("acc_gold")]] },
+    { key: "acc", tiers: [[c("masked")], [c("astronaut")], [c("marksman")], [b("exam100")]] },
     { key: "hun", tiers: hun },
     { key: "study", tiers: study },
-    { key: "ans", tiers: [[r("ans")], [b("correct5000")], [b("tests100")], [c("ronin")], [b("correct10000")], [b("tests250"), r("ans_gold")]] },
-    { key: "vr", tiers: [[b("tests500")], [c("hive")], [c("poseidon")], [c("clown")], [b("vr50")], [b("vrtop10"), r("vr_gold")]] }
+    { key: "ans", tiers: [[b("correct5000")], [b("tests100")], [c("ronin")], [b("correct10000")], [b("tests250")]] },
+    { key: "vr", tiers: [[b("tests500")], [c("hive")], [c("poseidon")], [c("clown")], [b("vr50")], [b("vrtop10")]] }
   ];
 }
 /* One-offs kept as they are, with their rarity shown (Zeus is the academy's only; Fire Code has no weekly board). */
@@ -84088,10 +84092,8 @@ function unlockTrackView(){
 /* Every rim this class has, held or not, in the order they are shown. */
 function unlockRimList(view){
   const v = view || unlockTrackView(), out = [];
-  v.tracks.forEach(t => t.tiers.forEach(x => x.rewards.forEach(rw => { if(rw.k === "rim" && !rw.gold) out.push(rw); })));
-  v.tracks.forEach(t => t.tiers.forEach(x => x.rewards.forEach(rw => { if(rw.k === "rim" && rw.gold) out.push(rw); })));
-  out.push(v.mastery);
-  return out;
+  void v;
+  return out;   /* (384.136) no rims */
 }
 function rimHeld(id, view){
   if(!id) return false;
@@ -84100,6 +84102,7 @@ function rimHeld(id, view){
 }
 /* The rim you wear: the pick, while it is held here (an id from another build or a rim no longer held wears nothing). */
 function wornRim(view){
+  return "";   /* (384.136) no rims: store.rim is kept (defaulted, synced) but never worn */
   const id = typeof (store && store.rim) === "string" ? store.rim : "";
   return id && rimHeld(id, view) ? id : "";
 }
@@ -84186,8 +84189,8 @@ function plateRimFor(entry){
   try{
     if(!entry) return { rim: "", mastery: false };
     const mine = entry.me === true || !!(store && store.publicId && entry.pub && entry.pub === store.publicId);
-    const src = mine ? unlockRowFieldsSafe() : entry;
-    return { rim: rowRimShown(src), mastery: rowHasMastery(src) };
+    void mine;
+    return { rim: "", mastery: false };   /* (384.136) no rims, no Mastery rim */
   }catch(e){ return { rim: "", mastery: false }; }
 }
 /* Draw (or clear) the rim on `host`, the box round the character: a ring in the rim's colour, Mastery's a gold ring turning
@@ -160020,7 +160023,7 @@ function unlockItemThumb(it){
    charFlipWatch parks off screen; an effect's stage waits while its card is off screen; a banner's live scene is put in the
    first time its card comes near and is paused when it leaves). No per-frame script; the filter swap is one fade (opacity /
    transform). */
-var ULK_FILTERS = [["all", "All"], ["char", "Characters"], ["banner", "Banners"], ["theme", "Themes"], ["fx", "Effects"], ["rim", "Rims"]];
+var ULK_FILTERS = [["all", "All"], ["char", "Characters"], ["banner", "Banners"], ["theme", "Themes"], ["fx", "Effects"]];   /* (384.136) no Rims */
 var ULK_NEW_KIND = { char: "chars", banner: "banners", theme: "themes", fx: "fx" };
 var ULK_GROUPS = {
   char: [["starter", "Starters", "Yours from day one"], ["rank", "Rank rewards", "Handed over as you climb the ranks"],
@@ -160421,13 +160424,12 @@ function ulkAllBody(view){
   sect.className = "sect trk-sect";
   view.tracks.forEach(t => sect.appendChild(buildTrackCard(t)));
   if(view.feats.length) sect.appendChild(buildItemListCard("trk-feats", "Feats", "One-offs, outside the tracks", view.feats));
-  const caps = [view.mastery];
+  const caps = [];   /* (384.136) the Mastery rim is gone: the class's ultimate is the capstone */
   try{
     const top = AVATAR_CHARACTERS.find(c => c.id === ULTIMATE_TOP && !c.retired);
     if(top) caps.push(unlockItemState({ k: "char", id: top.id }));
   }catch(e){}
-  sect.appendChild(buildItemListCard("trk-caps", "Capstones", "Above the tracks", caps));
-  sect.appendChild(buildRimsCard(view));
+  if(caps.length) sect.appendChild(buildItemListCard("trk-caps", caps.length > 1 ? "Capstones" : "Capstone", "Above the tracks", caps));
   frag.appendChild(sect);
   return { frag, lazy: [] };
 }
