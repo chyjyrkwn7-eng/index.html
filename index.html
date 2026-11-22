@@ -38476,6 +38476,7 @@ html.is-browser{ --fade-paper: transparent; }
     aspect-ratio:540 / 1174; border-radius:26px; overflow:hidden; background:#0A0B14; cursor:pointer;
     border:1px solid rgba(255,255,255,.2); box-shadow:0 18px 44px rgba(0,0,0,.5);
   }
+  .a2hs-phone.is-ios26{ aspect-ratio:500 / 612; border-radius:18px; }   /* (384.116) the iPhone's cropped iOS 26 recording */
   .a2hs-phone video{ position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; background:#0A0B14; }
   .a2hs-play{
     position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; padding:0; border:0; border-radius:50%;
@@ -99679,6 +99680,15 @@ var A2HS_POINTERS = [
   { kind: "add", from: 11.13, to: 12.58, x: .883, y: .119, side: "below", step: 4, label: "Tap Add" },
   { kind: "icon", from: 13.18, to: 14.98, x: .841, y: .248, side: "above", step: 5, label: "Tap Nova to open it" }
 ];
+/* (384.116) Madison: "the two lines, that's what I'm seeing on my iPhone. For iPads it won't be like that". The first step on an iPad
+   is Safari's Share button in its toolbar (top right); on an iPhone it is the menu button at the left of the address bar (below). */
+var A2HS_STEP1_IPAD = { parts: [{ text: "Tap the " }, { icon: buildShareIcon, style: "grey-circle" }, { text: " " }, { text: "Share", b: true }, { text: " button at the top right of Safari." }],
+  note: [{ text: "If it is not there, tap " }, { icon: buildDotsIcon, style: "plain" }, { text: " in the address bar, then " }, { text: "Share", b: true }, { text: "." }] };
+/* the iPhone's clip is the guide's own iOS 26 recording (INSTALL_CLIP; its tap rings are in the picture): the steps it is on, by its clock */
+var A2HS_POINTERS_26 = [
+  { from: 0, to: 2.7, step: 0, kind: "menu" }, { from: 2.7, to: 6.9, step: 1, kind: "viewmore" },
+  { from: 6.9, to: 9.0, step: 2, kind: "a2hs" }, { from: 9.0, to: 99, step: 3, kind: "switch" }
+];
 var A2HS_STEPS_APPLE = [
   /* (384.111) Madison's iPhone (iOS 26): the menu button at the LEFT of the address bar, Share in it; ••• and a toolbar Share button are
      other Safari layouts */
@@ -100040,10 +100050,13 @@ function showHomeScreenSheet(opts){
   video.muted = true; video.defaultMuted = true; video.loop = true; video.playsInline = true; video.preload = "none";
   video.setAttribute("muted", ""); video.setAttribute("playsinline", ""); video.setAttribute("webkit-playsinline", "");
   video.setAttribute("disablepictureinpicture", ""); video.setAttribute("disableremoteplayback", "");
-  video.poster = A2HS_CLIP.poster;
+  /* (384.116) an iPhone gets its own iOS 26 recording (no labels over it: its tap rings are in the picture); an iPad the walkthrough */
+  const phone26 = a2hsIsIPhone(), CLIP = phone26 ? { src: INSTALL_CLIP.src, poster: INSTALL_CLIP.poster, rate: 1 } : A2HS_CLIP, PTS = phone26 ? A2HS_POINTERS_26 : A2HS_POINTERS;
+  if(phone26) frame.classList.add("is-ios26");
+  video.poster = CLIP.poster;
   video.setAttribute("aria-label", "Video: adding Nova to the Home Screen from Safari on an iPhone");
   frame.appendChild(video);
-  const pts = A2HS_POINTERS.map(p => {
+  const pts = (phone26 ? [] : PTS).map(p => {
     const d = mk("div", "a2hs-pt");
     d.style.left = (p.x * 100) + "%"; d.style.top = (p.y * 100) + "%";
     d.dataset.from = String(p.from); d.dataset.to = String(p.to); d.dataset.step = String(p.step); d.dataset.kind = p.kind || "";
@@ -100056,7 +100069,7 @@ function showHomeScreenSheet(opts){
   const playBtn = mk("button", "a2hs-play"); playBtn.type = "button"; playBtn.setAttribute("aria-label", "Play the video");
   playBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.2v13.6L18.6 12z" fill="currentColor"/></svg>';
   frame.appendChild(playBtn);
-  const appleSteps = steps(A2HS_STEPS_APPLE);
+  const appleSteps = steps(phone26 ? A2HS_STEPS_APPLE : [A2HS_STEP1_IPAD].concat(A2HS_STEPS_APPLE.slice(1)));
   /* a phone: the list sits under the clip, mostly below the fold, so the step the clip is on is said right under it
      (build 384; on an iPad or a computer the list is beside the clip and this is hidden) */
   const now = mk("div", "a2hs-now"); now.setAttribute("aria-hidden", "true");
@@ -100150,20 +100163,19 @@ function showHomeScreenSheet(opts){
     if(closed) return;
     const t = video.currentTime || 0;
     let step = -1;
-    pts.forEach((d, i) => {
-      const p = A2HS_POINTERS[i];
-      const on = t >= p.from && t < p.to;
-      if(d.classList.contains("is-on") !== on) d.classList.toggle("is-on", on);
+    PTS.forEach((p, i) => {
+      const on = t >= p.from && t < p.to, d = pts[i];
+      if(d && d.classList.contains("is-on") !== on) d.classList.toggle("is-on", on);
       if(on) step = p.step;
     });
     appleSteps.items.forEach((li, i) => { const on = i === step; if(li.classList.contains("is-now") !== on) li.classList.toggle("is-now", on); });
     /* the caption keeps the step the clip is on between pointers too (the last one begun), step 1 before the first */
-    let capStep = 0; A2HS_POINTERS.forEach(p => { if(t >= p.from) capStep = p.step; });
+    let capStep = 0; PTS.forEach(p => { if(t >= p.from) capStep = p.step; });
     showNow(capStep);
     if(!video.paused && !video.ended) raf = requestAnimationFrame(tick);
   };
   const kick = () => { if(!raf && !closed) raf = requestAnimationFrame(tick); };
-  const clipRate = () => { try{ video.defaultPlaybackRate = A2HS_CLIP.rate || 1; video.playbackRate = A2HS_CLIP.rate || 1; }catch(e){} };
+  const clipRate = () => { try{ video.defaultPlaybackRate = CLIP.rate || 1; video.playbackRate = CLIP.rate || 1; }catch(e){} };
   video.addEventListener("loadedmetadata", clipRate);
   video.addEventListener("play", () => { clipRate(); frame.classList.remove("is-paused"); kick(); });
   video.addEventListener("playing", kick);
@@ -100173,12 +100185,12 @@ function showHomeScreenSheet(opts){
   video.addEventListener("seeked", tick);
   const calmMotion = () => { try{ return !!(theme && theme.reduceMotion) || window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } };
   const playClip = () => {
-    if(!video.getAttribute("src")){ video.preload = "auto"; video.src = A2HS_CLIP.src; }
+    if(!video.getAttribute("src")){ video.preload = "auto"; video.src = CLIP.src; }
     try{ const pr = video.play(); if(pr && pr.catch) pr.catch(() => frame.classList.add("is-paused")); }catch(e){ frame.classList.add("is-paused"); }
   };
   frame.addEventListener("click", e => { e.stopPropagation(); if(video.paused) playClip(); else video.pause(); });
   const startApple = () => {
-    if(!video.getAttribute("src")){ video.preload = calmMotion() ? "metadata" : "auto"; video.src = A2HS_CLIP.src; }
+    if(!video.getAttribute("src")){ video.preload = calmMotion() ? "metadata" : "auto"; video.src = CLIP.src; }
     if(!calmMotion()) playClip(); else if(video.paused) frame.classList.add("is-paused");
     try{ installCodeInUrl(true); }catch(e){}
     clearInterval(armTimer);

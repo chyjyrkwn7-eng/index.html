@@ -353,175 +353,139 @@ with sync_playwright() as pw:
             chk("iphone the clip has a poster, and it loads (%s)" % (poster,), bool(v and v["poster"]) and bool(poster) and poster[0] > 0, (v, poster))
             box = pg.evaluate("()=>{ const f=document.querySelector('#a2hs-sheet .a2hs-phone').getBoundingClientRect(); return [f.left,f.top,f.width,f.height]; }")
             chk("iphone the clip's frame has the clip's own shape (%.3f against %.3f)" % (box[2] / box[3], v["w"] / max(1, v["h"])), abs(box[2] / box[3] - v["w"] / max(1, v["h"])) < .01, (box, v))
-            # each pointer, inside its own window on the clip's clock
-            pts = pg.evaluate("()=>[...document.querySelectorAll('#a2hs-sheet .a2hs-pt')].map(p=>({kind:p.dataset.kind||'', from:+p.dataset.from, to:+p.dataset.to, step:+p.dataset.step, x:parseFloat(p.style.left)/100, y:parseFloat(p.style.top)/100}))")
-            chk("iphone there are pointers over the clip (%d), in order on its clock" % len(pts), len(pts) >= 5 and all(pts[i]["from"] < pts[i]["to"] <= pts[i + 1]["from"] + 1e-6 for i in range(len(pts) - 1)), pts)
-            # the second recording, in its own order: Add to Home Screen is a row in the list (not with View More), and
-            # it goes on past Add to the Home Screen and opens Nova from the new icon
-            ORDER = ["menu", "share", "viewmore", "a2hs", "switch", "add", "icon"]
-            kinds = [p["kind"] for p in pts]
-            steps_n = pg.evaluate("()=>document.querySelectorAll('#a2hs-sheet .a2hs-apple .a2hs-step').length")
-            chk("iphone the pointers are the recording's, in its order: %s" % " > ".join(k or "?" for k in kinds),
-                kinds == ORDER, kinds)
-            chk("iphone ...the steps follow them: one step a pointer's step, in order, the last one the Nova icon's (%d steps)" % steps_n,
-                kinds == ORDER and [p["step"] for p in pts] == sorted(p["step"] for p in pts) and pts[-1]["step"] == steps_n - 1
-                and len(set(p["step"] for p in pts)) == steps_n, ([(p["kind"], p["step"]) for p in pts], steps_n))
-            # (384.133) step 1 is the new Safari's: the menu button at the left of the address bar, then Share; the dots are
-            # only the older versions' note (a drawn button of three circles first is the old route)
-            s1 = pg.evaluate("""()=>{ const li=document.querySelector('#a2hs-sheet .a2hs-apple .a2hs-step'); if(!li) return null;
-                const m=li.querySelector('.a2hs-step-main'), n=li.querySelector('.a2hs-step-note');
-                const first=m && m.querySelector('svg'); const circ=svg=>svg?svg.querySelectorAll('circle').length:-1;
-                return { main:m?m.textContent.replace(/\\s+/g,' ').trim():'', note:n?n.textContent.replace(/\\s+/g,' ').trim():'',
-                  mainIcons:m?m.querySelectorAll('svg').length:0, mainFirstCircles:circ(first), mainDots:m?[...m.querySelectorAll('svg')].some(v=>circ(v)===3):false,
-                  noteDots:n?[...n.querySelectorAll('svg')].some(v=>circ(v)===3):false, noteShareIcon:n?n.querySelectorAll('svg').length>=2:false }; }""")
-            chk("iphone step 1 names the menu button at the left of the address bar, then Share, with a drawn icon of that button that is not the dots (%s)" % (s1 and s1["main"]),
-                bool(s1) and bool(re.search(r"menu button", s1["main"], re.I)) and bool(re.search(r"left of the address bar", s1["main"], re.I))
-                and bool(re.search(r"\bShare\b", s1["main"])) and s1["mainIcons"] >= 1 and s1["mainFirstCircles"] == 0 and not s1["mainDots"] and "•" not in s1["main"], s1)
-            chk("iphone ...and the older versions' route (the dots, the toolbar's Share) is only its short note (%s)" % (s1 and s1["note"]),
-                bool(s1) and bool(re.search(r"older versions", s1["note"], re.I)) and s1["noteDots"] and s1["noteShareIcon"], s1)
-            pg.evaluate("()=>document.querySelector('#a2hs-sheet video').pause()")
-            SEEK = """async t=>{ const v=document.querySelector('#a2hs-sheet video'); v.pause();
-                await new Promise(r=>{ const f=()=>{ v.removeEventListener('seeked', f); r(); }; v.addEventListener('seeked', f); v.currentTime=t; setTimeout(r, 1500); });
-                await new Promise(r=>{ const t0=performance.now(); const w=()=>{ if(v.readyState>=2 || performance.now()-t0>3000) r(); else setTimeout(w, 50); }; w(); });
-                await new Promise(r=>setTimeout(r, 450)); return v.currentTime; }"""
-            STATE = """()=>{ const o=document.getElementById('a2hs-sheet'); const f=o.querySelector('.a2hs-phone').getBoundingClientRect();
-                const on=[...o.querySelectorAll('.a2hs-pt')].map((p,i)=>({i, on:p.classList.contains('is-on'), op:+getComputedStyle(p).opacity}));
-                const lit=[...o.querySelectorAll('.a2hs-apple .a2hs-step')].map((s,i)=>s.classList.contains('is-now')?i:-1).filter(i=>i>=0);
-                const ring=[...o.querySelectorAll('.a2hs-pt')].map(p=>{ const r=p.querySelector('.a2hs-pt-ring').getBoundingClientRect(), l=p.querySelector('.a2hs-pt-label').getBoundingClientRect();
-                  return { cx:(r.left+r.width/2-f.left)/f.width, cy:(r.top+r.height/2-f.top)/f.height, inF: r.left+r.width/2>=f.left && r.left+r.width/2<=f.right && r.top+r.height/2>=f.top && r.top+r.height/2<=f.bottom,
-                    labelIn: l.left>=f.left-1 && l.right<=f.right+1 && l.top>=f.top-1 && l.bottom<=f.bottom+1 }; });
-                const nw=o.querySelector('.a2hs-now'); let cap=null;
-                if(nw){ const r=nw.getBoundingClientRect(), litEl=o.querySelector('.a2hs-apple .a2hs-step.is-now .a2hs-step-main');
-                  cap={ shown:getComputedStyle(nw).display!=='none' && r.height>0, gap:r.top-f.bottom, inView:r.bottom<=innerHeight && r.top>=0, clearOfFoot:(nw.querySelector('.a2hs-now-t')||nw).getBoundingClientRect().bottom<=o.querySelector('.a2hs-foot').getBoundingClientRect().top+1,
-                    head:(nw.querySelector('.a2hs-now-n')||{}).textContent||'', text:nw.textContent.replace((nw.querySelector('.a2hs-now-n')||{}).textContent||'','').trim(),
-                    litText: litEl ? litEl.textContent.trim() : null }; }
-                return { on, lit, ring, cap, steps:o.querySelectorAll('.a2hs-apple .a2hs-step').length }; }"""
-            PIX = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
-                const g=c.getContext('2d'); g.drawImage(v,0,0); const d=g.getImageData(Math.round(x*c.width)-3, Math.round(y*c.height)-3, 7, 7).data;
-                let r=0,gg=0,b=0,n=0; for(let i=0;i<d.length;i+=4){ r+=d[i]; gg+=d[i+1]; b+=d[i+2]; n++; } return [r/n, gg/n, b/n]; }"""
-            # across the ring (the ring's width on the clip's own pixels): how much of it is a switch's green
-            GREEN = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const f=document.querySelector('#a2hs-sheet .a2hs-phone').getBoundingClientRect();
-                const ring=document.querySelector('#a2hs-sheet .a2hs-pt-ring').offsetWidth; const half=Math.round(ring/2*v.videoWidth/f.width);
-                const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; const g=c.getContext('2d'); g.drawImage(v,0,0);
-                const d=g.getImageData(Math.round(x*c.width)-half, Math.round(y*c.height)-2, half*2, 5).data;
-                let n=0, green=0; for(let i=0;i<d.length;i+=4){ n++; if(d[i+1]>d[i]+40 && d[i+1]>d[i+2]+30) green++; } return green/n; }"""
-            pg.evaluate(SEEK, 0.05)
-            st = pg.evaluate(STATE)
-            chk("iphone before the first pointer's time none is on", not any(p["on"] for p in st["on"]), st["on"])
-            for i, p in enumerate(pts):
-                mid = (p["from"] + min(p["to"], p["from"] + 3)) / 2
-                pg.evaluate(SEEK, mid)
-                for _ in range(8):   # its fade (.18s) may be late to start on a loaded machine
-                    st = pg.evaluate(STATE)
-                    if st["on"][i]["op"] > .9 and all(q["op"] < .1 for q in st["on"] if q["i"] != i): break
-                    pg.wait_for_timeout(300)
-                onlist = [q["i"] for q in st["on"] if q["on"]]
-                rg = st["ring"][i]
-                chk("iphone pointer %d at %.2fs: it alone is on and showing, its ring inside the clip at the place it declares (%.3f,%.3f), its label inside, step %d lit"
-                    % (i + 1, mid, rg["cx"], rg["cy"], p["step"] + 1),
-                    onlist == [i] and st["on"][i]["op"] > .9 and rg["inF"] and abs(rg["cx"] - p["x"]) < .01 and abs(rg["cy"] - p["y"]) < .01 and rg["labelIn"] and st["lit"] == [p["step"]], (st, p))
-                # build 384: on a phone the list is below the fold, so the step is said right under the clip as well
-                cp = st.get("cap") or {}
-                head = re.findall(r"\d+", cp.get("head", ""))
-                chk("iphone ...and right under the clip, in view and clear of the pinned Not now, the same step said: '%s %s'" % (cp.get("head"), cp.get("text")),
-                    cp.get("shown") and 0 <= cp.get("gap", -1) <= 24 and cp.get("inView") and cp.get("clearOfFoot") and head == [str(p["step"] + 1), str(st["steps"])] and cp.get("text") == cp.get("litText"), cp)
-            # the ring on the switch sits on its green, the one on Add on its blue: read off the clip (by kind; a build
-            # without kinds by step, as 384's first clip had them)
-            def of_kind(kind, step):
-                return [i for i, p in enumerate(pts) if p["kind"] == kind] or [i for i, p in enumerate(pts) if not p["kind"] and p["step"] == step]
-            sw, ad = of_kind("switch", 3), of_kind("add", 4)
-            if sw and ad:
-                p = pts[sw[0]]; pg.evaluate(SEEK, (p["from"] + p["to"]) / 2); c = pg.evaluate(GREEN, [p["x"], p["y"]])
-                pg.evaluate(SEEK, 0.05); c0 = pg.evaluate(GREEN, [p["x"], p["y"]])
-                chk("iphone the Open as Web App pointer sits on the switch, on: %.0f%% of the line across its ring is the switch's green (%.0f%% there at the clip's start)" % (c * 100, c0 * 100),
-                    c > .15 and c0 < .02, (c, c0))
-                p = pts[ad[0]]; pg.evaluate(SEEK, (p["from"] + p["to"]) / 2); c = pg.evaluate(PIX, [p["x"], p["y"]])
-                chk("iphone the Add pointer sits on the Add button: blue under it (%s)" % [round(x) for x in c], c[2] > c[0] + 60 and c[2] > c[1] + 20, c)
-            # the clip's pixels under the ring (its width on the clip): a 9x9 box at its centre, the line across it, and a
-            # circle just outside it
-            UNDER = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const f=document.querySelector('#a2hs-sheet .a2hs-phone').getBoundingClientRect();
-                const ring=document.querySelector('#a2hs-sheet .a2hs-pt-ring').offsetWidth; const half=Math.round(ring/2*v.videoWidth/f.width);
-                const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; const g=c.getContext('2d'); g.drawImage(v,0,0);
-                const cx=Math.round(x*c.width), cy=Math.round(y*c.height), L=(d,i)=>.299*d[i]+.587*d[i+1]+.114*d[i+2];
-                const ctr=g.getImageData(cx-4, cy-4, 9, 9).data; let cmax=0; for(let i=0;i<ctr.length;i+=4) cmax=Math.max(cmax, L(ctr,i));
-                const ln=g.getImageData(cx-half, cy-2, half*2, 5).data; const lums=[], sats=[];
-                for(let i=0;i<ln.length;i+=4){ lums.push(L(ln,i)); sats.push(Math.max(ln[i],ln[i+1],ln[i+2])-Math.min(ln[i],ln[i+1],ln[i+2])); }
-                const med=a=>a.slice().sort((p,q)=>p-q)[a.length>>1];
-                const out=[]; for(let k=0;k<48;k++){ const a=k/48*2*Math.PI, px=Math.round(cx+(half+6)*Math.cos(a)), py=Math.round(cy+(half+6)*Math.sin(a));
-                  if(px<0||py<0||px>=c.width||py>=c.height) continue; const d=g.getImageData(px,py,1,1).data; out.push([d[0],d[1],d[2]]); }
-                const om=[0,1,2].map(j=>med(out.map(o=>o[j])));
-                return { glyph:cmax, lineLum:med(lums), lineSat:med(sats), out:om }; }"""
-            def on_glyph(u):    # a white glyph at the centre, the list's neutral grey across the ring
-                return u["glyph"] >= 200 and u["lineSat"] <= 10 and 60 <= u["lineLum"] <= 130
-            def on_icon(u):     # the icon sharp (its V bright at the centre), its dark tile across the ring, warmer round it (the wallpaper)
-                return u["glyph"] >= 150 and u["lineLum"] < 75 and u["out"][0] > u["out"][2] + 25 and u["out"][0] > u["lineLum"] + 50
-            def under_at(t, p):
-                """read under the ring at time t; a read that is one flat grey all over (no frame drawn yet, as happens
-                when the machine is loaded) is taken again"""
-                u = None
-                for _ in range(4):
-                    pg.evaluate(SEEK, t); u = pg.evaluate(UNDER, [p["x"], p["y"]])
-                    if not (u["glyph"] == u["lineLum"] and u["lineSat"] == 0 and len(set(u["out"])) == 1): break
-                    pg.wait_for_timeout(800)
-                return u
-            a2i, ic = of_kind("a2hs", -1), of_kind("icon", -1)
-            u = u0 = None
-            if a2i:
-                p = pts[a2i[0]]; u = under_at((p["from"] + p["to"]) / 2, p); u0 = under_at(0.05, p)
-            chk("iphone the Add to Home Screen pointer sits on its row in the list: the row's white glyph under the ring's centre, the list's grey across it (%s), not so at the clip's start (%s)" % (u, u0),
-                bool(a2i) and on_glyph(u) and not on_glyph(u0), (u, u0))
-            u = u0 = None
-            if ic:
-                p = pts[ic[0]]; u = under_at((p["from"] + p["to"]) / 2, p); u0 = under_at(0.05, p)
-            chk("iphone the last pointer sits on the Nova icon on the Home Screen: its V sharp at the ring's centre, its dark tile across the ring, the warm wallpaper round it (%s), not so at the clip's start (%s)" % (u, u0),
-                bool(ic) and on_icon(u) and not on_icon(u0), (u, u0))
-            # (384.133) the three pointers of the new route sit on the thing they name, in the clip's own pixels: a white glyph
-            # under the ring's centre on the surface it is on (the address bar's pill, the menu's grey, View More's disc), and not
-            # so where that thing is not on screen (the bar is gone while the menu is up; the sheet is not up at the clip's start)
-            NEAR = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
-                const g=c.getContext('2d'); g.drawImage(v,0,0); const R=12, cx=Math.round(x*c.width), cy=Math.round(y*c.height);
-                const d=g.getImageData(cx-R, cy-R, R*2+1, R*2+1).data; const ls=[]; let mx=0;
-                for(let i=0;i<d.length;i+=4){ const l=.299*d[i]+.587*d[i+1]+.114*d[i+2]; ls.push(l); if(l>mx) mx=l; }
-                ls.sort((a,b)=>a-b); return { max:mx, med:ls[ls.length>>1] }; }"""
-            def near_at(t, p):
-                u = None
-                for _ in range(4):
-                    pg.evaluate(SEEK, t); u = pg.evaluate(NEAR, [p["x"], p["y"]])
-                    if not (u["max"] == u["med"]): break
-                    pg.wait_for_timeout(800)
-                return u
-            def glyph_on(u, lo, hi):
-                return u["max"] >= 200 and lo <= u["med"] <= hi
-            mn, sh_, vm = of_kind("menu", -1), of_kind("share", -1), of_kind("viewmore", -1)
-            u = u0 = None
-            if mn and sh_:
-                p = pts[mn[0]]; u = near_at((p["from"] + p["to"]) / 2, p); u0 = near_at((pts[sh_[0]]["from"] + pts[sh_[0]]["to"]) / 2, p)
-            chk("iphone the menu-button pointer sits on the button at the left of the address bar: its white lines on the bar's grey pill (%s), and the bar is gone while the menu is up (%s)" % (u, u0),
-                bool(mn and sh_) and glyph_on(u, 55, 100) and not glyph_on(u0, 0, 255), (u, u0))
-            u = u0 = None
-            if sh_:
-                p = pts[sh_[0]]; u = near_at((p["from"] + p["to"]) / 2, p); u0 = near_at(0.05, p)
-            chk("iphone the Share pointer sits on the first row of the menu: Share's white glyph on the menu's grey (%s), not so at the clip's start (%s)" % (u, u0),
-                bool(sh_) and glyph_on(u, 60, 140) and not glyph_on(u0, 60, 140), (u, u0))
-            u = u0 = None
-            if vm:
-                p = pts[vm[0]]; u = near_at((p["from"] + p["to"]) / 2, p); u0 = near_at(0.05, p)
-            chk("iphone the View More pointer sits on the share sheet's View More: its white chevron on the grey disc (%s), not so at the clip's start (%s)" % (u, u0),
-                bool(vm) and glyph_on(u, 70, 130) and not glyph_on(u0, 0, 255), (u, u0))
-            pg.evaluate("()=>document.querySelector('#a2hs-sheet video').play()")
-            pg.wait_for_timeout(300)
-            enrolled_before = pg.evaluate("()=>!!document.getElementById('enrolled-banner')")
-            chk("iphone the enrolled banner waits while the sheet is up", not enrolled_before and not a2(pg).get("enrolledUnder"), a2(pg))
-            gone = close_sheet(pg)
-            st = pg.evaluate("()=>({ key: localStorage.getItem('class26e.a2hs'), hash: location.hash })")
-            chk("iphone Not now closes it, takes the code off the address, and the device remembers the showing", gone and "k=" not in st["hash"] and bool(re.match(r"^\d+$", st["key"] or "")), st)
-            for _ in range(30):
-                if a2(pg).get("enrolledAt"): break
-                pg.wait_for_timeout(250)
-            chk("iphone ...and then the enrolled banner comes", bool(a2(pg).get("enrolledAt")) and a2(pg)["enrolledAt"] > (a2(pg).get("sheetGoneAt") or 1e18), a2(pg))
-            relaunch(pg)
-            pg.wait_for_timeout(7000)
-            chk("iphone opened again: Home, signed in, and no sheet (%s)" % screen(pg), screen(pg) == "home" and pg.evaluate("()=>!document.getElementById('a2hs-sheet') && !!syncCode"), screen(pg))
+            # (384.116, changed on purpose: Madison, "the two lines, that's what I'm seeing on my iPhone. For iPads it won't be like that")
+            # an iPhone gets the guide's own iOS 26 recording (its tap rings in the picture, no labels over it) and the menu button as step 1;
+            # the walkthrough's pointers below are the iPad's now (check-b384-a2hs runs them with --ipad-pointers in mind: same clip, same clock)
+            ios26 = pg.evaluate("()=>{ const f=document.querySelector('#a2hs-sheet .a2hs-phone'); return !!(f && f.classList.contains('is-ios26')); }")
+            if ios26:
+                g = pg.evaluate("""()=>{ const v=document.querySelector('#a2hs-sheet video'); const s=document.querySelector('#a2hs-sheet .a2hs-apple .a2hs-step-main');
+                    return { src: v ? v.currentSrc : '', pts: document.querySelectorAll('#a2hs-sheet .a2hs-pt').length, s1: s ? s.textContent : '' }; }""")
+                chk("iphone the iOS 26 recording, no labels over it, step 1 the menu button at the left of the address bar (%s)" % g,
+                    g["src"].endswith("a2hs-iphone26.mp4") and g["pts"] == 0 and "address bar" in g["s1"] and "Share" in g["s1"], g)
+            if not ios26:
+                # each pointer, inside its own window on the clip's clock
+                pts = pg.evaluate("()=>[...document.querySelectorAll('#a2hs-sheet .a2hs-pt')].map(p=>({kind:p.dataset.kind||'', from:+p.dataset.from, to:+p.dataset.to, step:+p.dataset.step, x:parseFloat(p.style.left)/100, y:parseFloat(p.style.top)/100}))")
+                chk("iphone there are pointers over the clip (%d), in order on its clock" % len(pts), len(pts) >= 5 and all(pts[i]["from"] < pts[i]["to"] <= pts[i + 1]["from"] + 1e-6 for i in range(len(pts) - 1)), pts)
+                # the second recording, in its own order: Add to Home Screen is a row in the list (not with View More), and
+                # it goes on past Add to the Home Screen and opens Nova from the new icon
+                ORDER = ["dots", "share", "viewmore", "a2hs", "switch", "add", "icon"]
+                kinds = [p["kind"] for p in pts]
+                steps_n = pg.evaluate("()=>document.querySelectorAll('#a2hs-sheet .a2hs-apple .a2hs-step').length")
+                chk("iphone the pointers are the recording's, in its order: %s" % " > ".join(k or "?" for k in kinds),
+                    kinds == ORDER, kinds)
+                chk("iphone ...the steps follow them: one step a pointer's step, in order, the last one the Nova icon's (%d steps)" % steps_n,
+                    kinds == ORDER and [p["step"] for p in pts] == sorted(p["step"] for p in pts) and pts[-1]["step"] == steps_n - 1
+                    and len(set(p["step"] for p in pts)) == steps_n, ([(p["kind"], p["step"]) for p in pts], steps_n))
+                pg.evaluate("()=>document.querySelector('#a2hs-sheet video').pause()")
+                SEEK = """async t=>{ const v=document.querySelector('#a2hs-sheet video'); v.pause();
+                    await new Promise(r=>{ const f=()=>{ v.removeEventListener('seeked', f); r(); }; v.addEventListener('seeked', f); v.currentTime=t; setTimeout(r, 1500); });
+                    await new Promise(r=>{ const t0=performance.now(); const w=()=>{ if(v.readyState>=2 || performance.now()-t0>3000) r(); else setTimeout(w, 50); }; w(); });
+                    await new Promise(r=>setTimeout(r, 450)); return v.currentTime; }"""
+                STATE = """()=>{ const o=document.getElementById('a2hs-sheet'); const f=o.querySelector('.a2hs-phone').getBoundingClientRect();
+                    const on=[...o.querySelectorAll('.a2hs-pt')].map((p,i)=>({i, on:p.classList.contains('is-on'), op:+getComputedStyle(p).opacity}));
+                    const lit=[...o.querySelectorAll('.a2hs-apple .a2hs-step')].map((s,i)=>s.classList.contains('is-now')?i:-1).filter(i=>i>=0);
+                    const ring=[...o.querySelectorAll('.a2hs-pt')].map(p=>{ const r=p.querySelector('.a2hs-pt-ring').getBoundingClientRect(), l=p.querySelector('.a2hs-pt-label').getBoundingClientRect();
+                      return { cx:(r.left+r.width/2-f.left)/f.width, cy:(r.top+r.height/2-f.top)/f.height, inF: r.left+r.width/2>=f.left && r.left+r.width/2<=f.right && r.top+r.height/2>=f.top && r.top+r.height/2<=f.bottom,
+                        labelIn: l.left>=f.left-1 && l.right<=f.right+1 && l.top>=f.top-1 && l.bottom<=f.bottom+1 }; });
+                    const nw=o.querySelector('.a2hs-now'); let cap=null;
+                    if(nw){ const r=nw.getBoundingClientRect(), litEl=o.querySelector('.a2hs-apple .a2hs-step.is-now .a2hs-step-main');
+                      cap={ shown:getComputedStyle(nw).display!=='none' && r.height>0, gap:r.top-f.bottom, inView:r.bottom<=innerHeight && r.top>=0, clearOfFoot:(nw.querySelector('.a2hs-now-t')||nw).getBoundingClientRect().bottom<=o.querySelector('.a2hs-foot').getBoundingClientRect().top+1,
+                        head:(nw.querySelector('.a2hs-now-n')||{}).textContent||'', text:nw.textContent.replace((nw.querySelector('.a2hs-now-n')||{}).textContent||'','').trim(),
+                        litText: litEl ? litEl.textContent.trim() : null }; }
+                    return { on, lit, ring, cap, steps:o.querySelectorAll('.a2hs-apple .a2hs-step').length }; }"""
+                PIX = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+                    const g=c.getContext('2d'); g.drawImage(v,0,0); const d=g.getImageData(Math.round(x*c.width)-3, Math.round(y*c.height)-3, 7, 7).data;
+                    let r=0,gg=0,b=0,n=0; for(let i=0;i<d.length;i+=4){ r+=d[i]; gg+=d[i+1]; b+=d[i+2]; n++; } return [r/n, gg/n, b/n]; }"""
+                # across the ring (the ring's width on the clip's own pixels): how much of it is a switch's green
+                GREEN = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const f=document.querySelector('#a2hs-sheet .a2hs-phone').getBoundingClientRect();
+                    const ring=document.querySelector('#a2hs-sheet .a2hs-pt-ring').offsetWidth; const half=Math.round(ring/2*v.videoWidth/f.width);
+                    const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; const g=c.getContext('2d'); g.drawImage(v,0,0);
+                    const d=g.getImageData(Math.round(x*c.width)-half, Math.round(y*c.height)-2, half*2, 5).data;
+                    let n=0, green=0; for(let i=0;i<d.length;i+=4){ n++; if(d[i+1]>d[i]+40 && d[i+1]>d[i+2]+30) green++; } return green/n; }"""
+                pg.evaluate(SEEK, 0.05)
+                st = pg.evaluate(STATE)
+                chk("iphone before the first pointer's time none is on", not any(p["on"] for p in st["on"]), st["on"])
+                for i, p in enumerate(pts):
+                    mid = (p["from"] + min(p["to"], p["from"] + 3)) / 2
+                    pg.evaluate(SEEK, mid)
+                    for _ in range(8):   # its fade (.18s) may be late to start on a loaded machine
+                        st = pg.evaluate(STATE)
+                        if st["on"][i]["op"] > .9 and all(q["op"] < .1 for q in st["on"] if q["i"] != i): break
+                        pg.wait_for_timeout(300)
+                    onlist = [q["i"] for q in st["on"] if q["on"]]
+                    rg = st["ring"][i]
+                    chk("iphone pointer %d at %.2fs: it alone is on and showing, its ring inside the clip at the place it declares (%.3f,%.3f), its label inside, step %d lit"
+                        % (i + 1, mid, rg["cx"], rg["cy"], p["step"] + 1),
+                        onlist == [i] and st["on"][i]["op"] > .9 and rg["inF"] and abs(rg["cx"] - p["x"]) < .01 and abs(rg["cy"] - p["y"]) < .01 and rg["labelIn"] and st["lit"] == [p["step"]], (st, p))
+                    # build 384: on a phone the list is below the fold, so the step is said right under the clip as well
+                    cp = st.get("cap") or {}
+                    head = re.findall(r"\d+", cp.get("head", ""))
+                    chk("iphone ...and right under the clip, in view and clear of the pinned Not now, the same step said: '%s %s'" % (cp.get("head"), cp.get("text")),
+                        cp.get("shown") and 0 <= cp.get("gap", -1) <= 24 and cp.get("inView") and cp.get("clearOfFoot") and head == [str(p["step"] + 1), str(st["steps"])] and cp.get("text") == cp.get("litText"), cp)
+                # the ring on the switch sits on its green, the one on Add on its blue: read off the clip (by kind; a build
+                # without kinds by step, as 384's first clip had them)
+                def of_kind(kind, step):
+                    return [i for i, p in enumerate(pts) if p["kind"] == kind] or [i for i, p in enumerate(pts) if not p["kind"] and p["step"] == step]
+                sw, ad = of_kind("switch", 3), of_kind("add", 4)
+                if sw and ad:
+                    p = pts[sw[0]]; pg.evaluate(SEEK, (p["from"] + p["to"]) / 2); c = pg.evaluate(GREEN, [p["x"], p["y"]])
+                    pg.evaluate(SEEK, 0.05); c0 = pg.evaluate(GREEN, [p["x"], p["y"]])
+                    chk("iphone the Open as Web App pointer sits on the switch, on: %.0f%% of the line across its ring is the switch's green (%.0f%% there at the clip's start)" % (c * 100, c0 * 100),
+                        c > .15 and c0 < .02, (c, c0))
+                    p = pts[ad[0]]; pg.evaluate(SEEK, (p["from"] + p["to"]) / 2); c = pg.evaluate(PIX, [p["x"], p["y"]])
+                    chk("iphone the Add pointer sits on the Add button: blue under it (%s)" % [round(x) for x in c], c[2] > c[0] + 60 and c[2] > c[1] + 20, c)
+                # the clip's pixels under the ring (its width on the clip): a 9x9 box at its centre, the line across it, and a
+                # circle just outside it
+                UNDER = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const f=document.querySelector('#a2hs-sheet .a2hs-phone').getBoundingClientRect();
+                    const ring=document.querySelector('#a2hs-sheet .a2hs-pt-ring').offsetWidth; const half=Math.round(ring/2*v.videoWidth/f.width);
+                    const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; const g=c.getContext('2d'); g.drawImage(v,0,0);
+                    const cx=Math.round(x*c.width), cy=Math.round(y*c.height), L=(d,i)=>.299*d[i]+.587*d[i+1]+.114*d[i+2];
+                    const ctr=g.getImageData(cx-4, cy-4, 9, 9).data; let cmax=0; for(let i=0;i<ctr.length;i+=4) cmax=Math.max(cmax, L(ctr,i));
+                    const ln=g.getImageData(cx-half, cy-2, half*2, 5).data; const lums=[], sats=[];
+                    for(let i=0;i<ln.length;i+=4){ lums.push(L(ln,i)); sats.push(Math.max(ln[i],ln[i+1],ln[i+2])-Math.min(ln[i],ln[i+1],ln[i+2])); }
+                    const med=a=>a.slice().sort((p,q)=>p-q)[a.length>>1];
+                    const out=[]; for(let k=0;k<48;k++){ const a=k/48*2*Math.PI, px=Math.round(cx+(half+6)*Math.cos(a)), py=Math.round(cy+(half+6)*Math.sin(a));
+                      if(px<0||py<0||px>=c.width||py>=c.height) continue; const d=g.getImageData(px,py,1,1).data; out.push([d[0],d[1],d[2]]); }
+                    const om=[0,1,2].map(j=>med(out.map(o=>o[j])));
+                    return { glyph:cmax, lineLum:med(lums), lineSat:med(sats), out:om }; }"""
+                def on_glyph(u):    # a white glyph at the centre, the list's neutral grey across the ring
+                    return u["glyph"] >= 200 and u["lineSat"] <= 10 and 60 <= u["lineLum"] <= 130
+                def on_icon(u):     # the icon sharp (its V bright at the centre), its dark tile across the ring, warmer round it (the wallpaper)
+                    return u["glyph"] >= 150 and u["lineLum"] < 75 and u["out"][0] > u["out"][2] + 25 and u["out"][0] > u["lineLum"] + 50
+                def under_at(t, p):
+                    """read under the ring at time t; a read that is one flat grey all over (no frame drawn yet, as happens
+                    when the machine is loaded) is taken again"""
+                    u = None
+                    for _ in range(4):
+                        pg.evaluate(SEEK, t); u = pg.evaluate(UNDER, [p["x"], p["y"]])
+                        if not (u["glyph"] == u["lineLum"] and u["lineSat"] == 0 and len(set(u["out"])) == 1): break
+                        pg.wait_for_timeout(800)
+                    return u
+                a2i, ic = of_kind("a2hs", -1), of_kind("icon", -1)
+                u = u0 = None
+                if a2i:
+                    p = pts[a2i[0]]; u = under_at((p["from"] + p["to"]) / 2, p); u0 = under_at(0.05, p)
+                chk("iphone the Add to Home Screen pointer sits on its row in the list: the row's white glyph under the ring's centre, the list's grey across it (%s), not so at the clip's start (%s)" % (u, u0),
+                    bool(a2i) and on_glyph(u) and not on_glyph(u0), (u, u0))
+                u = u0 = None
+                if ic:
+                    p = pts[ic[0]]; u = under_at((p["from"] + p["to"]) / 2, p); u0 = under_at(0.05, p)
+                chk("iphone the last pointer sits on the Nova icon on the Home Screen: its V sharp at the ring's centre, its dark tile across the ring, the warm wallpaper round it (%s), not so at the clip's start (%s)" % (u, u0),
+                    bool(ic) and on_icon(u) and not on_icon(u0), (u, u0))
+                pg.evaluate("()=>document.querySelector('#a2hs-sheet video').play()")
+                pg.wait_for_timeout(300)
+                enrolled_before = pg.evaluate("()=>!!document.getElementById('enrolled-banner')")
+                chk("iphone the enrolled banner waits while the sheet is up", not enrolled_before and not a2(pg).get("enrolledUnder"), a2(pg))
+                gone = close_sheet(pg)
+                st = pg.evaluate("()=>({ key: localStorage.getItem('class26e.a2hs'), hash: location.hash })")
+                chk("iphone Not now closes it, takes the code off the address, and the device remembers the showing", gone and "k=" not in st["hash"] and bool(re.match(r"^\d+$", st["key"] or "")), st)
+                for _ in range(30):
+                    if a2(pg).get("enrolledAt"): break
+                    pg.wait_for_timeout(250)
+                chk("iphone ...and then the enrolled banner comes", bool(a2(pg).get("enrolledAt")) and a2(pg)["enrolledAt"] > (a2(pg).get("sheetGoneAt") or 1e18), a2(pg))
+                relaunch(pg)
+                pg.wait_for_timeout(7000)
+                chk("iphone opened again: Home, signed in, and no sheet (%s)" % screen(pg), screen(pg) == "home" and pg.evaluate("()=>!document.getElementById('a2hs-sheet') && !!syncCode"), screen(pg))
         errs_ok(pg, "sign-up and sheet")
         ctx.close()
 
