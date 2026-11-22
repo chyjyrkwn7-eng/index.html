@@ -59,7 +59,11 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # badges to be raised pins "just as great" as Fire Code's, so every academy badge surface (tokens, sheet, case, hand, cards, cutscene)
 # differs from 31588af on purpose (the run before this re-pin: all 24 tokens, 48 sheet images, the case, the hand, 18 cards, 8 cutscene
 # frames, and nothing in Fire Code's class that the base commit 21a1a45 had not already changed). 560d3bc is that art.
-REFS = {"academy": arg("--acad-ref", "560d3bc"), "ifc": arg("--ifc-ref", "c2417de")}
+# (384.136 academy pins, round 3) the academy's reference RE-PINNED from 560d3bc to 3ac7a9f: Madison circled the academy pins ("we want
+# perfection"). Run against 266cbb6 (round 2 on art8's slot and side fixes) before this re-pin, exactly the 15 redrawn units differed
+# (their tokens, their 30 sheet images, the 6 unit cards that show them, the case, the hand and the cutscene that hold them); the
+# scales' finial (3ac7a9f) is the 16th. 3ac7a9f is that art.
+REFS = {"academy": arg("--acad-ref", "3ac7a9f"), "ifc": arg("--ifc-ref", "c2417de")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene

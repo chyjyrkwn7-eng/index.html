@@ -42869,3 +42869,49 @@ Madison (2026-11-22), of the academy pins' dirt: "no badges don't need cleaning 
 nothing changes - cleaning was already retired in build 382 (badgeDirtStage returns 0 for every badge, nothing rubs a badge clean, the
 "Rub to clean it." line went with it). store.badgeCleanedAt is still kept, merged and synced (never drop a persisted field) and read by
 nothing. The academy pins go out in the same push as everything else on claude/b384-final.
+
+### 384.136 academy pins, round 3 (branch claude/b384-acad2 from claude/b384-integ 266cbb6; NOT on main, waiting for Madison)
+
+Madison, of the academy pins large: "The badge, it looks off, it's like the gold part is combined with the blue but it should be a
+layer. The shoe is bad, make the shoe better. The purple ribbon has messed up parts. The heart on the umbrella you can see through it,
+the chat you can see through it in the blue. The handcuffs are bad, make them better, teddy bears ears are messed up. There's a lot of
+spots all over that just don't look right. Get these badges right, we want perfection."
+
+THE CAUSE of "see through": a plate's height is ADDED to what is under it, so a part laid over another carried the under part's relief
+(the ring's beads and edges through the star's arms, the shaft through the heart as a crease, the white bubble's raised edge through
+the blue one). Each top layer is now its own level (`lvl`, as Appendix H's pencil): it sits at one height over what it covers, with its
+own profile, its own edge and (star, ring housings, bubble) its painted shadow. Applied to: the TCOLE star (arms, balls, centre and its
+star), the umbrella's heart, the blue speech bubble (its side, face and dots), the cap's shield, the watch's hands and centre, the
+teddy's bow, the ID card's fingerprint pad and ridges, the envelope's clasp, the cuffs' housings and chain, their pivots.
+Per badge:
+- TCOLE Rules: the star is a separate raised layer on the ring, clean arms and balls (the ring shows nowhere through them).
+- Fitness: a new running shoe - long and low with the toe sprung up, outsole tread, white midsole thinning to the toe with its wave and an
+  orange piping, heel counter and toe bumper (stitched), eyestay with six eyelets and white laces, padded tongue with an orange tab, the
+  dark lining at the ankle over the padded collar, an orange heel loop. Its grooves are one plate (it is the first badge opened).
+- Sexual Assault and Family Violence: one smooth band all round the loop (no step at the top: the lump was the front strand's raised
+  start), the strand to the right tail raised from where it reaches the other and lying over it with its shadow; the strand under it
+  loses its woven edges there. A lighter satin purple over the base so the parts colour the pin (objbadges (2)).
+- Victims of Crime: the heart wholly over the shaft (no crease); the shaft passes behind it.
+- Verbal Communication: the blue bubble wholly covers the white where they overlap.
+- Arrest, Search, and Seizure: new chain handcuffs with REAL open rings (round 2's were pressed-in discs): each cuff's lock housing across
+  its top (chamfered, a face plate, keyhole, two rivets), the double bar down one side to the pivot (its two plates' seam), the single bar
+  with its ratchet teeth up the other; two round swivels and a link between the housings. The housings are as wide as the back needs:
+  the title and CLASS 26E fit at 9.5px (two open rings with small housings gave 8.2-9.2px and no class line).
+- Missing and Exploited Children: the ears sit clear of the head, their insides wholly on the ear (the head cut through them).
+- Identity Crimes: the fingerprint pad lies over the card (the card's window and lines showed through it); its ridges are closed loops.
+- Civil Process: the clasp's prongs spread on its washer (it read as a handle). Consular: the ticket is one colour where it leaves the
+  passport (a patch of navy showed). De-Escalation: the near wing blends into the body (no ledge, no painted shadow). Interacting with
+  Deaf or Hard-of-Hearing: the hollow inside the rim follows the ear (straight cut edges removed). Constitution: the inkwell's facets are
+  painted, not raised (cost). Professional Policing: shield on its own level. Phonetic: hands on their own level.
+- Professionalism and Ethics (found by check-behaviour b321d, "sits on the middle of the screen", 21px high): the finial was a separate
+  loop, so S.trace kept it as a HOLE outside the outline - drawn only because holes are appended to d, while CHAPTER_OBJ_BBOX (from d
+  alone) stopped under it. The finial now stands on the boss, one silhouette; every pin's box equals its face's box (all 82 checked). The
+  plinth's wood a little lighter and rounder (objbadges (4) enamel highlight 26 -> 48).
+GATES (TMPDIR=/dev/shm, one at a time, load 5-8 from other sessions): check-js ALL PASS; check-b384-objbadges --class academy ALL PASS
+(59; PERF cold failed twice under load 6-8 on different units, 7.0-8.3x, and passed on retry: the shoe and the inkwell were made cheaper);
+check-b384-acadpins ALL PASS (13); check-b384-badgeart ALL PASS (12); check-b384-badgetwins ALL PASS (14); check-b384-chapterbadges ALL PASS
+(75); check-b384-casefit ALL PASS (5); check-b384-sides ALL PASS (7). check-behaviour check_b321d_badges: Professionalism now centred; the
+section still FAILS on Fitness, the FIRST badge it opens (front 2.3, 5.8 px): at its 700ms wait the front is still the drawing with the
+painted wall (it swaps to the bare face later); the same section FAILS identically on 266cbb6 (2.0, 5.8 px) with round 2's shoe, so it
+is not this round's (its other four fails are the retired dirt stages).
+badges2: academy reference 560d3bc -> 3ac7a9f (comment in the gate) after a run against 266cbb6 differed in exactly this round's units; --class academy ALL PASS against it.
