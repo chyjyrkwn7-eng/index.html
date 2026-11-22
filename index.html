@@ -99395,6 +99395,7 @@ function buildShareIcon(){
   return svg;
 }
 
+
 /* Matches the "Add to Home Screen" icon shown in Safari's share sheet. */
 function buildAddSquareIcon(){
   const svgNS = "http://www.w3.org/2000/svg";
@@ -99669,8 +99670,10 @@ var A2HS_POINTERS = [
   { kind: "icon", from: 13.18, to: 14.98, x: .841, y: .248, side: "above", step: 5, label: "Tap Nova to open it" }
 ];
 var A2HS_STEPS_APPLE = [
-  { parts: [{ text: "Tap the menu button " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of the address bar, then " }, { text: "Share", b: true }, { text: "." }],
-    note: [{ text: "In Safari. On older versions, tap " }, { icon: buildDotsIcon, style: "plain" }, { text: " instead, or the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button in the toolbar." }] },
+  /* (384.111) Madison's iPhone (iOS 26): the menu button at the LEFT of the address bar, Share in it; ••• and a toolbar Share button are
+     other Safari layouts */
+  { parts: [{ text: "Tap " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of Safari’s address bar, then " }, { text: "Share", b: true }, { text: "." }],
+    note: [{ text: "If you see " }, { icon: buildDotsIcon, style: "plain" }, { text: " instead, tap that. If the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button is in the toolbar, tap that." }] },
   { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " " }, { text: "View More", b: true }, { text: "." }],
     note: [{ text: "It is called " }, { text: "More", b: true }, { text: " on some versions. If " }, { text: "Add to Home Screen", b: true }, { text: " is already in the list, skip this step." }] },
   { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " " }, { text: "Add to Home Screen", b: true }, { text: "." }],
@@ -108393,9 +108396,11 @@ function showInstallFirst(o){
     panel.setAttribute("data-screen", "installhelp"); panel.dataset.dev = dev;
     const steps = dev === "apple" ? [
       [{ text: "Open this page in " }, { text: "Safari", b: true }, { text: "." }],
-      { parts: [{ text: "Tap the menu button " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of Safari’s address bar, then " }, { text: "Share", b: true }, { text: "." }],
-        note: [{ text: "On older versions, tap the " }, { icon: buildShareIcon, style: "plain" }, { text: " Share button in the toolbar." }] },
-      { parts: [{ text: "In the share menu, tap " }, { text: "View More", b: true }, { text: ", then " }, { text: "Add to Home Screen", b: true }, { text: "." }],
+      /* (384.111) Madison, circling it on his iPhone: since iOS 26 Share is in the menu behind the button at the left of the address bar */
+      a2hsIsIPhone()
+        ? [{ text: "Tap the menu button " }, { icon: buildPageMenuIcon, style: "plain" }, { text: " at the left of Safari’s address bar, then " }, { text: "Share", b: true }, { text: "." }]
+        : [{ text: "Tap the " }, { text: "Share", b: true }, { text: " button " }, { icon: buildShareIcon, style: "plain" }, { text: " in Safari’s toolbar." }],
+      { parts: [{ text: "Tap " }, { text: "View More", b: true }, { text: ", then " }, { text: "Add to Home Screen", b: true }, { text: "." }],
         note: [{ text: "Not in the list? Scroll to the bottom of the menu, tap " }, { text: "Edit Actions", b: true }, { text: " and add it." }] },
       [{ text: "Tap " }, { text: "Add", b: true }, { text: "." }]
     ] : [
