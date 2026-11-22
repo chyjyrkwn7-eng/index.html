@@ -5,6 +5,7 @@ Renders each of Fire Code's chapters as the app draws it - buildUnitBadgeSVG, ea
 light on dark, in a grid with the chapter's title under each, and writes one PNG.
   python3 tools/render-chapter-badges.py OUT.png [--index OLD/index.html] [--only 10,12] [--cols 6] [--dsf 2]
                                          [--phone OUT.png] [--ipad OUT.png] [--earned samples|all|none|10,12] [--shape coin]
+--class academy draws the police academy's units instead (384.136: they are pins too; --only then takes title prefixes such as 'Penal');
 --only takes chapter numbers (or title prefixes such as 'Appendix B'); --index renders another build's file; --phone / --ipad also
 write a screenshot of Profile > Badges (440x956 / 834x1194) with the chapters that have an icon earned and the rest empty (or
 --earned all / none / a comma list of chapter numbers). --shape KEY draws every chosen chapter on one outline (a what-if for the
@@ -115,7 +116,7 @@ def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME, args=["--disable-dev-shm-usage"])
         if out:
-            ctx, pg, errs = open_page(br, port, SEED, 440, 956, dsf)
+            ctx, pg, errs = open_page(br, port, SEED, 440, 956, dsf, arg("--class", "ifc"))
             r = pg.evaluate(SHEET, {"only": only, "cols": cols, "shape": arg("--shape"), "px0": int(arg("--px", "96"))})
 
             shoot_tiles(pg, out, r["w"], r["h"], dsf)
@@ -124,7 +125,7 @@ def main():
             dest = arg(flag)
             if not dest: continue
             earned = arg("--earned", "samples")
-            ctx, pg, errs = open_page(br, port, SEED, w, h, int(arg("--sdsf", "3" if w < 500 else "2")))
+            ctx, pg, errs = open_page(br, port, SEED, w, h, int(arg("--sdsf", "3" if w < 500 else "2")), arg("--class", "ifc"))
             pg.evaluate("""(earned)=>{ const us = unitsInTeachingOrder(); const samples = (typeof CHAPTER_ICON === 'object') ? us.filter(u => chapterIconFor(u)) : [];
               const want = earned === 'all' ? us : earned === 'none' ? [] : earned === 'samples' ? samples : us.filter(u => earned.split(',').some(n => u.indexOf('Chapter ' + n + ':') === 0));
               want.forEach(u => { store.unitPerfects[u] = Math.max(store.unitPerfects[u] || 0, badgeThresholdFor(u)); });

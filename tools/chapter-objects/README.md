@@ -26,7 +26,15 @@ silver, with the title cut into it. A chapter with no entry here still draws its
 **(384.121) The police academy's 24 units were drawn as pins too, and then taken back out** (Madison: "Revert the badges for the police
 academy. I'm not a fan of these new ones."). The academy draws its flat struck badges, exactly as on main 384.107. The pins are kept,
 unmerged, in `retired/academy-pins/` (the part file, its keys, its snaps, its gate and a patch of the tool edits); see
-`retired/academy-pins/academy-pins.md` to put them back. Every part file here is Fire Code's.
+`retired/academy-pins/academy-pins.md` to put them back.
+
+**(384.136) The academy's 24 units are pins again, redrawn from nothing** (Madison asked for the police academy's badges to get the same
+upgraded look as these, "just as great"). `part-6-academy.js` is that set (gavel, handcuffs, scroll and inkwell, life ring, teddy bear,
+awareness ribbon, field watch, globe, open law book, speech bubbles, scales, running shoe, prescription bottle, dove, envelope of papers,
+peace officer's star, patrol cap, patrol car, umbrella over a heart, ID card and fingerprint, ear and hearing aid, passport, brain,
+radio); the merge accepts the academy's names (`academy-units.json`) as object keys, and `check-b384-objbadges.py --class academy` and
+`check-b384-acadpins.py` gate them. The reverted 384.121 drawings stay in `retired/academy-pins/` for reference only.
+
 `option-63b.js` is Chapter 63's option B (the oxygen mask), kept beside the part files and NOT merged.
 
 ## 0. The rules

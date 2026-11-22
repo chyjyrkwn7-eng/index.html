@@ -42784,3 +42784,83 @@ kept >= .7 on every badge over the parts with a colour (map saturation > .25, br
 near-black has no colour to lose), (1b) median >= .85, (2) hue within 25 degrees on 90% of the saturated parts. Now min .73, median
 .92: ALL PASS. --against c2417de: FAILS (1) (31 badges, min .39) and (1b) (median .70).
 casefit, objbadges, badgeart, badgetwins ALL PASS; badges2 ALL PASS against c2417de (the faces, the case, the cards: unchanged).
+### 384.136 academy pins, round 2
+
+Madison asked for the police academy's 24 unit badges to get the same upgraded look as the Fire Code chapter pins, "just as great".
+Branch `claude/b384-acadart` (from 21a1a45, art7); build kept 384.133, NOT bumped; NOT on main, waiting for Madison to see it and say go.
+The first academy set (384.121) was reverted ("I'm not a fan of these new ones"); its drawings stay in `retired/academy-pins/` for
+reference only. This set is drawn from nothing in `tools/chapter-objects/part-6-academy.js` to the current pin standard: 3/4 objects show
+the sides they turn to us (the scales' plinth, the sound block, the pill bottle and cap, the passport's page block, the globe's foot), loose
+things lie ON what is under them (`lvl`: the gavel on its block, the capsules, the papers, the inkwell and quill), every groove stays on its
+part (badgeart (1)), no painted shadow straddles a join (they read as seams), at most 24 plates, sides take each part's colour when turned.
+
+What each unit is, and what changed against the reverted set:
+- Penal Code - the gavel striking its sound block. Was a flat gavel on a flat oval; now a turned head with its end face, a brass band at
+  each cap, a turned knob, standing on the block's top face (groove, two turned rings on its side), its shadow on the block.
+- Arrest, Search, and Seizure - chain handcuffs. Was rigid bar cuffs; now two cuffs with lock housings (keyhole, rivets), ratchet teeth,
+  pivots, swivels and a three-link chain. The openings are pressed deep, not cut through: two open rings left the back no room for the
+  title and the class line (6-8 px against 9.2); a filled pin keeps it at 14.3 px. Turned, the back is two solid discs.
+- US and Texas Constitution and Rights - the parchment with rolled ends (the spiral shows), a flourish heading, ink lines, the red wax seal
+  on its ribbons, a cut-glass inkwell (three facets and its shoulder) with a brass collar and the quill standing in it. Was scroll + quill.
+- Crisis Intervention Training - the life ring, now with its grab line twisted round the rim and lashed at four points.
+- Missing and Exploited Children - the teddy bear sitting, a blue ribbon bow, stitched tummy patch, foot and paw pads, ear insides.
+- Sexual Assault and Family Violence - the purple awareness ribbon (the domestic violence awareness colour), its strand in front shading
+  the one behind, woven edges, V-cut tails. Was a house with a heart. The strands are wide (10.6) so the back holds the title (10.2 px).
+- Phonetic Alphabet and Military Time - the olive field watch on a stitched NATO strap with its buckle and keepers, a minute track, a
+  24-hour ring of ticks, lumed bars, hands at ten past ten. Was a plainer watch.
+- Multiculturalism and Human Relations - the desk globe; the continents are a real orthographic projection (the Americas, Greenland,
+  Europe, Africa, Iceland), the meridian ring on its axle, turned stem, wooden foot from above. Was blobs on a ball.
+- Code of Criminal Procedure and Bill of Rights - an open law book: pages curving into the gutter, print and section headings, the page
+  block's leaves, the maroon boards, a gold ribbon. Was a closed book.
+- Verbal Communication - two thick speech bubbles whose sides show down-right, dots on the blue, lines on the white.
+- Professionalism and Ethics - the brass scales on a fluted column, a two-step wooden plinth in 3/4, chains with links, pans with insides.
+- Fitness, Wellness, and Stress Management - a running shoe (outsole tread, midsole wave, mesh vents, counter, toe cap, eyestay with
+  eyelets, lime laces, pull loop). Was a kettlebell.
+- Health and Safety Code - a prescription bottle (child-resistant cap with ridges and top, amber body, label with band and print) and two
+  capsules lying in front. Was one capsule.
+- De-Escalation - the dove with its wings fanned (near wing with primaries and coverts, far wing in shade), tail, olive sprig with
+  leaves and an olive.
+- Civil Process and Liability - papers served: a manila envelope with its flap open behind, a sealed court paper and a second sheet drawn
+  out, the clasp on its eyelet, the side flaps' folds. Was an envelope with a wax seal.
+- TCOLE Rules - the five-point brass star with ball tips, faceted arms, in a steel ring with a navy beaded band, a navy centre with a star.
+- Professional Policing - the patrol cap from the front and above: crown top with piping, band, chin strap and buttons, gloss peak, gold
+  shield.
+- Racial Profiling - the patrol car: push bumper, spotlight, light bar, door star, wheel wells, rims. Redrawn.
+- Victims of Crime - an umbrella sheltering a heart (two-tone panels, raised ribs, rib tips, finial, leather crook). Was a heart with a
+  plaster.
+- Identity Crimes - an ID card (header band, chip, photo window, details) with a fingerprint pad over its corner, ridges looping round a
+  core. Was a thumbprint oval.
+- Interacting with Deaf or Hard-of-Hearing - the ear (rim, hollow, antihelix, bowl, the way in, tragus, lobe) with a behind-the-ear aid
+  and its clear tube. Redrawn.
+- Consular Notification - the passport with its page block along the top and right, an embossed globe, chip mark, a ticket tucked in.
+- Traumatic Brain Injury - the brain: gyri as rounded folds in rings broken into lengths, the lateral fissure and central sulcus, the
+  ridged cerebellum, the stem. Was a blob with a few lines.
+- Radio Communications, Alerts, and TCIC-TLETS - the handheld radio: ribbed antenna, ridged knobs with tops, orange emergency button,
+  display, grille, push-to-talk bar.
+
+Plumbing (from retired/academy-pins, the patch applied with --3way; one conflict in check-b384-objbadges' base_body, kept the current
+7bdca1e base and added --class): the merge tool takes academy keys; `check-b384-objbadges.py --class academy`; `check-b384-acadpins.py`;
+check-b384-chapterbadges (4) holds academy units with no object; check_b317_badge2 waits 180s. NEW `render-chapter-badges.py --class academy`.
+Re-pinned, citing this request: check-b384-objbadges (8) no longer holds the academy to main's flat badges (comment); check-b384-badgeart
+(1) counts 58 + 24 pins (was 58: it walks every CHAPTER_OBJ entry); check-b384-badges2's academy reference 31588af -> 560d3bc (the run
+before: all 24 academy tokens, 48 sheet images, case, hand, 18 cards, 8 cutscene frames differed, as asked).
+Snaps re-traced (snap.py): Fire Code's 58 entries in snaps.json are byte-identical to before.
+
+Gates (TMPDIR=/dev/shm, one at a time, load 4-7 from other sessions): check-js 13 blocks ALL PASS; check-b384-objbadges --class academy
+ALL PASS; check-b384-acadpins ALL PASS (13); check-b384-badgeart ALL PASS (12); check-b384-badgetwins ALL PASS (14); check-b384-chapterbadges
+ALL PASS (75); check-b384-objbadges (Fire Code) ALL PASS (94; one earlier run under load 7 failed only (4) PERF cold 6.29x on Chapter 32, the
+rack, untouched here); check-b384-badges2 --class academy ALL PASS against 560d3bc; check-b384-badges2 --class ifc FAILS on Chapters 32,
+63 and Appendix H and the case/cutscene frames holding them, and fails IDENTICALLY with --against 21a1a45 (the base): art7's own changes
+against its reference dfd6af1, not this branch's (no Fire Code part file or snap changed here); left for whoever lands art7.
+Turned: tools/shoot-badge-turns.py --class academy, every badge at 0/35/70/82/90/145/180; sides in each part's colour, backs carry the
+title and CLASS 26E. (The shots at 145/180 of the first badge show the app's own Full Case banner behind it: every academy badge is found.)
+Open for Madison: a pin shows no dirt, so the academy's dirty-badge stages no longer show on its badges (as noted in 384.121).
+Chromium cannot show the phone's OLED at 3x nor WebKit's compositor.
+
+## art8 + academy pins round 2, together (branch claude/b384-acadmerge, local; NOT in claude/b384-final until Madison says go)
+
+claude/b384-acadart (the 24 academy pins, 560d3bc..c8529e4) merged onto art8 (eff47c6). Conflicts: CHAPTER_OBJ_BBOX (generated:
+snap.py + merge-chapter-icons.py re-run, 82 objects from 7 files), the notes (both kept), badges2's references (academy 560d3bc,
+Fire Code c2417de). The academy's pins take art8's two fixes with no change of their own: the slot cut round the whole pin
+(casefit: 24 even, nothing past its slot) and the side in each part's own colour, lit (check-b384-sides now walks both classes:
+academy min .83, median .91). Turned sheets of all 24 reviewed (acturns).

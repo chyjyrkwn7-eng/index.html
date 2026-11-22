@@ -19,7 +19,7 @@ Every badge surface is drawn on the build under test and on a reference build, i
      device pixels: the cutscene allows 2 levels on 0.05% of the frame and prints what it allowed. The frames as they are, glint shown,
      are printed for information only;
  (4) no page errors.
---class academy compares with 31588af (was origin/main 384.107; --acad-ref REV|FILE); --class ifc compares with 1c2758a (384.133 art3; was 31588af, before that a68976a, claude/b384-badges,
+--class academy compares with 560d3bc (384.136 academy pins; was 31588af, before that origin/main 384.107; --acad-ref REV|FILE); --class ifc compares with 1c2758a (384.133 art3; was 31588af, before that a68976a, claude/b384-badges,
 --ifc-ref REV|FILE). Default: both.
 Run:  python3 tools/check-b384-badges2.py [--class academy|ifc|both] [--against REV|FILE] [--shots DIR]
       --against origin/main must PASS the academy (main against itself); --against a68976a must FAIL it (the 24 redrawn pins)."""
@@ -55,7 +55,11 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # and the earned cutscene's turned coin differ there and only there (the run before this re-pin: (3) inspect 2 and cutscene 6, nothing else)
 # (384.136 art6 round 3) and again: Appendix H redrawn, the rack, the cylinder, the bare faces in hand and the edge-on strip
 # (384.136 art6 round 4) and again: the pencil, ticks, rack and cylinder collar redrawn
-REFS = {"academy": arg("--acad-ref", "31588af"), "ifc": arg("--ifc-ref", "c2417de")}
+# (384.136 academy pins, round 2) the academy's reference RE-PINNED from 31588af to 560d3bc: Madison asked for the academy's 24 unit
+# badges to be raised pins "just as great" as Fire Code's, so every academy badge surface (tokens, sheet, case, hand, cards, cutscene)
+# differs from 31588af on purpose (the run before this re-pin: all 24 tokens, 48 sheet images, the case, the hand, 18 cards, 8 cutscene
+# frames, and nothing in Fire Code's class that the base commit 21a1a45 had not already changed). 560d3bc is that art.
+REFS = {"academy": arg("--acad-ref", "560d3bc"), "ifc": arg("--ifc-ref", "c2417de")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene
