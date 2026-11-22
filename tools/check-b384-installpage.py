@@ -100,8 +100,16 @@ try:
                 s = pg.evaluate(STATE)
                 if mode != "none":
                     sh = pg.evaluate("()=>window.__shares"); at = pg.evaluate("()=>window.__shareAt")
-                    chk("(2) %dx%d share %s: the tap calls navigator.share once, with the canonical address, while the install page is still the screen" % (w, h, mode),
-                        len(sh) == 1 and sh[0]["url"] == canon and sh[0]["title"] and at == [True], [sh, at])
+                    # (384.110, changed on purpose: Madison, in Safari on iOS 26, "the button on the iPhone doesn't open that same menu anymore")
+                    # on an iPhone the page's share menu has no Add to Home Screen, so the tap never opens it; the video page names Safari's
+                    # own route (the iPad keeps the share menu)
+                    route = pg.evaluate("()=>{ const r = document.querySelector('#stage .iv-route'); return r ? r.textContent.replace(/\\s+/g, ' ').trim() : null; }")
+                    if w >= 600:   # the iPad: the share menu, as before
+                        chk("(2) %dx%d share %s: the tap calls navigator.share once, with the canonical address, while the install page is still the screen" % (w, h, mode),
+                            len(sh) == 1 and sh[0]["url"] == canon and sh[0]["title"] and at == [True], [sh, at])
+                    else:
+                        chk("(2) %dx%d share %s: on an iPhone the tap never calls navigator.share, and the video page names Safari's route (%r)" % (w, h, mode, route),
+                            len(sh) == 0 and route and "Share" in route and "View More" in route and "Add to Home Screen" in route, [sh, route])
                 chk("(2) %dx%d share %s: the page is the video screen" % (w, h, mode), s["screen"] == "installvideo" and s["video"] is not None and not s["sheet"], s)
                 if mode == "resolve":
                     v = s["video"]
