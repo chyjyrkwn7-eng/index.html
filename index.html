@@ -12194,6 +12194,8 @@
     color:var(--ink); background:color-mix(in srgb, var(--ink) 14%, transparent); }
   .iv-route-ic svg{ width:1em; height:1em; display:block; }
   .iv-route-step{ white-space:nowrap; }
+  .iv-route-sub{ display:block; margin-top:.2rem; font-size:.82rem; color:var(--soft); }
+  @media (max-height:46rem) and (max-width:39.99rem){ .iv-route-sub{ display:none; } .iv-route{ font-size:.88rem; margin-bottom:.45rem; } }   /* a short phone (an SE): the clip still ends in the top 45% */
   @media (min-width:40rem){ .iv-route{ margin:-.6rem 0 .25rem; } }   /* (384.136) the clip still ends in the top 45% on a tablet (Safari's menu rises under it) */
   .iv-frame{ position:relative; flex:none; box-sizing:border-box; width:min(100%, 30rem, calc(var(--iv-h) * var(--iv-ar))); aspect-ratio:var(--iv-ar);
     border-radius:18px; overflow:hidden; background:var(--surface-inset); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); cursor:pointer; }
@@ -12222,6 +12224,12 @@
   html[data-layout] body #stage > .installvideo-panel::before{ content:none !important; }
   html[data-layout] body #stage > .installvideo-panel > .next.playbtn{ margin:1.2rem auto 0 !important; width:min(100%, 22rem) !important; min-height:52px; box-sizing:border-box;
     display:flex; align-items:center; justify-content:center; }
+  /* (384.110) a phone: Safari's menu rises over the lower part of the screen, so the heading, the line and the clip are the top of the
+     page and the buttons sit at its foot - out from under the menu while it is up, there when it is closed */
+  @media (max-width:39.99rem){
+    html[data-layout] body #stage > .installvideo-panel{ min-height:calc(100dvh - var(--sat, 0px) - 4.25rem) !important; }
+    html[data-layout] body #stage > .installvideo-panel > .next.playbtn{ margin-top:auto !important; }
+  }
   @media (min-width:40rem){
     html[data-layout] body #stage > .installfirst-panel .if-title{ font-size:2.2rem; max-width:30rem; }
     html[data-layout] body #stage > .installfirst-panel .if-line, html[data-layout] body #stage > .installfirst-panel .if-after{ font-size:1.1rem; max-width:26rem; }
@@ -94373,7 +94381,7 @@ function showA2hsBar(){
   /* (384.27) THE WHITE BUTTON OPENS THE SHARE MENU (iPhone and iPad): the same as the install page's and the sheet's. It is called from
      this tap, with the canonical address; Add to Home Screen is a row in the menu (Apple has no call that adds it in one tap, so the
      pill says "Share"). Cancelled, failed or missing, the guide opens, as it always did. */
-  const shareHere = A2HS_PAGE_SHARE && a2hsDeviceGuess() === "apple" && typeof navigator.share === "function";
+  const shareHere = A2HS_PAGE_SHARE && !a2hsIsIPhone() && a2hsDeviceGuess() === "apple" && typeof navigator.share === "function";
   if(shareHere){
     pill.textContent = "Share";
     main.setAttribute("aria-label", "Open the share menu, then tap Add to Home Screen");
@@ -94562,7 +94570,7 @@ function showHomeScreenSheet(opts){
   row.append(frame, now, appleSteps.ol);
   const hasCode = !!(syncCode && !syncOff && store && store.onboardingComplete);
   /* (384.23) Open Share menu (below) opens the share menu with Add to Home Screen in it; the steps are the same thing by hand, as in the clip */
-  const shareOk = A2HS_PAGE_SHARE && !standalone && typeof navigator.share === "function";
+  const shareOk = A2HS_PAGE_SHARE && !a2hsIsIPhone() && !standalone && typeof navigator.share === "function";
   apple.append(row, mk("p", "a2hs-note",
     standalone ? "These steps are for adding Nova on another iPhone or iPad."
     /* (384 r4) "if you add to homescreen ... and then you open the app from your Home Screen, isn't it gonna get you back to the
@@ -102671,8 +102679,12 @@ function installFirstWanted(){
    without Add to Home Screen was Messages' own web viewer (it offered Open in Safari): in Safari itself the menu this opens has View
    More, and Add to Home Screen under it, on the iPhone as on the iPad. */
 const A2HS_PAGE_SHARE = true;
+/* (384.110) ...except on an iPhone. Madison, in Safari itself on iOS 26: the menu the page opens on the iPhone has Copy, Add to Reading
+   List, Open in Safari, Ask ChatGPT - no View More, no Add to Home Screen; on the iPad it still has them. So the iPad keeps the button's
+   share menu, and the iPhone goes to the guide, which names Safari's own way in (the menu button left of the address bar). */
+function a2hsIsIPhone(){ try{ return /iPhone|iPod/.test(navigator.userAgent || ""); }catch(e){ return false; } }
 function a2hsShare(){
-  if(!A2HS_PAGE_SHARE || typeof navigator.share !== "function") return Promise.resolve("unavailable");
+  if(!A2HS_PAGE_SHARE || a2hsIsIPhone() || typeof navigator.share !== "function") return Promise.resolve("unavailable");
   try{
     return Promise.resolve(navigator.share({ url: A2HS_URL, title: "Nova" })).then(() => "shared",
       e => (e && e.name === "AbortError") ? "cancelled" : "failed");
@@ -102766,7 +102778,16 @@ function showInstallFirst(o){
        Screen (with no menu up - it was closed, or never opened - Safari's own way in is the menu button left of its address bar) */
     if(dev === "apple"){
       const step = (...kids) => { const sp = mk("span", "iv-route-step"); sp.append(...kids); return sp; };
-      route.append(step(document.createTextNode("In the menu, tap "), mk("b", "", "View More"), document.createTextNode(" \u2192")), document.createTextNode(" "), step(mk("b", "", "Add to Home Screen")));
+      if(a2hsIsIPhone()){
+        /* the iPhone: no menu was opened for them - Safari's own, from the menu button at the left of the address bar */
+        const ic = mk("span", "iv-route-ic"); ic.setAttribute("role", "img"); ic.setAttribute("aria-label", "the menu button at the left of the address bar");
+        ic.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/></svg>';
+        route.append(step(document.createTextNode("Tap "), ic, document.createTextNode(" \u2192")), document.createTextNode(" "));
+        ["Share", "View More", "Add to Home Screen"].forEach((t, i, all) => { const last = i === all.length - 1;
+          route.append(last ? step(mk("b", "", t)) : step(mk("b", "", t), document.createTextNode(" \u2192"))); if(!last) route.append(document.createTextNode(" ")); });
+        const sub = mk("span", "iv-route-sub", "The menu button is at the left of Safari’s address bar.");
+        route.append(sub);
+      } else route.append(step(document.createTextNode("In the menu, tap "), mk("b", "", "View More"), document.createTextNode(" \u2192")), document.createTextNode(" "), step(mk("b", "", "Add to Home Screen")));
     }
     else route.textContent = "Browser menu \u2192 Add to Home screen";
     const frame = mk("div", "iv-frame");
@@ -123317,7 +123338,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-21-384.109";
+const APP_BUILD = "2026-11-21-384.110";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
