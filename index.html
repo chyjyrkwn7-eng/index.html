@@ -137342,6 +137342,23 @@ const EDGE_LIGHT_PX = 128;
    the dirt are overlays on it in each slice's drawing, so five tones cost
    one image, not five) */
 const EDGE_LIGHT_CACHE = {};
+/* (art8) the side's light as values (58 in shade to ~260 in the sheen), R x R in the edge's frame - the silver side's image below, and
+   what lights a pin's coloured side (badgeEdgeColourHref) */
+function badgeEdgeLightValues(shape, R){
+  const g = badgeStrikeGeometry(shape), GW = g.W, sc = GW / R, out = new Float32Array(R * R);
+  const lx = -.45, ly = -.89;
+  for(let y = 0; y < R; y++){
+    const fy = Math.min(GW - 1, Math.max(0, ((y + .5) * sc) | 0));
+    for(let x = 0; x < R; x++){
+      const fx = Math.min(GW - 1, Math.max(0, ((x + .5) * sc) | 0)), q = fy * GW + fx;
+      let nx = g.Ox[q], ny = g.Oy[q]; const nl = Math.sqrt(nx * nx + ny * ny) || 1; nx /= nl; ny /= nl;
+      const fdot = -(nx < 0 ? -nx : nx) * lx + ny * ly;
+      const diff = .5 + .5 * fdot, sp = fdot > 0 ? fdot : 0, sp2 = sp * sp, sp4 = sp2 * sp2, spec = sp4 * sp4 * sp4 * sp2;
+      out[y * R + x] = 58 + 132 * Math.pow(diff, 1.35) + 70 * spec;
+    }
+  }
+  return out;
+}
 function badgeEdgeLightHref(shape){
   const d = shape.d;
   if(EDGE_LIGHT_CACHE[d] !== undefined) return EDGE_LIGHT_CACHE[d];
@@ -137391,7 +137408,18 @@ function badgeEdgeColourHref(unitName, shape, vb){
       /* grown a few pixels past the outline (the side's mask reaches a hair beyond it), each part's own colour carried out */
       cx.globalCompositeOperation = "destination-over";
       for(let r = 1; r <= 3; r++) for(let k = 0; k < 8; k++){ const a = k * Math.PI / 4; cx.drawImage(t, Math.round(Math.cos(a) * r), Math.round(Math.sin(a) * r)); }
-      cx.globalCompositeOperation = "source-atop"; cx.fillStyle = "rgba(0,0,0,.3)"; cx.fillRect(0, 0, R, R);
+      /* (art8) Madison, of the pencil turned: two erasers, "check every badge because I've seen this same kinda look/problem before".
+         The side was this map laid at .72 over the SILVER side, so every part's side was its colour washed with grey - the eraser's
+         side a pale pink, the ferrule's beige, the paint's a faded yellow - and the light and the rounding under it barely showed:
+         beside the face it read as a second, ghostly object. Now each part's side is its own colour LIT by the side's own light
+         (shade to sheen), opaque, and the rounding across the thickness is laid over it (badgeEdgeURL). */
+      const L = badgeEdgeLightValues(shape, R), im = cx.getImageData(0, 0, R, R), px = im.data;
+      for(let i = 0, n = R * R; i < n; i++){
+        const j = i * 4; if(!px[j + 3]) continue;
+        const v = L[i], k = .42 + .58 * Math.min(1, v / 190), hi = Math.max(0, v - 190) * .3;
+        px[j] = Math.min(255, px[j] * k + hi); px[j + 1] = Math.min(255, px[j + 1] * k + hi); px[j + 2] = Math.min(255, px[j + 2] * k + hi);
+      }
+      cx.putImageData(im, 0, 0);
       href = cv.toDataURL("image/png");
     }
   }catch(e){ href = null; }
@@ -137451,7 +137479,9 @@ function badgeEdgeURL(unitName, tone, stage){
     m.appendChild(p); defs.appendChild(m); svg.appendChild(defs);
     const grp = document.createElementNS(NS, "g"); grp.setAttribute("mask", "url(#s)");
     const im = box(document.createElementNS(NS, "image"));
-    im.setAttribute("preserveAspectRatio", "none"); im.setAttribute("href", lightHref);
+    /* (art8) a pin's side: its parts' colours, lit, opaque - under the rounding and the dirt, not over them */
+    const cm = shape.obj ? badgeEdgeColourHref(unitName, shape, vb) : null;
+    im.setAttribute("preserveAspectRatio", "none"); im.setAttribute("href", cm || lightHref);
     grp.appendChild(im);
     /* across the thickness, rounded over: darker where it turns in to a
        face (tq 0), a touch of light along its middle (tq 4); dirt dims and
@@ -137465,11 +137495,7 @@ function badgeEdgeURL(unitName, tone, stage){
        and look right when you rotate them." The side was one colour (the badge's theme, darker) all the way round, so turned, a blue
        spray arm stood on a red wall, a white page on a grey one. It is now the face's own colour map (chapterObjColourMap, the same
        parts the face is drawn from), darkened as the one colour was, over the same light. */
-    if(shape.obj){
-      const cm = badgeEdgeColourHref(unitName, shape, vb);
-      if(cm){ const im2 = box(document.createElementNS(NS, "image")); im2.setAttribute("preserveAspectRatio", "none"); im2.setAttribute("href", cm); im2.setAttribute("opacity", ".72"); grp.appendChild(im2); }
-      else { const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", badgeShade(badgeThemeFor(unitName).p, -.3)); r.setAttribute("opacity", ".72"); grp.appendChild(r); }
-    }
+    if(shape.obj && !cm){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", badgeShade(badgeThemeFor(unitName).p, -.3)); r.setAttribute("opacity", ".72"); grp.appendChild(r); }
     svg.appendChild(grp);
   } else {
     p.setAttribute("fill", "#8E98A3"); p.setAttribute("stroke", "#8E98A3");

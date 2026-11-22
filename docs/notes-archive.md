@@ -42765,3 +42765,22 @@ The token, its render and the inspector are untouched.
 Gate: tools/check-b384-casefit.py (1) nothing of any pin past its slot, (2) the gap even (p5 >= .6, p95 <= 1.5 of the median),
 both classes; ALL PASS. --against 21a1a45: FAILS (1) and (2) on all 58 Fire Code badges. objbadges, badgeart, badgetwins,
 chapterbadges, ifcbadges, casefix ALL PASS. badges2's Fire Code reference moves to this commit (every Fire Code slot changed).
+
+## art8 (continued): a Fire Code pin's side, turned, is its parts' own colours, lit and opaque
+
+Madison, with his photo of Appendix H turned (the point-down pencil): two erasers, the second one pale - "You said turned views looks
+right, but what is this, check every badge because I've seen this same kinda look/problem before". The inspector's side is 16 slices
+of the outline (badgeEdgeURL); since art6 a pin's slices carry its parts' colours (badgeEdgeColourHref), but laid at .72 OVER the
+silver side, darkened .3, with the side's rounding (the tone rects) under that layer. Every part's side came out its colour washed
+with grey and flat (the eraser's pink, the steel ferrule's beige, the paint faded): beside the crisp face it read as a second, ghostly
+object - on every Fire Code badge, the pencil's being where it shows most. Now: badgeEdgeLightValues (the side's light, factored out of
+badgeEdgeLightHref) LIGHTS the colour map (each pixel x .42-1 from shade to light, a small white sheen x .3 where it faces the light),
+it is drawn opaque as the slice's base, and the rounding and the dirt are laid OVER it. The silver sides (academy) are unchanged.
+Reviewed: all 58 Fire Code badges at 0/35/70/82/90/145/180 (turns17). A thin part (the pencil, the match, the tower) shows its
+thickness as a solid wedge - what a cut-out pin of that thickness is - in its own colours now, not a pale copy.
+
+Gate: tools/check-b384-sides.py - the middle slice of every Fire Code side against the colour map, inside the outline: (1) saturation
+kept >= .7 on every badge over the parts with a colour (map saturation > .25, brightness > 70: a white page, a steel band or a
+near-black has no colour to lose), (1b) median >= .85, (2) hue within 25 degrees on 90% of the saturated parts. Now min .73, median
+.92: ALL PASS. --against c2417de: FAILS (1) (31 badges, min .39) and (1b) (median .70).
+casefit, objbadges, badgeart, badgetwins ALL PASS; badges2 ALL PASS against c2417de (the faces, the case, the cards: unchanged).
