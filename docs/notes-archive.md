@@ -43038,3 +43038,33 @@ the title and FIRE CODE. badges2's Fire Code reference moves to this work's comm
   key badgeStrikeEntry builds. check_b321d_badges: shoe front [2.26, 5.76] -> [0.24, 0.2]; it FAILS on 6075063.
 - Still inherited from main (identical on eff47c6, not this push's): the Profile shut case's plate/handle/"Level 1 Badge Case"
   checks and the cutscene/Profile one-case checks (15 in check-behaviour's badge sections).
+
+## 384.137 - Version 11's What's New; the still's vapour line comes out of the column's cap (branch claude/b384-final; NOT on main, waiting for Madison)
+
+Build `2026-11-22-384.137` in APP_BUILD and version.json `build` (384.134-384.136 are placeholders other branches used in these
+notes; 137 is the next free value, dated the day it was written so it no longer reads older than main's 2026-11-22-384.120).
+
+**THE STILL (Chapter 39).** Madison circled the vapour line's left end on the column's cap in the art9 before/after: a pointed gold
+wedge. The line's box started at x 30, inside the cap's half-ellipse (23,20 13x14), so its end lay over the cap and the outline's run
+from the cap's arc (ending at 32.1,10) to the elbow clipped it into a point. Now: the line is cut by the cap's own ellipse (as its
+other end is by the tank's), and a brass collar (OBJ_rrect 32.3, 9.2, 5.4x9.8, r1.5) sits where it leaves the cap, laid flat
+(`lvl: "collar"`) so the dome under it does not raise it into a bump. A cut alone left a thin tapering tip at the cap's shoulder
+(the line's top edge meets the curve at a shallow angle); the collar covers that join like the line's two other flanges.
+
+**VERSION 11 (What's New).** Madison: "Go ahead and start working on a what's new update thing. Talking about the plated badges and
+whatever else. We have a pretty massive new build on our hands here."
+- Main is 384.107 plus the A2HS/rims hotfixes (384.108-384.120); everything in this branch is new to the class, so the version is 11.
+- THE CARD: WHATS_NEW_V11, one sentence a row, the badges first: Badges, struck in metal; Pin a badge to your profile; All unlocks;
+  Levels keep going; Review a test; (Fire Code only, `cls: "ifc"`) A calculator; The iOS 26 look. whatsNewRows() filters by class
+  (6 rows in the academy, 7 in Fire Code); WHATS_NEW_320 (the name old gates read) is V11. INTRO_REV 8.
+- BOTH CLASSES: maybeShowIntro no longer returns early in Fire Code (Version 10's card was the academy's news; this one is both
+  classes'). The mark (`class26e.intro.seen`) is in the boot SHARED list, so a device sees the card once, in whichever class it opens.
+- VERSION HISTORY: RELEASE_NOTES leads with Version 11 - New (pins, pinning, All unlocks, levels past 80, Full Case / Pennants /
+  Completionist banners, Review test, a friend's profile, the Fire Code calculator, Software Update) and Better (the iOS 26 look,
+  Test history, the daily question, rank-ups, class switch fade, room countdown, search and Find me, chat pictures, the six new
+  Chapter 6 questions, smoother screens). Every line was read against the branch's own notes and the strings the app shows.
+- GATE: NEW tools/check-b384-whatsnew11.py (from whatsnew10): (1) an account that saw Version 10 (mark 7) gets the card in the
+  academy, "New in version 11", 4-7 rows, the badges first, pinning and All unlocks, no calculator row; (2) Got it, not again;
+  (3) a sign-up never sees it; (4) inside the SE, Pro Max and iPad, nothing scrolls; (5) the history leads with 11, no page errors;
+  (6) Fire Code gets it too, with the calculator row. ALL PASS here; --against the previous head FAILS (1), (4), (5) and (6).
+  check-b384-whatsnew10 is superseded (it asks for Version 10's card).

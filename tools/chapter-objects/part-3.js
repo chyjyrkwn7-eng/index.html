@@ -443,10 +443,14 @@
         ["brass", OBJ_rrect(9, 67, 28, 5, 1), { z: .8, bev: .6 }],
         /* (art9) Madison: "There's a lot of spots all over that just don't look right." The vapour line stopped square at y 48, a hair
            over the tank's curved top, so its end crumpled into a glinting lump where it met the dome. It now runs down into the tank
-           and is cut by the tank's own curve: it goes into the tank. */
+           and is cut by the tank's own curve: it goes into the tank.
+           (384.133, Madison circled it) its other end lay over the column's cap from x 30, and the outline's run from the cap to
+           the elbow clipped that overlap into a pointed gold wedge on the cap's shoulder. It is cut by the cap's own curve now, as
+           it is by the tank's: it comes out of the cap. */
         ["brass", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.union([OBJ_SDF.box(30, 10, 45.5, 7, 0), OBJ_SDF.box(75, 16.5, 7, 40, 0),
-          OBJ_SDF.inter(OBJ_SDF.circle(75, 17, 7), OBJ_SDF.box(74.5, 10, 7.5, 7.5, 0))], 0), OBJ_SDF.ellipse(65, 60, 29, 14)), [0, 0, 100, 100]), { dome: .9 }],   /* the vapour line */
+          OBJ_SDF.inter(OBJ_SDF.circle(75, 17, 7), OBJ_SDF.box(74.5, 10, 7.5, 7.5, 0))], 0), OBJ_SDF.union([OBJ_SDF.ellipse(65, 60, 29, 14), OBJ_SDF.ellipse(23, 20, 13, 14)], 0)), [0, 0, 100, 100]), { dome: .9 }],   /* the vapour line */
         ["brass", OBJ_rrect(53, 8, 5, 11, 1.2), { z: .7, bev: .5 }],                                   /* its flanges */
+        ["brass", OBJ_rrect(32.3, 9.2, 5.4, 9.8, 1.5), { lvl: "collar", z: .7, bev: .5 }],                    /* (384.133) its collar where it leaves the cap: laid flat, not raised by the dome under it */
         ["brass", OBJ_rrect(73, 27, 11, 5, 1.2), { z: .7, bev: .5 }],
         ["steel", "M36 60A29 14 0 0 1 94 60V86H36Z", { z: .2, bev: 1, dome: 1.8 }],                     /* the receiving tank, domed */
         ["brass", OBJ_rrect(36, 66, 58, 5, 0), { z: .6, bev: .5 }],                                     /* its band */
