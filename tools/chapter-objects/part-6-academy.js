@@ -409,7 +409,7 @@
       hull: S.poly([[x0, yTop + d], [x0 + d * 1.2, yTop], [x1 + d * 1.2, yTop], [x1 + d * 1.2, yTop + h], [x1, yTop + d + h], [x0, yTop + d + h]]) });
     const t1 = tier(15, 80, 80.5, 11.5, 4), t2 = tier(30.5, 66.5, 71.5, 8.5, 3.4);
     const colX = 50.5, col = S.box(colX - 4.2, 24, 8.4, 50, 1.2), cap = S.box(colX - 6.2, 23, 12.4, 4.6, 1.6), cb = S.box(colX - 6.2, 69.5, 12.4, 4.4, 1.4);
-    const beam = S.union([S.capsule(15, 23.5, 86, 23.5, 2.6), S.circle(15, 23.5, 3.6), S.circle(86, 23.5, 3.6)], .8), boss = S.circle(colX, 23.5, 5.4), fin = S.union([S.circle(colX, 13, 4.4), S.cone(colX, 13, colX, 3, 2.6, .9)], .8);
+    const beam = S.union([S.capsule(15, 23.5, 86, 23.5, 2.6), S.circle(15, 23.5, 3.6), S.circle(86, 23.5, 3.6)], .8), boss = S.circle(colX, 23.5, 5.4), fin = S.union([S.circle(colX, 13.5, 4.4), S.cone(colX, 13.5, colX, 3, 2.6, .9), S.cone(colX, 14, colX, 22, 2.6, 3.2)], .8);   /* (round 3) the finial stands on the boss: one silhouette (it was a separate loop, taken as a hole) */
     const pan = cx => { const rim = S.ellipse(cx, 57, 11.5, 3.6); return { rim, bowl: S.union([rim, half(S.ellipse(cx, 57, 11.5, 9.5), 57, 80)], 0), inner: S.ellipse(cx, 57, 9.4, 2.3) }; };
     function half(f, y0, y1){ return S.inter(f, S.box(-10, y0, 120, y1 - y0, 0)); }
     const pl = pan(15), pr = pan(86);
@@ -420,8 +420,8 @@
     CHAPTER_OBJ["Professionalism and Ethics"] = {
       d: t.d, holes: t.holes, col: "#D9A63E", base: "brass",
       plates: [
-        ["wood", sh(g(t1.top)) + sh(g(t2.top)), { z: .2, bev: .5, dome: .5, col: "#8E5A33" }],                               /* the plinth's tops */
-        ["wood", sh(g(t1.front)) + sh(g(t2.front)), { z: .2, bev: .5, dome: .9, col: "#6E4426" }],                           /* its fronts */
+        ["wood", sh(g(t1.top)) + sh(g(t2.top)), { z: .2, bev: .5, dome: .9, col: "#9C6639" }],                               /* the plinth's tops */
+        ["wood", sh(g(t1.front)) + sh(g(t2.front)), { z: .2, bev: .5, dome: 1.4, col: "#7A4B2A" }],                          /* its fronts */
         ["wood", sh(g(t1.side)) + sh(g(t2.side)), { z: .2, bev: .5, dome: .5, col: "#4F301B" }],                             /* its sides */
         ["brass", all(g(chains)), { dome: .9 }],                                                                              /* the chains */
         ["brass", links, { ln: .8, cut: .45, paint: 0 }],
@@ -463,6 +463,7 @@
     const lining = S.inter(S.grow(shoe, .01), S.poly([[11, 44], [19, 45.6], [27.5, 47.6], [34, 45.2], [36.5, 40], [37.5, 44.5], [34, 49.8], [27, 51.6], [19, 50], [12.5, 49]]));
     const eyes = [0, 1, 2, 3, 4, 5].map(k => { const x = 51 + k * 6.3; return [x, topAt(x) + 4.6]; });
     let laces = ""; eyes.forEach((p, k) => { laces += lineP([[p[0] - .3, p[1] - .3], [p[0] + 3.4, p[1] - 4.4 + .6]]); });
+    const wave = lineP(Array.from({ length: 23 }, (_, i) => { const x = 10 + i * 3.8; return [x, (mid(x) + obot(x)) / 2 + 1.2 * Math.sin(i * .9)]; }));
     let tread = ""; for(let x = 17; x < 90; x += 5) tread += "M" + F(x) + " " + F(obot(x) + 1.2) + "V" + F(Math.min(85.4, obot(x) + 4.2));
     let vents = ""; for(let r = 0; r < 3; r++) for(let k = 0; k < 7; k++){ const x = 54 + k * 4.4 + (r % 2) * 2.2, y = 58 + r * 3.8 + (x - 54) * .2;
       const ok = q => eyestay(...q) > 1 && bumper(...q) > 1 && q[1] < mid(q[0]) - 2.4 && shoe(...q) < -2; if(ok([x, y]) && ok([x + 1.6, y])) vents += "M" + F(x) + " " + F(y) + "H" + F(x + 1.6); }
@@ -473,18 +474,15 @@
         ["rubber", sh(g(lining)), { z: -.6, bev: .8, col: "#1A2238" }],                                                         /* the lining at the ankle */
         ["field", lineP([[12.5, 48.8], [19.5, 50.6], [27, 52.2], [33.8, 49.8]]), { ln: 3.2, z: .45, bev: .6, dome: .4, col: "#3A70E4" }],   /* the padded collar */
         ["field", sh(g(tongue)), { z: .3, bev: .8, dome: .7, col: "#3B72E6" }],                                                 /* the tongue */
-        ["hot", lineP([[42, 33.2], [44.6, 33]]), { ln: 2.4, z: .55, bev: .3, col: "#FF7A1F" }],                                  /* its pull tab */
         ["field", sh(g(counter)) + sh(g(bumper)), { z: .4, bev: .7, dome: .55, col: "#1F4AA6" }],                                /* the heel counter and toe bumper */
-        ["field", keep(ellP(ax, 3, 64, 19.8, 20.8, -60, 18, 24), q => counter(...q) < -1 && q[1] < mid(q[0]) - 1.4) + keep(ellP(ax, 101, 71, 15.2, 10.4, 186, 262, 16), q => bumper(...q) < -1 && q[1] < mid(q[0]) - 1.4) + vents, { ln: .9, cut: .4, paint: 0 }],   /* their stitching, the mesh's vents */
+        ["field", keep(ellP(ax, 3, 64, 19.8, 20.8, -60, 18, 24), q => counter(...q) < -1 && q[1] < mid(q[0]) - 1.4) + keep(ellP(ax, 101, 71, 15.2, 10.4, 186, 262, 16), q => bumper(...q) < -1 && q[1] < mid(q[0]) - 1.4) + vents + wave + tread, { ln: 1, cut: .45, paint: 0 }],   /* their stitching, the mesh's vents, the midsole's wave, the tread (one plate: the shoe is the first badge opened, so it is kept cheap) */
         ["field", sh(g(eyestay)), { z: .45, bev: .5, dome: .4, col: "#1B3F8E" }],                                               /* the eyestay */
         ["steel", eyes.map(p => OBJ_circle(p[0], p[1], 1.6)).join(""), { z: .75, bev: .3, dome: .5 }],                          /* its eyelets */
         ["cream", laces, { ln: 2.4, z: 1, bev: .4, dome: .3, col: "#F5F7FA", sh: 1 }],                                           /* the laces */
         ["cream", sh(g(sole)), { z: .35, bev: .6, dome: .7, col: "#F2F3F5" }],                                                  /* the midsole */
-        ["cream", lineP(Array.from({ length: 23 }, (_, i) => { const x = 10 + i * 3.8; return [x, (mid(x) + obot(x)) / 2 + 1.2 * Math.sin(i * .9)]; })), { ln: .8, cut: .4, paint: 0 }],   /* its sculpted wave */
         ["hot", lineP(Array.from({ length: 25 }, (_, i) => { const x = 8.5 + i * 3.6; return [x, mid(x) + .2]; })), { ln: 1.6, z: .5, bev: .4, col: "#FF7A1F" }],   /* the orange piping */
         ["rubber", sh(g(outsole)), { z: .35, bev: .5, dome: .3, col: "#2A2D33" }],                                              /* the outsole */
-        ["rubber", tread, { ln: 1.5, cut: .55, paint: 0 }],                                                                       /* its tread */
-        ["hot", sh(g(loop)), { z: .35, bev: .6, dome: .7, col: "#FF7A1F" }],                                                     /* the heel pull loop */
+        ["hot", sh(g(loop)) + OBJ_rrect(41.6, 31.9, 3.4, 2.6, 1.2), { z: .4, bev: .5, dome: .6, col: "#FF7A1F" }],                /* the heel pull loop, the tongue's tab */
       ],
     };
   }
