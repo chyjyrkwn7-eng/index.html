@@ -63,42 +63,48 @@
     };
   }
 
-  /* ---- Arrest, Search, and Seizure - a pair of chain handcuffs: two steel cuffs, each a ring with its lock housing (keyhole, two
-     rivets) and the ratchet teeth of its swinging arm, the pivot rivet; swivels from the housings into a short chain (a link face on,
-     one edge on, one face on). ---- */
+  /* ---- Arrest, Search, and Seizure - a pair of chain handcuffs, open rings you can see through. Each cuff: the lock housing across its
+     top (the keyhole, two rivets, the seam of its two plates), the double bar running down from it round one side to the pivot at the
+     bottom (two plates, the seam between them), the single bar swinging up the other side into the housing with its ratchet teeth on
+     its outer edge; the housings joined by two swivels and a link. (384.136 round 3, Madison: "The handcuffs are bad, make them better".
+     Round 2's cuffs were filled discs with dark centres and a tangle of swivels; these are real rings, and the housings and the chain
+     between them are one broad band across the top, which is where the back's title goes.) ---- */
   {
-    const RO = 23.6, RI = 9.8, cuffs = [[24.4, 69, 1], [75.6, 69, -1]].map(([x, y, s]) => {
-      const C = [x, y], ang = s > 0 ? -48 : -132, bc = polar(C, 17.6, ang), out = polar(C, 23.4, ang), eye = [50 - s * 6, 39.5];
-      return { C, s, ang, bc, out, eye, box: rbox(bc[0], bc[1], 24, 13, ang + 90, 3.6), swivel: S.capsule(out[0], out[1], eye[0], eye[1], 3.4) }; });
-    const rings = S.union(cuffs.map(c => ring(c.C[0], c.C[1], RO, RI)), 0);
-    const boxes = S.union(cuffs.map(c => c.box), 0), swivels = S.union(cuffs.map(c => c.swivel), 0);
-    const linkL = S.ellipse(44.2, 36.5, 6, 4.4), linkR = S.ellipse(55.8, 36.5, 6, 4.4), linkM = S.capsule(46.5, 36.5, 53.5, 36.5, 2.7);
-    const chain = S.union([linkL, linkR, linkM], .6);
-    /* (the cuffs' openings are pressed deep into the pin, not cut through it: a pin's back carries the unit's title, and two open
-       rings left it no room for the title and the class line at 9.2px in the hand) */
-    const t = S.trace(S.union([S.union(cuffs.map(c => S.circle(c.C[0], c.C[1], RO)), 0), boxes, swivels, chain], 1.2), BB);
-    let teeth = "", pivots = [], rivets = [];
+    const RO = 20.5, RI = 11.4, CY = 70, HY = 37.5, HH = 26;
+    const cuffs = [[27, 1], [73, -1]].map(([x, s]) => {
+      const C = [x, CY], hx0 = s > 0 ? 8 : 55.5, hx1 = s > 0 ? 44.5 : 92;
+      const mirror = a => s > 0 ? a : 180 - a;
+      return { C, s, mirror, house: S.box(hx0, HY - HH / 2, hx1 - hx0, HH, 4.2), ring: ring(C[0], C[1], RO, RI), hc: [(hx0 + hx1) / 2, HY] }; });
+    const caps = S.union([S.circle(44.5, HY - 1, 5.6), S.circle(55.5, HY - 1, 5.6)], 0), link = S.ellipse(50, HY - 1, 5.6, 5.4);
+    const chain = S.union([caps, link], .8);
+    const sector = (C, a0, a1, r0, r1) => S.inter(ring(C[0], C[1], r1, r0), wedge(C, a0, a1, 40));
+    const dbl = S.union(cuffs.map(c => { const a0 = c.mirror(90), a1 = c.mirror(232); return sector(c.C, Math.min(a0, a1), Math.max(a0, a1), RI, RO); }), 0);
+    const t = S.trace(S.union([S.union(cuffs.map(c => c.ring), 0), S.union(cuffs.map(c => c.house), 0), chain], 1), BB);
+    let teeth = "", seams = "", pivots = "", rivets = "";
     cuffs.forEach(c => {
-      for(let k = 0; k < 12; k++){ const a = c.ang + c.s * (46 + k * 6.5); teeth += lineP([polar(c.C, RO - 4.8, a), polar(c.C, RO + .5, a)]); }
-      pivots.push(OBJ_circle(...polar(c.C, (RO + RI) / 2, c.ang - c.s * 64), 2.9));
-      const tg = [Math.cos((c.ang + 90) * D), Math.sin((c.ang + 90) * D)];
-      rivets.push(OBJ_circle(c.bc[0] + tg[0] * 8, c.bc[1] + tg[1] * 8, 2.5), OBJ_circle(c.bc[0] - tg[0] * 8, c.bc[1] - tg[1] * 8, 2.5));
+      for(let k = 0; k < 13; k++){ const a = c.mirror(78 - k * 9.5); teeth += lineP([polar(c.C, RO - 4.4, a), polar(c.C, RO + .4, a)]); }
+      const a0 = c.mirror(98), a1 = c.mirror(226); seams += lineP(ellP(ax, c.C[0], c.C[1], (RO + RI) / 2, (RO + RI) / 2, Math.min(a0, a1), Math.max(a0, a1), 24));
+      pivots += OBJ_circle(...polar(c.C, (RO + RI) / 2, 90), 2.9);
+      rivets += OBJ_circle(c.hc[0] - c.s * 10.5, HY - 4.5, 2.2) + OBJ_circle(c.hc[0] - c.s * 10.5, HY + 4.5, 2.2);
+      
     });
-    const keyhole = S.union(cuffs.map(c => { const k = c.bc; return S.union([S.circle(k[0], k[1] - .7, 2.5), S.capsule(k[0], k[1] - .7, k[0], k[1] + 3.1, 1.3)], .5); }), 0);
+    const keyhole = S.union(cuffs.map(c => S.union([S.circle(c.hc[0], HY - 1.4, 2.5), S.capsule(c.hc[0], HY - 1.4, c.hc[0], HY + 2.6, 1.3)], .5)), 0);
     CHAPTER_OBJ["Arrest, Search, and Seizure"] = {
       d: t.d, holes: t.holes, col: "#B9C2CC", base: "steel",
       plates: [
-        ["rubber", cuffs.map(c => OBJ_circle(c.C[0], c.C[1], RI + .4)).join(""), { z: -2.6, bev: 1.6, col: "#121418" }],           /* their openings */
-        ["steel", all(g(rings)), { dome: 2 }],                                                                                /* the cuffs */
-        ["steel", teeth, { ln: 1.1, cut: .55, paint: 0 }],                                                                     /* the ratchet teeth */
-        ["steel", cuffs.map(c => lineP(ellP(ax, c.C[0], c.C[1], RO - 5.2, RO - 5.2, c.ang + c.s * 42, c.ang + c.s * 124, 16))).join(""), { ln: .9, cut: .5, paint: 0 }],   /* the swinging arm's edge */
-        ["steel", pivots.join(""), { z: .5, bev: .5, dome: .9 }],                                                             /* the pivots */
-        ["steel", all(g(chain)), { dome: 1.4 }],                                                                              /* the chain */
-        ["rubber", all(S.union([S.ellipse(44.2, 36.5, 3.1, 1.5), S.ellipse(55.8, 36.5, 3.1, 1.5)], 0)), { z: -.8, bev: .5 }],   /* the links' eyes */
-        ["steel", all(g(swivels)), { z: .4, bev: .6, dome: 1 }],                                                              /* the swivels */
-        ["steel", all(g(boxes)), { z: 1, bev: .7, dome: .6, col: "#A3ADB8", sh: 1 }],                                         /* the lock housings */
-        ["rubber", all(keyhole), { z: -.7, bev: .4 }],                                                                       /* the keyholes */
-        ["steel", rivets.join(""), { z: 1.2, bev: .4, dome: .8 }],                                                           /* the rivets */
+        ["steel", all(g(S.union(cuffs.map(c => c.ring), 0))), { dome: 2 }],                                                   /* the single bars */
+        ["steel", teeth, { ln: 1.1, cut: .55, paint: 0 }],                                                                       /* their ratchet teeth */
+        ["steel", all(g(dbl)), { z: .35, bev: .6, dome: 1.8, col: "#A7B0BB" }],                                                 /* the double bars */
+        ["steel", seams, { ln: .8, cut: .45, paint: 0 }],                                                                        /* the seams of their plates */
+        ["steel", pivots, { lvl: "piv", z: .9, bev: .4, dome: .8 }],                                                                         /* the pivots */
+        ["steel", all(g(S.union(cuffs.map(c => c.house), 0))), { lvl: "house", z: 1, bev: .7, gem: 1, gw: 3.2, col: "#A2ACB7", sh: 1 }],   /* the lock housings, chamfered */
+        ["steel", cuffs.map(c => OBJ_rrect(c.hc[0] - 14.2, HY - HH / 2 + 4.2, 28.4, HH - 8.4, 2.6)).join(""), { lvl: "house", z: .75, bev: .5, dome: .5, col: "#B8C0CA" }],   /* their face plates */
+        ["rubber", all(keyhole), { lvl: "house", z: .3, bev: .4, col: "#1C1F24" }],                                              /* the keyholes */
+        ["steel", rivets, { lvl: "house", z: 1.5, bev: .4, dome: .8 }],                                                          /* the rivets */
+        ["steel", sh(g(link)), { lvl: "house", z: .8, bev: .6, dome: 1.2, col: "#B3BCC6" }],                                     /* the link */
+        ["rubber", sh(S.ellipse(50, HY - 1, 2.8, 2.4)), { lvl: "house", z: .3, bev: .5, col: "#1C1F24" }],                       /* its eye */
+        ["steel", all(g(caps)), { lvl: "house", z: 1.3, bev: .6, dome: 1.4 }],                                                   /* the swivels */
+        ["steel", OBJ_circle(44.5, HY - 1, 2.4) + OBJ_circle(55.5, HY - 1, 2.4), { lvl: "house", z: 1.9, bev: .4, dome: .7, col: "#C9D0D8" }],   /* their pins */
       ],
     };
   }
@@ -139,9 +145,9 @@
         ["red", OBJ_circle(sealC[0], sealC[1], 6.6), { z: 1.4, bev: .7, dome: 1.1, col: "#C22E33", sh: 1 }],               /* the wax seal */
         ["red", OBJ_circle(sealC[0], sealC[1], 3.6), { ln: 1, cut: .45, paint: 0 }],
         ["glass", sh(g(bottle)), { lvl: "well", z: .9, bev: .6, dome: .4, col: "#2F4E6E", sh: 1 }],                     /* the cut-glass inkwell */
-        ["glass", sh(S.poly([[66, 75], [71, 77], [71, 95], [66, 93]])), { lvl: "well", z: .9, bev: .3, col: "#4C7398" }],   /* its facets: left */
-        ["glass", sh(S.poly([[91, 77], [96, 75], [96, 93], [91, 95]])), { lvl: "well", z: .9, bev: .3, col: "#1F364F" }],   /* right */
-        ["glass", sh(S.poly([[66, 75], [70.5, 70.5], [91.5, 70.5], [96, 75], [91, 77], [71, 77]])), { lvl: "well", z: .9, bev: .3, col: "#5D86AE" }],   /* its shoulder */
+        ["glass", sh(S.poly([[66, 75], [71, 77], [71, 95], [66, 93]])), { col: "#4C7398" }],   /* its facets: left */
+        ["glass", sh(S.poly([[91, 77], [96, 75], [96, 93], [91, 95]])), { col: "#1F364F" }],   /* right */
+        ["glass", sh(S.poly([[66, 75], [70.5, 70.5], [91.5, 70.5], [96, 75], [91, 77], [71, 77]])), { col: "#5D86AE" }],   /* its shoulder */
         ["brass", sh(g(collar)), { lvl: "well", z: 1.2, bev: .6, dome: .7 }],                                           /* its collar */
         ["cream", sh(g(quill)), { lvl: "well", z: 1.4, bev: .7, dome: 1, col: "#F4F2EA", sh: 1 }],                     /* the quill */
         ["cream", barbs, { lvl: "well", ln: .8, cut: .4, paint: 0 }],                                                   /* its barbs */
@@ -178,7 +184,7 @@
      the button eyes and nose, a blue ribbon bow at its neck, the plush tummy patch stitched on, the arms, the legs out in front with
      their round foot pads. ---- */
   {
-    const head = S.circle(50, 29, 19), ears = S.union([S.circle(33, 14.5, 8.6), S.circle(67, 14.5, 8.6)], 0);
+    const head = S.circle(50, 29.5, 18.6), ears = S.union([S.circle(32.5, 13.5, 9), S.circle(67.5, 13.5, 9)], 0);
     const body = S.ellipse(50, 66, 20.5, 21.5), arms = S.union([S.capsule(33, 55, 20.5, 71, 7.4), S.capsule(67, 55, 79.5, 71, 7.4)], 0);
     const legs = S.union([S.ellipse(32.5, 86, 12, 10.5), S.ellipse(67.5, 86, 12, 10.5)], 0);
     const bow = S.union([S.grow(S.poly([[50, 49], [37.5, 42.5], [37.5, 55.5]]), 2), S.grow(S.poly([[50, 49], [62.5, 42.5], [62.5, 55.5]]), 2), S.circle(50, 49, 4.4)], 0);
@@ -194,15 +200,15 @@
         ["cream", OBJ_ellipse(32.5, 87, 7.2, 6.4) + OBJ_ellipse(67.5, 87, 7.2, 6.4), { z: .5, bev: .6, dome: .8, col: "#E1BE8A" }],   /* the foot pads */
         ["cream", OBJ_ellipse(21, 71.5, 4.6, 4.2) + OBJ_ellipse(79, 71.5, 4.6, 4.2), { z: .4, bev: .5, dome: .6, col: "#E1BE8A" }],   /* the paw pads */
         ["field", all(g(ears)), { dome: 1.4, col: "#A86C36" }],                                                  /* the ears */
-        ["cream", OBJ_circle(33.5, 15, 4.6) + OBJ_circle(66.5, 15, 4.6), { z: -.6, bev: .6, col: "#DDB582" }],   /* their insides */
+        ["cream", sh(S.minus(S.circle(31.4, 12.6, 5), S.grow(head, 1.4))) + sh(S.minus(S.circle(68.6, 12.6, 5), S.grow(head, 1.4))), { z: -.6, bev: .6, col: "#DDB582" }],   /* their insides */
         ["field", sh(g(head)), { z: .7, bev: .9, dome: 2.4 }],                                                   /* the head */
         ["cream", OBJ_ellipse(50, 36.5, 9.6, 7.4), { z: 1.1, bev: .7, dome: .9, col: "#E6C696" }],               /* the muzzle */
         ["rubber", "M50 35V39.5M45.5 40.2Q50 43.6 54.5 40.2", { ln: 1, cut: .45, paint: 0 }],                    /* its mouth */
         ["rubber", OBJ_ellipse(50, 33, 4.4, 3.1), { z: 1.6, bev: .5, dome: .9, col: "#2B2220" }],                /* the nose */
         ["rubber", OBJ_circle(42.4, 25, 2.8) + OBJ_circle(57.6, 25, 2.8), { z: .9, bev: .5, dome: 1, col: "#2B2220" }],   /* the button eyes */
-        ["water", sh(g(bow)), { z: 1, bev: .7, dome: 1.1, col: "#3B78C4", sh: 1 }],                              /* the ribbon bow */
-        ["water", "M45.4 46.3L40 44.4M45.4 51.7L40 53.6M54.6 46.3L60 44.4M54.6 51.7L60 53.6", { ln: .8, cut: .45, paint: 0 }],    /* its folds */
-        ["water", OBJ_circle(50, 49, 3.9), { z: 1.4, bev: .5, dome: .8, col: "#4A88D4" }],                       /* its knot */
+        ["water", sh(g(bow)), { lvl: "bow", z: 1, bev: .7, dome: 1.1, col: "#3B78C4", sh: 1 }],                              /* the ribbon bow */
+        ["water", "M45.4 46.3L40 44.4M45.4 51.7L40 53.6M54.6 46.3L60 44.4M54.6 51.7L60 53.6", { lvl: "bow", ln: .8, cut: .45, paint: 0 }],    /* its folds */
+        ["water", OBJ_circle(50, 49, 3.9), { lvl: "bow", z: 1.4, bev: .5, dome: .8, col: "#4A88D4" }],                       /* its knot */
       ],
     };
   }
@@ -230,13 +236,18 @@
         if((hide && hide(...p) < .6) || notch(...p) < .8){ if(run.length > 1) d += lineP(run); run = []; } else run.push(p); }
       if(run.length > 1) d += lineP(run); return d; };
     const frontTail = S.cone(...X2, ...RT, R, R + 2.4);
+    /* (384.136 round 3, Madison: "The purple ribbon has messed up parts" - a lump at the top of the loop, a messy crossing.) The ribbon
+       is ONE smooth band now (no step anywhere round the loop); only the strand going down to the right tail is raised, from the line
+       where it reaches the strand under it - it lies over that strand, its shadow on it, the strand under it losing its edges there. */
+    const bu = [(X1[0] - LT[0]), (X1[1] - LT[1])], bl = Math.hypot(...bu), side = (x, y) => ((x - LT[0]) * -bu[1] + (y - LT[1]) * bu[0]) / bl;   /* + toward the lower right */
+    const over = S.inter(cut(frontTail), (x, y) => -side(x, y) - (R + 1.2)), inv = (x, y) => -S.grow(over, -.6)(x, y);   /* inv: < .6 outside the raised strand */
     CHAPTER_OBJ["Sexual Assault and Family Violence"] = {
       d: t.d, holes: t.holes, col: "#7A3E9E", base: "field",
       plates: [
-        ["field", all(g(cut(back))), { dome: 1.6 }],                                                                   /* the strand behind */
-        ["field", edges(0, 60, E, S.grow(cut(front), .8)) + edges(0, 60, -E, S.grow(cut(front), .8)), { ln: .7, cut: .3, paint: 0 }],             /* its woven edges */
-        ["field", sh(g(cut(front))), { z: .35, bev: .8, dome: 1.6, col: "#8646AC", sh: 1 }],                            /* the strand in front */
-        ["field", edges(60, cl.length, E) + edges(60, cl.length, -E), { ln: .7, cut: .3, paint: 0 }],
+        ["field", all(g(S.union([cut(back), cut(front)], 0))), { dome: 1.5, col: "#8746AD" }],                                        /* the ribbon */
+        ["field", edges(0, 90, E, S.grow(over, .6)) + edges(0, 90, -E, S.grow(over, .6)), { ln: .7, cut: .3, paint: 0 }],   /* its woven edges, under the crossing strand */
+        ["field", sh(g(over)), { z: .6, bev: 3.2, dome: .3, col: "#8746AD", sh: 1 }],                                   /* the strand lying over it */
+        ["field", edges(60, cl.length, E, inv) + edges(60, cl.length, -E, inv), { ln: .7, cut: .3, paint: 0 }],
       ],
     };
   }
@@ -277,9 +288,9 @@
         ["rubber", ticks24, { ln: .8, z: .15, bev: .3, col: "#B9B5A0" }],                                                 /* the 24-hour ring */
         ["cream", bars, { ln: 2.1, z: .35, bev: .4, col: "#E9E4C6" }],                                                    /* the lumed hour bars */
         ["cream", quarters, { z: .35, bev: .4, col: "#E9E4C6" }],
-        ["cream", hand(-150, 11.5, 1.9) + hand(-30, 17, 1.5), { z: .7, bev: .4, dome: .3, col: "#EFEBD2" }],   /* the hands */
-        ["red", lineP([polar(C, -5, 200), polar(C, 17.5, 20)]), { ln: 1.1, z: .95, bev: .3, col: "#D8352C" }],             /* the seconds hand */
-        ["brass", OBJ_circle(C[0], C[1], 2.4), { z: 1.1, bev: .4, dome: .6 }],
+        ["cream", hand(-150, 11.5, 1.9) + hand(-30, 17, 1.5), { lvl: "hands", z: .7, bev: .4, dome: .3, col: "#EFEBD2" }],   /* the hands */
+        ["red", lineP([polar(C, -5, 200), polar(C, 17.5, 20)]), { lvl: "hands", ln: 1.1, z: .95, bev: .3, col: "#D8352C" }],             /* the seconds hand */
+        ["brass", OBJ_circle(C[0], C[1], 2.4), { lvl: "hands", z: 1.15, bev: .4, dome: .6 }],
       ],
     };
   }
@@ -382,9 +393,9 @@
         ["cream", sh(g(S.minus(bbX, bb))), { col: "#B9C1CA" }],                                                       /* the white bubble's side */
         ["cream", sh(g(bb)), { z: .5, bev: .8, dome: 1.6, col: "#EEF1F4" }],                                           /* the white bubble */
         ["cream", "M50 22H82M50 31H74", { ln: 4, z: .45, bev: .6, col: "#CDD4DC" }],                                     /* its lines */
-        ["field", sh(g(S.minus(fbX, fb))), { col: "#1F5DAE" }],                                                        /* the blue bubble's side */
-        ["field", sh(g(fb)), { z: .9, bev: .9, dome: 1.8, sh: 1 }],                                                     /* the blue bubble */
-        ["cream", OBJ_circle(20, 53, 4.6) + OBJ_circle(33, 53, 4.6) + OBJ_circle(46, 53, 4.6), { z: 1.4, bev: .6, dome: 1, col: "#F4F7FA" }],   /* its dots */
+        ["field", sh(g(S.minus(fbX, fb))), { lvl: "blue", z: .3, bev: .5, col: "#1F5DAE" }],                                                        /* the blue bubble's side */
+        ["field", sh(g(fb)), { lvl: "blue", z: .9, bev: .9, dome: 1.8, sh: 1 }],                                                     /* the blue bubble */
+        ["cream", OBJ_circle(20, 53, 4.6) + OBJ_circle(33, 53, 4.6) + OBJ_circle(46, 53, 4.6), { lvl: "blue", z: 1.6, bev: .6, dome: 1, col: "#F4F7FA" }],   /* its dots */
       ],
     };
   }
@@ -398,7 +409,7 @@
       hull: S.poly([[x0, yTop + d], [x0 + d * 1.2, yTop], [x1 + d * 1.2, yTop], [x1 + d * 1.2, yTop + h], [x1, yTop + d + h], [x0, yTop + d + h]]) });
     const t1 = tier(15, 80, 80.5, 11.5, 4), t2 = tier(30.5, 66.5, 71.5, 8.5, 3.4);
     const colX = 50.5, col = S.box(colX - 4.2, 24, 8.4, 50, 1.2), cap = S.box(colX - 6.2, 23, 12.4, 4.6, 1.6), cb = S.box(colX - 6.2, 69.5, 12.4, 4.4, 1.4);
-    const beam = S.union([S.capsule(15, 23.5, 86, 23.5, 2.6), S.circle(15, 23.5, 3.6), S.circle(86, 23.5, 3.6)], .8), boss = S.circle(colX, 23.5, 5.4), fin = S.union([S.circle(colX, 13, 4.4), S.cone(colX, 13, colX, 3, 2.6, .9)], .8);
+    const beam = S.union([S.capsule(15, 23.5, 86, 23.5, 2.6), S.circle(15, 23.5, 3.6), S.circle(86, 23.5, 3.6)], .8), boss = S.circle(colX, 23.5, 5.4), fin = S.union([S.circle(colX, 13.5, 4.4), S.cone(colX, 13.5, colX, 3, 2.6, .9), S.cone(colX, 14, colX, 22, 2.6, 3.2)], .8);   /* (round 3) the finial stands on the boss: one silhouette (it was a separate loop, taken as a hole) */
     const pan = cx => { const rim = S.ellipse(cx, 57, 11.5, 3.6); return { rim, bowl: S.union([rim, half(S.ellipse(cx, 57, 11.5, 9.5), 57, 80)], 0), inner: S.ellipse(cx, 57, 9.4, 2.3) }; };
     function half(f, y0, y1){ return S.inter(f, S.box(-10, y0, 120, y1 - y0, 0)); }
     const pl = pan(15), pr = pan(86);
@@ -409,8 +420,8 @@
     CHAPTER_OBJ["Professionalism and Ethics"] = {
       d: t.d, holes: t.holes, col: "#D9A63E", base: "brass",
       plates: [
-        ["wood", sh(g(t1.top)) + sh(g(t2.top)), { z: .2, bev: .5, dome: .5, col: "#8E5A33" }],                               /* the plinth's tops */
-        ["wood", sh(g(t1.front)) + sh(g(t2.front)), { z: .2, bev: .5, dome: .9, col: "#6E4426" }],                           /* its fronts */
+        ["wood", sh(g(t1.top)) + sh(g(t2.top)), { z: .2, bev: .5, dome: .9, col: "#9C6639" }],                               /* the plinth's tops */
+        ["wood", sh(g(t1.front)) + sh(g(t2.front)), { z: .2, bev: .5, dome: 1.4, col: "#7A4B2A" }],                          /* its fronts */
         ["wood", sh(g(t1.side)) + sh(g(t2.side)), { z: .2, bev: .5, dome: .5, col: "#4F301B" }],                             /* its sides */
         ["brass", all(g(chains)), { dome: .9 }],                                                                              /* the chains */
         ["brass", links, { ln: .8, cut: .45, paint: 0 }],
@@ -425,42 +436,53 @@
     };
   }
 
-  /* ---- Fitness, Wellness, and Stress Management - a running shoe from the side, toe to the right: the treaded rubber outsole, the
-     white foam midsole (thick under the heel, a sculpted wave along it), the blue mesh upper with its vents, the darker heel counter and
-     toe cap, the eyestay with its eyelets and the laces crossing over the tongue, the padded collar, the heel pull loop. ---- */
+  /* ---- Fitness, Wellness, and Stress Management - a running shoe from the side, toe to the right, long and low with the toe sprung
+     up: the treaded rubber outsole; the white foam midsole, thick under the heel and thinning to the toe, an orange piping along its top;
+     the blue mesh upper with its vents; the darker heel counter and toe bumper (stitched); the eyestay with six eyelets and white laces
+     crossing over the instep; the padded tongue standing up with its pull tab; the dark lining showing at the ankle opening above the
+     padded collar; the orange heel pull loop. (384.136 round 3, Madison: "The shoe is bad, make the shoe better" - round 2's was a tall
+     slab with a flat sole.) ---- */
   {
-    const outline = [[9, 84], [6, 66], [8, 52], [12, 47.5], [21, 50.5], [30, 48], [35, 40], [40, 35.5], [45.5, 36.5], [53, 43.5], [63, 49.5], [74, 54.5], [84, 58.5], [92, 63], [97, 71], [96, 79], [89, 85], [60, 87], [20, 87]];
-    const rad = [4, 6, 4, 2.5, 3, 3, 2, 2, 2, 4, 4, 4, 5, 5, 4, 3, 4, 5, 4];
+    const outline = [[11, 83], [7, 73], [6, 61], [8.5, 50], [12.5, 45.5], [19, 46.5], [27, 48.5], [33, 46], [36.5, 39.5], [39.5, 33], [45, 32.5], [48.5, 36.5],
+                     [56, 42], [65, 47.3], [74, 51.8], [83, 56], [90, 60], [95.5, 65.5], [97.5, 71], [95.5, 76.5], [88, 81], [74, 84], [50, 85.4], [26, 85.4], [16, 84.6]];
+    const rad = [4, 6, 6, 4, 3, 4, 4, 3, 3, 2.5, 2.5, 3, 5, 5, 5, 5, 4, 4, 3, 4, 6, 6, 5, 5, 4];
     const shoe = S.poly(outline);
-    const mid = (x) => x < 16 ? 70 : x < 70 ? 70 + (x - 16) * 5 / 54 : 75 + (x - 70) * .2;
-    const sole = S.inter(S.grow(shoe, .01), (x, y) => mid(x) - y);
-    const outsole = S.inter(S.grow(shoe, .01), (x, y) => 81.5 - y);
-    const counter = S.inter(shoe, S.union([S.ellipse(4, 66, 22, 21)], 0));
-    const toecap = S.inter(shoe, S.ellipse(100, 74, 19, 13));
-    const eyestay = S.inter(shoe, S.minus(S.grow(S.poly([[34, 41], [41, 35.5], [46, 37], [53, 44], [63, 50], [74, 55], [85, 59.5], [84, 66], [72, 62], [61, 57], [51, 51.5], [40, 47]]), .5), S.box(0, 0, 100, 0, 0)));
-    const loop = S.capsule(10.5, 47.5, 7.5, 41.5, 2.9);
-    const sil = S.union([shoe, loop], 1);
-    const eyes = [[42.5, 43.5], [50.5, 48.5], [59.5, 54], [68.5, 58.5], [77.5, 62]];
-    let laces = ""; eyes.forEach(p => { laces += lineP([[p[0] - .6, p[1] - .6], [p[0] + 1.6, p[1] - 7.2]]); });
-    let tread = ""; for(let x = 14; x < 90; x += 5.5) tread += "M" + F(x) + " " + F(82.8) + "V" + F(87);
-    let perf = ""; for(let r = 0; r < 3; r++) for(let k = 0; k < 5; k++){ const x = 50 + k * 6 + r * 3, y = 66 - r * 4.4 + k * 1.2; const ok = q => eyestay(...q) > .9 && toecap(...q) > .9 && counter(...q) > .9 && (q[1] < mid(q[0]) - 1.5); if(ok([x, y]) && ok([x + 2, y])) perf += "M" + F(x) + " " + F(y) + "H" + F(x + 2); }
+    const mid = x => 68 + 6.2 * Math.sin(Math.min(1, Math.max(0, (x - 6) / 64)) * Math.PI / 2) - Math.max(0, x - 82) * .18;
+    const obot = x => 81.6 - Math.max(0, x - 76) * .26 - Math.max(0, 16 - x) * .12;
+    const loop = S.capsule(10.6, 46.5, 8.6, 39.5, 2.7);
+    const sil = S.union([shoe, loop], 1.2);
+    const upper = S.inter(S.grow(shoe, .01), (x, y) => y - mid(x));
+    const sole = S.inter(S.inter(S.grow(shoe, .01), (x, y) => mid(x) - y), (x, y) => y - obot(x));
+    const outsole = S.inter(S.grow(shoe, .01), (x, y) => obot(x) - y);
+    const counter = S.inter(upper, S.ellipse(3, 64, 22, 23));
+    const bumper = S.inter(upper, S.ellipse(101, 71, 17.5, 12.5));
+    const edgeTop = (x0, x1, off, w) => { const p = []; for(let i = 0; i <= 20; i++){ const x = x0 + (x1 - x0) * i / 20; p.push([x, topAt(x) + off]); } for(let i = 20; i >= 0; i--){ const x = x0 + (x1 - x0) * i / 20; p.push([x, topAt(x) + off + w]); } return S.poly(p); };
+    function topAt(x){ for(let i = 9; i < 17; i++){ const a = outline[i], b = outline[i + 1]; if(x >= a[0] && x <= b[0]) return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return x < 45 ? 33 : 60; }
+    const eyestay = S.inter(upper, edgeTop(47, 88, 0, 7.6));
+    const tongue = S.inter(S.grow(shoe, .01), S.poly([[35, 47], [37.2, 38.5], [40.2, 32.4], [45.6, 32], [49, 36.6], [47.5, 43.5]]));
+    const lining = S.inter(S.grow(shoe, .01), S.poly([[11, 44], [19, 45.6], [27.5, 47.6], [34, 45.2], [36.5, 40], [37.5, 44.5], [34, 49.8], [27, 51.6], [19, 50], [12.5, 49]]));
+    const eyes = [0, 1, 2, 3, 4, 5].map(k => { const x = 51 + k * 6.3; return [x, topAt(x) + 4.6]; });
+    let laces = ""; eyes.forEach((p, k) => { laces += lineP([[p[0] - .3, p[1] - .3], [p[0] + 3.4, p[1] - 4.4 + .6]]); });
+    const wave = lineP(Array.from({ length: 23 }, (_, i) => { const x = 10 + i * 3.8; return [x, (mid(x) + obot(x)) / 2 + 1.2 * Math.sin(i * .9)]; }));
+    let tread = ""; for(let x = 17; x < 90; x += 5) tread += "M" + F(x) + " " + F(obot(x) + 1.2) + "V" + F(Math.min(85.4, obot(x) + 4.2));
+    let vents = ""; for(let r = 0; r < 3; r++) for(let k = 0; k < 7; k++){ const x = 54 + k * 4.4 + (r % 2) * 2.2, y = 58 + r * 3.8 + (x - 54) * .2;
+      const ok = q => eyestay(...q) > 1 && bumper(...q) > 1 && q[1] < mid(q[0]) - 2.4 && shoe(...q) < -2; if(ok([x, y]) && ok([x + 1.6, y])) vents += "M" + F(x) + " " + F(y) + "H" + F(x + 1.6); }
     CHAPTER_OBJ["Fitness, Wellness, and Stress Management"] = {
-      d: sh(sil), col: "#2D63D8", base: "field",
+      d: sh(sil), col: "#2F63D9", base: "field",
       plates: [
-        ["field", sh(g(shoe)), { dome: 1.4 }],                                                                              /* the mesh upper */
-        ["field", perf, { ln: 1.3, cut: .5, paint: 0 }],                                                                    /* its vents */
-        ["field", sh(g(counter)), { z: .4, bev: .7, dome: .6, col: "#1F4AA6" }],                                            /* the heel counter */
-        ["field", sh(g(toecap)), { z: .35, bev: .7, dome: .5, col: "#1F4AA6" }],                                            /* the toe cap */
-        ["field", keep(ellP(ax, 4, 66, 19.6, 18.6, -75, 30, 24), q => shoe(...q) < -1.2 && q[1] > 55 && q[1] < mid(q[0]) - 1.2) + keep(ellP(ax, 100, 74, 16.5, 10.5, 180, 260, 16), q => shoe(...q) < -1.2 && q[1] < mid(q[0]) - 1.2), { ln: .8, cut: .4, paint: 0 }],   /* their stitching */
-        ["field", sh(g(eyestay)), { z: .45, bev: .5, dome: .5, col: "#1B3F8E" }],                                           /* the eyestay */
-        ["steel", eyes.map(p => OBJ_circle(p[0], p[1], 1.9)).join(""), { z: .75, bev: .3, dome: .5 }],                     /* its eyelets */
-        ["glow", laces, { ln: 2.6, z: 1, bev: .4, dome: .3, col: "#C3E84A", sh: 1 }],                                       /* the laces */
-        ["rubber", sh(g(loop)), { z: .3, bev: .5, dome: .6, col: "#25282E" }],                                              /* the pull loop */
-        ["field", lineP([[12.5, 49.5], [21, 52.5], [30, 50]]), { ln: 2.4, z: .55, bev: .5, col: "#2A58BE" }],                /* the padded collar */
-        ["cream", sh(g(sole)), { z: .3, bev: .6, dome: .7, col: "#F2F3F5" }],                                              /* the midsole */
-        ["cream", lineP([[10, 76], [24, 78.5], [40, 76.5], [58, 79.5], [76, 78], [92, 77.5]]), { ln: .9, cut: .45, paint: 0 }],   /* its wave */
-        ["rubber", sh(g(outsole)), { z: .35, bev: .5, dome: .3, col: "#2C2F35" }],                                         /* the outsole */
-        ["rubber", tread, { ln: 1.6, cut: .5, paint: 0 }],                                                                  /* its tread */
+        ["field", sh(g(upper)), { dome: 1.3 }],                                                                                 /* the mesh upper */
+        ["rubber", sh(g(lining)), { z: -.6, bev: .8, col: "#1A2238" }],                                                         /* the lining at the ankle */
+        ["field", lineP([[12.5, 48.8], [19.5, 50.6], [27, 52.2], [33.8, 49.8]]), { ln: 3.2, z: .45, bev: .6, dome: .4, col: "#3A70E4" }],   /* the padded collar */
+        ["field", sh(g(tongue)), { z: .3, bev: .8, dome: .7, col: "#3B72E6" }],                                                 /* the tongue */
+        ["field", sh(g(counter)) + sh(g(bumper)), { z: .4, bev: .7, dome: .55, col: "#1F4AA6" }],                                /* the heel counter and toe bumper */
+        ["field", keep(ellP(ax, 3, 64, 19.8, 20.8, -60, 18, 24), q => counter(...q) < -1 && q[1] < mid(q[0]) - 1.4) + keep(ellP(ax, 101, 71, 15.2, 10.4, 186, 262, 16), q => bumper(...q) < -1 && q[1] < mid(q[0]) - 1.4) + vents + wave + tread, { ln: 1, cut: .45, paint: 0 }],   /* their stitching, the mesh's vents, the midsole's wave, the tread (one plate: the shoe is the first badge opened, so it is kept cheap) */
+        ["field", sh(g(eyestay)), { z: .45, bev: .5, dome: .4, col: "#1B3F8E" }],                                               /* the eyestay */
+        ["steel", eyes.map(p => OBJ_circle(p[0], p[1], 1.6)).join(""), { z: .75, bev: .3, dome: .5 }],                          /* its eyelets */
+        ["cream", laces, { ln: 2.4, z: 1, bev: .4, dome: .3, col: "#F5F7FA", sh: 1 }],                                           /* the laces */
+        ["cream", sh(g(sole)), { z: .35, bev: .6, dome: .7, col: "#F2F3F5" }],                                                  /* the midsole */
+        ["hot", lineP(Array.from({ length: 25 }, (_, i) => { const x = 8.5 + i * 3.6; return [x, mid(x) + .2]; })), { ln: 1.6, z: .5, bev: .4, col: "#FF7A1F" }],   /* the orange piping */
+        ["rubber", sh(g(outsole)), { z: .35, bev: .5, dome: .3, col: "#2A2D33" }],                                              /* the outsole */
+        ["hot", sh(g(loop)) + OBJ_rrect(41.6, 31.9, 3.4, 2.6, 1.2), { z: .4, bev: .5, dome: .6, col: "#FF7A1F" }],                /* the heel pull loop, the tongue's tab */
       ],
     };
   }
@@ -527,7 +549,7 @@
         ["field", sh(g(tail)), { dome: 1.1 }],                                                                             /* the tail */
         ["field", tailC, { ln: .9, cut: .45, paint: 0 }],
         ["field", sh(g(body)), { z: .4, bev: .8, dome: 2.4, sh: 1 }],                                                     /* the body and head */
-        ["field", sh(g(nearW)), { z: .6, bev: 1, dome: 1.8, col: "#F8F9F6", sh: 1 }],                                    /* the near wing */
+        ["field", sh(g(nearW)), { z: .35, bev: 1.8, dome: 1.8, col: "#F8F9F6" }],                                    /* the near wing */
         ["field", prim, { ln: 1, cut: .5, paint: 0 }],                                                                     /* its primaries */
         ["field", cov, { ln: .8, cut: .4, paint: 0 }],                                                                     /* its coverts */
         ["field", all(g(S.union([sprig, leaves], .5))), { z: .5, bev: .5, dome: .7, col: "#5E9A3A" }],                    /* the olive sprig */
@@ -563,7 +585,9 @@
         ["field", sh(g(env)), { z: .9, bev: .8, dome: .9, sh: 1 }],                                                           /* the envelope */
         ["field", "M10 91L40 66M90 91L60 66M9.5 47.5Q50 52 90.5 47.5", { ln: .9, cut: .45, paint: 0 }],                       /* the side flaps' folds */
         ["field", OBJ_circle(50, 58, 6), { z: 1.1, bev: .5, dome: .4, col: "#C29A55" }],                                       /* the reinforced eyelet */
-        ["brass", OBJ_circle(50, 58, 3.4) + OBJ_rrect(42, 56.4, 16, 3.2, 1.6), { z: 1.5, bev: .4, dome: .7 }],               /* the brass clasp */
+        ["brass", OBJ_poly([[49.2, 57], [43.2, 53.2], [42.2, 54.8], [48.6, 59.4]], .9) + OBJ_poly([[50.8, 57], [56.8, 53.2], [57.8, 54.8], [51.4, 59.4]], .9), { lvl: "clasp", z: 1.3, bev: .4, dome: .5 }],   /* the clasp's prongs, spread */
+        ["brass", OBJ_circle(50, 58, 3.3), { lvl: "clasp", z: 1.6, bev: .4, dome: .6 }],                                          /* its washer */
+        ["brass", OBJ_circle(50, 58, 1.3), { lvl: "clasp", z: 1.1, bev: .3, col: "#8A6A2A" }],               /* the brass clasp */
       ],
     };
   }
@@ -584,11 +608,11 @@
         ["steel", all(g(rg)), { dome: 1.2 }],                                                                              /* the ring */
         ["field", all(ring(C[0], C[1], 32, 27)), { z: -.4, bev: .5, col: "#1F3A78" }],                                     /* its navy band */
         ["steel", beads, { z: .1, bev: .3, dome: .5 }],                                                                     /* its beads */
-        ["brass", sh(g(S.grow(S.poly(star(41, 16.5)), 1.2))), { z: 1, bev: .6, gem: 2.4, gw: 9, sh: 1 }],                  /* the star, faceted */
-        ["brass", ridges, { ln: .7, cut: .35, paint: 0 }],
-        ["brass", all(g(balls)), { z: 1, bev: .5, dome: 1.4 }],                                                             /* the balls on its points */
-        ["field", OBJ_circle(C[0], C[1], 9.5), { z: 1.5, bev: .6, dome: .5, col: "#1F3A78" }],                              /* the centre */
-        ["brass", OBJ_poly(star(7.5, 3.1), .4), { z: 2, bev: .4, gem: .5, gw: 1.6 }],                                       /* its star */
+        ["brass", sh(g(S.grow(S.poly(star(41, 16.5)), 1.2))), { lvl: "star", z: 1, bev: .6, gem: 2.4, gw: 9, sh: 1 }],                  /* the star, faceted */
+        ["brass", ridges, { lvl: "star", ln: .7, cut: .35, paint: 0 }],
+        ["brass", all(g(balls)), { lvl: "star", z: 1.1, bev: .5, dome: 1.4 }],                                                             /* the balls on its points */
+        ["field", OBJ_circle(C[0], C[1], 9.5), { lvl: "star", z: 1.6, bev: .6, dome: .5, col: "#1F3A78" }],                              /* the centre */
+        ["brass", OBJ_poly(star(7.5, 3.1), .4), { lvl: "star", z: 2.1, bev: .4, gem: .5, gw: 1.6 }],                                       /* its star */
       ],
     };
   }
@@ -616,9 +640,9 @@
         ["brass", OBJ_circle(21.5, 53.8, 3.1) + OBJ_circle(78.5, 53.8, 3.1), { z: 1, bev: .4, dome: .9 }],                 /* its buttons */
         ["rubber", sh(g(peak)), { z: .7, bev: .8, dome: 1.6, col: "#121417", sh: 1 }],                                    /* the peak */
         ["rubber", lineP(ellP(ax, 50, 58, 36, 21, 12, 168, 30)), { ln: .9, cut: .45, paint: 0 }],                          /* its stitched edge */
-        ["brass", shield, { z: 1.1, bev: .6, dome: .7, sh: 1 }],                                                           /* the cap shield */
-        ["field", OBJ_circle(50, 34.5, 5.2), { z: 1.6, bev: .4, dome: .4, col: "#24345F" }],                               /* its enamel centre */
-        ["brass", OBJ_poly([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => polar([50, 34.8], i % 2 ? 1.6 : 3.8, -90 + i * 36)), .3), { z: 2, bev: .3, gem: .4, gw: 1 }],
+        ["brass", shield, { lvl: "shield", z: 1.1, bev: .6, dome: .7, sh: 1 }],                                                           /* the cap shield */
+        ["field", OBJ_circle(50, 34.5, 5.2), { lvl: "shield", z: 1.6, bev: .4, dome: .4, col: "#24345F" }],                               /* its enamel centre */
+        ["brass", OBJ_poly([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => polar([50, 34.8], i % 2 ? 1.6 : 3.8, -90 + i * 36)), .3), { lvl: "shield", z: 2, bev: .3, gem: .4, gw: 1 }],
       ],
     };
   }
@@ -689,7 +713,7 @@
         ["field", lineP(rib(-RX / 2).slice(2)) + lineP(rib(0).slice(2)) + lineP(rib(RX / 2).slice(2)), { ln: 1.2, z: .25, bev: .3, col: "#24508F" }],   /* the ribs */
         ["steel", all(g(tipBalls)), { z: .4, bev: .4, dome: .8 }],                                                           /* the rib tips */
         ["steel", sh(g(fin)), { z: .5, bev: .4, dome: .9 }],                                                                  /* the finial */
-        ["red", sh(g(heart)), { z: 1, bev: .9, dome: 2.4, col: "#D8352C" }],                                          /* the heart */
+        ["red", sh(g(heart)), { lvl: "heart", z: 1, bev: .9, dome: 2.4, col: "#D8352C" }],                                          /* the heart */
       ],
     };
   }
@@ -709,7 +733,8 @@
        arches across the foot of the pad; all clipped to inside the pad's bevel */
     const inPad = p => rell(FP[0], FP[1], 16.5, 21, 90 + fpA)(...p) < -2.6;
     const clip = pts => { let d = "", run = []; pts.forEach(p => { if(inPad(p)) run.push(p); else { if(run.length > 1) d += lineP(run); run = []; } }); if(run.length > 1) d += lineP(run); return d; };
-    let ridges = ""; for(let k = 0; k < 7; k++){ const rx = 1.6 + k * 1.95, ry = 2.4 + k * 2.45, o = [], a0 = 235 - k * 4, a1 = 235 + 300 + k * 4; for(let i = 0; i <= 40; i++){ const t = (a0 + (a1 - a0) * i / 40) * D; o.push(P(rx * Math.cos(t), -3.5 + ry * Math.sin(t))); } ridges += clip(o); }
+    /* (round 3) a whorl: closed loops round the core, each a little off the last so they read as one ridge winding out */
+    let ridges = ""; for(let k = 0; k < 6; k++){ const rx = 1.8 + k * 2.05, ry = 2.6 + k * 2.55, o = []; for(let i = 0; i <= 48; i++){ const t = (i / 48) * 2 * Math.PI; o.push(P(rx * Math.cos(t) + .25 * k * Math.cos(t * 2), -3.2 - .3 * k + ry * Math.sin(t))); } ridges += clip(o); }
     for(let k = 0; k < 3; k++){ const y = 14.5 + k * 2.4, w = 16, o = []; for(let i = 0; i <= 20; i++){ const x = -w + 2 * w * i / 20; o.push(P(x, y - 3 * Math.cos(x / w * Math.PI / 2))); } ridges += clip(o); }
     let lines = ""; [[-8, 18], [-2, 22], [4, 14], [10, 20]].forEach(([y, l]) => { lines += lineP([Q(-10, y), Q(-10 + l, y)]); });
     CHAPTER_OBJ["Identity Crimes"] = {
@@ -722,8 +747,8 @@
         ["brass", lineP([Q(-23.5, -8.5), Q(-23.5, 3.5)]) + lineP([Q(-30.5, -2.5), Q(-16.5, -2.5)]), { ln: .9, cut: .45, paint: 0 }],
         ["field", sh(photo), { z: -.6, bev: .5, col: "#A8C0D8" }],                                                          /* the photo window */
         ["ink", lines, { ln: 1.6, cut: .3, col: "#7E93A8" }],                                                                /* the details */
-        ["field", sh(g(pad)), { z: 1, bev: .9, dome: 1.6, col: "#263F6B", sh: 1 }],                                          /* the fingerprint */
-        ["water", ridges, { ln: 1.25, z: 1.2, bev: .35, col: "#8CBDEE" }],                                                  /* its ridges */
+        ["field", sh(g(pad)), { lvl: "fp", z: 1, bev: .9, dome: 1.6, col: "#263F6B", sh: 1 }],                                          /* the fingerprint */
+        ["water", ridges, { lvl: "fp", ln: 1.25, z: 1.25, bev: .35, col: "#8CBDEE" }],                                                  /* its ridges */
       ],
     };
   }
@@ -735,7 +760,7 @@
   {
     const ear = S.union([S.ellipse(61, 36, 21, 30), S.ellipse(54, 80, 10.5, 13), S.poly([[42, 40], [80, 44], [65, 78], [44.5, 76]])], 9);
     const rimIn = S.grow(ear, -6.2);
-    const hollow = S.minus(S.inter(rimIn, S.box(0, 0, 100, 72, 0)), S.union([S.box(0, 40, 47, 40, 0)], 0));
+    const hollow = S.minus(S.inter(rimIn, S.ellipse(64, 37, 16.5, 30)), S.ellipse(54, 82, 10, 12));
     const anti = S.union([S.tube([59, 67], [71, 52], [67, 32], () => 3.6, 14), S.tube([67, 32], [64, 19], [51, 20], () => 3, 12)], 1.5);
     const concha = S.union([S.ellipse(54, 52, 9.5, 11.5), S.ellipse(56, 40, 6, 4)], 3);
     const crus = S.tube([45, 40], [52, 37], [60, 42], () => 2.2, 10);
@@ -769,7 +794,7 @@
     const rightS = S.poly([[x1 - 1, y0 + 1], [x1 + d - 1, y0 - d * .8], [x1 + d, y1 - 4 - d * .8], [x1, y1 - 3]]);
     const pages = S.union([topS, rightS], 0);
     const tk = rbox(62, 20, 46, 18, 14, 2.5);
-    const ticket = S.minus(tk, S.union([cover, S.box(0, y0 - 1, 100, 100, 0)], 0));
+    const ticket = S.minus(tk, cover);
     const sil = S.union([cover, pages, tk], 1);
     const G = [43, 47], GR = 12.5;
     const glob = lineP(ellP(ax, G[0], G[1], GR * .45, GR, 0, 360, 30)) + lineP(ellP(ax, G[0], G[1], GR, GR * .35, 180, 360, 20)) + lineP(ellP(ax, G[0], G[1], GR, GR * .35, 0, 180, 20)) + "M" + F(G[0]) + " " + F(G[1] - GR) + "V" + F(G[1] + GR);
