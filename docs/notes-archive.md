@@ -43068,3 +43068,7 @@ whatever else. We have a pretty massive new build on our hands here."
   (3) a sign-up never sees it; (4) inside the SE, Pro Max and iPad, nothing scrolls; (5) the history leads with 11, no page errors;
   (6) Fire Code gets it too, with the calculator row. ALL PASS here; --against the previous head FAILS (1), (4), (5) and (6).
   check-b384-whatsnew10 is superseded (it asks for Version 10's card).
+- WORDING: Fire Code turns "unit" into "chapter" in every string it shows (CHAPTER_RX), so the first row's "pin of its unit or
+  chapter" read "chapter or chapter" there. It is "a raised metal pin of what its unit is about" in the card and the history, which
+  reads right in both classes. Shots: Pro Max both classes, iPad Fire Code (2x). Fire Code gates that never marked the card seen
+  (they did not need to before) were sampled after the change: check-b384-calc, -pin and -friendprofile ALL PASS.
