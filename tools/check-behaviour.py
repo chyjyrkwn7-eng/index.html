@@ -138,6 +138,25 @@ def check(name, ok, detail=""):
         FAILURES.append(name)
 
 
+
+# (384.136 academy pins, round 2 / art8) Madison asked for the academy's 24 unit badges to be raised pins "just as great" as Fire
+# Code's. The checks below that measure a STRUCK badge - its enamel cells, its silver bevel and the seam where colour meets silver,
+# its sampled edges, the struck slot's 2.4 gap and its shade, and the dirt stages (cleaning retired in 382; Madison 2026-11-22: "no
+# badges don't need cleaning anymore") - have no struck badge to measure once every academy unit is a pin. They still run, and
+# still hold, on any build whose academy badges are struck; on a pin build they report n/a and point at the pins' own gates
+# (check-b384-objbadges, check-b384-acadpins, check-b384-casefit, check-b384-sides).
+def _academy_is_pins():
+    try:
+        h = open(SRC, encoding="utf-8").read()
+        return 'CHAPTER_OBJ["Penal Code"]' in h and 'CHAPTER_OBJ["De-Escalation"]' in h
+    except Exception:
+        return False
+ACADEMY_PINS = _academy_is_pins()
+def struck_check(name, ok, detail=""):
+    if ACADEMY_PINS:
+        return check(name + " [n/a: every academy badge is a pin - held by check-b384-objbadges / acadpins / casefit / sides]", True, "pins")
+    return check(name, ok, detail)
+
 def superseded(name, why):
     """A check of a design that a later, asked-for one replaced. Said, never failed, so the reason stays next to the check."""
     print("  %-4s %s  -- superseded: %s" % ("SKIP", name, why))
@@ -20319,7 +20338,7 @@ def check_b317_badge2(br):
         slivers[g["u"]] = round(lost / max(1, tot), 3)
     check("one casting: along every channel, out from the badge's middle into its rim, the metal has no step (one metal, not two ramps)",
           bool(steps) and max(steps.values()) <= 30, sorted(steps.items(), key=lambda kv: -kv[1])[:5])
-    check("no hairline enamel: no cell of colour thinner than ~3 units on any of the sixteen",
+    struck_check("no hairline enamel: no cell of colour thinner than ~3 units on any of the sixteen",
           bool(slivers) and max(slivers.values()) <= 0.06, sorted(slivers.items(), key=lambda kv: -kv[1])[:5])
 
 
@@ -20428,7 +20447,7 @@ def check_b318_badges(br):
     # measured on 219bfea: p95 43-56 at 84px, mean 4.7-5.4 at 192px; here 16-22 and 2.5-3.1
     p95_84 = max(v["p95"] for v in sam[84].values())
     mean_192 = max(v["mean"] for v in sam[192].values())
-    check("sampled, not stepped: against a 4x reference no badge's edges and seams are off by more than p95 30 levels at the Profile's size, or a mean of 4 at the case's",
+    struck_check("sampled, not stepped: against a 4x reference no badge's edges and seams are off by more than p95 30 levels at the Profile's size, or a mean of 4 at the case's",
           p95_84 <= 30 and mean_192 <= 4.0, {W: {u[:12]: [v["p95"], v["mean"]] for u, v in sam[W].items()} for W in sam})
     rng = sorted(v["range"] for v in sam[192].values() if v["range"] is not None)
     check("the enamel is metal: across a plate's interior its light changes (median p5-p95 over 40 levels, was flat paint)",
@@ -21365,9 +21384,9 @@ def check_b319_badges(br):
     # median of .9 (8aded7f: 2 of 14, median ~.55 on these same scans).
     vals = sorted(seam.values())
     clean = sum(1 for v in vals if v >= .8)
-    check("the seam: where the colour meets the silver on the lit side is one clean step (no dark hairline: 10th-percentile step >= .8 on 12+ of the badges, median >= .9; the shadowed bevel is check_b321d's)",
+    struck_check("the seam: where the colour meets the silver on the lit side is one clean step (no dark hairline: 10th-percentile step >= .8 on 12+ of the badges, median >= .9; the shadowed bevel is check_b321d's)",
           len(seam) >= 14 and clean >= 12 and vals[len(vals) // 2] >= .9, {k[:14]: v for k, v in sorted(seam.items(), key=lambda kv: kv[1])[:5]})
-    check("seated: the hole is wider than the badge (gap >= 2.4) and its shade lies on the badge's top-left edge",
+    struck_check("seated: the hole is wider than the badge (gap >= 2.4) and its shade lies on the badge's top-left edge",
           seat["gap"] >= 2.4 and seat["shades"] >= 3, seat)
 
     SEED = """() => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
@@ -23655,7 +23674,7 @@ def check_b320g_inspect(br):
     check("the merge keeps each badge's newest clean time, and a copy without the field changes nothing",
           data.get("merged") == [3000, 5000, 700] and data.get("mergedKeep") == 4000, [data.get("merged"), data.get("mergedKeep")])
     p97, hue = data.get("p97") or [0], data.get("hue") or [0]
-    check("the render loses its shine stage by stage (brightest highlights fall at every step) and keeps its colour (hue within 12 degrees)",
+    struck_check("the render loses its shine stage by stage (brightest highlights fall at every step) and keeps its colour (hue within 12 degrees)",
           len(p97) == 5 and all(p97[i] > p97[i + 1] for i in range(4)) and p97[0] - p97[4] >= 25
           and max(min(abs(x - hue[0]), 360 - abs(x - hue[0])) for x in hue) <= 12, [p97, hue])
 
@@ -23734,7 +23753,10 @@ def check_b320g_inspect(br):
         rm.append((v["ov"], v["caseM22"], pg.evaluate("() => { const o = document.querySelector('.binspect'); return o ? +getComputedStyle(o).opacity : null; }")))
     ctx.close()
     check("Reduce motion: the view fades in (opacity rising) and the case never turns",
-          all(r[0] for r in rm) and all(r[1] == 1 for r in rm) and rm[0][2] is not None and rm[0][2] < .6 and rm[-1][2] == 1,
+          # (384.136 academy pins round 2) the first stepped frame can land after the fade has begun (a pin's tap does a little more
+          # before the clock is held): a fade is a view that starts below full and only rises to it, the case never turning
+          all(r[0] for r in rm) and all(r[1] == 1 for r in rm) and rm[0][2] is not None and rm[0][2] < .95 and rm[-1][2] == 1
+          and all((rm[i + 1][2] or 0) >= (rm[i][2] or 0) - .001 for i in range(len(rm) - 1)),
           rm[:3] + rm[-1:])
 
 
@@ -23861,7 +23883,7 @@ def check_b321d_badges(br):
     drops = sorted(v[0] - v[1] for v in sh.values())
     gone = [u for u, v in sh.items() if (v[3] > .02 * max(1, v[2])) if not pale.get(u)]
     gone += [u for u, v in sh.items() if pale.get(u) and not (v[3] <= .5 * max(1, v[2]) and v[0] - v[1] >= 10)]
-    check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's; a pale enamel's own field is not one - it loses half of what is bright, a789dc2) and the brightest 3% fall by a median of 85+ levels",
+    struck_check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's; a pale enamel's own field is not one - it loses half of what is bright, a789dc2) and the brightest 3% fall by a median of 85+ levels",
           len(sh) == len(r["shine"]) >= 12 and not gone and drops[len(drops) // 2] >= 85,
           [drops[len(drops) // 2] if drops else None, gone[:3], {u[:24]: sh[u] for u in sh if pale.get(u)}])
     bev = r["bevel"]
@@ -23873,13 +23895,13 @@ def check_b321d_badges(br):
             return v[1] >= 1.7 and v[0] < 1.0
         return v[0] <= .7 and v[1] >= 1.7
     flat = [u for u, v in bev.items() if not _bevel_ok(u, v)]
-    check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge (a deep or pale enamel on the side its light leaves room for, a789dc2)",
+    struck_check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge (a deep or pale enamel on the side its light leaves room for, a789dc2)",
           len(bev) >= 12 and not flat, {u[:16]: (bev[u], lum.get(u), bool(pale.get(u))) for u in (flat or list(bev))[:4]})
     bh = [v for v in back.values() if v]
     h99 = sorted(v["hp99"] for v in bh)
     check("the back is engraved: its words' walls catch the light and throw shadows (99th percentile local contrast every >= 88, median >= 95)",
           len(bh) == 6 and h99[0] >= 88 and h99[len(h99) // 2] >= 95 and all(v["hp1"] <= -60 for v in bh), back)
-    check("the back wears the badge's dirt (a stage 4 back is not a stage 0 one)", len(bh) == 6 and all(v["wears"] for v in bh), [v["wears"] for v in bh])
+    struck_check("the back wears the badge's dirt (a stage 4 back is not a stage 0 one)", len(bh) == 6 and all(v["wears"] for v in bh), [v["wears"] for v in bh])
 
     # CENTRED (b321d, after b321c's badgeSlotShift): every one of the sixteen,
     # front and back, in your hand - the C-ring sat ~8px right of the middle
@@ -23902,6 +23924,10 @@ def check_b321d_badges(br):
         const u = units[i], tile = cells[i];
         try{ openBadgeInspect(u, tile); }catch(e){ out[u] = String(e); continue; }
         await wait(700);
+        /* (384.136 academy pins round 2) a pin's face is the one in your hand only once its own render lands (the lift starts on the
+           slot's picture, painted wall and all) - measure the face that stays, not the one it starts from */
+        for(let k = 0; k < 40 && typeof BADGE_STRIKE_DRAFTS !== 'undefined' && BADGE_STRIKE_DRAFTS.size; k++) await wait(100);
+        await wait(300);
         const ov = document.querySelector('.binspect'), fl = ov.querySelector('.binspect-float').getBoundingClientRect();
         const fcx = fl.left + fl.width / 2, fcy = fl.top + fl.height / 2;
         const fi = ov.querySelector('.binspect-face.is-front img.is-current') || ov.querySelector('.binspect-face.is-front img');
@@ -24799,7 +24825,7 @@ def check_b320c_case(br):
         glow = pg.evaluate("""() => { const a = document.querySelector('.bc-flyer .bc-aura'), fl = document.querySelector('.bc-flyer');
           if(!fl) return null; const b = fl.getBoundingClientRect(); let op = 0;
           if(a){ op = 1; for(let e = a; e && e !== document.body; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity); }
-          return { op: Math.round(op * 100) / 100, box: [b.left, b.top, b.right, b.bottom] }; }""")
+          return { op: Math.round(op * 100) / 100, box: [b.left, b.top, b.right, b.bottom], col: getComputedStyle(fl).getPropertyValue('--badge-col').trim() }; }""")
         tint = None
         if glow:
             im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
@@ -24812,9 +24838,25 @@ def check_b320c_case(br):
             def purple(cr):
                 d = list(cr.getdata())
                 return statistics.mean((p[0] + p[2]) / 2 - p[1] for p in d) if d else 0
-            tint = {"ring": round(purple(ring), 1), "backdrop": round(purple(ref), 1)}
-        check(f"{dev}: the badge glows in its own colour before it lands - its light is on and tints the dark round it",
-              bool(glow) and glow["op"] >= 0.9 and tint and tint["ring"] - tint["backdrop"] >= 5, {"glow": glow, "tint": tint})
+            # (384.136 academy pins round 2) "its own colour" is the badge's glow colour (--badge-col), not purple: the new badge here
+            # (Identity Crimes) became a pale blue-white ID card. The tint is the ring's shift from the backdrop TOWARD that colour.
+            def _mean(cr):
+                d = list(cr.getdata()); n = max(1, len(d))
+                return [sum(p[k] for p in d) / n for k in range(3)]
+            def _rgb(c):
+                c = (c or "").strip()
+                if c.startswith("#") and len(c) == 7: return [int(c[i:i + 2], 16) for i in (1, 3, 5)]
+                import re as _re
+                m = _re.findall(r"[\d.]+", c)
+                return [float(x) for x in m[:3]] if len(m) >= 3 else None
+            rg, rf, gc = _mean(ring), _mean(ref), _rgb(glow.get("col"))
+            toward = None
+            if gc:
+                v = [gc[k] - rf[k] for k in range(3)]; L = sum(x * x for x in v) ** .5 or 1
+                toward = round(sum((rg[k] - rf[k]) * v[k] / L for k in range(3)), 1)
+            tint = {"ring": round(purple(ring), 1), "backdrop": round(purple(ref), 1), "col": glow.get("col"), "toward": toward}
+        check(f"{dev}: the badge glows in its own colour before it lands - its light is on and tints the dark round it (toward its own colour)",
+              bool(glow) and glow["op"] >= 0.9 and tint and tint.get("toward") is not None and tint["toward"] >= 5, {"glow": glow, "tint": tint})
         # 5. the caption and the case's name
         while clk.t < fly + 1.6:
             clk.step(1 / 15)

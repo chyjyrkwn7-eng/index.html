@@ -42869,3 +42869,29 @@ Madison (2026-11-22), of the academy pins' dirt: "no badges don't need cleaning 
 nothing changes - cleaning was already retired in build 382 (badgeDirtStage returns 0 for every badge, nothing rubs a badge clean, the
 "Rub to clean it." line went with it). store.badgeCleanedAt is still kept, merged and synced (never drop a persisted field) and read by
 nothing. The academy pins go out in the same push as everything else on claude/b384-final.
+
+## art8 gates on the combined branch (academy pins + Fire Code fixes): what failed, what was inherited, what changed
+
+Full run on 266cbb6 (one at a time): check-js, badgeart, badgetwins, chapterbadges, casefit, sides, acadpins, objbadges --class
+academy, unlocks, unlocks2, fxthumb, check-unlocks, a2hs, installpage, casefix (no summary line; every line PASS) ALL PASS; sweep-layout
+--quick 20/20 clean. check-behaviour's ten badge sections: 15 failures are INHERITED (identical on eff47c6, before the academy pins:
+the Profile case's plate/handle/'Level 1 Badge Case' and the cutscene/Profile one-case checks - left for their own pass), 14 came with
+the pins:
+- 8 measure a STRUCK badge (enamel cells, the silver bevel and its seam, sampled edges, the struck slot's 2.4 gap and shade, the dirt
+  stages): on a build whose academy badges are all pins they now report n/a (struck_check / ACADEMY_PINS in check-behaviour), and
+  still hold on a struck build. Pins are held by objbadges/acadpins/casefit/sides.
+- "glows in its own colour before it lands" measured PURPLE (the old Identity Crimes); now the ring's shift toward the badge's own
+  --badge-col (the ID card's #CFE0F0).
+- "in your hand every badge sits on the middle": waits for the pin's own face (no draft pending) before measuring - the lift starts
+  on the slot's picture, painted wall and all (Chapter 1 shows the same 2/6px on its first open in Fire Code).
+- Reduce motion's fade: the first stepped frame can land at .83 with a pin's heavier tap; a fade is now "starts below full, only rises,
+  ends at 1, the case never turns". (Tap cost measured: academy pins and Fire Code pins alike - tens of ms in the tap, the side and back
+  built over the next second.)
+- REAL: Professionalism and Ethics sat 21px high in your hand and 3.9px in its slot - a `hole` lying OUTSIDE its outline (the finial,
+  y 2.1-18.1) became a filled region through chapterObjShape, while CHAPTER_OBJ_BBOX (from `d` alone) said y 18.1-96. Sent to the
+  academy art pass (round 3) to put the finial into the outline; every other badge's bbox matches its shape (82 measured).
+check-centering --quick: 4 off centre, the same on origin/main 384.120: the two-line menu glyph (buildPageMenuIcon, "M5 10.5h14M5
+15.5h9.5") inked 9.5-16.5 about 13 in its 24 box - 0.51-0.64px low in the Home Screen sheet's grey circle. Now "M5 9.5h14M5 14.5h9.5":
+ALL PASS, 0 off centre. check-b384-a2hstip (1b) wanted the words "menu button" in step 1, which since 384.112 DRAWS the button
+(Madison: "that image of the button isn't accurate") - the drawn glyph now counts (inherited from main). objbadges (4) PERF: Chapter
+32 cold 6.36x against 6.0 under the agents' load (6.29 earlier, passed on a rerun) - rerun when quiet.

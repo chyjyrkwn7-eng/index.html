@@ -99456,7 +99456,9 @@ function buildPageMenuIcon(){
   svg.setAttribute("aria-hidden", "true");
   const p = document.createElementNS(svgNS, "path");
   /* (384.112) as it is on the iPhone: two lines, a long one over a short one (a small speaker over them while the page plays a video) */
-  p.setAttribute("d", "M5 10.5h14M5 15.5h9.5");
+  /* (art8) centred in its 24-unit box: the ink (round caps, stroke 2) runs 8.5-15.5 about 12 - at 10.5/15.5 it sat a unit low, 0.5-0.64px
+     in the Home Screen sheet's grey circle (check-centering, on main 384.120 as well) */
+  p.setAttribute("d", "M5 9.5h14M5 14.5h9.5");
   p.setAttribute("fill", "none"); p.setAttribute("stroke", "currentColor"); p.setAttribute("stroke-width", "2"); p.setAttribute("stroke-linecap", "round");
   svg.appendChild(p);
   return svg;

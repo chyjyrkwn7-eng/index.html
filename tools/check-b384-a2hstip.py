@@ -67,10 +67,13 @@ with sync_playwright() as pw:
         and re.search(r"later|not now", r["close"], re.I) and not re.search(r"computer", r["intro"], re.I), r)
     if r:
         # (384.133) the walkthrough in the tip teaches the new Safari's route: step 1 is the menu button at the left of the address bar, then Share
+        # (art8) since 384.112 the step DRAWS the menu button (buildPageMenuIcon, two lines) in place of the words "menu button" - Madison:
+        # "What if it literally pointed to it? Also that image of the button isn't accurate" - so the drawn icon counts as naming it
         st1 = pg.evaluate("""()=>{ const li=document.querySelector('#a2hs-sheet .a2hs-apple .a2hs-step'); const m=li&&li.querySelector('.a2hs-step-main');
-            return m ? { text:m.textContent.replace(/\\s+/g,' ').trim(), circles:[...m.querySelectorAll('svg')].map(v=>v.querySelectorAll('circle').length) } : null; }""")
+            return m ? { text:m.textContent.replace(/\\s+/g,' ').trim(), circles:[...m.querySelectorAll('svg')].map(v=>v.querySelectorAll('circle').length),
+              menuIcon:[...m.querySelectorAll('svg path')].some(q=>/^M5 [\\d.]+h14M5 [\\d.]+h9\\.5$/.test(q.getAttribute('d')||'')) } : null; }""")
         chk("(1b) iPhone: the tip's step 1 is the menu button at the left of the address bar, then Share, with no dots drawn in it (%s)" % (st1 and st1["text"]),
-            bool(st1) and bool(re.search(r"menu button", st1["text"], re.I)) and bool(re.search(r"left of the address bar", st1["text"], re.I)) and bool(re.search(r"Share", st1["text"]))
+            bool(st1) and (bool(re.search(r"menu button", st1["text"], re.I)) or st1.get("menuIcon")) and bool(re.search(r"left of (Safari.s |the )?address bar", st1["text"], re.I)) and bool(re.search(r"Share", st1["text"]))
             and len(st1["circles"]) >= 1 and 3 not in st1["circles"], st1)
         G["sheet_layout"](pg, "Quick tip sheet")
         gone = G["close_sheet"](pg)
