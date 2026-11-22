@@ -59,7 +59,12 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # badges to be raised pins "just as great" as Fire Code's, so every academy badge surface (tokens, sheet, case, hand, cards, cutscene)
 # differs from 31588af on purpose (the run before this re-pin: all 24 tokens, 48 sheet images, the case, the hand, 18 cards, 8 cutscene
 # frames, and nothing in Fire Code's class that the base commit 21a1a45 had not already changed). 560d3bc is that art.
-REFS = {"academy": arg("--acad-ref", "560d3bc"), "ifc": arg("--ifc-ref", "c2417de")}
+# (art9) Fire Code's reference RE-PINNED from c2417de to d4f9fae: Madison, of the badges, "There's a lot of spots all over that just
+# don't look right ... we want perfection. Double check the fire code ones as well". 37 of the 58 Fire Code pins were cleaned at their
+# joins (each part stops where the part in front of it starts), so their tokens, sheet images, the case, the hand, the cards holding
+# them and the cutscene differ from c2417de on purpose (the run before this re-pin: (2) 37 of 58 units - exactly the 37 changed -
+# (1) 74 sheet images = those 37 on both devices, (3) case 2, hand 2, cards 6, cutscene 8, and nothing else). d4f9fae is that art.
+REFS = {"academy": arg("--acad-ref", "560d3bc"), "ifc": arg("--ifc-ref", "d4f9fae")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene
