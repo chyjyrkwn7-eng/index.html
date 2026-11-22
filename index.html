@@ -12185,7 +12185,7 @@
   /* the video screen: the heading and the clip stay in the top ~40% of the screen, above the share menu that rises over the rest.
      The clip's box is these three properties (a new recording is cropped here, not in code): --iv-ar is the box's width / height,
      --iv-pos which part of the frame is kept (x y), --iv-scale a zoom into it. --iv-h is the height the top 40% leaves. */
-  .installvideo-panel{ --iv-ar:1.4; --iv-pos:50% 92%; --iv-scale:1;
+  .installvideo-panel{ --iv-ar:.776; --iv-pos:50% 50%; --iv-scale:1;
     --iv-h:max(7rem, calc(40vh - env(safe-area-inset-top, 0px) - 6.5rem)); --iv-h:max(7rem, calc(40dvh - env(safe-area-inset-top, 0px) - 6.5rem)); }
   .if-vhead{ margin:0 0 .75rem; font-size:clamp(1.15rem, 5vw, 1.55rem); font-weight:700; line-height:1.2; color:var(--ink); text-align:center; text-wrap:balance; font-family:inherit; text-transform:none; }
   .iv-route{ margin:-.35rem 0 .7rem; text-align:center; font-size:.95rem; line-height:1.35; color:var(--soft); text-wrap:balance; }
@@ -12194,8 +12194,18 @@
     color:var(--ink); background:color-mix(in srgb, var(--ink) 14%, transparent); }
   .iv-route-ic svg{ width:1em; height:1em; display:block; }
   .iv-route-step{ white-space:nowrap; }
+  .iv-route-ic svg{ width:1.15em; height:1.15em; }
+  .iv-pointer{ position:fixed; left:0; top:0; z-index:5; pointer-events:none; overflow:visible; }
+  .iv-pointer path{ fill:none; stroke:#FFD34D; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .iv-pointer-line{ opacity:.9; }
+  @media (prefers-reduced-motion:no-preference){
+    .iv-pointer-head{ animation:iv-point 1.1s ease-in-out infinite; }
+    @keyframes iv-point{ 0%, 100%{ transform:translateY(-3px); } 50%{ transform:translateY(3px); } }
+  }
+  [data-reduce-motion="true"] .iv-pointer-head{ animation:none; }
   .iv-route-sub{ display:block; margin-top:.2rem; font-size:.82rem; color:var(--soft); }
-  @media (max-height:46rem) and (max-width:39.99rem){ .iv-route-sub{ display:none; } .iv-route{ font-size:.88rem; margin-bottom:.45rem; } }   /* a short phone (an SE): the clip still ends in the top 45% */
+  @media (max-height:46rem) and (max-width:39.99rem){ .iv-route-sub{ display:none; } .iv-route{ font-size:.88rem; margin-bottom:.45rem; }
+    .installvideo-panel{ --iv-h:calc(44dvh - 10.25rem); } }   /* (384.112) the tall clip takes the room down to 44% of the screen */   /* a short phone (an SE): the clip still ends in the top 45% */
   @media (min-width:40rem){ .iv-route{ margin:-.6rem 0 .25rem; } }   /* (384.136) the clip still ends in the top 45% on a tablet (Safari's menu rises under it) */
   .iv-frame{ position:relative; flex:none; box-sizing:border-box; width:min(100%, 30rem, calc(var(--iv-h) * var(--iv-ar))); aspect-ratio:var(--iv-ar);
     border-radius:18px; overflow:hidden; background:var(--surface-inset); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow); cursor:pointer; }
@@ -93916,8 +93926,9 @@ function buildPageMenuIcon(){
   svg.setAttribute("class", "installguide-glyph");
   svg.setAttribute("aria-hidden", "true");
   const p = document.createElementNS(svgNS, "path");
-  p.setAttribute("d", "M5 8h14M5 12.5h14M5 17h9");
-  p.setAttribute("fill", "none"); p.setAttribute("stroke", "currentColor"); p.setAttribute("stroke-width", "1.9"); p.setAttribute("stroke-linecap", "round");
+  /* (384.112) as it is on the iPhone: two lines, a long one over a short one (a small speaker over them while the page plays a video) */
+  p.setAttribute("d", "M5 10.5h14M5 15.5h9.5");
+  p.setAttribute("fill", "none"); p.setAttribute("stroke", "currentColor"); p.setAttribute("stroke-width", "2"); p.setAttribute("stroke-linecap", "round");
   svg.appendChild(p);
   return svg;
 }
@@ -102719,7 +102730,9 @@ function a2hsShare(){
              in the browser, remembered).
    THE VIDEO: INSTALL_CLIP names it (one place). Its box is CSS custom properties on .installvideo-panel (--iv-ar the box's
    width / height, --iv-pos the part of the frame kept, --iv-scale a zoom into it), so a new recording is cropped without code. */
-var INSTALL_CLIP = { src: "landing/a2hs-iphone.mp4", poster: "landing/a2hs-iphone.jpg" };
+/* (384.112) Madison's own recording on iOS 26 (the menu button, Share, View More, Add to Home Screen, the Add page), cut to that and
+   cropped to a tall box: the lower part of the screen while the menus are up, its top for the Add page */
+var INSTALL_CLIP = { src: "landing/a2hs-iphone26.mp4", poster: "landing/a2hs-iphone26.jpg" };
 /* the app's own icon, as the page already carries it (the 192px icon link, else the data-URI favicon) */
 function installAppIcon(){
   const wrap = document.createElement("span");
@@ -102790,6 +102803,7 @@ function showInstallFirst(o){
     /* (384.136) the way through Safari's own menu, in one line under the heading - the part of the page the menu never covers.
        Madison, with Safari's share menu open over the page: on iOS 26 Add to Home Screen is behind View More, not in the first row */
     const route = mk("p", "iv-route");
+    let ivPointer = null;
     /* (384.109) the line under the heading is for the menu the button has just opened over the page: View More, then Add to Home
        Screen (with no menu up - it was closed, or never opened - Safari's own way in is the menu button left of its address bar) */
     if(dev === "apple"){
@@ -102797,12 +102811,32 @@ function showInstallFirst(o){
       if(a2hsIsIPhone()){
         /* the iPhone: no menu was opened for them - Safari's own, from the menu button at the left of the address bar */
         const ic = mk("span", "iv-route-ic"); ic.setAttribute("role", "img"); ic.setAttribute("aria-label", "the menu button at the left of the address bar");
-        ic.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/></svg>';
+        ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 4.6h1.6l2.3-1.9v6.2L6.8 7H5.2z" fill="currentColor" opacity=".55"/><path d="M10.9 4.1q1.1 1.3 0 2.7M12.6 3q2 2.4 0 4.9" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" opacity=".55"/><path d="M5 14.2h13M5 19h8.5" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round"/></svg>';
         route.append(step(document.createTextNode("Tap "), ic, document.createTextNode(" \u2192")), document.createTextNode(" "));
         ["Share", "View More", "Add to Home Screen"].forEach((t, i, all) => { const last = i === all.length - 1;
           route.append(last ? step(mk("b", "", t)) : step(mk("b", "", t), document.createTextNode(" \u2192"))); if(!last) route.append(document.createTextNode(" ")); });
         const sub = mk("span", "iv-route-sub", "The menu button is at the left of Safari’s address bar.");
         route.append(sub);
+        /* (384.112) Madison: "What if it literally pointed to it? ... a nice yellow line". A yellow line from the drawn button in this
+           line, down the screen's left edge and in under the buttons, ending in an arrow over where Safari's menu button is (a quarter
+           of the way across, just above Safari's bar). Drawn from the boxes as laid out, again on a resize; it takes no taps. */
+        ivPointer = () => {
+          const old = panel.querySelector(".iv-pointer"); if(old) old.remove();
+          if(!panel.isConnected) return;
+          const W = innerWidth, H = (window.visualViewport && visualViewport.height) || innerHeight, r = ic.getBoundingClientRect();
+          if(!r.width) return;
+          /* out of the drawn button to the left, under nothing: the steps' words are measured and the line goes left of all of them */
+          let minL = r.left; route.querySelectorAll(".iv-route-step, .iv-route-sub").forEach(e => { const b = e.getBoundingClientRect(); if(b.width) minL = Math.min(minL, b.left); });
+          const sy = r.top + r.height / 2, ex = Math.round(W * .26), ey = H - 10, lx = Math.max(8, Math.min(16, minL - 14));
+          const tap = route.querySelector(".iv-route-step"), tb = tap ? tap.getBoundingClientRect() : r;
+          /* from just left of "Tap" on the button's line (not through the words), down the edge, along the foot, down onto the button */
+          const d = "M" + (tb.left - 6) + " " + sy + " H" + (lx + 12) + " Q" + lx + " " + sy + " " + lx + " " + (sy + 12) + " V" + (ey - 46) +
+            " Q" + lx + " " + (ey - 26) + " " + (ex - 18) + " " + (ey - 26) + " Q" + ex + " " + (ey - 26) + " " + ex + " " + (ey - 12);
+          const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+          svg.setAttribute("class", "iv-pointer"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("width", W); svg.setAttribute("height", H);
+          svg.innerHTML = '<path class="iv-pointer-line" d="' + d + '"/><path class="iv-pointer-head" d="M' + (ex - 7) + ' ' + (ey - 13) + ' L' + ex + ' ' + ey + ' L' + (ex + 7) + ' ' + (ey - 13) + '"/>';
+          panel.appendChild(svg);
+        };
       } else route.append(step(document.createTextNode("In the menu, tap "), mk("b", "", "View More"), document.createTextNode(" \u2192")), document.createTextNode(" "), step(mk("b", "", "Add to Home Screen")));
     }
     else route.textContent = "Browser menu \u2192 Add to Home screen";
@@ -102846,6 +102880,12 @@ function showInstallFirst(o){
     panel.append(head, route, frame, added, installHelpLink(dev, inApp));
     stage.replaceChildren(panel);
     toTop();
+    if(ivPointer){
+      const draw = () => { try{ ivPointer(); }catch(e){} };
+      requestAnimationFrame(() => requestAnimationFrame(draw)); setTimeout(draw, 600);
+      const onR = () => { if(!panel.isConnected){ window.removeEventListener("resize", onR); try{ visualViewport && visualViewport.removeEventListener("resize", onR); }catch(e){} return; } draw(); };
+      window.addEventListener("resize", onR, { passive: true }); try{ visualViewport && visualViewport.addEventListener("resize", onR); }catch(e){}
+    }
     return panel;
   }
 
@@ -123357,7 +123397,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-22-384.111";
+const APP_BUILD = "2026-11-22-384.112";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
