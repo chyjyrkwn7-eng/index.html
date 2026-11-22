@@ -11,7 +11,7 @@ app; GitHub Pages serves it, but nothing links to it.
 | The cracked planet (crack stages, Supernova scar, fracture and wreck scenes, the story lines) | build 337 | the commit "Remove the cracked planet completely" | [cracked-planet.md](cracked-planet.md) |
 | The Virtual Room's points results screen ("Ranked by total score", pts) | build 384 r8 | `ca4c46d` | [vr-points-results.md](vr-points-results.md) |
 | The display test (`?diag`, Settings > Advanced > Troubleshooting) and its switches; a diagnostic, not a feature | build 384.105 | `b6c0b68` | [display-test.md](display-test.md) |
-| The police academy's unit badges as raised pins (never shipped; the academy keeps its flat badges) | build 384.121 follow-up (claude/b384-badges2) | the commit "384.121 follow-up: the police academy's badges back to main's" | [academy-pins/academy-pins.md](academy-pins/academy-pins.md) |
+| The police academy's unit badges as raised pins, first set (never shipped; 384.136 drew a new set, this folder keeps the reverted drawings only) | build 384.121 follow-up (claude/b384-badges2) | the commit "384.121 follow-up: the police academy's badges back to main's" | [academy-pins/academy-pins.md](academy-pins/academy-pins.md) |
 | Fire Code's prestige (three prestiges: characters, banners, emblems beside names, the Prestige screen and ceremony, Virtual Room emblems; never shipped) | build 384.135 (claude/b384-prog) | `1070cec` "Remove Fire Code prestige completely" | [prestige/prestige.md](prestige/prestige.md) |
 
 Both were taken out on 2026-10-02 because almost nobody used them.

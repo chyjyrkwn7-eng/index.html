@@ -38,3 +38,11 @@ python3 tools/check-b384-acadpins.py           # and the gates listed in the 384
 Then `tools/check-b384-badges2.py --class academy` turns red on purpose (it holds the academy to main's flat badges): retire it
 or point it elsewhere. The notes (`### 384.121 (badges)` in `docs/notes-archive.md`) say what each pin is and the decision left
 open then: a pin shows no dirt, so the dirty-badge stages no longer show on an academy badge drawn as a pin.
+
+## 384.136: the plumbing is back, the art is not
+
+Madison asked for the academy's badges to be pins after all, "just as great" as the Fire Code ones. The keys
+(`academy-units.json`), the gate (`check-b384-acadpins.py`) and the tool edits (the patch, applied with `--3way` onto the current
+tools) are back in `tools/`. The ART is not: `tools/chapter-objects/part-6-academy.js` is a new set drawn from nothing to the current
+pin standard (see `### 384.136 academy pins, round 2` in docs/notes-archive.md). This folder's `part-6-academy.js` and
+`snaps-academy.json` are the reverted 384.121 drawings, kept only to compare against; nothing reads them.

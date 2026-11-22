@@ -174,7 +174,10 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=R.CHROME, args=["--disable-dev-shm-usage"])
     ctx, pg, errs = R.open_page(br, port, R.SEED, 440, 956, 1, "ifc", BODY)
     r = pg.evaluate(PROBE)
-    chk("(1) every groove on the %d pins stays on the part it is cut into (80%% of its length): %d run off" % (r["n"], len(r["grooves"])), r["n"] == 58 and not r["grooves"], r["grooves"][:8])
+    # (384.136) RE-PINNED: the pins are Fire Code's 58 and, since Madison asked for the academy's badges to be pins "just as great", the
+    # academy's 24 (tools/chapter-objects/academy-units.json); every groove on all of them is held to the same rule
+    NPINS = 58 + len(__import__("json").load(open(os.path.join(HERE, "chapter-objects", "academy-units.json"), encoding="utf-8")))
+    chk("(1) every groove on the %d pins stays on the part it is cut into (80%% of its length): %d run off" % (r["n"], len(r["grooves"])), r["n"] == NPINS and not r["grooves"], r["grooves"][:8])
     chk("(2) the tent's door stops at least 2 units above the silhouette's foot under it (gap %s)" % (r["door"] and r["door"]["gap"]), bool(r["door"]) and r["door"]["gap"] >= 2, r["door"])
     chk("(3) the corrosive jug's acid is at least 3 units from its cap (%s)" % (r["leak"] and r["leak"]["dist"]), bool(r["leak"]) and r["leak"]["dist"] >= 3, r["leak"])
     q = pg.evaluate(PROBE2); print("     art3:", q, flush=True)
