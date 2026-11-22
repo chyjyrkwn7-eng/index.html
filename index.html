@@ -93908,6 +93908,20 @@ function buildShareIcon(){
   return svg;
 }
 
+/* (384.111) Safari's page menu button on the iPhone since iOS 26: three lines, at the left of the address bar (Share lives in it) */
+function buildPageMenuIcon(){
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "installguide-glyph");
+  svg.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS(svgNS, "path");
+  p.setAttribute("d", "M5 8h14M5 12.5h14M5 17h9");
+  p.setAttribute("fill", "none"); p.setAttribute("stroke", "currentColor"); p.setAttribute("stroke-width", "1.9"); p.setAttribute("stroke-linecap", "round");
+  svg.appendChild(p);
+  return svg;
+}
+
 /* Matches the "Add to Home Screen" icon shown in Safari's share sheet. */
 function buildAddSquareIcon(){
   const svgNS = "http://www.w3.org/2000/svg";
@@ -94178,8 +94192,10 @@ var A2HS_POINTERS = [
   { kind: "icon", from: 12.85, to: 14.65, x: .841, y: .248, side: "above", step: 5, label: "Tap Nova to open it" }
 ];
 var A2HS_STEPS_APPLE = [
-  { parts: [{ text: "Tap " }, { icon: buildDotsIcon, style: "grey-circle" }, { text: ", then " }, { text: "Share", b: true }, { text: "." }],
-    note: [{ text: "In Safari. If the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button is in the toolbar, tap that instead." }] },
+  /* (384.111) Madison's iPhone (iOS 26): the menu button at the LEFT of the address bar, Share in it; ••• and a toolbar Share button are
+     other Safari layouts */
+  { parts: [{ text: "Tap " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of Safari’s address bar, then " }, { text: "Share", b: true }, { text: "." }],
+    note: [{ text: "If you see " }, { icon: buildDotsIcon, style: "plain" }, { text: " instead, tap that. If the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button is in the toolbar, tap that." }] },
   { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " " }, { text: "View More", b: true }, { text: "." }],
     note: [{ text: "It is called " }, { text: "More", b: true }, { text: " on some versions. If " }, { text: "Add to Home Screen", b: true }, { text: " is already in the list, skip this step." }] },
   { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " " }, { text: "Add to Home Screen", b: true }, { text: "." }],
@@ -102854,9 +102870,12 @@ function showInstallFirst(o){
     panel.setAttribute("data-screen", "installhelp"); panel.dataset.dev = dev;
     const steps = dev === "apple" ? [
       [{ text: "Open this page in " }, { text: "Safari", b: true }, { text: "." }],
-      [{ text: "Tap the " }, { text: "Share", b: true }, { text: " button " }, { icon: buildShareIcon, style: "plain" }, { text: " in Safari’s toolbar." }],
-      { parts: [{ text: "Scroll the menu down and tap " }, { text: "Add to Home Screen", b: true }, { text: "." }],
-        note: [{ text: "Not in the list? Scroll to the bottom of the menu, tap " }, { text: "Edit Actions", b: true }, { text: " (or " }, { text: "More", b: true }, { text: ") and add it." }] },
+      /* (384.111) Madison, circling it on his iPhone: since iOS 26 Share is in the menu behind the button at the left of the address bar */
+      a2hsIsIPhone()
+        ? [{ text: "Tap the menu button " }, { icon: buildPageMenuIcon, style: "plain" }, { text: " at the left of Safari’s address bar, then " }, { text: "Share", b: true }, { text: "." }]
+        : [{ text: "Tap the " }, { text: "Share", b: true }, { text: " button " }, { icon: buildShareIcon, style: "plain" }, { text: " in Safari’s toolbar." }],
+      { parts: [{ text: "Tap " }, { text: "View More", b: true }, { text: ", then " }, { text: "Add to Home Screen", b: true }, { text: "." }],
+        note: [{ text: "Not in the list? Scroll to the bottom of the menu, tap " }, { text: "Edit Actions", b: true }, { text: " and add it." }] },
       [{ text: "Tap " }, { text: "Add", b: true }, { text: "." }]
     ] : [
       [{ text: "Open this page in " }, { text: "Chrome", b: true }, { text: " or your browser." }],
@@ -123338,7 +123357,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-21-384.110";
+const APP_BUILD = "2026-11-22-384.111";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
