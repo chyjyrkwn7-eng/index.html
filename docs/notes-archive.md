@@ -42741,3 +42741,76 @@ Answers to the review: Customize option B ("I like B"); classes keep the new unl
 - 384.117: Safari's share glyph beside "Share" wherever the iPhone steps name it (Madison: "it says 'share' without the share icon next to it"): the video page's route line (.iv-route-glyph), the Home Screen sheet's step 1, the help page's step 2.
 - 384.118: the share glyph in the route line is the same grey 1.6em circle as the menu button (.iv-route-ic.iv-route-share), and a grey circle in the sheet's step 1 like the menu button there (Madison: "It needs to be the same size as the circle icon thing").
 - (art7) Madison, of the badges at full size: "the sides of the boxes are missing, the wooden pallets ... you can only see the face"; "The check marks aren't the same all the way through"; the cylinder "like looking at a soda with a screw top, and the screw top doesn't exist on the sides"; the pencil "why is the led only visible on the very face". RACK: each load narrowed so its carton's right side and its pallet's top and side show going back (DL), the pallet wider than its carton; the two left uprights carry a side face; back posts widened .35 a side (a seam at (52,71) where the dark inside met a back post's edge). PENCIL: the lead is the point's last 7.2 units (was 4.2), so it shows down the side when turned. TICKS: a dark outline (ink #16324F, ln 4.1) under each blue tick (ln 2.5), the same all along. CYLINDER: the collar's foot is a steel band across the shoulder's top from outline to outline (no white or green beside the collar); the white starts at y 24.4. badgeart (7) reads each side's own wood corner and lead point (the three-tone wood and the rounded point).
+
+### 384.136 academy pins, round 2
+
+Madison asked for the police academy's 24 unit badges to get the same upgraded look as the Fire Code chapter pins, "just as great".
+Branch `claude/b384-acadart` (from 21a1a45, art7); build kept 384.133, NOT bumped; NOT on main, waiting for Madison to see it and say go.
+The first academy set (384.121) was reverted ("I'm not a fan of these new ones"); its drawings stay in `retired/academy-pins/` for
+reference only. This set is drawn from nothing in `tools/chapter-objects/part-6-academy.js` to the current pin standard: 3/4 objects show
+the sides they turn to us (the scales' plinth, the sound block, the pill bottle and cap, the passport's page block, the globe's foot), loose
+things lie ON what is under them (`lvl`: the gavel on its block, the capsules, the papers, the inkwell and quill), every groove stays on its
+part (badgeart (1)), no painted shadow straddles a join (they read as seams), at most 24 plates, sides take each part's colour when turned.
+
+What each unit is, and what changed against the reverted set:
+- Penal Code - the gavel striking its sound block. Was a flat gavel on a flat oval; now a turned head with its end face, a brass band at
+  each cap, a turned knob, standing on the block's top face (groove, two turned rings on its side), its shadow on the block.
+- Arrest, Search, and Seizure - chain handcuffs. Was rigid bar cuffs; now two cuffs with lock housings (keyhole, rivets), ratchet teeth,
+  pivots, swivels and a three-link chain. The openings are pressed deep, not cut through: two open rings left the back no room for the
+  title and the class line (6-8 px against 9.2); a filled pin keeps it at 14.3 px. Turned, the back is two solid discs.
+- US and Texas Constitution and Rights - the parchment with rolled ends (the spiral shows), a flourish heading, ink lines, the red wax seal
+  on its ribbons, a cut-glass inkwell (three facets and its shoulder) with a brass collar and the quill standing in it. Was scroll + quill.
+- Crisis Intervention Training - the life ring, now with its grab line twisted round the rim and lashed at four points.
+- Missing and Exploited Children - the teddy bear sitting, a blue ribbon bow, stitched tummy patch, foot and paw pads, ear insides.
+- Sexual Assault and Family Violence - the purple awareness ribbon (the domestic violence awareness colour), its strand in front shading
+  the one behind, woven edges, V-cut tails. Was a house with a heart. The strands are wide (10.6) so the back holds the title (10.2 px).
+- Phonetic Alphabet and Military Time - the olive field watch on a stitched NATO strap with its buckle and keepers, a minute track, a
+  24-hour ring of ticks, lumed bars, hands at ten past ten. Was a plainer watch.
+- Multiculturalism and Human Relations - the desk globe; the continents are a real orthographic projection (the Americas, Greenland,
+  Europe, Africa, Iceland), the meridian ring on its axle, turned stem, wooden foot from above. Was blobs on a ball.
+- Code of Criminal Procedure and Bill of Rights - an open law book: pages curving into the gutter, print and section headings, the page
+  block's leaves, the maroon boards, a gold ribbon. Was a closed book.
+- Verbal Communication - two thick speech bubbles whose sides show down-right, dots on the blue, lines on the white.
+- Professionalism and Ethics - the brass scales on a fluted column, a two-step wooden plinth in 3/4, chains with links, pans with insides.
+- Fitness, Wellness, and Stress Management - a running shoe (outsole tread, midsole wave, mesh vents, counter, toe cap, eyestay with
+  eyelets, lime laces, pull loop). Was a kettlebell.
+- Health and Safety Code - a prescription bottle (child-resistant cap with ridges and top, amber body, label with band and print) and two
+  capsules lying in front. Was one capsule.
+- De-Escalation - the dove with its wings fanned (near wing with primaries and coverts, far wing in shade), tail, olive sprig with
+  leaves and an olive.
+- Civil Process and Liability - papers served: a manila envelope with its flap open behind, a sealed court paper and a second sheet drawn
+  out, the clasp on its eyelet, the side flaps' folds. Was an envelope with a wax seal.
+- TCOLE Rules - the five-point brass star with ball tips, faceted arms, in a steel ring with a navy beaded band, a navy centre with a star.
+- Professional Policing - the patrol cap from the front and above: crown top with piping, band, chin strap and buttons, gloss peak, gold
+  shield.
+- Racial Profiling - the patrol car: push bumper, spotlight, light bar, door star, wheel wells, rims. Redrawn.
+- Victims of Crime - an umbrella sheltering a heart (two-tone panels, raised ribs, rib tips, finial, leather crook). Was a heart with a
+  plaster.
+- Identity Crimes - an ID card (header band, chip, photo window, details) with a fingerprint pad over its corner, ridges looping round a
+  core. Was a thumbprint oval.
+- Interacting with Deaf or Hard-of-Hearing - the ear (rim, hollow, antihelix, bowl, the way in, tragus, lobe) with a behind-the-ear aid
+  and its clear tube. Redrawn.
+- Consular Notification - the passport with its page block along the top and right, an embossed globe, chip mark, a ticket tucked in.
+- Traumatic Brain Injury - the brain: gyri as rounded folds in rings broken into lengths, the lateral fissure and central sulcus, the
+  ridged cerebellum, the stem. Was a blob with a few lines.
+- Radio Communications, Alerts, and TCIC-TLETS - the handheld radio: ribbed antenna, ridged knobs with tops, orange emergency button,
+  display, grille, push-to-talk bar.
+
+Plumbing (from retired/academy-pins, the patch applied with --3way; one conflict in check-b384-objbadges' base_body, kept the current
+7bdca1e base and added --class): the merge tool takes academy keys; `check-b384-objbadges.py --class academy`; `check-b384-acadpins.py`;
+check-b384-chapterbadges (4) holds academy units with no object; check_b317_badge2 waits 180s. NEW `render-chapter-badges.py --class academy`.
+Re-pinned, citing this request: check-b384-objbadges (8) no longer holds the academy to main's flat badges (comment); check-b384-badgeart
+(1) counts 58 + 24 pins (was 58: it walks every CHAPTER_OBJ entry); check-b384-badges2's academy reference 31588af -> 560d3bc (the run
+before: all 24 academy tokens, 48 sheet images, case, hand, 18 cards, 8 cutscene frames differed, as asked).
+Snaps re-traced (snap.py): Fire Code's 58 entries in snaps.json are byte-identical to before.
+
+Gates (TMPDIR=/dev/shm, one at a time, load 4-7 from other sessions): check-js 13 blocks ALL PASS; check-b384-objbadges --class academy
+ALL PASS; check-b384-acadpins ALL PASS (13); check-b384-badgeart ALL PASS (12); check-b384-badgetwins ALL PASS (14); check-b384-chapterbadges
+ALL PASS (75); check-b384-objbadges (Fire Code) 93 pass, 1 FAIL: (4) PERF cold 6.29x on Chapter 32 (limit 6.0; warm 1.44x) - the rack,
+untouched here, under load (it passed, 94, on the run before with the same art); check-b384-badges2 --class ifc FAILS on Chapters 32, 63
+and Appendix H and the case/cutscene frames holding them: those are art7's own changes (21a1a45, the base), not this branch's (no Fire Code
+part file or snap changed here).
+Turned: tools/shoot-badge-turns.py --class academy, every badge at 0/35/70/82/90/145/180; sides in each part's colour, backs carry the
+title and CLASS 26E. (The shots at 145/180 of the first badge show the app's own Full Case banner behind it: every academy badge is found.)
+Open for Madison: a pin shows no dirt, so the academy's dirty-badge stages no longer show on its badges (as noted in 384.121).
+Chromium cannot show the phone's OLED at 3x nor WebKit's compositor.
