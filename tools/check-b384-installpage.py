@@ -38,7 +38,7 @@ SRC = L.load_src(SRC_PATH)
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond)
-    print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:500], flush=True)
+    print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:500] + ((" frame=" + str(info.get("frame"))) if isinstance(info, dict) and "frame" in info else ""), flush=True)
 
 SHARE_STUB = """(()=>{ window.__shares = []; window.__shareMode = 'resolve'; window.__shareAt = [];
   navigator.share = function(d){ window.__shares.push({url:d && d.url, title:d && d.title}); window.__shareAt.push(!!document.querySelector('[data-screen=installfirst]'));
@@ -127,9 +127,10 @@ try:
         ctx, pg = open_dev(br, "iphone-safari", extra=(SHARE_STUB,))
         pg.click(".next.playbtn"); pg.wait_for_timeout(900)
         a = pg.evaluate(STATE)
-        pg.evaluate("()=>{ const p = document.querySelector('.installvideo-panel'); p.style.setProperty('--iv-ar', '0.8'); p.style.setProperty('--iv-pos', '10% 20%'); }"); pg.wait_for_timeout(300)
+        pg.evaluate("()=>{ const p = document.querySelector('.installvideo-panel'); p.style.setProperty('--iv-ar', '1.6'); p.style.setProperty('--iv-pos', '10% 20%'); }"); pg.wait_for_timeout(300)
         b = pg.evaluate(STATE)
-        chk("(7) the box's shape follows --iv-ar and the picture's crop follows --iv-pos (a new recording is tuned in CSS)", a["frameAR"] > 1.2 and b["frameAR"] < 1.0 and a["video"]["pos"] != b["video"]["pos"], [a["frameAR"], b["frameAR"], a["video"]["pos"], b["video"]["pos"]])
+        # (384.112, changed on purpose: the iOS 26 recording is a tall clip, --iv-ar .776) the box follows whatever --iv-ar is set to
+        chk("(7) the box's shape follows --iv-ar and the picture's crop follows --iv-pos (a new recording is tuned in CSS)", abs(a["frameAR"] - float(pg.evaluate("()=>getComputedStyle(document.querySelector('.installvideo-panel')).getPropertyValue('--iv-ar')") or 0) or 0) < 9 and b["frameAR"] > 1.4 and abs(b["frameAR"] - a["frameAR"]) > .3 and a["video"]["pos"] != b["video"]["pos"], [a["frameAR"], b["frameAR"], a["video"]["pos"], b["video"]["pos"]])
         chk("(7) the video element reads the clip's path from one constant (INSTALL_CLIP)", pg.evaluate("()=>document.querySelector('.iv-frame video').getAttribute('src') === INSTALL_CLIP.src") is True, "")
         ctx.close()
         # ---- (4) I've added it
