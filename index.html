@@ -168453,10 +168453,17 @@ function binspectWarmSoon(){
     step();
   }, 1200);
 }
+/* (384.133) THE FACE IN YOUR HAND IS THE BARE ONE. A pin's face in your hand is rendered bare (no painted wall: the real side is drawn
+   in 3D) and cached under "|bare"; the slot's render, wall and shadow painted on, is cached without it. Both lookups below read the
+   slot's key, so a badge already drawn large in its slot came out of the case with its wall painted on down-right - the shoe sat
+   2px right and 6px low of the middle, and its painted wall doubled the real side. The same key badgeStrikeEntry builds. */
+function binspectFaceKey(unit, s){
+  return String(unit) + "|c" + (s ? "|d" + s : "") + (chapterObjShape(unit) ? "|bare" : "");
+}
 function binspectPredecode(unit){
   if(!unitBadgeEarned(unit)) return;
   const W = binspectW(), d = badgeDirtStage(unit);
-  (BADGE_STRIKE_CACHE[String(unit) + "|c" + (d ? "|d" + d : "")] || []).forEach(e => { if(e && e.W >= W * .9 && !e.draft) bcPredecode(e.url); });
+  (BADGE_STRIKE_CACHE[binspectFaceKey(unit, d)] || []).forEach(e => { if(e && e.W >= W * .9 && !e.draft) bcPredecode(e.url); });
   const b = BADGE_BACK_CACHE[unit + "|" + W + "|" + d]; if(b) bcPredecode(b.url);
   try{ bcPredecode(badgeSilhouetteURL(unit)); }catch(e){}
 }
@@ -168503,7 +168510,7 @@ function openBadgeInspect(unit, tile, opts){
   const faceEntry = (s, draft) => badgeStrikeEntry(unit, false, WF, draft, s, true);   /* (art6) bare: the real side is drawn in 3D */
   /* a face already rendered, without rendering one */
   const peekFace = s => { let best = null;
-    (BADGE_STRIKE_CACHE[String(unit) + "|c" + (s ? "|d" + s : "")] || []).forEach(e => {
+    (BADGE_STRIKE_CACHE[binspectFaceKey(unit, s)] || []).forEach(e => {
       if(e.W >= W * .9 && (!best || (best.draft && !e.draft) || (best.draft === e.draft && e.W < best.W))) best = e; });
     return best; };
   if(found){

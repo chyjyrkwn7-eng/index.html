@@ -294,7 +294,10 @@ with sync_playwright() as pw:
         # before the 384.108 shine took the in-SVG glint out of every badge drawing (its mask, gradient and band). Read on this build
         # against main 384.107 (7bdca1e, 29fbbe96): every academy outline, channel, colour and back plan is identical, and the drawings
         # differ only by that glint group. Taken on this build.
-        PIN = "dc7d6f55"
+        # RE-PINNED (384.133 academy rounds 2-3): Madison's circled fixes and the see-through pass redrew the academy pins on
+        # purpose (TCOLE star a layer on the ring, shoe, ribbon, umbrella heart, chat, handcuffs, teddy ears and the rest), so
+        # every drawing moved. Was dc7d6f55. Taken on this build after the round-3 badges were reviewed.
+        PIN = "76402311"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)

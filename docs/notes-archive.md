@@ -43023,3 +43023,18 @@ all PASS but (6) (the academy's pinned hash 1250e0c2), which fails identically o
 Fire Code's); casefit --class ifc ALL PASS (58 even, nothing past its slot); sides --class ifc ALL PASS (min >= .70, median .92).
 Turned: every changed pin shot at 0/35/70/82/90/145/180 (shoot-badge-turns) and reviewed: sides in each part's colour, backs carry
 the title and FIRE CODE. badges2's Fire Code reference moves to this work's commit (its diff list was exactly the changed badges).
+
+## 384.133 final gates (combined push: academy round 3 + Fire Code art9 + art8)
+
+- Full gate run on the merged branch (6075063): check-js, every check-b384 badge gate, casefit, sides, unlocks, unlocks2, fxthumb,
+  a2hs, a2hstip, badges2, check-unlocks, centering --quick (0 off centre) and sweep --quick (20/20) pass. The tracebacks in the
+  sweep's log are the test's local http.server dropping requests the browser cancelled (socketserver broken pipe), not the app.
+- check-b384-ifcbadges (6) re-pinned to 76402311 (was dc7d6f55): the academy pins were redrawn on purpose in rounds 2-3.
+- IN-HAND FACE KEY (real bug, every pin, both classes): the inspector's peekFace and binspectPredecode looked up the face cache
+  under the slot's key (`unit|c[|dN]`), while a pin's face in your hand is rendered bare (no painted wall; the 3D side is real)
+  and cached under `...|bare`. A badge already drawn large in its slot (the first found one, on the Badges screen) was lifted
+  out showing the slot render with its wall painted down-right: the shoe sat 2.26px right / 5.76px low (check_b321d "in your hand
+  every badge sits on the middle"), and the painted wall doubled the real side. Both now read binspectFaceKey(unit, stage), the
+  key badgeStrikeEntry builds. check_b321d_badges: shoe front [2.26, 5.76] -> [0.24, 0.2]; it FAILS on 6075063.
+- Still inherited from main (identical on eff47c6, not this push's): the Profile shut case's plate/handle/"Level 1 Badge Case"
+  checks and the cutscene/Profile one-case checks (15 in check-behaviour's badge sections).
