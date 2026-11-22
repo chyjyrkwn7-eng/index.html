@@ -42741,3 +42741,27 @@ Answers to the review: Customize option B ("I like B"); classes keep the new unl
 - 384.117: Safari's share glyph beside "Share" wherever the iPhone steps name it (Madison: "it says 'share' without the share icon next to it"): the video page's route line (.iv-route-glyph), the Home Screen sheet's step 1, the help page's step 2.
 - 384.118: the share glyph in the route line is the same grey 1.6em circle as the menu button (.iv-route-ic.iv-route-share), and a grey circle in the sheet's step 1 like the menu button there (Madison: "It needs to be the same size as the circle icon thing").
 - (art7) Madison, of the badges at full size: "the sides of the boxes are missing, the wooden pallets ... you can only see the face"; "The check marks aren't the same all the way through"; the cylinder "like looking at a soda with a screw top, and the screw top doesn't exist on the sides"; the pencil "why is the led only visible on the very face". RACK: each load narrowed so its carton's right side and its pallet's top and side show going back (DL), the pallet wider than its carton; the two left uprights carry a side face; back posts widened .35 a side (a seam at (52,71) where the dark inside met a back post's edge). PENCIL: the lead is the point's last 7.2 units (was 4.2), so it shows down the side when turned. TICKS: a dark outline (ink #16324F, ln 4.1) under each blue tick (ln 2.5), the same all along. CYLINDER: the collar's foot is a steel band across the shoulder's top from outline to outline (no white or green beside the collar); the white starts at y 24.4. badgeart (7) reads each side's own wood corner and lead point (the three-tone wood and the rounded point).
+
+## art8 (branch claude/b384-final, build number untouched at 384.133): the pencil stands point up; every Fire Code slot cut round the whole pin
+
+Madison circled the Appendix H pencil's point: a grey sleeve round it. Cause: the pencil stood beside the board with its point down,
+so the cone's slope and the board's edge made a narrow V notch in the outline, and the case's slot (lip + wall, a ring round the
+outline) filled that V - the grey was the slot's lit wall. A first try ran the board in under the point (so the point lay on wood);
+Madison: "now it looks like it's literally attached to the clipboard". Reverted. THE PENCIL NOW STANDS ON ITS ERASER, POINT UP
+(part-5.js: E = [76.8, 97], TP = [76.8, 1], n = [u[1], -u[0]] so w > 0 is still its lit left side): the sharpened end is above the
+board beside the clip, where the outline is open, so there is no V anywhere; the eraser's foot is flush with the board's bottom (the
+board's bottom-right corner and the eraser's corner on the board side are square, so the joint is one straight line). Faces,
+cone tones, lead, ferrule and crimps unchanged.
+
+CASE FITTING. Madison: "ensure the case fitting ... looks good and matches up and stuff... for all of them". Measured (the token's
+own render against the slot the app draws, every badge, both classes): the 24 academy badges have an even gap all round (2.1-2.3
+units). Every Fire Code pin did not: the slot (buildObjPinSVG) was cut round the FACE, but the pin as drawn is its face plus its
+painted thickness (OBJ_PIN.wall 3.0 along wallDir [.5, .866]), so the gap was the full 1.9 at the top and left and 0 at the bottom and
+right, where the wall ran over the slot's lip (12-66 units^2 of pin past its slot per badge). The slot's lip, wall and (empty slot)
+floor are now drawn round the footprint: the outline plus three copies moved a third, two thirds and all of the wall along wallDir,
+in ONE path (badgePathShift, absolute M/L/Q/A/Z and the rest), so a band's paint is laid once. Gap now 1.78-2.0 all round on all 58.
+The token, its render and the inspector are untouched.
+
+Gate: tools/check-b384-casefit.py (1) nothing of any pin past its slot, (2) the gap even (p5 >= .6, p95 <= 1.5 of the median),
+both classes; ALL PASS. --against 21a1a45: FAILS (1) and (2) on all 58 Fire Code badges. objbadges, badgeart, badgetwins,
+chapterbadges, ifcbadges, casefix ALL PASS. badges2's Fire Code reference moves to this commit (every Fire Code slot changed).

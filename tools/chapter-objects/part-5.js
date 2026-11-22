@@ -182,12 +182,12 @@
    runs in straight to the graphite.) ---- */
 {
   const X0 = 10, X1 = 72, Y0 = 27, Y1 = 97, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  const E = [76.8, 1], TP = [76.8, 97], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [-u[1], u[0]], HW = 4.8;
+  const E = [76.8, 97], TP = [76.8, 1], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [u[1], -u[0]], HW = 4.8;   /* (art8) it stands on its eraser, point up: w > 0 is still its left (lit) side */
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
   const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
   const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13.5, ER = 2.4;
   const rows = [48, 63, 78], plates = [
-    ["wood", OBJ_rrect(X0, Y0, X1 - X0, Y1 - Y0, 4), { dome: .6 }],                                   /* the board */
+    ["wood", OBJ_poly([[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]], [4, 4, 0, 4]), { dome: .6 }],                                   /* the board */
     ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 54, 2), { z: .5, bev: .6 }],                    /* the sheet */
     ["steel", OBJ_poly([[20, 38], [20, 28], [26, 16], [56, 16], [62, 28], [62, 38]], [2, 2, 3, 3, 2, 2]), { z: 1.1, bev: .8, dome: .6 }],   /* the clip */
   ];
@@ -220,15 +220,15 @@
   plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { lvl: "pencil", z: 1.3, bev: .35, col: "#3A3D42" }]);   /* the graphite */
   plates.push(["steel", OBJ_poly([Q(6.8, -HW), Q(11.2, -HW), Q(11.2, HW), Q(6.8, HW)], 0), { lvl: "pencil", z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
   plates.push(["steel", "M" + f(Q(8.4, -HW + .6)) + "L" + f(Q(8.4, HW - .6)) + "M" + f(Q(9.7, -HW + .6)) + "L" + f(Q(9.7, HW - .6)), { lvl: "pencil", ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
-  plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, ER]), { lvl: "pencil", z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
+  plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, 0]), { lvl: "pencil", z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
   plates.push(["rubber", "M" + f([X1, Y0]) + "V" + Y1, { ln: .9, cut: .4, paint: 0 }]);   /* the line where it stands against the board */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
     /* (384.136 art6) THE PENCIL STANDS AGAINST THE BOARD. Madison, a sixth time: "The pencil is still messed up". Every round that patched
        the place where it crossed the board's edge left something there; lying wholly on the board made the outline a plain board (a
        twin of Chapter 10's door). It now stands upright against the board's right side - a straight joint, no crossing - rising past the
        board's top beside the clip, and its sharpened end makes the outline's notch. */
-    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [20, Y0], [26, 16], [56, 16], [62, Y0], [X1, Y0], Q(0, HW), Q(0, -HW), Q(CONE, -HW), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(CONE, HW), [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
-      [0, 1, 3, 3, 1, 1, ER, ER, 0, .3, .3, 0, 4, 4, 4, 0]) + "Z",
+    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [20, Y0], [26, 16], [56, 16], [62, Y0], [X1, Y0], Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, -wAt(PT)), Q(CONE, -HW), Q(0, -HW), [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
+      [0, 1, 3, 3, 1, 1, 0, .3, .3, 0, ER, 4, 4, 0]) + "Z",
     holes: [OBJ_rrect(33, 21, 16, 6, 2.5)],
     base: "wood",
     plates,
