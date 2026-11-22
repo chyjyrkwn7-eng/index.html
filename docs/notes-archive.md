@@ -42940,3 +42940,86 @@ section still FAILS on Fitness, the FIRST badge it opens (front 2.3, 5.8 px): at
 painted wall (it swaps to the bare face later); the same section FAILS identically on 266cbb6 (2.0, 5.8 px) with round 2's shoe, so it
 is not this round's (its other four fails are the retired dirt stages).
 badges2: academy reference 560d3bc -> 3ac7a9f (comment in the gate) after a run against 266cbb6 differed in exactly this round's units; --class academy ALL PASS against it.
+## art9 (branch claude/b384-fc2, from 266cbb6; build number untouched at 384.133): Fire Code pins, a perfection pass on joins
+
+Madison, of the badges: "There's a lot of spots all over that just don't look right ... we want perfection. Double check the fire code
+ones as well to ensure if there's any improvement then just do it." All 58 Fire Code pins rendered at 600px (front, empty slot, small
+sizes), cropped and zoomed at every join, and turned (0/35/70/82/90/145/180). One fault ran through most of them: A PART'S RELIEF IS ADDED
+TO WHAT IS UNDER IT (objPinGeometry), so wherever a part was drawn whole under the part in front of it - a capsule's round end, a box run
+on a unit or two "to be safe", a rim drawn the full width under the arms - its edge showed THROUGH the front part as a ridge, a step, a
+half-moon or a lump (the "see-through" look). A scan of every pin (each raised part's edge lying under a later painted part, 2+ units)
+listed the candidates; each was looked at zoomed and fixed where it showed. The fix is always one of: the part behind stops where the
+part in front starts (OBJ_SDF minus, or the rectangle shortened to the edge), or the part in front lies flat over what it crosses (lvl).
+No concept changed; no outline changed except where noted.
+
+- Ch 1 stamp: the neck stops on the knob's curve (the knob's foot showed through it); the flange stands square on the base (dark nicks
+  at its rounded lower corners; the outline's inside corners square with it).
+- Ch 3 extinguisher: the cylinder stops at the collar, the collar at the valve, the hose starts from under the valve/gauge/collar, the
+  valve head stops at the gauge (steps and lumps round the valve); the clip lies flat (lvl).
+- Ch 6 elevator: the lantern and the call station end on the frame's edge (the frame's edge showed through each).
+- Ch 8 armchair: the back stops behind the arms and the seat, the skirt runs between the arms under the seat, the seat sits between the
+  arms (square-cornered, its piping inset) - the back's edge stood as a ridge down each arm, steps across them.
+- Ch 9 sprinkler: the jets stop under the deflector (five round bumps along it), the frame arms stop at the hex and the boss (blobs), the
+  bulb stops at the boss, the nipple at the hex.
+- Ch 11 building: each column shaft runs from its capital to its base (its ends showed through as lumps).
+- Ch 20 airport (plane): the engines lie flat over the wing's edge (lvl).
+- Ch 21 shirt: the hook runs to the shirt's top (its end stood in the neck as a blob); the collar points meet under the neck (a speck
+  of shirt between them); the placket starts where they end.
+- Ch 22 grain bin: the bin and the cone roof stop under the eave (two ridges along it, nicks where the ribs met it), the ribs stop at the
+  eave, the elevator leg runs from its head to its boot.
+- Ch 23 dispenser: the hose stops where the nozzle starts (gen-part-2.js; its round end was a lump in the nozzle's stem).
+- Ch 24 spray gun: the grip and the trigger start on the body's foot on the outline's own lines (a hair-thin wedge of base down each
+  side came out as a saw-tooth glint down the trigger); the trigger is faceted (a domed sliver that thin glinted in steps); the body's
+  corners square where parts meet them; the cup's neck sits between cup and body.
+- Ch 26 beetle: the legs and antennae stop at the body (each leg's root showed through the head, pronotum and wing cases); the pronotum
+  stops at the wing cases.
+- Ch 27 chip: the pins run from the package's edge outward (each pin's end showed through the package as a bump).
+- Ch 29 paint can: the beads stop at the run of paint (they nicked it).
+- Ch 31 big top: the roof, its stripes and the wall stop at the valance; the valance is one band with a scalloped hem (six domes pinched
+  into dimples where they met).
+- Ch 32 rack: loads, pallets, front posts, beams and connectors each lie flat at their own level (lvl) - the cartons and pallets
+  carried the deck/inside's edges as faint ridges and the beams the uprights' edges.
+- Ch 35 torch: grip, head, tip, nozzle and flame each stop where the next starts (the head's round end was a half-moon on the grip, the
+  blue cone's back a ring in the nozzle, the nozzle's round foot hid the steel tip); the head and nozzle end square so the tip shows; the
+  outline's fillets are fine (.6, was 1.4 - fat fillets filled with brass/steel slivers along the underside).
+- Ch 36 anchor: the shank stops at the ring, the stock and the crown (its foot a lump on the crown, its edges ridges down the stock).
+- Ch 37 yarn: the loose end comes out from under the over-wrap band and lies across the winding (its round start read as a loose
+  crescent stuck on); the strands stop round it; its ply twist is cut across it.
+- Ch 39 still: the vapour line runs down into the tank, cut by the tank's curve (its square end crumpled into a lump on the dome), and
+  the outline has a small fillet where it goes in.
+- Ch 40 cask: the chocks stop at the cask's belly (their tops showed through cask and hoops).
+- Ch 54 jug: the neck starts under the cap.
+- Ch 55 dewar: the neck stands on the crown (the crown's edge showed through it), the crown is a smooth arc (three straight pieces
+  glinted as beads), the lugs lie flat over the side and band (lvl).
+- Ch 56 rocket: the stick starts at the body's foot (its top was a tab on the body).
+- Ch 57 gas can: the threaded collar lies flat on the neck (the neck's and can's edges ran across its ridges).
+- Ch 58 lighter: the chimney lies flat over the case's top edge (a step across it).
+- Ch 59 matches: each lying match runs from its head to the sleeve's edge (a pale hook in every red head, bumps down the sleeve) and stops
+  where the struck match crosses (its stick rippled over each); the struck match is one straight stick (lvl) stopping at its head.
+- Ch 60 poison bottle: the neck runs from the lip to the shoulder.
+- Ch 62 cooler: the handle stands on the lid; grips and latch lie flat (lvl).
+- Ch 64 burning rock: the flames' hearts stop at the stone (round bumps along its top).
+- Ch 65 film reel: the film strip leaves from under the reel's rim (a step through the reel's face).
+- Ch 66 bomb: the cap stands out of the sphere from its edge (it carried the sphere's curve as an arc); the fuse runs from the cap's end
+  to the spark's foot.
+- Appendix B nozzle: hose, coupling, barrel, tip and spray each end where the next begins (ridges at every join).
+- Appendix D engine: the stripe stops at the wheel wells.
+- Appendix H clipboard: the clip lies flat over the board's edge and the sheet's top (lvl).
+- Appendix I tag: the yellow tag stops at the red one; the wire lies flat over both (lvl).
+- Chapter and Section Finder: the handle starts at the collar.
+Reviewed and left as they are (no join showing through, no sliver, reads clean front and turned): Ch 2, 4, 5, 7, 10, 12, 25, 28, 30, 33,
+34, 38, 50, 51, 53, 61, 63, 67, 80, Appendix C, Exhibit B.
+
+Renderer (index.html objPinGeometry): a levelled plate's coverage is drawn once and kept for the pass (covMemo; only lvl plates, for
+memory) - the level groups read each plate's coverage and the pass drew it again; with the rack's levels Chapter 32 went over objbadges
+(4)'s cold-render budget. Output identical. Nothing else in the renderer changed (slot cut, side colours untouched).
+
+Gates (TMPDIR=/dev/shm, one at a time, load 3-7 from other sessions): check-js 13 blocks ALL PASS; snap.py --check and gen-part-2
+--check in step; check-b384-objbadges all but one PASS (93), including (4e) NO SLIVERS (a first run caught two on Chapter 27's
+pins traced through OBJ_SDF; the pins are plain rounded rectangles from the package's edge now) - the one FAIL is (4) PERF, Chapter 32's
+cold render 6.29-6.42x against the 6.0x budget, and the base 266cbb6 fails it the same way in the same conditions (6.78x, run
+--index on the base right after), as noted at 384.136; badgeart ALL PASS (12); badgetwins ALL PASS; chapterbadges ALL PASS; ifcbadges
+all PASS but (6) (the academy's pinned hash 1250e0c2), which fails identically on the base (the academy pins changed those badges; not
+Fire Code's); casefit --class ifc ALL PASS (58 even, nothing past its slot); sides --class ifc ALL PASS (min >= .70, median .92).
+Turned: every changed pin shot at 0/35/70/82/90/145/180 (shoot-badge-turns) and reviewed: sides in each part's colour, backs carry
+the title and FIRE CODE. badges2's Fire Code reference moves to this work's commit (its diff list was exactly the changed badges).

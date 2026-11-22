@@ -6,6 +6,8 @@
 /* ---- Chapter 64: Pyrophoric Materials - a burning rock (it ignites on contact with air): a faceted dark stone with glowing cracks cut
    into it, and three tongues of flame rising off it, the middle one tallest, a hot core inside. ---- */
 {
+  /* (art9) a flame's corners rounded (convex 1.8, concave 4), as OBJ_poly rounded them, before it is cut at the stone */
+  const RND = p => OBJ_SDF.grow(OBJ_SDF.grow(OBJ_SDF.grow(OBJ_SDF.grow(p, -1.8), 1.8), 4), -4);
   CHAPTER_OBJ["Chapter 64: Pyrophoric Materials"] = {
     d: OBJ_poly([[12, 93], [5, 76], [13, 60], [20, 57.12], [13, 42], [21, 21], [33, 37], [38, 20], [50, 2], [62, 20], [67, 37], [79, 21], [87, 42], [80, 57.12],
                  [87, 60], [95, 76], [88, 93]],
@@ -14,11 +16,14 @@
     plates: [
       /* (384.90) the flames flame-orange, not the tent's red: with the outline following the stone's edge the two outlines came to 0.81
          alike, and the same red made them twins (check-b384-objbadges (6)) */
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right." The flames' hearts ran on under the stone and a
+         part's relief is added to what is under it, so their round feet stood up as bumps along the stone's top. They now stop where
+         the stone starts. */
       ["red", OBJ_rrect(0, 0, 100, 62, 0), { col: "#F36A21" }],                                                                                       /* the flames */
-      ["hot", OBJ_poly([[38, 58], [37, 42], [44, 30], [50, 17], [56, 30], [63, 42], [62, 58]], [2, 6, 4, 2, 4, 6, 2]), { z: .6, bev: .9, dome: 1.2 }],   /* the hot inner flame */
-      ["glow", OBJ_poly([[44, 58], [45, 47], [50, 36], [55, 47], [56, 58]], [2, 4, 2, 4, 2]), { z: .5, bev: .7, dome: .8 }],                             /* its white-hot core */
-      ["hot", OBJ_poly([[21, 58], [19, 46], [23, 34], [30, 48], [30, 58]], [2, 4, 2, 3, 2]), { z: .4, bev: .7, dome: .8 }],                             /* the side flames' hearts */
-      ["hot", OBJ_poly([[79, 58], [81, 46], [77, 34], [70, 48], [70, 58]], [2, 4, 2, 3, 2]), { z: .4, bev: .7, dome: .8 }],
+      ["hot", OBJ_SDF.shape(OBJ_SDF.minus(RND(OBJ_SDF.poly([[38, 58], [37, 42], [44, 30], [50, 17], [56, 30], [63, 42], [62, 58]])), OBJ_SDF.poly([[5, 76], [13, 60], [30, 53], [50, 57], [70, 53], [87, 60], [95, 76], [88, 93], [12, 93]])), [0, 0, 100, 100]), { z: .6, bev: .9, dome: 1.2 }],   /* the hot inner flame */
+      ["glow", OBJ_SDF.shape(OBJ_SDF.minus(RND(OBJ_SDF.poly([[44, 58], [45, 47], [50, 36], [55, 47], [56, 58]])), OBJ_SDF.poly([[5, 76], [13, 60], [30, 53], [50, 57], [70, 53], [87, 60], [95, 76], [88, 93], [12, 93]])), [0, 0, 100, 100]), { z: .5, bev: .7, dome: .8 }],                             /* its white-hot core */
+      ["hot", OBJ_SDF.shape(OBJ_SDF.minus(RND(OBJ_SDF.poly([[21, 58], [19, 46], [23, 34], [30, 48], [30, 58]])), OBJ_SDF.poly([[5, 76], [13, 60], [30, 53], [50, 57], [70, 53], [87, 60], [95, 76], [88, 93], [12, 93]])), [0, 0, 100, 100]), { z: .4, bev: .7, dome: .8 }],                             /* the side flames' hearts */
+      ["hot", OBJ_SDF.shape(OBJ_SDF.minus(RND(OBJ_SDF.poly([[79, 58], [81, 46], [77, 34], [70, 48], [70, 58]])), OBJ_SDF.poly([[5, 76], [13, 60], [30, 53], [50, 57], [70, 53], [87, 60], [95, 76], [88, 93], [12, 93]])), [0, 0, 100, 100]), { z: .4, bev: .7, dome: .8 }],
       ["rubber", OBJ_poly([[5, 76], [13, 60], [30, 53], [50, 57], [70, 53], [87, 60], [95, 76], [88, 93], [12, 93]], [5, 4, 3, 3, 3, 4, 5, 5, 5]), { z: .8, bev: 1.1, gem: 1.8, gw: 6 }],   /* the stone, faceted */
       ["hot", "M24 66L36 75L31 87M62 64L71 74L83 79M50 70L53 84", { ln: 2.8, cut: .8 }],                                                               /* its glowing cracks */
     ],
@@ -40,7 +45,8 @@
     holes,
     base: "steel",
     plates: [
-      ["wood", OBJ_rrect(40, Y0, 56, Y1 - Y0, [0, 2, 2, 0]), { dome: .6 }],                       /* the film strip */
+      /* (art9) the film strip leaves the reel from under its rim: drawn on under the reel, its top edge and end showed through the reel's face as a step */
+      ["wood", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.box(40, Y0, 56, Y1 - Y0, 2), OBJ_SDF.circle(C[0], C[1], R)), [0, 0, 100, 100]), { dome: .6 }],   /* the film strip */
       ["rubber", perf, { z: -.9, bev: .5 }],                                                         /* its perforations */
       ["steel", OBJ_circle(C[0], C[1], R), { dome: .4 }],                                          /* the reel */
       ["steel", OBJ_circle(C[0], C[1], R - 5.5), { z: -.7, bev: .9 }],                             /* its face, inside the rim */
@@ -65,9 +71,11 @@
     base: "rubber",
     plates: [
       ["rubber", OBJ_circle(C[0], C[1], R), { dome: 4 }],                                                   /* the sphere */
-      ["brass", OBJ_poly([P(a - 5, -W), P(CAP, -W), P(CAP, W), P(a - 5, W)], 1.5), { z: .5, bev: .7, gem: .9, gw: 2.2 }],   /* the cap */
-      ["brass", "M" + f(P(a - 1, -W)) + "L" + f(P(a - 1, W)), { ln: 1.4, cut: .7, paint: 0 }],             /* its seam */
-      ["cream", OBJ_poly([P(CAP - 1, -FW), P(ST - SV + 1, -FW), P(ST - SV + 1, FW), P(CAP - 1, FW)], 1), { dome: .9 }],   /* the fuse */
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right." The cap ran 5 on over the sphere and took its
+         curve as an arc across it (a part's relief is added to what is under it). It now stands out of the sphere from its edge. */
+      ["brass", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.poly([P(a - 5, -W), P(CAP, -W), P(CAP, W), P(a - 5, W)]), OBJ_SDF.circle(C[0], C[1], R)), [0, 0, 100, 100]), { z: .5, bev: .7, gem: .9, gw: 2.2 }],   /* the cap */
+      ["brass", "M" + f(P(a + 3.5, -W)) + "L" + f(P(a + 3.5, W)), { ln: 1.4, cut: .7, paint: 0 }],         /* its seam */
+      ["cream", OBJ_poly([P(CAP, -FW), P(ST - SV, -FW), P(ST - SV, FW), P(CAP, FW)], 0), { dome: .9 }],   /* the fuse, from the cap's end to the spark's foot (art9: run a unit into each, its ends showed through them) */
       ["hot", OBJ_poly(star.slice(1, -1).concat([S]), 1), { z: .5, bev: .7, gem: 1, gw: 2.4 }],             /* the spark */
       ["glow", OBJ_circle(S[0], S[1], 4.2), { dome: 1.2 }],                                                  /* its heart */
     ],
@@ -134,13 +142,16 @@
     holes: [OBJ_rrect(33, 31, 8, top(33) - 31 - .8, 2)],
     base: "steel",
     plates: [
-      ["water", OBJ_poly([[49, 40], [51, 40]].concat(edge).concat([[51, 60], [49, 60]]), [0, 1].concat(er).concat([1, 0])), { dome: 1.8 }],   /* the spray */
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right." Each part ran a unit or two on under the next
+         (the hose under the coupling, the barrel and the spray under the tip, the bale handle over the barrel), and a part's relief is
+         added to what is under it, so each join showed a ridge through the part in front. Every part now ends where the next begins. */
+      ["water", OBJ_poly([[51.8, 40], [52, 40]].concat(edge).concat([[52, 60], [51.8, 60]]), [0, 1].concat(er).concat([1, 0])), { dome: 1.8 }],   /* the spray */
       ["water", streams, { ln: 1.6, cut: .9, paint: 0 }],                                           /* its streams */
-      ["red", OBJ_rrect(3, 42, 14, 16, [4, 0, 0, 4]), { dome: 1.1 }],                               /* the hose */
+      ["red", OBJ_rrect(3, 42, 12, 16, [4, 0, 0, 4]), { dome: 1.1 }],                               /* the hose */
       ["brass", OBJ_rrect(15, 35, 11, 30, 1), { z: .6, bev: .6 }],                                  /* the coupling */
       ["brass", knurl, { ln: 1.2, cut: .7, paint: 0 }],                                             /* its knurling */
-      ["steel", OBJ_poly([[26, top(26)], [46, top(46)], [46, bot(46)], [26, bot(26)]], 1), { dome: 1.4 }],   /* the barrel */
-      ["rubber", OBJ_poly([[28, top(28) + 1], [28, 26], [46, 26], [46, top(46) + 1]], [0, 2, 2, 0]), { z: .5, bev: .6 }],   /* the bale handle */
+      ["steel", OBJ_poly([[26, top(26)], [45, top(45)], [45, bot(45)], [26, bot(26)]], [0, 0, 0, 0]), { dome: 1.4 }],   /* the barrel */
+      ["rubber", OBJ_poly([[28, top(28)], [28, 26], [46, 26], [46, top(46)]], [0, 2, 2, 0]), { z: .5, bev: .6 }],   /* the bale handle */
       ["steel", OBJ_rrect(45, 40, 7, 20, 1.5), { z: .5, bev: .5, gem: .6, gw: 1.6 }],               /* the tip */
     ],
   };
@@ -189,7 +200,9 @@
   const rows = [48, 63, 78], plates = [
     ["wood", OBJ_poly([[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]], [4, 4, 0, 4]), { dome: .6 }],                                   /* the board */
     ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 54, 2), { z: .5, bev: .6 }],                    /* the sheet */
-    ["steel", OBJ_poly([[20, 38], [20, 28], [26, 16], [56, 16], [62, 28], [62, 38]], [2, 2, 3, 3, 2, 2]), { z: 1.1, bev: .8, dome: .6 }],   /* the clip */
+    /* (art9) Madison: "There's a lot of spots all over that just don't look right." The clip took the board's edge and the sheet's
+       top as steps across it (a part's relief is added to what is under it); it now lies flat over both (lvl). */
+    ["steel", OBJ_poly([[20, 38], [20, 28], [26, 16], [56, 16], [62, 28], [62, 38]], [2, 2, 3, 3, 2, 2]), { z: 1.1, bev: .8, dome: .6, lvl: "clip" }],   /* the clip */
   ];
   /* (384.136 art6) the three rows' boxes, ticks and lines are one plate each (the same parts, the same options): a badge holds at
      most CHAPTER_OBJ_MAX_PLATES (24) and the pencil's contour was the 25th, dropped without a word */
@@ -260,7 +273,11 @@
     d: sil.d, holes: sil.holes,
     col: "#E0352B", base: "red",
     plates: [
-      ["glow", S.shape(yel, BB), { dome: .6, col: "#F2C230" }],                                       /* the yellow tag behind */
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right." The yellow tag ran on under the red one and the
+         wire lay over both, and a part's relief is added to what is under it: the yellow tag's edge showed through the red one as a
+         nick along its foot, the red tag's edge as a step across the wire. The yellow tag now stops at the red one; the wire lies
+         flat over everything (lvl). */
+      ["glow", S.shape(S.minus(yel, red), BB), { dome: .6, col: "#F2C230" }],                         /* the yellow tag behind */
       ["glow", "M" + rot([67, 66]).map(v => v.toFixed(2)).join(" ") + "L" + rot([67, 90]).map(v => v.toFixed(2)).join(" ") + "M" + rot([70, 63]).map(v => v.toFixed(2)).join(" ") + "L" + rot([70, 90]).map(v => v.toFixed(2)).join(" "), { ln: .9, cut: .45, paint: 0 }],   /* its grid, where it shows */
       ["red", S.shape(red, BB), { z: .6, bev: .8, dome: .6 }],                                       /* the red tag */
       ["red", grid, { ln: .8, cut: .45, paint: 0 }],                                                  /* its day and month grids */
@@ -269,7 +286,7 @@
       ["ink", "M32.5 80.5H59.5M35.5 87H56.5", { ln: 3.6, z: .4, bev: .35, col: "#1D1616" }],          /* EQUIPMENT IMPAIRED */
       ["cream", OBJ_circle(G[0], G[1], 7.2), { z: .3, bev: .5, dome: .4, col: "#D8C08E" }],            /* the reinforcing patch */
       ["steel", OBJ_circle(G[0], G[1], 4.5), { z: .6, bev: .5, dome: .8 }],                           /* the eyelet */
-      ["steel", S.shape(S.grow(wire, -.01), BB), { z: .4, bev: .7, dome: 1.2 }],                      /* the wire loop */
+      ["steel", S.shape(S.grow(wire, -.01), BB), { z: .4, bev: .7, dome: 1.2, lvl: "wire" }],         /* the wire loop */
     ],
   };
 }

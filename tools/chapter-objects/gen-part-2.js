@@ -26,13 +26,14 @@ const OUT = {};
   OUT.c22 = { d: shape(union([bin, eave, roof, cap, leg, head, boot, spout], 1.6), [2, 1, 98, 99]), bin: shape(bin, [8, 44, 70, 99]),
     eave: shape(eave, [4, 40, 74, 54]) };
 }
-/* Chapter 23: the dispenser, its plinth, the hose loop (a hole) and the nozzle hung in its holster */
+/* Chapter 23: the dispenser, its plinth, the hose loop (a hole) and the nozzle hung in its holster (art9: the hose stops where the
+   nozzle starts - its round end showed through the nozzle's stem as a lump) */
 {
   const hose = union([capsule(66, 71.5, 80, 71.5, 3.6), capsule(83.5, 40, 83.5, 64, 3.6), tube([78, 71.5], [83.5, 71.5], [83.5, 64], () => 3.6, 6)], 0);
   const nozzle = union([box(75, 22, 17, 11, 3), capsule(83.5, 30, 83.5, 41, 3.6), capsule(77, 26, 68, 33, 2.8)], 2);
   const body = union([box(20, 12, 48, 76, 3), box(15, 3, 58, 13, 4), box(14, 86, 60, 9, 2.5)], 1.5);
   const sil = trace(union([body, hose, nozzle], 2.4), [10, 2, 96, 98]);
-  OUT.c23 = { d: sil.d, holes: sil.holes, hose: shape(hose, [60, 36, 90, 78]), nozzle: shape(nozzle, [58, 18, 94, 44]) };
+  OUT.c23 = { d: sil.d, holes: sil.holes, hose: shape(minus(hose, nozzle), [60, 36, 90, 78]), nozzle: shape(nozzle, [58, 18, 94, 44]) };
 }
 /* Chapter 25: three fingers fanning from the crown */
 {

@@ -100,7 +100,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["cream", OBJ_rrect(52, 12, 28, 30, [7, 6, 2, 2]), { dome: .9 }],                            /* the handle */
       ["glow", OBJ_rrect(26, 47, 48, 40, 5), { z: -.8, bev: .9 }],                               /* the panel pressed in */
       ["field", "M21 43H79M21 91H79", { ln: 1.6, cut: .8, paint: 0 }],                            /* the moulded ribs */
-      ["cream", OBJ_rrect(33, 12, 16, 12, 1), { z: .3 }],                                         /* the neck */
+      ["cream", OBJ_rrect(33, 13.5, 16, 10.5, [0, 0, 1, 1]), { z: .3 }],                          /* the neck, from under the cap (art9: its top showed through the cap as a step) */
       ["red", OBJ_rrect(31, 4, 20, 9.5, 2.5), { z: .6, bev: .6 }],                               /* the cap */
       ["deep", "M35 6.5V11M39 6.5V11M43 6.5V11M47 6.5V11", { ln: 1.3, cut: .6, paint: 0 }],       /* its knurling */
       ["glow", "M29.6 62.4L32.4 64.6L30.4 66.8L32.4 68.4", { ln: 1.3, cut: .9, paint: 0 }],           /* the split it seeps from */
@@ -128,8 +128,8 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   const n = pts.length; [[n - 1, 8], [n - 2, 1], [n - 3, 3], [n - 4, 3], [n - 5, 1]].forEach(q => { rs[q[0]] = q[1]; });
   const iL = 5 + sL.length - 2; [[iL, 1], [iL + 1, 1], [iL + 2, 1.5], [iL + 3, 2]].forEach(q => { rs[q[0]] = q[1]; });
   const iR = iL + 4 + cloud.length - 1; [[iR, 1], [iR + 1, 2], [iR + 2, 1.5], [iR + 3, 1], [iR + 4, 1]].forEach(q => { rs[q[0]] = q[1]; });
-  const tank = OBJ_poly([[20, 96], [20, CY]].concat(sL.slice(1)).concat(P4_arc(50, CY, 30, 24, 250.5, 289.5, 3).slice(1, -1)).concat(sR.slice(0, -1)).concat([[80, CY], [80, 96]]),
-    [8, 0].concat(sL.slice(1).map(() => 0)).concat([0, 0]).concat(sR.slice(0, -1).map(() => 0)).concat([0, 8]));
+  const tank = OBJ_poly([[20, 96], [20, CY]].concat(sL.slice(1)).concat(P4_arc(50, CY, 30, 24, 250.5, 289.5, 12).slice(1, -1)).concat(sR.slice(0, -1)).concat([[80, CY], [80, 96]]),
+    [8, 0].concat(sL.slice(1).map(() => 0)).concat(P4_arc(50, CY, 30, 24, 250.5, 289.5, 12).slice(1, -1).map(() => 0)).concat(sR.slice(0, -1).map(() => 0)).concat([0, 8]));
   CHAPTER_OBJ["Chapter 55: Cryogenic Fluids"] = {
     base: "steel",
     d: OBJ_poly(pts, rs),
@@ -137,9 +137,11 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["steel", tank, { dome: 2 }],                                                               /* the insulated steel tank */
       ["glass", OBJ_rrect(20, CY + 4, 60, 9, 0), { z: .6, bev: .7 }],                            /* its frosted band */
       ["steel", "M21 " + (CY + 21) + "H79", { ln: 1.6, cut: .8, paint: 0 }],                      /* a groove */
-      ["rubber", OBJ_rrect(11, CY + 2, 12, 14, 3), { dome: .9 }],                                  /* the lugs */
-      ["rubber", OBJ_rrect(77, CY + 2, 12, 14, 3), { dome: .9 }],
-      ["steel", OBJ_rrect(40, LT + 7, 20, NY - LT - 5, 1), { z: .4, bev: .5 }],                  /* the neck */
+      ["rubber", OBJ_rrect(11, CY + 2, 12, 14, 3), { dome: .9, lvl: "lug" }],                      /* the lugs (art9: flat over the tank's side and the band, whose edges showed through them) */
+      ["rubber", OBJ_rrect(77, CY + 2, 12, 14, 3), { dome: .9, lvl: "lug" }],
+      /* (art9) the neck stands on the tank's crown (it ran 2 on over it, so the crown's edge showed through it), and the crown is a
+         smooth arc (three straight pieces glinted as beads along it) */
+      ["steel", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.box(40, LT + 7, 20, NY - LT - 5, 0), OBJ_SDF.ellipse(50, CY, 30, 24)), [0, 0, 100, 100]), { z: .4, bev: .5 }],   /* the neck */
       ["rubber", OBJ_rrect(34, LT, 32, 8, 2), { gem: 1, gw: 2 }],                                    /* the stopper */
       ["glow", OBJ_poly(W1, 0), { dome: 1.2 }],                                                     /* the vapour */
       ["glow", OBJ_poly(W2, 0), { dome: 1.2 }],
@@ -170,7 +172,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["brass", OBJ_rrect(X(35), 24.5, X(65) - X(35), 4, 1.5), { z: .5, bev: .5 }],                 /* its rim */
       ["brass", OBJ_poly([[X(64), 47], [X(78), 67], [X(78), 80], [X(64), 73]], [0, 3, 3.5, 0]), { z: .3, bev: .8 }],   /* the fins */
       ["brass", OBJ_poly([[X(36), 47], [X(22), 67], [X(22), 80], [X(36), 73]], [0, 3, 3.5, 0]), { z: .3, bev: .8 }],
-      ["wood", OBJ_rrect(47, 74, 6, 23, [0, 0, 2.5, 2.5]), { dome: .7 }],                          /* the stick */
+      ["wood", OBJ_rrect(47, 77, 6, 20, [0, 0, 2.5, 2.5]), { dome: .7 }],                          /* the stick, from the body's foot (art9: run up under it, its top showed through as a tab) */
     ],
   };
 }
@@ -191,7 +193,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["brass", OBJ_rrect(16, 54, 52, 43, [2, 0, 6, 6]), { dome: 1.5 }],                          /* the case */
       ["brass", "M17 61H67", { ln: 1.5, cut: .7, paint: 0 }],                                      /* its seam */
       ["brass", OBJ_rrect(58, 16, 18, 40, [5, 5, 2, 2]), { dome: 1 }],                               /* the lid, standing open */
-      ["steel", OBJ_rrect(20, 30, 32, 25, 1.5), { z: .5, bev: .6 }],                               /* the chimney */
+      ["steel", OBJ_rrect(20, 30, 32, 25, 1.5), { z: .5, bev: .6, lvl: "chimney" }],               /* the chimney (art9: flat over the case's top edge, which showed through it as a step) */
       ["steel", OBJ_rrect(57, 49, 10, 9, 2.5), { dome: 1 }],                                        /* the hinge */
       ["red", OBJ_poly(flame.concat([[42, 31], [30, 31]]), fr.concat([0, 0])), { dome: 1.5 }],     /* the flame */
       ["hot", inner, { dome: 1.1 }],                                                                /* its hot heart */
@@ -219,10 +221,17 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   const flame = S.union([S.circle(HC[0] - 1.4, HC[1] - 6.5, 6.6), S.cone(HC[0] - 1.4, HC[1] - 6.5, HC[0] - 5.5, 2.5, 6.6, 1)], 2.2);
   const all = S.union([box, stick, head, flame], 1.2);
   /* the matches in the drawer, lying along it, heads at its open end */
-  let sticks = "", heads = "";
+  /* (art9) Madison: "There's a lot of spots all over that just don't look right." A part's relief is added to what is under it: each
+     lying match's stick ran into its head (a pale hook in every red head), on under the sleeve's edge (a row of bumps down it), and the
+     struck match lay over them all (its stick rippled where it crossed each one). Each stick now runs from its head to the sleeve's
+     edge, and the lying matches stop where the struck one lies across them. */
+  const lyS = [], lyH = [];
   for(let k = 0; k < 6; k++){ const w = .13 + k * .148, h = P(DL + 4.2, w), e = P(SL, w);
-    sticks += "M" + f([h[0] + 2, h[1] + 1.2]) + "L" + f([e[0], e[1] + 1.2]);
-    heads += OBJ_ellipse(h[0], h[1] + 1.2, 3.6, 2.6); }
+    lyS.push(S.capsule(h[0] + 2, h[1] + 1.2, e[0] + 2, e[1] + 1.2, 1.2));
+    lyH.push(S.ellipse(h[0], h[1] + 1.2, 3.6, 2.6)); }
+  const sleeve = S.poly([P(SL, 0), P(SR, 0), P(SR, 1), P(SL, 1)]), over = S.grow(stick, .2);
+  const sticks = S.loops(S.minus(S.minus(S.minus(S.union(lyS, 0), S.union(lyH, 0)), sleeve), over), BB).map(S.pathOf).join("");
+  const heads = S.loops(S.minus(S.union(lyH, 0), over), BB).map(S.pathOf).join("");
   const quad = (a, b, c, d, r) => OBJ_poly([a, b, c, d], r), FE = P(61.5, .5);
   CHAPTER_OBJ["Chapter 59: Flammable Solids"] = {
     d: S.shape(all, BB),
@@ -230,7 +239,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     plates: [
       ["cardboard", quad(P(DL, 0), P(SL, 0), P(SL, 1), P(DL, 1), .8), { col: "#D8B98C" }],                                   /* the drawer's rim */
       ["wood", quad(P(DL + 1.6, .07), P(SL, .07), P(SL, .94), P(DL + 1.6, .94), .6), { z: -1.2, bev: .6, col: "#6E4B2A" }],   /* inside it */
-      ["wood", sticks, { ln: 2.4, z: -.6, bev: .4, col: "#E2C38F" }],                                                         /* the matches lying in it */
+      ["wood", sticks, { z: -.6, bev: .4, col: "#E2C38F" }],                                                                  /* the matches lying in it */
       ["red", heads, { z: -.2, bev: .5, dome: .9, col: "#D8352C" }],                                                          /* their heads */
       ["cardboard", quad(P(DL, 0), P(SL, 0), dn(P(SL, 0)), dn(P(DL, 0)), [.8, 0, 0, .8]), { z: .2, bev: .5, col: "#D8B98C" }], /* the drawer's front */
       ["field", quad(P(SL, 0), P(SR, 0), P(SR, 1), P(SL, 1), .8), { dome: .8 }],                                              /* the sleeve's top */
@@ -239,10 +248,10 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["leather", quad(P(SL, 0), P(SR, 0), dn(P(SR, 0)), dn(P(SL, 0)), [0, 0, .8, 0]), { z: .2, bev: .5, col: "#6B3F22" }],     /* the striking strip down its side */
       ["leather", "M" + f([SL + 3, 76.5]) + "H" + (SR - 3) + "M" + f([SL + 3, 80]) + "H" + (SR - 3), { ln: 1, cut: .4, paint: 0 }],
       ["shade", quad(P(SR, 0), P(SR, 1), dn(P(SR, 1)), dn(P(SR, 0)), [0, .8, .8, .8]), { z: .1, bev: .5 }],                     /* the sleeve's end */
-      ["wood", S.shape(stick, BB), { z: 1, bev: .7, dome: .5, col: "#E2C38F" }],                                               /* the struck match */
+      ["wood", S.shape(S.minus(stick, head), BB), { z: 1, bev: .7, dome: .5, col: "#E2C38F", lvl: "struck" }],                                /* the struck match, one straight stick (lvl: not stepping down over the drawer's rim) */
       ["hot", S.shape(flame, BB), { z: .8, dome: 1.4, col: "#FF8A2A" }],                                                        /* its flame */
       ["glow", S.shape(S.union([S.circle(HC[0] - 1.2, HC[1] - 5.2, 3.4), S.cone(HC[0] - 1.2, HC[1] - 5.2, HC[0] - 3.6, 9.5, 3.4, .6)], 1.4), BB), { z: 1.3, bev: .6, dome: .8, col: "#FFE9A8" }],   /* its heart */
-      ["red", S.shape(head, BB), { z: 1.4, bev: .6, dome: 1.6, col: "#C9302A" }],                                               /* its head, burning */
+      ["red", S.shape(head, BB), { z: 1.4, bev: .6, dome: 1.6, col: "#C9302A", lvl: "head" }],                                  /* its head, burning (whole: the flame under it no longer shows through) */
     ],
   };
 }
@@ -264,7 +273,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["field", OBJ_poly(body, [3, 5, 5, 5, 5, 3]), { gem: 1.5, gw: 6 }],                            /* the faceted body */
       ["body", OBJ_poly(panel, [2, 3, 3, 3, 3]), { z: .8, bev: .9 }],                                 /* its raised front */
       ["body", P4_lines(segs), { ln: 1.4, cut: .7, paint: 0 }],                                       /* quilted */
-      ["field", OBJ_rrect(43, 18, 14, 11, 0), { z: .2 }],                                             /* the neck */
+      ["field", OBJ_rrect(43, 19, 14, 8, 0), { z: .2 }],                                              /* the neck, from the lip to the shoulder (art9: run on under both, their edges showed through it) */
       ["shade", OBJ_rrect(39, 12, 22, 7, 2), { z: .5, bev: .6 }],                                     /* the lip */
       ["wood", OBJ_rrect(43, 2, 14, 11, [2.5, 2.5, 0, 0]), { dome: 1 }],                              /* the cork */
       ["wood", "M44 6H56", { ln: 1.2, cut: .5, paint: 0 }],
@@ -346,13 +355,16 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["field", OBJ_poly([[8, 42], [92, 42], [89, 94], [11, 94]], [0, 0, 8, 8]), { dome: 1 }],        /* the body */
       ["body", OBJ_poly([[16, 50], [84, 50], [82, 86], [18, 86]], 4), { z: .7, bev: .9 }],            /* its raised panel */
       ["cream", sf(50, 68, 13.5), { ln: 2.6, z: .9, bev: .5, col: "#F7F9FA" }],                       /* the snowflake on it */
-      ["shade", OBJ_rrect(28, 8, 44, 20, [7, 7, 0, 0]), { dome: .9 }],                                /* the carry handle */
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right." The handle ran 2 on under the lid, and the grips
+         and the latch lay over the body's and the lid's edges, and a part's relief is added to what is under it: each showed the edge
+         under it as a step. The handle now stands on the lid; the grips and the latch lie flat over what they cross (lvl). */
+      ["shade", OBJ_rrect(28, 8, 44, 18, [7, 7, 0, 0]), { dome: .9 }],                                /* the carry handle */
       ["cream", OBJ_rrect(5, 26, 90, 16, [6, 6, 1, 1]), { dome: 1, col: "#F4F2EC" }],                   /* the lid */
       ["cream", OBJ_rrect(14, 29.5, 72, 7.5, 3), { z: .5, bev: .7, col: "#F4F2EC" }],                    /* its top */
       ["field", "M6 42.5H94", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the seal line */
-      ["shade", OBJ_rrect(2, 54, 9, 16, 3), { dome: .9 }],                                             /* the end grips */
-      ["shade", OBJ_rrect(89, 54, 9, 16, 3), { dome: .9 }],
-      ["steel", OBJ_rrect(43, 37, 14, 13, 2.5), { dome: 1 }],                                          /* the latch */
+      ["shade", OBJ_rrect(2, 54, 9, 16, 3), { dome: .9, lvl: "grip" }],                                /* the end grips */
+      ["shade", OBJ_rrect(89, 54, 9, 16, 3), { dome: .9, lvl: "grip" }],
+      ["steel", OBJ_rrect(43, 37, 14, 13, 2.5), { dome: 1, lvl: "latch" }],                            /* the latch */
     ],
   };
 }

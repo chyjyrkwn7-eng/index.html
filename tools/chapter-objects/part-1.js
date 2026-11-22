@@ -61,15 +61,19 @@
   const all = S.union([body, neck, valve, lever, handle, gauge, gstem, hose, horn, clip], 1.2), sil = S.trace(all, BB);
   CHAPTER_OBJ["Chapter 3: General Requirements"] = {
     d: sil.d, holes: sil.holes, base: "red",
+    /* (art9) Madison: "There's a lot of spots all over that just don't look right ... we want perfection." Round the valve every part
+       was drawn whole under the next, and a part's relief is added to what is under it: the cylinder's shoulder showed through the
+       brass collar as a step, the collar's top through the valve head as a bar, the hose's start as a lump under the valve and the
+       gauge, the gauge's stem as a blob in the gauge's rim. Each part now stops where the part in front of it starts. */
     plates: [
-      ["red", S.shape(body, BB), { dome: 1.7 }],                                                          /* the cylinder */
+      ["red", S.shape(S.minus(body, neck), BB), { dome: 1.7 }],                                           /* the cylinder */
       ["cream", OBJ_rrect(32, 54, 34, 23, 2), { z: .5, bev: .6, col: "#F4F1EA" }],                         /* its label */
       ["cream", "M37 61H61M37 66H61M37 71H54", { ln: 1.5, cut: .6, paint: 0 }],                           /* its lines of instructions */
       ["deep", OBJ_rrect(29, 90, 40, 6, [0, 0, 5.5, 5.5]), { z: .3, bev: .5 }],                               /* the foot ring */
-      ["rubber", S.shape(S.union([hose, horn], .6), BB), { dome: .9 }],                                    /* the hose and its horn */
-      ["steel", S.shape(clip, BB), { z: .5, bev: .5 }],                                                    /* the clip */
-      ["brass", S.shape(neck, BB), { z: .4, bev: .5 }],                                                    /* the collar */
-      ["steel", S.shape(S.union([valve, gstem], .8), BB), { dome: .9 }],                                   /* the valve head */
+      ["rubber", S.shape(S.minus(S.union([hose, horn], .6), S.union([valve, gauge, neck, body], 0)), BB), { dome: .9 }],   /* the hose and its horn, from under the valve */
+      ["steel", S.shape(clip, BB), { z: .5, bev: .5, lvl: "clip" }],                                       /* the clip */
+      ["brass", S.shape(S.minus(neck, valve), BB), { z: .4, bev: .5 }],                                    /* the collar */
+      ["steel", S.shape(S.minus(S.union([valve, gstem], .8), gauge), BB), { dome: .9 }],                   /* the valve head */
       ["rubber", S.shape(handle, BB), { dome: .8 }],                                                      /* the carry handle */
       ["rubber", S.shape(lever, BB), { dome: .8 }],                                                       /* the squeeze lever */
       ["steel", S.shape(gauge, BB), { dome: .7 }],                                                        /* the gauge */
@@ -119,11 +123,12 @@
       ["steel", OBJ_rrect(47, 28.5, 22.5, 66.5, 1), { z: .4, bev: .6, dome: .6 }],
       ["rubber", "M46 29V90", { ln: 3, cut: 1 }],                                                           /* the gap where they meet */
       ["steel", OBJ_rrect(19, 91, 54, 4, 1), { z: .5, bev: .5 }],                                              /* the sill */
-      ["rubber", OBJ_rrect(26, 1, 40, 20, [4, 4, 0, 0]), { z: .3 }],                                             /* the floor lantern */
+      /* (art9) the lantern and the call station end on the frame's edge: run on over it, the frame's edge showed through each as a ridge */
+      ["rubber", OBJ_rrect(26, 1, 40, 18, [4, 4, 0, 0]), { z: .3 }],                                             /* the floor lantern */
       ["rubber", OBJ_rrect(29, 3.5, 34, 15, 2), { z: -.7, bev: .6 }],
       ["glow", OBJ_poly([[31.5, 16], [38.5, 6], [45.5, 16]], 1.2), { gem: 1.2, gw: 2 }],                       /* up */
       ["glow", OBJ_poly([[46.5, 6], [60.5, 6], [53.5, 16]], 1.2), { gem: 1.2, gw: 2 }],                        /* down */
-      ["brass", OBJ_rrect(76, 44, 18, 30, [0, 4, 4, 0]), { z: .3 }],                                            /* the call station */
+      ["brass", OBJ_rrect(78, 44, 16, 30, [0, 4, 4, 0]), { z: .3 }],                                            /* the call station */
       ["rubber", OBJ_rrect(81, 48, 9, 22, 4.5), { z: -.6, bev: .6 }],
       ["glow", OBJ_circle(85.5, 53.5, 2.8), { dome: 1.2 }],                                                    /* its two buttons */
       ["glow", OBJ_circle(85.5, 64.5, 2.8), { dome: 1.2 }],
@@ -158,15 +163,21 @@
     d: "M20 36" + OBJ_chain([[20, 36], [20, 8], [80, 8], [80, 36]], [0, 13, 13, 0]) + "A10 10 0 0 1 96 44" +
        OBJ_chain([[96, 44], [96, 84], [88, 84], [87, 94], [81, 94], [80, 84], [20, 84], [19, 94], [13, 94], [12, 84], [4, 84], [4, 44]], [0, 2, 1, 1.5, 1.5, 1, 1, 1.5, 1.5, 1, 2, 0]) + "A10 10 0 0 1 20 36Z",
     base: "leather",                                                                                              /* warm brown leather */
+    /* (art9) Madison: "There's a lot of spots all over that just don't look right ... we want perfection." The back, the skirt and
+       the seat were drawn whole under the arms, and a part's relief is added to what is under it, so the back's edge stood up as a
+       ridge down each arm, the back's foot and the skirt's top as steps across them, and the seat's end as a crease inside them. Each
+       part now stops where the part in front of it starts: the back behind the seat and the arms, the skirt between the arms and
+       under the seat. */
     plates: [
-      ["leather", OBJ_rrect(20, 8, 60, 50, [13, 13, 0, 0]), { dome: 1.2 }],                                     /* the back */
+      ["leather", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.minus(OBJ_SDF.inter(OBJ_SDF.box(20, 8, 60, 80, 13), OBJ_SDF.box(0, 0, 100, 58, 0)),
+        OBJ_SDF.union([OBJ_SDF.box(4, 34, 20, 60, 10), OBJ_SDF.box(76, 34, 20, 60, 10)], 0)), OBJ_SDF.union([OBJ_SDF.box(24, 52, 52, 19, 4), OBJ_SDF.box(24, 60, 52, 11, 1)], 0)), [0, 0, 100, 100]), { dome: 1.2 }],   /* the back */
       ["leather", OBJ_rrect(27, 14, 46, 38, [10, 10, 3, 3]), { z: .5, bev: .8, dome: 1.2 }],                    /* its cushion */
       ["rubber", OBJ_rrect(27, 14, 46, 38, [10, 10, 3, 3]), { ln: 1.4, z: .3, bev: .4 }],                    /* its piping */
       ["rubber", "M42.5 20V46M57.5 20V46", { ln: 1.3, cut: .8 }],                                            /* its channel stitching */
-      ["leather", OBJ_rrect(6, 70, 88, 14, 3), { z: .2 }],                                                      /* the skirt */
-      ["rubber", "M8 76H92", { ln: 1.3, cut: .6 }],
-      ["leather", OBJ_rrect(22, 52, 56, 19, 5), { z: .6, bev: .8, dome: 1.4 }],                                 /* the seat cushion */
-      ["rubber", OBJ_rrect(22, 52, 56, 19, 5), { ln: 1.4, z: .3, bev: .4 }],                                 /* its piping */
+      ["leather", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.box(23, 70, 54, 14, 0), OBJ_SDF.union([OBJ_SDF.box(24, 52, 52, 19, 4), OBJ_SDF.box(24, 60, 52, 11, 1)], 0)), [0, 0, 100, 100]), { z: .2 }],   /* the skirt */
+      ["rubber", "M25.5 76H74.5", { ln: 1.3, cut: .6 }],
+      ["leather", OBJ_rrect(24, 52, 52, 19, [4, 4, 1, 1]), { z: .6, bev: .8, dome: 1.4 }],                      /* the seat cushion, between the arms */
+      ["rubber", OBJ_rrect(24.7, 52.7, 50.6, 17.6, [3.3, 3.3, 1, 1]), { ln: 1.4, z: .3, bev: .4 }],          /* its piping */
       ["leather", OBJ_rrect(4, 34, 20, 50, [10, 10, 2, 2]), { z: .7, bev: .8, dome: 1.6 }],                      /* the arms */
       ["leather", OBJ_rrect(76, 34, 20, 50, [10, 10, 2, 2]), { z: .7, bev: .8, dome: 1.6 }],
       ["leather", OBJ_circle(14, 45, 6.5), { z: .5, bev: .7, dome: .8 }],                                        /* their scrolled fronts */
@@ -183,7 +194,7 @@
    cornice, four fluted columns with their capitals and bases standing out of the shadowed portico, the two steps. ---- */
 {
   const cols = [23, 41, 59, 77], parts = [];
-  cols.forEach(c => parts.push(["glow", OBJ_rrect(c - 5, 41, 10, 38, 1), { z: 1.5, bev: .6, dome: 1 }]));
+  cols.forEach(c => parts.push(["glow", OBJ_rrect(c - 5, 42.5, 10, 35.5, 0), { z: 1.5, bev: .6, dome: 1 }]));   /* (art9) from the capital to the base: run on into them, the shaft's ends showed through as lumps */
   let flutes = ""; cols.forEach(c => { flutes += "M" + (c - 2.4) + " 45V75M" + (c + 2.4) + " 45V75"; });
   cols.forEach(c => parts.push(["glow", OBJ_rrect(c - 6.5, 37, 13, 5.5, 1), { z: 1.7, bev: .5 }]));
   cols.forEach(c => parts.push(["glow", OBJ_rrect(c - 6.5, 78, 13, 4, 1), { z: 1.7, bev: .5 }]));
@@ -241,8 +252,8 @@
       ["steel", "M39 56.5L9 55M61 56.5L91 55", { ln: 1.2, cut: .55, paint: 0 }],                            /* their flaps */
       ["steel", tail(-1), { dome: .6 }],                                                                        /* the tailplane */
       ["steel", tail(1), { dome: .6 }],
-      ["field", OBJ_rrect(20, 31, 8, 17, 3.5), { z: .6, bev: .6, dome: 1 }],                                      /* the engines */
-      ["field", OBJ_rrect(72, 31, 8, 17, 3.5), { z: .6, bev: .6, dome: 1 }],
+      ["field", OBJ_rrect(20, 31, 8, 17, 3.5), { z: .6, bev: .6, dome: 1, lvl: "engine" }],                       /* the engines (art9: flat over the wing's edge, which showed through them) */
+      ["field", OBJ_rrect(72, 31, 8, 17, 3.5), { z: .6, bev: .6, dome: 1, lvl: "engine" }],
       ["ink", OBJ_rrect(21.5, 32, 5, 3, 1.4), { z: -.5, bev: .4 }],                                            /* their intakes */
       ["ink", OBJ_rrect(73.5, 32, 5, 3, 1.4), { z: -.5, bev: .4 }],
       ["glow", "M42 11A8 8 0 0 1 58 11V91Q58 95 54 95H46Q42 95 42 91Z", { z: .8, bev: 1, dome: 1.8 }],          /* the fuselage */
@@ -262,15 +273,19 @@
   const hookOut = Out.slice(1), hookIn = In.slice(1).reverse();
   const pts = [[38, 22], [50 - hw, 22]].concat(hookOut).concat(hookIn).concat([[50 + hw, 22], [62, 22], [82, 28], [96, 47], [88, 56], [78, 47], [78, 90], [70, 94], [30, 94], [22, 90], [22, 47], [12, 56], [4, 47], [18, 28]]);
   const rs = [2, 1].concat(hookOut.map((p, i) => i === hookOut.length - 1 ? 2.5 : 2)).concat(hookIn.map((p, i) => i === 0 ? 2.5 : 2)).concat([1, 2, 3, 2.5, 2.5, 1, 3, 3, 3, 3, 1, 2.5, 2.5, 3]);
-  const hook = OBJ_poly([[50 - hw, 26]].concat(hookOut).concat(hookIn).concat([[50 + hw, 26]]), 2);
+  const hook = OBJ_poly([[50 - hw, 22]].concat(hookOut).concat(hookIn).concat([[50 + hw, 22]]), [0].concat(hookOut.map(() => 2)).concat(hookIn.map(() => 2)).concat([0]));   /* (art9) to the shirt's top: run on into the neck, its end stood in it as a blob */
+  const colL = [[37, 22], [50, 29.6], [43, 39]], colR = [[63, 22], [50, 29.6], [57, 39]];
   CHAPTER_OBJ["Chapter 21: Dry Cleaning"] = {
     d: OBJ_poly(pts, rs),
     plates: [
       ["steel", hook, { dome: 1 }],                                                                             /* the hook */
       ["ink", OBJ_poly([[42, 22], [58, 22], [50, 29]], [1, 1, 1.5]), { z: -1, bev: .7 }],                       /* the neck */
-      ["lite", OBJ_poly([[37, 22], [49.5, 29], [43, 39]], [1.5, 1.5, 2]), { z: .8, bev: .6, dome: .5 }],         /* the collar points */
-      ["lite", OBJ_poly([[63, 22], [50.5, 29], [57, 39]], [1.5, 1.5, 2]), { z: .8, bev: .6, dome: .5 }],
-      ["body", OBJ_rrect(46.5, 31, 7, 63, [1, 1, 0, 0]), { z: .4, bev: .5 }],                                    /* the placket */
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right." The collar points stopped a unit apart over a
+         speck of shirt, and the placket ran up under them (its top showed through each as a step). The points now meet under the
+         neck and the placket starts where they end. */
+      ["lite", OBJ_poly(colL, [1.5, .6, 2]), { z: .8, bev: .6, dome: .5 }],                                      /* the collar points */
+      ["lite", OBJ_poly(colR, [1.5, .6, 2]), { z: .8, bev: .6, dome: .5 }],
+      ["body", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.box(46.5, 29, 7, 65, 0), OBJ_SDF.union([OBJ_SDF.poly(colL), OBJ_SDF.poly(colR)], 0)), [0, 0, 100, 100]), { z: .4, bev: .5 }],   /* the placket */
       ["cream", OBJ_circle(50, 44, 2.7), { dome: 1.3 }],                                                         /* its buttons */
       ["cream", OBJ_circle(50, 57, 2.7), { dome: 1.3 }],
       ["cream", OBJ_circle(50, 70, 2.7), { dome: 1.3 }],

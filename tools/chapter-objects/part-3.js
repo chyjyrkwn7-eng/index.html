@@ -125,25 +125,25 @@
       seam += "M" + f(xm, box[1] + .8) + "V" + (box[1] + box[3] - .6).toFixed(2);
       tape += "M" + f(box[0] + box[2] * .25, box[1]) + "V" + (box[1] + box[3] * .38).toFixed(2) + "M" + f(box[0] + box[2] * .75, box[1]) + "V" + (box[1] + box[3] * .38).toFixed(2);
     });
-    plates.push(["wood", psides, { z: .35, bev: .35, col: "#7A5530" }]);   /* the pallets' tops and sides, going back */
-    plates.push(["cardboard", sides, { z: .55, bev: .5, col: "#94633A" }]);   /* the cartons' sides, in their shade */
-    plates.push(["cardboard", tops, { z: .5, bev: .5, col: "#D9AC72" }]);
-    plates.push(["cardboard", cart, { z: .7, bev: .6, col: "#B47E45" }]);
+    plates.push(["wood", psides, { z: .35, bev: .35, col: "#7A5530", lvl: "pal" }]);   /* the pallets' tops and sides, going back */
+    plates.push(["cardboard", sides, { z: .55, bev: .5, col: "#94633A", lvl: "load" }]);   /* the cartons' sides, in their shade */
+    plates.push(["cardboard", tops, { z: .5, bev: .5, col: "#D9AC72", lvl: "load" }]);
+    plates.push(["cardboard", cart, { z: .7, bev: .6, col: "#B47E45", lvl: "load" }]);
     plates.push(["cardboard", seam, { ln: 1.2, cut: .7, paint: 0 }]);
     plates.push(["cardboard", tape, { ln: 2, z: .2, bev: .3, col: "#8C5A2B" }]);
-    plates.push(["wood", pals, { z: .5, bev: .45 }]);
+    plates.push(["wood", pals, { z: .5, bev: .45, lvl: "pal" }]);
     plates.push(["ink", pfork, { z: -.6, bev: .35, col: "#2A1D12" }]);
     /* the front uprights, the punched slots up them, the orange beams and their connectors in front of everything */
-    plates.push(["field", UP.slice(0, 2).map(([x0, x1]) => polyD([[x1, TOP + 1], [x1 + 3, TOP - 1], [x1 + 3, FLOOR - 2], [x1, FLOOR]])).join(""), { z: .8, bev: .4, col: "#1D4F93" }]);   /* (art7) each upright's side, going back */
-    plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0, TOP, x1 - x0, FLOOR - TOP, 1)).join(""), { z: 1, bev: .7, dome: .5 }]);
+    plates.push(["field", UP.slice(0, 2).map(([x0, x1]) => polyD([[x1, TOP + 1], [x1 + 3, TOP - 1], [x1 + 3, FLOOR - 2], [x1, FLOOR]])).join(""), { z: .8, bev: .4, col: "#1D4F93", lvl: "post" }]);   /* (art7) each upright's side, going back */
+    plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0, TOP, x1 - x0, FLOOR - TOP, 1)).join(""), { z: 1, bev: .7, dome: .5, lvl: "post" }]);
     const onBeam = p => BEAMS.some(([y0, y1]) => p[1] > y0 - 2.4 && p[1] < y1 + 2.4);
     let slots = ""; UP.forEach(([x0, x1]) => { const xm = (x0 + x1) / 2, ys = []; for(let y = TOP + 3; y <= FLOOR - 3; y += .5) ys.push([xm, y]); slots += P3runs(ys, onBeam); });
     plates.push(["field", slots, { ln: 1.3, cut: .6, paint: 0 }]);
     let beams = "", conn = "";
     BAYS.forEach(([x0, x1]) => BEAMS.forEach(([y0, y1]) => { beams += OBJ_rrect(x0, y0, x1 - x0, y1 - y0, .6);
       conn += OBJ_rrect(x0 - 1.6, y0 - 1.6, 3.6, y1 - y0 + 3.2, .8) + OBJ_rrect(x1 - 2, y0 - 1.6, 3.6, y1 - y0 + 3.2, .8); }));
-    plates.push(["hot", beams, { z: 1.3, bev: .6, dome: .4, col: "#F07A1A" }]);
-    plates.push(["hot", conn, { z: 1.5, bev: .45, col: "#C95F12" }]);
+    plates.push(["hot", beams, { z: 1.3, bev: .6, dome: .4, col: "#F07A1A", lvl: "beam" }]);
+    plates.push(["hot", conn, { z: 1.5, bev: .45, col: "#C95F12", lvl: "conn" }]);
     CHAPTER_OBJ["Chapter 32: High-Piled Combustible Storage"] = {
       d: sil.d, holes: sil.holes,
       col: "#2F6FB8", base: "field",
@@ -274,25 +274,31 @@
     const a = -18 * Math.PI / 180, u = [Math.cos(a), Math.sin(a)], n = [-u[1], u[0]];
     const P = (p, t, w) => [p[0] + u[0] * t + n[0] * (w || 0), p[1] + u[1] * t + n[1] * (w || 0)];
     const G0 = [13, 63], G1 = P(G0, 31), H1 = P(G1, 14), T1 = P(H1, 11), N1 = P(T1, 6.5), FC = P(N1, 9), FT = P(N1, 33);
-    const grip = S.capsule(G0[0], G0[1], G1[0], G1[1], 17), head = S.capsule(G1[0], G1[1], H1[0], H1[1], 8.6);
-    const tip = S.capsule(H1[0], H1[1], T1[0], T1[1], 4.2), noz = S.cone(T1[0], T1[1], N1[0], N1[1], 4.2, 5.8);
+    /* (art9) the head ends square, 4 short of the tip's end (its round end swallowed the steel tip, so the tip never showed) */
+    const HE = P(G1, 21), grip = S.capsule(G0[0], G0[1], G1[0], G1[1], 17), head = S.inter(S.capsule(G1[0], G1[1], H1[0] + u[0] * 7, H1[1] + u[1] * 7, 8.6), (x, y) => (x - HE[0]) * u[0] + (y - HE[1]) * u[1]);
+    const tip = S.capsule(H1[0], H1[1], T1[0], T1[1], 4.2), noz = S.inter(S.cone(T1[0], T1[1], N1[0], N1[1], 4.2, 5.8), (x, y) => -((x - T1[0]) * u[0] + (y - T1[1]) * u[1]));   /* (art9) square at its foot, so the tip shows */
     const K1 = P(G0, -1.5, -13), K2 = P(G0, -1.5, 13), knobR = S.circle(K1[0], K1[1], 7.8), knobG = S.circle(K2[0], K2[1], 7.8);
     const flame = S.union([S.circle(FC[0], FC[1], 9.6), S.cone(FC[0], FC[1], FT[0], FT[1], 9.6, .9)], 0);
     const heart = S.union([S.circle(P(FC, -.5)[0], P(FC, -.5)[1], 4.6), S.cone(P(FC, -.5)[0], P(FC, -.5)[1], P(FC, 13)[0], P(FC, 13)[1], 4.6, .7)], 0);
     const blue = S.cone(P(N1, .4)[0], P(N1, .4)[1], P(N1, 5.2)[0], P(N1, 5.2)[1], 2.6, 2.9);
-    const all = S.union([grip, head, tip, noz, knobR, knobG, flame], 1.4);
+    const all = S.union([grip, head, tip, noz, knobR, knobG, flame], .6);
     const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
     let grooves = ""; [9, 16, 23, 30].forEach(t => { grooves += "M" + f(P(G0, t, -11)) + "L" + f(P(G0, t, 11)); });
     CHAPTER_OBJ["Chapter 35: Welding and Other Hot Work"] = {
       d: S.shape(all, BB),
       base: "rubber",
       plates: [
-        ["hot", S.shape(flame, BB), { dome: 1.4, col: "#FF8A2A" }],                                       /* the flame */
-        ["glow", S.shape(heart, BB), { z: .5, bev: .6, dome: .8, col: "#FFE08A" }],                       /* its yellow heart */
-        ["water", S.shape(blue, BB), { z: .8, bev: .5, dome: .6, col: "#5FB6FF" }],                       /* the hot blue cone at the nozzle */
-        ["steel", S.shape(tip, BB), { dome: .8 }],                                                         /* the tip */
-        ["brass", S.shape(noz, BB), { dome: .8 }],                                                         /* its nozzle */
-        ["brass", S.shape(head, BB), { dome: 1.2 }],                                                       /* the head */
+        /* (art9) Madison: "There's a lot of spots all over that just don't look right ... we want perfection." Each part was a whole
+           capsule painted over the last, and a part's relief is added to what is under it: the head's round end showed through the
+           grip as a half-moon, the blue cone's back as a ring inside the brass nozzle, the nozzle's round foot hid the steel tip, and the fat fillets of the outline (1.4) between head, tip,
+           nozzle and flame were snapped full of brass and steel slivers along the underside. Each part now stops where the one in
+           front of it starts (grip, head, tip, nozzle, flame, in that order from your hand), and the outline's fillets are fine. */
+        ["hot", S.shape(S.minus(flame, noz), BB), { dome: 1.4, col: "#FF8A2A" }],                         /* the flame */
+        ["glow", S.shape(S.minus(heart, blue), BB), { z: .5, bev: .6, dome: .8, col: "#FFE08A" }],        /* its yellow heart */
+        ["water", S.shape(S.minus(blue, noz), BB), { z: .8, bev: .5, dome: .6, col: "#5FB6FF" }],                       /* the hot blue cone at the nozzle */
+        ["steel", S.shape(S.minus(S.minus(tip, head), noz), BB), { dome: .8 }],                           /* the tip */
+        ["brass", S.shape(noz, BB), { dome: .5 }],                                                         /* its nozzle */
+        ["brass", S.shape(S.minus(head, grip), BB), { dome: 1.2 }],                                       /* the head */
         ["rubber", S.shape(grip, BB), { dome: 1.4 }],                                                      /* the grip */
         ["rubber", grooves, { ln: 1.6, cut: .9, paint: 0 }],                                               /* its grooves */
         ["red", S.shape(knobR, BB), { dome: 1.5, col: "#D8352C" }],                                        /* the fuel valve */
@@ -332,7 +338,11 @@
       base: "steel",
       holes: [OBJ_circle(50, 13, 5)],
       plates: [
-        ["steel", OBJ_rrect(50 - W, 20, 2 * W, 50, 2), { dome: 1.2 }],                                /* the shank */
+        /* (art9) Madison: "There's a lot of spots all over that just don't look right." The shank ran on under the ring, the stock and
+           the crown, and a part's relief is added to what is under it: its rounded foot stood up as a lump on the crown and its two
+           edges ran down the wooden stock as ridges. It now stops where each of them starts. */
+        ["steel", OBJ_SDF.loops(OBJ_SDF.minus(OBJ_SDF.minus(OBJ_SDF.inter(OBJ_SDF.box(50 - W, 20, 2 * W, 50, 0), OBJ_SDF.union([OBJ_SDF.ellipse(Ci[0], Ci[1], Rx, Ry), OBJ_SDF.box(0, 0, 100, Ci[1], 0)], 0)),
+          OBJ_SDF.box(23, 25, 54, 11, 4.5)), OBJ_SDF.circle(50, 13, 11)), [0, 0, 100, 100]).map(OBJ_SDF.pathOf).join(""), { dome: 1.2 }],   /* the shank */
         ["steel", arm, { dome: 1.8 }],                                                                 /* the arms and the crown */
         ["steel", fluke(1), { gem: 1.4, gw: 3.4 }],                                                   /* the flukes */
         ["steel", fluke(-1), { gem: 1.4, gw: 3.4 }],
@@ -366,10 +376,15 @@
       offs.forEach(o => { const h = Math.sqrt(Math.max(0, (R - 3) * (R - 3) - o * o)), m = [C[0] + v[0] * o, C[1] + v[1] * o];
         const p0 = [m[0] - u[0] * h, m[1] - u[1] * h], p1 = [m[0] + u[0] * h, m[1] + u[1] * h], c = [m[0] + v[0] * bow * (1 - Math.abs(o) / R), m[1] + v[1] * bow * (1 - Math.abs(o) / R)];
         s += skip ? P3runs(P3q(p0, c, p1, 40), skip) : "M" + P3f(p0) + "Q" + P3f(c) + " " + P3f(p1); }); return s; };
-    const underBand = p => { const a = 125 * D2R; return Math.abs(-(p[0] - C[0]) * Math.sin(a) + (p[1] - C[1]) * Math.cos(a)) < 9 + 1.3; };
-    const band = (() => { const a = 125 * D2R, u = [Math.cos(a), Math.sin(a)], v = [-u[1], u[0]], h = R + 2, w = 9;
-      return OBJ_poly([[C[0] - u[0] * h - v[0] * w, C[1] - u[1] * h - v[1] * w], [C[0] + u[0] * h - v[0] * w, C[1] + u[1] * h - v[1] * w],
-        [C[0] + u[0] * h + v[0] * w, C[1] + u[1] * h + v[1] * w], [C[0] - u[0] * h + v[0] * w, C[1] - u[1] * h + v[1] * w]], 2); })();
+    const looseOn = P3q([36.6, 63.7], [51.8, 71.3], [60, 80], 24);   /* (art9) the loose end's run across the ball */
+    const underBand = p => { const a = 125 * D2R; return Math.abs(-(p[0] - C[0]) * Math.sin(a) + (p[1] - C[1]) * Math.cos(a)) < 9 + 1.3 ||
+      looseOn.some(q => Math.hypot(p[0] - q[0], p[1] - q[1]) < hw + 1.3); };
+    const bandPts = (() => { const a = 125 * D2R, u = [Math.cos(a), Math.sin(a)], v = [-u[1], u[0]], h = R + 2, w = 9;
+      return [[C[0] - u[0] * h - v[0] * w, C[1] - u[1] * h - v[1] * w], [C[0] + u[0] * h - v[0] * w, C[1] + u[1] * h - v[1] * w],
+        [C[0] + u[0] * h + v[0] * w, C[1] + u[1] * h + v[1] * w], [C[0] - u[0] * h + v[0] * w, C[1] - u[1] * h + v[1] * w]]; })();
+    const band = OBJ_poly(bandPts, 2), S3 = OBJ_SDF;
+    const twist = [3, 7, 11, 15].map(i => { const a = line[i - 1], b = line[i + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]), t = [(b[0] - a[0]) / l, (b[1] - a[1]) / l], q = line[i];
+      return "M" + P3f([q[0] + t[1] * 2.6 - t[0] * 1.3, q[1] - t[0] * 2.6 - t[1] * 1.3]) + "L" + P3f([q[0] - t[1] * 2.6 + t[0] * 1.3, q[1] + t[0] * 2.6 + t[1] * 1.3]); }).join("");
     CHAPTER_OBJ["Chapter 37: Combustible Fibers"] = {
       d,
       plates: [
@@ -379,9 +394,13 @@
         ["lite", strands(125, [-5, 0, 5], 3), { ln: 1.5, cut: 1, paint: 0 }],                      /* its strands */
         /* (384.79) the loose end comes OUT of the ball: it starts well inside the ball (on its wound surface), in the ball's own colour and
            at the silhouette's own thickness, and runs off it - it was the darker shade and began at the ball's edge, so it read as a
-           separate piece ("the piece coming off looks disconnected") */
-        ["body", "M" + P3f([50, 66]) + "Q" + P3f([55, 76]) + " " + P3f(line[0]) + "L" + line.map(P3f).join("L"), { ln: hw * 2, z: .45, bev: 1.1 }],
-        ["body", "M" + P3f(line[4]) + "l2.6 -3.4M" + P3f(line[8]) + "l2.6 -3.4M" + P3f(line[12]) + "l3.2 -1.2", { ln: 1, cut: .6, paint: 0 }],   /* its ply twist */
+           separate piece ("the piece coming off looks disconnected").
+           (art9) Madison: "There's a lot of spots all over that just don't look right." Its round start on the ball read as a loose
+           crescent stuck to the wool. It now comes out from UNDER the over-wrap band (cut off at the band's edge, so nothing of it
+           shows through the band) and lies across the winding to where it leaves the ball; its twist is cut right across it. */
+        ["body", S3.loops(S3.minus(S3.union([S3.tube(looseOn[0], [51.8, 71.3], line[0], () => hw, 12), S3.tube([60, 80], [78, 99], [96, 84], () => hw, 18)], 0),
+          S3.poly(bandPts)), [0, 0, 100, 100]).map(S3.pathOf).join(""), { z: .7, bev: 1.1 }],
+        ["body", twist, { ln: 1.1, cut: .6, paint: 0 }],                                             /* its ply twist */
       ],
     };
   }
@@ -408,7 +427,8 @@
   {
     const cap = P3arc(23, 20, 13, 14, 180, 314.4, 6);
     const ang = x => Math.acos((x - 65) / 29) / D2R;
-    const d = P3poly([[cap, 0], [[[82, 10]], 7], [P3arc(65, 60, 29, 14, 360 - ang(82), 360, 6), 0], [[[94, 86]], 1], [[[96, 86]], 1.5], [[[96, 95]], 2], [[[4, 95]], 2],
+    const tankTop = P3arc(65, 60, 29, 14, 360 - ang(82), 360, 6);   /* (art9) a fillet where the vapour line goes into the tank: the sharp inside corner creased the dome */
+    const d = P3poly([[cap, 0], [[[82, 10]], 7], [tankTop.slice(0, 1), 1.6], [tankTop.slice(1), 0], [[[94, 86]], 1], [[[96, 86]], 1.5], [[[96, 95]], 2], [[[4, 95]], 2],
       [[[4, 86]], 1.5], [[[10, 86]], 1]]);
     const hole = P3poly([[[[36, 17]], 1.5], [[[75, 17]], 1], [P3arc(65, 60, 29, 14, 360 - ang(75), 180, 6), 0]]);
     CHAPTER_OBJ["Chapter 39: Processing and Extraction Facilities"] = {
@@ -421,7 +441,11 @@
         ["brass", OBJ_rrect(9, 31, 28, 5, 1), { z: .8, bev: .6 }],                                     /* its tray rings */
         ["brass", OBJ_rrect(9, 49, 28, 5, 1), { z: .8, bev: .6 }],
         ["brass", OBJ_rrect(9, 67, 28, 5, 1), { z: .8, bev: .6 }],
-        ["brass", OBJ_poly([[30, 10], [82, 10], [82, 48], [75, 48], [75, 17], [30, 17]], [0, 7, 0, 0, 1, 0]), { dome: .9 }],   /* the vapour line */
+        /* (art9) Madison: "There's a lot of spots all over that just don't look right." The vapour line stopped square at y 48, a hair
+           over the tank's curved top, so its end crumpled into a glinting lump where it met the dome. It now runs down into the tank
+           and is cut by the tank's own curve: it goes into the tank. */
+        ["brass", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.union([OBJ_SDF.box(30, 10, 45.5, 7, 0), OBJ_SDF.box(75, 16.5, 7, 40, 0),
+          OBJ_SDF.inter(OBJ_SDF.circle(75, 17, 7), OBJ_SDF.box(74.5, 10, 7.5, 7.5, 0))], 0), OBJ_SDF.ellipse(65, 60, 29, 14)), [0, 0, 100, 100]), { dome: .9 }],   /* the vapour line */
         ["brass", OBJ_rrect(53, 8, 5, 11, 1.2), { z: .7, bev: .5 }],                                   /* its flanges */
         ["brass", OBJ_rrect(73, 27, 11, 5, 1.2), { z: .7, bev: .5 }],
         ["steel", "M36 60A29 14 0 0 1 94 60V86H36Z", { z: .2, bev: 1, dome: 1.8 }],                     /* the receiving tank, domed */
@@ -450,6 +474,7 @@
       [[[10, 53]], 1], [[[10, 61]], 1.5], [[[4, 61]], 1.5], [[[4, 45]], 1], [[[6, 45]], 1], [[[6, 36]], 2], [[[11, 36]], 2], [[[11, 45]], 1],
       [P3arc(L, 44, 4, 22, 177.4, 270, 10).slice(0, -1), 0]]);
     const hole = P3poly([[botRun(40, 66), 1], [[[66, 86]], 1.5], [[[40, 86]], 1.5]]);
+    const caskPts = [].concat(topRun, P3arc(Rt, 44, 4, 22, -90, 90, 10).slice(1, -1), botRun(Rt, L), P3arc(L, 44, 4, 22, 90, 270, 10).slice(1, -1));
     const cask = P3poly([[topRun, 0], [P3arc(Rt, 44, 4, 22, -90, 90, 10).slice(1, -1), 0], [botRun(Rt, L), 0], [P3arc(L, 44, 4, 22, 90, 270, 10).slice(1, -1), 0]]);
     const hoop = x => OBJ_poly([[x, top(x) - 1], [x + 5, top(x + 5) - 1], [x + 5, bot(x + 5)], [x, bot(x)]], 0);
     const underHoop = p => [21, 31, 70, 80].some(x => p[0] > x - .9 && p[0] < x + 5.9);
@@ -461,8 +486,8 @@
       plates: [
         ["wood", OBJ_rrect(14, 86, 78, 8, 2), { z: .2, bev: .6 }],                                       /* the rack's plank */
         ["wood", "M30 87V93M53 87V93M76 87V93", { ln: 1.4, cut: .7, paint: 0 }],
-        ["wood", OBJ_rrect(22, 58, 18, 28, 0), { z: -.3, bev: .6 }],                                     /* the chocks */
-        ["wood", OBJ_rrect(66, 58, 18, 28, 0), { z: -.3, bev: .6 }],
+        /* (art9) the chocks stop at the cask's belly: drawn up under it, their tops showed through the cask and its hoops as a step */
+        ["wood", OBJ_SDF.loops(OBJ_SDF.minus(OBJ_SDF.union([OBJ_SDF.box(22, 58, 18, 28, 0), OBJ_SDF.box(66, 58, 18, 28, 0)], 0), OBJ_SDF.poly(caskPts)), [0, 0, 100, 100]).map(OBJ_SDF.pathOf).join(""), { z: -.3, bev: .6 }],   /* the chocks */
         ["wood", cask, { z: .3, bev: 1, dome: 2.2 }],                                                   /* the cask */
         ["wood", staves, { ln: 1.6, cut: .9, paint: 0 }],                                               /* its staves */
         ["rubber", hoop(21), { z: .7, bev: .5, dome: .4 }],                                              /* the iron hoops */

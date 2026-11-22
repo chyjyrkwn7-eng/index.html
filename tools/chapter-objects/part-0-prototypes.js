@@ -74,12 +74,16 @@
       ["red", S.shape(pipe, BB), { dome: 1.6 }],                                                          /* the sprinkler main */
       ["red", "M9 6H31M69 6H91M9 22.5H31M69 22.5H91", { ln: 1.2, cut: .5, paint: 0 }],                                      /* its seams */
       ["red", S.shape(tee, BB), { z: .6, bev: .6, dome: .6, col: "#B52A22" }],                             /* its tee */
-      ["water", ALL(jets), { dome: 1.4 }],                                                        /* the jets */
-      ["brass", S.shape(nipple, BB), { z: .4 }],                                                          /* the nipple */
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right ... we want perfection." Every part used to be
+         drawn whole and the one painted over it covered only its colour: its relief still showed through - the five jets' round tops
+         as bumps along the deflector, the frame's capsule ends as blobs on the hex and the boss, the bulb's foot on the boss. Each
+         part now stops where the part in front of it starts (a crease where they meet). */
+      ["water", ALL(S.minus(jets, defl)), { dome: 1.4 }],                                         /* the jets, from under the deflector */
+      ["brass", S.shape(S.minus(nipple, hex), BB), { z: .4 }],                                            /* the nipple */
       ["brass", S.shape(hex, BB), { gem: 1.4, gw: 3 }],                                                   /* the hex body */
-      ["brass", ALL(arms), { dome: 1 }],                                                                  /* the frame */
-      ["red", OBJ_ellipse(50, Y(36.5), 3.4, Hh(8)), { dome: 2.2 }],                                       /* the glass bulb */
-      ["brass", S.shape(boss, BB), { dome: 1 }],                                                          /* the boss */
+      ["brass", ALL(S.minus(arms, S.union([hex, boss], 0))), { dome: 1 }],                                /* the frame */
+      ["red", S.shape(S.minus(bulb, boss), BB), { dome: 2.2 }],                                           /* the glass bulb */
+      ["brass", S.shape(S.minus(boss, defl), BB), { dome: 1 }],                                           /* the boss */
       ["brass", S.shape(defl, BB), { z: .6, bev: .6 }],                                                   /* the deflector */
       ["brass", teeth, { ln: 1.3, cut: .7, paint: 0 }],                                                   /* its teeth */
     ],
@@ -112,7 +116,7 @@
       ["red", OBJ_rrect(13, 10, 39, 24, 4), { z: .3, bev: .8 }],                                /* the handle */
       ["red", OBJ_rrect(63.5, 24, 17, 9, 2.5), { z: .6, bev: .8, dome: .6 }],                    /* the neck, moulded into the shoulder */
       ["rubber", OBJ_poly(quad(9, L - 3.5, 5.6), 1), { z: .4, dome: .8 }],                       /* the spout */
-      ["rubber", OBJ_poly(quad(2.5, 9.5, 7.6), 1.2), { z: .8, bev: .7, dome: .5 }],               /* the threaded collar seated on the neck */
+      ["rubber", OBJ_poly(quad(2.5, 9.5, 7.6), 1.2), { z: .8, bev: .7, dome: .5, lvl: "collar" }],   /* the threaded collar seated on the neck (art9: flat on it - the neck's and the can's edges showed through it across its ridges) */
       ["rubber", ridges, { ln: 1.1, cut: .6, paint: 0 }],                                        /* its grip ridges */
       ["hot", OBJ_poly(quad(L - 4, L + 4, 7.8), 1.5), { dome: 1.4 }],                             /* the cap */
     ],
@@ -130,7 +134,8 @@
     plates: [
       ["steel", OBJ_rrect(22, 23, 74, 10, 2), { z: .8, bev: .6 }],                              /* the ladder */
       ["steel", rungs, { ln: 1.4, cut: .8, paint: 0 }],                                         /* its rungs */
-      ["cream", OBJ_rrect(6, 58, 90, 6, 0), { z: .4, bev: .5 }],                                /* the stripe */
+      /* (art9) the stripe stops at the wheel wells: run on under them, its edges showed through the wells and tyres as steps */
+      ["cream", OBJ_SDF.loops(OBJ_SDF.minus(OBJ_SDF.box(6, 58, 90, 6, 0), OBJ_SDF.union([OBJ_SDF.circle(26, 74, 13.8), OBJ_SDF.circle(76, 74, 13.8)], 0)), [0, 0, 100, 100]).map(OBJ_SDF.pathOf).join(""), { z: .4, bev: .5 }],   /* the stripe */
       ["glass", OBJ_poly([[8, 56], [13, 47], [27, 47], [27, 56]], 1.5), { z: -.8, bev: .6 }],   /* the windscreen */
       ["hot", OBJ_rrect(13, 41, 14, 5, 2), { dome: 1.4 }],                                       /* the light bar */
       ["body", OBJ_rrect(35, 37, 18, 18, 1.5), { z: .7, bev: .6 }],                              /* the lockers */
@@ -176,12 +181,16 @@
 {
   CHAPTER_OBJ["Chapter 1: Scope and Administration"] = {
     col: "#A0662F",   /* (384.67) natural colours: a wooden stamp, its red inked die */
-    d: "M35 20A15 15 0 0 1 65 20A15 15 0 0 1 57.5 33" + OBJ_chain([[57.5, 33], [57.5, 48], [78, 50], [78, 62], [90, 64], [90, 86], [88, 94], [12, 94], [10, 86], [10, 64], [22, 62], [22, 50], [42.5, 48], [42.5, 33]], [0, 2, 3, 2, 3, 2, 2, 2, 2, 3, 2, 3, 2, 0]) + "A15 15 0 0 1 35 20Z",
+    d: "M35 20A15 15 0 0 1 65 20A15 15 0 0 1 57.5 33" + OBJ_chain([[57.5, 33], [57.5, 48], [78, 50], [78, 62], [90, 64], [90, 86], [88, 94], [12, 94], [10, 86], [10, 64], [22, 62], [22, 50], [42.5, 48], [42.5, 33]], [0, 0, 3, 0, 3, 2, 2, 2, 2, 3, 0, 3, 0, 0]) + "A15 15 0 0 1 35 20Z",
     plates: [
+      /* (art9) Madison: "There's a lot of spots all over that just don't look right." The neck was a box run up into the knob, so the
+         knob's round foot showed through the neck's top; and the flange's rounded lower corners against the outline's fillets left a
+         dark nick each side where it sits on the base. The neck now stops on the knob's own curve (the knob sits on it), and the
+         flange stands square on the base, the outline's inside corners square with it. */
       ["body", OBJ_circle(50, 20, 15), { dome: 3.2 }],                                            /* the knob */
-      ["shade", OBJ_rrect(42.5, 32, 15, 17, 0), { dome: .8 }],                                   /* the neck */
+      ["shade", "M42.5 33A15 15 0 0 0 57.5 33V48H42.5Z", { dome: .8 }],                            /* the neck, up to the knob's curve */
       ["shade", "M42 38H58M42 43H58", { ln: 1.6, cut: .8, paint: 0 }],                           /* its grooves */
-      ["body", OBJ_rrect(22, 48, 56, 14, 3), { gem: 1.4, gw: 3 }],                               /* the flange */
+      ["body", OBJ_rrect(22, 48, 56, 14, [3, 3, 0, 0]), { gem: 1.4, gw: 3 }],                     /* the flange */
       ["deep", OBJ_rrect(10, 62, 80, 24, [3, 3, 0, 0]), { z: .4 }],                              /* the base (384.90: square below, where the die meets it) */
       ["lite", OBJ_rrect(14, 66, 72, 3, 1.5), { z: .3, bev: .4 }],                                /* its lip */
       ["red", OBJ_poly([[10, 86], [90, 86], [88, 94], [12, 94]], [0, 0, 2, 2]), { z: -.4, bev: .5 }],   /* the inked rubber die: the outline's own sides and corners (384.90) */
@@ -202,7 +211,7 @@
     d: "M" + f(P1) + "A" + R + " " + R + " 0 1 0 " + f(P2) + "L" + f(E2) + "A" + W + " " + W + " 0 0 0 " + f(E1) + "Z",
     plates: [
       ["glass", OBJ_circle(40, 40, 26), { z: -.6, bev: .8, dome: 2.4 }],                          /* the glass, domed, set into the ring */
-      ["deep", "M" + f(along(6, -W - 1)) + "L" + f(along(L + 2, -W - 1)) + "L" + f(along(L + 2, W + 1)) + "L" + f(along(6, W + 1)) + "Z", { dome: 1 }],   /* the handle */
+      ["deep", "M" + f(along(7, -W - 1)) + "L" + f(along(L + 2, -W - 1)) + "L" + f(along(L + 2, W + 1)) + "L" + f(along(7, W + 1)) + "Z", { dome: 1 }],   /* the handle, from the collar (art9: its end showed through the collar) */
       ["deep", grip, { ln: 1.4, cut: .7, paint: 0 }],                                              /* its grip */
       ["brass", "M" + f(along(-1, -W - 1)) + "L" + f(along(7, -W - 1)) + "L" + f(along(7, W + 1)) + "L" + f(along(-1, W + 1)) + "Z", { z: .7, bev: .6 }],   /* the collar */
     ],
