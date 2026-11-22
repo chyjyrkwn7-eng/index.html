@@ -42806,10 +42806,10 @@ Snaps re-traced (snap.py): Fire Code's 58 entries in snaps.json are byte-identic
 
 Gates (TMPDIR=/dev/shm, one at a time, load 4-7 from other sessions): check-js 13 blocks ALL PASS; check-b384-objbadges --class academy
 ALL PASS; check-b384-acadpins ALL PASS (13); check-b384-badgeart ALL PASS (12); check-b384-badgetwins ALL PASS (14); check-b384-chapterbadges
-ALL PASS (75); check-b384-objbadges (Fire Code) 93 pass, 1 FAIL: (4) PERF cold 6.29x on Chapter 32 (limit 6.0; warm 1.44x) - the rack,
-untouched here, under load (it passed, 94, on the run before with the same art); check-b384-badges2 --class ifc FAILS on Chapters 32, 63
-and Appendix H and the case/cutscene frames holding them: those are art7's own changes (21a1a45, the base), not this branch's (no Fire Code
-part file or snap changed here).
+ALL PASS (75); check-b384-objbadges (Fire Code) ALL PASS (94; one earlier run under load 7 failed only (4) PERF cold 6.29x on Chapter 32, the
+rack, untouched here); check-b384-badges2 --class academy ALL PASS against 560d3bc; check-b384-badges2 --class ifc FAILS on Chapters 32,
+63 and Appendix H and the case/cutscene frames holding them, and fails IDENTICALLY with --against 21a1a45 (the base): art7's own changes
+against its reference dfd6af1, not this branch's (no Fire Code part file or snap changed here); left for whoever lands art7.
 Turned: tools/shoot-badge-turns.py --class academy, every badge at 0/35/70/82/90/145/180; sides in each part's colour, backs carry the
 title and CLASS 26E. (The shots at 145/180 of the first badge show the app's own Full Case banner behind it: every academy badge is found.)
 Open for Madison: a pin shows no dirt, so the academy's dirty-badge stages no longer show on its badges (as noted in 384.121).
