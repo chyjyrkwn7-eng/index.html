@@ -196,7 +196,11 @@
   /* (art6 round 4) Madison: "the check marks are messed up and don't look right all the way through". A tick that crossed its box's
      edge showed the box's rim through it. Each tick now sits wholly inside its (larger) box: nothing crosses anything. */
   plates.push(["steel", rows.map(y => OBJ_rrect(19, y - 6.5, 13, 13, 2.5)).join(""), { z: -.7, bev: .5 }]);
-  plates.push(["water", rows.map(y => "M22 " + (y + .2) + "L24.8 " + (y + 3.2) + "L29.4 " + (y - 3.4)).join(""), { ln: 2.6, z: 1.1, bev: .6 }]);   /* the ticks, inside the boxes */
+  /* (art7) Madison: "inside the box they have an outline, outside the box the outline is gone" - each tick is a dark outline under its blue,
+     the same the whole way along, wherever it lies */
+  const tickD = rows.map(y => "M22 " + (y + .2) + "L24.8 " + (y + 3.2) + "L29.4 " + (y - 3.4)).join("");
+  plates.push(["ink", tickD, { ln: 4.1, z: 1.0, bev: .5, col: "#16324F" }]);
+  plates.push(["water", tickD, { ln: 2.5, z: 1.25, bev: .6 }]);   /* the ticks */
   plates.push(["cream", rows.map(y => "M36 " + (y - 2.5) + "H" + (y > 70 ? 52 : 58) + "M36 " + (y + 3) + "H" + (y > 70 ? 46 : 52)).join(""), { ln: 2.2, cut: .7, paint: 0 }]);
   /* (384.133 art3, Madison circled the pencil's lower end, where the body meets the sharpened wood and the graphite: the body's facet
      lines ran on past it and the cone and the tip did not line up.) One straight pencil now, every piece on the same axis and butting
@@ -207,7 +211,7 @@
   /* (art6 round 4) Madison: "The pencil looks messed up". It is drawn now as a plain hexagonal pencil seen square on, nothing borrowed
      from the versions that hung off the board: no side band, no grooves - three flat faces (lit, middle, shaded) from the ferrule to the
      cone, the sharpened wood in the same three tones to the graphite, a crimped ferrule and the eraser. It runs the board's full height. */
-  const AP = L, PT = L - .5, GR = L - 4.2, wAt = t => HW * (AP - t) / (AP - CONE), H3 = HW / 3;
+  const AP = L, PT = L - .5, GR = L - 7.2,   /* (art7) the lead is a real length of the point, so it shows on the face and down its side */ wAt = t => HW * (AP - t) / (AP - CONE), H3 = HW / 3;
   const penOut = [Q(0, HW), Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, -wAt(PT)), Q(CONE, -HW), Q(0, -HW)];
   const face = (w0, w1, t0, t1, col, role, o) => plates.push([role, OBJ_poly([Q(t0, w0), Q(t1, w0), Q(t1, w1), Q(t0, w1)], 0), Object.assign({ lvl: "pencil", z: 1.3, bev: .3 }, o, { col })]);
   face(HW, H3, 11.2, CONE, "#F0C75A", "cardboard"); face(H3, -H3, 11.2, CONE, "#DDAA36", "cardboard"); face(-H3, -HW, 11.2, CONE, "#B5832A", "cardboard");

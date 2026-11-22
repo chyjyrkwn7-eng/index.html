@@ -395,12 +395,15 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     col: "#2E8B57", base: "field",
     plates: [
       ["field", S.shape(cyl, BB), { dome: 2 }],                                                          /* the cylinder */
-      ["cream", S.shape(S.minus(S.inter(cyl, S.box(0, 0, 100, 42, 0)), ring), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder */
+      ["cream", S.shape(S.minus(S.inter(cyl, S.box(0, 24.4, 100, 17.6, 0)), ring), BB), { z: .2, bev: .5, dome: 1.6, col: "#F2F0EA" }],   /* its white shoulder, under the collar's foot */
       ["field", "M17 42H65", { ln: 1.4, cut: .6, paint: 0 }],                                           /* where the paint changes */
       ["field", "M17 88.5H65", { ln: 1.6, cut: .8, paint: 0 }],                                         /* the foot ring */
       ["brass", S.shape(S.minus(S.inter(all, S.box(0, 0, 61, 12.6, 0)), cyl), BB), { z: .2, bev: .5 }],     /* the valve gear, every fillet in it brass (above the ring only) */
       ["brass", S.shape(S.union([valve, stem], .8), BB), { z: .3, bev: .6, gem: .8, gw: 2.2 }],           /* the valve body and its stem */
-      ["steel", S.shape(S.minus(S.inter(all, S.box(32, 12.4, 18, 10.4, 0)), S.minus(cyl, S.grow(ring, 1.4))), BB), { z: .6, bev: .5, gem: .7, gw: 2.4 }],   /* the collar (and its fillets onto the shoulder) */
+      /* (art7) Madison: "the edges aren't silver it's like looking at a soda with a screw top, and the screw top doesn't exist on the sides".
+         The collar's foot flares out over the shoulder's top to the outline on both sides (a steel shoulder ring the collar stands in), so
+         there is no white beside it, and the outline's silhouette there is steel - its side, turned, is silver */
+      ["steel", S.shape(S.inter(all, S.union([S.box(32, 12.4, 18, 10.4, 0), S.inter(S.box(0, 19, 100, 5.6, 0), S.grow(cyl, 1))], 2.4)), BB), { z: .6, bev: .55, gem: .7, gw: 2.4 }],   /* the collar and its foot, a steel band across the shoulder's top from outline to outline */
       ["steel", "M34.6 15.4Q41 17.2 47.4 15.4M34.6 18.2Q41 20 47.4 18.2", { ln: .7, cut: .4, paint: 0 }],                 /* its threads, curved round it */
       ["rubber", OBJ_rrect(32.5, .8, 17, 4.6, 2.3), { z: .4, dome: 1, col: "#2B2E33" }],                 /* the handwheel */
       ["rubber", "M36 1.9V4.4M39.5 1.9V4.4M43 1.9V4.4M46.5 1.9V4.4", { ln: 1, cut: .5, paint: 0 }],

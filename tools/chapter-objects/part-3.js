@@ -44,10 +44,16 @@
     UP.forEach(u => parts.push(S.poly(strut(u))));
     const loads = [];
     BAYS.forEach(([x0, x1]) => LV.forEach(([foot, topY]) => {
-      const bx0 = x0 + 2.2, bx1 = x1 - 2.2, by1 = foot - PH;
+      /* (384.136 art7) Madison: "the sides of the boxes are missing, the wooden pallets are missing you can only see the face". Each load
+         is narrowed so its right side shows, going back into the rack the way its top does, before the next upright: the carton's side
+         and the pallet's side (and the pallet a little wider than its carton, as a real one is) */
+      const bx0 = x0 + 2.6, bx1 = x1 - 9.6, by1 = foot - PH, px0 = bx0 - 1.2, px1 = bx1 + 1.4;
       const topFace = [[bx0, topY], [bx0 + DL[0], topY + DL[1]], [bx1 + DL[0], topY + DL[1]], [bx1, topY]];
-      loads.push({ pal: [x0 + 1, by1, x1 - x0 - 2, PH], box: [bx0, topY, bx1 - bx0, by1 - topY], topFace });
-      parts.push(S.poly(topFace));
+      const sideFace = [[bx1, topY], [bx1 + DL[0], topY + DL[1]], [bx1 + DL[0], by1 + DL[1]], [bx1, by1]];
+      const palSide = [[px1, by1], [px1 + DL[0], by1 + DL[1]], [px1 + DL[0], foot + DL[1]], [px1, foot]];
+      const palTop = [[px0, by1], [px0 + DL[0], by1 + DL[1]], [px1 + DL[0], by1 + DL[1]], [px1, by1]];
+      loads.push({ pal: [px0, by1, px1 - px0, PH], box: [bx0, topY, bx1 - bx0, by1 - topY], topFace, sideFace, palSide, palTop });
+      parts.push(S.poly(topFace), S.poly(sideFace), S.poly(palSide));
     }));
     const sil = S.trace(S.grow(S.grow(S.union(parts, 0), -1), 1), BB);
     const f = (x, y) => (+x).toFixed(2) + " " + (+y).toFixed(2);
@@ -58,7 +64,7 @@
     /* the back beams of each bay at both levels, behind the loads (their connectors on the back uprights) */
     /* what stands in front of the rack's insides: every load (pallet, cartons, their tops) and the front uprights - a part behind them is
        cut where they cover it, so its relief never shows through them */
-    const front = S.union(loads.flatMap(l => [S.box(l.pal[0], l.pal[1], l.pal[2], l.pal[3], 0), S.box(l.box[0], l.box[1], l.box[2], l.box[3], 0), S.poly(l.topFace)])
+    const front = S.union(loads.flatMap(l => [S.box(l.pal[0], l.pal[1], l.pal[2], l.pal[3], 0), S.box(l.box[0], l.box[1], l.box[2], l.box[3], 0), S.poly(l.topFace), S.poly(l.sideFace), S.poly(l.palSide), S.poly(l.palTop)])
       .concat(UP.map(([x0, x1]) => S.box(x0, TOP, x1 - x0, FLOOR - TOP, 0)))
       .concat(BAYS.flatMap(([x0, x1]) => BEAMS.map(([y0, y1]) => S.box(x0 - 1.6, y0 - 1.6, x1 - x0 + 3.2, y1 - y0 + 3.2, 0)))), 0);
     const behind = g => S.loops(S.minus(g, S.grow(front, .3)), BB).map(S.pathOf).join("");   /* every piece that shows, each its own loop */
@@ -101,15 +107,16 @@
     plates.push(["steel", behind(S.union(decks, 0)), { z: -.2, bev: .35, col: "#7D8794" }]);
     plates.push(["steel", behind(S.union(mesh, 0)), { z: .15, bev: .25, col: "#B7C0CB" }]);
     /* the back uprights (seen over the top, and the right one beside the end frame), over the ends of the bracing and the back beams */
-    plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0 + D[0], BTOP, x1 - x0, BFLOOR - BTOP, .8)).join(""), { z: -.3, bev: .45, col: "#1B4FA0" }]);   /* (art6) a step darker than the front posts, saturated so it reads as solid steel, not glass */
+    plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0 + D[0] - .35, BTOP, x1 - x0 + .7, BFLOOR - BTOP, .8)).join(""), { z: -.3, bev: .45, col: "#1B4FA0" }]);   /* (art6) a step darker than the front posts, saturated so it reads as solid steel, not glass */
     /* the right end frame, seen from the side: its two posts and the bracing between them */
     let brace = "M" + f(80.5, TOP + 6); { let y = TOP + 6, front = true; while(y + 10 <= FLOOR - 4){ y += 10; brace += "L" + f(front ? 80 + D[0] - .5 : 80.5, front ? y + D[1] * 1 : y); front = !front; } }
     plates.push(["field", polyD([[80, TOP + 3], [80 + D[0], TOP + 3 + D[1]], [80 + D[0], TOP + 7.5 + D[1]], [80, TOP + 7.5]]) + polyD([[80, FLOOR - 7], [80 + D[0], FLOOR - 7 + D[1]], [80 + D[0], FLOOR - 2.5 + D[1]], [80, FLOOR - 2.5]]), { z: .3, bev: .4, col: "#2B64A6" }]);
     void brace;
     plates.push(["field", polyD([[80, 52], [80 + D[0], 52 + D[1]], [80 + D[0], 56 + D[1]], [80, 56]]), { z: .3, bev: .4, col: "#2B64A6" }]);   /* its middle tie */
     /* the loads: pallets and cartons, their tops going back into the rack */
-    let pals = "", pfork = "", cart = "", tops = "", seam = "", tape = "";
-    loads.forEach(({ pal, box, topFace }) => {
+    let pals = "", pfork = "", cart = "", tops = "", seam = "", tape = "", sides = "", psides = "";
+    loads.forEach(({ pal, box, topFace, sideFace, palSide, palTop }) => {
+      sides += polyD(sideFace); psides += polyD(palSide) + polyD(palTop);
       pals += OBJ_rrect(pal[0], pal[1], pal[2], pal[3], .5);
       const fw = pal[2] * .24; pfork += OBJ_rrect(pal[0] + pal[2] * .13, pal[1] + 2, fw, pal[3] - 2, [.5, .5, 0, 0]) + OBJ_rrect(pal[0] + pal[2] * .87 - fw, pal[1] + 2, fw, pal[3] - 2, [.5, .5, 0, 0]);
       cart += OBJ_rrect(box[0], box[1], box[2], box[3], 0);
@@ -118,6 +125,8 @@
       seam += "M" + f(xm, box[1] + .8) + "V" + (box[1] + box[3] - .6).toFixed(2);
       tape += "M" + f(box[0] + box[2] * .25, box[1]) + "V" + (box[1] + box[3] * .38).toFixed(2) + "M" + f(box[0] + box[2] * .75, box[1]) + "V" + (box[1] + box[3] * .38).toFixed(2);
     });
+    plates.push(["wood", psides, { z: .35, bev: .35, col: "#7A5530" }]);   /* the pallets' tops and sides, going back */
+    plates.push(["cardboard", sides, { z: .55, bev: .5, col: "#94633A" }]);   /* the cartons' sides, in their shade */
     plates.push(["cardboard", tops, { z: .5, bev: .5, col: "#D9AC72" }]);
     plates.push(["cardboard", cart, { z: .7, bev: .6, col: "#B47E45" }]);
     plates.push(["cardboard", seam, { ln: 1.2, cut: .7, paint: 0 }]);
@@ -125,6 +134,7 @@
     plates.push(["wood", pals, { z: .5, bev: .45 }]);
     plates.push(["ink", pfork, { z: -.6, bev: .35, col: "#2A1D12" }]);
     /* the front uprights, the punched slots up them, the orange beams and their connectors in front of everything */
+    plates.push(["field", UP.slice(0, 2).map(([x0, x1]) => polyD([[x1, TOP + 1], [x1 + 3, TOP - 1], [x1 + 3, FLOOR - 2], [x1, FLOOR]])).join(""), { z: .8, bev: .4, col: "#1D4F93" }]);   /* (art7) each upright's side, going back */
     plates.push(["field", UP.map(([x0, x1]) => OBJ_rrect(x0, TOP, x1 - x0, FLOOR - TOP, 1)).join(""), { z: 1, bev: .7, dome: .5 }]);
     const onBeam = p => BEAMS.some(([y0, y1]) => p[1] > y0 - 2.4 && p[1] < y1 + 2.4);
     let slots = ""; UP.forEach(([x0, x1]) => { const xm = (x0 + x1) / 2, ys = []; for(let y = TOP + 3; y <= FLOOR - 3; y += .5) ys.push([xm, y]); slots += P3runs(ys, onBeam); });

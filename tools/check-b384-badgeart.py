@@ -132,12 +132,16 @@ PROBE2 = r"""() => {
     /* (384.136 art6 round 4, changed on purpose: the pencil is three faces now, its wood in three tones) the graphite is its own plate,
        the wood the two outer tones, whose outer edges run to the point */
     const g = subs(byCol('#3A3D42')[0][1])[0], wl = subs(byCol('#E6C08E')[0][1])[0], wr = subs(byCol('#B5844F')[0][1])[0], w = [wl[0], wl[1], wr[2], wr[3]];   /* the outer edges (the cone's own sides) */
+    /* (384.136 art7, changed on purpose: the lead is longer and its point rounded) each side: the wood's outer edge (its far corner to the
+       corner it shares with the lead) and the lead's outer edge (that corner to the lead's last point on the same side) run on one line */
     const near = (p, P) => Math.min(...P.map(q => Math.hypot(p[0] - q[0], p[1] - q[1])));
-    /* the graphite's base: its two corners nearest the wood; the wood's sides: from each of its far corners to that base */
-    const gs = g.slice().sort((a, b) => near(a, w) - near(b, w)).slice(0, 2), shared = Math.max(...gs.map(p => near(p, w)));
-    const gtip = g.filter(p => !gs.includes(p)), ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
-    let worst = 0; gs.forEach(p => { const wc = w.slice().sort((a, b) => Math.hypot(a[0] - p[0], a[1] - p[1]) - Math.hypot(b[0] - p[0], b[1] - p[1]));
-      const far = wc.filter(q => Math.hypot(q[0] - p[0], q[1] - p[1]) > 3)[0], tip = gtip.slice().sort((a, b) => Math.hypot(a[0] - p[0], a[1] - p[1]) - Math.hypot(b[0] - p[0], b[1] - p[1]))[0];
+    const uniq = P => P.filter((p, k) => P.findIndex(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < .01) === k);
+    const G = uniq(g), Wd = uniq(w), cx = (Math.min(...G.map(p => p[0])) + Math.max(...G.map(p => p[0]))) / 2;
+    const gs = G.slice().sort((a, b) => near(a, Wd) - near(b, Wd)).slice(0, 2), shared = Math.max(...gs.map(p => near(p, Wd)));
+    const ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+    let worst = 0; gs.forEach(p => { const side = Math.sign(p[0] - cx);
+      const far = Wd.filter(q => Math.sign(q[0] - cx) === side && Math.hypot(q[0] - p[0], q[1] - p[1]) > 3).sort((a, b) => Math.hypot(a[0] - p[0], a[1] - p[1]) - Math.hypot(b[0] - p[0], b[1] - p[1]))[0];
+      const tip = G.filter(q => Math.sign(q[0] - cx) === side && Math.hypot(q[0] - p[0], q[1] - p[1]) > 3).sort((a, b) => Math.hypot(b[0] - p[0], b[1] - p[1]) - Math.hypot(a[0] - p[0], a[1] - p[1]))[0];
       if(far && tip){ let d = Math.abs(ang(far, p) - ang(p, tip)); if(d > 180) d = 360 - d; worst = Math.max(worst, d); } });
     out.pencil = { shared: +shared.toFixed(2), angle: +worst.toFixed(2) };
   }
