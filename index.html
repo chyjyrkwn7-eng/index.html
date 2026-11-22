@@ -12195,8 +12195,8 @@
   .iv-route-ic svg{ width:1em; height:1em; display:block; }
   .iv-route-step{ white-space:nowrap; }
   .iv-route-arr{ display:inline-block; margin:0 .4em; }
-  .iv-route-glyph{ display:inline-block; width:1.05em; height:1.05em; margin-right:.2em; vertical-align:-.17em; color:var(--ink); }
-  .iv-route-glyph svg{ display:block; width:100%; height:100%; }
+  .iv-route-ic.iv-route-share{ margin:0 .3em 0 0; }
+  .iv-route-ic.iv-route-share svg{ width:1em; height:1em; }
   .iv-route-ic svg{ width:1.15em; height:1.15em; }
   .iv-pointer{ position:fixed; left:0; top:0; z-index:5; pointer-events:none; overflow:visible; }
   .iv-pointer path{ fill:none; stroke:#FFD34D; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
@@ -94218,7 +94218,7 @@ var A2HS_POINTERS_26 = [
 var A2HS_STEPS_APPLE = [
   /* (384.111) Madison's iPhone (iOS 26): the menu button at the LEFT of the address bar, Share in it; ••• and a toolbar Share button are
      other Safari layouts */
-  { parts: [{ text: "Tap " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of Safari’s address bar, then " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: "." }],
+  { parts: [{ text: "Tap " }, { icon: buildPageMenuIcon, style: "grey-circle" }, { text: " at the left of Safari’s address bar, then " }, { icon: buildShareIcon, style: "grey-circle" }, { text: " " }, { text: "Share", b: true }, { text: "." }],
     note: [{ text: "If you see " }, { icon: buildDotsIcon, style: "plain" }, { text: " instead, tap that. If the " }, { icon: buildShareIcon, style: "plain" }, { text: " " }, { text: "Share", b: true }, { text: " button is in the toolbar, tap that." }] },
   { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " " }, { text: "View More", b: true }, { text: "." }],
     note: [{ text: "It is called " }, { text: "More", b: true }, { text: " on some versions. If " }, { text: "Add to Home Screen", b: true }, { text: " is already in the list, skip this step." }] },
@@ -102832,7 +102832,8 @@ function showInstallFirst(o){
         const arr = () => mk("span", "iv-route-arr", "\u2192");
         route.append(step(document.createTextNode("Tap"), ic, arr()), document.createTextNode("\u200B"));
         /* (384.117) Madison: "it says 'share' without the share icon next to it" - Safari's share glyph before the word */
-        const shareIc = () => { const g = mk("span", "iv-route-glyph"); g.setAttribute("aria-hidden", "true"); g.appendChild(buildShareIcon()); return g; };
+        /* (384.118) the share glyph in the same grey circle as the menu button, the same size ("It needs to be the same size as the circle icon") */
+        const shareIc = () => { const g = mk("span", "iv-route-ic iv-route-share"); g.setAttribute("aria-hidden", "true"); g.appendChild(buildShareIcon()); return g; };
         ["Share", "View More", "Add to Home Screen"].forEach((t, i, all) => { const last = i === all.length - 1, word = mk("b", "", t);
           const kids = t === "Share" ? [shareIc(), word] : [word];
           route.append(last ? step(...kids) : step(...kids, arr())); if(!last) route.append(document.createTextNode("\u200B")); });
@@ -123418,7 +123419,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-22-384.117";
+const APP_BUILD = "2026-11-22-384.118";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
