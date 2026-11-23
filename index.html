@@ -128803,6 +128803,11 @@ var CAMEO_LIFE = { sit: 7600, tiptoe: 5600, dangle: 6800, peek: 3500, wave: 3600
 var cameoPlan = null;   /* this run's: { at, kind, qi, pos, timer, fired } or null */
 var cameoNow = null;    /* the one up: { el, kind, panel, timers, off } */
 
+/* (384.137) CAMEOS ARE HELD BACK FOR THIS BUILD. Madison, of the round-2 cameos: "They need to be a lot better ... It's missing its entire
+   body arms legs .. you are gonna have to spend some time here". They come back with full-body characters (the same figures meant for
+   results, Profile and the person card). While this is false a run is never dealt a cameo and Settings has no Character cameos row;
+   cameoForce (the gates' hook) still works, so check-b384-cameo keeps measuring the code. */
+const CAMEOS_LIVE = false;
 function cameoAllowed(){
   try{ if(theme.cameos === false) return false; }catch(e){ return false; }
   return !resultsMotionOff();
@@ -128811,6 +128816,7 @@ function cameoPacing(){ try{ const v = JSON.parse(localStorage.getItem(CAMEO_KEY
 function cameoPacingSave(v){ try{ localStorage.setItem(CAMEO_KEY, JSON.stringify(v)); }catch(e){} }
 /* The dice for one run of n questions (eligible: a run that may have one). The only reader of Math.random and the pacing key. */
 function cameoPlanFor(n, eligible){
+  if(!CAMEOS_LIVE) return null;
   if(!eligible || !(n >= CAMEO_MIN_QUESTIONS)) return null;
   const p = cameoPacing();
   const cool = Math.max(0, Math.floor(Number(p.cool) || 0));
@@ -147336,7 +147342,7 @@ function showAppearance(opts){
   cameoHint.textContent = "Your character now and then drops in during a test.";
   cameoWrap.appendChild(cameoHint);
   cameoRow.append(cameoCb, cameoBox, cameoWrap);
-  motionDetails.appendChild(cameoRow);
+  if(CAMEOS_LIVE) motionDetails.appendChild(cameoRow);
 
   /* Keep screen awake was here until build 284: "remove the keep screen
      awake setting as well, just unnecessary, just remove that function

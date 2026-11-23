@@ -43621,3 +43621,20 @@ that reach its last row (228 nodes instead of ~500). (3) Taking a child of <body
 without in turn and compares medians (the slide's own build of the next question is a 40-110ms task either way, so one swipe against one
 measured that), and checks every piece of the exit under 8ms. Also fixed: gen-cameo-rig.py still emitted the old `.cx-fx-hat` rule and
 had re-written it into index.html; it now emits `.cx-fx-shhat`.
+
+## 384.137 - cameos HELD BACK for this build (CAMEOS_LIVE false); full-body characters next
+Madison, of the round-2 signature sheet: "the cameos need to be better ... a lot better. They seem to have little effort. Their
+shoulders/bodies are like serving as their main body? It's missing its entire body arms legs .. you are gonna have to spend some time here
+and that's okay ... by getting these right, we can use anywhere else, like maybe on the result screen ... when you go to your profile, the
+character isn't in a circle he's there, when looking at someone on their leaderboard and the box comes up, character is there".
+- `const CAMEOS_LIVE = false` (beside cameoAllowed): cameoPlanFor deals no run a cameo and Settings > Motion & Effects has no Character
+  cameos row (the GROUPS builder skips a missing row). cameoForce, the gates' hook, still works, so check-b384-cameo keeps measuring the
+  code. theme.cameos is kept (default true) so turning CAMEOS_LIVE on later needs nothing else. Nothing in What's New or the version
+  history mentions cameos.
+- check-b384-cameo (D) and (E) know the held state: no Settings row; 0 of 2000 dice rolls deal a cameo and a real Drill with the dice
+  forced shows none on questions 1-3. Both pass. Section (J) still fails on 'hacker' (ifc) seam 34.3 after d3fdc98's slimmer torso copy -
+  that body is being replaced, not patched. Section (H)'s swipe comparison fails intermittently at x6 (one extra ~60ms task on the swipe
+  after a cameo); the exit itself is under 5ms - to be traced with the new figures.
+- NEXT: full-body characters (a shared rig - head from each drawing, a designed body in its own outfit, arms, hands, legs, feet - and
+  poses), approved on a few prototypes first, then all 53, then cameos on them, then the figures standing on results, Profile and the
+  person card.

@@ -388,7 +388,12 @@ with sync_playwright() as pw:
                 all(not r.get("ok") for r in res) and plan is None and n == 0, (res[:2], plan, n))
             ctx.close()
         ctx, pg, cdp = open_page(br, "phone", "academy")
-        if pg.evaluate(HAS_HOOK):
+        # (384.137) cameos are HELD BACK (CAMEOS_LIVE false) until the full-body characters: Settings then has no switch at all
+        if pg.evaluate(HAS_HOOK) and not pg.evaluate("()=>typeof CAMEOS_LIVE === 'undefined' || CAMEOS_LIVE === true"):
+            pg.evaluate("()=>showAppearance({page:'motion'})"); pg.wait_for_timeout(1200)
+            n = pg.evaluate("()=>[...document.querySelectorAll('label.opt')].filter(l=>/^Character cameos/.test((l.querySelector('.otext')||{}).textContent||'')).length")
+            chk("(D) held back: Settings has no Character cameos row while cameos are held (%s rows)" % n, n == 0, n)
+        elif pg.evaluate(HAS_HOOK):
             pg.evaluate("()=>showAppearance({page:'motion'})"); pg.wait_for_timeout(1200)
             row = pg.evaluate("""()=>{ const r=[...document.querySelectorAll('label.opt')].find(l=>/^Character cameos/.test((l.querySelector('.otext')||{}).textContent||'')); if(!r) return null;
               const cb=r.querySelector('input'); return { on: cb.checked, hint: (r.querySelector('.ohint')||{}).textContent, h: r.getBoundingClientRect().height }; }""")
@@ -408,6 +413,18 @@ with sync_playwright() as pw:
         ctx, pg, cdp = open_page(br, "phone", "academy")
         if not pg.evaluate(HAS_HOOK):
             chk("(E) rarity: the app has the dice (cameoPlanFor)", False)
+        elif not pg.evaluate("()=>typeof CAMEOS_LIVE === 'undefined' || CAMEOS_LIVE === true"):
+            # (384.137) held back: the dice never deal a cameo, and a real Drill run with the dice forced to hit shows none
+            held = pg.evaluate("()=>{ localStorage.removeItem('class26e.cameo'); let k=0; for(let i=0;i<2000;i++){ if(cameoPlanFor(6+Math.floor(Math.random()*35), true)) k++; } return k; }")
+            pg.evaluate("()=>{ Math.__r=Math.random; Math.random=()=>0; }")
+            pg.evaluate(START, {"mode": "drill"})
+            seen = []
+            for q in range(3):
+                pg.wait_for_timeout(4500)
+                seen.append(pg.evaluate("()=>document.querySelectorAll('body > .cameo').length"))
+                pg.evaluate(ANSWER, True); pg.evaluate("()=>advanceWithSlide()"); pg.wait_for_timeout(900)
+            pg.evaluate("()=>{ Math.random=Math.__r; }")
+            chk("(E) held back: no run is dealt a cameo (%d of 2000) and none shows on questions 1-3 with the dice forced (%s)" % (held, seen), held == 0 and seen == [0, 0, 0], (held, seen))
         else:
             sim = pg.evaluate("""()=>{ localStorage.removeItem('class26e.cameo'); let fired=0, runs=0, twice=0, last=false, badPos=0, small=0, inel=0, gaps=[], since=0;
               for(let i=0;i<7000;i++){ const n=6+Math.floor(Math.random()*35); const p=cameoPlanFor(n, true); runs++;
