@@ -42501,6 +42501,7 @@ html.is-browser{ --fade-paper: transparent; }
     background:radial-gradient(circle, #FFFFFF, #FFE29A 60%, rgba(255,226,154,0)); }
   /* in the planet's box */
   .fest-ring, .fest-planet, .fest-count, .fest-year{ position:absolute; inset:0; }
+  .fest-planet{ z-index:1; }   /* above the planet's smoke (.cosmic-plasma, z-index 1, earlier in the box): no hat is seen through */
   .fest-ring > svg, .fest-planet > svg, .fest-count > svg, .fest-year > svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
   .fest-ring-glow{ opacity:.85; }
   .fest-ring[data-season="newyear"] .fest-ring-glow{ opacity:.7; }
@@ -121561,59 +121562,74 @@ function festSkyBuild(s, calm){
   sky.innerHTML = html;
   return sky;
 }
-/* THE PLANET'S HAT, in the hero's own coordinates (viewBox 0 -12 360 342: the sphere is r52 at 180,150) */
+/* THE PLANET'S HAT, in the hero's own coordinates (viewBox 0 -12 360 342: the sphere is r52 at 180,150). Each hat is drawn with
+   its base on the sphere's top (180,98) and turned about the sphere's centre, so its brim or trim sits ON the curve whatever the
+   tilt; a contact shadow lies on the sphere under it (clipped to it). EVERY PART IS OPAQUE (round 3, Madison: "All the hats can be
+   seen through to the planet"): solid fills and gradients whose stops are all solid, no part with an opacity, the fur on a solid
+   band, and the whole hat (.fest-planet, z-index 1) is above the planet's smoke (.cosmic-plasma, z-index 1, .55 - it was the
+   planet's glow seen "through" the brim). */
 function festHatSvg(s, id){
   const clip = '<clipPath id="' + id + 'c"><circle cx="180" cy="150" r="52"/></clipPath>';
+  const shadow = (tilt, rx, ry, dy) => '<g class="fest-hat-shadow" transform="rotate(' + tilt + ' 180 150)"><ellipse cx="180" cy="' + (98 + dy) + '" rx="' + rx + '" ry="' + ry + '" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/></g>';
+  const shadowGrad = '<radialGradient id="' + id + 's" cx=".5" cy=".42" r=".5"><stop offset="0" stop-color="#14060C" stop-opacity=".62"/><stop offset=".6" stop-color="#14060C" stop-opacity=".3"/><stop offset="1" stop-color="#14060C" stop-opacity="0"/></radialGradient>';
+  const on = (tilt) => '<g transform="rotate(' + tilt + ' 180 150) translate(180 98)">';
+  /* a point on the sphere's top arc, in the hat's own frame (origin at the top of the sphere) */
+  const arc = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [Math.cos(a) * r, 52 + Math.sin(a) * r]; };
+  const P = (p) => p[0].toFixed(2) + " " + p[1].toFixed(2);
   if(s.id === "christmas"){
+    /* the trim: a solid band along the sphere's top (r 49 to 60), the puffs on it along r 55, overlapping */
+    const A = 38;
+    const band = "M" + P(arc(-A, 48.5)) + "A48.5 48.5 0 0 1 " + P(arc(A, 48.5)) + "L" + P(arc(A, 60)) + "A60 60 0 0 0 " + P(arc(-A, 60)) + "Z";
     let fur = "";
-    for(let i = 0; i < 9; i++){ const x = -33 + i * 8.25, y = Math.abs(x) * .1; fur += '<circle cx="' + x.toFixed(1) + '" cy="' + (y - .5).toFixed(1) + '" r="' + (i % 2 ? 6.4 : 7.2) + '"/>'; }
-    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
-      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2=".4"><stop offset="0" stop-color="#F0473F"/><stop offset=".55" stop-color="#C81E26"/><stop offset="1" stop-color="#7E0E16"/></linearGradient>' +
-      '<radialGradient id="' + id + 'w" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#EEF3F8"/><stop offset="1" stop-color="#C5D1DD"/></radialGradient>' +
-      '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
-      '<ellipse cx="176" cy="108" rx="40" ry="11" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
-      '<g transform="translate(173 101) rotate(-13)">' +
-        '<path d="M-29 -2C-25 -30 -8 -54 13 -57C30 -59 45 -48 51 -30C46 -35 38 -38 31 -34C27 -24 28 -12 30 -2Z" fill="url(#' + id + 'r)"/>' +
-        '<path d="M-29 -2C-25 -30 -8 -54 13 -57C2 -48 -9 -30 -12 -2Z" fill="#FFFFFF" opacity=".12"/>' +
-        '<path d="M31 -34C38 -38 46 -35 51 -30" stroke="#6A0A12" stroke-width="1.4" fill="none" opacity=".55"/>' +
+    for(let i = 0; i <= 10; i++){ const p = arc(-A + i * (2 * A / 10), 54.5); fur += '<circle cx="' + p[0].toFixed(2) + '" cy="' + p[1].toFixed(2) + '" r="' + (i % 2 ? 6.6 : 7.4) + '"/>'; }
+    const l = arc(-A + 4, 58), r = arc(A - 5, 58);
+    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
+      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2=".4"><stop offset="0" stop-color="#F25A50"/><stop offset=".3" stop-color="#E0322F"/><stop offset=".65" stop-color="#C81E26"/><stop offset="1" stop-color="#7E0E16"/></linearGradient>' +
+      '<radialGradient id="' + id + 'w" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#EEF3F8"/><stop offset="1" stop-color="#C9D4DF"/></radialGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F7FA"/><stop offset="1" stop-color="#C3CEDA"/></linearGradient></defs>' +
+      shadow(-13, 44, 15, 13) +
+      on(-13) +
+        '<path d="M' + P(l) + 'C-24 -26 -8 -50 12 -54C29 -57 44 -46 50 -28C45 -33 37 -36 30 -32C26 -22 27 -12 ' + P(r) + 'Z" fill="url(#' + id + 'r)"/>' +
+        '<path d="M30 -32C37 -36 45 -33 50 -28" stroke="#8A1219" stroke-width="1.4" fill="none"/>' +
+        '<path d="' + band + '" fill="url(#' + id + 'b)"/>' +
         '<g fill="url(#' + id + 'w)">' + fur + '</g>' +
-        '<circle cx="49.5" cy="-30.5" r="9.5" fill="url(#' + id + 'w)"/>' +
+        '<circle cx="49" cy="-28.5" r="9.5" fill="url(#' + id + 'w)"/>' +
       '</g></svg>';
   }
   if(s.id === "thanksgiving"){
-    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
-      '<linearGradient id="' + id + 'k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4450"/><stop offset=".35" stop-color="#2A262E"/><stop offset="1" stop-color="#121014"/></linearGradient>' +
-      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3740"/><stop offset="1" stop-color="#151317"/></linearGradient>' +
-      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A0"/><stop offset=".5" stop-color="#E2B045"/><stop offset="1" stop-color="#9A6B16"/></linearGradient>' +
-      '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
-      '<ellipse cx="178" cy="109" rx="44" ry="12" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
-      '<g transform="translate(176 100) rotate(-9)">' +
-        '<ellipse cx="0" cy="0" rx="45" ry="9.5" fill="url(#' + id + 'b)"/>' +
-        '<path d="M-44 -1.5C-30 -7 30 -7 44 -1.5" stroke="#6E6676" stroke-width="1" fill="none" opacity=".7"/>' +
-        '<path d="M-23 -3L-19 -46C-10 -49.5 10 -49.5 19 -46L23 -3C10 1 -10 1 -23 -3Z" fill="url(#' + id + 'k)"/>' +
-        '<ellipse cx="0" cy="-46.4" rx="19" ry="3.6" fill="#3E3843"/>' +
-        '<path d="M-22.2 -12.5C-10 -9 10 -9 22.2 -12.5L22.9 -4C10 -.4 -10 -.4 -22.9 -4Z" fill="#0E0C10"/>' +
-        '<rect x="-8" y="-15" width="16" height="13" rx="1.6" fill="none" stroke="url(#' + id + 'g)" stroke-width="3.4"/>' +
-        '<path d="M-17 -43C-15 -30 -15 -18 -16 -6" stroke="#FFFFFF" stroke-width="2" opacity=".1" fill="none" stroke-linecap="round"/>' +
+    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
+      '<linearGradient id="' + id + 'k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4450"/><stop offset=".18" stop-color="#3C3742"/><stop offset=".4" stop-color="#2A262E"/><stop offset="1" stop-color="#121014"/></linearGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3740"/><stop offset="1" stop-color="#161418"/></linearGradient>' +
+      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A0"/><stop offset=".5" stop-color="#E2B045"/><stop offset="1" stop-color="#9A6B16"/></linearGradient></defs>' +
+      shadow(-9, 50, 16, 14) +
+      on(-9) +
+        '<ellipse cx="0" cy="5" rx="45" ry="10" fill="url(#' + id + 'b)"/>' +
+        '<path d="M-44 3.6C-30 -2 30 -2 44 3.6" stroke="#57505E" stroke-width="1" fill="none"/>' +
+        '<path d="M-23 3L-19 -42C-10 -45.5 10 -45.5 19 -42L23 3C10 7 -10 7 -23 3Z" fill="url(#' + id + 'k)"/>' +
+        '<ellipse cx="0" cy="-42.4" rx="19" ry="3.6" fill="#3E3843"/>' +
+        '<path d="M-22.2 -7.5C-10 -4 10 -4 22.2 -7.5L22.9 2C10 5.6 -10 5.6 -22.9 2Z" fill="#0E0C10"/>' +
+        '<rect x="-8" y="-10" width="16" height="13" rx="1.6" fill="none" stroke="url(#' + id + 'g)" stroke-width="3.4"/>' +
       '</g></svg>';
   }
-  /* New Year's: a party hat - midnight blue with gold stripes and dots, a gold trim, a burst of tinsel on top */
+  /* New Year's: a party hat - midnight blue with gold stripes and dots, a gold trim on the sphere's curve, a burst of tinsel on top */
   let tin = "";
   for(let i = 0; i < 11; i++){ const a = -Math.PI / 2 + (i - 5) * .3; tin += '<line x1="0" y1="0" x2="' + (Math.cos(a) * (i % 2 ? 9 : 12)).toFixed(1) + '" y2="' + (Math.sin(a) * (i % 2 ? 9 : 12) + 2).toFixed(1) + '"/>'; }
-  return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
-    '<clipPath id="' + id + 'h"><path d="M-29 0L0 -78L29 0Z"/></clipPath>' +
-    '<linearGradient id="' + id + 'n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3A3F8F"/><stop offset=".5" stop-color="#232A6B"/><stop offset="1" stop-color="#11153D"/></linearGradient>' +
-    '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".5" stop-color="#F1C24E"/><stop offset="1" stop-color="#B07E1C"/></linearGradient>' +
-    '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
-    '<ellipse cx="184" cy="110" rx="36" ry="10" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
-    '<g transform="translate(187 105) rotate(12)">' +
-      '<g clip-path="url(#' + id + 'h)"><rect x="-32" y="-80" width="64" height="84" fill="url(#' + id + 'n)"/>' +
+  const A = 28;
+  const trim = "M" + P(arc(-A, 49)) + "A49 49 0 0 1 " + P(arc(A, 49)) + "L" + P(arc(A, 57.5)) + "A57.5 57.5 0 0 0 " + P(arc(-A, 57.5)) + "Z";
+  const bl = arc(-A, 54), br = arc(A, 54);
+  const cone = "M" + P(bl) + "L0 -76L" + P(br) + "A54 54 0 0 0 " + P(bl) + "Z";
+  return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
+    '<clipPath id="' + id + 'h"><path d="' + cone + '"/></clipPath>' +
+    '<linearGradient id="' + id + 'n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A50A0"/><stop offset=".3" stop-color="#2E357A"/><stop offset=".6" stop-color="#232A6B"/><stop offset="1" stop-color="#11153D"/></linearGradient>' +
+    '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".5" stop-color="#F1C24E"/><stop offset="1" stop-color="#B07E1C"/></linearGradient></defs>' +
+    shadow(12, 36, 13, 12) +
+    on(12) +
+      '<g clip-path="url(#' + id + 'h)"><rect x="-34" y="-80" width="68" height="90" fill="url(#' + id + 'n)"/>' +
         '<g stroke="url(#' + id + 'g)" stroke-width="6.4">' + [-66, -46, -26, -6, 14].map(v => '<line x1="-36" y1="' + v + '" x2="36" y2="' + (v - 26) + '"/>').join("") + '</g>' +
-        '<g fill="#FFF6D8">' + [[-11, -17], [9, -31], [-3, -47], [12, -8], [-17, -4], [3, -62]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.6"/>').join("") + '</g>' +
-        '<path d="M-29 0L0 -78L-8 0Z" fill="#FFFFFF" opacity=".1"/></g>' +
-      '<rect x="-31" y="-4" width="62" height="8.5" rx="4.2" fill="url(#' + id + 'g)"/>' +
-      '<g transform="translate(0 -78)" stroke="url(#' + id + 'g)" stroke-width="2.4" stroke-linecap="round">' + tin + '</g>' +
-      '<circle cx="0" cy="-78" r="3.6" fill="#FFF3C4"/>' +
+        '<g fill="#FFF6D8">' + [[-11, -17], [9, -31], [-3, -47], [12, -8], [-17, -4], [3, -62]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.6"/>').join("") + '</g></g>' +
+      '<path d="' + trim + '" fill="url(#' + id + 'g)"/>' +
+      '<g transform="translate(0 -76)" stroke="url(#' + id + 'g)" stroke-width="2.4" stroke-linecap="round">' + tin + '</g>' +
+      '<circle cx="0" cy="-76" r="3.6" fill="#FFF3C4"/>' +
     '</g></svg>';
 }
 /* THE RING'S DRESSING: leaves, lights or glints round the outer ring (R), still in one svg; what twinkles is in two more svgs whose

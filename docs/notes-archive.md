@@ -43666,3 +43666,18 @@ unchanged. check-b384-classstep, check-b384-signupclass ALL PASS; check-centerin
   the chip's foot. `background-origin:border-box; background-repeat:no-repeat`. 3x render: the bottom rows (240,103,31) continuous, no
   light row. Swept every gradient-with-translucent-border element on Home, Customize, Badges, Select your classes, Classes, modes and the
   Leaderboard in both classes and A/B'd each with the same fix: none changes (their bright edges are drawn rims), so only the chip is fixed.
+
+## 384 festive round 3 - the hats are solid and sit on the planet; Santa's sleigh in colour (same branch, claude/b384-integ 64417b2 merged in; build 384.137; NOT on main)
+
+Madison on his phone: "All the hats can be seen through to the planet. We need to fix this." and "I feel like the Santa and stuff
+riding around could look better."
+- WHY THE HATS LOOKED SEE-THROUGH: the planet's smoke (.cosmic-plasma) is z-index 1 at opacity .55 and so painted ABOVE the hat
+  (.fest-planet was z-index auto, though later in the box): the planet's colour and glow lay over the brim and the trim. The hat is
+  z-index 1 now, after the smoke in the box, so it is on top of it (and of the tap's press, .cosmic-tapfx, which comes after it with
+  z-index auto). The orbiting rank bubbles were already under the smoke; they now pass under the hat too.
+- EVERY PART OPAQUE: the shading overlays with an opacity (white .1-.12 streaks, a .7 rim line, a .55 flop line) are gone - the
+  light is in the gradients, whose stops are all solid. The Santa trim's puffs (11, overlapping) sit on a solid band along the
+  sphere; the party hat's gold trim is a solid band.
+- SEATED: each hat is drawn with its base at the sphere's top (180,98) and turned about the sphere's centre (rotate(T 180 150)), so
+  the Santa and party trims are arcs of the sphere's own curve (r 48.5-60 / 49-57.5) and the pilgrim brim lies over the sphere's cap.
+  The contact shadow (.fest-hat-shadow, a soft dark ellipse clipped to the sphere) is turned the same way, under the brim.
