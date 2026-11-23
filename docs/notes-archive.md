@@ -43444,3 +43444,107 @@ FAILS 4 (the dial's dot at 0, a toast's 3px bar, iphone and ipad) identically on
 behind it for a moment); Fire Code's sign-up shows Fire Code's Home for a beat before Nova's second half (the same Home-then-Nova hold
 as the academy's, by design); "Bronze - Level 21" on the ladder is TIER_UNLOCKS as written; Nova's second half in Fire Code is long
 (~70s at a reading pace) - his script, not a fault.
+## 384 festive - the seasons on Home: Thanksgiving, Christmas, New Year's (branch claude/b384-festive, cut from claude/b384-final 1cb2318; build NOT bumped, stays 2026-11-22-384.137; NOT on main, waiting for Madison)
+
+Madison: "we need to update the app for some festive stuff. On thanksgiving can we add some thanksgiving spirit somehow on the main
+menu? That will go live, and when December first hits, it will be Christmas festive themed and that will last till new years which
+will have new years stuff and then after new years say like January 2nd it will go back to normal. We have to make this super cool
+and fun though."
+
+**THE CALENDAR** (festSeasonAt, by the device's own local date; computed for any year):
+- Thanksgiving: the Monday of Thanksgiving week (the fourth Thursday of November, festThanksgivingDay) through Nov 30. 2026: Nov 23 -
+  Nov 30, the day Nov 26. (Chosen so the season is "from now" in 2026 and about a week every year; a later start date is one line.)
+- Christmas: Dec 1 - Dec 30 (Dec 24 "christmas-eve", Dec 25 "christmas-day").
+- New Year's: Dec 31 ("nye") and Jan 1 ("newyears-day"); the year it shows is the new one, computed.
+- Jan 2 on: nothing at all (no element, no timer beyond the next midnight check).
+Read each time Home is built (showHome -> festMount) and again while Home is up: a timer to the next local midnight (on Dec 31, to
+23:00, then once a second until midnight) and on visibilitychange/pageshow (an app suspended across midnight). A change of season
+rebuilds the decoration in place (no new Home); a change of day only updates the greeting and the sky's data-day.
+
+**WHAT EACH SEASON PUTS ON HOME** (decoration only - pointer-events none everywhere, no sound, no Firestore, no stored state):
+- The sky: ONE layer, `.fest-sky`, appended at the END of #stage (many places read stage.firstElementChild as "the screen") -
+  position fixed, bottom-anchored 100lvh like body::before, z-index -1 (paints over the paper and its glow, under the stars and under
+  every control; nothing on Home's root stacking context is above it but the hero, the text and the docks, which is the point). A
+  warm / cold / gold tint (static gradients, near zero at the top so the status-bar strip is unchanged) and the season's pieces.
+  It goes with the stage on every navigation (stage.replaceChildren), so nothing is ever left on <body>.
+- The planet's box (.cosmic-hero-wrap, so it follows the planet on every layout): `.fest-ring` (inserted after the main svg, under
+  the moving layers) dresses the OUTER ring (its radius read off the ring, as planetTapFx does), and `.fest-planet` (before the first
+  rank bubble, like .cosmic-tapfx) carries the hat, in the hero's own viewBox (0 -12 360 342, sphere r52 at 180,150).
+- Thanksgiving: a pilgrim hat (black capotain, gold buckle), a garland of maple leaves and acorns on a twig round the outer ring,
+  14-26 maple/aspen leaves drifting down and tumbling (rotateX flutter), a warm ember tint. Its day: "Happy Thanksgiving, NAME" and
+  ~30% more leaves. Tap the planet: a swirl of leaves out of it.
+- Christmas: a Santa hat, string lights on a sagging wire round the outer ring (two sets of halos twinkle out of phase), snow
+  (34-72 soft flakes in three depths, every ninth a six-armed crystal turning), a cold tint. Dec 24/25: "Merry Christmas Eve, NAME" /
+  "Merry Christmas, NAME", 20% more snow on the 25th, and Santa's sleigh (gold silhouette, three reindeer, the lead one's red nose)
+  flies up across the sky once a launch, 2.6s after Home. Tap the planet (any Christmas day): the sleigh (one at a time).
+- New Year's: a party hat (midnight blue, gold stripes, a tinsel burst), gold glints twinkling on the ring, six firework stations
+  round the planet system's edge (rocket trail, flash, a burst that opens and drops), a gold/violet tint. Dec 31: "Happy New Year's
+  Eve, NAME"; from 23:00 the greeting counts down ("2027 in 42 minutes", then seconds), the last ten seconds stand large over the
+  planet, and at midnight the new year arrives in gold over the planet with every station firing and confetti, and the greeting
+  turns to "Happy New Year, NAME". Jan 1: the year in gold once a launch, 1.4s after Home. Tap the planet: confetti and a firework.
+- Greetings come from homeGreetingText() (festGreetingText first), so a sign-up's greeting refresh says the same thing.
+
+**COST.** Transform and opacity only; no filters; no node is made per frame or per tap after the first (thrown pieces are made once
+per Home and run by the Web Animations API; the countdown writes its text nodes' data, a characterData change the #stage observers
+do not watch). Loops are infinite CSS animations, so loopsPauseAll pauses them with the planet's while the app is away. The hero
+gains at most two running loops (the twinkles); the rest are on the sky layer, outside the hero. Seeded random, so a season's sky is
+the same picture every time.
+
+**REDUCE MOTION** (the app's switch or the system's): CSS - the motion rules sit inside prefers-reduced-motion:no-preference and
+`html:not([data-reduce-motion="true"])`, and every piece's resting style is its scattered still place (--y) - plus festCalm() in JS
+(fewer pieces, nothing thrown, no sleigh, the year shown still, countdown digits without the pop).
+
+**PREVIEW / TESTING** (nothing in the app leads to it): `?season=NAME` in the address or localStorage `class26e.season` = NAME,
+NAME one of thanksgiving | thanksgiving-day | christmas | christmas-eve | christmas-day | nye | countdown (Dec 31 23:59:45) |
+newyear | off, or a local date-time `2026-12-31T23:59:50`. The clock is moved to that moment when first read and runs on from it
+(festNow), so midnight can be watched. Remove the key to go back to the real date.
+The key is in the head script's SHARED list (beside intro.seen): Fire Code maps every other class26e.* key to class26e.ifc.*, so
+without it Fire Code read class26e.ifc.season and ignored a preview set for the device (the first Fire Code recordings showed the real
+date's Thanksgiving under every scene). Gate (2) now sets the key before the class's map and reads it in both classes.
+
+**GATE: NEW tools/check-b384-festive.py** - (1) 36 forced dates (Thanksgiving's Monday and Day worked out in Python for 2026-2030,
+every boundary) give the right season and day; (2) each season in both classes puts a sky with its pieces, one hat, one ring; three
+different hats; a normal date puts nothing; (3) every festive element is pointer-events none, the middle of each Home control (16)
+hits the same element as without the season and nothing moved; (4) real clicks: the planet still gives its caption and throws the
+season's pieces (transform/opacity only), Start Studying still leaves Home and nothing festive stays; (5) the pieces move, every
+festive animation is transform/opacity; (6) Reduce motion, switch and system: no festive animation, pieces on the glass and still,
+hat and ring there, a tap throws nothing; (7) Profile / Settings / mode select carry nothing festive; Home twice = one of each;
+(8) Nov 30 23:59:57 -> Christmas with Home up, Dec 31 23:59:51 -> countdown, seconds over the planet, 2027 at midnight; (9) the five
+days' greetings are their own, ordinary days unchanged; (10) no page errors. ALL PASS; --against 1cb2318 FAILS 29.
+RECORDER: NEW tools/record-b384-festive.py OUTDIR [scenes] [--class] - Home on a virtual clock (record-hundo's), 1320x2868 H.264,
+a real click on the planet at a fixed moment; JPEG stills at ~2100px (phone 4.8x) and the iPad Pro 11".
+Chromium cannot show iOS's compositor under load: whether 40-70 falling pieces stay smooth on an older iPhone is for the phone.
+Gates on this branch (Nov 23 is inside Thanksgiving, so every gate below ran with the season live on Home): check-js ALL PASS; the page
+loads with no console errors; sweep-layout --quick 20/20 clean; check-centering --quick 0 off centre; check-b384-planetcost,
+-homescroll, -reducemotion (A, C), -perf --only 3, -resume ALL PASS; check-positions exit 0 (its only lines are showInstallFirst on two
+laptops, not Home). check-b384-home FAILS (1) the academy class icon asym 6.36 > 6, (6) the friend-code caret and (8) the chat
+button - all three fail the same way on 1cb2318 (asym 6.29 there, no season): inherited, not this branch's.
+
+## 384 festive round 2 - fireworks in open sky only; nothing falls over the tab bar (same branch; build still 384.137; NOT on main)
+
+Review of the first videos and stills: on New Year's Eve, the countdown and New Year's Day the top-right burst went off over the
+chat button and a lower-left one over the greeting beside NOVA; in the Thanksgiving still a leaf was drawn over the tab bar's edge.
+- FIREWORKS FROM THE LIVE RECTS (festPlace / festBusyRects): the six stations are no longer fixed percentages. The busy places are
+  read off the page: Start Studying, the daily question (button or laptop card), the class button, the chat button, the tab bar,
+  the greeting, NOVA and its tagline, the flares caption (and the band it comes up in, panel-wide, above the greeting) and the planet
+  with its hat. Candidates on a 12px grid whose whole burst (70k + 10px margin, plus its 22k drop) clears all of them and stays
+  below the chat button's top; picked farthest-point (no two closer than 1.8 radii). Bursts shrink (k 1 -> .44) on a screen with
+  little sky, and stations with no room stay hidden (an SE gets 5 small ones). The flash scales with k. Placed after the frame that
+  shows Home, again at 0.7s and 1.8s (the first Home of a launch: the tab bar and docks arrive after it - the first placement there
+  had no tab bar and put a burst on it) and on a resize. Unplaced/unused stations are visibility:hidden; the finale and a tap fire
+  only placed ones.
+- FALLING PIECES END AT THE TAB BAR: --fall-to on the sky = the tab bar's top (sky coordinates); the fall's last keyframe is there
+  (faded to 0 over the last 10%), the Reduce-motion rest is a fraction of it (--f), and the leaf swirl and confetti end there too
+  (festFloor). Everywhere else the pieces pass BEHIND the controls (the sky is z-index -1).
+- GATE (11): Pro Max both classes, SE, iPad upright and turned x Thanksgiving, Christmas, New Year's Eve (with a tap), the
+  countdown, New Year's Day; 12 frames 420ms apart: no visible burst/flash circle touches a control or Home's text, the countdown
+  and the year touch no control, no visible piece is over the tab bar, and where a piece crosses another control the control is
+  first in elementsFromPoint (pieces made hit-testable for the read; the point nearest the control's middle, since a round button
+  is not hit at its box's corners). Text is not a no-go for the falling pieces: they pass behind it.
+- FIXTURES: the gate and the recorder set class26e.intro.seen '99' (the shared fixture's '1' is below INTRO_REV 8, so Version 11's
+  card came up over Home in the stills), and remove the challenge cards (.rs-spot) the fixture account is owed before a tap and in
+  each recorded frame - with the card gone they come up over Home and took the gate's first planet tap.
+- THE YEAR, WHOLE: in the 3x recordings the gold year on New Year's Day was drawn shifted and cut off (at the left, or at the right
+  when it landed from larger) - its layer was the planet system's whole box and the sky's 1.8s re-placement changed styles while it
+  was up. Now the year is a box just round its words (viewBox 0 0 260 90, 72% of the hero, centred on the planet), lands from
+  larger like the countdown's seconds, and the Jan 1 moment starts at 2.1s, after the last placement. Re-recorded whole.
