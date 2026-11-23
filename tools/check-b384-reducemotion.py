@@ -187,6 +187,7 @@ ALLOWED = [
     (r"^\.rs-spot\.is-up \.rs-morph-rays", "the rank-up's turning rays are an effect layer, off at rest"),
     (r"^\.bc-slot\.is-new \.badge-shine-band", "a glint across a badge: off at rest"),
     (r"^\.sf-absence \.sfv-blackwave", "a flash layer of the rank scenes: off at rest (their still has its own rules)"),
+    (r"^\.cameo\b", "a character cameo is never built under Reduce motion (cameoAllowed); its display:none there is a second lock (384 cameo)"),
 ]
 
 def rules_check(br, os_reduce):
