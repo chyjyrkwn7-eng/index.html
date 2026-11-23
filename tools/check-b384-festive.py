@@ -149,6 +149,15 @@ OPEN = r"""(phase)=>{
 }"""
 
 def see_through(pg, tap=False):
+    # (384.137) a pop-up the account is owed (a challenge card, its dim) could land between the shots and darken the whole frame: the hat
+    # then "changed" though the planet was all that was recoloured. A frame is only trusted when a patch outside the hero (the sky in the
+    # clip's corner, which nothing here touches) is the same in every shot; otherwise the overlays are cleared again and it retries.
+    for attempt in range(4):
+        r = _see_through_once(pg, tap)
+        if r.get("steady"): r.pop("steady", None); return r
+        pg.evaluate(UNCOVER); pg.wait_for_timeout(1200)
+    r.pop("steady", None); return r
+def _see_through_once(pg, tap=False):
     import io
     import numpy as np
     from PIL import Image
@@ -173,7 +182,9 @@ def see_through(pg, tap=False):
     hat = np.abs(on - off).sum(2) > 30
     core = ndimage.binary_erosion(hat, iterations=4)
     d = np.abs(a - b).sum(2)
-    return {"core": int(core.sum()), "through": int((d[core] > 12).sum()), "max": int(d[core].max()) if core.any() else None}
+    k = max(6, a.shape[0] // 20); corner = lambda x: x[:k, :k].mean(axis=(0, 1))
+    steady = all(np.abs(corner(x) - corner(a)).sum() < 6 for x in (on, off)) and np.abs(corner(b) - corner(a)).sum() < 60
+    return {"core": int(core.sum()), "through": int((d[core] > 12).sum()), "max": int(d[core].max()) if core.any() else None, "steady": bool(steady)}
 def thanksgiving(y):
     d = datetime.date(y, 11, 1); first_thu = 1 + (3 - d.weekday()) % 7; return first_thu + 21
 errs_all = []

@@ -43707,3 +43707,11 @@ riding around could look better."
   recoloured (invert + hue-rotate) - nothing shows through and nothing paints over; also just after a planet tap (the press and its
   ripple). All three hats 0 pixels here; on 64417b2 (the merged head before this round) every hat fails (10,000-32,000 pixels).
 - RECORDER: --closeups writes hat-thanksgiving|christmas|newyear.jpg (each hat on the planet, 3x, loops held) and sleigh-closeup.jpg.
+
+## 384.137 - festive gate (12): a frame that dims mid-measure is retried, not counted as see-through
+On the merged tree (4cc8906) section (12) failed the party hat twice ("169018 change"). The saved shots of a failing run: the recoloured
+frame shows the hat unchanged over an inverted planet, but between the shots a pop-up the fixture account is owed (a challenge card and its
+dim) had started to darken the whole frame, so every hat pixel moved by a few levels. see_through now checks a sky patch in the clip's corner
+(nothing the check recolours) across the four shots; a frame where it moved (on/off over 6, the recoloured one over 60 - the ring lines there
+are inverted) is thrown away, the overlays cleared and it retries (up to 4). Normal runs read 0-6 / 0-38 there. Full check-b384-festive ALL
+PASS: every hat 0 changed pixels.
