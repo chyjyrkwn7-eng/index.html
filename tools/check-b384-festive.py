@@ -30,6 +30,11 @@ moved there and runs on). iPhone 17 Pro Max (440x956), installed, both classes. 
      button, the tab bar) or Home's text (greeting, NOVA and tagline, the flares caption); the countdown and the year touch no
      control; Thanksgiving's leaves, the snow, the leaf swirl and the confetti: none visible is ever over the tab bar, and wherever
      one crosses another control the control is painted over it (elementsFromPoint, the pieces made hit-testable for the read).
+ (12) NO HAT IS SEEN THROUGH (round 3 - Madison: "All the hats can be seen through to the planet"): at 3x on the Pro Max in both
+     classes and on the iPad, for each hat, every animation paused: the hat's own pixels (hat shown vs hidden, its contact shadow
+     off, eroded 4px off its edge) do not change at all when everything else in the planet's box is recoloured (inverted and
+     turned) - so nothing of the planet shows through any part and nothing of it paints over the hat; again just after a tap on
+     the planet (its press and ripple), on the Pro Max.
  (10) no page errors.
 Run:  python3 tools/check-b384-festive.py   (--against OLD/index.html must FAIL)"""
 import datetime, json, os, re, sys
@@ -50,8 +55,8 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
 CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly').forEach(e=>e.remove());")
-def page(br, cls, reduce=False, pre=None, vp=(440, 956), ins=(59, 0, 34, 0)):
-    ctx = br.new_context(viewport={"width": vp[0], "height": vp[1]}, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
+def page(br, cls, reduce=False, pre=None, vp=(440, 956), ins=(59, 0, 34, 0), dpr=1):
+    ctx = br.new_context(viewport={"width": vp[0], "height": vp[1]}, device_scale_factor=dpr, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
     ctx.add_init_script("window.__cloudSeed = {};")
     ctx.add_init_script(G["FAKE"])
     ctx.add_init_script(g["STANDALONE"])
@@ -142,6 +147,33 @@ OPEN = r"""(phase)=>{
   st.remove();
   return { bad: bad.slice(0, 6), nbad: bad.length, seen };
 }"""
+
+def see_through(pg, tap=False):
+    import io
+    import numpy as np
+    from PIL import Image
+    from scipy import ndimage
+    pg.evaluate(UNCOVER)
+    pg.evaluate("()=>document.querySelectorAll('#stage .fest-year, #stage .fest-count').forEach(e=>e.remove())")
+    if tap:
+        hp = [c for c in pg.evaluate(CONTROLS) if c["q"] == "planet"][0]["rect"]
+        pg.mouse.click(hp[0], hp[1]); pg.wait_for_timeout(140)
+    pg.evaluate("()=>document.getAnimations().forEach(a=>{ try{ a.pause(); }catch(e){} })")
+    clip = pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap').getBoundingClientRect(); const cx=h.left+h.width/2, cy=h.top+h.height*.47368, w=h.width*.5;
+      return {x:cx-w/2, y:cy-w*.8, width:w, height:w}; }""")
+    shot = lambda: np.asarray(Image.open(io.BytesIO(pg.screenshot(clip=clip, scale="device"))).convert("RGB")).astype(int)
+    a = shot()
+    pg.evaluate("()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); [...h.children].forEach(c=>{ if(!c.classList.contains('fest-planet')) c.style.filter='invert(1) hue-rotate(90deg)'; }); }")
+    b = shot()
+    pg.evaluate("()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); [...h.children].forEach(c=>c.style.filter=''); const sh=h.querySelector('.fest-hat-shadow'); if(sh) sh.style.display='none'; }")
+    on = shot()
+    pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility='hidden'; }")
+    off = shot()
+    pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility=''; const sh=document.querySelector('#stage .fest-hat-shadow'); if(sh) sh.style.display=''; document.getAnimations().forEach(a=>{ try{ a.play(); }catch(e){} }); }")
+    hat = np.abs(on - off).sum(2) > 30
+    core = ndimage.binary_erosion(hat, iterations=4)
+    d = np.abs(a - b).sum(2)
+    return {"core": int(core.sum()), "through": int((d[core] > 12).sum()), "max": int(d[core].max()) if core.any() else None}
 def thanksgiving(y):
     d = datetime.date(y, 11, 1); first_thu = 1 + (3 - d.weekday()) % 7; return first_thu + 21
 errs_all = []
@@ -293,6 +325,16 @@ with sync_playwright() as pw:
                     "the countdown": tot["bursts"] >= 6 and tot["big"] >= 3, "New Year's Day": tot["bursts"] >= 6 and tot["big"] >= 3}[scene]
             chk("(11) %s %s, %s: over 12 frames, %d bursts, %d pieces, %d countdown/year seen - %d on a control or Home's text (%s)" % (dev, cls, scene, tot["bursts"], tot["pieces"], tot["big"], len(bad), bad[:2]),
                 want and not bad, bad[:4])
+        errs_all += errs; ctx.close()
+    # (12) no hat is seen through
+    for (dev, vp, ins, cls, dpr) in (("Pro Max", (440, 956), (59, 0, 34, 0), "academy", 3), ("Pro Max", (440, 956), (59, 0, 34, 0), "ifc", 3), ("iPad", (834, 1194), (24, 0, 20, 0), "academy", 2)):
+        ctx, pg, errs = page(br, cls, vp=vp, ins=ins, dpr=dpr)
+        for name, at in (("the pilgrim hat", "thanksgiving"), ("the Santa hat", "christmas"), ("the party hat", "2026-12-31T20:00")):
+            for tap in ((False, True) if (dev == "Pro Max" and cls == "academy") else (False,)):
+                force(pg, at, 1300)
+                r = see_through(pg, tap)
+                chk("(12) %s %s, %s%s: %d of the hat's own pixels, %d change when the planet is recoloured (most %s)" % (dev, cls, name, " just after a tap" if tap else "", r["core"], r["through"], r["max"]),
+                    r["core"] > 1500 and r["through"] == 0, r)
         errs_all += errs; ctx.close()
     br.close()
 chk("(10) no page errors", not errs_all, errs_all[:3])
