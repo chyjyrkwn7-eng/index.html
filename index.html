@@ -39212,7 +39212,10 @@ html.is-browser{ --fade-paper: transparent; }
     /* the check on the mark's bottom-right corner, drawn by the card (a pseudo-element inside the mark would count as the
        mark's own ink and pull it off centre) */
     html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked:not(.is-soon)::after{
-      top:calc(var(--cc-pt) + 28px); left:calc(var(--cc-pl) + 24px); right:auto; width:20px; height:20px; background-size:12px 12px; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+      top:calc(var(--cc-pt) + 22px); left:calc(var(--cc-pl) + 24px); right:auto; width:20px; height:20px; background-size:12px 12px; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+    /* (384.137) Madison: "The check mark when selecting a class looks a little tight cause it's right on top the words under it" - at +28px
+       its bottom met the line under the name to the pixel (gap -0.1px on a Pro Max, -1.1 on an SE). At +22 it sits on the mark's own
+       bottom-right corner (its bottom ~1px under the mark's) with ~6px clear above the line */
   }
   /* (384 r13) ...and on a short phone (an SE, a phone in Safari) a little tighter, so the step fits or nearly does (the pick then brings
      Continue into view) */

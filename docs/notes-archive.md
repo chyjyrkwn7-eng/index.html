@@ -43645,3 +43645,10 @@ on top each other I would think, it looks bad how it is". novaModeRow adds `is-s
 Drill, Review, Virtual Room - no Mock); `.nt-modes.is-stack` is one column, each card a row (mark left, name and line beside it), the mode
 picker's own layout. The academy's four stay two by two. The short-stage container query already made rows and is unchanged. Rendered
 both classes, phone and iPad.
+
+## 384.137 - the picked class's check clears the line under it
+Madison (sign-up "Select your classes", Fire Code picked): "The check mark when selecting a class looks a little tight cause it's right on
+top the words under it". On a phone the check (the card's ::after, 20px on the mark's bottom-right) was placed at --cc-pt + 28px; its bottom
+met the first line of the description to the pixel (measured: gap -0.1px Pro Max, -1.1px SE, -0.1px iPhone 17 Pro). Now --cc-pt + 22px: it
+sits on the mark's corner (bottom ~0.7px below the mark's) with 5.9px clear (SE 4.9px). Tablet/laptop (the check in the card's top-right) is
+unchanged. check-b384-classstep, check-b384-signupclass ALL PASS; check-centering --quick in the commit log below.
