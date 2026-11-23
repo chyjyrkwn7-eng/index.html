@@ -43666,3 +43666,15 @@ unchanged. check-b384-classstep, check-b384-signupclass ALL PASS; check-centerin
   the chip's foot. `background-origin:border-box; background-repeat:no-repeat`. 3x render: the bottom rows (240,103,31) continuous, no
   light row. Swept every gradient-with-translucent-border element on Home, Customize, Badges, Select your classes, Classes, modes and the
   Leaderboard in both classes and A/B'd each with the same fix: none changes (their bright edges are drawn rims), so only the chip is fixed.
+
+## 384.137 - the Unlocks ladder's numbers centred; Home's arrival held from the first frame
+- LADDER NUMBERS. Madison (Unlocks, the Hundos ladder circled): "The numbers aren't centered by the way". Measured at 3x on the rendered
+  ladders: each digit's ink 1.3-1.8px ABOVE its circle's centre (Pro Max and iPad), within 0.2px side to side, the circles exactly on the
+  rail. buildTierRow now puts the figure in its own box (`.trk-num-fig`, display block, line-height 1, `text-box:trim-both cap alphabetic`)
+  which the circle's grid centres; the .5px nudge is dropped for those. Every digit 1-6 on three ladders, phone and iPad: within +-0.5px
+  (sub-pixel row positions). A block with padding calc((1.9rem - 1cap)/2) was tried first: right on a phone, up to 1.8px high on the iPad.
+  check-b384-unlocks2, -unlocks4 ALL PASS; check-centering --quick 0 off centre.
+- HOME ARRIVAL, second half. The re-recorded sign-up still showed, for one frame as Nova began to fade, a faint NOVA title and Start
+  Studying through him: .hometitle-wrap has `transition:opacity .25s`, so the hold faded them out instead of hiding them. The hold now
+  sets `transition:none !important`. Re-recorded at 15fps over 75.9-77.4s: Nova fades over the sky and greeting only; the planet blooms
+  (76.83), the ring runs (77.2), the title rises (77.43) - one arrival, nothing shown twice.
