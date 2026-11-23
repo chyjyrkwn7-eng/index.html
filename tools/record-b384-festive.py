@@ -31,6 +31,8 @@ VIDEO = "--stills-only" not in sys.argv
 FF = "/usr/bin/ffmpeg" if os.path.exists("/usr/bin/ffmpeg") else "ffmpeg"
 FPS = 30
 CLOCK = open(os.path.join(HERE, "record-hundo.py")).read().split('CLOCK = r"""', 1)[1].split('"""', 1)[0]
+# the fixture's account has never seen Version 11's card (intro.seen 99 above) and is owed challenge cards (.rs-spot): neither is the season
+UNCOVER = "document.querySelectorAll('.rs-spot,.rs-fly,.unlock-card,.intro-popup,#intro-pop,.app-banner,.daily-alert,.nova-talk').forEach(e=>e.remove());"
 CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly,.homecaption').forEach(e=>e.remove());")
 # scene: the forced moment, seconds of clip, seconds into the clip to tap the planet (None: no tap), the still's moment
@@ -47,7 +49,7 @@ def open_page(br, cls, forced, w, h, dpr, ins):
     ctx.add_init_script(G["FAKE"])
     ctx.add_init_script(g["STANDALONE"])
     ctx.add_init_script(G["init"](G["ifc"] if cls == "ifc" else G["academy"], active=cls))
-    ctx.add_init_script("try{ localStorage.setItem('class26e.season', %s); localStorage.setItem('class26e.weekrecap.v1','9999-12-31'); localStorage.setItem('class26e.ifc.weekrecap.v1','9999-12-31'); }catch(e){}" % json.dumps(forced))
+    ctx.add_init_script("try{ localStorage.setItem('class26e.intro.seen', '99'); localStorage.setItem('class26e.season', %s); localStorage.setItem('class26e.weekrecap.v1','9999-12-31'); localStorage.setItem('class26e.ifc.weekrecap.v1','9999-12-31'); }catch(e){}" % json.dumps(forced))
     if ins[0]: ctx.add_init_script(g["STATUS_BAR"].replace("__H__", str(ins[0])))
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
@@ -71,7 +73,7 @@ def still(br, scene, cls, ipad=False):
     pg.evaluate("()=>{ festYearShown = ''; %s showHome(); }" % CLEAN)
     pg.wait_for_timeout(int(at * 1000))
     if scene == "nye": pg.wait_for_timeout(4100)   # the last seconds over the planet, before midnight
-    pg.evaluate("()=>document.querySelectorAll('.homecaption,.daily-alert,.app-banner').forEach(e=>e.remove())")
+    pg.evaluate("()=>{ " + UNCOVER + " }")
     png = pg.screenshot(scale="device")
     name = "%s-%s.jpg" % (scene, "ipad" if ipad else cls)
     save_jpeg(png, os.path.join(OUT, name), 2100 if not ipad else None)
@@ -98,8 +100,8 @@ def video(br, scene, cls):
     n = 0; total = int(secs * FPS); tapped = False
     while n < total:
         if tap is not None and not tapped and n >= tap * FPS:
-            x, y = planet_xy(pg); pg.mouse.click(x, y); tapped = True
-        pg.evaluate("async () => { await __clk.advance(1000 / 30); }")
+            pg.evaluate("()=>{ " + UNCOVER + " }"); x, y = planet_xy(pg); pg.mouse.click(x, y); tapped = True
+        pg.evaluate("async () => { await __clk.advance(1000 / 30); " + UNCOVER + " }")
         fr = base64.b64decode(cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 90})["data"])
         p.stdin.write(fr); n += 1
         if n % 15 == 0: open(os.path.join(OUT, "frames", "%s-%s-%03d.jpg" % (scene, cls, n // 15)), "wb").write(fr)

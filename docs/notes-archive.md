@@ -43152,3 +43152,28 @@ loads with no console errors; sweep-layout --quick 20/20 clean; check-centering 
 -homescroll, -reducemotion (A, C), -perf --only 3, -resume ALL PASS; check-positions exit 0 (its only lines are showInstallFirst on two
 laptops, not Home). check-b384-home FAILS (1) the academy class icon asym 6.36 > 6, (6) the friend-code caret and (8) the chat
 button - all three fail the same way on 1cb2318 (asym 6.29 there, no season): inherited, not this branch's.
+
+## 384 festive round 2 - fireworks in open sky only; nothing falls over the tab bar (same branch; build still 384.137; NOT on main)
+
+Review of the first videos and stills: on New Year's Eve, the countdown and New Year's Day the top-right burst went off over the
+chat button and a lower-left one over the greeting beside NOVA; in the Thanksgiving still a leaf was drawn over the tab bar's edge.
+- FIREWORKS FROM THE LIVE RECTS (festPlace / festBusyRects): the six stations are no longer fixed percentages. The busy places are
+  read off the page: Start Studying, the daily question (button or laptop card), the class button, the chat button, the tab bar,
+  the greeting, NOVA and its tagline, the flares caption (and the band it comes up in, panel-wide, above the greeting) and the planet
+  with its hat. Candidates on a 12px grid whose whole burst (70k + 10px margin, plus its 22k drop) clears all of them and stays
+  below the chat button's top; picked farthest-point (no two closer than 1.8 radii). Bursts shrink (k 1 -> .44) on a screen with
+  little sky, and stations with no room stay hidden (an SE gets 5 small ones). The flash scales with k. Placed after the frame that
+  shows Home, again at 0.7s and 1.8s (the first Home of a launch: the tab bar and docks arrive after it - the first placement there
+  had no tab bar and put a burst on it) and on a resize. Unplaced/unused stations are visibility:hidden; the finale and a tap fire
+  only placed ones.
+- FALLING PIECES END AT THE TAB BAR: --fall-to on the sky = the tab bar's top (sky coordinates); the fall's last keyframe is there
+  (faded to 0 over the last 10%), the Reduce-motion rest is a fraction of it (--f), and the leaf swirl and confetti end there too
+  (festFloor). Everywhere else the pieces pass BEHIND the controls (the sky is z-index -1).
+- GATE (11): Pro Max both classes, SE, iPad upright and turned x Thanksgiving, Christmas, New Year's Eve (with a tap), the
+  countdown, New Year's Day; 12 frames 420ms apart: no visible burst/flash circle touches a control or Home's text, the countdown
+  and the year touch no control, no visible piece is over the tab bar, and where a piece crosses another control the control is
+  first in elementsFromPoint (pieces made hit-testable for the read; the point nearest the control's middle, since a round button
+  is not hit at its box's corners). Text is not a no-go for the falling pieces: they pass behind it.
+- FIXTURES: the gate and the recorder set class26e.intro.seen '99' (the shared fixture's '1' is below INTRO_REV 8, so Version 11's
+  card came up over Home in the stills), and remove the challenge cards (.rs-spot) the fixture account is owed before a tap and in
+  each recorded frame - with the card gone they come up over Home and took the gate's first planet tap.
