@@ -42123,7 +42123,7 @@ html.is-browser{ --fade-paper: transparent; }
   .cameo .cm-clip{ width:100%; height:100%; }
   .cameo :is(.cm-body, .cm-sty){ transform-origin:50% 100%; }
   .cameo .cm-bust{ position:absolute; left:0; top:0; width:1em; height:1em; z-index:2; }
-  .cameo :is(.cm-bust, .cm-torso) > svg{ width:100%; height:100%; display:block; filter:none !important; -webkit-mask-image:none !important; mask-image:none !important; }
+  .cameo :is(.cm-bust, .cm-torso) > svg{ width:100%; height:100%; display:block; overflow:hidden !important; filter:none !important; -webkit-mask-image:none !important; mask-image:none !important; }
   /* the torso: the drawing's last row run on down to a waist; its top row is the bust's bottom row */
   .cameo .cm-torso{ position:absolute; left:0; top:.985em; width:1em; height:.255em; z-index:1; clip-path:polygon(0 0, 100% 0, 84% 100%, 16% 100%); }
   .cameo .cm-torso > svg{ position:absolute; left:0; top:0; }
@@ -42172,6 +42172,7 @@ html.is-browser{ --fade-paper: transparent; }
   .cameo.cm-c-ghost :is(.cm-ua, .cm-fa){ background:none; box-shadow:none; }
   .cameo.cm-c-ghost .cm-hand::after{ display:none; }
   /* the cape (the Masked One): behind everything, swirling */
+  .cameo:is(.cm-sit, .cm-sleepy) .cm-cape{ display:none; }   /* sitting on it */
   .cameo .cm-cape{ position:absolute; left:.02em; top:.78em; width:.96em; height:.66em; z-index:0; transform-origin:50% 0;
     background:linear-gradient(90deg, #1C0A0E, #6E1620 30%, #9A2430 50%, #6E1620 70%, #1C0A0E); clip-path:polygon(14% 0, 86% 0, 100% 100%, 50% 92%, 0 100%);
     animation:cm-cape 1.6s ease-in-out infinite alternate; }
@@ -42209,6 +42210,7 @@ html.is-browser{ --fade-paper: transparent; }
   .cameo .cm-fxb > i.cm-beam{ left:-.05em; top:-.08em; width:1.1em; height:1.56em; background:linear-gradient(180deg, color-mix(in srgb, var(--cm-glow) 70%, transparent), color-mix(in srgb, var(--cm-glow) 12%, transparent));
     clip-path:polygon(34% 0, 66% 0, 100% 100%, 0 100%); animation:cm-beam 1.3s ease-out both; }
   @keyframes cm-beam{ 0%{ opacity:0; transform:scaleY(.2); transform-origin:50% 0; } 25%{ opacity:.75; transform:none; } 100%{ opacity:0; } }
+  .cameo:is(.cm-sit, .cm-sleepy) .cm-fxb > i.cm-beam{ height:1.26em; }   /* down to the ledge it sits on */
   .cameo.cm-m-beam.is-leaving .cm-fxb > i.cm-beam{ animation:cm-beam-out .24s ease-out both; }
   @keyframes cm-beam-out{ 0%{ opacity:0; } 40%{ opacity:.7; } 100%{ opacity:0; } }
   /* puff: smoke (or leaves) round the figure, in and out */
@@ -42340,7 +42342,7 @@ html.is-browser{ --fade-paper: transparent; }
   .cameo.cm-run .cm-hand-r > .cm-prop-art{ transform-origin:.14em .345em; transform:rotate(125deg); }
   .cameo.cm-wave .cm-hand-r > .cm-prop-art{ transform-origin:.14em .345em; transform:rotate(145.2deg); }
   .cameo.cm-cheer .cm-hand-r > .cm-prop-art{ transform-origin:.14em .345em; transform:rotate(152.5deg); }
-  .cameo.cm-g-hattip .cm-bust .cx-fx-hat{ animation:cm-hattip 3.2s ease-in-out .9s infinite; }
+  .cameo.cm-g-hattip .cm-bust .cx-fx-shhat{ animation:cm-hattip 3.2s ease-in-out .9s infinite; transform-origin:72% 100%; }
   @keyframes cm-hattip{ 0%, 52%, 100%{ transform:none; } 62%, 78%{ transform:translateY(-1.8px) rotate(-14deg); } }
 
   /* ---- leaving (CAMEO_OUT_MS 240): ducks behind the ledge, shrinks off it, or fades as it runs on ---- */
@@ -127940,8 +127942,9 @@ var CAMEO_WEIGHT = { sit: 3, peek: 2, wave: 2, tiptoe: 2, dangle: 2, run: 2, sle
 /* how long each stays when nothing sends it away (ms); sleepy stays until something does, at most its number */
 /* each kind's reach, in units of its size from its figure's left edge and the line it is on: [left, up, right, down]; measured
    over every character's own figure, prop and way in (tools/check-b384-cameo.py (S) scrubs them all and holds these) */
-var CAMEO_BOX = { sit: [-.21, 1.45, 1.41, .46], sleepy: [-.19, 1.42, 1.36, .46], tiptoe: [0, 1.8, 0, .08], dangle: [-.18, .83, 1.37, 1.05],
-  peek: [-.22, .95, 1.23, 0], wave: [-.2, 1.08, 1.43, 0], cheer: [-.38, 1.14, 1.39, 0], oops: [-.19, .94, 1.24, 0], run: [0, 1.85, 0, .08] };
+var CAMEO_BOX = { sit: [[-.21, 1.45, 1.41, .08], [.04, 0, .96, .46]], sleepy: [[-.19, 1.42, 1.36, .08], [.04, 0, .96, .46]], tiptoe: [[0, 1.8, 0, .08]],
+  dangle: [[-.18, .83, 1.37, 1.05]], peek: [[-.22, .95, 1.23, 0]], wave: [[-.2, 1.08, 1.43, 0]], cheer: [[-.38, 1.14, 1.39, 0]], oops: [[-.19, .94, 1.24, 0]],
+  run: [[0, 1.85, 0, .08]] };
 var CAMEO_LIFE = { sit: 7600, tiptoe: 5600, dangle: 6800, peek: 3500, wave: 3600, sleepy: 16000, cheer: 2900, oops: 3300, run: 2600 };
 var cameoPlan = null;   /* this run's: { at, kind, qi, pos, timer, fired } or null */
 var cameoNow = null;    /* the one up: { el, kind, panel, timers, off } */
@@ -127968,6 +127971,13 @@ function cameoNoteFired(){
   cameoPacingSave(p);
 }
 /* beginRun: a Drill or a Mock this device owns (runSaveSlot: not the Daily Question, not a room), on this class's questions */
+function cameoWarm(){
+  try{
+    const id = store.avatarChar || "ghost";
+    const svg = buildAvatarCharSVGSafe(id);
+    if(svg) cameoPalette(id, svg);
+  }catch(e){}
+}
 function cameoPlanRun(){
   cameoGone();
   if(cameoPlan) clearTimeout(cameoPlan.timer);
@@ -127975,6 +127985,7 @@ function cameoPlanRun(){
   let ok = false;
   try{ ok = cameoAllowed() && !!runSaveSlot && !vroomForeign(); }catch(e){ ok = false; }
   cameoPlan = cameoPlanFor(order.length, ok);
+  if(cameoPlan){ try{ (window.requestIdleCallback || (f => setTimeout(f, 400)))(() => cameoWarm(), { timeout: 3000 }); }catch(e){} }
 }
 function cameoPickKind(){
   const pool = CAMEO_KINDS.filter(k => runMode === "drill" || (k !== "cheer" && k !== "oops"));
@@ -128089,12 +128100,13 @@ function cameoGeometry(){
 }
 /* the boxes each kind can reach at size s (one-s units), its figure's left edge at x */
 function cameoBoxes(kind, s, x, g){
-  const L = g.ledge ? g.ledge.y : 0, W = g.vw, B = CAMEO_BOX[kind];
-  if(!B) return null;
+  const L = g.ledge ? g.ledge.y : 0, W = g.vw, BB = CAMEO_BOX[kind];
+  if(!BB) return null;
+  const B = BB[0];
   if(kind === "tiptoe"){ const T = g.surf != null ? g.surf : L;   /* along the ledge, or the floor; x: how far in, from the right (+) or the left (-) */
     return x > 0 ? [[W - x, T - B[1] * s, W + 2 * s, T + B[3] * s]] : [[-2 * s, T - B[1] * s, -x, T + B[3] * s]]; }
   if(kind === "run") return [[-2 * s, g.floor - B[1] * s, W + 2 * s, g.floor + B[3] * s]];
-  return [[x + B[0] * s, L - B[1] * s, x + B[2] * s, L + B[3] * s]];
+  return BB.map(b => [x + b[0] * s, L - b[1] * s, x + b[2] * s, L + b[3] * s]);
 }
 function cameoFree(boxes, g){
   const m = CAMEO_CLEAR;
@@ -128150,7 +128162,7 @@ function cameoPlace(kind, g, opt){
 /* ---- THE FIGURE (384 cameo, round 2) ----
    Madison, on the first videos: "the arms and legs need to look great" / "it looks like their shoulders aren't even connected
    properly to their bodies, fix that" / "Maybe each character kinda has their own kinda thing too". So a cameo is ONE body now:
-   - THE TORSO is the bust's own last row of drawing (a 0.2-unit strip at the very foot of its box, a second copy of the drawing with
+   - THE TORSO is the bust's own last row of drawing (its last 0.1 unit, at the very foot of its box, a second copy of the drawing with
      that viewBox, preserveAspectRatio none) stretched down a quarter of the figure and tapered to a waist: its top row IS the
      bust's bottom row, so the clothes run on with no seam, gap, overhang or colour step whatever the character wears (a tie, a
      zip, a hem, the Hive's stripes), then a soft shade towards the waist.
@@ -128168,6 +128180,9 @@ function cameoPlace(kind, g, opt){
    own ink (tools/check-b384-cameo.py (J) holds it: every arm's top is under its shoulder) - a little inside the ink's edge over the
    rows round the pivot, so the top of the arm is always hidden however the shoulder slopes */
 var CAMEO_SHOULDER = {alien: [0.273, 0.725, 0.93], clown: [0.258, 0.74, 0.93], detective: [0.18, 0.818, 0.93], fcchief3: [0.188, 0.81, 0.93], fccomet: [0.155, 0.843, 0.93], fcdispatch3: [0.188, 0.81, 0.93], fcdrone2: [0.275, 0.723, 0.93], fchazmat: [0.188, 0.81, 0.93], fcinspector5: [0.162, 0.835, 0.93], fcnebula: [0.188, 0.81, 0.93], fcopt_exit: [0.193, 0.805, 0.93], fcopt_plain: [0.188, 0.81, 0.93], fcranger: [0.188, 0.81, 0.93], fcrecon: [0.188, 0.81, 0.93], fcscba: [0.188, 0.81, 0.93], fcspill: [0.215, 0.783, 0.93], fcsprinkler2: [0.237, 0.76, 0.93], fcstrobe: [0.205, 0.793, 0.93], fcwhiteout2: [0.2, 0.8, 0.93], forge: [0.247, 0.75, 0.93], frost: [0.28, 0.718, 0.93], genesis: [0.175, 0.823, 0.93], ghost: [0.36, 0.64, 0.74], grizzly: [0.24, 0.758, 0.93], hacker: [0.175, 0.823, 0.93], hive: [0.188, 0.81, 0.93], inferno: [0.36, 0.64, 0.96], koi: [0.265, 0.733, 0.93], lunar: [0.258, 0.74, 0.93], marksman: [0.19, 0.807, 0.93], masked: [0.193, 0.805, 0.93], oracle: [0.34, 0.658, 0.93], ronin: [0.232, 0.713, 0.93], sheriff: [0.198, 0.8, 0.93], singularity: [0.213, 0.785, 0.93], solar: [0.285, 0.713, 0.93], starblade: [0.175, 0.818, 0.93], tempest: [0.285, 0.713, 0.93], timekeeper: [0.325, 0.673, 0.93], umbra: [0.255, 0.743, 0.93], voidwalker: [0.245, 0.753, 0.93], zenith: [0.222, 0.775, 0.93], zeus: [0.2, 0.798, 0.84]};
+/* where a drawing's body ends, when it is not the foot of its box (Zeus's bust stands on a plinth: his torso runs on from the
+   marble of his chest instead, and the plinth is not drawn) */
+var CAMEO_CUT = { zeus: .885, fcopt_exit: .978 };
 var CAMEO_PAL = {};
 function cameoRgb(c){
   c = String(c || "").trim();
@@ -128394,12 +128409,18 @@ function cameoBuild(pl){
   });
   ["l", "r"].forEach(side => cameoEl("i", "cm-shoe", cameoEl("i", "cm-sh", cameoEl("i", "cm-th", cameoEl("i", "cm-leg cm-leg-" + side, rig)))));
   /* the torso: a second copy of the drawing, only its last row, stretched to a waist (its top row is the bust's bottom row) */
-  const torso = cameoEl("div", "cm-torso", body);
+  const torso = cameoEl("div", "cm-torso", body);   /* still: no live part may move inside a row stretched this far */
+  const cut = CAMEO_CUT[cameoKindOf(id)] || 1;
   const tsvg = svg.cloneNode(true);
-  tsvg.setAttribute("viewBox", "3 36.8 34 0.2");
+  /* the drawing's own viewBox (most are 3 3 34 34; not all): its last tenth of a unit */
+  const vb = (svg.getAttribute("viewBox") || "3 3 34 34").trim().split(/[\s,]+/).map(Number);
+  const vh = vb[3] || 34, band = vh * .1 / 34;
+  tsvg.setAttribute("viewBox", vb[0] + " " + (vb[1] + vh * cut - band).toFixed(3) + " " + (vb[2] || 34) + " " + band.toFixed(3));
+  if(cut < 1) torso.style.cssText = "top:" + (cut - .015).toFixed(3) + "em;height:" + (1.24 - cut + .015).toFixed(3) + "em";
   tsvg.setAttribute("preserveAspectRatio", "none");
   torso.appendChild(tsvg);
   const bust = cameoEl("div", "cm-bust " + (kind === "sleepy" ? "char-sleep" : "char-live"), body);
+  if(cut < 1) bust.style.clipPath = "inset(0 0 " + (1 - cut).toFixed(3) + "em 0)";
   bust.appendChild(svg);
   if(showProp && !held && sig.prop !== "cape" && sig.prop !== "hattip"){
     const f = cameoEl("div", "cm-fprop is-" + sig.prop, body);

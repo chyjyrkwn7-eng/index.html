@@ -186,7 +186,7 @@ SCRUB_ALL = r"""()=>{
       const lack=need.filter(q=>!el.querySelector(q)); if(lack.length) broken.push(id+' '+kind+' lacks '+lack.join(','));
       el.style.setProperty('--cm-dx','0px'); if(kind==='tiptoe'||kind==='run') el.style.left=X+'px';
       document.body.appendChild(el);
-      const B=CAMEO_BOX[kind]; const box=[X+B[0]*s, L-B[1]*s, X+B[2]*s, L+B[3]*s];
+      const BB=Array.isArray(CAMEO_BOX[kind][0]) ? CAMEO_BOX[kind] : [CAMEO_BOX[kind]]; const boxes=BB.map(B=>[X+B[0]*s, L-B[1]*s, X+B[2]*s, L+B[3]*s]);
       const vertOnly=(kind==='tiptoe'||kind==='run');
       const anims=el.getAnimations({subtree:true}); anims.forEach(a=>a.pause());
       const clipEl=el.querySelector('.cm-clip'); const clipped=getComputedStyle(clipEl).overflow==='hidden';
@@ -196,7 +196,11 @@ SCRUB_ALL = r"""()=>{
         el.querySelectorAll(LEAF).forEach(p=>{ const r=p.getBoundingClientRect(); if(!r.width||!r.height) return; let q=[r.left,r.top,r.right,r.bottom];
           if(c) q=[Math.max(q[0],c.left),Math.max(q[1],c.top),Math.min(q[2],c.right),Math.min(q[3],c.bottom)];
           if(q[2]-q[0]<=.5||q[3]-q[1]<=.5) return;
-          const over=Math.max(vertOnly?0:box[0]-q[0], box[1]-q[1], vertOnly?0:q[2]-box[2], q[3]-box[3]);
+          /* inside the boxes' union: every point of a 6x6 grid over the part is in one of them (by how far it is out, at worst) */
+          let over=-1e9;
+          for(let i=0;i<=5;i++) for(let j=0;j<=5;j++){ const px=q[0]+(q[2]-q[0])*i/5, py=q[1]+(q[3]-q[1])*j/5;
+            const o=Math.min(...boxes.map(box=>Math.max(vertOnly?-1e9:box[0]-px, box[1]-py, vertOnly?-1e9:px-box[2], py-box[3])));
+            if(o>over) over=o; }
           if(over>worstV){ worstV=over; worst=id+' '+kind+' '+over.toFixed(1)+'px of 100'; }
           if(over>.5) out.push(id+' '+kind+' t'+t+' '+(p.className.baseVal!=null?'svg':p.className)+' '+over.toFixed(1)+'px'); });
       }
@@ -219,8 +223,8 @@ JOINT_SETUP = r"""async([id, kind, t])=>{
   el.getAnimations({subtree:true}).forEach(a=>{ a.pause(); a.currentTime=t; });
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   const piv=[...el.querySelectorAll('.cm-arm')].map(a=>{ const r=a.getBoundingClientRect(); return [r.left, r.top]; });
-  const b=el.querySelector('.cm-bust').getBoundingClientRect();
-  return { s, x0: Math.max(0, b.left-40), y0: Math.max(0, b.top-30), w: b.width+80, h: b.height*1.9, piv, seam: b.bottom, sx0: b.left+b.width*.3, sx1: b.left+b.width*.7 }; }"""
+  const b=el.querySelector('.cm-bust').getBoundingClientRect(), tr=el.querySelector('.cm-torso').getBoundingClientRect();
+  return { s, x0: Math.max(0, b.left-40), y0: Math.max(0, b.top-30), w: b.width+80, h: b.height*1.9, piv, seam: tr.top+.015*s, sx0: b.left+b.width*.3, sx1: b.left+b.width*.7 }; }"""
 
 KINDS = ["sit", "tiptoe", "dangle", "peek", "wave", "sleepy", "cheer", "oops", "run"]
 def touch_drag(cdp, x0, y0, x1, y1, ms=260):
@@ -495,7 +499,8 @@ with sync_playwright() as pw:
                                     p1, p2 = a.getpixel((xx, yy)), b.getpixel((xx, yy)); diff = max(diff, max(abs(p1[i] - p2[i]) for i in range(3))); n += 1
                         if diff > 24: shoulders.append((cid, kind, round(diff)))
                     if kind == "sit":
-                        # the seam: the rows just above and just below where the bust ends and the torso begins, across the torso's middle half
+                        # the seam: the rows two device pixels above and below where the bust ends and the torso begins, across the torso's
+                        # middle half (the median of the columns)
                         y = int((g["seam"] - g["y0"]) * sc)
                         x0, x1 = int((g["sx0"] - g["x0"]) * sc), int((g["sx1"] - g["x0"]) * sc)
                         st = []
@@ -527,6 +532,10 @@ with sync_playwright() as pw:
             base = pg.evaluate(PERF_MEASURE, 2600)
             info("x%d no cameo: %d frames, %.1f%% over 25ms, worst gap %.0fms, long tasks %s" % (rate, base["n"], base["drop"] * 100, base["worst"], base["lt"]))
             rows = []
+            cold = pg.evaluate("(k)=>{ const t0=performance.now(); const r=cameoForce('peek', {hold:true}); return { ms: performance.now()-t0, ok: r.ok }; }", "peek")
+            pg.evaluate("()=>cameoGone()"); pg.wait_for_timeout(300)
+            info("x%d the very first fire, cold (nothing warmed): %.1fms" % (rate, cold["ms"]))
+            chk("(H) x%d the very first fire with nothing warmed (a forced one; a planned run warms the drawing in idle time first) costs %.1fms (< 60)" % (rate, cold["ms"]), cold["ok"] and cold["ms"] < 60, cold)
             for k in KINDS:
                 res = None
                 for attempt in range(2):
