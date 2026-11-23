@@ -62,15 +62,15 @@ def plan_now(pg, kind, streak=0):
 
 # kind, class, character, what happens
 SCENES = [
-    ("sit", "academy", "grizzly", "answered; sits on the ledge; the swipe to the next question sends it off"),
-    ("run", "academy", "alien", "runs across the bottom and off"),
-    ("tiptoe", "ifc", "hacker", "Fire Code: tiptoes in along the ledge, looks, tiptoes out"),
-    ("dangle", "ifc", "hacker", "Fire Code: hangs from the ledge; the swipe sends it off"),
-    ("peek", "academy", "alien", "peeks over the ledge"),
-    ("wave", "ifc", "masked", "Fire Code: rises behind the ledge and waves"),
-    ("sleepy", "academy", "ghost", "dozes on the ledge; a tap on an answer wakes it and it goes"),
-    ("cheer", "academy", "grizzly", "a right answer, 3 in a row: cheers; the swipe sends it off"),
-    ("oops", "ifc", "masked", "Fire Code: a wrong pick: a sweat drop and a fist pump; the next pick sends it off"),
+    ("sit", "academy", "grizzly", "the Bear hops onto the ledge with a fish; the swipe to the next question sends it off"),
+    ("run", "academy", "zeus", "Zeus crackles in and runs across the bottom, lightning bolt in hand"),
+    ("tiptoe", "ifc", "detective", "Fire Code's Inspector swaggers in on tiptoe with a flashlight"),
+    ("dangle", "ifc", "hacker", "Fire Code's Dispatcher glitches in and hangs from the ledge; the swipe sends it off"),
+    ("peek", "academy", "masked", "the Masked One peeks over the ledge out of a puff of smoke"),
+    ("wave", "ifc", "poseidon", "Fire Code's Chief waves his bullhorn"),
+    ("sleepy", "academy", "ghost", "the Ghost dozes, floating, its lantern beside; a tap wakes it"),
+    ("cheer", "academy", "clown", "the Clown cheers a run of right answers with a balloon; the swipe sends it off"),
+    ("oops", "ifc", "marksman", "Fire Code's Hazmat after a wrong pick; the next pick sends it off"),
 ]
 done = []
 with sync_playwright() as pw:
@@ -117,7 +117,7 @@ with sync_playwright() as pw:
                 x, y = choice_xy(pg, True); tap(cdp, x, y); pg.wait_for_timeout(1400)
         print(kind, cls, char, "-", what)
         frames = record(pg, cdp, steps)
-        path = os.path.join(OUT, "cameo-%s%s.mp4" % (kind, "-firecode" if cls == "ifc" else ""))
+        path = os.path.join(OUT, "cameo-%s%s-v2.mp4" % (kind, "-firecode" if cls == "ifc" else ""))
         to_mp4(frames, path)
         print("  %d frames -> %s (%.1f MB)" % (len(frames), path, os.path.getsize(path) / 1e6))
         done.append(path)
