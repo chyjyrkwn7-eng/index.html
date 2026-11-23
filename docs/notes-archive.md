@@ -43678,3 +43678,32 @@ unchanged. check-b384-classstep, check-b384-signupclass ALL PASS; check-centerin
   Studying through him: .hometitle-wrap has `transition:opacity .25s`, so the hold faded them out instead of hiding them. The hold now
   sets `transition:none !important`. Re-recorded at 15fps over 75.9-77.4s: Nova fades over the sky and greeting only; the planet blooms
   (76.83), the ring runs (77.2), the title rises (77.43) - one arrival, nothing shown twice.
+## 384 festive round 3 - the hats are solid and sit on the planet; Santa's sleigh in colour (same branch, claude/b384-integ 64417b2 merged in; build 384.137; NOT on main)
+
+Madison on his phone: "All the hats can be seen through to the planet. We need to fix this." and "I feel like the Santa and stuff
+riding around could look better."
+- WHY THE HATS LOOKED SEE-THROUGH: the planet's smoke (.cosmic-plasma) is z-index 1 at opacity .55 and so painted ABOVE the hat
+  (.fest-planet was z-index auto, though later in the box): the planet's colour and glow lay over the brim and the trim. The hat is
+  z-index 1 now, after the smoke in the box, so it is on top of it (and of the tap's press, .cosmic-tapfx, which comes after it with
+  z-index auto). The orbiting rank bubbles were already under the smoke; they now pass under the hat too.
+- EVERY PART OPAQUE: the shading overlays with an opacity (white .1-.12 streaks, a .7 rim line, a .55 flop line) are gone - the
+  light is in the gradients, whose stops are all solid. The Santa trim's puffs (11, overlapping) sit on a solid band along the
+  sphere; the party hat's gold trim is a solid band.
+- SEATED: each hat is drawn with its base at the sphere's top (180,98) and turned about the sphere's centre (rotate(T 180 150)), so
+  the Santa and party trims are arcs of the sphere's own curve (r 48.5-60 / 49-57.5) and the pilgrim brim lies over the sphere's cap.
+  The contact shadow (.fest-hat-shadow, a soft dark ellipse clipped to the sphere) is turned the same way, under the brim.
+- SANTA'S SLEIGH IN COLOUR (festSleighSvg / festDeerSvg): a red sleigh (gradient, gold trim, a gold scroll on its side, gold runners
+  and struts), Santa (red coat, black belt and gold buckle, white fur and beard, his hat, a green mitten on the reins), a sack with
+  two presents, three reindeer in warm browns (lighter belly, dark legs in a gallop, pale antlers, white tail, a red harness with a
+  gold bell), gold reins, the lead one's red nose with a soft glow. One 240x64 drawing in parts: the reins (under), the sleigh, and
+  each reindeer in its own box, so the reindeer gallop (a bob and a tilt, each a beat after the one in front) and the sleigh rides
+  the bumps while the whole flies the same arc - all transform, by the Web Animations API, only while it flies. Wider (54% of the
+  screen, 190-280px). Close-up: sleigh-closeup.jpg.
+- FIREWORKS WAIT FOR THE CORNERS: under the merged head a station was placed before the chat button was laid out and went off over it
+  until the next placement (gate (11), New Year's Eve). The stations now stay hidden until a placement that has the chat button and
+  the tab bar (tried at the first frame, 0.7s, 1.8s; the 3.2s try places regardless).
+- GATE (12) NO HAT IS SEEN THROUGH: at 3x (Pro Max, both classes) and 2x (iPad), each hat, every animation paused: the hat's own pixels
+  (hat shown vs hidden with its contact shadow off, eroded 4px) must not change at all when every other layer of the planet's box is
+  recoloured (invert + hue-rotate) - nothing shows through and nothing paints over; also just after a planet tap (the press and its
+  ripple). All three hats 0 pixels here; on 64417b2 (the merged head before this round) every hat fails (10,000-32,000 pixels).
+- RECORDER: --closeups writes hat-thanksgiving|christmas|newyear.jpg (each hat on the planet, 3x, loops held) and sleigh-closeup.jpg.

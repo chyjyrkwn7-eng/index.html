@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """384 festive: MP4s and stills of Home in each season, for Madison (both classes, iPhone 17 Pro Max at 3x; an iPad still a season).
 
-  python3 tools/record-b384-festive.py OUTDIR [SCENE,...] [--class academy|ifc|both] [--stills-only] [--no-stills]
+  python3 tools/record-b384-festive.py OUTDIR [SCENE,...] [--class academy|ifc|both] [--stills-only] [--no-stills] [--closeups]
 
 SCENES: thanksgiving, thanksgiving-day, christmas, nye (the last seconds of Dec 31 and midnight), newyear (Jan 1).
 The season is forced with the preview key the app reads (localStorage "class26e.season", see festMount) - the device's clock is moved
@@ -9,7 +9,8 @@ to that moment and runs on from it. Frames are made on a virtual clock (the cloc
 timers and every CSS / Web animation advance exactly 1/30s a frame), so the video is smooth whatever the machine's load, and a tap on
 the planet (a real click on the sphere) lands at a fixed moment of the clip.
 Out: <scene>-<class>.mp4 (H.264, yuv420p, faststart, 1320x2868), <scene>-<class>.jpg (iPhone, ~2100px wide, quality 87),
-<scene>-ipad.jpg (iPad Pro 11", academy). Each clip also leaves one frame a second in OUTDIR/frames/ for checking by eye."""
+<scene>-ipad.jpg (iPad Pro 11", academy). --closeups (alone): hat-thanksgiving|christmas|newyear.jpg (each hat on the planet at 3x,
+every loop held) and sleigh-closeup.jpg (Santa's sleigh mid-flight at 3x). Each clip also leaves one frame a second in OUTDIR/frames/ for checking by eye."""
 import base64, io, json, os, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
@@ -108,10 +109,32 @@ def video(br, scene, cls):
     p.stdin.close(); p.wait()
     print("video", os.path.basename(path), "%.1f MB" % (os.path.getsize(path) / 1e6), "errors:", errs[:2], flush=True)
     ctx.close()
+def closeups(br):
+    ctx, pg, errs = open_page(br, "academy", "thanksgiving", 440, 956, 3, (62, 0, 34, 0))
+    for name, forced in (("thanksgiving", "thanksgiving"), ("christmas", "christmas"), ("newyear", "2026-12-31T20:00")):
+        pg.evaluate("(f)=>{ localStorage.setItem('class26e.season', f); festYearShown = 'x'; %s showHome(); }" % CLEAN, forced)
+        pg.wait_for_timeout(2200)
+        pg.evaluate("()=>{ " + UNCOVER + " document.getAnimations().forEach(a=>{ try{ a.pause(); }catch(e){} }); }")
+        clip = pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap').getBoundingClientRect(); const cx=h.left+h.width/2, cy=h.top+h.height*.47368, w=h.width*.5;
+          return {x:cx-w/2, y:cy-w*.98, width:w, height:w*1.06}; }""")
+        save_jpeg(pg.screenshot(clip=clip, scale="device"), os.path.join(OUT, "hat-%s.jpg" % name))
+        print("close-up hat-%s.jpg" % name, errs[:2], flush=True)
+    pg.evaluate("()=>{ localStorage.setItem('class26e.season', 'christmas'); %s showHome(); }" % CLEAN); pg.wait_for_timeout(1500)
+    pg.evaluate("()=>{ festSleighBusy = 0; festSleigh(); }"); pg.wait_for_timeout(100)
+    pg.evaluate("""()=>{ const sl=document.querySelector('.fest-sleigh'); sl.getAnimations({subtree:true}).forEach(a=>{ try{ a.pause(); a.currentTime = a.effect.target === sl ? a.effect.getComputedTiming().endTime * .5 : 300; }catch(e){} }); }""")
+    pg.wait_for_timeout(200)
+    r = pg.evaluate("()=>{ const b=document.querySelector('.fest-sleigh').getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; }")
+    clip = {"x": max(0, r[0] - 16), "y": max(0, r[1] - 24), "width": min(440 - max(0, r[0] - 16), r[2] + 32), "height": r[3] + 48}
+    save_jpeg(pg.screenshot(clip=clip, scale="device"), os.path.join(OUT, "sleigh-closeup.jpg"))
+    print("close-up sleigh-closeup.jpg", errs[:2], flush=True)
+    ctx.close()
+
 with sync_playwright() as pw:
     # the video's frames are the screen's own pixels at 3x (CDP's screenshot is at the forced scale)
     brv = pw.chromium.launch(executable_path=g["CHROME"], args=["--force-device-scale-factor=3"])
     br = pw.chromium.launch(executable_path=g["CHROME"])
+    if "--closeups" in sys.argv:
+        closeups(br); br.close(); brv.close(); sys.exit(0)
     for scene in SCENES:
         for cls in CLASSES:
             if VIDEO: video(brv, scene, cls)

@@ -42498,7 +42498,9 @@ html.is-browser{ --fade-paper: transparent; }
   .fest-throw.is-leaf{ width:20px; height:20px; margin:-10px 0 0 -10px; }
   .fest-throw.is-leaf > svg{ display:block; width:100%; height:100%; overflow:visible; }
   .fest-sleigh{ position:absolute; left:0; top:0; opacity:0; }
-  .fest-sleigh > svg{ position:relative; display:block; width:100%; height:auto; overflow:visible; }
+  .fest-sl-part{ position:absolute; top:0; height:100%; }
+  .fest-sl-part > svg, .fest-sl-reins{ display:block; width:100%; height:100%; overflow:visible; }
+  .fest-sl-reins{ position:absolute; inset:0; }
   .fest-sleigh-glow{ position:absolute; left:-8%; right:-8%; top:-40%; bottom:-40%; border-radius:50%;
     background:radial-gradient(closest-side, rgba(255,226,150,.2), rgba(255,226,150,0)); }
   .fest-sleigh-trail{ position:absolute; left:2%; top:78%; width:0; height:0; }
@@ -42506,6 +42508,7 @@ html.is-browser{ --fade-paper: transparent; }
     background:radial-gradient(circle, #FFFFFF, #FFE29A 60%, rgba(255,226,154,0)); }
   /* in the planet's box */
   .fest-ring, .fest-planet, .fest-count, .fest-year{ position:absolute; inset:0; }
+  .fest-planet{ z-index:1; }   /* above the planet's smoke (.cosmic-plasma, z-index 1, earlier in the box): no hat is seen through */
   .fest-ring > svg, .fest-planet > svg, .fest-count > svg, .fest-year > svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
   .fest-ring-glow{ opacity:.85; }
   .fest-ring[data-season="newyear"] .fest-ring-glow{ opacity:.7; }
@@ -121566,59 +121569,74 @@ function festSkyBuild(s, calm){
   sky.innerHTML = html;
   return sky;
 }
-/* THE PLANET'S HAT, in the hero's own coordinates (viewBox 0 -12 360 342: the sphere is r52 at 180,150) */
+/* THE PLANET'S HAT, in the hero's own coordinates (viewBox 0 -12 360 342: the sphere is r52 at 180,150). Each hat is drawn with
+   its base on the sphere's top (180,98) and turned about the sphere's centre, so its brim or trim sits ON the curve whatever the
+   tilt; a contact shadow lies on the sphere under it (clipped to it). EVERY PART IS OPAQUE (round 3, Madison: "All the hats can be
+   seen through to the planet"): solid fills and gradients whose stops are all solid, no part with an opacity, the fur on a solid
+   band, and the whole hat (.fest-planet, z-index 1) is above the planet's smoke (.cosmic-plasma, z-index 1, .55 - it was the
+   planet's glow seen "through" the brim). */
 function festHatSvg(s, id){
   const clip = '<clipPath id="' + id + 'c"><circle cx="180" cy="150" r="52"/></clipPath>';
+  const shadow = (tilt, rx, ry, dy) => '<g class="fest-hat-shadow" transform="rotate(' + tilt + ' 180 150)"><ellipse cx="180" cy="' + (98 + dy) + '" rx="' + rx + '" ry="' + ry + '" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/></g>';
+  const shadowGrad = '<radialGradient id="' + id + 's" cx=".5" cy=".42" r=".5"><stop offset="0" stop-color="#14060C" stop-opacity=".62"/><stop offset=".6" stop-color="#14060C" stop-opacity=".3"/><stop offset="1" stop-color="#14060C" stop-opacity="0"/></radialGradient>';
+  const on = (tilt) => '<g transform="rotate(' + tilt + ' 180 150) translate(180 98)">';
+  /* a point on the sphere's top arc, in the hat's own frame (origin at the top of the sphere) */
+  const arc = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [Math.cos(a) * r, 52 + Math.sin(a) * r]; };
+  const P = (p) => p[0].toFixed(2) + " " + p[1].toFixed(2);
   if(s.id === "christmas"){
+    /* the trim: a solid band along the sphere's top (r 49 to 60), the puffs on it along r 55, overlapping */
+    const A = 38;
+    const band = "M" + P(arc(-A, 48.5)) + "A48.5 48.5 0 0 1 " + P(arc(A, 48.5)) + "L" + P(arc(A, 60)) + "A60 60 0 0 0 " + P(arc(-A, 60)) + "Z";
     let fur = "";
-    for(let i = 0; i < 9; i++){ const x = -33 + i * 8.25, y = Math.abs(x) * .1; fur += '<circle cx="' + x.toFixed(1) + '" cy="' + (y - .5).toFixed(1) + '" r="' + (i % 2 ? 6.4 : 7.2) + '"/>'; }
-    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
-      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2=".4"><stop offset="0" stop-color="#F0473F"/><stop offset=".55" stop-color="#C81E26"/><stop offset="1" stop-color="#7E0E16"/></linearGradient>' +
-      '<radialGradient id="' + id + 'w" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#EEF3F8"/><stop offset="1" stop-color="#C5D1DD"/></radialGradient>' +
-      '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
-      '<ellipse cx="176" cy="108" rx="40" ry="11" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
-      '<g transform="translate(173 101) rotate(-13)">' +
-        '<path d="M-29 -2C-25 -30 -8 -54 13 -57C30 -59 45 -48 51 -30C46 -35 38 -38 31 -34C27 -24 28 -12 30 -2Z" fill="url(#' + id + 'r)"/>' +
-        '<path d="M-29 -2C-25 -30 -8 -54 13 -57C2 -48 -9 -30 -12 -2Z" fill="#FFFFFF" opacity=".12"/>' +
-        '<path d="M31 -34C38 -38 46 -35 51 -30" stroke="#6A0A12" stroke-width="1.4" fill="none" opacity=".55"/>' +
+    for(let i = 0; i <= 10; i++){ const p = arc(-A + i * (2 * A / 10), 54.5); fur += '<circle cx="' + p[0].toFixed(2) + '" cy="' + p[1].toFixed(2) + '" r="' + (i % 2 ? 6.6 : 7.4) + '"/>'; }
+    const l = arc(-A + 4, 58), r = arc(A - 5, 58);
+    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
+      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2=".4"><stop offset="0" stop-color="#F25A50"/><stop offset=".3" stop-color="#E0322F"/><stop offset=".65" stop-color="#C81E26"/><stop offset="1" stop-color="#7E0E16"/></linearGradient>' +
+      '<radialGradient id="' + id + 'w" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#EEF3F8"/><stop offset="1" stop-color="#C9D4DF"/></radialGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F7FA"/><stop offset="1" stop-color="#C3CEDA"/></linearGradient></defs>' +
+      shadow(-13, 44, 15, 13) +
+      on(-13) +
+        '<path d="M' + P(l) + 'C-24 -26 -8 -50 12 -54C29 -57 44 -46 50 -28C45 -33 37 -36 30 -32C26 -22 27 -12 ' + P(r) + 'Z" fill="url(#' + id + 'r)"/>' +
+        '<path d="M30 -32C37 -36 45 -33 50 -28" stroke="#8A1219" stroke-width="1.4" fill="none"/>' +
+        '<path d="' + band + '" fill="url(#' + id + 'b)"/>' +
         '<g fill="url(#' + id + 'w)">' + fur + '</g>' +
-        '<circle cx="49.5" cy="-30.5" r="9.5" fill="url(#' + id + 'w)"/>' +
+        '<circle cx="49" cy="-28.5" r="9.5" fill="url(#' + id + 'w)"/>' +
       '</g></svg>';
   }
   if(s.id === "thanksgiving"){
-    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
-      '<linearGradient id="' + id + 'k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4450"/><stop offset=".35" stop-color="#2A262E"/><stop offset="1" stop-color="#121014"/></linearGradient>' +
-      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3740"/><stop offset="1" stop-color="#151317"/></linearGradient>' +
-      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A0"/><stop offset=".5" stop-color="#E2B045"/><stop offset="1" stop-color="#9A6B16"/></linearGradient>' +
-      '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
-      '<ellipse cx="178" cy="109" rx="44" ry="12" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
-      '<g transform="translate(176 100) rotate(-9)">' +
-        '<ellipse cx="0" cy="0" rx="45" ry="9.5" fill="url(#' + id + 'b)"/>' +
-        '<path d="M-44 -1.5C-30 -7 30 -7 44 -1.5" stroke="#6E6676" stroke-width="1" fill="none" opacity=".7"/>' +
-        '<path d="M-23 -3L-19 -46C-10 -49.5 10 -49.5 19 -46L23 -3C10 1 -10 1 -23 -3Z" fill="url(#' + id + 'k)"/>' +
-        '<ellipse cx="0" cy="-46.4" rx="19" ry="3.6" fill="#3E3843"/>' +
-        '<path d="M-22.2 -12.5C-10 -9 10 -9 22.2 -12.5L22.9 -4C10 -.4 -10 -.4 -22.9 -4Z" fill="#0E0C10"/>' +
-        '<rect x="-8" y="-15" width="16" height="13" rx="1.6" fill="none" stroke="url(#' + id + 'g)" stroke-width="3.4"/>' +
-        '<path d="M-17 -43C-15 -30 -15 -18 -16 -6" stroke="#FFFFFF" stroke-width="2" opacity=".1" fill="none" stroke-linecap="round"/>' +
+    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
+      '<linearGradient id="' + id + 'k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4450"/><stop offset=".18" stop-color="#3C3742"/><stop offset=".4" stop-color="#2A262E"/><stop offset="1" stop-color="#121014"/></linearGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3740"/><stop offset="1" stop-color="#161418"/></linearGradient>' +
+      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A0"/><stop offset=".5" stop-color="#E2B045"/><stop offset="1" stop-color="#9A6B16"/></linearGradient></defs>' +
+      shadow(-9, 50, 16, 14) +
+      on(-9) +
+        '<ellipse cx="0" cy="5" rx="45" ry="10" fill="url(#' + id + 'b)"/>' +
+        '<path d="M-44 3.6C-30 -2 30 -2 44 3.6" stroke="#57505E" stroke-width="1" fill="none"/>' +
+        '<path d="M-23 3L-19 -42C-10 -45.5 10 -45.5 19 -42L23 3C10 7 -10 7 -23 3Z" fill="url(#' + id + 'k)"/>' +
+        '<ellipse cx="0" cy="-42.4" rx="19" ry="3.6" fill="#3E3843"/>' +
+        '<path d="M-22.2 -7.5C-10 -4 10 -4 22.2 -7.5L22.9 2C10 5.6 -10 5.6 -22.9 2Z" fill="#0E0C10"/>' +
+        '<rect x="-8" y="-10" width="16" height="13" rx="1.6" fill="none" stroke="url(#' + id + 'g)" stroke-width="3.4"/>' +
       '</g></svg>';
   }
-  /* New Year's: a party hat - midnight blue with gold stripes and dots, a gold trim, a burst of tinsel on top */
+  /* New Year's: a party hat - midnight blue with gold stripes and dots, a gold trim on the sphere's curve, a burst of tinsel on top */
   let tin = "";
   for(let i = 0; i < 11; i++){ const a = -Math.PI / 2 + (i - 5) * .3; tin += '<line x1="0" y1="0" x2="' + (Math.cos(a) * (i % 2 ? 9 : 12)).toFixed(1) + '" y2="' + (Math.sin(a) * (i % 2 ? 9 : 12) + 2).toFixed(1) + '"/>'; }
-  return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
-    '<clipPath id="' + id + 'h"><path d="M-29 0L0 -78L29 0Z"/></clipPath>' +
-    '<linearGradient id="' + id + 'n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3A3F8F"/><stop offset=".5" stop-color="#232A6B"/><stop offset="1" stop-color="#11153D"/></linearGradient>' +
-    '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".5" stop-color="#F1C24E"/><stop offset="1" stop-color="#B07E1C"/></linearGradient>' +
-    '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
-    '<ellipse cx="184" cy="110" rx="36" ry="10" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
-    '<g transform="translate(187 105) rotate(12)">' +
-      '<g clip-path="url(#' + id + 'h)"><rect x="-32" y="-80" width="64" height="84" fill="url(#' + id + 'n)"/>' +
+  const A = 28;
+  const trim = "M" + P(arc(-A, 49)) + "A49 49 0 0 1 " + P(arc(A, 49)) + "L" + P(arc(A, 57.5)) + "A57.5 57.5 0 0 0 " + P(arc(-A, 57.5)) + "Z";
+  const bl = arc(-A, 54), br = arc(A, 54);
+  const cone = "M" + P(bl) + "L0 -76L" + P(br) + "A54 54 0 0 0 " + P(bl) + "Z";
+  return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
+    '<clipPath id="' + id + 'h"><path d="' + cone + '"/></clipPath>' +
+    '<linearGradient id="' + id + 'n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A50A0"/><stop offset=".3" stop-color="#2E357A"/><stop offset=".6" stop-color="#232A6B"/><stop offset="1" stop-color="#11153D"/></linearGradient>' +
+    '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".5" stop-color="#F1C24E"/><stop offset="1" stop-color="#B07E1C"/></linearGradient></defs>' +
+    shadow(12, 36, 13, 12) +
+    on(12) +
+      '<g clip-path="url(#' + id + 'h)"><rect x="-34" y="-80" width="68" height="90" fill="url(#' + id + 'n)"/>' +
         '<g stroke="url(#' + id + 'g)" stroke-width="6.4">' + [-66, -46, -26, -6, 14].map(v => '<line x1="-36" y1="' + v + '" x2="36" y2="' + (v - 26) + '"/>').join("") + '</g>' +
-        '<g fill="#FFF6D8">' + [[-11, -17], [9, -31], [-3, -47], [12, -8], [-17, -4], [3, -62]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.6"/>').join("") + '</g>' +
-        '<path d="M-29 0L0 -78L-8 0Z" fill="#FFFFFF" opacity=".1"/></g>' +
-      '<rect x="-31" y="-4" width="62" height="8.5" rx="4.2" fill="url(#' + id + 'g)"/>' +
-      '<g transform="translate(0 -78)" stroke="url(#' + id + 'g)" stroke-width="2.4" stroke-linecap="round">' + tin + '</g>' +
-      '<circle cx="0" cy="-78" r="3.6" fill="#FFF3C4"/>' +
+        '<g fill="#FFF6D8">' + [[-11, -17], [9, -31], [-3, -47], [12, -8], [-17, -4], [3, -62]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.6"/>').join("") + '</g></g>' +
+      '<path d="' + trim + '" fill="url(#' + id + 'g)"/>' +
+      '<g transform="translate(0 -76)" stroke="url(#' + id + 'g)" stroke-width="2.4" stroke-linecap="round">' + tin + '</g>' +
+      '<circle cx="0" cy="-76" r="3.6" fill="#FFF3C4"/>' +
     '</g></svg>';
 }
 /* THE RING'S DRESSING: leaves, lights or glints round the outer ring (R), still in one svg; what twinkles is in two more svgs whose
@@ -121702,7 +121720,7 @@ function festMount(panel){
   /* after the frame that lays Home out (the class button and the docks are mounted after this), once; again on a resize */
   try{ requestAnimationFrame(() => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(); }, 0)); }catch(e){ setTimeout(festPlace, 30); }
   /* the first Home of a launch: the tab bar and the docks arrive (and settle) after it - placed again once they have */
-  [700, 1800].forEach(ms => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(); }, ms));
+  [700, 1800, 3200].forEach((ms, i) => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(i === 2); }, ms));
   festHookResize();
   if(hero){
     const id = "fest" + (++festSeq) + "-";
@@ -121763,7 +121781,7 @@ function festBusyRects(){
   }
   return out;
 }
-function festPlace(){
+function festPlace(last){
   const L = festLive;
   if(!L || !L.sky || !L.sky.isConnected || !L.panel || !L.panel.isConnected) return;
   const sky = L.sky, sr = sky.getBoundingClientRect();
@@ -121775,9 +121793,12 @@ function festPlace(){
   L.floor = floor - sr.top;
   const fws = [...sky.querySelectorAll(".fest-fw")];
   if(!fws.length) return;
-  const busy = festBusyRects();
   const chat = document.getElementById("chatdock-btn");
   const cr = chat ? chat.getBoundingClientRect() : null;
+  /* not until the corner buttons and the tab bar are laid out (they can come a moment after Home): a station placed without them went
+     off over the chat button until the next placement - the stations stay hidden until then (the last try places them regardless) */
+  if(!last && (!cr || cr.width < 4 || floor === H)) return;
+  const busy = festBusyRects();
   const top0 = cr && cr.height ? Math.max(24, cr.top - 4) : 40;
   let best = [], bestK = 1;
   for(const k of [1, .84, .7, .56, .44]){
@@ -122013,38 +122034,77 @@ function festLeafSwirl(){
     }catch(e){}
   });
 }
-/* SANTA'S SLEIGH: a gold silhouette and three reindeer (the first with his red nose) across the top of the sky, a trail of glitter
-   behind; one at a time */
+/* SANTA'S SLEIGH (round 3, Madison: "the Santa and stuff riding around could look better"): a little illustration - a red sleigh with
+   gold runners and trim, Santa in red with white fur and beard, a sack with presents, three reindeer in warm browns with antlers, a
+   red harness with a gold bell, gold reins, the lead one's red nose glowing. One drawing of 240x64 units, in parts: the reins (under
+   everything), the sleigh with Santa, and each reindeer in a box of its own so it can gallop (a bob and a tilt, transform only) while
+   the whole flies its arc. Built once per Home, run by the Web Animations API, gone with Home; one at a time. */
 var festSleighBusy = 0;
+var FEST_DEER_X = [86, 132, 178];
+function festDeerSvg(x0, nose){
+  const B = "#8A5530", L = "#B57A4A", D = "#5E3A20";
+  return '<svg viewBox="' + x0 + ' 0 58 64" aria-hidden="true"><g transform="translate(' + x0 + ' 0)">' +
+    '<path d="M13 33L6 37L3.6 36M16 34L10 42.6M38 33L45 39L47.6 38M35 34L40 42.6" stroke="' + D + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+    '<path d="M8.6 27L5 24.4" stroke="#F3E6D2" stroke-width="2.4" stroke-linecap="round"/>' +
+    '<path d="M8 30C8 24 14 21 22 21L32 21C37 21 40 23 41 26L42 30C40 34 35 35 30 35L16 35C11 35 8 33 8 30Z" fill="' + B + '"/>' +
+    '<path d="M12 32C17 34.6 30 34.6 37 32.6C33 36 16 36.6 12 32Z" fill="' + L + '"/>' +
+    '<path d="M36 25L42 14C43 12 46 11 48 12.5L52 15C53 16 52.5 17.6 51 17.6L47 17.6L42 28Z" fill="' + B + '"/>' +
+    '<path d="M43.6 12L41 5M42 8.2L38.2 6.6M41.2 6L39.4 2.6M45.2 11.6L46.6 4.4M46 7.6L49.6 6.2" stroke="#E2C596" stroke-width="1.45" stroke-linecap="round" fill="none"/>' +
+    '<path d="M43 13.2L39.4 11.4L42.4 15.6Z" fill="#6E4024"/><circle cx="45.6" cy="14.2" r=".85" fill="#24140A"/>' +
+    '<path d="M24 21.6L26.2 35" stroke="#C8242B" stroke-width="2.8"/><circle cx="26.3" cy="35.6" r="1.6" fill="#F2C14E"/>' +
+    '<path d="M36.4 25.6L41.6 24" stroke="#C8242B" stroke-width="2"/>' +
+    (nose ? '<radialGradient id="fsn' + x0 + '"><stop offset="0" stop-color="#FF4A4A" stop-opacity=".6"/><stop offset="1" stop-color="#FF4A4A" stop-opacity="0"/></radialGradient>' +
+            '<circle cx="52.4" cy="16.2" r="7" fill="url(#fsn' + x0 + ')"/><circle cx="52.4" cy="16.2" r="2.1" fill="#FF3A3A"/><circle cx="51.8" cy="15.6" r=".7" fill="#FFC2C2"/>'
+          : '<circle cx="52" cy="16" r="1.4" fill="#3A2214"/>') +
+    '</g></svg>';
+}
+function festSleighSvg(){
+  const G = "#F2C14E";
+  return '<svg viewBox="0 0 84 64" aria-hidden="true"><defs><linearGradient id="fslr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8403A"/><stop offset="1" stop-color="#A3161E"/></linearGradient>' +
+    '<linearGradient id="fslg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE7A0"/><stop offset="1" stop-color="#C8912A"/></linearGradient></defs>' +
+    /* the sack and its presents, behind Santa */
+    '<rect x="10.5" y="8.5" width="7.5" height="7.5" rx=".8" fill="#2FA35A"/><path d="M14.2 8.5V16M10.5 12.2H18" stroke="' + G + '" stroke-width="1.2"/>' +
+    '<rect x="18.4" y="5.4" width="6.6" height="9" rx=".8" fill="#3D7BE0"/><path d="M21.7 5.4V14.4" stroke="#FFFFFF" stroke-width="1.2"/>' +
+    '<path d="M8.6 24C5 16 9 10.6 14 12.4C18 10.4 25.6 10.6 27.4 15.6C29 19.6 27.6 22.4 27 24Z" fill="#8F6038"/><path d="M11 14.4C14 15.6 21 15.6 26 14" stroke="#6A4426" stroke-width="1.1" fill="none"/>' +
+    /* Santa */
+    '<path d="M28 37C27 27 31 20 38 20C45 20 48.4 27 47.4 37Z" fill="#D7262C"/>' +
+    '<path d="M28.6 29.6H46.9V32.6H28.6Z" fill="#2A1A12"/><rect x="35.6" y="29.2" width="4" height="3.8" rx=".6" fill="none" stroke="' + G + '" stroke-width="1"/>' +
+    '<path d="M44 24C48 25 51 27 53.6 29.4" stroke="#D7262C" stroke-width="3.6" stroke-linecap="round" fill="none"/><circle cx="54" cy="29.8" r="1.9" fill="#2E7D3A"/>' +
+    '<circle cx="38" cy="14.6" r="4.6" fill="#F4C9A8"/>' +
+    '<path d="M33.2 15C32.6 21.4 35.8 24.2 38 24.2C40.2 24.2 43.4 21.4 42.8 15C41 17.4 35 17.4 33.2 15Z" fill="#FFFFFF"/><circle cx="39.6" cy="13.6" r=".7" fill="#3A2214"/>' +
+    '<path d="M33.2 13C33.6 7 38 4.4 42 6C44.6 7 46.2 9.6 47.2 12.2L44.2 11.2C43.2 9.6 41.6 9 40.6 10.2L42.8 12.6Z" fill="#D7262C"/>' +
+    '<path d="M32.8 12.2C36 10.6 40.4 10.8 43.4 12.4V14.6C40.2 13 36 13 32.8 14.4Z" fill="#FFFFFF"/><circle cx="47.6" cy="12.6" r="2" fill="#FFFFFF"/>' +
+    /* the sleigh */
+    '<path d="M6 34C6 25 10 21 16 21H20L22 37H54C61 37 64 32 65 25C66 20 71.2 18 74.4 22C71.2 21.8 70 24 70 28C69 41 61 47 52 47H16C10 47 6 42 6 34Z" fill="url(#fslr)"/>' +
+    '<path d="M6.6 33C6.6 25 10.4 21.8 16 21.8H19.6M22 37H54C61 37 64 32 65 25C66 20 71.2 18 74.4 22" stroke="url(#fslg)" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
+    '<path d="M25 42C31 38.6 40 45.4 47 41.4M12 39C13 42 16 43 19 42" stroke="' + G + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+    '<path d="M14 47L13 54M48 47L49 54" stroke="url(#fslg)" stroke-width="2.4" stroke-linecap="round"/>' +
+    '<path d="M2 54H58C66 54 71 50 72 44C72.6 40.4 69.4 39.4 68 41.4" stroke="url(#fslg)" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+    '</svg>';
+}
 function festSleigh(){
   const host = festFxHost();
   if(!host || festCalm() || Date.now() < festSleighBusy) return;
   let sl = host.querySelector(":scope > .fest-sleigh");
   if(!sl){
-    const deer = (x, nose) => '<g transform="translate(' + x + ' 6)"><path d="M5 14C5 10.2 8.6 9 13.5 9L22 9C25.6 9 27.6 10 28.6 12L29.6 14.6C28 16.8 24.6 18 20.4 18L11 18C7.4 18 5 17 5 14Z"/>' +
-      '<path d="M25.4 11.4L30.6 4.2C31.6 3 33.4 2.8 34.6 3.8L38.2 6.2C39.2 7 38.6 8.4 37.4 8.4L34.2 8.4L30.2 14.2Z"/>' +
-      '<path d="M27 16L32.6 20.6L35 19.6M23.6 17.2L28.2 23.4M9.4 16.4L3.6 19.8L1.4 18.8M12.4 17.4L6.4 23.6" fill="none" stroke-width="2.1"/>' +
-      '<path d="M31.6 4.2L29.6 -1.6M30.8 1.6L27.6 .2M30.2 -.4L28.8 -3M33 3.6L34.2 -2.2M33.8 .6L37 -.8M5.6 12.4L2.4 10.2M31 5.6L28.6 5" fill="none" stroke-width="1.25"/>' +
-      (nose ? '<circle cx="38.6" cy="7.2" r="5.4" fill="#FF5050" opacity=".28" stroke="none"/><circle cx="38.6" cy="7.2" r="2.3" fill="#FF5A5A" stroke="none"/>' : '') + '</g>';
     sl = document.createElement("i");
     sl.className = "fest-sleigh";
-    sl.innerHTML = '<i class="fest-sleigh-glow"></i><svg viewBox="-2 -4 200 54" aria-hidden="true"><g fill="#F6DFA8" stroke="#F6DFA8" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path d="M6 27C6 19 10 15 16 15L18 15L20 31L44 31C50 31 54 27 55 21C56 17 60.4 15.6 62.6 18.6C60.6 18.4 59.4 20.4 59.4 23.4C58.6 33.6 52.4 38.4 44 38.4L14 38.4C9 38.4 6 34 6 27Z"/>' +
-      '<path d="M1.5 45.4L50 45.4C57.6 45.4 62 41.6 63.4 37" fill="none" stroke-width="2.3"/><path d="M14.5 38.4L13 45.4M41.5 38.4L43 45.4" fill="none" stroke-width="1.9"/>' +
-      '<path d="M7 17C3.6 9.4 9.6 3.6 15.4 7.2C19.6 3.6 24.6 8.6 21.6 15.4Z"/>' +
-      '<path d="M22.4 31C21.4 21 25.2 14 32 14C38.8 14 42.4 21 41.4 31Z"/><circle cx="32" cy="10.6" r="4.6"/>' +
-      '<path d="M27.6 8.6C29.6 1.8 36.6 .4 41.2 5L39.2 6.8Z"/><circle cx="42.2" cy="5.2" r="2"/>' +
-      '<path d="M40 22C56 20 68 21 84 20L122 20L160 20" fill="none" stroke-width="1"/>' +
-      deer(78) + deer(116) + deer(154, true) + '</g></svg>' +
+    const part = (x0, w, cls, svg) => '<i class="fest-sl-part ' + cls + '" style="left:' + (x0 / 240 * 100).toFixed(3) + '%;width:' + (w / 240 * 100).toFixed(3) + '%">' + svg + '</i>';
+    const rx = FEST_DEER_X.map(x => x + 25);
+    sl.innerHTML = '<i class="fest-sleigh-glow"></i>' +
+      '<svg class="fest-sl-reins" viewBox="0 0 240 64" aria-hidden="true"><path d="M54 29.8C66 28 78 28 ' + rx[0] + ' 27M' + rx[0] + ' 27C' + (rx[0] + 20) + ' 26 ' + (rx[1] - 12) + ' 26.4 ' + rx[1] + ' 27M' + rx[1] + ' 27C' + (rx[1] + 20) + ' 26 ' + (rx[2] - 12) + ' 26.4 ' + rx[2] + ' 27" stroke="#E7B94C" stroke-width=".9" fill="none"/></svg>' +
+      part(0, 84, "is-sleigh", festSleighSvg()) +
+      FEST_DEER_X.map((x, i) => part(x, 58, "is-deer", festDeerSvg(x, i === 2))).join("") +
       '<i class="fest-sleigh-trail">' + '<b></b>'.repeat(7) + '</i>';
     host.appendChild(sl);
   }
   const W = window.innerWidth || 440, H = window.innerHeight || 900;
   /* up from the lower left to the upper right, behind the planet system (the sky is under it), a little rise and fall as it goes */
-  const sw = Math.min(260, Math.max(170, W * .5)), y0 = H * .6, y1 = H * .03;
+  const sw = Math.min(280, Math.max(190, W * .54)), y0 = H * .6, y1 = H * .03;
   const dur = 5600 + W * 3;
   festSleighBusy = Date.now() + dur + 200;
   sl.style.width = sw + "px";
+  sl.style.height = (sw * 64 / 240).toFixed(1) + "px";
   const kf = [];
   for(let i = 0; i <= 8; i++){
     const t = i / 8, x = -sw - 20 + (W + sw + 40) * t, y = y0 + (y1 - y0) * t + Math.sin(t * Math.PI) * H * .05 + Math.sin(t * Math.PI * 4) * 5;
@@ -122052,6 +122112,16 @@ function festSleigh(){
     kf.push({ transform: "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px,0) rotate(" + (slope * .7 + Math.cos(t * Math.PI * 4) * 2).toFixed(2) + "deg)", opacity: i === 0 || i === 8 ? 0 : 1 });
   }
   try{ sl.animate(kf, { duration: dur, easing: "linear" }); }catch(e){}
+  /* the reindeer gallop (each a beat after the one in front), the sleigh rides the bumps */
+  const gal = Math.round(dur / 440);
+  [...sl.querySelectorAll(".fest-sl-part.is-deer")].reverse().forEach((d, i) => {
+    try{ d.animate([{ transform: "translate3d(0,0,0) rotate(0deg)" }, { transform: "translate3d(0,-1.6px,0) rotate(-5deg)", offset: .35 },
+      { transform: "translate3d(0,.6px,0) rotate(3deg)", offset: .7 }, { transform: "translate3d(0,0,0) rotate(0deg)" }],
+      { duration: 440, delay: i * 110, iterations: gal, easing: "ease-in-out" }); }catch(e){}
+  });
+  const s1 = sl.querySelector(".fest-sl-part.is-sleigh");
+  try{ s1.animate([{ transform: "translate3d(0,0,0)" }, { transform: "translate3d(0,-1.2px,0) rotate(-1.5deg)" }, { transform: "translate3d(0,0,0)" }],
+    { duration: 880, iterations: Math.round(dur / 880), easing: "ease-in-out" }); }catch(e){}
   [...sl.querySelectorAll(".fest-sleigh-trail > b")].forEach((b, i) => {
     try{ b.animate([{ opacity: 0, transform: "translate3d(0,0,0) scale(1)" }, { opacity: .95, offset: .1 }, { opacity: 0, transform: "translate3d(" + (-14 - i * 4) + "px," + (10 + i * 2) + "px,0) scale(.3)" }],
       { duration: 900, delay: i * 120, iterations: Math.ceil(dur / 900), easing: "ease-out" }); }catch(e){}
