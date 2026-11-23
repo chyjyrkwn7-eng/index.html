@@ -43077,7 +43077,6 @@ whatever else. We have a pretty massive new build on our hands here."
   so it is not this build's: the fixture's state moves with the date (week key) or the tile is mid-animation. Left for the
   inherited-failures pass.
 
-<<<<<<< HEAD
 ## 384.137 - the ribbon's tails cut across their own length (Sexual Assault and Family Violence)
 Seen in the full badge sets sent to Madison: each tail's end was cut by a LEVEL line (y 97) and two upright V's, but the tails run
 down at ~45 degrees, so the round end of each tail stood out past the V on its outer side as a step - the "messed up parts" he circled
@@ -43087,7 +43086,6 @@ to 5a133a95. acadpins, badgetwins, sides --class academy, casefit, chapterbadges
 at load 15-21 (five helpers running; the slowest are Identity Crimes, Racial Profiling, Multiculturalism, not the ribbon) - rerun quiet.
 The badge-set tool now waits for the app to be up before it clears the page (the launch watchdog drew "taking too long" over sets
 rendered while the machine was loaded).
-=======
 ## 384.137 (unlocks4) - every unlock screen shot at three stages of an account, both classes; what was wrong, fixed (branch claude/b384-wn-unlocks, cut from claude/b384-final 1cb2318; build kept 2026-11-22-384.137, NOT bumped; NOT on main, waiting for Madison)
 
 Madison: "I need screenshots of the unlock stuff by the way, all of it, the selection screens and stuff. Anything along the way you
@@ -43159,4 +43157,3 @@ SEEN, NOT CHANGED (design questions, for Madison):
 - The Leaderboard's Pennants still at row size puts the gold championship flag behind the level number (readable, busy).
 - A locked rank reward in a grid shows "0%" while the next rank's step has not begun (the Rank tab's own measure), and nothing for
   the later ranks.
->>>>>>> claude/b384-wn-unlocks
