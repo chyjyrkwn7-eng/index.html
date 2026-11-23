@@ -26,15 +26,7 @@ const OUT = {};
   OUT.c22 = { d: shape(union([bin, eave, roof, cap, leg, head, boot, spout], 1.6), [2, 1, 98, 99]), bin: shape(bin, [8, 44, 70, 99]),
     eave: shape(eave, [4, 40, 74, 54]) };
 }
-/* Chapter 23: the dispenser, its plinth, the hose loop (a hole) and the nozzle hung in its holster (art9: the hose stops where the
-   nozzle starts - its round end showed through the nozzle's stem as a lump) */
-{
-  const hose = union([capsule(66, 71.5, 80, 71.5, 3.6), capsule(83.5, 40, 83.5, 64, 3.6), tube([78, 71.5], [83.5, 71.5], [83.5, 64], () => 3.6, 6)], 0);
-  const nozzle = union([box(75, 22, 17, 11, 3), capsule(83.5, 30, 83.5, 41, 3.6), capsule(77, 26, 68, 33, 2.8)], 2);
-  const body = union([box(20, 12, 48, 76, 3), box(15, 3, 58, 13, 4), box(14, 86, 60, 9, 2.5)], 1.5);
-  const sil = trace(union([body, hose, nozzle], 2.4), [10, 2, 96, 98]);
-  OUT.c23 = { d: sil.d, holes: sil.holes, hose: shape(minus(hose, nozzle), [60, 36, 90, 78]), nozzle: shape(nozzle, [58, 18, 94, 44]) };
-}
+/* (art10) Chapter 23 (the nozzle and its hose) and Chapter 28 (six separate logs) are drawn in part-2.js itself with OBJ_SDF now */
 /* Chapter 25: three fingers fanning from the crown */
 {
   const rf = R => t => t < .1 ? 3 + 8 * t : 3.8 + (R - 3.8) * Math.pow(Math.sin(Math.PI * Math.min(1, (t - .1) / .95)), .55);
@@ -56,11 +48,6 @@ const OUT = {};
 {
   const pins = []; [31, 43, 57, 69].forEach(c => { pins.push(box(c - 3, 6, 6, 18, 1.5), box(c - 3, 76, 6, 18, 1.5), box(6, c - 3, 18, 6, 1.5), box(76, c - 3, 18, 6, 1.5)); });
   OUT.c27 = { d: shape(union([box(20, 20, 60, 60, 4)].concat(pins), 1.6), [2, 2, 98, 98]) };
-}
-/* Chapter 28: six log ends, three, two, one */
-{
-  const L = [[22, 78], [50, 78], [78, 78], [36, 53.75], [64, 53.75], [50, 29.5]];
-  OUT.c28 = { d: shape(union(L.map(c => circle(c[0], c[1], 14)), 4), [4, 12, 96, 96]) };
 }
 /* Chapter 29: the can, the bail (a hole under it) and the paint run over the rim, down the side and into a pool */
 {

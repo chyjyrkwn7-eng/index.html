@@ -32,9 +32,8 @@ them, to ensure they are perfect, ensure all edges and pieces are good to go."
       the rack - and the outline has one 8+ units long (the end frame's foot); straight on, every part and the outline were square.
   (9) THE OXYGEN CYLINDER HAS A NECK (Chapter 63: "a nice connection from that top piece to the actual tank"): the white shoulder runs
       up into a neck - 2 units below its top it is at most 16 units wide (it was the dome's cap, 23 wide, with the valve set on it).
- (10) THE LPG COLLAR'S FOOT MEETS THE TANK (Chapter 61: "Blue tank has the same issue"): the steel band at the collar's foot (the wide
-      steel plate at the top) runs out to the tank's outline at both ends - each end within 0.8 units of the outline (its square ends
-      stopped inside the dome, with blue between them and the edge).
+ (10) THE LPG COLLAR (Chapter 61): (art10) a straight steel cylinder standing on the dome - the widest steel part in the pin's top
+      half is no more than 1.10x as wide three quarters of the way down as a quarter of the way down (the old flaring skirt: ~1.4x).
   python3 tools/check-b384-badgeart.py [--against OLD/index.html]   (FAILS on 458b3c9, the build before)
 Playwright + /opt/pw-browsers Chromium; Firebase is blocked here, which changes nothing measured."""
 import sys, os, importlib.util
@@ -166,6 +165,10 @@ PROBE2 = r"""() => {
       .filter(f => f && f.b.y1 < N * .5 && (f.b.x1 - f.b.x0) > N * .3);   /* (384.136 art6, changed on purpose: the foot is the collar's own plate now - Madison: the band read as a separate piece - so the steel part measured is the collar, whose widest columns are its foot's ends) */
     const dOut = (x, y) => { let best = 1e9; for(let yy = Math.max(0, y - 40); yy < Math.min(N, y + 40); yy++) for(let xx = Math.max(0, x - 40); xx < Math.min(N, x + 40); xx++) if(!face[yy * N + xx]){ const d = Math.hypot(xx - x, yy - y); if(d < best) best = d; } return best / SC; };
     out.collar = steel.map(f => { const ends = []; [f.b.x0, f.b.x1].forEach(x => { let ys = []; for(let y = 0; y < N; y++) if(f.m[y * N + x]) ys.push(y); ends.push(+dOut(x, ys[ys.length >> 1]).toFixed(2)); }); return ends; });
+    /* (art10) the collar is a cylinder: the widest steel part's width a quarter of the way down it and three quarters of the way down */
+    const wAt = (f, fr) => { const y = Math.round(f.b.y0 + (f.b.y1 - f.b.y0) * fr); let x0 = N, x1 = -1; for(let x = 0; x < N; x++) if(f.m[y * N + x]){ if(x < x0) x0 = x; if(x > x1) x1 = x; } return (x1 - x0 + 1) / SC; };
+    const wide = steel.reduce((a, f) => (!a || f.b.x1 - f.b.x0 > a.b.x1 - a.b.x0) ? f : a, null);
+    out.skirt = wide ? +(wAt(wide, .75) / wAt(wide, .25)).toFixed(2) : null;
   }
   return out;
 }"""
@@ -191,9 +194,11 @@ with sync_playwright() as pw:
     # (384.136 art6 round 4, changed on purpose: Madison, "the silver part, it doesn't wrap around, not sure why the sides are white") no
     # neck stands beside the collar any more: the collar sits on the shoulder, so the white's first rows are the shoulder's, wider than it
     chk("(9) Chapter 63: the white starts at the shoulder under the collar, no neck beside it (%s units wide 2 below its top)" % q["neck"], q["neck"] >= 17, q["neck"])
-    # (384.136 art4, changed on purpose: Madison circled both ends of the foot band where it ran out into the outline - a notch and a stray
-    # line at each side) the band now ends rounded a little inside the dome's outline, clear of it at both ends
-    chk("(10) Chapter 61: the collar's foot band ends inside the tank's outline at both ends, clear of it by 1 to 4 units (%s)" % q["collar"], bool(q["collar"]) and all(1 <= min(c) and max(c) <= 4 for c in q["collar"]), q["collar"])
+    # (art10, changed on purpose: Madison circled the collar's foot twice more - "a wide grey skirt with a stepped/ragged join") the collar
+    # is a straight steel cylinder now, its sides coming down to the dome with only the outline's fillet: the foot-band leg (each end 1 to
+    # 4 units inside the outline) measured a skirt that no longer exists. It now asks that there is NO skirt: the collar's width three
+    # quarters of the way down is within 10% of its width a quarter of the way down (the skirt flared it to ~1.4x). FAILS on a0da788.
+    chk("(10) Chapter 61: the collar stands straight on the dome, no flaring skirt (width low / width high %s, at most 1.10)" % q["skirt"], q["skirt"] is not None and q["skirt"] <= 1.10, q["skirt"])
     real = [e for e in errs if "firebase" not in e.lower() and "gstatic" not in e.lower()]
     chk("(4) no page errors", not real, real[:3])
     br.close()
