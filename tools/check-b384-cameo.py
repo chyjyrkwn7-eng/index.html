@@ -300,7 +300,7 @@ with sync_playwright() as pw:
                 r = pg.evaluate("()=>cameoForce('dangle', {hold:true})")
                 c = pg.evaluate("()=>{ const qi=order[pos]; const k=optionOrder(qi).indexOf(QUESTIONS[qi].answer); const b=[...document.querySelectorAll('#stage .qpanel .choice')][k].getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2, qi]; }")
                 tap_at(cdp, c[0], c[1]); pg.wait_for_timeout(700)
-                st = pg.evaluate("(qi)=>({ cleared, att: attempts[qi], up: document.querySelectorAll('body > .cameo').length })", c[2])
+                st = pg.evaluate("(qi)=>({ cleared, att: attempts[qi], up: [...document.querySelectorAll('body > .cameo')].filter(e=>!e.__cmLeaving).length })", c[2])
                 chk("(B) %s: a real touch on a choice with a cameo up answers it (attempts %s, cleared %s), and the cameo went (%s left)" % (label, st["att"], st["cleared"], st["up"]),
                     r.get("ok") and st["att"] == 1 and st["cleared"] and st["up"] == 0, (r, st))
             ctx.close()
@@ -317,12 +317,12 @@ with sync_playwright() as pw:
             pg.evaluate(ANSWER, True)
             r = pg.evaluate("()=>cameoForce('sit', {hold:true})")
             p0 = pg.evaluate("()=>pos")
-            pg.evaluate("""()=>{ window.__gone=null; const t0=performance.now(); const f=()=>{ if(!document.querySelector('body > .cameo')){ window.__gone=performance.now()-t0; return; } requestAnimationFrame(f); }; requestAnimationFrame(f);
+            pg.evaluate("""()=>{ window.__gone=null; const t0=performance.now(); const f=()=>{ const e=document.querySelector('body > .cameo'); if(!e || +getComputedStyle(e).opacity < .05){ window.__gone=performance.now()-t0; return; } requestAnimationFrame(f); }; requestAnimationFrame(f);
               window.__slideAt=null; const q=window.qSlideDone; window.qSlideDone=function(){ if(window.__slideAt==null) window.__slideAt=performance.now()-t0; return q.apply(this, arguments); }; }""")
             touch_drag(cdp, W * .85, H * .55, W * .1, H * .55, 280)
-            pg.wait_for_timeout(1200)
+            pg.wait_for_timeout(4800)    # the node itself is taken out once the page has been still after the slide (CAMEO_QUIET_MS)
             g = pg.evaluate("()=>({ gone: window.__gone, slide: window.__slideAt, pos, n: document.querySelectorAll('body > .cameo').length })")
-            chk("(C) %s: a swipe to the next question - it was up (%s), went in %sms, before the slide ended (%sms), next question up (pos %s -> %s), nothing left" % (label, r.get("ok"), g["gone"] and round(g["gone"]), g["slide"] and round(g["slide"]), p0, g["pos"]),
+            chk("(C) %s: a swipe to the next question - it was up (%s), faded out in %sms, before the slide ended (%sms), next question up (pos %s -> %s), the node gone after the slide" % (label, r.get("ok"), g["gone"] and round(g["gone"]), g["slide"] and round(g["slide"]), p0, g["pos"]),
                 r.get("ok") and g["gone"] is not None and g["slide"] is not None and g["gone"] <= g["slide"] + 20 and g["pos"] == p0 + 1 and g["n"] == 0, (r, g))
             # a tap on Next
             pg.wait_for_timeout(600)
@@ -330,20 +330,20 @@ with sync_playwright() as pw:
             r = pg.evaluate("()=>cameoForce('peek', {hold:true})")
             nb = pg.evaluate("()=>{ const b=document.getElementById('nextbtn').getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2]; }")
             p0 = pg.evaluate("()=>pos")
-            tap_at(cdp, nb[0], nb[1]); pg.wait_for_timeout(700)
+            tap_at(cdp, nb[0], nb[1]); pg.wait_for_timeout(4800)
             g = pg.evaluate("()=>({ pos, n: document.querySelectorAll('body > .cameo').length })")
             chk("(C) %s: a tap on Next - next question (pos %s -> %s), it is gone (%s left)" % (label, p0, g["pos"], g["n"]), r.get("ok") and g["pos"] == p0 + 1 and g["n"] == 0, (r, g))
             pg.wait_for_timeout(600)
             # an answer (keyboard: no pointer at all)
             r = pg.evaluate("()=>cameoForce('wave', {hold:true})")
             pg.keyboard.press("1"); pg.wait_for_timeout(400)
-            n = pg.evaluate("()=>document.querySelectorAll('body > .cameo').length")
+            n = pg.evaluate("()=>[...document.querySelectorAll('body > .cameo')].filter(e=>!e.__cmLeaving).length")
             chk("(C) %s: an answer by key - it goes (%s left)" % (label, n), r.get("ok") and n == 0, r)
             pg.evaluate("()=>{ cameoGone(); if(cleared || attempts[order[pos]]) { advance(); } }"); pg.wait_for_timeout(800)
             # a redraw with no input at all (the question drawn again)
             r = pg.evaluate("()=>cameoForce('sit', {hold:true})")
             pg.evaluate("()=>render()"); pg.wait_for_timeout(400)
-            n = pg.evaluate("()=>document.querySelectorAll('body > .cameo').length")
+            n = pg.evaluate("()=>[...document.querySelectorAll('body > .cameo')].filter(e=>!e.__cmLeaving).length")
             chk("(C) %s: the question redrawn - it goes (%s left)" % (label, n), r.get("ok") and n == 0, r)
             # Pause: gone in the same task
             r = pg.evaluate("()=>cameoForce('dangle', {hold:true})")
@@ -549,24 +549,30 @@ with sync_playwright() as pw:
                 chk("(H) x%d %s: the moment it fires costs %.1fms (< 50), then %.1f%% of frames over 25ms (no cameo %.1f%%, allowed +5), worst gap %.0fms, long tasks %s (none over 50ms)" % (rate, k, f["ms"], m["drop"] * 100, base["drop"] * 100, m["worst"], m["lt"]),
                     f["ok"] and f["ms"] < 50 and not [x for x in m["lt"] if x > 50] and m["drop"] <= base["drop"] + .05, (f, m))
             pg.evaluate("()=>cameoGone()")
-            # the swipe to the next question, with and without one up: frames over 25ms while it slides
-            sw = {}
-            for label in ("without", "with"):
-                ok_ = None
-                for attempt in range(2):
-                    pg.evaluate("()=>cameoGone()")
-                    pg.evaluate(ANSWER, True)
-                    if label == "with": pg.evaluate("()=>cameoForce('sit', {hold:true})")
-                    pg.evaluate("()=>{ window.__pm=null; }")
-                    pg.evaluate(PERF_START)
-                    touch_drag(cdp, 440 * .86, 956 * .55, 440 * .1, 956 * .55, 280)
-                    pg.wait_for_timeout(1100)
-                    m = pg.evaluate(PERF_STOP)
-                    sw[label] = m
-                    if label == "without" or m["drop"] <= sw["without"]["drop"] + .08: break
-            info("x%d the swipe: without %s, with %s" % (rate, sw["without"], sw["with"]))
-            chk("(H) x%d the swipe away: %.1f%% of frames over 25ms with a cameo up, %.1f%% without (allowed +8), no long task over 50ms caused (%s)" % (rate, sw["with"]["drop"] * 100, sw["without"]["drop"] * 100, sw["with"]["lt"]),
-                sw["with"]["drop"] <= sw["without"]["drop"] + .08 and len([x for x in sw["with"]["lt"] if x > 50]) <= len([x for x in sw["without"]["lt"] if x > 50]), sw)
+            # the swipe to the next question, with and without one up, three of each in turn (the slide's own build of the next
+            # question is a 40-110ms task either way: one swipe against one swipe measures that, not the cameo): frames over 25ms
+            # and long tasks while it slides and the second after; and what the cameo's own exit cost, piece by piece
+            sw = {"without": [], "with": []}
+            pg.evaluate("()=>{ cameoExitCost.length=0; }")
+            for i in range(6):
+                label = "without" if i % 2 == 0 else "with"
+                pg.evaluate("()=>cameoGone()")
+                pg.evaluate(ANSWER, True)
+                if label == "with": pg.evaluate("()=>cameoForce('sit', {hold:true})"); pg.wait_for_timeout(500)
+                pg.evaluate(PERF_START)
+                touch_drag(cdp, 440 * .86, 956 * .55, 440 * .1, 956 * .55, 280)
+                pg.wait_for_timeout(1600)
+                sw[label].append(pg.evaluate(PERF_STOP))
+            costs = pg.evaluate("()=>cameoExitCost.map(x=>[x[0], Math.round(x[1]*10)/10])")
+            med = lambda xs: sorted(xs)[len(xs) // 2]
+            m = {k: {"drop": med([r["drop"] for r in v]), "n50": med([len([x for x in r["lt"] if x > 50]) for r in v]), "max": med([max(r["lt"] or [0]) for r in v])} for k, v in sw.items()}
+            info("x%d the swipe, three each: without %s, with %s; the exit's own pieces %s" % (rate, [(round(r["drop"] * 100, 1), r["lt"]) for r in sw["without"]], [(round(r["drop"] * 100, 1), r["lt"]) for r in sw["with"]], costs))
+            worst = max([c[1] for c in costs] or [0])
+            chk("(H) x%d the swipe away: the cameo's own exit - the touch's leave, the hide, each piece of the removal after the slide - costs at most %.1fms (each under 8; %d pieces)" % (rate, worst, len(costs)),
+                costs and worst < 8, costs)
+            chk("(H) x%d the swipe away, the median of three each: %.1f%% of frames over 25ms with a cameo up, %.1f%% without (allowed +5), long tasks over 50ms %d with, %d without, the longest %dms with, %dms without (allowed +15)" % (
+                rate, m["with"]["drop"] * 100, m["without"]["drop"] * 100, m["with"]["n50"], m["without"]["n50"], m["with"]["max"], m["without"]["max"]),
+                m["with"]["drop"] <= m["without"]["drop"] + .05 and m["with"]["n50"] <= m["without"]["n50"] and m["with"]["max"] <= m["without"]["max"] + 15, m)
             PERF_ROWS.append((rate, base, rows, sw))
             cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
             ctx.close()

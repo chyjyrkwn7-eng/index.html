@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generates the cameo rig's pose CSS (384 cameo, round 2) and writes it into index.html between its two markers:
-"  /* ---- the poses (generated: tools/gen-cameo-rig.py) ---- */" and "  /* ---- leaving (CAMEO_OUT_MS 240)".
+"  /* ---- the poses (generated: tools/gen-cameo-rig.py) ---- */" and "  /* ---- leaving (cameoLeave)".
 Run:  python3 tools/gen-cameo-rig.py [index.html]   (then check-js and check-b384-cameo.py --only S,J).
 The cameo rig: every limb segment's static angle or keyframes, per kind.
 Angles are CSS rotate() (clockwise; 0 = hanging straight down). Arm poses are given as glove targets and solved (two-bone IK)."""
@@ -117,13 +117,13 @@ upright("run", -30, -95)
 a, f = arm((.0, .64), "r", 1); upright("wave", a, f)
 upright("cheer", *arm((.04, .62), "r", 1))
 # ---- the Sheriff tips his hat (the drawing's own hat group), with a little bow
-rule(".cameo.cm-g-hattip .cm-bust .cx-fx-hat", "animation:cm-hattip 3.2s ease-in-out .9s infinite;")
+rule(".cameo.cm-g-hattip .cm-bust .cx-fx-shhat", "animation:cm-hattip 3.2s ease-in-out .9s infinite !important; transform-origin:72% 100%;")   # his hat is .cx-fx-shhat
 css.append("  @keyframes cm-hattip{ 0%, 52%, 100%{ transform:none; } 62%, 78%{ transform:translateY(-1.8px) rotate(-14deg); } }")
 out = "\n".join(css)
 import os
 path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "index.html")
 src = open(path, encoding="utf-8").read()
-A = "  /* ---- the poses (generated: tools/gen-cameo-rig.py) ---- */\n"; B = "  /* ---- leaving (CAMEO_OUT_MS 240)"
+A = "  /* ---- the poses (generated: tools/gen-cameo-rig.py) ---- */\n"; B = "  /* ---- leaving (cameoLeave)"
 a = src.index(A) + len(A); b = src.index(B, a)
 open(path, "w", encoding="utf-8").write(src[:a] + out + "\n\n" + src[b:])
 print(len(css), "rules written into", path)

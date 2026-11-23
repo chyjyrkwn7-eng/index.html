@@ -43605,3 +43605,19 @@ their shoulders aren't even connected properly to their bodies, fix that" / "May
   (the Hazmat); cameo-contact-sheet-v2.jpg, cameo-signatures-academy-v2.jpg / -firecode-v2.jpg (every character's signature with
   a still), cameo-limbs-closeup-v2.jpg (six characters x seven poses at 3x), cameo-joints-before-after-v2.jpg (f4fa333 against now,
   sit and dangle, at 3x). Recorded with tools/record-b384-cameo.py; the sheets' script is in the scratchpad.
+
+### 384 cameo - the swipe's long tasks (gate (H) failing 2 of 3 at load ~1)
+Profiled (CDP trace, x4 and x6): the cameo's exit itself was never the long task; three things around it were. (1) The figure's
+drawing ran SVG-internal animations (char-live's blink and details, char-sleep's breathing): every frame they run is a main-thread
+restyle and layout of the SVG, and on the touch that starts the swipe it made a 40-60ms task (gesturetapdown: 110 elements restyled,
+102 laid out). Now nothing animates inside a cameo's drawing (`animation:none !important` there), except the Sheriff's hat tip; every
+move is the HTML boxes' (compositor). (2) The old exit restyled the whole figure (an is-leaving class with descendant rules) and took
+the node out 240ms later, mid-slide. Now: one Web Animations fade (and small sink) on the root alone, the root composited from the start
+(will-change), display:none on the root when the fade ends, listeners off at once, no layout read; the torso copy keeps only the shapes
+that reach its last row (228 nodes instead of ~500). (3) Taking a child of <body> out restyles the page's own body-level rules (33
+`body:has` / `html:has` rules): 250-315 elements, 45-75ms at x6. The hidden root is now taken out only after the page has been still for
+2.5s after the slide (CAMEO_QUIET_MS), in idle time; leaving the screen still takes it out at once. The exit's own pieces are logged
+(cameoExitCost): leave 0.1-4.7ms, hide 0-2.3ms, removal 0-2.2ms at x4/x6. Gate (H)'s swipe check now runs three swipes with and three
+without in turn and compares medians (the slide's own build of the next question is a 40-110ms task either way, so one swipe against one
+measured that), and checks every piece of the exit under 8ms. Also fixed: gen-cameo-rig.py still emitted the old `.cx-fx-hat` rule and
+had re-written it into index.html; it now emits `.cx-fx-shhat`.
