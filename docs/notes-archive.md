@@ -43245,3 +43245,121 @@ GATES:
 DESIGN QUESTIONS (for Madison, not done): a first-time tip for Fire Code's calculator on a question; existing accounts seeing the new
 Profile tips (TOUR_REV 5); the Settings tour has no Sound & Haptics / Classes / Software Update step (kept to four on "less but the
 good stuff"); the top clamp of a bubble is 10px, not the safe area (only reached when a target is off screen, which no tip now is).
+## 384 cameo - CHARACTER CAMEOS on a test's question (branch claude/b384-cameo, cut from claude/b384-final 1cb2318; build NOT bumped, stays 2026-11-22-384.137; NOT on main, waiting for Madison)
+
+Madison: "Maybe when you are taking a test your character can be interactive in a way, so maybe your character will randomly be
+sitting on the edge of the question box with his legs swinging, or maybe he will be run across the bottom and then go away, but
+when you swipe to the next question it would go away. Almost like an Easter egg, just randomly coming up at rare times. Would be
+super cool, obviously get creative with this because I gave only a few ideas."
+
+**WHAT IT IS.** The character the account wears (store.avatarChar, drawn by buildAvatarCharSVGSafe in the page's own art, so Fire
+Code draws its own) now and then drops in on a question of a Drill or a Mock. The drawings are busts (head and shoulders, viewBox
+3..37, the shoulders cut by the box), so a cameo gives the bust two short legs (CSS: trousers in the app's dark, shoes in the
+character's glow colour, avatarGlowColor) and two floating gloves (white, a thumb, a cuff in the shoes' colour) - Rayman-style, no
+arms, so nothing has to join the art. The drawing itself is untouched: its scenery (.cx-bg) and aura/halo circles are taken off,
+the avatarDepth svg filter and the edge mask are off, the bottom corners are rounded by a clip-path on its wrapper, and it is only
+ever tilted as a whole; inside it only its own live parts move (char-live's blink, char-sleep's shut eyes and breathing,
+char-react-great's happy eyes and nod). Every other movement is transform/opacity (and translate/rotate) on HTML boxes.
+
+**THE LEDGE.** The line under the test header is `.wrap > .count`'s bottom border (the count's words are transparent, for a screen
+reader) - the top edge of the question. Most kinds use it; one uses the floor (the empty band at the bottom of the screen).
+- sit: sits on the ledge, legs swinging over it (each leg rotates and shortens, out of step), looks left and right, taps its
+  gloves; after 7.6s shrinks away. Plops down as it arrives.
+- tiptoe: in from a side of the screen along the stretch of ledge that is clear above it, a stop half-way to look at you, back out
+  the same side (5.4s). Where the header leaves no clear stretch (the iPad: Pause and the meter fill the row), along the floor.
+- dangle: hangs under the ledge by both gloves (the gloves on the line), swaying like a pendulum, legs kicking; shrinks away
+  upwards after 6.8s.
+- peek: rises from behind the ledge as if over a wall (its box is clipped at the line), gloves over the edge a beat later, looks
+  left, right, ducks back (3.5s).
+- wave: the same rise, the right glove up beside the head waving (3.6s).
+- sleepy: only after the question has been open 25s: sits on the ledge asleep (char-sleep), legs barely swaying, three z's
+  drifting up; startles and goes when anything happens (at most 16s).
+- cheer: Drill only, on a first-try right answer that makes 3 or more in a row (runLiveStreak): pops up behind the ledge, both
+  gloves up and shaking, two hops, four sparkles, the drawing's happy nod (2.9s).
+- oops: Drill only, on a first wrong pick: rises half behind the ledge, a sweat drop, a nod, then a fist pump - "next one" (3.3s).
+  Never in a Mock: an Exam gives nothing away about right or wrong until the results, and a cheer or an oops would.
+- run: runs across the bottom of the screen from one side and off the other (2.6s), leaning, legs striding, gloves pumping, dust.
+
+**WHERE (cameoGeometry / cameoInk / cameoPlace).** Nothing is built and nothing is measured until one fires. Then the page is read
+once: every visible element with ink in the viewport (its own non-transparent text, a control, a picture/canvas/svg, a role, or a
+painted background; not page-size containers, not the inside of a drawing; checkVisibility for opacity/visibility), plus Next from
+80px above where it is (it rises). Each kind has its own boxes (the reach of every part through its whole animation, in units of
+its size s); the largest s from 56 (phone) / 64 (iPad) - 84 for the run - down to 32 where no box comes within 6px of any ink
+(CAMEO_CLEAR) is taken, at a random place away from the ends of the places that fit. No room: another kind (the planned one
+first, the idle ones shuffled after it), else nothing (it carries). The Fire Code calculator, a timer, a two-row meter, a long
+question, a code card are just more ink. It sits at z-index 130 (under the header's 140).
+
+**IT NEVER TAKES A TAP.** pointer-events none on the layer and every part (!important). Nothing of it is a target.
+
+**IT LEAVES** (cameoLeave, 240ms: the peeking kinds duck behind the ledge, the sitting/hanging ones shrink away, the walkers fade
+as they go on): any pointerdown / touchstart / keydown / wheel anywhere (capture) - so the swipe to the next question sends it off
+as the finger goes down; a scroll; any render() of the question (an answer, a star, the next question, Next/Enter/auto-advance).
+AT ONCE (cameoGone): Pause (pauseRun), the screen going (a MutationObserver on #stage while it is up - and while one is still
+leaving - sees the question replaced by anything else), the app hidden (visibilitychange, pagehide), a resize, the Settings switch
+turned off. The only thing it adds to <body> is the one `.cameo` layer; its listeners and observer are removed with it.
+
+**RARITY (the numbers).** Decided once per run in beginRun (cameoPlanRun -> cameoPlanFor, the only reader of the dice and the
+pacing key). Eligible: runSaveSlot (a Drill or a Mock: not the Daily Question, not a Virtual Room race) on this class's own
+questions (not vroomForeign), 6 or more questions (CAMEO_MIN_QUESTIONS), not a resumed run. Then: in the 2 eligible runs after a
+run that had one (CAMEO_COOLDOWN_RUNS, device-local `class26e.cameo` = {cool, n, at}), none; otherwise a 1 in 5 chance
+(CAMEO_RUN_CHANCE). Long-run: 1 run in 7 (2 + 5) has one; never two runs in a row; at most one per run. Its question is drawn from
+the 3rd to the second-to-last (CAMEO_FIRST_POS 2). On that question a kind is drawn (weights sit 3, peek/wave/tiptoe/dangle/run 2,
+cheer 2 and oops 1 in a Drill only, sleepy 1) and it shows 1.6-3.6s after the question opens (CAMEO_DELAY_MS), answered or not -
+so it can be sitting there when you swipe on - but never within 1.3s of a redraw (CAMEO_SETTLE_MS: Next rising); sleepy waits 25s
+(CAMEO_SLEEPY_MS); cheer and oops wait for the answer that fits and come 490ms after it (CHOICE_PRESS_MS + CAMEO_REACT_MS).
+Moved on first, no room, or an answer that did not fit: it carries to the next question with a new kind drawn. The cooldown is
+set only when one actually shows. Measured by the gate over 7000 simulated runs: see the gate line below.
+
+**REDUCE MOTION: NO CAMEO AT ALL** (the app's switch or the system's; resultsMotionOff): nothing is planned, cameoForce refuses,
+and a CSS second lock hides `.cameo`. Why none rather than a still that fades: a cameo carries no information - it is only motion
+and surprise in the corner of the eye while somebody reads, and a figure appearing beside the question is exactly that, still or
+not.
+
+**SETTINGS.** Motion & Effects > "Character cameos" ("Your character now and then drops in during a test."), between Reduce motion
+and Skip celebrations: `theme.cameos` (default true in the theme object, a typeof line in loadTheme, `cameos: theme.cameos !== false`
+in saveTheme; an older theme or a reset theme without it reads as on). No store field, no Firestore read or write.
+
+**SOUND / HAPTICS.** None: a test is read in quiet, and iOS only gives a haptic on a tap.
+
+**NOT ON:** the Daily Question, Virtual Room races / team games, flash cards, Review's list, a run in another class's room, a run of
+under 6 questions (a short retake).
+
+**HOOK.** cameoForce(kind, {hold, dir}) fires one now on the question that is up (skips the dice, the delay and the answer rule;
+never the placement, Reduce motion or the switch); hold keeps it until something sends it away. cameoInfo() returns
+{plan, up, onPage, pacing, allowed}. cameoPlanFor(n, eligible) / cameoNoteFired() are the dice.
+
+**GATE: NEW tools/check-b384-cameo.py** (A) every kind forced, each part's box (clipped by the ledge where it is) sampled every frame
+for its whole life (or 6s) against the question text, every choice, the number row (number, star, calculator), status/reference,
+the panel's buttons, Pause, chat, mode/count labels, the meter's ticks, the timer, the keyboard hint and Next - on phone and iPad,
+academy and Fire Code Drills, a phone Mock with a 20-minute timer and 30 questions (two meter rows), a Fire Code Drill after a wrong
+pick; (B) no pointer events, elementFromPoint never finds it, a real touch on a choice with one up answers; (C) leaves on a real
+swipe (gone before the slide ends), a tap on Next, an answer by key, a redraw, Pause (same task), the app hidden (same task), Save
+and exit with one up and one still leaving (both gone); (D) Reduce motion app and system: nothing forced, planned or built; the
+Settings switch on by default, off saved and obeyed; (E) the dice over 7000 runs, the real path with the dice forced (nothing on
+questions 1-2, one by itself on question 3, none after it, the next two runs none, the third may); (F) nothing before it fires,
+only transform/opacity animate, the drawing unfiltered; (G) no page errors.
+Here: ALL PASS, 172 checks (all nine kinds fit in every configuration; the dice read 1024 of 7000 = 0.146, 1 in 6.8; a swipe sends
+it off in 269ms, before the 712-834ms slide ends). `--against 1cb2318` FAILS (12: no hook anywhere).
+Other gates on this branch (one at a time, TMPDIR=/dev/shm, load 4-15 from other helpers): check-js ALL PASS; sweep-layout --quick
+clean; check-centering --quick ALL PASS, 0 off centre; check-b383-slide, check-b384-qslide, -toggles, -results-flow, -resume,
+-reviewtest ALL PASS; check-b384-reducemotion: C flagged the three `.cameo` rules that start hidden (display:none under the OS
+setting, by design - a cameo is never built there), so the gate's ALLOWED list has one line for `.cameo`; rerun ALL PASS.
+check-behaviour check_swipe / check_b314_swipe / check_b313_pause / check_b313_qmotion / check_b324g_toggles pass;
+check_b324s_settings fails (the revealed code, "every switch has a title and a description", the celebrations switch, section gaps)
+and check-b384-settingslook fails (6) (the top bar at 0, not the inset) - both fail the same on 1cb2318, so they are inherited, not
+this branch's. Page console (both classes, all nine kinds forced): no errors beside the blocked network.
+
+**VIDEOS** (NEW tools/record-b384-cameo.py OUTDIR [kind...]: CDP screencast at 3x on the Pro Max, installed, H.264 high/yuv420p 30fps,
+faststart; 0.2-0.6MB each): cameo-sit (the Grizzly, an answered question, then the swipe sends it off), -run (the Alien), -tiptoe-firecode
+(the Dispatcher), -dangle-firecode (the Dispatcher, swiped off), -peek (the Alien), -wave-firecode (the Hazmat), -sleepy (the Ghost, a
+tap on an answer wakes it), -cheer (the Grizzly: planned, set off by a real tap on a right answer with 2 already in a row, swiped off),
+-oops-firecode (the Hazmat: a real wrong tap, then the right one sends it off), and a contact sheet. The recorder wears a Fire Code
+challenge character the fixture has not earned by wrapping isLockedCharacter for that id only (a recording, not the app).
+Polish from watching them frame by frame: the gloves got a thumb and a cuff (plain circles read as ping-pong balls); the peeking
+gloves sit ON the ledge; wave and cheer come up 0.12 further so the whole face clears the line; the cheer's gloves came in close to
+the head and its sparks grew; the z's are placed in their own em (a small z's em is small - they had drifted into Pause); the
+arrival plop moves 3px, not 7 (it brushed the chat button on its first frame).
+
+Chromium cannot show the iOS safe areas, the soft keyboard or how WebKit composites the clipped peeking box; the ledge's place and
+the floor's band are read live from the page, so they follow whatever the phone lays out, but the look on a real phone is the one
+thing to confirm there.

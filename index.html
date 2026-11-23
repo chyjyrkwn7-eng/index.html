@@ -42112,6 +42112,180 @@ html.is-browser{ --fade-paper: transparent; }
   .binspect-pin, .binspect-pin:focus{ outline:none; }
   html[data-reduce-motion="true"] .pin-host > .pin-mark-hero{ animation:none; }
   @media (prefers-reduced-motion:reduce){ .pin-host > .pin-mark-hero{ animation:none; } }
+  /* ---- CHARACTER CAMEOS (384, claude/b384-cameo; see cameoFire) ----
+     One fixed layer on <body>, sized in em (font-size is the figure's size, s px), so every part scales with it. Only
+     transform and opacity move, on HTML boxes (the drawing itself is only tilted as a whole, and only its own live parts -
+     the blink, char-sleep, char-react-great - move inside it); no svg filter (the bust's avatarDepth filter is taken off),
+     no mask, nothing takes a tap. Under Reduce motion it is never built; the rules at the end are a second lock. */
+  .cameo{ position:fixed; z-index:130; width:1em; height:1em; pointer-events:none; contain:layout style; line-height:1; }
+  .cameo, .cameo *{ pointer-events:none !important; user-select:none; -webkit-user-select:none; }
+  .cameo :is(.cm-clip, .cm-duck, .cm-path, .cm-body, .cm-hands){ position:absolute; left:0; top:0; width:1em; height:1em; }
+  .cameo .cm-clip{ width:100%; height:100%; }
+  .cameo .cm-body{ transform-origin:50% 100%; }
+  .cameo .cm-bust{ position:absolute; left:0; top:0; width:1em; height:1em; z-index:2; transform-origin:50% 88%;
+    clip-path:inset(0 round 0 0 .2em .2em); }
+  .cameo .cm-bust > svg{ width:100%; height:100%; display:block; filter:none !important; -webkit-mask-image:none !important; mask-image:none !important; }
+  /* legs: trousers in the app's own dark, shoes in the character's glow colour; behind the bust, its hem over their tops */
+  .cameo .cm-leg{ position:absolute; top:.84em; width:.13em; height:.36em; border-radius:.065em; z-index:1; transform-origin:50% .03em;
+    background:linear-gradient(90deg, #4B5466, #2F3542 55%, #22262F); box-shadow:0 0 0 .012em rgba(0,0,0,.45); }
+  .cameo .cm-leg-l{ left:.3em; } .cameo .cm-leg-r{ left:.57em; }
+  .cameo .cm-shoe{ position:absolute; left:-.035em; bottom:-.035em; width:.2em; height:.1em; border-radius:.07em .07em .045em .045em;
+    background:var(--cm-shoe, #9FB1FF); box-shadow:inset 0 -.028em 0 rgba(0,0,0,.38), inset 0 .02em 0 rgba(255,255,255,.35), 0 0 0 .012em rgba(0,0,0,.45); }
+  /* gloves, floating beside the figure */
+  .cameo .cm-hands{ z-index:3; }
+  .cameo .cm-hand{ position:absolute; width:.18em; height:.17em; border-radius:48% 48% 42% 42%; transform-origin:50% 50%;
+    background:radial-gradient(circle at 38% 30%, #FFFFFF, #E9EDF4 50%, #AEB6C6 100%); box-shadow:0 0 0 .014em rgba(12,14,20,.7), 0 .02em .05em rgba(0,0,0,.35); }
+  /* a thumb, and a cuff in the shoes' colour */
+  .cameo .cm-hand::before{ content:""; position:absolute; left:-.03em; top:.05em; width:.07em; height:.06em; border-radius:50%;
+    background:#DCE1EA; box-shadow:0 0 0 .012em rgba(12,14,20,.6); }
+  .cameo .cm-hand-r::before{ left:auto; right:-.03em; }
+  .cameo .cm-hand::after{ content:""; position:absolute; left:.025em; right:.025em; bottom:-.035em; height:.05em; border-radius:.03em;
+    background:var(--cm-shoe, #9FB1FF); box-shadow:0 0 0 .012em rgba(12,14,20,.6), inset 0 -.015em 0 rgba(0,0,0,.3); }
+
+  /* ---- leaving (CAMEO_OUT_MS 240): ducks behind the ledge, shrinks off it, or fades as it runs on ---- */
+  .cameo.is-leaving .cm-duck{ animation:cm-shrink .22s cubic-bezier(.5,0,.8,.4) forwards; transform-origin:50% 100%; }
+  .cameo:is(.cm-peek, .cm-wave, .cm-cheer, .cm-oops).is-leaving .cm-duck{ animation:cm-duck .22s cubic-bezier(.5,0,.9,.6) forwards; }
+  .cameo.cm-dangle.is-leaving .cm-duck{ transform-origin:50% 0; }
+  .cameo:is(.cm-run, .cm-tiptoe).is-leaving .cm-duck{ animation:cm-fade .2s linear forwards; }
+  @keyframes cm-shrink{ to{ opacity:0; transform:scale(.5); } }
+  @keyframes cm-duck{ to{ transform:translateY(1.15em); } }
+  @keyframes cm-fade{ to{ opacity:0; } }
+
+  /* ---- sit: on the ledge, legs over it ---- */
+  .cameo.cm-sit .cm-body, .cameo.cm-sleepy .cm-body{ animation:cm-plop .5s cubic-bezier(.3,1.3,.5,1) both; }
+  @keyframes cm-plop{ 0%{ opacity:0; transform:translateY(-.04em) scale(.96, 1.02); } 40%{ opacity:1; transform:translateY(0) scale(1.1, .88); }
+    70%{ transform:scale(.97, 1.03); } 100%{ transform:none; } }
+  .cameo.cm-sit .cm-leg{ animation:cm-swing-l .64s ease-in-out .4s infinite alternate both; }
+  .cameo.cm-sit .cm-leg-r{ animation-name:cm-swing-r; }
+  @keyframes cm-swing-l{ from{ transform:rotate(16deg) scaleY(1); } to{ transform:rotate(-6deg) scaleY(.78); } }
+  @keyframes cm-swing-r{ from{ transform:rotate(6deg) scaleY(.78); } to{ transform:rotate(-16deg) scaleY(1); } }
+  .cameo:is(.cm-sit, .cm-sleepy) .cm-hand-l{ left:-.1em; top:.81em; }
+  .cameo:is(.cm-sit, .cm-sleepy) .cm-hand-r{ left:.91em; top:.81em; }
+  .cameo.cm-sit .cm-bust{ animation:cm-look 6.4s ease-in-out .7s both; }
+  @keyframes cm-look{ 0%, 10%{ transform:none; } 20%, 33%{ transform:rotate(-8deg); } 44%, 52%{ transform:none; } 62%, 76%{ transform:rotate(7deg); }
+    86%, 100%{ transform:none; } }
+  .cameo.cm-sit .cm-hand{ animation:cm-tap .32s ease-in-out 3.1s 4 alternate; }
+  @keyframes cm-tap{ to{ transform:translateY(-.06em); } }
+
+  /* ---- sleepy: asleep on the ledge ---- */
+  .cameo.cm-sleepy .cm-leg{ animation:cm-dangle-slow 2.4s ease-in-out infinite alternate both; }
+  .cameo.cm-sleepy .cm-leg-r{ animation-delay:-1.2s; }
+  @keyframes cm-dangle-slow{ from{ transform:rotate(5deg); } to{ transform:rotate(-4deg); } }
+  .cameo.cm-sleepy .cm-path{ animation:cm-doze 3.6s ease-in-out .5s infinite; transform-origin:50% 100%; }
+  @keyframes cm-doze{ 0%, 100%{ transform:none; } 50%{ transform:translateY(.012em) scale(1.02, .985); } }
+  /* a z's own em is its font size: placed at .78 x .3 of the figure whichever its size (2.8em of .28, 3.4em of .23, 4.1em of .19) */
+  .cameo .cm-z{ position:absolute; left:2.8em; top:1.07em; font:800 .28em/1 system-ui, -apple-system, sans-serif; color:#E4EAFF;
+    font-style:normal; opacity:0; animation:cm-zz 2.7s ease-out infinite; text-shadow:0 0 .2em rgba(0,0,0,.5); }
+  .cameo .cm-z1{ animation-delay:.9s; font-size:.23em; left:3.4em; top:1.3em; } .cameo .cm-z2{ animation-delay:1.8s; font-size:.19em; left:4.1em; top:1.58em; }
+  @keyframes cm-zz{ 0%{ opacity:0; transform:translate(0, 0) scale(.6); } 22%{ opacity:.95; } 100%{ opacity:0; transform:translate(1em, -.85em) scale(1.08); } }
+  .cameo.cm-sleepy.is-leaving .cm-body{ animation:cm-startle .2s ease-out both; }
+  @keyframes cm-startle{ 0%{ transform:none; } 50%{ transform:translateY(-.06em) scale(.96, 1.06); } 100%{ transform:none; } }
+
+  /* ---- tiptoe: along the top of the ledge, a stop half-way to look at you ---- */
+  .cameo:is(.cm-tiptoe, .cm-run) .cm-leg{ top:.9em; height:.4em; }
+  .cameo.cm-tiptoe .cm-path{ animation:cm-sneak-in 5.4s both; }
+  @keyframes cm-sneak-in{ 0%{ transform:translateX(0); animation-timing-function:cubic-bezier(.3,.2,.5,1); } 38%{ transform:translateX(var(--cm-dx)); }
+    64%{ transform:translateX(var(--cm-dx)); animation-timing-function:cubic-bezier(.5,0,.7,.8); } 100%{ transform:translateX(0); } }
+  .cameo.cm-tiptoe .cm-body{ animation:cm-tip .5s ease-in-out infinite; }
+  @keyframes cm-tip{ 0%, 100%{ transform:translateY(0) rotate(calc(var(--cm-dir) * -3deg)); } 50%{ transform:translateY(-.055em) rotate(calc(var(--cm-dir) * 3deg)); } }
+  .cameo.cm-tiptoe .cm-leg{ animation:cm-step .5s ease-in-out infinite; }
+  .cameo.cm-tiptoe .cm-leg-r{ animation-delay:-.25s; }
+  @keyframes cm-step{ 0%, 100%{ transform:none; } 50%{ transform:translateY(-.05em) scaleY(.8); } }
+  .cameo.cm-tiptoe .cm-hand-l{ left:.1em; top:.64em; } .cameo.cm-tiptoe .cm-hand-r{ left:.72em; top:.64em; }
+  .cameo.cm-tiptoe .cm-hand{ animation:cm-sneak .5s ease-in-out infinite; }
+  .cameo.cm-tiptoe .cm-hand-r{ animation-delay:-.25s; }
+  @keyframes cm-sneak{ 0%, 100%{ transform:none; } 50%{ transform:translateY(-.05em); } }
+  .cameo.cm-tiptoe .cm-bust{ animation:cm-glance 5.4s ease-in-out both; }
+  @keyframes cm-glance{ 0%, 36%{ transform:rotate(calc(var(--cm-dir) * 5deg)); } 42%, 50%{ transform:rotate(calc(var(--cm-dir) * -8deg)) translateY(-.02em); }
+    54%{ transform:none; } 58%, 62%{ transform:rotate(calc(var(--cm-dir) * 6deg)); } 68%, 100%{ transform:rotate(calc(var(--cm-dir) * -5deg)); } }
+
+  /* ---- dangle: hanging under the ledge by both hands ---- */
+  .cameo.cm-dangle .cm-body{ top:.16em; transform-origin:50% -.1em; animation:cm-pend 1.8s ease-in-out .45s infinite alternate both; }
+  @keyframes cm-pend{ from{ transform:rotate(-5deg); } to{ transform:rotate(5deg); } }
+  .cameo.cm-dangle .cm-path{ animation:cm-drop-in .45s cubic-bezier(.3,1.5,.5,1) both; transform-origin:50% 0; }
+  @keyframes cm-drop-in{ from{ opacity:0; transform:translateY(-.1em) scale(.96); } to{ opacity:1; transform:none; } }
+  .cameo.cm-dangle .cm-hand-l{ left:.13em; top:.02em; } .cameo.cm-dangle .cm-hand-r{ left:.68em; top:.02em; }
+  .cameo.cm-dangle .cm-leg{ animation:cm-kick .42s ease-in-out infinite alternate both; }
+  .cameo.cm-dangle .cm-leg-r{ animation-delay:-.42s; }
+  @keyframes cm-kick{ from{ transform:rotate(13deg); } to{ transform:rotate(-13deg); } }
+  .cameo.cm-dangle .cm-bust{ animation:cm-hang-look 6s ease-in-out .6s both; }
+  @keyframes cm-hang-look{ 0%, 15%{ transform:none; } 25%, 45%{ transform:translateY(.02em) rotate(4deg); } 55%, 100%{ transform:none; } }
+
+  /* ---- peek, wave, cheer, oops: from behind the ledge (the box is clipped at the line) ---- */
+  .cameo:is(.cm-peek, .cm-wave, .cm-cheer, .cm-oops){ width:1.8em; height:1.3em; }
+  .cameo:is(.cm-peek, .cm-wave, .cm-cheer, .cm-oops) .cm-clip{ overflow:hidden; }
+  .cameo:is(.cm-peek, .cm-wave, .cm-cheer, .cm-oops) .cm-duck{ left:.4em; top:.58em; }
+  .cameo:is(.cm-peek, .cm-wave, .cm-cheer, .cm-oops) .cm-hand-l{ left:-.02em; top:.53em; }
+  .cameo:is(.cm-peek, .cm-wave, .cm-cheer, .cm-oops) .cm-hand-r{ left:.84em; top:.53em; }
+  .cameo.cm-peek .cm-path{ animation:cm-rise 3.5s both; }
+  .cameo.cm-wave .cm-path{ animation:cm-rise-up 3.6s both; }
+  .cameo.cm-oops .cm-path{ animation:cm-rise-half 3.3s both; }
+  .cameo.cm-cheer .cm-path{ animation:cm-rise-fast 2.9s both; }
+  @keyframes cm-rise{ 0%{ transform:translateY(1.15em); animation-timing-function:cubic-bezier(.2,.9,.3,1.2); } 13%{ transform:translateY(0); }
+    88%{ transform:translateY(0); animation-timing-function:cubic-bezier(.6,0,.9,.6); } 100%{ transform:translateY(1.15em); } }
+  @keyframes cm-rise-half{ 0%{ transform:translateY(1.15em); animation-timing-function:cubic-bezier(.3,.8,.4,1); } 16%{ transform:translateY(.1em); }
+    88%{ transform:translateY(.1em); animation-timing-function:cubic-bezier(.6,0,.9,.6); } 100%{ transform:translateY(1.15em); } }
+  /* wave and cheer come up further, the whole face over the ledge */
+  @keyframes cm-rise-up{ 0%{ transform:translateY(1.3em); animation-timing-function:cubic-bezier(.2,.9,.3,1.2); } 13%{ transform:translateY(-.12em); }
+    88%{ transform:translateY(-.12em); animation-timing-function:cubic-bezier(.6,0,.9,.6); } 100%{ transform:translateY(1.3em); } }
+  @keyframes cm-rise-fast{ 0%{ transform:translateY(1.3em); animation-timing-function:cubic-bezier(.2,1,.3,1.3); } 9%{ transform:translateY(-.12em); }
+    88%{ transform:translateY(-.12em); animation-timing-function:cubic-bezier(.6,0,.9,.6); } 100%{ transform:translateY(1.3em); } }
+  /* the gloves come over the ledge a beat after the head */
+  .cameo:is(.cm-peek, .cm-wave, .cm-oops) .cm-hand{ animation:cm-grip 3.5s both; }
+  @keyframes cm-grip{ 0%, 9%{ transform:translateY(.3em); } 15%, 86%{ transform:none; } 92%, 100%{ transform:translateY(.3em); } }
+  .cameo.cm-peek .cm-bust{ animation:cm-peek-look 3.5s ease-in-out both; }
+  @keyframes cm-peek-look{ 0%, 20%{ transform:none; } 30%, 44%{ transform:translateX(-.03em) rotate(-9deg); } 52%{ transform:none; } 60%, 74%{ transform:translateX(.03em) rotate(8deg); }
+    82%, 100%{ transform:none; } }
+  /* wave: the right glove up beside the head, four waves */
+  .cameo.cm-wave .cm-hand-l{ top:.65em; }   /* on the ledge though the figure is up further */
+  .cameo.cm-wave .cm-hand-r{ left:1.0em; top:.08em; transform-origin:30% 230%; animation:cm-wave-up 3.6s both, cm-wave .26s ease-in-out .75s 8 alternate; }
+  @keyframes cm-wave-up{ 0%, 12%{ opacity:0; transform:translateY(.5em) scale(.4); } 19%{ opacity:1; transform:none; } 84%{ opacity:1; transform:none; } 90%, 100%{ opacity:0; transform:translateY(.5em) scale(.4); } }
+  @keyframes cm-wave{ from{ rotate:-24deg; } to{ rotate:22deg; } }
+  .cameo.cm-wave .cm-bust{ animation:cm-wave-tilt 3.6s ease-in-out both; }
+  @keyframes cm-wave-tilt{ 0%, 18%{ transform:none; } 26%, 80%{ transform:rotate(5deg); } 88%, 100%{ transform:none; } }
+  /* cheer: both gloves up, two hops, sparkles; the drawing's own happy nod (char-react-great) */
+  .cameo.cm-cheer .cm-hand-l{ left:-.17em; top:.17em; } .cameo.cm-cheer .cm-hand-r{ left:.99em; top:.17em; }
+  .cameo.cm-cheer .cm-hand{ animation:cm-arms-up 2.9s both, cm-shake .2s ease-in-out .5s 6 alternate; }
+  .cameo.cm-cheer .cm-hand-r{ animation-delay:0s, .6s; }
+  @keyframes cm-arms-up{ 0%, 6%{ opacity:0; transform:translateY(.6em) scale(.5); } 14%{ opacity:1; transform:none; } 84%{ opacity:1; transform:none; } 90%, 100%{ opacity:0; transform:translateY(.6em) scale(.5); } }
+  @keyframes cm-shake{ from{ translate:0 0; } to{ translate:0 -.07em; } }
+  .cameo.cm-cheer .cm-body{ animation:cm-hop2 .9s cubic-bezier(.3,.7,.4,1) .3s 2 both; }
+  @keyframes cm-hop2{ 0%{ transform:none; } 30%{ transform:translateY(.02em) scale(1.06, .94); } 60%{ transform:translateY(-.12em) scale(.97, 1.04); } 85%{ transform:translateY(.01em); } 100%{ transform:none; } }
+  .cameo .cm-spark{ position:absolute; width:.2em; height:.2em; opacity:0; background:#FFE07A;
+    clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation:cm-spark .7s ease-out both; }
+  .cameo .cm-spark0{ left:-.24em; top:.38em; animation-delay:.5s; } .cameo .cm-spark1{ left:1.1em; top:.42em; animation-delay:.75s; background:#FFFFFF; }
+  .cameo .cm-spark2{ left:.06em; top:.0em; animation-delay:1.05s; width:.15em; height:.15em; } .cameo .cm-spark3{ left:.84em; top:-.02em; animation-delay:1.3s; background:var(--cm-shoe, #FFE07A); }
+  @keyframes cm-spark{ 0%{ opacity:0; transform:scale(.2) rotate(0deg); } 35%{ opacity:1; transform:scale(1.1) rotate(25deg); } 100%{ opacity:0; transform:scale(.4) rotate(70deg); } }
+  /* oops: a sweat drop, a nod, then a fist pump - "next one" */
+  .cameo .cm-drop{ position:absolute; left:.86em; top:.22em; width:.1em; height:.14em; opacity:0; border-radius:50% 50% 50% 50% / 62% 62% 38% 38%;
+    background:linear-gradient(180deg, #CFEAFF, #6FB6FF); box-shadow:0 0 0 .01em rgba(10,40,80,.5); animation:cm-sweat 1.4s ease-in .55s both; }
+  @keyframes cm-sweat{ 0%{ opacity:0; transform:translateY(-.04em) scale(.5); } 20%{ opacity:1; transform:scale(1); } 80%{ opacity:1; transform:translateY(.2em); } 100%{ opacity:0; transform:translateY(.26em); } }
+  .cameo.cm-oops .cm-bust{ animation:cm-oops-nod 3.3s ease-in-out both; }
+  @keyframes cm-oops-nod{ 0%, 16%{ transform:none; } 24%, 46%{ transform:rotate(-6deg) translateY(.02em); } 54%{ transform:rotate(0deg) translateY(.03em); } 60%{ transform:none; } 66%{ transform:translateY(.03em); } 72%, 100%{ transform:none; } }
+  .cameo.cm-oops .cm-hand-r{ animation:cm-pump-up 3.3s both, cm-pump .18s ease-in-out 1.95s 4 alternate; }
+  @keyframes cm-pump-up{ 0%, 50%{ transform:none; } 56%, 84%{ transform:translate(.2em, -.4em) scale(1.08); } 92%, 100%{ transform:translateY(.3em); } }
+  @keyframes cm-pump{ from{ translate:0 0; } to{ translate:0 -.08em; } }
+
+  /* ---- run: across the bottom of the screen and off ---- */
+  .cameo.cm-run .cm-path{ animation:cm-dash 2.6s cubic-bezier(.35,.15,.65,.85) both; }
+  @keyframes cm-dash{ from{ transform:translateX(0); } to{ transform:translateX(var(--cm-dx)); } }
+  .cameo.cm-run .cm-body{ animation:cm-bob .26s ease-in-out infinite alternate; }
+  @keyframes cm-bob{ from{ transform:translateY(0) rotate(calc(var(--cm-dir) * 7deg)); } to{ transform:translateY(-.07em) rotate(calc(var(--cm-dir) * 9deg)); } }
+  .cameo.cm-run .cm-leg{ animation:cm-stride .26s ease-in-out infinite alternate both; }
+  .cameo.cm-run .cm-leg-r{ animation-delay:-.26s; }
+  @keyframes cm-stride{ from{ transform:rotate(32deg); } to{ transform:rotate(-32deg); } }
+  .cameo.cm-run .cm-hand-l{ left:-.06em; top:.7em; } .cameo.cm-run .cm-hand-r{ left:.86em; top:.7em; }
+  .cameo.cm-run .cm-hand{ animation:cm-pumparm .26s ease-in-out infinite alternate both; }
+  .cameo.cm-run .cm-hand-r{ animation-delay:-.26s; }
+  @keyframes cm-pumparm{ from{ transform:translate(calc(var(--cm-dir) * -.06em), .04em); } to{ transform:translate(calc(var(--cm-dir) * .06em), -.06em); } }
+  .cameo .cm-dust{ position:absolute; left:.42em; top:1.16em; width:.16em; height:.16em; border-radius:50%; background:rgba(190,200,220,.38); opacity:0;
+    animation:cm-puff .52s ease-out infinite; }
+  .cameo .cm-dust1{ animation-delay:.17s; left:.3em; } .cameo .cm-dust2{ animation-delay:.34s; left:.55em; width:.12em; height:.12em; }
+  @keyframes cm-puff{ 0%{ opacity:.7; transform:translate(0, 0) scale(.4); } 100%{ opacity:0; transform:translate(calc(var(--cm-dir) * -.5em), -.12em) scale(1.4); } }
+
+  /* the second lock: never under Reduce motion */
+  html[data-reduce-motion="true"] .cameo{ display:none !important; }
+  @media (prefers-reduced-motion:reduce){ .cameo{ display:none !important; } }
 </style>
 <script>
   (function(){
@@ -92873,7 +93047,9 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
               tapSounds: true,
               /* Settings > Study (build 382): auto-advance waits about a second
                  instead of AUTO_ADVANCE_MS, to read the answer first. */
-              autoAdvanceLong: false };
+              autoAdvanceLong: false,
+              /* Settings > Motion & Effects (384 cameo): the character's rare cameos on a test's question (cameoFire). On by default. */
+              cameos: true };
 
 /* (384) A CLASS SHOWS ONLY A THEME IT HAS UNLOCKED. Madison: "When switching classes, the theme from the other class is being
    used on the class you switched to, this is not it. Also, that shouldn't even be possible cause I don't have it unlocked."
@@ -92926,6 +93102,7 @@ function loadTheme(){
     if(typeof store.theme.haptics === "boolean") theme.haptics = store.theme.haptics;
     if(typeof store.theme.tapSounds === "boolean") theme.tapSounds = store.theme.tapSounds;
     if(typeof store.theme.autoAdvanceLong === "boolean") theme.autoAdvanceLong = store.theme.autoAdvanceLong;
+    if(typeof store.theme.cameos === "boolean") theme.cameos = store.theme.cameos;
     theme.soundOn327 = store.theme.soundOn327 === true;
   }
   /* SOUND ON FOR EVERYONE ONCE (build 327), the swipe's pattern below:
@@ -93383,7 +93560,8 @@ function saveTheme(){
                   showClassDaysLeft: theme.showClassDaysLeft,
                   soundOn: theme.soundOn, soundVolume: theme.soundVolume, vibrate: theme.vibrate, haptics: theme.haptics !== false,
                   soundOn327: theme.soundOn327 !== false,
-                  tapSounds: theme.tapSounds !== false, autoAdvanceLong: theme.autoAdvanceLong === true };
+                  tapSounds: theme.tapSounds !== false, autoAdvanceLong: theme.autoAdvanceLong === true,
+                  cameos: theme.cameos !== false };
   saveStore();
 }
 
@@ -101333,6 +101511,7 @@ function pauseRun(){
   if(paused || order.length === 0) return;
   paused = true;
   pauseStartedAt = Date.now();
+  try{ cameoGone(); }catch(e){}
   playSound("test.pause");
   stopTimer();
   stopQuestionTimer();
@@ -125420,6 +125599,8 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   runSaveSlot = runLabel !== "Daily question" && !inVirtualRoom && !raceTimed &&
                 (runMode === "drill" || runMode === "exam");
   if(runSaveSlot) clearRunSession();
+  /* (384 cameo) this run's character cameo, if it gets one */
+  try{ cameoPlanRun(); }catch(e){}
   /* The actual fix for the daily question never awarding points at
      all \u2014 runTrackable's own condition required runLabel to be null,
      which excludes every labeled run (retakes, re-runs) from
@@ -125821,6 +126002,7 @@ function openQuestion(instant){
      Scrolling preference is still exactly right there). */
   toTop(instant);
   if(raceTimed) runRaceClock();
+  try{ cameoQuestionOpened(); }catch(e){}
 }
 
 /* drawMeter()'s own cache: the actual <span> for each tile (parallel
@@ -127611,7 +127793,384 @@ function noteFlareMissIfPassed(atEnd){
     saveStore();
   }catch(e){}
 }
+/* ======================================================================
+   CHARACTER CAMEOS (384, branch claude/b384-cameo)
+   ======================================================================
+   Madison: "Maybe when you are taking a test your character can be interactive in a way, so maybe your character will
+   randomly be sitting on the edge of the question box with his legs swinging, or maybe he will be run across the bottom and
+   then go away, but when you swipe to the next question it would go away. Almost like an Easter egg, just randomly coming up
+   at rare times."
+   The character you wear (store.avatarChar, drawn in this class's own art by buildAvatarCharSVG) now and then drops in on a
+   question of a Drill or a Mock. The drawings are busts, so a cameo gives the bust two short legs (shoes in the character's
+   own glow colour) and two floating gloves - drawn in CSS round the untouched drawing, the whole figure posed and moved as
+   one, the bust itself only tilted, and the drawing's own live parts (blink, sleep, a happy nod) used as they are.
+   THE KINDS. Most use THE LEDGE - the line under the header (.wrap > .count's bottom border), the top edge of the question:
+     sit     sits on the ledge, legs swinging over it, looks round; hops off (shrinks away) after about seven seconds
+     tiptoe  tiptoes along the top of the ledge from one side of the screen to the other, stopping half-way to look at you
+     dangle  hangs from the ledge by both hands under it, legs kicking, swaying; lets go upwards (shrinks away)
+     peek    rises from behind the ledge as if over a wall, looks left and right, ducks back down
+     wave    rises from behind the ledge and waves, ducks back down
+     sleepy  only when the question has been open 25s: sits on the ledge asleep (eyes shut, head down), z's drifting up
+     cheer   Drill only, right after a first-try right answer that makes 3 or more in a row: pops up behind the ledge, arms
+             up, two hops, sparkles, the drawing's own happy nod
+     oops    Drill only, right after a first wrong pick: peeks up behind the ledge, a sweat drop, a nod and a fist pump
+   and one uses THE FLOOR, the empty band under everything at the bottom of the screen:
+     run     runs across the bottom of the screen from one side and off the other, dust behind it
+   WHERE. Nothing is placed until a cameo fires: then the page is read once (every visible thing with ink - text, a control,
+   a picture, a painted box) and the kind's own boxes, at the largest size that fits (32-64px), are fitted where none of
+   them comes within 6px of any of it. No room: another kind, or none (it waits for the next question). Fire Code's two
+   buttons beside the star, a timer, a long question, a code card - each is simply more ink the boxes go round.
+   IT NEVER TAKES A TAP: pointer-events none on every part; nothing of it is a target.
+   IT LEAVES the moment anything happens: any touch, click, key or wheel anywhere (so the swipe to the next question - a finger
+   going down - sends it away as the swipe begins), a scroll, any redraw of the question (an answer, a star, the next
+   question), Pause, the screen going (the stage's question replaced by anything else), the app hidden, a resize. Leaving is
+   quick (220ms: ducking back behind the ledge, shrinking away, or fading as it runs on); the screen going, Pause or the app
+   hidden take it off at once. It is the only thing it adds to <body>, and nothing of it survives a navigation.
+   RARITY (the numbers, device-local, no account field, no Firestore): decided once per run, when the run starts. Only a
+   Drill or a Mock of 6 or more questions on this class's own questions (not the Daily Question, not a Virtual Room, not a
+   resumed run). Such a run gets a cameo with a 1 in 5 chance (CAMEO_RUN_CHANCE) - except the 2 runs after one that had a
+   cameo (CAMEO_COOLDOWN_RUNS, class26e.cameo), which never do. So over many runs about 1 run in 7 (2 + 5) has one, never
+   two in a row, at most one per run. Its question is drawn from the 3rd to the second-to-last (never the first two), and
+   it shows 1.6-3.6s after that question opens (sleepy: 25s; cheer and oops: on the answer that fits), answered or not -
+   so it can be sitting there when you swipe on - but never within 1.3s of a redraw (CAMEO_SETTLE_MS: Next rising). Moved
+   on sooner, no room, or the answer did not fit: it carries to the next question, a new kind drawn.
+   NOT AT ALL under Reduce motion (the app's switch or the system's): a cameo is nothing but motion and surprise in the
+   corner of the eye while somebody reads - a still figure fading in is still that - and it carries no information.
+   Off as well with Settings > Motion & Effects > Character cameos (theme.cameos, on by default).
+   Silent: no sound and no haptic - a test is read in quiet, and iOS only buzzes on a tap anyway.
+   Test hook: cameoForce(kind, {hold, dir}) fires one now on the question up (skipping the dice, the wait and the answer
+   rules, never the placement or Reduce motion); cameoInfo() says what is planned and what is up. tools/check-b384-cameo.py. */
+var CAMEO_RUN_CHANCE = .2, CAMEO_COOLDOWN_RUNS = 2, CAMEO_MIN_QUESTIONS = 6, CAMEO_FIRST_POS = 2;
+var CAMEO_DELAY_MS = [1600, 3600], CAMEO_SLEEPY_MS = 25000, CAMEO_REACT_MS = 450, CAMEO_OUT_MS = 240, CAMEO_CLEAR = 6;
+var CAMEO_KEY = "class26e.cameo";
+var CAMEO_KINDS = ["sit", "tiptoe", "dangle", "peek", "wave", "sleepy", "cheer", "oops", "run"];
+var CAMEO_WEIGHT = { sit: 3, peek: 2, wave: 2, tiptoe: 2, dangle: 2, run: 2, sleepy: 1, cheer: 2, oops: 1 };
+/* how long each stays when nothing sends it away (ms); sleepy stays until something does, at most its number */
+var CAMEO_LIFE = { sit: 7600, tiptoe: 5600, dangle: 6800, peek: 3500, wave: 3600, sleepy: 16000, cheer: 2900, oops: 3300, run: 2600 };
+var cameoPlan = null;   /* this run's: { at, kind, qi, pos, timer, fired } or null */
+var cameoNow = null;    /* the one up: { el, kind, panel, timers, off } */
+
+function cameoAllowed(){
+  try{ if(theme.cameos === false) return false; }catch(e){ return false; }
+  return !resultsMotionOff();
+}
+function cameoPacing(){ try{ const v = JSON.parse(localStorage.getItem(CAMEO_KEY) || "null"); return v && typeof v === "object" ? v : {}; }catch(e){ return {}; } }
+function cameoPacingSave(v){ try{ localStorage.setItem(CAMEO_KEY, JSON.stringify(v)); }catch(e){} }
+/* The dice for one run of n questions (eligible: a run that may have one). The only reader of Math.random and the pacing key. */
+function cameoPlanFor(n, eligible){
+  if(!eligible || !(n >= CAMEO_MIN_QUESTIONS)) return null;
+  const p = cameoPacing();
+  const cool = Math.max(0, Math.floor(Number(p.cool) || 0));
+  if(cool > 0){ p.cool = cool - 1; cameoPacingSave(p); return null; }
+  if(!(Math.random() < CAMEO_RUN_CHANCE)) return null;
+  const hi = n - 2;
+  return { at: CAMEO_FIRST_POS + Math.floor(Math.random() * (hi - CAMEO_FIRST_POS + 1)), kind: null, qi: null, pos: -1, timer: 0, fired: false };
+}
+function cameoNoteFired(){
+  const p = cameoPacing();
+  p.cool = CAMEO_COOLDOWN_RUNS; p.n = (Number(p.n) || 0) + 1; p.at = Date.now();
+  cameoPacingSave(p);
+}
+/* beginRun: a Drill or a Mock this device owns (runSaveSlot: not the Daily Question, not a room), on this class's questions */
+function cameoPlanRun(){
+  cameoGone();
+  if(cameoPlan) clearTimeout(cameoPlan.timer);
+  cameoPlan = null;
+  let ok = false;
+  try{ ok = cameoAllowed() && !!runSaveSlot && !vroomForeign(); }catch(e){ ok = false; }
+  cameoPlan = cameoPlanFor(order.length, ok);
+}
+function cameoPickKind(){
+  const pool = CAMEO_KINDS.filter(k => runMode === "drill" || (k !== "cheer" && k !== "oops"));
+  let sum = 0; pool.forEach(k => { sum += CAMEO_WEIGHT[k]; });
+  let r = Math.random() * sum;
+  for(const k of pool){ r -= CAMEO_WEIGHT[k]; if(r < 0) return k; }
+  return pool[0];
+}
+var cameoRenderAt = 0;   /* the question's last redraw: nothing fires while what it drew is still settling (Next rising) */
+var CAMEO_SETTLE_MS = 1300;
+/* still the same question, on the screen, with nothing over it or moving it */
+function cameoScreenOk(qi, p){
+  try{
+    if(!testInProgress || paused || order[pos] !== qi || (p != null && pos !== p)) return false;
+    if(document.visibilityState === "hidden" || !stage.querySelector(".qpanel")) return false;
+    if(slideTransitionInFlight || qDrag || document.documentElement.classList.contains("q-sliding")) return false;
+    if(document.body.classList.contains("cutscene-focus") || document.getElementById("teststart-overlay")) return false;
+    return true;
+  }catch(e){ return false; }
+}
+/* openQuestion: the run's question has come, or a carried one */
+function cameoQuestionOpened(){
+  const P = cameoPlan;
+  if(!P || P.fired || !testInProgress || pos < P.at || pos >= order.length) return;
+  clearTimeout(P.timer); P.timer = 0;
+  if(!cameoAllowed()) return;
+  P.qi = order[pos]; P.pos = pos; P.kind = cameoPickKind();
+  if(P.kind === "cheer" || P.kind === "oops") return;      /* on the answer (cameoAnswered) */
+  const wait = P.kind === "sleepy" ? CAMEO_SLEEPY_MS : CAMEO_DELAY_MS[0] + Math.random() * (CAMEO_DELAY_MS[1] - CAMEO_DELAY_MS[0]);
+  const qi = P.qi, at = P.pos;
+  const go = () => {
+    P.timer = 0;
+    if(cameoPlan !== P || P.fired || !cameoAllowed() || !cameoScreenOk(qi, at)) return;
+    /* answered or not (it may be there when you swipe on), but never while a redraw is settling */
+    const settle = cameoRenderAt + CAMEO_SETTLE_MS - Date.now();
+    if(settle > 0){ P.timer = setTimeout(go, settle); return; }
+    cameoFire(P.kind, { plan: P, fallback: true });
+  };
+  P.timer = setTimeout(go, wait);
+}
+/* choose(), a Drill's answer: a planned cheer or oops plays once the answer is drawn, if this answer is its moment */
+function cameoAnswered(right){
+  const P = cameoPlan;
+  if(!P || P.fired || runMode !== "drill" || P.qi !== order[pos] || P.pos !== pos) return;
+  const qi = P.qi, at = P.pos;
+  const fits = P.kind === "cheer" ? (right && runLiveStreak >= 3) : P.kind === "oops" ? (!right && attempts[qi] === 1) : false;
+  if(!fits) return;
+  clearTimeout(P.timer);
+  P.timer = setTimeout(() => {
+    P.timer = 0;
+    if(cameoPlan !== P || P.fired || !cameoAllowed() || !cameoScreenOk(qi, at)) return;
+    cameoFire(P.kind, { plan: P });
+  }, CHOICE_PRESS_MS + CAMEO_REACT_MS);
+}
+/* render(): any redraw of the question sends the one up away */
+function cameoOnRender(){ cameoRenderAt = Date.now(); if(cameoNow) cameoLeave("redraw"); }
+
+/* ---- WHERE: the page read once, at the moment one fires ---- */
+function cameoInk(vw, vh){
+  const out = [];
+  const els = document.body.getElementsByTagName("*");
+  const CTL = /^(BUTTON|A|INPUT|SELECT|TEXTAREA|IMG|CANVAS|VIDEO|IFRAME|LABEL)$/;
+  for(let i = 0; i < els.length; i++){
+    const e = els[i];
+    if(e.classList.contains("cameo") || e.id === "top-edge") continue;
+    if(e.ownerSVGElement) continue;                 /* inside a drawing: the drawing is the ink */
+    const tag = e.tagName;
+    if(tag === "SCRIPT" || tag === "STYLE" || tag === "TEMPLATE") continue;
+    const r = e.getBoundingClientRect();
+    if(r.width < 1 || r.height < 1 || r.bottom <= 0 || r.top >= vh || r.right <= 0 || r.left >= vw) continue;
+    if(r.width * r.height > vw * vh * .45) continue;   /* the page's own containers */
+    let ink = CTL.test(tag) || tag.toLowerCase() === "svg" || !!e.getAttribute("role");
+    let cs = null;
+    if(!ink){
+      for(let n = e.firstChild; n; n = n.nextSibling){ if(n.nodeType === 3 && /\S/.test(n.nodeValue)){ ink = "text"; break; } }
+      cs = getComputedStyle(e);
+      if(ink === "text" && /^rgba\(.*,\s*0\)$|^transparent$/.test(cs.color)) ink = false;   /* .count: words for a screen reader */
+      if(!ink){
+        const bg = cs.backgroundColor;
+        ink = (cs.backgroundImage && cs.backgroundImage !== "none") || (bg && bg !== "transparent" && !/^rgba\(.*,\s*0\)$/.test(bg));
+      }
+      if(!ink) continue;
+    }
+    let shown = true;
+    try{
+      if(typeof e.checkVisibility === "function") shown = e.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+      else { cs = cs || getComputedStyle(e); shown = cs.visibility !== "hidden" && +cs.opacity > .02; }
+    }catch(err){}
+    if(!shown && e.id !== "nextbtn") continue;
+    out.push([r.left, r.top, r.right, r.bottom]);
+  }
+  /* Next, rising or not: where it lands, and the room it rises through */
+  try{ const nb = document.getElementById("nextbtn"); if(nb && !nb.hidden){ const r = nb.getBoundingClientRect(); if(r.width) out.push([r.left, r.top - 80, r.right, r.bottom + 10]); } }catch(e){}
+  return out;
+}
+function cameoGeometry(){
+  const vw = document.documentElement.clientWidth || innerWidth, vh = innerHeight;
+  let ledge = null;
+  try{
+    const c = document.querySelector(".wrap > .count");
+    if(c && !c.hidden){
+      const r = c.getBoundingClientRect(), cs = getComputedStyle(c), bw = parseFloat(cs.borderBottomWidth) || 0;
+      if(r.width > 120 && bw > 0 && cs.borderBottomStyle !== "none" && r.bottom > 40 && r.bottom < vh * .6) ledge = { y: r.bottom - bw, l: r.left, r: r.right };
+    }
+  }catch(e){}
+  return { vw, vh, ledge, ink: cameoInk(vw, vh) };
+}
+/* the boxes each kind can reach at size s (one-s units), its figure's left edge at x */
+function cameoBoxes(kind, s, x, g){
+  const L = g.ledge ? g.ledge.y : 0, W = g.vw;
+  switch(kind){
+    case "sit":    return [[x - .12 * s, L - 1.08 * s, x + 1.12 * s, L], [x + .2 * s, L - .1 * s, x + .8 * s, L + .44 * s]];
+    case "sleepy": return [[x - .12 * s, L - 1.08 * s, x + 1.12 * s, L], [x + .2 * s, L - .1 * s, x + .8 * s, L + .42 * s], [x + .7 * s, L - 1.08 * s, x + 1.5 * s, L - .3 * s]];
+    case "tiptoe": { const T = g.surf != null ? g.surf : L;   /* along the ledge, or the floor; x: how far in, from the right (+) or the left (-) */
+      return x > 0 ? [[W - x, T - 1.42 * s, W + 2 * s, T + .04 * s]] : [[-2 * s, T - 1.42 * s, -x, T + .04 * s]]; }
+    case "dangle": return [[x - .22 * s, L - .14 * s, x + 1.22 * s, L + 1.5 * s]];
+    case "peek":   return [[x - .14 * s, L - .78 * s, x + 1.14 * s, L]];
+    case "oops":   return [[x - .14 * s, L - .9 * s, x + 1.38 * s, L]];
+    case "wave":   return [[x - .14 * s, L - 1.06 * s, x + 1.42 * s, L]];
+    case "cheer":  return [[x - .32 * s, L - 1.04 * s, x + 1.32 * s, L]];
+    case "run":    return [[-2 * s, g.floor - 1.42 * s, W + 2 * s, g.floor + .04 * s]];
+  }
+  return null;
+}
+function cameoFree(boxes, g){
+  const m = CAMEO_CLEAR;
+  for(const b of boxes){
+    if(b[1] < 0 || b[3] > g.vh) return false;
+    for(const r of g.ink){ if(b[0] - m < r[2] && b[2] + m > r[0] && b[1] - m < r[3] && b[3] + m > r[1]) return false; }
+  }
+  return true;
+}
+function cameoPlace(kind, g, opt){
+  opt = opt || {};
+  const big = g.vw >= 640;
+  const sMin = 32, sMax = kind === "run" ? (big ? 84 : 62) : (big ? 64 : 56);
+  g.floor = g.vh - 16;
+  if(kind === "run"){
+    for(let s = sMax; s >= sMin; s -= 2){
+      if(cameoFree(cameoBoxes("run", s, 0, g), g)) return { kind, s, x: 0, y: g.floor, dir: opt.dir || (Math.random() < .5 ? 1 : -1) };
+    }
+    return null;
+  }
+  if(kind === "tiptoe"){
+    /* in from a side of the screen along the stretch of ledge that is clear above it (or, where the header leaves none, along
+       the floor), a stop, and back out the same side */
+    const surfs = (g.ledge ? [g.ledge.y] : []).concat([g.floor]);
+    const sides = opt.dir ? [-opt.dir, opt.dir] : (Math.random() < .5 ? [1, -1] : [-1, 1]);
+    for(const T of surfs){
+      g.surf = T;
+      for(let s = sMax; s >= sMin; s -= 2){
+        for(const side of sides){
+          let d = 0;
+          for(let t = Math.ceil(1.7 * s); t <= Math.min(g.vw * .55, 5 * s); t += 4){ if(cameoFree(cameoBoxes(kind, s, side * t, g), g)) d = t; else break; }
+          if(d){ g.surf = null; return { kind, s, x: 0, reach: d, y: T, dir: -side, floor: T === g.floor }; }
+        }
+      }
+    }
+    g.surf = null;
+    return null;
+  }
+  if(!g.ledge) return null;
+  for(let s = sMax; s >= sMin; s -= 2){
+    const xs = [];
+    const lo = Math.ceil(g.ledge.l + .3 * s), hi = Math.floor(g.ledge.r - 1.5 * s);
+    for(let x = lo; x <= hi; x += 4){ if(cameoFree(cameoBoxes(kind, s, x, g), g)) xs.push(x); }
+    if(xs.length){
+      /* not hard against the ink it was squeezed beside: away from the two ends of the places that fit, when there are enough */
+      const mid = xs.length > 6 ? xs.slice(2, -2) : xs;
+      return { kind, s, x: mid[Math.floor(Math.random() * mid.length)], y: g.ledge.y, dir: 1 };
+    }
+  }
+  return null;
+}
+
+/* ---- WHAT: the figure, built only now ---- */
+function cameoEl(tag, cls, parent){ const e = document.createElement(tag); e.className = cls; if(parent) parent.appendChild(e); return e; }
+function cameoBuild(pl){
+  const kind = pl.kind, s = pl.s, id = store.avatarChar || "ghost";
+  const root = cameoEl("div", "cameo cm-" + kind + (pl.dir < 0 ? " cm-rtl" : ""));
+  root.setAttribute("aria-hidden", "true");
+  root.dataset.kind = kind;
+  const W = document.documentElement.clientWidth || innerWidth;
+  let left = pl.x, top = pl.y - s;
+  if(kind === "dangle") top = pl.y - .12 * s;
+  if(kind === "tiptoe"){ top = pl.y - 1.34 * s; left = pl.dir > 0 ? -1.3 * s : W + .3 * s; }
+  const dx = kind === "tiptoe" ? (pl.reach + .15 * s) * (pl.dir < 0 ? -1 : 1) : (W + 2.7 * s) * (pl.dir < 0 ? -1 : 1);
+  if(kind === "run"){ top = pl.y - 1.34 * s; left = pl.dir > 0 ? -1.4 * s : W + .4 * s; }
+  const peekish = kind === "peek" || kind === "wave" || kind === "cheer" || kind === "oops";
+  if(peekish){ left = pl.x - .4 * s; top = pl.y - 1.3 * s; }
+  root.style.cssText = "left:" + left.toFixed(1) + "px;top:" + top.toFixed(1) + "px;font-size:" + s + "px;--cm-dir:" + (pl.dir < 0 ? -1 : 1) +
+    ";--cm-dx:" + dx.toFixed(1) + "px;--cm-shoe:" + avatarGlowColor(id);
+  const clip = cameoEl("div", "cm-clip", root);
+  const duck = cameoEl("div", "cm-duck", clip);
+  const path = cameoEl("div", "cm-path", duck);
+  const body = cameoEl("div", "cm-body", path);
+  ["l", "r"].forEach(side => { const leg = cameoEl("i", "cm-leg cm-leg-" + side, body); cameoEl("i", "cm-shoe", leg); });
+  const bust = cameoEl("div", "cm-bust " + (kind === "sleepy" ? "char-sleep" : kind === "cheer" ? "char-live char-react-great" : "char-live"), body);
+  let svg = null;
+  try{ svg = buildAvatarCharSVGSafe(id); }catch(e){ svg = null; }
+  if(!svg) return null;
+  /* the figure alone: its scenery and its halo stay in the circles they were drawn for */
+  svg.querySelectorAll(".cx-bg").forEach(n => n.remove());
+  svg.querySelectorAll("circle").forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) n.remove(); });
+  bust.appendChild(svg);
+  const hands = cameoEl("div", "cm-hands", kind === "dangle" || peekish ? path : body);
+  ["l", "r"].forEach(side => cameoEl("i", "cm-hand cm-hand-" + side, hands));
+  if(kind === "sleepy") for(let i = 0; i < 3; i++){ const z = cameoEl("i", "cm-z cm-z" + i, body); z.textContent = "z"; }
+  if(kind === "cheer") for(let i = 0; i < 4; i++) cameoEl("i", "cm-spark cm-spark" + i, body);
+  if(kind === "oops") cameoEl("i", "cm-drop", body);
+  if(kind === "run") for(let i = 0; i < 3; i++) cameoEl("i", "cm-dust cm-dust" + i, body);
+  return root;
+}
+function cameoFire(kind, o){
+  o = o || {};
+  const g = cameoGeometry();
+  let order0 = [kind];
+  if(o.fallback && kind !== "cheer" && kind !== "oops" && kind !== "sleepy"){
+    const rest = ["sit", "peek", "wave", "dangle", "tiptoe", "run"].filter(k => k !== kind);
+    for(let i = rest.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); const t = rest[i]; rest[i] = rest[j]; rest[j] = t; }
+    order0 = order0.concat(rest);
+  }
+  let pl = null;
+  for(const k of order0){ pl = cameoPlace(k, g, o); if(pl) break; }
+  if(!pl) return { ok: false, why: "no room" };
+  cameoGone();
+  const el = cameoBuild(pl);
+  if(!el) return { ok: false, why: "no drawing" };
+  document.body.appendChild(el);
+  const c = { el, kind: pl.kind, panel: stage.querySelector(".qpanel"), timers: [], off: [] };
+  cameoNow = c;
+  const on = (t, type, fn, opts) => { t.addEventListener(type, fn, opts); c.off.push(() => t.removeEventListener(type, fn, opts)); };
+  const away = () => cameoLeave("input");
+  on(document, "pointerdown", away, { capture: true, passive: true });
+  on(document, "touchstart", away, { capture: true, passive: true });
+  on(document, "keydown", away, true);
+  on(document, "wheel", away, { capture: true, passive: true });
+  on(window, "scroll", away, { capture: true, passive: true });
+  on(window, "resize", () => cameoGone(), { passive: true });
+  on(document, "visibilitychange", () => { if(document.visibilityState === "hidden") cameoGone(); });
+  on(window, "pagehide", () => cameoGone());
+  try{
+    const mo = new MutationObserver(() => {
+      if(cameoNow !== c) return;
+      if(!c.panel || !c.panel.isConnected){ if(cameoScreenOk(order[pos])) cameoLeave("redraw"); else cameoGone(); }
+    });
+    mo.observe(stage, { childList: true });
+    c.off.push(() => mo.disconnect());
+  }catch(e){}
+  if(!o.hold) c.timers.push(setTimeout(() => { if(cameoNow === c) cameoLeave("done"); }, CAMEO_LIFE[pl.kind] || 4000));
+  if(o.plan){ o.plan.fired = true; o.plan.kind = pl.kind; cameoNoteFired(); }
+  return { ok: true, kind: pl.kind, s: pl.s, x: pl.x, y: pl.y, dir: pl.dir };   /* no read of the page after it is added: no layout forced */
+}
+function cameoUnhook(c){
+  c.off.forEach(f => { try{ f(); }catch(e){} }); c.off = [];
+  c.timers.forEach(t => clearTimeout(t)); c.timers = [];
+}
+/* away, gracefully (CAMEO_OUT_MS): ducking behind the ledge, shrinking off it, or fading as it runs on */
+function cameoLeave(why){
+  const c = cameoNow;
+  if(!c) return;
+  cameoNow = null;
+  cameoUnhook(c);
+  c.el.classList.add("is-leaving");
+  c.el.dataset.why = why || "";
+  /* still watching the stage while it goes: the screen going takes it off at once */
+  let mo = null;
+  try{ mo = new MutationObserver(() => { if(!stage.querySelector(".qpanel")){ try{ c.el.remove(); }catch(e){} if(mo) mo.disconnect(); } }); mo.observe(stage, { childList: true }); }catch(e){}
+  setTimeout(() => { try{ c.el.remove(); }catch(e){} if(mo) mo.disconnect(); }, CAMEO_OUT_MS);
+}
+/* away at once, with any that are still leaving: the screen went, Pause, the app hidden */
+function cameoGone(){
+  const c = cameoNow;
+  if(c){ cameoNow = null; cameoUnhook(c); }
+  try{ document.querySelectorAll("body > .cameo").forEach(e => e.remove()); }catch(e){}
+}
+/* ---- the test hook (gates and recordings): one of `kind` now, on the question that is up ---- */
+function cameoForce(kind, opts){
+  opts = opts || {};
+  if(CAMEO_KINDS.indexOf(kind) < 0) return { ok: false, why: "no such kind" };
+  if(!cameoAllowed()) return { ok: false, why: "off" };
+  if(!cameoScreenOk(order[pos])) return { ok: false, why: "not on a question" };
+  return cameoFire(kind, { hold: !!opts.hold, dir: opts.dir });
+}
+function cameoInfo(){
+  const P = cameoPlan;
+  return { plan: P ? { at: P.at, kind: P.kind, pos: P.pos, fired: P.fired, armed: !!P.timer } : null, up: cameoNow ? cameoNow.kind : null,
+           onPage: document.querySelectorAll(".cameo").length, pacing: cameoPacing(), allowed: cameoAllowed() };
+}
+
 function render(){
+  try{ cameoOnRender(); }catch(e){}
   noteFlareMissIfPassed(false);
   const qi = order[pos];
   const item = QUESTIONS[qi];
@@ -128223,6 +128782,7 @@ function choose(slot){
     if(runLabel === "Daily question"){ summarize(); return; }
     choiceFx = { qi, slot, kind: "right", at: Date.now() };
     scheduleAutoAdvance(qi);
+    try{ cameoAnswered(true); }catch(e){}
   } else {
     // The loophole fix: nothing is struck through and nothing is disabled, so
     // the answer can never be reached by elimination. Each attempt is a fresh
@@ -128249,6 +128809,7 @@ function choose(slot){
       return;
     }
     choiceFx = { qi, slot, kind: "wrong", at: Date.now() };
+    try{ cameoAnswered(false); }catch(e){}
   }
   renderAfterPress(qi, slot);
 }
@@ -145514,6 +146075,29 @@ function showAppearance(opts){
   motionRow.append(motionCb, motionBox, motionWrap);
   motionDetails.appendChild(motionRow);
 
+  /* (384 cameo) the character's rare cameos on a test's question - see cameoFire. Off under Reduce motion whatever this says. */
+  const cameoRow = document.createElement("label");
+  cameoRow.className = "opt";
+  const cameoCb = document.createElement("input");
+  cameoCb.type = "checkbox"; cameoCb.checked = theme.cameos !== false;
+  cameoCb.addEventListener("change", () => {
+    theme.cameos = cameoCb.checked;
+    if(!theme.cameos){ try{ cameoGone(); }catch(e){} }
+    saveTheme();
+    showToast(theme.cameos ? "Character cameos on." : "Character cameos off.");
+  });
+  const cameoBox = document.createElement("span");
+  cameoBox.className = "box"; cameoBox.setAttribute("aria-hidden", "true"); cameoBox.textContent = "\u2713";
+  const cameoWrap = document.createElement("span");
+  cameoWrap.className = "otext";
+  cameoWrap.appendChild(document.createTextNode("Character cameos"));
+  const cameoHint = document.createElement("span");
+  cameoHint.className = "ohint";
+  cameoHint.textContent = "Your character now and then drops in during a test.";
+  cameoWrap.appendChild(cameoHint);
+  cameoRow.append(cameoCb, cameoBox, cameoWrap);
+  motionDetails.appendChild(cameoRow);
+
   /* Keep screen awake was here until build 284: "remove the keep screen
      awake setting as well, just unnecessary, just remove that function
      too". The switch and the wake lock behind it are both gone. */
@@ -145657,6 +146241,7 @@ function showAppearance(opts){
     const HINTS = {
       "Reduce motion":                  "Turns off shimmer, pulse and other animations.",
       "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
+      "Character cameos":               "Your character now and then drops in during a test.",
       /* BUILD 324: "the auto advance in correct, the title and description
          are slightly vague. The auto star description says every 5th miss
          or something. Remove that part and change it. The mute achievement
@@ -145679,7 +146264,7 @@ function showAppearance(opts){
     };
     /* build 382: celebrations belong with motion and effects now */
     const GROUPS = [
-      [motionDetails, ["Reduce motion", "Skip celebrations and pop-ups"]],
+      [motionDetails, ["Reduce motion", "Character cameos", "Skip celebrations and pop-ups"]],
       [studyDetails,  ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"]]
     ];
     GROUPS.forEach(([host, titles]) => {
