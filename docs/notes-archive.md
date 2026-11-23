@@ -43638,3 +43638,10 @@ character isn't in a circle he's there, when looking at someone on their leaderb
 - NEXT: full-body characters (a shared rig - head from each drawing, a designed body in its own outfit, arms, hands, legs, feet - and
   poses), approved on a few prototypes first, then all 53, then cameos on them, then the figures standing on results, Profile and the
   person card.
+
+## 384.137 - Nova's modes slide in Fire Code stacks its three cards
+Madison (screenshot of 3-signup-firecode.mp4 at 2:41: Drill and Review side by side, Virtual Room alone under Drill): "These should all be
+on top each other I would think, it looks bad how it is". novaModeRow adds `is-stack` when the class has an odd number of modes (Fire Code:
+Drill, Review, Virtual Room - no Mock); `.nt-modes.is-stack` is one column, each card a row (mark left, name and line beside it), the mode
+picker's own layout. The academy's four stay two by two. The short-stage container query already made rows and is unchanged. Rendered
+both classes, phone and iPad.

@@ -3012,6 +3012,13 @@
   .nt-modes .nt-mode.is-review{ --kc:#4ADE80; } .nt-modes .nt-mode.is-vroom{ --kc:#4A9FE8; }
   .nt-mode-t{ display:flex; flex-direction:column; gap:.2rem; min-width:0; }
   .nt-modes .nt-mode-ic svg{ width:100%; height:100%; }
+  /* (384.137) an odd number of modes (Fire Code's three): one per row, mark at the left, name and line beside it - the mode picker's own
+     layout - instead of a 2-column grid with a card left alone */
+  .nt-modes.is-stack{ grid-template-columns:minmax(0, 1fr); }
+  .nt-modes.is-stack .nt-mode{ display:grid; grid-template-columns:auto minmax(0, 1fr); grid-template-areas:"ic t"; column-gap:.85rem;
+    align-items:center; }
+  .nt-modes.is-stack .nt-mode-ic{ grid-area:ic; margin:0; }
+  .nt-modes.is-stack .nt-mode-t{ grid-area:t; }
   /* banners and hundo effects */
   .nt-flair{ display:flex; flex-direction:column; gap:1.1rem; width:min(25rem, 100%); }
   .nt-flair-h{ margin:0 0 .5rem; font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.62); text-align:left; padding-left:.14em; }
@@ -111173,7 +111180,12 @@ const NOVA_MODE_LINES = {
 function novaModeRow(){
   const row = document.createElement("div"); row.className = "nt-modes";
   /* (384) the modes this class has: Fire Code has no Mock (342) */
-  ["drill", "exam", "review", "vroom"].filter(k => !(window.NOVA_CLASS === "ifc" && k === "exam")).forEach((k, i) => {
+  const keys = ["drill", "exam", "review", "vroom"].filter(k => !(window.NOVA_CLASS === "ifc" && k === "exam"));
+  /* (384.137) Madison, of Fire Code's slide (three cards in a 2-column grid, Virtual Room alone under Drill): "These should all be on top
+     each other I would think, it looks bad how it is". An odd count stacks as rows, as the mode picker itself does; the academy's four
+     stay two by two */
+  if(keys.length % 2) row.classList.add("is-stack");
+  keys.forEach((k, i) => {
     const m = document.createElement("div"); m.className = "nt-mode is-" + k; m.style.setProperty("--i", i);
     const ic = document.createElement("span"); ic.className = "nt-mode-ic";
     try{ ic.appendChild(modeIcon(k)); }catch(e){}
