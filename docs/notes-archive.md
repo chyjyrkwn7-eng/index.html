@@ -43652,3 +43652,17 @@ top the words under it". On a phone the check (the card's ::after, 20px on the m
 met the first line of the description to the pixel (measured: gap -0.1px Pro Max, -1.1px SE, -0.1px iPhone 17 Pro). Now --cc-pt + 22px: it
 sits on the mark's corner (bottom ~0.7px below the mark's) with 5.9px clear (SE 4.9px). Tablet/laptop (the check in the card's top-right) is
 unchanged. check-b384-classstep, check-b384-signupclass ALL PASS; check-centering --quick in the commit log below.
+
+## 384.137 - a new account's Home arrives once (no blink after Nova); the Select chip's hairline
+- NOVA -> HOME. Madison: "the transition from meeting nova to going to the main menu ... the cool effect I like though, but what I see
+  happens is, everything is there, (shouldn't be) it disappears, then comes back with the cool effect". Frames of 2-signup-academy.mp4
+  at 0.25s: 76.25 Nova fading over Home; 76.50 Home whole (NOVA, Start Studying, the bar); 76.75 those gone; 77.0-77.75 the arrival
+  (ring, rise). Home was mounted under him and shown in full as he faded; then showHome()+homeArrive() restarted its rise from opacity 0.
+  Now playNovaIntro's onClose (sign-up, not Fire Code's first half, not a sign-in, motion on) puts `home-arrive-pending` on <body> - the
+  hero, the title, Start Studying and the bar at opacity 0, the rise's first frame - and homeArrive() takes it off in the frame its
+  animations begin; a sign-in path removes it, and a 4s timer clears it whatever happens.
+- SELECT CHIP. Madison: "Weird lines under the select buttons". `.cc-status.is-enroll` has a transparent 1px rim (384 centring) and a
+  vertical gradient sized to the padding box and repeated, so the rim's bottom row drew the gradient's light top - a pale hairline along
+  the chip's foot. `background-origin:border-box; background-repeat:no-repeat`. 3x render: the bottom rows (240,103,31) continuous, no
+  light row. Swept every gradient-with-translucent-border element on Home, Customize, Badges, Select your classes, Classes, modes and the
+  Leaderboard in both classes and A/B'd each with the same fix: none changes (their bright edges are drawn rims), so only the chip is fixed.

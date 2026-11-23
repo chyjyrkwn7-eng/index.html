@@ -37198,6 +37198,8 @@ html.is-browser{ --fade-paper: transparent; }
   body.home-arrive #stage .screen-home-actual .hometitle-wrap{ animation:home-rise .8s cubic-bezier(.2,.7,.2,1) .7s both; }
   body.home-arrive #stage .screen-home-actual .playbtn{ animation:home-rise .8s cubic-bezier(.2,.7,.2,1) .85s both; }
   body.home-arrive .bottomtabs{ animation:home-rise .8s cubic-bezier(.2,.7,.2,1) 1s both; }
+  /* (384.137) held at the arrival's first frame while Nova leaves a new account (see playNovaIntro's onClose / homeArrive) */
+  body.home-arrive-pending #stage .screen-home-actual :is(.cosmic-hero-wrap, .hometitle-wrap, .playbtn), body.home-arrive-pending .bottomtabs{ opacity:0; }
   .home-arrive-ring{ position:absolute; left:50%; top:50%; width:46%; aspect-ratio:1; border-radius:50%; pointer-events:none; z-index:3;
     border:2px solid rgba(255,255,255,.75); box-shadow:0 0 24px 6px color-mix(in srgb, var(--accent, #fff) 45%, transparent), inset 0 0 18px 2px rgba(255,255,255,.35);
     animation:home-arrive-ring 1.5s cubic-bezier(.2,.7,.3,1) .45s both; }
@@ -40108,6 +40110,10 @@ html.is-browser{ --fade-paper: transparent; }
     /* Enroll / Select: its siblings' padding assumes a 1px rim, which it lacked; 329's 1.2px nudge down stood in for the
        missing 2px and put the capitals half a pixel low. Now a clear rim (the gradient runs under it) and even padding */
     html[data-layout] .cc-status.is-enroll{ border:1px solid transparent; padding-top:calc((28px - 1cap) / 2); padding-bottom:calc((28px - 1cap) / 2); }
+    /* (384.137) Madison, of the sign-up's Select chips: "Weird lines under the select buttons". The gradient was sized to the padding box
+       and REPEATED under the transparent 1px rim, so the rim's bottom row drew the gradient's light top (#FF9A4A) - a pale hairline along
+       the chip's foot (and a dark one along its top). The gradient now spans the whole chip, rim included, once */
+    html[data-layout] .cc-status.is-enroll{ background-origin:border-box; background-repeat:no-repeat; }
     /* Enrolled / Selected: its tick and word sat half a pixel right */
     html[data-layout] .cc-status.is-enrolled{ padding-left:calc(.8rem - .5px); padding-right:calc(.8rem + .5px); }
     /* Settings > Sync's (i): a letter in a 1.15rem ring, on its capitals */
@@ -108662,6 +108668,9 @@ function welcomeArrive(){
 function homeArrive(){
   try{
     document.body.classList.add("home-arrive");
+    /* the pieces held at the rise's first frame while Nova left (see playNovaIntro's onClose): the animations below start from the
+       same opacity 0, in this same frame, so taking the hold off shows nothing until they run */
+    document.body.classList.remove("home-arrive-pending"); clearTimeout(homeArrive._p);
     clearTimeout(homeArrive._t);
     homeArrive._t = setTimeout(() => document.body.classList.remove("home-arrive"), 2400);
     const wrap = stage.querySelector(".screen-home-actual .cosmic-hero-wrap");
@@ -111887,6 +111896,16 @@ function playNovaIntro(then, o){
     signal: o.existing ? "Nova, explorer" : null,
     onClose: reason => {
       novaIntroOn = false;
+      /* (384.137) A NEW ACCOUNT'S HOME ARRIVES ONCE. Madison: "the transition from meeting nova to going to the main menu ... everything
+         is there, (shouldn't be) it disappears, then comes back with the cool effect". Home was mounted, whole, under him, so as he faded
+         it showed in full; then showHome() + homeArrive() started its rise from opacity 0 - the planet, NOVA, Start Studying and the bar
+         blinked out and back. From the moment he starts to leave they wait at the rise's first frame (home-arrive-pending); homeArrive()
+         takes the class off as it starts, so the only thing seen is the arrival itself. Not for Fire Code's first half (it switches
+         class) or a sign-in; a 4s fallback clears it whatever happens. */
+      if(o.signup && o.part !== 1 && reason !== "signin" && !novaMotionOff()){
+        try{ document.body.classList.add("home-arrive-pending");
+          clearTimeout(homeArrive._p); homeArrive._p = setTimeout(() => document.body.classList.remove("home-arrive-pending"), 4000); }catch(e){}
+      }
       /* friends whether or not the line was reached - a Skip goes past it
          (build 324); quietly, since his tooltips or What's New come next */
       try{ novaBefriend({ intro: true, quiet: true }); novaFriendMomentEnd(); }catch(e){}
@@ -122462,7 +122481,7 @@ function showHome(){
     const novaGo = () => {
       if(document.querySelector(".homeversion-btn")) playNovaIntro(reason => {
         signupInNova = false; signupPart = 0;
-        if(reason === "signin" || !syncCode) return;
+        if(reason === "signin" || !syncCode){ document.body.classList.remove("home-arrive-pending"); return; }
         if(part === 2){ try{ localStorage.removeItem("class26e.signupnext"); }catch(e){} }
         showHome();
         homeArrive();   /* (384 r4) out of his dark and into Home */
