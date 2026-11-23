@@ -11,12 +11,13 @@
  switch  - NO BANNER DROPS INTO A CLASS SWITCH. In the switch video the daily question's "It's out" banner (which waits out the
            "Welcome back" banner) came due as the class was tapped and dropped in at the top, with its chime, as the cover faded
            in. An account in both classes on the academy's Home (installed iPhone), the class button and Fire Code tapped for
-           real, the reload held off (so the cover stays up): while it is up, the daily question's announcement and a plain
-           banner are asked for -
-           (3) no banner is shown and the daily chime is not played;
+           real, the reload held off (so the cover stays up). The daily question comes due with the list open, then the class
+           is tapped and, under the cover, the announcement and a plain banner are asked for again -
+           (3a) while the list is open the banner waits (it landed then in the video, and went under the cover);
+           (3) under the cover no banner is shown and no daily sound is played (not the recharge, not the chime);
            (4) the cover is up the whole time (the switch itself is untouched).
  (5) no page errors, either section.
-Run:  python3 tools/check-b384-newuser.py [bar switch] [--against OLD/index.html]   (--against 1cb2318's index.html FAILS (2) and (3))"""
+Run:  python3 tools/check-b384-newuser.py [bar switch] [--against OLD/index.html]   (--against 1cb2318's index.html FAILS (2), (3a) and (3))"""
 import os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 ARGS = [a for a in sys.argv[1:] if not a.startswith("--") and not a.endswith(".html")]
@@ -81,6 +82,16 @@ with sync_playwright() as pw:
         L.ev(pg, "()=>{ window.__plays = []; const P = NovaSound.play; NovaSound.play = (id, o) => { window.__plays.push(id); return P(id, o); };"
                  " document.querySelectorAll('.daily-alert,.app-banner').forEach(e => e.remove()); }")
         s.tap(".class-bubble"); pg.wait_for_timeout(900)
+        # the daily question comes due while the list is open (as in the video, a beat before the class was tapped)
+        L.ev(pg, "()=>{ const b = document.querySelector('.daily-question-fab'); try{ if(b) announceDailyReset(b); }catch(e){ window.__annErr = String(e); } }")
+        open_seen, list_open = [], True
+        for _ in range(18):
+            pg.wait_for_timeout(200)
+            st = L.ev(pg, "()=>({ ban: [...document.querySelectorAll('.daily-alert, .app-banner')].filter(e => e.isConnected && e.getBoundingClientRect().height > 0).map(e => e.id || e.className), open: !!document.querySelector('.class-bubble-wrap.is-open') })")
+            open_seen += st["ban"]; list_open = list_open and st["open"]
+        ck("(3a) with the class list open, the daily question's banner waits (%s while it was open %.1fs)" % (sorted(set(open_seen)) or "none", 3.6),
+           list_open and not open_seen, {"open": list_open, "seen": open_seen})
+        L.ev(pg, "()=>{ window.__plays.length = 0; }")    # from here on: what plays once the class is tapped
         s.tap(".class-stack-item.is-ifc"); pg.wait_for_timeout(350)
         before = L.ev(pg, "()=>({ sw: document.documentElement.classList.contains('class-switching'), cover: !!document.getElementById('class-switch-loader') })")
         # what came due in that moment on the video: the daily question's announcement (its recharge, chime and banner) and a banner

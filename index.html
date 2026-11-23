@@ -114599,7 +114599,10 @@ function announceDailyReset(btn){
     /* (384 final check) one banner at a time: "It's out" waits while another is up at the top ("Welcome back to the
        Police Academy" after a class switch) rather than stacking under it, mid-screen; up to 12 seconds */
     const other = () => [...document.querySelectorAll(".daily-alert.show, .app-banner.show")].some(b => b.id !== "dailyalert" && !b.classList.contains("nova-friend-note"));
-    if(other() && (announce.waited = (announce.waited || 0) + 1) < 24){ setTimeout(() => announce(motion), 500); return; }
+    /* (384.137 videos) ...and while the class list is open: someone choosing a class is not to have a banner come down on it
+       (in the switch video it landed as the list was open, a beat before the class was tapped, and went under the cover) */
+    const listOpen = () => !!document.querySelector(".class-bubble-wrap.is-open");
+    if((other() || listOpen()) && (announce.waited = (announce.waited || 0) + 1) < 24){ setTimeout(() => announce(motion), 500); return; }
     playSound("home.daily.ready");
     const tap = () => { try { btn.click(); } catch(e){} };
     /* AT THE TOP, ON THE BANNER (build 327z5), superseding the bubble

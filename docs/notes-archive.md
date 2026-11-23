@@ -43076,3 +43076,85 @@ whatever else. We have a pretty massive new build on our hands here."
   profile@573), 0.54-1.02px high, varying run to run. It FAILS the same way on 6075063 (which passed it on 11-22) and on d12b8c2,
   so it is not this build's: the fixture's state moves with the date (week key) or the tile is mid-animation. Left for the
   inherited-failures pass.
+
+## 384.137 (videos) - the new-user videos; what they showed (branch claude/b384-wn-videos, cut from claude/b384-final 1cb2318; build NOT bumped, still 2026-11-22-384.137; NOT on main, waiting for Madison)
+
+Madison: "Before we push everything to main. I need a few videos of the sign up process and stuff. The start up page, im assuming the
+badges got updated there as well? ... Anything along the way you find that's messed up fix it. Ensure changing between classes the
+transition is good to go ... We are really trying to ensure there is a good thing for any new user when they see this app."
+
+**THE GET STARTED BADGES CLIP WAS STALE.** landing/badges.mp4 (record-landing-badges.py's ten: Chapters 3, 5, 9, 10, 20, 33, 35, 54,
+59, 62) was last recorded 11-20 (c3b6d01), before art9 (11-22) redrew seven of its ten (3, 9, 20, 35, 54, 59, 62). A frame of the old
+clip against a fresh recording of the same moment: Chapter 9's sprinkler (the one found, close up) still had art9's "see-through"
+faults - the frame arms ending in blobs at the hex, the bulb's foot through the boss. Re-recorded (BADGES_RATE .06 on a machine at load
+12-17 from other sessions: 17.0s, 3.0 MB, no frozen run in motion by a frame-difference scan). The academy's pins are in no landing clip
+(the clip is Fire Code only, by Madison's 384.124 "only show a few of the ifc ones"; the scene's text still says "A Police Academy unit's
+badge takes repeated 100% scores") - asked of Madison whether the start-up page should show academy pins too, not changed.
+- GUARD: record-landing-badges.py now writes tools/landing-badges-art.json (a 16-hex sha1 of each clip chapter's CHAPTER_OBJ entry, read
+  in the recording page); check-b384-startup's clip section reads the same entries off the Fire Code page and FAILS when any differs
+  ("the clip was recorded from the pins the app draws now"). FAILS on 1cb2318 (no record) and, given today's record, on c3b6d01's tree
+  naming exactly the seven art9 chapters; PASSES here. Whoever redraws one of the ten re-records the clip (the gate says so).
+- THE HUNDO CLIP (same page) was stale too, found while looking at every clip: it showed the results screen from before the grade
+  card's centred landing (384 rsGradeLift), and it dissolved back to its start while the Total was still counting (+81 ... +352 of
+  +395), so the score never landed. record-landing.py's hundo scene waits HUNDO_MS (16000, was 9800) after Next: 19.5s, 1.2 MB, ends
+  on +395 and the level bar. Take 1 had a 5-frame hold in the question's slide-out (capture gap under load); take 2 has none, kept.
+  The 3-frame hold at 99% is the count's own ease (the old clip holds there too). Other clips (academy, test, ifc, rank, customize)
+  looked at frame by frame: nothing stale.
+
+**THE VIDEOS** (scratchpad only, never the repo; made-up names "Alex Rivera" / "Jordan Ellis" and the switch fixture "Riley Switch").
+NEW TOOL tools/record-b384-newuser.py SCENARIO OUT.mp4 (startup | signup-academy | signup-ifc | switch): the installed app on an iPhone 17
+Pro Max (440x956, 2x, the iPhone's user agent, navigator.standalone, touch), record-sound's engine and page clock installed as INIT
+scripts, so every frame is on the video's own clock whatever the load (the output does not stutter with the machine; only its run time
+does). New in it: real touches (CDP touchStart/touchEnd 60ms apart on the wall clock - two recorded frames between them on a loaded
+machine was a long press and no click: the class list's rows ignored it), a ring where the finger lands (the recording only), the Get
+Started clips SEEKED a frame per frame (a <video> plays on the media clock, which a page clock does not slow - they ran 4-5x; and the
+local server had to answer byte ranges or a clip cannot seek), the reloads (a class switch, a Fire Code sign-up) followed - the old
+page's sound rendered as the switch starts, its last frame (the cover) held --gap 0.9s, the new page's Date carried on from the old's
+plus the gap so the switch's own timing (CSW_HOLD_MS from the tap) reads true - and each page's sound laid at its place. Fire Code's
+sign-up loads the owner's real book (IFC_BOOK + PDFJS_DIR, pdfjs-dist 5.4.149 from npm): the analysis is the real one (~15s in the
+video). Chromium cannot show safe areas (insets 0), blur-behind, haptics or the soft keyboard (typing is key presses).
+
+**FOUND IN THEM, FIXED** (tools/check-b384-newuser.py, new; FAILS on 1cb2318 (2) and (3)):
+- THE TAB BAR BLINKED OUT under a new account's first Home. GENERATING PROFILE fades over a whole Home with its bar, the overlay goes,
+  Home holds HOME_HOLD_BEFORE_NOVA_MS (1.1s), Nova comes in. syncVisibility's `homeUnder` (a Home under #nova-intro or
+  #genprofile-overlay) is what shows the bar before onboardingComplete, so in that beat the bar was hidden: on, gone ~1.1s, on again
+  under Nova (42 of 53 frames without it on 1cb2318). `homeUnder` also holds while `signupInNova` (read in a try: it runs on stage
+  mutations). Fire Code's first half has no Home under it (unchanged).
+- A BANNER DROPPED INTO A CLASS SWITCH. Switching back from Fire Code, the daily question's "It's out" (announceDailyReset, which
+  waits out the "Welcome back" banner) came due while the class list was open, a beat before the academy was tapped: it came down
+  over the open list and went on under the cover as it faded in (in an earlier take its recharge sound and chime ran into the switch
+  too). Two holds: announce waits while the class list is open (`.class-bubble-wrap.is-open`, the same 500ms / 12s polling as for
+  another banner); and classSwitchUnderway() (html.class-switching or #class-switch-loader) - showDailyAlert returns null and
+  announceDailyReset does nothing (no recharge, chime or banner) while it holds. Every showDailyAlert caller already takes a null
+  (holdForCutscene returns one). A switch that is given up drops nothing that matters (the "?" stays lit); the next page announces
+  what it owes. The final switch video has no banner.
+- Gate sections: bar (1) the overlay, Home, a beat alone, Nova; (2) the bar never hidden from Home's first frame to Nova's; switch -
+  the class list open, the daily question comes due: (3a) no banner while the list is open; the class tapped, the reload held off
+  (b384_switchfx_lib no_reload), the announcement and a plain banner asked for under the cover: (3) no banner and no daily sound,
+  (4) the cover up throughout; (5) no page errors. ALL PASS here; --against 1cb2318 FAILS (2), (3a) and (3).
+
+**THE FILES** (440x956 at 2x = 880x1912, H.264 High 4.1 yuv420p 30 fps, AAC 48k stereo with the app's own sound, faststart):
+1-startup.mp4 72.5s 8.6 MB (fresh install from the icon: splash, Get Started read through - every clip at 1x, 13.5s on the badges clip to
+its open case, the ladder lighting - Let's get started, Welcome; one sound: the first tap unlocks audio, as on a phone);
+2-signup-academy.mp4 112.6s 12.3 MB (Get Started skimmed, Welcome, I'm new here, New to Nova?, Select your classes, the confirm,
+GENERATING PROFILE, Nova: name, partner, sync code, Let's go, the four tips, +100 XP, Enrolled, the Start Studying tip, Home);
+3-signup-firecode.mp4 201.6s 19.6 MB (the same into Fire Code: the confirm naming the PDF, Enroll in Fire Code, the real analysis to
+Success, Continue, Nova's first half with no class behind him, Open Fire Code, the switch, Fire Code's Home a beat, his second half,
+the tips, Home); 4-class-switch.mp4 20.2s 2.2 MB (an account in both classes: the class button, Fire Code, Fire Code's Home and its
+"Welcome back"; the class button, Police Academy, the academy's Home and its "Welcome back"). A frame-difference scan finds no frozen
+run in motion in any of them (the holds it lists are still screens: a clip's reading pause, Select your classes before the tap).
+The reload in 3 and 4 is shown at 0.9s (--gap); a phone's own reload time is not measured here.
+
+**GATES** (TMPDIR=/dev/shm, one at a time; load 4-17 from other sessions most of the time): check-js 13 blocks ALL PASS;
+check-b384-newuser ALL PASS (fails on 1cb2318 as above); check-b384-startup ALL PASS (53; the new art check fails on 1cb2318 and on
+c3b6d01's tree); check-b384-getstarted ALL PASS (165); check-b383-signup, check-b384-signupclass, check-tours ALL PASS;
+check-centering --quick ALL PASS, 0 off centre (a run at load 15 reported "6 moving while measured" - Show the code pills - and 0 off
+centre; at lower load clean); check-b384-switchfx ALL PASS (whole run, load 8.6); its laptop section alone, six runs at load 8-10,
+failed once each on three different budget/light checks (1b, 3b, 8/8c, 5) and passed the other runs - the load, not this build (nothing
+here touches the cover); sweep-layout --quick 20/20 clean; check-b384-bannerroom and check-b384-popups ALL PASS; check-b327z5-c
+FAILS 4 (the dial's dot at 0, a toast's 3px bar, iphone and ipad) identically on 1cb2318 - inherited, not this work's.
+
+**SEEN, NOT CHANGED** (design, or not this pass's): the Get Started page's content scrolls under the fixed Sign in pill (a title runs
+behind it for a moment); Fire Code's sign-up shows Fire Code's Home for a beat before Nova's second half (the same Home-then-Nova hold
+as the academy's, by design); "Bronze - Level 21" on the ladder is TIER_UNLOCKS as written; Nova's second half in Fire Code is long
+(~70s at a reading pace) - his script, not a fault.
