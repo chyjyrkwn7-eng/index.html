@@ -42136,7 +42136,7 @@ html.is-browser{ --fade-paper: transparent; }
       radial-gradient(ellipse 70vw 40lvh at 0vw 30lvh, rgba(255,110,190,.07), transparent 70%); }
   /* the falling pieces: an outer box that falls (and drifts), an inner one that sways and turns */
   .fest-p{ position:absolute; top:0; left:var(--x); width:var(--s); height:var(--s); margin-left:calc(var(--s) / -2);
-    transform:translate3d(0, var(--y), 0); opacity:var(--o); }
+    transform:translate3d(0, calc(var(--fall-to, 100vh) * var(--f) - var(--s)), 0); opacity:var(--o); }
   .fest-pi{ width:100%; height:100%; transform:rotate(var(--r0)); }
   .fest-pi > svg{ display:block; width:100%; height:100%; overflow:visible; }
   .fest-snow .fest-pi{ border-radius:50%;
@@ -42145,9 +42145,10 @@ html.is-browser{ --fade-paper: transparent; }
   .fest-leaf .fest-pi{ --fx0:52deg; --fx1:-58deg; }
   /* fireworks: a rocket's trail up to the spot, a flash, the burst (sparks and glitter) that opens and drops; still, a burst rests open */
   .fest-fw{ position:absolute; left:var(--x); top:var(--y); width:0; height:0; }
+  .fest-fw.is-unplaced, .fest-fw.is-off{ visibility:hidden; }
   .fest-fw-burst{ position:absolute; width:calc(136px * var(--k)); height:calc(136px * var(--k)); left:calc(-68px * var(--k)); top:calc(-68px * var(--k));
     overflow:visible; opacity:.42; }
-  .fest-fw-flash{ position:absolute; width:130px; height:130px; left:-65px; top:-65px; border-radius:50%; opacity:0;
+  .fest-fw-flash{ position:absolute; width:calc(120px * var(--k)); height:calc(120px * var(--k)); left:calc(-60px * var(--k)); top:calc(-60px * var(--k)); border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, rgba(255,248,228,.55), rgba(255,236,190,.18) 45%, rgba(255,236,190,0)); }
   .fest-fw-trail{ position:absolute; left:-1px; top:0; width:2px; height:64px; border-radius:1px; opacity:0;
     background:linear-gradient(to bottom, #FFF8E2, var(--fw) 28%, rgba(255,255,255,0)); }
@@ -42186,7 +42187,7 @@ html.is-browser{ --fade-paper: transparent; }
     0%{ transform:translate3d(0, -8vh, 0); opacity:0; }
     7%{ opacity:var(--o); }
     90%{ opacity:var(--o); }
-    100%{ transform:translate3d(var(--drift), 106vh, 0); opacity:0; }
+    100%{ transform:translate3d(var(--drift), calc(var(--fall-to, 106vh) - var(--s)), 0); opacity:0; }
   }
   @keyframes fest-sway{
     from{ transform:translate3d(calc(var(--a) * -1), 0, 0) rotate(var(--r0)) rotateX(var(--fx0, 0deg)); }
@@ -42207,8 +42208,8 @@ html.is-browser{ --fade-paper: transparent; }
     0%, 12.5%{ transform:scale(.1); opacity:0; animation-timing-function:cubic-bezier(.06,.72,.28,1); }
     13.5%{ opacity:1; }
     40%{ opacity:.95; }
-    58%{ transform:translate3d(0, 20px, 0) scale(1.04); opacity:0; }
-    100%{ transform:translate3d(0, 20px, 0) scale(1.04); opacity:0; }
+    58%{ transform:translate3d(0, calc(20px * var(--k)), 0) scale(1.04); opacity:0; }
+    100%{ transform:translate3d(0, calc(20px * var(--k)), 0) scale(1.04); opacity:0; }
   }
   @keyframes fest-twinkle{ from{ opacity:.3; } to{ opacity:1; } }
 </style>
@@ -121104,7 +121105,7 @@ function festSkyBuild(s, calm){
     for(let i = 0; i < n; i++){
       const c = FEST_LEAF_COLS[i % FEST_LEAF_COLS.length], near = rnd() < .3;
       const size = near ? 22 + rnd() * 8 : 12 + rnd() * 8, dur = (near ? 11 : 15) + rnd() * 7;
-      html += '<i class="fest-p fest-leaf" style="--x:' + pc((i + rnd() * .8) / n) + ';--y:' + (8 + rnd() * 84).toFixed(1) + 'vh;--s:' + size.toFixed(1) + 'px;--o:' + (near ? .95 : .62 + rnd() * .2).toFixed(2) +
+      html += '<i class="fest-p fest-leaf" style="--x:' + pc((i + rnd() * .8) / n) + ';--f:' + (.08 + rnd() * .84).toFixed(3) + ';--s:' + size.toFixed(1) + 'px;--o:' + (near ? .95 : .62 + rnd() * .2).toFixed(2) +
         ';--d:' + dur.toFixed(2) + 's;--dl:' + (-rnd() * dur).toFixed(2) + 's;--drift:' + (-20 + rnd() * 70).toFixed(0) + 'px">' +
         '<i class="fest-pi" style="--a:' + (14 + rnd() * 22).toFixed(0) + 'px;--r0:' + (-40 - rnd() * 40).toFixed(0) + 'deg;--r1:' + (30 + rnd() * 60).toFixed(0) + 'deg;--sw:' + (2.6 + rnd() * 2.2).toFixed(2) + 's;--swdl:' + (-rnd() * 4).toFixed(2) + 's">' +
         festLeafSvg(c, i % 3 === 2 ? 1 : 0) + '</i></i>';
@@ -121115,17 +121116,17 @@ function festSkyBuild(s, calm){
     for(let i = 0; i < n; i++){
       const crystal = i % 9 === 4, depth = rnd();
       const size = crystal ? 13 + rnd() * 7 : 3 + depth * 6.5, dur = crystal ? 14 + rnd() * 6 : 19 - depth * 9 + rnd() * 3;
-      html += '<i class="fest-p fest-snow' + (crystal ? ' is-crystal' : '') + '" style="--x:' + pc((i + rnd()) / n) + ';--y:' + (6 + rnd() * 88).toFixed(1) + 'vh;--s:' + size.toFixed(1) + 'px;--o:' + (crystal ? .85 : .5 + depth * .45).toFixed(2) +
+      html += '<i class="fest-p fest-snow' + (crystal ? ' is-crystal' : '') + '" style="--x:' + pc((i + rnd()) / n) + ';--f:' + (.06 + rnd() * .88).toFixed(3) + ';--s:' + size.toFixed(1) + 'px;--o:' + (crystal ? .85 : .5 + depth * .45).toFixed(2) +
         ';--d:' + dur.toFixed(2) + 's;--dl:' + (-rnd() * dur).toFixed(2) + 's;--drift:' + (-14 + rnd() * 40).toFixed(0) + 'px">' +
         '<i class="fest-pi" style="--a:' + (6 + rnd() * 16).toFixed(0) + 'px;--r0:' + (crystal ? (-rnd() * 60).toFixed(0) : 0) + 'deg;--r1:' + (crystal ? (90 + rnd() * 90).toFixed(0) : 0) + 'deg;--sw:' + (3 + rnd() * 3).toFixed(2) + 's;--swdl:' + (-rnd() * 5).toFixed(2) + 's">' +
         (crystal ? festFlakeSvg() : '') + '</i></i>';
     }
   } else {
-    /* fireworks: a few stations round the planet system's edges, each on its own cycle */
+    /* fireworks: six stations, each on its own cycle; WHERE they go is festPlace's (open sky only, from the live rects) */
     const st = [[.15, .09, "#FFD36B", "#FF8FC8", 5.4, 0], [.86, .07, "#7FE3FF", "#FFFFFF", 6.2, -2.1], [.09, .43, "#FF7BC0", "#FFD36B", 5.8, -3.9],
                 [.91, .37, "#B9A2FF", "#7FE3FF", 6.6, -1.1], [.28, .58, "#FFE7A8", "#FF7BC0", 7.2, -4.6], [.74, .55, "#FF9E5E", "#FFF3C9", 6.9, -5.6]];
     st.forEach(([x, y, c1, c2, d, dl], i) => {
-      html += '<i class="fest-fw" style="--x:' + pc(x) + ';--y:' + pc(y) + ';--fw:' + c1 + ';--d:' + d + 's;--dl:' + dl + 's;--k:' + (.78 + (i % 3) * .14).toFixed(2) + '">' +
+      html += '<i class="fest-fw is-unplaced" style="--x:' + pc(x) + ';--y:' + pc(y) + ';--fw:' + c1 + ';--d:' + d + 's;--dl:' + dl + 's;--k:' + (.78 + (i % 3) * .14).toFixed(2) + '">' +
         '<i class="fest-fw-trail"></i><i class="fest-fw-flash"></i>' + festBurstSvg(c1, c2, "festfw" + (++festSeq)) + '</i>';
     });
   }
@@ -121266,6 +121267,11 @@ function festMount(panel){
   if(calm) sky.classList.add("is-calm");
   stage.appendChild(sky);
   festLive.sky = sky;
+  /* after the frame that lays Home out (the class button and the docks are mounted after this), once; again on a resize */
+  try{ requestAnimationFrame(() => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(); }, 0)); }catch(e){ setTimeout(festPlace, 30); }
+  /* the first Home of a launch: the tab bar and the docks arrive (and settle) after it - placed again once they have */
+  [700, 1800].forEach(ms => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(); }, ms));
+  festHookResize();
   if(hero){
     const id = "fest" + (++festSeq) + "-";
     const outer = hero.querySelector(".cosmic-orbit-ring[r]:not([r='108'])");
@@ -121292,6 +121298,86 @@ function festMount(panel){
     festYearShown = key;
     setTimeout(() => { if(festLive && festLive.sky === sky && sky.isConnected) festYearMoment(s.year, false); }, 1400);
   }
+}
+/* WHERE THE SKY MAY BE BUSY (384 festive round 2). Madison's review: a burst went off over the chat button and another over the
+   greeting beside NOVA. Fireworks go in OPEN SKY only: every control (Start Studying, the daily question, the class button, the chat
+   button, the tab bar), every line of Home's text (the greeting, NOVA and its tagline, the flares caption and the place it comes up
+   in) and the planet itself are read off the page here - once when the season is put on and again on a resize - and each station
+   is the farthest open spot from the others whose whole burst (its sparks at full size, the drop, a margin) clears all of them.
+   A screen with less open sky gets smaller bursts, then fewer. The falling pieces end their fall (and fade out) at the tab bar's top,
+   so none is ever drawn over it; elsewhere they pass behind the controls (the sky is under every one). */
+var festResizeHooked = false, festResizeTimer = 0;
+function festHookResize(){
+  if(festResizeHooked) return;
+  festResizeHooked = true;
+  try{ window.addEventListener("resize", () => { clearTimeout(festResizeTimer); festResizeTimer = setTimeout(() => { if(festLive && festLive.sky && festLive.sky.isConnected) festPlace(); }, 220); }); }catch(e){}
+}
+function festBusyRects(){
+  const L = festLive, out = [];
+  const add = (e, pad) => { if(!e) return; const r = e.getBoundingClientRect(); if(r.width < 2 || r.height < 2) return; out.push([r.left - pad, r.top - pad, r.right + pad, r.bottom + pad]); };
+  ["#nextbtn", ".daily-question-fab", ".dq-card", ".class-bubble", "#chatdock-btn", "#bottomtabs"].forEach(q => document.querySelectorAll(q).forEach(e => add(e, 0)));
+  const P = L.panel;
+  P.querySelectorAll(":scope > .homegreeting, :scope > .hometitle-wrap, :scope > .home-caption").forEach(e => add(e, 0));
+  const g = P.querySelector(":scope > .homegreeting"), h = L.hero;
+  if(g && h){
+    /* the flares caption comes up between the planet and the greeting, as wide as the panel */
+    const gr = g.getBoundingClientRect(), hr = h.getBoundingClientRect(), pr = P.getBoundingClientRect();
+    out.push([pr.left, Math.min(gr.top - 74, Math.max(hr.bottom - 40, gr.top - 74)), pr.right, gr.top]);
+  }
+  if(h){
+    const hr = h.getBoundingClientRect(), cx = hr.left + hr.width / 2, cy = hr.top + hr.height * .47368, r = hr.width * .1444 * 1.3;
+    out.push([cx - r, cy - r * 1.5, cx + r, cy + r]);   /* the planet and its hat */
+  }
+  return out;
+}
+function festPlace(){
+  const L = festLive;
+  if(!L || !L.sky || !L.sky.isConnected || !L.panel || !L.panel.isConnected) return;
+  const sky = L.sky, sr = sky.getBoundingClientRect();
+  const W = window.innerWidth || sr.width, H = window.innerHeight || sr.height;
+  const bar = document.getElementById("bottomtabs");
+  let floor = H;
+  if(bar && !bar.hidden){ const br = bar.getBoundingClientRect(); if(br.height > 4 && br.top > H * .5) floor = br.top; }
+  sky.style.setProperty("--fall-to", Math.round(floor - sr.top) + "px");
+  L.floor = floor - sr.top;
+  const fws = [...sky.querySelectorAll(".fest-fw")];
+  if(!fws.length) return;
+  const busy = festBusyRects();
+  const chat = document.getElementById("chatdock-btn");
+  const cr = chat ? chat.getBoundingClientRect() : null;
+  const top0 = cr && cr.height ? Math.max(24, cr.top - 4) : 40;
+  let best = [], bestK = 1;
+  for(const k of [1, .84, .7, .56, .44]){
+    const R = 70 * k + 10, drop = 22 * k;
+    const cand = [];
+    for(let y = top0 + R; y <= floor - R - drop; y += 12){
+      for(let x = R; x <= W - R; x += 12){
+        if(busy.some(a => x + R > a[0] && x - R < a[2] && y + R + drop > a[1] && y - R < a[3])) continue;
+        cand.push([x, y]);
+      }
+    }
+    const picked = [];
+    while(picked.length < fws.length && cand.length){
+      let pick = null, pd = -Infinity;
+      for(const c of cand){
+        const d = picked.length ? Math.min(...picked.map(p => Math.hypot(p[0] - c[0], p[1] - c[1]))) : -(c[1] + c[0] * .2);
+        if(d > pd){ pd = d; pick = c; }
+      }
+      if(picked.length && pd < R * 1.8) break;
+      picked.push(pick);
+    }
+    if(picked.length > best.length){ best = picked; bestK = k; }
+    if(best.length >= 4) break;
+  }
+  fws.forEach((f, i) => {
+    const p = best[i];
+    f.classList.remove("is-unplaced");
+    if(!p){ f.classList.add("is-off"); return; }
+    f.classList.remove("is-off");
+    f.style.setProperty("--x", Math.round(p[0]) + "px");
+    f.style.setProperty("--y", Math.round(p[1] - sr.top) + "px");
+    f.style.setProperty("--k", (bestK * (1 - (i % 3) * .08)).toFixed(3));
+  });
 }
 function festClear(){
   clearTimeout(festTimer); festTimer = 0;
@@ -121401,7 +121487,7 @@ function festYearMoment(year, finale){
 function festFinale(){
   const L = festLive;
   if(!L || !L.sky) return;
-  const fx = L.sky.querySelectorAll(".fest-fw");
+  const fx = L.sky.querySelectorAll(".fest-fw:not(.is-off):not(.is-unplaced)");
   fx.forEach((f, i) => setTimeout(() => festFireOnce(f), i * 160));
   setTimeout(() => festConfetti(), 300);
 }
@@ -121409,7 +121495,7 @@ function festFireOnce(f){
   if(!f || !f.isConnected) return;
   const b = f.querySelector(".fest-fw-burst"), fl = f.querySelector(".fest-fw-flash");
   try{
-    b.animate([{ transform: "scale(.12)", opacity: 1 }, { transform: "scale(1)", opacity: .95, offset: .45 }, { transform: "translate3d(0,18px,0) scale(1.04)", opacity: 0 }],
+    b.animate([{ transform: "scale(.12)", opacity: 1 }, { transform: "scale(1)", opacity: .95, offset: .45 }, { transform: "translate3d(0,14px,0) scale(1.04)", opacity: 0 }],
       { duration: 1900, easing: "cubic-bezier(.1,.7,.3,1)" });
     fl.animate([{ opacity: 0 }, { opacity: .9, offset: .08 }, { opacity: 0, offset: .4 }, { opacity: 0 }], { duration: 1900 });
   }catch(e){}
@@ -121429,8 +121515,10 @@ function festPlanetTap(){
   if(!L || !L.sky || !L.sky.isConnected || festCalm()) return;
   if(L.id === "thanksgiving") festLeafSwirl();
   else if(L.id === "christmas") festSleigh();
-  else if(L.id === "newyear"){ festConfetti(); const f = L.sky.querySelectorAll(".fest-fw"); festFireOnce(f[Math.floor(Math.random() * f.length)]); }
+  else if(L.id === "newyear"){ festConfetti(); const f = L.sky.querySelectorAll(".fest-fw:not(.is-off):not(.is-unplaced)"); if(f.length) festFireOnce(f[Math.floor(Math.random() * f.length)]); }
 }
+/* where a thrown piece's fall ends (and it has faded out): the tab bar's top, in the sky's own coordinates */
+function festFloor(){ return (festLive && festLive.floor > 0) ? festLive.floor : (window.innerHeight || 900); }
 function festFxHost(){
   const L = festLive;
   return L && L.sky ? L.sky.querySelector(".fest-fx") : null;
@@ -121458,7 +121546,7 @@ function festConfetti(){
     const a = -Math.PI / 2 + (Math.random() - .5) * 2.4, v = 120 + Math.random() * 190;
     const x0 = p.x + Math.cos(a) * p.r * .6, y0 = p.y + Math.sin(a) * p.r * .6;
     const x1 = x0 + Math.cos(a) * v, y1 = y0 + Math.sin(a) * v;
-    const x2 = x1 + (Math.random() - .5) * 120, y2 = Math.min(H + 30, y1 + 260 + Math.random() * 320);
+    const x2 = x1 + (Math.random() - .5) * 120, y2 = Math.min(festFloor() - 14, y1 + 260 + Math.random() * 320);
     const r0 = Math.random() * 360, spin = (Math.random() < .5 ? -1 : 1) * (360 + Math.random() * 720);
     try{
       el.animate([
@@ -121477,7 +121565,7 @@ function festLeafSwirl(){
   parts.forEach((el, i) => {
     const a = i / parts.length * Math.PI * 2 + Math.random() * .3, v = p.r * (1.6 + Math.random() * 1.4);
     const x1 = p.x + Math.cos(a) * v, y1 = p.y + Math.sin(a) * v - 30;
-    const x2 = x1 + (Math.random() - .3) * 140, y2 = Math.min(H + 30, y1 + 300 + Math.random() * 300);
+    const x2 = x1 + (Math.random() - .3) * 140, y2 = Math.min(festFloor() - 14, y1 + 300 + Math.random() * 300);
     const r0 = Math.random() * 360, spin = (Math.random() < .5 ? -1 : 1) * (200 + Math.random() * 300);
     try{
       el.animate([

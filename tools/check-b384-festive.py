@@ -24,6 +24,12 @@ moved there and runs on). iPhone 17 Pro Max (440x956), installed, both classes. 
      the greeting counts down to the next year (its number read off the page), the last seconds stand over the planet, and at
      midnight the year is shown over the planet and the greeting and the day turn to the new year;
  (9) the days' greetings differ from the ordinary greeting, and Jan 2's is the ordinary one;
+ (11) OPEN SKY ONLY (round 2 - Madison saw a burst over the chat button and one over the greeting): on an iPhone 17 Pro Max in both
+     classes, an SE, and an iPad upright and turned, New Year's Eve, its countdown and New Year's Day, many frames apart: no visible
+     burst or flash (a circle of its drawn size) touches a control (Start Studying, the daily question, the class button, the chat
+     button, the tab bar) or Home's text (greeting, NOVA and tagline, the flares caption); the countdown and the year touch no
+     control; Thanksgiving's leaves, the snow, the leaf swirl and the confetti: none visible is ever over the tab bar, and wherever
+     one crosses another control the control is painted over it (elementsFromPoint, the pieces made hit-testable for the read).
  (10) no page errors.
 Run:  python3 tools/check-b384-festive.py   (--against OLD/index.html must FAIL)"""
 import datetime, json, os, re, sys
@@ -44,21 +50,24 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
 CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly').forEach(e=>e.remove());")
-def page(br, cls, reduce=False, pre=None):
-    ctx = br.new_context(viewport={"width": 440, "height": 956}, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
+def page(br, cls, reduce=False, pre=None, vp=(440, 956), ins=(59, 0, 34, 0)):
+    ctx = br.new_context(viewport={"width": vp[0], "height": vp[1]}, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
     ctx.add_init_script("window.__cloudSeed = {};")
     ctx.add_init_script(G["FAKE"])
     ctx.add_init_script(g["STANDALONE"])
     ctx.add_init_script(G["init"](G["ifc"] if cls == "ifc" else G["academy"], active=cls))
+    ctx.add_init_script("try{ localStorage.setItem('class26e.intro.seen', '99'); }catch(e){}")
     if pre: ctx.add_init_script("try{ localStorage.setItem('class26e.season', %s); }catch(e){}" % json.dumps(pre))
     ctx.add_init_script("try{ localStorage.setItem('class26e.weekrecap.v1','9999-12-31'); localStorage.setItem('class26e.ifc.weekrecap.v1','9999-12-31'); }catch(e){}")
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
-    body = g["patched"]((59, 0, 34, 0))
+    body = g["patched"](ins)
     pg.route("**/index.html", lambda route, request, b=body: route.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
     pg.goto(G["serve_url"]); pg.wait_for_timeout(3500)
     pg.evaluate("document.getElementById('splashscreen')?.remove()")
     return ctx, pg, errs
+# the fixture's account is owed challenge cards (.rs-spot), which come up over Home a while after it is built: off before a tap
+UNCOVER = "()=>document.querySelectorAll('.rs-spot,.rs-fly,.unlock-card,.intro-popup,.app-banner,.daily-alert,.nova-talk').forEach(e=>e.remove())"
 def force(pg, val, wait=900):
     pg.evaluate("(v)=>{ if(v === null) localStorage.removeItem('class26e.season'); else localStorage.setItem('class26e.season', v); %s showHome(); }" % CLEAN, val)
     pg.wait_for_timeout(wait)
@@ -97,6 +106,42 @@ PIECE = """()=>{ const p = document.querySelector('#stage > .fest-sky .fest-p, #
   const c = getComputedStyle(p); let o = 1, n = p; while(n && n !== document.documentElement){ o *= +getComputedStyle(n).opacity; n = n.parentElement; }
   const r = p.getBoundingClientRect(); return { tf: c.transform, op: o, box: [r.left, r.top, r.width, r.height].map(v => Math.round(v)) }; }"""
 POINTER = """()=>[...document.querySelectorAll('[class*="fest-"], [class*="fest-"] *')].filter(e => getComputedStyle(e).pointerEvents !== 'none').map(e => e.tagName + '.' + (e.className && e.className.baseVal !== undefined ? e.className.baseVal : e.className)).slice(0, 6)"""
+
+OPEN = r"""(phase)=>{
+  const vis = e => { let o = 1, n = e; while(n && n !== document.documentElement){ const c = getComputedStyle(n); if(c.visibility === 'hidden' || c.display === 'none') return 0; o *= +c.opacity; n = n.parentElement; } return o; };
+  const R = e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
+  const ctl = [], txt = [];
+  ['#nextbtn', '#stage .daily-question-fab', '#stage .dq-card', '.class-bubble', '#chatdock-btn', '#bottomtabs'].forEach(q => document.querySelectorAll(q).forEach(e => { const r = e.getBoundingClientRect(); if(r.width > 2 && r.height > 2 && vis(e) > .05) ctl.push([q, R(e), e]); }));
+  ['#stage .homegreeting', '#stage .hometitle-wrap', '#stage .home-caption'].forEach(q => document.querySelectorAll(q).forEach(e => { const r = e.getBoundingClientRect(); if(r.width > 2 && r.height > 2) txt.push([q, R(e)]); }));
+  const circ = (cx, cy, rad, b) => { const nx = Math.max(b[0], Math.min(cx, b[2])), ny = Math.max(b[1], Math.min(cy, b[3])); return Math.hypot(nx - cx, ny - cy) < rad; };
+  const hitBox = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+  const bad = [], seen = { bursts: 0, pieces: 0, big: 0 };
+  document.querySelectorAll('#stage .fest-fw-burst, #stage .fest-fw-flash').forEach(e => {
+    if(vis(e) < .03) return; seen.bursts++;
+    const r = e.getBoundingClientRect(), cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2, rad = r.width / 2 * (e.classList.contains('fest-fw-burst') ? .95 : .8);
+    ctl.concat(txt).forEach(([q, b]) => { if(circ(cx, cy, rad, b)) bad.push(['burst', q, [cx, cy, rad].map(Math.round)]); });
+  });
+  document.querySelectorAll('#stage .fest-count, #stage .fest-year').forEach(e => {
+    if(vis(e) < .03) return; const t = e.querySelector('text'); if(!t) return; seen.big++;
+    const b = R(t); ctl.forEach(([q, c]) => { if(hitBox(b, c)) bad.push(['year/count', q, b.map(Math.round)]); });
+  });
+  const st = document.createElement('style'); st.textContent = 'html body .fest-sky.fest-sky *{ pointer-events:auto !important; }'; document.body.appendChild(st);
+  document.querySelectorAll('#stage .fest-p, #stage .fest-throw').forEach(e => {
+    if(vis(e) < .05) return; seen.pieces++;
+    const b = R(e);
+    ctl.forEach(([q, c, el]) => {
+      if(!hitBox(b, c)) return;
+      if(q === '#bottomtabs'){ bad.push(['piece over the tab bar', e.className, b.map(Math.round)]); return; }
+      /* the point of the overlap nearest the control's middle (a round button is not hit at its box's corners) */
+      const mx = (c[0] + c[2]) / 2, my = (c[1] + c[3]) / 2;
+      const x = Math.max(Math.max(b[0], c[0]), Math.min(mx, Math.min(b[2], c[2]))), y = Math.max(Math.max(b[1], c[1]), Math.min(my, Math.min(b[3], c[3])));
+      const list = document.elementsFromPoint(x, y), ic = list.findIndex(n => el === n || el.contains(n)), ip = list.findIndex(n => e === n || e.contains(n));
+      if(ip >= 0 && ic >= 0 && ip < ic) bad.push(['piece painted over', q, e.className, [x, y].map(Math.round)]);
+    });
+  });
+  st.remove();
+  return { bad: bad.slice(0, 6), nbad: bad.length, seen };
+}"""
 def thanksgiving(y):
     d = datetime.date(y, 11, 1); first_thu = 1 + (3 - d.weekday()) % 7; return first_thu + 21
 errs_all = []
@@ -161,15 +206,16 @@ with sync_playwright() as pw:
                 pg.evaluate("()=>document.querySelectorAll('.homecaption, .home-caption').forEach(e=>e.remove())")
                 hp = [c for c in pg.evaluate(CONTROLS) if c["q"] == "planet"][0]["rect"]
                 cap0 = pg.evaluate("()=>document.querySelectorAll('[class*=caption]').length")
-                pg.mouse.click(hp[0], hp[1]); pg.wait_for_timeout(500)
+                over = pg.evaluate("(p)=>{ const n=document.elementFromPoint(p[0],p[1]); return n ? n.tagName+'.'+(n.className && n.className.baseVal!==undefined ? n.className.baseVal : n.className)+' in '+(n.closest('[id]')||{}).id : null; }", hp)
+                pg.evaluate(UNCOVER); pg.mouse.click(hp[0], hp[1]); pg.wait_for_timeout(500)
                 thrown = pg.evaluate("""()=>{ const a = document.getAnimations().filter(x => { const t = x.effect && x.effect.target; return t && t.closest && t.closest('.fest-throw, .fest-sleigh, .fest-fw'); });
                   const props = new Set(); a.forEach(x => { try{ x.effect.getKeyframes().forEach(k => Object.keys(k).forEach(p => { if(!['offset','easing','composite','computedOffset'].includes(p)) props.add(p); })); }catch(e){} });
                   return { n: a.filter(x => x.playState === 'running' && x.effect.getTiming().iterations !== Infinity).length, props: [...props], caption: document.querySelectorAll('[class*=caption]').length }; }""")
                 chk("(4) %s: a real click on the planet still gives its caption (%d -> %d) and throws the season's pieces (%d animations: %s)" % (season, cap0, thrown["caption"], thrown["n"], thrown["props"]),
-                    thrown["caption"] > cap0 and thrown["n"] >= 5 and set(thrown["props"]) <= {"transform", "opacity"}, thrown)
+                    thrown["caption"] > cap0 and thrown["n"] >= 5 and set(thrown["props"]) <= {"transform", "opacity"}, [thrown, over])
             force(pg, "christmas", 1000)
             b = pg.evaluate("()=>{ const r = document.querySelector('#nextbtn').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
-            pg.mouse.click(b[0], b[1]); pg.wait_for_timeout(900)
+            pg.evaluate(UNCOVER); pg.mouse.click(b[0], b[1]); pg.wait_for_timeout(900)
             left = pg.evaluate("()=>({ home: !!document.querySelector('#stage [data-screen=\"home\"]'), fest: document.querySelectorAll('[class*=\"fest-\"]').length })")
             chk("(4) a real click on Start Studying leaves Home (%s), and nothing festive is left (%d)" % (not left["home"], left["fest"]), not left["home"] and left["fest"] == 0, left)
             # (7) navigation
@@ -222,11 +268,31 @@ with sync_playwright() as pw:
             st = pg.evaluate(STATE); fa = pg.evaluate(FESTANIMS)
             p1 = pg.evaluate(PIECE); pg.wait_for_timeout(700); p2 = pg.evaluate(PIECE)
             hp = [c for c in pg.evaluate(CONTROLS) if c["q"] == "planet"][0]["rect"]
-            pg.mouse.click(hp[0], hp[1]); pg.wait_for_timeout(400)
+            pg.evaluate(UNCOVER); pg.mouse.click(hp[0], hp[1]); pg.wait_for_timeout(400)
             th = pg.evaluate("()=>document.getAnimations().filter(a => { const t = a.effect && a.effect.target; return t && t.closest && t.closest('.fest-throw, .fest-sleigh'); }).length")
             chk("(6) Reduce motion (%s), %s: no festive animation (%d), the pieces on the glass and still (opacity %s, %s), hat %d and ring %d, a planet tap throws nothing (%d)" %
                 (how, season, fa["n"], p1 and round(p1["op"], 2), p1 and p2 and p1["box"] == p2["box"], st["hats"], st["rings"], th),
                 fa["n"] == 0 and p1 and p2 and p1["op"] > .2 and p1["box"] == p2["box"] and p1["tf"] == p2["tf"] and st["hats"] == 1 and st["rings"] == 1 and th == 0, [fa, p1, p2, st, th])
+        errs_all += errs; ctx.close()
+    # (11) open sky only
+    for (dev, vp, ins, cls) in (("Pro Max", (440, 956), (59, 0, 34, 0), "academy"), ("Pro Max", (440, 956), (59, 0, 34, 0), "ifc"), ("SE", (375, 667), (20, 0, 0, 0), "academy"),
+                                ("iPad", (834, 1194), (24, 0, 20, 0), "academy"), ("iPad turned", (1194, 834), (24, 0, 20, 0), "academy")):
+        ctx, pg, errs = page(br, cls, vp=vp, ins=ins)
+        for scene, at, tap in (("Thanksgiving", "thanksgiving", True), ("Christmas", "christmas", False), ("New Year's Eve", "2026-12-31T20:00", True),
+                               ("the countdown", "2026-12-31T23:59:52", False), ("New Year's Day", "newyear", False)):
+            force(pg, at, 900)
+            tot = {"bursts": 0, "pieces": 0, "big": 0}; bad = []
+            for i in range(12):
+                if tap and i == 3:
+                    hp = [c for c in pg.evaluate(CONTROLS) if c["q"] == "planet"][0]["rect"]; pg.evaluate(UNCOVER); pg.mouse.click(hp[0], hp[1])
+                r = pg.evaluate(OPEN, scene)
+                for k in tot: tot[k] += r["seen"][k]
+                bad += r["bad"]
+                pg.wait_for_timeout(420)
+            want = {"Thanksgiving": tot["pieces"] > 20, "Christmas": tot["pieces"] > 50, "New Year's Eve": tot["bursts"] >= 6,
+                    "the countdown": tot["bursts"] >= 6 and tot["big"] >= 3, "New Year's Day": tot["bursts"] >= 6 and tot["big"] >= 3}[scene]
+            chk("(11) %s %s, %s: over 12 frames, %d bursts, %d pieces, %d countdown/year seen - %d on a control or Home's text (%s)" % (dev, cls, scene, tot["bursts"], tot["pieces"], tot["big"], len(bad), bad[:2]),
+                want and not bad, bad[:4])
         errs_all += errs; ctx.close()
     br.close()
 chk("(10) no page errors", not errs_all, errs_all[:3])
