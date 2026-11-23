@@ -139,13 +139,13 @@ PROTECTED = r"""()=>{ const out=[]; const vh=innerHeight, vw=innerWidth;
   const nb=document.getElementById('nextbtn'); if(nb && !nb.hidden) add('Next', nb);
   return out; }"""
 # per frame: every element of the cameo (clipped by its clip box where it clips), and what it must not cover, until it is gone
-SAMPLE = r"""async(ms)=>{ const frames=[]; const t0=performance.now(); const prot=(%s);
+SAMPLE = r"""async(ms)=>{ const LEAF='.cm-bust, .cm-torso, .cm-ua, .cm-fa, .cm-hand, .cm-th, .cm-sh, .cm-shoe, .cm-prop-art, .cm-fprop, .cm-cape, .cm-z, .cm-spark, .cm-drop, .cm-dust, .cm-fx > i, .cm-fxb > i, .cm-bee'; const frames=[]; const t0=performance.now(); const prot=(%s);
   const clipOf=e=>{ const c=e.closest('.cm-clip'); if(!c) return null; return getComputedStyle(c).overflow==='hidden' ? c.getBoundingClientRect() : null; };
   while(performance.now()-t0<ms){
     const el=document.querySelector('body > .cameo'); if(!el) break;
-    const parts=[]; el.querySelectorAll('.cm-bust, .cm-leg, .cm-shoe, .cm-hand, .cm-z, .cm-spark, .cm-drop, .cm-dust').forEach(p=>{ let r=p.getBoundingClientRect(); let b=[r.left,r.top,r.right,r.bottom];
+    const parts=[]; el.querySelectorAll(LEAF).forEach(p=>{ let r=p.getBoundingClientRect(); let b=[r.left,r.top,r.right,r.bottom];
       const c=clipOf(p); if(c) b=[Math.max(b[0],c.left),Math.max(b[1],c.top),Math.min(b[2],c.right),Math.min(b[3],c.bottom)];
-      if(b[2]-b[0]>.5 && b[3]-b[1]>.5) parts.push([p.className.split(' ').slice(0,2).join('.'), b]); });
+      if(b[2]-b[0]>.5 && b[3]-b[1]>.5) parts.push([(p.getAttribute('class')||'').split(' ').slice(0,2).join('.'), b]); });
     frames.push({ t: Math.round(performance.now()-t0), parts, prot: prot() });
     await new Promise(r=>requestAnimationFrame(r)); }
   return { frames, gone: !document.querySelector('body > .cameo'), t: Math.round(performance.now()-t0) }; }""" % PROTECTED
@@ -157,6 +157,71 @@ def overlaps(frames):
                 ix = min(p[2], q[2]) - max(p[0], q[0]); iy = min(p[3], q[3]) - max(p[1], q[1])
                 if ix > .5 and iy > .5: bad.append((f["t"], pn, qn, [round(v) for v in p], [round(v) for v in q]))
     return bad
+
+PERF_ROWS = []
+# rAF deltas and long tasks (PerformanceObserver) over a window
+PERF_INSTALL = """()=>{ window.__lt=[]; try{ new PerformanceObserver(l=>l.getEntries().forEach(e=>window.__lt.push([e.startTime, e.duration]))).observe({type:'longtask', buffered:false}); }catch(e){} }"""
+PERF_MEASURE = """async(ms)=>{ const d=[]; const t0=performance.now(); let last=t0; const lt0=performance.now();
+  await new Promise(res=>{ const f=t=>{ d.push(t-last); last=t; if(t-t0<ms) requestAnimationFrame(f); else res(); }; requestAnimationFrame(t=>{ last=t; requestAnimationFrame(f); }); });
+  const lt=(window.__lt||[]).filter(x=>x[0]>=lt0).map(x=>Math.round(x[1]));
+  const n=d.length, drop=d.filter(x=>x>25).length/Math.max(1,n); return { n, drop, worst: Math.max(0,...d), lt }; }"""
+PERF_START = """()=>{ window.__pd=[]; window.__pt0=performance.now(); let last=null; window.__prun=true; const f=t=>{ if(last!=null) window.__pd.push(t-last); last=t; if(window.__prun) requestAnimationFrame(f); }; requestAnimationFrame(f); }"""
+PERF_STOP = """()=>{ window.__prun=false; const d=window.__pd||[]; const lt=(window.__lt||[]).filter(x=>x[0]>=window.__pt0).map(x=>Math.round(x[1]));
+  return { n:d.length, drop: d.filter(x=>x>25).length/Math.max(1,d.length), worst: Math.round(Math.max(0,...d)), lt }; }"""
+# builds every character in every kind (off the page's own builder), scrubs every animation every 60ms over its life and checks each part
+# against the kind's measured box (CAMEO_BOX); and lists each character's signature
+SCRUB_ALL = r"""()=>{
+  const ids=AVATAR_CHARACTERS.filter(c=>!c.retired).map(c=>c.id), kinds=CAMEO_KINDS, s=100, X=300, L=400;
+  const LEAF='.cm-bust, .cm-torso, .cm-ua, .cm-fa, .cm-hand, .cm-th, .cm-sh, .cm-shoe, .cm-prop-art, .cm-fprop, .cm-cape, .cm-z, .cm-spark, .cm-drop, .cm-dust, .cm-fx > i, .cm-fxb > i, .cm-bee';
+  const missing=[], broken=[], out=[], sigs={}; let builds=0, worst=null, worstV=-1;
+  const keep=store.avatarChar;
+  for(const id of ids){
+    const k0=cameoKindOf(id); if(!CAMEO_SIG[k0]) missing.push(id+':'+k0); const sg=cameoSig(id); sigs[id]=sg.move+'+'+sg.prop;
+    for(const kind of kinds){
+      store.avatarChar=id; let el=null;
+      try{ el=cameoBuild({kind, s, x:X, y:L, dir:1, reach:200}); }catch(e){ broken.push(id+' '+kind+' '+e.message); continue; }
+      if(!el){ broken.push(id+' '+kind+' null'); continue; }
+      builds++;
+      const need=['.cm-bust svg','.cm-torso svg','.cm-arm-l .cm-ua','.cm-arm-r .cm-hand'].concat(sg.move==='float'?[]:['.cm-leg-l .cm-shoe','.cm-leg-r .cm-shoe']);
+      const lack=need.filter(q=>!el.querySelector(q)); if(lack.length) broken.push(id+' '+kind+' lacks '+lack.join(','));
+      el.style.setProperty('--cm-dx','0px'); if(kind==='tiptoe'||kind==='run') el.style.left=X+'px';
+      document.body.appendChild(el);
+      const B=CAMEO_BOX[kind]; const box=[X+B[0]*s, L-B[1]*s, X+B[2]*s, L+B[3]*s];
+      const vertOnly=(kind==='tiptoe'||kind==='run');
+      const anims=el.getAnimations({subtree:true}); anims.forEach(a=>a.pause());
+      const clipEl=el.querySelector('.cm-clip'); const clipped=getComputedStyle(clipEl).overflow==='hidden';
+      for(let t=0;t<=Math.min(CAMEO_LIFE[kind]||4000, 9000);t+=60){
+        anims.forEach(a=>{ try{ a.currentTime=t; }catch(e){} });
+        const c=clipped?clipEl.getBoundingClientRect():null;
+        el.querySelectorAll(LEAF).forEach(p=>{ const r=p.getBoundingClientRect(); if(!r.width||!r.height) return; let q=[r.left,r.top,r.right,r.bottom];
+          if(c) q=[Math.max(q[0],c.left),Math.max(q[1],c.top),Math.min(q[2],c.right),Math.min(q[3],c.bottom)];
+          if(q[2]-q[0]<=.5||q[3]-q[1]<=.5) return;
+          const over=Math.max(vertOnly?0:box[0]-q[0], box[1]-q[1], vertOnly?0:q[2]-box[2], q[3]-box[3]);
+          if(over>worstV){ worstV=over; worst=id+' '+kind+' '+over.toFixed(1)+'px of 100'; }
+          if(over>.5) out.push(id+' '+kind+' t'+t+' '+(p.className.baseVal!=null?'svg':p.className)+' '+over.toFixed(1)+'px'); });
+      }
+      el.remove();
+    }
+  }
+  store.avatarChar=keep;
+  const distinct=new Set(Object.values(sigs)).size;
+  return { n: ids.length, missing, broken, out: out.slice(0, 20), builds, worst, sigs, distinct }; }"""
+# one character in one kind at s=110 on a plain dark page, frozen at t: where its seam and its arm pivots are
+JOINT_SETUP = r"""async([id, kind, t])=>{
+  document.querySelectorAll('#cmj, #cmjbg').forEach(e=>e.remove());
+  document.querySelectorAll('body > *').forEach(e=>{ if(e.id!=='cmjbg' && !e.classList.contains('cameo') && e.tagName!=='SCRIPT' && e.tagName!=='STYLE') e.style.setProperty('visibility','hidden','important'); });
+  const bg=document.createElement('div'); bg.id='cmjbg'; bg.style.cssText='position:fixed;inset:0;background:#15171C;z-index:129;visibility:visible'; document.body.appendChild(bg);
+  const keep=store.avatarChar; store.avatarChar=id; const s=110, X=120, L=260;
+  let el=null; try{ el=cameoBuild({kind, s, x:X, y:L, dir:1, reach:200}); }catch(e){ el=null; } store.avatarChar=keep; if(!el) return null;
+  el.id='cmj'; el.style.setProperty('--cm-dx','0px'); if(kind==='tiptoe'||kind==='run') el.style.left=X+'px';
+  document.body.appendChild(el);
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  el.getAnimations({subtree:true}).forEach(a=>{ a.pause(); a.currentTime=t; });
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  const piv=[...el.querySelectorAll('.cm-arm')].map(a=>{ const r=a.getBoundingClientRect(); return [r.left, r.top]; });
+  const b=el.querySelector('.cm-bust').getBoundingClientRect();
+  return { s, x0: Math.max(0, b.left-40), y0: Math.max(0, b.top-30), w: b.width+80, h: b.height*1.9, piv, seam: b.bottom, sx0: b.left+b.width*.3, sx1: b.left+b.width*.7 }; }"""
+
 KINDS = ["sit", "tiptoe", "dangle", "peek", "wave", "sleepy", "cheer", "oops", "run"]
 def touch_drag(cdp, x0, y0, x1, y1, ms=260):
     cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x0, "y": y0}]}); time.sleep(.05)
@@ -386,6 +451,116 @@ with sync_playwright() as pw:
             chk("(E) after a run with one, the next two runs plan none and the third may (%s)" % plans, plans == [False, False, True], plans)
             pg.evaluate("()=>localStorage.removeItem('class26e.cameo')")
         ctx.close()
+
+    # ------------------------------------------------------------------ (S) every character's signature, within the boxes
+    if want("S"):
+        for cls in ("academy", "ifc"):
+            ctx, pg, cdp = open_page(br, "phone", cls)
+            if not pg.evaluate("()=>typeof cameoBuild==='function' && typeof CAMEO_SIG==='object' && typeof CAMEO_BOX==='object'"):
+                chk("(S) %s: the app has the signatures and the measured boxes" % cls, False); ctx.close(); continue
+            r = pg.evaluate(SCRUB_ALL)
+            chk("(S) %s: every one of the %d characters has a signature of its own (%d distinct)" % (cls, r["n"], r["distinct"]),
+                not r["missing"] and r["distinct"] == r["n"], r["missing"] or r["sigs"])
+            chk("(S) %s: every character builds in every kind with no error, a bust, a torso, two arms, two gloves and (walking) two legs and shoes (%d builds)" % (cls, r["builds"]),
+                not r["broken"], r["broken"][:6])
+            chk("(S) %s: every part of every character, every kind, its whole life (scrubbed every 60ms), inside its kind's box (CAMEO_BOX) - so the placement's no-overlap holds for all of them (worst %s)" % (cls, r["worst"]),
+                not r["out"], r["out"][:6])
+            ctx.close()
+    # ------------------------------------------------------------------ (J) one body: the bust runs into the torso, the arms' tops are under the shoulders
+    if want("J"):
+        import io
+        from PIL import Image
+        for cls in ("academy", "ifc"):
+            ctx, pg, cdp = open_page(br, "phone", cls)
+            if not pg.evaluate("()=>typeof cameoBuild==='function' && typeof CAMEO_SIG==='object'"):
+                chk("(J) %s: the app draws a torso and a rig" % cls, False); ctx.close(); continue
+            ids = pg.evaluate("()=>AVATAR_CHARACTERS.filter(c=>!c.retired).map(c=>c.id)")
+            seams, shoulders = [], []
+            for cid in ids:
+                for kind, t in (("sit", 650), ("dangle", 1600), ("tiptoe", 2300), ("run", 1000), ("sleepy", 2200)):
+                    g = pg.evaluate(JOINT_SETUP, [cid, kind, t])
+                    if not g: shoulders.append((cid, kind, "no build")); continue
+                    shot = lambda: Image.open(io.BytesIO(pg.screenshot(clip={"x": g["x0"], "y": g["y0"], "width": g["w"], "height": g["h"]}))).convert("RGB")
+                    a = shot()
+                    pg.evaluate("()=>{ document.querySelector('#cmj .cm-rig').style.visibility='hidden'; const c=document.querySelector('#cmj .cm-cape'); if(c) c.style.visibility='hidden'; }")
+                    b = shot()
+                    sc = a.width / g["w"]
+                    # shoulders: the arm's own top (a disc of its upper arm's radius round each pivot) is the same with and without the rig
+                    for (px, py) in g["piv"]:
+                        cx, cy, rr = int((px - g["x0"]) * sc), int((py - g["y0"]) * sc), max(2, int(g["s"] * .045 * sc))
+                        diff = 0; n = 0
+                        for yy in range(cy - rr, cy + rr + 1):
+                            for xx in range(cx - rr, cx + rr + 1):
+                                if 0 <= xx < a.width and 0 <= yy < a.height and (xx - cx) ** 2 + (yy - cy) ** 2 <= rr * rr:
+                                    p1, p2 = a.getpixel((xx, yy)), b.getpixel((xx, yy)); diff = max(diff, max(abs(p1[i] - p2[i]) for i in range(3))); n += 1
+                        if diff > 24: shoulders.append((cid, kind, round(diff)))
+                    if kind == "sit":
+                        # the seam: the rows just above and just below where the bust ends and the torso begins, across the torso's middle half
+                        y = int((g["seam"] - g["y0"]) * sc)
+                        x0, x1 = int((g["sx0"] - g["x0"]) * sc), int((g["sx1"] - g["x0"]) * sc)
+                        st = []
+                        for xx in range(x0, x1):
+                            p1, p2 = b.getpixel((xx, y - 2)), b.getpixel((xx, y + 2))
+                            st.append(sum(abs(p1[i] - p2[i]) for i in range(3)) / 3)
+                        st.sort(); step = st[len(st) // 2] if st else 0
+                        seams.append((cid, round(step, 1)))
+                    pg.evaluate("()=>{ const e=document.getElementById('cmj'); if(e) e.remove(); }")
+            worst = max(seams, key=lambda v: v[1]) if seams else None
+            chk("(J) %s: the bust runs into the torso with no step - the median colour change across the seam over the torso's middle is at most 10 (of 255) for all %d characters (worst %s)" % (cls, len(seams), worst),
+                seams and all(v[1] <= 10 for v in seams), [v for v in seams if v[1] > 10][:6])
+            if shoulders:
+                from collections import Counter
+                info("(J) %s shoulders off, by character: %s" % (cls, dict(Counter(v[0] for v in shoulders))))
+            chk("(J) %s: every arm's top is under its shoulder in sit, dangle, tiptoe, run and sleepy, for every character (the pixels round each pivot are the same with the arms hidden) (%d off)" % (cls, len(shoulders)),
+                not shoulders, shoulders[:8])
+            ctx.close()
+    # ------------------------------------------------------------------ (H) lag: frames and long tasks with and without a cameo, throttled
+    if want("H"):
+        for rate in (4, 6):
+            ctx, pg, cdp = open_page(br, "phone", "academy")
+            if not pg.evaluate(HAS_HOOK):
+                chk("(H) x%d: the app has the cameo hook" % rate, False); ctx.close(); continue
+            pg.evaluate(START, {"mode": "drill"})
+            pg.evaluate(PERF_INSTALL)
+            cdp.send("Emulation.setCPUThrottlingRate", {"rate": rate})
+            pg.wait_for_timeout(800)
+            base = pg.evaluate(PERF_MEASURE, 2600)
+            info("x%d no cameo: %d frames, %.1f%% over 25ms, worst gap %.0fms, long tasks %s" % (rate, base["n"], base["drop"] * 100, base["worst"], base["lt"]))
+            rows = []
+            for k in KINDS:
+                res = None
+                for attempt in range(2):
+                    pg.evaluate("()=>cameoGone()"); pg.wait_for_timeout(300)
+                    f = pg.evaluate("(k)=>{ performance.clearMarks(); const t0=performance.now(); const r=cameoForce(k, {hold:true}); return { ms: performance.now()-t0, ok: r.ok, s: r.s }; }", k)
+                    m = pg.evaluate(PERF_MEASURE, 2600)
+                    res = (f, m)
+                    if f["ok"] and f["ms"] < 50 and not [x for x in m["lt"] if x > 50] and m["drop"] <= base["drop"] + .05: break
+                f, m = res
+                rows.append((k, round(f["ms"], 1), round(m["drop"] * 100, 1), round(m["worst"]), m["lt"]))
+                chk("(H) x%d %s: the moment it fires costs %.1fms (< 50), then %.1f%% of frames over 25ms (no cameo %.1f%%, allowed +5), worst gap %.0fms, long tasks %s (none over 50ms)" % (rate, k, f["ms"], m["drop"] * 100, base["drop"] * 100, m["worst"], m["lt"]),
+                    f["ok"] and f["ms"] < 50 and not [x for x in m["lt"] if x > 50] and m["drop"] <= base["drop"] + .05, (f, m))
+            pg.evaluate("()=>cameoGone()")
+            # the swipe to the next question, with and without one up: frames over 25ms while it slides
+            sw = {}
+            for label in ("without", "with"):
+                ok_ = None
+                for attempt in range(2):
+                    pg.evaluate("()=>cameoGone()")
+                    pg.evaluate(ANSWER, True)
+                    if label == "with": pg.evaluate("()=>cameoForce('sit', {hold:true})")
+                    pg.evaluate("()=>{ window.__pm=null; }")
+                    pg.evaluate(PERF_START)
+                    touch_drag(cdp, 440 * .86, 956 * .55, 440 * .1, 956 * .55, 280)
+                    pg.wait_for_timeout(1100)
+                    m = pg.evaluate(PERF_STOP)
+                    sw[label] = m
+                    if label == "without" or m["drop"] <= sw["without"]["drop"] + .08: break
+            info("x%d the swipe: without %s, with %s" % (rate, sw["without"], sw["with"]))
+            chk("(H) x%d the swipe away: %.1f%% of frames over 25ms with a cameo up, %.1f%% without (allowed +8), no long task over 50ms caused (%s)" % (rate, sw["with"]["drop"] * 100, sw["without"]["drop"] * 100, sw["with"]["lt"]),
+                sw["with"]["drop"] <= sw["without"]["drop"] + .08 and len([x for x in sw["with"]["lt"] if x > 50]) <= len([x for x in sw["without"]["lt"] if x > 50]), sw)
+            PERF_ROWS.append((rate, base, rows, sw))
+            cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+            ctx.close()
     br.close()
 allerr = [(k, e) for k, e in ERRS if e]
 chk("(G) no page errors (%d pages)" % len(ERRS), not allerr, allerr[:3])

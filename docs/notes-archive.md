@@ -43195,3 +43195,31 @@ arrival plop moves 3px, not 7 (it brushed the chat button on its first frame).
 Chromium cannot show the iOS safe areas, the soft keyboard or how WebKit composites the clipped peeking box; the ledge's place and
 the floor's band are read live from the page, so they follow whatever the phone lays out, but the look on a real phone is the one
 thing to confirm there.
+
+## 384 cameo, round 2 - one body, real limbs, a signature each, lag measured (branch claude/b384-cameo on f4fa333; build NOT bumped, stays 384.137; NOT on main)
+
+Madison on the first videos: "ensure they are lag free, look really good, like the arms and legs need to look great" / "it looks like
+their shoulders aren't even connected properly to their bodies, fix that" / "Maybe each character kinda has their own kinda thing too".
+- ONE BODY. A torso under the bust is the drawing's own last 0.2-unit row (a second copy of the drawing, viewBox "3 36.8 34 0.2",
+  preserveAspectRatio none) stretched to a waist: its top row IS the bust's bottom row, so the clothes run on with no seam (gate (J):
+  median colour step across the seam <= 10/255 for all 53; worst 8.3, Zeus's pedestal). The bust's rounded clip and every independent
+  bust tilt are gone - leans and looks turn the whole body, so nothing comes apart.
+- ARMS: upper arm + forearm capsules (CSS, nested, each turning about its own joint; transform only) pivoting at measured shoulder
+  points (CAMEO_SHOULDER, by kind, read off each drawing's ink and set inside its edge), BEHIND bust and torso, ending in the gloves
+  (thumb, cuff in the sleeve colour). Sleeves in the outfit's colour (cameoPalette: the largest lit .cx-body shape). Gate (J): the
+  pixels round every pivot are identical with the arms hidden, in sit/dangle/tiptoe/run/sleepy, every character, both classes.
+  The Ghost's arms are not drawn (its gloves float, spookily). LEGS: thigh, shin, a shaped shoe (toe turned out, sole, shine),
+  trousers a shade of the outfit, pivoting at the hips under the torso's hem. Poses are generated (tools/gen-cameo-rig.py, two-bone
+  IK to glove targets: gloves on the ledge in peek/wave/oops, a chin-up in dangle, a real stride in run with the arms against the
+  legs and the trailing shin folding, creeping hands in tiptoe, dangling shins in sit).
+- SIGNATURES (CAMEO_SIG, by the drawing's kind, so Fire Code's own characters have theirs): a way in (float, beam, puff, spark,
+  flame, frost, twinkle, hop, swagger, glitch, buzz, ooze, walk - .cm-sty / .cm-fx layers) and a prop (CAMEO_PROPS: small inline
+  drawings, held upright in the right glove or floating beside) or gesture (the Sheriff's hat tip, the Masked One's cape). 27 + 26
+  characters, each distinct within its class; the table's `say` lines are the list for Madison.
+- WHERE: each kind's reach (CAMEO_BOX) is measured over every character's figure, prop and effect by scrubbing every animation every
+  60ms; gate (S) re-scrubs all 477 builds and holds them inside. The page read at fire time styles only elements near the ledge or
+  the floor.
+- LAG (gate (H), Pro Max, CDP CPU throttle x4 and x6): with no cameo 0% of frames over 25ms; with each kind 0-1.4%; the moment one
+  fires 8-24ms at x4, 8-16ms at x6 (one first fire 42ms at x6, before the near-band page read); no long task over 50ms caused; the
+  swipe to the next question with one up 4.7% / 2.4% of frames over 25ms against 1.1% / 3.6% without (the slide's own 52-70ms task
+  is there either way).
