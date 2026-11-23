@@ -121769,10 +121769,10 @@ function festMount(panel){
   /* after the frame that lays Home out (the class button and the docks are mounted after this), once; again on a resize */
   try{ requestAnimationFrame(() => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(); }, 0)); }catch(e){ setTimeout(festPlace, 30); }
   /* the first Home of a launch: the tab bar and the docks arrive (and settle) after it - placed again once they have */
-  [700, 1800, 3200].forEach((ms, i) => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(i === 2); }, ms));
+  [700, 1800, 3200].forEach((ms, i) => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(i === 2 && !festLive.placed); }, ms));
   /* and every few seconds while Home is up: a control that arrived late or moved (a tab bar still sliding in, the chat button settling)
      is read again; nothing is written unless what the sky avoids has changed */
-  festLive.watch = setInterval(() => { if(!festLive || festLive.sky !== sky || !sky.isConnected){ clearInterval(festLive && festLive.watch); return; } if(!document.hidden) festPlace(true, true); }, 3000);
+  festLive.watch = setInterval(() => { if(!festLive || festLive.sky !== sky || !sky.isConnected){ clearInterval(festLive && festLive.watch); return; } if(!document.hidden) festPlace(false, true); }, 3000);
   festHookResize();
   if(hero){
     const id = "fest" + (++festSeq) + "-";
@@ -121810,7 +121810,7 @@ function festMount(panel){
    is the farthest open spot from the others whose whole burst (its sparks at full size, the drop, a margin) clears all of them.
    A screen with less open sky gets smaller bursts, then fewer. The falling pieces end their fall (and fade out) at the tab bar's top,
    so none is ever drawn over it; elsewhere they pass behind the controls (the sky is under every one). */
-var festResizeHooked = false, festResizeTimer = 0;
+var festResizeHooked = false, festResizeTimer = 0, festSeenFloor = 0;
 function festHookResize(){
   if(festResizeHooked) return;
   festResizeHooked = true;
@@ -121841,22 +121841,30 @@ function festPlace(last, onlyIfMoved){
   const sky = L.sky, sr = sky.getBoundingClientRect();
   const W = window.innerWidth || sr.width, H = window.innerHeight || sr.height;
   const bar = document.getElementById("bottomtabs");
-  let floor = H;
-  if(bar && !bar.hidden){ const br = bar.getBoundingClientRect(); if(br.height > 4 && br.top > H * .5) floor = br.top; }
+  let floor = H, barOn = false, guess = 0;
+  if(bar && !bar.hidden){ const br = bar.getBoundingClientRect();
+    if(br.height > 4 && br.top > H * .5 && br.bottom <= H + 2){ floor = br.top; barOn = true; festSeenFloor = floor; }
+    else if(br.height > 4) guess = festSeenFloor || (H - br.height - 24);   /* slid away for now: where it rests */ }
+  /* the pieces' fall ends at the bar's top - set first, whatever else waits */
+  if(barOn) { sky.style.setProperty("--fall-to", Math.round(floor - sr.top) + "px"); L.floor = floor - sr.top; }
+  else if(!L.floor && guess){ sky.style.setProperty("--fall-to", Math.round(guess - sr.top) + "px"); L.floor = guess - sr.top; }
+  /* the corner buttons and the tab bar slide off the screen at times (and back): read the sky's no-go places only while they are home */
+  const chat0 = document.getElementById("chatdock-btn"), c0 = chat0 ? chat0.getBoundingClientRect() : null;
+  const chromeHome = barOn && c0 && c0.width >= 4 && c0.top >= 0;
+  if(!chromeHome && !last){ if(onlyIfMoved) L.placeKey = ""; return; }
   if(onlyIfMoved){
     const key = Math.round(floor) + "|" + festBusyRects().map(r => r.map(Math.round).join(",")).join(";") + "|" + W + "x" + H;
     if(key === L.placeKey) return;
     L.placeKey = key;
   } else L.placeKey = "";
-  sky.style.setProperty("--fall-to", Math.round(floor - sr.top) + "px");
-  L.floor = floor - sr.top;
+  if(!L.floor){ sky.style.setProperty("--fall-to", Math.round(floor - sr.top) + "px"); L.floor = floor - sr.top; }
   const fws = [...sky.querySelectorAll(".fest-fw")];
   if(!fws.length) return;
   const chat = document.getElementById("chatdock-btn");
   const cr = chat ? chat.getBoundingClientRect() : null;
   /* not until the corner buttons and the tab bar are laid out (they can come a moment after Home): a station placed without them went
      off over the chat button until the next placement - the stations stay hidden until then (the last try places them regardless) */
-  if(!last && (!cr || cr.width < 4 || floor === H)) return;
+  L.placed = true;
   const busy = festBusyRects();
   const top0 = cr && cr.height ? Math.max(24, cr.top - 4) : 40;
   let best = [], bestK = 1;
@@ -122064,7 +122072,7 @@ function festConfetti(){
     const a = -Math.PI / 2 + (Math.random() - .5) * 2.4, v = 120 + Math.random() * 190;
     const x0 = p.x + Math.cos(a) * p.r * .6, y0 = p.y + Math.sin(a) * p.r * .6;
     const x1 = x0 + Math.cos(a) * v, y1 = y0 + Math.sin(a) * v;
-    const x2 = x1 + (Math.random() - .5) * 120, y2 = Math.min(festFloor() - 14, y1 + 260 + Math.random() * 320);
+    const x2 = x1 + (Math.random() - .5) * 120, y2 = Math.min(festFloor() - 26, y1 + 260 + Math.random() * 320);
     const r0 = Math.random() * 360, spin = (Math.random() < .5 ? -1 : 1) * (360 + Math.random() * 720);
     try{
       el.animate([
@@ -122083,7 +122091,7 @@ function festLeafSwirl(){
   parts.forEach((el, i) => {
     const a = i / parts.length * Math.PI * 2 + Math.random() * .3, v = p.r * (1.6 + Math.random() * 1.4);
     const x1 = p.x + Math.cos(a) * v, y1 = p.y + Math.sin(a) * v - 30;
-    const x2 = x1 + (Math.random() - .3) * 140, y2 = Math.min(festFloor() - 14, y1 + 300 + Math.random() * 300);
+    const x2 = x1 + (Math.random() - .3) * 140, y2 = Math.min(festFloor() - 32, y1 + 300 + Math.random() * 300);
     const r0 = Math.random() * 360, spin = (Math.random() < .5 ? -1 : 1) * (200 + Math.random() * 300);
     try{
       el.animate([

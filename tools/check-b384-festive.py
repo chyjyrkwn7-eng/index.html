@@ -193,8 +193,8 @@ def _see_through_once(pg, tap=False):
       .map(e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }).filter(r => r[2] - r[0] > 2)""")
     sc = a.shape[1] / clip["width"]
     for (l, t, r_, b_) in orbs:
-        x0, y0 = int((l - clip["x"]) * sc) - 12, int((t - clip["y"]) * sc) - 12
-        x1, y1 = int((r_ - clip["x"]) * sc) + 12, int((b_ - clip["y"]) * sc) + 12
+        x0, y0 = int((l - clip["x"]) * sc) - 30, int((t - clip["y"]) * sc) - 30
+        x1, y1 = int((r_ - clip["x"]) * sc) + 30, int((b_ - clip["y"]) * sc) + 30
         core[max(0, y0):max(0, y1), max(0, x0):max(0, x1)] = False
     d = np.abs(a - b).sum(2)
     k = max(6, a.shape[0] // 20); corner = lambda x: x[:k, :k].mean(axis=(0, 1))
@@ -338,6 +338,7 @@ with sync_playwright() as pw:
         ctx, pg, errs = page(br, cls, vp=vp, ins=ins)
         for scene, at, tap in (("Thanksgiving", "thanksgiving", True), ("Christmas", "christmas", False), ("New Year's Eve", "2026-12-31T20:00", True),
                                ("the countdown", "2026-12-31T23:59:52", False), ("New Year's Day", "newyear", False)):
+            pg.evaluate("()=>{ festYearShown = ''; }")   # the countdown before may have run into midnight and shown the year already
             force(pg, at, 900)
             tot = {"bursts": 0, "pieces": 0, "big": 0}; bad = []
             for i in range(12):
@@ -392,21 +393,11 @@ with sync_playwright() as pw:
         for name, at in (("the pilgrim hat", "thanksgiving"), ("the Santa hat", "christmas"), ("the party hat", "2026-12-31T20:00")):
             force(pg, at, 1300); pg.evaluate(UNCOVER)
             r = pg.evaluate(ORB)
-            # how far the hat's own pixels reach from the planet's centre, in the hero's units
-            import io as _io
-            import numpy as np
-            from PIL import Image
-            c = pg.evaluate(REACH)
-            box = {"x": c[0] - 115 * c[2], "y": c[1] - 115 * c[2], "width": 230 * c[2], "height": 230 * c[2]}
-            # the sky's pieces (fireworks, snow) are not the hat: off for the two shots
-            pg.evaluate("()=>{ document.getAnimations().forEach(a=>{ try{ a.pause(); }catch(e){} }); const k=document.querySelector('#stage > .fest-sky'); if(k) k.style.visibility='hidden'; }")
-            on = np.asarray(Image.open(_io.BytesIO(pg.screenshot(clip=box, scale="device"))).convert("RGB")).astype(int)
-            pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility='hidden'; }")
-            off = np.asarray(Image.open(_io.BytesIO(pg.screenshot(clip=box, scale="device"))).convert("RGB")).astype(int)
-            pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility=''; const k=document.querySelector('#stage > .fest-sky'); if(k) k.style.visibility=''; document.getAnimations().forEach(a=>{ try{ a.play(); }catch(e){} }); }")
-            m = np.abs(on - off).sum(2) > 30
-            ys, xs = np.nonzero(m); k = on.shape[1] / 230
-            reach = float(np.max(np.hypot(xs / k - 115, ys / k - 115))) if len(xs) else 0
+            # how far the hat reaches from the planet's centre, in the hero's units: the farthest corner of any of its parts' boxes (an upper
+            # bound - a box's corner is beyond the shape it holds)
+            reach = pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); const r=h.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height*.47368, k=r.width/360;
+              let m = 0; h.querySelectorAll('.fest-planet .fest-hat :is(path, circle, ellipse, rect, line):not(.fest-hat-shadow)').forEach(e => { if(e.closest('clipPath') || (e.parentElement && e.parentElement.closest('[clip-path]'))) return;   /* what a clip holds is inside the clip's own shape, counted */ const b=e.getBoundingClientRect(); if(!b.width && !b.height) return;
+                [[b.left,b.top],[b.right,b.top],[b.left,b.bottom],[b.right,b.bottom]].forEach(([x,y]) => { m = Math.max(m, Math.hypot(x-cx, y-cy) / k); }); }); return m; }""")
             chk("(13) %s %s, %s: every orb and orbit dot over the hat is above it (%d tried, %s under) and the hat reaches %.1f of the inner ring's 108" % (dev, cls, name, r["n"], r["under"] or "none", reach),
                 r["n"] >= 6 and not r["under"] and 30 < reach < 104, [r, reach])
         errs_all += errs; ctx.close()

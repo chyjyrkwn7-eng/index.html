@@ -43740,3 +43740,13 @@ you can see the hats through the Liquid Glass, and I guess the rings? Idk but it
   (13): each rank bubble and each orbit dot, moved over the hat's middle, is above it in elementsFromPoint; and the hat's own pixels
   reach no further than the inner ring. Close-ups (hat-*.jpg) show a glass orb in front of each hat (the nearest bubble moved there,
   every loop held).
+- THE SKY'S PLACES, ROUND 4: the chat button and the tab bar slide off the screen at times and back (seen in the gate: chat top -56,
+  bar top 992 for a few seconds, on a timer of the app's). festPlace now reads the sky's no-go places only while both are home (the bar
+  wholly on screen, the chat button below the top), keeps the last placement otherwise, and a watch every 3s while Home is up
+  re-places only when what it avoids has changed (a key of the rects; the flares caption is not read - its band is reserved). The
+  pieces' fall floor is set first, from the bar's top, or where it rests when it has slid away (the last seen, else H - its height -
+  24). Thrown leaves and confetti end 32 / 26px above it. Gate (12) also leaves out the pixels under an orb's soft shadow (30 device px
+  round each orb and orbit dot) - the hat is seen through the glass there; (13)'s reach is the farthest corner of the hat's parts' boxes
+  (clipped contents excluded): pilgrim 86.5, Santa 94.8, party 95.6 of the inner ring's 108.
+- Gates: check-b384-festive ALL PASS (86); against a0da788 it fails (13) for all nine hats (the orbs were under the hat there).
+  sweep-layout --quick 20/20 clean; check-centering --quick 0 off centre (on 65abe76 - the later changes are the sky's placement only).
