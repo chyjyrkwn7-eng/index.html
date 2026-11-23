@@ -34,7 +34,7 @@ FPS = 30
 CLOCK = open(os.path.join(HERE, "record-hundo.py")).read().split('CLOCK = r"""', 1)[1].split('"""', 1)[0]
 # the fixture's account has never seen Version 11's card (intro.seen 99 above) and is owed challenge cards (.rs-spot): neither is the season
 UNCOVER = "document.querySelectorAll('.rs-spot,.rs-fly,.unlock-card,.intro-popup,#intro-pop,.app-banner,.daily-alert,.nova-talk').forEach(e=>e.remove());"
-CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
+CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} try{ scheduleHomeUnlocks = () => {}; playHomeUnlocks = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly,.homecaption').forEach(e=>e.remove());")
 # scene: the forced moment, seconds of clip, seconds into the clip to tap the planet (None: no tap), the still's moment
 SCENE = {

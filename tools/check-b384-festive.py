@@ -57,7 +57,7 @@ from playwright.sync_api import sync_playwright
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
-CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
+CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} try{ scheduleHomeUnlocks = () => {}; playHomeUnlocks = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly').forEach(e=>e.remove());")
 def page(br, cls, reduce=False, pre=None, vp=(440, 956), ins=(59, 0, 34, 0), dpr=1):
     ctx = br.new_context(viewport={"width": vp[0], "height": vp[1]}, device_scale_factor=dpr, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
@@ -187,6 +187,15 @@ def _see_through_once(pg, tap=False):
     pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility=''; const sh=document.querySelector('#stage .fest-hat-shadow'); if(sh) sh.style.display=''; document.getAnimations().forEach(a=>{ try{ a.play(); }catch(e){} }); }")
     hat = np.abs(on - off).sum(2) > 30
     core = ndimage.binary_erosion(hat, iterations=4)
+    # (round 4) where a glass orb or an orbit dot is over the hat, the hat is seen THROUGH the glass, with the planet round it: those
+    # pixels are the glass's (section 13 checks the orbs are on top), not the hat's
+    orbs = pg.evaluate("""()=>[...document.querySelectorAll('#stage .cosmic-hero-wrap > .cosmic-icon-badge, #stage .cosmic-hero-wrap .cosmic-orbit-dot, #stage .cosmic-hero-wrap .cosmic-orbit-dot > *')]
+      .map(e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }).filter(r => r[2] - r[0] > 2)""")
+    sc = a.shape[1] / clip["width"]
+    for (l, t, r_, b_) in orbs:
+        x0, y0 = int((l - clip["x"]) * sc) - 12, int((t - clip["y"]) * sc) - 12
+        x1, y1 = int((r_ - clip["x"]) * sc) + 12, int((b_ - clip["y"]) * sc) + 12
+        core[max(0, y0):max(0, y1), max(0, x0):max(0, x1)] = False
     d = np.abs(a - b).sum(2)
     k = max(6, a.shape[0] // 20); corner = lambda x: x[:k, :k].mean(axis=(0, 1))
     steady = all(np.abs(corner(x) - corner(a)).sum() < 6 for x in (on, off)) and np.abs(corner(b) - corner(a)).sum() < 60
@@ -348,16 +357,29 @@ with sync_playwright() as pw:
       const h = document.querySelector('#stage .cosmic-hero-wrap'), hat = h && h.querySelector('.fest-planet .fest-hat');
       if(!hat) return { n: 0, under: ['no hat'], reach: null };
       document.getAnimations().forEach(a => { try{ a.pause(); }catch(e){} });
-      const st = document.createElement('style'); st.textContent = 'html body .fest-planet.fest-planet, html body .fest-planet.fest-planet *{ pointer-events:auto !important; }'; document.body.appendChild(st);
+      const st = document.createElement('style'); st.textContent = 'html body .fest-planet.fest-planet, html body .fest-planet.fest-planet *, html body .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer, html body .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer *{ pointer-events:auto !important; }'; document.body.appendChild(st);
       const shape = hat.querySelector('g > path:not(.fest-hat-shadow)') || hat; const hr = shape.getBoundingClientRect();
       const cx = hr.left + hr.width / 2, cy = hr.top + hr.height * .55;
       const orbs = [...h.querySelectorAll(':scope > .cosmic-icon-badge, :scope > .cosmic-hero-orbitlayer .cosmic-orbit-dot')];
       const under = []; let n = 0;
       orbs.forEach(o => {
         const r = o.getBoundingClientRect(); if(r.width < 4) return;
-        const was = o.style.translate; o.style.translate = (cx - (r.left + r.width / 2)) + 'px ' + (cy - (r.top + r.height / 2)) + 'px';
-        const list = document.elementsFromPoint(cx, cy); const io = list.findIndex(e => o === e || o.contains(e)), ih = list.findIndex(e => hat === e || hat.contains(e));
-        n++; if(io < 0 || (ih >= 0 && ih < io)) under.push((o.className || '').toString().slice(0, 40) + ' ' + io + '/' + ih);
+        /* an orbit dot sits in a turned layer: its translate moves it in the layer's own axes - so the two axes are measured and the
+           move that brings its middle onto the point is solved for */
+        const was = o.style.translate;
+        const mid = () => { const q = o.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2]; };
+        const c0 = mid(); o.style.translate = '10px 0px'; const cx1 = mid(); o.style.translate = '0px 10px'; const cy1 = mid();
+        const a11 = (cx1[0] - c0[0]) / 10, a21 = (cx1[1] - c0[1]) / 10, a12 = (cy1[0] - c0[0]) / 10, a22 = (cy1[1] - c0[1]) / 10, det = a11 * a22 - a12 * a21 || 1;
+        const ex = cx - c0[0], ey = cy - c0[1];
+        o.style.translate = ((a22 * ex - a12 * ey) / det) + 'px ' + ((-a21 * ex + a11 * ey) / det) + 'px';
+        /* every point of a 7x7 grid over the orb where both the orb and the hat are hit: the orb must come first; at least one such point */
+        const q = o.getBoundingClientRect(); let both = 0, bad = 0;
+        for(let i = 1; i < 8; i++) for(let j = 1; j < 8; j++){
+          const x = q.left + q.width * i / 8, y = q.top + q.height * j / 8;
+          const list = document.elementsFromPoint(x, y); const io = list.findIndex(e => o === e || o.contains(e)), ih = list.findIndex(e => hat === e || hat.contains(e));
+          if(io >= 0 && ih >= 0){ both++; if(ih < io) bad++; }
+        }
+        n++; if(!both || bad) under.push((o.className || '').toString().slice(0, 40) + ' over ' + both + ', under ' + bad);
         o.style.translate = was;
       });
       st.remove();

@@ -121648,7 +121648,7 @@ function festHatSvg(s, id){
     const br = 45, bry = br * P, by = y + 1.5;                              /* the brim: a disc at the crown's base */
     const ct = y - 27, crt = 20.5;                                          /* the crown's top: a little narrower */
     const brimTop = festPath(festEllArc(180, by, br, bry, 0, 360, 72), true);
-    const brimEdge = festPath(festEllArc(180, by + 1.8, br + .4, bry + .3, 0, 180, 36).concat(festEllArc(180, by, br, bry, 180, 0, 36)), true);
+    const brimEdge = festPath(festEllArc(180, by + 1.8, br + .4, bry + .3, 0, 360, 72), true);   /* a whole ellipse under the brim's top (no shared edge, no seam) */
     const crownPts = [[180 - cr, y]].concat([[180 - crt, ct], [180 + crt, ct], [180 + cr, y]]).concat(festEllArc(180, y, cr, ry, 0, 180, 30));
     const bandF = festPath(festEllArc(180, y - 7.2, cr - .85, ry, 0, 180, 30).concat(festEllArc(180, y + .2, cr + .05, ry, 180, 0, 30)), true);
     return wrap(-9,
@@ -121770,6 +121770,9 @@ function festMount(panel){
   try{ requestAnimationFrame(() => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(); }, 0)); }catch(e){ setTimeout(festPlace, 30); }
   /* the first Home of a launch: the tab bar and the docks arrive (and settle) after it - placed again once they have */
   [700, 1800, 3200].forEach((ms, i) => setTimeout(() => { if(festLive && festLive.sky === sky) festPlace(i === 2); }, ms));
+  /* and every few seconds while Home is up: a control that arrived late or moved (a tab bar still sliding in, the chat button settling)
+     is read again; nothing is written unless what the sky avoids has changed */
+  festLive.watch = setInterval(() => { if(!festLive || festLive.sky !== sky || !sky.isConnected){ clearInterval(festLive && festLive.watch); return; } if(!document.hidden) festPlace(true, true); }, 3000);
   festHookResize();
   if(hero){
     const id = "fest" + (++festSeq) + "-";
@@ -121818,12 +121821,13 @@ function festBusyRects(){
   const add = (e, pad) => { if(!e) return; const r = e.getBoundingClientRect(); if(r.width < 2 || r.height < 2) return; out.push([r.left - pad, r.top - pad, r.right + pad, r.bottom + pad]); };
   ["#nextbtn", ".daily-question-fab", ".dq-card", ".class-bubble", "#chatdock-btn", "#bottomtabs"].forEach(q => document.querySelectorAll(q).forEach(e => add(e, 0)));
   const P = L.panel;
-  P.querySelectorAll(":scope > .homegreeting, :scope > .hometitle-wrap, :scope > .home-caption").forEach(e => add(e, 0));
+  /* (the flares caption is not read itself: it comes and goes with a tap, and the band below keeps its place) */
+  P.querySelectorAll(":scope > .homegreeting, :scope > .hometitle-wrap").forEach(e => add(e, 0));
   const g = P.querySelector(":scope > .homegreeting"), h = L.hero;
   if(g && h){
     /* the flares caption comes up between the planet and the greeting, as wide as the panel */
     const gr = g.getBoundingClientRect(), hr = h.getBoundingClientRect(), pr = P.getBoundingClientRect();
-    out.push([pr.left, Math.min(gr.top - 74, Math.max(hr.bottom - 40, gr.top - 74)), pr.right, gr.top]);
+    out.push([pr.left, gr.top - 92, pr.right, gr.top]);
   }
   if(h){
     const hr = h.getBoundingClientRect(), cx = hr.left + hr.width / 2, cy = hr.top + hr.height * .47368, r = hr.width * .1444 * 1.3;
@@ -121831,7 +121835,7 @@ function festBusyRects(){
   }
   return out;
 }
-function festPlace(last){
+function festPlace(last, onlyIfMoved){
   const L = festLive;
   if(!L || !L.sky || !L.sky.isConnected || !L.panel || !L.panel.isConnected) return;
   const sky = L.sky, sr = sky.getBoundingClientRect();
@@ -121839,6 +121843,11 @@ function festPlace(last){
   const bar = document.getElementById("bottomtabs");
   let floor = H;
   if(bar && !bar.hidden){ const br = bar.getBoundingClientRect(); if(br.height > 4 && br.top > H * .5) floor = br.top; }
+  if(onlyIfMoved){
+    const key = Math.round(floor) + "|" + festBusyRects().map(r => r.map(Math.round).join(",")).join(";") + "|" + W + "x" + H;
+    if(key === L.placeKey) return;
+    L.placeKey = key;
+  } else L.placeKey = "";
   sky.style.setProperty("--fall-to", Math.round(floor - sr.top) + "px");
   L.floor = floor - sr.top;
   const fws = [...sky.querySelectorAll(".fest-fw")];
@@ -121889,6 +121898,7 @@ function festClear(){
   if(festLive){
     ["sky", "ring", "top", "count", "year"].forEach(k => { try{ if(festLive[k]) festLive[k].remove(); }catch(e){} });
     try{ if(festLive.hero) festLive.hero.classList.remove("has-fest"); }catch(e){}
+    clearInterval(festLive.watch);
     festLive = null;
   }
 }
