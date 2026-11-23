@@ -163,7 +163,9 @@
     function up(){
       try{
         var st = document.getElementById("stage");
-        return !!(st && st.children.length) && !document.getElementById("splashscreen");
+        /* (384.137 tips) or Nova is talking: a sign-up for Fire Code alone empties the stage for his first half (startIfcSignupHere),
+           and a person who reached him inside 25 seconds had "Nova is taking too long to open" put over him */
+        return (!!(st && st.children.length) || !!document.getElementById("nova-intro")) && !document.getElementById("splashscreen");
       }catch(e){ return true; }
     }
     function fresh(){
@@ -111520,17 +111522,23 @@ const TOUR_OVERLAY_WAIT_MS = 14000;
 const TOUR_REV = 4;   /* 4 (build 384): the class button's tip (maybeClassButtonTip); 3: the Profile tips (289) */
 /* Build 289. Shared by the Profile tour and the re-armed three-step one
    so the two can never say different things. */
+/* (384.137 tips) In the order the page reads, top to bottom: the rank card, Customize, the badge case, the next rank's challenges
+   and the Rank ladder (the foot of that card, its own row since 384's profilerows2, which had no tip). The challenge step points at
+   the two challenge rows, not the whole card: the card is a screen tall and its middle is the unlock tiles, so the dot sat on "Flare".
+   Customize says what it holds now (character, banner, theme colour, hundo effect, All unlocks; rank rewards and feats). */
 const PROFILE_TIPS_289 = [
-  { target: ".profile-edit-btn", align: "left", vplacement: "below",
-    text: "Customize: your character, banner and colour. More unlock as you rank up." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank, level and badges. XP fills the bar." },
+  { target: ".profile-edit-btn", align: "left", vplacement: "below",
+    text: "Customize: your character, banner, theme and more. Rank up and complete feats to unlock more." },
   { target: ".profile-identity-tab .pf-case", align: "left", vplacement: "above",
     /* (384) Fire Code's badge is one 100% */
     text: window.NOVA_CLASS === "ifc" ? "Your badge case. Score 100% on a whole chapter to find its badge. Tap to open it."
       : "Your badge case. Score enough 100%s on a whole unit to find its badge. Tap to open it." },
-  { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
-    text: "What your next rank takes. Tap one to see how." }
+  { target: ".profile-identity-tab .pf-goal .pf-tasks", align: "left", vplacement: "above",
+    text: "What your next rank takes. Tap a challenge to see how." },
+  { target: ".profile-identity-tab .pf-goal-foot", align: "left", vplacement: "above",
+    text: "The Rank ladder: every rank, and what each one unlocks." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -111595,6 +111603,18 @@ function startSimpleTour(steps, onComplete, _waitedMs){
   let stepIndex = 0;
 
   let scrolledForStep = -1;
+  let placedFor = -1, placedEl = null, followRaf = 0;
+  const followScroll = () => {
+    if(followRaf) return;
+    followRaf = requestAnimationFrame(() => {
+      followRaf = 0;
+      if(placedFor !== stepIndex || !placedEl || !placedEl.isConnected || !document.body.contains(tooltip)) return;
+      const st = steps[stepIndex];
+      if(st && !st.center) placeStep(placedEl, st);
+    });
+  };
+  document.addEventListener("scroll", followScroll, { passive: true, capture: true });
+  window.addEventListener("resize", followScroll);
   function renderStep(){
     /* Guards against a real race condition the auto-scroll delay
        introduced: if the tour gets dismissed (its last step's "Got
@@ -111605,6 +111625,7 @@ function startSimpleTour(steps, onComplete, _waitedMs){
        steps[stepIndex] being undefined. A tour that's already finished
        has nothing left to render, so this is a no-op, not an error. */
     if(stepIndex >= steps.length) return;
+    placedFor = -1;
     const step = steps[stepIndex];
     /* (384 r4) a step can do something as it comes up (the friend tip: novaFriendMoment) - once */
     if(typeof step.onShow === "function" && !step.__shown){ step.__shown = true; try{ step.onShow(); }catch(e){} }
@@ -111649,10 +111670,22 @@ function startSimpleTour(steps, onComplete, _waitedMs){
     if(outOfView && scrolledForStep !== stepIndex){
       scrolledForStep = stepIndex;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(renderStep, 400);
+      /* (384.137 tips) placed once the scroll has STOPPED, not at a fixed 400ms: a long scroll (Profile's next-rank card, a
+         screen down) was still moving then, so the bubble was placed against where the target had been and the dot landed
+         off it. Its top read each frame until it holds still for three, up to ~1.5s. */
+      const forStep = stepIndex;
+      let lastTop = null, still = 0, frames = 0;
+      const settle = () => {
+        if(stepIndex !== forStep || !document.body.contains(overlay)) return;
+        const t = el.getBoundingClientRect().top;
+        still = (lastTop !== null && Math.abs(t - lastTop) < 0.5) ? still + 1 : 0;
+        lastTop = t;
+        if(still >= 3 || ++frames > 90){ renderStep(); return; }
+        requestAnimationFrame(settle);
+      };
+      setTimeout(() => requestAnimationFrame(settle), 100);
       return;
     }
-    const rect = el.getBoundingClientRect();
     if(tourTyper) tourTyper.cancel();
     playSound("ob.tooltip");
     tourTyper = novaType(text, step.text, NOVA_TOUR_CPS, {
@@ -111660,6 +111693,15 @@ function startSimpleTour(steps, onComplete, _waitedMs){
       done: () => face.classList.remove("is-talking")
     });
     nextBtn.textContent = stepIndex === steps.length - 1 ? "Got it" : "Next";
+    placedFor = stepIndex; placedEl = el;
+    placeStep(el, step);
+  }
+  /* (384.137 tips) WHERE THE BUBBLE, ITS LINE AND ITS DOT GO, for a step already up - split from renderStep so it can be done
+     again without the words starting over. It is, whenever the page scrolls under a step (followScroll below): the first
+     results' tip comes up as the results finish landing and the page is still scrolling down to the buttons, and on an iPad
+     in Fire Code (a badge found, a longer page) the bubble stayed where the buttons had been - on top of them. */
+  function placeStep(el, step){
+    const rect = el.getBoundingClientRect();
     /* Auto-flips to above the target when placing it below would run
        into the bottom tab bar or off the screen entirely \u2014 a target
        near the bottom of a tall list always placing its tooltip below
@@ -111673,12 +111715,17 @@ function startSimpleTour(steps, onComplete, _waitedMs){
     const bottomSafeLimit = window.innerHeight - 90;
     const wouldOverflowBelow = rect.bottom + 16 + estimatedTooltipHeight > bottomSafeLimit;
     const above = step.vplacement === "above" || wouldOverflowBelow;
+    /* (384.137 tips) VIEWPORT COORDINATES. The bubble is position:fixed and `rect` is the target's viewport box, so the page's
+       scroll has no part in this. It added window.scrollY, which is 0 until a step scrolls its target into view - and from then on
+       every step of that tour was pushed down by however far the page had scrolled: Profile's "What your next rank takes" landed
+       ON the card it explains, the Friends step dropped to the foot of the screen with a line drawn up across the page, and a
+       first test's results tip sat on the very buttons it names (the final clamp below caught it on screen, on top of them). */
     if(above){
       tooltip.style.top = "auto";
-      tooltip.style.bottom = (window.innerHeight - rect.top - window.scrollY + 16) + "px";
+      tooltip.style.bottom = (window.innerHeight - rect.top + 16) + "px";
     } else {
       tooltip.style.bottom = "auto";
-      tooltip.style.top = (rect.bottom + window.scrollY + 16) + "px";
+      tooltip.style.top = (rect.bottom + 16) + "px";
     }
     tooltip.className = "has-nova tour-align-" + step.align + (above ? " tour-arrow-below" : "");
     /* Safety clamp against a genuinely tall target (like an always-
@@ -111790,6 +111837,9 @@ function startSimpleTour(steps, onComplete, _waitedMs){
 
   function cleanup(){
     if(tourTyper) tourTyper.cancel();
+    document.removeEventListener("scroll", followScroll, { capture: true });
+    window.removeEventListener("resize", followScroll);
+    if(followRaf){ cancelAnimationFrame(followRaf); followRaf = 0; }
     overlay.remove();
     tooltip.remove();
     line.remove();
@@ -111980,7 +112030,8 @@ function scheduleNovaGoodLuck(){
    calendar reposition". After the main menu's own tips, and nothing else. */
 const NOVA_NEW_TIPS_321 = [
   { target: ".panel.home .cosmic-plasma", align: "left", vplacement: "below",
-    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings." },
+    /* (384.137 tips) its rings spin only at Supernova (homeRingStreak); a tap answers with where you stand and what is next */
+    text: "The planet answers your touch. Tap it to see where you stand and what\u2019s next." },
   /* build 327: What's New no longer has the badge case's row, so the tip
      no longer leans on it (HANDOFF-326, known issue 2) */
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
@@ -111988,7 +112039,7 @@ const NOVA_NEW_TIPS_321 = [
   /* build 327 round 9: "split it up into two so I can talk about the stats,
      and profile changes" */
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
-    text: "Stats got a rebuild too: your accuracy, your last three tests and a week of study time, all in one place." },
+    text: "Stats got a rebuild too: your accuracy, your recent tests, your full test history and your study time." },
   /* build 323: the calendar has its own tab in the bar, Settings is in Profile.
      Round 9: "simple but catching so people want to click it" */
   { target: "#bottomtab-calendar", align: "right", vplacement: "above",
@@ -122433,7 +122484,8 @@ function maybeShowUnitHoldTip(row){
 function showUnitHoldTip(){
   startSimpleTour([
     { target: ".unit-hold-tip-target", text: "Tip: press and hold any unit to see its details." },
-    { target: ".unit-hold-tip-target", text: "Your scores on this unit, and the questions you miss most." }
+    /* (384.137 tips) the card's Most missed went in build 284: its scores and its Starred questions are what it holds */
+    { target: ".unit-hold-tip-target", text: "Your scores on this unit, and the questions you\u2019ve starred." }
   ], () => document.querySelectorAll(".unit-hold-tip-target").forEach(el => el.classList.remove("unit-hold-tip-target")));
 }
 
@@ -125278,9 +125330,9 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it. Its bar shows how close you are to its badge." },
+          text: "Tap a unit to add it. The badge in its corner is the one it earns." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
-          text: "Then tap here to set the timer and start." }
+          text: "Then tap Start to choose your test settings and begin." }
       ]);
     }, 200);
   }
@@ -144024,7 +144076,8 @@ function summarize(){
       saveStore();
       startSimpleTour([
         { target: ".actions", align: "left", vplacement: "above",
-          text: "Review what you missed, try again, or head back. Your result is saved." }
+          /* (384.137 tips) the first results can be a 100% (Review test, Re-run, Main menu) or have misses (Continue to review) */
+          text: "Review your test, take it again, or go back to the main menu. Your result is saved." }
       ]);
     }
   };
@@ -146349,15 +146402,18 @@ function showAppearance(opts){
        in general terms - including "sharing and install options",
        which moved under Miscellaneous, and saying nothing at all about
        Rankings or about what the sync code actually is. */
+    /* (384.137 tips) The menu is rows that open pages now (382/384), so each step names its row and says what is on its page, in
+       the menu's own order: Study, Motion & Effects, then Sync and Leaderboard & Privacy. Swiping moved from Study to Motion &
+       Effects; Study holds Auto-advance, Skip celebrations and Auto-star. Fire Code has a leaderboard and its switch too (385). */
     startSimpleTour([
-      { target: "#settings-row-motion", align: "left", vplacement: "below",
-        text: "Reduce motion turns off the animated effects." },
       { target: "#settings-row-study", align: "left", vplacement: "below",
-        text: "How tests behave: swiping, moving on and starring missed questions." },
-      ...(window.NOVA_CLASS === "ifc" ? [] : [{ target: "#settings-row-rankings", align: "left", vplacement: "below",
-        text: "Turn this off to leave the leaderboards. Your progress still counts." }]),
+        text: "Study: auto-advance, celebrations, and starring questions you keep missing." },
+      { target: "#settings-row-motion", align: "left", vplacement: "below",
+        text: "Motion & Effects: reduce motion, or swipe to the next question." },
       { target: "#settings-row-sync", align: "left", vplacement: "below",
-        text: "Your sync code is your account. Keep it safe: it\u2019s the only way back in." }
+        text: "Sync: your sync code. It is your account and the only way back in, so keep it safe." },
+      { target: "#settings-row-rankings", align: "left", vplacement: "below",
+        text: "Leaderboard & Privacy: leave the leaderboard here. Your progress still counts." }
     ]);
   }
 }
@@ -148744,9 +148800,11 @@ function showVirtualRoomSetup(editRoom){
         { target: ".pick", align: "left", vplacement: "below",
           /* Badges have not been a flat 35 since build 210: 3 to 20
              hundos by the unit's size (BADGE_THRESHOLD_BANDS). */
-          text: "Tap a unit to add it. Its bar shows how close you are to its badge." },
-        { target: "#bottomtab-start", align: "right", vplacement: "above",
-          text: "Then tap here to set the timer and start." }
+          text: "Tap a unit to add it. The badge in its corner is the one it earns." },
+        /* (384.137 tips) the room's units screen has its own bar since 325 ("Match settings"), not the tab bar's Start: this step
+           pointed at a hidden Start and its bubble went up under the status bar */
+        { target: ".vroom-setup-go", align: "right", vplacement: "above",
+          text: "Then tap Match settings to set up the match." }
       ]);
     }, 200);
   }
@@ -158957,7 +159015,7 @@ function renderLeaderboardRows(rows, entries){
   if(sorted.length === 0){
     const empty = document.createElement("p");
     empty.className = "lb-board-empty";
-    empty.textContent = "No one yet \u2014 turn on \u201cShow me on the leaderboard\u201d in Settings to be the first.";
+    empty.textContent = "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
     rows.appendChild(empty);
     return;
   }
@@ -165694,7 +165752,7 @@ function showProfile(defaultTab, opts){
   } else {
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Finish a Drill or a Mock and it shows up here.";
+    p.textContent = window.NOVA_CLASS === "ifc" ? "Finish a Drill and it shows up here." : "Finish a Drill or a Mock and it shows up here.";   /* (384.137 tips) no Mock in Fire Code */
     recentSect.appendChild(p);
   }
   /* (384) "The test history button, not a fan. Find a better spot, id think it could maybe just be a bigger button under
@@ -167285,7 +167343,8 @@ function showRankings(defaultBoard){
     startSimpleTour([
       /* (385 r2) Fire Code has one board, so no switcher to point at: the search is the first stop */
       ...(ifcBoard ? [] : [{ target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
-        text: "This Week: XP since Monday. Overall: all time. Hundos: units at 100%." }]),
+        /* (384.137 tips) Overall is ordered by rank (RANKING_BOARDS' own line), not all-time XP; a hundo is a 100% on a whole unit */
+        text: "This Week: XP since Monday. Overall: by rank. Hundos: 100% scores on whole units." }]),
       { target: ".rank-search", align: "left", vplacement: "below",
         text: ifcBoard ? "Search for anyone in Fire Code by username." : "Search for anyone in 26E by username." },
       { target: ".rank-me-btn", align: "right", vplacement: "below",

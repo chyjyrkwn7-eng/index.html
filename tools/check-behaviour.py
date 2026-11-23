@@ -7281,8 +7281,9 @@ def check_b289(br):
     check("last week's top 3 sit on the This Week podium; the Leaderboard opens no card for them (Nova's recap on Home does, build 324)",
           r.get("congrats") >= 3 and r.get("congratsCard") is False and r.get("congratsAgain") is False,
           [r.get("congrats"), r.get("congratsCard"), r.get("congratsAgain")])
-    check("tourRev 3 arms the three Profile tips, starting with Customize",
-          (r.get("tourRev") or 0) >= 3 and "Customize" in str(r.get("tip")), r.get("tip"))   # (384) TOUR_REV is 4 now (the class button), 3 still arms these
+    # (384.137 tips) the Profile tips go down the page now: the rank card first, then Customize (check-b384-tips holds the order)
+    check("tourRev 3 arms the Profile tips, starting at the top of the page (the rank card)",
+          (r.get("tourRev") or 0) >= 3 and re.search(r"\brank\b|Customize", str(r.get("tip"))), r.get("tip"))   # (384) TOUR_REV is 4 now (the class button), 3 still arms these
     check("the rank line is no box; the next rank and the badge case are one family: same width, no glow, no watermark - and the case strip takes the Next rank box's corner (319h)",
           isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
     check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))

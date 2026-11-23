@@ -43157,3 +43157,91 @@ SEEN, NOT CHANGED (design questions, for Madison):
 - The Leaderboard's Pennants still at row size puts the gold championship flag behind the level number (readable, busy).
 - A locked rank reward in a grid shows "0%" while the next rank's step has not begun (the Rank tab's own measure), and nothing for
   the later ranks.
+## 384.137 (tips) - every tip read against this build, both classes, as a new account (branch claude/b384-wn-tips, cut from claude/b384-final 1cb2318; build NOT bumped, stays 384.137; NOT on main, waiting for Madison)
+
+Madison: "ensure all the tool tips are accurate and updated. We are really trying to ensure there is a good thing for any new user
+when they see this app." Plus: "Anything along the way you find that's messed up fix it." Every tip was walked in the real app as a
+brand-new account (Get Started -> Welcome -> class -> book stub for Fire Code -> Nova -> tips -> Start Studying's tip; then Profile,
+the Leaderboard, Settings, Choose your mode, Choose your units, the hold tip, a whole Drill to its results), installed, on the
+iPhone 17 Pro Max (440x956 @2x) and the iPad Pro 11" (834x1194 @2x), in both classes; the existing-account tips (the class button's,
+the meeting with Nova's new tips) were called by hand.
+
+THE TOUR ENGINE (startSimpleTour), three faults, all of them "the bubble is not where the target is":
+- window.scrollY was added to a position:fixed bubble's top/bottom. 0 until a step scrolls its target into view; from then on every
+  step of that tour was pushed down by the page's scroll: Profile's next-rank step landed ON the card, the Friends step dropped to
+  the foot of the screen with a line up across the page, and the first results' tip sat on Review test / Re-run / Main menu (the
+  final clamp kept it on screen, on top of them). Viewport coordinates now.
+- after scrollIntoView it waited a fixed 400ms; a long smooth scroll (Profile's card, a screen down) was still moving, so the dot
+  landed off the target. It now reads the target's top each frame and places once it has held still for three (cap ~1.5s).
+- the bubble never moved once placed. The results tip comes up as the results finish and the page is still scrolling to the
+  buttons (an iPad in Fire Code, a badge found, read "covers its target"). Placement is placeStep() now, split from renderStep so it
+  can run again without retyping; a capture-phase scroll listener and resize re-place the step that is up (removed in cleanup).
+
+WHAT EACH TIP SAYS NOW (changed ones; see the report for the full table):
+- Profile (PROFILE_TIPS_289, the first-visit tour and the tourRev-3 tips): top-to-bottom order - the rank card, Customize, the badge
+  case, the next rank's challenges, and a new step for the Rank ladder (the foot of the next-rank card since profilerows2; it had no
+  tip). Customize: "your character, banner, theme and more. Rank up and complete feats to unlock more." (it held "colour" and ranks
+  only; Customize is character / banner / theme color / hundo effect / All unlocks, earned by rank rewards and feats). The challenge
+  step points at .pf-goal .pf-tasks, not the whole card (a screen tall; its middle is the unlock tiles, the dot sat on "Flare"):
+  "What your next rank takes. Tap a challenge to see how."
+- Leaderboard: "Overall: all time" was wrong - Overall is ordered by rank (RANKING_BOARDS' own line). "This Week: XP since Monday.
+  Overall: by rank. Hundos: 100% scores on whole units."
+- Settings: the menu is rows that open pages (382/384). In the menu's order, each naming its row: Study ("auto-advance,
+  celebrations, and starring questions you keep missing" - swiping moved to Motion & Effects), Motion & Effects ("reduce motion, or
+  swipe to the next question"), Sync, Leaderboard & Privacy. Fire Code now gets the Leaderboard & Privacy step too (385 gave it the
+  board and the switch; the tour still left it out).
+- Choose your units: "Its bar shows how close you are to its badge" - a phone's card has had no bar since 328 (an iPad's does).
+  "Tap a unit to add it. The badge in its corner is the one it earns." Step 2: "Then tap Start to choose your test settings and
+  begin." (the sheet is Test settings: how many, starred only, answer choices, stopwatch and time limit; not only a timer).
+- A Virtual Room's units (showVirtualRoomSetup): step 2 pointed at #bottomtab-start, which is hidden on that screen (its own bar
+  since 325, "Match settings"); the bubble went up under the status bar pointing at nothing. Now ".vroom-setup-go": "Then tap Match
+  settings to set up the match."
+- Hold a unit, step 2: "the questions you miss most" - the card's Most missed went in 284. "Your scores on this unit, and the
+  questions you've starred."
+- First results: "Review what you missed" on a 100% (the first test often is one: Review test / Re-run / Main menu). "Review your
+  test, take it again, or go back to the main menu. Your result is saved."
+- An existing account's meeting with Nova (NOVA_NEW_TIPS_321): the planet promised "keep tapping to spin its rings" (only at
+  Supernova, homeRingStreak) -> "Tap it to see where you stand and what's next."; Stats -> "your accuracy, your recent tests, your
+  full test history and your study time."
+- Unchanged (true as they stand): Home's four new-account tips, Start Studying's last tip, the class button's tip, Choose your mode,
+  the Leaderboard's search and Find me, Profile's badge case / Friends / Stats steps, the hold tip's step 1, Nova's introduction in
+  both classes (its sync-code line "Settings, under Sync" is right).
+- Fire Code rewrites "unit" to "chapter" in everything it shows (CHAPTER_RX), tips included - checked in the shots.
+
+ALSO FIXED ON THE WAY:
+- the head's launch watchdog ("Nova is taking too long to open") counted only a filled stage as up. A sign-up for Fire Code alone
+  empties the stage for Nova's first half (startIfcSignupHere); a person who reached him inside 25 seconds of the page starting had
+  the trouble page put over him (found by the walker, which is quick). Nova's talk (#nova-intro) counts as up now.
+- the Leaderboard's empty board said turn on "Show me on the leaderboard"; the switch is "Show me in the rankings".
+- Stats' empty Recent tests said "Finish a Drill or a Mock" in Fire Code, which has no Mock: "Finish a Drill" there.
+
+NOT CHANGED, ON PURPOSE:
+- TOUR_REV stays 4. Bumping it would replay the Profile tips (and could re-arm others) for every existing account on top of Version
+  11's What's New; the Settings and Profile tours only reach new accounts and accounts that have not opened those screens. If Madison
+  wants existing accounts to see the new Profile tips (the Rank ladder step), it is TOUR_REV 5 with a `< 5` line setting
+  store.profileTips289 = true in the re-arm block - a question for him, not done.
+- The Version 11 What's New card (approved).
+- mainMenuTourSteps(true) (the "returning" branch) is not called by anything since 325; its words are left as they are.
+
+GATES:
+- NEW tools/check-b384-tips.py: new account, both classes, Pro Max + iPad Pro 11, installed: (geometry) every step's target shown,
+  bubble on screen, dot on target, bubble not over the target; (order) Profile's and Settings' tips go down the page; (coverage) Fire
+  Code's Settings tips point at every row the academy's do that it has; (claims) the unit tip's "bar" is visible, the hold tip names
+  only what the card holds, a 100% run's results tip does not speak of misses, Overall is said the board's way, Stats' empty line names
+  only the class's modes, the planet tip promises no spin; (launch) Nova's first half at 30s has nothing over it. ALL PASS (137
+  checks, at load ~1); --against 1cb2318 FAILS 34 (order x6, the Leaderboard x2, units bar x3, hold x4, results x6 incl. covering,
+  Settings coverage x2, the room's units hidden target x4, Stats, planet x2, launch; the room's four from a run of that scenario
+  alone, added after the first comparison).
+- Shots for Madison (Pro Max both classes, iPad Pro 11 check, before/after of every changed tip) were made by a walker that signs a
+  new account up as a person does (on check-b384-classes-open's harness: the fake cloud kept across the class switch's reload, the
+  book stub) and then taps into each screen; it is a scratch tool, not a gate.
+- check-js ALL PASS; check-tours 24 runs, every step renders, none off screen (profile 7/7, profiletips 5/5);
+  check-b384-launchtrouble ALL PASS; check-centering --quick ALL PASS (0 off centre).
+- check-behaviour (the tour sections: b319h_layout, b321g_nova, b320f_nova, b289, b324m_modes, b321f_profile, b324s_settings,
+  b245_start_pill, b323n_nav): 59 failures, the SAME 59 on 1cb2318 (stale: Quiz/Qualifier names, the shut case, Settings as a tab,
+  What's New row counts, the 3-tip sign-up). One was this change's and is updated: b289's "tourRev 3 arms the three Profile tips,
+  starting with Customize" now asks for the top of the page (the rank card), the new first tip.
+
+DESIGN QUESTIONS (for Madison, not done): a first-time tip for Fire Code's calculator on a question; existing accounts seeing the new
+Profile tips (TOUR_REV 5); the Settings tour has no Sound & Haptics / Classes / Software Update step (kept to four on "less but the
+good stuff"); the top clamp of a bubble is 10px, not the safe area (only reached when a target is off screen, which no tip now is).
