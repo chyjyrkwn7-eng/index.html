@@ -84179,9 +84179,12 @@ function unlockNextUp(view, n){
     list.push({ track: t.key, trackTitle: t.title, tier: x.n, goldTier: x.goldTier, item: it, have, need,
                 frac: need ? Math.max(0, Math.min(1, have / need)) : 0, first: t.next === x });
   }));
+  /* (384.137) A FEAT IS NOT A TRACK'S FIRST STEP. Feats were marked `first` with tier 0, so on an equal share they went ahead of every
+     track's first tier: a new account (everything at 0) was told its three closest unlocks are Zeus ("1 to go": top the weekly board),
+     Lights Out and Full Case (every badge). A Feat now goes after the tracks' tiers at the same share; by share it competes as before. */
   v.feats.forEach(it => { if(!it.held) list.push({ track: "feat", trackTitle: "Feat", tier: 0, item: it, have: it.have, need: it.need,
-                                                  frac: it.need ? it.have / it.need : 0, first: true }); });
-  list.sort((a, b) => (b.frac - a.frac) || ((b.first ? 1 : 0) - (a.first ? 1 : 0)) || (a.tier - b.tier));
+                                                  frac: it.need ? it.have / it.need : 0, first: false, feat: true }); });
+  list.sort((a, b) => (b.frac - a.frac) || ((b.first ? 1 : 0) - (a.first ? 1 : 0)) || ((a.feat ? 1 : 0) - (b.feat ? 1 : 0)) || (a.tier - b.tier));
   return list.slice(0, n || 3);
 }
 /* ---- WHAT A ROW PUBLISHES (384.120): `ut`, one short string ----
@@ -158119,6 +158122,10 @@ function renderRankingRows(rows, entries, board, opts){
       row.dataset.me = "1";
       const since = Date.now() - lbFindMeAt;
       if(since < LB_FLASH_MS) lbFlashRow(row, since);
+      /* (384.137) YOUR OWN ROW WEARS THE BANNER THIS DEVICE WEARS, as its rim did (384.132): the value the next row write will carry
+         (buildLeaderboardRow / buildClassBoardRow), so a banner changed in Customize shows on the board, and on the card the row opens,
+         at once - not after the account's next push (up to a minute: CLOUD_PUSH_MIN_GAP_MS). Drawing only; nothing is written. */
+      try{ entry = Object.assign({}, entry, { banner: wornBanner() || "" }); }catch(e){}
     }
 
     const rank = document.createElement("span");
@@ -159099,6 +159106,9 @@ function bannerDetail(id){
   }
   if(def.ultimate || def.completionist) o.kicker = "Ultimate banner";
   o.desc = def.label + ".";
+  /* (384.137) Completionist's live label carries "N of M left" (its Customize tile's line); on the card the bar under the rule says
+     the same in its own words, so the rule is the rule */
+  if(def.completionist && !bannerEarned(id)) o.desc = "Unlock everything in Fire Code.";
   o.have = Math.min(def.have(), def.need); o.need = def.need;
   if(def.note) o.note = typeof def.note === "function" ? def.note() : def.note;
   const win = bannerEarned(id) ? null : unlockWindow("banner", id);
@@ -160590,6 +160600,13 @@ function ulkAllBody(view){
   try{
     const top = AVATAR_CHARACTERS.find(c => c.id === ULTIMATE_TOP && !c.retired);
     if(top) caps.push(unlockItemState({ k: "char", id: top.id }));
+    /* (384.137) Fire Code's Completionist, "everything", is above the tracks too (it was on no card of All, only under Banners); its
+       row says the rule, and the bar says how far (the live label's "N of M left" would say the bar's number twice) */
+    if(typeof COMPLETIONIST_ID !== "undefined" && bannerDef(COMPLETIONIST_ID)){
+      const c = unlockItemState({ k: "banner", id: COMPLETIONIST_ID });
+      c.label = "Unlock everything in Fire Code";
+      caps.push(c);
+    }
   }catch(e){}
   if(caps.length) sect.appendChild(buildItemListCard("trk-caps", caps.length > 1 ? "Capstones" : "Capstone", "Above the tracks", caps));
   frag.appendChild(sect);
@@ -160638,7 +160655,9 @@ function showUnlockTracks(filter){
 function buildNextUpCard(){
   const view = unlockTrackView();
   const list = unlockNextUp(view, 3);
-  const box = buildCustomizeGroup("nextup", "Next up", "Your three closest unlocks", null, null, "trk-tiers");
+  /* (384.137) the note counts what is listed: near the end there are fewer than three tiers and Feats left ("Your three closest" over two) */
+  const nNote = ["Every track tier and Feat is yours", "Your closest unlock", "Your two closest unlocks"][list.length] || "Your three closest unlocks";
+  const box = buildCustomizeGroup("nextup", "Next up", nNote, null, null, "trk-tiers");
   box.card.classList.add("trk-card", "trk-nextup");
   const cnt = box.head.querySelector(".cz-group-count"); if(cnt) cnt.remove();
   list.forEach(e => {

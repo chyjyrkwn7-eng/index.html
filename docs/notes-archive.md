@@ -43077,6 +43077,7 @@ whatever else. We have a pretty massive new build on our hands here."
   so it is not this build's: the fixture's state moves with the date (week key) or the tile is mid-animation. Left for the
   inherited-failures pass.
 
+<<<<<<< HEAD
 ## 384.137 - the ribbon's tails cut across their own length (Sexual Assault and Family Violence)
 Seen in the full badge sets sent to Madison: each tail's end was cut by a LEVEL line (y 97) and two upright V's, but the tails run
 down at ~45 degrees, so the round end of each tail stood out past the V on its outer side as a step - the "messed up parts" he circled
@@ -43086,3 +43087,76 @@ to 5a133a95. acadpins, badgetwins, sides --class academy, casefit, chapterbadges
 at load 15-21 (five helpers running; the slowest are Identity Crimes, Racial Profiling, Multiculturalism, not the ribbon) - rerun quiet.
 The badge-set tool now waits for the app to be up before it clears the page (the launch watchdog drew "taking too long" over sets
 rendered while the machine was loaded).
+=======
+## 384.137 (unlocks4) - every unlock screen shot at three stages of an account, both classes; what was wrong, fixed (branch claude/b384-wn-unlocks, cut from claude/b384-final 1cb2318; build kept 2026-11-22-384.137, NOT bumped; NOT on main, waiting for Madison)
+
+Madison: "I need screenshots of the unlock stuff by the way, all of it, the selection screens and stuff. Anything along the way you
+find that's messed up fix it. ... We are really trying to ensure there is a good thing for any new user when they see this app."
+
+THE SHOTS: NEW tools/shoot-b384-unlockall.py OUTDIR [--src] [--only academy|ifc] [--dev pm|ipad] [--stage new|mid|near]. Three
+made-up accounts on check-b384-unlocks.py's in-memory Firestore and its made-up classmates: `new` (a sign-up from today: nothing
+but the starters and the defaults), `mid` (that gate's rich fixture), `near` (every badge, years of study, short of the 10th room
+win, Zeus and the last secret flares; Fire Code short of Completionist). At the end of `near` the rest is handed over on the app's
+own counters (nothing forced: the Masked One / Smoke Diver from 120 different retaken questions with their misses on record) and
+the class's biggest banner (Full Case / Completionist) is told on Home by the app's own queue (unmarked as shown, then showHome),
+worn, and shown on Profile, the Leaderboard and your own row's card. Every Customize page, Unlocks (overview, All, every type
+filter, each track as a ladder, Feats, Capstones), the cards (locked / earned / rank / secret / theme / effect / Pennants / Full
+Case or After Hours / the ultimate character and banner / Completionist), Profile and the Leaderboard. Phone iPhone 17 Pro Max
+440x956 @2x; the mid stage's main screens on iPad Pro 11" 834x1194. No rim and no prestige appear anywhere (Customize, Unlocks'
+filters and cards, Profile, the Leaderboard, the person card); rimDetail / buildRimsCard / unlockRimDefs are still in the source,
+unreachable from any screen (dead code, left).
+
+FIXED (index.html):
+1. NEXT UP TOLD A NEW ACCOUNT TO TOP THE WEEKLY BOARD. unlockNextUp marked the Feats `first` with tier 0, so on an equal share they
+   sorted ahead of every track's first tier: with everything at 0, Customize's "Your three closest unlocks" were Zeus ("Feat · 1 to
+   go": finish a week at the top of the weekly XP board), Lights Out and Full Case (all 24 badges); the Unlocks overview's "Closest"
+   and Profile's Customize row ("Next: Zeus · 0 / 1") said Zeus too. Fire Code's first row was After Hours. The 384.120 rule was
+   "first tier of a track first": a Feat is now `first: false, feat: true` and goes after the tracks' tiers at the same share (by
+   share it competes as before). A new account now reads The Masked One / Fireworks / Koi (academy), Smoke Diver / Extinguisher /
+   the Study Time tier (Fire Code).
+2. NEXT UP'S NOTE SAID "three" OVER TWO ROWS. Near the end (Fire Code: its only Feat held, few tiers left) the card listed two. The
+   note now counts what it lists: "Your three closest unlocks" / "Your two closest unlocks" / "Your closest unlock" / (none left)
+   "Every track tier and Feat is yours".
+3. FIRE CODE'S COMPLETIONIST WAS ON NO CARD OF "ALL". The Capstones card held Star Ranger alone; Completionist ("everything") was
+   only under the Banners filter. It is the card's second row in Fire Code (the card says "Capstones"); its rule is "Unlock
+   everything in Fire Code" and its bar / count completionistProgress's (have / need), its tap its card. The academy has none.
+4. COMPLETIONIST'S CARD SAID ITS NUMBER TWICE: "To unlock: Unlock everything in Fire Code. 114 of 127 left." over a bar reading
+   "13 of 127". While locked the card's rule is the rule ("Unlock everything in Fire Code."); the bar and the note ("Still to
+   unlock: ...") say what is left. The Customize tile keeps the live label with "N of M left" (its only line; check-b384-completionist
+   (9) asks for it there).
+5. YOUR OWN LEADERBOARD ROW SHOWED THE OLD BANNER FOR UP TO A MINUTE. A banner picked in Customize is written with the account's next
+   push (2.5s, or up to CLOUD_PUSH_MIN_GAP_MS = 60s after a recent one); until then your own row, and the card it opens, drew the
+   published copy's banner (Full Case worn on Profile, Star Trails on your row). Your own row now draws wornBanner() - the value the
+   next row write carries - as 384.132 did for the rim. Drawing only: nothing is written, everybody else's row is their published
+   banner. (The character already showed at once on the previous build, so only the banner changed.)
+
+GATE: NEW tools/check-b384-unlocks4.py [--against] [--only 1..5], both classes: (1) a new account: no Feat in Next up's rows, the
+overview's closest or Profile's next while a track tier at the same share is to earn; never a Feat before a track tier of the same
+share (new and mid accounts); (2) three rows and a note naming three; near the end fewer rows and a note naming that number, not
+three; (3) Fire Code's capstones card has Completionist with completionistProgress's bar and count and a rule with no number, the
+academy's has none; (4) its card's rule has no number and its count is the progress; (5) your own row and its card wear a banner
+changed with the push held, nothing written, the published copy still the old one, everybody else's row their own banner.
+
+GATES (one at a time, TMPDIR=/dev/shm; two other helpers' browser jobs had the machine at load 11-27 for most of it):
+- check-js: 13 inline blocks ALL PASS. Every shot and gate page, both classes, loaded with no page error.
+- check-b384-unlocks4 (new): ALL PASS (31). `--against` 1cb2318: FAILURES, 18 fail, 13 pass (every (1) leg in both classes, (2)
+  near the end, every (3) and (4) leg, (5)'s row and card in both classes fail; the passes there are the harness's - no page error,
+  others' rows, nothing written, a three-row note on a full card, the academy's empty capstone check).
+- check-b384-unlocks ALL PASS; check-b384-unlocks2 112/0; check-unlocks ALL PASS; check-b384-completionist ALL PASS;
+  check-b384-prog ALL PASS; check-b384-fxthumb ALL PASS; check-b384-profilerows2 499/0; check-b384-custom ALL PASS;
+  check-friends ALL PASS; sweep-layout --quick 20/20 clean.
+- check-centering --quick: 1 off centre, Fire Code Profile's next-rank reward tile 'Forge' 0.56px high - the inherited one the
+  384.137 entry above records (fails on 6075063 and d12b8c2 too); nothing this change draws.
+
+SEEN, NOT CHANGED (design questions, for Madison):
+- The round chat button stays fixed at the top right while Customize's pages and Unlocks scroll (their back button and title scroll
+  away); on the long lists it sits over a row's tick or chevron. Settings' pages have the frosted bar behind it (#settings-bar is
+  Profile and Settings only). Giving Customize / Unlocks that bar is a look change across six screens.
+- The academy's Astral asks for Supernova's three rewards, and Supernova asks 25 badges of a 24-unit bank (384.133 (J), on
+  purpose): a new user reading "Unlock every other character..." cannot get there today. Its card does not say so.
+- Past the level a badge wall holds you at, the XP line reads "182,090 / 6,529 XP" (build 317: the count runs on while the bar
+  sits full). In the academy every account past level 80's XP stays at 80 until Supernova is reachable.
+- The Leaderboard's Pennants still at row size puts the gold championship flag behind the level number (readable, busy).
+- A locked rank reward in a grid shows "0%" while the next rank's step has not begun (the Rank tab's own measure), and nothing for
+  the later ranks.
+>>>>>>> claude/b384-wn-unlocks
