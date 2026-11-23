@@ -42170,6 +42170,8 @@ html.is-browser{ --fade-paper: transparent; }
   .fest-ring-glow{ opacity:.85; }
   .fest-ring[data-season="newyear"] .fest-ring-glow{ opacity:.7; }
   .fest-count, .fest-year{ transform-origin:50% 47.368%; z-index:2; }
+  .fest-year{ inset:auto; left:14%; width:72%; top:47.368%; margin-top:-12.46%; transform-origin:50% 50%; }
+  .fest-year > svg{ position:relative; inset:auto; height:auto; }
   .fest-count text, .fest-year text{ font-family:var(--serif); font-weight:800; text-anchor:middle; dominant-baseline:central;
     paint-order:stroke; stroke:rgba(16,8,26,.42); stroke-linejoin:round; }
   .fest-count text{ font-size:92px; fill:#FFFFFF; stroke-width:7px; }
@@ -121296,7 +121298,8 @@ function festMount(panel){
   }
   if(s.day === "newyears-day" && festYearShown !== key){
     festYearShown = key;
-    setTimeout(() => { if(festLive && festLive.sky === sky && sky.isConnected) festYearMoment(s.year, false); }, 1400);
+    /* after the sky's last placement (1.8s), so nothing on the page changes under it while it is up */
+    setTimeout(() => { if(festLive && festLive.sky === sky && sky.isConnected) festYearMoment(s.year, false); }, 2100);
   }
 }
 /* WHERE THE SKY MAY BE BUSY (384 festive round 2). Madison's review: a burst went off over the chat button and another over the
@@ -121469,15 +121472,18 @@ function festYearMoment(year, finale){
   y.className = "fest-year";
   y.setAttribute("aria-hidden", "true");
   const id = "festy" + (++festSeq);
-  y.innerHTML = '<svg viewBox="0 -12 360 342"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6D2"/><stop offset=".45" stop-color="#F6CC5C"/><stop offset="1" stop-color="#C08A22"/></linearGradient></defs>' +
-    '<text x="180" y="150" fill="url(#' + id + ')">' + year + '</text></svg>';
+  /* a box just round the words, centred on the planet (a layer the size of the whole system was drawn cut off when it moved) */
+  y.innerHTML = '<svg viewBox="0 0 260 90"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6D2"/><stop offset=".45" stop-color="#F6CC5C"/><stop offset="1" stop-color="#C08A22"/></linearGradient></defs>' +
+    '<text x="130" y="45" fill="url(#' + id + ')">' + year + '</text></svg>';
   L.hero.appendChild(y);
   L.year = y;
   const calm = festCalm();
   const end = () => { try{ if(L.year === y){ y.remove(); L.year = null; } }catch(e){} };
   if(calm){ setTimeout(end, 4200); return; }
   try{
-    const a = y.animate([{ transform: "scale(.6)", opacity: 0 }, { transform: "scale(1.06)", opacity: 1, offset: .14 }, { transform: "scale(1)", opacity: 1, offset: .24 },
+    /* it lands from larger, as the countdown's seconds do (started under its size, the layer was drawn cut off at the left in
+       Chromium at 3x, which an iPhone could do too) */
+    const a = y.animate([{ transform: "scale(1.4)", opacity: 0 }, { transform: "scale(.97)", opacity: 1, offset: .16 }, { transform: "scale(1)", opacity: 1, offset: .26 },
       { transform: "scale(1)", opacity: 1, offset: .8 }, { transform: "scale(1.12)", opacity: 0 }], { duration: 4600, easing: "ease-out" });
     a.onfinish = end; a.oncancel = end;
   }catch(e){ setTimeout(end, 4600); }

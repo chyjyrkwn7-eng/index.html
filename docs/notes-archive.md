@@ -43177,3 +43177,7 @@ chat button and a lower-left one over the greeting beside NOVA; in the Thanksgiv
 - FIXTURES: the gate and the recorder set class26e.intro.seen '99' (the shared fixture's '1' is below INTRO_REV 8, so Version 11's
   card came up over Home in the stills), and remove the challenge cards (.rs-spot) the fixture account is owed before a tap and in
   each recorded frame - with the card gone they come up over Home and took the gate's first planet tap.
+- THE YEAR, WHOLE: in the 3x recordings the gold year on New Year's Day was drawn shifted and cut off (at the left, or at the right
+  when it landed from larger) - its layer was the planet system's whole box and the sky's 1.8s re-placement changed styles while it
+  was up. Now the year is a box just round its words (viewBox 0 0 260 90, 72% of the hero, centred on the planet), lands from
+  larger like the countdown's seconds, and the Jan 1 moment starts at 2.1s, after the last placement. Re-recorded whole.
