@@ -398,11 +398,12 @@ with sync_playwright() as pw:
             from PIL import Image
             c = pg.evaluate(REACH)
             box = {"x": c[0] - 115 * c[2], "y": c[1] - 115 * c[2], "width": 230 * c[2], "height": 230 * c[2]}
-            pg.evaluate("()=>document.getAnimations().forEach(a=>{ try{ a.pause(); }catch(e){} })")
+            # the sky's pieces (fireworks, snow) are not the hat: off for the two shots
+            pg.evaluate("()=>{ document.getAnimations().forEach(a=>{ try{ a.pause(); }catch(e){} }); const k=document.querySelector('#stage > .fest-sky'); if(k) k.style.visibility='hidden'; }")
             on = np.asarray(Image.open(_io.BytesIO(pg.screenshot(clip=box, scale="device"))).convert("RGB")).astype(int)
             pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility='hidden'; }")
             off = np.asarray(Image.open(_io.BytesIO(pg.screenshot(clip=box, scale="device"))).convert("RGB")).astype(int)
-            pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility=''; document.getAnimations().forEach(a=>{ try{ a.play(); }catch(e){} }); }")
+            pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility=''; const k=document.querySelector('#stage > .fest-sky'); if(k) k.style.visibility=''; document.getAnimations().forEach(a=>{ try{ a.play(); }catch(e){} }); }")
             m = np.abs(on - off).sum(2) > 30
             ys, xs = np.nonzero(m); k = on.shape[1] / 230
             reach = float(np.max(np.hypot(xs / k - 115, ys / k - 115))) if len(xs) else 0
