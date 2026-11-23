@@ -42509,6 +42509,9 @@ html.is-browser{ --fade-paper: transparent; }
   /* in the planet's box */
   .fest-ring, .fest-planet, .fest-count, .fest-year{ position:absolute; inset:0; }
   .fest-planet{ z-index:1; }   /* above the planet's smoke (.cosmic-plasma, z-index 1, earlier in the box): no hat is seen through */
+  /* (round 4) ...and under the glass: while a hat is on, the orbs and the orbit dots come forward of it (Madison: "It should still be
+     behind the flares so you can see the hats through the Liquid Glass") */
+  .cosmic-hero-wrap.has-fest > :is(.cosmic-icon-badge, .cosmic-hero-orbitlayer){ z-index:2; }
   .fest-ring > svg, .fest-planet > svg, .fest-count > svg, .fest-year > svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
   .fest-ring-glow{ opacity:.85; }
   .fest-ring[data-season="newyear"] .fest-ring-glow{ opacity:.7; }
@@ -121569,75 +121572,121 @@ function festSkyBuild(s, calm){
   sky.innerHTML = html;
   return sky;
 }
-/* THE PLANET'S HAT, in the hero's own coordinates (viewBox 0 -12 360 342: the sphere is r52 at 180,150). Each hat is drawn with
-   its base on the sphere's top (180,98) and turned about the sphere's centre, so its brim or trim sits ON the curve whatever the
-   tilt; a contact shadow lies on the sphere under it (clipped to it). EVERY PART IS OPAQUE (round 3, Madison: "All the hats can be
-   seen through to the planet"): solid fills and gradients whose stops are all solid, no part with an opacity, the fur on a solid
-   band, and the whole hat (.fest-planet, z-index 1) is above the planet's smoke (.cosmic-plasma, z-index 1, .55 - it was the
-   planet's glow seen "through" the brim). */
+/* THE PLANET'S HAT (round 4). Madison: "It should still be behind the flares so you can see the hats through the Liquid Glass ... it
+   needs to make more sense and look better." Each hat is WORN: drawn round the sphere (r52 at 180,150 in the hero's viewBox) in a
+   slight top-down perspective (a circle of latitude is an ellipse, ry = rx * .22), its band or base sitting on the latitude where the
+   sphere is exactly its width - so the band's ends tuck round the sphere's sides and nothing of the planet shows between band and
+   surface - with a soft contact shadow on the sphere just below, then the whole turned about the sphere's centre. Small: the crown
+   rises about half the sphere's radius above the band, inside the inner ring (r108), so no ring line ever crosses a hat. Lit from
+   the upper left like the planet, a faint rim light on the right. EVERY PART OPAQUE (solid fills, gradients with solid stops). The
+   layering is the hero's: the planet and its smoke (.cosmic-plasma, z-index 1), then the hat (.fest-planet, z-index 1, later), then
+   the glass orbs and the orbit dots (z-index 2 while a hat is on, .cosmic-hero-wrap.has-fest), which pass in front of it. */
+function festLat(rx){ return 150 - Math.sqrt(52 * 52 - rx * rx); }          /* the latitude (y) where the sphere is 2*rx wide */
+function festEllArc(cx, cy, rx, ry, a0, a1, n){                            /* points along an ellipse, angles in degrees (0 = right, 90 = front) */
+  const out = [];
+  for(let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; out.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+  return out;
+}
+function festPath(pts, close){ return "M" + pts.map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L") + (close ? "Z" : ""); }
+/* a soft, fluffy edge: points pushed in and out along a line of points (fur) */
+function festFluff(pts, amp, every){ return pts.map((p, i) => { const q = pts[Math.min(pts.length - 1, i + 1)], o = pts[Math.max(0, i - 1)];
+  const dx = q[0] - o[0], dy = q[1] - o[1], L = Math.hypot(dx, dy) || 1, k = Math.sin(i / every * Math.PI * 2) * amp + (i % 3 === 1 ? amp * .35 : 0);
+  return [p[0] - dy / L * k, p[1] + dx / L * k]; }); }
+/* soft scallops along a line of points (fur): each step a curve bowed outward by amp (its sign picks the side); "cont" continues a path */
+function festScallop(pts, amp, cont){
+  let d = (cont ? "L" : "M") + pts[0][0].toFixed(2) + " " + pts[0][1].toFixed(2);
+  for(let i = 1; i < pts.length; i++){
+    const a = pts[i - 1], b = pts[i], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+    d += "Q" + ((a[0] + b[0]) / 2 + dy / L * amp).toFixed(2) + " " + ((a[1] + b[1]) / 2 - dx / L * amp).toFixed(2) + " " + b[0].toFixed(2) + " " + b[1].toFixed(2);
+  }
+  return d;
+}
 function festHatSvg(s, id){
-  const clip = '<clipPath id="' + id + 'c"><circle cx="180" cy="150" r="52"/></clipPath>';
-  const shadow = (tilt, rx, ry, dy) => '<g class="fest-hat-shadow" transform="rotate(' + tilt + ' 180 150)"><ellipse cx="180" cy="' + (98 + dy) + '" rx="' + rx + '" ry="' + ry + '" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/></g>';
-  const shadowGrad = '<radialGradient id="' + id + 's" cx=".5" cy=".42" r=".5"><stop offset="0" stop-color="#14060C" stop-opacity=".62"/><stop offset=".6" stop-color="#14060C" stop-opacity=".3"/><stop offset="1" stop-color="#14060C" stop-opacity="0"/></radialGradient>';
-  const on = (tilt) => '<g transform="rotate(' + tilt + ' 180 150) translate(180 98)">';
-  /* a point on the sphere's top arc, in the hat's own frame (origin at the top of the sphere) */
-  const arc = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [Math.cos(a) * r, 52 + Math.sin(a) * r]; };
-  const P = (p) => p[0].toFixed(2) + " " + p[1].toFixed(2);
+  const P = 0.22;                                                          /* the perspective: ry = rx * P */
+  const defs = '<clipPath id="' + id + 'c"><circle cx="180" cy="150" r="52"/></clipPath>' +
+    '<radialGradient id="' + id + 's" cx=".5" cy=".3" r=".62"><stop offset="0" stop-color="#12050B" stop-opacity=".66"/><stop offset=".55" stop-color="#12050B" stop-opacity=".28"/><stop offset="1" stop-color="#12050B" stop-opacity="0"/></radialGradient>';
+  /* the contact shadow: under the band, on the sphere only */
+  const shadow = (rx, y, depth) => '<ellipse class="fest-hat-shadow" cx="180" cy="' + (y + depth * .35).toFixed(1) + '" rx="' + (rx + 3) + '" ry="' + depth + '" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>';
+  const wrap = (tilt, inner, extraDefs) => '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + defs + (extraDefs || "") + '</defs>' +
+    '<g transform="rotate(' + tilt + ' 180 150)">' + inner + '</g></svg>';
   if(s.id === "christmas"){
-    /* the trim: a solid band along the sphere's top (r 49 to 60), the puffs on it along r 55, overlapping */
-    const A = 38;
-    const band = "M" + P(arc(-A, 48.5)) + "A48.5 48.5 0 0 1 " + P(arc(A, 48.5)) + "L" + P(arc(A, 60)) + "A60 60 0 0 0 " + P(arc(-A, 60)) + "Z";
-    let fur = "";
-    for(let i = 0; i <= 10; i++){ const p = arc(-A + i * (2 * A / 10), 54.5); fur += '<circle cx="' + p[0].toFixed(2) + '" cy="' + p[1].toFixed(2) + '" r="' + (i % 2 ? 6.6 : 7.4) + '"/>'; }
-    const l = arc(-A + 4, 58), r = arc(A - 5, 58);
-    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
-      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2=".4"><stop offset="0" stop-color="#F25A50"/><stop offset=".3" stop-color="#E0322F"/><stop offset=".65" stop-color="#C81E26"/><stop offset="1" stop-color="#7E0E16"/></linearGradient>' +
-      '<radialGradient id="' + id + 'w" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#EEF3F8"/><stop offset="1" stop-color="#C9D4DF"/></radialGradient>' +
-      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F7FA"/><stop offset="1" stop-color="#C3CEDA"/></linearGradient></defs>' +
-      shadow(-13, 44, 15, 13) +
-      on(-13) +
-        '<path d="M' + P(l) + 'C-24 -26 -8 -50 12 -54C29 -57 44 -46 50 -28C45 -33 37 -36 30 -32C26 -22 27 -12 ' + P(r) + 'Z" fill="url(#' + id + 'r)"/>' +
-        '<path d="M30 -32C37 -36 45 -33 50 -28" stroke="#8A1219" stroke-width="1.4" fill="none"/>' +
-        '<path d="' + band + '" fill="url(#' + id + 'b)"/>' +
-        '<g fill="url(#' + id + 'w)">' + fur + '</g>' +
-        '<circle cx="49" cy="-28.5" r="9.5" fill="url(#' + id + 'w)"/>' +
-      '</g></svg>';
+    const rx = 41, y = festLat(rx), ry = rx * P, t = 10;                     /* the fur band: its top at y - t, its bottom on the latitude */
+    const yb = y - t;                                                       /* the cone stands on the band's top ellipse */
+    const topF = festEllArc(180, yb, rx - 1, ry, 180, 0, 16), botF = festEllArc(180, y + .6, rx + 1.4, ry + .6, 0, 180, 18);
+    const band = festScallop(topF, -1.3) + festScallop(botF, 1.6, true) + "Z";
+    const L = 180 - rx + 1, R = 180 + rx - 1;
+    /* the cone: up from the band, a soft peak left of centre, then it flops over to the right and hangs, the pompom on its tip */
+    const front = festEllArc(180, yb + 2, rx - 1, ry + 4, 0, 180, 24);      /* closed under the band's top front (the band covers it), so no planet between */
+    const cone = "M" + L + " " + yb + "C" + (L + 1) + " " + (yb - 16) + " " + (L + 14) + " " + (yb - 33) + " 190 " + (yb - 36) +
+      "C204 " + (yb - 38) + " 218 " + (yb - 30) + " 226 " + (yb - 16) + "C230 " + (yb - 9) + " 231.5 " + (yb - 2) + " 231 " + (yb + 8) +
+      "C228.5 " + (yb + 7) + " 225 " + (yb + 3.5) + " " + R + " " + yb +   /* the flop lies against the cone's side: no gap under it */
+      festPath(front).replace("M", "L") + "Z";
+    const lit = "M" + (L + 3) + " " + (yb - 1) + "C" + (L + 4) + " " + (yb - 16) + " " + (L + 15) + " " + (yb - 31) + " 187 " + (yb - 34.5) +
+      "C176 " + (yb - 26) + " " + (L + 16) + " " + (yb - 14) + " " + (L + 13) + " " + (yb + 1) + "Z";
+    const fold = "M214 " + (yb - 9) + "C220 " + (yb - 6) + " 226 " + (yb + 2) + " 231 " + (yb + 8) + "C228 " + (yb - 3) + " 222 " + (yb - 12) + " 211 " + (yb - 15) + "Z";
+    const crease = "M200 " + (yb - 33) + "C205 " + (yb - 24) + " 207 " + (yb - 12) + " 205 " + (yb + 2);
+    const pom = festScallop(festEllArc(231, yb + 8.2, 7.2, 7.2, 0, 360, 12), 1.3) + "Z";
+    const fluff = festScallop(festEllArc(180, y - 2.2, rx - 2, ry - .6, 10, 170, 14), 1.1) + festScallop(festEllArc(180, y + .2, rx + .6, ry + .3, 170, 10, 14), 1.2, true) + "Z";
+    return wrap(-11,
+      shadow(rx, y, 8) +
+      /* the cone a little lower than drawn: the hat stands about two thirds of the sphere's radius */
+      '<g transform="translate(0 ' + yb.toFixed(2) + ') scale(1 .78) translate(0 ' + (-yb).toFixed(2) + ')">' +
+      '<path d="' + cone + '" fill="url(#' + id + 'r)"/>' +
+      '<path d="' + lit + '" fill="#E3443B"/>' +
+      '<path d="' + crease + '" stroke="#A4161E" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+      '<path d="' + fold + '" fill="#8E1219"/>' +
+      '<path d="M190 ' + (yb - 36) + 'C204 ' + (yb - 38) + ' 218 ' + (yb - 30) + ' 226 ' + (yb - 16) + '" stroke="#F0675B" stroke-width=".9" fill="none" stroke-linecap="round"/></g>' +
+      '<path d="' + band + '" fill="url(#' + id + 'w)"/>' +
+      '<path d="' + fluff + '" fill="#DCE3EB"/>' +
+      '<path d="' + pom + '" fill="url(#' + id + 'p)"/>',
+      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2=".25"><stop offset="0" stop-color="#D9302C"/><stop offset=".55" stop-color="#C11F27"/><stop offset="1" stop-color="#7E0E16"/></linearGradient>' +
+      '<linearGradient id="' + id + 'w" x1="0" y1="0" x2=".25" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#EEF2F7"/><stop offset="1" stop-color="#C2CCD8"/></linearGradient>' +
+      '<radialGradient id="' + id + 'p" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#E9EEF4"/><stop offset="1" stop-color="#B9C4D0"/></radialGradient>');
   }
   if(s.id === "thanksgiving"){
-    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
-      '<linearGradient id="' + id + 'k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4450"/><stop offset=".18" stop-color="#3C3742"/><stop offset=".4" stop-color="#2A262E"/><stop offset="1" stop-color="#121014"/></linearGradient>' +
-      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3740"/><stop offset="1" stop-color="#161418"/></linearGradient>' +
-      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A0"/><stop offset=".5" stop-color="#E2B045"/><stop offset="1" stop-color="#9A6B16"/></linearGradient></defs>' +
-      shadow(-9, 50, 16, 14) +
-      on(-9) +
-        '<ellipse cx="0" cy="5" rx="45" ry="10" fill="url(#' + id + 'b)"/>' +
-        '<path d="M-44 3.6C-30 -2 30 -2 44 3.6" stroke="#57505E" stroke-width="1" fill="none"/>' +
-        '<path d="M-23 3L-19 -42C-10 -45.5 10 -45.5 19 -42L23 3C10 7 -10 7 -23 3Z" fill="url(#' + id + 'k)"/>' +
-        '<ellipse cx="0" cy="-42.4" rx="19" ry="3.6" fill="#3E3843"/>' +
-        '<path d="M-22.2 -7.5C-10 -4 10 -4 22.2 -7.5L22.9 2C10 5.6 -10 5.6 -22.9 2Z" fill="#0E0C10"/>' +
-        '<rect x="-8" y="-10" width="16" height="13" rx="1.6" fill="none" stroke="url(#' + id + 'g)" stroke-width="3.4"/>' +
-      '</g></svg>';
+    const cr = 23.5, y = festLat(cr), ry = cr * P;                          /* the crown's base sits on the sphere */
+    const br = 45, bry = br * P, by = y + 1.5;                              /* the brim: a disc at the crown's base */
+    const ct = y - 27, crt = 20.5;                                          /* the crown's top: a little narrower */
+    const brimTop = festPath(festEllArc(180, by, br, bry, 0, 360, 72), true);
+    const brimEdge = festPath(festEllArc(180, by + 1.8, br + .4, bry + .3, 0, 180, 36).concat(festEllArc(180, by, br, bry, 180, 0, 36)), true);
+    const crownPts = [[180 - cr, y]].concat([[180 - crt, ct], [180 + crt, ct], [180 + cr, y]]).concat(festEllArc(180, y, cr, ry, 0, 180, 30));
+    const bandF = festPath(festEllArc(180, y - 7.2, cr - .85, ry, 0, 180, 30).concat(festEllArc(180, y + .2, cr + .05, ry, 180, 0, 30)), true);
+    return wrap(-9,
+      shadow(br - 6, by + 2, 9) +
+      '<path d="' + brimEdge + '" fill="#0B0A0D"/>' +
+      '<path d="' + brimTop + '" fill="url(#' + id + 'b)"/>' +
+      '<path d="' + festPath(festEllArc(180, by, br, bry, 200, 340, 30)) + '" stroke="#5E5766" stroke-width=".9" fill="none"/>' +
+      '<path d="' + festPath(crownPts, true) + '" fill="url(#' + id + 'k)"/>' +
+      '<path d="' + bandF + '" fill="#0D0B0F"/>' +
+      '<ellipse cx="180" cy="' + ct + '" rx="' + crt + '" ry="' + (crt * P).toFixed(2) + '" fill="url(#' + id + 't)"/>' +
+      '<path d="M' + (180 + crt - .4) + ' ' + (ct + .6) + 'L' + (180 + cr - .6) + ' ' + (y - .4) + '" stroke="#5A5361" stroke-width=".9" stroke-linecap="round"/>' +
+      '<rect x="173.6" y="' + (y - 6.4).toFixed(1) + '" width="12.8" height="7.6" rx="1.3" fill="none" stroke="url(#' + id + 'g)" stroke-width="2.4"/>' +
+      '<rect x="178.9" y="' + (y - 5.6).toFixed(1) + '" width="2.2" height="6" rx=".6" fill="#C99A35"/>',
+      '<linearGradient id="' + id + 'k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4E4855"/><stop offset=".3" stop-color="#36313C"/><stop offset=".7" stop-color="#211E25"/><stop offset="1" stop-color="#121014"/></linearGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#47414E"/><stop offset=".6" stop-color="#2A262F"/><stop offset="1" stop-color="#18161B"/></linearGradient>' +
+      '<linearGradient id="' + id + 't" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4450"/><stop offset="1" stop-color="#2B2730"/></linearGradient>' +
+      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFEBA8"/><stop offset=".5" stop-color="#E2B045"/><stop offset="1" stop-color="#9A6B16"/></linearGradient>');
   }
-  /* New Year's: a party hat - midnight blue with gold stripes and dots, a gold trim on the sphere's curve, a burst of tinsel on top */
+  /* New Year's: a party hat at a jaunty tilt, its round base resting on the sphere */
+  const cr = 18, y = festLat(cr), ry = cr * P, tip = y - 36;
+  const coneD = festPath([[180, tip]].concat(festEllArc(180, y, cr, ry, 0, 180, 30)), true);
+  const trim = festPath(festEllArc(180, y - 3.2, cr - 1.6, ry - .4, 0, 180, 30).concat(festEllArc(180, y + 1.2, cr + .8, ry + .3, 180, 0, 30)), true);
+  let stripes = "";
+  for(let k = 0; k < 5; k++){ const yy = y + 4 - k * 9; stripes += '<path d="M150 ' + yy + 'L210 ' + (yy - 15) + 'L210 ' + (yy - 10) + 'L150 ' + (yy + 5) + 'Z"/>'; }
   let tin = "";
-  for(let i = 0; i < 11; i++){ const a = -Math.PI / 2 + (i - 5) * .3; tin += '<line x1="0" y1="0" x2="' + (Math.cos(a) * (i % 2 ? 9 : 12)).toFixed(1) + '" y2="' + (Math.sin(a) * (i % 2 ? 9 : 12) + 2).toFixed(1) + '"/>'; }
-  const A = 28;
-  const trim = "M" + P(arc(-A, 49)) + "A49 49 0 0 1 " + P(arc(A, 49)) + "L" + P(arc(A, 57.5)) + "A57.5 57.5 0 0 0 " + P(arc(-A, 57.5)) + "Z";
-  const bl = arc(-A, 54), br = arc(A, 54);
-  const cone = "M" + P(bl) + "L0 -76L" + P(br) + "A54 54 0 0 0 " + P(bl) + "Z";
-  return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip + shadowGrad +
-    '<clipPath id="' + id + 'h"><path d="' + cone + '"/></clipPath>' +
-    '<linearGradient id="' + id + 'n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A50A0"/><stop offset=".3" stop-color="#2E357A"/><stop offset=".6" stop-color="#232A6B"/><stop offset="1" stop-color="#11153D"/></linearGradient>' +
-    '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".5" stop-color="#F1C24E"/><stop offset="1" stop-color="#B07E1C"/></linearGradient></defs>' +
-    shadow(12, 36, 13, 12) +
-    on(12) +
-      '<g clip-path="url(#' + id + 'h)"><rect x="-34" y="-80" width="68" height="90" fill="url(#' + id + 'n)"/>' +
-        '<g stroke="url(#' + id + 'g)" stroke-width="6.4">' + [-66, -46, -26, -6, 14].map(v => '<line x1="-36" y1="' + v + '" x2="36" y2="' + (v - 26) + '"/>').join("") + '</g>' +
-        '<g fill="#FFF6D8">' + [[-11, -17], [9, -31], [-3, -47], [12, -8], [-17, -4], [3, -62]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.6"/>').join("") + '</g></g>' +
-      '<path d="' + trim + '" fill="url(#' + id + 'g)"/>' +
-      '<g transform="translate(0 -76)" stroke="url(#' + id + 'g)" stroke-width="2.4" stroke-linecap="round">' + tin + '</g>' +
-      '<circle cx="0" cy="-76" r="3.6" fill="#FFF3C4"/>' +
-    '</g></svg>';
+  for(let i = 0; i < 11; i++){ const a = -Math.PI / 2 + (i - 5) * .3; tin += '<line x1="0" y1="0" x2="' + (Math.cos(a) * (i % 2 ? 6.5 : 9)).toFixed(1) + '" y2="' + (Math.sin(a) * (i % 2 ? 6.5 : 9) + 1.5).toFixed(1) + '"/>'; }
+  return wrap(16,
+    shadow(cr + 2, y, 6.5) +
+    '<clipPath id="' + id + 'h"><path d="' + coneD + '"/></clipPath>' +
+    '<path d="' + coneD + '" fill="url(#' + id + 'n)"/>' +
+    '<g clip-path="url(#' + id + 'h)"><g fill="url(#' + id + 'g)">' + stripes + '</g>' +
+      '<g fill="#FFF6D8">' + [[-7, -10], [6, -19], [-2, -27], [8, -6], [-11, -3]].map(p => '<circle cx="' + (180 + p[0]) + '" cy="' + (y + p[1]) + '" r="1.25"/>').join("") + '</g>' +
+      '<path d="M' + (180 + cr) + ' ' + y + 'L180 ' + tip + '" stroke="#6C74C8" stroke-width="1.2"/></g>' +
+    '<path d="' + trim + '" fill="url(#' + id + 'g)"/>' +
+    '<g transform="translate(180 ' + tip + ')" stroke="url(#' + id + 'g)" stroke-width="1.9" stroke-linecap="round">' + tin + '</g>' +
+    '<circle cx="180" cy="' + tip + '" r="2.9" fill="#FFF3C4"/>',
+    '<linearGradient id="' + id + 'n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4C53A6"/><stop offset=".35" stop-color="#2E357A"/><stop offset=".7" stop-color="#20276A"/><stop offset="1" stop-color="#12163E"/></linearGradient>' +
+    '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".5" stop-color="#F1C24E"/><stop offset="1" stop-color="#B07E1C"/></linearGradient>');
 }
 /* THE RING'S DRESSING: leaves, lights or glints round the outer ring (R), still in one svg; what twinkles is in two more svgs whose
    opacity alone moves (an HTML box each, so the compositor does it) */
@@ -121736,6 +121785,7 @@ function festMount(panel){
     top.setAttribute("aria-hidden", "true");
     top.innerHTML = festHatSvg(s, id);
     hero.insertBefore(top, hero.querySelector(":scope > .cosmic-icon-badge"));
+    hero.classList.add("has-fest");
     festLive.ring = ring; festLive.top = top; festLive.hero = hero;
   }
   /* the day's own moment, once a launch */
@@ -121838,6 +121888,7 @@ function festClear(){
   clearTimeout(festTick); festTick = 0;
   if(festLive){
     ["sky", "ring", "top", "count", "year"].forEach(k => { try{ if(festLive[k]) festLive[k].remove(); }catch(e){} });
+    try{ if(festLive.hero) festLive.hero.classList.remove("has-fest"); }catch(e){}
     festLive = null;
   }
 }

@@ -43715,3 +43715,28 @@ dim) had started to darken the whole frame, so every hat pixel moved by a few le
 (nothing the check recolours) across the four shots; a frame where it moved (on/off over 6, the recoloured one over 60 - the ring lines there
 are inverted) is thrown away, the overlays cleared and it retries (up to 4). Normal runs read 0-6 / 0-38 there. Full check-b384-festive ALL
 PASS: every hat 0 changed pixels.
+
+## 384 festive round 4 - the hats are worn, under the glass (same branch, claude/b384-integ a0da788 merged in; build 384.137; NOT on main)
+
+Madison, on round 3's Santa hat (painted over a glass orb and the orbit line; the trim a row of separate balls floating above the
+planet with its glow beneath): "The [hat] got fixed in some areas and got worse in others. It should still be behind the flares so
+you can see the hats through the Liquid Glass, and I guess the rings? Idk but it needs to make more sense and look better."
+- LAYERING, back to front: the sky; the planet (glow, body, the rings in the same svg, the ring's festive dressing); its smoke
+  (.cosmic-plasma, z-index 1); the hat and its contact shadow (.fest-planet, z-index 1, after the smoke); then, while a hat is on
+  (.cosmic-hero-wrap.has-fest, taken off with the hat), every glass orb (.cosmic-icon-badge) and the orbit dots' layers
+  (.cosmic-hero-orbitlayer) at z-index 2 - they pass in front of the hat and show it through their glass as they show the planet.
+  The tap's press (.cosmic-tapfx, z auto) stays on the planet under the hat; the countdown and the year (z-index 2, last) stay on top.
+  No ring crosses a hat at all: every hat now stays inside the inner ring (r108; gate (13) measures it from the pixels).
+- WORN, NOT PERCHED (festHatSvg): a slight top-down perspective (a circle of latitude is an ellipse, ry = .22 rx); each hat's band or
+  base lies on the latitude where the sphere is exactly its width (festLat), so its ends tuck round the sphere's sides and no planet
+  shows between band and surface; a soft contact shadow on the sphere just below; turned about the sphere's centre (Santa -11, pilgrim
+  -9, party +16 degrees). Light from the upper left (the gradients), a faint rim line.
+  - Santa: the fur is ONE band (festScallop: soft scallops along both edges, a gradient, a shaded inner fluff band), the cone closed
+    under it; the cone peaks left of centre and flops over to the right, hanging, with a fold, a crease and a lit side; the pompom
+    (scalloped, shaded) on the tip. Crown scaled to about two thirds of the sphere's radius.
+  - Pilgrim: a brim disc seen from above (with its edge's thickness), a tapered crown, the band and the buckle on the crown's front.
+  - Party: a cone on a round base (a gold trim band in perspective) at a jaunty tilt, stripes and dots, a tinsel tuft.
+- GATE: (12) now recolours only the planet's layers (glow, body, smoke, rings, the press) - the orbs are meant to be over the hat; new
+  (13): each rank bubble and each orbit dot, moved over the hat's middle, is above it in elementsFromPoint; and the hat's own pixels
+  reach no further than the inner ring. Close-ups (hat-*.jpg) show a glass orb in front of each hat (the nearest bubble moved there,
+  every loop held).

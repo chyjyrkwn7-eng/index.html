@@ -115,8 +115,14 @@ def closeups(br):
         pg.evaluate("(f)=>{ localStorage.setItem('class26e.season', f); festYearShown = 'x'; %s showHome(); }" % CLEAN, forced)
         pg.wait_for_timeout(2200)
         pg.evaluate("()=>{ " + UNCOVER + " document.getAnimations().forEach(a=>{ try{ a.pause(); }catch(e){} }); }")
+        # one glass orb passing in front of the hat's right shoulder (the nearest rank bubble, moved there; its own animation held)
+        pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); const hat=h.querySelector('.fest-planet .fest-hat g > path:not(.fest-hat-shadow)');
+          const hr=hat.getBoundingClientRect(); const tx=hr.right-hr.width*.26, ty=hr.top+hr.height*.42;
+          let best=null, bd=1e9; h.querySelectorAll(':scope > .cosmic-icon-badge').forEach(b=>{ const r=b.getBoundingClientRect(); const d=Math.hypot(r.left+r.width/2-tx, r.top+r.height/2-ty); if(d<bd){ bd=d; best=b; } });
+          if(best){ const r=best.getBoundingClientRect(); best.style.translate=(tx-(r.left+r.width/2))+'px '+(ty-(r.top+r.height/2))+'px'; } }""")
+        pg.wait_for_timeout(150)
         clip = pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap').getBoundingClientRect(); const cx=h.left+h.width/2, cy=h.top+h.height*.47368, w=h.width*.5;
-          return {x:cx-w/2, y:cy-w*.98, width:w, height:w*1.06}; }""")
+          return {x:cx-w/2, y:cy-w*.86, width:w, height:w*1.02}; }""")
         save_jpeg(pg.screenshot(clip=clip, scale="device"), os.path.join(OUT, "hat-%s.jpg" % name))
         print("close-up hat-%s.jpg" % name, errs[:2], flush=True)
     pg.evaluate("()=>{ localStorage.setItem('class26e.season', 'christmas'); %s showHome(); }" % CLEAN); pg.wait_for_timeout(1500)
