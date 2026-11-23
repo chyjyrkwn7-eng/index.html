@@ -43076,3 +43076,13 @@ whatever else. We have a pretty massive new build on our hands here."
   profile@573), 0.54-1.02px high, varying run to run. It FAILS the same way on 6075063 (which passed it on 11-22) and on d12b8c2,
   so it is not this build's: the fixture's state moves with the date (week key) or the tile is mid-animation. Left for the
   inherited-failures pass.
+
+## 384.137 - the ribbon's tails cut across their own length (Sexual Assault and Family Violence)
+Seen in the full badge sets sent to Madison: each tail's end was cut by a LEVEL line (y 97) and two upright V's, but the tails run
+down at ~45 degrees, so the round end of each tail stood out past the V on its outer side as a step - the "messed up parts" he circled
+in round 3. Now tailEnd(end, from) cuts each tail square to its own axis, 3 units in from its end, with a V 5.5 deep centred on it
+(W 13, the tail's width there); the woven edges stop at the same cut (notch = -max(endL, endR)). check-b384-ifcbadges (6) re-pinned
+to 5a133a95. acadpins, badgetwins, sides --class academy, casefit, chapterbadges ALL PASS; objbadges --class academy (4) PERF failed
+at load 15-21 (five helpers running; the slowest are Identity Crimes, Racial Profiling, Multiculturalism, not the ribbon) - rerun quiet.
+The badge-set tool now waits for the app to be up before it clears the page (the launch watchdog drew "taking too long" over sets
+rendered while the machine was loaded).

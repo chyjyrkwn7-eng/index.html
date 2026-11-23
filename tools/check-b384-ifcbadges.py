@@ -297,7 +297,8 @@ with sync_playwright() as pw:
         # RE-PINNED (384.133 academy rounds 2-3): Madison's circled fixes and the see-through pass redrew the academy pins on
         # purpose (TCOLE star a layer on the ring, shoe, ribbon, umbrella heart, chat, handcuffs, teddy ears and the rest), so
         # every drawing moved. Was dc7d6f55. Taken on this build after the round-3 badges were reviewed.
-        PIN = "76402311"
+        # RE-PINNED (384.137): the ribbon's tails are cut across their own length (Sexual Assault and Family Violence). Was 76402311.
+        PIN = "5a133a95"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)

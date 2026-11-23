@@ -226,8 +226,17 @@
     for(let i = 0; i <= 30; i++) cl.push(Pq(X2, X2, RT, i / 30));
     const back = S.union([S.cone(...LT, ...X1, R + 2.4, R), S.tube(X1, [82, 13], TOP, () => R, 24)], .5);
     const front = S.union([S.tube(TOP, [18, 13], X2, () => R, 24), S.cone(...X2, ...RT, R, R + 2.4)], .5);
-    const notch = S.union([S.poly([[8, 101], [16, 90.5], [24, 101]]), S.poly([[76, 101], [84, 90.5], [92, 101]]), S.box(0, 97, 100, 10, 0)], 0);
-    const cut = f => S.minus(f, notch);
+    /* (384.137) each tail is cut ACROSS ITS OWN LENGTH with its V centred on it. The cut was a level line (y 97) and two upright V's,
+       but the tails run down at ~45 degrees, so each tail's round end stood out past the V as a step on its outer side (the "messed
+       up parts" at the tail ends). tailEnd(end, from): < 0 on the ribbon's side of a V whose point is D in from the end, across width W. */
+    const D = 5.5, W = 13;
+    const tailEnd = (end, from) => { const ul = Math.hypot(end[0] - from[0], end[1] - from[1]), u = [(end[0] - from[0]) / ul, (end[1] - from[1]) / ul];
+      const E = [end[0] - u[0] * 3, end[1] - u[1] * 3];
+      return (x, y) => { const along = (x - E[0]) * u[0] + (y - E[1]) * u[1], across = Math.abs((x - E[0]) * -u[1] + (y - E[1]) * u[0]);
+        return along + D - D * Math.min(across, W) / W; }; };
+    const endL = tailEnd(LT, X1), endR = tailEnd(RT, X2);
+    const notch = (x, y) => -Math.max(endL(x, y), endR(x, y));   /* < 0 where the tails are cut away */
+    const cut = f => S.inter(S.inter(f, endL), endR);
     const t = S.trace(S.union([cut(back), cut(front)], 0), BB);
     /* the woven edges: E either side of the centre line; the strand behind loses its edges where the front strand lies over it */
     const E = 8, edges = (from, to, off, hide) => { let d = "", run = [];
