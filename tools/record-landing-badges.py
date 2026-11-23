@@ -24,7 +24,7 @@ Capture and encoding are record-landing.py's (780x1690 from a 390px page at 2x, 
 the last half second dissolved into the first frame, H.264 High 4.1 yuv420p, faststart, no audio, under 3 MB). The account is
 record-landing-ifc.py's fixture ("Alex"; the Fire Code class needs the publicId it uses, never on screen); sound off. The
 Firebase CDN is blocked in the sandbox, so the app runs on its local copy as every recorder here does."""
-import importlib.util, json, os, sys
+import hashlib, importlib.util, json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("record_landing_ifc", os.path.join(HERE, "record-landing-ifc.py"))
 ri = importlib.util.module_from_spec(spec); spec.loader.exec_module(ri)
@@ -47,6 +47,18 @@ CLIP_UNITS = [
 FOUND = "Chapter 9: Fire Protection and Life Safety Systems"
 EMPTY = "Chapter 59: Flammable Solids"
 assert len(CLIP_UNITS) <= 10 and FOUND in CLIP_UNITS and EMPTY in CLIP_UNITS
+# WHICH ART THE CLIP SHOWS (384.137 videos): the clip is a baked copy of these pins, so it goes stale whenever one of them is
+# redrawn (art9 redrew seven of the ten after the 11-20 recording). Each recording writes what it drew - a hash of each chapter's
+# CHAPTER_OBJ entry, read in the recording page - to tools/landing-badges-art.json; check-b384-startup's clip section reads the
+# same entries off the page and fails when they differ: the clip must be recorded again.
+ART_FILE = os.path.join(HERE, "landing-badges-art.json")
+ART_JS = "(units)=>units.map(u => typeof CHAPTER_OBJ !== 'undefined' && CHAPTER_OBJ[u] ? JSON.stringify(CHAPTER_OBJ[u]) : null)"
+
+
+def art_hashes(pg):
+    return {u: (hashlib.sha1(s.encode("utf-8")).hexdigest()[:16] if s else None) for u, s in zip(CLIP_UNITS, pg.evaluate(ART_JS, CLIP_UNITS))}
+
+
 # the wait while the case comes up and opens (6.0-12.1s of the scene) plays 1.5x faster, uniformly (never skips)
 SPEED = [(6.6, 12.9, 1.5)]
 
@@ -72,12 +84,15 @@ def scene_badges(br, port):
     ctx, pg = rl.new_page(br, port, ri.SEED, ri.IN_IFC)
     cls = pg.evaluate("()=>window.NOVA_CLASS")
     if cls != "ifc": raise SystemExit("badges: the page is not in Fire Code (%s)" % cls)
+    art = art_hashes(pg)
+    if not all(art.values()): raise SystemExit("badges: no CHAPTER_OBJ entry for " + ", ".join(u for u, h in art.items() if not h))
     got = pg.evaluate(SETUP, [CLIP_UNITS, FOUND, EMPTY])
     if got != "ok": raise SystemExit("badges: " + got)
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1500)
     rl.settle(pg)
     pg.wait_for_timeout(1200)
-    rec = rl.Recorder(pg); rec.start(rate=.12)
+    # (384.137) BADGES_RATE: slower still on a loaded machine (a capture gap of g real seconds holds a frame for g x rate)
+    rec = rl.Recorder(pg); rec.start(rate=float(os.environ.get("BADGES_RATE", ".12")))
     rl.wait(pg, 900)
     pg.evaluate("(u)=>{ window.__bcDone = false; playBadgeCaseScene([u], () => { window.__bcDone = true; }, [], {}); }", FOUND)
     # the scene runs ~17s of its own clock; then Home again for a beat (the loop's join)
@@ -87,6 +102,10 @@ def scene_badges(br, port):
     rl.wait(pg, 700)
     frames = rec.stop(); ctx.close()
     rl.encode(frames, "badges", speed=SPEED)
+    # the art record goes with the clip it describes (a recording to another place writes its own beside it)
+    dest = ART_FILE if os.path.abspath(rl.OUT) == os.path.join(rl.ROOT, "landing") else os.path.join(rl.OUT, "badges.art.json")
+    json.dump({"clip": "landing/badges.mp4", "units": art}, open(dest, "w"), indent=1)
+    print("  art of the clip's badges written to " + dest, flush=True)
 
 
 if __name__ == "__main__":

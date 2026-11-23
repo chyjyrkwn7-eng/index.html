@@ -21,7 +21,7 @@ Read off the page (shape, not label strings or typed numbers):
 Run:  python3 tools/check-b384-startup.py [clip ladder scroll calm tap] [--against DIR]
       DIR holds an older tree's index.html, landing/ and tools/ (git archive origin/main index.html landing version.json tools
       | tar -x -C /dev/shm/old) - it must FAIL there."""
-import functools, http.server, importlib.util, json, os, re, socket, subprocess, sys, threading
+import functools, hashlib, http.server, importlib.util, json, os, re, socket, subprocess, sys, threading
 from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -142,8 +142,18 @@ def sec_clip(br, url):
             srv2, port2 = ri.rl.serve()
             c2, p2 = ri.rl.new_page(br, port2, ri.SEED, ri.IN_IFC)
             bank = p2.evaluate("()=>[window.NOVA_CLASS, unitsInTeachingOrder()]")
+            # (384.137 videos) THE CLIP SHOWS TODAY'S PINS: the art each of its chapters had when the clip was recorded (written
+            # by the recorder) is the art the app draws now - a redrawn pin means the clip must be recorded again
+            art_now = {u: (hashlib.sha1(s.encode("utf-8")).hexdigest()[:16] if s else None) for u, s in zip(units, p2.evaluate(
+                "(units)=>units.map(u => typeof CHAPTER_OBJ !== 'undefined' && CHAPTER_OBJ[u] ? JSON.stringify(CHAPTER_OBJ[u]) : null)", units))}
             c2.close(); srv2.shutdown()
             chk("all %d are Fire Code chapters in the bank" % len(units), bank[0] == "ifc" and all(u in bank[1] for u in units), [u for u in units if u not in bank[1]])
+            af = os.path.join(ROOT, "tools", "landing-badges-art.json")
+            rec_art = json.load(open(af)).get("units", {}) if os.path.isfile(af) else {}
+            stale = [u for u in units if not art_now.get(u) or rec_art.get(u) != art_now.get(u)]
+            chk("the clip was recorded from the pins the app draws now (%d of %d the same; tools/landing-badges-art.json %s)"
+                % (len(units) - len(stale), len(units), "present" if rec_art else "missing"), bool(rec_art) and not stale,
+                "re-record with tools/record-landing-badges.py - changed or unrecorded: " + ", ".join(stale))
         except Exception as e:
             chk("the Fire Code bank could be read", False, e)
 
