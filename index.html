@@ -42110,6 +42110,107 @@ html.is-browser{ --fade-paper: transparent; }
   .binspect-pin, .binspect-pin:focus{ outline:none; }
   html[data-reduce-motion="true"] .pin-host > .pin-mark-hero{ animation:none; }
   @media (prefers-reduced-motion:reduce){ .pin-host > .pin-mark-hero{ animation:none; } }
+  /* ---- (384 festive) THE SEASONS ON HOME - see festMount. Decoration only: nothing here takes a touch. The sky's layer is fixed
+     at the end of #stage at z-index -1 (over the paper and its glow, under every control); the hat, the ring's dressing, the
+     countdown and the year sit in the planet's own box. Transform and opacity only, no filters. Reduce motion (the app's switch
+     or the system's): every piece rests where it is scattered (--y) and nothing loops. ---- */
+  .fest-sky{ position:fixed; left:0; right:0; bottom:0; height:100lvh; z-index:-1; pointer-events:none; overflow:hidden; contain:strict; }
+  .fest-sky *, .fest-ring, .fest-ring *, .fest-planet, .fest-planet *, .fest-count, .fest-count *, .fest-year, .fest-year *{ pointer-events:none !important; }
+  .fest-sky i, .fest-sky b{ display:block; font-style:normal; }
+  .fest-tint, .fest-fall, .fest-fx{ position:absolute; inset:0; }
+  .fest-sky[data-season="thanksgiving"] .fest-tint{
+    background:
+      radial-gradient(ellipse 130vw 58lvh at 50vw 106lvh, rgba(255,122,36,.2), transparent 70%),
+      radial-gradient(ellipse 70vw 46lvh at -6vw 62lvh, rgba(214,74,28,.11), transparent 70%),
+      radial-gradient(ellipse 70vw 40lvh at 104vw 44lvh, rgba(255,170,60,.09), transparent 70%); }
+  .fest-sky[data-season="thanksgiving"][data-day] .fest-tint{ opacity:1.25; }
+  .fest-sky[data-season="christmas"] .fest-tint{
+    background:
+      radial-gradient(ellipse 120vw 50lvh at 50vw 0lvh, rgba(150,200,255,.1), transparent 70%),
+      radial-gradient(ellipse 70vw 40lvh at 0vw 100lvh, rgba(255,70,80,.08), transparent 70%),
+      radial-gradient(ellipse 70vw 40lvh at 100vw 100lvh, rgba(60,214,122,.07), transparent 70%); }
+  .fest-sky[data-season="newyear"] .fest-tint{
+    background:
+      radial-gradient(ellipse 130vw 56lvh at 50vw 106lvh, rgba(246,196,80,.16), transparent 70%),
+      radial-gradient(ellipse 80vw 46lvh at 100vw 12lvh, rgba(170,110,255,.1), transparent 70%),
+      radial-gradient(ellipse 70vw 40lvh at 0vw 30lvh, rgba(255,110,190,.07), transparent 70%); }
+  /* the falling pieces: an outer box that falls (and drifts), an inner one that sways and turns */
+  .fest-p{ position:absolute; top:0; left:var(--x); width:var(--s); height:var(--s); margin-left:calc(var(--s) / -2);
+    transform:translate3d(0, var(--y), 0); opacity:var(--o); }
+  .fest-pi{ width:100%; height:100%; transform:rotate(var(--r0)); }
+  .fest-pi > svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .fest-snow .fest-pi{ border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,.98) 0 30%, rgba(236,245,255,.55) 52%, rgba(236,245,255,0) 72%); }
+  .fest-snow.is-crystal .fest-pi{ background:none; border-radius:0; }
+  .fest-leaf .fest-pi{ --fx0:52deg; --fx1:-58deg; }
+  /* fireworks: a rocket's trail up to the spot, a flash, the burst (sparks and glitter) that opens and drops; still, a burst rests open */
+  .fest-fw{ position:absolute; left:var(--x); top:var(--y); width:0; height:0; }
+  .fest-fw-burst{ position:absolute; width:calc(136px * var(--k)); height:calc(136px * var(--k)); left:calc(-68px * var(--k)); top:calc(-68px * var(--k));
+    overflow:visible; opacity:.42; }
+  .fest-fw-flash{ position:absolute; width:130px; height:130px; left:-65px; top:-65px; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, rgba(255,248,228,.55), rgba(255,236,190,.18) 45%, rgba(255,236,190,0)); }
+  .fest-fw-trail{ position:absolute; left:-1px; top:0; width:2px; height:64px; border-radius:1px; opacity:0;
+    background:linear-gradient(to bottom, #FFF8E2, var(--fw) 28%, rgba(255,255,255,0)); }
+  /* the thrown pieces (a tap on the planet) rest hidden; the Web Animations API carries them */
+  .fest-throw{ position:absolute; left:0; top:0; opacity:0; }
+  .fest-throw.is-conf > b{ width:6px; height:11px; margin:-5px 0 0 -3px; border-radius:1.5px; }
+  .fest-throw.is-leaf{ width:20px; height:20px; margin:-10px 0 0 -10px; }
+  .fest-throw.is-leaf > svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .fest-sleigh{ position:absolute; left:0; top:0; opacity:0; }
+  .fest-sleigh > svg{ position:relative; display:block; width:100%; height:auto; overflow:visible; }
+  .fest-sleigh-glow{ position:absolute; left:-8%; right:-8%; top:-40%; bottom:-40%; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(255,226,150,.2), rgba(255,226,150,0)); }
+  .fest-sleigh-trail{ position:absolute; left:2%; top:78%; width:0; height:0; }
+  .fest-sleigh-trail > b{ position:absolute; width:4px; height:4px; margin:-2px; border-radius:50%; opacity:0;
+    background:radial-gradient(circle, #FFFFFF, #FFE29A 60%, rgba(255,226,154,0)); }
+  /* in the planet's box */
+  .fest-ring, .fest-planet, .fest-count, .fest-year{ position:absolute; inset:0; }
+  .fest-ring > svg, .fest-planet > svg, .fest-count > svg, .fest-year > svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .fest-ring-glow{ opacity:.85; }
+  .fest-ring[data-season="newyear"] .fest-ring-glow{ opacity:.7; }
+  .fest-count, .fest-year{ transform-origin:50% 47.368%; z-index:2; }
+  .fest-count text, .fest-year text{ font-family:var(--serif); font-weight:800; text-anchor:middle; dominant-baseline:central;
+    paint-order:stroke; stroke:rgba(16,8,26,.42); stroke-linejoin:round; }
+  .fest-count text{ font-size:92px; fill:#FFFFFF; stroke-width:7px; }
+  .fest-year text{ font-size:76px; letter-spacing:2px; stroke-width:6px; }
+  @media (prefers-reduced-motion:no-preference){
+    html:not([data-reduce-motion="true"]) .fest-sky:not(.is-calm) .fest-p{ animation:fest-fall var(--d) linear var(--dl) infinite; }
+    html:not([data-reduce-motion="true"]) .fest-sky:not(.is-calm) .fest-pi{ animation:fest-sway var(--sw) ease-in-out var(--swdl) infinite alternate; }
+    html:not([data-reduce-motion="true"]) .fest-sky:not(.is-calm) .fest-fw-trail{ animation:fest-fw-trail var(--d) linear var(--dl) infinite; }
+    html:not([data-reduce-motion="true"]) .fest-sky:not(.is-calm) .fest-fw-flash{ animation:fest-fw-flash var(--d) ease-out var(--dl) infinite; }
+    html:not([data-reduce-motion="true"]) .fest-sky:not(.is-calm) .fest-fw-burst{ animation:fest-fw-burst var(--d) linear var(--dl) infinite; }
+    html:not([data-reduce-motion="true"]) .fest-ring-glow.is-a{ animation:fest-twinkle 1.7s ease-in-out infinite alternate; }
+    html:not([data-reduce-motion="true"]) .fest-ring-glow.is-b{ animation:fest-twinkle 1.7s ease-in-out -1.7s infinite alternate; }
+  }
+  @keyframes fest-fall{
+    0%{ transform:translate3d(0, -8vh, 0); opacity:0; }
+    7%{ opacity:var(--o); }
+    90%{ opacity:var(--o); }
+    100%{ transform:translate3d(var(--drift), 106vh, 0); opacity:0; }
+  }
+  @keyframes fest-sway{
+    from{ transform:translate3d(calc(var(--a) * -1), 0, 0) rotate(var(--r0)) rotateX(var(--fx0, 0deg)); }
+    to{ transform:translate3d(var(--a), 0, 0) rotate(var(--r1)) rotateX(var(--fx1, 0deg)); }
+  }
+  @keyframes fest-fw-trail{
+    0%{ transform:translate3d(0, 36vh, 0); opacity:0; }
+    2%{ opacity:.9; }
+    12%{ transform:translate3d(0, 0, 0); opacity:.85; }
+    15%, 100%{ transform:translate3d(0, 0, 0); opacity:0; }
+  }
+  @keyframes fest-fw-flash{
+    0%, 12%{ transform:scale(.4); opacity:0; }
+    14.5%{ transform:scale(1); opacity:.9; }
+    30%, 100%{ transform:scale(1.15); opacity:0; }
+  }
+  @keyframes fest-fw-burst{
+    0%, 12.5%{ transform:scale(.1); opacity:0; animation-timing-function:cubic-bezier(.06,.72,.28,1); }
+    13.5%{ opacity:1; }
+    40%{ opacity:.95; }
+    58%{ transform:translate3d(0, 20px, 0) scale(1.04); opacity:0; }
+    100%{ transform:translate3d(0, 20px, 0) scale(1.04); opacity:0; }
+  }
+  @keyframes fest-twinkle{ from{ opacity:.3; } to{ opacity:1; } }
 </style>
 <script>
   (function(){
@@ -107032,6 +107133,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       /* and at Supernova, the cutscene's streak round the rings (b321h) */
       try{ homeRingStreak(wrap, "tap"); }catch(err){}
       try{ homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(), "planet"); }catch(err){}
+      try{ festPlanetTap(); }catch(err){}   /* (384 festive) leaves, the sleigh, confetti */
     };
     homeTapBind(sphere, planetRun);
     /* On an iPhone the planet is tapped through a real switch like every
@@ -109339,6 +109441,8 @@ function finishWelcomeStartFresh(then){
 /* Home's greeting (split out in build 327z15 so a sign-up with Nova can
    name the Home already built under him before he fades out). */
 function homeGreetingText(){
+  /* (384 festive) Thanksgiving, Christmas Eve and Day, New Year's Eve (its last hour counts down) and Day say so */
+  try{ const fg = festGreetingText(); if(fg) return fg; }catch(e){}
   const hour = new Date().getHours();
   const isLateNight = hour < 5 || hour >= 21;
   const baseGreeting = isLateNight ? "Studying late"
@@ -120845,6 +120949,596 @@ function homeFitWindow(panel){
     try{ window.addEventListener("resize", () => { const p = document.querySelector(".panel.home.screen-home-actual"); if(p) requestAnimationFrame(() => homeFitNow(p)); }, { passive: true }); }catch(e){}
   }
 }
+/* ---- THE SEASONS ON HOME (384 festive) ------------------------------------------------------------------------------------
+   Madison: "On thanksgiving can we add some thanksgiving spirit somehow on the main menu? ... when December first hits, it will be
+   Christmas festive themed and that will last till new years which will have new years stuff and then after new years say like
+   January 2nd it will go back to normal. We have to make this super cool and fun though."
+   By the device's own date, read each time Home is built and again at midnight (and on coming back to the app) while Home is up:
+     - Thanksgiving: the Monday of Thanksgiving week (the fourth Thursday of November, computed) through Nov 30. The planet wears a
+       pilgrim's hat, a garland of autumn leaves hangs on the outer ring, maple leaves drift down a warm sky. On the day itself the
+       greeting says Happy Thanksgiving. A tap on the planet throws a swirl of leaves.
+     - Christmas: Dec 1 - Dec 30. A Santa hat, string lights round the outer ring (they twinkle), snow. Dec 24 / 25 the greeting says
+       so and Santa's sleigh crosses the sky once; a tap on the planet sends it any day.
+     - New Year's: Dec 31 - Jan 1. A party hat, gold glints on the ring, fireworks. Dec 31's last hour counts down in the greeting,
+       the last ten seconds over the planet, and at midnight the new year (computed) arrives in gold with a finale; Jan 1's first
+       Home of a launch shows the year once. A tap on the planet throws confetti and a firework.
+     - Jan 2 on: nothing.
+   All of it is decoration: pointer-events none, built with Home and gone with it (#stage's children and the hero's), transform and
+   opacity only, no filters. The sky's pieces are one layer at the end of #stage (z-index -1: under every control, over the paper);
+   the hat, the ring's dressing and the year are in the planet's own box, so they follow it on every layout. Reduce motion (the
+   app's switch or the system's): the same scene, still - the pieces rest where they are scattered and nothing is thrown or flown.
+   No sound, no Firestore, no stored state. Loops pause with every other loop while the app is away (loopsPauseAll).
+   PREVIEW (not reachable from the app): ?season=NAME in the address, or localStorage "class26e.season" = NAME, where NAME is
+   thanksgiving | thanksgiving-day | christmas | christmas-eve | christmas-day | nye | countdown | newyear | off, or a local date and
+   time (2026-12-31T23:59:45). The device's clock is moved to that moment and runs on from it, so midnight can be watched. */
+var festPin = null, festTimer = 0, festTick = 0, festLive = null, festSeq = 0, festVisHooked = false, festYearShown = "";
+function festThanksgivingDay(y){
+  const first = new Date(y, 10, 1).getDay();
+  return 1 + ((4 - first + 7) % 7) + 21;
+}
+function festOverrideRaw(){
+  let raw = null;
+  try{ const m = /[?&]season=([^&#]+)/.exec(location.search); if(m) raw = decodeURIComponent(m[1]); }catch(e){}
+  if(!raw){ try{ raw = localStorage.getItem("class26e.season"); }catch(e){} }
+  return raw ? String(raw).trim().toLowerCase() : null;
+}
+function festForcedAt(raw){
+  const iso = /^(\d{4})-(\d\d)-(\d\d)(?:t(\d\d):(\d\d)(?::(\d\d))?)?$/.exec(raw);
+  if(iso) return new Date(+iso[1], +iso[2] - 1, +iso[3], +(iso[4] || 12), +(iso[5] || 0), +(iso[6] || 0)).getTime();
+  const now = new Date();
+  const y = now.getMonth() < 6 ? now.getFullYear() - 1 : now.getFullYear();
+  const tg = festThanksgivingDay(y);
+  const at = {
+    "thanksgiving": [y, 10, tg - 3, 12], "thanksgiving-day": [y, 10, tg, 12],
+    "christmas": [y, 11, 12, 12], "christmas-eve": [y, 11, 24, 19], "christmas-day": [y, 11, 25, 10],
+    "nye": [y, 11, 31, 20], "countdown": [y, 11, 31, 23, 59, 45], "newyear": [y + 1, 0, 1, 12],
+    "off": [y + 1, 0, 10, 12], "normal": [y + 1, 0, 10, 12]
+  }[raw];
+  return at ? new Date(at[0], at[1], at[2], at[3], at[4] || 0, at[5] || 0).getTime() : null;
+}
+/* the device's clock, or the preview's (moved to the forced moment when it was first read, running on from there) */
+function festNow(){
+  const raw = festOverrideRaw();
+  if(!raw){ festPin = null; return new Date(); }
+  if(!festPin || festPin.raw !== raw){
+    const t = festForcedAt(raw);
+    festPin = { raw, off: t == null ? 0 : t - Date.now() };
+  }
+  return new Date(Date.now() + festPin.off);
+}
+/* { id, day, year } for a date, or null outside the seasons. year is the year the season looks to (New Year's: the new one). */
+function festSeasonAt(d){
+  const y = d.getFullYear(), m = d.getMonth(), n = d.getDate();
+  if(m === 10){
+    const tg = festThanksgivingDay(y);
+    if(n >= tg - 3) return { id: "thanksgiving", day: n === tg ? "thanksgiving-day" : "", year: y };
+    return null;
+  }
+  if(m === 11 && n <= 30) return { id: "christmas", day: n === 24 ? "christmas-eve" : n === 25 ? "christmas-day" : "", year: y };
+  if(m === 11) return { id: "newyear", day: "nye", year: y + 1 };
+  if(m === 0 && n === 1) return { id: "newyear", day: "newyears-day", year: y };
+  return null;
+}
+function festCalm(){
+  try{
+    return !!(theme && theme.reduceMotion) || document.documentElement.dataset.reduceMotion === "true" ||
+      !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) || typeof Element.prototype.animate !== "function";
+  }catch(e){ return true; }
+}
+/* Home's greeting on the days that have one (homeGreetingText asks first); null on every other day */
+function festGreetingText(){
+  let s = null, now = null;
+  try{ now = festNow(); s = festSeasonAt(now); }catch(e){ return null; }
+  if(!s || !s.day) return null;
+  const who = (typeof store !== "undefined" && store && store.firstName) ? ", " + getFirstName(store.firstName) : "";
+  if(s.day === "nye"){
+    const left = festToMidnight(now);
+    if(left <= 3600000){
+      const sec = Math.ceil(left / 1000);
+      return s.year + " in " + (sec > 60 ? Math.ceil(sec / 60) + " minutes" : sec === 1 ? "1 second" : sec + " seconds");
+    }
+    return "Happy New Year's Eve" + who;
+  }
+  return ({ "thanksgiving-day": "Happy Thanksgiving", "christmas-eve": "Merry Christmas Eve", "christmas-day": "Merry Christmas",
+            "newyears-day": "Happy New Year" })[s.day] + who;
+}
+function festToMidnight(now){ const m = new Date(now); m.setHours(24, 0, 0, 0); return m - now; }
+/* a small seeded random, so a season's sky is the same picture every time (and in every recording) */
+function festRand(seed){ let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+var FEST_LEAF_COLS = [["#C8401E", "#E86A3C"], ["#E0692A", "#F5A04E"], ["#E8A33A", "#F7CF6A"], ["#A8442A", "#D06A44"], ["#D9852B", "#F2B457"], ["#B8321C", "#E25A3A"]];
+/* a maple leaf in a 24-unit box, stem down: the right half's points, mirrored */
+function festMaplePath(){
+  const R = [[12, .8], [13.6, 4.7], [16.1, 3.5], [15.3, 8.3], [18.7, 6.1], [18.2, 9], [21.8, 8.6], [20, 11.4], [22.6, 12.4], [17.5, 15.7],
+             [18.3, 17.5], [13, 16.3], [12.5, 19.2]];
+  const L = R.slice(1).reverse().map(([x, y]) => [24 - x, y]);
+  return "M" + R.concat(L).map(p => p[0] + " " + p[1]).join("L") + "Z";
+}
+function festLeafSvg(c, kind){
+  const body = kind === 1
+    ? '<path d="M12 1.6C18.6 6.4 19.2 13.6 12 20.4C4.8 13.6 5.4 6.4 12 1.6Z" fill="' + c[0] + '"/><path d="M12 1.6C5.4 6.4 4.8 13.6 12 20.4Z" fill="' + c[1] + '" opacity=".55"/>' +
+      '<path d="M12 4v18.6M12 9l3.2-2.4M12 13l4-3M12 9L8.8 6.6M12 13L8 10" stroke="rgba(60,20,8,.42)" stroke-width=".7" fill="none" stroke-linecap="round"/>'
+    : '<path d="' + festMaplePath() + '" fill="' + c[0] + '"/><path d="M12 .8L12 19.2L10.4 4.7L7.9 3.5L8.7 8.3L5.3 6.1L5.8 9L2.2 8.6L4 11.4L1.4 12.4L6.5 15.7L5.7 17.5L11 16.3Z" fill="' + c[1] + '" opacity=".5"/>' +
+      '<path d="M12 22.8V5M12 15.6L18 9.4M12 15.6L6 9.4M12 12.4L15.6 5.2M12 12.4L8.4 5.2" stroke="rgba(60,20,8,.4)" stroke-width=".75" fill="none" stroke-linecap="round"/>';
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">' + body + '</svg>';
+}
+function festFlakeSvg(){
+  let arms = "";
+  for(let i = 0; i < 6; i++) arms += '<g transform="rotate(' + i * 60 + ' 12 12)"><path d="M12 12V2.2M12 5.4L9.9 3.6M12 5.4L14.1 3.6M12 8.4L10.3 7M12 8.4L13.7 7"/></g>';
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="#F4F9FF" stroke-width="1.25" stroke-linecap="round" fill="none">' + arms + '</g><circle cx="12" cy="12" r="1.6" fill="#F4F9FF"/></svg>';
+}
+/* one firework's sparks, in a 140 box: streaks out from the middle with a bright head, and a ring of glitter inside */
+function festBurstSvg(col, col2, id){
+  let s = "", g = "";
+  const n = 22;
+  for(let i = 0; i < n; i++){
+    const a = i / n * Math.PI * 2 + (i % 2 ? .07 : 0), r0 = 20, r1 = i % 3 === 1 ? 52 : i % 3 === 2 ? 58 : 63;
+    const x0 = 70 + Math.cos(a) * r0, y0 = 70 + Math.sin(a) * r0, x1 = 70 + Math.cos(a) * r1, y1 = 70 + Math.sin(a) * r1;
+    s += '<line x1="' + x0.toFixed(1) + '" y1="' + y0.toFixed(1) + '" x2="' + x1.toFixed(1) + '" y2="' + y1.toFixed(1) + '"/>';
+    g += '<circle cx="' + (70 + Math.cos(a) * (r1 + 1.5)).toFixed(1) + '" cy="' + (70 + Math.sin(a) * (r1 + 1.5)).toFixed(1) + '" r="1.8"/>';
+  }
+  let in2 = "";
+  for(let i = 0; i < 12; i++){
+    const a = (i + .5) / 12 * Math.PI * 2;
+    in2 += '<circle cx="' + (70 + Math.cos(a) * 34).toFixed(1) + '" cy="' + (70 + Math.sin(a) * 34).toFixed(1) + '" r="1.7"/>';
+  }
+  return '<svg class="fest-fw-burst" viewBox="0 0 140 140" aria-hidden="true"><defs><radialGradient id="' + id + '" gradientUnits="userSpaceOnUse" cx="70" cy="70" r="64">' +
+    '<stop offset=".2" stop-color="' + col + '" stop-opacity="0"/><stop offset=".75" stop-color="' + col + '" stop-opacity=".9"/><stop offset="1" stop-color="#FFFFFF"/></radialGradient></defs>' +
+    '<g stroke="url(#' + id + ')" stroke-width="1.7" stroke-linecap="round">' + s + '</g><g fill="#FFF8E8">' + g + '</g>' +
+    '<g fill="' + col2 + '" class="fest-fw-glit">' + in2 + '</g></svg>';
+}
+/* THE SKY: one fixed layer at the end of #stage, under everything Home draws */
+function festSkyBuild(s, calm){
+  const sky = document.createElement("div");
+  sky.className = "fest-sky";
+  sky.setAttribute("aria-hidden", "true");
+  sky.dataset.season = s.id;
+  if(s.day) sky.dataset.day = s.day;
+  const w = Math.max(320, window.innerWidth || 440), h = Math.max(480, window.innerHeight || 956);
+  const area = w * h;
+  const rnd = festRand(s.id === "thanksgiving" ? 1126 : s.id === "christmas" ? 1225 : 1231);
+  let html = '<div class="fest-tint"></div><div class="fest-fall">';
+  const pc = (v) => (v * 100).toFixed(2) + "%";
+  if(s.id === "thanksgiving"){
+    let n = Math.round(Math.min(26, Math.max(14, area / 24000)) * (s.day ? 1.3 : 1));
+    if(calm) n = Math.round(n * .6);
+    for(let i = 0; i < n; i++){
+      const c = FEST_LEAF_COLS[i % FEST_LEAF_COLS.length], near = rnd() < .3;
+      const size = near ? 22 + rnd() * 8 : 12 + rnd() * 8, dur = (near ? 11 : 15) + rnd() * 7;
+      html += '<i class="fest-p fest-leaf" style="--x:' + pc((i + rnd() * .8) / n) + ';--y:' + (8 + rnd() * 84).toFixed(1) + 'vh;--s:' + size.toFixed(1) + 'px;--o:' + (near ? .95 : .62 + rnd() * .2).toFixed(2) +
+        ';--d:' + dur.toFixed(2) + 's;--dl:' + (-rnd() * dur).toFixed(2) + 's;--drift:' + (-20 + rnd() * 70).toFixed(0) + 'px">' +
+        '<i class="fest-pi" style="--a:' + (14 + rnd() * 22).toFixed(0) + 'px;--r0:' + (-40 - rnd() * 40).toFixed(0) + 'deg;--r1:' + (30 + rnd() * 60).toFixed(0) + 'deg;--sw:' + (2.6 + rnd() * 2.2).toFixed(2) + 's;--swdl:' + (-rnd() * 4).toFixed(2) + 's">' +
+        festLeafSvg(c, i % 3 === 2 ? 1 : 0) + '</i></i>';
+    }
+  } else if(s.id === "christmas"){
+    let n = Math.round(Math.min(72, Math.max(34, area / 9000)) * (s.day === "christmas-day" ? 1.2 : 1));
+    if(calm) n = Math.round(n * .55);
+    for(let i = 0; i < n; i++){
+      const crystal = i % 9 === 4, depth = rnd();
+      const size = crystal ? 13 + rnd() * 7 : 3 + depth * 6.5, dur = crystal ? 14 + rnd() * 6 : 19 - depth * 9 + rnd() * 3;
+      html += '<i class="fest-p fest-snow' + (crystal ? ' is-crystal' : '') + '" style="--x:' + pc((i + rnd()) / n) + ';--y:' + (6 + rnd() * 88).toFixed(1) + 'vh;--s:' + size.toFixed(1) + 'px;--o:' + (crystal ? .85 : .5 + depth * .45).toFixed(2) +
+        ';--d:' + dur.toFixed(2) + 's;--dl:' + (-rnd() * dur).toFixed(2) + 's;--drift:' + (-14 + rnd() * 40).toFixed(0) + 'px">' +
+        '<i class="fest-pi" style="--a:' + (6 + rnd() * 16).toFixed(0) + 'px;--r0:' + (crystal ? (-rnd() * 60).toFixed(0) : 0) + 'deg;--r1:' + (crystal ? (90 + rnd() * 90).toFixed(0) : 0) + 'deg;--sw:' + (3 + rnd() * 3).toFixed(2) + 's;--swdl:' + (-rnd() * 5).toFixed(2) + 's">' +
+        (crystal ? festFlakeSvg() : '') + '</i></i>';
+    }
+  } else {
+    /* fireworks: a few stations round the planet system's edges, each on its own cycle */
+    const st = [[.15, .09, "#FFD36B", "#FF8FC8", 5.4, 0], [.86, .07, "#7FE3FF", "#FFFFFF", 6.2, -2.1], [.09, .43, "#FF7BC0", "#FFD36B", 5.8, -3.9],
+                [.91, .37, "#B9A2FF", "#7FE3FF", 6.6, -1.1], [.28, .58, "#FFE7A8", "#FF7BC0", 7.2, -4.6], [.74, .55, "#FF9E5E", "#FFF3C9", 6.9, -5.6]];
+    st.forEach(([x, y, c1, c2, d, dl], i) => {
+      html += '<i class="fest-fw" style="--x:' + pc(x) + ';--y:' + pc(y) + ';--fw:' + c1 + ';--d:' + d + 's;--dl:' + dl + 's;--k:' + (.78 + (i % 3) * .14).toFixed(2) + '">' +
+        '<i class="fest-fw-trail"></i><i class="fest-fw-flash"></i>' + festBurstSvg(c1, c2, "festfw" + (++festSeq)) + '</i>';
+    });
+  }
+  html += '</div><div class="fest-fx"></div>';
+  sky.innerHTML = html;
+  return sky;
+}
+/* THE PLANET'S HAT, in the hero's own coordinates (viewBox 0 -12 360 342: the sphere is r52 at 180,150) */
+function festHatSvg(s, id){
+  const clip = '<clipPath id="' + id + 'c"><circle cx="180" cy="150" r="52"/></clipPath>';
+  if(s.id === "christmas"){
+    let fur = "";
+    for(let i = 0; i < 9; i++){ const x = -33 + i * 8.25, y = Math.abs(x) * .1; fur += '<circle cx="' + x.toFixed(1) + '" cy="' + (y - .5).toFixed(1) + '" r="' + (i % 2 ? 6.4 : 7.2) + '"/>'; }
+    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
+      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2=".4"><stop offset="0" stop-color="#F0473F"/><stop offset=".55" stop-color="#C81E26"/><stop offset="1" stop-color="#7E0E16"/></linearGradient>' +
+      '<radialGradient id="' + id + 'w" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#EEF3F8"/><stop offset="1" stop-color="#C5D1DD"/></radialGradient>' +
+      '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
+      '<ellipse cx="176" cy="108" rx="40" ry="11" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
+      '<g transform="translate(173 101) rotate(-13)">' +
+        '<path d="M-29 -2C-25 -30 -8 -54 13 -57C30 -59 45 -48 51 -30C46 -35 38 -38 31 -34C27 -24 28 -12 30 -2Z" fill="url(#' + id + 'r)"/>' +
+        '<path d="M-29 -2C-25 -30 -8 -54 13 -57C2 -48 -9 -30 -12 -2Z" fill="#FFFFFF" opacity=".12"/>' +
+        '<path d="M31 -34C38 -38 46 -35 51 -30" stroke="#6A0A12" stroke-width="1.4" fill="none" opacity=".55"/>' +
+        '<g fill="url(#' + id + 'w)">' + fur + '</g>' +
+        '<circle cx="49.5" cy="-30.5" r="9.5" fill="url(#' + id + 'w)"/>' +
+      '</g></svg>';
+  }
+  if(s.id === "thanksgiving"){
+    return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
+      '<linearGradient id="' + id + 'k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4450"/><stop offset=".35" stop-color="#2A262E"/><stop offset="1" stop-color="#121014"/></linearGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3740"/><stop offset="1" stop-color="#151317"/></linearGradient>' +
+      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A0"/><stop offset=".5" stop-color="#E2B045"/><stop offset="1" stop-color="#9A6B16"/></linearGradient>' +
+      '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
+      '<ellipse cx="178" cy="109" rx="44" ry="12" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
+      '<g transform="translate(176 100) rotate(-9)">' +
+        '<ellipse cx="0" cy="0" rx="45" ry="9.5" fill="url(#' + id + 'b)"/>' +
+        '<path d="M-44 -1.5C-30 -7 30 -7 44 -1.5" stroke="#6E6676" stroke-width="1" fill="none" opacity=".7"/>' +
+        '<path d="M-23 -3L-19 -46C-10 -49.5 10 -49.5 19 -46L23 -3C10 1 -10 1 -23 -3Z" fill="url(#' + id + 'k)"/>' +
+        '<ellipse cx="0" cy="-46.4" rx="19" ry="3.6" fill="#3E3843"/>' +
+        '<path d="M-22.2 -12.5C-10 -9 10 -9 22.2 -12.5L22.9 -4C10 -.4 -10 -.4 -22.9 -4Z" fill="#0E0C10"/>' +
+        '<rect x="-8" y="-15" width="16" height="13" rx="1.6" fill="none" stroke="url(#' + id + 'g)" stroke-width="3.4"/>' +
+        '<path d="M-17 -43C-15 -30 -15 -18 -16 -6" stroke="#FFFFFF" stroke-width="2" opacity=".1" fill="none" stroke-linecap="round"/>' +
+      '</g></svg>';
+  }
+  /* New Year's: a party hat - midnight blue with gold stripes and dots, a gold trim, a burst of tinsel on top */
+  let tin = "";
+  for(let i = 0; i < 11; i++){ const a = -Math.PI / 2 + (i - 5) * .3; tin += '<line x1="0" y1="0" x2="' + (Math.cos(a) * (i % 2 ? 9 : 12)).toFixed(1) + '" y2="' + (Math.sin(a) * (i % 2 ? 9 : 12) + 2).toFixed(1) + '"/>'; }
+  return '<svg class="fest-hat" viewBox="0 -12 360 342" aria-hidden="true"><defs>' + clip +
+    '<clipPath id="' + id + 'h"><path d="M-29 0L0 -78L29 0Z"/></clipPath>' +
+    '<linearGradient id="' + id + 'n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3A3F8F"/><stop offset=".5" stop-color="#232A6B"/><stop offset="1" stop-color="#11153D"/></linearGradient>' +
+    '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".5" stop-color="#F1C24E"/><stop offset="1" stop-color="#B07E1C"/></linearGradient>' +
+    '<radialGradient id="' + id + 's" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>' +
+    '<ellipse cx="184" cy="110" rx="36" ry="10" fill="url(#' + id + 's)" clip-path="url(#' + id + 'c)"/>' +
+    '<g transform="translate(187 105) rotate(12)">' +
+      '<g clip-path="url(#' + id + 'h)"><rect x="-32" y="-80" width="64" height="84" fill="url(#' + id + 'n)"/>' +
+        '<g stroke="url(#' + id + 'g)" stroke-width="6.4">' + [-66, -46, -26, -6, 14].map(v => '<line x1="-36" y1="' + v + '" x2="36" y2="' + (v - 26) + '"/>').join("") + '</g>' +
+        '<g fill="#FFF6D8">' + [[-11, -17], [9, -31], [-3, -47], [12, -8], [-17, -4], [3, -62]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.6"/>').join("") + '</g>' +
+        '<path d="M-29 0L0 -78L-8 0Z" fill="#FFFFFF" opacity=".1"/></g>' +
+      '<rect x="-31" y="-4" width="62" height="8.5" rx="4.2" fill="url(#' + id + 'g)"/>' +
+      '<g transform="translate(0 -78)" stroke="url(#' + id + 'g)" stroke-width="2.4" stroke-linecap="round">' + tin + '</g>' +
+      '<circle cx="0" cy="-78" r="3.6" fill="#FFF3C4"/>' +
+    '</g></svg>';
+}
+/* THE RING'S DRESSING: leaves, lights or glints round the outer ring (R), still in one svg; what twinkles is in two more svgs whose
+   opacity alone moves (an HTML box each, so the compositor does it) */
+function festRingBuild(s, R, id){
+  const box = document.createElement("div");
+  box.className = "fest-ring";
+  box.setAttribute("aria-hidden", "true");
+  const at = (a, r) => [180 + Math.cos(a) * r, 150 + Math.sin(a) * r];
+  const svgOf = (cls, inner, defs) => '<svg class="' + cls + '" viewBox="0 -12 360 342" aria-hidden="true">' + (defs ? "<defs>" + defs + "</defs>" : "") + inner + '</svg>';
+  if(s.id === "thanksgiving"){
+    let g = "", twig = "";
+    const n = 26;
+    for(let i = 0; i <= 52; i++){ const [x, y] = at(i / 52 * Math.PI * 2, R + Math.sin(i * 1.7) * 1.2); twig += (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1); }
+    g += '<path d="' + twig + '" stroke="#6B3B1C" stroke-width="1.3" fill="none" stroke-linejoin="round" opacity=".85"/>';
+    for(let i = 0; i < n; i++){
+      const a = i / n * Math.PI * 2 + .05, [x, y] = at(a, R), c = FEST_LEAF_COLS[(i * 7) % FEST_LEAF_COLS.length];
+      const turn = a * 180 / Math.PI + (i % 2 ? 50 : 130), sc = (i % 3 === 0 ? .78 : .64);
+      g += '<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + turn.toFixed(0) + ') scale(' + sc + ') translate(-12 -12)"><path d="' + festMaplePath() + '" fill="' + c[0] + '"/>' +
+        '<path d="M12 12V20" stroke="rgba(60,20,8,.5)" stroke-width="1"/></g>';
+      if(i % 5 === 2){ const [bx, by] = at(a + .1, R + 1); g += '<circle cx="' + bx.toFixed(1) + '" cy="' + by.toFixed(1) + '" r="2.2" fill="#8A4B1E"/><circle cx="' + (bx - .6).toFixed(1) + '" cy="' + (by - .8).toFixed(1) + '" r=".7" fill="#E3A25C"/>'; }
+    }
+    box.innerHTML = svgOf("fest-ring-base", g);
+    return box;
+  }
+  if(s.id === "christmas"){
+    const cols = ["#FF4D5A", "#FFC94A", "#3BD67A", "#57B0FF"];
+    const n = 32;
+    let base = "", ga = "", gb = "", halos = "";
+    cols.forEach((c, k) => { halos += '<radialGradient id="' + id + "h" + k + '"><stop offset="0" stop-color="' + c + '" stop-opacity=".95"/><stop offset=".35" stop-color="' + c + '" stop-opacity=".45"/><stop offset="1" stop-color="' + c + '" stop-opacity="0"/></radialGradient>'; });
+    /* the wire, sagging a little between the hooks */
+    let wire = "";
+    for(let i = 0; i < n; i++){
+      const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2, [x0, y0] = at(a0, R), [x1, y1] = at(a1, R), [mx, my] = at((a0 + a1) / 2, R + 3.2);
+      wire += (i ? "" : "M" + x0.toFixed(1) + " " + y0.toFixed(1)) + "Q" + mx.toFixed(1) + " " + my.toFixed(1) + " " + x1.toFixed(1) + " " + y1.toFixed(1);
+    }
+    base += '<path d="' + wire + 'Z" stroke="#1E3B2A" stroke-width="1.1" fill="none" opacity=".9"/>';
+    for(let i = 0; i < n; i++){
+      const a = (i + .5) / n * Math.PI * 2, k = i % cols.length, [x, y] = at(a, R + 2.6), deg = a * 180 / Math.PI - 90;
+      base += '<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + deg.toFixed(0) + ')"><rect x="-1.5" y="-1.2" width="3" height="2.6" rx=".6" fill="#2B4636"/>' +
+        '<path d="M0 1.2C2.6 1.6 2.9 6.2 0 8C-2.9 6.2 -2.6 1.6 0 1.2Z" fill="' + cols[k] + '"/><ellipse cx="-.8" cy="3.4" rx=".7" ry="1.3" fill="#FFFFFF" opacity=".55"/></g>';
+      const [hx, hy] = at(a, R + 7.4);
+      const halo = '<circle cx="' + hx.toFixed(1) + '" cy="' + hy.toFixed(1) + '" r="8.5" fill="url(#' + id + "h" + k + ')"/>';
+      if(i % 2) ga += halo; else gb += halo;
+    }
+    box.innerHTML = svgOf("fest-ring-glow is-a", ga, halos) + svgOf("fest-ring-glow is-b", gb, halos.replace(/id="/g, 'id="b')).replace(/url\(#/g, "url(#b") + svgOf("fest-ring-base", base);
+    return box;
+  }
+  /* New Year's: four-point gold glints along the ring */
+  const star = (x, y, r) => '<path d="M' + x.toFixed(1) + " " + (y - r).toFixed(1) + "Q" + (x + r * .16).toFixed(1) + " " + (y - r * .16).toFixed(1) + " " + (x + r).toFixed(1) + " " + y.toFixed(1) +
+    "Q" + (x + r * .16).toFixed(1) + " " + (y + r * .16).toFixed(1) + " " + x.toFixed(1) + " " + (y + r).toFixed(1) + "Q" + (x - r * .16).toFixed(1) + " " + (y + r * .16).toFixed(1) + " " + (x - r).toFixed(1) + " " + y.toFixed(1) +
+    "Q" + (x - r * .16).toFixed(1) + " " + (y - r * .16).toFixed(1) + " " + x.toFixed(1) + " " + (y - r).toFixed(1) + 'Z"/>';
+  let base = "", ga = "", gb = "";
+  const n = 24;
+  for(let i = 0; i < n; i++){
+    const a = (i + .25) / n * Math.PI * 2, [x, y] = at(a, R);
+    base += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="1.5"/>';
+    const [sx, sy] = at(a + .06, R);
+    if(i % 2) ga += star(sx, sy, i % 4 === 1 ? 6.5 : 4.6); else gb += star(sx, sy, i % 4 === 0 ? 5.6 : 4);
+  }
+  box.innerHTML = svgOf("fest-ring-glow is-a", '<g fill="#FFE7A0">' + ga + '</g>') + svgOf("fest-ring-glow is-b", '<g fill="#FFF6DA">' + gb + '</g>') +
+    svgOf("fest-ring-base", '<g fill="#F3C65A" opacity=".85">' + base + '</g>');
+  return box;
+}
+/* everything the season puts on Home, onto this Home's panel; anything already there is taken off first */
+function festMount(panel){
+  festClear();
+  if(!panel || !panel.isConnected) return;
+  let now, s;
+  try{ now = festNow(); s = festSeasonAt(now); }catch(e){ return; }
+  festLive = { panel, id: s ? s.id : "", day: s ? s.day : "" };
+  festArm();
+  festHookVisibility();
+  if(!s) return;
+  const calm = festCalm();
+  const hero = panel.querySelector(".cosmic-hero-wrap");
+  const sky = festSkyBuild(s, calm);
+  if(calm) sky.classList.add("is-calm");
+  stage.appendChild(sky);
+  festLive.sky = sky;
+  if(hero){
+    const id = "fest" + (++festSeq) + "-";
+    const outer = hero.querySelector(".cosmic-orbit-ring[r]:not([r='108'])");
+    const R = outer ? Number(outer.getAttribute("r")) || HOME_OUTER_R : HOME_OUTER_R;
+    const ring = festRingBuild(s, R, id);
+    ring.dataset.season = s.id;
+    const main = hero.querySelector(":scope > svg.cosmic-hero-svg:not(.cosmic-hero-layer)");
+    if(main && main.nextSibling) hero.insertBefore(ring, main.nextSibling); else hero.appendChild(ring);
+    const top = document.createElement("div");
+    top.className = "fest-planet";
+    top.dataset.season = s.id;
+    top.setAttribute("aria-hidden", "true");
+    top.innerHTML = festHatSvg(s, id);
+    hero.insertBefore(top, hero.querySelector(":scope > .cosmic-icon-badge"));
+    festLive.ring = ring; festLive.top = top; festLive.hero = hero;
+  }
+  /* the day's own moment, once a launch */
+  const key = s.day + ":" + now.getFullYear() + "-" + now.getMonth() + "-" + now.getDate();
+  if((s.day === "christmas-eve" || s.day === "christmas-day") && festYearShown !== key){
+    festYearShown = key;
+    setTimeout(() => { if(festLive && festLive.sky === sky && sky.isConnected) festSleigh(); }, 2600);
+  }
+  if(s.day === "newyears-day" && festYearShown !== key){
+    festYearShown = key;
+    setTimeout(() => { if(festLive && festLive.sky === sky && sky.isConnected) festYearMoment(s.year, false); }, 1400);
+  }
+}
+function festClear(){
+  clearTimeout(festTimer); festTimer = 0;
+  clearTimeout(festTick); festTick = 0;
+  if(festLive){
+    ["sky", "ring", "top", "count", "year"].forEach(k => { try{ if(festLive[k]) festLive[k].remove(); }catch(e){} });
+    festLive = null;
+  }
+}
+/* MIDNIGHT: the next local midnight (or, on New Year's Eve, the top of its last hour and then every second) - re-read there */
+function festArm(){
+  clearTimeout(festTimer); festTimer = 0;
+  clearTimeout(festTick); festTick = 0;
+  if(!festLive) return;
+  const now = festNow(), left = festToMidnight(now), s = festSeasonAt(now);
+  if(s && s.day === "nye" && left <= 3600000 + 1000){
+    festTick = setTimeout(festCountTick, Math.max(20, (left % 1000) + 5));
+    return;
+  }
+  let wait = left + 400;
+  if(s && s.day === "nye") wait = left - 3600000 + 5;
+  festTimer = setTimeout(festRecheck, Math.min(Math.max(wait, 50), 2147000000));
+}
+function festRecheck(){
+  festTimer = 0;
+  const L = festLive;
+  if(!L || !L.panel || !L.panel.isConnected){ festClear(); return; }
+  let s = null;
+  try{ s = festSeasonAt(festNow()); }catch(e){}
+  const id = s ? s.id : "", day = s ? s.day : "";
+  const g = L.panel.querySelector(":scope > .homegreeting");
+  if(id !== L.id){
+    festMount(L.panel);
+    if(g) g.textContent = homeGreetingText();
+    return;
+  }
+  if(day !== L.day){
+    L.day = day;
+    if(L.sky){ if(day) L.sky.dataset.day = day; else delete L.sky.dataset.day; }
+    if(g) g.textContent = homeGreetingText();
+  }
+  festArm();
+}
+/* THE LAST HOUR OF THE YEAR: the greeting counts down (its text node's data - no new nodes), the last ten seconds stand over the
+   planet, and midnight brings the new year */
+function festCountTick(){
+  festTick = 0;
+  const L = festLive;
+  if(!L || !L.panel || !L.panel.isConnected){ festClear(); return; }
+  const now = festNow(), left = festToMidnight(now), s = festSeasonAt(now);
+  const g = L.panel.querySelector(":scope > .homegreeting");
+  if(!s || s.day !== "nye"){
+    /* it is the new year */
+    const year = s ? s.year : now.getFullYear();
+    if(L.count){ L.count.remove(); L.count = null; }
+    festYearShown = (s ? s.day : "") + ":" + now.getFullYear() + "-" + now.getMonth() + "-" + now.getDate();
+    festYearMoment(year, true);
+    festRecheck();
+    return;
+  }
+  if(g){ const t = homeGreetingText(); if(g.firstChild && g.firstChild.nodeType === 3 && g.childNodes.length === 1){ if(g.firstChild.data !== t) g.firstChild.data = t; } else g.textContent = t; }
+  const sec = Math.ceil(left / 1000);
+  if(sec <= 10 && L.hero) festCountShow(sec);
+  festTick = setTimeout(festCountTick, Math.max(20, (left % 1000 || 1000) + 5));
+}
+function festCountShow(n){
+  const L = festLive;
+  if(!L.count){
+    const c = document.createElement("div");
+    c.className = "fest-count";
+    c.setAttribute("aria-hidden", "true");
+    c.innerHTML = '<svg viewBox="0 -12 360 342"><text x="180" y="150">' + n + '</text></svg>';
+    L.hero.appendChild(c);
+    L.count = c;
+  }
+  const t = L.count.querySelector("text");
+  if(t.firstChild && t.firstChild.data !== String(n)) t.firstChild.data = String(n);
+  if(!festCalm()){
+    try{ L.count.animate([{ transform: "scale(1.35)", opacity: 0 }, { transform: "scale(1)", opacity: 1, offset: .25 }, { transform: "scale(.92)", opacity: .85 }],
+      { duration: 980, easing: "cubic-bezier(.2,.7,.3,1)" }); }catch(e){}
+  }
+}
+/* THE YEAR, in gold over the planet: at midnight with every firework at once, or once on New Year's Day */
+function festYearMoment(year, finale){
+  const L = festLive;
+  if(!L || !L.hero || !L.hero.isConnected) return;
+  if(L.year){ L.year.remove(); L.year = null; }
+  const y = document.createElement("div");
+  y.className = "fest-year";
+  y.setAttribute("aria-hidden", "true");
+  const id = "festy" + (++festSeq);
+  y.innerHTML = '<svg viewBox="0 -12 360 342"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6D2"/><stop offset=".45" stop-color="#F6CC5C"/><stop offset="1" stop-color="#C08A22"/></linearGradient></defs>' +
+    '<text x="180" y="150" fill="url(#' + id + ')">' + year + '</text></svg>';
+  L.hero.appendChild(y);
+  L.year = y;
+  const calm = festCalm();
+  const end = () => { try{ if(L.year === y){ y.remove(); L.year = null; } }catch(e){} };
+  if(calm){ setTimeout(end, 4200); return; }
+  try{
+    const a = y.animate([{ transform: "scale(.6)", opacity: 0 }, { transform: "scale(1.06)", opacity: 1, offset: .14 }, { transform: "scale(1)", opacity: 1, offset: .24 },
+      { transform: "scale(1)", opacity: 1, offset: .8 }, { transform: "scale(1.12)", opacity: 0 }], { duration: 4600, easing: "ease-out" });
+    a.onfinish = end; a.oncancel = end;
+  }catch(e){ setTimeout(end, 4600); }
+  if(finale) festFinale();
+}
+/* every station fires at once, then confetti from the planet */
+function festFinale(){
+  const L = festLive;
+  if(!L || !L.sky) return;
+  const fx = L.sky.querySelectorAll(".fest-fw");
+  fx.forEach((f, i) => setTimeout(() => festFireOnce(f), i * 160));
+  setTimeout(() => festConfetti(), 300);
+}
+function festFireOnce(f){
+  if(!f || !f.isConnected) return;
+  const b = f.querySelector(".fest-fw-burst"), fl = f.querySelector(".fest-fw-flash");
+  try{
+    b.animate([{ transform: "scale(.12)", opacity: 1 }, { transform: "scale(1)", opacity: .95, offset: .45 }, { transform: "translate3d(0,18px,0) scale(1.04)", opacity: 0 }],
+      { duration: 1900, easing: "cubic-bezier(.1,.7,.3,1)" });
+    fl.animate([{ opacity: 0 }, { opacity: .9, offset: .08 }, { opacity: 0, offset: .4 }, { opacity: 0 }], { duration: 1900 });
+  }catch(e){}
+}
+/* where the planet is on the screen (read on a tap only) */
+function festPlanetBox(){
+  const L = festLive;
+  const r = (L && L.hero) ? L.hero.getBoundingClientRect() : null;
+  if(!r || !r.width) return null;
+  /* the sky hangs from the bottom of the screen (100lvh): in a browser tab with its bars out, its top is above the window's */
+  const top = L.sky ? L.sky.getBoundingClientRect().top : 0;
+  return { x: r.left + r.width / 2, y: r.top + r.height * .47368 - top, r: r.width * .1444 };
+}
+/* a tap on the planet (planetRun): Thanksgiving throws leaves, Christmas sends the sleigh, New Year's throws confetti */
+function festPlanetTap(){
+  const L = festLive;
+  if(!L || !L.sky || !L.sky.isConnected || festCalm()) return;
+  if(L.id === "thanksgiving") festLeafSwirl();
+  else if(L.id === "christmas") festSleigh();
+  else if(L.id === "newyear"){ festConfetti(); const f = L.sky.querySelectorAll(".fest-fw"); festFireOnce(f[Math.floor(Math.random() * f.length)]); }
+}
+function festFxHost(){
+  const L = festLive;
+  return L && L.sky ? L.sky.querySelector(".fest-fx") : null;
+}
+/* thrown pieces are made once per Home, kept hidden, and run by the Web Animations API (no node is added per tap) */
+function festPieces(kind, n, make){
+  const host = festFxHost();
+  if(!host) return [];
+  let got = [...host.querySelectorAll(":scope > .fest-throw.is-" + kind)];
+  if(got.length < n){
+    let html = "";
+    for(let i = got.length; i < n; i++) html += '<i class="fest-throw is-' + kind + '">' + make(i) + '</i>';
+    host.insertAdjacentHTML("beforeend", html);
+    got = [...host.querySelectorAll(":scope > .fest-throw.is-" + kind)];
+  }
+  return got;
+}
+function festConfetti(){
+  const p = festPlanetBox();
+  if(!p) return;
+  const cols = ["#FFD36B", "#FF7BC0", "#7FE3FF", "#FFFFFF", "#B9A2FF", "#FF9E5E", "#7CF0B0"];
+  const parts = festPieces("conf", 36, i => '<b style="background:' + cols[i % cols.length] + (i % 4 === 3 ? ';border-radius:50%;width:7px;height:7px' : '') + '"></b>');
+  const H = window.innerHeight || 900;
+  parts.forEach((el, i) => {
+    const a = -Math.PI / 2 + (Math.random() - .5) * 2.4, v = 120 + Math.random() * 190;
+    const x0 = p.x + Math.cos(a) * p.r * .6, y0 = p.y + Math.sin(a) * p.r * .6;
+    const x1 = x0 + Math.cos(a) * v, y1 = y0 + Math.sin(a) * v;
+    const x2 = x1 + (Math.random() - .5) * 120, y2 = Math.min(H + 30, y1 + 260 + Math.random() * 320);
+    const r0 = Math.random() * 360, spin = (Math.random() < .5 ? -1 : 1) * (360 + Math.random() * 720);
+    try{
+      el.animate([
+        { transform: "translate3d(" + x0 + "px," + y0 + "px,0) rotate(" + r0 + "deg) scale(.4)", opacity: 0 },
+        { transform: "translate3d(" + x1 + "px," + y1 + "px,0) rotate(" + (r0 + spin * .35) + "deg) scale(1)", opacity: 1, offset: .22, easing: "cubic-bezier(.3,.1,.6,1)" },
+        { transform: "translate3d(" + x2 + "px," + y2 + "px,0) rotate(" + (r0 + spin) + "deg) rotateX(" + (540 + Math.random() * 360) + "deg) scale(1)", opacity: 0 }
+      ], { duration: 2600 + Math.random() * 1200, delay: Math.random() * 120, easing: "cubic-bezier(.2,.6,.4,1)" });
+    }catch(e){}
+  });
+}
+function festLeafSwirl(){
+  const p = festPlanetBox();
+  if(!p) return;
+  const parts = festPieces("leaf", 14, i => festLeafSvg(FEST_LEAF_COLS[i % FEST_LEAF_COLS.length], i % 3 === 2 ? 1 : 0));
+  const H = window.innerHeight || 900;
+  parts.forEach((el, i) => {
+    const a = i / parts.length * Math.PI * 2 + Math.random() * .3, v = p.r * (1.6 + Math.random() * 1.4);
+    const x1 = p.x + Math.cos(a) * v, y1 = p.y + Math.sin(a) * v - 30;
+    const x2 = x1 + (Math.random() - .3) * 140, y2 = Math.min(H + 30, y1 + 300 + Math.random() * 300);
+    const r0 = Math.random() * 360, spin = (Math.random() < .5 ? -1 : 1) * (200 + Math.random() * 300);
+    try{
+      el.animate([
+        { transform: "translate3d(" + p.x + "px," + p.y + "px,0) rotate(" + r0 + "deg) scale(.3)", opacity: 0 },
+        { transform: "translate3d(" + x1 + "px," + y1 + "px,0) rotate(" + (r0 + spin * .4) + "deg) scale(1)", opacity: 1, offset: .25, easing: "cubic-bezier(.2,.5,.5,1)" },
+        { transform: "translate3d(" + ((x1 + x2) / 2 + 30) + "px," + ((y1 + y2) / 2) + "px,0) rotate(" + (r0 + spin * .7) + "deg) rotateY(160deg) scale(1)", opacity: .95, offset: .62 },
+        { transform: "translate3d(" + x2 + "px," + y2 + "px,0) rotate(" + (r0 + spin) + "deg) rotateY(320deg) scale(1)", opacity: 0 }
+      ], { duration: 3400 + Math.random() * 1400, delay: Math.random() * 140, easing: "linear" });
+    }catch(e){}
+  });
+}
+/* SANTA'S SLEIGH: a gold silhouette and three reindeer (the first with his red nose) across the top of the sky, a trail of glitter
+   behind; one at a time */
+var festSleighBusy = 0;
+function festSleigh(){
+  const host = festFxHost();
+  if(!host || festCalm() || Date.now() < festSleighBusy) return;
+  let sl = host.querySelector(":scope > .fest-sleigh");
+  if(!sl){
+    const deer = (x, nose) => '<g transform="translate(' + x + ' 6)"><path d="M5 14C5 10.2 8.6 9 13.5 9L22 9C25.6 9 27.6 10 28.6 12L29.6 14.6C28 16.8 24.6 18 20.4 18L11 18C7.4 18 5 17 5 14Z"/>' +
+      '<path d="M25.4 11.4L30.6 4.2C31.6 3 33.4 2.8 34.6 3.8L38.2 6.2C39.2 7 38.6 8.4 37.4 8.4L34.2 8.4L30.2 14.2Z"/>' +
+      '<path d="M27 16L32.6 20.6L35 19.6M23.6 17.2L28.2 23.4M9.4 16.4L3.6 19.8L1.4 18.8M12.4 17.4L6.4 23.6" fill="none" stroke-width="2.1"/>' +
+      '<path d="M31.6 4.2L29.6 -1.6M30.8 1.6L27.6 .2M30.2 -.4L28.8 -3M33 3.6L34.2 -2.2M33.8 .6L37 -.8M5.6 12.4L2.4 10.2M31 5.6L28.6 5" fill="none" stroke-width="1.25"/>' +
+      (nose ? '<circle cx="38.6" cy="7.2" r="5.4" fill="#FF5050" opacity=".28" stroke="none"/><circle cx="38.6" cy="7.2" r="2.3" fill="#FF5A5A" stroke="none"/>' : '') + '</g>';
+    sl = document.createElement("i");
+    sl.className = "fest-sleigh";
+    sl.innerHTML = '<i class="fest-sleigh-glow"></i><svg viewBox="-2 -4 200 54" aria-hidden="true"><g fill="#F6DFA8" stroke="#F6DFA8" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M6 27C6 19 10 15 16 15L18 15L20 31L44 31C50 31 54 27 55 21C56 17 60.4 15.6 62.6 18.6C60.6 18.4 59.4 20.4 59.4 23.4C58.6 33.6 52.4 38.4 44 38.4L14 38.4C9 38.4 6 34 6 27Z"/>' +
+      '<path d="M1.5 45.4L50 45.4C57.6 45.4 62 41.6 63.4 37" fill="none" stroke-width="2.3"/><path d="M14.5 38.4L13 45.4M41.5 38.4L43 45.4" fill="none" stroke-width="1.9"/>' +
+      '<path d="M7 17C3.6 9.4 9.6 3.6 15.4 7.2C19.6 3.6 24.6 8.6 21.6 15.4Z"/>' +
+      '<path d="M22.4 31C21.4 21 25.2 14 32 14C38.8 14 42.4 21 41.4 31Z"/><circle cx="32" cy="10.6" r="4.6"/>' +
+      '<path d="M27.6 8.6C29.6 1.8 36.6 .4 41.2 5L39.2 6.8Z"/><circle cx="42.2" cy="5.2" r="2"/>' +
+      '<path d="M40 22C56 20 68 21 84 20L122 20L160 20" fill="none" stroke-width="1"/>' +
+      deer(78) + deer(116) + deer(154, true) + '</g></svg>' +
+      '<i class="fest-sleigh-trail">' + '<b></b>'.repeat(7) + '</i>';
+    host.appendChild(sl);
+  }
+  const W = window.innerWidth || 440, H = window.innerHeight || 900;
+  /* up from the lower left to the upper right, behind the planet system (the sky is under it), a little rise and fall as it goes */
+  const sw = Math.min(260, Math.max(170, W * .5)), y0 = H * .6, y1 = H * .03;
+  const dur = 5600 + W * 3;
+  festSleighBusy = Date.now() + dur + 200;
+  sl.style.width = sw + "px";
+  const kf = [];
+  for(let i = 0; i <= 8; i++){
+    const t = i / 8, x = -sw - 20 + (W + sw + 40) * t, y = y0 + (y1 - y0) * t + Math.sin(t * Math.PI) * H * .05 + Math.sin(t * Math.PI * 4) * 5;
+    const slope = Math.atan2((y1 - y0) + Math.cos(t * Math.PI) * Math.PI * H * .05, W + sw + 40) * 180 / Math.PI;
+    kf.push({ transform: "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px,0) rotate(" + (slope * .7 + Math.cos(t * Math.PI * 4) * 2).toFixed(2) + "deg)", opacity: i === 0 || i === 8 ? 0 : 1 });
+  }
+  try{ sl.animate(kf, { duration: dur, easing: "linear" }); }catch(e){}
+  [...sl.querySelectorAll(".fest-sleigh-trail > b")].forEach((b, i) => {
+    try{ b.animate([{ opacity: 0, transform: "translate3d(0,0,0) scale(1)" }, { opacity: .95, offset: .1 }, { opacity: 0, transform: "translate3d(" + (-14 - i * 4) + "px," + (10 + i * 2) + "px,0) scale(.3)" }],
+      { duration: 900, delay: i * 120, iterations: Math.ceil(dur / 900), easing: "ease-out" }); }catch(e){}
+  });
+}
+function festHookVisibility(){
+  if(festVisHooked) return;
+  festVisHooked = true;
+  const back = () => { try{ if(!document.hidden && festLive && festLive.panel && festLive.panel.isConnected){ clearTimeout(festTimer); festTimer = 0; festRecheck(); } }catch(e){} };
+  try{ document.addEventListener("visibilitychange", back); window.addEventListener("pageshow", back); }catch(e){}
+}
 function showHome(){
   /* (384 r16) a leave asked for in Fire Code is finished here before anything is built; one that goes straight on to Fire Code builds no Home */
   try{ if(runPendingClassLeave()) return; }catch(e){}
@@ -121147,6 +121841,7 @@ function showHome(){
     stage.appendChild(dailyBtn);
   }
   dailyRingTick();
+  try{ festMount(panel); }catch(e){}   /* (384 festive) the season's sky, hat and ring, when there is one */
   try{ warmCardBadges(); }catch(e){}   /* (384.119) the units' badges, in idle time, before Start Studying and a mode are tapped */
   /* the orbit's emblems, recorded once Home has settled (build 298); any
      already recorded this session play from the first frame (build 300) */
