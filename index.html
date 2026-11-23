@@ -127940,8 +127940,9 @@ var CAMEO_KEY = "class26e.cameo";
 var CAMEO_KINDS = ["sit", "tiptoe", "dangle", "peek", "wave", "sleepy", "cheer", "oops", "run"];
 var CAMEO_WEIGHT = { sit: 3, peek: 2, wave: 2, tiptoe: 2, dangle: 2, run: 2, sleepy: 1, cheer: 2, oops: 1 };
 /* how long each stays when nothing sends it away (ms); sleepy stays until something does, at most its number */
-/* each kind's reach, in units of its size from its figure's left edge and the line it is on: [left, up, right, down]; measured
-   over every character's own figure, prop and way in (tools/check-b384-cameo.py (S) scrubs them all and holds these) */
+/* each kind's reach, in units of its size from its figure's left edge and the line it is on: boxes [left, up, right, down], the
+   kind reaching only their union (sit and sleepy are wide above the line, only their legs below it); measured over every
+   character's own figure, prop and way in (tools/check-b384-cameo.py (S) scrubs them all every 60ms and holds these) */
 var CAMEO_BOX = { sit: [[-.21, 1.45, 1.41, .08], [.04, 0, .96, .46]], sleepy: [[-.19, 1.42, 1.36, .08], [.04, 0, .96, .46]], tiptoe: [[0, 1.8, 0, .08]],
   dangle: [[-.18, .83, 1.37, 1.05]], peek: [[-.22, .95, 1.23, 0]], wave: [[-.2, 1.08, 1.43, 0]], cheer: [[-.38, 1.14, 1.39, 0]], oops: [[-.19, .94, 1.24, 0]],
   run: [[0, 1.85, 0, .08]] };
