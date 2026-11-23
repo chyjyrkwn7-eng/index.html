@@ -43131,6 +43131,9 @@ the same picture every time.
 NAME one of thanksgiving | thanksgiving-day | christmas | christmas-eve | christmas-day | nye | countdown (Dec 31 23:59:45) |
 newyear | off, or a local date-time `2026-12-31T23:59:50`. The clock is moved to that moment when first read and runs on from it
 (festNow), so midnight can be watched. Remove the key to go back to the real date.
+The key is in the head script's SHARED list (beside intro.seen): Fire Code maps every other class26e.* key to class26e.ifc.*, so
+without it Fire Code read class26e.ifc.season and ignored a preview set for the device (the first Fire Code recordings showed the real
+date's Thanksgiving under every scene). Gate (2) now sets the key before the class's map and reads it in both classes.
 
 **GATE: NEW tools/check-b384-festive.py** - (1) 36 forced dates (Thanksgiving's Monday and Day worked out in Python for 2026-2030,
 every boundary) give the right season and day; (2) each season in both classes puts a sky with its pieces, one hat, one ring; three

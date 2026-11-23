@@ -415,7 +415,7 @@
        (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
        with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
     /* (384) the status bar's colour is the class's own (its theme's), as the theme is: not shared */
-    var SHARED = /^class26e\.(signout|activeclass|enrolled|leaveclass|leftnote|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|leaveclass|leftnote|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled|season)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;

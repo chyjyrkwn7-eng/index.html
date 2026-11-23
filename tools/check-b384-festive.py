@@ -7,7 +7,7 @@ moved there and runs on). iPhone 17 Pro Max (440x956), installed, both classes. 
  (1) THE CALENDAR, by what Home shows for a forced date: nothing on Nov 22 2026 and Jan 2; Thanksgiving from the Monday of
      Thanksgiving week (the fourth Thursday, worked out here for 2026-2030) to Nov 30, its day marked on the fourth Thursday only;
      Christmas Dec 1 - 30 (Dec 24 and 25 marked); New Year's Dec 31 and Jan 1 (each marked);
- (2) each season, in each class, puts on Home: a sky layer with its falling / bursting pieces, a hat in the planet's box, a dressing
+ (2) both classes read the one device key (Fire Code maps its own keys, not this one); each season, in each class, puts on Home: a sky layer with its falling / bursting pieces, a hat in the planet's box, a dressing
      on the outer ring - three different pictures for the three seasons - and a normal date puts on nothing at all;
  (3) NOTHING TAKES A TOUCH: every festive element computes pointer-events none; the point in the middle of each of Home's controls
      (Start Studying, the daily question, the class button, the chat button, the tab bar's buttons, the planet, each rank bubble)
@@ -44,12 +44,13 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
 CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly').forEach(e=>e.remove());")
-def page(br, cls, reduce=False):
+def page(br, cls, reduce=False, pre=None):
     ctx = br.new_context(viewport={"width": 440, "height": 956}, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
     ctx.add_init_script("window.__cloudSeed = {};")
     ctx.add_init_script(G["FAKE"])
     ctx.add_init_script(g["STANDALONE"])
     ctx.add_init_script(G["init"](G["ifc"] if cls == "ifc" else G["academy"], active=cls))
+    if pre: ctx.add_init_script("try{ localStorage.setItem('class26e.season', %s); }catch(e){}" % json.dumps(pre))
     ctx.add_init_script("try{ localStorage.setItem('class26e.weekrecap.v1','9999-12-31'); localStorage.setItem('class26e.ifc.weekrecap.v1','9999-12-31'); }catch(e){}")
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
@@ -121,6 +122,13 @@ with sync_playwright() as pw:
     chk("(1) the calendar: %d forced dates (Thanksgiving's Monday and Day worked out for 2026-2030), %d wrong" % (len(want), len(bad)), not bad, bad[:5])
     errs_all += errs; ctx.close()
     pics = {}
+    # (2) the preview key is the DEVICE's: set as the address bar's console would (before the class's own storage map), both classes read it
+    for cls in ("academy", "ifc"):
+        ctx, pg, errs = page(br, cls, pre="christmas")
+        pg.evaluate("()=>{ %s showHome(); }" % CLEAN); pg.wait_for_timeout(900)
+        st = pg.evaluate(STATE)
+        chk("(2) %s reads the device's own preview key (class26e.season, unmapped): %s" % (cls, st["season"]), st["season"] == "christmas", st)
+        errs_all += errs; ctx.close()
     for cls in ("academy", "ifc"):
         ctx, pg, errs = page(br, cls)
         force(pg, "off", 1200)
