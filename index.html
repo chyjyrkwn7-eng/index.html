@@ -114145,7 +114145,15 @@ function bannerTitleSub(text, msg){
   const sub = document.createElement("span"); sub.className = "app-banner-sub"; sub.textContent = rest.charAt(0).toUpperCase() + rest.slice(1);
   text.append(ttl, document.createTextNode(" "), sub);
 }
+function classSwitchUnderway(){
+  try{ return document.documentElement.classList.contains("class-switching") || !!document.getElementById("class-switch-loader"); }catch(e){ return false; }
+}
 function showDailyAlert(msg, opts){
+  /* (384.137 videos) NOT INTO A CLASS SWITCH: from the tap on a class the page is covered and about to reload; a banner that
+     came due then (the daily question's "It's out", which waits out the "Welcome back" banner) dropped in at the top, with its
+     sound, as the cover faded in over it. The next page says what is still owed; a switch that is given up drops nothing that
+     matters (the daily question's "?" is still lit). */
+  if(classSwitchUnderway()) return null;
   watchTopBanners();
   /* a notice banner: held while a cutscene has the screen (build 320) */
   if(typeof holdForCutscene === "function" && holdForCutscene("dailyalert:" + msg, () => showDailyAlert(msg, opts))) return null;
@@ -114560,6 +114568,8 @@ function emergeDailyAlert(el, from, settled){
    Home already on screen. Both should look the same. */
 function announceDailyReset(btn){
   if(!btn) return;
+  /* (384.137 videos) not under a class switch's cover: no recharge, no chime, no banner (the next page announces it) */
+  if(classSwitchUnderway()) return;
   /* where the ring stood: a waiting ring (answered) goes on from where it
      was; a question still unanswered from the last period, or one met on
      arriving at Home, fills a whole cycle (build 320) */
@@ -114584,6 +114594,8 @@ function announceDailyReset(btn){
      is only the fallback for when the "?" is not on screen. */
   const announce = motion => {
     if(!document.body.contains(btn)) return;
+    /* (384.137 videos) no chime and no banner once a class switch has started (see showDailyAlert) */
+    if(classSwitchUnderway()) return;
     /* (384 final check) one banner at a time: "It's out" waits while another is up at the top ("Welcome back to the
        Police Academy" after a class switch) rather than stacking under it, mid-screen; up to 12 seconds */
     const other = () => [...document.querySelectorAll(".daily-alert.show, .app-banner.show")].some(b => b.id !== "dailyalert" && !b.classList.contains("nova-friend-note"));
@@ -172834,7 +172846,13 @@ function tabPerfText(){
     /* (round 37) "the bottom tab doesn't appear at first though, it takes a second to load in":
        a new account's Home under Nova's introduction (z 360, over the bar's 200) has its bar
        there already, so it is uncovered with Home as he fades - not built a beat after */
-    const homeUnder = !!stage.querySelector(".screen-home-actual") && !!document.querySelector("#nova-intro, #genprofile-overlay");
+    /* (384.137 videos) ...and in the beat between them: GENERATING PROFILE has gone and Home holds on its own for
+       HOME_HOLD_BEFORE_NOVA_MS before Nova comes in. With neither element up the bar was hidden for that beat - on under the
+       overlay's fade, gone for 1.1s, back under Nova - a new account's first look at Home with its bar blinking out and in.
+       signupInNova (a sign-up whose account Nova makes) holds it there. Read in a try: this runs on stage mutations. */
+    let signupHome = false;
+    try{ signupHome = !!signupInNova; }catch(e){}
+    const homeUnder = !!stage.querySelector(".screen-home-actual") && (!!document.querySelector("#nova-intro, #genprofile-overlay") || signupHome);
     const show = isModern && oldNavVisible && !window.forceHideBottomTabs
                  && (!!(typeof store !== "undefined" && store && store.onboardingComplete) || homeUnder);
     bar.hidden = !show;
