@@ -43072,3 +43072,7 @@ whatever else. We have a pretty massive new build on our hands here."
   chapter" read "chapter or chapter" there. It is "a raised metal pin of what its unit is about" in the card and the history, which
   reads right in both classes. Shots: Pro Max both classes, iPad Fire Code (2x). Fire Code gates that never marked the card seen
   (they did not need to before) were sampled after the change: check-b384-calc, -pin and -friendprofile ALL PASS.
+- check-centering --quick (2026-11-23): ONE off centre, Fire Code Profile's next-rank reward tile 'Forge' (span.pf-rw.pf-taps,
+  profile@573), 0.54-1.02px high, varying run to run. It FAILS the same way on 6075063 (which passed it on 11-22) and on d12b8c2,
+  so it is not this build's: the fixture's state moves with the date (week key) or the tile is mid-animation. Left for the
+  inherited-failures pass.
