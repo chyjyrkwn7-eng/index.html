@@ -337,7 +337,9 @@ def scene_hundo(pg, rec):
     rec.start(rate=.1); wait(pg, 900)
     answer(pg, True, 1300)
     pg.evaluate("()=>document.getElementById('nextbtn').click()")
-    wait(pg, 9800)
+    # (384.137 videos) to the Total and a beat on it: at 9800 the clip dissolved back into its first frame while the Total was
+    # still counting (+210 ... +352), so the score it is about never landed
+    wait(pg, int(os.environ.get("HUNDO_MS", "16000")))
     return {}
 
 
