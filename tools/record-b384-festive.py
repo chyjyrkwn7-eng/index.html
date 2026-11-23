@@ -70,7 +70,7 @@ def still(br, scene, cls, ipad=False):
     ctx, pg, errs = open_page(br, cls, forced, w, h, dpr, ins)
     pg.evaluate("()=>{ festYearShown = ''; %s showHome(); }" % CLEAN)
     pg.wait_for_timeout(int(at * 1000))
-    if scene == "nye": pg.wait_for_timeout(3600)   # the last seconds over the planet, before midnight
+    if scene == "nye": pg.wait_for_timeout(4100)   # the last seconds over the planet, before midnight
     pg.evaluate("()=>document.querySelectorAll('.homecaption,.daily-alert,.app-banner').forEach(e=>e.remove())")
     png = pg.screenshot(scale="device")
     name = "%s-%s.jpg" % (scene, "ipad" if ipad else cls)
