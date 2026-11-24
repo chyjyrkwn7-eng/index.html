@@ -360,6 +360,17 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   /* the hand-hold opening: a slot cut through the front, curved as the front is */
   const HW = 11, slot = S.grow(S.grow((x, y) => Math.max(Math.abs(x - 50) - HW + 2.4, -ell(TY + 4.3, 1)(x, y), ell(TY + 12.7, 1)(x, y)), -2.4), 2.4);
   const inSlot = f => S.shape(S.inter(f, S.grow(slot, -.55)), BB);
+  /* (art15) Madison: "This blue container looks a smidge boring, and the part I checked is messed up? It's supposed to have the 3d look".
+     The collar's right side was a flat lit band, a dark bevel, then the pin's own side wall as a second bright strip: it now turns
+     away like a cylinder (darker toward its right edge), so the wall carries on from it. On its lower body, the placard every LPG cylinder carries: a white hazard diamond with
+     a red border and a red flame. */
+  const tankBelow = S.minus(tank, (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y)));
+  const tStrip = (x0, x1) => S.shape(S.inter(tankBelow, S.box(x0, 0, x1 - x0, 100, 0)), BB);
+  const cStrip = (x0, x1) => S.shape(S.inter(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, TY - 1.5 - y, ell(Y0, 1)(x, y))), S.box(x0, 0, x1 - x0, 100, 0)), BB);
+  const DZ = [50, 71], DH = 8.4;
+  const diamond = S.grow(S.poly([[DZ[0], DZ[1] - DH + 1.2], [DZ[0] + DH - 1.2, DZ[1]], [DZ[0], DZ[1] + DH - 1.2], [DZ[0] - DH + 1.2, DZ[1]]]), 1.2);
+  const dIn = S.grow(diamond, -1.3);
+  const fl = [[50, 65.2], [52.6, 68.4], [53.4, 71.2], [52.3, 73.8], [50, 75], [47.7, 73.8], [46.6, 71.4], [47.4, 69.2], [48.6, 70.6], [48.9, 68.2]];
   CHAPTER_OBJ["Chapter 61: Liquefied Petroleum Gases"] = {
     base: "water",
     d: S.shape(all, BB),
@@ -370,8 +381,13 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["ink", S.loops(S.inter(S.inter(S.minus(S.grow(tank, 2), tank), foot), (x, y) => y - 78), BB).map(S.pathOf).join(""), { z: .2, bev: .6, col: "#5A6068" }],   /* the tank's shadow on it */
       ["water", S.shape(S.minus(S.union([tank, S.inter(S.inter(all, S.grow(tank, 1.5)), (x, y) => y - 30)], 0), (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))), BB), { dome: 2 }],   /* the tank, from the collar's weld down (over the foot ring's top, as before) */
       ["water", OBJ_rrect(10, 54, 80, 6, 0), { z: .7, bev: .7 }],                                      /* its welded seam */
+      ["cream", S.shape(diamond, BB), { z: .35, bev: .4, dome: .3, col: "#C8302C" }],                 /* the hazard placard: its red border, */
+      ["cream", S.shape(dIn, BB), { z: .15, bev: .3, col: "#F4F2EC" }],                               /* its white field, */
+      ["red", OBJ_poly(fl, [0, .8, 1.2, 1.2, 1.4, 1.2, 1.2, .6, 0, 0]), { z: .2, bev: .3, dome: .3, col: "#D2342C" }],   /* its flame */
       ["steel", S.shape(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, ell(Y0, 1)(x, y))), BB)],                             /* (the collar's steel, under its parts to the outline's last corner) */
-      ["steel", S.shape(S.minus(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, TY - 1.5 - y, ell(Y0, 1)(x, y))), rimOut), BB), { z: .55, bev: .9 }],   /* the collar's front, a band round a cylinder (its fillets into the dome with it) */
+      ["steel", S.shape(S.minus(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, TY - 1.5 - y, ell(Y0, 1)(x, y))), rimOut), BB), { dome: 1.4 }],   /* (art15: domed, not stepped - a step's dark bevel stood between the collar and its own side wall) the collar's front, a band round a cylinder (its fillets into the dome with it) */
+      ["steel", cStrip(50 + CW * .55, 50 + CW * .85), { col: "#8C939B" }],                              /* the collar turning away toward its right */
+      ["steel", cStrip(50 + CW * .85, 100), { col: "#6B7279" }],
       ["rubber", S.shape(slot, BB), { z: -1.5, bev: .6 }],                                                 /* the hand-hold opening */
       ["brass", inSlot(S.box(42.5, TY + 8.6, 15, 12, 2)), { z: .2, gem: .9, gw: 2.2 }],                    /* through it: the brass valve body */
       ["brass", inSlot(S.box(56.4, TY + 11.6, 6, 4.2, 1.6)), { z: .15, dome: .7 }],                        /* and its outlet */

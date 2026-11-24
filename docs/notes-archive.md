@@ -44151,3 +44151,13 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - **The cut.** The ink cut's half-plane had its sign the wrong way round (an SDF is < 0 inside). It removed the shaft ABOVE the ink line, so the back rim showed across the shaft as a band, with a stub of quill below it.
   - **The colour.** The "wet" grey plate was the grey mark.
 - Now the quill is one white shaft over the back rim, ending at the ink's surface on a shallow curve through the middle of the mouth. The wet plate is gone. check-b384-ifcbadges is re-pinned to 79bc9939.
+
+## 384.145 (2026-11-24): Ch.28's hull, Ch.61's collar and placard (art15)
+- **Ch.28.** Madison: "It's like you stuck the badges together and left over pieces weren't taken out". The pieces were the pin's own side wall (OBJ_PIN.wall, 3 units down-right of the outline, in the face's colour above it): in every notch of the scalloped pile it stood as a brown crescent of "log".
+  - **Outline.** It is now the pile's hull: the corner logs joined by tangent capsules R + .3. The notches are filled with the pile's dark shadow, and the wall runs only along three straight sides.
+  - **Logs.** Each log's bark is flat (z .35, bev .35); the sapwood is centred (r 10.6).
+- **Ch.61.** Madison: "This blue container looks a smidge boring, and the part I checked is messed up? It's supposed to have the 3d look".
+  - **Collar.** Its front was a stepped plate (z .55, bev .9) whose dark bevel stood between the collar and the pin's side wall, reading as a separate strip. It is now domed (1.4), with no step, and two darker steel bands turn it away on its right.
+  - **Placard.** The tank carries the LPG placard: a white hazard diamond with a red border and a red flame on its lower body.
+  - Tried and removed: colour strips on the tank (they read as hard vertical stripes).
+- **Gates.** merge --check, badgeart, chapterbadges, objbadges --class ifc: ALL PASS except PERF cold on Ch.32 (untouched; flakes under load).

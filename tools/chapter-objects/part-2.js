@@ -202,7 +202,7 @@
     const grain = () => { const w = [[2, rnd() * 6.283, .035 + .02 * rnd()], [3, rnd() * 6.283, .02 + .015 * rnd()], [5, rnd() * 6.283, .008]]; return t => w.reduce((f, [m, ph, a]) => f + a * Math.sin(m * t + ph), 1); };
     const ringOf = (o, r, g, own, n) => { const ph = rnd() * 6.283, pts = []; for(let i = 0; i < n; i++){ const t = i / n * 6.283; const f = g(t) * (1 + own * Math.sin(4 * t + ph) + own * .6 * Math.sin(7 * t + ph * 2)); pts.push([o[0] + r * f * Math.cos(t), o[1] + r * f * Math.sin(t)]); } return pts; };
     const logs = L.map((c, i) => {
-      const out = wob(c, R, .014, 72), face = wob([c[0] - .15, c[1] + .1], 10.3, .03, 72);
+      const out = wob(c, R, .014, 72), face = wob([c[0], c[1]], 10.6, .03, 72);
       const o = [c[0] + (rnd() - .5) * 2.2, c[1] + (rnd() - .5) * 2];                 /* the pith, off centre */
       const g = grain();
       const heart = ringOf(o, 6.2, g, .012, 60);
@@ -218,7 +218,13 @@
        bottom logs. The lengths are gone: the logs are seen straight end on, the pile's depth in the shadow between them. The logs are a
        touch larger, so neighbours touch, and the outline's union is only lightly filleted: no dark wedge stands in the notch between two
        logs on the outside. */
-    const all = S.union([ends, S.poly([L[0], L[2], L[5]])], .7);
+    /* (art15) Madison: "It's like you stuck the badges together and left over pieces weren't taken out". The pieces were the pin's own
+       THICKNESS: renderObjPin draws a side wall OBJ_PIN.wall deep down and to the right of the outline, in the colour of the face above
+       it, and in every notch of a scalloped pile that wall is a brown crescent of "log" standing in the gap. The outline is now the
+       pile's hull (the three corner logs joined by their tangents), so it runs straight along each side with no notch for a wall to
+       show in; the notches are filled with the pile's dark shadow. */
+    const hull = S.union([S.capsule(...L[0], ...L[2], R + .3), S.capsule(...L[2], ...L[5], R + .3), S.capsule(...L[5], ...L[0], R + .3), S.poly([L[0], L[2], L[5]])], 0);
+    const all = S.union([ends, hull], 0);
     const lp = f => S.loops(f, BB).map(S.pathOf).join("");
     /* the bark's furrows: short, irregular grooves across the rim, at uneven spacing and length; and furrows running along each length */
     let furrows = "", along = "", checks = [];
@@ -241,7 +247,7 @@
       d: S.shape(all, BB), base: "wood",
       plates: [
         ["wood", S.shape(all, BB), { col: "#21160D" }],                                                 /* the shadow between the logs (the logs stand up out of it) */
-        ["wood", logs.map(g => path(g.out)).join(""), { z: 1.2, bev: .8, dome: .5, col: "#5E3A20" }],     /* the logs' ends, in their bark */
+        ["wood", logs.map(g => path(g.out)).join(""), { z: .35, bev: .35, col: "#5E3A20" }],     /* the logs' ends, in their bark */
         ["wood", furrows, { ln: .6, cut: .55, paint: 0 }],                                              /* its furrows */
         ["wood", logs.map(g => path(g.face)).join(""), { z: .25, bev: .45, dome: .25, col: "#E2B67A" }],   /* the end grain: the pale sapwood */
         ["wood", logs.map(g => path(g.heart)).join(""), { col: "#C98F52" }],                            /* the warmer heartwood */
