@@ -6619,6 +6619,9 @@ def check_b280_rankmap_still(br):
          (the seed has none, and an unranked account has no stretch) */
       const u = topicsIn(QUESTIONS); u.slice(0, 3).forEach(n => store.unitPerfects[n] = 999);
       store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = null;
+      /* (384 streak) today already checked in: the account's first Home of the day pays the daily streak's XP (checkinTick), which
+         would land between the two looks and grow the climb - "nothing changed" is an account that has had its day */
+      try{ if(typeof checkinInfo === 'function') store.checkins = [dayKey(new Date())]; }catch(e){}
       const open = async () => { showHome(); await wait(300); window.scrollTo({ top: 0, behavior: 'instant' });
         showProfile('ranks'); let max = 0; for(let i = 0; i < 45; i++){ await wait(100); max = Math.max(max, window.scrollY); } return max; };
       /* first look: no record, so the climb plays and the spot is recorded */

@@ -42560,6 +42560,71 @@ html.is-browser{ --fade-paper: transparent; }
     100%{ transform:translate3d(0, calc(20px * var(--k)), 0) scale(1.04); opacity:0; }
   }
   @keyframes fest-twinkle{ from{ opacity:.3; } to{ opacity:1; } }
+
+  /* ---- THE DAILY CHECK-IN STREAK (384 streak) - see checkinTick, showStreakNews, buildStreakRow, openStreakSheet ----
+     The flame is three flat tongues (no gradient, no filter): orange, amber, a yellow core; grey while no streak is alive. */
+  .streak-flame{ display:block; overflow:visible; }
+  .streak-flame .sf-outer{ fill:#FF6A2B; }
+  .streak-flame .sf-mid{ fill:#FFA234; }
+  .streak-flame .sf-core{ fill:#FFE27A; }
+  .streak-flame.is-dim .sf-outer{ fill:#6E6E76; }
+  .streak-flame.is-dim .sf-mid{ fill:#8E8E96; }
+  .streak-flame.is-dim .sf-core{ fill:#B4B4BC; }
+  /* Home's banner: the flame where every banner's glyph sits, a touch larger (it is a picture, not a line glyph) */
+  .app-banner.app-banner-streak > .streak-flame.app-banner-icon{ width:1.6rem; height:1.6rem; margin:-.12rem -.06rem -.12rem -.12rem; }
+  /* the chip that flies to Profile: a 0x0 box moving across, the chip in it moving up and down (the arc), the chip solid */
+  .streak-fly{ position:fixed; z-index:501; width:0; height:0; pointer-events:none; will-change:transform; }
+  .streak-fly-chip{
+    position:absolute; left:0; top:0; transform:translate(-50%, -50%); transform-origin:center; will-change:transform, opacity;
+    display:flex; align-items:center; gap:.35rem; white-space:nowrap; padding:.36rem .8rem .36rem .5rem; border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(30,22,18,.95);
+    border:1px solid rgba(255,138,61,.55);
+    box-shadow:0 6px 18px rgba(0,0,0,.34), 0 0 16px rgba(255,122,44,.38), inset 0 1px 0 rgba(255,255,255,.14);
+    font-family:var(--sans); font-size:.94rem; font-weight:800; letter-spacing:-.01em; line-height:1.2; color:#FFC27A;
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+  }
+  .streak-fly-chip > .streak-flame{ width:1.5rem; height:1.5rem; flex:0 0 auto; }
+  /* Profile: the row under the XP, Customize's glass row with the flame for its art */
+  html[data-layout] body #stage .profile-hero > .profile-streak-row{ position:relative; z-index:3; display:flex; margin:1.05rem 0 0; }
+  html[data-layout] body #stage .profile-hero > .profile-streak-row + .profile-customize-row{ margin-top:10px; }
+  html[data-layout] body #stage .profile-identity-tab .pf-streak-art{
+    position:relative; flex:0 0 auto; display:grid; place-items:center; width:38px; height:38px; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(255,128,48,.32), rgba(255,128,48,0));
+  }
+  html[data-layout] body #stage .profile-identity-tab .pf-streak-art.is-dim{ background:none; }
+  html[data-layout] body #stage .profile-identity-tab .pf-streak-art > .streak-flame{ width:32px; height:32px; }
+  html[data-layout] body #stage .profile-identity-tab .pf-streak .pf-act-sub{ font-variant-numeric:tabular-nums; }
+  /* the sheet: the person card's, the flame over its title, three numbers, the ladder */
+  .streak-sheet{ text-align:center; }
+  .streak-sheet .streak-sheet-head{ display:flex; flex-direction:column; align-items:center; }
+  .streak-sheet .streak-sheet-flame{ display:grid; place-items:center; width:3rem; height:3rem; margin:-.2rem auto .25rem; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(255,128,48,.34), rgba(255,128,48,0)); }
+  .streak-sheet .streak-sheet-flame.is-dim{ background:none; }
+  .streak-sheet .streak-sheet-flame > .streak-flame{ width:2.5rem; height:2.5rem; }
+  .streak-sheet .unlock-card-name{ margin:.15rem 0 .6rem; }
+  .streak-sheet .streak-sheet-stats{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.5rem; margin:0 0 .7rem; }
+  .streak-sheet .streak-stat{ display:flex; flex-direction:column; align-items:center; gap:.15rem; padding:.5rem .25rem .45rem; border-radius:14px;
+    background:rgba(28,30,37,.82); border:1px solid rgba(255,255,255,.09); }
+  .streak-sheet .streak-stat-num{ font-family:var(--sans); font-size:1.35rem; font-weight:800; line-height:1.1; color:#FFFFFF; font-variant-numeric:tabular-nums; }
+  .streak-sheet .streak-stat-lab{ font-size:.72rem; font-weight:600; color:rgba(255,255,255,.6); }
+  .streak-sheet .streak-sheet-body{ margin:.15rem auto .5rem; text-align:left; max-width:none; color:rgba(255,255,255,.72); }
+  .streak-sheet .streak-ladder{ list-style:none; margin:.2rem 0 .55rem; padding:0; display:flex; flex-direction:column; gap:.3rem; text-align:left; }
+  .streak-sheet .streak-step{ display:flex; align-items:center; gap:.6rem; min-height:2.35rem; padding:.3rem .75rem .3rem .55rem; border-radius:12px;
+    background:rgba(28,30,37,.78); border:1px solid rgba(255,255,255,.08); }
+  .streak-sheet .streak-step-mark{ flex:0 0 auto; display:grid; place-items:center; width:1.4rem; height:1.4rem; border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.22); color:#1A1206; }
+  .streak-sheet .streak-step-mark > svg{ width:.95rem; height:.95rem; }
+  .streak-sheet .streak-step.is-reached .streak-step-mark{ background:#FF9A3A; border-color:#FF9A3A; }
+  .streak-sheet .streak-step-words{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+  .streak-sheet .streak-step-days{ font-size:.95rem; font-weight:700; color:#FFFFFF; }
+  .streak-sheet .streak-step-togo{ font-size:.75rem; font-weight:600; color:#FFB36B; margin-top:.05rem; }
+  .streak-sheet .streak-step-xp{ flex:0 0 auto; font-size:.9rem; font-weight:800; color:rgba(255,255,255,.75); font-variant-numeric:tabular-nums; }
+  .streak-sheet .streak-step.is-reached .streak-step-days, .streak-sheet .streak-step.is-reached .streak-step-xp{ color:rgba(255,255,255,.55); }
+  .streak-sheet .streak-step.is-next{ background:linear-gradient(rgba(255,138,61,.15), rgba(255,138,61,.15)), rgba(28,30,37,.85); border-color:rgba(255,138,61,.55); }
+  .streak-sheet .streak-step.is-next .streak-step-mark{ border-color:#FF9A3A; }
+  .streak-sheet .streak-step.is-next .streak-step-xp{ color:#FFC27A; }
+  .streak-sheet .streak-sheet-every{ margin-top:-.2rem; font-size:.84rem; }
+  .streak-sheet .streak-sheet-foot{ margin-bottom:.85rem; }
 </style>
 <script>
   (function(){
@@ -61144,7 +61209,8 @@ function renderStatsPopoverContent(){
   brandHead.className = "statspopover-brand";
   brandHead.textContent = "Nova \u2014 Class 26E Study";
   statsPopover.appendChild(brandHead);
-  const streakNum = currentStreak();
+  /* (384 streak) the daily check-in streak (checkinInfo) - the study-time one (currentStreak) is no longer shown */
+  const streakNum = checkinInfo(store).current;
   const drillStars = totalStarsFor("drill");
   const maxStars = maxStarsPossible();
   const rows = [];
@@ -71635,6 +71701,17 @@ const TEST_HISTORY_MAX = 50;
 const ACADEMY_LADDER_RULE = 38488;
 /* (384.135) Fire Code's curve fitted to its badges: a copy at or past this has had its rank floor dropped (ifcCurveMigrate) */
 const IFC_CURVE_RULE = 38435;
+/* (384 streak) THE DAILY CHECK-IN STREAK - see checkinTick(). Declared up here: the store literal and applyLoadedData() read them
+   during boot. A day is a local calendar day in dayKey()'s format; 25 XP a day, and a bonus at each milestone of a run.
+   THE LADDER, the one place to tune it: the early rungs are the table; from then on every CHECKIN_EVERY days pays
+   CHECKIN_EVERY_XP x (days / CHECKIN_EVERY) - 30 days 1000, 60 days 2000, 90 days 3000 ... Madison: a flat 1000 every 30 days
+   would make starting over pay about the same, so a long streak has to keep paying more (checkinMileXp). */
+var CHECKIN_XP = 25;
+var CHECKIN_MILES = [[3, 100], [7, 200], [14, 500]];
+var CHECKIN_EVERY = 30, CHECKIN_EVERY_XP = 1000;
+var CHECKIN_CAP = 1000;        /* days kept as days; older ones are folded into store.checkinOld (checkinTrim) */
+var CHECKIN_MILES_CAP = 300;   /* paid bonuses kept (a few a month) */
+var CHECKIN_DAY_RE = /^\d{4}-\d{2}-\d{2}$/, CHECKIN_MILE_RE = /^\d{4}-\d{2}-\d{2}\/\d{1,5}$/;
 /* THE FRIENDS LIST, as one block (build 384 - see socialDb()): the same in every class, dated by `socialAt`. Declared up here
    for the same reason: applyLoadedData() reads it during boot. socialSigBase is what the block was when it was last loaded,
    copied or saved - a `var` with no value, so nothing resets it once boot has set it. */
@@ -71652,6 +71729,9 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, hiveMoved384: true, ifcCharsFixed384: true, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], weekWinLost: [], weekWinPts: {}, weekWinBase: null, retakenQuestions: 0, retakenKeys: [], hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, badgeSceneOwed: null, badgeScenePlayed: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
+              /* (384 streak) the days this account checked in, the bonuses paid ("<run's first day>/<days>"), and what was folded off
+                 the front of the list (checkinTrim) - see checkinTick */
+              checkins: [], checkinMiles: [], checkinOld: null,
               /* (384 pin) the badge pinned to your profile in this class: { u: its unit name, "" for none, at: when picked } (pinnedBadgeOf) */
               pinnedBadge: { u: "", at: 0 },
               vrMatches: 0, vrWins: 0, vrHosted: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
@@ -71878,6 +71958,12 @@ function applyLoadedData(got){
   /* (384.40) Fire Code's retakes: the keys of the different questions answered after a miss (see retakeDistinctCount). Defaults to none: what an
      older copy never recorded is not guessed from its counter. */
   store.retakenKeys = Array.isArray(got.retakenKeys) ? got.retakenKeys.filter(k => typeof k === "string").slice(-RETAKEN_KEYS_CAP) : [];
+  /* (384 streak) the check-in days, sorted and unique; the bonuses paid; the folded-off front. A copy from before has none: no days,
+     nothing paid - its first check-in is day 1. */
+  store.checkinOld = checkinOldClean(got.checkinOld);
+  store.checkins = checkinDaysClean(got.checkins, store.checkinOld);
+  checkinTrim(store);
+  store.checkinMiles = Array.isArray(got.checkinMiles) ? got.checkinMiles.filter(k => typeof k === "string" && CHECKIN_MILE_RE.test(k)).slice(-CHECKIN_MILES_CAP) : [];
   store.hundoDay = got.hundoDay && typeof got.hundoDay === "object" && typeof got.hundoDay.day === "string" && Array.isArray(got.hundoDay.units) ? got.hundoDay : null;
   store.hundoDayBest = typeof got.hundoDayBest === "number" ? got.hundoDayBest : 0;
   /* Null until the Rank tab first sees it, which sets it to the rank
@@ -74474,6 +74560,7 @@ function wipeLocalProgressAndSettings(){
   store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
+  store.checkins = []; store.checkinMiles = []; store.checkinOld = null;   /* (384 streak) a never-used app has checked in on no day */
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.weekWinLost = []; store.weekWinPts = {}; store.weekWinBase = null; store.retakenQuestions = 0; store.retakenKeys = []; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
@@ -75362,6 +75449,7 @@ function markCloudConfirmed(docExists){
   const confirm = () => {
     if(code !== syncCode || cloudConfirmedFor === code) return;
     cloudConfirmedFor = code;
+    checkinConfirmDay = dayKey(new Date());   /* (384 streak) the day this launch heard the server */
     clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
     /* (384) Fire Code wears only what Fire Code has unlocked, judged on the merged copy */
     try{ ifcChallengesRepair384(); }catch(e){}   /* (384 r23) before the look is judged: a character this class has not earned is not worn */
@@ -75375,6 +75463,8 @@ function markCloudConfirmed(docExists){
        the account even for the 2.5s the save waits */
     if(cloudPushPending){ cloudPushPending = false; rowAwaitingConfirm = false; scheduleCloudPush(); }
     else if(rowAwaitingConfirm){ rowAwaitingConfirm = false; try{ if(store.leaderboardOptIn) pushLeaderboardRow(); }catch(e){} }
+    /* (384 streak) today's check-in, now that the server's copy is in */
+    setTimeout(() => { try{ checkinTick(); }catch(e){} }, 0);
   };
   if(docExists === false || !acctDb()){
     /* nothing to restore into: the next push writes the floor fresh */
@@ -75479,6 +75569,8 @@ function accountAhead(a, b){
   const key = h => h ? String(h.playedAt || h.ts || "") + "|" + String(h.label || "") + "|" + String(h.pct) : "";
   const had = new Set(((b && b.testHistory) || []).map(key));
   if(((a && a.testHistory) || []).some(h => h && !had.has(key(h)))) return true;
+  /* (384 streak) a check-in day or a paid bonus one copy has and the other does not (mergeSameAccount unions them) */
+  try{ if(checkinAhead(a, b)) return true; }catch(e){}
   /* (384) a class one copy is in and the other is not (mergeSameAccount unions them): never written over by a copy without it */
   try{ const ca = cleanClassList(a && a.classes) || [], cb = cleanClassList(b && b.classes) || []; if(ca.some(k => cb.indexOf(k) < 0)) return true; }catch(e){}
   /* (384) a newer friends list (mergeSameAccount takes it by socialAt): the server's is not written over by an older one */
@@ -76046,6 +76138,8 @@ function mergeLeavingAccount(src, note){
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
+  /* (384 streak) the days either account checked in, and the bonuses either was paid (their XP was added with the points above) */
+  try{ checkinMerge(store, src, { gained: false, otherHadLess: false }); }catch(e){}
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324", "hiveMoved384", "ifcCharsFixed384"]
     .forEach(k => { if(src[k] === true) store[k] = true; });
   if(src.mysteryColorsFound && store.mysteryColorsFound){
@@ -76505,6 +76599,8 @@ function mergeSameAccount(dst, src){
     if(typeof b === "number" && (typeof a !== "number" || b > a)){ dst.weekWinBase = b; res.gained = true; }
     else if(typeof a === "number" && (typeof b !== "number" || a > b)) res.otherHadLess = true; }
   unionArr("retakenKeys", RETAKEN_KEYS_CAP);   /* (384.40) a union: a question retaken on either device is retaken */
+  /* (384 streak) a day checked in on either device is checked in; a bonus paid on either is paid (the XP is in the base: checkinCredit) */
+  checkinMerge(dst, src, res);
   /* The backfills ran once per ACCOUNT (build 327): a device whose copy
      says not-yet would scan the rooms again and count them twice. */
   ["vrRetroDone", "vrTop3RetroDone"].forEach(k => { if(src[k] === true && dst[k] !== true){ dst[k] = true; res.gained = true; } });
@@ -98487,6 +98583,459 @@ function currentStreak(){
   return streak;
 }
 
+/* ---- THE DAILY CHECK-IN STREAK (384 streak) ----
+   Madison: "Let's also add a feature to keep bringing people back. Perhaps on your profile now there will be a fire thing for
+   streak and it has a thing for how many days you've studied. You now get xp for every day you log in. It will show up on the
+   main menu and shoot to your profile thing. When you click it in profile it will show like a thing on how you get it, 3 days in
+   a row is 100 xp, 7 days is 200 14 is 500?" This SUPERSEDES his earlier "let's remove the consecutive day streak counter ... No
+   longer a thing" (that one was the study-time streak, currentStreak() above, which is not this and is no longer shown anywhere).
+   A DAY COUNTS WHEN THE APP IS OPENED on a local calendar day, signed in, in that class (each class keeps its own, as XP), and only
+   once this launch has read the server's copy of the account (cloudConfirmedFor) - a session that heard the server on an earlier
+   day reads it again first (checkinTick) - so a stale copy cannot pay a day twice or start a run over that another device kept.
+   WHAT IS STORED is the days themselves (store.checkins, sorted day keys) and the bonuses paid (store.checkinMiles, "<first day of
+   the run>/<days>"), both unions in every merge; what was folded off the front of a very long list is store.checkinOld. The
+   streak, the best run and the total are worked out from the days when read (checkinInfo), never stored.
+   THE XP: 25 a day, and once per run 100 at 3 days, 200 at 7, 500 at 14, then 1000 x (days / 30) at every 30 (1000 at 30, 2000 at
+   60, 3000 at 90 ...: CHECKIN_MILES and CHECKIN_EVERY, up by the store literal). A run that
+   misses a whole calendar day starts again at 1 and its bonuses can be earned again.
+   NEVER PAID TWICE. A day is paid at the moment it joins the list, and the XP goes into the account's tally BASE, not this
+   device's own tally (checkinCredit): every merge takes the higher base, so two devices that both pay the same day before either
+   has heard of the other (the one race the server read cannot close) still add it once, where two tallies would add it twice.
+   One extra account write a person a day (the push the check-in schedules); nothing periodic. */
+function checkinOldClean(o){
+  if(!o || typeof o !== "object" || typeof o.to !== "string" || !CHECKIN_DAY_RE.test(o.to)) return null;
+  const n = v => Math.max(0, Math.floor(Number(v) || 0));
+  return { to: o.to, n: n(o.n), best: n(o.best), run: n(o.run) };
+}
+function checkinDaysClean(a, old){
+  if(!Array.isArray(a)) return [];
+  const cut = old && old.to ? old.to : "";
+  return [...new Set(a.filter(d => typeof d === "string" && CHECKIN_DAY_RE.test(d) && d > cut))].sort();
+}
+/* the day k days from `day` (a day key), by the calendar - a DST change is not a day */
+function checkinShift(day, k){
+  const p = String(day).split("-").map(Number);
+  return dayKey(new Date(p[0], p[1] - 1, p[2] + k));
+}
+/* A list past CHECKIN_CAP folds its oldest days into checkinOld: how many, the last of them, the best run among them and the run
+   they end on (so a streak that spans the fold still counts its whole length). */
+function checkinTrim(s){
+  const days = Array.isArray(s.checkins) ? s.checkins : [];
+  if(days.length <= CHECKIN_CAP) return;
+  const drop = days.slice(0, days.length - CHECKIN_CAP);
+  const old = checkinOldClean(s.checkinOld) || { to: "", n: 0, best: 0, run: 0 };
+  let run = old.run, prev = old.to || null, best = old.best;
+  drop.forEach(d => { run = (prev && checkinShift(prev, 1) === d) ? run + 1 : 1; if(run > best) best = run; prev = d; });
+  s.checkinOld = { to: prev, n: old.n + drop.length, best, run };
+  s.checkins = days.slice(drop.length);
+}
+/* What the days say, read now: the streak (alive while its last day is today or yesterday), the best run, the total, whether today
+   is in, and the first day of the live run. A day ahead of this device's clock is not read. */
+function checkinInfo(s, now){
+  s = s || store;
+  const today = dayKey(now || new Date()), yest = checkinShift(today, -1);
+  const old = checkinOldClean(s && s.checkinOld);
+  const days = (Array.isArray(s && s.checkins) ? s.checkins : []).filter(d => typeof d === "string" && d <= today);
+  let run = old ? old.run : 0, prev = old ? old.to : null, best = old ? old.best : 0;
+  let start = prev && run ? checkinShift(prev, 1 - run) : null;
+  days.forEach(d => {
+    if(prev && checkinShift(prev, 1) === d) run++;
+    else { run = 1; start = d; }
+    if(run > best) best = run;
+    prev = d;
+  });
+  const alive = !!prev && (prev === today || prev === yest);
+  return { current: alive ? run : 0, best, total: days.length + (old ? old.n : 0), today: prev === today, start: alive ? start : null };
+}
+/* the milestones a run of L days has reached, in order */
+function checkinMilesUpTo(L){
+  const out = CHECKIN_MILES.map(m => m[0]).filter(m => m <= L);
+  for(let m = CHECKIN_EVERY; m <= L; m += CHECKIN_EVERY) if(out.indexOf(m) < 0) out.push(m);
+  return out.sort((a, b) => a - b);
+}
+/* what a milestone pays: the table's early rungs, then CHECKIN_EVERY_XP for every CHECKIN_EVERY days of the run */
+function checkinMileXp(m){
+  const f = CHECKIN_MILES.find(x => x[0] === m);
+  if(f) return f[1];
+  return m % CHECKIN_EVERY === 0 ? CHECKIN_EVERY_XP * (m / CHECKIN_EVERY) : 0;
+}
+/* the next milestone after a run of L days */
+function checkinNextMile(L){
+  const f = CHECKIN_MILES.find(x => x[0] > L);
+  const every = CHECKIN_EVERY * (Math.floor(L / CHECKIN_EVERY) + 1);
+  return f ? Math.min(f[0], every) : every;
+}
+/* Two copies of one account: the days and the bonuses are both sides', the folded front the later one. Reports into `res` as
+   mergeSameAccount does (gained: dst took something; otherHadLess: src lacks something dst has). */
+function checkinMerge(dst, src, res){
+  if(!src || typeof src !== "object") return;
+  const a = checkinOldClean(dst.checkinOld), b = checkinOldClean(src.checkinOld);
+  let old = a;
+  if(b && (!a || b.to > a.to)) old = b;
+  else if(a && b && a.to === b.to) old = { to: a.to, n: Math.max(a.n, b.n), best: Math.max(a.best, b.best), run: Math.max(a.run, b.run) };
+  const sig = o => o ? [o.to, o.n, o.best, o.run].join("|") : "";
+  if(sig(old) !== sig(a)) res.gained = true;
+  if(sig(old) !== sig(b)) res.otherHadLess = true;
+  dst.checkinOld = old;
+  const mine = checkinDaysClean(dst.checkins, old), theirs = checkinDaysClean(src.checkins, old);
+  const hm = new Set(mine), ht = new Set(theirs);
+  if(theirs.some(d => !hm.has(d))) res.gained = true;
+  if(mine.some(d => !ht.has(d))) res.otherHadLess = true;
+  dst.checkins = [...new Set(mine.concat(theirs))].sort();
+  checkinTrim(dst);
+  const ma = (Array.isArray(dst.checkinMiles) ? dst.checkinMiles : []).filter(k => typeof k === "string");
+  const mb = (Array.isArray(src.checkinMiles) ? src.checkinMiles : []).filter(k => typeof k === "string" && CHECKIN_MILE_RE.test(k));
+  const add = mb.filter(k => ma.indexOf(k) < 0);
+  if(add.length) res.gained = true;
+  if(ma.some(k => mb.indexOf(k) < 0)) res.otherHadLess = true;
+  dst.checkinMiles = ma.concat(add).slice(-CHECKIN_MILES_CAP);
+}
+/* Does copy `a` hold a check-in day or a paid bonus copy `b` lacks? (accountAhead: never written over by a copy without it) */
+function checkinAhead(a, b){
+  const bo = checkinOldClean(b && b.checkinOld), cut = bo ? bo.to : "";
+  const have = new Set(Array.isArray(b && b.checkins) ? b.checkins : []);
+  if((Array.isArray(a && a.checkins) ? a.checkins : []).some(d => typeof d === "string" && d > cut && !have.has(d))) return true;
+  const paid = new Set(Array.isArray(b && b.checkinMiles) ? b.checkinMiles : []);
+  return (Array.isArray(a && a.checkinMiles) ? a.checkinMiles : []).some(k => typeof k === "string" && !paid.has(k));
+}
+/* THE XP GOES INTO THE BASE. awardXp() raises the count, and the next tallyCapture() would put the rise on THIS device's tally -
+   which every merge ADDS to the other devices' tallies. A day two devices both paid before either heard of the other would then
+   be counted twice. So this device's own progress is captured first, the XP is awarded, and the base (which a merge takes the
+   higher of) carries it: two copies that both paid the day hold the same base, and the merge keeps one. */
+function checkinCredit(n){
+  if(!(n > 0)) return;
+  try{ tallyCapture(store); }catch(e){}
+  awardXp(n);
+  try{
+    tallyMaps(store);
+    ["L:points", "W:" + (store.weekKey || "")].forEach(k => { if(k in store.tallyBase) store.tallyBase[k] = tallyNum(store.tallyBase[k]) + n; });
+  }catch(e){}
+}
+/* `var`s: showHome (which asks) can run during boot, before a `let` down here would be out of its dead zone */
+var checkinConfirmDay = "", checkinReading = false, checkinMidnightTimer = 0;
+function checkinEligible(){
+  try{ return !!(syncCode && cloudConfirmedFor === syncCode && store && store.onboardingComplete && acctDb()); }catch(e){ return false; }
+}
+/* Called when this launch has heard the server (markCloudConfirmed), on every Home, when the app comes back to the front, and
+   just after midnight. Pays today if it is not in yet. */
+function checkinTick(){
+  if(!checkinEligible() || checkinReading) return;
+  const today = dayKey(new Date());
+  checkinArmMidnight();
+  if((store.checkins || []).indexOf(today) >= 0) return;
+  if(checkinConfirmDay === today){ checkinPay(today); return; }
+  /* heard the server on an earlier day (a session left open overnight): read it again, merge, then pay - the other device's
+     check-ins since then are in the run this one is about to extend */
+  const code = syncCode;
+  checkinReading = true;
+  try{
+    acctDb().collection("progress").doc(code).get({ source: "server" }).then(snap => {
+      checkinReading = false;
+      if(code !== syncCode || cloudConfirmedFor !== code) return;
+      if(snap && snap.metadata && snap.metadata.fromCache) return;
+      checkinConfirmDay = dayKey(new Date());
+      if(snap && snap.exists){ try{ if(syncSameAccount(snap.data())) onLiveUpdateApplied(); }catch(e){} }
+      checkinTick();
+    }).catch(() => { checkinReading = false; });
+  }catch(e){ checkinReading = false; }
+}
+function checkinArmMidnight(){
+  if(checkinMidnightTimer) return;
+  const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 20);
+  checkinMidnightTimer = setTimeout(() => { checkinMidnightTimer = 0; checkinTick(); }, Math.max(1000, next - now));
+}
+var CHECKIN_NEWS_KEY = "class26e.streak.news";
+function checkinPay(today){
+  store.checkins = checkinDaysClean((store.checkins || []).concat([today]), checkinOldClean(store.checkinOld));
+  checkinTrim(store);
+  const info = checkinInfo(store);
+  let bonus = 0; const hit = [];
+  if(info.today && info.start){
+    if(!Array.isArray(store.checkinMiles)) store.checkinMiles = [];
+    checkinMilesUpTo(info.current).forEach(m => {
+      const k = info.start + "/" + m;
+      if(store.checkinMiles.indexOf(k) < 0){ store.checkinMiles.push(k); bonus += checkinMileXp(m); hit.push(m); }
+    });
+    if(store.checkinMiles.length > CHECKIN_MILES_CAP) store.checkinMiles = store.checkinMiles.slice(-CHECKIN_MILES_CAP);
+  }
+  checkinCredit(CHECKIN_XP + bonus);
+  /* Home says so once (showStreakNews) - not in a sign-up's own launch (its first day is in the Profile; its Home has Nova, the
+     tips and the welcome XP to get through) and not with celebrations off (the XP still counts) */
+  let quiet = !!theme.muteBanners;
+  try{ quiet = quiet || signupInNova || pendingMainMenuTour || novaIntroOn || !!document.getElementById("tour-overlay") || (info.total <= 1 && !novaHasHistory()); }catch(e){}
+  if(!quiet){
+    try{ localStorage.setItem(CHECKIN_NEWS_KEY, JSON.stringify({ d: today, n: info.current, xp: CHECKIN_XP, bonus, m: hit })); }catch(e){}
+  }
+  saveStore();
+  try{ streakRowRefresh(); }catch(e){}
+  try{ if(statsPopoverOpen) renderStatsPopoverContent(); }catch(e){}
+  if(onNovaHome()){
+    if(quiet){ try{ scheduleRankUpLock(); }catch(e){} }
+    else maybeStreakNews();
+  }
+}
+/* the day's news, if this device paid today and has not said it yet */
+function streakNewsOwed(){
+  let n = null;
+  try{ n = JSON.parse(localStorage.getItem(CHECKIN_NEWS_KEY) || "null"); }catch(e){ n = null; }
+  if(!n || typeof n !== "object" || n.d !== dayKey(new Date())) return null;
+  return n;
+}
+/* ---- HOME SAYS SO, AND IT FLIES TO PROFILE ----
+   Home's own banner (the daily question's XP has the same one: .app-banner glass, the pop-up line, gone on a screen change), with
+   the flame: "Day 4 streak", "+25 XP" and a milestone's bonus. After a beat the flame leaves it on a solid chip (nothing that moves
+   is blurred) and flies on a short arc into the Profile tab, which bumps as it does for every other thing that lands there.
+   Transform and opacity only, no filter; under Reduce motion the banner fades in and out where it is. Waits, as the class button's
+   tip does, until Home has been quiet for a moment: What's New, Nova, the tips, the reward cards and their flight, a cutscene, a
+   sheet, a banner already up, the rank-up's lock. */
+var streakNewsTimer = 0;
+var STREAK_NEWS_BUSY = "#tour-overlay, #tour-tooltip, .nova-talk, #intro-pop, #nova-intro, #welcomebonus-banner, .wb-chip, .rs-spot, .rs-fly, " +
+  ".bc-scene, .fl-scene, .ff-scene, .scene-bridge, .unlock-card, .invite-overlay, #badge-cutscene, #supernova-cutscene, #void-cutscene, " +
+  "#vroom-cutscene, #genprofile-overlay, #splashscreen, #resume-offer, .class-bubble-wrap.is-open, #class-switch-loader, #nova-class-greet, " +
+  ".chatdock.is-open, #streak-banner, .streak-fly, .daily-alert.show, #a2hs-sheet, .installguide-overlay";
+function streakNewsBusy(){
+  let busy = !onNovaHome();
+  try{ busy = busy || whatsNewHolds() || a2hsBusy() || a2hsHolds(); }catch(e){ busy = true; }
+  busy = busy || !!document.querySelector(STREAK_NEWS_BUSY);
+  try{ busy = busy || pendingMainMenuTour || signupInNova || novaIntroOn || testInProgress || !!studyTipTimer || !!classTipTimer; }catch(e){}
+  try{ busy = busy || homeUnlockPlaying || (!!homeUnlockTimer && homeUnlocksOwed(pendingHomeUnlocks())); }catch(e){}
+  try{ busy = busy || document.body.classList.contains("rankup-lock") || (typeof rankUpScene !== "undefined" && !!rankUpScene); }catch(e){}
+  try{ busy = busy || Date.now() < (Number(dailyXpFlyEndsAt) || 0); }catch(e){}
+  return busy;
+}
+function maybeStreakNews(){
+  if(streakNewsTimer || !streakNewsOwed()) return;
+  let tries = 0, calm = 0;
+  const attempt = () => {
+    streakNewsTimer = 0;
+    const news = streakNewsOwed();
+    if(!news) return;
+    if(streakNewsBusy()){
+      calm = 0;
+      if(++tries > 400) return;   /* left for the next Home */
+      streakNewsTimer = setTimeout(attempt, 700); return;
+    }
+    if(++calm < 3){ streakNewsTimer = setTimeout(attempt, 700); return; }
+    showStreakNews(news);
+  };
+  streakNewsTimer = setTimeout(attempt, 900);
+}
+/* the flame: three tongues, flat fills (Settings' tiles are flat), drawn in a 32 box. `dim` is a streak not alive. */
+function buildStreakFlame(dim){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 32 32");
+  svg.setAttribute("class", "streak-flame" + (dim ? " is-dim" : ""));
+  svg.setAttribute("aria-hidden", "true");
+  [["sf-outer", "M16.6 2.2c.5 3.6 3.3 5.7 5.5 8.3 2.3 2.7 4.1 5.6 4.1 9.4 0 5.6-4.5 9.9-10.2 9.9S5.8 25.5 5.8 19.9c0-3.4 1.4-6.1 3.4-8.2.3 2 1.2 3.4 2.6 4.2-.4-5.1 1.3-9.8 4.8-13.7z"],
+   ["sf-mid", "M16.4 10.6c.4 2.4 2.1 3.9 3.4 5.6 1.3 1.6 2.1 3.2 2.1 5.1 0 3.4-2.7 6-6 6s-6-2.6-6-6c0-2 .9-3.6 2.1-4.8.2 1.2.7 2 1.5 2.5-.1-3.1.9-5.9 2.9-8.4z"],
+   ["sf-core", "M16.2 17.6c.3 1.3 1.2 2.1 1.8 3 .6.8 1 1.6 1 2.6 0 1.8-1.4 3.1-3.1 3.1s-3.1-1.3-3.1-3.1c0-1 .5-1.9 1.1-2.5.1.6.4 1 .8 1.3 0-1.6.5-3 1.5-4.4z"]]
+    .forEach(([c, d]) => { const p = document.createElementNS(NS, "path"); p.setAttribute("class", c); p.setAttribute("d", d); svg.appendChild(p); });
+  return svg;
+}
+function streakNewsLines(news){
+  const title = "Day " + news.n + " streak";
+  let sub = "+" + news.xp + " XP";
+  if(news.bonus > 0){
+    const m = (news.m || []).slice(-1)[0];
+    sub += " · " + (m ? m + "-day bonus " : "Streak bonus ") + "+" + news.bonus.toLocaleString() + " XP";
+  }
+  return { title, sub };
+}
+function showStreakNews(news){
+  try{ localStorage.removeItem(CHECKIN_NEWS_KEY); }catch(e){}
+  if(theme.muteBanners) return;
+  const L = streakNewsLines(news);
+  const banner = document.createElement("div");
+  banner.id = "streak-banner";
+  banner.className = "daily-alert app-banner app-banner-streak";
+  banner.style.setProperty("--banner-color", "#FF8A3D");
+  banner.setAttribute("role", "status");
+  const icon = buildStreakFlame(false);
+  icon.classList.add("app-banner-icon");
+  const body = document.createElement("span"); body.className = "app-banner-body";
+  const tag = document.createElement("span"); tag.className = "app-banner-tag"; tag.textContent = "DAILY STREAK";
+  const text = document.createElement("span"); text.className = "app-banner-text";
+  const ttl = document.createElement("span"); ttl.className = "app-banner-title"; ttl.textContent = L.title;
+  const sb = document.createElement("span"); sb.className = "app-banner-sub"; sb.textContent = L.sub;
+  text.append(ttl, document.createTextNode(" "), sb);
+  body.append(tag, text);
+  banner.append(icon, body);
+  document.body.appendChild(banner);
+  try{ placeTopBanner(banner); }catch(e){}
+  const watch = clearBannerOnScreenChange(banner);
+  try{ playSound(news.bonus > 0 ? "test.streak.3" : "test.streak.1"); }catch(e){}
+  const still = resultsMotionOff();
+  const tab = document.getElementById("bottomtab-profile");
+  const land = () => {
+    try{ if(statsPopoverOpen) renderStatsPopoverContent(); }catch(e){}
+    /* the check-in's XP can be a rank's: its lock comes after this, not over it */
+    try{ if(onNovaHome()) scheduleRankUpLock(); }catch(e){}
+  };
+  const bye = () => { banner.classList.remove("show"); setTimeout(() => { try{ watch && watch.disconnect(); }catch(e){} banner.remove(); }, 560); };
+  requestAnimationFrame(() => {
+    banner.classList.add("show");
+    setTimeout(() => {
+      if(!banner.isConnected) return;
+      const r = tab ? tab.getBoundingClientRect() : null;
+      const flies = !still && r && r.width > 0 && r.height > 0 && getComputedStyle(tab).visibility !== "hidden";
+      if(!flies){ bye(); land(); return; }
+      /* the flame leaves the banner on a chip of its own, the XP beside it */
+      const from = icon.getBoundingClientRect();
+      const chip = document.createElement("div");
+      chip.className = "streak-fly";
+      chip.setAttribute("aria-hidden", "true");
+      const inner = document.createElement("div"); inner.className = "streak-fly-chip";
+      const amt = document.createElement("span"); amt.className = "streak-fly-xp"; amt.textContent = "+" + (news.xp + (news.bonus || 0)).toLocaleString() + " XP";
+      inner.append(buildStreakFlame(false), amt);
+      chip.appendChild(inner);
+      chip.style.left = Math.round(from.left + from.width / 2) + "px";
+      chip.style.top = Math.round(from.top + from.height / 2) + "px";
+      document.body.appendChild(chip);
+      /* its flame over the banner's, the XP beside it (the chip's centre is what flies) */
+      try{
+        const ir = inner.getBoundingClientRect(), fr = inner.firstElementChild.getBoundingClientRect();
+        const off = (ir.left + ir.width / 2) - (fr.left + fr.width / 2);
+        chip.style.left = Math.round(from.left + from.width / 2 + off) + "px";
+      }catch(e){}
+      const chipWatch = clearBannerOnScreenChange(chip);
+      icon.style.visibility = "hidden";
+      bye();
+      const c = chip.getBoundingClientRect();
+      const dx = Math.round((r.left + r.width / 2) - (c.left + c.width / 2)), dy = Math.round((r.top + r.height / 2) - (c.top + c.height / 2));
+      /* a short hop, then down into the tab: across fast and then easing (ease-out), down slow and then falling (ease-in) - the two
+         together draw the arc. The hop is small: the banner is at the top of the screen, and a big one would leave it. */
+      const hop = Math.round(Math.max(14, Math.min(30, (c.top - 8) * .3)));
+      const T = 980;
+      let flight = null;
+      try{
+        chip.animate([{ transform: "translateX(0)" }, { transform: "translateX(" + dx + "px)" }], { duration: T, easing: "cubic-bezier(.25,.75,.45,1)", fill: "forwards" });
+        flight = inner.animate([
+          { transform: "translate(-50%, -50%) translateY(0) scale(1)", opacity: 1, easing: "cubic-bezier(.3,.7,.5,1)" },
+          { transform: "translate(-50%, -50%) translateY(" + (-hop) + "px) scale(1.08)", opacity: 1, offset: .2, easing: "cubic-bezier(.6,0,.9,.55)" },
+          { transform: "translate(-50%, -50%) translateY(" + dy + "px) scale(.4)", opacity: .25 }
+        ], { duration: T, easing: "linear", fill: "forwards" });
+      }catch(e){ flight = null; }
+      const done = () => {
+        try{ chipWatch && chipWatch.disconnect(); }catch(e){}
+        chip.remove();
+        if(!onNovaHome() && !document.querySelector("#stage .screen-profile")) return;
+        if(tab && tab.isConnected){
+          tab.classList.remove("avatar-pulse"); void tab.offsetWidth; tab.classList.add("avatar-pulse");
+          setTimeout(() => tab.classList.remove("avatar-pulse"), 800);
+        }
+        try{ playSound("res.xp.pop"); }catch(e){}
+        land();
+      };
+      if(flight && flight.finished) flight.finished.then(done, done); else setTimeout(done, T);
+    }, news.bonus > 0 ? 2600 : 1900);
+  });
+}
+/* ---- PROFILE: THE STREAK ROW, AND WHAT IT EXPLAINS ----
+   One of the person card's rows (pfActFill's: the glass, 62px, the chevron), with the flame for its art instead of a grey tile - it
+   is the one thing on the card that is alight. The streak as its name, the total and the best under it. A tap opens the sheet. */
+function streakRowText(info){
+  const label = info.current > 0 ? info.current + "-day streak" : "Daily streak";
+  const days = n => n.toLocaleString() + (n === 1 ? " day" : " days");
+  let sub = info.total > 0 ? days(info.total) + " in total" : "Open Nova each day to start one";
+  if(info.total > 0 && info.best > info.current) sub += " · Best " + days(info.best);
+  return { label, sub };
+}
+function buildStreakRow(){
+  const wrap = document.createElement("div");
+  wrap.className = "profile-streak-row";
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "pf-streak";
+  streakRowFill(btn);
+  btn.addEventListener("click", () => { try{ playSound("ui.tap.secondary"); }catch(e){} openStreakSheet(); });
+  wrap.appendChild(btn);
+  return wrap;
+}
+function streakRowFill(btn){
+  const info = checkinInfo(store);
+  const t = streakRowText(info);
+  const parts = pfActFill(btn, "trophy", t.label, t.sub);
+  const art = document.createElement("span");
+  art.className = "pf-streak-art" + (info.current > 0 ? "" : " is-dim");
+  art.setAttribute("aria-hidden", "true");
+  art.appendChild(buildStreakFlame(info.current <= 0));
+  parts.tile.replaceWith(art);
+  btn.dataset.streak = String(info.current);
+  btn.dataset.total = String(info.total);
+  btn.setAttribute("aria-label", t.label + ". " + t.sub + ". How the streak works.");
+}
+function streakRowRefresh(){
+  document.querySelectorAll("#stage .pf-streak").forEach(b => streakRowFill(b));
+}
+function openStreakSheet(){
+  if(document.querySelector(".streak-sheet")) return;
+  const info = checkinInfo(store);
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet person-card penal-note-sheet streak-sheet";
+  sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true"); sheet.setAttribute("aria-label", "Daily streak");
+  const head = document.createElement("div"); head.className = "streak-sheet-head";
+  const art = document.createElement("span"); art.className = "streak-sheet-flame" + (info.current > 0 ? "" : " is-dim");
+  art.appendChild(buildStreakFlame(info.current <= 0));
+  const kick = document.createElement("p"); kick.className = "unlock-card-kicker"; kick.textContent = "Daily streak";
+  const nm = document.createElement("h2"); nm.className = "unlock-card-name";
+  nm.textContent = info.current > 0 ? info.current + (info.current === 1 ? " day" : " days") : "No streak yet";
+  head.append(art, kick, nm);
+  /* the three numbers */
+  const stats = document.createElement("div"); stats.className = "streak-sheet-stats";
+  [["Current", info.current], ["Best", info.best], ["Total days", info.total]].forEach(([k, v]) => {
+    const c = document.createElement("div"); c.className = "streak-stat"; c.dataset.k = k;
+    const n = document.createElement("span"); n.className = "streak-stat-num"; n.textContent = v.toLocaleString();
+    const l = document.createElement("span"); l.className = "streak-stat-lab"; l.textContent = k;
+    c.append(n, l); stats.appendChild(c);
+  });
+  const p1 = document.createElement("p"); p1.className = "penal-note-body streak-sheet-body";
+  p1.textContent = "Each day you open Nova earns " + CHECKIN_XP + " XP. Days in a row build a streak, and each bonus is paid once per streak:";
+  /* the ladder: reached marked, the next one lit with the days to go */
+  const ladder = document.createElement("ol"); ladder.className = "streak-ladder";
+  const next = checkinNextMile(info.current);
+  /* the table's rungs, then three of the 30-day marks: 30, 60, 90 until the run is past 60, then the last reached and the two after */
+  const rows = CHECKIN_MILES.map(([d]) => ({ d }));
+  const k0 = Math.max(1, Math.floor(info.current / CHECKIN_EVERY));
+  for(let k = k0; k < k0 + 3; k++) rows.push({ d: k * CHECKIN_EVERY });
+  rows.forEach(r => { r.xp = checkinMileXp(r.d); r.label = r.d + " days"; });
+  rows.forEach(r => {
+    const li = document.createElement("li"); li.className = "streak-step";
+    const reached = info.current >= r.d;
+    const isNext = r.d === next;
+    if(reached) li.classList.add("is-reached");
+    if(isNext) li.classList.add("is-next");
+    li.dataset.days = String(r.d);
+    const mark = document.createElement("span"); mark.className = "streak-step-mark"; mark.setAttribute("aria-hidden", "true");
+    mark.innerHTML = reached ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4.2 4.2 8.8-9.4"/></svg>' : "";
+    const w = document.createElement("span"); w.className = "streak-step-words";
+    const a = document.createElement("span"); a.className = "streak-step-days"; a.textContent = r.label;
+    w.appendChild(a);
+    if(isNext){ const to = document.createElement("span"); to.className = "streak-step-togo"; const left = r.d - info.current;
+      to.textContent = "Next · " + left + (left === 1 ? " day to go" : " days to go"); w.appendChild(to); }
+    const x = document.createElement("span"); x.className = "streak-step-xp"; x.textContent = "+" + r.xp.toLocaleString() + " XP";
+    li.append(mark, w, x);
+    if(reached) li.setAttribute("aria-label", r.label + ", +" + r.xp + " XP, reached");
+    ladder.appendChild(li);
+  });
+  const pe = document.createElement("p"); pe.className = "penal-note-body streak-sheet-body streak-sheet-every";
+  pe.textContent = "After that, every " + CHECKIN_EVERY + " days pays " + CHECKIN_EVERY_XP.toLocaleString() + " XP more than the last.";
+  const p3 = document.createElement("p"); p3.className = "penal-note-body streak-sheet-body streak-sheet-foot";
+  p3.textContent = "Missing a full calendar day resets the streak to zero, and the bonuses can be earned again.";
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next"; close.textContent = "Got it";
+  close.addEventListener("click", () => overlay.remove());
+  sheet.append(head, stats, p1, ladder, pe, p3, close);
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  mountSheetOverlay(overlay);
+}
+/* back at the front of the screen (a phone woken the next morning): the day may be a new one */
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible") setTimeout(() => { try{ checkinTick(); }catch(e){} }, 1500);
+});
+
 /* A small two-tone flame icon (a genuine SVG we draw and control, not a
    system emoji) for the streak badge. */
 /* ---- THE SWITCH'S LIQUID GLASS (build 324) ----
@@ -104301,6 +104850,7 @@ const RELEASE_NOTES = [
     groups: [
       { label: "New In Version 11", items: [
         { icon: buildStarIcon, color: "#E8B04A", title: "Badges Struck In Metal", body: "Every badge in both classes is a raised metal pin of what its unit is about: 24 in the academy and 58 in Fire Code. Pick one up from the case and turn it to see its side and its engraved back." },
+        { icon: buildFireIcon, color: "#FF8A3D", title: "Daily Streak", body: "Each day you open Nova earns 25 XP, in each class. Days in a row earn a bonus: 100 XP at 3 days, 200 at 7, 500 at 14, 1,000 at 30, 2,000 at 60, 3,000 at 90, and so on. Profile shows your streak; tap it for the details." },
         { icon: buildPersonIcon, color: "#FFD27A", title: "Pin A Badge", body: "A badge's page has Pin to profile, one badge in each class. It shows on your Profile, the Leaderboard, your friends' view of your profile and in Virtual Rooms." },
         { icon: buildSwatchClusterIcon, color: "#A694FF", title: "All Unlocks", body: "Customize > All unlocks lays out every character, banner, theme and hundo effect by track, with what each one takes, how close you are and how many classmates have it." },
         { icon: buildTrendUpIcon, color: "#5CA8FF", title: "Levels Past 80", body: "Levels keep going after 80 on the same curve. Supernova stays the top rank." },
@@ -120498,6 +121048,10 @@ const WHATS_NEW_V11 = [
   { key: "pins11", color: "#E8B04A", title: "Badges, struck in metal",
     glyph: "M6.5 2h3.6L12 6.6 13.9 2h3.6l-3.3 6.9a7 7 0 0 0-4.4 0L6.5 2ZM12 9.2a6.4 6.4 0 1 1 0 12.8 6.4 6.4 0 0 1 0-12.8Zm0 2.4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 1.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2Z",
     body: "Every badge is now a raised metal pin of what its unit is about. Pick one up and turn it to see its side and back." },
+  /* (384 streak) the daily check-in streak, in both classes (checkinTick) */
+  { key: "streak11", color: "#FF8A3D", title: "Daily streak",
+    glyph: "M12.45 1.65c.38 2.7 2.48 4.28 4.13 6.23 1.72 2.02 3.07 4.2 3.07 7.05 0 4.2-3.38 7.42-7.65 7.42S4.35 19.13 4.35 14.93c0-2.55 1.05-4.58 2.55-6.15.22 1.5.9 2.55 1.95 3.15-.3-3.83.98-7.35 3.6-10.28Z",
+    body: "Each day you open Nova earns 25 XP, and days in a row earn bonuses. Your streak is on your profile." },
   { key: "pin11", color: "#FFD27A", title: "Pin a badge to your profile",
     glyph: "M9 2h6v1.8l-1 .7v5.2l3.5 3.1v1.7h-4.6V21L12 22.5 11.1 21v-6.5H6.5v-1.7L10 9.7V4.5l-1-.7V2Z",
     body: "Pin one badge in each class. Classmates see it on your profile, the Leaderboard and in Virtual Rooms." },
@@ -122609,6 +123163,8 @@ function showHome(){
   /* (384) a page opened by a sign-in elsewhere welcomes them back; one opened by the class button welcomes them to the class;
      and an account in Fire Code has its questions in the cache before it switches (warmIfcBank) */
   try{ sayClassArrival(); maybeSwitchWelcome(); warmIfcBankSoon(); }catch(e){}
+  /* (384 streak) today's check-in, and Home's word on it once Home is quiet */
+  try{ checkinTick(); maybeStreakNews(); }catch(e){}
 
   toTop();
   /* a rank-up not yet shown locks Home to the Profile tab (build 317) */
@@ -142959,6 +143515,8 @@ function homeUnlockBlocked(){
   /* the rank-up journey's own Home leg gives its rank's cards first (384.55): Home's queue waits for it, then plays */
   try{ if(typeof rankUpScene !== "undefined" && rankUpScene && rankUpScene.homing) return true; }catch(e){}
   return !!(document.getElementById("genprofile-overlay") || document.getElementById("splashscreen") ||
+    /* (384 streak) nor over the day's streak banner or its flight to Profile */
+    document.getElementById("streak-banner") || document.querySelector(".streak-fly") ||
     document.getElementById("tour-overlay") || document.getElementById("badge-cutscene") ||
     document.getElementById("supernova-cutscene") || document.getElementById("void-cutscene") ||
     document.getElementById("vroom-cutscene") || document.querySelector(".rs-spot") || document.querySelector(".bc-scene") ||
@@ -159901,7 +160459,8 @@ function scheduleWeekRecap(ms){
 function weekRecapBlocked(){
   if(document.getElementById("splashscreen") || document.getElementById("install-update") || document.getElementById("tour-overlay") || document.getElementById("genprofile-overlay")) return true;
   if(document.querySelector(".nova-talk, #intro-pop, #nova-intro, #badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, " +
-    ".rs-spot, .rs-fly, .fl-scene, .ff-scene, .bc-scene, .scene-bridge, #teststart-overlay, .invite-overlay, .chatdock.is-open, #resume-offer")) return true;
+    ".rs-spot, .rs-fly, .fl-scene, .ff-scene, .bc-scene, .scene-bridge, #teststart-overlay, .invite-overlay, .chatdock.is-open, #resume-offer, " +
+    "#streak-banner, .streak-fly")) return true;
   try{ if(whatsNewHolds()) return true; }catch(e){}
   try{ if(typeof cutsceneFocusActive === "function" && cutsceneFocusActive()) return true; }catch(e){}
   /* the badge queue and Home's unlock cards go first: they are about a
@@ -167434,7 +167993,9 @@ function showProfile(defaultTab, opts){
      request - "let's remove the consecutive day streak counter
      completing. No longer a thing." buildStreakBadge() is left where it
      is; the calendar still draws its own streak, and this is the one
-     place that was presenting it as a headline stat. */
+     place that was presenting it as a headline stat.
+     (384 streak) SUPERSEDED by his later ask for a daily check-in streak ("on your profile now there will be a fire thing for
+     streak"): that is a different streak (a day counts when the app is opened) and it is the row under the XP (buildStreakRow). */
   /* The rank, under the name. It is the most identity-shaped fact the
      app holds - it is literally what everybody else sees beside your
      character on every board - and with the character grid and the
@@ -167528,6 +168089,8 @@ function showProfile(defaultTab, opts){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
+  /* (384 streak) the daily streak, between the XP and Customize (buildStreakRow) */
+  heroSect.appendChild(buildStreakRow());
   heroSect.appendChild(customizeRow);
   /* (round 26: "Why does the profile box have those 4 new things ... Remove
      those." The person card's Progress tiles came off; the person card
@@ -172531,7 +173094,9 @@ function rankUpLockCardDue(){
 }
 function rankUpLockWaits(){
   try{ if(homeUnlockBlocked() || homeUnlockPlaying || rankUpLockCardDue() || (store.pendingBadgeUnlocks || []).length) return true; }catch(e){ return true; }
-  if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #nova-intro, #tour-overlay, #splashscreen")) return true;
+  if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #nova-intro, #tour-overlay, #splashscreen, #streak-banner, .streak-fly")) return true;
+  /* (384 streak) the day's streak banner first: its XP can be the rank's, and its flight lands in Profile before the lock */
+  try{ if(streakNewsTimer && streakNewsOwed()) return true; }catch(e){}
   return Date.now() < (Number(dailyXpFlyEndsAt) || 0);
 }
 function rankUpLockCheck(){
