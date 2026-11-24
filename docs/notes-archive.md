@@ -43715,3 +43715,80 @@ dim) had started to darken the whole frame, so every hat pixel moved by a few le
 (nothing the check recolours) across the four shots; a frame where it moved (on/off over 6, the recoloured one over 60 - the ring lines there
 are inverted) is thrown away, the overlays cleared and it retries (up to 4). Normal runs read 0-6 / 0-38 there. Full check-b384-festive ALL
 PASS: every hat 0 changed pixels.
+
+## art10 (branch claude/b384-art10-fc, from a0da788; build number untouched at 384.137): ten Fire Code pins Madison circled, redrawn
+
+Madison sent circled screenshots, "Make these better..", then two more, "And these...". All in the part files (part-0 57, part-2 23 and
+28, part-4 54, 59, 61, part-5 66, 67, Appendix C, Appendix H); the loop as ever: snap.py, merge-chapter-icons.py (--check in step).
+Every one was rendered at 900px before and after, its joins cropped at 3x, and looked at at 96, 44 and 26 px; flat plate maps (each plate a
+flat colour) were used to find what the base showed through.
+
+- Ch 54 jug (circle: "a stiff green spike standing on the puddle, the puddle a flat lens jammed against the jug's foot"). The acid RUNS
+  now: a rivulet from a curved split in the side, wandering a little as it goes down, swelling into a bead (a long taper above, round
+  below) and pouring into the pool at the jug's foot, where it is cut by the jug's own outline. The pool is an uneven spill on the floor -
+  a lobe in front, one out to the left reaching back beside the jug, one running on to the right - LOWER than the jug (z -1, a wide bevel
+  and a dome: a soft edge and a sheen), so the jug stands in it with no seam; three small lighter bubbles where the acid lands (the fizz).
+  The panel and lower rib stop short of the run. badgeart (3) (acid 3+ from the cap) still holds.
+- Ch 59 matchbox label (a notch at the flame's top: a disc, a spike and a side tongue joined with a V). ONE teardrop: a round foot, its
+  sides sweeping in to a single point whose tip flickers over in an S (OBJ_SDF.tube on a quadratic), an orange heart inside, centred on
+  the label.
+- Ch 59 lit match (the red head was a disc ON the flame, the flame behind). The stick swells into an oval head along its own axis (one
+  relief: union of the capsule and an oriented ellipse), painted red from where it swells and CHARRED dark on its burning top; the flame is
+  three nested teardrops - orange, yellow, and a white-yellow core sitting on the head's top - each stopping at the head; a flame-orange
+  under-plate fills the fillet where the flame meets the stick (the base's blue showed there).
+- Ch 57 gas can (a notched, stepped corner where the collar met the can). The can's top-right corner is a SHOULDER sloped square to the
+  spout (55 degrees), and everything stands on one axis on it: the red threaded neck moulded out of the shoulder (two threads, filleted
+  in), a thin dark shadow on the neck under the collar, the collar's ring chamfered onto the neck, the collar with its grip ridges
+  chamfered into the spout (square steps came out as nubs in joins (4e)), the spout and the amber cap with its ring. The can shifts 3 left
+  so the spout clears the frame. A black under-plate fills the collar/spout fillets.
+- Ch 61 LPG (twice circled: "a wide grey skirt with a stepped/ragged join"). The collar is drawn as a steel CYLINDER seen a little from
+  above: the rolled top rim an ellipse with the collar's dark inside and the valve's handwheel (rim, two spokes, hub) in it, the front a
+  straight band between two parallel elliptic arcs, the curved hand-hold opening cut through it with the faceted brass valve body and its
+  outlet seen through it, the foot the same ellipse laid on the dome with the dome in a narrow shadow under it. No skirt: the sides come
+  straight down and the outline takes them in with a 1.6 fillet. (A raised steel weld bead along the foot was tried: it glinted in broken
+  dashes and read as ragged again; the shadow reads cleaner.) badgeart (10) CHANGED ON PURPOSE: the foot-band leg (each end 1-4 units in
+  from the outline) measured the skirt; it now asks for NO skirt - the widest steel part 3/4 down at most 1.10x its width 1/4 down (here
+  1.0; a0da788 1.18, FAILS).
+- Ch 66 bomb (a gold star with a white disc over the fuse). The fuse is a cord on a slight curve (a tapered tube), domed, its twist
+  painted as slanted strands; its tip an ember; from it a starburst of eleven thin tapering rays of uneven length, evenly spaced round
+  (14 rays left a narrow V between two at their roots that joins (4e) caught as a notch), yellow at the root cooling to orange at the
+  tips, and a white four-pointed glint at the tip. All one with the outline.
+- Ch 67 bolt (crude, flat). A classic bolt: the upper bar slanting down to a level step, the lower bar leaving it and tapering to a
+  sharp point; small corner radii, chamfered planes (gem 1, gw 2.3) so each face catches the light as gold, centred in the drop.
+- Appendix C pin (the point stuck into a wide flat disc). The pin stands on a small round base plate seen in perspective (a light top
+  ellipse, a darker edge band), the point touching the top's middle, its soft contact shadow falling down-right on the plate; the plate
+  stops where the pin starts.
+- Appendix H pencil (all of it circled). Slimmer (half-width 4.1, was 4.8): ONE faceted relief for barrel, cone and point (gem with gw =
+  half the half-width, so the creases fall on the hexagon's face edges and run on up the cone to the point), the three faces in light /
+  mid / dark yellow, the sharpened wood in three tones with the SCALLOPED edge where each flat face meets the cone (a parabola per face,
+  highest mid-face), the graphite on the same taper (badgeart (7) shared 0, 0.06 degrees), a brushed-aluminium ferrule with four crimped
+  ridges, a pink eraser with rounded corners. It stands point up beside the board and runs past the board's foot (the board is now 1 shorter,
+  its edge raised, with the groove where they meet) so it reads as standing beside it, not part of it.
+- Ch 23 pump (circle: "a grey hammer shape stuck to the pump"). A real nozzle hung in a red holster (a boot on the pump's side): its
+  spout bent down into the holster, the faceted body, the black ribbed pistol grip running back and down, the steel lever under it, the
+  trigger guard looping beneath (a real opening), the swivel at the grip's end, and the hose leaving the swivel, falling in one curve and
+  running back into the pump low down (the loop a real hole). The pump moves 3 left. Built with OBJ_SDF in part-2.js now; gen-part-2.js no
+  longer makes c23 (nor c28).
+- Ch 28 logs (one brown blob with crack lines, red marks on every join). Six SEPARATE logs: the whole outline is a dark shadow plate the
+  logs stand up out of (z 1.2), each its own round end with a bark rim and fissures, a light sawn face with three growth rings, a heart a
+  little off centre and one or two checks; behind each end its length goes back up and right in darker bark (depth). They touch at points.
+
+GATES (TMPDIR=/dev/shm, one at a time; another artist's session kept the machine at load 7-11 for most of it, the container restarted
+once mid-run): check-js 13 blocks ALL PASS; merge --check, snap --check and gen-part-2 --check in step; check-b384-badgeart ALL PASS
+(--against a0da788: (10) FAILS); badgetwins, sides --class ifc (min .73, median .92), casefit, chapterbadges, ifcbadges ALL PASS;
+check-b384-objbadges: 93 legs pass, including (4e) joins (no sliver, seam or nub: the first runs caught a 2-pixel seam on 23's holster
+and nubs on 57 - both collar steps, chamfered now - and 66, all fixed). (4) PERF: at load ~1 it passed outright (the only failure that run
+was 57's last nub); at load 4.5 Chapter 32 (not changed here) is 6.63x cold against 6.0 - the same failure art9 noted on its base.
+check-centering --quick ALL PASS, 0 off centre.
+badges2: against d4f9fae (art9) exactly 11 Fire Code tokens differed - these ten and Chapter 39 (the still's vapour line, redrawn at 384.137
+after art9, not this round's) - with their 22 sheet images, the case, the hand and the cutscene's open/seated frames; the unit cards and
+everything else pixel-identical. Fire Code's reference moves to this work's art commit.
+START-UP: the Get Started badges clip holds 54 and 59, so landing/badges.mp4 and its poster were re-recorded (BADGES_RATE .06 at load ~10:
+16.9s, 2.4 MB, one 1.4s capture gap, held ~2 frames on the clip's clock) and tools/landing-badges-art.json rewritten; check-b384-startup
+ALL PASS. (The clip's title is in the serif fallback font, as in the clip it replaces: the web font is blocked in the sandbox.)
+Turned: the sides are each part's own colour (sides gate); not reshot frame by frame this round.
+
+SEEN, NOT CHANGED: 61's valve, through the hand-hold, is a brass block with a small outlet - at 44px it reads as a brass window in the
+collar, not as a valve with a wheel (the handwheel is drawn in the collar's top, where a real one sits). 54's bubbles are small; at 26px
+the drip and fizz are gone and the pin reads as a jug in a green puddle. 59's charred head is dark against the flame and reads as a match
+head only at 96px and up.

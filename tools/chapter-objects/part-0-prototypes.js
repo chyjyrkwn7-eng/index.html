@@ -113,7 +113,7 @@
   const T1 = 4.6, T2 = 6.3, T3 = 11.6, T4 = 21.2, T5 = 27;                   /* neck | ring | grip | spout | cap */
   const body = S.grow(S.grow(S.inter(S.box(5, 31, 80, 63, 5.5), tt), -1.5), 1.5);   /* the can, its top-right corner a shoulder square to the spout */
   const handle = S.box(10, 10, 39, 24, 4);
-  const neck = S.poly(quad(-3, T1, 5.4)), ring = S.poly([Q(T1, -6), Q(T1 + .8, -7.3), Q(T2, -7.3), Q(T2, 7.3), Q(T1 + .8, 7.3), Q(T1, 6)]);   /* its foot chamfered onto the neck */
+  const neck = S.poly(quad(-3, T1, 5.4)), ring = S.poly([Q(T1, -6), Q(T1 + .8, -7.3), Q(T2 - .5, -7.3), Q(T2, -6.8), Q(T2, 6.8), Q(T2 - .5, 7.3), Q(T1 + .8, 7.3), Q(T1, 6)]);   /* chamfered onto the neck below and into the collar above (a square step read as a notch) */
   const spout = S.poly(quad(T3 - .5, T4 + .5, 5)), cap = S.poly(quad(T4, T5, 7));
   const grip = S.poly([Q(T2, -6.8), Q(T3 - 1.4, -6.8), Q(T3 + .2, -5), Q(T3 + .2, 5), Q(T3 - 1.4, 6.8), Q(T2, 6.8)]);   /* the collar's top chamfered into the spout (a square step read as a notch) */
   const can = S.union([body, handle], 1.6);
