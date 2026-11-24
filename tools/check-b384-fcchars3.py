@@ -131,7 +131,7 @@ N = r["names"]
 # (384 round 12, r9-chars) The Irons became the Fire Marshal and Eclipse the Firebird; they join the names that must be gone
 chk("A. valkyrie is Undercover, timekeeper the Exit, genesis the Comet (round 16) (%s, %s, %s)" % (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")),
     (N.get("valkyrie"), N.get("timekeeper"), N.get("genesis")) == ("Undercover", "Exit", "Comet"), N)
-chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator", "The Irons", "Eclipse", "Pulsar", "Firebird", "Fire Marshal", "Aurora"} & set(N.values()), N)
+chk("A. Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone from the class's list", not {"Pyrotech", "Salamander", "Solstice", "Lookout", "Smoke Alarm", "Pump Operator", "The Irons", "Eclipse", "Pulsar", "Firebird", "Fire Marshal", "Aurora"} & {v for k, v in N.items() if not k.startswith("pg")}, N)   # (384.126) the prestige characters (ids pg...) are a status Fire Code adds on purpose: "Fire Marshal" is the prestige II character, not the retired one
 I = r["insp"]
 fb = lum(I["feltBase"]) if I.get("feltBase") else 1
 # (384 r6) the felt cowboy hat became the navy duty cap ("Fire inspectors wear police gear"): still darker than round 6's .52, and not

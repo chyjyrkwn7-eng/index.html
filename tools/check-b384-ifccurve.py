@@ -4,7 +4,8 @@ grinding these nearly as hard as the police one. And remember that each unit 1 o
 to be easier, it's gonna have to be easier to reach the max rank." / "ensure for the ifc version, the secret flares are more spread
 out and come through earlier on ... There's 6 of them, so every 15 levels or so I'd think you can get one for the ifc?"
 Read off the app (the academy in one page, Fire Code in another), XP from computeRunXp itself:
-(1) every Fire Code level costs a fifth of the academy's, level by level (within 1%); the academy's curve is its own (unscaled);
+(1) every Fire Code level costs one steady fraction of the academy's, level by level (within 1%); the academy's curve is its own (unscaled);
+(1b) 384.135: that fraction is one half - fitted to the class's own accounts (their badges against their XP; see LEVEL_COST_SCALE);
 (2) taking every Fire Code chapter to 100% - an imperfect first go (about 70%, 9s a question) and a perfect second (8s a question),
     as computeRunXp pays them - reaches level 80: the top rank's level is there by the time its badges are;
 (3) each Fire Code rank's level is there by its badges: its badge count of average chapters (the same two goes each) reaches the
@@ -51,7 +52,12 @@ with sync_playwright() as pw:
     # (1) one steady fraction of the academy's curve, level for level, between a third and two thirds of it
     chk("(1) Fire Code's curve is one steady fraction of the academy's - ratios %s ... %s, level 80 at %s XP against the academy's %s (%s)" % (ratios[0], ratios[-1], icurve[-1], acurve[-1], acad["cls"]),
         info["cls"] == "ifc" and acad["cls"] == "academy" and max(ratios) - min(ratios) <= .01 and .33 <= ratios[-1] <= .67, list(zip(LEVELS, acurve, icurve)))
-    total = sum(c["xp"] for c in ch)
+    # (1b) 384.135: FITTED TO THE CLASS. Madison: "Just needs to line up. Figure it out by the fire code people, look at their amount of
+    #      badges to their current xp earned". The four active accounts' XP against the level their badges qualify for on this ladder gave
+    #      0.34, 0.44, 0.55 and (the farmer, weighted a quarter) 1.06 - weighted 0.47, rounded to the clean value on the dearer side: 0.5.
+    #      Held here as one half of the academy's curve, level for level (the 0.46 it replaces fails this).
+    chk("(1b) Fire Code's curve is half the academy's, the fit to the class's own badges and XP (384.135): ratios %s ... %s" % (min(ratios), max(ratios)),
+        all(abs(r - .5) <= .006 for r in ratios), list(zip(LEVELS, ratios)))
     total = sum(c["xp"] for c in ch)
     # (2) finishing every chapter once is real progress but not the top: under level 80's XP, over a third of it (the top ranks take repetition)
     chk("(2) every chapter once (%d XP, %d chapters) is over a third and under all of level 80's XP (%d)" % (total, len(ch), icurve[-1]),

@@ -89,8 +89,18 @@ def page(ctx):
         status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
     return pg
 
+# (384 streak) THE DAILY CHECK-IN IS OFF IN THIS GATE. Every account here is an existing one opened on a launch, and since the daily
+# streak a launch that has heard the server pays the day's 25 XP (checkinTick) - so every exact total below would read 25 higher.
+# These checks are about how two copies of an account meet; the check-in's own sync (paid once across two devices, a reload, a
+# merge, written up in the account) is check-b384-streak's. Each context gets one init script that empties checkinTick once the
+# app's script is in (on an older build, --against, it only defines a global nobody reads).
+NO_CHECKIN = "addEventListener('DOMContentLoaded', () => { try{ checkinTick = function(){}; }catch(e){} });"
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=CHROME)
+    _new_context = br.new_context
+    def _ctx_no_checkin(*a, **k):
+        c = _new_context(*a, **k); c.add_init_script(NO_CHECKIN); return c
+    br.new_context = _ctx_no_checkin
 
     # ---- 1. onboarded, no sync code: boot issues one ----
     print("\n1. onboarded account whose sync code went missing")

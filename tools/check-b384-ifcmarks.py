@@ -201,6 +201,13 @@ for view, r in frac.items():
     room = [(c["ix0"] - c["gx0"]) / sc, (c["gx1"] - c["ix1"]) / sc, (c["iy0"] - c["gy0"]) / sc, (c["gy1"] - c["iy1"]) / sc]   # left, right, top, bottom, in points
     off = [((c["ix0"] + c["ix1"]) - (c["gx0"] + c["gx1"])) / 2 / sc, ((c["iy0"] + c["iy1"]) - (c["gy0"] + c["gy1"])) / 2 / sc]
     wide = (c["ix1"] - c["ix0"]) / sc
+    if wide > 20:
+        # (384.97) THE GOLD IS THE FRACTION'S ROW NOW (Madison: "highlight entire rows"; IFC_POINTER_PATCH rows: true): the print inside the gold is the whole row
+        # "All other dusts | 1/32", so the fraction is not centred across it - it stands inside it, with the row's even room above and below; the row itself, border
+        # to border and no other row, is check-b384-cropfix (g)
+        chk("ch22-014 (%s): the stacked 1/32 stands in its row's gold (the row's print %.1f pt wide), 0.4 pt clear above and below, centred down within 0.6 pt (down %.2f)" % (view, wide, off[1]),
+            min(room[2], room[3]) >= 0.4 and abs(off[1]) <= 0.6, "room l/r/t/b %s pt" % [round(x, 2) for x in room])
+        continue
     chk("ch22-014 (%s): the whole stacked 1/32 (raised 1, slash, lowered 32: %.1f pt wide, %.1f pt tall) is inside the gold, 0.4 pt clear on every side or more" % (view, wide, (c["iy1"] - c["iy0"]) / sc),
         wide >= 4.5 and min(room) >= 0.4, "room l/r/t/b %s pt, ink %.1f pt wide" % ([round(x, 2) for x in room], wide))
     chk("ch22-014 (%s): the print is centred in the gold within 0.6 pt (across %.2f, down %.2f)" % (view, off[0], off[1]), abs(off[0]) <= 0.6 and abs(off[1]) <= 0.6, "off x %.2f y %.2f pt; room l/r/t/b %s" % (off[0], off[1], [round(x, 2) for x in room]))

@@ -19,7 +19,7 @@
      longest Nova line).
  (S) THE SEAM where Nova's speech tail meets his bubble: across the tail's base the border's rows are the bubble's own fill
      (read off the pixels at 3x, 2.5x and 2x).
- (C) the Settings icons on their tiles' middles: on whole CSS pixels, and no lean (measured at 3x against the exact layout centre).
+ (C) the Settings icons on their tiles' middles: on whole CSS pixels, and no lean (measured at 3x against the tile as drawn, sideways; the layout centre vertically).
  (E) no page errors.
 Run:  python3 tools/check-b384-r4.py            (--against OLD/index.html must FAIL)"""
 import importlib.util, json, os, sys
@@ -259,7 +259,7 @@ with sync_playwright() as pw:
     p3.evaluate("()=>{ document.querySelectorAll('#splashscreen,.app-banner,.daily-alert').forEach(n=>n.remove()); showAppearance(); }")
     p3.wait_for_timeout(1800)
     n_t = p3.evaluate("()=>[...document.querySelectorAll('.settings-row-icon')].length")
-    offs, whole, rows_c = [], [], []
+    offs, whole, rows_c, lays = [], [], [], []
     for i in range(n_t):
         g = p3.evaluate("""(i)=>{ const t=[...document.querySelectorAll('.settings-row-icon')][i]; const r=t.getBoundingClientRect(); if(!r.width) return null;
           t.scrollIntoView({block:'center'}); const r2=t.getBoundingClientRect(), s=t.querySelector('svg').getBoundingClientRect();
@@ -274,8 +274,20 @@ with sync_playwright() as pw:
         x0, y0, x1, y1 = int(np.floor(x * sc)), int(np.floor(y * sc)), int(np.ceil((x + w) * sc)), int(np.ceil((y + h) * sc))
         m = (a3[y0:y1, x0:x1].min(axis=2) > 215); ys, xs = np.nonzero(m)
         if not len(xs): continue
-        offs.append((g["kind"], ((xs.min() + xs.max() + 1) / 2 - ((x + w / 2) * sc - x0)) / sc, ((ys.min() + ys.max() + 1) / 2 - ((y + h / 2) * sc - y0)) / sc))
+        # (384.133) SIDEWAYS, against the tile AS DRAWN. settingslook's rows pad 16.5px in (Delta's), so a tile's layout box starts on a half
+        # CSS pixel (37.5) and the renderer draws the whole tile - fill, keyline, lit edge and glyph together - on the next whole pixel (38), a
+        # constant +.5 that is not the glyph's: against the layout centre every glyph read +.50 (the gate said "leans right") while the glyph
+        # was on the drawn tile's middle. So the tile's drawn middle is read off the same screenshot (the first and last columns, in the row
+        # through its middle, that differ from the page behind it) and the glyph's ink is measured from that; the layout reading is INFO.
+        bgc = a3[int((y + h / 2) * sc), max(0, x0 - 8)]
+        row = a3[int((y + h / 2) * sc), x0 - 8:x1 + 8]
+        diff = np.nonzero(np.abs(row - bgc).max(axis=1) > 60)[0]
+        tile_cx = (diff.min() + diff.max() + 1) / 2 + (x0 - 8) if len(diff) else (x + w / 2) * sc
+        lay_dx = ((xs.min() + xs.max() + 1) / 2 - ((x + w / 2) * sc - x0)) / sc
+        offs.append((g["kind"], ((xs.min() + xs.max() + 1) / 2 + x0 - tile_cx) / sc, ((ys.min() + ys.max() + 1) / 2 - ((y + h / 2) * sc - y0)) / sc))
+        lays.append((g["kind"], round(lay_dx, 2), round((tile_cx / sc) - (x + w / 2), 2)))
     c3.close()
+    print("  INFO (C) against the layout centre: ink %s; the tile is drawn %s px right of its layout box" % (sorted(set(v for _, v, _ in lays)), sorted(set(v for _, _, v in lays))))
     med = lambda v: sorted(v)[len(v) // 2] if v else 99
     mdx, mdy = med([o[1] for o in offs]), med([o[2] for o in offs])
     chk("(C) every Settings icon sits on whole CSS pixels in its tile (%d of %d; off: %s)" % (sum(1 for _, ok_ in whole if ok_), len(whole), [k for k, ok_ in whole if not ok_][:6]),

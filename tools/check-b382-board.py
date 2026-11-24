@@ -45,11 +45,14 @@ LOOK = """()=>{ const scr=document.querySelector('.screen-rankings'); const rows
   const r4=rows.find(r=>!r.querySelector('.lb-rank-medal')); const hash=r4 && r4.querySelector('.rank-place .rank-hash');
   const pod=[1,2,3].map(n=>{ const r=scr.querySelector('.rank-row.rank-podium-'+n+':not(.lb-row-me)'); if(!r) return null; const be=getComputedStyle(r,'::before');
     return { ring: be.content!=='none' && be.backgroundImage.includes('gradient'), light: cs(r).backgroundImage.includes('radial-gradient') }; });
-  const me=scr.querySelector('.rank-row.lb-row-me'); const acc=me ? (()=>{ const t=document.createElement('span'); t.style.color='var(--accent)'; me.appendChild(t); const c=cs(t).color; t.remove(); return c; })() : null;
+  /* (384.133) 384.111 (searchbar): "I'm permanently highlighted, don't do that" - your row is FOUND (data-me, how Find me finds it), not lit: no .lb-row-me */
+  const me=scr.querySelector('.rank-row[data-me]'); const lit=!!scr.querySelector('.rank-row.lb-row-me'); const acc=me ? (()=>{ const t=document.createElement('span'); t.style.color='var(--accent)'; me.appendChild(t); const c=cs(t).color; t.remove(); return c; })() : null;
   const hs=rows.map(r=>Math.round(r.getBoundingClientRect().height*10)/10);
   const head=[...scr.querySelectorAll('.rank-row-head .rank-col-head')].map(h=>cs(h).textTransform);
   return { med, hash: hash ? +cs(hash).opacity : null, hashText: r4 ? r4.querySelector('.rank-place').textContent : null, pod,
-    me: me ? { border: cs(me).borderTopColor, acc, wash: cs(me).backgroundImage.includes('gradient'), podium: /rank-podium-[123]/.test(me.className),
+    me: me ? { border: cs(me).borderTopColor, acc, lit, wash: cs(me).backgroundImage.includes('gradient'), podium: /rank-podium-[123]/.test(me.className),
+      same: (()=>{ const o=rows.find(r=>r!==me && !r.dataset.me && !r.querySelector('.lb-rank-medal') && !/rank-podium/.test(r.className)); if(!o) return null; const pl=r=>{ const p=r.querySelector('.rank-place:not(.lb-rank-medal)'); return p ? cs(p).color : null; };
+        return { img: cs(o).backgroundImage===cs(me).backgroundImage, place: pl(o)===pl(me), border: cs(o).borderTopColor===cs(me).borderTopColor, oi: cs(o).backgroundImage.slice(0,80), mi: cs(me).backgroundImage.slice(0,80), op: pl(o), mp: pl(me) }; })(),
       place: (me.querySelector('.rank-place:not(.lb-rank-medal)') ? cs(me.querySelector('.rank-place')).color : null) } : null,
     hmin: Math.min(...hs), hmax: Math.max(...hs), blur: rows.filter(r=>{ const f=cs(r).backdropFilter||cs(r).webkitBackdropFilter||'none'; return f!=='none'; }).length,
     head }; }"""
@@ -131,7 +134,10 @@ with sync_playwright() as pw:
         pod = all(p and p["ring"] and p["light"] for p in lk["pod"])
         # build 382 iOS look: in the grouped list your row is the accent's wash with your place in the accent (no ring breaking
         # the card); on the podium it keeps the accent's ring
-        me = lk["me"] and lk["me"]["wash"] and (lk["me"]["border"] == lk["me"]["acc"] if lk["me"]["podium"] else lk["me"]["place"] == lk["me"]["acc"])
+        # (384.133) REVISED BY 384.111 (searchbar, "I'm permanently highlighted, don't do that"): it was "your row is the accent's wash with your place in the accent"; now the
+        # WASH is gone - your row is found (data-me, how Find me finds it), carries no .lb-row-me, and in the grouped list is drawn as the other rows are (same background
+        # and border, no ring) - while your place stays in the accent (that line of the 382 look is kept, keyed on data-me). On the podium it keeps the podium's own ring.
+        me = lk["me"] and not lk["me"]["lit"] and (lk["me"]["podium"] or (bool(lk["me"]["same"]) and lk["me"]["same"]["img"] and lk["me"]["same"]["border"] and lk["me"]["place"] == lk["me"]["acc"]))
         return circ and lk["hash"] is not None and lk["hash"] < 0.9 and (lk["hashText"] or "").startswith("#") and pod and me \
             and lk["hmax"] - lk["hmin"] <= 1 and lk["hmin"] >= 44 and lk["blur"] == 0 and lk["head"] and all(t == "none" for t in lk["head"])
     lk = pg.evaluate(LOOK)

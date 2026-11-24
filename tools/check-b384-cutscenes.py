@@ -32,7 +32,7 @@ each - and read off the page (the words every scene and card puts up, sampled wh
      too, and in Fire Code he sends nobody to a Calendar tab; Customize's ultimate note names the class's own top character;
  (9) THE WHOLE EARN, WALKED: the last answer of a chapter / unit at 100% - the results (grade, XP, the badge's case, the hundo
      effect's card), Main menu, the Profile tab's call, the rank-up journey (the road map, the cutscene, the reward card) and
-     Nova's words over the flare - each class's own words throughout, and nothing left on the page at the end;
+     no talk from Nova after it (384.123) - each class's own words throughout, and nothing left on the page at the end;
 (10) no page errors in either class.
 Run:  python3 tools/check-b384-cutscenes.py   (--against OLD/index.html must FAIL; ONLY=1,3,5 runs those sections)"""
 import json, os, re, sys, time, functools, http.server, socket, threading
@@ -183,11 +183,11 @@ with sync_playwright() as pw:
         fx = CF["fx"]
         chk("(1) Fire Code's hundo effect cards ask for its own counts, %s" % [(d["name"], d["said"]) for d in fx],
             [d["need"] for d in fx] == [25, 50, 75, 100] and all(d["said"] == "Earn %d hundos" % d["need"] for d in fx)
-            and [d["name"] for d in fx] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Hazmat"], fx)
+            and [d["name"] for d in fx] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Containment"], fx)
         chk("(1) the academy's ask for its own, %s" % [(d["name"], d["said"]) for d in CA["fx"]],
             [d["need"] for d in CA["fx"]] == [25, 75, 125, 200] and all(d["said"] == "Earn %d hundos" % d["need"] for d in CA["fx"]), CA["fx"])   # (384 r9) the academy's rungs are 25/75/125/200 (AC_HUNDO_NEED)
         alarm = [t for _, t in CF["cards"] + CA["cards"] if re.search(r"fire alarm", t, re.I)]
-        chk("(1) no card in either class is the Fire Alarm (Hazmat is the 150, the Thermal Camera the 75)", not alarm, alarm)
+        chk("(1) no card in either class is the Fire Alarm (Containment, once Hazmat, is the top rung, the Thermal Camera the 75)", not alarm, alarm)
         # (384 r17) Fire Code's ladder was re-lined in 384 to FIRE_BADGE_SHARE of its chapters (read off the page, not typed here)
         share = F.evaluate("() => TIER_ORDER_FULL.map(k => FIRE_BADGE_SHARE[k])")
         want_b = [max(1, round(sh * CF["chapters"])) for sh in share]
@@ -496,8 +496,10 @@ with sync_playwright() as pw:
                             p.evaluate("()=>document.getElementById('bottomtab-profile')?.click()"); stage[c] = "journey"; W9[c]["at"] = time.time()
                     elif s == "journey":
                         p.evaluate(TAP_CARD)
-                        st = p.evaluate(TALK, "nova-rank")
-                        if st == "go": stage[c] = "settle"; W9[c]["at"] = time.time()
+                        # (384.123) Nova no longer talks at the end: the journey is over when it has been seen, is gone, nothing is owed
+                        # and no reward card is up; the walk then settles on Home
+                        over = p.evaluate("()=>{ window.__sawScene = window.__sawScene || !!rankUpScene; return !!window.__sawScene && !rankUpScene && !rankUpOwed() && !document.querySelector('.rs-spot.is-up'); }")
+                        if over: stage[c] = "settle"; W9[c]["at"] = time.time()
                     elif s == "settle":
                         if time.time() - W9[c]["at"] > 3:
                             W9[c]["journey"] = p.evaluate("()=>__capEnd()"); stage[c] = "end"
@@ -516,8 +518,9 @@ with sync_playwright() as pw:
                 badge in res["texts"] and w["fx"] in res["texts"]
                 and "cs.badge" in res["snd"] and "res.unlock.banner" in res["snd"], res["texts"])
             rk = p.evaluate("(k)=>RANK_DISPLAY_NAME[k].toUpperCase()", w["rank"])
-            chk("(9) %s: the journey ranked up to %s, its reward card and Nova's words over the flare (%s)" % (c, rk, [t for t in jr["texts"] if "flare!" in t][:1]),
-                rk in jr["texts"] and any("rank rewards" in t for t in jr["texts"]) and any(("my " + rk.title() + " flare") in t for t in jr["texts"]), jr["texts"])
+            chk("(9) %s: the journey ranked up to %s and gave its reward card, and Nova said nothing over the flare (384.123)" % (c, rk),
+                rk in jr["texts"] and any("rank rewards" in t for t in jr["texts"]) and not any("flare!" in t for t in jr["texts"]), jr["texts"])
+            chk("(9) %s: no Nova talk is up after the journey" % c, not p.evaluate("()=>!!document.querySelector('.nova-talk, #nova-rank, #nova-intro')"))
             chk("(9) %s: nothing left on the page at the end (%s %s), the tab bar and chat button back" % (c, jr["left"], jr["focus"]),
                 not jr["left"] and not jr["focus"] and jr["tab"] and jr["chat"], jr)
     chk("(10) no page errors in the academy (%s)" % aerr[:2], not aerr, aerr)

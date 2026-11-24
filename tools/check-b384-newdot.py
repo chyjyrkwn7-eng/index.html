@@ -204,14 +204,36 @@ with sync_playwright() as p:
         places = lambda D: sorted(set(re.sub(r"#\d+$", "", k) for k in D))
         need = {"home:#bottomtab-profile", "home:class-bubble", "profile:settings-row-icon", "character:avatarchar-option", "banner:banner-opt",
                 "theme:swatch", "fx:hfx-opt", "badges:badge-tile-art"}
+        # (384.133 r2) PROFILE'S TWO ROWS WERE REBUILT ON PURPOSE (profilerows2): the Badge case row's dot is on its art (pfr-bc-art) and the
+        # Customize row's on its next-unlock thumb (pfr-cz-next), not on a row icon. The reference's two row-icon dots are those two, in
+        # that order; they are compared by their new hosts' corners (the hosts moved, so (1)'s offset check holds them to the corner).
+        # (384 ui3, round three) REBUILT AGAIN ON PURPOSE: the Badge case row is B's words beside the plain row icon (settingsRowIcon), so its
+        # dot is back on a settings-row-icon; Customize's default (d) carries the theme ring (pfr-swatch), its dot on the ring. Both rows
+        # moved and changed host, so neither is compared with the reference's place: both are held by the corner check below (on the
+        # host's corner, on the 45-degree line). `need` names the two hosts this build has.
+        rebuilt = any(k.startswith("profile:pfr-") for k in test)
+        if rebuilt:
+            ref = {k: v for k, v in ref.items() if not (k.startswith("profile:settings-row-icon") or k.startswith("profile:pfr-"))}
+            hosts = {re.sub(r"#\d+$", "", k) for k in test if k.startswith("profile:pfr-") or k.startswith("profile:settings-row-icon")}
+            test_cmp = {k for k in test if k.startswith("profile:pfr-") or k.startswith("profile:settings-row-icon")}
+            need = (need - {"profile:settings-row-icon"}) | hosts
+            chk("(1) %s: Profile's two rows each have their dot (%s)" % (dev, sorted(test_cmp)), len(test_cmp) >= 2 and "profile:settings-row-icon" in hosts and any(h.startswith("profile:pfr-") for h in hosts), sorted(test_cmp))
         found = set(re.sub(r"#\d+$", "", k).replace("bottomtab-icon", "#bottomtab-profile") for k in test)
-        chk("(1) %s: a dot in every place (%d dots: %s)" % (dev, len(test), places(test)), need <= found and set(ref) == set(test),
+        chk("(1) %s: a dot in every place (%d dots: %s)" % (dev, len(test), places(test)), need <= found and set(ref) <= set(test) and len(set(test) - set(ref)) <= 3 and (set(ref) == set(test) or rebuilt),
             {"missing": sorted(need - found), "only on ref": sorted(set(ref) - set(test)), "only here": sorted(set(test) - set(ref))})
         bad = [(k, d["w"], d["h"], d["vis"]) for k, d in test.items() if not (d["w"] >= 6 and d["h"] >= 6 and d["vis"])]
         chk("(1) %s: every dot drawn (a box, visible)" % dev, not bad, bad[:5])
-        moved = [(k, round(test[k]["cx"] - ref[k]["cx"], 2), round(test[k]["cy"] - ref[k]["cy"], 2), (ref[k]["w"], test[k]["w"])) for k in test if k in ref
-                 and (abs(test[k]["cx"] - ref[k]["cx"]) > .75 or abs(test[k]["cy"] - ref[k]["cy"]) > .75 or abs(test[k]["w"] - ref[k]["w"]) > .5 or abs(test[k]["h"] - ref[k]["h"]) > .5)]
-        chk("(1) %s: every dot's centre and size where %s has them (within 0.75px; %d compared)" % (dev, build_of(REFSRC), len([k for k in test if k in ref])), not moved, moved[:6])
+        # (384.133) THE PLACE IS ITS HOST'S CORNER. A dot whose HOST was moved on purpose by a later build (settingslook, 384.110: Profile's title, large-title
+        # and rows are Delta's now, so the page's rows - Customize, the rank, Settings - sit a few px higher than on 384.107) is held to the same offset from its
+        # host's corner (within the same 0.75px) rather than to the screen's pixel; every dot whose host did not move is still held to the screen's pixel.
+        hmoved = {k for k in test if k in ref and (abs(test[k]["hx"] - ref[k]["hx"]) > .75 or abs(test[k]["hy"] - ref[k]["hy"]) > .75 or abs(test[k]["hw"] - ref[k]["hw"]) > .75 or abs(test[k]["hh"] - ref[k]["hh"]) > .75)}
+        def _off(k):   # how far the dot is from where the reference puts it: by the screen's pixel, or by its host's corner when the host moved
+            if k in hmoved: return abs(test[k]["dx"] - ref[k]["dx"]), abs(test[k]["dy"] - ref[k]["dy"])
+            return abs(test[k]["cx"] - ref[k]["cx"]), abs(test[k]["cy"] - ref[k]["cy"])
+        moved = [(k, round(_off(k)[0], 2), round(_off(k)[1], 2), (ref[k]["w"], test[k]["w"])) for k in test if k in ref
+                 and (_off(k)[0] > .75 or _off(k)[1] > .75 or abs(test[k]["w"] - ref[k]["w"]) > .5 or abs(test[k]["h"] - ref[k]["h"]) > .5)]
+        chk("(1) %s: every dot's centre and size where %s has them (within 0.75px; %d compared, %d on a host a later build moved: held to the host's corner: %s)" % (
+            dev, build_of(REFSRC), len([k for k in test if k in ref]), len(hmoved), sorted(hmoved)), not moved, moved[:6])
         bad = [(k, round(d["dx"], 1), round(d["dy"], 1)) for k, d in test.items() if abs(d["dx"] - d["dy"]) > 1.5 or d["dx"] < -1 or d["dx"] > min(d["hw"], d["hh"]) / 3]
         chk("(1) %s: each on its host's corner, on the 45-degree line" % dev, not bad, bad[:6])
 

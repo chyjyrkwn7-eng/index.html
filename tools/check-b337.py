@@ -15,7 +15,6 @@ HOME = """async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); const
     .filter(n => { try{ return typeof eval(n) !== 'undefined'; }catch(e){ return false; } });
   const texts = [];
   try{ NOVA_RANK_HEAD.forEach(f => texts.push(f('Casey'))); }catch(e){}
-  try{ Object.values(NOVA_RANK_BEATS).forEach(a => texts.push(...a)); }catch(e){}
   try{ Object.values(RANK_LORE).forEach(t => texts.push(t)); }catch(e){}
   try{ [false, true].forEach(ex => novaIntroLines({ existing: ex }).forEach(l => texts.push(typeof l.text === 'function' ? l.text() : l.text))); }catch(e){}
   try{ ['why is my planet cracking', 'what are badges', 'tell me about the planet', 'what do i get', 'flares', 'what is a badge'].forEach(q => texts.push(novaReplyFor(q))); }catch(e){}

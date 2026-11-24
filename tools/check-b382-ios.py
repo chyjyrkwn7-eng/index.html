@@ -30,7 +30,9 @@ BOARD = """()=>{ const scr=document.querySelector('.screen-rankings'); const cs=
   const rows=[...scr.querySelectorAll('.rank-rows > .rank-row[data-pub]')]; const rw=rows.length ? rows[0].getBoundingClientRect().width : 1;
   const sb=seg ? seg.getBoundingClientRect() : null;
   const segInfo = seg ? { tops: btns.map(b=>Math.round(b.getBoundingClientRect().top)), hs: btns.map(b=>Math.round(b.getBoundingClientRect().height*10)/10),
-    span: Math.round(sb.width/rw*100)/100, blur: (cs(seg).backdropFilter||'none') } : null;
+    span: Math.round(sb.width/rw*100)/100, blur: (cs(seg).backdropFilter||'none'), th: Math.round(sb.height*10)/10,
+    hit: btns.every(b=>{ const r=b.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2; return [-21,21].every(d=>{ const e=document.elementFromPoint(x, y+d); return e && (e===b || b.contains(e)); }); }),
+    mid: rows.length ? Math.round(((sb.left+sb.right)/2 - (rows[0].getBoundingClientRect().left + rw/2))*10)/10 : 0 } : null;
   /* build 383: "why is the top 3 disconnected from the rest" - the group runs from first place down */
   const list=rows;
   const R=r=>r.getBoundingClientRect(); const rad=(r,k)=>parseFloat(cs(r)[k])||0;
@@ -77,8 +79,11 @@ with sync_playwright() as pw:
         chk("%s board: the title %r is big and bold (%sx the body, weight %s)" % (dev, t["text"], t["ratio"], t["weight"]),
             t["text"] == "Leaderboard" and t["ratio"] >= 1.6 and t["weight"] >= 700, t)
         s = b["seg"]
-        chk("%s board: the switch is a segmented control - one row %s, segments %s tall, %s of the rows' width, frost %s" % (dev, s and s["tops"], s and s["hs"], s and s["span"], s and s["blur"]),
-            s and len(s["tops"]) >= 3 and max(s["tops"]) - min(s["tops"]) <= 1 and min(s["hs"]) >= 44 and s["span"] >= .8 and s["blur"] == "none", s)
+        # (384.133) REVISED BY 384.116 (segglass, the top switchers "compact, raised liquid glass", approved): the segments are 40px in a 48px glass track (the 44px
+        # target is the hit area: 21px above and below each segment's middle still lands on it, check-b384-segglass (7)), the track is the glass and carries the blur,
+        # and it is as wide as its words need, centred over the rows - no longer the rows' full width. It was: segments >= 44 tall, >= .8 of the rows' width, no blur.
+        chk("%s board: the switch is a segmented control - one row %s, segments %s in a %s track, centred (%s off), %s of the rows' width, frost %s" % (dev, s and s["tops"], s and s["hs"], s and s["th"], s and s["mid"], s and s["span"], s and s["blur"]),
+            s and len(s["tops"]) >= 3 and max(s["tops"]) - min(s["tops"]) <= 1 and min(s["hs"]) >= 40 and s["th"] >= 44 and s["hit"] and abs(s["mid"]) <= 2 and s["span"] <= 1.01 and "blur" in s["blur"], s)
         # CHANGED ON PURPOSE IN 384.92: the line under each row runs across the card from its inner left edge (left 0), no longer
         # inset to the name - Madison, "why are there weird lines? Fix that" (check-b384-lbclean measures it)
         hair_ok = all(x["on"] and x["h"] >= .5 and abs(x["l"]) <= 1 for x in b["hair"][:-1]) if len(b["hair"]) > 1 else False

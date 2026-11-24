@@ -11,7 +11,8 @@ Everything is read off the page (rects, computed styles), never a label or a typ
   (E4) in each card the picture, the name and the count are centred across the card (centre within 1.5px of the card's);
   (E5) the contents are centred up-down in the card (the gap above the picture equals the gap under the count, within 2px);
   (E6) no horizontal page scroll; with the page scrolled to its end the last card clears the tab bar;
-  (E7) on a phone tall enough (>= 800px) all four are on the first screen without scrolling;
+  (E7) on a phone tall enough (>= 800px) the Next up card (384.120, owner-approved) is above the four cards, which begin under it, and their first row
+       starts on the first screen, at least 60px of it above the tab bar (the rest by scrolling; E6 holds the end). Until 384.120 all four fitted on the first screen;
  PAGES (showCustomize('character' | 'banner' | 'theme' | 'fx'))
   (P1) the header is centred: the count, the page's line and the hold hint (centre within 1.5px of the column's), and the hint
        is the SAME words on all four pages;
@@ -111,6 +112,10 @@ ENTRY = r"""async () => {
       up: art && gr ? [Math.round((R(art).t - cr.t) * 10) / 10, Math.round((cr.b - gr.b) * 10) / 10] : null,
       pickUp: pr && art ? Math.round((pr.cy - R(art).cy) * 10) / 10 : null }; });
   out.first = rs.length ? { allAbove: rs.every(r => r.b <= Math.min(tabTop(), innerHeight) + 0.5), vh: innerHeight } : null;
+  /* (384.120) Customize opens with the Next up card above 'Your look': where the four cards start, and what of them is on the first screen */
+  { const nu = document.querySelector('#stage .cz-group-nextup'), room = Math.min(tabTop(), innerHeight) + 0.5, t0 = rs.length ? Math.min(...rs.map(r => r.t)) : 0;
+    out.nextUp = { present: !!nu, bottom: nu ? Math.round(nu.getBoundingClientRect().bottom * 10) / 10 : null, firstTop: Math.round(t0 * 10) / 10,
+                   room: Math.round(room * 10) / 10, row1Above: rs.length > 0 && rs.filter(r => Math.abs(r.t - t0) < 2).every(r => r.b <= room), someBelow: rs.some(r => r.b > room), vh: innerHeight }; }
   await toEnd();
   const rs2 = cards.map(R);
   out.endClear = Math.min(tabTop() - Math.max(...rs2.map(r => r.b)), 9999);
@@ -281,7 +286,15 @@ def run_device(br, dev, cls):
     chk("%s (E6) no horizontal scroll, and the last card clears the tab bar when scrolled to the end (%spx)" % (tag, e["endClear"]),
         e["hscroll"] <= 0 and e["hscroll2"] <= 0 and e["endClear"] >= -0.5, [e["hscroll"], e["hscroll2"], e["endClear"]])
     if W < 700 and H >= 800 and H > W:
-        chk("%s (E7) all four cards are on the first screen" % tag, e["first"]["allAbove"], e["first"])
+        # CHANGED ON PURPOSE IN 384.120 (unlocks; the owner approved it as built): Customize opens with the Next up card (the three closest unlocks and
+        # All tracks) above "Your look", so the four cards start BELOW it and the page scrolls: they were all on the first screen of a tall phone before.
+        # What E7 holds now: that card is there and above the four cards (they begin under it, not beside or over it), that the first row of them
+        # (Character and Banner) STARTS on the first screen of a tall phone (at least 60px of it above the tab bar: a 440x956 phone shows the whole row,
+        # a 393x852 one its top and the page scrolls to the rest), and the other cards are reached by scrolling (E6 holds
+        # that the last card clears the tab bar at the end). The build before 384.120 has no Next up card and fails this.
+        nu = e["nextUp"]
+        chk("%s (E7) Next up sits above the four cards, which begin under it; their first row starts on the first screen of a tall phone (60px+ above the tab bar), the rest by scrolling (%s)" % (tag, nu),
+            nu["present"] and nu["bottom"] is not None and nu["bottom"] <= nu["firstTop"] + 1 and nu["firstTop"] <= nu["room"] - 60, nu)
     # the pages
     hints = []
     for kind in ("character", "banner", "theme", "fx"):

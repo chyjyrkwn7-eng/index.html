@@ -104,7 +104,7 @@ with sync_playwright() as pw:
           const pad=parseFloat(cs.paddingLeft);
           return { align: cs.textAlign, textStart: Math.round(fr.left + pad), iconRight: Math.round(ir.right), fieldLeft: Math.round(fr.left),
             field:[fr.left, fr.top, fr.width, fr.height], track:[tr.left, tr.top, tr.width, tr.height],
-            fb: parseFloat(cs.borderTopWidth), tb: parseFloat(getComputedStyle(t).borderTopWidth) }; }""")
+            fb: parseFloat(cs.borderTopWidth), tb: parseFloat(getComputedStyle(t).borderTopWidth), tsh: getComputedStyle(t).boxShadow }; }""")
         ck("%s: the placeholder starts at the left, just right of the magnifier (%s)" % (dev, r),
            r["align"] in ("left", "start") and 0 <= r["textStart"] - r["iconRight"] <= 16, r)
         img = Image.open(io.BytesIO(pg.screenshot())).convert("L")
@@ -115,8 +115,12 @@ with sync_playwright() as pw:
             return lum(box[0] + box[2] - 6, box[1] - 5)
         tbx = r["track"]   # the track at its LEFT end - the picked segment (Hundos) is at the right
         fi, fo, ti, to = inside(r["field"]), outside(r["field"]), lum(tbx[0] + 6, tbx[1] + tbx[3] / 2), lum(tbx[0] + 6, tbx[1] - 5)
-        ck("%s: the search field is lighter than the sky behind it by 12+ levels, with a rim (%d vs %d, rim %s)" % (dev, fi, fo, r["fb"]), fi - fo >= 12 and r["fb"] >= 1, [fi, fo])
-        ck("%s: so is the switch's track (%d vs %d, rim %s)" % (dev, ti, to, r["tb"]), ti - to >= 12 and r["tb"] >= 1, [ti, to])
+        # (384.133) TWO STALE READINGS OF "A RIM", not a lost look: (1) the search field is Apple's capsule since 384.111 (searchbar; Madison's two screenshots beside Apple Music's
+        # Search: "the round edges and stuff"): a flat translucent fill and NO edge, so what this asks of it is the part that was the complaint - it stands out from the sky by
+        # 12+ levels; (2) the switch's track is the segmented control's glass pill since segglass (the combined build 384.1xx series): `border: 0`, its rim is box-shadow (an inset lit edge and a .5px ring),
+        # so a rim is a border OR a box-shadow edge, and the track is still 12+ levels over the sky.
+        ck("%s: the search field is lighter than the sky behind it by 12+ levels (%d vs %d)" % (dev, fi, fo), fi - fo >= 12, [fi, fo])
+        ck("%s: so is the switch's track (%d vs %d, rim: border %s / shadow %s)" % (dev, ti, to, r["tb"], (r["tsh"] or "")[:40]), ti - to >= 12 and (r["tb"] >= 1 or (r["tsh"] or "none") != "none"), [ti, to, r["tb"], r["tsh"]])
         ctx.close()
     print("\n5. the units screen in the board's look (\"this screen looks so much different than every other screen\")")
     for (w, h, dev) in [(440, 956, "phone"), (834, 1194, "iPad")]:

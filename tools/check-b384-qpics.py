@@ -97,6 +97,17 @@ COUNTY = {
 }
 # ids this build sets out to change (relative to origin/main 384.70): the pointers above, ch22-014's 384.71 mark (already in this branch's base build), and the tables of Chapter 10
 EXPECTED = set(HL) | set(TABLE_IDS) | set(COUNTY)
+# (384.133) THE BASE MOVED. This gate was written against origin/main 384.70; origin/main 384.107 (the base now) already holds this build's own fixes for 27 of the 41 ids above
+# (the 384.72 branch merged), so they cannot differ from it - they are asked to be exactly main's (MAIN_HOLDS), not to differ. And builds made after it add 22 ids' pictures that
+# are not this build's, each Madison's own request, named here with its build (LATER):
+#   384 cropfix - "highlight entire rows": ch6-029, ch6-030 (rows:true; it was in ALREADY), ch12-040, ch60-511, ch60-514, ch62-205, ch62-506, ch62-507; and the last three county rows
+#   with their table's title: ch60-701, ch60-702, chExhB-703; the viewer's cuts for the county tables' rows (ifc-viewer.js 384.93 / 384.97) reach ch4-625, ch4-626, ch62-206, ch62-701, ch64-204;
+#   384.130 ch6cook - six NEW questions ch6-622..627 (pointers are ch6-029's, the row lit by `find` + rows:true).
+# No question's text, options, answer or explanation changed: the bank file differs from origin/main's in the 32 added questions only (384.104's ch10-339..364 and ch6cook's six).
+MAIN_HOLDS = {"ch2-607", "ch10-151", "ch32-052", "ch10-162", "ch10-147", "ch2-094", "ch2-079", "ch10-143", "ch2-084", "ch10-149", "ch10-146", "ch10-158", "ch10-159", "ch10-154", "ch10-145",
+              "ch10-156", "ch10-142", "ch10-152", "ch10-144", "ch10-161", "ch10-160", "ch10-153", "ch10-157", "ch2-618", "ch10-148", "ch10-150", "ch2-610"}
+LATER = {"ch12-040", "ch4-625", "ch4-626", "ch6-029", "ch6-030", "ch6-622", "ch6-623", "ch6-624", "ch6-625", "ch6-626", "ch6-627", "ch60-511", "ch60-514", "ch60-701", "ch60-702",
+         "ch62-205", "ch62-206", "ch62-506", "ch62-507", "ch62-701", "ch64-204", "chExhB-703"}
 ALREADY = {"chAppC-003", "chAppC-004", "chAppC-005", "chAppC-009", "chAppB-011", "chAppB-012", "ch61-022", "ch57-066", "ch66-712", "ch7-009", "ch6-030", "ch62-702", "ch62-703", "ch33-001", "ch9b-120", "ch2-616"}
 
 JS_COUNTY = """async (id) => {
@@ -243,11 +254,15 @@ if want("3"):
 if want("4") and AGAINST is None:
     new = read_all(); old = read_all(BASE)
     diff = sorted(k for k in set(new) | set(old) if new.get(k) != old.get(k))
-    extra = [k for k in diff if k not in EXPECTED and k != "ch22-014"]
-    never = [k for k in EXPECTED if k not in diff and k not in ALREADY]
-    moved = [k for k in ALREADY if k in diff]
+    extra = [k for k in diff if k not in EXPECTED and k != "ch22-014" and k not in LATER]
+    never = [k for k in EXPECTED if k not in diff and k not in ALREADY and k not in MAIN_HOLDS]
+    moved = [k for k in ALREADY if k in diff and k not in LATER]
+    held = [k for k in MAIN_HOLDS if k in diff]
+    print("    (384.133) ids on the gate's list that did not differ: %s" % never)
+    print("    (384.133) every id that differs from %s and is not on this gate's own list (%d): %s" % (BASE, len(extra), extra))
     chk("(4) of %d content questions only the ones this build set out to change differ from %s (%d differ)" % (len(new), BASE, len(diff)), not extra, extra[:10])
     chk("(4) ... each of the %d it set out to change does differ (the fix is in the pictures, not only in the table)" % len(EXPECTED - ALREADY), not never, never[:10])
+    chk("(4) ... the %d fixes origin/main 384.107 already holds are exactly its (none differs)" % len(MAIN_HOLDS), not held, held[:10])
     chk("(4) ... and the %d that origin/main already fixes (the 384.56 patches, ch9b-120) and ch2-616 (its patch keeps the three items main marked) are NOT moved" % len(ALREADY), not moved, moved[:10])
     print("    changed: %d of %d; unchanged by design: %d" % (len([k for k in diff if k in EXPECTED]), len(EXPECTED), len(ALREADY)))
 

@@ -271,9 +271,18 @@
         for (const cv of cvs) {
           const W = cv.width, H = cv.height, img = cv.getContext("2d").getImageData(0, 0, W, H), D = img.data;
           // the text lines: rows with print, split where a row has none
-          const rowInk = new Uint8Array(H);                                       // print pixels in each row
-          for (let y = 0; y < H; y++) for (let x = 0, i = y * W * 4; x < W; x++, i += 4) if (inkPx(D[i], D[i + 1], D[i + 2])) rowInk[y]++;
           const em0 = 11 * s, lines = [];
+          // (384 cropfix) a table's uprights are not print: inked in every row of the table, they left no empty row between its lines, so the split below
+          // fell wherever a tie of minima put it - once a table's right border came into the picture, through the middle of a label's first line
+          const rule = new Uint8Array(W * H);
+          for (let x = 0; x < W; x++) for (let y = 0; y < H;) {
+            const i = (y * W + x) * 4; if (!inkPx(D[i], D[i + 1], D[i + 2])) { y++; continue; }
+            let e = y; while (e < H) { const j = (e * W + x) * 4; if (!inkPx(D[j], D[j + 1], D[j + 2])) break; e++; }
+            if (e - y >= 1.5 * em0) for (let k = y; k < e; k++) rule[k * W + x] = 1;
+            y = e;
+          }
+          const rowInk = new Uint16Array(H);                                      // print pixels in each row
+          for (let y = 0; y < H; y++) for (let x = 0, i = y * W * 4; x < W; x++, i += 4) if (!rule[y * W + x] && inkPx(D[i], D[i + 1], D[i + 2])) rowInk[y]++;
           // a cluster of rows with print is one line, or (lines set close, a descender in the next ascender's rows) several: split at the row with least print
           const split = (r0, r1) => {
             // (taller than one line: split at the row between two humps of print, where it falls to under a third of the lower hump)

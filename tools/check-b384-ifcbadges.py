@@ -70,6 +70,13 @@ def init_js(cls):
     return s + " }catch(e){} })()"
 srv, port = serve()
 def page(br, cls, w=440, h=956, dsf=1):
+    """retried: under load (other sessions' browsers) a renderer of this 10MB page is sometimes killed at start"""
+    for attempt in range(4):
+        try: return _page(br, cls, w, h, dsf)
+        except Exception as e:
+            if attempt == 3: raise
+            print("page start failed, retrying", flush=True)
+def _page(br, cls, w=440, h=956, dsf=1):
     ctx = br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dsf, has_touch=True)
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
@@ -142,10 +149,15 @@ with sync_playwright() as pw:
     # ------------------------------------------------------------------ (3) the backs' words
     if want(3):
         R3 = F.evaluate(r"""() => { const R = BADGE_BACK_RELIEF;
-          return unitsInTeachingOrder().map(u => { const p = badgeBackPlan(u), g = badgeStrikeGeometry(badgeShapeFor(u)), W = p.W, D = badgeBackField(g, W);
+          /* (384.133 badgeart) a pin's back (384.67) has no rim: its field is the pin's own silhouette from the foot of its bevel in, and
+             that is the field its words are planned on (badgeBackPlan's objPinBackField). Measured against the struck badge's field - a
+             rim 4.6 deep - every pin read as spilling a few pixels it does not spill. Pins are held to their own field's edge here. */
+          const field = (u, W) => { if(chapterObjShape(u)){ const g = objPinGeometry(badgeFaceShapeFor(u), u, 256, true); return { D: objPinBackField(g, W), lim: -OBJ_PIN.bevel }; }
+            return { D: badgeBackField(badgeStrikeGeometry(badgeShapeFor(u)), W), lim: -R.rimIn }; };
+          return unitsInTeachingOrder().map(u => { const p = badgeBackPlan(u), W = p.W, F = field(u, W), D = F.D;
             const cv = document.createElement('canvas'); cv.width = cv.height = W; const c2 = cv.getContext('2d'); badgeBackDrawPlan(c2, p, W);
             const px = c2.getImageData(0, 0, W, W).data; let out = 0;
-            for(let i = 0; i < W * W; i++) if(px[i * 4 + 3] > 25 && D[i] > -R.rimIn) out++;
+            for(let i = 0; i < W * W; i++) if(px[i * 4 + 3] > 25 && D[i] > F.lim) out++;
             const rows = p.items.filter(i => i.s);
             return { u, mode: p.mode, text: p.mode === 'arc' ? rows.map(i => i.s).join('') : rows.map(i => i.s).join(' '), out, fs: p.fs / W }; }); }""")
         norm = lambda s: re.sub(r"\s*—\s*", "—", re.sub(r"\s+", " ", s)).strip()
@@ -167,9 +179,9 @@ with sync_playwright() as pw:
           const coinCss = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
           const sizes = { hand: binspectW(), coin: Math.min(864, badgeStrikeSize(coinCss * dpr)) };
           const us = A ? A : unitsInTeachingOrder(), res = { sizes, dpr, spill: [], minName: [1e9, ''] };
-          us.forEach(u => { const g = badgeStrikeGeometry(badgeShapeFor(u)), p = badgeBackPlan(u);
-            Object.keys(sizes).forEach(k => { const W = sizes[k], M = badgeBackLayout(u, g, W), D = badgeBackField(g, W); let out = 0;
-              for(let i = 0; i < W * W; i++) if(M[i] > .1 && D[i] > -R.rimIn) out++;
+          us.forEach(u => { const pin = !!chapterObjShape(u), g = pin ? objPinGeometry(badgeFaceShapeFor(u), u, 256, true) : badgeStrikeGeometry(badgeShapeFor(u)), p = badgeBackPlan(u);
+            Object.keys(sizes).forEach(k => { const W = sizes[k], M = badgeBackLayout(u, g, W), D = pin ? objPinBackField(g, W) : badgeBackField(g, W), lim = pin ? -OBJ_PIN.bevel : -R.rimIn; let out = 0;
+              for(let i = 0; i < W * W; i++) if(M[i] > .1 && D[i] > lim) out++;
               if(out) res.spill.push([u.slice(0, 30), k, W, out]); });
             const css = p.fs / p.W * sizes.hand / dpr; if(css < res.minName[0]) res.minName = [+css.toFixed(2), u]; });
           return res; }"""
@@ -278,7 +290,31 @@ with sync_playwright() as pw:
         # CHANGED ON PURPOSE (384 final check, badges round 2): the academy's own look-alikes went - TCOLE Rules, De-Escalation,
         # Crisis Intervention Training and Civil Process have new outlines, eight units new enamels (check-b384-badgetwins
         # holds the academy to Fire Code's rule now). Was 8996cbb2 (1dca98e). Taken with --dump on this round's build.
-        PIN = "2de41ef8"
+        # RE-PINNED (384.133 badgeart): 2de41ef8 was taken before the academy's badges were drawn as pins and reverted (384.121) and
+        # before the 384.108 shine took the in-SVG glint out of every badge drawing (its mask, gradient and band). Read on this build
+        # against main 384.107 (7bdca1e, 29fbbe96): every academy outline, channel, colour and back plan is identical, and the drawings
+        # differ only by that glint group. Taken on this build.
+        # RE-PINNED (384.133 academy rounds 2-3): Madison's circled fixes and the see-through pass redrew the academy pins on
+        # purpose (TCOLE star a layer on the ring, shoe, ribbon, umbrella heart, chat, handcuffs, teddy ears and the rest), so
+        # every drawing moved. Was dc7d6f55. Taken on this build after the round-3 badges were reviewed.
+        # RE-PINNED (384.137): the ribbon's tails are cut across their own length (Sexual Assault and Family Violence). Was 76402311.
+        # RE-PINNED (384.137 art10): Madison's circled "Make these better.." / "And these..." redrew eight academy pins on purpose
+        # (handcuffs, ribbon crossing, umbrella heart and handle, ID card's fingerprint seal, teddy bear, pill bottle, the
+        # Constitution's seal and inkwell, the radio). Was 5a133a95. Taken on this build after the eight were reviewed.
+        # RE-PINNED (384.138 art11): Madison's circled shots of art10 redrew seven academy pins on purpose (hinged handcuffs after
+        # his ASP reference, the umbrella's shaft and heart, the Constitution's ribbon tails and inkwell rim, the radio back to the
+        # a0da788 shape with a blue LCD, the pill bottle's capsules and cap, the ribbon crossing, the fingerprint). Was c0816bbd.
+        # Taken on this build after the seven were reviewed.
+        # RE-PINNED (384.138 art11b): the handcuffs' bows polished silver, the Constitution's swallowtails and twist, the ribbon
+        # crossing (the over strand untouched, the under strand dipping under it). Was 9737995c. Taken on this build after review.
+        # RE-PINNED (384.141 art12-14): Madison's circled fixes redrew the academy pins on purpose (Victims of Crime a mended heart,
+        # Identity Crimes reverted to art10, the pill bottle's cap and capsules, the Constitution's ribbon and quill, the handcuffs after
+        # the ASP photo). Was 83db107d.
+        # RE-PINNED (384.142): the handcuffs back to Madison's pick, their back's words laid on their slant (backRot). Was 8a20aca3.
+        # RE-PINNED (384.143): the pill bottle reverted to its art11 drawing (Madison: "Revert the pills"). Was 4bb89d51.
+        # RE-PINNED (384.144): the Constitution's quill one white shaft into the ink (art15). Was 66933723.
+        # RE-PINNED (384.146): Victims of Crime redrawn as a lighthouse (Madison: "Give me something good"). Was 79bc9939.
+        PIN = "d4b074cd"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)

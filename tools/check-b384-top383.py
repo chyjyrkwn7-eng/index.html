@@ -18,9 +18,11 @@ git), on the same screens, in Chromium (docs/notes-archive.md "384.77"):
  (5) STRIP       (384.80) ONE strip, #top-edge, over the whole safe area (6px where there is none), in the markup ahead of every script in
                  <body>, one solid opaque colour, no image, taps going through; no #top-safe; a Profile scrolled 300 shows the same status-bar
                  area as at rest; theme-color and color-scheme are not written after launch;
- (6) VARIANTS    the display test lists A (class26e.topmatch), B (topdeep), C (top383); C takes both strips away and rewrites the tags as 383;
+ (6) VARIANTS    (384.105, CHANGED ON PURPOSE: the display test is gone, docs/notes-archive.md "384.105") A (class26e.topmatch), B (topdeep) and
+                 C (top383) are deleted at launch and change nothing: none of their classes, no backdrop, the default strip, and the flag gone
+                 (until 384.95: the display test listed them, and C took both strips away and rewrote the tags as 383);
  (7) no page errors.
-Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2), (6); main 384.77 must FAIL (4))"""
+Run:  python3 tools/check-b384-top383.py [--against FILE]   (main 384.70 must FAIL (1), (2); main 384.77 must FAIL (4); main 384.95 must FAIL (6))"""
 import os, sys, io, re, subprocess, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("cb", os.path.join(HERE, "check-behaviour.py")); cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
@@ -149,11 +151,19 @@ def run(br):
         e, s = f["edge"], f["safe"]
         # (384.80, changed on purpose: the owner's Safari 26 / r/PWA reports) ONE strip: #top-edge over the whole safe area (6px where there is none),
         # a solid opaque colour with no image, taps going through; #top-safe is folded into it
+        # (384.136, changed on purpose: 384.134 "the top banner thing here, it doesn't match the rest of the screen") the strip may now wear
+        # the sky's own glows as an image, ending in the opaque paper, over the same solid colour WebKit samples; what WebKit reads (the
+        # background-COLOUR) is still one opaque colour, and check-b384-topseam holds the strip's pixels to the sky's
+        ebi = f["ebi"] or ""
+        img_ok = ebi == "none" or (re.search(r"linear-gradient\((rgb\([^)]*\)), \1\)(, none)?$", ebi) is not None and "rgba(0, 0, 0, 0) 70%" in ebi)
         chk("%s: #top-edge is the one opaque strip over the status bar's area, solid, taps through (%s, %s, %s, %s)" % (name, e and e["r"], e and e["bg"], f["ebi"], f["pe"]),
-            e and e["r"][1] == 0 and abs(e["r"][3] - max(top, 6)) < .6 and "rgba" not in e["bg"] and f["ebi"] == "none" and f["pe"] == "none", f)
+            e and e["r"][1] == 0 and abs(e["r"][3] - max(top, 6)) < .6 and "rgba" not in e["bg"] and img_ok and f["pe"] == "none", f)
         chk("%s: no second strip (#top-safe %s)" % (name, s), s is None, s)
         px = got.get("strip_px")
-        chk("%s: a Profile scrolled 300 shows the same status-bar area as at rest - nothing of the page under the clock (%s pixels off)" % (name, px and px[0]), px and px[0] == 0, px)
+        # (384.136, changed on purpose: Madison, "When you scroll up, the content should work how it used to ... all we needed to do was move
+        # the stuff down") the reverse of 384.80's leg: a Profile scrolled 300 shows the page under the clock, as build 383 did (the
+        # strip sits behind the page now); at rest the area is the sky's (check-b384-topseam)
+        chk("%s: a Profile scrolled 300 shows the page under the clock, as on 383 (%s pixels differ from rest)" % (name, px and px[0]), px and px[0] > 500, px)
         tw = f["tw"] or {}
         # (384.80, changed on purpose) theme-color follows the sampled strip with the "fe" dance; color-scheme is still never written
         tch = (f["tc"] or "").lstrip("#"); tcr = "rgb(%d, %d, %d)" % tuple(int(tch[i:i + 2], 16) for i in (0, 2, 4)) if len(tch) == 6 else None
@@ -161,24 +171,19 @@ def run(br):
     # markup ahead of every script
     serve = RAW; bi = serve.find("\n<body>\n"); ie, ib = serve.find('id="top-edge"', bi), serve.find("<script", bi)
     chk("the strip is in the markup ahead of every script in <body>, with an inline colour (%d < %d)" % (ie, ib), 0 < ie < ib and 'id="top-edge" aria-hidden="true" style="background-color:' in serve, [ie, ib])
-    # (6) the variants
+    # (6) (384.105, changed on purpose) the variants are gone: their flags are deleted at launch and change nothing
     dev = DEVICES[0]
-    ctx, pg = boot(br, RAW, dev, "localStorage.setItem('class26e.displaytest','1');")
-    pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
-    r = pg.evaluate("""()=>{ const T = window.__diagTrials; if(!T) return null; return ['tvmatch', 'tvdeep', 'tv383'].map(i => !!T.byId[i]); }""")
-    chk("the display test lists A, B and C (%s)" % r, r and all(r), r)
-    ctx.close()
     for flag, cls in (("topmatch", "top-match"), ("topdeep", "top-deep"), ("top383", "top-383")):
         ctx, pg = boot(br, RAW, dev, "localStorage.setItem('class26e.%s','1');" % flag)
         pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
         pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(1200); pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1200)
         f = pg.evaluate(READ)
-        d = pg.evaluate("()=>{ const e = document.getElementById('top-deep'); if(!e) return null; const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return [cs.display, Math.round(r.bottom), cs.zIndex]; }")
-        chk("variant %s: the head script put .%s on (%s)" % (flag, cls, cls in f["cls"].split()), cls in f["cls"].split(), f["cls"])
-        if flag == "topdeep": chk("variant B: the flat backdrop lies under the wash's depth, behind the content (%s)" % d, d and d[0] == "block" and d[1] == dev[3] + 62 and d[2] == "-1", d)
-        if flag == "top383":
-            chk("variant C: no strip of any kind (edge %s, safe %s, guard)" % (f["edge"], f["safe"]), f["edge"] is None and f["safe"] is None and not pg.evaluate("()=>!!document.getElementById('top-guard')"), f)
-            chk("variant C: the tags are the app's again (theme-color written after launch: %s)" % (f["tw"] or {}).get("tags"), (f["tw"] or {}).get("tags", 0) >= 1, f["tw"])
+        x = pg.evaluate("""(k)=>{ const d = document.getElementById('top-deep'); return { left: localStorage.getItem('class26e.' + k), guard: !!document.getElementById('top-guard'),
+          deep: !!d && getComputedStyle(d).display !== 'none', panel: !!document.getElementById('diagpanel') }; }""", flag)
+        e = f["edge"]
+        chk("variant %s is gone: no .%s, no backdrop, no old strip, the default strip over the inset, and the flag deleted at launch (%s, %s)" % (flag, cls, e and e["r"], x),
+            cls not in f["cls"].split() and not x["deep"] and not x["guard"] and not x["panel"] and x["left"] is None and bool(e) and e["r"][1] == 0
+            and abs(e["r"][3] - max(dev[3], 6)) < .6 and f["pe"] == "none", [f["cls"], e, x])
         ctx.close()
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=cb.CHROME)

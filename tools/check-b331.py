@@ -18,7 +18,15 @@ RUN = """async ()=>{
     else if(t > 20) break;
   }
   await W(1500); showHome(); await W(1500);
-  return { seen, open, after: forcedUpdateBlocked() }; }"""
+  /* (384.98) Nova's words after the journey are a full-screen overlay and hold the update too: read through, as a person would */
+  let nova = 0;
+  for(let i = 0; i < 60 && document.querySelector('.nova-talk'); i++){
+    nova++; const el = document.querySelector('.nova-talk'), n = el.__nova;
+    if(n && (n.typing || n.index < n.count - 1)) n.advance(); else { const g = el.querySelector('.nt-go'); if(g) g.click(); }
+    await W(400);
+  }
+  await W(1500);
+  return { seen, open, nova, after: forcedUpdateBlocked() }; }"""
 ok = True
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["g"]["CHROME"])

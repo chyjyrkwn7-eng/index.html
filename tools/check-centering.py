@@ -475,9 +475,14 @@ SCREENS = [
     {"name": "units/picked", "js": "cfg.mode='drill'; cfg.units=[]; showSetup(); setTimeout(()=>{ const c=document.querySelector('.picks > label.pick input'); c && c.click(); }, 500);", "wait": 1500, "ready": "document.querySelector('#stage .picks')"},
     # a test: the question, an answer, the pause card, the results
     {"name": "test/question", "js": "__czs.run();", "wait": 4200, "ready": "document.body.classList.contains('has-active-question')", "clear": False},
+    # (384.125) Fire Code's calculator open mid-sum (the academy has none: nothing opens there)
+    {"name": "test/calculator", "js": "const b=document.querySelector('#stage .qcalc-btn'); if(b){ b.click(); ['4','2','0','0','/','7'].forEach(k=>document.querySelector('.qcalc-key[data-k=\"'+k+'\"]').click()); }", "wait": 900, "clear": False},
     {"name": "test/answered", "js": "const c=[...document.querySelectorAll('#stage .choice, #stage .choices button, #stage label.choice')].find(e=>e.getBoundingClientRect().height>20); c && c.click();", "wait": 1600, "clear": False},
     {"name": "test/paused", "js": "__czs.tap('#pausebtn');", "wait": 1200, "ready": "document.querySelector('.pause-card, .paused, #paused, .screen-paused, [class*=pause]')", "clear": False},
     {"name": "results", "js": "try{ order.forEach(qi=>{ attempts[qi]=1; }); pos=order.length; summarize(); }catch(e){ throw e; }", "wait": 5200, "ready": "document.querySelector('#stage .rs-grade, #stage [class*=result]')"},
+    # (384.103) a 100%'s Review test: the whole test's review, opened by its own button once that is armed. A run of its own (so
+    # --only can reach it), every answer right; the button is pressed whenever the reveal has finished and the row is armed.
+    {"name": "results/review test", "js": "__czs.run(); setTimeout(()=>{ try{ order.forEach(qi=>{ attempts[qi]=1; }); pos=order.length; summarize(); }catch(e){} const go=()=>{ const b=document.querySelector('#stage .rs-final .rs-testreview-go'); if(b && !b.closest('.rs-final').classList.contains('rs-unarmed') && Date.now()>rsTapGuardUntil){ b.click(); return; } setTimeout(go, 150); }; go(); }, 4200);", "wait": 32000, "ready": "document.querySelector('#stage .rs-testreview')"},
     {"name": "review", "js": "showAnswerReview([__czs.unit()], 'all');", "ready": "document.querySelector('#stage .ar-head, #stage [class*=review]')"},
     {"name": "test history", "js": "showTestReviewList();"},
     {"name": "flash cards", "js": "showFlashcards([__czs.unit()], 'all');", "ready": "document.querySelector('#stage .fc-face, #stage [class*=flash]')"},
@@ -515,6 +520,10 @@ SCREENS = [
     {"name": "settings/advanced", "js": "showAdvancedSettings();"},
     {"name": "settings/credits", "js": "showCredits();"},
     {"name": "settings/terms", "js": "showSettingsText('terms');"},
+    # (384.106) Software Update, its three answers (the checking state only turns); the menu's row carries its pill (settings, above)
+    {"name": "settings/software update", "js": "showSoftwareUpdate();", "wait": 1800, "ready": "document.querySelector('#stage .screen-swupdate[data-state=current]')"},
+    {"name": "settings/software update, available", "js": "window.__swuF = window.__swuF || window.fetch; window.fetch = function(u, o){ if(String(u).indexOf('version.json') >= 0 && o && o.cache === 'reload') return Promise.resolve(new Response(JSON.stringify({ build: APP_BUILD + '-next', note: 'A line of what this build fixes.', force: false }), { status: 200, headers: { 'content-type': 'application/json' } })); return window.__swuF.apply(this, arguments); }; showSoftwareUpdate();", "wait": 1800, "ready": "document.querySelector('#stage .screen-swupdate[data-state=available]')", "after": "window.fetch = window.__swuF;"},
+    {"name": "settings/software update, can't reach", "js": "window.__swuF = window.__swuF || window.fetch; window.fetch = function(u, o){ if(String(u).indexOf('version.json') >= 0 && o && o.cache === 'reload') return Promise.resolve(new Response('not found', { status: 404, headers: { 'content-type': 'application/json' } })); return window.__swuF.apply(this, arguments); }; showSoftwareUpdate();", "wait": 1800, "ready": "document.querySelector('#stage .screen-swupdate[data-state=error]')", "after": "window.fetch = window.__swuF;"},
     {"name": "settings/whats new list", "js": "showReleaseHistory();"},
     {"name": "settings/feedback", "js": "showBugReport();"},
     # classes
@@ -545,6 +554,8 @@ SCREENS = [
     {"name": "tips", "js": "showHome(); startSimpleTour(mainMenuTourSteps(false), ()=>{});", "wait": 1500},
     # signed out: Get Started, Welcome, sign-in and the sign-up steps
     {"name": "signup/get started", "js": "store.onboardingComplete=false; showGetStarted();", "wait": 2600, "after": "store.onboardingComplete=true;"},
+    # (384.124) the rank ladder at the foot of Get Started, scrolled to and lit
+    {"name": "signup/get started ranks", "js": "store.onboardingComplete=false; showGetStarted(); setTimeout(()=>{ const s=document.querySelector('.gs-scroll'), e=document.querySelector('.gs-ladder'); if(s && e) s.scrollTop += e.getBoundingClientRect().top - 60; }, 900);", "wait": 4200, "after": "store.onboardingComplete=true;"},
     {"name": "signup/welcome", "js": "store.onboardingComplete=false; showWelcome();", "wait": 1600, "after": "store.onboardingComplete=true;"},
     {"name": "signup/sign in", "js": "store.onboardingComplete=false; showWelcomeCodeEntry();", "wait": 1400, "after": "store.onboardingComplete=true;"},
     # (384.36) the install page and what its button opens

@@ -52,8 +52,15 @@ def init(cls):
             "localStorage.setItem('class26e.drill.v1',%s);localStorage.setItem('class26e.ifc.drill.v1',%s);"
             "localStorage.setItem('class26e.activeclass','%s');localStorage.setItem('class26e.enrolled',JSON.stringify(['%s']));localStorage.setItem('class26e.greet.ifc','done');"
             "['class26e.ifc.freshstart','class26e.ifc.intro.seen','class26e.ifc.daily.seen','class26e.ifc.savecode.asked','class26e.ifc.savecode.card','class26e.ifc.getstarted'].forEach(k=>localStorage.setItem(k,'1'));}catch(e){}") % (s, s, cls, cls)
+# (384.133) THE HASH IS OF THE DRAWING THE BROWSER MAKES OF THE MARKUP, not of the markup's bytes. The inspector kit (and the dashed-line helper) wrote
+# `stroke-linecap="round" ... stroke-linecap="butt"` on 29 lines (a duplicate attribute: an HTML parser keeps the FIRST, so the page drew `round`, but a standalone
+# SVG image - the Leaderboard's banner stills, 384.120 - is XML and refuses the whole picture); a later build took the duplicate out. The drawing is the same, the
+# bytes are not, so the five inspector banners (tests500, hundos100, hundos250, level80, early10) "moved" under a byte hash. The markup is parsed the way the page
+# parses it (a <template>) and serialised again before it is hashed, in the page AND in the three pins (check-b384-r9-banners.prev*.json, re-read from cd82880,
+# 3b1526d and 9c276e7 with --dump / --dump2 / --dump3): a different drawing still moves the hash; a duplicate attribute does not.
 HASH = r"""() => { const hash = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); };
-  const out = { cls: window.NOVA_CLASS, h: {} }; BANNERS.forEach(b => { if(BANNER_ART[b.id]) out.h[b.id] = hash(bannerStaticSVG(b.id) || ''); }); return out; }"""
+  const drawn = m => { const t = document.createElement('template'); t.innerHTML = m || ''; return new XMLSerializer().serializeToString(t.content); };
+  const out = { cls: window.NOVA_CLASS, h: {} }; BANNERS.forEach(b => { if(BANNER_ART[b.id]) out.h[b.id] = hash(drawn(bannerStaticSVG(b.id))); }); return out; }"""
 MEASURE = r"""(R9) => {
   const mount = id => { const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:480px;height:180px;overflow:hidden;z-index:99999';
     box.innerHTML = bannerStaticSVG(id) || ''; document.body.appendChild(box); const sv = box.querySelector('svg'); if(sv){ sv.setAttribute('width', 480); sv.setAttribute('height', 180); sv.setAttribute('preserveAspectRatio', 'none'); } return box; };
@@ -152,11 +159,19 @@ H = res["ifc"]["h"]
 same = [i for i in R9 if H.get(i) == PREV["ifc"].get(i)]
 chk("(1) the eleven round 9 banners differ from cd82880 (unchanged: %s)" % same, not same and all(i in H for i in R9), same)
 moved = [i for i in PREV["ifc"] if i not in R9 and H.get(i) != PREV["ifc"][i]]
-chk("(1) every other Fire Code banner is exactly as cd82880 drew it (%d checked; moved: %s)" % (len([i for i in PREV["ifc"] if i not in R9]), moved), not moved and len(H) == len(PREV["ifc"]), moved)
+# (384.133) STALE EXPECTATION: later builds ADDED banners (384.126 prestige: pgoath, pgcommand, pglaurel; the Completionist banner; 384.120's Virtual Room top tier, vrtop10). They are not cd82880's to hold:
+# every banner cd82880 had is still here and as it drew it, and the only extra ones are these five (anything else new fails).
+# (384.133) prestige is retired (Madison: "no prestige at all"), so its three banners left the app; the academy's Full Case banner
+# (`fullcase`, Madison: "ensure there is a banner for earning every badge") joined. Neither changes any banner that was already drawn.
+NEWB = {"completionist", "vrtop10", "fullcase"}
+extra = sorted(set(H) - set(PREV["ifc"])); lost = sorted(set(PREV["ifc"]) - set(H))
+chk("(1) every other Fire Code banner is exactly as cd82880 drew it (%d checked; moved: %s; added since: %s; lost: %s)" % (len([i for i in PREV["ifc"] if i not in R9]), moved, extra or "none", lost or "none"), not moved and not lost and set(extra) <= NEWB, moved)
 A0 = res["academy"]["h"]; amoved = [i for i in PREV["academy"] if A0.get(i) != PREV["academy"][i]]
-chk("(1) every academy banner is byte-identical to cd82880 (%d checked; moved: %s)" % (len(PREV["academy"]), amoved), not amoved and len(A0) == len(PREV["academy"]) and len(A0) > 15, amoved)
+aextra = sorted(set(A0) - set(PREV["academy"])); alost = sorted(set(PREV["academy"]) - set(A0))
+chk("(1) every academy banner is byte-identical to cd82880 (%d checked; moved: %s; added since: %s; lost: %s)" % (len(PREV["academy"]), amoved, aextra or "none", alost or "none"), not amoved and not alost and set(aextra) <= NEWB and len(A0) > 15, amoved)
 M = res["m"]; A = M.get("A") or {}; per = {k: v for k, v in (A.get("per") or {}).items() if v}
 want = {"tests500": 3, "hundos250": 7, "level80": 1, "early10": 1}
+if "completionist" in per: want["completionist"] = 1   # (384.133) the Completionist banner is drawn with the same kit: ONE inspector, held to the same look by the next line
 chk("(2) THE INSPECTOR: the shared kit draws every inspector (%s; want %s)" % (per, want), per == want, per)
 chk("(2) ...each in the dark brown cowboy hat, the dark glasses and stubble where his face shows, a navy shirt and a BLUE vest (wrong: %s)" % A.get("bad"), per and not A.get("bad"), A.get("bad"))
 chk("(2) ...no ball cap anywhere in a Fire Code banner (%s); the hat off his head on the plans table and the gear wall (%s)" % (A.get("caps"), A.get("hats")),
@@ -188,7 +203,7 @@ same2 = [i for i in R11 if H.get(i) == P2["ifc"].get(i)]
 chk("(9) r11: the Whiteout and flare_genesis are redrawn since 3b1526d (unchanged: %s)" % same2, not same2 and all(i in H for i in R11), same2)
 moved3 = [i for i in P2["ifc"] if i not in R11 and H.get(i) != P2["ifc"][i]] + ["academy:" + i for i in P2["academy"] if A0.get(i) != P2["academy"][i]]
 chk("(9) ...and every other banner in both classes is byte-identical to 3b1526d (%d checked; moved: %s)" % (len(P2["ifc"]) - len(R11) + len(P2["academy"]), moved3),
-    not moved3 and len(H) == len(P2["ifc"]) and len(A0) == len(P2["academy"]), moved3)
+    not moved3 and set(P2["ifc"]) <= set(H) and set(H) - set(P2["ifc"]) <= NEWB and set(P2["academy"]) <= set(A0) and set(A0) - set(P2["academy"]) <= NEWB, moved3)
 R = M.get("R11") or {}
 chk("(9) WHITEOUT is a blizzard: %s sheets of snow driven across (bl-slide), a lit ridge (%s), nothing spinning (%s)" % (R.get("slides"), R.get("ridge"), R.get("spin")),
     R.get("slides", 0) >= 3 and R.get("ridge") and not R.get("spin"), R)
@@ -196,7 +211,7 @@ P3 = json.load(open(PREVF3))
 same3 = H.get("flare_genesis") == P3["ifc"].get("flare_genesis")
 moved4 = [i for i in P3["ifc"] if i != "flare_genesis" and H.get(i) != P3["ifc"][i]] + ["academy:" + i for i in P3["academy"] if A0.get(i) != P3["academy"][i]]
 chk("(10) r13: the Comet banner is redrawn since 9c276e7 (%s) and every other banner in both classes is byte-identical to it (%d checked; moved: %s)" % (not same3, len(P3["ifc"]) - 1 + len(P3["academy"]), moved4),
-    not same3 and not moved4 and len(H) == len(P3["ifc"]) and len(A0) == len(P3["academy"]), (same3, moved4))
+    not same3 and not moved4 and set(P3["ifc"]) <= set(H) and set(H) - set(P3["ifc"]) <= NEWB and set(P3["academy"]) <= set(A0) and set(A0) - set(P3["academy"]) <= NEWB, (same3, moved4))
 C = M.get("R13") or {}
 def hue(h):
     import colorsys; n = int(h[1:], 16); return colorsys.rgb_to_hsv((n >> 16) / 255, (n >> 8 & 255) / 255, (n & 255) / 255)[0] * 360

@@ -37,6 +37,8 @@
 import json, os, sys, io, warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from b384_spill_lib import SPILL_NORM   # (384.133) the Toxic Spill with 384.113's closed-eye work taken out
 src = open(os.path.join(HERE, "record-cutscenes.py")).read().split("\nSCENES = [")[0]
 rc = {"__file__": os.path.join(HERE, "record-cutscenes.py"), "__name__": "rc"}; exec(src, rc)
 from playwright.sync_api import sync_playwright
@@ -165,7 +167,7 @@ def run(init, coins):
             pg.route("**/index.html", lambda r, q: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
         pg.add_init_script(init)
         pg.goto("http://127.0.0.1:%d/index.html" % port); pg.wait_for_timeout(3500)
-        r = pg.evaluate(SNAP, [SEVEN, FOUR, BROW_RE])
+        r = pg.evaluate(SNAP, [SEVEN, FOUR, BROW_RE]); r["spill"] = pg.evaluate(SPILL_NORM)
         ctx.close()
         r["coin"] = {}; r["band"] = {}
         if coins:
@@ -303,6 +305,18 @@ for key, R in (("academy", ACA), ("ifc", IFC)):
     bad = [i for i in PINNED if i != "inferno" and R["full"].get(i) != P["full"].get(i)]
     chk("E. [%s] Oracle and Frost are byte for byte what cd34de2 drew (changed: %s)" % (key, bad or "none"), not bad, bad)
     others = sorted(set(P["full"]) | set(R["full"]))
+    # (384.133) STALE EXPECTATIONS, two, neither an art leak:
+    #  - 384.126 (prestige) ADDED three Fire Code characters, pgdeputy, pgmarshal, pgstate, that cd34de2 never had: they are not "other characters that moved", they
+    #    are new (their own gate, check-b384-prestige*.py, holds them). Anything ELSE absent from the pin still fails.
+    #  - 384.113 (closedeyes; Madison: "His eyes close just look missing. Fix that.") gave the Toxic Spill (`astronaut`) a group per eye and redrew its closed eyes
+    #    as lids. Outside its closed eyes and those groups the Spill is held byte for byte (b384_spill_lib.SPILL_NORM, pinned from cd34de2).
+    NEWCHARS = {"pgdeputy", "pgmarshal", "pgstate"} if key == "ifc" else set()
+    fresh = sorted(i for i in R["full"] if i not in P["full"])
+    chk("E. [%s] the only characters cd34de2 did not have are the three prestige characters (new: %s)" % (key, fresh or "none"), set(fresh) <= NEWCHARS, fresh)
+    others = [i for i in others if i not in NEWCHARS]
+    if key == "ifc":
+        chk("E. [ifc] the Toxic Spill is cd34de2's outside its closed eyes (384.113 redrew those)", R["spill"] == PREV["spillNorm"], {"now": R["spill"], "pinned": PREV["spillNorm"]})
+        others = [i for i in others if i != "astronaut"]
     # (384 round 12, r9-chars) the Fire Code characters Madison picked versions for are redrawn on purpose (check-b384-r9-chars holds them)
     R12 = {"detective", "masked", "poseidon", "valkyrie", "timekeeper", "ronin", "voidwalker", "umbra", "singularity", "genesis", "zenith", "hacker"} if key == "ifc" else set()   # (round 14: the Dispatcher a woman)
     mv = [i for i in others if i not in FOUR and i not in R12 and i != "inferno" and R["full"].get(i) != P["full"].get(i)]

@@ -316,7 +316,7 @@ ART_JS = """()=>{
   const strip = el => { const u = el.getAttribute && el.getAttribute('data-cx-uid'); let x = new XMLSerializer().serializeToString(el); if(u) x = x.split(u).join('U');
     return x.replace(/ data-art="[a-z]+"/g, '').replace(/bn\\d+-/g, 'bn-'); };
   const kindOf = svg => { const f = svg && svg.querySelector("[class*='cx-k-']"); const m = f && /\\bcx-k-([a-z0-9_]+)/.exec(f.getAttribute('class') || ''); return m ? m[1] : null; };
-  const before = { glow: JSON.stringify(AVATAR_GLOW), kinds: JSON.stringify(AVATAR_CHARACTERS.map(c => [c.id, c.kind])), cen: JSON.stringify(AVATAR_CENTRE_DY),
+  const before = { glow: JSON.stringify(AVATAR_GLOW), kinds: JSON.stringify(AVATAR_CHARACTERS.map(c => [c.id, c.kind])), cen: JSON.stringify(AVATAR_CENTRE_DY, Object.keys(AVATAR_CENTRE_DY).sort()),
                    sp: Object.keys(CHAR_SPECIAL_DRAW).sort().join(','), n: AVATAR_CHARACTERS.length };
   const page = window.NOVA_CLASS === 'ifc' ? 'ifc' : 'academy';
   const ids = AVATAR_CHARACTERS.map(c => c.id).concat(['zeus']);
@@ -330,7 +330,7 @@ ART_JS = """()=>{
     });
     out.chars[id] = row;
   });
-  const after = { glow: JSON.stringify(AVATAR_GLOW), kinds: JSON.stringify(AVATAR_CHARACTERS.map(c => [c.id, c.kind])), cen: JSON.stringify(AVATAR_CENTRE_DY),
+  const after = { glow: JSON.stringify(AVATAR_GLOW), kinds: JSON.stringify(AVATAR_CHARACTERS.map(c => [c.id, c.kind])), cen: JSON.stringify(AVATAR_CENTRE_DY, Object.keys(AVATAR_CENTRE_DY).sort()),
                   sp: Object.keys(CHAR_SPECIAL_DRAW).sort().join(','), n: AVATAR_CHARACTERS.length };
   out.restored = JSON.stringify(before) === JSON.stringify(after);
   out.glows = {}; Object.keys(IFC_CHAR_LOOK).forEach(id => { out.glows[id] = { a: avatarGlowIn(id, 'academy'), i: avatarGlowIn(id, 'ifc') }; });
@@ -353,7 +353,12 @@ def run_art(br, url, cls, shared):
         except Exception as e:
             chk("%s: the page can draw either class's art" % cls, False, str(e)[:200]); return
         chars, banners = res["chars"], res["banners"]
-        redrawn = [i for i, r in chars.items() if r["looks"]]
+        # (384.114 / 384.126) Fire Code's own additions have no academy twin and are drawn the same in both classes' art by design: the three
+        # prestige characters and the three prestige banners (ids pg...) and Completionist. They are left out of the "drawn differently in the two
+        # classes' art" checks below (every other id is still held to them); the check that something is a redrawn character in Fire Code's art
+        # still counts every other one.
+        def fc_only(i): return i.startswith("pg") or i == "completionist"
+        redrawn = [i for i, r in chars.items() if r["looks"] and not fc_only(i)]
         chk("%s: %d characters are drawn differently in Fire Code" % (cls, len(redrawn)), len(redrawn) >= 15, len(redrawn))
         bad = [i for i, r in chars.items() if not (r.get("academy") and r.get("ifc") and not r["academy"].get("err") and not r["ifc"].get("err"))]
         # a retired id that has no drawing at all (RETIRED_CHARACTER_TO says what it is) still draws as something
@@ -377,10 +382,12 @@ def run_art(br, url, cls, shared):
         moved = [i for i, r in chars.items() if r.get(own_art) and r["page"] != r[own_art]["ser"]]
         chk("%s: the page's own art is the drawing it always was (no argument = this class)" % cls, not moved, moved[:6])
         chk("%s: nothing lent for a draw is left behind (kinds, glows, centring, specials, the table)" % cls, res["restored"], "")
-        gl = [i for i, g in res["glows"].items() if g["a"] == g["i"]]
-        chk("%s: a glow follows the art (%d of %d differ)" % (cls, len(res["glows"]) - len(gl), len(res["glows"])), len(gl) <= 3, gl)
-        bn = [i for i, b in banners.items() if b["a"] == b["i"]]
-        chk("%s: %d redrawn banners draw differently in the two classes' art" % (cls, len(banners) - len(bn)), len(banners) >= 15 and len(bn) <= 2, bn[:6])
+        gl = [i for i, g in res["glows"].items() if g["a"] == g["i"] and not fc_only(i)]
+        _ng = len([i for i in res["glows"] if not fc_only(i)])
+        chk("%s: a glow follows the art (%d of %d differ; Fire Code-only ids left out)" % (cls, _ng - len(gl), _ng), len(gl) <= 3, gl)
+        bn = [i for i, b in banners.items() if b["a"] == b["i"] and not fc_only(i)]
+        _nb = len([i for i in banners if not fc_only(i)])
+        chk("%s: %d redrawn banners draw differently in the two classes' art (Fire Code-only ids left out)" % (cls, _nb - len(bn)), _nb >= 15 and len(bn) <= 2, bn[:6])
         bw = [i for i, b in banners.items() if b["aart"] != "academy" or b["iart"] != "ifc"]
         chk("%s: ...each banner says which class's art it is" % cls, not bw, bw[:6])
         bo = [i for i, b in banners.items() if b[own_art[0]] != b["own"]]

@@ -190,7 +190,8 @@ with sync_playwright() as pw:
     bar = pg.evaluate("()=>[...document.querySelectorAll('#bottomtabs .bottomtab')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>b.dataset.dest)")
     chk("5. the academy's bar is unchanged: Home, Profile, Leaderboard, Calendar (%s)" % bar, bar == ["home", "profile", "rewards", "calendar"], bar)
     lad = pg.evaluate("()=>TIER_ORDER_FULL.map(k=>TIER_UNLOCKS[k].badges)")
-    chk("6. the academy's ladder is unchanged (%s)" % lad, lad == [1, 3, 5, 7, 9, 12, 14], lad)
+    # (384.133) CHANGED ON PURPOSE IN 384.88 (on main since): "the academy's Amethyst asks 16 badges and Supernova 25; nobody loses a rank" - the first five rungs are untouched
+    chk("6. the academy's ladder is unchanged below Amethyst, which asks 16 and Supernova 25 (%s)" % lad, lad == [1, 3, 5, 7, 9, 16, 25], lad)
     ac = pg.evaluate("""()=>{ const t=topicsIn(QUESTIONS).find(u=>!unitBadgeEarned(u)); const c=document.createElement('label'); appendUnitProgress(c, t);
       return {thr:badgeThresholdFor(t), bar:!!c.querySelector('.pick-bar-track')}; }""")
     chk("7. the academy keeps its hundo bands and bar (%s)" % ac, ac["thr"] > 1 and ac["bar"], ac)

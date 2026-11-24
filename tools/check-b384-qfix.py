@@ -37,9 +37,9 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import b384_qfix_lib as L
 
-def _base():   # the commit this branch was cut from (origin/main moves as other branches merge; the keys to hold are the ones THIS bank started from)
-    r = subprocess.run(["git", "-C", ROOT, "merge-base", "HEAD", "origin/main"], capture_output=True, text=True).stdout.strip()
-    return r or "origin/main"
+def _base():   # the commit this build was cut from: main 384.70, 4e5328c. Pinned (it was the merge-base with origin/main): qfix is on main since the
+    # 384.78 release (2254386), so the merge-base is now a build that already has the fixes and the removed ids are not in it.
+    return "4e5328c"
 BASE = os.environ.get("BASE") or _base()
 OLD_HTML = L.git_show(BASE, "index.html"); OLD_BANK = L.git_show(BASE, "ifc/bank.js"); OLD_VER = L.git_show(BASE, "version.json")
 assert OLD_HTML and OLD_BANK, "git show %s failed" % BASE
@@ -63,6 +63,9 @@ EXPL = ["ch28-701", "chAppC-002"]                                               
 EDITED = STEMS + list(OPT) + EXPL
 LEAKS = {"ch3-099": "ch3-624", "ch35-009": "ch35-016", "ch1-112": "ch1-142"}               # the stem that printed the figure another question asks -> that question
 UNIT_OF_REMOVED = {"ch12-012": "4", "ch55-702": "2", "ch2-047": "2"}
+# (384.104) the 26 occupant load questions a later build added to Chapter 10 (and 384.130's six in Chapter 6, `_cook`) (tools/gen-ifc-bank.py QUESTION_ADDS, read by their ids): counted as what they
+# are - new questions after Chapter 10's last, nothing of this build's fixes; check-b384-occload holds them. (BASE for this gate is main 384.70, 4e5328c.)
+ADDED = set(re.findall(r'_(?:row|sec|cook)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read()))
 ob, nb = bank_of(OLD_BANK), bank_of(NEW_BANK)
 oq = {q["id"]: q for q in ob["questions"]}; nq = {q["id"]: q for q in nb["questions"]}
 KEEP_SAME = [i for i in oq if i not in REMOVED and i not in EDITED]
@@ -101,7 +104,7 @@ REMAP = """(args)=>{ const qk = {}; const order = []; args.keys.forEach((k, n) =
 # =========================================================== the bank file
 bad_other = [i for i in KEEP_SAME if oq[i] != nq.get(i)]
 twins_same = all(oq[t] == nq.get(t) for t in REMOVED.values())
-gone_ok = all(i not in nq for i in REMOVED) and set(nq) == set(oq) - set(REMOVED)
+gone_ok = all(i not in nq for i in REMOVED) and set(nq) == (set(oq) - set(REMOVED)) | (ADDED & set(nq))
 diff_fields = {i: sorted(k for k in oq[i] if oq[i][k] != nq[i][k]) for i in EDITED if i in nq}
 want_fields = {**{i: ["question"] for i in STEMS}, **{i: ["options"] for i in OPT}, **{i: ["explanation"] for i in EXPL}}
 opt_diff = {i: sorted(k for k in oq[i]["options"] if nq[i]["options"][k] != oq[i]["options"][k]) for i in OPT if i in nq}
@@ -109,10 +112,10 @@ ans_same = all(nq[i]["answer"] == oq[i]["answer"] and nq[i]["options"][nq[i]["an
 units_ok = all(u["questionCount"] == sum(1 for q in nb["questions"] if q["unit"] == u["id"]) for u in nb["units"]) and nb["meta"]["questionCount"] == len(nb["questions"]) \
     and all(u["questionCount"] >= 1 for u in nb["units"]) and sum(u["questionCount"] for u in nb["units"]) == len(nb["questions"])
 meta_same = {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"}
-order_ok = [q["id"] for q in ob["questions"] if q["id"] in nq] == [q["id"] for q in nb["questions"]]
+order_ok = [q["id"] for q in ob["questions"] if q["id"] in nq] == [q["id"] for q in nb["questions"] if q["id"] not in ADDED]
 chk("(1) bank file: the three removed (%s) are gone and their twins (%s) are byte-identical; the %d edited questions differ only in the field the build says (%s) and keep their keyed answer; the other %d are byte-identical to main's; "
     "order, meta and every unit's questionCount are the bank's own (%d questions); no chapter is empty" % (", ".join(REMOVED), ", ".join(REMOVED.values()), len(EDITED), "stem 5, one option, explanation 2", len(KEEP_SAME), len(nb["questions"])),
-    gone_ok and twins_same and not bad_other and diff_fields == want_fields and opt_diff == {i: [o] for i, o in OPT.items()} and ans_same and units_ok and meta_same and order_ok and len(nb["questions"]) == len(oq) - len(REMOVED),
+    gone_ok and twins_same and not bad_other and diff_fields == want_fields and opt_diff == {i: [o] for i, o in OPT.items()} and ans_same and units_ok and meta_same and order_ok and len(nb["questions"]) == len(oq) - len(REMOVED) + len(ADDED & set(nq)),
     {"gone_ok": gone_ok, "twins": twins_same, "other": bad_other[:4], "fields": {i: f for i, f in diff_fields.items() if f != want_fields[i]}, "opt": opt_diff, "ans": ans_same, "units": units_ok, "order": order_ok})
 
 # =========================================================== each fix, as shapes
@@ -180,7 +183,7 @@ with sync_playwright() as pw:
         chk("(3) identity: %d questions here; all %d that stay keep main's exact key (%d moved: %s); all keys unique; the %d reworded stems and %d replaced option are pinned to main's wording (so the key is main's) while the page shows the new text; "
             "each removed question's position stays taken (IFC_SRC_GAPS), its key and the key it was stored under before 384.42 are retired (%d keys); the tables only grew" % (
             len(N), len(N), len(moved), moved[:3], len(STEMS), len(OPT), len(ret_need)),
-            len(N) == len(O) - len(REMOVED) and not moved and len(set(allk)) == len(allk) and pins_ok and shown_new and gaps_ok and ret_ok and tables_grew and set(N) == set(O) - set(REMOVED),
+            len(N) == len(O) - len(REMOVED) + len(ADDED & set(N)) and not moved and len(set(allk)) == len(allk) and pins_ok and shown_new and gaps_ok and ret_ok and tables_grew and set(N) == (set(O) - set(REMOVED)) | (ADDED & set(N)),
             {"moved": moved[:5], "pins": pins_ok, "shown": shown_new, "gaps": gaps_ok, "retired": ret_ok, "grew": tables_grew, "n": len(N), "uniq": len(set(allk))})
         # ---- (4) counts
         S = {s["id"]: s for s in new["sizes"]}; T = {s["id"]: s for s in old["sizes"]}
@@ -192,13 +195,13 @@ with sync_playwright() as pw:
         run4 = pg.evaluate(FULLRUN, {"t": t4, "n": S["4"]["n"] - 1})
         errs_all += errs; ctx.close()
         card_for = lambda t: next((v for k, v in cards.items() if k and (k == t or k == t.split(": ", 1)[-1])), None)
-        EXPECT = {u["id"]: sum(1 for q in ob["questions"] if q["unit"] == u["id"] and q["id"] not in REMOVED) for u in ob["units"]}
+        EXPECT = {u["id"]: sum(1 for q in ob["questions"] if q["unit"] == u["id"] and q["id"] not in REMOVED) + sum(1 for q in nb["questions"] if q["unit"] == u["id"] and q["id"] in ADDED) for u in ob["units"]}
         bad4 = {u: (S[u]["n"], S[u]["cache"], S[u]["run"], card_for(S[u]["topic"])) for u, n in EXPECT.items()
                 if not (S[u]["n"] == S[u]["cache"] == S[u]["run"] == n and card_for(S[u]["topic"]) in (None, "%d questions" % n))}
         chk("(4) counts: Chapter 2 %s -> %s, Chapter 4 %s -> %s, Chapter 1 %s unchanged, every other chapter main's size; each is its bank count, unitQuestionCount, a full run and its card; %s questions in all (main %s; the class card reads %s); "
             "a run one short of Chapter 2 / Chapter 4 is a partial run (%s / %s); every question of each (%s / %s) is the whole chapter, so the next full run is the new size" % (
             T["2"]["n"], S["2"]["n"], T["4"]["n"], S["4"]["n"], S["1"]["n"], new["meta"], old["meta"], new["tables"]["countText"], run2["part"], run4["part"], run2["n"], run4["n"]),
-            not bad4 and S["2"]["n"] == T["2"]["n"] - 2 and S["4"]["n"] == T["4"]["n"] - 1 and S["1"]["n"] == T["1"]["n"] and new["meta"] == old["meta"] - 3 and new["tables"]["countText"] == "{:,}".format(new["meta"])
+            not bad4 and S["2"]["n"] == T["2"]["n"] - 2 and S["4"]["n"] == T["4"]["n"] - 1 and S["1"]["n"] == T["1"]["n"] and new["meta"] == old["meta"] - 3 + len(ADDED & set(nq)) and new["tables"]["countText"] == "{:,}".format(new["meta"])
             and run2["part"] is False and run2["full"] is True and run4["part"] is False and run4["full"] is True and run2["n"] == S["2"]["n"] and run4["n"] == S["4"]["n"] and min(s["n"] for s in new["sizes"]) >= 1, {"bad": bad4, "run2": run2, "run4": run4})
         # ---- (5) nothing lost
         topics = [S[u]["topic"] for u in ("1", "2", "4")]
@@ -234,11 +237,13 @@ with sync_playwright() as pw:
         errs_all += e; ctx.close()
         Bp, Ap = {p["t"]: p for p in before["per"]}, {p["t"]: p for p in after["per"]}
         held = all(Ap[t]["perf"] == Bp[t]["perf"] and Ap[t]["earned"] == Bp[t]["earned"] and Ap[t]["star"] == Bp[t]["star"] and Ap[t]["level"] == Bp[t]["level"] for t in topics)
-        rest_diff = [k for k in set(before["rest"]) | set(after["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
+        # the stored fields THE BASE HAD must come through unchanged; a field only a later build has (its default, added by applyLoadedData: 384.88's
+        # academyLadderRule, the week-win fields, prestige, rim, ...) is not this build's and is not a difference
+        rest_diff = [k for k in set(before["rest"]) if json.dumps(before["rest"].get(k), sort_keys=True) != json.dumps(after["rest"].get(k), sort_keys=True)]
         chk("(5a) the badge, hundos, star and level of Chapters 1, 2 and 4 are held (hundos %s -> %s, badges %s -> %s, rank and the published row the same); every stored field but the per-question answers and stars is identical (%d differ: %s); nothing is owed or re-fired" % (
             before["hundos"], after["hundos"], before["badgeCount"], after["badgeCount"], len(rest_diff), rest_diff[:4]),
             held and not rest_diff and before["hundos"] == after["hundos"] and before["badgeCount"] == after["badgeCount"] and before["rank"] == after["rank"] and before["lvl"] == after["lvl"]
-            and json.dumps(before["row"], sort_keys=True) == json.dumps(after["row"], sort_keys=True) and after["pending"] == [] and before["pend"] == after["pend"] and not after["overlay"],
+            and json.dumps(before["row"], sort_keys=True) == json.dumps({k: after["row"].get(k) for k in before["row"]}, sort_keys=True) and after["pending"] == [] and before["pend"] == after["pend"] and not after["overlay"],
             {"held": held, "rest": rest_diff[:5], "hundos": [before["hundos"], after["hundos"]], "pend": [before["pend"], after["pend"]]})
         lowered = [k for k, v in before["stats"].items() if after["stats"].get(k, {}).get("n", 0) < v.get("n", 0) or after["stats"].get(k, {}).get("m", 0) < v.get("m", 0)]
         gone_ans = {t: Bp[t]["answered"] - Ap[t]["answered"] for t in topics}
@@ -261,7 +266,12 @@ with sync_playwright() as pw:
     finally:
         rig.close()
 # the lines of index.html that differ from main's
-ol, nl = OLD_HTML.split("\n"), NEW_HTML.split("\n")
+# (6b) is a statement about the qfix CHANGE (main 384.70 -> the qfix commit eda90b3: only the identity tables and the APP_BUILD line moved). On the
+# combined tree index.html also holds every later build, so it cannot be asked of the live file; it is asked of that commit's own files (pinned),
+# or of --against FILE when one is given.
+SIX_HTML = NEW_HTML if "--against" in sys.argv else (L.git_show("eda90b3", "index.html") or NEW_HTML)
+SIX_VER = NEW_VER if "--against" in sys.argv else (L.git_show("eda90b3", "version.json") or NEW_VER)
+ol, nl = OLD_HTML.split("\n"), SIX_HTML.split("\n")
 sm = difflib.SequenceMatcher(None, ol, nl, autojunk=False)
 start = next(i for i, l in enumerate(nl) if l.startswith("/* ---- THE 5.4.2 BANK (build 384)"))
 end = next(i for i, l in enumerate(nl) if l.startswith("const IFC_QUESTIONS = ifcQuestionsFrom"))
@@ -274,10 +284,10 @@ for tag, i1, i2, j1, j2 in sm.get_opcodes():
     build_line = all("APP_BUILD" in l for l in ol[i1:i2] + nl[j1:j2]) and (i2 - i1) == 1 and (j2 - j1) == 1
     if not (inblock or build_line): outside.append((i1 + 1, ol[i1:i2][:1], nl[j1:j2][:1]))
 def build_of(t): return re.search(r'const APP_BUILD = "([^"]+)"', t).group(1)
-vb = json.loads(NEW_VER)["build"]
+vb = json.loads(SIX_VER)["build"]
 chk("(6b) index.html differs from main's only inside the Fire Code identity block (the tables, lines %d-%d) and the APP_BUILD line (%d stray hunks%s); APP_BUILD %s is version.json's build %s (main: %s)" % (
-    start + 1, end + 1, len(outside), (": " + str(outside[:2])[:160]) if outside else "", build_of(NEW_HTML), vb, build_of(OLD_HTML)),
-    not outside and build_of(NEW_HTML) == vb and build_of(OLD_HTML) != build_of(NEW_HTML), {"outside": outside[:3]})
+    start + 1, end + 1, len(outside), (": " + str(outside[:2])[:160]) if outside else "", build_of(SIX_HTML), vb, build_of(OLD_HTML)),
+    not outside and build_of(SIX_HTML) == vb and build_of(OLD_HTML) != build_of(SIX_HTML), {"outside": outside[:3]})
 chk("(6c) Fire Code and the academy both boot: no page errors (%s)" % errs_all[:2], not errs_all, errs_all[:4])
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)

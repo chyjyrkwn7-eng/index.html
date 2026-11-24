@@ -243,7 +243,12 @@ with sync_playwright() as pw:
                 chk("%s ready: the daily question is the tab bar's glass, the rank colour only in its rim (%s / bar %s)" % (label, q, b), okq, (q, b))
             else:
                 chk("%s answered: the daily question is the tab bar's glass (%s / bar %s)" % (label, q, b), same(q), (q, b))
-            chk("%s %s: the class button is the tab bar's glass, no colour wash (%s)" % (label, state, c), same(c), (c, b))
+            # (384.133) REVISED BY 384.98 (newdot: "the class button goes back to A, the lit ring") and AGAIN BY classglass (the owner circled option B, the
+            # liquid glass: "Ensure that's updated app wide"): the button keeps the bar's frost but is no longer the bar's body/lift/shadow - it is its own dark glass
+            # orb (B as he saw it under ?classbtn=b), a transparent 1.5px border over a gradient rim, the arc and foot as radials (check-b384-classbtn holds it to
+            # the preview pixel for pixel; this asks for the shape only)
+            glassb = lambda x: x and b and x["frost"] == b["frost"] and x["radials"] >= 2 and x["rim"] in ("rgba(0, 0, 0, 0)", "transparent") and float(x["rimW"][:-2]) >= .99
+            chk("%s %s: the class button is the liquid glass orb with the bar's frost, its rim a gradient through a transparent border (%s)" % (label, state, c), glassb(c), (c, b))
             if label == "iphone":
                 chk("%s %s: the class button is the daily question's size (%s / %s)" % (label, state, c and c["w"], q and q["w"]), c and q and abs(c["w"] - q["w"]) <= 1, (c, q))
             else:
@@ -253,7 +258,9 @@ with sync_playwright() as pw:
                 pg.click(".class-bubble"); pg.wait_for_timeout(900)
                 it = pg.evaluate(GLASS)["item"]
                 if SHOTS: pg.screenshot(path=os.path.join(SHOTS, "fr-corners-%s-classlist.png" % label))
-                chk("%s: the class list's buttons wear the bar's lift and rim (%s)" % (label, it), it and it["lift"] == b["lift"] and it["rim"] == b["rim"] and it["radials"] == 0, it)
+                # (384.133) REVISED BY 384.108 (classmarks: the list's bubbles wear the button's circle) and by classglass (that circle is now the liquid glass):
+                # the list's bubbles are the same orb - the same radials and the same transparent gradient rim as the button
+                chk("%s: the class list's buttons are the class button's liquid glass (%s)" % (label, it), it and c and it["radials"] == c["radials"] >= 2 and it["rim"] == c["rim"] and it["rimW"] == c["rimW"], (it, c))
                 pg.click(".class-bubble"); pg.wait_for_timeout(700)
             chk("%s %s: no page or console errors (%s)" % (label, state, pg.errs[:3]), not pg.errs, pg.errs)
             ctx.close()

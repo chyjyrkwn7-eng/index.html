@@ -121,12 +121,41 @@ URL = "http://127.0.0.1:%d/index.html" % PORT
 FAILURES = []
 
 
+# 384.55: the rank-up journey ends on Home and gives its rewards there; it no longer goes back to Profile. These checks are of the
+# Profile return it had (the XP bar climbing, the card changing over, the rank word turning) and are said, not failed.
+RETIRED_384_55 = ("back on Profile the XP bar does not load again", "back on Profile the rank reads Silver", "the challenge box changes over first",
+                  "the climb is slow (", "the level challenge stays where it stood", "the Profile card keeps its grey look throughout",
+                  "while the saved XP climbs, the line under the bar")
+
+
 def check(name, ok, detail=""):
+    if any(f in name for f in RETIRED_384_55):
+        print("  SKIP %s  -- superseded: 384.55: the journey ends on Home (tools/check-b384-rankjourney.py C)" % name)
+        return
     print("  %-4s %s%s" % ("PASS" if ok else "FAIL", name,
                            ("  -> " + str(detail)) if detail else ""))
     if not ok:
         FAILURES.append(name)
 
+
+
+# (384.136 academy pins, round 2 / art8) Madison asked for the academy's 24 unit badges to be raised pins "just as great" as Fire
+# Code's. The checks below that measure a STRUCK badge - its enamel cells, its silver bevel and the seam where colour meets silver,
+# its sampled edges, the struck slot's 2.4 gap and its shade, and the dirt stages (cleaning retired in 382; Madison 2026-11-22: "no
+# badges don't need cleaning anymore") - have no struck badge to measure once every academy unit is a pin. They still run, and
+# still hold, on any build whose academy badges are struck; on a pin build they report n/a and point at the pins' own gates
+# (check-b384-objbadges, check-b384-acadpins, check-b384-casefit, check-b384-sides).
+def _academy_is_pins():
+    try:
+        h = open(SRC, encoding="utf-8").read()
+        return 'CHAPTER_OBJ["Penal Code"]' in h and 'CHAPTER_OBJ["De-Escalation"]' in h
+    except Exception:
+        return False
+ACADEMY_PINS = _academy_is_pins()
+def struck_check(name, ok, detail=""):
+    if ACADEMY_PINS:
+        return check(name + " [n/a: every academy badge is a pin - held by check-b384-objbadges / acadpins / casefit / sides]", True, "pins")
+    return check(name, ok, detail)
 
 def superseded(name, why):
     """A check of a design that a later, asked-for one replaced. Said, never failed, so the reason stays next to the check."""
@@ -1313,8 +1342,11 @@ def check_b313_notice(br):
           const bar = document.getElementById('updatebanner').getBoundingClientRect();
           const chat = document.querySelector('.chatdock-btn').getBoundingClientRect();
           const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          const cb = document.querySelector('.chatdock-btn'), ccs = getComputedStyle(cb);
           const res = { chatHit: hit(bar, chat), bubbleGap: Math.round(top() - bar.bottom),
-            closeVisible: (() => { const c = document.querySelector('#updatebanner .update-banner-close, #updatebanner button[aria-label*="lose"]'); if(!c) return null; const r = c.getBoundingClientRect(); return !hit(r, chat); })() };
+            chatOpacity: parseFloat(ccs.opacity), chatPE: ccs.pointerEvents,
+            closeVisible: (() => { const c = document.querySelector('#updatebanner .update-banner-close, #updatebanner button[aria-label*="lose"]'); if(!c) return null; const r = c.getBoundingClientRect();
+              const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!top && !!top.closest('#updatebanner'); })() };
           hideBanner(); await wait(900);
           res.back = Math.round(top() - before);
           const greet = document.querySelector('.hometitle-wrap, .homegreet');
@@ -1322,7 +1354,12 @@ def check_b313_notice(br):
           return res; }""")
         ctx.close()
     for tag, r in out.items():
-        check("%s: the notice does not run under the chat button" % tag, r.get("chatHit") is False and r.get("closeVisible") is not False, r)
+        # CHANGED ON PURPOSE IN 384.93 / 384.100 (popups-wide, docs/notes-archive.md "384.100 (popups-wide)"): every top pop-up is the page's full
+        # width on the chat button's row, OVER the chat button, which fades out and takes no taps while it shows. What this build protected
+        # (the close button hidden beneath the chat button) now reads: the close button is the top element where it is drawn, and the chat
+        # button is gone (opacity 0, no taps) under the notice, so nothing runs under a button that can be seen or tapped.
+        check("%s: the notice's own close button is on top, and the chat button under it is faded out and takes no taps" % tag,
+              r.get("closeVisible") is not False and (r.get("chatHit") is False or (r.get("chatOpacity") == 0 and r.get("chatPE") == "none")), r)
         check("%s: and it clears the top flare bubble" % tag, isinstance(r.get("bubbleGap"), int) and r["bubbleGap"] >= 4, r)
         check("%s: the planet goes back when the notice goes" % tag, r.get("back") == 0, r)
 
@@ -1610,15 +1647,18 @@ def check_b218(br):
     # Share & install are each ONE list card of full-width rows, stacked, 44px+.
     # build 382 (Settings is a menu): Check for update and Share & Install are rows of one menu card;
     # Share this app and Add to Home Screen are the Share & Install page's card.
-    rows = pg.evaluate("""async ()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
-      const o = { upd: row('Check for update'), bug: row('Share & Install') };
+    # (384.105) "row:KEY" finds a row by its key (data-row): the install row's words are "Add to Home Screen guide" now
+    # (384.106) the update row is found by its kind (data-row), not its words: "Check for update" became "Software Update"
+    rows = pg.evaluate("""async ()=>{ const at=b=>{ if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
+      const row=t=>at([...document.querySelectorAll('button.settings-row')].find(x=>t.startsWith('row:') ? x.dataset.row===t.slice(4) : x.textContent.trim().startsWith(t)));
+      const o = { upd: at(document.querySelector('button.settings-row[data-row=update]')), bug: row('Share & Install') };
       showAppearance({ page: 'share' }); await new Promise(r=>setTimeout(r,500));
-      o.share = row('Share this app'); o.install = row('Add to Home Screen');
+      o.share = row('Share this app'); o.install = row('row:install');
       const same = (a,b)=>!!(o[a]&&o[b]) && o[a].card===o[b].card;
       const out = { helpOneCard: same('upd','bug'), shareOneCard: same('share','install') };
       for(const k in o){ out[k] = o[k] && { top:o[k].top, h:o[k].h, full:o[k].full }; } return out; }""")
     ok_row = lambda k: bool(rows[k]) and rows[k]["h"] >= 44 and rows[k]["full"]
-    check("Check for update and Share & Install are full-width rows in one menu card", rows["helpOneCard"] and ok_row("upd") and ok_row("bug"), rows)
+    check("Software Update (was Check for update) and Share & Install are full-width rows in one menu card", rows["helpOneCard"] and ok_row("upd") and ok_row("bug"), rows)
     check("so are Share and Add to Home Screen", rows["shareOneCard"] and ok_row("share") and ok_row("install") and rows["install"]["top"] > rows["share"]["top"], rows)
     # Find me wears the search field's glass, at its height.
     pg.evaluate("()=>{ showRankings(); }")
@@ -1786,10 +1826,26 @@ def check_b221(br):
       showVroomCountdown(Date.now() + 4000, () => {});
       const ov = document.getElementById('vroom-reveal-overlay');
       out.bg = getComputedStyle(ov).backgroundColor;
+      /* (384.128) opaque, on the page's own colour */
+      { const pr = document.createElement('i'); pr.style.color = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(); document.body.appendChild(pr); out.paper = getComputedStyle(pr).color; pr.remove(); }
       out.ring = !!document.getElementById('vroom-reveal-ring');
       const kf = [...document.styleSheets].flatMap(sh => { try{ return [...sh.cssRules]; }catch(e){ return []; } })
         .filter(r => r.type === CSSRule.KEYFRAMES_RULE && r.name === 'vroom-reveal-pulse')[0];
       out.fades = kf ? /opacity/.test(kf.cssText) : null;
+      /* REVISED IN 384.128: the numbers are one element a second, faded in and out on the timeline (vroom-reveal-pulse is
+         gone). "Never fades" is now: at every instant through a change some number is drawn at .5 or more (no dark beat). */
+      const ns = [...ov.querySelectorAll('.vcd-n[data-n]')];
+      if(!kf && ns.length > 1){
+        const tl = performance.now() - Date.now(), sa = Number(ov.dataset.startAt);
+        const anims = document.getAnimations().filter(a => a.effect && a.effect.target && ov.contains(a.effect.target));
+        let worst = 1;
+        const starts = anims.map(a => a.startTime);
+        for(let ms = -40; ms <= 400; ms += 10){   /* through the 4 -> 3 change */
+          anims.forEach((a, i) => { a.pause(); a.currentTime = (sa - 3000 + ms + tl) - starts[i]; });
+          worst = Math.min(worst, Math.max(...ns.map(n => parseFloat(getComputedStyle(n).opacity))));
+        }
+        out.fades = worst < .5; out.worst = worst;
+      }
       ov.remove();
       // Any ordinary screen takes the race line down.
       raceBarEl.hidden = false; showHome();
@@ -1798,7 +1854,7 @@ def check_b221(br):
       out.stepsTail = VROOM_XP_STEPS.slice(-2).map(x => x.key);
       return out; }""")
     check("the room's countdown is opaque, with a ring, and its number never fades",
-          r["bg"] in ("rgb(10, 10, 10)",) and r["ring"] and r["fades"] is False, r)
+          (r["bg"] in ("rgb(10, 10, 10)",) or (r["bg"].startswith("rgb(") and r["bg"] == r.get("paper"))) and r["ring"] and r["fades"] is False, r)
     check("the race line is gone from Home", r["raceAfterHome"] is True, r)
     check("speed and correct answers are counted last", r["stepsTail"] == ["speed", "correct"], r)
 
@@ -4940,11 +4996,18 @@ def check_b245_daily_announce(br):
             # REVISED IN 327z15: every pop-up is the top Liquid Glass banner, the daily question's
             # included - "it like shoots over to the pop up animation ... super cool" - so it settles
             # in the top third, centred on the screen
-            check("%s: the announcement settles as the top glass banner, centred" % label,
-                  a[1] < 0.3 * r["vh"] and abs((a[0] + a[2]) / 2 - w / 2) <= 3, [a, w])
             ch = r["chat"]
-            clear = ch is None or a[2] <= ch[0] - 4 or a[3] <= ch[1] or a[1] >= ch[3]
-            check("%s: clear of the chat button" % label, clear, [a, ch])
+            # CHANGED ON PURPOSE IN 384.93 (the pop-ups' row, docs/notes-archive.md "384.93") AND AGAIN IN 384.100 ("384.100 (popups-wide)"):
+            # it settles IN the chat button's row, its top on the button's top, at the page's full width (the same gutter on both
+            # sides, centred) and OVER the chat button - it no longer stops short of it
+            if ch:
+                placed = abs(a[1] - ch[1]) <= 1 and abs(a[0] - (w - a[2])) <= 1.5 and a[2] - a[0] >= min(w, 896) - 2 * 24 - 1.5 and a[0] <= 24.5
+                check("%s: the announcement settles as the top glass banner in the chat button's row, the page's full width" % label, placed, [a, ch, w])
+            else:
+                check("%s: the announcement settles as the top glass banner, centred" % label,
+                      a[1] < 0.3 * r["vh"] and abs((a[0] + a[2]) / 2 - w / 2) <= 3, [a, w])
+            covers = ch is None or (a[0] <= ch[0] and a[2] >= ch[2] and a[1] <= ch[1] + 1 and a[3] >= ch[3] - 1)
+            check("%s: over the chat button, covering it" % label, covers, [a, ch])
         else:
             check("%s: the bubble settles" % label, False)
         stays = [f for f in fr if f["op"] > 0.9 and shown is not None and f["t"] >= shown + 6000]
@@ -6556,6 +6619,9 @@ def check_b280_rankmap_still(br):
          (the seed has none, and an unranked account has no stretch) */
       const u = topicsIn(QUESTIONS); u.slice(0, 3).forEach(n => store.unitPerfects[n] = 999);
       store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = null;
+      /* (384 streak) today already checked in: the account's first Home of the day pays the daily streak's XP (checkinTick), which
+         would land between the two looks and grow the climb - "nothing changed" is an account that has had its day */
+      try{ if(typeof checkinInfo === 'function') store.checkins = [dayKey(new Date())]; }catch(e){}
       const open = async () => { showHome(); await wait(300); window.scrollTo({ top: 0, behavior: 'instant' });
         showProfile('ranks'); let max = 0; for(let i = 0; i < 45; i++){ await wait(100); max = Math.max(max, window.scrollY); } return max; };
       /* first look: no record, so the climb plays and the spot is recorded */
@@ -7218,8 +7284,9 @@ def check_b289(br):
     check("last week's top 3 sit on the This Week podium; the Leaderboard opens no card for them (Nova's recap on Home does, build 324)",
           r.get("congrats") >= 3 and r.get("congratsCard") is False and r.get("congratsAgain") is False,
           [r.get("congrats"), r.get("congratsCard"), r.get("congratsAgain")])
-    check("tourRev 3 arms the three Profile tips, starting with Customize",
-          (r.get("tourRev") or 0) >= 3 and "Customize" in str(r.get("tip")), r.get("tip"))   # (384) TOUR_REV is 4 now (the class button), 3 still arms these
+    # (384.137 tips) the Profile tips go down the page now: the rank card first, then Customize (check-b384-tips holds the order)
+    check("tourRev 3 arms the Profile tips, starting at the top of the page (the rank card)",
+          (r.get("tourRev") or 0) >= 3 and re.search(r"\brank\b|Customize", str(r.get("tip"))), r.get("tip"))   # (384) TOUR_REV is 4 now (the class button), 3 still arms these
     check("the rank line is no box; the next rank and the badge case are one family: same width, no glow, no watermark - and the case strip takes the Next rank box's corner (319h)",
           isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
     check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))
@@ -9075,7 +9142,7 @@ def check_b304(br):
              recorded loop rather than the live svg - that is the lag fix. */
           out.liveRows = all.filter(x => x.querySelector('.rank-avatar-wrap.char-live, .rank-avatar-wrap.char-flip')).length;
           out.offRows = all.filter(x => x.classList.contains('is-offscreen')).length;
-          const me = document.querySelector('.rank-row.lb-row-me');
+          const me = document.querySelector('.rank-row[data-me="1"]');   /* (384.111) your row is found, not lit: no .lb-row-me on the board's rows */
           out.meTappable = !!(me && me.classList.contains('is-tappable'));
           if(me){ me.click(); await wait(700); }
           const card = document.querySelector('.person-card');
@@ -9368,32 +9435,22 @@ def check_b305_resultstap(br):
         pg.touchscreen.tap(where[0], where[1]); pg.wait_for_timeout(900)
         r1 = pg.evaluate("()=>({ home: !!document.querySelector('[data-screen=\"home\"]'), results: !!document.querySelector('.rs-rewards') })")
         check(dev + ": a tap where Main menu will be, before it is there, stays on the results", r1["results"] and not r1["home"], r1)
-        # one tap, one card
-        landed = "()=>document.querySelectorAll('.rs-rewards .rs-land.rs-in, .rs-rewards .rs-land.rs-in-now').length"
-        total = pg.evaluate("()=>document.querySelectorAll('.rs-rewards .rs-land').length")
-        graded = "()=>!!document.querySelector('.rs-rewards .rs-grade.rs-graded')"
-        # which box each landed piece belongs to: the outermost .rs-land round it (a card's lines are inside the card)
-        boxes = """()=>{ const all = [...document.querySelectorAll('.rs-rewards .rs-land')];
-          return all.map((e, i) => { let top = e; for(let p = e.parentElement; p; p = p.parentElement) if(p.classList && p.classList.contains('rs-land')) top = p;
-            return [i, all.indexOf(top), e.classList.contains('rs-in') || e.classList.contains('rs-in-now')]; }); }"""
-        before = pg.evaluate(landed); g0 = pg.evaluate(graded); b0 = pg.evaluate(boxes)
-        pg.touchscreen.tap(w / 2, h * 0.45); pg.wait_for_timeout(60)
-        after = pg.evaluate(landed); g1 = pg.evaluate(graded); b1 = pg.evaluate(boxes)
-        new_boxes = sorted({x[1] for x, y in zip(b0, b1) if y[2] and not x[2]}) if len(b0) == len(b1) else ["changed"]
-        # BUILD 320: the grade is counted in, and a tap while it counts is
-        # "the box on screen" - it finishes the count and lands the grade,
-        # one step, and the XP card waits for the next tap.
-        # MOVED IN 380 (fef8ce3, "TAP-THROUGH, BOX BY BOX"): "if you tap it
-        # while it loads it would finish instantly and then go to the xp box
-        # and do it normally, if you tap it again that would finish and so
-        # on" - 305's tap ran one step of the timeline and often seemed to do
-        # nothing, so a tap now finishes the box coming in (the XP card's
-        # lines, its total and its level block land together) and the next
-        # box follows after a beat. One tap is still never the rest of the
-        # reveal: what lands is inside ONE box, and the way-on row is not it.
-        check(dev + ": a tap finishes the box coming in (or lands the grade being counted) - one box, never the rest of them (380)",
-              ((after > before and len(new_boxes) == 1) or (after == before and g1 and not g0)) and after < total,
-              (before, after, total, g0, g1, new_boxes))
+        # MOVED IN 384.99 (resultskip): "it should just speed up/skip" - ONE tap lands the whole reveal (every card, the grade,
+        # the XP, the way-on row), or, with a scene or pop-up still to play, everything up to it, which then plays. The tap
+        # above (where Main menu would be) was that tap, and it pressed nothing. 380's "one box a tap" is superseded below.
+        r2 = pg.evaluate("""()=>{ const p=document.querySelector('.rs-rewards'); if(!p) return null;
+          const all=p.querySelectorAll('.rs-land').length, on=p.querySelectorAll('.rs-land.rs-in-now, .rs-land.rs-in').length;
+          return { all, on, done: p.classList.contains('rs-done'), pending: !!(typeof resultsSeq !== 'undefined' && resultsSeq && resultsSeq.isRunning()),
+            graded: !!p.querySelector('.rs-grade.rs-graded, .rs-grade:not(.is-counting)') }; }""")
+        came = bool(r2) and r2["done"]
+        if r2 and not came and r2["pending"]:
+            try: pg.wait_for_function("()=>!!document.querySelector('.rs-spot, .bc-scene, .sf-scene')", timeout=5000); came = True
+            except Exception: came = False
+        check(dev + ": that one tap landed the whole reveal - the way-on row too - or all of it up to a pop-up still to come (384.99)",
+              came and r2["graded"] and (r2["done"] and r2["on"] == r2["all"] or r2["pending"]), r2)
+        superseded(dev + ": a tap finishes the box coming in (or lands the grade being counted) - one box, never the rest of them (380)",
+                   "384.99: Madison asked for one tap to skip ('I'm sitting there having to spam it for it to register')")
+        # (the 380 leg's own second tap and its count of boxes, gone with it)
         for _ in range(150):
             pg.wait_for_timeout(200)
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
@@ -10769,7 +10826,7 @@ def check_b310(br):
       await wait(200);
       const after = rowOf('N2') && rowOf('N2').querySelector('.rank-avatar-wrap');
       out.sameAvatar = !!before && before === after; out.boardFound = !!board;
-      out.noRowBanner = !document.querySelector('.lb-row-bnr') && typeof LB_ROW_BANNER !== 'undefined' && LB_ROW_BANNER === '';
+      out.noRowBanner = !document.querySelector('.lb-row-bnr') && !document.querySelector('.has-row-bnr') && typeof LB_ROW_BANNER !== 'undefined' && LB_ROW_BANNER === 'edge';
       /* online: a heartbeat is green, leaving is green for the grace, then grey */
       const now = Date.now();
       presenceMap = { a: now - 60000, b: -(now - 60000), c: -(now - 3 * 60000), d: 0 };
@@ -10808,7 +10865,9 @@ def check_b310(br):
     check("the leaderboard's top tabs have a sliding indicator", r["slider"], r)
     check("the indicator glides between tabs rather than jumping", bool(sl) and sl["x0"] != sl["end"] and sl["mid"] != sl["end"] and "transform" in sl["tr"], sl)
     check("a leaderboard snapshot keeps each character (no restart, no shake)", r["sameAvatar"] and r["boardFound"], r)
-    check("no banners on leaderboard rows until one is picked", r["noRowBanner"], r)
+    # CHANGED ON PURPOSE IN 384.120 (unlocks): the owner picked "along the edge", so LB_ROW_BANNER is "edge" now (it was "" until one was
+    # picked). What this protects stays: a row whose entry has no real banner draws none (these fixture rows carry none).
+    check("no banner on a leaderboard row whose entry has none (the treatment is switched on, along the edge)", r["noRowBanner"], r)
     check("online: heartbeat green, just left green, left 3 min ago grey, 0 grey", r["online"] == [True, True, False, False] and r["grace"] == 120000, r)
     # MOVED IN 326 (b326d): Home shows all six secret flares, unlit until
     # found (was the three build 313 showed before Void)
@@ -11070,9 +11129,13 @@ def check_b312_results(br):
     """Build 312: "Review test" on a perfect run was asked for ("when getting
     a 100, still provide a review option") and taken back before it shipped
     ("Nvm, if you get a 100, let's not do the review test thing"). A 100%
-    run ends on Re-run and Main menu, as build 311 did; the review is only
-    for the misses."""
-    print("\n87. build 312: a perfect run ends on Re-run and Main menu - no Review test")
+    run ended on Re-run and Main menu, as build 311 did.
+    384.103 REVERSED IT, on the newer word: "After you finish a test (you get
+    the 100 or finish all the retakes, did them all finally), add a button for
+    review test or something". A 100% run now ends on the review button (the
+    lead, first), then Re-run and Main menu - read by its class, not its words;
+    tools/check-b384-reviewtest.py holds the rest of it."""
+    print("\n87. build 312 / 384.103: a perfect run ends on the whole test's review, then Re-run and Main menu")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.source = 'all'; cfg.size = 0; cfg.versions = {};
@@ -11087,8 +11150,10 @@ def check_b312_results(br):
       }
       for(let i = 0; i < 100 && !document.querySelector('.rs-final button'); i++){ document.querySelector('.rs-screen')?.click(); await wait(200); }
       await wait(600);
-      return { btns: [...document.querySelectorAll('.rs-final button')].map(b => b.textContent.trim()) }; }""")
-    check("a 100% run's final buttons are Re-run and Main menu, with no Review test", r.get("btns") == ["Re-run", "Main menu"], r.get("btns"))
+      return { btns: [...document.querySelectorAll('.rs-final button')].map(b => b.textContent.trim()),
+               review: [...document.querySelectorAll('.rs-final button')].map(b => b.classList.contains('rs-testreview-go')) }; }""")
+    check("a 100% run's final buttons are the review (first), then Re-run and Main menu (384.103)",
+          r.get("btns", [])[1:] == ["Re-run", "Main menu"] and r.get("review") == [True, False, False], r)
     ctx.close()
     # "if I get a hundo on a unit that I already have a badge on, you don't
     # need to show the badge stuff there, no point"
@@ -15419,9 +15484,9 @@ def check_b317_evolve(br):
     s_pp, s_pre, s_on = at((spin_at or 0) - 2), at((spin_at or 0) - 1), at(spin_at or 0)
     s3 = at((spin_at or 0) + 3)
     a3 = abs((s3 or {}).get("orbA") or 0)
-    check("timed: the last pale ring is still closing on the flare in the last frame before the whirl, the charge is released in the whirl's first frame, and the whirl moves at once (5+ degrees in 0.1s)",
+    check("timed: the last pale ring is still closing on the flare in the last frame before the whirl, the charge is released in the whirl's first frame, and the whirl LEAVES FROM REST (384.55: under 3 degrees in the first 0.1s - one smooth curve, no step in speed; it was 5+ with a push)",
           bool(s_pp and s_pre and s_on and s3) and s_pre["ringW"] is not None and s_pp["ringW"] is not None
-          and s_pre["ringW"] <= 1.6 and s_pp["ringW"] > s_pre["ringW"] and (s_on["rel"] or 0) > .9 and a3 >= 5,
+          and s_pre["ringW"] <= 1.6 and s_pp["ringW"] > s_pre["ringW"] and (s_on["rel"] or 0) > .9 and a3 < 3,
           s_pre and s_on and (s_pp and s_pp["ringW"], s_pre["ringW"], s_on["rel"], round(a3, 2)))
     offs = [st["lightOff"] for i, st in rows if st and st.get("lightOff") is not None]
     check("the light on the flare is centred on it in every frame, before and after the spin (within 1px)",
@@ -16821,17 +16886,21 @@ def check_b317_xpcap(br):
     # Generous: headless Chromium runs this page's rAF at a few frames a
     # second, and the knock is a fill, a timer and a count-up in a row.
     wait = "await new Promise(r => setTimeout(r, %d));"
-    # 1. level 80, well past what a level 81 would cost
+    # 1. level 80's XP and 60,000 more, every rank's badges (16 is Supernova's count on the build this was written for; the rank
+    #    floor makes it Supernova whatever the ladder asks). REVISED IN 384.135, NO LEVEL CAP: "don't cap the level at 80 after you
+    #    hit supernova, you can just keep leveling up." That XP is now the level the curve gives past 80 - read off the page
+    #    (levelFromPoints), never typed - with an ordinary bar under its requirement. Fails on fa11d79 (Level 80, the bar over).
     l80 = pg.evaluate("""async () => { try{ localStorage.removeItem('class26e.pfxp.seen'); }catch(e){}
-      __acct(xpForLevel(LEVEL_CAP) + 60000, 16); showProfile('identity'); %s return __pf(); }""" % (wait % 1500))
-    check("level 80 no longer says every level reached",
-          l80["level"] == "Level 80" and not re.search(r"every level reached", l80["text"] or "", re.I), l80)
+      const rf0 = store.rankFloor; __acct(xpForLevel(80) + 60000, 16); store.rankFloor = 7; showProfile('identity'); %s
+      const o = Object.assign(__pf(), { curve: levelProgress(xpForLevel(80) + 60000).level }); store.rankFloor = rf0; return o; }""" % (wait % 1500))
+    check("past level 80 the level carries on: the Profile says the curve's level, above 80 (384.135)",
+          l80["curve"] > 80 and l80["level"] == "Level %d" % l80["curve"] and not re.search(r"every level reached", l80["text"] or "", re.I), l80)
     m = re.match(r"^([0-9,]+) / ([0-9,]+) XP$", l80["nums"] or "")
-    check("...it shows the XP since level 80 against a level's cost, past it, both numbers blue",
-          bool(m) and int(m.group(1).replace(",", "")) > int(m.group(2).replace(",", "")) and l80["over"], l80["nums"])
+    check("...and its bar is an ordinary level's: the XP into it under what it asks, not over (384.135)",
+          bool(m) and int(m.group(1).replace(",", "")) < int(m.group(2).replace(",", "")) and not l80["over"], l80["nums"])
     # REVISED IN 321: "remove the description under the xp bar that talks
     # about using xp for the next level, we don't need that anymore".
-    check("...and there is no note under the bar at level 80 (321)",
+    check("...and there is no note under the bar past level 80 (321)",
           l80["note"] is None and "still counts" not in (l80["text"] or ""), l80["note"])
     # 2. the wall note, Silver held at 49 behind the four-badge wall
     wall = pg.evaluate("""async () => { __acct(xpForLevel(52) + 200, 4); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
@@ -16843,7 +16912,7 @@ def check_b317_xpcap(br):
     # REVISED IN THE 317 TOUCH-UP: one blue, not a deeper one for the total
     mid = pg.evaluate("""async () => { __acct(xpForLevel(33) + 400, 3); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
     blue = lambda c: len(c) == 3 and c[2] - c[0] >= 80
-    for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("level 80, over the wall", l80)):
+    for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("past level 80 (384.135: no cap)", l80)):
         hv, nd, tt = rgb(st["have"]), rgb(st["need"]), rgb(st["tot"])
         # REVISED IN 321: the total in the level's colour (compared whole)
         check(f"{tag}: this level's XP and what it asks are one blue; the total XP is the level's colour",
@@ -16863,7 +16932,8 @@ def check_b317_xpcap(br):
       out.fill = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
       __bumps = 0; b = block(300, xpForLevel(52) + 200, 4); %s
       out.full = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
-      __bumps = 0; b = block(300, xpForLevel(LEVEL_CAP) + 60000, 16); %s
+      const rf0 = store.rankFloor; store.rankFloor = 7; __bumps = 0; b = block(300, xpForLevel(80) + 60000, 16); %s
+      store.rankFloor = rf0;
       out.top = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
       __bumps = 0; b = block(0, xpForLevel(52) + 200, 4); %s
       out.none = { bumps: __bumps }; b.parentNode.remove();
@@ -16879,8 +16949,9 @@ def check_b317_xpcap(br):
           res["fill"]["bumps"] >= 1 and res["fill"]["over"], res["fill"])
     check("XP added to a bar already full at a wall knocks it, and the numbers run on",
           res["full"]["bumps"] >= 1 and res["full"]["over"], res["full"])
-    check("XP added at level 80 past a level's cost knocks the bar and shows the overflow, not 'the cap'",
-          res["top"]["bumps"] >= 1 and res["top"]["over"] and "cap" not in (res["top"]["line"] or ""), res["top"])
+    # REVISED IN 384.135 (no level cap): past 80 a level is an ordinary one, so XP into it is no knock and no overflow
+    check("XP added past level 80 is an ordinary level's: no knock, no overflow, never 'the cap' (384.135)",
+          res["top"]["bumps"] == 0 and not res["top"]["over"] and "cap" not in (res["top"]["line"] or ""), res["top"])
     check("a full bar with no XP this run does not knock", res["none"]["bumps"] == 0, res["none"])
     check("a bar with room left does not knock", res["room"]["bumps"] == 0, res["room"])
     check("Reduce motion: no knock, the numbers still settle on the overflow",
@@ -17778,7 +17849,7 @@ B319_RU_WALK = """async (a) => {
     if(document.querySelector('.pf-goal.ru-goal-in')) at('goalin');
     const lv = document.querySelector('.screen-profile .pf-standing .pf-level');
     if(out.at.back && lv && lv.textContent !== lastLv){ lastLv = lv.textContent; out.lvls.push(lastLv); }
-    if(out.at.back && !s){ at('done'); break; }
+    if((out.at.back || out.at.ph_home) && !s){ at('done'); break; }
     if(a.watchdogAt && ph === a.watchdogAt && s){ rankUpSceneWatch(s, 150); out.dogged = true; }
     await wait(40);
   }
@@ -17868,8 +17939,8 @@ def check_b319_rankup(br):
         check(f"{dev}: Gold's cutscene is launched once, inline, over the road map (Silver to Gold)",
               len(ca) == 1 and ca[0].get("key") == "veteran" and ca[0].get("from") == "ranger" and ca[0].get("inline") and ca[0].get("onMap"), ca)
         cards = wk.get("cards") or []
-        check(f"{dev}: then Gold's reward card, on the map, and a tap reaches it",
-              len(cards) == 1 and "rs-spot-rankrewards" in cards[0].get("cls", "") and cards[0].get("onMap") and wk.get("cardHit") == "card"
+        check(f"{dev}: then Gold's reward card (384.55: on HOME, after the ladder - not on the map), and a tap reaches it",
+              len(cards) == 1 and "rs-spot-rankrewards" in cards[0].get("cls", "") and not cards[0].get("onMap") and wk.get("cardHit") == "card"
               and at.get("cutscene", 0) < at.get("card", -1), [cards, wk.get("cardHit")])
         un = wk.get("upnext") or {}
         # build 320: Up next is the road map's own box (no card under the hero), and the card turns over with no "Rank up"
@@ -17879,15 +17950,13 @@ def check_b319_rankup(br):
         # build 321: the card no longer turns over - it fades to the new one (b321e)
         check(f"{dev}: then the card changes to Gold with a fade, not a turn ('Your rank', no 'Rank up')",
               at.get("upnext", 0) < at.get("heroturn", -1) and "turnout" not in at and hr == {"kick": "Your rank", "name": "Gold"}, [at, hr])
-        check(f"{dev}: a slow fade back to Profile; the completed card fades away and Platinum's comes in",
-              at.get("heroturn", 0) < at.get("curtain", -1) < at.get("back", -1) < at.get("flipout", -1) < at.get("goalin", -1), at)
+        superseded(f"{dev}: a slow fade back to Profile; the completed card fades away and Platinum's comes in", "384.55: the journey ends on Home and gives its rewards there (tools/check-b384-rankjourney.py C)")
         af = wk.get("after") or {}
         lv = wk.get("lvls") or []
         # build 325: from Gold's 40 to Platinum's 50 - the next wall - with the rest still saved
-        check(f"{dev}: the saved XP climbs the bar level by level, 40 to 50 (Platinum's level, the new wall), and the level challenge then reads 50 (build 321: after the bar, see 320d)",
-              lv[:1] == ["Level 40"] and lv[-1:] == ["Level 50"] and len(lv) >= 5 and af.get("lvRow") == "50" and af.get("level") == "Level 50", [lv, af.get("lvRow")])
-        check(f"{dev}: done: Gold, Platinum next, shown, nothing held, no layer or curtain left, nothing owed on the device",
-              af.get("rank") == "Gold" and af.get("next") == "Platinum" and af.get("shown") == af.get("held") == 3 and af.get("owed") is None
+        superseded(f"{dev}: the saved XP climbs the bar level by level, 40 to 50, and the level challenge then reads 50", "384.55: the journey ends on Home and gives its rewards there (tools/check-b384-rankjourney.py C) - Profile is not visited, its bar is the real one when next opened")
+        check(f"{dev}: done (384.55: on Home): Gold shown, nothing held, no layer or curtain left, nothing owed on the device",
+              af.get("shown") == af.get("held") == 3 and af.get("owed") is None
               and not af.get("blocker") and not af.get("curtain") and af.get("prog") is None and not af.get("dot"), af)
         check(f"{dev}: Home is free, its Gold flare lit, and it plays once only",
               (wk.get("home2") or {}) == {"lock": False, "flare": True} and wk.get("again") is False, [wk.get("home2"), wk.get("again")])
@@ -17915,7 +17984,7 @@ def check_b319_rankup(br):
           and [(c.get("key"), c.get("from")) for c in ca2] == [("vanguard", "veteran")] and [c.get("name") for c in cards2] == ["Platinum rank"],
           [ca, [c.get("name") for c in cards], ca2, [c.get("name") for c in cards2]])
     af2 = wk2.get("after") or {}
-    check("two at once: ends on Platinum, Sapphire next, both shown", af2.get("rank") == "Platinum" and af2.get("next") == "Sapphire" and af2.get("shown") == 4, af2)
+    check("two at once (384.55: on Home): both shown, nothing held or owed", af2.get("shown") == af2.get("held") == 4 and af2.get("owed") is None, af2)
     ctx.close()
 
     # EVERY CHALLENGE COUNT STOPS AT ITS GOAL (Madison's screenshot: "Earn 3
@@ -17956,7 +18025,7 @@ def check_b319_rankup(br):
     check("a rank-up with a challenge already over: Bronze to Silver by level, its badge row 3 / 3 from the start, the level row ticks, nothing ever past its goal",
           not wk.get("threw") and r.get("owed") == {"fromIdx": 0, "toIdx": 1} and wk.get("tickRows") == 1
           and any(x.get("k") == "badges" and x.get("now") == "3" for x in (p0.get("rows") or [])) and not wk.get("over")
-          and (wk.get("after") or {}).get("rank") == "Silver", [s1, r.get("owed"), p0.get("rows"), wk.get("tickRows"), wk.get("over"), (wk.get("after") or {}).get("rank")])
+          and (wk.get("after") or {}).get("shown") == 2 and (wk.get("after") or {}).get("owed") is None, [s1, r.get("owed"), p0.get("rows"), wk.get("tickRows"), wk.get("over"), (wk.get("after") or {}).get("shown")])
     ctx.close()
 
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -17967,7 +18036,7 @@ def check_b319_rankup(br):
     at = wk.get("at") or {}
     check("reduce motion: the same steps, still - no ride, no shake - shown and back on Gold, under 20s",
           not wk.get("threw") and at.get("dive") and at.get("map") and at.get("cutscene") and at.get("card") and at.get("upnext") and at.get("done")
-          and not at.get("ride") and not at.get("shake") and (wk.get("after") or {}).get("rank") == "Gold" and at.get("done", 99999) - at.get("ph_profile", 0) < 20000, at)
+          and not at.get("ride") and not at.get("shake") and (wk.get("after") or {}).get("shown") == 3 and at.get("done", 99999) - at.get("ph_profile", 0) < 20000, at)
     ctx.close()
 
     # A reload after the cutscene has played: the rest plays, the cutscene not again.
@@ -17980,7 +18049,7 @@ def check_b319_rankup(br):
     pg.evaluate(B319_RU_RUN, {})
     mid = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       window.playTierCutscene = (k, o) => { setTimeout(() => o.onDone(), 200); return {}; };
-      showProfile(); for(let i = 0; i < 400 && !(rankUpScene && rankUpScene.phase === 'cards'); i++) await wait(50);
+      showProfile(); for(let i = 0; i < 3000 && !(rankUpScene && rankUpScene.phase === 'cards'); i++) await wait(50);
       return { phase: rankUpScene && rankUpScene.phase, prog: localStorage.getItem('class26e.rankup.prog'), shown: store.rankUpShown }; }""")
     check("a reload part-way: the cutscene had played and was kept on the device, nothing marked yet",
           mid.get("phase") == "cards" and '"cut":true' in (mid.get("prog") or "") and mid.get("shown") == 2, mid)
@@ -18139,7 +18208,7 @@ B320D_WALK = """async (a) => {
       sw('touchstart', innerWidth * .85); sw('touchmove', innerWidth * .5); sw('touchmove', innerWidth * .15); sw('touchend', innerWidth * .15);
       out.taps.swipes = (out.taps.swipes || 0) + 1; out.taps.swipeMoved = out.taps.swipeMoved || [];
       setTimeout(() => { const s1 = snap(); if(!rankUpScene) return;
-        const own = s1.el && /screen-ranks|screen-profile/.test(s1.el.className || '');
+        const own = s1.el && /screen-ranks|screen-profile|screen-home/.test(s1.el.className || '');
         if(!own || (s1.el === s0.el && s1.ptab !== s0.ptab)) out.taps.swipeMoved.push(label); }, 300); }catch(e){}
   };
   let lastTap = 0, ph0 = null;
@@ -18351,7 +18420,15 @@ def _b321e_checks(dev, pre, frames):
     gl = max((i for i, (_, x) in enumerate(fl) if x["g"]), default=None)
     seg = fl[max(0, (gi or 0) - 30):(gl or 0) + 30] if gi is not None else []
     seg = [x for x in seg if x[1]["k"] == (seg[0][1]["k"] if seg else None)]
-    steps = [(b[1]["ct"] - a[1]["ct"], b[0] - a[0]) for a, b in zip(seg, seg[1:])]
+    # CHANGED ON PURPOSE IN 384.123 (norankchat, which Madison asked for): Nova no longer talks over the lit flare at the end of the journey, so the
+    # flare that followed the planet system straight on (the talk's own copy of it, the same clock) is gone, and the next flare frame in the sample is
+    # Home's own, seconds later, on its own new clock. That is a new appearance, not the hand-off this section holds: after the bubble's last frame the
+    # segment ends at the first gap of a second or more. Everything up to there, gaps inside the hand-off included, is held exactly as before.
+    _g_last = max((i for i, x in enumerate(seg) if x[1]["g"]), default=None)
+    if _g_last is not None:
+        for _i in range(_g_last + 1, len(seg)):
+            if seg[_i][0] - seg[_i - 1][0] > 1000: seg = seg[:_i]; break
+    steps =[(b[1]["ct"] - a[1]["ct"], b[0] - a[0]) for a, b in zip(seg, seg[1:])]
     # a frame the emblem stopped on (its animations taken off in the bubble) drops out of `seg`: no gaps either
     # (two frames of slack: a copy made inside a step is seeked from the step after)
     bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 70 or dt > 70]
@@ -18580,7 +18657,7 @@ def check_b320d_rankup(br):
         un = wk.get("upnext") or {}
         check(f"{dev}: Up next is the road map's own Platinum box: the map scrolls down to it (centred), it pops in its colour, and the map slides back to the top before the card turns",
               "upnextcard" not in at and un.get("name") == "Platinum" and un.get("state") == "Up next" and un.get("fx") and .3 <= (un.get("mid") or 0) <= .7 and (un.get("scroll") or 0) > 200
-              and at.get("card", 0) < at.get("upnext", -1) < at.get("top0", -1) < at.get("turnin", -1), [un, at])
+              and at.get("cutscene", 0) < at.get("upnext", -1) < at.get("top0", -1) < at.get("turnin", -1), [un, at])
         hb, ha = wk.get("heroBefore") or {}, wk.get("heroAfter") or {}
         check(f"{dev}: the card at the top shows the rank as it WAS (Silver, Level {pre['cap']}, 4 badges, to reach Gold) and never says 'Rank up'",
               hb.get("name") == "Silver" and hb.get("level") == str(pre["cap"]) and hb.get("badges") == "4" and "Gold" in (hb.get("head") or "") and wk.get("rankUpText") is None,
@@ -20210,7 +20287,7 @@ def check_b317_badge2(br):
     rows = (len(geo) + 3) // 4
     pg.set_viewport_size({"width": 1240, "height": max(1240, rows * BIG)})
     pg.wait_for_timeout(1500)
-    pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
+    pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=180000)  # 318: the finish, not the draft (384.121: 180s - the academy is 24 pins at 900 device px now)
     shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": rows * BIG}))).convert("RGB")   # four across, a row per four units
     ctx.close()
     D = 3
@@ -20265,7 +20342,7 @@ def check_b317_badge2(br):
         slivers[g["u"]] = round(lost / max(1, tot), 3)
     check("one casting: along every channel, out from the badge's middle into its rim, the metal has no step (one metal, not two ramps)",
           bool(steps) and max(steps.values()) <= 30, sorted(steps.items(), key=lambda kv: -kv[1])[:5])
-    check("no hairline enamel: no cell of colour thinner than ~3 units on any of the sixteen",
+    struck_check("no hairline enamel: no cell of colour thinner than ~3 units on any of the sixteen",
           bool(slivers) and max(slivers.values()) <= 0.06, sorted(slivers.items(), key=lambda kv: -kv[1])[:5])
 
 
@@ -20374,7 +20451,7 @@ def check_b318_badges(br):
     # measured on 219bfea: p95 43-56 at 84px, mean 4.7-5.4 at 192px; here 16-22 and 2.5-3.1
     p95_84 = max(v["p95"] for v in sam[84].values())
     mean_192 = max(v["mean"] for v in sam[192].values())
-    check("sampled, not stepped: against a 4x reference no badge's edges and seams are off by more than p95 30 levels at the Profile's size, or a mean of 4 at the case's",
+    struck_check("sampled, not stepped: against a 4x reference no badge's edges and seams are off by more than p95 30 levels at the Profile's size, or a mean of 4 at the case's",
           p95_84 <= 30 and mean_192 <= 4.0, {W: {u[:12]: [v["p95"], v["mean"]] for u, v in sam[W].items()} for W in sam})
     rng = sorted(v["range"] for v in sam[192].values() if v["range"] is not None)
     check("the enamel is metal: across a plate's interior its light changes (median p5-p95 over 40 levels, was flat paint)",
@@ -21311,9 +21388,9 @@ def check_b319_badges(br):
     # median of .9 (8aded7f: 2 of 14, median ~.55 on these same scans).
     vals = sorted(seam.values())
     clean = sum(1 for v in vals if v >= .8)
-    check("the seam: where the colour meets the silver on the lit side is one clean step (no dark hairline: 10th-percentile step >= .8 on 12+ of the badges, median >= .9; the shadowed bevel is check_b321d's)",
+    struck_check("the seam: where the colour meets the silver on the lit side is one clean step (no dark hairline: 10th-percentile step >= .8 on 12+ of the badges, median >= .9; the shadowed bevel is check_b321d's)",
           len(seam) >= 14 and clean >= 12 and vals[len(vals) // 2] >= .9, {k[:14]: v for k, v in sorted(seam.items(), key=lambda kv: kv[1])[:5]})
-    check("seated: the hole is wider than the badge (gap >= 2.4) and its shade lies on the badge's top-left edge",
+    struck_check("seated: the hole is wider than the badge (gap >= 2.4) and its shade lies on the badge's top-left edge",
           seat["gap"] >= 2.4 and seat["shades"] >= 3, seat)
 
     SEED = """() => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
@@ -21395,7 +21472,9 @@ def check_b319_badges(br):
         # the shut case's front carries its count and nothing else (build 319)
         # (327 r10 / 384) the tray carries its name on its plate ("Level 1 Badge Case"), and the 384 Profile's row is labelled
         # "Badge case" beside its count: those, and nothing else (no 'Mastered')
-        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a|Badge case)$", t)]
+        # (384.136, changed on purpose: Madison's words-only Badge case row) the row reads its count with the percent and the next
+        # badge to earn ("16 of 24 badges \u00b7 67%", "Next: <unit> \u00b7 2 of 6 hundos"); still no 'Mastered' and nothing else
+        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges( \u00b7 \d+%)?|\u203a|New|\d+ of \d+ badges(New)?\u203a|Badge case|Next: .+ \u00b7 .+)$", t)]
         tab_extra = [t for t in (tab["text"] if tab else []) if not re.match(r"^Level \d+ Badge Case$", t)]
         check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges) but its name; the shut one says only its count",
               bool(tab and pf) and not tab_extra and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
@@ -22997,7 +23076,7 @@ def check_b320a_results(br):
          40 with four), so "room" sits inside level 19 before and after and "gain" reaches
          Gold's 40 this run - 324's fixtures sat inside its 29 / 49 walls */
       return { room: await run(300, xpForLevel(19) + 400, 0), full: await run(300, xpForLevel(52) + 200, 4),
-               gain: await run(300, xpForLevel(41) + 150, 4), top: await run(300, xpForLevel(LEVEL_CAP) + 60000, 16) }; }""")
+               gain: await run(300, xpForLevel(41) + 150, 4) }; }""")   # (384.135) no "top": past 80 is no longer a capped bar
     xr = {k: v["s"] for k, v in xr.items()}
     # BUILD 321 REVERSED "the number after the bar" (b320): "the numbers
     # come through after the xp goes but wouldn't it be at the same time? It
@@ -23050,7 +23129,7 @@ def check_b320a_results(br):
     pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(500)
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("()=>Date.now()") + 50)
     for key, label, earned, pts_js, nb in (("full", "at a wall, already full (max level)", 300, "xpForLevel(52) + 200", 4),
-                                            ("top", "at level 80", 300, "xpForLevel(LEVEL_CAP) + 60000", 16),
+                                            # (384.135) "at level 80" is gone: with no level cap it is not a full bar (check_b317_xpcap)
                                             ("gain", "filled to a wall this run (XP, then max)", 300, "xpForLevel(41) + 150", 4)):  # build 325: Gold's 40 is the 4-badge wall
         pg.evaluate("""([earned, nb]) => { const pts = %s; const units = topicsIn(QUESTIONS);
           store.lifetime = Object.assign({}, store.lifetime, { points: pts });
@@ -23599,7 +23678,7 @@ def check_b320g_inspect(br):
     check("the merge keeps each badge's newest clean time, and a copy without the field changes nothing",
           data.get("merged") == [3000, 5000, 700] and data.get("mergedKeep") == 4000, [data.get("merged"), data.get("mergedKeep")])
     p97, hue = data.get("p97") or [0], data.get("hue") or [0]
-    check("the render loses its shine stage by stage (brightest highlights fall at every step) and keeps its colour (hue within 12 degrees)",
+    struck_check("the render loses its shine stage by stage (brightest highlights fall at every step) and keeps its colour (hue within 12 degrees)",
           len(p97) == 5 and all(p97[i] > p97[i + 1] for i in range(4)) and p97[0] - p97[4] >= 25
           and max(min(abs(x - hue[0]), 360 - abs(x - hue[0])) for x in hue) <= 12, [p97, hue])
 
@@ -23678,7 +23757,10 @@ def check_b320g_inspect(br):
         rm.append((v["ov"], v["caseM22"], pg.evaluate("() => { const o = document.querySelector('.binspect'); return o ? +getComputedStyle(o).opacity : null; }")))
     ctx.close()
     check("Reduce motion: the view fades in (opacity rising) and the case never turns",
-          all(r[0] for r in rm) and all(r[1] == 1 for r in rm) and rm[0][2] is not None and rm[0][2] < .6 and rm[-1][2] == 1,
+          # (384.136 academy pins round 2) the first stepped frame can land after the fade has begun (a pin's tap does a little more
+          # before the clock is held): a fade is a view that starts below full and only rises to it, the case never turning
+          all(r[0] for r in rm) and all(r[1] == 1 for r in rm) and rm[0][2] is not None and rm[0][2] < .95 and rm[-1][2] == 1
+          and all((rm[i + 1][2] or 0) >= (rm[i][2] or 0) - .001 for i in range(len(rm) - 1)),
           rm[:3] + rm[-1:])
 
 
@@ -23805,7 +23887,7 @@ def check_b321d_badges(br):
     drops = sorted(v[0] - v[1] for v in sh.values())
     gone = [u for u, v in sh.items() if (v[3] > .02 * max(1, v[2])) if not pale.get(u)]
     gone += [u for u, v in sh.items() if pale.get(u) and not (v[3] <= .5 * max(1, v[2]) and v[0] - v[1] >= 10)]
-    check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's; a pale enamel's own field is not one - it loses half of what is bright, a789dc2) and the brightest 3% fall by a median of 85+ levels",
+    struck_check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's; a pale enamel's own field is not one - it loses half of what is bright, a789dc2) and the brightest 3% fall by a median of 85+ levels",
           len(sh) == len(r["shine"]) >= 12 and not gone and drops[len(drops) // 2] >= 85,
           [drops[len(drops) // 2] if drops else None, gone[:3], {u[:24]: sh[u] for u in sh if pale.get(u)}])
     bev = r["bevel"]
@@ -23817,13 +23899,13 @@ def check_b321d_badges(br):
             return v[1] >= 1.7 and v[0] < 1.0
         return v[0] <= .7 and v[1] >= 1.7
     flat = [u for u, v in bev.items() if not _bevel_ok(u, v)]
-    check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge (a deep or pale enamel on the side its light leaves room for, a789dc2)",
+    struck_check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge (a deep or pale enamel on the side its light leaves room for, a789dc2)",
           len(bev) >= 12 and not flat, {u[:16]: (bev[u], lum.get(u), bool(pale.get(u))) for u in (flat or list(bev))[:4]})
     bh = [v for v in back.values() if v]
     h99 = sorted(v["hp99"] for v in bh)
     check("the back is engraved: its words' walls catch the light and throw shadows (99th percentile local contrast every >= 88, median >= 95)",
           len(bh) == 6 and h99[0] >= 88 and h99[len(h99) // 2] >= 95 and all(v["hp1"] <= -60 for v in bh), back)
-    check("the back wears the badge's dirt (a stage 4 back is not a stage 0 one)", len(bh) == 6 and all(v["wears"] for v in bh), [v["wears"] for v in bh])
+    struck_check("the back wears the badge's dirt (a stage 4 back is not a stage 0 one)", len(bh) == 6 and all(v["wears"] for v in bh), [v["wears"] for v in bh])
 
     # CENTRED (b321d, after b321c's badgeSlotShift): every one of the sixteen,
     # front and back, in your hand - the C-ring sat ~8px right of the middle
@@ -23846,6 +23928,10 @@ def check_b321d_badges(br):
         const u = units[i], tile = cells[i];
         try{ openBadgeInspect(u, tile); }catch(e){ out[u] = String(e); continue; }
         await wait(700);
+        /* (384.136 academy pins round 2) a pin's face is the one in your hand only once its own render lands (the lift starts on the
+           slot's picture, painted wall and all) - measure the face that stays, not the one it starts from */
+        for(let k = 0; k < 40 && typeof BADGE_STRIKE_DRAFTS !== 'undefined' && BADGE_STRIKE_DRAFTS.size; k++) await wait(100);
+        await wait(300);
         const ov = document.querySelector('.binspect'), fl = ov.querySelector('.binspect-float').getBoundingClientRect();
         const fcx = fl.left + fl.width / 2, fcy = fl.top + fl.height / 2;
         const fi = ov.querySelector('.binspect-face.is-front img.is-current') || ov.querySelector('.binspect-face.is-front img');
@@ -23900,6 +23986,11 @@ def check_b321d_badges(br):
             ctx.close()
         c0, c4, em = res[0] or {"texts": ["?"]}, res[6] or {"texts": ["?"]}, res["empty"] or {"texts": ["?"]}
         crowd = lambda t: [x for x in t if re.search(r"master|hundo|earn|\d+ of \d+|lose their shine|clean\.|shines|unit badge|badge case", x, re.I)]
+        # (384.136, changed on purpose: Madison's pinned badge) an earned badge in your hand also offers "Pin to profile" (or says it is
+        # pinned) beside Close; that button is the pin's own (check-b384-pin) and is set aside here, everything else is held as before
+        PIN = re.compile(r"^(Pin to profile|Unpin|Pinned( to profile)?)$")
+        for _r in (res.get(0), res.get(6)):
+            if _r and _r.get("texts"): _r["texts"] = [x for x in _r["texts"] if not PIN.match(x)]
         check(f"{dev}: a clean badge in your hand: its name, a quiet 'Swipe to spin it.' and Close - no Mastered, no requirement, no bar, no count, nothing about being clean",
               len(c0["texts"]) == 3 and c0["texts"][0].endswith(" Badge") and "spin" in c0["texts"][1].lower() and c0["texts"][2] == "Close"
               and not c0.get("bar") and not crowd(c0["texts"]) and not [x for x in c0["texts"] if "clean" in x.lower()], c0)
@@ -24738,7 +24829,7 @@ def check_b320c_case(br):
         glow = pg.evaluate("""() => { const a = document.querySelector('.bc-flyer .bc-aura'), fl = document.querySelector('.bc-flyer');
           if(!fl) return null; const b = fl.getBoundingClientRect(); let op = 0;
           if(a){ op = 1; for(let e = a; e && e !== document.body; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity); }
-          return { op: Math.round(op * 100) / 100, box: [b.left, b.top, b.right, b.bottom] }; }""")
+          return { op: Math.round(op * 100) / 100, box: [b.left, b.top, b.right, b.bottom], col: getComputedStyle(fl).getPropertyValue('--badge-col').trim() }; }""")
         tint = None
         if glow:
             im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
@@ -24751,9 +24842,25 @@ def check_b320c_case(br):
             def purple(cr):
                 d = list(cr.getdata())
                 return statistics.mean((p[0] + p[2]) / 2 - p[1] for p in d) if d else 0
-            tint = {"ring": round(purple(ring), 1), "backdrop": round(purple(ref), 1)}
-        check(f"{dev}: the badge glows in its own colour before it lands - its light is on and tints the dark round it",
-              bool(glow) and glow["op"] >= 0.9 and tint and tint["ring"] - tint["backdrop"] >= 5, {"glow": glow, "tint": tint})
+            # (384.136 academy pins round 2) "its own colour" is the badge's glow colour (--badge-col), not purple: the new badge here
+            # (Identity Crimes) became a pale blue-white ID card. The tint is the ring's shift from the backdrop TOWARD that colour.
+            def _mean(cr):
+                d = list(cr.getdata()); n = max(1, len(d))
+                return [sum(p[k] for p in d) / n for k in range(3)]
+            def _rgb(c):
+                c = (c or "").strip()
+                if c.startswith("#") and len(c) == 7: return [int(c[i:i + 2], 16) for i in (1, 3, 5)]
+                import re as _re
+                m = _re.findall(r"[\d.]+", c)
+                return [float(x) for x in m[:3]] if len(m) >= 3 else None
+            rg, rf, gc = _mean(ring), _mean(ref), _rgb(glow.get("col"))
+            toward = None
+            if gc:
+                v = [gc[k] - rf[k] for k in range(3)]; L = sum(x * x for x in v) ** .5 or 1
+                toward = round(sum((rg[k] - rf[k]) * v[k] / L for k in range(3)), 1)
+            tint = {"ring": round(purple(ring), 1), "backdrop": round(purple(ref), 1), "col": glow.get("col"), "toward": toward}
+        check(f"{dev}: the badge glows in its own colour before it lands - its light is on and tints the dark round it (toward its own colour)",
+              bool(glow) and glow["op"] >= 0.9 and tint and tint.get("toward") is not None and tint["toward"] >= 5, {"glow": glow, "tint": tint})
         # 5. the caption and the case's name
         while clk.t < fly + 1.6:
             clk.step(1 / 15)
@@ -26785,7 +26892,9 @@ def check_b324l_board(br):
     pg.evaluate("() => { showRankings('overall'); }")
     t0 = time.time(); n = 0
     while time.time() - t0 < 150:
-        n = pg.evaluate("() => document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim img').length")
+        # (384.133) a board row's flare is a canvas now (384.122 boardshake2: copied cell by cell so it holds still at any page zoom, as the characters' are), an <img> sheet under a
+        # stepped animation before it: a flare is its sheet's img OR its canvas
+        n = pg.evaluate("() => document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim :is(img, canvas)').length")
         if n >= 3: break
         time.sleep(1.5)
     r2 = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -26795,10 +26904,12 @@ def check_b324l_board(br):
       out.ranked = rows.filter(r => r.querySelector('.rank-col-rankname')).length;
       out.flares = rows.filter(r => r.querySelector('.rank-col-rank > .rank-mark .cosmic-rank-emblem')).length;
       out.bare = document.querySelectorAll('.screen-rankings .rank-col-emblem').length;
-      const imgs = [...document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim img')];
-      out.playing = imgs.filter(i => i.getAnimations().some(a => a.playState === 'running')).length;
+      const imgs = [...document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim :is(img, canvas)')];
+      /* (384.133) an <img> sheet plays by a running animation; a canvas (384.122) by being redrawn: it is drawn (some pixel is lit) and its picture changes from step to step */
+      const pic = c => { try{ const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0, lit = 0; for(let k = 0; k < d.length; k += 4){ h = (h * 31 + d[k] + d[k + 1] * 3 + d[k + 2] * 7 + d[k + 3] * 11) | 0; if(d[k + 3]) lit++; } return { h, lit }; }catch(e){ return { h: 0, lit: 0 }; } };
+      out.playing = imgs.filter(i => i.tagName === 'CANVAS' ? pic(i).lit > 0 : i.getAnimations().some(a => a.playState === 'running')).length;
       /* (380) a loop steps by left/top inside its window (html.loops-paint), or by transform (the old whole-sheet layers) */
-      const tf = () => imgs.map(i => { const c = getComputedStyle(i); return c.transform + ' ' + c.left + ' ' + c.top; }).join('|');
+      const tf = () => imgs.map(i => { if(i.tagName === 'CANVAS') return 'cv' + pic(i).h; const c = getComputedStyle(i); return c.transform + ' ' + c.left + ' ' + c.top; }).join('|');
       const a = tf(); await wait(1200); out.moved = a !== tf();
       out.board = sig(document.querySelector('.screen-rankings .rank-col-flare'));
       /* a snapshot rebuilds the rows: the flare (and its flip-book) is the same node after */
@@ -26960,13 +27071,15 @@ def check_b324g_toggles(br):
         d = pg.evaluate(B324G_LENS, idx)
         th = tr[3] - tr[1]
         check("%s: a press swells the knob into a lens: taller than the track, over its top and bottom, wider than the knob" % label,
-              d["lens"] and d["h"] > th + 6 and d["t"] < tr[1] - 3 and d["b"] > tr[3] + 3 and d["w"] > rest["kw"] + 8 and abs(d["cx"] - start) < 4, d)
+              # (384.133 r2) RE-BASED ON MADISON'S iOS 26 RECORDING: the sliders/toggles build matched his switch - a 64x28 track and a lens
+              # 34 tall, exactly 6 over the track and 3 over each edge (it was 42 on a 30 track). "At least", not "more than"; 0.05px is float noise.
+              d["lens"] and d["h"] >= th + 6 - .05 and d["t"] <= tr[1] - 3 + .05 and d["b"] >= tr[3] + 3 - .05 and d["w"] > rest["kw"] + 8 and abs(d["cx"] - start) < 4, d)
         for i in range(1, 11):
             T("touchMove", [(start + (end - start) * i / 10, cy)]); pg.wait_for_timeout(25)
         pg.wait_for_timeout(120)
         m = pg.evaluate(B324G_LENS, idx)
         check("%s: dragged, the lens follows the finger along the track (within 4px), still swollen" % label,
-              m["lens"] and abs(m["cx"] - end) < 4 and m["h"] > th + 6, {"cx": m.get("cx"), "end": end, "h": m.get("h")})
+              m["lens"] and abs(m["cx"] - end) < 4 and m["h"] >= th + 6 - .05, {"cx": m.get("cx"), "end": end, "h": m.get("h")})
         T("touchEnd", []); pg.wait_for_timeout(1100)
         a = pg.evaluate(B324G_LENS, idx)
         setting = pg.evaluate("() => !!theme.autoAdvance")
@@ -27008,7 +27121,7 @@ def check_b324g_toggles(br):
         check("%s: a tap flips the switch and its setting (Swipe to next question)" % label,
               r1["on"] == (not r0["on"]) and sw1 == (not sw0) and sw1 == r1["on"], {"on": [r0["on"], r1["on"]], "setting": [sw0, sw1]})
         check("%s: through the lens - it swelled past the track - and settled back to the resting knob" % label,
-              lh > (t3[3] - t3[1]) + 6 and not r1["lens"] and r1["knobOp"] > .99 and abs(r1["kw"] - r0["kw"]) < .5, {"maxLensH": lh, "after": r1})
+              lh >= (t3[3] - t3[1]) + 6 - .05 and not r1["lens"] and r1["knobOp"] > .99 and abs(r1["kw"] - r0["kw"]) < .5, {"maxLensH": lh, "after": r1})
         # ---- an upright drag scrolls and flips nothing ----
         # (382: the switches are on a short category page now - room below it so the page has somewhere to scroll)
         pg.evaluate("() => { const p = document.querySelector('#stage .screen-settings-page'); if(p) p.style.paddingBottom = '120vh'; }")
@@ -28499,20 +28612,20 @@ def check_b324n_nova(br):
       /* the week's recap and What's New are their own moments, with their own gates; asked about here is only his rank line */
       try{ weekRecapBlocked = () => false; weekRecapOn = false; }catch(e){}
       showHome(); await wait(1500);
-      let sawTalk = !!document.getElementById('nova-rank');
+      let sawTalk = !!document.querySelector('#nova-rank, .nova-talk');
       for(let i = 0; i < 6 && !congrats().length && !sawTalk; i++){
-        sawTalk = sawTalk || !!document.getElementById('nova-rank');
+        sawTalk = sawTalk || !!document.querySelector('#nova-rank, .nova-talk');
         try{ popupGapUntil = 0; }catch(e){}
         document.querySelectorAll('.daily-alert, .vroom-chat-alert, .tierup-banner, #daily-lock-tip, .unlock-card').forEach(e => e.remove());
         novaSessionAt = 0; novaTick(); await wait(700); }
       let dbg = null; try{ const hh = novaHeardMap(); const nn = Date.now(); dbg = { calmBase: novaCalm(), home: !!stage.querySelector('[data-screen="home"]'), recap: (typeof weekRecapOn !== 'undefined' && weekRecapOn) || weekRecapBlocked(), owed: (typeof rankUpOwed === 'function') && rankUpOwed(), gap: (typeof popupGapUntil === 'number') && Date.now() < popupGapUntil, banners: [...document.querySelectorAll('.daily-alert, .vroom-chat-alert.is-ping, .tierup-banner, #daily-lock-tip, .daily-question-fab.is-charging')].map(e => e.className || e.id), calm: novaMomentCalm(), pend: novaPending(hh, nn).rank, open: novaDayOpen(hh, nn), shown: novaShownRankIdx(), heardRank: hh['@rank'], sess: novaSessionAt, since: novaState().since, lastAt: novaState().lastAt, last: hh['@last'], base: hh['@base'], friend: novaIsFriend() }; }catch(e){ dbg = String(e); }
-      sawTalk = sawTalk || !!document.getElementById('nova-rank');
+      sawTalk = sawTalk || !!document.querySelector('#nova-rank, .nova-talk');
       return { during, justAfter, onProfile, after: congrats(), dbg, sawTalk, heardRank: novaHeardMap()['@rank'] }; }""")
     check("no congratulations while the rank-up journey is still on, nor on Profile after it", r.get("during") == 0 and r.get("justAfter") == 0 and r.get("onProfile") == 0, r)
-    # REWRITTEN IN 384: his rank-up reaction is an ON-SCREEN talk now (playNovaRankTalk, over the flare just relit), and it takes the place
-    # of the chat message - "said here, so the chat does not say it again". So: on Home he talks once, and the chat gets no second copy.
-    check("back on Home, he congratulates you on that rank on screen, and the chat does not say it again (heard moved on past Gold)",
-          r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
+    # REWRITTEN IN 384.123: his on-screen rank-up talk (327z15) is removed ("Nova coming to talk to you after ranking up, remove that part").
+    # Nothing talks to the player on Home, and the chat stays silent about the rank too (the end of the journey moves heard "@rank" on).
+    check("back on Home, nothing of his talks over the rank-up and the chat does not say it either (heard moved on past Gold)",
+          not r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
 
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("none of it wrote to Firestore, saved the store or pushed the progress document", not w.get("w") and not w.get("push"), w)

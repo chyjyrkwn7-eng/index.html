@@ -18,7 +18,7 @@ Everything is read off the page, in Fire Code, for the app and bank on origin/ma
     IFC_SRC_GAPS each old position;
 (3) ORDER: the 70 are at the END of Chapter 1 in the table's order (89-158), Chapter 1's own 88 keep their positions, each old chapter keeps
     every other question's position (the moved/removed one's number stays taken), every other question has main's chapter and position;
-(4) THE COUNTS: every unit's size is what the table says (main's size, less what left it, plus what came in); Chapter 1 158, the bank 1,795 (1,792 with the three 384.73 took out; LATER) -
+(4) THE COUNTS: every unit's size is what the table says (main's size, less what left it, plus what came in); Chapter 1 158, the bank 1,795 (1,792 with the three 384.73 took out; LATER; 1,818 with the 26 384.104 added to Chapter 10, 1,824 with 384.130's six in Chapter 6; ADDED) -
     the bank's own unit sizes, unitQuestionCount (what a full-chapter run must cover, isFullUnitRun), a full-chapter question count and the "N
     questions" on the chapter cards all agree; a run of Chapter 1's old 88 is no longer the chapter;
 (5) STARS: a star on a moved question goes with it (new key, same stamp, the old key gets the tombstone), a star on a removed question comes off
@@ -46,6 +46,9 @@ _ALL_REMOVED = list(_gen("UNIT_REMOVALS"))
 REMOVED = _ALL_REMOVED[:17]                                                         # the 17 of 384.47
 LATER = _ALL_REMOVED[17:]                                                           # (384.73) ch12-012, ch55-702, ch2-047
 EDIT73 = set(_gen("QUESTION_EDITS"))                                                # (384.73) the eight questions whose wording changed
+# (384.104) the 26 occupant load questions added to Chapter 10 (QUESTION_ADDS, built with helpers, so read by their ids): counted as what they are -
+# new questions after Chapter 10's last, nothing of 384.47's moves - check-b384-occload holds them
+ADDED = re.findall(r'_(?:row|sec|cook)\("(ch\d+-\d+)"', open(os.path.join(HERE, "gen-ifc-bank.py"), encoding="utf-8").read())
 assert len(MOVES) == 70 and len(REMOVED) == 17 and len(LATER) == 3 and not (set(LATER) & set(MOVES)) and {"ch20-508", "ch30-505"} <= set(REMOVED) and not ({"ch20-508", "ch30-505"} & set(MOVES))
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
 G = {"__file__": os.path.join(HERE, "check-b383-ifcsync.py"), "__name__": "b384moveperm"}
@@ -106,6 +109,7 @@ with sync_playwright() as pw:
     ctx, pg, errs = open_class(br, G["g"]["patched"], NEW_BANK, seed)
     new = pg.evaluate(READ)
     cards = pg.evaluate(CARDS)
+    PATCH = pg.evaluate("()=>JSON.parse(JSON.stringify(typeof IFC_POINTER_PATCH === 'undefined' ? {} : IFC_POINTER_PATCH))")   # the app's own pointer patches (384 cropfix, later builds)
     flags = pg.evaluate("()=>({ flagged: JSON.parse(JSON.stringify(store.flagged||{})), unflagged: JSON.parse(JSON.stringify(store.unflagged||{})) })")
     ch1_topic = next(s["topic"] for s in new["sizes"] if s["id"] == "1")
     oldrun = pg.evaluate(OLDRUN, {"t": ch1_topic, "n": len(oq) and sum(1 for q in ob["questions"] if q["unit"] == "1")})
@@ -116,11 +120,18 @@ topic_of_unit = {s["id"]: s["topic"] for s in new["sizes"]}
 bad1 = []
 for i in MOVES:
     same_fields = i in nq and set(oq[i]) == set(nq[i]) and all(oq[i][k] == nq[i][k] for k in oq[i] if k != "unit")
-    shown_same = i in N and all(O[i][k] == N[i][k] for k in ("q", "ch", "ans", "expl")) and json.loads(N[i]["ifc"]) == dict(json.loads(O[i]["ifc"]), unit="1")
+    # the citation as shown is the bank's with the unit moved AND, since 384 cropfix, the app's own pointer patch for the id (ch60-511/514/701/702
+    # got a `highlight` row there): a stale expectation, not a moved question - the patch is read off the page and applied the way ifcWithPatch does
+    exp = dict(json.loads(O[i]["ifc"]), unit="1")
+    if PATCH.get(i):   # ifcWithPatch: the question's citation gets the patch's keys; `head` is printed before the excerpt and is not kept
+        cit = dict(exp.get("citation") or {}); cit.update({k: v for k, v in PATCH[i].items() if k != "head"})
+        if PATCH[i].get("head"): cit["excerpt"] = PATCH[i]["head"] + "\n" + (exp.get("citation") or {}).get("excerpt", "")
+        exp["citation"] = cit
+    shown_same = i in N and all(O[i][k] == N[i][k] for k in ("q", "ch", "ans", "expl")) and json.loads(N[i]["ifc"]) == exp
     if not (i in N and N[i]["topic"] == topic_of_unit["1"] and O[i]["topic"] != N[i]["topic"] and nq[i]["unit"] == "1" and oq[i]["unit"] != "1" and same_fields and shown_same):
         bad1.append((i, N.get(i, {}).get("topic"), same_fields, shown_same))
 gone_bad = [i for i in REMOVED if i in nq or i in N]
-others_same = all(oq[i] == nq[i] for i in oq if i not in MOVES and i not in REMOVED and i in nq and i not in EDIT73) and set(nq) == set(oq) - set(REMOVED) - set(LATER)
+others_same = all(oq[i] == nq[i] for i in oq if i not in MOVES and i not in REMOVED and i in nq and i not in EDIT73) and set(nq) == (set(oq) - set(REMOVED) - set(LATER)) | set(ADDED)
 chk("(1) %d questions each in Chapter 1 and not their old chapter; bank file: every field but `unit` identical; as shown: wording, options, answer, explanation, citation identical; %d removed ones gone from bank and app; every other question is main's word for word" % (len(MOVES), len(REMOVED)),
     not bad1 and not gone_bad and others_same, {"bad1": bad1[:4], "gone": gone_bad[:4], "others_same": others_same})
 # (2) the identity guarantee
@@ -147,7 +158,9 @@ GONE = set(MOVES) | set(REMOVED)
 bad3 = []
 for fr in sorted({O[i]["topic"] for i in GONE}):
     was = rows(old["rows"], fr); now = rows(new["rows"], fr)
-    if not ([r["id"] for r in now] == [r["id"] for r in was if r["id"] not in GONE] and all(N[r["id"]]["src"] == r["src"] for r in now)): bad3.append(fr)
+    # the questions later builds ADDED to a chapter (ADDED: 384.104's occupant loads in Chapter 10, 384.130's cooking questions in Chapter 6) are not
+    # this table's: the chapter's own questions keep their order and positions, and nothing is lost or reordered among them (an addition only joins)
+    if not ([r["id"] for r in now if r["id"] not in ADDED] == [r["id"] for r in was if r["id"] not in GONE] and all(N[r["id"]]["src"] == r["src"] for r in now)): bad3.append(fr)
 pos_same = all(O[i]["src"] == N[i]["src"] and O[i]["topic"] == N[i]["topic"] for i in O if i not in GONE and i not in LATER)
 chk("(3) the %d are last in Chapter 1 in the table's order (%d..%d), Chapter 1's own %d keep their positions; the %d chapters they left keep every other question's position (%s); every other question has main's chapter and position (%s)" % (
     len(MOVES), len(was1) + 1, len(was1) + len(MOVES), len(was1), len({O[i]['topic'] for i in GONE}) , bad3 or "yes", pos_same), ok3a and not bad3 and pos_same, {"ok3a": ok3a, "bad3": bad3})
@@ -159,13 +172,14 @@ EXPECT = {}
 for u in ob["units"]:
     EXPECT[u["id"]] = sum(1 for q in ob["questions"] if q["unit"] == u["id"] and q["id"] not in GONE and q["id"] not in LATER)
 EXPECT["1"] += len(MOVES)
+for _i in ADDED: EXPECT[re.match(r"ch(\w+?)-", _i).group(1)] += 1                  # (384.104: 26 in Chapter 10; 384.130: 6 in Chapter 6) an added id is ch<its unit>-
 bad4 = {u: (S[u]["n"], S[u]["cache"], S[u]["run"], len(rows(new["rows"], S[u]["topic"])), card_for(S[u]["topic"])) for u, n in EXPECT.items()
         if not (S[u]["n"] == S[u]["cache"] == S[u]["run"] == len(rows(new["rows"], S[u]["topic"])) == n and (card_for(S[u]["topic"]) in (None, "%d questions" % n)))}
 bank_same = {k: v for k, v in ob["meta"].items() if k != "questionCount"} == {k: v for k, v in nb["meta"].items() if k != "questionCount"} and \
     all({k: v for k, v in a.items() if k != "questionCount"} == {k: v for k, v in b.items() if k != "questionCount"} for a, b in zip(ob["units"], nb["units"])) and \
     all(u["questionCount"] == sum(1 for q in nb["questions"] if q["unit"] == u["id"]) for u in nb["units"])
 chk("(4) Chapter 1 %d (bank, unitQuestionCount, a full run, its card %s); every unit = main's size less what left it plus what came in; %s questions in all (the bank's own count; main %d); a run of Chapter 1's old 88 is no longer the whole chapter (isFullUnitRun on 88 of 158 -> %s)" % (
-    S["1"]["n"], card_for(t1), new["meta"], old["meta"], oldrun), not bad4 and S["1"]["n"] == 158 and new["meta"] == 1795 - len(LATER) and bank_same and oldrun["part"] is False and oldrun["full"] is True,
+    S["1"]["n"], card_for(t1), new["meta"], old["meta"], oldrun), not bad4 and S["1"]["n"] == 158 and new["meta"] == 1795 - len(LATER) + len(ADDED) and bank_same and oldrun["part"] is False and oldrun["full"] is True,
     {"bad": bad4, "bank_same": bank_same, "oldrun": oldrun})
 # (5) the stars
 bad5 = []

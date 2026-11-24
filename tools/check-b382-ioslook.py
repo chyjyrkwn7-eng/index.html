@@ -64,14 +64,14 @@ window.__io = {
     return ['borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius'].map(k => Math.round(__io.px(c[k], w) * 10) / 10); },
   tok: e => { const p = document.createElement('i'); p.style.cssText = 'position:absolute;width:1px;height:1px;background-color:var(--surface-1)'; e.appendChild(p);
     const v = getComputedStyle(p).backgroundColor; p.remove(); return v; },
-  head: e => { const c = getComputedStyle(e); return { fs: parseFloat(c.fontSize), fw: c.fontWeight, col: c.color, tt: c.textTransform, bg: c.backgroundColor, bi: c.backgroundImage, ls: c.letterSpacing }; },
+  head: e => { const c = getComputedStyle(e); return { fs: parseFloat(c.fontSize), fw: c.fontWeight, col: c.color, tt: c.textTransform, bg: c.backgroundColor, bi: c.backgroundImage, ls: c.letterSpacing, lh: c.lineHeight, ff: c.fontFamily, cls: String(e.className) }; },
   panel: () => document.querySelector('#stage > .panel, #stage > section'),
   col: P => { const c = getComputedStyle(P), b = P.getBoundingClientRect(); const l = b.left + parseFloat(c.paddingLeft), r = b.right - parseFloat(c.paddingRight); return { l, r, cx: (l + r) / 2 }; }
 };"""
 
 REF = """()=>{ const P=__io.panel(); const b=P.querySelector('.settings-nav-back'), t=P.querySelector('.settings-nav-title'), c=P.querySelector('.settings-card'),
   h=P.querySelector('.slab.motion-summary, .settings-group-head');
-  return { back: b && Object.assign(__io.r(b), { pt: b.getBoundingClientRect().top + scrollY }), title: t && Object.assign(__io.head(t), __io.r(t)), card: c && Object.assign({ rad: __io.rad(c) }, __io.r(c)), head: h && __io.head(h), col: __io.col(P) }; }"""
+  return { back: b && Object.assign(__io.r(b), { pt: b.getBoundingClientRect().top + scrollY }), title: t && Object.assign(__io.head(t), __io.r(t)), card: c && Object.assign({ rad: __io.rad(c), bg: getComputedStyle(c).backgroundColor }, __io.r(c)), head: h && __io.head(h), col: __io.col(P) }; }"""
 
 NAV = """()=>{ const P=__io.panel(); if(!P) return null;
   const btn=[...P.querySelectorAll('button')].find(__io.shown); if(!btn) return null;
@@ -83,24 +83,25 @@ NAV = """()=>{ const P=__io.panel(); if(!P) return null;
 # per screen: headings, cards, a single group of rows, rows to measure, heading-over-card pairs
 SPEC = {
   # (383) the name row moved to Settings > Account > Name; Customize is the one group of rows
-  "customize": dict(heads=".screen-customize .slab.motion-summary", group=".screen-customize .cz-row",
+  "customize": dict(heads=".screen-customize .slab.motion-summary", group=".screen-customize .cz-row", cards=".screen-customize .cz-group",
                     rows=".screen-customize .cz-row"),
-  "czpage":    dict(heads=".screen-customize .slab.motion-summary", rows=".screen-customize .settings-nav .back-link"),
+  "czpage":    dict(heads=".screen-customize .slab.motion-summary", cards=".screen-customize .cz-group", rows=".screen-customize .settings-nav .back-link"),
   "friends":   dict(heads=".screen-friends .friend-sect > .sect-label", cards=".screen-friends > .friend-sect", rows=".screen-friends .friend-row, .screen-friends .friend-act, .screen-friends .friend-add-input, .screen-friends .settings-nav .back-link",
                     over=(".screen-friends > .friend-sect", ".sect-label")),
-  "ranks":     dict(heads=".screen-ranks .ranks-tab > .slab", art=".screen-ranks .rankhero"),
+  "ranks":     dict(heads=".screen-ranks .ranks-tab > .slab", art=".screen-ranks .rankhero, .screen-ranks .rankmap-card"),
   "badges":    dict(art=".screen-ranks .badges-head"),
   "stats":     dict(heads=".profile-stats-tab > .points-progress-sect .slab", cards=".profile-stats-tab > .points-progress-sect",
                     over=(".profile-stats-tab > .points-progress-sect", ".slab")),
-  # Profile's blocks keep the badge case's 22px corner (the case is art); its labels are Settings' headings
-  "profile":   dict(heads=".profile-identity-tab .pf-goal > .pf-tasks-kick, .profile-identity-tab .pf-goal > .pf-rewards-kick"),
+  # (384.133 follow) Profile's blocks (the hero, the challenge card, the shut case) are Settings' card too; its labels are Settings' grey
+  "profile":   dict(heads=".profile-identity-tab .pf-goal > .pf-tasks-kick, .profile-identity-tab .pf-goal > .pf-rewards-kick",
+                    cards=".profile-identity-tab > .profile-hero, .profile-identity-tab > .pf-goal, .profile-identity-tab .pf-ccase, .profile-identity-tab > .pf-case.pfr-case"),   # (profilerows2) the case is a Delta card of its own
 }
 MEASURE = """(s)=>{ const q=sel=>sel?[...document.querySelectorAll(sel)].filter(__io.shown):[];
   const out={};
   out.heads=q(s.heads).map(e=>Object.assign(__io.head(e), { t: (e.textContent||'').trim().slice(0,24) }));
   out.cards=q(s.cards).map(e=>{ const c=getComputedStyle(e); return Object.assign({ rad: __io.rad(e), bg: c.backgroundColor, tok: __io.tok(e), cls: e.className.slice(0,40) }, __io.r(e)); });
-  out.art=q(s.art).map(e=>Object.assign({ rad: __io.rad(e), cls: e.className.slice(0,40) }, __io.r(e)));
-  const gr=q(s.group); out.group=gr.map(e=>Object.assign({ rad: __io.rad(e) }, __io.r(e)));
+  out.art=q(s.art).map(e=>Object.assign({ rad: __io.rad(e), bg: getComputedStyle(e).backgroundColor, cls: e.className.slice(0,40) }, __io.r(e)));
+  const gr=q(s.group); out.group=gr.map(e=>Object.assign({ rad: __io.rad(e), bg: getComputedStyle(e).backgroundColor }, __io.r(e)));
   /* a row's height, or its invisible 44px target (::after) where the visible pill is smaller; a field's text size */
   out.rows=q(s.rows).map(e=>{ const a=getComputedStyle(e,'::after'); const ah=a.content!=='none'&&a.position==='absolute'?parseFloat(a.height)||0:0;
     return { h: Math.round(Math.max(e.getBoundingClientRect().height, ah)*10)/10, fs: e.tagName==='INPUT'?parseFloat(getComputedStyle(e).fontSize):null, cls: e.className.slice(0,30) }; });
@@ -138,21 +139,29 @@ with sync_playwright() as pw:
             ref["back"] and ref["title"] and ref["card"] and ref["head"], ref)
         if not (ref["back"] and ref["title"] and ref["card"] and ref["head"]):
             ctx.close(); continue
-        RAD = ref["card"]["rad"][0]
+        SET_RAD = ref["card"]["rad"][0]
+        # (384.133 follow) THE SIX FOLLOW SETTINGS. Settings is Delta's (384.110: cards #2C2C2E on 26px, section names 16/600 in rgba(235,235,245,.62)) and Customize, Friends, Rank,
+        # Badges, Stats and Profile read the same tokens (--delta-card-r, --delta-card-fill, --delta-head-ink, --delta-head-lh, --delta-head-gap). Every card's radius and fill and
+        # every section name's size, weight, grey, tracking and line (where it has one of its own) is asserted EQUAL to what Settings' own page computes in this run.
+        print("  INFO %s Settings' card %s radius %s, heading %s %spx/%s %s on %s - the six are held to exactly these" % (tag, ref["card"]["bg"], SET_RAD, ref["head"]["col"], ref["head"]["fs"], ref["head"]["fw"], ref["head"]["ls"], ref["head"]["lh"]), flush=True)
         def heads_ok(name, m):
-            bad = [x for x in m["heads"] if not (x["bg"] in ("rgba(0, 0, 0, 0)", "transparent") and x["bi"] == "none" and x["tt"] == "none"
-                   and near(x["fs"], ref["head"]["fs"], .6) and x["col"] == ref["head"]["col"] and x["fw"] == ref["head"]["fw"])]
-            chk("%s %s: %d heading(s), each Settings' (no surface, no forced capitals, %.1fpx, its grey and weight)" % (tag, name, len(m["heads"]), ref["head"]["fs"]),
-                m["heads"] and not bad, bad)
+            def bad_head(x):
+                own_line = ("cz-bar" in x["cls"]) or ("pf-kick" in x["cls"])   # a centred bar / a label inside a card keep their own line and spacing
+                return not (x["bg"] in ("rgba(0, 0, 0, 0)", "transparent") and x["bi"] == "none" and x["tt"] == "none"
+                            and near(x["fs"], ref["head"]["fs"], .1) and x["col"] == ref["head"]["col"] and x["fw"] == ref["head"]["fw"]
+                            and (own_line or (x["lh"] == ref["head"]["lh"] and x["ls"] == ref["head"]["ls"])) and x["ff"] == ref["head"]["ff"])
+            bad = [x for x in m["heads"] if bad_head(x)]
+            chk("%s %s: %d heading(s), each Settings' (no surface, no forced capitals, %.1fpx/%s, the grey %s, its face and line)" % (tag, name, len(m["heads"]), ref["head"]["fs"], ref["head"]["fw"], ref["head"]["col"]),
+                m["heads"] and not bad, [(x["t"], x["fs"], x["col"], x["lh"], x["ff"][:20]) for x in bad])
         def cards_ok(name, m):
-            bad = [x for x in m["cards"] if not (all(near(r, RAD, .6) for r in x["rad"]) and x["bg"] == x["tok"])]
-            chk("%s %s: %d card(s) at Settings' %.0fpx radius on the surface token" % (tag, name, len(m["cards"]), RAD), m["cards"] and not bad,
-                [(x["cls"], x["rad"], x["bg"], x["tok"]) for x in bad])
+            bad = [x for x in m["cards"] if not (all(near(r, SET_RAD, .1) for r in x["rad"]) and x["bg"] == ref["card"]["bg"])]
+            chk("%s %s: %d card(s) at Settings' %.0fpx radius on Settings' fill %s" % (tag, name, len(m["cards"]), SET_RAD, ref["card"]["bg"]), m["cards"] and not bad,
+                [(x["cls"], x["rad"], x["bg"]) for x in bad])
         def art_ok(name, m):
-            # cards that carry their own art (the hero, the next rank, the ladder's head, the case's head): the radius only
-            bad = [x for x in m["art"] if not all(near(r, RAD, .6) for r in x["rad"])]
-            chk("%s %s: %d showcase card(s) at Settings' %.0fpx radius, their own art kept" % (tag, name, len(m["art"]), RAD), m["art"] and not bad,
-                [(x["cls"], x["rad"]) for x in bad])
+            # cards that carry their own art (the hero, the next rank, the ladder's cards, the case's head): Settings' corner and Settings' fill, their art kept
+            bad = [x for x in m["art"] if not (all(near(r, SET_RAD, .1) for r in x["rad"]) and x["bg"] == ref["card"]["bg"])]
+            chk("%s %s: %d showcase card(s) at Settings' %.0fpx radius on Settings' fill, their own art kept" % (tag, name, len(m["art"]), SET_RAD), m["art"] and not bad,
+                [(x["cls"], x["rad"], x["bg"]) for x in bad])
         def over_ok(name, m):
             bad = [x for x in m["over"] if x["hb"] > x["ct"] + 1]
             chk("%s %s: every heading sits above its card (%d)" % (tag, name, len(m["over"])), m["over"] and not bad, bad)
@@ -176,11 +185,12 @@ with sync_playwright() as pw:
             if SPEC[key].get("over"): over_ok(name, m)
             if SPEC[key].get("group"):
                 gp = m["group"]
-                rads_ok = len(gp) >= 4 and all(all(near(r, RAD, .6) for r in x["rad"]) for x in gp)
+                RAD = SET_RAD
+                rads_ok = len(gp) >= 4 and all(all(near(r, RAD, .1) and x["bg"] == ref["card"]["bg"] for r in x["rad"]) for x in gp)
                 # four separate cards in a grid: the gap across a row equals the gap down a column
                 across = [round(gp[i + 1]["l"] - gp[i]["r"], 1) for i in range(len(gp) - 1) if abs(gp[i + 1]["t"] - gp[i]["t"]) < 4]
                 down = [round(gp[i + 2]["t"] - gp[i]["b"], 1) for i in range(len(gp) - 2) if abs(gp[i + 2]["l"] - gp[i]["l"]) < 4] if len(gp) >= 4 else []
-                chk("%s %s: its %d rows are four separate cards, each at Settings' radius, one gap across and down (%s / %s)" % (tag, name, len(gp), across, down),
+                chk("%s %s: its %d rows are four separate cards, each at Settings' radius and fill, one gap across and down (%s / %s)" % (tag, name, len(gp), across, down),
                     rads_ok and across and down and max(across + down) - min(across + down) <= 4 and min(across + down) >= 4, [x["rad"] for x in gp])
             if SPEC[key].get("rows"):
                 short = [x for x in m["rows"] if x["h"] < 44 or (x["fs"] is not None and x["fs"] < 16)]

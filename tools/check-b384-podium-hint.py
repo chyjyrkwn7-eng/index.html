@@ -18,7 +18,9 @@ Shape is read off the page (no label strings, no typed sizes beyond the 44px tap
     (b1) the hint control's words lie on one line (or on two lines that start at the same left edge - never a centred ragged
          wrap), none cut short, the control 44px+ tall and inside the question's panel;
     (b2) GUARD: a tap shows the code with the answer hidden (a picture is drawn under it, the question is still unanswered) and a
-         second tap puts it away;
+         second tap puts it away
+         (384.133: "puts it away" = no picture is DRAWN any more: since 384.119 (dropfix) the folded-away picture is kept in the page at display:none and
+         shown again at once on the next tap, so what is counted is the pictures that have a box, not the ones in the markup);
     (b3) GUARD: the academy's own hint ("show me the answer" after three misses in a Drill) still comes, on one line, and a tap on
          it marks the right answer (it is a text link about 33px tall on this build and the one before - not changed here);
 (c) no page errors.
@@ -231,7 +233,7 @@ HINT = r"""()=>{ const b = document.querySelector('.qpanel .ifc-hint-btn'); if(!
   const rows = LINES(b);
   const cut = [b, ...b.querySelectorAll('*')].filter(e => { const cs = getComputedStyle(e); return cs.overflow !== 'visible' && e.scrollWidth > e.clientWidth + 1; }).length;
   return { w: r.width, h: r.height, l: r.left, r: r.right, pl: panel.left, pr: panel.right, vw: innerWidth, rows: rows.map(w => [Math.round(w.left * 10) / 10, Math.round(w.top), Math.round(w.right * 10) / 10]), cut,
-    on: b.classList.contains('is-on'), pics: document.querySelectorAll('.qpanel .ifc-hintpic canvas').length, cleared: (typeof cleared !== 'undefined') ? cleared : null }; }""".replace("LINES", LINES)
+    on: b.classList.contains('is-on'), pics: [...document.querySelectorAll('.qpanel .ifc-hintpic canvas')].filter(c => c.getClientRects().length > 0).length, cleared: (typeof cleared !== 'undefined') ? cleared : null }; }""".replace("LINES", LINES)
 def hint_ok(s):
     if not s: return False
     if len(s["rows"]) == 1: shape = True

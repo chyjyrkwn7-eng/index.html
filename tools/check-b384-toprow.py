@@ -37,7 +37,12 @@ sys.path.insert(0, HERE)
 import b384_toprow_lib as L
 from playwright.sync_api import sync_playwright
 def arg(n, d=None): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else d
-RAW = open(arg("--against"), encoding="utf-8").read() if arg("--against") else open(os.path.join(L.ROOT, "index.html"), encoding="utf-8").read()
+# Screens that scroll on a combined tree and did not on main 384.107 because a later build ADDED content to them on purpose (the base is main, which
+# has none of it): Customize gained the unlock tracks' "Next up" and the Tracks entry (384.120 unlocks), Settings' sound page is taller on the smallest
+# phone (swupdate / settingslook rows), and Test history is the 384.118 screen. Any OTHER screen that starts to scroll still fails (4); these are printed
+# with their amounts on every run.
+GREW_ON_PURPOSE = {"class pick": "384.136 More classes is a full-size card (Madison); a short phone scrolls the pick", "Customize": "384.120 unlocks: Next up and Tracks", "Settings: sound": "swupdate / settingslook rows", "Test history": "384.118 testhistory"}
+RAW =open(arg("--against"), encoding="utf-8").read() if arg("--against") else open(os.path.join(L.ROOT, "index.html"), encoding="utf-8").read()
 NOBASE = "--no-base" in sys.argv
 BASE = None if NOBASE else (open(arg("--base"), encoding="utf-8").read() if arg("--base") else
         subprocess.run(["git", "-C", L.ROOT, "show", "origin/main:index.html"], capture_output=True, text=True).stdout)
@@ -211,7 +216,9 @@ def check_screens(dev, cls, M, B):
             bk = geo["back"]; d = abs((bk[1] + bk[3] / 2) - (c[1] + c[3] / 2)); dx = abs(bk[0] - (geo["W"] - c[0] - c[2])) if phone else 0
             if d > 1 or dx > 1: back_off.append((scr, "mid %.1f vs %.1f, left %.1f vs right %.1f" % (bk[1] + bk[3] / 2, c[1] + c[3] / 2, bk[0], geo["W"] - c[0] - c[2]))); good = False
         if B is not None and scr in B and B[scr][0] is not None and isinstance(B[scr][1], dict) and B[scr][1].get("scr") == geo.get("scr"):   # the same screen on both builds
-            if B[scr][0]["scroll"] <= 1 and ink["scroll"] > 1: newscroll.append((scr, "%d (was %d)" % (ink["scroll"], B[scr][0]["scroll"]))); good = False
+            if B[scr][0]["scroll"] <= 1 and ink["scroll"] > 1:
+                if scr in GREW_ON_PURPOSE: print("      (grew on purpose, %s) %s: %d (was %d)" % (GREW_ON_PURPOSE[scr], scr, ink["scroll"], B[scr][0]["scroll"]), flush=True)
+                else: newscroll.append((scr, "%d (was %d)" % (ink["scroll"], B[scr][0]["scroll"]))); good = False
         row[(dev, cls)] = "ok" if good else "FAIL"
     n = len([k for k in M if not k.startswith("__")])
     for lst, what in ((below, "above E"), (chat_off, "chat"), (back_off, "back"), (newscroll, "scroll")):

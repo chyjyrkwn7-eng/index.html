@@ -143,6 +143,14 @@ def frame_stats(fr):
     if len(d) < 3: return None
     s = sorted(d); n = len(s)
     return {"n": n, "p50": round(s[n // 2], 1), "p95": round(s[min(n - 1, int(n * .95))], 1), "max": round(s[-1], 1), "late": sum(1 for x in d if x > 25)}
+# CHANGED ON PURPOSE IN 384.102 (tabfeel, docs/notes-archive.md "384.102 (tabfeel)" point 4): the press's first frame no longer carries barUnderPause's look
+# (the stage's animations listed and the band measured: hundreds of animations on Home and the board inside the very frame that shows the lift); it runs in
+# the task after that frame (requestAnimationFrame -> setTimeout 0), so Profile's card and the board's rows keep their loops running a little longer under
+# the glass. MEASURED on this tree against main 384.107 (phone, 1x, samples every 2 frames, the glass first seen at frame 2-4): main's loops are held by the
+# first sample under the glass (1-2 frames after it is seen); here they are held from frame 8-12, i.e. at most 9 frames after the glass is seen (about 150ms
+# at 60Hz): Profile's 30 loops and the board's 71 run those frames under the glass on a tap off Profile or the Leaderboard. It was 3 frames. The cost is that
+# many frames of extra compositing at the start of a tap off those two screens; what the gate still holds is that the hold is in force by then, every pair.
+HOLD_FRAMES = 12   # the measured worst is 9 frames after the glass is seen; three more for a loaded machine
 HOLD = """([sel, dest, hold])=>{ const st=document.getElementById('stage'); const S=window.__hold={ t0:performance.now(), rows:[], mount:null, mountFrame:null, lensSeen:null, lensGone:null, before:null, on:true, fr:0 };
   const heavy=()=>{ let run=0; try{ st.getAnimations({subtree:true}).forEach(a=>{ if(a.playState!=='running') return; const t=a.effect&&a.effect.target; if(t&&t.closest&&t.closest(hold)) run++; }); }catch(e){} return run; };
   S.before=heavy();
@@ -220,7 +228,7 @@ with sync_playwright() as pw:
                     H = pg.evaluate("()=>{ __hold.on=false; return __hold; }")
                     mf = H["mountFrame"]
                     grace = lambda fr: mf is not None and mf <= fr <= mf + 5     # the look is a frame after the build
-                    after_press = lambda r: r[1] and r[0] >= (H["lensSeen"] or 0) + 3
+                    after_press = lambda r: r[1] and r[0] >= (H["lensSeen"] or 0) + HOLD_FRAMES
                     viol = [r for r in H["rows"] if after_press(r) and r[2] > 0 and not grace(r[0])]
                     held = [r for r in H["rows"] if after_press(r) and not grace(r[0])]
                     if H["lensSeen"] is None: unmeasured.append("%s>%s (no lens)" % (a, b)); continue

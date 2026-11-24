@@ -13,27 +13,31 @@ rounded box ended (a hard-edged lit disc).
      browser tab, 320x568, SE on its side), a 13 mini, a Pro Max, an iPad Pro 11" both ways, laptops - unpicked, with each
      picked, and with both picked, and neither card's height changes with a pick (Select -> Selected); on the Classes screen
      (Settings / the class button's Add a class) at four widths, with none, one and both enrolled.
-  B  the coin: rendered at device pixel ratio 3 with the card's background and glow flattened (so only the coin is measured),
-     the rim's brightness against the ground just outside it and just inside it, in 36 sectors of 10 degrees. Each sector's
-     value is the rim's peak along its radial profile minus the mean of a band outside (or inside) it, averaged over the
-     sector. TOLERANCES are read off the fixed render: its spread (max - min over the 36 sectors) is at most 1.1 levels of 255
-     on the inner edge and 4.1 on the outer edge (the outer band takes the halo's falloff and the anti-aliasing of a 3-pixel
-     rim at a fractional layout position), and its top-90 and bottom-90 sector means sit within 1.6 of the overall mean. The
-     tolerances are 3 / 6 / 3, about twice the new render's own noise and a third of the unfixed one's (inner spread 40-90,
-     outer 27-32; top vs bottom sector means 13-15 apart from the overall mean), so a dark crescent, a bright hairline or a tile
-     seam each fails it. The mark is centred in the coin (within .6px).
+  B  the coin. Until 384.108 it was a flat grey disc and this leg measured its rim: rendered at device pixel ratio 3, the rim's brightness
+     in 36 sectors against the ground outside and inside it (tolerances 3 / 6 / 3 on the spreads and the top/bottom means). Since 384.108
+     (classmarks, at the owner's request: "ensure the two classes are updated (the logos and circles) to match what the Home Screen has now",
+     and he approved the look) the coin is the class button's LIT RING, which is not an even rim by design, so that measurement is replaced
+     by classmarks' own ring check: the coin is the button's ring - the same --cb-ring colour, the ring's four stops at the same share of the
+     coin's radius (within 2 points), the same pool and rim colours, and the button's two glows in the same colours with their blur the same
+     share of the coin's size (within 25%) - read against a probe of Home's button (54px, .class-bubble.is-<class>) on the same page. The mark
+     is still centred in the coin (within .6px).
+     REVISED for classglass (the owner circled option B, the liquid glass: "Ensure that's updated app wide"): the coin is now the
+     button's LIQUID GLASS, so the ring check (--cb-ring, four stops) is replaced by the same glass check classmarks makes
+     (tools/b384_classglass_lib.py: the five layers and their colours, a transparent rim over the border-box gradient at the
+     button's width as a share of the size, the light behind the mark, the class-coloured shadow), against the same probe.
   C  nothing is cut: the coin plus its halo (its own computed box-shadow blur) and the glow box both sit inside the card and
      inside every ancestor that clips.
 
     python3 tools/check-b384-classcards.py [--against OLD/index.html]   (must FAIL on the build before)
 """
-import io, math, os, sys
+import io, math, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 CP = os.path.join(HERE, "check-positions.py")
 g = {"__file__": CP, "__name__": "cp"}
 exec(io.open(CP, encoding="utf-8").read().rsplit("\nmain()", 1)[0], g)
 from playwright.sync_api import sync_playwright
 from PIL import Image
+sys.path.insert(0, HERE); import b384_classglass_lib as L
 
 AGAINST = sys.argv[sys.argv.index("--against") + 1] if "--against" in sys.argv else None
 SRC = io.open(AGAINST or os.path.join(g["ROOT"], "index.html"), encoding="utf-8").read()
@@ -86,6 +90,9 @@ def profile(im, cx, cy, R):
             out.append(sum(v for d, v in P if 9 <= d <= 15) / 7.0)
         pk = sum(peak) / 10; outc.append(pk - sum(out) / 10); inc.append(pk - sum(inn) / 10)
     return outc, inc
+RINGS = ("""()=>{ const one = ONE_JS;
+  return [...document.querySelectorAll('#stage .class-card:not(.is-soon)')].map(card => { const key = ['academy', 'ifc'].find(k => card.classList.contains('is-' + k)) || window.NOVA_CLASS;
+    return { key, el: one(card.querySelector('.cc-emblem')), ref: (PROBE_JS)(key) }; }); }""").replace("ONE_JS", L.ONE_JS).replace("PROBE_JS", L.PROBE_JS)
 def sector_mean(a, lo, hi): v = [a[i % 36] for i in range(lo, hi)]; return sum(v) / len(v)
 
 GEOM = """()=>[...document.querySelectorAll('#stage .class-card:not(.is-soon)')].map(card => {
@@ -169,18 +176,12 @@ try:
                     chk(f"C {tag} card {i + 1}: coin + its {d['reach']:.0f}px halo is inside the card and every clipping ancestor (room {d['coinRoom']:.1f}px); the glow box {d['glowBox']} stays inside the card {d['card']} (room {d['glowRoom']:.1f}px)",
                         d["coinRoom"] >= -.01 and d["glowRoom"] >= -.51, d)
                     chk(f"B {tag} card {i + 1}: the mark is centred in the coin (off by {d['dx']:.2f}, {d['dy']:.2f}px)", abs(d["dx"]) <= .6 and abs(d["dy"]) <= .6, d)
-                pg.add_style_tag(content=".cc-glow{display:none!important} #stage .class-card{background:#1f232b!important;background-image:none!important;box-shadow:none!important;animation:none!important;opacity:1!important;transform:none!important}")
-                pg.wait_for_timeout(250)
-                im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-                for i, d in enumerate(geo):
-                    x, y, bw, bh = d["rect"]
-                    oc, ic = profile(im, x + bw / 2, y + bh / 2, bw / 2)
-                    mo, mi = sum(oc) / 36, sum(ic) / 36
-                    so, si = max(oc) - min(oc), max(ic) - min(ic)
-                    bo, to = sector_mean(oc, 7, 12) - mo, sector_mean(oc, 25, 30) - mo
-                    bi, ti = sector_mean(ic, 7, 12) - mi, sector_mean(ic, 25, 30) - mi
-                    chk(f"B {tag} card {i + 1}: the rim is even all round - inner edge spread {si:.1f} (<= {TOL_IN}), outer edge spread {so:.1f} (<= {TOL_OUT}); bottom/top 90 degrees vs the mean: inner {bi:+.1f}/{ti:+.1f}, outer {bo:+.1f}/{to:+.1f} (<= {TOL_SECTOR})",
-                        si <= TOL_IN and so <= TOL_OUT and max(abs(bo), abs(to), abs(bi), abs(ti)) <= TOL_SECTOR, (si, so, bo, to, bi, ti))
+                for i, d in enumerate(pg.evaluate(RINGS)):
+                    e, ref = d["el"], d["ref"]
+                    if not e or not e["vis"]:
+                        chk(f"B {tag} card {i + 1}: the coin is drawn", False, d); continue
+                    ok_g, summary, info = L.glass(e, ref)
+                    chk(f"B {tag} card {i + 1} ({d['key']}): the coin is Home's liquid glass at {e['w']}px ({summary})", ok_g, info)
                 errs_all += errs; ctx.close()
         br.close()
 finally:
