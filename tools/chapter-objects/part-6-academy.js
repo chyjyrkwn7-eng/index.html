@@ -158,7 +158,6 @@
        inside the mouth it is wet with ink */
     const front = S.union([S.inter(S.minus(rimO, rimIn), (x, y) => MC[1] + .15 - y), S.minus(rimAll, rimO), neck, bottle], 0);
     const quill = S.union([vane, shaft], 1), quillV = S.minus(quill, front), quillWet = S.inter(quillV, S.grow(rimIn, .2));
-    const shaftX = A[0] + (MC[1] + .15 - A[1]) / w[1] * w[0];                                   /* where the shaft meets the ink */
     let barbs = ""; for(let k = 0; k < 15; k++){ const t = t0 + .06 + k * .042; barbs += lineP([Qq(L * t, 1.7), Qq(L * (t + .05), wl(t + .05) * .84)]); }
     for(let k = 0; k < 9; k++){ const t = t0 + .1 + k * .06; if(wr(t + .04) > 2.4) barbs += lineP([Qq(L * t, -1.5), Qq(L * (t + .04), -wr(t + .04) * .8)]); }
     const splits = lineP([Qq(L * .5, 1.6), Qq(L * .56, wl(.56) + 1)]) + lineP([Qq(L * .74, 1.6), Qq(L * .8, wl(.8) + 1)]);
@@ -205,15 +204,13 @@
         ["red", OBJ_circle(SC[0], SC[1], 5), { ln: .8, cut: .4, paint: 0 }],                                             /* its ring */
         ["red", OBJ_poly(pts5, .3), { z: -.35, bev: .3, col: "#A8222A" }],                                              /* its star, pressed in */
         ["glass", sh(g(bottle)), { z: .9, bev: .6, dome: .4, col: "#2F4E6E" }],                                         /* the cut-glass inkwell */
-        ["glass", sh(S.poly([[66, 76], [71, 78], [71, 95], [66, 93]])), { col: "#4C7398" }],                            /* its facets: left */
-        ["glass", sh(S.poly([[91, 78], [96, 76], [96, 93], [91, 95]])), { col: "#1F364F" }],                            /* right */
+        ["glass", sh(S.poly([[91, 78], [96, 76], [96, 93], [91, 95]])), { col: "#1F364F" }],                            /* its facets: right */
         ["glass", sh(S.poly([[66, 76], [70.5, 71.5], [91.5, 71.5], [96, 76], [91, 78], [71, 78]])), { col: "#5D86AE" }],   /* its shoulder */
         ["glass", sh(g(S.minus(neck, rimAll))), { z: .9, bev: .4, dome: .6, col: "#3C6188" }],                         /* its neck */
         ["rubber", all(S.minus(rimIn, quillV)), { z: .6, bev: .3, col: "#101418" }],                                   /* the ink in it */
         ["brass", all(g(S.minus(S.minus(rimO, rimIn), quillV), .15)), { z: 1.1, bev: .4, dome: .5 }],          /* the mouth's rim: its top, a whole ring (the quill crosses its back half) */
         ["cream", all(g(quillV)), { z: 1.2, bev: .7, dome: 1, col: "#F4F2EA" }],                                       /* the quill, down into the mouth */
         ["cream", all(quillWet), { col: "#59606B" }],                                                                    /* where it is in the ink, wet */
-        ["rubber", all(S.minus(S.inter(S.ellipse(shaftX, MC[1] + .15, 3.1, 1), rimIn), quillV)), { col: "#2B3440" }],      /* the ink rising round it */
         ["cream", barbs + splits, { ln: .6, cut: .35, paint: 0 }],                                                       /* its barbs and splits */
         ["cream", keep([Qq(L * .26, 0), Qq(L * .97, 0)], q => quillV(...q) < -.4), { ln: 1.15, z: .3, bev: .3, col: "#FFFFFF" }],   /* its rachis */
         ["brass", sh(g(S.minus(rimAll, rimO), .2)), { z: .9, bev: .35, dome: .3, col: "#B88A2E" }],                    /* its round front face */
@@ -660,10 +657,10 @@
         ["cream", sh(capLip), { col: "#E1E4E8" }],                                                                       /* its lip (colour only: no groove to dent its edge) */
         ["cream", sh(S.inter(g(capTop), capF)), { z: .95, bev: .5, dome: .4, col: "#FBFBFC" }],                                        /* its top */
         ["cream", lineP(ellP(ax, CX, 10, RX - 3.5, (RX - 3.5) * KY, 0, 360, 40)), { ln: 1.4, z: .3, bev: .4, col: "#ECEDEF" }],   /* its raised ring */
-        ["cream", all(S.minus(S.inter(g(p1.bodyH, .2), p1.all), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#F3F3F1" }],                      /* the capsules: the far one's body half, */
-        ["red", all(S.minus(S.inter(g(p1.capH, .2), p1.all), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#D2342E" }],   /* the far one's cap half, */
-        ["red", all(S.inter(g(p2.capH, .2), p2.all)), { z: .85, bev: .9, dome: 2.8, col: "#D2342E" }],                      /* the near one's cap half, */
-        ["cream", all(S.inter(g(p2.bodyH, .2), p2.all)), { z: .85, bev: .9, dome: 2.8, col: "#F3F3F1" }],                                       /* the near one's body half: each its own dome, so the near one lies over the far one */
+        ["cream", all(S.minus(S.inter(g(p1.bodyH, .2), S.grow(p1.all, .3)), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#F3F3F1" }],                      /* the capsules: the far one's body half, */
+        ["red", all(S.minus(S.inter(g(p1.capH, .2), S.grow(p1.all, .3)), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#D2342E" }],   /* the far one's cap half, */
+        ["red", all(S.inter(g(p2.capH, .2), S.grow(p2.all, .3))), { z: .85, bev: .9, dome: 2.8, col: "#D2342E" }],                      /* the near one's cap half, */
+        ["cream", all(S.inter(g(p2.bodyH, .2), S.grow(p2.all, .3))), { z: .85, bev: .9, dome: 2.8, col: "#F3F3F1" }],                                       /* the near one's body half: each its own dome, so the near one lies over the far one */
         ["red", keep(p1.seam, q => p2.all(...q) > .3) + lineP(p2.seam), { ln: .7, cut: .3, paint: 0 }],                            /* where the halves meet */
       ],
     };

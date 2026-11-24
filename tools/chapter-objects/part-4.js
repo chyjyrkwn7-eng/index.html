@@ -344,9 +344,13 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
      round its foot, and the tank's shadow on it under the dome. No slots. */
   const FY0 = 80, FY1 = 92.6, FR0 = 20.5, FR1 = 24, FE = 4.2;                 /* its top (inside the tank) and its foot: half-widths and the ellipses' depth */
   const front = (y0, r) => (x, y) => y - (y0 + FE * Math.sqrt(Math.max(0, 1 - ((x - 50) / r) ** 2)));   /* <0 above the front arc of the ellipse at y0 */
-  const foot = S.union([S.poly([[50 - FR0, FY0], [50 + FR0, FY0], [50 + FR1, FY1], [50 - FR1, FY1]]), S.ellipse(50, FY1, FR1, FE)], 0);
-  const lip = S.inter(foot, (x, y) => -front(FY1 - 2.8, FR1)(x, y));             /* the rolled lip: the foot below the arc 2.8 above its edge */
-  const vents = [-11, 0, 11].map(dx => OBJ_circle(50 + dx, FY1 - 4.6 + FE * Math.sqrt(1 - (dx / FR1) ** 2) - 1.2, 1.25)).join("");   /* three small round vents, on the band's curve */
+  /* (art12) Madison: "Why is the bottom of this container curved? It's not supposed to rock back and forth, should be flat like the
+     before". The foot stands FLAT: its bottom edge is straight across (the front arc rocked it), its lip a straight band along it, its
+     vents in a level row. It keeps its flare and its round vents. */
+  const FB = FY1 + 3.2;                                                                           /* the flat foot */
+  const foot = S.grow(S.grow(S.poly([[50 - FR0, FY0], [50 + FR0, FY0], [50 + FR1, FB], [50 - FR1, FB]]), -1.1), 1.1);
+  const lip = S.inter(foot, (x, y) => (FB - 2.8) - y);                              /* the rolled lip: a straight band along the foot */
+  const vents = [-11, 0, 11].map(dx => OBJ_circle(50 + dx, FB - 6.2, 1.25)).join("");   /* three small round vents, in a level row */
   const CW = 16.5, ER = 3.6, TY = 9.8, Y0 = domeY(50 - CW);                  /* the collar's half-width, its ellipses' depth, the rim's middle, where its sides meet the dome */
   const ell = (cy, k) => (x, y) => { const dx = (x - 50) / CW; return y - (cy + k * ER * Math.sqrt(Math.max(0, 1 - dx * dx))); };   /* <0 above the arc (front k = 1, back k = -1) */
   const within = (x, y) => Math.abs(x - 50) - CW;
@@ -360,7 +364,7 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     base: "water",
     d: S.shape(all, BB),
     plates: [
-      ["steel", S.shape(S.minus(S.inter(all, S.grow(foot, 1.2)), S.grow(tank, -.5)), BB), { z: .35, bev: .6 }],      /* the foot ring, its band (under the tank's edge and its fillets) */
+      ["steel", S.shape(S.minus(S.inter(S.inter(all, S.grow(foot, 1.2)), (x, y) => FY0 + 2.5 - y), S.grow(tank, -.5)), BB), { z: .35, bev: .6 }],      /* the foot ring, its band (under the tank's edge and its fillets; (art12) from under the tank's bottom down, so its top edge never shows through the tank) */
       ["steel", S.shape(S.inter(all, lip), BB), { z: .6, bev: 1, dome: .3 }],                                /* its rolled lip */
       ["rubber", vents, { z: -.7, bev: .45, col: "#2A2E34" }],                                             /* its vents */
       ["ink", S.loops(S.inter(S.inter(S.minus(S.grow(tank, 2), tank), foot), (x, y) => y - 78), BB).map(S.pathOf).join(""), { z: .2, bev: .6, col: "#5A6068" }],   /* the tank's shadow on it */
