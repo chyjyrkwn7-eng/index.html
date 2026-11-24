@@ -44169,3 +44169,11 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - **Beams.** Two fans of light from the lantern, their ends arcs about it, brightening toward it in three rings.
   - **Rock.** A heap of boulders with faceted lit tops.
 - **Back.** The beams are wide at the lantern (16.5 to 33) so the back's title and class line both fit across them. objbadges --class academy: ALL PASS. check-b384-ifcbadges is re-pinned to d4b074cd.
+
+## 384.147 (2026-11-24): the build that ships
+- **Streak chip, round 5.** Madison: "The number 3 looks like it isn't centered right, it's too high, and the button needs to look better".
+  - **The digit** is trimmed to its cap height (`text-box: trim-both cap alphabetic`).
+  - **The pill** is a warm ember: an orange glow behind the flame, an orange-tinted rim and a lit top edge; it is grey when no streak is alive.
+  - **The flame** has margin-top -1px, so the ink is centred: check-centering 0 off centre.
+- **Ch.28.** Madison: "Don't make it a full ON TRIANGLE NO", then "REVERT". The outline is the logs again (ends plus the centre triangle, fillet .7). The pin carries `wall: 1.7` (of 3): the new `objPinWall(unit)` reads it in renderObjPin, renderObjPinBack, the case seat's footprint and the no-canvas fallback, so the side wall in each notch is a thin edge, not a crescent of log. Gates: casefit ALL PASS; objbadges --class ifc passes its side-wall check (it failed at wall 1).
+- **Gates for the push:** check-js; merge --check; badgeart; chapterbadges; casefit; ifcbadges; objbadges (academy ALL PASS; ifc ALL PASS but PERF cold on Ch.32, untouched, which flakes under load); streak; centering --quick. The full suite ran on 384.138-140 this week.

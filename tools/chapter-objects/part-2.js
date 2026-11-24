@@ -223,8 +223,9 @@
        it, and in every notch of a scalloped pile that wall is a brown crescent of "log" standing in the gap. The outline is now the
        pile's hull (the three corner logs joined by their tangents), so it runs straight along each side with no notch for a wall to
        show in; the notches are filled with the pile's dark shadow. */
-    const hull = S.union([S.capsule(...L[0], ...L[2], R + .3), S.capsule(...L[2], ...L[5], R + .3), S.capsule(...L[5], ...L[0], R + .3), S.poly([L[0], L[2], L[5]])], 0);
-    const all = S.union([ends, hull], 0);
+    /* (384.147) ...but not a triangle: Madison, "Don't make it a full ON TRIANGLE NO". The outline is the logs again, and the pin is
+       made thinner (`wall` 1.7, of 3) so its side wall is an edge, not a crescent of log in each notch. */
+    const all = S.union([ends, S.poly([L[0], L[2], L[5]])], .7);
     const lp = f => S.loops(f, BB).map(S.pathOf).join("");
     /* the bark's furrows: short, irregular grooves across the rim, at uneven spacing and length; and furrows running along each length */
     let furrows = "", along = "", checks = [];
@@ -244,7 +245,7 @@
         checks.push(OBJ_poly([P(r0 + .4, -w0), P((r0 + r1) / 2, -w0 * .5), P(r1, 0), P((r0 + r1) / 2, w0 * .5), P(r0 + .4, w0)], [0, 0, .2, 0, 0])); }   /* a wedge: widest at the edge, to a point */
     });
     CHAPTER_OBJ["Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities"] = {
-      d: S.shape(all, BB), base: "wood",
+      d: S.shape(all, BB), base: "wood", wall: 1.7,
       plates: [
         ["wood", S.shape(all, BB), { col: "#21160D" }],                                                 /* the shadow between the logs (the logs stand up out of it) */
         ["wood", logs.map(g => path(g.out)).join(""), { z: .35, bev: .35, col: "#5E3A20" }],     /* the logs' ends, in their bark */
