@@ -344,7 +344,10 @@ BACKWORDS = r"""() => {
   const hand = (typeof binspectPinW === 'function' ? binspectPinW() : 950) / devicePixelRatio, cls = BADGE_CASE_CLASS.toUpperCase();
   return Object.keys(CHAPTER_OBJ).filter(u => unitsInTeachingOrder().indexOf(u) >= 0).map(u => { const p = badgeBackPlan(u), rows = p.items.filter(i => !i.rule).map(i => i.s);
     const words = (p.mode === 'arc' ? rows.join('') : rows.filter(r => r !== cls).join(' ')).replace(/\s+/g, ' ').replace(/\u2014 /g, '\u2014');
-    return { u, exact: words === String(u).toUpperCase().replace(/\s+/g, ' '), cls: !!p.cls && rows.indexOf(cls) >= 0, px: p.fs / p.W * hand, rows: rows.length }; });
+    /* (384.142) a pin whose words run on its slant (backRot: the hinged handcuffs, Madison's pick of the two drawings) keeps the
+       name, large, and gives up the class line: no band across the pair holds both */
+    const slant = !!(CHAPTER_OBJ[u] && CHAPTER_OBJ[u].backRot);
+    return { u, exact: words === String(u).toUpperCase().replace(/\s+/g, ' '), cls: (!!p.cls && rows.indexOf(cls) >= 0) || slant, px: p.fs / p.W * hand, rows: rows.length }; });
 }"""
 MAINCOL = r"""async () => {
   /* each chapter's main colour: an authored chapter's commonest painted colour (its colour map, quantised), any other's enamel */
