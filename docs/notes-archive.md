@@ -44126,3 +44126,6 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 - `streakShown(s)` (Profile's chip label and the sheet) counts the union of the check-in days and every day `store.studyLog` has time on (> 0), up to today. Both classes have kept that log per store since long before the streak, so a classmate who has studied 23 days sees 23 on day one.
 - Best is the longest run of those days (or the check-in best, if higher).
 - The current streak, Home's banner and every XP payment stay on the check-ins (`checkinInfo`): history counts, it does not pay. Gate check-b384-streak (5b) adds five study days before the first check-in (four in a row, plus a day with 0 logged that must not count) and reads Total days = check-ins + 5 and Best >= 4, with XP and the current streak unchanged.
+
+## 384.140 (2026-11-24): combined build
+- Merged: art12 and art13 (Ch.28 lengths, Identity Crimes reverted, Victims of Crime as a mended heart, the pill bottle, the Constitution's ribbon and quill, Ch.61's flat foot, the handcuffs after the ASP photo) and the streak rounds 2 and 3 (the corner chip, the sheet to 30 days, total days and best from the study log). Also the streak banner standing down for the class list.
