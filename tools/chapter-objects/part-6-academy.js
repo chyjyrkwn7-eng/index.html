@@ -28,6 +28,10 @@
   const keep = (pts, ok) => { let d = "", run = []; dense(pts).forEach(p => { if(ok(p)) run.push(p); else { if(run.length > 1) d += lineP(S.simp(run, .03)); run = []; } }); if(run.length > 1) d += lineP(S.simp(run, .03)); return d; };
   const polar = (C, r, a) => [C[0] + r * Math.cos(a * D), C[1] + r * Math.sin(a * D)];
   const ring = (cx, cy, ro, ri) => S.minus(S.circle(cx, cy, ro), S.circle(cx, cy, ri));
+  /* (art11) an exact outline: f traced and made a polygon again, so its distance is true off its corners too; then a convex corner
+     rounded by r (opening) and a concave one by rc (closing) */
+  const exact = f => S.poly(S.simp(S.loops(f, BB)[0], .02));
+  const round = (f, r, rc) => { let o = r ? S.grow(exact(S.grow(f, -r)), r) : f; if(rc) o = S.grow(exact(S.grow(o, rc)), -rc); return o; };
   const wedge = (C, a0, a1, R) => { const p = [C]; for(let i = 0; i <= 12; i++) p.push(polar(C, R, a0 + (a1 - a0) * i / 12)); return S.poly(p); };
 
   /* ---- Penal Code - the judge's gavel striking its sound block. The block is a round wooden block seen from a little above: its top
@@ -63,62 +67,57 @@
     };
   }
 
-  /* ---- Arrest, Search, and Seizure - a pair of chain handcuffs in polished steel (art10; Madison, of round 3's: "Make these better.."
-     - it read clunky and toy-like: two flat housings over two toothed rings and a flat link). Each cuff is a real ring you can see
-     through: the DOUBLE strand (two plates, the seam between them) running from the pivot at the bottom round the outer side up into the
-     lock case; the SINGLE strand, a little narrower, swinging from the same pivot round the inner side into the case, its ratchet teeth
-     cut across its back; the lock case where they meet at the top, its edges chamfered, its foot running into the strands, with its
-     keyhole, the double-lock slot and two rivets; the pivot rivet. A swivel out of each case's inner end and the chain between them:
-     a link seen edge on, one face on, one edge on. (The cases carry the back's title and CLASS 26E: the class line needs 37 units
-     across their foot, so they are that broad, with square feet.) ---- */
+  /* ---- Arrest, Search, and Seizure - a pair of hinged handcuffs (art11; Madison sent ASP hinged cuffs as the reference: "ours need to
+     look that good"). Each cuff: the black lock case - the double bar's housing, with its keyhole, three small rivets and the yellow
+     double-lock tab - and the black double bar running from it round the cuff's inner side to the pivot at the bottom; the polished
+     single bow swinging from that round pivot pin round the outer side and up into the case, its ratchet teeth cut along its outer
+     edge where it enters. Two flat steel hinge links join the two cases, pinned into each case and to each other at the middle. Laid
+     out symmetrically, the hinge at the top centre (the cases and the hinge between them carry the back's title). ---- */
   {
-    const RO = 22.2, RI = 13.3, CY = 62, KW = 39.5, KH = 27, KR = 7, XS = [23.2, 76.8];
-    const KB = CY - RI + 3;                                            /* the cases' foot */
-    const cuffs = XS.map((x, i) => {
-      const s = i ? -1 : 1, C = [x, CY], m = a => s > 0 ? a : 180 - a;   /* m: an angle on the left cuff to the same place on this one */
-      const kx = x - s * 1.8, xi = kx + s * KW / 2;                      /* the case sits a little to the outer side; xi: its inner end */
-      const kase = S.union([S.box(kx - KW / 2, KB - KH, KW, KH, KR), S.box(kx - KW / 2, KB - KH / 2, KW, KH / 2, 2.2)], 0);
-      const sector = (a0, a1, r0, r1) => { const A = m(a0), B = m(a1); return S.inter(ring(C[0], C[1], r1, r0), wedge(C, Math.min(A, B), Math.max(A, B), 50)); };
-      /* the left cuff: the double strand round the left (outer) side, 90 -> 270; the single strand round the right, -90 -> 90 */
-      const dbl = sector(90, 272, RI - .4, RO + .7), sgl = sector(-92, 92, RI + .3, RO - .3);
-      const piv = S.circle(C[0], C[1] + (RO + RI) / 2, 4.4);
-      return { C, s, m, kase, dbl, sgl, piv, xi };
-    });
-    /* the chain, level with the middle of the cases' narrow ends */
-    const LY = KB - KH / 2 + 1, SW = cuffs.map(c => [c.xi - c.s * .5, LY]);
-    const swiv = S.union(SW.map(p => S.circle(p[0], p[1], 3)), 0);
-    const edgeL = S.union([S.capsule(SW[0][0] + 1.5, LY, 47.2, LY, 2.25), S.capsule(SW[1][0] - 1.5, LY, 52.8, LY, 2.25)], 0);
-    const faceL = S.ellipse(50, LY, 4.3, 4.1), faceH = S.ellipse(50, LY, 2.3, 1.75);
-    const kases = S.union(cuffs.map(c => c.kase), 0), pivs = S.union(cuffs.map(c => c.piv), 0);
-    const strands = S.union(cuffs.map(c => S.union([c.dbl, c.sgl], 0)), 0);
-    const t = S.trace(S.union([S.union([strands, kases], 2.2), pivs, swiv, edgeL, faceL], .6), BB);
-    const under = S.union([kases, pivs], 0);
-    let teeth = "", seams = "", rivets = "", keys = "";
-    cuffs.forEach(c => {
-      const onSgl = p => S.minus(c.sgl, S.grow(under, .2))(...p) < -.3;
-      for(let k = 0; k < 16; k++){ const a = c.m(-55 + k * 9.2); teeth += keep([polar(c.C, RO - 4.8, a), polar(c.C, RO + .5, a)], onSgl); }
-      const onDbl = p => S.minus(c.dbl, S.grow(under, .2))(...p) < -.3;
-      seams += keep(ellP(ax, c.C[0], c.C[1], (RO + RI) / 2 + .15, (RO + RI) / 2 + .15, c.s > 0 ? 96 : -84, c.s > 0 ? 262 : 84, 44), onDbl);
-      const rx = c.C[0] - c.s * 14.4;
-      rivets += OBJ_circle(rx, KB - 19.5, 2) + OBJ_circle(rx, KB - 8, 2);
-      const kx = c.C[0] - c.s * 2.8;
-      keys += OBJ_circle(kx, KB - 14.5, 2) + OBJ_poly([[kx - 1.1, KB - 14.1], [kx + 1.1, KB - 14.1], [kx + 1.6, KB - 9.2], [kx - 1.6, KB - 9.2]], .5);
-    });
-    const dlock = cuffs.map(c => OBJ_rrect(c.C[0] + c.s * 5.6 - 1.15, KB - 14.4, 2.3, 4.2, 1.1)).join("");
+    const RO = 20.6, RI = 12.6, RB = 19.2, CY = 61.5, CXL = 25.4;       /* the ring: the double bar's outer radius, the opening; the bow's outer radius */
+    const BX0 = 25.4, BX1 = 43.2, BY0 = 20.5, BY1 = 47.5, BR = 3.6;     /* the left case */
+    const LK = [26.3, 41.9], LKR = 4.6;                                  /* the two hinge links: their middles' heights, half heights */
+    const mir = f => (x, y) => f(100 - x, y), mp = p => [100 - p[0], p[1]];
+    const both = f => S.union([f, mir(f)], 0);
+    const C = [CXL, CY], sector = (a0, a1, r0, r1) => S.inter(ring(C[0], C[1], r1, r0), wedge(C, a0, a1, 40));
+    const box = S.box(BX0, BY0, BX1 - BX0, BY1 - BY0, BR);
+    const bar = S.minus(sector(-78, 118, RI, RO), box);                 /* the double bar: from the case round the inner side to the pivot */
+    const PV = polar(C, (RO + RI) / 2, 118), pivot = S.circle(PV[0], PV[1], 4.3);
+    const bow = S.minus(S.minus(sector(112, 286, RI, RB), box), pivot); /* the single bow: from the pivot round the outer side into the case */
+    const links = S.union(LK.map(y => S.box(BX1 - 2, y - LKR, 100 - 2 * BX1 + 4, 2 * LKR, 1.3)), 0);
+    const hinge = S.box(BX1 - 1, LK[0] - LKR, 100 - 2 * BX1 + 2, LK[1] - LK[0] + 2 * LKR, 1.3);   /* the links and the dark gap between them (painted, not a hole) */
+    const cases = both(box), bars = both(bar), bows = both(bow), pivots = both(pivot);
+    const sil = S.union([S.union([cases, bars, bows, pivots], .8), links, hinge], .5);
+    const t = S.trace(sil, BB);
+    const linkV = S.minus(links, cases), gapV = S.minus(S.minus(S.box(BX1 - 1, LK[0], 100 - 2 * BX1 + 2, LK[1] - LK[0], 0), links), cases);
+    /* the case's face: a raised panel; the keyhole; rivets; the double-lock tab on its outer side */
+    const KC = [(BX0 + BX1) / 2 - 1.2, 33.5];
+    const keyhole = OBJ_circle(KC[0], KC[1], 1.9) + OBJ_poly([[KC[0] - 1, KC[1] + .4], [KC[0] + 1, KC[1] + .4], [KC[0] + 1.5, KC[1] + 5], [KC[0] - 1.5, KC[1] + 5]], .5);
+    const keyholes = keyhole + OBJ_circle(100 - KC[0], KC[1], 1.9) + OBJ_poly([[100 - KC[0] - 1, KC[1] + .4], [100 - KC[0] + 1, KC[1] + .4], [100 - KC[0] + 1.5, KC[1] + 5], [100 - KC[0] - 1.5, KC[1] + 5]], .5);
+    const rv = [[BX0 + 3.3, BY0 + 3.3], [BX0 + 3.3, BY1 - 3.6]];
+    const rivets = rv.concat(rv.map(mp)).map(p => OBJ_circle(p[0], p[1], 1.15)).join("");
+    const pins = [[BX1 + 2.9, LK[0]], [BX1 + 2.9, LK[1]]].reduce((a, p) => a.concat([p, mp(p)]), []).map(p => OBJ_circle(p[0], p[1], 1.6)).join("");
+    const tab = S.box(BX0 + 7.8, BY1 - 1.2 - 2.4, 5, 2.4, 1.1);       /* the yellow double-lock tab, on the case's lower edge */
+    /* the ratchet teeth: across the bow's outer edge, over the stretch that enters the case */
+    let teeth = ""; for(let a = 218; a <= 282; a += 5.2){ const pa = polar(C, RB - 2.6, a), pb = polar(C, RB + .4, a); teeth += keep([pa, pb], q => bow(...q) < -.35); teeth += keep([mp(pa), mp(pb)], q => mir(bow)(...q) < -.35); }
+    /* the double bar is two plates: the seam between them along its middle */
+    const seamPts = ellP(ax, C[0], C[1], (RO + RI) / 2, (RO + RI) / 2, -40, 100, 40), onBar = q => S.minus(bar, S.grow(pivot, .8))(...q) < -.6;
+    const seams = keep(seamPts, onBar) + keep(seamPts.map(mp), q => onBar(mp(q)));
     CHAPTER_OBJ["Arrest, Search, and Seizure"] = {
-      d: t.d, holes: t.holes, col: "#B9C2CC", base: "steel",
+      d: t.d, holes: t.holes, col: "#2A2D33", base: "rubber",
       plates: [
-        ["steel", all(g(S.minus(S.union(cuffs.map(c => c.dbl), 0), under))), { z: .3, bev: .5, dome: 2, col: "#A9B2BD" }],      /* the double strands */
-        ["steel", all(g(S.minus(S.union(cuffs.map(c => c.sgl), 0), under))), { dome: 1.9, col: "#C3CBD4" }],                     /* the single strands */
-        ["steel", seams + teeth, { ln: .85, cut: .5, paint: 0 }],                                                                 /* the seam of the double strands' plates; the single strands' ratchet teeth */
-        ["steel", all(g(pivs)), { z: .5, bev: .5, dome: 1.3, col: "#B5BEC8" }],                                                  /* the pivots */
-        ["steel", all(g(kases)), { z: .7, bev: .7, gem: .9, gw: 2.4, dome: 1, col: "#AFB8C2" }],                                /* the lock cases, chamfered */
-        ["rubber", keys + dlock, { z: -.5, bev: .35, col: "#16181C" }],                                                           /* their keyholes and double-lock slots */
-        ["steel", all(g(S.minus(edgeL, faceL))), { z: .3, bev: .4, gem: .7, gw: 1.2, col: "#A3ACB7" }],                         /* the links: edge on */
-        ["steel", all(g(S.minus(faceL, faceH))), { z: .6, bev: .4, dome: 1.3, col: "#C0C8D1" }],                                  /* face on */
-        ["rubber", sh(faceH), { z: -.4, bev: .3, col: "#15171B" }],
-        ["steel", all(g(swiv)), { z: .6, bev: .5, gem: .6, gw: 1.2, dome: .4, col: "#B7C0CA" }],                                  /* the swivels */
-        ["steel", rivets + cuffs.map(c => OBJ_circle(c.C[0], c.C[1] + (RO + RI) / 2, 2)).join("") + SW.map(p => OBJ_circle(p[0], p[1], 1.5)).join(""), { z: .35, bev: .3, dome: .6, col: "#D0D7DE" }],   /* the rivets: the cases', the pivots', the swivels' */
+        ["rubber", all(g(S.minus(S.union([bars, cases], 0), pivots), .2)), { z: .45, bev: .8, dome: 1.2, col: "#2A2D33" }],      /* the black double bars and their cases, one part each side */
+        ["rubber", all(both(S.box(BX0 + 2.2, BY0 + 2.2, BX1 - BX0 - 4.4, BY1 - BY0 - 4.4, 2.2))), { z: .3, bev: .7, gem: .4, gw: 1.4, col: "#33373F" }],   /* each case's raised face */
+        ["rubber", keyholes, { z: -.55, bev: .35, col: "#0C0D10" }],                                                              /* the keyholes */
+        ["hot", all(both(tab)), { z: .35, bev: .4, dome: .5, col: "#F2C12E" }],                                                  /* the double-lock tabs */
+        ["steel", all(g(bows, .2)), { z: .2, bev: .6, dome: 1.7, col: "#98A2AE" }],                                             /* the polished single bows */
+        ["steel", teeth, { ln: .8, cut: .45, paint: 0 }],                                                                          /* their ratchet teeth */
+        ["rubber", seams, { ln: .7, cut: .35, paint: 0 }],                                                                          /* the double bars' seams */
+        ["steel", all(g(pivots, .2)), { z: .65, bev: .5, dome: 1.2, col: "#B9C1CA" }],                                          /* the round pivot pins */
+        ["steel", all(g(linkV, .2)), { z: .4, bev: .6, dome: 1.1, col: "#AEB7C1" }],                                            /* the hinge links */
+        ["rubber", all(g(gapV, .1)), { z: -.3, bev: .4, col: "#121418" }],                                                        /* the gap between them */
+        ["steel", "M50 " + F(LK[0] - LKR + 1) + "V" + F(LK[0] + LKR - 1) + "M50 " + F(LK[1] - LKR + 1) + "V" + F(LK[1] + LKR - 1), { ln: .8, cut: .45, paint: 0 }],   /* the hinge joint across each link */
+        ["steel", rivets + pins + all(both(S.circle(PV[0], PV[1], 1.6))), { z: .3, bev: .3, dome: .6, col: "#D3D9DF" }],         /* rivets, hinge pins, the pivots' heads */
       ],
     };
   }
@@ -141,7 +140,10 @@
     const MC = [81, 65.2], neck = S.box(74.2, 65.2, 13.6, 7.5, 1.2);
     const rimO = S.ellipse(MC[0], MC[1], 8.2, 2.9), rimIn = S.ellipse(MC[0], MC[1], 5.7, 1.75);
     const rimAll = S.minus(S.union([rimO, S.box(MC[0] - 8.2, MC[1], 16.4, 1.9, 0), S.ellipse(MC[0], MC[1] + 1.9, 8.2, 2.9)], 0), rimIn);
-    const lowerHalf = (x, y) => MC[1] - y, upperHalf = (x, y) => y - MC[1], belowMouth = S.minus(S.box(0, MC[1], 100, 40, 0), rimIn);   /* belowMouth: under the mouth's front arc */
+    /* (art11) the rim is ONE clean ring, nothing cut out of it (the quill crossing its back left it looking broken open): the quill leans
+       back, away from us, so the back of the rim is in front of it; the quill shows above the rim, and again inside the mouth, its bare
+       shaft going down into the ink */
+    const mouthAll = S.union([rimAll, rimO, neck, bottle], 0);
     /* the quill: from inside the mouth up to its tip */
     const A = [82, 67.5], B = [95.5, 5], L = Math.hypot(B[0] - A[0], B[1] - A[1]), w = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], n = [w[1], -w[0]];
     const Qq = frame(A, w, n);                                  /* Q(along the shaft, across: + toward the scroll) */
@@ -150,39 +152,41 @@
     for(let i = 0; i <= 24; i++){ const t = t0 + (1 - t0) * i / 24; vpts.push(Qq(L * t, wl(t) + .01)); }
     for(let i = 24; i >= 0; i--){ const t = t0 + (1 - t0) * i / 24; vpts.push(Qq(L * t, -wr(t) - .01)); }
     const vane = S.grow(S.poly(vpts), .8), shaft = S.cone(...Qq(-2, 0), ...Qq(L * .99, 0), 1.75, .8);
-    const quill = S.union([vane, shaft], 1), quillV = S.minus(quill, belowMouth);
+    const quill = S.union([vane, shaft], 1), quillV = S.minus(quill, mouthAll), quillIn = S.inter(S.inter(shaft, S.grow(rimIn, -.25)), (x, y) => y - (MC[1] + .3));
     let barbs = ""; for(let k = 0; k < 15; k++){ const t = t0 + .06 + k * .042; barbs += lineP([Qq(L * t, 1.7), Qq(L * (t + .05), wl(t + .05) * .84)]); }
     for(let k = 0; k < 9; k++){ const t = t0 + .1 + k * .06; if(wr(t + .04) > 2.4) barbs += lineP([Qq(L * t, -1.5), Qq(L * (t + .04), -wr(t + .04) * .8)]); }
     const splits = lineP([Qq(L * .5, 1.6), Qq(L * .56, wl(.56) + 1)]) + lineP([Qq(L * .74, 1.6), Qq(L * .8, wl(.8) + 1)]);
     /* the seal: a pool of wax with a melted edge, a star pressed in a ring; its two tails hang from under it, turning over once */
     const SC = [24.5, 71.5], sealPts = []; for(let i = 0; i < 72; i++){ const a = i / 72 * 2 * Math.PI, r = 7.1 + .5 * Math.sin(5 * a + .4) + .32 * Math.sin(9 * a + 1.3) + .2 * Math.sin(14 * a + 2); sealPts.push([SC[0] + r * Math.cos(a), SC[1] + r * Math.sin(a)]); }
     const seal = S.poly(sealPts);
-    const tail = (P0, P1, flip) => { const u = [P1[0] - P0[0], P1[1] - P0[1]], l = Math.hypot(...u), uu = [u[0] / l, u[1] / l], nn = [-uu[1], uu[0]];
-      const W = t => t < .48 ? 6.2 + .6 * t : t < .62 ? 6.5 - 2.9 * Math.sin(Math.PI / 2 * (t - .48) / .14) : t < .78 ? 3.6 + 3.1 * Math.sin(Math.PI / 2 * (t - .62) / .16) : 6.7, C = t => [P0[0] + u[0] * t, P0[1] + u[1] * t];
-      const left = [], right = []; for(let i = 0; i <= 40; i++){ const t = i / 40, c = C(t), h = W(t) / 2 - .5;
-        left.push([c[0] + nn[0] * h, c[1] + nn[1] * h]); right.push([c[0] - nn[0] * h, c[1] - nn[1] * h]); }
-      const notch = [P1[0] - uu[0] * 3.4, P1[1] - uu[1] * 3.4];
-      const f = S.grow(S.poly(left.concat([notch], right.reverse())), .5);
-      const ca = Math.cos(flip * 38 * D), sa = Math.sin(flip * 38 * D), tu = [uu[0] * ca - uu[1] * sa, uu[0] * sa + uu[1] * ca];
-      const turn = (x, y) => -((x - C(.62)[0]) * tu[0] + (y - C(.62)[1]) * tu[1]);   /* < 0 past the turn, which runs across it on a slant */
-      return { all: f, front: S.inter(f, (x, y) => -turn(x, y)), back: S.inter(f, turn) }; };
-    const tL = tail([21, 75], [14.5, 96.5], 1), tR = tail([28, 75.5], [34, 96.5], -1);
-    const tails = S.union([tL.all, tR.all], 0);
+    /* (art11) Madison: "Doesn't look like a legit ribbon" - the tails were boxy, pinched at a waist, with ragged ends. Now each tail is a
+       satin ribbon hanging from under the seal along a gentle curve, a little narrower where it turns and flaring toward its end, cut in
+       a clean swallowtail. */
+    const tail = (P0, C, P1, side) => { const bz = t => [(1 - t) * (1 - t) * P0[0] + 2 * (1 - t) * t * C[0] + t * t * P1[0], (1 - t) * (1 - t) * P0[1] + 2 * (1 - t) * t * C[1] + t * t * P1[1]];
+      const W = t => 5.6 - 1.1 * Math.sin(Math.PI * Math.min(1, t / .8)) * (t < .5 ? 1 : 1) + 2.2 * Math.pow(t, 2.2), N = 30, L = [], R = [], mid = [];
+      for(let i = 0; i <= N; i++){ const t = i / N, p = bz(t), q = bz(Math.min(1, t + .01)), o = bz(Math.max(0, t - .01)), dx = q[0] - o[0], dy = q[1] - o[1], l = Math.hypot(dx, dy), n = [-dy / l, dx / l], h = W(t) / 2;
+        L.push([p[0] + n[0] * h, p[1] + n[1] * h]); R.push([p[0] - n[0] * h, p[1] - n[1] * h]); mid.push([p, n]); }
+      const e = mid[N], d = [-e[1][1], e[1][0]], notch = [e[0][0] - d[0] * 3.3, e[0][1] - d[1] * 3.3];
+      const f = round(S.poly(L.concat([notch], R.slice().reverse())), .45);
+      const under = S.inter(f, S.poly(mid.slice(14).map(([p, n]) => [p[0] + n[0] * side * .2, p[1] + n[1] * side * .2]).concat(mid.slice(14).reverse().map(([p, n]) => [p[0] + n[0] * side * 6, p[1] + n[1] * side * 6]))));
+      return { all: f, under }; };
+    const tL = tail([22, 74], [20.5, 86], [14.8, 96.8], 1), tR = tail([27.5, 74.5], [29.5, 86], [35, 96.8], -1);
+    const tails = S.union([tL.all, tR.all], 0), ribbonAll = S.union([tails, S.grow(seal, 0)], 0);
     const pts5 = []; for(let i = 0; i < 10; i++){ const a = -90 + i * 36, r = i % 2 ? 1.45 : 3.5; pts5.push(polar(SC, r, a)); }
     const sil = S.union([sheet, rolls, bottle, neck, rimAll, rimO, quill, tails, seal], 1);
-    let lines = ""; for(let y = 38; y <= 70; y += 6.4) lines += "M19 " + F(y) + "H" + (y > 60 ? 50 : 58);
+    let lines = ""; for(let y = 38; y <= 70; y += 6.4) lines += "M" + (y > 60 ? 35 : 19) + " " + F(y) + "H" + (y > 60 ? 50 : 58);   /* (art11) the lines beside the seal start right of it */
     const spiral = (cx, cy) => { const p = []; for(let i = 0; i <= 30; i++){ const t = i / 30 * 3.2 * Math.PI, r = .2 + .8 * i / 30; p.push([cx + 2.6 * r * Math.cos(t), cy + 5.6 * r * Math.sin(t)]); } return lineP(p); };
     CHAPTER_OBJ["US and Texas Constitution and Rights"] = {
       d: sh(sil), col: "#E9D5A6", base: "field",
       plates: [
-        ["field", sh(g(sheet)), { dome: .5 }],                                                                           /* the sheet */
+        ["field", sh(g(S.minus(sheet, ribbonAll))), { dome: .5 }],                                                       /* the sheet (cut where the seal and its ribbon lie on it: a part stacks on what is under it) */
         ["ink", lineP(Array.from({ length: 41 }, (_, i) => [19 + i, 26 - 2.4 * Math.sin(i / 40 * 5.5 * Math.PI) * (1 - i / 80)])), { ln: 2.2, z: .3, bev: .4, col: "#5A3A1E" }],   /* the heading's flourish */
         ["ink", lines, { ln: 1.1, cut: .3, col: "#8A6A44" }],                            /* its lines */
-        ["field", all(g(rolls)), { z: .7, bev: .9, dome: 1.7, col: "#D9BD84" }],                                        /* the rolls */
+        ["field", all(g(S.minus(rolls, ribbonAll))), { z: .7, bev: .9, dome: 1.7, col: "#D9BD84" }],                    /* the rolls */
         ["field", sh(S.ellipse(RL, 14, 3.3, 6.6)) + sh(S.ellipse(RL, 86, 3.3, 6.6)), { z: .85, bev: .4, col: "#C3A267" }],   /* their ends */
         ["field", spiral(RL, 14) + spiral(RL, 86), { ln: .8, cut: .4, paint: 0 }],                                       /* the rolled sheet */
-        ["red", all(g(S.minus(tails, seal))), { z: .6, bev: .5, dome: .5, col: "#B3242B" }],                            /* the seal's ribbons */
-        ["red", all(S.union([tL.back, tR.back], 0)), { col: "#7E141B" }],                                              /* turned over: their backs (colour only: one ribbon, no crease) */
+        ["red", sh(g(S.minus(tL.all, seal), .2)), { z: .3, bev: 1.1, dome: .6, col: "#B3242B" }],                      /* the seal's ribbon tails, each its own band */
+        ["red", sh(g(S.minus(S.minus(tR.all, seal), tL.all), .2)), { z: .3, bev: 1.1, dome: .6, col: "#B3242B" }],
         ["red", sh(g(seal)), { z: .9, bev: .8, dome: 1.3, col: "#C42A30" }],                                            /* the wax seal */
         ["red", OBJ_circle(SC[0], SC[1], 5), { ln: .8, cut: .4, paint: 0 }],                                             /* its ring */
         ["red", OBJ_poly(pts5, .3), { z: -.35, bev: .3, col: "#A8222A" }],                                              /* its star, pressed in */
@@ -191,11 +195,13 @@
         ["glass", sh(S.poly([[91, 78], [96, 76], [96, 93], [91, 95]])), { col: "#1F364F" }],                            /* right */
         ["glass", sh(S.poly([[66, 76], [70.5, 71.5], [91.5, 71.5], [96, 76], [91, 78], [71, 78]])), { col: "#5D86AE" }],   /* its shoulder */
         ["glass", sh(g(S.minus(neck, rimAll))), { z: .9, bev: .4, dome: .6, col: "#3C6188" }],                         /* its neck */
-        ["rubber", sh(S.minus(rimIn, quill)), { z: .6, bev: .3, col: "#101418" }],                                     /* the ink in it */
+        ["rubber", sh(S.minus(rimIn, quillIn)), { z: .6, bev: .3, col: "#101418" }],                                   /* the ink in it */
+        ["cream", sh(g(quillIn, .1)), { z: .9, bev: .3, dome: .4, col: "#E9E6DC" }],                                     /* the quill's shaft going down into it */
         ["cream", all(g(quillV)), { z: 1.2, bev: .7, dome: 1, col: "#F4F2EA" }],                                       /* the quill */
         ["cream", barbs + splits, { ln: .6, cut: .35, paint: 0 }],                                                       /* its barbs and splits */
         ["cream", keep([Qq(L * .26, 0), Qq(L * .97, 0)], q => quillV(...q) < -.4), { ln: 1.15, z: .3, bev: .3, col: "#FFFFFF" }],   /* its rachis */
-        ["brass", all(g(S.minus(rimAll, S.inter(quill, upperHalf)))), { z: 1.1, bev: .4, dome: .5 }],                  /* the mouth's rim: its back behind the quill, its front lip before it */
+        ["brass", all(g(S.minus(rimO, rimIn))), { z: 1.1, bev: .4, dome: .5 }],                                          /* the mouth's rim: its top, a whole ring */
+        ["brass", sh(g(S.minus(rimAll, rimO), .2)), { z: .9, bev: .35, dome: .3, col: "#B88A2E" }],                    /* its round front face */
       ],
     };
   }
@@ -317,14 +323,18 @@
     /* the over strand rides up by the under strand's thickness over the crossing: a lift along it with long soft ends (no step) */
     const lu = [X1[0] - LT[0], X1[1] - LT[1]], den = ou[0] * lu[1] - ou[1] * lu[0], tt = ((LT[0] - X2[0]) * lu[1] - (LT[1] - X2[1]) * lu[0]) / den;
     const XC = [X2[0] + ou[0] * tt, X2[1] + ou[1] * tt], lift = S.inter(S.inter(ovS, (x, y) => -((x - X2[0]) * ou[0] + (y - X2[1]) * ou[1]) / ol), rell(XC[0], XC[1], 25, 30, Math.atan2(ou[1], ou[0]) / D));
+    /* (art11) Madison: "It doesn't make sense where it crosses." The lift was one plate with a 7-unit bevel all round, so the over
+       strand's edges had no step and grooves pressed in along them stood for one (a double edge), and its ends were light bands across
+       it. Now the lift is a stack of eight thin plates, each the WHOLE over strand (its own long edges, so they add to one crisp step
+       down onto the strand under it) cut by a circle round the crossing a little wider than the last: along the strand the steps are
+       a few hundredths high and a couple of units apart, so the strand rises and settles back with no seam or band. */
+    const frontC = cut(front), LIFT = [0, 1, 2, 3, 4, 5, 6, 7].map(k => ["field", sh(S.inter(frontC, S.circle(XC[0], XC[1], 16.5 + k * 1.25))), { z: .08, bev: 2.5, paint: 0 }]);
     CHAPTER_OBJ["Sexual Assault and Family Violence"] = {
       d: t.d, holes: t.holes, col: "#7A3E9E", base: "field",
       plates: [
         ["field", all(g(S.union([cut(back), cut(front)], 0))), { dome: 1.5, col: "#8746AD" }],                                        /* the ribbon */
         ...SHADE,                                                                                                                       /* the over strand's soft shade on the other */
-        ["field", sh(lift), { z: .55, bev: 7, paint: 0 }],                                                                            /* it rides over it */
-        ["field", keep(oEdge(1), onUnder) + keep(oEdge(-1), onUnder), { ln: 1.6, cut: .55, paint: 0 }],                               /* where its edges press down onto it */
-        ["field", edges(0, 60, E, S.grow(ovS, .7)) + edges(0, 60, -E, S.grow(ovS, .7)) + edges(60, cl.length, E) + edges(60, cl.length, -E), { ln: .7, cut: .3, paint: 0 }],   /* the woven edges */
+        ...LIFT,                                                                                                                        /* it rides over it */
       ],
     };
   }
@@ -573,28 +583,36 @@
   {
     const CX = 42, RX = 21.5, KY = .27;
     const cyl = (y0, y1, rx) => S.union([S.box(CX - rx, y0, 2 * rx, y1 - y0, 0), S.ellipse(CX, y0, rx, rx * KY), S.ellipse(CX, y1, rx, rx * KY)], 0);
-    const capF = cyl(10, 26, RX + 1.2), capTop = S.ellipse(CX, 10, RX + 1.2, (RX + 1.2) * KY), body = cyl(26, 86, RX), lip = cyl(25, 28.5, RX - 1.2);
+    /* (art11) the cap is one clean cylinder a little wider than the bottle, its ridges even, a plain lip round its foot, and its sides
+       run straight down to that lip: no neck band under it and no fillet where it steps in to the bottle (that fillet was the bulge
+       Madison circled on its right) */
+    const RC = RX + 1.6, capF = cyl(10, 26, RC), capTop = S.ellipse(CX, 10, RC, RC * KY), body = cyl(26, 86, RX);
     const below = y => S.minus(S.box(0, y, 100, 100, 0), S.ellipse(CX, y, RX + .01, RX * KY));                          /* the bottle from the front arc at y down */
+    const capBelow = y => S.minus(S.box(0, y, 100, 100, 0), S.ellipse(CX, y, RC + .01, RC * KY));
+    const capLip = S.inter(capF, capBelow(23.2));
     const label = S.minus(S.inter(body, S.minus(below(44), below(74))), S.ellipse(CX, 44, RX + 1, RX * KY));
     /* a capsule A -> B in its two halves: the cap half (from A, a little wider) over the body half */
     const capsule = (A, B, r) => { const L = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], M = [A[0] + u[0] * L * .54, A[1] + u[1] * L * .54];
       const along = (x, y) => (x - M[0]) * u[0] + (y - M[1]) * u[1];
-      const capH = S.inter(S.capsule(...A, ...M, r + .35), (x, y) => along(x, y) - .3), bodyH = S.minus(S.inter(S.capsule(...M, ...B, r), (x, y) => -along(x, y) - .6), capH);
-      const all_ = S.union([capH, S.capsule(...A, ...B, r)], 0);
+      const whole = S.capsule(...A, ...B, r), capH = S.inter(whole, (x, y) => along(x, y)), bodyH = S.inter(whole, (x, y) => -along(x, y));   /* (art11) one radius: a wider cap half stepped the outline */
+      const all_ = whole;
       const seam = [[M[0] - u[1] * (r - .6) + u[0] * .3, M[1] + u[0] * (r - .6) + u[1] * .3], [M[0] + u[1] * (r - .6) + u[0] * .3, M[1] - u[0] * (r - .6) + u[1] * .3]];
       return { all: all_, capH, bodyH, seam }; };
     const p1 = capsule([62.5, 89], [84.5, 81.2], 5.4), p2 = capsule([93.6, 94.4], [71.5, 96.2], 4.5);
     const pills = S.union([p1.all, p2.all], 0);
-    const sil = S.union([capF, body, pills], .8);
+    const sil = S.union([S.union([capF, body], 0), pills], .8);
     const bodyP = S.minus(body, pills);
-    let ridges = ""; for(let k = -9; k <= 9; k++){ const t = k / 9.6 * Math.PI / 2, x = CX + (RX + 1.2) * Math.sin(t), y = (RX + 1.2) * KY * Math.cos(t); ridges += "M" + F(x) + " " + F(10 + y + 1.3) + "V" + F(26 + y - .9); }
+    let ridges = ""; for(let k = -8; k <= 8; k++){ const t = k / 9.6 * Math.PI / 2, x = CX + RC * Math.sin(t), y = RC * KY * Math.cos(t); ridges += "M" + F(x) + " " + F(10 + y + 1.6) + "V" + F(23.2 + y - 1); }
     /* print on the label: lines set from one left margin, following the cylinder (the front arcs of its ellipse) */
     const arcL = (y, t0, t1) => lineP(ellP(ax, CX, y, RX, RX * KY, t0, t1, 18));
     const print = arcL(56.5, 152, 48) + arcL(61, 152, 66) + arcL(65.5, 152, 84) + arcL(70, 152, 104);
     /* the amber's shading: bands down its sides, darkest at the right (away from the light), a highlight down its left */
     const strip = (x0, x1) => S.inter(bodyP, S.box(x0, 0, x1 - x0, 100, 0));
     const shift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
-    const pShade = [0, 1].map(k => { const f = 1 - k / 2; return ["field", all(S.minus(S.inter(bodyP, S.grow(shift(pills, -.3 * f, -.4 * f), .45 + 1.3 * f)), pills)), { col: ["#AE5F1B", "#9A5216"][k] }]; });
+        /* (art11) each half is grown across the seam only (into its other half), never past the capsule's own outline: a half grown past
+       it stood out as a hook at the seam */
+    const pShade = [["field", all(S.minus(S.inter(bodyP, S.grow(shift(pills, -.3, -.4), 1.4)), pills)), { col: "#A65A19" }]];
+    const capShade = S.minus(S.inter(bodyP, shift(capF, .3, 1.8)), capF);                                               /* the cap's shade on the bottle, just under its lip */
     CHAPTER_OBJ["Health and Safety Code"] = {
       d: sh(sil), col: "#D9822B", base: "field",
       plates: [
@@ -612,13 +630,15 @@
         ["cream", all(S.inter(S.minus(label, pills), S.box(CX + RX * .84, 0, 40, 100, 0))), { col: "#D8D2C5" }],
         ["red", sh(S.inter(S.grow(label, .3), S.minus(S.box(0, 0, 100, 100, 0), below(49.5)))), { z: .3, bev: .3, dome: .6, col: "#2F6FB8" }],    /* its band */
         ["ink", print, { ln: 1.25, cut: .3, col: "#8F949B" }],                                                          /* its print */
-        ["cream", sh(g(lip)), { z: .3, bev: .4, dome: .6, col: "#D7D9DC" }],                                            /* the neck */
-        ["cream", sh(g(capF)), { z: .8, bev: .6, dome: 1.2, col: "#F2F3F4" }],                                          /* the cap */
-        ["cream", ridges, { ln: .9, cut: .45, paint: 0 }],                                                               /* its ridges */
+        ["field", all(capShade), { col: "#9E5517" }],                                                                    /* the cap's shade on it */
+        ["cream", sh(g(capF)), { z: .8, bev: .6, dome: 1.2, col: "#F2F3F4" }],                                          /* the cap: one cylinder, its sides straight down to its lip */
+        ["cream", ridges, { ln: 1, cut: .6, paint: 0 }],                                                               /* its ridges */
+        ["cream", sh(capLip), { col: "#E1E4E8" }],                                                                       /* its lip (colour only: no groove to dent its edge) */
         ["cream", sh(g(capTop)), { z: .95, bev: .5, dome: .4, col: "#FBFBFC" }],                                        /* its top */
         ["cream", lineP(ellP(ax, CX, 10, RX - 3.5, (RX - 3.5) * KY, 0, 360, 40)), { ln: 1.4, z: .3, bev: .4, col: "#ECEDEF" }],   /* its raised ring */
-        ["cream", all(g(S.union([S.minus(p1.bodyH, p2.all), p2.bodyH], 0))), { z: .4, bev: .6, dome: 1.5, col: "#F3F3F1" }],     /* the capsules: body halves */
-        ["red", all(g(S.union([S.minus(p1.capH, p2.all), p2.capH], 0))), { z: .5, bev: .6, dome: 1.6, col: "#D2342E" }],          /* cap halves */
+        ["cream", all(S.minus(S.inter(g(p1.bodyH, .2), p1.all), p2.all)), { z: .4, bev: .6, dome: 1.5, col: "#F3F3F1" }],                      /* the capsules: the far one's body half, */
+        ["red", all(S.minus(S.inter(g(p1.capH, .2), p1.all), p2.all)) + all(S.inter(g(p2.capH, .2), p2.all)), { z: .45, bev: .6, dome: 1.5, col: "#D2342E" }],   /* both cap halves (they do not touch), */
+        ["cream", all(S.inter(g(p2.bodyH, .2), p2.all)), { z: .45, bev: .6, dome: 1.5, col: "#F3F3F1" }],                                       /* the near one's body half: each its own dome, so the near one lies over the far one */
         ["red", keep(p1.seam, q => p2.all(...q) > .3) + lineP(p2.seam), { ln: .7, cut: .3, paint: 0 }],                            /* where the halves meet */
       ],
     };
@@ -798,40 +818,50 @@
      rounded end.) ---- */
   {
     const AX = 50, TY = 13, EY = 45, RX = 45, ry = EY - TY;
-    const tips = [-1, -.5, 0, .5, 1].map(k => [AX + k * RX, EY]);
+    /* (art11) seen from the side: the canopy hides the shaft - only the ferrule's tip shows above it, and the shaft comes out from under
+       the canopy's middle, below its scalloped edge. Four rib tips (no rib down the middle, which read as the pole drawn over the cloth):
+       the panel facing us is the widest and lightest, the two turning away darker. */
+    const TK = [-1, -.42, .42, 1], tips = TK.map(k => [AX + k * RX, EY]), DEP = [5, 5.2, 5];
     const canopyPts = []; for(let i = 0; i <= 40; i++){ const t = Math.PI * i / 40; canopyPts.push([AX - RX * Math.cos(t), EY - ry * Math.sin(t)]); }
-    for(let k = 3; k >= 0; k--){ const a = tips[k + 1], b = tips[k]; for(let i = 1; i < 10; i++){ const s = i / 10; canopyPts.push([a[0] + (b[0] - a[0]) * s, EY - 5.5 * Math.sin(Math.PI * s)]); } }
+    for(let k = 2; k >= 0; k--){ const a = tips[k + 1], b = tips[k]; for(let i = 1; i < 12; i++){ const s = i / 12; canopyPts.push([a[0] + (b[0] - a[0]) * s, EY - DEP[k] * Math.sin(Math.PI * s)]); } }
     const canopy = S.grow(S.poly(canopyPts), .8);
     const rib = dx => { const o = []; for(let i = 0; i <= 20; i++){ const t = Math.PI / 2 * i / 20; o.push([AX + dx * Math.sin(t), EY - ry * Math.cos(t)]); } return o; };
-    const panel = (d0, d1) => S.inter(canopy, S.poly(rib(d0).concat(rib(d1).reverse())));
-    const panelsA = S.union([panel(-RX - 6, -RX / 2), panel(0, RX / 2)], 0), panelsB = S.union([panel(-RX / 2, 0), panel(RX / 2, RX + 6)], 0);
-    const fin = S.union([S.cone(AX, TY + 2, AX, 4.5, 2.8, 2.2), S.circle(AX, 4.6, 3)], .5);
-    const tipBalls = S.union(tips.map(p => S.circle(p[0], p[1] + .5, 2.6)), 0);
-    /* the heart: the classic heart curve (round lobes, a soft notch, a point) */
-    const HY = 61.6, heart = (() => { const pts = []; for(let i = 0; i < 90; i++){ const t = 2 * Math.PI * i / 90, x = 16 * Math.pow(Math.sin(t), 3), y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); pts.push([AX + x * .96, HY + y * .94]); } return S.poly(pts); })();
+    const RB = .42 * RX, mid = S.inter(canopy, S.poly(rib(-RB).concat(rib(RB).reverse(), [[AX + RB, EY + 4], [AX - RB, EY + 4]])));
+    const sides = S.minus(canopy, mid);
+    const fin = S.union([S.cone(AX, TY + 1.5, AX, TY - 4.6, 2.2, 1.1), S.circle(AX, TY - 5.1, 1.6)], .5);   /* the top ferrule: a small turned tip */
+    const tipBalls = S.union([tips[0], tips[3]].map(p => S.circle(p[0], p[1] + .4, 2.5)).concat([tips[1], tips[2]].map(p => S.circle(p[0], p[1] + .4, 2.3))), 0);
+    /* the heart: the classic heart curve, plump, its point rounded wider than the shaft (so the shaft leaves it cleanly) and its cleft a
+       soft dip (the shaft goes in behind it there) */
+    const HY = 58.6, heart = round(S.poly(Array.from({ length: 180 }, (_, i) => { const t = 2 * Math.PI * i / 180;
+      return [AX + 16 * Math.pow(Math.sin(t), 3) * 1.04, HY - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))]; })), 2.8, 2.4);
     /* the shaft, the brass ferrule, the wooden crook: one piece */
     const FY0 = 79.5, FY1 = 84, CR = 6.3, CC = [AX - CR, 89.4], WR = 3.1;
-    const shaft = S.capsule(AX, EY - 2, AX, FY0 + 1.6, 2.1);
+    const shaft = S.capsule(AX, EY - 9, AX, FY0 + 1.6, 2.1);
     const ferrule = S.poly([[AX - 2.1, FY0], [AX + 2.1, FY0], [AX + WR, FY1], [AX - WR, FY1]]);   /* a tapered collar, the shaft's width to the wood's */
     const arcPts = []; for(let i = 0; i <= 24; i++){ const a = Math.PI * i / 24; arcPts.push([CC[0] + CR * Math.cos(a), CC[1] + CR * Math.sin(a)]); }
     const crook = S.union([S.capsule(AX, FY1 - .5, AX, CC[1], WR)].concat(arcPts.slice(1).map((p, i) => S.capsule(...arcPts[i], ...p, WR))).concat([S.capsule(CC[0] - CR, CC[1], CC[0] - CR, CC[1] - 2.6, WR), S.circle(CC[0] - CR, CC[1] - 2.8, WR + .25)]), .4);
     const handle = S.union([shaft, ferrule, crook], 0);
     const sil = S.union([canopy, tipBalls, fin, handle, heart], .8);
     const grain = keep(arcPts.map(([x, y]) => [CC[0] + (x - CC[0]) * .82, CC[1] + (y - CC[1]) * .82]), p => S.minus(crook, ferrule)(...p) < -.6);
+    const shaftV = S.minus(S.minus(shaft, canopy), S.union([heart, ferrule], 0));
+    const shift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
+    /* contact shade on the shaft: under the canopy's edge and under the heart's point (colour only) */
+    const shadeOn = (f, k) => S.minus(S.inter(shaftV, S.grow(shift(f, .4, 1), k)), f);
     CHAPTER_OBJ["Victims of Crime"] = {
       d: sh(sil), col: "#2F5FA8", base: "field",
       plates: [
         ["wood", sh(g(S.minus(crook, S.grow(ferrule, .1)))), { z: .3, bev: .6, dome: 1.3, col: "#7A4524" }],                    /* the wooden crook */
         ["wood", grain, { ln: .7, cut: .3, paint: 0 }],                                                                            /* its grain along the bend */
-        ["steel", all(g(S.minus(S.minus(S.union([shaft, S.inter(S.grow(heart, 1.6), S.grow(shaft, 2.2))], 0), canopy), S.union([heart, ferrule], 0)))), { z: .3, bev: .5, dome: .8 }],             /* the shaft */
+        ["steel", all(g(shaftV)), { z: .3, bev: .5, dome: .8 }],                                                                   /* the shaft: under the canopy, behind the heart */
+        ["steel", all(shadeOn(canopy, 1.6)) + all(shadeOn(heart, 1.6)), { col: "#5E6670" }],                                       /* its contact shade (colour only) */
         ["brass", sh(g(ferrule)), { z: .5, bev: .4, dome: .8 }],                                                                  /* the ferrule */
         ["brass", "M" + (AX - 2.2) + " " + (FY0 + 2.4) + "H" + (AX + 2.2), { ln: .7, cut: .35, paint: 0 }],
-        ["field", all(g(panelsA)), { dome: 2.2 }],                                                                                 /* the canopy */
-        ["field", all(g(panelsB)), { dome: 2.2, col: "#3E78C8" }],
-        ["field", lineP(rib(-RX / 2).slice(2)) + lineP(rib(0).slice(2)) + lineP(rib(RX / 2).slice(2)), { ln: 1.2, z: .25, bev: .3, col: "#24508F" }],   /* the ribs */
+        ["field", all(g(sides)), { dome: 2.2 }],                                                                                   /* the canopy: the panels turning away */
+        ["field", sh(g(mid)), { dome: 2.2, col: "#3E78C8" }],                                                                     /* the panel facing us */
+        ["field", lineP(rib(-RB).slice(2)) + lineP(rib(RB).slice(2)), { ln: 1.2, z: .25, bev: .3, col: "#24508F" }],              /* the ribs */
         ["steel", all(g(tipBalls)), { z: .4, bev: .4, dome: .8 }],                                                                 /* the rib tips */
-        ["steel", sh(g(fin)), { z: .5, bev: .4, dome: .9 }],                                                                        /* the finial */
-        ["red", sh(g(heart)), { z: .5, bev: .7, dome: 3, col: "#D8352C" }],                                                /* the heart */
+        ["steel", sh(g(S.minus(fin, canopy), .2)), { z: .4, bev: .4, dome: .9 }],                                                     /* the top ferrule: only its tip, out of the canopy (cut where the canopy is: a part stacks on what is under it) */
+        ["red", sh(g(heart)), { z: .5, bev: .7, dome: 2.6, col: "#D8352C" }],                                              /* the heart */
       ],
     };
   }
@@ -849,52 +879,22 @@
     const photo = S.grow(S.poly([Q(-31, 8.5), Q(-15, 8.5), Q(-15, 20), Q(-31, 20)]), 1);
     const TC = [72.5, 64.5], TR = 17.6, TF = 14.2, token = S.circle(TC[0], TC[1], TR);
     const sil = S.union([card, token], 1.2), cardP = S.minus(card, token);
-    /* the print: evenly spaced streamlines of the Sherlock-Monro orientation field (a core and a delta), traced at merge time */
-    /* evenly spaced streamlines of a loop-print orientation field (Sherlock-Monro), in a disc of radius RR */
-    function fingerprint(opt){
-      const RR = opt.R, SP = opt.sp, core = opt.core, delta = opt.delta, th0 = opt.th0 || 0;
-      const dir = (x, y) => { const a = .5 * (Math.atan2(y - core[1], x - core[0]) - Math.atan2(y - delta[1], x - delta[0])) + th0; return [Math.cos(a), Math.sin(a)]; };
-      const lines = [], pts = [];   /* pts: every accepted point, for the spacing test (a grid) */
-      const G = new Map(), cell = SP, key = (x, y) => Math.floor(x / cell) + "," + Math.floor(y / cell);
-      const near = (x, y, d, self) => { const cx = Math.floor(x / cell), cy = Math.floor(y / cell); let m = Infinity;
-        for(let i = -1; i <= 1; i++) for(let j = -1; j <= 1; j++){ const a = G.get((cx + i) + "," + (cy + j)); if(!a) continue; for(const p of a){ if(p[2] === self) continue; const q = Math.hypot(p[0] - x, p[1] - y); if(q < m) m = q; } } return m; };
-      const add = (p, id) => { const k = key(p[0], p[1]); if(!G.has(k)) G.set(k, []); G.get(k).push([p[0], p[1], id]); };
-      const st = .22;
-      const trace = (s, id, stopK) => {
-        const half = sg => { const o = []; let x = s[0], y = s[1], d = dir(x, y); d = [d[0] * sg, d[1] * sg];
-          for(let n = 0; n < 900; n++){
-            let e = dir(x, y); if(e[0] * d[0] + e[1] * d[1] < 0) e = [-e[0], -e[1]];
-            const mx = x + e[0] * st / 2, my = y + e[1] * st / 2; let f = dir(mx, my); if(f[0] * e[0] + f[1] * e[1] < 0) f = [-f[0], -f[1]];
-            const nx = x + f[0] * st, ny = y + f[1] * st;
-            if(Math.hypot(nx, ny) > RR) break;
-            if(Math.hypot(nx - core[0], ny - core[1]) < SP * .55 || Math.hypot(nx - delta[0], ny - delta[1]) < SP * .45) break;
-            if(near(nx, ny, SP * stopK, id) < SP * stopK) break;
-            /* do not run back into its own earlier points (a closed loop) */
-            if(o.length > 30){ let hit = false; for(let i = 0; i < o.length - 30; i += 2) if(Math.hypot(o[i][0] - nx, o[i][1] - ny) < SP * stopK){ hit = true; break; } if(hit) break; }
-            d = f; x = nx; y = ny; o.push([x, y]);
-          }
-          return o; };
-        const a = half(1), b = half(-1);
-        return b.reverse().concat([s], a);
-      };
-      const tryseed = (s, stopK) => {
-        if(Math.hypot(...s) > RR - .3) return;
-        if(near(s[0], s[1], SP, -1) < SP * .98) return;
-        const id = lines.length, l = trace(s, id, stopK);
-        if(l.length < (opt.minLen || 10)) return;
-        l.forEach(p => add(p, id)); lines.push(l);
-      };
-      /* seeds: first along a line across the ridges, then everywhere (gap filling) */
-      (opt.seeds || []).forEach(s => tryseed(s, .78));
-      for(let pass = 0; pass < 2; pass++) for(let y = -RR; y <= RR; y += SP * .5) for(let x = -RR; x <= RR; x += SP * .5) tryseed([x + .13, y + .07], .72);
-      return lines;
+    /* (art11) the print: Madison circled its top-left - the streamlines broke into loose dashes. Now a LOOP print drawn as a print is
+       read: one continuous ridge per loop, nested round a core - each ridge comes up one side, turns over the top and goes down the
+       other, its legs opening a little as they go down - tilted as a thumb is pressed. Every ridge stops a clear margin inside the
+       rim. */
+    const FPa = -14 * D, fpT = ([u, v]) => [TC[0] + u * Math.cos(FPa) - v * Math.sin(FPa), TC[1] + u * Math.sin(FPa) + v * Math.cos(FPa)];
+    const FPc = [.4, 1.6], FPr = 13.3;
+    let ridges = "";
+    for(let k = 0; k <= 8; k++){
+      const r = 1.2 + 1.9 * k, leg = (v, sg) => [FPc[0] + sg * (r + (v - FPc[1]) * .1 + Math.pow(Math.max(0, v - 5), 2) * .03), v], pts = [];
+      for(let v = 15; v > FPc[1]; v -= .5) pts.push(leg(v, -1));
+      for(let i = 0; i <= 36; i++){ const t = Math.PI + Math.PI * i / 36; pts.push([FPc[0] + r * Math.cos(t), FPc[1] + 1.1 * r * Math.sin(t)]); }
+      for(let v = FPc[1] + .5; v <= 15; v += .5) pts.push(leg(v, 1));
+      ridges += keep(pts.map(fpT), q => Math.hypot(q[0] - TC[0], q[1] - TC[1]) < FPr - .5);
     }
-    const seeds = []; for(let v = -12.8; v <= 12.8; v += 1.9) seeds.push([9, v]);
-    const raw = fingerprint({ R: 12.9, sp: 1.9, core: [0, -2], delta: [-10, 8], th0: -.4, seeds });
-    const toT = ([x, y]) => [TC[0] - y, TC[1] + x];                       /* turned a quarter: the loop opens downward */
-    const ridges = raw.map(l => lineP(S.simp(l.map(toT), .03))).join("");
     const shift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
-    const shade = [0, 1, 2, 3, 4].map(k => { const f = 1 - k / 5; return ["field", all(S.minus(S.inter(cardP, S.grow(shift(token, .9 * f, 1.3 * f), .3 + 2.6 * f)), token)), { col: ["#C3D5E8", "#B6CADF", "#A9BFD6", "#9CB3CC", "#8EA6C1"][k] }]; });
+    const shade = [0, 1, 2, 3, 4].map(k => { const f = 1 - k / 5; return ["field", all(S.minus(S.inter(cardP, S.grow(shift(token, .5 * f, .8 * f), .25 + 1.7 * f)), token)), { col: ["#C3D5E8", "#B6CADF", "#A9BFD6", "#9CB3CC", "#8EA6C1"][k] }]; });
     let lines = ""; [[-8, 18], [-2, 22], [4, 14], [10, 20]].forEach(([y, l]) => { lines += keep([Q(-10, y), Q(-10 + l, y)], p => cardP(...p) < -.8); });
     CHAPTER_OBJ["Identity Crimes"] = {
       d: sh(sil), col: "#CFE0F0", base: "field",
@@ -907,7 +907,7 @@
         ["field", sh(photo), { z: -.6, bev: .5, col: "#A8C0D8" }],                                                          /* the photo window */
         ["ink", lines, { ln: 1.6, cut: .3, col: "#7E93A8" }],                                                                /* the details */
         ...shade,                                                                                                            /* the seal's soft shade on the card */
-        ["steel", sh(g(token)), { z: .7, bev: .6, gem: 1.1, gw: 2.2, dome: .5, col: "#B9C3CE" }],                            /* the seal: its polished rim, chamfered */
+        ["steel", sh(g(token)), { z: .7, bev: .6, gem: 1.1, gw: 2.2, dome: .5, col: "#5E6773" }],                            /* the seal: its polished rim, chamfered */
         ["field", OBJ_circle(TC[0], TC[1], TF), { z: -.45, bev: .7, dome: .7, col: "#223B66" }],                             /* its navy face, set in */
         ["water", ridges, { ln: .95, z: .3, bev: .28, col: "#98C4EE" }],                                                   /* the print */
       ],
@@ -1009,55 +1009,55 @@
     };
   }
 
-  /* ---- Radio Communications, Alerts, and TCIC-TLETS - the officer's handheld radio, seen from the front, a little from the right and
-     above (art10, Madison circled the whole radio - "And these..."): the case with its top and its right side showing, the belt clip
-     down that side, the push-to-talk button standing out of the left side, ridged; on top, the ribbed rubber antenna in its collar,
-     the tall channel knob and the volume knob (knurled sides, their tops) and the orange emergency button; on the front the display
-     (signal bars and a channel readout), three soft keys, the speaker grille drilled with rows of holes; the lanyard eye at the foot. ---- */
+  /* ---- Radio Communications, Alerts, and TCIC-TLETS - the officer's handheld radio seen from the front and a little above. (art11,
+     Madison: "The older radio looked better, it just needed to be nicer, maybe with a cooler blueish LED screen.") Back to the older
+     radio's shape (a0da788): the slim case with the top of it showing, the stubby ribbed antenna, the channel and volume knobs, the
+     push-to-talk bar on the left side - no belt clip, no lanyard eye. Polished: the case's front edge chamfered crisp; each knob in a
+     steel collar, knurled round its side, its top lighter with a pointer; the orange emergency button between antenna and knobs; the
+     screen a backlit blue LCD set in a dark bezel - brightest at its middle, a cyan glow round its edge - with signal bars and a
+     two-digit channel in dark segments; the speaker's horizontal slots pressed in. ---- */
   {
-    const X0 = 27, X1 = 70, Y0 = 31, Y1 = 95, DP = [5.5, -3.5];           /* the front face, and the depth that shows the top and the side */
-    const front = S.box(X0, Y0, X1 - X0, Y1 - Y0, 6);
-    const topF = S.grow(S.poly([[X0 + 5, Y0 + .6], [X1 - 2, Y0 + .6], [X1 + DP[0] - 2.2, Y0 + DP[1] + 1.3], [X0 + DP[0] + 4, Y0 + DP[1] + 1.3]]), 1.3);
-    const sideF = S.grow(S.poly([[X1 - .6, Y0 + 4], [X1 + DP[0] - 1.3, Y0 + DP[1] + 3.2], [X1 + DP[0] - 1.3, Y1 + DP[1] - 4.6], [X1 - .6, Y1 - 4.6]]), 1.3);
-    const caseAll = S.union([front, topF, sideF], 1.2);
-    const clip = S.grow(S.poly([[X1 + 2.2, 41], [X1 + 8.6, 37.6], [X1 + 8.6, 80], [X1 + 2.2, 84]]), 1.4);
-    const ptt = S.box(X0 - 4.6, 45, 6.6, 21, 2.4);
-    const TY = Y0 + DP[1] / 2 + .4;                                          /* the middle of the top face */
-    const AC = [35.5, TY], ant = S.union([S.cone(AC[0], TY - 3, AC[0], 6.5, 3.3, 2.3), S.circle(AC[0], 6.4, 2.35)], .5), collar = S.box(AC[0] - 4.3, TY - 5.5, 8.6, 6.5, 2);
-    const knob = (cx, r, h) => { const yt = TY - h; return { side: S.box(cx - r, yt, 2 * r, h, .8), top: S.ellipse(cx, yt, r, r * .36), all: S.union([S.box(cx - r, yt, 2 * r, h + 1, .8), S.ellipse(cx, yt, r, r * .36)], 0), yt }; };
-    const k1 = knob(52, 4.7, 11.5), k2 = knob(64.2, 4.1, 7.5);
-    const btn = S.box(40.8, TY - 3.4, 5.8, 4.2, 1.8);
-    const eye = S.circle(X0 + 2.8, Y1 + .6, 3.6);
-    const sil = S.union([caseAll, clip, ptt, ant, collar, k1.all, k2.all, btn, eye], 1);
-    /* the display, the readout: signal bars and two seven-segment digits */
-    const DX0 = 33.5, DX1 = 63.5, DY0 = 37.5, DY1 = 50;
-    let bars = ""; [1.6, 2.6, 3.6, 4.6].forEach((h, i) => { const x = DX0 + 3.6 + i * 2; bars += "M" + F(x) + " " + F(DY1 - 3.2) + "V" + F(DY1 - 3.2 - h); });
-    const seg = (x, y, on) => { const w = 3.4, h = 3.3, S7 = { a: [[0, 0], [w, 0]], b: [[w, 0], [w, h]], c: [[w, h], [w, 2 * h]], d: [[0, 2 * h], [w, 2 * h]], e: [[0, h], [0, 2 * h]], f: [[0, 0], [0, h]], g: [[0, h], [w, h]] };
-      return on.split("").map(k => { const [p, q] = S7[k], sh = .55, dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy); return lineP([[x + p[0] + dx / l * sh, y + p[1] + dy / l * sh], [x + q[0] - dx / l * sh, y + q[1] - dy / l * sh]]); }).join(""); };
-    const digits = seg(50.2, 40.4, "bc") + seg(55.6, 40.4, "abged");
-    let holes = ""; for(let r = 0; r < 8; r++) for(let c = 0; c < 8; c++){ const x = 36.6 + c * 3.4 + (r % 2) * 1.7, y = 62.4 + r * 3.35; if(x < 62.5) holes += OBJ_circle(x, y, 1); }
-    const kr = (k, cx, r) => { let s = ""; for(let i = -4; i <= 4; i++){ const x = cx + r * Math.sin(i / 4.6 * Math.PI / 2), dx = (x - cx) / r; s += "M" + F(x) + " " + F(k.yt + r * .36 * Math.sqrt(Math.max(0, 1 - dx * dx)) + .8) + "V" + F(TY - .8); } return s; };
-    let rings = ""; for(let y = 9; y < TY - 6; y += 2.6){ const r = 2.3 + (y - 6.5) / (TY - 9.5) * .95; rings += "M" + F(AC[0] - r + .5) + " " + F(y) + "H" + F(AC[0] + r - .5); }
+    const x0 = 30, x1 = 74, y0 = 30, y1 = 95, d = 3.4;
+    const body = S.box(x0, y0, x1 - x0, y1 - y0, 6.5), topF = S.inter(S.box(x0, y0 - d, x1 - x0, 12, 6.5), S.box(0, 0, 100, y0 + 4, 0));
+    const AX = 38, ant = S.union([S.cone(AX, 27, AX, 9.5, 3.4, 2.8), S.circle(AX, 9.3, 2.9)], .6), antC = S.union([S.box(AX - 4.3, y0 - 5.2, 8.6, 3.4, 1.2), S.ellipse(AX, y0 - 5.2, 4.3, 1.5)], 0);
+    const knob = (cx, r, h) => { const yt = y0 - 2.4 - h; return { yt, side: S.box(cx - r, yt, 2 * r, h, 1), top: S.ellipse(cx, yt, r, r * .38),
+      all: S.union([S.box(cx - r, yt, 2 * r, h + 1, 1), S.ellipse(cx, yt, r, r * .38)], 0), col: S.union([S.box(cx - r - .9, y0 - 3.4, 2 * r + 1.8, 2.6, 1), S.ellipse(cx, y0 - 3.4, r + .9, (r + .9) * .38)], 0) }; };
+    const k1 = knob(53.5, 4.6, 10), k2 = knob(65.5, 4.1, 6.6);
+    const ptt = S.box(25, 44, 7, 22, 2.5);
+    const btn = S.box(42.4, y0 - 4.6, 6, 4.4, 1.8);
+    const sil = S.union([body, topF, ant, antC, k1.all, k2.all, k1.col, k2.col, ptt, btn], 1);
+    /* the screen: a dark bezel, the backlit glass in it, its glow */
+    const BZ = [x0 + 5, y0 + 6, x1 - x0 - 10, 17], SC = [BZ[0] + 2, BZ[1] + 2, BZ[2] - 4, BZ[3] - 4];
+    const scr = S.box(...SC, 1.6);
+    let bars = ""; [1.8, 2.9, 4, 5.1].forEach((h, i) => { const x = SC[0] + 3.3 + i * 2.1; bars += "M" + F(x) + " " + F(SC[1] + SC[3] - 2.6) + "V" + F(SC[1] + SC[3] - 2.6 - h); });
+    const seg = (x, y, on) => { const w = 3.4, h = 3.5, S7 = { a: [[0, 0], [w, 0]], b: [[w, 0], [w, h]], c: [[w, h], [w, 2 * h]], d: [[0, 2 * h], [w, 2 * h]], e: [[0, h], [0, 2 * h]], f: [[0, 0], [0, h]], g: [[0, h], [w, h]] };
+      return on.split("").map(k => { const [p, q] = S7[k], s0 = .55, dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy); return lineP([[x + p[0] + dx / l * s0, y + p[1] + dy / l * s0], [x + q[0] - dx / l * s0, y + q[1] - dy / l * s0]]); }).join(""); };
+    const digits = seg(SC[0] + SC[2] - 11.6, SC[1] + 1.9, "bc") + seg(SC[0] + SC[2] - 6, SC[1] + 1.9, "abged");
+    /* the speaker: horizontal slots pressed into a recessed panel */
+    const SP = [x0 + 6, 55, x1 - x0 - 12, 33];
+    let slots = ""; for(let k = 0; k < 6; k++) slots += OBJ_rrect(SP[0] + 3.2, SP[1] + 3.6 + k * 4.6, SP[2] - 6.4, 2.3, 1.1);
+    let ribs = ""; for(let y = 12; y < 22; y += 2.6) ribs += "M" + F(AX - 2.6) + " " + F(y) + "H" + F(AX + 2.6);
+    const kr = (k, cx, r) => { let s = ""; for(let i = -4; i <= 4; i++){ const x = cx + r * Math.sin(i / 4.6 * Math.PI / 2), dx = (x - cx) / r; s += "M" + F(x) + " " + F(k.yt + r * .38 * Math.sqrt(Math.max(0, 1 - dx * dx)) + .9) + "V" + F(y0 - 4.6); } return s; };
+    const pttR = [49, 53, 57, 61].map(y => "M27 " + y + "H30.4").join("");
     CHAPTER_OBJ["Radio Communications, Alerts, and TCIC-TLETS"] = {
       d: sh(sil), col: "#33373F", base: "field",
       plates: [
-        ["field", sh(g(front)), { z: .3, bev: .9, dome: 1.1 }],                                                              /* the case: its front */
-        ["field", sh(g(S.minus(topF, front))), { z: .3, bev: .5, dome: .3, col: "#4A4F58" }],                                /* its top */
-        ["field", sh(g(S.minus(sideF, front))), { z: .3, bev: .5, dome: .3, col: "#23262C" }],                               /* its right side */
-        ["rubber", sh(g(clip)), { z: .5, bev: .6, dome: .7, col: "#2B2E34" }],                                               /* the belt clip */
-        ["rubber", sh(g(ptt)), { z: .3, bev: .6, dome: .9, col: "#2A2D33" }],                                                 /* the push-to-talk button */
-        ["rubber", sh(g(ant)), { dome: 1.3, col: "#24272C" }],                                                               /* the antenna */
-        ["rubber", sh(g(collar)), { z: .4, bev: .5, dome: .6, col: "#3A3E45" }],                                             /* its collar */
-        ["rubber", sh(g(k1.all)) + sh(g(k2.all)), { z: .3, bev: .5, dome: .8, col: "#2A2D33" }],                             /* the knobs */
-        ["rubber", kr(k1, 52, 4.7) + kr(k2, 64.2, 4.1) + rings + "M" + (X1 + 5.4) + " 46V76" + [49, 53, 57, 61].map(y => "M" + (X0 - 3.4) + " " + y + "H" + (X0 - .6)).join(""), { ln: .8, cut: .42, paint: 0 }],   /* the knobs' knurling, the antenna's ribs, the clip's groove, the push-to-talk's ridges: grooves, one plate */
-        ["rubber", sh(g(k1.top)) + sh(g(k2.top)), { z: .4, bev: .4, dome: .3, col: "#4E535C" }],                              /* their tops */
-        ["hot", sh(g(btn)), { z: .5, bev: .4, dome: .8, col: "#F07A1A" }],                                                   /* the emergency button */
-        ["glass", OBJ_rrect(DX0, DY0, DX1 - DX0, DY1 - DY0, 2.2), { z: -.4, bev: .6, dome: .3, col: "#9BBFA9" }],            /* the display */
-        ["ink", bars + digits, { ln: 1.05, z: .12, bev: .25, col: "#28382F" }],                                              /* its readout */
-        ["rubber", OBJ_rrect(35, 53, 7, 3.2, 1.5) + OBJ_rrect(45, 53, 7, 3.2, 1.5) + OBJ_rrect(55, 53, 7, 3.2, 1.5), { z: .35, bev: .35, dome: .4, col: "#4A4F58" }],   /* the soft keys */
-        ["field", all(g(S.minus(eye, S.grow(front, .2)))), { dome: .8, col: "#3A3E45" }],                                    /* the lanyard eye */
-        ["rubber", OBJ_rrect(33.5, 59, 30, 30, 4), { z: -.3, bev: .6, dome: .3, col: "#2A2D33" }],                           /* the speaker */
-        ["rubber", holes + OBJ_circle(X0 + 2.4, Y1 + 1.5, 1.4), { z: -.55, bev: .3, col: "#121418" }],                       /* its grille; the lanyard eye's hole */
+        ["rubber", sh(g(S.minus(ant, antC))), { dome: 1.3, col: "#24272C" }],                                                /* the antenna */
+        ["rubber", sh(g(ptt)), { z: .2, bev: .6, dome: .8, col: "#26292E" }],                                                /* the push-to-talk bar */
+        ["field", sh(g(body)), { z: .45, bev: .6, gem: .5, gw: 1.6, dome: 1 }],                                             /* the case: its front, its edge chamfered */
+        ["field", sh(g(topF)), { z: .55, bev: .5, dome: .4, col: "#4A4F58" }],                                               /* its top */
+        ["steel", sh(g(k1.col)) + sh(g(k2.col)) + sh(g(antC)), { z: .35, bev: .4, dome: .5, col: "#8A939E" }],                             /* the knobs' collars, the antenna's */
+        ["rubber", sh(g(S.minus(k1.all, k1.col))) + sh(g(S.minus(k2.all, k2.col))), { z: .3, bev: .5, dome: .9, col: "#2A2D33" }],   /* the knobs */
+        ["rubber", sh(g(k1.top)) + sh(g(k2.top)), { z: .45, bev: .4, dome: .35, col: "#555B65" }],                             /* their tops */
+        ["rubber", kr(k1, 53.5, 4.6) + kr(k2, 65.5, 4.1) + ribs + pttR + "M53.5 " + F(k1.yt - .9) + "V" + F(k1.yt + .9) + "M65.5 " + F(k2.yt - .8) + "V" + F(k2.yt + .8), { ln: .8, cut: .42, paint: 0 }],   /* knurling, the antenna's ribs, the bar's ridges, the knobs' pointers: grooves, one plate */
+        ["hot", sh(g(btn)), { z: .55, bev: .45, dome: .9, col: "#F27B1B" }],                                                 /* the emergency button */
+        ["rubber", OBJ_rrect(...BZ, 3), { z: -.15, bev: .5, dome: .2, col: "#17191D" }],                                     /* the screen's bezel */
+        ["glass", sh(g(scr)), { z: -.25, bev: .45, dome: .25, col: "#3FB6FF" }],                                             /* the backlit screen */
+        ...["#4DBDFF", "#5CC4FF", "#6BCBFF", "#7AD2FF", "#88D8FF"].map((c, k) => ["glass", OBJ_rrect(SC[0] + 1.2 + k * 1.15, SC[1] + .9 + k * .75, SC[2] - 2.4 - k * 2.3, SC[3] - 1.8 - k * 1.5, 1.6 - k * .15), { dome: .06, col: c }]),   /* its glow, brightest at the middle (small steps; together a faint curve of the glass) */
+        ["field", all(S.minus(S.box(BZ[0] + .6, BZ[1] + .6, BZ[2] - 1.2, BZ[3] - 1.2, 2.4), S.grow(scr, .25))), { dome: .05, col: "#1E5A86" }],   /* the glow's spill on the bezel */
+        ["ink", bars + digits, { ln: 1.1, z: .1, bev: .25, col: "#06304F" }],                                                /* its readout: signal bars, the channel */
+        ["rubber", OBJ_rrect(...SP, 4), { z: -.35, bev: .6, dome: .3, col: "#2A2D33" }],                                    /* the speaker */
+        ["rubber", slots, { z: -.5, bev: .4, col: "#111316" }],                                                              /* its slots */
       ],
     };
   }

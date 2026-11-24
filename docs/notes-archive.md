@@ -43898,3 +43898,48 @@ head only at 96px and up.
 - Merged into one build: the police art10 badges (handcuffs, ribbon, umbrella, fingerprint, teddy, pill bottle, Constitution, radio), the Fire Code art10 badges (Ch 23, 28, 54, 57, 59, 61, 66, 67, Appendix C and H), and festive round 5 (Santa cuff, larger party hat).
 - Full-size characters and cameos are parked at the owner's request. CAMEOS_LIVE stays false and claude/b384-bodies is not merged.
 - index.html conflicted only in the generated CHAPTER_OBJ block; it was resolved by re-running snap.py and merge-chapter-icons.py (in step).
+
+## 384 art11 police (branch claude/b384-art11-acad from af8f535; build NOT bumped, stays 384.138; NOT on main, waiting for Madison)
+
+Madison circled seven of the art10 academy pins again (his bar: "ours need to look that good", with an ASP hinged-cuff photo). Only
+`tools/chapter-objects/part-6-academy.js` (its snaps, the baked CHAPTER_OBJ / CHAPTER_OBJ_BBOX) and the ifcbadges pin changed; no
+renderer change; Fire Code's snaps byte-identical. New helpers at the top of the part file: `exact(f)` (an SDF traced and made a polygon
+again, so its distance is true off its corners) and `round(f, r, rc)` (convex corners rounded by r, concave ones by rc).
+- Arrest, Search, and Seizure: hinged cuffs after the ASP reference, laid out symmetrically (the back needs a broad block for the
+  title AND the class line: the two cases plus the hinge between them are that block - cases 17.8 x 27, the hinge the cases' full
+  height; shorter cases or a notched hinge lost CLASS 26E). Each cuff: the black case and the black double bar round the inner side
+  to the pivot as ONE rubber plate (a seam groove along the bar's middle), a raised faceted face on the case, keyhole, two rivets,
+  the yellow double-lock tab; the polished bow round the outer side from the round pivot pin into the case, ratchet teeth cut across
+  its outer edge where it enters. Two flat steel links (a joint groove across each at the middle, a pin into each case) with a dark
+  gap between them painted, not cut (a hole there broke the title's block). Back 12.2 px with the class line.
+- Victims of Crime: four rib tips (no middle rib: it read as the pole drawn over the cloth); the shaft is cut by the canopy and
+  shows only below the scalloped edge's middle arch; the top ferrule is cut by the canopy too, so only its tip stands out of it.
+  Heart: the classic curve with round(.., 2.8, 2.4) - its point rounder than the shaft is wide (the shaft leaves it with no slivers)
+  and its cleft a soft dip (no pinch); colour-only contact shade on the shaft under the canopy and under the heart.
+- US and Texas Constitution: the tails are bands along a quadratic curve, a slight waist then flaring, a 3.3-unit swallowtail,
+  rounded .45, each its own plate (z .3, bev 1.1, dome .6); the sheet and the rolls are cut where the seal and tails lie (a tail
+  stacked on the roll showed a ridge where the roll ended). The inkwell rim is ONE whole ring (top plate via all(): sh() kept only
+  its outer loop and covered the ink) plus its front face; the quill leans back, so the rim's back is in front of it: the quill is
+  cut by the whole mouth and shows again inside the opening as a short shaft into the ink.
+- Radio: the a0da788 shape again (slim case, top face, stubby ribbed antenna, two knobs, PTT bar; no belt clip, no lanyard eye),
+  chamfered case (gem), steel collars under the knobs and the antenna, pointer grooves on the knob tops, the orange button; a
+  backlit blue LCD in a dark bezel - five nested colour bands (each dome .06, so not stickers) brightest at the middle, a blue spill
+  on the bezel (all(): sh() on that ring filled the whole screen dark blue), dark signal bars and a two-digit channel; six
+  horizontal speaker slots pressed in.
+- Health and Safety Code: capsules of one radius (the wider cap half was the step in the outline); the far capsule's halves, both
+  caps, and the near capsule's body are separate plates, each half grown across its seam only (grown past the outline it made a
+  hook); the cap is one cylinder (RX + 1.6), no neck band, no fillet where it steps in to the bottle, even ridges stopping above
+  a colour-only lip (a raised lip plate dented the right edge).
+- Sexual Assault and Family Violence: the 7-unit-bevel lift and the grooves along the over strand's edges are gone (the double
+  edge, the light bands); the lift is eight thin plates (z .08, bev 2.5), each the whole over strand cut by a circle round the
+  crossing 1.25 wider than the last - their long edges add to one step onto the under strand, their ends to a smooth ramp. The
+  woven-edge grooves are gone (badgeart (1)'s groove at M16.22 80.86 went with them). Faint streaks remain in the ramp's
+  reflection on the loop's left side at 3x; not visible at case size.
+- Identity Crimes: the print is nine nested loop ridges (U's tilted -14 degrees, legs opening as they go down), one continuous line
+  each, clipped 1.4 inside the face; the seal's rim is gunmetal steel (#5E6773) so its side wall is dark, not a white crescent; the
+  card's contact shade is tighter (1.95 at most).
+Gates (TMPDIR=/dev/shm, one at a time; load 4-9 from other sessions): check-js ALL PASS; merge --check and snap --check in step;
+badgeart ALL PASS; ifcbadges (6) re-pinned c0816bbd -> 9737995c (comment in the gate), ALL PASS; acadpins ALL PASS; chapterbadges
+ALL PASS; objbadges --class academy ALL PASS at load 5 (PERF cold failed three times at load 8-10, each time on units not touched
+here - Racial Profiling 8.16, Phonetic Alphabet 12.8 - while the measured cold ratios of the seven are within noise of af8f535's).
+Sheets: police-<badge>-before-after.jpg (2100 wide, q87; the radio also shows a0da788) with ~3x close-ups of each circled spot.

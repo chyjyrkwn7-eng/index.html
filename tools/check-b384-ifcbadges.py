@@ -301,7 +301,11 @@ with sync_playwright() as pw:
         # RE-PINNED (384.137 art10): Madison's circled "Make these better.." / "And these..." redrew eight academy pins on purpose
         # (handcuffs, ribbon crossing, umbrella heart and handle, ID card's fingerprint seal, teddy bear, pill bottle, the
         # Constitution's seal and inkwell, the radio). Was 5a133a95. Taken on this build after the eight were reviewed.
-        PIN = "c0816bbd"
+        # RE-PINNED (384.138 art11): Madison's circled shots of art10 redrew seven academy pins on purpose (hinged handcuffs after
+        # his ASP reference, the umbrella's shaft and heart, the Constitution's ribbon tails and inkwell rim, the radio back to the
+        # a0da788 shape with a blue LCD, the pill bottle's capsules and cap, the ribbon crossing, the fingerprint). Was c0816bbd.
+        # Taken on this build after the seven were reviewed.
+        PIN = "9737995c"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)
