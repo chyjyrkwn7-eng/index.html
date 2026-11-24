@@ -107,7 +107,8 @@ def page(br, cls="academy", reduce=False, cards=False, seed_cloud=True, first_da
     return ctx, pg, errs
 STATE = """()=>({ pts: store.lifetime.points, days: Array.isArray(store.checkins) ? store.checkins.slice() : null, miles: Array.isArray(store.checkinMiles) ? store.checkinMiles.slice() : null,
   conf: cloudConfirmedFor, xp: typeof CHECKIN_XP === 'number' ? CHECKIN_XP : null,
-  info: typeof checkinInfo === 'function' ? checkinInfo(store) : { current: -1, best: -1, total: -1 }, now: new Date().toString().slice(0, 15),
+  info: typeof checkinInfo === 'function' ? checkinInfo(store) : { current: -1, best: -1, total: -1 },
+  shown: typeof streakShown === 'function' ? streakShown(store) : (typeof checkinInfo === 'function' ? checkinInfo(store) : { current: -1, best: -1, total: -1 }), now: new Date().toString().slice(0, 15),
   banner: !!document.getElementById('streak-banner'), fly: !!document.querySelector('.streak-fly') })"""
 def state(pg): return pg.evaluate(STATE)
 def cloud_doc(pg, id_): return pg.evaluate("(id)=>{ const d = (window.__cloud.progress || {})[id]; return d ? { pts: d.lifetime && d.lifetime.points, days: d.checkins || null, miles: d.checkinMiles || null } : null; }", id_)
@@ -234,7 +235,7 @@ with sync_playwright() as pw:
         s6["pts"] - s4["pts"] == 2 * xp + first["xp"] and s6["miles"] == [day(0) + "/3", day(4) + "/3"] and s6["info"]["current"] == 3, s6)
 
     # (5) Profile: the row and the sheet, on day 7 of the calendar (streak 3, best 3, 6 days)
-    info = s6["info"]
+    info = s6["shown"]
     pg.evaluate("document.querySelectorAll('#streak-banner, .streak-fly').forEach(e => e.remove())")
     pg.evaluate("showProfile()"); pg.wait_for_timeout(1400)
     row = pg.evaluate("""()=>{ const b = document.querySelector('#stage .pf-streak'); if(!b) return null; const r = b.getBoundingClientRect();
@@ -264,6 +265,19 @@ with sync_playwright() as pw:
         and re.search(r"\b%d\b" % xp, sh["text"]) and sh["inside"] and max(x["days"] for x in sh["steps"]) == 30, sh)
     pg.evaluate("showHome()"); pg.wait_for_timeout(700)
     chk("(5) the sheet is gone when the screen changes", pg.evaluate("!document.querySelector('.streak-sheet, .invite-overlay')"))
+    # (5b) days studied before the streak existed count in Total days and Best (Madison: "starting at 0 wouldn't make sense for total
+    # days"): five study days before the first check-in, four of them in a row, a day with no time logged that does not count
+    hist = [day(-20), day(-12), day(-11), day(-10), day(-9)]
+    pg.evaluate("(ks)=>{ store.studyLog = store.studyLog || {}; ks.forEach(k => { store.studyLog[k] = 600000; }); store.studyLog[%s] = 0; }" % json.dumps(day(-30)), hist)
+    s5b = state(pg)
+    pg.evaluate("showProfile()"); pg.wait_for_timeout(1200)
+    pg.evaluate("document.querySelector('#stage .pf-streak')?.click()"); pg.wait_for_timeout(700)
+    tot = pg.evaluate("""()=>{ const c = [...document.querySelectorAll('.streak-sheet .streak-stat')].find(x => x.dataset.k === 'Total days'); return c ? +c.querySelector('.streak-stat-num').textContent.replace(/[^0-9]/g, '') : -1; }""")
+    bst = pg.evaluate("""()=>{ const c = [...document.querySelectorAll('.streak-sheet .streak-stat')].find(x => x.dataset.k === 'Best'); return c ? +c.querySelector('.streak-stat-num').textContent.replace(/[^0-9]/g, '') : -1; }""")
+    chk("(5b) Total days counts the days studied before the streak (%s check-in days + 5 study days = %s; the sheet says %s), Best the longest run of them (4 or more: %s), XP unchanged (%s -> %s)"
+        % (s6["info"]["total"], s6["info"]["total"] + 5, tot, bst, s6["pts"], s5b["pts"]),
+        tot == s6["info"]["total"] + 5 and bst >= max(4, s6["info"]["best"]) and s5b["pts"] == s6["pts"] and s5b["info"]["current"] == s6["info"]["current"], [tot, bst, s5b])
+    pg.evaluate("document.querySelector('.invite-overlay')?.remove(); showHome()"); pg.wait_for_timeout(500)
 
     # (6) day 8: the banner, then a screen change while it is up; Home does not say it again
     goto_day(pg, 7)

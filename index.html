@@ -98635,6 +98635,21 @@ function checkinTrim(s){
 }
 /* What the days say, read now: the streak (alive while its last day is today or yesterday), the best run, the total, whether today
    is in, and the first day of the live run. A day ahead of this device's clock is not read. */
+/* (384 streak r3) WHAT PROFILE SHOWS: the total days and the best run count every day this account has studied (store.studyLog, the
+   study-time log both classes have kept since long before the streak) as well as every day it checked in - Madison: "starting at 0
+   wouldn't make sense for total days". The current streak and every XP payment stay on the check-ins (checkinInfo): history counts,
+   it does not pay. */
+function streakShown(s, now){
+  s = s || store;
+  const info = checkinInfo(s, now), today = dayKey(now || new Date());
+  const set = new Set((Array.isArray(s && s.checkins) ? s.checkins : []).filter(d => typeof d === "string" && d <= today));
+  try{ Object.keys((s && s.studyLog) || {}).forEach(k => { if(/^\d{4}-\d{2}-\d{2}$/.test(k) && k <= today && (Number(s.studyLog[k]) || 0) > 0) set.add(k); }); }catch(e){}
+  const days = Array.from(set).sort();
+  let run = 0, prev = null, best = 0;
+  days.forEach(d => { run = prev && checkinShift(prev, 1) === d ? run + 1 : 1; if(run > best) best = run; prev = d; });
+  const old = checkinOldClean(s && s.checkinOld);
+  return Object.assign({}, info, { total: days.length + (old ? old.n : 0), best: Math.max(info.best, best, info.current) });
+}
 function checkinInfo(s, now){
   s = s || store;
   const today = dayKey(now || new Date()), yest = checkinShift(today, -1);
@@ -98953,7 +98968,7 @@ function buildStreakRow(){
   return btn;
 }
 function streakRowFill(btn){
-  const info = checkinInfo(store);
+  const info = streakShown(store);
   const t = streakRowText(info);
   btn.replaceChildren();
   btn.classList.toggle("is-dim", info.current <= 0);
@@ -98969,7 +98984,7 @@ function streakRowRefresh(){
 }
 function openStreakSheet(){
   if(document.querySelector(".streak-sheet")) return;
-  const info = checkinInfo(store);
+  const info = streakShown(store);
   const overlay = document.createElement("div");
   overlay.className = "invite-overlay";
   const sheet = document.createElement("div");
