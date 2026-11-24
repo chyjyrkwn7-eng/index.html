@@ -43898,3 +43898,25 @@ head only at 96px and up.
 - Merged into one build: the police art10 badges (handcuffs, ribbon, umbrella, fingerprint, teddy, pill bottle, Constitution, radio), the Fire Code art10 badges (Ch 23, 28, 54, 57, 59, 61, 66, 67, Appendix C and H), and festive round 5 (Santa cuff, larger party hat).
 - Full-size characters and cameos are parked at the owner's request. CAMEOS_LIVE stays false and claude/b384-bodies is not merged.
 - index.html conflicted only in the generated CHAPTER_OBJ block; it was resolved by re-running snap.py and merge-chapter-icons.py (in step).
+
+## 384 art11 Fire Code (branch claude/b384-art11-fc, from af8f535; build not bumped): Chapter 28's log ends and Chapter 61's foot ring
+
+Madison, of the art10 sheets: Chapter 28 "The log change is good but needs to be better" (flat beige discs with perfect rings pressed in,
+an even bark rim with evenly spaced ticks - a dial, a bottle cap); Chapter 61 "The bottom of the barrel thing looks like a USB" (the foot
+ring was a dark box with two oval slots).
+- Ch 28 (part-2.js): every log end drawn from a fixed seed. Its outside a little out of round. A bark rim of uneven thickness (the
+  sapwood's edge wanders) cut by short irregular furrows (24 per log, uneven spacing and length, starting clear of the sapwood). End
+  grain in warm tones: pale sapwood round a darker heartwood whose edge follows the grain. Eight growth rings as fine darker painted
+  lines, all from ONE low wobble per log (so they stay concentric and never cross; a first try gave each ring its own wobble and they
+  scribbled across each other), closer toward the bark. The pith off centre. One or two checks as filled tapering wedges (stroked
+  segments stepped; traced SDF cones lost their thin end on the half-unit grid). The lengths recede up-right in shaded bark with
+  furrows along them, only round the outside of the stack: between the logs it is shadow (the length's slivers there read as chips).
+- Ch 61 (part-4.js): the foot ring is a short steel cylinder seen a little from above - flared toward the ground (half-width 20.5 to 24),
+  its foot the front arc of an ellipse, the tank's bottom drawn over its top so the dome sits into it, the tank's shadow under it, a rolled
+  lip round its foot and three small round vents on the band's curve. No slots. The art10 collar is unchanged.
+GATES (TMPDIR=/dev/shm, one at a time; a police helper ran gates alongside, load 4-5): check-js ALL PASS; merge/snap/gen-part-2 --check in
+step; badgetwins, sides --class ifc, casefit, chapterbadges, ifcbadges ALL PASS; objbadges 93 pass, joins clean, only (4) PERF on
+Chapter 32 (unchanged, cold 6.4-6.7x at load 5; inherited). badgeart: all Fire Code legs pass (a first run caught the log furrows and the
+length grooves crossing onto neighbouring parts; fixed); its one FAIL is leg (1) on the academy's "Sexual Assault and Family Violence"
+ribbon (plate 10, a groove at 16.2,80.9), which fails identically on af8f535 - the police art10 work, not this round's.
+Neither chapter is in the Get Started clip. badges2's Fire Code reference moves to this round's art commit.

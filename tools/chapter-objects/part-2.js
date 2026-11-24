@@ -182,39 +182,67 @@
   }
 
   /* ---- Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities - a stack of logs seen end on, three, two
-     and one. (art10) Madison circled the whole stack and marked every join: the six ends were fused into one brown blob, the joins only
-     crack lines. Now six SEPARATE logs: each its own round end - a rough bark rim with its fissures, the light sawn face inside it with
-     its growth rings, its heart and a check or two (the radial crack a drying log opens) - and a deep shadow wherever logs meet and in
-     the gaps between them, so each end stands apart from its neighbours (they touch at points, they do not merge). Behind every end the
-     log's own length goes back a little up and to the right, in darker bark, so the stack has depth. ---- */
+     and one. (art10) Six SEPARATE logs, each its own end, standing up out of the shadow where they meet, their lengths going back.
+     (art11) Madison: "The log change is good but needs to be better." The sawn faces were flat beige discs with perfect rings pressed
+     in, and the bark an even brown rim with evenly spaced ticks - a dial, a bottle cap. Now each end is a real cut log: a rough bark rim
+     of uneven thickness (its inner edge wanders, its outside a little out of round) cut by irregular furrows of different lengths; end
+     grain in warm wood tones - a pale sapwood ring round a darker, warmer heartwood - with growth rings drawn as fine, slightly darker,
+     WAVY lines (each ring its own wobble, closer together toward the bark), the pith a little off centre, and one or two checks (the
+     radial cracks a drying log opens) as dark tapering splits. Behind each end the log's length recedes up and to the right in shaded
+     bark with furrows running along it. Everything is drawn from a fixed seed, so the six logs differ but the badge never changes. ---- */
   {
     const S = OBJ_SDF, BB = [0, 0, 100, 100];
-    const L = [[22, 78], [50, 78], [78, 78], [36, 53.75], [64, 53.75], [50, 29.5]], R = 13.4, RF = 10.9, BK = [2.6, -2.6];
-    const ends = S.union(L.map(c => S.circle(c[0], c[1], R)), 0);
+    const L = [[22, 78], [50, 78], [78, 78], [36, 53.75], [64, 53.75], [50, 29.5]], R = 13.4, BK = [3, -3];
+    let seed = 28; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    /* a wobbly closed curve round c: radius r(t) = r (1 + sum of three soft waves), sampled at n points */
+    const wob = (c, r, amp, n) => { const w = [0, 1, 2].map(k => [2 + k + Math.floor(rnd() * 2), rnd() * 6.283, amp * (1 - k * .3) * (.6 + .8 * rnd())]);
+      const pts = []; for(let i = 0; i < n; i++){ const t = i / n * 6.283; let f = 1; w.forEach(([m, ph, a]) => { f += a * Math.sin(m * t + ph); }); pts.push([c[0] + r * f * Math.cos(t), c[1] + r * f * Math.sin(t)]); } return pts; };
+    const path = pts => "M" + pts.map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L") + "Z";
+    /* a log's grain: ONE low wobble for the whole end (rings are concentric, roughly the same shape), each ring a little of its own */
+    const grain = () => { const w = [[2, rnd() * 6.283, .035 + .02 * rnd()], [3, rnd() * 6.283, .02 + .015 * rnd()], [5, rnd() * 6.283, .008]]; return t => w.reduce((f, [m, ph, a]) => f + a * Math.sin(m * t + ph), 1); };
+    const ringOf = (o, r, g, own, n) => { const ph = rnd() * 6.283, pts = []; for(let i = 0; i < n; i++){ const t = i / n * 6.283; const f = g(t) * (1 + own * Math.sin(4 * t + ph) + own * .6 * Math.sin(7 * t + ph * 2)); pts.push([o[0] + r * f * Math.cos(t), o[1] + r * f * Math.sin(t)]); } return pts; };
+    const logs = L.map((c, i) => {
+      const out = wob(c, R, .014, 72), face = wob([c[0] - .15, c[1] + .1], 10.3, .03, 72);
+      const o = [c[0] + (rnd() - .5) * 2.2, c[1] + (rnd() - .5) * 2];                 /* the pith, off centre */
+      const g = grain();
+      const heart = ringOf(o, 6.2, g, .012, 60);
+      const rings = [1.5, 2.8, 4, 5.1, 6.1, 7, 7.8, 8.5].map(r => ringOf(o, r, g, .008, 60));   /* closer together toward the bark */
+      return { c, out, face, o, heart, rings };
+    });
+    const ends = S.union(logs.map(g => S.poly(g.out)), 0);
     const backs = S.union(L.map(c => S.circle(c[0] + BK[0], c[1] + BK[1], R)), 0);
     const all = S.union([ends, backs], 3.2);                                                   /* (the outline's one loop: the gaps between the logs are inside it, in shadow) */
     const lp = f => S.loops(f, BB).map(S.pathOf).join("");
-    const at = (c, a, r) => (c[0] + r * Math.cos(a)).toFixed(2) + " " + (c[1] + r * Math.sin(a)).toFixed(2);
-    let fiss = "", rings = "", checks = "";
-    L.forEach((c, i) => {
-      for(let k = 0; k < 11; k++){ const a = (k + .37 * (i % 3)) * 2 * Math.PI / 11 + .2; fiss += "M" + at(c, a, RF + .9) + "L" + at(c, a, R - .9); }
-      const o = [c[0] + .45 * Math.cos(i * 2.1), c[1] + .35 * Math.sin(i * 2.1)];               /* the heart a little off the middle, as a real log's is */
-      [3, 5.6, 8.2].forEach(r => { rings += OBJ_circle(o[0], o[1], r); });
-      const a0 = -Math.PI / 2 + [.5, -.4, .9, -.7, .3, -1.1][i];
-      checks += "M" + at(o, a0, 1.4) + "L" + at(o, a0, 9.8);
-      if(i % 2 === 0){ const a1 = a0 + 2.4; checks += "M" + at(o, a1, 4.6) + "L" + at(o, a1, 9.4); }
+    /* the bark's furrows: short, irregular grooves across the rim, at uneven spacing and length; and furrows running along each length */
+    let furrows = "", along = "", checks = [];
+    logs.forEach((g, i) => {
+      for(let k = 0, t = rnd() * 6.283; k < 24; k++){ t += .14 + rnd() * .34;
+        const fp = g.face[Math.round(((t % 6.283) + 6.283) % 6.283 / 6.283 * g.face.length) % g.face.length], rf = Math.hypot(fp[0] - g.c[0], fp[1] - g.c[1]);
+        const r0 = Math.max(10.6, rf + .7) + rnd() * 1.2, r1 = Math.min(R - .45, r0 + .8 + rnd() * 1.8), bend = (rnd() - .5) * .3;   /* (it starts on the bark, clear of the sapwood's wandering edge) */
+        if(r1 - r0 < .6) continue;
+        furrows += "M" + (g.c[0] + r0 * Math.cos(t)).toFixed(2) + " " + (g.c[1] + r0 * Math.sin(t)).toFixed(2) + "L" + (g.c[0] + r1 * Math.cos(t + bend)).toFixed(2) + " " + (g.c[1] + r1 * Math.sin(t + bend)).toFixed(2); }
+      [-.55, .1, .75].forEach(t => { const ang = -Math.PI / 4 + t, px = g.c[0] + (R + 1.3) * Math.cos(ang), py = g.c[1] + (R + 1.3) * Math.sin(ang);   /* (on the length itself, clear of the end: a groove stays on its part) */
+        const q = [px + BK[0] * .55, py + BK[1] * .55], tri = S.poly([L[0], L[2], L[5]]), free = p2 => tri(p2[0], p2[1]) > .5 && L.every(c2 => c2 === g.c || Math.hypot(p2[0] - c2[0], p2[1] - c2[1]) > R + .6);
+        if(free([px + BK[0] * .2, py + BK[1] * .2]) && free(q)) along += "M" + px.toFixed(2) + " " + py.toFixed(2) + "L" + q[0].toFixed(2) + " " + q[1].toFixed(2); });   /* (only where the length shows) */
+      /* one or two checks: a dark split from the sapwood's edge in toward the pith, widest at the edge */
+      const nC = i % 2 === 0 ? 2 : 1;
+      for(let k = 0; k < nC; k++){ const t = (k ? 2.6 : 0) + rnd() * 6.283, r0 = 10.1, r1 = 2.4 + rnd() * 3;
+        const P = (r, w) => { const a = t + .05 * (r0 - r) / (r0 - r1); return [g.o[0] + r * Math.cos(a) - w * Math.sin(a), g.o[1] + r * Math.sin(a) + w * Math.cos(a)]; }, w0 = .42 + rnd() * .12;
+        checks.push(OBJ_poly([P(r0 + .4, -w0), P((r0 + r1) / 2, -w0 * .5), P(r1, 0), P((r0 + r1) / 2, w0 * .5), P(r0 + .4, w0)], [0, 0, .2, 0, 0])); }   /* a wedge: widest at the edge, to a point */
     });
     CHAPTER_OBJ["Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities"] = {
       d: S.shape(all, BB), base: "wood",
       plates: [
-        ["wood", S.shape(all, BB), { col: "#23170E" }],                                                 /* the shadow between the logs (the logs stand up out of it) */
-        ["wood", lp(S.minus(S.inter(backs, S.grow(all, -.01)), S.grow(ends, .9))), { z: .45, bev: .7, dome: .5, col: "#4A2F1B" }],   /* each log's length, going back */
-        ["wood", lp(ends), { z: 1.2, bev: .8, dome: .6, col: "#6E4428" }],                               /* the logs' ends, in their bark */
-        ["wood", fiss, { ln: .8, cut: .55, paint: 0 }],                                                /* its fissures */
-        ["wood", L.map(c => OBJ_circle(c[0], c[1], RF)).join(""), { z: .2, bev: .5, col: "#E9CB98" }],      /* the sawn faces */
-        ["wood", rings, { ln: .75, cut: .5, paint: 0 }],                                               /* their growth rings */
-        ["wood", checks, { ln: 1, cut: .9, paint: 0 }],                                                /* and checks */
-        ["wood", L.map((c, i) => OBJ_circle(c[0] + .45 * Math.cos(i * 2.1), c[1] + .35 * Math.sin(i * 2.1), 1.05)).join(""), { z: -.35, bev: .4, col: "#9A6A3A" }],   /* the heart */
+        ["wood", S.shape(all, BB), { col: "#21160D" }],                                                 /* the shadow between the logs (the logs stand up out of it) */
+        ["wood", lp(S.minus(S.inter(backs, S.grow(all, -.01)), S.union([S.grow(ends, .9), S.poly([L[0], L[2], L[5]])], 0))), { z: .45, bev: .7, dome: .6, col: "#4B301C" }],   /* each log's length, receding (round the outside of the stack: between the logs it is in shadow) */
+        ["wood", along, { ln: .7, cut: .45, paint: 0 }],                                               /* the furrows along it */
+        ["wood", logs.map(g => path(g.out)).join(""), { z: 1.2, bev: .8, dome: .5, col: "#5E3A20" }],     /* the logs' ends, in their bark */
+        ["wood", furrows, { ln: .6, cut: .55, paint: 0 }],                                              /* its furrows */
+        ["wood", logs.map(g => path(g.face)).join(""), { z: .25, bev: .45, dome: .25, col: "#E2B67A" }],   /* the end grain: the pale sapwood */
+        ["wood", logs.map(g => path(g.heart)).join(""), { col: "#C98F52" }],                            /* the warmer heartwood */
+        ["wood", logs.map(g => g.rings.map(path).join("")).join(""), { ln: .36, z: -.05, bev: .12, col: "#A86F3A" }],   /* the growth rings, wavy */
+        ["wood", checks.join(""), { z: -.4, bev: .25, col: "#4A2D16" }],                               /* the checks */
+        ["wood", logs.map(g => OBJ_circle(g.o[0], g.o[1], .9)).join(""), { z: -.25, bev: .3, col: "#8E5A2C" }],   /* the pith */
       ],
     };
   }

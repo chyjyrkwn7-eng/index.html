@@ -338,12 +338,19 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   const domeY = x => DC[1] - DR[1] * Math.sqrt(Math.max(0, 1 - ((x - DC[0]) / DR[0]) ** 2));
   const topDome = S.inter(S.ellipse(DC[0], DC[1], DR[0], DR[1]), S.box(0, 0, 100, 52.5, 0));
   const tank = S.union([topDome, S.box(10, 52, 80, 18, 0), S.inter(S.ellipse(50, 70, 40, 16), S.box(0, 69.5, 100, 31, 0))], 0);
-  const foot = S.box(26, 80, 48, 17, 2.5);
+  /* (art11) the foot ring: Madison, of art10's, "the bottom of the barrel thing looks like a USB" - a dark box with two oval slots. It
+     is a short steel cylinder now, seen a little from above like the collar: flared a little toward the ground, its bottom edge the front
+     arc of an ellipse (a curve, not a box), the tank's bottom dome sitting down into it (the tank is drawn over its top), a rolled lip
+     round its foot, and the tank's shadow on it under the dome. No slots. */
+  const FY0 = 80, FY1 = 92.6, FR0 = 20.5, FR1 = 24, FE = 4.2;                 /* its top (inside the tank) and its foot: half-widths and the ellipses' depth */
+  const front = (y0, r) => (x, y) => y - (y0 + FE * Math.sqrt(Math.max(0, 1 - ((x - 50) / r) ** 2)));   /* <0 above the front arc of the ellipse at y0 */
+  const foot = S.union([S.poly([[50 - FR0, FY0], [50 + FR0, FY0], [50 + FR1, FY1], [50 - FR1, FY1]]), S.ellipse(50, FY1, FR1, FE)], 0);
+  const lip = S.inter(foot, (x, y) => -front(FY1 - 2.8, FR1)(x, y));             /* the rolled lip: the foot below the arc 2.8 above its edge */
+  const vents = [-11, 0, 11].map(dx => OBJ_circle(50 + dx, FY1 - 4.6 + FE * Math.sqrt(1 - (dx / FR1) ** 2) - 1.2, 1.25)).join("");   /* three small round vents, on the band's curve */
   const CW = 16.5, ER = 3.6, TY = 9.8, Y0 = domeY(50 - CW);                  /* the collar's half-width, its ellipses' depth, the rim's middle, where its sides meet the dome */
   const ell = (cy, k) => (x, y) => { const dx = (x - 50) / CW; return y - (cy + k * ER * Math.sqrt(Math.max(0, 1 - dx * dx))); };   /* <0 above the arc (front k = 1, back k = -1) */
   const within = (x, y) => Math.abs(x - 50) - CW;
   const rimOut = S.ellipse(50, TY, CW, ER), rimIn = S.ellipse(50, TY + .25, CW - 1.9, ER - 1.25);
-  const front = (x, y) => Math.max(within(x, y), -ell(TY, 1)(x, y), ell(Y0, 1)(x, y));   /* between the rim's front arc and the foot's */
   const collar = S.union([rimOut, (x, y) => Math.max(within(x, y), TY - y, ell(Y0, 1)(x, y) - 6)], 0);   /* rim and body, run on into the dome */
   const all = S.union([tank, foot, collar], 1.6);
   /* the hand-hold opening: a slot cut through the front, curved as the front is */
@@ -353,10 +360,10 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
     base: "water",
     d: S.shape(all, BB),
     plates: [
-      ["steel", OBJ_rrect(26, 80, 48, 17, [0, 0, 2.5, 2.5]), { z: .3 }],                               /* the foot ring */
-      ["rubber", OBJ_rrect(33, 88, 10, 5, 2), { z: -1, bev: .5 }],                                        /* its slots */
-      ["rubber", OBJ_rrect(57, 88, 10, 5, 2), { z: -1, bev: .5 }],
-      ["ink", S.loops(S.inter(S.minus(S.grow(tank, 2.2), tank), S.box(26, 70, 48, 27, 2.5)), BB).map(S.pathOf).join(""), { z: .15, bev: .6, col: "#4B5158" }],   /* the tank's shadow on it */
+      ["steel", S.shape(S.minus(S.inter(all, S.grow(foot, 1.2)), S.grow(tank, -.5)), BB), { z: .35, bev: .6 }],      /* the foot ring, its band (under the tank's edge and its fillets) */
+      ["steel", S.shape(S.inter(all, lip), BB), { z: .6, bev: 1, dome: .3 }],                                /* its rolled lip */
+      ["rubber", vents, { z: -.7, bev: .45, col: "#2A2E34" }],                                             /* its vents */
+      ["ink", S.loops(S.inter(S.inter(S.minus(S.grow(tank, 2), tank), foot), (x, y) => y - 78), BB).map(S.pathOf).join(""), { z: .2, bev: .6, col: "#5A6068" }],   /* the tank's shadow on it */
       ["water", S.shape(S.minus(S.union([tank, S.inter(S.inter(all, S.grow(tank, 1.5)), (x, y) => y - 30)], 0), (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))), BB), { dome: 2 }],   /* the tank, from the collar's weld down (over the foot ring's top, as before) */
       ["water", OBJ_rrect(10, 54, 80, 6, 0), { z: .7, bev: .7 }],                                      /* its welded seam */
       ["steel", S.shape(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, ell(Y0, 1)(x, y))), BB)],                             /* (the collar's steel, under its parts to the outline's last corner) */
