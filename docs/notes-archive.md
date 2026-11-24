@@ -43782,7 +43782,12 @@ was 57's last nub); at load 4.5 Chapter 32 (not changed here) is 6.63x cold agai
 check-centering --quick ALL PASS, 0 off centre.
 badges2: against d4f9fae (art9) exactly 11 Fire Code tokens differed - these ten and Chapter 39 (the still's vapour line, redrawn at 384.137
 after art9, not this round's) - with their 22 sheet images, the case, the hand and the cutscene's open/seated frames; the unit cards and
-everything else pixel-identical. Fire Code's reference moves to this work's art commit.
+everything else pixel-identical. Fire Code's reference moves to this work's art commit (af6da1a).
+LATE FIX (af6da1a): reviewing the final before/after sheets, 61's foot ring had changed when nothing asked for it - the redraw cut the
+foot ring out of the tank plate (and the ring's shadow kept only one of its loops), so the ring's top showed square instead of tucked
+under the tank's curve. The tank runs over it again as before; the collar's shadow on the dome is a shade darker. Gates rerun after it:
+check-js, badgeart, casefit, sides, badgetwins, chapterbadges, ifcbadges ALL PASS; objbadges all but PERF (Chapter 32 cold 6.06x at load
+1.8, the inherited one); badges2 --class ifc ALL PASS against af6da1a.
 START-UP: the Get Started badges clip holds 54 and 59, so landing/badges.mp4 and its poster were re-recorded (BADGES_RATE .06 at load ~10:
 16.9s, 2.4 MB, one 1.4s capture gap, held ~2 frames on the clip's clock) and tools/landing-badges-art.json rewritten; check-b384-startup
 ALL PASS. (The clip's title is in the serif fallback font, as in the clip it replaces: the web font is blocked in the sandbox.)
