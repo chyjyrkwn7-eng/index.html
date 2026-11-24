@@ -43750,3 +43750,17 @@ you can see the hats through the Liquid Glass, and I guess the rings? Idk but it
   (clipped contents excluded): pilgrim 86.5, Santa 94.8, party 95.6 of the inner ring's 108.
 - Gates: check-b384-festive ALL PASS (86); against a0da788 it fails (13) for all nine hats (the orbs were under the hat there).
   sweep-layout --quick 20/20 clean; check-centering --quick 0 off centre (on 65abe76 - the later changes are the sky's placement only).
+
+## 384 festive round 5 - a thick fur cuff, a bigger party hat, close-ups unposed (same branch; build 384.137; NOT on main)
+
+- SANTA: the fur is a cuff 17 deep from the front (was 10), lower on the planet's shoulder (its bottom on the latitude where the sphere
+  is 87 wide, rx 43.5), full scallops on both edges (2.3 / 2.5), a lit top strip and a shaded underside in solid tones; the pompom
+  fuller (r 7.8, scallops 1.7, a lit centre). The corner where the cuff's end, the flop and the pompom meet showed the planet (gate
+  (12): 11 pixels, most 82) - a dark-red ellipse there now, the hat's shaded inside. Reach 99.4 of the inner ring's 108.
+- PARTY HAT: base 54 wide (rx 27, was 18) on its latitude, cone 47 tall (was 36), tilt 7 degrees (was 16) so it sits over the planet's
+  middle; six stripes, seven dots, a deeper gold trim, a bigger tuft. Reach 101.4: its tuft stays under the inner ring, so the orbs on
+  that ring pass over the tuft only.
+- CLOSE-UPS (record-b384-festive --closeups): hat-<season>.jpg UNPOSED - everything moving, the frame of a 35s window in which an orb's
+  middle is nearest the hat while 10px or more outside the hat's own box (its parts, not its shadow or its clip's contents); the party
+  hat lies on the orbs' path, so there the clearest frame of the window. hat-<season>-glass.jpg POSED - the nearest rank bubble moved
+  in front of the hat's shoulder, loops held, to show the hat through the glass.
