@@ -44179,3 +44179,18 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 - **Gates for the push:** check-js; merge --check; badgeart; chapterbadges; casefit; ifcbadges; objbadges (academy ALL PASS; ifc ALL PASS but PERF cold on Ch.32, untouched, which flakes under load); streak; centering --quick. The full suite ran on 384.138-140 this week.
 - 384.119: Madison, "not centered" (the share circle). Measured at 4x: the share circle sat 1.1px below the menu button's circle and its glyph .3px right, .4px high; and the menu button's white lines sat 2.5px low in their circle. The share circle is lifted (top -.072em) and its glyph moved (translate -.03em .045em); the menu button's lines and speaker are raised 3.2 units. Both circles now level, both drawings within .35px of their circle's centre.
 - 384.120: Madison: "the two line one is too high, the share one is too low". 384.119 centred only the menu button's white lines (the faint speaker over them left the drawing high) and moved the share glyph down. Now each whole drawing (speaker included; ink over 105 at 4x) is centred: menu button -.16/-.16px, share -.16/-.03px.
+
+## 384.148 (2026-11-24): the update is narrated every time
+- Madison: "The 'update' splash screen wasn't there for me, I have noticed they inconsistently show up as of late. Ensure they are showing up the right way".
+- **Why.** The splash said its update lines ("> downloading latest build... > update complete.") only on the reload `applyUpdate()` makes, which needs the OLD build open to find the new one. Opened cold after a deploy, iOS often loads the new page directly: the new build booted with an ordinary "> ready." splash. Whether anyone saw the update screen depended on which copy iOS happened to serve.
+- **Now.**
+  - Right after `APP_BUILD`, the app compares it with `class26e.lastbuild`, a device-level key in SHARED and in the sign-out keep list.
+  - If the device last ran a different build, or never recorded one but holds an account, it calls `window.__splashAsUpdate()`. The rest of the splash then says three update lines and "update complete.", and runs at least 2.6s.
+  - The splash's finish timer re-reads `duration`, since the call can lengthen it.
+  - Not on a first visit with no account, a class switch's arrival, or a splash that is already the update's.
+  - The forced update ("Pushing update", then the reload) is unchanged.
+- **Checked** in Chromium on three devices:
+  - no mark but an account: update lines;
+  - mark 384.120: update lines;
+  - mark 384.148: the normal lines.
+  - Gates: check-js, startup, newuser, whatsnew11.
