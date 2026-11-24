@@ -76,7 +76,7 @@
      CONNECTION is the photo's: two flat steel hinge links side by side, each pinned into one case and the other, a dark gap between
      them, a joint across each at the middle. ---- */
   {
-    const H = [50, 50], TH = -42 * D, U = [Math.cos(TH), Math.sin(TH)], V = [-Math.sin(TH), Math.cos(TH)], K = 1.13;   /* K: the local frame's scale */
+    const H = [50, 50], TH = -24 * D, U = [Math.cos(TH), Math.sin(TH)], V = [-Math.sin(TH), Math.cos(TH)], K = 1.19;   /* K: the local frame's scale */
     /* local frame: u along the pair's axis toward the upper cuff, v across it; the lower cuff is the upper one turned half round */
     const toA = (u, v) => [H[0] + K * (U[0] * u + V[0] * v), H[1] + K * (U[1] * u + V[1] * v)], toB = (u, v) => toA(-u, -v);
     const loc = (x, y) => { const dx = (x - H[0]) / K, dy = (y - H[1]) / K; return [dx * U[0] + dy * U[1], dx * V[0] + dy * V[1]]; };
@@ -84,20 +84,21 @@
     const pair = f => S.union([WA(f), WB(f)], 0);
     const pts2 = ps => ps.map(p => toA(...p)).concat([]), ptsB = ps => ps.map(p => toB(...p));
     /* one cuff, in the local frame */
-    const CU = 14, CW = 13, CL = 27, caseL = S.box(CU - CW / 2, -CL / 2, CW, CL, 3.2);
+    const CU = 14.5, CW = 16, CL = 34, caseL = S.box(CU - CW / 2, -CL / 2, CW, CL, 3.2);
     const RC = [30.5, 1.5], RO = 17.2, RI = 11.4, RB = 16.6, MR = (RO + RI) / 2, PA = -16;
     const sectorL = (a0, a1, r0, r1) => S.inter(ring(RC[0], RC[1], r1, r0), wedge(RC, a0, a1, 40));
     const barL = S.minus(sectorL(PA, 182, RI, RO), caseL);              /* the double bar: from the case round the outer side to the pivot */
     const PVL = polar(RC, MR, PA), pivotL = S.circle(PVL[0], PVL[1], 3.7);
     const bowL = S.minus(S.minus(sectorL(176, 360 + PA + 4, RI, RB), caseL), pivotL);   /* the single bow: from the pivot round the other side into the case */
     /* the hinge: two links side by side along the axis, pinned into each case */
-    const LV = 6.1, LW = 5.6, LU = 10.6;
+    const LV = 8.8, LW = 9.2, LU = 11;
     const linkL = v => S.box(-LU, v - LW / 2, 2 * LU, LW, 1.7);
     const linksW = S.union([linkL(-LV), linkL(LV)].map(f => WA(f)), 0);     /* (the links are their own turned copies: symmetric already) */
     const gapW = WA(S.box(-LU + 3.3, -LV + LW / 2, 2 * (LU - 3.3), 2 * LV - LW, .6));
     const cases = pair(caseL), bars = pair(barL), bows = pair(bowL), pivots = pair(pivotL);
-    /* (the space between the two links is open: the ground shows through it, as in the photo - a hole in the pin, not a dark plate) */
-    const sil = S.union([S.union([cases, bars, bows, pivots], .8), linksW], .3);
+    /* (the space between the two links is a deep dark recess, the ground in shadow between them: a hole there split the pin's back,
+       which carries the title, into pieces too small for it) */
+    const sil = S.union([S.union([cases, bars, bows, pivots], .8), linksW, gapW], .3);
     const t = S.trace(sil, BB);
     const linkV = S.minus(linksW, cases), gapV = S.minus(S.minus(gapW, linksW), cases);
     /* the case's face, its keyhole, rivets, the double-lock tab */
@@ -132,6 +133,7 @@
         ["rubber", seams, { ln: .7, cut: .35, paint: 0 }],                                                                       /* the double bars' seams */
         ["cream", all(g(pivots, .2)), { z: .65, bev: .5, dome: 1.2, col: "#C4CBD3" }],                                           /* the round pivot pins */
         ["steel", all(g(linkV, .2)), { z: .45, bev: .45, dome: .25, col: "#B4BDC6" }],                                           /* the two hinge links: flat steel plates */
+        ["rubber", all(g(gapV, .1)), { z: -.9, bev: .5, col: "#0B0C0F" }],                                                        /* the dark recess between them */
         ["steel", all(S.minus(S.union([-LV, LV].map(v => WA(S.box(-1.9, v - LW / 2 - .35, 3.8, LW + .7, 1.2))), 0), cases)), { z: .7, bev: .5, dome: 1.1, col: "#C9D0D7" }],   /* the knuckle at each link's middle, where its two plates hinge */
         ["steel", joints, { ln: .7, cut: .4, paint: 0 }],                                                                        /* the joint across it */
         ["steel", rivets + pins + pv.map(p => OBJ_circle(p[0], p[1], 1.6 * K)).join(""), { z: .3, bev: .3, dome: .6, col: "#D3D9DF" }],   /* rivets, hinge pins, the pivots' heads */
@@ -652,10 +654,10 @@
     const pShade = [["field", all(S.minus(S.inter(bodyP, S.grow(shift(pills, -.3, -.4), 1.4)), pills)), { col: "#A65A19" }]];
     const capShade = S.minus(S.inter(bodyP, shift(capF, .3, 1.8)), capF);                                               /* the cap's shade on the bottle, just under its lip */
     CHAPTER_OBJ["Health and Safety Code"] = {
-      d: sh(sil), col: "#D9822B", base: "field",
+      d: sh(sil), col: "#3A3A43", base: "field",   /* (art13) the base under it all is the capsules' shadow colour: no lighter halo where a capsule meets it */
       plates: [
         ["rubber", all(g(ground)), { col: "#3A3A43" }],                                              /* the capsules' shadow on the ground */
-        ["field", sh(g(bodyP)), { dome: 1.8 }],                                                                          /* the amber bottle */
+        ["field", sh(g(bodyP)), { dome: 1.8, col: "#D9822B" }],                                                                          /* the amber bottle */
         ["field", all(strip(CX + RX * .55, 100)), { col: "#D07C29" }],                                                  /* its shading round the side */
         ["field", all(strip(CX + RX * .72, 100)), { col: "#C47124" }],
         ["field", all(strip(CX + RX * .86, 100)), { col: "#B4661F" }],

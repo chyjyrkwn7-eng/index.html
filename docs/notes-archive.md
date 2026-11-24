@@ -44111,3 +44111,7 @@ ALL PASS here; --against af8f535 FAILS 22 of 25 (it passes only "a reload pays n
   - **Each cuff.** A black lock case, long across the axis, with a keyhole, four rivets and the yellow tab on the edge toward its ring. The black double bar runs round the outer side to the round pivot at the far end. The silver single bow comes back round the other side into the case, with ratchet teeth where it enters.
   - **The connection.** Two flat steel hinge links side by side, each pinned into both cases, with a raised knuckle and a joint at its middle. The space between the links is a real hole in the pin: the ground shows through, as in the photo.
 - **Health and Safety Code.** The capsules' ground shadow is colour only (no recess), which clears the base-coloured seam objbadges (4e) found where a capsule met it.
+- **Handcuffs, settled.** The axis is -24 degrees and the frame x1.19. The cases are 16 x 34. The links are 9.2 wide with a dark recess between them (`gapV`, z -.9), not a hole. Two constraints set these numbers:
+  - **A hole** split the back's field and failed objbadges (5): the plan fell to 0.016 against a floor of 0.026, and the title to 5.2 px.
+  - **A steeper axis** (-42 or -27) fitted the title but not the class line under it. The rows are set on one centre line, so the band through the hinge must be about 26 units tall. objbadges --class academy: ALL PASS.
+- Health and Safety Code: the base colour is the shadow's (#3A3A43); the bottle plate carries its own amber.
