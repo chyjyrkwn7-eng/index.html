@@ -210,7 +210,10 @@
       return { c, out, face, o, heart, rings };
     });
     const ends = S.union(logs.map(g => S.poly(g.out)), 0);
-    const backs = S.union(L.map(c => S.circle(c[0] + BK[0], c[1] + BK[1], R)), 0);
+    /* (art12) each log's length is its end swept back along BK - the hull of the end and the far end, a cylinder's side - not a second
+       circle behind it: a second circle left a crescent with a waist where the two outlines crossed, and with a dark gap round the end
+       it read as another log behind ("there's a second log or a piece of it there") */
+    const backs = S.union(L.map(c => S.union([0, 1, 2, 3, 4, 5, 6, 7, 8].map(k => S.circle(c[0] + BK[0] * k / 8, c[1] + BK[1] * k / 8, R)), 0)), 0);
     const all = S.union([ends, backs], 3.2);                                                   /* (the outline's one loop: the gaps between the logs are inside it, in shadow) */
     const lp = f => S.loops(f, BB).map(S.pathOf).join("");
     /* the bark's furrows: short, irregular grooves across the rim, at uneven spacing and length; and furrows running along each length */
@@ -234,7 +237,7 @@
       d: S.shape(all, BB), base: "wood",
       plates: [
         ["wood", S.shape(all, BB), { col: "#21160D" }],                                                 /* the shadow between the logs (the logs stand up out of it) */
-        ["wood", lp(S.minus(S.inter(backs, S.grow(all, -.01)), S.union([S.grow(ends, .9), S.poly([L[0], L[2], L[5]])], 0))), { z: .45, bev: .7, dome: .6, col: "#4B301C" }],   /* each log's length, receding (round the outside of the stack: between the logs it is in shadow) */
+        ["wood", lp(S.minus(S.inter(backs, S.grow(all, -.01)), S.union([S.grow(ends, .05), S.poly([L[0], L[2], L[5]])], 0))), { z: .45, bev: .45, dome: .2, col: "#4B301C" }],   /* each log's length, receding: the end's own side, running straight on from its bark (round the outside of the stack: between the logs it is in shadow) */
         ["wood", along, { ln: .7, cut: .45, paint: 0 }],                                               /* the furrows along it */
         ["wood", logs.map(g => path(g.out)).join(""), { z: 1.2, bev: .8, dome: .5, col: "#5E3A20" }],     /* the logs' ends, in their bark */
         ["wood", furrows, { ln: .6, cut: .55, paint: 0 }],                                              /* its furrows */

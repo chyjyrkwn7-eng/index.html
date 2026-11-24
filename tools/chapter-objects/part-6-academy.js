@@ -153,7 +153,12 @@
     for(let i = 0; i <= 24; i++){ const t = t0 + (1 - t0) * i / 24; vpts.push(Qq(L * t, wl(t) + .01)); }
     for(let i = 24; i >= 0; i--){ const t = t0 + (1 - t0) * i / 24; vpts.push(Qq(L * t, -wr(t) - .01)); }
     const vane = S.grow(S.poly(vpts), .8), shaft = S.cone(...Qq(-2, 0), ...Qq(L * .99, 0), 1.75, .8);
-    const quill = S.union([vane, shaft], 1), quillV = S.minus(quill, mouthAll), quillIn = S.inter(S.inter(shaft, S.grow(rimIn, -.25)), (x, y) => y - (MC[1] + .3));
+    /* (art12) Madison: "where it's supposed to be inside of the ink thing isn't happening". The quill goes down INTO the mouth: it is in
+       front of the rim's back half and of the ink, and behind the rim's front half, its front face, the neck and the bottle; where it is
+       inside the mouth it is wet with ink */
+    const front = S.union([S.inter(S.minus(rimO, rimIn), (x, y) => MC[1] + .15 - y), S.minus(rimAll, rimO), neck, bottle], 0);
+    const quill = S.union([vane, shaft], 1), quillV = S.minus(quill, front), quillWet = S.inter(quillV, S.grow(rimIn, .2));
+    const shaftX = A[0] + (MC[1] + .15 - A[1]) / w[1] * w[0];                                   /* where the shaft meets the ink */
     let barbs = ""; for(let k = 0; k < 15; k++){ const t = t0 + .06 + k * .042; barbs += lineP([Qq(L * t, 1.7), Qq(L * (t + .05), wl(t + .05) * .84)]); }
     for(let k = 0; k < 9; k++){ const t = t0 + .1 + k * .06; if(wr(t + .04) > 2.4) barbs += lineP([Qq(L * t, -1.5), Qq(L * (t + .04), -wr(t + .04) * .8)]); }
     const splits = lineP([Qq(L * .5, 1.6), Qq(L * .56, wl(.56) + 1)]) + lineP([Qq(L * .74, 1.6), Qq(L * .8, wl(.8) + 1)]);
@@ -174,8 +179,11 @@
       const k0 = twist ? Math.round(twist * N) : N;
       const back = S.inter(f, S.poly(mid.slice(k0).map(([p, n, h]) => [p[0] + n[0] * (h + 2), p[1] + n[1] * (h + 2)]).concat(mid.slice(k0).reverse().map(([p, n, h]) => [p[0] - n[0] * (h + 2), p[1] - n[1] * (h + 2)])).concat([[e[0][0] + fw[0] * 3, e[0][1] + fw[1] * 3]])));
       return { all: f, back }; };
-    const tL = tail([22, 74], [20.5, 87], [15, 98.9], 0), tR = tail([27.5, 74.5], [29.5, 87], [35, 98.9], .5);
-    const tails = S.union([tL.all, tR.all], 0), ribbonAll = S.union([tails, S.grow(seal, 0)], 0);
+    /* (art12) Madison: "it's supposed to look like it's resting on top of it, so why does the bottom make it look like it's built into
+       it?" The tails end ON the bottom roll (they ran off its edge onto the pin's ground, a step below the paper), and the sheet and the
+       rolls are no longer cut where the ribbon lies: the ribbon sits on them, over the roll's curve, with its shadow on the paper */
+    const tL = tail([22, 74], [20.6, 83], [16.2, 90.6], 0), tR = tail([27.5, 74.5], [29.4, 83], [33.4, 90.6], .5);
+    const tails = S.union([tL.all, tR.all], 0), ribbonAll = S.union([tails, S.grow(seal, 0)], 0), shift0 = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
     const pts5 = []; for(let i = 0; i < 10; i++){ const a = -90 + i * 36, r = i % 2 ? 1.45 : 3.5; pts5.push(polar(SC, r, a)); }
     const sil = S.union([sheet, rolls, bottle, neck, rimAll, rimO, quill, tails, seal], 1);
     let lines = ""; for(let y = 38; y <= 70; y += 6.4) lines += "M" + (y > 60 ? 35 : 19) + " " + F(y) + "H" + (y > 60 ? 50 : 58);   /* (art11) the lines beside the seal start right of it */
@@ -183,14 +191,15 @@
     CHAPTER_OBJ["US and Texas Constitution and Rights"] = {
       d: sh(sil), col: "#E9D5A6", base: "field",
       plates: [
-        ["field", sh(g(S.minus(sheet, ribbonAll))), { dome: .5 }],                                                       /* the sheet (cut where the seal and its ribbon lie on it: a part stacks on what is under it) */
+        ["field", sh(g(sheet)), { dome: .5 }],                                                                           /* the sheet */
         ["ink", lineP(Array.from({ length: 41 }, (_, i) => [19 + i, 26 - 2.4 * Math.sin(i / 40 * 5.5 * Math.PI) * (1 - i / 80)])), { ln: 2.2, z: .3, bev: .4, col: "#5A3A1E" }],   /* the heading's flourish */
         ["ink", lines, { ln: 1.1, cut: .3, col: "#8A6A44" }],                            /* its lines */
-        ["field", all(g(S.minus(rolls, ribbonAll))), { z: .7, bev: .9, dome: 1.7, col: "#D9BD84" }],                    /* the rolls */
+        ["field", all(g(rolls)), { z: .7, bev: .9, dome: 1.7, col: "#D9BD84" }],                                        /* the rolls */
+        ["field", all(S.minus(S.inter(S.union([sheet, rolls], 0), S.grow(shift0(ribbonAll, .5, .9), .9)), ribbonAll)), { col: "#B99A60" }],   /* the ribbon's shadow on the paper */
         ["field", sh(S.ellipse(RL, 14, 3.3, 6.6)) + sh(S.ellipse(RL, 86, 3.3, 6.6)), { z: .85, bev: .4, col: "#C3A267" }],   /* their ends */
         ["field", spiral(RL, 14) + spiral(RL, 86), { ln: .8, cut: .4, paint: 0 }],                                       /* the rolled sheet */
-        ["red", sh(g(S.minus(tL.all, seal), .2)), { z: .3, bev: 1.1, dome: .6, col: "#B3242B" }],                      /* the seal's ribbon tails, each its own band */
-        ["red", sh(g(S.minus(S.minus(tR.all, seal), tL.all), .2)), { z: .3, bev: 1.1, dome: .6, col: "#B3242B" }],
+        ["red", sh(g(S.minus(tL.all, seal), .2)), { z: .35, bev: .7, dome: .5, col: "#B3242B" }],                      /* the seal's ribbon tails, each its own band */
+        ["red", sh(g(S.minus(S.minus(tR.all, seal), tL.all), .2)), { z: .35, bev: .7, dome: .5, col: "#B3242B" }],
         ["red", all(S.minus(tR.back, tL.all)), { col: "#9A1E25" }],                                                      /* past its twist, the ribbon's back (colour only) */
         ["red", sh(g(seal)), { z: .9, bev: .8, dome: 1.3, col: "#C42A30" }],                                            /* the wax seal */
         ["red", OBJ_circle(SC[0], SC[1], 5), { ln: .8, cut: .4, paint: 0 }],                                             /* its ring */
@@ -200,12 +209,13 @@
         ["glass", sh(S.poly([[91, 78], [96, 76], [96, 93], [91, 95]])), { col: "#1F364F" }],                            /* right */
         ["glass", sh(S.poly([[66, 76], [70.5, 71.5], [91.5, 71.5], [96, 76], [91, 78], [71, 78]])), { col: "#5D86AE" }],   /* its shoulder */
         ["glass", sh(g(S.minus(neck, rimAll))), { z: .9, bev: .4, dome: .6, col: "#3C6188" }],                         /* its neck */
-        ["rubber", sh(S.minus(rimIn, quillIn)), { z: .6, bev: .3, col: "#101418" }],                                   /* the ink in it */
-        ["cream", sh(g(quillIn, .1)), { z: .9, bev: .3, dome: .4, col: "#E9E6DC" }],                                     /* the quill's shaft going down into it */
-        ["cream", all(g(quillV)), { z: 1.2, bev: .7, dome: 1, col: "#F4F2EA" }],                                       /* the quill */
+        ["rubber", all(S.minus(rimIn, quillV)), { z: .6, bev: .3, col: "#101418" }],                                   /* the ink in it */
+        ["brass", all(g(S.minus(S.minus(rimO, rimIn), quillV), .15)), { z: 1.1, bev: .4, dome: .5 }],          /* the mouth's rim: its top, a whole ring (the quill crosses its back half) */
+        ["cream", all(g(quillV)), { z: 1.2, bev: .7, dome: 1, col: "#F4F2EA" }],                                       /* the quill, down into the mouth */
+        ["cream", all(quillWet), { col: "#59606B" }],                                                                    /* where it is in the ink, wet */
+        ["rubber", all(S.minus(S.inter(S.ellipse(shaftX, MC[1] + .15, 3.1, 1), rimIn), quillV)), { col: "#2B3440" }],      /* the ink rising round it */
         ["cream", barbs + splits, { ln: .6, cut: .35, paint: 0 }],                                                       /* its barbs and splits */
         ["cream", keep([Qq(L * .26, 0), Qq(L * .97, 0)], q => quillV(...q) < -.4), { ln: 1.15, z: .3, bev: .3, col: "#FFFFFF" }],   /* its rachis */
-        ["brass", all(g(S.minus(rimO, rimIn))), { z: 1.1, bev: .4, dome: .5 }],                                          /* the mouth's rim: its top, a whole ring */
         ["brass", sh(g(S.minus(rimAll, rimO), .2)), { z: .9, bev: .35, dome: .3, col: "#B88A2E" }],                    /* its round front face */
       ],
     };
@@ -592,7 +602,7 @@
     /* (art11) the cap is one clean cylinder a little wider than the bottle, its ridges even, a plain lip round its foot, and its sides
        run straight down to that lip: no neck band under it and no fillet where it steps in to the bottle (that fillet was the bulge
        Madison circled on its right) */
-    const RC = RX + 1.6, capF = cyl(10, 26, RC), capTop = S.ellipse(CX, 10, RC, RC * KY), body = cyl(26, 86, RX);
+    const RC = RX + .3, capF = cyl(10, 26, RC), capTop = S.ellipse(CX, 10, RC, RC * KY), body = cyl(26, 86, RX);
     const below = y => S.minus(S.box(0, y, 100, 100, 0), S.ellipse(CX, y, RX + .01, RX * KY));                          /* the bottle from the front arc at y down */
     const capBelow = y => S.minus(S.box(0, y, 100, 100, 0), S.ellipse(CX, y, RC + .01, RC * KY));
     const capLip = S.inter(capF, capBelow(23.2));
@@ -603,10 +613,19 @@
       const whole = S.capsule(...A, ...B, r), capH = S.inter(whole, (x, y) => along(x, y)), bodyH = S.inter(whole, (x, y) => -along(x, y));   /* (art11) one radius: a wider cap half stepped the outline */
       const all_ = whole;
       const seam = [[M[0] - u[1] * (r - .6) + u[0] * .3, M[1] + u[0] * (r - .6) + u[1] * .3], [M[0] + u[1] * (r - .6) + u[0] * .3, M[1] - u[0] * (r - .6) + u[1] * .3]];
-      return { all: all_, capH, bodyH, seam }; };
+      /* (art12) its round: a lit band along its upper side and a shaded one along its lower side (colour only), so it reads as a
+         cylinder lying down, not a slab */
+      const n = u[1] > 0 ? [u[1], -u[0]] : [-u[1], u[0]], side = (x, y) => (x - A[0]) * n[0] + (y - A[1]) * n[1];
+      const lit = S.inter(S.grow(whole, -.7), (x, y) => Math.max(r * .18 - side(x, y), side(x, y) - r * .62));
+      const dark = S.inter(S.grow(whole, -.5), (x, y) => side(x, y) + r * .42);
+      return { all: all_, capH, bodyH, seam, lit, dark }; };
     const p1 = capsule([62.5, 89], [84.5, 81.2], 5.4), p2 = capsule([93.6, 94.4], [71.5, 96.2], 4.5);
     const pills = S.union([p1.all, p2.all], 0);
-    const sil = S.union([S.union([capF, body], 0), pills], .8);
+    const shift0 = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
+    /* (art12) the capsules lie on their own soft shadow: the pin's edge runs round the shadow, not round each capsule, so a capsule's
+       lower side is its own round, not the pin's bevel under it (that read as a second bottom) */
+    const ground = S.minus(S.union([S.grow(shift0(pills, .4, 1.1), 1.2), S.grow(pills, .8)], 1), S.union([capF, body], 0));
+    const sil = S.union([S.union([capF, body], 0), pills, ground], .6);
     const bodyP = S.minus(body, pills);
     let ridges = ""; for(let k = -8; k <= 8; k++){ const t = k / 9.6 * Math.PI / 2, x = CX + RC * Math.sin(t), y = RC * KY * Math.cos(t); ridges += "M" + F(x) + " " + F(10 + y + 1.6) + "V" + F(23.2 + y - 1); }
     /* print on the label: lines set from one left margin, following the cylinder (the front arcs of its ellipse) */
@@ -622,29 +641,29 @@
     CHAPTER_OBJ["Health and Safety Code"] = {
       d: sh(sil), col: "#D9822B", base: "field",
       plates: [
+        ["rubber", all(g(ground)), { z: -.2, bev: 1, col: "#3A3A43" }],                                              /* the capsules' shadow on the ground */
         ["field", sh(g(bodyP)), { dome: 1.8 }],                                                                          /* the amber bottle */
         ["field", all(strip(CX + RX * .55, 100)), { col: "#D07C29" }],                                                  /* its shading round the side */
         ["field", all(strip(CX + RX * .72, 100)), { col: "#C47124" }],
         ["field", all(strip(CX + RX * .86, 100)), { col: "#B4661F" }],
-        ["field", all(strip(0, CX - RX * .86)), { col: "#CD7B28" }],
         ["field", all(strip(CX - RX * .6, CX - RX * .43)), { col: "#E8994C" }],                                         /* its highlight */
         ["field", all(S.inter(bodyP, below(81))), { col: "#B5641B" }],                                                   /* its foot, darker */
         ["field", keep(ellP(ax, CX, 85.2, RX - 1.6, (RX - 1.6) * KY, 8, 172, 24), q => S.grow(pills, .6)(...q) > 0), { ln: .8, cut: .4, paint: 0 }],
         ...pShade,                                                                                                       /* the capsules' shade on it */
         ["cream", sh(g(S.minus(label, pills))), { z: .3, bev: .5, dome: .6, col: "#F4F1E8" }],                         /* the label */
         ["cream", all(S.inter(S.minus(label, pills), S.box(CX + RX * .62, 0, 40, 100, 0))), { col: "#E7E3D8" }],        /* round the side */
-        ["cream", all(S.inter(S.minus(label, pills), S.box(CX + RX * .84, 0, 40, 100, 0))), { col: "#D8D2C5" }],
         ["red", sh(S.inter(S.grow(label, .3), S.minus(S.box(0, 0, 100, 100, 0), below(49.5)))), { z: .3, bev: .3, dome: .6, col: "#2F6FB8" }],    /* its band */
         ["ink", print, { ln: 1.25, cut: .3, col: "#8F949B" }],                                                          /* its print */
         ["field", all(capShade), { col: "#9E5517" }],                                                                    /* the cap's shade on it */
         ["cream", sh(g(capF)), { z: .8, bev: .6, dome: 1.2, col: "#F2F3F4" }],                                          /* the cap: one cylinder, its sides straight down to its lip */
         ["cream", ridges, { ln: 1, cut: .6, paint: 0 }],                                                               /* its ridges */
         ["cream", sh(capLip), { col: "#E1E4E8" }],                                                                       /* its lip (colour only: no groove to dent its edge) */
-        ["cream", sh(g(capTop)), { z: .95, bev: .5, dome: .4, col: "#FBFBFC" }],                                        /* its top */
+        ["cream", sh(S.inter(g(capTop), capF)), { z: .95, bev: .5, dome: .4, col: "#FBFBFC" }],                                        /* its top */
         ["cream", lineP(ellP(ax, CX, 10, RX - 3.5, (RX - 3.5) * KY, 0, 360, 40)), { ln: 1.4, z: .3, bev: .4, col: "#ECEDEF" }],   /* its raised ring */
-        ["cream", all(S.minus(S.inter(g(p1.bodyH, .2), p1.all), p2.all)), { z: .4, bev: .6, dome: 1.5, col: "#F3F3F1" }],                      /* the capsules: the far one's body half, */
-        ["red", all(S.minus(S.inter(g(p1.capH, .2), p1.all), p2.all)) + all(S.inter(g(p2.capH, .2), p2.all)), { z: .45, bev: .6, dome: 1.5, col: "#D2342E" }],   /* both cap halves (they do not touch), */
-        ["cream", all(S.inter(g(p2.bodyH, .2), p2.all)), { z: .45, bev: .6, dome: 1.5, col: "#F3F3F1" }],                                       /* the near one's body half: each its own dome, so the near one lies over the far one */
+        ["cream", all(S.minus(S.inter(g(p1.bodyH, .2), p1.all), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#F3F3F1" }],                      /* the capsules: the far one's body half, */
+        ["red", all(S.minus(S.inter(g(p1.capH, .2), p1.all), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#D2342E" }],   /* the far one's cap half, */
+        ["red", all(S.inter(g(p2.capH, .2), p2.all)), { z: .85, bev: .9, dome: 2.8, col: "#D2342E" }],                      /* the near one's cap half, */
+        ["cream", all(S.inter(g(p2.bodyH, .2), p2.all)), { z: .85, bev: .9, dome: 2.8, col: "#F3F3F1" }],                                       /* the near one's body half: each its own dome, so the near one lies over the far one */
         ["red", keep(p1.seam, q => p2.all(...q) > .3) + lineP(p2.seam), { ln: .7, cut: .3, paint: 0 }],                            /* where the halves meet */
       ],
     };
@@ -815,59 +834,36 @@
     };
   }
 
-  /* ---- Victims of Crime - shelter: an umbrella held over a heart. The canopy's panels in two blues meeting at the ribs, its scalloped
-     edge and rib tips, the finial; the steel shaft running down behind a plump red heart to the brass ferrule and the wooden crook.
-     (art10, Madison circled the heart and the handle: the heart sat ON the shaft - laid level over it, so its edge stood as a second
-     step on its right and its foot - and the crook was a bent tube with a ball stuck on its end, joined to the shaft in a lump. Now the
-     shaft stops where the heart starts and runs on below it, the heart is one plump dome with one edge, and the shaft, the ferrule and
-     the crook are one turned piece: steel into a brass collar, the collar into the wood, the wood bending round in an even curve to a
-     rounded end.) ---- */
+  /* ---- Victims of Crime - a mended heart: a plump red heart with a crack across it, and an adhesive bandage laid over the crack,
+     corner to corner. (art12) Madison, of the umbrella over a heart: "Just change this one entirely, make it something else and make it
+     great." Harm and healing in one picture: the split shows on both sides of the bandage and the bandage holds it closed. The heart
+     is one dome; the crack is a jagged groove cut into it; the bandage is a cream strip with rounded ends, its gauze pad a paler raised
+     square, a row of vent holes on each wing. ---- */
   {
-    const AX = 50, TY = 13, EY = 45, RX = 45, ry = EY - TY;
-    /* (art11) seen from the side: the canopy hides the shaft - only the ferrule's tip shows above it, and the shaft comes out from under
-       the canopy's middle, below its scalloped edge. Four rib tips (no rib down the middle, which read as the pole drawn over the cloth):
-       the panel facing us is the widest and lightest, the two turning away darker. */
-    const TK = [-1, -.42, .42, 1], tips = TK.map(k => [AX + k * RX, EY]), DEP = [5, 5.2, 5];
-    const canopyPts = []; for(let i = 0; i <= 40; i++){ const t = Math.PI * i / 40; canopyPts.push([AX - RX * Math.cos(t), EY - ry * Math.sin(t)]); }
-    for(let k = 2; k >= 0; k--){ const a = tips[k + 1], b = tips[k]; for(let i = 1; i < 12; i++){ const s = i / 12; canopyPts.push([a[0] + (b[0] - a[0]) * s, EY - DEP[k] * Math.sin(Math.PI * s)]); } }
-    const canopy = S.grow(S.poly(canopyPts), .8);
-    const rib = dx => { const o = []; for(let i = 0; i <= 20; i++){ const t = Math.PI / 2 * i / 20; o.push([AX + dx * Math.sin(t), EY - ry * Math.cos(t)]); } return o; };
-    const RB = .42 * RX, mid = S.inter(canopy, S.poly(rib(-RB).concat(rib(RB).reverse(), [[AX + RB, EY + 4], [AX - RB, EY + 4]])));
-    const sides = S.minus(canopy, mid);
-    const fin = S.union([S.cone(AX, TY + 1.5, AX, TY - 4.6, 2.2, 1.1), S.circle(AX, TY - 5.1, 1.6)], .5);   /* the top ferrule: a small turned tip */
-    const tipBalls = S.union([tips[0], tips[3]].map(p => S.circle(p[0], p[1] + .4, 2.5)).concat([tips[1], tips[2]].map(p => S.circle(p[0], p[1] + .4, 2.3))), 0);
-    /* the heart: the classic heart curve, plump, its point rounded wider than the shaft (so the shaft leaves it cleanly) and its cleft a
-       soft dip (the shaft goes in behind it there) */
-    const HY = 58.6, heart = round(S.poly(Array.from({ length: 180 }, (_, i) => { const t = 2 * Math.PI * i / 180;
-      return [AX + 16 * Math.pow(Math.sin(t), 3) * 1.04, HY - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))]; })), 2.8, 2.4);
-    /* the shaft, the brass ferrule, the wooden crook: one piece */
-    const FY0 = 79.5, FY1 = 84, CR = 6.3, CC = [AX - CR, 89.4], WR = 3.1;
-    const shaft = S.capsule(AX, EY - 9, AX, FY0 + 1.6, 2.1);
-    const ferrule = S.poly([[AX - 2.1, FY0], [AX + 2.1, FY0], [AX + WR, FY1], [AX - WR, FY1]]);   /* a tapered collar, the shaft's width to the wood's */
-    const arcPts = []; for(let i = 0; i <= 24; i++){ const a = Math.PI * i / 24; arcPts.push([CC[0] + CR * Math.cos(a), CC[1] + CR * Math.sin(a)]); }
-    const crook = S.union([S.capsule(AX, FY1 - .5, AX, CC[1], WR)].concat(arcPts.slice(1).map((p, i) => S.capsule(...arcPts[i], ...p, WR))).concat([S.capsule(CC[0] - CR, CC[1], CC[0] - CR, CC[1] - 2.6, WR), S.circle(CC[0] - CR, CC[1] - 2.8, WR + .25)]), .4);
-    const handle = S.union([shaft, ferrule, crook], 0);
-    const sil = S.union([canopy, tipBalls, fin, handle, heart], .8);
-    const grain = keep(arcPts.map(([x, y]) => [CC[0] + (x - CC[0]) * .82, CC[1] + (y - CC[1]) * .82]), p => S.minus(crook, ferrule)(...p) < -.6);
-    const shaftV = S.minus(S.minus(shaft, canopy), S.union([heart, ferrule], 0));
-    const shift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
-    /* contact shade on the shaft: under the canopy's edge and under the heart's point (colour only) */
-    const shadeOn = (f, k) => S.minus(S.inter(shaftV, S.grow(shift(f, .4, 1), k)), f);
+    const AX = 50, HK = 2.72, HY = 43;
+    const heart = round(S.poly(Array.from({ length: 200 }, (_, i) => { const t = 2 * Math.PI * i / 200;
+      return [AX + 16 * Math.pow(Math.sin(t), 3) * HK, HY - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * HK]; })), 3.2, 3.2);
+    /* the bandage: along A (rising to the right), centred a little above the heart's middle */
+    const BC = [51.5, 47], A = -36 * Math.PI / 180, ca = Math.cos(A), sa = Math.sin(A);
+    const rot = (u, v) => [BC[0] + u * ca - v * sa, BC[1] + u * sa + v * ca];
+    const BL = 23.5, BW = 8.2, PL = 8.2, PW = 5.9;
+    const band = S.capsule(...rot(-BL + BW, 0), ...rot(BL - BW, 0), BW);
+    const pad = round(S.poly([rot(-PL, -PW), rot(PL, -PW), rot(PL, PW), rot(-PL, PW)]), 0, 1.4);
+    const holes = [-18.2, -14.2, 14.2, 18.2].flatMap(u => [-3.2, 0, 3.2].map(v => OBJ_circle(...rot(u, v), .62))).join("");
+    /* the crack: a jagged line across the heart, square to the bandage, its two ends showing either side of it */
+    const ck = [[-25, 1.5], [-19, -2.2], [-13, 1.8], [-8, -1.6], [-3, 1.2], [3, -1.4], [8, 1.6], [13, -1.8], [19, 1.4], [24, -1]]
+      .map(([v, u]) => rot(u, v));
+    const crackLine = S.union(ck.slice(1).map((q, i) => S.capsule(...ck[i], ...q, .95)), 0);
+    const crackV = S.minus(S.inter(crackLine, S.grow(heart, -2.4)), S.grow(band, .5));
+    const sil = S.union([heart, band], .6);
     CHAPTER_OBJ["Victims of Crime"] = {
-      d: sh(sil), col: "#2F5FA8", base: "field",
+      d: sh(sil), col: "#C92E2A", base: "field",
       plates: [
-        ["wood", sh(g(S.minus(crook, S.grow(ferrule, .1)))), { z: .3, bev: .6, dome: 1.3, col: "#7A4524" }],                    /* the wooden crook */
-        ["wood", grain, { ln: .7, cut: .3, paint: 0 }],                                                                            /* its grain along the bend */
-        ["steel", all(g(shaftV)), { z: .3, bev: .5, dome: .8 }],                                                                   /* the shaft: under the canopy, behind the heart */
-        ["steel", all(shadeOn(canopy, 1.6)) + all(shadeOn(heart, 1.6)), { col: "#5E6670" }],                                       /* its contact shade (colour only) */
-        ["brass", sh(g(ferrule)), { z: .5, bev: .4, dome: .8 }],                                                                  /* the ferrule */
-        ["brass", "M" + (AX - 2.2) + " " + (FY0 + 2.4) + "H" + (AX + 2.2), { ln: .7, cut: .35, paint: 0 }],
-        ["field", all(g(sides)), { dome: 2.2 }],                                                                                   /* the canopy: the panels turning away */
-        ["field", sh(g(mid)), { dome: 2.2, col: "#3E78C8" }],                                                                     /* the panel facing us */
-        ["field", lineP(rib(-RB).slice(2)) + lineP(rib(RB).slice(2)), { ln: 1.2, z: .25, bev: .3, col: "#24508F" }],              /* the ribs */
-        ["steel", all(g(tipBalls)), { z: .4, bev: .4, dome: .8 }],                                                                 /* the rib tips */
-        ["steel", sh(g(S.minus(fin, canopy), .2)), { z: .4, bev: .4, dome: .9 }],                                                     /* the top ferrule: only its tip, out of the canopy (cut where the canopy is: a part stacks on what is under it) */
-        ["red", sh(g(heart)), { z: .5, bev: .7, dome: 2.6, col: "#D8352C" }],                                              /* the heart */
+        ["red", sh(g(heart)), { z: .5, bev: .8, dome: 2.8, col: "#D8352C" }],                                     /* the heart */
+        ["red", all(crackV), { z: -.55, bev: .35, col: "#7E1714" }],                                                /* the crack, cut into it, either side of the bandage */
+        ["cream", sh(g(band)), { z: .9, bev: .6, dome: 1.1, col: "#E8C39A" }],                                      /* the bandage */
+        ["cream", holes, { z: -.3, bev: .15, col: "#B98D60" }],                                                     /* its vent holes */
+        ["cream", sh(g(pad, .15)), { z: .45, bev: .45, dome: .7, col: "#F7EBDA" }],                               /* the gauze pad */
       ],
     };
   }
@@ -885,22 +881,52 @@
     const photo = S.grow(S.poly([Q(-31, 8.5), Q(-15, 8.5), Q(-15, 20), Q(-31, 20)]), 1);
     const TC = [72.5, 64.5], TR = 17.6, TF = 14.2, token = S.circle(TC[0], TC[1], TR);
     const sil = S.union([card, token], 1.2), cardP = S.minus(card, token);
-    /* (art11) the print: Madison circled its top-left - the streamlines broke into loose dashes. Now a LOOP print drawn as a print is
-       read: one continuous ridge per loop, nested round a core - each ridge comes up one side, turns over the top and goes down the
-       other, its legs opening a little as they go down - tilted as a thumb is pressed. Every ridge stops a clear margin inside the
-       rim. */
-    const FPa = -14 * D, fpT = ([u, v]) => [TC[0] + u * Math.cos(FPa) - v * Math.sin(FPa), TC[1] + u * Math.sin(FPa) + v * Math.cos(FPa)];
-    const FPc = [.4, 1.6], FPr = 13.3;
-    let ridges = "";
-    for(let k = 0; k <= 8; k++){
-      const r = 1.2 + 1.9 * k, leg = (v, sg) => [FPc[0] + sg * (r + (v - FPc[1]) * .1 + Math.pow(Math.max(0, v - 5), 2) * .03), v], pts = [];
-      for(let v = 15; v > FPc[1]; v -= .5) pts.push(leg(v, -1));
-      for(let i = 0; i <= 36; i++){ const t = Math.PI + Math.PI * i / 36; pts.push([FPc[0] + r * Math.cos(t), FPc[1] + 1.1 * r * Math.sin(t)]); }
-      for(let v = FPc[1] + .5; v <= 15; v += .5) pts.push(leg(v, 1));
-      ridges += keep(pts.map(fpT), q => Math.hypot(q[0] - TC[0], q[1] - TC[1]) < FPr - .5);
+    /* the print: evenly spaced streamlines of the Sherlock-Monro orientation field (a core and a delta), traced at merge time */
+    /* evenly spaced streamlines of a loop-print orientation field (Sherlock-Monro), in a disc of radius RR */
+    function fingerprint(opt){
+      const RR = opt.R, SP = opt.sp, core = opt.core, delta = opt.delta, th0 = opt.th0 || 0;
+      const dir = (x, y) => { const a = .5 * (Math.atan2(y - core[1], x - core[0]) - Math.atan2(y - delta[1], x - delta[0])) + th0; return [Math.cos(a), Math.sin(a)]; };
+      const lines = [], pts = [];   /* pts: every accepted point, for the spacing test (a grid) */
+      const G = new Map(), cell = SP, key = (x, y) => Math.floor(x / cell) + "," + Math.floor(y / cell);
+      const near = (x, y, d, self) => { const cx = Math.floor(x / cell), cy = Math.floor(y / cell); let m = Infinity;
+        for(let i = -1; i <= 1; i++) for(let j = -1; j <= 1; j++){ const a = G.get((cx + i) + "," + (cy + j)); if(!a) continue; for(const p of a){ if(p[2] === self) continue; const q = Math.hypot(p[0] - x, p[1] - y); if(q < m) m = q; } } return m; };
+      const add = (p, id) => { const k = key(p[0], p[1]); if(!G.has(k)) G.set(k, []); G.get(k).push([p[0], p[1], id]); };
+      const st = .22;
+      const trace = (s, id, stopK) => {
+        const half = sg => { const o = []; let x = s[0], y = s[1], d = dir(x, y); d = [d[0] * sg, d[1] * sg];
+          for(let n = 0; n < 900; n++){
+            let e = dir(x, y); if(e[0] * d[0] + e[1] * d[1] < 0) e = [-e[0], -e[1]];
+            const mx = x + e[0] * st / 2, my = y + e[1] * st / 2; let f = dir(mx, my); if(f[0] * e[0] + f[1] * e[1] < 0) f = [-f[0], -f[1]];
+            const nx = x + f[0] * st, ny = y + f[1] * st;
+            if(Math.hypot(nx, ny) > RR) break;
+            if(Math.hypot(nx - core[0], ny - core[1]) < SP * .55 || Math.hypot(nx - delta[0], ny - delta[1]) < SP * .45) break;
+            if(near(nx, ny, SP * stopK, id) < SP * stopK) break;
+            /* do not run back into its own earlier points (a closed loop) */
+            if(o.length > 30){ let hit = false; for(let i = 0; i < o.length - 30; i += 2) if(Math.hypot(o[i][0] - nx, o[i][1] - ny) < SP * stopK){ hit = true; break; } if(hit) break; }
+            d = f; x = nx; y = ny; o.push([x, y]);
+          }
+          return o; };
+        const a = half(1), b = half(-1);
+        return b.reverse().concat([s], a);
+      };
+      const tryseed = (s, stopK) => {
+        if(Math.hypot(...s) > RR - .3) return;
+        if(near(s[0], s[1], SP, -1) < SP * .98) return;
+        const id = lines.length, l = trace(s, id, stopK);
+        if(l.length < (opt.minLen || 10)) return;
+        l.forEach(p => add(p, id)); lines.push(l);
+      };
+      /* seeds: first along a line across the ridges, then everywhere (gap filling) */
+      (opt.seeds || []).forEach(s => tryseed(s, .78));
+      for(let pass = 0; pass < 2; pass++) for(let y = -RR; y <= RR; y += SP * .5) for(let x = -RR; x <= RR; x += SP * .5) tryseed([x + .13, y + .07], .72);
+      return lines;
     }
+    const seeds = []; for(let v = -12.8; v <= 12.8; v += 1.9) seeds.push([9, v]);
+    const raw = fingerprint({ R: 12.9, sp: 1.9, core: [0, -2], delta: [-10, 8], th0: -.4, seeds });
+    const toT = ([x, y]) => [TC[0] - y, TC[1] + x];                       /* turned a quarter: the loop opens downward */
+    const ridges = raw.map(l => lineP(S.simp(l.map(toT), .03))).join("");
     const shift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
-    const shade = [0, 1, 2, 3, 4].map(k => { const f = 1 - k / 5; return ["field", all(S.minus(S.inter(cardP, S.grow(shift(token, .5 * f, .8 * f), .25 + 1.7 * f)), token)), { col: ["#C3D5E8", "#B6CADF", "#A9BFD6", "#9CB3CC", "#8EA6C1"][k] }]; });
+    const shade = [0, 1, 2, 3, 4].map(k => { const f = 1 - k / 5; return ["field", all(S.minus(S.inter(cardP, S.grow(shift(token, .9 * f, 1.3 * f), .3 + 2.6 * f)), token)), { col: ["#C3D5E8", "#B6CADF", "#A9BFD6", "#9CB3CC", "#8EA6C1"][k] }]; });
     let lines = ""; [[-8, 18], [-2, 22], [4, 14], [10, 20]].forEach(([y, l]) => { lines += keep([Q(-10, y), Q(-10 + l, y)], p => cardP(...p) < -.8); });
     CHAPTER_OBJ["Identity Crimes"] = {
       d: sh(sil), col: "#CFE0F0", base: "field",
@@ -913,7 +939,7 @@
         ["field", sh(photo), { z: -.6, bev: .5, col: "#A8C0D8" }],                                                          /* the photo window */
         ["ink", lines, { ln: 1.6, cut: .3, col: "#7E93A8" }],                                                                /* the details */
         ...shade,                                                                                                            /* the seal's soft shade on the card */
-        ["steel", sh(g(token)), { z: .7, bev: .6, gem: 1.1, gw: 2.2, dome: .5, col: "#5E6773" }],                            /* the seal: its polished rim, chamfered */
+        ["steel", sh(g(token)), { z: .7, bev: .6, gem: 1.1, gw: 2.2, dome: .5, col: "#B9C3CE" }],                            /* the seal: its polished rim, chamfered */
         ["field", OBJ_circle(TC[0], TC[1], TF), { z: -.45, bev: .7, dome: .7, col: "#223B66" }],                             /* its navy face, set in */
         ["water", ridges, { ln: .95, z: .3, bev: .28, col: "#98C4EE" }],                                                   /* the print */
       ],
