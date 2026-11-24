@@ -305,7 +305,9 @@ with sync_playwright() as pw:
         # his ASP reference, the umbrella's shaft and heart, the Constitution's ribbon tails and inkwell rim, the radio back to the
         # a0da788 shape with a blue LCD, the pill bottle's capsules and cap, the ribbon crossing, the fingerprint). Was c0816bbd.
         # Taken on this build after the seven were reviewed.
-        PIN = "9737995c"
+        # RE-PINNED (384.138 art11b): the handcuffs' bows polished silver, the Constitution's swallowtails and twist, the ribbon
+        # crossing (the over strand untouched, the under strand dipping under it). Was 9737995c. Taken on this build after review.
+        PIN = "83db107d"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)

@@ -43943,3 +43943,26 @@ badgeart ALL PASS; ifcbadges (6) re-pinned c0816bbd -> 9737995c (comment in the 
 ALL PASS; objbadges --class academy ALL PASS at load 5 (PERF cold failed three times at load 8-10, each time on units not touched
 here - Racial Profiling 8.16, Phonetic Alphabet 12.8 - while the measured cold ratios of the seven are within noise of af8f535's).
 Sheets: police-<badge>-before-after.jpg (2100 wide, q87; the radio also shows a0da788) with ~3x close-ups of each circled spot.
+
+## 384 art11b police (same branch, on 9eb431a; build stays 384.138; NOT on main)
+
+Review of art11: umbrella, radio, pills and fingerprint approved; three more passes.
+- Handcuffs still read as binoculars / black rubber rings. The colour split now follows the ASP photo: black is only the case and
+  the double bar (case down the inner side to the pivot); the single bow from the pivot round the open side into the case is bright
+  silver. A `steel` plate that narrow is nearly all slope and reflects the studio's dark floor (it rendered near black with a light
+  wall), so the bow is a light enamel (`cream`, #CDD4DB) with a darker colour band along its middle (the floor's reflection) and the
+  clear coat's highlight; the pivot pins the same. Rings larger against the cases (RO 23.2, RI 15.6); a 25.5-tall case lost the
+  class line again, so the cases stay 27 tall. The hinge links are unchanged. The diagonal ASP layout was not tried: the back's rows
+  share one centre, and a diagonal block leaves no run wide enough for the title.
+- Constitution tails: the swallowtail notch went OUT (the tangent was taken the wrong way round: an arrow point); now cut 3.8 INTO
+  each end. The right tail narrows smoothly to 40% at its middle and widens again (a half twist) and shows the ribbon's back (a
+  deeper red, colour only) below it. Tails end at y 98.9: with the points 2 units under the roll's foot the outline turned 150 degrees
+  and back there (objbadges (4e) nub).
+- Purple ribbon: the over strand carries no relief of its own any more (art11's lift and the ribbon plate's dome - which peaked where
+  the strands cross, the union being widest there - made the band along the under strand's path). The ribbon plate is colour only
+  (the silhouette's own bevel and dome shape it); the UNDER strand dips instead: ten plates (z -.065, bev 1.3) on the back strand,
+  circles round the crossing 13 + 1.1k, each stopping at the over strand's edges - one crisp step down there, a ramp back up; its
+  shade is five bands right at those edges, symmetric. The loop's reflection streaks went with the dome.
+Gates: check-js, badgeart, acadpins, chapterbadges, objbadges --class academy ALL PASS; merge/snap in step; ifcbadges re-pinned
+9737995c -> 83db107d. check-centering --quick: 1 off centre, Fire Code's Profile 'Forge' reward tab 0.53px high - the same flaky
+tab as on af8f535 (0.85) and art11's first run (0); no UI changed. Sheets (before = 9eb431a) carry a 132-device-px row (the case at 3x).

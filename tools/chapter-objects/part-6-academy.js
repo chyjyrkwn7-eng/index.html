@@ -74,8 +74,8 @@
      edge where it enters. Two flat steel hinge links join the two cases, pinned into each case and to each other at the middle. Laid
      out symmetrically, the hinge at the top centre (the cases and the hinge between them carry the back's title). ---- */
   {
-    const RO = 20.6, RI = 12.6, RB = 19.2, CY = 61.5, CXL = 25.4;       /* the ring: the double bar's outer radius, the opening; the bow's outer radius */
-    const BX0 = 25.4, BX1 = 43.2, BY0 = 20.5, BY1 = 47.5, BR = 3.6;     /* the left case */
+    const RO = 23.2, RI = 15.6, RB = 22.8, CY = 64, CXL = 24.4;       /* the ring: the double bar's outer radius, the opening; the bow's outer radius */
+    const BX0 = 26.2, BX1 = 43.2, BY0 = 20.5, BY1 = 47.5, BR = 3.6;     /* the left case */
     const LK = [26.3, 41.9], LKR = 4.6;                                  /* the two hinge links: their middles' heights, half heights */
     const mir = f => (x, y) => f(100 - x, y), mp = p => [100 - p[0], p[1]];
     const both = f => S.union([f, mir(f)], 0);
@@ -110,10 +110,11 @@
         ["rubber", all(both(S.box(BX0 + 2.2, BY0 + 2.2, BX1 - BX0 - 4.4, BY1 - BY0 - 4.4, 2.2))), { z: .3, bev: .7, gem: .4, gw: 1.4, col: "#33373F" }],   /* each case's raised face */
         ["rubber", keyholes, { z: -.55, bev: .35, col: "#0C0D10" }],                                                              /* the keyholes */
         ["hot", all(both(tab)), { z: .35, bev: .4, dome: .5, col: "#F2C12E" }],                                                  /* the double-lock tabs */
-        ["steel", all(g(bows, .2)), { z: .2, bev: .6, dome: 1.7, col: "#98A2AE" }],                                             /* the polished single bows */
-        ["steel", teeth, { ln: .8, cut: .45, paint: 0 }],                                                                          /* their ratchet teeth */
+        ["cream", all(g(bows, .2)), { z: .4, bev: .5, dome: 1, col: "#CDD4DB" }],                                            /* the polished single bows: bright steel (enamel-lit: a metal plate this narrow is all slope and reflects the dark floor) */
+        ["cream", all(both(S.inter(bow, ring(C[0], C[1], (RI + RB) / 2 + 2.2, (RI + RB) / 2 + .5)))), { dome: .05, col: "#7B8590" }],   /* the dark band of the floor in the polished steel */                                             /* the polished single bows */
+        ["cream", teeth, { ln: .9, cut: .6, col: "#9AA3AD" }],                                                                          /* their ratchet teeth */
         ["rubber", seams, { ln: .7, cut: .35, paint: 0 }],                                                                          /* the double bars' seams */
-        ["steel", all(g(pivots, .2)), { z: .65, bev: .5, dome: 1.2, col: "#B9C1CA" }],                                          /* the round pivot pins */
+        ["cream", all(g(pivots, .2)), { z: .65, bev: .5, dome: 1.2, col: "#C4CBD3" }],                                          /* the round pivot pins */
         ["steel", all(g(linkV, .2)), { z: .4, bev: .6, dome: 1.1, col: "#AEB7C1" }],                                            /* the hinge links */
         ["rubber", all(g(gapV, .1)), { z: -.3, bev: .4, col: "#121418" }],                                                        /* the gap between them */
         ["steel", "M50 " + F(LK[0] - LKR + 1) + "V" + F(LK[0] + LKR - 1) + "M50 " + F(LK[1] - LKR + 1) + "V" + F(LK[1] + LKR - 1), { ln: .8, cut: .45, paint: 0 }],   /* the hinge joint across each link */
@@ -162,15 +163,18 @@
     /* (art11) Madison: "Doesn't look like a legit ribbon" - the tails were boxy, pinched at a waist, with ragged ends. Now each tail is a
        satin ribbon hanging from under the seal along a gentle curve, a little narrower where it turns and flaring toward its end, cut in
        a clean swallowtail. */
-    const tail = (P0, C, P1, side) => { const bz = t => [(1 - t) * (1 - t) * P0[0] + 2 * (1 - t) * t * C[0] + t * t * P1[0], (1 - t) * (1 - t) * P0[1] + 2 * (1 - t) * t * C[1] + t * t * P1[1]];
-      const W = t => 5.6 - 1.1 * Math.sin(Math.PI * Math.min(1, t / .8)) * (t < .5 ? 1 : 1) + 2.2 * Math.pow(t, 2.2), N = 30, L = [], R = [], mid = [];
+    /* (art11b) each tail ends in a real swallowtail: the V is cut INTO the end, two points either side of it. The right tail turns over
+       once, partway down: it narrows smoothly to the twist and widens again, and below it the ribbon's back shows, a deeper red. */
+    const tail = (P0, C, P1, twist) => { const bz = t => [(1 - t) * (1 - t) * P0[0] + 2 * (1 - t) * t * C[0] + t * t * P1[0], (1 - t) * (1 - t) * P0[1] + 2 * (1 - t) * t * C[1] + t * t * P1[1]];
+      const W = t => (5.4 + 2.3 * Math.pow(t, 1.8)) * (twist ? 1 - .6 * Math.exp(-Math.pow((t - twist) / .085, 2)) : 1 - .1 * Math.sin(Math.PI * Math.min(1, t / .8))), N = 40, L = [], R = [], mid = [];
       for(let i = 0; i <= N; i++){ const t = i / N, p = bz(t), q = bz(Math.min(1, t + .01)), o = bz(Math.max(0, t - .01)), dx = q[0] - o[0], dy = q[1] - o[1], l = Math.hypot(dx, dy), n = [-dy / l, dx / l], h = W(t) / 2;
-        L.push([p[0] + n[0] * h, p[1] + n[1] * h]); R.push([p[0] - n[0] * h, p[1] - n[1] * h]); mid.push([p, n]); }
-      const e = mid[N], d = [-e[1][1], e[1][0]], notch = [e[0][0] - d[0] * 3.3, e[0][1] - d[1] * 3.3];
-      const f = round(S.poly(L.concat([notch], R.slice().reverse())), .45);
-      const under = S.inter(f, S.poly(mid.slice(14).map(([p, n]) => [p[0] + n[0] * side * .2, p[1] + n[1] * side * .2]).concat(mid.slice(14).reverse().map(([p, n]) => [p[0] + n[0] * side * 6, p[1] + n[1] * side * 6]))));
-      return { all: f, under }; };
-    const tL = tail([22, 74], [20.5, 86], [14.8, 96.8], 1), tR = tail([27.5, 74.5], [29.5, 86], [35, 96.8], -1);
+        L.push([p[0] + n[0] * h, p[1] + n[1] * h]); R.push([p[0] - n[0] * h, p[1] - n[1] * h]); mid.push([p, n, h]); }
+      const e = mid[N], fw = [e[1][1], -e[1][0]], notch = [e[0][0] - fw[0] * 3.8, e[0][1] - fw[1] * 3.8];   /* fw: forward along the tail; the notch goes back into it */
+      const f = round(S.poly(L.concat([notch], R.slice().reverse())), .35);
+      const k0 = twist ? Math.round(twist * N) : N;
+      const back = S.inter(f, S.poly(mid.slice(k0).map(([p, n, h]) => [p[0] + n[0] * (h + 2), p[1] + n[1] * (h + 2)]).concat(mid.slice(k0).reverse().map(([p, n, h]) => [p[0] - n[0] * (h + 2), p[1] - n[1] * (h + 2)])).concat([[e[0][0] + fw[0] * 3, e[0][1] + fw[1] * 3]])));
+      return { all: f, back }; };
+    const tL = tail([22, 74], [20.5, 87], [15, 98.9], 0), tR = tail([27.5, 74.5], [29.5, 87], [35, 98.9], .5);
     const tails = S.union([tL.all, tR.all], 0), ribbonAll = S.union([tails, S.grow(seal, 0)], 0);
     const pts5 = []; for(let i = 0; i < 10; i++){ const a = -90 + i * 36, r = i % 2 ? 1.45 : 3.5; pts5.push(polar(SC, r, a)); }
     const sil = S.union([sheet, rolls, bottle, neck, rimAll, rimO, quill, tails, seal], 1);
@@ -187,6 +191,7 @@
         ["field", spiral(RL, 14) + spiral(RL, 86), { ln: .8, cut: .4, paint: 0 }],                                       /* the rolled sheet */
         ["red", sh(g(S.minus(tL.all, seal), .2)), { z: .3, bev: 1.1, dome: .6, col: "#B3242B" }],                      /* the seal's ribbon tails, each its own band */
         ["red", sh(g(S.minus(S.minus(tR.all, seal), tL.all), .2)), { z: .3, bev: 1.1, dome: .6, col: "#B3242B" }],
+        ["red", all(S.minus(tR.back, tL.all)), { col: "#9A1E25" }],                                                      /* past its twist, the ribbon's back (colour only) */
         ["red", sh(g(seal)), { z: .9, bev: .8, dome: 1.3, col: "#C42A30" }],                                            /* the wax seal */
         ["red", OBJ_circle(SC[0], SC[1], 5), { ln: .8, cut: .4, paint: 0 }],                                             /* its ring */
         ["red", OBJ_poly(pts5, .3), { z: -.35, bev: .3, col: "#A8222A" }],                                              /* its star, pressed in */
@@ -313,28 +318,29 @@
        unbroken through the fold, the under strand's stop at it. */
     const frontTail = S.cone(...X2, ...RT, R, R + 2.4), ovS = cut(frontTail), unS = cut(S.cone(...LT, ...X1, R + 2.4, R));
     const shift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
-    const shade = (w, dx, dy) => S.minus(S.inter(unS, S.grow(shift(ovS, dx, dy), w)), ovS);
     const ou = [(RT[0] - X2[0]), (RT[1] - X2[1])], ol = Math.hypot(...ou), on = [-ou[1] / ol, ou[0] / ol];
     const oEdge = k => { const o = []; for(let i = 0; i <= 60; i++){ const t = i / 60, r = (R + 2.4 * t) - .15; o.push([X2[0] + ou[0] * t + on[0] * r * k, X2[1] + ou[1] * t + on[1] * r * k]); } return o; };
     const onUnder = p => unS(...p) < -.25;
-    /* the shade: seven bands, each a step darker towards the edge (a step too small to see), wider on the side away from the light */
     const hx = (a, b, k) => "#" + [0, 1, 2].map(i => { const v = Math.round(parseInt(a.substr(1 + 2 * i, 2), 16) * (1 - k) + parseInt(b.substr(1 + 2 * i, 2), 16) * k); return (v < 16 ? "0" : "") + v.toString(16); }).join("").toUpperCase();
-    const SHADE = [0, 1, 2, 3, 4, 5, 6].map(k => { const f = 1 - k / 7; return ["field", all(shade(.35 + 3.4 * f, 1.1 * f, 1.5 * f)), { col: hx("#8746AD", "#5A297C", (k + 1) / 7.6) }]; });
-    /* the over strand rides up by the under strand's thickness over the crossing: a lift along it with long soft ends (no step) */
+    /* the middle of the crossing */
     const lu = [X1[0] - LT[0], X1[1] - LT[1]], den = ou[0] * lu[1] - ou[1] * lu[0], tt = ((LT[0] - X2[0]) * lu[1] - (LT[1] - X2[1]) * lu[0]) / den;
-    const XC = [X2[0] + ou[0] * tt, X2[1] + ou[1] * tt], lift = S.inter(S.inter(ovS, (x, y) => -((x - X2[0]) * ou[0] + (y - X2[1]) * ou[1]) / ol), rell(XC[0], XC[1], 25, 30, Math.atan2(ou[1], ou[0]) / D));
-    /* (art11) Madison: "It doesn't make sense where it crosses." The lift was one plate with a 7-unit bevel all round, so the over
-       strand's edges had no step and grooves pressed in along them stood for one (a double edge), and its ends were light bands across
-       it. Now the lift is a stack of eight thin plates, each the WHOLE over strand (its own long edges, so they add to one crisp step
-       down onto the strand under it) cut by a circle round the crossing a little wider than the last: along the strand the steps are
-       a few hundredths high and a couple of units apart, so the strand rises and settles back with no seam or band. */
-    const frontC = cut(front), LIFT = [0, 1, 2, 3, 4, 5, 6, 7].map(k => ["field", sh(S.inter(frontC, S.circle(XC[0], XC[1], 16.5 + k * 1.25))), { z: .08, bev: 2.5, paint: 0 }]);
+    const XC = [X2[0] + ou[0] * tt, X2[1] + ou[1] * tt];
+    /* (art11b) the shade is on the strand that goes under, at both its ends, darkest right at the over strand's edge (no shift) */
+    const backC = cut(back), frontC = cut(front), tuck = w => S.minus(S.inter(S.inter(backC, S.circle(XC[0], XC[1], 24)), S.grow(frontC, w)), frontC);
+    const SHADE = [0, 1, 2, 3, 4].map(k => ["field", all(tuck(2.8 - k * .6)), { col: hx("#8746AD", "#4E2270", (k + 1) / 5.4) }]);
+    /* (art11) Madison: "It doesn't make sense where it crosses." art10's lift was one plate with a 7-unit bevel and grooves along the
+       over strand's edges (a double edge, light bands across it). (art11b) The over strand is not touched at all now - its shading runs
+       on along its own length through the crossing (art11's lift, eight plates round the crossing, still showed as a lighter band
+       where the other strand ran under it). Instead the strand going under DIPS as it reaches it: ten thin plates on the under strand,
+       each cut by a circle round the crossing a little wider than the last and stopping exactly at the over strand's edges, so they
+       add to one crisp step down at those edges and a gentle ramp back up away from them. */
+    const DIP = Array.from({ length: 10 }, (_, k) => ["field", all(S.minus(S.inter(backC, S.circle(XC[0], XC[1], 13 + k * 1.1)), frontC)), { z: -.065, bev: 1.3, paint: 0 }]);
     CHAPTER_OBJ["Sexual Assault and Family Violence"] = {
       d: t.d, holes: t.holes, col: "#7A3E9E", base: "field",
       plates: [
-        ["field", all(g(S.union([cut(back), cut(front)], 0))), { dome: 1.5, col: "#8746AD" }],                                        /* the ribbon */
-        ...SHADE,                                                                                                                       /* the over strand's soft shade on the other */
-        ...LIFT,                                                                                                                        /* it rides over it */
+        ["field", all(g(S.union([cut(back), cut(front)], 0))), { col: "#8746AD" }],                                   /* the ribbon: a satin band, its edges rounded, its face level (art11b: a dome over the whole ribbon peaked where the strands cross - the band across the over strand) */
+        ...SHADE,                                                                                                                       /* the under strand's shade where it tucks under */
+        ...DIP,                                                                                                                         /* the under strand dips under it */
       ],
     };
   }
