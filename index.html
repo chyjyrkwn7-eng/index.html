@@ -12501,7 +12501,11 @@
   .iv-route-step{ white-space:nowrap; }
   .iv-route-arr{ display:inline-block; margin:0 .4em; }
   .iv-route-ic.iv-route-share{ margin:0 .3em 0 0; }
-  .iv-route-ic.iv-route-share svg{ width:1em; height:1em; }
+  /* (384.119) Madison: "not centered". Measured at 4x: the share circle sat 1.1px below the menu button's circle (an inline grid takes
+     its baseline from its content, and the two contents differ) and its glyph a third of a pixel right and half a pixel high (the arrow's
+     tip is the tallest thing in it). The circle is lifted level, the glyph moved to the circle's middle. */
+  .iv-route-ic.iv-route-share{ position:relative; top:-.072em; }
+  .iv-route-ic.iv-route-share svg{ width:1em; height:1em; transform:translate(-.03em, .02em); }
   .iv-route-ic svg{ width:1.15em; height:1.15em; }
   .iv-pointer{ position:fixed; left:0; top:0; z-index:5; pointer-events:none; overflow:visible; }
   .iv-pointer path{ fill:none; stroke:#FFD34D; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
@@ -109492,7 +109496,7 @@ function showInstallFirst(o){
       if(a2hsIsIPhone()){
         /* the iPhone: no menu was opened for them - Safari's own, from the menu button at the left of the address bar */
         const ic = mk("span", "iv-route-ic"); ic.setAttribute("role", "img"); ic.setAttribute("aria-label", "the menu button at the left of the address bar");
-        ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 5.6h1.6l2.3-1.9v6.2L6.8 8H5.2z" fill="currentColor" opacity=".55"/><path d="M10.9 5.1q1.1 1.3 0 2.7M12.6 4q2 2.4 0 4.9" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" opacity=".55"/><path d="M5 13.2h13M5 17.8h8.5" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round"/></svg>';
+        ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.6 6.3h1.4l2-1.6v5.3L7 8.3H5.6z" fill="currentColor" opacity=".55"/><path d="M10.8 6q.9 1.1 0 2.3M12.3 5.1q1.7 2 0 4.1" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" opacity=".55"/><path d="M5 13.4h13M5 18h8.5" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round"/></svg>';
         /* (384.113) Madison: the icon "looks lower than the word share ... ensure the arrows next to it have the right spacing": every
            arrow is its own span with the same space either side, kept with the step before it; the icon is centred on the capitals */
         const arr = () => mk("span", "iv-route-arr", "\u2192");
