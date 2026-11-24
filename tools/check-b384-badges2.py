@@ -19,7 +19,7 @@ Every badge surface is drawn on the build under test and on a reference build, i
      device pixels: the cutscene allows 2 levels on 0.05% of the frame and prints what it allowed. The frames as they are, glint shown,
      are printed for information only;
  (4) no page errors.
---class academy compares with 560d3bc (384.136 academy pins; was 31588af, before that origin/main 384.107; --acad-ref REV|FILE); --class ifc compares with 1c2758a (384.133 art3; was 31588af, before that a68976a, claude/b384-badges,
+--class academy compares with 560d3bc (384.136 academy pins; was 31588af, before that origin/main 384.107; --acad-ref REV|FILE); --class ifc compares with af6da1a (art10; was d4f9fae (art9), 1c2758a (384.133 art3), 31588af, before that a68976a, claude/b384-badges,
 --ifc-ref REV|FILE). Default: both.
 Run:  python3 tools/check-b384-badges2.py [--class academy|ifc|both] [--against REV|FILE] [--shots DIR]
       --against origin/main must PASS the academy (main against itself); --against a68976a must FAIL it (the 24 redrawn pins)."""
@@ -68,7 +68,12 @@ HERE = body_of(arg("--against")) if arg("--against") else open(ROOT + "/index.ht
 # joins (each part stops where the part in front of it starts), so their tokens, sheet images, the case, the hand, the cards holding
 # them and the cutscene differ from c2417de on purpose (the run before this re-pin: (2) 37 of 58 units - exactly the 37 changed -
 # (1) 74 sheet images = those 37 on both devices, (3) case 2, hand 2, cards 6, cutscene 8, and nothing else). d4f9fae is that art.
-REFS = {"academy": arg("--acad-ref", "3ac7a9f"), "ifc": arg("--ifc-ref", "d4f9fae")}
+# (art10) Fire Code's reference RE-PINNED from d4f9fae to af6da1a: Madison circled ten pins ("Make these better..", "And these...":
+# Chapters 23, 28, 54, 57, 59, 61, 66, 67, Appendix C and Appendix H) and they were redrawn. The run before this re-pin (a0da788 + the
+# art) differed from d4f9fae in exactly 11 tokens - those ten and Chapter 39, whose vapour line 384.137 redrew after art9 (on purpose,
+# not this round's) - their 22 sheet images, the case, the hand and the cutscene's two frames on each device; the unit cards and
+# everything else pixel-identical. af6da1a is that art (abb5443, then 57's collar chamfers and 61's foot ring restored).
+REFS = {"academy": arg("--acad-ref", "3ac7a9f"), "ifc": arg("--ifc-ref", "af6da1a")}
 CLASSES = ["academy", "ifc"] if arg("--class", "both") == "both" else [arg("--class")]
 SHOTS = arg("--shots")
 ONLY = set(os.environ.get("ONLY", "").split(",")) - {""}   # sheet, screens, cutscene

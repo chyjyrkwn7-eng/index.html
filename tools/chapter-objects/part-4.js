@@ -80,31 +80,44 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
 
 /* ---- Chapter 54: Corrosive Materials - a chemical jug: the screw cap with its knurling, the neck, the moulded handle with a real hole
    through it, the ribbed body with its panel pressed in, and the acid it is leaking. (384.133 badgeart, Madison: "The leak is coming out
-   of the lid, the green leak." The round-9 drop hung from under the cap, so the cap looked like what was leaking.) The cap is now clean
-   and sealed; the acid seeps from a split low in the jug's side, runs down it and spreads into a glossy green puddle round the jug's
-   foot - the puddle is part of the silhouette, so it reads at 44px as a leaking container. ---- */
+   of the lid, the green leak." The round-9 drop hung from under the cap, so the cap looked like what was leaking.) The cap is clean and
+   sealed; the acid seeps from a split low in the jug's side.
+   (art10) Madison circled the drip and the puddle: the run was a stiff green spike (a straight cone) standing on the puddle, and the
+   puddle a flat lens jammed against the jug's foot at the jug's own height. Now the acid RUNS: a rivulet from the split that wanders a
+   little as it goes down the jug's side, swells into a bead low down and spreads where it reaches the ground; the puddle is an uneven
+   pool on the floor - in front of the jug and out to its left, lower than the jug (the jug stands IN it: its foot drops into the pool
+   all along, no seam), with a soft edge, a domed sheen and a few bubbles where the acid lands (it fizzes). The panel and the lower rib
+   stop short of the run so it lies on plain plastic. ---- */
 {
-  const S = OBJ_SDF, BB = [0, 0, 100, 100];
-  const PX = 31, PY = 94, PRX = 27, PRY = 5;                                   /* the puddle */
-  const t0 = Math.acos((57 - PX) / PRX) * 180 / Math.PI, t1 = 360 - Math.acos((20 - PX) / PRX) * 180 / Math.PI;
-  const arc = P4_arc(PX, PY, PRX, PRY, t0, t1, 16), aEnd = arc[arc.length - 1];
-  const jug = [[aEnd[0], aEnd[1]], [20, 36], [26, 26], [33, 22], [33, 13], [31, 13], [31, 4], [51, 4], [51, 13], [49, 13], [49, 20], [55, 14], [73, 13], [80, 20], [80, 96]];
-  const jr = [0, 10, 6, 2, 1, 1, 2.5, 2.5, 1, 1, 2, 3, 6, 4, 6];
-  const run = S.union([S.cone(31, 72, 31.3, 90, 1.2, 2.4), S.ellipse(31.5, 92.2, 4.6, 2.6)], 1.6);
+  const S = OBJ_SDF, BB = [0, 0, 100, 100], FT = 93;                         /* FT: the jug's foot, on the floor */
+  const jug = [[20, FT], [20, 36], [26, 26], [33, 22], [33, 13], [31, 13], [31, 4], [51, 4], [51, 13], [49, 13], [49, 20], [55, 14], [73, 13], [80, 20], [80, FT]];
+  const jr = [1, 10, 6, 2, 1, 1, 2.5, 2.5, 1, 1, 2, 3, 6, 4, 1];
+  const jugD = OBJ_poly(jug, jr), jugF = S.poly(OBJ_walk(jugD));
+  /* the pool on the floor, seen a little from above: a wide flat lobe in front of the jug, one out to its left (reaching back beside
+     it) and one running on to the right in front - joined softly, so its edge wanders */
+  const pool = S.union([S.ellipse(31, 95.6, 26.5, 4), S.ellipse(11.5, 92.2, 8.4, 3.9), S.ellipse(57, 96.7, 14, 2.8), S.ellipse(78.5, 95.6, 7, 3), S.ellipse(5.8, 97.4, 3.2, 1.9)], 4.5);
+  const all = S.union([jugF, pool], 4);
+  /* the run: a centreline from the split down the jug's side, its half-width swelling into a bead near the foot, and a foot that
+     spreads into the pool */
+  const N = 30, segs = [], cl = t => [26.45 + .55 * Math.sin(t * Math.PI * 1.15 + .2), 59.9 + 33.1 * t], rw = t => .85 + .5 * t;
+  for(let i = 0; i < N; i++){ const a = cl(i / N), b = cl((i + 1) / N); segs.push(S.cone(a[0], a[1], b[0], b[1], rw(i / N), rw((i + 1) / N))); }
+  const bx = cl(.64)[0], bead = S.union([S.cone(bx - .05, 77, bx + .1, 82, .95, 2.35), S.circle(bx + .1, 82, 2.35)], 0);   /* a bead: a long taper above, round below */
+  const run = S.inter(S.union([S.union(segs, 0), bead, S.ellipse(26.2, 93, 2.8, 1.5)], 1.1), jugF);   /* it pours into the pool at the jug's foot: the pool is the same acid */
   CHAPTER_OBJ["Chapter 54: Corrosive Materials"] = {
     base: "cream",
-    d: OBJ_poly(jug.concat(arc.slice(0, -1)), jr.concat(arc.slice(0, -1).map(() => 0))),
+    d: S.shape(all, BB),
     holes: [OBJ_rrect(57, 21, 14, 17, 5)],
     plates: [
-      ["water", OBJ_poly(arc.concat([[20, aEnd[1]], [20, 96], [arc[0][0], 96]]), arc.map(() => 0).concat([0, 6, 0])), { z: .2, bev: .6, dome: .5, col: "#86C232" }],   /* the puddle */
+      ["water", S.shape(S.minus(all, jugF), BB), { z: -1, bev: 1.6, dome: .6, col: "#86C232" }],          /* the pool, on the floor: lower than the jug, its foot dropping into it */
       ["cream", OBJ_rrect(52, 12, 28, 30, [7, 6, 2, 2]), { dome: .9 }],                            /* the handle */
-      ["glow", OBJ_rrect(26, 47, 48, 40, 5), { z: -.8, bev: .9 }],                               /* the panel pressed in */
-      ["field", "M21 43H79M21 91H79", { ln: 1.6, cut: .8, paint: 0 }],                            /* the moulded ribs */
+      ["glow", OBJ_rrect(32, 47, 42, 38, 5), { z: -.8, bev: .9 }],                               /* the panel pressed in */
+      ["field", "M21 43H79M31 88.5H79", { ln: 1.6, cut: .8, paint: 0 }],                          /* the moulded ribs (the lower one stops short of the run) */
       ["cream", OBJ_rrect(33, 13.5, 16, 10.5, [0, 0, 1, 1]), { z: .3 }],                          /* the neck, from under the cap (art9: its top showed through the cap as a step) */
-      ["red", OBJ_rrect(31, 4, 20, 9.5, 2.5), { z: .6, bev: .6 }],                               /* the cap */
+      ["red", OBJ_rrect(31, 4, 20, 9.5, [2.5, 2.5, 1, 1]), { z: .6, bev: .6 }],                  /* the cap */
       ["deep", "M35 6.5V11M39 6.5V11M43 6.5V11M47 6.5V11", { ln: 1.3, cut: .6, paint: 0 }],       /* its knurling */
-      ["glow", "M29.6 62.4L32.4 64.6L30.4 66.8L32.4 68.4", { ln: 1.3, cut: .9, paint: 0 }],           /* the split it seeps from */
-      ["water", S.shape(run, BB), { z: .6, bev: .6, dome: 1.1, col: "#86C232" }],                 /* the acid running down */
+      ["ink", "M24.2 59.6Q26.4 58.5 28.7 59.4", { ln: 1, z: -.45, bev: .3, col: "#6E6253" }],          /* the split it seeps from */
+      ["water", S.shape(run, BB), { z: .75, bev: 1.4, col: "#86C232" }],                  /* the acid running down */
+      ["water", OBJ_circle(33.5, 96.2, 1.35) + OBJ_circle(37.6, 95.1, .95) + OBJ_circle(21.8, 97.4, 1.05), { z: .2, bev: .3, dome: .5, col: "#C6EE7C" }],   /* where it lands, fizzing */
     ],
   };
 }
@@ -214,12 +227,23 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   const dn = ([x, y]) => [x, y + H];
   const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
   const box = S.grow(S.grow(S.poly([dn(P(DL, 0)), P(DL, 0), P(DL, 1), P(SR, 1), dn(P(SR, 1)), dn(P(SR, 0))]), -.9), .9);
-  /* the struck match: from inside the drawer up and to the left; its head; the flame off it */
+  /* the struck match: from inside the drawer up and to the left; its head; the flame off it.
+     (art10) Madison circled the head: a red disc sat on top of the flame with the flame behind it. A lit match's head is the end of the
+     stick, not a disc: it is ONE relief with the stick now (the stick swells smoothly into an oval head along its own axis, painted red
+     where the coating starts and charred dark at its top, where it burns), and the flame rises off it and wraps round its top - an
+     orange outer flame, a yellow one inside it and a white-yellow core right at the head, each a teardrop with its tip flickering
+     over, each stopping at the head (nothing is drawn under the head to show through it). */
   const M0 = [27, 57], M1 = [14.5, 23], ux = (M1[0] - M0[0]), uy = (M1[1] - M0[1]), ul = Math.hypot(ux, uy), u = [ux / ul, uy / ul];
-  const HC = [M1[0] + u[0] * 2, M1[1] + u[1] * 2];
-  const stick = S.capsule(M0[0], M0[1], M1[0], M1[1], 2.6), head = S.ellipse(HC[0], HC[1], 4.4, 4.4);
-  const flame = S.union([S.circle(HC[0] - 1.4, HC[1] - 6.5, 6.6), S.cone(HC[0] - 1.4, HC[1] - 6.5, HC[0] - 5.5, 2.5, 6.6, 1)], 2.2);
-  const all = S.union([box, stick, head, flame], 1.2);
+  const HC = [M1[0] + u[0] * 1.4, M1[1] + u[1] * 1.4], hp = (x, y) => (x - HC[0]) * u[0] + (y - HC[1]) * u[1], hq = (x, y) => (x - HC[0]) * -u[1] + (y - HC[1]) * u[0];
+  const oval = (c, a, b) => (x, y) => { const px = x - c[0], py = y - c[1], s = (px * u[0] + py * u[1]) / a, t = (px * -u[1] + py * u[0]) / b; return (Math.hypot(s, t) - 1) * Math.min(a, b); };
+  const stick = S.capsule(M0[0], M0[1], M1[0], M1[1], 2.3), head = oval(HC, 5.3, 3.4);
+  const match = S.union([stick, head], 2.2);                                   /* the stick swells into its head */
+  const tear = (c, r, ctl, tip, rt) => S.union([S.circle(c[0], c[1], r), S.tube(c, ctl, tip, t => rt + (r - rt) * Math.pow(1 - t, 1.35), 26)], 0);
+  const FB = [HC[0] + u[0] * 2.3, HC[1] + u[1] * 2.3];                        /* the flame's round foot, on the head's upper half */
+  const flame = tear(FB, 6.1, [FB[0] - .9, FB[1] - 7.8], [9.4, 1.2], .6);
+  const flameMid = tear([FB[0], FB[1] + .3], 4.4, [FB[0] - .6, FB[1] - 5.4], [10.5, 5.6], .45);
+  const CT = [HC[0] + u[0] * 4.4, HC[1] + u[1] * 4.4], core = tear(CT, 3.1, [CT[0] - .2, CT[1] - 3.2], [CT[0] - .8, CT[1] - 6.6], .4);   /* right on the head's top */
+  const all = S.union([box, S.union([match, flame], .5)], 1.2);
   /* the matches in the drawer, lying along it, heads at its open end */
   /* (art9) Madison: "There's a lot of spots all over that just don't look right." A part's relief is added to what is under it: each
      lying match's stick ran into its head (a pale hook in every red head), on under the sleeve's edge (a row of bumps down it), and the
@@ -232,7 +256,14 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   const sleeve = S.poly([P(SL, 0), P(SR, 0), P(SR, 1), P(SL, 1)]), over = S.grow(stick, .2);
   const sticks = S.loops(S.minus(S.minus(S.minus(S.union(lyS, 0), S.union(lyH, 0)), sleeve), over), BB).map(S.pathOf).join("");
   const heads = S.loops(S.minus(S.union(lyH, 0), over), BB).map(S.pathOf).join("");
-  const quad = (a, b, c, d, r) => OBJ_poly([a, b, c, d], r), FE = P(61.5, .5);
+  const quad = (a, b, c, d, r) => OBJ_poly([a, b, c, d], r);
+  /* (art10) Madison circled the flame on the label: a clipped notch at its top (a round body, a straight spike and a side tongue
+     joined, with a V between them). It is ONE teardrop now - a round foot, sides that sweep in to a single point, the tip flickering
+     over in a gentle S - with its hot heart inside, upright and centred on the label. */
+  const LC = P((SL + SR) / 2, .5);                                            /* the label's middle */
+  const tear0 = (c, r, ctl, tip, rt, n) => S.union([S.circle(c[0], c[1], r), S.tube(c, ctl, tip, t => rt + (r - rt) * Math.pow(1 - t, 1.3), n || 28)], 0);
+  const logo = tear0([LC[0] - .2, LC[1] + 3], 3.5, [LC[0] - 2.2, LC[1] - 2.9], [LC[0] + .8, LC[1] - 6.7], .45);
+  const logoCore = tear0([LC[0] - .1, LC[1] + 3.8], 1.7, [LC[0] - 1.1, LC[1] + .6], [LC[0] - .2, LC[1] - 2], .35, 16);
   CHAPTER_OBJ["Chapter 59: Flammable Solids"] = {
     d: S.shape(all, BB),
     col: "#2E6FB8", base: "field",
@@ -244,14 +275,18 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["cardboard", quad(P(DL, 0), P(SL, 0), dn(P(SL, 0)), dn(P(DL, 0)), [.8, 0, 0, .8]), { z: .2, bev: .5, col: "#D8B98C" }], /* the drawer's front */
       ["field", quad(P(SL, 0), P(SR, 0), P(SR, 1), P(SL, 1), .8), { dome: .8 }],                                              /* the sleeve's top */
       ["cream", quad(P(SL + 5, .17), P(SR - 5, .17), P(SR - 5, .83), P(SL + 5, .83), 1.6), { z: .5, bev: .6, col: "#F4EEDC" }],   /* its label */
-      ["red", S.shape(S.union([S.circle(FE[0], FE[1] + 3, 4.4), S.cone(FE[0], FE[1] + 3, FE[0] + 1.6, FE[1] - 10, 4.4, .7), S.cone(FE[0] - 1.6, FE[1] + 2.4, FE[0] - 4.4, FE[1] - 3.8, 3, .6)], 2.2), BB), { z: .4, bev: .4, dome: .5, col: "#E2412F" }],   /* the flame on it */
+      ["red", S.shape(logo, BB), { z: .4, bev: .45, dome: .55, col: "#E2412F" }],
+      ["hot", S.shape(logoCore, BB), { z: .15, bev: .35, dome: .3, col: "#F7A234" }],         /* its hot heart */   /* the flame printed on it (art10: a clean teardrop, its tip flickering over, centred on the label and lying in its plane) */
       ["leather", quad(P(SL, 0), P(SR, 0), dn(P(SR, 0)), dn(P(SL, 0)), [0, 0, .8, 0]), { z: .2, bev: .5, col: "#6B3F22" }],     /* the striking strip down its side */
       ["leather", "M" + f([SL + 3, 76.5]) + "H" + (SR - 3) + "M" + f([SL + 3, 80]) + "H" + (SR - 3), { ln: 1, cut: .4, paint: 0 }],
       ["shade", quad(P(SR, 0), P(SR, 1), dn(P(SR, 1)), dn(P(SR, 0)), [0, .8, .8, .8]), { z: .1, bev: .5 }],                     /* the sleeve's end */
-      ["wood", S.shape(S.minus(stick, head), BB), { z: 1, bev: .7, dome: .5, col: "#E2C38F", lvl: "struck" }],                                /* the struck match, one straight stick (lvl: not stepping down over the drawer's rim) */
-      ["hot", S.shape(flame, BB), { z: .8, dome: 1.4, col: "#FF8A2A" }],                                                        /* its flame */
-      ["glow", S.shape(S.union([S.circle(HC[0] - 1.2, HC[1] - 5.2, 3.4), S.cone(HC[0] - 1.2, HC[1] - 5.2, HC[0] - 3.6, 9.5, 3.4, .6)], 1.4), BB), { z: 1.3, bev: .6, dome: .8, col: "#FFE9A8" }],   /* its heart */
-      ["red", S.shape(head, BB), { z: 1.4, bev: .6, dome: 1.6, col: "#C9302A", lvl: "head" }],                                  /* its head, burning (whole: the flame under it no longer shows through) */
+      ["hot", S.shape(S.inter(all, S.grow(flame, 3)), BB), { col: "#FF8A2A" }],                                                 /* the flame's colour, under the match (so no base shows where they meet) */
+      ["wood", S.shape(match, BB), { z: 1, bev: .7, dome: .5, col: "#E2C38F", lvl: "struck" }],                                /* the struck match, one straight stick swelling into its head (lvl: not stepping down over the drawer's rim) */
+      ["red", S.shape(S.inter(match, (x, y) => -(hp(x, y) + 4.2 - .1 * hq(x, y) ** 2)), BB), { col: "#C9302A" }],   /* its red coating, from where the head swells */
+      ["rubber", S.shape(S.inter(head, (x, y) => -(hp(x, y) - .6 - .07 * hq(x, y) ** 2)), BB), { col: "#3B2620" }],   /* charred where it burns */
+      ["hot", S.shape(S.minus(S.inter(all, S.grow(flame, 3)), match), BB), { z: .6, dome: 1.3, col: "#FF8A2A" }],                                            /* its flame, rising off the head */
+      ["glow", S.shape(S.minus(flameMid, head), BB), { z: .2, bev: .6, dome: .6, col: "#FFC53D" }],                               /* the yellow inside it */
+      ["glow", S.shape(S.minus(core, head), BB), { z: .15, bev: .5, dome: .5, col: "#FFF5D6" }],                                  /* the white-hot core at the head */
     ],
   };
 }
@@ -290,6 +325,13 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
    ring follows that arc and runs out into the dome's outline at both ends; the collar's sides flare down into it; the outline is one
    filleted curve from the dome up the collar. Under the foot ring the dome takes its shadow, and the foot ring at the bottom takes the
    tank's. ---- */
+/* (art10) Madison circled the collar again (two pictures): its foot was a wide grey skirt flaring over the dome, joined to it in a
+   stepped, ragged line. A propane cylinder's collar is a steel CYLINDER standing on the dome, so it is drawn as one now: seen a
+   little from above, its rolled top rim is an ellipse (the inside of the collar and the valve's handwheel showing in it), its front
+   is a straight band between two parallel elliptic arcs, the curved hand-hold opening is cut through that front (the brass valve body
+   and its outlet seen through it), and its foot is the same ellipse laid on the dome - the line where it is welded on, the dome in its
+   shadow just under it (a raised steel bead there glinted in broken dashes: it read as ragged again). No skirt: the collar's sides come straight down to the dome and the outline takes them in with a small fillet.
+   Every part stops where the part in front of it starts (the dome stops at the weld, the front at the rim). ---- */
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
   const DC = [50, 52], DR = [40, 30];
@@ -297,26 +339,16 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
   const topDome = S.inter(S.ellipse(DC[0], DC[1], DR[0], DR[1]), S.box(0, 0, 100, 52.5, 0));
   const tank = S.union([topDome, S.box(10, 52, 80, 18, 0), S.inter(S.ellipse(50, 70, 40, 16), S.box(0, 69.5, 100, 31, 0))], 0);
   const foot = S.box(26, 80, 48, 17, 2.5);
-  /* the collar's foot: where a ring round the dome at the collar's width is seen from a little above - an arc from the dome's outline
-     at x = 50 -/+ FW, dipping DIP below it in the middle */
-  const FW = 21, DIP = 4.6, y0 = domeY(50 - FW);
-  const arcY = x => y0 + DIP * Math.max(0, 1 - ((x - 50) / FW) ** 2);
-  const arc = (dy, x0, x1) => { const o = []; for(let i = 0; i <= 28; i++){ const x = x0 + (x1 - x0) * i / 28; o.push([x, arcY(x) + dy]); } return o; };
-  /* the collar: its top, its sides flaring to the foot, which ends on the dome's outline at both sides and follows the arc between */
-  const below = S.poly(arc(1.4, 0, 100).concat([[100, 100], [0, 100]]));
-  /* (384.136 art4, Madison circled both ends of the foot ring where it met the dome's outline: it ran out INTO the outline, leaving a
-     notch and a stray light line at each side.) The collar's foot and its ring now stop a little inside the dome's face, the ring's ends
-     rounded, so the dome's outline runs on unbroken and the collar joins it with the outline's own fillet. */
-  const collar = S.minus(S.grow(S.poly([[38.6, 8.6], [61.4, 8.6], [50 + FW - 5.4, y0 + 2], [50 - FW + 5.4, y0 + 2]]), 2.6), below);
-  /* the ring thins toward its ends, where the dome's outline comes down close over the collar's foot: its top edge keeps just inside
-     the outline, and it ends round under the collar's flare */
-  const HR = FW - 2.2, rTop = [], rBot = [];
-  for(let i = 0; i <= 40; i++){ const x = 50 - HR + 2 * HR * i / 40, t = Math.max(arcY(x) - 2.8, domeY(x) + 1.5), b = Math.max(arcY(x) + 1.4, t + 1.9);
-    rTop.push([x, t]); rBot.push([x, b]); }
-  const ring = S.grow(S.grow(S.poly(rTop.concat(rBot.reverse())), -.7), .7);
-  const all = S.union([tank, foot, S.union([collar, ring], 1.5)], 2.6);
-  const lp = f => S.loops(f, BB).map(S.pathOf).join("");
-  const shadowUnder = S.inter(S.minus(S.poly(arc(4.4, 50 - FW + 1, 50 + FW - 1).concat(arc(-1, 50 + FW - 1, 50 - FW + 1))), ring), S.grow(tank, -1.6));
+  const CW = 16.5, ER = 3.6, TY = 9.8, Y0 = domeY(50 - CW);                  /* the collar's half-width, its ellipses' depth, the rim's middle, where its sides meet the dome */
+  const ell = (cy, k) => (x, y) => { const dx = (x - 50) / CW; return y - (cy + k * ER * Math.sqrt(Math.max(0, 1 - dx * dx))); };   /* <0 above the arc (front k = 1, back k = -1) */
+  const within = (x, y) => Math.abs(x - 50) - CW;
+  const rimOut = S.ellipse(50, TY, CW, ER), rimIn = S.ellipse(50, TY + .25, CW - 1.9, ER - 1.25);
+  const front = (x, y) => Math.max(within(x, y), -ell(TY, 1)(x, y), ell(Y0, 1)(x, y));   /* between the rim's front arc and the foot's */
+  const collar = S.union([rimOut, (x, y) => Math.max(within(x, y), TY - y, ell(Y0, 1)(x, y) - 6)], 0);   /* rim and body, run on into the dome */
+  const all = S.union([tank, foot, collar], 1.6);
+  /* the hand-hold opening: a slot cut through the front, curved as the front is */
+  const HW = 11, slot = S.grow(S.grow((x, y) => Math.max(Math.abs(x - 50) - HW + 2.4, -ell(TY + 4.3, 1)(x, y), ell(TY + 12.7, 1)(x, y)), -2.4), 2.4);
+  const inSlot = f => S.shape(S.inter(f, S.grow(slot, -.55)), BB);
   CHAPTER_OBJ["Chapter 61: Liquefied Petroleum Gases"] = {
     base: "water",
     d: S.shape(all, BB),
@@ -324,16 +356,20 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["steel", OBJ_rrect(26, 80, 48, 17, [0, 0, 2.5, 2.5]), { z: .3 }],                               /* the foot ring */
       ["rubber", OBJ_rrect(33, 88, 10, 5, 2), { z: -1, bev: .5 }],                                        /* its slots */
       ["rubber", OBJ_rrect(57, 88, 10, 5, 2), { z: -1, bev: .5 }],
-      ["ink", lp(S.inter(S.minus(S.grow(tank, 2.2), tank), S.box(26, 70, 48, 27, 2.5))), { z: .15, bev: .6, col: "#4B5158" }],   /* the tank's shadow on it */
-      ["water", S.shape(tank, BB), { dome: 2 }],                                                        /* the tank */
+      ["ink", S.loops(S.inter(S.minus(S.grow(tank, 2.2), tank), S.box(26, 70, 48, 27, 2.5)), BB).map(S.pathOf).join(""), { z: .15, bev: .6, col: "#4B5158" }],   /* the tank's shadow on it */
+      ["water", S.shape(S.minus(S.union([tank, S.inter(S.inter(all, S.grow(tank, 1.5)), (x, y) => y - 30)], 0), (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))), BB), { dome: 2 }],   /* the tank, from the collar's weld down (over the foot ring's top, as before) */
       ["water", OBJ_rrect(10, 54, 80, 6, 0), { z: .7, bev: .7 }],                                      /* its welded seam */
-      /* (384.136 art4) the dome's shadow band under the collar is gone: stopped inside the dome, its square ends read as a slab */
-      ["steel", S.shape(S.union([collar, ring], 1.5), BB), { z: .5, bev: .9, dome: .7 }],               /* the collar and its foot: ONE part (art6) */
-      /* (384.136 art6) Madison circled the collar's foot: a darker ring with a cut weld line between it and the collar read as two
-         pieces stacked on the dome. The foot is the collar's own steel now, flaring out in one soft bevel - no seam between them */
-      ["rubber", OBJ_rrect(38, 9, 24, 14, 4), { z: -1.7, bev: .7 }],                                     /* its window */
-      ["steel", OBJ_rrect(41.5, 10, 17, 5.5, 2.5), { dome: 1 }],                                      /* the valve's handwheel */
-      ["brass", OBJ_rrect(45.5, 15, 9, 8.5, 1.5), { gem: 1, gw: 2.2 }],                               /* the valve */
+      ["steel", S.shape(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, ell(Y0, 1)(x, y))), BB)],                             /* (the collar's steel, under its parts to the outline's last corner) */
+      ["steel", S.shape(S.minus(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, TY - 1.5 - y, ell(Y0, 1)(x, y))), rimOut), BB), { z: .55, bev: .9 }],   /* the collar's front, a band round a cylinder (its fillets into the dome with it) */
+      ["rubber", S.shape(slot, BB), { z: -1.5, bev: .6 }],                                                 /* the hand-hold opening */
+      ["brass", inSlot(S.box(42.5, TY + 8.6, 15, 12, 2)), { z: .2, gem: .9, gw: 2.2 }],                    /* through it: the brass valve body */
+      ["brass", inSlot(S.box(56.4, TY + 11.6, 6, 4.2, 1.6)), { z: .15, dome: .7 }],                        /* and its outlet */
+      ["water", S.shape(S.inter(S.minus((x, y) => Math.max(within(x, y) - 2, ell(Y0 + 1.5, 1)(x, y)), (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))), all), BB), { col: "#225C9A" }],   /* the dome in the collar's shadow, along the weld */
+      ["steel", S.shape(S.minus(rimOut, rimIn), BB), { z: .9, bev: .6, dome: .5 }],                       /* the rolled rim */
+      ["rubber", S.shape(rimIn, BB), { z: -1.3, bev: .5, col: "#2C3036" }],                                /* the inside of the collar */
+      ["rubber", OBJ_ellipse(50, TY + .5, 8.6, 1.75), { ln: 1.3, z: .45, bev: .4, col: "#4A5059" }],        /* the valve's handwheel in it: its rim, */
+      ["rubber", "M42.4 " + (TY + .5) + "H57.6M50 " + (TY - .9) + "V" + (TY + 1.9), { ln: 1, z: .3, bev: .3, col: "#4A5059" }],   /* its spokes */
+      ["rubber", OBJ_ellipse(50, TY + .5, 2.2, .9), { z: .5, bev: .3, dome: .3, col: "#5A616B" }],           /* and its hub */
     ],
   };
 }

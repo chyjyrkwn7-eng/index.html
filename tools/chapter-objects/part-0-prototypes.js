@@ -96,29 +96,50 @@
    spout now screws onto a NECK: a raised red boss moulded into the can's shoulder, the black threaded collar seated on it, square to the
    spout, with its grip ridges, and the spout running out of the collar to its amber cap. The silhouette is one filleted union, so the
    neck grows out of the can's top. ---- */
+/* (art10) Madison circled where the collar met the can: a notched, stepped corner. The spout leant out of a square boss on the flat
+   top, so the collar's corner hung over the can's edge on one side and the outline stepped round it. Now the can's top-right corner
+   is a SHOULDER sloped square to the spout (as a plastic fuel can's is), and everything stands square on it along one axis: the red
+   threaded neck moulded out of the shoulder (filleted into it both sides), the black collar screwed down onto it - a raised ring at
+   its foot and its grip ridges above - with a thin shadow on the neck under the ring, then the spout and the amber cap with its ring.
+   Each part starts where the one under it stops (nothing drawn under another to show through). */
 {
   const S = OBJ_SDF, BB = [0, 0, 100, 100];
-  const A = [72, 31], B = [89, 9], ux = B[0] - A[0], uy = B[1] - A[1], L = Math.hypot(ux, uy), dx = ux / L, dy = uy / L, nx = -dy, ny = dx;
-  const at = (t, w) => [A[0] + dx * t + nx * w, A[1] + dy * t + ny * w];
-  const quad = (t0, t1, w) => [at(t0, -w), at(t1, -w), at(t1, w), at(t0, w)];
-  const body = S.box(8, 31, 80, 63, 5.5), handle = S.box(13, 10, 39, 24, 4), boss = S.box(63.5, 24, 17, 9, 2.5);
-  const collar = S.poly(quad(2.5, 9.5, 7.6)), spout = S.poly(quad(9, L - 3.5, 5.6)), cap = S.poly(quad(L - 4, L + 4, 7.8));
-  const solid = S.union([body, handle, boss, collar, spout, cap], 1.6);
-  const sil = S.trace(S.minus(solid, S.box(20, 16, 25, 9, 3.5)), BB);
-  const ridges = [-4.6, -1.6, 1.6, 4.6].map(w => "M" + at(3.6, w).map(v => v.toFixed(2)).join(" ") + "L" + at(8.4, w).map(v => v.toFixed(2)).join(" ")).join("");
+  const th = 55 * Math.PI / 180, u = [Math.cos(th), -Math.sin(th)], n = [-u[1], u[0]];   /* the spout's axis (up and right) and across it */
+  const M = [77, 36.5];                                                          /* the neck's foot, on the shoulder */
+  const tt = (x, y) => (x - M[0]) * u[0] + (y - M[1]) * u[1], ww = (x, y) => (x - M[0]) * n[0] + (y - M[1]) * n[1];
+  const Q = (t, w) => [M[0] + u[0] * t + n[0] * w, M[1] + u[1] * t + n[1] * w];
+  const quad = (t0, t1, w) => [Q(t0, -w), Q(t1, -w), Q(t1, w), Q(t0, w)];
+  const slab = (t0, t1, w) => (x, y) => Math.max(t0 - tt(x, y), tt(x, y) - t1, Math.abs(ww(x, y)) - w);
+  const T1 = 4.6, T2 = 6.3, T3 = 11.6, T4 = 21.2, T5 = 27;                   /* neck | ring | grip | spout | cap */
+  const body = S.grow(S.grow(S.inter(S.box(5, 31, 80, 63, 5.5), tt), -1.5), 1.5);   /* the can, its top-right corner a shoulder square to the spout */
+  const handle = S.box(10, 10, 39, 24, 4);
+  const neck = S.poly(quad(-3, T1, 5.4)), ring = S.poly([Q(T1, -6), Q(T1 + .8, -7.3), Q(T2 - .5, -7.3), Q(T2, -6.8), Q(T2, 6.8), Q(T2 - .5, 7.3), Q(T1 + .8, 7.3), Q(T1, 6)]);   /* chamfered onto the neck below and into the collar above (a square step read as a notch) */
+  const spout = S.poly(quad(T3 - .5, T4 + .5, 5)), cap = S.poly(quad(T4, T5, 7));
+  const grip = S.poly([Q(T2, -6.8), Q(T3 - 1.4, -6.8), Q(T3 + .2, -5), Q(T3 + .2, 5), Q(T3 - 1.4, 6.8), Q(T2, 6.8)]);   /* the collar's top chamfered into the spout (a square step read as a notch) */
+  const can = S.union([body, handle], 1.6);
+  const solid = S.union([S.union([can, neck], 1.8), S.grow(S.grow(S.union([ring, grip, spout, cap], .7), -.9), .9)], .7);
+  const all = S.minus(solid, S.box(17, 16, 25, 9, 3.5)), sil = S.trace(all, BB);
+  const part = (t0, t1, w) => S.shape(S.inter(all, slab(t0, t1, w)), BB);
+  const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2), line = (t, w) => "M" + f(Q(t, -w)) + "L" + f(Q(t, w));
+  const ridges = [-4.8, -1.6, 1.6, 4.8].map(w => "M" + f(Q(T2 + .9, w)) + "L" + f(Q(T3 - .9, w))).join("");
   CHAPTER_OBJ["Chapter 57: Flammable and Combustible Liquids"] = {
     d: sil.d, holes: sil.holes,
     base: "red",
     plates: [
-      ["red", OBJ_rrect(8, 31, 80, 63, 5.5)],                                                   /* the can */
-      ["red", OBJ_rrect(15, 40, 66, 46, 4), { z: -.9, bev: 1 }],                                /* the panel pressed into its side */
-      ["red", "M21 46L75 80M75 46L21 80", { ln: 6, z: 1.4, bev: 1.4 }],                         /* the embossed X */
-      ["red", OBJ_rrect(13, 10, 39, 24, 4), { z: .3, bev: .8 }],                                /* the handle */
-      ["red", OBJ_rrect(63.5, 24, 17, 9, 2.5), { z: .6, bev: .8, dome: .6 }],                    /* the neck, moulded into the shoulder */
-      ["rubber", OBJ_poly(quad(9, L - 3.5, 5.6), 1), { z: .4, dome: .8 }],                       /* the spout */
-      ["rubber", OBJ_poly(quad(2.5, 9.5, 7.6), 1.2), { z: .8, bev: .7, dome: .5, lvl: "collar" }],   /* the threaded collar seated on the neck (art9: flat on it - the neck's and the can's edges showed through it across its ridges) */
-      ["rubber", ridges, { ln: 1.1, cut: .6, paint: 0 }],                                        /* its grip ridges */
-      ["hot", OBJ_poly(quad(L - 4, L + 4, 7.8), 1.5), { dome: 1.4 }],                             /* the cap */
+      ["red", S.shape(body, BB)],                                                               /* the can */
+      ["red", OBJ_rrect(12, 40, 64, 46, 4), { z: -.9, bev: 1 }],                                /* the panel pressed into its side */
+      ["red", "M18 46L70 80M70 46L18 80", { ln: 6, z: 1.4, bev: 1.4 }],                         /* the embossed X */
+      ["red", OBJ_rrect(10, 10, 39, 24, 4), { z: .3, bev: .8 }],                                /* the handle */
+      ["red", part(0, T1, 9), { z: .45, bev: .8, dome: .4 }],                                   /* the threaded neck, moulded out of the shoulder */
+      ["red", line(1.5, 4.6) + line(2.9, 4.8), { ln: .8, cut: .5, paint: 0 }],                /* its threads */
+      ["ink", OBJ_poly(quad(T1 - 1.1, T1, 6), 0), { col: "#4A100E" }],                       /* the collar's shadow on it */
+      ["rubber", part(T1, T4 + 1, 9.5)],                                                          /* (the black under the collar and spout, to their fillets' last corner) */
+      ["rubber", part(T1, T2, 9), { z: .95, bev: .5, dome: .3 }],                               /* the collar's ring, seated on the neck */
+      ["rubber", part(T2, T3, 9), { z: .75, bev: .6, dome: .5 }],                               /* the collar */
+      ["rubber", ridges, { ln: 1.1, cut: .55, paint: 0 }],                                       /* its grip ridges */
+      ["rubber", part(T3, T4, 9), { z: .35, dome: .8 }],                                         /* the spout */
+      ["hot", part(T4, 40, 9), { dome: 1.3 }],                                                    /* the cap */
+      ["hot", line(T4 + 1.6, 6.1), { ln: .8, cut: .45, paint: 0 }],                              /* its ring */
     ],
   };
 }

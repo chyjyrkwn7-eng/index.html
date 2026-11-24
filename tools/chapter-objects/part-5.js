@@ -56,28 +56,48 @@
   };
 }
 
-/* ---- Chapter 66: Unstable (Reactive) Materials - a round bomb: the domed sphere, the faceted steel cap, the fuse and its spark. ---- */
+/* ---- Chapter 66: Unstable (Reactive) Materials - a round bomb: the domed sphere, the faceted steel cap, the fuse and its spark.
+   (art10) Madison circled the spark: a gold star stuck over the fuse's end with a white disc. A lit fuse is a cord that burns at its
+   tip and throws sparks: the fuse is a twisted cord now, bending a little as a cord does, its tip a glowing ember, and from the ember a
+   starburst - a white-hot flash and nine thin rays of different lengths in warm yellow, all one piece with the outline. ---- */
 {
-  const C = [41, 60], R = 34, s = Math.SQRT1_2, u = [s, -s], n = [s, s], W = 9.5, CAP = 45, FW = 3.2, SR = 11.5, SV = 5.2, ST = 62;
+  const S = OBJ_SDF, BB = [0, 0, 100, 100];
+  const C = [41, 60], R = 34, s = Math.SQRT1_2, u = [s, -s], n = [s, s], W = 9.5, CAP = 45;
   const P = (t, w) => [C[0] + t * u[0] + w * n[0], C[1] + t * u[1] + w * n[1]], f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  const a = Math.sqrt(R * R - W * W), S = P(ST, 0), opp = P(-R, 0);
-  const star = [P(ST - SV, -FW)];
-  for(let k = 1; k <= 15; k++){ const ang = (135 + 22.5 * k) * Math.PI / 180, r = k % 2 ? SR : SV; star.push([S[0] + r * Math.cos(ang), S[1] + r * Math.sin(ang)]); }
-  star.push(P(ST - SV, FW));
-  const run = [P(a, -W), P(CAP, -W), P(CAP, -FW)].concat(star).concat([P(CAP, FW), P(CAP, W), P(a, W)]);
-  const rr = [0, 1.5, 1].concat(star.map((p, i) => (i === 0 || i === star.length - 1) ? 1 : (i % 2 ? 1.2 : 1))).concat([1, 1.5, 0]);
+  const a = Math.sqrt(R * R - W * W);
+  /* the fuse: a cord on a gentle curve from the cap's end to its burning tip */
+  const F0 = P(CAP - .6, 0), F1 = P(51.5, 2.4), T = P(57.6, -.6);
+  const bz = t => [(1 - t) * (1 - t) * F0[0] + 2 * (1 - t) * t * F1[0] + t * t * T[0], (1 - t) * (1 - t) * F0[1] + 2 * (1 - t) * t * F1[1] + t * t * T[1]];
+  const fuse = S.tube(F0, F1, T, t => 2.55 - .35 * t, 22);
+  /* the burst: a flash at the tip and nine rays, their angles from the fuse's own direction and their lengths uneven */
+  const dT = [T[0] - bz(.94)[0], T[1] - bz(.94)[1]], dl = Math.hypot(dT[0], dT[1]), a0 = Math.atan2(dT[1] / dl, dT[0] / dl);
+  const FC = [T[0] + dT[0] / dl * 1.4, T[1] + dT[1] / dl * 1.4];
+  const RAYS = [[-135, 6], [-108, 10.5], [-81, 7], [-54, 12.5], [-27, 8], [0, 13], [27, 7.5], [54, 11.5], [81, 6.5], [108, 10], [135, 6]];   /* evenly round (a narrow V between two rays at their roots read as a notch) */
+  const rays = RAYS.map(([g, L]) => { const t = a0 + g * Math.PI / 180, e = [FC[0] + Math.cos(t) * (2.4 + L), FC[1] + Math.sin(t) * (2.4 + L)]; return S.cone(FC[0], FC[1], e[0], e[1], 1, .26); });
+  /* the flash: a four-pointed glint (a twinkle), its points square to the fuse and across it */
+  const glint = S.union([0, 90, 180, 270].map(g => { const t = a0 + (g + 45) * Math.PI / 180, L = g % 180 ? 6.4 : 7.8; return S.cone(FC[0], FC[1], FC[0] + Math.cos(t) * L, FC[1] + Math.sin(t) * L, 1.45, .2); }).concat([S.circle(FC[0], FC[1], 1.7)]), .7);
+  const flash = S.circle(FC[0], FC[1], 2.2), burst = S.union([glint].concat(rays), .35);
+  const body = "M" + f(P(a, W)) + "A" + R + " " + R + " 0 0 1 " + f(P(-R, 0)) + "A" + R + " " + R + " 0 0 1 " + f(P(a, -W));
+  const capF = S.poly([P(a - 5, -W), P(CAP, -W), P(CAP, W), P(a - 5, W)]);
+  const all = S.union([S.circle(C[0], C[1], R), S.grow(S.grow(capF, -1), 1), S.union([fuse, burst], .8)], .9);
+  /* the cord's twist: short grooves across it, slanted, every 1.7 along it */
+  const e0 = [(T[0] - F0[0]), (T[1] - F0[1])], el = Math.hypot(e0[0], e0[1]), ex = e0[0] / el, ey = e0[1] / el;
+  const twist = (x, y) => { const sx = (x - F0[0]) * ex + (y - F0[1]) * ey, sw = (x - F0[0]) * -ey + (y - F0[1]) * ex, ph = ((sx + .75 * sw) % 1.9 + 1.9) % 1.9; return Math.abs(ph - .95) - .38; };
   CHAPTER_OBJ["Chapter 66: Unstable (Reactive) Materials"] = {
-    d: "M" + f(P(a, W)) + "A" + R + " " + R + " 0 0 1 " + f(opp) + "A" + R + " " + R + " 0 0 1 " + f(P(a, -W)) + OBJ_chain(run, rr) + "Z",
+    d: S.shape(all, BB),
     base: "rubber",
     plates: [
       ["rubber", OBJ_circle(C[0], C[1], R), { dome: 4 }],                                                   /* the sphere */
       /* (art9) Madison: "There's a lot of spots all over that just don't look right." The cap ran 5 on over the sphere and took its
          curve as an arc across it (a part's relief is added to what is under it). It now stands out of the sphere from its edge. */
-      ["brass", OBJ_SDF.shape(OBJ_SDF.minus(OBJ_SDF.poly([P(a - 5, -W), P(CAP, -W), P(CAP, W), P(a - 5, W)]), OBJ_SDF.circle(C[0], C[1], R)), [0, 0, 100, 100]), { z: .5, bev: .7, gem: .9, gw: 2.2 }],   /* the cap */
+      ["brass", S.shape(S.minus(S.inter(all, S.grow(capF, .6)), S.circle(C[0], C[1], R)), BB), { z: .5, bev: .7, gem: .9, gw: 2.2 }],   /* the cap */
       ["brass", "M" + f(P(a + 3.5, -W)) + "L" + f(P(a + 3.5, W)), { ln: 1.4, cut: .7, paint: 0 }],         /* its seam */
-      ["cream", OBJ_poly([P(CAP, -FW), P(ST - SV, -FW), P(ST - SV, FW), P(CAP, FW)], 0), { dome: .9 }],   /* the fuse, from the cap's end to the spark's foot (art9: run a unit into each, its ends showed through them) */
-      ["hot", OBJ_poly(star.slice(1, -1).concat([S]), 1), { z: .5, bev: .7, gem: 1, gw: 2.4 }],             /* the spark */
-      ["glow", OBJ_circle(S[0], S[1], 4.2), { dome: 1.2 }],                                                  /* its heart */
+      ["cream", S.shape(S.minus(S.inter(all, S.grow(fuse, .6)), S.union([capF, glint], 0)), BB), { dome: .9, col: "#E3D3B0" }],   /* the fuse, a round cord from the cap's end to the flash */
+      ["cream", S.loops(S.inter(S.minus(fuse, S.union([capF, glint], 0)), twist), BB).map(S.pathOf).join(""), { col: "#B9A27A" }],   /* its twist: the strands, slanting round it */
+      ["hot", S.shape(S.minus(S.inter(fuse, S.circle(T[0], T[1], 3.3)), glint), BB), { col: "#FF6A1C" }],   /* its tip, an ember */
+      ["glow", S.loops(S.minus(S.inter(all, S.grow(burst, .5)), S.union([fuse, glint], 0)), BB).map(S.pathOf).join(""), { z: .5, bev: .8, col: "#FFD23A" }],   /* the sparks, */
+      ["glow", S.loops(S.minus(S.inter(all, S.grow(burst, .5)), S.union([fuse, S.circle(FC[0], FC[1], 8.5)], 0)), BB).map(S.pathOf).join(""), { col: "#FF9A26" }],   /* cooling to orange as they fly */
+      ["glow", S.shape(glint, BB), { z: .7, bev: .7, dome: .5, col: "#FFF8E0" }],                            /* the white-hot glint at the tip */
     ],
   };
 }
@@ -88,12 +108,16 @@
   const C = [50, 62], R = 32, T = [50, 3], d = Math.hypot(T[0] - C[0], T[1] - C[1]), ph = Math.acos(R / d);
   const Rt = [C[0] + R * Math.sin(ph), C[1] - R * Math.cos(ph)], Lt = [C[0] - R * Math.sin(ph), C[1] - R * Math.cos(ph)], f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
   const sil = "M" + f(Rt) + "A" + R + " " + R + " 0 0 1 " + f([C[0], C[1] + R]) + "A" + R + " " + R + " 0 0 1 " + f(Lt) + OBJ_chain([Lt, T, Rt], [0, 3.5, 0]) + "Z";
+  const BOLT = [[54, 26], [67, 26], [57.5, 49], [69, 49], [39.5, 89], [49, 60], [40, 60]].map(([x, y]) => [+(50 + (x - 54.5) * .86).toFixed(2), +(58.5 + (y - 58) * .86).toFixed(2)]);
   CHAPTER_OBJ["Chapter 67: Water-Reactive Solids and Liquids"] = {
     d: sil,
     base: "water",
     plates: [
       ["water", sil, { dome: 2.4 }],                                                                          /* the drop */
-      ["brass", OBJ_poly([[57, 27], [37, 62], [49, 62], [41, 87], [65, 50], [53, 50], [63, 27]], [1.5, 1.5, 1, 1.5, 1.5, 1, 1.5]), { z: 1.4, bev: .9, gem: .8, gw: 2 }],   /* the spark */
+      /* (art10) Madison circled the bolt: crude and flat - a thin upper stroke, a wide step, a long thin spike. A classic bolt now: an
+         upper bar of one width slanting down to a level step, the lower bar leaving the step at the same width and tapering to a
+         sharp point; sharp outer corners, its edges chamfered in planes (gold catching the light along them), centred in the drop */
+      ["brass", OBJ_poly(BOLT, [.6, .6, .9, .6, .3, .9, .6]), { z: 1.1, bev: .7, gem: 1, gw: 2.3 }],   /* the bolt */
     ],
   };
 }
@@ -158,22 +182,26 @@
 }
 
 /* ---- Appendix C: Fire Hydrant Locations and Distribution - a map pin standing on its spot, a hydrant raised in its window: the location,
-   and what is there. ---- */
+   and what is there. (art10) Madison circled the foot: the pin's point was stuck into the middle of a wide, flat black disc. The pin
+   now STANDS on a small round base plate seen in perspective - its top an ellipse, its edge a band below it - with the point touching
+   the middle of the top and a soft contact shadow round it; the base stops where the pin starts (nothing under the pin to show through
+   it), so the pin reads as a marker standing on the map. ---- */
 {
-  const C = [50, 34], R = 31, T = [50, 88], d = T[1] - C[1], ph = Math.acos(R / d), E = [50, 87.5], EX = 32, EY = 8.5;
-  const Rt = [C[0] + R * Math.sin(ph), C[1] + R * Math.cos(ph)], Lt = [C[0] - R * Math.sin(ph), C[1] + R * Math.cos(ph)], f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  /* where each side of the pin meets the top of the spot (the ellipse) */
-  const meet = (P) => { const dx = T[0] - P[0], dy = T[1] - P[1], ox = (P[0] - E[0]) / EX, oy = (P[1] - E[1]) / EY, ax = dx / EX, ay = dy / EY;
-    const qa = ax * ax + ay * ay, qb = 2 * (ox * ax + oy * ay), qc = ox * ox + oy * oy - 1, t = (-qb - Math.sqrt(qb * qb - 4 * qa * qc)) / (2 * qa); return [P[0] + dx * t, P[1] + dy * t]; };
-  const Ir = meet(Rt), Il = meet(Lt);
-  const pin = "M" + f(Lt) + "A" + R + " " + R + " 0 0 1 " + f([C[0], C[1] - R]) + "A" + R + " " + R + " 0 0 1 " + f(Rt) + OBJ_chain([Rt, T, Lt], [0, 3, 0]) + "Z";
+  const S = OBJ_SDF, BB = [0, 0, 100, 100];
+  const C = [50, 34], R = 31, T = [50, 87.2], d = T[1] - C[1], ph = Math.acos(R / d), f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
+  const Rt = [C[0] + R * Math.sin(ph), C[1] + R * Math.cos(ph)], Lt = [C[0] - R * Math.sin(ph), C[1] + R * Math.cos(ph)];
+  const pin = "M" + f(Lt) + "A" + R + " " + R + " 0 0 1 " + f([C[0], C[1] - R]) + "A" + R + " " + R + " 0 0 1 " + f(Rt) + OBJ_chain([Rt, T, Lt], [0, 2.2, 0]) + "Z";
+  const pinF = S.poly(OBJ_walk(pin));
+  const BX = 17, BY = 4.6, BT = 3.2;                                           /* the base: its top's half-axes, and its thickness */
+  const top = S.ellipse(50, T[1], BX, BY), base = S.union([top, S.ellipse(50, T[1] + BT, BX, BY), S.box(50 - BX, T[1], 2 * BX, BT, 0)], 0);
+  const all = S.union([pinF, base], 1.2);
   CHAPTER_OBJ["Appendix C: Fire Hydrant Locations and Distribution"] = {
-    d: "M" + f(Lt) + "A" + R + " " + R + " 0 0 1 " + f([C[0], C[1] - R]) + "A" + R + " " + R + " 0 0 1 " + f(Rt) + "L" + f(Ir) +
-       "A" + EX + " " + EY + " 0 0 1 " + f([E[0], E[1] + EY]) + "A" + EX + " " + EY + " 0 0 1 " + f(Il) + "Z",
+    d: S.shape(all, BB),
     base: "rubber",
     plates: [
-      ["rubber", OBJ_ellipse(E[0], E[1], EX, EY), { dome: .5 }],                                        /* the spot */
-      ["rubber", OBJ_ellipse(E[0], E[1], EX - 6.5, EY - 3), { ln: 1.6, cut: .8, paint: 0 }],             /* its ring */
+      ["rubber", S.shape(S.minus(S.minus(all, top), pinF), BB), { z: -.2, bev: .9, col: "#3F454D" }],       /* the base's edge */
+      ["rubber", S.shape(S.minus(top, pinF), BB), { z: .25, bev: .8, dome: .3, col: "#7D8792" }],          /* its top */
+      ["rubber", S.shape(S.minus(S.inter(S.ellipse(54.6, T[1] + .55, 8.6, 2.2), S.grow(top, -.8)), pinF), BB), { z: -.12, bev: 1.3, col: "#5C656F" }],   /* the pin's shadow on it, falling down and right */
       ["red", pin, { dome: 2.2 }],                                                                  /* the pin */
       ["cream", OBJ_circle(C[0], C[1] + 1, 21), { z: -1.1, bev: 1 }],                                  /* its window */
       ["red", OBJ_poly([[46, 17], [54, 17], [55.5, 21], [59, 23], [61, 28], [58, 28], [58, 32], [66, 32], [66, 41], [58, 41], [58, 47], [61, 47], [61, 52],
@@ -192,14 +220,20 @@
    the outline's own corner, the ferrule is crimped twice, the body carries two facet lines like a hexagonal pencil, and the sharpened wood
    runs in straight to the graphite.) ---- */
 {
-  const X0 = 10, X1 = 72, Y0 = 27, Y1 = 97, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
-  const E = [76.8, 97], TP = [76.8, 1], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [u[1], -u[0]], HW = 4.8;   /* (art8) it stands on its eraser, point up: w > 0 is still its left (lit) side */
+  /* (art10) Madison circled the whole pencil: "make these better". A real pencil now, slimmer (a pencil is a long thin thing): a
+     hexagonal barrel showing three flat faces (lit, middle, shaded yellow - the middle face as wide as both sides together, as a hexagon
+     seen flat-on is); the sharpened wood cone with the SCALLOPED edge where the paint meets the wood (the cone cuts each flat face in a
+     curve, so the paint runs up to a point in the middle of every face); the graphite point; the metal ferrule with its crimped ridges
+     near both ends; and a pink eraser with a rounded end. It stands point up beside the board, clear of it below (its eraser runs past
+     the board's foot) and with the board's own edge rising between them, so it reads as a pencil standing there, not a strip of the
+     board. */
+  const X0 = 10, X1 = 72, Y0 = 27, Y1 = 96, f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
+  const HW = 4.1, E = [X1 + HW, 98.6], TP = [X1 + HW, 1], L = Math.hypot(TP[0] - E[0], TP[1] - E[1]), u = [(TP[0] - E[0]) / L, (TP[1] - E[1]) / L], n = [u[1], -u[0]];   /* it stands on its eraser, point up: w > 0 is its left (lit) side */
   const Q = (t, w) => [E[0] + u[0] * t + n[0] * w, E[1] + u[1] * t + n[1] * w];
-  const atX = (w, x) => (x - E[0] - n[0] * w) / u[0];          /* where the pencil's side w crosses the board's edge x */
-  const tl = atX(HW, X1), tr = atX(-HW, X1), CONE = L - 13.5, ER = 2.4;
+  const ER = 2.7, RUB = 5.6, FER = 15.2, CONE = L - 17.5, AP = L, PT = L - .5, GR = L - 6.2;   /* eraser | ferrule | barrel | cone | graphite */
   const rows = [48, 63, 78], plates = [
-    ["wood", OBJ_poly([[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]], [4, 4, 0, 4]), { dome: .6 }],                                   /* the board */
-    ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 54, 2), { z: .5, bev: .6 }],                    /* the sheet */
+    ["wood", OBJ_poly([[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]], [4, 4, 0, 4]), { z: .35, bev: 1, dome: .6 }],                    /* the board (its edges rise: the pencil stands clear of it) */
+    ["cream", OBJ_rrect(X0 + 6, Y0 + 10, X1 - X0 - 12, 53, 2), { z: .5, bev: .6 }],                    /* the sheet */
     /* (art9) Madison: "There's a lot of spots all over that just don't look right." The clip took the board's edge and the sheet's
        top as steps across it (a part's relief is added to what is under it); it now lies flat over both (lvl). */
     ["steel", OBJ_poly([[20, 38], [20, 28], [26, 16], [56, 16], [62, 28], [62, 38]], [2, 2, 3, 3, 2, 2]), { z: 1.1, bev: .8, dome: .6, lvl: "clip" }],   /* the clip */
@@ -215,33 +249,32 @@
   plates.push(["ink", tickD, { ln: 4.1, z: 1.0, bev: .5, col: "#16324F" }]);
   plates.push(["water", tickD, { ln: 2.5, z: 1.25, bev: .6 }]);   /* the ticks */
   plates.push(["cream", rows.map(y => "M36 " + (y - 2.5) + "H" + (y > 70 ? 52 : 58) + "M36 " + (y + 3) + "H" + (y > 70 ? 46 : 52)).join(""), { ln: 2.2, cut: .7, paint: 0 }]);
-  /* (384.133 art3, Madison circled the pencil's lower end, where the body meets the sharpened wood and the graphite: the body's facet
-     lines ran on past it and the cone and the tip did not line up.) One straight pencil now, every piece on the same axis and butting
-     on the next at one line across it: the eraser 0-6.8, the ferrule 6.8-11.2, the body 11.2 to the cone, the cone to the graphite and
-     the graphite to the point. The body is a hexagonal pencil's three faces - three flat strips side by side (each lit as one plane, so
-     the facets are its own edges, not lines cut along it), all three ending exactly where the cone starts. The cone and the graphite are
-     ONE taper: both sides run straight from the body's corners to a single point, the graphite is just the last stretch of it. */
-  /* (art6 round 4) Madison: "The pencil looks messed up". It is drawn now as a plain hexagonal pencil seen square on, nothing borrowed
-     from the versions that hung off the board: no side band, no grooves - three flat faces (lit, middle, shaded) from the ferrule to the
-     cone, the sharpened wood in the same three tones to the graphite, a crimped ferrule and the eraser. It runs the board's full height. */
-  const AP = L, PT = L - .5, GR = L - 7.2,   /* (art7) the lead is a real length of the point, so it shows on the face and down its side */ wAt = t => HW * (AP - t) / (AP - CONE), H3 = HW / 3;
-  const penOut = [Q(0, HW), Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, -wAt(PT)), Q(CONE, -HW), Q(0, -HW)];
-  const face = (w0, w1, t0, t1, col, role, o) => plates.push([role, OBJ_poly([Q(t0, w0), Q(t1, w0), Q(t1, w1), Q(t0, w1)], 0), Object.assign({ lvl: "pencil", z: 1.3, bev: .3 }, o, { col })]);
-  face(HW, H3, 11.2, CONE, "#F0C75A", "cardboard"); face(H3, -H3, 11.2, CONE, "#DDAA36", "cardboard"); face(-H3, -HW, 11.2, CONE, "#B5832A", "cardboard");
-  const cone = (wa, wb, col) => plates.push(["cardboard", OBJ_poly([Q(CONE, wa), Q(GR, wa * wAt(GR) / HW), Q(GR, wb * wAt(GR) / HW), Q(CONE, wb)], 0), { lvl: "pencil", z: 1.3, bev: .3, col }]);
-  cone(HW, H3, "#E6C08E"); cone(H3, -H3, "#D4A56C"); cone(-H3, -HW, "#B5844F");
-  plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { lvl: "pencil", z: 1.3, bev: .35, col: "#3A3D42" }]);   /* the graphite */
-  plates.push(["steel", OBJ_poly([Q(6.8, -HW), Q(11.2, -HW), Q(11.2, HW), Q(6.8, HW)], 0), { lvl: "pencil", z: 1.45, bev: .5, dome: .9 }]);   /* the ferrule */
-  plates.push(["steel", "M" + f(Q(8.4, -HW + .6)) + "L" + f(Q(8.4, HW - .6)) + "M" + f(Q(9.7, -HW + .6)) + "L" + f(Q(9.7, HW - .6)), { lvl: "pencil", ln: .7, cut: .45, paint: 0 }]);   /* its crimps */
-  plates.push(["red", OBJ_poly([Q(0, -HW), Q(6.8, -HW), Q(6.8, HW), Q(0, HW)], [ER, 0, 0, 0]), { lvl: "pencil", z: 1.3, bev: .7, dome: .9 }]);   /* its eraser */
-  plates.push(["rubber", "M" + f([X1, Y0]) + "V" + Y1, { ln: .9, cut: .4, paint: 0 }]);   /* the line where it stands against the board */
+  /* THE PENCIL. The cone's half-width at t, and where the paint stops across face w (the scallop: highest in each face's middle) */
+  const wAt = t => HW * (AP - t) / (AP - CONE), H2 = HW / 2, SB = 2.6;
+  const FACES = [[HW, H2], [H2, -H2], [-H2, -HW]];
+  const scal = (w0, w1, w) => { const c = (w0 + w1) / 2, h = Math.abs(w1 - w0) / 2; return CONE + SB * (1 - ((w - c) / h) ** 2); };
+  const N = 10, arc = (w0, w1) => { const o = []; for(let i = 0; i <= N; i++){ const w = w0 + (w1 - w0) * i / N; o.push(Q(scal(w0, w1, w), w)); } return o; };
+  const FCOL = ["#F7D262", "#E7B532", "#BE8A22"], WCOL = ["#E6C08E", "#D4A56C", "#B5844F"];
+  /* ONE relief for barrel, cone and point, cut into planar facets (gem: the ramp from each side is a hexagon's side face, half the
+     half-width wide, so the creases fall on the faces' own edges and run on up the cone to the point); the faces' tones on it */
+  plates.push(["cardboard", OBJ_poly([Q(FER, HW), Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, -wAt(PT)), Q(CONE, -HW), Q(FER, -HW)], [0, 0, .2, .2, 0, 0]), { lvl: "pencil", z: .9, bev: .3, gem: .8, gw: H2, col: FCOL[1] }]);
+  /* the barrel's faces, each from the ferrule to its scallop */
+  FACES.forEach(([w0, w1], k) => plates.push(["cardboard", OBJ_poly([Q(FER, w0)].concat(arc(w0, w1)).concat([Q(FER, w1)]), 0), { col: FCOL[k] }]));
+  /* the sharpened wood, each face's tone, from its scallop up to the graphite (the outer two keep their outer edge on the cone's own line) */
+  const gw = w => w * wAt(GR) / HW;
+  FACES.forEach(([w0, w1], k) => plates.push(["cardboard", OBJ_poly([Q(CONE, w0), Q(GR, gw(w0)), Q(GR, gw(w1)), Q(CONE, w1)].concat(arc(w0, w1).reverse().slice(1, -1)), 0), { col: WCOL[k] }]));
+  plates.push(["rubber", OBJ_poly([Q(GR, -wAt(GR)), Q(PT, -wAt(PT)), Q(PT, wAt(PT)), Q(GR, wAt(GR))], [0, .2, .2, 0]), { col: "#3A3D42" }]);   /* the graphite */
+  plates.push(["cream", OBJ_poly([Q(RUB, -HW), Q(FER, -HW), Q(FER, HW), Q(RUB, HW)], 0), { lvl: "pencil", z: 1.2, bev: .45, dome: .5, col: "#BCC3CC" }]);   /* the ferrule, brushed aluminium */
+  plates.push(["cream", [RUB + 1.3, RUB + 2.4, FER - 2.4, FER - 1.3].map(t => "M" + f(Q(t, -HW + .5)) + "L" + f(Q(t, HW - .5))).join(""), { lvl: "pencil", ln: .7, cut: .6, paint: 0 }]);   /* its crimped ridges */
+  plates.push(["red", OBJ_poly([Q(0, -HW), Q(RUB, -HW), Q(RUB, HW), Q(0, HW)], [ER, 0, 0, ER]), { lvl: "pencil", z: 1.1, bev: .8, dome: 1, col: "#EC6F82" }]);   /* its eraser, rounded */
+  plates.push(["rubber", "M" + f([X1, Y0 + 1]) + "V" + (Y1 - .5), { ln: 1, cut: .5, paint: 0 }]);   /* the line where it stands beside the board */
   CHAPTER_OBJ["Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions"] = {
     /* (384.136 art6) THE PENCIL STANDS AGAINST THE BOARD. Madison, a sixth time: "The pencil is still messed up". Every round that patched
        the place where it crossed the board's edge left something there; lying wholly on the board made the outline a plain board (a
        twin of Chapter 10's door). It now stands upright against the board's right side - a straight joint, no crossing - rising past the
        board's top beside the clip, and its sharpened end makes the outline's notch. */
-    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [20, Y0], [26, 16], [56, 16], [62, Y0], [X1, Y0], Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, -wAt(PT)), Q(CONE, -HW), Q(0, -HW), [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
-      [0, 1, 3, 3, 1, 1, 0, .3, .3, 0, ER, 4, 4, 0]) + "Z",
+    d: "M" + f([X0 + 4, Y0]) + OBJ_chain([[X0 + 4, Y0], [20, Y0], [26, 16], [56, 16], [62, Y0], [X1, Y0], Q(CONE, HW), Q(PT, wAt(PT)), Q(PT, -wAt(PT)), Q(CONE, -HW), Q(0, -HW), Q(0, HW), [X1, Y1], [X0, Y1], [X0, Y0], [X0 + 4, Y0]],
+      [0, 1, 3, 3, 1, 1, 0, .3, .3, 0, ER, ER, 0, 4, 4, 0]) + "Z",
     holes: [OBJ_rrect(33, 21, 16, 6, 2.5)],
     base: "wood",
     plates,
