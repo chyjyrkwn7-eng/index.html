@@ -616,7 +616,7 @@
     /* (art11) the cap is one clean cylinder a little wider than the bottle, its ridges even, a plain lip round its foot, and its sides
        run straight down to that lip: no neck band under it and no fillet where it steps in to the bottle (that fillet was the bulge
        Madison circled on its right) */
-    const RC = RX + .3, capF = cyl(10, 26, RC), capTop = S.ellipse(CX, 10, RC, RC * KY), body = cyl(26, 86, RX);
+    const RC = RX + 1.6, capF = cyl(10, 26, RC), capTop = S.ellipse(CX, 10, RC, RC * KY), body = cyl(26, 86, RX);
     const below = y => S.minus(S.box(0, y, 100, 100, 0), S.ellipse(CX, y, RX + .01, RX * KY));                          /* the bottle from the front arc at y down */
     const capBelow = y => S.minus(S.box(0, y, 100, 100, 0), S.ellipse(CX, y, RC + .01, RC * KY));
     const capLip = S.inter(capF, capBelow(23.2));
@@ -627,19 +627,10 @@
       const whole = S.capsule(...A, ...B, r), capH = S.inter(whole, (x, y) => along(x, y)), bodyH = S.inter(whole, (x, y) => -along(x, y));   /* (art11) one radius: a wider cap half stepped the outline */
       const all_ = whole;
       const seam = [[M[0] - u[1] * (r - .6) + u[0] * .3, M[1] + u[0] * (r - .6) + u[1] * .3], [M[0] + u[1] * (r - .6) + u[0] * .3, M[1] - u[0] * (r - .6) + u[1] * .3]];
-      /* (art12) its round: a lit band along its upper side and a shaded one along its lower side (colour only), so it reads as a
-         cylinder lying down, not a slab */
-      const n = u[1] > 0 ? [u[1], -u[0]] : [-u[1], u[0]], side = (x, y) => (x - A[0]) * n[0] + (y - A[1]) * n[1];
-      const lit = S.inter(S.grow(whole, -.7), (x, y) => Math.max(r * .18 - side(x, y), side(x, y) - r * .62));
-      const dark = S.inter(S.grow(whole, -.5), (x, y) => side(x, y) + r * .42);
-      return { all: all_, capH, bodyH, seam, lit, dark }; };
+      return { all: all_, capH, bodyH, seam }; };
     const p1 = capsule([62.5, 89], [84.5, 81.2], 5.4), p2 = capsule([93.6, 94.4], [71.5, 96.2], 4.5);
     const pills = S.union([p1.all, p2.all], 0);
-    const shift0 = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
-    /* (art12) the capsules lie on their own soft shadow: the pin's edge runs round the shadow, not round each capsule, so a capsule's
-       lower side is its own round, not the pin's bevel under it (that read as a second bottom) */
-    const ground = S.minus(S.union([S.grow(shift0(pills, .4, 1.1), 1.2), S.grow(pills, .8)], 1), S.union([capF, body], 0));
-    const sil = S.union([S.union([capF, body], 0), pills, ground], .6);
+    const sil = S.union([S.union([capF, body], 0), pills], .8);
     const bodyP = S.minus(body, pills);
     let ridges = ""; for(let k = -8; k <= 8; k++){ const t = k / 9.6 * Math.PI / 2, x = CX + RC * Math.sin(t), y = RC * KY * Math.cos(t); ridges += "M" + F(x) + " " + F(10 + y + 1.6) + "V" + F(23.2 + y - 1); }
     /* print on the label: lines set from one left margin, following the cylinder (the front arcs of its ellipse) */
@@ -653,31 +644,31 @@
     const pShade = [["field", all(S.minus(S.inter(bodyP, S.grow(shift(pills, -.3, -.4), 1.4)), pills)), { col: "#A65A19" }]];
     const capShade = S.minus(S.inter(bodyP, shift(capF, .3, 1.8)), capF);                                               /* the cap's shade on the bottle, just under its lip */
     CHAPTER_OBJ["Health and Safety Code"] = {
-      d: sh(sil), col: "#3A3A43", base: "field",   /* (art13) the base under it all is the capsules' shadow colour: no lighter halo where a capsule meets it */
+      d: sh(sil), col: "#D9822B", base: "field",
       plates: [
-        ["rubber", all(g(ground)), { col: "#3A3A43" }],                                              /* the capsules' shadow on the ground */
-        ["field", sh(g(bodyP)), { dome: 1.8, col: "#D9822B" }],                                                                          /* the amber bottle */
+        ["field", sh(g(bodyP)), { dome: 1.8 }],                                                                          /* the amber bottle */
         ["field", all(strip(CX + RX * .55, 100)), { col: "#D07C29" }],                                                  /* its shading round the side */
         ["field", all(strip(CX + RX * .72, 100)), { col: "#C47124" }],
         ["field", all(strip(CX + RX * .86, 100)), { col: "#B4661F" }],
+        ["field", all(strip(0, CX - RX * .86)), { col: "#CD7B28" }],
         ["field", all(strip(CX - RX * .6, CX - RX * .43)), { col: "#E8994C" }],                                         /* its highlight */
         ["field", all(S.inter(bodyP, below(81))), { col: "#B5641B" }],                                                   /* its foot, darker */
         ["field", keep(ellP(ax, CX, 85.2, RX - 1.6, (RX - 1.6) * KY, 8, 172, 24), q => S.grow(pills, .6)(...q) > 0), { ln: .8, cut: .4, paint: 0 }],
         ...pShade,                                                                                                       /* the capsules' shade on it */
         ["cream", sh(g(S.minus(label, pills))), { z: .3, bev: .5, dome: .6, col: "#F4F1E8" }],                         /* the label */
         ["cream", all(S.inter(S.minus(label, pills), S.box(CX + RX * .62, 0, 40, 100, 0))), { col: "#E7E3D8" }],        /* round the side */
+        ["cream", all(S.inter(S.minus(label, pills), S.box(CX + RX * .84, 0, 40, 100, 0))), { col: "#D8D2C5" }],
         ["red", sh(S.inter(S.grow(label, .3), S.minus(S.box(0, 0, 100, 100, 0), below(49.5)))), { z: .3, bev: .3, dome: .6, col: "#2F6FB8" }],    /* its band */
         ["ink", print, { ln: 1.25, cut: .3, col: "#8F949B" }],                                                          /* its print */
         ["field", all(capShade), { col: "#9E5517" }],                                                                    /* the cap's shade on it */
         ["cream", sh(g(capF)), { z: .8, bev: .6, dome: 1.2, col: "#F2F3F4" }],                                          /* the cap: one cylinder, its sides straight down to its lip */
         ["cream", ridges, { ln: 1, cut: .6, paint: 0 }],                                                               /* its ridges */
         ["cream", sh(capLip), { col: "#E1E4E8" }],                                                                       /* its lip (colour only: no groove to dent its edge) */
-        ["cream", sh(S.inter(g(capTop), capF)), { z: .95, bev: .5, dome: .4, col: "#FBFBFC" }],                                        /* its top */
+        ["cream", sh(g(capTop)), { z: .95, bev: .5, dome: .4, col: "#FBFBFC" }],                                        /* its top */
         ["cream", lineP(ellP(ax, CX, 10, RX - 3.5, (RX - 3.5) * KY, 0, 360, 40)), { ln: 1.4, z: .3, bev: .4, col: "#ECEDEF" }],   /* its raised ring */
-        ["cream", all(S.minus(S.inter(g(p1.bodyH, .2), S.grow(p1.all, .3)), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#F3F3F1" }],                      /* the capsules: the far one's body half, */
-        ["red", all(S.minus(S.inter(g(p1.capH, .2), S.grow(p1.all, .3)), p2.all)), { z: .6, bev: .9, dome: 2.8, col: "#D2342E" }],   /* the far one's cap half, */
-        ["red", all(S.inter(g(p2.capH, .2), S.grow(p2.all, .3))), { z: .85, bev: .9, dome: 2.8, col: "#D2342E" }],                      /* the near one's cap half, */
-        ["cream", all(S.inter(g(p2.bodyH, .2), S.grow(p2.all, .3))), { z: .85, bev: .9, dome: 2.8, col: "#F3F3F1" }],                                       /* the near one's body half: each its own dome, so the near one lies over the far one */
+        ["cream", all(S.minus(S.inter(g(p1.bodyH, .2), p1.all), p2.all)), { z: .4, bev: .6, dome: 1.5, col: "#F3F3F1" }],                      /* the capsules: the far one's body half, */
+        ["red", all(S.minus(S.inter(g(p1.capH, .2), p1.all), p2.all)) + all(S.inter(g(p2.capH, .2), p2.all)), { z: .45, bev: .6, dome: 1.5, col: "#D2342E" }],   /* both cap halves (they do not touch), */
+        ["cream", all(S.inter(g(p2.bodyH, .2), p2.all)), { z: .45, bev: .6, dome: 1.5, col: "#F3F3F1" }],                                       /* the near one's body half: each its own dome, so the near one lies over the far one */
         ["red", keep(p1.seam, q => p2.all(...q) > .3) + lineP(p2.seam), { ln: .7, cut: .3, paint: 0 }],                            /* where the halves meet */
       ],
     };

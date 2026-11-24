@@ -44142,3 +44142,6 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 ## 384.142 (2026-11-24): the build for the push
 - 384.141 plus the handcuffs restored to Madison's pick, with their back's words on the slant (backRot). check-b384-ifcbadges is re-pinned to 4bb89d51.
 - Gates on what changed: check-js; merge --check; objbadges --class academy (ALL PASS except PERF cold on Phonetic Alphabet, a unit this did not touch, which flakes under load); ifcbadges; badgeart; chapterbadges; streak; centering --quick (0 off centre, run on 384.141 - no UI changed since).
+
+## 384.143 (2026-11-24): the pills reverted
+- Madison: "Revert the pills". The Health and Safety Code block in part-6-academy.js is restored from b18630f (art11b: the capsules without the ground shadow, the cap at RX + 1.6). check-b384-ifcbadges is re-pinned to 66933723.

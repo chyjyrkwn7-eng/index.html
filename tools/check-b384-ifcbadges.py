@@ -311,7 +311,8 @@ with sync_playwright() as pw:
         # Identity Crimes reverted to art10, the pill bottle's cap and capsules, the Constitution's ribbon and quill, the handcuffs after
         # the ASP photo). Was 83db107d.
         # RE-PINNED (384.142): the handcuffs back to Madison's pick, their back's words laid on their slant (backRot). Was 8a20aca3.
-        PIN = "4bb89d51"
+        # RE-PINNED (384.143): the pill bottle reverted to its art11 drawing (Madison: "Revert the pills"). Was 4bb89d51.
+        PIN = "66933723"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)
