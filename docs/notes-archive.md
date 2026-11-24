@@ -43919,4 +43919,6 @@ step; badgetwins, sides --class ifc, casefit, chapterbadges, ifcbadges ALL PASS;
 Chapter 32 (unchanged, cold 6.4-6.7x at load 5; inherited). badgeart: all Fire Code legs pass (a first run caught the log furrows and the
 length grooves crossing onto neighbouring parts; fixed); its one FAIL is leg (1) on the academy's "Sexual Assault and Family Violence"
 ribbon (plate 10, a groove at 16.2,80.9), which fails identically on af8f535 - the police art10 work, not this round's.
-Neither chapter is in the Get Started clip. badges2's Fire Code reference moves to this round's art commit.
+Neither chapter is in the Get Started clip. badges2: against af6da1a exactly the two tokens, their sheet images, the case and the
+cutscene frames differed (and 4 pixels at 1 level on Chapter 2's sheet, noise); re-pinned to 27e10d3, ALL PASS. check-centering --quick
+ALL PASS, 0 off centre.
