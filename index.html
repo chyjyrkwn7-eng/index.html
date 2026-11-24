@@ -42584,16 +42584,20 @@ html.is-browser{ --fade-paper: transparent; }
     -webkit-backdrop-filter:none; backdrop-filter:none;
   }
   .streak-fly-chip > .streak-flame{ width:1.5rem; height:1.5rem; flex:0 0 auto; }
-  /* Profile: the row under the XP, Customize's glass row with the flame for its art */
-  html[data-layout] body #stage .profile-hero > .profile-streak-row{ position:relative; z-index:3; display:flex; margin:1.05rem 0 0; }
-  html[data-layout] body #stage .profile-hero > .profile-streak-row + .profile-customize-row{ margin-top:10px; }
-  html[data-layout] body #stage .profile-identity-tab .pf-streak-art{
-    position:relative; flex:0 0 auto; display:grid; place-items:center; width:38px; height:38px; border-radius:50%;
-    background:radial-gradient(closest-side, rgba(255,128,48,.32), rgba(255,128,48,0));
+  /* Profile: a chip in the person card's top-left corner - the flame and the streak - that opens the sheet (Madison: "the streak thing
+     would just appear in the top left corner of that big box.. and if you click it then it would open a popup") */
+  html[data-layout] body #stage .profile-hero{ position:relative; }
+  html[data-layout] body #stage .profile-hero > .pf-streak{
+    position:absolute; z-index:6; top:12px; left:12px; min-width:44px; min-height:44px; margin:0; box-sizing:border-box;
+    display:inline-flex; align-items:center; justify-content:center; gap:4px; padding:0 13px 0 9px; border-radius:999px;
+    background:rgba(22,23,29,.72); border:1px solid rgba(255,255,255,.12); box-shadow:0 4px 14px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08);
+    color:#FFFFFF; font-family:var(--sans); font-size:17px; font-weight:800; line-height:1; letter-spacing:-.01em; font-variant-numeric:tabular-nums;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .15s ease;
   }
-  html[data-layout] body #stage .profile-identity-tab .pf-streak-art.is-dim{ background:none; }
-  html[data-layout] body #stage .profile-identity-tab .pf-streak-art > .streak-flame{ width:32px; height:32px; }
-  html[data-layout] body #stage .profile-identity-tab .pf-streak .pf-act-sub{ font-variant-numeric:tabular-nums; }
+  html[data-layout] body #stage .profile-hero > .pf-streak:active{ transform:scale(.94); }
+  html[data-layout] body #stage .profile-hero > .pf-streak.is-dim{ color:rgba(255,255,255,.55); }
+  html[data-layout] body #stage .profile-hero > .pf-streak > .streak-flame{ width:24px; height:24px; flex:0 0 auto; }
+  html[data-layout] body #stage .profile-hero > .pf-streak > .pf-streak-num{ display:block; }
   /* the sheet: the person card's, the flame over its title, three numbers, the ladder */
   .streak-sheet{ text-align:center; }
   .streak-sheet .streak-sheet-head{ display:flex; flex-direction:column; align-items:center; }
@@ -98632,6 +98636,21 @@ function checkinTrim(s){
 }
 /* What the days say, read now: the streak (alive while its last day is today or yesterday), the best run, the total, whether today
    is in, and the first day of the live run. A day ahead of this device's clock is not read. */
+/* (384 streak r3) WHAT PROFILE SHOWS: the total days and the best run count every day this account has studied (store.studyLog, the
+   study-time log both classes have kept since long before the streak) as well as every day it checked in - Madison: "starting at 0
+   wouldn't make sense for total days". The current streak and every XP payment stay on the check-ins (checkinInfo): history counts,
+   it does not pay. */
+function streakShown(s, now){
+  s = s || store;
+  const info = checkinInfo(s, now), today = dayKey(now || new Date());
+  const set = new Set((Array.isArray(s && s.checkins) ? s.checkins : []).filter(d => typeof d === "string" && d <= today));
+  try{ Object.keys((s && s.studyLog) || {}).forEach(k => { if(/^\d{4}-\d{2}-\d{2}$/.test(k) && k <= today && (Number(s.studyLog[k]) || 0) > 0) set.add(k); }); }catch(e){}
+  const days = Array.from(set).sort();
+  let run = 0, prev = null, best = 0;
+  days.forEach(d => { run = prev && checkinShift(prev, 1) === d ? run + 1 : 1; if(run > best) best = run; prev = d; });
+  const old = checkinOldClean(s && s.checkinOld);
+  return Object.assign({}, info, { total: days.length + (old ? old.n : 0), best: Math.max(info.best, best, info.current) });
+}
 function checkinInfo(s, now){
   s = s || store;
   const today = dayKey(now || new Date()), yest = checkinShift(today, -1);
@@ -98944,35 +98963,31 @@ function showStreakNews(news){
     }, news.bonus > 0 ? 2600 : 1900);
   });
 }
-/* ---- PROFILE: THE STREAK ROW, AND WHAT IT EXPLAINS ----
-   One of the person card's rows (pfActFill's: the glass, 62px, the chevron), with the flame for its art instead of a grey tile - it
-   is the one thing on the card that is alight. The streak as its name, the total and the best under it. A tap opens the sheet. */
+/* ---- PROFILE: THE STREAK CHIP, AND WHAT IT EXPLAINS ----
+   A chip in the person card's top-left corner: the flame and the current streak (grey with a 0 while none is alive). A tap opens
+   the sheet, which holds the numbers and the ladder. (It was a full row under the XP; Madison moved it to the corner.) */
 function streakRowText(info){
-  const label = info.current > 0 ? info.current + "-day streak" : "Daily streak";
   const days = n => n.toLocaleString() + (n === 1 ? " day" : " days");
+  const label = info.current > 0 ? info.current + "-day streak" : "No daily streak yet";
   let sub = info.total > 0 ? days(info.total) + " in total" : "Open Nova each day to start one";
-  if(info.total > 0 && info.best > info.current) sub += " · Best " + days(info.best);
+  if(info.total > 0 && info.best > info.current) sub += ", best " + days(info.best);
   return { label, sub };
 }
 function buildStreakRow(){
-  const wrap = document.createElement("div");
-  wrap.className = "profile-streak-row";
   const btn = document.createElement("button");
   btn.type = "button"; btn.className = "pf-streak";
   streakRowFill(btn);
-  btn.addEventListener("click", () => { try{ playSound("ui.tap.secondary"); }catch(e){} openStreakSheet(); });
-  wrap.appendChild(btn);
-  return wrap;
+  btn.addEventListener("click", (e) => { e.stopPropagation(); try{ playSound("ui.tap.secondary"); }catch(err){} openStreakSheet(); });
+  return btn;
 }
 function streakRowFill(btn){
-  const info = checkinInfo(store);
+  const info = streakShown(store);
   const t = streakRowText(info);
-  const parts = pfActFill(btn, "trophy", t.label, t.sub);
-  const art = document.createElement("span");
-  art.className = "pf-streak-art" + (info.current > 0 ? "" : " is-dim");
-  art.setAttribute("aria-hidden", "true");
-  art.appendChild(buildStreakFlame(info.current <= 0));
-  parts.tile.replaceWith(art);
+  btn.replaceChildren();
+  btn.classList.toggle("is-dim", info.current <= 0);
+  btn.appendChild(buildStreakFlame(info.current <= 0));
+  const n = document.createElement("span"); n.className = "pf-streak-num"; n.textContent = info.current.toLocaleString();
+  btn.appendChild(n);
   btn.dataset.streak = String(info.current);
   btn.dataset.total = String(info.total);
   btn.setAttribute("aria-label", t.label + ". " + t.sub + ". How the streak works.");
@@ -98982,7 +98997,7 @@ function streakRowRefresh(){
 }
 function openStreakSheet(){
   if(document.querySelector(".streak-sheet")) return;
-  const info = checkinInfo(store);
+  const info = streakShown(store);
   const overlay = document.createElement("div");
   overlay.className = "invite-overlay";
   const sheet = document.createElement("div");
@@ -99007,11 +99022,10 @@ function openStreakSheet(){
   p1.textContent = "Each day you open Nova earns " + CHECKIN_XP + " XP. Days in a row build a streak, and each bonus is paid once per streak:";
   /* the ladder: reached marked, the next one lit with the days to go */
   const ladder = document.createElement("ol"); ladder.className = "streak-ladder";
-  const next = checkinNextMile(info.current);
-  /* the table's rungs, then three of the 30-day marks: 30, 60, 90 until the run is past 60, then the last reached and the two after */
+  const next = info.current < CHECKIN_EVERY ? checkinNextMile(info.current) : 0;
+  /* the table's rungs and the 30-day mark - the sheet stops at 30 days (Madison: "only up to 30 days"); the marks after it still pay */
   const rows = CHECKIN_MILES.map(([d]) => ({ d }));
-  const k0 = Math.max(1, Math.floor(info.current / CHECKIN_EVERY));
-  for(let k = k0; k < k0 + 3; k++) rows.push({ d: k * CHECKIN_EVERY });
+  rows.push({ d: CHECKIN_EVERY });
   rows.forEach(r => { r.xp = checkinMileXp(r.d); r.label = r.d + " days"; });
   rows.forEach(r => {
     const li = document.createElement("li"); li.className = "streak-step";
@@ -99032,14 +99046,12 @@ function openStreakSheet(){
     if(reached) li.setAttribute("aria-label", r.label + ", +" + r.xp + " XP, reached");
     ladder.appendChild(li);
   });
-  const pe = document.createElement("p"); pe.className = "penal-note-body streak-sheet-body streak-sheet-every";
-  pe.textContent = "After that, every " + CHECKIN_EVERY + " days pays " + CHECKIN_EVERY_XP.toLocaleString() + " XP more than the last.";
   const p3 = document.createElement("p"); p3.className = "penal-note-body streak-sheet-body streak-sheet-foot";
   p3.textContent = "Missing a full calendar day resets the streak to zero, and the bonuses can be earned again.";
   const close = document.createElement("button");
   close.type = "button"; close.className = "next"; close.textContent = "Got it";
   close.addEventListener("click", () => overlay.remove());
-  sheet.append(head, stats, p1, ladder, pe, p3, close);
+  sheet.append(head, stats, p1, ladder, p3, close);
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
   mountSheetOverlay(overlay);
@@ -168102,7 +168114,7 @@ function showProfile(defaultTab, opts){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
-  /* (384 streak) the daily streak, between the XP and Customize (buildStreakRow) */
+  /* (384 streak) the daily streak: a chip in the card's top-left corner (buildStreakRow) */
   heroSect.appendChild(buildStreakRow());
   heroSect.appendChild(customizeRow);
   /* (round 26: "Why does the profile box have those 4 new things ... Remove
