@@ -192,7 +192,7 @@
      bark with furrows running along it. Everything is drawn from a fixed seed, so the six logs differ but the badge never changes. ---- */
   {
     const S = OBJ_SDF, BB = [0, 0, 100, 100];
-    const L = [[22, 78], [50, 78], [78, 78], [36, 53.75], [64, 53.75], [50, 29.5]], R = 13.4, BK = [3, -3];
+    const L = [[22, 78], [50, 78], [78, 78], [36, 53.75], [64, 53.75], [50, 29.5]], R = 14, BK = [3, -3];
     let seed = 28; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
     /* a wobbly closed curve round c: radius r(t) = r (1 + sum of three soft waves), sampled at n points */
     const wob = (c, r, amp, n) => { const w = [0, 1, 2].map(k => [2 + k + Math.floor(rnd() * 2), rnd() * 6.283, amp * (1 - k * .3) * (.6 + .8 * rnd())]);
@@ -214,7 +214,11 @@
        circle behind it: a second circle left a crescent with a waist where the two outlines crossed, and with a dark gap round the end
        it read as another log behind ("there's a second log or a piece of it there") */
     const backs = S.union(L.map(c => S.union([0, 1, 2, 3, 4, 5, 6, 7, 8].map(k => S.circle(c[0] + BK[0] * k / 8, c[1] + BK[1] * k / 8, R)), 0)), 0);
-    const all = S.union([ends, backs], 3.2);                                                   /* (the outline's one loop: the gaps between the logs are inside it, in shadow) */
+    /* (art14) Madison, again: "No, you didn't fix it" - circling the crescent of length behind every log, and the dark wedges between the
+       bottom logs. The lengths are gone: the logs are seen straight end on, the pile's depth in the shadow between them. The logs are a
+       touch larger, so neighbours touch, and the outline's union is only lightly filleted: no dark wedge stands in the notch between two
+       logs on the outside. */
+    const all = S.union([ends, S.poly([L[0], L[2], L[5]])], .7);
     const lp = f => S.loops(f, BB).map(S.pathOf).join("");
     /* the bark's furrows: short, irregular grooves across the rim, at uneven spacing and length; and furrows running along each length */
     let furrows = "", along = "", checks = [];
@@ -237,8 +241,6 @@
       d: S.shape(all, BB), base: "wood",
       plates: [
         ["wood", S.shape(all, BB), { col: "#21160D" }],                                                 /* the shadow between the logs (the logs stand up out of it) */
-        ["wood", lp(S.minus(S.inter(backs, S.grow(all, -.01)), S.union([S.grow(ends, .05), S.poly([L[0], L[2], L[5]])], 0))), { z: .45, bev: .45, dome: .2, col: "#4B301C" }],   /* each log's length, receding: the end's own side, running straight on from its bark (round the outside of the stack: between the logs it is in shadow) */
-        ["wood", along, { ln: .7, cut: .45, paint: 0 }],                                               /* the furrows along it */
         ["wood", logs.map(g => path(g.out)).join(""), { z: 1.2, bev: .8, dome: .5, col: "#5E3A20" }],     /* the logs' ends, in their bark */
         ["wood", furrows, { ln: .6, cut: .55, paint: 0 }],                                              /* its furrows */
         ["wood", logs.map(g => path(g.face)).join(""), { z: .25, bev: .45, dome: .25, col: "#E2B67A" }],   /* the end grain: the pale sapwood */
