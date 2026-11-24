@@ -44194,3 +44194,10 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - mark 384.120: update lines;
   - mark 384.148: the normal lines.
   - Gates: check-js, startup, newuser, whatsnew11.
+
+## 384.149 (2026-11-24): leaderboard rows with a banner
+- Madison (an iPhone screenshot of the Overall board): "People with banners set are messed up, the stuff isn't set right". On rows wearing a banner, the name was squeezed to a letter or two ("O.", "B.") and the Rank / Level / Badges columns were pulled left against it, out of line with every other row.
+- **Cause (as far as Chromium can show).** It does not reproduce in Chromium: every row lays out alike there, short names included. Those rows alone made every child `position:relative; z-index:1` to sit over the banner, and rows scrolled off are `content-visibility:hidden` (.is-offscreen). The likely WebKit fault is that a row coming back keeps those lifted children where they were laid out while skipped. This could only be confirmed on a phone.
+- **Fix.** No child is lifted. The row is its own stacking context (`isolation:isolate`) and `.lb-row-bnr` sits at z-index -1 inside it: over the row's surface, under its content. The content is ordinary flex items again, exactly as on a row with no banner.
+- **The streak chip's flame.** margin-top is -.5px: centering read the chip 0.58px high once at -1px (0 at -.5).
+- **Gates:** check-js; unlocks4 --only 5 (the banner rows: 12 pass); check-centering --quick (0 off centre); a Chromium render of the board with a banner on every row (banners behind, content over, columns aligned).

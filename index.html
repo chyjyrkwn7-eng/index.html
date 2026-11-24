@@ -24609,9 +24609,15 @@
   /* Leaderboard rows (LB_ROW_BANNER). The art sits over the row's own
      surface - so the podium tint is still under it - and under every
      piece of content; the ring is the border, which nothing covers. */
-  .rank-row.has-row-bnr{ position:relative; overflow:hidden; }
-  .rank-row.has-row-bnr > :not(.lb-row-bnr){ position:relative; z-index:1; }
-  .lb-row-bnr{ position:absolute; z-index:0; pointer-events:none; overflow:hidden; }
+  /* (384.149) the banner goes UNDER the row's content by stacking, not by lifting every child: "People with banners set are messed
+     up, the stuff isn't set right". Each child was made position:relative + z-index:1 to sit over the banner, and on the iPhone a
+     row that came back from content-visibility:hidden (rows scrolled off are skipped, .is-offscreen) kept those lifted children
+     where they were laid out while skipped - the name squeezed to a letter, the columns pulled in against it. The row is its own
+     stacking context now (isolation) and the banner sits at z-index -1 inside it: over the row's surface, under its content,
+     and the content is ordinary flex items again, laid out like every other row's. */
+  .rank-row.has-row-bnr{ position:relative; overflow:hidden; isolation:isolate; }
+  .lb-row-bnr{ position:absolute; z-index:-1; pointer-events:none; overflow:hidden; }
+  .lb-bnr-tile .rank-avatar-wrap > .lb-row-bnr{ z-index:0; }
   .lb-row-bnr > .bnr{ position:absolute; inset:0; border-radius:0; }
   .lb-row-bnr > .bnr svg{ width:100%; height:100%; display:block; }
   .lb-bnr-edge > .lb-row-bnr{
@@ -42609,7 +42615,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-hero > .pf-streak:active{ transform:scale(.94); }
   html[data-layout] body #stage .profile-hero > .pf-streak.is-dim{ color:rgba(255,255,255,.6); border-color:var(--surface-border);
     background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 48%), linear-gradient(rgba(30,31,36,.94), rgba(30,31,36,.94)); }
-  html[data-layout] body #stage .profile-hero > .pf-streak > .streak-flame{ width:24px; height:24px; flex:0 0 auto; margin-top:-1px; }
+  html[data-layout] body #stage .profile-hero > .pf-streak > .streak-flame{ width:24px; height:24px; flex:0 0 auto; margin-top:-.5px; }
   html[data-layout] body #stage .profile-hero > .pf-streak > .pf-streak-num{ display:block; text-box:trim-both cap alphabetic; text-shadow:0 1px 1px rgba(0,0,0,.35); }
   /* the sheet: the person card's, the flame over its title, three numbers, the ladder */
   .streak-sheet{ text-align:center; }
@@ -132546,7 +132552,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-24-384.148";
+const APP_BUILD = "2026-11-24-384.149";
 /* (384.148) the first launch of a new build on this device is narrated as an update, however the new page arrived (see
    window.__splashAsUpdate). class26e.lastbuild is device-level (SHARED, kept through a sign-out). A device that has never recorded
    one but already holds an account was running a build from before this mark existed, so it is told too; a device with nothing
