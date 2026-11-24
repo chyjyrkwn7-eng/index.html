@@ -3,7 +3,7 @@ Madison: "Go ahead and start working on a what's new update thing. Talking about
 pretty massive new build on our hands here."
 Read off the page:
 (1) an existing account that saw Version 10's card (mark 7) opening Nova in the academy on an iPhone 17 Pro Max: the card comes up
-    on Home, headed "New in version 11", 4 to 7 rows, the first about the badges as metal pins, the others covering pinning a badge
+    on Home, headed "New in version 11", 4 to 8 rows (384 streak: the Daily streak row made the academy's 7 and Fire Code's 8), the first about the badges as metal pins, the others covering pinning a badge
     and All unlocks - the same card (intro-card-compact, its heading, Got it); no Fire Code-only row in the academy;
 (2) Got it closes it, and opened again it does not come back;
 (3) a brand-new account never sees it: a sign-up from Get Started to Home's last tip never puts it up, and the device's
@@ -11,7 +11,7 @@ Read off the page:
 (4) the card is inside the screen on an iPhone SE (375x667), the Pro Max and an iPad Pro 11", nothing scrolls;
 (5) Settings' version history leads with Version 11; no page errors;
 (6) Fire Code: the same account opening in Fire Code gets the card there too (Version 10's was held for the academy), with the
-    calculator row, 4 to 7 rows, inside the screen.
+    calculator row, 4 to 8 rows, inside the screen.
 Run:  python3 tools/check-b384-whatsnew11.py   (--against OLD/index.html must FAIL)"""
 import os, sys, json, re
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -50,7 +50,7 @@ with sync_playwright() as pw:
     rows = (r or {}).get("rows", [])
     txt = " ".join(rows).lower()
     chk("(1) existing account: the card on Home, '%s', %d rows, first: %r" % (r and r["eyebrow"], len(rows), rows[:1]),
-        bool(r) and r["compact"] and re.search(r"version 11\b", r["eyebrow"], re.I) and "new" in r["title"].lower() and 4 <= len(rows) <= 7
+        bool(r) and r["compact"] and re.search(r"version 11\b", r["eyebrow"], re.I) and "new" in r["title"].lower() and 4 <= len(rows) <= 8
         and re.search(r"badge", rows[0], re.I) and re.search(r"metal|pin", rows[0], re.I) and re.search(r"pin a badge|pin one badge", txt)
         and re.search(r"all unlocks", txt) and not re.search(r"calculator", txt) and re.search(r"got it", r["go"], re.I), r)
     if r:
@@ -82,7 +82,7 @@ with sync_playwright() as pw:
     r = wait_card(pg, 30); cls = pg.evaluate("()=>window.NOVA_CLASS")
     rows = (r or {}).get("rows", []); txt = " ".join(rows).lower()
     chk("(6) Fire Code: the card there too, with its calculator row (%s, %s, %d rows)" % (cls, r and r["eyebrow"], len(rows)),
-        cls == "ifc" and bool(r) and re.search(r"version 11\b", r["eyebrow"], re.I) and 4 <= len(rows) <= 7 and re.search(r"calculator", txt)
+        cls == "ifc" and bool(r) and re.search(r"version 11\b", r["eyebrow"], re.I) and 4 <= len(rows) <= 8 and re.search(r"calculator", txt)
         and re.search(r"badge", rows[0], re.I) and r["inside"] and not r["scrolls"], r or cls)
     errs_all += pg.errs; ctx.close()
     # (3) a brand-new account

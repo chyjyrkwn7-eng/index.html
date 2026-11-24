@@ -43898,3 +43898,101 @@ head only at 96px and up.
 - Merged into one build: the police art10 badges (handcuffs, ribbon, umbrella, fingerprint, teddy, pill bottle, Constitution, radio), the Fire Code art10 badges (Ch 23, 28, 54, 57, 59, 61, 66, 67, Appendix C and H), and festive round 5 (Santa cuff, larger party hat).
 - Full-size characters and cameos are parked at the owner's request. CAMEOS_LIVE stays false and claude/b384-bodies is not merged.
 - index.html conflicted only in the generated CHAPTER_OBJ block; it was resolved by re-running snap.py and merge-chapter-icons.py (in step).
+
+## 384 daily streak - the daily check-in streak, with XP (branch claude/b384-streak, cut from af8f535 384.138; build NOT bumped, stays 384.138; NOT on main, waiting for Madison)
+
+Madison (he/him): "Let's also add a feature to keep bringing people back. Perhaps on your profile now there will be a fire thing for
+streak and it has a thing for how many days you've studied. You now get xp for every day you log in. It will show up on the main menu
+and shoot to your profile thing. When you click it in profile it will show like a thing on how you get it, 3 days in a row is 100 xp,
+7 days is 200 14 is 500? Something like that? Idk". Then, on the ladder past 30: each 30-day mark pays 1000 x (days / 30) - "a flat
++1000 per 30 days would make starting over pay about the same, so a long streak has to keep paying more".
+This SUPERSEDES his earlier "let's remove the consecutive day streak counter ... No longer a thing" (archive line ~3570). That one was
+the study-time streak (`currentStreak()`, read off `store.studyLog`); it stays in the code, unused on Profile, and the stats popover's
+"day streak" now reads the new one (`checkinInfo(store).current`), so the app shows one streak.
+
+**WHAT COUNTS.** A day counts when the app is opened on a local calendar day (dayKey), signed in (syncCode), onboarding complete, in
+that class (each class's store has its own, as XP does: Fire Code's store is `class26e.ifc.drill.v1`, its document `<code>__ifc`;
+the field names are the same). It is a check-in, not a study requirement. It counts only once this launch has read the server's copy
+(`cloudConfirmedFor`); a session that confirmed on an EARLIER day (left open overnight, a phone woken in the morning) does one plain
+server read of its own document first (`checkinTick`: get({source:"server"}), merged with syncSameAccount, then pays) so the other
+device's check-ins are in the run it extends. Asked: on confirm (markCloudConfirmed's confirm()), on every showHome, on
+visibilitychange -> visible (1.5s later), and once just after local midnight (one timer, re-armed; no polling).
+
+**THE NUMBERS (one place: the vars above the store literal).** `CHECKIN_XP` 25 a day. Bonuses once per run: `CHECKIN_MILES`
+[[3,100],[7,200],[14,500]], then every `CHECKIN_EVERY` (30) days `CHECKIN_EVERY_XP` (1000) x (days / 30): 30 -> 1000, 60 -> 2000,
+90 -> 3000, 120 -> 4000 ... (`checkinMileXp`, `checkinMilesUpTo`, `checkinNextMile`). A whole calendar day missed ends the run; the
+next check-in starts a new one at 1 and its bonuses can be earned again.
+
+**DATA MODEL.**
+- `store.checkins`: the days, sorted unique day keys ("2026-11-24"). Capped at `CHECKIN_CAP` (1000); anything older is folded into
+  `store.checkinOld` = { to: last folded day, n: how many, best: best run among them, run: the run they end on } (`checkinTrim`), so a
+  total, a best and a streak that spans the fold stay right. (A year is ~13KB of the document; the cap is ~2.7 years.)
+- `store.checkinMiles`: the bonuses paid, "<first day of the run>/<days>" ("2026-11-27/3"), capped at 300.
+- Defaults in the store literal and `applyLoadedData` (cleaned: valid keys only, sorted, deduped, trimmed); cleared by
+  `wipeLocalProgressAndSettings`.
+- `mergeSameAccount` -> `checkinMerge`: days and paid bonuses are unions, `checkinOld` the later fold. `mergeLeavingAccount` unions
+  them too (the leaving account's XP was already added with its points). `accountAhead` -> `checkinAhead`: a copy with a day or a
+  paid bonus the other lacks is ahead, so a write never drops one.
+- DERIVED WHEN READ, never stored: `checkinInfo(s)` -> { current (alive while the last day is today or yesterday), best, total, today,
+  start (first day of the live run) }. A day ahead of the device's clock is not read.
+
+**NEVER PAID TWICE.** A day is paid at the moment it joins `checkins` (`checkinPay`), bonuses for every milestone of the live run
+that is not in `checkinMiles` (so one a late merge revealed is paid at the next check-in). The XP goes through `awardXp()` (lifetime,
+week, the week's per-day block), but into the account's tally BASE, not this device's tally (`checkinCredit`: tallyCapture first,
+awardXp, then tallyBase["L:points"] and ["W:<week>"] += n). Why: build 298's tallies ADD across devices, so two devices that both paid
+the same day before hearing of each other (the one race the server read cannot close) would add it twice; a merge takes the higher
+BASE, so two copies that both paid hold the same base and the merge keeps one. Gate (7) plays exactly that, with a 300 XP test on one
+device to show device tallies still add. Edge: if a device's base is stale against a raised server base (an admin gift) AND the
+other device had not paid the day, the max can swallow that 25 XP once (never a double). The write is the ordinary
+saveStore -> scheduleCloudPush -> pushToCloud -> writeAccount (transaction): about one extra account write per person per day
+(~40/day for the class), plus the leaderboard row that follows any XP change. Nothing periodic.
+
+**HOME.** The paying device stores the day's news (localStorage `class26e.streak.news`, per class through the ifc key map) unless it
+is quiet: "Skip celebrations and pop-ups" on (its subtitle already promised no "streak banners"; the XP still counts), or a sign-up's
+own launch (signupInNova / pendingMainMenuTour / Nova's intro / a tour up / a first day with no history) - a new account's first day
+is in Profile, its Home has Nova, the tips and the welcome XP. `maybeStreakNews` (from showHome and after a payment) waits like the
+class button's tip: Home up and quiet for 3 x 700ms - no What's New/Nova (whatsNewHolds), tips, reward cards or their queue, the
+daily question's XP flight, a cutscene, a sheet, another top banner, Add to Home Screen, the rank-up lock or scene, a test; gives up
+after ~280s (left for the next Home). Then `showStreakNews`: Home's own banner (`.daily-alert.app-banner.app-banner-streak`, the
+daily XP's glass and place, tag DAILY STREAK, "Day 4 streak", "+25 XP" or "+25 XP · 7-day bonus +200 XP"), sound "test.streak.1"
+(a milestone "test.streak.3", the answer streak's own sounds). After 1.9s (2.6s with a bonus) the flame leaves on a solid chip
+(`.streak-fly` > `.streak-fly-chip`: flame + "+225 XP"; no blur, no filter) and flies 980ms on an arc into #bottomtab-profile:
+the outer box moves across (ease-out), the chip a small hop (14-30px, it starts at the top of the screen) then down (ease-in), shrinking
+to .4 and fading - Web Animations on transform and opacity only. Landing: the tab's `.avatar-pulse` bump, "res.xp.pop", and
+scheduleRankUpLock (the check-in XP can be a rank's: rankUpLockWaits now waits for the banner, its flight and an owed banner).
+The news mark is removed as the banner shows: once per day per paying device; a screen change clears the banner and the chip
+(clearBannerOnScreenChange). Reduce motion (resultsMotionOff): the banner fades in and out where it is, no flight.
+homeUnlockBlocked and weekRecapBlocked wait for #streak-banner / .streak-fly.
+
+**PROFILE.** `buildStreakRow`: one of the person card's rows (pfActFill's glass row, 62px+, chevron), between the XP bar and
+Customize, with the flame as its art instead of the grey tile (the card's one lit thing; grey flame while no streak is alive):
+"7-day streak" / "7 days in total · Best 9 days" ("Daily streak" / "Open Nova each day to start one" with none). Refreshed in place
+when a day is paid with Profile open (streakRowRefresh). A tap opens `openStreakSheet` (the person card sheet, mountSheetOverlay,
+so it goes on a screen change): the flame, "DAILY STREAK", "7 days", Current / Best / Total days, "Each day you open Nova earns 25 XP.
+Days in a row build a streak, and each bonus is paid once per streak:", the ladder (3, 7, 14, then three 30-day marks - 30/60/90, or
+the last reached and the two after once past 60 - reached ones ticked, the next lit with "Next · N days to go"), "After that, every 30
+days pays 1,000 XP more than the last.", "Missing a full calendar day resets the streak to zero, and the bonuses can be earned again."
+It fits the Pro Max without scrolling (a first draft did not: "Got it" was under the fold).
+
+**THE FLAME** (`buildStreakFlame`): three flat tongues in a 32 box (#FF6A2B, #FFA234, #FFE27A; greys when dim), no gradient ids, no
+filter. buildFireIcon (the old two-tone one) is left for the version history row and the stats popover.
+
+**WHAT'S NEW / VERSION HISTORY.** WHATS_NEW_V11 gets "Daily streak" (second row, both classes): academy 7 rows, Fire Code 8.
+INTRO_REV and TOUR_REV NOT bumped: Version 11 is not on main yet, so everybody sees this row with the rest of the card. The card
+already scrolled inside itself on an SE in Fire Code at 384.138 (7 rows: Got it at 720 in a 613 card; check-b384-whatsnew11's
+"scrolls" reads #intro-pop, not .intro-card, so it does not see that); its "4 to 7 rows" bound is now "4 to 8". RELEASE_NOTES
+Version 11 gets a "Daily Streak" item with the full ladder.
+
+**GATE: tools/check-b384-streak.py (new).** Date shimmed from localStorage "__fakeNow" at load; the in-memory Firestore of
+check-b383-ifcsync kept across reloads in sessionStorage, plus __cloudPut (another device's write). (1) day 1 pays CHECKIN_XP once,
+in the store and the cloud; (2) a reload that day pays nothing, no banner; (3) day 3 pays daily + the sheet's 3-day rung, once, not
+again on reload; (3b) seeded runs of 29 and 59: day 30 pays the 30-day rung, day 60 the 60-day rung = 2000 = twice the 30-day, the
+sheet's 30-day marks grow; (4) a gap: daily only, streak 1, best 3; a new run of 3 pays the 3-day bonus again; (5) the row (in the
+card, >= 44px, streak and total), the sheet (the three numbers, reached rungs, the next with its days to go, nothing scrolls), gone
+on a screen change; (6) the banner comes up once (never over a reward card - day 1 runs WITH the fixture's owed challenge cards,
+tapped through), names the streak and the XP, its flight ends on the Profile tab's middle (from its keyframes), transform/opacity
+only, no filter, the tab bumps; a screen change clears it and Home does not repeat it; Reduce motion: banner, no flight; (7) two
+devices pay the same day independently, one also plays 300 XP; after each hears the other: base + 25 + 300 on both and in the cloud;
+(8) Fire Code: its own store and `<code>__ifc` document, the academy's untouched, the row on its Profile; (9) no page errors.
+ALL PASS here; --against af8f535 FAILS 22 of 25 (it passes only "a reload pays nothing", "the sheet is gone on navigation" and
+"no page errors", which are true of a build with no streak).
