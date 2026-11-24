@@ -365,7 +365,7 @@
        so a different account signing in on this device sees none of it; class26e.enrolled is only a mirror of it now. */
     try{
       if(localStorage.getItem("class26e.signout")){
-        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|enrolled|classseen|greet\.[a-z]+|newclass\.[a-z]+)$/;
+        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|lastbuild|bootmark|booterr|bootcb|diag|enrolled|classseen|greet\.[a-z]+|newclass\.[a-z]+)$/;
         var del = [];
         for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf("class26e.") === 0 && !keepRe.test(k)) del.push(k); }
         for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
@@ -417,7 +417,7 @@
        (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
        with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
     /* (384) the status bar's colour is the class's own (its theme's), as the theme is: not shared */
-    var SHARED = /^class26e\.(signout|activeclass|enrolled|leaveclass|leftnote|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled|season)$/;
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|leaveclass|leftnote|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|lastbuild|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled|season)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -42847,6 +42847,26 @@ html.is-browser{ --fade-paper: transparent; }
       msgIndex++;
       if(msgIndex < messages.length) statusEl.textContent = messages[msgIndex];
     }, msgInterval);
+    /* (384.148) THE UPDATE IS NARRATED EVERY TIME, NOT ONLY WHEN THE OLD BUILD PUSHED IT. Madison: "The 'update' splash screen wasn't
+       there for me, I have noticed they inconsistently show up". The update lines ran only on the reload applyUpdate() makes, i.e.
+       when the OLD build was open and found the new one. Opened cold after a deploy, iOS often fetches the new page straight away:
+       the new build boots with nothing to say it is new. The app calls this as soon as it knows its build (APP_BUILD) and that this
+       device last ran a different one (class26e.lastbuild): the rest of this splash says the update lines and ends on "update
+       complete.", and it runs for at least the update's length. */
+    window.__splashAsUpdate = function(){
+      try{
+        if(isUpdating || splashDone || firstVisit || arrive) return;
+        isUpdating = true;
+        var up = updatePool.slice(0, -1), done = updatePool[updatePool.length - 1];
+        for(var k = up.length - 1; k > 0; k--){ var r = Math.floor(Math.random() * (k + 1)), t = up[k]; up[k] = up[r]; up[r] = t; }
+        var lines = up.slice(0, 3).concat([done]);
+        var el = performance.now() - start, left = Math.max(duration - el, 0), want = 2600;
+        if(left < want){ duration = el + want; left = want; fill.style.setProperty("animation", "loadbar-fill " + duration + "ms linear " + (-el) + "ms forwards", "important"); }
+        messages = lines; msgIndex = 0; statusEl.textContent = lines[0];
+        clearInterval(msgTimer);
+        msgTimer = setInterval(function(){ msgIndex++; if(msgIndex < messages.length) statusEl.textContent = messages[msgIndex]; }, left / lines.length);
+      }catch(e){}
+    };
 
     /* The bar runs itself (see #splash-fill); this only says when. */
     /* important: a loading bar is information, not decoration, and the
@@ -42878,7 +42898,7 @@ html.is-browser{ --fade-paper: transparent; }
         finishSplash();
       }
     }
-    setTimeout(function(){ finishSplash(); }, duration + 120);
+    (function finishAfter(){ var t = duration + 120 - (performance.now() - start); if(t > 5) setTimeout(finishAfter, t); else finishSplash(); })();   /* (384.148: duration can grow - __splashAsUpdate) */
     /* (384 full check) NOT OVER AN EMPTY STAGE. The splash's time is a timer, and the first screen is mounted after the saved
        copy loads (asynchronously), so on a slow phone - most of all after a class switch, where only what is left of the
        switch's bar is run here, 0.8s at the least - it faded out over a stage with nothing in it yet: the page's bare top row
@@ -132526,7 +132546,20 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-24-384.147";
+const APP_BUILD = "2026-11-24-384.148";
+/* (384.148) the first launch of a new build on this device is narrated as an update, however the new page arrived (see
+   window.__splashAsUpdate). class26e.lastbuild is device-level (SHARED, kept through a sign-out). A device that has never recorded
+   one but already holds an account was running a build from before this mark existed, so it is told too; a device with nothing
+   on it is a first visit (the splash steps aside for Get Started) and is not. */
+(function(){
+  let prev = null, had = false;
+  try{
+    prev = localStorage.getItem("class26e.lastbuild");
+    had = !!(localStorage.getItem("class26e.synccode") || localStorage.getItem("class26e.activeclass"));
+    localStorage.setItem("class26e.lastbuild", APP_BUILD);
+  }catch(e){}
+  if(prev ? prev !== APP_BUILD : had){ try{ window.__splashAsUpdate && window.__splashAsUpdate(); }catch(e){} }
+})();
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
