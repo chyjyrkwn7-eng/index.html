@@ -43892,3 +43892,9 @@ SEEN, NOT CHANGED: 61's valve, through the hand-hold, is a brass block with a sm
 collar, not as a valve with a wheel (the handwheel is drawn in the collar's top, where a real one sits). 54's bubbles are small; at 26px
 the drip and fizz are gone and the pin reads as a jug in a green puddle. 59's charred head is dark against the flame and reads as a match
 head only at 96px and up.
+
+## 384.138 (2026-11-24): combined build
+
+- Merged into one build: the police art10 badges (handcuffs, ribbon, umbrella, fingerprint, teddy, pill bottle, Constitution, radio), the Fire Code art10 badges (Ch 23, 28, 54, 57, 59, 61, 66, 67, Appendix C and H), and festive round 5 (Santa cuff, larger party hat).
+- Full-size characters and cameos are parked at the owner's request. CAMEOS_LIVE stays false and claude/b384-bodies is not merged.
+- index.html conflicted only in the generated CHAPTER_OBJ block; it was resolved by re-running snap.py and merge-chapter-icons.py (in step).
