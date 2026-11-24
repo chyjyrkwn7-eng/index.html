@@ -42136,10 +42136,16 @@ html.is-browser{ --fade-paper: transparent; }
     margin:calc(var(--pin-d) / -2) 0 0 calc(var(--pin-d) / -2); border-radius:50%; }
   .person-card-art > .pin-mark-hero{ --pin-d:2.25rem; }
   @media (min-width:40rem){ .pin-host > .pin-mark-hero, .pin-host > .pin-spot{ --pin-d:3.4rem; } }
-  .pin-mark-hero{ background:radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--badge-glow, #9FB1FF) 26%, var(--surface-2)), var(--surface-1) 74%), var(--delta-card-fill, #1C1C1E);
-    box-shadow:0 0 0 3px var(--delta-card-fill, #1C1C1E), 0 0 0 4.5px color-mix(in srgb, var(--badge-glow, #9FB1FF) 62%, transparent), 0 8px 18px var(--surface-inset); }
-  .pin-mark-hero::before{ inset:6%; opacity:.55; }
-  .pin-mark-hero > .pin-mark-art{ width:84%; height:84%; }
+  /* (384.150) THE PIN ITSELF, NOT A MEDALLION: Madison, of the disc on the plate's corner, "I was thinking the badge would just be the
+     badge here, it wouldn't be in the circle like that, it would just be the 3d badge kinda thing pinned". No disc, no ring, no wash: the
+     raised pin (its own render, with its own side wall and contact shadow) sits on the plate's corner, a little larger than the disc
+     was, so it reads as the object */
+  .pin-host > .pin-mark-hero, .person-card-art > .pin-mark-hero{ --pin-d:3.35rem; }
+  .person-card-art > .pin-mark-hero{ --pin-d:2.6rem; }
+  @media (min-width:40rem){ .pin-host > .pin-mark-hero{ --pin-d:3.9rem; } }
+  .pin-mark-hero{ background:none; box-shadow:none; border-radius:0; }
+  .pin-mark-hero::before{ display:none; }
+  .pin-mark-hero > .pin-mark-art{ width:100%; height:100%; }
   /* nothing pinned yet: the same place, a dashed ring with a plus - the way in to pin one */
   .pin-spot{ background:var(--surface-2); box-shadow:0 0 0 3px var(--delta-card-fill, #1C1C1E), 0 8px 18px var(--surface-inset); color:var(--ink); }
   .pin-spot::before{ content:""; position:absolute; inset:2px; border-radius:50%; border:1.5px dashed var(--surface-border); pointer-events:none; }
@@ -79722,7 +79728,7 @@ function pinHostFor(plate, entry, who){
   if(who === null){ host.classList.add("is-mine"); pinPaintMine(host, false); }
   else {
     const u = rowPinnedBadge(entry);
-    const m = pinMark(u, "hero", { who: who || "", px: 56 });
+    const m = pinMark(u, "hero", { who: who || "", px: 64 });
     if(m){ host.classList.add("has-pin"); host.appendChild(m); }
   }
   return host;
@@ -79732,7 +79738,7 @@ function pinPaintMine(host, fresh){
   const u = myPinnedBadge();
   host.classList.toggle("has-pin", !!u);
   if(u){
-    const m = pinMark(u, "hero", { mine: true, px: 56 });
+    const m = pinMark(u, "hero", { mine: true, px: 64 });
     if(fresh) m.classList.add("is-fresh");
     host.appendChild(m);
     return;
