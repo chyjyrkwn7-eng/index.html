@@ -44223,3 +44223,7 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - **Before**, the Delta card rule (`background-image:none !important`) left the card flat, so the cover's art faded straight into grey.
   - **Now**, a later, more specific rule lays --hero-t1 / --hero-t2 (bannerTintOf) over the card's fill as a wash. It starts at 30% and is gone by 66% of the card's height.
   - The cover's own fade begins at 18%, was 24%, and eases out over eleven stops.
+- **The rank circles on the road.** Madison: "Why are all the rank circles leaning to the right?" On his iPhone every circle on the climb sat ~4pt right of the road. Chromium puts them on the road to the hundredth of a pixel, at 440 and at 85% zoom, so no gate saw it.
+  - **Cause.** The circle was centred by the grid's column arithmetic, and the road by the stop's own 50%. WebKit resolves the arithmetic differently.
+  - **Fix.** The circle is absolute at left 50%, margin-left -node/2: the road's reference. It has no grid-column, since an absolute child placed in a grid area takes that area as its box. The stop's row is minmax(var(--node), auto), so its height is unchanged (313px a stop, before and after).
+  - **Gates.** check-b384-rankcard fails 34 checks identically on 384.149: its card-token colour checks predate the Delta card rule, so these are not this change.

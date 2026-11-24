@@ -19592,7 +19592,14 @@
     .rankmap-stop{ --node:3.9rem; --gap:2.4rem; --cgap:.55rem; grid-template-columns:calc((100% - var(--node) - 2 * var(--cgap)) / 2) var(--node) calc((100% - var(--node) - 2 * var(--cgap)) / 2); gap:var(--cgap); }
     .rankmap-road{ left:calc(50% - 2px); }
     .rankmap-roadtip{ left:50%; }
-    .rankmap-node{ grid-column:2; grid-row:1; }
+    /* (384.150) THE CIRCLE IS PLACED FROM THE SAME 50% AS THE ROAD: Madison, "Why are all the rank circles leaning to the right?" - on
+       his iPhone every circle sat ~4pt right of the road. In the grid's middle column the circle's centre is the stop's 50% only by the
+       columns' arithmetic, which WebKit resolves differently (Chromium puts it on the road to the hundredth of a pixel, so no gate here
+       saw it). The circle is now absolute at left 50% less half its width - the road's own reference - and the stop keeps the circle's
+       height as its minimum, so nothing below moves */
+    .rankmap-stop{ grid-template-rows:minmax(var(--node), auto); }
+    /* (no grid-column on it: an absolute child placed in a grid area takes that area as its box; with none, the stop's own box) */
+    .rankmap-node{ grid-column:auto; grid-row:auto; position:absolute; left:50%; top:0; margin-left:calc(var(--node) / -2); }
     .rankmap-stop.is-left .rankmap-card{ grid-column:1; grid-row:1; text-align:right; }
     .rankmap-stop.is-left .rankmap-head{ flex-direction:row-reverse; }
     .rankmap-stop.is-right .rankmap-card{ grid-column:3; grid-row:1; }
