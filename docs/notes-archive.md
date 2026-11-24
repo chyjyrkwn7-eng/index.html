@@ -44218,3 +44218,8 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - **Cause.** body is touch-action:pan-y, and iOS carries that down to a sideways scroller unless the scroller gives the axis back itself, as the Calendar's countdown track does (327z15).
   - **Fix.** `.ulk-chips` and `.ulk-chip`, Profile's rank ladder `.pfr-ld-scroll` and `.ifc-clips.is-scroll` now declare touch-action:pan-x pan-y.
   - **Gate:** tools/check-b384-sideways.py (Unlocks, Profile and the Calendar, both classes: every sideways scroller declares pan-x).
+- **The pinned badge is the pin itself.** Madison: "I was thinking the badge would just be the badge here, it wouldn't be in the circle like that, it would just be the 3d badge kinda thing pinned". `.pin-mark-hero` has no disc, ring or wash. The raised pin (its own render, with its side wall and contact shadow) sits on the plate's corner, at 3.35rem (3.9 on a tablet, 2.6 on the person card) and drawn at 64px. check-b384-pin 111/111.
+- **The banner's colours run down the Profile card.** Madison: "Can we make the banner colors fade down a little better into the rest of the profile box it's in?"
+  - **Before**, the Delta card rule (`background-image:none !important`) left the card flat, so the cover's art faded straight into grey.
+  - **Now**, a later, more specific rule lays --hero-t1 / --hero-t2 (bannerTintOf) over the card's fill as a wash. It starts at 30% and is gone by 66% of the card's height.
+  - The cover's own fade begins at 18%, was 24%, and eases out over eleven stops.

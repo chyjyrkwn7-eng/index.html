@@ -36313,10 +36313,11 @@ html.is-browser{ --fade-paper: transparent; }
   @keyframes pf-emb-breathe{ 0%,100%{ opacity:.45; transform:scale(.88); } 50%{ opacity:.9; transform:scale(1.08); } }
   [data-reduce-motion="true"] .screen-profile .pf-goal .pf-goal-emb > svg,
   [data-reduce-motion="true"] .screen-profile .pf-goal .pf-goal-emb::before{ animation:none !important; }
+  /* (384.150) begins a little higher and eases out longer (a smoothstep in eleven stops), so the art's own ground line is already
+     faint where it sits and nothing in the fade reads as an edge */
   .screen-profile .profile-hero.has-cover.has-tint .profile-cover{
-    --cover-fade:linear-gradient(180deg, #000 0%, #000 24%, rgba(0,0,0,.94) 34%, rgba(0,0,0,.82) 44%,
-      rgba(0,0,0,.66) 54%, rgba(0,0,0,.48) 63%, rgba(0,0,0,.31) 72%, rgba(0,0,0,.17) 81%, rgba(0,0,0,.07) 89%,
-      rgba(0,0,0,.02) 95%, transparent 100%);
+    --cover-fade:linear-gradient(180deg, #000 0%, #000 18%, rgba(0,0,0,.97) 26%, rgba(0,0,0,.9) 34%, rgba(0,0,0,.79) 42%,
+      rgba(0,0,0,.65) 50%, rgba(0,0,0,.5) 58%, rgba(0,0,0,.35) 66%, rgba(0,0,0,.21) 74%, rgba(0,0,0,.1) 82%, rgba(0,0,0,.03) 90%, transparent 100%);
     -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
   }
   html[data-theme="dark"][data-layout="modern"] .screen-profile .profile-identity-tab > .pf-goal{
@@ -41895,6 +41896,15 @@ html.is-browser{ --fade-paper: transparent; }
     /* what sits flush on the card in the card's own colour (Stats' tiles, the friend-code field, the effect preview, a tick's cut-out
        ring) reads the surface token: inside these cards that token IS the card, so none of them turns into a darker well */
     --surface-1:var(--delta-card-fill); --surface-2:var(--delta-card-fill); --clean-card:var(--delta-card-fill);
+  }
+  /* (384.150) THE BANNER'S COLOURS RUN ON DOWN THE CARD: Madison, "Can we make the banner colors fade down a little better into the
+     rest of the profile box it's in?" The Profile card under its cover keeps the banner's two colours (--hero-t1 / --hero-t2,
+     bannerTintOf; the default banner's are two greys) as a wash that thins out over the card's top two thirds, so the art fades into its
+     own colour and that colour into the card - not the art straight into flat grey. Over the card's own fill (the rule above) */
+  html[data-theme][data-layout] body #stage .screen-profile .profile-identity-tab > .profile-hero.has-cover.has-tint{
+    background-image:linear-gradient(180deg, color-mix(in srgb, var(--hero-t1) 30%, transparent) 0%, color-mix(in srgb, var(--hero-t1) 22%, transparent) 20%,
+      color-mix(in srgb, var(--hero-t2) 13%, transparent) 34%, color-mix(in srgb, var(--hero-t2) 6%, transparent) 46%,
+      color-mix(in srgb, var(--hero-t2) 2%, transparent) 56%, transparent 66%) !important;
   }
   html[data-theme][data-layout] body #stage .screen-customize .cz-row:active{ background-image:linear-gradient(var(--surface-lift), var(--surface-lift)) !important; }
   /* the shut badge case on Profile is the badge case on the Badges screen (its shell is already 26): its corner and its leather
