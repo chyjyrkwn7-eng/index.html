@@ -307,7 +307,10 @@ with sync_playwright() as pw:
         # Taken on this build after the seven were reviewed.
         # RE-PINNED (384.138 art11b): the handcuffs' bows polished silver, the Constitution's swallowtails and twist, the ribbon
         # crossing (the over strand untouched, the under strand dipping under it). Was 9737995c. Taken on this build after review.
-        PIN = "83db107d"
+        # RE-PINNED (384.141 art12-14): Madison's circled fixes redrew the academy pins on purpose (Victims of Crime a mended heart,
+        # Identity Crimes reverted to art10, the pill bottle's cap and capsules, the Constitution's ribbon and quill, the handcuffs after
+        # the ASP photo). Was 83db107d.
+        PIN = "8a20aca3"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)
