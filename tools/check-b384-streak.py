@@ -11,13 +11,14 @@ daily XP and the ladder are read off the page (CHECKIN_XP, the sheet's ladder), 
  (2) A RELOAD THE SAME DAY pays nothing and Home says nothing;
  (3) THE THIRD DAY IN A ROW pays the daily XP plus the 3-day bonus (the sheet's first ladder row), once;
  (3b) THE 30-DAY MARKS GROW: a run of 29 days (seeded, its earlier bonuses paid) checks in its 30th and is paid the daily XP and the
-     sheet's 30-day rung; a run of 59 its 60th, the 60-day rung, which is 2000 and twice the 30-day one (Madison: "a long streak has
-     to keep paying more"); the sheet lists the growing amounts;
+     sheet's 30-day rung; a run of 59 its 60th, a bonus of 2000, twice the 30-day one (Madison: "a long streak has to keep paying
+     more"); the sheet stops at the 30-day rung;
  (4) A GAP resets the run: a day missed, then a day: the daily XP only, the streak 1, the best kept; and two more days pay the 3-day
      bonus AGAIN (a new run);
- (5) THE PROFILE ROW AND SHEET show the derived numbers: the row's streak, total and best; the sheet's Current / Best / Total days,
-     the reached rungs marked, the next one lit with its days to go, all of it in sight on the Pro Max (nothing scrolls); the row is a tap target of 44px or more; the sheet is gone
-     when the screen changes;
+ (5) THE PROFILE CHIP AND SHEET show the derived numbers: the chip sits in the person card's top-left corner with the flame and the
+     streak (the total in its label), a tap target of 44px or more; the sheet's Current / Best / Total days, the ladder stopping at
+     30 days (Madison: "only up to 30 days"), the reached rungs marked, the next one lit with its days to go, all of it in sight on the
+     Pro Max (nothing scrolls); the sheet is gone when the screen changes;
  (6) HOME'S BANNER comes up once on the day's first Home (never with a reward card up), names the streak and the XP, and its flame
      flies to the Profile tab (transform and opacity only, no filter) which bumps; a screen change clears the banner and the chip,
      and Home does not show it again that day; under Reduce motion it fades with no flight;
@@ -81,7 +82,7 @@ academy = G["academy"]; ifc = G["ifc"]
 base = datetime.date.today() + datetime.timedelta(days=3)
 def day(k): return (base + datetime.timedelta(days=k)).isoformat()
 def page(br, cls="academy", reduce=False, cards=False, seed_cloud=True, first_day=0, store=None):
-    ctx = br.new_context(viewport={"width": 440, "height": 956}, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, device_scale_factor=float(os.environ.get("SHOTS_DPR", "1")), has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
     store = store or (ifc if cls == "ifc" else academy)
     cloud = {"progress": {(CODE + "__ifc" if cls == "ifc" else CODE): store}} if seed_cloud else {}
     ctx.add_init_script("window.__cloudSeed = %s;" % json.dumps(cloud))
@@ -237,11 +238,18 @@ with sync_playwright() as pw:
     pg.evaluate("document.querySelectorAll('#streak-banner, .streak-fly').forEach(e => e.remove())")
     pg.evaluate("showProfile()"); pg.wait_for_timeout(1400)
     row = pg.evaluate("""()=>{ const b = document.querySelector('#stage .pf-streak'); if(!b) return null; const r = b.getBoundingClientRect();
-        return { h: r.height, w: r.width, text: b.textContent, flame: !!b.querySelector('.streak-flame'), inCard: !!b.closest('.profile-hero') }; }""")
+        const c = b.closest('.profile-hero'); const q = c ? c.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return { h: r.height, w: r.width, text: b.textContent, label: b.getAttribute('aria-label') || '', flame: !!b.querySelector('.streak-flame'), inCard: !!c,
+          dx: r.left - q.left, dy: r.top - q.top, cw: q.width, ch: q.height, onTop: !!hit && b.contains(hit) }; }""")
+    if os.environ.get("SHOTS"): pg.screenshot(path=os.path.join(os.environ["SHOTS"], "profile.png"))
     rn = [int(x.replace(",", "")) for x in re.findall(r"\d[\d,]*", (row or {}).get("text", ""))]
-    chk("(5) Profile's row in the person card: the flame, the streak %s and the %s days (%r), %sx%s" % (info["current"], info["total"], row and row["text"], row and round(row["w"]), row and round(row["h"])),
-        bool(row) and row["flame"] and row["inCard"] and row["h"] >= 44 and info["current"] in rn and info["total"] in rn, row)
+    ln = [int(x.replace(",", "")) for x in re.findall(r"\d[\d,]*", (row or {}).get("label", ""))]
+    chk("(5) Profile's chip in the person card's top-left corner: the flame, the streak %s (%r; label %r), %sx%s at +%s,+%s" % (info["current"], row and row["text"], row and row["label"], row and round(row["w"]), row and round(row["h"]), row and round(row["dx"]), row and round(row["dy"])),
+        bool(row) and row["flame"] and row["inCard"] and row["h"] >= 44 and row["w"] >= 44 and rn == [info["current"]] and info["total"] in ln
+        and 0 <= row["dx"] <= 0.12 * row["cw"] and 0 <= row["dy"] <= 0.06 * row["ch"] and row["onTop"], row)
     pg.evaluate("document.querySelector('#stage .pf-streak')?.click()"); pg.wait_for_timeout(700)
+    if os.environ.get("SHOTS"): pg.screenshot(path=os.path.join(os.environ["SHOTS"], "sheet.png"))
     sh = pg.evaluate("""()=>{ const s = document.querySelector('.streak-sheet'); if(!s) return null;
         const st = {}; s.querySelectorAll('.streak-stat').forEach(c => { st[c.dataset.k] = +c.querySelector('.streak-stat-num').textContent.replace(/[^0-9]/g, ''); });
         const steps = [...s.querySelectorAll('.streak-step')].map(li => ({ days: +li.dataset.days, reached: li.classList.contains('is-reached'), next: li.classList.contains('is-next'),
@@ -253,7 +261,7 @@ with sync_playwright() as pw:
     chk("(5) the sheet: current %s, best %s, total %s (%s); reached %s; next %s" % (info["current"], info["best"], info["total"], sh and sh["st"], reached, nxt),
         bool(sh) and len(sh["st"]) == 3 and vals == sorted([info["current"], info["best"], info["total"]])
         and reached == [x["days"] for x in sh["steps"] if x["days"] <= info["current"]] and len(nxt) == 1 and nxt[0]["togo"] == nxt[0]["days"] - info["current"]
-        and re.search(r"\b%d\b" % xp, sh["text"]) and sh["inside"], sh)
+        and re.search(r"\b%d\b" % xp, sh["text"]) and sh["inside"] and max(x["days"] for x in sh["steps"]) == 30, sh)
     pg.evaluate("showHome()"); pg.wait_for_timeout(700)
     chk("(5) the sheet is gone when the screen changes", pg.evaluate("!document.querySelector('.streak-sheet, .invite-overlay')"))
 
@@ -296,11 +304,10 @@ with sync_playwright() as pw:
     b30, lad30, s30 = paid[30]; b60, lad60, s60 = paid[60]
     chk("(3b) day 30 of a run: the daily XP and the sheet's 30-day rung (+%s bonus, the sheet says %s), streak %s" % (b30, lad30.get("30"), s30["info"]["current"]),
         b30 == lad30.get("30") and b30 > 0 and s30["info"]["current"] == 30 and (day(-29) + "/30") in (s30["miles"] or []), [b30, lad30, s30])
-    chk("(3b) day 60 of a run: the 60-day rung, 2000 and twice the 30-day one (+%s bonus, the sheet says %s; 30-day %s)" % (b60, lad60.get("60"), b30),
-        b60 == lad60.get("60") == 2000 and b60 == 2 * b30 and s60["info"]["current"] == 60, [b60, lad60, s60])
-    rungs = sorted((int(k), v) for k, v in lad60.items())
-    big = [v for k, v in rungs if k >= 30]
-    chk("(3b) the sheet lists the 30-day marks growing (%s)" % rungs, len(big) >= 3 and all(b > a for a, b in zip(big, big[1:])), rungs)
+    chk("(3b) day 60 of a run: a 2000 bonus, twice the 30-day one (+%s bonus; 30-day %s)" % (b60, b30),
+        b60 == 2000 and b60 == 2 * b30 and s60["info"]["current"] == 60 and (day(-59) + "/60") in (s60["miles"] or []), [b60, lad60, s60])
+    rungs = sorted(int(k) for k in lad60)
+    chk("(3b) the sheet stops at the 30-day rung, even 60 days in (%s)" % rungs, bool(rungs) and rungs[-1] == 30, rungs)
 
     # ---------------- (7) two devices, one day ----------------
     ctxA, A, eA = page(br); ctxB, B, eB = page(br)

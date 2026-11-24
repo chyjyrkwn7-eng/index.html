@@ -43996,3 +43996,9 @@ devices pay the same day independently, one also plays 300 XP; after each hears 
 (8) Fire Code: its own store and `<code>__ifc` document, the academy's untouched, the row on its Profile; (9) no page errors.
 ALL PASS here; --against af8f535 FAILS 22 of 25 (it passes only "a reload pays nothing", "the sheet is gone on navigation" and
 "no page errors", which are true of a build with no streak).
+
+### 384 streak, round 2: the chip in the corner; the sheet stops at 30 days
+Madison: "Naw, the streak thing would just appear in the top left corner of that big box.. and if you click it then it would open a popup that says the xp rewards or something but only up to 30 days, the best stuff at the the top can stay".
+- **Profile.** The full row under the XP is gone. `buildStreakRow` now returns a chip, `button.pf-streak`, absolutely placed at the person card's top-left corner (12px in, z-index 6, at least 44x44). It shows the flame and the current streak number, with a grey flame and a 0 while no streak is alive. The total and best are in its aria-label. `.profile-hero` is `position:relative` under the modern layout.
+- **Sheet.** It keeps the flame, the title and the Current / Best / Total days. The ladder is 3 / 7 / 14 / 30 and nothing past it: no 60/90 rows and no "After that" line. The 60-day and later marks still pay (1000 x days / 30); the sheet just does not list them. Once a run is past 30, no rung is "next".
+- **Gate.** check-b384-streak (5) reads the chip's corner position and that it is on top at its centre. (3b) asserts that the 60-day payment is 2000 = 2 x 30-day, read from the store, and that the sheet stops at 30. `SHOTS=dir` saves profile.png and sheet.png, and `SHOTS_DPR` sets the scale.
