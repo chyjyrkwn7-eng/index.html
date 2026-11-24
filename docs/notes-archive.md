@@ -44129,3 +44129,4 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 
 ## 384.140 (2026-11-24): combined build
 - Merged: art12 and art13 (Ch.28 lengths, Identity Crimes reverted, Victims of Crime as a mended heart, the pill bottle, the Constitution's ribbon and quill, Ch.61's flat foot, the handcuffs after the ASP photo) and the streak rounds 2 and 3 (the corner chip, the sheet to 30 days, total days and best from the study log). Also the streak banner standing down for the class list.
+- **Ch.28, art14.** Madison: "No, you didn't fix it" (circling the crescent behind every log and the dark wedges between the bottom logs). The lengths are gone entirely: the logs are seen straight end on, the pile's depth carried by the shadow between them. R is 13.4 -> 14 so neighbours touch. The outline is ends plus the centre triangle, filleted only .7, so no dark wedge fills the outside notch between two logs. The `along` furrows went with the lengths.
