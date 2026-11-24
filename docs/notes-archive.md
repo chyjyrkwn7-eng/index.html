@@ -44161,3 +44161,11 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - **Placard.** The tank carries the LPG placard: a white hazard diamond with a red border and a red flame on its lower body.
   - Tried and removed: colour strips on the tank (they read as hard vertical stripes).
 - **Gates.** merge --check, badgeart, chapterbadges, objbadges --class ifc: ALL PASS except PERF cold on Ch.32 (untouched; flakes under load).
+
+## 384.146 (2026-11-24): Victims of Crime, a lighthouse
+- Madison, of the heart with a bandage: "Heart with a bandaid? Come on that sucks and it looks bad. Give me something good". It is now a lighthouse: the safe harbour a victim is guided to. (The life ring was taken: Crisis Intervention.)
+  - **Tower.** White, tapering up from its rock, with three red bands whose edges curve round it. It is lit down its left and turns darker on its right, with an arched door and a window.
+  - **Top.** The gallery's dark deck and railing, the lantern room glowing gold behind glazing bars, the dark dome roof and a brass finial.
+  - **Beams.** Two fans of light from the lantern, their ends arcs about it, brightening toward it in three rings.
+  - **Rock.** A heap of boulders with faceted lit tops.
+- **Back.** The beams are wide at the lantern (16.5 to 33) so the back's title and class line both fit across them. objbadges --class academy: ALL PASS. check-b384-ifcbadges is re-pinned to d4b074cd.

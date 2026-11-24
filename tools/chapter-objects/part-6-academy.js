@@ -842,36 +842,62 @@
     };
   }
 
-  /* ---- Victims of Crime - a mended heart: a plump red heart with a crack across it, and an adhesive bandage laid over the crack,
-     corner to corner. (art12) Madison, of the umbrella over a heart: "Just change this one entirely, make it something else and make it
-     great." Harm and healing in one picture: the split shows on both sides of the bandage and the bandage holds it closed. The heart
-     is one dome; the crack is a jagged groove cut into it; the bandage is a cream strip with rounded ends, its gauze pad a paler raised
-     square, a row of vent holes on each wing. ---- */
+  /* ---- Victims of Crime - a lighthouse: the safe harbour a victim is guided to. (art15) Madison, of the heart with a bandage: "that
+     sucks and it looks bad. Give me something good." The tower tapers up from its rock, white with three red bands, each band's edges
+     curving round the tower (seen from a little above) and the whole tower darker as it turns away on the right; a dark arched door
+     at its foot and a small window; the gallery's black railing round its top; the lantern room glowing gold behind its glazing bars;
+     the black dome roof and its ball finial; and two beams of light swept out either side of the lantern. The rock it stands on is
+     dark grey with a few facets. ---- */
   {
-    const AX = 50, HK = 2.72, HY = 43;
-    const heart = round(S.poly(Array.from({ length: 200 }, (_, i) => { const t = 2 * Math.PI * i / 200;
-      return [AX + 16 * Math.pow(Math.sin(t), 3) * HK, HY - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * HK]; })), 3.2, 3.2);
-    /* the bandage: along A (rising to the right), centred a little above the heart's middle */
-    const BC = [51.5, 47], A = -36 * Math.PI / 180, ca = Math.cos(A), sa = Math.sin(A);
-    const rot = (u, v) => [BC[0] + u * ca - v * sa, BC[1] + u * sa + v * ca];
-    const BL = 23.5, BW = 8.2, PL = 8.2, PW = 5.9;
-    const band = S.capsule(...rot(-BL + BW, 0), ...rot(BL - BW, 0), BW);
-    const pad = round(S.poly([rot(-PL, -PW), rot(PL, -PW), rot(PL, PW), rot(-PL, PW)]), 0, 1.4);
-    const holes = [-18.2, -14.2, 14.2, 18.2].flatMap(u => [-3.2, 0, 3.2].map(v => OBJ_circle(...rot(u, v), .62))).join("");
-    /* the crack: a jagged line across the heart, square to the bandage, its two ends showing either side of it */
-    const ck = [[-25, 1.5], [-19, -2.2], [-13, 1.8], [-8, -1.6], [-3, 1.2], [3, -1.4], [8, 1.6], [13, -1.8], [19, 1.4], [24, -1]]
-      .map(([v, u]) => rot(u, v));
-    const crackLine = S.union(ck.slice(1).map((q, i) => S.capsule(...ck[i], ...q, .95)), 0);
-    const crackV = S.minus(S.inter(crackLine, S.grow(heart, -2.4)), S.grow(band, .5));
-    const sil = S.union([heart, band], .6);
+    const AX = 50, TY0 = 37, TY1 = 84, TW0 = 9.6, TW1 = 15.2, K = .22;        /* the tower: its top and foot, their half-widths; the arcs' depth */
+    const halfW = y => TW0 + (TW1 - TW0) * (y - TY0) / (TY1 - TY0);
+    const tower = S.union([S.poly([[AX - TW0, TY0], [AX + TW0, TY0], [AX + TW1, TY1], [AX - TW1, TY1]]), S.ellipse(AX, TY1, TW1, TW1 * K)], 0);
+    /* a band of the tower between y0 and y1, its edges the front arcs of the tower's section */
+    const arcY = (y, x) => { const w = halfW(y); return y + w * K * Math.sqrt(Math.max(0, 1 - ((x - AX) / w) ** 2)); };
+    const band = (y0, y1) => S.inter(tower, (x, y) => Math.max(arcY(y0, x) - y, y - arcY(y1, x)));
+    const bands = S.union([band(42, 49), band(56, 63), band(70, 77)], 0);
+    const gal = S.union([S.box(AX - 14.5, 33, 29, 4.2, 1.2), S.ellipse(AX, 37.2, 14.5, 2.2)], 0);          /* the gallery: its deck */
+    const rail = S.box(AX - 13.2, 28.6, 26.4, 4.6, .8);                                                   /* its railing */
+    const lantern = S.box(AX - 8.2, 17.5, 16.4, 13, 1.2);                                                 /* the lantern room */
+    const roof = S.grow(S.union([S.poly([[AX - 9.2, 17.9], [AX + 9.2, 17.9], [AX + 3.4, 11.6], [AX - 3.4, 11.6]]), S.ellipse(AX, 11.4, 3.8, 1.2)], .6), .8);
+    const finial = S.union([S.circle(AX, 7.4, 2.2), S.box(AX - .9, 7.4, 1.8, 4, .4)], .4);
+    /* the beams: wedges of light from the lantern, widening outward, either side */
+    /* (fans of light: their far ends are arcs about the lantern, and they brighten toward it in rings) */
+    const LC = [AX, 24], beamL = S.poly([[AX, 16.5], [AX, 33], [-10, 45], [-10, 1]]), beamR = S.poly([[AX, 16.5], [AX, 33], [110, 45], [110, 1]]);
+    const beams = S.minus(S.inter(S.union([beamL, beamR], 0), S.circle(LC[0], LC[1], 45)), S.box(AX - 8.2, 0, 16.4, 100, 0));
+    /* the rock: a few boulders heaped round its foot, not a plinth */
+    const boulders = [[AX - 22, 89.5, 9, 6.2], [AX - 10, 87.2, 10.5, 7.6], [AX + 4, 88.6, 11, 7.2], [AX + 17, 87.6, 9.6, 7], [AX + 27, 90.4, 6.6, 4.8], [AX - 30, 91.6, 5.4, 3.8]];
+    const rock = S.union(boulders.map(([x, y, rx, ry]) => S.ellipse(x, y, rx, ry)), 1.6);
+    const rockTop = S.union(boulders.map(([x, y, rx, ry]) => S.inter(S.ellipse(x, y, rx, ry), (px, py) => py - (y - ry * .15))), 1.2);
+    const sil = S.union([S.union([tower, gal, rail, lantern, roof, finial, rock, S.box(AX - 9, 17, 18, 20, 0)], 1.2), beams], 2.4);
+    const t = S.trace(sil, BB);
+    const door = S.union([S.box(AX - 3.1, 76.5, 6.2, 9, 0), S.circle(AX, 76.5, 3.1)], 0);
+    const win = S.union([S.box(AX - 1.7, 59.2, 3.4, 4.6, 0), S.circle(AX, 59.2, 1.7)], 0);
+    const glass = S.box(AX - 6.6, 19.3, 13.2, 9.6, .6);
+    const turn = (f, x0) => S.inter(f, (x, y) => x0 - x);                                                 /* the part of f right of x0 */
+    let rails = ""; for(let k = -5; k <= 5; k++) rails += "M" + F(AX + k * 2.4) + " 29.4V" + F(33);
     CHAPTER_OBJ["Victims of Crime"] = {
-      d: sh(sil), col: "#C92E2A", base: "field",
+      d: t.d, holes: t.holes, col: "#F2EFE8", base: "field",
       plates: [
-        ["red", sh(g(heart)), { z: .5, bev: .8, dome: 2.8, col: "#D8352C" }],                                     /* the heart */
-        ["red", all(crackV), { z: -.55, bev: .35, col: "#7E1714" }],                                                /* the crack, cut into it, either side of the bandage */
-        ["cream", sh(g(band)), { z: .9, bev: .6, dome: 1.1, col: "#E8C39A" }],                                      /* the bandage */
-        ["cream", holes, { z: -.3, bev: .15, col: "#B98D60" }],                                                     /* its vent holes */
-        ["cream", sh(g(pad, .15)), { z: .45, bev: .45, dome: .7, col: "#F7EBDA" }],                               /* the gauze pad */
+        ["glow", all(g(beams, .2)), { bev: .3, col: "#FFF1C2" }],                                          /* the beams of light, palest at their ends, */
+        ["glow", all(S.inter(beams, S.circle(LC[0], LC[1], 33))), { col: "#FFE48A" }],
+        ["glow", all(S.inter(beams, S.circle(LC[0], LC[1], 21))), { col: "#FFD54F" }],                     /* brightest at the lantern */
+        ["rubber", sh(g(rock)), { z: .3, bev: .8, dome: 1.6, col: "#3D424A" }],                             /* the rock */
+        ["rubber", all(S.minus(rockTop, tower)), { gem: .6, gw: 2.4, col: "#5C626B" }],                    /* its boulders' lit tops, faceted */
+        ["cream", sh(g(S.minus(tower, rock), .2)), { z: .5, bev: .7, dome: 2.2, col: "#F2EFE8" }],        /* the white tower */
+        ["red", all(S.minus(bands, rock)), { col: "#C9302C" }],                                             /* its red bands */
+        ["cream", all(S.minus(S.inter(S.minus(tower, bands), (x, y) => Math.max(AX - 7 - x, x - (AX - 3.5))), rock)), { dome: .5, col: "#FFFFFF" }],   /* lit down its left side */
+        ["cream", all(S.minus(turn(S.minus(tower, bands), AX + 6), rock)), { col: "#D9D5CC" }],             /* turning away: the white, */
+        ["red", all(S.minus(turn(bands, AX + 6), rock)), { col: "#A3241F" }],                               /* the red */
+        ["rubber", sh(door) + sh(win), { z: -.6, bev: .35, col: "#1E2228" }],                               /* the door and the window */
+        ["rubber", sh(g(gal, .2)), { z: .8, bev: .5, dome: .6, col: "#2B2F36" }],                           /* the gallery's deck */
+        ["rubber", sh(g(rail, .1)), { z: -.3, bev: .3, col: "#3F444C" }],                                                  /* the gallery's railing: the dark behind its posts, */
+        ["rubber", rails + "M" + F(AX - 13.2) + " 29.2H" + F(AX + 13.2), { ln: .9, z: .5, bev: .3, col: "#2B2F36" }],   /* its railing */
+        ["rubber", sh(g(lantern, .2)), { z: .7, bev: .5, col: "#2B2F36" }],                                /* the lantern room's frame */
+        ["hot", sh(glass), { z: .4, bev: .4, dome: .6, col: "#FFC83D" }],                                   /* its light */
+        ["rubber", "M" + F(AX - 2.2) + " 19.3V28.9M" + F(AX + 2.2) + " 19.3V28.9", { ln: .7, z: .25, bev: .2, col: "#2B2F36" }],   /* its glazing bars */
+        ["rubber", sh(g(roof, .2)), { z: .8, bev: .5, dome: 1, col: "#24282E" }],                           /* the dome roof */
+        ["brass", sh(g(finial, .2)), { z: .9, bev: .4, dome: .8 }],                                         /* its finial */
       ],
     };
   }
