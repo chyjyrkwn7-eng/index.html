@@ -174,7 +174,11 @@
        front of the rim's back half and of the ink, and behind the rim's front half, its front face, the neck and the bottle; where it is
        inside the mouth it is wet with ink */
     const front = S.union([S.inter(S.minus(rimO, rimIn), (x, y) => MC[1] + .15 - y), S.minus(rimAll, rimO), neck, bottle], 0);
-    const quill = S.union([vane, shaft], 1), quillV = S.minus(quill, front), quillWet = S.inter(quillV, S.grow(rimIn, .2));
+    /* (art15) Madison: "Some of the white pen is behind it and half is inside? There's like a random grey mark". The shaft now ENDS at
+       the ink: its foot is cut along the ink's surface through the middle of the mouth, a shallow curve like the mouth itself, so it is
+       one white shaft standing in the ink - no grey "wet" patch, no stub below. */
+    const inkCut = S.inter(S.grow(rimIn, .6), (x, y) => (MC[1] + .45 - .9 * Math.sqrt(Math.max(0, 1 - ((x - MC[0]) / 5.7) ** 2))) - y);   /* (below the curve: < 0 is inside) */
+    const quill = S.union([vane, shaft], 1), quillV = S.minus(S.minus(quill, front), inkCut);
     let barbs = ""; for(let k = 0; k < 15; k++){ const t = t0 + .06 + k * .042; barbs += lineP([Qq(L * t, 1.7), Qq(L * (t + .05), wl(t + .05) * .84)]); }
     for(let k = 0; k < 9; k++){ const t = t0 + .1 + k * .06; if(wr(t + .04) > 2.4) barbs += lineP([Qq(L * t, -1.5), Qq(L * (t + .04), -wr(t + .04) * .8)]); }
     const splits = lineP([Qq(L * .5, 1.6), Qq(L * .56, wl(.56) + 1)]) + lineP([Qq(L * .74, 1.6), Qq(L * .8, wl(.8) + 1)]);
@@ -227,7 +231,6 @@
         ["rubber", all(S.minus(rimIn, quillV)), { z: .6, bev: .3, col: "#101418" }],                                   /* the ink in it */
         ["brass", all(g(S.minus(S.minus(rimO, rimIn), quillV), .15)), { z: 1.1, bev: .4, dome: .5 }],          /* the mouth's rim: its top, a whole ring (the quill crosses its back half) */
         ["cream", all(g(quillV)), { z: 1.2, bev: .7, dome: 1, col: "#F4F2EA" }],                                       /* the quill, down into the mouth */
-        ["cream", all(quillWet), { col: "#59606B" }],                                                                    /* where it is in the ink, wet */
         ["cream", barbs + splits, { ln: .6, cut: .35, paint: 0 }],                                                       /* its barbs and splits */
         ["cream", keep([Qq(L * .26, 0), Qq(L * .97, 0)], q => quillV(...q) < -.4), { ln: 1.15, z: .3, bev: .3, col: "#FFFFFF" }],   /* its rachis */
         ["brass", sh(g(S.minus(rimAll, rimO), .2)), { z: .9, bev: .35, dome: .3, col: "#B88A2E" }],                    /* its round front face */

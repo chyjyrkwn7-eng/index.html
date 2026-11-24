@@ -44145,3 +44145,9 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 
 ## 384.143 (2026-11-24): the pills reverted
 - Madison: "Revert the pills". The Health and Safety Code block in part-6-academy.js is restored from b18630f (art11b: the capsules without the ground shadow, the cap at RX + 1.6). check-b384-ifcbadges is re-pinned to 66933723.
+
+## 384.144 (2026-11-24): the quill in the ink (art15)
+- Madison: "Some of the white pen is behind it and half is inside? There's like a random grey mark on it". Two faults:
+  - **The cut.** The ink cut's half-plane had its sign the wrong way round (an SDF is < 0 inside). It removed the shaft ABOVE the ink line, so the back rim showed across the shaft as a band, with a stub of quill below it.
+  - **The colour.** The "wet" grey plate was the grey mark.
+- Now the quill is one white shaft over the back rim, ending at the ink's surface on a shallow curve through the middle of the mouth. The wet plate is gone. check-b384-ifcbadges is re-pinned to 79bc9939.
