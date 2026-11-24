@@ -1561,7 +1561,17 @@
      each top-row element is brought down to the line and no further, and Home's flow is untouched (only its chat button moves). */
   :root{ --edge-e: 0px; }
   @media (orientation:portrait) and (max-width:39.99rem){
-    html.top-edge-on{ --edge-e: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 18px) * var(--zc, 1)); }
+    /* (384.150) 36pt, was 18: Madison's Calendar at rest on 384.148 ("you didn't line up the stuff perfectly, there's still that slight
+       blur at the top over the header") - the title's ink dims from where it starts (~75pt) to full white only at ~93-95pt, the chat
+       button's glyph from ~82 to ~95pt: the band iOS softens now reaches ~95pt under a 62pt inset, not 78pt as in 384.95's recording */
+    html.top-edge-on{ --edge-e: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 36px) * var(--zc, 1));
+      /* --edge-more: what 384.150 added to 384.95's line, for the screens that sat on the old line by their own margins (sign-up) */
+      --edge-more: calc(clamp(0px, (env(safe-area-inset-top, 0px) - 30px) * 100, 18px) * var(--zc, 1)); }
+    /* (384.150) the sign-up and install screens come down by what the line came down: their back buttons, titles and pictures sat
+       just under 384.95's line by their own spacing */
+    html.top-edge-on[data-layout] body #stage > :is(.onboarding-shortform-panel, .classselect-panel, .charselect-panel, .installfirst-panel, .cosmic-welcome){
+      margin-top:var(--edge-more);
+    }
   }
   :root{ --top-e: calc(env(safe-area-inset-top, 0px) + var(--edge-e));
     /* how far the test header's row comes down to put Pause's top on the line (0 wherever the line is not below Pause already) */
@@ -36755,7 +36765,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-ptr{ margin:0; font-size:.86rem; font-weight:650; color:var(--ink); line-height:1.35; }
   .ifc-pages{ margin:.15rem 0 0; font-size:.78rem; color:var(--soft); }
   .ifc-code-body{ border-radius:.75rem; }
-  .ifc-clips.is-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:.35rem; }
+  .ifc-clips.is-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:.35rem; touch-action:pan-x pan-y; }
   .ifc-clips.is-scroll canvas{ flex:none; }
   .ifc-ref{ margin-bottom:1.5rem; }
   .ifc-busy, .ifc-note, .ifc-foot{ margin:.4rem 0 0; font-size:.82rem; line-height:1.4; color:var(--soft); }
@@ -38465,7 +38475,7 @@ html.is-browser{ --fade-paper: transparent; }
      move; the clip's frame has no filter. */
   .invite-overlay.a2hs-overlay{
     z-index:420; align-items:center; justify-content:center; background:transparent;
-    padding-top:calc(var(--sat) + 12px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding-top:max(calc(var(--sat) + 12px), var(--top-e)); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);   /* (384.150) its top under the system's blur */
     padding-left:calc(env(safe-area-inset-left, 0px) + 12px); padding-right:calc(env(safe-area-inset-right, 0px) + 12px);
   }
   .a2hs-sheet{
@@ -38605,7 +38615,11 @@ html.is-browser{ --fade-paper: transparent; }
      Calendar, and Profile's three segments (rule below); 0 wherever there is no band. */
   @media (orientation:portrait) and (max-width:39.99rem){
     html.top-edge-on[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab, .screen-profile)) > #count:not(:empty){
-      position:relative; top:max(0px, calc(var(--edge-e) - .18em));
+      /* (384.150) in the flow (a margin), not lifted: at 36pt the title would sit on the line under it ("Class 26E", the switcher) */
+      margin-top:max(0px, calc(var(--edge-e) - .18em));
+      /* ...and the gap under it as it looked: what 384.95's lift took out of it is taken out here, so the page under the title moves
+         down by exactly what the title moved (--edge-more), not by that plus the lift */
+      margin-bottom:calc(1.25rem - max(0px, calc(var(--edge-e) - var(--edge-more, 0px) - .18em)));
     }
   }
   @media (min-width:40rem){
@@ -40629,10 +40643,13 @@ html.is-browser{ --fade-paper: transparent; }
   .ulk-hero-count{ font-size:1.45rem; font-weight:800; line-height:1.15; color:var(--ink); font-variant-numeric:tabular-nums; }
   .ulk-hero-sub{ font-size:.8rem; font-weight:600; line-height:1.3; color:var(--soft); }
   /* the filters: one row you can slide sideways, every chip a 44px target */
-  .ulk-chips{ display:flex; gap:.45rem; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; -webkit-overflow-scrolling:touch;
+  /* (384.150) touch-action:pan-x pan-y - "You should be able to slide back and forth across this filter ... but you can't". body is
+     touch-action:pan-y (the app keeps the sideways axis for its own swipes) and iOS carries that down to this row, so a sideways drag on
+     it never scrolled; the Calendar's countdown track gives the axis back the same way */
+  .ulk-chips{ display:flex; gap:.45rem; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y;
     margin:0 0 .85rem; padding:.1rem .1rem .2rem; scroll-snap-type:x proximity; }
   .ulk-chips::-webkit-scrollbar{ display:none; }
-  .ulk-chip{ all:unset; box-sizing:border-box; flex:0 0 auto; display:inline-flex; align-items:center; gap:.4rem; min-height:44px; padding:0 .95rem;
+  .ulk-chip{ all:unset; box-sizing:border-box; touch-action:pan-x pan-y; flex:0 0 auto; display:inline-flex; align-items:center; gap:.4rem; min-height:44px; padding:0 .95rem;
     border-radius:99px; background:var(--surface-lift); box-shadow:inset 0 0 0 1px var(--surface-border); color:var(--ink); cursor:pointer;
     font-family:var(--sans); font-size:.86rem; font-weight:700; scroll-snap-align:start; -webkit-tap-highlight-color:transparent; position:relative;
     transition:background-color .2s ease, color .2s ease, transform .15s ease; }
@@ -41931,7 +41948,7 @@ html.is-browser{ --fade-paper: transparent; }
      node at the scroll box's edge was cut through: a column may now be 36px (was 38), and under 380px wide the nodes are smaller
      (28 / 38px, was 32 / 44), so the seven ranks fit without scrolling from a 375px phone to a Pro Max at 135%.
      check-b384-profilerows2 L7 holds every node, ring, glow and tag inside every box that clips it, in every state, mid-entrance. */
-  html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll{ display:block; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin:-24px -22px -6px; padding:28px 22px 8px; }
+  html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll{ display:block; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y; margin:-24px -22px -6px; padding:28px 22px 8px; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-scroll::-webkit-scrollbar{ display:none; }
   html[data-layout] body #stage .profile-identity-tab .pfr-ld-track{
     --ns:32px; --nb:44px; position:relative; display:grid; grid-template-columns:repeat(var(--n, 7), minmax(0, 1fr)); align-items:start;
@@ -132552,7 +132569,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-24-384.149";
+const APP_BUILD = "2026-11-24-384.150";
 /* (384.148) the first launch of a new build on this device is narrated as an update, however the new page arrived (see
    window.__splashAsUpdate). class26e.lastbuild is device-level (SHARED, kept through a sign-out). A device that has never recorded
    one but already holds an account was running a build from before this mark existed, so it is told too; a device with nothing
@@ -171237,7 +171254,10 @@ function badgeInspectPrewarm(unit){
     const probe = document.createElement("div"); probe.className = "binspect"; probe.style.visibility = "hidden"; probe.style.pointerEvents = "none";
     const f = document.createElement("div"); f.className = "binspect-float"; probe.appendChild(f); document.body.appendChild(probe);
     const size = Math.max(60, f.getBoundingClientRect().width || 280); probe.remove();
-    badgeStrikeEntry(unit, false, badgeRenderW(size * badgeDpr(), unit, 864), true, badgeDirtStage(unit));
+    /* (384.150) bare, as the lift reads it (binspectFaceKey): a pin's face drawn here without it was cached under the slot's key, so
+       the lift never found it and rose from the case's small picture - soft all the way up ("The badges come up blurry when you
+       select them") - until the big face was drawn over it */
+    badgeStrikeEntry(unit, false, badgeRenderW(size * badgeDpr(), unit, 864), true, badgeDirtStage(unit), true);
   }catch(e){}
 }
 /* What is open now, for the gates and the recorder. */
@@ -171270,7 +171290,7 @@ function binspectWarmSoon(){
     let W = 0; try{ W = binspectW(); }catch(e){ return; }
     let units = []; try{ units = unitsInTeachingOrder().filter(u => unitBadgeEarned(u)); }catch(e){}
     units.forEach(u => {
-      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, chapterObjShape(u) ? binspectPinW() : W, false, d); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, chapterObjShape(u) ? binspectPinW() : W, false, d, true); });   /* (384.150) bare: the face the lift reads */
       binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeBackEntry(u, chapterObjShape(u) ? binspectPinW() : W, d, false); });
       binspectWarmJobs.push(() => { const d = badgeDirtStage(u); for(let i = 0; i < BINSPECT.edges; i++) badgeEdgeURL(u, Math.sin(Math.PI * i / (BINSPECT.edges - 1)), d); });
     });

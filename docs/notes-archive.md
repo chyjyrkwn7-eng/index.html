@@ -44201,3 +44201,20 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 - **Fix.** No child is lifted. The row is its own stacking context (`isolation:isolate`) and `.lb-row-bnr` sits at z-index -1 inside it: over the row's surface, under its content. The content is ordinary flex items again, exactly as on a row with no banner.
 - **The streak chip's flame.** margin-top is -.5px: centering read the chip 0.58px high once at -1px (0 at -.5).
 - **Gates:** check-js; unlocks4 --only 5 (the banner rows: 12 pass); check-centering --quick (0 off centre); a Chromium render of the board with a banner on every row (banners behind, content over, columns aligned).
+
+## 384.150 (2026-11-24): the top row under the deeper blur; badges lift out sharp; the Unlocks filter slides
+- **The top line, 18 -> 36pt.** Madison (Calendar at rest, 384.148): "Is the blurry stuff supposed to be at the top even as you scroll down? Also, you didn't line up the stuff perfectly, there's still that slight blur at the top over the header makes chat buttons and other things, fix that positioning".
+  - **The band itself** is iOS 26's own, drawn in an installed app and staying put as the page scrolls. Nothing of ours paints it (384 r12, 384.95).
+  - **Measured on his screenshot** (1186 wide, 2.695 px/pt): the title's ink dims from ~75pt (peak 162 of 255) to full white only at ~93-95pt, and the chat glyph from ~82 to ~95pt. The band now reaches ~95pt under a 62pt inset, not 78pt as in 384.95's recording.
+  - `--edge-e` is 36pt (x --zc). `--edge-more` (18pt) is what this build added.
+  - **Tab-screen titles** (#count on the Leaderboard, Calendar and Profile) are now in the flow: margin-top edge-e - .18em, plus a margin-bottom that takes back 384.95's lift. The page under a title moves by exactly what the title moved.
+  - **Sign-up and install panels** (`.onboarding-shortform-panel, .classselect-panel, .charselect-panel, .installfirst-panel, .cosmic-welcome`) take margin-top --edge-more. The Add to Home Screen overlay's top is max(sat + 12px, top-e).
+  - **Gate.** check-b384-toprow's EDGE_PT is 36. `.fest-sky` is skipped (aria-hidden decoration). Terms and the Home Screen sheet are listed in GREW_ON_PURPOSE (4px at 85%).
+- **Badges lift out sharp.** Madison (a recording): "The badges come up blurry when you select them ... they aren't clear hd as they pull up".
+  - **Cause.** The lift reads a pin's in-hand face under the "|bare" key (binspectFaceKey, 384.133), but the warm-up (binspectWarmSoon) and the finger-down prewarm (badgeInspectPrewarm) drew it without `bare`. That cached it under the slot's key, so the lift never found it and rose from the case's small picture until the big face was drawn.
+  - **Fix.** Both now pass bare = true.
+  - **Gate:** tools/check-b384-liftsharp.py runs the warm-up's own jobs, then opens every found badge. The src it starts on must be a finished cached in-hand face at >= 90% of the float's device width. 384.149 FAILS: every badge starts on an SVG.
+- **The Unlocks filter slides.** Madison: "You should be able to slide back and forth across this filter to select them, but you can't."
+  - **Cause.** body is touch-action:pan-y, and iOS carries that down to a sideways scroller unless the scroller gives the axis back itself, as the Calendar's countdown track does (327z15).
+  - **Fix.** `.ulk-chips` and `.ulk-chip`, Profile's rank ladder `.pfr-ld-scroll` and `.ifc-clips.is-scroll` now declare touch-action:pan-x pan-y.
+  - **Gate:** tools/check-b384-sideways.py (Unlocks, Profile and the Calendar, both classes: every sideways scroller declares pan-x).
