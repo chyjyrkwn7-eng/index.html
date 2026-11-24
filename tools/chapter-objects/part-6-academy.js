@@ -67,58 +67,74 @@
     };
   }
 
-  /* ---- Arrest, Search, and Seizure - a pair of hinged handcuffs (art11; Madison sent ASP hinged cuffs as the reference: "ours need to
-     look that good"). Each cuff: the black lock case - the double bar's housing, with its keyhole, three small rivets and the yellow
-     double-lock tab - and the black double bar running from it round the cuff's inner side to the pivot at the bottom; the polished
-     single bow swinging from that round pivot pin round the outer side and up into the case, its ratchet teeth cut along its outer
-     edge where it enters. Two flat steel hinge links join the two cases, pinned into each case and to each other at the middle. Laid
-     out symmetrically, the hinge at the top centre (the cases and the hinge between them carry the back's title). ---- */
+  /* ---- Arrest, Search, and Seizure - a pair of hinged handcuffs, laid as Madison's reference photo lies (ASP hinged cuffs: "There's no
+     way you think these look alike. Redo the connection part ... ensure it's that good"). (art12) The pair lies on a diagonal, one cuff
+     up and right, the other down and left, turned half round from each other about the hinge between them. Each cuff: the black
+     lock case, long across the pair's axis, with its keyhole, four rivets and the yellow double-lock tab on the side toward its ring;
+     the black double bar running from the case round the cuff's outer side to the round pivot at the far end; the polished single bow
+     swinging from that pivot round the other side and back into the case, its ratchet teeth along its outer edge where it enters. The
+     CONNECTION is the photo's: two flat steel hinge links side by side, each pinned into one case and the other, a dark gap between
+     them, a joint across each at the middle. ---- */
   {
-    const RO = 23.2, RI = 15.6, RB = 22.8, CY = 64, CXL = 24.4;       /* the ring: the double bar's outer radius, the opening; the bow's outer radius */
-    const BX0 = 26.2, BX1 = 43.2, BY0 = 20.5, BY1 = 47.5, BR = 3.6;     /* the left case */
-    const LK = [26.3, 41.9], LKR = 4.6;                                  /* the two hinge links: their middles' heights, half heights */
-    const mir = f => (x, y) => f(100 - x, y), mp = p => [100 - p[0], p[1]];
-    const both = f => S.union([f, mir(f)], 0);
-    const C = [CXL, CY], sector = (a0, a1, r0, r1) => S.inter(ring(C[0], C[1], r1, r0), wedge(C, a0, a1, 40));
-    const box = S.box(BX0, BY0, BX1 - BX0, BY1 - BY0, BR);
-    const bar = S.minus(sector(-78, 118, RI, RO), box);                 /* the double bar: from the case round the inner side to the pivot */
-    const PV = polar(C, (RO + RI) / 2, 118), pivot = S.circle(PV[0], PV[1], 4.3);
-    const bow = S.minus(S.minus(sector(112, 286, RI, RB), box), pivot); /* the single bow: from the pivot round the outer side into the case */
-    const links = S.union(LK.map(y => S.box(BX1 - 2, y - LKR, 100 - 2 * BX1 + 4, 2 * LKR, 1.3)), 0);
-    const hinge = S.box(BX1 - 1, LK[0] - LKR, 100 - 2 * BX1 + 2, LK[1] - LK[0] + 2 * LKR, 1.3);   /* the links and the dark gap between them (painted, not a hole) */
-    const cases = both(box), bars = both(bar), bows = both(bow), pivots = both(pivot);
-    const sil = S.union([S.union([cases, bars, bows, pivots], .8), links, hinge], .5);
+    const H = [50, 50], TH = -42 * D, U = [Math.cos(TH), Math.sin(TH)], V = [-Math.sin(TH), Math.cos(TH)], K = 1.13;   /* K: the local frame's scale */
+    /* local frame: u along the pair's axis toward the upper cuff, v across it; the lower cuff is the upper one turned half round */
+    const toA = (u, v) => [H[0] + K * (U[0] * u + V[0] * v), H[1] + K * (U[1] * u + V[1] * v)], toB = (u, v) => toA(-u, -v);
+    const loc = (x, y) => { const dx = (x - H[0]) / K, dy = (y - H[1]) / K; return [dx * U[0] + dy * U[1], dx * V[0] + dy * V[1]]; };
+    const WA = f => (x, y) => { const q = loc(x, y); return K * f(q[0], q[1]); }, WB = f => (x, y) => { const q = loc(x, y); return K * f(-q[0], -q[1]); };
+    const pair = f => S.union([WA(f), WB(f)], 0);
+    const pts2 = ps => ps.map(p => toA(...p)).concat([]), ptsB = ps => ps.map(p => toB(...p));
+    /* one cuff, in the local frame */
+    const CU = 14, CW = 13, CL = 27, caseL = S.box(CU - CW / 2, -CL / 2, CW, CL, 3.2);
+    const RC = [30.5, 1.5], RO = 17.2, RI = 11.4, RB = 16.6, MR = (RO + RI) / 2, PA = -16;
+    const sectorL = (a0, a1, r0, r1) => S.inter(ring(RC[0], RC[1], r1, r0), wedge(RC, a0, a1, 40));
+    const barL = S.minus(sectorL(PA, 182, RI, RO), caseL);              /* the double bar: from the case round the outer side to the pivot */
+    const PVL = polar(RC, MR, PA), pivotL = S.circle(PVL[0], PVL[1], 3.7);
+    const bowL = S.minus(S.minus(sectorL(176, 360 + PA + 4, RI, RB), caseL), pivotL);   /* the single bow: from the pivot round the other side into the case */
+    /* the hinge: two links side by side along the axis, pinned into each case */
+    const LV = 6.1, LW = 5.6, LU = 10.6;
+    const linkL = v => S.box(-LU, v - LW / 2, 2 * LU, LW, 1.7);
+    const linksW = S.union([linkL(-LV), linkL(LV)].map(f => WA(f)), 0);     /* (the links are their own turned copies: symmetric already) */
+    const gapW = WA(S.box(-LU + 3.3, -LV + LW / 2, 2 * (LU - 3.3), 2 * LV - LW, .6));
+    const cases = pair(caseL), bars = pair(barL), bows = pair(bowL), pivots = pair(pivotL);
+    /* (the space between the two links is open: the ground shows through it, as in the photo - a hole in the pin, not a dark plate) */
+    const sil = S.union([S.union([cases, bars, bows, pivots], .8), linksW], .3);
     const t = S.trace(sil, BB);
-    const linkV = S.minus(links, cases), gapV = S.minus(S.minus(S.box(BX1 - 1, LK[0], 100 - 2 * BX1 + 2, LK[1] - LK[0], 0), links), cases);
-    /* the case's face: a raised panel; the keyhole; rivets; the double-lock tab on its outer side */
-    const KC = [(BX0 + BX1) / 2 - 1.2, 33.5];
-    const keyhole = OBJ_circle(KC[0], KC[1], 1.9) + OBJ_poly([[KC[0] - 1, KC[1] + .4], [KC[0] + 1, KC[1] + .4], [KC[0] + 1.5, KC[1] + 5], [KC[0] - 1.5, KC[1] + 5]], .5);
-    const keyholes = keyhole + OBJ_circle(100 - KC[0], KC[1], 1.9) + OBJ_poly([[100 - KC[0] - 1, KC[1] + .4], [100 - KC[0] + 1, KC[1] + .4], [100 - KC[0] + 1.5, KC[1] + 5], [100 - KC[0] - 1.5, KC[1] + 5]], .5);
-    const rv = [[BX0 + 3.3, BY0 + 3.3], [BX0 + 3.3, BY1 - 3.6]];
-    const rivets = rv.concat(rv.map(mp)).map(p => OBJ_circle(p[0], p[1], 1.15)).join("");
-    const pins = [[BX1 + 2.9, LK[0]], [BX1 + 2.9, LK[1]]].reduce((a, p) => a.concat([p, mp(p)]), []).map(p => OBJ_circle(p[0], p[1], 1.6)).join("");
-    const tab = S.box(BX0 + 7.8, BY1 - 1.2 - 2.4, 5, 2.4, 1.1);       /* the yellow double-lock tab, on the case's lower edge */
+    const linkV = S.minus(linksW, cases), gapV = S.minus(S.minus(gapW, linksW), cases);
+    /* the case's face, its keyhole, rivets, the double-lock tab */
+    const faceL = S.box(CU - CW / 2 + 2.2, -CL / 2 + 2.2, CW - 4.4, CL - 4.4, 2);
+    const KH = [CU + .5, -5.2], keyL = [[KH[0] - 1.9, KH[1]], [KH[0] - .3, KH[1] - 1.1], [KH[0] + 4.6, KH[1] - 1.6], [KH[0] + 4.6, KH[1] + 1.6], [KH[0] - .3, KH[1] + 1.1]];
+    const keyholes = OBJ_circle(...toA(KH[0] - 1.2, KH[1]), 1.9 * K) + OBJ_poly(pts2(keyL.slice(1)), .5) + OBJ_circle(...toB(KH[0] - 1.2, KH[1]), 1.9 * K) + OBJ_poly(ptsB(keyL.slice(1)), .5);
+    const rvL = [[CU - 3.6, -CL / 2 + 3.4], [CU + 3.6, -CL / 2 + 3.4], [CU - 3.6, CL / 2 - 3.4], [CU + 3.6, CL / 2 - 3.4]];
+    const rivets = rvL.map(p => OBJ_circle(...toA(...p), 1.05 * K)).join("") + rvL.map(p => OBJ_circle(...toB(...p), 1.05 * K)).join("");
+    const pinL = [[-LU + 1.9, -LV], [-LU + 1.9, LV], [LU - 1.9, -LV], [LU - 1.9, LV]];
+    const pins = pinL.map(p => OBJ_circle(...toA(...p), 1.35 * K)).join("");
+    const tabL = S.box(CU - 2.3, CL / 2 - 2.1, 4.6, 2.4, 1.1);            /* the yellow tab, on the case's edge toward its ring, between its rivets */
     /* the ratchet teeth: across the bow's outer edge, over the stretch that enters the case */
-    let teeth = ""; for(let a = 218; a <= 282; a += 5.2){ const pa = polar(C, RB - 2.6, a), pb = polar(C, RB + .4, a); teeth += keep([pa, pb], q => bow(...q) < -.35); teeth += keep([mp(pa), mp(pb)], q => mir(bow)(...q) < -.35); }
-    /* the double bar is two plates: the seam between them along its middle */
-    const seamPts = ellP(ax, C[0], C[1], (RO + RI) / 2, (RO + RI) / 2, -40, 100, 40), onBar = q => S.minus(bar, S.grow(pivot, .8))(...q) < -.6;
-    const seams = keep(seamPts, onBar) + keep(seamPts.map(mp), q => onBar(mp(q)));
+    let teeth = ""; for(let a = 186; a <= 246; a += 5){ const pa = polar(RC, RB - 2.6, a), pb = polar(RC, RB + .4, a);
+      teeth += keep([toA(...pa), toA(...pb)], q => WA(bowL)(...q) < -.35) + keep([toB(...pa), toB(...pb)], q => WB(bowL)(...q) < -.35); }
+    /* the double bar's seam along its middle */
+    const seamL = []; for(let i = 0; i <= 40; i++){ const a = PA + 12 + (150 - PA - 12) * i / 40; seamL.push(polar(RC, MR, a)); }
+    const onBarA = q => WA(S.minus(barL, S.grow(pivotL, .8)))(...q) < -.6, onBarB = q => WB(S.minus(barL, S.grow(pivotL, .8)))(...q) < -.6;
+    const seams = keep(seamL.map(p => toA(...p)), onBarA) + keep(seamL.map(p => toB(...p)), onBarB);
+    /* the joint across each link, at its middle */
+    const joints = [-LV, LV].map(v => lineP([toA(0, v - LW / 2 + .9), toA(0, v + LW / 2 - .9)])).join("");
+    const pv = [toA(...PVL), toB(...PVL)];   /* (world points: OBJ_ radii above are local x K) */
     CHAPTER_OBJ["Arrest, Search, and Seizure"] = {
       d: t.d, holes: t.holes, col: "#2A2D33", base: "rubber",
       plates: [
-        ["rubber", all(g(S.minus(S.union([bars, cases], 0), pivots), .2)), { z: .45, bev: .8, dome: 1.2, col: "#2A2D33" }],      /* the black double bars and their cases, one part each side */
-        ["rubber", all(both(S.box(BX0 + 2.2, BY0 + 2.2, BX1 - BX0 - 4.4, BY1 - BY0 - 4.4, 2.2))), { z: .3, bev: .7, gem: .4, gw: 1.4, col: "#33373F" }],   /* each case's raised face */
+        ["rubber", all(g(S.minus(S.union([bars, cases], 0), pivots), .2)), { z: .45, bev: .8, dome: 1.2, col: "#2A2D33" }],      /* the black double bars and their cases */
+        ["rubber", all(pair(faceL)), { z: .3, bev: .7, gem: .4, gw: 1.4, col: "#33373F" }],                                       /* each case's raised face */
         ["rubber", keyholes, { z: -.55, bev: .35, col: "#0C0D10" }],                                                              /* the keyholes */
-        ["hot", all(both(tab)), { z: .35, bev: .4, dome: .5, col: "#F2C12E" }],                                                  /* the double-lock tabs */
-        ["cream", all(g(bows, .2)), { z: .4, bev: .5, dome: 1, col: "#CDD4DB" }],                                            /* the polished single bows: bright steel (enamel-lit: a metal plate this narrow is all slope and reflects the dark floor) */
-        ["cream", all(both(S.inter(bow, ring(C[0], C[1], (RI + RB) / 2 + 2.2, (RI + RB) / 2 + .5)))), { dome: .05, col: "#7B8590" }],   /* the dark band of the floor in the polished steel */                                             /* the polished single bows */
-        ["cream", teeth, { ln: .9, cut: .6, col: "#9AA3AD" }],                                                                          /* their ratchet teeth */
-        ["rubber", seams, { ln: .7, cut: .35, paint: 0 }],                                                                          /* the double bars' seams */
-        ["cream", all(g(pivots, .2)), { z: .65, bev: .5, dome: 1.2, col: "#C4CBD3" }],                                          /* the round pivot pins */
-        ["steel", all(g(linkV, .2)), { z: .4, bev: .6, dome: 1.1, col: "#AEB7C1" }],                                            /* the hinge links */
-        ["rubber", all(g(gapV, .1)), { z: -.3, bev: .4, col: "#121418" }],                                                        /* the gap between them */
-        ["steel", "M50 " + F(LK[0] - LKR + 1) + "V" + F(LK[0] + LKR - 1) + "M50 " + F(LK[1] - LKR + 1) + "V" + F(LK[1] + LKR - 1), { ln: .8, cut: .45, paint: 0 }],   /* the hinge joint across each link */
-        ["steel", rivets + pins + all(both(S.circle(PV[0], PV[1], 1.6))), { z: .3, bev: .3, dome: .6, col: "#D3D9DF" }],         /* rivets, hinge pins, the pivots' heads */
+        ["hot", all(pair(tabL)), { z: .35, bev: .4, dome: .5, col: "#F2C12E" }],                                                 /* the double-lock tabs */
+        ["cream", all(g(bows, .2)), { z: .4, bev: .5, dome: 1, col: "#CDD4DB" }],                                                /* the polished single bows */
+        ["cream", all(pair(S.inter(bowL, ring(RC[0], RC[1], (RI + RB) / 2 + 2, (RI + RB) / 2 + .4)))), { dome: .05, col: "#7B8590" }],   /* the dark band of the floor in the polished steel */
+        ["cream", teeth, { ln: .9, cut: .6, col: "#9AA3AD" }],                                                                   /* their ratchet teeth */
+        ["rubber", seams, { ln: .7, cut: .35, paint: 0 }],                                                                       /* the double bars' seams */
+        ["cream", all(g(pivots, .2)), { z: .65, bev: .5, dome: 1.2, col: "#C4CBD3" }],                                           /* the round pivot pins */
+        ["steel", all(g(linkV, .2)), { z: .45, bev: .45, dome: .25, col: "#B4BDC6" }],                                           /* the two hinge links: flat steel plates */
+        ["steel", all(S.minus(S.union([-LV, LV].map(v => WA(S.box(-1.9, v - LW / 2 - .35, 3.8, LW + .7, 1.2))), 0), cases)), { z: .7, bev: .5, dome: 1.1, col: "#C9D0D7" }],   /* the knuckle at each link's middle, where its two plates hinge */
+        ["steel", joints, { ln: .7, cut: .4, paint: 0 }],                                                                        /* the joint across it */
+        ["steel", rivets + pins + pv.map(p => OBJ_circle(p[0], p[1], 1.6 * K)).join(""), { z: .3, bev: .3, dome: .6, col: "#D3D9DF" }],   /* rivets, hinge pins, the pivots' heads */
       ],
     };
   }
@@ -638,7 +654,7 @@
     CHAPTER_OBJ["Health and Safety Code"] = {
       d: sh(sil), col: "#D9822B", base: "field",
       plates: [
-        ["rubber", all(g(ground)), { z: -.2, bev: 1, col: "#3A3A43" }],                                              /* the capsules' shadow on the ground */
+        ["rubber", all(g(ground)), { col: "#3A3A43" }],                                              /* the capsules' shadow on the ground */
         ["field", sh(g(bodyP)), { dome: 1.8 }],                                                                          /* the amber bottle */
         ["field", all(strip(CX + RX * .55, 100)), { col: "#D07C29" }],                                                  /* its shading round the side */
         ["field", all(strip(CX + RX * .72, 100)), { col: "#C47124" }],
