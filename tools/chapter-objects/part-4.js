@@ -356,15 +356,15 @@ const P4_lines = segs => segs.filter(Boolean).map(s => "M" + P4_f(s[0]) + "L" + 
       ["steel", OBJ_rrect(26, 80, 48, 17, [0, 0, 2.5, 2.5]), { z: .3 }],                               /* the foot ring */
       ["rubber", OBJ_rrect(33, 88, 10, 5, 2), { z: -1, bev: .5 }],                                        /* its slots */
       ["rubber", OBJ_rrect(57, 88, 10, 5, 2), { z: -1, bev: .5 }],
-      ["ink", S.shape(S.inter(S.minus(S.grow(tank, 2.2), tank), S.box(26, 70, 48, 27, 2.5)), BB), { z: .15, bev: .6, col: "#4B5158" }],   /* the tank's shadow on it */
-      ["water", S.shape(S.minus(S.inter(all, S.grow(tank, 1.5)), S.union([foot, (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))], 0)), BB), { dome: 2 }],   /* the tank, from the collar's weld down */
+      ["ink", S.loops(S.inter(S.minus(S.grow(tank, 2.2), tank), S.box(26, 70, 48, 27, 2.5)), BB).map(S.pathOf).join(""), { z: .15, bev: .6, col: "#4B5158" }],   /* the tank's shadow on it */
+      ["water", S.shape(S.minus(S.union([tank, S.inter(S.inter(all, S.grow(tank, 1.5)), (x, y) => y - 30)], 0), (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))), BB), { dome: 2 }],   /* the tank, from the collar's weld down (over the foot ring's top, as before) */
       ["water", OBJ_rrect(10, 54, 80, 6, 0), { z: .7, bev: .7 }],                                      /* its welded seam */
       ["steel", S.shape(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, ell(Y0, 1)(x, y))), BB)],                             /* (the collar's steel, under its parts to the outline's last corner) */
       ["steel", S.shape(S.minus(S.inter(all, (x, y) => Math.max(within(x, y) - 1.4, TY - 1.5 - y, ell(Y0, 1)(x, y))), rimOut), BB), { z: .55, bev: .9 }],   /* the collar's front, a band round a cylinder (its fillets into the dome with it) */
       ["rubber", S.shape(slot, BB), { z: -1.5, bev: .6 }],                                                 /* the hand-hold opening */
       ["brass", inSlot(S.box(42.5, TY + 8.6, 15, 12, 2)), { z: .2, gem: .9, gw: 2.2 }],                    /* through it: the brass valve body */
       ["brass", inSlot(S.box(56.4, TY + 11.6, 6, 4.2, 1.6)), { z: .15, dome: .7 }],                        /* and its outlet */
-      ["water", S.shape(S.inter(S.minus((x, y) => Math.max(within(x, y) - 2, ell(Y0 + 1.5, 1)(x, y)), (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))), all), BB), { col: "#2B6CB0" }],   /* the dome in the collar's shadow, along the weld */
+      ["water", S.shape(S.inter(S.minus((x, y) => Math.max(within(x, y) - 2, ell(Y0 + 1.5, 1)(x, y)), (x, y) => Math.max(within(x, y), ell(Y0, 1)(x, y))), all), BB), { col: "#225C9A" }],   /* the dome in the collar's shadow, along the weld */
       ["steel", S.shape(S.minus(rimOut, rimIn), BB), { z: .9, bev: .6, dome: .5 }],                       /* the rolled rim */
       ["rubber", S.shape(rimIn, BB), { z: -1.3, bev: .5, col: "#2C3036" }],                                /* the inside of the collar */
       ["rubber", OBJ_ellipse(50, TY + .5, 8.6, 1.75), { ln: 1.3, z: .45, bev: .4, col: "#4A5059" }],        /* the valve's handwheel in it: its rim, */
