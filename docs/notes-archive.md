@@ -44086,3 +44086,8 @@ devices pay the same day independently, one also plays 300 XP; after each hears 
 (8) Fire Code: its own store and `<code>__ifc` document, the academy's untouched, the row on its Profile; (9) no page errors.
 ALL PASS here; --against af8f535 FAILS 22 of 25 (it passes only "a reload pays nothing", "the sheet is gone on navigation" and
 "no page errors", which are true of a build with no streak).
+
+## 384.139 (2026-11-24): combined build
+
+- Merged: art11 Fire Code (Ch 28 logs, Ch 61 foot ring); art11 and art11b police (handcuffs black and chrome, umbrella shaft hidden, heart, Constitution swallowtails, the blue-LCD radio on the older shape, pills, purple ribbon crossing, fingerprint loop); and the daily streak (see "384 daily streak").
+- The streak helper stopped on a usage limit before it could commit. Its last step was a final check-b384-whatsnew11 run. The work was committed as found and then gated here.
