@@ -9,8 +9,8 @@ to that moment and runs on from it. Frames are made on a virtual clock (the cloc
 timers and every CSS / Web animation advance exactly 1/30s a frame), so the video is smooth whatever the machine's load, and a tap on
 the planet (a real click on the sphere) lands at a fixed moment of the clip.
 Out: <scene>-<class>.mp4 (H.264, yuv420p, faststart, 1320x2868), <scene>-<class>.jpg (iPhone, ~2100px wide, quality 87),
-<scene>-ipad.jpg (iPad Pro 11", academy). --closeups (alone): hat-thanksgiving|christmas|newyear.jpg (each hat on the planet at 3x,
-every loop held) and sleigh-closeup.jpg (Santa's sleigh mid-flight at 3x). Each clip also leaves one frame a second in OUTDIR/frames/ for checking by eye."""
+<scene>-ipad.jpg (iPad Pro 11", academy). --closeups (alone): hat-thanksgiving|christmas|newyear.jpg (each hat at 3x, unposed: a moment an orb is
+near it), hat-<season>-glass.jpg (posed: an orb moved in front, loops held) and sleigh-closeup.jpg (Santa's sleigh mid-flight at 3x). Each clip also leaves one frame a second in OUTDIR/frames/ for checking by eye."""
 import base64, io, json, os, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "check-b383-ifcsync.py")).read().split("\nwith sync_playwright() as pw:")[0]
@@ -34,7 +34,7 @@ FPS = 30
 CLOCK = open(os.path.join(HERE, "record-hundo.py")).read().split('CLOCK = r"""', 1)[1].split('"""', 1)[0]
 # the fixture's account has never seen Version 11's card (intro.seen 99 above) and is owed challenge cards (.rs-spot): neither is the season
 UNCOVER = "document.querySelectorAll('.rs-spot,.rs-fly,.unlock-card,.intro-popup,#intro-pop,.app-banner,.daily-alert,.nova-talk').forEach(e=>e.remove());"
-CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
+CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} try{ scheduleHomeUnlocks = () => {}; playHomeUnlocks = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly,.homecaption').forEach(e=>e.remove());")
 # scene: the forced moment, seconds of clip, seconds into the clip to tap the planet (None: no tap), the still's moment
 SCENE = {
@@ -110,15 +110,49 @@ def video(br, scene, cls):
     print("video", os.path.basename(path), "%.1f MB" % (os.path.getsize(path) / 1e6), "errors:", errs[:2], flush=True)
     ctx.close()
 def closeups(br):
+    """Each hat on the planet at 3x, twice: UNPOSED (everything moving; the frame of the first 25s in which a glass orb or an orbit dot
+    is nearest the hat while its middle stays 10px or more outside the hat's box - near, not parked on it), hat-<season>.jpg, and POSED (the nearest rank bubble moved in front
+    of the hat's right shoulder, every loop held, to show the hat through the glass), hat-<season>-glass.jpg. And the sleigh mid-flight."""
     ctx, pg, errs = open_page(br, "academy", "thanksgiving", 440, 956, 3, (62, 0, 34, 0))
+    CLIP = """()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap').getBoundingClientRect(); const cx=h.left+h.width/2, cy=h.top+h.height*.47368, w=h.width*.5;
+      return {x:cx-w/2, y:cy-w*.86, width:w, height:w*1.02}; }"""
+    GAP = """()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); const hat=h.querySelector('.fest-planet .fest-hat > g'); if(!hat) return null;
+      /* the hat's own box: its parts, not the contact shadow and not what a clip holds (the party hat's stripes run wide of the cone) */
+      const r={left:1e9, top:1e9, right:-1e9, bottom:-1e9};
+      hat.querySelectorAll(':scope > :is(path, circle, ellipse, rect, g):not(.fest-hat-shadow):not([clip-path])').forEach(e=>{ const b=e.getBoundingClientRect(); if(!b.width) return;
+        r.left=Math.min(r.left,b.left); r.top=Math.min(r.top,b.top); r.right=Math.max(r.right,b.right); r.bottom=Math.max(r.bottom,b.bottom); });
+      let best=1e9;
+      h.querySelectorAll(':scope > .cosmic-icon-badge, .cosmic-orbit-dot').forEach(o=>{ const q=o.getBoundingClientRect(); if(q.width<4) return;
+        const x=q.left+q.width/2, y=q.top+q.height/2, dx=Math.max(r.left-x, x-r.right, 0), dy=Math.max(r.top-y, y-r.bottom, 0); const d=(dx||dy) ? Math.hypot(dx,dy) : -1; if(d<best) best=d; });
+      return best; }"""
     for name, forced in (("thanksgiving", "thanksgiving"), ("christmas", "christmas"), ("newyear", "2026-12-31T20:00")):
         pg.evaluate("(f)=>{ localStorage.setItem('class26e.season', f); festYearShown = 'x'; %s showHome(); }" % CLEAN, forced)
-        pg.wait_for_timeout(2200)
+        pg.wait_for_timeout(1800)
+        pg.evaluate("()=>{ " + UNCOVER + " }")
+        # the frame of the next 25s with an orb nearest the hat without touching it (each closer one shot as it comes)
+        # (a hat that sits on the orbs' own path - the party hat's tip - always has one close: then the clearest frame of the window)
+        got, shot, clear, cshot = None, None, -9, None
+        for _ in range(140):
+            g = pg.evaluate(GAP)
+            if g is not None and g >= 10 and (got is None or g < got):
+                pg.evaluate("()=>{ " + UNCOVER + " }")
+                got, shot = g, pg.screenshot(clip=pg.evaluate(CLIP), scale="device")
+                if g <= 16: break
+            elif g is not None and got is None and g > clear + .5:
+                pg.evaluate("()=>{ " + UNCOVER + " }")
+                clear, cshot = g, pg.screenshot(clip=pg.evaluate(CLIP), scale="device")
+            pg.wait_for_timeout(250)
+        if shot is None: shot, got = cshot or pg.screenshot(clip=pg.evaluate(CLIP), scale="device"), clear
+        save_jpeg(shot, os.path.join(OUT, "hat-%s.jpg" % name))
+        print("close-up hat-%s.jpg (unposed, nearest orb %s px off the hat)" % (name, got if got is not None else "-"), errs[:2], flush=True)
         pg.evaluate("()=>{ " + UNCOVER + " document.getAnimations().forEach(a=>{ try{ a.pause(); }catch(e){} }); }")
-        clip = pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap').getBoundingClientRect(); const cx=h.left+h.width/2, cy=h.top+h.height*.47368, w=h.width*.5;
-          return {x:cx-w/2, y:cy-w*.98, width:w, height:w*1.06}; }""")
-        save_jpeg(pg.screenshot(clip=clip, scale="device"), os.path.join(OUT, "hat-%s.jpg" % name))
-        print("close-up hat-%s.jpg" % name, errs[:2], flush=True)
+        pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); const hat=h.querySelector('.fest-planet .fest-hat > g');
+          const hr=hat.getBoundingClientRect(); const tx=hr.right-hr.width*.2, ty=hr.top+hr.height*.45;
+          let best=null, bd=1e9; h.querySelectorAll(':scope > .cosmic-icon-badge').forEach(b=>{ const r=b.getBoundingClientRect(); const d=Math.hypot(r.left+r.width/2-tx, r.top+r.height/2-ty); if(d<bd){ bd=d; best=b; } });
+          if(best){ const r=best.getBoundingClientRect(); best.style.translate=(tx-(r.left+r.width/2))+'px '+(ty-(r.top+r.height/2))+'px'; } }""")
+        pg.wait_for_timeout(150)
+        save_jpeg(pg.screenshot(clip=pg.evaluate(CLIP), scale="device"), os.path.join(OUT, "hat-%s-glass.jpg" % name))
+        print("close-up hat-%s-glass.jpg (posed)" % name, errs[:2], flush=True)
     pg.evaluate("()=>{ localStorage.setItem('class26e.season', 'christmas'); %s showHome(); }" % CLEAN); pg.wait_for_timeout(1500)
     pg.evaluate("()=>{ festSleighBusy = 0; festSleigh(); }"); pg.wait_for_timeout(100)
     pg.evaluate("""()=>{ const sl=document.querySelector('.fest-sleigh'); sl.getAnimations({subtree:true}).forEach(a=>{ try{ a.pause(); a.currentTime = a.effect.target === sl ? a.effect.getComputedTiming().endTime * .5 : 300; }catch(e){} }); }""")
@@ -128,7 +162,6 @@ def closeups(br):
     save_jpeg(pg.screenshot(clip=clip, scale="device"), os.path.join(OUT, "sleigh-closeup.jpg"))
     print("close-up sleigh-closeup.jpg", errs[:2], flush=True)
     ctx.close()
-
 with sync_playwright() as pw:
     # the video's frames are the screen's own pixels at 3x (CDP's screenshot is at the forced scale)
     brv = pw.chromium.launch(executable_path=g["CHROME"], args=["--force-device-scale-factor=3"])

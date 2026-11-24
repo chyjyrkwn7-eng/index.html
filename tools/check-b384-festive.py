@@ -35,6 +35,10 @@ moved there and runs on). iPhone 17 Pro Max (440x956), installed, both classes. 
      off, eroded 4px off its edge) do not change at all when everything else in the planet's box is recoloured (inverted and
      turned) - so nothing of the planet shows through any part and nothing of it paints over the hat; again just after a tap on
      the planet (its press and ripple), on the Pro Max.
+ (13) THE GLASS IN FRONT, THE RINGS CLEAR (round 4 - Madison: "It should still be behind the flares so you can see the hats through the
+     Liquid Glass"): for each hat (Pro Max both classes, iPad), each rank bubble and each orbit dot in turn is brought over the hat's
+     middle (an added translate, its own animation left alone) and the hat made hit-testable for the read: at that point the orb (or a
+     part of it) is above the hat in elementsFromPoint; and no part of any hat (its pixels, at 3x) reaches the inner ring (r108).
  (10) no page errors.
 Run:  python3 tools/check-b384-festive.py   (--against OLD/index.html must FAIL)"""
 import datetime, json, os, re, sys
@@ -53,7 +57,7 @@ from playwright.sync_api import sync_playwright
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
-CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} "
+CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} try{ maybeShowIntro = () => {}; }catch(e){} try{ scheduleHomeUnlocks = () => {}; playHomeUnlocks = () => {}; }catch(e){} "
          "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly').forEach(e=>e.remove());")
 def page(br, cls, reduce=False, pre=None, vp=(440, 956), ins=(59, 0, 34, 0), dpr=1):
     ctx = br.new_context(viewport={"width": vp[0], "height": vp[1]}, device_scale_factor=dpr, has_touch=True, reduced_motion="reduce" if reduce else "no-preference")
@@ -172,7 +176,9 @@ def _see_through_once(pg, tap=False):
       return {x:cx-w/2, y:cy-w*.8, width:w, height:w}; }""")
     shot = lambda: np.asarray(Image.open(io.BytesIO(pg.screenshot(clip=clip, scale="device"))).convert("RGB")).astype(int)
     a = shot()
-    pg.evaluate("()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); [...h.children].forEach(c=>{ if(!c.classList.contains('fest-planet')) c.style.filter='invert(1) hue-rotate(90deg)'; }); }")
+    # (round 4) the PLANET's layers are recoloured - its glow, body, smoke, rings and the tap's press - not the glass orbs and orbit dots,
+    # which pass in front of the hat by design (section 13 checks that they do)
+    pg.evaluate("()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); [...h.children].forEach(c=>{ if(!c.classList.contains('fest-planet') && !c.matches('.cosmic-icon-badge, .cosmic-hero-orbitlayer')) c.style.filter='invert(1) hue-rotate(90deg)'; }); }")
     b = shot()
     pg.evaluate("()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); [...h.children].forEach(c=>c.style.filter=''); const sh=h.querySelector('.fest-hat-shadow'); if(sh) sh.style.display='none'; }")
     on = shot()
@@ -181,6 +187,15 @@ def _see_through_once(pg, tap=False):
     pg.evaluate("()=>{ const p=document.querySelector('#stage .fest-planet'); if(p) p.style.visibility=''; const sh=document.querySelector('#stage .fest-hat-shadow'); if(sh) sh.style.display=''; document.getAnimations().forEach(a=>{ try{ a.play(); }catch(e){} }); }")
     hat = np.abs(on - off).sum(2) > 30
     core = ndimage.binary_erosion(hat, iterations=4)
+    # (round 4) where a glass orb or an orbit dot is over the hat, the hat is seen THROUGH the glass, with the planet round it: those
+    # pixels are the glass's (section 13 checks the orbs are on top), not the hat's
+    orbs = pg.evaluate("""()=>[...document.querySelectorAll('#stage .cosmic-hero-wrap > .cosmic-icon-badge, #stage .cosmic-hero-wrap .cosmic-orbit-dot, #stage .cosmic-hero-wrap .cosmic-orbit-dot > *')]
+      .map(e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }).filter(r => r[2] - r[0] > 2)""")
+    sc = a.shape[1] / clip["width"]
+    for (l, t, r_, b_) in orbs:
+        x0, y0 = int((l - clip["x"]) * sc) - 30, int((t - clip["y"]) * sc) - 30
+        x1, y1 = int((r_ - clip["x"]) * sc) + 30, int((b_ - clip["y"]) * sc) + 30
+        core[max(0, y0):max(0, y1), max(0, x0):max(0, x1)] = False
     d = np.abs(a - b).sum(2)
     k = max(6, a.shape[0] // 20); corner = lambda x: x[:k, :k].mean(axis=(0, 1))
     steady = all(np.abs(corner(x) - corner(a)).sum() < 6 for x in (on, off)) and np.abs(corner(b) - corner(a)).sum() < 60
@@ -323,6 +338,7 @@ with sync_playwright() as pw:
         ctx, pg, errs = page(br, cls, vp=vp, ins=ins)
         for scene, at, tap in (("Thanksgiving", "thanksgiving", True), ("Christmas", "christmas", False), ("New Year's Eve", "2026-12-31T20:00", True),
                                ("the countdown", "2026-12-31T23:59:52", False), ("New Year's Day", "newyear", False)):
+            pg.evaluate("()=>{ festYearShown = ''; }")   # the countdown before may have run into midnight and shown the year already
             force(pg, at, 900)
             tot = {"bursts": 0, "pieces": 0, "big": 0}; bad = []
             for i in range(12):
@@ -336,6 +352,54 @@ with sync_playwright() as pw:
                     "the countdown": tot["bursts"] >= 6 and tot["big"] >= 3, "New Year's Day": tot["bursts"] >= 6 and tot["big"] >= 3}[scene]
             chk("(11) %s %s, %s: over 12 frames, %d bursts, %d pieces, %d countdown/year seen - %d on a control or Home's text (%s)" % (dev, cls, scene, tot["bursts"], tot["pieces"], tot["big"], len(bad), bad[:2]),
                 want and not bad, bad[:4])
+        errs_all += errs; ctx.close()
+    # (13) the glass in front of the hat; no ring crosses a hat
+    ORB = """()=>{
+      const h = document.querySelector('#stage .cosmic-hero-wrap'), hat = h && h.querySelector('.fest-planet .fest-hat');
+      if(!hat) return { n: 0, under: ['no hat'], reach: null };
+      document.getAnimations().forEach(a => { try{ a.pause(); }catch(e){} });
+      const st = document.createElement('style'); st.textContent = 'html body .fest-planet.fest-planet, html body .fest-planet.fest-planet *, html body .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer, html body .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer *{ pointer-events:auto !important; }'; document.body.appendChild(st);
+      const shape = hat.querySelector('g > path:not(.fest-hat-shadow)') || hat; const hr = shape.getBoundingClientRect();
+      const cx = hr.left + hr.width / 2, cy = hr.top + hr.height * .55;
+      const orbs = [...h.querySelectorAll(':scope > .cosmic-icon-badge, :scope > .cosmic-hero-orbitlayer .cosmic-orbit-dot')];
+      const under = []; let n = 0;
+      orbs.forEach(o => {
+        const r = o.getBoundingClientRect(); if(r.width < 4) return;
+        /* an orbit dot sits in a turned layer: its translate moves it in the layer's own axes - so the two axes are measured and the
+           move that brings its middle onto the point is solved for */
+        const was = o.style.translate;
+        const mid = () => { const q = o.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2]; };
+        const c0 = mid(); o.style.translate = '10px 0px'; const cx1 = mid(); o.style.translate = '0px 10px'; const cy1 = mid();
+        const a11 = (cx1[0] - c0[0]) / 10, a21 = (cx1[1] - c0[1]) / 10, a12 = (cy1[0] - c0[0]) / 10, a22 = (cy1[1] - c0[1]) / 10, det = a11 * a22 - a12 * a21 || 1;
+        const ex = cx - c0[0], ey = cy - c0[1];
+        o.style.translate = ((a22 * ex - a12 * ey) / det) + 'px ' + ((-a21 * ex + a11 * ey) / det) + 'px';
+        /* every point of a 7x7 grid over the orb where both the orb and the hat are hit: the orb must come first; at least one such point */
+        const q = o.getBoundingClientRect(); let both = 0, bad = 0;
+        for(let i = 1; i < 8; i++) for(let j = 1; j < 8; j++){
+          const x = q.left + q.width * i / 8, y = q.top + q.height * j / 8;
+          const list = document.elementsFromPoint(x, y); const io = list.findIndex(e => o === e || o.contains(e)), ih = list.findIndex(e => hat === e || hat.contains(e));
+          if(io >= 0 && ih >= 0){ both++; if(ih < io) bad++; }
+        }
+        n++; if(!both || bad) under.push((o.className || '').toString().slice(0, 40) + ' over ' + both + ', under ' + bad);
+        o.style.translate = was;
+      });
+      st.remove();
+      document.getAnimations().forEach(a => { try{ a.play(); }catch(e){} });
+      return { n, under: under.slice(0, 4) };
+    }"""
+    REACH = """()=>{ const h = document.querySelector('#stage .cosmic-hero-wrap'); const r = h.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height * .47368, r.width / 360]; }"""
+    for (dev, vp, ins, cls, dpr) in (("Pro Max", (440, 956), (59, 0, 34, 0), "academy", 3), ("Pro Max", (440, 956), (59, 0, 34, 0), "ifc", 3), ("iPad", (834, 1194), (24, 0, 20, 0), "academy", 2)):
+        ctx, pg, errs = page(br, cls, vp=vp, ins=ins, dpr=dpr)
+        for name, at in (("the pilgrim hat", "thanksgiving"), ("the Santa hat", "christmas"), ("the party hat", "2026-12-31T20:00")):
+            force(pg, at, 1300); pg.evaluate(UNCOVER)
+            r = pg.evaluate(ORB)
+            # how far the hat reaches from the planet's centre, in the hero's units: the farthest corner of any of its parts' boxes (an upper
+            # bound - a box's corner is beyond the shape it holds)
+            reach = pg.evaluate("""()=>{ const h=document.querySelector('#stage .cosmic-hero-wrap'); const r=h.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height*.47368, k=r.width/360;
+              let m = 0; h.querySelectorAll('.fest-planet .fest-hat :is(path, circle, ellipse, rect, line):not(.fest-hat-shadow)').forEach(e => { if(e.closest('clipPath') || (e.parentElement && e.parentElement.closest('[clip-path]'))) return;   /* what a clip holds is inside the clip's own shape, counted */ const b=e.getBoundingClientRect(); if(!b.width && !b.height) return;
+                [[b.left,b.top],[b.right,b.top],[b.left,b.bottom],[b.right,b.bottom]].forEach(([x,y]) => { m = Math.max(m, Math.hypot(x-cx, y-cy) / k); }); }); return m; }""")
+            chk("(13) %s %s, %s: every orb and orbit dot over the hat is above it (%d tried, %s under) and the hat reaches %.1f of the inner ring's 108" % (dev, cls, name, r["n"], r["under"] or "none", reach),
+                r["n"] >= 6 and not r["under"] and 30 < reach < 104, [r, reach])
         errs_all += errs; ctx.close()
     # (12) no hat is seen through
     for (dev, vp, ins, cls, dpr) in (("Pro Max", (440, 956), (59, 0, 34, 0), "academy", 3), ("Pro Max", (440, 956), (59, 0, 34, 0), "ifc", 3), ("iPad", (834, 1194), (24, 0, 20, 0), "academy", 2)):
