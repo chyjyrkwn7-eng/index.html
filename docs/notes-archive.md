@@ -43715,3 +43715,51 @@ dim) had started to darken the whole frame, so every hat pixel moved by a few le
 (nothing the check recolours) across the four shots; a frame where it moved (on/off over 6, the recoloured one over 60 - the ring lines there
 are inverted) is thrown away, the overlays cleared and it retries (up to 4). Normal runs read 0-6 / 0-38 there. Full check-b384-festive ALL
 PASS: every hat 0 changed pixels.
+
+## 384.137 art10 - eight academy pins redrawn from Madison's circled shots (branch claude/b384-art10-acad from a0da788; build NOT bumped, stays 384.137; NOT on main, waiting for Madison)
+Madison circled five pins with "Make these better.." and three more with "And these...". Only `tools/chapter-objects/part-6-academy.js`
+(and its snaps, the baked CHAPTER_OBJ / CHAPTER_OBJ_BBOX) changed; no renderer change; Fire Code's 58 snaps byte-identical.
+THE ONE RULE BEHIND MOST FIXES: a plate's height is added to whatever is under it, and `lvl` lifts a plate flat to the highest point under
+it, so a lvl part whose edge runs along the outline stands on a cliff (that was the heart's "double edge"). Every part here is cut where
+the part in front of it begins (OBJ_SDF minus), nothing is lvl, and a contact shadow is a run of colour-only bands a few levels apart
+(no painted `sh` across a join: the heart's `sh` fell on the shaft/ferrule join and the gate read it as a seam).
+- Arrest, Search, and Seizure (handcuffs): real chain cuffs - each a see-through ring (a D opening under the case): the double strand
+  (two plates, the seam) round the outer side, the narrower single strand with its ratchet teeth round the inner side, the pivot rivet at
+  the foot, the lock case where they meet (chamfered, keyhole, double-lock slot, two rivets), a swivel out of each case and three links
+  (edge on, face on, edge on). THE BACK DECIDES THE CASE'S SIZE: the plan is made first at the 1.6 margin, and only if the class line fits
+  there is it kept; "CLASS 26E" needs ~29 units of run under the name, so a case must be 39.5 x 27 with square feet (narrower, 34-38, gave the
+  name at 9.4-11 px but NO class line; a "compact" case cannot carry the title). Taken: 9.88 px with the class line. Tried and dropped: a
+  tapered case (looked like flags, no class line), cuffs overlapping with the chain in an arc above (thin chain read as a hanger).
+- Sexual Assault and Family Violence (ribbon crossing): nothing raised as a box any more. The ribbon is one smooth band; the over strand
+  rides up by a lift with 7-unit soft ends cut on the strand's own axis (no round cap - the cone's start cap showed as a disc); its edges
+  press down onto the under strand (a soft V groove there only); the under strand is shaded in seven bands each a step darker toward the
+  edge (colour only); woven edges unbroken on the over strand, stopped at it on the under strand.
+- Victims of Crime (umbrella): the classic heart curve, one dome, no lvl, no `sh`; the shaft stops at the heart (grown a little round the
+  heart's foot so the fillet is steel, not canopy blue) and runs on below into a tapered brass ferrule (the shaft's width to the wood's - a
+  box ferrule's 1.3-unit shoulder was a nub in (4e)) and a wooden crook bending in an even arc to a rounded end, grain along it.
+- Identity Crimes (fingerprint): a real LOOP print - evenly spaced streamlines (Jobard-Lefer style) of the Sherlock-Monro orientation field
+  (core [0,-2], delta [-10,8], th0 -.4, spacing 1.9), traced at merge time inside the part file and turned a quarter so the loop opens
+  downward; one ridge weight (a thinner outer plate left a bead where the two met). The seal: navy face set into a chamfered polished steel
+  rim; the card stops at the seal and is shaded round it in five bands.
+- Missing and Exploited Children (teddy): head and ears ONE plate (union, fillet 3.4) - no seam; inner ears softer ovals pressed in;
+  body/arms/legs each cut by what is in front (bow > head > arms > legs > body); bow without its painted shadow (it read as a dark slab);
+  arms, legs and body joined in the silhouette with a fillet of 3 (the armpit notch filled; the base colour is the fur, so it reads as fur).
+- Health and Safety Code (pill bottle): label edges, band and four print lines on the cylinder's front arcs (`below(y)` = box minus the
+  ellipse: the old label's foot followed the BACK arc); amber shaded in bands round the side, a highlight streak, a darker foot; two
+  capsules in two halves each (cap half wider), the nearer over the other, the bottle cut round them with a soft contact shade; the base
+  groove kept off the capsule.
+- US and Texas Constitution and Rights: a wax seal with a melted edge (three sines on its radius), a ring and a star pressed in; two tails
+  from under it with a waist where they turn (the back of the ribbon a darker colour-only plate past a slanted fold, so no crease) and V
+  ends. The inkwell has a round brass mouth: ONE rim plate minus the quill over its back half, so the quill passes in front of the back
+  rim and behind the front lip, the ink dark inside; the quill: narrow and broad vanes, 24 barbs, two splits, a raised rachis.
+- Radio Communications (radio): the case shows its top and right side (DP 5.5,-3.5); belt clip down the side; PTT ridged out of the left
+  side; ribbed antenna in a collar, knurled channel and volume knobs, orange emergency button; display with signal bars and a two-digit
+  seven-segment channel (asked for as "a channel number/readout": the README's no-numbers rule is waived here as it was for Chapter 10's
+  EXIT - Madison can veto); three soft keys; a drilled grille; the lanyard eye. Its grooves are one plate (cold PERF 5.2x -> cheaper).
+Gates (TMPDIR=/dev/shm, one at a time; load 5-9 from another session): check-js ALL PASS; merge --check in step; snap --check in step;
+objbadges --class academy ALL PASS at load 4.8 (PERF cold failed at load 7-9 on Professionalism and Ethics and once on the cuffs before
+their plates were merged 15 -> 11); acadpins, badgetwins, sides --class academy, casefit, chapterbadges ALL PASS; ifcbadges (6) re-pinned
+5a133a95 -> c0816bbd (comment in the gate), ALL PASS, and fails on the base; check-centering --quick fails only on Fire Code's Profile
+'Forge' reward tab (0.70 px high), and identically on the base (0.85 px): not this work. Turned (shoot-badge-turns, 0-180) reviewed:
+sides in each part's colour, backs carry the title and CLASS 26E. Before/after JPEGs with 3x close-ups of every circled join were made for
+Madison (police-<badge>-before-after.jpg).

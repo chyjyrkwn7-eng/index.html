@@ -298,7 +298,10 @@ with sync_playwright() as pw:
         # purpose (TCOLE star a layer on the ring, shoe, ribbon, umbrella heart, chat, handcuffs, teddy ears and the rest), so
         # every drawing moved. Was dc7d6f55. Taken on this build after the round-3 badges were reviewed.
         # RE-PINNED (384.137): the ribbon's tails are cut across their own length (Sexual Assault and Family Violence). Was 76402311.
-        PIN = "5a133a95"
+        # RE-PINNED (384.137 art10): Madison's circled "Make these better.." / "And these..." redrew eight academy pins on purpose
+        # (handcuffs, ribbon crossing, umbrella heart and handle, ID card's fingerprint seal, teddy bear, pill bottle, the
+        # Constitution's seal and inkwell, the radio). Was 5a133a95. Taken on this build after the eight were reviewed.
+        PIN = "c0816bbd"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)
