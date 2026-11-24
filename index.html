@@ -121640,6 +121640,8 @@ function festHatSvg(s, id){
       '<path d="' + crease + '" stroke="#A4161E" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
       '<path d="' + fold + '" fill="#8E1219"/>' +
       '<path d="M190 ' + (yb - 36) + 'C204 ' + (yb - 38) + ' 218 ' + (yb - 30) + ' 226 ' + (yb - 16) + '" stroke="#F0675B" stroke-width=".9" fill="none" stroke-linecap="round"/></g>' +
+      /* the hat's shaded inside where the cuff's end, the flop and the pompom meet - no planet in the corner between them */
+      '<ellipse cx="226" cy="' + (yb + 9.5).toFixed(2) + '" rx="5.5" ry="7" fill="#8E1219"/>' +
       '<path d="' + band + '" fill="url(#' + id + 'w)"/>' +
       '<path d="' + fluff + '" fill="#DEE4EC"/>' +
       '<path d="' + furLit + '" fill="#F8FAFD"/>' +
