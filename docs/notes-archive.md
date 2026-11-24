@@ -44138,3 +44138,7 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 - **Handcuffs, back to the drawing Madison picked** (384.142). Madison: "You sent handcuffs, but they look like ass. The first ones you sent look amazing. We have to use these somehow". The art13 first render is restored exactly: -42 degrees, x1.2, cases 13 x 27, links 4.6 wide at +/-5.4 with the dark gap between them, no knuckles.
   - **The back.** Level rows found no band wide enough across a pair at -42 degrees: the title fitted at 8.4 px and the class line did not fit. So a pin may now carry `backRot` (degrees, the front's turn). badgeBackPlanAt plans the rows in the back field turned by it (`badgeBackTurned`), then turns the items back. badgeBackDrawPlan draws a turned rule. The handcuffs' name now runs along the pair at 11.3 px.
   - **Class line.** It still does not fit there. check-b384-objbadges (5)'s class-line demand is waived for a `backRot` pin, named in the gate. Every other back is unchanged: its plan does not turn.
+
+## 384.142 (2026-11-24): the build for the push
+- 384.141 plus the handcuffs restored to Madison's pick, with their back's words on the slant (backRot). check-b384-ifcbadges is re-pinned to 4bb89d51.
+- Gates on what changed: check-js; merge --check; objbadges --class academy (ALL PASS except PERF cold on Phonetic Alphabet, a unit this did not touch, which flakes under load); ifcbadges; badgeart; chapterbadges; streak; centering --quick (0 off centre, run on 384.141 - no UI changed since).
