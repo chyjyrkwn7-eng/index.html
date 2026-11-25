@@ -21,8 +21,8 @@ installed iPhone 17 Pro Max at 100% (440 CSS px on 440pt) and at his ~85% page z
  (6) the header: at rest no bar shows; scrolled past the large title a bar does - its top at the inset (never within 4px of the
      top on a notched phone: the status bar's strip stays the one thing WebKit samples there), no background-colour of its own, its
      foot 7-11pt under the chat button's, the large title's words centred on the screen (1pt) and on the chat button's middle
-     (1.5pt), a hairline at its foot; on a page that scrolls (Contributors) the back button stays where it rests and the bar shows
-     behind it;
+     (1.5pt), a hairline at its foot; on a page that scrolls (Contributors) no bar shows and the back button scrolls away with the
+     page (384.151: "we dont want the bar at all");
  (7) a status pill (settingsPill): 19.5-20.6pt tall, a capsule, white bold 10.8-11.3pt words, the green tone Delta's #68CE68;
  (8) no page errors.
 (1)-(5) and (7) are read at both zooms; (6) at both.
