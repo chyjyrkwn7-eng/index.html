@@ -59269,9 +59269,9 @@ function settingsBarHost(){
     const nav = sub.querySelector(":scope > .settings-nav");
     return nav ? { kind: "page", el: sub, title: "" } : null;
   }
-  const prof = st.querySelector(":scope > .panel.screen-profile");
-  const c = document.getElementById("count");
-  if(prof && c && c.textContent.trim() && c.getClientRects().length) return { kind: "tab", el: prof, title: c.textContent.trim(), anchor: c };
+  /* (384.150) NOT ON THE PROFILE TAB: Madison, of the bar sliding in over Profile as it scrolls - "Remove the bar thing". Profile's big
+     title scrolls away like the Leaderboard's and the Calendar's, under the system's own blur; the pages Settings opens keep the bar
+     (their back button and name stay pinned in it) */
   return null;
 }
 function syncSettingsBar(){

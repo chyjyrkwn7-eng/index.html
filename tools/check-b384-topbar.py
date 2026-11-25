@@ -26,7 +26,8 @@ from playwright.sync_api import sync_playwright
 import io
 from PIL import Image, ImageChops, ImageStat
 SCREENS = [("Profile", "()=>{ showProfile(); }"), ("Stats", "()=>{ showStatsScreen(); }"), ("Settings", "()=>{ showAppearance(); }"),
-           ("Advanced settings", "()=>{ showAdvancedSettings(); }"), ("Leaderboard", "()=>{ showLeaderboard(); }"),
+           ("Advanced settings", "()=>{ showAdvancedSettings(); }"), ("Sound settings", "()=>{ showAppearance({page:'sound'}); }"),
+           ("Study settings", "()=>{ showAppearance({page:'study'}); }"), ("Account settings", "()=>{ showAppearance({page:'account'}); }"), ("Leaderboard", "()=>{ showLeaderboard(); }"),
            ("Calendar", "()=>{ showCalendarTab ? showCalendarTab() : showCalendar(); }"), ("Ranks", "()=>{ showRanksScreen(); }")]
 DEVICES = ["promax", "pm85", "ipad"]
 PROBE = """()=>{ const b = document.getElementById('settings-bar'); const on = !!(b && b.classList.contains('is-on'));
@@ -54,6 +55,9 @@ with sync_playwright() as pw:
                     if can < y: continue
                     pg.evaluate("(y)=>{ document.documentElement.style.scrollBehavior='auto'; window.scrollTo(0,y); }", y); pg.wait_for_timeout(500)
                     r = pg.evaluate(PROBE)
+                    if name in ("Profile", "Stats", "Settings"):
+                        # (384.150) Madison: "Remove the bar thing" - the Profile tab's three segments scroll their big title away, no bar
+                        chk(not r["on"], "%s %s %s scrolled %d: no bar on the Profile tab (384.150)" % (dev, cls, name, y)); continue
                     if not r["on"]:
                         print("INFO %s %s %s scrolled %d: no bar on this screen" % (dev, cls, name, y)); continue
                     seen_bar += 1
@@ -69,7 +73,9 @@ with sync_playwright() as pw:
                     if SHOTS and name == "Profile" and y == 160:
                         pg.screenshot(path=os.path.join(SHOTS, "%s-%s-profile-scrolled.png" % (dev, cls)))
                 pg.evaluate("()=>{ window.scrollTo(0,0); document.documentElement.style.scrollBehavior=''; }")
-            chk(seen_bar >= 3, "%s %s: the bar came up on %d scrolled screens (so the check measured something)" % (dev, cls, seen_bar))
+            # (384.150) the Profile tab no longer has the bar, and the Settings pages that keep it are too short here to scroll 160px; the
+            # Profile checks above are what this gate measures now (they FAIL on 384.149, where the bar came up there)
+            print("INFO %s %s: the bar came up on %d scrolled screens" % (dev, cls, seen_bar))
             chk(not pg.errs, "%s %s: no page errors %s" % (dev, cls, pg.errs[:2]))
             pg.ctx.close()
     br.close()

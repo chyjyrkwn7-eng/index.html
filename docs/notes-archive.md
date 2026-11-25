@@ -44231,3 +44231,6 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - **Now** it is solid to Pause's foot (nothing shows through behind Pause) and thins out over a 1.75rem eased ramp. The box ends 2.1rem under the row, was .9rem.
   - check-b384-toprow (5) still passes: solid from the strip to the foot.
   - Only his phone can say whether this is the edge he meant.
+- **No bar over the Profile tab.** Madison, of #settings-bar sliding in as Profile scrolls: "Remove the bar thing". settingsBarHost no longer returns the Profile tab. Profile, Stats and Settings scroll their big title away like the Leaderboard and the Calendar, under the system's own blur. The pages Settings opens keep the bar, where their back button and name are pinned.
+  - **check-b384-topbar.** Asserts no bar on the three segments, scrolled 160 and 400; this FAILS on origin/main 384.148. Its "came up on >= 3 screens" became INFO: the remaining pages are too short to scroll 160px in its harness.
+  - **check-b384-settingslook (6)** asserts no bar once scrolled.
