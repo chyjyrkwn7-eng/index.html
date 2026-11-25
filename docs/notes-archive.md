@@ -44227,3 +44227,7 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - **Cause.** The circle was centred by the grid's column arithmetic, and the road by the stop's own 50%. WebKit resolves the arithmetic differently.
   - **Fix.** The circle is absolute at left 50%, margin-left -node/2: the road's reference. It has no grid-column, since an absolute child placed in a grid area takes that area as its box. The stop's row is minmax(var(--node), auto), so its height is unchanged (313px a stop, before and after).
   - **Gates.** check-b384-rankcard fails 34 checks identically on 384.149: its card-token colour checks predate the Delta card rule, so these are not this change.
+- **The question under the pinned header fades out, no hard line.** Madison (a recording of a Drill question scrolled up and down): "that hard thing wouldn't follow you as you scroll down at all" and, asked, "The chat and pause button always are supposed to [stay]". The header, chat and Pause stay pinned. The paper behind them was solid to Pause's foot and then faded over only .55rem (384.95), so a question scrolled up was cut off at a hard line just under the row.
+  - **Now** it is solid to Pause's foot (nothing shows through behind Pause) and thins out over a 1.75rem eased ramp. The box ends 2.1rem under the row, was .9rem.
+  - check-b384-toprow (5) still passes: solid from the strip to the foot.
+  - Only his phone can say whether this is the edge he meant.

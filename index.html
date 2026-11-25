@@ -13948,15 +13948,22 @@
   }
   [data-layout="modern"] .wrap.test-pinned > .top::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
-    top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
-    /* (384.80) OPAQUE: the strip over the status bar's area is solid paper on a question, and the header under it is the same solid paper
-       (it was 97% / 95%) down to where it fades, so the two read as one colour */
-    /* (384.95) solid to Pause's foot (.35rem under the row's; this box ends .9rem under the row's), then a short fade that ends above
-       the dots: from 70% the paper thinned behind the lower half of Pause and the mode, so a question scrolled under the row showed
-       through between them */
+    top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-2.1rem; pointer-events:none; z-index:-1;
+    /* (384.80) OPAQUE at the top: the strip over the status bar's area is solid paper on a question, and the header under it the same */
+    /* (384.150) NO HARD EDGE: Madison (a recording of a Drill question scrolled up and down): "back when we tried to fix it at the beginning,
+       that hard thing wouldn't follow you as you scroll down at all" - the header, the chat button and Pause stay pinned (his answer:
+       "The chat and pause button always are supposed to"), but the paper behind them ended in a .55rem fade at Pause's foot, so the
+       question was cut off at a hard line under the row. Now it is solid to Pause's foot (.35rem under the row: nothing shows through
+       behind Pause, 384.95) and thins out from there over a long, eased ramp (the box ends 2.1rem under the row, was .9): the question
+       passes under the row fading out, no edge */
     background:linear-gradient(to bottom,
       var(--paper) 0%,
-      var(--paper) calc(100% - .55rem),
+      var(--paper) calc(100% - 1.75rem),
+      color-mix(in srgb, var(--paper) 90%, transparent) calc(100% - 1.45rem),
+      color-mix(in srgb, var(--paper) 70%, transparent) calc(100% - 1.1rem),
+      color-mix(in srgb, var(--paper) 45%, transparent) calc(100% - .75rem),
+      color-mix(in srgb, var(--paper) 22%, transparent) calc(100% - .4rem),
+      color-mix(in srgb, var(--paper) 7%, transparent) calc(100% - .15rem),
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   .wrap:has(.fc-screen) .top .test-qcounter,
