@@ -44234,3 +44234,15 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
 - **No bar over the Profile tab.** Madison, of #settings-bar sliding in as Profile scrolls: "Remove the bar thing". settingsBarHost no longer returns the Profile tab. Profile, Stats and Settings scroll their big title away like the Leaderboard and the Calendar, under the system's own blur. The pages Settings opens keep the bar, where their back button and name are pinned.
   - **check-b384-topbar.** Asserts no bar on the three segments, scrolled 160 and 400; this FAILS on origin/main 384.148. Its "came up on >= 3 screens" became INFO: the remaining pages are too short to scroll 160px in its harness.
   - **check-b384-settingslook (6)** asserts no bar once scrolled.
+
+## 384.151 - the frosted bar is gone everywhere (2026-11-25)
+
+Madison: "No, we dont want the bar at all? Push this live and then start working on removing this bar completely."
+- `settingsBarHost()` returns null first thing, so no screen makes `#settings-bar`; `syncSettingsBar()` only ever takes an old one down.
+  The bar's CSS and the rest of the function are left inert (restorable).
+- A Settings sub-page's `.settings-nav` is `position:relative` (was sticky inside the bar): its back button and name scroll away with
+  the page, like every other screen's top row.
+- Gates: check-b384-settingslook (6) now asserts no bar and that the back button moves by exactly the scroll (fails on 384.150, where
+  it stayed pinned); check-b384-topbar 98/98; check-b384-toprow promax/academy ALL PASS; navmeet ALL PASS.
+- check-b384-navchat (3) iPad "mirrored corners" (back 44 from the left, chat 24 from the right) fails identically on 384.150 -
+  pre-existing, not from this build.

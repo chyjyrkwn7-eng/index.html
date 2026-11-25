@@ -41646,7 +41646,9 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .settings-nav > .settings-nav-title.settings-nav-title{
     font-family:-apple-system, system-ui, BlinkMacSystemFont, var(--sans); font-size:calc(17px * var(--zc, 1)); font-weight:600; letter-spacing:normal;
   }
-  html[data-layout] body #stage > .panel.screen-settings-sub > .settings-nav.settings-nav{ position:sticky; z-index:62; }   /* over the bar (60), under the toasts (70) and the top banners (75) */
+  /* (384.151) NOT PINNED: Madison, "we dont want the bar at all" - with the frosted bar gone, a Settings page's back button and name
+     scroll away with the page like every other screen's top row (it was position:sticky inside the bar) */
+  html[data-layout] body #stage > .panel.screen-settings-sub > .settings-nav.settings-nav{ position:relative; z-index:62; }   /* over the bar (60), under the toasts (70) and the top banners (75) */
   /* THE FROSTED BAR (#settings-bar, syncSettingsBar). From the status bar's strip (which keeps its own colour and stays the one
      thing WebKit samples at the top edge: this bar starts under it, at the inset, and paints with an image, never a
      background-colour) down to 9pt under the round buttons, the screen's top colour at 86% over a blur, a 2/3pt hairline at its
@@ -59262,6 +59264,9 @@ function alignNavChat(){
    starts at the inset, under the status bar's strip - so the strip stays the one thing WebKit samples at the top edge (384.80). */
 var settingsBarEl = null, settingsBarRaf = 0, settingsBarKey = "";
 function settingsBarHost(){
+  /* (384.151) NO BAR ANYWHERE: Madison, "No, we dont want the bar at all ... start working on removing this bar completely". Nothing hosts
+     it, so syncSettingsBar only ever takes an old one down, and no screen makes it */
+  return null;
   const st = document.getElementById("stage");
   if(!st) return null;
   const sub = st.querySelector(":scope > .panel.screen-settings-sub");
@@ -132599,7 +132604,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-24-384.150";
+const APP_BUILD = "2026-11-24-384.151";
 /* (384.148) the first launch of a new build on this device is narrated as an update, however the new page arrived (see
    window.__splashAsUpdate). class26e.lastbuild is device-level (SHARED, kept through a sign-out). A device that has never recorded
    one but already holds an account was running a build from before this mark existed, so it is told too; a device with nothing
