@@ -21,6 +21,9 @@ screen with a top row (onboarding from a fresh install; the rest on a used accou
  (5) CAP: on a question scrolled 200px, the strip from y 0 to the foot of the header row (on a phone, Pause's foot: it is in the
      row; on a tablet Pause is a corner button like the chat button) is the sky with only the header's controls over it, across the
      whole width (384.152: no band - the backing is the sky, not flat paper - and no question text shows through);
+     RETIRED in 384.153 (printed as INFO): Madison chose "Only chat + Pause float" - nothing is pinned or painted behind a question's
+     row any more, so the question is MEANT to show there. tools/check-b384-testfloat.py holds the new shape (the row scrolls away,
+     Pause and the chat button stay, the question is seen where the row was).
  (6) TRANSITIONS (frame by frame, every rAF for the whole change): the bottom tabs Home -> Profile -> Leaderboard -> Settings ->
      Home, push and back (Start Studying and back, Settings -> Advanced -> back, Profile's badge case and back, Choose your mode ->
      Drill's units -> back), Profile's segments, a question (start, answer, the slide to the next, pause and resume, the last
@@ -254,7 +257,8 @@ def check_screens(dev, cls, M, B):
             # a band or text showing through covers several samples of a row; one pixel of a control's rim antialiased over a
             # different layer beneath it (Pause's glass at 85% zoom: 6 levels at one sample) is not either
             if len(hits) >= 3: w_ = max(hits); bad.append((round(y / sc, 1), round(w_[1] / sc), w_[0], len(hits)))
-        chk("%s (5): a question scrolled %dpx: from the top of the screen to the header's foot (y %.0f) it is the sky with only the header's controls over it - no band, nothing shows through (%d rows off)" % (tag, cap["sy"], cap["foot"], len(bad)), cap["sy"] >= 150 and not bad, bad[:6])
+        # (384.153) RETIRED: the question is meant to show under the row now (only chat and Pause float); check-b384-testfloat holds it
+        print("INFO %s (5, retired 384.153 - see check-b384-testfloat): a question scrolled %dpx, %d rows under the row differ from the bare sky (the question showing)" % (tag, cap["sy"], len(bad)))
 def transitions(br, dev, cls, qtop=None):
     name, W, H, ins, installed, ua, gated = L.DEVICES[dev]
     tag = "%s, %s" % (name, "Fire Code" if cls == "ifc" else "academy")

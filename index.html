@@ -9773,7 +9773,7 @@
      a lens), follows the finger 1:1, and past either end the track stretches after the finger (~8pt, rubber band) and thins;
      on release it shrinks back to the solid capsule in ~8 frames. Every slider is built by novaSlider() (the input stays under
      it, invisible, for the keyboard and VoiceOver); only transform and opacity move, the thumb is placed by a transform from
-     --f (0..1) and the slider's width (--nsl-w, 384.152; it was cqw), so painting it reads no layout. No backdrop-filter on the thumb: the glass is
+     --f (0..1) on a rail of the slider's own width (.nsl-run, 384.153; no width is read), so painting it reads no layout. No backdrop-filter on the thumb: the glass is
      gradients and inset rims. Reduce motion: no grow and no stretch, the glass comes and goes at once.
      tools/check-b384-sliders.py holds it. */
   :root{
@@ -9823,13 +9823,23 @@
      so at 100% the glass showed bare track beyond it. Now the fill moves by its OWN width (a percentage of itself: from nothing at 0%
      to the whole line at 100%, and in between under the thumb, never more than half the thumb from its middle), and the thumb and
      the lens by --nsl-w, the slider's width in px, set by novaSlider (a ResizeObserver, and again at every press). */
+  /* (384.153) NOTHING IS MEASURED. Madison's recording (his iPhone, 384.152): at 100% the knob ran ~43pt past the line's end, over
+     "100%", and was too far right all the way along (x1.18 the travel - his phone lays the page out at 85%, and the press's
+     getBoundingClientRect width is in the zoomed space while the transform is in CSS px). Now the knob rides .nsl-run, a rail as
+     wide as the line less the knob (100% - 37px), moved by --f of ITS OWN width: 0 at the line's start, the knob's right edge on the
+     line's end at 1, at any zoom, text size or width, with no width read from script. The lens needs no width either: inside the
+     knob the fill's edge sits at --f x the knob's width (the fill ends at f x W, the knob's left at f x (W - 37)). */
+  .nsl-run{
+    position:absolute; left:0; top:0; bottom:0; width:calc(100% - 37px); pointer-events:none;
+    transform:translateX(calc(var(--f) * 100%));
+  }
   .nsl-fill, .nsl-lens-fill{
     position:absolute; top:0; bottom:0; left:0; width:100%; border-radius:3px; background:var(--nsl-fill);
     transform:translateX(calc((var(--f) - 1) * 100%));
   }
   .nsl-thumb{
     position:absolute; left:0; top:50%; width:37px; height:24px; margin-top:-12px; pointer-events:none;
-    transform:translateX(calc(var(--f) * (var(--nsl-w, 100cqw) - 37px) + var(--os)));
+    transform:translateX(var(--os));
   }
   .nsl-knob{
     position:absolute; inset:0; border-radius:999px; overflow:visible;
@@ -9846,13 +9856,12 @@
   .nsl.is-pressed .nsl-glass{ opacity:1; transition-duration:var(--glass-in); }
   /* the lens: the same track again inside the glass, so the thumb's own scale magnifies it about its middle */
   .nsl-lens{
-    position:absolute; left:0; top:50%; width:var(--nsl-w, 100cqw); height:6px; margin-top:-3px; border-radius:3px; overflow:hidden;
+    position:absolute; left:0; top:50%; width:100%; height:6px; margin-top:-3px; overflow:hidden;
     background:var(--nsl-lens-track);
-    transform:translateX(calc(var(--f) * (37px - var(--nsl-w, 100cqw))));
   }
   .nsl-lens-fill{ background-image:linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)), var(--nsl-fill); }
   /* let go, or a step from outside a drag: the thumb, the fill and the stretch spring back to the value */
-  .nsl.is-settling :is(.nsl-thumb, .nsl-fill, .nsl-lens, .nsl-lens-fill, .nsl-track){
+  .nsl.is-settling :is(.nsl-run, .nsl-thumb, .nsl-fill, .nsl-lens-fill, .nsl-track){
     transition:transform var(--glass-back) var(--glass-back-ease);
   }
   @media (prefers-reduced-motion:reduce){
@@ -9862,7 +9871,7 @@
   [data-reduce-motion="true"] .nsl.is-pressed .nsl-knob{ transform:none; }
   /* their own layers from the start: a press that promoted them (the first transition on the thumb) re-laid the page's layers
      and repainted the sheet under it - a 130ms paint at 4x CPU on the Virtual Room's sheet (check-b384-sliders H) */
-  .nsl-thumb, .nsl-knob, .nsl-fill, .nsl-lens{ will-change:transform; }
+  .nsl-run, .nsl-thumb, .nsl-knob, .nsl-fill, .nsl-lens-fill{ will-change:transform; }
   .nsl-solid, .nsl-glass{ will-change:opacity; }
 
   /* ---------- unit mastery levels ---------- */
@@ -14347,6 +14356,9 @@
      up to a screen's width off the side, and on an iPhone a page wider than the screen ZOOMS OUT to fit it - the whole app shrank to
      a third, with a tiny tab bar in a corner and blank frames, then snapped back (the owner's recording, 384.94/95). */
   html.tab-sliding, html.tab-sliding body, .tab-slide-clip{ overflow-x:clip; }
+  /* (384.153) the swipe back's shade: a soft shadow at the left edge of the screen that follows the finger (transform and opacity only) */
+  #swipeback-shade{ position:fixed; left:0; top:0; bottom:0; width:26px; pointer-events:none; z-index:5; opacity:0;
+    background:linear-gradient(to left, rgba(0,0,0,.28), rgba(0,0,0,0)); will-change:transform, opacity; }
   /* build 382: "when swiping or auto swipe is on ensure the button doesn't leak over on the next page". Next question lives in the
      .foot, outside the question panel: a swipe moved the question away under it while it stayed put, over the one coming in, and
      an auto-advance dropped it in one frame. While a question is being dragged or slid (html.q-sliding) it fades out at once, and
@@ -28152,6 +28164,13 @@
      last activity, the badge case (the Badges screen's tray, read-only), what they hold. View profile sits beside Message on the card. */
   .person-sheet-acts{ display:flex; gap:.6rem; margin-top:1.05rem; }
   .person-card .person-sheet-acts .person-sheet-act{ flex:1 1 0; width:auto; min-width:0; margin-top:0; min-height:48px; padding-left:.6rem; padding-right:.6rem; }
+  /* (384.153) NO ROUNDED CLIP ON THE PAIR. Madison's iPhone (85% page zoom) drew a 1px line across View profile and Message at ~72% of
+     their height - dark on the white one, light on the black one (the card showing through: a seam, not paint), inset by the pill's
+     curve, and not on Close below. The pair are the only buttons here at fractional sizes (half a row each: ~150.2 x 50.4px); with
+     .next's overflow:hidden and the radius WebKit clips them with a mask layer, and a fractional mask can leave a seam. Nothing in
+     them needs clipping: the press shimmer (::after) takes the pill's own radius instead. Chromium never draws the seam. */
+  .person-card .person-sheet-acts .person-sheet-act{ overflow:visible; }
+  .person-card .person-sheet-acts .person-sheet-act::after{ border-radius:inherit; }
   .screen-friendprofile .fp-body{ display:flex; flex-direction:column; gap:.9rem; padding-bottom:1rem; }
   .screen-friendprofile .profile-hero{ margin-bottom:0; }
   .fp-hero{ text-align:center; }
@@ -28745,6 +28764,22 @@
     background-position:0 calc(-1 * (var(--test-race-y, 0px) + .7rem));
     -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
     mask-image:linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
+  }
+  /* (384.153) NO BAR OVER A QUESTION AT ALL: ONLY CHAT AND PAUSE FLOAT. Madison (a Drill question scrolled up, 384.152): "What's up with the
+     bar thing in tests? I thought you fixed this?" - 384.152 painted the pinned row's backing as the sky, but it was still a strip the
+     question vanished into under Drill / the count / Pause. Asked which he wanted, he chose: "Only chat + Pause float". Pause and the chat
+     button are fixed already (phone and tablet rules, #chatdock-btn), so they stay where they rest, as glass over the page; the row
+     ("Drill", the count, the scope) is back in the page and scrolls away with the question, and nothing is painted behind anything.
+     The race line is not pinned either (syncTestPin): it scrolls with the page under the two buttons. The daily question's title too. */
+  html[data-layout] body .wrap.test-pinned.test-pinned{ padding-top:var(--test-top-y, 1.25rem) !important; }
+  html[data-layout] body .wrap.test-pinned > .top.top{ position:relative !important; top:auto !important; left:auto; right:auto; min-height:0; }
+  html[data-layout] body .wrap.test-pinned > .top.top::before,
+  html[data-layout] body .wrap.test-pinned > #vroomracebar::before{ content:none !important; display:none !important; }
+  /* the two that float are over a moving page now, so their body is near-solid while a question is up: at 50% tint a line of the
+     question read straight through both. NOT a backdrop blur: 384 r17 took the blur off every control in the top band (on iOS a
+     backdrop blur at the top edge brings its own soft band and dimmed the titles under it) - a fuller body hides what passes behind. */
+  html[data-theme][data-layout] body:has(> .wrap.test-pinned) :is(#pausebtn#pausebtn:not([hidden]), #chatdock-btn#chatdock-btn){
+    background-color:color-mix(in srgb, var(--panel) 93%, transparent) !important;
   }
   /* The top bar is sticky so Pause stays in reach over a long question.
      On the results screens it would float its title over the cards. */
@@ -59240,7 +59275,8 @@ function syncTestPin(force){
      pinned straight under the header, where it rests, with the same fade
      behind it, and .wrap reserves its height as it does the row's. */
   const rb = document.getElementById("vroomracebar");
-  const raceWant = !!(want && rb && !rb.hidden);
+  /* (384.153) the race line is not pinned any more: nothing over a question is, but Pause and the chat button (see the CSS) */
+  const raceWant = false;
   const hasRace = wrap.classList.contains("race-pinned");
   if(want === has && raceWant === hasRace && !force) return;
   wrap.classList.remove("test-pinned", "race-pinned");
@@ -125312,16 +125348,13 @@ function novaSlider(slider){
   slider.classList.add("nsl-input");
   const mk = (cls, parent) => { const d = document.createElement("div"); d.className = cls; if(parent) parent.appendChild(d); return d; };
   const track = mk("nsl-track"); mk("nsl-fill", track);
-  const thumb = mk("nsl-thumb"), knob = mk("nsl-knob", thumb);
+  const run = mk("nsl-run"), thumb = mk("nsl-thumb", run), knob = mk("nsl-knob", thumb);
   mk("nsl-solid", knob);
   const glass = mk("nsl-glass", knob), lens = mk("nsl-lens", glass); mk("nsl-lens-fill", lens);
-  [track, thumb].forEach(el => el.setAttribute("aria-hidden", "true"));
-  host.append(slider, track, thumb);
+  [track, run].forEach(el => el.setAttribute("aria-hidden", "true"));
+  host.append(slider, track, run);
   const st = { host, dragF: null, raf: 0, x: 0, id: null, rect: null, grabDx: 0, decided: false, startX: 0, startY: 0, settleT: 0, lastF: -1, lastOs: 0 };
   slider._nsl = st;
-  /* (384.152) the slider's width in px for the thumb and the lens (no container units: see .nsl-fill) */
-  st.setW = w => { if(w > 0){ const v = w.toFixed(2) + "px"; if(st.w !== v){ st.w = v; host.style.setProperty("--nsl-w", v); } } };
-  try{ new ResizeObserver(es => { for(const e of es){ const b = e.borderBoxSize && e.borderBoxSize[0]; st.setW(b ? b.inlineSize : e.contentRect.width); } }).observe(host); }catch(e){}
   const range = () => { const mn = Number(slider.min) || 0, mx = Number(slider.max) || 0; return [mn, mx]; };
   const valueF = () => { const [mn, mx] = range(); const v = Number(slider.value) || 0; return mx > mn ? Math.max(0, Math.min(1, (v - mn) / (mx - mn))) : 1; };
   st.paint = () => {
@@ -125348,8 +125381,8 @@ function novaSlider(slider){
   const apply = () => {
     st.raf = 0;
     if(!st.rect || st.id == null) return;
-    const W = st.rect.width, span = Math.max(1, W - NSL.thumbW);
-    const raw = (st.x - st.rect.left - NSL.thumbW / 2 - st.grabDx) / span;
+    const W = st.rect.width, tw = st.tw, span = Math.max(1, W - tw);
+    const raw = (st.x - st.rect.left - tw / 2 - st.grabDx) / span;
     const f = Math.max(0, Math.min(1, raw));
     const over = raw < 0 ? raw * span : raw > 1 ? (raw - 1) * span : 0;
     stretch(nslCalm() ? 0 : Math.sign(over) * rubber(Math.abs(over)));
@@ -125387,9 +125420,10 @@ function novaSlider(slider){
   host.addEventListener("pointerdown", e => {
     if(slider.disabled || st.id != null || !e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
     st.rect = host.getBoundingClientRect();
-    st.setW(st.rect.width);
+    /* (384.153) the knob's width in the same space as the pointer and the rect (at a page zoom it is not 37) */
+    st.tw = (st.rect.width / Math.max(1, host.offsetWidth)) * NSL.thumbW || NSL.thumbW;
     st.id = e.pointerId; st.x = e.clientX; st.startX = e.clientX; st.startY = e.clientY;
-    const W = st.rect.width, thumbC = st.rect.left + NSL.thumbW / 2 + valueF() * Math.max(1, W - NSL.thumbW);
+    const W = st.rect.width, tw = st.tw, thumbC = st.rect.left + tw / 2 + valueF() * Math.max(1, W - tw);
     st.grabDx = Math.abs(e.clientX - thumbC) <= NSL.grab ? e.clientX - thumbC : 0;
     st.dragF = valueF();
     clearTimeout(st.settleT); host.classList.remove("is-settling");
@@ -132745,7 +132779,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-24-384.152";
+const APP_BUILD = "2026-11-25-384.153";
 /* (384.148) the first launch of a new build on this device is narrated as an update, however the new page arrived (see
    window.__splashAsUpdate). class26e.lastbuild is device-level (SHARED, kept through a sign-out). A device that has never recorded
    one but already holds an account was running a build from before this mark existed, so it is told too; a device with nothing
@@ -161612,23 +161646,37 @@ function lbPaintWatch(rows){
 }
 /* saved loops read back in the quiet after launch, for the characters and ranks on the board (never recorded here) */
 var lbPreloadT = 0, lbPreloadBusy = false;
-function lbArtPreloadSoon(){ if(window.NOVA_CLASS === "ifc") return; /* (384) no Leaderboard there to ready */ clearTimeout(lbPreloadT); lbPreloadT = setTimeout(() => { try{ lbArtPreload(); }catch(e){} }, 1500); }
+/* (384.153) THE BOARD OF THE CLASS YOU ARE IN. Madison: "the characters within their circles aren't loading properly on the leaderboard
+   sometimes when i go to the tab". Fire Code has had its own board since 385, but this still returned at once there ("no Leaderboard
+   there to ready") and read only the academy's rows - so on Fire Code's board nothing was readied ahead and its circles opened as
+   discs, filled one at a time from the queue. Now it readies the rows of the class the app is in: the live ones when the board has
+   been read (classBoardRows / leaderboardRows), else the copy the board keeps on the device (lbCacheRead), so the first visit after
+   a launch is ready too. */
+function lbPreloadRows(){
+  const ifc = window.NOVA_CLASS === "ifc";
+  const live = ifc ? (typeof classBoardRows !== "undefined" ? classBoardRows : null) : (typeof leaderboardRows !== "undefined" ? leaderboardRows : null);
+  if(Array.isArray(live) && live.length) return live;
+  try{ const disk = lbCacheRead(ifc ? "ifc" : "academy"); if(Array.isArray(disk)) return disk; }catch(e){}
+  return [];
+}
+function lbArtPreloadSoon(){ clearTimeout(lbPreloadT); lbPreloadT = setTimeout(() => { try{ lbArtPreload(); }catch(e){} }, 1500); }
 async function lbArtPreload(){
   if(lbPreloadBusy) return;
   lbPreloadBusy = true;
   try{
     const G = lbGeomGet();
-    if(typeof leaderboardRows === "undefined" || !Array.isArray(leaderboardRows) || !leaderboardRows.length) return;
+    const boardRows = lbPreloadRows();
+    if(!boardRows.length) return;
     /* build 376: not behind quietIdle's two quiet seconds - he opens the Leaderboard straight after launch, still tapping */
     const pause = async () => { do{ await new Promise(r => setTimeout(r, 40)); } while(Date.now() < settleUntil || document.documentElement.classList.contains("tab-held")); };
     /* (384) the stills first, one a step (JS only), on a first visit too */
-    { const w = lbStillsWarm(leaderboardRows);
+    { const w = lbStillsWarm(boardRows);
       for(const id of w.ids){ await pause(); try{ charStill(id); }catch(e){} }
       for(const rk of w.tiers){ await pause(); try{ rankStill(rk); }catch(e){} } }
     if(!G) return;
     if(G.flip && G.flip.px > 0){
       const ids = [];
-      leaderboardRows.forEach(e => { const c = e && e.avatarChar && e.avatarChar !== "nova" ? lbCharId(e.avatarChar) : null; if(c && ids.indexOf(c) < 0) ids.push(c); });
+      boardRows.forEach(e => { const c = e && e.avatarChar && e.avatarChar !== "nova" ? lbCharId(e.avatarChar) : null; if(c && ids.indexOf(c) < 0) ids.push(c); });
       for(const cid of ids.slice(0, 24)){
         await pause();
         const d = charAnimDrawing(cid), key = d.id + "|" + G.flip.px;
@@ -161644,7 +161692,7 @@ async function lbArtPreload(){
       }
     }
     const tiers = [];
-    leaderboardRows.forEach(e => { let rk = null; try{ rk = rankOfEntry(e); }catch(x){} if(rk && tiers.indexOf(rk) < 0) tiers.push(rk); });
+    boardRows.forEach(e => { let rk = null; try{ rk = rankOfEntry(e); }catch(x){} if(rk && tiers.indexOf(rk) < 0) tiers.push(rk); });
     for(const rk of tiers){
       const g = G.marks && G.marks[rk];
       if(!g || !(g.px > 0)) continue;
@@ -169434,11 +169482,196 @@ function attachSegSlider(seg, activeSel){
   }
   schedule(false);
 }
+/* ---- SWIPE BACK (384.153) ----
+   Madison: "we need a swipe back function.. similar to how tests have the swipe forward function ... on like every screen ... It
+   won't be blurry when you half swipe on these though. But it will bounce back if you didn't swipe like all the way". An installed
+   app has no system swipe back, so a screen with a back button had only the button.
+   WHERE: any screen whose stage shows a back button (.back-link - every buildBackLink, the iOS nav bars - or Settings' pages'
+   .settings-nav-back); the swipe presses THAT button, so it goes exactly where a tap goes. Not the Virtual Room lobby (its back
+   leaves the room at once), not a test (no back button), not a screen with a top-tab swipe of its own (Profile's tabs, the boards)
+   unless the finger starts at the left edge, where that swipe never starts.
+   WHAT: a finger that moves right, clearly more across than down (decided once at ~10px; a scroll never becomes it), takes the
+   screen's panel with it 1:1 on the compositor (one transform a frame, nothing read while it moves), a soft shade at its left edge.
+   Let go past a third of the width, or thrown right (>0.35px/ms): it is carried off to the right, the back button is pressed, and
+   the screen it leads to comes in from the left. Short of that it springs back with a small overshoot (the bounce). No blur, no dim.
+   Not where the touch starts on something that takes a sideways drag itself: a field, a slider, a switch, a top switcher, anything
+   that scrolls sideways, [data-noswipe]; not off .wrap (the tab bar, a sheet, a pop-up), not with a second finger. Reduce motion:
+   nothing follows the finger; a swipe of 80px presses the button. tools/check-b384-swipeback.py holds it. */
+const SWIPE_BACK = { decide: 10, commit: 0.33, fling: 0.35, edge: 24, back: 360, out: 240, enter: 300 };
+let sbTouch = null, sbDrag = null, sbBusy = false;
+function swipeBackButton(){
+  const st = document.getElementById("stage");
+  if(!st || st.querySelector(":scope > .screen-vroom-lobby")) return null;
+  const list = st.querySelectorAll(".back-link, .settings-nav-back");
+  for(const b of list){
+    if(b.disabled || b.closest("[hidden], [inert], .q-slide-clone")) continue;
+    if(!b.getClientRects().length) continue;
+    return b;
+  }
+  return null;
+}
+function swipeBackReduced(){ return !!((typeof theme === "object" && theme && theme.reduceMotion) || document.documentElement.dataset.reduceMotion === "true"); }
+function swipeBackOwnsTarget(tg){
+  if(!tg || tg.nodeType !== 1) return true;
+  const wrap = document.querySelector(".wrap");
+  if(!(tg === document.documentElement || tg === document.body || (wrap && wrap.contains(tg)))) return false;
+  if(tg.closest && tg.closest("input, textarea, select, [contenteditable=true], .nsl, .nsw, .nova-hsw, .has-seg-thumb, [data-noswipe], [data-tabdrag], .q-slide-clone")) return false;
+  return true;
+}
+function swipeBackHScrolls(tg){
+  for(let n = tg; n && n.nodeType === 1 && n !== document.body; n = n.parentElement){
+    if(n.scrollWidth > n.clientWidth + 2){ const ox = getComputedStyle(n).overflowX; if(ox === "auto" || ox === "scroll") return true; }
+  }
+  return false;
+}
+function swipeBackShade(){
+  let sh = document.getElementById("swipeback-shade");
+  if(!sh){ sh = document.createElement("div"); sh.id = "swipeback-shade"; sh.setAttribute("aria-hidden", "true"); document.body.appendChild(sh); }
+  return sh;
+}
+function swipeBackPlace(){
+  const d = sbDrag;
+  if(!d) return;
+  d.raf = 0;
+  if(d.els.some(el => !el.isConnected)){ swipeBackClear(); return; }
+  /* right: 1:1; left of where it started: a little, as a rubber band */
+  const x = d.dx >= 0 ? d.dx : d.dx * 0.15;
+  d.x = x;
+  const tf = "translate3d(" + x.toFixed(1) + "px,0,0)";
+  d.els.forEach(el => { el.style.transform = tf; });
+  d.shade.style.transform = "translate3d(" + (Math.max(0, x) - 26).toFixed(1) + "px,0,0)";
+  d.shade.style.opacity = String(Math.max(0, Math.min(1, x / 40)) * (1 - Math.min(1, Math.max(0, x) / d.W) * 0.6));
+}
+function swipeBackClear(){
+  const d = sbDrag;
+  if(!d) return;
+  if(d.raf) cancelAnimationFrame(d.raf);
+  d.els.forEach(el => { el.style.transform = ""; el.style.willChange = ""; el.style.transition = ""; el.removeAttribute("data-swipeback"); });
+  d.shade.remove();
+  sbDrag = null;
+  if(!sbBusy) swipeBackClip(false);
+}
+function swipeBackClip(on){
+  const st = document.getElementById("stage");
+  document.documentElement.classList.toggle("tab-sliding", !!on);
+  if(st) st.classList.toggle("tab-slide-clip", !!on);
+}
+function swipeBackAnimate(els, from, to, ms, easing, done){
+  const anims = els.map(el => { try{ return el.animate([from, to], { duration: ms, easing, fill: "forwards" }); }catch(e){ return null; } });
+  let fin = false;
+  const end = () => { if(fin) return; fin = true; anims.forEach(a => { try{ if(a) a.cancel(); }catch(e){} }); done(); };
+  const a0 = anims.find(Boolean);
+  if(a0) a0.onfinish = end;
+  setTimeout(end, ms + 80);   /* a hidden app never finishes an animation */
+  return end;
+}
+document.addEventListener("touchstart", e => {
+  sbTouch = null;
+  if(sbBusy || sbDrag || e.touches.length !== 1) return;
+  const t = e.touches[0], tg = e.target;
+  if(!swipeBackOwnsTarget(tg)) return;
+  if(typeof swipeOverlayUp === "function" && swipeOverlayUp()) return;
+  /* nothing is read here (a read in the first touch handler forced a style pass on every touch, 376): the screen is looked at once
+     the finger has shown it is going right */
+  sbTouch = { x: t.clientX, y: t.clientY, tg, axis: null, samples: [{ t: e.timeStamp, x: t.clientX }], btn: null };
+}, { passive: true, capture: true });
+document.addEventListener("touchmove", e => {
+  const s = sbTouch;
+  if(!s) return;
+  if(e.touches.length !== 1){ sbTouch = null; if(sbDrag) swipeBackSettle(false, 0); return; }
+  const t = e.touches[0], dx = t.clientX - s.x, dy = t.clientY - s.y;
+  if(!s.axis){
+    if(Math.abs(dx) < SWIPE_BACK.decide && Math.abs(dy) < SWIPE_BACK.decide) return;
+    s.axis = (dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.2) ? "back" : "no";
+    if(s.axis === "back"){
+      const btn = swipeBackButton();
+      const st = document.getElementById("stage");
+      const tabbed = st && st.querySelector("[data-tabswipe]");
+      if(!btn || (tabbed && s.x > SWIPE_BACK.edge) || swipeBackHScrolls(s.tg)
+         || document.documentElement.classList.contains("q-sliding") || document.documentElement.classList.contains("tab-sliding")){ s.axis = "no"; }
+      else{
+        s.btn = btn;
+        if(!swipeBackReduced()){
+          const els = [...st.children].filter(el => el.nodeType === 1 && el.getClientRects().length);
+          if(els.length){
+            swipeBackClip(true);
+            els.forEach(el => { el.style.transition = "none"; el.style.willChange = "transform"; el.setAttribute("data-swipeback", "1"); });
+            sbDrag = { els, dx: 0, x: 0, raf: 0, W: Math.max(240, window.innerWidth), shade: swipeBackShade() };
+          }
+        }
+      }
+    }
+    if(s.axis === "no"){ sbTouch = null; return; }
+  }
+  e.preventDefault();
+  s.samples.push({ t: e.timeStamp, x: t.clientX });
+  if(s.samples.length > 24) s.samples.shift();
+  if(sbDrag){ sbDrag.dx = dx; if(!sbDrag.raf) sbDrag.raf = requestAnimationFrame(swipeBackPlace); }
+}, { passive: false, capture: true });
+function swipeBackEnd(e, cancelled){
+  const s = sbTouch;
+  sbTouch = null;
+  if(!s || s.axis !== "back") return;
+  const t = e.changedTouches && e.changedTouches[0];
+  const dx = t ? t.clientX - s.x : 0;
+  /* the finger's last ~100ms (its last two moves when it rested first, so a rest and then a flick is still a flick) */
+  const b = s.samples[s.samples.length - 1];
+  let a = s.samples.find(q => b && q.t >= b.t - 100);
+  if(a === b && s.samples.length > 1) a = s.samples[s.samples.length - 2];
+  const v = a && b && b.t > a.t ? (b.x - a.x) / Math.max(8, b.t - a.t) : 0;
+  const W = Math.max(240, window.innerWidth);
+  const go = !cancelled && s.btn && s.btn.isConnected
+    && (dx > W * SWIPE_BACK.commit || (v > SWIPE_BACK.fling && dx > 24) || (!sbDrag && dx > 80));
+  if(!sbDrag){ if(go) s.btn.click(); return; }
+  if(sbDrag.raf){ cancelAnimationFrame(sbDrag.raf); sbDrag.raf = 0; }
+  sbDrag.dx = dx; swipeBackPlace();
+  if(sbDrag) swipeBackSettle(go, v, s.btn);
+}
+function swipeBackSettle(go, v, btn){
+  const d = sbDrag;
+  if(!d) return;
+  sbBusy = true;
+  const from = { transform: "translate3d(" + d.x.toFixed(1) + "px,0,0)" };
+  if(!go){
+    /* back where it was, with a small overshoot past it and home (the bounce) */
+    const ms = Math.round(Math.min(SWIPE_BACK.back, 220 + d.x * 0.4));
+    swipeBackAnimate([d.shade], { transform: d.shade.style.transform, opacity: d.shade.style.opacity || "0" }, { transform: "translate3d(-26px,0,0)", opacity: "0" }, ms, "ease-out", () => {});
+    swipeBackAnimate(d.els, from, { transform: "translate3d(0,0,0)" }, ms, "cubic-bezier(.3,1.35,.5,1)", () => { sbBusy = false; if(sbDrag === d) swipeBackClear(); });
+    return;
+  }
+  /* carried off to the right: never slower than the finger that threw it */
+  const rest = Math.max(0, d.W - d.x);
+  const ms = Math.max(140, Math.min(SWIPE_BACK.out, v > 0 ? Math.round(1.8 * rest / v) : SWIPE_BACK.out));
+  swipeBackAnimate([d.shade], { transform: d.shade.style.transform, opacity: d.shade.style.opacity || "0" }, { transform: "translate3d(" + (d.W - 26) + "px,0,0)", opacity: "0" }, ms, "cubic-bezier(.25,.8,.35,1)", () => {});
+  swipeBackAnimate(d.els, from, { transform: "translate3d(" + d.W + "px,0,0)" }, ms, "cubic-bezier(.25,.8,.35,1)", () => {
+    const st = document.getElementById("stage");
+    /* the old panel stays off to the side until the button has put the next screen up (it may also ask first, and stay) */
+    d.els.forEach(el => { el.style.transform = "translate3d(" + d.W + "px,0,0)"; });
+    try{ if(btn && btn.isConnected) btn.click(); }catch(e){}
+    const fresh = st ? [...st.children].filter(el => el.nodeType === 1 && !d.els.includes(el)) : [];
+    if(!fresh.length){
+      /* nothing new: the screen did not change (a confirm, or the button refused) - it comes back */
+      if(sbDrag === d) swipeBackClear();
+      sbBusy = false;
+      return;
+    }
+    if(sbDrag === d) swipeBackClear();
+    const inEls = fresh.filter(el => el.getClientRects().length);
+    if(!inEls.length || swipeBackReduced()){ sbBusy = false; swipeBackClip(false); return; }
+    swipeBackClip(true);
+    swipeBackAnimate(inEls, { transform: "translate3d(" + Math.round(-d.W * 0.28) + "px,0,0)", opacity: "0.35" },
+      { transform: "translate3d(0,0,0)", opacity: "1" }, SWIPE_BACK.enter, "cubic-bezier(.2,.8,.25,1)", () => { sbBusy = false; swipeBackClip(false); });
+  });
+}
+document.addEventListener("touchend", e => swipeBackEnd(e, false), { passive: true, capture: true });
+document.addEventListener("touchcancel", e => swipeBackEnd(e, true), { passive: true, capture: true });
 /* opts.zone: only a touch that STARTS inside this element counts (a
    switcher of its own inside a tab, build 319). opts.skip: a touch that
    starts inside anything matching this is left alone (that switcher's). */
 function attachTabSwipe(panel, order, getCurrent, select, opts){
   opts = opts || {};
+  /* (384.153) the swipe back leaves a screen with its own top-tab swipe alone but at the left edge */
+  try{ panel.setAttribute("data-tabswipe", ""); }catch(e){}
   /* Listen across the whole screen area, not just the panel. A panel is
      only as tall as its own content, and on a tablet most of the screen
      is the empty space UNDERNEATH it - which is exactly where a thumb
@@ -170155,7 +170388,7 @@ function showRankings(defaultBoard){
         /* Shared with the Friends screen, which needs the same rows
            and must not open a second listener on the same
            collection. */
-        if(ifcBoard) classBoardRows = entries;
+        if(ifcBoard){ classBoardRows = entries; if(served){ try{ lbArtPreloadSoon(); }catch(e){} } }
         else { leaderboardRows = entries; leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){} friendsListCatchUp(); }
         /* A cache that knows nobody but you is not the class: the
            placeholders stay up until the server answers, rather than

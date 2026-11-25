@@ -44325,3 +44325,92 @@ Madison: "No, we dont want the bar at all? Push this live and then start working
     384.137 it is seen at INTRO_REV (8), so the card armed and landed ~2.1s in, over the measure. It does this on 384.151
     too, which passed by luck. The gate now marks it 99 and mutes the launch streak banner the card held back
     (theme.muteBanners). The shared fixture is unchanged: changing it moves pop-up timing under every gate.
+
+## 384.153
+
+1. **Sliders: the knob ends on the line, at any page zoom.** Madison sent a recording of Sound & Haptics on his iPhone
+   (384.152): "It should kinda end at line you see there? It's covering the percent? ... 100 percent is at the end of that
+   bar". At 100% the knob ran ~43pt past the line's end, over the "100%" label, and sat too far right all along (1.18x the
+   travel, which matches a page laid out at 85%). Cause: 384.152 moved the knob by --nsl-w, a width read from script. The
+   press read it from getBoundingClientRect, which is in the zoomed space, while the transform is in CSS px. Chromium under CSS
+   zoom shows the same thing the other way: at html zoom .85 the knob stopped 40px short of the end.
+   - Nothing is measured now. The knob rides .nsl-run, a rail 100% - 37px wide, moved by --f x 100% of its own width.
+     .nsl-thumb carries only the rubber band (--os). The ResizeObserver and --nsl-w are gone.
+   - The lens needs no width. Inside the knob the fill's edge is at f x 37px (the fill ends at f x W, the knob's left at
+     f x (W - 37)), so .nsl-lens is the knob's width and its fill is translated by (f - 1) x 100% like the real one.
+   - The drag maps the pointer with the knob's width in the pointer's space (st.tw = 37 x rect width / offsetWidth).
+   - New gate tools/check-b384-slidezoom.py: each slider at zoom 1, .85 and 1.15, dragged past each end and set to the middle.
+     The knob's edges sit on the line's ends and the fill ends under its middle, within 1.5px. It fails 384.152.
+2. **Swipe back.** Madison: "we need a swipe back function.. similar to how tests have the swipe forward function ... on like
+   every screen ... All the ones that make sense. It won't be blurry when you half swipe on these though. But it will bounce
+   back if you didn't swipe like all the way". An installed app has no system swipe back.
+   - One set of document listeners (touchstart passive, touchmove non-passive, capture), installed at boot beside
+     attachTabSwipe.
+   - Where: any screen whose stage shows a back button (.back-link: every buildBackLink and the iOS nav bars; or Settings'
+     pages' .settings-nav-back). The swipe presses that button, so it goes exactly where a tap goes, sound included.
+   - Not on: the Virtual Room lobby (its back leaves the room at once); a test (no back button); a screen with a top-tab swipe
+     ([data-tabswipe], set by attachTabSwipe) unless the finger starts within 24px of the left edge, where that swipe never
+     starts.
+   - Not from a touch that starts on a field, a slider (.nsl), a switch (.nsw / .nova-hsw), a top switcher, anything that
+     scrolls sideways, [data-noswipe], off .wrap (the tab bar, a sheet, a pop-up), or with a second finger.
+   - Nothing is read in touchstart (376: a read there forced a style pass on every touch). The back button, the side-scroller
+     test and the panels are read once the finger has gone 10px right, clearly more across than down.
+   - The stage's panels follow 1:1 by transform (one write a frame), with a 26px shade at their left edge
+     (#swipeback-shade, transform and opacity). Left of the start: 15%, as a rubber band. html.tab-sliding and
+     .tab-slide-clip on the stage stop an iPhone zooming out to the moved content.
+   - Let go past a third of the width, or thrown (>0.35px/ms over the last ~100ms): carried off right (140-240ms, never
+     slower than the finger), the button pressed, the new screen in from -28% (300ms). If the button put nothing new up
+     (a confirm), the old panel comes back.
+   - Short of that: back with cubic-bezier(.3,1.35,.5,1), a small overshoot past its rest and home (the bounce, ~4px
+     measured). No blur, no dim.
+   - Reduce motion: nothing follows; an 80px swipe presses the button.
+   - Gate tools/check-b384-swipeback.py: real CDP touches, 8 screens. Follow, bounce, back (= a tap's destination), flick,
+     down / left / slider / Home / a drill question do nothing.
+   - Phone only: the feel under a thumb, against iOS's own edge gestures in a Safari tab.
+3. **A friend's profile: the View profile line.** Madison's screenshot: a 1px line across View profile and Message at ~72% of
+   their height, dark on the white one and light on the black one. That's the card showing through, i.e. a seam, not
+   paint. It's inset by the pill's curve, and Close below has none. No CSS rule draws it, and Chromium renders both
+   buttons clean even emulating his phone. The pair are the only buttons on the card at fractional sizes (~150.2 x 50.4px:
+   half a row each). With .next's overflow:hidden and the radius, WebKit clips them with a mask layer, and a fractional
+   mask on his 85% page can leave a seam. They are overflow:visible now (the press shimmer takes border-radius:inherit).
+   Confirm on his phone.
+4. **A friend's profile: the empty badge case.** Not a drawing bug. The case reads `bd` (which badges), a row field that
+   first went live with Version 11 (384.147, merged 11-24 14:51; the code was 384.115 on the branch). Admin read
+   (2026-11-25): 33 academy and 8 Fire Code rows had no `bd`. Each was last written before 11-24 ~22:00 by a build without
+   it, e.g. Logang, Fire Code, 13 badges, last write 11-22. Those cases fill in when the classmate next opens the app.
+   A one-off backfill is in the scratchpad (backfill_bd.py, not in the repo). It reads each class's account
+   (progress/<code> or <code>__ifc, never a __floor), computes the list with the app's own classTopics +
+   badgeThresholdFor in a real page, and writes only `bd` (update mask, document must exist). It writes only where the
+   length equals the row's own `badges`. Dry run: 41 of 41 rows match. Not written yet: waiting on Madison's OK.
+5. **No bar over a question: only chat and Pause float.** Madison (a Drill question scrolled up, 384.152): "What's up with the
+   bar thing in tests? I thought you fixed this?" 384.152 only recoloured the pinned row's backing to the sky. The row (Drill,
+   the count, the scope) was still pinned with it behind, so the question vanished into a strip under the row (his screenshot,
+   cut at ~265pt). Asked (options: only chat + Pause float / whole row stays, no cover / everything scrolls), he chose "Only
+   chat + Pause float".
+   - Pause (the phone and tablet rules) and #chatdock-btn were already position:fixed, so they float where they rest.
+   - `.wrap.test-pinned > .top` is back in the page (position:relative, the wrap's padding only --test-top-y): the row scrolls
+     away with the question.
+   - Neither the row nor the race line paints a ::before any more. syncTestPin pins the race line no longer (raceWant false),
+     so in a race it scrolls under the two buttons too. The daily question's title is the same.
+   - test-pinned itself stays: the class still drives the strip, the dock's place beside Pause and the daily cap.
+   - Gate tools/check-b384-testfloat.py: 5 devices x 2 classes, a drill question scrolled so its first line is level with the
+     row's rest. (1) the row moved with the scroll, (2) Pause and chat did not, (3) the question is seen in the row's band
+     (screenshot vs the question hidden), (4) no errors.
+   - Gates that held the old backing (toprow (5), topseam's question screens, topfade) describe the bar that is gone and are
+     superseded for questions by testfloat.
+6. **The leaderboard's circles on Fire Code.** Madison: "the characters within their circles aren't loading properly on the
+   leaderboard sometimes when i go to the tab". lbArtPreloadSoon returned at once in Fire Code ("(384) no Leaderboard there
+   to ready", from before 385 gave Fire Code its own board), and lbArtPreload read only the academy's leaderboardRows.
+   Fire Code's board (classBoardRows) was never readied: its stills and saved loops were not read ahead, so its circles opened
+   as discs and filled one at a time from the queue.
+   - lbPreloadRows() gives the current class's live rows, else the board's on-device copy (lbCacheRead), so the boot preload
+     (3.5s) readies the first visit too.
+   - Fire Code's board listener calls lbArtPreloadSoon on a server answer, as the academy's fetch does.
+   - The two floating buttons were 50% tint, so with the question passing behind them a line read straight through both
+     (seen on the first before/after picture). While a question is up their body is
+     color-mix(var(--panel) 93%, transparent). Not a backdrop blur: 384 r17 took the blur off every control in the top band,
+     because on iOS it brought its own soft band and dimmed the titles under it.
+7. **Gates for 384.153.** On the new build: check-js; sweep-layout --quick 20/20 clean; check-centering --quick (0 off
+   centre); check-b384-slidezoom (fails 11 on 384.152); check-b384-swipeback (fails follow / bounce / back / flick on 384.152);
+   check-b384-testfloat 40/40 (fails 15 on 384.152); sliders, toggles, swipe (top tabs), tabbutter (a first run's 28ms
+   phone@4x handler was noise: rerun worst 7.6ms, 384.152 8.7ms). toprow (5) retired to INFO (see 5).
