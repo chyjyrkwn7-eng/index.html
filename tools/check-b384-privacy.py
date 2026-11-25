@@ -46,7 +46,7 @@ READ = """()=>{ const s = document.querySelector('#stage'); const M = s.querySel
     return { cls: r.dataset.cls, label: r.querySelector('.otext').firstChild.textContent, checked: i.checked, disabled: i.disabled, locked: r.classList.contains('is-locked'),
              opacity: +getComputedStyle(r).opacity, h: q.height, w: q.width, shown: q.width > 0 && q.height > 0, note: n ? n.textContent : '', sig: sig(r) }; });
   const head = s.querySelector('#settings-rankings-classes');
-  return { master: { checked: M.querySelector('input').checked, disabled: M.querySelector('input').disabled, sig: sig(M), hint: (M.querySelector('.ohint')||{}).textContent || '' },
+  return { master: { checked: M.querySelector('input').checked, disabled: M.querySelector('input').disabled, sig: sig(M), hint: (M.querySelector('.ohint') || document.querySelector('#stage .settings-lb-foot') || {}).textContent || ''   /* (384.152) a footnote under the card */ },
            head: head ? head.textContent : null, rows, text: s.innerText }; }"""
 # the ink of each row: its label's text and its switch against the row's middle line (CSS px), and the 44px target
 CENTRE = """()=>{ return [...document.querySelectorAll('#stage .settings-lb-class')].map(r => { const q = r.getBoundingClientRect(), mid = q.top + q.height / 2;

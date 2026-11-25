@@ -33,7 +33,7 @@ READ = """async (two)=>{ const w=ms=>new Promise(r=>setTimeout(r,ms)); document.
   let page = null;
   if(row){ row.click(); await w(900);
     page = { text: (document.querySelector('#stage')||{}).innerText, classes: [...document.querySelectorAll('#stage .settings-lb-class')].map(r => (r.querySelector('.otext').firstChild.textContent) + '=' + (r.querySelector('input').checked ? 'Shown' : 'Hidden')),
-             hint: (document.querySelector('#stage .ohint')||{}).textContent || null, sw: !!document.querySelector('#stage input[type=checkbox]') }; }
+             hint: (document.querySelector('#stage .settings-lb-foot, #stage .ohint')||{}).textContent || null, sw: !!document.querySelector('#stage input[type=checkbox]') }; }
   return { cls: window.NOVA_CLASS, tab: [...document.querySelectorAll('.bottomtabs .bottomtab')].filter(b => b.id === 'bottomtab-rewards').map(b => b.hidden || !b.getBoundingClientRect().width), menu, page }; }"""
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G["g"]["CHROME"])

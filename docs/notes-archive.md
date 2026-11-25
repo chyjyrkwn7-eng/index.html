@@ -44246,3 +44246,82 @@ Madison: "No, we dont want the bar at all? Push this live and then start working
   it stayed pinned); check-b384-topbar 98/98; check-b384-toprow promax/academy ALL PASS; navmeet ALL PASS.
 - check-b384-navchat (3) iPad "mirrored corners" (back 44 from the left, chat 24 from the right) fails identically on 384.150 -
   pre-existing, not from this build.
+
+## 384.152 - no bar over a question; a lighter tab change; iPad back button mirrors the chat button (2026-11-25)
+
+1. **No bar over a question.** Madison (a Daily question on his iPhone): "Ensure that top bar thing is removed from everywhere".
+   - What he saw: the pinned header's backing (`.wrap.test-pinned > .top::before`) was flat --paper from y 0 to under the row,
+     while the page is the sky (the paper with two faint corner glows). Read off his screenshot at 2.695px/pt: (28,31,36) at
+     the top, (19,22,27) on the band's foot at 90-120pt, (24,27,32) just under it where the glow shows. A flat band.
+   - Now the backing is the sky itself, as #top-edge's has been since 384.134: body::before's layers on a 100vw x 100lvh box
+     from the screen's top-left corner, with its own registered --sky-k / --sky-kb set where body::before's are (.55 beyond Home,
+     .3 / 0 on a question). The fade at its foot is a mask over the same ramp the paper had: solid to Pause's foot, then 1.75rem;
+     the daily question keeps its .9rem. In a race the header's backing runs solid to the race line and the line's own backing
+     (positioned by `--test-race-y`, set in syncTestPin) fades out.
+   - Light theme: body::before's light stack. A Safari tab (html.is-browser) keeps the paper: its sky is laid out round
+     Safari's bars.
+   - Measured (Chromium, installed, the header's backing on vs off at rest): under the row the difference is now at most 1
+     level (it was 6-7 from the inset to ~152pt on a Pro Max, the same on SE, iPad and 85% zoom).
+   - A scan of 21 screens for a full-width pinned element at the top with a flat or blurred backing finds nothing on this build;
+     on 384.151 it finds the Daily question's.
+   - check-b384-toprow (5) rewritten: a question scrolled 200px must look, across the whole width from y 0 to the header's foot,
+     like the sky with only the header's controls over it (a second screenshot with #stage and the backing hidden).
+2. **The tab change does less before its first frame.** Madison: "make the bottom tab movement as smooth as possible".
+   Traced per hop (Pro Max, 4x CPU, read as 1x): Home's build forced six style or layout passes before its first frame.
+   - `topStripsSky` read body::before's computed style inside the screen change, right after body's sky-home class flipped:
+     a full-page style pass (28-46ms) in the tap. Its target (#top-safe) is gone since 384.80, so the read did nothing.
+     It now runs one frame later (topStripsSkySoon), when style is clean.
+   - showHome sets the sky (`syncSky(false)`) before `syncLoopClock` reads the animations, so one full pass covers both; the
+     observer then finds nothing to change. It used to be a second full pass (33-50ms) in the first frame.
+   - `festSkyBuild` read innerWidth in the middle of the build (a forced layout in Chromium); it keeps the size from resize.
+   - `accentToGradientStops` caches the theme triad by the root's data-accent / data-theme / style.
+   - Result: Home's build task 114-125ms -> 67-69ms; Profile's 63-69 -> 28-37ms (1x-equivalent). Per hop on average
+     (Performance metrics over 16 hops) ~300 vs ~307ms on 384.151.
+   - The glass's glide itself animates only transform / opacity / scale (composited); this is the work around it.
+3. **iPad: the back button mirrors the chat button.** alignNavChat mirrored only within 8px (a phone). On an iPad in portrait the
+   back button sat 44px in against the chat button's 24. Any back button within 72px of the left edge now mirrors it; one in a
+   centred column (landscape, 13") keeps its place. check-b384-navchat: ALL PASS (fails on 384.151, its 4 iPad cases).
+4. **The status-bar strip carries the sky under a question too.** #top-edge's sky layers (384.134) were left off while a header
+   was pinned, because the header's paper covered the strip. The header's backing is the sky now, so the strip is as well; its
+   solid colour (what WebKit samples) is unchanged.
+5. **XP landing on the Profile tab, smooth.** Madison: "When xp goes to your profile ... that effect your thing does on the bottom
+   ... is not ultra smooth". .avatar-pulse scaled the whole tab button (label too) with an animated box-shadow ring (a repaint of
+   the button on the glass bar every frame) on `ease-out` per keyframe (a lurch at 35% and 60%). On the tab bar now only the
+   picture moves (.bottomtab-icon, its own layer) along a damped spring sampled every 2.5% and run linear (eased onset, 1.18 at
+   ~100ms, .97, settled by .8s - the callers remove the class at 800ms); the ring is the icon's ::after (transform and opacity).
+   Every caller keeps adding .avatar-pulse. Measured per frame: the button never transforms, no box-shadow animates.
+6. **Leaderboard & Privacy: the master switch level with its name.** Madison: "Is the one on the top by itself slightly to the
+   left or bigger ... Why does it look just slightly off". Off his screenshot the three switches match to .3pt in size, place
+   and colour; the top one sat centred on its name plus three lines (switch middle 242.8 vs name 214 in Chromium). The
+   explanation is now a footnote under the card (.settings-lb-foot), as iOS Settings does; check-b384-privacy and lbclasses
+   read the hint from there. Measured: switch middle = name middle on all three rows.
+7. **Switches: a tap swells, then slides.** Madison sent iOS's VPN switch beside ours: "Ours need to be smoother, they look great
+   though." Off the recording at 60fps: iOS swells into glass in place (~100ms), slides (most of it ~117-217ms), holds as glass
+   while the green fills, shrinks back by ~420ms; ours set off as the finger lifted, still swelling, on cubic-bezier(.3,.8,.3,1)
+   (~75% of the travel in the first third: across in ~60ms, then sitting as glass), and dropped 2-4 frames at its start.
+   - A tap's glide now waits for the swell (nswSettle: transition-delay on the lens, view, fill, rim and --nsw-d for the
+     track's ::before; nswPlace clears it, so drags have none).
+   - GLASS.GLIDE / --glass-glide-ease: cubic-bezier(.45,0,.2,1) (slow out of the start, most in the middle, a long landing),
+     still 280ms, the colour on the same curve.
+   - A toast asked for during the glide waits until the switch has landed (nswBusyUntil, read by showToast): building it in
+     the glide's first frames cost frames (traced: the Haptics row's change handler 11-25ms at 1x, its toast inside).
+8. **The Home flash** (Madison: "Sometimes when going back to the Home Screen ... it flashes"): not reproduced in Chromium.
+   Every painted frame of Profile/Leaderboard/Calendar -> Home captured (CDP screencast): Home's first frame is complete, then
+   only the sky's .6s ease (mean 43.3 -> 46.2) and at most ~3,000px moving in any later frame (the glass, the sky). Asked for
+   a screen recording.
+9. **Sliders: the fill ends where the thumb is.** Madison, the volume slider at 0% and How many at All: "why is the line
+   coming out? Ensure when it's at 100 percent it's at the end of the line." The fill was a width of --f in % with a
+   rounded end, so at 0 the rounding showed past the thumb; the thumb's travel came from 100cqw, which in a container that
+   is not its own query container measured a different box, leaving a gap at 100%.
+   - .nsl-fill / .nsl-lens-fill are full width and translated by (--f - 1) * 100% (the round end goes behind the thumb).
+   - The thumb and the lens travel on --nsl-w, the host's own border-box width (a ResizeObserver, and again on pointerdown),
+     falling back to 100cqw.
+   - Measured on volume, How many and time: 0% fill ends at the line's start (107.5), 100% at its end (341.8). sliders passes.
+10. **Gates.** check-b384-toprow (5) compares the header area with a reference shot of the sky: the same page with the
+    stage, the pinned header's other children and the backing's ::before hidden. The chat button is left out with a 12px
+    margin, and a row counts as off only if at least 3 samples differ by more than 3 levels (a single pixel of Pause's glass
+    rim at 85% zoom was 6 off). It fails 384.151 (10-42 rows off on 4 devices) and passes this build.
+    check-b384-topseam failed now and then on Fire Code's first Home. The fixture marks What's New seen with '1', but since
+    384.137 it is seen at INTRO_REV (8), so the card armed and landed ~2.1s in, over the measure. It does this on 384.151
+    too, which passed by luck. The gate now marks it 99 and mutes the launch streak banner the card held back
+    (theme.muteBanners). The shared fixture is unchanged: changing it moves pop-up timing under every gate.
