@@ -132,7 +132,10 @@ with sync_playwright() as pw:
                     break
                 except Exception as ex:
                     print("retry open", dev, cls, str(ex)[:120])
-            pg.evaluate("()=>{ window.__edge0 = document.getElementById('top-edge'); }")
+            # (384.152) nothing lands over the sky while it is read: What's New is seen at a revision (INTRO_REV, 8 since 384.137) and the
+            # fixture's '1' armed it on the first Home ~2.1s in, so a run measuring at ~1.8s caught its scrim fading in (a Fire Code Home flake,
+            # on 384.151 too); the launch streak banner it held back is muted the same way (theme.muteBanners, read when it shows)
+            pg.evaluate("()=>{ window.__edge0 = document.getElementById('top-edge'); try{ localStorage.setItem('class26e.intro.seen','99'); }catch(e){} try{ theme.muteBanners = true; }catch(e){} }")
             for name, js in SCREENS:
                 if name.startswith("Enroll") and cls == "ifc":
                     continue

@@ -19,8 +19,8 @@ screen with a top row (onboarding from a fresh install; the rest on a used accou
      chat button is from the right (1px);
  (4) FIT: no screen scrolls that did not scroll on the previous build (--base, default origin/main);
  (5) CAP: on a question scrolled 200px, the strip from y 0 to the foot of the header row (on a phone, Pause's foot: it is in the
-     row; on a tablet Pause is a corner button like the chat button) is solid paper down the left edge (no question text shows
-     through above or between the row's controls);
+     row; on a tablet Pause is a corner button like the chat button) is the sky with only the header's controls over it, across the
+     whole width (384.152: no band - the backing is the sky, not flat paper - and no question text shows through);
  (6) TRANSITIONS (frame by frame, every rAF for the whole change): the bottom tabs Home -> Profile -> Leaderboard -> Settings ->
      Home, push and back (Start Studying and back, Settings -> Advanced -> back, Profile's badge case and back, Choose your mode ->
      Drill's units -> back), Profile's segments, a question (start, answer, the slide to the next, pause and resume, the last
@@ -109,7 +109,8 @@ GEOM = """()=>{ const R = s => { const e = document.querySelector(s); if(!e || !
   return { chat: (() => { const b = document.getElementById('chatdock-btn'); return b && !b.closest('[hidden]') ? R('#chatdock-btn') : null; })(), back, pause: R('#pausebtn:not([hidden])'),
     inTest: !!document.querySelector('.chatdock.in-test'), W: innerWidth, scr: ((document.querySelector('#stage > *') || {}).className || '') + '' }; }"""
 CAP = """()=>{ const t = document.querySelector('.wrap.test-pinned > .top'); const p = document.querySelector('#pausebtn:not([hidden])');
-  if(!t) return null; const r = t.getBoundingClientRect(); return { foot: Math.max(r.bottom, p && innerWidth < 640 ? p.getBoundingClientRect().bottom : 0), paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(), sy: scrollY }; }"""
+  if(!t) return null; const r = t.getBoundingClientRect(); const cb = document.getElementById('chatdock-btn'); const cr = cb && cb.getClientRects().length ? cb.getBoundingClientRect() : null;
+  return { chat: cr ? [cr.left - 12, cr.top - 12, cr.right + 12, cr.bottom + 12] : null, foot: Math.max(r.bottom, p && innerWidth < 640 ? p.getBoundingClientRect().bottom : 0), paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(), sy: scrollY }; }"""
 REC = """(ms)=>{ let n = 0; const tag = e => { if(!e) return null; if(!e.dataset.trk) e.dataset.trk = 'k' + (++window.__trkN || (window.__trkN = 1)); return e.dataset.trk; };
   const R = e => { if(!e || !e.getClientRects().length) return null; const s = getComputedStyle(e); if(s.visibility === 'hidden' || s.display === 'none' || parseFloat(s.opacity) < .05) return null; const r = e.getBoundingClientRect(); return r.width ? [r.left, r.top] : null; };
   window.__frames = []; const t0 = performance.now();
@@ -169,6 +170,10 @@ def measure(br, raw, dev, cls, base=False):
                         if name == "question: drill" and not base:
                             pg.evaluate("()=>{ const s = document.createElement('div'); s.id = '__pad'; s.style.height = '1600px'; document.getElementById('stage').appendChild(s); window.scrollTo({ top: 200, behavior: 'instant' }); }"); pg.wait_for_timeout(500)
                             cap = pg.evaluate(CAP); f = os.path.join(SHOTS or "/tmp", "toprow_cap_%s_%s.png" % (dev, cls)); pg.screenshot(path=f)
+                            # (384.152) the sky alone with the header's own controls over it: the page and the header's backing hidden
+                            pg.evaluate("()=>{ const st = document.createElement('style'); st.id = '__skyref'; st.textContent = '#stage, .wrap.test-pinned > :not(.top){ visibility:hidden !important; } .wrap.test-pinned > .top::before, #vroomracebar::before{ display:none !important; }'; document.body.appendChild(st); }"); pg.wait_for_timeout(300)
+                            f2 = f.replace(".png", "_sky.png"); pg.screenshot(path=f2); cap["sky"] = f2
+                            pg.evaluate("()=>{ document.getElementById('__skyref')?.remove(); }")
                             res["__cap"] = (cap, f); pg.evaluate("()=>{ document.getElementById('__pad')?.remove(); window.scrollTo({ top: 0, behavior: 'instant' }); }")
                     except Exception as ex:
                         if "rash" in str(ex): raise
@@ -234,12 +239,22 @@ def check_screens(dev, cls, M, B):
     if "__cap" in M and M["__cap"][0]:
         from PIL import Image
         cap, f = M["__cap"]; im = Image.open(f).convert("RGB"); sc = im.size[0] / W
-        pap = cap["paper"]; m = re.match(r"#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})", pap.strip(), re.I)
-        pc = tuple(int(x, 16) for x in m.groups()) if m else None
-        top_strip = int(max(ins[0], 12) * sc)
-        ys = range(top_strip + 2, int((cap["foot"] - 1) * sc))
-        bad = [(round(y / sc, 1), im.getpixel((int(6 * sc), y))) for y in ys if pc and max(abs(a - b) for a, b in zip(im.getpixel((int(6 * sc), y)), pc)) > 3]
-        chk("%s (5): a question scrolled %dpx: the header is solid paper %s from the strip to its foot (y %.0f) - nothing shows through" % (tag, cap["sy"], pap, cap["foot"]), cap["sy"] >= 150 and not bad, bad[:5])
+        # (384.152) Madison: "Ensure that top bar thing is removed from everywhere" - the header's backing is the sky itself, not flat paper.
+        # Across the whole width, from the top of the screen to the header's foot, the scrolled question looks exactly like the sky with
+        # only the header's own controls over it: no band (a backing that is not the sky) and nothing of the question showing through
+        sky = Image.open(cap["sky"]).convert("RGB")
+        ys = range(0, int((cap["foot"] - 1) * sc), max(1, int(2 * sc)))
+        xs = range(0, im.size[0], max(1, int(4 * sc)))
+        bad = []
+        for y in ys:
+            ch_ = cap.get("chat")   # the chat button is not the header's: its own glow and dot are left out (12px round it)
+            offs = [(max(abs(a - b) for a, b in zip(im.getpixel((x, y)), sky.getpixel((x, y)))), x) for x in xs
+                    if not (ch_ and ch_[0] * sc <= x <= ch_[2] * sc and ch_[1] * sc <= y <= ch_[3] * sc)]
+            hits = [o for o in offs if o[0] > 3]
+            # a band or text showing through covers several samples of a row; one pixel of a control's rim antialiased over a
+            # different layer beneath it (Pause's glass at 85% zoom: 6 levels at one sample) is not either
+            if len(hits) >= 3: w_ = max(hits); bad.append((round(y / sc, 1), round(w_[1] / sc), w_[0], len(hits)))
+        chk("%s (5): a question scrolled %dpx: from the top of the screen to the header's foot (y %.0f) it is the sky with only the header's controls over it - no band, nothing shows through (%d rows off)" % (tag, cap["sy"], cap["foot"], len(bad)), cap["sy"] >= 150 and not bad, bad[:6])
 def transitions(br, dev, cls, qtop=None):
     name, W, H, ins, installed, ua, gated = L.DEVICES[dev]
     tag = "%s, %s" % (name, "Fire Code" if cls == "ifc" else "academy")

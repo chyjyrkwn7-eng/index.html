@@ -9773,7 +9773,7 @@
      a lens), follows the finger 1:1, and past either end the track stretches after the finger (~8pt, rubber band) and thins;
      on release it shrinks back to the solid capsule in ~8 frames. Every slider is built by novaSlider() (the input stays under
      it, invisible, for the keyboard and VoiceOver); only transform and opacity move, the thumb is placed by a transform from
-     --f (0..1) and the container's width (cqw), so painting it reads no layout. No backdrop-filter on the thumb: the glass is
+     --f (0..1) and the slider's width (--nsl-w, 384.152; it was cqw), so painting it reads no layout. No backdrop-filter on the thumb: the glass is
      gradients and inset rims. Reduce motion: no grow and no stretch, the glass comes and goes at once.
      tools/check-b384-sliders.py holds it. */
   :root{
@@ -9782,7 +9782,7 @@
        colour fades) in ~17, and the solid knob is back in ~5 as it lands, its size settling on a small spring. */
     --glass-grow:110ms; --glass-in:50ms; --glass-out:80ms; --glass-glide:280ms;
     --glass-shrink:150ms; --glass-switch-shrink:240ms; --glass-back:420ms;
-    --glass-ease:cubic-bezier(.25,.9,.35,1.06); --glass-glide-ease:cubic-bezier(.3,.8,.3,1);
+    --glass-ease:cubic-bezier(.25,.9,.35,1.06); --glass-glide-ease:cubic-bezier(.45,0,.2,1);   /* (384.152) the JS twin is GLASS.GLIDE */
     --glass-settle-ease:cubic-bezier(.3,1.35,.5,1); --glass-back-ease:cubic-bezier(.22,1.18,.4,1);
     --nsl-fill:var(--switch-on-paint, var(--accent));
     --nsl-track:var(--surface-lift); --nsl-lens-track:rgba(255,255,255,.13);
@@ -9816,13 +9816,20 @@
     background:var(--nsl-track); pointer-events:none;
     transform:translateX(var(--ost)) scale(var(--osx), var(--osy));
   }
+  /* (384.152) NO CONTAINER UNITS, AND THE FILL REACHES THE ENDS. Madison (his iPhone): the volume at 0% with its fill running out past
+     the thumb, and "when it's at 100 percent ... there's still space on the line". The fill and the thumb were placed with 100cqw in
+     their transforms, and on his iPhone the fill's width and its transform did not come to the same width (at 0% its end sat 61pt in,
+     where the arithmetic gives 18.5pt whatever cqw is - only two different cqw make that); and the fill ended at the thumb's middle,
+     so at 100% the glass showed bare track beyond it. Now the fill moves by its OWN width (a percentage of itself: from nothing at 0%
+     to the whole line at 100%, and in between under the thumb, never more than half the thumb from its middle), and the thumb and
+     the lens by --nsl-w, the slider's width in px, set by novaSlider (a ResizeObserver, and again at every press). */
   .nsl-fill, .nsl-lens-fill{
-    position:absolute; top:0; bottom:0; left:0; width:100cqw; border-radius:3px; background:var(--nsl-fill);
-    transform:translateX(calc(var(--f) * (100cqw - 37px) + 18.5px - 100cqw));
+    position:absolute; top:0; bottom:0; left:0; width:100%; border-radius:3px; background:var(--nsl-fill);
+    transform:translateX(calc((var(--f) - 1) * 100%));
   }
   .nsl-thumb{
     position:absolute; left:0; top:50%; width:37px; height:24px; margin-top:-12px; pointer-events:none;
-    transform:translateX(calc(var(--f) * (100cqw - 37px) + var(--os)));
+    transform:translateX(calc(var(--f) * (var(--nsl-w, 100cqw) - 37px) + var(--os)));
   }
   .nsl-knob{
     position:absolute; inset:0; border-radius:999px; overflow:visible;
@@ -9839,9 +9846,9 @@
   .nsl.is-pressed .nsl-glass{ opacity:1; transition-duration:var(--glass-in); }
   /* the lens: the same track again inside the glass, so the thumb's own scale magnifies it about its middle */
   .nsl-lens{
-    position:absolute; left:0; top:50%; width:100cqw; height:6px; margin-top:-3px; border-radius:3px; overflow:hidden;
+    position:absolute; left:0; top:50%; width:var(--nsl-w, 100cqw); height:6px; margin-top:-3px; border-radius:3px; overflow:hidden;
     background:var(--nsl-lens-track);
-    transform:translateX(calc(var(--f) * (37px - 100cqw)));
+    transform:translateX(calc(var(--f) * (37px - var(--nsl-w, 100cqw))));
   }
   .nsl-lens-fill{ background-image:linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)), var(--nsl-fill); }
   /* let go, or a step from outside a drag: the thumb, the fill and the stretch spring back to the value */
@@ -10388,7 +10395,7 @@
      page-wide `* { transition:none }` does not reach ::before / ::after) */
   [data-reduce-motion="true"] :is(.opt > .box, .nsw)::after, [data-reduce-motion="true"] :is(.opt > .box, .nsw)::before{ transition:none; }
   @media (prefers-reduced-motion:reduce){ :is(.opt > .box, .nsw)::after, :is(.opt > .box, .nsw)::before{ transition:none; } }
-  .nsw-live::before{ opacity:var(--nsw-p, 0) !important; transition:opacity var(--nsw-t, 0ms) var(--glass-glide-ease) !important; }
+  .nsw-live::before{ opacity:var(--nsw-p, 0) !important; transition:opacity var(--nsw-t, 0ms) var(--glass-glide-ease) var(--nsw-d, 0ms) !important; }
   /* THE LENS. It lives inside the track (so it scrolls with it) and pokes
      out above and below it and past its ends. The outer box only moves
      (translateX); the body only scales (the swell and the settle); inside
@@ -19713,6 +19720,40 @@
   #bottomtab-profile > .ru-nudge-ring{ position:absolute; z-index:0; border-radius:50%; pointer-events:none; box-sizing:border-box;
     border:2px solid var(--ru-color, var(--accent)); opacity:0; }
   #bottomtab-profile.ru-nudge > .ru-nudge-ring{ animation:ru-nudge-ring 1.1s ease-out both; will-change:transform, opacity; }
+  /* (384.152) XP LANDING ON THE TAB, SMOOTH. Madison: "When xp goes to your profile ... that effect your thing does on the bottom ... is
+     not ultra smooth, make that smoother". .avatar-pulse scaled the WHOLE tab button (its label too) and animated a box-shadow ring with
+     it - a repaint of the button on the glass bar every frame - on `ease-out`, which eases each keyframe interval, so it lurched at its
+     35% and 60% stops. On the tab bar it is now what the rank-up nudge became in 384.55: only the picture moves (.bottomtab-icon, its own
+     layer), by transform alone, along a damped spring sampled every 2.5% and run `linear` (an eased onset, 1.18 at ~100ms, a soft .97,
+     settled at exactly 1 by .8s - the callers take the class off at 800ms); the ring is the picture's own ::after, transform and opacity
+     only. The label, the button and the bar do not move, so nothing is re-sampled behind the glass. Every caller keeps adding
+     .avatar-pulse (the XP banner, the results' XP, a badge or a pin flying to Profile). */
+  @keyframes tab-xp-land{
+    0%{transform:translate3d(0,-0.00px,0) scale(1.0000)} 2.5%{transform:translate3d(0,-0.10px,0) scale(1.0087)} 5%{transform:translate3d(0,-0.54px,0) scale(1.0489)}
+    7.5%{transform:translate3d(0,-1.21px,0) scale(1.1097)} 10%{transform:translate3d(0,-1.78px,0) scale(1.1618)} 12.5%{transform:translate3d(0,-1.98px,0) scale(1.1798)}
+    15%{transform:translate3d(0,-1.74px,0) scale(1.1583)} 17.5%{transform:translate3d(0,-1.39px,0) scale(1.1261)} 20%{transform:translate3d(0,-1.01px,0) scale(1.0923)}
+    22.5%{transform:translate3d(0,-0.66px,0) scale(1.0601)} 25%{transform:translate3d(0,-0.35px,0) scale(1.0320)} 27.5%{transform:translate3d(0,-0.10px,0) scale(1.0092)}
+    30%{transform:translate3d(0,0.09px,0) scale(0.9922)} 32.5%{transform:translate3d(0,0.21px,0) scale(0.9808)} 35%{transform:translate3d(0,0.28px,0) scale(0.9743)}
+    37.5%{transform:translate3d(0,0.31px,0) scale(0.9719)} 40%{transform:translate3d(0,0.30px,0) scale(0.9727)} 42.5%{transform:translate3d(0,0.27px,0) scale(0.9756)}
+    45%{transform:translate3d(0,0.22px,0) scale(0.9798)} 47.5%{transform:translate3d(0,0.17px,0) scale(0.9845)} 50%{transform:translate3d(0,0.12px,0) scale(0.9893)}
+    52.5%{transform:translate3d(0,0.07px,0) scale(0.9936)} 55%{transform:translate3d(0,0.03px,0) scale(0.9972)} 57.5%{transform:translate3d(0,-0.00px,0) scale(1.0000)}
+    60%{transform:translate3d(0,-0.02px,0) scale(1.0020)} 62.5%{transform:translate3d(0,-0.04px,0) scale(1.0033)} 65%{transform:translate3d(0,-0.04px,0) scale(1.0039)}
+    67.5%{transform:translate3d(0,-0.04px,0) scale(1.0040)} 70%{transform:translate3d(0,-0.04px,0) scale(1.0037)} 72.5%{transform:translate3d(0,-0.03px,0) scale(1.0032)}
+    75%{transform:translate3d(0,-0.03px,0) scale(1.0025)} 77.5%{transform:translate3d(0,-0.02px,0) scale(1.0018)} 80%{transform:translate3d(0,-0.01px,0) scale(1.0012)}
+    82.5%{transform:translate3d(0,-0.01px,0) scale(1.0006)} 85%{transform:translate3d(0,-0.00px,0) scale(1.0002)} 87.5%{transform:translate3d(0,0.00px,0) scale(0.9998)}
+    90%{transform:translate3d(0,0.00px,0) scale(0.9996)} 92.5%{transform:translate3d(0,0.01px,0) scale(0.9995)} 95%{transform:translate3d(0,0.01px,0) scale(0.9994)}
+    97.5%{transform:translate3d(0,0.01px,0) scale(0.9995)} 100%{transform:translate3d(0,0.00px,0) scale(1.0000)}
+  }
+  @keyframes tab-xp-ring{ 0%{ opacity:0; transform:scale(.86); } 12%{ opacity:.85; } 100%{ opacity:0; transform:scale(1.75); } }
+  #bottomtabs .bottomtab.avatar-pulse{ animation:none; }
+  #bottomtabs .bottomtab.avatar-pulse > .bottomtab-icon{ animation:tab-xp-land .8s linear both; transform-origin:50% 60%; }
+  #bottomtabs .bottomtab.avatar-pulse > .bottomtab-icon::after{
+    content:""; position:absolute; inset:-3px; border-radius:50%; pointer-events:none; box-sizing:border-box;
+    border:2px solid color-mix(in srgb, #4B9BFF 80%, #fff); opacity:0;
+    animation:tab-xp-ring .8s cubic-bezier(.2,.7,.3,1) both;
+  }
+  [data-reduce-motion="true"] #bottomtabs .bottomtab.avatar-pulse > .bottomtab-icon,
+  [data-reduce-motion="true"] #bottomtabs .bottomtab.avatar-pulse > .bottomtab-icon::after{ animation:none; }
   /* While it plays nothing can be pressed: this layer takes every touch,
      and the scene swallows keys, wheels and clicks on the window. */
   .ru-blocker{ position:fixed; inset:0; z-index:2147483000; background:transparent; touch-action:none; -webkit-tap-highlight-color:rgba(0,0,0,0); }
@@ -28655,6 +28696,55 @@
       var(--paper) 0%,
       var(--paper) calc(100% - .9rem),
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
+  }
+  /* (384.152) NO BAR OVER A QUESTION. Madison (a Daily question on his iPhone): "Ensure that top bar thing is removed from everywhere".
+     The pinned header (the row, the chat button and Pause stay pinned: his answer in 384.150) was backed by flat --paper from the top of
+     the screen to under the row, while the page under it is the sky - the paper with two faint corner glows - so the backing read as a
+     band: flat where the glow shows just under it (his screenshot: (19,22,27) on the band against (24,27,32) a few points lower).
+     The backing is now the sky itself, as #top-edge's has been since 384.134: body::before's own layers, on the same 100vw x 100lvh box
+     from the screen's top-left corner (the header's ::before starts there when pinned), with its own --sky-k set where body::before's
+     is. At rest it is the sky's pixels, so nothing shows; a question scrolled up still goes under it, faded out by a MASK over the same
+     long ramp the paper had (solid to Pause's foot), not a colour. A Safari tab keeps the paper (its sky is laid out round Safari's
+     bars, html.is-browser). */
+  html:not(.is-browser)[data-layout="modern"] body .wrap.test-pinned > .top.top::before,
+  html:not(.is-browser)[data-layout="modern"] body .wrap.test-pinned.race-pinned > #vroomracebar::before{
+    background-color:transparent;
+    background-image:
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
+      linear-gradient(var(--paper), var(--paper));
+    background-size:100vw 100lvh; background-position:0 0; background-repeat:no-repeat;
+    -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 calc(100% - 1.75rem), rgba(0,0,0,.9) calc(100% - 1.45rem), rgba(0,0,0,.7) calc(100% - 1.1rem),
+      rgba(0,0,0,.45) calc(100% - .75rem), rgba(0,0,0,.22) calc(100% - .4rem), rgba(0,0,0,.07) calc(100% - .15rem), transparent 100%);
+    mask-image:linear-gradient(to bottom, #000 0%, #000 calc(100% - 1.75rem), rgba(0,0,0,.9) calc(100% - 1.45rem), rgba(0,0,0,.7) calc(100% - 1.1rem),
+      rgba(0,0,0,.45) calc(100% - .75rem), rgba(0,0,0,.22) calc(100% - .4rem), rgba(0,0,0,.07) calc(100% - .15rem), transparent 100%);
+  }
+  html:not(.is-browser)[data-theme="dark"][data-layout="modern"] body .wrap.test-pinned > .top.top::before,
+  html:not(.is-browser)[data-theme="dark"][data-layout="modern"] body .wrap.test-pinned.race-pinned > #vroomracebar::before{
+    background-image:
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) calc(11% * var(--sky-kb)), transparent), transparent 70%),
+      linear-gradient(var(--paper), var(--paper));
+    transition:--sky-k .6s ease, --sky-kb .6s ease;
+  }
+  /* its own --sky-k (registered, not inherited), where body::before's is */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .wrap.test-pinned > .top.top::before,
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .wrap.test-pinned.race-pinned > #vroomracebar::before{ --sky-k:.55; --sky-kb:.55; }
+  html[data-theme="dark"][data-layout="modern"] body.has-active-question .wrap.test-pinned > .top.top::before,
+  html[data-theme="dark"][data-layout="modern"] body.has-active-question .wrap.test-pinned.race-pinned > #vroomracebar::before{ --sky-k:.3; --sky-kb:0; }
+  [data-reduce-motion="true"] .wrap.test-pinned > .top.top::before{ transition:none !important; }
+  /* the daily question's: solid to the chat button's foot, then its .9rem fade (384.100) */
+  html:not(.is-browser)[data-layout="modern"] body .wrap.test-pinned:has(.qpanel.is-dailyq) > .top.top::before{
+    -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 calc(100% - .9rem), transparent 100%);
+    mask-image:linear-gradient(to bottom, #000 0%, #000 calc(100% - .9rem), transparent 100%);
+  }
+  /* in a race the header's backing runs solid down to the race line, and the line's own backing (from .7rem under its top) fades out */
+  html:not(.is-browser)[data-layout="modern"] body .wrap.test-pinned.race-pinned > .top.top::before{ -webkit-mask-image:none; mask-image:none; }
+  html:not(.is-browser)[data-layout="modern"] body .wrap.test-pinned.race-pinned > #vroomracebar::before{
+    background-position:0 calc(-1 * (var(--test-race-y, 0px) + .7rem));
+    -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
+    mask-image:linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
   }
   /* The top bar is sticky so Pause stays in reach over a long question.
      On the results screens it would float its title over the cards. */
@@ -39683,7 +39773,9 @@ html.is-browser{ --fade-paper: transparent; }
      the opaque paper, so the pixels are the sky's own and the colour under them never shows). Kept the same text as the dark
      body::before stack above; check-b384-topseam holds the pixels to the sky's. Not while the splash is in the page (the strip is the
      splash's colour, above it) and not under a pinned question header (the page's top is the header's paper there: the strip is flat paper). */
-  html.top-edge-on[data-theme="dark"][data-layout="modern"] body:not(:has(> #splashscreen)):not(:has(> .wrap.test-pinned)) > #top-edge{
+  /* (384.152) under a pinned question header too: the header's backing is the sky now (no flat paper band), so the strip under it is the
+     sky's as well; its solid colour (what WebKit samples) is unchanged */
+  html.top-edge-on[data-theme="dark"][data-layout="modern"] body:not(:has(> #splashscreen)) > #top-edge{
     background-image:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
@@ -59169,6 +59261,7 @@ function syncTestPin(force){
     const tr = top.getBoundingClientRect(), rr = rb.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
     wrap.style.setProperty("--test-race-h", Math.max(0, rr.bottom - tr.bottom) + "px");
     rb.style.top = (rr.top - wr.top) + "px";
+    wrap.style.setProperty("--test-race-y", (rr.top - wr.top) + "px");   /* (384.152) where the line's sky copy lines up with the sky */
     rb.style.left = rr.left + "px";
     rb.style.width = rr.width + "px";
     wrap.classList.add("race-pinned");
@@ -59243,7 +59336,10 @@ function alignNavChat(){
     /* left: only where the back button is a corner button too (a phone: the nav spans the page, so it is near the left edge) */
     const backLeft = x + (br.left - nr.left) - (parseFloat(back.style.translate) || 0);
     const dx = cRight - backLeft;
-    const want = Math.abs(dx) <= 8 ? dx.toFixed(2) + "px 0" : "";
+    /* (384.152) an iPad's back button is a corner button too (44px in, the tablet page's gutter, against the chat button's 24): Madison,
+       "perfectly symmetrical with each of their own corners". Any back button within 72px of the left edge mirrors the chat button;
+       one further in (a centred column) keeps its place */
+    const want = (Math.abs(dx) <= 8 || (backLeft <= 72 && cRight <= 72)) ? dx.toFixed(2) + "px 0" : "";
     if(back.style.translate !== want) back.style.translate = want;
     /* (384.110) ...and it sticks exactly where it rests: its top on the screen once its back button is on the chat button's middle */
     if(sticky){
@@ -93904,7 +94000,12 @@ function topEdgeStripColor(color){
    fixed sky starts in an installed app) on top of their opaque colour: the same pixels as the sky where there is no wash, still opaque. Not under
    a pinned question header (the page's top there is the header's paper, and the strips are paper).
    Recoloured in place, never replaced; run again after the sky's .6s dimming. (384.105) Variant A and B's backdrop are gone. */
-let topStripsSkyTimer = 0;
+let topStripsSkyTimer = 0, topStripsSkyRaf = 0;
+function topStripsSkySoon(){
+  if(topStripsSkyRaf) return;
+  try{ topStripsSkyRaf = requestAnimationFrame(() => setTimeout(() => { topStripsSkyRaf = 0; topStripsSky(); }, 0)); }
+  catch(e){ topStripsSkyRaf = 0; topStripsSky(); }
+}
 function topStripsSky(){
   try{
     const flat = !!document.querySelector(".wrap.test-pinned");
@@ -94010,8 +94111,13 @@ function syncTopGuard(color){
         const s2 = document.getElementById(id);
         if(s2 && s2.dataset.color !== color){ s2.dataset.color = color; s2.style.backgroundColor = color; }
       }
-      topStripsSky();
-      clearTimeout(topStripsSkyTimer); topStripsSkyTimer = setTimeout(topStripsSky, 750);   /* again once the sky's .6s dimming has run */
+      /* (384.152) READ AFTER THE FRAME, NOT IN THE TAP. Madison: "make the bottom tab movement as smooth as possible". This runs in the
+         screen change (#stage's observer, syncSky) right after body's sky-home class flips, so reading the sky's ::before here forced a
+         style pass over the whole page in the middle of the build (28-46ms on a hop to or from Home, 1x) - and the frame then paid for
+         everything built after it. The strip takes the sky's picture one frame later instead, when the frame has left the style clean
+         and the read is free; again once the sky's .6s dimming has run */
+      topStripsSkySoon();
+      clearTimeout(topStripsSkyTimer); topStripsSkyTimer = setTimeout(topStripsSky, 750);
       return;
     }
     /* Anywhere else (a browser tab, Android, a computer) there is no strip. (384.105) The 8px #top-guard that was made here for an installed
@@ -99201,8 +99307,13 @@ __bm("L70613");
    half-way - and its size settles on a small spring (~240ms, ~3% past). Ours: a 190ms swell, a 150-270ms glide, the colour on a
    linear ramp, the settle starting at half the glide, and 250ms / 300ms for a flip with no lens - every phase a different speed.
    Now every phase is one constant here and in the CSS (--glass-*), shared with the slider. */
+/* (384.152) Madison, iOS's VPN switch beside ours (a recording, 60fps): "Ours need to be smoother, they look great though." iOS's tap:
+   the knob swells into glass IN PLACE (~100ms), then slides across - slow out of the start, most of the way in the middle, a long
+   soft landing - holds as glass while the green fills, and shrinks back. Ours set off as the finger lifted, still swelling, on a
+   curve that put ~75% of the travel in its first third: across in ~60ms and then sitting there as glass - a jump, not a slide. Now a
+   tap's glide waits for the swell (nswSettle), on GLIDE below; the colour rides the same curve. The CSS twin is --glass-glide-ease. */
 const GLASS = { grow: 110, in: 50, out: 80, glide: 280, shrink: 240,
-  EASE: "cubic-bezier(.25,.9,.35,1.06)", GLIDE: "cubic-bezier(.3,.8,.3,1)", SETTLE: "cubic-bezier(.3,1.35,.5,1)" };
+  EASE: "cubic-bezier(.25,.9,.35,1.06)", GLIDE: "cubic-bezier(.45,0,.2,1)", SETTLE: "cubic-bezier(.3,1.35,.5,1)" };
 const NSW_T = { pop: GLASS.grow, shrink: GLASS.shrink, glide: GLASS.glide, fin: GLASS.in, fout: GLASS.out, LX: 1.5, LY: 1.22, MAG: .82,
   POP: GLASS.EASE, GLIDE: GLASS.GLIDE, SETTLE: GLASS.SETTLE };
 const nswRuns = new WeakMap();
@@ -99272,6 +99383,7 @@ function nswPlace(run, c, ms, ease){
   run.fill.style.transition = run.edgeOn.style.transition = ms ? "opacity " + ms + "ms " + ease : "none";
   run.fill.style.opacity = p; run.edgeOn.style.opacity = p;
   run.track.style.setProperty("--nsw-t", (ms || 0) + "ms");
+  run.track.style.setProperty("--nsw-d", "0ms");   /* (384.152) no delay unless a tap's settle sets one after this (nswSettle) */
   run.track.style.setProperty("--nsw-p", p);
   run.c = c;
 }
@@ -99321,7 +99433,7 @@ function nswDone(run){
   run.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
   run.lens.remove();
   run.track.classList.remove("nsw-lensed", "nsw-live", "nsw-drag");
-  run.track.style.removeProperty("--nsw-p"); run.track.style.removeProperty("--nsw-t");
+  run.track.style.removeProperty("--nsw-p"); run.track.style.removeProperty("--nsw-t"); run.track.style.removeProperty("--nsw-d");
   if(nswRuns.get(run.track) === run) nswRuns.delete(run.track);
 }
 /* glide to the end that matches the state, then shrink back into the knob */
@@ -99331,10 +99443,18 @@ function nswSettle(run, on){
   const span = Math.max(1, g.onC - g.offC), dist = Math.abs(c - run.c);
   /* (384.134) a whole crossing is iOS's 280ms; a part of one is that share of it, never under 40% */
   const glide = dist < .5 ? 0 : Math.round(NSW_T.glide * Math.max(.4, Math.min(1, dist / span)));
-  nswPlace(run, c, glide, NSW_T.GLIDE);
   const now = performance.now();
+  /* (384.152) a tap swells into the glass where the knob is FIRST, then slides (iOS); a drag's lens is already under the finger */
+  const wait = glide && run.up && run.popEnds > now + 4 ? Math.round(run.popEnds - now) : 0;
+  nswPlace(run, c, glide, NSW_T.GLIDE);
+  /* after nswPlace: its `transition` shorthand resets the delay */
+  const dl = wait ? wait + "ms" : "0ms";
+  run.lens.style.transitionDelay = run.view.style.transitionDelay = run.fill.style.transitionDelay = run.edgeOn.style.transitionDelay = dl;
+  run.track.style.setProperty("--nsw-d", dl);
+  /* while it plays, a toast the flip asks for waits (showToast): building one in the glide's first frames cost it frames */
+  nswBusyUntil = now + wait + glide + NSW_T.shrink;
   /* (384.134) solid again as it lands, as iOS does - not half-way along */
-  const delay = Math.round(Math.max(0, run.popEnds - now, glide - NSW_T.fout / 2));
+  const delay = Math.round(Math.max(0, run.popEnds - now, wait + glide - NSW_T.fout / 2));
   nswMorph(run, false, delay);
   /* gone when the settle has played out - on its own clock, not a timer */
   const mine = run.anims.slice();
@@ -99552,6 +99672,7 @@ function nswRelease(e){
   run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; if(a.host.on() !== a.predicted) nswSettle(run, a.host.on()); } }, 350);
 }
 let nswHold = null;
+var nswBusyUntil = 0;   /* (384.152) var: showToast reads it, and a toast can come before this line has run */
 ["change", "click"].forEach(ev => document.addEventListener(ev, e => {
   const h = nswHold;
   if(!h || nswCommitting) return;
@@ -105425,12 +105546,18 @@ function showReleaseHistory(from){
    bare call now resolves the tier's triad instead of diverging from the
    forced one. forceAccent stays in the signature the way the third
    argument to rankOfStats does: callers pass it, nothing reads it. */
+var accentStopsKey = "", accentStopsVal = null;   /* var: read in the boot */
 function accentToGradientStops(forceAccent){
-  const cs = getComputedStyle(document.documentElement);
+  /* (384.152) the triad is set by the root's data-accent / data-theme alone, so it is read once per pair, not on every Home build
+     (a getComputedStyle read there forced a style pass in the tap) */
+  const de = document.documentElement;
+  const key = (de.getAttribute("data-accent") || "") + "|" + (de.getAttribute("data-theme") || "") + "|" + (de.getAttribute("style") || "");
+  if(key === accentStopsKey && accentStopsVal) return accentStopsVal.slice();
+  const cs = getComputedStyle(de);
   const c1 = cs.getPropertyValue("--theme-c1").trim();
   const c2 = cs.getPropertyValue("--theme-c2").trim();
   const c3 = cs.getPropertyValue("--theme-c3").trim();
-  if(c1 && c2 && c3) return [c1, c2, c3];
+  if(c1 && c2 && c3){ accentStopsKey = key; accentStopsVal = [c1, c2, c3]; return [c1, c2, c3]; }
   /* Only reachable if a stylesheet somehow has no triad at all. Keeps
      the old single-hue derivation rather than painting nothing. */
   const raw = cs.getPropertyValue("--accent").trim();
@@ -122203,13 +122330,17 @@ function festBurstSvg(col, col2, id){
     '<g fill="' + col2 + '" class="fest-fw-glit">' + in2 + '</g></svg>';
 }
 /* THE SKY: one fixed layer at the end of #stage, under everything Home draws */
+var festVP = { w: 0, h: 0 };   /* var: Home can be built in the boot before this line has run */
+try{ addEventListener("resize", () => { festVP.w = window.innerWidth || 440; festVP.h = window.innerHeight || 956; }, { passive: true }); }catch(e){}
 function festSkyBuild(s, calm){
   const sky = document.createElement("div");
   sky.className = "fest-sky";
   sky.setAttribute("aria-hidden", "true");
   sky.dataset.season = s.id;
   if(s.day) sky.dataset.day = s.day;
-  const w = Math.max(320, window.innerWidth || 440), h = Math.max(480, window.innerHeight || 956);
+  /* (384.152) the size kept from the last resize: innerWidth in the middle of Home's build forced a layout of the half-built page */
+  if(!festVP || !festVP.w){ if(!festVP) festVP = { w: 0, h: 0 }; festVP.w = window.innerWidth || 440; festVP.h = window.innerHeight || 956; }
+  const w = Math.max(320, festVP.w), h = Math.max(480, festVP.h);
   const area = w * h;
   const rnd = festRand(s.id === "thanksgiving" ? 1126 : s.id === "christmas" ? 1225 : 1231);
   let html = '<div class="fest-tint"></div><div class="fest-fall">';
@@ -123213,6 +123344,10 @@ function showHome(){
     if(hw && homeShownBefore) hw.classList.add("is-return");
     homeShownBefore = true;
   }
+  /* (384.152) THE SKY TURNS UP BEFORE THE CLOCK READS. body's sky-home restyles the whole page; set by #stage's observer at the end of the
+     tap, it came AFTER syncLoopClock's read (getAnimations: a full style + layout pass), so the frame paid for a second full pass on every
+     hop to Home (33-50ms at 1x). Set here, the one pass covers both; the observer finds it already on and changes nothing */
+  try{ syncSky(false); }catch(e){}
   syncLoopClock(panel);
   heroSettleSkip(panel);
   homeFitWindow(panel);   /* 384.89: no scroll on Home where it is only slack */
@@ -125184,6 +125319,9 @@ function novaSlider(slider){
   host.append(slider, track, thumb);
   const st = { host, dragF: null, raf: 0, x: 0, id: null, rect: null, grabDx: 0, decided: false, startX: 0, startY: 0, settleT: 0, lastF: -1, lastOs: 0 };
   slider._nsl = st;
+  /* (384.152) the slider's width in px for the thumb and the lens (no container units: see .nsl-fill) */
+  st.setW = w => { if(w > 0){ const v = w.toFixed(2) + "px"; if(st.w !== v){ st.w = v; host.style.setProperty("--nsl-w", v); } } };
+  try{ new ResizeObserver(es => { for(const e of es){ const b = e.borderBoxSize && e.borderBoxSize[0]; st.setW(b ? b.inlineSize : e.contentRect.width); } }).observe(host); }catch(e){}
   const range = () => { const mn = Number(slider.min) || 0, mx = Number(slider.max) || 0; return [mn, mx]; };
   const valueF = () => { const [mn, mx] = range(); const v = Number(slider.value) || 0; return mx > mn ? Math.max(0, Math.min(1, (v - mn) / (mx - mn))) : 1; };
   st.paint = () => {
@@ -125249,6 +125387,7 @@ function novaSlider(slider){
   host.addEventListener("pointerdown", e => {
     if(slider.disabled || st.id != null || !e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
     st.rect = host.getBoundingClientRect();
+    st.setW(st.rect.width);
     st.id = e.pointerId; st.x = e.clientX; st.startX = e.clientX; st.startY = e.clientY;
     const W = st.rect.width, thumbC = st.rect.left + NSL.thumbW / 2 + valueF() * Math.max(1, W - NSL.thumbW);
     st.grabDx = Math.abs(e.clientX - thumbC) <= NSL.grab ? e.clientX - thumbC : 0;
@@ -132532,6 +132671,8 @@ function orbitBoostStep(ts){
 }
 
 function showToast(msg, tone){
+  /* (384.152) not in the middle of a switch's glide: a toast's build and its glass cost the glide frames; it comes as the switch lands */
+  try{ const w = (typeof nswBusyUntil === "number" ? nswBusyUntil : 0) - performance.now(); if(w > 16){ setTimeout(() => showToast(msg, tone), Math.min(700, w)); return; } }catch(e){}
   /* held while a cutscene has the screen (build 320) */
   if(typeof holdForCutscene === "function" && holdForCutscene("toast:" + msg, () => showToast(msg, tone))) return;
   const existing = document.getElementById("toast");
@@ -132604,7 +132745,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-24-384.151";
+const APP_BUILD = "2026-11-24-384.152";
 /* (384.148) the first launch of a new build on this device is narrated as an update, however the new page arrived (see
    window.__splashAsUpdate). class26e.lastbuild is device-level (SHARED, kept through a sign-out). A device that has never recorded
    one but already holds an account was running a build from before this mark existed, so it is told too; a device with nothing
@@ -148533,6 +148674,13 @@ function showAppearance(opts){
       lbSect.appendChild(cl); lbSect.appendChild(card);
       lbRefresh();
     }
+  }catch(e){}
+  /* (384.152) THE SWITCH LEVEL WITH ITS NAME. Madison (his screenshot): "Is the one on the top by itself slightly to the left or bigger or
+     something? Why does it look just slightly off". Measured off it, the three switches are the same to .3pt in size, place and colour;
+     what differed was the top one sitting centred on a title AND three lines of explanation, ~22pt under its own name, where the two
+     below sit level with theirs. As iOS Settings does it: the row is the name and the switch, the explanation a footnote under the card */
+  try{
+    if(lbHint.textContent){ const foot = settingsFootnote(lbHint.textContent); foot.classList.add("settings-lb-foot"); lbHint.remove(); lbCard.after(foot); }
   }catch(e){}
   panel.appendChild(lbSect);
 
