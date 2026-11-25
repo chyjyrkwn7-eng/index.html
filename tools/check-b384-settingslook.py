@@ -201,8 +201,9 @@ def run(pw, dev):
     pg.evaluate("()=>{ const de=document.documentElement; de.style.scrollBehavior='auto'; scrollTo(0, 320); }"); pg.wait_for_timeout(900)
     back1 = pg.evaluate("()=>{ const b=document.querySelector('#stage .settings-nav-back'); const r=b.getBoundingClientRect(); const n=b.parentElement, bar=document.getElementById('settings-bar'); return [r.left, r.top, scrollY, +getComputedStyle(n).zIndex || 0, bar ? (+getComputedStyle(bar).zIndex || 0) : 1e9]; }")
     b2 = pg.evaluate(BAR, "page")
-    chk(tag + "(6) a page that scrolls (Contributors, scrolled %dpx): its back button stays where it rests (%s -> %s) and the bar shows behind it" % (back1[2], [round(v, 1) for v in back0], [round(v, 1) for v in back1[:2]]),
-        back1[2] > 100 and abs(back1[0] - back0[0]) <= .5 and abs(back1[1] - back0[1]) <= .5 and b2.get("exists") and b2["on"] and back1[3] > back1[4], [back0, back1, b2])
+    # (384.151) Madison: "we dont want the bar at all" - no bar, and the back button scrolls away with the page like any top row
+    chk(tag + "(6) a page that scrolls (Contributors, scrolled %dpx): no bar, and its back button scrolls with the page (%s -> %s)" % (back1[2], [round(v, 1) for v in back0], [round(v, 1) for v in back1[:2]]),
+        back1[2] > 100 and abs(back1[0] - back0[0]) <= .5 and abs((back0[1] - back1[1]) - back1[2]) <= 1 and not (b2.get("exists") and b2["on"]), [back0, back1, b2])
     go(pg, "()=>showAdvancedSettings()")
     p = pg.evaluate(PAGE)
     chk(tag + "(3) a page's title 16.7-17.3pt at 600 (%s)" % (p["nav"],), p["nav"] and 16.7 <= p["nav"]["size"] <= 17.3 and p["nav"]["weight"] == "600", p)
