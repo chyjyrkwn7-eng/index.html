@@ -44414,3 +44414,21 @@ Madison: "No, we dont want the bar at all? Push this live and then start working
    centre); check-b384-slidezoom (fails 11 on 384.152); check-b384-swipeback (fails follow / bounce / back / flick on 384.152);
    check-b384-testfloat 40/40 (fails 15 on 384.152); sliders, toggles, swipe (top tabs), tabbutter (a first run's 28ms
    phone@4x handler was noise: rerun worst 7.6ms, 384.152 8.7ms). toprow (5) retired to INFO (see 5).
+8. **The badge lists, written (2026-11-25, with Madison's OK).** He asked again ("their case is empty ... Fix that") and,
+   asked plainly, chose "Yes, fill them in now". backfill_bd.py --write: 40 rows written, all HTTP 200. That is one fewer
+   than the dry run's 41, because one classmate opened the app in between and published their own. After: no row on either
+   board lacks `bd`; Logang's Fire Code row has 13. This works with the live build, since the case already reads `bd`.
+   Note: a phone still running a build from before Version 11 that writes its row (tx.set, the whole row) drops `bd` again
+   until it updates.
+9. **The leaderboard's empty circles: found.** Madison: "right when I click the tab, some of the characters within the
+   circle don't load". renderRankingRows built a row whose recorded loop was ready (lbFlipKnown) with the loop ALONE: the
+   still was added only `if(!flipPre)`, and lbFlipKnown deletes lazyAv. The loop is a canvas (charFlipCanvas) that draws only
+   once its sheet image is loaded and decoded (charFlipDraw: complete && naturalWidth). On an iPhone that is often not yet
+   true as the tab opens (charPreKeep keeps only the 14 used most lately; the rest are new Images), so those circles were
+   blank until it was. Chromium decodes at once, so it never showed here until the sheets were made slow on purpose.
+   - Now the still goes in FIRST on every on-screen row, then the loop. The loop's first real draw hides it (onFirst:
+     svg.cx-still -> .char-under-flip), so there is no double image.
+   - Measured, Fire Code board, 30 classmates, loops recorded, relaunch, sheets 900ms late: 384.152 had 9 of 10 circles
+     empty at 80/200/400ms (filled by 800ms); this build has 0 at every sample.
+   - Gate tools/check-b384-lbstill.py.
+   - Item 6 (the Fire Code preload) is kept and is correct, but it was not this symptom.

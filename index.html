@@ -161121,11 +161121,18 @@ function renderRankingRows(rows, entries, board, opts){
          first screenful is built as its words and numbers with an empty frame where the character and the flare go
          (same size, so nothing moves), and the art goes in as the row comes within a screen of the view, or in the
          quiet after the list is up. */
-      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(keptPhase != null) avatarWrap.dataset.flipPhase = keptPhase; if(rowIdx < knownRows) lbFlipKnown(avatarWrap, entry.avatarChar);
-        /* (384) no loop on yet: the character's still picture, from the first frame (on screen always; below it, if made already) */
-        if(avatarWrap.dataset.lazyAv !== undefined && !avatarWrap.dataset.flipPre && entry.avatarChar !== "nova" && (rowIdx < lbStillRows || charStillReady(entry.avatarChar))){
+      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(keptPhase != null) avatarWrap.dataset.flipPhase = keptPhase;
+        /* (384) the character's still picture, from the first frame (on screen always; below it, if made already).
+           (384.153) STILL FIRST, THEN THE LOOP, ALWAYS. Madison: "right when I click the tab, some of the characters within the circle
+           don't load". A row whose loop was ready was built with the loop ALONE: no still under it. The loop is a canvas a frame is
+           copied into, and on an iPhone the sheet it copies from is often not decoded yet as the tab opens - the canvas stays blank
+           until it is (charFlipCanvas waits on decode()), so those circles were empty for that moment. Chromium decodes at once,
+           which is why it never showed here. Now the still goes in first; the loop's first real draw hides it (charFlipCanvas's
+           onFirst: svg.cx-still -> .char-under-flip), so the circle always shows the character. */
+        if(entry.avatarChar !== "nova" && (rowIdx < lbStillRows || charStillReady(entry.avatarChar))){
           try{ avatar.appendChild(charStillSVG(entry.avatarChar)); avatarWrap.dataset.still = "1"; }catch(e){}
         }
+        if(rowIdx < knownRows) lbFlipKnown(avatarWrap, entry.avatarChar);
       }
       else {
         avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
