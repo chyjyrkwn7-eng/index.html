@@ -185,8 +185,10 @@ def run(pw, dev):
     pg.evaluate("()=>{ const c=document.getElementById('count'); const de=document.documentElement; de.style.scrollBehavior='auto'; scrollTo(0, Math.ceil(c.getBoundingClientRect().bottom + scrollY) + 30); }")
     pg.wait_for_timeout(900)
     b1 = pg.evaluate(BAR, "scrolled")
-    good = b1.get("exists") and b1["on"]
-    chk(tag + "(6) scrolled past the large title, the bar shows", good, b1)
+    # (384.150) Madison: "Remove the bar thing" - on the Profile tab (this screen) the big title scrolls away and no bar comes up;
+    # the pages Settings opens keep theirs (check-b384-topbar)
+    chk(tag + "(6) scrolled past the large title, no bar comes up on the Profile tab", (not b1.get("exists")) or not b1["on"], b1)
+    good = False
     if good:
         K = b1["k"]
         chk(tag + "(6) the bar starts at the inset (%.1f; inset %.1f), never within 4px of the top on a notched phone, with no background-colour of its own (%s) and no touch (%s)" % (b1["top"], b1["sat"], b1["bg"], b1["pe"]),

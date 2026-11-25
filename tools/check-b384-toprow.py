@@ -41,7 +41,9 @@ def arg(n, d=None): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else
 # has none of it): Customize gained the unlock tracks' "Next up" and the Tracks entry (384.120 unlocks), Settings' sound page is taller on the smallest
 # phone (swupdate / settingslook rows), and Test history is the 384.118 screen. Any OTHER screen that starts to scroll still fails (4); these are printed
 # with their amounts on every run.
-GREW_ON_PURPOSE = {"class pick": "384.136 More classes is a full-size card (Madison); a short phone scrolls the pick", "Customize": "384.120 unlocks: Next up and Tracks", "Settings: sound": "swupdate / settingslook rows", "Test history": "384.118 testhistory"}
+# (384.150) the band iOS softens, in points under the inset: 18 (384.95, his 15:35 recording), 36 from his 384.148 Calendar shot
+EDGE_PT = 36
+GREW_ON_PURPOSE = {"class pick": "384.136 More classes is a full-size card (Madison); a short phone scrolls the pick", "Customize": "384.120 unlocks: Next up and Tracks", "Settings: sound": "swupdate / settingslook rows", "Test history": "384.118 testhistory", "Terms": "384.150 the line under the system blur is 36pt (Madison): a pushed page starts 18pt lower, Terms at 85% zoom scrolls 4px", "Home Screen sheet": "384.150 the sheet starts under the 36pt line; its body (a scroller by design) scrolls 4px at 85% zoom"}
 RAW =open(arg("--against"), encoding="utf-8").read() if arg("--against") else open(os.path.join(L.ROOT, "index.html"), encoding="utf-8").read()
 NOBASE = "--no-base" in sys.argv
 BASE = None if NOBASE else (open(arg("--base"), encoding="utf-8").read() if arg("--base") else
@@ -198,7 +200,7 @@ def check_screens(dev, cls, M, B):
         row = table.setdefault(scr, {})
         # the line is the gate's own (his recording: the inset + 16pt, + 2pt, in points: x the page zoom), not the page's word for it
         zc = (W / 440.0) if dev == "zoom85" else 1.0
-        E = ins[0] + (18 * zc if gated else 0); mn = ink["min"]
+        E = ins[0] + (EDGE_PT * zc if gated else 0); mn = ink["min"]
         if ink["E"] is None or abs(ink["E"] - E) > .5: below.append((scr, "the page's line (--top-e) is %s, not %.1f" % (ink["E"], E))); good = False
         good = True
         if gated and mn is not None and mn < E - .5:
@@ -223,7 +225,7 @@ def check_screens(dev, cls, M, B):
     n = len([k for k in M if not k.startswith("__")])
     for lst, what in ((below, "above E"), (chat_off, "chat"), (back_off, "back"), (newscroll, "scroll")):
         for x in lst: print("      %s: %s" % (what, x), flush=True)
-    chk("%s (1): %s on all %d screens" % (tag, "every top row's ink is at or below E (the inset + 18pt) and the page's line is E" if gated else
+    chk("%s (1): %s on all %d screens" % (tag, "every top row's ink is at or below E (the inset + EDGE_PT) and the page's line is E" if gated else
         "no band here - the page's line is the inset (%s) and nothing has to clear it" % ins[0], n), not below, below)
     chk("%s (2): the chat button is in Home's place (%s) on every screen it shows on, beside Pause on its line in a question" % (tag, hc and [round(v, 1) for v in hc]), hc and not chat_off, chat_off)
     chk("%s (3): every round back button is level with the chat button%s" % (tag, " and mirrors its inset" if phone else ""), not back_off, back_off)

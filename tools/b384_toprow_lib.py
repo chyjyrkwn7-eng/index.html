@@ -75,7 +75,7 @@ QUIET = ("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlo
 # dot; skipped: the status-bar strip and fixed full-width backdrops (no ink of their own), the bottom tab bar, the sky, hidden things.
 INK = """()=>{
   const H = innerHeight, W = innerWidth, lim = H * .4, out = [];
-  const skip = e => e.closest('#top-edge, #top-deep, #top-guard, .bottomtabs, #splashscreen, #tour-overlay, .chatdock-panel, [aria-hidden="true"].sky, #sb-probe');
+  const skip = e => e.closest('#top-edge, #top-deep, #top-guard, .bottomtabs, #splashscreen, #tour-overlay, .chatdock-panel, [aria-hidden="true"].sky, #sb-probe, .fest-sky');   /* (384.150) the season's sky on Home: decoration, aria-hidden */
   const vis = e => { for(let n = e; n && n !== document.body; n = n.parentElement){ const s = getComputedStyle(n); if(s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) < .05) return false; } return true; };
   /* (a box that starts above the screen is cut by the screen's edge - a backdrop or a page scrolled under the top - not a top-row element) */
   /* what an ancestor that clips (overflow other than visible) cuts away is not ink: the box is cut to it */

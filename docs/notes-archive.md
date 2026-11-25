@@ -44194,3 +44194,43 @@ Madison: "It says total days for the streak thing, ensure that's gonna be accura
   - mark 384.120: update lines;
   - mark 384.148: the normal lines.
   - Gates: check-js, startup, newuser, whatsnew11.
+
+## 384.149 (2026-11-24): leaderboard rows with a banner
+- Madison (an iPhone screenshot of the Overall board): "People with banners set are messed up, the stuff isn't set right". On rows wearing a banner, the name was squeezed to a letter or two ("O.", "B.") and the Rank / Level / Badges columns were pulled left against it, out of line with every other row.
+- **Cause (as far as Chromium can show).** It does not reproduce in Chromium: every row lays out alike there, short names included. Those rows alone made every child `position:relative; z-index:1` to sit over the banner, and rows scrolled off are `content-visibility:hidden` (.is-offscreen). The likely WebKit fault is that a row coming back keeps those lifted children where they were laid out while skipped. This could only be confirmed on a phone.
+- **Fix.** No child is lifted. The row is its own stacking context (`isolation:isolate`) and `.lb-row-bnr` sits at z-index -1 inside it: over the row's surface, under its content. The content is ordinary flex items again, exactly as on a row with no banner.
+- **The streak chip's flame.** margin-top is -.5px: centering read the chip 0.58px high once at -1px (0 at -.5).
+- **Gates:** check-js; unlocks4 --only 5 (the banner rows: 12 pass); check-centering --quick (0 off centre); a Chromium render of the board with a banner on every row (banners behind, content over, columns aligned).
+
+## 384.150 (2026-11-24): the top row under the deeper blur; badges lift out sharp; the Unlocks filter slides
+- **The top line, 18 -> 36pt.** Madison (Calendar at rest, 384.148): "Is the blurry stuff supposed to be at the top even as you scroll down? Also, you didn't line up the stuff perfectly, there's still that slight blur at the top over the header makes chat buttons and other things, fix that positioning".
+  - **The band itself** is iOS 26's own, drawn in an installed app and staying put as the page scrolls. Nothing of ours paints it (384 r12, 384.95).
+  - **Measured on his screenshot** (1186 wide, 2.695 px/pt): the title's ink dims from ~75pt (peak 162 of 255) to full white only at ~93-95pt, and the chat glyph from ~82 to ~95pt. The band now reaches ~95pt under a 62pt inset, not 78pt as in 384.95's recording.
+  - `--edge-e` is 36pt (x --zc). `--edge-more` (18pt) is what this build added.
+  - **Tab-screen titles** (#count on the Leaderboard, Calendar and Profile) are now in the flow: margin-top edge-e - .18em, plus a margin-bottom that takes back 384.95's lift. The page under a title moves by exactly what the title moved.
+  - **Sign-up and install panels** (`.onboarding-shortform-panel, .classselect-panel, .charselect-panel, .installfirst-panel, .cosmic-welcome`) take margin-top --edge-more. The Add to Home Screen overlay's top is max(sat + 12px, top-e).
+  - **Gate.** check-b384-toprow's EDGE_PT is 36. `.fest-sky` is skipped (aria-hidden decoration). Terms and the Home Screen sheet are listed in GREW_ON_PURPOSE (4px at 85%).
+- **Badges lift out sharp.** Madison (a recording): "The badges come up blurry when you select them ... they aren't clear hd as they pull up".
+  - **Cause.** The lift reads a pin's in-hand face under the "|bare" key (binspectFaceKey, 384.133), but the warm-up (binspectWarmSoon) and the finger-down prewarm (badgeInspectPrewarm) drew it without `bare`. That cached it under the slot's key, so the lift never found it and rose from the case's small picture until the big face was drawn.
+  - **Fix.** Both now pass bare = true.
+  - **Gate:** tools/check-b384-liftsharp.py runs the warm-up's own jobs, then opens every found badge. The src it starts on must be a finished cached in-hand face at >= 90% of the float's device width. 384.149 FAILS: every badge starts on an SVG.
+- **The Unlocks filter slides.** Madison: "You should be able to slide back and forth across this filter to select them, but you can't."
+  - **Cause.** body is touch-action:pan-y, and iOS carries that down to a sideways scroller unless the scroller gives the axis back itself, as the Calendar's countdown track does (327z15).
+  - **Fix.** `.ulk-chips` and `.ulk-chip`, Profile's rank ladder `.pfr-ld-scroll` and `.ifc-clips.is-scroll` now declare touch-action:pan-x pan-y.
+  - **Gate:** tools/check-b384-sideways.py (Unlocks, Profile and the Calendar, both classes: every sideways scroller declares pan-x).
+- **The pinned badge is the pin itself.** Madison: "I was thinking the badge would just be the badge here, it wouldn't be in the circle like that, it would just be the 3d badge kinda thing pinned". `.pin-mark-hero` has no disc, ring or wash. The raised pin (its own render, with its side wall and contact shadow) sits on the plate's corner, at 3.35rem (3.9 on a tablet, 2.6 on the person card) and drawn at 64px. check-b384-pin 111/111.
+- **The banner's colours run down the Profile card.** Madison: "Can we make the banner colors fade down a little better into the rest of the profile box it's in?"
+  - **Before**, the Delta card rule (`background-image:none !important`) left the card flat, so the cover's art faded straight into grey.
+  - **Now**, a later, more specific rule lays --hero-t1 / --hero-t2 (bannerTintOf) over the card's fill as a wash. It starts at 30% and is gone by 66% of the card's height.
+  - The cover's own fade begins at 18%, was 24%, and eases out over eleven stops.
+- **The rank circles on the road.** Madison: "Why are all the rank circles leaning to the right?" On his iPhone every circle on the climb sat ~4pt right of the road. Chromium puts them on the road to the hundredth of a pixel, at 440 and at 85% zoom, so no gate saw it.
+  - **Cause.** The circle was centred by the grid's column arithmetic, and the road by the stop's own 50%. WebKit resolves the arithmetic differently.
+  - **Fix.** The circle is absolute at left 50%, margin-left -node/2: the road's reference. It has no grid-column, since an absolute child placed in a grid area takes that area as its box. The stop's row is minmax(var(--node), auto), so its height is unchanged (313px a stop, before and after).
+  - **Gates.** check-b384-rankcard fails 34 checks identically on 384.149: its card-token colour checks predate the Delta card rule, so these are not this change.
+- **The question under the pinned header fades out, no hard line.** Madison (a recording of a Drill question scrolled up and down): "that hard thing wouldn't follow you as you scroll down at all" and, asked, "The chat and pause button always are supposed to [stay]". The header, chat and Pause stay pinned. The paper behind them was solid to Pause's foot and then faded over only .55rem (384.95), so a question scrolled up was cut off at a hard line just under the row.
+  - **Now** it is solid to Pause's foot (nothing shows through behind Pause) and thins out over a 1.75rem eased ramp. The box ends 2.1rem under the row, was .9rem.
+  - check-b384-toprow (5) still passes: solid from the strip to the foot.
+  - Only his phone can say whether this is the edge he meant.
+- **No bar over the Profile tab.** Madison, of #settings-bar sliding in as Profile scrolls: "Remove the bar thing". settingsBarHost no longer returns the Profile tab. Profile, Stats and Settings scroll their big title away like the Leaderboard and the Calendar, under the system's own blur. The pages Settings opens keep the bar, where their back button and name are pinned.
+  - **check-b384-topbar.** Asserts no bar on the three segments, scrolled 160 and 400; this FAILS on origin/main 384.148. Its "came up on >= 3 screens" became INFO: the remaining pages are too short to scroll 160px in its harness.
+  - **check-b384-settingslook (6)** asserts no bar once scrolled.
