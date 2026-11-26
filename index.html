@@ -93812,7 +93812,15 @@ function cssColorHex(expr){
     const de = document.documentElement, b = document.body;
     /* (384 perf) not the finger's own classes (html.tab-held / tab-dragging come and go with every tap on the bar and change no
        colour): with them in the key every tap missed the colours kept from before it */
-    key = expr + "|" + (de.dataset.theme || "") + "|" + (de.dataset.layout || "") + "|" + (de.dataset.accent || "") + "|" + de.className.replace(/(^|\s)tab-(held|dragging)(?=\s|$)/g, "") + "|" +
+    /* (384.154) NOT THE ROOT'S CLASSES AT ALL. They come and go with every screen (page-locked, lens-up, tab-sliding, loops-paint...)
+       and none of them sets a colour this is asked for (--paper, --bg-c*, --theme-c*, --statusbar-mix*: set only by data-theme,
+       data-layout, data-accent, the root's inline style and the body's three classes below), so every new mix of them missed and
+       forced a style pass of the whole new screen inside the tap: Profile's status-bar colour, 44-62ms at 1x, ~200ms at 4x, every
+       visit (traced). Nor the whole inline style (it carries --vv-shift, scroll-behavior and the like, which change between calls):
+       only the colour properties a custom theme sets inline are in the key. */
+    const ds = de.style;
+    key = expr + "|" + (de.dataset.theme || "") + "|" + (de.dataset.layout || "") + "|" + (de.dataset.accent || "") + "|" +
+      ["--theme-c1", "--theme-c2", "--theme-c3", "--bg-c2", "--bg-c3", "--paper", "--statusbar-mix2", "--statusbar-mix3"].map(k => ds.getPropertyValue(k)).join(",") + "|" +
       (b ? ["sky-home", "sky-calm", "has-active-question"].map(c => b.classList.contains(c) ? 1 : 0).join("") : "-") + "|" +
       (window.matchMedia && matchMedia("(min-width:40rem)").matches ? 1 : 0);
     if(CSS_COLOR_HEX_CACHE.has(key)) return CSS_COLOR_HEX_CACHE.get(key);
@@ -105935,12 +105943,15 @@ function quietIdle(fn, timeout){
   const go = () => {
     let w = 0; try{ w = recordingShouldWait(); }catch(e){}
     if(w > 0){ setTimeout(go, w + 40); return; }
+    /* (384.154) nothing warms while a badge is in your hand: the case's own tiles were being finished (10-80ms each) under the lift */
+    if(document.body && document.body.classList.contains("binspect-open")){ setTimeout(go, 300); return; }
     if(typeof window.requestIdleCallback === "function") window.requestIdleCallback(dl => {
       let w2 = 0; try{ w2 = recordingShouldWait(); }catch(e){}
       if(w2 > 0){ setTimeout(go, w2 + 40); return; }
+      if(document.body && document.body.classList.contains("binspect-open")){ setTimeout(go, 300); return; }   /* (384.154) and when it fires */
       fn(dl);
     }, { timeout: timeout || 1500 });
-    else setTimeout(() => fn(null), 60);
+    else setTimeout(() => { if(document.body && document.body.classList.contains("binspect-open")){ setTimeout(go, 300); return; } fn(null); }, 60);
   };
   go();
 }
@@ -122218,7 +122229,10 @@ function homeFitNow(panel){
 }
 var homeFitResizeOn = false;
 function homeFitWindow(panel){
-  homeFitNow(panel);
+  /* (384.154) NOT IN THE TAP. Madison: "The bottom tab is laggy still". This read the whole new Home's layout (scrollHeight and every
+     child's box) inside the tap's own task, before Home's first frame: ~87ms of a tab change at 4x CPU (getBoundingClientRect 62 +
+     homeFitNow 25, profiled). It runs at the frame instead (the layout that frame does anyway) and again after: the slack it takes back
+     is a few px of scroll, never anything on the screen, so one frame without it shows nothing. */
   requestAnimationFrame(() => homeFitNow(panel));
   setTimeout(() => homeFitNow(panel), 450);
   setTimeout(() => homeFitNow(panel), 1100);
@@ -132779,7 +132793,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-25-384.153";
+const APP_BUILD = "2026-11-26-384.154";
 /* (384.148) the first launch of a new build on this device is narrated as an update, however the new page arrived (see
    window.__splashAsUpdate). class26e.lastbuild is device-level (SHARED, kept through a sign-out). A device that has never recorded
    one but already holds an account was running a build from before this mark existed, so it is told too; a device with nothing
@@ -167683,6 +167697,13 @@ var pfrObservers = [];
 var pfrGen = 0;   /* one per showProfile: a row from an earlier Profile that is no longer on the page stops being watched */
 /* arm a row: it waits, still, in its first frame, until it is at least a third on screen, then plays once (onIn runs then) */
 function pfrArm(el, onIn){
+  /* (384.154) PROFILE IS THERE, FINISHED, IN ITS FIRST FRAME. Madison: "When clicking the profile tab, some of the stuff doesn't load
+     immediately, like the badge icon, the new up for customize." The rows were armed for an entrance that waited for the tab's glass
+     to land: until then the Customize picture and the case's art (and the new dots on them) were at opacity 0, the bars empty, and
+     then the numbers counted up from 0 ("6 of 24" before "8 of 24") - read as the screen still loading. Every row is its finished
+     self now: the words are already the final ones, the art and the bars as they rest (.is-still: no .pfr-anim, so nothing is hidden). */
+  el.classList.add("is-still");
+  return;
   pfrObservers = pfrObservers.filter(o => { if(o.gen === pfrGen || o.el.isConnected) return true; try{ o.io.disconnect(); }catch(e){} return false; });
   if(!pfrMotionOk() || !pfrReplay || typeof IntersectionObserver !== "function"){ el.classList.add("is-still"); return; }
   el.classList.add("pfr-anim");
@@ -168184,7 +168205,12 @@ function showProfile(defaultTab, opts){
   /* Settings' volume slider is dragged sideways; a drag on it is the
      slider's, never a tab change. */
   if(profileTabOrder.length > 1) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]",
-    content: () => { const d = profileTabDefs.find(t => t.key === profileTabKey); return d ? [d.node] : []; } });
+    content: () => { const d = profileTabDefs.find(t => t.key === profileTabKey); return d ? [d.node] : []; },
+    /* (384.154) the tab being swiped to, shown beside this one as the finger moves (Settings is built the first time it is needed:
+       shown for that moment so what it measures has a box, then hidden again - the swipe shows it itself) */
+    peek: key => { const d = profileTabDefs.find(t => t.key === key); if(!d) return null;
+      if(key === "settings" && settingsTab.dataset.built !== "1"){ const was = d.node.hidden; d.node.hidden = false; buildSettingsTab(); d.node.hidden = was; }
+      return d.node; } });
 
   /* ---------- identity header ----------------------------------------
      One card: the character you chose, your name, the day streak, and
@@ -169522,7 +169548,7 @@ function swipeBackOwnsTarget(tg){
   if(!tg || tg.nodeType !== 1) return true;
   const wrap = document.querySelector(".wrap");
   if(!(tg === document.documentElement || tg === document.body || (wrap && wrap.contains(tg)))) return false;
-  if(tg.closest && tg.closest("input, textarea, select, [contenteditable=true], .nsl, .nsw, .nova-hsw, .has-seg-thumb, [data-noswipe], [data-tabdrag], .q-slide-clone")) return false;
+  if(tg.closest && tg.closest("input, textarea, select, [contenteditable=true], .nsl, .nsw, .nova-hsw, .has-seg-thumb, [data-noswipe], [data-tabdrag], [data-tabpeek], .q-slide-clone")) return false;
   return true;
 }
 function swipeBackHScrolls(tg){
@@ -169762,9 +169788,45 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
        again every frame, which a machine without a GPU does not do in 16ms */
     const tf = "translate3d(" + x.toFixed(1) + "px,0,0)";
     drag.els.forEach(el => { el.style.transform = tf; });
+    /* (384.154) THE TAB YOU ARE SWIPING TO IS THERE AS YOU SWIPE. Madison: "if I'm swiping between tabs, the screen I'm swiping too
+       should be seen as I'm attempting the swipe". Where the caller can hand over the next tab's own content (opts.peek: Profile's
+       tabs are all on the page), it sits beside this one - just past the edge the finger is pulling from - and moves with it, so
+       the two slide as one strip, as iOS pages do. The finger turning back swaps which side is shown. */
+    if(opts.peek){
+      const want = dx < 0 ? (st.next ? 1 : 0) : (st.prev ? -1 : 0);
+      if(!drag.peek || drag.peek.dir !== want) peekSet(want);
+      if(drag.peek) drag.peek.el.style.transform = "translate3d(" + (x + drag.peek.dir * drag.peek.span).toFixed(1) + "px,0,0)";
+    }
+  };
+  /* show the neighbour (dir 1: the next tab, from the right; -1: the previous, from the left) laid exactly over this one, off to its side */
+  const peekSet = (dir) => {
+    const d = drag;
+    if(!d) return;
+    if(d.peek){ peekRestore(d.peek); d.peek = null; }
+    if(!dir) return;
+    const key = order[d.i + dir], cur = d.els[0];
+    let el = null;
+    try{ el = opts.peek(key); }catch(e){ el = null; }
+    if(!el || el === cur || !cur || !cur.parentElement || el.parentElement !== cur.parentElement) return;
+    const pk = { el, dir, hidden: el.hidden, css: el.style.cssText, span: Math.max(240, window.innerWidth), anim: null };
+    el.hidden = false;
+    el.style.position = "absolute"; el.style.top = cur.offsetTop + "px"; el.style.left = cur.offsetLeft + "px";
+    el.style.width = cur.offsetWidth + "px"; el.style.margin = "0"; el.style.pointerEvents = "none"; el.style.willChange = "transform";
+    el.style.transform = "translate3d(" + (d.x + dir * pk.span).toFixed(1) + "px,0,0)";
+    el.setAttribute("data-tabpeek", "1"); el.setAttribute("aria-hidden", "true");
+    d.peek = pk;
+  };
+  const peekRestore = (pk) => {
+    try{ if(pk.anim) pk.anim.cancel(); }catch(e){}
+    pk.el.style.cssText = pk.css; pk.el.hidden = pk.hidden;
+    pk.el.removeAttribute("data-tabpeek"); pk.el.removeAttribute("aria-hidden");
+  };
+  const peekAnimate = (pk, fromX, toX, ms) => {
+    try{ pk.anim = pk.el.animate([{ transform: "translate3d(" + fromX.toFixed(1) + "px,0,0)" }, { transform: "translate3d(" + toX.toFixed(1) + "px,0,0)" }], { duration: ms, easing: EASE, fill: "forwards" }); }catch(e){}
   };
   const clearDrag = () => {
     if(!drag) return;
+    if(drag.peek){ peekRestore(drag.peek); drag.peek = null; }
     drag.els.forEach(el => { el.style.transform = ""; el.style.opacity = ""; el.style.transition = ""; el.style.willChange = ""; el.removeAttribute("data-tabdrag"); });
     if(drag.raf) cancelAnimationFrame(drag.raf);
     drag = null;
@@ -169782,7 +169844,9 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
   const clipOn = (els) => {
     clipTries = 0;   /* never cancels a pending clipOff poll: the next tab's clipOn lands after the drag's clipOff, and that poll is what ends it */
     document.documentElement.classList.add("tab-sliding");
-    (els || []).forEach(el => { const p = el && el.parentElement; if(p && !clipBoxes.has(p)){ clipBoxes.add(p); p.classList.add("tab-slide-clip"); } });
+    /* (384.154) at the page's own full-width box (.wrap), not the content's parent: the parent is inset by the page's side margin, so the
+       moving tab was cut off 20px short of the screen's edge - with the next tab beside it now, a hard edge in the middle of the slide */
+    (els || []).forEach(el => { const p = el && (el.closest(".wrap") || el.parentElement); if(p && !clipBoxes.has(p)){ clipBoxes.add(p); p.classList.add("tab-slide-clip"); } });
   };
   const clipOff = () => {
     clearTimeout(clipT);
@@ -169851,8 +169915,23 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
       && (Math.abs(dx) > d.W * 0.33 || (speed > 0.35 && Math.abs(dx) > 24)) && wasAxis === "x";
     const cur = { transform: "translate3d(" + d.x.toFixed(1) + "px,0,0)", opacity: d.els[0].style.opacity || "1" };
     if(!commit){
-      /* back where it was, eased from where it is */
+      /* back where it was, eased from where it is (and the tab it was showing back off its side) */
+      if(d.peek) peekAnimate(d.peek, d.x + d.peek.dir * d.peek.span, d.peek.dir * d.peek.span, 260);
       settle(d.els, cur, { transform: "translate3d(0,0,0)", opacity: "1" }, 260, () => { if(drag === d) clearDrag(); });
+      return;
+    }
+    /* (384.154) committed with the next tab already beside it: the two finish the slide together (never slower than the finger that
+       threw them), then the tab is selected in the same task as the strip is let go, so there is no frame between */
+    if(d.peek && d.peek.dir === dir){
+      busy = true;
+      const rest = Math.max(0, d.peek.span - Math.abs(d.x));
+      const ms = Math.max(150, Math.min(280, speed > 0 ? Math.round(1.8 * rest / speed) : 280));
+      peekAnimate(d.peek, d.x + dir * d.peek.span, 0, ms);
+      settle(d.els, cur, { transform: "translate3d(" + (-dir * d.peek.span) + "px,0,0)", opacity: "1" }, ms, () => {
+        clearDrag();
+        if(panel.isConnected) select(order[next]);
+        busy = false;
+      });
       return;
     }
     busy = true;
@@ -169906,6 +169985,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
   const onCancel = () => {
     startX = null; startY = null; locked = false; axis = null;
     const d = drag; if(!d) return;
+    if(d.peek) peekAnimate(d.peek, d.x + d.peek.dir * d.peek.span, d.peek.dir * d.peek.span, 260);
     settle(d.els, { transform: "translate3d(" + d.x.toFixed(1) + "px,0,0)", opacity: d.els[0].style.opacity || "1" }, { transform: "translate3d(0,0,0)", opacity: "1" }, 260, () => { if(drag === d) clearDrag(); });
   };
   host.addEventListener("touchcancel", onCancel, { passive: true });
@@ -171712,20 +171792,30 @@ function binspectWarmSoon(){
   binspectWarmT = setTimeout(() => {
     let W = 0; try{ W = binspectW(); }catch(e){ return; }
     let units = []; try{ units = unitsInTeachingOrder().filter(u => unitBadgeEarned(u)); }catch(e){}
+    /* (384.154) WHAT THE OPENING NEEDS, FOR EVERY BADGE, FIRST. Madison: "Clicking a badge to see it, it still isn't smooth. Make this
+       perfect." Profiled: opening a badge drew its pin in the open - the face's draft (~115ms at 1x for a pin), the back's draft (~280ms)
+       and the 16 edge slices - because this warm-up did each badge's FINISHED face, then its back, then its edges, one badge at a time:
+       a badge tapped in the first seconds was never reached. Now every earned badge's face draft, then every back draft, then the
+       finished faces and the edges. The backs are made under the key the viewer reads (bare, a pin at its own width) - they were made
+       under another, so a pin's back was always drawn again in the open. */
+    const pinW = () => binspectPinW();
+    const wOf = u => chapterObjShape(u) ? pinW() : W;
+    units.forEach(u => binspectWarmJobs.push(() => badgeStrikeEntry(u, false, wOf(u), true, badgeDirtStage(u), true)));
+    units.forEach(u => binspectWarmJobs.push(() => badgeBackEntry(u, wOf(u), badgeDirtStage(u), true, true)));
     units.forEach(u => {
-      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, chapterObjShape(u) ? binspectPinW() : W, false, d, true); });   /* (384.150) bare: the face the lift reads */
-      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeBackEntry(u, chapterObjShape(u) ? binspectPinW() : W, d, false); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, wOf(u), false, d, true); });   /* (384.150) bare: the face the lift reads */
       binspectWarmJobs.push(() => { const d = badgeDirtStage(u); for(let i = 0; i < BINSPECT.edges; i++) badgeEdgeURL(u, Math.sin(Math.PI * i / (BINSPECT.edges - 1)), d); });
+      binspectWarmJobs.push(() => badgeBackEntry(u, wOf(u), badgeDirtStage(u), false, true));
     });
     const step = () => {
       binspectWarmT = 0;
       if(!binspectWarmJobs.length || !document.querySelector("#stage .ncase")) return;
-      if(document.hidden || badgeInspectNow || (typeof settleUntil === "number" && Date.now() < settleUntil) || performance.now() - recUserAt < 900){ binspectWarmT = setTimeout(step, 400); return; }
+      if(document.hidden || badgeInspectNow || (typeof settleUntil === "number" && Date.now() < settleUntil) || performance.now() - recUserAt < 350){ binspectWarmT = setTimeout(step, 200); return; }
       try{ binspectWarmJobs.shift()(); }catch(e){}
-      binspectWarmT = setTimeout(step, 150);
+      binspectWarmT = setTimeout(step, 40);
     };
     step();
-  }, 1200);
+  }, 450);
 }
 /* (384.133) THE FACE IN YOUR HAND IS THE BARE ONE. A pin's face in your hand is rendered bare (no painted wall: the real side is drawn
    in 3D) and cached under "|bare"; the slot's render, wall and shadow painted on, is cached without it. Both lookups below read the
@@ -171794,7 +171884,10 @@ function openBadgeInspect(unit, tile, opts){
     backImg = mk("binspect-art", "img"); backImg.alt = ""; backImg.draggable = false;
     /* the back is rendered like the front now (build 321) - never in the
        tap: one already made, or its draft a moment after the lift starts */
-    const b0 = BADGE_BACK_CACHE[unit + "|" + W + "|" + dirt];
+    /* (384.154) under the key badgeBackEntry makes it with (a pin: its own width, stage 0, bare) - this looked under another, so a back
+       made ahead was never found */
+    const pinB = !!chapterObjShape(unit);
+    const b0 = BADGE_BACK_CACHE[unit + "|" + (pinB ? WF : W) + "|" + (pinB ? 0 : dirt) + (pinB ? "|bare" : "")] || BADGE_BACK_CACHE[unit + "|" + W + "|" + dirt];
     if(b0){ backImg.src = b0.url; backAt = dirt; backFinal = !b0.draft; }
     backImg.dataset.face = "back";
     backSpec = mk("binspect-spec"); backSpec.appendChild(mk("", "i"));
@@ -171970,7 +172063,11 @@ function openBadgeInspect(unit, tile, opts){
   const ensureBack = draft => {
     if(!backImg || closed) return;
     try{
-      const e = badgeBackEntry(unit, chapterObjShape(unit) ? WF : W, dirt, draft, true);
+      const BW = chapterObjShape(unit) ? WF : W;
+      /* (384.154) the back made in the open is a half-size draft (a quarter of the drawing: ~110ms at 1x for a pin, was ~440) unless one
+         at full size is already made - it only shows once the badge is turned, and the full one is made by the case's warm-up for next time */
+      const full = draft ? BADGE_BACK_CACHE[unit + "|" + BW + "|" + (chapterObjShape(unit) ? 0 : dirt) + (chapterObjShape(unit) ? "|bare" : "")] : null;
+      const e = (draft && !full) ? badgeBackEntry(unit, Math.max(64, Math.round(BW / 2)), dirt, true, true) : badgeBackEntry(unit, BW, dirt, draft, true);
       if(backImg.getAttribute("src") !== e.url) backImg.src = e.url;
       backAt = dirt; backFinal = !e.draft;
     }catch(err){}
@@ -171981,6 +172078,12 @@ function openBadgeInspect(unit, tile, opts){
       idleTimer = 0;
       if(closed || closing) return;
       if(mode !== "idle" || gest || opening){ idleWork(); return; }
+      /* (384.154) NO FINISHING WHILE IT IS IN YOUR HAND. The finished face of a pin is ~850ms of drawing at 1x (the back's draft ~440):
+         run here, a touch in that time froze the spin. The badge shows the best one already made (the case's warm-up makes every
+         earned badge's face and back before you open it, and the finishes while nothing is open); a back never made is drawn on the
+         first touch (pointerdown) or once the lift has landed. */
+      if(backAt < 0 && backImg){ try{ ensureBack(true); }catch(e){} }
+      return;
       let job = null;
       if(!isFinal[dirt]) job = () => { const e = faceEntry(dirt, false); if(e){ ready[dirt] = e.url; isFinal[dirt] = true; showFace(dirt); } };
       /* the back at this stage, its finish (build 321) */
@@ -171995,10 +172098,11 @@ function openBadgeInspect(unit, tile, opts){
   const pt = e => ({ x: e.clientX, y: e.clientY });
   if(hit){
     /* the side's slices: a beat after the lift, or at once on a press */
-    const edgeTimer = setTimeout(() => { if(!closed) addEdges(); }, still ? 0 : 450);
+    /* (384.154) after the lift has landed, never during it (a draw on the main thread mid-lift was the stutter) */
+    const edgeTimer = setTimeout(() => { if(!closed) addEdges(); }, still ? 0 : BINSPECT.open + 160);
     hit.addEventListener("pointerdown", e => {
       if(closed || closing || gest || (e.button && e.button !== 0)) return;
-      clearTimeout(edgeTimer); addEdges();
+      clearTimeout(edgeTimer); addEdges(); if(backAt < 0) ensureBack(true);
       e.preventDefault();
       try{ hit.setPointerCapture(e.pointerId); }catch(err){}
       const r = float.getBoundingClientRect(), now = performance.now(), p = pt(e);
@@ -172221,10 +172325,12 @@ function openBadgeInspect(unit, tile, opts){
       a.finished.then(() => { opening = false; idleWork(); }, () => { opening = false; });
     }catch(e){ opening = false; lift(); }
   }
-  /* the big face, a moment after the lift has started */
-  if(found) setTimeout(() => { if(!closed) ensureFace(dirt); }, 60);
-  /* ...and its back's draft, a moment after that: one render per frame */
-  if(found) setTimeout(() => { if(!closed && backAt < 0) ensureBack(true); }, 140);
+  /* the big face, a moment after the lift has started - only when nothing is ready (384.154: the warm-up makes every earned badge's
+     face draft first, so this is normally a look-up) */
+  if(found) setTimeout(() => { if(!closed) ensureFace(dirt); }, ready[dirt] ? 0 : 60);
+  /* ...and its back's draft once the lift has landed (384.154: it was 140ms in, mid-lift - ~280ms of drawing for a pin's back; a touch
+     before then makes it at once, above) */
+  if(found) setTimeout(() => { if(!closed && backAt < 0) ensureBack(true); }, still ? 140 : BINSPECT.open + 60);
   try{ closeBtn.focus({ preventScroll: true }); }catch(e){}
   return ctl;
 }

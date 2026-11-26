@@ -44432,3 +44432,56 @@ Madison: "No, we dont want the bar at all? Push this live and then start working
      empty at 80/200/400ms (filled by 800ms); this build has 0 at every sample.
    - Gate tools/check-b384-lbstill.py.
    - Item 6 (the Fire Code preload) is kept and is correct, but it was not this symptom.
+
+## 384.154 - Profile finished on arrival, the next tab seen while swiping, a badge opened without drawing, lighter tab changes
+
+1. **Profile is finished in its first frame.** Madison: "When clicking the profile tab, some of the stuff doesn't load
+   immediately, like the badge icon, the new up for customize." The rows were armed for an entrance (pfrArm) that waited for
+   the tab's glass to land. Until then the Customize picture and the case's art (and their new dots) were at opacity 0, the
+   bars empty, and the numbers counted up from 0. Filmed at 4x: the screen came at ~600ms, the art at ~1s, "6 of 24 · 25%"
+   then "8 of 24 · 33%". pfrArm now marks every row .is-still and returns: the final words, art and bars from the first frame.
+2. **No colour read in a tab change.** cssColorHex keyed its cache on the root's whole className, plus (briefly) its inline
+   style. Passing classes (page-locked, lens-up, tab-sliding...) and inline values (--vv-shift, scroll-behavior) made every
+   new mix miss, and a miss is a probe and a style pass of the whole new screen inside the tap. Measured: Profile's
+   status-strip colour, 44-62ms at 1x, ~200ms at 4x, most visits. The key is now theme, layout, accent, the theme colour
+   properties set inline, the body's three sky classes and the tablet query. syncSky per Profile tap: 58 -> 4.5ms at 4x.
+3. **Home's fit is not in the tap.** homeFitWindow ran homeFitNow synchronously in showHome: scrollHeight and every child's
+   box, a forced layout of the new Home before its first frame (~87ms at 4x: getBoundingClientRect 62 + homeFitNow 25). It
+   starts at the frame now (rAF, then 450ms, 1.1s, fonts). The slack it takes back is a few px of scroll, never visible.
+   - Tab timing at 4x (noisy machine, tap -> painted): first Profile visit 1.1-1.2s -> 0.5-1.0s; Home 0.3-0.6s ->
+     0.36-0.47s.
+   - Tried and dropped: content-visibility:auto on Profile's below-the-fold goal blocks (rewards row, ladder: ~1,100
+     elements). No clear gain read through the noise, and a risk of the page height moving.
+4. **The next tab is seen while swiping.** Madison: "if I'm swiping between tabs, the screen I'm swiping too should be seen
+   as I'm attempting the swipe".
+   - attachTabSwipe takes opts.peek(key): the neighbour tab's own node, laid exactly over the current one (absolute at its
+     offsetTop/Left/Width, same parent) one screen width to the side, moved with the finger. The finger turning back swaps
+     which side is shown.
+   - Commit: both finish together (150-280ms, never slower than the throw), then clearDrag and select(next) in the same task,
+     so there is no frame between. Not committed or touchcancel: both go back.
+   - Profile hands over its tabs. Settings is built the first time it is peeked (shown for that moment so its measuring
+     works).
+   - The sideways clip (tab-slide-clip) moved from the content's parent to .wrap: the parent is inset 20px, so the slide was
+     cut off short of the screen's edge.
+   - NOT on the Leaderboard: its boards share one list redrawn per board, so there is no next board on the page to show. It
+     keeps the lift-and-cross from 384 r22. Showing the next board means building neighbours ahead (a larger change).
+5. **A badge opened without drawing.** Madison: "Clicking a badge to see it, it still isn't smooth. Make this perfect."
+   Profiled at 1x: ~0.8s of pin drawing per open (renderObjPinBack 279, renderObjPin 114, filters), 13-19 frames over 20ms
+   in the first 1.4s.
+   - binspectWarmSoon now does every earned badge's FACE DRAFT first, then every back draft, then the finishes and edges. It
+     used to do one badge at a time, finish first, so a badge tapped in the first seconds was never reached. It starts at
+     450ms (was 1.2s), steps every 40ms (was 150) and waits for 350ms since a touch (was 900).
+   - Back keys fixed: the warm-up made a pin's back without `bare` and the viewer's first look used a third key, so a back
+     made ahead was never found.
+   - In the viewer: the back's draft and the 16 edge slices wait for the lift to land (were 140ms and 450ms in, mid-lift). A
+     touch before that makes them at once. The back made in the open is a half-size draft unless a full one exists (~110ms
+     for a pin, was ~440). idleWork no longer runs finishes while the badge is in your hand (a pin's finished face is ~850ms
+     at 1x, and a touch then froze the spin).
+   - quietIdle waits while body.binspect-open (both when scheduling and when the idle callback fires): the case's tiles were
+     finished (10-80ms each) under the lift.
+   - Measured, 1x: second and third opens 1-3 frames over 20ms, no long tasks (were 13-19). The first open after the case
+     opens still pays a 270ms half-back at landing if the warm-up has not reached it. At 4x the viewer's own build is
+     150-280ms before its first frame.
+6. **Gate tools/check-b384-b154.py.** (A) first frame, (B) no colour probe with a passing class added before each tab,
+   (C) the peek: one screen width along, back, and commit, (D) no draw >= 30ms in the lift and no idle job while open,
+   (E) errors. ALL PASS here; fails (A) (B) (C) (D) on 384.153.
